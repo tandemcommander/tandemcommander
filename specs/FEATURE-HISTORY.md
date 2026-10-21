@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271 |
@@ -3698,3 +3698,19 @@ a few early ones are out of sequence).
   incl. cancel, 1326, 1219, refused again, 53, list at once, a CJK server name); negative control
   FAILs; saltests +31; one refute-first review (no MUST; SHOULD 1 fixed, SHOULD 2 -> decision);
   person step `share-list-sign-in-285-by-hand-the-real-windows-dialog-on-a`.
+- 286-folder-shortcut-browse: Browse For Folder (`GetTargetDirectory`, `shellib.cpp`: change drive >
+  Network, Copy / Move / Find / user-menu / Drives browse, plug-ins) handed back a picked folder
+  whose UTF-8 path needs more than 259 bytes in its CODE-PAGE form (`????...`, another folder,
+  accepted silently), and a picked folder shortcut (network location) whose target needs 260+
+  bytes as the shortcut folder itself - now both are refused ("The path specified is too long.",
+  nothing picked, `path` written only on success); OK stays enabled for such a folder. Rule
+  header-only in `salshelllink.h`: `SalIsFolderShortcutIni` (whole class id; `{}` matched
+  before), `SalFolderShortcutTargetU8` (heap / `\\?\` names, target read whole, distinct
+  "too long"). Traps: the Browse tree does not list a folder shortcut inside an ordinary folder
+  (only network locations reach the code) and hides hidden folders like Explorer - `%TEMP%` is
+  unreachable, probe fixture in `build\probe286` (`-FixtureBase`); `GetMyDocumentsOrDesktopPath`
+  lost the same code-page fallback. Plug-in interface unchanged (`MAX_PATH`). From backlog item
+  `folder-shortcut-browse-result-max-path`. Probe `fsc286_probe` pick-long FAIL -> PASS
+  (pick-ctl PASS, fsc-* INFO); saltests +45 (real folder shortcuts; negative control 2 FAIL);
+  one refute-first review (no MUST; SHOULD 1 fixed, SHOULD 2 -> Inbox); person step
+  `confirm-a-network-location-with-a-long-target-is-refused-in`.

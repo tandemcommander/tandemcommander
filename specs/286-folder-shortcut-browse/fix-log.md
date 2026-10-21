@@ -110,3 +110,33 @@ Before -> after: `pick-long` FAIL (146-byte code-page path `????...` accepted) -
   `IShellLinkW::GetPath(tgt, MAX_PATH, ...)` into `WCHAR[MAX_PATH]`; feature 194 recorded that
   `GetPath` into `MAX_PATH` units can hand back a cut target - a target of 260+ units would be
   another folder. Not measured here -> Inbox item (`measure:286`).
+
+## Review
+
+Independent refute-first review (general-purpose agent, 2026-10-21): **no MUST findings**. It
+re-ran the build, saltests (25167 / 0 failed), the encoding guard (TOTAL 0) and the probe (PASS 7,
+FAIL 0, registry identical); its own negative control (`strlen(whole) < targetSize - 1`) failed
+exactly the 259-byte exact-limit check; a throw-away check confirmed that `SHGetPathFromIDListW`
+of a real folder shortcut gives the shortcut's own folder (so `ResolveNetHoodPath` is live code).
+
+- SHOULD 1 (fixed): on the folder-shortcut refusal `path` already held the shortcut folder
+  although FALSE was returned (contract: `path` unchanged) - no caller reads it after FALSE, but
+  the plug-in forwarder's buffer changed. Now `GetTargetDirectory` resolves into its own
+  `picked[MAX_PATH]` and copies into `path` only on TRUE (`GetTargetDirectoryAux` writes into that
+  buffer directly). Re-checked: build OK, saltests 25167 / 0 failed, encoding TOTAL 0, probe after
+  PASS 7 / FAIL 0 (pick-long PASS, pick-ctl PASS), registry identical.
+- SHOULD 2 (out of scope -> Inbox `my-documents-drive-opens-a-cut-path-when-documents-needs`):
+  `GetMyDocumentsOrDesktopPath` cuts a Documents path to the caller's `MAX_PATH` with `lstrcpyn`.
+- SHOULD 3 (recorded): the wiring "`ResolveNetHoodPath` FALSE -> message + FALSE" has no automated
+  check (the rule has; the GUI route cannot be driven without the user's profile) - verified by
+  code reading; the GUI confirmation is the person-step item.
+- NOTE 4: the Inbox item for the plug-in twin - added (`plug-in-folder-picker-may-cut-a-folder-shortcut-target-of`).
+- NOTE 5: a folder of 260+ UTF-16 units stays unpickable with OK disabled (older; spec Assumptions).
+- NOTE 6 (older, recorded only): `DirectoryBrowse` passes the UTF-8 initial folder to the `A`
+  `BFFM_SETSELECTION` - an initial folder with letters outside ASCII is not preselected; no data
+  risk.
+- NOTE 7 (fixed): the test's early return on low memory now removes its folder and uninitialises COM.
+- NOTE 8 (fixed): the comment "never silently the shortcut folder itself" overstated - an unreadable
+  target still keeps the folder (spec Clarification); comment corrected.
+
+A second review was not required (no MUST findings).

@@ -2525,7 +2525,7 @@ int CALLBACK DirectoryBrowse(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
 }
 
 // feature 286: '*tooLong' = the picked folder's UTF-8 path does not fit 'path' (MAX_PATH bytes);
-// 'path' is written only when TRUE is returned (callers pass it as 'initDir' too)
+// 'path' must not be 'initDir' (GetTargetDirectory passes its own buffer)
 static BOOL GetTargetDirectoryAux(HWND parent, HWND hCenterWindow,
                                   const char* title, const char* comment,
                                   char* path, BOOL onlyNet, const char* initDir, BOOL* tooLong)
@@ -2564,12 +2564,8 @@ static BOOL GetTargetDirectoryAux(HWND parent, HWND hCenterWindow,
         BOOL ret = FALSE; // return value
         if (res != NULL)
         {
-            char picked[MAX_PATH];
-            if (SalSHGetPathFromIDListU8(res, picked, MAX_PATH, tooLong))
-            {
-                strcpy(path, picked);
-                ret = TRUE;
-            } // else: too long (refused by the caller) or no file-system path - nothing picked
+            // FALSE: too long (refused by the caller) or no file-system path - nothing picked
+            ret = SalSHGetPathFromIDListU8(res, path, MAX_PATH, tooLong);
         }
         // release the item ID list
         IMalloc* alloc;
@@ -2617,17 +2613,21 @@ BOOL GetTargetDirectory(HWND parent, HWND hCenterWindow,
                         char* path, BOOL onlyNet, const char* initDir)
 {
     CALL_STACK_MESSAGE5("GetTargetDirectory(, , %s, %s, , %d, %s)", title, comment, onlyNet, initDir);
+    // feature 286: resolved in 'picked', 'path' is written only when TRUE is returned
+    char picked[MAX_PATH];
     BOOL tooLong;
-    BOOL ret = GetTargetDirectoryAux(parent, hCenterWindow, title, comment, path, onlyNet, initDir, &tooLong);
-    if (ret && !ResolveNetHoodPath(path))
+    BOOL ret = GetTargetDirectoryAux(parent, hCenterWindow, title, comment, picked, onlyNet, initDir, &tooLong);
+    if (ret && !ResolveNetHoodPath(picked))
     {
         ret = FALSE; // a folder shortcut whose target does not fit 'path'
         tooLong = TRUE;
     }
     // feature 286: a folder (or a folder shortcut's target) longer than 'path' is refused - never
-    // cut, never its code-page form, never silently the shortcut folder itself
+    // cut and never its code-page form
     if (tooLong)
         SalMessageBox(parent, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+    if (ret)
+        strcpy(path, picked);
     return ret;
 }
 

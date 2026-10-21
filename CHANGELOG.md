@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A folder picked in Browse For Folder could come back as another folder, and a long network location as itself** (feature 286).
+  - **Before:** in the Browse For Folder dialog (Change Drive > Network, the browse of a Copy / Move target, Find, the User Menu, Configuration > Drives, plug-ins), a folder whose path is long in letters outside ASCII (more than 259 bytes in UTF-8, e.g. about 85 Chinese letters) came back in the system's code page - letters turned into `?` or look-alikes, another folder - and was taken without a word. A network location (a folder shortcut) whose target is that long was not followed: the location's own folder came back instead.
+  - **Now:** both are refused with "The path specified is too long." and nothing is picked - the field or panel keeps what it had. Folders and network locations that fit come back whole, as before.
+  - **Limitation:** such folders still cannot be picked there (the callers, plug-ins included, hold the result in 260 bytes); a folder of 260 or more characters cannot be selected in the dialog at all (Windows). The network-location case was checked by unit tests against real folder shortcuts; the dialog with a real network location is recorded for a person.
+
 - **A server that wants a name and password before it lists its shares showed only "Access is denied"** (feature 285).
   - **Before:** `\\server\` in Change Directory (and, since feature 284, Backspace or *Go to root* in the root of a share) showed "Error: (5) Access is denied." when the server lists its shared folders only to a signed-in user, and stopped there - while a full path `\\server\share` in the same case offers Windows' sign-in dialog.
   - **Now:** the same Windows sign-in dialog appears; after you sign in, the server's shares are listed and you pick one. Cancel in the dialog leaves everything as it was; a failed sign-in shows the same message as for a full share path. The dialog is offered once: if the server still refuses the list after a sign-in, its error is shown. The program sees no name or password - Windows asks for them and keeps them only if you choose so in its dialog.

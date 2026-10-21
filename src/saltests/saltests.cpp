@@ -16071,6 +16071,9 @@ static void TestFolderShortcut286()
     if (big == NULL)
     {
         CHECK(FALSE);
+        RemoveDirectoryW(dir.c_str());
+        if (SUCCEEDED(coInit))
+            CoUninitialize();
         return;
     }
     char target[MAX_PATH];

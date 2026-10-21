@@ -1,6 +1,6 @@
 fsc286_probe (feature 286) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 14:55; ACP 1250; registry key existed True
+Date    : 2026-10-21 15:05; ACP 1250; registry key existed True
 Fixture : long target 147 units / 327 bytes; short target E:\Projects\tandemcommander\build\probe286\tc286_fsc\tgt\short
 
 fsc-long   RUN    INFO        picked its child; asked: nothing; field after: 58 units / 58 bytes, same as the initial folder: False, same as expected: False, tail '...probe286\tc286_fsc\fl\zz'
