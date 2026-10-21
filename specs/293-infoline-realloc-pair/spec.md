@@ -5,6 +5,14 @@
 **Status**: Draft  
 **Input**: User description: "Backlog item the-information-line-keeps-using-a-freed-text-when-memory - implement exactly what it describes." From backlog item the-information-line-keeps-using-a-freed-text-when-memory.
 
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: After a failed enlargement, does the line show the old text, a part of the new one, or nothing? → A: the old text stays shown, unchanged (autonomous run: item)
+- Q: Should a failed enlargement tell the user (a message box) beyond today's internal low-memory trace? → A: no - the failure is reported to the caller and traced exactly as today; no new UI and no new strings (autonomous run: conservative)
+- Q: Is an enlargement that succeeded kept even though the other failed (memory held until the next attempt)? → A: yes - each successful result is kept at once; the next long text retries and reuses it (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A panel line that cannot grow keeps working (Priority: P1)
