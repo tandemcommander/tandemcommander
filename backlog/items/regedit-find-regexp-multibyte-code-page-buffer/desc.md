@@ -7,8 +7,8 @@ area: other-plugins
 source: review:257
 who: both
 created: 2026-10-20
-updated: 2026-10-20
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 cffe5eca
 effort: S
 feature: -
 related: []
@@ -56,3 +56,4 @@ feature 257 did for the hex pattern (`src/common/salregfind.h`).
 - 2026-10-20 — created (source review:257)
 - 2026-10-20 — related item regedit-find-whole-words-and-quoted-hex-letters done in feature 257
 - 2026-10-20 — moved to Next position 18
+- 2026-10-21 — verified at cffe5eca: present at cffe5eca: Test regexp branch sizes the CP_ACP buffer by units; WideCharToMultiByte(65001) of cccc bar into 8 bytes returns 0, needs 12; bar never scanned
