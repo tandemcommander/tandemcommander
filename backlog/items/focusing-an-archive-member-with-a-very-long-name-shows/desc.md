@@ -7,8 +7,8 @@ area: panels-ui
 source: measure:260
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 de31d72a
 effort: S
 feature: -
 related: []
@@ -34,3 +34,4 @@ Focusing an item with any name the panel lists shows no error box; the informati
 
 - 2026-10-20 — created (source measure:260)
 - 2026-10-20 — moved to Next position 14
+- 2026-10-21 — verified at de31d72a: reproduced at de31d72a: new probe infoline276 rows ARCCAP / ARCDEEP (604-byte ZIP member) show the box, the info line keeps the old text; default content expands the name twice (FileName + FileDOSName) into 1000 bytes

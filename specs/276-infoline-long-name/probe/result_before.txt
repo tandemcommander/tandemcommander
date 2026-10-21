@@ -1,0 +1,25 @@
+infoline276_probe (feature 276) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 03:10; registry key existed True; TEMP C:\Users\pavel\AppData\Local\Temp
+
+PIXCTL     RUN    PASS        a_short.txt 04D2CE40B612C715/42c; b_other.txt B2857862CDF1AA91/40c
+PIXCTL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ARCCAP     FOCUS  FAIL        long item 604 bytes / 204 units; boxes 1: [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK
+ARCCAP     LINE   FAIL        information line a_short.txt 846472F8E1E34D7F/43c -> long item 846472F8E1E34D7F/43c (changed False)
+ARCCAP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ARCMAX     FOCUS  PASS        long item 964 bytes / 324 units; boxes 0: no window; at the start: [#32770 'ZIP'] [Static id=2477] Cannot add 1 or more files to the list. The total path is too long. Some directories or files may be missing in the archive listing. | [Button id=1] OK
+ARCMAX     LINE   PASS        information line a_short.txt F199D902FFE3CBD8/41c -> long item BD0E08C7D253B706/39c (changed True)
+ARCMAX     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ARCDEEP    FOCUS  FAIL        long item 604 bytes / 204 units; boxes 1: [#32770 'Error'] [Static id=2477] Expanded string is too large. | [Button id=1] OK
+ARCDEEP    LINE   FAIL        information line a_short.txt EF3086D596E1AF24/41c -> long item EF3086D596E1AF24/41c (changed False)
+ARCDEEP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DISK: the long file's short (8.3) name: '0771~1.TXT'
+DISK       FOCUS  PASS        long item 754 bytes / 254 units; boxes 0: no window
+DISK       LINE   PASS        information line a_short.txt EF84B2DAA4695E63/43c -> long item 1C2BA45CA7FA01EA/65c (changed True)
+DISK       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ARCSHORT   FOCUS  PASS        long item 10 bytes / 10 units; boxes 0: no window
+ARCSHORT   LINE   PASS        information line a_short.txt 361E917ABA995EA0/42c -> long item 15F026CCBF675954/42c (changed True)
+ARCSHORT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Rows: PASS 13, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
