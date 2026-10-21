@@ -1104,12 +1104,20 @@ BOOL CFindThread::Test(char* text, int len, BOOL name, DWORD type)
 
             if (len > 0)
             {
-                if (!AsciiBuffer.Reserve(len))
+                // feature 278: the space and the searched length are the code-page bytes, not the
+                // units (with a multi-byte code page the conversion failed and stale bytes were
+                // searched, or the end of the text never was); a failed conversion is no match
+                int bytes = SalRegFindTextToCodePage((LPWSTR)text, len, CP_ACP, NULL, 0);
+                if (bytes < 0)
+                    return FALSE;
+                if (!AsciiBuffer.Reserve(bytes))
                 {
                     TRACE_E("LOW_MEMORY");
                     return FALSE;
                 }
-                WStrToStr(AsciiBuffer.Get(), AsciiBuffer.GetSize(), (LPWSTR)text, len);
+                if (SalRegFindTextToCodePage((LPWSTR)text, len, CP_ACP, AsciiBuffer.Get(), AsciiBuffer.GetSize()) != bytes)
+                    return FALSE;
+                len = bytes;
                 text = AsciiBuffer.Get();
             }
         }

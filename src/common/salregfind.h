@@ -30,6 +30,16 @@
 // converted at all); SALHEXPAT_TOOLONG (the bytes do not fit 'outSize' - never
 // cut). An unclosed quote runs to the end of the pattern.
 //
+// SalRegFindTextToCodePage (feature 278) - a regular expression searches the
+// code-page form of a text (a key or value name, a text value). The space and
+// the searched length were the text's UTF-16 unit count: with a multi-byte code
+// page (UTF-8, 932 / 936 / 949 / 950) the form is longer - the conversion failed
+// and stale bytes were searched, or the end of the text never was. 'out' == NULL
+// returns the byte count WideCharToMultiByte(codePage, 0, ...) needs (no NUL
+// added); with a space it converts and returns that count. -1 when the text
+// cannot be converted or does not fit 'outSize' (never a partial result; the
+// content of 'out' is then not to be searched). An empty text is 0.
+//
 // Header-only (the plug-ins cannot compile a .cpp from src\common); needs
 // <windows.h> and <ctype.h>; checked by saltests.
 //
@@ -143,4 +153,20 @@ inline int SalHexPatternToBytes(const WCHAR* text, UINT codePage, BOOL strict, c
     if (outLen != NULL)
         *outLen = len;
     return SALHEXPAT_OK;
+}
+
+inline int SalRegFindTextToCodePage(const WCHAR* text, int units, UINT codePage, char* out, int outSize)
+{
+    if (text == NULL || units <= 0)
+        return 0;
+    int bytes = WideCharToMultiByte(codePage, 0, text, units, NULL, 0, NULL, NULL);
+    if (bytes <= 0)
+        return -1;
+    if (out == NULL)
+        return bytes;
+    if (bytes > outSize)
+        return -1; // never a partial result
+    if (WideCharToMultiByte(codePage, 0, text, units, out, bytes, NULL, NULL) != bytes)
+        return -1;
+    return bytes;
 }

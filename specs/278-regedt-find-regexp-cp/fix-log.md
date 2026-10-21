@@ -23,3 +23,48 @@ misses text past the code-page length of a value.
   | 1250 | 8 | 8 | 8 | 8 | yes |
 
 - The GUI case is not reachable on this machine (ANSI code page 1250).
+
+## Analyze
+
+`speckit-analyze` (one run): 0 CRITICAL, 0 HIGH, 0 MEDIUM, 2 LOW, both accepted - C1: the call
+site's guard (`len != need` -> no match) is proven through the rule's too-small-space check,
+not by its own test (no GUI fault can reach it); C2: feature 257's probe drives value data only,
+key and value names take the same code path (only the NUL trimming differs).
+
+## Implementation
+
+- `src/common/salregfind.h`: `SalRegFindTextToCodePage(text, units, codePage, out, outSize)` -
+  `out == NULL` counts the code-page bytes (`WideCharToMultiByte(codePage, 0, ..., NULL, 0)`);
+  with a space it converts and returns the count, or -1 when the conversion fails or the space
+  is too small (never a partial result); an empty text is 0.
+- `src/plugins/regedt/finddlg.cpp`, `CFindThread::Test`, regexp branch: count with `CP_ACP`
+  (-1 → no match), reserve the count, convert (a different count → no match), `len` = the
+  converted count. The NUL trimming of 189, the line loop and the whole-word rule of 257 are
+  untouched; `WStrToStr` and its other callers unchanged. `salregfind.h` was already in the
+  plug-in's `precomp.h` (257).
+- `src/saltests/saltests.cpp`: `TestRegFindTextToCodePage278` - 65001 `čččč bar` = 12 bytes,
+  `bar` at the end, no NUL added, exact fit, 11 and 8 (the old space) refused; the old sizing
+  emulated with the real API loses `bar` both ways (failed conversion into 8 bytes; 12 converted
+  into a larger space, 8 searched); 932 `ああ bar` = 8 bytes from 6 units, `bar` beyond the unit
+  count; 1250 = 8 bytes as before; lone surrogate / unrepresentable letter replaced (count =
+  conversion, 6 under 65001, `?a?` under 1250); only the given units; empty / NULL text 0; a bad
+  code page -1. clang-format applied to the new lines only (`--lines`).
+
+## Checks
+
+| Check | Command | Result |
+|---|---|---|
+| build before | PowerShell `.\build.cmd` (tree unchanged) | `BUILD SUCCEEDED` |
+| probe before | `tools\run_on_hidden_desktop.ps1` with `specs\257-regedt-find-words-hex\probe\find_words_hex_probe.ps1` → `probe/result_before.txt` | PASS 9, FAIL 0 (ACP 1250; registry restored, identical hash) |
+| build after | `.\build.cmd` | `BUILD SUCCEEDED`, exit 0 (saltests.exe and regedt.spl rebuilt 04:53) |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 24954 checks, 0 failed`, exit 0 |
+| negative control | rule's count replaced by `units` (the old sizing), rebuilt, saltests | `24954 checks, 12 failed` (all in `TestRegFindTextToCodePage278`, 65001 / 932 / lone-surrogate / bad-code-page rows); rule restored, rebuilt, `0 failed` |
+| encoding guard | Bash `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)`, exit 0 |
+| probe after | the same probe → `probe/result_after.txt` | PASS 9, FAIL 0 (regexp RX-BAR / WW-LINE2 / EMPTY-RX rows drive the changed branch; registry restored, identical hash) |
+| the item | the step-3 measurement as a rule check | `čččč bar` under 65001: 12 bytes searched, `bar` found (before: 8 bytes, `bar` absent) |
+
+## Owed to a person
+
+- NOT DRIVEN: the GUI under a multi-byte ANSI code page (this machine is 1250; the system code
+  page needs a restart). Steps in `quickstart.md` step 4 - recorded as a `person-step` item at
+  closing.

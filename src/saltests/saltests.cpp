@@ -13205,6 +13205,62 @@ static void TestHexPattern257()
     }
 }
 
+// feature 278: a regexp searches the whole code-page form of a text (the space and the searched
+// length were the UTF-16 unit count - with UTF-8 or a DBCS code page the end was never searched)
+static bool HasBar278(const char* s, int len)
+{
+    for (int i = 0; i + 3 <= len; i++)
+        if (memcmp(s + i, "bar", 3) == 0)
+            return true;
+    return false;
+}
+
+static void TestRegFindTextToCodePage278()
+{
+    const WCHAR* cccc = L"\x010D\x010D\x010D\x010D bar"; // 8 units
+    char out[64];
+    // UTF-8: 12 bytes, "bar" at the end
+    CHECK(SalRegFindTextToCodePage(cccc, 8, 65001, NULL, 0) == 12);
+    memset(out, 0x5A, sizeof(out));
+    CHECK(SalRegFindTextToCodePage(cccc, 8, 65001, out, sizeof(out)) == 12);
+    CHECK(memcmp(out, "\xC4\x8D\xC4\x8D\xC4\x8D\xC4\x8D bar", 12) == 0 && HasBar278(out, 12));
+    CHECK(out[12] == 0x5A);                                         // no NUL added
+    CHECK(SalRegFindTextToCodePage(cccc, 8, 65001, out, 12) == 12); // exact fit
+    CHECK(SalRegFindTextToCodePage(cccc, 8, 65001, out, 11) == -1); // never a partial result
+    CHECK(SalRegFindTextToCodePage(cccc, 8, 65001, out, 8) == -1);  // the old space
+    // the negative control: the old sizing (space and length = units) loses "bar"
+    {
+        char old[8];
+        memset(old, 0x5A, sizeof(old));
+        CHECK(WideCharToMultiByte(65001, 0, cccc, 8, old, 8, NULL, NULL) == 0 && !HasBar278(old, 8));
+        char big[64]; // a reused, larger space: converted, but only 8 bytes searched
+        CHECK(WideCharToMultiByte(65001, 0, cccc, 8, big, sizeof(big), NULL, NULL) == 12 && !HasBar278(big, 8));
+    }
+    // a DBCS code page: two hiragana A + " bar" = 6 units, 8 bytes
+    const WCHAR* aa = L"\x3042\x3042 bar";
+    CHECK(SalRegFindTextToCodePage(aa, 6, 932, NULL, 0) == 8);
+    CHECK(SalRegFindTextToCodePage(aa, 6, 932, out, sizeof(out)) == 8);
+    CHECK(memcmp(out, "\x82\xA0\x82\xA0 bar", 8) == 0 && HasBar278(out, 8) && !HasBar278(out, 6));
+    // a single-byte code page: one byte a unit, as before
+    CHECK(SalRegFindTextToCodePage(cccc, 8, 1250, NULL, 0) == 8);
+    CHECK(SalRegFindTextToCodePage(cccc, 8, 1250, out, 8) == 8);
+    CHECK(memcmp(out, "\xE8\xE8\xE8\xE8 bar", 8) == 0);
+    // a lone surrogate and a letter the code page lacks: replaced, count = conversion
+    const WCHAR lone[] = {0xD800, L'a', 0x0436, 0};
+    CHECK(SalRegFindTextToCodePage(lone, 3, 65001, NULL, 0) == 6);
+    CHECK(SalRegFindTextToCodePage(lone, 3, 65001, out, sizeof(out)) == 6);
+    CHECK(memcmp(out, "\xEF\xBF\xBD\x61\xD0\xB6", 6) == 0);
+    CHECK(SalRegFindTextToCodePage(lone, 3, 1250, out, sizeof(out)) == 3);
+    CHECK(memcmp(out, "?a?", 3) == 0);
+    // only the given units, not up to a NUL
+    CHECK(SalRegFindTextToCodePage(cccc, 4, 65001, NULL, 0) == 8);
+    // nothing to convert; a bad code page
+    CHECK(SalRegFindTextToCodePage(cccc, 0, 65001, out, sizeof(out)) == 0);
+    CHECK(SalRegFindTextToCodePage(NULL, 8, 65001, out, sizeof(out)) == 0);
+    CHECK(SalRegFindTextToCodePage(L"x", 1, 12345, NULL, 0) == -1);
+    CHECK(SalRegFindTextToCodePage(L"x", 1, 12345, out, sizeof(out)) == -1);
+}
+
 // feature 180: system texts with inserts (193 "%1 is not a valid Win32 application.", 216, 34) are
 // formatted - before, FormatMessage without arguments failed (87) and the program showed "System
 // error N, text description is not available."; the inserts become "..." and no '%' is left
@@ -15530,6 +15586,7 @@ int main(int argc, char** argv)
     TestMultiSzToLine189();
     TestRegFindWholeWord257();
     TestHexPattern257();
+    TestRegFindTextToCodePage278();
     TestDeleteAsDirLink197();
     TestAttrsLink253();
     TestAttrsFileLink272();
