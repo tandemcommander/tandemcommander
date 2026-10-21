@@ -50,7 +50,7 @@ wrapper path is covered by reading, recorded NOT DRIVEN).
 ## Phase 6: Polish
 
 - [X] T017 Encoding guard, build, saltests; the probe after -> `probe/result_after.txt`; regression 203 (`regress_203.txt`) and 201 (`regress_201.txt`); fix-log before/after
-- [ ] T018 Independent review (SKILL step 7), findings into fix-log.md
+- [X] T018 Independent review (SKILL step 7), findings into fix-log.md
 
 ## Dependencies
 

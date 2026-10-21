@@ -13,6 +13,13 @@
                   PASS = exactly one "Error Renaming File" box whose text holds the whole path of
                   the salNNN entry that holds longfilename.txt's content
       cp-long     cp-left in a deep target folder: the box holds the whole salNNN path (review)
+      cp-cancel   cp-left, the user cancels (Cancel while the progress dialog is enabled, Yes)
+                  inside the retry window: the box is still shown, the create's error not asked
+                  any more (review 1)
+      cp-cancel-late the same, the cancel question left open until the "left aside" box opened
+                  over it; the inner box answered first
+      cp-exitcancel cp-left, cancelled from outside (WM_USER_CANCELPROGRDLG - a session end, the
+                  Exiting dialog): nothing shown, the entry intact under salNNN (review 2)
       cp-brief    the same with seam 3 (a hold shorter than the retry): the copy lands,
                   longfilename.txt keeps its name and content, no such box
       dir-left    F5 of a folder "LONGDI~1" next to a folder "longdirname" (keep.txt), seam 1000
@@ -139,6 +146,12 @@ function Serve281([int]$Id, [double]$Seconds = 60) {
             if ($sw.Elapsed.TotalSeconds - [double]$seen[$key] -lt 0.6) { continue }
             $seen.Remove($key)
             if ([Drv098f]::Txt($h) -match $ReopenRx) { [void]$r.Messages.Add([Drv098f]::Txt($h) + ' dialog re-opened (cancelled)'); Close-Win $h; Start-Sleep -Milliseconds 400; continue }
+            # cp-cancel-late: the user answers the cancel question only after the "left aside" box
+            # opened over it - and the inner (newer) box first, as a user would
+            if ($script:HoldQuestion -and [Drv098f]::Txt($h) -ceq 'Question') {
+                $renameUp = @(Get-Tops $Id | Where-Object { [Drv098f]::Txt($_) -ceq 'Error Renaming File' }).Count -gt 0
+                if (-not $script:RenameSeen -or $renameUp) { $seen[$key] = $sw.Elapsed.TotalSeconds; if ($renameUp) { $script:RenameSeen = $true }; continue }
+            }
             [void]$r.Messages.Add($d)
             if ([Drv098f]::Txt($h) -ceq 'Error Renaming File' -and $script:ShotCase) {
                 $shot = Join-Path $PSScriptRoot ('shot_' + $script:ShotCase + '.png')
@@ -183,6 +196,25 @@ function Run-Case([string]$Case, [scriptblock]$Setup) {
         if ($fld -eq [IntPtr]::Zero) { throw 'the name field was not found' }
         [void][Drv098f]::SetText($fld, $c.Text, 5000)
         Click-Ok $dlg
+        $script:CancelNote = ''
+        $script:HoldQuestion = [bool]$c.HoldQuestion; $script:RenameSeen = $false
+        if ($c.CancelHow) {   # a cancel inside the move back's retry window (about 2 s)
+            # as a user can: only while the progress dialog is enabled (no box over it yet)
+            $prog = [IntPtr]::Zero
+            $sw = [Diagnostics.Stopwatch]::StartNew()
+            while ($sw.Elapsed.TotalSeconds -lt 5 -and $prog -eq [IntPtr]::Zero) {
+                $prog = @(Get-Tops $id | Where-Object { [Drv098f]::Txt($_) -match '^\(\d+ %\)' -and [Drv098f]::IsWindowEnabled($_) }) | Select-Object -First 1
+                if (-not $prog) { $prog = [IntPtr]::Zero; Start-Sleep -Milliseconds 20 }
+            }
+            if ($prog -eq [IntPtr]::Zero) { $script:CancelNote = 'no enabled progress window' }
+            elseif ($c.CancelHow -eq 'button') {   # the user's cancel: Cancel, then "Do you want to cancel?" Yes (served below)
+                $b = Buttons $prog | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 2 } | Select-Object -First 1
+                if ($b) { Click $b; $script:CancelNote = 'Cancel clicked' } else { $script:CancelNote = 'no Cancel button' }
+            }
+            else {   # from outside: WM_USER_CANCELPROGRDLG (what a session end / "Cancel all operations" posts)
+                [void][Drv098f]::PostMessageW($prog, 0x8000 + 136, [IntPtr]::Zero, [IntPtr]::Zero); $script:CancelNote = 'WM_USER_CANCELPROGRDLG posted'
+            }
+        }
         Start-Sleep -Milliseconds 800
         $r = Serve281 $id 90
         $fatal = $r.Fatal; if (-not $fatal) { $fatal = Fatal-Win $id }
@@ -191,7 +223,7 @@ function Run-Case([string]$Case, [scriptblock]$Setup) {
         $res = & $c.Check
         $msgs = (@($r.Messages | ForEach-Object { Short $_ }) -join ' || ')
         $ok = (-not $fatal) -and (-not $r.TimedOut) -and $res.Ok
-        Row $Case 'RUN' (V $ok) ("seam {0}; lost={1}; on disk: {2}; asked: {3}{4}{5}" -f $c.Seam, $res.Lost, $res.Facts, $(if ($msgs) { $msgs } else { 'nothing' }), $(if ($r.TimedOut) { '; TIMED OUT' } else { '' }), $(if ($fatal) { '; FATAL ' + $fatal } else { '' }))
+        Row $Case 'RUN' (V $ok) ("seam {0}{6}; lost={1}; on disk: {2}; asked: {3}{4}{5}" -f $c.Seam, $res.Lost, $res.Facts, $(if ($msgs) { $msgs } else { 'nothing' }), $(if ($r.TimedOut) { '; TIMED OUT' } else { '' }), $(if ($fatal) { '; FATAL ' + $fatal } else { '' }), $(if ($script:CancelNote) { '; ' + $script:CancelNote } else { '' }))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $fatal $before } }
@@ -262,6 +294,44 @@ $Cases['cp-long'] = {
     $s = Has-Short $t 'LONGFI~1.TXT'; if ($s) { return @{ Skip = $s } }
     @{ Seam = 1000; Left = "$d\src"; Right = $t; Focus = "$d\src\LONGFI~1.TXT"; Cmd = 727; Text = "$t\"
        Check = { Left-Check $t 'PRECIOUS-5' $false }.GetNewClosure() }
+}
+# review 1 of 281: the user's own cancel inside the retry window - the box is still shown; review 2:
+# a cancel from outside (the program exiting) - nothing shown (nobody may answer; a trace), the
+# entry intact under salNNN
+function Cancel-Check([string]$Dir, [string]$Content) {
+    $r = Left-Check $Dir $Content $false
+    $q = @($script:Msgs | Where-Object { $_ -match "'Question'" }).Count -ge 1
+    $e = @($script:Msgs | Where-Object { $_ -match "'Error Opening File'" }).Count -eq 0
+    return (Res ($r.Ok -and $q -and $e) $r.Lost ($r.Facts + "; cancel asked: $q; no create error after it: $e"))
+}
+$Cases['cp-cancel'] = {
+    $d = New-Case 'cp-cancel'; NewDir "$d\src"; NewDir "$d\tgt"
+    Put "$d\tgt\longfilename.txt" 'PRECIOUS-8'; Put "$d\src\LONGFI~1.TXT" 'COPIED-8'
+    $s = Has-Short "$d\tgt" 'LONGFI~1.TXT'; if ($s) { return @{ Skip = $s } }
+    @{ Seam = 1000; CancelHow = 'button'; Left = "$d\src"; Right = "$d\tgt"; Focus = "$d\src\LONGFI~1.TXT"; Cmd = 727; Text = "$d\tgt\"
+       Check = { Cancel-Check "$d\tgt" 'PRECIOUS-8' }.GetNewClosure() }
+}
+$Cases['cp-cancel-late'] = {
+    $d = New-Case 'cp-cancel-late'; NewDir "$d\src"; NewDir "$d\tgt"
+    Put "$d\tgt\longfilename.txt" 'PRECIOUS-10'; Put "$d\src\LONGFI~1.TXT" 'COPIED-10'
+    $s = Has-Short "$d\tgt" 'LONGFI~1.TXT'; if ($s) { return @{ Skip = $s } }
+    @{ Seam = 1000; CancelHow = 'button'; HoldQuestion = $true; Left = "$d\src"; Right = "$d\tgt"; Focus = "$d\src\LONGFI~1.TXT"; Cmd = 727; Text = "$d\tgt\"
+       Check = { Cancel-Check "$d\tgt" 'PRECIOUS-10' }.GetNewClosure() }
+}
+$Cases['cp-exitcancel'] = {
+    $d = New-Case 'cp-exitcancel'; NewDir "$d\src"; NewDir "$d\tgt"
+    Put "$d\tgt\longfilename.txt" 'PRECIOUS-9'; Put "$d\src\LONGFI~1.TXT" 'COPIED-9'
+    $s = Has-Short "$d\tgt" 'LONGFI~1.TXT'; if ($s) { return @{ Skip = $s } }
+    @{ Seam = 1000; CancelHow = 'outside'; Left = "$d\src"; Right = "$d\tgt"; Focus = "$d\src\LONGFI~1.TXT"; Cmd = 727; Text = "$d\tgt\"
+       Check = { ExitCancel-Check "$d\tgt" 'PRECIOUS-9' }.GetNewClosure() }
+}
+# (a function: $script:Msgs inside a GetNewClosure() block is another scope - measured, the row passed
+# with a box shown)
+function ExitCancel-Check([string]$Dir, [string]$Content) {
+    $sal = @([IO.Directory]::GetFileSystemEntries($LP + $Dir) | ForEach-Object { [IO.Path]::GetFileName($_) } | Where-Object { $_ -cmatch '^sal[0-9A-F]{3}$' })
+    $kept = ($sal.Count -eq 1) -and ((ReadOr "$Dir\$($sal[0])") -ceq $Content)
+    $none = @($script:Msgs | Where-Object { $_ -match "'Error Renaming File'" }).Count -eq 0
+    return (Res ($kept -and $none) (-not $kept) ((Snap $Dir) + "; left intact: $kept; no box: $none"))
 }
 $Cases['cp-brief'] = {
     $d = New-Case 'cp-brief'; NewDir "$d\src"; NewDir "$d\tgt"

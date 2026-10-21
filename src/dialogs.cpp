@@ -787,9 +787,16 @@ CProgressDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_USER_DIALOG:
     {
         // feature 281: request 13 (an entry left under a temporary name) is shown after the user's
-        // cancel too - where the user's file is now; never during an unattended close (080)
-        if (CancelWorker && (wParam != 13 || UnattendedClose || CriticalShutdown))
+        // own cancel too - where the user's file is now; never when the cancel came from outside
+        // (DoNotBeepOnClose: the program is exiting - a session end, "Cancel all operations"; nobody
+        // may be there to answer, the main thread waits for this dialog) nor during an unattended
+        // close (080) - a trace only then
+        if (CancelWorker && (wParam != 13 || DoNotBeepOnClose || UnattendedClose || CriticalShutdown))
+        {
+            if (wParam == 13)
+                TRACE_E("CProgressDialog: the program is exiting, not shown: " << ((char**)lParam)[1]);
             return TRUE; // should terminate, it should not request anything
+        }
 
         BOOL canFlash = RunningInOwnThread;
         if (IsIconic(RunningInOwnThread ? HWindow : MainWindow->HWindow))
@@ -930,6 +937,8 @@ CProgressDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (!UnattendedClose && !CriticalShutdown) // feature 080: nothing is shown during an unattended close
                 SalMessageBox(HWindow, data[1], data[0], MB_OK | MB_ICONEXCLAMATION);
+            else
+                TRACE_E("CProgressDialog: during a close, not shown: " << data[1]);
             break;
         }
         }

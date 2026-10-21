@@ -152,5 +152,41 @@ violation) and then lands as `LONGFI~1.TXT` - the short name is free; the user i
 longfilename.txt is (221's logic, nothing lost); Quick Rename stays undone and shows its own error
 box after the "left aside" one (221).
 
+### Review 2 (refute-first, fresh agent)
+
+No MUST. Re-ran build, saltests, the probe (20 / 0), 203 (14 / 0); drove a cancel inside the retry
+window (`WM_USER_CANCELPROGRDLG` at ~1 s: one box, the whole path) with a negative control
+(`dialogs.cpp` back to `if (CancelWorker)` -> 0 boxes, the entry left silently), restored.
+
+- **SHOULD 1 - "never during a critical shutdown" did not hold**: a session end cancels the
+  workers (`mainwnd3.cpp` `WM_QUERYENDSESSION` critical; the forced non-critical shutdown after
+  Yes) before `CriticalShutdown` is set, so request 13 put up a box nobody may answer while the
+  main thread waits for the dialog. **Fixed**: request 13 after a cancel is shown only for the
+  user's own cancel in the progress dialog - not when the cancel came from outside
+  (`WM_USER_CANCELPROGRDLG`, which every session end and the Exiting dialog's "Cancel all
+  operations" send; it already sets `DoNotBeepOnClose`, "the program is exiting") - a trace then.
+- NOTE 2 (a request-13 box already up is closed unread by `CloseAllOwnedEnabledDialogs` when the
+  cancel comes from outside): the old mechanism of the exiting program; the trace stays. Accepted.
+- NOTE 3 (feature 198's rename via a temporary name can leave the source there silently after a
+  cancel; its dialog cuts long paths): outside this item - new Inbox item
+  `rename-via-temp-left-silently` (review:281).
+- NOTE 4: checked by reading, no defect.
+
+New probe rows: `cp-cancel` (the user's Cancel while the progress dialog is enabled, Yes -> one
+box with the whole path, the create's error not asked), `cp-cancel-late` (the cancel question left
+open until the box opened over it, the inner box answered first -> both close, one box),
+`cp-exitcancel` (`WM_USER_CANCELPROGRDLG` -> no box, the entry intact under salNNN). Traps met in
+the probe: a first `cp-cancel` clicked Cancel on the progress dialog while it was already disabled
+under the box (a `BM_CLICK` reaches a disabled dialog's button - no user can) and answered the
+outer box first: 66 records, the two boxes nested the other way round; the row now waits for an
+enabled progress dialog. `$script:Msgs` inside a `GetNewClosure()` block is another scope: the
+negative control (`DoNotBeepOnClose ||` removed -> the box shown) first PASSED `cp-exitcancel`;
+the check is a script-level function now and the control FAILS it (box shown, "no box: False");
+`dialogs.cpp` restored byte-exact from a saved copy, rebuilt.
+
+Final (the build of the final sources): `build.cmd` and `build.cmd release` BUILD SUCCEEDED;
+saltests 25,011 / 0; encoding guard 0; `left281_probe` **26 / 0** (13 rows); `ren281_probe` 4 / 0;
+regression 203 14 / 0, 201 6 / 0; Release binaries hold no seam variable.
+
 - clang-format: no new finding in the changed code (the one extra in `saltests.cpp` is the new
   `#include` line in the include block, which the tool reports line by line already).
