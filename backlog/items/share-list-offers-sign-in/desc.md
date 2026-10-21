@@ -7,11 +7,11 @@ area: panels-ui
 source: leftover:125
 who: agent
 created: 2026-10-13
-updated: 2026-10-17
+updated: 2026-10-21
 verified: -
 effort: M
 feature: -
-related: [decide-ship-network-plugin-nethood, share-root-parent-offers-share-list]
+related: [decide-ship-network-plugin-nethood]
 depends-on: []
 reason: -
 ---
@@ -37,3 +37,4 @@ Needs a real file server that refuses the list to verify (see the person step `r
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-21 — related item share-root-parent-offers-share-list done in feature 284

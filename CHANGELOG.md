@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Backspace and Go to root did nothing in the root of a network share** (feature 284).
+  - **Before:** in `\\server\share` the panel listed no `..` entry, Backspace and the *Parent directory* command did nothing, and *Go to root* opened the same share root again - the way to another share of the same server was typing `\\server\` into Change Directory (feature 125).
+  - **Now:** the root of a share lists `..`; it, Backspace, *Parent directory*, *Go to root* and *Open in other panel* on `..` show the server's shares under the directory line, as Change Directory does with `\\server\`: pick one to open it, Esc to stay. A server that refuses the list shows its error and the panel stays. Dropping files onto that `..` is refused, as nothing can be stored at `\\server\`. With a Network plug-in installed, its `net:` panel still opens instead.
+  - **Limitation:** holding Backspace now ends at the share list instead of stopping at the share's root; a server that lists no folder share answers "A share name is missing in the path specified". Checked against this computer's own shares (`\\localhost`) with the list given by a test switch of the development build; a real file server, Esc in the wait window and dropping onto `..` are recorded for a person.
+
 - **A file mask like `*.čtx` missed `A.ČTX`, and `*.ĥ` converted or selected `x.Ĺ`** (feature 283).
   - **Before:** a mask made of `*.` and an extension with accented letters compared the extension byte by byte through the system's code page. It missed the other case of an accented letter (`*.čtx` did not find `A.ČTX`, nor a name written with a separate accent mark), an exclusion like `|*.čtx` excluded nothing, and on some systems two different letters counted as one - with a Czech system locale `*.ĥ` matched `x.Ĺ`, and Convert rewrote that file. The same masks are used by Select / Unselect, the panel filter, Find, Copy / Move masks and the Recycle Bin masks (a file the mask missed was deleted permanently instead of being recycled).
   - **Now:** such a mask matches whole letters without regard to case, as every other mask with accented letters already did; masks made only of ASCII letters work exactly as before.

@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names) | 071, 078, 123, 244, 245, 246 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284 |
 
 ## Feature notes
 
@@ -3664,3 +3664,19 @@ a few early ones are out of sequence).
   From backlog item `mask-matcher-code-page-fold`. Probe `mask283_probe` 14 / 6 -> 20 / 0 (10
   Convert cases; negative control with the rule disabled 14 / 6, saltests 11 failed); one
   refute-first review (no MUST; one SHOULD fixed; Inbox `mask-group-prepare-unbounded-mask-copy`).
+- 284-share-root-parent: in the root of `\\server\share` without a Network plug-in (none ships)
+  the way up did nothing - no `..` was listed (`ReadDirectory` added it to a share's root only for
+  the plug-in), Backspace / Ctrl+PgUp / *Parent directory* had nothing to execute, *Go to root*
+  re-opened the same root. Now the `..` is listed, and executing it, *Go to root* and *Open in
+  other panel* on it hand `\\server\` to the panel's `ChangeDir` - the route of 125 (the plug-in
+  test, `PickServerShare`, the wait window, the messages, the never-cut refusals). Pure rule
+  `SalUncShareRootServerPath` (`saluncserver.h`). Every plug-in branch stays first and unchanged.
+  Traps: at the root of an archive lying in a share's root `GetPath()` is the archive's folder -
+  *Go to root* and *Open in other panel* are limited to disk panels (FR-006); the newly listed `..`
+  is a drop target whose path (`GetCurrentDir`, `shellsup.cpp`) is `\\server\` - now refused (stop
+  cursor) without the plug-in. Limits: holding Backspace ends at the share list; a list with no
+  folder share says "A share name is missing" (125's text, no new string); middle click on that
+  `..` does nothing (as at every root). From backlog item `share-root-parent-offers-share-list`.
+  Probe `shareroot_probe` (seam of 125, `\\localhost\C$` -> `D$`): before 8 FAIL / 14 PASS ->
+  22 / 0 (11 rows incl. Esc, error 53, no folder share, three regression controls); saltests +40;
+  one refute-first review (no MUST, no SHOULD); person step `share-root-up-284-person-rows`.

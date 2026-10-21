@@ -77,6 +77,24 @@ the right panel `\\localhost\D$`, the left stays `\\localhost\C$`; X1 Esc -> sta
 one box `Path: "\\localhost\" Error: (53) ...`; N1 one box `Path: "\\localhost\" Error: A share
 name is missing in the path specified.`; S1, S2, L1 as before.
 
+## Review
+
+One independent refute-first review (general-purpose agent): **no MUST, no SHOULD**. It re-ran the
+probe on the branch build (22 / 0), ran a negative control on an older Debug build without 284
+(`Debug_x64_pre251`: the 8 fix rows FAIL, the 3 controls PASS), saltests 25091 / 0, encoding guard
+0, walked about 66 consumers of `..` by name, the plug-in branches, archives, never-cut buffers,
+paste and drag and drop, the toolbar state and the re-entry in `Execute`. NOTEs, all accepted:
+
+1. Holding Backspace in `\\server\share\a\b` walks up to the share's root and then opens the share
+   list (the menu swallows further Backspaces) - the plug-in's way up does the same; intended.
+2. *Go to root* (Ctrl+\, Shift+Backspace) at a share's root now asks the server (FR-003);
+   `PRIVACY.md` covers the share list since 125 - no new kind of communication.
+3. The archive case (FR-006) and the plug-in case (FR-005) are verified by reading only;
+   drag onto `..` NOT DRIVEN - recorded for a person.
+4. Middle click on the newly visible `..` does nothing (spec decision, as at every root).
+5. N1's "A share name is missing" after a Backspace reads oddly - 125's text, no new string (FR-008).
+6. FEATURE-HISTORY / CHANGELOG were not yet written at review time - done at closing.
+
 ## Not driven (owed to a person)
 
 - Drag and drop onto the `..` of a share's root shows the stop cursor (OLE drag needs the real
