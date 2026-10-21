@@ -24,6 +24,21 @@ long-new, long-undo, manual-long, long-rel, long-rel-deep refused "Expanded stri
 sub-long-file and sub-long-dir refused on loading "too long path name". The controls (one
 component of 300 characters - refused; a short rename and Undo) pass.
 
+## Clarifications
+
+### Session 2026-10-21
+
+- Q: Is the New name pattern field's own limit (520 bytes of the typed pattern, refused by the
+  field) raised as well? → A: no - the item is about the name built from the pattern; the field
+  refuses (never cuts) and a long name is reached through the pattern's variables; recorded as an
+  Inbox item. (autonomous run: conservative)
+- Q: What does the preview's path column show for an item whose folder is longer than its old
+  260-byte buffer? → A: the folder whole (no piece cut inside a character). (autonomous run: rule -
+  "a path or name is never cut")
+- Q: Where is the upper limit of a built new name? → A: the UTF-8 form of the longest path the file
+  system accepts (3 x 32,767 + 1 bytes); beyond it the existing "Expanded string is too large."
+  refusal. (autonomous run: item - "any length the file system accepts")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A long item renamed to another long name (Priority: P1)
@@ -115,7 +130,8 @@ error; the file keeps its name and nothing else is created.
   existing "too long path name" error, never cut.
 - **FR-005**: The stored full-name length of an item MUST hold the UTF-8 length of the longest
   path (no wrap-around of a narrow length field).
-- **FR-006**: Every other behaviour (short names, Undo, "Remove source path", the 8.3 clash
+- **FR-006**: The preview's path column MUST show an item's folder whole, at any length.
+- **FR-007**: Every other behaviour (short names, Undo, "Remove source path", the 8.3 clash
   handling of 199 / 206, 209's reload, the existing errors) MUST stay as it is.
 
 ### Key Entities
