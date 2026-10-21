@@ -1,16 +1,16 @@
 ---
 title: Adding a file into a ZIP that holds names differing only in case can replace the other twin
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: measure:271
 who: agent
 created: 2026-10-20
 updated: 2026-10-21
-verified: -
+verified: 2026-10-21 1e402ea2
 effort: S
-feature: -
+feature: 290
 related: []
 depends-on: []
 reason: -
@@ -46,3 +46,5 @@ Severity 7: narrow (twin ZIPs), but the overwrite removes a file the user did no
 - 2026-10-20 — created (source measure:271)
 - 2026-10-21 — related item a-zip-made-on-windows-that-holds-names-differing-only-in done in feature 271
 - 2026-10-21 — moved to Next position 1
+- 2026-10-21 — verified at 1e402ea2: reproduced at 1e402ea2 by a hidden-desktop probe: 6 FAIL - Windows twin ZIP loses D/x.txt and A.txt; Unix twin ZIP replaces A.txt when a.txt is added (below the panel folder names are compared ignoring case also on Unix)
+- 2026-10-21 — run started, feature 290

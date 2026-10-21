@@ -1,0 +1,25 @@
+zip290_probe (feature 290) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 19:55; registry key existed True; ACP 1250
+
+ZIP-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-CONTROL RUN    PASS        archive: readme.txt=NEW,z.txt=z; questions: 1; host 0 in 2 central headers; windows: ...=182] 3, 21.10.2026, 19:55:08 | [Static id=1151] With file: | [Static id=184] 3, 21.10.2026, 19:55:09 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+ZIP-ADDDIR END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-ADDDIR RUN    FAIL        archive: d/x.txt=NEW,d/y.txt=Y; questions: 1; host 0 in 2 central headers; windows: ...=182] 1, 21.10.2026, 19:55:22 | [Static id=1151] With file: | [Static id=184] 3, 21.10.2026, 19:55:22 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+ZIP-ADDFILE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-ADDFILE RUN    FAIL        archive: a.txt=NEW,z.txt=z; questions: 2; host 0 in 3 central headers; windows: ...=182] 5, 21.10.2026, 19:55:34 | [Static id=1151] With file: | [Static id=184] 3, 21.10.2026, 19:55:34 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+ZIP-ADDFOLDER END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-ADDFOLDER RUN    FAIL        archive: d/x.txt=NEW,d/y.txt=Y; questions: 1; host 0 in 2 central headers; windows: ...=182] 1, 21.10.2026, 19:55:46 | [Static id=1151] With file: | [Static id=184] 3, 21.10.2026, 19:55:47 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+ZIP-NEWNAME END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-NEWNAME RUN    FAIL        archive: A.txt=UPPER,B.txt=NEW,a.txt=lower; questions: 1; host 0 in 3 central headers; windows: ...=182] 3, 21.10.2026, 19:55:58 | [Static id=1151] With file: | [Static id=184] 3, 21.10.2026, 19:55:59 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+UNIX-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNIX-CONTROL RUN    PASS        archive: README.txt=NEW,z.txt=z; questions: 1; host 3 in 2 central headers; windows: ...=182] 3, 21.10.2026, 19:56:10 | [Static id=1151] With file: | [Static id=184] 3, 21.10.2026, 19:56:11 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+UNIX-ADDDIR END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNIX-ADDDIR RUN    PASS        archive: D/x.txt=X,d/x.txt=NEW,d/y.txt=Y; questions: 0; host 3 in 2 central headers; windows: ...| [Button id=123] &256-bit AES | [Button id=110] &Don't show this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+UNIX-ADDFILE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNIX-ADDFILE RUN    FAIL        archive: A.txt=NEW,a.txt=lower,z.txt=z; questions: 1; host 3 in 3 central headers; windows: ...=182] 5, 21.10.2026, 19:56:32 | [Static id=1151] With file: | [Static id=184] 3, 21.10.2026, 19:56:33 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+UNIX-ADDFOLDER END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNIX-ADDFOLDER RUN    FAIL        archive: D/x.txt=NEW,d/y.txt=Y; questions: 1; host 3 in 2 central headers; windows: ...=182] 1, 21.10.2026, 19:56:44 | [Static id=1151] With file: | [Static id=184] 3, 21.10.2026, 19:56:45 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+Registry: restored; identical=True; SHA-256 before 8079B05F9E7FF2CA3F5B0701BC545AD96B2E5A91DC2D54E461ADD0A889EC0CAE / after 8079B05F9E7FF2CA3F5B0701BC545AD96B2E5A91DC2D54E461ADD0A889EC0CAE
+
+Rows: PASS 12, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
