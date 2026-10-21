@@ -23,6 +23,7 @@
 - Q: Is the box naming the folder shown also when every file of it already failed with a box of its own? → A: Yes - zero confirmed items always fail the folder with one box naming it (autonomous run: item - "zero confirmed (an empty folder, or every file failed) = the level fails with one box naming the folder")
 - Q: Which refusals of a file's creation end the folder at once (no box for the file, the rest not tried)? → A: Only "no such file" and "no such path" - the folder is not there. A refusal for want of a right or because a file of that name exists stays the file's own failure, as for a file uploaded alone (autonomous run: item - Approach names "no such file / path"; a refusal for a right is what an upload-only service without the "overwrite" right answers for a file that is already there)
 - Q: Does a subfolder count as "confirmed" for its parent? → A: Yes, when the server created it, showed it as a folder, or confirmed at least one item inside it - each proves that the parent is there (autonomous run: conservative - only what the server confirmed)
+- Q: Does a "no such file / path" refusal still end an unconfirmed folder after one of its items was already confirmed? → A: No - only while nothing of the folder is confirmed; once an item is confirmed the folder is known to be there and a later refusal is that item's own failure with its own box, as in any folder (autonomous run: conservative - keeps today's per-file behaviour where the folder is known)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -108,8 +109,8 @@ nothing of it had reached the server. Data safety.
   folder: the server's reason for the refused creation, that the server does not show whether the
   folder is there, and that nothing of it was confirmed to arrive. A Move MUST keep the local
   folder and all it holds.
-- **FR-005**: In an unconfirmed folder, the first item whose creation the server refuses with
-  "no such file" or "no such path" MUST end the folder: no box for that item, the remaining
+- **FR-005**: In an unconfirmed folder with no confirmed item yet, the first item whose creation
+  the server refuses with "no such file" or "no such path" MUST end the folder: no box for that item, the remaining
   items not tried, one box naming the folder and saying that it is not there (a file could not
   be created in it).
 - **FR-006**: A Move MUST remove the local folder of an unconfirmed folder only when at least one
