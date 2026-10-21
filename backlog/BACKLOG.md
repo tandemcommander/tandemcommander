@@ -32,7 +32,7 @@ Last triaged: 2026-10-20
 | 8 | [Archive Update: a changed member can go unmarked or be marked needlessly](items/archive-update-change-detection-limits/desc.md) | bug | 3 | archives | agent | M | blocked |
 | 9 | [Other plug-ins' dialogs: code-page message loops not examined](items/plugin-dialogs-code-page-message-loops/desc.md) | tech-debt | 3 | encoding | agent | ? | blocked |
 | 10 | [Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260](items/renamer-long-new-name-limits/desc.md) | bug | 3 | long-paths | agent | M | blocked |
-| 11 | [711 clipped labels in the shipped translations](items/translations-clipped-labels/desc.md) | bug | 3 | translations | both | L | open |
+| 11 | [711 clipped labels in the shipped translations](items/translations-clipped-labels/desc.md) | bug | 3 | translations | both | L | blocked |
 | 12 | [After a menu popup closes by itself, typed characters are swallowed until Esc](items/menubar-loop-swallows-typed-characters/desc.md) | bug | 3 | panels-ui | agent | S | open |
 | 13 | [File masks fold accented letters through the code page](items/mask-matcher-code-page-fold/desc.md) | bug | 3 | encoding | agent | M | open |
 | 14 | [`..` / Go to root in \\\\server\\share does nothing without the Network plug-in](items/share-root-parent-offers-share-list/desc.md) | improvement | 3 | panels-ui | agent | M | open |
@@ -212,6 +212,14 @@ Last triaged: 2026-10-20
 | [tar plug-in ignores PAX extended headers: long or non-ASCII names listed under the ustar fallback name](items/tar-plug-in-ignores-pax-extended-headers/desc.md) | bug | 5 | archives | measure:275 | 2026-10-21 |
 | [The information line keeps using a freed text when memory runs out as it grows](items/the-information-line-keeps-using-a-freed-text-when-memory/desc.md) | bug | 7 | panels-ui | review:276 | 2026-10-21 |
 | [The question whether to create a missing folder cuts a long path inside a letter](items/the-question-whether-to-create-a-missing-folder-cuts-a-long/desc.md) | bug | 2 | long-paths | review:274 | 2026-10-21 |
+| [Clipped labels in the Czech translation (74)](items/translations-clipped-labels-cs/desc.md) | bug | 3 | translations | manual | 2026-10-21 |
+| [Clipped labels in the German translation (98)](items/translations-clipped-labels-de/desc.md) | bug | 3 | translations | manual | 2026-10-21 |
+| [Clipped labels in the Spanish translation (89)](items/translations-clipped-labels-es/desc.md) | bug | 3 | translations | manual | 2026-10-21 |
+| [Clipped labels in the French translation (159)](items/translations-clipped-labels-fr/desc.md) | bug | 3 | translations | manual | 2026-10-21 |
+| [Clipped labels in the Hungarian translation (45)](items/translations-clipped-labels-hu/desc.md) | bug | 3 | translations | manual | 2026-10-21 |
+| [Clipped labels in the Dutch translation (78)](items/translations-clipped-labels-nl/desc.md) | bug | 3 | translations | manual | 2026-10-21 |
+| [Clipped labels in the Romanian translation (74)](items/translations-clipped-labels-ro/desc.md) | bug | 3 | translations | manual | 2026-10-21 |
+| [Clipped labels in the Slovak translation (85)](items/translations-clipped-labels-sk/desc.md) | bug | 3 | translations | manual | 2026-10-21 |
 | [unchm plug-in: a member path over 259 bytes overflows a stack buffer on F3 / F4](items/unchm-plug-in-a-member-path-over-259-bytes-overflows-a-stack/desc.md) | bug | 7 | archives | measure:275 | 2026-10-21 |
 | [User Menu from Find results in folders of 260 or more bytes driven by a person](items/user-menu-from-find-results-in-folders-of-260-or-more-bytes/desc.md) | person-step | 4 | long-paths | leftover:280 | 2026-10-21 |
 | [User Menu list commands refused when the first selected item does not fit 259 bytes](items/user-menu-list-commands-refused-when-the-first-selected-item/desc.md) | improvement | 2 | long-paths | leftover:280 | 2026-10-21 |

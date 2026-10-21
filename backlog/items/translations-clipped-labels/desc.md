@@ -1,19 +1,19 @@
 ---
 title: 711 clipped labels in the shipped translations
 type: bug
-status: open
+status: blocked
 severity: 3
 area: translations
 source: measure:166
 who: both
 created: 2026-10-14
-updated: 2026-10-18
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 dcb6b30a
 effort: L
 feature: -
 related: [translate-merge-bundle-rekey]
 depends-on: []
-reason: -
+reason: larger than one feature: 702 clipped labels in 8 languages, 14 modules, 34-73 dialogs per language, each changed dialog needs a picture - split per language
 ---
 
 # 711 clipped labels in the shipped translations
@@ -42,3 +42,6 @@ who both: an agent changes and measures, a person or pictures confirm the look.
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
 - 2026-10-18 — measure:244 - the Configuration > Panels page in French clips two existing checkbox texts (Rediriger le clavier du panneau..., Maj+chiffre...); the new quick-search checkbox of 244 was pinned to fit (specs/244-quick-search-substring-filter/fix-log.md, Translations)
+- 2026-10-21 — verified at dcb6b30a: still present: layout_check.py at dcb6b30a - 702 clipped in the 8 enabled languages, 1251 in all 11
+- 2026-10-21 — blocked: larger than one feature: 702 clipped labels in 8 languages, 14 modules, 34-73 dialogs per language, each changed dialog needs a picture - split per language
+- 2026-10-21 — split into: translations-clipped-labels-cs, translations-clipped-labels-de, translations-clipped-labels-fr, translations-clipped-labels-nl, translations-clipped-labels-hu, translations-clipped-labels-ro, translations-clipped-labels-sk, translations-clipped-labels-es

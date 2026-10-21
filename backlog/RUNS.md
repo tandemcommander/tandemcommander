@@ -49,3 +49,4 @@ One row per run of `/tandem-backlog-implement`, newest last, appended by
 | 2026-10-21 08:00 | plugin-dialogs-code-page-message-loops | not-reproduced | - | - | 0 | - | audit of all shipped plug-in loops: wide, harmless (no text field / parent disabled / keys discarded) or unreachable (ZIP SFX); see evidence/loop_audit_47209800.md |
 | 2026-10-21 09:55 | moved-aside-restore-leftovers | closed | 281 | 281-moved-aside-leftovers | 2 | - | create paths and plug-in creates tell where an entry moved aside for an 8.3 clash stayed; PictView and Renamer retry the move back |
 | 2026-10-21 11:56 | renamer-long-new-name-limits | blocked | 282 | 282-renamer-long-new-name | 2 | - | review 2 MUST: regex stack overflow on long names (crash); manual mode cuts a wrapped line |
+| 2026-10-21 11:58 | translations-clipped-labels | split | - | - | 8 | - | still 702 clipped labels in 8 languages at dcb6b30a; split into one item per enabled language |
