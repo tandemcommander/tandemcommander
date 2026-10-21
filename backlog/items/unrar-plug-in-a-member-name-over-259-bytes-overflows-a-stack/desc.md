@@ -7,11 +7,11 @@ area: archives
 source: review:260
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-21
 verified: -
 effort: S
 feature: -
-related: [f3-f4-refuse-archive-members-whose-path-inside-the-archive]
+related: []
 depends-on: []
 reason: plug-in not built or shipped (plugins.cfg off); fix before enabling it; maintainer 2026-10-20
 ---
@@ -38,3 +38,4 @@ Review 1 of 260 also saw unchm (`src/plugins/unchm/unchm.cpp` ~456) and demoplug
 
 - 2026-10-20 — created (source review:260)
 - 2026-10-20 — moved to Parked: plug-in not built or shipped (plugins.cfg off); fix before enabling it; maintainer 2026-10-20
+- 2026-10-21 — related item f3-f4-refuse-archive-members-whose-path-inside-the-archive done in feature 275

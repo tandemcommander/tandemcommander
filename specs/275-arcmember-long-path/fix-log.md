@@ -137,3 +137,21 @@ Re-ran the probe (14 / 0) and a scratch probe of its own (`%TEMP%\tc275rev\deep_
 
 After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 24859 / 0; encoding guard 0; probe 17 / 0;
 `probe/regress_260.txt` 16 / 0; `probe/regress_222.txt` 10 / 0 (rerun on the final build).
+
+### Review 2 (fresh agent, with review 1's findings) - no MUST, 1 SHOULD, 4 NOTE
+
+Re-ran the probe (17 / 0, `%TEMP%\tc275rev2\result.txt`); confirmed M1 / S1 / S2; read the packing
+back (`CheckAndPackAndClear`, `PackCompress`, ZIP `PackToArchive` and its "Confirm File Overwrite"
+text, 7-Zip `CFileItem`), the disk cache, history / Find, the viewer / editor launch - heap or
+refusing. Drove 7-Zip edit-back itself (`%TEMP%\tc275rev2\edit7z.ps1`): a 604-byte member at the top
+and an 857-byte member in a folder go back under the whole path with the new content.
+- **S1** the CHANGELOG generalised editing to every archive type - **fixed**: "Editing was tried
+  with ZIP and 7-Zip archives; ISO images and CAB archives were checked by reading only."
+- N1 the information line's "Expanded string is too large." also shows after the viewer closes -
+  the CHANGELOG limitation says so now; the Inbox item exists.
+- N2 on low memory the Archive Update line shows the bare name (display only; packing uses the
+  item's fields) - accepted.
+- N3 uncab's `Error()` may append a stale system text to the refusal - as the function's other
+  refusals; unreachable - accepted.
+- N4 deep members of 7z / tar under F3, uniso, CAB and the maximum ~1,021-byte path are by reading -
+  every buffer on those routes is heap or refusing.

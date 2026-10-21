@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -3511,3 +3511,18 @@ a few early ones are out of sequence).
   `create-directory-refuses-a-relative-name-in-a-folder-whose`. Probe `createdir274_probe.ps1`
   8 / 4 -> 14 / 0 (negative control: the name check disabled -> U256 FAIL); one refute-first review
   (no MUST; SHOULD row MULTI added).
+- 275-arcmember-long-path: F3 / F4 (and Enter) of an archive member whose path inside the archive
+  had 520+ bytes (feature 095's limit, kept by 260 - e.g. 200 CJK letters at the top, or 100 inside
+  a folder of 84) said "resulting filename is too long" although the temporary copy fit - now the
+  test is gone in `ViewFile` / `ExecuteFromArchive`; the listing bounds the path (~1,021 bytes), the
+  cache's 259-unit rule is the only length refusal. Audit: ZIP, 7-Zip, tar, uniso take it (heap /
+  refusing); uncab's `lstrcpyn` into 769 bytes (unreachable) refuses now; the external route
+  refuses. Review 1 MUST: the Archive Update list (`AddFilesToListBox`, `buf[3 * MAX_PATH]`, result
+  ignored) showed only the folder at 780+ bytes - heap line. Traps: focusing such a member shows the
+  information line's "Expanded string is too large." and a posted F4 is lost while it is open (the
+  probe answers it first); an F4 copy path of 649 bytes now drives 260's 620-byte edit-back fix.
+  Limits: ISO / CAB by reading; Inbox `unchm-plug-in-a-member-path-over-259-bytes-overflows-a-stack`,
+  `tar-plug-in-ignores-pax-extended-headers`, `archive-update-copy-selected-to-refuses-long-targets`.
+  From backlog item `f3-f4-refuse-archive-members-whose-path-inside-the-archive`. Probe
+  `arcmember275_probe.ps1` 9 / 5 -> 17 / 0 (without the M1 fix 16 / 1); 260's probe (ARCCAP now the
+  viewer) 16 / 0; 222's 10 / 0; two refute-first reviews (one MUST, fixed; then none).
