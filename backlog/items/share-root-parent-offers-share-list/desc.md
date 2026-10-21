@@ -1,7 +1,7 @@
 ---
 title: `..` / Go to root in \\server\share does nothing without the Network plug-in
 type: improvement
-status: open
+status: in-progress
 severity: 3
 area: panels-ui
 source: leftover:125
@@ -10,7 +10,7 @@ created: 2026-10-13
 updated: 2026-10-21
 verified: 2026-10-21 e35f8588
 effort: M
-feature: -
+feature: 284
 related: [decide-ship-network-plugin-nethood, share-list-offers-sign-in]
 depends-on: []
 reason: -
@@ -38,3 +38,4 @@ Depends in spirit on the nethood decision: if the plug-in is enabled, its `net:`
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-21 — verified at e35f8588: reproduced at e35f8588: hidden-desktop probe at `\\localhost\C$` - Backspace and Go to root leave the panel there, no share list; no up-dir entry is listed (Home, Enter opens a folder)
+- 2026-10-21 — run started, feature 284
