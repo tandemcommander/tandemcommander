@@ -44,6 +44,8 @@ server is the bytes of its listings and of its working-path / created-folder rep
 - Q: Should the plug-in start sending `FEAT` (and read its `UTF8` line) as evidence? → A: no - that is a change of the product's network communication, owned by the maintainer; evidence comes from listings and 257 replies only, the question is recorded as a decision item (autonomous run: rule - stop-rules §1 maintainer-owned "Network"; the item allows "FEAT UTF8 or a listing")
 - Q: Is a server's encoding state kept after the program ends? → A: no - in memory for the life of the plug-in only; nothing new is stored (autonomous run: rule - stored data is maintainer-owned; conservative)
 - Q: What does a server whose listings show both UTF-8 and code-page names get for a new name? → A: UTF-8, as since feature 224 (names that one of its listings gave in the code page still go back in the code page) (autonomous run: conservative)
+- Q: Does a path in a 257 reply (PWD, MKD) that is valid UTF-8 count as UTF-8 evidence? → A: no - such a reply can echo the bytes the client itself sent (a path typed while the state was unknown went in UTF-8); only listing fields give UTF-8 evidence; a 257 path read in the code page still gives legacy evidence and its names are remembered (feature 224's home-folder case) (autonomous run: conservative)
+- Q: What does a legacy server get for a new name its code page cannot hold (CJK)? → A: UTF-8, as before - there is no better form (autonomous run: conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -106,7 +108,10 @@ probes as recorded.
 
 ### Edge Cases
 
-- A name the code page cannot hold (CJK) goes in UTF-8 to any server (as before).
+- A name the code page cannot hold (CJK) goes in UTF-8 to any server, also to a legacy one (as
+  before).
+- A path typed while the server is unknown goes in UTF-8; the PWD reply that echoes it does not
+  make the server a UTF-8 one.
 - Pure ASCII names and paths are identical in every encoding and go unchanged.
 - Two logins to the same host and port with different user names are two servers; the anonymous
   login and an empty user name are the same server (the upload listing cache's identity rule);
@@ -127,8 +132,10 @@ probes as recorded.
   ignored), port and user (anonymous = none), an encoding state: unknown, UTF-8, legacy (code
   page) or mixed, for the life of the plug-in.
 - **FR-002**: A listing field or a 257 reply path with bytes outside ASCII MUST count as evidence
-  for the server it came from: valid UTF-8 (WTF-8, feature 269) = UTF-8 evidence; read in the code
-  page = legacy evidence, and the text is remembered as one of that server's code-page names.
+  for the server it came from: a listing field that is valid UTF-8 (WTF-8, feature 269) = UTF-8
+  evidence (a 257 reply path never is - it may echo what the client sent); a field or a 257 path
+  read in the code page = legacy evidence, and the text is remembered as one of that server's
+  code-page names.
 - **FR-003**: A non-ASCII name or path sent to a server MUST go in the code page when it is, or
   contains as a component or leading part, a code-page name of **that** server (feature 224's
   rule, now per server), or when the server's state is legacy - provided the code page can hold
