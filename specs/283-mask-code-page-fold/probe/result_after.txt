@@ -1,0 +1,27 @@
+mask283_probe (feature 283) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 12:32; ACP 1250; registry key existed True
+
+miss       RUN    PASS        file 'A.\u010CTX', mask '*.\u010Dtx': converted (expected converted); asked: no window
+miss       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+miss-hash  RUN    PASS        file 'A.\u010CTX', mask '....a05;*.a06;*.a07;*.a08;*.a09;*.a10;*.\u010Dtx': converted (expected converted); asked: no window
+miss-hash  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+miss-excl  RUN    PASS        file 'A.\u010CTX', mask '|*.\u010Dtx': unchanged (expected unchanged); asked: [#32770 'Information'] [Static id=2477] There is no file that matches the specified file mask. | [Button id=1] OK
+miss-excl  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+false      RUN    PASS        file 'x.\u0139', mask '*.\u0125': unchanged (expected unchanged); asked: [#32770 'Information'] [Static id=2477] There is no file that matches the specified file mask. | [Button id=1] OK
+false      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+false-hash RUN    PASS        file 'x.\u0139', mask '...;*.a05;*.a06;*.a07;*.a08;*.a09;*.a10;*.\u0125': unchanged (expected unchanged); asked: [#32770 'Information'] [Static id=2477] There is no file that matches the specified file mask. | [Button id=1] OK
+false-hash END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+nfd        RUN    PASS        file 'A.C\u030CTX', mask '*.\u010Dtx': converted (expected converted); asked: no window
+nfd        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+same       RUN    PASS        file 'b.\u010Dtx', mask '*.\u010Dtx': converted (expected converted); asked: no window
+same       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ascii      RUN    PASS        file 'c.TXT', mask '*.txt': converted (expected converted); asked: no window
+ascii      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ascii-hash RUN    PASS        file 'c.TXT', mask '....a05;*.a06;*.a07;*.a08;*.a09;*.a10;*.txt': converted (expected converted); asked: no window
+ascii-hash END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ascii-no   RUN    PASS        file 'c.TXT', mask '*.doc': unchanged (expected unchanged); asked: [#32770 'Information'] [Static id=2477] There is no file that matches the specified file mask. | [Button id=1] OK
+ascii-no   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 20, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

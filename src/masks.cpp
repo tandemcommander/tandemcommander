@@ -5,6 +5,11 @@
 #include "precomp.h"
 
 #include "salmaskname.h" // feature 141
+#include "salmaskopt.h"  // feature 283
+
+static_assert(SAL_MASKOPT_NONE == MASK_OPTIMIZE_NONE && SAL_MASKOPT_ALL == MASK_OPTIMIZE_ALL &&
+                  SAL_MASKOPT_EXTENSION == MASK_OPTIMIZE_EXTENSION,
+              "salmaskopt.h and masks.h must agree");
 
 //
 //*****************************************************************************
@@ -383,6 +388,10 @@ BOOL CMaskGroup::GetExtendedMode()
     return ExtendedMode;
 }
 
+// The extension shortcut (MASK_OPTIMIZE_EXTENSION: the StrICmp compares in AgreeMasks and this
+// table key) folds bytes through the code-page LowerCase table - it holds only masks with an ASCII
+// extension (SalMaskOptimizeKind, feature 283); an accented name extension can never equal one
+// (a UTF-8 continuation byte never folds to ASCII - saltests), it only picks some bucket
 #define COMPUTEMASKGROUPHASH(hash, exten) \
     { \
         const unsigned char* __CMGH_ext = (exten); \
@@ -465,33 +474,11 @@ BOOL CMaskGroup::PrepareMasks(int& errorPos, const char* masksString)
                 if (newMask != NULL)
                 {
                     CMaskItemFlags* flags = (CMaskItemFlags*)newMask;
-                    flags->Optimize = MASK_OPTIMIZE_NONE;
-                    // determine whether one of the optimizations can be used
-                    if (lstrcmp(buf, "*") == 0 || lstrcmp(buf, "*.*") == 0)
-                        flags->Optimize = MASK_OPTIMIZE_ALL; // *.* nebo *
-                    else
-                    {
-                        if (l > 3 && buf[0] == '*' && buf[1] == '.') // *.xxxx
-                        {
-                            const char* iter = buf + 2;
-                            if (ExtendedMode)
-                            {
-                                while (*iter != 0 && *iter != '*' && *iter != '?' && *iter != '#' && *iter != '.')
-                                    iter++;
-                            }
-                            else
-                            {
-                                while (*iter != 0 && *iter != '*' && *iter != '?' && *iter != '.')
-                                    iter++;
-                            }
-                            if (*iter == 0)
-                            {
-                                flags->Optimize = MASK_OPTIMIZE_EXTENSION;
-                                if (excludePos == -1)
-                                    hashableMasks++;
-                            }
-                        }
-                    }
+                    // determine whether one of the optimizations can be used (*.* or *; *.xxxx with
+                    // an ASCII extension - feature 283: an accented one goes to AgreeMask)
+                    flags->Optimize = SalMaskOptimizeKind(buf, ExtendedMode);
+                    if (flags->Optimize == MASK_OPTIMIZE_EXTENSION && excludePos == -1)
+                        hashableMasks++;
                     flags->Exclude = excludePos != -1 ? 1 : 0;
 
                     memmove(newMask + 1, buf, l);
@@ -665,6 +652,9 @@ BOOL CMaskGroup::AgreeMasks(const char* fileName, const char* fileExt)
         ext = fileName + 1;
     }
     int i;
+    // an extension mask (*.xxxx) is ASCII only (feature 283): the byte compare with StrICmp decides
+    // as AgreeMask does for an ASCII name and never matches an accented extension; accented
+    // extension masks are MASK_OPTIMIZE_NONE (AgreeMask, whole letters)
     for (i = 0; i < PreparedMasks.Count; i++)
     {
         char* mask = PreparedMasks[i];

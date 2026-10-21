@@ -86,6 +86,7 @@
 #include "salarcpathspell.h"  // feature 273
 #include "salftppwd.h"        // feature 277
 #include "salumvalue.h"       // feature 280
+#include "salmaskopt.h"       // feature 283
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -15646,6 +15647,197 @@ static void TestArcPathRespell273()
     }
 }
 
+// feature 283: which masks of a mask group take the byte shortcut (salmaskopt.h)
+
+// the classification of CMaskGroup::PrepareMasks at cb0d80f5, copied as the reference
+static int OldMaskOptimizeKind283(const char* buf, BOOL extendedMode)
+{
+    int l = (int)strlen(buf) + 1;
+    if (lstrcmpA(buf, "*") == 0 || lstrcmpA(buf, "*.*") == 0)
+        return 1;
+    if (l > 3 && buf[0] == '*' && buf[1] == '.')
+    {
+        const char* iter = buf + 2;
+        if (extendedMode)
+        {
+            while (*iter != 0 && *iter != '*' && *iter != '?' && *iter != '#' && *iter != '.')
+                iter++;
+        }
+        else
+        {
+            while (*iter != 0 && *iter != '*' && *iter != '?' && *iter != '.')
+                iter++;
+        }
+        if (*iter == 0)
+            return 2;
+    }
+    return 0;
+}
+
+// the LowerCase table CharLowerA builds in code page 'cp' (str.cpp InitializeCase): the byte as a
+// character of the code page, lower-cased, back to the code page; a byte that is no character
+// (a lead byte alone) or whose lower case the code page cannot hold stays as it is
+static void LowerTable283(UINT cp, BYTE* table)
+{
+    for (int b = 0; b < 256; b++)
+    {
+        table[b] = (BYTE)b;
+        char in = (char)b;
+        WCHAR w;
+        if (b == 0 || MultiByteToWideChar(cp, MB_ERR_INVALID_CHARS, &in, 1, &w, 1) != 1)
+            continue;
+        CharLowerBuffW(&w, 1);
+        char out[4];
+        BOOL usedDefault = FALSE;
+        int n = WideCharToMultiByte(cp, WC_NO_BEST_FIT_CHARS, &w, 1, out, sizeof(out), NULL, &usedDefault);
+        if (n == 1 && !usedDefault)
+            table[b] = (BYTE)out[0];
+    }
+}
+
+// StrICmp (str.cpp) over a given table: 0 = equal
+static int OldStrICmp283(const BYTE* table, const char* s1, const char* s2)
+{
+    while (1)
+    {
+        int res = (int)table[(BYTE)*s1] - (int)table[(BYTE)*s2++];
+        if (res != 0)
+            return res < 0 ? -1 : 1;
+        if (*s1++ == 0)
+            return 0;
+    }
+}
+
+static void TestMaskOptimize283()
+{
+    // the contract's table (contracts/mask-optimize-kind.md)
+    struct
+    {
+        const char* Mask;
+        BOOL Extended;
+        int Kind;
+    } table[] = {
+        {"*", FALSE, SAL_MASKOPT_ALL},
+        {"*.*", FALSE, SAL_MASKOPT_ALL},
+        {"*.*", TRUE, SAL_MASKOPT_ALL},
+        {"*.txt", FALSE, SAL_MASKOPT_EXTENSION},
+        {"*.TXT", TRUE, SAL_MASKOPT_EXTENSION},
+        {"*.x", FALSE, SAL_MASKOPT_EXTENSION},
+        {"*.", FALSE, SAL_MASKOPT_NONE},
+        {"*", TRUE, SAL_MASKOPT_ALL},
+        {"", FALSE, SAL_MASKOPT_NONE},
+        {"*.t?t", FALSE, SAL_MASKOPT_NONE},
+        {"*.t*", FALSE, SAL_MASKOPT_NONE},
+        {"*.a.b", FALSE, SAL_MASKOPT_NONE},
+        {"?*.txt", FALSE, SAL_MASKOPT_NONE},
+        {"a*.txt", FALSE, SAL_MASKOPT_NONE},
+        {"*.#x", FALSE, SAL_MASKOPT_EXTENSION}, // '#' is a literal outside the extended mode
+        {"*.#x", TRUE, SAL_MASKOPT_NONE},
+        // accented extensions: whole letters (AgreeMask), never the byte shortcut
+        {"*.\xC4\x8Dtx", FALSE, SAL_MASKOPT_NONE},       // *.čtx
+        {"*.\xC4\x8Dtx", TRUE, SAL_MASKOPT_NONE},        //
+        {"*.\xC4\xA5", FALSE, SAL_MASKOPT_NONE},         // *.ĥ
+        {"*.t\xC4\x8Dx", FALSE, SAL_MASKOPT_NONE},       // *.tčx
+        {"*.tx\xC4\x8D", FALSE, SAL_MASKOPT_NONE},       // *.txč
+        {"*.\xE4\xB8\xAD", FALSE, SAL_MASKOPT_NONE},     // *.中
+        {"*.\xF0\x9F\x98\x80", FALSE, SAL_MASKOPT_NONE}, // *.😀
+        {"*.\xC4", FALSE, SAL_MASKOPT_NONE},             // not UTF-8: a lone byte >= 0x80
+        {"*.*\xC4\x8D", FALSE, SAL_MASKOPT_NONE},        // a wildcard first: NONE as before
+    };
+    for (int i = 0; i < (int)(sizeof(table) / sizeof(table[0])); i++)
+        CHECK(SalMaskOptimizeKind(table[i].Mask, table[i].Extended) == table[i].Kind);
+
+    // the measured defects of the old shortcut (probe mask283, ACP 1250) under the CP1250 and
+    // CP1252 tables: the other case of c-caron missed, different letters equal - and the rule now
+    // sends those masks to the letter matcher
+    BYTE t1250[256], t1252[256];
+    LowerTable283(1250, t1250);
+    LowerTable283(1252, t1252);
+    CHECK(OldStrICmp283(t1250, "\xC4\x8CTX", "\xC4\x8Dtx") != 0);                  // ČTX vs čtx: missed
+    CHECK(OldStrICmp283(t1250, "\xC4\xB9", "\xC4\xA5") == 0);                      // Ĺ vs ĥ: confused
+    CHECK(OldStrICmp283(t1252, "\xC4\x9A", "\xC4\x8A") == 0);                      // Ě vs Ċ: confused on CP1252
+    CHECK(OldStrICmp283(t1250, "TXT", "txt") == 0);                                // ASCII: folds as it should
+    CHECK(OldMaskOptimizeKind283("*.\xC4\x8Dtx", FALSE) == SAL_MASKOPT_EXTENSION); // the old route
+    CHECK(OldMaskOptimizeKind283("*.\xC4\xA5", FALSE) == SAL_MASKOPT_EXTENSION);
+    CHECK(SalMaskOptimizeKind("*.\xC4\x8Dtx", FALSE) == SAL_MASKOPT_NONE); // the new one
+    CHECK(SalMaskOptimizeKind("*.\xC4\xA5", FALSE) == SAL_MASKOPT_NONE);
+
+    // the emulated table is the real one: equal to CharLowerA's in this process's code page
+    {
+        BYTE emu[256];
+        LowerTable283(GetACP(), emu);
+        int diff = 0;
+        for (int b = 0; b < 256; b++)
+            if (emu[b] != (BYTE)(UINT_PTR)CharLowerA((LPSTR)(UINT_PTR)b))
+                diff++;
+        CHECK(diff == 0);
+    }
+
+    // differential: every mask of ASCII bytes is classified as before; any other mask is
+    // classified as before or NONE (and some do change - the test reaches the difference)
+    {
+        const char alphabet[] = {'*', '?', '#', '.', 'a', 'B', '1', '\xC4', '\x8D'};
+        const int n = (int)sizeof(alphabet);
+        long long cases = 0, asciiMismatch = 0, otherBad = 0, changed = 0;
+        char buf[8];
+        for (int len = 0; len <= 5; len++)
+        {
+            long long total = 1;
+            for (int k = 0; k < len; k++)
+                total *= n;
+            for (long long code = 0; code < total; code++)
+            {
+                long long c = code;
+                BOOL ascii = TRUE;
+                for (int k = 0; k < len; k++)
+                {
+                    buf[k] = alphabet[c % n];
+                    c /= n;
+                    if ((BYTE)buf[k] >= 0x80)
+                        ascii = FALSE;
+                }
+                buf[len] = 0;
+                for (int ext = 0; ext < 2; ext++)
+                {
+                    int o = OldMaskOptimizeKind283(buf, ext);
+                    int k2 = SalMaskOptimizeKind(buf, ext);
+                    cases++;
+                    if (ascii && o != k2)
+                        asciiMismatch++;
+                    if (!ascii && k2 != o && k2 != SAL_MASKOPT_NONE)
+                        otherBad++;
+                    if (k2 != o)
+                        changed++;
+                }
+            }
+        }
+        CHECK(cases > 100000);
+        CHECK(asciiMismatch == 0);
+        CHECK(otherBad == 0);
+        CHECK(changed > 0);
+    }
+
+    // an ASCII shortcut mask can never equal an accented extension: no UTF-8 continuation byte
+    // (0x80-0xBF) folds to ASCII in any ANSI code page
+    {
+        const UINT cps[] = {874, 932, 936, 949, 950, 1250, 1251, 1252, 1253, 1254, 1255, 1256, 1257, 1258};
+        int tested = 0, toAscii = 0;
+        for (int i = 0; i < (int)(sizeof(cps) / sizeof(cps[0])); i++)
+        {
+            if (!IsValidCodePage(cps[i]))
+                continue;
+            tested++;
+            BYTE t[256];
+            LowerTable283(cps[i], t);
+            for (int b = 0x80; b <= 0xBF; b++)
+                if (t[b] < 0x80)
+                    toAscii++;
+        }
+        CHECK(tested >= 2);
+        CHECK(toAscii == 0); // (a lead byte alone may fold to ASCII; its continuation byte never does)
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -15775,6 +15967,7 @@ int main(int argc, char** argv)
     TestFtpPwdReply277();
     TestUserMenuValue280();
     TestMoveBack281();
+    TestMaskOptimize283();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

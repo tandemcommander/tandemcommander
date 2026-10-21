@@ -18,4 +18,5 @@ Rules:
   `CMaskGroup::PrepareMasks` at cb0d80f5 (differential saltests check).
 - The values equal `MASK_OPTIMIZE_NONE` / `_ALL` / `_EXTENSION` of `src/masks.h`
   (`static_assert` in `masks.cpp`).
-- Pure: no globals, no code page, no allocation.
+- Pure: no globals, no allocation. The `*` / `*.*` test stays `lstrcmpA` as in the old code (the
+  only code-page-dependent part, kept so ASCII masks decide exactly as before).
