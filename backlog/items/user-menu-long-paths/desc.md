@@ -1,7 +1,7 @@
 ---
 title: User Menu on items in folders of 260 or more bytes: work, or refuse aloud
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: long-paths
 source: manual
@@ -10,7 +10,7 @@ created: 2026-10-20
 updated: 2026-10-21
 verified: 2026-10-21 d7405c6a
 effort: L
-feature: -
+feature: 280
 related: [user-menu-messages-and-folder-leftovers, user-menu-find-route-person]
 depends-on: []
 reason: -
@@ -45,3 +45,4 @@ The batch route's `cd /d` and cmd itself limit the folder (cmd's current folder 
 - 2026-10-20 — created (source manual)
 - 2026-10-20 — moved to Next position 20
 - 2026-10-21 — verified at d7405c6a: probe um280 at d7405c6a: FullPathRight of a 260-byte folder gave its parent; FullPathRight 313 B said not defined; mixed direct selection ran a.txt then refused; full-name list refused; compare names silently asked
+- 2026-10-21 — run started, feature 280
