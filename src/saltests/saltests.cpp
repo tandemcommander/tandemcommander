@@ -13478,15 +13478,14 @@ static void TestRegKeyId292()
     CHECK(SalRegKeyIdsAdd(src, L"\\REGISTRY\\USER", L"S-1-5-21-1-2-3-1001"));
     CHECK(SalRegKeyIdsAdd(dst, user, L"S-1-5-21-1-2-3-1001"));
     CHECK(SalRegKeyIdsAnyWithin(dst, src));
-    // HKEY_CLASSES_ROOT\TcProbe292\Zdroj as a set of three (machine half, user half, opened key)
-    // against HKCU\Software\Classes\TcProbe292\Zdroj
+    // the HKEY_CLASSES_ROOT root (both halves) joined with a name that does not exist yet: it may
+    // become the key in either half - against HKCU\Software\Classes\TcProbe292\Zdroj
     a.Count = 0;
     b.Count = 0;
-    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\MACHINE\\SOFTWARE\\Classes", L"TcProbe292\\Zdroj"));
-    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001_Classes", L"TcProbe292\\Zdroj"));
-    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001_Classes\\TcProbe292\\Zdroj", NULL));
+    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\MACHINE\\SOFTWARE\\Classes", L"TcProbe292"));
+    CHECK(SalRegKeyIdsAdd(a, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001_Classes", L"TcProbe292"));
     CHECK(SalRegKeyIdsAdd(b, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001_Classes\\TcProbe292\\Zdroj", NULL));
-    CHECK(SalRegKeyIdsAnySame(a, b) && SalRegKeyIdsAnySame(b, a));
+    CHECK(SalRegKeyIdsAnyWithin(b, a) && !SalRegKeyIdsAnyWithin(a, b) && !SalRegKeyIdsAnySame(a, b));
     b.Count = 0;
     CHECK(SalRegKeyIdsAdd(b, L"\\REGISTRY\\USER\\S-1-5-21-1-2-3-1001\\Software\\TcProbe292\\Zdroj", NULL));
     CHECK(!SalRegKeyIdsAnySame(a, b) && !SalRegKeyIdsAnyWithin(a, b) && !SalRegKeyIdsAnyWithin(b, a));

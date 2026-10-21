@@ -21,6 +21,9 @@
                   v keeps ALPHA
       HKCRMOVE    F6 of HKCU\Software\Classes\TcProbe292\Zdroj\<K> into
                   \HKEY_CLASSES_ROOT\TcProbe292\Zdroj\, answered All: refused (1066); unchanged
+      HKCRROOT    F6 of HKEY_CLASSES_ROOT\TcProbe292 (only in the user's half; focused by Backspace
+                  from it) into \HKEY_CURRENT_USER\Software\Classes\, Cancel: the key is refused by its
+                  own identity (1067 naming TcProbe292); unchanged
       ALIASRENAME (control) F6 of <K> into <U>\...\Zdroj\<N> (no such key, no trailing backslash):
                   no box; Zdroj\<N> holds v and <P>\w; Zdroj\<K> is gone (a rename stays allowed)
       ALIASOTHER  (control) F6 of <K> into <U>\...\<Cil>\: no box; moved whole; the source is gone
@@ -168,7 +171,13 @@ function Run-Op([int]$Cmd, [string]$From, [int[]]$Keys, [string]$Target, [int[]]
     $res = @{ Boxes = @(); Pre = $null }
     $id = Start-P
     $res.Id = $id
-    Go $id $From
+    if ($script:GoUpFrom) {
+        Go $id $script:GoUpFrom
+        Key $id 0x08                                               # Backspace: the parent, the key focused
+        Sync $id; Start-Sleep -Milliseconds 1500
+        $res.Loc = Get-Loc $id
+    }
+    else { Go $id $From }
     foreach ($vk in $Keys) { Key $id $vk }
     $known = Get-Tops $id
     Post-Cmd (Get-Main $id) $Cmd
@@ -220,7 +229,9 @@ function First-Is($r, [string]$Text) { return ($r.Boxes.Count -ge 1) -and ($null
 $MoveSelf = Template 1066 "Can't move key or value to itself."
 $CopySelf = Template 1053 "Can't copy key or value to itself."
 $MoveInto = (Template 1067 "Name:`t%ls`n`nError:`tCan't move a key to itself.").Replace('%ls', $K)
-$All = @(185, 6, 1)                                                # All, else Yes, else OK
+$MoveIntoRoot = (Template 1067 "Name:`t%ls`n`nError:`tCan't move a key to itself.").Replace('%ls', $RegName)
+$script:GoUpFrom = $null
+$All = @(185, 6, 1)                                              # All, else Yes, else OK
 $FocusK = @(0x24, 0x28)                                            # "..", then <K> (the only key)
 $FocusV = @(0x23)                                                  # the last item: the value v
 
@@ -250,6 +261,10 @@ try {
     Row-Op 'ALIASINTO' 728 ($RegFs + '\Zdroj') $FocusK ('\' + $RegUsers + '\Zdroj\' + $K + '\' + $Sub + '\') @(2) { param($r); Refused-Row 'ALIASINTO' $MoveInto $r }
     Row-Op 'ALIASVALUE' 728 ($RegFs + '\Zdroj\' + $K) $FocusV ('\' + $RegUsers + '\Zdroj\' + $K + '\') $All { param($r); Refused-Row 'ALIASVALUE' $MoveSelf $r }
     Row-Op 'HKCRMOVE' 728 ($ClsFs + '\Zdroj') $FocusK ('\' + $ClsRoot + '\Zdroj\') $All { param($r); Refused-Row 'HKCRMOVE' $MoveSelf $r }
+    # the HKCR root lists both halves: TcProbe292 (only in the user's half) focused by going up from it
+    $script:GoUpFrom = 'reg:\' + $ClsRoot
+    Row-Op 'HKCRROOT' 728 'reg:\HKEY_CLASSES_ROOT' $null ('\HKEY_CURRENT_USER\Software\Classes\') @(2) { param($r); Refused-Row 'HKCRROOT' $MoveIntoRoot $r }
+    $script:GoUpFrom = $null
     Row-Op 'ALIASRENAME' 728 ($RegFs + '\Zdroj') $FocusK ('\' + $RegUsers + '\Zdroj\' + $NewName) $null {
         param($r)
         $moved = (ValueOf ('Zdroj\' + $NewName) 'v') -ceq 'ALPHA' -and (ValueOf ('Zdroj\' + $NewName + '\' + $Sub) 'w') -ceq 'BETA'

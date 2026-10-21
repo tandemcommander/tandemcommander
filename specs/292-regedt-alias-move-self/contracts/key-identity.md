@@ -16,8 +16,11 @@ compare an empty set).
 
 ## Use in `fs5.cpp` (`CPluginFSInterface::CopyOrMoveFromFS`)
 
-- `GetRegKeyIds(root, key, set, mayNotExist)` fills a set: a root by the rule of research R2, HKCR
-  by R3, other keys by the opened key's reported name. Returns a Win32 error code;
-  `ERROR_FILE_NOT_FOUND` with `mayNotExist` = success with nothing added for the opened key.
-- Folder check: `sameFolder = text check || SalRegKeyIdsAnySame(panelFolder, targetFolder)`.
-- Key check: `into = text check || SalRegKeyIdsAnyWithin(targetKey, sourceKey)`.
+- `GetRegKeyIds(root, key, set, mayNotExist)` fills a set: a root by the rule of research R2 (the
+  HKCR root: both halves), every other key by the opened key's reported name. Returns a Win32
+  error code; `ERROR_FILE_NOT_FOUND` with `mayNotExist` = success with an empty set.
+- Folder check: `sameFolder = text check || (SalRegKeyIdsAnySame(panelFolder, targetFolder) &&
+  neither folder is the HKCR root)`; same by identity with the HKCR root as one folder = values
+  are refused, keys go to the key check.
+- Key check: `into = text check || SalRegKeyIdsAnyWithin(targetKey, sourceKey)`; `targetKey` =
+  the opened target key, or (not existing) the target folder's identities joined with the name.

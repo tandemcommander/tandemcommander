@@ -798,29 +798,25 @@ static int AddRegRootIds(HKEY root, CSalRegKeyIds& ids)
 }
 
 // the identity set of 'root'\'key'; 'mayNotExist' = a key that does not exist adds nothing and is
-// no error (a target key); every other failure is returned and the caller does not go on
+// no error (a target key); every other failure is returned and the caller does not go on. An
+// opened key reports exactly the key it is - also under HKCR, which reports the half it reaches
+// (measured) - so only a root has more than one identity (HKCR: both halves)
 static int GetRegKeyIds(int root, LPCWSTR key, CSalRegKeyIds& ids, BOOL mayNotExist)
 {
     ids.Count = 0;
     HKEY rootHKey = PredefinedHKeys[root].HKey;
     if (*key == 0)
         return AddRegRootIds(rootHKey, ids);
-    if (rootHKey == HKEY_CLASSES_ROOT)
-    {
-        // either half may be the key (or become it), and the opened key is the one it reaches now
-        CSalRegKeyIds halves;
-        halves.Count = 0;
-        int err = AddRegRootIds(HKEY_CLASSES_ROOT, halves);
-        if (err != ERROR_SUCCESS)
-            return err;
-        for (int i = 0; i < halves.Count; i++)
-            if (!SalRegKeyIdsAdd(ids, halves.Id[i], key))
-                return ERROR_FILENAME_EXCED_RANGE;
-    }
     int err = AddRegKeyIdOf(rootHKey, key, ids);
     if (err == ERROR_FILE_NOT_FOUND && mayNotExist)
         return ERROR_SUCCESS;
     return err;
+}
+
+// the HKCR root lists the keys of both halves, so its identity does not tell which key an item is
+static BOOL IsMergedRegRoot(int root, LPCWSTR key)
+{
+    return PredefinedHKeys[root].HKey == HKEY_CLASSES_ROOT && *key == 0;
 }
 
 // GetRegKeyIds with the existing open-error box (Retry / Skip / Skip All / Cancel); FALSE = do not
@@ -1052,11 +1048,21 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
         }
 
         // ensure we are not copying the file onto itself
-        if (root == CurrentKeyRoot &&
-                CompareStringW(LOCALE_USER_DEFAULT, NORM_IGNORECASE,
-                               key, -1,
-                               CurrentKeyName, -1) == CSTR_EQUAL ||
-            SalRegKeyIdsAnySame(sourceFolderIds, targetFolderIds))
+        BOOL sameFolder = root == CurrentKeyRoot &&
+                          CompareStringW(LOCALE_USER_DEFAULT, NORM_IGNORECASE,
+                                         key, -1,
+                                         CurrentKeyName, -1) == CSTR_EQUAL;
+        BOOL valuesMaybeOntoThemselves = FALSE;
+        if (!sameFolder && SalRegKeyIdsAnySame(sourceFolderIds, targetFolderIds))
+        {
+            // the HKCR root and one of its halves: each key is decided by its own identity below,
+            // a value (whose half is not known) is refused
+            if (IsMergedRegRoot(CurrentKeyRoot, CurrentKeyName) || IsMergedRegRoot(root, key))
+                valuesMaybeOntoThemselves = TRUE;
+            else
+                sameFolder = TRUE;
+        }
+        if (sameFolder)
         {
             // fetch data about the first processed file
             int index2 = 0;
@@ -1168,9 +1174,9 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
                         if (!into)
                         {
                             // feature 292: ... nor by identity under another root name - the source
-                            // is the opened key (a link is followed) and the panel's key joined with
-                            // its name, the target the target folder joined with the new name and,
-                            // when it exists, the opened target key
+                            // is the opened key (a link is followed: what a Move deletes), the target
+                            // the opened target key, or, when it does not exist yet, the target
+                            // folder joined with the new name (the HKCR root: both halves)
                             CSalRegKeyIds sourceIds, targetIds;
                             if (!SafeGetRegKeyIds(sourceRoot, sourceKey, sourceIds, FALSE, errorTitle, skip, skipAllErrors) ||
                                 !SafeGetRegKeyIds(root, key, targetIds, TRUE, errorTitle, skip, skipAllErrors))
@@ -1178,7 +1184,7 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
                                 if (!skip)
                                     success = FALSE; // Cancel; Skip leaves the key alone
                             }
-                            else if (!AddRegKeyIdsJoined(sourceIds, sourceFolderIds, pd->Name) ||
+                            else if (targetIds.Count == 0 &&
                                      !AddRegKeyIdsJoined(targetIds, targetFolderIds, useTargetName ? targetName : pd->Name))
                             {
                                 Error(IDS_LONGNAME); // never a cut identity
@@ -1218,8 +1224,13 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
                 }
                 else
                 {
+                    if (valuesMaybeOntoThemselves)
+                    {
+                        Error(copy ? IDS_CANTCOPYTOITSELF : IDS_CANTMOVETOITSELF); // feature 292
+                        success = FALSE;
+                    }
                     // do not process the default value if it is not set
-                    if (pd->Name != NULL || pd->Type != REG_NONE)
+                    else if (pd->Name != NULL || pd->Type != REG_NONE)
                     {
                         success = CopyOrMoveValue(sourceRoot, sourceKey, pd->Name,
                                                   root, key, useTargetName ? targetName : pd->Name, !copy,

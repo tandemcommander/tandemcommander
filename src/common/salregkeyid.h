@@ -34,7 +34,7 @@
 //
 
 #define SAL_REGKEYID_MAX 1280 // units incl. the terminator: \REGISTRY\... + a 512-unit path + a 512-unit name
-#define SAL_REGKEYIDS_MAX 6
+#define SAL_REGKEYIDS_MAX 6 // the Registry Editor needs at most 2 (the HKCR root: both halves)
 
 struct CSalRegKeyIds
 {

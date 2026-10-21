@@ -31,11 +31,15 @@
 - **Finding**: `HKCR\.txt` opened gives `\REGISTRY\USER\<SID>_Classes\.txt` (the user's half);
   `HKCU\Software\Classes` gives `\REGISTRY\USER\<SID>_Classes`. Which half a path under HKCR reaches
   depends on which half holds it; new keys may be created in either.
-- **Decision**: a path `HKCR\<rest>` has the identities `<machine classes>\<rest>`,
-  `<user classes>\<rest>` (the names of `HKLM\Software\Classes` and `HKCU\Software\Classes`
-  opened) and, when it exists, the name of the opened key. The operation is refused when any of
-  them matches. Conservative (spec Clarifications): a rare operation between the merged view and
-  the half it does not reach may be refused.
+- **Decision (revised after the review, NOTE 2)**: an existing key under HKCR has the one
+  identity of the opened key - the review measured that a key only in the machine's half reports
+  `\REGISTRY\MACHINE\SOFTWARE\Classes\...`, one in the user's half the user's name. Only the root
+  `HKCR` itself has two identities (the names of `HKLM\Software\Classes` and
+  `HKCU\Software\Classes` opened); a target not yet existing directly under it is that name in
+  either half. With the HKCR root and one of its halves as the two folders, keys are decided one by
+  one by their own identity and values are refused (their half is unknown). The first rule (every
+  HKCR path as both halves + the opened key) refused real copies, e.g. F5 of a machine-only
+  `HKCR\.123` into `HKCU\Software\Classes\`.
 
 ## R4 - Where the checks sit (fs5.cpp `CPluginFSInterface::CopyOrMoveFromFS`)
 
@@ -52,10 +56,9 @@ Consumers enumerated (Grep `CopyOrMoveKey(`, `CopyOrMoveValue(`, `SafeDeleteKey`
    exists at that point - it was opened or just created) are compared; equal = the same block runs
    (refusal 1053 / 1066, or a rename to another name).
 2. **Key check** (today "sourceKey is a prefix of targetKey" under one root): kept, and in addition
-   the identities of the target key (target folder identities + the new name; plus the opened
-   target key when it exists) are tested to be equal to / inside the identities of the source key
-   (the opened source key; plus source folder identities + its name). Inside = the existing
-   1065 / 1067 box.
+   the identity of the target key (the opened target key; when it does not exist, the target
+   folder identities + the new name) is tested to be equal to / inside the identity of the opened
+   source key (a link is followed - what a Move deletes). Inside = the existing 1065 / 1067 box.
 - **Fail closed**: an identity that cannot be established (open error other than "not found" for
   the target key, a query error, a name too long for the buffer) stops: folder level = the existing
   `ErrorL(..., IDS_ACCESS, ...)` and back to the dialog (as the target-path checks above it do); key

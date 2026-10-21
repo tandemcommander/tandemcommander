@@ -66,11 +66,14 @@ U1 (LOW, drag and drop not driven) - an assumption of the spec; the same functio
   `AddRegKeyIdsJoined`.
   `CopyOrMoveFromFS`: (1) after the target folder exists, the identity sets of the panel's key and
   of the target folder; an error -> `ErrorL(..., IDS_ACCESS, ...)` and back to the dialog; the
-  "onto itself" block runs when the text test OR `SalRegKeyIdsAnySame`. (2) for each key: the text
-  "prefix" test OR `SalRegKeyIdsAnyWithin(target, source)` (target = target folder ids + new name +
-  the opened target key if it exists; source = the opened source key + panel folder ids + name);
-  an identity error -> the `RegOperationError(IDS_OPEN)` box (Skip leaves the key, Cancel stops);
-  too long -> `IDS_LONGNAME`, stop.
+  "onto itself" block runs when the text test OR `SalRegKeyIdsAnySame` (the latter not when one
+  folder is the HKCR root - then values are refused in the item loop and keys go to (2)). (2) for
+  each key: the text "prefix" test OR `SalRegKeyIdsAnyWithin(target, source)` (target = the opened
+  target key, or when it does not exist the target folder ids + new name; source = the opened
+  source key); an identity error -> the `RegOperationError(IDS_OPEN)` box (Skip leaves the key,
+  Cancel stops); too long -> `IDS_LONGNAME`, stop. (This is the design after the review, see
+  *Review*; the first version joined the folder ids also for existing keys and gave every HKCR path
+  both halves.)
 - `src/plugins/regedt/precomp.h` includes the header; `src/saltests/saltests.cpp`
   `TestRegKeyId292`.
 - No UI string added or removed; no `spl_*.h` change.
@@ -81,10 +84,10 @@ U1 (LOW, drag and drop not driven) - an assumption of the spec; the same functio
 |---|---|---|
 | encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
 | build | `.\build.cmd` (and `.\build.cmd rebuild`) | `BUILD SUCCEEDED`; warnings only the pre-existing C4267 of `regedt\fs2.cpp` (untouched) and others outside the feature |
-| saltests | `saltests.exe` | `saltests: 25322 checks, 0 failed` |
+| saltests | `saltests.exe` | `saltests: 25322 checks, 0 failed` (first version); after the review `25321 checks, 0 failed` (the HKCR model rewritten: one check fewer) |
 | saltests negative control | `SalRegKeyIdWithin` boundary replaced by `return TRUE`, rebuilt | `25322 checks, 1 failed` (the "Key2" not inside "Key" check); restored, rebuilt, 0 failed |
-| probe after (English) | `alias292_probe.ps1` -> `result_after.txt` / `alias292_after.txt` | **27 PASS / 0 FAIL / 0 NOT DRIVEN**, registry restored identical (34FA77DB...125A) |
-| probe after (Czech) | `-Lang czech` -> `result_after_czech.txt` / `alias292_after_czech.txt` | **27 PASS / 0 FAIL**, registry restored identical |
+| probe after (English) | `alias292_probe.ps1` -> `result_after.txt` / `alias292_after.txt` | first version 27 / 0; after the review (row HKCRROOT added) **30 PASS / 0 FAIL / 0 NOT DRIVEN**, registry restored identical (34FA77DB...125A) |
+| probe after (Czech) | `-Lang czech` -> `result_after_czech.txt` / `alias292_after_czech.txt` | first version 27 / 0; after the review **30 PASS / 0 FAIL**, registry restored identical |
 | probe before (negative control) | `-Expect before` on main 9781daee | 18 PASS / 9 FAIL (above) |
 | clang-format | VS LLVM `clang-format --lines` on the new code | clean (`saltests.cpp` as a whole is not clean on main either: 1731 lines) |
 
@@ -95,3 +98,24 @@ Not driven: drag and drop between two Registry Editor panels (mode 5) - it reach
 KEY_READ): `RegOpenCurrentUser` -> `\REGISTRY\USER\S-1-5-21-...-1001`;
 `HKLM\SYSTEM\CurrentControlSet\Hardware Profiles\Current` -> `\REGISTRY\MACHINE\SYSTEM\ControlSet001\Hardware Profiles\0001`;
 `HKLM\Software\Classes` -> `\REGISTRY\MACHINE\SOFTWARE\Classes`.
+
+## Review
+
+### First review (independent agent, refute-first, on commit 80c44acd)
+
+No MUST. Re-ran: build up to date, saltests 25322 / 0, encoding guard 0, probe 27 / 0 (registry
+identical); measured that `HKU\S-1-5-18` / `HKU\.DEFAULT`, `CurrentControlSet` / `ControlSet001`
+report one name and that a key only in HKCR's machine half reports `\REGISTRY\MACHINE\...`.
+
+| Finding | Done |
+|---|---|
+| SHOULD 1 (predates 292) Move of a key into the key above its parent, the moved key holding a same-name subkey: the recursion copies onto the source, which is then deleted - reproduced on the hidden desktop, also under one root name | out of scope: Inbox item `registry-editor-move-of-a-key-into-the-key-above-its-parent` (`review:292`) |
+| NOTE 2 Copy / Move between the HKCR root (or any HKCR path) and one of its halves refused although the target is another key (e.g. F5 of a machine-only `HKCR\.123` into `HKCU\Software\Classes\`, a real copy before) | fixed in scope: an existing key has only its opened identity (exact, also under HKCR); only the HKCR root has both halves; with the HKCR root as one folder keys are decided one by one, values refused. New probe row HKCRROOT (Move of `HKCR\TcProbe292` - user half only - into `HKCU\Software\Classes\`: refused by its own identity with 1067, unchanged). Spec Clarification, FR-003, research R3 / R4, contract and data model revised |
+| NOTE 3 the identity set sized without spare room | moot after NOTE 2 (at most 2 identities now); comment at `SAL_REGKEYIDS_MAX` |
+| NOTE 4 not driven: the fail-closed path, Copy into itself via an alias, multi-selection, drag and drop, HKCC / link cases, the root-inside-source case | recorded; the fail-closed path cannot be provoked without also failing the copy's own open; the machine-only HKCR copy (NOTE 2) is not driven either - it would write a per-user file association |
+| NOTE 5 `sourceEqualsTarget` set, never read (upstream) | unchanged (not this feature's code) |
+| NOTE 6 CHANGELOG / FEATURE-HISTORY not yet written | done at closing |
+
+After the changes: build SUCCEEDED, saltests 25321 / 0, probe English 30 / 0 and Czech 30 / 0,
+registry restored identical. The HKCRROOT row was not run on a build without the fix (it would
+delete the fixture key there; the first version of this fix gave 1066 for it).

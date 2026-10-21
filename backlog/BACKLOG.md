@@ -235,6 +235,7 @@ Last triaged: 2026-10-21
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Registry Editor: Move of a key into the key above its parent loses a same-name subkey](items/registry-editor-move-of-a-key-into-the-key-above-its-parent/desc.md) | bug | 7 | data-safety | review:292 | 2026-10-21 |
 
 ## Parked
 
