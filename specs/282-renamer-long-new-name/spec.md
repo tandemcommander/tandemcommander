@@ -159,3 +159,7 @@ error; the file keeps its name and nothing else is created.
   New name / Search / Replace pattern fields (520 / 520 / 260 bytes, a refusal of the field) are
   separate limits, not part of this item; the pattern field limit is recorded as an Inbox item.
 - Assumption (autonomous run): no new UI strings - the existing errors are reused.
+- Assumption (autonomous run): without the 260-byte bound the recursive listing could descend
+  ~16,000 levels; a folder more than 1024 levels below the selected one is refused with the
+  existing "too long path name" error (Skip / Skip all / Cancel as now) so the listing never runs
+  out of stack (conservative: a refusal, never a crash or a cut).
