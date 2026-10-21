@@ -206,6 +206,31 @@ static void TestPaths()
     CHECK(!SftpTargetStatRefused(FALSE, 3) && !SftpTargetStatRefused(FALSE, 12));
     CHECK(!SftpTargetStatRefused(TRUE, 0) && !SftpTargetStatRefused(TRUE, 2) && !SftpTargetStatRefused(TRUE, 4) &&
           !SftpTargetStatRefused(TRUE, 7) && !SftpTargetStatRefused(TRUE, 8) && !SftpTargetStatRefused(TRUE, 10));
+    // feature 279: a folder is taken as possibly there only when its creation may have met it AND
+    // the server refused to show it for want of a right, both on a live session
+    CHECK(SftpUnconfirmedDir(TRUE, 4, TRUE, 3) && SftpUnconfirmedDir(TRUE, 11, TRUE, 3) &&
+          SftpUnconfirmedDir(TRUE, 4, TRUE, 12) && SftpUnconfirmedDir(TRUE, 11, TRUE, 12));
+    {
+        const unsigned long notMayExist[] = {0, 2, 3, 7, 8, 10, 12, 14, 15};
+        for (unsigned long m : notMayExist)
+            CHECK(!SftpUnconfirmedDir(TRUE, m, TRUE, 3)); // refused for a right, no space, no status, ...
+        const unsigned long notRefused[] = {0, 2, 4, 7, 8, 10, 11};
+        for (unsigned long s : notRefused)
+            CHECK(!SftpUnconfirmedDir(TRUE, 4, TRUE, s)); // the stat said something else (or nothing)
+    }
+    CHECK(!SftpUnconfirmedDir(FALSE, 4, TRUE, 3) && !SftpUnconfirmedDir(TRUE, 4, FALSE, 3) &&
+          !SftpUnconfirmedDir(FALSE, 4, FALSE, 3)); // a dead session at either request
+    // feature 279: only "no such file / path" ends the folder, and only while nothing is confirmed
+    CHECK(SftpEndsUnconfirmedDir(TRUE, 2, 0) && SftpEndsUnconfirmedDir(TRUE, 10, 0));
+    CHECK(!SftpEndsUnconfirmedDir(TRUE, 2, 1) && !SftpEndsUnconfirmedDir(TRUE, 10, 5)); // the folder is known to be there
+    CHECK(!SftpEndsUnconfirmedDir(FALSE, 2, 0) && !SftpEndsUnconfirmedDir(FALSE, 10, 0));
+    CHECK(!SftpEndsUnconfirmedDir(TRUE, 0, 0) && !SftpEndsUnconfirmedDir(TRUE, 3, 0) && !SftpEndsUnconfirmedDir(TRUE, 4, 0) &&
+          !SftpEndsUnconfirmedDir(TRUE, 11, 0) && !SftpEndsUnconfirmedDir(TRUE, 12, 0)); // a right, a name there: the item's own
+    // feature 279: zero confirmed never lets the folder count as there
+    CHECK(SftpUnconfirmedDirVerdict(0, FALSE) == udNothingConfirmed);
+    CHECK(SftpUnconfirmedDirVerdict(-1, FALSE) == udNothingConfirmed);
+    CHECK(SftpUnconfirmedDirVerdict(1, FALSE) == udConfirmed && SftpUnconfirmedDirVerdict(7, FALSE) == udConfirmed);
+    CHECK(SftpUnconfirmedDirVerdict(0, TRUE) == udNotThere && SftpUnconfirmedDirVerdict(3, TRUE) == udNotThere);
     // feature 258: only names SftpTempPath makes are offered for deletion
     {
         char made[64];

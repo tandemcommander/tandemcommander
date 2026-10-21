@@ -135,6 +135,30 @@ CSftpUploadConfirm SftpUploadConfirmation(BOOL remoteSizeKnown, unsigned __int64
 // session dead) is no answer at all.
 BOOL SftpTargetStatRefused(BOOL connected, unsigned long status);
 
+// feature 279: a folder of an upload is "unconfirmed" - it may be there from an earlier upload,
+// but the server will not show it: its creation was refused with a status that allows "a name is
+// there" (FAILURE - what OpenSSH answers for an existing name - or FILE_ALREADY_EXISTS) on a live
+// session, AND the following stat was refused for want of a right (SftpTargetStatRefused). Its
+// items are tried; a Move removes it only when the server confirmed something of it. Any other
+// pair (the creation refused for a right, no space, no status at all, ...) is no folder.
+BOOL SftpUnconfirmedDir(BOOL mkdirConnected, unsigned long mkdirStatus, BOOL statConnected, unsigned long statStatus);
+
+// feature 279: an item of an unconfirmed folder with nothing confirmed yet could not be created
+// because the folder is not there ("no such file / path" on a live session): the folder ends at
+// once, with one box naming it (not one per item). After a confirmed item the folder is known to
+// be there and every refusal is the item's own.
+BOOL SftpEndsUnconfirmedDir(BOOL connected, unsigned long status, int confirmed);
+
+// feature 279: the end of an unconfirmed folder ('confirmed': its items the server confirmed;
+// 'noFolder': SftpEndsUnconfirmedDir stopped it)
+enum CSftpUnconfirmedDirVerdict
+{
+    udConfirmed,        // something of it arrived: the folder is there (a Move removes it when every item was moved)
+    udNothingConfirmed, // nothing of it was confirmed: it fails with one box, the local folder stays
+    udNotThere,         // an item could not be created in it - it is not there: one box, the local folder stays
+};
+CSftpUnconfirmedDirVerdict SftpUnconfirmedDirVerdict(int confirmed, BOOL noFolder);
+
 // feature 258: is 'path' the path of an upload's temporary file, as SftpTempPath makes it - its
 // last component is exactly ".tcpart-" and 8 lower-case hex digits? (Checked before such a file
 // is offered for deletion.)

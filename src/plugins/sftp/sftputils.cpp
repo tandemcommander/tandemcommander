@@ -369,6 +369,24 @@ BOOL SftpTargetStatRefused(BOOL connected, unsigned long status)
     return connected && SftpStatusIsPermission(status);
 }
 
+BOOL SftpUnconfirmedDir(BOOL mkdirConnected, unsigned long mkdirStatus, BOOL statConnected, unsigned long statStatus)
+{
+    BOOL mayExist = mkdirStatus == 4 || mkdirStatus == 11; // SSH_FX_FAILURE, SSH_FX_FILE_ALREADY_EXISTS
+    return mkdirConnected && mayExist && SftpTargetStatRefused(statConnected, statStatus);
+}
+
+BOOL SftpEndsUnconfirmedDir(BOOL connected, unsigned long status, int confirmed)
+{
+    return confirmed == 0 && connected && SftpStatusIsNotFound(status);
+}
+
+CSftpUnconfirmedDirVerdict SftpUnconfirmedDirVerdict(int confirmed, BOOL noFolder)
+{
+    if (noFolder)
+        return udNotThere;
+    return confirmed > 0 ? udConfirmed : udNothingConfirmed;
+}
+
 BOOL SftpIsUploadTempPath(const char* path)
 {
     if (path == NULL)

@@ -1,0 +1,198 @@
+sftp258_probe (feature 258), run: regress-279
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 05:33; desktop 'tc_probe_22756'; ACP 1250; registry key existed True; export SHA-256 BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+Server  : dropsftp.py pid 13856 on 127.0.0.1:2258, root C:\Users\pavel\AppData\Local\Temp\tc258\srv
+
+DROPNEW    ROW    PASS        drop\up.txt holds 'DROP-NEW'; .tcpart-* in drop: 0; an error box False; connected: True [password, host key] at 'sftp:tctest@localhost:2258/pub'; dialogs: typed into [Copy]
+DROPNEW    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPEXIST  ROW    PASS        drop\up.txt holds 'OLD-DROP'; .tcpart-* in drop: 0; the error box True; connected: True [password, host key] at 'sftp:tctest@localhost:2258/pub'; dialogs: typed into [Copy] || [#32770 'SFTP Error'] [Static id=2477] Cannot upload "/drop/up.txt": SFTP error 4: Failure - the server does not show whether a file of that name is there; nothing was replaced | [Button id=1] OK || [Copy] came back - cancelled
+DROPEXIST  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPMOVE   ROW    PASS        drop\mv.txt holds 'DROP-MOVE'; the local source still there False; connected: True [password, host key] at 'sftp:tctest@localhost:2258/pub'; dialogs: typed into [Move/Rename]
+DROPMOVE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPDIR    ROW    PASS        drop\pack\a.txt 'PACK-A', b.txt 'PACK-B'; an error box False; connected: True [password, host key] at 'sftp:tctest@localhost:2258/pub'; dialogs: typed into [Copy]
+DROPDIR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPFAIL   ROW    PASS        the write fails after 1000 bytes (seam): drop\big.bin size 1000 (the server refuses its removal); the box says a partial file may remain True; connected: True [password, host key] at 'sftp:tctest@localhost:2258/pub'; dialogs: typed into [Copy] || [#32770 'SFTP Error'] [Static id=2477] Cannot upload "/drop/big.bin": Cannot write to the remote file. - a partial file may remain on the server under this name (Permission denied.) | [Button id=1] OK || [Copy] came back - cancelled
+DROPFAIL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPDIR2   ROW    FAIL        Move of pack2 into /drop where drop\pack2 is there already (the server refuses to show it): the box names the folder False; the local pack2\c.txt kept False; drop\pack2\c.txt 'PACK2-C'; connected: True [password, host key] at 'sftp:tctest@localhost:2258/pub'; dialogs: typed into [Move/Rename]
+DROPDIR2   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPHOLE   ROW    PASS        Move of the EMPTY folder hole into /drop where drop\hole is a file: the box names the folder True; the local folder kept True; drop\hole still the file 'A-FILE' (review 2 MUST-1); connected: True [password, host key] at 'sftp:tctest@localhost:2258/pub'; dialogs: typed into [Move/Rename] || [#32770 'SFTP Error'] [Static id=2477] Cannot create directory "/drop/hole": SFTP error 4: Failure - the server does not show whether the folder is there; nothing of it was confirmed to arrive | [Button id=1] OK || [Move/Rename] came back - cancelled
+DROPHOLE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPNOEXCL ROW    PASS        Move onto an existing file of a server that ignores the exclusive create: dropnx\mv.txt holds 'NEW-NX' (never the new content over the old tail); the local source still there False; connected: True [password, host key] at 'sftp:tctest@localhost:2258/pub'; dialogs: typed into [Move/Rename]
+DROPNOEXCL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REPL       ROW    PASS        pub\r.txt holds 'REPL-NEW'; the question names hard links and the ACL: True; connected: True [password, host key] at 'sftp:tctest@localhost:2258/pub'; dialogs: [#32770 'Copy'] [Static id=209] &Copy file "r.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help || [#32770 'SFTP Error'] [Static id=2477] The file already exists on the server: /pub/r.txt Overwrite it? (Yes = this file, No = skip; Cancel = skip the rest) It is replaced by a new copy where the server allows it: other hard links to it keep the old content, and its ACL and extended attributes are not carried over. | [Button id=6] &Yes | [Button id=7] &No | [Button id=2] Cancel
+REPL       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CUT        ROW    PASS        cut\c.txt holds 'CUT-NEW'; .tcpart-* left in cut: 0 (); a dialog named the temporary file True; connected: True [password, host key] at 'sftp:tctest@localhost:2258/cut'; dialogs: --- run 1 || [#32770 'Copy'] [Static id=209] &Copy file "c.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help || [#32770 'SFTP Error'] [Static id=2477] Cannot upload "/cut/c.txt": The connection to the server was lost. (close: Error waiting for status message) (the temporary file .tcpart-d56d4568 could not be removed) | [Button id=1] OK || [Copy] came back - cancelled || host key || --- run 2 || [#32770 'Copy'] [Static id=209] &Copy file "c.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help || [#32770 'SFTP Client'] [Static id=2477] Earlier uploads lost the connection before they could remove their temporary files; these are left on the server: /cut/.tcpart-d56d4568 Delete them now? (They hold only copies: the files they were uploaded for were not changed by them.) | [Button id=6] &Yes | [Button id=7] &No
+CUT        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Server log:
+  1792553599.132 start 2258 C:\Users\pavel\AppData\Local\Temp\tc258\srv
+  1792553599.246 connect
+  1792553599.251 session error SSHException('Error reading SSH protocol banner[WinError 10054] St\u00E1vaj\u00EDc\u00ED p\u0159ipojen\u00ED bylo vynucen\u011B ukon\u010Deno vzd\u00E1len\u00FDm hostitelem')
+  1792553599.251 disconnected
+  1792553604.141 connect
+  1792553604.645 disconnected
+  1792553605.141 connect
+  1792553605.145 realpath /pub -> /pub
+  1792553605.145 stat /pub ok
+  1792553605.146 opendir /pub ok (0)
+  1792553611.076 lstat /drop/up.txt DENIED
+  1792553611.077 open /drop/up.txt flags=0x701 exists=False
+  1792553611.078 close /drop/up.txt
+  1792553611.079 stat /drop/up.txt DENIED
+  1792553611.080 realpath /pub -> /pub
+  1792553611.080 stat /pub ok
+  1792553611.081 opendir /pub ok (0)
+  1792553617.650 disconnected
+  1792553623.872 connect
+  1792553624.375 disconnected
+  1792553624.844 connect
+  1792553624.848 realpath /pub -> /pub
+  1792553624.848 stat /pub ok
+  1792553624.849 opendir /pub ok (0)
+  1792553630.988 lstat /drop/up.txt DENIED
+  1792553630.988 open /drop/up.txt flags=0x701 exists=True
+  1792553630.989 open /drop/up.txt FileExistsError(17, 'File exists')
+  1792553634.113 realpath /pub -> /pub
+  1792553634.113 stat /pub ok
+  1792553634.114 opendir /pub ok (0)
+  1792553640.354 disconnected
+  1792553646.577 connect
+  1792553647.080 disconnected
+  1792553647.549 connect
+  1792553647.553 realpath /pub -> /pub
+  1792553647.554 stat /pub ok
+  1792553647.554 opendir /pub ok (0)
+  1792553653.657 lstat /drop/mv.txt DENIED
+  1792553653.658 open /drop/mv.txt flags=0x701 exists=False
+  1792553653.659 close /drop/mv.txt
+  1792553653.659 stat /drop/mv.txt DENIED
+  1792553653.660 realpath /pub -> /pub
+  1792553653.661 stat /pub ok
+  1792553653.662 opendir /pub ok (0)
+  1792553660.058 disconnected
+  1792553666.234 connect
+  1792553666.737 disconnected
+  1792553667.212 connect
+  1792553667.216 realpath /pub -> /pub
+  1792553667.216 stat /pub ok
+  1792553667.217 opendir /pub ok (0)
+  1792553673.114 mkdir /drop/pack ok
+  1792553673.115 lstat /drop/pack/a.txt DENIED
+  1792553673.115 open /drop/pack/a.txt flags=0x701 exists=False
+  1792553673.117 close /drop/pack/a.txt
+  1792553673.117 stat /drop/pack/a.txt DENIED
+  1792553673.118 lstat /drop/pack/b.txt DENIED
+  1792553673.119 open /drop/pack/b.txt flags=0x701 exists=False
+  1792553673.120 close /drop/pack/b.txt
+  1792553673.120 stat /drop/pack/b.txt DENIED
+  1792553673.121 realpath /pub -> /pub
+  1792553673.122 stat /pub ok
+  1792553673.122 opendir /pub ok (0)
+  1792553679.720 disconnected
+  1792553685.801 connect
+  1792553686.303 disconnected
+  1792553686.773 connect
+  1792553686.776 realpath /pub -> /pub
+  1792553686.777 stat /pub ok
+  1792553686.777 opendir /pub ok (0)
+  1792553692.901 lstat /drop/big.bin DENIED
+  1792553692.902 open /drop/big.bin flags=0x701 exists=False
+  1792553692.903 close /drop/big.bin
+  1792553692.903 remove /drop/big.bin DENIED
+  1792553696.047 realpath /pub -> /pub
+  1792553696.047 stat /pub ok
+  1792553696.048 opendir /pub ok (0)
+  1792553702.284 disconnected
+  1792553708.430 connect
+  1792553708.933 disconnected
+  1792553709.404 connect
+  1792553709.408 realpath /pub -> /pub
+  1792553709.409 stat /pub ok
+  1792553709.409 opendir /pub ok (0)
+  1792553715.310 mkdir /drop/pack2 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792553715.311 stat /drop/pack2 DENIED
+  1792553715.312 lstat /drop/pack2/c.txt DENIED
+  1792553715.312 open /drop/pack2/c.txt flags=0x701 exists=False
+  1792553715.313 close /drop/pack2/c.txt
+  1792553715.314 stat /drop/pack2/c.txt DENIED
+  1792553715.315 realpath /pub -> /pub
+  1792553715.316 stat /pub ok
+  1792553715.316 opendir /pub ok (0)
+  1792553721.915 disconnected
+  1792553727.838 connect
+  1792553728.341 disconnected
+  1792553728.813 connect
+  1792553728.831 realpath /pub -> /pub
+  1792553728.832 stat /pub ok
+  1792553728.832 opendir /pub ok (0)
+  1792553734.686 mkdir /drop/hole FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792553734.687 stat /drop/hole DENIED
+  1792553737.811 realpath /pub -> /pub
+  1792553737.812 stat /pub ok
+  1792553737.812 opendir /pub ok (0)
+  1792553744.337 disconnected
+  1792553750.088 connect
+  1792553750.591 disconnected
+  1792553751.061 connect
+  1792553751.065 realpath /pub -> /pub
+  1792553751.065 stat /pub ok
+  1792553751.066 opendir /pub ok (0)
+  1792553756.969 lstat /dropnx/mv.txt DENIED
+  1792553756.970 open /dropnx/mv.txt flags=0x701 exists=True
+  1792553756.970 open /dropnx/mv.txt: EXCL ignored
+  1792553756.971 close /dropnx/mv.txt
+  1792553756.972 stat /dropnx/mv.txt DENIED
+  1792553756.973 realpath /pub -> /pub
+  1792553756.974 stat /pub ok
+  1792553756.974 opendir /pub ok (0)
+  1792553763.570 disconnected
+  1792553769.636 connect
+  1792553770.139 disconnected
+  1792553770.609 connect
+  1792553770.613 realpath /pub -> /pub
+  1792553770.613 stat /pub ok
+  1792553770.614 opendir /pub ok (1)
+  1792553776.734 lstat /pub/r.txt ok
+  1792553778.154 open /pub/.tcpart-a216c310 flags=0x501 exists=False
+  1792553778.154 lstat /pub/.tcpart-a216c310 ok
+  1792553778.155 close /pub/.tcpart-a216c310
+  1792553778.156 stat /pub/.tcpart-a216c310 ok
+  1792553778.156 rename /pub/.tcpart-a216c310 /pub/r.txt exists
+  1792553778.157 lstat /pub/.tcpart-a216c310 ok
+  1792553778.158 remove /pub/r.txt ok
+  1792553778.159 rename /pub/.tcpart-a216c310 /pub/r.txt ok
+  1792553778.160 realpath /pub -> /pub
+  1792553778.160 stat /pub ok
+  1792553778.161 opendir /pub ok (1)
+  1792553784.619 disconnected
+  1792553790.751 connect
+  1792553791.254 disconnected
+  1792553791.732 connect
+  1792553791.736 realpath /cut -> /cut
+  1792553791.737 stat /cut ok
+  1792553791.737 opendir /cut ok (1)
+  1792553797.665 lstat /cut/c.txt FileNotFoundError(2, 'Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor')
+  1792553797.666 open /cut/.tcpart-d56d4568 flags=0x501 exists=False
+  1792553797.667 close /cut/.tcpart-d56d4568
+  1792553797.668 cut: the connection is dropped at the close of /cut/.tcpart-d56d4568
+  1792553797.739 disconnected
+  1792553800.993 connect
+  1792553801.496 disconnected
+  1792553802.265 connect
+  1792553802.269 realpath /cut -> /cut
+  1792553802.269 stat /cut ok
+  1792553802.270 opendir /cut ok (1)
+  1792553811.790 lstat /cut/.tcpart-d56d4568 ok
+  1792553811.791 remove /cut/.tcpart-d56d4568 ok
+  1792553811.792 lstat /cut/c.txt FileNotFoundError(2, 'Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor')
+  1792553811.793 open /cut/.tcpart-52a1d77e flags=0x501 exists=False
+  1792553811.795 close /cut/.tcpart-52a1d77e
+  1792553811.795 stat /cut/.tcpart-52a1d77e ok
+  1792553811.796 rename /cut/.tcpart-52a1d77e /cut/c.txt ok
+  1792553811.797 realpath /cut -> /cut
+  1792553811.798 stat /cut ok
+  1792553811.799 opendir /cut ok (1)
+  1792553818.276 disconnected
+
+Rows: PASS 19, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

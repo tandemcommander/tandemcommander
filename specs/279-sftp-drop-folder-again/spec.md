@@ -134,8 +134,8 @@ nothing of it had reached the server. Data safety.
 - **SC-002**: Probe rows DROPHOLE, DROPEMPTY, DROPHOLE2 pass: in each, the local folder is kept
   and exactly one box names the folder (DROPHOLE2: the server log shows one file creation only).
 - **SC-003**: Row OSSHLINK (real OpenSSH) passes: the local folder is kept, one box.
-- **SC-004**: All other rows of 258's probe and 133's SFTP regression probe keep passing
-  (258: 20 / 0; 133: 76 / 0).
+- **SC-004**: All other rows of 258's probe (without DROPDIR2, whose expectation was the limit
+  this feature removes: 18 / 0) and 133's SFTP regression probe (76 / 0) keep passing.
 - **SC-005**: The SFTP plug-in's rule harness passes with new checks for the decisions (which
   refusals make a folder unconfirmed, which end it, the verdict for zero confirmed items), each
   with negatives.

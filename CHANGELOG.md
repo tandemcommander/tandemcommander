@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A folder uploaded again into an upload-only SFTP folder failed with "Cannot create directory"** (feature 279).
+  - **Before:** in a server folder that accepts uploads but does not show its content (an "upload" right without "list", hosted drop boxes), a local folder that had been uploaded there before failed as a whole: "Cannot create directory ...: SFTP error 4: Failure", and none of its files were sent.
+  - **Now:** its files are sent, each only if no file of that name is there (as for files uploaded alone into such a folder). When the server confirms nothing of the folder - an empty folder, a file of that name in the way, a folder that cannot be entered - one box names the folder and says that the server does not show whether it is there (or that it is not there), and a Move keeps the local folder; a Move removes a local folder only when something of it was confirmed to arrive.
+  - **Limitation:** a file of the folder that the server refuses for want of a right still shows its own box (an upload-only service answers so for a file that is already there); checked against a test server modelling such a folder and against OpenSSH, not against a real upload-only service (recorded for a person).
+
 - **The Registry Editor's Find with a regular expression could miss text at the end of a name or value with accented letters** (feature 278).
   - **Before:** on Windows set to use UTF-8 for the system (the "Beta: Use Unicode UTF-8" option) or to a Chinese, Japanese or Korean system locale, a regular expression searched only part of a key name, value name or text value that contained letters taking more than one byte - for example, `bar` did not find `čččč bar` - or searched leftover bytes of an earlier text in its place. Other system locales (such as Czech or Western European) were not affected.
   - **Now:** the whole text is searched; a text that cannot be converted for the search is skipped instead of being searched as leftover bytes.

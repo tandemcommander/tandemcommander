@@ -1,0 +1,125 @@
+sftp279_probe (feature 279), run: before-3541e7ad
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 05:26; desktop 'tc_probe_33612'; ACP 1250; registry key existed True; export SHA-256 BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+Server  : dropsftp.py pid 1940 on 127.0.0.1:2279, root C:\Users\pavel\AppData\Local\Temp\tc279\srv; OpenSSH container tandem-sftp at /home/tctest/tc279
+
+DROPDIR    ROW    PASS        first upload: drop\pack\a.txt 'PACK-A', b.txt 'PACK-B'; an error box False; connected: True [password, host key] at 'sftp:tctest@localhost:2279/pub'; dialogs: typed into [Copy]
+DROPDIR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPDIR2   ROW    FAIL        Move of pack2 into /drop where drop\pack2 exists (not shown): drop\pack2\c.txt '(none)'; the local pack2 gone False; an error box True; connected: True [password, host key] at 'sftp:tctest@localhost:2279/pub'; dialogs: typed into [Move/Rename] || [#32770 'SFTP Error'] [Static id=2477] Cannot create directory "/drop/pack2": SFTP error 4: Failure | [Button id=1] OK || [Move/Rename] came back - cancelled
+DROPDIR2   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPAGAIN  ROW    FAIL        Copy of pack3 again: new.txt '(none)'; old.txt 'OLD-3' (kept); 'Cannot upload' boxes 0; a 'Cannot create' box True; connected: True [password, host key] at 'sftp:tctest@localhost:2279/pub'; dialogs: typed into [Copy] || [#32770 'SFTP Error'] [Static id=2477] Cannot create directory "/drop/pack3": SFTP error 4: Failure | [Button id=1] OK || [Copy] came back - cancelled
+DROPAGAIN  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPNEST   ROW    FAIL        Move of pack4\sub\d.txt where drop\pack4\sub exists: d.txt '(none)'; the local pack4 gone False; an error box True; connected: True [password, host key] at 'sftp:tctest@localhost:2279/pub'; dialogs: typed into [Move/Rename] || [#32770 'SFTP Error'] [Static id=2477] Cannot create directory "/drop/pack4": SFTP error 4: Failure | [Button id=1] OK || [Move/Rename] came back - cancelled
+DROPNEST   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPHOLE   ROW    FAIL        Move of the EMPTY folder hole where drop\hole is a file: folder boxes 0 (all error boxes 1); the local folder kept True; drop\hole still 'A-FILE'; connected: True [password, host key] at 'sftp:tctest@localhost:2279/pub'; dialogs: typed into [Move/Rename] || [#32770 'SFTP Error'] [Static id=2477] Cannot create directory "/drop/hole": SFTP error 4: Failure | [Button id=1] OK || [Move/Rename] came back - cancelled
+DROPHOLE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPEMPTY  ROW    FAIL        Move of the EMPTY folder empty where drop\empty exists (not shown): folder boxes 0 (all error boxes 1); the local folder kept True (review 2 of 258, MUST-1); connected: True [password, host key] at 'sftp:tctest@localhost:2279/pub'; dialogs: typed into [Move/Rename] || [#32770 'SFTP Error'] [Static id=2477] Cannot create directory "/drop/empty": SFTP error 4: Failure | [Button id=1] OK || [Move/Rename] came back - cancelled
+DROPEMPTY  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DROPHOLE2  ROW    FAIL        Move of hole2 (2 files) where drop\hole2 is a file: 'not there' boxes 0 (all error boxes 1); creations asked of the server 0; the local files kept True; drop\hole2 still 'A-FILE-2'; connected: True [password, host key] at 'sftp:tctest@localhost:2279/pub'; dialogs: typed into [Move/Rename] || [#32770 'SFTP Error'] [Static id=2477] Cannot create directory "/drop/hole2": SFTP error 4: Failure | [Button id=1] OK || [Move/Rename] came back - cancelled
+DROPHOLE2  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OSSHCTL    ROW    PASS        Move of the EMPTY folder ctl into tc279/pub: created on the server 1; the local folder gone True; an error box False; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc279/pub'; dialogs: typed into [Move/Rename]
+OSSHCTL    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OSSHLINK   ROW    FAIL        Move of the EMPTY folder x onto a link into a root 0700 folder: folder boxes 0 (all error boxes 1); the local folder kept True; x still a link 1; entries behind it 0; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc279/pub'; dialogs: typed into [Move/Rename] || [#32770 'SFTP Error'] [Static id=2477] Cannot create directory "/home/tctest/tc279/x": SFTP error 4: Failure | [Button id=1] OK || [Move/Rename] came back - cancelled
+OSSHLINK   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OSSHLINK2  ROW    FAIL        Move of x2 (c.txt) onto a link into a root 0700 folder: folder boxes 0 (all error boxes 1 - the file's own box is a recorded limit); the local c.txt kept True; entries behind the link 0; connected: True [password] at 'sftp:tctest@localhost:2222/home/tctest/tc279/pub'; dialogs: typed into [Move/Rename] || [#32770 'SFTP Error'] [Static id=2477] Cannot create directory "/home/tctest/tc279/x2": SFTP error 4: Failure | [Button id=1] OK || [Move/Rename] came back - cancelled
+OSSHLINK2  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+
+Server log:
+  1792553213.447 start 2279 C:\Users\pavel\AppData\Local\Temp\tc279\srv
+  1792553213.554 connect
+  1792553213.559 session error SSHException('Error reading SSH protocol banner[WinError 10054] St\u00E1vaj\u00EDc\u00ED p\u0159ipojen\u00ED bylo vynucen\u011B ukon\u010Deno vzd\u00E1len\u00FDm hostitelem')
+  1792553213.559 disconnected
+  1792553218.386 connect
+  1792553218.890 disconnected
+  1792553219.356 connect
+  1792553219.375 realpath /pub -> /pub
+  1792553219.376 stat /pub ok
+  1792553219.377 opendir /pub ok (0)
+  1792553225.293 mkdir /drop/pack ok
+  1792553225.294 lstat /drop/pack/a.txt DENIED
+  1792553225.294 open /drop/pack/a.txt flags=0x701 exists=False
+  1792553225.296 close /drop/pack/a.txt
+  1792553225.296 stat /drop/pack/a.txt DENIED
+  1792553225.297 lstat /drop/pack/b.txt DENIED
+  1792553225.298 open /drop/pack/b.txt flags=0x701 exists=False
+  1792553225.299 close /drop/pack/b.txt
+  1792553225.299 stat /drop/pack/b.txt DENIED
+  1792553225.300 realpath /pub -> /pub
+  1792553225.301 stat /pub ok
+  1792553225.302 opendir /pub ok (0)
+  1792553231.881 disconnected
+  1792553237.915 connect
+  1792553238.418 disconnected
+  1792553238.887 connect
+  1792553238.891 realpath /pub -> /pub
+  1792553238.892 stat /pub ok
+  1792553238.892 opendir /pub ok (0)
+  1792553244.773 mkdir /drop/pack2 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792553244.773 stat /drop/pack2 DENIED
+  1792553247.914 realpath /pub -> /pub
+  1792553247.915 stat /pub ok
+  1792553247.915 opendir /pub ok (0)
+  1792553254.399 disconnected
+  1792553260.428 connect
+  1792553260.931 disconnected
+  1792553261.393 connect
+  1792553261.411 realpath /pub -> /pub
+  1792553261.412 stat /pub ok
+  1792553261.412 opendir /pub ok (0)
+  1792553267.318 mkdir /drop/pack3 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792553267.319 stat /drop/pack3 DENIED
+  1792553270.439 realpath /pub -> /pub
+  1792553270.440 stat /pub ok
+  1792553270.440 opendir /pub ok (0)
+  1792553276.919 disconnected
+  1792553282.934 connect
+  1792553283.436 disconnected
+  1792553283.895 connect
+  1792553283.913 realpath /pub -> /pub
+  1792553283.914 stat /pub ok
+  1792553283.915 opendir /pub ok (0)
+  1792553289.966 mkdir /drop/pack4 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792553289.967 stat /drop/pack4 DENIED
+  1792553293.100 realpath /pub -> /pub
+  1792553293.101 stat /pub ok
+  1792553293.101 opendir /pub ok (0)
+  1792553299.419 disconnected
+  1792553305.533 connect
+  1792553306.036 disconnected
+  1792553306.506 connect
+  1792553306.525 realpath /pub -> /pub
+  1792553306.526 stat /pub ok
+  1792553306.526 opendir /pub ok (0)
+  1792553312.381 mkdir /drop/hole FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792553312.381 stat /drop/hole DENIED
+  1792553315.518 realpath /pub -> /pub
+  1792553315.519 stat /pub ok
+  1792553315.520 opendir /pub ok (0)
+  1792553322.031 disconnected
+  1792553327.985 connect
+  1792553328.487 disconnected
+  1792553328.960 connect
+  1792553328.978 realpath /pub -> /pub
+  1792553328.978 stat /pub ok
+  1792553328.979 opendir /pub ok (0)
+  1792553335.064 mkdir /drop/empty FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792553335.065 stat /drop/empty DENIED
+  1792553338.181 realpath /pub -> /pub
+  1792553338.182 stat /pub ok
+  1792553338.182 opendir /pub ok (0)
+  1792553344.485 disconnected
+  1792553350.701 connect
+  1792553351.219 disconnected
+  1792553351.667 connect
+  1792553351.670 realpath /pub -> /pub
+  1792553351.671 stat /pub ok
+  1792553351.672 opendir /pub ok (0)
+  1792553357.562 mkdir /drop/hole2 FileExistsError(17, 'Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje')
+  1792553357.563 stat /drop/hole2 DENIED
+  1792553360.682 realpath /pub -> /pub
+  1792553360.683 stat /pub ok
+  1792553360.684 opendir /pub ok (0)
+  1792553367.177 disconnected
+
+Rows: PASS 12, FAIL 8, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

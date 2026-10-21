@@ -1563,12 +1563,41 @@ static CXferResult UploadSecondPass(COperationCtx* ctx, HANDLE lf, const char* t
     return xrFailed;
 }
 
+// feature 279: what an item of an upload tells the folder level that holds it. Passed only by an
+// unconfirmed folder (SftpUnconfirmedDir: it may be there, the server will not show it) to its
+// items; every other caller passes NULL - and the item behaves as before.
+struct CUploadItemNote
+{
+    BOOL QuietNoFolder;    // in: nothing of the folder is confirmed yet - a creation refused because the folder is not there is not shown, only reported
+    BOOL Arrived;          // out: the server confirmed the item (a file written whole; a folder created, shown, or with something confirmed in it)
+    BOOL NoFolder;         // out: the item could not be created - the folder is not there (SftpEndsUnconfirmedDir); no box was shown
+    char NoFolderWhy[300]; // out: with NoFolder, the server's reason
+};
+
+// feature 279: was the creation of 'remotePath' just refused because its folder is not there - in
+// an unconfirmed folder with nothing confirmed yet? Then it is logged and reported to the folder,
+// which shows one box naming itself; TRUE = the caller shows nothing.
+static BOOL UploadNoteNoFolder(COperationCtx* ctx, CUploadItemNote* note, const char* remotePath)
+{
+    CSFTPSession* session = ctx->Session;
+    if (note == NULL || !note->QuietNoFolder ||
+        !SftpEndsUnconfirmedDir(session->IsConnected(), session->GetLastSftpStatus(), 0))
+        return FALSE;
+    Logs.AppendFmt(session->GetLogUID(), "%s cannot be created (%s): its folder is not there.",
+                   CSFTPMsgText(remotePath).Get(), session->GetLastErrorText());
+    note->NoFolder = TRUE;
+    SplU8CopyTrunc(note->NoFolderWhy, sizeof(note->NoFolderWhy), session->GetLastErrorText());
+    return TRUE;
+}
+
 // feature 258: the upload into a folder whose files the server will not show ("drop" folder:
 // it refused the lstat of the target for want of a right). Whether a file of that name exists
 // cannot be learned, so the user cannot be asked: the file is only CREATED (exclusive create),
 // never opened over anything; a server without the exclusive create is not written to. No
 // temporary file: such a server lets nobody rename or remove there. 'lf' stays open.
-static CXferResult UploadDropRoute(COperationCtx* ctx, HANDLE lf, const char* remotePath, unsigned __int64 localSize)
+// feature 279: 'note' (may be NULL): see CUploadItemNote.
+static CXferResult UploadDropRoute(COperationCtx* ctx, HANDLE lf, const char* remotePath, unsigned __int64 localSize,
+                                   CUploadItemNote* note)
 {
     CSFTPSession* session = ctx->Session;
     Logs.AppendFmt(session->GetLogUID(),
@@ -1581,6 +1610,8 @@ static CXferResult UploadDropRoute(COperationCtx* ctx, HANDLE lf, const char* re
     LIBSSH2_SFTP_HANDLE* h = session->OpenWriteNew(remotePath, 0644, TRUE);
     if (h == NULL)
     {
+        if (UploadNoteNoFolder(ctx, note, remotePath)) // feature 279: the folder says it, once
+            return xrFailed;
         char* reason = SftpFormatMsgAlloc("%s - the server does not show whether a file of that name is there; "
                                           "nothing was replaced",
                                           session->GetLastErrorText(), NULL);
@@ -1628,7 +1659,10 @@ static CXferResult UploadFinishMove(COperationCtx* ctx, const wchar_t* wlocal, c
     return res;
 }
 
-static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, const char* remotePath, BOOL move)
+// feature 279: 'note' (may be NULL): see CUploadItemNote - Arrived is set where the upload's own
+// result is known, before a Move removes the local file
+static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, const char* remotePath, BOOL move,
+                                     CUploadItemNote* note)
 {
     CSFTPSession* session = ctx->Session;
     int logUID = session->GetLogUID();
@@ -1659,8 +1693,10 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
     if (old == sxError && SftpTargetStatRefused(session->IsConnected(), session->GetLastSftpStatus()))
     {
         // feature 258: an upload-only folder - created there, or not at all
-        CXferResult dr = UploadDropRoute(ctx, lf, remotePath, (unsigned __int64)localSize.QuadPart);
+        CXferResult dr = UploadDropRoute(ctx, lf, remotePath, (unsigned __int64)localSize.QuadPart, note);
         CloseHandle(lf);
+        if (note != NULL)
+            note->Arrived = dr == xrOk;
         return UploadFinishMove(ctx, wlocal, localPath, dr, move);
     }
     if (old == sxError)
@@ -1736,6 +1772,8 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
             // is opened under the target's name - after an open that timed out the library
             // would hand the temporary file's handle to the next open
             CloseHandle(lf);
+            if (UploadNoteNoFolder(ctx, note, remotePath)) // feature 279: the folder says it, once
+                return xrFailed;
             ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, session->GetLastErrorText());
             return xrFailed;
         }
@@ -1819,14 +1857,17 @@ static CXferResult UploadOneFileImpl(COperationCtx* ctx, const char* localPath, 
             ShowRequestError(ctx, IDS_ERR_UPLOAD, remotePath, why);
     }
     CloseHandle(lf);
+    if (note != NULL)
+        note->Arrived = res == xrOk;
     return UploadFinishMove(ctx, wlocal, localPath, res, move);
 }
 
-static CXferResult UploadOneFile(COperationCtx* ctx, const char* localPath, const char* remotePath, BOOL move)
+static CXferResult UploadOneFile(COperationCtx* ctx, const char* localPath, const char* remotePath, BOOL move,
+                                 CUploadItemNote* note)
 {
     if (StopIfSessionLost(ctx, remotePath)) // feature 139: no further attempt (and box) per item
         return xrFailed;
-    CXferResult res = UploadOneFileImpl(ctx, localPath, remotePath, move);
+    CXferResult res = UploadOneFileImpl(ctx, localPath, remotePath, move, note);
     if (res == xrFailed && ctx->SessionLost()) // (see DownloadOneFile)
         ctx->ReportSessionLost();
     return res;
@@ -1843,6 +1884,9 @@ struct CUploadLevel
     char LPath[4096];
     char RPath[4096];
     WIN32_FIND_DATAW Fd;
+    char MkdirWhy[600];       // feature 279: the reason of a refused Mkdir
+    char NoFolderWhy[300];    // feature 279: the reason an item of an unconfirmed folder could not be created
+    CUploadItemNote ItemNote; // feature 279: what the current item of an unconfirmed folder says
 };
 
 // feature 139: a local folder that is a link to another place (a junction, a directory symbolic
@@ -1866,15 +1910,16 @@ static CXferResult SkipLocalLinkDir(COperationCtx* ctx, const char* localDir)
 }
 
 static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, const char* remoteDir, int depth,
-                                  BOOL move, BOOL linkChecked, CUploadLevel* lv);
+                                  BOOL move, BOOL linkChecked, CUploadLevel* lv, CUploadItemNote* note);
 
 // feature 139: returns the tri-state of the download (feature 138) and carries 'move': each
 // file removes its own local source after its upload was confirmed, a folder is removed when
 // every item of it was moved. (The local tree used to be deleted by listing it again after
 // the upload - whatever was in it at that moment, uploaded or not.) With 'move', xrOk =
 // uploaded AND removed. 'linkChecked': the caller has seen that 'localDir' is not a link.
+// feature 279: 'note' (may be NULL): see CUploadItemNote.
 static CXferResult UploadDirRecursive(COperationCtx* ctx, const char* localDir, const char* remoteDir, int depth,
-                                      BOOL move, BOOL linkChecked)
+                                      BOOL move, BOOL linkChecked, CUploadItemNote* note)
 {
     if (depth > SFTP_MAX_RECURSION) // CF-5
     {
@@ -1888,13 +1933,13 @@ static CXferResult UploadDirRecursive(COperationCtx* ctx, const char* localDir, 
         SalamanderGeneral->SalMessageBox(ctx->Parent, LOW_MEMORY, LoadStr(IDS_SFTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
         return xrFailed;
     }
-    CXferResult res = UploadDirLevel(ctx, localDir, remoteDir, depth, move, linkChecked, lv);
+    CXferResult res = UploadDirLevel(ctx, localDir, remoteDir, depth, move, linkChecked, lv, note);
     free(lv);
     return res;
 }
 
 static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, const char* remoteDir, int depth,
-                                  BOOL move, BOOL linkChecked, CUploadLevel* lv)
+                                  BOOL move, BOOL linkChecked, CUploadLevel* lv, CUploadItemNote* note)
 {
     CSFTPSession* session = ctx->Session;
     int logUID = session->GetLogUID();
@@ -1953,22 +1998,55 @@ static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, cons
     // feature 139: the directory must be there, as a directory. A failed Mkdir was ignored
     // ("already exists"): with a file of that name in the way, or no right to create it,
     // nothing below was uploaded and all of it counted as uploaded.
+    // feature 279: an "unconfirmed" folder (SftpUnconfirmedDir) - the creation may have met it and
+    // the server will not show it (an upload-only folder, a folder uploaded again) - is gone on
+    // with for its items' sake only: it counts what the server confirmed of it, and with nothing
+    // confirmed it fails and stays (a Move used to delete an EMPTY folder that never arrived).
+    char* mkdirWhy = lv->MkdirWhy;
+    mkdirWhy[0] = 0;
+    BOOL unconfirmed = FALSE;
     if (!session->Mkdir(remoteDir, 0755))
     {
-        char why[600];
-        SplU8CopyTrunc(why, sizeof(why), session->GetLastErrorText());
-        LIBSSH2_SFTP_ATTRIBUTES dirAttrs;
-        if (!session->Stat(remoteDir, TRUE, &dirAttrs) || (dirAttrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) == 0 ||
-            !SFTP_S_ISDIR(dirAttrs.permissions))
+        SplU8CopyTrunc(mkdirWhy, sizeof(lv->MkdirWhy), session->GetLastErrorText());
+        BOOL mkdirConnected = session->IsConnected();
+        unsigned long mkdirStatus = session->GetLastSftpStatus();
+        if (UploadNoteNoFolder(ctx, note, remoteDir)) // feature 279: the parent is not there - it says so, once
         {
             if (hFind != INVALID_HANDLE_VALUE)
                 FindClose(hFind);
-            ShowRequestError(ctx, IDS_ERR_MKDIR, remoteDir, why);
             return xrFailed;
         }
+        LIBSSH2_SFTP_ATTRIBUTES dirAttrs;
+        CSFTPStatResult dirSt = session->StatEx(remoteDir, TRUE, &dirAttrs);
+        BOOL isDir = dirSt == sxFound && (dirAttrs.flags & LIBSSH2_SFTP_ATTR_PERMISSIONS) != 0 &&
+                     SFTP_S_ISDIR(dirAttrs.permissions);
+        if (!isDir) // (a folder: it is there, the items go on as before)
+        {
+            if (dirSt == sxError &&
+                SftpUnconfirmedDir(mkdirConnected, mkdirStatus, session->IsConnected(), session->GetLastSftpStatus()))
+            {
+                unconfirmed = TRUE;
+                Logs.AppendFmt(logUID,
+                               "The folder %s could not be created (%s) and the server does not show whether it exists (%s); "
+                               "its items are tried.",
+                               CSFTPMsgText(remoteDir).Get(), mkdirWhy, session->GetLastErrorText());
+            }
+            else
+            {
+                if (hFind != INVALID_HANDLE_VALUE)
+                    FindClose(hFind);
+                ShowRequestError(ctx, IDS_ERR_MKDIR, remoteDir, mkdirWhy);
+                return xrFailed;
+            }
+        }
     }
+    if (note != NULL && !unconfirmed)
+        note->Arrived = TRUE; // created, or shown as a folder
 
     CXferResult agg = xrOk; // xrOk only if every item was fully transferred (and, in a move, removed)
+    int confirmed = 0;      // feature 279: (unconfirmed) items the server confirmed
+    BOOL noFolder = FALSE;  // feature 279: (unconfirmed) an item could not be created - the folder is not there
+    lv->NoFolderWhy[0] = 0;
     DWORD listErr = ERROR_NO_MORE_FILES;
     BOOL more = hFind != INVALID_HANDLE_VALUE;
     while (more && !ctx->CheckCancel())
@@ -1981,6 +2059,9 @@ static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, cons
         if (wcscmp(lv->Fd.cFileName, L".") != 0 && wcscmp(lv->Fd.cFileName, L"..") != 0)
         {
             CXferResult r;
+            memset(&lv->ItemNote, 0, sizeof(lv->ItemNote));
+            lv->ItemNote.QuietNoFolder = confirmed == 0;
+            CUploadItemNote* itemNotePtr = unconfirmed ? &lv->ItemNote : NULL; // (any other folder: as before)
             if (!WideToUtf8(lv->Fd.cFileName, lv->Name, sizeof(lv->Name)) ||
                 !LocalPathAppend(localDir, lv->Name, lv->LPath, sizeof(lv->LPath)) ||
                 PosixPathAppend(remoteDir, lv->Name, lv->RPath, sizeof(lv->RPath)) == NULL)
@@ -1993,17 +2074,26 @@ static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, cons
                 if (SftpLocalDirIsLink(lv->Fd.dwFileAttributes, lv->Fd.dwReserved0))
                     r = SkipLocalLinkDir(ctx, lv->LPath); // a junction inside the tree is not entered
                 else
-                    r = UploadDirRecursive(ctx, lv->LPath, lv->RPath, depth + 1, move, TRUE);
+                    r = UploadDirRecursive(ctx, lv->LPath, lv->RPath, depth + 1, move, TRUE, itemNotePtr);
             }
             else
             {
                 WaitText("Uploading %s ...", lv->Name);
-                r = UploadOneFile(ctx, lv->LPath, lv->RPath, move);
+                r = UploadOneFile(ctx, lv->LPath, lv->RPath, move, itemNotePtr);
             }
             if (r == xrFailed)
                 agg = xrFailed;
             else if (r == xrSkipped && agg == xrOk)
                 agg = xrSkipped;
+            if (itemNotePtr != NULL && lv->ItemNote.Arrived)
+                confirmed++;
+            if (itemNotePtr != NULL && lv->ItemNote.NoFolder) // feature 279: the rest is not tried
+            {
+                noFolder = TRUE;
+                SplU8CopyTrunc(lv->NoFolderWhy, sizeof(lv->NoFolderWhy), lv->ItemNote.NoFolderWhy);
+                agg = xrFailed;
+                break;
+            }
         }
         if (!FindNextFileW(hFind, &lv->Fd))
         {
@@ -2020,6 +2110,28 @@ static CXferResult UploadDirLevel(COperationCtx* ctx, const char* localDir, cons
         Logs.AppendFmt(logUID, "The listing of the local folder ended early (error %u): %s", (unsigned)listErr, localDir);
         SFTPShowPathError(ctx->Parent, IDS_ERR_OPENLOCAL, localDir, NULL, logUID);
         return xrFailed;
+    }
+    if (unconfirmed)
+    {
+        // feature 279: the folder counts as there only when the server confirmed something of it
+        if (StopIfSessionLost(ctx, remoteDir)) // (the one box of a lost connection; the folder stays)
+            return xrFailed;
+        CSftpUnconfirmedDirVerdict verdict = SftpUnconfirmedDirVerdict(confirmed, noFolder);
+        if (verdict != udConfirmed)
+        {
+            char* reason =
+                verdict == udNotThere
+                    ? SftpFormatMsgAlloc("%s - a file or folder could not be created in it (%s): the folder is not there",
+                                         mkdirWhy, lv->NoFolderWhy)
+                    : SftpFormatMsgAlloc("%s - the server does not show whether the folder is there; nothing of it was "
+                                         "confirmed to arrive",
+                                         mkdirWhy, NULL);
+            ShowRequestError(ctx, IDS_ERR_MKDIR, remoteDir, reason != NULL ? reason : mkdirWhy);
+            free(reason);
+            return xrFailed;
+        }
+        if (note != NULL)
+            note->Arrived = TRUE; // something of it arrived: it is there
     }
     if (move && StopIfSessionLost(ctx, remoteDir)) // feature 140: nothing is removed once the connection is lost
         return xrFailed;
@@ -2074,11 +2186,11 @@ BOOL SFTPUploadToFS(HWND parent, CSFTPSession* session, const char* sourcePath,
         // (the user's "No", a link folder) is not a failure, as in a download.
         CXferResult r;
         if (isDir)
-            r = UploadDirRecursive(&ctx, lpath, rpath, 0, move, FALSE);
+            r = UploadDirRecursive(&ctx, lpath, rpath, 0, move, FALSE, NULL);
         else
         {
             WaitText("Uploading %s ...", name);
-            r = UploadOneFile(&ctx, lpath, rpath, move);
+            r = UploadOneFile(&ctx, lpath, rpath, move, NULL);
         }
         if (r == xrFailed)
             ok = FALSE;

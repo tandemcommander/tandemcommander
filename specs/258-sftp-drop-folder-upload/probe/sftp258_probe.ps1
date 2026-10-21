@@ -25,7 +25,9 @@
                  refuses its removal), the local file stays
       DROPDIR2   Move the folder pack2 (c.txt) to /drop where drop\pack2 exists already (the
                  server will not show it): PASS = a box names the folder, the local files stay
-                 (a folder uploaded again into a drop folder is a recorded limit)
+                 (a folder uploaded again into a drop folder is a recorded limit - removed by
+                 feature 279: the folder now arrives and this row FAILS by design; 279's probe
+                 row DROPDIR2 supersedes it)
       DROPHOLE   Move the EMPTY folder hole to /drop where drop\hole is a file: PASS = a box
                  names the folder, the local folder stays (review 2 of 258, MUST-1)
       DROPNOEXCL Move mv.txt to /dropnx (a drop folder whose server IGNORES the exclusive create)
