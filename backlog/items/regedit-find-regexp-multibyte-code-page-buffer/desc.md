@@ -1,7 +1,7 @@
 ---
 title: Registry Editor Find: regexp misses text past the code-page length of a value
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: other-plugins
 source: review:257
@@ -10,7 +10,7 @@ created: 2026-10-20
 updated: 2026-10-21
 verified: 2026-10-21 cffe5eca
 effort: S
-feature: -
+feature: 278
 related: []
 depends-on: []
 reason: -
@@ -57,3 +57,4 @@ feature 257 did for the hex pattern (`src/common/salregfind.h`).
 - 2026-10-20 — related item regedit-find-whole-words-and-quoted-hex-letters done in feature 257
 - 2026-10-20 — moved to Next position 18
 - 2026-10-21 — verified at cffe5eca: present at cffe5eca: Test regexp branch sizes the CP_ACP buffer by units; WideCharToMultiByte(65001) of cccc bar into 8 bytes returns 0, needs 12; bar never scanned
+- 2026-10-21 — run started, feature 278

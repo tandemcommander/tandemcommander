@@ -3,7 +3,7 @@
 **Feature Branch**: `278-regedt-find-regexp-cp`
 **Created**: 2026-10-21
 **Status**: Draft
-**Input**: User description: "Backlog item regedit-find-regexp-multibyte-code-page-buffer - implement exactly what it describes."
+**Input**: User description: "Backlog item regedit-find-regexp-multibyte-code-page-buffer - implement exactly what it describes." From backlog item regedit-find-regexp-multibyte-code-page-buffer.
 
 ## Background (measured at cffe5eca)
 
