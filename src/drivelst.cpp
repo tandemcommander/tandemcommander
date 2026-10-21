@@ -14,8 +14,14 @@
 #include "shellib.h"
 #include "toolbar.h"
 #include "shiconov.h"
-#include "gui.h"         // CopyToolTipAnswer (feature 246)
-#include "salnetdrive.h" // feature 246
+#include "gui.h"          // CopyToolTipAnswer (feature 246)
+#include "salnetdrive.h"  // feature 246
+#include "saldrivetext.h" // feature 289
+
+// feature 289: a drive's name in the Change Drive menu / drive bar tooltip is UTF-8 of up to
+// SAL_DRIVE_TEXT_U8_MAX - 1 bytes; with every '&' doubled for the menu it still fits this
+#define DRIVE_MENU_NAME_MAX (2 * SAL_DRIVE_TEXT_U8_MAX)
+static_assert(sizeof(ReadCDVolNameBuffer) == SAL_DRIVE_TEXT_U8_MAX, "289: the CD label is handed over whole");
 
 CNBWNetAC3Thread NBWNetAC3Thread;
 
@@ -1565,17 +1571,18 @@ void GetDisplayNameFromSystem(const char* root, char* volumeName, int volumeName
 {
     CALL_STACK_MESSAGE2("GetDisplayNameFromSystem(%s)", root);
 
-    SHFILEINFO fi;
-    if (SHGetFileInfo(root, 0, &fi, sizeof(fi), SHGFI_DISPLAYNAME))
+    // feature 289: the wide call - the code-page one gave '?' for every character of the name
+    // outside the code page; UTF-8 like every other drive text (saldrivetext.h). A name that does
+    // not fit the caller's buffer whole leaves it empty (the caller shows "Removable Drive").
+    WCHAR rootW[MAX_PATH];
+    SHFILEINFOW fi;
+    if (volumeNameBufSize > 0 && SalU8ToW(root, -1, rootW, _countof(rootW)) != 0 &&
+        SHGetFileInfoW(rootW, 0, &fi, sizeof(fi), SHGFI_DISPLAYNAME))
     {
-        lstrcpyn(volumeName, fi.szDisplayName, volumeNameBufSize);
-        char* s = strrchr(volumeName, '(');
-        if (s != NULL)
-        {
-            while (s > volumeName && *(s - 1) == ' ')
-                s--;
-            *s = 0;
-        }
+        fi.szDisplayName[_countof(fi.szDisplayName) - 1] = 0;
+        SalDriveNameTrimLetterSuffixW(fi.szDisplayName);
+        if (SalWToU8(fi.szDisplayName, -1, volumeName, volumeNameBufSize) == 0)
+            volumeName[0] = 0;
     }
 }
 
@@ -1585,30 +1592,37 @@ unsigned ReadCDVolNameThreadFBody(void* param) // directory accessibility test
     UINT_PTR uid = (UINT_PTR)param;
     char root[MAX_PATH];
     root[0] = 0;
-    char buf[MAX_PATH];
+    char buf[SAL_DRIVE_TEXT_U8_MAX];
     buf[0] = 0;
 
     HANDLES(EnterCriticalSection(&ReadCDVolNameCS));
     BOOL run = FALSE;
     if (uid == ReadCDVolNameReqUID) // someone is still waiting for an answer
     {
-        lstrcpyn(root, ReadCDVolNameBuffer, MAX_PATH);
+        lstrcpyn(root, ReadCDVolNameBuffer, MAX_PATH); // the root, e.g. "D:\"
         run = TRUE;
     }
     HANDLES(LeaveCriticalSection(&ReadCDVolNameCS));
 
     if (run)
     {
+        // feature 289: the wide call, the label kept as UTF-8 (the code-page call gave '?' for every
+        // character outside the code page); a failure is not retried in the code page
+        WCHAR rootW[MAX_PATH];
+        WCHAR labelW[MAX_PATH + 1];
         DWORD dummy;
-        char fileSystem[11];
-        if (!GetVolumeInformation(root, buf, MAX_PATH, NULL, &dummy, &dummy, fileSystem, 10))
-            buf[0] = 0; // GetVolumeInformation failed
+        if (SalU8ToW(root, -1, rootW, _countof(rootW)) == 0 ||
+            !GetVolumeInformationW(rootW, labelW, _countof(labelW), NULL, &dummy, &dummy, NULL, 0) ||
+            SalWToU8(labelW, -1, buf, sizeof(buf)) == 0)
+        {
+            buf[0] = 0; // GetVolumeInformationW failed
+        }
         if (buf[0] == 0)
-            GetDisplayNameFromSystem(root, buf, MAX_PATH);
+            GetDisplayNameFromSystem(root, buf, sizeof(buf));
 
         HANDLES(EnterCriticalSection(&ReadCDVolNameCS));
         if (uid == ReadCDVolNameReqUID) // someone is still waiting for an answer
-            lstrcpyn(ReadCDVolNameBuffer, buf, MAX_PATH);
+            strcpy_s(ReadCDVolNameBuffer, buf);
         HANDLES(LeaveCriticalSection(&ReadCDVolNameCS));
     }
     return 0;
@@ -2314,7 +2328,7 @@ int GetOneDriveStorages()
 void CDrivesList::AddToDrives(CDriveData& drv, int textResId, char hotkey, CDriveTypeEnum driveType,
                               BOOL getGrayIcons, HICON icon, BOOL destroyIcon, const char* itemText)
 {
-    const char* s = itemText != NULL ? itemText : LoadStr(textResId);
+    const char* s = itemText != NULL ? itemText : LoadStrU8(textResId);
     // WARNING: for drvtOneDriveBus, DisplayName is later taken from drv.DriveText; if the text format changes, update this accordingly
     char* txt = (char*)malloc(1 + (hotkey == 0 ? 0 : 1) + strlen(s) + 1);
     strcpy(txt, hotkey == 0 ? "\t" : " \t");
@@ -2454,7 +2468,8 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                 }
                 drv.Shared = FALSE;
                 drv.Accessible = (mask & i) != 0;
-                char volumeName[MAX_PATH + 50];
+                // feature 289: a UTF-8 name with every '&' doubled + free space
+                char volumeName[DRIVE_MENU_NAME_MAX + 100];
                 char* netText = NULL; // feature 246: the whole text of a network drive (heap, never cut)
                 freeSpace = CQuadWord(-1, -1);
                 switch (drv.DriveType)
@@ -2469,21 +2484,21 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                         switch (medium)
                         {
                         case 350:
-                            strcpy(volumeName, LoadStr(IDS_FLOPPY350));
+                            strcpy(volumeName, LoadStrU8(IDS_FLOPPY350));
                             break;
                         case 525:
-                            strcpy(volumeName, LoadStr(IDS_FLOPPY525));
+                            strcpy(volumeName, LoadStrU8(IDS_FLOPPY525));
                             break;
                         case 800:
-                            strcpy(volumeName, LoadStr(IDS_FLOPPY800));
+                            strcpy(volumeName, LoadStrU8(IDS_FLOPPY800));
                             break;
                         default:
                         {
-                            GetDisplayNameFromSystem(root, volumeName, MAX_PATH);
+                            GetDisplayNameFromSystem(root, volumeName, SAL_DRIVE_TEXT_U8_MAX);
                             if (volumeName[0] == 0)
-                                strcpy(volumeName, LoadStr(IDS_REMOVABLE_DISK));
+                                strcpy(volumeName, LoadStrU8(IDS_REMOVABLE_DISK));
                             else
-                                DuplicateAmpersands(volumeName, MAX_PATH);
+                                DuplicateAmpersands(volumeName, DRIVE_MENU_NAME_MAX);
                             break;
                         }
                         }
@@ -2500,14 +2515,14 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                     // downstream could recover it; the sinks (menu3.cpp,
                     // dialogs3.cpp) are UTF-8-first with an ANSI fallback, so a
                     // label that renders correctly today keeps doing so
-                    if (GetVolumeInformationU8Menu(root, volumeName, MAX_PATH, &flags))
+                    if (GetVolumeInformationU8Menu(root, volumeName, SAL_DRIVE_TEXT_U8_MAX, &flags))
                     {
                         CQuadWord t;                              // total disk space
                         freeSpace = MyGetDiskFreeSpace(root, &t); // free disk space
                         // double '&' so that it is not displayed as an underline
-                        DuplicateAmpersands(volumeName, MAX_PATH);
+                        DuplicateAmpersands(volumeName, DRIVE_MENU_NAME_MAX);
                         if (volumeName[0] == 0)
-                            strcpy(volumeName, LoadStr(IDS_LOCAL_DISK));
+                            strcpy(volumeName, LoadStrU8(IDS_LOCAL_DISK));
                     }
                     else
                     {
@@ -2548,7 +2563,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                             volumeName[0] = 0;
                     }
                     // double '&' so that it is not displayed as an underline
-                    DuplicateAmpersands(volumeName, MAX_PATH);
+                    DuplicateAmpersands(volumeName, DRIVE_MENU_NAME_MAX);
                     break;
                 }
 
@@ -2567,7 +2582,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
 
                     { // give it 500ms to find out the volume-name
                         HANDLES(EnterCriticalSection(&ReadCDVolNameCS));
-                        lstrcpyn(volumeName, ReadCDVolNameBuffer, MAX_PATH + 50);
+                        strcpy_s(volumeName, ReadCDVolNameBuffer); // fits whole (feature 289)
                         HANDLES(LeaveCriticalSection(&ReadCDVolNameCS));
                     }
                     else
@@ -2575,11 +2590,11 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                     if (thread != NULL)
                         AddAuxThread(thread, TRUE); // if the thread is not finished, we will kill it before closing the software
                     if (volumeName[0] == 0)
-                        strcpy(volumeName, LoadStr(IDS_COMPACT_DISK));
+                        strcpy(volumeName, LoadStrU8(IDS_COMPACT_DISK));
                     else
                     {
                         // double '&' so that it is not displayed as an underline
-                        DuplicateAmpersands(volumeName, MAX_PATH);
+                        DuplicateAmpersands(volumeName, DRIVE_MENU_NAME_MAX);
                     }
                     break;
                 }
@@ -2593,7 +2608,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                     if (p == volumeName)
                         *p++ = '\t';
                     *p++ = '\t';
-                    PrintDiskSize(p, freeSpace, 0);
+                    PrintDiskSize(p, freeSpace, 0, TRUE); // UTF-8 units (feature 289)
                 }
                 if (netText != NULL)
                 { // feature 246: 'z' + '\t' + text + 0
@@ -2662,6 +2677,8 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
     // probe seam (feature 246): the drive items just built
     ProbeDrivesDump("BUILD bar=%d copy=%d drives=%08X netdisc=%08X", forDriveBar ? 1 : 0, copyDrives != NULL ? 1 : 0,
                     CachedDrivesMask, CachedNetDisconnectedMask);
+    // feature 289: the panel's two type names (specs/289-drive-list-wide-texts/contracts/probe-seam.md)
+    ProbeDrivesDump("TYPES folder=%s updir=%s", FolderTypeName, UpDirTypeName != NULL ? UpDirTypeName : "");
     for (int probeIndex = 0; probeIndex < Drives->Count; probeIndex++)
     {
         const CDriveData* probeItem = &Drives->At(probeIndex);
@@ -2807,7 +2824,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
         BOOL destroyOneDriveIco = oneDriveIco != NULL;
         if (forDriveBar && c > 1) // data for the drive bar when there are multiple storages = let the user choose from the menu (drop-down)
         {
-            strcpy_s(itemText, LoadStr(IDS_ONEDRIVE));
+            strcpy_s(itemText, LoadStrU8(IDS_ONEDRIVE));
             AddToDrives(drv, 0, 0, drvtOneDriveMenu, getGrayIcons, oneDriveIco, destroyOneDriveIco, itemText);
             destroyOneDriveIco = FALSE;
         }
@@ -2816,15 +2833,15 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
             if (OneDrivePath[0] != 0) // personal
             {
                 if (c == 1)
-                    strcpy_s(itemText, LoadStr(IDS_ONEDRIVE)); // the only personal storage = we write only: OneDrive
+                    strcpy_s(itemText, LoadStrU8(IDS_ONEDRIVE)); // the only personal storage = we write only: OneDrive
                 else
-                    sprintf_s(itemText, "%s - %s", LoadStr(IDS_ONEDRIVE), LoadStr(IDS_ONEDRIVEPERSONAL));
+                    sprintf_s(itemText, "%s - %s", LoadStrU8(IDS_ONEDRIVE), LoadStrU8(IDS_ONEDRIVEPERSONAL));
                 AddToDrives(drv, 0, 0, drvtOneDrive, getGrayIcons, oneDriveIco, destroyOneDriveIco, itemText);
                 destroyOneDriveIco = FALSE;
             }
             for (int i = 0; i < OneDriveBusinessStorages.Count; i++) // business storages
             {                                                        // WARNING: For drvtOneDriveBus, DisplayName is later taken from drv.DriveText; if the text format changes, update this too.
-                sprintf_s(itemText, "%s - %s", LoadStr(IDS_ONEDRIVE), OneDriveBusinessStorages[i]->DisplayName);
+                sprintf_s(itemText, "%s - %s", LoadStrU8(IDS_ONEDRIVE), OneDriveBusinessStorages[i]->DisplayName);
                 AddToDrives(drv, 0, 0, drvtOneDriveBus, getGrayIcons, oneDriveIco, destroyOneDriveIco, itemText);
                 destroyOneDriveIco = FALSE;
             }
@@ -2892,7 +2909,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
     if (Configuration.ChangeDriveShowAnother)
     {
         // a variant with a string 'Another Panel Path' ('As Another Panel'?)
-        char* s = LoadStr(IDS_ANOTHERPANEL);
+        char* s = LoadStrU8(IDS_ANOTHERPANEL);
         char* txt = (char*)malloc(2 + strlen(s) + 1);
         if (txt != NULL)
         {
@@ -3009,6 +3026,16 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
     {
         HANDLES(DestroyIcon(drv.HIcon));
     }
+#ifdef _DEBUG
+    // probe seam (feature 289): the whole list as built - drives, cloud storages, Documents,
+    // Network, plug-in items and hot paths
+    for (int probeIndex = 0; probeIndex < Drives->Count; probeIndex++)
+    {
+        const CDriveData* probeItem = &Drives->At(probeIndex);
+        if (probeItem->DriveType != drvtSeparator && probeItem->DriveText != NULL)
+            ProbeDrivesDump("ALL idx=%d type=%d text=%s", probeIndex, (int)probeItem->DriveType, probeItem->DriveText);
+    }
+#endif // _DEBUG
     return TRUE;
 }
 
@@ -3103,7 +3130,7 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
             s++; // hot key
         if (*s == '\t')
             s++;
-        s += strlen(LoadStr(IDS_ONEDRIVE)) + 3 /* " - " */;
+        s += strlen(LoadStrU8(IDS_ONEDRIVE)) + 3 /* " - " */;
         if (s <= end)
             *DriveTypeParam = (DWORD_PTR)DupStr(s); // DisplayName
         else
@@ -3133,14 +3160,14 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
             char itemText[200 + ONEDRIVE_MAXBUSINESSDISPLAYNAME];
             if (OneDrivePath[0] != 0) // personal
             {
-                sprintf_s(itemText, "%s - %s", LoadStr(IDS_ONEDRIVE), LoadStr(IDS_ONEDRIVEPERSONAL));
+                sprintf_s(itemText, "%s - %s", LoadStrU8(IDS_ONEDRIVE), LoadStrU8(IDS_ONEDRIVEPERSONAL));
                 mii.String = itemText;
                 mii.ID = 1;
                 menu.InsertItem(-1, TRUE, &mii);
             }
             for (int i = 0; i < OneDriveBusinessStorages.Count; i++) // business
             {
-                sprintf_s(itemText, "%s - %s", LoadStr(IDS_ONEDRIVE), OneDriveBusinessStorages[i]->DisplayName);
+                sprintf_s(itemText, "%s - %s", LoadStrU8(IDS_ONEDRIVE), OneDriveBusinessStorages[i]->DisplayName);
                 mii.String = itemText;
                 mii.ID = i + 2;
                 menu.InsertItem(-1, TRUE, &mii);
@@ -3160,7 +3187,7 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
                     {
                         const char* s = mii.String;
                         const char* end = s + strlen(s);
-                        s += strlen(LoadStr(IDS_ONEDRIVE)) + 3 /* " - " */;
+                        s += strlen(LoadStrU8(IDS_ONEDRIVE)) + 3 /* " - " */;
                         if (s <= end)
                         {
                             *DriveType = drvtOneDriveBus;
@@ -3409,7 +3436,8 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
 
     text[0] = 0;
 
-    char volumeName[MAX_PATH + 50];
+    // feature 289: a UTF-8 name with every '&' doubled + free space
+    char volumeName[DRIVE_MENU_NAME_MAX + 100];
     CQuadWord freeSpace;
     char freeSpaceText[100];
     char root[10] = " :\\";
@@ -3428,19 +3456,19 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
             switch (medium)
             {
             case 350:
-                strcpy(volumeName, LoadStr(IDS_FLOPPY350));
+                strcpy(volumeName, LoadStrU8(IDS_FLOPPY350));
                 break;
             case 525:
-                strcpy(volumeName, LoadStr(IDS_FLOPPY525));
+                strcpy(volumeName, LoadStrU8(IDS_FLOPPY525));
                 break;
             case 800:
-                strcpy(volumeName, LoadStr(IDS_FLOPPY800));
+                strcpy(volumeName, LoadStrU8(IDS_FLOPPY800));
                 break;
             default:
             {
-                GetDisplayNameFromSystem(root, volumeName, MAX_PATH);
+                GetDisplayNameFromSystem(root, volumeName, SAL_DRIVE_TEXT_U8_MAX);
                 if (volumeName[0] == 0)
-                    strcpy(volumeName, LoadStr(IDS_REMOVABLE_DISK));
+                    strcpy(volumeName, LoadStrU8(IDS_REMOVABLE_DISK));
 
                 break;
             }
@@ -3456,13 +3484,13 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
         root[0] = item->DriveText[0];
         DWORD flags;
         // feature 069 (F-P1-14): see the note at the drive-menu site
-        if (GetVolumeInformationU8Menu(root, volumeName, MAX_PATH, &flags))
+        if (GetVolumeInformationU8Menu(root, volumeName, SAL_DRIVE_TEXT_U8_MAX, &flags))
         {
             CQuadWord t;                              // total disk space
             freeSpace = MyGetDiskFreeSpace(root, &t); // free disk space
-            PrintDiskSize(freeSpaceText, freeSpace, 0);
+            PrintDiskSize(freeSpaceText, freeSpace, 0, TRUE); // UTF-8 units (feature 289)
             if (volumeName[0] == 0)
-                strcpy(volumeName, LoadStr(IDS_LOCAL_DISK));
+                strcpy(volumeName, LoadStrU8(IDS_LOCAL_DISK));
             sprintf(text, "%s (%s)", volumeName, freeSpaceText);
         }
         break;
@@ -3483,7 +3511,7 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
         if (thread != NULL && WaitForSingleObject(thread, 500) == WAIT_OBJECT_0)
         { // give it 500ms to find out the volume-name
             HANDLES(EnterCriticalSection(&ReadCDVolNameCS));
-            lstrcpyn(volumeName, ReadCDVolNameBuffer, MAX_PATH + 50);
+            strcpy_s(volumeName, ReadCDVolNameBuffer); // fits whole (feature 289)
             HANDLES(LeaveCriticalSection(&ReadCDVolNameCS));
         }
         else
@@ -3491,7 +3519,7 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
         if (thread != NULL)
             AddAuxThread(thread, TRUE); // if the thread is still running, we will kill it before closing the program
         if (volumeName[0] == 0)
-            strcpy(volumeName, LoadStr(IDS_COMPACT_DISK));
+            strcpy(volumeName, LoadStrU8(IDS_COMPACT_DISK));
 
         strcpy(text, volumeName);
         break;
@@ -3518,28 +3546,24 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
                 free(stored);
             }
         }
-#ifdef _DEBUG
-        // probe seam (feature 246)
-        ProbeDrivesDump("TIP %c %s", item->DriveText[0], text);
-#endif // _DEBUG
         break;
     }
 
     case drvtMyDocuments:
-        strcpy(text, LoadStr(IDS_MYDOCUMENTS));
+        strcpy(text, LoadStrU8(IDS_MYDOCUMENTS));
         break;
     case drvtGoogleDrive:
-        strcpy(text, LoadStr(IDS_GOOGLEDRIVE));
+        strcpy(text, LoadStrU8(IDS_GOOGLEDRIVE));
         break;
     case drvtDropbox:
-        strcpy(text, LoadStr(IDS_DROPBOX));
+        strcpy(text, LoadStrU8(IDS_DROPBOX));
         break;
     case drvtOneDrive:
     case drvtOneDriveMenu:
-        strcpy(text, LoadStr(IDS_ONEDRIVE));
+        strcpy(text, LoadStrU8(IDS_ONEDRIVE));
         break;
     case drvtNeighborhood:
-        strcpy(text, LoadStr(IDS_NETWORKDRIVE));
+        strcpy(text, LoadStrU8(IDS_NETWORKDRIVE));
         break;
 
     case drvtOneDriveBus:
@@ -3569,6 +3593,10 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
         break;
     }
     }
+#ifdef _DEBUG
+    // probe seam (feature 246; every drive type since feature 289)
+    ProbeDrivesDump("TIP %c %s", item->DriveText[0], text);
+#endif // _DEBUG
     return TRUE;
 }
 
@@ -3985,8 +4013,8 @@ void CDrivesList::ProbeDumpToolTips()
         return;
     for (int i = 0; i < Drives->Count; i++)
     {
-        if (Drives->At(i).DriveType == drvtRemote)
-            GetDriveBarToolTip(i, text); // records "TIP <letter> <text>"
+        if (Drives->At(i).DriveType != drvtSeparator)
+            GetDriveBarToolTip(i, text); // records "TIP <letter> <text>" (every drive type, feature 289)
     }
     free(text);
 }

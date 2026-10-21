@@ -88,6 +88,7 @@
 #include "salumvalue.h"       // feature 280
 #include "salmaskopt.h"       // feature 283
 #include "salftpsrvenc.h"     // feature 288
+#include "saldrivetext.h"     // feature 289
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -16307,6 +16308,56 @@ static void TestFtpServerEncoding288()
     CHECK(!SalFtpSameServer("host", 21, "u", "other", 21, "u"));
 }
 
+// feature 289: drive names and folder type names from the wide shell / volume calls (saldrivetext.h)
+static void TestDriveText289()
+{
+    // the drive letter suffix: cut at the last '(' with the spaces before it
+    {
+        WCHAR name[64];
+        wcscpy_s(name, L"USB stick (E:)");
+        SalDriveNameTrimLetterSuffixW(name);
+        CHECK(wcscmp(name, L"USB stick") == 0);
+        wcscpy_s(name, L"\x0414\x0438\x0441\x043A   (F:)"); // Cyrillic, several spaces
+        SalDriveNameTrimLetterSuffixW(name);
+        CHECK(wcscmp(name, L"\x0414\x0438\x0441\x043A") == 0);
+        wcscpy_s(name, L"A (b) (G:)"); // the last '(' only
+        SalDriveNameTrimLetterSuffixW(name);
+        CHECK(wcscmp(name, L"A (b)") == 0);
+        wcscpy_s(name, L"No letter");
+        SalDriveNameTrimLetterSuffixW(name);
+        CHECK(wcscmp(name, L"No letter") == 0);
+        wcscpy_s(name, L"(H:)");
+        SalDriveNameTrimLetterSuffixW(name);
+        CHECK(name[0] == 0);
+        wcscpy_s(name, L"  (H:)");
+        SalDriveNameTrimLetterSuffixW(name);
+        CHECK(name[0] == 0);
+        wcscpy_s(name, L"");
+        SalDriveNameTrimLetterSuffixW(name);
+        CHECK(name[0] == 0);
+        SalDriveNameTrimLetterSuffixW(NULL); // ignored
+    }
+
+    // the bounds hold the longest answer of each call without a cut
+    {
+        // a display name / label: MAX_PATH - 1 units of 3-byte characters
+        std::wstring longest(MAX_PATH - 1, L'\x6863');
+        char buf[SAL_DRIVE_TEXT_U8_MAX];
+        int n = SalWToU8(longest.c_str(), -1, buf, sizeof(buf));
+        CHECK(n == 3 * (MAX_PATH - 1) + 1);
+        // surrogate pairs: 2 units -> 4 bytes, fewer than 3 per unit
+        std::wstring pairs;
+        for (int i = 0; i < (MAX_PATH - 1) / 2; i++)
+            pairs += L"\xD83D\xDE00";
+        CHECK(SalWToU8(pairs.c_str(), -1, buf, sizeof(buf)) == 4 * ((MAX_PATH - 1) / 2) + 1);
+        // a type name: 79 units of 3-byte characters
+        std::wstring type(79, L'\x1159'); // 3 bytes each
+        char typeBuf[SAL_FOLDER_TYPE_U8_MAX];
+        CHECK(SalWToU8(type.c_str(), -1, typeBuf, sizeof(typeBuf)) == 3 * 79 + 1);
+        CHECK(SAL_FOLDER_TYPE_U8_MAX <= 1024); // fits the panel's column transfer buffer (TRANSFER_BUFFER_MAX)
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -16441,6 +16492,7 @@ int main(int argc, char** argv)
     TestMaskOptimize283();
     TestFolderShortcut286();
     TestFtpServerEncoding288();
+    TestDriveText289();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

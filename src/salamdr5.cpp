@@ -44,7 +44,7 @@ CRITICAL_SECTION OpenHtmlHelpCS; // critical section for OpenHtmlHelp()
 // non-blocking reading of the volume name of CD drives:
 CRITICAL_SECTION ReadCDVolNameCS;        // critical section for accessing the data
 UINT_PTR ReadCDVolNameReqUID = 0;        // request UID (to recognize whether someone is still waiting for the result)
-char ReadCDVolNameBuffer[MAX_PATH] = ""; // IN/OUT buffer (root/volume_name)
+char ReadCDVolNameBuffer[3 * MAX_PATH + 1] = ""; // IN/OUT (root/UTF-8 label), 289
 
 struct CInitOpenHtmlHelpCS
 {

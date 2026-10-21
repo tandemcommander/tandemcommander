@@ -1,0 +1,210 @@
+english TYPES folder=Slo\u017Eka soubor\u016F updir=Upper Directory
+english TYPES folder=Slo\u017Eka soubor\u016F updir=Upper Directory
+english TYPES folder=Slo\u017Eka soubor\u016F updir=Upper Directory
+english TYPES folder=Slo\u017Eka soubor\u016F updir=Upper Directory
+english TYPES folder=Slo\u017Eka soubor\u016F updir=Upper Directory
+english ITEM C idx=0 type=3 acc=1 text=C\u0009Local Drive
+english ITEM D idx=1 type=3 acc=1 text=D\u0009DATA
+english ITEM E idx=2 type=3 acc=1 text=E\u0009DATA
+english ITEM F idx=3 type=3 acc=1 text=F\u0009DATA
+english ITEM G idx=4 type=3 acc=1 text=G\u0009Google Drive
+english ITEM C idx=0 type=3 acc=1 text=C\u0009Local Drive
+english ITEM D idx=1 type=3 acc=1 text=D\u0009DATA
+english ITEM E idx=2 type=3 acc=1 text=E\u0009DATA
+english ITEM F idx=3 type=3 acc=1 text=F\u0009DATA
+english ITEM G idx=4 type=3 acc=1 text=G\u0009Google Drive
+english ITEM C idx=0 type=3 acc=1 text=C\u0009Local Drive
+english ITEM D idx=1 type=3 acc=1 text=D\u0009DATA
+english ITEM E idx=2 type=3 acc=1 text=E\u0009DATA
+english ITEM F idx=3 type=3 acc=1 text=F\u0009DATA
+english ITEM G idx=4 type=3 acc=1 text=G\u0009Google Drive
+english ITEM C idx=0 type=3 acc=1 text=C\u0009Local Drive
+english ITEM D idx=1 type=3 acc=1 text=D\u0009DATA
+english ITEM E idx=2 type=3 acc=1 text=E\u0009DATA
+english ITEM F idx=3 type=3 acc=1 text=F\u0009DATA
+english ITEM G idx=4 type=3 acc=1 text=G\u0009Google Drive
+english ITEM C idx=0 type=3 acc=1 text=C\u0009Local Drive
+english ITEM D idx=1 type=3 acc=1 text=D\u0009DATA
+english ITEM E idx=2 type=3 acc=1 text=E\u0009DATA
+english ITEM F idx=3 type=3 acc=1 text=F\u0009DATA
+english ITEM G idx=4 type=3 acc=1 text=G\u0009Google Drive
+english ALL idx=0 type=3 text=C\u0009Local Drive
+english ALL idx=1 type=3 text=D\u0009DATA
+english ALL idx=2 type=3 text=E\u0009DATA
+english ALL idx=3 type=3 text=F\u0009DATA
+english ALL idx=4 type=3 text=G\u0009Google Drive
+english ALL idx=6 type=7 text=;\u0009Documents
+english ALL idx=7 type=10 text=\u0009OneDrive
+english ALL idx=8 type=13 text=,\u0009Network
+english ALL idx=0 type=3 text=C\u0009Local Drive
+english ALL idx=1 type=3 text=D\u0009DATA
+english ALL idx=2 type=3 text=E\u0009DATA
+english ALL idx=3 type=3 text=F\u0009DATA
+english ALL idx=4 type=3 text=G\u0009Google Drive
+english ALL idx=6 type=7 text=;\u0009Documents
+english ALL idx=7 type=10 text=\u0009OneDrive
+english ALL idx=8 type=13 text=,\u0009Network
+english ALL idx=0 type=3 text=C\u0009Local Drive
+english ALL idx=1 type=3 text=D\u0009DATA
+english ALL idx=2 type=3 text=E\u0009DATA
+english ALL idx=3 type=3 text=F\u0009DATA
+english ALL idx=4 type=3 text=G\u0009Google Drive
+english ALL idx=6 type=7 text=;\u0009Documents
+english ALL idx=7 type=10 text=\u0009OneDrive
+english ALL idx=8 type=13 text=,\u0009Network
+english ALL idx=0 type=3 text=C\u0009Local Drive
+english ALL idx=1 type=3 text=D\u0009DATA
+english ALL idx=2 type=3 text=E\u0009DATA
+english ALL idx=3 type=3 text=F\u0009DATA
+english ALL idx=4 type=3 text=G\u0009Google Drive
+english ALL idx=6 type=7 text=;\u0009Documents
+english ALL idx=7 type=10 text=\u0009OneDrive
+english ALL idx=8 type=13 text=,\u0009Network
+english ALL idx=0 type=3 text=C\u0009Local Drive
+english ALL idx=1 type=3 text=D\u0009DATA
+english ALL idx=2 type=3 text=E\u0009DATA
+english ALL idx=3 type=3 text=F\u0009DATA
+english ALL idx=4 type=3 text=G\u0009Google Drive
+english ALL idx=6 type=7 text=;\u0009Documents
+english ALL idx=7 type=10 text=\u0009OneDrive
+english ALL idx=8 type=13 text=,\u0009Network
+english TIP C Local Drive
+english TIP D DATA
+english TIP E DATA
+english TIP F DATA
+english TIP G Google Drive
+english TIP C Local Drive
+english TIP D DATA
+english TIP E DATA
+english TIP F DATA
+english TIP G Google Drive
+english TIP C Local Drive
+english TIP D DATA
+english TIP E DATA
+english TIP F DATA
+english TIP G Google Drive
+english TIP ; Documents
+english TIP \u0009 OneDrive
+english TIP , Network
+english TIP / FTP Client
+english TIP ' Desktop
+english TIP \u0009 Portable Devices
+english TIP \u0009 Windows Registry
+english TIP / SFTP Client
+english TIP \u0009 Undelete
+english TIP . 
+english TIP 1 
+english TIP 2 
+english TIP C Local Drive
+english TIP D DATA
+english TIP E DATA
+english TIP F DATA
+english TIP G Google Drive
+english TIP ; Documents
+english TIP \u0009 OneDrive
+english TIP , Network
+english TIP / FTP Client
+english TIP ' Desktop
+english TIP \u0009 Portable Devices
+english TIP \u0009 Windows Registry
+english TIP / SFTP Client
+english TIP \u0009 Undelete
+english TIP . 
+english TIP 1 
+english TIP 2 
+english TIP C Local Drive
+english TIP D DATA
+english TIP E DATA
+english TIP F DATA
+english TIP G Google Drive
+english TIP C Local Drive
+english TIP D DATA
+english TIP E DATA
+english TIP F DATA
+english TIP G Google Drive
+czech TYPES folder=Slo\u017Eka soubor\u016F updir=Nad\u0159azen\u00FD adres\u00E1\u0159
+czech TYPES folder=Slo\u017Eka soubor\u016F updir=Nad\u0159azen\u00FD adres\u00E1\u0159
+czech TYPES folder=Slo\u017Eka soubor\u016F updir=Nad\u0159azen\u00FD adres\u00E1\u0159
+czech ITEM C idx=0 type=3 acc=1 text=C\u0009M\u00EDstn\u00ED jednotka
+czech ITEM D idx=1 type=3 acc=1 text=D\u0009DATA
+czech ITEM E idx=2 type=3 acc=1 text=E\u0009DATA
+czech ITEM F idx=3 type=3 acc=1 text=F\u0009DATA
+czech ITEM G idx=4 type=3 acc=1 text=G\u0009Google Drive
+czech ITEM C idx=0 type=3 acc=1 text=C\u0009M\u00EDstn\u00ED jednotka
+czech ITEM D idx=1 type=3 acc=1 text=D\u0009DATA
+czech ITEM E idx=2 type=3 acc=1 text=E\u0009DATA
+czech ITEM F idx=3 type=3 acc=1 text=F\u0009DATA
+czech ITEM G idx=4 type=3 acc=1 text=G\u0009Google Drive
+czech ITEM C idx=0 type=3 acc=1 text=C\u0009M\u00EDstn\u00ED jednotka
+czech ITEM D idx=1 type=3 acc=1 text=D\u0009DATA
+czech ITEM E idx=2 type=3 acc=1 text=E\u0009DATA
+czech ITEM F idx=3 type=3 acc=1 text=F\u0009DATA
+czech ITEM G idx=4 type=3 acc=1 text=G\u0009Google Drive
+czech ALL idx=0 type=3 text=C\u0009M\u00EDstn\u00ED jednotka
+czech ALL idx=1 type=3 text=D\u0009DATA
+czech ALL idx=2 type=3 text=E\u0009DATA
+czech ALL idx=3 type=3 text=F\u0009DATA
+czech ALL idx=4 type=3 text=G\u0009Google Drive
+czech ALL idx=6 type=7 text=;\u0009Dokumenty
+czech ALL idx=7 type=10 text=\u0009OneDrive
+czech ALL idx=8 type=13 text=,\u0009S\u00ED\u0165
+czech ALL idx=0 type=3 text=C\u0009M\u00EDstn\u00ED jednotka
+czech ALL idx=1 type=3 text=D\u0009DATA
+czech ALL idx=2 type=3 text=E\u0009DATA
+czech ALL idx=3 type=3 text=F\u0009DATA
+czech ALL idx=4 type=3 text=G\u0009Google Drive
+czech ALL idx=6 type=7 text=;\u0009Dokumenty
+czech ALL idx=7 type=10 text=\u0009OneDrive
+czech ALL idx=8 type=13 text=,\u0009S\u00ED\u0165
+czech ALL idx=0 type=3 text=C\u0009M\u00EDstn\u00ED jednotka
+czech ALL idx=1 type=3 text=D\u0009DATA
+czech ALL idx=2 type=3 text=E\u0009DATA
+czech ALL idx=3 type=3 text=F\u0009DATA
+czech ALL idx=4 type=3 text=G\u0009Google Drive
+czech ALL idx=6 type=7 text=;\u0009Dokumenty
+czech ALL idx=7 type=10 text=\u0009OneDrive
+czech ALL idx=8 type=13 text=,\u0009S\u00ED\u0165
+czech TIP C M\u00EDstn\u00ED jednotka
+czech TIP D DATA
+czech TIP E DATA
+czech TIP F DATA
+czech TIP G Google Drive
+czech TIP C M\u00EDstn\u00ED jednotka
+czech TIP D DATA
+czech TIP E DATA
+czech TIP F DATA
+czech TIP G Google Drive
+czech TIP C M\u00EDstn\u00ED jednotka
+czech TIP D DATA
+czech TIP E DATA
+czech TIP F DATA
+czech TIP G Google Drive
+czech TIP ; Dokumenty
+czech TIP \u0009 OneDrive
+czech TIP , S\u00ED\u0165
+czech TIP / FTP Client
+czech TIP ' Desktop
+czech TIP \u0009 Portable Devices
+czech TIP \u0009 Windows Registry
+czech TIP / SFTP Client
+czech TIP \u0009 Undelete
+czech TIP . 
+czech TIP 1 
+czech TIP 2 
+czech TIP C M\u00EDstn\u00ED jednotka
+czech TIP D DATA
+czech TIP E DATA
+czech TIP F DATA
+czech TIP G Google Drive
+czech TIP ; Dokumenty
+czech TIP \u0009 OneDrive
+czech TIP , S\u00ED\u0165
+czech TIP / FTP Client
+czech TIP ' Desktop
+czech TIP \u0009 Portable Devices
+czech TIP \u0009 Windows Registry
+czech TIP / SFTP Client
+czech TIP \u0009 Undelete
+czech TIP . 
+czech TIP 1 
+czech TIP 2 

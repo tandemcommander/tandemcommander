@@ -212,7 +212,7 @@ const char* ProgDlgHoursStr = NULL;
 const char* ProgDlgMinutesStr = NULL;
 const char* ProgDlgSecsStr = NULL;
 
-char FolderTypeName[80] = "";
+char FolderTypeName[3 * 80 + 1] = ""; // UTF-8, SAL_FOLDER_TYPE_U8_MAX (feature 289)
 int FolderTypeNameLen = 0;
 const char* UpDirTypeName = NULL;
 int UpDirTypeNameLen = 0;
@@ -915,7 +915,7 @@ BOOL InitPreloadedStrings()
     ColExtStr = DupStr(LoadStr(IDS_COLUMN_NAME_EXT));
     ColExtStrLen = lstrlen(ColExtStr);
 
-    UpDirTypeName = DupStr(LoadStr(IDS_UPDIRTYPENAME));
+    UpDirTypeName = DupStr(LoadStrU8(IDS_UPDIRTYPENAME)); // UTF-8: the panel draws it as UTF-8 (feature 289)
     UpDirTypeNameLen = lstrlen(UpDirTypeName);
 
     CommonFileTypeName = DupStr(LoadStr(IDS_COMMONFILETYPE));

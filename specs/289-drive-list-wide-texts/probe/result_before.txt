@@ -1,0 +1,17 @@
+run289 (feature 289) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 18:33; registry key existed True; ACP 1250; UI culture cs-CZ; unlabelled fixed drives C
+
+[english] menu opened True; dump lines 176
+TYPES-english RUN    FAIL        utf8 False; folder 'Slo\u017Eka soubor\u016F' (Windows 'Slo\u017Eka soubor\u016F'); updir 'Upper Directory' (expected 'Upper Directory')
+ITEM-english RUN    PASS        25 lines, 0 not UTF-8; unlabelled drives C -> 'Local Drive' x5 True; e.g. -
+ALL-english RUN    PASS        40 lines, 0 not UTF-8; Documents True ('Documents'); Network items 5 ('Network') True; e.g. -
+TIP-english RUN    PASS        54 lines, 0 not UTF-8; unlabelled tooltips x6 start 'Local Drive (' True; e.g. -
+[czech] menu opened True; dump lines 118
+TYPES-czech RUN    FAIL        utf8 False; folder 'Slo\u017Eka soubor\u016F' (Windows 'Slo\u017Eka soubor\u016F'); updir 'Nad\u0159azen\u00FD adres\u00E1\u0159' (expected 'Nad\u0159azen\u00FD adres\u00E1\u0159')
+ITEM-czech RUN    FAIL        15 lines, 3 not UTF-8; unlabelled drives C -> 'M\u00EDstn\u00ED jednotka' x3 True; e.g. ITEM C idx=0 type=3 acc=1 text=C\u0009M\u00EDstn\u00ED jednotka\u000960,8 GB
+ALL-czech  RUN    FAIL        24 lines, 6 not UTF-8; Documents True ('Dokumenty'); Network items 3 ('S\u00ED\u0165') True; e.g. ALL idx=0 type=3 text=C\u0009M\u00EDstn\u00ED jednotka\u000960,8 GB
+TIP-czech  RUN    FAIL        44 lines, 6 not UTF-8; unlabelled tooltips x4 start 'M\u00EDstn\u00ED jednotka (' True; e.g. TIP C M\u00EDstn\u00ED jednotka (60,8 GB)
+Registry: restored; identical=True; SHA-256 before 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861 / after 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861
+
+Rows: PASS 3, FAIL 5, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

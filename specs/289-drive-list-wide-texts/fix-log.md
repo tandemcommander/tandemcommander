@@ -45,3 +45,52 @@ ACP = 1250
   and by an unchanged display.
 
 ## Decisions
+
+- Clarify (autonomous): buffers grow so nothing is cut; no ANSI retry after a failed wide call
+  (069 precedent); hot paths / plug-in items / remembered network chain out of scope.
+- Analyze run 1: 0 CRITICAL, 0 HIGH; MEDIUM F1 (the "before" binary needs the seam - T001/T006
+  reworded), MEDIUM C1 (SC-002 "same decoded text" had no task - added to T018); LOW A1 (API
+  names in the spec's Background) accepted - traceability of the measurement. Run 2: only A1.
+
+## Implementation log
+
+- T001: `.\build.cmd` of the unchanged tree: BUILD SUCCEEDED.
+- T002/T003: `src/common/saldrivetext.h` + `TestDriveText289` in saltests.
+- T004: seam - `TYPES` after `BUILD`, `ALL` at the end of `BuildData` (whole list), `TIP` for
+  every drive type (`ProbeDumpToolTips` over every non-separator drive item).
+- T005: `probe/run289.ps1` (English and Czech; rows TYPES / ITEM / ALL / TIP).
+- T006 (seam only, no fix; build 18:33, saltests 25,237 checks, 0 failed): hidden-desktop probe
+  `probe/result_before.txt`, `results_before.txt`, `decoded_before.txt`: **PASS 3, FAIL 5** -
+  TYPES-english / TYPES-czech FAIL (folder type "Složka souborů" in cp1250 bytes; Czech display
+  language), ITEM-czech FAIL (3 of 15 lines not UTF-8: `C<TAB>Místní jednotka<TAB>60,8 GB`),
+  ALL-czech FAIL (6 of 24: the C: item, "Síť"), TIP-czech FAIL (6 of 44: "Místní jednotka
+  (60,8 GB)"); English ITEM / ALL / TIP PASS (ASCII words). Registry restored, SHA-256 identical.
+  The negative control fails as it must.
+- T007-T015 (the fix): `GetDisplayNameFromSystem` -> `SHGetFileInfoW` + `SalDriveNameTrimLetterSuffixW`
+  + `SalWToU8` (failure: empty, as before); CD thread -> `GetVolumeInformationW` into a
+  `SAL_DRIVE_TEXT_U8_MAX` buffer, no code-page retry, `strcpy_s` into the equally sized
+  `ReadCDVolNameBuffer` (was `lstrcpyn` at `MAX_PATH` - a cut); `FolderTypeName[241]` from
+  `SHGetFileInfoW` (system directory via `GetSystemDirectoryW`); `UpDirTypeName` from
+  `LoadStrU8`; `volumeName` buffers `DRIVE_MENU_NAME_MAX + 100` with the ampersand doubling bounded
+  by `DRIVE_MENU_NAME_MAX`; 29 `LoadStr` -> `LoadStrU8` in the drive list (floppies, removable /
+  local / compact disk, Documents, Google Drive, Dropbox, OneDrive (+ Personal, both offsets that
+  read the business name back), Network, Another Panel, `AddToDrives`); both free-space texts
+  `PrintDiskSize(..., TRUE)`. Static asserts tie the buffer sizes to `saldrivetext.h`.
+- T016: left in `drivelst.cpp` / `icncache.cpp`: `LoadStr` of message-box captions and texts (code
+  page sinks, not drive-list texts) and feature 069's transitional `GetVolumeInformation` (A)
+  fallback for a root that is not valid UTF-8 (cannot happen for "X:\"). Nothing feeds the
+  drive list or the type names any more.
+- T017: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`; `.\build.cmd` ->
+  BUILD SUCCEEDED (touched files recompiled 18:36:47, no warning); saltests -> `25237 checks,
+  0 failed`.
+- T018 (fixed build 18:36): `probe/result_after.txt`, `results_after.txt`: **PASS 8, FAIL 0**
+  (TYPES / ITEM / ALL / TIP, English and Czech; every line valid UTF-8; registry restored,
+  SHA-256 identical). SC-002: `decoded_before.txt` and `decoded_after.txt` (each line decoded
+  the way the sinks decode - UTF-8, else cp1250 - free space removed): 210 lines each,
+  `diff` -> identical, also in order. The display on this machine is unchanged; only the
+  bytes are now UTF-8.
+- T019 person step (NOT DRIVEN here - no such hardware / locale): (1) a CD / DVD or ISO and (2) a
+  USB stick labelled in Cyrillic or Greek on a cp1250 / cp1252 system: Alt+F1 and the drive bar
+  tooltip show the label as Explorer does (was `????`); (3) a Windows display language outside
+  the system code page (e.g. Japanese display language, English non-Unicode setting): the *Type*
+  column of folders shows the display language's "File folder" (was `?`).

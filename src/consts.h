@@ -1862,7 +1862,7 @@ extern const char* ProgDlgHoursStr;   // LoadStr(IDS_PROGDLGHOURS) - pouziva se 
 extern const char* ProgDlgMinutesStr; // LoadStr(IDS_PROGDLGMINUTES) - pouziva se prilis casto, cachujeme
 extern const char* ProgDlgSecsStr;    // LoadStr(IDS_PROGDLGSECS) - pouziva se prilis casto, cachujeme
 
-extern char FolderTypeName[80];         // file-type pro vsechny adresare (ziskany ze systemoveho adresare)
+extern char FolderTypeName[3 * 80 + 1]; // file-type pro vsechny adresare (ziskany ze systemoveho adresare); UTF-8, SAL_FOLDER_TYPE_U8_MAX (feature 289)
 extern int FolderTypeNameLen;           // delka retezce FolderTypeName
 extern const char* UpDirTypeName;       // LoadStr(IDS_UPDIRTYPENAME) - pouziva se prilis casto, cachujeme
 extern int UpDirTypeNameLen;            // delka retezce
@@ -2422,7 +2422,7 @@ void EnumFileNamesRemoveSourceUID(HWND hWnd);
 
 extern CRITICAL_SECTION ReadCDVolNameCS;   // kriticka sekce pro pristup k datum
 extern UINT_PTR ReadCDVolNameReqUID;       // UID pozadavku (pro rozpoznani jestli na vysledek jeste nekdo ceka)
-extern char ReadCDVolNameBuffer[MAX_PATH]; // IN/OUT buffer (root/volume_name)
+extern char ReadCDVolNameBuffer[3 * MAX_PATH + 1]; // IN/OUT (root/UTF-8 label), 289
 
 //******************************************************************************
 // funkce pro praci s historiemi posledne pouzitych hodnot v comboboxech

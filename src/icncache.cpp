@@ -9,6 +9,9 @@
 #include "plugins.h"
 #include "geticon.h"
 #include "logo.h"
+#include "saldrivetext.h" // feature 289
+
+static_assert(sizeof(FolderTypeName) == SAL_FOLDER_TYPE_U8_MAX, "289: the folder type name is held whole as UTF-8");
 
 // melo by byt nasobkem hodnoty IL_ITEMS_IN_ROW
 // aby se plne vyuzil prostor v bitmape
@@ -697,7 +700,6 @@ BOOL ReadDirectoryIconAndTypeAux(CIconList* iconList, int index, CIconSizeEnum i
 {
     char systemDir[MAX_PATH];
     GetSystemDirectory(systemDir, MAX_PATH);
-    SHFILEINFO shi;
     HICON hIcon;
     __try
     {
@@ -706,10 +708,21 @@ BOOL ReadDirectoryIconAndTypeAux(CIconList* iconList, int index, CIconSizeEnum i
             iconList->ReplaceIcon(index, hIcon);
             NOHANDLES(DestroyIcon(hIcon));
         }
-        if (SHGetFileInfo(systemDir, 0, &shi, sizeof(shi), SHGFI_TYPENAME) != 0)
+        // feature 289: the wide call, kept as UTF-8 - the panel draws the name as UTF-8, and the
+        // code-page call gave '?' for a display language outside the code page
+        WCHAR systemDirW[MAX_PATH];
+        SHFILEINFOW shiW;
+        char typeName[SAL_FOLDER_TYPE_U8_MAX];
+        UINT dirLen = GetSystemDirectoryW(systemDirW, _countof(systemDirW));
+        if (dirLen > 0 && dirLen < _countof(systemDirW) &&
+            SHGetFileInfoW(systemDirW, 0, &shiW, sizeof(shiW), SHGFI_TYPENAME) != 0)
         {
-            lstrcpyn(FolderTypeName, shi.szTypeName, sizeof(FolderTypeName));
-            FolderTypeNameLen = (int)strlen(FolderTypeName);
+            shiW.szTypeName[_countof(shiW.szTypeName) - 1] = 0;
+            if (SalWToU8(shiW.szTypeName, -1, typeName, sizeof(typeName)) != 0)
+            {
+                strcpy_s(FolderTypeName, typeName); // the same size: whole
+                FolderTypeNameLen = (int)strlen(FolderTypeName);
+            }
         }
         return TRUE;
     }
