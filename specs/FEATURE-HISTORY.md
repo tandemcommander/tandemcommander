@@ -41,7 +41,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148 |
-| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266 |
+| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
 | User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names) | 071, 078, 123, 244, 245, 246 |
@@ -3566,3 +3566,19 @@ a few early ones are out of sequence).
   `ftp277_probe.ps1` 7 / 3 on the old code -> 10 / 0; 215 12 / 0, 224 16 / 0, 233 as recorded;
   `TestFtpPwdReply277` (negative control: the old cut 7 failed); one refute-first review (no MUST,
   no SHOULD; two NOTEs fixed: a NUL inside the path, the raw bytes of a failed conversion).
+- 278-regedt-find-regexp-cp: Registry Editor Find with a regular expression, on a multi-byte ANSI
+  code page (UTF-8 65001, 932 / 936 / 949 / 950), converted a key name, value name or text value
+  into a space of one byte per UTF-16 unit and searched that many bytes: a non-ASCII text did not
+  fit (the conversion failed, stale bytes were searched) or its end was never searched
+  (`čččč bar` is 8 units, 12 UTF-8 bytes - `bar` not found). Now `SalRegFindTextToCodePage`
+  (`src/common/salregfind.h`) counts the code-page bytes first, converts whole or returns -1
+  (never a partial result); `CFindThread::Test` reserves the count, searches the converted count,
+  and a failed conversion is no match. Traps: on code page 1250 the old and new code search the
+  same bytes, so 257's probe cannot tell them apart - the call site rests on reading plus the
+  person step `registry-editor-find-confirm-a-regexp-finds-the-end-of-a-non`. Limits: the
+  viewer's export of a text value has the same unit-sized buffer (Inbox
+  `registry-editor-view-of-a-text-value-cut-text-and-a-stray`); a DBCS trail byte can still match
+  an ASCII regexp (older, not recorded). From backlog item
+  `regedit-find-regexp-multibyte-code-page-buffer`. `TestRegFindTextToCodePage278` (negative
+  control: unit sizing fails 12); 257's probe 9 / 0 -> 9 / 0 (regression control on 1250); one
+  refute-first review (no MUST; SHOULDs: the viewer -> Inbox, the call site's proof stated).

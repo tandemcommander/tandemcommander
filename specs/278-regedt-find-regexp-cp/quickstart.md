@@ -8,5 +8,7 @@
    (`specs/257-regedt-find-words-hex/probe/find_words_hex_probe.ps1`, rows unchanged: 9 / 0).
 4. GUI under a multi-byte code page (person): Windows *Region* → *Administrative* → *Change system
    locale* → *Beta: Use Unicode UTF-8*, restart; create `HKCU\Software\tc278` with REG_SZ `v` =
-   `čččč bar`; Registry Editor Find in that key, Regular expression `bar`, Look at data → `v`
-   found; with Whole words → found.
+   `čččč bar`, a REG_SZ named `čččč bar` with the data `x`, and a subkey `čččč bar`; Registry
+   Editor Find in `tc278`, Regular expression `bar`, only Look at data → `v` found; only Look at
+   values → the value `čččč bar` found; only Look at keys → the key `čččč bar` found; each also
+   with Whole words → found. Afterwards delete `tc278` and restore the system locale setting.

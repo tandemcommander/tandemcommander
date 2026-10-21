@@ -17,7 +17,6 @@ Last triaged: 2026-10-20
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor Find: regexp misses text past the code-page length of a value](items/regedit-find-regexp-multibyte-code-page-buffer/desc.md) | bug | 4 | other-plugins | 278 |
 
 ## Next
 
@@ -201,6 +200,8 @@ Last triaged: 2026-10-20
 | [FTP 277 on real servers: long PWD paths, AS/400 member names, case-insensitive lock](items/ftp-277-real-server-checks/desc.md) | person-step | 3 | ftp | leftover:277 | 2026-10-21 |
 | [FTP: server folder names compared by the code-page case rule on UTF-8 bytes](items/ftp-server-path-compare-code-page-fold/desc.md) | bug | 4 | ftp | review:277 | 2026-10-21 |
 | [Information line of a long-named item: check it on screen (276)](items/information-line-of-a-long-named-item-check-it-on-screen-276/desc.md) | person-step | 2 | panels-ui | leftover:276 | 2026-10-21 |
+| [Registry Editor Find: confirm a regexp finds the end of a non-ASCII text on UTF-8](items/registry-editor-find-confirm-a-regexp-finds-the-end-of-a-non/desc.md) | person-step | 3 | other-plugins | leftover:278 | 2026-10-21 |
+| [Registry Editor View of a text value: cut text and a stray byte on a UTF-8 code page](items/registry-editor-view-of-a-text-value-cut-text-and-a-stray/desc.md) | bug | 4 | other-plugins | review:278 | 2026-10-21 |
 | [tar plug-in ignores PAX extended headers: long or non-ASCII names listed under the ustar fallback name](items/tar-plug-in-ignores-pax-extended-headers/desc.md) | bug | 5 | archives | measure:275 | 2026-10-21 |
 | [The information line keeps using a freed text when memory runs out as it grows](items/the-information-line-keeps-using-a-freed-text-when-memory/desc.md) | bug | 7 | panels-ui | review:276 | 2026-10-21 |
 | [The question whether to create a missing folder cuts a long path inside a letter](items/the-question-whether-to-create-a-missing-folder-cuts-a-long/desc.md) | bug | 2 | long-paths | review:274 | 2026-10-21 |

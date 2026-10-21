@@ -68,3 +68,30 @@ key and value names take the same code path (only the NUL trimming differs).
 - NOT DRIVEN: the GUI under a multi-byte ANSI code page (this machine is 1250; the system code
   page needs a restart). Steps in `quickstart.md` step 4 - recorded as a `person-step` item at
   closing.
+
+## Review
+
+One independent refute-first review (general-purpose agent), no MUST findings. It re-ran the
+measurement with ctypes (matches the table above), built (`BUILD SUCCEEDED`), ran saltests
+(`24954 checks, 0 failed`) and the encoding guard (`TOTAL: 0`), and enumerated the callers of
+`CFindThread::Test` (value name, value data, key name - all in `finddlg.cpp`) and of the new
+rule (only the two calls in `Test`). Findings:
+
+- SHOULD 1 - the same unit-sized buffer in the viewer's export (`fs3.cpp` `ExportValueData`,
+  View of a text value with `ExportStringsForViewerInASCII`): outside this item → Inbox
+  `registry-editor-view-of-a-text-value-cut-text-and-a-stray` (`review:278`).
+- SHOULD 2 - the call-site change is not proven by an automated check: the negative control
+  breaks the rule, not `finddlg.cpp`; reverting the call site would leave saltests at 0 failed
+  and 257's probe at 9 / 0 (on code page 1250 the old and new code search the same bytes), so
+  `result_before.txt` and `result_after.txt` are identical. **Accepted and stated plainly**: the
+  probe shows only that nothing regressed on 1250; the fix of the plug-in under a multi-byte code
+  page rests on the rule's checks plus reading the call site (count, reserve, convert, compare,
+  `len` = count) and on the person's check - the `person-step` item created at closing.
+- NOTE 3 - quickstart step 4 checked value data only → extended with a value name and a key
+  name (all three callers, one restart).
+- NOTE 4 - under a DBCS code page the byte-wise regexp can match a trail byte (U+30A2 = `83 41`
+  under 932, so `A` matches inside it); older than this fix, UTF-8 unaffected, outside the item -
+  recorded here, not added (not serious: an extra match, no data at risk).
+- NOTE 5 - each text is converted twice (count, then convert): correct, slightly slower; kept
+  for the plain count-first rule the item asks for.
+- NOTE 6 - the new saltests checks are sound (the old-sizing control uses the real old call).

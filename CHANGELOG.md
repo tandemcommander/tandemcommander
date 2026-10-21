@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **The Registry Editor's Find with a regular expression could miss text at the end of a name or value with accented letters** (feature 278).
+  - **Before:** on Windows set to use UTF-8 for the system (the "Beta: Use Unicode UTF-8" option) or to a Chinese, Japanese or Korean system locale, a regular expression searched only part of a key name, value name or text value that contained letters taking more than one byte - for example, `bar` did not find `čččč bar` - or searched leftover bytes of an earlier text in its place. Other system locales (such as Czech or Western European) were not affected.
+  - **Now:** the whole text is searched; a text that cannot be converted for the search is skipped instead of being searched as leftover bytes.
+  - **Limitation:** checked by tests with each code page; the Find window itself was tried only with a Czech system locale (a check with the UTF-8 option is recorded for a person). Viewing (F3) such a text value can still show it cut on those systems (recorded for a later fix).
+
 - **Copying an FTP folder whose server path is very long could download another folder's files under its name** (feature 277).
   - **Before:** when the server reported a folder's path longer than 300 bytes - in the form German AIX servers use (`257 '/path' ist das aktuelle Verzeichnis.`), or from an older server with accented folder names whose path grows longer in UTF-8 - the FTP plug-in cut the path and took the cut one, an ancestor folder, as the folder it was in. Such a path appears, for example, for a link to a deeply nested folder. After a reconnect, copying the folder downloaded the ancestor's files under the deep folder's name. A path of exactly 300 bytes in the usual form was refused, although it fits.
   - **Now:** a path that does not fit is refused with "Error Getting Working Path On Server", as the usual form already was, and nothing is read from or written to another folder; a path of exactly 300 bytes is accepted. Also: the Create Directory report to the upload's folder cache, AS/400 member names used as download names and the upload's size estimate of a linked file no longer work on a cut name or path, and the lock that keeps two operations off one server file now compares file names by the Windows rule (`Č.txt` and `č.txt` are one file on a case-insensitive server).
