@@ -1,16 +1,16 @@
 ---
 title: FTP: a PWD reply or a created folder path that does not fit is cut and used
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: ftp
 source: manual
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 65c337dc
 effort: M
-feature: -
+feature: 277
 related: [ftp-long-name-and-path-leftovers]
 depends-on: []
 reason: -
@@ -54,3 +54,5 @@ Measured narrower than the original item said: the plain RFC 959 PWD reply over 
 
 - 2026-10-20 — created (source manual)
 - 2026-10-20 — moved to Next position 15
+- 2026-10-21 — verified at 65c337dc: probe ftp277 at 65c337dc: AIX-form PWD of 305 bytes cut to 300, after a reconnect the ancestor file was downloaded under the deep folder name; cp1250 decode cut and CWD sent; RFC 300-byte path refused; other sites by reading
+- 2026-10-21 — run started, feature 277
