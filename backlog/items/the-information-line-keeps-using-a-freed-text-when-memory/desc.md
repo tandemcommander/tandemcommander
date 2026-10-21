@@ -7,8 +7,8 @@ area: panels-ui
 source: review:276
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-10-22
+verified: 2026-10-22 ad477c57
 effort: S
 feature: -
 related: []
@@ -53,3 +53,4 @@ two-buffer `realloc` pairs of the core - check `SizeW` / `TextW` in the same fil
 
 - 2026-10-21 — created (source review:276)
 - 2026-10-21 — moved to Next position 4
+- 2026-10-22 — verified at ad477c57: present at ad477c57 by reading: SetText reallocs Text then AlpDX and stores neither when one fails; reached by every directory/information line SetText
