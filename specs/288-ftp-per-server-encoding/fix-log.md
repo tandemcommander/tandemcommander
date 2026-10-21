@@ -38,3 +38,10 @@ callers ctrlcon3.cpp (PWD), ctrlcon5.cpp (MKD), operats7.cpp, operatsa.cpp.
   `UploadListingCache.ReportCreateDirs` / `ReportRename`, which take `(user, host, ...)` -> Inbox.
 
 ## Work
+### Analyze
+
+Run 1: CRITICAL D1 (no CHANGELOG task - constitution *Release Documentation*), CRITICAL D2 (no
+clang-format check - *Development Workflow*), MEDIUM E1 (FR-006 not verified), LOW U1 (the
+1,000-server bound only in the plan). Fixed: T022, T016, T021, spec Edge Cases. Run 2: no
+findings.
+

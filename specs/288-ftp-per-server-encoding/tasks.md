@@ -43,17 +43,18 @@ data-model.md, contracts/server-encoding-rule.md, quickstart.md)
 
 ## Phase 6: Polish and verification
 
-- [ ] T016 `python tools/check_encoding.py --strict` -> TOTAL: 0 finding(s)
+- [ ] T016 `python tools/check_encoding.py --strict` -> TOTAL: 0 finding(s); clang-format (the repository's .clang-format) of the changed sources src/common/salftpsrvenc.h, src/saltests/saltests.cpp (the new test), src/plugins/ftp/*.cpp / *.h touched - only the changed lines
 - [ ] T017 `build.cmd` -> BUILD SUCCEEDED; saltests -> 0 failed (record the count) in fix-log.md
 - [ ] T018 Probe after: specs/288-ftp-per-server-encoding/probe/result_after.txt -> all PASS
 - [ ] T019 Regression probes 224, 269, 277 -> specs/288-ftp-per-server-encoding/probe/regress_224.txt, regress_269.txt, regress_277.txt as recorded
 - [ ] T020 Negative control: the saltests rule with a broken decision (temporarily) fails; record in fix-log.md and restore
-- [ ] T021 Record the work, results and limits in specs/288-ftp-per-server-encoding/fix-log.md
+- [ ] T021 Record the work, results and limits in specs/288-ftp-per-server-encoding/fix-log.md; FR-006: the probe's server logs show no command the plug-in did not send before (no FEAT / OPTS), and the diff adds no registry or file write
+- [ ] T022 CHANGELOG.md: an entry at the top of the `— unreleased` section (symptom, feature 288, what it does now, the limits: unknown servers get UTF-8, no FEAT), or into closing-report.md when no such section exists
 
 ## Dependencies
 
 T002 -> T003; T004 -> T005, T006, T007 -> T008 -> T009 -> T010..T013 (one build: all signatures
-change together) -> T014, T015 -> T016..T021. US1 and US2 are delivered by the same change
+change together) -> T014, T015 -> T016..T022. US1 and US2 are delivered by the same change
 (per-server registry + plumbing); US2 needs no code of its own beyond T004/T007.
 
 ## Parallel opportunities

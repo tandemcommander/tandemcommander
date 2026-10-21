@@ -122,7 +122,8 @@ probes as recorded.
 - A server whose listings show both UTF-8 and code-page names: its code-page names go back in the
   code page, new names go in UTF-8.
 - Memory: the remembered names keep feature 224's bound (200,000 names in total); past it, a name
-  is not remembered (it goes as a new name of its server).
+  is not remembered (it goes as a new name of its server). At most 1,000 servers are tracked; a
+  further one is treated as unknown (UTF-8, no remembered names).
 
 ## Requirements *(mandatory)*
 
