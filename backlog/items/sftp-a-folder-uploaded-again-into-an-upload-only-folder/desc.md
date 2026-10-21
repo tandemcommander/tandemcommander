@@ -7,8 +7,8 @@ area: sftp
 source: leftover:258
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 3541e7ad
 effort: M
 feature: -
 related: []
@@ -42,3 +42,4 @@ Severity 4: a function that does not work, with a workaround (upload the files i
 
 - 2026-10-20 — created (source leftover:258)
 - 2026-10-20 — moved to Next position 19
+- 2026-10-21 — verified at 3541e7ad: reproduced at 3541e7ad: probe 258 row DROPDIR2 - Move of pack2 into /drop where pack2 exists: mkdir FAILURE, stat DENIED, box Cannot create directory, c.txt not sent
