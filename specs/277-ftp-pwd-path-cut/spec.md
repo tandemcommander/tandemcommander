@@ -34,6 +34,16 @@ conversion, the client changed to the cut path. The RFC form of 305 bytes: refus
 RFC form of exactly 300 bytes: refused. A short AIX-form path: downloaded "DEEP" (control). The
 other sites by reading.
 
+## Clarifications
+
+### Session 2026-10-21
+
+- Q: When a Create Directory name does not fit the 300-byte path buffer, should its whole components be recorded as created folders, or the affected listings invalidated? → A: invalidated (the listings the walk reaches are marked out of date; components are walked whole, never cut; nothing is recorded as created) (autonomous run: item)
+- Q: When a legacy server's path cannot be converted to UTF-8 for low memory, is the unconverted path used? → A: no, the reply is refused like a path that does not fit (autonomous run: conservative)
+- Q: How does the explore of a folder on an AS/400 server refuse a member name that does not fit? → A: the caller's buffer holds any listed name (the helper never shortens - its result is never longer than its input), so the helper's failure is unreachable there; if it fails anyway the item is not created and the explore reports an error as for any other item it could not create; a target name that is too long for the local disk is then refused by the existing check of feature 215 (autonomous run: conservative)
+- Q: Does the lock's new name rule also change how the host name is compared? → A: no, only file names (the item names only names; host names keep their comparison) (autonomous run: item)
+- Q: Does the AIX-form parser keep reading past the reply's size (to the terminator) as before? → A: no, it reads only within the reply's size; for a terminated reply the result is the same (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A server folder whose working path does not fit is refused, never replaced by an ancestor (Priority: P1)
@@ -123,7 +133,7 @@ probes (215, 224, 233) as regressions.
   their current parsing.
 - A reply that is not terminated after its size: the parser reads only within the reply's size.
 - Low memory while converting a code-page path: refused (never a cut or unconverted path taken
-  as UTF-8 - [Assumption] see below).
+  as UTF-8).
 - A Create Directory name made of components that each fit but whose whole does not: the
   components that fit are walked whole; listings are invalidated, nothing cut is recorded.
 
@@ -148,7 +158,8 @@ probes (215, 224, 233) as regressions.
   download, the explore of a folder in a copy / move) MUST refuse a name that does not fit, as
   they refuse other too-long target names.
 - **FR-007**: The opened-file lock MUST compare names on a case-insensitive server by the file
-  system's name rule of feature 092 (the header-only plug-in variant).
+  system's name rule of feature 092 (the header-only plug-in variant); the host comparison is
+  unchanged.
 - **FR-008**: The upload's link size estimate MUST be skipped (size unknown) when the local
   source path does not fit the link-name buffer.
 - **FR-009**: The pure parse rule of FR-001 / FR-002 MUST be covered by `saltests` checks
