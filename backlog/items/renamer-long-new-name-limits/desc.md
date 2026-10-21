@@ -1,19 +1,19 @@
 ---
 title: Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260
 type: bug
-status: open
+status: blocked
 severity: 3
 area: long-paths
 source: review:207
 who: agent
 created: 2026-10-15
-updated: 2026-10-20
+updated: 2026-10-21
 verified: -
 effort: M
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: the second independent review found MUST findings: a regex over a long built name overflows the stack and kills the program; manual mode reads the wrapped display lines and renames to a cut name - see the fix-log Review 2 and Stopped (feature 282, branch 282-renamer-long-new-name)
 ---
 
 # Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260
@@ -34,3 +34,4 @@ A new name of any length the file system accepts is built on the heap (never cut
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
 - 2026-10-20 — related item renamer-regex-single-byte-classes done in feature 254
+- 2026-10-21 — blocked: the second independent review found MUST findings: a regex over a long built name overflows the stack and kills the program; manual mode reads the wrapped display lines and renames to a cut name - see the fix-log Review 2 and Stopped (feature 282, branch 282-renamer-long-new-name)
