@@ -1,19 +1,19 @@
 ---
 title: Other plug-ins' dialogs: code-page message loops not examined
 type: tech-debt
-status: open
+status: blocked
 severity: 3
 area: encoding
 source: leftover:154
 who: agent
 created: 2026-10-14
-updated: 2026-10-17
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 47209800
 effort: ?
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: not reproduced at 47209800: no reachable code-page loop of a shipped plug-in delivers typed characters to a text field; listing with reasons in evidence/loop_audit_47209800.md
 ---
 
 # Other plug-ins' dialogs: code-page message loops not examined
@@ -42,3 +42,5 @@ NW §5 *B-1* ("other plug-ins' dialogs ... the rest still not examined", L1961) 
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
 - 2026-10-17 — migration review N3: migration remark removed
+- 2026-10-21 — verified at 47209800: not reproduced: all shipped plug-in loops audited, none delivers typed text to a reachable field (evidence/loop_audit_47209800.md)
+- 2026-10-21 — blocked: not reproduced at 47209800: no reachable code-page loop of a shipped plug-in delivers typed characters to a text field; listing with reasons in evidence/loop_audit_47209800.md

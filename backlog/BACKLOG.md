@@ -30,7 +30,7 @@ Last triaged: 2026-10-20
 | 6 | [Undelete and ZIP wrap the core's UTF-8 texts in their own code-page sentences](items/undelete-zip-core-texts-in-code-page-sentences/desc.md) | bug | 4 | encoding | agent | M | blocked |
 | 7 | [User Menu: messages name the command, System32 fallback, silent batch ends](items/user-menu-messages-and-folder-leftovers/desc.md) | bug | 4 | panels-ui | agent | M | blocked |
 | 8 | [Archive Update: a changed member can go unmarked or be marked needlessly](items/archive-update-change-detection-limits/desc.md) | bug | 3 | archives | agent | M | blocked |
-| 9 | [Other plug-ins' dialogs: code-page message loops not examined](items/plugin-dialogs-code-page-message-loops/desc.md) | tech-debt | 3 | encoding | agent | ? | open |
+| 9 | [Other plug-ins' dialogs: code-page message loops not examined](items/plugin-dialogs-code-page-message-loops/desc.md) | tech-debt | 3 | encoding | agent | ? | blocked |
 | 10 | [A file moved aside to salNNN can stay there silently on the create paths](items/moved-aside-restore-leftovers/desc.md) | bug | 3 | data-safety | agent | M | open |
 | 11 | [Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260](items/renamer-long-new-name-limits/desc.md) | bug | 3 | long-paths | agent | M | open |
 | 12 | [711 clipped labels in the shipped translations](items/translations-clipped-labels/desc.md) | bug | 3 | translations | both | L | open |
