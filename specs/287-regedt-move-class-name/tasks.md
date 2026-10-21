@@ -33,6 +33,7 @@ contracts/probe-rows.md, quickstart.md)
 - [ ] T007 Full probe runs on the fixed build: `-Lang czech` and `-Lang english` -> `move287_after_czech.txt`, `move287_after_english.txt`, every row PASS
 - [ ] T008 Regression: `specs/129-regedt-wide-inserts/probe/wide_probe.ps1` on the fixed build (PASS 19, FAIL 0)
 - [ ] T009 `python tools/check_encoding.py --strict` (TOTAL: 0) and `saltests` (0 failed) as controls; record all numbers in fix-log
+- [ ] T010 `CHANGELOG.md`: an entry at the top of the `— unreleased` section (bold symptom, feature 287, the limits) - or, without such a section, the text in `closing-report.md`
 
 ## Dependencies
 

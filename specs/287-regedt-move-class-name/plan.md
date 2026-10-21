@@ -35,7 +35,7 @@ as a control); `tools/check_encoding.py --strict`
 | Principle | Check | Result |
 |---|---|---|
 | I. Build reproducibility | no new dependency, no project change | PASS |
-| II. Backward compatibility | no stored data, no interface change; the only behaviour change is a question the code was written to ask, in a case where the user's target loses the source's class name | PASS |
+| II. Backward compatibility | no stored data, no interface change. The only behaviour change is a defect fix, not a new feature: the question the code was written to ask (since Open Salamander) appears, and only in the one case where the target would otherwise silently lose the source's class name; Cancel copies and deletes nothing, Yes gives the old result. Not gated: nobody can rely on a check that compares a key with itself | PASS |
 | III. Incremental modernization | a minimal change at the defect | PASS |
 | IV. Windows commitment | Win32 registry API | PASS |
 | V. Plug-in architecture | inside one plug-in; no `spl_*.h` change | PASS |
