@@ -326,8 +326,10 @@ BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
     // verify that the new key has the same class name
     if (!skipAllClassNames)
     {
+        // feature 287: the class name of the TARGET key (an existing key keeps its own; it was read
+        // from the source key again, so the two always compared equal and the question never came)
         WCHAR targetClassName[MAX_PATH];
-        if (!SafeQueryInfoKey(sourceHKey, sourceRoot, source, targetClassName, NULL, NULL, errorTitle, skip, skipAllErrors))
+        if (!SafeQueryInfoKey(targetHKey, targetRoot, target, targetClassName, NULL, NULL, errorTitle, skip, skipAllErrors))
         {
             RegCloseKey(sourceHKey);
             RegCloseKey(targetHKey);

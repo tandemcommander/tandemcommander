@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Registry Editor: copying or moving a key onto a key of the same name never warned that the class name would be lost** (feature 287).
+  - **Before:** when the target already held a key of the same name with another *class name* (a rarely used attribute of a registry key), F5 / F6 merged the contents into it without a word - the target kept its own class name and, with Move, the source key was deleted. The warning "Class name of the key cannot be copied to the target key" was written for this case but compared the source key with itself, so it never appeared (in Open Salamander as well).
+  - **Now:** the warning appears before anything is copied, naming the key: *Cancel* copies and deletes nothing, *Yes* continues as before, *All* stops asking for the rest of the operation. Copying into a key that has no key of that name, or one with the same class name, is unchanged.
+  - **Limitation:** Windows cannot change the class name of an existing key, so the target keeps its own after *Yes*.
+
 - **A folder picked in Browse For Folder could come back as another folder, and a long network location as itself** (feature 286).
   - **Before:** in the Browse For Folder dialog (Change Drive > Network, the browse of a Copy / Move target, Find, the User Menu, Configuration > Drives, plug-ins), a folder whose path is long in letters outside ASCII (more than 259 bytes in UTF-8, e.g. about 85 Chinese letters) came back in the system's code page - letters turned into `?` or look-alikes, another folder - and was taken without a word. A network location (a folder shortcut) whose target is that long was not followed: the location's own folder came back instead.
   - **Now:** both are refused with "The path specified is too long." and nothing is picked - the field or panel keeps what it had. Folders and network locations that fit come back whole, as before.
