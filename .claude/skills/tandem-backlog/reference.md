@@ -1,7 +1,7 @@
 # tandem-backlog — reference
 
 Sections: §1 item templates · §2 writing rules · §3 decision tables for the
-fields · §4 triage guidance (§4.1 automatic placement, `triage auto`) ·
+fields · §4 triage guidance (§4.1 automatic placement, `auto-triage`) ·
 §5 sections and statuses · §6 check findings and refusals → fix.
 
 ---
@@ -265,7 +265,7 @@ feature that handled it, or `manual`, and cites the issue in *Evidence*.
 - **Rejected** — decided not to do; the reason states the decision, who and
   when, so that re-opening needs a *new* reason.
 
-### §4.1 Automatic placement (`triage auto`, SKILL.md §2.5a)
+### §4.1 Automatic placement (`auto-triage`, SKILL.md §2.5a)
 
 The rules, in order; the first that applies gives the target. They also
 give the recommendation of the interactive `triage` (§2.5).
@@ -273,7 +273,7 @@ give the recommendation of the interactive `triage` (§2.5).
 | Rule | The item … | Target |
 |---|---|---|
 | **A** | has its fault **only** in code the default build does not build or ship (checks below) | *Parked*, reason below |
-| **B** | cannot be placed with certainty: a `(to be written)` placeholder in the body; its *Notes* or *Log* say "possibly fixed by …", "may duplicate …", "not verified" about the defect itself; its type or `who` contradicts its own text (a `bug` / `agent` item whose fix needs a real server, a person, a decision) | stays in *Inbox*, log line `auto-triage: left in Inbox - <which of these>` |
+| **B** | cannot be placed with certainty: a `(to be written)` placeholder in the body; its *Notes* or *Log* say it may already be fixed or may duplicate another item ("possibly fixed by …", "may duplicate …" — `verify` decides that first); its type or `who` contradicts its own text (a `bug` / `agent` item whose fix needs a real server, a person, a decision). **Not** a reason: "by reading", "not verified", "not measured", "suspected" — every run measures first and blocks an item it does not reproduce | stays in *Inbox*, log line `auto-triage: left in Inbox - <which of these>` |
 | **C** | is `type: decision` | *Decisions for the maintainer* |
 | **D** | is `type: person-step` or `who: person` | *Person steps* |
 | **E** | anything else (`who` agent / both) | *Next* |

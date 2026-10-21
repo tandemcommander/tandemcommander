@@ -1,7 +1,7 @@
 ---
 name: "tandem-backlog"
-description: "Manage the Tandem Commander backlog in backlog/ (feature 242): add an item (bug, idea, leftover, review finding, person step, decision), import a GitHub issue, list or show items, triage the Inbox (interactively or automatically with triage auto), reorder, update fields or text, verify an item at HEAD, record a maintainer decision, park, reject, reopen, block, unblock, close an already fixed item, check consistency. Use whenever planned work is recorded, looked up or changed. Never write planned work into specs/."
-argument-hint: "<add|import-github|list|show|triage [auto [--dry-run]]|move|update|verify|decide|park|reject|reopen|block|unblock|close|check> [arguments]"
+description: "Manage the Tandem Commander backlog in backlog/ (feature 242): add an item (bug, idea, leftover, review finding, person step, decision), import a GitHub issue, list or show items, triage the Inbox (triage with questions, auto-triage without), reorder, update fields or text, verify an item at HEAD, record a maintainer decision, park, reject, reopen, block, unblock, close an already fixed item, check consistency. Use whenever planned work is recorded, looked up or changed. Never write planned work into specs/."
+argument-hint: "<add|import-github|list|show|triage|auto-triage [--dry-run|--commit]|move|update|verify|decide|park|reject|reopen|block|unblock|close|check> [arguments]"
 compatibility: "Requires backlog/ and tools/backlog/backlog.py (feature 242)"
 user-invocable: true
 disable-model-invocation: false
@@ -79,7 +79,9 @@ BL = python tools/backlog/backlog.py
   `lock: free` (or to let a manual run finish), then continue; resuming the
   loop (`loop-resume.sh`) is the maintainer's step. Read-only operations
   (`list`, `show`, `check`) are fine. Agent mode inside a run is
-  unaffected.
+  unaffected. **The loop's own triage** (`loop-start.sh --auto-triage`,
+  §2.5a *From the loop*) is the exception: it runs while the loop waits
+  for it, and the loop starts no run meanwhile.
 - Commands of this skill: `check`, `sync`, `list`, `new`, `import-github`,
   `set`, `log`, `verify`, `move`, `block`, `unblock`, `remove --reason`.
   `next`, `start`, `remove --feature`, `run-log` and `lock` belong to
@@ -90,14 +92,18 @@ BL = python tools/backlog/backlog.py
 - **Maintainer mode**: the maintainer invoked `/tandem-backlog` or asked in
   their own words in this conversation for this backlog operation. All
   operations are allowed.
+- **The loop's triage**: the prompt is exactly
+  `/tandem-backlog auto-triage --commit` and the environment variable
+  `TANDEM_BACKLOG_LOOP_TRIAGE` is set (the loop started this session; the
+  maintainer chose it with `loop-start.sh --auto-triage`). Maintainer mode
+  for that one operation only, never for anything else in the session.
 - **Agent mode**: any other case — you record a finding while implementing
   a feature, a reviewer agent reports something, another skill calls this
   one, or you are unsure. Allowed: `add`, `import-github`, `list`, `show`,
   `verify` (the `verified` stamp and a log line only), `log` (a log line on
   any item), `check`, and completing or correcting **the items you
-  yourself created in this session**. **Forbidden: `triage` (also
-  `triage auto`), `move`,
-  `decide`, `park`, `reject`, `reopen`, `block`, `unblock`, `close`, and
+  yourself created in this session**. **Forbidden: `triage`,
+  `auto-triage`, `move`, `decide`, `park`, `reject`, `reopen`, `block`, `unblock`, `close`, and
   any change of the fields or the body of an item you did not create in
   this session** (FR-014). A finding that belongs to an existing item
   becomes a new item with `--related <slug>`. If a forbidden operation
@@ -150,8 +156,8 @@ Take the first word of the input; Czech synonyms in brackets.
 | `import-github` | import, issue, `#N`, a github.com/…/issues/N link, "ai backlog", import all / new issues (naimportuj, nové issues) | §2.2 |
 | `list` | list, what next (seznam, vypiš, co dál, co je v backlogu) | §2.3 |
 | `show` | show (ukaž, detail) + a slug or a title | §2.4 |
-| `triage auto` | triage auto, auto-triage, `triage --auto`, triage automatically (roztřiď automaticky, automatické třídění); `--dry-run` / "just show" (jen ukaž, nic neměň) = plan only | §2.5a |
-| `triage` | triage (roztřiď, projdi inbox, třídění) | §2.5 |
+| `triage` | triage (roztřiď, projdi inbox, třídění) — with a question per item | §2.5 |
+| `auto-triage` | auto-triage, triage automatically, also the older form `triage auto` (roztřiď automaticky, automatické třídění) — without questions; `--dry-run` / "just show" (jen ukaž, nic neměň) = plan only; `--commit` = commit the result on `main` | §2.5a |
 | `move` | move, put, reorder, up, down (přesuň, dej na místo, nahoru, dolů) | §2.6 |
 | `update` | update, change, set (uprav, změň, nastav, doplň) | §2.7 |
 | `verify` | verify, still valid? (ověř, platí ještě) | §2.8 |
@@ -360,7 +366,7 @@ Goal: every *Inbox* item gets a place, or explicitly stays in *Inbox*.
      a lower severity), the fitting one of `Decisions for the maintainer` /
      `Person steps`, `Parked`, `Rejected`. The automatic "Other" lets the
      maintainer type a position, "leave in Inbox" or "stop". The
-     recommendation is the place `triage auto` would choose (reference.md
+     recommendation is the place `auto-triage` would choose (reference.md
      §4.1); an item whose fault lies only in code that is not shipped
      (rule A there) is recommended `Parked` with the rule's reason.
    - "Severity of `<slug>`?" — `<proposed> (Recommended)`, `<proposed+1>`,
@@ -385,7 +391,7 @@ Goal: every *Inbox* item gets a place, or explicitly stays in *Inbox*.
 **Report:** a table `| Item | → Section | Position | Severity |`, then
 `<n> items remain in Inbox.`
 
-### 2.5a `triage auto [--dry-run]` (maintainer mode only)
+### 2.5a `auto-triage [--dry-run | --commit]` (maintainer mode only)
 
 Goal: every *Inbox* item gets the place the rules of reference.md §4.1
 give it, **without questions**; an item the rules cannot place with
@@ -393,10 +399,12 @@ certainty stays in *Inbox* with a log line saying why, for the next
 interactive `triage`. An item whose fault lies only in code that is not
 built or shipped (an `off` plug-in, an `off` language, a file no project
 compiles) never enters a queue — it is **parked** with a reason that says
-what brings it back. `triage auto` never rejects, closes, decides, blocks
+what brings it back. `auto-triage` never rejects, closes, decides, blocks
 or unblocks, and never edits an item's body.
 
-1. §0.2 (lock and loop status) and §0.5 step 1 (`BL check`).
+1. §0.2 (lock and loop status) and §0.5 step 1 (`BL check`). From the
+   loop (*From the loop* below) the loop's status is expected, not a
+   reason to stop.
 2. Read the inputs **now**, never from memory:
    - `BL list --section inbox --json` (oldest first — the processing
      order); *Inbox* empty → report `Inbox is empty.` and stop;
@@ -430,6 +438,30 @@ or unblocks, and never edits an item's body.
       `check after the change found problems:` → §0.2 (never repeat),
       fix by reference.md §6, then continue.
 6. `BL check` → `TOTAL: 0`.
+7. `--commit` only: `git status --porcelain` must list only paths under
+   `backlog/` (anything else → do not commit; say so in the report);
+   nothing changed → no commit. Else `git add backlog` and
+   `git commit -m 'backlog: auto-triage - <n> placed, <n> parked, <n> left in Inbox' -m '<the attribution lines the session's instructions give for commits>'`.
+   Never push.
+
+**From the loop** (`loop-start.sh --auto-triage`, feature 247). The loop
+runs `claude -p '/tandem-backlog auto-triage --commit'` between two runs,
+whenever the *Inbox* holds an item its last triage did not see, with
+`TANDEM_BACKLOG_LOOP_TRIAGE` set to the loop's pid. Then:
+
+- Step 1: `echo "$TANDEM_BACKLOG_LOOP_TRIAGE"` and
+  `python tools/backlog/loop.py status`. Proceed only when it shows
+  `loop:    running (pid <that number>,` (with the comma: pid 123 must
+  not match 1234) and `state:   triage`, the lock is
+  `free`, the branch is `main` and `git status --porcelain` is empty.
+  Otherwise change nothing and end with
+  `Outcome: refused (<what did not match>)`.
+- No questions (there is nobody to answer them): what §2.5a would ask
+  about is left in *Inbox* by rule B.
+- Step 7 (`--commit`) is required: the loop starts the next run only on a
+  clean tree on `main`; a tree left changed stops the loop for a person.
+- End with the report; the loop reads the outcome from git, not from the
+  text.
 
 **Report:** a table `| Item | → Section | Position | Severity | Why |`
 (*Item* is `<title> (<slug>)`; *Severity* `n` or `old → n`; *Why* is the

@@ -837,6 +837,164 @@ class LogTests(unittest.TestCase):
         self.assertFalse(loop.alive(None, None))
 
 
+class AutoTriageTests(Base):
+    """--auto-triage: '/tandem-backlog auto-triage --commit' before a run when the Inbox has new items."""
+
+    def prompts(self):
+        return [c["prompt"] for c in self.calls()]
+
+    def test_triage_first_and_after_a_run_that_adds_an_item(self):
+        self.write_plan(["triage", {"do": "close", "add": "critical-find"}, "triage", "close"])
+        code, out = self.run_loop("--auto-triage", "--max-items", "2")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.prompts(), [loop.TRIAGE_PROMPT, f"/tandem-backlog-implement {FTP}",
+                                          loop.TRIAGE_PROMPT, "/tandem-backlog-implement critical-find"])
+        calls = self.calls()
+        self.assertEqual(calls[0]["triage_env"], str(os.getpid()))
+        self.assertIsNone(calls[1]["triage_env"])
+        argv = calls[0]["argv"]
+        self.assertEqual(argv[argv.index("--permission-mode") + 1], "bypassPermissions")
+        self.assertIn("--session-id", argv)
+        self.assertIn("auto-triage: 1 Inbox item(s) placed (1 new), 0 left in Inbox; next: critical-find", out)
+        self.assertIn("auto-triage 2", out)
+        self.assertNotIn("REFUSED", out)  # the fake checked the loop's status as the skill does
+        self.assertEqual(len(list(self.repo.logs.glob("*-auto-triage.jsonl"))), 2)
+        self.assertFalse(self.repo.triage_file.exists())
+
+    def test_the_last_item_of_max_items_is_triaged_after(self):
+        self.write_plan(["triage", {"do": "close", "add": "late-find"}, "triage"])
+        code, out = self.run_loop("--auto-triage", "--max-items", "1")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.prompts(), [loop.TRIAGE_PROMPT, f"/tandem-backlog-implement {FTP}", loop.TRIAGE_PROMPT])
+        bl = backlog.Backlog(self.root)
+        self.assertEqual(bl.ov.sections[backlog.SEC_NEXT].rows[0].slug, "late-find")
+
+    def test_without_the_option_no_triage(self):
+        self.write_plan(["close"])
+        code, out = self.run_loop("--max-items", "1")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.prompts(), [f"/tandem-backlog-implement {FTP}"])
+
+    def test_items_left_in_inbox_are_not_triaged_again(self):
+        self.write_plan(["triage-none", "close", "close", "close"])
+        code, out = self.run_loop("--auto-triage", "--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.prompts().count(loop.TRIAGE_PROMPT), 1)
+        self.assertEqual(self.prompts()[1], f"/tandem-backlog-implement {FTP}")
+        self.assertIn("auto-triage: no commit", out)
+
+    def test_a_refusal_is_said_and_tried_again(self):
+        self.write_plan(["refuse", "triage", "close"])
+        code, out = self.run_loop("--auto-triage", "--max-items", "1")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.prompts(), [loop.TRIAGE_PROMPT, loop.TRIAGE_PROMPT, f"/tandem-backlog-implement {FTP}"])
+        self.assertIn("the auto-triage REFUSED", out)
+        self.assertIn("auto-triage 1", out)  # a refusal is not counted as done
+
+    def test_two_refusals_in_a_row_stop_the_loop(self):
+        self.write_plan(["refuse", "refuse", "close"])
+        code, out = self.run_loop("--auto-triage")
+        self.assertEqual(code, 1, out)
+        self.assertEqual(self.prompts(), [loop.TRIAGE_PROMPT, loop.TRIAGE_PROMPT])
+        self.assertIn("refused 2 times in a row", out)
+
+    def test_an_error_is_retried_after_a_pause(self):
+        self.write_plan(["crash-start", "triage", "close"])
+        code, out = self.run_loop("--auto-triage", "--max-items", "1")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.prompts(), [loop.TRIAGE_PROMPT, loop.TRIAGE_PROMPT, f"/tandem-backlog-implement {FTP}"])
+        self.assertIn("the auto-triage ended with an error", out)
+
+    def test_errors_beyond_the_backoff_stop_the_loop(self):
+        self.write_plan(["crash-start", "crash-start", "crash-start", "triage"])
+        code, out = self.run_loop("--auto-triage")
+        self.assertEqual(code, 1, out)
+        self.assertEqual(self.prompts(), [loop.TRIAGE_PROMPT] * 3)  # FAST backoff has two pauses
+        self.assertIn("ended with an error 3 times", out)
+
+    def test_a_usage_limit_is_waited_out(self):
+        self.write_plan([{"do": "limit-start", "in": 0}, "triage", "close"])
+        code, out = self.run_loop("--auto-triage", "--max-items", "1")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.prompts(), [loop.TRIAGE_PROMPT, loop.TRIAGE_PROMPT, f"/tandem-backlog-implement {FTP}"])
+        self.assertIn("the auto-triage ended at a usage limit", out)
+
+    def test_ctrl_break_during_the_triage(self):
+        if os.name != "nt":
+            self.skipTest("Ctrl+Break is Windows")
+        self.write_plan([{"do": "triage-hang", "seconds": 60}])
+        p = self.spawn_loop("--auto-triage")
+        pid_file = self.tmp / "fake.pid"
+        self.wait_for(pid_file.exists, what="the fake's pid")
+        fake_pid = int(pid_file.read_text())
+        fake_ident = loop.process_ident(fake_pid)
+        _, status = self.ctl("status")
+        self.assertIn("state:   triage", status)
+        self.assertIn("HARD STOP now (the auto-triage is running)", status)
+        self.assertTrue(self.repo.triage_file.exists())
+        os.kill(p.pid, signal.CTRL_BREAK_EVENT)
+        self.assertEqual(p.wait(timeout=30), 130, self.output(p))
+        self.assertIn("HARD STOP: claude was killed during the auto-triage", self.output(p))
+        self.assertFalse(loop.alive(fake_pid, fake_ident))
+        self.assertFalse(self.repo.triage_file.exists())
+        self.assertFalse(self.repo.run_file.exists())
+
+    def test_stop_and_pause_during_the_triage_wait_for_it(self):
+        self.write_plan([{"do": "triage-hang", "seconds": 3}, "close"])
+        p = self.spawn_loop("--auto-triage")
+        self.wait_for(lambda: (self.tmp / "fake.pid").exists(), what="the triage")
+        _, said = self.ctl("pause")
+        self.assertIn("finishes the auto-triage, then waits", said)
+        self.ctl("resume")
+        _, said = self.ctl("stop")
+        self.assertIn("finishes the auto-triage, then ends", said)
+        self.assertEqual(p.wait(timeout=30), 0, self.output(p))
+        self.assertIn("1 Inbox item(s) placed", self.output(p))
+        self.assertEqual(self.prompts(), [loop.TRIAGE_PROMPT])  # no run after the stop
+
+    def test_a_triage_left_by_a_dead_loop_is_waited_for(self):
+        self.write_plan([{"do": "triage-hang", "seconds": 4, "nogate": True}, "close"])
+        orphan = subprocess.Popen([sys.executable, str(FAKE), "-p", loop.TRIAGE_PROMPT, "--session-id",
+                                   "22222222-2222-4222-8222-222222222222"], cwd=str(self.root),
+                                  stdout=subprocess.DEVNULL)
+        self.procs.append(orphan)
+        self.wait_for(lambda: (self.tmp / "fake.pid").exists(), what="the orphan")
+        self.repo.dir.mkdir(parents=True, exist_ok=True)
+        loop.save_json(self.repo.triage_file, {"log": str(self.tmp / "t.jsonl"), "err": str(self.tmp / "t.err"),
+                                               "offset": 0, "err_offset": 0, "pid": orphan.pid,
+                                               "ident": loop.process_ident(orphan.pid)})
+        _, status = self.ctl("status")
+        self.assertIn("auto-triage claude of the last loop", status)
+        p = self.spawn_loop("--auto-triage", "--max-items", "1")
+        self.wait_for(lambda: "previous loop" in str((loop.load_json(self.repo.loop_file) or {}).get("detail")),
+                      what="waiting for the orphan")
+        _, status = self.ctl("status")
+        self.assertIn("safe now", status)
+        self.assertEqual(p.wait(timeout=30), 0, self.output(p))
+        out = self.output(p)
+        self.assertIn("the auto-triage of the previous loop ended", out)
+        # its commit placed the Inbox item: no second triage, then the run
+        self.assertEqual(self.prompts(), [loop.TRIAGE_PROMPT, f"/tandem-backlog-implement {FTP}"])
+        self.assertFalse(self.repo.triage_file.exists())
+
+    def test_a_triage_that_leaves_the_tree_changed_stops_the_loop(self):
+        self.write_plan(["triage-dirty", "close"])
+        code, out = self.run_loop("--auto-triage", "--max-items", "1")
+        self.assertEqual(code, 1, out)
+        self.assertEqual(self.prompts(), [loop.TRIAGE_PROMPT])
+        self.assertIn("after the auto-triage the working tree is not clean", out)
+        self.assertFalse(self.repo.loop_file.exists())
+
+    def test_no_triage_while_the_tree_is_not_ready(self):
+        # a dirty tree: neither a triage nor a run starts; the precheck waits and says why
+        (self.root / "stray.txt").write_text("x", encoding="utf-8")
+        self.write_plan(["triage"])
+        code, out = self.run_loop("--auto-triage", "--deadline", "1.5")
+        self.assertEqual(code, 3, out)
+        self.assertEqual(self.prompts(), [])
+        self.assertIn("the working tree is not clean", out)
+
+
 class PruneTests(Base):
     def test_old_logs_are_pruned_the_current_kept(self):
         self.repo.logs.mkdir(parents=True)

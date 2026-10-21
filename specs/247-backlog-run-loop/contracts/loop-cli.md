@@ -23,6 +23,7 @@ another repository (tests).
 | `--model M` | claude's default | passed to `claude --model` |
 | `--until-idle` | off | end (exit 0) when nothing is eligible instead of waiting |
 | `--forget-run` | off | drop the record of an interrupted run first (after the maintainer cleaned up) |
+| `--auto-triage` | off | before a new run, when the *Inbox* holds an item the last triage of this loop did not see (at the start: any item), run the auto-triage (*Auto-triage* below) |
 
 Hidden test options: `--claude-cmd JSON-list`, `--backoff s,s,…`, `--limit-margin s`,
 `--limit-unknown-wait s`, `--tick s`, `--deadline s` (the loop ends with exit 3 after s
@@ -42,6 +43,10 @@ seconds and kills its claude — a test that would hang fails instead).
 
 1. stop requested → end (0). Paused → wait for `resume` / `stop`.
 2. `run.json` exists → *pending run* (below).
+2a. `--auto-triage`, the precheck's tree conditions of step 4 hold (lock free, `main`,
+   clean, `check` clean) and the *Inbox* holds an item the last triage did not see →
+   *Auto-triage* (below), then the cycle starts again. So the findings of a finished run
+   are placed before the next item is chosen, also after the last item of `--max-items`.
 3. `--max-items` reached → end (0).
 4. Precheck, in order — while one fails the loop waits (`--poll`) and starts nothing:
    run lock free; `HEAD` is `main`; `git status --porcelain` empty;
@@ -71,6 +76,25 @@ seconds and kills its claude — a test that would hang fails instead).
 
 *Continue* = `claude -p '<continue prompt>' --resume <uuid>` with the same options: the
 prompt says why the run was interrupted and points to SKILL.md *Continued run*.
+
+## Auto-triage
+
+`claude -p '/tandem-backlog auto-triage --commit'` with the options of a new run (its own
+`uuid4` session, never continued), `TANDEM_BACKLOG_LOOP_TRIAGE=<the loop's pid>` (the skill
+proceeds only when `status` shows that pid in state `triage`), log
+`logs/<date>-auto-triage.jsonl`, state `triage`. The skill commits its changes on `main`
+(`backlog: auto-triage - …`). It takes no run lock and writes no `run.json`. When claude ends:
+
+| After it | Action |
+|---|---|
+| the tree is not on `main`, not clean, or `check` reports findings | stop (1): the loop never repairs the tree |
+| a usage limit | wait for the reset, then the auto-triage again |
+| an error result or no result | wait 1, 5, 15, 30, 60 min, then again; the 6th → stop (1) |
+| a successful result, a new commit | count it; the *Inbox* items left now are not triaged again by this loop; say how many were placed and which item is next |
+| a successful result, no commit (refused, nothing to do) | say so; the same, the loop continues with *Next* as it is |
+
+Pause and stop wait for it as for an item. Ctrl+C kills it (`HARD STOP …`): what it
+changed and did not commit stays in `backlog/`; the next start waits for a clean tree.
 
 ## Pending run (a `run.json` at the top of a cycle)
 
@@ -103,16 +127,18 @@ loop:    running (pid P, host H, since T) | not running | not running (… ended
 state:   <state> - <detail> (since T)
 control: pause requested, stop requested | -
 done:    closed n, blocked n, not-reproduced n, split n (blocked in a row: n)
+triage:  auto, when the Inbox has new items (n done)        (only with --auto-triage)
 usage:   <status>: five_hour x% (resets HH:MM), seven_day y% (resets …)
 run:     item S, session U, phase P[, continues after T] [(why)]
 log:     <path>
 todo:    (phase lost / failed: what the maintainer does)
 lock:    free | <backlog.py lock status>
-Ctrl+C:  HARD STOP now (an item is running) … | safe now (no item is running)
+Ctrl+C:  HARD STOP now (an item | the auto-triage is running) … | safe now (no item is running)
 ```
 
 The `Ctrl+C` line follows what the loop announced (`ctrl_c_safe` in `loop.json`): while the
 loop waits for a claude left by a previous loop, Ctrl+C ends only the loop — safe.
 
-States: `starting`, `running`, `waiting` (precheck failed / lock of another item),
-`idle` (nothing eligible), `paused`, `limit` (waiting for a reset), `backoff`.
+States: `starting`, `running`, `triage` (the auto-triage runs), `waiting` (precheck failed /
+lock of another item), `idle` (nothing eligible), `paused`, `limit` (waiting for a reset),
+`backoff`.

@@ -13,7 +13,15 @@ limit-noreset, crash, stall, watchdog-stall, context-error, row-keep-lock (an
 interrupted run holding the lock); limit-start, crash-start, refuse,
 refuse-other, lost (a run that never took its item); release (finish a run
 that wrote its row but kept the lock); hang [seconds, then: step] (sleeps
-holding the lock, then plays `then`).
+holding the lock, then plays `then`).  A finished run with `add: slug
+[, severity: n]` first records a new Inbox item.  For the loop's
+auto-triage: triage (every Inbox item to Next - severity 7+ at the top -
+and a commit), triage-none (no change, no commit), triage-dirty (a change
+left uncommitted), triage-hang
+[seconds] (sleeps, then triage); each first checks what the skill checks
+(loop status: the pid of TANDEM_BACKLOG_LOOP_TRIAGE, state triage, lock
+free) and refuses otherwise, unless `nogate` is set; crash-start,
+limit-start and refuse work there too.
 """
 
 import json
@@ -60,8 +68,13 @@ def ensure_lock(slug):
         bl("lock", "acquire", "--slug", slug)
 
 
-def finish(slug, outcome):
+def finish(slug, outcome, step=None):
     ensure_lock(slug)
+    if (step or {}).get("add"):
+        new = step["add"]
+        bl("new", "--title", f"Found by {slug}: {new}", "--type", "bug", "--severity", str(step.get("severity", 9)),
+           "--area", "tooling", "--source", "manual", "--slug", new, "--problem", "p", "--evidence", "e",
+           "--expected", "x")
     if outcome == "closed":
         bl("remove", slug, "--reason", "fake close")
     else:
@@ -73,10 +86,54 @@ def finish(slug, outcome):
     result(f"Outcome: {outcome}\nItem: {slug}")
 
 
+def loop_gate():
+    """What SKILL.md 2.5a 'From the loop' checks before a triage; None when it may proceed."""
+    pid = os.environ.get("TANDEM_BACKLOG_LOOP_TRIAGE")
+    if not pid:
+        return "TANDEM_BACKLOG_LOOP_TRIAGE is not set"
+    loop_py = Path(__file__).resolve().parents[1] / "loop.py"
+    out = subprocess.run([sys.executable, str(loop_py), "status", "--root", str(ROOT)], capture_output=True,
+                         text=True, encoding="utf-8").stdout
+    if f"loop:    running (pid {pid}," not in out:
+        return f"the loop of pid {pid} is not running"
+    if "\nstate:   triage" not in out:
+        return "the loop is not in state triage"
+    if "\nlock:    free" not in out:
+        return "the run lock is held"
+    return None
+
+
 def play(step, slug):
     do = step["do"]
     if do in ("close", "block", "split", "notrepro"):
-        finish(slug, {"close": "closed", "notrepro": "not-reproduced"}.get(do, do + ("ed" if do == "block" else "")))
+        finish(slug, {"close": "closed", "notrepro": "not-reproduced"}.get(do, do + ("ed" if do == "block" else "")),
+               step)
+        return 0
+    if do in ("triage", "triage-dirty", "triage-hang", "triage-none") and not step.get("nogate"):
+        why = loop_gate()
+        if why:
+            result(f"Outcome: refused ({why})")
+            return 0
+    if do == "triage-hang":
+        (Path(os.environ["FAKE_CLAUDE_PLAN"]).parent / "fake.pid").write_text(str(os.getpid()))
+        time.sleep(step.get("seconds", 60))
+        return play({"do": "triage", "nogate": True}, slug)
+    if do == "triage":
+        b = backlog.Backlog(ROOT)
+        for row in list(b.ov.sections[backlog.SEC_INBOX].rows):
+            top = int(b.items[row.slug].header["severity"]) >= 7
+            bl("move", row.slug, "--section", "next", *(["--position", "1"] if top else []))
+        git("add", "-A")
+        git("commit", "-q", "-m", "backlog: auto-triage (fake)")
+        result("Placed every Inbox item.")
+        return 0
+    if do == "triage-none":
+        result("Every Inbox item stays in Inbox (rule B).")
+        return 0
+    if do == "triage-dirty":
+        with open(ROOT / "backlog" / "BACKLOG.md", "a", encoding="utf-8") as f:
+            f.write("\n")
+        result("Left a change.")
         return 0
     if do in ("limit", "limit-start"):
         if do == "limit":
@@ -160,6 +217,7 @@ def main():
     plan["calls"].append({"argv": argv, "prompt": prompt, "resume": resume, "session": SESSION, "slug": slug,
                           "step": step["do"], "watchdog": os.environ.get("CLAUDE_CODE_RETRY_WATCHDOG"),
                           "test_clock": os.environ.get("TANDEM_BACKLOG_NOW"),
+                          "triage_env": os.environ.get("TANDEM_BACKLOG_LOOP_TRIAGE"),
                           "pid": os.getpid(), "cwd": str(ROOT)})
     plan_path.write_text(json.dumps(plan, indent=1), encoding="utf-8")
     emit({"type": "system", "subtype": "init", "session_id": SESSION})

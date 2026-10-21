@@ -21,12 +21,15 @@ Operations: `add`, `import-github`, `list`, `show`, `triage`, `move`,
 `unblock`, `close`, `check` — each with exact steps, commands and a fixed
 report line. A decision that is answered is closed (`remove --reason`),
 not rejected; rejecting an item first resolves its dependents
-(`list --needs`). `triage auto [--dry-run]` places every *Inbox* item by
+(`list --needs`). `auto-triage [--dry-run]` places every *Inbox* item by
 the rules of `reference.md` §4.1 without questions (or, with `--dry-run`,
 only reports the plan): an item whose fault lies only in code the default
 build does not build or ship is parked with a reason, an item the rules
 cannot place stays in *Inbox* with a log line; it never rejects, closes or
-edits a body.
+edits a body. `--commit` commits the result on `main`; the backlog loop
+(`loop-start.sh --auto-triage`, feature 247) runs `auto-triage --commit`
+between two runs with `TANDEM_BACKLOG_LOOP_TRIAGE` set — maintainer mode
+for that operation only.
 
 Guarantees:
 
