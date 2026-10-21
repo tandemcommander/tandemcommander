@@ -1,0 +1,18 @@
+fsc286_probe (feature 286) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 14:44; ACP 1250; registry key existed True
+Fixture : long target 147 units / 327 bytes; short target E:\Projects\tandemcommander\build\probe286\tc286_fsc\tgt\short
+
+fsc-long   RUN    FAIL        picked its child; asked: nothing; field after: 58 units / 58 bytes, same as the initial folder: False, same as expected: False, tail '...probe286\tc286_fsc\fl\zz'
+fsc-long   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+fsc-long-init RUN    FAIL        OK of the browse window is disabled for the initial folder - the folder cannot be picked at all
+fsc-long-init END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+fsc-ctl    RUN    FAIL        picked its child; asked: nothing; field after: 58 units / 58 bytes, same as the initial folder: False, same as expected: False, tail '...probe286\tc286_fsc\fc\zz'
+fsc-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pick-long  RUN    FAIL        picked its child; asked: nothing; field after: 146 units / 146 bytes, same as the initial folder: False, same as expected: False, tail '...????????????????????????'
+pick-long  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pick-ctl   RUN    PASS        picked its child; asked: nothing; field after: 76 units / 116 bytes, same as the initial folder: False, same as expected: True, tail '...\pc\\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C\u4E0D\u4E0E\u4E0F\u4E10\u4E11\u4E12\u4E13\u4E14'
+pick-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 6, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
