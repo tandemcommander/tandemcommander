@@ -10,6 +10,7 @@
 #include "salunicode.h"
 #include "salpath.h"
 #include "salfileio.h"
+#include "salmoveback.h" // feature 281
 
 // frees the converted path while keeping the API call's last error
 static void SalFreeKeepLastError(WCHAR* w)
@@ -347,19 +348,18 @@ BOOL SalMoveFile(const char* u8from, const char* u8to)
 
 BOOL SalMoveFileBack(const char* u8from, const char* u8to)
 {
-    for (int attempt = 0;; attempt++)
-    {
-        if (SalMoveFile(u8from, u8to))
-            return TRUE;
-        DWORD err = GetLastError();
-        if (attempt >= 10 ||
-            (err != ERROR_SHARING_VIOLATION && err != ERROR_ACCESS_DENIED && err != ERROR_LOCK_VIOLATION))
-        {
-            SetLastError(err);
-            return FALSE;
-        }
-        Sleep(100);
-    }
+    // feature 281: the rule shared with the plug-ins (salmoveback.h)
+    DWORD err = ERROR_SUCCESS;
+    BOOL ok = SalMoveBackRetry([u8from, u8to](DWORD* e)
+                               {
+                                   if (SalMoveFile(u8from, u8to))
+                                       return TRUE;
+                                   *e = GetLastError();
+                                   return FALSE; },
+                               &err);
+    if (!ok)
+        SetLastError(err);
+    return ok;
 }
 
 BOOL SalMoveFileEx(const char* u8from, const char* u8to, DWORD flags)

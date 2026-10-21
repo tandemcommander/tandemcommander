@@ -1605,7 +1605,11 @@ void CFilesWindow::EditNewFile()
                     SetLastError(ERROR_FILENAME_EXCED_RANGE);
                 else
                 {
-                    hFile = SalCreateFileEx(path, GENERIC_READ | GENERIC_WRITE, 0, FILE_ATTRIBUTE_NORMAL, NULL);
+                    CMovedAsideLeft left; // feature 281
+                    hFile = SalCreateFileEx(path, GENERIC_READ | GENERIC_WRITE, 0, FILE_ATTRIBUTE_NORMAL, NULL, &left);
+                    DWORD crErr = GetLastError();
+                    ReportMovedAsideLeft(HWindow, &left); // where the other file stays - before the create's error
+                    SetLastError(crErr);
                     HANDLES_ADD_EX(__otQuiet, hFile != INVALID_HANDLE_VALUE, __htFile, __hoCreateFile, hFile, GetLastError(), TRUE);
                 }
                 BOOL editExisting = FALSE;
@@ -2095,7 +2099,14 @@ void CFilesWindow::CreateDir(CFilesWindow* target)
 
                     DWORD err;
                     BOOL invalidName = FileNameInvalidForManualCreate(path);
-                    if (!invalidName && SalCreateDirectoryEx(path, &err))
+                    CMovedAsideLeft left; // feature 281
+                    BOOL created = !invalidName && SalCreateDirectoryEx(path, &err, &left);
+                    if (left.Path != NULL)
+                    {
+                        SetCursor(oldCur);
+                        ReportMovedAsideLeft(HWindow, &left); // where the other entry stays - before the create's error
+                    }
+                    if (created)
                     {
                         SetCursor(oldCur);
                         if (nextFocus[0] != 0)

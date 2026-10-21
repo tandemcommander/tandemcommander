@@ -188,9 +188,36 @@ BOOL IsUNCRootPath(const char* path);
 // atributem, zkusi ho otevrit jeste bez Encrypted atributu, pokud se to povede,
 // soubor je smazan a do 'encryptionNotSupported' se zapise TRUE - navratova hodnota
 // funkce a GetLastError() obsahuji "puvodni" chybu (otevirani s Encrypted atributem)
+// feature 281: where an entry moved aside to a temporary name ("salNNN") for an 8.3 clash stayed
+// because it could not be moved back (another program held it) - the user is told
+struct CMovedAsideLeft
+{
+    char* Path; // malloc'd UTF-8 full path of the salNNN entry; NULL = nothing left
+    DWORD Err;  // the error of the last failed move back
+
+    CMovedAsideLeft() : Path(NULL), Err(0) {}
+    ~CMovedAsideLeft() { free(Path); }
+    void Set(const char* path, DWORD err); // (a copy of 'path'; replaces an earlier one)
+    void Clear()
+    {
+        free(Path);
+        Path = NULL;
+        Err = 0;
+    }
+};
+
+// shows "Error Renaming File" with the salNNN path and the reason when 'left' holds one, then
+// clears it; 'parent' NULL = GetMovedAsideReportParent(); callable from any thread
+void ReportMovedAsideLeft(HWND parent, CMovedAsideLeft* left);
+// an owner for that message on the calling thread: its foreground or first visible enabled
+// top-level window, else (main thread) the main window, else NULL
+HWND GetMovedAsideReportParent();
+
+// feature 281: 'left' (may be NULL) receives the entry of an 8.3 clash that could not be moved
+// back; with NULL the function shows it itself (ReportMovedAsideLeft) - never only a trace
 HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
                        DWORD shareMode, DWORD flagsAndAttributes,
-                       BOOL* encryptionNotSupported);
+                       BOOL* encryptionNotSupported, CMovedAsideLeft* left = NULL);
 
 // zkontroluje posledni komponentu jmena v ceste 'path', pokud obsahuje na
 // zacatku nebo na konci mezeru nebo na konci tecku, vraci TRUE, jinak FALSE
@@ -233,8 +260,8 @@ BOOL PathContainsValidComponents(char* path, BOOL cutPath);
 // prejmenuje zpet); dale resi jmena koncici na mezery (umi je vytvorit, narozdil
 // od CreateDirectory, ktera mezery bez varovani orizne a vytvori tak vlastne
 // jiny adresar); vraci TRUE pri uspechu, pri chybe FALSE (vraci v 'err'
-// (neni-li NULL) kod Windows chyby)
-BOOL SalCreateDirectoryEx(const char* name, DWORD* err);
+// (neni-li NULL) kod Windows chyby); 'left' as for SalCreateFileEx (feature 281)
+BOOL SalCreateDirectoryEx(const char* name, DWORD* err, CMovedAsideLeft* left = NULL);
 
 void InitLocales();                                       // nutne volat pres pouzitim NumberToStr a PrintDiskSize
 char* NumberToStr(char* buffer, const CQuadWord& number); // prevod int -> prehlednejsi string, !char buffer[50]!
@@ -669,7 +696,8 @@ private:
 // other entry moved aside and back, SalCreateDirectoryEx); 'lastIsFolder' = the last component too
 // (else it is a file's name). FALSE: *err why such a folder could not be made (never "it exists").
 // Outside an unpack, or above its target, nothing is done (a typed PROGRA~1 keeps resolving).
-BOOL MakeUnpackFoldersOwn(const char* path, BOOL lastIsFolder, DWORD* err);
+// 'left' as for SalCreateFileEx (feature 281).
+BOOL MakeUnpackFoldersOwn(const char* path, BOOL lastIsFolder, DWORD* err, CMovedAsideLeft* left = NULL);
 
 // smaze z disku prazdne podadresare v 'dir' a je-li 'dir' po vymazu podadresaru prazdny,
 // je smazan take

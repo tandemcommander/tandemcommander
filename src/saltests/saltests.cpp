@@ -63,6 +63,7 @@
 #include "salregfind.h"      // feature 257
 #include "salreparse.h"      // feature 197
 #include "salshortname.h"    // feature 203
+#include "salmoveback.h"     // feature 281
 #include "salu8fold.h"       // feature 210
 #include "salu8letter.h"     // feature 254
 #include "salbatchtext.h"    // feature 226
@@ -15478,6 +15479,85 @@ static void TestUserMenuValue280()
     CHECK(!SalUMJoinWhole("a", "b", NULL, MAX_PATH));
 }
 
+// feature 281: the move back of an entry moved aside for an 8.3 clash (salmoveback.h) - retried
+// while another process holds it, about a second; the last error kept; the probe seam's count
+static void TestMoveBack281()
+{
+    CHECK(SalMoveBackRetryable(ERROR_SHARING_VIOLATION));
+    CHECK(SalMoveBackRetryable(ERROR_ACCESS_DENIED));
+    CHECK(SalMoveBackRetryable(ERROR_LOCK_VIOLATION));
+    CHECK(!SalMoveBackRetryable(ERROR_FILE_EXISTS));
+    CHECK(!SalMoveBackRetryable(ERROR_PATH_NOT_FOUND));
+    CHECK(!SalMoveBackRetryable(ERROR_SUCCESS));
+
+    // a fake move failing 'fails' times with 'failErr', then done; counts attempts and waits
+    struct CFake
+    {
+        int Fails, Attempts, Waits;
+        DWORD FailErr, Waited;
+    };
+    auto run = [](CFake& f, BOOL seamOn, LONG* seamLeft, DWORD* lastErr)
+    {
+        return SalMoveBackRetryEx([&f](DWORD* e)
+                                  {
+                                      f.Attempts++;
+                                      if (f.Fails > 0)
+                                      {
+                                          f.Fails--;
+                                          *e = f.FailErr;
+                                          return FALSE;
+                                      }
+                                      return TRUE; },
+                                  [&f](DWORD ms)
+                                  {
+                                      f.Waits++;
+                                      f.Waited += ms; },
+                                  [seamOn, seamLeft]()
+                                  { return seamOn && SalMoveBackSeamTake(seamLeft); },
+                                  lastErr);
+    };
+    DWORD err = 12345;
+    CFake ok = {0, 0, 0, ERROR_SHARING_VIOLATION, 0};
+    CHECK(run(ok, FALSE, NULL, &err) && ok.Attempts == 1 && ok.Waits == 0 && err == ERROR_SUCCESS);
+    CFake brief = {3, 0, 0, ERROR_SHARING_VIOLATION, 0}; // held for three attempts
+    CHECK(run(brief, FALSE, NULL, &err) && brief.Attempts == 4 && brief.Waits == 3 && err == ERROR_SUCCESS);
+    CFake edge = {SAL_MOVE_BACK_RETRIES, 0, 0, ERROR_LOCK_VIOLATION, 0}; // done at the last attempt
+    CHECK(run(edge, FALSE, NULL, &err) && edge.Attempts == SAL_MOVE_BACK_RETRIES + 1);
+    CFake held = {1000, 0, 0, ERROR_ACCESS_DENIED, 0}; // held for good: gives up
+    CHECK(!run(held, FALSE, NULL, &err) && held.Attempts == SAL_MOVE_BACK_RETRIES + 1 &&
+          held.Waits == SAL_MOVE_BACK_RETRIES && err == ERROR_ACCESS_DENIED);
+    CHECK(held.Waited == SAL_MOVE_BACK_RETRIES * SAL_MOVE_BACK_WAIT_MS && held.Waited <= 1000); // about a second
+    // not a hold: no retry
+    CFake other = {1000, 0, 0, ERROR_PATH_NOT_FOUND, 0};
+    CHECK(!run(other, FALSE, NULL, &err) && other.Attempts == 1 && other.Waits == 0 && err == ERROR_PATH_NOT_FOUND);
+    CHECK(SalMoveBackRetryEx([](DWORD* e)
+                             { *e = ERROR_FILE_EXISTS; return FALSE; },
+                             [](DWORD) {}, []()
+                             { return FALSE; },
+                             NULL) == FALSE); // no last-error buffer
+
+    // the seam: its failures never touch the disk, they look like a hold
+    LONG left = 3;
+    CFake seam = {0, 0, 0, ERROR_SUCCESS, 0};
+    CHECK(run(seam, TRUE, &left, &err) && seam.Attempts == 1 && seam.Waits == 3 && left == 0);
+    left = 1000;
+    CFake seamAll = {0, 0, 0, ERROR_SUCCESS, 0};
+    CHECK(!run(seamAll, TRUE, &left, &err) && seamAll.Attempts == 0 && err == ERROR_SHARING_VIOLATION &&
+          left == 1000 - (SAL_MOVE_BACK_RETRIES + 1));
+    LONG none = 0;
+    CHECK(!SalMoveBackSeamTake(&none) && none == 0);
+    LONG neg = -1;
+    CHECK(!SalMoveBackSeamTake(&neg) && neg == -1);
+    CHECK(SalMoveBackSeamParse(L"3") == 3);
+    CHECK(SalMoveBackSeamParse(L"1000000") == 1000000);
+    CHECK(SalMoveBackSeamParse(L"1000001") == 0);
+    CHECK(SalMoveBackSeamParse(L"") == 0);
+    CHECK(SalMoveBackSeamParse(NULL) == 0);
+    CHECK(SalMoveBackSeamParse(L"-1") == 0);
+    CHECK(SalMoveBackSeamParse(L"3x") == 0);
+    CHECK(SalMoveBackSeamParse(L"99999999999999") == 0); // never overflows
+}
+
 // feature 273: the path inside an archive re-spelled as the listing spells it (salarcpathspell.h);
 // the fake listing reuses FakeDir252, the comparison is the listing's: the legacy byte fold
 // (= StrICmpEx) or exact bytes (= StrCmpEx, SALDIRFLAG_CASESENSITIVE)
@@ -15694,6 +15774,7 @@ int main(int argc, char** argv)
     TestInfoLineBuf276();
     TestFtpPwdReply277();
     TestUserMenuValue280();
+    TestMoveBack281();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

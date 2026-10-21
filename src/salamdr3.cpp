@@ -1297,7 +1297,64 @@ CUnpackRootScope::~CUnpackRootScope()
     free(mine);
 }
 
-BOOL MakeUnpackFoldersOwn(const char* path, BOOL lastIsFolder, DWORD* err)
+void CMovedAsideLeft::Set(const char* path, DWORD err)
+{
+    free(Path);
+    Path = path != NULL ? DupStr(path) : NULL; // NULL (low memory): the trace stays the only record
+    if (path != NULL && Path == NULL)
+        TRACE_E("CMovedAsideLeft::Set(): low memory, not reported: " << path);
+    Err = err;
+}
+
+// feature 281: a visible, enabled top-level window with a caption (never a tool tip)
+static BOOL CALLBACK FindMovedAsideOwner(HWND hwnd, LPARAM lParam)
+{
+    if (IsWindowVisible(hwnd) && IsWindowEnabled(hwnd) &&
+        (GetWindowLongPtr(hwnd, GWL_STYLE) & WS_CAPTION) == WS_CAPTION)
+    {
+        *(HWND*)lParam = hwnd;
+        return FALSE;
+    }
+    return TRUE;
+}
+
+HWND GetMovedAsideReportParent()
+{
+    // a window of the calling thread only: it is disabled while the message is up (no re-entry
+    // into a plug-in's dialog); another thread's window is never the owner from a worker thread
+    DWORD tid = GetCurrentThreadId();
+    HWND fg = GetForegroundWindow();
+    if (fg != NULL && GetWindowThreadProcessId(fg, NULL) == tid && IsWindowEnabled(fg))
+        return fg;
+    HWND found = NULL;
+    EnumThreadWindows(tid, FindMovedAsideOwner, (LPARAM)&found);
+    if (found != NULL)
+    {
+        HWND popup = GetLastActivePopup(found);
+        if (popup != NULL && GetWindowThreadProcessId(popup, NULL) == tid && IsWindowVisible(popup) &&
+            IsWindowEnabled(popup))
+        {
+            found = popup;
+        }
+        return found;
+    }
+    if (tid == MainThreadID && MainWindow != NULL)
+        return MainWindow->HWindow;
+    return NULL;
+}
+
+void ReportMovedAsideLeft(HWND parent, CMovedAsideLeft* left)
+{
+    if (left == NULL || left->Path == NULL)
+        return;
+    if (parent == NULL)
+        parent = GetMovedAsideReportParent();
+    // 221's form: "Error Renaming File", the salNNN path whole, the reason; OK only
+    ::DialogError(parent, BUTTONS_OK, left->Path, GetErrorText(left->Err), LoadStr(IDS_ERRORRENAMINGFILE));
+    left->Clear();
+}
+
+BOOL MakeUnpackFoldersOwn(const char* path, BOOL lastIsFolder, DWORD* err, CMovedAsideLeft* left)
 {
     *err = ERROR_SUCCESS;
     AcquireSRWLockShared(&UnpackRootLock);
@@ -1358,7 +1415,7 @@ BOOL MakeUnpackFoldersOwn(const char* path, BOOL lastIsFolder, DWORD* err)
         if (SalNameIsOnlyShortNameOf(path + start, i - start, longU8, shortU8))
         {
             DWORD e = ERROR_SUCCESS;
-            if (!SalCreateDirectoryEx(prefix, &e)) // the other entry moved aside and back (feature 203)
+            if (!SalCreateDirectoryEx(prefix, &e, left)) // the other entry moved aside and back (feature 203; 281: where it stayed)
             {
                 TRACE_I("MakeUnpackFoldersOwn(): unable to make the member's own folder " << prefix);
                 *err = SalShortNameClashError(e);
@@ -1376,6 +1433,7 @@ BOOL CheckAndCreateDirectory(const char* dir, HWND parent, BOOL quiet, char* err
                              BOOL manualCrDir)
 {
     CALL_STACK_MESSAGE2("CheckAndCreateDirectory(%s)", dir);
+    HWND givenParent = parent; // feature 281: the owner of the "left aside" message
 AGAIN:
     if (parent == NULL)
         parent = MainWindow->HWindow;
@@ -1392,7 +1450,12 @@ AGAIN:
     }
     char buf[MAX_PATH + 200]; // error texts (paths truncated into messages)
     DWORD ownErr;
-    if (!MakeUnpackFoldersOwn(dir, TRUE, &ownErr)) // feature 204: never into another folder by its short name
+    CMovedAsideLeft left;
+    BOOL own = MakeUnpackFoldersOwn(dir, TRUE, &ownErr, &left); // feature 204: never into another folder by its short name
+    // feature 281: the other folder could not get its name back - said in every mode (quiet, an
+    // error buffer): it is not this create's error but where the user's folder is now
+    ReportMovedAsideLeft(givenParent, &left);
+    if (!own)
     {
         _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CREATEDIRFAILED), dir);
         SalU8TrimIncompleteTail(buf);

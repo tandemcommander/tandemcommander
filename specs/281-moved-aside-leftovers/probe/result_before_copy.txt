@@ -1,0 +1,11 @@
+left281_probe (feature 281) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 08:17; ACP 1250; registry key existed True
+
+cp-left    RUN    FAIL        seam 1000; lost=False; on disk: sal49D=PRECIOUS-1; left at: sal49D; rename boxes: 0, naming it: False; asked: [#32770 'Error Opening File'] Name: | Error: | (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  |
+cp-left    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+dir-left   RUN    FAIL        seam 1000; lost=False; on disk: sal9FB/{keep.txt}; left at: sal9FB; rename boxes: 0, naming it: False; asked: [#32770 'Error Creating Directory'] Name: | Error: | (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  |
+dir-left   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 2, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -135,7 +135,10 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
         // feature 204: an archive member's folder that exists only as another entry's short (8.3)
         // name is made a folder of its own - never unpacked INTO the other folder
         DWORD ownErr;
-        if (!MakeUnpackFoldersOwn(fileName, isDir, &ownErr))
+        CMovedAsideLeft ownLeft; // feature 281: the other folder could not get its name back
+        BOOL own = MakeUnpackFoldersOwn(fileName, isDir, &ownErr, &ownLeft);
+        ReportMovedAsideLeft(hParent, &ownLeft); // said first, whatever the skip mask (not this create's error)
+        if (!own)
         {
             int ret;
             if (silentMask != NULL && (*silentMask & SILENT_SKIP_DIR_CREATE) && allowSkip)
@@ -246,7 +249,15 @@ CSalamanderSafeFile::SafeFileCreate(const char* fileName,
                                     SalDeleteFile(fileName);
                                 }
                                 if (!::SalMoveFileBack(tmpName, origFullName)) // feature 203: also when the create failed
+                                {
+                                    clashErr = GetLastError();
                                     TRACE_E("Fatal unexpected situation in CSalamanderGeneral::SafeCreateFile(): unable to rename file from tmp-name to original long file name! " << origFullName);
+                                    // feature 281: the other file stays under the temporary name - said before the
+                                    // create's error (a Retry there finds the short name free and creates the file)
+                                    CMovedAsideLeft left;
+                                    left.Set(tmpName, clashErr);
+                                    ReportMovedAsideLeft(hParent, &left);
+                                }
                             }
                             if (hFile != INVALID_HANDLE_VALUE)
                                 goto SUCCESS; // return only on success

@@ -6,6 +6,7 @@
 #include "../../common/salsamefile.h" // feature 103: is an existing target the source itself?
 #include "../../common/salnameorder.h" // feature 196: "the same name" by the file system's rule
 #include "splshortname.h"              // feature 206: a folder that is only another entry's short name
+#include "../../common/salmoveback.h"  // feature 281: the move back of an entry moved aside, retried
 
 // feature 199: does 'targetName' exist only as the SHORT (8.3) name of ANOTHER entry
 // ("LONGFI~1.TXT" of "longfilename.txt")? Its long name in 'longName' (the 092 name rule).
@@ -77,7 +78,10 @@ static CShortClashResult MoveAsideShortNameClash(const char* sourceName, const c
             if (!done)
                 *err = e;
             DWORD backErr = 0;
-            if (!SG->SalMoveFile(tmp, entry, &backErr)) // its long name back (a new short name)
+            // feature 281: the move back is tried for about a second (another program may hold the entry)
+            auto moveBack = [tmp, entry](DWORD* moveErr)
+            { return SG->SalMoveFile(tmp, entry, moveErr); };
+            if (!SalMoveBackRetry(moveBack, &backErr)) // its long name back (a new short name)
             {
                 // Windows may have made the new name the entry's long name: undo the rename and retry
                 if (done && SG->SalMoveFile(targetName, sourceName, &e))
@@ -85,7 +89,7 @@ static CShortClashResult MoveAsideShortNameClash(const char* sourceName, const c
                     done = FALSE;
                     *err = backErr; // second review: the reason the rename was undone
                 }
-                if (!SG->SalMoveFile(tmp, entry, &backErr))
+                if (!SalMoveBackRetry(moveBack, &backErr))
                 {
                     TRACE_E("MoveAsideShortNameClash(): the entry stays under the temporary name " << tmp);
                     *leftAt = tmp;

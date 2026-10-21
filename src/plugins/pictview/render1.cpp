@@ -6,6 +6,7 @@
 #include <shlobj.h>
 #include "../../common/salsamefile.h" // feature 103: is an existing target the viewed file itself?
 #include "../../common/salnameorder.h" // feature 200: "the same name" by the file system's rule
+#include "../../common/salmoveback.h"  // feature 281: the move back of an entry moved aside, retried
 
 #include "lib/pvw32dll.h"
 #include "renderer.h"
@@ -2874,7 +2875,10 @@ static BOOL PvMoveAsideShortNameClash(const char* source, const char* target, co
             if (!done)
                 *err = e;
             DWORD backErr = 0;
-            if (!SalamanderGeneral->SalMoveFile(tmp, entry, &backErr)) // its long name back
+            // feature 281: the move back is tried for about a second (another program may hold the entry)
+            auto moveBack = [tmp, entry](DWORD* moveErr)
+            { return SalamanderGeneral->SalMoveFile(tmp, entry, moveErr); };
+            if (!SalMoveBackRetry(moveBack, &backErr)) // its long name back
             {
                 // Windows may have made the new name the entry's long name: undo the rename and retry
                 if (done && SalamanderGeneral->SalMoveFile(target, source, &e))
@@ -2882,7 +2886,7 @@ static BOOL PvMoveAsideShortNameClash(const char* source, const char* target, co
                     done = FALSE;
                     *err = backErr;
                 }
-                if (!SalamanderGeneral->SalMoveFile(tmp, entry, &backErr))
+                if (!SalMoveBackRetry(moveBack, &backErr))
                 {
                     TRACE_E("PvMoveAsideShortNameClash(): the entry stays under the temporary name " << tmp);
                     *leftAt = tmp;

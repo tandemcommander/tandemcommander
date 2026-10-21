@@ -2968,7 +2968,8 @@ COPY_ADS_AGAIN:
 }
 
 HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
-                       DWORD shareMode, DWORD flagsAndAttributes, BOOL* encryptionNotSupported)
+                       DWORD shareMode, DWORD flagsAndAttributes, BOOL* encryptionNotSupported,
+                       CMovedAsideLeft* left)
 {
     HANDLE out = SalCreateFileNH(fileName, desiredAccess, shareMode, NULL,
                                  CREATE_NEW, flagsAndAttributes, NULL);
@@ -3085,7 +3086,16 @@ HANDLE SalCreateFileEx(const char* fileName, DWORD desiredAccess,
                                         SalDeleteFile(fileName);
                                     }
                                     if (!SalMoveFileBack(tmpName, origFullName)) // feature 203: also when the create failed
+                                    {
+                                        clashErr = GetLastError();
                                         TRACE_E("Fatal unexpected situation in SalCreateFileEx(): unable to rename file from tmp-name to original long file name! " << origFullName);
+                                        // feature 281: the user's entry stays under the temporary name - said (it was a trace)
+                                        CMovedAsideLeft own;
+                                        CMovedAsideLeft* l = left != NULL ? left : &own;
+                                        l->Set(tmpName, clashErr);
+                                        if (left == NULL)
+                                            ReportMovedAsideLeft(NULL, &own);
+                                    }
                                 }
                                 else
                                 {
@@ -4508,6 +4518,22 @@ void DoCopyFileLoopAsync(CAsyncCopyParams* asyncPar, HANDLE& in, HANDLE& out, vo
     }
 }
 
+// feature 281: the entry of an 8.3 clash that could not be moved back stays under its temporary
+// name - said through the progress dialog (221's form for the worker's move); keeps the last error
+static void ReportMovedAsideLeftWorker(HWND hProgressDlg, CMovedAsideLeft* left)
+{
+    if (left->Path == NULL)
+        return;
+    DWORD err = GetLastError();
+    char* data[3];
+    data[0] = LoadStr(IDS_ERRORRENAMINGFILE);
+    data[1] = left->Path;
+    data[2] = GetErrorText(left->Err);
+    SendMessage(hProgressDlg, WM_USER_DIALOG, 5, (LPARAM)data);
+    left->Clear();
+    SetLastError(err);
+}
+
 BOOL DoCopyFile(COperation* op, HWND hProgressDlg, void* buffer,
                 COperations* script, CQuadWord& totalDone,
                 DWORD clearReadonlyMask, BOOL* skip, BOOL lantasticCheck,
@@ -4666,9 +4692,17 @@ COPY_AGAIN:
                 if (!invalidTgtName)
                 {
                     // GENERIC_READ for 'out' slows asynchronous copying from disk to network (measured 95 MB/s instead of 111 MB/s on Win7 x64 GLAN)
-                    out = SalCreateFileEx(op->TargetName, GENERIC_WRITE | (script->CopyAttrs ? GENERIC_READ : 0), 0, fileAttrs, &encryptionNotSupported);
-                    if (!encryptionNotSupported && script->CopyAttrs && out == INVALID_HANDLE_VALUE) // in case read access to the directory is not allowed (we added it only for setting the Compressed attribute), try creating a write-only file
-                        out = SalCreateFileEx(op->TargetName, GENERIC_WRITE, 0, fileAttrs, &encryptionNotSupported);
+                    // feature 281: a block of its own - the gotos below never skip 'left'
+                    {
+                        CMovedAsideLeft left;
+                        out = SalCreateFileEx(op->TargetName, GENERIC_WRITE | (script->CopyAttrs ? GENERIC_READ : 0), 0, fileAttrs, &encryptionNotSupported, &left);
+                        ReportMovedAsideLeftWorker(hProgressDlg, &left);
+                        if (!encryptionNotSupported && script->CopyAttrs && out == INVALID_HANDLE_VALUE) // in case read access to the directory is not allowed (we added it only for setting the Compressed attribute), try creating a write-only file
+                        {
+                            out = SalCreateFileEx(op->TargetName, GENERIC_WRITE, 0, fileAttrs, &encryptionNotSupported, &left);
+                            ReportMovedAsideLeftWorker(hProgressDlg, &left);
+                        }
+                    }
 
                     if (out == INVALID_HANDLE_VALUE && encryptionNotSupported && dlgData.FileOutLossEncrAll && !lossEncryptionAttr)
                     { // the user agreed to lose the Encrypted attribute for all problematic files, so make that happen here
@@ -6631,7 +6665,7 @@ BOOL DoDeleteFile(HWND hProgressDlg, char* name, const CQuadWord& size, COperati
     }
 }
 
-BOOL SalCreateDirectoryEx(const char* name, DWORD* err)
+BOOL SalCreateDirectoryEx(const char* name, DWORD* err, CMovedAsideLeft* left)
 {
     if (err != NULL)
         *err = 0;
@@ -6719,7 +6753,16 @@ BOOL SalCreateDirectoryEx(const char* name, DWORD* err)
                                 if (createDirDone && SalRemoveDirectory(name))
                                     createDirDone = FALSE;
                                 if (!SalMoveFileBack(tmpName, origFullName)) // feature 203: also when the create failed
+                                {
+                                    clashErr = GetLastError();
                                     TRACE_E("Fatal unexpected situation: unable to rename file from tmp-name to original long file name! " << origFullName);
+                                    // feature 281: the user's entry stays under the temporary name - said (it was a trace)
+                                    CMovedAsideLeft own;
+                                    CMovedAsideLeft* l = left != NULL ? left : &own;
+                                    l->Set(tmpName, clashErr);
+                                    if (left == NULL)
+                                        ReportMovedAsideLeft(NULL, &own);
+                                }
                             }
                             else
                             {
@@ -6858,7 +6901,10 @@ BOOL DoCreateDir(HWND hProgressDlg, char* name, DWORD attr,
     while (1)
     {
         DWORD err;
-        if (!invalidName && SalCreateDirectoryEx(name, &err))
+        CMovedAsideLeft left; // feature 281
+        BOOL created = !invalidName && SalCreateDirectoryEx(name, &err, &left);
+        ReportMovedAsideLeftWorker(hProgressDlg, &left);
+        if (created)
         {
             script->AddBytesToSpeedMetersAndTFSandPS((DWORD)CREATE_DIR_SIZE.Value, TRUE, 0, NULL, MAX_OP_FILESIZE); // directory already created
 

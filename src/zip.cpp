@@ -4460,7 +4460,9 @@ CSalamanderGeneral::SalCreateFileEx(const char* fileName, DWORD desiredAccess, D
                                     DWORD flagsAndAttributes, DWORD* err)
 {
     CALL_STACK_MESSAGE1("CSalamanderGeneral::SalCreateFileEx()");
-    HANDLE ret = ::SalCreateFileEx(fileName, desiredAccess, shareMode, flagsAndAttributes, NULL);
+    // feature 281: no record - an entry of an 8.3 clash left under its temporary name is shown by
+    // the create itself (owner: a window of the calling thread); the result and error unchanged
+    HANDLE ret = ::SalCreateFileEx(fileName, desiredAccess, shareMode, flagsAndAttributes, NULL, NULL);
     if (err != NULL)
         *err = GetLastError();
     return ret;
@@ -4469,7 +4471,8 @@ CSalamanderGeneral::SalCreateFileEx(const char* fileName, DWORD desiredAccess, D
 BOOL CSalamanderGeneral::SalCreateDirectoryEx(const char* name, DWORD* err)
 {
     CALL_STACK_MESSAGE1("CSalamanderGeneral::SalCreateDirectoryEx()");
-    return ::SalCreateDirectoryEx(name, err);
+    // feature 281: no record - the create shows a left entry itself (as SalCreateFileEx above)
+    return ::SalCreateDirectoryEx(name, err, NULL);
 }
 
 void CSalamanderGeneral::PanelStopMonitoring(int panel, BOOL stopMonitoring)
