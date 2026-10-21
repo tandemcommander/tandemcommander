@@ -40,6 +40,8 @@ Controls (text that fits) are accepted and kept whole.
 - Q: The Find dialog's Add Current / Manage / Ignore commands, which read the field without the dialog's check: refuse or skip? → A: refuse with the same message before reading the field; the command does nothing, the field keeps the whole text (autonomous run: item - "no cut mask list is used or stored"; conservative)
 - Q: Choosing a stored Find option without a Named text keeps the field's text - read cut? → A: no - the field keeps its whole text; the next Find refuses it (autonomous run: item; conservative - the existing "keep the previous value" behaviour, whole)
 - Q: The Views name edit (30-byte name): refuse at Enter, or keep the whole name and refuse at OK? → A: refuse at the end of the edit with "The path specified is too long."; nothing is stored, the row keeps its earlier name - the views keep their names in 30-byte slots, so the whole text cannot be kept (autonomous run: item - its *Expected* names this refusal; conservative - no new string, no buffer grown)
+- Q: After the view name refusal, should the in-place edit open again with the typed text? → A: no - the message is shown and the edit is over; the user presses F2 again (autonomous run: conservative - changes least, the list's edit handling stays as it is)
+- Q: A view name edit that ends because the focus moves (e.g. OK pressed while editing) with a name that does not fit? → A: refused the same way; nothing is stored, the row keeps its earlier name and the dialog continues as before (autonomous run: conservative - never stores a cut name)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -131,6 +133,7 @@ earlier name.
 - The viewer page checks the tab size first (as before); the masks are measured after it.
 - A refused compare field may be disabled (its box unchecked): the message names the problem; the
   user checks the box to edit the field, or cancels.
+- A view name edit ended by a focus change (not Enter) is refused the same way; nothing is stored.
 - An empty view name edit keeps its existing behaviour; the code-page fallback (no edit control
   reachable) is unchanged - its text is already limited.
 - Stored masks are never longer than 259 bytes (registry load and the settings import refuse
