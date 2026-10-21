@@ -28,6 +28,8 @@ panel* on the first item -> the folder. Controls: Backspace / *Go to root* in
 - Q: What does "offer the server's share list" do exactly - a new list, or the one of Change Directory? → A: exactly what Change Directory does with `\\server\` since 125: the same list, the same wait window, the same messages; picking a share opens it, Esc leaves the panel where it was (autonomous run: item - "as Change Directory to `\\server\` does since 125")
 - Q: Opening the `..` of a share's root in the other panel (*Open in other panel*) - what does it open? → A: the other panel offers the server's shares, as it does with the plug-in (there it opens the `net:` panel of the server) (autonomous run: conservative - the plug-in's behaviour mapped to the core's list; otherwise the command would open a path that cannot exist)
 - Q: Opening the `..` of a share's root in a new tab (middle click)? → A: unchanged - nothing happens, as now and as with the plug-in (the code says "the UNC-root nethood jump stays a Backspace thing") (autonomous run: conservative)
+- Q: Should the share list opened from a share's root put the share the user came from first or focus it? → A: no - the list is the one of 125, unchanged (visible shares, then hidden ones, in the file system's name order; no item focused) (autonomous run: conservative - changes least, one list for both routes)
+- Q: Which message when the server lists no folder share at all? → A: the one Change Directory shows for `\\server\` since 125 ("A share name is missing in the path specified"), naming `\\server\`; no new text (autonomous run: rule - a new string breaks `build.cmd full` until the `.slt` refresh, which a run does not do; FR-008)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -85,7 +87,8 @@ does not exist.
 - A Network plug-in is loaded: `..`, Backspace, *Go to root* and *Open in other panel* go to its `net:` panel exactly as before (the plug-in route is checked first and left untouched).
 - A folder inside a share (`\\server\share\dir`): `..` / Backspace go to the parent folder, *Go to root* to the share's root - unchanged, no list.
 - A drive root (`C:\`) and a device path (`\\.\C:\`, `\\?\...`): unchanged - no `..`, Backspace does nothing.
-- The server lists no folder share: the message Change Directory shows for `\\server\` ("A share name is missing ..."), the panel stays.
+- The server lists no folder share: the message Change Directory shows for `\\server\` ("A share name is missing in the path specified", naming `\\server\`), the panel stays.
+- The share list is the one of 125 unchanged - the share the user came from is neither moved nor focused.
 - The server is slow: the wait window of 125 with Esc / Close.
 - A share root reached under a name the share list cannot rebuild (a server name too long for the list's buffers): the route of 125 refuses or shows its message; the panel stays - never a cut path.
 - The panel's directory line (clicking its parts) is unchanged.
