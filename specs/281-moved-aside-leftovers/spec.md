@@ -22,6 +22,22 @@ user where the entry stays for Quick Rename and the worker's move. Left open:
 2. **PictView's and the Renamer's own rename**: they already say where the entry stays, but they
    move it back only once - no retry while the other program lets go.
 
+## Clarifications
+
+### Session 2026-10-21
+
+- Q: Which window owns the "left aside" message when a create service is called without a window
+  (the plug-in interface's create functions, `CheckAndCreateDirectory` called with no parent or
+  quietly)? → A: a window the caller gave; else on the main thread the program's usual message-box
+  parent; on another thread its own visible enabled top-level window (so that window is disabled
+  while the message is up - no re-entry), else none (ownerless). (autonomous run: conservative)
+- Q: Is the message also shown in the quiet modes (`CheckAndCreateDirectory` quiet / with an error
+  buffer, a worker "Skip all")? → A: yes - it is not an error of the operation the caller may
+  silence but a fact about the user's other entry, and the item asks that every route tells.
+  (autonomous run: item)
+- Q: Does the message replace the create's own error report? → A: no - it comes first, then the
+  create's report exactly as before (221's order for Quick Rename). (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A copy, a new folder or an unpack tells where the other entry stayed (Priority: P1)
@@ -98,7 +114,10 @@ the other file has its own name, no message.
 - A "Skip all" of the create's errors in the worker: the "left aside" message is still shown -
   it is not an error of the create but a fact about the user's other entry.
 - The plug-in calls the create service from a background thread without a window: the message is
-  still shown (owned by a window of that thread if it has one, else ownerless).
+  still shown (owned by a visible enabled top-level window of that thread if it has one, else
+  ownerless); on the main thread it is owned by the program's usual message-box parent.
+- `CheckAndCreateDirectory` quiet or with an error buffer: the message is still shown (owner as
+  above when no parent was given).
 - The retry window must stay bounded (about one second per move back) so an operation is never
   stalled noticeably longer than today on the failure path.
 
