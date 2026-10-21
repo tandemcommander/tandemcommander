@@ -11,7 +11,7 @@ updated: 2026-10-21
 verified: -
 effort: S
 feature: -
-related: [regedit-key-name-buffer-size-and-move-rows]
+related: []
 depends-on: []
 reason: -
 ---
@@ -58,3 +58,4 @@ The GUI case needs a machine with a UTF-8 (or DBCS) ANSI code page - a person's 
 ## Log
 
 - 2026-10-21 — created (source review:278)
+- 2026-10-21 — related item regedit-key-name-buffer-size-and-move-rows done in feature 287

@@ -41,7 +41,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148 |
-| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278 |
+| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
 | User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285 |
@@ -3714,3 +3714,19 @@ a few early ones are out of sequence).
   (pick-ctl PASS, fsc-* INFO); saltests +45 (real folder shortcuts; negative control 2 FAIL);
   one refute-first review (no MUST; SHOULD 1 fixed, SHOULD 2 -> Inbox); person step
   `confirm-a-network-location-with-a-long-target-is-refused-in`.
+- 287-regedt-move-class-name: Registry Editor Copy / Move (F5 / F6) of a key into a key that
+  already holds a key of the same name with another class name merged the contents silently
+  (Move then deleted the source) - the "Class name of the key cannot be copied" question compared
+  the source key with itself (`CopyOrMoveKey`, `fs5.cpp`: `SafeQueryInfoKey(sourceHKey, ...)` for
+  the target, upstream since the first commit) - now the target's class is read and the question
+  comes before that key's contents are copied (Cancel stops, Move keeps the key and those above it,
+  All for the rest). The item's `fs3.cpp` buffer size was already fixed by 131. Limit: a question
+  for a subkey leaves what was copied above it. Traps: `CStaticText` answers `WM_GETTEXT` with
+  UTF-8 bytes (a wide caller gets them through the code page - reverse it to read a name; text
+  recognition drops long path lines); `RegCreateKeyEx` gives the class to the parents it creates;
+  PowerShell names ignore case (`$k` hid `$K`); take no fresh window list after an answer (the
+  next question is already open). From backlog item `regedit-key-name-buffer-size-and-move-rows`.
+  Probe `move287_probe` (Czech key names, Czech and English, 11 rows incl. Move, move into itself,
+  nested Cancel / All / Yes): without the fix 19 / 11 -> 30 / 0; 129's probe 19 / 0; one
+  refute-first review (no MUST; SHOULD changelog scope and the probe's name check fixed; Move onto
+  itself through `HKEY_USERS\<SID>` deletes the key -> Inbox `registry-editor-move-of-a-key-onto-itself-through-hkey-users`).

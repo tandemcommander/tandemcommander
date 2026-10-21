@@ -17,7 +17,6 @@ Last triaged: 2026-10-20
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor: fs3.cpp passes a third of the key-name buffer size](items/regedit-key-name-buffer-size-and-move-rows/desc.md) | bug | 3 | other-plugins | 287 |
 
 ## Next
 
