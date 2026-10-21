@@ -3,7 +3,7 @@
 **Feature Branch**: `285-share-list-sign-in`
 **Created**: 2026-10-21
 **Status**: Draft
-**Input**: Backlog item share-list-offers-sign-in (backlog/items/share-list-offers-sign-in/desc.md) - implement exactly what it describes.
+**Input**: Backlog item share-list-offers-sign-in (backlog/items/share-list-offers-sign-in/desc.md) - implement exactly what it describes. From backlog item share-list-offers-sign-in.
 
 ## Background
 
