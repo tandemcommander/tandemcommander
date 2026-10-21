@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
@@ -3796,3 +3796,22 @@ a few early ones are out of sequence).
   `zip290_probe.ps1` 6 FAIL / 12 -> 18 / 0 (negative control 6 FAIL); 110's 33 / 9 -> 44 / 0, 271's
   16 / 0, 108's 30 / 0; saltests 25,281 / 0; one refute-first review (no MUST; SHOULD 1-2
   and NOTE 6 fixed).
+- 291-masks-cut-rest: the Recycle Bin masks (Configuration > System), the Find dialog's Named
+  mask, the viewer's text / hex masks, the Compare Directories ignore masks and the Views list's
+  in-place name read typed text into their buffers (260 bytes, the view name 30) cut at a whole
+  character - Recycle Bin masks `R;*.kp` were stored as `R;*.k` (files the dropped mask named would
+  be deleted permanently), also with another Recycle Bin choice; Find with `M*Q` searched `M*` and
+  found `M.txt`; viewer and compare masks were stored cut (compare also with its box unchecked); 11
+  CJK letters / 30 ASCII letters became a 9 / 29 letter view name - now each `Validate` refuses
+  first (`DlgItemTextFitsU8`, "The path specified is too long.", no new string) and the view name
+  edit refuses at its end, storing nothing. Traps: `HistoryComboBox` writes what it read back into
+  the field, so Find's Add Current / Manage / Ignore (a `TransferData` without `Validate`) left a cut
+  mask that passed the next Find - they refuse first now; choosing a stored option without Named
+  kept the field through a cut read - its whole text is put back (`LoadControls`, taken before
+  `Data` changes); `SalGetWindowTextWAlloc` is file-static in winlib. Limits: a refused view name
+  is not kept (F2 again); a refused compare field may be disabled or hidden; Find's Containing, the
+  external Unpack dialog's path / mask, User Menu compare names and the Change Icon file still cut
+  (Inbox, `review:291`). From backlog item `masks-cut-recycle-bin-find-viewer-compare`. Probe
+  `mask291_probe.ps1` 12 FAIL / 22 -> 34 / 0 (negative control: Add Current and option keep off,
+  2 FAIL); 270's 24 / 0, 251's 42 / 0; saltests 25,281 / 0; one refute-first review (no MUST, no
+  SHOULD; 3 NOTEs to the Inbox).

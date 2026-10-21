@@ -11,7 +11,7 @@ updated: 2026-10-21
 verified: -
 effort: S
 feature: -
-related: [masks-cut-recycle-bin-find-viewer-compare]
+related: []
 depends-on: []
 reason: -
 ---
@@ -55,3 +55,4 @@ the reach is unproven; a reachable stack overrun would be 7-8.
 
 - 2026-10-21 — created (source review:283)
 - 2026-10-21 — moved to Next position 3
+- 2026-10-21 — related item masks-cut-recycle-bin-find-viewer-compare done in feature 291

@@ -17,7 +17,6 @@ Last triaged: 2026-10-21
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Typed masks still cut to their buffer: Recycle Bin, Find, viewer, compare](items/masks-cut-recycle-bin-find-viewer-compare/desc.md) | bug | 7 | long-paths | 291 |
 
 ## Next
 
@@ -233,6 +232,9 @@ Last triaged: 2026-10-21
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Find cuts a long Containing text and writes the cut text back](items/find-cuts-a-long-containing-text-and-writes-the-cut-text/desc.md) | bug | 5 | long-paths | review:291 | 2026-10-21 |
+| [Unpack with an external unpacker cuts a long target path and mask](items/unpack-with-an-external-unpacker-cuts-a-long-target-path-and/desc.md) | bug | 6 | long-paths | review:291 | 2026-10-21 |
+| [User Menu compare names and the Change Icon file are cut to 259 bytes](items/user-menu-compare-names-and-the-change-icon-file-are-cut-to/desc.md) | bug | 4 | long-paths | review:291 | 2026-10-21 |
 
 ## Parked
 

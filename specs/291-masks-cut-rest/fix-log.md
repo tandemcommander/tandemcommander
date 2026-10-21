@@ -82,3 +82,31 @@ driven - it would write the user's Recycle Bin): accepted; the delete matches th
   name (an overrun, not the old behaviour) - its control is the before run (vname, vname-ascii
   FAIL at c01e1801).
 - Regression: 270's probe 24 / 0 (`probe/regress_270.txt`), 251's 42 / 0 (`probe/regress_251.txt`).
+
+## Review
+
+Review 1 (refute-first agent, at c767771e): **no MUST, no SHOULD**. Re-ran build (BUILD
+SUCCEEDED), saltests 25,281 / 0, encoding 0, the probe 34 / 0; its own negative control (Recycle
+Bin, viewer text, compare files and Find Validate checks off): exactly those rows FAIL, the others
+PASS (13 / 5), restored byte-exact, 34 / 0 again; its own rows: Manage refuses (field whole), an
+option without Named keeps a fitting text (found 2), an option with Named replaces a long field
+(found 1), a named view row renamed long keeps its name after OK and reopening, OK while the edit
+holds a long name refuses and the dialog stays, 29 bytes with surrounding spaces stored trimmed;
+270's probe 24 / 0, 251's 42 / 0. Callers enumerated (six `TransferData(ttDataFromWindow)` in the
+Find dialog, all guarded now; page changes go through `PSN_KILLACTIVE` / `ValidateData`).
+- NOTE 1 - Find's Containing text is cut the same way (`GREP_TEXT_LEN` 201, written back) ->
+  Inbox `find-cuts-a-long-containing-text-and-writes-the-cut-text`.
+- NOTE 2 - `CUnpackDialog` (external unpacker) cuts its target path (a combo box without a limit)
+  and mask, no `Validate` -> Inbox `unpack-with-an-external-unpacker-cuts-a-long-target-path-and`.
+- NOTE 3 - `CCompareArgsDlg` names and `CChangeIconDialog` file cut -> Inbox
+  `user-menu-compare-names-and-the-change-icon-file-are-cut-to`.
+- NOTE 4 - a view name edit ended by OK / Cancel: the message, the click consumed, the text not
+  kept: the spec's choice (clarifications 5-7). Kept.
+- NOTE 5 - a refused compare field may be disabled or hidden: the spec's choice. Kept.
+- NOTE 6 - the code-page fallback of the view name edit (no edit control) unchanged, practically
+  unreachable. Kept.
+- NOTE 7 - CHANGELOG and FEATURE-HISTORY entries: written at closing.
+- NOTE 8 - a restore with `Copy-Item` keeps the old timestamp and the build skips the file: this
+  run restored with `cp` (new timestamp) and the restored rebuild ran the restored code (find-add
+  / find-option PASS again, `probe/result_negative_control_restored.txt`).
+No second review: review 1 had no MUST.
