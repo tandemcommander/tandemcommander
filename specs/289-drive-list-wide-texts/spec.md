@@ -44,6 +44,10 @@ encodings in one drive menu, and one menu item can join a UTF-8 label with a cod
 
 ### Session 2026-10-21
 
+- Q: When a text from Windows is longer in UTF-8 than the buffer that holds it today, is it cut or does the buffer grow? → A: The buffer grows to hold the longest text that field can return (a type name of 80 UTF-16 units, a display name of 260, a volume label of 260 - at most 3 bytes per unit); no cut happens, and a conversion that still fails is treated like a failed call (autonomous run: rule - CLAUDE.md "never cut"; whole-character cut only if shortening is unavoidable, which it is not here)
+- Q: When the Unicode call fails, does the program retry the old code-page call? → A: No - the Unicode call is the answer; on failure the existing fallback text ("Compact Disc", "Removable Disk", empty folder type name) is used exactly as when the code-page call failed (autonomous run: recommended - the precedent of feature 069 for fixed-drive labels, and a code-page retry would bring the '?' back)
+- Q: Does the change also cover the hot path names, plug-in items and the remembered-network-drive chain listed in the same menu? → A: No - they are UTF-8 already (hot paths, plug-in names by contract 052) or tracked by their own item (`remembered-network-drive-with-a-non-code-page-or-long-path`) (autonomous run: item - "Expected" names folder type names, removable / CD drive names and the drive menu's texts)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A CD or removable drive named in another script shows its real name (Priority: P1)
@@ -115,11 +119,12 @@ every item; the menu and tooltips on this machine look exactly as before.
 
 ### Edge Cases
 
-- A label or display name whose UTF-8 form is longer than the code-page form: the stored text
-  must never be cut in the middle of a character; the buffers hold the longest text Windows can
-  return for that field, or the text is cut at a whole character.
+- A label or display name whose UTF-8 form is longer than the code-page form: the buffers hold
+  the longest text Windows can return for that field (3 bytes per UTF-16 unit), so nothing is
+  cut; a conversion that still fails counts as a failed call.
 - Windows fails the Unicode call (no medium, a slow CD): the existing fallback texts ("Compact
-  Disc", "Removable Disk") are used, exactly as when the code-page call failed.
+  Disc", "Removable Disk") are used, exactly as when the code-page call failed; the code-page
+  call is not retried.
 - The CD thread times out (500 ms): unchanged - the item shows "Compact Disc".
 - A label containing `&`: still doubled for the menu, as today.
 - Texts that are pure ASCII: the bytes are identical before and after.
