@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A CD or USB drive named in another script showed as question marks in the Change Drive menu** (feature 289).
+  - **Before:** the label of a CD / DVD and the name of a removable drive were asked of Windows in the system's code page, which turns every letter outside it into `?` before the program sees it - a disc labelled `Диск` on a Czech or English system showed as `????` in Alt+F1 / Alt+F2 and the drive bar tooltip. The same held for the type name of folders in the *Type* column ("File folder") when the Windows display language is outside the code page. The program's own words in the drive list ("Local Drive", "Network", "As Other Panel", the free space, …) and the type of the `..` entry were also code-page text where everything else is Unicode.
+  - **Now:** these names and words come from Windows and the language file as Unicode and are shown exactly; a long name is never cut. Where they showed correctly before, they look the same.
+  - **Limitation:** checked on fixed drives in English and Czech (the stored texts are Unicode, the display unchanged); a real CD, a USB stick and a display language outside the code page were not available - recorded for a person.
+
 - **FTP: a new name reached an old (code-page) server garbled, and a name seen on one server was sent wrongly to another** (feature 288).
   - **Before:** on an older FTP server whose names are in the system's code page (not UTF-8), a folder you created, the new name of a rename or an uploaded file with letters outside ASCII (`nový`, `čaj.txt`) arrived as UTF-8 and the server stored a garbled name (`novĂ˝`). And a name the program had once seen in the code page on one server was sent in the code page to every server: after browsing an old server, deleting, renaming or downloading a file of the same name on a UTF-8 server failed with "550 No such file".
   - **Now:** the program learns each server's encoding (by its address, port and user name) from the names its listings show: a server whose listings show only code-page names gets new names in the code page; a UTF-8 server gets UTF-8; what one server showed no longer decides another. Names of UTF-8 servers and names taken from a listing go as before.

@@ -1864,7 +1864,7 @@ extern const char* ProgDlgSecsStr;    // LoadStr(IDS_PROGDLGSECS) - pouziva se p
 
 extern char FolderTypeName[3 * 80 + 1]; // file-type pro vsechny adresare (ziskany ze systemoveho adresare); UTF-8, SAL_FOLDER_TYPE_U8_MAX (feature 289)
 extern int FolderTypeNameLen;           // delka retezce FolderTypeName
-extern const char* UpDirTypeName;       // LoadStr(IDS_UPDIRTYPENAME) - pouziva se prilis casto, cachujeme
+extern const char* UpDirTypeName;       // LoadStrU8(IDS_UPDIRTYPENAME) - pouziva se prilis casto, cachujeme
 extern int UpDirTypeNameLen;            // delka retezce
 extern const char* CommonFileTypeName;  // LoadStr(IDS_COMMONFILETYPE) - pouziva se prilis casto, cachujeme
 extern int CommonFileTypeNameLen;       // delka retezce CommonFileTypeName

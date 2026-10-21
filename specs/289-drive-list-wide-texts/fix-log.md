@@ -94,3 +94,37 @@ ACP = 1250
   tooltip show the label as Explorer does (was `????`); (3) a Windows display language outside
   the system code page (e.g. Japanese display language, English non-Unicode setting): the *Type*
   column of folders shows the display language's "File folder" (was `?`).
+
+## Review
+
+Review 1 (independent agent, refute-first; it re-ran the fix-log measurement - reproduced -, built,
+ran saltests 25,237 / 0 failed and the encoding guard 0; it could not re-run the GUI probe because
+an installed `tandemcommander.exe` was running at that moment, and read the committed results):
+**no MUST**.
+
+- SHOULD S1 - the CD / removable label paths have no evidence beyond code reading; the reviewer
+  suggested mounting an ISO labelled "Диск" (IMAPI2FS + Explorer's *Mount*). Not done: mounting
+  puts a new drive into the maintainer's visible session (Explorer, AutoPlay) while the maintainer
+  works on the machine; it stays a person step with exact steps (ISO and USB), see *Owed to a
+  person*. The code of both paths follows feature 069's measured `GetVolumeInformationU8Menu`.
+- NOTE N1 - the seam logs a TIP for every item now (plug-in items, hot paths, other panel); the
+  246 / 264 probes key tooltips by the first character - no clash here (keys `/ ' ; , . TAB`
+  and digits vs drive letters). Accepted, Debug-only.
+- NOTE N2 - the probe header claimed hot paths / plug-in items were never written out (the TIP
+  rows do write their tooltips: empty for hot paths, the command name for plug-ins), and the ALL
+  filter left out `drvtOtherPanel`, so the changed `IDS_ANOTHERPANEL` was not measured. Fixed:
+  header corrected, type 14 checked against "As Other Panel" / "Jako druhý panel". Re-run 18:48
+  (`result_after.txt`, `results_after.txt`): PASS 8, FAIL 0; ALL-czech now 27 lines incl. 3
+  "Jako druhý panel", all UTF-8. `decoded_after.txt` minus its 8 type-14 lines equals
+  `decoded_before.txt` (210 lines; the before run predates the type-14 check).
+- NOTE N3 - `consts.h` comment still said `LoadStr(IDS_UPDIRTYPENAME)`: fixed.
+- NOTE N4 - subst targets: `MyQueryDosDevice` falls back to the code page when the UTF-8 form
+  does not fit `MAX_PATH` bytes, `GetSubstInformation` cuts with `lstrcpyn`, and `ResolveSubsts`
+  uses the result; outside this item -> Inbox item
+  `a-subst-drive-whose-target-is-long-or-outside-the-code-page` (review:289). The remembered-path
+  `min(l, MAX_PATH - 1)` display cut is noted there too.
+- NOTE N5 - `result_*.txt` (runner log) vs `results_*.txt` (the script's file) are both kept as
+  in earlier features; the closing artifacts follow in the close step.
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED, saltests 25,237 checks 0 failed, encoding guard
+TOTAL 0, probe PASS 8 / FAIL 0. No second review needed (no MUST finding).

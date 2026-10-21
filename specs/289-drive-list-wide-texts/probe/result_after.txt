@@ -1,17 +1,17 @@
 run289 (feature 289) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 18:37; registry key existed True; ACP 1250; UI culture cs-CZ; unlabelled fixed drives C
+Date    : 2026-10-21 18:48; registry key existed True; ACP 1250; UI culture cs-CZ; unlabelled fixed drives C
 
 [english] menu opened True; dump lines 176
 TYPES-english RUN    PASS        utf8 True; folder 'Slo\u017Eka soubor\u016F' (Windows 'Slo\u017Eka soubor\u016F'); updir 'Upper Directory' (expected 'Upper Directory')
 ITEM-english RUN    PASS        25 lines, 0 not UTF-8; unlabelled drives C -> 'Local Drive' x5 True; e.g. -
-ALL-english RUN    PASS        40 lines, 0 not UTF-8; Documents True ('Documents'); Network items 5 ('Network') True; e.g. -
+ALL-english RUN    PASS        45 lines, 0 not UTF-8; Documents True ('Documents'); Network items 5 ('Network'), As Other Panel items 5 ('As Other Panel') True; e.g. -
 TIP-english RUN    PASS        54 lines, 0 not UTF-8; unlabelled tooltips x6 start 'Local Drive (' True; e.g. -
 [czech] menu opened True; dump lines 118
 TYPES-czech RUN    PASS        utf8 True; folder 'Slo\u017Eka soubor\u016F' (Windows 'Slo\u017Eka soubor\u016F'); updir 'Nad\u0159azen\u00FD adres\u00E1\u0159' (expected 'Nad\u0159azen\u00FD adres\u00E1\u0159')
 ITEM-czech RUN    PASS        15 lines, 0 not UTF-8; unlabelled drives C -> 'M\u00EDstn\u00ED jednotka' x3 True; e.g. -
-ALL-czech  RUN    PASS        24 lines, 0 not UTF-8; Documents True ('Dokumenty'); Network items 3 ('S\u00ED\u0165') True; e.g. -
+ALL-czech  RUN    PASS        27 lines, 0 not UTF-8; Documents True ('Dokumenty'); Network items 3 ('S\u00ED\u0165'), As Other Panel items 3 ('Jako druh\u00FD panel') True; e.g. -
 TIP-czech  RUN    PASS        44 lines, 0 not UTF-8; unlabelled tooltips x4 start 'M\u00EDstn\u00ED jednotka (' True; e.g. -
-Registry: restored; identical=True; SHA-256 before 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861 / after 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861
+Registry: restored; identical=True; SHA-256 before 8079B05F9E7FF2CA3F5B0701BC545AD96B2E5A91DC2D54E461ADD0A889EC0CAE / after 8079B05F9E7FF2CA3F5B0701BC545AD96B2E5A91DC2D54E461ADD0A889EC0CAE
 
 Rows: PASS 8, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

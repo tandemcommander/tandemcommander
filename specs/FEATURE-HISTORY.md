@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
@@ -3752,3 +3752,27 @@ a few early ones are out of sequence).
   failing on the earlier versions); negative control (224's rule) 9 / 3; 224 16 / 0, 269 14 / 0,
   277 10 / 0; saltests 25,226 / 0; two refute-first reviews (review 1: MUST best-fit + SHOULD echo fixed;
   review 2: no MUST, SHOULD fixed); person step `ftp-288-real-server-checks`.
+- 289-drive-list-wide-texts: a CD / DVD label and a removable drive's name in the Change Drive
+  menu and the drive bar tooltip, and the folder type name of the panel's *Type* column, were asked
+  of Windows in the code page (`GetVolumeInformation` A in the CD thread, `SHGetFileInfo` A) - '?'
+  for every character outside it, before the program saw the text; the drive list's own words
+  (`LoadStr`: Local / Removable Drive, Compact Disc, floppies, Documents, Network, OneDrive (+
+  Personal), Google Drive, Dropbox, As Other Panel, the free space) and the `..` type
+  (`UpDirTypeName`) were code page in UTF-8-first sinks - now all wide / `LoadStrU8` /
+  `PrintDiskSize(.., TRUE)` and UTF-8, never cut: header-only `saldrivetext.h`
+  (`SAL_DRIVE_TEXT_U8_MAX` = 3 * MAX_PATH + 1, `SAL_FOLDER_TYPE_U8_MAX` = 241,
+  `SalDriveNameTrimLetterSuffixW`), `FolderTypeName[241]`, `ReadCDVolNameBuffer[781]` copied
+  whole (was `lstrcpyn` at MAX_PATH), menu buffers `2 * SAL_DRIVE_TEXT_U8_MAX + 100` with the '&'
+  doubling bounded; no code-page retry after a failed wide call (069's precedent); the OneDrive for
+  Business name is read back with `LoadStrU8(IDS_ONEDRIVE)`, the encoding it was composed with.
+  Seam (Debug) of 246 extended: `TYPES`, `ALL` (whole list), `TIP` for every item. Traps: on a
+  machine whose display language is in its code page nothing is visibly wrong - the probe reads
+  the bytes and checks them with a strict UTF-8 decoder (the negative control: Czech "Místní
+  jednotka", "Síť", "Složka souborů" in cp1250); `consts.h` changes rebuild everything (old
+  C4018 / C4244 warnings show up). Left: a real CD / USB stick / display language outside the code
+  page (person step `check-drive-labels-and-folder-type-names-outside-the-code`); subst targets
+  (`MyQueryDosDevice` code-page fallback, `GetSubstInformation` cut) -> Inbox
+  `a-subst-drive-whose-target-is-long-or-outside-the-code-page`. From backlog item
+  `drive-list-code-page-texts`. Probe `run289` (English, Czech) 3 / 5 -> 8 / 0; sink-decoded texts
+  before = after (210 lines); saltests 25,226 -> 25,237 / 0; one refute-first review (no MUST;
+  N2 probe coverage of As Other Panel and N3 fixed; N4 -> Inbox).

@@ -36,6 +36,7 @@ english ALL idx=4 type=3 text=G\u0009Google Drive
 english ALL idx=6 type=7 text=;\u0009Documents
 english ALL idx=7 type=10 text=\u0009OneDrive
 english ALL idx=8 type=13 text=,\u0009Network
+english ALL idx=15 type=14 text=.\u0009As Other Panel
 english ALL idx=0 type=3 text=C\u0009Local Drive
 english ALL idx=1 type=3 text=D\u0009DATA
 english ALL idx=2 type=3 text=E\u0009DATA
@@ -44,6 +45,7 @@ english ALL idx=4 type=3 text=G\u0009Google Drive
 english ALL idx=6 type=7 text=;\u0009Documents
 english ALL idx=7 type=10 text=\u0009OneDrive
 english ALL idx=8 type=13 text=,\u0009Network
+english ALL idx=15 type=14 text=.\u0009As Other Panel
 english ALL idx=0 type=3 text=C\u0009Local Drive
 english ALL idx=1 type=3 text=D\u0009DATA
 english ALL idx=2 type=3 text=E\u0009DATA
@@ -52,6 +54,7 @@ english ALL idx=4 type=3 text=G\u0009Google Drive
 english ALL idx=6 type=7 text=;\u0009Documents
 english ALL idx=7 type=10 text=\u0009OneDrive
 english ALL idx=8 type=13 text=,\u0009Network
+english ALL idx=15 type=14 text=.\u0009As Other Panel
 english ALL idx=0 type=3 text=C\u0009Local Drive
 english ALL idx=1 type=3 text=D\u0009DATA
 english ALL idx=2 type=3 text=E\u0009DATA
@@ -60,6 +63,7 @@ english ALL idx=4 type=3 text=G\u0009Google Drive
 english ALL idx=6 type=7 text=;\u0009Documents
 english ALL idx=7 type=10 text=\u0009OneDrive
 english ALL idx=8 type=13 text=,\u0009Network
+english ALL idx=15 type=14 text=.\u0009As Other Panel
 english ALL idx=0 type=3 text=C\u0009Local Drive
 english ALL idx=1 type=3 text=D\u0009DATA
 english ALL idx=2 type=3 text=E\u0009DATA
@@ -68,6 +72,7 @@ english ALL idx=4 type=3 text=G\u0009Google Drive
 english ALL idx=6 type=7 text=;\u0009Documents
 english ALL idx=7 type=10 text=\u0009OneDrive
 english ALL idx=8 type=13 text=,\u0009Network
+english ALL idx=15 type=14 text=.\u0009As Other Panel
 english TIP C Local Drive
 english TIP D DATA
 english TIP E DATA
@@ -148,6 +153,7 @@ czech ALL idx=4 type=3 text=G\u0009Google Drive
 czech ALL idx=6 type=7 text=;\u0009Dokumenty
 czech ALL idx=7 type=10 text=\u0009OneDrive
 czech ALL idx=8 type=13 text=,\u0009S\u00ED\u0165
+czech ALL idx=15 type=14 text=.\u0009Jako druh\u00FD panel
 czech ALL idx=0 type=3 text=C\u0009M\u00EDstn\u00ED jednotka
 czech ALL idx=1 type=3 text=D\u0009DATA
 czech ALL idx=2 type=3 text=E\u0009DATA
@@ -156,6 +162,7 @@ czech ALL idx=4 type=3 text=G\u0009Google Drive
 czech ALL idx=6 type=7 text=;\u0009Dokumenty
 czech ALL idx=7 type=10 text=\u0009OneDrive
 czech ALL idx=8 type=13 text=,\u0009S\u00ED\u0165
+czech ALL idx=15 type=14 text=.\u0009Jako druh\u00FD panel
 czech ALL idx=0 type=3 text=C\u0009M\u00EDstn\u00ED jednotka
 czech ALL idx=1 type=3 text=D\u0009DATA
 czech ALL idx=2 type=3 text=E\u0009DATA
@@ -164,6 +171,7 @@ czech ALL idx=4 type=3 text=G\u0009Google Drive
 czech ALL idx=6 type=7 text=;\u0009Dokumenty
 czech ALL idx=7 type=10 text=\u0009OneDrive
 czech ALL idx=8 type=13 text=,\u0009S\u00ED\u0165
+czech ALL idx=15 type=14 text=.\u0009Jako druh\u00FD panel
 czech TIP C M\u00EDstn\u00ED jednotka
 czech TIP D DATA
 czech TIP E DATA

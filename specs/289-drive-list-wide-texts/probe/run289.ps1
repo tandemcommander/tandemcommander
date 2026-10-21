@@ -13,11 +13,14 @@
                     system directory; updir = the language's "Upper Directory"
       ITEM-<lang>   every ITEM line valid UTF-8; the item of a fixed drive without a label reads
                     the language's "Local Drive"
-      ALL-<lang>    every ALL line of a drive, cloud, Documents or Network item valid UTF-8; the
-                    Documents item (and the Network item when listed) read the language's words
+      ALL-<lang>    every ALL line of a drive, cloud, Documents, Network or "As Other Panel" item
+                    valid UTF-8; the Documents item (and the Network / "As Other Panel" items when
+                    listed) read the language's words
       TIP-<lang>    every TIP line valid UTF-8; the unlabelled fixed drive's tooltip starts with
                     the language's "Local Drive" + " ("
-    Hot path and plug-in items are not checked or written out (the user's own data).
+    The ALL rows leave out hot paths and plug-in items (the user's own data); the TIP rows check
+    every tooltip the drive bar build asks for - a hot path's tooltip is empty, a plug-in item's
+    is its command name.
     -DecodedFile receives every checked line decoded the way the sinks decode it (UTF-8, else the
     code page), free-space parts removed, for the before / after comparison (SC-002).
 
@@ -80,8 +83,8 @@ function SltText([string]$Lang, [int]$Id) {
     throw "string $Id not found in $file"
 }
 $Langs = @(
-    @{ Name = 'english'; Local = 'Local Drive'; Docs = 'Documents'; Net = 'Network'; UpDir = 'Upper Directory' },
-    @{ Name = 'czech'; Local = (SltText 'czech' 10814); Docs = (SltText 'czech' 10927); Net = (SltText 'czech' 10191); UpDir = (SltText 'czech' 12220) }
+    @{ Name = 'english'; Local = 'Local Drive'; Docs = 'Documents'; Net = 'Network'; Other = 'As Other Panel'; UpDir = 'Upper Directory' },
+    @{ Name = 'czech'; Local = (SltText 'czech' 10814); Docs = (SltText 'czech' 10927); Net = (SltText 'czech' 10191); Other = (SltText 'czech' 10192); UpDir = (SltText 'czech' 12220) }
 )
 $FolderType = [Sh289]::TypeName([Environment]::SystemDirectory)
 
@@ -171,15 +174,17 @@ function Run-Lang($L) {
 
     # ALL (whole list; drives, cloud, Documents, Network only)
     $al = @($lines | Where-Object { $_.Text.StartsWith('ALL ') } | Where-Object {
-            $ty = [int]($_.Text -replace '^ALL idx=\d+ type=(\d+) .*$', '$1'); $ty -ge 1 -and $ty -le 13 })
+            $ty = [int]($_.Text -replace '^ALL idx=\d+ type=(\d+) .*$', '$1'); $ty -ge 1 -and $ty -le 14 })
     $bad = @($al | Where-Object { -not $_.Ok })
     $docs = @($al | Where-Object { $_.Text -match ' type=7 ' } | ForEach-Object { $_.Text.Split([char]9)[1] })
     $nets = @($al | Where-Object { $_.Text -match ' type=13 ' } | ForEach-Object { $_.Text.Split([char]9)[1] })
     $docsOk = $docs.Count -gt 0 -and @($docs | Where-Object { $_ -cne $L.Docs }).Count -eq 0
     $netsOk = @($nets | Where-Object { $_ -cne $L.Net }).Count -eq 0
+    $others = @($al | Where-Object { $_.Text -match ' type=14 ' } | ForEach-Object { $_.Text.Split([char]9)[1] })
+    $netsOk = $netsOk -and (@($others | Where-Object { $_ -cne $L.Other }).Count -eq 0)
     foreach ($e in $al) { $p = $e.Text.Split([char]9); [void]$Decoded.Add($lang + ' ' + $p[0] + [char]9 + $(if ($p.Length -ge 2) { $p[1] } else { '' })) }
     $ok = $al.Count -gt 0 -and $bad.Count -eq 0 -and $docsOk -and $netsOk
-    Row ('ALL-' + $lang) 'RUN' (V $ok) ("{0} lines, {1} not UTF-8; Documents {2} ('{3}'); Network items {4} ('{5}') {6}; e.g. {7}" -f $al.Count, $bad.Count, $docsOk, (Esc $L.Docs), $nets.Count, (Esc $L.Net), $netsOk, ($(if ($bad.Count) { Esc $bad[0].Text } else { '-' })))
+    Row ('ALL-' + $lang) 'RUN' (V $ok) ("{0} lines, {1} not UTF-8; Documents {2} ('{3}'); Network items {4} ('{5}'), As Other Panel items {8} ('{9}') {6}; e.g. {7}" -f $al.Count, $bad.Count, $docsOk, (Esc $L.Docs), $nets.Count, (Esc $L.Net), $netsOk, ($(if ($bad.Count) { Esc $bad[0].Text } else { '-' })), $others.Count, (Esc $L.Other))
 
     # TIP
     $tp = @($lines | Where-Object { $_.Text.StartsWith('TIP ') })
