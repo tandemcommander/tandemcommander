@@ -1,7 +1,7 @@
 ---
 title: SFTP: a folder uploaded again into an upload-only folder fails with Cannot create directory
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: sftp
 source: leftover:258
@@ -10,7 +10,7 @@ created: 2026-10-20
 updated: 2026-10-21
 verified: 2026-10-21 3541e7ad
 effort: M
-feature: -
+feature: 279
 related: []
 depends-on: []
 reason: -
@@ -43,3 +43,4 @@ Severity 4: a function that does not work, with a workaround (upload the files i
 - 2026-10-20 — created (source leftover:258)
 - 2026-10-20 — moved to Next position 19
 - 2026-10-21 — verified at 3541e7ad: reproduced at 3541e7ad: probe 258 row DROPDIR2 - Move of pack2 into /drop where pack2 exists: mkdir FAILURE, stat DENIED, box Cannot create directory, c.txt not sent
+- 2026-10-21 — run started, feature 279
