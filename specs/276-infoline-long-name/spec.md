@@ -79,7 +79,10 @@ DISK row (754-byte name) must stay box-free.
 ### Functional Requirements
 
 - **FR-001**: Focusing an item whose name the panel lists MUST NOT show "Expanded string is too
-  large." for the default Information Line content or any content up to its 199-character limit.
+  large." for the default Information Line content or any content whose expanded text has at
+  most 65,535 bytes - every content of up to its 199-character limit that names the item any
+  number of times (at most 18 names of 765 bytes, about 14 KB); only width modifiers of
+  thousands of characters (`:9999`, padding with spaces) can exceed it, and then FR-006 applies.
 - **FR-002**: The information line MUST show the focused item's whole expanded text (its name is
   never cut by the expansion; the line's own drawing clips what does not fit its width, as for
   any long text).
