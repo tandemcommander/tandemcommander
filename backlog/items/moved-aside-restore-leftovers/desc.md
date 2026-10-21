@@ -1,7 +1,7 @@
 ---
 title: A file moved aside to salNNN can stay there silently on the create paths
 type: bug
-status: open
+status: in-progress
 severity: 3
 area: data-safety
 source: leftover:221
@@ -10,7 +10,7 @@ created: 2026-10-15
 updated: 2026-10-21
 verified: 2026-10-21 17ac1562
 effort: M
-feature: -
+feature: 281
 related: []
 depends-on: []
 reason: -
@@ -42,3 +42,4 @@ Severity: the content is never lost, it is left under another name; narrow (a sc
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
 - 2026-10-21 — verified at 17ac1562: by reading at 17ac1562: the create paths only trace a failed second move-back; PictView and Renamer move back once without retry; race - not driven without a seam
+- 2026-10-21 — run started, feature 281
