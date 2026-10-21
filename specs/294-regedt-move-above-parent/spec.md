@@ -172,6 +172,9 @@ another key and every case refused before behave as before.
 - Assumption (autonomous run): a registry link inside the source tree is followed by the check as it
   is followed by the copy itself (both open the path by name); such trees are not driven by the
   probe.
+- Assumption (autonomous run): the check opens the source joined with the path below the target as
+  one whole path (never cut); when that chain exists the key is refused even if its names were too
+  long for the copy to reach them (conservative: refuse rather than guess).
 - Assumption (autonomous run): the drag-and-drop route between two Registry Editor panels uses the
   same function and is covered by the same change; it is not driven by the probe.
 - Out of scope: Quick Rename (F2), Copy / Move to or from a disk panel, the low-level overwrite
