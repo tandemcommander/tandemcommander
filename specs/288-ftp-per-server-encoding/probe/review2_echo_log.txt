@@ -1,0 +1,12 @@
+review2_probe_echo (review 2 of feature 288)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 17:39; desktop 'tc_probe_23404'; ACP 1250; registry key existed True; export SHA-256 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861
+Server  : ftpmini.py cp1250 on 127.0.0.1:2121 - up
+
+ECHO-RMD   ROW    FAIL        after F7: a.txt,nov\u0102\u02DD,sub; after F8: a.txt,nov\u0102\u02DD,sub; at 'ftp://u@127.0.0.1:2121/ECHO2', 'ftp://u@127.0.0.1:2121/ECHO2/sub', 'ftp://u@127.0.0.1:2121/ECHO2'; server got: USER u / PASS p / SYST / PWD / CWD /ECHO2 / PWD / PORT 127,0,0,1,209,39 / TYPE A / LIST / MKD nov\u0102\u02DD / CWD /ECHO2/sub / PWD / PORT 127,0,0,1,209,44 / LIST / CWD /ECHO2 / PWD / PORT 127,0,0,1,209,49 / LIST / CWD /ECHO2/nov\u00FD / NOOP; dialogs: typed into [Create Directory] || [#32770 'Confirm Delete'] [Button id=1] &Yes | [Button id=2] &No | [Static id=786] Are you sure you want to delete directory "nov\u00FD" from FTP server? | [Button id=787] &Only add to Queue (do not process in active connection) | [#32770 'Error Changing Working Path On Server'] [Button id=1] Retry | [Button id=881] &Skip | [Button id=2] Cancel | [Button id=9] Help | [Button id=882] A&pply to operations with the same error now | [Static id=3001] P&ath: | [Static id=3002] &Name: | [Static id=3003] Error description:
+ECHO-RMD   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ECHO-CWD   ROW    FAIL        server folder: a.txt,nov\u00FD,nov\u0102\u02DD,sub; Enter 1 -> 'ftp://u@127.0.0.1:2121/ECHO3/nov\u00FD', Enter 2 -> 'ftp://u@127.0.0.1:2121/ECHO3/nov\u00FD'; CWDs: CWD /ECHO3/nov\u00FD; all after: CWD /ECHO3/nov\u00FD / PWD / PORT 127,0,0,1,240,177 / LIST; dialogs: typed into [Create Directory] || 
+ECHO-CWD   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861 / after 06513A1C9E38D24DD2BE698A9D9D44ED1631B392E28C2A7721923F0AE28F9861
+
+Rows: PASS 2, FAIL 2. Left running: 0; fixture removed: True; registry restored+identical: True

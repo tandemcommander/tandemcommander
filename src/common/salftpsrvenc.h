@@ -49,11 +49,23 @@ inline int SalFtpServerEncState(BOOL sawUtf8, BOOL sawCodePage)
 
 // TRUE when a non-ASCII name goes to the server in the code page: it is (or holds as a
 // component or a leading part) a text this server gave in the code page, or the server
-// speaks only the code page; an unknown or mixed server gets a new name in UTF-8 (224's
-// policy). The caller still sends UTF-8 when the code page cannot hold the name.
-inline BOOL SalFtpNameGoesInCodePage(int state, BOOL isCodePageNameOfServer)
+// speaks only the code page - except a name this client sent it in UTF-8 (a folder made
+// while the server was unknown is held in UTF-8 bytes; in the code page it was not found -
+// review 2 of 288); an unknown or mixed server gets a new name in UTF-8 (224's policy). The
+// caller still sends UTF-8 when the code page cannot hold the name exactly.
+inline BOOL SalFtpNameGoesInCodePage(int state, BOOL isCodePageNameOfServer, BOOL isSentUtf8NameOfServer)
 {
-    return isCodePageNameOfServer || state == SALFTPENC_LEGACY;
+    if (isCodePageNameOfServer)
+        return TRUE;
+    return state == SALFTPENC_LEGACY && !isSentUtf8NameOfServer;
+}
+
+// TRUE when a name this client sends a server in UTF-8 is remembered for it (its listing
+// echoing the name is then no UTF-8 evidence): only while the server is unknown or legacy -
+// a UTF-8 or mixed server is decided, and the names would only fill the bounded table
+inline BOOL SalFtpRememberSentUtf8(int state)
+{
+    return state == SALFTPENC_UNKNOWN || state == SALFTPENC_LEGACY;
 }
 
 // the code-page form of the name 'w' (NUL-terminated) in 'buf', exactly: TRUE only when every

@@ -16236,18 +16236,26 @@ static void TestFtpServerEncoding288()
     CHECK(SalFtpServerEncState(TRUE, TRUE) == SALFTPENC_MIXED);
 
     // the decision table: a server's own code-page name always in the code page; a new name only
-    // to a legacy server
+    // to a legacy server; a name this client sent the server in UTF-8 goes so again (review 2)
     const int states[] = {SALFTPENC_UNKNOWN, SALFTPENC_UTF8, SALFTPENC_LEGACY, SALFTPENC_MIXED};
     for (int s : states)
     {
-        CHECK(SalFtpNameGoesInCodePage(s, TRUE));
-        CHECK(!SalFtpNameGoesInCodePage(s, FALSE) == (s != SALFTPENC_LEGACY));
+        CHECK(SalFtpNameGoesInCodePage(s, TRUE, FALSE));
+        CHECK(SalFtpNameGoesInCodePage(s, TRUE, TRUE)); // a listed code-page name wins (224)
+        CHECK(!SalFtpNameGoesInCodePage(s, FALSE, FALSE) == (s != SALFTPENC_LEGACY));
+        CHECK(!SalFtpNameGoesInCodePage(s, FALSE, TRUE));
+        // sent names are remembered only while the server is undecided for new names
+        CHECK(SalFtpRememberSentUtf8(s) == (s == SALFTPENC_UNKNOWN || s == SALFTPENC_LEGACY));
     }
-    // negative control - the rule of 224 (the code page only for a remembered name): a new name
-    // went in UTF-8 to a legacy server
-    auto rule224 = [](int, BOOL isCodePageName) -> BOOL
+    // negative controls - the rule of 224 (the code page only for a remembered name): a new name
+    // went in UTF-8 to a legacy server; the rule of review 1 (legacy = every name): a folder made
+    // in UTF-8 while the server was unknown went in the code page and was not found
+    auto rule224 = [](int, BOOL isCodePageName, BOOL) -> BOOL
     { return isCodePageName; };
-    CHECK(rule224(SALFTPENC_LEGACY, FALSE) != SalFtpNameGoesInCodePage(SALFTPENC_LEGACY, FALSE));
+    auto ruleReview1 = [](int state, BOOL isCodePageName, BOOL) -> BOOL
+    { return isCodePageName || state == SALFTPENC_LEGACY; };
+    CHECK(rule224(SALFTPENC_LEGACY, FALSE, FALSE) != SalFtpNameGoesInCodePage(SALFTPENC_LEGACY, FALSE, FALSE));
+    CHECK(ruleReview1(SALFTPENC_LEGACY, FALSE, TRUE) != SalFtpNameGoesInCodePage(SALFTPENC_LEGACY, FALSE, TRUE));
 
     // the code-page form, exactly (review of 288): a best-fit look-alike is another name
     {

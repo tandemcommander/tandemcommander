@@ -24,6 +24,8 @@
       ECHO      (review) the legacy server, unknown: F7 "novy" goes in UTF-8 and is listed back as
                 UTF-8 bytes; ECHO/sub lists "cafe.txt" in cp1250; back in ECHO, F7 "caj" with
                 c-caron: PASS = the server has "caj" (the echo did not make the server "mixed")
+      ECHO-RMD  (review 2) as ECHO, then F8 on the folder "novy" made in UTF-8 while the server was
+                unknown: PASS = it is gone (its own UTF-8 bytes; the code page did not reach it)
       UTF-MKD   the control: UTF-8 server, its folder lists "cafe.txt" in UTF-8; F7 "novy": PASS =
                 the folder by that name (MKD in UTF-8 - before and after)
       UNK-MKD   the limit: the legacy server, a folder of ASCII names only (no evidence yet); F7
@@ -287,12 +289,43 @@ try {
         finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'ECHO' $id $fatal $before } }
     }
 
+    # review 2 of 288 (SHOULD): the folder made in UTF-8 while the legacy server was unknown stays
+    # reachable after the server is known to be legacy - its own name goes in UTF-8 again
+    $NovyAsCp = [Text.Encoding]::GetEncoding(1250).GetString([Text.Encoding]::UTF8.GetBytes($Novy))
+    if (Want 'ECHO-RMD') {
+        $before = Reports; $id = 0
+        try {
+            NewDir ($SrvL.Root + '\ECHO2'); NewDir ($SrvL.Root + '\ECHO2\sub')
+            [IO.File]::WriteAllText($LP + $SrvL.Root + '\ECHO2\a.txt', 'A'); [IO.File]::WriteAllText($LP + $SrvL.Root + '\ECHO2\sub\' + $Acc, 'ACC')
+            $fromL = Srv-Count $SrvL
+            $id = Start-P
+            $c1 = Connect $id $SrvL 'ECHO2'
+            Start-Sleep -Milliseconds 1500; Sync $id
+            Key $id 0x24; Start-Sleep -Milliseconds 500; Sync $id
+            Post-Cmd (Get-Main $id) 730; Start-Sleep -Milliseconds 700
+            $t1 = @(Answer $id 60 6 $Novy)        # unknown server: UTF-8, stored in UTF-8 bytes
+            Start-Sleep -Milliseconds 1500; Sync $id
+            $c2 = Connect $id $SrvL 'ECHO2/sub'   # cafe.txt in cp1250: legacy evidence
+            Start-Sleep -Milliseconds 1500; Sync $id
+            $c3 = Connect $id $SrvL 'ECHO2'
+            Start-Sleep -Milliseconds 1500; Sync $id
+            $eMid = @(Entries ($SrvL.Root + '\ECHO2'))
+            Key $id 0x24; Key $id 0x28; Start-Sleep -Milliseconds 700; Sync $id   # "..", then the folder
+            Post-Cmd (Get-Main $id) 729; Start-Sleep -Milliseconds 700
+            $t2 = @(Answer $id 60 6)
+            $eE = @(Entries ($SrvL.Root + '\ECHO2'))
+            $ok = ($c1.Ok -and $c2.Ok -and $c3.Ok -and ($eMid -ccontains $NovyAsCp) -and -not ($eE -ccontains $NovyAsCp))
+            Row 'ECHO-RMD' 'ROW' (V $ok) ("after F7: {0}; after F8: {1}; at '{2}', '{3}', '{4}'; legacy got: {5}; dialogs: {6} || {7}" -f (Show $eMid), (Show $eE), (Tail $c1.Loc 40), (Tail $c2.Loc 40), (Tail $c3.Loc 40), ((Srv-Cmds $SrvL $fromL) -join ' / '), ($t1 -join ' | '), ($t2 -join ' | '))
+        }
+        catch { Row 'ECHO-RMD' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+        finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'ECHO-RMD' $id $fatal $before } }
+    }
+
     Row-Ftp 'UTF-MKD' $SrvU 0 730 { param($s, $l) [IO.File]::WriteAllText($LP + $s + '\' + $Acc, 'ACC') } {
         param($t, $c, $s, $l, $conn)
         $e = @(Entries $s)
         @{ Ok = ($e -ccontains $Novy); Facts = ("on the server: {0}" -f (Show $e)) } } -Type $Novy
     # the limit: no evidence yet - UTF-8 (the cp1250 server decodes its bytes: another name)
-    $NovyAsCp = [Text.Encoding]::GetEncoding(1250).GetString([Text.Encoding]::UTF8.GetBytes($Novy))
     Row-Ftp 'UNK-MKD' $SrvL 0 730 { param($s, $l) [IO.File]::WriteAllText($LP + $s + '\a.txt', 'A') } {
         param($t, $c, $s, $l, $conn)
         $e = @(Entries $s)

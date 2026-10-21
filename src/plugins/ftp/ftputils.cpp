@@ -3612,11 +3612,6 @@ static BOOL FTPIsServerNameN(CFTPServerEnc* srv, int kind, const char* s, int le
     return found;
 }
 
-static BOOL FTPIsCodePageNameN(CFTPServerEnc* srv, const char* s, int len)
-{
-    return FTPIsServerNameN(srv, FTPNAME_CODEPAGE, s, len);
-}
-
 // remembers the 'len' bytes at 's' (no NUL needed) as a name of 'kind' of 'srv'
 static void FTPAddServerName(CFTPServerEnc* srv, int kind, const char* s, int len)
 {
@@ -3669,22 +3664,22 @@ void FTPFreeServerEncodings()
     ReleaseSRWLockExclusive(&FTPServerEncLock);
 }
 
-// TRUE when 'u8' (a name or a path) is, or has a component or a leading part that is, a text a
-// listing or a reply (a PWD path) of 'srv' gave in the code page - "/home/jiri" from a PWD makes
-// "/home/jiri/x" go in the code page too (review of 224)
-static BOOL FTPHasCodePageName(CFTPServerEnc* srv, const char* u8)
+// TRUE when 'u8' (a name or a path) is, or has a component or a leading part that is, a name of
+// 'kind' of 'srv' - FTPNAME_CODEPAGE: a text a listing or a reply (a PWD path) gave in the code
+// page; "/home/jiri" from a PWD makes "/home/jiri/x" go in the code page too (review of 224)
+static BOOL FTPHasServerName(CFTPServerEnc* srv, int kind, const char* u8)
 {
     int len = (int)strlen(u8);
-    if (FTPIsCodePageNameN(srv, u8, len))
+    if (FTPIsServerNameN(srv, kind, u8, len))
         return TRUE;
     const char* beg = u8;
     for (const char* s = u8;; s++)
     {
         if (*s == '/' || *s == '\\' || *s == 0)
         {
-            if (s > beg && (s - beg) < len && FTPIsCodePageNameN(srv, beg, (int)(s - beg)))
+            if (s > beg && (s - beg) < len && FTPIsServerNameN(srv, kind, beg, (int)(s - beg)))
                 return TRUE;
-            if (s > u8 && (s - u8) < len && FTPIsCodePageNameN(srv, u8, (int)(s - u8))) // the leading part
+            if (s > u8 && (s - u8) < len && FTPIsServerNameN(srv, kind, u8, (int)(s - u8))) // the leading part
                 return TRUE;
             if (*s == 0)
                 break;
@@ -3795,7 +3790,9 @@ const char* FTPU8NameToServer(const char* u8, char* buf, int bufSize, CFTPServer
     if (srv == NULL)
         return u8; // the server is not known (low memory): UTF-8, as to an unknown server
     int state = SalFtpServerEncState(srv->SawUtf8 != 0, srv->SawCodePage != 0);
-    if (SalFtpNameGoesInCodePage(state, FTPHasCodePageName(srv, u8)))
+    BOOL codePageName = FTPHasServerName(srv, FTPNAME_CODEPAGE, u8);
+    BOOL sentUtf8Name = !codePageName && state == SALFTPENC_LEGACY && FTPHasServerName(srv, FTPNAME_SENTUTF8, u8);
+    if (SalFtpNameGoesInCodePage(state, codePageName, sentUtf8Name))
     {
         WCHAR* w = SplU8ToWAlloc(u8);
         if (w != NULL)
@@ -3807,7 +3804,9 @@ const char* FTPU8NameToServer(const char* u8, char* buf, int bufSize, CFTPServer
                 return buf; // the name in the ANSI code page (a legacy server's form)
         }
     }
-    // UTF-8 verbatim: a UTF-8 or unknown server, or a name the code page cannot hold
-    FTPAddSentUtf8Names(srv, u8);
+    // UTF-8 verbatim: a UTF-8 or unknown server, a name sent so before, or a name the code page
+    // cannot hold exactly
+    if (SalFtpRememberSentUtf8(state))
+        FTPAddSentUtf8Names(srv, u8);
     return u8;
 }

@@ -141,7 +141,8 @@ probes as recorded.
   texts (224); fields other than the name do not change the state.
 - **FR-003**: A non-ASCII name or path sent to a server MUST go in the code page when it is, or
   contains as a component or leading part, a code-page name of **that** server (feature 224's
-  rule, now per server), or when the server's state is legacy - provided the code page holds it
+  rule, now per server), or when the server's state is legacy and the name is not one this client
+  sent that server in UTF-8 (review 2 of 288) - provided the code page holds it
   **exactly** (no best-fit look-alike: `señor` is never sent as `senor`, another file; review of
   288); otherwise in UTF-8.
 - **FR-004**: The state of a server MUST NOT be influenced by listings or replies of any other

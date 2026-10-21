@@ -18,6 +18,7 @@ Lifetime: created at the first lookup of its identity, never freed before the pl
 | Field | Meaning |
 |---|---|
 | Server | the `CFTPServerEnc` whose listing or reply gave the text |
+| Kind | `FTPNAME_CODEPAGE` (a text the server gave in the code page) or `FTPNAME_SENTUTF8` (a non-ASCII path component this client sent the server in UTF-8 while it was unknown or legacy - review of 288) |
 | Len, Name | the UTF-8 form of the text |
 
 One hash table for all servers (a lookup compares the server too); at most 200,000 names in total.
@@ -28,7 +29,7 @@ One hash table for all servers (a lookup compares the server too); at most 200,0
 |---|---|---|---|
 | no | no | unknown | UTF-8 |
 | yes | no | UTF-8 | UTF-8 |
-| no | yes | legacy | code page (if it holds it) |
+| no | yes | legacy | code page (if it holds it exactly), except a name sent it in UTF-8 |
 | yes | yes | mixed | UTF-8 |
 
 A name that is (or contains as a component or leading part) a code-page name of the same server

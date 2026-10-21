@@ -142,6 +142,45 @@ the UTF-8 name, garbled on the legacy server, `senor.txt` still OLD; BF-MKD like
 čaj` in cp1250 after the echo); regressions 224 16 / 0, 269 14 / 0, 277 10 / 0. The rows BF-UP,
 BF-MKD, ECHO failed on the first version (the reviewer's runs) - their negative control.
 
+### Review 2 (refute-first, a fresh agent, with the findings of review 1) - no MUST; 1 SHOULD, 5 NOTE
+
+Re-measured by the review: BUILD SUCCEEDED, saltests 25213 / 0, the probe 18 / 0
+(`probe/review2_full_result.txt`); MUST 1 fixed (the exact conversion; names and paths always fit
+`nameBuf` - the code-page form is never longer than the UTF-8 one; WTF-8 and ACP 65001 go in UTF-8).
+
+- **SHOULD 1 (taken - a regression of review 1's echo fix)**: once a server was legacy, every name
+  the code page holds went in the code page - also a folder this client had made in UTF-8 while
+  the server was unknown (the server holds its UTF-8 bytes): it could no longer be entered,
+  deleted, renamed or downloaded (main sent its UTF-8 and reached it). Reproduced
+  (`probe/review2_echo_result.txt`, ECHO-RMD: `CWD /ECHO2/nový` in cp1250 - "Error Changing
+  Working Path"); control with the echo rule off passed (`probe/review2_control_result.txt`).
+  **Fix**: `SalFtpNameGoesInCodePage(state, isCodePageName, isSentUtf8Name)` - a listed code-page
+  name of the server still wins (224); otherwise a legacy server gets the code page except for a
+  name (a component) this client sent it in UTF-8. Probe row ECHO-RMD added (its negative control:
+  the reviewer's run on the review-1 build). saltests: the 3-input table, negative controls for the
+  rule of 224 and the rule of review 1.
+- NOTE 1 (taken): the parser functions `cut_white_spaces*`, `add_string_to_column`,
+  `cut_end_of_string` re-assign a column from its already decoded value through
+  `AssignStringToColumn` - counted as UTF-8 evidence, so AS/400, z/VM CMS and VxWorks legacy
+  servers turned "mixed" by their own names. Now `AssignStringToColumn(.., evidence = TRUE)`, the
+  three re-assignments pass FALSE (parser2.cpp). Not driven (no such test server). The joining of
+  a decoded name with raw server bytes in `add_string_to_column` (parser2.cpp, before 288) ->
+  Inbox.
+- NOTE 2 (taken): sent names were recorded for every server and shared the 200,000 bound - now
+  only while the server is unknown or legacy (`SalFtpRememberSentUtf8`).
+- NOTE 3 (limit, recorded): one non-UTF-8 name field decides - a UTF-8 server with one stray
+  legacy-named file, listed before any non-ASCII UTF-8 name, is taken for legacy (new names in
+  the code page there).
+- NOTE 4 (limit, extends 269's): code-page bytes that are also valid UTF-8 (e.g. `ÚŽAS` = DA 8E
+  41 53) are read as UTF-8; 288 may now create such names itself on a legacy server; commands
+  still reach them, the panel shows another spelling.
+- NOTE 5 (limit): with a double-byte ANSI code page (cp932) a new name to a legacy server may
+  carry the trail byte 0x5C (`\`) - as listed names could before.
+
+After the fixes: BUILD SUCCEEDED; saltests `25226 checks, 0 failed`; encoding guard TOTAL 0;
+probe `probe/result_after_review2.txt` **PASS 20, FAIL 0**; regressions 224 16 / 0, 269 14 / 0,
+277 10 / 0. clang-format of the changed lines: no change.
+
 ## Limits
 
 - An unknown server (no non-ASCII listing field yet) gets UTF-8 for new names and typed paths
@@ -149,4 +188,8 @@ BF-MKD, ECHO failed on the first version (the reviewer's runs) - their negative 
 - No FEAT: a decision item for the maintainer.
 - The state lasts for the plug-in's life (not stored); the code page is the system ANSI one.
 - A server listed under one user name and used under another is two servers.
+- One non-UTF-8 name field decides a server whose non-ASCII names were not seen before (review 2
+  NOTE 3); fields of a parser that autodetection tried and rejected count too (review 1 NOTE 1).
+- A path that mixes a listed code-page component and a component sent in UTF-8 goes whole in the
+  code page (224's precedence; one encoding per command).
 

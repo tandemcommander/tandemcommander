@@ -629,15 +629,19 @@ BOOL AssignNumberToColumn(int col, TIndirectArray<CSrvTypeColumn>* columns, BOOL
     }
 }
 
+// feature 288: 'evidence' FALSE = the text is not the server's bytes as listed (a column the
+// parser re-assigns from an already decoded value) - it tells nothing about the server's encoding
 BOOL AssignStringToColumn(int col, TIndirectArray<CSrvTypeColumn>* columns, const char* beg,
                           const char* end, BOOL* lowMemErr, DWORD* emptyCol,
-                          CFileData* file, CFTPListingPluginDataInterface* dataIface)
+                          CFileData* file, CFTPListingPluginDataInterface* dataIface,
+                          BOOL evidence = TRUE)
 {
     if (col >= 0 && col < columns->Count) // "always true"
     {
         // interface 104: names/text crossing the Salamander interface are UTF-8;
-        // decode the raw listing bytes (server encoding) here (see ftputils.cpp)
-        char* str = FTPListingFieldToU8(beg, (int)(end - beg), columns->At(col)->Type == stctName); // feature 288: a name tells the server's encoding
+        // decode the raw listing bytes (server encoding) here (see ftputils.cpp);
+        // feature 288: a listed name tells the server's encoding
+        char* str = FTPListingFieldToU8(beg, (int)(end - beg), evidence && columns->At(col)->Type == stctName);
         if (str == NULL)
         {
             TRACE_E(LOW_MEMORY);
@@ -1697,7 +1701,7 @@ BOOL CFTPParserFunction::UseFunction(CFileData* file, BOOL* isDir,
                         }
                         memcpy(str, newBeg, newEnd - newBeg);
                         if (!AssignStringToColumn(i, columns, str, str + (newEnd - newBeg),
-                                                  lowMemErr, emptyCol, file, dataIface))
+                                                  lowMemErr, emptyCol, file, dataIface, FALSE /* re-assigned */))
                         {
                             ret = FALSE;
                         }
@@ -1766,7 +1770,7 @@ BOOL CFTPParserFunction::UseFunction(CFileData* file, BOOL* isDir,
                         memcpy(str, begDst, endDst - begDst);
                         memcpy(str + (endDst - begDst), beg, end - beg);
                         if (!AssignStringToColumn(i, columns, str, str + (endDst - begDst) + (end - beg),
-                                                  lowMemErr, emptyCol, file, dataIface))
+                                                  lowMemErr, emptyCol, file, dataIface, FALSE /* re-assigned */))
                         {
                             ret = FALSE;
                         }
@@ -1816,7 +1820,7 @@ BOOL CFTPParserFunction::UseFunction(CFileData* file, BOOL* isDir,
                         }
                         memcpy(str, beg, newEnd - beg);
                         if (!AssignStringToColumn(i, columns, str, str + (newEnd - beg),
-                                                  lowMemErr, emptyCol, file, dataIface))
+                                                  lowMemErr, emptyCol, file, dataIface, FALSE /* re-assigned */))
                         {
                             ret = FALSE;
                         }
