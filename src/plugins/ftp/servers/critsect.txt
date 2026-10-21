@@ -10,6 +10,7 @@ Sekce bez vstupu do jinych sekci (primitivni):
   CTransferSpeedMeter::TransferSpeedMeterCS
   CSynchronizedDWORD::ValueCS
   CFTPProxyServerList::ProxyServerListCS
+  FTPServerEncLock (ftputils.cpp, SRW lock, feature 288: the servers' name encodings)
 
 Ze sekce CClosedCtrlConChecker::DataSect se vstupuje do:
   CControlConnectionSocket::EventCritSect

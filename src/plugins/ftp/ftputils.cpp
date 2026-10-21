@@ -7,6 +7,7 @@
 #include "../../common/salftpautoren.h" // feature 141: the shortening step of the automatic rename
 #include "../../common/salftplisting.h" // feature 269: a listing field kept as UTF-8 (WTF-8)
 #include "../../common/salftppwd.h"     // feature 277: the path of a "257" reply, never cut
+#include "../../common/salftpsrvenc.h"  // feature 288: names go to each server in its own encoding
 
 #include "../../common/salurlpwd.h" // feature 085
 #include "../../common/salfmtinserts.h" // feature 180
@@ -1703,11 +1704,15 @@ BOOL FTPReadFTPReply(char* readBytes, int readBytesCount, int readBytesOffset,
 // top of it. ASCII (the common case) is left byte-for-byte unchanged.
 // Feature 277: FALSE (dirBuf = "") when the UTF-8 form does not fit dirBuf or cannot be made
 // (low memory) - it was cut, possibly inside a letter, and the cut path (an ancestor) was used.
-static BOOL FTPDecodeServerReplyPathInPlace(char* dirBuf, int dirBufSize)
+// Feature 288: a path read in the code page is evidence of 'srv' (its legacy names); a UTF-8 path
+// is not - the reply may echo the bytes the client sent.
+static char* FTPFieldToU8(const char* beg, int len, CFTPServerEnc* srv, BOOL utf8Evidence);
+
+static BOOL FTPDecodeServerReplyPathInPlace(char* dirBuf, int dirBufSize, CFTPServerEnc* srv)
 {
     if (dirBufSize <= 0 || dirBuf[0] == 0 || SplIsASCII(dirBuf))
         return TRUE;
-    char* u8 = FTPListingFieldToU8(dirBuf, (int)strlen(dirBuf));
+    char* u8 = FTPFieldToU8(dirBuf, (int)strlen(dirBuf), srv, FALSE);
     // the raw bytes come back when the conversion could not be made (low memory): not UTF-8
     BOOL ok = u8 != NULL && (int)strlen(u8) < dirBufSize && SalFtpListingFieldIsU8(u8, (int)strlen(u8));
     if (ok)
@@ -1719,7 +1724,8 @@ static BOOL FTPDecodeServerReplyPathInPlace(char* dirBuf, int dirBufSize)
     return ok;
 }
 
-BOOL FTPGetDirectoryFromReply(const char* reply, int replySize, char* dirBuf, int dirBufSize)
+BOOL FTPGetDirectoryFromReply(const char* reply, int replySize, char* dirBuf, int dirBufSize,
+                              CFTPServerEnc* srv)
 {
     CALL_STACK_MESSAGE3("FTPGetDirectoryFromReply(, %d, , %d)", replySize, dirBufSize);
 
@@ -1731,7 +1737,7 @@ BOOL FTPGetDirectoryFromReply(const char* reply, int replySize, char* dirBuf, in
     // fit 'dirBuf' - also after the conversion to UTF-8 - is refused, never cut (the cut path is
     // another folder, an ancestor)
     int res = SalFtpPathFromPwdReply(reply, replySize, dirBuf, dirBufSize);
-    if (res == SALFTPPWD_OK && !FTPDecodeServerReplyPathInPlace(dirBuf, dirBufSize)) // server encoding -> UTF-8
+    if (res == SALFTPPWD_OK && !FTPDecodeServerReplyPathInPlace(dirBuf, dirBufSize, srv)) // server encoding -> UTF-8
         res = SALFTPPWD_TOOLONG;
     if (res == SALFTPPWD_TOOLONG)
         TRACE_E("The path in the get-directory reply (reply code 257) does not fit the buffer in FTPGetDirectoryFromReply().");
@@ -3475,55 +3481,140 @@ HANDLE FTPFindFirstFileU8(const char* pathName, WIN32_FIND_DATAW* data)
 
 // feature 224: the texts a listing gave in the ANSI code page (a legacy server, its bytes not
 // UTF-8) - only they go back to a server in the code page (FTPU8NameToServer); every other
-// non-ASCII name goes in UTF-8. A hash set of UTF-8 strings, process-wide, under an SRW lock.
+// non-ASCII name goes in UTF-8. Feature 288: per server - one set for the whole program sent a
+// name seen in the code page on one server in the code page to another, and new names in UTF-8
+// to a server that speaks only the code page. The servers (a list) and their names (one hash
+// table, each name tagged with its server) live until the plug-in's release, under an SRW lock.
+struct CFTPServerEnc
+{
+    CFTPServerEnc* Next;
+    char* Host;
+    char* User; // NULL = anonymous (SalFtpSameServerUser)
+    unsigned short Port;
+    volatile LONG SawUtf8;     // a listing field with non-ASCII bytes was UTF-8 (WTF-8)
+    volatile LONG SawCodePage; // a listing field or a "257" path was read in the code page
+};
 struct CFTPCodePageName
 {
     CFTPCodePageName* Next;
+    CFTPServerEnc* Server;
     int Len;
     char Name[1];
 };
+static CFTPServerEnc* FTPServerEncs = NULL;
+static int FTPServerEncsCount = 0;
 static CFTPCodePageName* FTPCodePageNames[1024];
 static int FTPCodePageNamesCount = 0;
-static SRWLOCK FTPCodePageNamesLock = SRWLOCK_INIT;
+static SRWLOCK FTPServerEncLock = SRWLOCK_INIT;
+static thread_local CFTPServerEnc* FTPListingServer = NULL; // CFTPListingServerScope
 
-static DWORD FTPCodePageNameHash(const char* s, int len)
+static CFTPServerEnc* FTPFindServerEnc(const char* host, unsigned short port, const char* user)
+{
+    for (CFTPServerEnc* s = FTPServerEncs; s != NULL; s = s->Next)
+    {
+        if (SalFtpSameServer(s->Host, s->Port, s->User, host, port, user))
+            return s;
+    }
+    return NULL;
+}
+
+CFTPServerEnc* FTPGetServerEnc(const char* host, unsigned short port, const char* user)
+{
+    if (host == NULL || host[0] == 0)
+        return NULL;
+    AcquireSRWLockShared(&FTPServerEncLock);
+    CFTPServerEnc* found = FTPFindServerEnc(host, port, user);
+    ReleaseSRWLockShared(&FTPServerEncLock);
+    if (found != NULL)
+        return found;
+    AcquireSRWLockExclusive(&FTPServerEncLock);
+    found = FTPFindServerEnc(host, port, user); // another thread may have added it meanwhile
+    if (found == NULL)
+    {
+        if (FTPServerEncsCount < 1000) // a bound: a session never connects to that many servers
+        {
+            BOOL anonymous = SalFtpSameServerUser(user, NULL);
+            CFTPServerEnc* s = (CFTPServerEnc*)malloc(sizeof(CFTPServerEnc));
+            char* h = _strdup(host);
+            char* u = anonymous ? NULL : _strdup(user);
+            if (s != NULL && h != NULL && (anonymous || u != NULL))
+            {
+                s->Host = h;
+                s->User = u;
+                s->Port = port;
+                s->SawUtf8 = 0;
+                s->SawCodePage = 0;
+                s->Next = FTPServerEncs;
+                FTPServerEncs = s;
+                FTPServerEncsCount++;
+                found = s;
+            }
+            else
+            {
+                TRACE_E(LOW_MEMORY);
+                free(s);
+                free(h);
+                free(u);
+            }
+        }
+        else
+            TRACE_I("FTPGetServerEnc(): the bound of remembered servers reached");
+    }
+    ReleaseSRWLockExclusive(&FTPServerEncLock);
+    return found;
+}
+
+CFTPListingServerScope::CFTPListingServerScope(CFTPServerEnc* srv)
+{
+    Prev = FTPListingServer;
+    FTPListingServer = srv;
+}
+
+CFTPListingServerScope::~CFTPListingServerScope()
+{
+    FTPListingServer = Prev;
+}
+
+static DWORD FTPCodePageNameHash(CFTPServerEnc* srv, const char* s, int len)
 {
     DWORD h = 2166136261u; // FNV-1a
     for (int i = 0; i < len; i++)
         h = (h ^ (unsigned char)s[i]) * 16777619u;
+    h ^= (DWORD)(((ULONG_PTR)srv) >> 4);
     return h & (_countof(FTPCodePageNames) - 1);
 }
 
-static BOOL FTPIsCodePageNameN(const char* s, int len)
+static BOOL FTPIsCodePageNameN(CFTPServerEnc* srv, const char* s, int len)
 {
     BOOL found = FALSE;
-    AcquireSRWLockShared(&FTPCodePageNamesLock);
-    for (CFTPCodePageName* n = FTPCodePageNames[FTPCodePageNameHash(s, len)]; n != NULL; n = n->Next)
+    AcquireSRWLockShared(&FTPServerEncLock);
+    for (CFTPCodePageName* n = FTPCodePageNames[FTPCodePageNameHash(srv, s, len)]; n != NULL; n = n->Next)
     {
-        if (n->Len == len && memcmp(n->Name, s, len) == 0)
+        if (n->Server == srv && n->Len == len && memcmp(n->Name, s, len) == 0)
         {
             found = TRUE;
             break;
         }
     }
-    ReleaseSRWLockShared(&FTPCodePageNamesLock);
+    ReleaseSRWLockShared(&FTPServerEncLock);
     return found;
 }
 
-static void FTPAddCodePageName(const char* u8)
+static void FTPAddCodePageName(CFTPServerEnc* srv, const char* u8)
 {
     int len = (int)strlen(u8);
-    if (len == 0 || FTPIsCodePageNameN(u8, len))
+    if (len == 0 || FTPIsCodePageNameN(srv, u8, len))
         return;
-    AcquireSRWLockExclusive(&FTPCodePageNamesLock);
+    AcquireSRWLockExclusive(&FTPServerEncLock);
     if (FTPCodePageNamesCount < 200000) // a bound: a session never lists that many such names
     {
         CFTPCodePageName* n = (CFTPCodePageName*)malloc(sizeof(CFTPCodePageName) + len);
         if (n != NULL)
         {
+            n->Server = srv;
             n->Len = len;
             memcpy(n->Name, u8, len + 1);
-            DWORD h = FTPCodePageNameHash(u8, len);
+            DWORD h = FTPCodePageNameHash(srv, u8, len);
             n->Next = FTPCodePageNames[h];
             FTPCodePageNames[h] = n;
             FTPCodePageNamesCount++;
@@ -3531,12 +3622,12 @@ static void FTPAddCodePageName(const char* u8)
     }
     else
         TRACE_I("FTPAddCodePageName(): the bound of remembered code-page names reached");
-    ReleaseSRWLockExclusive(&FTPCodePageNamesLock);
+    ReleaseSRWLockExclusive(&FTPServerEncLock);
 }
 
-void FTPFreeCodePageNames()
+void FTPFreeServerEncodings()
 {
-    AcquireSRWLockExclusive(&FTPCodePageNamesLock);
+    AcquireSRWLockExclusive(&FTPServerEncLock);
     for (int i = 0; i < _countof(FTPCodePageNames); i++)
     {
         while (FTPCodePageNames[i] != NULL)
@@ -3547,25 +3638,34 @@ void FTPFreeCodePageNames()
         }
     }
     FTPCodePageNamesCount = 0;
-    ReleaseSRWLockExclusive(&FTPCodePageNamesLock);
+    while (FTPServerEncs != NULL)
+    {
+        CFTPServerEnc* s = FTPServerEncs;
+        FTPServerEncs = s->Next;
+        free(s->Host);
+        free(s->User);
+        free(s);
+    }
+    FTPServerEncsCount = 0;
+    ReleaseSRWLockExclusive(&FTPServerEncLock);
 }
 
 // TRUE when 'u8' (a name or a path) is, or has a component or a leading part that is, a text a
-// listing or a reply (a PWD path) gave in the code page - "/home/jiri" from a PWD makes
-// "/home/jiri/x" go in the code page too (review)
-static BOOL FTPHasCodePageName(const char* u8)
+// listing or a reply (a PWD path) of 'srv' gave in the code page - "/home/jiri" from a PWD makes
+// "/home/jiri/x" go in the code page too (review of 224)
+static BOOL FTPHasCodePageName(CFTPServerEnc* srv, const char* u8)
 {
     int len = (int)strlen(u8);
-    if (FTPIsCodePageNameN(u8, len))
+    if (FTPIsCodePageNameN(srv, u8, len))
         return TRUE;
     const char* beg = u8;
     for (const char* s = u8;; s++)
     {
         if (*s == '/' || *s == '\\' || *s == 0)
         {
-            if (s > beg && (s - beg) < len && FTPIsCodePageNameN(beg, (int)(s - beg)))
+            if (s > beg && (s - beg) < len && FTPIsCodePageNameN(srv, beg, (int)(s - beg)))
                 return TRUE;
-            if (s > u8 && (s - u8) < len && FTPIsCodePageNameN(u8, (int)(s - u8))) // the leading part
+            if (s > u8 && (s - u8) < len && FTPIsCodePageNameN(srv, u8, (int)(s - u8))) // the leading part
                 return TRUE;
             if (*s == 0)
                 break;
@@ -3575,7 +3675,7 @@ static BOOL FTPHasCodePageName(const char* u8)
     return FALSE;
 }
 
-char* FTPListingFieldToU8(const char* beg, int len)
+static char* FTPFieldToU8(const char* beg, int len, CFTPServerEnc* srv, BOOL utf8Evidence)
 {
     if (len < 0)
         len = 0;
@@ -3590,6 +3690,8 @@ char* FTPListingFieldToU8(const char* beg, int len)
         {
             memcpy(str, beg, len);
             str[len] = 0;
+            if (srv != NULL && utf8Evidence && !SplIsASCII(str)) // feature 288: this server speaks UTF-8
+                InterlockedExchange(&srv->SawUtf8, 1);
         }
         return str;
     }
@@ -3609,7 +3711,11 @@ char* FTPListingFieldToU8(const char* beg, int len)
                 {
                     WideCharToMultiByte(CP_UTF8, 0, w, wLen, str, u8Len, NULL, NULL);
                     str[u8Len] = 0;
-                    FTPAddCodePageName(str); // feature 224: this server speaks the code page
+                    if (srv != NULL) // feature 224 / 288: this server speaks the code page
+                    {
+                        InterlockedExchange(&srv->SawCodePage, 1);
+                        FTPAddCodePageName(srv, str);
+                    }
                 }
                 free(w);
                 return str;
@@ -3627,14 +3733,23 @@ char* FTPListingFieldToU8(const char* beg, int len)
     return str;
 }
 
-const char* FTPU8NameToServer(const char* u8, char* buf, int bufSize)
+char* FTPListingFieldToU8(const char* beg, int len)
+{
+    return FTPFieldToU8(beg, len, FTPListingServer, TRUE);
+}
+
+const char* FTPU8NameToServer(const char* u8, char* buf, int bufSize, CFTPServerEnc* srv)
 {
     if (u8 == NULL || SplIsASCII(u8))
         return u8; // ASCII is identical in every code page
     // feature 224: the code page only for a name (or a path with a name) a listing gave in it - a
     // name of a UTF-8 server that the code page can hold ("cafe" with an accent) went out in the code
-    // page: another name (delete, rename, download failed or reached another file)
-    if (!FTPHasCodePageName(u8))
+    // page: another name (delete, rename, download failed or reached another file); feature 288: a
+    // listing of this server, and any name to a server that speaks only the code page
+    if (srv == NULL)
+        return u8; // the server is not known (low memory): UTF-8, as to an unknown server
+    int state = SalFtpServerEncState(srv->SawUtf8 != 0, srv->SawCodePage != 0);
+    if (!SalFtpNameGoesInCodePage(state, FTPHasCodePageName(srv, u8)))
         return u8;
     WCHAR* w = SplU8ToWAlloc(u8);
     if (w == NULL)

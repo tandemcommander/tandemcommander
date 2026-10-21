@@ -1131,6 +1131,11 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                                                       AutodetectSrvType ? NULL : LastServerType);
             }
 
+            // feature 288: the names of this listing are evidence of the server of the panel's
+            // connection (the one its commands go to); looked up before the server types are locked
+            // (critsect.txt: no SocketCritSect inside ServerTypeListCS)
+            CFTPListingServerScope listingServer(ControlConnection->GetServerEnc());
+
             // Reset the helper variable indicating which server type has already been (unsuccessfully) tested
             CServerTypeList* serverTypeList = Config.LockServerTypeList();
             int serverTypeListCount = serverTypeList->Count;

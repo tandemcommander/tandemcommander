@@ -41,7 +41,7 @@ BOOL CControlConnectionSocket::SetCurrentTransferMode(HWND parent, BOOL asciiMod
         leaveSect = FALSE;
 
         // change the transfer mode on the server
-        PrepareFTPCommand(cmdBuf, 50, logBuf, 50, ftpcmdSetTransferMode, NULL, asciiMode); // cannot fail
+        PrepareFTPCommand(NULL, cmdBuf, 50, logBuf, 50, ftpcmdSetTransferMode, NULL, asciiMode); // cannot fail
         int ftpReplyCode;
         if (SendFTPCommand(parent, cmdBuf, logBuf, NULL, GetWaitTime(WAITWND_COMOPER), NULL,
                            &ftpReplyCode, ftpReplyBuf, ftpReplyBufSize, FALSE, FALSE, TRUE,
@@ -385,7 +385,7 @@ BOOL CControlConnectionSocket::ListWorkingPath(HWND parent, const char* path, ch
             ReuseSSLSessionFailed = FALSE;
             if (ok && usePassiveModeAux) // passive mode (PASV)
             {
-                PrepareFTPCommand(cmdBuf, 50 + FTP_MAX_PATH, logBuf, 50 + FTP_MAX_PATH,
+                PrepareFTPCommand(NULL, cmdBuf, 50 + FTP_MAX_PATH, logBuf, 50 + FTP_MAX_PATH,
                                   ftpcmdPassive, NULL); // cannot fail
                 int ftpReplyCode;
                 if (SendFTPCommand(parent, cmdBuf, logBuf, NULL, GetWaitTime(WAITWND_COMOPER), NULL,
@@ -432,7 +432,7 @@ BOOL CControlConnectionSocket::ListWorkingPath(HWND parent, const char* path, ch
                                                   retryMsgBuf, 300, GetWaitTime(WAITWND_COMOPER),
                                                   errBuf, 900 + FTP_MAX_PATH))
                 {
-                    PrepareFTPCommand(cmdBuf, 50 + FTP_MAX_PATH, logBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(NULL, cmdBuf, 50 + FTP_MAX_PATH, logBuf, 50 + FTP_MAX_PATH,
                                       ftpcmdSetPort, NULL, localIP, localPort); // cannot fail
                     int ftpReplyCode;
                     if (!SendFTPCommand(parent, cmdBuf, logBuf, NULL, GetWaitTime(WAITWND_COMOPER), NULL,
@@ -660,7 +660,7 @@ BOOL CControlConnectionSocket::ListWorkingPath(HWND parent, const char* path, ch
                         dataConnection->SetCertificate(pCertificate);
 
                     // change the path to 'path' (the path we are listing)
-                    PrepareFTPCommand(cmdBuf, 50 + FTP_MAX_PATH, logBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(GetServerEnc(), cmdBuf, 50 + FTP_MAX_PATH, logBuf, 50 + FTP_MAX_PATH,
                                       ftpcmdChangeWorkingPath, NULL, path);
                     int ftpReplyCode;
                     if (SendFTPCommand(parent, cmdBuf, logBuf, NULL, GetWaitTime(WAITWND_COMOPER), NULL,
@@ -1219,13 +1219,13 @@ void CControlConnectionSocket::ReceiveTimer(DWORD id, void* param)
             {
             case 0: // NOOP
             {
-                PrepareFTPCommand(ftpCmd, 200, NULL, 0, ftpcmdNoOperation, NULL);
+                PrepareFTPCommand(NULL, ftpCmd, 200, NULL, 0, ftpcmdNoOperation, NULL);
                 break;
             }
 
             case 1: // PWD
             {
-                PrepareFTPCommand(ftpCmd, 200, NULL, 0, ftpcmdPrintWorkingPath, NULL);
+                PrepareFTPCommand(NULL, ftpCmd, 200, NULL, 0, ftpcmdPrintWorkingPath, NULL);
                 break;
             }
 
@@ -1234,7 +1234,7 @@ void CControlConnectionSocket::ReceiveTimer(DWORD id, void* param)
             {
                 if (usePassiveModeAux) // passive mode of the "data connection"
                 {
-                    PrepareFTPCommand(ftpCmd, 200, NULL, 0, ftpcmdPassive, NULL);
+                    PrepareFTPCommand(NULL, ftpCmd, 200, NULL, 0, ftpcmdPassive, NULL);
                 }
                 else // active mode of the "data connection"
                 {
@@ -1343,7 +1343,7 @@ void CControlConnectionSocket::ReceivePostMessage(DWORD id, void* param)
                     KeepAliveDataConState = kadcsWaitForSetPortReply;
                     HANDLES(LeaveCriticalSection(&SocketCritSect));
 
-                    PrepareFTPCommand(buf, 300, NULL, 0, ftpcmdSetPort, NULL, listenOnIP, listenOnPort);
+                    PrepareFTPCommand(NULL, buf, 300, NULL, 0, ftpcmdSetPort, NULL, listenOnIP, listenOnPort);
                     SendKeepAliveCmd(logUID, buf);
                 }
             }

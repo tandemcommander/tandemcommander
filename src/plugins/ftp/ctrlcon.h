@@ -49,8 +49,11 @@ enum CFtpCmdCode
 // is the command code (see CFtpCmdCode); if 'cmdLen' is not NULL, it returns the length
 // of the prepared command text (it is always null-terminated at the end);
 // 'logBuf' with the length 'logBufSize' will contain a version of the command suitable for
-// the log file (passwords replaced with asterisks, etc.) - this is a null-terminated string
-BOOL PrepareFTPCommand(char* buf, int bufSize, char* logBuf, int logBufSize,
+// the log file (passwords replaced with asterisks, etc.) - this is a null-terminated string;
+// feature 288: 'srv' is the server the command goes to - a name or path in it is written in
+// that server's encoding (FTPU8NameToServer); NULL for a command without a name
+struct CFTPServerEnc;
+BOOL PrepareFTPCommand(CFTPServerEnc* srv, char* buf, int bufSize, char* logBuf, int logBufSize,
                        CFtpCmdCode ftpCmd, int* cmdLen, ...);
 
 // helper function for preparing error messages
@@ -1054,6 +1057,10 @@ public:
 
     // returns (inside the critical section) the value of UseListingsCache
     BOOL GetUseListingsCache();
+
+    // feature 288: the encoding state of the server of this connection (Host + Port + User,
+    // read inside the critical section); NULL = unknown (see FTPGetServerEnc)
+    CFTPServerEnc* GetServerEnc();
 
     // downloads a single file in the working directory; the file name (without path) is 'fileName'; if
     // the file size in bytes is known, it is provided in 'fileSizeInBytes', otherwise it is

@@ -41,7 +41,7 @@ char* CopyStr(char* buf, int bufSize, const char* txt, int size)
 
 // ****************************************************************************
 
-BOOL PrepareFTPCommand(char* buf, int bufSize, char* logBuf, int logBufSize,
+BOOL PrepareFTPCommand(CFTPServerEnc* srv, char* buf, int bufSize, char* logBuf, int logBufSize,
                        CFtpCmdCode ftpCmd, int* cmdLen, ...)
 {
     va_list args;
@@ -74,7 +74,7 @@ BOOL PrepareFTPCommand(char* buf, int bufSize, char* logBuf, int logBufSize,
         case ftpcmdChangeWorkingPath:
         {
             char* path = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "CWD %s", FTPU8NameToServer(path, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "CWD %s", FTPU8NameToServer(path, nameBuf, sizeof(nameBuf), srv));
             break;
         }
 
@@ -106,27 +106,27 @@ BOOL PrepareFTPCommand(char* buf, int bufSize, char* logBuf, int logBufSize,
         case ftpcmdDeleteFile:
         {
             char* name = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "DELE %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "DELE %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf), srv));
             break;
         }
         case ftpcmdDeleteDir:
         {
             char* name = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "RMD %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "RMD %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf), srv));
             break;
         }
         case ftpcmdChangeAttrs:
         {
             int newAttr = va_arg(args, int);
             char* name = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "SITE CHMOD %03o %s", newAttr, FTPU8NameToServer(name, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "SITE CHMOD %03o %s", newAttr, FTPU8NameToServer(name, nameBuf, sizeof(nameBuf), srv));
             break;
         }
         case ftpcmdChangeAttrsQuoted:
         {
             int newAttr = va_arg(args, int);
             char* name = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "SITE CHMOD %03o \"%s\"", newAttr, FTPU8NameToServer(name, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "SITE CHMOD %03o \"%s\"", newAttr, FTPU8NameToServer(name, nameBuf, sizeof(nameBuf), srv));
             break;
         }
         case ftpcmdRestartTransfer:
@@ -135,43 +135,43 @@ BOOL PrepareFTPCommand(char* buf, int bufSize, char* logBuf, int logBufSize,
         case ftpcmdRetrieveFile:
         {
             char* name = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "RETR %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "RETR %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf), srv));
             break;
         }
         case ftpcmdStoreFile:
         {
             char* name = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "STOR %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "STOR %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf), srv));
             break;
         }
         case ftpcmdAppendFile:
         {
             char* name = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "APPE %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "APPE %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf), srv));
             break;
         }
         case ftpcmdCreateDir:
         {
             char* path = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "MKD %s", FTPU8NameToServer(path, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "MKD %s", FTPU8NameToServer(path, nameBuf, sizeof(nameBuf), srv));
             break;
         }
         case ftpcmdRenameFrom:
         {
             char* name = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "RNFR %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "RNFR %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf), srv));
             break;
         }
         case ftpcmdRenameTo:
         {
             char* name = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "RNTO %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "RNTO %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf), srv));
             break;
         }
         case ftpcmdGetSize:
         {
             char* name = va_arg(args, char*);
-            len = _snprintf_s(buf, bufSize, _TRUNCATE, "SIZE %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf)));
+            len = _snprintf_s(buf, bufSize, _TRUNCATE, "SIZE %s", FTPU8NameToServer(name, nameBuf, sizeof(nameBuf), srv));
             break;
         }
 
@@ -335,7 +335,7 @@ void CControlConnectionSocket::CloseControlConnection(HWND parent)
     int cmdLen;
     char buf[500];
     char errBuf[300];
-    if (PrepareFTPCommand(buf, 500, errBuf, 300, ftpcmdQuit, &cmdLen))
+    if (PrepareFTPCommand(NULL, buf, 500, errBuf, 300, ftpcmdQuit, &cmdLen))
     {
         DWORD error;
         BOOL allBytesWritten;

@@ -1328,7 +1328,7 @@ void CFTPWorker::HandleEventInConnectingState(CFTPWorkerEvent event, BOOL& sendQ
 
             case fwssConSendSyst: // determine the server system (send the "SYST" command)
             {
-                PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH, ftpcmdSystem, &cmdLen); // cannot report an error
+                PrepareFTPCommand(NULL, buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH, ftpcmdSystem, &cmdLen); // cannot report an error
                 sendCmd = TRUE;
                 SubState = fwssConWaitForSystRes;
                 // run = TRUE; // no point yet (no event has occurred yet)
@@ -1433,6 +1433,9 @@ BOOL CFTPWorker::ParseListingToFTPQueue(TIndirectArray<CFTPQueueItem>* ftpQueueI
                                         DWORD attrOrMask, int operationsUnknownAttrs,
                                         int operationsHiddenFileDel, int operationsHiddenDirDel)
 {
+    // feature 288: the names of this listing are evidence of the operation's server (OperCritSect may
+    // be entered inside ServerTypeListCS and WorkerCritSect - critsect.txt)
+    CFTPListingServerScope listingServer(Oper->GetServerEnc());
     BOOL ret = FALSE;
     *lowMem = FALSE;
     ftpQueueItems->DestroyMembers();

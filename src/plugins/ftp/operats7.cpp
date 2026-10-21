@@ -150,7 +150,7 @@ void CFTPWorker::WaitForListen(CFTPWorkerEvent event, BOOL& handleShouldStop, ch
 
                 if (ok)
                 {
-                    PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(NULL, buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                       ftpcmdSetPort, &cmdLen, listenOnIP, listenOnPort); // cannot report an error
                     sendCmd = TRUE;
                     SubState = waitForPORTRes;
@@ -404,7 +404,7 @@ void CFTPWorker::SetTypeA(BOOL& handleShouldStop, char* errBuf, char* buf, int& 
     {
         if (CurrentTransferMode != trMode) // we need ASCII mode; set it if necessary
         {
-            PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+            PrepareFTPCommand(NULL, buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                               ftpcmdSetTransferMode, &cmdLen, asciiTrMode); // cannot report an error
             sendCmd = TRUE;
             SubState = waitForTYPERes;
@@ -509,7 +509,7 @@ void CFTPWorker::HandleEventInWorkingState2(CFTPWorkerEvent event, BOOL& sendQui
                     FTPLogMsgCutKeepLineEnd(errText, 200 + FTP_MAX_PATH);
                 Logs.LogMessage(LogUID, errText, -1, TRUE);
 
-                PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                PrepareFTPCommand(Oper->GetServerEnc(), buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                   ftpcmdChangeWorkingPath, &cmdLen, ftpPath); // cannot report an error
                 sendCmd = TRUE;
                 SubState = fwssWorkExplWaitForCWDRes;
@@ -547,7 +547,7 @@ void CFTPWorker::HandleEventInWorkingState2(CFTPWorkerEvent event, BOOL& sendQui
                         }
                         else
                         {
-                            PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                            PrepareFTPCommand(NULL, buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                               ftpcmdPrintWorkingPath, &cmdLen); // cannot report an error
                             sendCmd = TRUE;
                             SubState = fwssWorkExplWaitForPWDRes;
@@ -591,7 +591,7 @@ void CFTPWorker::HandleEventInWorkingState2(CFTPWorkerEvent event, BOOL& sendQui
                         handleShouldStop = TRUE; // check whether the worker should stop
                     else
                     {
-                        if (UploadDirGetTgtPathListing || FTPGetDirectoryFromReply(reply, replySize, ftpPath, FTP_MAX_PATH))
+                        if (UploadDirGetTgtPathListing || FTPGetDirectoryFromReply(reply, replySize, ftpPath, FTP_MAX_PATH, Oper->GetServerEnc()))
                         { // We have the working path; check whether a cycle (infinite loop) is occurring
                             BOOL cycle = FALSE;
                             if (!UploadDirGetTgtPathListing)
@@ -684,7 +684,7 @@ void CFTPWorker::HandleEventInWorkingState2(CFTPWorkerEvent event, BOOL& sendQui
 
                                     if (Oper->GetUsePassiveMode()) // passive mode (PASV)
                                     {
-                                        PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                                        PrepareFTPCommand(NULL, buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                           ftpcmdPassive, &cmdLen); // cannot report an error
                                         sendCmd = TRUE;
                                         SubState = fwssWorkExplWaitForPASVRes;

@@ -214,7 +214,7 @@ BOOL CControlConnectionSocket::SendFTPCommand(HWND parent, const char* ftpCmd, c
         }
         case sfcsAbortCommand:
         {
-            if (!PrepareFTPCommand(buf, 500, errBuf, 300, ftpcmdAbort, NULL))
+            if (!PrepareFTPCommand(NULL, buf, 500, errBuf, 300, ftpcmdAbort, NULL))
             { // unexpected error ("always false")
                 state = sfcsDone;
                 userIface->CancelDataCon();
@@ -795,7 +795,7 @@ BOOL CControlConnectionSocket::GetCurrentWorkingPath(HWND parent, char* path, in
         leaveSect = FALSE;
 
         // determine the working directory on the server
-        PrepareFTPCommand(cmdBuf, 50, logBuf, 50, ftpcmdPrintWorkingPath, NULL); // cannot fail
+        PrepareFTPCommand(NULL, cmdBuf, 50, logBuf, 50, ftpcmdPrintWorkingPath, NULL); // cannot fail
         int ftpReplyCode;
         if (SendFTPCommand(parent, cmdBuf, logBuf, NULL, GetWaitTime(WAITWND_COMOPER), NULL,
                            &ftpReplyCode, replyBuf, 700, FALSE, FALSE, FALSE, canRetry,
@@ -803,7 +803,7 @@ BOOL CControlConnectionSocket::GetCurrentWorkingPath(HWND parent, char* path, in
         {
             HANDLES(EnterCriticalSection(&SocketCritSect));
             if (FTP_DIGIT_1(ftpReplyCode) == FTP_D1_SUCCESS && // success is returned (should be 257)
-                    FTPGetDirectoryFromReply(replyBuf, (int)strlen(replyBuf), WorkingPath, FTP_MAX_PATH) ||
+                    FTPGetDirectoryFromReply(replyBuf, (int)strlen(replyBuf), WorkingPath, FTP_MAX_PATH, GetServerEnc()) ||
                 FTP_DIGIT_1(ftpReplyCode) != FTP_D1_SUCCESS) // failed (e.g. "not defined; use CWD to set the working directory") -> temporarily use an empty path
             {
                 if (FTP_DIGIT_1(ftpReplyCode) != FTP_D1_SUCCESS)
@@ -935,7 +935,7 @@ BOOL CControlConnectionSocket::SendChangeWorkingPath(BOOL notInPanel, BOOL leftP
                 p = path;
                 i = 1; // end of the loop
             }
-            if (PrepareFTPCommand(cmdBuf, 50 + FTP_MAX_PATH, logBuf, 50 + FTP_MAX_PATH,
+            if (PrepareFTPCommand(GetServerEnc(), cmdBuf, 50 + FTP_MAX_PATH, logBuf, 50 + FTP_MAX_PATH,
                                   ftpcmdChangeWorkingPath, NULL, p))
             {
                 int ftpReplyCode;
@@ -1615,6 +1615,16 @@ BOOL CControlConnectionSocket::GetUseListingsCache()
 
     HANDLES(EnterCriticalSection(&SocketCritSect));
     BOOL ret = UseListingsCache;
+    HANDLES(LeaveCriticalSection(&SocketCritSect));
+    return ret;
+}
+
+CFTPServerEnc* CControlConnectionSocket::GetServerEnc()
+{
+    CALL_STACK_MESSAGE1("CControlConnectionSocket::GetServerEnc()");
+
+    HANDLES(EnterCriticalSection(&SocketCritSect));
+    CFTPServerEnc* ret = FTPGetServerEnc(Host, Port, User);
     HANDLES(LeaveCriticalSection(&SocketCritSect));
     return ret;
 }

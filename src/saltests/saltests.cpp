@@ -87,6 +87,7 @@
 #include "salftppwd.h"        // feature 277
 #include "salumvalue.h"       // feature 280
 #include "salmaskopt.h"       // feature 283
+#include "salftpsrvenc.h"     // feature 288
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -16223,6 +16224,58 @@ static void TestFolderShortcut286()
         CoUninitialize();
 }
 
+// feature 288: a name goes to each FTP server in its own encoding (salftpsrvenc.h) - 224's one
+// set for the whole program sent new names in UTF-8 to a legacy server, and a name seen in the
+// code page on one server in the code page to another
+static void TestFtpServerEncoding288()
+{
+    // the state from the evidence
+    CHECK(SalFtpServerEncState(FALSE, FALSE) == SALFTPENC_UNKNOWN);
+    CHECK(SalFtpServerEncState(TRUE, FALSE) == SALFTPENC_UTF8);
+    CHECK(SalFtpServerEncState(FALSE, TRUE) == SALFTPENC_LEGACY);
+    CHECK(SalFtpServerEncState(TRUE, TRUE) == SALFTPENC_MIXED);
+
+    // the decision table: a server's own code-page name always in the code page; a new name only
+    // to a legacy server
+    const int states[] = {SALFTPENC_UNKNOWN, SALFTPENC_UTF8, SALFTPENC_LEGACY, SALFTPENC_MIXED};
+    for (int s : states)
+    {
+        CHECK(SalFtpNameGoesInCodePage(s, TRUE));
+        CHECK(!SalFtpNameGoesInCodePage(s, FALSE) == (s != SALFTPENC_LEGACY));
+    }
+    // negative control - the rule of 224 (the code page only for a remembered name): a new name
+    // went in UTF-8 to a legacy server
+    auto rule224 = [](int, BOOL isCodePageName) -> BOOL
+    { return isCodePageName; };
+    CHECK(rule224(SALFTPENC_LEGACY, FALSE) != SalFtpNameGoesInCodePage(SALFTPENC_LEGACY, FALSE));
+
+    // the user: NULL, "" and "anonymous" are one; otherwise exact (case kept)
+    CHECK(SalFtpSameServerUser(NULL, NULL));
+    CHECK(SalFtpSameServerUser(NULL, ""));
+    CHECK(SalFtpSameServerUser("anonymous", NULL));
+    CHECK(SalFtpSameServerUser("", "anonymous"));
+    CHECK(SalFtpSameServerUser("jiri", "jiri"));
+    CHECK(!SalFtpSameServerUser("jiri", "Jiri"));
+    CHECK(!SalFtpSameServerUser("jiri", NULL));
+    CHECK(!SalFtpSameServerUser("Anonymous", NULL)); // the plug-in's own spelling only
+    CHECK(!SalFtpSameServerUser("u", "u2"));
+
+    // the host: ASCII case ignored, other bytes as they are, NULL never a host
+    CHECK(SalFtpSameServerHost("ftp.Example.COM", "FTP.example.com"));
+    CHECK(SalFtpSameServerHost("127.0.0.1", "127.0.0.1"));
+    CHECK(!SalFtpSameServerHost("127.0.0.1", "127.0.0.10"));
+    CHECK(!SalFtpSameServerHost("ftp.a", "ftp.ab"));
+    CHECK(!SalFtpSameServerHost("\xC3\xA1", "\xC3\x81")); // a-acute / A-acute in UTF-8: not folded
+    CHECK(!SalFtpSameServerHost(NULL, NULL));
+    CHECK(!SalFtpSameServerHost("h", NULL));
+
+    // the server: host, port and user together
+    CHECK(SalFtpSameServer("Host", 21, "anonymous", "host", 21, NULL));
+    CHECK(!SalFtpSameServer("host", 2121, "u", "host", 2122, "u")); // the probe's two servers
+    CHECK(!SalFtpSameServer("host", 21, "u", "host", 21, "v"));
+    CHECK(!SalFtpSameServer("host", 21, "u", "other", 21, "u"));
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -16356,6 +16409,7 @@ int main(int argc, char** argv)
     TestMoveBack281();
     TestMaskOptimize283();
     TestFolderShortcut286();
+    TestFtpServerEncoding288();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

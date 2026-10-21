@@ -123,7 +123,7 @@ void CControlConnectionSocket::DownloadOneFile(HWND parent, const char* fileName
                 ReuseSSLSessionFailed = FALSE;
                 if (ok && usePassiveModeAux) // passive mode (PASV)
                 {
-                    PrepareFTPCommand(cmdBuf, sizeof(cmdBuf), logBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(NULL, cmdBuf, sizeof(cmdBuf), logBuf, 50 + FTP_MAX_PATH,
                                       ftpcmdPassive, NULL); // cannot fail
                     int ftpReplyCode;
                     if (SendFTPCommand(parent, cmdBuf, logBuf, NULL, GetWaitTime(WAITWND_COMOPER), NULL,
@@ -168,7 +168,7 @@ void CControlConnectionSocket::DownloadOneFile(HWND parent, const char* fileName
                                                       retryMsgBuf, 300, GetWaitTime(WAITWND_COMOPER),
                                                       errBuf, 900 + FTP_MAX_PATH))
                     {
-                        PrepareFTPCommand(cmdBuf, sizeof(cmdBuf), logBuf, 50 + FTP_MAX_PATH,
+                        PrepareFTPCommand(NULL, cmdBuf, sizeof(cmdBuf), logBuf, 50 + FTP_MAX_PATH,
                                           ftpcmdSetPort, NULL, localIP, localPort); // cannot fail
                         int ftpReplyCode;
                         if (!SendFTPCommand(parent, cmdBuf, logBuf, NULL, GetWaitTime(WAITWND_COMOPER), NULL,
@@ -225,7 +225,7 @@ void CControlConnectionSocket::DownloadOneFile(HWND parent, const char* fileName
                     CFTPServerPathType pathType = ::GetFTPServerPathType(ServerFirstReply, ServerSystem, workPath);
                     HANDLES(LeaveCriticalSection(&SocketCritSect));
 
-                    PrepareFTPCommand(cmdBuf, sizeof(cmdBuf), logBuf, 50 + FTP_MAX_PATH,
+                    PrepareFTPCommand(GetServerEnc(), cmdBuf, sizeof(cmdBuf), logBuf, 50 + FTP_MAX_PATH,
                                       ftpcmdRetrieveFile, NULL, fileName); // cannot report an error
                     BOOL fileIncomplete = TRUE;
                     BOOL tgtFileError = FALSE;
@@ -559,7 +559,7 @@ BOOL CControlConnectionSocket::CreateDir(char* changedPath, HWND parent, char* n
         if (ok)
         {
             // create the requested directory
-            PrepareFTPCommand(cmdBuf, sizeof(cmdBuf), logBuf, 50 + 2 * MAX_PATH,
+            PrepareFTPCommand(GetServerEnc(), cmdBuf, sizeof(cmdBuf), logBuf, 50 + 2 * MAX_PATH,
                               ftpcmdCreateDir, NULL, newName); // cannot fail
             BOOL refreshWorkingPath = TRUE;
             int ftpReplyCode;
@@ -579,7 +579,7 @@ BOOL CControlConnectionSocket::CreateDir(char* changedPath, HWND parent, char* n
                                                         GetFTPServerPathType(workPath), newName, FALSE);
                 }
                 if (FTP_DIGIT_1(ftpReplyCode) == FTP_D1_SUCCESS && // a success reply is returned (should be 257)
-                    FTPGetDirectoryFromReply(replyBuf, (int)strlen(replyBuf), newPath, FTP_MAX_PATH))
+                    FTPGetDirectoryFromReply(replyBuf, (int)strlen(replyBuf), newPath, FTP_MAX_PATH, GetServerEnc()))
                 {                   // directory 'newPath' has just been created
                     newName[0] = 0; // no focus after refresh yet
                     CFTPServerPathType pathType = GetFTPServerPathType(newPath);
@@ -739,7 +739,7 @@ BOOL CControlConnectionSocket::QuickRename(char* changedPath, HWND parent, const
                 if (ok)
                 {
                     // send the "rename from" command first (later send the follow-up "rename to")
-                    PrepareFTPCommand(cmdBuf, sizeof(cmdBuf), logBuf, 50 + 2 * MAX_PATH,
+                    PrepareFTPCommand(GetServerEnc(), cmdBuf, sizeof(cmdBuf), logBuf, 50 + 2 * MAX_PATH,
                                       ftpcmdRenameFrom, NULL, fromNameForSrv); // cannot fail
                     int ftpReplyCode;
                     if (SendFTPCommand(parent, cmdBuf, logBuf, NULL, GetWaitTime(WAITWND_COMOPER), NULL,
@@ -748,7 +748,7 @@ BOOL CControlConnectionSocket::QuickRename(char* changedPath, HWND parent, const
                     {
                         if (FTP_DIGIT_1(ftpReplyCode) == FTP_D1_PARTIALSUCCESS) // 350 Requested file action pending further information
                         {                                                       // we need to send "rename to"
-                            PrepareFTPCommand(cmdBuf, sizeof(cmdBuf), logBuf, 50 + 2 * MAX_PATH,
+                            PrepareFTPCommand(GetServerEnc(), cmdBuf, sizeof(cmdBuf), logBuf, 50 + 2 * MAX_PATH,
                                               ftpcmdRenameTo, NULL, newName); // cannot fail
                             if (SendFTPCommand(parent, cmdBuf, logBuf, NULL, GetWaitTime(WAITWND_COMOPER), NULL,
                                                &ftpReplyCode, replyBuf, 700, FALSE, FALSE, FALSE, &canRetry,

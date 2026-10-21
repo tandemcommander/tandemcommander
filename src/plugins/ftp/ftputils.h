@@ -320,7 +320,11 @@ BOOL FTPReadFTPReply(char* readBytes, int readBytesCount, int readBytesOffset,
 // does not strictly require "257" at the beginning of the string (if necessary, handle this before calling);
 // returns TRUE if the directory was parsed successfully
 // can be called from any thread
-BOOL FTPGetDirectoryFromReply(const char* reply, int replySize, char* dirBuf, int dirBufSize);
+// feature 288: 'srv' is the server that sent the reply (a path read in the code page is its
+// evidence and its remembered text; NULL = none recorded)
+struct CFTPServerEnc;
+BOOL FTPGetDirectoryFromReply(const char* reply, int replySize, char* dirBuf, int dirBufSize,
+                              CFTPServerEnc* srv);
 
 // parses the IP address and port from the string 'reply' of length 'replySize' (-1 == use 'strlen(reply)')
 // (returns them in 'ip' and 'port' (must not be NULL); for the rules, see RFC 959, FTP reply code 227);
@@ -461,22 +465,44 @@ HANDLE FTPFindFirstFileU8(const char* pathName, WIN32_FIND_DATAW* data);
 // Protocol boundary (server names <-> UTF-8): the FTP plugin carries no
 // per-server charset setting, so names are converted heuristically and
 // symmetrically. Pure ASCII takes neither branch and is byte-for-byte
-// unchanged (the common case keeps the previous behavior exactly).
+// unchanged (the common case keeps the previous behavior exactly). Feature 288:
+// the heuristic learns each server's encoding from its listings (CFTPServerEnc).
 //
+
+// feature 288: the encoding state of one FTP server (host without ASCII case, port, user with
+// anonymous = none - salftpsrvenc.h): the evidence its listings / "257" replies gave and the
+// texts they gave in the code page. Lives until the plug-in's release, so a pointer from
+// FTPGetServerEnc stays valid; NULL (no host, low memory, more than 1,000 servers) = unknown.
+struct CFTPServerEnc;
+CFTPServerEnc* FTPGetServerEnc(const char* host, unsigned short port, const char* user);
+
+// feature 288: the server whose listing this thread parses (FTPListingFieldToU8 records its
+// evidence there); set around a parse loop, nests. NULL = no server (the server-type test
+// dialog): the texts are decoded the same way, nothing is recorded.
+class CFTPListingServerScope
+{
+protected:
+    CFTPServerEnc* Prev;
+
+public:
+    CFTPListingServerScope(CFTPServerEnc* srv);
+    ~CFTPListingServerScope();
+};
 
 // Decode 'len' bytes of a raw listing field (in the server's encoding) into a
 // newly SalamanderGeneral->Alloc'd, null-terminated UTF-8 string. Valid UTF-8
 // (incl. ASCII) is kept verbatim (covers ASCII and UTF-8 servers); other bytes
 // are read in the system ANSI code page (legacy servers). Returns NULL on
 // allocation failure; free the result with SalamanderGeneral->Free.
+// Feature 288: the evidence goes to the server of CFTPListingServerScope.
 char* FTPListingFieldToU8(const char* beg, int len);
 
-// Encode a UTF-8 name/path into the bytes an FTP server expects (inverse of
-// FTPListingFieldToU8). ASCII passes through; otherwise the name is written in
-// the system ANSI code page when it is representable there (reverses the
-// legacy path), else the UTF-8 bytes are sent verbatim (accepted by UTF-8
-// servers). 'buf' (size 'bufSize') receives the result; returns 'buf', or the
-// original 'u8' when no conversion is needed or on failure.
-const char* FTPU8NameToServer(const char* u8, char* buf, int bufSize);
-// feature 224: frees the remembered names of code-page listings (at the plug-in's release)
-void FTPFreeCodePageNames();
+// Encode a UTF-8 name/path into the bytes the FTP server 'srv' expects (inverse of
+// FTPListingFieldToU8). ASCII passes through; the code page when it can hold the name
+// and the name is one 'srv' gave in it (also a component or a leading part, 224) or
+// 'srv' speaks only the code page (288, SalFtpNameGoesInCodePage); else the UTF-8
+// bytes are sent verbatim. 'buf' (size 'bufSize') receives the result; returns 'buf',
+// or the original 'u8' when no conversion is needed or on failure.
+const char* FTPU8NameToServer(const char* u8, char* buf, int bufSize, CFTPServerEnc* srv);
+// feature 224 / 288: frees the servers' states and remembered names (at the plug-in's release)
+void FTPFreeServerEncodings();

@@ -354,6 +354,9 @@ BOOL CUploadListingsOnServer::AddOrUpdateListing(const char* path, CFTPServerPat
                                                  const char* welcomeReply, const char* systReply,
                                                  const char* suggestedListingServerType)
 {
+    // feature 288: the names of the listing are evidence of this server (FTPGetServerEnc enters
+    // only its own SRW lock - allowed inside UploadLstCacheCritSect)
+    CFTPListingServerScope listingServer(FTPGetServerEnc(Host, Port, User));
     BOOL ret = TRUE;
     int index;
     if (FindPath(path, pathType, index)) // the path is already in the cache
@@ -889,6 +892,9 @@ BOOL CUploadListingsOnServer::ListingFinished(const char* path, CFTPServerPathTy
                                               const CFTPDate& pathListingDate, const char* welcomeReply,
                                               const char* systReply, const char* suggestedListingServerType)
 {
+    // feature 288: the names of the listing are evidence of this server (FTPGetServerEnc enters
+    // only its own SRW lock - allowed inside UploadLstCacheCritSect)
+    CFTPListingServerScope listingServer(FTPGetServerEnc(Host, Port, User));
     BOOL ret = TRUE;
     int index;
     if (FindPath(path, pathType, index))

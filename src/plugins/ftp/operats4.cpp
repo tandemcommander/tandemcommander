@@ -315,7 +315,7 @@ void CFTPWorker::HandleEventInWorkingState(CFTPWorkerEvent event, BOOL& sendQuit
                                 FTPLogMsgCutKeepLineEnd(errText, _countof(errText));
                             Logs.LogMessage(LogUID, errText, -1, TRUE);
 
-                            PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                            PrepareFTPCommand(Oper->GetServerEnc(), buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                               ftpcmdChangeWorkingPath, &cmdLen, ftpPath); // cannot report an error
                             sendCmd = TRUE;
                             SubState = fwssWorkResLnkWaitForCWDRes;
@@ -585,7 +585,7 @@ void CFTPWorker::HandleEventInWorkingState(CFTPWorkerEvent event, BOOL& sendQuit
                                     { // we need to change the working path (assumption: the server keeps returning the same path string - the one
                                         // that reached the item during explore-dir or from the panel, in both cases it was the path returned
                                         // by the server in response to the PWD command)
-                                        PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                                        PrepareFTPCommand(Oper->GetServerEnc(), buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                           ftpcmdChangeWorkingPath, &cmdLen, CurItem->Path); // cannot report an error
                                         sendCmd = TRUE;
                                         SubState = fwssWorkSimpleCmdWaitForCWDRes;
@@ -649,7 +649,7 @@ void CFTPWorker::HandleEventInWorkingState(CFTPWorkerEvent event, BOOL& sendQuit
                                     case fqitDeleteLink:        // delete a link (CFTPQueueItemDel object)
                                     case fqitMoveDeleteDirLink: // delete a link to a directory after moving its contents (CFTPQueueItemDir object)
                                     {
-                                        PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                                        PrepareFTPCommand(Oper->GetServerEnc(), buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                           ftpcmdDeleteFile, &cmdLen, CurItem->Name); // cannot report an error
                                         sendCmd = TRUE;
                                         SubState = fwssWorkDelFileWaitForDELERes;
@@ -667,7 +667,7 @@ void CFTPWorker::HandleEventInWorkingState(CFTPWorkerEvent event, BOOL& sendQuit
                                             FTPMakeVMSDirName(vmsDirName, sizeof(vmsDirName), CurItem->Name);
                                             dirName = vmsDirName;
                                         }
-                                        PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                                        PrepareFTPCommand(Oper->GetServerEnc(), buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                           ftpcmdDeleteDir, &cmdLen, dirName); // cannot report an error
                                         sendCmd = TRUE;
                                         SubState = fwssWorkDelDirWaitForRMDRes;
@@ -678,7 +678,7 @@ void CFTPWorker::HandleEventInWorkingState(CFTPWorkerEvent event, BOOL& sendQuit
                                     case fqitChAttrsDir:  // change directory attributes (CFTPQueueItemChAttrDir object)
                                     {
                                         DWORD attr = CurItem->Type == fqitChAttrsFile ? ((CFTPQueueItemChAttr*)CurItem)->Attr : ((CFTPQueueItemChAttrDir*)CurItem)->Attr;
-                                        PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                                        PrepareFTPCommand(Oper->GetServerEnc(), buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                           ftpcmdChangeAttrs, &cmdLen, attr, CurItem->Name); // cannot report an error
                                         sendCmd = TRUE;
                                         SubState = fwssWorkChAttrWaitForCHMODRes;
@@ -732,7 +732,7 @@ void CFTPWorker::HandleEventInWorkingState(CFTPWorkerEvent event, BOOL& sendQuit
                                                     FTPMakeVMSDirName(vmsDirName, sizeof(vmsDirName), CurItem->Name);
                                                     dirName = vmsDirName;
                                                 }
-                                                PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                                                PrepareFTPCommand(Oper->GetServerEnc(), buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                                   ftpcmdDeleteDir, &cmdLen, dirName); // cannot report an error
                                                 sendCmd = TRUE;
                                                 SubState = fwssWorkDelDirWaitForRMDRes;
@@ -854,7 +854,7 @@ void CFTPWorker::HandleEventInWorkingState(CFTPWorkerEvent event, BOOL& sendQuit
                                                     *d++ = *s++;
                                                 }
                                                 *d = 0;
-                                                PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
+                                                PrepareFTPCommand(Oper->GetServerEnc(), buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH,
                                                                   ftpcmdChangeAttrsQuoted, &cmdLen, attr, nameToQuotes); // cannot report an error
                                                 sendCmd = TRUE;
                                                 SubState = fwssWorkChAttrWaitForCHMODQuotedRes;
@@ -1275,7 +1275,7 @@ void CFTPWorker::HandleEvent(CFTPWorkerEvent event, char* reply, int replySize, 
         {
             Logs.LogMessage(logUID, LoadStr(IDS_LOGMSGDISCONNECT), -1, TRUE);
 
-            PrepareFTPCommand(buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH, ftpcmdQuit, &cmdLen); // cannot report an error
+            PrepareFTPCommand(NULL, buf, FTP_CMDBUF_SIZE, errBuf, 50 + FTP_MAX_PATH, ftpcmdQuit, &cmdLen); // cannot report an error
             sendCmd = TRUE;
         }
         else // the connection will be handed over; simulate closing the worker's socket (to stop waiting for socket closure when stopping the worker)

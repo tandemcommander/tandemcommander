@@ -2151,7 +2151,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
         }
 
         // find out the server operating system
-        if (ret && PrepareFTPCommand(buf, 1000, formatBuf, 300, ftpcmdSystem, NULL))
+        if (ret && PrepareFTPCommand(NULL, buf, 1000, formatBuf, 300, ftpcmdSystem, NULL))
         {
             int ftpReplyCode;
             if (SendFTPCommand(parent, buf, formatBuf, NULL, GetWaitTime(showWaitWndTime), NULL,

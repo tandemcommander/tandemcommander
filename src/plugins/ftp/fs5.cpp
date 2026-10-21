@@ -575,6 +575,10 @@ BOOL CPluginFSInterface::QuickRename(const char* fsName, int mode, HWND parent, 
 
                 BOOL caseSensitive = FTPIsCaseSensitive(pathType);
 
+                // feature 288: the listing's evidence goes to the panel connection's server (looked up
+                // before the server types are locked - critsect.txt)
+                CFTPListingServerScope listingServer(ControlConnection != NULL ? ControlConnection->GetServerEnc() : NULL);
+
                 // find which parser handled the listing
                 CServerTypeList* serverTypeList = Config.LockServerTypeList();
                 int serverTypeListCount = serverTypeList->Count;

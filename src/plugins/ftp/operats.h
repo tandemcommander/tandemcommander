@@ -2777,6 +2777,10 @@ public:
     // HOST_MAX_SIZE; 'user' (if not NULL) is a buffer for 'User' of size USER_MAX_SIZE;
     // 'port' (if not NULL) returns 'Port'
     void GetUserHostPort(char* user, char* host, unsigned short* port);
+
+    // feature 288: the encoding state of the operation's server ('Host' + 'Port' + 'User', read
+    // inside the critical section); NULL = unknown (see FTPGetServerEnc)
+    CFTPServerEnc* GetServerEnc();
 };
 
 //

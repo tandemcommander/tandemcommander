@@ -2093,6 +2093,15 @@ void CFTPOperation::GetUserHostPort(char* user, char* host, unsigned short* port
     HANDLES(LeaveCriticalSection(&OperCritSect));
 }
 
+CFTPServerEnc* CFTPOperation::GetServerEnc()
+{
+    CALL_STACK_MESSAGE1("CFTPOperation::GetServerEnc()");
+    HANDLES(EnterCriticalSection(&OperCritSect));
+    CFTPServerEnc* ret = FTPGetServerEnc(Host, Port, User);
+    HANDLES(LeaveCriticalSection(&OperCritSect));
+    return ret;
+}
+
 //
 // ****************************************************************************
 // CFTPQueueItem
