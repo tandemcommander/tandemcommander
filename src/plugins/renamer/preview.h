@@ -38,12 +38,12 @@ protected:
     BOOL Dirty;
     char TextBuffer[MAX_PATH]; // short texts: size, date, time
     // feature 282: on the heap - a name may be as long as the longest path (REN_MAX_NAME bytes)
-    char* PathText;        // the path column, the folder whole (it was cut at MAX_PATH bytes)
+    char* PathText; // the path column, the folder whole (it was cut at MAX_PATH bytes)
     int PathTextSize;
-    WCHAR* TextBufferW;    // the UTF-8 item text converted for the W listview notifications (grows)
-    int TextBufferWSize;   // in WCHARs
+    WCHAR* TextBufferW;  // the UTF-8 item text converted for the W listview notifications (grows)
+    int TextBufferWSize; // in WCHARs
     int CachedItem;
-    char* NewNameCache;    // REN_MAX_NAME bytes (it was MAX_PATH: a long new name showed an error)
+    char* NewNameCache; // REN_MAX_NAME bytes (it was MAX_PATH: a long new name showed an error)
     BOOL NewNameValid;
 
     HWND Static;
