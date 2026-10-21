@@ -5,6 +5,15 @@
 **Status**: Draft  
 **Input**: User description: "Backlog item a-dialog-status-text-and-the-panel-size-field-crash-when - implement exactly what it describes." From backlog item a-dialog-status-text-and-the-panel-size-field-crash-when.
 
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: After a failed enlargement, does the dialog text show the old text, a part of the new one, or nothing? → A: the old text stays shown, unchanged (autonomous run: item)
+- Q: Should a failed enlargement tell the user (a message box) beyond today's internal low-memory trace? → A: no - failure is reported to the caller and traced exactly as today; no new UI and no new strings (autonomous run: conservative)
+- Q: When one enlargement fails, are the remaining ones still attempted or does the growth stop there? → A: all are attempted in a fixed order and each success is kept, as in feature 293's two-storage rule; the next long text retries and reuses what grew (autonomous run: rule)
+- Q: When the size field's storage cannot be obtained, is it tried again at the next size update? → A: yes - the field stays without storage and the next update tries again, as today's code already does once the write is guarded (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A dialog text that cannot grow keeps working (Priority: P1)
@@ -71,7 +80,8 @@ the field checks for missing storage).
 ### Functional Requirements
 
 - **FR-001**: When a dialog static text enlarges its storages, every storage that was successfully
-  enlarged MUST be kept by the control at once, whether or not the other enlargements succeed.
+  enlarged MUST be kept by the control at once, whether or not the other enlargements succeed;
+  every enlargement is attempted, in a fixed order.
   Exception: a storage the control did not have before gets nothing on a failed growth - a block
   newly obtained for it is released again.
 - **FR-002**: After a failed enlargement the control's recorded capacity MUST NOT exceed the size of
@@ -80,7 +90,8 @@ the field checks for missing storage).
   to its caller as today; no storage the control refers to is released.
 - **FR-004**: When every enlargement succeeds, or none is needed, the behaviour MUST be exactly as
   before (the same sizes, including the room for "..." in the shortened text).
-- **FR-005**: The panel's size field MUST check that its storage was obtained before writing into it.
+- **FR-005**: The panel's size field MUST check that its storage was obtained before writing into it;
+  without storage it shows no size and the next size update tries to obtain it again.
 - **FR-006**: The rule of FR-001..FR-003 MUST be testable without the GUI and without real memory
   exhaustion: a low-memory seam in the unit rules makes chosen enlargements fail and checks it.
 - **FR-007**: The panel status line's existing growth of two storages (feature 293) MUST keep its
