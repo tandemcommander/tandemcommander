@@ -43,6 +43,7 @@ Drives > browse button):
 - Q: A picked folder (not a shortcut) whose UTF-8 path does not fit - same treatment? → A: yes, refused with the same message; it is the same Browse result of `MAX_PATH` bytes the item names, and the code-page form is another folder (autonomous run: item; rule - a path is never cut, `A` APIs best-fit)
 - Q: A folder shortcut whose target cannot be read (no `target.lnk`, a broken or non-file-system target)? → A: as before - the picked folder itself is handed back (autonomous run: conservative - keeps behaviour for cases the item does not name)
 - Q: An item Windows gives no file-system path for at all? → A: "nothing picked" instead of "picked" with an undefined path (autonomous run: conservative - refuse rather than guess)
+- Q: Should the Browse dialog's OK button stay enabled when the selected folder's path is too long for the caller? → A: yes - enabled as today (the code-page fallback enables it now); OK then shows the refusal, so the user learns why (autonomous run: conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
