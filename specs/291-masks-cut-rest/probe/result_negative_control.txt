@@ -1,0 +1,16 @@
+mask291_probe (feature 291) negative-control
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 21:57; ACP 1250; registry key existed True
+M = 86 CJK letters (258 bytes), R = 85 (255 bytes)
+
+find-ctl   RUN    PASS        typed 87 units / 259 bytes; asked: nothing; found: 2; the field after: 87 units / 259 bytes, whole: True
+find-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-add   RUN    FAIL        typed 88 units / 260 bytes; asked: nothing; found: 0; the field after: 87 units / 259 bytes, whole: False
+find-add   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-ignore RUN    PASS        typed 88 units / 260 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 88 units / 260 bytes, whole: True
+find-ignore END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-option RUN    FAIL        typed 88 units / 260 bytes; after the option the field: 87 units, whole: False; asked: nothing; found: 2; the field after: 87 units / 259 bytes, whole: False
+find-option END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 6, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

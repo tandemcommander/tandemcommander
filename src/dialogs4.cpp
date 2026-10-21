@@ -1540,21 +1540,41 @@ CCfgPageView::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 EnableHeader();
                 if (nmhd->item.pszText != NULL)
                 {
-                    char name[VIEW_NAME_MAX];
+                    char nameBuf[VIEW_NAME_MAX];
+                    char* nameAlloc = NULL;
+                    char* name = nameBuf;
                     // feature 010: the A notification delivers ACP-mangled text;
-                    // read the label-edit control wide and convert to UTF-8
+                    // read the label-edit control wide and convert to UTF-8;
+                    // feature 291: read whole - a name that does not fit is refused
+                    // (it used to be stored cut)
                     HWND hEdit = ListView_GetEditControl(HListView);
                     if (hEdit != NULL)
-                        SalGetWindowTextU8(hEdit, name, VIEW_NAME_MAX);
+                    {
+                        nameAlloc = SalGetWindowTextU8Alloc(hEdit);
+                        if (nameAlloc == NULL)
+                        {
+                            TRACE_E(LOW_MEMORY);
+                            break;
+                        }
+                        name = nameAlloc;
+                    }
                     else
-                        lstrcpyn(name, nmhd->item.pszText, VIEW_NAME_MAX);
+                        lstrcpyn(nameBuf, nmhd->item.pszText, VIEW_NAME_MAX);
                     Config.CleanName(name);
+                    if ((int)strlen(name) >= VIEW_NAME_MAX)
+                    {
+                        free(nameAlloc);
+                        SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE),
+                                      MB_OK | MB_ICONEXCLAMATION);
+                        break; // nothing stored, the row keeps its name
+                    }
                     int index = nmhd->item.iItem;
                     if (lstrlen(Config.Items[index].Name) == 0)
                         Config.Items[index].Flags = 0;
                     lstrcpy(Config.Items[index].Name, name);
                     LoadControls();
                     SalListViewSetItemTextU8(HListView, index, 0, name);
+                    free(nameAlloc);
                     Dirty = TRUE;
                     break;
                 }
@@ -1687,6 +1707,9 @@ void CCfgPageViewer::Validate(CTransferInfo& ti)
     char buf[MAX_PATH];
     if (ti.IsGood())
     {
+        // feature 291: masks whose UTF-8 form does not fit are refused, never stored cut
+        if (!DlgItemTextFitsU8(HWindow, IDC_VIEW_INTEXT, &ti, MAX_PATH))
+            return;
         lstrcpyn(buf, Configuration.TextModeMasks.GetMasksString(), MAX_PATH); // backup of TextModeMasks
         // provide MasksString, there is range checking, nothing serious
         ti.EditLine(IDC_VIEW_INTEXT, Configuration.TextModeMasks.GetWritableMasksString(), MAX_PATH);
@@ -1705,6 +1728,8 @@ void CCfgPageViewer::Validate(CTransferInfo& ti)
 
     if (ti.IsGood())
     {
+        if (!DlgItemTextFitsU8(HWindow, IDC_VIEW_INHEX, &ti, MAX_PATH)) // feature 291: as the text masks
+            return;
         lstrcpyn(buf, Configuration.HexModeMasks.GetMasksString(), MAX_PATH); // backup of HexModeMasks
         // provide MasksString, there is range checking, nothing serious
         ti.EditLine(IDC_VIEW_INHEX, (char*)Configuration.HexModeMasks.GetWritableMasksString(), MAX_PATH);
@@ -3413,6 +3438,10 @@ CCfgPageSystem::CCfgPageSystem()
 void CCfgPageSystem::Validate(CTransferInfo& ti)
 {
     CALL_STACK_MESSAGE1("CCfgPageSystem::Validate()");
+    // feature 291: Transfer stores the masks whatever the radio - masks whose UTF-8 form does not
+    // fit are refused, never stored cut (a dropped mask sent its files past the Recycle Bin)
+    if (!DlgItemTextFitsU8(HWindow, IDE_RECYCLEMASKS, &ti, MAX_PATH))
+        return;
     int useRecycle;
     ti.RadioButton(IDR_RECYCLE1, 0, useRecycle);
     ti.RadioButton(IDR_RECYCLE2, 1, useRecycle);

@@ -1501,6 +1501,12 @@ void CCompareDirsDialog::Validate(CTransferInfo& ti)
 {
     CALL_STACK_MESSAGE1("CCompareDirsDialog::Validate()");
 
+    // feature 291: Transfer stores both masks whatever the check boxes - masks whose UTF-8 form
+    // does not fit are refused, never used or stored cut
+    if (!DlgItemTextFitsU8(HWindow, IDE_COMPARE_IGNORE_FILES, &ti, MAX_PATH) ||
+        !DlgItemTextFitsU8(HWindow, IDE_COMPARE_IGNORE_DIRS, &ti, MAX_PATH))
+        return;
+
     BOOL ret = TRUE;
     if (ret)
         ret &= ValidateMask(HWindow, ti, IDC_COMPARE_IGNORE_FILES, IDE_COMPARE_IGNORE_FILES);

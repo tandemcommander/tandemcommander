@@ -12,6 +12,7 @@
 #include "viewer.h"
 #include "shellib.h"
 #include "find.h"
+#include "dialogs.h" // feature 291: DlgItemTextFitsU8
 #include "gui.h"
 #include "usermenu.h"
 #include "execute.h"
@@ -1768,6 +1769,9 @@ void CFindDialog::Validate(CTransferInfo& ti)
     if (ti.GetControl(hNamesWnd, IDC_FIND_NAMED) &&
         ti.GetControl(hLookInWnd, IDC_FIND_LOOKIN))
     {
+        // feature 291: a mask whose UTF-8 form does not fit is refused - cut, it found other files
+        if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, &ti, NAMED_TEXT_LEN))
+            return;
         // back up the data
         char bufNamed[NAMED_TEXT_LEN];
         strcpy(bufNamed, Data.NamedText);
@@ -1847,10 +1851,24 @@ void CFindDialog::UpdateAdvancedText()
 void CFindDialog::LoadControls(int index)
 {
     CALL_STACK_MESSAGE2("CFindDialog::LoadControls(0x%X)", index);
+    // feature 291: an option without a Named text keeps the field's text - whole: a text that does
+    // not fit NAMED_TEXT_LEN is put back after the transfer (Validate refuses it), never read cut
+    HWND hNamesWnd = GetDlgItem(HWindow, IDC_FIND_NAMED);
+    char* keepNamed = NULL;
+    if (FindOptions.At(index)->NamedText[0] == 0 && hNamesWnd != NULL &&
+        !SalWindowTextFitsU8(hNamesWnd, NAMED_TEXT_LEN))
+    {
+        keepNamed = SalGetWindowTextU8Alloc(hNamesWnd);
+        if (keepNamed == NULL)
+        {
+            TRACE_E(LOW_MEMORY); // nothing is loaded
+            return;
+        }
+    }
     Data = *FindOptions.At(index);
 
     // if any edit line is empty, keep its previous value (feature 005: UTF-8)
-    if (Data.NamedText[0] == 0)
+    if (Data.NamedText[0] == 0 && keepNamed == NULL)
         SalGetDlgItemTextU8(HWindow, IDC_FIND_NAMED, Data.NamedText, NAMED_TEXT_LEN);
     if (Data.LookInText[0] == 0)
         SalGetDlgItemTextU8(HWindow, IDC_FIND_LOOKIN, Data.LookInText, LOOKIN_TEXT_LEN);
@@ -1858,6 +1876,11 @@ void CFindDialog::LoadControls(int index)
         SalGetDlgItemTextU8(HWindow, IDC_FIND_CONTAINING, Data.GrepText, GREP_TEXT_LEN);
 
     TransferData(ttDataToWindow);
+    if (keepNamed != NULL)
+    {
+        SalSetWindowTextU8(hNamesWnd, keepNamed);
+        free(keepNamed);
+    }
 
     // if Grep contains text and the dialog isn't expanded, expand it
     if (Data.GrepText[0] != 0 && !Expanded)
@@ -3626,6 +3649,10 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case CM_FIND_ADD_CURRENT:
         {
+            // feature 291: TransferData reads the Named field without Validate and writes what it
+            // read back into the field - a mask that does not fit is refused, never kept cut
+            if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN))
+                return TRUE;
             CFindOptionsItem* item = new CFindOptionsItem();
             if (item != NULL)
             {
@@ -3645,6 +3672,8 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (FindManageInUse)
                 return 0;
+            if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN)) // feature 291: as Add Current
+                return 0;
             FindManageInUse = TRUE;
             TransferData(ttDataFromWindow);
             CFindManageDialog dlg(HWindow, &Data);
@@ -3657,6 +3686,8 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         case CM_FIND_IGNORE:
         {
             if (FindIgnoreInUse)
+                return 0;
+            if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN)) // feature 291: as Add Current
                 return 0;
             FindIgnoreInUse = TRUE;
             TransferData(ttDataFromWindow);

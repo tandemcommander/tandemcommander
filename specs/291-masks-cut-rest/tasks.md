@@ -16,7 +16,7 @@ regression checks.
 
 ## Phase 1: Setup
 
-- [ ] T001 Start `specs/291-masks-cut-rest/fix-log.md` with the measurement at c01e1801 (probe command, 12 FAIL / 5 controls PASS, registry restored identical) and the consumers enumerated in plan.md
+- [X] T001 Start `specs/291-masks-cut-rest/fix-log.md` with the measurement at c01e1801 (probe command, 12 FAIL / 5 controls PASS, registry restored identical) and the consumers enumerated in plan.md
 
 ---
 
@@ -33,7 +33,7 @@ No shared code: 251's `DlgItemTextFitsU8` (`src/dialogs3.cpp`) and `SalGetWindow
 
 **Independent Test**: probe rows `rb-mask`, `rb-unused`, control `rb-ctl`.
 
-- [ ] T002 [US1] In `CCfgPageSystem::Validate` (`src/dialogs4.cpp`) add `if (!DlgItemTextFitsU8(HWindow, IDE_RECYCLEMASKS, &ti, MAX_PATH)) return;` first, before the `useRecycle == 2` branch, with a feature-291 comment (Transfer stores the field whatever the radio)
+- [X] T002 [US1] In `CCfgPageSystem::Validate` (`src/dialogs4.cpp`) add `if (!DlgItemTextFitsU8(HWindow, IDE_RECYCLEMASKS, &ti, MAX_PATH)) return;` first, before the `useRecycle == 2` branch, with a feature-291 comment (Transfer stores the field whatever the radio)
 
 ---
 
@@ -44,9 +44,9 @@ Ignore refuse before reading the field; a stored option without Named keeps the 
 
 **Independent Test**: probe rows `find-named`, `find-add`, `find-ignore`, `find-option`, control `find-ctl`.
 
-- [ ] T003 [US2] In `CFindDialog::Validate` (`src/finddlg1.cpp`) add the check `DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, &ti, NAMED_TEXT_LEN)` first inside the `GetControl` block, before the backups and the syntax check
-- [ ] T004 [US2] In `CFindDialog::DialogProc` (`src/finddlg1.cpp`) cases `CM_FIND_ADD_CURRENT`, `CM_FIND_MANAGE` (before `FindManageInUse = TRUE`) and `CM_FIND_IGNORE` (before `FindIgnoreInUse = TRUE`): `if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN))` return as the case already returns, nothing else done
-- [ ] T005 [US2] In `CFindDialog::LoadControls` (`src/finddlg1.cpp`): when the option has no Named text and the field's text does not fit (`SalWindowTextFitsU8`), take its whole wide text (`SalGetWindowTextWAlloc`) and set it back after `TransferData(ttDataToWindow)` (`SetWindowTextW`); no memory -> `TRACE_E(LOW_MEMORY)`, return without loading; text that fits -> read as before
+- [X] T003 [US2] In `CFindDialog::Validate` (`src/finddlg1.cpp`) add the check `DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, &ti, NAMED_TEXT_LEN)` first inside the `GetControl` block, before the backups and the syntax check
+- [X] T004 [US2] In `CFindDialog::DialogProc` (`src/finddlg1.cpp`) cases `CM_FIND_ADD_CURRENT`, `CM_FIND_MANAGE` (before `FindManageInUse = TRUE`) and `CM_FIND_IGNORE` (before `FindIgnoreInUse = TRUE`): `if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN))` return as the case already returns, nothing else done
+- [X] T005 [US2] In `CFindDialog::LoadControls` (`src/finddlg1.cpp`): when the option has no Named text and the field's text does not fit (`SalWindowTextFitsU8`), take its whole wide text (`SalGetWindowTextWAlloc`) and set it back after `TransferData(ttDataToWindow)` (`SetWindowTextW`); no memory -> `TRACE_E(LOW_MEMORY)`, return without loading; text that fits -> read as before
 
 ---
 
@@ -56,8 +56,8 @@ Ignore refuse before reading the field; a stored option without Named keeps the 
 
 **Independent Test**: probe rows `view-text`, `view-hex`, `cmp-files`, `cmp-dirs-unused`, controls `view-ctl`, `cmp-ctl`.
 
-- [ ] T006 [P] [US3] In `CCfgPageViewer::Validate` (`src/dialogs4.cpp`) inside each `ti.IsGood()` block, before its `EditLine`: `if (!DlgItemTextFitsU8(HWindow, IDC_VIEW_INTEXT, &ti, MAX_PATH)) return;` and the same for `IDC_VIEW_INHEX`
-- [ ] T007 [P] [US3] In `CCompareDirsDialog::Validate` (`src/dialogs6.cpp`) first check `IDE_COMPARE_IGNORE_FILES`, then `IDE_COMPARE_IGNORE_DIRS` (`MAX_PATH`), whatever the check boxes, return on a refusal
+- [X] T006 [P] [US3] In `CCfgPageViewer::Validate` (`src/dialogs4.cpp`) inside each `ti.IsGood()` block, before its `EditLine`: `if (!DlgItemTextFitsU8(HWindow, IDC_VIEW_INTEXT, &ti, MAX_PATH)) return;` and the same for `IDC_VIEW_INHEX`
+- [X] T007 [P] [US3] In `CCompareDirsDialog::Validate` (`src/dialogs6.cpp`) first check `IDE_COMPARE_IGNORE_FILES`, then `IDE_COMPARE_IGNORE_DIRS` (`MAX_PATH`), whatever the check boxes, return on a refusal
 
 ---
 
@@ -67,18 +67,18 @@ Ignore refuse before reading the field; a stored option without Named keeps the 
 
 **Independent Test**: probe rows `vname`, `vname-ascii`, control `vname-ctl`.
 
-- [ ] T008 [US4] In `CCfgPageView::DialogProc` `LVN_ENDLABELEDIT` (`src/dialogs4.cpp`): read the edit whole (`SalGetWindowTextU8Alloc`, NULL -> `TRACE_E(LOW_MEMORY)`, nothing stored), `CleanName`; `strlen(name) >= VIEW_NAME_MAX` -> free, `SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION)`, nothing stored; else store as before; the code-page fallback (no edit control) unchanged; free the heap copy
+- [X] T008 [US4] In `CCfgPageView::DialogProc` `LVN_ENDLABELEDIT` (`src/dialogs4.cpp`): read the edit whole (`SalGetWindowTextU8Alloc`, NULL -> `TRACE_E(LOW_MEMORY)`, nothing stored), `CleanName`; `strlen(name) >= VIEW_NAME_MAX` -> free, `SalMessageBox(HWindow, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION)`, nothing stored; else store as before; the code-page fallback (no edit control) unchanged; free the heap copy
 
 ---
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T009 Run `python tools/check_encoding.py --strict` (TOTAL: 0 finding(s)) and `.\build.cmd` (BUILD SUCCEEDED)
-- [ ] T010 Run `build\tandemcommander\Debug_x64\saltests\saltests.exe` (0 failed)
-- [ ] T011 Run the probe after the change on the hidden desktop (`probe/result_after.txt`): 34 / 0, registry restored identical
-- [ ] T012 Negative control: disable one check (`FALSE &&`), rebuild, run its rows - they must FAIL; restore, rebuild, PASS again (`probe/result_negative_control.txt`)
-- [ ] T013 [P] Regression: 270's probe (`specs/270-mask-filter-label-fits/probe/mask270_probe.ps1`, 24 / 0) and 251's (`specs/251-dialog-text-fits/probe/dlg251_probe.ps1`, 42 / 0), results in `specs/291-masks-cut-rest/probe/`
-- [ ] T014 Record the implementation, checks and results in `specs/291-masks-cut-rest/fix-log.md`
+- [X] T009 Check the changed sources with clang-format (`--dry-run --Werror` on the changed lines' files, as the tree's style), run `python tools/check_encoding.py --strict` (TOTAL: 0 finding(s)) and `.\build.cmd` (BUILD SUCCEEDED)
+- [X] T010 Run `build\tandemcommander\Debug_x64\saltests\saltests.exe` (0 failed)
+- [X] T011 Run the probe after the change on the hidden desktop (`probe/result_after.txt`): 34 / 0, registry restored identical
+- [X] T012 Negative control: disable one check (`FALSE &&`), rebuild, run its rows - they must FAIL; restore, rebuild, PASS again (`probe/result_negative_control.txt`)
+- [X] T013 [P] Regression: 270's probe (`specs/270-mask-filter-label-fits/probe/mask270_probe.ps1`, 24 / 0) and 251's (`specs/251-dialog-text-fits/probe/dlg251_probe.ps1`, 42 / 0), results in `specs/291-masks-cut-rest/probe/`
+- [X] T014 Record the implementation, checks and results in `specs/291-masks-cut-rest/fix-log.md`
 
 ---
 
