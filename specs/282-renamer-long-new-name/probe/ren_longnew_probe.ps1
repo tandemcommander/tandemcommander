@@ -15,6 +15,8 @@
       sub-long-file  a folder "sub" holding "L.txt", "Include subdirectories" (IDC_SUBDIRS 102)
                      ticked: PASS = no box on loading, 1 preview row, renamed to sub\a.txt
       sub-long-dir   a folder "L" holding "x.txt", subdirectories ticked: PASS = L\y.txt
+      deep-guard     a folder "top" holding 1030 nested folders "d", subdirectories ticked: PASS =
+                     the existing "too long path" refusal on loading, no crash, nothing renamed
       over-comp      "x.txt" -> 300 x "a" + ".txt" (one component over 255): PASS = an error box,
                      x.txt unchanged, nothing else made (refused, never cut)
       short-ctl      the control: "x.txt" -> "a.txt", then Undo
@@ -39,6 +41,7 @@ $others = @(Get-Process tandemcommander -ErrorAction SilentlyContinue)
 if ($others.Count) { Write-Output ('REFUSED: tandemcommander.exe already runs: ' + (($others | ForEach-Object { '' + $_.Id + ' ' + $_.Path }) -join '; ')); exit 99 }
 
 . (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
+. (Join-Path $PSScriptRoot '..\..\127-mixed-template-texts\probe\lvtext_lib.ps1')   # the preview's cells
 if (-not ('Drv104' -as [type])) {
     Add-Type -TypeDefinition @'
 using System;
@@ -251,8 +254,22 @@ function Run-Ren([string]$Case, [scriptblock]$Setup) {
             Start-Sleep -Milliseconds 800
         }
         else {
-            [void][Drv098f]::SetText((Kid $dlg 106 'ComboBox'), $c.NewName, 5000)
-            Start-Sleep -Milliseconds 1500
+            # all but the last character set, the last one typed: the edit's change notification marks
+            # the preview for an update (WM_SETTEXT alone does not)
+            $nc = Kid $dlg 106 'ComboBox'
+            [void][Drv098f]::SetText($nc, $c.NewName.Substring(0, $c.NewName.Length - 1), 5000)
+            $ne = Edit-Of $nc
+            [void][Drv104]::SendR($ne, 0x00B1 <#EM_SETSEL#>, $c.NewName.Length - 1, $c.NewName.Length - 1)   # the caret at the end
+            Type-Into $ne $c.NewName.Substring($c.NewName.Length - 1)
+            Start-Sleep -Milliseconds 2000
+        }
+        $cellNew = $null; $cellPath = $null; $cellsOk = $true
+        if ($c.PreviewNew -or $c.PreviewPath) {   # the preview's first row: New name (1), Path (5)
+            $lv = Kid $dlg 104 $null
+            $cellNew = [LvText127]::Cell($lv, 0, 1); $cellPath = [LvText127]::Cell($lv, 0, 5)
+            if ($c.PreviewNew -and $cellNew -cne $c.PreviewNew) { $cellsOk = $false }
+            if ($c.PreviewPath -and $cellPath -cne $c.PreviewPath) { $cellsOk = $false }
+            $texts = 'preview new name: ' + (Short-L $cellNew) + '; path: ' + (Short-L ($cellPath -replace [regex]::Escape($Root), '<fixture>')) + ' || ' + $texts
         }
         if ($loadBoxes) {   # refused on loading (the subdirectories were dropped): never rename the folder itself
             $ans = [pscustomobject]@{ Messages = New-Object System.Collections.ArrayList; Fatal = $null }
@@ -277,7 +294,7 @@ function Run-Ren([string]$Case, [scriptblock]$Setup) {
         $asked = $(if ($c.Want) { $texts -match $c.Want } else { -not ($texts -match '#32770') })
         if ($c.NotWant -and $texts -match $c.NotWant) { $asked = $false }
         $rowsOk = (-not $c.Rows) -or ($preview -eq $c.Rows)
-        Row $Case 'RUN' (V ($res1[0] -and $asked -and $rowsOk -and -not $ans.Fatal)) ("preview rows {0}; boxes as expected: {1}; on disk: {2}; boxes: {3}{4}" -f $preview, $asked, $res1[1], $texts, $(if ($ans.Fatal) { '; FATAL ' + $ans.Fatal } else { '' }))
+        Row $Case 'RUN' (V ($res1[0] -and $asked -and $rowsOk -and $cellsOk -and -not $ans.Fatal)) ("preview rows {0}; boxes as expected: {1}; on disk: {2}; boxes: {3}{4}" -f $preview, $asked, $res1[1], $texts, $(if ($ans.Fatal) { '; FATAL ' + $ans.Fatal } else { '' }))
         Close-Renamer $id $dlg
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -305,13 +322,13 @@ function Run-RenCases {
     Run-Ren 'long-new' {
         $d = $Root + '\long-new'; NewDir $d; Put "$d\$L.txt" 'LN'
         $want = "${L}b.txt=LN"
-        @{ Folder = $d; Source = "$L.txt"; NewName = "${L}b.txt"; Answers = @(6, 1); Want = $null; Rows = 1
+        @{ Folder = $d; Source = "$L.txt"; NewName = "${L}b.txt"; PreviewNew = "${L}b.txt"; PreviewPath = $d; Answers = @(6, 1); Want = $null; Rows = 1
            Check = { $n = List-Tree $d; @(($n -ceq $want), (Short-L $n)) }.GetNewClosure() }
     }
     Run-Ren 'long-undo' {
         $d = $Root + '\long-undo'; NewDir $d; Put "$d\$L.txt" 'LU'
         $want = "${L}b.txt=LU"; $wantU = "$L.txt=LU"
-        @{ Folder = $d; Source = "$L.txt"; NewName = "${L}b.txt"; Answers = @(6, 1); Want = 'undo'; Undo = $true; Rows = 1
+        @{ Folder = $d; Source = "$L.txt"; NewName = "${L}b.txt"; PreviewNew = "${L}b.txt"; PreviewPath = $d; Answers = @(6, 1); Want = 'undo'; Undo = $true; Rows = 1
            Check = { $n = List-Tree $d; @(($n -ceq $want), (Short-L $n)) }.GetNewClosure()
            CheckUndo = { $n = List-Tree $d; @(($n -ceq $wantU), (Short-L $n)) }.GetNewClosure() }
     }
@@ -324,30 +341,36 @@ function Run-RenCases {
     Run-Ren 'long-rel' {
         $d = $Root + '\long-rel'; NewDir $d; Put "$d\x.txt" 'LR'
         $want = "$M\,$M\$M$M.txt=LR"
-        @{ Folder = $d; Source = 'x.txt'; NewName = "$M\$M$M.txt"; RelPath = $true; Answers = @(6, 1); Want = $null; Rows = 1
+        @{ Folder = $d; Source = 'x.txt'; NewName = "$M\$M$M.txt"; PreviewNew = "$M\$M$M.txt"; RelPath = $true; Answers = @(6, 1); Want = $null; Rows = 1
            Check = { $n = List-Tree $d; @(($n -ceq $want), (Short-L $n)) }.GetNewClosure() }
     }
     Run-Ren 'long-rel-deep' {
         $d = $Root + '\long-rel-deep'; NewDir $d; Put "$d\x.txt" 'LD'
         $a = 'a' * 100; $b = 'b' * 100; $cc = 'c' * 100
         $want = "$a\,$a\$b\,$a\$b\$cc.txt=LD"
-        @{ Folder = $d; Source = 'x.txt'; NewName = "$a\$b\$cc.txt"; RelPath = $true; Answers = @(6, 1); Want = $null; Rows = 1
+        @{ Folder = $d; Source = 'x.txt'; NewName = "$a\$b\$cc.txt"; PreviewNew = "$a\$b\$cc.txt"; RelPath = $true; Answers = @(6, 1); Want = $null; Rows = 1
            Check = { $n = List-Tree $d; @(($n -ceq $want), (Short-L $n)) }.GetNewClosure() }
     }
     Run-Ren 'sub-long-file' {
         $d = $Root + '\sub-long-file'; NewDir "$d\sub"; Put "$d\sub\$L.txt" 'SF'
-        @{ Folder = $d; Source = 'sub'; SourceIsDir = $true; Subdirs = $true; NewName = 'a.txt'; Answers = @(6, 1); Want = $null; Rows = 1
+        @{ Folder = $d; Source = 'sub'; SourceIsDir = $true; Subdirs = $true; NewName = 'a.txt'; PreviewNew = 'a.txt'; PreviewPath = "$d\sub"; Answers = @(6, 1); Want = $null; Rows = 1
            Check = { $n = List-Tree $d; @(($n -ceq 'sub\,sub\a.txt=SF'), (Short-L $n)) }.GetNewClosure() }
     }
     Run-Ren 'sub-long-dir' {
         $d = $Root + '\sub-long-dir'; NewDir "$d\$L"; Put "$d\$L\x.txt" 'SD'
         $want = "$L\,$L\y.txt=SD"
-        @{ Folder = $d; Source = $L; SourceIsDir = $true; Subdirs = $true; NewName = 'y.txt'; Answers = @(6, 1); Want = $null; Rows = 1
+        @{ Folder = $d; Source = $L; SourceIsDir = $true; Subdirs = $true; NewName = 'y.txt'; PreviewNew = 'y.txt'; PreviewPath = "$d\$L"; Answers = @(6, 1); Want = $null; Rows = 1
            Check = { $n = List-Tree $d; @(($n -ceq $want), (Short-L $n)) }.GetNewClosure() }
+    }
+    Run-Ren 'deep-guard' {
+        # 1030 folders "d" below "top": deeper than the listing's guard (1024 levels) - refused, never a crash
+        $d = $Root + '\deep-guard'; $bottom = $d + '\top' + ('\d' * 1030); NewDir $bottom; Put "$bottom\x.txt" 'DG'
+        @{ Folder = $d; Source = 'top'; SourceIsDir = $true; Subdirs = $true; NewName = 'z.txt'; Answers = @(2, 7); Want = 'too long path'; Rows = 1
+           Check = { $lp = '\\?\'; $ok = [IO.File]::Exists($lp + $bottom + '\x.txt') -and [IO.Directory]::Exists($lp + $d + '\top'); @($ok, ('the bottom file in place, "top" kept: ' + $ok)) }.GetNewClosure() }
     }
     Run-Ren 'over-comp' {
         $d = $Root + '\over-comp'; NewDir $d; Put "$d\x.txt" 'OC'
-        @{ Folder = $d; Source = 'x.txt'; NewName = ('a' * 300) + '.txt'; Answers = @(2, 7); Want = '#32770'; Rows = 1
+        @{ Folder = $d; Source = 'x.txt'; NewName = ('a' * 300) + '.txt'; PreviewNew = ('a' * 300) + '.txt'; Answers = @(2, 7); Want = '#32770'; Rows = 1
            Check = { $n = List-Tree $d; @(($n -ceq 'x.txt=OC'), $n) }.GetNewClosure() }
     }
     Run-Ren 'short-ctl' {

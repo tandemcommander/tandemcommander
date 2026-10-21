@@ -22,6 +22,15 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\282-renamer-long-new
 - controls: over-comp (one component of 300 characters: refused, x.txt kept), short-ctl (rename
   and Undo) - PASS.
 
+After `speckit-analyze` (C1, C2 - MEDIUM, cheap): the long rows also read the preview's New name /
+Path cells (127's `lvtext_lib.ps1`, cross-process `LVM_GETITEMTEXTW`) and a row **deep-guard**
+(1030 nested folders - the depth guard of research R3) was added. Final before-run (same build,
+`probe/result_before.txt`): **12 PASS / 8 FAIL** - the preview showed **"<Error: Expanded string is
+too large.>"** for every long new name (also over-comp: its rename stays refused, but the preview
+cell failed); deep-guard and short-ctl PASS (deep-guard refused at ~100 levels by the 260 bytes).
+The last character of the new name is typed (WM_CHAR) after `EM_SETSEL` to the end - without the
+caret move it went to position 0 ("ta.tx").
+
 Probe traps met: the checks are `GetNewClosure()` blocks - a script function is invisible there and
 `Ls` resolved to the alias of `Get-ChildItem` (the first run's facts lacked the contents); the
 helpers are `global:` now. 207's `-replace X + '{10,}', ...` never replaced (the comma binds

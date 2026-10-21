@@ -38,7 +38,7 @@
 ## Phase 6: Polish
 
 - [ ] T012 Encoding guard `python tools/check_encoding.py --strict` → TOTAL: 0; `.\build.cmd` → BUILD SUCCEEDED; `saltests` → 0 failed (record in specs/282-renamer-long-new-name/fix-log.md)
-- [ ] T013 Run the probe after the fix → `probe/result_after.txt` 18 / 0 (specs/282-renamer-long-new-name/probe/)
+- [ ] T013 Run the probe after the fix → `probe/result_after.txt` 20 / 0 (specs/282-renamer-long-new-name/probe/)
 - [ ] T014 Regression probes 199, 206, 207, 209 → `probe/regress_*.txt` all PASS (specs/282-renamer-long-new-name/probe/)
 - [ ] T015 Record before / after and decisions in specs/282-renamer-long-new-name/fix-log.md
 
