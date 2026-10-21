@@ -7,8 +7,8 @@ area: panels-ui
 source: leftover:125
 who: agent
 created: 2026-10-13
-updated: 2026-10-17
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 e35f8588
 effort: M
 feature: -
 related: [decide-ship-network-plugin-nethood, share-list-offers-sign-in]
@@ -37,3 +37,4 @@ Depends in spirit on the nethood decision: if the plug-in is enabled, its `net:`
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-21 — verified at e35f8588: reproduced at e35f8588: hidden-desktop probe at `\\localhost\C$` - Backspace and Go to root leave the panel there, no share list; no up-dir entry is listed (Home, Enter opens a folder)
