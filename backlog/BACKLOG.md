@@ -203,10 +203,12 @@ Last triaged: 2026-10-20
 | [My Documents drive opens a cut path when Documents needs more than 259 bytes](items/my-documents-drive-opens-a-cut-path-when-documents-needs/desc.md) | bug | 4 | long-paths | review:286 | 2026-10-21 |
 | [Plug-in folder picker may cut a folder shortcut target of 260 or more units](items/plug-in-folder-picker-may-cut-a-folder-shortcut-target-of/desc.md) | bug | 5 | other-plugins | measure:286 | 2026-10-21 |
 | [Registry Editor Find: confirm a regexp finds the end of a non-ASCII text on UTF-8](items/registry-editor-find-confirm-a-regexp-finds-the-end-of-a-non/desc.md) | person-step | 3 | other-plugins | leftover:278 | 2026-10-21 |
+| [Registry Editor: Move of a key onto itself through HKEY_USERS deletes the key](items/registry-editor-move-of-a-key-onto-itself-through-hkey-users/desc.md) | bug | 7 | data-safety | review:287 | 2026-10-21 |
 | [Registry Editor View of a text value: cut text and a stray byte on a UTF-8 code page](items/registry-editor-view-of-a-text-value-cut-text-and-a-stray/desc.md) | bug | 4 | other-plugins | review:278 | 2026-10-21 |
 | [A rename via a temporary name can leave the source there silently after a cancel](items/rename-via-temp-left-silently/desc.md) | bug | 3 | file-ops | review:281 | 2026-10-21 |
 | [Renamer: Include subdirectories descends into junctions and folder links](items/renamer-include-subdirectories-descends-into-junctions-and/desc.md) | bug | 4 | data-safety | review:282 | 2026-10-21 |
 | [Renamer: the New name field holds only 519 bytes of a typed pattern](items/renamer-the-new-name-field-holds-only-519-bytes-of-a-typed/desc.md) | improvement | 2 | long-paths | leftover:282 | 2026-10-21 |
+| [Screen readers get garbled names from the core path labels (CStaticText)](items/screen-readers-get-garbled-names-from-the-core-path-labels/desc.md) | bug | 3 | encoding | review:287 | 2026-10-21 |
 | [SFTP: a folder uploaded again into a real upload-only service (279)](items/sftp-a-folder-uploaded-again-into-a-real-upload-only-service/desc.md) | person-step | 4 | sftp | leftover:279 | 2026-10-21 |
 | [SFTP: a folder uploaded again whose files are all there ends with a misleading folder box](items/sftp-a-folder-uploaded-again-whose-files-are-all-there-ends/desc.md) | improvement | 2 | sftp | review:279 | 2026-10-21 |
 | [Share list sign-in (285) by hand: the real Windows dialog on a server that refuses the list](items/share-list-sign-in-285-by-hand-the-real-windows-dialog-on-a/desc.md) | person-step | 3 | panels-ui | leftover:285 | 2026-10-21 |
