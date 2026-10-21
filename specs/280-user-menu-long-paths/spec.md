@@ -56,6 +56,10 @@ Debug build of d7405c6a, probe `um280_probe.ps1` on the hidden desktop. Fixture 
 - Q: `$(ListOfSelectedFullNames)` from the panel? → A: Work - the full names are built whole (the
   list holds up to 32771 bytes), as the Find window's route does since 004 (autonomous run:
   item - "work" where it costs nothing; the list's own limit and message stay)
+- Q: When every item's command was prepared and the system then fails to start one of them (a
+  launch error, not a refusal), what happens to the items after it? → A: As today - the error is
+  shown and the remaining items are not started; the items started before it stay started
+  (autonomous run: conservative - keeps today's behaviour for a case the item does not name)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -126,6 +130,8 @@ list that fits.
 - A panel path of exactly 259 bytes: `$(FullPathLeft)` needs 260 with its backslash - refused.
 - Group commands (a list variable) use only the first item's folder and name; a long name of
   another selected item does not refuse them.
+- A launch that fails after all items were prepared (without a shell): the error is shown, the
+  later items are not started, the earlier ones stay started (as today).
 
 ## Requirements *(mandatory)*
 
