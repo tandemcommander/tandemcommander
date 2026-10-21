@@ -8,7 +8,7 @@ source: leftover:125
 who: agent
 created: 2026-10-13
 updated: 2026-10-21
-verified: -
+verified: 2026-10-21 eb173f7f
 effort: M
 feature: -
 related: [decide-ship-network-plugin-nethood]
@@ -38,3 +38,4 @@ Needs a real file server that refuses the list to verify (see the person step `r
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-21 — related item share-root-parent-offers-share-list done in feature 284
+- 2026-10-21 — verified at eb173f7f: present at eb173f7f: PickServerShare shows only the Windows error for a refused list; seam probe error 5 -> box, no sign-in
