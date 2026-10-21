@@ -1,0 +1,29 @@
+menubar_probe (backlog item menubar-loop-swallows-typed-characters) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe  (built 2026-10-21 09:58:03)
+Date    : 2026-10-21 12:12; registry key existed True
+
+MAINESC    RUN    PASS        control: Esc posted to the popup; popup gone; a posted plain 'e' then opened a popup - the menu bar loop was still running (expected a popup)
+MAINCANCEL RUN    PASS        WM_CANCELMODE sent to the main window; popup gone; a posted plain 'e' then opened nothing - the loop had ended (expected nothing)
+MAINDEACT  RUN    PASS        WM_ACTIVATE(WA_INACTIVE) sent to the main window; popup gone; a posted plain 'e' then opened nothing - the loop had ended (expected nothing)
+MAINOTHER  RUN    PASS        Change Directory opened over the menu and closed; popup gone; a posted plain 'e' then opened nothing - the loop had ended (expected nothing)
+F10CTRL    RUN    FAIL        control: F10 posted to the Named field (the menu bar loop without a popup); field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'q' dropped and a popup on 'm' - the menu bar stays active by design)
+ESC-SELF   RUN    PASS        the first popup went away by itself; field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'qm' in the field, no popup)
+ESC        RUN    FAIL        Esc posted to the popup; popup gone; field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'q' dropped and a popup on 'm' - the menu bar stays active by design)
+ACTESC-SELF RUN    PASS        the first popup went away by itself; field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'qm' in the field, no popup)
+ACTESC     RUN    FAIL        caption made active; Esc posted to the popup; popup gone; field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'q' dropped and a popup on 'm' - the menu bar stays active by design)
+CANCELMODE-SELF RUN    PASS        the first popup went away by itself; field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'qm' in the field, no popup)
+CANCELMODE RUN    PASS        WM_CANCELMODE sent to the Find window; popup gone; field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'qm' in the field, no popup)
+DEACTIVATE-SELF RUN    PASS        the first popup went away by itself; field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'qm' in the field, no popup)
+DEACTIVATE RUN    PASS        WM_ACTIVATE(WA_INACTIVE) sent to the Find window; popup gone; field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'qm' in the field, no popup)
+OTHERWIN-SELF RUN    PASS        the first popup went away by itself; field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'qm' in the field, no popup)
+OTHERWIN   RUN    PASS        Change Directory opened and closed; popup gone; field after 'q': 'q', after 'm': 'qm'; popup on 'm': False (expected 'qm' in the field, no popup)
+EARLY1     OPEN   NOT DRIVEN  Alt+F opened no popup
+EARLY2     OPEN   NOT DRIVEN  Alt+F opened no popup
+EARLY3     OPEN   NOT DRIVEN  Alt+F opened no popup
+EARLY4     OPEN   NOT DRIVEN  Alt+F opened no popup
+EARLY5     OPEN   NOT DRIVEN  Alt+F opened no popup
+EARLY6     OPEN   NOT DRIVEN  Alt+F opened no popup
+END        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 13, FAIL 3, NOT DRIVEN 6. Left running: 0; fixture removed: True; registry restored+identical: True

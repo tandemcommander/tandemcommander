@@ -1,19 +1,19 @@
 ---
 title: After a menu popup closes by itself, typed characters are swallowed until Esc
 type: bug
-status: open
+status: blocked
 severity: 3
 area: panels-ui
 source: leftover:168
 who: agent
 created: 2026-10-14
-updated: 2026-10-17
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 fed08ad1
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: not reproduced at fed08ad1: a popup closed by activation, cancel-mode or by itself ends the menu bar loop too (thread hook closes every menu window); typed characters reach the field - evidence/menubar_probe_result_fed08ad1.txt
 ---
 
 # After a menu popup closes by itself, typed characters are swallowed until Esc
@@ -41,3 +41,6 @@ Severity 3 until a person sees it (reading only).
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
+- 2026-10-21 — verified at fed08ad1: not reproduced: probe evidence/menubar_probe.ps1 on the hidden desktop - main window: Esc control keeps the loop (plain e opens a popup), WM_CANCELMODE, WA_INACTIVE and another window opening end it; Find window: every self-closed popup left qm reaching the Named field. The thread hook sends WM_USER_CLOSEMENU to the menu bar too
+- 2026-10-21 — blocked: not reproduced at fed08ad1: a popup closed by activation, cancel-mode or by itself ends the menu bar loop too (thread hook closes every menu window); typed characters reach the field - evidence/menubar_probe_result_fed08ad1.txt
+- 2026-10-21 — side observation: on the hidden desktop the Find window menu bar loop did not stay even after F10 or Esc (its control rows FAIL), unlike 168 runs; the 093 probe comment that a left-running loop swallowed later Alt+letters is not supported - an ended loop let the probe Esc reach the Find window (close question)

@@ -50,3 +50,4 @@ One row per run of `/tandem-backlog-implement`, newest last, appended by
 | 2026-10-21 09:55 | moved-aside-restore-leftovers | closed | 281 | 281-moved-aside-leftovers | 2 | - | create paths and plug-in creates tell where an entry moved aside for an 8.3 clash stayed; PictView and Renamer retry the move back |
 | 2026-10-21 11:56 | renamer-long-new-name-limits | blocked | 282 | 282-renamer-long-new-name | 2 | - | review 2 MUST: regex stack overflow on long names (crash); manual mode cuts a wrapped line |
 | 2026-10-21 11:58 | translations-clipped-labels | split | - | - | 8 | - | still 702 clipped labels in 8 languages at dcb6b30a; split into one item per enabled language |
+| 2026-10-21 12:14 | menubar-loop-swallows-typed-characters | not-reproduced | - | - | 0 | - | popup closed by activation, cancel-mode or by itself ends the menu bar loop; characters reach the field (probe in the item evidence) |
