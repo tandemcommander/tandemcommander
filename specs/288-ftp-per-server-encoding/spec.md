@@ -3,7 +3,7 @@
 **Feature Branch**: `288-ftp-per-server-encoding`
 **Created**: 2026-10-21
 **Status**: Draft
-**Input**: User description: "Backlog item ftp-per-server-encoding-flag (backlog/items/ftp-per-server-encoding-flag/desc.md) - implement exactly what it describes." (full input: title, problem, evidence, expected, measurement at f9da572f - see *Background* below)
+**Input**: From backlog item ftp-per-server-encoding-flag. User description: "Backlog item ftp-per-server-encoding-flag (backlog/items/ftp-per-server-encoding-flag/desc.md) - implement exactly what it describes." (full input: title, problem, evidence, expected, measurement at f9da572f - see *Background* below)
 
 ## Background
 

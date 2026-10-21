@@ -1,7 +1,7 @@
 ---
 title: FTP: one process-wide name encoding instead of a per-server flag
 type: improvement
-status: open
+status: in-progress
 severity: 3
 area: ftp
 source: leftover:224
@@ -10,7 +10,7 @@ created: 2026-10-15
 updated: 2026-10-21
 verified: 2026-10-21 f9da572f
 effort: M
-feature: -
+feature: 288
 related: [ftp-long-name-and-path-leftovers]
 depends-on: []
 reason: -
@@ -35,3 +35,4 @@ Each server (by host, port, user) has an encoding state unknown / UTF-8 / legacy
 - 2026-10-16 — maintainer: stays in the backlog (severity about 3/10: only legacy code-page servers, new names garbled or typed paths not found, no data lost)
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-21 — verified at f9da572f: probe ftp288 (two ftpmini servers cp1250/utf-8): MKD, RNTO, STOR to the legacy server in UTF-8, DELE of a name seen on the legacy server in cp1250 to the UTF-8 one (550); 4 FAIL
+- 2026-10-21 — run started, feature 288
