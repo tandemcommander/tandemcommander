@@ -9629,6 +9629,75 @@ static void TestUncShareRoot284()
     }
 }
 
+// feature 285: a share list refused for want of a name and password - SalUncShareListStep and
+// SalUncSignInTarget of saluncserver.h
+static void TestUncShareListSignIn285()
+{
+    // a list: shown, whatever else is known (the second way of 125 may give shares after a refusal)
+    CHECK(SalUncShareListStep(1, 0, FALSE, FALSE) == SALUNC_LIST_SHOW);
+    CHECK(SalUncShareListStep(3, ERROR_ACCESS_DENIED, TRUE, FALSE) == SALUNC_LIST_SHOW);
+    CHECK(SalUncShareListStep(2, 0, FALSE, TRUE) == SALUNC_LIST_SHOW);
+    // nothing and no error: "a share name is missing" (125), also after a sign-in
+    CHECK(SalUncShareListStep(0, 0, FALSE, FALSE) == SALUNC_LIST_NOTHING);
+    CHECK(SalUncShareListStep(0, 0, FALSE, TRUE) == SALUNC_LIST_NOTHING);
+    CHECK(SalUncShareListStep(0, 0, TRUE, FALSE) == SALUNC_LIST_NOTHING);
+    // refused for want of a name and password: the sign-in, once
+    CHECK(SalUncShareListStep(0, ERROR_ACCESS_DENIED, TRUE, FALSE) == SALUNC_LIST_SIGNIN);
+    CHECK(SalUncShareListStep(0, ERROR_LOGON_FAILURE, TRUE, FALSE) == SALUNC_LIST_SIGNIN);
+    CHECK(SalUncShareListStep(0, ERROR_ACCESS_DENIED, TRUE, TRUE) == SALUNC_LIST_ERROR);
+    CHECK(SalUncShareListStep(0, ERROR_LOGON_FAILURE, TRUE, TRUE) == SALUNC_LIST_ERROR);
+    // any other error: shown, never a sign-in
+    CHECK(SalUncShareListStep(0, ERROR_BAD_NETPATH, FALSE, FALSE) == SALUNC_LIST_ERROR);
+    CHECK(SalUncShareListStep(0, ERROR_NETWORK_UNREACHABLE, FALSE, FALSE) == SALUNC_LIST_ERROR);
+    CHECK(SalUncShareListStep(0, ERROR_MORE_DATA, FALSE, FALSE) == SALUNC_LIST_ERROR);
+    CHECK(SalUncShareListStep(0, ERROR_BAD_NETPATH, FALSE, TRUE) == SALUNC_LIST_ERROR);
+    // a negative count is no list
+    CHECK(SalUncShareListStep(-1, ERROR_ACCESS_DENIED, TRUE, FALSE) == SALUNC_LIST_SIGNIN);
+
+    // the sign-in target "\\server\IPC$"
+    char t[40];
+    CHECK(SalUncSignInTarget("server", t, sizeof(t)) && strcmp(t, "\\\\server\\IPC$") == 0);
+    CHECK(SalUncSignInTarget("localhost", t, sizeof(t)) && strcmp(t, "\\\\localhost\\IPC$") == 0);
+    CHECK(SalUncSignInTarget("192.168.1.10", t, sizeof(t)) && strcmp(t, "\\\\192.168.1.10\\IPC$") == 0);
+    CHECK(SalUncSignInTarget("fs01.corp.example.com", t, sizeof(t)) && strcmp(t, "\\\\fs01.corp.example.com\\IPC$") == 0);
+    // UTF-8 (s-caron): the bytes are kept as they are
+    CHECK(SalUncSignInTarget("\xC5\xA1kola", t, sizeof(t)) && strcmp(t, "\\\\\xC5\xA1kola\\IPC$") == 0);
+    // the server SalUncServerOfPath gives for "\\server\" builds the target of that server
+    {
+        char server[40];
+        CHECK(SalUncServerOfPath("\\\\fs01\\", server, sizeof(server)) && SalUncSignInTarget(server, t, sizeof(t)) &&
+              strcmp(t, "\\\\fs01\\IPC$") == 0);
+    }
+    // refused: no name, a separator in it
+    memset(t, 'X', sizeof(t));
+    CHECK(!SalUncSignInTarget("", t, sizeof(t)) && t[0] == 0);
+    memset(t, 'X', sizeof(t));
+    CHECK(!SalUncSignInTarget(NULL, t, sizeof(t)) && t[0] == 0);
+    CHECK(!SalUncSignInTarget("a\\b", t, sizeof(t)) && t[0] == 0);
+    CHECK(!SalUncSignInTarget("a/b", t, sizeof(t)) && t[0] == 0);
+    // the buffer: "\\server\IPC$" is 13 bytes + terminator - fits exactly / one byte short = refused, never cut
+    {
+        char tiny[16];
+        CHECK(SalUncSignInTarget("server", tiny, 14) && strcmp(tiny, "\\\\server\\IPC$") == 0);
+        memset(tiny, 'X', sizeof(tiny));
+        CHECK(!SalUncSignInTarget("server", tiny, 13) && tiny[0] == 0);
+        CHECK(!SalUncSignInTarget("server", NULL, 14));
+        CHECK(!SalUncSignInTarget("server", tiny, 0));
+    }
+    // a 300-byte internationalised server name: refused in a MAX_PATH buffer, whole in a larger one
+    {
+        char server[310];
+        for (int i = 0; i < 100; i++)
+            memcpy(server + 3 * i, "\xE4\xB8\xAD", 3);
+        server[300] = 0;
+        char mp[MAX_PATH];
+        mp[0] = 'X';
+        CHECK(!SalUncSignInTarget(server, mp, MAX_PATH) && mp[0] == 0);
+        char big[320];
+        CHECK(SalUncSignInTarget(server, big, sizeof(big)) && strlen(big) == 307 && strcmp(big + 302, "\\IPC$") == 0);
+    }
+}
+
 // feature 126 (GitHub #6): the package lookup of the command-shell presets takes its two
 // kernel32 functions as a table - absent on Windows 7 / 8.0, where the answer is "not found"
 namespace Pkg126
@@ -15987,6 +16056,7 @@ int main(int argc, char** argv)
     TestUpdateCheck123();
     TestUncServer125();
     TestUncShareRoot284();
+    TestUncShareListSignIn285();
     TestPackageApi126();
     TestInserts127();
     TestShellLink128();

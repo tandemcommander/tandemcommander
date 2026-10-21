@@ -2593,6 +2593,18 @@ BOOL RestoreNetworkConnection(HWND parent, const char* name, const char* remoteN
 // or failed (the user has been told, except after a cancel)
 BOOL RestoreNetworkDriveW(HWND parent, char drive, const WCHAR* remote);
 
+// feature 285: the error belongs to the class for which a network path offers Windows' sign-in
+BOOL IsLogonFailureErr(DWORD err);
+
+// feature 285: signs the user in to a server whose share list was refused - Windows' own dialog
+// (CONNECT_INTERACTIVE, on this thread) connects 'target' ("\\server\IPC$", passed whole, wide);
+// not remembered beyond the Windows session; the program handles no name or password. A failure
+// is shown with the messages of RestoreNetworkConnection; a cancel shows nothing.
+#define SIGNIN_CONNECTED 0
+#define SIGNIN_CANCELLED 1
+#define SIGNIN_ERRORSHOWN 2
+int SignInToUncServerW(HWND parent, const WCHAR* target);
+
 // sestavi text do sloupce Type v panelu pro neasociovany soubor (napr. "AAA File" nebo "File")
 void GetCommonFileTypeStr(char* buf, int* resLen, const char* ext);
 

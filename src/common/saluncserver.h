@@ -24,6 +24,12 @@
 //   SalUncShareRootServerPath  (feature 284) is the path a share's root, and
 //                         "\\server\" of it - the way up from "\\server\share"
 //                         (`..`, Backspace, Go to root) offers the same list
+//   SalUncShareListStep   (feature 285) what the route does with the answer:
+//                         the list, "no share", the error - or first Windows'
+//                         sign-in, once, when the list was refused for want of
+//                         a name and password
+//   SalUncSignInTarget    (feature 285) "\\server\IPC$", the name the sign-in
+//                         connects - refused when it does not fit, never cut
 //
 // Names are UTF-8 (WTF-8), as everywhere in the core. Header-only.
 //
@@ -167,6 +173,38 @@ inline BOOL SalUncShareRootServerPath(const char* path, char* serverPath, int se
     serverPath[2 + serverLen] = '\\';
     serverPath[2 + serverLen + 1] = 0;
     return TRUE;
+}
+
+// Feature 285: the steps of the share-list route (CFilesWindow::PickServerShare)
+#define SALUNC_LIST_SHOW 0    // offer the list
+#define SALUNC_LIST_NOTHING 1 // no folder share and no error: "a share name is missing"
+#define SALUNC_LIST_SIGNIN 2  // refused for want of a name and password: Windows' sign-in first
+#define SALUNC_LIST_ERROR 3   // show the error of the list
+
+// What the route does with the answer of one reading of the list: 'count'
+// folder shares, 'error' (0 = none), 'logonFailure' = the error belongs to the
+// class for which a full "\\server\share" path offers the sign-in
+// (IsLogonFailureErr), 'signInTried' = the sign-in was offered already in this
+// opening - it is never offered twice (a second refusal shows its error).
+inline int SalUncShareListStep(int count, DWORD error, BOOL logonFailure, BOOL signInTried)
+{
+    if (count > 0)
+        return SALUNC_LIST_SHOW;
+    if (error == 0)
+        return SALUNC_LIST_NOTHING;
+    if (logonFailure && !signInTried)
+        return SALUNC_LIST_SIGNIN;
+    return SALUNC_LIST_ERROR;
+}
+
+// Feature 285: "\\server\IPC$" into 'buf' - the server's inter-process share,
+// the connection Windows signs the user in to the server itself with. FALSE
+// (and an empty 'buf') for an empty server name, one holding a separator, or a
+// result that does not fit - the route then shows the list's error instead of
+// a sign-in to another name; it is never shortened.
+inline BOOL SalUncSignInTarget(const char* server, char* buf, int bufSize)
+{
+    return SalUncBuildSharePath(server, "IPC$", buf, bufSize);
 }
 
 // A share name as the text of a menu item: every '&' doubled (a single one

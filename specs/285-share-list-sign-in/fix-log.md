@@ -36,3 +36,48 @@ the Windows error. Autonomous run (`/tandem-backlog-implement`), HEAD0 `eb173f7f
   it committed `a4f1422b`). No probe was running; no registry backup was left.
 
 ## Implementation
+
+- Analyze (2 passes): pass 1 - C1 MEDIUM (no task checked FR-010 "no new string"), C2 MEDIUM
+  (constitution: CHANGELOG entry), C3 LOW (clang-format), C4 LOW (FR-006 plug-in route only by
+  reading); all fixed in tasks.md (T007, T010, T013). Pass 2: 0 CRITICAL, 0 HIGH, coverage 100%.
+- `src/common/saluncserver.h`: `SalUncShareListStep` (SHOW / NOTHING / SIGNIN / ERROR) and
+  `SalUncSignInTarget` (`\\server\IPC$` through `SalUncBuildSharePath`: refused, never cut).
+- `src/saltests/saltests.cpp`: `TestUncShareListSignIn285` (+31 checks).
+- `src/drivelst.cpp`: `SignInToUncServerW` - `WNetAddConnection3W(parent, {RESOURCETYPE_ANY,
+  target}, NULL, NULL, CONNECT_INTERACTIVE)`, results CONNECTED (also ALREADY_ASSIGNED /
+  DEVICE_ALREADY_REMEMBERED) / CANCELLED / ERRORSHOWN; messages: 1219 -> `IDS_CREDENTIALCONFLICT`
+  (body via `LoadStrU8`), extended error with provider text -> `ShowExtendedNetErrorW`, else
+  `GetErrorText`; title `IDS_NETWORKERROR`. Debug seam inside `#ifdef _DEBUG`.
+- `src/consts.h`: declarations (`IsLogonFailureErr` was only file-local by use, now declared).
+- `src/fileswnb.cpp` `PickServerShare`: the 125 job + wait inside `while (TRUE)`; Esc primed each
+  round; `SALUNC_LIST_SIGNIN` -> job released, sign-in, round 2 with `signInTried`; target not
+  built -> the job's error shown (job kept for it). After the loop the 125 code by `step`.
+- Formatting: clang-format (VS 2022 LLVM) on the changed lines only (`--lines`); the loop body
+  re-indented, nothing else moved.
+- `specs/125-unc-server-shares/contracts/probe-seam.md`: the three new variables listed.
+
+## Checks after
+
+| Check | Command | Result |
+|---|---|---|
+| build | `.\build.cmd` | `BUILD SUCCEEDED`, exit 0 (only the old warnings of salamdr2.cpp / zip.cpp) |
+| unit rules | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 25122 checks, 0 failed` (25091 before, +31) |
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| no new string | `git diff main --stat -- src/texts.rh2 src/lang/` | empty |
+| probe | `run_on_hidden_desktop.ps1 ... signin_probe.ps1 -Expect fixed` -> `probe/result_after.txt` | PASS 16, FAIL 0 (A1, A2, C1, F1, W1, K1, N1, R1 ACT + END), registry restored + identical |
+| Release seam | `.\build.cmd release` (`BUILD SUCCEEDED`); byte search of `Release_x64\tandemcommander.exe` (14:10) | `TC_PROBE_UNC_SIGNIN` / `TC_PROBE_UNC_ERROR` absent (UTF-16 and UTF-8); `IPC$` present - the seam is Debug-only, the route is in |
+| negative control | probe copy with the expected target `\\localhost\IPC` (wrong), `-Only A1,R1` -> `probe/result_negative.txt` | A1 FAIL, R1 PASS, exit 1 - the target check bites |
+
+Before -> after: A1 / A2 "(5) Access denied" box, 0 sign-ins -> 1 sign-in to `\\localhost\IPC$`,
+list, `\\localhost\D$`, no box; C1 box -> no box, the dialog again; F1 -> one "Network Error (1326)";
+W1 -> one "Multiple connections ..."; K1 -> one sign-in, then the "(5)" box (no second offer);
+N1 / R1 unchanged, 0 sign-ins.
+
+- US2 (T007) by reading: `fileswn1.cpp` GotoRoot, `fileswn2.cpp` Execute of `..`, `fileswn8.cpp`
+  open in other panel, `shellsup.cpp` (drop target - refused, no change of path) - all hand
+  `\\server\` to `ChangeDir`; `PickServerShare` has the single caller `fileswn3.cpp` (the
+  `IDS_SHARENAMEMISSING` branch), where `Plugins.GetFirstNethoodPluginFSName` is tried first
+  (`goto CHANGE_AGAIN_NO_DLG`) - with a Network plug-in the new code is never reached (FR-006).
+- NOT DRIVEN (owed to a person): Windows' real credential dialog against a real file server that
+  refuses the list - sign in, Cancel / Esc in the dialog, a wrong password, *Remember my
+  credentials*.

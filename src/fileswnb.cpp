@@ -1425,62 +1425,92 @@ int CFilesWindow::PickServerShare(const char* serverPath, char* sharePath, int s
     char server[MAX_PATH];
     if (!SalUncServerOfPath(serverPath, server, _countof(server)))
         return PSS_NOTHING;
-    GetAsyncKeyState(VK_ESCAPE); // init: an ESC pressed before (it closed a menu or a dialog) must not cancel the wait
-    CUncSharesJob* job = CUncSharesJob::Start(server);
-    if (job == NULL)
-        return PSS_NOTHING;
 
-    // the server is asked on a worker thread; a quiet moment first, then the wait window with
-    // ESC / Close (the way SalCheckPath waits for a network path)
-    BOOL cancelled = FALSE;
-    if (WaitForSingleObject(job->Done, 400) == WAIT_TIMEOUT)
+    // feature 285: a list refused for want of a name and password gets Windows' sign-in (as a full
+    // "\\server\share" path does) and is then read once more - the sign-in is offered once
+    BOOL signInTried = FALSE;
+    CUncSharesJob* job;
+    int step;
+    while (TRUE)
     {
-        char buf[MAX_PATH + 100];
-        _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CHECKINGPATHESC), serverPath);
-        SalU8TrimIncompleteTail(buf);
-        CreateSafeWaitWindow(buf, NULL, 600, TRUE, NULL);
-#ifdef _DEBUG
-        // probe seam, Debug builds only (specs/125-unc-server-shares/contracts/probe-seam.md,
-        // feature 193): the user gives up waiting - ESC or Close cannot be driven on the hidden desktop
-        WCHAR seamCancel[16];
-        DWORD seamLen = GetEnvironmentVariableW(L"TC_PROBE_UNC_CANCEL", seamCancel, _countof(seamCancel));
-        BOOL seamCancelSet = seamLen > 0 && seamLen < _countof(seamCancel);
-        DWORD seamMs = seamCancelSet ? (DWORD)max(0, _wtoi(seamCancel)) : 0;
-        DWORD seamStart = GetTickCount();
-#endif // _DEBUG
-        while (WaitForSingleObject(job->Done, 100) == WAIT_TIMEOUT)
+        GetAsyncKeyState(VK_ESCAPE); // init: an ESC pressed before (it closed a menu or a dialog) must not cancel the wait
+        job = CUncSharesJob::Start(server);
+        if (job == NULL)
+            return PSS_NOTHING;
+
+        // the server is asked on a worker thread; a quiet moment first, then the wait window with
+        // ESC / Close (the way SalCheckPath waits for a network path)
+        BOOL cancelled = FALSE;
+        if (WaitForSingleObject(job->Done, 400) == WAIT_TIMEOUT)
         {
-            if (UserWantsToCancelSafeWaitWindow())
-            {
-                cancelled = TRUE;
-                break;
-            }
+            char buf[MAX_PATH + 100];
+            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CHECKINGPATHESC), serverPath);
+            SalU8TrimIncompleteTail(buf);
+            CreateSafeWaitWindow(buf, NULL, 600, TRUE, NULL);
 #ifdef _DEBUG
-            if (seamCancelSet && GetTickCount() - seamStart >= seamMs)
-            {
-                cancelled = TRUE;
-                break;
-            }
+            // probe seam, Debug builds only (specs/125-unc-server-shares/contracts/probe-seam.md,
+            // feature 193): the user gives up waiting - ESC or Close cannot be driven on the hidden desktop
+            WCHAR seamCancel[16];
+            DWORD seamLen = GetEnvironmentVariableW(L"TC_PROBE_UNC_CANCEL", seamCancel, _countof(seamCancel));
+            BOOL seamCancelSet = seamLen > 0 && seamLen < _countof(seamCancel);
+            DWORD seamMs = seamCancelSet ? (DWORD)max(0, _wtoi(seamCancel)) : 0;
+            DWORD seamStart = GetTickCount();
 #endif // _DEBUG
+            while (WaitForSingleObject(job->Done, 100) == WAIT_TIMEOUT)
+            {
+                if (UserWantsToCancelSafeWaitWindow())
+                {
+                    cancelled = TRUE;
+                    break;
+                }
+#ifdef _DEBUG
+                if (seamCancelSet && GetTickCount() - seamStart >= seamMs)
+                {
+                    cancelled = TRUE;
+                    break;
+                }
+#endif // _DEBUG
+            }
+            DestroySafeWaitWindow();
+            if (cancelled)
+            {
+                MSG msg; // discard the buffered ESC
+                while (PeekMessage(&msg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE))
+                    ;
+            }
         }
-        DestroySafeWaitWindow();
         if (cancelled)
         {
-            MSG msg; // discard the buffered ESC
-            while (PeekMessage(&msg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE))
-                ;
+            job->Release(); // the worker frees the job when its call returns
+            return PSS_CANCELLED;
         }
-    }
-    if (cancelled)
-    {
-        job->Release(); // the worker frees the job when its call returns
-        return PSS_CANCELLED;
+
+        step = SalUncShareListStep(job->Count, job->Error, IsLogonFailureErr(job->Error), signInTried);
+        if (step != SALUNC_LIST_SIGNIN)
+            break;
+        signInTried = TRUE;
+        char target[MAX_PATH + 16];
+        WCHAR* targetW = SalUncSignInTarget(server, target, _countof(target)) ? SalU8ToWAlloc(target) : NULL;
+        if (targetW == NULL)
+        { // the sign-in target cannot be built (refused, never cut): the list's error is shown
+            step = SALUNC_LIST_ERROR;
+            break;
+        }
+        job->Release();
+        job = NULL;
+        int signIn = SignInToUncServerW(HWindow, targetW);
+        free(targetW);
+        if (signIn == SIGNIN_CANCELLED)
+            return PSS_CANCELLED;
+        if (signIn == SIGNIN_ERRORSHOWN)
+            return PSS_ERRORSHOWN;
+        // signed in: the list once more
     }
 
     int ret = PSS_NOTHING;
-    if (job->Count == 0)
+    if (step != SALUNC_LIST_SHOW)
     {
-        if (job->Error != ERROR_SUCCESS)
+        if (step == SALUNC_LIST_ERROR)
         {
             char errBuf[2 * MAX_PATH + 300];
             _snprintf_s(errBuf, _TRUNCATE, LoadStrU8(IDS_PATHERRORFORMAT), serverPath, GetErrorText(job->Error));

@@ -1,0 +1,24 @@
+signin_probe (backlog item share-list-offers-sign-in), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 14:07; desktop 'tc_probe_11496'; computer PC-DOMA; registry key existed True; export SHA-256 A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+Plug-in : plugins\nethood\nethood.spl present next to the program: False; seam list: C$*2147483648|D$*2147483648|IPC$*2147483651
+
+A1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\localhost\, list refused (5), sign-in 0; sign-ins: 1 [\\localhost\IPC$]; share list opened: True; windows: no window; location '\\localhost\D$'
+A1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+A2         ACT    PASS        from '\\localhost\C$': Backspace, list refused (5), sign-in 0; sign-ins: 1 [\\localhost\IPC$]; share list opened: True; windows: no window; location '\\localhost\D$'
+A2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\localhost\, list refused (5), sign-in cancelled (1223); sign-ins: 1 [\\localhost\IPC$]; share list opened: False; windows: Change Directory dialog opened; location 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start'
+C1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+F1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\localhost\, list refused (5), sign-in fails (1326); sign-ins: 1 [\\localhost\IPC$]; share list opened: False; windows: [#32770 'Network Error'] [Static id=2477] (1326) U\u017Eivatelsk\u00E9 jm\u00E9no nebo heslo je nespr\u00E1vn\u00E9.  | [Button id=1] OK || Change Directory dialog opened; location 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start'
+F1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+W1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\localhost\, list refused (5), sign-in conflict (1219); sign-ins: 1 [\\localhost\IPC$]; share list opened: False; windows: [#32770 'Network Error'] [Static id=2477] Multiple connections to a server or shared resource by the same user, using more than one user name, are not allowed. Disconnect all previous connections to the server or shared resource and try again. | [Button id=1] OK || Change Directory dialog opened; location 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start'
+W1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+K1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\localhost\, list refused (5), sign-in 0, refused again; sign-ins: 1 [\\localhost\IPC$]; share list opened: False; windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "\\localhost\" Error: (5) P\u0159\u00EDstup byl odep\u0159en.  | [Button id=1] OK || Change Directory dialog opened; location 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start'
+K1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+N1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\localhost\, server not found (53); sign-ins: 0 []; share list opened: False; windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "\\localhost\" Error: (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK || Change Directory dialog opened; location 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start'
+N1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\localhost\, the list at once; sign-ins: 0 []; share list opened: True; windows: no window; location '\\localhost\D$'
+R1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0, INFO 0. Left running: 0; registry restored+identical: True

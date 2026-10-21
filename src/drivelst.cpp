@@ -1183,6 +1183,80 @@ BOOL RestoreNetworkDriveW(HWND parent, char drive, const WCHAR* remote)
     return ret;
 }
 
+int SignInToUncServerW(HWND parent, const WCHAR* target)
+{
+    CALL_STACK_MESSAGE1("SignInToUncServerW(, )");
+
+    // the sign-in RestoreNetworkConnection gives an unmapped "\\server\share" on Windows 7 and later
+    // (Windows' own dialog through CONNECT_INTERACTIVE, on this thread, not remembered), wide: the
+    // server name reaches Windows whole, never through the code page
+    NETRESOURCEW ns;
+    memset(&ns, 0, sizeof(ns));
+    ns.dwType = RESOURCETYPE_ANY; // IPC$ is not a disk share
+    ns.lpRemoteName = (LPWSTR)target;
+
+    DWORD err;
+    BOOL asked = FALSE;
+#ifdef _DEBUG
+    // probe seam, Debug builds only (specs/285-share-list-sign-in/contracts/sign-in.md): the
+    // attempt is logged, and Windows' dialog - which cannot be driven on the hidden desktop - is
+    // answered by the seam
+    {
+        WCHAR env[MAX_PATH];
+        DWORD len = GetEnvironmentVariableW(L"TC_PROBE_UNC_SIGNIN_LOG", env, _countof(env));
+        if (len > 0 && len < _countof(env))
+        {
+            char* line = SalWToU8Alloc(target);
+            FILE* f = _wfopen(env, L"ab");
+            if (f != NULL && line != NULL)
+                fprintf(f, "%s\r\n", line);
+            if (f != NULL)
+                fclose(f);
+            free(line);
+        }
+        len = GetEnvironmentVariableW(L"TC_PROBE_UNC_SIGNIN", env, _countof(env));
+        if (len > 0 && len < _countof(env))
+        {
+            err = (DWORD)_wtoi(env);
+            asked = TRUE;
+            WCHAR keep[8];
+            DWORD keepLen = GetEnvironmentVariableW(L"TC_PROBE_UNC_SIGNIN_KEEP", keep, _countof(keep));
+            if (err == NO_ERROR && !(keepLen > 0 && keepLen < _countof(keep)))
+                SetEnvironmentVariableW(L"TC_PROBE_UNC_ERROR", NULL); // signed in: the server gives its list now
+        }
+    }
+#endif // _DEBUG
+    if (!asked)
+        err = WNetAddConnection3W(parent, &ns, NULL, NULL, CONNECT_INTERACTIVE);
+
+    if (err == ERROR_CANCELLED)
+        return SIGNIN_CANCELLED;
+    if (err == NO_ERROR || err == ERROR_ALREADY_ASSIGNED || err == ERROR_DEVICE_ALREADY_REMEMBERED)
+        return SIGNIN_CONNECTED;
+    if (err == ERROR_SESSION_CREDENTIAL_CONFLICT)
+    {
+        SalMessageBox(parent, LoadStrU8(IDS_CREDENTIALCONFLICT), LoadStr(IDS_NETWORKERROR),
+                      MB_OK | MB_ICONEXCLAMATION);
+        return SIGNIN_ERRORSHOWN;
+    }
+    if (err == ERROR_EXTENDED_ERROR)
+    {
+        DWORD errProviderCode = 0;
+        WCHAR errBuf[300];
+        WCHAR errProviderName[200];
+        errBuf[0] = 0;
+        errProviderName[0] = 0;
+        if (WNetGetLastErrorW(&errProviderCode, errBuf, _countof(errBuf), errProviderName, _countof(errProviderName)) == NO_ERROR &&
+            errBuf[0] != 0)
+        {
+            ShowExtendedNetErrorW(parent, errProviderName, errProviderCode, errBuf);
+            return SIGNIN_ERRORSHOWN;
+        }
+    }
+    SalMessageBox(parent, GetErrorText(err), LoadStr(IDS_NETWORKERROR), MB_OK | MB_ICONEXCLAMATION);
+    return SIGNIN_ERRORSHOWN;
+}
+
 BOOL CheckAndRestoreNetworkConnection(HWND parent, const char drive, BOOL& pathInvalid)
 {
     CALL_STACK_MESSAGE2("CheckAndRestoreNetworkConnection(, %u,)", drive);

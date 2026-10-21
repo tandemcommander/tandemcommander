@@ -10,6 +10,7 @@ names below (checked by a string search at the gates).
 | `TC_PROBE_UNC_DELAY` | milliseconds to sleep before answering (with or without `TC_PROBE_UNC_SHARES`) |
 | `TC_PROBE_UNC_ERROR` | when set: the answer is this Windows error code and no list |
 | `TC_PROBE_UNC_CANCEL` | (feature 193) when set: milliseconds after the wait window opens, the wait is given up as if ESC was pressed - the main thread does not read this one, the worker is abandoned |
+| `TC_PROBE_UNC_SIGNIN`, `TC_PROBE_UNC_SIGNIN_KEEP`, `TC_PROBE_UNC_SIGNIN_LOG` | (feature 285) the sign-in offered for a refused list: answered by the seam instead of Windows' dialog, the attempt logged; read by the main thread in `SignInToUncServerW` - see `specs/285-share-list-sign-in/contracts/sign-in.md` |
 
 The variables are read by the worker thread at each enumeration (`TC_PROBE_UNC_CANCEL` by the
 waiting main thread). They change nothing else:
