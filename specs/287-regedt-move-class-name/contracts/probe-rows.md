@@ -6,7 +6,7 @@ focused, F5 (727) or F6 (728) opens the plug-in's dialog, the target path is typ
 | Row | Command, target | Answer | PASS when |
 |---|---|---|---|
 | MOVE | F6 into `Cíl řx` | - | `Cíl řx\<K>` holds `v` = ALPHA and `podklíč\w` = BETA; `Zdroj\<K>` is gone; no question box |
-| MOVESELF | F6 into `Zdroj\<K>\podklíč` | Cancel | the box text is the "cannot move into itself" template (id 1066) with `<K>`; fixture unchanged |
+| MOVESELF | F6 into `Zdroj\<K>\podklíč` | Cancel | the box text is the "cannot move into itself" template (id 1067) with `<K>`; fixture unchanged |
 | CLASSCOPY | F5 into `Jiná` | Cancel | a question box: its texts hold `HKEY_CURRENT_USER\Software\TcProbe287\Zdroj\<K>` and the question template (id 1068); `Jiná\<K>` has no `v`; fixture unchanged |
 | CLASSMOVE | F6 into `Jiná` | Cancel | as CLASSCOPY; `Zdroj\<K>` still holds `v` and `podklíč` |
 | CLASSYES | F6 into `Jiná` | Yes | the question was asked; `Jiná\<K>` holds `v` and `podklíč\w`, keeps class `TřídaB`; `Zdroj\<K>` is gone |
