@@ -4,13 +4,21 @@ Serves ROOT on 127.0.0.1:PORT (loopback only), any user / password; names on the
 (FEAT announces UTF8). Every control line received is logged to LOG as one JSON object per line
 ({"t": seconds, "cmd": the raw line as text}); replies too ({"reply": ...}). A path never leaves ROOT.
 
-    python -I ftpmini.py ROOT PORT LOG [ENC [HOME]]
+    python -I ftpmini.py ROOT PORT LOG [ENC [HOME [PWDMAP]]]
 
 ENC (feature 224): the encoding of names on the wire - utf-8 (default; FEAT announces UTF8) or a
 legacy code page such as cp1250 (FEAT announces nothing - an old server); wtf-8 (feature 269):
 UTF-8 that also carries an unpaired UTF-16 surrogate byte for byte (ED A0 80 ..; a name NTFS
 allows), as a byte-transparent UNIX server does. HOME (feature 224): the folder a session starts
 in (default "/").
+
+PWDMAP (feature 277): a JSON file [[virtual, reported, form], ...] - a server whose folders are
+reached through links: the PWD / MKD reply for the folder 'virtual' (and below it) names it
+'reported' (any length), and a path the client sends that starts with 'reported' means 'virtual'
+again. 'form' is the reply's form: "rfc" (257 "path", default) or "aix" (the German AIX one,
+257 'path' ist das aktuelle Verzeichnis.). A fourth item "drop" closes the session once, right
+after the first listing of the folder (an idle timeout: the client connects again and goes back by
+the path PWD gave).
 """
 import json
 import os
@@ -26,6 +34,41 @@ LOG = sys.argv[3]
 ENC = sys.argv[4] if len(sys.argv) > 4 else 'utf-8'
 HOME = sys.argv[5] if len(sys.argv) > 5 else '/'
 WIRE, ERRS = ('utf-8', 'surrogatepass') if ENC.lower() == 'wtf-8' else (ENC, 'surrogateescape')
+PWDMAP = []
+if len(sys.argv) > 6:
+    with open(sys.argv[6], encoding='utf-8') as _f:
+        _entries = json.load(_f)
+    PWDMAP = [(e[0], e[1], e[2] if len(e) > 2 else 'rfc') for e in _entries]
+    DROPS = set(e[0] for e in _entries if len(e) > 3 and e[3] == 'drop')
+else:
+    DROPS = set()
+
+
+def _under(p, base):
+    return p == base or p.startswith(base.rstrip('/') + '/')
+
+
+# the path the server names a virtual folder by, and the form of its 257 reply
+def reported(v):
+    for virt, rep, form in sorted(PWDMAP, key=lambda e: -len(e[0])):
+        if _under(v, virt):
+            return rep + v[len(virt):], form
+    return v, 'rfc'
+
+
+# a path the client sent: a reported path means its virtual folder again
+def unreported(p):
+    for virt, rep, form in sorted(PWDMAP, key=lambda e: -len(e[1])):
+        if _under(p, rep):
+            return virt + p[len(rep):]
+    return p
+
+
+def reply257(v, text):
+    rep, form = reported(v)
+    if form == 'aix':
+        return "257 '%s' ist das aktuelle Verzeichnis." % rep
+    return '257 "%s" %s' % (rep.replace('"', '""'), text)
 _log_lock = threading.Lock()
 T0 = time.time()
 
@@ -57,7 +100,7 @@ class Session(socketserver.StreamRequestHandler):
 
     # the virtual path of 'arg' (relative to cwd) and its real path inside ROOT, or None
     def resolve(self, arg):
-        v = arg if arg.startswith('/') else (self.cwd.rstrip('/') + '/' + arg)
+        v = unreported(arg) if arg.startswith('/') else (self.cwd.rstrip('/') + '/' + arg)
         parts = []
         for p in v.split('/'):
             if p in ('', '.'):
@@ -124,7 +167,7 @@ class Session(socketserver.StreamRequestHandler):
         elif verb in ('OPTS', 'MODE', 'STRU', 'TYPE', 'ALLO', 'SITE', 'NOOP', 'CLNT'):
             self.reply('200 OK')
         elif verb == 'PWD' or verb == 'XPWD':
-            self.reply('257 "%s" is the current directory' % self.cwd.replace('"', '""'))
+            self.reply(reply257(self.cwd, 'is the current directory'))
         elif verb in ('CWD', 'XCWD', 'CDUP', 'XCUP'):
             v, r = self.resolve('..' if verb in ('CDUP', 'XCUP') else arg)
             if r is not None and os.path.isdir(r):
@@ -173,6 +216,10 @@ class Session(socketserver.StreamRequestHandler):
             c.sendall(''.join(x + '\r\n' for x in out).encode(WIRE, ERRS))
             c.close()
             self.reply('226 Listing sent')
+            if v in DROPS:
+                DROPS.discard(v)
+                log({'event': 'drop', 'path': v})
+                return False
         elif verb == 'RETR':
             v, r = self.resolve(arg)
             if r is None or not os.path.isfile(r):
@@ -234,7 +281,7 @@ class Session(socketserver.StreamRequestHandler):
             v, r = self.resolve(arg)
             if r is not None and not os.path.exists(r) and os.path.isdir(os.path.dirname(r)):
                 os.mkdir(r)
-                self.reply('257 "%s" created' % v.replace('"', '""'))
+                self.reply(reply257(v, 'created'))
             else:
                 self.reply('550 Cannot create')
         elif verb == 'RNFR':
