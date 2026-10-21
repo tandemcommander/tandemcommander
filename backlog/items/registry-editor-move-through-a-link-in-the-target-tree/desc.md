@@ -1,8 +1,8 @@
 ---
 title: Registry Editor: Move into a key holding a registry link to the source writes into the source
 type: bug
-status: new
-severity: 3
+status: open
+severity: 7
 area: data-safety
 source: review:294
 who: agent
@@ -48,3 +48,5 @@ reproduced by the item's author. Severity 3 for the rarity; the loss itself woul
 ## Log
 
 - 2026-10-22 — created (source review:294)
+- 2026-10-22 — auto-triage: severity 3 -> 7: a Move can silently lose the moved key in a narrow scenario (a registry link in the target tree), band 7-8; rarity picks the low end
+- 2026-10-22 — moved to Next position 2
