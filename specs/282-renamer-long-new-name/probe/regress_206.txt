@@ -1,0 +1,17 @@
+ren_dir83_probe (feature 206), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 10:37; ACP 1250; registry key existed True
+
+ren-dir83  RUN    PASS        preview rows 1; boxes as expected: True; on disk: longdirname/(keep.txt); LONGDI~1/(x.txt); boxes: no box
+ren-dir83  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-dir83-same RUN    PASS        preview rows 1; boxes as expected: True; on disk: longdirname/(keep.txt,x.txt); LONGDI~1/(x.txt); longdirname\x.txt=PRECIOUS-X; LONGDI~1\x.txt=MOVED-2; boxes: no box
+ren-dir83-same END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-dir83-held RUN    PASS        preview rows 1; boxes as expected: True; on disk: longdirname/(keep.txt); x.txt where it was: True; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to create directory: (5) P\u0159\u00EDstup byl odep\u0159en.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=177] Renaming files, press ESC to cancel... | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=177] Renaming files, press ESC to cancel... | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=2477] Some files have not been renamed successfully. These files will be listed now to enable you to correct errors and try to rename files again. To see successfully renamed files use options in `View' menu. | [Button id=1] OK || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No
+ren-dir83-held END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-dir83-long RUN    PASS        preview rows 1; boxes as expected: True; on disk: <230 l>/(keep.txt); LLLLLL~1/(x.txt); boxes: no box
+ren-dir83-long END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ren-case   RUN    PASS        preview rows 1; boxes as expected: True; on disk: SUB/(keep.txt,x.txt); boxes: no box
+ren-case   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -128,7 +128,8 @@ public:
 
     void LoadSelection();
     void ReloadSourceFiles();
-    BOOL LoadSubdir(char* path, const char* subdir);
+    // 'path' holds REN_MAX_NAME bytes (feature 282); 'depth' = levels below the selected folder
+    BOOL LoadSubdir(char* path, const char* subdir, int depth);
 
     BOOL ReloadManualModeEdit();
 
@@ -146,7 +147,7 @@ public:
     BOOL BuildScript(CRenameScriptEntry*& script, int& count,
                      BOOL validate, BOOL& somethingToDo);
     int GetManualModeNewName(CSourceFile* file, int index,
-                             char* newName, char*& newPart);
+                             char* newName, int newNameSize, char*& newPart);
     void ExecuteScript(CRenameScriptEntry* script, int count);
     void Undo();
 

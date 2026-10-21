@@ -193,7 +193,9 @@ BOOL CRenamerDialog::BuildScript(CRenameScriptEntry*& script, int& count,
     BOOL ret = FALSE;
     CRenameScriptEntry* tmpScript = NULL;
     script = NULL;
-    char newName[MAX_PATH];
+    // feature 282: on the heap, the longest path in UTF-8 - char[MAX_PATH] refused every new name of
+    // 260+ bytes (90 CJK letters) as "Expanded string is too large"
+    char* newName = NULL;
     char* newPart;
     BOOL skip;
     BOOL skipAllLongNames = FALSE,
@@ -249,6 +251,13 @@ BOOL CRenamerDialog::BuildScript(CRenameScriptEntry*& script, int& count,
         goto LBUILD_SCRIPT_ERROR;
     }
 
+    newName = (char*)malloc(REN_MAX_NAME);
+    if (newName == NULL)
+    {
+        Error(IDS_LOWMEM);
+        goto LBUILD_SCRIPT_ERROR;
+    }
+
     // create the progress dialog
     Progress = new CProgressDialog(HWindow);
     Progress->Create();
@@ -262,7 +271,7 @@ BOOL CRenamerDialog::BuildScript(CRenameScriptEntry*& script, int& count,
     {
         tmpScript[i].Source = SourceFiles[i];
         // create a new name
-        int l = ManualMode ? GetManualModeNewName(SourceFiles[i], i, newName, newPart) : renamer.Rename(SourceFiles[i], i, newName, &newPart);
+        int l = ManualMode ? GetManualModeNewName(SourceFiles[i], i, newName, REN_MAX_NAME, newPart) : renamer.Rename(SourceFiles[i], i, newName, REN_MAX_NAME, &newPart);
         if (l < 0)
         {
             FileError(HWindow, SourceFiles[i]->FullName, IDS_EXP_SMALLBUFFER,
@@ -493,25 +502,31 @@ LBUILD_SCRIPT_ERROR:
         delete[] tmpScript;
     if (!ret && script)
         delete[] script;
+    free(newName);
 
     return ret;
 }
 
-int CRenamerDialog::GetManualModeNewName(CSourceFile* file, int index, char* newName, char*& newPart)
+int CRenamerDialog::GetManualModeNewName(CSourceFile* file, int index, char* newName, int newNameSize, char*& newPart)
 {
     CALL_STACK_MESSAGE_NONE
+    // feature 282: into 'newNameSize' bytes (REN_MAX_NAME); the folder part only when it fits
     int pathLen = 0;
     switch (RenamerOptions.Spec)
     {
     case rsFileName:
     {
         pathLen = (int)(file->Name - file->FullName);
+        if (pathLen + 2 > newNameSize)
+            return -1; // does not fit: refused as too large, never cut
         memcpy(newName, file->FullName, pathLen);
         break;
     }
     case rsRelativePath:
     {
         pathLen = RootLen;
+        if (pathLen + 3 > newNameSize)
+            return -1;
         memcpy(newName, Root, pathLen);
         if (newName[pathLen - 1] != '\\')
             newName[pathLen++] = '\\';
@@ -535,7 +550,7 @@ int CRenamerDialog::GetManualModeNewName(CSourceFile* file, int index, char* new
         // EM_GETLINE A gave the code-page form of the edit's text - '?' or a best-fit look-alike
         // for a typed name, the raw bytes of an untouched one. The limit is in BYTES now: a
         // name whose UTF-8 form does not fit is the "too small buffer" error, never cut.
-        int l = GetEditLineU8(ManualEdit->HWindow, index, newName, MAX_PATH - pathLen);
+        int l = GetEditLineU8(ManualEdit->HWindow, index, newName, newNameSize - pathLen);
         return l == -2 ? 0 : l; // a missing line: an empty name (cannot happen - Validate counts the lines)
     }
 }

@@ -22,11 +22,20 @@ CPreviewWindow::CPreviewWindow(CRenamerDialog* renamerDialog)
     CachedItem = -1;
     Static = 0;
     State = -1;
+    // feature 282: NULL without memory - the column then shows nothing (GetItemText)
+    NewNameCache = (char*)malloc(REN_MAX_NAME);
+    PathText = NULL;
+    PathTextSize = 0;
+    TextBufferW = NULL;
+    TextBufferWSize = 0;
 }
 
 CPreviewWindow::~CPreviewWindow()
 {
     CALL_STACK_MESSAGE1("CPreviewWindow::~CPreviewWindow()");
+    free(NewNameCache);
+    free(PathText);
+    free(TextBufferW);
 }
 
 BOOL CPreviewWindow::InitColumns()
@@ -136,13 +145,37 @@ void CPreviewWindow::GetDispInfo(LV_DISPINFOW* info)
         if (info->item.mask & LVIF_TEXT)
         {
             // the item texts are UTF-8 (names) or ANSI (resource strings) -> hand them over as UTF-16
+            // feature 282: the buffer grows to the text (it held 780 units - a longer name showed empty)
             const char* text = GetItemText(info->item.iItem, info->item.iSubItem);
-            if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text, -1, TextBufferW, _countof(TextBufferW)) == 0 &&
-                MultiByteToWideChar(CP_ACP, 0, text, -1, TextBufferW, _countof(TextBufferW)) == 0)
+            UINT cp = CP_UTF8;
+            DWORD flags = MB_ERR_INVALID_CHARS;
+            int need = MultiByteToWideChar(cp, flags, text, -1, NULL, 0);
+            if (need == 0)
             {
-                TextBufferW[0] = 0;
+                cp = CP_ACP;
+                flags = 0;
+                need = MultiByteToWideChar(cp, flags, text, -1, NULL, 0);
             }
-            info->item.pszText = TextBufferW;
+            if (need > TextBufferWSize)
+            {
+                WCHAR* grown = (WCHAR*)realloc(TextBufferW, need * sizeof(WCHAR));
+                if (grown != NULL)
+                {
+                    TextBufferW = grown;
+                    TextBufferWSize = need;
+                }
+            }
+            if (TextBufferW == NULL) // no memory at all
+                info->item.pszText = emptyBufferW;
+            else
+            {
+                if (need == 0 || need > TextBufferWSize ||
+                    MultiByteToWideChar(cp, flags, text, -1, TextBufferW, TextBufferWSize) == 0)
+                {
+                    TextBufferW[0] = 0;
+                }
+                info->item.pszText = TextBufferW;
+            }
         }
     }
     else
@@ -178,6 +211,11 @@ char* CPreviewWindow::GetItemText(int index, int subItem)
         break;
 
     case CI_NEWNAME:
+        if (NewNameCache == NULL) // feature 282: no memory for it - nothing shown, the warning icon
+        {
+            NewNameValid = FALSE;
+            break;
+        }
         if (CachedItem != index)
         {
             NewNameValid = FALSE;
@@ -200,7 +238,7 @@ char* CPreviewWindow::GetItemText(int index, int subItem)
                 //   else
                 //   {
                 // feature 104: the line as UTF-8 (see CRenamerDialog::GetManualModeNewName)
-                int l = GetEditLineU8(RenamerDialog->ManualEdit->HWindow, index, NewNameCache, MAX_PATH);
+                int l = GetEditLineU8(RenamerDialog->ManualEdit->HWindow, index, NewNameCache, REN_MAX_NAME);
                 if (l == -1) // the line's UTF-8 form does not fit
                     SalPrintf(NewNameCache, MAX_PATH, LoadStr(IDS_GENERICERR), LoadStr(IDS_EXP_SMALLBUFFER));
                 else // a missing line (fewer lines than files) is an empty name, as before
@@ -216,7 +254,7 @@ char* CPreviewWindow::GetItemText(int index, int subItem)
                 {
                     if (Renamer.IsGood())
                     {
-                        int l = Renamer.Rename(item, index, NewNameCache, FALSE);
+                        int l = Renamer.Rename(item, index, NewNameCache, REN_MAX_NAME, NULL);
                         if (l < 0)
                         {
                             SalPrintf(NewNameCache, MAX_PATH, LoadStr(IDS_GENERICERR), LoadStr(IDS_EXP_SMALLBUFFER));
@@ -264,13 +302,23 @@ char* CPreviewWindow::GetItemText(int index, int subItem)
         {
         case rsFileName:
         {
-            lstrcpyn(TextBuffer, item->FullName, _countof(TextBuffer));
-            if (item->NameLen < _countof(TextBuffer) ||
-                strchr(item->FullName + _countof(TextBuffer) - 1, '\\') == NULL)
+            // feature 282: the folder whole - it was copied into MAX_PATH bytes, cut inside a letter
+            int need = (int)strlen(item->FullName) + 1;
+            if (need > PathTextSize)
             {
-                SG->CutDirectory(TextBuffer);
+                char* grown = (char*)realloc(PathText, need);
+                if (grown != NULL)
+                {
+                    PathText = grown;
+                    PathTextSize = need;
+                }
             }
-            ret = TextBuffer;
+            if (PathText != NULL && need <= PathTextSize)
+            {
+                memcpy(PathText, item->FullName, need);
+                SG->CutDirectory(PathText);
+                ret = PathText;
+            }
             break;
         }
         case rsRelativePath:

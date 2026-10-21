@@ -312,12 +312,14 @@ BOOL CRenamer::SetOptions(CRenamerOptions* options)
     return TRUE;
 }
 
-int CRenamer::Rename(CSourceFile* file, int counter, char* newName, char** newPart)
+int CRenamer::Rename(CSourceFile* file, int counter, char* newName, int newNameSize, char** newPart)
 {
     CALL_STACK_MESSAGE_NONE
     if (!IsGood())
         return -1;
 
+    // feature 282: the name is built into 'newNameSize' bytes (REN_MAX_NAME - the longest path in
+    // UTF-8); it was MAX_PATH. The folder part is copied only when it fits with a name character.
     int pathLen = 0;
     if (newPart)
     {
@@ -326,12 +328,16 @@ int CRenamer::Rename(CSourceFile* file, int counter, char* newName, char** newPa
         case rsFileName:
         {
             pathLen = (int)(file->Name - file->FullName);
+            if (pathLen + 2 > newNameSize)
+                return -1; // does not fit: refused as too large, never cut
             memcpy(newName, file->FullName, pathLen);
             break;
         }
         case rsRelativePath:
         {
             pathLen = RootLen;
+            if (pathLen + 3 > newNameSize)
+                return -1;
             memcpy(newName, Root, pathLen);
             if (newName[pathLen - 1] != '\\')
                 newName[pathLen++] = '\\';
@@ -351,13 +357,22 @@ int CRenamer::Rename(CSourceFile* file, int counter, char* newName, char** newPa
     param.Counter = counter;
     param.RootLen = RootLen;
 
+    int cap = newNameSize - pathLen; // what 'newName' holds from here
     int l;
     if (Substitute)
     {
-        char tmp[MAX_PATH];
+        // feature 282: on the heap, as large as the name (it was char[MAX_PATH])
+        char* tmp = (char*)malloc(newNameSize);
+        if (tmp == NULL)
+            return -1;
+        struct CFreeTmp
+        {
+            char* P;
+            ~CFreeTmp() { free(P); }
+        } freeTmp = {tmp};
 
         // expand the New Name into a temporary buffer
-        l = NewName.Execute(tmp, MAX_PATH, &param);
+        l = NewName.Execute(tmp, newNameSize, &param);
         if (l < 0)
             return -1;
         // l is strlen(tmp)
@@ -374,10 +389,10 @@ int CRenamer::Rename(CSourceFile* file, int counter, char* newName, char** newPa
             }
 
             // perform the requested substitution in the name
-            int substl = UseRegExp ? RESubst(tmp, namel, newName, MAX_PATH - pathLen) : BMSubst(tmp, namel, newName, MAX_PATH - pathLen);
+            int substl = UseRegExp ? RESubst(tmp, namel, newName, cap) : BMSubst(tmp, namel, newName, cap);
 
             // dokopirujeme extension
-            if (substl < 0 || substl + (l - namel) >= MAX_PATH - pathLen)
+            if (substl < 0 || substl + (l - namel) >= cap)
                 return -1;
             memcpy(newName + substl, tmp + namel, l - namel + 1);
             // calculate new name length : substed name len + appended ext len - '\0'
@@ -386,13 +401,13 @@ int CRenamer::Rename(CSourceFile* file, int counter, char* newName, char** newPa
         else
         {
             // perform the requested substitution
-            l = UseRegExp ? RESubst(tmp, l, newName, MAX_PATH - pathLen) : BMSubst(tmp, l, newName, MAX_PATH - pathLen);
+            l = UseRegExp ? RESubst(tmp, l, newName, cap) : BMSubst(tmp, l, newName, cap);
         }
     }
     else
     {
         // expand the New Name
-        l = NewName.Execute(newName, MAX_PATH - pathLen, &param);
+        l = NewName.Execute(newName, cap, &param);
     }
 
     if (l < 0)
@@ -414,7 +429,7 @@ int CRenamer::Rename(CSourceFile* file, int counter, char* newName, char** newPa
 
         // feature 208: the UTF-8 length may change - built anew: the part before, the name, the extension
         char* s = FileCase != ccDontChange && IncludePath ? newName : filePart;
-        int cap = MAX_PATH - pathLen; // what 'newName' holds (as given to Execute)
+        // 'cap': what 'newName' holds (as given to Execute)
         char* built = (char*)malloc(cap);
         if (built == NULL)
             return -1;

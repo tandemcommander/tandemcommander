@@ -1,0 +1,57 @@
+ren_regex_probe (feature 254), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 10:44; ACP 1250; registry key existed True
+
+dot        RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 586C75C5A52E747874 want 586C75C5A52E747874; boxes: no box
+dot        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+w-cyr      RUN    PASS        preview rows 1; boxes as expected: True; on disk: before D096D0B0D0B1D0B02E747874 got 572E747874 want 572E747874; boxes: no box
+w-cyr      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+class      RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 7A6C75C5A52E747874 want 7A6C75C5A52E747874; boxes: no box
+class      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+negclass   RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 4E6C75C5A52E747874 want 4E6C75C5A52E747874; boxes: no box
+negclass   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+range      RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 526C75C5A52E747874 want 526C75C5A52E747874; boxes: no box
+range      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+quant      RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BEC5BE6C75C5A52E747874 got 5A6C75C5A52E747874 want 5A6C75C5A52E747874; boxes: no box
+quant      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+wordb      RUN    PASS        preview rows 1; boxes as expected: True; on disk: before D096D0B0D0B1D0B02E747874 got D096D0B0D0B1412E747874 want D096D0B0D0B1412E747874; boxes: no box
+wordb      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+lookb      RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got C5BE4C75C5A52E747874 want C5BE4C75C5A52E747874; boxes: no box
+lookb      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+esc        RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 5A6C75C5A52E747874 want 5A6C75C5A52E747874; boxes: no box
+esc        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sigma      RUN    PASS        preview rows 1; boxes as expected: True; on disk: before CEBBCF8CCEB3CEBFCF822E747874 got CEBBCF8CCEB3CEBF732E747874 want CEBBCF8CCEB3CEBF732E747874; boxes: no box
+sigma      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+bm-sigma   RUN    PASS        preview rows 1; boxes as expected: True; on disk: before CEBBCF8CCEB3CEBFCF822E747874 got CEBBCF8CCEB3CEBF732E747874 want CEBBCF8CCEB3CEBF732E747874; boxes: no box
+bm-sigma   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+mark       RUN    PASS        preview rows 1; boxes as expected: True; on disk: before 43616665CC8120782E747874 got 5720782E747874 want 5720782E747874; boxes: no box
+mark       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+nonbmp     RUN    PASS        preview rows 1; boxes as expected: True; on disk: before F0A08080F0A0808120782E747874 got 5720782E747874 want 5720782E747874; boxes: no box
+nonbmp     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+posix      RUN    PASS        preview rows 1; boxes as expected: True; on disk: before D096D0B0D0B1D0B02E747874 got 502E747874 want 502E747874; boxes: no box
+posix      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ci-class   RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BD6C75C5A52E747874 got 7A6C75C5A52E747874 want 7A6C75C5A52E747874; boxes: no box
+ci-class   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+empty      RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C2E747874 got 2DC5BE2D2E747874 want 2DC5BE2D2E747874; boxes: no box
+empty      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ww-mark    RUN    PASS        preview rows 1; boxes as expected: True; on disk: before 43616665CC8120782E747874 got 43616665CC8120782E747874 want 43616665CC8120782E747874; boxes: [#32770 'Renamer'] [Static id=2477] Nothing to do. | [Button id=1] OK
+ww-mark    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+bs-lit     RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 5A6C75C5A52E747874 want 5A6C75C5A52E747874; boxes: no box
+bs-lit     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+bs-class   RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C3856C75C5A52E747874 got C3856C75C5A52E747874 want C3856C75C5A52E747874; boxes: [#32770 'Renamer'] [Static id=2477] Nothing to do. | [Button id=1] OK
+bs-class   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+esc-ci-cls RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BD6C75C5A52E747874 got 5A6C75C5A52E747874 want 5A6C75C5A52E747874; boxes: no box
+esc-ci-cls END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ungreedy   RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 5875C5A52E747874 want 5875C5A52E747874; boxes: no box
+ungreedy   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+byte-cls   RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 5F6C755F2E747874 want 5F6C755F2E747874; boxes: no box
+byte-cls   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+byte-all   RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 582E747874 want 582E747874; boxes: no box
+byte-all   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+asc-wb     RUN    PASS        preview rows 1; boxes as expected: True; on disk: before 616263206465662E747874 got 586263205865662E587874 want 586263205865662E587874; boxes: no box
+asc-wb     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+asc-dot    RUN    PASS        preview rows 1; boxes as expected: True; on disk: before 6162632E747874 got 59632E747874 want 59632E747874; boxes: no box
+asc-dot    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 50, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

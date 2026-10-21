@@ -1210,6 +1210,17 @@ void CRenamerDialog::ReloadSourceFiles()
         return;
     }
 
+    // feature 282: the folders are read in REN_MAX_NAME bytes (the longest path in UTF-8) - with
+    // char[MAX_PATH] an item found below a folder was refused at 260 bytes, a selected one accepted
+    char* pathBuf = (char*)malloc(REN_MAX_NAME);
+    if (pathBuf == NULL)
+    {
+        Error(IDS_LOWMEM);
+        Preview->SetItemCount(0, 0, 2);
+        SetDlgItemText(HWindow, IDS_COUNT, "");
+        return;
+    }
+
     if (!FocusHWnd)
         FocusHWnd = GetFocus();
 
@@ -1218,8 +1229,7 @@ void CRenamerDialog::ReloadSourceFiles()
     EnableWindow(HWindow, FALSE);
 
     BOOL success = TRUE;
-    char pathBuf[MAX_PATH];
-    strcpy(pathBuf, Root);
+    strcpy(pathBuf, Root); // Root has fewer than MAX_PATH bytes
     SkipAllLongNames = FALSE;
     SkipAllBadDirs = FALSE;
     TRACE_I("start reading files");
@@ -1242,7 +1252,7 @@ void CRenamerDialog::ReloadSourceFiles()
             int dirLen = (int)(item->Name - item->FullName);
             if (dirLen > 0 && item->FullName[dirLen - 1] == '\\')
                 dirLen--;
-            if (dirLen > 0 && dirLen < MAX_PATH)
+            if (dirLen > 0 && dirLen + 2 <= REN_MAX_NAME)
             {
                 memcpy(pathBuf, item->FullName, dirLen);
                 pathBuf[dirLen] = 0;
@@ -1251,7 +1261,7 @@ void CRenamerDialog::ReloadSourceFiles()
                     pathBuf[2] = '\\';
                     pathBuf[3] = 0;
                 }
-                success = LoadSubdir(pathBuf, item->Name);
+                success = LoadSubdir(pathBuf, item->Name, 1);
             }
             else // its folder does not fit the buffer: refused as LoadSubdir refuses a long path
             {
@@ -1286,6 +1296,7 @@ void CRenamerDialog::ReloadSourceFiles()
             break;
         }
     }
+    free(pathBuf);
     LastUpdateTime = GetTickCount() - LastUpdateTime;
     TRACE_I("finished reading files");
 
@@ -1349,11 +1360,18 @@ void CRenamerDialog::ReloadSourceFiles()
     SetWait(FALSE);
 }
 
-BOOL CRenamerDialog::LoadSubdir(char* path, const char* subdir)
+// feature 282: the levels "Include subdirectories" descends below the selected folder - the path is
+// no longer bounded by 260 bytes (~130 levels) but by the longest path (~16,000 levels of "a\"),
+// far past the thread's stack; a deeper folder is refused as a too long path (Skip / Skip all /
+// Cancel), never a crash. A level's frame is small: its find data and name are on the heap.
+#define REN_MAX_DEPTH 1024
+
+BOOL CRenamerDialog::LoadSubdir(char* path, const char* subdir, int depth)
 {
-    CALL_STACK_MESSAGE2("CRenamerDialog::LoadSubdir(, %s)", subdir);
-    BOOL b = SG->SalPathAppend(path, subdir, MAX_PATH);
-    if (!b || !SG->SalPathAppend(path, "*.*", MAX_PATH))
+    CALL_STACK_MESSAGE3("CRenamerDialog::LoadSubdir(, %s, %d)", subdir, depth);
+    // feature 282: 'path' holds REN_MAX_NAME bytes (it was MAX_PATH: refused at 260 bytes)
+    BOOL b = depth <= REN_MAX_DEPTH && SG->SalPathAppend(path, subdir, REN_MAX_NAME);
+    if (!b || !SG->SalPathAppend(path, "*.*", REN_MAX_NAME))
     {
         if (b)
             SG->CutDirectory(path); // trim the subdirectory portion
@@ -1364,8 +1382,26 @@ BOOL CRenamerDialog::LoadSubdir(char* path, const char* subdir)
     }
 
     // 'path' is UTF-8 since plugin interface 104 -> enumerate via the W API
-    WIN32_FIND_DATAW fd;
-    char fileName[3 * MAX_PATH]; // fd.cFileName converted to UTF-8
+    struct CLevel
+    {
+        WIN32_FIND_DATAW Fd;
+        char FileName[3 * MAX_PATH]; // fd.cFileName converted to UTF-8 (a component: 255 units)
+    };
+    CLevel* level = (CLevel*)malloc(sizeof(CLevel));
+    if (level == NULL)
+    {
+        SG->CutDirectory(path); // trim the *.* wildcard
+        SG->CutDirectory(path); // trim the subdirectory portion
+        Error(IDS_LOWMEM);
+        return FALSE;
+    }
+    struct CFreeLevel
+    {
+        CLevel* P;
+        ~CFreeLevel() { free(P); }
+    } freeLevel = {level};
+    WIN32_FIND_DATAW& fd = level->Fd;
+    char* fileName = level->FileName;
     HANDLE hFind;
 
     for (;;)
@@ -1429,14 +1465,14 @@ BOOL CRenamerDialog::LoadSubdir(char* path, const char* subdir)
             Preview->SetItemCount(0, 0, 3);
         }
 
-        if (SplWToU8(fd.cFileName, fileName, _countof(fileName)) == 0)
+        if (SplWToU8(fd.cFileName, fileName, (int)sizeof(level->FileName)) == 0)
             fileName[0] = 0; // name we cannot represent in UTF-8 (should not happen)
 
         if (fileName[0] != 0 && strcmp(fileName, ".") && strcmp(fileName, ".."))
         {
             if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
-                if (!LoadSubdir(path, fileName))
+                if (!LoadSubdir(path, fileName, depth + 1))
                 {
                     ret = FALSE;
                     break;
@@ -1453,7 +1489,7 @@ BOOL CRenamerDialog::LoadSubdir(char* path, const char* subdir)
                 if (SalMaskGroup->AgreeMasks(fileName, ext))
                 {
                     CSourceFile* item = new CSourceFile(fd, fileName, path, pathLen);
-                    if (item->NameLen < MAX_PATH)
+                    if (item->NameLen < REN_MAX_NAME) // feature 282: the limit of a selected item (was MAX_PATH)
                         SourceFiles.Add(item);
                     else
                     {

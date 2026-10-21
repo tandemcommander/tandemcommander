@@ -145,8 +145,8 @@ error; the file keeps its name and nothing else is created.
 
 ### Measurable Outcomes
 
-- **SC-001**: The probe `ren_longnew_probe.ps1` goes from 12 PASS / 8 FAIL to 20 PASS / 0 FAIL
-  (10 rows, each RUN + END; the long rows also read the preview's New name and Path cells).
+- **SC-001**: The probe `ren_longnew_probe.ps1` goes from 12 PASS / 8 FAIL to 22 PASS / 0 FAIL
+  (11 rows, each RUN + END - deep-ok added with the fix; the long rows also read the preview's New name and Path cells).
 - **SC-002**: The over-length control is still refused with nothing changed on disk.
 - **SC-003**: The earlier Renamer probes (199, 206, 207, 209) still pass.
 

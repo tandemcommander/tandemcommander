@@ -57,3 +57,46 @@ Inbox item at closing.
 - Not limits of this item: `Root[MAX_PATH]` (the panel folder - refused before the dialog, 207);
   the pattern fields `NewName` / `SearchFor` 2 * MAX_PATH, `ReplaceWith` MAX_PATH;
   `clashLongName[3 * MAX_PATH]` (a component's long name - fits).
+
+## Work
+
+- `crenamer.h`: `REN_MAX_NAME` = `SAL_MAX_PATH_UTF8` (3 x 32,767 + 1 bytes); `CSourceFile::NameLen`
+  15 -> 29 bits (with `IsDir` / `State` still one 32-bit unit); `CRenamer::Rename(..., newNameSize, ...)`.
+- `crenamer.cpp` `Rename`: the folder part copied only when it fits with a name character (else -1,
+  the existing "Expanded string is too large."); every `MAX_PATH` cap is `newNameSize` / its rest
+  `cap`; the substitution's `tmp` is `malloc(newNameSize)`, freed on every return.
+- `rendlg2.cpp` `BuildScript`: `newName` = `malloc(REN_MAX_NAME)` (none: `IDS_LOWMEM`, nothing
+  built), freed at the end; `GetManualModeNewName(..., newNameSize, ...)` with the same guard.
+- `preview.h/.cpp`: `NewNameCache` on the heap (none: the column empty, the warning icon); the
+  list view's wide text grows to the text (it held 780 units); the path column copies the full name
+  into a growing buffer and cuts the last component - the folder whole (`lstrcpyn` cut it at 260
+  bytes, inside a letter).
+- `rendlg.cpp` `ReloadSourceFiles`: `pathBuf` = `malloc(REN_MAX_NAME)` (none: `IDS_LOWMEM`, an empty
+  listing), `dirLen + 2 <= REN_MAX_NAME`; `LoadSubdir(path, subdir, depth)`: `SalPathAppend(...,
+  REN_MAX_NAME)`, a found item up to `REN_MAX_NAME` (as a selected one), the find data and the
+  converted name on the heap, deeper than `REN_MAX_DEPTH` (1024) levels the existing "too long path
+  name" refusal (research R3: without the 260 bytes ~16,000 levels were possible - past the 1 MB
+  stack).
+- Not changed: the panel folder `Root[MAX_PATH]` (207), the pattern fields (Inbox item at closing).
+
+T011 (refusals, by reading): `Rename` / `GetManualModeNewName` -1 -> `BuildScript`'s existing
+`FileError(IDS_EXP_SMALLBUFFER)` (Skip / Skip all / Cancel; the entry skipped or the build stopped -
+nothing renamed); the preview shows the same error; `LoadSubdir`'s refusal returns the box's skip
+(Cancel drops the tick, as before); out of memory: `IDS_LOWMEM`, nothing built / listed.
+
+Build: `.\build.cmd` BUILD SUCCEEDED, no warning in the renamer.
+
+## Measured (after)
+
+`probe/result_after.txt`: **22 PASS / 0 FAIL** - long-new, long-undo (back under "L.txt"),
+manual-long, long-rel ("M\MM.txt", the folder made), long-rel-deep (300+ units), sub-long-file,
+sub-long-dir: renamed, no box, the preview's New name cell is the long name and its Path cell the
+folder whole; deep-guard refused at level 1025 ("too long path name", nothing renamed, no crash);
+**deep-ok** (added with the fix: 1020 levels - listed and renamed at the bottom, the path column a
+2,000+-character folder whole; before the fix it would be refused at ~100 levels like deep-guard -
+not run on the old build); over-comp now refused **"Not valid filename."** (the name validation:
+a component over 255 - the preview shows the long name, the rename is refused, x.txt kept);
+short-ctl as before.
+
+Regressions (`probe/regress_*.txt`): 199 6 / 0, 206 10 / 0, 207 8 / 0, 209 8 / 0, 210 16 / 0,
+254 50 / 0. Encoding guard `TOTAL: 0 finding(s)`; `saltests: 25011 checks, 0 failed`.

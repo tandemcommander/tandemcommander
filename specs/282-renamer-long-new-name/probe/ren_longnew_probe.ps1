@@ -17,6 +17,7 @@
       sub-long-dir   a folder "L" holding "x.txt", subdirectories ticked: PASS = L\y.txt
       deep-guard     a folder "top" holding 1030 nested folders "d", subdirectories ticked: PASS =
                      the existing "too long path" refusal on loading, no crash, nothing renamed
+      deep-ok        the same with 1020 levels (inside the guard): listed and renamed at the bottom
       over-comp      "x.txt" -> 300 x "a" + ".txt" (one component over 255): PASS = an error box,
                      x.txt unchanged, nothing else made (refused, never cut)
       short-ctl      the control: "x.txt" -> "a.txt", then Undo
@@ -367,6 +368,12 @@ function Run-RenCases {
         $d = $Root + '\deep-guard'; $bottom = $d + '\top' + ('\d' * 1030); NewDir $bottom; Put "$bottom\x.txt" 'DG'
         @{ Folder = $d; Source = 'top'; SourceIsDir = $true; Subdirs = $true; NewName = 'z.txt'; Answers = @(2, 7); Want = 'too long path'; Rows = 1
            Check = { $lp = '\\?\'; $ok = [IO.File]::Exists($lp + $bottom + '\x.txt') -and [IO.Directory]::Exists($lp + $d + '\top'); @($ok, ('the bottom file in place, "top" kept: ' + $ok)) }.GetNewClosure() }
+    }
+    Run-Ren 'deep-ok' {
+        # 1020 folders "d" below "top": inside the guard - listed and renamed (the stack holds that deep)
+        $d = $Root + '\deep-ok'; $bottom = $d + '\top' + ('\d' * 1020); NewDir $bottom; Put "$bottom\x.txt" 'DO'
+        @{ Folder = $d; Source = 'top'; SourceIsDir = $true; Subdirs = $true; NewName = 'z.txt'; PreviewNew = 'z.txt'; Answers = @(6, 1); Want = $null; Rows = 1
+           Check = { $lp = '\\?\'; $ok = [IO.File]::Exists($lp + $bottom + '\z.txt') -and -not [IO.File]::Exists($lp + $bottom + '\x.txt'); @($ok, ('renamed at the bottom to z.txt: ' + $ok)) }.GetNewClosure() }
     }
     Run-Ren 'over-comp' {
         $d = $Root + '\over-comp'; NewDir $d; Put "$d\x.txt" 'OC'

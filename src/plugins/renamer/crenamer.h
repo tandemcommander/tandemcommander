@@ -3,6 +3,11 @@
 
 #pragma once
 
+// feature 282: the storage of a built new name (bytes incl. the terminator) and the longest full name
+// of an item - the UTF-8 (WTF-8) form of the longest path the file system accepts (32,767 UTF-16
+// units, 3 bytes each). A name was built into char[MAX_PATH]: 259 bytes - 90 CJK letters did not fit.
+#define REN_MAX_NAME SAL_MAX_PATH_UTF8
+
 struct CSourceFile
 {
     char* FullName;        // allocated file name (with full path)
@@ -13,7 +18,8 @@ struct CSourceFile
     CQuadWord Size;        // file size in bytes
     DWORD Attr;            // file attributes - ORed FILE_ATTRIBUTE_XXX constants
     FILETIME LastWrite;    // time of the last write to the file (UTC-based time)
-    unsigned NameLen : 15; // length of the FullName string (strlen(FullName))
+    unsigned NameLen : 29; // length of the FullName string (strlen(FullName)); feature 282: up to
+                           // REN_MAX_NAME - 1 (15 bits held 32,767 - less than the longest UTF-8 path)
     unsigned IsDir : 1;
     // unsigned Delete:	1; // the destructor should call free(FullName);
     unsigned State : 1; // 0 -- file not renamed (error, cancel, undo)
@@ -150,7 +156,9 @@ public:
 
     BOOL SetOptions(CRenamerOptions* options);
 
-    int Rename(CSourceFile* file, int counter, char* newName,
+    // builds the new name into 'newName' ('newNameSize' bytes, REN_MAX_NAME as a rule); -1 when it
+    // does not fit (never cut) or on an error
+    int Rename(CSourceFile* file, int counter, char* newName, int newNameSize,
                char** newPart);
 
 protected:
