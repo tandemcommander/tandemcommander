@@ -8,7 +8,7 @@ source: review:270
 who: agent
 created: 2026-10-20
 updated: 2026-10-21
-verified: -
+verified: 2026-10-21 c01e1801
 effort: M
 feature: -
 related: []
@@ -63,3 +63,4 @@ be split into the Recycle Bin item and the rest if one feature is too large.
 - 2026-10-20 — created (source review:270)
 - 2026-10-20 — related item more-typed-fields-cut-to-their-buffer-masks-filter-volume done in feature 270
 - 2026-10-21 — moved to Next position 2
+- 2026-10-21 — verified at c01e1801: reproduced at c01e1801: probe mask291 12 FAIL / 5 controls PASS - Recycle Bin, Find Named (also Add current / Ignore / option), viewer, compare masks stored or used cut; view name cut to 29 bytes

@@ -1,0 +1,42 @@
+mask291_probe (feature 291) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 21:37; ACP 1250; registry key existed True
+M = 86 CJK letters (258 bytes), R = 85 (255 bytes)
+
+rb-mask    RUN    FAIL        typed 90 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 89 units / 259 bytes, same as typed: False, tail '...\u4E54\u4E55;*.k'
+rb-mask    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+rb-unused  RUN    FAIL        typed 90 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 89 units / 259 bytes, same as typed: False, tail '...\u4E54\u4E55;*.k'
+rb-unused  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+rb-ctl     RUN    PASS        typed 89 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 89 units / 259 bytes, same as typed: True, tail '...\u4E54\u4E55;*.k'
+rb-ctl     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-named RUN    FAIL        typed 88 units / 260 bytes; asked: nothing; found: 2; the field after: 87 units / 259 bytes, whole: False
+find-named END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-ctl   RUN    PASS        typed 87 units / 259 bytes; asked: nothing; found: 2; the field after: 87 units / 259 bytes, whole: True
+find-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-add   RUN    FAIL        typed 88 units / 260 bytes; asked: nothing; found: 0; the field after: 87 units / 259 bytes, whole: False
+find-add   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-ignore RUN    FAIL        typed 88 units / 260 bytes; asked: [#32770 'Ignore Directory List'] &Directories to skip during search: | To specify path in the root directory (UNC or local) insert one backslash to the beginning. | Checked paths will be skipped durin...; found: 0; the field after: 87 units / 259 bytes, whole: False
+find-ignore END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-option RUN    FAIL        typed 88 units / 260 bytes; after the option the field: 87 units, whole: False; asked: nothing; found: 2; the field after: 87 units / 259 bytes, whole: False
+find-option END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-text  RUN    FAIL        typed 88 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: False, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+view-text  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-hex   RUN    FAIL        typed 88 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: False, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+view-hex   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-ctl   RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+view-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cmp-files  RUN    FAIL        typed 88 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: False, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+cmp-files  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cmp-dirs-unused RUN    FAIL        typed 88 units / 260 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: False, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+cmp-dirs-unused END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cmp-ctl    RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+cmp-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vname      RUN    FAIL        typed 11 units / 33 bytes; row 7 before: ''; edit ended: True; asked: nothing; row 7 after: 9 units / 27 bytes '\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09'
+vname      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vname-ascii RUN    FAIL        typed 30 units / 30 bytes; row 7 before: ''; edit ended: True; asked: nothing; row 7 after: 29 units / 29 bytes '...vvvvvvvvvvvv'
+vname-ascii END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vname-ctl  RUN    PASS        typed 11 units / 29 bytes; row 7 before: ''; edit ended: True; asked: nothing; row 7 after: 11 units / 29 bytes '\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09ab'
+vname-ctl  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 22, FAIL 12, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
