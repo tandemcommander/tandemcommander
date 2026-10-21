@@ -1,0 +1,25 @@
+ren_longnew_probe (feature 282), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 10:06; ACP 1250; registry key existed True
+
+long-new   RUN    FAIL        preview rows 1; boxes as expected: False; on disk: <L>.txt=LN; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Expanded string is too large. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [ ''] 
+long-new   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long-undo  RUN    FAIL        preview rows 1; boxes as expected: True; on disk: after the rename: <L>.txt=LU; after Undo: <L>.txt=LU; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Expanded string is too large. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [ '']  || undo: no box
+long-undo  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+manual-long RUN    FAIL        preview rows 1; boxes as expected: False; on disk: x.txt=ML; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Expanded string is too large. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [ ''] 
+manual-long END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long-rel   RUN    FAIL        preview rows 1; boxes as expected: False; on disk: x.txt=LR; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Expanded string is too large. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [ ''] 
+long-rel   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long-rel-deep RUN    FAIL        preview rows 1; boxes as expected: False; on disk: x.txt=LD; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Expanded string is too large. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [ ''] 
+long-rel-deep END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sub-long-file RUN    FAIL        preview rows 1; boxes as expected: False; on disk: sub\,sub\<L>.txt=SF; boxes: loading: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to read directory because of too long path name | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel; checkbox 0 || not renamed (refused on loading)
+sub-long-file END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sub-long-dir RUN    FAIL        preview rows 1; boxes as expected: False; on disk: <L>\,<L>\x.txt=SD; boxes: loading: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to read directory because of too long path name | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel; checkbox 0 || not renamed (refused on loading)
+sub-long-dir END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+over-comp  RUN    PASS        preview rows 1; boxes as expected: True; on disk: x.txt=OC; boxes: [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Expanded string is too large. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [ ''] 
+over-comp  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+short-ctl  RUN    PASS        preview rows 1; boxes as expected: True; on disk: after the rename: a.txt=SC; after Undo: x.txt=SC; boxes: no box || undo: [#32770 'Question'] [Static id=2477] Undo rename operation? | [Button id=6] &Yes | [Button id=7] &No
+short-ctl  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 11, FAIL 7, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
