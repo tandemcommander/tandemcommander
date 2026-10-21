@@ -81,3 +81,35 @@ N1 / R1 unchanged, 0 sign-ins.
 - NOT DRIVEN (owed to a person): Windows' real credential dialog against a real file server that
   refuses the list - sign in, Cancel / Esc in the dialog, a wrong password, *Remember my
   credentials*.
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+No MUST. Re-ran saltests (25122 / 0), the encoding guard (0), the probe (16 PASS), the Release
+string search (absent); own probe variant with a CJK server `\\中文tc\` (cancel: target logged
+exactly `\\中文tc\IPC$`), a non-class error 64 (no sign-in, one "(64)" box) and a negative control
+(error 64 expected to sign in -> FAIL, as it should). Callers enumerated: `PickServerShare` has one
+caller; job references balanced on every exit; target buffer always fits.
+
+- **SHOULD 1** - without `CONNECT_PROMPT` Windows first tries the current identity; `IPC$` is not
+  what refused (the list is), so a silent success would give no dialog, the same "(5)" again and a
+  session connection left behind. **Fixed**: `CONNECT_INTERACTIVE | CONNECT_PROMPT`
+  (`drivelst.cpp`, comment there; consts.h, plan, research R1, contract updated). The real dialog
+  stays a person's row (the silent-success case can only be seen on a real server).
+- **SHOULD 2** - `PRIVACY.md` not changed in the same change. Maintainer-owned (stop-rules §1
+  public claims) and every claim stays true (research R4) -> decision item for the maintainer.
+- NOTE - the person rows of 285 are not in the backlog -> a new `person-step` item at closing
+  (the existing `real-file-server-person-rows` is another item; not edited).
+- NOTE - the sign-in blocks the UI thread without the Esc wait window, like the full share path's
+  sign-in; accepted (it is Windows' modal dialog).
+- NOTE - a sign-in failing outside the logon class shows the Windows error under "Network Error"
+  without the server's name, as the full share path does; accepted (FR-004 "the same messages").
+- NOTE - probe covered only error 5 and ASCII names -> **added** rows L1 (list refused 1326,
+  sign-in, list) and U1 (CJK server, cancel, the exact target logged).
+- NOTE - `LoadStrU8` vs `LoadStr` for the conflict text; kept `LoadStrU8` (the UTF-8 sink rule).
+
+After the fixes: `.\build.cmd` `BUILD SUCCEEDED` (exe 14:25 after the source 14:24); saltests
+25122 / 0 failed; encoding guard 0; probe `probe/result_after.txt` **PASS 20, FAIL 0** (A1, A2, C1,
+F1, W1, K1, N1, R1, L1, U1 ACT + END), registry restored + identical. No MUST -> no second review
+needed (SKILL.md step 7).

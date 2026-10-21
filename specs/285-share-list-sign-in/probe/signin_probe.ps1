@@ -19,6 +19,10 @@
           refused again (5)
       N1  Change Directory \\localhost\ : the server is not found (53) - no sign-in
       R1  Change Directory \\localhost\ : the list is given at once - no sign-in
+      L1  Change Directory \\localhost\ : list refused (1326, another error of the class), the
+          sign-in succeeds (review of 285)
+      U1  Change Directory \\<CJK>tc\ (a server name outside the code page) : list refused (5),
+          the sign-in is cancelled - the target reaches the sign-in whole (review of 285)
 
     The sign-in seam appends each attempt's target (the name Windows would be asked to connect)
     to a log file; the probe reads how many attempts were made and to which target.
@@ -33,6 +37,8 @@
       K1      one sign-in (not a second); one box naming \\localhost\ and (5); no list
       N1      no sign-in; one box naming \\localhost\ and (53); no list
       R1      no sign-in; the list opens; Down, Down, Enter -> \\localhost\D$; no message box
+      L1      as A1
+      U1      one sign-in to \\<CJK>tc\IPC$ exactly; no list, no message box; the dialog again
 
     MUST run through tools\run_on_hidden_desktop.ps1; refuses while tandemcommander.exe runs;
     the product's registry key is exported, restored and SHA-256-verified. Exit code = FAIL rows.
@@ -167,7 +173,7 @@ function Row-Act([string]$Case, [string]$Where, [string]$What, [scriptblock]$Act
         $box = @(Boxes $r)
         $facts = ("from '{0}': {1}; sign-ins: {2} [{3}]; share list opened: {4}; windows: {5}; location '{6}'" -f (Esc $Where), $What, $log.Count, (Esc ($log -join ' | ')), $hadMenu, (Msgs $r), (Esc $loc))
         $ok = -not $fatal
-        $one = ($log.Count -eq 1 -and $log[0] -ceq $Target)
+        $one = ($log.Count -eq 1 -and $log[0] -ceq $script:Target)
         switch ($Kind) {
             'pick'     { $ok = $ok -and $one -and $hadMenu -and $box.Count -eq 0 -and $loc -ieq $Picked }
             'cancel'   { $ok = $ok -and $one -and (-not $hadMenu) -and $box.Count -eq 0 -and (Reopened $r) -and $loc -ieq $Where }
@@ -207,6 +213,11 @@ try {
     Row-Act 'K1' $StartDir 'Change Directory \\localhost\, list refused (5), sign-in 0, refused again' $ToServer 'again' '5' '0' '1'
     Row-Act 'N1' $StartDir 'Change Directory \\localhost\, server not found (53)' $ToServer 'notfound' '53' '0'
     Row-Act 'R1' $StartDir 'Change Directory \\localhost\, the list at once' $ToServer 'direct' '' '0'
+    Row-Act 'L1' $StartDir 'Change Directory \\localhost\, list refused (1326), sign-in 0' $ToServer 'pick' '1326' '0'
+    $cjk = [string][char]0x4E2D + [string][char]0x6587 + 'tc'
+    $script:Server = '\\' + $cjk + '\'; $script:Target = '\\' + $cjk + '\IPC$'
+    Row-Act 'U1' $StartDir ('Change Directory ' + (Esc $script:Server) + ', list refused (5), sign-in cancelled (1223)') $ToServer 'cancel' '5' '1223'
+    $script:Server = '\\localhost\'; $script:Target = '\\localhost\IPC$'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

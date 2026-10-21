@@ -11,7 +11,7 @@ updated: 2026-10-21
 verified: -
 effort: -
 feature: -
-related: [share-list-offers-sign-in, getshobjectname-code-page-cut-server-links]
+related: [getshobjectname-code-page-cut-server-links]
 depends-on: []
 reason: -
 ---
@@ -51,3 +51,4 @@ A - keep it off. The reported case works in the core since 125; enabling costs t
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-21 — related item share-root-parent-offers-share-list done in feature 284
+- 2026-10-21 — related item share-list-offers-sign-in done in feature 285

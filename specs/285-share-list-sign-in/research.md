@@ -29,6 +29,13 @@ CONNECT_INTERACTIVE)` - Windows' own credential dialog, on the UI thread. Result
   `NETRESOURCEA`, `WNetAddConnection3` = A): a server name outside the code page would become `?`
   (the item's *Notes*; CLAUDE.md "never pass names to an `A` API"). Feature 264 did the same for
   mapped letters (`RestoreNetworkDriveW`).
+- **Added after the review (SHOULD 1)**: `CONNECT_PROMPT`. The full share path connects the very
+  share that refused, so Windows' first silent try with the current identity fails and the dialog
+  follows. Here the target (`IPC$`) is not what refused (the list is): the current identity may
+  connect `IPC$` silently while the list stays refused - no dialog, the same error, and a
+  connection left for the session. `CONNECT_PROMPT` (valid with `CONNECT_INTERACTIVE`) makes
+  Windows ask in every case, which is what the route needs: the current identity was refused
+  already.
 - **Not copied**: `WM_USER_DRIVES_CHANGE` after success - a connection to `IPC$` maps no drive;
   the drive bars have nothing to rebuild.
 

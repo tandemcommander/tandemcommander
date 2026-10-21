@@ -2597,7 +2597,7 @@ BOOL RestoreNetworkDriveW(HWND parent, char drive, const WCHAR* remote);
 BOOL IsLogonFailureErr(DWORD err);
 
 // feature 285: signs the user in to a server whose share list was refused - Windows' own dialog
-// (CONNECT_INTERACTIVE, on this thread) connects 'target' ("\\server\IPC$", passed whole, wide);
+// (CONNECT_INTERACTIVE | CONNECT_PROMPT, on this thread) connects 'target' ("\\server\IPC$", passed whole, wide);
 // not remembered beyond the Windows session; the program handles no name or password. A failure
 // is shown with the messages of RestoreNetworkConnection; a cancel shows nothing.
 #define SIGNIN_CONNECTED 0

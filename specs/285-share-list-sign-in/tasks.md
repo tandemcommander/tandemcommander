@@ -41,7 +41,7 @@ are part of the feature.
 - [X] T010 Encoding guard `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`; `clang-format` on the changed sources; `git diff main -- src/texts.rh2 src/lang/texts.rc2` empty (FR-010: no new string); a negative control of the probe (a row whose expectation is wrong must FAIL) recorded in `fix-log.md`
 - [X] T011 Release build string check: `TC_PROBE_UNC_SIGNIN` absent from a Release `tandemcommander.exe` - or, when no Release build is made in the run, the `#ifdef _DEBUG` guard checked by reading and recorded
 - [X] T012 `fix-log.md`: before / after, commands, results
-- [ ] T013 CHANGELOG entry under the `— unreleased` heading (constitution: every user-visible change) - written at the closing (SKILL.md step 8.5)
+- [X] T013 CHANGELOG entry under the `— unreleased` heading (constitution: every user-visible change) - written at the closing (SKILL.md step 8.5)
 
 ## Dependencies
 

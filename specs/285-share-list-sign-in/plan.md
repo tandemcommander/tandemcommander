@@ -10,7 +10,8 @@ list is refused, shows the error. Now a refusal of the logon-failure class (`IsL
 the class `CheckAndConnectUNCNetworkPath` uses for a full share path) first offers Windows'
 sign-in dialog for the server - `SignInToUncServerW` (new, `drivelst.cpp`):
 `WNetAddConnection3W(parent, {RESOURCETYPE_ANY, remote "\\server\IPC$"}, NULL, NULL,
-CONNECT_INTERACTIVE)` on the UI thread, wide, with the messages of `RestoreNetworkConnection` for
+CONNECT_INTERACTIVE | CONNECT_PROMPT)` on the UI thread (the prompt flag added after the review),
+wide, with the messages of `RestoreNetworkConnection` for
 an unmapped path. After a successful sign-in the list is read again (once); a cancel ends like Esc
 in the list; a failure ends like an error. The route's decision and the sign-in target are pure
 rules in `src/common/saluncserver.h` (`SalUncShareListStep`, `SalUncSignInTarget`) with

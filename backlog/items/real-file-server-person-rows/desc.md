@@ -7,11 +7,11 @@ area: panels-ui
 source: leftover:125
 who: person
 created: 2026-10-13
-updated: 2026-10-17
+updated: 2026-10-21
 verified: -
 effort: S
 feature: -
-related: [share-list-offers-sign-in]
+related: []
 depends-on: []
 reason: -
 ---
@@ -40,3 +40,4 @@ The share list shows the real shares, names in another script read correctly, a 
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-21 — related item share-list-offers-sign-in done in feature 285

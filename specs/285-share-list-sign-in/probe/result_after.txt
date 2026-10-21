@@ -1,6 +1,6 @@
 signin_probe (backlog item share-list-offers-sign-in), expect: fixed
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 14:07; desktop 'tc_probe_11496'; computer PC-DOMA; registry key existed True; export SHA-256 A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+Date    : 2026-10-21 14:25; desktop 'tc_probe_17248'; computer PC-DOMA; registry key existed True; export SHA-256 A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
 Plug-in : plugins\nethood\nethood.spl present next to the program: False; seam list: C$*2147483648|D$*2147483648|IPC$*2147483651
 
 A1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\localhost\, list refused (5), sign-in 0; sign-ins: 1 [\\localhost\IPC$]; share list opened: True; windows: no window; location '\\localhost\D$'
@@ -19,6 +19,10 @@ N1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\s
 N1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 R1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\localhost\, the list at once; sign-ins: 0 []; share list opened: True; windows: no window; location '\\localhost\D$'
 R1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\localhost\, list refused (1326), sign-in 0; sign-ins: 1 [\\localhost\IPC$]; share list opened: True; windows: no window; location '\\localhost\D$'
+L1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U1         ACT    PASS        from 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start': Change Directory \\\u4E2D\u6587tc\, list refused (5), sign-in cancelled (1223); sign-ins: 1 [\\\u4E2D\u6587tc\IPC$]; share list opened: False; windows: Change Directory dialog opened; location 'C:\Users\pavel\AppData\Local\Temp\tcsignin\start'
+U1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
 
-Rows: PASS 16, FAIL 0, NOT DRIVEN 0, INFO 0. Left running: 0; registry restored+identical: True
+Rows: PASS 20, FAIL 0, NOT DRIVEN 0, INFO 0. Left running: 0; registry restored+identical: True

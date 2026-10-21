@@ -9,7 +9,9 @@ int SignInToUncServerW(HWND parent, const WCHAR* target);   // target = "\\serve
 ```
 
 - Calls `WNetAddConnection3W(parent, {dwType RESOURCETYPE_ANY, lpLocalName NULL, lpRemoteName
-  target, lpProvider NULL}, NULL, NULL, CONNECT_INTERACTIVE)` on the caller's (UI) thread - no
+  target, lpProvider NULL}, NULL, NULL, CONNECT_INTERACTIVE | CONNECT_PROMPT)` on the caller's
+  (UI) thread - the dialog is always shown (the list was refused to the current identity; without
+  `CONNECT_PROMPT` Windows could connect `IPC$` with it silently, review of 285) - no
   `CONNECT_UPDATE_PROFILE`, no password or user name from the program.
 - Returns `SIGNIN_CONNECTED`, `SIGNIN_CANCELLED` (nothing shown) or `SIGNIN_ERRORSHOWN`.
 - Messages (title `IDS_NETWORKERROR`), as `RestoreNetworkConnection` for an unmapped path:

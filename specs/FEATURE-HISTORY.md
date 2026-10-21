@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285 |
 
 ## Feature notes
 
@@ -3680,3 +3680,21 @@ a few early ones are out of sequence).
   Probe `shareroot_probe` (seam of 125, `\\localhost\C$` -> `D$`): before 8 FAIL / 14 PASS ->
   22 / 0 (11 rows incl. Esc, error 53, no folder share, three regression controls); saltests +40;
   one refute-first review (no MUST, no SHOULD); person step `share-root-up-284-person-rows`.
+- 285-share-list-sign-in: a server that lists its shares only to a signed-in user answered
+  `\\server\` (Change Directory, and the way up of 284) with "(5) Access is denied" - now
+  `PickServerShare` reads the list in at most two rounds: a refusal of the logon-failure class
+  (`IsLogonFailureErr`, the class a full share path signs in for) gets Windows' dialog through
+  `SignInToUncServerW` (drivelst.cpp: `WNetAddConnection3W(CONNECT_INTERACTIVE | CONNECT_PROMPT)`
+  to `\\server\IPC$`, RESOURCETYPE_ANY, wide, not remembered; the messages of
+  `RestoreNetworkConnection` for an unmapped path), then the list once more; cancel = Esc in the
+  list; never a second dialog. Pure rules `SalUncShareListStep`, `SalUncSignInTarget`
+  (saluncserver.h). Traps: `RestoreNetworkConnection` is ANSI (not reused); without
+  `CONNECT_PROMPT` Windows may connect `IPC$` with the current identity silently while the list
+  stays refused (review); Bash here-documents collapse `\\` in fix-log text (CLAUDE.md, 123) - use
+  the editor. `PRIVACY.md` unchanged (claims checked true) - decision
+  `should-privacy-md-name-the-sign-in-of-the-share-list-285`. Debug seam `TC_PROBE_UNC_SIGNIN` /
+  `_KEEP` / `_LOG` (absent from Release). From backlog item `share-list-offers-sign-in`. Probe
+  `signin_probe` (seams, `\\localhost`): before 6 rows "(5)" box, 0 sign-ins -> 20 PASS (10 rows
+  incl. cancel, 1326, 1219, refused again, 53, list at once, a CJK server name); negative control
+  FAILs; saltests +31; one refute-first review (no MUST; SHOULD 1 fixed, SHOULD 2 -> decision);
+  person step `share-list-sign-in-285-by-hand-the-real-windows-dialog-on-a`.

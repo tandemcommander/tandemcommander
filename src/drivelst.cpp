@@ -1227,7 +1227,11 @@ int SignInToUncServerW(HWND parent, const WCHAR* target)
     }
 #endif // _DEBUG
     if (!asked)
-        err = WNetAddConnection3W(parent, &ns, NULL, NULL, CONNECT_INTERACTIVE);
+    { // CONNECT_PROMPT (review of 285): the list was refused to the current identity already, but a
+        // connection to IPC$ with it may well succeed - without the flag Windows would then connect
+        // silently, ask nothing, and the list would be refused again
+        err = WNetAddConnection3W(parent, &ns, NULL, NULL, CONNECT_INTERACTIVE | CONNECT_PROMPT);
+    }
 
     if (err == ERROR_CANCELLED)
         return SIGNIN_CANCELLED;

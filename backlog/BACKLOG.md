@@ -17,7 +17,6 @@ Last triaged: 2026-10-20
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A server's share list that needs a password shows only the Windows error](items/share-list-offers-sign-in/desc.md) | improvement | 3 | panels-ui | 285 |
 
 ## Next
 
@@ -208,7 +207,9 @@ Last triaged: 2026-10-20
 | [Renamer: the New name field holds only 519 bytes of a typed pattern](items/renamer-the-new-name-field-holds-only-519-bytes-of-a-typed/desc.md) | improvement | 2 | long-paths | leftover:282 | 2026-10-21 |
 | [SFTP: a folder uploaded again into a real upload-only service (279)](items/sftp-a-folder-uploaded-again-into-a-real-upload-only-service/desc.md) | person-step | 4 | sftp | leftover:279 | 2026-10-21 |
 | [SFTP: a folder uploaded again whose files are all there ends with a misleading folder box](items/sftp-a-folder-uploaded-again-whose-files-are-all-there-ends/desc.md) | improvement | 2 | sftp | review:279 | 2026-10-21 |
+| [Share list sign-in (285) by hand: the real Windows dialog on a server that refuses the list](items/share-list-sign-in-285-by-hand-the-real-windows-dialog-on-a/desc.md) | person-step | 3 | panels-ui | leftover:285 | 2026-10-21 |
 | [Share root way up (284) by hand: drop onto .., a real server, Esc in the wait](items/share-root-up-284-person-rows/desc.md) | person-step | 2 | panels-ui | leftover:284 | 2026-10-21 |
+| [Should PRIVACY.md name the sign-in of the share list (285)?](items/should-privacy-md-name-the-sign-in-of-the-share-list-285/desc.md) | decision | 2 | privacy-security | review:285 | 2026-10-21 |
 | [tar plug-in ignores PAX extended headers: long or non-ASCII names listed under the ustar fallback name](items/tar-plug-in-ignores-pax-extended-headers/desc.md) | bug | 5 | archives | measure:275 | 2026-10-21 |
 | [The information line keeps using a freed text when memory runs out as it grows](items/the-information-line-keeps-using-a-freed-text-when-memory/desc.md) | bug | 7 | panels-ui | review:276 | 2026-10-21 |
 | [The question whether to create a missing folder cuts a long path inside a letter](items/the-question-whether-to-create-a-missing-folder-cuts-a-long/desc.md) | bug | 2 | long-paths | review:274 | 2026-10-21 |

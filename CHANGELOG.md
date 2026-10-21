@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A server that wants a name and password before it lists its shares showed only "Access is denied"** (feature 285).
+  - **Before:** `\\server\` in Change Directory (and, since feature 284, Backspace or *Go to root* in the root of a share) showed "Error: (5) Access is denied." when the server lists its shared folders only to a signed-in user, and stopped there - while a full path `\\server\share` in the same case offers Windows' sign-in dialog.
+  - **Now:** the same Windows sign-in dialog appears; after you sign in, the server's shares are listed and you pick one. Cancel in the dialog leaves everything as it was; a failed sign-in shows the same message as for a full share path. The dialog is offered once: if the server still refuses the list after a sign-in, its error is shown. The program sees no name or password - Windows asks for them and keeps them only if you choose so in its dialog.
+  - **Limitation:** checked with a test switch of the development build in place of Windows' dialog and of a refusing server (also with a server name in Chinese letters); Windows' real dialog on a real file server is recorded for a person.
+
 - **Backspace and Go to root did nothing in the root of a network share** (feature 284).
   - **Before:** in `\\server\share` the panel listed no `..` entry, Backspace and the *Parent directory* command did nothing, and *Go to root* opened the same share root again - the way to another share of the same server was typing `\\server\` into Change Directory (feature 125).
   - **Now:** the root of a share lists `..`; it, Backspace, *Parent directory*, *Go to root* and *Open in other panel* on `..` show the server's shares under the directory line, as Change Directory does with `\\server\`: pick one to open it, Esc to stay. A server that refuses the list shows its error and the panel stays. Dropping files onto that `..` is refused, as nothing can be stored at `\\server\`. With a Network plug-in installed, its `net:` panel still opens instead.
