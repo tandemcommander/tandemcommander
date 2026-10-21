@@ -62,7 +62,9 @@ the fix-log ties the seam to the line's code.
 
 - **FR-001**: When the directory line or the information line enlarges its text and position
   storages, every storage that was successfully enlarged MUST be kept by the line at once, whether
-  or not the other enlargement succeeds.
+  or not the other enlargement succeeds. Exception: a storage the line did not have before (a
+  fresh line) gets nothing on a failed growth - a block newly obtained for it is released again,
+  so the line stays exactly as it was (no text).
 - **FR-002**: After a failed enlargement the line's recorded capacity MUST NOT exceed the size of
   either storage (it stays at the previous capacity until both storages hold the new size).
 - **FR-003**: After a failed enlargement the line MUST keep its previous text and report failure to
