@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
@@ -3730,3 +3730,25 @@ a few early ones are out of sequence).
   nested Cancel / All / Yes): without the fix 19 / 11 -> 30 / 0; 129's probe 19 / 0; one
   refute-first review (no MUST; SHOULD changelog scope and the probe's name check fixed; Move onto
   itself through `HKEY_USERS\<SID>` deletes the key -> Inbox `registry-editor-move-of-a-key-onto-itself-through-hkey-users`).
+- 288-ftp-per-server-encoding: 224's one process-wide set of code-page names sent new names (MKD,
+  RNTO, STOR, typed paths) in UTF-8 to an FTP server whose listings speak the code page (garbled
+  names) and a name seen in the code page on one server in the code page to another (UTF-8 server:
+  550) - now each server (host without ASCII case, port, user; anonymous = none) has its own
+  evidence and names (`CFTPServerEnc`, `ftputils.cpp`; rule header-only `salftpsrvenc.h`): a
+  legacy server (code-page names only) gets new names in the code page, unknown and mixed servers
+  UTF-8 (224's policy); evidence only from listing NAME fields and code-page 257 paths, no FEAT
+  (decision item). Plumbing: `PrepareFTPCommand(srv, ...)` (all 55 sites, compiler-checked),
+  `FTPGetDirectoryFromReply(.., srv)`, a thread-local `CFTPListingServerScope` around the parse
+  loops (panel scope set before `LockServerTypeList` - critsect.txt forbids SocketCritSect inside
+  ServerTypeListCS). Traps: `WideCharToMultiByte(CP_ACP, 0)` best-fits without the default flag
+  (`señor` -> `senor`: an upload replaced the server's `senor.txt` silently - review 1 MUST) - now
+  `SalFtpWToCodePageExact` (`WC_NO_BEST_FIT_CHARS` + round trip); a legacy server lists back the
+  UTF-8 bytes of a name sent while it was unknown (made it "mixed"; and once legacy such a folder
+  was unreachable in the code page - review 2) - names sent in UTF-8 are remembered per server;
+  parser rules that re-assign a decoded column are no evidence; Bash here-docs collapse doubled
+  backslashes in scripts too (use the editor). Limits: an unknown server gets UTF-8; one non-UTF-8 name decides; state not
+  stored. From backlog item `ftp-per-server-encoding-flag`. Probe `ftp288_probe` (two ftpmini
+  servers, cp1250 + UTF-8) 8 / 4 -> 20 / 0 (BF-UP, BF-MKD, ECHO, ECHO-RMD added by the reviews,
+  failing on the earlier versions); negative control (224's rule) 9 / 3; 224 16 / 0, 269 14 / 0,
+  277 10 / 0; saltests 25,226 / 0; two refute-first reviews (review 1: MUST best-fit + SHOULD echo fixed;
+  review 2: no MUST, SHOULD fixed); person step `ftp-288-real-server-checks`.

@@ -7,11 +7,11 @@ area: ftp
 source: review:215
 who: agent
 created: 2026-10-15
-updated: 2026-10-20
+updated: 2026-10-21
 verified: 2026-10-20 4c6fd132
 effort: M
 feature: -
-related: [ftp-per-server-encoding-flag]
+related: []
 depends-on: []
 reason: split: larger than one feature (an interface decision, long local paths, a part depending on ftp-per-server-encoding-flag); agent 2026-10-20
 ---
@@ -40,3 +40,4 @@ Deep FTP paths are limited to ~260 bytes by the core (a limit, recorded in 233).
 - 2026-10-20 — verified at 4c6fd132: by reading at 4c6fd132: PWD cut only in the AIX form and the UTF-8 decode (RFC form refused); helpers, lock compare, link size still cut; split into four parts
 - 2026-10-20 — blocked: split: larger than one feature (an interface decision, long local paths, a part depending on ftp-per-server-encoding-flag); agent 2026-10-20
 - 2026-10-20 — split into: ftp-pwd-and-created-path-cut, ftp-escaped-path-does-not-fit-decision, ftp-local-long-paths, ftp-mask-letters-by-server-encoding
+- 2026-10-21 — related item ftp-per-server-encoding-flag done in feature 288

@@ -17,7 +17,6 @@ Last triaged: 2026-10-20
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [FTP: one process-wide name encoding instead of a per-server flag](items/ftp-per-server-encoding-flag/desc.md) | improvement | 3 | ftp | 288 |
 
 ## Next
 
@@ -195,6 +194,10 @@ Last triaged: 2026-10-20
 | [Confirm a network location with a long target is refused in Browse](items/confirm-a-network-location-with-a-long-target-is-refused-in/desc.md) | person-step | 4 | long-paths | leftover:286 | 2026-10-21 |
 | [Copying into an archive folder typed in another case packs into a new folder beside it](items/copying-into-an-archive-folder-typed-in-another-case-packs/desc.md) | bug | 4 | archives | review:273 | 2026-10-21 |
 | [FTP 277 on real servers: long PWD paths, AS/400 member names, case-insensitive lock](items/ftp-277-real-server-checks/desc.md) | person-step | 3 | ftp | leftover:277 | 2026-10-21 |
+| [FTP 288 on real servers: names to a code-page server, mainframe listings](items/ftp-288-real-server-checks/desc.md) | person-step | 4 | ftp | leftover:288 | 2026-10-21 |
+| [FTP: should the plug-in ask a server whether it speaks UTF-8 (FEAT)?](items/ftp-ask-server-utf8-feat-decision/desc.md) | decision | 3 | ftp | leftover:288 | 2026-10-21 |
+| [FTP: a name a listing rule extends (z/VM, AS/400, VxWorks) mixes UTF-8 with raw server bytes](items/ftp-listing-rule-joins-utf8-with-raw-bytes/desc.md) | bug | 4 | ftp | review:288 | 2026-10-21 |
+| [FTP: Create Directory and Quick Rename in a panel never update the upload listing cache](items/ftp-panel-mkdir-rename-skip-upload-listing-cache/desc.md) | bug | 5 | ftp | measure:288 | 2026-10-21 |
 | [FTP: server folder names compared by the code-page case rule on UTF-8 bytes](items/ftp-server-path-compare-code-page-fold/desc.md) | bug | 4 | ftp | review:277 | 2026-10-21 |
 | [Information line of a long-named item: check it on screen (276)](items/information-line-of-a-long-named-item-check-it-on-screen-276/desc.md) | person-step | 2 | panels-ui | leftover:276 | 2026-10-21 |
 | [The left-aside message names only the salNNN entry, not the entry it was](items/left-aside-message-names-the-entry/desc.md) | improvement | 3 | file-ops | review:281 | 2026-10-21 |

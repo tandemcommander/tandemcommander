@@ -7,12 +7,12 @@ area: ftp
 source: manual
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-21
 verified: -
 effort: S
 feature: -
-related: [ftp-long-name-and-path-leftovers, ftp-per-server-encoding-flag]
-depends-on: [ftp-per-server-encoding-flag]
+related: [ftp-long-name-and-path-leftovers]
+depends-on: []
 reason: -
 ---
 
@@ -38,3 +38,5 @@ Needs the per-server encoding state of `ftp-per-server-encoding-flag` (depends-o
 
 - 2026-10-20 — created (source manual)
 - 2026-10-20 — moved to Next position 68
+- 2026-10-21 — dependency ftp-per-server-encoding-flag done in feature 288
+- 2026-10-21 — feature 288 added the per-server encoding state (CFTPServerEnc in ftputils.cpp, src/common/salftpsrvenc.h); listing fields are still decoded one by one (valid UTF-8 kept), so the guess this item describes is unchanged
