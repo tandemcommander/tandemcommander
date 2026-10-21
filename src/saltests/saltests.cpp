@@ -9555,6 +9555,80 @@ static void TestUncServer125()
     }
 }
 
+// feature 284: the way up from a share's root - SalUncShareRootServerPath of saluncserver.h
+static void TestUncShareRoot284()
+{
+    char sp[40];
+
+    // a share's root -> "\\server\"
+    CHECK(SalUncShareRootServerPath("\\\\server\\share", sp, sizeof(sp)) && strcmp(sp, "\\\\server\\") == 0);
+    CHECK(SalUncShareRootServerPath("\\\\server\\share\\", sp, sizeof(sp)) && strcmp(sp, "\\\\server\\") == 0);
+    CHECK(SalUncShareRootServerPath("\\\\192.168.1.10\\C$", sp, sizeof(sp)) && strcmp(sp, "\\\\192.168.1.10\\") == 0);
+    CHECK(SalUncShareRootServerPath("\\\\localhost\\C$", sp, sizeof(sp)) && strcmp(sp, "\\\\localhost\\") == 0);
+    CHECK(SalUncShareRootServerPath("\\\\fs01.corp.example.com\\My Share & more", sp, sizeof(sp)) && strcmp(sp, "\\\\fs01.corp.example.com\\") == 0);
+    CHECK(SalUncShareRootServerPath("\\\\a\\b", sp, sizeof(sp)) && strcmp(sp, "\\\\a\\") == 0);
+    // UTF-8 names: s-caron, i-acute, e-acute - the bytes are copied as they are
+    CHECK(SalUncShareRootServerPath("\\\\\xC5\xA1kola\\Sd\xC3\xADlen\xC3\xA9", sp, sizeof(sp)) && strcmp(sp, "\\\\\xC5\xA1kola\\") == 0);
+    // what it gives is "server only" for the rule of feature 125, and the same server comes back
+    {
+        char server[40];
+        CHECK(SalUncShareRootServerPath("\\\\server\\share", sp, sizeof(sp)) && SalUncServerOfPath(sp, server, sizeof(server)) && strcmp(server, "server") == 0);
+    }
+    // names that only start with a device character are servers
+    CHECK(SalUncShareRootServerPath("\\\\.x\\s", sp, sizeof(sp)) && strcmp(sp, "\\\\.x\\") == 0);
+    CHECK(SalUncShareRootServerPath("\\\\?x\\s", sp, sizeof(sp)) && strcmp(sp, "\\\\?x\\") == 0);
+
+    // not a share's root
+    CHECK(!SalUncShareRootServerPath("\\\\server", sp, sizeof(sp)) && sp[0] == 0);
+    CHECK(!SalUncShareRootServerPath("\\\\server\\", sp, sizeof(sp)) && sp[0] == 0);
+    CHECK(!SalUncShareRootServerPath("\\\\server\\share\\dir", sp, sizeof(sp)) && sp[0] == 0);
+    CHECK(!SalUncShareRootServerPath("\\\\server\\share\\dir\\", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\\\server\\share\\\\", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\\\server\\\\share", sp, sizeof(sp))); // an empty share part
+    CHECK(!SalUncShareRootServerPath("\\\\server\\\\", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\\\", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\\\\\share", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\\\.\\C:\\", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\\\.\\C:", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\\\.\\x", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\\\?\\C:\\", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\\\?\\UNC", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\\\?\\UNC\\s\\x", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("C:\\", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("C:\\Windows", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("\\server\\share", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("server\\share", sp, sizeof(sp)));
+    CHECK(!SalUncShareRootServerPath("//server/share", sp, sizeof(sp))); // panel paths hold backslashes only
+    CHECK(!SalUncShareRootServerPath("", sp, sizeof(sp)) && sp[0] == 0);
+    CHECK(!SalUncShareRootServerPath(NULL, sp, sizeof(sp)) && sp[0] == 0);
+
+    // the buffer: "\\server\" is 9 bytes + terminator - fits exactly / one byte short = refused, never cut
+    {
+        char tiny[10];
+        CHECK(SalUncShareRootServerPath("\\\\server\\share", tiny, 10) && strcmp(tiny, "\\\\server\\") == 0);
+        memset(tiny, 'X', sizeof(tiny));
+        CHECK(!SalUncShareRootServerPath("\\\\server\\share", tiny, 9) && tiny[0] == 0);
+        memset(tiny, 'X', sizeof(tiny));
+        CHECK(!SalUncShareRootServerPath("\\\\server\\share", tiny, 1) && tiny[0] == 0);
+        CHECK(!SalUncShareRootServerPath("\\\\server\\share", NULL, 10));
+        CHECK(!SalUncShareRootServerPath("\\\\server\\share", tiny, 0));
+        CHECK(!SalUncShareRootServerPath("\\\\server\\share", tiny, -1));
+    }
+    // a long server name (a 300-byte internationalised name) in a MAX_PATH buffer: refused
+    {
+        char path[320];
+        path[0] = path[1] = '\\';
+        for (int i = 0; i < 100; i++)
+            memcpy(path + 2 + 3 * i, "\xE4\xB8\xAD", 3);
+        strcpy(path + 302, "\\s");
+        char mp[MAX_PATH];
+        mp[0] = 'X';
+        CHECK(!SalUncShareRootServerPath(path, mp, MAX_PATH) && mp[0] == 0);
+        char big[310];
+        CHECK(SalUncShareRootServerPath(path, big, sizeof(big)) && strlen(big) == 303 && big[302] == '\\');
+    }
+}
+
 // feature 126 (GitHub #6): the package lookup of the command-shell presets takes its two
 // kernel32 functions as a table - absent on Windows 7 / 8.0, where the answer is "not found"
 namespace Pkg126
@@ -15912,6 +15986,7 @@ int main(int argc, char** argv)
     TestSmallBatch121();
     TestUpdateCheck123();
     TestUncServer125();
+    TestUncShareRoot284();
     TestPackageApi126();
     TestInserts127();
     TestShellLink128();

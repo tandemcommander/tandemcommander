@@ -21,6 +21,9 @@
 //   SalUncBuildSharePath  "\\server\share" - refused when it does not fit,
 //                         never cut (CLAUDE.md: a path or name is never cut)
 //   SalUncMenuText        a share name as a menu item text ('&' doubled)
+//   SalUncShareRootServerPath  (feature 284) is the path a share's root, and
+//                         "\\server\" of it - the way up from "\\server\share"
+//                         (`..`, Backspace, Go to root) offers the same list
 //
 // Names are UTF-8 (WTF-8), as everywhere in the core. Header-only.
 //
@@ -122,6 +125,47 @@ inline BOOL SalUncBuildSharePath(const char* server, const char* share, char* bu
     d += serverLen;
     *d++ = '\\';
     memcpy(d, share, shareLen + 1);
+    return TRUE;
+}
+
+// Feature 284: TRUE when 'path' is the root of a share - "\\server\share" or
+// "\\server\share\" (backslashes only, as the panel's paths are) with a server
+// that is not a device prefix ("\\.\", "\\?\"), a share part that is not
+// empty and nothing after it; 'serverPath' then holds "\\server\", the path
+// whose change offers the server's shares (feature 125). FALSE and an empty
+// 'serverPath' otherwise, also when the result does not fit into
+// 'serverPathSize' bytes - refused, never cut.
+inline BOOL SalUncShareRootServerPath(const char* path, char* serverPath, int serverPathSize)
+{
+    if (serverPath == NULL || serverPathSize <= 0)
+        return FALSE;
+    serverPath[0] = 0;
+    if (path == NULL || path[0] != '\\' || path[1] != '\\')
+        return FALSE;
+    const char* server = path + 2;
+    const char* e = server;
+    while (*e != 0 && *e != '\\')
+        e++;
+    int serverLen = (int)(e - server);
+    if (serverLen == 0 || *e != '\\')
+        return FALSE; // "\\", "\\\..." or no share part at all ("\\server")
+    if (serverLen == 1 && (*server == '.' || *server == '?'))
+        return FALSE; // "\\.\" and "\\?\" are device prefixes
+    const char* share = e + 1;
+    const char* s = share;
+    while (*s != 0 && *s != '\\')
+        s++;
+    if (s == share)
+        return FALSE; // "\\server\" or "\\server\\...": no share name
+    if (*s == '\\' && s[1] != 0)
+        return FALSE; // something follows the share: not its root
+    if (2 + serverLen + 1 + 1 > serverPathSize)
+        return FALSE;
+    serverPath[0] = '\\';
+    serverPath[1] = '\\';
+    memcpy(serverPath + 2, server, serverLen);
+    serverPath[2 + serverLen] = '\\';
+    serverPath[2 + serverLen + 1] = 0;
     return TRUE;
 }
 

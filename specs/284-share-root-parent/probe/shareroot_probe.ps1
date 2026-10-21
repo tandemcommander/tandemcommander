@@ -7,6 +7,8 @@
     Rows (names for -Only); every row starts its own instance in English and ends it:
 
       B1  at \\localhost\C$ : Backspace            G1  at \\localhost\C$ : Go to root (823)
+      P1  at \\localhost\C$ : the Parent directory command (822)
+      N1  at \\localhost\C$ : Backspace, the list holds no folder share (IPC$, a printer)
       D1  at \\localhost\C$ : Home, Enter (the first item: `..` when it is listed)
       O1  at \\localhost\C$ : Home, open the focused item in the other panel and activate it (2941)
       X1  at \\localhost\C$ : Backspace, Esc in the share list
@@ -21,7 +23,8 @@
     \\localhost.
 
     With -Expect measure (default) the rows are INFO - the probe only records. With -Expect fixed:
-      B1, G1, D1   the share list opens; Down, Down, Enter -> location \\localhost\D$, no window
+      N1           one box naming \\localhost\ with "share name is missing"; location \\localhost\C$
+      B1, P1, G1, D1  the share list opens; Down, Down, Enter -> location \\localhost\D$, no window
       O1           the share list opens in the other panel; Down, Down, Enter -> the other
                    panel's location \\localhost\D$; the first panel stays at \\localhost\C$
       X1           Esc -> location \\localhost\C$, no window
@@ -83,7 +86,7 @@ function Start-P {
     if ($r.Messages.Count) { Out ('           at start: ' + (Msgs $r)) }
     return $p.Id
 }
-# the location of a panel: its Change Directory field as the dialog opens (862 active, 864 right)
+# the location of a panel: its Change Directory field as the dialog opens (862 active, 863 left, 864 right)
 function Get-LocOf([int]$Id, [int]$Cmd) {
     if (-not (Test-Alive $Id)) { return '<gone>' }
     $dlg = Open-ByCmd $Id $Cmd
@@ -128,11 +131,11 @@ function Go-Start([int]$Id, [string]$Where) {
 
 # one row: open $Where, run the action, see whether the share list opens; pick the second item
 # (Down, Down, Enter) or press $MenuAnswer; then read the location(s)
-function Row-Act([string]$Case, [string]$Where, [string]$What, [scriptblock]$Act, [string]$Kind, [string]$Err = '') {
+function Row-Act([string]$Case, [string]$Where, [string]$What, [scriptblock]$Act, [string]$Kind, [string]$Err = '', [string]$List = $SeamList) {
     if (-not (Want $Case)) { return }
     $before = Reports; $id = 0; $fatal = $null
     try {
-        Set-Seam $SeamList $Err
+        Set-Seam $List $Err
         $id = Start-P
         Go-Start $id $Where
         & $Act $id
@@ -146,16 +149,21 @@ function Row-Act([string]$Case, [string]$Where, [string]$What, [scriptblock]$Act
         $fatal = $r.Fatal
         Sync $id; Start-Sleep -Milliseconds 1500
         $loc = Get-LocOf $id 862
+        $locL = Get-LocOf $id 863
         $locR = Get-LocOf $id 864
-        $facts = ("at '{0}': {1}; share list opened: {2}; windows: {3}; location '{4}'; right panel '{5}'" -f (Esc $Where), $What, $hadMenu, (Msgs $r), (Esc $loc), (Esc $locR))
+        $facts = ("at '{0}': {1}; share list opened: {2}; windows: {3}; location '{4}'; left panel '{5}'; right panel '{6}'" -f (Esc $Where), $What, $hadMenu, (Msgs $r), (Esc $loc), (Esc $locL), (Esc $locR))
         $ok = -not $fatal
         switch ($Kind) {
             'pick'  { $ok = $ok -and $hadMenu -and $r.Messages.Count -eq 0 -and $loc -ieq $Picked }
-            'other' { $ok = $ok -and $hadMenu -and $r.Messages.Count -eq 0 -and $loc -ieq $Picked -and $locR -ieq $Picked }
+            'other' { $ok = $ok -and $hadMenu -and $r.Messages.Count -eq 0 -and $locL -ieq $Where -and $locR -ieq $Picked -and $loc -ieq $Picked }   # the right panel is the active one now
             'esc'   { $ok = $ok -and $hadMenu -and $r.Messages.Count -eq 0 -and $loc -ieq $Where }
             'error' {
                 $box = @($r.Messages)
                 $ok = $ok -and (-not $hadMenu) -and $box.Count -eq 1 -and ($box[0] -match [regex]::Escape('\\localhost\')) -and ($box[0] -match '\(53\)') -and $loc -ieq $Where
+            }
+            'nofolder' {
+                $box = @($r.Messages)
+                $ok = $ok -and (-not $hadMenu) -and $box.Count -eq 1 -and ($box[0] -match [regex]::Escape('\\localhost\')) -and ($box[0] -match 'share name is missing') -and $loc -ieq $Where
             }
             'stay'  { $ok = $ok -and (-not $hadMenu) -and $r.Messages.Count -eq 0 -and $loc -ieq $script:ExpectLoc }
         }
@@ -167,6 +175,7 @@ function Row-Act([string]$Case, [string]$Where, [string]$What, [scriptblock]$Act
 
 $Backspace = { param($id) Key-Post $id 0x08 }
 $GoRoot = { param($id) Post-Cmd (Get-Main $id) 823 }
+$ParentCmd = { param($id) Post-Cmd (Get-Main $id) 822 }
 $HomeEnter = { param($id) Key $id 0x24; Start-Sleep -Milliseconds 300; Key-Post $id 0x0D }
 $HomeOther = { param($id) Key $id 0x24; Start-Sleep -Milliseconds 300; Post-Cmd (Get-Main $id) 2941 }
 
@@ -184,11 +193,13 @@ try {
     Out ("Plug-in : plugins\nethood\nethood.spl present next to the program: {0}; seam list: {1}" -f (Test-Path -LiteralPath (Join-Path (Split-Path $Exe) 'plugins\nethood\nethood.spl')), $SeamList)
     Out ''
     Row-Act 'B1' $Share0 'Backspace' $Backspace 'pick'
+    Row-Act 'P1' $Share0 'Parent directory command (822)' $ParentCmd 'pick'
     Row-Act 'G1' $Share0 'Go to root (823)' $GoRoot 'pick'
     Row-Act 'D1' $Share0 'Home, Enter' $HomeEnter 'pick'
     Row-Act 'O1' $Share0 'Home, open in the other panel + activate (2941)' $HomeOther 'other'
     Row-Act 'X1' $Share0 'Backspace, Esc in the list' $Backspace 'esc'
     Row-Act 'E1' $Share0 'Backspace, seam error 53' $Backspace 'error' '53'
+    Row-Act 'N1' $Share0 'Backspace, no folder share in the list' $Backspace 'nofolder' '' 'IPC$*2147483651|HP LaserJet*1'
     $script:ExpectLoc = $Share0
     Row-Act 'S1' ($Share0 + '\Windows') 'Backspace' $Backspace 'stay'
     Row-Act 'S2' ($Share0 + '\Windows') 'Go to root (823)' $GoRoot 'stay'

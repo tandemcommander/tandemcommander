@@ -54,7 +54,7 @@ user picks one and is there.
 
 ### User Story 2 - Go to root in a share's root offers the shares (Priority: P2)
 
-*Go to root* (Ctrl+\ / the command) in a folder of a share goes to the share's root, as before;
+*Go to root* (the command) in a folder of a share goes to the share's root, as before;
 in the share's root itself it offers the server's shares.
 
 **Why this priority**: named by the item; less used than Backspace.
@@ -93,6 +93,7 @@ does not exist.
 - A share root reached under a name the share list cannot rebuild (a server name too long for the list's buffers): the route of 125 refuses or shows its message; the panel stays - never a cut path.
 - The panel's directory line (clicking its parts) is unchanged.
 - Middle click on `..` of a share's root (open in a new tab): unchanged, nothing happens.
+- Dragging files onto the `..` of a share's root without the plug-in: no drop target (the stop cursor) - the drop would aim at `\\server\`, where nothing can be stored (found while enumerating the consumers of `..`; with the plug-in the drop code is unchanged).
 
 ## Requirements *(mandatory)*
 
@@ -116,8 +117,8 @@ does not exist.
 
 ### Measurable Outcomes
 
-- **SC-001**: In the probe, Backspace, *Go to root*, Enter on the first item and *Open in other panel* in `\\localhost\C$` each open the share list, and choosing the second entry opens `\\localhost\D$` with no message (rows B1, G1, D1, O1 PASS; all four were "nothing happens" before).
-- **SC-002**: Esc in the list and a refused list leave the panel in `\\localhost\C$` (rows X1, E1 PASS; E1 with exactly one message naming `\\localhost\`).
+- **SC-001**: In the probe, Backspace, the *Parent directory* command, *Go to root*, Enter on the first item and *Open in other panel* in `\\localhost\C$` each open the share list, and choosing the second entry opens `\\localhost\D$` with no message (rows B1, P1, G1, D1, O1 PASS; all were "nothing happens" or "opens a folder" before).
+- **SC-002**: Esc in the list, a refused list and a list with no folder share leave the panel in `\\localhost\C$` (rows X1, E1, N1 PASS; E1 and N1 with exactly one message naming `\\localhost\`).
 - **SC-003**: The regression controls stay as measured before (rows S1, S2, L1 PASS).
 - **SC-004**: The unit checks of the share-root rule pass (`saltests`, 0 failed), the encoding guard reports 0 findings, the build succeeds.
 

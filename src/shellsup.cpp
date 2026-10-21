@@ -20,7 +20,8 @@ extern "C"
 #include "salshlib.h"
 #include "tasklist.h"
 #include "salshelllink.h" // feature 194
-#include "salnamerun.h" // feature 261
+#include "salnamerun.h"   // feature 261
+#include "saluncserver.h" // feature 284
 //#include "drivelst.h"
 
 //
@@ -473,6 +474,17 @@ const char* GetCurrentDir(POINTL& pt, void* param, DWORD* effect, BOOL rButton, 
             }
         }
 
+        if (strcmp(panel->Dirs->At(index).Name, "..") == 0)
+        { // feature 284: the `..` of a share's root (listed without a Network plugin too) leads to
+            // "\\server\", where nothing can be dropped - no target, the stop cursor
+            char uncServerPath[MAX_PATH];
+            if (!Plugins.GetFirstNethoodPluginFSName() &&
+                SalUncShareRootServerPath(panel->GetPath(), uncServerPath, _countof(uncServerPath)))
+            {
+                panel->SetDropTarget(-1); // hide the marker
+                return NULL;
+            }
+        }
         panel->SetDropTarget(index);
         int l = (int)strlen(panel->GetPath());
         memcpy(panel->DropPath, panel->GetPath(), l);

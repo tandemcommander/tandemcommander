@@ -18,6 +18,7 @@
 #include "thumbnl.h"
 #include "geticon.h"
 #include "shiconov.h"
+#include "saluncserver.h" // feature 284
 
 //
 // ****************************************************************************
@@ -2422,6 +2423,12 @@ void CFilesWindow::GotoRoot()
             if (IsUNCRootPath(GetPath()) && Plugins.GetFirstNethoodPluginFSName(root))
             {
                 ChangePathToPluginFS(root, "");
+            }
+            else if (Is(ptDisk) && SalUncShareRootServerPath(GetPath(), root, _countof(root)))
+            { // feature 284: no Network plugin - the root of a share offers the server's shares,
+                // the way Change Directory does with "\\server\" (feature 125); from an archive
+                // the way leads to the share's root as before
+                ChangeDir(root);
             }
             else
             {

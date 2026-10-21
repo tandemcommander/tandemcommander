@@ -13,7 +13,8 @@
 #include "worker.h"
 #include "pack.h"
 #include "mapi.h"
-#include "salheapstr.h" // feature 097
+#include "salheapstr.h"   // feature 097
+#include "saluncserver.h" // feature 284
 
 //
 // ****************************************************************************
@@ -1531,6 +1532,16 @@ BOOL CFilesWindow::OpenFocusedInOtherPanel(BOOL activate)
                 memmove(buff + len + 1, buff, strlen(buff) + 1);
                 memcpy(buff, doublePath, len);
                 buff[len] = ':';
+            }
+            else
+            { // feature 284: no Network plugin - the other panel offers the server's shares,
+                // the way Change Directory does with "\\server\" (feature 125)
+                char uncServerPath[MAX_PATH];
+                if (Is(ptDisk) && SalUncShareRootServerPath(buff, uncServerPath, _countof(uncServerPath)))
+                {
+                    nethoodPath = TRUE; // the location is complete: no item name is appended
+                    lstrcpyn(buff, uncServerPath, buffSize);
+                }
             }
         }
         if (!nethoodPath)

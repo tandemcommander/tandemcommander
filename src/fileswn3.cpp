@@ -17,7 +17,8 @@
 #include "snooper.h"
 #include "zip.h"
 #include "shiconov.h"
-#include "salheapstr.h" // feature 098
+#include "salheapstr.h"   // feature 098
+#include "saluncserver.h" // feature 284
 
 //
 // ****************************************************************************
@@ -256,7 +257,11 @@ BOOL CFilesWindow::ReadDirectory(HWND parent, BOOL isRefresh)
                 while (*s2 != 0 && *s2 != '\\')
                     s2++;
                 upDir = (*s2 == '\\' && *(s2 + 1) != 0);
-                if (!upDir && Plugins.GetFirstNethoodPluginFSName())
+                char uncServerPath[MAX_PATH];
+                if (!upDir && (Plugins.GetFirstNethoodPluginFSName() ||
+                               // feature 284: without a Network plugin the way up from a share's
+                               // root offers the server's shares (feature 125)
+                               SalUncShareRootServerPath(GetPath(), uncServerPath, _countof(uncServerPath))))
                 {
                     upDir = TRUE;
                     UNCRootUpDir = TRUE;

@@ -1,0 +1,30 @@
+shareroot_probe (backlog item share-root-parent-offers-share-list), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 13:03; desktop 'tc_probe_13104'; computer PC-DOMA; registry key existed True; export SHA-256 A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+Plug-in : plugins\nethood\nethood.spl present next to the program: False; seam list: C$*2147483648|D$*2147483648|IPC$*2147483651
+
+B1         ACT    FAIL        at '\\localhost\C$': Backspace; share list opened: False; windows: no window; location '\\localhost\C$'; right panel 'C:\Users\pavel\AppData\Local\Temp\tcshareroot\start'
+B1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+P1         ACT    FAIL        at '\\localhost\C$': Parent directory command (822); share list opened: False; windows: no window; location '\\localhost\C$'; right panel 'C:\Users\pavel\AppData\Local\Temp\tcshareroot\start'
+P1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+G1         ACT    FAIL        at '\\localhost\C$': Go to root (823); share list opened: False; windows: no window; location '\\localhost\C$'; right panel 'C:\Users\pavel\AppData\Local\Temp\tcshareroot\start'
+G1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D1         ACT    FAIL        at '\\localhost\C$': Home, Enter; share list opened: False; windows: no window; location '\\localhost\C$\$WINDOWS.~BT'; right panel 'C:\Users\pavel\AppData\Local\Temp\tcshareroot\start'
+D1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+O1         ACT    FAIL        at '\\localhost\C$': Home, open in the other panel + activate (2941); share list opened: False; windows: no window; location '\\localhost\C$\$WINDOWS.~BT'; right panel '\\localhost\C$\$WINDOWS.~BT'
+O1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+X1         ACT    FAIL        at '\\localhost\C$': Backspace, Esc in the list; share list opened: False; windows: no window; location '\\localhost\C$'; right panel 'C:\Users\pavel\AppData\Local\Temp\tcshareroot\start'
+X1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+E1         ACT    FAIL        at '\\localhost\C$': Backspace, seam error 53; share list opened: False; windows: no window; location '\\localhost\C$'; right panel 'C:\Users\pavel\AppData\Local\Temp\tcshareroot\start'
+E1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+N1         ACT    FAIL        at '\\localhost\C$': Backspace, no folder share in the list; share list opened: False; windows: no window; location '\\localhost\C$'; right panel 'C:\Users\pavel\AppData\Local\Temp\tcshareroot\start'
+N1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S1         ACT    PASS        at '\\localhost\C$\Windows': Backspace; share list opened: False; windows: no window; location '\\localhost\C$'; right panel 'C:\Users\pavel\AppData\Local\Temp\tcshareroot\start'
+S1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S2         ACT    PASS        at '\\localhost\C$\Windows': Go to root (823); share list opened: False; windows: no window; location '\\localhost\C$'; right panel 'C:\Users\pavel\AppData\Local\Temp\tcshareroot\start'
+S2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L1         ACT    PASS        at 'C:\': Backspace; share list opened: False; windows: no window; location 'C:\'; right panel 'C:\Users\pavel\AppData\Local\Temp\tcshareroot\start'
+L1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 14, FAIL 8, NOT DRIVEN 0, INFO 0. Left running: 0; registry restored+identical: True

@@ -19,6 +19,7 @@
 #include "cache.h"
 #include "salheapstr.h"     // feature 095
 #include "salinfolinebuf.h" // feature 276
+#include "saluncserver.h"   // feature 284
 #include "toolbar.h"
 extern "C"
 {
@@ -364,6 +365,13 @@ void CFilesWindow::Execute(int index)
                                 TopIndexMem.Clear(); // if we didn't remain on a disk path (UNC root), it's a long jump
                                 UpdateWindow(HWindow);
                             }
+                        }
+                        else
+                        { // feature 284: no Network plugin - the root of a share offers the server's
+                            // shares, the way Change Directory does with "\\server\" (feature 125)
+                            char uncServerPath[MAX_PATH];
+                            if (SalUncShareRootServerPath(GetPath(), uncServerPath, _countof(uncServerPath)))
+                                ChangeDir(uncServerPath);
                         }
                     }
                     EndStopRefresh();
