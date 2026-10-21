@@ -331,12 +331,14 @@ struct CUMDataFromPanel
     CFilesWindow* Window;
     int* Index;
     int Count;
+    BOOL EndReached; // feature 280: the enumeration ended - the caller clears the selection when every command started
 
     CUMDataFromPanel(CFilesWindow* window)
     {
         Count = -1;
         Index = NULL;
         Window = window;
+        EndReached = FALSE;
     }
     ~CUMDataFromPanel()
     {
@@ -632,7 +634,9 @@ public:
     void DeleteOldConfigurations(BOOL* deleteConfigurations, BOOL autoImportConfig,
                                  const char* autoImportConfigFromKey, BOOL doNotDeleteImportedCfg);
 
-    void UserMenu(HWND parent, int itemIndex, UM_GetNextFileName getNextFile, void* data,
+    // returns FALSE when a command of the route without a shell failed to start (feature 280: the
+    // panel then keeps its selection, as when the commands started one by one), else TRUE
+    BOOL UserMenu(HWND parent, int itemIndex, UM_GetNextFileName getNextFile, void* data,
                   CUserMenuAdvancedData* userMenuAdvancedData);
 
     // sets the hot path 'path' with index 'index'; receives a valid path without doubled '$' or variables

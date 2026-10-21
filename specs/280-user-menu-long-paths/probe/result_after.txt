@@ -1,6 +1,6 @@
-um280_probe (feature 280) after
+um280_probe (feature 280) after-review
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 06:41; registry key existed True; ACP 1250
+Date    : 2026-10-21 07:09; registry key existed True; ACP 1250
 Fixture : root 39 bytes; long folder 313 bytes; cut folder 260 bytes (its parent + backslash 259 bytes); long name 274 bytes
 
 CONTROL    RUN    PASS        left s, a.txt focused; out '[C:\Users\pavel\AppData\Local\Temp\tc280\s\a.txt]' (49 bytes); windows: no window
@@ -27,6 +27,10 @@ LISTFULL   RUN    PASS        left s, a.txt + <L>.txt selected; out '...\u4E24\u
 LISTFULL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 CMPLONG    RUN    PASS        left s, <L>.txt focused; out missing; windows: [#32770 'User Menu Error'] [Static id=2477] Cannot finish operation because of too long name. | [Button id=1] OK
 CMPLONG    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-Registry: restored; identical=True; SHA-256 before BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74 / after BA9B23CF730CC35E31F38E0D4C8D5DB67162C75015F9ACB144D564F17A5ADF74
+CMPGUESS   RUN    PASS        right 313 bytes, left active on a.txt; out missing; windows: ...id=2802] &With file: | [Button id=2806] ... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help | [Button id=2807] &Do not display this dialog if you have both names to compare | [Static id=2808] how to revert
+CMPGUESS   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LAUNCHFAIL RUN    PASS        launch error shown True; then a.txt '[C:\Users\pavel\AppData\Local\Temp\tc280\s2\a.txt]' (50 bytes), b.txt '[C:\Users\pavel\AppData\Local\Temp\tc280\s2\b.txt]' (50 bytes); windows: ...nnot execute external command 'tc280-no-such-command.exe'. (1223) U\u017Eivatel operaci zru\u0161il.  | [Button id=1] OK / no window
+LAUNCHFAIL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
 
-Rows: PASS 24, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 28, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

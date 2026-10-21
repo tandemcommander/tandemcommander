@@ -30,6 +30,10 @@
       FPRLONG    right panel pl\<L>, FPR: "too long", no out (before: "not defined")
       LISTFULL   s, a.txt and <L>.txt selected, LISTFULL: out holds both whole full names
       CMPLONG    both panels s, <L>.txt focused, CMPL: "too long", no compare-names dialog, no out
+      CMPGUESS   left s, a.txt focused; right panel pl\<L> (holds a.txt): the guessed second name does
+                 not fit - no match, the compare dialog opens (cancelled), no "too long" (review S2)
+      LAUNCHFAIL s2, a.txt + b.txt selected, an item whose command does not exist (error box), then
+                 PERNAME: both items ran - the selection was kept (review S1)
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 #>
@@ -67,6 +71,7 @@ $Unicode = New-Object Text.UnicodeEncoding($false, $false)
 $Items = [ordered]@{
     'FULLNAME' = @('cmd.exe', '/u /c echo [$(FullName)]>>"{OUT}"', 0)
     'PERNAME'  = @('cmd.exe', '/u /c echo [$(FullName)]>"{OUTDIR}\PERNAME-$(Name).txt"', 0)
+    'NOSUCH'   = @('tc280-no-such-command.exe', '$(Name)', 0)
     'FULLBAT'  = @('echo', '[$(FullName)]>>"{OUT}"', 1)
     'FPR'      = @('cmd.exe', '/u /c echo [$(FullPathRight)]>>"{OUT}"', 0)
     'LISTFULL' = @('cmd.exe', '/u /c echo [$(ListOfSelectedFullNames)]>>"{OUT}"', 0)
@@ -145,10 +150,35 @@ function Run-Row([string]$Case, [string]$Left, [string]$Right, [int]$Active, [sc
         $got = Wait-Out $Item 4
         $msgs = Msgs $r
         $told = $msgs -match 'too long name'
-        $dialog = $msgs -match 'Compare'
-        if ($Expect -is [string]) { $ok = $told -and ($null -eq $got) -and -not $dialog }
+        $dialog = $msgs -match 'Compare|With file'
+        if ($Expect -eq 'dialog') { $ok = $dialog -and ($null -eq $got) -and -not $told }
+        elseif ($Expect -is [string]) { $ok = $told -and ($null -eq $got) -and -not $dialog }
         else { $ok = (& $Expect $got) -and -not $told }
         Row $Case 'RUN' (V $ok) ("{0}; out {1}; windows: {2}" -f $where, (Short $got), (Tail $msgs 220))
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row $Case $id $null $before } }
+}
+
+# review of 280 (S1): a command that fails to start keeps the selection - the next item runs on both
+function Run-LaunchFail([string]$Case) {
+    if (-not (Want $Case)) { return }
+    Clear-Out
+    $id = 0; $before = Reports
+    try {
+        $id = Start-Two $S2 $StartDir 1
+        $lists = Get-Lists $id
+        KeyTo $lists[0] 0x24; KeyTo $lists[0] 0x28; KeyTo $lists[0] 0x2D; KeyTo $lists[0] 0x2D
+        Start-Sleep -Milliseconds 500
+        Post-Cmd (Get-Main $id) (3000 + $ItemIndex['NOSUCH'])
+        $r1 = Serve $id 25 @(1, 6)
+        Post-Cmd (Get-Main $id) (3000 + $ItemIndex['PERNAME'])
+        $r2 = Serve $id 25 @(1, 6)
+        [void](Wait-Out 'PERNAME-b.txt' 4)
+        $a = Read-Out 'PERNAME-a.txt'; $b = Read-Out 'PERNAME-b.txt'
+        $failShown = (Msgs $r1) -ne 'no window'
+        $ok = $failShown -and ($a -ceq ('[' + $S2 + '\a.txt]')) -and ($b -ceq ('[' + $S2 + '\b.txt]'))
+        Row $Case 'RUN' (V $ok) ("launch error shown {0}; then a.txt {1}, b.txt {2}; windows: {3} / {4}" -f $failShown, (Short $a), (Short $b), (Tail (Msgs $r1) 120), (Tail (Msgs $r2) 80))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before } }
@@ -197,6 +227,10 @@ try {
     Run-Row 'FPRLONG' $StartDir ($Root + '\pl') 2 $rightLong 'FPR' 'refuse'
     Run-Row 'LISTFULL' $StartDir $StartDir 1 $selBoth 'LISTFULL' { param($g) $g -ceq ('[' + $sA + ' ' + $sL + ']') -or $g -ceq ('[' + $sA + ' "' + $sL + '"]') }
     Run-Row 'CMPLONG' $StartDir $StartDir 1 $focusL 'CMPL' 'refuse' @(2)
+    # review of 280 (S2): a.txt focused, the other panel's folder (313 bytes) holds a.txt too - the
+    # guessed second name does not fit: no match, the compare dialog asks (as before), no refusal
+    Run-Row 'CMPGUESS' $StartDir ($Root + '\pl') 2 $rightLong 'CMPL' 'dialog' @(2)
+    Run-LaunchFail 'LAUNCHFAIL'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

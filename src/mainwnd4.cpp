@@ -480,7 +480,7 @@ int GetNextFileFromPanel(int index, char* path, char* name, void* param)
             {
                 CFileData* f = &((index < data->Window->Dirs->Count) ? data->Window->Dirs->At(index) : data->Window->Files->At(index - data->Window->Dirs->Count));
                 if (!SalUMCopyWhole(f->Name, name, UM_ITEM_TEXT_SIZE)) // feature 280
-                return UMNEXT_TOOLONG;
+                    return UMNEXT_TOOLONG;
             }
             return UMNEXT_ITEM;
         }
@@ -507,8 +507,9 @@ int GetNextFileFromPanel(int index, char* path, char* name, void* param)
             delete[] (data->Index);
             data->Index = NULL;
         }
-        data->Window->SetSel(FALSE, -1, TRUE);                        // explicit redraw
-        PostMessage(data->Window->HWindow, WM_USER_SELCHANGED, 0, 0); // sel-change notify
+        // feature 280: the selection is cleared by the caller once the commands started - the route
+        // without a shell now starts them after the enumeration, and a launch error keeps the selection
+        data->EndReached = TRUE;
         return UMNEXT_END;
     }
 }
@@ -800,10 +801,11 @@ struct CUserMenuPreparedRun
     }
 };
 
-void CMainWindow::UserMenu(HWND parent, int itemIndex, UM_GetNextFileName getNextFile, void* data,
+BOOL CMainWindow::UserMenu(HWND parent, int itemIndex, UM_GetNextFileName getNextFile, void* data,
                            CUserMenuAdvancedData* userMenuAdvancedData)
 {
     CALL_STACK_MESSAGE2("CMainWindow::UserMenu(%d, ,)", itemIndex);
+    BOOL launchFailed = FALSE; // feature 280: a prepared command of the route without a shell did not start
     if (itemIndex >= 0 && itemIndex < UserMenuItems->Count)
     {
         UpdateWindow(parent);
@@ -986,7 +988,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
             if (path.Get() == NULL || name.Get() == NULL)
             {
                 TRACE_E(LOW_MEMORY);
-                return;
+                SalMessageBox(parent, GetErrorText(ERROR_NOT_ENOUGH_MEMORY), LoadStr(IDS_ERRORTITLE),
+                              MB_OK | MB_ICONEXCLAMATION);
+                UpdateWindow(parent);
+                return TRUE;
             }
             TIndirectArray<CUserMenuPreparedRun> runs(10, 50);
 
@@ -1004,7 +1009,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         Sleep(100);
                         goto _TRY_AGAIN;
                     }
-                    return; // fatal error
+                    return TRUE; // fatal error
                 }
                 // feature 069 (F-P1-21): batName comes from SalGetTempFileName (UTF-8), so under a
                 // non-ASCII %TEMP% the wrapper could not be created and a user-menu
@@ -1206,6 +1211,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                         _snprintf_s(buff, _TRUNCATE, LoadStrU8(IDS_EXECERROR), cmdLine, GetErrorText(err)); // UTF-8 template: the composed text is UTF-8 (feature 127)
                         SalU8TrimIncompleteTail(buff); // a cut text ends at a whole character (feature 127)
                         SalMessageBox(parent, buff, LoadStr(IDS_ERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                        launchFailed = TRUE; // the panel keeps its selection (review of 280)
                         break;
                     }
                 }
@@ -1305,6 +1311,7 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
         }
     }
     UpdateWindow(parent);
+    return !launchFailed;
 }
 
 void CMainWindow::SetDefaultDirectories(const char* curPath)

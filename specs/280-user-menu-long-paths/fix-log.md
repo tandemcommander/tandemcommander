@@ -88,3 +88,40 @@ Backlog item `user-menu-long-paths`. HEAD at the start: d7405c6a.
   answered Abort). Fixed the test (a 400-byte buffer); rebuilt: `saltests: 24986 checks, 0
   failed`, exit 0, 12 s. The negative control inside the test: `lstrcpynA` of the 260-byte
   folder gives its parent - the old copy - and the new rule refuses that folder.
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+No MUST. Re-measured: saltests 24986 / 0; probe 24 / 0; negative control (old `lstrcpyn` +
+`SalPathAddBackslash` for FullPathRight and the start loop without `&& !error`, rebuilt): MIXDIRECT,
+FPRCUT, FPRLONG FAIL again, FPRSHORT PASS - the rows detect the defects; tree restored.
+- SHOULD 1 - a command of the route without a shell that failed to start now cleared the panel's
+  selection (the enumeration's end, which clears it, now comes before the starts; before, a launch
+  error stopped the enumeration and the selection stayed - FR-007 / Q6). Reproduced by the
+  reviewer. **Fixed**: `GetNextFileFromPanel` only records `EndReached`; `UserMenu` returns FALSE
+  when a prepared command failed to start; the panel's caller clears the selection when the
+  enumeration ended and every command started. Probe row LAUNCHFAIL.
+- SHOULD 2 - the compare command was refused because of a second name only GUESSED (the same name
+  looked up in the other panel) whose folder is 260+ bytes; before, that was no match and the
+  dialog asked. Reproduced by the reviewer. **Fixed**: a guessed name that does not fit is no
+  match (empty, no "too long" flag); names the user chose (selection, focus) are still refused.
+  Probe row CMPGUESS.
+- NOTE - `$(ListOfSelectedFullNames)` "works" only when the first item fits (a group command
+  still uses item 0's folder + name for `$(FullName)`-like variables and the expansion): existed
+  before; recorded as a limit.
+- NOTE - low memory for the item buffers returned silently: **fixed** (an error box, then return).
+- NOTE - indentation at `GetNextFileFromPanel` (`return UMNEXT_TOOLONG;`): **fixed**.
+- NOTE - `salumvalue.h` comment overstated "SalPathAppend's rules" for an empty name: **fixed**.
+- NOTE - `probe/result_before.txt` comes from the first version of the probe (a missing output
+  printed as `''`; the committed probe prints `missing`, and has more rows); the reviewer's
+  negative control above stands for the gap.
+- NOTE - not driven: `$(FullPathLeft)`, `$(FullPathInactive)` (by reading: the flag follows the
+  inactive panel), the cleared-names path and the "files or folders" question, Cancel at a missing
+  environment variable, the Find window's route (by reading).
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests `24986 checks, 0 failed`; encoding guard
+TOTAL 0; probe **28 PASS / 0 FAIL** (rows CMPGUESS and LAUNCHFAIL added), registry restored
+identical (`probe/result_after.txt`). (The program's registry key hash differs from the earlier
+runs - the key changed between runs outside this probe; each run restored its own backup
+identically.)

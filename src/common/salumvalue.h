@@ -59,9 +59,9 @@ inline BOOL SalUMPathWithBackslash(const char* path, char* buf, int size)
     return TRUE;
 }
 
-// 'path' + '\' + 'name' as SalPathAppend joins them: one leading backslash of 'name' and one
-// trailing backslash of 'path' are dropped; an empty 'name' gives 'path' unchanged, an empty
-// 'path' gives 'name'
+// 'path' + '\' + 'name' with SalPathAppend's separators: one leading backslash of 'name' and one
+// trailing backslash of 'path' are dropped; an empty 'name' gives 'path' unchanged (SalPathAppend
+// would drop its trailing backslash), an empty 'path' gives 'name'
 inline BOOL SalUMJoinWhole(const char* path, const char* name, char* buf, int size)
 {
     if (buf == NULL || size <= 0)

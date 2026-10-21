@@ -2719,6 +2719,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                 CFileData* f1 = NULL;
                 CFileData* f2 = NULL;
                 BOOL f2FromInactPanel = FALSE;
+                BOOL f2Guessed = FALSE; // feature 280: f2 is the same name looked up in the inactive panel
                 int focus = activePanel->GetCaretIndex();
                 BOOL focusOnUpDir = (focus == 0 && activePanel->Dirs->Count > 0 &&
                                      strcmp(activePanel->Dirs->At(0).Name, "..") == 0);
@@ -2793,6 +2794,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                             {
                                 f2 = &list->At(i);
                                 f2FromInactPanel = TRUE;
+                                f2Guessed = TRUE;
                             }
                         }
                     }
@@ -2807,7 +2809,11 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                 {
                     userMenuAdvancedData.CompareName2TooLong = !SalUMJoinWhole((f2FromInactPanel ? inactivePanel : activePanel)->GetPath(),
                                                                                 f2->Name, userMenuAdvancedData.CompareName2, MAX_PATH);
-                    if (!userMenuAdvancedData.CompareName2TooLong)
+                    // a name only guessed (the same name in the other panel, not chosen by the user) that
+                    // does not fit is no match: the dialog asks for it, as before (review of 280)
+                    if (userMenuAdvancedData.CompareName2TooLong && f2Guessed)
+                        userMenuAdvancedData.CompareName2TooLong = FALSE;
+                    if (userMenuAdvancedData.CompareName2[0] != 0)
                     {
                         if (f2FromInactPanel && inactivePanel == LeftPanel)
                             userMenuAdvancedData.CompareNamesReversed = TRUE;
@@ -2826,9 +2832,16 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
                 // that system folder - never another panel's
                 if (!SalSetCurrentDirectoryU8(activePanel->GetPath()))
                     SetCurrentDirectoryToSystem();
-                UserMenu(HWindow, LOWORD(wParam) - CM_USERMENU_MIN, GetNextFileFromPanel,
-                         &data, &userMenuAdvancedData);
+                BOOL started = UserMenu(HWindow, LOWORD(wParam) - CM_USERMENU_MIN, GetNextFileFromPanel,
+                                        &data, &userMenuAdvancedData);
                 SetCurrentDirectoryToSystem();
+                // the enumeration ended (every item handed on): the selection is cleared - not after a
+                // command that failed to start (feature 280: the commands start after the enumeration)
+                if (data.EndReached && started)
+                {
+                    activePanel->SetSel(FALSE, -1, TRUE);                        // explicit redraw
+                    PostMessage(activePanel->HWindow, WM_USER_SELCHANGED, 0, 0); // sel-change notify
+                }
             }
             return 0;
         }
