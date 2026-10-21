@@ -34,7 +34,7 @@ Last triaged: 2026-10-20
 | 10 | [Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260](items/renamer-long-new-name-limits/desc.md) | bug | 3 | long-paths | agent | M | blocked |
 | 11 | [711 clipped labels in the shipped translations](items/translations-clipped-labels/desc.md) | bug | 3 | translations | both | L | blocked |
 | 12 | [After a menu popup closes by itself, typed characters are swallowed until Esc](items/menubar-loop-swallows-typed-characters/desc.md) | bug | 3 | panels-ui | agent | S | blocked |
-| 13 | [SFTP: leaks and waits after a lost or broken connection](items/sftp-leaks-and-waits-after-broken-connection/desc.md) | bug | 3 | sftp | agent | M | open |
+| 13 | [SFTP: leaks and waits after a lost or broken connection](items/sftp-leaks-and-waits-after-broken-connection/desc.md) | bug | 3 | sftp | agent | M | blocked |
 | 14 | [FTP: one process-wide name encoding instead of a per-server flag](items/ftp-per-server-encoding-flag/desc.md) | improvement | 3 | ftp | agent | M | open |
 | 15 | [ZIP: a code-page .set file that looks like UTF-8 is misread on import](items/zip-set-import-and-favourites-wide/desc.md) | bug | 3 | archives | agent | S | open |
 | 16 | [Drive list and folder type names use code-page shell texts](items/drive-list-code-page-texts/desc.md) | bug | 3 | encoding | both | M | open |
@@ -210,6 +210,10 @@ Last triaged: 2026-10-20
 | [Screen readers get garbled names from the core path labels (CStaticText)](items/screen-readers-get-garbled-names-from-the-core-path-labels/desc.md) | bug | 3 | encoding | review:287 | 2026-10-21 |
 | [SFTP: a folder uploaded again into a real upload-only service (279)](items/sftp-a-folder-uploaded-again-into-a-real-upload-only-service/desc.md) | person-step | 4 | sftp | leftover:279 | 2026-10-21 |
 | [SFTP: a folder uploaded again whose files are all there ends with a misleading folder box](items/sftp-a-folder-uploaded-again-whose-files-are-all-there-ends/desc.md) | improvement | 2 | sftp | review:279 | 2026-10-21 |
+| [SFTP: run about 1,500 connections to show the key-exchange failure gone](items/sftp-key-exchange-soak-1500-connections/desc.md) | tech-debt | 3 | sftp | leftover:217 | 2026-10-21 |
+| [SFTP: files open when a connection is lost stay allocated until exit](items/sftp-open-handles-of-lost-connection-leak/desc.md) | bug | 3 | sftp | leftover:140 | 2026-10-21 |
+| [SFTP: a stalled upload or a server disconnect leaks the whole session](items/sftp-session-leak-after-partial-send-or-disconnect/desc.md) | bug | 3 | sftp | leftover:220 | 2026-10-21 |
+| [SFTP: a server reply shorter than the protocol allows waits for the timeout](items/sftp-short-reply-waits-for-timeout/desc.md) | bug | 3 | sftp | leftover:140 | 2026-10-21 |
 | [Share list sign-in (285) by hand: the real Windows dialog on a server that refuses the list](items/share-list-sign-in-285-by-hand-the-real-windows-dialog-on-a/desc.md) | person-step | 3 | panels-ui | leftover:285 | 2026-10-21 |
 | [Share root way up (284) by hand: drop onto .., a real server, Esc in the wait](items/share-root-up-284-person-rows/desc.md) | person-step | 2 | panels-ui | leftover:284 | 2026-10-21 |
 | [Should PRIVACY.md name the sign-in of the share list (285)?](items/should-privacy-md-name-the-sign-in-of-the-share-list-285/desc.md) | decision | 2 | privacy-security | review:285 | 2026-10-21 |

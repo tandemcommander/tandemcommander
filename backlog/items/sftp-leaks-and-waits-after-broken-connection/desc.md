@@ -1,19 +1,19 @@
 ---
 title: SFTP: leaks and waits after a lost or broken connection
 type: bug
-status: open
+status: blocked
 severity: 3
 area: sftp
 source: leftover:220
 who: agent
 created: 2026-10-14
-updated: 2026-10-17
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 d727a28f
 effort: M
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: larger than one feature: five defects in plug-in and three libssh2 sites plus a soak probe; split into four items
 ---
 
 # SFTP: leaks and waits after a lost or broken connection
@@ -38,3 +38,6 @@ A run of about 1,500 connections against the container shows no key-exchange fai
 
 - 2026-10-13 — the key-exchange failure ("SSH handshake failed: Unable to exchange encryption keys") seen a second time on the 0.1.9 build, on the ninth connection of a probe run; leak boxes followed and the program did not end within 30 s - root cause fixed by feature 217 on 2026-10-15
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-21 — verified at d727a28f: all five parts present at d727a28f by reading: sftp.c handle TODO, Disconnect notes partial packet and DISCONNECT, sftp_packet_add drops short packets, soak not run
+- 2026-10-21 — blocked: larger than one feature: five defects in plug-in and three libssh2 sites plus a soak probe; split into four items
+- 2026-10-21 — split into: sftp-open-handles-of-lost-connection-leak, sftp-session-leak-after-partial-send-or-disconnect, sftp-short-reply-waits-for-timeout, sftp-key-exchange-soak-1500-connections
