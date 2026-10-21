@@ -136,3 +136,52 @@ Regressions (`probe/regress_*.txt`): 199 6 / 0, 206 10 / 0, 207 8 / 0, 209 8 / 0
 After the fix: build BUILD SUCCEEDED (no warning), `probe/result_after.txt` **24 PASS / 0 FAIL**,
 the regressions re-run on that build (199 6 / 0, 206 10 / 0, 207 8 / 0, 209 8 / 0, 210 16 / 0,
 254 50 / 0).
+
+**Review 2** (independent, refute-first, of the head after review 1; its variant probe and logs in
+`%TEMP%\rev282b\` - `rev282b_probe.ps1`, `run1` / `run2_branch` / `run4_branch` / `run5_ctl` on the
+branch build, `run3_0110.txt` on the installed 0.1.10 as the negative control; the official probe
+re-run 24 / 0):
+
+- **MUST 1 - a regular expression over a long new name crashes the program.** The text
+  `RESubst` (`crenamer.cpp`) runs the expression over is no longer bounded by 259 bytes; the regex
+  engine recurses once per repetition of a group (`RegMatch`, `regexp.cpp` ~1768-1830); its
+  stack-overflow handler (`regexp.cpp` ~1596-1600) does not call `_resetstkoflw()` and `RESubst`'s
+  `while (RegExec(...))` does not look at `GetState()` - the first overflow is swallowed (the preview
+  shows the name unreplaced), the second kills the process (0xC0000005, no bug report). Reproduced:
+  "top" + N nested folders of 200 "a" + x.txt, "Include subdirectories", relative-path mode, New name
+  `$(OriginalName)`, regex Search `(a|\\)*x`, Replace `y`: built names of 1,014 / 3,024 / 8,049 /
+  ~20,100 units - the process died; a control of 2 folders of 20 letters renamed to `topy.txt`;
+  0.1.10 refused all on loading. No file lost (the crash comes before any rename), but the program
+  dies. Suggested: `_resetstkoflw()` in the handler, `RESubst` -1 on an error state, possibly
+  `RegExec`'s `separateThread` or a bound of the regex input; a probe row `re-deep`.
+- **MUST 2 - manual mode cuts a line longer than 1,024 units and renames to the cut name.** The
+  manual edit control wraps a line of 1,025+ UTF-16 units into display lines (also with
+  `ES_AUTOHSCROLL`; measured 1,025 -> 2 lines, 32,000 -> 32); `Validate` (`rendlg.cpp` ~1672-1680) and
+  `GetEditLineU8` (`utils.cpp`, `EM_LINEINDEX` / `EM_LINELENGTH`) count and read display lines. Since
+  282 a 1,024-unit piece fits the buffer (before: "too large"). Reproduced (row man-wrap2): x.txt
+  and y.txt, relative-path mode, one manual line of five 200-letter folders + 19 "c" + "tail.txt"
+  (1,032 units): no box, x.txt renamed to `<B>\<B>\<B>\<B>\<B>\ccccccccccccccccccc` (cut, the
+  extension lost, 5 folders made), y.txt to `tail.txt`; 0.1.10: "Expanded string is too large.",
+  both kept. Breaks "a name is never cut". Also: a single 1,030-unit manual line for one file is
+  refused "Number of entered lines must match" on both builds - review 1's manual checks
+  (`GetManualModeNewName`'s `RenNameFitsPath`, the preview's manual branch, the 65,535 guard) are
+  unreachable through this control; FR-001 and the CHANGELOG entry overclaim manual mode.
+  Suggested: read real lines (split the whole text at CR LF) in `Validate`, `GetEditLineU8` and the
+  preview, or at least refuse a soft break (the next line starts where this one ends).
+- SHOULD: the Search / Replace rows used 90-letter names only, never a long path; no manual
+  over-limit row; over-max does not read the preview cell; `RenNameFitsPath` / `RenU16Units` are pure
+  rules without a `src/common` header and `saltests` checks.
+- NOTE: `utils.cpp` - the `units + 1 > 0xFFFF ? 0xFFFF : ...` branch is dead after the new early
+  return; the CHANGELOG's manual-mode sentence must change with MUST 2.
+
+## Stopped
+
+The second independent review rejected the fix with MUST findings (stop-rules §3 #3): the run
+stops here, the work stays on branch `282-renamer-long-new-name` (not merged; `main` unchanged
+except the backlog). State of the branch: the item's two defects are fixed and proven (probe 24 / 0,
+regressions 199 / 206 / 207 / 209 / 210 / 254 green, encoding guard 0, saltests 0 failed), review 1's
+MUST fixed; open are review 2's MUST 1 (regex stack overflow on long names - a crash) and MUST 2
+(manual mode's wrapped display lines - a cut name renamed), its SHOULDs, and then a third review.
+The CHANGELOG entry on the branch (top of `[0.1.11] — unreleased`) overclaims manual mode and must
+be corrected with MUST 2. Not done: closing (FEATURE-HISTORY entry, closing report). The two Inbox
+items found on the way are copied to `main`.
