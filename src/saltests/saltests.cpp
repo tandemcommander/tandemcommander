@@ -83,6 +83,7 @@
 #include "salumbalance.h"     // feature 268
 #include "salftplisting.h"    // feature 269
 #include "salarcpathspell.h"  // feature 273
+#include "salftppwd.h"        // feature 277
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -15288,6 +15289,61 @@ static void TestFtpListingField269()
     CHECK(kept > 0 && kept < strings);
 }
 
+// feature 277: the path of a "257" reply is never cut (salftppwd.h) - the German AIX form was
+// cut at the buffer and taken as the working folder (an ancestor), the quoted form was refused
+// one byte early
+static int Pwd277(const std::string& reply, char* buf, int bufSize)
+{
+    return SalFtpPathFromPwdReply(reply.c_str(), (int)reply.size(), buf, bufSize);
+}
+
+static void TestFtpPwdReply277()
+{
+    char buf[301];
+    // the three forms, as before
+    CHECK(Pwd277("257 \"/home/u\" is the current directory\r\n", buf, 301) == SALFTPPWD_OK && strcmp(buf, "/home/u") == 0);
+    CHECK(Pwd277("257 \"/a\"\"b\" created\r\n", buf, 301) == SALFTPPWD_OK && strcmp(buf, "/a\"b") == 0);
+    CHECK(Pwd277("257 \"\" empty\r\n", buf, 301) == SALFTPPWD_OK && buf[0] == 0);
+    CHECK(Pwd277("257 Current directory is \"mars:\"\r\n", buf, 301) == SALFTPPWD_OK && strcmp(buf, "mars:") == 0);
+    CHECK(Pwd277("257 '/p/a'g'f' ist das aktuelle Verzeichnis.\r\n", buf, 301) == SALFTPPWD_OK && strcmp(buf, "/p/a'g'f") == 0);
+    CHECK(Pwd277("257 '/p/a\"d' ist das aktuelle Verzeichnis.\r\n", buf, 301) == SALFTPPWD_OK && strcmp(buf, "/p/a\"d") == 0);
+    // a ' first but a " after the last ': the quoted form from the first "
+    CHECK(Pwd277("257 'x \"/q\" it's\" \r\n", buf, 301) == SALFTPPWD_OK && strcmp(buf, "/q") == 0);
+    // no path
+    CHECK(Pwd277("257 no path here\r\n", buf, 301) == SALFTPPWD_SYNTAX && buf[0] == 0);
+    CHECK(Pwd277("257 \"/never/closed\r\n", buf, 301) == SALFTPPWD_SYNTAX && buf[0] == 0);
+    CHECK(Pwd277("257", buf, 301) == SALFTPPWD_SYNTAX);
+    CHECK(SalFtpPathFromPwdReply(NULL, 0, buf, 301) == SALFTPPWD_SYNTAX);
+    CHECK(SalFtpPathFromPwdReply("257 \"/a\"", 8, buf, 0) == SALFTPPWD_TOOLONG);
+    // only the reply's bytes are read: the closing quote after the size is not seen
+    CHECK(SalFtpPathFromPwdReply("257 \"/abc\" ok", 9, buf, 301) == SALFTPPWD_SYNTAX);
+    CHECK(SalFtpPathFromPwdReply("257 '/abc' ist '", 9, buf, 301) == SALFTPPWD_SYNTAX); // AIX: no closing ' within
+    CHECK(SalFtpPathFromPwdReply("257 '/a' ist\0'\"", 12, buf, 301) == SALFTPPWD_OK && strcmp(buf, "/a") == 0);
+
+    // the buffer's edge, each form: 299 / 300 bytes fit a 301-byte buffer, 301 does not
+    for (int len = 298; len <= 302; len++)
+    {
+        std::string path = "/" + std::string(len - 1, 'p');
+        BOOL fits = len <= 300;
+        int r1 = Pwd277("257 \"" + path + "\" is the current directory\r\n", buf, 301);
+        CHECK(fits ? (r1 == SALFTPPWD_OK && strlen(buf) == (size_t)len && path == buf) : (r1 == SALFTPPWD_TOOLONG && buf[0] == 0));
+        int r2 = Pwd277("257 '" + path + "' ist das aktuelle Verzeichnis.\r\n", buf, 301);
+        CHECK(fits ? (r2 == SALFTPPWD_OK && strlen(buf) == (size_t)len && path == buf) : (r2 == SALFTPPWD_TOOLONG && buf[0] == 0));
+        int r3 = Pwd277("257 Current directory is \"" + path + "\"\r\n", buf, 301);
+        CHECK(fits ? r3 == SALFTPPWD_OK : r3 == SALFTPPWD_TOOLONG);
+        // an escaped quote counts as one byte of the path
+        std::string esc = "257 \"" + std::string(len - 1, 'q') + "\"\"\" x\r\n";
+        int r4 = Pwd277(esc, buf, 301);
+        CHECK(fits ? (r4 == SALFTPPWD_OK && strlen(buf) == (size_t)len && buf[len - 1] == '"') : r4 == SALFTPPWD_TOOLONG);
+    }
+    // a 4-byte buffer: exactly full / one over
+    char buf4[4];
+    CHECK(Pwd277("257 \"/ab\"", buf4, 4) == SALFTPPWD_OK && strcmp(buf4, "/ab") == 0);
+    CHECK(Pwd277("257 \"/abc\"", buf4, 4) == SALFTPPWD_TOOLONG && buf4[0] == 0);
+    CHECK(Pwd277("257 '/ab' ist", buf4, 4) == SALFTPPWD_OK && strcmp(buf4, "/ab") == 0);
+    CHECK(Pwd277("257 '/abc' ist", buf4, 4) == SALFTPPWD_TOOLONG && buf4[0] == 0);
+}
+
 // feature 273: the path inside an archive re-spelled as the listing spells it (salarcpathspell.h);
 // the fake listing reuses FakeDir252, the comparison is the listing's: the legacy byte fold
 // (= StrICmpEx) or exact bytes (= StrCmpEx, SALDIRFLAG_CASESENSITIVE)
@@ -15501,6 +15557,7 @@ int main(int argc, char** argv)
     TestFtpListingField269();
     TestArcPathRespell273();
     TestInfoLineBuf276();
+    TestFtpPwdReply277();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

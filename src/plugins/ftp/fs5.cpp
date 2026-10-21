@@ -1147,6 +1147,9 @@ BOOL CPluginFSInterface::CopyOrMoveFromDiskToFS(BOOL copy, int mode, const char*
                             DWORD attr; // dummy
                             BOOL useMask = strchr(mask, '*') != NULL || strchr(mask, '?') != NULL;
                             char linkName[MAX_PATH];
+                            // feature 277: a source path that does not fit 'linkName' (with its backslash)
+                            // leaves the size of a link unknown - the cut path + the name was another file
+                            BOOL linkPathWhole = (int)strlen(sourcePath) + 1 < _countof(linkName);
                             lstrcpyn(linkName, sourcePath, _countof(linkName));
                             SalamanderGeneral->SalPathAddBackslash(linkName, _countof(linkName));
                             char* linkNameEnd = linkName + strlen(linkName);
@@ -1177,7 +1180,7 @@ BOOL CPluginFSInterface::CopyOrMoveFromDiskToFS(BOOL copy, int mode, const char*
 
                                 // links: size == 0, the file size must be obtained via GetLinkTgtFileSize() later
                                 BOOL cancel = FALSE;
-                                if (!isDir && (attr & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
+                                if (!isDir && (attr & FILE_ATTRIBUTE_REPARSE_POINT) != 0 && linkPathWhole &&
                                     linkNameEnd - linkName + strlen(name) < _countof(linkName))
                                 { // this is a link to a file and the link name is not too long (otherwise reported elsewhere)
                                     CQuadWord linkSize;

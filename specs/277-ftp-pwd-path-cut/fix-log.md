@@ -42,7 +42,55 @@ By reading at 65c337dc:
 
 ## Decisions
 
-(see spec *Assumptions*)
+See spec *Clarifications* / *Assumptions*. In code:
+- `src/common/salftppwd.h` `SalFtpPathFromPwdReply` (pure, saltests): the three forms as before,
+  read only within `replySize`; a path of `dirBufSize - 1` bytes fits, one more is `TOOLONG`.
+- `FTPGetDirectoryFromReply` uses it; `FTPDecodeServerReplyPathInPlace` returns FALSE when the
+  UTF-8 form does not fit or on low memory (it kept the code-page bytes before - conservative).
+- T005 callers, by reading - unchanged, all treat FALSE as before: `ctrlcon3.cpp`
+  `GetCurrentWorkingPath` (closes the connection, "cannot get the working directory");
+  `ctrlcon5.cpp` `CreateDir` (no focus name, refresh of the working path); `operats7.cpp`
+  explore (item fails: "Error Getting Working Path On Server" - seen in the probe);
+  `operatsa.cpp` upload target (ITEMPR_UNABLETOPWD).
+- `ReportCreateDirs`: heap buffers of `max(FTP_MAX_PATH, strlen(newDirs) + strlen(workPath) + 3)`,
+  a name of FTP_MAX_PATH bytes or more -> `unknownResult` (invalidate only); low memory ->
+  invalidate the workPath listing. The absolute branch looks up only paths < FTP_MAX_PATH.
+- `FTPCompleteAbsolutePath`: FALSE + path unchanged when it does not fit (one caller, whose heap
+  buffer always fits; its existing handling of FALSE for a relative workPath kept).
+- `FTPAS400CutFileNamePart(mbrName, mbrNameSize, name)` -> BOOL; callers pass `3 * MAX_PATH`
+  (> FTP_MAX_NAME_U8); fs4 FALSE -> IDS_TOOLONGPATH, operats6 FALSE -> no item (explore error).
+- `CFTPOpenedFile::IsSameFile`: `SalNameOrderEqualCI` (salnameorder.h) for case-insensitive
+  servers; the host compare unchanged.
+- fs5 upload: the link size only when `strlen(sourcePath) + 1 < MAX_PATH`.
+
+## Implementation attempts
+
+1. saltests did not compile: a test buffer named `small` (a macro of rpcndr.h) - renamed.
+   Restoring a comment with PowerShell 7 `Set-Content -Encoding utf8` dropped saltests.cpp's BOM -
+   restored with the shell.
+2. The probe's `-Lib` / `-Server` defaults used `$PSScriptRoot` in the param block - empty in
+   PowerShell 5.1 under the hidden-desktop runner; resolved in the body.
+3. The probe's "refused" judge accepted the CP row of the old code (missing file + any dialog,
+   while the old code had sent `CWD` to the cut path): tightened to "Error Getting Working Path"
+   and no `CWD <long>` - then the control below.
+
+## Measured after
+
+| Check | Command | Result |
+|---|---|---|
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| build | `build.cmd` | `BUILD SUCCEEDED` |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 24926 checks, 0 failed` |
+| saltests negative control | header with the old cut (AIX) + the old one-byte-early refusal | `7 failed` - restored |
+| probe after | `ftp277_probe.ps1` (`probe/result_after.txt`) | **PASS 10, FAIL 0**: AIX / CP / R301 refused at the PWD ("Error Getting Working Path On Server", no `CWD` to a cut path), R300 "DEEP300" (after the reconnect `CWD <300 bytes>`), CTL "DEEP"; registry identical |
+| probe control, old code | `git checkout main -- src/plugins/ftp`, build, the same probe (`probe/result_control_old_code.txt`), sources restored, rebuilt | **PASS 7, FAIL 3**: AIX "ANCESTOR", CP (cut CWD), R300 refused |
+| regression 215 | `ftp215_probe.ps1` (`probe/regress_215.txt`) | PASS 12 / FAIL 0 (as recorded) |
+| regression 224 | `ftp224_probe.ps1` (`probe/regress_224.txt`) | PASS 16 / FAIL 0 (as recorded) |
+| regression 233 | `ftp233_probe.ps1` (`probe/regress_233.txt`) | DLT / DLC / UPT FAIL - as recorded in 233 (its probe defect, `result.txt` + `result_dlc_control.txt`) |
+
+Not driven (no AS/400, OS/2, VMS server; the lock and the link size need two concurrent
+operations / a local path of 260+ bytes with a file link): the AS/400 member name, the
+created-folder report, the lock, the link size - by reading; the reply rule by saltests.
 
 ## Analyze
 

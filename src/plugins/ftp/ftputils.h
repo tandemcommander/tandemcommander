@@ -375,9 +375,9 @@ BOOL FTPCutFirstDirFromRelativePath(CFTPServerPathType pathType, char* path,
 // completes an absolute path to a full absolute path (for VMS the volume is added - e.g.
 // "PUB$DEVICE:", for OS/2 the drive - e.g. "C:"); 'pathType' is the path type; 'path' is an
 // absolute path; 'path' (a buffer of at least 'pathBufSize' characters) receives the full
-// absolute path (lack of space = truncated result); 'workPath' is the working
-// full absolute path (from which the volume/drive is taken); returns success (even if
-// 'path' is already a full absolute path on input - meaning there is nothing to do)
+// absolute path (feature 277: lack of space = FALSE, 'path' unchanged - it was cut); 'workPath'
+// is the working full absolute path (from which the volume/drive is taken); returns success (even
+// if 'path' is already a full absolute path on input - meaning there is nothing to do)
 BOOL FTPCompleteAbsolutePath(CFTPServerPathType pathType, char* path, int pathBufSize,
                              const char* workPath);
 
@@ -422,9 +422,11 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
                         CFTPServerPathType pathType, BOOL isDir, BOOL alreadyRenamedFile);
 
 // for AS/400: if the name is in the form "???1.file/???2.mbr" (both names ???1 and ???2 are the
-// same), copies "???2.mbr" into 'mbrName' (a buffer of size MAX_PATH), otherwise copies
-// "???1.???2.mbr"
-void FTPAS400CutFileNamePart(char* mbrName, const char* name);
+// same), copies "???2.mbr" into 'mbrName' (a buffer of 'mbrNameSize' bytes), otherwise copies
+// "???1.???2.mbr" (or the whole name when it has neither form); feature 277: FALSE (mbrName =
+// "") when the result does not fit - it was cut (a target name of another file); the result is
+// never longer than 'name'
+BOOL FTPAS400CutFileNamePart(char* mbrName, int mbrNameSize, const char* name);
 
 // for AS/400: if the name is in the form "???.mbr", rewrites 'name' (a buffer of size at least
 // 2*MAX_PATH) to "???.file/???.mbr" (both names ??? are the same); if the name is in the form

@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 
+#include "../../common/salnameorder.h" // feature 277: the file system's name rule (the opened-file lock)
+
 #ifdef _DEBUG
 int CUploadListingsOnServer::FoundPathIndexesInCache = 0; // how many searched paths the cache has caught
 int CUploadListingsOnServer::FoundPathIndexesTotal = 0;   // total number of searched paths
@@ -557,14 +559,34 @@ BOOL CUploadListingsOnServer::FindPath(const char* path, CFTPServerPathType path
 void CUploadListingsOnServer::ReportCreateDirs(const char* workPath, CFTPServerPathType pathType,
                                                const char* newDirs, BOOL unknownResult)
 {
-    char cutDir[FTP_MAX_PATH];
+    // feature 277: 'newDirs' (a typed name, up to 2 * MAX_PATH) was cut to FTP_MAX_PATH and its
+    // last, cut component recorded as a created directory; now it is walked whole (heap buffers)
+    // and a name that does not fit FTP_MAX_PATH only invalidates the listings it reaches (what the
+    // server made of it is not known)
+    int newLen = (int)strlen(newDirs);
+    if (newLen >= FTP_MAX_PATH)
+        unknownResult = TRUE;
+    int bufSize = newLen + (int)strlen(workPath) + 3; // + an OS/2 drive or a VMS device, see FTPCompleteAbsolutePath()
+    if (bufSize < FTP_MAX_PATH)
+        bufSize = FTP_MAX_PATH;
+    char* bufs = (char*)malloc(2 * bufSize);
+    if (bufs == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        int index;
+        if (FindPath(workPath, pathType, index))
+            InvalidateListing(index);
+        return;
+    }
+    char* cutDir = bufs;
+    char* longPath = bufs + bufSize;
     char path[FTP_MAX_PATH];
     if (FTPIsPathRelative(pathType, newDirs))
     { // call ReportCreateDir sequentially for all directories being created
-        char relPath[FTP_MAX_PATH];
-        lstrcpyn(relPath, newDirs, FTP_MAX_PATH);
+        char* relPath = longPath;
+        strcpy(relPath, newDirs);
         lstrcpyn(path, workPath, FTP_MAX_PATH);
-        while (FTPCutFirstDirFromRelativePath(pathType, relPath, cutDir, FTP_MAX_PATH))
+        while (FTPCutFirstDirFromRelativePath(pathType, relPath, cutDir, bufSize))
         {
             if (strcmp(cutDir, ".") != 0) // assumption: "." is the current directory or is meaningless
             {
@@ -595,13 +617,13 @@ void CUploadListingsOnServer::ReportCreateDirs(const char* workPath, CFTPServerP
     }
     else // newDirs is an absolute path, so trim it up to the root and call ReportCreateDir for all subdirectories (we do not know how many subdirectories were created)
     {
-        lstrcpyn(path, newDirs, FTP_MAX_PATH);
-        FTPCompleteAbsolutePath(pathType, path, FTP_MAX_PATH, workPath); // convert the path to a full absolute path if necessary
-        FTPRemovePointsFromPath(path, pathType);                         // assumption: "." is the current directory or is meaningless, ".." is the parent directory or is meaningless
-        while (FTPCutDirectory(pathType, path, FTP_MAX_PATH, cutDir, FTP_MAX_PATH, NULL))
+        strcpy(longPath, newDirs);
+        FTPCompleteAbsolutePath(pathType, longPath, bufSize, workPath); // convert the path to a full absolute path if necessary (always fits 'bufSize')
+        FTPRemovePointsFromPath(longPath, pathType);                    // assumption: "." is the current directory or is meaningless, ".." is the parent directory or is meaningless
+        while (FTPCutDirectory(pathType, longPath, bufSize, cutDir, bufSize, NULL))
         {
             int index;
-            if (FindPath(path, pathType, index)) // find the path in the cache
+            if ((int)strlen(longPath) < FTP_MAX_PATH && FindPath(longPath, pathType, index)) // find the path in the cache (a longer one is never there)
             {
                 if (unknownResult)
                     InvalidateListing(index);
@@ -612,11 +634,12 @@ void CUploadListingsOnServer::ReportCreateDirs(const char* workPath, CFTPServerP
                     if (lowMem)
                         InvalidateListing(index);
                     if (dirCreated)
-                        AddEmptyListing(path, cutDir, pathType, ulsReady, FALSE); // add an empty listing to the listing cache for the newly created directory
+                        AddEmptyListing(longPath, cutDir, pathType, ulsReady, FALSE); // add an empty listing to the listing cache for the newly created directory
                 }
             }
         }
     }
+    free(bufs);
 }
 
 void CUploadListingsOnServer::ReportRename(const char* workPath, CFTPServerPathType pathType,
@@ -1854,7 +1877,9 @@ BOOL CFTPOpenedFile::IsSameFile(const char* user, const char* host, unsigned sho
 {
     return strcmp(User, user) == 0 && SalamanderGeneral->StrICmp(Host, host) == 0 &&
            Port == port && FTPIsTheSameServerPath(pathType, Path, path) &&
-           (FTPIsCaseSensitive(pathType) ? strcmp(Name, name) == 0 : SalamanderGeneral->StrICmp(Name, name) == 0);
+           // feature 277: a case-insensitive server's names by the file system's rule (092; StrICmp folded
+           // UTF-8 bytes by the code page: two other names matched, case twins did not)
+           (FTPIsCaseSensitive(pathType) ? strcmp(Name, name) == 0 : SalNameOrderEqualCI(Name, -1, name, -1));
 }
 
 BOOL CFTPOpenedFile::IsInConflictWith(CFTPFileAccessType accessType)

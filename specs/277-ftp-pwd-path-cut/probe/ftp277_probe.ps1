@@ -31,10 +31,12 @@ param(
     [string[]]$Only,
     [string]$Python = 'python',
     [int]$Port = 2177,
-    [string]$Lib = (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1'),
-    [string]$Server = (Join-Path $PSScriptRoot '..\..\215-ftp-long-name-command\probe\ftpmini.py')
+    [string]$Lib,
+    [string]$Server
 )
 $ErrorActionPreference = 'Stop'
+if (-not $Lib) { $Lib = Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1' }
+if (-not $Server) { $Server = Join-Path $PSScriptRoot '..\..\215-ftp-long-name-command\probe\ftpmini.py' }
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
 $Server = (Resolve-Path -LiteralPath $Server).Path
 if ($Only) { $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
@@ -224,7 +226,9 @@ try {
     Out ("Paths   : A (AIX) {0} bytes, A (R301) {1}, R300 {2}, A (cp1250) {3} bytes of UTF-8 / {4} of cp1250; + '/deep' = 5 bytes more" -f [Text.Encoding]::UTF8.GetByteCount($aAix), [Text.Encoding]::UTF8.GetByteCount($aR), [Text.Encoding]::UTF8.GetByteCount($a300), [Text.Encoding]::UTF8.GetByteCount($aCp), [Text.Encoding]::GetEncoding(1250).GetByteCount($aCp))
     Out ''
     if (-not ($up1 -and $up2)) { throw 'an FTP server did not start' }
-    $refused = { param($got, $t, $c) ($got -ne 'ANCESTOR') -and ($got -eq '<missing>') -and (@($t).Count -gt 0) }
+    # refused = the working path is refused at the PWD (never a command sent to a cut path: before 277
+    # the CP row ended with "Error Changing Working Path" after a CWD to the cut path)
+    $refused = { param($got, $t, $c) ($got -eq '<missing>') -and (Has $t 'Error Getting Working Path') -and -not (Has $c '^CWD <') }
     Row-Copy 'AIX' $Port 'DEEP' $refused
     Row-Copy 'CP' ($Port + 1) 'DEEP' $refused
     Row-Copy 'R301' $Port 'DEEP' $refused

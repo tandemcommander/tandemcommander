@@ -6,6 +6,7 @@
 
 #include "../../common/salftpautoren.h" // feature 141: the shortening step of the automatic rename
 #include "../../common/salftplisting.h" // feature 269: a listing field kept as UTF-8 (WTF-8)
+#include "../../common/salftppwd.h"     // feature 277: the path of a "257" reply, never cut
 
 #include "../../common/salurlpwd.h" // feature 085
 #include "../../common/salfmtinserts.h" // feature 180
@@ -1700,84 +1701,42 @@ BOOL FTPReadFTPReply(char* readBytes, int readBytesCount, int readBytesOffset,
 // encoding; decode it to UTF-8 in place (symmetrically with listing entry names,
 // see FTPListingFieldToU8) so the working path matches the UTF-8 names built on
 // top of it. ASCII (the common case) is left byte-for-byte unchanged.
-static void FTPDecodeServerReplyPathInPlace(char* dirBuf, int dirBufSize)
+// Feature 277: FALSE (dirBuf = "") when the UTF-8 form does not fit dirBuf or cannot be made
+// (low memory) - it was cut, possibly inside a letter, and the cut path (an ancestor) was used.
+static BOOL FTPDecodeServerReplyPathInPlace(char* dirBuf, int dirBufSize)
 {
     if (dirBufSize <= 0 || dirBuf[0] == 0 || SplIsASCII(dirBuf))
-        return;
+        return TRUE;
     char* u8 = FTPListingFieldToU8(dirBuf, (int)strlen(dirBuf));
+    BOOL ok = u8 != NULL && (int)strlen(u8) < dirBufSize;
+    if (ok)
+        strcpy(dirBuf, u8);
+    else
+        dirBuf[0] = 0;
     if (u8 != NULL)
-    {
-        lstrcpyn(dirBuf, u8, dirBufSize); // truncation only for pathological over-long legacy paths
         SalamanderGeneral->Free(u8);
-    }
+    return ok;
 }
 
 BOOL FTPGetDirectoryFromReply(const char* reply, int replySize, char* dirBuf, int dirBufSize)
 {
     CALL_STACK_MESSAGE3("FTPGetDirectoryFromReply(, %d, , %d)", replySize, dirBufSize);
 
-    if (dirBufSize > 0)
-        dirBuf[0] = 0;
-    else
-    {
-        TRACE_E("Insufficient buffer space in FTPGetDirectoryFromReply().");
-        return FALSE;
-    }
-    BOOL ok = FALSE;
-    const char* end = reply + replySize;
-    const char* s = reply + 4;
-
     // rfc 959 format: 257<space>"<directory-name>"<space><commentary>
     // VxWorks FTP server returns: 257 Current directory is "mars:"
     // German AIX returns for a'g'f: 257 '/projects/acaix3/iplus/lnttmp/a'g'f' ist das aktuelle Verzeichnis.
     // German AIX returns for a"d: 257 '/projects/acaix3/iplus/lnttmp/a"d' ist das aktuelle Verzeichnis.
-
-    // solution for VxWorks: find the first '"'
-    // solution for German AIX: detect '\'' before '"'; the path reaches up to the last '\'', and there is no '"' after the last '\''
-
-    while (s < end && *s != '"' && *s != '\'')
-        s++;
-    if (*s == '\'') // German AIX
-    {
-        const char* lastQuote = strrchr(s + 1, '\'');
-        if (lastQuote != NULL && strchr(lastQuote, '"') == NULL)
-        {
-            int len = (int)(lastQuote - (s + 1));
-            if (len >= dirBufSize)
-                len = dirBufSize - 1;
-            memcpy(dirBuf, s + 1, len);
-            dirBuf[len] = 0;
-            FTPDecodeServerReplyPathInPlace(dirBuf, dirBufSize); // server encoding -> UTF-8
-            return TRUE;
-        }
-        while (s < end && *s != '"')
-            s++;
-    }
-    if (s < end && *s == '"') // must start with '"'
-    {
-        char* d = dirBuf;
-        char* endDir = dirBuf + dirBufSize - 1; // we must leave space for the terminating null character
-        while (++s < end && d < endDir)
-        {
-            if (*s == '"')
-            {
-                if (s + 1 < end && *(s + 1) == '"')
-                    s++; // '""' = '"' (escape sequence)
-                else
-                {
-                    ok = TRUE; // end of the directory name
-                    break;
-                }
-            }
-            *d++ = *s;
-        }
-        *d = 0;
-    }
-    if (ok)
-        FTPDecodeServerReplyPathInPlace(dirBuf, dirBufSize); // server encoding -> UTF-8
-    else
+    // feature 277: the forms are read by SalFtpPathFromPwdReply (salftppwd.h); a path that does not
+    // fit 'dirBuf' - also after the conversion to UTF-8 - is refused, never cut (the cut path is
+    // another folder, an ancestor)
+    int res = SalFtpPathFromPwdReply(reply, replySize, dirBuf, dirBufSize);
+    if (res == SALFTPPWD_OK && !FTPDecodeServerReplyPathInPlace(dirBuf, dirBufSize)) // server encoding -> UTF-8
+        res = SALFTPPWD_TOOLONG;
+    if (res == SALFTPPWD_TOOLONG)
+        TRACE_E("The path in the get-directory reply (reply code 257) does not fit the buffer in FTPGetDirectoryFromReply().");
+    else if (res != SALFTPPWD_OK)
         TRACE_E("Syntax error in get-directory reply (reply code 257) in FTPGetDirectoryFromReply().");
-    return ok;
+    return res == SALFTPPWD_OK;
 }
 
 BOOL FTPGetIPAndPortFromReply(const char* reply, int replySize, DWORD* ip, unsigned short* port)
@@ -2191,14 +2150,10 @@ BOOL FTPCompleteAbsolutePath(CFTPServerPathType pathType, char* path, int pathBu
             {
                 int l = (int)strlen(path);
                 if (l + 3 > pathBufSize)
-                    l = pathBufSize - 3;
-                if (l >= 0)
-                {
-                    memmove(path + 2, path, l + 1);
-                    path[l + 2] = 0;
-                    path[0] = workPath[0];
-                    path[1] = ':';
-                }
+                    return FALSE; // feature 277: does not fit - the path is left unchanged (it was cut)
+                memmove(path + 2, path, l + 1);
+                path[0] = workPath[0];
+                path[1] = ':';
             }
             else
                 return FALSE; // workPath is not a full absolute path
@@ -2216,13 +2171,9 @@ BOOL FTPCompleteAbsolutePath(CFTPServerPathType pathType, char* path, int pathBu
                 s++;
                 int l = (int)strlen(path);
                 if (l + 1 + (s - workPath) > pathBufSize)
-                    l = pathBufSize - (int)(1 + (s - workPath));
-                if (l >= 0)
-                {
-                    memmove(path + (s - workPath), path, l + 1);
-                    path[l + (s - workPath)] = 0;
-                    memmove(path, workPath, (s - workPath));
-                }
+                    return FALSE; // feature 277: does not fit - the path is left unchanged (it was cut)
+                memmove(path + (s - workPath), path, l + 1);
+                memmove(path, workPath, (s - workPath));
             }
             else
                 return FALSE; // workPath is not a full absolute path
@@ -3351,8 +3302,12 @@ void FTPGenerateNewName(int* phase, char* newName, int* index, const char* origi
     }
 }
 
-void FTPAS400CutFileNamePart(char* mbrName, const char* name)
+BOOL FTPAS400CutFileNamePart(char* mbrName, int mbrNameSize, const char* name)
 {
+    // feature 277: the result is never cut (it was cut at MAX_PATH bytes and used as a target
+    // name - another file's name); it is never longer than 'name'
+    if (mbrNameSize <= 0)
+        return FALSE;
     mbrName[0] = 0;
     const char* fileBeg = name;
     const char* fileEnd = fileBeg;
@@ -3369,20 +3324,27 @@ void FTPAS400CutFileNamePart(char* mbrName, const char* name)
             if (mbrEnd - mbrBeg == fileEnd - fileBeg &&
                 _strnicmp(fileBeg, mbrBeg, fileEnd - fileBeg) == 0) // if the names before ".file" and before ".mbr" match, this is the case we are looking for and it will be shortened
             {
-                lstrcpyn(mbrName, mbrBeg, MAX_PATH);
+                if ((int)strlen(mbrBeg) >= mbrNameSize)
+                    return FALSE;
+                strcpy(mbrName, mbrBeg);
             }
             else // "a.file/b.mbr" -> "a.b.mbr"
             {
-                if ((fileEnd - fileBeg) + 1 < MAX_PATH)
-                {
-                    memcpy(mbrName, fileBeg, (fileEnd - fileBeg) + 1);
-                    lstrcpyn(mbrName + (fileEnd - fileBeg) + 1, mbrBeg, (int)(MAX_PATH - ((fileEnd - fileBeg) + 1)));
-                }
+                int fileLen = (int)(fileEnd - fileBeg) + 1; // "a."
+                if (fileLen + (int)strlen(mbrBeg) >= mbrNameSize)
+                    return FALSE;
+                memcpy(mbrName, fileBeg, fileLen);
+                strcpy(mbrName + fileLen, mbrBeg);
             }
         }
     }
     if (mbrName[0] == 0)
-        lstrcpyn(mbrName, name, MAX_PATH);
+    {
+        if ((int)strlen(name) >= mbrNameSize)
+            return FALSE;
+        strcpy(mbrName, name);
+    }
+    return TRUE;
 }
 
 void FTPAS400AddFileNamePart(char* name)

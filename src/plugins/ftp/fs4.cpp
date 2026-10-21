@@ -1125,8 +1125,16 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
                                     }
                                     else
                                     {
-                                        char mbrName[MAX_PATH];
-                                        FTPAS400CutFileNamePart(mbrName, f->Name);
+                                        // feature 277: the member name whole (it was cut at MAX_PATH bytes -
+                                        // another file's name); a buffer for any listed name
+                                        char mbrName[3 * MAX_PATH];
+                                        if (!FTPAS400CutFileNamePart(mbrName, sizeof(mbrName), f->Name))
+                                        {
+                                            SalamanderGeneral->SalMessageBox(SalamanderGeneral->GetMsgBoxParent(), LoadStr(IDS_TOOLONGPATH),
+                                                                             LoadStr(IDS_FTPERRORTITLE), MB_OK | MB_ICONEXCLAMATION);
+                                            ok = FALSE;
+                                            break;
+                                        }
                                         if (donotUseOpMask)
                                             lstrcpyn(targetName, mbrName, sizeof(targetName)); // masks trim '.' from the ends of names, which is not always OK (e.g. directories "a.b" and "a.b." would merge) - this is probably rare, so for now we handle it provisionally like this
                                         else

@@ -1536,11 +1536,18 @@ BOOL CFTPWorker::ParseListingToFTPQueue(TIndirectArray<CFTPQueueItem>* ftpQueueI
                         case fqitMoveExploreDir:     // explore a directory for moving (deletes the directory after completion) (object of class CFTPQueueItemCopyMoveExplore)
                         case fqitMoveExploreDirLink: // explore a link to a directory for moving (deletes the directory link after completion) (object of class CFTPQueueItemCopyMoveExplore)
                         {
-                            char mbrName[MAX_PATH];
+                            // feature 277: the member name whole (it was cut at MAX_PATH bytes - another
+                            // file's name); a buffer for any listed name, a name that does not fit gets no
+                            // item (the explore's error, below)
+                            char mbrName[3 * MAX_PATH];
                             char* tgtName = file.Name;
                             if (is_AS_400_QSYS_LIB_Path)
                             {
-                                FTPAS400CutFileNamePart(mbrName, tgtName);
+                                if (!FTPAS400CutFileNamePart(mbrName, sizeof(mbrName), tgtName))
+                                {
+                                    TRACE_E("The AS/400 member name does not fit in CFTPWorker::ParseListingToFTPQueue().");
+                                    break;
+                                }
                                 tgtName = mbrName;
                             }
                             item = CreateItemForCopyOrMoveOperation(&file, isDir, rightsCol, dataIface,
