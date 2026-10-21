@@ -1,7 +1,7 @@
 ---
 title: Archive Update: how to tell a member rewritten with the same size and time
 type: decision
-status: new
+status: open
 severity: 3
 area: archives
 source: manual
@@ -47,3 +47,4 @@ C - the case is rare and both A and B cost more than the warning is worth; the o
 ## Log
 
 - 2026-10-21 — created (source manual)
+- 2026-10-21 — moved to Decisions for the maintainer position 5

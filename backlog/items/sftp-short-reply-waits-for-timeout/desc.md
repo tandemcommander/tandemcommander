@@ -1,7 +1,7 @@
 ---
 title: SFTP: a server reply shorter than the protocol allows waits for the timeout
 type: bug
-status: new
+status: open
 severity: 3
 area: sftp
 source: leftover:140
@@ -45,3 +45,4 @@ The exact site is suspected, not confirmed; 140 named the symptom without a site
 
 - 2026-10-21 — created (source leftover:140)
 - 2026-10-21 — severity as the source item
+- 2026-10-21 — moved to Next position 59

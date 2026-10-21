@@ -1,7 +1,7 @@
 ---
 title: tar plug-in ignores PAX extended headers: long or non-ASCII names listed under the ustar fallback name
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: measure:275
@@ -37,3 +37,4 @@ Not verified on the build: the severity assumes the fallback names really differ
 ## Log
 
 - 2026-10-21 — created (source measure:275)
+- 2026-10-21 — moved to Next position 12

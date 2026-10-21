@@ -1,7 +1,7 @@
 ---
 title: SFTP: a stalled upload or a server disconnect leaks the whole session
 type: bug
-status: new
+status: open
 severity: 3
 area: sftp
 source: leftover:220
@@ -46,3 +46,4 @@ Not verified by a run - both cases are 220's review's reading. Severity 3: memor
 ## Log
 
 - 2026-10-21 — created (source leftover:220)
+- 2026-10-21 — moved to Next position 58

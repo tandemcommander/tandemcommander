@@ -1,7 +1,7 @@
 ---
 title: SFTP: a folder uploaded again whose files are all there ends with a misleading folder box
 type: improvement
-status: new
+status: open
 severity: 2
 area: sftp
 source: review:279
@@ -41,3 +41,4 @@ Severity 2: the wording of a box and one box too many; no data at risk.
 ## Log
 
 - 2026-10-21 — created (source review:279)
+- 2026-10-21 — moved to Next position 95

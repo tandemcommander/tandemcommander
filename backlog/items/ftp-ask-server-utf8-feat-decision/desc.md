@@ -1,7 +1,7 @@
 ---
 title: FTP: should the plug-in ask a server whether it speaks UTF-8 (FEAT)?
 type: decision
-status: new
+status: open
 severity: 3
 area: ftp
 source: leftover:288
@@ -49,3 +49,4 @@ A for now: the cases B would decide (a UTF-8 server) already get UTF-8, and the 
 ## Log
 
 - 2026-10-21 — created (source leftover:288)
+- 2026-10-21 — moved to Decisions for the maintainer position 6

@@ -1,7 +1,7 @@
 ---
 title: Archive Update: a time-zone or daylight-saving change marks an unchanged member
 type: bug
-status: new
+status: open
 severity: 2
 area: archives
 source: manual
@@ -41,3 +41,4 @@ Record the current time-zone bias with the panel's listing of the archive (or at
 ## Log
 
 - 2026-10-21 — created (source manual)
+- 2026-10-21 — moved to Next position 80

@@ -1,13 +1,13 @@
 ---
 title: Drive Information writes the volume label through an ANSI API
 type: bug
-status: new
+status: open
 severity: 5
 area: encoding
 source: review:270
 who: both
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-21
 verified: -
 effort: S
 feature: -
@@ -54,3 +54,4 @@ checker are agent work; writing a real label must be confirmed by a person on a 
 ## Log
 
 - 2026-10-20 — created (source review:270)
+- 2026-10-21 — moved to Next position 6

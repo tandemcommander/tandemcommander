@@ -1,7 +1,7 @@
 ---
 title: FTP: a name a listing rule extends (z/VM, AS/400, VxWorks) mixes UTF-8 with raw server bytes
 type: bug
-status: new
+status: open
 severity: 4
 area: ftp
 source: review:288
@@ -37,3 +37,4 @@ Severity 4: only legacy z/VM (and the other listed types) servers with non-ASCII
 ## Log
 
 - 2026-10-21 — created (source review:288)
+- 2026-10-21 — moved to Next position 14

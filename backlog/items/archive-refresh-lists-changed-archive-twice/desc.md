@@ -1,7 +1,7 @@
 ---
 title: Refreshing a changed archive with edited files lists it twice
 type: improvement
-status: new
+status: open
 severity: 2
 area: archives
 source: manual
@@ -41,3 +41,4 @@ Severity 2: speed only, and only on the rare path "edited files + archive change
 ## Log
 
 - 2026-10-21 — created (source manual)
+- 2026-10-21 — moved to Next position 77

@@ -1,7 +1,7 @@
 ---
 title: A subst drive whose target is long or outside the code page resolves to a cut or code-page path
 type: bug
-status: new
+status: open
 severity: 5
 area: long-paths
 source: review:289
@@ -63,3 +63,4 @@ other callers never work with a cut or '?' path (CLAUDE.md: a path is never cut)
 ## Log
 
 - 2026-10-21 — created (source review:289)
+- 2026-10-21 — moved to Next position 7

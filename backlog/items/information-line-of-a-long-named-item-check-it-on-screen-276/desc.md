@@ -1,7 +1,7 @@
 ---
 title: Information line of a long-named item: check it on screen (276)
 type: person-step
-status: new
+status: open
 severity: 2
 area: panels-ui
 source: leftover:276
@@ -47,3 +47,4 @@ becomes a new item.
 ## Log
 
 - 2026-10-21 — created (source leftover:276)
+- 2026-10-21 — moved to Person steps

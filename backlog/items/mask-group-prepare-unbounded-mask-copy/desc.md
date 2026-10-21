@@ -1,7 +1,7 @@
 ---
 title: A single mask longer than 259 bytes overruns the mask group preparation buffers
 type: bug
-status: new
+status: open
 severity: 6
 area: long-paths
 source: review:283
@@ -54,3 +54,4 @@ the reach is unproven; a reachable stack overrun would be 7-8.
 ## Log
 
 - 2026-10-21 — created (source review:283)
+- 2026-10-21 — moved to Next position 3

@@ -1,7 +1,7 @@
 ---
 title: Check that Change Attributes refuses to encrypt or decrypt a file symbolic link (272)
 type: person-step
-status: new
+status: open
 severity: 4
 area: data-safety
 source: leftover:272
@@ -54,3 +54,4 @@ the same session as the junction check of the related item (253).
 ## Log
 
 - 2026-10-21 — created (source leftover:272)
+- 2026-10-21 — moved to Person steps position 11

@@ -1,7 +1,7 @@
 ---
 title: FTP: Create Directory and Quick Rename in a panel never update the upload listing cache
 type: bug
-status: new
+status: open
 severity: 5
 area: ftp
 source: measure:288
@@ -37,3 +37,4 @@ Severity 5 because the effect is not measured; if the probe shows an upload repl
 ## Log
 
 - 2026-10-21 — created (source measure:288)
+- 2026-10-21 — moved to Next position 8

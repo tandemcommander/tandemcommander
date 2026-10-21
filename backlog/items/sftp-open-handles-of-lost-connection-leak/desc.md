@@ -1,7 +1,7 @@
 ---
 title: SFTP: files open when a connection is lost stay allocated until exit
 type: bug
-status: new
+status: open
 severity: 3
 area: sftp
 source: leftover:140
@@ -45,3 +45,4 @@ Reverses 140's recorded choice only in its means (the leak), not its rule (never
 ## Log
 
 - 2026-10-21 — created (source leftover:140)
+- 2026-10-21 — moved to Next position 57

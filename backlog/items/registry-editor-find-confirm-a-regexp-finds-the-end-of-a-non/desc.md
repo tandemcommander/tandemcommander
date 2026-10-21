@@ -1,7 +1,7 @@
 ---
 title: Registry Editor Find: confirm a regexp finds the end of a non-ASCII text on UTF-8
 type: person-step
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: leftover:278
@@ -59,3 +59,4 @@ Do it on a test machine or VM: the setting changes the whole system. Turn it bac
 ## Log
 
 - 2026-10-21 — created (source leftover:278)
+- 2026-10-21 — moved to Person steps position 23

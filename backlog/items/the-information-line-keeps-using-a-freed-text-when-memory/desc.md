@@ -1,7 +1,7 @@
 ---
 title: The information line keeps using a freed text when memory runs out as it grows
 type: bug
-status: new
+status: open
 severity: 7
 area: panels-ui
 source: review:276
@@ -52,3 +52,4 @@ two-buffer `realloc` pairs of the core - check `SizeW` / `TextW` in the same fil
 ## Log
 
 - 2026-10-21 — created (source review:276)
+- 2026-10-21 — moved to Next position 4

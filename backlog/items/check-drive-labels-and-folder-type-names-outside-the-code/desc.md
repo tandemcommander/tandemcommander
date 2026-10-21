@@ -1,7 +1,7 @@
 ---
 title: Check drive labels and folder type names outside the code page on real hardware (289)
 type: person-step
-status: new
+status: open
 severity: 3
 area: encoding
 source: leftover:289
@@ -54,3 +54,4 @@ Explorer does.
 ## Log
 
 - 2026-10-21 — created (source leftover:289)
+- 2026-10-21 — moved to Person steps position 19

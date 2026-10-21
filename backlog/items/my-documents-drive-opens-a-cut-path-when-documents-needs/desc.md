@@ -1,7 +1,7 @@
 ---
 title: My Documents drive opens a cut path when Documents needs more than 259 bytes
 type: bug
-status: new
+status: open
 severity: 4
 area: long-paths
 source: review:286
@@ -53,3 +53,4 @@ My Documents drive. `buff` itself (`2 * MAX_PATH` bytes) also limits the long-pa
 ## Log
 
 - 2026-10-21 — created (source review:286)
+- 2026-10-21 — moved to Next position 18

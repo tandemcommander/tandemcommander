@@ -1,7 +1,7 @@
 ---
 title: A rename via a temporary name can leave the source there silently after a cancel
 type: bug
-status: new
+status: open
 severity: 3
 area: file-ops
 source: review:281
@@ -53,3 +53,4 @@ rename and two returns must fail - another program holding the file). Not verifi
 ## Log
 
 - 2026-10-21 — created (source review:281)
+- 2026-10-21 — moved to Next position 53

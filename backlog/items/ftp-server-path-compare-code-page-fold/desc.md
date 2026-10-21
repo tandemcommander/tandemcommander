@@ -1,7 +1,7 @@
 ---
 title: FTP: server folder names compared by the code-page case rule on UTF-8 bytes
 type: bug
-status: new
+status: open
 severity: 4
 area: ftp
 source: review:277
@@ -40,3 +40,4 @@ Severity 4: a wrong "same folder" answer needs non-ASCII folder names on a case-
 ## Log
 
 - 2026-10-21 — created (source review:277)
+- 2026-10-21 — moved to Next position 16

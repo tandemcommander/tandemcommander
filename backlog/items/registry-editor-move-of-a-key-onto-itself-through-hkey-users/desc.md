@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: Move of a key onto itself through HKEY_USERS deletes the key
 type: bug
-status: new
+status: open
 severity: 7
 area: data-safety
 source: review:287
@@ -64,3 +64,4 @@ itself (taken from the review's report).
 ## Log
 
 - 2026-10-21 — created (source review:287)
+- 2026-10-21 — moved to Next position 3

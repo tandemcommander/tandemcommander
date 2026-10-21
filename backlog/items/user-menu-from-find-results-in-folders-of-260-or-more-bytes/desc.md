@@ -1,7 +1,7 @@
 ---
 title: User Menu from Find results in folders of 260 or more bytes driven by a person
 type: person-step
-status: new
+status: open
 severity: 4
 area: long-paths
 source: leftover:280
@@ -55,3 +55,4 @@ The Find route behaves as the panel routes do in the probe.
 ## Log
 
 - 2026-10-21 — created (source leftover:280)
+- 2026-10-21 — moved to Person steps position 15

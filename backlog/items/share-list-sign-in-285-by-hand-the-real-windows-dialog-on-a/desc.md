@@ -1,7 +1,7 @@
 ---
 title: Share list sign-in (285) by hand: the real Windows dialog on a server that refuses the list
 type: person-step
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: leftover:285
@@ -44,3 +44,4 @@ Every step below gives the stated result on a Release or Debug build of 285 or l
 ## Log
 
 - 2026-10-21 — created (source leftover:285)
+- 2026-10-21 — moved to Person steps position 25

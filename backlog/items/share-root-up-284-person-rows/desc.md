@@ -1,7 +1,7 @@
 ---
 title: Share root way up (284) by hand: drop onto .., a real server, Esc in the wait
 type: person-step
-status: new
+status: open
 severity: 2
 area: panels-ui
 source: leftover:284
@@ -39,3 +39,4 @@ Dropping onto the `..` of a share's root is refused (stop cursor); Backspace in 
 ## Log
 
 - 2026-10-21 — created (source leftover:284)
+- 2026-10-21 — moved to Person steps

@@ -1,7 +1,7 @@
 ---
 title: Should PRIVACY.md name the sign-in of the share list (285)?
 type: decision
-status: new
+status: open
 severity: 2
 area: privacy-security
 source: review:285
@@ -46,3 +46,4 @@ A - the bullet already explains the share list in detail; naming the sign-in kee
 ## Log
 
 - 2026-10-21 — created (source review:285)
+- 2026-10-21 — moved to Decisions for the maintainer position 13

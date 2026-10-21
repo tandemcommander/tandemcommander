@@ -1,7 +1,7 @@
 ---
 title: Archive Update: an archive rewritten with its old size and time is not checked again
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: manual
@@ -41,3 +41,4 @@ The panel's own "the archive file has changed" check on refresh (`ChangePathToAr
 ## Log
 
 - 2026-10-21 — created (source manual)
+- 2026-10-21 — moved to Next position 41

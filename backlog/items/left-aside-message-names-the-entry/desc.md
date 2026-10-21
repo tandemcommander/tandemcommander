@@ -1,7 +1,7 @@
 ---
 title: The left-aside message names only the salNNN entry, not the entry it was
 type: improvement
-status: new
+status: open
 severity: 3
 area: file-ops
 source: review:281
@@ -59,3 +59,4 @@ refresh, which an autonomous run does not do - a run would stop on it.
 
 - 2026-10-21 — created (source review:281)
 - 2026-10-21 — related item moved-aside-restore-leftovers done in feature 281
+- 2026-10-21 — moved to Next position 47

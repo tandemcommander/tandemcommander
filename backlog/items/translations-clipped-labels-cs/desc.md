@@ -1,7 +1,7 @@
 ---
 title: Clipped labels in the Czech translation (74)
 type: bug
-status: new
+status: open
 severity: 3
 area: translations
 source: manual
@@ -41,3 +41,4 @@ Split from `translations-clipped-labels` (one item per enabled language). who bo
 ## Log
 
 - 2026-10-21 — created (source manual)
+- 2026-10-21 — moved to Next position 62

@@ -1,7 +1,7 @@
 ---
 title: SFTP: a folder uploaded again into a real upload-only service (279)
 type: person-step
-status: new
+status: open
 severity: 4
 area: sftp
 source: leftover:279
@@ -40,3 +40,4 @@ Each step below gives the result written next to it; a different result is a new
 ## Log
 
 - 2026-10-21 — created (source leftover:279)
+- 2026-10-21 — moved to Person steps position 14

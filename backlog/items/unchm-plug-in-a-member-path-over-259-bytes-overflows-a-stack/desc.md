@@ -1,7 +1,7 @@
 ---
 title: unchm plug-in: a member path over 259 bytes overflows a stack buffer on F3 / F4
 type: bug
-status: new
+status: parked
 severity: 7
 area: archives
 source: measure:275
@@ -13,7 +13,7 @@ effort: S
 feature: -
 related: [unrar-plug-in-a-member-name-over-259-bytes-overflows-a-stack]
 depends-on: []
-reason: -
+reason: plug-in unchm not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-10-21
 ---
 
 # unchm plug-in: a member path over 259 bytes overflows a stack buffer on F3 / F4
@@ -37,3 +37,4 @@ The same kind of defect as the related unrar item (a parked item - plug-in not s
 ## Log
 
 - 2026-10-21 — created (source measure:275)
+- 2026-10-21 — moved to Parked: plug-in unchm not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-10-21

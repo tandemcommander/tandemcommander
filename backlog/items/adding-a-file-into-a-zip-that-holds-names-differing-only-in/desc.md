@@ -1,7 +1,7 @@
 ---
 title: Adding a file into a ZIP that holds names differing only in case can replace the other twin
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: measure:271
@@ -45,3 +45,4 @@ Severity 7: narrow (twin ZIPs), but the overwrite removes a file the user did no
 
 - 2026-10-20 — created (source measure:271)
 - 2026-10-21 — related item a-zip-made-on-windows-that-holds-names-differing-only-in done in feature 271
+- 2026-10-21 — moved to Next position 1

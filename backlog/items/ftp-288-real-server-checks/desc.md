@@ -1,7 +1,7 @@
 ---
 title: FTP 288 on real servers: names to a code-page server, mainframe listings
 type: person-step
-status: new
+status: open
 severity: 4
 area: ftp
 source: leftover:288
@@ -41,3 +41,4 @@ On a real code-page server new names arrive by the name typed, an unknown server
 ## Log
 
 - 2026-10-21 — created (source leftover:288)
+- 2026-10-21 — moved to Person steps position 13

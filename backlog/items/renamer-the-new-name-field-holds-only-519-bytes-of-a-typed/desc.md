@@ -1,7 +1,7 @@
 ---
 title: Renamer: the New name field holds only 519 bytes of a typed pattern
 type: improvement
-status: new
+status: open
 severity: 2
 area: long-paths
 source: leftover:282
@@ -53,3 +53,4 @@ check how `GetValue` behaves then before raising the size.
 
 - 2026-10-21 — created (source leftover:282)
 - 2026-10-21 — moved to Inbox
+- 2026-10-21 — moved to Next position 93

@@ -1,7 +1,7 @@
 ---
 title: Screen readers get garbled names from the core path labels (CStaticText)
 type: bug
-status: new
+status: open
 severity: 3
 area: encoding
 source: review:287
@@ -51,3 +51,4 @@ change with the fix). A check with a real screen reader (Narrator) is owed to a 
 ## Log
 
 - 2026-10-21 — created (source review:287)
+- 2026-10-21 — moved to Next position 55

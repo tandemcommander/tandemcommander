@@ -1,7 +1,7 @@
 ---
 title: Archive Update: Copy Selected To refuses an edited member whose target path is over 259 units
 type: improvement
-status: new
+status: open
 severity: 3
 area: long-paths
 source: review:275
@@ -37,3 +37,4 @@ Low severity: *Update All* packs such edits back correctly (probe 275 row EDITDE
 ## Log
 
 - 2026-10-21 — created (source review:275)
+- 2026-10-21 — moved to Next position 42

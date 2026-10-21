@@ -1,7 +1,7 @@
 ---
 title: SFTP: run about 1,500 connections to show the key-exchange failure gone
 type: tech-debt
-status: new
+status: open
 severity: 3
 area: sftp
 source: leftover:217
@@ -43,3 +43,4 @@ Needs Docker Desktop running (a run can start it with `docker desktop start`). S
 ## Log
 
 - 2026-10-21 — created (source leftover:217)
+- 2026-10-21 — moved to Next position 56

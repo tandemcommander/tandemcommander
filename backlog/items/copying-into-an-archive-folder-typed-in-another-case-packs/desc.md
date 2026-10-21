@@ -1,7 +1,7 @@
 ---
 title: Copying into an archive folder typed in another case packs into a new folder beside it
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:273
@@ -41,3 +41,4 @@ Severity 4 (suspected): nothing is lost, the files land in an unexpected second 
 ## Log
 
 - 2026-10-21 — created (source review:273)
+- 2026-10-21 — moved to Next position 13

@@ -1,7 +1,7 @@
 ---
 title: Plug-in folder picker may cut a folder shortcut target of 260 or more units
 type: bug
-status: new
+status: open
 severity: 5
 area: other-plugins
 source: measure:286
@@ -55,3 +55,4 @@ feature 286 R4).
 
 - 2026-10-21 — created (source measure:286)
 - 2026-10-21 — no relation intended
+- 2026-10-21 — moved to Next position 10

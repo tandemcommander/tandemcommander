@@ -1,7 +1,7 @@
 ---
 title: Registry Editor View of a text value: cut text and a stray byte on a UTF-8 code page
 type: bug
-status: new
+status: open
 severity: 4
 area: other-plugins
 source: review:278
@@ -59,3 +59,4 @@ The GUI case needs a machine with a UTF-8 (or DBCS) ANSI code page - a person's 
 
 - 2026-10-21 — created (source review:278)
 - 2026-10-21 — related item regedit-key-name-buffer-size-and-move-rows done in feature 287
+- 2026-10-21 — moved to Next position 21

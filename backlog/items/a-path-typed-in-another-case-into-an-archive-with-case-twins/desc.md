@@ -1,7 +1,7 @@
 ---
 title: A path typed in another case into an archive with case twins elsewhere opens its root
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:273
@@ -41,3 +41,4 @@ Severity 4: nothing is lost, the panel shows the root (visible), but a following
 ## Log
 
 - 2026-10-21 — created (source review:273)
+- 2026-10-21 — moved to Next position 11

@@ -1,7 +1,7 @@
 ---
 title: The question whether to create a missing folder cuts a long path inside a letter
 type: bug
-status: new
+status: open
 severity: 2
 area: long-paths
 source: review:274
@@ -33,3 +33,4 @@ The question shows the whole path, or a shortened one that ends at a whole lette
 ## Log
 
 - 2026-10-21 — created (source review:274)
+- 2026-10-21 — moved to Next position 102

@@ -1,7 +1,7 @@
 ---
 title: User Menu list commands refused when the first selected item does not fit 259 bytes
 type: improvement
-status: new
+status: open
 severity: 2
 area: long-paths
 source: leftover:280
@@ -51,3 +51,4 @@ the selection. Not verified beyond the review's reproduction.
 ## Log
 
 - 2026-10-21 — created (source leftover:280)
+- 2026-10-21 — moved to Next position 111

@@ -1,7 +1,7 @@
 ---
 title: FTP 277 on real servers: long PWD paths, AS/400 member names, case-insensitive lock
 type: person-step
-status: new
+status: open
 severity: 3
 area: ftp
 source: leftover:277
@@ -44,3 +44,4 @@ Optional confirmations - the defect the item was about (an ancestor's file downl
 ## Log
 
 - 2026-10-21 — created (source leftover:277)
+- 2026-10-21 — moved to Person steps position 21

@@ -1,13 +1,13 @@
 ---
 title: Settings import ends the viewers, editors and User Menu lists at a damaged entry
 type: bug
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: measure:268
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-21
 verified: -
 effort: S
 feature: -
@@ -37,3 +37,4 @@ Narrow: needs a damaged source configuration, and the preview shows the stop bef
 ## Log
 
 - 2026-10-20 — created (source measure:268)
+- 2026-10-21 — moved to Next position 37
