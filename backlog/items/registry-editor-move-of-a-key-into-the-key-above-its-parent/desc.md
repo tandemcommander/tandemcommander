@@ -8,7 +8,7 @@ source: review:292
 who: agent
 created: 2026-10-21
 updated: 2026-10-22
-verified: -
+verified: 2026-10-22 e752f9b9
 effort: M
 feature: -
 related: []
@@ -67,3 +67,4 @@ report). Narrow scenario (a key containing a subkey of its own name), hence seve
 - 2026-10-21 — created (source review:292)
 - 2026-10-22 — related item registry-editor-move-of-a-key-onto-itself-through-hkey-users done in feature 292
 - 2026-10-22 — moved to Next position 2
+- 2026-10-22 — verified at e752f9b9: reproduced at e752f9b9: hidden-desktop probe above294 -Expect before 14 PASS / 10 FAIL; Move into the key above the parent loses x=3 without a box (HKCU, HKEY_USERS alias, two-element chain), Copy writes into the source
