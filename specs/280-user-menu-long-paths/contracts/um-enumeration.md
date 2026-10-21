@@ -14,9 +14,11 @@ typedef int (*UM_GetNextFileName)(int index, char* path, char* name, void* param
 
 - `path` and `name` are buffers of `UM_ITEM_TEXT_SIZE` bytes (UTF-8 / WTF-8).
 - The callback never cuts a value: it copies it whole or answers `UMNEXT_TOOLONG`.
-- `UMNEXT_END` keeps its old meaning (the old `FALSE`), including the end-of-enumeration side
-  effects (selection redraw, index freed) and feature 225's early refusal (a panel folder over
-  259 bytes with no selection: the box, then `UMNEXT_END`).
+- `UMNEXT_END` keeps its old meaning (the old `FALSE`), including feature 225's early refusal (a
+  panel folder over 259 bytes with no selection: the box, then `UMNEXT_END`) and the index freed.
+  The panel's end of enumeration no longer clears the selection itself: it sets
+  `CUMDataFromPanel::EndReached`, and the caller clears the selection when the enumeration ended
+  and `CMainWindow::UserMenu` returned TRUE (every command started; review 1 of 280).
 - `UserMenu` refuses with "too long name" - before preparing that item's command, nothing run -
   on `UMNEXT_TOOLONG` or on a folder or name of `MAX_PATH` bytes or more; `ExpandCommand2` still
   refuses a folder + name over 259 bytes.

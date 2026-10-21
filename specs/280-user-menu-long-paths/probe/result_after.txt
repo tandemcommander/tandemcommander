@@ -1,6 +1,6 @@
-um280_probe (feature 280) after-review
+um280_probe (feature 280) after-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 07:09; registry key existed True; ACP 1250
+Date    : 2026-10-21 07:41; registry key existed True; ACP 1250
 Fixture : root 39 bytes; long folder 313 bytes; cut folder 260 bytes (its parent + backslash 259 bytes); long name 274 bytes
 
 CONTROL    RUN    PASS        left s, a.txt focused; out '[C:\Users\pavel\AppData\Local\Temp\tc280\s\a.txt]' (49 bytes); windows: no window
@@ -31,6 +31,8 @@ CMPGUESS   RUN    PASS        right 313 bytes, left active on a.txt; out missing
 CMPGUESS   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 LAUNCHFAIL RUN    PASS        launch error shown True; then a.txt '[C:\Users\pavel\AppData\Local\Temp\tc280\s2\a.txt]' (50 bytes), b.txt '[C:\Users\pavel\AppData\Local\Temp\tc280\s2\b.txt]' (50 bytes); windows: ...nnot execute external command 'tc280-no-such-command.exe'. (1223) U\u017Eivatel operaci zru\u0161il.  | [Button id=1] OK / no window
 LAUNCHFAIL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CLEARSEL   RUN    PASS        first run both True; second run a.txt missing, b.txt '[C:\Users\pavel\AppData\Local\Temp\tc280\s2\b.txt]' (50 bytes); windows: no window / no window
+CLEARSEL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
 
-Rows: PASS 28, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 30, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

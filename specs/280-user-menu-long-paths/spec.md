@@ -130,7 +130,11 @@ list that fits.
 - An item with an up-dir focus or an empty panel in a 260+ byte folder: refused as 225 does.
 - A panel path of exactly 259 bytes: `$(FullPathLeft)` needs 260 with its backslash - refused.
 - Group commands (a list variable) use only the first item's folder and name; a long name of
-  another selected item does not refuse them.
+  another selected item does not refuse them. Limit: when the first item itself does not fit, the
+  command is refused (as before) although the list would hold it.
+- A second name to compare only guessed (the same name in the other panel) that does not fit is
+  no match - the dialog asks, as before; a name the user chose (selected, focused) is refused.
+- A command without a shell that fails to start keeps the panel's selection (as before).
 - Without a shell, a later item refused for another reason (an expansion error, Cancel at a
   missing environment variable): nothing runs (before: the earlier items ran) - FR-003.
 - A launch that fails after all items were prepared (without a shell): the error is shown, the
@@ -172,7 +176,7 @@ list that fits.
 
 ### Measurable Outcomes
 
-- **SC-001**: Probe `um280_probe.ps1`: 28 / 0 (20 measured rows + 2 controls + 2 rows from the review added later; against 15 / 5 on the build of d7405c6a; the
+- **SC-001**: Probe `um280_probe.ps1`: 30 / 0 rows = 15 cases x (RUN + END) (10 measured cases + 2 controls + 3 cases from the reviews added later; against 15 / 5 on the build of d7405c6a; the
   rows FPRCUT, FPRLONG, MIXDIRECT, LISTFULL, CMPLONG FAIL before).
 - **SC-002**: The probes of features 226, 229 and 234 keep their results after the change.
 - **SC-003**: No User Menu route copies an item's folder or name, a panel path or a compare name

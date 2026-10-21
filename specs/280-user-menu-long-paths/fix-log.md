@@ -125,3 +125,32 @@ TOTAL 0; probe **28 PASS / 0 FAIL** (rows CMPGUESS and LAUNCHFAIL added), regist
 identical (`probe/result_after.txt`). (The program's registry key hash differs from the earlier
 runs - the key changed between runs outside this probe; each run restored its own backup
 identically.)
+
+### Review 2 (independent agent, refute-first, "Previous findings" given)
+
+No MUST; both fixes of review 1 hold. Re-measured: saltests 24986 / 0; probe at HEAD 28 / 0;
+**before re-measured with the committed probe** (main's `mainwnd.h`, `execute.h`, `mainwnd3.cpp`,
+`mainwnd4.cpp`, `finddlg1.cpp`): **23 / 5** - exactly FPRCUT, FPRLONG, MIXDIRECT, LISTFULL,
+CMPLONG fail (this replaces review 1's NOTE on the earlier probe version); negative control with
+review 1's bugs put back: CMPGUESS and LAUNCHFAIL FAIL; regression probes 226 / 229 / 234 as
+recorded. Every path where the selection used to be cleared compared with main by reading: the
+same (batch route incl. a batch file that cannot be written or started; refusals, 225's early
+refusal, group commands, low memory, a failed start without a shell keep it).
+- SHOULD - no probe row checked that the selection IS cleared after a successful run (a build
+  that never cleared it passed 28 / 0). **Fixed**: row CLEARSEL (s2, a.txt + b.txt selected,
+  PERNAME twice: the second run only the focused b.txt). Negative control: `if (FALSE &&
+  data.EndReached && started)` in `src/mainwnd3.cpp`, rebuilt, `-Only CLEARSEL`: **FAIL** (the
+  second run ran a.txt too); reverted with `git checkout`, rebuilt.
+- NOTE - `contracts/um-enumeration.md` and `research.md` still said the enumeration's end clears
+  the selection: **fixed**. SC-001 mixed rows and cases: **fixed** (15 cases, 30 rows).
+- NOTE - a focused second compare name (one item selected, the cursor on another) counts as
+  chosen: refused when it does not fit (before: the dialog asked). Kept - the spec's rule (a name
+  the user chose is refused); recorded.
+- NOTE - a command using only one compare name: not reachable - `ValidateUserMenuArguments`
+  refuses a compare command that does not use both names (`IDS_COMPARENEEDSBOTHARGS`,
+  `src/execute.cpp`).
+- NOTE - not driven: the Find route, `$(FullPathLeft)` / `$(FullPathInactive)`, the cleared-names
+  path, the "files or folders" question (correct by reading).
+
+Final: `.\build.cmd` BUILD SUCCEEDED (from the committed sources after the negative control);
+probe **30 PASS / 0 FAIL** (`probe/result_after.txt`), registry restored identical.

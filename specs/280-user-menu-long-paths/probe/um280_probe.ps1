@@ -34,6 +34,8 @@
                  not fit - no match, the compare dialog opens (cancelled), no "too long" (review S2)
       LAUNCHFAIL s2, a.txt + b.txt selected, an item whose command does not exist (error box), then
                  PERNAME: both items ran - the selection was kept (review S1)
+      CLEARSEL   s2, a.txt + b.txt selected, PERNAME twice: the first run both, the second only the
+                 focused b.txt - the selection was cleared after success, as before (review 2)
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 #>
@@ -184,6 +186,33 @@ function Run-LaunchFail([string]$Case) {
     finally { if ($id) { End-Row $Case $id $null $before } }
 }
 
+# review 2 of 280: after commands that all started the selection is cleared (as before) - a second
+# run takes the focused item only
+function Run-ClearSel([string]$Case) {
+    if (-not (Want $Case)) { return }
+    Clear-Out
+    $id = 0; $before = Reports
+    try {
+        $id = Start-Two $S2 $StartDir 1
+        $lists = Get-Lists $id
+        KeyTo $lists[0] 0x24; KeyTo $lists[0] 0x28; KeyTo $lists[0] 0x2D; KeyTo $lists[0] 0x2D
+        Start-Sleep -Milliseconds 500
+        Post-Cmd (Get-Main $id) (3000 + $ItemIndex['PERNAME'])
+        $r1 = Serve $id 25 @(1, 6)
+        [void](Wait-Out 'PERNAME-b.txt' 4)
+        $first = ($null -ne (Read-Out 'PERNAME-a.txt')) -and ($null -ne (Read-Out 'PERNAME-b.txt'))
+        Clear-Out
+        Post-Cmd (Get-Main $id) (3000 + $ItemIndex['PERNAME'])
+        $r2 = Serve $id 25 @(1, 6)
+        [void](Wait-Out 'PERNAME-b.txt' 4)
+        $a = Read-Out 'PERNAME-a.txt'; $b = Read-Out 'PERNAME-b.txt'
+        $ok = $first -and ($null -eq $a) -and ($b -ceq ('[' + $S2 + '\b.txt]'))
+        Row $Case 'RUN' (V $ok) ("first run both {0}; second run a.txt {1}, b.txt {2}; windows: {3} / {4}" -f $first, (Short $a), (Short $b), (Tail (Msgs $r1) 60), (Tail (Msgs $r2) 60))
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row $Case $id $null $before } }
+}
+
 $backup = Join-Path $env:TEMP 'tc280_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
@@ -231,6 +260,7 @@ try {
     # guessed second name does not fit: no match, the compare dialog asks (as before), no refusal
     Run-Row 'CMPGUESS' $StartDir ($Root + '\pl') 2 $rightLong 'CMPL' 'dialog' @(2)
     Run-LaunchFail 'LAUNCHFAIL'
+    Run-ClearSel 'CLEARSEL'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

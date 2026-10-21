@@ -18,8 +18,8 @@
   initial folder and item folder; only when the loop ended without an error are they started,
   in order.
 - **Rationale**: the batch route already behaves this way (an error leaves the batch file unrun).
-  A pre-pass over the enumeration is not possible - the callbacks free their index and clear the
-  panel's selection at the end.
+  A pre-pass over the enumeration is not possible - the callbacks free their index at the end
+  (the panel's selection is cleared by the caller after the commands started - review 1).
 - **Alternatives**: a length pre-check in the callers (mainwnd3 / finddlg1) - rejected: it would
   have to repeat the enumeration's choice of items (focus, up-dir, group commands use one item).
 
