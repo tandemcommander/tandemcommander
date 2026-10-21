@@ -1,7 +1,7 @@
 ---
 title: Find cuts a long Containing text and writes the cut text back
 type: bug
-status: new
+status: open
 severity: 5
 area: long-paths
 source: review:291
@@ -55,3 +55,4 @@ own Find text (`FIND_TEXT_LEN`, "should match") may have the same cut; check it 
 ## Log
 
 - 2026-10-21 — created (source review:291)
+- 2026-10-21 — moved to Next position 12

@@ -1,7 +1,7 @@
 ---
 title: User Menu compare names and the Change Icon file are cut to 259 bytes
 type: bug
-status: new
+status: open
 severity: 4
 area: long-paths
 source: review:291
@@ -56,3 +56,4 @@ configuration - check which callers exist before writing the probe.
 ## Log
 
 - 2026-10-21 — created (source review:291)
+- 2026-10-21 — moved to Next position 25

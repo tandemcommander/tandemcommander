@@ -1,7 +1,7 @@
 ---
 title: Unpack with an external unpacker cuts a long target path and mask
 type: bug
-status: new
+status: open
 severity: 6
 area: long-paths
 source: review:291
@@ -54,3 +54,4 @@ files land in another folder (overwrite questions still asked), no loss found by
 ## Log
 
 - 2026-10-21 — created (source review:291)
+- 2026-10-21 — moved to Next position 4
