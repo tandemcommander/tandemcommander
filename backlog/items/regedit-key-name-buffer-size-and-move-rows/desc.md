@@ -7,8 +7,8 @@ area: other-plugins
 source: leftover:129
 who: agent
 created: 2026-10-13
-updated: 2026-10-17
-verified: -
+updated: 2026-10-21
+verified: 2026-10-21 243174e4
 effort: S
 feature: -
 related: []
@@ -33,3 +33,4 @@ Migrated from specs/NEXT-WORK.md §D "From the GitHub issues after 0.1.9" (at 79
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-21 — verified at 243174e4: partly: fs3 buffer size fixed by 131; class-name question unreachable (fs5 queries the source key twice); Move and the question not driven
