@@ -64,3 +64,27 @@ Backlog item `registry-editor-move-of-a-key-into-the-key-above-its-parent` (sour
 | probe before (negative control) | `-Expect before` on main e752f9b9 | 14 PASS / 10 FAIL (above) |
 | probe after (Czech) | `-Lang czech` -> `probe/result_after_czech.txt`, `probe/above294_after_czech.txt` | **24 PASS / 0 FAIL**, registry restored identical |
 | 292's probe (regression) | `specs/292-.../probe/alias292_probe.ps1` on this build -> `probe/alias292_on294.txt` | first run 31 / 1: ALIASOTHER ERROR "Copy / Move opened no dialog" (the probe gave up waiting for the Copy / Move dialog - before any code of this feature runs; a timing flake); re-run `probe/alias292_on294_rerun.txt` **33 PASS / 0 FAIL**, registry restored identical |
+
+## Review
+
+One independent refute-first review (general-purpose agent) of the branch at 2804a7ba.
+**No MUST, no SHOULD.** It re-ran: build SUCCEEDED, saltests 25,458 / 0, encoding guard 0, probe
+24 / 0, 292's probe 33 / 0 (the flake did not recur), and its own scratch probe (fixture
+`HKCU\Software\TcReview294`, removed) 14 / 0 with rows this probe does not drive:
+CASEMOVE / CASECOPY (the repeated subkey differing in case: refused, unchanged), MULTICANCEL /
+MULTIOK (two keys selected: Cancel stops everything; OK skips only the refused key, the other is
+moved), DENYCANCEL / DENYSKIP (read access denied on the repeated subkey: the open-error box with
+Retry / Skip / Skip All / Cancel; Cancel and Skip leave the registry unchanged) - so analyze's
+accepted C1 and C2 are now driven (by the review). Proof sketch confirmed: a write lands inside the
+source only for subkey paths beginning with the remainder, which exist only when `source\R`
+exists; the copy cannot create `source\R`; every refusal is a real collision. Callers enumerated:
+`CopyOrMoveKey` from `CopyOrMoveFromFS` (F5 / F6 / drag and drop) and `QuickRename` (`fs3.cpp`,
+target never existing - not exposed).
+
+| Finding | Done |
+|---|---|
+| NOTE 1 a registry link in the target tree pointing into the source is followed by the copy (predates, exotic, applies to unrelated targets) | Inbox `registry-editor-move-through-a-link-in-the-target-tree` (`review:294`) |
+| NOTE 2 HKCR across halves (a machine-only source moved into the user's Classes above its parent; the copy creates the user half) - not driven, needs admin | covered by the existing items `registry-editor-move-from-hkcr-to-user-classes-does-nothing` and `registry-editor-292-elevated-hkcr-checks`; no new item |
+| NOTE 3 the message "Can't move a key to itself." for a target two levels up | accepted (spec Clarification: no new string in a run) |
+| NOTE 4 CHANGELOG / FEATURE-HISTORY not yet written | done at closing |
+| NOTE 5 the probe's `-Expect before` is only a label | accepted (as in 292's probe; the before run is read as failing rows) |

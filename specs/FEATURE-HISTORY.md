@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -3854,3 +3854,22 @@ a few early ones are out of sequence).
   `a-dialog-status-text-and-the-panel-size-field-crash-when`). From backlog item
   `the-information-line-keeps-using-a-freed-text-when-memory`. No probe; saltests 25,440 / 0
   (negative control, the old rule: 13 failed); one refute-first review (no MUST, one SHOULD fixed).
+- 294-regedt-move-above-parent: the Registry Editor's Copy / Move (F5 / F6) of a key into the key
+  above its parent, when the key held again the chain of names from that target down to itself (in
+  the simplest case a subkey of its own name: `A\K\K\K` moved as `A\K\K` into `A\`), wrote the
+  innermost keys onto the moved key and Move then deleted it - their values lost without a box, also
+  through `HKEY_USERS\<SID>` (upstream; review of 292) - now, after 292's identity test, the path of
+  the source below a target that holds it (`SalRegKeyIdBelow`, `src/common/salregkeyid.h`) is looked
+  up below the source (`SafeRegKeyHoldsPath`, heap-joined, never cut): found = the key is refused
+  with the existing "Can't move/copy a key to itself." box (OK skips, Cancel stops) before anything is
+  written; another open error = the existing open-error box (fails closed). A merge into the key
+  above the parent without the repeated chain stays allowed (refusing every target that holds the
+  source would have broken it). Traps: a Bash here-doc collapses doubled backslashes inside Python
+  too (a mutation for the negative control silently did not apply - use the editor); the first run
+  of 292's probe gave one "opened no dialog" flake (re-run clean). Limits: a registry link in the
+  target tree pointing into the source is still followed (Inbox
+  `registry-editor-move-through-a-link-in-the-target-tree`); HKCR across halves needs admin (existing
+  items). From backlog item `registry-editor-move-of-a-key-into-the-key-above-its-parent`. Probe
+  `above294_probe.ps1` 14 / 10 FAIL -> 24 / 0 (English and Czech); 292's probe 33 / 0; saltests
+  25,458 / 0 (negative control 1 failed); one refute-first review (no MUST, no SHOULD; its scratch
+  rows drove case, multi-selection and access denied).

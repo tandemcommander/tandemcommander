@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor: Move of a key into the key above its parent loses a same-name subkey](items/registry-editor-move-of-a-key-into-the-key-above-its-parent/desc.md) | bug | 7 | data-safety | 294 |
 
 ## Next
 
@@ -237,6 +236,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Registry Editor: Move into a key holding a registry link to the source writes into the source](items/registry-editor-move-through-a-link-in-the-target-tree/desc.md) | bug | 3 | data-safety | review:294 | 2026-10-22 |
 
 ## Parked
 
