@@ -13,6 +13,7 @@
 #include "shellib.h"
 #include "svg.h"
 #include "gui.h" // feature 069 (F-P3-07): CopyToolTipAnswer
+#include "salgrowpair.h" // feature 293
 
 //
 // ****************************************************************************
@@ -137,18 +138,12 @@ BOOL CStatusWindow::SetText(const char* txt, int pathLen)
     LastHotItem = NULL;
 
     int l = (int)strlen(txt) + 1;
-    if (Allocated < l)
+    // feature 293: a block that moved is stored even when the other one could not
+    // grow - out of memory leaves both valid and the old text shown
+    if (!SalGrowBufferPair(Text, AlpDX, Allocated, l))
     {
-        char* newText = (char*)realloc(Text, l);
-        int* newAlpDX = (int*)realloc(AlpDX, l * sizeof(int));
-        if (newText == NULL || newAlpDX == NULL)
-        {
-            TRACE_E(LOW_MEMORY);
-            return FALSE;
-        }
-        Text = newText;
-        AlpDX = newAlpDX;
-        Allocated = l;
+        TRACE_E(LOW_MEMORY);
+        return FALSE;
     }
     memmove(Text, txt, l);
     PathLen = pathLen;

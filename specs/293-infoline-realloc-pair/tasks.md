@@ -8,11 +8,11 @@ allocator.
 
 ## Phase 1: Setup
 
-- [ ] T001 Start the running log `specs/293-infoline-realloc-pair/fix-log.md` with the measurement at ad477c57 (reading proof of the defect, callers enumerated, TextW / SizeW findings)
+- [X] T001 Start the running log `specs/293-infoline-realloc-pair/fix-log.md` with the measurement at ad477c57 (reading proof of the defect, callers enumerated, TextW / SizeW findings)
 
 ## Phase 2: Foundational
 
-- [ ] T002 Create the header-only rule `SalGrowBufferPair` (allocator injected; each successful result stored at once; capacity raised only when both grew; a fresh block released again on failure) in src/common/salgrowpair.h (UTF-8 BOM, SPDX header like src/common/salinfolinebuf.h)
+- [X] T002 Create the header-only rule `SalGrowBufferPair` (allocator injected; each successful result stored at once; capacity raised only when both grew; a fresh block released again on failure) in src/common/salgrowpair.h (UTF-8 BOM, SPDX header like src/common/salinfolinebuf.h)
 
 ## Phase 3: User Story 1 - A panel line that cannot grow keeps working (Priority: P1)
 
@@ -21,16 +21,16 @@ allocator.
 **Independent Test**: `saltests` `TestGrowBufferPair293` with a fake allocator that fails chosen calls,
 moves every successful block and marks released blocks.
 
-- [ ] T003 [US1] Add `TestGrowBufferPair293` (four outcomes of data-model.md, the fresh-line case, a retry after a failure, no growth when the capacity suffices) and its include / call in src/saltests/saltests.cpp
-- [ ] T004 [US1] Replace the two `realloc` calls of `CStatusWindow::SetText` with `SalGrowBufferPair(Text, AlpDX, Allocated, l)` in src/stswnd.cpp (include the header; keep the TRACE_E and the FALSE result)
-- [ ] T005 [US1] Negative control: substitute the old store-only-when-both-succeed rule in src/common/salgrowpair.h, build saltests, record the failing checks in fix-log.md, restore the rule
+- [X] T003 [US1] Add `TestGrowBufferPair293` (four outcomes of data-model.md, the fresh-line case, a retry after a failure, no growth when the capacity suffices) and its include / call in src/saltests/saltests.cpp
+- [X] T004 [US1] Replace the two `realloc` calls of `CStatusWindow::SetText` with `SalGrowBufferPair(Text, AlpDX, Allocated, l)` in src/stswnd.cpp (include the header; keep the TRACE_E and the FALSE result)
+- [X] T005 [US1] Negative control: substitute the old store-only-when-both-succeed rule in src/common/salgrowpair.h, build saltests, record the failing checks in fix-log.md, restore the rule
 
 ## Phase 4: Polish & Cross-Cutting
 
-- [ ] T006 Encoding guard `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`
-- [ ] T007 `.\build.cmd` → `BUILD SUCCEEDED`; `saltests.exe` → `0 failed`; record numbers in fix-log.md
-- [ ] T008 Reading proof in fix-log.md: grep every write of `Text`, `AlpDX`, `Allocated` in src/stswnd.cpp; only the constructor, destructor and the rule touch them
-- [ ] T009 Record the out-of-scope findings (SetSize `Size[0]` before the NULL check; src/gui.cpp `CStaticText::SetText` frees the moved block) as backlog Inbox items with source measure:293
+- [X] T006 Encoding guard `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`
+- [X] T007 `.\build.cmd` → `BUILD SUCCEEDED`; `saltests.exe` → `0 failed`; record numbers in fix-log.md
+- [X] T008 Reading proof in fix-log.md: grep every write of `Text`, `AlpDX`, `Allocated` in src/stswnd.cpp; only the constructor, destructor and the rule touch them
+- [X] T009 Record the out-of-scope findings (SetSize `Size[0]` before the NULL check; src/gui.cpp `CStaticText::SetText` frees the moved block) as backlog Inbox items with source measure:293
 
 ## Dependencies
 

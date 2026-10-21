@@ -79,6 +79,7 @@
 #include "salcopyname.h"      // feature 259
 #include "salcachename.h"     // feature 260
 #include "salinfolinebuf.h"   // feature 276
+#include "salgrowpair.h"      // feature 293
 #include "salcodetable.h"     // feature 262
 #include "salregroot.h"       // feature 263
 #include "salexiforient.h"    // feature 267
@@ -15772,6 +15773,186 @@ static void TestFtpListingField269()
     CHECK(kept > 0 && kept < strings);
 }
 
+// feature 293: a fake heap for the low-memory seam of SalGrowBufferPair - chosen realloc calls
+// fail, every successful one moves the block, released blocks are poisoned and kept (marked dead)
+// so a pointer to one is detected without touching freed memory
+struct CFakeBlock293
+{
+    size_t Size;
+    int Alive;
+    int Pad;
+};
+static std::vector<CFakeBlock293*> g_fakeBlocks293;
+static int g_fakeCalls293 = 0;
+static unsigned g_fakeFailMask293 = 0; // bit i: the i-th realloc call fails
+static int g_fakeBadFrees293 = 0;
+
+static CFakeBlock293* FakeHdr293(const void* p) { return (CFakeBlock293*)((unsigned char*)p - sizeof(CFakeBlock293)); }
+
+static void FakeKill293(void* p)
+{
+    CFakeBlock293* h = FakeHdr293(p);
+    if (!h->Alive)
+        g_fakeBadFrees293++;
+    h->Alive = 0;
+    memset(p, 0xDD, h->Size);
+}
+
+static void* FakeRealloc293(void* p, size_t size)
+{
+    int call = g_fakeCalls293++;
+    if (call < 32 && (g_fakeFailMask293 & (1u << call)) != 0)
+        return NULL; // a failed realloc leaves 'p' untouched
+    CFakeBlock293* h = (CFakeBlock293*)malloc(sizeof(CFakeBlock293) + size);
+    h->Size = size;
+    h->Alive = 1;
+    unsigned char* block = (unsigned char*)(h + 1);
+    memset(block, 0xCD, size);
+    if (p != NULL)
+    {
+        size_t old = FakeHdr293(p)->Size;
+        memcpy(block, p, old < size ? old : size);
+        FakeKill293(p); // always moved: the old address is dead from here on
+    }
+    g_fakeBlocks293.push_back(h);
+    return block;
+}
+
+static void FakeFree293(void* p)
+{
+    if (p != NULL)
+        FakeKill293(p);
+}
+
+static bool FakeLive293(const void* p, size_t minBytes)
+{
+    return p != NULL && FakeHdr293(p)->Alive && FakeHdr293(p)->Size >= minBytes;
+}
+
+static int FakeLiveCount293()
+{
+    int n = 0;
+    for (CFakeBlock293* h : g_fakeBlocks293)
+        n += h->Alive;
+    return n;
+}
+
+static void FakeReset293(unsigned failMask)
+{
+    for (CFakeBlock293* h : g_fakeBlocks293)
+        free(h);
+    g_fakeBlocks293.clear();
+    g_fakeCalls293 = 0;
+    g_fakeFailMask293 = failMask;
+    g_fakeBadFrees293 = 0;
+}
+
+static bool Grow293(char*& text, int*& alpDX, int& allocated, int needed)
+{
+    return SalGrowBufferPair(text, alpDX, allocated, needed, FakeRealloc293, FakeFree293);
+}
+
+// the panel's directory / information line (CStatusWindow::SetText) grows Text and AlpDX
+// together; a failure between the two must leave both valid
+static void TestGrowBufferPair293()
+{
+    // a line showing "hello" in a pair of 10, then a growth to 100 with chosen calls failing
+    // (calls 0 and 1 build the starting pair, 2 = Text, 3 = AlpDX)
+    struct
+    {
+        unsigned failMask;
+        bool ok;
+        bool textMoved;
+        bool alpMoved;
+    } cases[] = {
+        {0, true, true, true},           // both grow - as before
+        {1u << 3, false, true, false},   // Text moved, AlpDX failed: the defect of the item
+        {1u << 2, false, false, true},   // Text failed, AlpDX moved: the reverse
+        {(1u << 2) | (1u << 3), false, false, false}, // both fail
+    };
+    for (auto& c : cases)
+    {
+        FakeReset293(c.failMask);
+        char* text = NULL;
+        int* alpDX = NULL;
+        int allocated = 0;
+        CHECK(Grow293(text, alpDX, allocated, 10));
+        CHECK(allocated == 10);
+        strcpy(text, "hello");
+        for (int i = 0; i < 6; i++)
+            alpDX[i] = 7 * (i + 1);
+        char* oldText = text;
+        int* oldAlpDX = alpDX;
+
+        bool ok = Grow293(text, alpDX, allocated, 100);
+        CHECK(ok == c.ok);
+        CHECK(g_fakeCalls293 == 4);
+        CHECK(allocated == (c.ok ? 100 : 10)); // never more than either block holds
+        CHECK((text != oldText) == c.textMoved);
+        CHECK((alpDX != oldAlpDX) == c.alpMoved);
+        CHECK(FakeLive293(text, (size_t)allocated));
+        CHECK(FakeLive293(alpDX, (size_t)allocated * sizeof(int)));
+        CHECK(FakeLiveCount293() == 2);           // no block lost, none kept twice
+        CHECK(strcmp(text, "hello") == 0);        // the old text stays shown
+        CHECK(alpDX[0] == 7 && alpDX[5] == 42);   // and its measurements
+        if (c.textMoved)
+            CHECK(!FakeHdr293(oldText)->Alive);   // the fake really released the old block
+        if (c.alpMoved)
+            CHECK(!FakeHdr293(oldAlpDX)->Alive);
+
+        // a later long text with memory available grows and fits
+        g_fakeFailMask293 = 0;
+        CHECK(Grow293(text, alpDX, allocated, 100));
+        CHECK(allocated == 100);
+        CHECK(FakeLive293(text, 100) && FakeLive293(alpDX, 100 * sizeof(int)));
+        CHECK(strcmp(text, "hello") == 0);
+        memset(text, 'x', 99);
+        text[99] = 0;
+        alpDX[99] = 1;
+
+        // a text that fits: no allocation at all
+        int calls = g_fakeCalls293;
+        CHECK(Grow293(text, alpDX, allocated, 50));
+        CHECK(Grow293(text, alpDX, allocated, 100));
+        CHECK(g_fakeCalls293 == calls && allocated == 100);
+
+        FakeFree293(text);
+        FakeFree293(alpDX);
+        CHECK(FakeLiveCount293() == 0);
+        CHECK(g_fakeBadFrees293 == 0);
+    }
+
+    // a fresh line (no blocks yet) whose growth fails half-way stays without blocks
+    for (unsigned failMask : {1u << 0, 1u << 1, 3u})
+    {
+        FakeReset293(failMask);
+        char* text = NULL;
+        int* alpDX = NULL;
+        int allocated = 0;
+        CHECK(!Grow293(text, alpDX, allocated, 20));
+        CHECK(text == NULL && alpDX == NULL && allocated == 0);
+        CHECK(FakeLiveCount293() == 0); // the fresh block was released, not leaked
+        CHECK(g_fakeBadFrees293 == 0);
+        g_fakeFailMask293 = 0;
+        CHECK(Grow293(text, alpDX, allocated, 20));
+        CHECK(allocated == 20 && FakeLive293(text, 20) && FakeLive293(alpDX, 20 * sizeof(int)));
+    }
+    FakeReset293(0);
+
+    // the CRT form used by the core
+    char* text = NULL;
+    int* alpDX = NULL;
+    int allocated = 0;
+    CHECK(SalGrowBufferPair(text, alpDX, allocated, 65536));
+    CHECK(allocated == 65536 && text != NULL && alpDX != NULL);
+    text[65535] = 0;
+    alpDX[65535] = 1;
+    CHECK(SalGrowBufferPair(text, alpDX, allocated, 16)); // fits
+    CHECK(allocated == 65536);
+    free(text);
+    free(alpDX);
+}
+
 // feature 277: the path of a "257" reply is never cut (salftppwd.h) - the German AIX form was
 // cut at the buffer and taken as the working folder (an ancestor), the quoted form was refused
 // one byte early
@@ -16774,6 +16955,7 @@ int main(int argc, char** argv)
     TestFolderShortcut286();
     TestFtpServerEncoding288();
     TestDriveText289();
+    TestGrowBufferPair293();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
