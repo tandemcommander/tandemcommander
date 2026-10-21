@@ -14990,6 +14990,18 @@ static void TestPathTwins290()
     CHECK(!SalPathsHaveCaseTwins(lens2, 2, NULL)); // "a.txt" and "A"
     // doubled separators add no empty part
     CHECK(!PathTwins290({"D\\\\x", "D\\y"}));
+    CHECK(PathTwins290({"D\\\\x", "D\\X"}));
+    // review of 290: a folder whose name is not valid WTF-8, ordinal-only twins below it - compared
+    // part by part as the tree does (whole prefixes fell back to the legacy fold and missed them)
+    CHECK(PathTwins290({"\xFF\\\xC4\x8C.txt", "\xFF\\\xC4\x8D.txt"}));
+    CHECK(!PathTwins290({"\xFF\\\xC4\x8C.txt", "\xFE\\\xC4\x8D.txt"})); // two folders
+    {
+        FakeDir252 inv, top;
+        inv.AddFile("\xC4\x8C.txt");
+        inv.AddFile("\xC4\x8D.txt");
+        top.AddDir("\xFF", &inv);
+        CHECK(SalDirTreeHasCaseTwins(&top)); // the listing's answer the rule must agree with
+    }
     // the legacy byte fold (cp1250: E-circumflex / U-acute) as 252
     const BYTE* lower = SalNameOrderDetail::LegacyLowerTable();
     for (int b1 = 0x80, done = 0; b1 <= 0xBF && !done; b1++)
@@ -15006,8 +15018,11 @@ static void TestPathTwins290()
                     done = 1;
                 }
             }
-    // the same decision as SalDirTreeHasCaseTwins on the tree the paths make (randomized, fixed seed)
-    static const char* parts[] = {"a", "A", "b", "B", "ab", "aB"};
+    // the same decision as SalDirTreeHasCaseTwins on the tree the paths make (randomized, fixed seed);
+    // set 1 ASCII case pairs, set 2 (review of 290) a part that is not valid WTF-8 and an ordinal-only
+    // pair (C-caron / c-caron, apart by the cp1250 fold) without other case pairs
+    static const char* parts1[] = {"a", "A", "b", "B", "ab", "aB", "\xFF", "\xC4\x8C", "\xC4\x8D"};
+    static const char* parts2[] = {"\xFF", "\xFE", "\xC4\x8C", "\xC4\x8D", "b"};
     unsigned seed = 290;
     auto rnd = [&seed](unsigned n)
     {
@@ -15015,9 +15030,11 @@ static void TestPathTwins290()
         return (seed >> 16) % n;
     };
     int agree = 0, twinSets = 0;
-    const int rounds = 4000;
+    const int rounds = 8000;
     for (int round = 0; round < rounds; round++)
     {
+        const char* const* parts = round % 2 == 0 ? parts1 : parts2;
+        const unsigned partCount = round % 2 == 0 ? (unsigned)_countof(parts1) : (unsigned)_countof(parts2);
         std::vector<std::string> paths;
         int count = 1 + (int)rnd(5);
         for (int i = 0; i < count; i++)
@@ -15028,7 +15045,7 @@ static void TestPathTwins290()
             {
                 if (k > 0)
                     p += '\\';
-                p += parts[rnd(6)];
+                p += parts[rnd(partCount)];
             }
             if (rnd(4) == 0)
                 p += '\\'; // a folder entry

@@ -11,6 +11,7 @@
     disk folder with the one item to add (content NEW). The left panel (active) shows src, the
     right panel the archive (or a folder in it). Home, Down focuses the item, Copy (727); the Copy
     dialog OK, every overwrite question Yes (IDYES).
+      Every twin row also asserts its overwrite questions: ADDFILE one, the others none.
       ADDDIR    D/x.txt=X, d/y.txt=Y; the right panel at <archive>\d; add x.txt.
                 PASS = the archive holds D/x.txt=X, d/x.txt=NEW, d/y.txt=Y
       ADDFILE   A.txt=UPPER, a.txt=lower, z.txt; the right panel at <archive>; add a.txt.
@@ -153,7 +154,9 @@ function Run-Case([string]$Kind, [string]$Case) {
         else {
             $ok = ($got.Count -eq $want.Count)
             foreach ($w in $want) { if (-not ($got -ccontains $w)) { $ok = $false } }
-            if ($Case -eq 'ADDFILE' -and $questions -ne 1) { $ok = $false }
+            # review 290: every row asserts its questions - ADDFILE one (for a.txt), the others none
+            $wantQ = $(if ($Case -eq 'ADDFILE') { 1 } else { 0 })
+            if ($questions -ne $wantQ) { $ok = $false }
         }
         Row $name 'RUN' (V $ok) ("archive: {0}; questions: {1}; {2}; windows: {3}" -f $(if ($got.Count) { $got -join ',' } else { 'nothing' }), $questions, $hostInfo, (Tail $msgs 220))
     }

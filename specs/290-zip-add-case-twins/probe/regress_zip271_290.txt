@@ -1,6 +1,6 @@
-zip271_probe (feature 271) regress-290
+zip271_probe (feature 271) regress-290-after-review
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 20:33; registry key existed True; ACP 1250
+Date    : 2026-10-21 21:15; registry key existed True; ACP 1250
 
 ZIP-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 ZIP-CONTROL RUN    PASS        panel at: ...\Users\pavel\AppData\Local\Temp\tc271\ZIP-CONTROL\t.zip\Docs; host 0 in 2 central headers

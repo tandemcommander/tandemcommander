@@ -77,6 +77,47 @@ inline BOOL RunHasTwins(SalCaseTwinName* names, int count, int(__cdecl* cmp)(con
     return FALSE;
 }
 
+// one part of a flat path (feature 290): the folder it is in - the path's first 'Start' bytes,
+// compared byte for byte as the case-sensitive tree tells its folders apart - and the part itself
+struct PathPart
+{
+    const char* Path;
+    int Start;
+    SalCaseTwinName Part;
+};
+
+inline int CompareFolder(const PathPart* x, const PathPart* y)
+{
+    if (x->Start != y->Start)
+        return x->Start < y->Start ? -1 : 1;
+    return memcmp(x->Path, y->Path, x->Start);
+}
+
+inline int __cdecl ComparePartOrdinal(const void* a, const void* b)
+{
+    int c = CompareFolder((const PathPart*)a, (const PathPart*)b);
+    return c != 0 ? c : CompareOrdinal(&((const PathPart*)a)->Part, &((const PathPart*)b)->Part);
+}
+
+inline int __cdecl ComparePartLegacy(const void* a, const void* b)
+{
+    int c = CompareFolder((const PathPart*)a, (const PathPart*)b);
+    return c != 0 ? c : CompareLegacy(&((const PathPart*)a)->Part, &((const PathPart*)b)->Part);
+}
+
+// sorts 'parts' by folder, then by 'cmp' on the part; twins = neighbours of one folder whose parts are
+// equal by it with different bytes
+inline BOOL PartRunHasTwins(PathPart* parts, int count, int(__cdecl* cmp)(const void*, const void*))
+{
+    qsort(parts, count, sizeof(PathPart), cmp);
+    for (int i = 1; i < count; i++)
+    {
+        if (cmp(&parts[i - 1], &parts[i]) == 0 && !SameBytes(parts[i - 1].Part, parts[i].Part))
+            return TRUE;
+    }
+    return FALSE;
+}
+
 // the check on a copy the caller owns (it is reordered)
 inline BOOL HaveTwinsInPlace(SalCaseTwinName* names, int count)
 {
@@ -108,15 +149,15 @@ inline BOOL SalNamesHaveCaseTwins(const SalCaseTwinName* names, int count)
 
 // The same question for flat paths - the names of an archive's members, '\' or
 // '/' separated (feature 290: the ZIP plug-in's add has the central directory,
-// not a tree). Every prefix of a path that ends at a whole part (before each
-// separator, and the whole path unless it ends with one) is one name, and the
-// check above runs over all of them: two byte-different paths equal ignoring
-// case differ first in a part whose preceding parts are identical - that folder
-// holds twins - and twins 'a', 'b' of folder 'F' give the prefixes 'F\a' and
-// 'F\b'. A separator has no case partner in either rule, so this is exactly
-// SalDirTreeHasCaseTwins on the case-sensitive tree the paths make. 'Len' < 0 =
-// up to the terminator; a NULL 'Name' is "". Low memory: TRUE and '*lowMemory'
-// (may be NULL) TRUE; otherwise '*lowMemory' FALSE.
+// not a tree). Every part of every path is one name in the folder the path's
+// bytes before it make (up to the end of the previous part; empty parts of
+// doubled, leading or trailing separators are none), and names of one folder
+// are compared as SalNamesHaveCaseTwins compares them - part by part, as
+// SalDirTreeHasCaseTwins does on the case-sensitive tree the paths make (whose
+// folders are told apart by their bytes). Comparing whole prefixes instead
+// would miss twins below a folder whose name is not valid WTF-8 (review of 290).
+// 'Len' < 0 = up to the terminator; a NULL 'Name' is "". Low memory: TRUE and
+// '*lowMemory' (may be NULL) TRUE; otherwise '*lowMemory' FALSE.
 inline BOOL SalPathsHaveCaseTwins(const SalCaseTwinName* paths, int count, BOOL* lowMemory)
 {
     if (lowMemory != NULL)
@@ -135,8 +176,8 @@ inline BOOL SalPathsHaveCaseTwins(const SalCaseTwinName* paths, int count, BOOL*
         }
         total++;
     }
-    SalCaseTwinName* names = (SalCaseTwinName*)malloc(sizeof(SalCaseTwinName) * total);
-    if (names == NULL)
+    SalCaseTwinsDetail::PathPart* parts = (SalCaseTwinsDetail::PathPart*)malloc(sizeof(SalCaseTwinsDetail::PathPart) * total);
+    if (parts == NULL)
     {
         if (lowMemory != NULL)
             *lowMemory = TRUE;
@@ -147,25 +188,33 @@ inline BOOL SalPathsHaveCaseTwins(const SalCaseTwinName* paths, int count, BOOL*
     {
         const char* s = paths[i].Name != NULL ? paths[i].Name : "";
         int len = paths[i].Name == NULL ? 0 : (paths[i].Len < 0 ? (int)strlen(s) : paths[i].Len);
-        for (int k = 0; k < len; k++)
+        int folderLen = 0; // the end of the previous part
+        int k = 0;
+        while (k < len)
         {
-            // a prefix ends before a separator that follows a part (doubled or leading ones add none)
-            if ((s[k] == '\\' || s[k] == '/') && k > 0 && s[k - 1] != '\\' && s[k - 1] != '/')
+            while (k < len && (s[k] == '\\' || s[k] == '/'))
+                k++;
+            int start = k;
+            while (k < len && s[k] != '\\' && s[k] != '/')
+                k++;
+            if (k > start)
             {
-                names[n].Name = s;
-                names[n].Len = k;
+                parts[n].Path = s;
+                parts[n].Start = folderLen;
+                parts[n].Part.Name = s + start;
+                parts[n].Part.Len = k - start;
                 n++;
+                folderLen = k;
             }
         }
-        if (len > 0 && s[len - 1] != '\\' && s[len - 1] != '/')
-        {
-            names[n].Name = s;
-            names[n].Len = len;
-            n++;
-        }
     }
-    BOOL ret = SalCaseTwinsDetail::HaveTwinsInPlace(names, n);
-    free(names);
+    BOOL ret = FALSE;
+    if (n >= 2)
+    {
+        ret = SalCaseTwinsDetail::PartRunHasTwins(parts, n, SalCaseTwinsDetail::ComparePartOrdinal) ||
+              SalCaseTwinsDetail::PartRunHasTwins(parts, n, SalCaseTwinsDetail::ComparePartLegacy);
+    }
+    free(parts);
     return ret;
 }
 

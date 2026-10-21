@@ -3,10 +3,11 @@
 Internal to the ZIP plug-in and the header-only rules; no plug-in interface change.
 
 1. `SalPathsHaveCaseTwins(const SalCaseTwinName* paths, int count, BOOL* lowMemory)`
-   (`src/common/salcasetwins.h`): TRUE when two byte-different path prefixes (ending at a whole part,
-   separators `\` and `/`) are equal by `SalNameOrderCompareCI` or by the legacy byte fold - exactly
+   (`src/common/salcasetwins.h`): TRUE when two byte-different parts of one folder (the folder = the
+   path's bytes up to the end of the previous part, compared byte for byte; separators `\` and `/`,
+   empty parts skipped) are equal by `SalNameOrderCompareCI` or by the legacy byte fold - exactly
    when some folder of the tree the paths make holds case twins (files and folders of one folder
-   together, as `SalDirTreeHasCaseTwins`). `count < 2` or `paths == NULL`: FALSE. Low memory: TRUE and
+   together, as `SalDirTreeHasCaseTwins`; review of 290: part by part, not whole prefixes). `count < 2` or `paths == NULL`: FALSE. Low memory: TRUE and
    `*lowMemory` (may be NULL) = TRUE; otherwise `*lowMemory` = FALSE.
 2. `SalZipMemberIs(..., BOOL rootIgnoreCase, int* rootBytes, BOOL nameIgnoreCase = TRUE)` and
    `SalZipMemberIsOrIsIn(..., BOOL rootIgnoreCase, BOOL nameIgnoreCase = TRUE)`

@@ -81,7 +81,8 @@ unchanged, research R4). Second run: no new findings.
 - `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
 - `.\build.cmd` -> `BUILD SUCCEEDED` (no `warning C` / `error C`); zip.spl rebuilt after the last
   source edit.
-- `saltests.exe` -> `saltests: 25277 checks, 0 failed` (TestPathTwins290: the item's cases, a 4000-set
+- `saltests.exe` -> `saltests: 25277 checks, 0 failed` (before the review; after it 25281 / 0 -
+  see *Review*) (TestPathTwins290: the item's cases, a 4000-set
   randomized cross-check against `SalDirTreeHasCaseTwins` on the case-sensitive tree, the
   `nameIgnoreCase` variants of `SalZipMemberIs` / `SalZipMemberIsOrIsIn`).
 - Unit negative control: the prefixes disabled in `SalPathsHaveCaseTwins` (only whole paths) ->
@@ -124,3 +125,53 @@ Probe `probe/result_after.txt`: **18 PASS, 0 FAIL, 0 NOT DRIVEN** (before 6 FAIL
   h-circumflex / L-acute, a pair of the legacy fold - a twin archive for 290) ->
   `probe/regress_namecoll108_290.txt` **30 PASS / 0 FAIL / 0 NOT DRIVEN**, F4 retries 0 (as after 110).
 - Registry restored and identical in every regression run.
+
+## Review
+
+Review 1 (independent agent, refute-first, build of b7617570): **no MUST**. It re-ran the probe
+(18 / 0, registry identical) and saltests (25277 / 0), enumerated the callers itself
+(`SalZipMemberIs` / `SalZipMemberIsOrIsIn`: `add.cpp` and saltests only; `pathFlag` only in the two
+calls; delete / extract `CZipCommon::MatchFiles` untouched) and drove its own rows under %TEMP% (copy
+of 110's probe, not in the repository): Move of a folder into a twin ZIP (Windows, Unix, with folder
+entries) - nothing replaced, the source removed (analyze C2 now driven); Move onto the exact member,
+Yes - only that member replaced; Move + Skip - archive unchanged, the source stays; byte-identical
+duplicates with Yes / Skip and Yes / Cancel - 110's "delete only once stored" holds; a legacy-fold
+pair (h-circumflex / L-acute) with README.txt - readme.txt added beside, no question. By reading:
+exact matching only shrinks the set of matches; the low-memory branch returns before any question;
+no path cut, no code-page conversion.
+- SHOULD 1 - `SalPathsHaveCaseTwins` compared whole prefixes: a folder name that is not valid WTF-8
+  made `SalNameOrderCompareCI` fall back to the legacy fold for the whole path, and ordinal-only twins
+  below it (C-caron / c-caron, apart in the cp1250 fold) were missed - `"\xFF\\Č.txt"` /
+  `"\xFF\\č.txt"` gave 0 while `SalDirTreeHasCaseTwins` on the same tree gave 1 (its `cl` program).
+  The randomized cross-check used ASCII parts only. **Fixed**: the rule now compares every part with
+  the other parts of its folder (folder = the path's bytes up to the end of the previous part,
+  compared byte for byte; parts by the two rules), exactly what the tree rule does; empty parts of
+  doubled separators are skipped (`{"D\\\\x", "D\\X"}` is now twins, as the tree says). saltests: the
+  reviewer's case, a two-folder control, the tree's own answer, and a second randomized set (`\xFF`,
+  `\xFE`, C-caron, c-caron, `b`; 8000 rounds in all). Negative control (whole prefixes restored,
+  NEGCTL290) -> `saltests: 25281 checks, 3 failed` (the reviewer's case, the doubled-separator case,
+  `agree == rounds`); restored, rebuilt -> `saltests: 25281 checks, 0 failed`.
+- SHOULD 2 - the re-baselined `r_3*` rows of 110 no longer drive 110's SF1 path (mixed answers for
+  several matches). **Fixed**: the reviewer's rows `v_dupys` (Yes / Skip) and `v_dupyc` (Yes /
+  Cancel) on byte-identical duplicate members added to 110's `zipname_probe.ps1` -> re-run
+  `probe/regress_zipname110_290.txt` **44 PASS / 0 FAIL / 0 NOT DRIVEN**.
+- NOTE 3 - cost: a second walk over the central directory and two sorts of every path part on each
+  add into an existing ZIP; the reviewer measured (/O2) about 1.0 s for 200,000 ASCII members five
+  folders deep, 3.2 s for non-ASCII. Accepted and recorded as a limit (the 271 listing pays the same
+  kind of check on every listing; the add itself rewrites the archive).
+- NOTE 4 - a legacy-fold pair (h-circumflex / L-acute: two names to Windows) makes the whole archive
+  exact for adding, so readme.txt is added beside README.txt there. Consistent with 271's listing,
+  nothing lost; recorded as a limit.
+- NOTE 5 - a typed target folder in another case in a twin ZIP now gets a new folder beside it: the
+  existing backlog item "Copying into an archive folder typed in another case packs into a new folder
+  beside it" covers it; nothing new.
+- NOTE 6 - the probe asserted the question count only in ADDFILE. **Fixed**: every twin row asserts
+  it (ADDFILE 1, the others 0).
+
+After the fixes, on the final build: `.\build.cmd` BUILD SUCCEEDED; saltests 25281 / 0; encoding
+guard 0; `probe/result_after.txt` (label after-review) **18 PASS / 0 FAIL / 0 NOT DRIVEN**; 110's
+44 / 0; 271's `probe/regress_zip271_290.txt` 16 / 0; registry identical every time. 108's probe was
+not repeated after the review fix: the rule changed only for names that are not valid WTF-8, and 108's
+fixtures use valid UTF-8 names (its run on the previous build: 30 / 0).
+
+No MUST -> no second review (SKILL step 7).

@@ -22,6 +22,10 @@
   0x5C; the legacy fold maps no byte to it), so whole-string equality is part-wise equality. This is
   the same decision 271's listing makes with `SalDirTreeHasCaseTwins` on the case-sensitive tree
   (checked by a randomized cross-check in saltests).
+- Revised by the review: whole prefixes are not enough - `SalNameOrderCompareCI` judges a whole
+  string as WTF-8 or not, so a folder name that is not valid WTF-8 sent the whole prefix to the legacy
+  fold and ordinal-only twins below it were missed. The rule now compares each part with the other
+  parts of its folder (folder by bytes), as the tree rule does.
 - Alternatives: build a directory tree in the plug-in (more code, more memory); compare only names
   of the target folder (would differ from the listing's per-archive decision, and the folder part
   below the panel's folder - ADDFOLDER - would still be matched ignoring case).
