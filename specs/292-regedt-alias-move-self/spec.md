@@ -37,6 +37,7 @@ Probe `probe/alias292_probe.ps1 -Expect before` on the Debug x64 build of `main`
 - Q: `HKEY_CLASSES_ROOT` is a merged view of the user's and the machine's classes - which key is a path under it? → A: it is treated as possibly being either of the two (and the key it resolves to): the operation is refused when any of them is the source key or lies inside it (autonomous run: conservative - refuses rather than guesses; a rare operation between the merged view and one of its halves may be refused although it would have reached the other half)
 - Q: What happens when the identity of a key cannot be established (the key cannot be opened)? → A: the operation does not go on for that key: the existing "Unable to open a registry key" error with Retry / Skip / Skip All / Cancel is shown, as the copy itself would show it (autonomous run: rule - a "safe to delete?" check fails closed, CLAUDE.md 098)
 - Q: Which messages are shown? → A: exactly the existing ones of the same-root case - "Can't move/copy key or value to itself." for a target folder that is the source folder, "Name: <key> Error: Can't move/copy a key to itself." for a target inside the key; no new UI text (autonomous run: item - "refused like the same path under the same root")
+- Q: With several keys or values selected and a target folder that is, by identity, the panel's own key, is the whole operation refused or only some items? → A: the whole operation, before anything is copied, exactly as under one root name today (back to the target dialog); a target inside one selected key refuses only that key (OK = skip it, Cancel = stop) (autonomous run: item - "refused like the same path under the same root")
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -128,7 +129,8 @@ written under another root name keep working, and every same-root operation beha
 - **FR-001**: When the target key of a Copy or Move from a Registry Editor panel is, by identity,
   the key the panel shows (the source items' parent), and the operation is not a rename to another
   name, the Registry Editor MUST refuse it with the message the same-root case shows ("Can't
-  copy/move key or value to itself.") and change nothing - for keys and values alike.
+  copy/move key or value to itself.") and change nothing - for keys and values alike, for the
+  whole selection, before anything is copied (the target dialog opens again).
 - **FR-002**: When the target of a key, by identity, is the source key or lies inside it, the
   Registry Editor MUST refuse that key with the message the same-root case shows ("Name: <key>
   Error: Can't copy/move a key to itself.", OK = skip the key, Cancel = stop) and never delete it.
