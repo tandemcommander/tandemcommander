@@ -115,7 +115,8 @@ probes (215, 224, 233) as regressions.
 2. **Given** an OS/2 or VMS absolute path that would not fit once completed, **Then** the
    completion fails without changing the path and its caller does not use a cut path.
 3. **Given** an AS/400 member name that does not fit the caller's buffer, **Then** no cut name is
-   used as a target name - the caller refuses ("too long" as for any other long target name).
+   used as a target name - the panel download refuses ("too long" as for any other long target
+   name), the explore of a folder creates no item and reports its existing error (Clarifications).
 4. **Given** two files on a case-insensitive server whose names differ only by the case of a
    non-ASCII letter (`Č.txt` / `č.txt`), **Then** the lock treats them as one file; two different
    non-ASCII names that only the code-page case table folds together are two files.

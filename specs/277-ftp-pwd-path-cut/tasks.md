@@ -37,7 +37,7 @@
 ## Phase 6: Polish & verification
 
 - [ ] T013 `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`
-- [ ] T014 `build.cmd` -> `BUILD SUCCEEDED`; `saltests.exe` -> 0 failed
+- [ ] T014 `build.cmd` -> `BUILD SUCCEEDED`; `saltests.exe` -> 0 failed; `git diff main --stat` shows no `lang` / `.rc` / `.rh` change (FR-010: no new UI strings)
 - [ ] T015 Probe after: `specs/277-ftp-pwd-path-cut/probe/result_after.txt` - every row PASS
 - [ ] T016 Regression probes 215 and 233 (`specs/277-ftp-pwd-path-cut/probe/regress_215.txt`, `regress_233.txt`) give their recorded results
 - [ ] T017 `specs/277-ftp-pwd-path-cut/fix-log.md`: before / after, commands, results

@@ -43,3 +43,10 @@ By reading at 65c337dc:
 ## Decisions
 
 (see spec *Assumptions*)
+
+## Analyze
+
+Round 1: 0 CRITICAL, 0 HIGH; MEDIUM C1 (FR-010 had no check - added to T014), MEDIUM I1 (US3
+scenario 3 vs clarification Q3 - aligned); LOW U1 (the item asked for a long *home* folder option,
+the probe drives a linked folder - the home / panel route is masked by the core's ~260-byte limit,
+research R1) accepted. Round 2: nothing left above LOW.
