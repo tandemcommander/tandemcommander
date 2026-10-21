@@ -65,7 +65,8 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\276-infoline-long-na
 ## Checks (after)
 
 - Build: `.\build.cmd` -> BUILD SUCCEEDED, no warning in the touched files.
-- `saltests.exe` -> `saltests: 24887 checks, 0 failed` (24,873 before + 14 new).
+- `saltests.exe` -> `saltests: 24887 checks, 0 failed` (24,859 at 275 + 28 new; review NOTE 1
+  corrected the count first written here).
 - Negative control: `SAL_INFOLINE_MAX_LEN` set to 1000 -> `saltests: 24873 checks, 6 failed`
   (TestInfoLineBuf276); restored -> 0 failed. (The edit through PowerShell dropped the header's
   BOM; restored before the commit - the encoding guard checks it.)
@@ -85,3 +86,30 @@ short name 0771~1.TXT, so `$(FileDOSName)` is short. A volume without 8.3 names 
 needs an administrator - "Error 5" here) reaches the same `ItemFocused` code with
 `DosName == NULL` and is covered by the same fix; not driven. The WIDTH row drives the same
 growth with 6 KB from short names.
+
+## Review
+
+Review 1 (independent, refute-first, general-purpose agent): **no MUST, no SHOULD.** It re-ran the
+probe on the hidden desktop (23 / 0, registry identical), checked the negative control by hand
+(14 checks of which 6 fail at a bound of 1000 - matches), saltests 24887 / 0, encoding 0, and
+failed to refute: quiet attempts give the same text (the info-line variables ignore the parent
+window; `$[ENV]` errors are ignored anyway); one box as before (BADSYNTAX / OVERCAP); hot-text
+positions at most 65534 and bounds-checked by `BuildHotTrackItems`; long texts reach the
+clipboard / drag consumers whole (`SAL_MAX_PATH_UTF8` buffers); `GetTextExtentExPointW` fails only
+from 43,680 CJK characters (65,535 bytes hold at most 21,845); the other writers of the line do
+not expand names. NOTEs:
+
+1. The saltests count was written as "24,873 + 14" - corrected (24,859 at 275 + 28).
+2. clang-format: two spaces before the header's trailing comments, the include comment alignment
+   in fileswn2.cpp - fixed with VS2022 clang-format (the changed blocks now format clean);
+   rebuilt: BUILD SUCCEEDED, saltests 24887 / 0.
+3. The saltests checks test the growth rule, not `ItemFocused` (a revert of fileswn2.cpp alone
+   still passes saltests) - accepted: the probe covers the call site (before 16 / 7, after 23 / 0).
+4. WIDTH checks only "no box", hot texts by reading - accepted (OVERCAP / ARCCAP catch a broken
+   loop; the information line exposes no text).
+5. A malformed content costs 8 expansions per focus before its one box - accepted, harmless.
+6. Pre-existing, outside the diff: `CStatusWindow::SetText` keeps a freed `Text` when the second
+   `realloc` fails - Inbox item `the-information-line-keeps-using-a-freed-text-when-memory`
+   (review:276).
+
+No second review: no MUST finding; the changes after review 1 are comment spacing only.

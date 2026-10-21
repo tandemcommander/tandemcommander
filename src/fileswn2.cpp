@@ -17,7 +17,7 @@
 #include "zip.h"
 #include "pack.h"
 #include "cache.h"
-#include "salheapstr.h" // feature 095
+#include "salheapstr.h"     // feature 095
 #include "salinfolinebuf.h" // feature 276
 #include "toolbar.h"
 extern "C"

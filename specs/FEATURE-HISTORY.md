@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271 |
@@ -3526,3 +3526,22 @@ a few early ones are out of sequence).
   From backlog item `f3-f4-refuse-archive-members-whose-path-inside-the-archive`. Probe
   `arcmember275_probe.ps1` 9 / 5 -> 17 / 0 (without the M1 fix 16 / 1); 260's probe (ARCCAP now the
   viewer) 16 / 0; 222's 10 / 0; two refute-first reviews (one MUST, fixed; then none).
+- 276-infoline-long-name: moving the cursor onto an item with a long name (an archive member of
+  200 CJK letters + ".txt", 604 bytes; also a disk file on a volume without 8.3 names) showed
+  "Expanded string is too large." (once per focus; twice at the start when both panels overflow) and the
+  information line kept describing the previous item - the default content names the item twice
+  (`$(FileDOSName)` is the name itself without a short name) and `ItemFocused` expanded into 1000
+  bytes. Now the expansion is repeated into a heap buffer that doubles up to 65,535 bytes
+  (`salinfolinebuf.h` `SalInfoLineNextLen`; the hot-text placements are WORDs), quietly - only the
+  last attempt reports, so a malformed content or a width-padded text over the bound still shows
+  its one box. Names are never cut (names alone stay under 14 KB). The plug-in route
+  (`GetInfoLineContent`, 1000 bytes by contract) is unchanged. Traps: the ZIP listing refuses a
+  member over 255 UTF-16 units, so the first ARCMAX row tested nothing; the information line
+  exposes no text - the probe hashes its pixels (PrintWindow) with a control row; a PowerShell
+  edit of the header dropped its BOM. Limits: the disk case was not driven (C: generates 8.3 names,
+  changing that needs an administrator); what the line shows is checked by pixels only (person step
+  `information-line-of-a-long-named-item-check-it-on-screen-276`); Inbox
+  `the-information-line-keeps-using-a-freed-text-when-memory`. From backlog item
+  `focusing-an-archive-member-with-a-very-long-name-shows`. Probe `infoline276_probe.ps1` 16 / 7 ->
+  23 / 0; 260's probe 16 / 0, 275's 17 / 0 (its F4 rows no longer meet the box); `TestInfoLineBuf276`
+  (negative control: a 1000-byte bound fails 6); one refute-first review (no MUST, no SHOULD).

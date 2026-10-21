@@ -11,10 +11,15 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Moving the cursor onto a file with a very long name showed "Expanded string is too large."** (feature 276).
+  - **Before:** when the cursor landed on an archive file with a long name - for example 200 Chinese letters - an error box "Expanded string is too large." appeared (sometimes twice), and the information line below the panel kept describing the previous file. The same happened on disks that do not keep short (8.3) names. The information line names the file twice by default (its name and its short name, which is the name itself when there is no short one), and the text did not fit.
+  - **Now:** no box appears; the information line describes the file - its name, size, date, time and attributes - whatever the length of its name. A malformed Information Line content (Configuration) still reports its error once.
+  - **Limitation:** an Information Line content with very large widths (such as many `$(FileSize:9999)`) can still be too large and reports it as before. A plug-in that fills the information line itself keeps its own limit.
+
 - **Viewing or editing an archive file whose path inside the archive is long still said "resulting filename is too long"** (feature 275).
   - **Before:** F3 (View) and F4 (Edit) refused a file whose folders and name inside the archive took 520 bytes or more - for example a name of about 172 or more Chinese letters at the top of the archive, or a shorter one inside folders with long names - although its temporary copy would fit. F5 (Copy) extracted such files.
   - **Now:** F3 and F4 open such files with ZIP, 7-Zip and TAR archives (and the other archive types the program ships), and an edited file goes back under its whole path, which the Archive Update list shows whole. The only length limit left is the temporary copy's: a name too long for the temporary folder is refused as before. The CAB plug-in refuses a path that does not fit its buffer with a message instead of cutting it (no real cabinet holds such a path).
-  - **Limitation:** focusing such a file, and closing its viewer, still shows "Expanded string is too large." (the information line; recorded for a later fix). *Copy Selected To...* in the Archive Update dialog refuses an edited file whose target path would be longer than 259 characters (Update All works). Editing was tried with ZIP and 7-Zip archives; ISO images and CAB archives were checked by reading only.
+  - **Limitation:** *Copy Selected To...* in the Archive Update dialog refuses an edited file whose target path would be longer than 259 characters (Update All works). Editing was tried with ZIP and 7-Zip archives; ISO images and CAB archives were checked by reading only.
 
 - **Create Directory (F7) refused a new folder's name in a deep folder with "The path specified is too long."** (feature 274).
   - **Before:** a name typed without a path was refused whenever the folder's path and the name together reached 260 bytes - in a deep folder, or for a long name in letters that take three bytes each (for example a Chinese name of 87 or more letters, even in a short folder). Typing the full path worked. A name longer than any file system takes got the same message, which blamed the path.

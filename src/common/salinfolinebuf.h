@@ -23,8 +23,8 @@
 //
 //*****************************************************************************
 
-#define SAL_INFOLINE_FIRST_LEN 1000  // the first attempt (and a plug-in's buffer, spl_com.h)
-#define SAL_INFOLINE_MAX_LEN 65535   // the bound: hot-text positions are WORDs
+#define SAL_INFOLINE_FIRST_LEN 1000 // the first attempt (and a plug-in's buffer, spl_com.h)
+#define SAL_INFOLINE_MAX_LEN 65535  // the bound: hot-text positions are WORDs
 
 // the buffer length to try after an expansion into 'len' bytes did not fit;
 // 0 = 'len' already is the bound, no further attempt
