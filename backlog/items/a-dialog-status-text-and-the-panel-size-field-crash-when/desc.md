@@ -1,7 +1,7 @@
 ---
 title: A dialog status text and the panel size field crash when memory runs out
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: panels-ui
 source: measure:293
@@ -10,7 +10,7 @@ created: 2026-10-22
 updated: 2026-10-22
 verified: 2026-10-22 9aa937a1
 effort: S
-feature: -
+feature: 295
 related: []
 depends-on: []
 reason: -
@@ -69,3 +69,4 @@ once by hand, is the fix to choose.
 - 2026-10-22 — created (source measure:293)
 - 2026-10-22 — moved to Next position 2
 - 2026-10-22 — verified at 9aa937a1: confirmed by reading at 9aa937a1: SetText frees the stored realloc result on a later failure; SetSize writes Size[0] before the NULL check
+- 2026-10-22 — run started, feature 295
