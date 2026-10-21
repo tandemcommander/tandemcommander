@@ -23,6 +23,14 @@
   (feature 129 drove only Copy: the "create the target?" question and the copy-onto-itself
   message).
 
+## Clarifications
+
+### Session 2026-10-21
+
+- Q: When the question comes for a subkey deep in the copied tree and the user answers Cancel, what happens to the rest of the operation? → A: the existing Cancel handling of Copy/Move: the whole operation stops; with Move, keys moved completely before the Cancel stay moved (copied, then deleted at the source), the key at the question and every key above it are not deleted (autonomous run: conservative)
+- Q: Is the question also asked by Quick Rename (F2) of a key? → A: no change there: Quick Rename refuses a target that exists before it copies, so a target with another class name cannot occur (autonomous run: conservative - existing behaviour kept)
+- Q: In which languages does the probe read the texts? → A: Czech (the item's "Czech key name", a Czech user interface) and English as the control (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Warned before a key's class name is lost (Priority: P1)
@@ -83,6 +91,9 @@ its own subkey and the message text.
   already has.
 - Class names that differ only in letter case count as equal (the comparison already used).
 - "All" covers the rest of the same operation only; the next operation asks again.
+- Cancel at a subkey deep in the tree stops the whole operation; with Move, keys already moved
+  completely stay moved, the key at the question and the keys above it are kept at the source.
+- Quick Rename (F2) of a key refuses an existing target first, so it never meets the question.
 - A Move answered Yes deletes the source after its contents are copied - exactly as a Move
   without a class name difference; the class name the user was warned about is the only loss.
 
