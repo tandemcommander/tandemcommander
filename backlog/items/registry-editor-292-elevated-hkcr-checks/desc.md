@@ -1,7 +1,7 @@
 ---
 title: Registry Editor 292: elevated checks of Move through HKEY_CLASSES_ROOT
 type: person-step
-status: new
+status: open
 severity: 6
 area: data-safety
 source: leftover:292
@@ -61,3 +61,4 @@ Every step below gives the stated result; a different result is a new Inbox item
 ## Log
 
 - 2026-10-22 — created (source leftover:292)
+- 2026-10-22 — moved to Person steps position 4

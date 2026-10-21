@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: Move from HKCR into the user's Classes key does nothing
 type: bug
-status: new
+status: open
 severity: 4
 area: other-plugins
 source: review:292
@@ -52,3 +52,4 @@ function that silently does not work, nothing lost.
 - 2026-10-21 — created (source review:292)
 - 2026-10-21 — severity: a function that silently does not work (band 4-6)
 - 2026-10-22 — related item registry-editor-move-of-a-key-onto-itself-through-hkey-users done in feature 292
+- 2026-10-22 — moved to Next position 25
