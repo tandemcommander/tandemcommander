@@ -183,6 +183,8 @@ int GetEditLineU8(HWND edit, int line, char* buf, int bufSize)
     if (charIndex < 0)
         return -2; // no such line
     int units = (int)SendMessageW(edit, EM_LINELENGTH, charIndex, 0);
+    if (units + 1 > 0xFFFF)
+        return -1; // feature 282 (review 1): EM_GETLINE takes 65,535 units at most - refused, never cut
     WCHAR* w = (WCHAR*)malloc((units + 2) * sizeof(WCHAR)); // EM_GETLINE needs room for a WORD
     if (w == NULL)
         return -1;

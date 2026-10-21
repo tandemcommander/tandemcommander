@@ -7,6 +7,10 @@
 // of an item - the UTF-8 (WTF-8) form of the longest path the file system accepts (32,767 UTF-16
 // units, 3 bytes each). A name was built into char[MAX_PATH]: 259 bytes - 90 CJK letters did not fit.
 #define REN_MAX_NAME SAL_MAX_PATH_UTF8
+// review 1 of 282: the bytes alone do not bound a path - 98,301 ASCII letters fit them; the longest
+// path is 32,767 UTF-16 units, less the extended form's prefix ("\\?\UNC\" for "\\": 6 more) and
+// the terminator. A longer new name is refused before anything is made on disk (folders were).
+#define REN_MAX_PATH_UNITS (32767 - 7)
 
 struct CSourceFile
 {
@@ -171,3 +175,8 @@ protected:
 
 int ChangeCase(CChangeCase change, char* dst, int dstSize, const char* src,
                const char* start, const char* end);
+
+// feature 282 (review 1): does the new name 'name' ('nameLen' bytes, without the folder part the
+// mode puts before it - the item's folder, Root + '\', or nothing) fit REN_MAX_PATH_UNITS?
+BOOL RenNameFitsPath(CRenameSpec spec, const CSourceFile* file, const char* root, int rootLen,
+                     const char* name, int nameLen);

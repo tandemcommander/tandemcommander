@@ -1,0 +1,9 @@
+ren_longnew_probe (feature 282), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-21 11:10; ACP 1250; registry key existed True
+
+over-max   RUN    FAIL        preview rows 1; boxes as expected: False; on disk: folders below the row folder: 164 (101 made by the fixture); x.txt kept: True; boxes: loading: no box; checkbox 1 || [#32770 'Error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to create directory: (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=177] Renaming files, press ESC to cancel... | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=177] Renaming files, press ESC to cancel... | [Button id=2] Cancel || [#32770 'Renamer'] [Static id=2477] Some files have not been renamed successfully. These files will be listed now to enable you to correct errors and try to rename files again. To see successfully renamed files use options in `View' menu. | [Button id=1] OK || [#32770 'Question'] [Static id=2477] Do you want to cancel this operation? | [Button id=6] &Yes | [Button id=7] &No
+over-max   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF / after A3805966FC5E1CDFB9C7FD04553FF917D4DA57E5D3BF7927909A7D3CB8092FEF
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -551,7 +551,12 @@ int CRenamerDialog::GetManualModeNewName(CSourceFile* file, int index, char* new
         // for a typed name, the raw bytes of an untouched one. The limit is in BYTES now: a
         // name whose UTF-8 form does not fit is the "too small buffer" error, never cut.
         int l = GetEditLineU8(ManualEdit->HWindow, index, newName, newNameSize - pathLen);
-        return l == -2 ? 0 : l; // a missing line: an empty name (cannot happen - Validate counts the lines)
+        if (l == -2)
+            return 0; // a missing line: an empty name (cannot happen - Validate counts the lines)
+        // feature 282 (review 1): longer than the longest path - refused, nothing made on disk
+        if (l >= 0 && !RenNameFitsPath(RenamerOptions.Spec, file, Root, RootLen, newName, l))
+            return -1;
+        return l;
     }
 }
 

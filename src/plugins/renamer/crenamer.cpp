@@ -453,7 +453,45 @@ int CRenamer::Rename(CSourceFile* file, int counter, char* newName, int newNameS
         l = pos;
     }
 
+    // feature 282 (review 1): longer than the longest path - refused here (the relative-path mode
+    // made folders on disk before the rename failed)
+    if (!RenNameFitsPath(Spec, file, Root, RootLen, newName, l))
+        return -1;
+
     return l;
+}
+
+// UTF-16 units of 'len' bytes of UTF-8 / WTF-8 (a 4-byte letter is a surrogate pair)
+static int RenU16Units(const char* s, int len)
+{
+    int units = 0;
+    for (int i = 0; i < len; i++)
+    {
+        unsigned char c = (unsigned char)s[i];
+        if (c >= 0xF0)
+            units += 2;
+        else if (c < 0x80 || c >= 0xC0)
+            units++; // continuation bytes belong to the letter of their lead byte
+    }
+    return units;
+}
+
+BOOL RenNameFitsPath(CRenameSpec spec, const CSourceFile* file, const char* root, int rootLen,
+                     const char* name, int nameLen)
+{
+    int units = RenU16Units(name, nameLen);
+    switch (spec)
+    {
+    case rsFileName:
+        units += RenU16Units(file->FullName, (int)(file->Name - file->FullName));
+        break;
+    case rsRelativePath:
+        units += RenU16Units(root, rootLen) + (rootLen > 0 && root[rootLen - 1] == '\\' ? 0 : 1);
+        break;
+    case rsFullPath:
+        break;
+    }
+    return units <= REN_MAX_PATH_UNITS;
 }
 
 int CRenamer::BMSearchForward(const char* string, int length, int offset)

@@ -12,7 +12,7 @@ New probe `probe/ren_longnew_probe.ps1` (the driver of 199 / 207 / 209), run on 
 powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\282-renamer-long-new-name\probe\result_before.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\282-renamer-long-new-name\probe\ren_longnew_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Expect before"
 ```
 
-`probe/result_before.txt`: **11 PASS / 7 FAIL** (L = 90 CJK letters, 270 bytes; M = 45):
+First run (`probe/result_before.txt`, later replaced by the final before-run below): **11 PASS / 7 FAIL** (L = 90 CJK letters, 270 bytes; M = 45):
 - long-new ("L.txt" -> "Lb.txt"), long-undo, manual-long (manual mode "x.txt" -> "Lc.txt"),
   long-rel (relative mode "x.txt" -> "M\MM.txt"), long-rel-deep ("x.txt" -> 100 a \ 100 b \ 100 c
   ".txt", 300+ UTF-16 units): refused **"Expanded string is too large."**, the file unchanged;
@@ -100,3 +100,39 @@ short-ctl as before.
 
 Regressions (`probe/regress_*.txt`): 199 6 / 0, 206 10 / 0, 207 8 / 0, 209 8 / 0, 210 16 / 0,
 254 50 / 0. Encoding guard `TOTAL: 0 finding(s)`; `saltests: 25011 checks, 0 failed`.
+
+## Review
+
+**Review 1** (independent, refute-first; re-ran the probe 22 / 0 and a variant probe of its own,
+`%TEMP%\rev282\rev282_probe.ps1`, 11 / 1):
+
+- **MUST 1** - a name longer than the longest path is no longer refused (spec US3 scenario 2): the
+  cap is bytes only, 98,301 ASCII letters fit; with "Include subdirectories" and relative-path mode
+  the New name `$(RelativePath)$(RelativePath)$(Name)` over 100 folders of 200 letters (~40,200
+  units) passed `ValidateFileName`, `MoveFile` -> `CheckAndCreateDirectory` made **63 folders of 200
+  letters** in the user's tree before "Unable to create directory: (123)"; x.txt kept (no data
+  lost). New with 282 - the 260 bytes refused it before anything happened. **Fixed**:
+  `REN_MAX_PATH_UNITS` (32,767 - 7: the extended form's prefix `\\?\UNC\` for `\\` and the
+  terminator) and `RenNameFitsPath` (`crenamer.cpp`: the UTF-16 units of the folder part the mode
+  puts before the name - the item's folder, `Root\` or none - plus the name's; a 4-byte letter = 2
+  units) - checked at the end of `Rename` (also the preview's build) and in `GetManualModeNewName`
+  and the preview's manual branch: longer -> the existing "Expanded string is too large.", nothing
+  made. Probe row **over-max** added (the reviewer's row): negative control on the build without
+  the fix `probe/result_review1_before.txt` FAIL (164 folders, 101 by the fixture); after PASS (101,
+  the "too large" box).
+- NOTE 1 (taken): `GetEditLineU8` (`utils.cpp`) read at most 0xFFFF units - a manual line of
+  65,535+ units was CUT and accepted; now refused (-1, the "too large" error).
+- NOTE 2 (taken with MUST 1): the preview builds without the folder part - `RenNameFitsPath` counts
+  the folder part from the mode, so the preview judges as the rename does.
+- NOTE 3 (Inbox, `renamer-include-subdirectories-descends-into-junctions-and`): the listing descends
+  into junctions / directory links (as before 282), a loop now up to the depth guard.
+- NOTE 4: the reviewer's edge rows - depth 1024 listed and renamed, depth 1025 refused; Search /
+  Replace (Boyer-Moore and regex) and upper case on long names PASS with matching preview cells.
+- NOTE 5 (fixed): the before-counts in spec / tasks (11 / 7 of the first run) now 12 / 8.
+- NOTE 6: closing work (CHANGELOG, FEATURE-HISTORY, the pattern-field Inbox item) - done at closing.
+- NOTE 7: the depth refusal names the last folder only (the existing `FileError` with the folder's
+  name, as `LoadSubdir`'s long-path refusal always did) - accepted.
+
+After the fix: build BUILD SUCCEEDED (no warning), `probe/result_after.txt` **24 PASS / 0 FAIL**,
+the regressions re-run on that build (199 6 / 0, 206 10 / 0, 207 8 / 0, 209 8 / 0, 210 16 / 0,
+254 50 / 0).

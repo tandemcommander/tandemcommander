@@ -1,6 +1,6 @@
 ren_regex_probe (feature 254), expect: fixed
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 10:44; ACP 1250; registry key existed True
+Date    : 2026-10-21 11:24; ACP 1250; registry key existed True
 
 dot        RUN    PASS        preview rows 1; boxes as expected: True; on disk: before C5BE6C75C5A52E747874 got 586C75C5A52E747874 want 586C75C5A52E747874; boxes: no box
 dot        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

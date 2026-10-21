@@ -19,7 +19,7 @@ refuses any found item whose full name reaches 260 bytes ("Unable to read direct
 long path name"), while the same item selected in the panel is accepted - two limits for the same
 file.
 
-Measured at c02b0f78 with `probe/ren_longnew_probe.ps1` (result_before.txt): 11 PASS / 7 FAIL -
+Measured at c02b0f78 with `probe/ren_longnew_probe.ps1` (result_before.txt): 12 PASS / 8 FAIL (first run without the preview cells: 11 / 7) -
 long-new, long-undo, manual-long, long-rel, long-rel-deep refused "Expanded string is too large.";
 sub-long-file and sub-long-dir refused on loading "too long path name". The controls (one
 component of 300 characters - refused; a short rename and Undo) pass.
@@ -121,8 +121,10 @@ error; the file keeps its name and nothing else is created.
   Replace, case changes; or a manual-mode line) in storage large enough for the longest path the
   file system accepts (32,767 UTF-16 units in UTF-8), allocated from the heap, never in a 260-byte
   buffer.
-- **FR-002**: A new name that does not fit that storage MUST be refused with the existing "Expanded
-  string is too large." error - never cut.
+- **FR-002**: A new name that does not fit that storage, or whose full path (with the folder part)
+  is longer than the longest path in UTF-16 units, MUST be refused with the existing "Expanded
+  string is too large." error before anything is made on disk - never cut (review 1: a name of
+  ~40,200 ASCII units fit the bytes and the relative-path mode made folders before failing).
 - **FR-003**: The preview MUST show such a new name (and judge its validity) the same way the
   rename builds it - the long name, not the error.
 - **FR-004**: "Include subdirectories" MUST read folders and accept found items up to the same
@@ -145,8 +147,8 @@ error; the file keeps its name and nothing else is created.
 
 ### Measurable Outcomes
 
-- **SC-001**: The probe `ren_longnew_probe.ps1` goes from 12 PASS / 8 FAIL to 22 PASS / 0 FAIL
-  (11 rows, each RUN + END - deep-ok added with the fix; the long rows also read the preview's New name and Path cells).
+- **SC-001**: The probe `ren_longnew_probe.ps1` goes from 12 PASS / 8 FAIL to 24 PASS / 0 FAIL
+  (12 rows, each RUN + END - deep-ok added with the fix, over-max with review 1; the long rows also read the preview's New name and Path cells).
 - **SC-002**: The over-length control is still refused with nothing changed on disk.
 - **SC-003**: The earlier Renamer probes (199, 206, 207, 209) still pass.
 

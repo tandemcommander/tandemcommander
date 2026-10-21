@@ -1,11 +1,11 @@
 # Tasks: The Renamer builds a new name of any length the file system accepts
 
 **Input**: `specs/282-renamer-long-new-name/` (plan.md, spec.md, research.md, data-model.md, quickstart.md)
-**Tests**: the GUI probe `probe/ren_longnew_probe.ps1` (written and run before the fix - 11 / 7).
+**Tests**: the GUI probe `probe/ren_longnew_probe.ps1` (written and run before the fix - 12 / 8).
 
 ## Phase 1: Setup
 
-- [X] T001 Confirm the before-run is recorded (`probe/result_before.txt`, 11 PASS / 7 FAIL) in specs/282-renamer-long-new-name/fix-log.md
+- [X] T001 Confirm the before-run is recorded (`probe/result_before.txt`, 12 PASS / 8 FAIL) in specs/282-renamer-long-new-name/fix-log.md
 
 ## Phase 2: Foundational
 
@@ -38,7 +38,7 @@
 ## Phase 6: Polish
 
 - [X] T012 Encoding guard `python tools/check_encoding.py --strict` → TOTAL: 0; `.\build.cmd` → BUILD SUCCEEDED; `saltests` → 0 failed (record in specs/282-renamer-long-new-name/fix-log.md)
-- [X] T013 Run the probe after the fix → `probe/result_after.txt` 22 / 0 (specs/282-renamer-long-new-name/probe/)
+- [X] T013 Run the probe after the fix → `probe/result_after.txt` 24 / 0 (specs/282-renamer-long-new-name/probe/)
 - [X] T014 Regression probes 199, 206, 207, 209, 210, 254 → `probe/regress_*.txt` all PASS (specs/282-renamer-long-new-name/probe/)
 - [X] T015 Record before / after and decisions in specs/282-renamer-long-new-name/fix-log.md
 

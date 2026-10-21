@@ -239,7 +239,9 @@ char* CPreviewWindow::GetItemText(int index, int subItem)
                 //   {
                 // feature 104: the line as UTF-8 (see CRenamerDialog::GetManualModeNewName)
                 int l = GetEditLineU8(RenamerDialog->ManualEdit->HWindow, index, NewNameCache, REN_MAX_NAME);
-                if (l == -1) // the line's UTF-8 form does not fit
+                // feature 282 (review 1): with the folder part longer than the longest path - the
+                // same refusal as the rename's (GetManualModeNewName)
+                if (l == -1 || (l >= 0 && !RenNameFitsPath(RenamerOptions.Spec, item, Root, RootLen, NewNameCache, l)))
                     SalPrintf(NewNameCache, MAX_PATH, LoadStr(IDS_GENERICERR), LoadStr(IDS_EXP_SMALLBUFFER));
                 else // a missing line (fewer lines than files) is an empty name, as before
                     NewNameValid = ValidateFileName(NewNameCache, l < 0 ? 0 : l, RenamerOptions.Spec, NULL, NULL);

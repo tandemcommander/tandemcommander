@@ -1,6 +1,6 @@
 ren_subdir_probe (feature 209), expect: fixed
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-21 10:40; ACP 1250; registry key existed True
+Date    : 2026-10-21 11:20; ACP 1250; registry key existed True
 
 full-sub   RUN    PASS        preview rows 1; boxes as expected: True; on disk: renamed: True; preview rows after ticking subdirectories 2 (expected 2: f.txt, g.txt); boxes: no box || subdirs: no box; preview rows 2; checkbox 0->1
 full-sub   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
