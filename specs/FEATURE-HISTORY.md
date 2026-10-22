@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4153,3 +4153,27 @@ a few early ones are out of sequence).
   (negative controls: refusal ignored + copy disabled 7 / 7, identity check removed - the share-read
   guard still kept a.txt); 308 probe 12 / 0, 306 probe 28 / 0; saltests 27,211 / 0; one refute-first
   review (one SHOULD fixed, two to Inbox / CHANGELOG, six NOTEs).
+- 310-cpio-link-members: unpacking a cpio or an rpm (Alt+F9, Copy from the opened archive, F3) wrote the
+  names of a hard-linked file that the newc / crc format stores with size 0 (GNU cpio, rpm, libarchive put
+  the data with the last name) as empty files, and skipped symbolic links without a word - both ended as
+  successful, so "Delete archive after unpacking" deleted the archive - now `ReadNewASCIIHeader` reads
+  `c_ino`, `c_nlink` and the device (silently: a non-hex field leaves the member ungrouped, never refuses
+  the archive), an extraction groups the names of one file by (device, inode) and acts by
+  `SalCpioLinkDecide` (`src/common/salcpiolink.h`, header-only, saltests): a name stored with size 0
+  waits for the data, is copied from the written file (309's `WriteOutLinkCopy`, identity check), gets
+  the data when the data member itself is not asked for, or - the data passed unwritten (not asked, Skip)
+  - is reported ("(2)", `name -> data name`) and fails the operation; a file no name carried data for is
+  written empty at the trailer. A cpio symlink (any cpio format) gets `SYMTYPE` and its target read from
+  its data (1..4096 bytes, counted for the padding) so 309's code reports it ("(50)"). `UnpackOneFile`
+  reads on to the data member. Traps: `UnpackOneFile`'s target name lives in the header the next
+  `ReadArchiveHeader` frees (copied first); `TxtToLong` would have refused archives with odd fields the
+  reader never needed; a Bash here-document would have collapsed the rpm fixture's escapes (123 - the
+  merge script was written with the editor). Limits: the data stored with an EARLIER name and only a
+  later name asked (copy of that name, F3) is reported, not shown; the listing still shows size 0 for
+  such names and no symlinks; symlinks never created (a whole Unpack of an rpm with symlinks ends as
+  failed); odc / binary unchanged (they repeat the data). From backlog item
+  `cpio-unpack-drops-links-and-may-delete-archive`. Probe `cpio310_probe.ps1` 13 / 7 -> 52 / 0 (26 rows
+  with review 1's rpm, padding, case-twin, Skip / Yes and data-first rows; negative control grouping +
+  symlink type off 17 / 9; review's control empty-name pass + padding off failed its rows); 309 probe
+  16 / 0, 308 12 / 0, 306 28 / 0; saltests 27,237 / 0; one refute-first review (no MUST, two SHOULDs
+  fixed - spec wording and probe rows -, five NOTEs).

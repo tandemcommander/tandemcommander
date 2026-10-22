@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Unpacking a cpio or rpm leaves links out silently and may delete the archive](items/cpio-unpack-drops-links-and-may-delete-archive/desc.md) | bug | 6 | archives | 310 |
 
 ## Next
 
