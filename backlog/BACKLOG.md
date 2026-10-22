@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Find cuts a long Containing text and writes the cut text back](items/find-cuts-a-long-containing-text-and-writes-the-cut-text/desc.md) | bug | 5 | long-paths | 311 |
 
 ## Next
 
@@ -243,6 +242,9 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Hex mode in Find turns quoted letters outside the code page into question marks](items/hex-mode-in-find-turns-quoted-letters-outside-the-code-page/desc.md) | bug | 4 | encoding | review:311 | 2026-10-22 |
+| [Typed check of the Find Containing and viewer Find refusals (feature 311)](items/typed-check-of-the-find-containing-and-viewer-find-refusals/desc.md) | person-step | 3 | long-paths | leftover:311 | 2026-10-22 |
+| [Viewer Find pre-fills a non-ASCII selection as code-page text](items/viewer-find-pre-fills-a-non-ascii-selection-as-code-page/desc.md) | bug | 4 | encoding | review:311 | 2026-10-22 |
 
 ## Parked
 

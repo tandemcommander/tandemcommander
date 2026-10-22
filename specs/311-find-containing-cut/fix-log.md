@@ -67,14 +67,43 @@ No new string, no plug-in interface change, no stored size changed.
 - `saltests.exe` -> `saltests: 27237 checks, 0 failed`.
 - clang-format (VS 2022 LLVM): the touched lines clean (two trailing comments aligned by hand);
   the remaining differences in `finddlg1.cpp` / `viewer.h` are older lines.
-- Probe after (`probe/result_after.txt`, 12 rows): **PASS 24, FAIL 0** (RUN + END rows), registry
-  restored identical, fixture removed. `view-copy-ctl` (added after the first after-run) proves the
-  copy into the viewer still works for a text that fits.
+- Probe after (12 rows at the time): **PASS 24, FAIL 0** (RUN + END rows), registry restored
+  identical, fixture removed. `view-copy-ctl` (added after the first after-run) proves the copy into
+  the viewer still works for a text that fits. The final run (13 rows) is under *Review*.
 - Negative control (`probe/result_negative_control.txt`): a build with the Validate check of
   `CFindDialog` and the body of `CFindSetDialog::Validate` disabled - `grep`, `grep-regex`,
   `grep-hex`, `grep-option`, `view-find` all FAIL (found 2 / 1 / 2 / 2, the field cut; the viewer
   dialog closed). The checks restored, rebuilt, the full probe re-run (the result above).
 - Regression: 291's probe (`probe/regress_291.txt`) **PASS 34, FAIL 0**.
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST**.
+- Re-measured: the probe at HEAD after a rebuild 24 PASS / 0 FAIL; a wider negative control
+  (also the Add Current / Manage / Ignore checks, `keepGrep` and the viewer-copy guard disabled):
+  `grep-add`, `grep-manage`, `grep-ignore`, `grep-option`, `view-copy` FAIL, `view-copy-ctl` still
+  PASS - every guard is needed. 291's probe 34 PASS, 251's 42 PASS. Source restored and rebuilt by
+  the reviewer.
+- SHOULD 1: the viewer's Find now refuses a text the program pre-filled from a selection (the
+  pre-fill puts raw selection bytes in through an ANSI `WM_SETTEXT`; a UTF-8 selection of 199 `a` +
+  `é…` shows as 201 bytes ending in `Ă`). Accepted as a consequence: before 311 that text was cut
+  and searched as code-page mojibake, which the file does not contain either; the refusal keeps the
+  field whole for the user to shorten. The ANSI pre-fill itself -> Inbox
+  `viewer-find-pre-fills-a-non-ascii-selection-as-code-page`.
+- SHOULD 2: hex mode's `DoHexValidation` reads / writes the field through the code page (quoted
+  CJK letters become `?` on the first typed key) - older than 311 -> Inbox
+  `hex-mode-in-find-turns-quoted-letters-outside-the-code-page`. It also means `grep-hex` is
+  reachable by `WM_SETTEXT` only; typed accented letters of the code page reach the refusal.
+- NOTEs: `view-copy` passed on an empty viewer text - row `view-copy-keep` added (a result viewed
+  with C66 + Z first, then with C67: the viewer keeps C66 + Z); 251's regression run was missing -
+  run (`probe/regress_251.txt`, 42 PASS); Find Duplicates and Append / Subtract / Intersect not
+  probed (the same `ValidateData` path); the message says "path" for search text (291's
+  precedent, no new string); the DB Viewer plug-in's own Find reads its field with ANSI
+  `WM_GETTEXT` into 201 bytes - code page end to end, not a UTF-8 cut; not filed (closing report).
+
+After the review: the probe with `view-copy-keep` on the final code (`probe/result_after.txt`, 13
+rows) **PASS 26, FAIL 0**; `regress_251.txt` **PASS 42, FAIL 0**; build, saltests 27237 / 0,
+encoding guard TOTAL 0 unchanged. No second review (no MUST in the first).
 
 ## Owed to a person
 

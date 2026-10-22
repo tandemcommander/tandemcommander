@@ -32,6 +32,8 @@
                   viewer's Find field is not the cut C66
       view-copy-ctl the same with Containing left at C66 + "Z" (fits): PASS = the viewer's Find
                   field holds C66 + "Z" (the copy still works)
+      view-copy-keep the result viewed with C66 + "Z" first (copied), then with C67: PASS = the
+                  viewer's Find still holds C66 + "Z" (its earlier text kept; added by review 1)
     Typing is not driven: the field's text is set by WM_SETTEXT, buttons are clicked by BM_CLICK.
     Driver of 291's probe (098's library). MUST run through tools\run_on_hidden_desktop.ps1.
     Registry exported, restored and verified.
@@ -241,8 +243,31 @@ function View-Row([string]$Case, [string]$Text, [switch]$Fits) {
 # ---- the copy of Containing into the viewer's Find -------------------------------------
 # Find with a text that fits (found cut.txt), then the Containing field changed to C67, the found
 # file viewed with the internal viewer (CM_FIND_ALTVIEW 2222); its Find (CM_FINDSET) shows the text
-# the Find dialog copied (GlobalFindDialog): PASS = not the cut C66
-function Copy-Row([string]$Case, [switch]$Fits) {
+# the Find dialog copied (GlobalFindDialog): PASS = not the cut C66. -Fits: Containing stays C66 + Z,
+# PASS = the viewer shows it. -Keep: the result is viewed once with C66 + Z first, PASS = the viewer
+# still shows C66 + Z after the view with C67 (its earlier find text kept)
+function AltView-FindText([int]$Id, [IntPtr]$Dlg) {   # the focused result viewed (Alt+F3), the viewer's Find field read
+    $lv = @([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::Cls($_) -eq 'SysListView32' }) | Select-Object -First 1
+    [void][Drv098f]::Send($Dlg, 0x0028, $lv.ToInt64(), 1, 5000)   # WM_NEXTDLGCTL: the result list
+    [void][Drv098f]::Send($lv, 0x0100, 0x24, 0x01470001, 5000)    # VK_HOME: the found file focused
+    Start-Sleep -Milliseconds 300
+    $known = Get-Tops $Id
+    [void][Drv098f]::PostMessageW($Dlg, 0x0111, [IntPtr]2222, [IntPtr]::Zero)   # CM_FIND_ALTVIEW
+    $view = Wait-NewWin $Id $known 15
+    if ($view -eq [IntPtr]::Zero) { throw 'CM_FIND_ALTVIEW opened no window' }
+    Start-Sleep -Milliseconds 1000
+    if ([Drv098f]::Cls($view) -ne "Salamander's Viewer Window") { throw ("not the internal viewer: {0}" -f (WinDesc $view)) }
+    $known = Get-Tops $Id
+    [void][Drv098f]::PostMessageW($view, 0x0111, [IntPtr]6063, [IntPtr]::Zero)   # CM_FINDSET
+    $fd = Wait-NewWin $Id $known 10
+    if ($fd -eq [IntPtr]::Zero) { throw 'CM_FINDSET opened no window' }
+    Start-Sleep -Milliseconds 500
+    $t = Get-Field $fd 6125
+    Close-Win $fd; Start-Sleep -Milliseconds 400
+    if ([Drv098f]::IsWindow($view)) { [void][Drv098f]::PostMessageW($view, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero); Start-Sleep -Milliseconds 700 }
+    return $t
+}
+function Copy-Row([string]$Case, [switch]$Fits, [switch]$Keep) {
     Run-Row $Case {
         $id = Start-Tc $FindDir; $script:RowId = $id
         $dlg = Open-ByCmd $id 741 15
@@ -258,32 +283,23 @@ function Copy-Row([string]$Case, [switch]$Fits) {
         Start-Sleep -Milliseconds 1000
         $count = Find-Count $dlg
         if ($count -ne 1) { throw ("the search that fits found {0}, not 1 ({1})" -f $count, (Shown $r)) }
+        $firstFacts = ''
+        if ($Keep) {
+            $first = AltView-FindText $id $dlg
+            if ($first -cne ($C66 + 'Z')) { throw ("the first view did not copy C66 + Z: {0} units" -f $first.Length) }
+            $firstFacts = 'first view copied C66 + Z; '
+        }
         $typed = $(if ($Fits) { $C66 + 'Z' } else { $C67 })
         Set-Field $dlg 2504 $typed
-        $lv = @([Drv098f]::Kids($dlg) | Where-Object { [Drv098f]::Cls($_) -eq 'SysListView32' }) | Select-Object -First 1
-        [void][Drv098f]::Send($dlg, 0x0028, $lv.ToInt64(), 1, 5000)   # WM_NEXTDLGCTL: the result list
-        [void][Drv098f]::Send($lv, 0x0100, 0x24, 0x01470001, 5000)    # VK_HOME: the found file focused
-        Start-Sleep -Milliseconds 300
-        $known = Get-Tops $id
-        [void][Drv098f]::PostMessageW($dlg, 0x0111, [IntPtr]2222, [IntPtr]::Zero)   # CM_FIND_ALTVIEW
-        $view = Wait-NewWin $id $known 15
-        if ($view -eq [IntPtr]::Zero) { throw 'CM_FIND_ALTVIEW opened no window' }
-        Start-Sleep -Milliseconds 1000
-        if ([Drv098f]::Cls($view) -ne "Salamander's Viewer Window") { throw ("not the internal viewer: {0}" -f (WinDesc $view)) }
-        $known = Get-Tops $id
-        [void][Drv098f]::PostMessageW($view, 0x0111, [IntPtr]6063, [IntPtr]::Zero)   # CM_FINDSET
-        $fd = Wait-NewWin $id $known 10
-        if ($fd -eq [IntPtr]::Zero) { throw 'CM_FINDSET opened no window' }
-        Start-Sleep -Milliseconds 500
-        $now = Get-Field $fd 6125
+        $now = AltView-FindText $id $dlg
         $field = Get-Field $dlg 2504
         $script:RowFatal = Fatal-Win $id
         $cut = ($now -ceq $C66)
-        if ($Fits) { $verdictOk = ($now -ceq $typed) } else { $verdictOk = (-not $cut) -and ($now -cne '<no field>') }
+        if ($Fits) { $verdictOk = ($now -ceq $typed) }
+        elseif ($Keep) { $verdictOk = ($now -ceq ($C66 + 'Z')) }
+        else { $verdictOk = (-not $cut) -and ($now -cne '<no field>') }
         $ok = (-not $script:RowFatal) -and $verdictOk
-        Row $Case 'RUN' (V $ok) ("the Find field: {0} units / {1} bytes, whole: {2}; the viewer's Find field: {3} units / {4} bytes, the cut C66: {5}, same as the Find field: {6}, '{7}'" -f $field.Length, (U8 $field), ($field -ceq $typed), $now.Length, (U8 $now), $cut, ($now -ceq $typed), (Tail $now 8))
-        Close-Win $fd; Start-Sleep -Milliseconds 400
-        if ([Drv098f]::IsWindow($view)) { [void][Drv098f]::PostMessageW($view, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero); Start-Sleep -Milliseconds 700 }
+        Row $Case 'RUN' (V $ok) ("{0}the Find field: {1} units / {2} bytes, whole: {3}; the viewer's Find field: {4} units / {5} bytes, the cut C66: {6}, same as the Find field: {7}, '{8}'" -f $firstFacts, $field.Length, (U8 $field), ($field -ceq $typed), $now.Length, (U8 $now), $cut, ($now -ceq $typed), (Tail $now 8))
         Close-Win $dlg; Start-Sleep -Milliseconds 500
         [void](Serve-Grep $id @() 'cancel' 10)
     }
@@ -302,6 +318,7 @@ $Cases['view-find'] = { View-Row 'view-find' $C67 }
 $Cases['view-ctl'] = { View-Row 'view-ctl' ($C66 + 'Z') -Fits }
 $Cases['view-copy'] = { Copy-Row 'view-copy' }
 $Cases['view-copy-ctl'] = { Copy-Row 'view-copy-ctl' -Fits }
+$Cases['view-copy-keep'] = { Copy-Row 'view-copy-keep' -Keep }
 
 # ---- main --------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tc311_backup.reg'

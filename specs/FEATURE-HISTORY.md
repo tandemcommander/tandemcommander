@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
@@ -4177,3 +4177,24 @@ a few early ones are out of sequence).
   symlink type off 17 / 9; review's control empty-name pass + padding off failed its rows); 309 probe
   16 / 0, 308 12 / 0, 306 28 / 0; saltests 27,237 / 0; one refute-first review (no MUST, two SHOULDs
   fixed - spec wording and probe rows -, five NOTEs).
+- 311-find-containing-cut: the Find dialog's Containing text (200 UTF-16 units, read into 201 bytes) was
+  cut at a whole character when its UTF-8 form was longer - 67 CJK letters searched as 66 and found files
+  without the typed text (`cut.txt` holding only the 66 letters), in plain, regular-expression and hex
+  mode; Find wrote the cut text back into the field and its history, Options > Add Current / Manage /
+  Ignore did the same, a stored option without Containing left the field cut; the viewer's own Find
+  (`FIND_TEXT_LEN`) searched a cut text too, and viewing a found file copied a cut Containing into the
+  viewer's Find (`UpdateInternalViewerData`, core `CTransferInfo::EditLine` cuts) - now
+  `CFindDialog::Validate` and the three Options commands refuse after 291's Named check
+  (`DlgItemTextFitsU8`, "The path specified is too long.", no new string), `LoadControls` keeps the
+  field's whole text as 291 keeps Named (also counted for expanding the dialog), the copy into the viewer
+  is skipped when the text does not fit (the viewer keeps its text), and `CFindSetDialog` got a
+  `Validate` with the same refusal. Traps: F3 on `.txt` opens the Code Viewer plug-in - the viewer rows
+  use Alt+F3 and assert the window class; a Bash here-document collapsed the probe's backslashes (123 -
+  rewritten with the editor). Limits: the viewer's Find pre-fills a selection through an ANSI
+  `WM_SETTEXT`, so a long non-ASCII selection is now refused (it was searched as mojibake before) and
+  hex mode's `DoHexValidation` turns quoted letters outside the code page into `?` (Inbox,
+  `review:311`); the message says "path" for search text (291's precedent). From backlog item
+  `find-cuts-a-long-containing-text-and-writes-the-cut-text`. Probe `grep311_probe.ps1` 9 FAIL / 13 ->
+  26 / 0 (13 rows; negative control Validate checks off 5 FAIL; review's control every guard off failed
+  its rows); 291's probe 34 / 0, 251's 42 / 0; saltests 27,237 / 0; one refute-first review (no MUST,
+  two SHOULDs to the Inbox, a `view-copy-keep` row added).
