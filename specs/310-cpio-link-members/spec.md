@@ -38,6 +38,8 @@ through a decompressing stream.
 - Q: How is a left-out link reported, given that no new UI text may be added in this run? → A: The feature 309 box: a system error text, the member's name and the name it links to, once per operation (autonomous run: rule - new strings need the maintainer's .slt refresh)
 - Q: What happens to devices, named pipes and sockets in a cpio? → A: Unchanged - skipped silently, as tar does with the same member types; they carry no file content (autonomous run: conservative)
 - Q: Does the panel listing change (size of the names stored with size 0, symbolic links listed)? → A: No - the listing is unchanged; the item asks about extraction (autonomous run: conservative)
+- Q: What happens to the names waiting for a file's data when the data is not written (the user answered Skip, or writing it failed)? → A: They are reported (system "file not found" text, the first waiting name and the name holding the data) and the operation fails after the rest is extracted - feature 309's rule for a hard link whose target was not written (autonomous run: rule - feature 309)
+- Q: Does viewing or opening one name stored with size 0 (a single-file extraction) also get the content? → A: Yes - the single-file extraction reads on to the member holding the file's data; it is the same defect seen from F3 / Enter (autonomous run: item - "hard-linked names arrive with their content")
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -108,8 +110,10 @@ features 306, 308 and 309 (tar) unchanged.
 - The data name comes before the names stored with size 0: those names are copied from it.
 - No member of the file carries data (a genuinely empty file): every asked name is written empty at
   the end of the operation.
-- The user answers Skip for one name at the overwrite question: that name is not written (the user's
-  choice, as for any member); the other names still get the content.
+- The user answers Skip for a waiting name at the overwrite question: that name is not written (the
+  user's choice, as for any member); the other names still get the content.
+- The user answers Skip for the name that receives the data (or writing it fails): the names waiting
+  for it are reported once and the operation fails (feature 309's rule), so the archive is kept.
 - Two names that are one file on Windows (differing only in case): the existing file is never
   truncated (feature 309's identity check).
 - A symbolic link whose target text is long or not valid text: the box still names the member; the
@@ -137,6 +141,9 @@ features 306, 308 and 309 (tar) unchanged.
 - **FR-005**: A cpio symbolic link the operation was asked for MUST be reported once per operation
   (system "not supported" text, the member's name and the name it links to) and MUST make the
   operation fail after the rest is extracted, so the core keeps the archive.
+- **FR-005a**: When the data of a group is not written (Skip, an error), every asked name waiting
+  for it or coming after it MUST be reported once per operation ("file not found" text, the name and
+  the name holding the data) and MUST make the operation fail after the rest is extracted.
 - **FR-006**: odc and binary cpio, devices, named pipes, sockets, tar archives, and the panel listing
   MUST behave as before.
 - **FR-007**: Opening a single name stored with size 0 (view / open of one file) MUST give the file's
