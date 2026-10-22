@@ -65,6 +65,23 @@ def main():
             add(tf, 'h.txt', b'H', pax={'mtime': '1400000000'})
         elif row == 'GIT-COMMENT':
             add(tf, 'a.txt', b'A')
+        elif row == 'PAX-PATHPART':
+            # review 1 of feature 306: folder parts over the listing's 255 bytes (fine on a file system)
+            add(tf, 'a.txt', b'a')
+            add(tf, cjk(90) + '/f.txt', b'F')  # folder part 270 bytes
+            add(tf, 'a' * 130 + '/' + 'b' * 130 + '/g.txt', b'G')  # folder part 261 bytes, ASCII
+            add(tf, 'ok.txt', b'K')
+        elif row == 'PAX-255DIR':
+            # a folder member named with 255 CJK letters (765 bytes) and a file inside it
+            ti = tarfile.TarInfo(cjk(255))
+            ti.type = tarfile.DIRTYPE
+            ti.mode = 0o755
+            ti.mtime = 1000000000
+            tf.addfile(ti)
+            add(tf, cjk(255) + '/in.txt', b'I')
+            add(tf, 'ok.txt', b'K')
+        elif row == 'PAX-LIMIT':
+            add(tf, 'p' * 255 + '/f.txt', b'P')  # folder part exactly 255 bytes: listed and extracted
         elif row in ('PAX-TOOLONG', 'GNU-TOOLONG'):
             add(tf, cjk(300) + '.txt', b'X')
             if row == 'PAX-TOOLONG':

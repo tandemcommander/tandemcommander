@@ -32,6 +32,8 @@ Opening such an archive never crashes. Either the core's listing code takes a na
 
 ## Notes
 
+Related, same route (measured by review 1 of feature 306, fixture R-GNU2K: a GNU long name of 12 components of 200 letters): a GNU long name whose folder part is longer than the panel listing's 255-byte limit (`CSalamanderDirectory::AddFile` / `AddDir`, `src/zip.cpp`, feature 222) fails the whole listing - "Internal error: file data structure corrupted.", the archive does not open (the same in 0.1.10). Feature 306 refuses such PAX members alone (`SalPaxNameFitsListingU8`, `src/common/salpaxheader.h`); the same rule could be applied to GNU long names in this item.
+
 Severity from the band "crashes in an unusual scenario". The probe row is excluded from the default run of 306's probe because it crashes; it runs with `-Only GNU-TOOLONG`.
 
 ## Log

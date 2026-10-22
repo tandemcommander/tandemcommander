@@ -347,3 +347,28 @@ inline bool SalPaxPathHasTooLongComponentU8(const char* path)
     }
     return false;
 }
+
+// the panel listing's own limits (CSalamanderDirectory::AddFile / AddDir, src/zip.cpp, feature 222):
+// the folder part of a member's path and a folder's own name hold at most MAX_PATH - 5 BYTES. A
+// member over them makes AddFile / AddDir fail, and the archive plug-in then gives up the WHOLE
+// listing - so such a member is refused alone (review 1 of feature 306: a PAX path deeper than the
+// ustar fallback could ever be made an archive unopenable that the fallback names left openable)
+#define SAL_PAX_LISTING_MAX_BYTES (MAX_PATH - 5)
+
+// true when the listing can hold the member 'name' (components separated by '\\' or '/', no leading
+// or trailing separator; 'isDir' = a folder member) and no component is too long for a file system
+inline bool SalPaxNameFitsListingU8(const char* name, bool isDir)
+{
+    if (SalPaxPathHasTooLongComponentU8(name))
+        return false;
+    const char* last = NULL; // the last separator
+    for (const char* s = name; *s != 0; s++)
+        if (*s == '\\' || *s == '/')
+            last = s;
+    size_t folderPart = last != NULL ? (size_t)(last - name) : 0;
+    if (folderPart > SAL_PAX_LISTING_MAX_BYTES)
+        return false;
+    if (isDir && strlen(last != NULL ? last + 1 : name) > SAL_PAX_LISTING_MAX_BYTES)
+        return false;
+    return true;
+}

@@ -1148,10 +1148,12 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     }
     strcpy(header.Name, tmpName);
     free(tmpName);
-    // feature 306: a PAX path with a component no file system takes (over 255 UTF-16 units) is
-    // refused - not listed, not extracted, never shortened or replaced by the ustar fallback name
-    // (the whole name of such a member crashed the listing, measured with a GNU long name)
-    if (header.NameFromPax && SalPaxPathHasTooLongComponentU8(header.Name))
+    // feature 306: a PAX path with a component no file system takes (over 255 UTF-16 units), or
+    // deeper than the panel listing holds (a folder part or a folder name over MAX_PATH - 5 bytes:
+    // the listing would fail as a whole), is refused - not listed, not extracted, never shortened
+    // or replaced by the ustar fallback name (the whole name of such a member crashed the listing,
+    // measured with a GNU long name); the rest of the archive stays usable
+    if (header.NameFromPax && !SalPaxNameFitsListingU8(header.Name, header.IsDir != FALSE))
     {
         header.Ignored = TRUE;
         if (ReportRefusedNames && !RefusedNameShown)

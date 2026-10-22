@@ -22,6 +22,11 @@
       GNU-LONG     PAX-LONG's path as a GNU long name (regression)                        -> that path, 'L'
       PAX-TOOLONG  CJK(300).txt (300 UTF-16 units: no file system takes it), then ok.txt 'K'
                                                                 -> "(206)" message at open, tgt holds only ok.txt
+      PAX-PATHPART a.txt, CJK(90)/f.txt (folder part 270 bytes), a*130/b*130/g.txt (261 bytes), ok.txt -
+                   folder parts over the listing's 255 bytes (review 1)  -> "(206)" at open, tgt a.txt + ok.txt
+      PAX-255DIR   folder CJK(255) (765 bytes), CJK(255)/in.txt, ok.txt   -> "(206)" at open, tgt ok.txt
+      PAX-LIMIT    p*255/f.txt (folder part exactly 255 bytes)            -> that path, 'P'
+    Every row first reads the panel's path: Copy runs only when the panel is inside the archive.
       GNU-TOOLONG  CJK(300).txt as a GNU long name - only with -Only GNU-TOOLONG: it crashes the program
                    (measured before feature 306; an Inbox defect outside it)      -> tgt empty, a message
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -86,7 +91,7 @@ function Run-Row([string]$name) {
     $tgt = $d + '\tgt'; $arc = $d + '\t.tar'
     $longPath = ('d' * 100) + '/' + ('e' * 100) + '/' + ('f' * 96) + '.txt'
     # expected: relative path -> @(content, unix time or $null)
-    $want = [ordered]@{}; $refuse = $false
+    $want = [ordered]@{}; $refuse = $false; $need206 = $false
     switch ($name) {
         'PAX-LONG' { $want[$longPath] = @('L', 1000000000) }
         'GNU-LONG' { $want[$longPath] = @('L', 1000000000) }
@@ -97,6 +102,10 @@ function Run-Row([string]$name) {
         'PAX-SIZE' { $want['s.txt'] = @('SIZE5', $null); $want['z.txt'] = @('Z', $null) }
         'PAX-GLOBAL' { $want['g.txt'] = @('G', 1500000000); $want['h.txt'] = @('H', 1400000000) }
         'GIT-COMMENT' { $want['a.txt'] = @('A', 1000000000) }
+        'PAX-TOOLONG' { $want['ok.txt'] = @('K', $null); $need206 = $true }
+        'PAX-PATHPART' { $want['a.txt'] = @('a', $null); $want['ok.txt'] = @('K', $null); $need206 = $true }
+        'PAX-255DIR' { $want['ok.txt'] = @('K', $null); $need206 = $true }
+        'PAX-LIMIT' { $want[('p' * 255) + '/f.txt'] = @('P', $null) }
         default { $refuse = $true }
     }
     try {
@@ -110,6 +119,14 @@ function Run-Row([string]$name) {
         if (-not $arc.StartsWith($Root + '\') -or -not $tgt.StartsWith($Root + '\')) { throw ('path outside the fixture: ' + $arc) }
         $id = Start-Arc $arc $tgt
         $openMsgs = $script:OpenMsgs
+        # review 1 NOTE 5: copy only from inside the archive (an archive that did not open leaves the
+        # panel somewhere else - nothing is copied from there)
+        $loc = Get-Loc $id
+        if (-not $loc.StartsWith($arc, [StringComparison]::OrdinalIgnoreCase)) {
+            End-Row $name $id $null $before; $id = 0
+            Row $name 'RUN' 'FAIL' ('the archive did not open; panel at: ' + (Tail $loc 80) + '; at open: ' + (Tail $openMsgs 160))
+            return
+        }
         Post-Cmd (Get-Main $id) 842; Start-Sleep -Milliseconds 800
         Post-Cmd (Get-Main $id) 727
         $r = Serve $id 40 @(1, 6)
@@ -117,15 +134,7 @@ function Run-Row([string]$name) {
         End-Row $name $id $null $before; $id = 0
         $files = @(Tgt-Files $tgt)
         $facts = New-Object System.Collections.ArrayList
-        if ($name -eq 'PAX-TOOLONG') {
-            # the system's "(206) file name too long" when the archive is opened, the long member not
-            # created under any name, the other member extracted
-            $msgOk = $openMsgs -match '\(206\)'
-            $okC = '-'; if ($files -ccontains 'ok.txt') { $okC = Content $tgt 'ok.txt' }
-            $ok = $msgOk -and ($files.Count -eq 1) -and ($okC -ceq 'K')
-            [void]$facts.Add(('message (206) at open: {0}; ok.txt: {1}; tgt: {2}' -f $msgOk, $okC, $(if ($files.Count) { Esc-Names $files } else { 'empty' })))
-        }
-        elseif ($refuse) {
+        if ($refuse) {
             $other = @($r.Messages | Where-Object { $_ -notmatch "^\[#32770 'Copy'\]" })
             $ok = ($files.Count -eq 0) -and (($other.Count + $(if ($openMsgs -ne 'no window') { 1 } else { 0 })) -gt 0)
             [void]$facts.Add('tgt: ' + $(if ($files.Count) { Esc-Names $files } else { 'empty' }))
@@ -142,6 +151,9 @@ function Run-Row([string]$name) {
                 [void]$facts.Add(('{0}: {1} t={2}' -f (Esc (Short $k)), $c, $t))
             }
             [void]$facts.Add('tgt: ' + $(if ($files.Count) { Esc-Names $files } else { 'empty' }))
+            # a refused member: the system's "(206) file name too long" when the archive is opened, the
+            # member created under no name, the rest of the archive extracted
+            if ($need206) { $m = $openMsgs -match '\(206\)'; if (-not $m) { $ok = $false }; [void]$facts.Add('message (206) at open: ' + $m) }
         }
         Row $name 'RUN' (V $ok) (($facts -join '; ') + '; at open: ' + (Tail $openMsgs 120) + '; windows: ' + (Tail $msgs 220))
     }
@@ -160,7 +172,7 @@ try {
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; ACP {2}; python {3}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [Drv098f]::GetACP(), ((& $Python --version 2>&1) -join ' '))
     Out ''
-    $rowNames = @('PAX-LONG', 'PAX-CJK', 'PAX-TWINS', 'PAX-DEEP', 'PAX-MTIME', 'PAX-SIZE', 'PAX-GLOBAL', 'GIT-COMMENT', 'GNU-LONG', 'PAX-TOOLONG')
+    $rowNames = @('PAX-LONG', 'PAX-CJK', 'PAX-TWINS', 'PAX-DEEP', 'PAX-MTIME', 'PAX-SIZE', 'PAX-GLOBAL', 'GIT-COMMENT', 'GNU-LONG', 'PAX-TOOLONG', 'PAX-PATHPART', 'PAX-255DIR', 'PAX-LIMIT')
     # GNU-TOOLONG crashes the program (the Inbox defect, outside feature 306): only with -Only GNU-TOOLONG
     if ($Only -and @($Only | Where-Object { 'GNU-TOOLONG' -like ($_ + '*') }).Count) { $rowNames += 'GNU-TOOLONG' }
     foreach ($n in $rowNames) { Run-Row $n }

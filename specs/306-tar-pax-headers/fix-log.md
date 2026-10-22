@@ -99,3 +99,46 @@ Traps met:
 - Every probe run restored the registry (SHA-256 identical).
 
 Inbox: `opening-a-tar-whose-member-name-has-a-300-letter-component` (measure:306) - the GNU-TOOLONG crash.
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+Reproduced: the official probe 20 / 0 on the branch build, saltests 27126 / 0, encoding guard 0,
+no string diff; the official probe against the installed 0.1.10 fails the PAX rows (the probe
+detects the defect). Own rows all correct: a 255-unit component (757 / 765 bytes) extracts; a bad
+record length (first or middle header), an `x` header over 1 MiB and a NUL in a path refused with
+the header error, just under 1 MiB accepted; `size=2^63-1` -> premature EOF; size on a directory
+ignored; a PAX size smaller than the ustar size reads only the PAX size; invalid mtime ignored;
+`mtime=-1.5` -> -1.5; `x` then GNU `L`; `path=` cancelling a global path; `../../` stays inside the
+target; a value with an embedded newline; `.tar.gz`; `linkpath` ignored; `x` directly before the
+end blocks; whole-archive Unpack (851) with two refused members - one (206) box, the rest extracted.
+
+- **MUST-1 (fixed)**: a PAX path deeper than the panel listing holds made the WHOLE archive
+  unopenable - `CSalamanderDirectory::AddFile` / `AddDir` (`src/zip.cpp`, feature 222) refuse a
+  folder part or a folder name over `MAX_PATH - 5` bytes, and the plug-in's `ListArchive` then gives
+  up the listing ("Internal error: file data structure corrupted."). The ustar fallback (<= 255
+  bytes, Python cuts at 100) never reached it: a regression against 0.1.10 for e.g.
+  `<90 CJK>/f.txt`, `a*130/b*130/f.txt`, a folder of 255 CJK letters. Fix: `SalPaxNameFitsListingU8`
+  (`src/common/salpaxheader.h`) - a component over 255 units, a folder part over 255 bytes or a
+  folder member's name over 255 bytes refuses that member alone (the same "(206)" message, once);
+  used in `ReadArchiveHeader` instead of the component check. saltests +16 checks.
+- **SHOULD-1 (fixed)**: the probe did not cover the listing's limits - rows PAX-PATHPART (a.txt,
+  `<90 CJK>/f.txt`, `a*130/b*130/g.txt`, ok.txt -> a.txt + ok.txt, "(206)"), PAX-255DIR (a folder of
+  255 CJK letters and a file in it, ok.txt -> ok.txt, "(206)") and PAX-LIMIT (folder part exactly
+  255 bytes -> extracted).
+- NOTE 1 (accepted, limit): an archive that ends with an `x` header and no end blocks now fails
+  with "Premature end of file" (0.1.10 listed the member before it through its missing-end-block
+  heuristic) - a damaged archive; the GNU long name route behaves the same.
+- NOTE 2 (accepted, FR-006 "once per operation"): only the first refused member is named, later
+  ones are skipped without their own box; a masked whole-archive unpack would also report a refused
+  member the mask does not select (by reading). No new strings allowed for a count.
+- NOTE 3 (accepted): for `L` -> `x` -> member the PAX path wins (spec, GNU tar); Python's tarfile
+  takes the GNU name in that order.
+- NOTE 4 (accepted): a `g` header with `path=` names every following member the same (POSIX); the
+  overwrite question appears, nothing is overwritten unasked.
+- NOTE 5 (fixed in the probe): Copy ran even when the archive had not opened (the panel elsewhere);
+  every row now reads the panel's path first and copies only from inside the archive.
+
+After the fix: build `BUILD SUCCEEDED`; saltests `27142 checks, 0 failed`; probe
+`probe/result_after.txt` (label after-review1) **PASS 26, FAIL 0**.

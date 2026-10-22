@@ -18293,6 +18293,34 @@ static void TestPaxHeader306()
         CHECK(differ == 0);
         CHECK(!SalPaxPathHasTooLongComponentU8(""));
     }
+
+    // the panel listing's limits (review 1): a folder part or a folder name over 255 BYTES fails the
+    // whole listing (CSalamanderDirectory::AddFile / AddDir) -> refused alone; a file name keeps 255 units
+    {
+        std::string cjk90;
+        for (int i = 0; i < 90; i++)
+            cjk90 += "\xE4\xB8\x80"; // 270 bytes, 90 units
+        std::string p255(255, 'p'), p256(256, 'p');
+        CHECK(SalPaxNameFitsListingU8((p255 + "\\f.txt").c_str(), false)); // folder part exactly 255 bytes
+        CHECK(!SalPaxNameFitsListingU8((p256 + "\\f.txt").c_str(), false));
+        CHECK(!SalPaxNameFitsListingU8((cjk90 + "\\f.txt").c_str(), false)); // 90 letters: 270 bytes
+        CHECK(!SalPaxNameFitsListingU8((std::string(130, 'a') + "\\" + std::string(130, 'b') + "\\f.txt").c_str(), false));
+        CHECK(!SalPaxNameFitsListingU8((std::string(130, 'a') + "/" + std::string(130, 'b') + "/f.txt").c_str(), false));
+        CHECK(SalPaxNameFitsListingU8((std::string(100, 'a') + "\\" + std::string(100, 'b') + "\\f.txt").c_str(), false));
+        CHECK(SalPaxNameFitsListingU8(cjk.c_str(), false));   // a file: 204 units, 604 bytes
+        CHECK(SalPaxNameFitsListingU8(cjk90.c_str(), false)); // a file of 270 bytes
+        CHECK(!SalPaxNameFitsListingU8(cjk90.c_str(), true)); // the same as a folder: over 255 bytes
+        CHECK(SalPaxNameFitsListingU8(p255.c_str(), true));
+        CHECK(!SalPaxNameFitsListingU8(p256.c_str(), true));
+        CHECK(SalPaxNameFitsListingU8(("sub\\" + p255).c_str(), true));
+        CHECK(!SalPaxNameFitsListingU8(("sub\\" + p256).c_str(), true));
+        std::string c256;
+        for (int i = 0; i < 256; i++)
+            c256 += "x";
+        CHECK(!SalPaxNameFitsListingU8(c256.c_str(), false)); // a component over 255 units
+        CHECK(SalPaxNameFitsListingU8("a.txt", false));
+        CHECK(SalPaxNameFitsListingU8("d", true));
+    }
 }
 
 int main(int argc, char** argv)
