@@ -1,16 +1,16 @@
 ---
 title: Markdown Viewer: choose the page width in View, up to the full window
 type: improvement
-status: open
+status: in-progress
 severity: 3
 area: other-plugins
 source: manual
 who: agent
 created: 2026-10-22
-updated: 2026-10-22
-verified: -
+updated: 2026-10-23
+verified: 2026-10-23 da0a455a
 effort: S
-feature: -
+feature: 314
 related: []
 depends-on: []
 reason: -
@@ -73,3 +73,5 @@ At f6c07c31, by reading:
 
 - 2026-10-22 — created (source manual)
 - 2026-10-22 — moved to Next position 3
+- 2026-10-23 — verified at da0a455a: present at da0a455a: CSS fixed max-width 46rem, .full rule never applied, no width command in View; htmlgen test 38/0 asserts 46rem
+- 2026-10-23 — run started, feature 314
