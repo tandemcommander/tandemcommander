@@ -6,6 +6,7 @@
 #include "names.h"
 #include "dlldefs.h"
 #include "../../common/salpaxheader.h" // feature 306: PAX extended header records
+#include "../../common/saltarlink.h"   // feature 309: link members
 
 // possible return codes
 #define TAR_OK 0
@@ -264,6 +265,8 @@ struct SCommonHeader
     DWORD MTimeFrac;  // feature 306: 100-ns part of a PAX mtime, added after the FILETIME conversion
     BOOL NameFromPax; // feature 306: Name is a PAX 'path' (a component no file system takes is refused)
     BOOL NameRefused; // feature 308: Name cannot be used in this pass (also Ignored); an extraction asked for it fails
+    char LinkType;    // feature 309: LNKTYPE / SYMTYPE for a link member (also Ignored), else 0
+    char* LinkName;   // feature 309: malloc'd UTF-8 name the link refers to, normalized like Name; NULL = none
 };
 
 class CArchiveAbstract
@@ -295,6 +298,7 @@ private:
     SalPaxValues GlobalPax;
     BOOL Listing; // feature 308: this pass builds the panel listing (its bounds apply only then)
     BOOL RefusedNameShown;
+    BOOL LinkReportShown; // feature 309: a link member left out is reported once per operation
     DWORD ListingPrefixLen; // feature 306: bytes the listing puts before every path (.deb: "data" + a separator)
 
     BOOL ListStream(CSalamanderDirectoryAbstract* dir);
@@ -304,8 +308,16 @@ private:
 
     int ReadArchiveHeader(SCommonHeader& header, BOOL probe);
     void ReportRefusedName(const char* name); // the system's "(206)" text with the whole name, once
+    // feature 309: a link member left out - the system's text for 'err' with "name -> link name", once
+    void ReportLinkMember(const SCommonHeader& header, DWORD err);
+    // 'written' (optional): set to TRUE when a file was created and completed (not skipped, not simulated)
     int WriteOutData(const SCommonHeader& header, const char* targetPath,
-                     const char* nameInArchive, BOOL simulate, BOOL doProgress);
+                     const char* nameInArchive, BOOL simulate, BOOL doProgress, BOOL* written = NULL);
+    // feature 309: extracts a hard-link member as a copy of 'sourceName' (a file written by this
+    // operation, relative to 'targetPath' like 'targetName'); TAR_OK (also after Skip; 'refused' set
+    // when the source could not be read - reported) / TAR_ERROR (Cancel, a write error - shown)
+    int WriteOutLinkCopy(const SCommonHeader& header, const char* targetPath, const char* targetName,
+                         const char* sourceName, BOOL* written, BOOL* refused);
 
     int SkipBlockPadding(const SCommonHeader& header);
     void GetArchiveType(const unsigned char* buffer, const unsigned short preRead, SCommonHeader& header);
@@ -318,8 +330,9 @@ private:
     int ReadCpioName(unsigned long namesize, SCommonHeader& header);
     // 'arcfilename' must be able to hold the archive path (which may be a long UTF-8
     // path since interface 104) plus the name inside the archive -> pass its size
+    // 'size' (feature 309): the size to show instead of the header's (a hard link's copy)
     void MakeFileInfo(const SCommonHeader& header, char* arcfiledata, char* arcfilename,
-                      int arcfilenameSize);
+                      int arcfilenameSize, const CQuadWord* size = NULL);
     // allocates the "<archive>\<name in archive>" string for MakeFileInfo; free() it
     char* AllocArcFileName(const SCommonHeader& header, int& size);
 

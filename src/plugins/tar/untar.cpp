@@ -8,6 +8,7 @@
 #include "tar.h"
 #include "deb/deb.h"
 #include "../../common/salmaskname.h" // feature 260: SalNameTooLongForFileSystemU8
+#include "../../common/salsamefile.h" // feature 309: a hard link's copy never writes the file it names
 
 #include "tar.rh"
 #include "tar.rh2"
@@ -130,6 +131,7 @@ SCommonHeader::SCommonHeader()
     Path = NULL;
     ;
     Name = NULL;
+    LinkName = NULL;
     FileInfo.Name = NULL;
     Initialize();
 }
@@ -147,6 +149,10 @@ void SCommonHeader::Initialize()
     if (Name != NULL)
         free(Name);
     Name = NULL;
+    if (LinkName != NULL)
+        free(LinkName);
+    LinkName = NULL;
+    LinkType = 0;
     if (FileInfo.Name != NULL)
         SalamanderGeneral->Free(FileInfo.Name);
     memset(&FileInfo, 0, sizeof(FileInfo));
@@ -183,6 +189,7 @@ CArchive::CArchive(const char* fileName, CSalamanderForOperationsAbstract* salam
     SalPaxInit(&GlobalPax);
     Listing = FALSE;
     RefusedNameShown = FALSE;
+    LinkReportShown = FALSE;
     ListingPrefixLen = 0;
     SalamanderIf = salamander;
     if (fileName == NULL || salamander == NULL)
@@ -348,6 +355,15 @@ BOOL CArchive::UnpackOneFile(const char* nameInArchive, const CFileData* fileDat
             ReportRefusedName(header.Name);
             return FALSE;
         }
+        // feature 309: a link member is never "extracted" as nothing with success (not listed, so not
+        // reachable from the panel; a hard link's target is not written by this one-file operation)
+        if (found && header.LinkType != 0)
+        {
+            ReportLinkMember(header, SalTarLinkDecide(header.LinkType, false) == SAL_TAR_LINK_REPORT_MISSING
+                                         ? ERROR_FILE_NOT_FOUND
+                                         : ERROR_NOT_SUPPORTED);
+            return FALSE;
+        }
         // if we cannot interpret what we found, skip it; otherwise extract the file
         // What we don't support (everything except files & dirs) has zero size and Ignored set.
         // This new condition unlike the old one also extracts empty files.
@@ -471,6 +487,33 @@ BOOL CArchive::UnpackWholeArchive(const char* mask, const char* targetPath)
 // ****************************************************************************
 //
 
+// feature 309: the archive names of the files an extraction wrote (a hard link may copy one of them);
+// out of memory leaves a name unrecorded - a link to it is then reported (the safe side)
+typedef std::unordered_set<std::string> CWrittenNames;
+
+static bool IsNameWritten(const CWrittenNames& written, const char* name)
+{
+    try
+    {
+        return name != NULL && written.count(name) != 0;
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+static void RecordNameWritten(CWrittenNames& written, const char* name)
+{
+    try
+    {
+        written.insert(name);
+    }
+    catch (...)
+    {
+    }
+}
+
 BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, CNames& names)
 {
     CALL_STACK_MESSAGE3("CArchive::DoUnpackArchive(%s, %s, )", targetPath, archiveRoot);
@@ -488,6 +531,7 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
     // fails the whole operation after the rest is extracted - the core then neither reports success
     // nor deletes the archive ("Delete archive after unpacking")
     BOOL refused = FALSE;
+    CWrittenNames writtenNames; // feature 309
     SCommonHeader header;
     int ret = ReadArchiveHeader(header, TRUE);
     // if this is not a supported format, unpack only the outer compression when present
@@ -528,10 +572,49 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         if (found && !header.Ignored && archiveRoot != NULL)
             ptr += strlen(archiveRoot);
 
+        // feature 309: a link member asked for - a hard link to a file written above is extracted as
+        // a copy of it; any other link is reported and fails the operation after the rest is extracted
+        BOOL linkHandled = FALSE;
+        if (found && !header.NameRefused && header.LinkType != 0)
+        {
+            linkHandled = TRUE;
+            switch (SalTarLinkDecide(header.LinkType, IsNameWritten(writtenNames, header.LinkName)))
+            {
+            case SAL_TAR_LINK_COPY:
+            {
+                // both names were asked for, so both lie below the archive root
+                size_t rootLen = archiveRoot != NULL ? strlen(archiveRoot) : 0;
+                BOOL linkWritten, linkRefused;
+                if (WriteOutLinkCopy(header, targetPath, header.Name + rootLen, header.LinkName + rootLen,
+                                     &linkWritten, &linkRefused) != TAR_OK)
+                {
+                    SalamanderIf->CloseProgressDialog();
+                    return FALSE;
+                }
+                if (linkRefused)
+                    refused = TRUE;
+                if (linkWritten)
+                    RecordNameWritten(writtenNames, header.Name);
+                break;
+            }
+            case SAL_TAR_LINK_REPORT_MISSING:
+                ReportLinkMember(header, ERROR_FILE_NOT_FOUND);
+                refused = TRUE;
+                break;
+            default: // a symbolic link: never created
+                ReportLinkMember(header, ERROR_NOT_SUPPORTED);
+                refused = TRUE;
+                break;
+            }
+        }
+
         // if we cannot interpret what we found, skip it; otherwise extract the file
         // What we don't support (everything except files & dirs) has zero size and Ignored set.
         // This new condition unlike the old one also extracts empty files.
-        ret = WriteOutData(header, targetPath, ptr, (header.Ignored || !found), TRUE);
+        BOOL written = FALSE;
+        ret = WriteOutData(header, targetPath, ptr, (header.Ignored || !found), !linkHandled, &written);
+        if (written && !header.IsDir)
+            RecordNameWritten(writtenNames, header.Name);
         if (ret != TAR_OK)
         {
             SalamanderIf->CloseProgressDialog();
@@ -579,7 +662,7 @@ char* CArchive::AllocArcFileName(const SCommonHeader& header, int& size)
 }
 
 void CArchive::MakeFileInfo(const SCommonHeader& header, char* arcfiledata, char* arcfilename,
-                            int arcfilenameSize)
+                            int arcfilenameSize, const CQuadWord* size)
 {
     CALL_STACK_MESSAGE1("CArchive::MakeFileInfo( , , , )");
 
@@ -601,7 +684,8 @@ void CArchive::MakeFileInfo(const SCommonHeader& header, char* arcfiledata, char
             sprintf(time, "%u:%02u:%02u", st.wHour, st.wMinute, st.wSecond);
         if (GetDateFormat(LOCALE_USER_DEFAULT, DATE_SHORTDATE, &st, NULL, date, 50) == 0)
             sprintf(date, "%u.%u.%u", st.wDay, st.wMonth, st.wYear);
-        sprintf(arcfiledata, "%s, %s, %s", SalamanderGeneral->NumberToStr(number, header.FileInfo.Size), date, time);
+        sprintf(arcfiledata, "%s, %s, %s", SalamanderGeneral->NumberToStr(number, size != NULL ? *size : header.FileInfo.Size),
+                date, time);
         // filename - the buffer is sized by AllocArcFileName(), so this always fits
         _snprintf_s(arcfilename, arcfilenameSize, _TRUNCATE, "%s\\%s",
                     Stream->GetArchiveName(), header.Name);
@@ -609,11 +693,13 @@ void CArchive::MakeFileInfo(const SCommonHeader& header, char* arcfiledata, char
 }
 
 int CArchive::WriteOutData(const SCommonHeader& header, const char* targetPath,
-                           const char* targetName, BOOL simulate, BOOL doProgress)
+                           const char* targetName, BOOL simulate, BOOL doProgress, BOOL* written)
 {
     SLOW_CALL_STACK_MESSAGE5("CArchive::WriteOutData( , %s, %s, %d, %d)",
                              targetPath, targetName, simulate, doProgress);
 
+    if (written != NULL)
+        *written = FALSE;
     BOOL toSkip = TRUE;
     char* extractedName;
     HANDLE file;
@@ -855,6 +941,8 @@ int CArchive::WriteOutData(const SCommonHeader& header, const char* targetPath,
                 free(extractedName);
                 return TAR_ERROR;
             }
+            if (written != NULL)
+                *written = TRUE; // feature 309: a hard link to this member may copy it
         }
         SetFileAttributesU8(extractedName, header.FileInfo.Attr);
     }
@@ -916,6 +1004,187 @@ void CArchive::ReportRefusedName(const char* name)
     }
     else
         SalamanderGeneral->ShowMessageBox(err, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+}
+
+// feature 309: a link member the operation was asked for but does not reproduce (a symbolic link, a
+// hard link to a file this operation did not write) - the system's text for 'err' with the member's
+// whole name and the name it refers to, once per operation; the operation then fails
+void CArchive::ReportLinkMember(const SCommonHeader& header, DWORD err)
+{
+    CALL_STACK_MESSAGE1("CArchive::ReportLinkMember()");
+    if (LinkReportShown)
+        return;
+    LinkReportShown = TRUE;
+    const char* text = SalamanderGeneral->GetErrorText(err);
+    const char* name = header.Name != NULL ? header.Name : "";
+    const char* link = header.LinkName != NULL ? header.LinkName : "";
+    size_t msgSize = strlen(text) + 2 + strlen(name) + 4 + strlen(link) + 1;
+    char* msg = (char*)malloc(msgSize);
+    if (msg != NULL)
+    {
+        strcpy(msg, text); // sized for the whole text: the names are shown whole
+        strcat(msg, "\n\n");
+        strcat(msg, name);
+        strcat(msg, " -> ");
+        strcat(msg, link);
+        SalamanderGeneral->ShowMessageBox(msg, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        free(msg);
+    }
+    else
+        SalamanderGeneral->ShowMessageBox(text, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+}
+
+// "<targetPath>\<name>" as WriteOutData builds it (a leading separator of 'name' dropped); free() it
+static char* AllocExtractedName(const char* targetPath, const char* name)
+{
+    char* path = (char*)malloc(strlen(targetPath) + 1 + strlen(name) + 1);
+    if (path == NULL)
+        return NULL;
+    strcpy(path, targetPath);
+    if (path[0] == '\0' || path[strlen(path) - 1] != '\\')
+        strcat(path, "\\");
+    strcat(path, (name[0] == '\\' ? 1 : 0) + name);
+    return path;
+}
+
+int CArchive::WriteOutLinkCopy(const SCommonHeader& header, const char* targetPath, const char* targetName,
+                               const char* sourceName, BOOL* written, BOOL* refused)
+{
+    SLOW_CALL_STACK_MESSAGE4("CArchive::WriteOutLinkCopy( , %s, %s, %s, , )", targetPath, targetName, sourceName);
+
+    *written = FALSE;
+    *refused = FALSE;
+    char* extractedName = AllocExtractedName(targetPath, targetName);
+    char* sourcePath = AllocExtractedName(targetPath, sourceName);
+    WCHAR* sourceW = sourcePath != NULL ? SplU8ToWExtAlloc(sourcePath) : NULL;
+    WCHAR* extractedW = extractedName != NULL ? SplU8ToWExtAlloc(extractedName) : NULL;
+    int arcfilenameSize = 0;
+    char* arcfilename = AllocArcFileName(header, arcfilenameSize);
+    char* buffer = (char*)malloc(BUFSIZE);
+    HANDLE source = INVALID_HANDLE_VALUE;
+    HANDLE file = INVALID_HANDLE_VALUE;
+    int ret = TAR_OK;
+    if (extractedName == NULL || sourcePath == NULL || sourceW == NULL || extractedW == NULL ||
+        arcfilename == NULL || buffer == NULL)
+    {
+        SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_ERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        ret = TAR_ERROR;
+        goto DONE;
+    }
+    // the file the link names, written earlier in this operation: read-only and nobody may write it
+    // meanwhile - not even SafeFileCreate below when the destination is that file under another name
+    source = CreateFileW(sourceW, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    if (source == INVALID_HANDLE_VALUE)
+    {
+        ReportLinkMember(header, GetLastError()); // it disappeared or became unreadable: not reproduced
+        *refused = TRUE;
+        goto DONE;
+    }
+    {
+        // the destination is that very file (archive names differing only in case, an alias): the
+        // link already has its content - nothing to write (never truncate the source)
+        CSalFileIdentity sourceId, destId;
+        if (SalFileIdentityFromHandle(source, &sourceId) && SalGetFileIdentityW(extractedW, FALSE, &destId) &&
+            SalFileIdMatch(sourceId, destId) == simEqual)
+        {
+            *written = TRUE;
+            goto DONE;
+        }
+        LARGE_INTEGER sourceSize;
+        CQuadWord size(0, 0);
+        if (GetFileSizeEx(source, &sourceSize))
+            size.Value = (unsigned __int64)sourceSize.QuadPart;
+        char arcfiledata[500];
+        MakeFileInfo(header, arcfiledata, arcfilename, arcfilenameSize, &size);
+        BOOL toSkip = TRUE;
+        file = SalamanderSafeFile->SafeFileCreate(extractedName, GENERIC_WRITE, 0, FILE_ATTRIBUTE_NORMAL,
+                                                  FALSE, SalamanderGeneral->GetMainWindowHWND(), arcfilename,
+                                                  arcfiledata, &Silent, TRUE, &toSkip, NULL, 0, NULL, NULL);
+        // the progress line as for every extracted member
+        char progresstxt[1000];
+        _snprintf_s(progresstxt, _TRUNCATE, "%s%s",
+                    LoadStrU8(file == INVALID_HANDLE_VALUE ? IDS_SKIPPROGRESS_TEXT : IDS_UNPACKPROGRESS_TEXT),
+                    header.Name != NULL ? header.Name : "");
+        SplU8TrimTornTail(progresstxt);
+        SalamanderIf->ProgressDialogAddText(progresstxt, TRUE);
+        if (file == INVALID_HANDLE_VALUE)
+        {
+            if (!toSkip)
+                ret = TAR_ERROR; // Cancel or an error the user was already shown
+            goto DONE;           // Skip: the user's choice, as for any member
+        }
+        for (;;)
+        {
+            DWORD read;
+            if (!ReadFile(source, buffer, BUFSIZE, &read, NULL))
+            {
+                DWORD readErr = GetLastError();
+                const char* text = SalamanderGeneral->GetErrorText(readErr);
+                char* message = (char*)malloc(strlen(text) + 2 + strlen(sourcePath) + 1);
+                if (message != NULL)
+                {
+                    strcpy(message, text); // sized for the whole path: it is shown whole
+                    strcat(message, "\n\n");
+                    strcat(message, sourcePath);
+                }
+                SalamanderGeneral->ShowMessageBox(message != NULL ? message : text, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                free(message);
+                ret = TAR_ERROR;
+                break;
+            }
+            if (read == 0)
+                break;
+            DWORD wr;
+            if (!WriteFile(file, buffer, read, &wr, NULL) || wr != read)
+            {
+                char message[1000];
+                DWORD writeErr = GetLastError();
+                _snprintf_s(message, _TRUNCATE, "%s%s", LoadStrU8(IDS_TARERR_FWRITE),
+                            wr != read ? LoadStrU8(IDS_TARERR_WRSIZE) : SalamanderGeneral->GetErrorText(writeErr));
+                SalamanderGeneral->ShowMessageBox(message, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                ret = TAR_ERROR;
+                break;
+            }
+        }
+        if (ret == TAR_OK)
+        {
+            SetFileTime(file, &header.FileInfo.LastWrite, &header.FileInfo.LastWrite, &header.FileInfo.LastWrite);
+            BOOL closed = CloseHandle(file);
+            file = INVALID_HANDLE_VALUE;
+            if (!closed)
+            {
+                char message[1000];
+                DWORD err = GetLastError();
+                _snprintf_s(message, _TRUNCATE, "%s%s", LoadStrU8(IDS_TARERR_FWRITE), SalamanderGeneral->GetErrorText(err));
+                SalamanderGeneral->ShowMessageBox(message, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                DeleteFileU8(extractedName);
+                ret = TAR_ERROR;
+            }
+            else
+            {
+                SetFileAttributesU8(extractedName, header.FileInfo.Attr);
+                *written = TRUE;
+            }
+        }
+        else
+        {
+            CloseHandle(file);
+            file = INVALID_HANDLE_VALUE;
+            DeleteFileU8(extractedName); // an incomplete copy is not left behind (as WriteOutData does)
+        }
+    }
+DONE:
+    if (file != INVALID_HANDLE_VALUE)
+        CloseHandle(file);
+    if (source != INVALID_HANDLE_VALUE)
+        CloseHandle(source);
+    free(buffer);
+    free(arcfilename);
+    free(extractedW);
+    free(sourceW);
+    free(sourcePath);
+    free(extractedName);
+    return ret;
 }
 
 // skip the unused remainder of the block to reach the next valid one
@@ -1117,58 +1386,15 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
                                           MSGBOX_ERROR);
         return TAR_ERROR;
     }
-    const char* src = header.Name;
-    char* dst = tmpName;
-    while (*src != '\0')
-    {
-        switch (*src)
-        {
-        case '\\':
-        case '/':
-            // when we encounter a slash, copy it if it is not the first path character and we do not have one already
-            if (dst > tmpName && *(dst - 1) != '\\')
-                *dst++ = '\\';
-            src++;
-            break;
-        case '.':
-            if (*(src + 1) == '.' && (*(src + 2) == '\\' || *(src + 2) == '/' || *(src + 2) == '\0'))
-            {
-                char* dstOld = dst;
-
-                // two dots - drop one directory level when possible
-                if (dst > tmpName)
-                    dst -= 2;
-                while ((dst > tmpName) && (*dst != '\\'))
-                    dst--;
-                // testAIX.tar from martin.pobitzer@gmx.at created on AIX starts with path "../../empty"
-                if (dst < dstOld)
-                {
-                    dst++;
-                }
-                src += 2;
-                break;
-            }
-            else if (*(src + 1) == '\\' || *(src + 1) == '/' || *(src + 1) == '\0')
-            {
-                // a single dot - simply ignore it
-                src++;
-                break;
-            }
-            // otherwise it is the start of the name; fall through to copying
-        default:
-            // copy characters until the next slash
-            while (*src != '\0' && *src != '\\' && *src != '/')
-                *dst++ = *src++;
-            break;
-        }
-    }
-    // terminate the destination string
-    *dst = '\0';
+    // feature 309: the rule lives in saltarlink.h - link names are normalized by it too
+    SalTarNormalizeNameU8(header.Name, tmpName);
+    char* dst = tmpName + strlen(tmpName);
     // skip invalid names
     if (tmpName[0] == '\0')
     {
         free(tmpName);
         header.Ignored = TRUE;
+        header.LinkType = 0; // feature 309: such a member stays without effect, as before
         return TAR_OK;
     }
     // skip the trailing slash but remember it was there
@@ -1191,6 +1417,23 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     }
     strcpy(header.Name, tmpName);
     free(tmpName);
+    // feature 309: the name a link member refers to - decoded and normalized like the member's name,
+    // so "./a.txt" names the member "a.txt"
+    if (header.LinkType != 0 && header.LinkName != NULL)
+    {
+        char* linkName = NULL;
+        if (ConvertNameToU8(header.LinkName))
+            linkName = (char*)malloc(strlen(header.LinkName) + 1);
+        if (linkName == NULL)
+        {
+            SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                              MSGBOX_ERROR);
+            return TAR_ERROR;
+        }
+        SalTarNormalizeNameU8(header.LinkName, linkName);
+        free(header.LinkName);
+        header.LinkName = linkName;
+    }
     // feature 306: a PAX path with a component no file system takes (over 255 UTF-16 units) is
     // refused - not listed, not extracted, never shortened or replaced by the ustar fallback name
     // (the whole name of such a member crashed the listing, measured with a GNU long name); while
@@ -1645,23 +1888,19 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
                 SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_HEADER), LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
                 return TAR_ERROR;
             }
-            // ignore link entries and keep only actual file names
-            if (tarHeader->Header.typeflag == GNUTYPE_LONGNAME)
+            // a long member name, or (feature 309) the long name a link member refers to
+            char** longName = tarHeader->Header.typeflag == GNUTYPE_LONGNAME ? &header.Name : &header.LinkName;
+            if (*longName != NULL)
+                free(*longName);
+            *longName = (char*)malloc(header.FileInfo.Size.LoDWord + 1);
+            if (*longName == NULL)
             {
-                if (header.Name != NULL)
-                    free(header.Name);
-                header.Name = (char*)malloc(header.FileInfo.Size.LoDWord + 1);
-                if (header.Name == NULL)
-                {
-                    SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_MEMORY), LoadStr(IDS_TARERR_TITLE),
-                                                      MSGBOX_ERROR);
-                    return TAR_ERROR;
-                }
+                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_MEMORY), LoadStr(IDS_TARERR_TITLE),
+                                                  MSGBOX_ERROR);
+                return TAR_ERROR;
             }
             DWORD toread = header.FileInfo.Size.LoDWord;
             DWORD offs = 0;
-            // data referenced by tarHeader is no longer valid once GetBlock is called
-            char typeFlag = tarHeader->Header.typeflag;
             while (toread > 0)
             {
                 const unsigned char* ptr = Stream->GetBlock(BLOCKSIZE);
@@ -1673,15 +1912,12 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
                 }
                 Offset += CQuadWord(BLOCKSIZE, 0);
                 DWORD rest = BLOCKSIZE < toread ? BLOCKSIZE : toread;
-                // ignore long-name link entries
-                if (typeFlag == GNUTYPE_LONGNAME)
-                    memcpy(header.Name + offs, ptr, rest);
+                memcpy(*longName + offs, ptr, rest);
                 offs += rest;
                 toread -= rest;
             }
             // terminate with a null character...
-            if (typeFlag == GNUTYPE_LONGNAME)
-                *(header.Name + offs) = '\0';
+            *(*longName + offs) = '\0';
             // and read the next block for further processing
             tarHeader = (const TTarBlock*)Stream->GetBlock(BLOCKSIZE);
             if (tarHeader == NULL)
@@ -1718,6 +1954,22 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
                     free(header.Name); // a GNU long name
                 header.Name = name;
                 header.NameFromPax = TRUE;
+            }
+            // feature 309: the name a link member refers to - a PAX linkpath beats a GNU long link name
+            const char* paxLink = SalPaxEffectiveLinkPath(&GlobalPax, &memberPax.V);
+            if (paxLink != NULL && (tarHeader->Header.typeflag == LNKTYPE || tarHeader->Header.typeflag == SYMTYPE))
+            {
+                char* link = (char*)malloc(strlen(paxLink) + 1);
+                if (link == NULL)
+                {
+                    SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                      MSGBOX_ERROR);
+                    return TAR_ERROR;
+                }
+                strcpy(link, paxLink);
+                if (header.LinkName != NULL)
+                    free(header.LinkName);
+                header.LinkName = link;
             }
             // the data size: not for links and directories, whose data is never read (size 0 above)
             unsigned __int64 paxSize;
@@ -1765,8 +2017,25 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
         {
         case LNKTYPE:
         case SYMTYPE:
-            // TODO: tar for DOS extracts symlinks as hard links and hard links
-            //       as copies. Or perhaps we could try shortcuts...
+            // feature 309: not listed (Ignored as before); an extraction asked for it copies a hard link
+            // whose target it wrote and reports every other link (DoUnpackArchive). The name it refers
+            // to: a PAX linkpath or a GNU long link name read above, else the ustar field (100 bytes,
+            // not terminated when full)
+            header.Ignored = TRUE;
+            header.LinkType = tarHeader->Header.typeflag;
+            if (header.LinkName == NULL)
+            {
+                header.LinkName = (char*)malloc(sizeof(tarHeader->Header.linkname) + 1);
+                if (header.LinkName == NULL)
+                {
+                    SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                      MSGBOX_ERROR);
+                    return TAR_ERROR;
+                }
+                memcpy(header.LinkName, tarHeader->Header.linkname, sizeof(tarHeader->Header.linkname));
+                header.LinkName[sizeof(tarHeader->Header.linkname)] = '\0';
+            }
+            break;
         case CHRTYPE:
         case BLKTYPE:
         case FIFOTYPE:

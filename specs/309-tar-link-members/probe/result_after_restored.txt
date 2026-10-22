@@ -1,0 +1,21 @@
+link309_probe (feature 309) after-restored
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 15:21; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-HARD-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-DEL RUN    PASS        tgt: 4 of 4 files; archive kept: False (want False); box naming the member: False (boxes: 0); windows: no window
+UNP-HARD-PAX-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-PAX-DEL RUN    PASS        tgt: 2 of 2 files; archive kept: False (want False); box naming the member: False (boxes: 0); windows: no window
+UNP-HARD-GNU-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-GNU-DEL RUN    PASS        tgt: 2 of 2 files; archive kept: False (want False); box naming the member: False (boxes: 0); windows: no window
+UNP-HARD-MISSING-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-MISSING-DEL RUN    PASS        tgt: 1 of 1 files; archive kept: True (want True); box naming the member: True (boxes: 1); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. b.txt -> missing.txt | [Button id=1] OK
+UNP-SYM-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-SYM-DEL RUN    PASS        tgt: 1 of 1 files; archive kept: True (want True); box naming the member: True (boxes: 1); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (50) Po\u017Eadavek nen\u00ED podporov\u00E1n. s.txt -> a.txt | [Button id=1] OK
+UNP-HARD-TWIN-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-TWIN-DEL RUN    PASS        tgt: 1 of 1 files; archive kept: False (want False); box naming the member: False (boxes: 0); windows: no window
+COPY-HARD  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-HARD  RUN    PASS        tgt: 4 of 4 files; at open: no window; during the copy: [#32770 'Copy'] [Static id=209] Copy 1 file and 1 directory from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 14, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

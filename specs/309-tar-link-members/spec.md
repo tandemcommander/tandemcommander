@@ -66,8 +66,9 @@ member and the name it links to), everything else is extracted, and the operatio
 
 **Acceptance Scenarios**:
 
-1. **Given** a tar with `a.txt` and a symbolic link `s.txt -> a.txt`, **When** it is unpacked whole with
-   "Delete archive after unpacking", **Then** `a.txt` is extracted, a box names `s.txt`, the archive is kept.
+1. **Given** a tar with `a.txt` and symbolic links `s.txt -> a.txt`, `t.txt -> a.txt`, **When** it is
+   unpacked whole with "Delete archive after unpacking", **Then** `a.txt` is extracted, exactly one box
+   names `s.txt`, the archive is kept.
 2. **Given** a hard link `b.txt -> missing.txt` (no such member) and `ok.txt`, **When** unpacked with
    Delete, **Then** `ok.txt` is extracted, a box names `b.txt`, the archive is kept.
 
@@ -145,5 +146,9 @@ not truncate or rewrite `a.txt`.
   item names tar link members.
 - Assumption (autonomous run): a hard link whose target was overwritten later in the same operation by
   another member of the same name copies what is on disk then (the same as a real hard link would show).
+- Assumption (autonomous run): a known behaviour change - a whole Unpack of an archive holding symbolic
+  links (common in Linux tarballs and `.deb` packages) used to end as successful with the links left out;
+  it now extracts the same files, shows one box and ends as failed (the archive is kept). This is the
+  item's Expected; the CHANGELOG entry names it.
 - Assumption (autonomous run): the copy of a large target has no progress of its own; the operation's
   progress continues after it.

@@ -1,0 +1,21 @@
+link309_probe (feature 309) negctl-A+B
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 15:19; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-HARD-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-DEL RUN    FAIL        tgt: 2 of 4 files; missing 2: sub/b.txt, sub/d.txt; archive kept: False (want False); box naming the member: False (boxes: 1); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. sub\b.txt -> a.txt | [Button id=1] OK
+UNP-HARD-PAX-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-PAX-DEL RUN    FAIL        tgt: 1 of 2 files; missing 1: sub/\u4F00\u4F01\u4F02\u4F03..[48 chars]..\u4F24\u4F25\u4F26\u4F27.txt; archive kept: False (want False); box naming the member: False (boxes: 1); windows: ...E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C\u4E0D\u4E0E\u4E0F\u4E10\u4E11\u4E12\u4E13\u4E14\u4E15\u4E16\u4E17\u4E18\u4E19\u4E1A\u4E1B\u4E1C\u4E1D\u4E1E\u4E1F\u4E20\u4E21\u4E22\u4E23\u4E24\u4E25\u4E26\u4E27.txt | [Button id=1] OK
+UNP-HARD-GNU-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-GNU-DEL RUN    FAIL        tgt: 1 of 2 files; missing 1: sub/h.txt; archive kept: False (want False); box naming the member: False (boxes: 1); windows: ...'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. sub\h.txt -> gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg gggggggggggggggggggggggggggggg.txt | [Button id=1] OK
+UNP-HARD-MISSING-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-MISSING-DEL RUN    FAIL        tgt: 1 of 1 files; archive kept: False (want True); box naming the member: True (boxes: 1); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. b.txt -> missing.txt | [Button id=1] OK
+UNP-SYM-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-SYM-DEL RUN    FAIL        tgt: 1 of 1 files; archive kept: False (want True); box naming the member: True (boxes: 1); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (50) Po\u017Eadavek nen\u00ED podporov\u00E1n. s.txt -> a.txt | [Button id=1] OK
+UNP-HARD-TWIN-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-TWIN-DEL RUN    FAIL        tgt: 1 of 1 files; archive kept: False (want False); box naming the member: False (boxes: 1); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. A.TXT -> a.txt | [Button id=1] OK
+COPY-HARD  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-HARD  RUN    FAIL        tgt: 2 of 4 files; missing 2: sub/b.txt, sub/d.txt; at open: no window; during the copy: ...] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. sub\b.txt -> a.txt | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 7, FAIL 7, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

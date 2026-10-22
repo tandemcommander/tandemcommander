@@ -1,0 +1,9 @@
+link309_probe (feature 309) negctl-C-no-identity
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 15:21; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-HARD-TWIN-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-TWIN-DEL RUN    FAIL        tgt: 1 of 1 files; archive kept: True (want False); box naming the member: False (boxes: 2); windows: ...atic id=1151] Error: | [Static id=172] (32) Proces nem\u00E1 p\u0159\u00EDstup k souboru, nebo\u0165 jej pr\u00E1v\u011B vyu\u017E\u00EDv\u00E1 jin\u00FD proces.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -24,8 +24,8 @@
 // dropped. The last record of a keyword wins. A member's own value beats the
 // global one; both beat the ustar header and a GNU long name.
 //
-// Applied keywords: path, size, mtime. Everything else is ignored (linkpath:
-// the plug-in does not extract links; uname, comment, SCHILY.*, ...).
+// Applied keywords: path, size, mtime, linkpath (feature 309: the name a hard or
+// symbolic link refers to). Everything else is ignored (uname, comment, SCHILY.*, ...).
 //
 // Errors: a malformed record, an invalid size or a NUL inside a path make the
 // header BAD - the caller refuses the archive (a wrong size or name would
@@ -60,6 +60,8 @@ struct SalPaxValues
 {
     int PathState;
     char* Path; // malloc'd, NUL-terminated: the value's bytes (UTF-8 by the standard)
+    int LinkPathState; // feature 309
+    char* LinkPath;    // malloc'd, NUL-terminated, as Path
     int SizeState;
     unsigned __int64 Size;
     int MTimeState;
@@ -75,6 +77,7 @@ inline void SalPaxInit(SalPaxValues* v)
 inline void SalPaxClear(SalPaxValues* v)
 {
     free(v->Path);
+    free(v->LinkPath);
     SalPaxInit(v);
 }
 
@@ -246,13 +249,16 @@ inline int SalPaxApply(const char* data, size_t size, SalPaxValues* v)
             return SAL_PAX_OK;
         if (r < 0)
             return SAL_PAX_BAD;
-        if (SalPaxDetail::KeyIs(key, keyLen, "path"))
+        bool isPath = SalPaxDetail::KeyIs(key, keyLen, "path");
+        if (isPath || SalPaxDetail::KeyIs(key, keyLen, "linkpath")) // feature 309: linkpath as path
         {
+            char** dst = isPath ? &v->Path : &v->LinkPath;
+            int* state = isPath ? &v->PathState : &v->LinkPathState;
             if (valLen == 0)
             {
-                free(v->Path);
-                v->Path = NULL;
-                v->PathState = SAL_PAX_DELETED;
+                free(*dst);
+                *dst = NULL;
+                *state = SAL_PAX_DELETED;
                 continue;
             }
             if (memchr(val, 0, valLen) != NULL)
@@ -262,9 +268,9 @@ inline int SalPaxApply(const char* data, size_t size, SalPaxValues* v)
                 return SAL_PAX_NOMEM;
             memcpy(p, val, valLen);
             p[valLen] = 0;
-            free(v->Path);
-            v->Path = p;
-            v->PathState = SAL_PAX_SET;
+            free(*dst);
+            *dst = p;
+            *state = SAL_PAX_SET;
         }
         else if (SalPaxDetail::KeyIs(key, keyLen, "size"))
         {
@@ -306,6 +312,17 @@ inline const char* SalPaxEffectivePath(const SalPaxValues* global, const SalPaxV
     if (member->PathState == SAL_PAX_DELETED)
         return NULL;
     return global->PathState == SAL_PAX_SET ? global->Path : NULL;
+}
+
+// feature 309: the name a link member refers to - its own value, else the global one; NULL = the GNU
+// long link name / ustar link name stays
+inline const char* SalPaxEffectiveLinkPath(const SalPaxValues* global, const SalPaxValues* member)
+{
+    if (member->LinkPathState == SAL_PAX_SET)
+        return member->LinkPath;
+    if (member->LinkPathState == SAL_PAX_DELETED)
+        return NULL;
+    return global->LinkPathState == SAL_PAX_SET ? global->LinkPath : NULL;
 }
 
 inline bool SalPaxEffectiveSize(const SalPaxValues* global, const SalPaxValues* member, unsigned __int64* out)

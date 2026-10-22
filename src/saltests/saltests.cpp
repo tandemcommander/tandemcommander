@@ -95,6 +95,7 @@
 #include "salsubst.h"         // feature 301
 #include "salftpupname.h"     // feature 303
 #include "salpaxheader.h"     // feature 306
+#include "saltarlink.h"       // feature 309
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -18388,6 +18389,67 @@ static void TestPaxNameUsable308()
     CHECK(differ == 0);
 }
 
+static std::string TarNorm309(const char* name)
+{
+    std::string buf(strlen(name) + 1, '\x7F'); // not NUL: the terminator must be written
+    SalTarNormalizeNameU8(name, &buf[0]);
+    return std::string(buf.c_str());
+}
+
+static std::string PaxLink309(const std::string& g, const std::string& x)
+{
+    CSalPaxValuesHolder gv, xv;
+    if (PaxApply306(g, &gv.V) != SAL_PAX_OK || PaxApply306(x, &xv.V) != SAL_PAX_OK)
+        return "<bad>";
+    const char* p = SalPaxEffectiveLinkPath(&gv.V, &xv.V);
+    return p != NULL ? p : "<none>";
+}
+
+static void TestTarLink309()
+{
+    // one normalization for member names and link names: GNU tar's "./" spelling is the same name
+    CHECK(TarNorm309("a.txt") == "a.txt");
+    CHECK(TarNorm309("./a.txt") == "a.txt");
+    CHECK(TarNorm309("./sub/d.txt") == "sub\\d.txt");
+    CHECK(TarNorm309("sub/b.txt") == "sub\\b.txt");
+    CHECK(TarNorm309("sub//b.txt") == "sub\\b.txt");
+    CHECK(TarNorm309("x/./y") == "x\\y");
+    CHECK(TarNorm309("/abs/x") == "abs\\x");
+    CHECK(TarNorm309("a\\b") == "a\\b");
+    CHECK(TarNorm309("../../empty") == "empty"); // never above the root (the AIX archive)
+    CHECK(TarNorm309("dir/") == "dir\\");        // the trailing separator stays: the caller's "folder"
+    CHECK(TarNorm309(".") == "");
+    CHECK(TarNorm309("") == "");
+    CHECK(TarNorm309("\xE4\xB8\x80/./\xE4\xB8\x81.txt") == "\xE4\xB8\x80\\\xE4\xB8\x81.txt"); // UTF-8 bytes untouched
+
+    // PAX linkpath: as path - the member's value, else the global one; empty cancels; NUL refuses
+    CHECK(PaxLink309("", PaxRec306("linkpath=a.txt")) == "a.txt");
+    CHECK(PaxLink309(PaxRec306("linkpath=g"), "") == "g");
+    CHECK(PaxLink309(PaxRec306("linkpath=g"), PaxRec306("linkpath=x")) == "x");
+    CHECK(PaxLink309(PaxRec306("linkpath=g"), PaxRec306("linkpath=")) == "<none>");
+    CHECK(PaxLink309("", PaxRec306(std::string("linkpath=a\0b", 12))) == "<bad>");
+    CHECK(PaxLink309("", "") == "<none>");
+    // path and linkpath are independent records
+    CHECK(PaxLink309("", PaxRec306("path=sub/b.txt") + PaxRec306("linkpath=a.txt")) == "a.txt");
+    CHECK(PaxPath306("", PaxRec306("path=sub/b.txt") + PaxRec306("linkpath=a.txt")) == "sub/b.txt");
+    CHECK(PaxLink309("", PaxRec306("path=sub/b.txt")) == "<none>");
+    {
+        CSalPaxValuesHolder v; // SalPaxClear frees both values (the leak check of the Debug CRT)
+        CHECK(PaxApply306(PaxRec306("linkpath=l") + PaxRec306("linkpath=m") + PaxRec306("path=p"), &v.V) == SAL_PAX_OK);
+        CHECK(v.V.LinkPathState == SAL_PAX_SET && strcmp(v.V.LinkPath, "m") == 0);
+    }
+
+    // the decision: copy a hard link whose target was written, report every other link
+    CHECK(SalTarLinkDecide('1', true) == SAL_TAR_LINK_COPY);
+    CHECK(SalTarLinkDecide('1', false) == SAL_TAR_LINK_REPORT_MISSING);
+    CHECK(SalTarLinkDecide('2', true) == SAL_TAR_LINK_REPORT_UNSUPPORTED);
+    CHECK(SalTarLinkDecide('2', false) == SAL_TAR_LINK_REPORT_UNSUPPORTED);
+    CHECK(SalTarLinkDecide('0', true) == SAL_TAR_LINK_NONE);
+    CHECK(SalTarLinkDecide('\0', false) == SAL_TAR_LINK_NONE);
+    CHECK(SalTarLinkDecide('5', true) == SAL_TAR_LINK_NONE);
+}
+
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -18535,6 +18597,7 @@ int main(int argc, char** argv)
     TestFtpCaseOnlyName303();
     TestPaxHeader306();
     TestPaxNameUsable308();
+    TestTarLink309();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

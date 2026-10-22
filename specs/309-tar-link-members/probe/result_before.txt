@@ -1,0 +1,21 @@
+link_probe before-main
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 14:58; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-HARD-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-DEL RUN    FAIL        tgt: 2 of 4 files; missing 2: sub/b.txt, sub/d.txt; archive kept: False (want False); box naming the member: False; windows: no window
+UNP-HARD-PAX-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-PAX-DEL RUN    FAIL        tgt: 1 of 2 files; missing 1: sub/\u4F00\u4F01\u4F02\u4F03..[48 chars]..\u4F24\u4F25\u4F26\u4F27.txt; archive kept: False (want False); box naming the member: False; windows: no window
+UNP-HARD-GNU-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-GNU-DEL RUN    FAIL        tgt: 1 of 2 files; missing 1: sub/h.txt; archive kept: False (want False); box naming the member: False; windows: no window
+UNP-HARD-MISSING-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-MISSING-DEL RUN    FAIL        tgt: 1 of 1 files; archive kept: False (want True); box naming the member: False; windows: no window
+UNP-SYM-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-SYM-DEL RUN    FAIL        tgt: 1 of 1 files; archive kept: False (want True); box naming the member: False; windows: no window
+UNP-HARD-TWIN-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-TWIN-DEL RUN    PASS        tgt: 1 of 1 files; archive kept: False (want False); box naming the member: False; windows: no window
+COPY-HARD  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-HARD  RUN    FAIL        tgt: 2 of 4 files; missing 2: sub/b.txt, sub/d.txt; at open: no window; during the copy: [#32770 'Copy'] [Static id=209] Copy 1 file and 1 directory from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 8, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
