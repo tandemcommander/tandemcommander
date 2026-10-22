@@ -1,7 +1,7 @@
 ---
 title: Copying the files of a tar folder leaves hard-linked names out silently
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:309
@@ -38,3 +38,4 @@ Not a data-loss path (Copy never deletes the archive). Listing link members chan
 ## Log
 
 - 2026-10-22 — created (source review:309)
+- 2026-10-22 — moved to Next position 11

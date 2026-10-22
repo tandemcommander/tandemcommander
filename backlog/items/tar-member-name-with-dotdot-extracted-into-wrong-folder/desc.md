@@ -1,7 +1,7 @@
 ---
 title: A tar member whose name contains .. is extracted into a wrong folder
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:309
@@ -39,3 +39,4 @@ Not reproduced in the GUI with a member name (only through the shared rule and s
 ## Log
 
 - 2026-10-22 — created (source review:309)
+- 2026-10-22 — moved to Next position 28

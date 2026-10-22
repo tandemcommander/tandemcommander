@@ -1,7 +1,7 @@
 ---
 title: Unpacking a cpio or rpm leaves links out silently and may delete the archive
 type: bug
-status: new
+status: open
 severity: 6
 area: archives
 source: measure:309
@@ -38,3 +38,4 @@ Severity from the tar case (7), one lower because not verified.
 ## Log
 
 - 2026-10-22 — created (source measure:309)
+- 2026-10-22 — moved to Next position 2
