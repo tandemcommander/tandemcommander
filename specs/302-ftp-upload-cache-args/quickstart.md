@@ -11,7 +11,7 @@ Prerequisites: Debug x64 build (`build.cmd`), Python on PATH (for `ftpmini.py`),
    ```
 
    Expected: `MKD-ABS` PASS (the second upload sends no `MKD new`, `f.txt` arrives in
-   `/MKA/other/new`), `REN-UP` PASS (`b.txt` keeps its content), every `END` row PASS, registry
-   restored + identical. Before the fix: `MKD-ABS` FAIL, `REN-UP` PASS (masked by the refresh).
-3. Regressions: `ftp288_probe.ps1` (and 224 / 277 if time allows) as recorded in their features.
+   `/MKD-ABS/other/new`), `REN-UP` PASS (`b.txt` keeps its content), every `END` row PASS, registry
+   restored + identical. Before the fix: `MKD-ABS` FAIL, `REN-UP` FAIL (`b.txt` replaced without the question).
+3. Regressions: `ftp288_probe.ps1` -> 20 / 0 as recorded by 288.
 4. Encoding guard: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.

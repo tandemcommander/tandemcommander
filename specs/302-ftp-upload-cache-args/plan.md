@@ -12,7 +12,7 @@ cache's `FindServer` then finds no server and the report is dropped. The fix pas
 `(userBuffer, hostBuf, portBuf, ...)` at the four calls. A hidden-desktop probe with 215's
 `ftpmini.py` shows the visible case (F7 with an absolute path outside the panel folder while an
 upload is open: the next upload sends `MKD` for an existing folder) before / after, and keeps the
-item's rename row as a regression check (masked by the panel refresh, expected to pass before too).
+item's rename row (before the fix the uploaded `b.txt` replaced the renamed file without the question).
 
 ## Technical Context
 

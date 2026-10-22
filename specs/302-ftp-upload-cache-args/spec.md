@@ -17,12 +17,15 @@ dropped: the cached listing stays as it was before the change.
 
 Measured at 02eba55f (by reading, see `fix-log.md`): the four reports (Create Directory: done and
 "result unknown"; Quick Rename: done and "result unknown") pass the host where the user name is
-expected; every other report passes them in the declared order. For the panel's own folder the
-effect is masked: the panel lists its folder again after the command, and that fresh listing
-replaces the cached one; a new upload into the panel's folder also takes the panel's listing. It is
-not masked when Create Directory names a folder outside the panel's folder (for example an absolute
-path typed into F7): only the cache knows of that folder's listing, and an upload into it keeps
-believing the new folder does not exist.
+expected; every other report passes them in the declared order. Reading suggested that for the
+panel's own folder the effect is masked (the panel lists its folder again after the command and
+that fresh listing replaces the cached one); the probe disproved it: the panel's new listing had
+not run when the next upload started (its `LIST` reached the server after the upload's `STOR`),
+and a new upload into the panel's folder does not take the panel's listing while another
+operation can change that folder. So a file renamed to `b.txt` in the panel was replaced by an
+uploaded `b.txt` without the overwrite question (data loss). Create Directory with a folder
+outside the panel's folder (an absolute path typed into F7) left the cache believing the new
+folder does not exist.
 
 ## Clarifications
 
@@ -66,8 +69,9 @@ arrives in `/other/new`.
 A user has an upload to a folder open, renames `a.txt` to `b.txt` in the FTP panel showing that
 folder, then uploads a local `b.txt` into it.
 
-**Why this priority**: the item's suspected data-loss path. Measured by reading as masked by the
-panel's refresh; the row stays as a regression check of the rename report.
+**Why this priority**: the item's suspected data-loss path - confirmed by the probe before the
+fix (the server's `b.txt` was replaced without the question). P2 only because it needs an open
+upload operation to the same server at the time of the rename.
 
 **Independent Test**: probe row: the server's `b.txt` keeps its content (the overwrite question
 appears and is answered "Skip", or no `STOR b.txt` reaches the server).
@@ -114,15 +118,18 @@ appears and is answered "Skip", or no `STOR b.txt` reaches the server).
 
 - **SC-001**: In the probe row of User Story 1, the second upload sends no `MKD new` to the server
   (before the fix: it does) and the local folder's file arrives in `/other/new`.
-- **SC-002**: In the probe row of User Story 2, the server's `b.txt` keeps its original content.
-- **SC-003**: The existing FTP probes that touch Create Directory, Quick Rename and upload
-  (features 224, 277, 288) give the same results as before the change.
+- **SC-002**: In the probe row of User Story 2, the overwrite question for `b.txt` appears, no
+  `STOR b.txt` reaches the server and its `b.txt` keeps its original content (before the fix: it
+  is replaced without the question).
+- **SC-003**: The existing FTP probe whose rows drive Create Directory, Quick Rename and upload
+  against the test server (feature 288, `ftp288_probe.ps1`) gives the same result as recorded
+  by 288 (20 / 0).
 
 ## Assumptions
 
-- Assumption (autonomous run): the item's rename row passes before the fix as well (masked by the
-  panel's refresh); this is recorded as the measured negative control, and the absolute-path
-  Create Directory row is the one that shows the defect.
+- Assumption (autonomous run), corrected by measurement: reading suggested the item's rename row
+  would pass before the fix (masked by the panel's refresh); the probe showed it fails (data
+  loss), so both rows are negative controls.
 - Assumption (autonomous run): the test FTP server of features 215 / 224 / 288 (`ftpmini.py`) and
   the hidden-desktop driver are used; a real server check is not needed for an argument-order fix
   (no server-dependent behaviour changes).

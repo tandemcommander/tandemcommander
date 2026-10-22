@@ -575,7 +575,7 @@ BOOL CControlConnectionSocket::CreateDir(char* changedPath, HWND parent, char* n
                     lstrcpyn(userBuffer, User, USER_MAX_SIZE);
                     unsigned short portBuf = Port;
                     HANDLES(LeaveCriticalSection(&SocketCritSect));
-                    UploadListingCache.ReportCreateDirs(hostBuf, userBuffer, portBuf, workPath,
+                    UploadListingCache.ReportCreateDirs(userBuffer, hostBuf, portBuf, workPath,
                                                         GetFTPServerPathType(workPath), newName, FALSE);
                 }
                 if (FTP_DIGIT_1(ftpReplyCode) == FTP_D1_SUCCESS && // a success reply is returned (should be 257)
@@ -621,7 +621,7 @@ BOOL CControlConnectionSocket::CreateDir(char* changedPath, HWND parent, char* n
                     lstrcpyn(userBuffer, User, USER_MAX_SIZE);
                     unsigned short portBuf = Port;
                     HANDLES(LeaveCriticalSection(&SocketCritSect));
-                    UploadListingCache.ReportCreateDirs(hostBuf, userBuffer, portBuf, workPath,
+                    UploadListingCache.ReportCreateDirs(userBuffer, hostBuf, portBuf, workPath,
                                                         GetFTPServerPathType(workPath), newName, TRUE);
                 }
                 if (canRetry) // "retry" is allowed
@@ -764,7 +764,7 @@ BOOL CControlConnectionSocket::QuickRename(char* changedPath, HWND parent, const
                                         lstrcpyn(userBuffer, User, USER_MAX_SIZE);
                                         portBuf = Port;
                                         HANDLES(LeaveCriticalSection(&SocketCritSect));
-                                        UploadListingCache.ReportRename(hostBuf, userBuffer, portBuf, workPath,
+                                        UploadListingCache.ReportRename(userBuffer, hostBuf, portBuf, workPath,
                                                                         pathType, fromName, newName, FALSE);
                                     }
                                 }
@@ -786,7 +786,7 @@ BOOL CControlConnectionSocket::QuickRename(char* changedPath, HWND parent, const
                                     lstrcpyn(userBuffer, User, USER_MAX_SIZE);
                                     portBuf = Port;
                                     HANDLES(LeaveCriticalSection(&SocketCritSect));
-                                    UploadListingCache.ReportRename(hostBuf, userBuffer, portBuf, workPath,
+                                    UploadListingCache.ReportRename(userBuffer, hostBuf, portBuf, workPath,
                                                                     pathType, fromName, newName, TRUE);
                                 }
                                 if (canRetry) // "retry" is allowed
