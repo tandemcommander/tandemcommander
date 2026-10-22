@@ -5,6 +5,12 @@
 **Status**: Draft
 **Input**: User description: "Backlog item mask-group-prepare-unbounded-mask-copy - a single mask longer than 259 bytes overruns the mask group preparation buffers." From backlog item mask-group-prepare-unbounded-mask-copy.
 
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: Should the sources that deliver long masks (registry readers with a 1001-byte cap, the tab filter, plug-ins, the viewer masks passed in directly) also be capped or refused? → A: No - only the preparation becomes safe for any length; the sources keep their behaviour, and a mask they deliver is used whole (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A long mask from the configuration does not crash the program (Priority: P1)
