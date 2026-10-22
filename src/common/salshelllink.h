@@ -226,6 +226,41 @@ inline BOOL SalIsFolderShortcutIni(const char* buf, int len)
     return FALSE;
 }
 
+// Feature 305: the part of SalFolderShortcutTargetU8 after target.lnk is loaded into 'link': the
+// target read whole (UNC preferred, no Resolve), handed back only when it fits 'targetSize' bytes.
+// Returns NOERROR ('target' holds it); ERROR_FILENAME_EXCED_RANGE (as an HRESULT) when it does not
+// fit or the reader refused it as possibly cut - refuse it, never cut, never the shortcut folder
+// silently; S_FALSE when the link names no file-system path or cannot be read (the rule before);
+// E_OUTOFMEMORY. 'target' is "" unless NOERROR. (A function of its own so saltests can drive it
+// with a link that answers what the test says.)
+inline HRESULT SalFolderShortcutLinkTargetU8(IShellLinkW* link, char* target, int targetSize)
+{
+    if (target == NULL || targetSize <= 0)
+        return E_INVALIDARG;
+    target[0] = 0;
+    if (link == NULL)
+        return E_INVALIDARG;
+    char* whole = (char*)malloc(SAL_MAX_PATH_UTF8); // any target Windows knows
+    if (whole == NULL)
+        return E_OUTOFMEMORY;
+    HRESULT res = S_FALSE;
+    HRESULT got = SalShellLinkGetPathU8(link, whole, SAL_MAX_PATH_UTF8, SLGP_UNCPRIORITY);
+    if (got == NOERROR)
+    {
+        if (strlen(whole) < (size_t)targetSize)
+        {
+            strcpy(target, whole);
+            res = NOERROR;
+        }
+        else
+            res = HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
+    }
+    else if (got == HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE))
+        res = got; // feature 305: a possibly cut target - refused, never the shortcut folder silently
+    free(whole);
+    return res;
+}
+
 // Feature 286: the target of the folder shortcut 'folderU8' (a path of the core, any length) - a
 // folder holding desktop.ini that names the folder-shortcut class and target.lnk (the network
 // locations under This PC / Network are such folders). The target is read whole (UNC preferred,
@@ -289,28 +324,7 @@ inline HRESULT SalFolderShortcutTargetU8(const char* folderU8, char* target, int
                 if (link->QueryInterface(IID_IPersistFile, (LPVOID*)&fileInt) == S_OK)
                 {
                     if (fileInt->Load(lnkW, STGM_READ) == S_OK)
-                    {
-                        char* whole = (char*)malloc(SAL_MAX_PATH_UTF8); // any target Windows knows
-                        if (whole == NULL)
-                            res = E_OUTOFMEMORY;
-                        else
-                        {
-                            HRESULT got = SalShellLinkGetPathU8(link, whole, SAL_MAX_PATH_UTF8, SLGP_UNCPRIORITY);
-                            if (got == NOERROR)
-                            {
-                                if (strlen(whole) < (size_t)targetSize)
-                                {
-                                    strcpy(target, whole);
-                                    res = NOERROR;
-                                }
-                                else
-                                    res = HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
-                            }
-                            else if (got == HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE))
-                                res = got; // feature 305: a possibly cut target - refused, never the shortcut folder silently
-                            free(whole);
-                        }
-                    }
+                        res = SalFolderShortcutLinkTargetU8(link, target, targetSize);
                     fileInt->Release();
                 }
                 link->Release();

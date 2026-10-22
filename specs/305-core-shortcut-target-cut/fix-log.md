@@ -115,6 +115,55 @@ Behaviour change to note: `SLGP_RAWPATH` answers of exactly 259 units (whole) ar
 The two callers ask the raw path only to recognise a link to a server (`\\server`), never 259
 units long; the Enter / Go to route falls back to the item list's own name as before.
 
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+No MUST. Re-ran build, saltests (27037 / 0), `measure_core.cpp` against main's and the branch's
+header on D: (main: 260-400 cut, not existing; branch: whole, existing; RAWPATH 259+ refused) and
+the GUI probe (PASS 10, registry identical). Own cases: a UNC base `\\localhost\D$\...` (answer
+`\\?\UNC\...` cut at 259, item list whole - whole after the fix), a surrogate pair across the cut
+(a lone high surrogate at unit 259 - caught, whole), a hand-made `.lnk` with LinkInfo only (Windows
+11 answers S_FALSE - nothing that worked before is refused). Callers enumerated: `fileswn0.cpp`,
+`fileswn2.cpp`, `shellsup.cpp` (`DropPath[SAL_MAX_PATH_UTF8]`), `shellib.cpp` via
+`SalFolderShortcutTargetU8` - each takes its existing "cannot read" route on a refusal.
+
+- SHOULD 1: the refusal pass-through in `SalFolderShortcutTargetU8` (FR-004) was untested - its
+  negative control (`FALSE && got == ...`) left saltests at 0 failed (real links always prove the
+  name, so "too long" came from the buffer check). **Fixed**: the loaded-link part moved into
+  `SalFolderShortcutLinkTargetU8(IShellLinkW*, char*, int)` (as 304 moved `LinkTargetWholeW`);
+  saltests drives it with `CFakeLink304`: a 259-unit answer without item list / with an item list
+  naming another folder -> too long (also with room for it); a short answer followed; longer than
+  the buffer -> too long; "" / E_FAIL -> S_FALSE; NULL arguments. Negative control 3 repeated
+  (`else if (FALSE && got == HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE))`) -> `27046 checks, 3
+  failed` (the three refusal rows); restored -> 0 failed.
+- SHOULD 2: a whole UNC answer of exactly 259 units (mapped drive, UNC preferred) can never match
+  the item list's drive form and is now refused - it was followed before. **Accepted** (fail
+  closed): a 259-unit answer cannot be told from a cut one; every longer UNC answer was cut before;
+  recorded in the spec's edge cases. Not reproduced (needs a `net use` mapping on the maintainer's
+  machine).
+- NOTE 1 (the prefix proof is not anchored to a separator): same rule as the plug-ins' twin
+  (304); the shell's own `GetPath` derives from the item list - no disagreeing case could be built;
+  the item-list object is what Explorer follows. Accepted.
+- NOTE 2 (RAWPATH of exactly 259 units refused): already recorded above. Accepted.
+- NOTE 3 (the Network plug-in reads `target.lnk` with `GetPath(MAX_PATH)`,
+  `src/plugins/nethood/cache.cpp:2645`, the same cut; plug-in off by default): out of scope ->
+  Inbox item `network-plug-in-follows-a-network-shortcut-to-a-cut-target` (review:305).
+- NOTE 4 (quickstart said "3 times"; CHANGELOG / FEATURE-HISTORY pending): quickstart fixed;
+  the records come with the closing commit.
+
+No second review: review 1 had no MUST finding (SKILL step 7); the change after it is the
+extraction of the loaded-link part into a function plus tests, checked by negative control 3.
+
+### Checks after the review
+
+| Check | Result |
+|---|---|
+| `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| `.\build.cmd` | `BUILD SUCCEEDED` |
+| saltests | `saltests: 27046 checks, 0 failed`; `saltests 305: 1 volume(s) without 8.3 names tested, GetPath's cut reproduced 8 time(s)` |
+| GUI probe | `probe/result_after.txt` re-run on the final code: PASS 10, FAIL 0; registry restored, identical |
+
 ## Not driven (owed to a person)
 
 - A drop onto a shortcut with a long target (`GetCurrentDir`, feature 194) - needs a real mouse

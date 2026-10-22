@@ -33,5 +33,6 @@ Outcomes of `SalShellLinkGetPathU8(link, path, size, flags)`:
 | 259+ units, proven whole, fits | `NOERROR` | the whole item-list name, plain (UTF-8) |
 | the result does not fit `size` bytes | `E_FAIL` | "" |
 
+`SalFolderShortcutLinkTargetU8` (the loaded `target.lnk`, extracted after review 1) and so
 `SalFolderShortcutTargetU8`: a reader result of `ERROR_FILENAME_EXCED_RANGE` is returned as its
 own `ERROR_FILENAME_EXCED_RANGE` (refuse, `target` ""); every other path as before.

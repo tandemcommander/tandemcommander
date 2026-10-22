@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A shortcut whose target path has 260 or more characters is followed to a cut path](items/a-shortcut-whose-target-path-has-260-or-more-characters-is/desc.md) | bug | 6 | long-paths | 305 |
 
 ## Next
 
@@ -240,6 +239,8 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check a drop onto a long-target shortcut and Browse on a long network location](items/check-a-drop-onto-a-long-target-shortcut-and-browse-on-a/desc.md) | person-step | 4 | long-paths | leftover:305 | 2026-10-22 |
+| [Network plug-in follows a network shortcut to a cut target of 260 or more units](items/network-plug-in-follows-a-network-shortcut-to-a-cut-target/desc.md) | bug | 4 | other-plugins | review:305 | 2026-10-22 |
 
 ## Parked
 

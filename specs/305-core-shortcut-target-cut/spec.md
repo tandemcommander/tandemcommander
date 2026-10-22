@@ -98,7 +98,9 @@ passing; targets of 250 and 259 units and 8.3 answers are read as before.
 - A target of exactly 259 units, answered whole: followed (the item list proves it).
 - The answer in the `\\?\` or `\\?\UNC\` form: compared and returned in the plain form.
 - A mapped drive: the UNC-preferred answer and the item list's drive form cannot be matched for
-  259+ units - refused (fail closed); shorter answers unchanged.
+  259+ units - refused (fail closed); shorter answers unchanged. This includes a whole UNC answer
+  of exactly 259 units, which was followed before (accepted after review 1: it cannot be told
+  from a cut one; every longer UNC answer was cut before).
 - The item list cannot be read or names no file-system path: a 259+ answer is refused.
 - The whole name does not fit the caller's buffer as UTF-8: refused as today (never cut).
 - A refused target on Enter: the existing route for an unreadable target - the shortcut file is

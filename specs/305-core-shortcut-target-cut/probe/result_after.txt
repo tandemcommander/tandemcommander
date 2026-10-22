@@ -1,7 +1,7 @@
 lnk305_probe (feature 305), expect: fixed
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
 Fixture : E:\Projects\tandemcommander\build\tc305; volume without 8.3 names: True
-Date    : 2026-10-22 10:45; registry key existed True; export SHA-256 D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+Date    : 2026-10-22 10:59; registry key existed True; export SHA-256 D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
 
 ENTER-250  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 ENTER-250  TARGET PASS        target 250 units; panel before '...demcommander\build\tc305\links', after 250 units '...zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' = the target; windows: no window

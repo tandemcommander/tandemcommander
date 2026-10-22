@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
@@ -4067,4 +4067,24 @@ a few early ones are out of sequence).
   `plug-in-folder-picker-may-cut-a-folder-shortcut-target-of`. Measurement `probe/measure3.cpp`
   on D: 4 of 4 cut -> 0 of 4; saltests 26,701 / 0 (negative controls: answer taken as it is 18
   failed, refusal flag off 3 failed); one refute-first review (no MUST; SHOULD 1-2 fixed, NOTEs
+  recorded).
+- 305-core-shortcut-target-cut: a shortcut (`.lnk`) whose target has 260 or more characters on a
+  volume without 8.3 names was followed to a cut path - Enter and Go to Shortcut Target showed an
+  error or, with the cut on a backslash, silently opened the target's parent folder; a drop onto
+  the shortcut and Browse on such a network location took the cut path too - now the core's one
+  reader (`salshelllink.h` `SalShellLinkGetPathU8`) returns the whole target, proven by the link's
+  item list (`SalShellLinkWholeTargetW`, the core twin of 304's rule; plain form), or refuses with
+  `ERROR_FILENAME_EXCED_RANGE`, which `SalFolderShortcutTargetU8` (loaded-link part
+  `SalFolderShortcutLinkTargetU8`) passes on as feature 286's "too long". Traps: after
+  `IShellLink::Resolve` (both panel callers resolve) the cut is 259 PLAIN units (`E:\...`), before
+  it `\\?\` + 255 - a "cut on a backslash" fixture needs a 259-character parent; `SLGP_RAWPATH` is
+  refused from 259 units without the item list (environment strings), also a whole 259; a whole
+  UNC answer of exactly 259 units (mapped drive) is refused - fail closed; the probe fixture lives
+  in the build folder (no 8.3 names), not `%TEMP%`. Left: the Network plug-in's own `target.lnk`
+  read (Inbox `network-plug-in-follows-a-network-shortcut-to-a-cut-target`); drop and Browse in the
+  real UI (person step `check-a-drop-onto-a-long-target-shortcut-and-browse-on-a`). From backlog
+  item `a-shortcut-whose-target-path-has-260-or-more-characters-is`. Probe `lnk305_probe.ps1`
+  PASS 6 / FAIL 4 -> PASS 10 / FAIL 0; `measure_core.cpp` on D: 4 of 4 cut -> 0 of 4; saltests
+  27,046 / 0 (negative controls: rule returning the answer 84 failed, raw-path refusal off 13,
+  pass-through off 3); one refute-first review (no MUST; SHOULD 1 fixed, SHOULD 2 accepted, NOTEs
   recorded).

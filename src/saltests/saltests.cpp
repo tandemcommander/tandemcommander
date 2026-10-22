@@ -17480,6 +17480,36 @@ static void TestShellLinkWholeTarget305()
         fake.AnswerRes = E_FAIL;
         memset(path, 'X', sizeof(path));
         CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_UNCPRIORITY) == E_FAIL && path[0] == 0);
+
+        // the folder shortcut's loaded target.lnk (SalFolderShortcutLinkTargetU8, Browse For Folder):
+        // a possibly cut target that cannot be proven is "too long" - never S_FALSE, which would leave
+        // the shortcut folder itself as the pick, silently
+        char target[MAX_PATH];
+        fake.IdList = NULL;
+        fake.AnswerRes = NOERROR;
+        fake.Answer = longAnswer;
+        memset(target, 'X', sizeof(target));
+        CHECK(SalFolderShortcutLinkTargetU8(&fake, target, MAX_PATH) == tooLong && target[0] == 0);
+        fake.IdList = tempList; // an item list naming another folder
+        memset(target, 'X', sizeof(target));
+        CHECK(SalFolderShortcutLinkTargetU8(&fake, target, MAX_PATH) == tooLong && target[0] == 0);
+        memset(path, 'X', sizeof(path));
+        CHECK(SalFolderShortcutLinkTargetU8(&fake, path, sizeof(path)) == tooLong && path[0] == 0); // also with room for it
+        // as before: a short target followed, a target longer than the buffer too long, no path S_FALSE
+        fake.Answer = L"C:\\short";
+        memset(target, 'X', sizeof(target));
+        CHECK(SalFolderShortcutLinkTargetU8(&fake, target, MAX_PATH) == NOERROR && strcmp(target, "C:\\short") == 0);
+        memset(target, 'X', sizeof(target));
+        CHECK(SalFolderShortcutLinkTargetU8(&fake, target, 5) == tooLong && target[0] == 0);
+        fake.Answer = L"";
+        memset(target, 'X', sizeof(target));
+        CHECK(SalFolderShortcutLinkTargetU8(&fake, target, MAX_PATH) == S_FALSE && target[0] == 0);
+        fake.Answer = L"C:\\short";
+        fake.AnswerRes = E_FAIL;
+        memset(target, 'X', sizeof(target));
+        CHECK(SalFolderShortcutLinkTargetU8(&fake, target, MAX_PATH) == S_FALSE && target[0] == 0);
+        CHECK(SalFolderShortcutLinkTargetU8(NULL, target, MAX_PATH) == E_INVALIDARG && target[0] == 0);
+        CHECK(SalFolderShortcutLinkTargetU8(&fake, NULL, MAX_PATH) == E_INVALIDARG);
         CoTaskMemFree(tempList);
     }
 

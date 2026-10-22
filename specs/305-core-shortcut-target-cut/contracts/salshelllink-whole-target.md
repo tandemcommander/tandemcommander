@@ -14,6 +14,10 @@ WCHAR* SalShellLinkWholeTargetW(const WCHAR* answer, const WCHAR* listName);
 // refused with HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE); SLGP_RAWPATH 259+ always refused
 HRESULT SalShellLinkGetPathU8(IShellLinkW* link, char* path, int pathSize, DWORD flags);
 
+// new (review 1, SHOULD 1): the part after target.lnk is loaded - NOERROR / too long (does not
+// fit or refused by the reader) / S_FALSE (no path, unreadable) / E_INVALIDARG / E_OUTOFMEMORY
+HRESULT SalFolderShortcutLinkTargetU8(IShellLinkW* link, char* target, int targetSize);
+
 // unchanged signature; a refused target.lnk target is ERROR_FILENAME_EXCED_RANGE (was S_FALSE
 // for a reader failure, NOERROR with a cut path for the measured case)
 HRESULT SalFolderShortcutTargetU8(const char* folderU8, char* target, int targetSize);

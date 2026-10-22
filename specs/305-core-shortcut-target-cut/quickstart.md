@@ -3,7 +3,8 @@
 1. Build: `.\build.cmd` (PowerShell) → `BUILD SUCCEEDED`.
 2. Unit rules: `& "build\tandemcommander\Debug_x64\saltests\saltests.exe"` →
    `saltests: <n> checks, 0 failed` and the line `saltests 305: ...` naming at least one volume
-   without 8.3 names and the cut reproduced (the raw answer) 3 times.
+   without 8.3 names and the cut reproduced (the raw answer) 8 times (4 targets, without / with
+   Resolve).
 3. Measurement: `probe/measure_core.cpp` rebuilt against the changed header, run with a base on a
    volume without 8.3 names → 260 / 261 / 300 / 400 whole and existing (before: 259 units, cut);
    RAWPATH refused; `SalFolderShortcutTargetU8` too long for `MAX_PATH`, whole for
