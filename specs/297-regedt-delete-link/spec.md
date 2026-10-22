@@ -55,6 +55,12 @@ link made by hand; every link points at `Jinde` (j=5, holding `Sub` s=6), which 
 - Q: What if a key cannot be inspected (an error other than "not found")? → A: the existing error box
   of that operation (Delete: "Unable to open a registry key.", Move: the open-error box); that key is
   not deleted or moved (autonomous run: rule - a safety check fails closed, 098)
+- Q: Should Delete's check of the selected key before it starts (the "not empty - delete?" question,
+  which reads the key by name) look at the link instead of what it points at? → A: no, unchanged: the
+  question still reflects what the panel shows, and a selected link that is itself dangling still
+  gets the existing "Unable to access a registry key" box (nothing deleted); only the deletion itself
+  treats links as links (autonomous run: conservative - keep the existing behaviour for every case
+  the item does not name; it loses nothing)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -124,6 +130,8 @@ compares the fixture.
 - Retry in the Move's refusal box checks again (the link may have been removed meanwhile).
 - Skip All in the refusal box skips later refusals and errors as before.
 - Deleting the link fails (access denied): the existing "Unable to delete a registry key." box.
+- The selected key is itself a dangling link: Delete's pre-check cannot read it and shows the existing
+  "Unable to access a registry key" box, as before (not deleted - nothing is lost).
 
 ## Requirements *(mandatory)*
 
