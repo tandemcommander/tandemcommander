@@ -277,12 +277,26 @@ BOOL SafeDeleteKey(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipA
     return TRUE;
 }
 
-BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
-                   BOOL move, BOOL& skip,
-                   BOOL& skipAllErrors, BOOL& skipAllLongNames,
-                   BOOL& skipAllOverwrites, BOOL& overwriteAll,
-                   BOOL& skipAllClassNames, LPWSTR nameBuffer,
-                   TIndirectArray<WCHAR>& stack)
+// feature 296: the key the user copies or moves (read, and deleted at the end of a Move) - the
+// recursion appends to its own path buffer, so the path is a copy; its identities are read the
+// first time a registry link stands in the target tree
+struct CRegCopyTop
+{
+    int Root;
+    LPWSTR Key; // malloc'd
+    BOOL HaveIds;
+    CSalRegKeyIds Ids;
+};
+
+static BOOL SafeCheckTargetLink(int targetRoot, LPWSTR target, int sourceRoot, LPWSTR source,
+                                CRegCopyTop& top, BOOL& refuse, int errorTitle, BOOL& skip, BOOL& skipAll);
+
+static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
+                             BOOL move, BOOL& skip,
+                             BOOL& skipAllErrors, BOOL& skipAllLongNames,
+                             BOOL& skipAllOverwrites, BOOL& overwriteAll,
+                             BOOL& skipAllClassNames, LPWSTR nameBuffer,
+                             TIndirectArray<WCHAR>& stack, CRegCopyTop& operation)
 {
     //  CALL_STACK_MESSAGE10("CopyOrMoveKey(%d, , %d, , %d, %d, %d, %d, %d, %d, %d, , )",
     //                       sourceRoot, targetRoot, move, skip, skipAllErrors,
@@ -314,6 +328,39 @@ BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
     // Microsoft sometimes returns half the size (observed on MULTI_SZ in
     // key HKEY_LOCAL_MACHINE\SYSTEM\ControlSet002\Services\NetBT\Linkage
     maxData *= 2;
+
+    // feature 296: creating the target key by name follows a registry link standing there - into
+    // the source when it points into it (a Move then deleted what was written there), and through a
+    // dangling link it creates the link's target; such a key is refused before anything is written
+    BOOL refuse;
+    if (!SafeCheckTargetLink(targetRoot, target, sourceRoot, source, operation, refuse, errorTitle, skip, skipAllErrors))
+    {
+        RegCloseKey(sourceHKey);
+        return FALSE;
+    }
+    if (refuse)
+    {
+        RegCloseKey(sourceHKey);
+        // the full name of the source key, whole (feature 129)
+        char* message = NULL;
+        size_t rootLen = wcslen(PredefinedHKeys[sourceRoot].KeyName), keyLen = wcslen(source);
+        LPWSTR fullName = (LPWSTR)malloc((rootLen + 1 + keyLen + 1) * sizeof(WCHAR));
+        if (fullName != NULL)
+        {
+            memcpy(fullName, PredefinedHKeys[sourceRoot].KeyName, rootLen * sizeof(WCHAR));
+            fullName[rootLen] = L'\\';
+            memcpy(fullName + rootLen + 1, source, (keyLen + 1) * sizeof(WCHAR));
+            message = FormatWideU8(move ? IDS_CANTMOVETOITSELF2 : IDS_CANTCOPYTOITSELF2, fullName);
+            free(fullName);
+        }
+        skip = message != NULL &&
+               SG->SalMessageBox(GetParent(), message, LoadStr(errorTitle), MB_OKCANCEL) == IDOK; // OK skips the key
+        if (message != NULL)
+            free(message);
+        else
+            Error(IDS_LOWMEM);
+        return FALSE;
+    }
 
     // create the target key
     if (!SafeCreateKey(targetRoot, target, sourceClassName, KEY_WRITE | KEY_READ, targetHKey,
@@ -503,10 +550,10 @@ BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
         wcscpy(sourceSubkey, stack[i]);
         wcscpy(targetSubkey, stack[i]);
 
-        if (!CopyOrMoveKey(sourceRoot, source, targetRoot, target, move,
-                           skip, skipAllErrors, skipAllLongNames,
-                           skipAllOverwrites, overwriteAll,
-                           skipAllClassNames, nameBuffer, stack))
+        if (!CopyOrMoveKeyRec(sourceRoot, source, targetRoot, target, move,
+                              skip, skipAllErrors, skipAllLongNames,
+                              skipAllOverwrites, overwriteAll,
+                              skipAllClassNames, nameBuffer, stack, operation))
         {
             if (skip)
                 someFileSkipped = TRUE;
@@ -889,6 +936,30 @@ static BOOL SafeRegKeyHoldsPath(int root, LPWSTR key, LPCWSTR below, BOOL& holds
     return ret;
 }
 
+// feature 294 (shared by 296): would a copy of 'root'\'key' into a key of the identities 'targetIds'
+// write into the source of the operation (identities 'sourceIds')? It writes target\P for each
+// subkey path P of the copied key - into the source when the source lies strictly inside the target
+// and the copied key holds the source's path below the target. 'into' = yes. FALSE = do not go on
+// with this key: Cancel or Skip in the existing open-error box ('skip' tells them apart), or low memory
+static BOOL SafeRegKeyIdsReachSource(int root, LPWSTR key, const CSalRegKeyIds& sourceIds,
+                                     const CSalRegKeyIds& targetIds, BOOL& into, int errorTitle,
+                                     BOOL& skip, BOOL& skipAll)
+{
+    into = FALSE;
+    for (int i = 0; i < sourceIds.Count; i++)
+        for (int j = 0; j < targetIds.Count; j++)
+        {
+            const WCHAR* below = SalRegKeyIdBelow(sourceIds.Id[i], targetIds.Id[j]);
+            if (below == NULL)
+                continue;
+            if (!SafeRegKeyHoldsPath(root, key, below, into, errorTitle, skip, skipAll))
+                return FALSE;
+            if (into)
+                return TRUE;
+        }
+    return TRUE;
+}
+
 // 'parent' joined with 'name' for every identity of 'parent', added to 'ids'
 static BOOL AddRegKeyIdsJoined(CSalRegKeyIds& ids, const CSalRegKeyIds& parent, LPCWSTR name)
 {
@@ -896,6 +967,100 @@ static BOOL AddRegKeyIdsJoined(CSalRegKeyIds& ids, const CSalRegKeyIds& parent, 
         if (!SalRegKeyIdsAdd(ids, parent.Id[i], name))
             return FALSE;
     return TRUE;
+}
+
+// feature 296: is a registry link (a key created with REG_OPTION_CREATE_LINK) standing at
+// 'targetRoot'\'target', and would the copy of 'sourceRoot'\'source' through it write into the
+// operation's source? 'refuse' = yes: the link points at the source or into it, or at a key holding
+// the source when the copied key holds the path back to it (294's rule); a link to anything else is
+// followed as before, a key that is no link is not looked at further. A dangling link is refused
+// with the open-error box (creating through it creates a key at its target, which cannot be shown to
+// lie outside the source without creating it). FALSE = do not go on with this key: Cancel or Skip in
+// the box ('skip' tells them apart), or low memory - every error fails closed
+static BOOL SafeCheckTargetLink(int targetRoot, LPWSTR target, int sourceRoot, LPWSTR source,
+                                CRegCopyTop& top, BOOL& refuse, int errorTitle, BOOL& skip, BOOL& skipAll)
+{
+    refuse = FALSE;
+    while (1)
+    {
+        // only the last element is opened as a link; the elements above it were decided before
+        HKEY hKey;
+        int err = RegOpenKeyExW(PredefinedHKeys[targetRoot].HKey, target, REG_OPTION_OPEN_LINK, KEY_QUERY_VALUE, &hKey);
+        if (err == ERROR_FILE_NOT_FOUND)
+            return TRUE; // no key there: a new key is created
+        if (err == ERROR_SUCCESS)
+        {
+            DWORD type = REG_NONE, size = 0;
+            err = RegQueryValueExW(hKey, L"SymbolicLinkValue", NULL, &type, NULL, &size);
+            RegCloseKey(hKey);
+            if (err == ERROR_FILE_NOT_FOUND || err == ERROR_SUCCESS && type != REG_LINK)
+                return TRUE; // no link
+        }
+        if (err == ERROR_SUCCESS)
+        {
+            // a link: the identities of the operation's source (once) and of the link's target
+            if (!top.HaveIds)
+            {
+                if (!SafeGetRegKeyIds(top.Root, top.Key, top.Ids, FALSE, errorTitle, skip, skipAll))
+                    return FALSE;
+                top.HaveIds = TRUE;
+            }
+            CSalRegKeyIds* linkIds = (CSalRegKeyIds*)malloc(sizeof(CSalRegKeyIds));
+            if (linkIds == NULL)
+            {
+                skip = FALSE;
+                return Error(IDS_LOWMEM);
+            }
+            err = GetRegKeyIds(targetRoot, target, *linkIds, FALSE); // links followed
+            if (err == ERROR_FILE_NOT_FOUND)
+                err = ERROR_CANT_RESOLVE_FILENAME; // a dangling link
+            BOOL ret = TRUE;
+            if (err == ERROR_SUCCESS)
+            {
+                refuse = SalRegKeyIdsAnyWithin(*linkIds, top.Ids);
+                if (!refuse)
+                    ret = SafeRegKeyIdsReachSource(sourceRoot, source, top.Ids, *linkIds, refuse, errorTitle, skip, skipAll);
+            }
+            free(linkIds);
+            if (err == ERROR_SUCCESS)
+                return ret;
+        }
+        if (!RegOperationError(err, IDS_OPEN, errorTitle, targetRoot, target, &skip, &skipAll))
+            return FALSE; // Retry checks again
+    }
+}
+
+BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
+                   BOOL move, BOOL& skip,
+                   BOOL& skipAllErrors, BOOL& skipAllLongNames,
+                   BOOL& skipAllOverwrites, BOOL& overwriteAll,
+                   BOOL& skipAllClassNames, LPWSTR nameBuffer,
+                   TIndirectArray<WCHAR>& stack)
+{
+    CALL_STACK_MESSAGE1("CopyOrMoveKey()");
+    CRegCopyTop* top = (CRegCopyTop*)malloc(sizeof(CRegCopyTop));
+    size_t len = wcslen(source);
+    LPWSTR key = (LPWSTR)malloc((len + 1) * sizeof(WCHAR));
+    if (top == NULL || key == NULL)
+    {
+        if (top != NULL)
+            free(top);
+        if (key != NULL)
+            free(key);
+        skip = FALSE;
+        return Error(IDS_LOWMEM);
+    }
+    memcpy(key, source, (len + 1) * sizeof(WCHAR));
+    top->Root = sourceRoot;
+    top->Key = key;
+    top->HaveIds = FALSE;
+    top->Ids.Count = 0;
+    BOOL ret = CopyOrMoveKeyRec(sourceRoot, source, targetRoot, target, move, skip, skipAllErrors,
+                                skipAllLongNames, skipAllOverwrites, overwriteAll, skipAllClassNames,
+                                nameBuffer, stack, *top);
+    free(key);
+    free(top);
+    return ret;
 }
 
 BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsName, HWND parent,
@@ -1254,15 +1419,10 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
                                 // P of the source, into the source itself when the source holds
                                 // its own path below the target (Move then deleted it, data lost);
                                 // refused like "into itself", before anything is written
-                                for (int i = 0; !into && success && !skip && i < sourceIds.Count; i++)
-                                    for (int j = 0; !into && success && !skip && j < targetIds.Count; j++)
-                                    {
-                                        const WCHAR* below = SalRegKeyIdBelow(sourceIds.Id[i], targetIds.Id[j]);
-                                        if (below != NULL &&
-                                            !SafeRegKeyHoldsPath(sourceRoot, sourceKey, below, into, errorTitle, skip, skipAllErrors) &&
-                                            !skip)
-                                            success = FALSE; // Cancel or low memory; Skip leaves the key alone
-                                    }
+                                if (!into &&
+                                    !SafeRegKeyIdsReachSource(sourceRoot, sourceKey, sourceIds, targetIds, into, errorTitle, skip, skipAllErrors) &&
+                                    !skip)
+                                    success = FALSE; // Cancel or low memory; Skip leaves the key alone
                             }
                         }
                         if (success && !skip && into)
