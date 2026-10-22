@@ -28,6 +28,14 @@ holding a.k and a.kp), 3 rows FAIL:
   a.kp.
 Controls (a mask of 259 bytes, a path of 255 bytes) were accepted and unpacked as typed.
 
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: When both the path and the mask are too long, which is refused first? → A: the path (the first field of the dialog); one message per OK, the mask is refused at the next OK (autonomous run: conservative - as 291's dialogs, one refusal per OK, field order)
+- Q: Should the path combo box also get a length limit so that long text cannot be typed at all? → A: no - the text is measured and refused at OK; no limit is added (a UTF-16 limit cannot express the byte limit anyway, 214) (autonomous run: conservative - changes least; item - "measures both fields whole ... and refuses")
+- Q: Is the refusal also needed when the Unpack dialog is opened by a plug-in's unpack command (the same dialog)? → A: yes - the same dialog, the same check (autonomous run: item - the dialog gets the `Validate`)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A long target path is refused, never cut (Priority: P1)
