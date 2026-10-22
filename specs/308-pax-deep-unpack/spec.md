@@ -20,6 +20,13 @@ hidden desktop -> `probe/result_before.txt`: PASS 5 (END rows) / FAIL 5.
 - COPY-DEEP (Select All + Copy from the opened archive; the listed top folder holds deep members): 2 of
   32 files - the folder's 30 deep files silently missing, no message during the copy.
 
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: When a selected folder is copied out of an opened archive and holds a member with a too-long component, is the "(206)" box shown again although the listing showed one at opening? → A: Yes, once per operation, and the copy ends as failed - the box at opening named only the first refused member, and the copy must not look complete (autonomous run: conservative)
+- Q: Does a refused member that the mask or selection does not include fail the extraction? → A: No - only a member the operation was asked to extract is reported and fails it (autonomous run: item - "a member that cannot be extracted ... makes the whole unpack fail")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Unpacking a whole PAX tar extracts the deep members (Priority: P1)
