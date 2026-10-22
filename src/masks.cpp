@@ -4,8 +4,9 @@
 
 #include "precomp.h"
 
-#include "salmaskname.h" // feature 141
-#include "salmaskopt.h"  // feature 283
+#include "salmaskname.h"  // feature 141
+#include "salmaskopt.h"   // feature 283
+#include "salmaskgroup.h" // feature 298
 
 static_assert(SAL_MASKOPT_NONE == MASK_OPTIMIZE_NONE && SAL_MASKOPT_ALL == MASK_OPTIMIZE_ALL &&
                   SAL_MASKOPT_EXTENSION == MASK_OPTIMIZE_EXTENSION,
@@ -19,28 +20,9 @@ static_assert(SAL_MASKOPT_NONE == MASK_OPTIMIZE_NONE && SAL_MASKOPT_ALL == MASK_
 void PrepareMask(char* mask, const char* src)
 {
     SLOW_CALL_STACK_MESSAGE2("PrepareMask(, %s)", src);
-    char* begMask = mask;
-    char lastChar = 0;
-    // remove spaces at the beginning of the mask
-    while (*src == ' ')
-        src++;
-    while (*src != 0)
-    {
-        if (*src == '*' && lastChar == '*')
-            src++;                               // "**" -> "*"
-        else if (*src == '?' && lastChar == '*') // "*?" -> "?*"
-        {
-            *(mask - 1) = '?';
-            *mask++ = '*';
-            src++;
-        }
-        else
-            *mask++ = (lastChar = *src++);
-    }
-    // trim spaces at the end of the mask
-    while (mask > begMask && *(mask - 1) == ' ')
-        mask--;
-    *mask = 0;
+    // feature 298: the algorithm lives in src/common/salmaskgroup.h (checked by saltests);
+    // 'mask' holds strlen(src) + 1 bytes (the plug-in interface's contract)
+    SalPrepareMaskU8(mask, src);
 }
 
 static BOOL AgreeMaskA(const char* filename, const char* mask, BOOL hasExtension, BOOL extendedMode)
@@ -423,50 +405,45 @@ BOOL CMaskGroup::PrepareMasks(int& errorPos, const char* masksString)
 
     const char* useMasksString = masksString == NULL ? MasksString : masksString;
     const char* s = useMasksString;
-    char buf[MAX_PATH];
-    char maskBuf[MAX_PATH];
     int excludePos = -1;   // if not -1, all following masks are exclude type
                            // and will be inserted at the beginning of the array
     int hashableMasks = 0; // number of masks that can be hashed (MASK_OPTIMIZE_EXTENSION + CMaskItemFlags::Exclude==0)
 
     // to avoid unnecessary reallocations for longer arrays, set a reasonable delta
-    int masksLen = (int)strlen(s);
-    PreparedMasks.SetDelta(max(10, (masksLen / 6) / 2)); // "*.xxx;" is 6 characters, use half the extensions
+    size_t masksLen = strlen(s);
+    PreparedMasks.SetDelta(max(10, (int)(masksLen / 6) / 2)); // "*.xxx;" is 6 characters, use half the extensions
+
+    // feature 298: one mask may fill the whole group text (were two MAX_PATH stack buffers - a single
+    // mask of 260+ bytes ran over the stack); neither the cut nor PrepareMask writes more than the
+    // text's length + 1 bytes (salmaskgroup.h), so every mask is prepared whole
+    struct CWorkFree
+    {
+        char* P;
+        ~CWorkFree() { free(P); }
+    } workFree = {(char*)malloc(2 * (masksLen + 1))};
+    if (workFree.P == NULL)
+    {
+        TRACE_E(LOW_MEMORY);
+        errorPos = 0;
+        return FALSE;
+    }
+    char* maskBuf = workFree.P;
+    char* buf = workFree.P + masksLen + 1;
 
     while (1)
     {
-        char* mask = maskBuf;
-        while (*s != 0 && *s > 31 && *s != '\\' && *s != '/' &&
-               *s != '<' && *s != '>' && *s != ':' && *s != '"')
-        {
-            if (*s == '|')
-                break;
-            if (*s == ';')
-            {
-                if (*(s + 1) == ';')
-                    s++;
-                else
-                    break;
-            }
-            *mask++ = *s++;
-        }
-        *mask = 0;
+        s = SalMaskGroupCutMask(s, maskBuf);
         if (*s != 0 && *s != ';' && (*s != '|' || excludePos != -1)) // the exclude character '|' may appear only once in the mask
         {
             errorPos = (int)(s - useMasksString);
             return FALSE;
         }
 
-        while (--mask >= maskBuf && *mask <= ' ')
-            ;
-        *(mask + 1) = 0;
-        mask = maskBuf;
-        while (*mask != 0 && *mask <= ' ')
-            mask++;
+        char* mask = SalMaskGroupTrimMask(maskBuf);
 
         if (*mask != 0)
         {
-            PrepareMask(buf, mask); // call PrepareMask for extendedMode as well
+            SalPrepareMaskU8(buf, mask); // PrepareMask, for extendedMode as well
             if (buf[0] != 0)
             {
                 int l = (int)strlen(buf) + 1;

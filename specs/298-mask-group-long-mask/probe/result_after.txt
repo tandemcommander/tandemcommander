@@ -1,0 +1,15 @@
+mask298_probe (feature 298) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 05:23; registry key existed True; ACP 1250; value HKCU\Software\Tandem Commander\0.1\Plugins\1\ThumbnailMasks
+
+SHORT      START  PASS        252 bytes; main window True; alive True
+SHORT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MULTI      START  PASS        1000 bytes; main window True; alive True
+MULTI      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M300       START  PASS        300 bytes; main window True; alive True
+M300       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M1000      START  PASS        1000 bytes; main window True; alive True
+M1000      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 8, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

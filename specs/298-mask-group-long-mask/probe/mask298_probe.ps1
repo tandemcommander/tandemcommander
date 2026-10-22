@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Feature 298 probe: a single mask longer than 259 bytes in a mask group - the program starts, stays
     responsive and exits cleanly (before the fix CMaskGroup::PrepareMasks copied it into 260-byte stack

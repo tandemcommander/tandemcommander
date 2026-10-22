@@ -51,3 +51,31 @@ No CRITICAL / HIGH. MEDIUM U1 (US2 scenario named matching, which saltests canno
 prepared mask is the whole mask"; MEDIUM C1 (long mask after `|`) - added to T007. LOW C2 (out-of-memory path
 not tested - cannot be forced) and C3 (the directly passed string > 1000 bytes checked through the rule, the
 sizing by review) - accepted.
+
+## Implementation
+
+- `src/common/salmaskgroup.h` (new, header-only): `SalMaskGroupCutMask` (one mask, `;;` -> `;`, stops at a
+  separator or a forbidden byte), `SalMaskGroupTrimMask` (bytes <= ' ' at both ends), `SalPrepareMaskU8` (the
+  `PrepareMask` normalization). Neither writes more than its input's length + 1 bytes. Bytes compared as
+  `unsigned char` - the same as the core's `/J` (also saltests is `/J`).
+- `src/masks.cpp` `CMaskGroup::PrepareMasks`: the two `char [MAX_PATH]` stack buffers are one heap block of
+  2 x (`strlen(group text)` + 1) bytes, allocated after the old prepared masks are released, freed by a local
+  guard (`CWorkFree`, the idiom of `fileswn1.cpp`) on every return; allocation failure = `TRACE_E(LOW_MEMORY)`,
+  `errorPos = 0`, FALSE (as the other out-of-memory exits). The cut / trim / normalize steps call the header.
+  `masksLen` became `size_t` (the `SetDelta` argument cast back to `int`).
+- `::PrepareMask` (exported as `CSalamanderGeneral::PrepareMask`) calls `SalPrepareMaskU8`; signature and
+  contract unchanged.
+
+## Measurements after
+
+| Check | Command | Result |
+|---|---|---|
+| build | `.\build.cmd` | `BUILD SUCCEEDED`, exit 0, no warning in `masks.cpp` / `saltests.cpp` |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 26443 checks, 0 failed` |
+| negative control | the rule cut a mask at 259 bytes (temporary), rebuilt | `26443 checks, 72 failed` (every long-mask row, the UTF-8 rows); restored -> 0 failed |
+| probe after | (as before, `-Label after`) | SHORT, MULTI, M300, M1000: PASS 8, FAIL 0 (`probe/result_after.txt`); registry restored identical |
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+
+The random rows of `TestMaskGroupSplit298` (3000 groups over the bytes that matter) did not fail under the
+negative control - their masks rarely exceed 259 bytes; they guard the equivalence of short groups, the fixed
+long rows guard the length.

@@ -91,6 +91,7 @@
 #include "salmaskopt.h"       // feature 283
 #include "salftpsrvenc.h"     // feature 288
 #include "saldrivetext.h"     // feature 289
+#include "salmaskgroup.h"     // feature 298
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -17040,6 +17041,219 @@ static void TestDriveText289()
     }
 }
 
+// feature 298: one mask of a mask group, cut and normalized whole (salmaskgroup.h)
+
+// CMaskGroup::PrepareMasks (the cut and the trim) and PrepareMask at 1bc8f164, copied as the
+// reference - run here with storage sized to the input (the old MAX_PATH stack buffers were the defect)
+static const char* OldCutMask298(const char* s, char* maskBuf, char** maskEnd)
+{
+    char* mask = maskBuf;
+    while (*s != 0 && *s > 31 && *s != '\\' && *s != '/' &&
+           *s != '<' && *s != '>' && *s != ':' && *s != '"')
+    {
+        if (*s == '|')
+            break;
+        if (*s == ';')
+        {
+            if (*(s + 1) == ';')
+                s++;
+            else
+                break;
+        }
+        *mask++ = *s++;
+    }
+    *mask = 0;
+    *maskEnd = mask;
+    return s;
+}
+
+static char* OldTrimMask298(char* maskBuf, char* mask)
+{
+    while (--mask >= maskBuf && *mask <= ' ')
+        ;
+    *(mask + 1) = 0;
+    mask = maskBuf;
+    while (*mask != 0 && *mask <= ' ')
+        mask++;
+    return mask;
+}
+
+static void OldPrepareMask298(char* mask, const char* src)
+{
+    char* begMask = mask;
+    char lastChar = 0;
+    while (*src == ' ')
+        src++;
+    while (*src != 0)
+    {
+        if (*src == '*' && lastChar == '*')
+            src++;
+        else if (*src == '?' && lastChar == '*')
+        {
+            *(mask - 1) = '?';
+            *mask++ = '*';
+            src++;
+        }
+        else
+            *mask++ = (lastChar = *src++);
+    }
+    while (mask > begMask && *(mask - 1) == ' ')
+        mask--;
+    *mask = 0;
+}
+
+// what PrepareMasks makes of 'text' through the cut / trim / normalize steps: the prepared masks,
+// each on its own line, "-" before an exclude mask; the error position, or -1. With 'useRule' the
+// steps of salmaskgroup.h run in storage of exactly strlen(text) + 1 bytes followed by guard bytes
+// ('guardsOk' FALSE when one changed); otherwise the reference with roomy storage.
+static int SplitGroup298(const std::string& text, bool useRule, std::string& out, bool& guardsOk)
+{
+    const size_t GUARD = 16;
+    size_t room = text.size() + 1 + (useRule ? 0 : 64);
+    std::vector<char> cut(room + GUARD, (char)0xA5);
+    std::vector<char> prep(room + GUARD, (char)0xA5);
+    out.clear();
+    int ret = -1;
+    const char* s = text.c_str();
+    bool exclude = false;
+    while (1)
+    {
+        char* mask;
+        if (useRule)
+        {
+            s = SalMaskGroupCutMask(s, cut.data());
+            mask = SalMaskGroupTrimMask(cut.data());
+        }
+        else
+        {
+            char* end;
+            s = OldCutMask298(s, cut.data(), &end);
+            mask = OldTrimMask298(cut.data(), end);
+        }
+        if (*s != 0 && *s != ';' && (*s != '|' || exclude))
+        {
+            ret = (int)(s - text.c_str());
+            break;
+        }
+        if (*mask != 0)
+        {
+            if (useRule)
+                SalPrepareMaskU8(prep.data(), mask);
+            else
+                OldPrepareMask298(prep.data(), mask);
+            if (prep[0] != 0)
+                out += std::string(exclude ? "-" : "") + prep.data() + "\n";
+        }
+        if (*s == 0)
+            break;
+        if (*s == '|')
+            exclude = true;
+        s++;
+    }
+    guardsOk = true;
+    for (size_t i = room; i < room + GUARD; i++)
+        if (cut[i] != (char)0xA5 || prep[i] != (char)0xA5)
+            guardsOk = false;
+    return ret;
+}
+
+// the rule and the reference agree on 'text' (prepared masks and error position), the rule's storage
+// of strlen(text) + 1 bytes held it; returns the rule's prepared masks
+static std::string SameSplit298(const std::string& text, int* errPos = NULL)
+{
+    std::string a, b;
+    bool guardsA, guardsB;
+    int ea = SplitGroup298(text, true, a, guardsA);
+    int eb = SplitGroup298(text, false, b, guardsB);
+    CHECK(guardsA && a == b && ea == eb);
+    if (errPos != NULL)
+        *errPos = ea;
+    return a;
+}
+
+static void TestMaskGroupSplit298()
+{
+    // short groups: the rule gives what the code it replaced gave (masks, exclude part, error position)
+    const char* groups[] = {
+        "", " ", ";", ";;", ";;;", "*.txt", " *.txt ; *.doc ", "a;;b", "a;;;b", "a;;;;b", "*.c|*.h",
+        "|*.bak", "*.c|", "a|b|c", "a||b", "x\\y", "a/b", "a<b", "a>b", "a:b", "a\"b", "a\tb", "\x01",
+        "a\x1F" "b", "**?.t*?x", "*??", "*?*?", "?*", " * ", "  a  b  ", "*.*;*", "a ;;  ;b", " ; ; ",
+        "\xC4\x8D*.txt", "\xE4\xB8\xAD;*.\xE4\xB8\xAD", "a;\x80\xFF;b", " \xA0" "a\xA0 ", "*.c ;| *.h ;",
+        "a; |b", "*.a;*.b;*.c|*.d;*.e", "**", "***?", "* ?", "a *?", "#*?#"};
+    for (const char* g : groups)
+        SameSplit298(g);
+
+    // the error positions the callers select in the field
+    int err;
+    SameSplit298("a|b|c", &err);
+    CHECK(err == 3);
+    SameSplit298("ab\\cd", &err);
+    CHECK(err == 2);
+    SameSplit298("*.c;*.h", &err);
+    CHECK(err == -1);
+
+    // one mask of 259 to 3000 bytes - whole, ending with its last letter; the old storage of MAX_PATH
+    // (260) bytes cannot hold the 300-byte one (the reproduction: it ran over the stack)
+    const int lens[] = {259, 260, 261, 300, 1000, 3000};
+    for (int len : lens)
+    {
+        std::string m = "*." + std::string(len - 3, 'b') + "z";
+        CHECK(SameSplit298(m) == m + "\n");
+        CHECK(SameSplit298("  " + m + " ;*.txt") == m + "\n*.txt\n");
+        CHECK(SameSplit298("*.c|" + m) == "*.c\n-" + m + "\n");
+        std::string esc = "a;;" + m;                                 // ";;" -> ';' inside a long mask
+        CHECK(SameSplit298(esc) == "a;" + m + "\n");
+        CHECK(SameSplit298("**" + m.substr(1)) == m + "\n");          // "**" -> "*"
+        CHECK(SameSplit298(m + "*?") == m + "?*\n");                  // "*?" -> "?*"
+        if (len == 300)
+            CHECK(m.size() + 1 > MAX_PATH);
+    }
+    std::string zh; // 100 / 334 letters of 3 bytes: 300 / 1002 bytes
+    for (int i = 0; i < 334; i++)
+        zh += "\xE4\xB8\xAD";
+    CHECK(SameSplit298(zh.substr(0, 300)) == zh.substr(0, 300) + "\n");
+    CHECK(SameSplit298("*." + zh) == "*." + zh + "\n");
+
+    // SalPrepareMaskU8 alone: storage of strlen(src) + 1 bytes is enough (guard bytes intact)
+    const char* srcs[] = {"", " ", "*", "**", "*?", "*??", "?*?*", " *?* ", "a b ", "***?***?"};
+    for (const char* src : srcs)
+    {
+        size_t n = strlen(src) + 1;
+        std::vector<char> dst(n + 8, (char)0x5A), ref(n + 64, 0);
+        SalPrepareMaskU8(dst.data(), src);
+        OldPrepareMask298(ref.data(), src);
+        bool guards = true;
+        for (size_t i = n; i < n + 8; i++)
+            if (dst[i] != (char)0x5A)
+                guards = false;
+        CHECK(guards && strcmp(dst.data(), ref.data()) == 0);
+    }
+
+    // random groups over the bytes that matter, up to 700 bytes: the rule equals the reference
+    const char alphabet[] = {' ', ' ', '*', '?', ';', ';', '|', '.', 'a', 'b', '\t', '\\', '#',
+                             (char)0xC4, (char)0x8D, (char)0xA0, 'x', 'x', 'x', 'x'};
+    unsigned int seed = 298;
+    int differ = 0;
+    for (int round = 0; round < 3000; round++)
+    {
+        seed = seed * 1103515245u + 12345u;
+        size_t len = (seed >> 16) % (round < 2000 ? 40 : 700);
+        std::string g;
+        for (size_t i = 0; i < len; i++)
+        {
+            seed = seed * 1103515245u + 12345u;
+            g += alphabet[(seed >> 16) % sizeof(alphabet)];
+        }
+        std::string a, b;
+        bool guardsA, guardsB;
+        int ea = SplitGroup298(g, true, a, guardsA);
+        int eb = SplitGroup298(g, false, b, guardsB);
+        if (!guardsA || a != b || ea != eb)
+            differ++;
+    }
+    CHECK(differ == 0);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -17180,6 +17394,7 @@ int main(int argc, char** argv)
     TestDriveText289();
     TestGrowBufferPair293();
     TestGrowBuffers295();
+    TestMaskGroupSplit298();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
