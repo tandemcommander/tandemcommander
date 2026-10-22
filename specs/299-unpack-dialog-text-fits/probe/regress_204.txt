@@ -1,0 +1,10 @@
+unpack_dir_probe (feature 204) regress-299
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 05:50; ACP 1250; registry key existed True
+WebDAV  : NOT AVAILABLE - not used by this probe
+
+f9-zip     RUN    PASS        lost=False; windows as 103 expects: True; focus held True; field was '', set '...\AppData\Local\Temp\tc204_ud\f9-zip\tgt\'; on disk: LONGDI~1/; longdirname/; longdirname holds: keep.txt; keep.txt: PRECIOUS-D; own LONGDI~1 with a.txt: True; asked: nothing
+f9-zip     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; subst removed: True; registry restored+identical: True

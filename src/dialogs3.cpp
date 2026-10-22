@@ -2207,6 +2207,16 @@ void CUnpackDialog::EnableDelArcCheckbox()
                  i != -1 && UnpackerConfig->GetUnpackerType(i) != CUSTOMUNPACKER_EXTERNAL);
 }
 
+void CUnpackDialog::Validate(CTransferInfo& ti)
+{
+    CALL_STACK_MESSAGE1("CUnpackDialog::Validate()");
+    // feature 299: never cut (the caller's buffers are MAX_PATH bytes) - a cut path unpacked into
+    // another folder, a cut mask other files (with "Delete archive" checked the archive went too)
+    if (!DlgItemTextFitsU8(HWindow, IDE_PATH, &ti, MAX_PATH))
+        return;
+    DlgItemTextFitsU8(HWindow, IDE_MASK, &ti, MAX_PATH);
+}
+
 void CUnpackDialog::Transfer(CTransferInfo& ti)
 {
     CALL_STACK_MESSAGE1("CUnpackDialog::Transfer()");

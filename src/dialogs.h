@@ -790,6 +790,7 @@ public:
                   CTruncatedString* subject, CUnpackerConfig* config,
                   BOOL* delArchiveWhenDone);
 
+    virtual void Validate(CTransferInfo& ti);
     virtual void Transfer(CTransferInfo& ti);
 
 protected:

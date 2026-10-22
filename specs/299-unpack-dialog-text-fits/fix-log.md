@@ -54,3 +54,23 @@ Row `both` on the build before the fix (`probe/result_before_both.txt`): FAIL - 
 nothing asked, only a.k unpacked into the cut 258-byte folder, and **a.zip deleted** (the box was
 checked): a.kp, the file the typed mask named, was never unpacked and its archive is gone. So the
 cut mask with "Delete archive after unpacking" loses data - more than the item's "no loss found".
+
+## Implementation
+
+`src/dialogs.h`: `CUnpackDialog::Validate` declared. `src/dialogs3.cpp`: `CUnpackDialog::Validate` -
+`DlgItemTextFitsU8(HWindow, IDE_PATH, &ti, MAX_PATH)` (refused -> return), then the same for
+`IDE_MASK`. `Transfer` unchanged. No new string (`git diff main -- src/lang` empty).
+
+## Checks after the fix
+
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- `.\build.cmd` (Debug x64) -> `BUILD SUCCEEDED`, exit 0.
+- `saltests.exe` -> `saltests: 26443 checks, 0 failed`, exit 0.
+- Probe `probe/result_after.txt` (same command as before, `-Label after`): rows PASS 12, FAIL 0 -
+  path-cjk, path-ascii, mask-cjk, both: refused ("[#32770 'Error'] The path specified is too
+  long."), the dialog stayed, the field whole (128 / 262 / 90 / 126 units), nothing under tgt, a.zip
+  kept; ctl, ctl-path: unpacked as typed, nothing asked; 6 END rows PASS. Registry restored identical.
+- Negative control: the same probe on the build before the fix (`result_before.txt`,
+  `result_before_both.txt`) - 4 FAIL; only the two-line `Validate` differs between the builds.
+- Regression: 204's `unpack_dir_probe.ps1 -Only f9-zip` (Alt+F9 of a ZIP, target typed) ->
+  `probe/regress_204.txt` PASS 2 / FAIL 0, registry identical.

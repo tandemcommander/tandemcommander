@@ -1,0 +1,20 @@
+unpack299_probe (feature 299) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 05:48; ACP 1250; registry key existed True
+R = 85 CJK letters (255 bytes); fixture C:\Users\pavel\AppData\Local\Temp\tc299_unp
+
+path-cjk   RUN    PASS        field 210 typed 128 units / 262 bytes (path was 0 bytes, mask '*.*'); dialog stayed: True; at the refusal: 128 units, whole: True; asked: [#32770 'Error'] The path specified is too long. |; under tgt: nothing; a.zip kept: True
+path-cjk   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+path-ascii RUN    PASS        field 210 typed 262 units / 262 bytes (path was 0 bytes, mask '*.*'); dialog stayed: True; at the refusal: 262 units, whole: True; asked: [#32770 'Error'] The path specified is too long. |; under tgt: nothing; a.zip kept: True
+path-ascii END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+mask-cjk   RUN    PASS        field 521 typed 90 units / 260 bytes (path was 0 bytes, mask '*.*'); dialog stayed: True; at the refusal: 90 units, whole: True; asked: [#32770 'Error'] The path specified is too long. |; under tgt: nothing; a.zip kept: True
+mask-cjk   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+both       RUN    PASS        field 210 typed 126 units / 262 bytes (path was 0 bytes, mask '*.*'); dialog stayed: True; at the refusal: 126 units, whole: True; asked: [#32770 'Error'] The path specified is too long. |; under tgt: nothing; a.zip kept: True
+both       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl        RUN    PASS        field 521 typed 89 units / 259 bytes (path was 0 bytes, mask '*.*'); dialog stayed: False; at the refusal: (not read); asked: nothing; under tgt: c\a.k=K; a.zip kept: True
+ctl        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-path   RUN    PASS        field 210 typed 123 units / 255 bytes (path was 0 bytes, mask '*.*'); dialog stayed: False; at the refusal: (not read); asked: nothing; under tgt: ...(72 units) ...\u4EB1\u4EB2\u4EB3\u4EB4\u4EB5\u4EB6\u4EB7\u4EB8\u4EB9\u4EBA\u4EBB\u4EBC\u4EBD\u4EBE\u4EBF\u4EC0\u4EC1\u4EC2\a.k=K; a.zip kept: True
+ctl-path   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 12, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
