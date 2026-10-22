@@ -93,6 +93,7 @@
 #include "saldrivetext.h"     // feature 289
 #include "salmaskgroup.h"     // feature 298
 #include "salsubst.h"         // feature 301
+#include "salftpupname.h"     // feature 303
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -17059,6 +17060,46 @@ static void TestSubstTarget301()
     CHECK(SalSubstTargetToPathU8(L"\\??\\C:\\a\xD800", buf, sizeof(buf)) == SAL_SUBST_OK && strlen(buf) == 4 + 3);
 }
 
+// feature 303: an FTP upload's target name that differs from a listed name only in case counts
+// as existing (salftpupname.h) - "B.txt" into a folder of a Windows-backed server with Unix paths
+// holding "b.txt" was sent without the overwrite question and replaced it
+static int CaseOnly303(const std::vector<const char*>& names, const char* name)
+{
+    return SalFtpFindCaseOnlyName((int)names.size(), [&](int i) { return names[i]; }, name);
+}
+
+static void TestFtpCaseOnlyName303()
+{
+    // the item's case: B.txt beside b.txt
+    CHECK(CaseOnly303({"a.txt", "b.txt", "c.txt"}, "B.txt") == 1);
+    CHECK(CaseOnly303({"a.txt", "b.txt"}, "b.TXT") == 1);
+    // no name equal in any case
+    CHECK(CaseOnly303({"a.txt", "b.txt"}, "c.txt") == -1);
+    CHECK(CaseOnly303({"b.txt"}, "b.txt.bak") == -1);
+    CHECK(CaseOnly303({"b.txt.bak"}, "B.txt") == -1);
+    // only the byte-equal name: not a case-only match (the exact lookup answers it)
+    CHECK(CaseOnly303({"b.txt"}, "b.txt") == -1);
+    // several twins (a case-sensitive server): the lowest index; the exact one is skipped
+    CHECK(CaseOnly303({"B.txt", "b.TXT", "b.txt"}, "b.txt") == 0);
+    CHECK(CaseOnly303({"x", "b.TXT", "B.TXT"}, "B.txt") == 1);
+    // the file system's rule: non-ASCII letters (C-caron / c-caron, UTF-8)
+    CHECK(CaseOnly303({"\xC4\x8C" "aj.txt"}, "\xC4\x8D" "aj.txt") == 0);
+    CHECK(CaseOnly303({"caf\xC3\x89.txt"}, "CAF\xC3\xA9.TXT") == 0);
+    // ... but NFC and NFD stay apart, and no non-ASCII letter equals an ASCII one
+    CHECK(CaseOnly303({"caf\xC3\xA9.txt"}, "cafe\xCC\x81.txt") == -1);
+    CHECK(CaseOnly303({"\xE2\x84\xAA.txt"}, "k.txt") == -1); // KELVIN SIGN
+    CHECK(CaseOnly303({"k.txt"}, "\xE2\x84\xAA.txt") == -1);
+    // nothing to look at
+    CHECK(CaseOnly303({}, "b.txt") == -1);
+    CHECK(CaseOnly303({NULL, "b.txt"}, "B.txt") == 1);
+    CHECK(CaseOnly303({"b.txt"}, NULL) == -1);
+    CHECK(SalFtpFindCaseOnlyName(-1, [](int) { return "b.txt"; }, "B.txt") == -1);
+    // each name is looked at once
+    int calls = 0;
+    std::vector<const char*> many(1000, "other.txt");
+    CHECK(SalFtpFindCaseOnlyName((int)many.size(), [&](int i) { calls++; return many[i]; }, "B.txt") == -1 && calls == 1000);
+}
+
 // feature 289: drive names and folder type names from the wide shell / volume calls (saldrivetext.h)
 static void TestDriveText289()
 {
@@ -17464,6 +17505,7 @@ int main(int argc, char** argv)
     TestGrowBuffers295();
     TestMaskGroupSplit298();
     TestSubstTarget301();
+    TestFtpCaseOnlyName303();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -28,12 +28,13 @@ param(
     [Parameter(Mandatory = $true)][string]$Exe,
     [string]$OutFile,
     [string[]]$Only,
-    [string]$Repo = (Join-Path $PSScriptRoot '..\..\..'),
+    [string]$Repo = '',
     [string]$Python = 'python',
     [int]$Port = 2132
 )
 $ErrorActionPreference = 'Stop'
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
+if (-not $Repo) { $Repo = Join-Path $PSScriptRoot '..\..\..' }
 $Repo = (Resolve-Path -LiteralPath $Repo).Path
 if ($Only) { $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 function Want([string]$n) { return (-not $Only) -or (@($Only | Where-Object { $n -like ($_ + '*') }).Count -gt 0) }

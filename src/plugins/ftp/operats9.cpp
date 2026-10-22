@@ -5,6 +5,7 @@
 #include "precomp.h"
 
 #include "../../common/salnameorder.h" // feature 277: the file system's name rule (the opened-file lock)
+#include "../../common/salftpupname.h" // feature 303: an upload's name that differs from a listed one only in case
 
 #ifdef _DEBUG
 int CUploadListingsOnServer::FoundPathIndexesInCache = 0; // how many searched paths the cache has caught
@@ -217,7 +218,7 @@ BOOL CUploadListingCache::GetListing(const char* user, const char* host, unsigne
                                      const char* path, CFTPServerPathType pathType, int workerMsg,
                                      int workerUID, BOOL* listingInProgress, BOOL* notAccessible,
                                      BOOL* getListing, const char* name, CUploadListingItem** existingItem,
-                                     BOOL* nameExists)
+                                     BOOL* nameExists, BOOL caseOnlyCounts)
 {
     BOOL ret = TRUE;
     *listingInProgress = FALSE;
@@ -258,7 +259,7 @@ BOOL CUploadListingCache::GetListing(const char* user, const char* host, unsigne
     if (server != NULL)
     {
         ret = server->GetListing(path, pathType, workerMsg, workerUID, listingInProgress,
-                                 notAccessible, getListing, name, existingItem, nameExists);
+                                 notAccessible, getListing, name, existingItem, nameExists, caseOnlyCounts);
     }
     HANDLES(LeaveCriticalSection(&UploadLstCacheCritSect));
     return ret;
@@ -770,7 +771,7 @@ void CUploadListingsOnServer::InvalidateListing(int index)
 BOOL CUploadListingsOnServer::GetListing(const char* path, CFTPServerPathType pathType, int workerMsg,
                                          int workerUID, BOOL* listingInProgress, BOOL* notAccessible,
                                          BOOL* getListing, const char* name, CUploadListingItem** existingItem,
-                                         BOOL* nameExists)
+                                         BOOL* nameExists, BOOL caseOnlyCounts)
 {
     BOOL ret = TRUE;
     int index;
@@ -793,7 +794,16 @@ BOOL CUploadListingsOnServer::GetListing(const char* path, CFTPServerPathType pa
                 if (listing->ListingState == ulsReady) // the listing is ready
                 {
                     int index2;
-                    if (listing->FindItem(name, index2)) // item 'name' found; copy its data into 'existingItem' and set 'nameExists' to TRUE
+                    BOOL found = listing->FindItem(name, index2);
+                    BOOL caseOnly = FALSE;
+                    if (!found && caseOnlyCounts) // feature 303: a name differing only in case counts (see the declaration)
+                    {
+                        TIndirectArray<CUploadListingItem>* items = &listing->ListingItem;
+                        index2 = SalFtpFindCaseOnlyName(items->Count, [items](int i)
+                                                        { return (const char*)items->At(i)->Name; }, name);
+                        found = caseOnly = index2 >= 0;
+                    }
+                    if (found) // item 'name' found; copy its data into 'existingItem' and set 'nameExists' to TRUE
                     {
                         if (nameExists != NULL)
                             *nameExists = TRUE;
@@ -807,7 +817,7 @@ BOOL CUploadListingsOnServer::GetListing(const char* path, CFTPServerPathType pa
                                 if ((*existingItem)->Name != NULL)
                                 {
                                     (*existingItem)->ItemType = item->ItemType;
-                                    (*existingItem)->ByteSize = item->ByteSize;
+                                    (*existingItem)->ByteSize = caseOnly ? UPLOADSIZE_UNKNOWN : item->ByteSize; // feature 303: never another name's size
                                 }
                                 else
                                 {

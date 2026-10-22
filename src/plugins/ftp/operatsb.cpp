@@ -228,7 +228,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                         if (UploadListingCache.GetListing(userBuf, hostBuf, portBuf, curItem->TgtPath,
                                                           pathType, Msg, UID, &listingInProgress,
                                                           &notAccessible, &getListing, curItem->TgtName,
-                                                          &existingItem, NULL))
+                                                          &existingItem, NULL, TRUE /* feature 303: a name differing only in case counts */))
                         {
                             if (listingInProgress) // the listing is currently in progress or is about to start
                             {
@@ -963,7 +963,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                     if (UploadListingCache.GetListing(userBuf, hostBuf, portBuf, curItem->TgtPath,
                                                       pathType, Msg, UID, &listingInProgress,
                                                       &notAccessible, &getListing, curItem->TgtName,
-                                                      &existingItem, NULL))
+                                                      &existingItem, NULL, TRUE /* feature 303: a name differing only in case counts */))
                     {
                         if (listingInProgress) // the listing is currently in progress or is about to start
                         {
@@ -1187,7 +1187,7 @@ void CFTPWorker::HandleEventInWorkingState5(CFTPWorkerEvent event, BOOL& sendQui
                     if (UploadListingCache.GetListing(userBuf, hostBuf, portBuf, curItem->TgtPath,
                                                       pathType, Msg, UID, &listingInProgress,
                                                       &notAccessible, &getListing,
-                                                      UploadAutorenameNewName, NULL, &nameExists))
+                                                      UploadAutorenameNewName, NULL, &nameExists, TRUE /* feature 303: a name differing only in case counts */))
                     {
                         if (listingInProgress) // the listing is currently in progress or is about to start
                         {

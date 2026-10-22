@@ -42,7 +42,7 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
                     if (UploadListingCache.GetListing(userBuf, hostBuf, portBuf, curItem->TgtPath,
                                                       pathType, Msg, UID, &listingInProgress,
                                                       &notAccessible, &getListing, curItem->TgtName,
-                                                      &existingItem, NULL))
+                                                      &existingItem, NULL, FALSE /* folders: the exact name only (feature 303) */))
                     {
                         if (listingInProgress) // the listing is currently running or is about to start
                         {
@@ -504,7 +504,7 @@ void CFTPWorker::HandleEventInWorkingState4(CFTPWorkerEvent event, BOOL& sendQui
                 if (UploadListingCache.GetListing(userBuf, hostBuf, portBuf, curItem->TgtPath,
                                                   pathType, Msg, UID, &listingInProgress,
                                                   &notAccessible, &getListing,
-                                                  UploadAutorenameNewName, NULL, &nameExists))
+                                                  UploadAutorenameNewName, NULL, &nameExists, FALSE /* folders: the exact name only (feature 303) */))
                 {
                     if (listingInProgress) // the listing is currently running or is about to start
                     {

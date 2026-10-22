@@ -3216,7 +3216,7 @@ public:
     BOOL GetListing(const char* path, CFTPServerPathType pathType, int workerMsg,
                     int workerUID, BOOL* listingInProgress, BOOL* notAccessible,
                     BOOL* getListing, const char* name, CUploadListingItem** existingItem,
-                    BOOL* nameExists);
+                    BOOL* nameExists, BOOL caseOnlyCounts);
 
     // see CUploadListingCache::ListingFailed()
     // WARNING: do not call directly, called through CUploadListingCache::ListingFailed()
@@ -3342,11 +3342,17 @@ public:
     // returns the item named 'name' in the allocated structure 'existingItem' (NULL if no item
     // with that name was found), and TRUE/FALSE in 'nameExists' depending on whether an item
     // named 'name' was found; returns FALSE only on out-of-memory
+    // 'caseOnlyCounts' TRUE (feature 303: a file upload's "does the target exist?"): when no item
+    // is named exactly 'name', an item whose name is the same name case ignored (the file system's
+    // rule, salftpupname.h) counts as found - a server with Unix paths may store files on a
+    // case-insensitive file system, where uploading "B.txt" writes its "b.txt"; the copy in
+    // 'existingItem' then has ByteSize UPLOADSIZE_UNKNOWN (another name's size is not the
+    // target's - never a resume offset); FALSE = only the exact name (folders, path identity)
     BOOL GetListing(const char* user, const char* host, unsigned short port,
                     const char* path, CFTPServerPathType pathType, int workerMsg,
                     int workerUID, BOOL* listingInProgress, BOOL* notAccessible,
                     BOOL* getListing, const char* name, CUploadListingItem** existingItem,
-                    BOOL* nameExists);
+                    BOOL* nameExists, BOOL caseOnlyCounts);
 
     // reports to the cache an error while obtaining the listing of path 'path' (of type 'pathType') on
     // server 'user'+'host'+'port' from a worker; 'listingIsNotAccessible' is TRUE

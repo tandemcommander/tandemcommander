@@ -51,3 +51,64 @@ Result `probe/result_before.txt`: PASS 5, FAIL 3 (exit 3); registry restored, id
 See `spec.md` *Clarifications*: the file system's name rule of 092 (`SalNameOrderEqualCI`),
 every server path type, only the file upload's existence check and the file auto-rename's check,
 a case-only item's size is unknown (never a resume offset).
+
+## Implementation
+
+- `src/common/salftpupname.h` (new, header-only): `SalFtpFindCaseOnlyName(count, getName, name)` -
+  the lowest index of a listed name that is not byte-equal to `name` but the same name under
+  `SalNameOrderEqualCI` (092's rule); -1 otherwise; one pass.
+- `src/plugins/ftp/operats.h` / `operats9.cpp`: both `GetListing` functions take
+  `BOOL caseOnlyCounts`; with TRUE, when `FindItem` (exact by the path type's rule, unchanged and
+  tried first) misses, the case-only lookup runs over `listing->ListingItem`; a hit sets
+  `nameExists` and returns a copy with `ByteSize = UPLOADSIZE_UNKNOWN`.
+- Callers (all five, compiler-checked by the new parameter): `operatsb.cpp` `fwssWorkStartWork`
+  (file), `fwssWorkUploadGetFileSizeFromListing`, `fwssWorkUploadGenNewName` pass TRUE;
+  `operatsa.cpp` `fwssWorkStartWork` (folder) and `fwssWorkUploadAutorenDirSendMKD` pass FALSE
+  (folders and path identity unchanged, spec FR-006).
+
+### By reading (T008, T009)
+
+- Exact first: `FindItem` runs first exactly as before; the case-only pass only after it missed
+  (a listing with both `b.txt` and `B.txt` answers `B.txt` exactly).
+- A configured automatic answer: the case-only file item has `ItemType == ulitFile`, so the start
+  check goes to `fwssWorkUploadFileExists`, whose `GetUploadFileAlreadyExists()` switch (ask /
+  auto-rename / resume / resume-or-overwrite / overwrite / skip) applies unchanged; a case-only
+  folder goes to "cannot create file" (`fwssWorkUploadCantCreateFileDirEx`), a link is resolved by
+  `CWD` of `TgtPath/TgtName` as for an exact link.
+- Resume: `SIZE <TgtName>` is asked first (a case-insensitive server answers with its file's size -
+  resume continues that file, what the user chose); when `SIZE` fails or is not supported, the
+  listing copy's size is `UPLOADSIZE_UNKNOWN` -> Resume fails with `ITEMPR_UPLOADUNABLETORESUMEUNKSIZ`,
+  Resume or Overwrite overwrites, the "transferred whole?" test fails with
+  `ITEMPR_UPLOADTESTIFFINISHEDNOTSUP` - never an append at another name's offset. (With an
+  exact-only size lookup instead, the "target no longer exists" branch would put the item back to
+  waiting and the start check would find the twin again - a loop; R3 of research.md.)
+- Auto-rename: a generated name with a case-only twin in the listing is taken as used; another
+  name is generated.
+- No string added or removed (FR-007): only code and comments changed; `build.cmd` (not `full`)
+  is enough.
+
+## Measurements after
+
+Commands from the repository root (PowerShell unless noted):
+
+- Bash `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`, exit 0.
+- `.\build.cmd` -> `BUILD SUCCEEDED` (`ftp.spl` 09:21; warnings only the old C4267 of `fs2.cpp` /
+  `parser2.cpp`).
+- `saltests.exe` -> `saltests: 26577 checks, 0 failed` (`TestFtpCaseOnlyName303`, 18 checks).
+  Negative controls (the header changed temporarily, restored after):
+  - no case-only match at all (the old behaviour): `7 failed` (every twin row).
+  - an ASCII-only fold (`_stricmp`): `2 failed` (the C-caron and E-acute rows) - the file system
+    rule is what the checks require.
+- Probe `probe/result_after.txt`: PASS 8, FAIL 0 (before: PASS 5, FAIL 3):
+  - CASE-UP: the "Target File Already Exists" question for `B.txt`, no command sent to the server
+    after the copy dialog (the decision came from the panel-seeded listing), `b.txt` keeps `SRV-B`.
+  - CASE-CZ: the question for `čaj.txt`, `Čaj.txt` keeps `SRV-C`.
+  - CASE-NEW: `STOR c.txt`, no question, `b.txt` kept (unchanged).
+  - CASE-OVR: question answered Overwrite -> `STOR B.txt`, the server's file holds `LOCAL-B`.
+  - END rows: exit 0, no reports (the expected "unfinished FTP operations" exit question after
+    the open question rows); registry restored and identical (SHA-256 D8DA635D...).
+  - First "after" attempt failed to start: `$PSScriptRoot` is empty in a PowerShell 5.1
+    parameter default (`-Repo`); the default is computed after the parameters now. Nothing ran
+    before the error (no registry backup taken, no program started).
+- Regressions: `probe/regress_288.txt` (288's probe) PASS 20, FAIL 0; `probe/regress_224.txt`
+  (224's probe) PASS 16, FAIL 0 - both as recorded by their features.
