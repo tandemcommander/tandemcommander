@@ -3,7 +3,7 @@
 **Feature Branch**: `297-regedt-delete-link`
 **Created**: 2026-10-22
 **Status**: Draft
-**Input**: Backlog item `registry-editor-delete-or-move-deletes-a-linked-key` - "Registry Editor: Delete or Move of a key holding a registry link deletes the linked key"; Expected: "Deleting or moving a key that holds a registry link never touches the key the link points at: the link itself is removed (opened as a link) or the operation is refused for it with a message; a Move does not turn the link into a copy of its target silently."
+**Input**: Backlog item `registry-editor-delete-or-move-deletes-a-linked-key` - "Registry Editor: Delete or Move of a key holding a registry link deletes the linked key"; Expected: "Deleting or moving a key that holds a registry link never touches the key the link points at: the link itself is removed (opened as a link) or the operation is refused for it with a message; a Move does not turn the link into a copy of its target silently." From backlog item registry-editor-delete-or-move-deletes-a-linked-key.
 
 ## Measured at 49147f36 (before this feature)
 

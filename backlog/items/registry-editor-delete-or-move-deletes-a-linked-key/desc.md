@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: Delete or Move of a key holding a registry link deletes the linked key
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: data-safety
 source: measure:296
@@ -10,7 +10,7 @@ created: 2026-10-22
 updated: 2026-10-22
 verified: 2026-10-22 49147f36
 effort: M
-feature: -
+feature: 297
 related: []
 depends-on: []
 reason: -
@@ -57,3 +57,4 @@ Find, which walk the tree by name too (they only read, but may walk out of the s
 - 2026-10-22 — created (source measure:296)
 - 2026-10-22 — moved to Next position 1
 - 2026-10-22 — verified at 49147f36: reproduced at 49147f36 by a hidden-desktop probe: F8 / F6 / Quick Rename of a key holding a link, or of the link, deleted the linked key (also via HKCR)
+- 2026-10-22 — run started, feature 297
