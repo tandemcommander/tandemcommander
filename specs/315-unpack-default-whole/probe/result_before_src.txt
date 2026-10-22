@@ -1,0 +1,10 @@
+unpack315_probe (feature 315) before-src
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 01:54; ACP 1250; registry key existed True
+Fixture C:\Users\pavel\AppData\Local\Temp\tc315_unp
+
+src-long   RUN    FAIL        UA=0 SD=0; L 58 units / 58 bytes; items (2): '' ; 58 units / 58 bytes [L] ...5_unp\src-long\tgt\L; OK on item 0 (0 bytes); dialog stayed: False; asked: nothing; new under tgt: no file; unpacked next to the archive: nothing [source 297 bytes; files in the row: ...(212 units) ...pppppppppppppppppp\a.k=K, ...(214 units) ...pppppppppppppppp\a.kp=KP; new folders in the row: 1]
+src-long   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

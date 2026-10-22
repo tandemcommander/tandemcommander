@@ -1,16 +1,16 @@
 ---
 title: Unpack dialog offers a long target panel path cut and unpacks into the cut folder
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: long-paths
 source: review:299
 who: agent
 created: 2026-10-22
-updated: 2026-10-22
-verified: -
+updated: 2026-10-23
+verified: 2026-10-23 32718c27
 effort: S
-feature: -
+feature: 315
 related: []
 depends-on: []
 reason: -
@@ -63,3 +63,5 @@ the buffers is a design choice of the fix; leaving it out changes least.
 
 - 2026-10-22 — created (source review:299)
 - 2026-10-22 — moved to Next position 10
+- 2026-10-23 — verified at 32718c27: still present at 32718c27: probe unpack315 before 5 FAIL (other/alt ASCII+CJK cut entry, subdir bare path), controls PASS
+- 2026-10-23 — run started, feature 315
