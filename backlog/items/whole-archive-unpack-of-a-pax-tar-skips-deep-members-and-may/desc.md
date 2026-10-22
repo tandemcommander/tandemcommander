@@ -8,7 +8,7 @@ source: review:307
 who: agent
 created: 2026-10-22
 updated: 2026-10-22
-verified: -
+verified: 2026-10-22 aa7f08bb
 effort: M
 feature: -
 related: [opening-a-tar-whose-member-name-has-a-300-letter-component]
@@ -40,3 +40,4 @@ Severity from the band "data loss in a narrow scenario" (deep PAX paths + the de
 
 - 2026-10-22 — created (source review:307)
 - 2026-10-22 — moved to Next position 1
+- 2026-10-22 — verified at aa7f08bb: reproduced at aa7f08bb by a hidden-desktop probe: whole Unpack of a deep PAX tree extracts 2 of 34 files, with Delete-archive the tar is deleted; CJK(300) member + Delete also deletes it
