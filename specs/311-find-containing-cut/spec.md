@@ -26,6 +26,14 @@ letters + "ZZ", `full.txt` = 67 CJK letters, `other.txt`), 8 rows FAIL:
   "cannot find", although the file does not hold the typed text - it searched the cut text.
 Controls (66 letters + `Z`, 199 bytes) are found and kept whole.
 
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: When both Named and Containing do not fit, which one is refused first? → A: Named - feature 291's check keeps its place; after it is fixed the next Find refuses Containing (autonomous run: conservative - existing behaviour unchanged for Named)
+- Q: Should Options > Manage refuse before its window opens, like Add Current and Ignore? → A: yes - same message, no window (autonomous run: item - "before Add Current / Manage / Ignore read it")
+- Q: When a found file is viewed and the Containing text does not fit the viewer's buffer, should viewing be refused or the copy into the viewer's Find skipped? → A: the copy is skipped silently, the file is viewed, the viewer keeps its earlier find text (autonomous run: conservative - viewing unchanged, nothing cut stored, no new string)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Find never searches for a cut Containing text (Priority: P1)
