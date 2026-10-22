@@ -78,3 +78,37 @@ not show the defect (an unelevated write fails either way).
 The real write (the item's `who: both`): on a USB stick, or a VHD in an elevated program -
 Drive Information, label `Zálohy`, OK → Explorer shows `Zálohy` (0.1.10: `ZĂˇlohy`); open Drive
 Information again → the field shows `Zálohy`; clear the field, OK → the label is removed.
+
+## Review
+
+Review 1 (independent agent, refute-first, at 124e1da5): **no MUST**. It re-measured the import
+table (only `5BD SetVolumeLabelW`), the checker (39 / strict 0 / plug-ins 76), the negative
+control (PASS; `main`'s checker on the old call gives 0 hits, so the control depends on the
+change; `SetVolumeLabelA(...)`, `::SetVolumeLabel(VolumePath, newName)` and a call split over
+lines are each reported), `saltests` 26443 / 0 failed, clang-format clean; enumerated the callers
+(the only call; every route ends at `CFilesWindow::DriveInfo` → `CDriveInfo::Validate`); confirmed
+the empty label → `L""`, `err` set on both branches, hands-off only around the real call, 069's
+comparison and 270's refusal kept.
+
+- S1 the checker addition is report-only, `--strict` would not catch a returning call → inside
+  scope as wording: US3 and SC-002 now say report-only (the item asked for the list entry; the
+  rule's strictness was settled in *Clarifications*). No strict rule added.
+- S2 no runtime evidence for FR-002 (a non-ASCII mount-folder path) → accepted: FR-002 is proven
+  by the import table and by reading (both strings go through `SalU8ToWAlloc` to the W call). The
+  suggested junction test does not discriminate: `MyGetVolumeInformation` resolves a junction to
+  its target volume's root (ASCII), and a real non-ASCII mount folder needs admin to create.
+- N3 `GetDiskFreeSpaceEx` (A) with the same UTF-8 path in `CDriveInfo::Transfer` - display only
+  (falls back to the cluster-based figures); one of the 39 report-only hits 068 classified - not
+  recorded as an item.
+- N4 the label field is a code-page edit: a label outside the code page is shown as `?` and an
+  edit writes the `?` back → new Inbox item
+  `drive-information-turns-a-volume-label-outside-the-code-page` (review:300); the new code
+  comment no longer says "never written in another form" (it now names the field's limit).
+- N5 the volume path in fixed `MAX_PATH` buffers (pre-existing); a cut path names no existing
+  folder, the write fails - not recorded.
+- N6 the rule matches only UTF-8-looking identifiers (`SetVolumeLabel(root, label)` is not
+  reported) - inherent to the heuristic.
+- N7 CHANGELOG entry and person step owed at closing - done at closing.
+
+After the comment and spec edits: `.\build.cmd` → `BUILD SUCCEEDED`; `--strict` → `TOTAL: 0`.
+No second review: review 1 had no MUST finding.

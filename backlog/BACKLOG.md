@@ -236,6 +236,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Drive Information turns a volume label outside the code page into question marks](items/drive-information-turns-a-volume-label-outside-the-code-page/desc.md) | bug | 5 | encoding | review:300 | 2026-10-22 |
 
 ## Parked
 

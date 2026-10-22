@@ -81,7 +81,10 @@ label, OK → the error box, the dialog stays; the drive's label is unchanged.
 A developer adds a new code-page call of the label-writing API with a UTF-8 path or name; the
 encoding checker's `ansi-api-on-utf8-path` report lists it.
 
-**Why this priority**: it keeps the defect from returning unseen.
+**Why this priority**: the defect becomes visible in the checker's report. The rule is
+report-only (a draft rule, *Clarifications*): it does not fail the build, so it shows a returning
+call to whoever runs the report (`--rule ansi-api-on-utf8-path` or `--draft`), it does not block
+it (review 1, S1).
 
 **Independent Test**: the checker's report before and after the fix, and a negative control (the
 call put back in a scratch copy is reported).
@@ -138,7 +141,8 @@ call put back in a scratch copy is reported).
 - **SC-001**: The program's executable no longer uses the code-page variant of the label-writing
   call (0 imports of it after, 1 before).
 - **SC-002**: The checker's `ansi-api-on-utf8-path` report, with the call in its list, shows 0 hits
-  of the call after the fix (1 before), and the strict run stays at 0 findings.
+  of the call after the fix (1 before), and the strict run stays at 0 findings (the strict run
+  does not include this report-only rule).
 - **SC-003**: The unelevated error path (probe) shows the error message and leaves the drive's
   label unchanged - 100% of the probe rows PASS.
 - **SC-004**: On a scratch drive, a label `Zálohy` typed in Drive Information is shown as `Zálohy`

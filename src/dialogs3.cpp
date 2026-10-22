@@ -1331,7 +1331,8 @@ void CDriveInfo::Validate(CTransferInfo& ti)
             SalPathAddBackslash(volumePathWithBackslash, MAX_PATH);
             // feature 300: the label and the path are UTF-8 (WTF-8, 066); the core's SetVolumeLabel is
             // the code-page A call, which wrote 'Zalohy' with a-acute as mojibake - both go to the wide
-            // call; a text that cannot be converted is refused, never written in another form
+            // call; a text that cannot be converted is refused, the conversion never substitutes letters
+            // (the field itself is a code-page edit: see the feature 069 note in Transfer)
             WCHAR* pathW = SalU8ToWAlloc(volumePathWithBackslash);
             WCHAR* nameW = pathW != NULL ? SalU8ToWAlloc(newName) : NULL;
             BOOL res = FALSE;
