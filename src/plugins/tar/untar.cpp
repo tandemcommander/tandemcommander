@@ -158,6 +158,7 @@ void SCommonHeader::Initialize()
     MTime.Set(0, 0);
     MTimeFrac = 0;
     NameFromPax = FALSE;
+    NameRefused = FALSE;
     Format = e_Unknown;
     IsExtendedTar = FALSE;
 }
@@ -180,7 +181,7 @@ CArchive::CArchive(const char* fileName, CSalamanderForOperationsAbstract* salam
     Ok = TRUE;
     Stream = NULL;
     SalPaxInit(&GlobalPax);
-    ReportRefusedNames = FALSE;
+    Listing = FALSE;
     RefusedNameShown = FALSE;
     ListingPrefixLen = 0;
     SalamanderIf = salamander;
@@ -218,7 +219,9 @@ BOOL CArchive::ListArchive(const char* prefix, CSalamanderDirectoryAbstract* dir
     // first try to detect the archive and read the first header
     Silent = 0;
     Offset.Set(0, 0);
-    ReportRefusedNames = TRUE; // feature 306: the user learns here which members are not listed
+    // feature 306: the user learns here which members are not listed; feature 308: the listing's
+    // bounds apply only in this pass
+    Listing = TRUE;
     SCommonHeader header;
     int ret = ReadArchiveHeader(header, TRUE);
 
@@ -320,6 +323,7 @@ BOOL CArchive::UnpackOneFile(const char* nameInArchive, const CFileData* fileDat
     // first try to detect the archive and read the first header
     Silent = 0;
     Offset.Set(0, 0);
+    Listing = FALSE; // feature 308: an extraction takes every name a file system takes
     SCommonHeader header;
     int ret = ReadArchiveHeader(header, TRUE);
     // if this is not a supported format, unpack only the outer compression when present
@@ -337,6 +341,13 @@ BOOL CArchive::UnpackOneFile(const char* nameInArchive, const CFileData* fileDat
     for (;;)
     {
         found = !strcmp(header.Name, nameInArchive);
+        // feature 308: the member asked for cannot be extracted under its name - say so and fail
+        // (it was "extracted" as nothing with success)
+        if (found && header.NameRefused)
+        {
+            ReportRefusedName(header.Name);
+            return FALSE;
+        }
         // if we cannot interpret what we found, skip it; otherwise extract the file
         // What we don't support (everything except files & dirs) has zero size and Ignored set.
         // This new condition unlike the old one also extracts empty files.
@@ -448,8 +459,6 @@ BOOL CArchive::UnpackWholeArchive(const char* mask, const char* targetPath)
     }
     free(tmp);
 
-    // feature 306: unpacked without a listing - a member refused for its name is reported here
-    ReportRefusedNames = TRUE;
     // and now perform the actual extraction
     return DoUnpackArchive(targetPath, NULL, names);
 }
@@ -474,6 +483,11 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
     // first try to detect the archive and read the first header
     Silent = 0;
     Offset.Set(0, 0);
+    Listing = FALSE; // feature 308: an extraction takes every name a file system takes
+    // feature 308: a member asked for (mask / selection) that cannot be extracted under its name
+    // fails the whole operation after the rest is extracted - the core then neither reports success
+    // nor deletes the archive ("Delete archive after unpacking")
+    BOOL refused = FALSE;
     SCommonHeader header;
     int ret = ReadArchiveHeader(header, TRUE);
     // if this is not a supported format, unpack only the outer compression when present
@@ -504,6 +518,11 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
     {
         // determine whether this is "our" file
         BOOL found = names.IsNamePresent(header.Name);
+        if (found && header.NameRefused)
+        {
+            ReportRefusedName(header.Name);
+            refused = TRUE;
+        }
         // what should be the name of the created file? (relative path)
         char* ptr = header.Name;
         if (found && !header.Ignored && archiveRoot != NULL)
@@ -516,7 +535,7 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         if (ret != TAR_OK)
         {
             SalamanderIf->CloseProgressDialog();
-            return (ret == TAR_EOF) ? TRUE : FALSE;
+            return (ret == TAR_EOF) ? !refused : FALSE;
         }
 
         // progress was advanced during extraction, just acknowledge it here
@@ -541,7 +560,7 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         if (header.Finished)
         {
             SalamanderIf->CloseProgressDialog();
-            return TRUE;
+            return !refused;
         }
     }
 }
@@ -876,6 +895,29 @@ int CArchive::WriteOutData(const SCommonHeader& header, const char* targetPath,
     return ret;
 } /* CArchive::WriteOutData */
 
+// feature 306: the system's "(206) file name too long" text with the refused member's whole name,
+// once per operation (the rest of the archive stays usable)
+void CArchive::ReportRefusedName(const char* name)
+{
+    CALL_STACK_MESSAGE1("CArchive::ReportRefusedName()");
+    if (RefusedNameShown)
+        return;
+    RefusedNameShown = TRUE;
+    const char* err = SalamanderGeneral->GetErrorText(ERROR_FILENAME_EXCED_RANGE);
+    size_t msgSize = strlen(err) + 2 + strlen(name) + 1;
+    char* msg = (char*)malloc(msgSize);
+    if (msg != NULL)
+    {
+        strcpy(msg, err); // sized for the whole text: the path is shown whole
+        strcat(msg, "\n\n");
+        strcat(msg, name);
+        SalamanderGeneral->ShowMessageBox(msg, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        free(msg);
+    }
+    else
+        SalamanderGeneral->ShowMessageBox(err, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+}
+
 // skip the unused remainder of the block to reach the next valid one
 int CArchive::SkipBlockPadding(const SCommonHeader& header)
 {
@@ -1149,31 +1191,19 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     }
     strcpy(header.Name, tmpName);
     free(tmpName);
-    // feature 306: a PAX path with a component no file system takes (over 255 UTF-16 units), or
-    // deeper than the panel listing holds (a folder part or a folder name over MAX_PATH - 5 bytes:
-    // the listing would fail as a whole), is refused - not listed, not extracted, never shortened
-    // or replaced by the ustar fallback name (the whole name of such a member crashed the listing,
-    // measured with a GNU long name); the rest of the archive stays usable
-    if (header.NameFromPax && !SalPaxNameFitsListingU8(header.Name, header.IsDir != FALSE, ListingPrefixLen))
+    // feature 306: a PAX path with a component no file system takes (over 255 UTF-16 units) is
+    // refused - not listed, not extracted, never shortened or replaced by the ustar fallback name
+    // (the whole name of such a member crashed the listing, measured with a GNU long name); while
+    // the panel listing is built, also a path deeper than it holds (a folder part or a folder name
+    // over MAX_PATH - 5 bytes: the listing would fail as a whole). Feature 308: only the listing
+    // applies that depth bound - an extraction takes every member a file system takes, and an
+    // extraction asked for a refused member reports it and fails (DoUnpackArchive, UnpackOneFile)
+    if (header.NameFromPax && !SalPaxNameUsableU8(header.Name, header.IsDir != FALSE, ListingPrefixLen, Listing != FALSE))
     {
         header.Ignored = TRUE;
-        if (ReportRefusedNames && !RefusedNameShown)
-        {
-            RefusedNameShown = TRUE; // once per operation: the rest of the archive stays usable
-            const char* err = SalamanderGeneral->GetErrorText(ERROR_FILENAME_EXCED_RANGE);
-            size_t msgSize = strlen(err) + 2 + strlen(header.Name) + 1;
-            char* msg = (char*)malloc(msgSize);
-            if (msg != NULL)
-            {
-                strcpy(msg, err); // sized for the whole text: the path is shown whole
-                strcat(msg, "\n\n");
-                strcat(msg, header.Name);
-                SalamanderGeneral->ShowMessageBox(msg, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
-                free(msg);
-            }
-            else
-                SalamanderGeneral->ShowMessageBox(err, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
-        }
+        header.NameRefused = TRUE;
+        if (Listing)
+            ReportRefusedName(header.Name);
     }
     // now analyze the name
     const char* ptr = header.Name + strlen(header.Name) - 1;

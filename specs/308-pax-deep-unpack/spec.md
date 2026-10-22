@@ -25,6 +25,7 @@ hidden desktop -> `probe/result_before.txt`: PASS 5 (END rows) / FAIL 5.
 ### Session 2026-10-22
 
 - Q: When a selected folder is copied out of an opened archive and holds a member with a too-long component, is the "(206)" box shown again although the listing showed one at opening? → A: Yes, once per operation, and the copy ends as failed - the box at opening named only the first refused member, and the copy must not look complete (autonomous run: conservative)
+- Q: Feature 306's probe row PAX-DEB expects Copy of the folder `data` to leave out a member the listing cannot show (251 bytes + the "data\" prefix); keep that, or extract it? → A: Extract it and update the row's expectation - the item's Expected says every extraction pass extracts every member a file system takes, and the listing bound applies only to the listing; "the 306 probe unchanged" is read as its listing behaviour (autonomous run: item)
 - Q: Does a refused member that the mask or selection does not include fail the extraction? → A: No - only a member the operation was asked to extract is reported and fails it (autonomous run: item - "a member that cannot be extracted ... makes the whole unpack fail")
 
 ## User Scenarios & Testing *(mandatory)*
@@ -77,21 +78,25 @@ under that folder is extracted, also those the listing could not show.
 **Why this priority**: the same silent omission as Story 1 on the other extraction route; no delete
 option there, so no loss of the archive.
 
-**Independent Test**: probe row COPY-DEEP.
+**Independent Test**: probe rows COPY-DEEP and COPY-TOOLONG.
 
 **Acceptance Scenarios**:
 
 1. **Given** the deep archive opened in a panel, **When** the user selects all and copies, **Then** the
    folder `a*29` arrives with `top.txt` and its 30 deep files, plus `ok.txt`.
+2. **Given** an opened archive whose listed folder `a*29` also holds `CJK(300).txt`, **When** the user
+   copies the folder, **Then** a "(206)" box with the path is shown during the copy and the rest of the
+   folder arrives.
 
 ### Edge Cases
 
 - A member refused for a too-long component that the selection or mask does not include: not reported
   during that extraction, does not fail it (it was not asked for).
-- Several refused members in one unpack: one box (the first path), as in feature 306; the unpack fails.
+- Several refused members in one unpack: one box per tar part (the first path; a `.deb` has two tar
+  parts), as in feature 306; the unpack fails.
 - The panel listing: unchanged - the listing bound (folder part / folder name over 255 bytes) still
   refuses those members alone when the archive is opened, with one "(206)" box; feature 306's probe
-  stays 28 / 0.
+  stays 28 / 0 (row PAX-DEB's Copy now also extracts its deep data member - SC-002).
 - Extract one file (F3 view, single-file copy) of a refused member: it is never listed, so it cannot be
   asked for; if it were, the operation fails instead of reporting success.
 - GNU long names (type `L`) and ustar names: not refused on `main` and not changed here.
@@ -126,9 +131,11 @@ option there, so no loss of the archive.
 ### Measurable Outcomes
 
 - **SC-001**: Probe `unp308_probe.ps1`: UNP-DEEP 34 of 34 files, UNP-DEEP-DEL 34 of 34 and the archive
-  deleted, UNP-TOOLONG-DEL `ok.txt` + "(206)" + the archive kept, UNP-DEB 5 of 5, COPY-DEEP 32 of 32;
+  deleted, UNP-TOOLONG-DEL `ok.txt` + "(206)" + the archive kept, UNP-DEB 5 of 5, COPY-DEEP 32 of 32, COPY-TOOLONG `top.txt` + `ok.txt` + "(206)" during the copy;
   every END row PASS (no crash, no stray window).
-- **SC-002**: Feature 306's probe `pax306_probe.ps1` unchanged: 28 PASS / 0 FAIL.
+- **SC-002**: Feature 306's probe `pax306_probe.ps1`: 28 PASS / 0 FAIL, with one expectation updated -
+  row PAX-DEB's Copy of the selected folder `data` now also extracts `data/a*125/b*125/f.txt` (FR-002;
+  the listing still leaves it out and shows "(206)" at opening).
 - **SC-003**: `saltests` and the encoding guard stay at 0 failures.
 
 ## Assumptions

@@ -28,6 +28,7 @@
       PAX-LIMIT    p*255/f.txt (folder part exactly 255 bytes)            -> that path, 'P'
       PAX-DEB      t.deb whose data.tar holds a.txt, a*125/b*125/f.txt (251 bytes + the listing's "data\"),
                    ok.txt (review 2)          -> "(206)" at open, tgt control/control, data/a.txt, data/ok.txt
+                   and (feature 308: Copy extracts what the listing cannot show) data/a*125/b*125/f.txt
     Every row first reads the panel's path: Copy runs only when the panel is inside the archive.
       GNU-TOOLONG  CJK(300).txt as a GNU long name - only with -Only GNU-TOOLONG: it crashes the program
                    (measured before feature 306; an Inbox defect outside it)      -> tgt empty, a message
@@ -108,7 +109,9 @@ function Run-Row([string]$name) {
         'PAX-PATHPART' { $want['a.txt'] = @('a', $null); $want['ok.txt'] = @('K', $null); $need206 = $true }
         'PAX-255DIR' { $want['ok.txt'] = @('K', $null); $need206 = $true }
         'PAX-LIMIT' { $want[('p' * 255) + '/f.txt'] = @('P', $null) }
-        'PAX-DEB' { $want['control/control'] = @("Package: x`n", $null); $want['data/a.txt'] = @('A', $null); $want['data/ok.txt'] = @('K', $null); $need206 = $true }
+        # feature 308: Copy of the selected folder "data" extracts its whole subtree - also the member the
+        # listing could not show (251 bytes + "data\" over its 255); only the listing refuses it
+        'PAX-DEB' { $want['control/control'] = @("Package: x`n", $null); $want['data/a.txt'] = @('A', $null); $want['data/' + ('a' * 125) + '/' + ('b' * 125) + '/f.txt'] = @('F', $null); $want['data/ok.txt'] = @('K', $null); $need206 = $true }
         default { $refuse = $true }
     }
     try {

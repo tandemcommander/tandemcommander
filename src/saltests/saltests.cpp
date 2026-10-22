@@ -18337,6 +18337,57 @@ static void TestPaxHeader306()
     }
 }
 
+// feature 308: the listing's bounds apply only while the panel listing is built; an extraction takes
+// every name a file system takes (a whole unpack left deep members out, succeeded and let "Delete
+// archive after unpacking" delete the archive)
+static void TestPaxNameUsable308()
+{
+    std::string deep; // ten folders of 29 letters: a folder part of 299 bytes (measured probe row)
+    for (int i = 0; i < 10; i++)
+        deep += std::string(29, (char)('a' + i)) + "\\";
+    std::string cjk90, cjk255, cjk300;
+    for (int i = 0; i < 300; i++)
+    {
+        if (i < 90)
+            cjk90 += "\xE4\xB8\x80";
+        if (i < 255)
+            cjk255 += "\xE4\xB8\x80";
+        cjk300 += "\xE4\xB8\x80";
+    }
+    const std::string deepFile = deep + "f01.txt";
+    // too deep for the listing, fine for a file system
+    CHECK(!SalPaxNameUsableU8(deepFile.c_str(), false, 0, true));
+    CHECK(SalPaxNameUsableU8(deepFile.c_str(), false, 0, false));
+    CHECK(!SalPaxNameUsableU8((cjk90 + "\\c.txt").c_str(), false, 0, true)); // folder part 270 bytes
+    CHECK(SalPaxNameUsableU8((cjk90 + "\\c.txt").c_str(), false, 0, false));
+    CHECK(!SalPaxNameUsableU8(("sub\\" + cjk255).c_str(), true, 0, true)); // a folder name of 765 bytes
+    CHECK(SalPaxNameUsableU8(("sub\\" + cjk255).c_str(), true, 0, false));
+    CHECK(!SalPaxNameUsableU8((cjk255 + "\\in.txt").c_str(), false, 0, true));
+    CHECK(SalPaxNameUsableU8((cjk255 + "\\in.txt").c_str(), false, 0, false));
+    // the .deb prefix counts only for the listing
+    const std::string deb251 = std::string(125, 'a') + "\\" + std::string(125, 'b') + "\\f.txt";
+    CHECK(!SalPaxNameUsableU8(deb251.c_str(), false, 5, true));
+    CHECK(SalPaxNameUsableU8(deb251.c_str(), false, 5, false));
+    // a component no file system takes: refused in every pass
+    CHECK(!SalPaxNameUsableU8((cjk300 + ".txt").c_str(), false, 0, true));
+    CHECK(!SalPaxNameUsableU8((cjk300 + ".txt").c_str(), false, 0, false));
+    CHECK(!SalPaxNameUsableU8((deep + std::string(256, 'x')).c_str(), false, 0, false));
+    CHECK(!SalPaxNameUsableU8(("a\\" + std::string(256, 'x') + "\\b.txt").c_str(), false, 0, false));
+    // 255 units: usable in both passes (a file at the root)
+    CHECK(SalPaxNameUsableU8(std::string(255, 'x').c_str(), false, 0, true));
+    CHECK(SalPaxNameUsableU8(std::string(255, 'x').c_str(), false, 0, false));
+    CHECK(SalPaxNameUsableU8((deep + std::string(255, 'x')).c_str(), false, 0, false));
+    // the listing pass is exactly feature 306's rule
+    const std::string samples[] = {deepFile, cjk90 + "\\c.txt", "a.txt", std::string(255, 'p') + "\\f.txt",
+                                   std::string(256, 'p') + "\\f.txt", cjk300};
+    int differ = 0;
+    for (const std::string& s : samples)
+        for (int dir = 0; dir < 2; dir++)
+            if (SalPaxNameUsableU8(s.c_str(), dir != 0, 0, true) != SalPaxNameFitsListingU8(s.c_str(), dir != 0, 0))
+                differ++;
+    CHECK(differ == 0);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -18483,6 +18534,7 @@ int main(int argc, char** argv)
     TestSubstTarget301();
     TestFtpCaseOnlyName303();
     TestPaxHeader306();
+    TestPaxNameUsable308();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -263,6 +263,7 @@ struct SCommonHeader
     CQuadWord MTime;
     DWORD MTimeFrac;  // feature 306: 100-ns part of a PAX mtime, added after the FILETIME conversion
     BOOL NameFromPax; // feature 306: Name is a PAX 'path' (a component no file system takes is refused)
+    BOOL NameRefused; // feature 308: Name cannot be used in this pass (also Ignored); an extraction asked for it fails
 };
 
 class CArchiveAbstract
@@ -289,10 +290,10 @@ private:
     CQuadWord Offset;
     DWORD Silent;
     // feature 306: values of the PAX global ('g') headers read so far in this pass (reset at the
-    // first header of every pass); refusing a PAX path no file system takes is reported once,
-    // and only by the listing and the whole-archive unpack (not by F3 / Copy of other members)
+    // first header of every pass); a refused PAX path is reported once per operation - by the
+    // listing, and by an extraction only for a member it was asked to extract (feature 308)
     SalPaxValues GlobalPax;
-    BOOL ReportRefusedNames;
+    BOOL Listing; // feature 308: this pass builds the panel listing (its bounds apply only then)
     BOOL RefusedNameShown;
     DWORD ListingPrefixLen; // feature 306: bytes the listing puts before every path (.deb: "data" + a separator)
 
@@ -302,6 +303,7 @@ private:
     BOOL GetStreamHeader(SCommonHeader& header);
 
     int ReadArchiveHeader(SCommonHeader& header, BOOL probe);
+    void ReportRefusedName(const char* name); // the system's "(206)" text with the whole name, once
     int WriteOutData(const SCommonHeader& header, const char* targetPath,
                      const char* nameInArchive, BOOL simulate, BOOL doProgress);
 

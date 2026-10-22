@@ -23,6 +23,8 @@
     Copy row: the left panel opens t.tar, the right shows tgt; Select All (842), Copy (727), boxes OK.
       COPY-DEEP        the deep tree: the listing shows a*29 (holding top.txt) and ok.txt; copying the
                        folder copies its whole subtree -> top.txt, DEEP/f01..f30.txt, ok.txt (32 files)
+      COPY-TOOLONG     a*29/top.txt, a*29/CJK(300).txt, ok.txt: the folder is copied -> top.txt, ok.txt and a
+                       "(206)" box DURING the copy (the one at opening is not enough)
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -140,7 +142,7 @@ function Unpack-Row([string]$Case, $Want, [switch]$Need206, [switch]$Delete, [sw
     finally { if ($id) { End-Row $Case $id $fatal $before } }
 }
 
-function Copy-Row([string]$Case, $Want) {
+function Copy-Row([string]$Case, $Want, [switch]$Need206) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     $arc = $d + '\t.tar'; $tgt = $d + '\tgt'
@@ -164,7 +166,10 @@ function Copy-Row([string]$Case, $Want) {
         $msgs = Msgs (Serve $id 60 @(1, 6))
         End-Row $Case $id $null $before; $id = 0
         $c = Check-Tgt $tgt $Want
-        Row $Case 'RUN' (V $c[0]) ('{0}; at open: {1}; windows: {2}' -f $c[1], (Tail $openMsgs 120), (Tail $msgs 200))
+        $ok = $c[0]
+        $copy206 = $msgs -match '\(206\)'
+        if ($Need206) { $ok = $ok -and $copy206 }
+        Row $Case 'RUN' (V $ok) ('{0}; "(206)" during the copy: {1}; at open: {2}; windows: {3}' -f $c[1], $copy206, (Tail $openMsgs 120), (Tail $msgs 200))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before } }
@@ -188,6 +193,7 @@ try {
     $deb = [ordered]@{ 'control/control' = "Package: x`n"; 'data/a.txt' = 'A'; ('data/' + ('a' * 125) + '/' + ('b' * 125) + '/f.txt') = 'F'; ('data/' + $Deep + '/d.txt') = 'D'; 'data/ok.txt' = 'K' }
     Unpack-Row 'UNP-DEB' $deb -Ext 'deb'
     Copy-Row 'COPY-DEEP' (Deep-Tree -Listed)
+    Copy-Row 'COPY-TOOLONG' ([ordered]@{ (('a' * 29) + '/top.txt') = 'T'; 'ok.txt' = 'K' }) -Need206
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

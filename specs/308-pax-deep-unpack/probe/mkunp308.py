@@ -67,6 +67,12 @@ def main():
             ar_member('data.tar.gz', gzip.compress(pax_tar(data), mtime=0))
     elif row.startswith('UNP-DEEP') or row.startswith('COPY-DEEP'):
         raw = pax_tar(deep_tree)
+    elif row.startswith('COPY-TOOLONG'):
+        def fill(tf):
+            add(tf, 'a' * 29 + '/top.txt', b'T')
+            add(tf, 'a' * 29 + '/' + cjk(300) + '.txt', b'X')   # inside the folder the user copies
+            add(tf, 'ok.txt', b'K')
+        raw = pax_tar(fill)
     elif row.startswith('UNP-TOOLONG'):
         def fill(tf):
             add(tf, cjk(300) + '.txt', b'X')      # 300 UTF-16 units: no file system takes it

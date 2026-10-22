@@ -1,0 +1,23 @@
+arc252_probe (feature 252) regress308
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 14:27; registry key existed True; ACP 1250
+
+TAR-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-CONTROL RUN    PASS        panel at: ...\Users\pavel\AppData\Local\Temp\tc252\TAR-CONTROL\t.tar\Docs
+TAR-HIDE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-HIDE   RUN    PASS        tgt: A.txt,z.txt; steps: content: A.txt=UPPER; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+TAR-GLOBAL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-GLOBAL RUN    PASS        tgt: a.txt; steps: store: ...Button id=2] Cancel | [Button id=9] Help / restore: ...Button id=2] Cancel | [Button id=9] Help / content: a.txt=lower; windows: [#32770 'Copy'] [Static id=209] Copy file "a.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+TAR-TREE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-TREE   RUN    PASS        tgt: D/x.txt,d/y.txt; steps: content: -; windows: [#32770 'Copy'] [Static id=209] Copy 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-CONTROL RUN    PASS        panel at: C:\Users\pavel\AppData\Local\Temp\tc252\7Z-CONTROL\t.7z\Docs
+7Z-HIDE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-HIDE    RUN    PASS        tgt: A.txt,z.txt; steps: content: A.txt=UPPER; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-GLOBAL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-GLOBAL  RUN    PASS        tgt: a.txt; steps: store: ...Button id=2] Cancel | [Button id=9] Help / restore: ...Button id=2] Cancel | [Button id=9] Help / content: a.txt=lower; windows: [#32770 'Copy'] [Static id=209] Copy file "a.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-TREE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-TREE    RUN    PASS        tgt: D/x.txt,d/y.txt; steps: content: -; windows: [#32770 'Copy'] [Static id=209] Copy 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

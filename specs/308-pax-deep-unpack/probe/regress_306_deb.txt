@@ -1,0 +1,10 @@
+pax306_probe (feature 306) regress308-deb-updated
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 14:31; registry key existed True; ACP 1250; python Python 3.14.6
+
+PAX-DEB    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-DEB    RUN    PASS        control/control: Package: x
+ t=1000000000; data/a.txt: A t=1000000000; data/aaa..[262 chars]..bb/f.txt: F t=1000000000; data/ok.txt: K t=1000000000; tgt: control/control, data/a.txt, data/aaa..[262 chars]..bb/f.txt, data/ok.txt; message (206) at open: True; at open: ...bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\f.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -376,3 +376,15 @@ inline bool SalPaxNameFitsListingU8(const char* name, bool isDir, size_t prefixL
         return false;
     return true;
 }
+
+// true when the member 'name' can be used in the current pass over the archive (feature 308): while
+// the panel listing is built ('listing'), the listing's bounds above apply; an extraction takes every
+// name a file system takes - depth is the file system's business (long paths), only a component over
+// 255 UTF-16 units is refused. The listing bound in an extraction left deep members out of a whole
+// unpack that still succeeded, and "Delete archive after unpacking" then deleted the archive.
+inline bool SalPaxNameUsableU8(const char* name, bool isDir, size_t prefixLen, bool listing)
+{
+    if (listing)
+        return SalPaxNameFitsListingU8(name, isDir, prefixLen);
+    return !SalPaxPathHasTooLongComponentU8(name);
+}

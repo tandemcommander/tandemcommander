@@ -1,0 +1,13 @@
+unp308_probe (feature 308) negctl-B-refusal-ignored-C-no-report-in-extraction
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 14:33; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-DEEP-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DEEP-DEL RUN    PASS        tgt: 34 of 34 files; archive kept: False (want False); "(206)" shown: False; windows: no window
+UNP-TOOLONG-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-TOOLONG-DEL RUN    FAIL        tgt: 1 of 1 files; archive kept: False (want True); "(206)" shown: False; windows: no window
+COPY-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-TOOLONG RUN    FAIL        tgt: 2 of 2 files; "(206)" during the copy: False; at open: ...B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy 1 file and 1 directory from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 4, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
