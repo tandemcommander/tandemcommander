@@ -1,0 +1,16 @@
+pax306_probe (feature 306) negctl-listing-limits-disabled
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 12:25; registry key existed True; ACP 1250; python Python 3.14.6
+
+PAX-PATHPART END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-PATHPART RUN    FAIL        the archive did not open; panel at: C:\Users\pavel\AppData\Local\Temp; at open: [#32770 'TAR Plugin Error'] [Static id=2477] Internal error: file data structure corrupted. | [Button id=1] OK
+PAX-255DIR END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-255DIR RUN    FAIL        the archive did not open; panel at: C:\Users\pavel\AppData\Local\Temp; at open: [#32770 'TAR Plugin Error'] [Static id=2477] Internal error: file data structure corrupted. | [Button id=1] OK
+PAX-LIMIT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-LIMIT  RUN    PASS        pppppppp..[261 chars]..pp/f.txt: P t=1000000000; tgt: pppppppp..[261 chars]..pp/f.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy directory "pppppppppppppppppppppp..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-DEB    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-DEB    RUN    FAIL        control/control: Package: x
+ t=1000000000; data/a.txt: A t=1000000000; data/ok.txt: K t=1000000000; tgt: control/control, data/a.txt, data/aaa..[262 chars]..bb/f.txt, data/ok.txt; message (206) at open: False; at open: [#32770 'TAR Plugin Error'] [Static id=2477] Internal error: file data structure corrupted. | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 5, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

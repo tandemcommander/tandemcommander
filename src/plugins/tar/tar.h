@@ -294,6 +294,7 @@ private:
     SalPaxValues GlobalPax;
     BOOL ReportRefusedNames;
     BOOL RefusedNameShown;
+    DWORD ListingPrefixLen; // feature 306: bytes the listing puts before every path (.deb: "data" + a separator)
 
     BOOL ListStream(CSalamanderDirectoryAbstract* dir);
     BOOL UnpackStream(const char* targetPath, BOOL doProgress,
@@ -325,6 +326,7 @@ public:
     ~CArchive();
 
     BOOL IsOk() { return Ok; }
+    void SetListingPrefixLen(DWORD len) { ListingPrefixLen = len; }
 
     BOOL ListArchive(const char* prefix, CSalamanderDirectoryAbstract* dir);
     BOOL UnpackOneFile(const char* nameInArchive, const CFileData* fileData,

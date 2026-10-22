@@ -140,5 +140,54 @@ end blocks; whole-archive Unpack (851) with two refused members - one (206) box,
 - NOTE 5 (fixed in the probe): Copy ran even when the archive had not opened (the panel elsewhere);
   every row now reads the panel's path first and copies only from inside the archive.
 
-After the fix: build `BUILD SUCCEEDED`; saltests `27142 checks, 0 failed`; probe
-`probe/result_after.txt` (label after-review1) **PASS 26, FAIL 0**.
+After the fix: build `BUILD SUCCEEDED`; saltests `27142 checks, 0 failed`; probe (label
+after-review1) **PASS 26, FAIL 0**.
+
+### Interruption
+
+The session ended while review 2 ran (the maintainer had the installed program open 12:07-12:09, so
+probes refused - "tandemcommander.exe already runs" - and the listing negative control waited).
+On continuing: branch `306-tar-pax-headers`, lock still held by this item, no probe backup left in
+`%TEMP%` (review 2's runs had restored the registry, identical SHA-256); review 2 resumed.
+
+### Review 2 (independent agent, refute-first; previous findings given)
+
+No MUST. Reproduced: official probe 26 / 0, saltests 27142 / 0; the MUST-1 rule matches
+`AddFile` / `AddDir` for `ListArchive(NULL, ...)` and runs on the decoded, normalised name; own rows
+B-FOLDLONG (folder part 250 bytes + a 255-letter CJK name, 1016 bytes) and B-FOLDLONG2 (1021 bytes)
+list and extract whole - the GNU-TOOLONG crash is not about the total length, the 255-unit
+component refusal is enough.
+
+- **SHOULD-1 (fixed)**: a .deb lists its tar parts under `control\` (8 bytes) and `data\` (5)
+  (`CDEBArchive::ListArchive`, `src/plugins/tar/deb/deb.cpp`), which the check did not count: a
+  data.tar member with a folder part of 251-255 bytes passed it, `AddFile` refused it, and that part's
+  listing stopped there ("Internal error: file data structure corrupted.", a partial `data` folder;
+  0.1.10 listed the 100-byte fallback). Fix: `SalPaxNameFitsListingU8(name, isDir, prefixLen)`;
+  `CArchive::ListingPrefixLen`, set by `CDEBArchive`'s constructor for both parts
+  (`SetListingPrefixLen`), so the listing and every extraction pass refuse the same members.
+  saltests +7; probe row PAX-DEB (review 2's B-DEB).
+- NOTE 1 (fixed): `mtime=910692730085.9` (the last second with a fraction over 0.4775807) passed
+  2^63 - 1 after the FILETIME conversion - `SAL_PAX_MTIME_MAX_FRAC`; saltests check the largest
+  accepted time converts to exactly 0x7FFFFFFFFFFFFFFF.
+- NOTE 2 (fixed): the message boxes of the new PAX code took code-page `LoadStr` texts while
+  `ShowMessageBox` is a UTF-8 sink - now `LoadStrU8` (standing rule; the old code of the file keeps
+  its `LoadStr`).
+- NOTE 3 (accepted, FR-007): a malformed PAX record refuses the whole archive; 0.1.10 opened it under
+  the fallback names.
+- NOTE 4: the regression probes re-run on the final build (below).
+- NOTE 5: CHANGELOG / FEATURE-HISTORY drafts were in the working tree; the CHANGELOG text holds for
+  .deb too after SHOULD-1.
+
+Negative control 3, the two listing checks disabled (`prefixLen + folderPart` and the folder-name
+check), `-Only PAX-PATHPART,PAX-255DIR,PAX-LIMIT,PAX-DEB` -> `probe/result_negctl_listing.txt`:
+PASS 5, FAIL 3 - PATHPART and 255DIR do not open ("Internal error: file data structure
+corrupted.", Copy not attempted - the panel check), PAX-DEB lists a partial `data`; PAX-LIMIT (the
+boundary) passes.
+
+## Final checks (after review 2, source restored, rebuilt)
+
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`; FR-010 diff empty.
+- `build.cmd` -> `BUILD SUCCEEDED`; `saltests.exe` -> `saltests: 27152 checks, 0 failed`.
+- Probe `pax306_probe.ps1 -Label after-review2` -> `probe/result_after.txt`: **PASS 28, FAIL 0**.
+- Regression probes: 252 16 / 0, 273 12 / 0, 275 17 / 0 (`probe/regress_*.txt`).
+- Every probe run restored the registry (SHA-256 identical).

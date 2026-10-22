@@ -26,3 +26,4 @@ global SET → global; else none.
 | `GlobalPax` | values of the `g` headers read so far in this pass |
 | `ReportRefusedNames` | TRUE in `ListArchive` and `UnpackWholeArchive` |
 | `RefusedNameShown` | the FR-006 message was shown in this object's life |
+| `ListingPrefixLen` | (review 2) bytes the listing puts before every path - 0, or `control\` / `data\` set by `CDEBArchive` |

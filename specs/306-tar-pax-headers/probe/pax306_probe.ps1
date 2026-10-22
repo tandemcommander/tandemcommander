@@ -26,6 +26,8 @@
                    folder parts over the listing's 255 bytes (review 1)  -> "(206)" at open, tgt a.txt + ok.txt
       PAX-255DIR   folder CJK(255) (765 bytes), CJK(255)/in.txt, ok.txt   -> "(206)" at open, tgt ok.txt
       PAX-LIMIT    p*255/f.txt (folder part exactly 255 bytes)            -> that path, 'P'
+      PAX-DEB      t.deb whose data.tar holds a.txt, a*125/b*125/f.txt (251 bytes + the listing's "data\"),
+                   ok.txt (review 2)          -> "(206)" at open, tgt control/control, data/a.txt, data/ok.txt
     Every row first reads the panel's path: Copy runs only when the panel is inside the archive.
       GNU-TOOLONG  CJK(300).txt as a GNU long name - only with -Only GNU-TOOLONG: it crashes the program
                    (measured before feature 306; an Inbox defect outside it)      -> tgt empty, a message
@@ -88,7 +90,7 @@ function Esc-Names($files) { return (@($files | ForEach-Object { Esc (Short $_) 
 function Run-Row([string]$name) {
     if (-not (Want $name)) { return }
     $d = $Root + '\' + $name
-    $tgt = $d + '\tgt'; $arc = $d + '\t.tar'
+    $tgt = $d + '\tgt'; $arc = $d + $(if ($name -eq 'PAX-DEB') { '\t.deb' } else { '\t.tar' })
     $longPath = ('d' * 100) + '/' + ('e' * 100) + '/' + ('f' * 96) + '.txt'
     # expected: relative path -> @(content, unix time or $null)
     $want = [ordered]@{}; $refuse = $false; $need206 = $false
@@ -106,6 +108,7 @@ function Run-Row([string]$name) {
         'PAX-PATHPART' { $want['a.txt'] = @('a', $null); $want['ok.txt'] = @('K', $null); $need206 = $true }
         'PAX-255DIR' { $want['ok.txt'] = @('K', $null); $need206 = $true }
         'PAX-LIMIT' { $want[('p' * 255) + '/f.txt'] = @('P', $null) }
+        'PAX-DEB' { $want['control/control'] = @("Package: x`n", $null); $want['data/a.txt'] = @('A', $null); $want['data/ok.txt'] = @('K', $null); $need206 = $true }
         default { $refuse = $true }
     }
     try {
@@ -172,7 +175,7 @@ try {
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; ACP {2}; python {3}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [Drv098f]::GetACP(), ((& $Python --version 2>&1) -join ' '))
     Out ''
-    $rowNames = @('PAX-LONG', 'PAX-CJK', 'PAX-TWINS', 'PAX-DEEP', 'PAX-MTIME', 'PAX-SIZE', 'PAX-GLOBAL', 'GIT-COMMENT', 'GNU-LONG', 'PAX-TOOLONG', 'PAX-PATHPART', 'PAX-255DIR', 'PAX-LIMIT')
+    $rowNames = @('PAX-LONG', 'PAX-CJK', 'PAX-TWINS', 'PAX-DEEP', 'PAX-MTIME', 'PAX-SIZE', 'PAX-GLOBAL', 'GIT-COMMENT', 'GNU-LONG', 'PAX-TOOLONG', 'PAX-PATHPART', 'PAX-255DIR', 'PAX-LIMIT', 'PAX-DEB')
     # GNU-TOOLONG crashes the program (the Inbox defect, outside feature 306): only with -Only GNU-TOOLONG
     if ($Only -and @($Only | Where-Object { 'GNU-TOOLONG' -like ($_ + '*') }).Count) { $rowNames += 'GNU-TOOLONG' }
     foreach ($n in $rowNames) { Run-Row $n }

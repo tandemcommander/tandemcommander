@@ -182,6 +182,7 @@ CArchive::CArchive(const char* fileName, CSalamanderForOperationsAbstract* salam
     SalPaxInit(&GlobalPax);
     ReportRefusedNames = FALSE;
     RefusedNameShown = FALSE;
+    ListingPrefixLen = 0;
     SalamanderIf = salamander;
     if (fileName == NULL || salamander == NULL)
     {
@@ -1153,7 +1154,7 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     // the listing would fail as a whole), is refused - not listed, not extracted, never shortened
     // or replaced by the ustar fallback name (the whole name of such a member crashed the listing,
     // measured with a GNU long name); the rest of the archive stays usable
-    if (header.NameFromPax && !SalPaxNameFitsListingU8(header.Name, header.IsDir != FALSE))
+    if (header.NameFromPax && !SalPaxNameFitsListingU8(header.Name, header.IsDir != FALSE, ListingPrefixLen))
     {
         header.Ignored = TRUE;
         if (ReportRefusedNames && !RefusedNameShown)
@@ -1548,7 +1549,7 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
             // members under the fallback names, or misread the data after a wrong size
             if (header.FileInfo.Size > CQuadWord(SAL_PAX_MAX_HEADER_BYTES, 0))
             {
-                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_HEADER), LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_HEADER), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
                 return TAR_ERROR;
             }
             BOOL global = tarHeader->Header.typeflag == XGLTYPE; // tarHeader is invalid after GetBlock
@@ -1556,7 +1557,7 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
             char* data = (char*)malloc(dataSize + 1);
             if (data == NULL)
             {
-                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_MEMORY), LoadStr(IDS_TARERR_TITLE),
+                SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
                                                   MSGBOX_ERROR);
                 return TAR_ERROR;
             }
@@ -1569,7 +1570,7 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
                 {
                     free(data);
                     SalamanderGeneral->ShowMessageBox(LoadErr(Stream->GetErrorCode(), Stream->GetLastErr()),
-                                                      LoadStr(IDS_GZERR_TITLE), MSGBOX_ERROR);
+                                                      LoadStrU8(IDS_GZERR_TITLE), MSGBOX_ERROR);
                     return TAR_ERROR;
                 }
                 Offset += CQuadWord(BLOCKSIZE, 0);
@@ -1582,8 +1583,8 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
             free(data);
             if (paxRet != SAL_PAX_OK)
             {
-                SalamanderGeneral->ShowMessageBox(LoadStr(paxRet == SAL_PAX_NOMEM ? IDS_TARERR_MEMORY : IDS_TARERR_HEADER),
-                                                  LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                SalamanderGeneral->ShowMessageBox(LoadStrU8(paxRet == SAL_PAX_NOMEM ? IDS_TARERR_MEMORY : IDS_TARERR_HEADER),
+                                                  LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
                 return TAR_ERROR;
             }
             // and read the next block for further processing (as after a GNU long name)
@@ -1591,13 +1592,13 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
             if (tarHeader == NULL)
             {
                 SalamanderGeneral->ShowMessageBox(LoadErr(Stream->GetErrorCode(), Stream->GetLastErr()),
-                                                  LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                                                  LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
                 return TAR_ERROR;
             }
             Offset += CQuadWord(BLOCKSIZE, 0);
             if (!IsTarHeader(tarHeader->RawBlock, header.Finished, header.Format))
             {
-                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_HEADER), LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_HEADER), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
                 return TAR_ERROR;
             }
             // and loop again
@@ -1678,7 +1679,7 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
                 char* name = (char*)malloc(strlen(paxPath) + 1); // header.Name is malloc'd / free'd
                 if (name == NULL)
                 {
-                    SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_MEMORY), LoadStr(IDS_TARERR_TITLE),
+                    SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
                                                       MSGBOX_ERROR);
                     return TAR_ERROR;
                 }

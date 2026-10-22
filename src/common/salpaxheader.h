@@ -53,6 +53,8 @@
 // mtime range a FILETIME holds: 1601-01-01 .. the largest second whose 100-ns count fits 63 bits
 #define SAL_PAX_MTIME_MIN (-11644473600LL)
 #define SAL_PAX_MTIME_MAX (910692730085LL)
+// the 100-ns units that still fit in that last second: 2^63 - 1 - (MAX + 11644473600) * 10^7 (review 2)
+#define SAL_PAX_MTIME_MAX_FRAC 4775807u
 
 struct SalPaxValues
 {
@@ -212,7 +214,7 @@ inline int SalPaxParseTime(const char* s, size_t n, __int64* sec, unsigned int* 
             f = 10000000 - f;
         }
     }
-    if (v < SAL_PAX_MTIME_MIN || v > SAL_PAX_MTIME_MAX)
+    if (v < SAL_PAX_MTIME_MIN || v > SAL_PAX_MTIME_MAX || (v == SAL_PAX_MTIME_MAX && f > SAL_PAX_MTIME_MAX_FRAC))
         return 0;
     *sec = v;
     *frac = f;
@@ -356,8 +358,10 @@ inline bool SalPaxPathHasTooLongComponentU8(const char* path)
 #define SAL_PAX_LISTING_MAX_BYTES (MAX_PATH - 5)
 
 // true when the listing can hold the member 'name' (components separated by '\\' or '/', no leading
-// or trailing separator; 'isDir' = a folder member) and no component is too long for a file system
-inline bool SalPaxNameFitsListingU8(const char* name, bool isDir)
+// or trailing separator; 'isDir' = a folder member) and no component is too long for a file system;
+// 'prefixLen' = bytes the listing puts before every member's folder part (review 2: a .deb lists
+// its two tar parts under "control\" and "data\")
+inline bool SalPaxNameFitsListingU8(const char* name, bool isDir, size_t prefixLen = 0)
 {
     if (SalPaxPathHasTooLongComponentU8(name))
         return false;
@@ -366,7 +370,7 @@ inline bool SalPaxNameFitsListingU8(const char* name, bool isDir)
         if (*s == '\\' || *s == '/')
             last = s;
     size_t folderPart = last != NULL ? (size_t)(last - name) : 0;
-    if (folderPart > SAL_PAX_LISTING_MAX_BYTES)
+    if (prefixLen + folderPart > SAL_PAX_LISTING_MAX_BYTES)
         return false;
     if (isDir && strlen(last != NULL ? last + 1 : name) > SAL_PAX_LISTING_MAX_BYTES)
         return false;

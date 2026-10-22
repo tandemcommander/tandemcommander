@@ -1,5 +1,6 @@
 # Feature 306 probe fixture: writes one tar archive per probe row with Python's tarfile.
 # Usage: python -I mkpax306.py <ROW> <out.tar>. Pure ASCII; CJK names are built with chr().
+import gzip
 import io
 import sys
 import tarfile
@@ -33,8 +34,36 @@ def patch_size_zero(raw, name):
     raise SystemExit('member not found: ' + name)
 
 
+def ar_member(name, data):
+    h = name.encode('ascii').ljust(16) + b'1000000000'.ljust(12) + b'0'.ljust(6) + b'0'.ljust(6) + \
+        b'100644'.ljust(8) + str(len(data)).encode().ljust(10) + b'`\n'
+    return h + data + (b'\n' if len(data) % 2 else b'')
+
+
+def pax_tar(entries):
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode='w', format=tarfile.PAX_FORMAT) as tf:
+        for name, data in entries:
+            add(tf, name, data)
+    return buf.getvalue()
+
+
+def make_deb(out):
+    # review 2 of feature 306 (fixture B-DEB): a .deb lists data.tar under "data\" - a folder part of
+    # 251 bytes fits a plain tar's listing but not with the 5-byte prefix
+    ctrl = gzip.compress(pax_tar([('control', b'Package: x\n')]), mtime=0)
+    data = gzip.compress(pax_tar([('a.txt', b'A'), ('a' * 125 + '/' + 'b' * 125 + '/f.txt', b'F'), ('ok.txt', b'K')]),
+                         mtime=0)
+    with open(out, 'wb') as f:
+        f.write(b'!<arch>\n' + ar_member('debian-binary', b'2.0\n') + ar_member('control.tar.gz', ctrl) +
+                ar_member('data.tar.gz', data))
+
+
 def main():
     row, out = sys.argv[1], sys.argv[2]
+    if row == 'PAX-DEB':
+        make_deb(out)
+        return
     buf = io.BytesIO()
     fmt = tarfile.GNU_FORMAT if row.startswith('GNU') else tarfile.PAX_FORMAT
     gpax = None

@@ -11,7 +11,7 @@ updated: 2026-10-22
 verified: -
 effort: M
 feature: -
-related: [tar-plug-in-ignores-pax-extended-headers]
+related: []
 depends-on: []
 reason: -
 ---
@@ -39,3 +39,4 @@ Severity from the band "crashes in an unusual scenario". The probe row is exclud
 ## Log
 
 - 2026-10-22 — created (source measure:306)
+- 2026-10-22 — related item tar-plug-in-ignores-pax-extended-headers done in feature 306

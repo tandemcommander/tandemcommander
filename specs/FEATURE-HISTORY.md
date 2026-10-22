@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4088,3 +4088,27 @@ a few early ones are out of sequence).
   27,046 / 0 (negative controls: rule returning the answer 84 failed, raw-path refusal off 13,
   pass-through off 3); one refute-first review (no MUST; SHOULD 1 fixed, SHOULD 2 accepted, NOTEs
   recorded).
+- 306-tar-pax-headers: TAR archives written by Python's `tarfile`, GNU tar `--format=posix` or
+  Windows `tar.exe` listed and extracted the ustar fallback of long or non-ASCII names - a 302-byte
+  path ended in a folder cut at 100 bytes, CJK names (100 `?`) failed with "(123) invalid name",
+  twins collided, a PAX `size` (8 GiB+) was ignored and the data read as a header, PAX / global
+  times ignored - because `ReadTarHeader` skipped `x` / `g` headers - now their records are parsed
+  (`src/common/salpaxheader.h`, header-only, saltests): `path`, `size`, `mtime` (100 ns), the
+  member's own values over the global ones (reset at the first header of every pass), an empty
+  value cancels; a malformed or 1 MiB+ header refuses the archive (`IDS_TARERR_HEADER`), a bad mtime
+  is ignored. A PAX name the listing cannot hold is refused alone (`SalPaxNameFitsListingU8`: a
+  component over 255 UTF-16 units, a folder part or folder name over `MAX_PATH - 5` bytes counting
+  the .deb's `control\` / `data\` prefix) with the system's "(206)" text and the path, once per
+  listing / whole-archive unpack. Traps: measured first - a GNU long name with a 300-letter component
+  crashes the core on opening ("Stack memory corruption" under `CommonRefresh`; the same with the
+  PAX refusal disabled), so the refusal is required; `AddFile` / `AddDir` failing ends the WHOLE
+  listing (review 1 MUST - deep PAX paths made archives unopenable that 0.1.10 opened); the .deb
+  prefix (review 2); `ShowMessageBox` is a UTF-8 sink (`LoadStrU8`); trap 123 twice in Bash
+  here-documents; a probe variable `$rows` replaced the library's `$Rows`. Limits: only the first
+  refused member is named; an archive cut right after an extended header no longer opens; links and
+  GNU sparse files unchanged; Inbox `opening-a-tar-whose-member-name-has-a-300-letter-component`
+  (the GNU crash and the GNU deep-path listing failure). From backlog item
+  `tar-plug-in-ignores-pax-extended-headers`. Probe `pax306_probe.ps1` 13 / 9 -> 28 / 0 (negative
+  controls: PAX branch off 12 / 8, refusal off - crash, listing checks off 5 / 3); 252, 273, 275
+  probes unchanged; saltests 27,152 / 0; two refute-first reviews (review 1 one MUST + one SHOULD,
+  fixed; review 2 one SHOULD and two NOTEs fixed).

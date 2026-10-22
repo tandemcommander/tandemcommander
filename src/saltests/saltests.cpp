@@ -18236,7 +18236,12 @@ static void TestPaxHeader306()
         CHECK(PaxTime306("-1", &sec, &frac) == 1 && sec == -1 && frac == 0);
         CHECK(PaxTime306("-11644473600", &sec, &frac) == 1 && sec == SAL_PAX_MTIME_MIN);
         CHECK(PaxTime306("-11644473600.5", &sec, &frac) == 0); // before 1601
-        CHECK(PaxTime306("910692730085.9999999", &sec, &frac) == 1 && sec == SAL_PAX_MTIME_MAX && frac == 9999999);
+        CHECK(PaxTime306("910692730085.4775807", &sec, &frac) == 1 && sec == SAL_PAX_MTIME_MAX && frac == 4775807);
+        CHECK(PaxTime306("910692730085.4775808", &sec, &frac) == 0); // past 2^63 - 1 as a FILETIME (review 2)
+        CHECK(PaxTime306("910692730085.9", &sec, &frac) == 0);
+        // the largest accepted time converts to exactly the largest FILETIME
+        CHECK(PaxTime306("910692730085.4775807", &sec, &frac) == 1 &&
+              (unsigned __int64)(sec + 11644473600LL) * 10000000ULL + frac == 0x7FFFFFFFFFFFFFFFULL);
         CHECK(PaxTime306("910692730086", &sec, &frac) == 0);
         CHECK(PaxTime306("1234567890123456789012", &sec, &frac) == 0 && sec == 12345 && frac == 777); // untouched
         CHECK(PaxTime306("", &sec, &frac) == -1);
@@ -18320,6 +18325,15 @@ static void TestPaxHeader306()
         CHECK(!SalPaxNameFitsListingU8(c256.c_str(), false)); // a component over 255 units
         CHECK(SalPaxNameFitsListingU8("a.txt", false));
         CHECK(SalPaxNameFitsListingU8("d", true));
+        // a .deb lists its parts under "data\" (5 bytes) and "control\" (8): the prefix counts (review 2)
+        std::string p250(250, 'p'), p251(251, 'p'), p247(247, 'p'), p248(248, 'p');
+        CHECK(SalPaxNameFitsListingU8((p250 + "\\f.txt").c_str(), false, 5));
+        CHECK(!SalPaxNameFitsListingU8((p251 + "\\f.txt").c_str(), false, 5));
+        CHECK(SalPaxNameFitsListingU8((p247 + "\\f.txt").c_str(), false, 8));
+        CHECK(!SalPaxNameFitsListingU8((p248 + "\\f.txt").c_str(), false, 8));
+        CHECK(!SalPaxNameFitsListingU8((std::string(125, 'a') + "/" + std::string(125, 'b') + "/f.txt").c_str(), false, 5));
+        CHECK(SalPaxNameFitsListingU8("f.txt", false, 8));     // no folder part: the path is the prefix alone
+        CHECK(SalPaxNameFitsListingU8(p255.c_str(), true, 8)); // a folder's own name: the prefix is not part of it
     }
 }
 

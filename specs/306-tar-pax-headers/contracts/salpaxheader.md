@@ -10,4 +10,6 @@ Header-only, no Windows types; for the tar plug-in and `saltests`. Not part of t
 | `SalPaxParseTime(s, n, &sec, &frac)` | 1 = valid and representable; 0 = valid syntax, outside SAL_PAX_MTIME_MIN..MAX; -1 = malformed. Syntax `[-]digits[.digits]`, at most 18 integer digits |
 | `SalPaxApply(data, size, v)` | applies every record to `v`: `path`, `size`, `mtime` (empty value → DELETED); other keywords ignored. SAL_PAX_OK / SAL_PAX_BAD (malformed record, invalid `size`, NUL inside `path`) / SAL_PAX_NOMEM. An invalid or out-of-range `mtime` leaves `v`'s time unchanged |
 | `SalPaxEffectivePath(g, x)` / `SalPaxEffectiveSize(g, x, &out)` / `SalPaxEffectiveMTime(g, x, &sec, &frac)` | the precedence of data-model.md |
+| `SalPaxNameFitsListingU8(name, isDir, prefixLen = 0)` | (review 1 / 2) false when a component is too long (below), when `prefixLen` + the folder part exceeds 255 bytes, or when a folder member's own name exceeds 255 bytes - the limits of `CSalamanderDirectory::AddFile` / `AddDir` |
+| `SalPaxParseTime` upper bound | (review 2) at `SAL_PAX_MTIME_MAX` only fractions up to `SAL_PAX_MTIME_MAX_FRAC` (4775807) are representable |
 | `SalPaxPathHasTooLongComponentU8(path)` | true when a component between `/` or `\` separators has more than 255 UTF-16 units (UTF-8: a 4-byte sequence = 2 units; the rule of `SalNameUtf16UnitsU8`) |

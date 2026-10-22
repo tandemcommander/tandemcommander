@@ -104,6 +104,8 @@ CDEBArchive::CDEBArchive(const char* fileName, CSalamanderForOperationsAbstract*
         controlArchive = NULL;
         return;
     }
+    // feature 306: its members are listed under "control\" - counted by the PAX listing check
+    controlArchive->SetListingPrefixLen(sizeof(DEB_STREAM_NAME_CONTROL "\\") - 1);
     // We are happy if at least one subarchive was recognized
     bOK = TRUE;
 
@@ -134,6 +136,8 @@ CDEBArchive::CDEBArchive(const char* fileName, CSalamanderForOperationsAbstract*
         delete dataArchive;
         dataArchive = NULL;
     }
+    else
+        dataArchive->SetListingPrefixLen(sizeof(DEB_STREAM_NAME_DATA "\\") - 1); // listed under "data\"
     CloseHandle(file);
 }
 
