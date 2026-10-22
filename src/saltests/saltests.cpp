@@ -13720,6 +13720,29 @@ namespace Legacy244
     }
 } // namespace Legacy244
 
+// does the folding of feature 313 touch 'u8' - a mark of the folded blocks in the canonical
+// decomposition of one of its characters, or a letter of the table? (independent of
+// salquickfilter.h: whole-text decomposition, plain code point lists)
+static BOOL Fold313Touches(const char* u8)
+{
+    static WCHAR w[2048], d[8192];
+    int n = MultiByteToWideChar(CP_UTF8, 0, u8, -1, w, _countof(w));
+    if (n <= 0)
+        return FALSE;
+    int m = NormalizeString(NormalizationD, w, -1, d, _countof(d));
+    const WCHAR* t = m > 0 ? d : w;
+    static const WCHAR table[] = {0x0141, 0x0142, 0x00D8, 0x00F8, 0x0110, 0x0111, 0x00DF, 0x1E9E,
+                                  0x00C6, 0x00E6, 0x0152, 0x0153, 0x0131, 0};
+    for (; *t != 0; t++)
+    {
+        WCHAR c = *t;
+        if (c >= 0x0300 && c <= 0x036F || c >= 0x1AB0 && c <= 0x1AFF || c >= 0x1DC0 && c <= 0x1DFF ||
+            c >= 0x20D0 && c <= 0x20FF || c >= 0xFE20 && c <= 0xFE2F || wcschr(table, c) != NULL)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 static void TestQuickFilter244()
 {
     // names (hasExtension as the panel computes it: a directory has one when its name holds a dot)
@@ -13812,7 +13835,7 @@ static void TestQuickFilter244()
         "a//c",
         "/x",
     };
-    int m1 = 0, m1Diff = 0, m3 = 0, m3Diff = 0;
+    int m1 = 0, m1Diff = 0, m3 = 0, m3Diff = 0, m3Folded = 0;
     for (int n = 0; n < (int)(sizeof(names) / sizeof(names[0])); n++)
     {
         for (int t = 0; t < (int)(sizeof(typed) / sizeof(typed[0])); t++)
@@ -13863,14 +13886,19 @@ static void TestQuickFilter244()
                 }
             }
             m3++;
-            // the one documented difference: the 0.1.10 comparison's linguistic "ss" = "sharp s"
-            // belongs to the old rule; the new mode compares canonical decomposition + case only
-            if (strstr(names[n].Name, "\xC3\x9F") != NULL && strcmp(typed[t], "strasse") == 0)
+            // feature 313: the new mode ignores diacritics, the 0.1.10 rule does not. Where the folding
+            // touches the name or the typed text, every 0.1.10 match is still found (a prefix one as
+            // a prefix); the exact answers of such pairs are the 313 cases below
+            if (Fold313Touches(names[n].Name) || Fold313Touches(typed[t]))
             {
-                CHECK(expKind == SALQF_PREFIX && r.Kind == SALQF_NONE);
-                continue;
+                m3Folded++;
+                if (expKind != SALQF_NONE && (!got || expKind == SALQF_PREFIX && r.Kind != SALQF_PREFIX))
+                {
+                    m3Diff++;
+                    printf("FAIL M3 (folded) name #%d typed #%d: expected %d/%d..%d, got %d/%d..%d\n", n, t, expKind, expStart, expEnd, r.Kind, r.MatchStart, r.MatchEnd);
+                }
             }
-            if (r.Kind != expKind || got != (expKind != SALQF_NONE) || expKind != SALQF_NONE && (r.MatchStart != expStart || r.MatchEnd != expEnd))
+            else if (r.Kind != expKind || got != (expKind != SALQF_NONE) || expKind != SALQF_NONE && (r.MatchStart != expStart || r.MatchEnd != expEnd))
             {
                 m3Diff++;
                 printf("FAIL M3 name #%d typed #%d: expected %d/%d..%d, got %d/%d..%d\n", n, t, expKind, expStart, expEnd, r.Kind, r.MatchStart, r.MatchEnd);
@@ -13885,7 +13913,7 @@ static void TestQuickFilter244()
     }
     CHECK(m1Diff == 0);
     CHECK(m3Diff == 0);
-    printf("TestQuickFilter244: %d prefix cases against the 0.1.10 matcher, %d differ; %d substring cases, %d differ\n", m1, m1Diff, m3, m3Diff);
+    printf("TestQuickFilter244: %d prefix cases against the 0.1.10 matcher, %d differ; %d substring cases (%d touched by the 313 folding), %d differ\n", m1, m1Diff, m3, m3Folded, m3Diff);
 
     // M3/M4/M5 by example
     struct Ex
@@ -13950,9 +13978,9 @@ static void TestQuickFilter244()
     // keys (review 244): character boundaries, decomposition, case, an invalid byte, many names
     {
         CSalQFMatch r;
-        // a base letter of a decomposed character matches only a whole character
-        CHECK(!SalQFMatchName("x\xC3\xBA", FALSE, "u", TRUE, r));                                           // x + NFC u-acute
-        CHECK(SalQFMatchName("xu\xCC\x81", FALSE, "u", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 2);    // NFD: u is a character there
+        // a match covers whole characters; feature 313: the accent is ignored and belongs to its letter
+        CHECK(SalQFMatchName("x\xC3\xBA", FALSE, "u", TRUE, r) && r.Kind == SALQF_SUBSTRING && r.MatchStart == 1 && r.MatchEnd == 3); // x + NFC u-acute
+        CHECK(SalQFMatchName("xu\xCC\x81", FALSE, "u", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 4);    // NFD: the mark is inside the match
         CHECK(SalQFMatchName("xu\xCC\x81y", FALSE, "\xC3\xBAy", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 5); // NFC mask, NFD name
         CHECK(SalQFMatchName("x\xC3\x9Ay", FALSE, "\xC3\xBA", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 3); // U-acute = u-acute
         CHECK(!SalQFMatchName("ab\x80" "cd", FALSE, "\xC3\xA1" "c", TRUE, r));                              // invalid byte: no crash, no match
@@ -13973,12 +14001,13 @@ static void TestQuickFilter244()
         // review 244 (round 2): a key longer than the 2048-unit scratch area grows on the heap, an ASCII
         // character at the boundary included; offsets stay byte offsets of characters
         {
-            static char longText[6004];
+            static char longText[7504];
             int pos = 0;
             for (int i = 0; i < 1500; i++)
             {
-                memcpy(longText + pos, "ab\xC3\xA1", 4); // a b a-acute: 3 characters, 4 units
-                pos += 4;
+                // a b hiragana GA (KA + the voiced mark, kept by feature 313): 3 characters, 4 units
+                memcpy(longText + pos, "ab\xE3\x81\x8C", 5);
+                pos += 5;
             }
             longText[pos] = 0;
             CSalQFKey lk;
@@ -14047,6 +14076,141 @@ static void TestQuickFilter244()
         for (int i = 0; i < N; i++)
             SalQFFreeKey(keys[i]);
         printf("TestQuickFilter244: 10,000 Czech names: keys built in %u ms, a keystroke scans them in %u ms\n", t1 - t0, t2 - t1);
+    }
+
+    // feature 313: the new mode ignores diacritics (contract specs/313-quick-search-diacritics/
+    // contracts/salquickfilter-fold.md, F1-F6 by example, F8 the cache)
+    {
+        struct Fx
+        {
+            const char* Name;
+            BOOL HasExt;
+            const char* Typed;
+            int Kind, Start, End;
+        };
+        static const Fx fx[] = {
+            // F1 marks of the Latin, Greek and Cyrillic blocks dropped in both directions, NFC and NFD
+            {"\xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD", FALSE, "zlut", SALQF_PREFIX, 0, 6},            // z-caron l u t-caron ...
+            {"zlut\xC3\xBD.txt", TRUE, "\xC5\xBElut", SALQF_PREFIX, 0, 4},                              // typed with the accent
+            {"\xC4\x8C" "esk\xC3\xBD.txt", TRUE, "cesky", SALQF_PREFIX, 0, 7},                         // C-caron esk y-acute
+            {"\xC4\x8C" "esk\xC3\xBD.txt", TRUE, "Cesky", SALQF_PREFIX, 0, 7},
+            {"\xC3\x9C" "bersicht.doc", TRUE, "ubersicht", SALQF_PREFIX, 0, 10},                        // U-diaeresis
+            {"r\xCC\x8C" "eka.txt", TRUE, "reka", SALQF_PREFIX, 0, 6},                                  // NFD name
+            {"r\xCC\x8C" "eka.txt", TRUE, "\xC5\x99" "eka", SALQF_PREFIX, 0, 6},                       // NFC mask, NFD name
+            {"\xC5\x99" "eka.txt", TRUE, "r\xCC\x8C" "eka", SALQF_PREFIX, 0, 5},                       // NFD mask, NFC name
+            {"moje \xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD", FALSE, "LUTOU", SALQF_SUBSTRING, 7, 13}, // inside the name
+            {"x\xE1\xBB\x87y", FALSE, "e", SALQF_SUBSTRING, 1, 4},                                      // U+1EC7: two marks
+            {"\xCE\xAC\xCE\xBB\xCF\x86\xCE\xB1", FALSE, "\xCE\xB1\xCE\xBB", SALQF_PREFIX, 0, 4},     // Greek alpha-tonos
+            {"\xD0\xB9\xD0\xBE\xD0\xB4", FALSE, "\xD0\xB8\xD0\xBE", SALQF_PREFIX, 0, 4},              // Cyrillic short i = i
+            // F2 the table, both directions; nothing else folds
+            {"\xC5\x81\xC3\xB3" "d\xC5\xBA.txt", TRUE, "lodz", SALQF_PREFIX, 0, 7},                    // L-stroke o-acute d z-acute
+            {"lodz.txt", TRUE, "\xC5\x82\xC3\xB3" "d\xC5\xBA", SALQF_PREFIX, 0, 4},
+            {"\xC3\x98" "rsted", FALSE, "orsted", SALQF_PREFIX, 0, 7},                                  // O-stroke
+            {"orsted", FALSE, "\xC3\xB8" "rsted", SALQF_PREFIX, 0, 6},
+            {"\xC4\x90" "akovo", FALSE, "dakovo", SALQF_PREFIX, 0, 7},                                  // D-stroke
+            {"djak \xC4\x91" "ak", FALSE, "dak", SALQF_SUBSTRING, 5, 9},
+            {"Stra\xC3\x9F" "e.txt", TRUE, "strasse", SALQF_PREFIX, 0, 7},                              // sharp s
+            {"Strasse.txt", TRUE, "stra\xC3\x9F" "e", SALQF_PREFIX, 0, 7},
+            {"GRO\xE1\xBA\x9E", FALSE, "gross", SALQF_PREFIX, 0, 6},                                    // capital sharp s
+            {"\xC3\x86" "sop", FALSE, "aesop", SALQF_PREFIX, 0, 5},                                     // AE
+            {"aesop", FALSE, "\xC3\xA6" "sop", SALQF_PREFIX, 0, 5},
+            {"c\xC5\x93ur", FALSE, "coeur", SALQF_PREFIX, 0, 5},                                        // oe
+            {"\xC5\x92uvre", FALSE, "oeuvre", SALQF_PREFIX, 0, 6},                                      // OE
+            {"kad\xC4\xB1n", FALSE, "kadin", SALQF_PREFIX, 0, 6},                                       // dotless i
+            {"\xC4\xB0stanbul", FALSE, "istanbul", SALQF_PREFIX, 0, 9},                                  // I with dot above (NFD)
+            {"a\xC3\x9F", FALSE, "as", SALQF_NONE, 0, 0},                                               // 's' does not end inside sharp s
+            {"a\xC3\x9F" "b", FALSE, "ssb", SALQF_SUBSTRING, 1, 4},
+            {"\xC3\xB0r", FALSE, "dr", SALQF_NONE, 0, 0},                                               // eth: not folded
+            {"\xC3\xBEing", FALSE, "thing", SALQF_NONE, 0, 0},                                          // thorn: not folded
+            {"\xC4\xA7obz", FALSE, "hobz", SALQF_NONE, 0, 0},                                           // h-stroke: not folded
+            // F3 marks of other scripts stay
+            {"\xE3\x81\x8C", FALSE, "\xE3\x81\x8B", SALQF_NONE, 0, 0},                                 // GA is not KA
+            {"\xE3\x81\x8B", FALSE, "\xE3\x81\x8C", SALQF_NONE, 0, 0},                                 // KA is not GA
+            {"\xD7\xA9\xD7\x81\xD7\x9C", FALSE, "\xD7\xA9\xD7\x9C", SALQF_NONE, 0, 0},                // Hebrew shin dot kept
+            {"\xE0\xA4\x95\xE0\xA5\x8D\xE0\xA4\xB7", FALSE, "\xE0\xA4\x95\xE0\xA4\xB7", SALQF_NONE, 0, 0}, // virama kept
+            // F4 the marks after the last matched letter are inside the match
+            {"z\xCC\x8C" "luty", FALSE, "z", SALQF_PREFIX, 0, 3},
+            // F5 a lone mark adds nothing; a mask of marks only matches every name
+            {"\xCC\x81" "abc", FALSE, "a", SALQF_PREFIX, 0, 3},
+            {"abc", FALSE, "\xCC\x81", SALQF_PREFIX, 0, 0},
+            {"xabyc", FALSE, "a/\xCC\x81/c", SALQF_SUBSTRING, 1, 5},
+            {"abc", FALSE, "\xCC\x81/b", SALQF_PREFIX, 0, 2},
+            // F6 a WTF-8 lone surrogate and an invalid byte
+            {"a\xED\xA0\x80" "b\xC3\xA9", FALSE, "\xED\xA0\x80" "be", SALQF_SUBSTRING, 1, 7},
+            {"\x80\xC3\xA9" "x", FALSE, "ex", SALQF_SUBSTRING, 1, 4},
+        };
+        int bad = 0;
+        for (int i = 0; i < (int)(sizeof(fx) / sizeof(fx[0])); i++)
+        {
+            char mask[3 * MAX_PATH];
+            Legacy244::Prepare(mask, fx[i].Typed);
+            CSalQFMatch r;
+            BOOL got = SalQFMatchName(fx[i].Name, fx[i].HasExt, mask, TRUE, r);
+            BOOL ok = got == (fx[i].Kind != SALQF_NONE) && r.Kind == fx[i].Kind &&
+                      (fx[i].Kind == SALQF_NONE || r.MatchStart == fx[i].Start && r.MatchEnd == fx[i].End);
+            CHECK(ok);
+            if (!ok)
+            {
+                bad++;
+                printf("FAIL 313 case #%d: expected %d/%d..%d, got %d/%d/%d..%d\n", i, fx[i].Kind, fx[i].Start, fx[i].End, got, r.Kind, r.MatchStart, r.MatchEnd);
+            }
+            // F7: the option off keeps the 0.1.10 rule (accents not ignored)
+            int off = 0;
+            BOOL legacy = Legacy244::Agree(fx[i].Name, fx[i].HasExt, mask, off);
+            CSalQFMatch ro;
+            BOOL gotOff = SalQFMatchName(fx[i].Name, fx[i].HasExt, mask, FALSE, ro);
+            CHECK(gotOff == legacy && (!legacy || ro.MatchEnd == off));
+        }
+        // the negative control of F1: the option off does not find the accented name
+        {
+            CSalQFMatch ro;
+            CHECK(!SalQFMatchName("\xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD", FALSE, "zlut", FALSE, ro));
+        }
+        // F8: the cached key of every BMP code point equals the uncached computation (twice: the
+        // second pass reads the cache), and no key is longer than its room
+        int cacheBad = 0, empty = 0;
+        for (int pass = 0; pass < 2; pass++)
+        {
+            for (int c = 0; c < 65536; c++)
+            {
+                WCHAR w = (WCHAR)c, a[32], b[32];
+                int na = SalQFDetail::CharKey(&w, 1, a, _countof(a));
+                int nb = c < 0x80 ? na : SalQFDetail::CharKeySystem(&w, 1, b, _countof(b));
+                if (c < 0x80)
+                    memcpy(b, a, sizeof(a));
+                if (na != nb || na < 0 || memcmp(a, b, na * sizeof(WCHAR)) != 0)
+                    cacheBad++;
+                if (pass == 0 && na == 0)
+                    empty++;
+            }
+        }
+        CHECK(cacheBad == 0);
+        CHECK(empty >= 0x70); // at least the Combining Diacritical Marks block (U+0300-036F)
+        {
+            WCHAR acute = 0x0301, out[4];
+            CHECK(SalQFDetail::CharKey(&acute, 1, out, 0) == -1); // no room: the caller grows
+            CHECK(SalQFDetail::CharKey(&acute, 1, out, 4) == 0);  // an empty key
+            WCHAR sharp = 0x00DF;
+            CHECK(SalQFDetail::CharKey(&sharp, 1, out, 1) == -1); // "ss" does not fit into one unit
+            CHECK(SalQFDetail::CharKey(&sharp, 1, out, 4) == 2 && out[0] == 's' && out[1] == 's');
+        }
+        // a key of a text with many dropped marks: offsets stay byte offsets of characters
+        {
+            static char marks[3 * 3000 + 2];
+            int pos = 0;
+            for (int i = 0; i < 3000; i++)
+            {
+                memcpy(marks + pos, "a\xCC\x81", 3); // a + combining acute: one unit per 3 bytes
+                pos += 3;
+            }
+            marks[pos] = 0;
+            CSalQFKey mk;
+            CHECK(SalQFBuildKey(marks, -1, mk) && mk.Count == 3000 && mk.Offsets[1] == 3 && mk.Offsets[3000] == pos &&
+                  mk.Starts[1] == 1);
+            SalQFFreeKey(mk);
+        }
+        printf("TestQuickFilter244: feature 313 folding - %d cases, %d differ; %d BMP code points with an empty key\n",
+               (int)(sizeof(fx) / sizeof(fx[0])), bad, empty);
     }
 
     // M7 (ASCII names and masks): appending a character only narrows

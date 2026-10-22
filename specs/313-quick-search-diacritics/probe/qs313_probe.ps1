@@ -159,6 +159,21 @@ try {
     # D10 option off: 'cesky' - no name starts with c (C-caron is another letter there); recorded,
     # compared between the builds
     Run-Case 'D10' 'cesky' 'FOCUS' @{ before = $null; after = $null; off = $null } "typed 'cesky' (option off)"
+    # D11 Right on a decomposed name: 'r' focuses r + caron + eka.txt (a prefix match); Right appends the
+    # character after the whole letter (its mark included), 'e', so only that name stays. Appending the
+    # mark instead would leave the text 'r' (the mark is ignored) and three names visible.
+    if (Want 'D11') {
+        $before = Reports; $id = 0
+        try {
+            $F = Make-Fixture 'D11'
+            $id = Start-Tc313 $F
+            Type-Text $id 'r'
+            Key $id 0x27; Start-Sleep -Milliseconds 150
+            Judge 'D11' 'VISIBLE' (Visible-Out $id $F) @{ before = $null; after = @($N_RekaNfd); off = $null } "typed 'r', Right"
+        }
+        catch { Row 'D11' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+        finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'D11' $id $fatal $before } }
+    }
 }
 finally {
     foreach ($p in @($Started)) { if (Test-Alive $p) { Kill-Mine $p } }

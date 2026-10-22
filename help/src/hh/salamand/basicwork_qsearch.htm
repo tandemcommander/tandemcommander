@@ -19,6 +19,14 @@ anywhere inside it, matches. A name that starts with the text is focused
 first; when no name starts with it, a name that contains it is focused - typing
 "chat" finds "2024_chatbot". A character that no name contains is ignored.</p>
 
+<p>Upper and lower case and accents do not matter, in either direction: typing
+"zlut" finds both "žluťoučký" and "zlutý", and so does typing "žlut"; "cesky"
+finds "Český", "ubersicht" finds "Übersicht". A few letters are also typed as
+their plain counterparts: "ł" as "l", "ø" as "o", "đ" as "d", "ß" as "ss",
+"æ" as "ae", "œ" as "oe" and "ı" as "i" - "lodz" finds "Łódź", "strasse" finds
+"Straße". Marks that tell letters apart in other scripts (for example the
+Japanese voiced mark) are not ignored.</p>
+
 <p>While you type, the panel shows only the matching names, lightly tinted in
 the colours of your colour scheme, and its directory line shows the typed text
 and the number of matches, for example "Search: chat (3 of 120)". Use the arrow
@@ -71,8 +79,8 @@ quick search mode.
 <p>When check box <i>Quick search finds text anywhere in names and shows only the
    matches</i> in <a href="configuration_panels.htm">Configuration/Panels</a> is
    cleared, quick search works as in earlier versions: only names that start
-   with the typed text are found, all names stay visible, and the search ends
-   with almost any command.</p>
+   with the typed text are found, accents are not ignored, all names stay
+   visible, and the search ends with almost any command.</p>
 
 </div>
 <div class="footer">&#169; 2023 Open Salamander Authors</div>

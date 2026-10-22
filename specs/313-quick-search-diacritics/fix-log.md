@@ -51,3 +51,44 @@ diacritics.
   D11 added to T013 and SC-001. A1 (LOW, accepted): SC-003's 10 % bound on the first keystroke is
   close to the run-to-run noise of the panel layout (244: 291-335 ms); if exceeded, re-run before
   judging.
+
+## 2026-10-22 - implementation
+
+- `src/common/salquickfilter.h`:
+  - `SalQFDetail::CharKeySystem`: NFD -> invariant lower case (into a local buffer) -> drop the
+    units of `IsFoldedMark` (U+0300-036F, 1AB0-1AFF, 1DC0-1DFF, 20D0-20FF, FE20-FE2F) -> replace
+    `FoldLetter` letters (`ł Ł ø Ø đ Đ ß ẞ æ Æ œ Œ ı`). Returns the count (0 = empty key), -1 = no room.
+  - `CharKey`: -1 for "does not fit" (was 0); the cache marks an empty key `SALQF_KEY_EMPTY` (0xFE).
+  - `SalQFBuildKey`: `n < 0` grows the buffer; `n == 0` adds no unit.
+  - `SalQFBuildMaskKeys`: a segment with an empty key is not stored; a wildcard before the first
+    stored segment sets `LeadingWild` (so mark + `/` + text behaves as `/` + text).
+  - Header comment updated.
+- `src/saltests/saltests.cpp`:
+  - `Fold313Touches` (independent classifier: whole-text NFD, plain code-point lists); M3 exact
+    for the 672 pairs it does not touch, the superset property for the 229 it touches.
+  - Changed 244 cases: `x`+`ú`/`u` now SUBSTRING 1..3; `xu`+U+0301/`u` end 2 -> 4; the `strasse`
+    exception removed (the new mode now matches like the 0.1.10 rule); the long-key test uses
+    `が` (2 kept units) instead of `á` (now 1 unit).
+  - New 313 block: 43 cases (F1-F6), F7 option off = 0.1.10 matcher for each, negative control
+    (option off does not find `žluťoučký` by `zlut`), F8 cache = uncached for every BMP code point
+    (two passes), `CharKey` room results, a 3000-mark text.
+- Build attempt 1: saltests 27,333 checks, **1 failed** - the 244 long-key test assumed `á` gives
+  two units. Fixed (above). Attempt 2: `saltests: 27333 checks, 0 failed`; lines
+  "901 prefix cases ..., 0 differ; 901 substring cases (229 touched by the 313 folding), 0 differ",
+  "feature 313 folding - 43 cases, 0 differ; 320 BMP code points with an empty key".
+- **Negative control**: `IsFoldedMark` disabled for U+0300-036F -> 20 of 43 cases differ, 24 checks
+  fail (the table cases still pass, as they should); restored from a copy, rebuilt.
+- Probes (Debug, hidden desktop, registry restored identical every time):
+  - `qs313_probe.ps1 -Expect after` (`probe/result_after.txt`): 22 rows, 0 FAIL - D01 `zlut` ->
+    {zlutý.txt, žluťoučký}; D02 `ž`+`lut` -> both; D03 `cesky` -> {Český.txt}; D04 -> {Übersicht.doc};
+    D05 -> {Łódź.txt}; D06 -> {Straße.txt}; D07 -> {řeka (NFD)}; D08 `か`+`kko` -> {かkko.txt} (the
+    voiced mark kept); D11 `r` + Right -> {řeka (NFD)} (Right appended `e`, not the mark).
+  - `-Expect off -FilterOption 0` (`probe/result_off_after.txt`): D09 PASS; D09/D10 lines identical
+    to `result_off_before.txt`.
+  - 244 probe `-Expect new` (`probe/result_244_new.txt`): 45 rows, 0 FAIL; case rows identical to
+    244's `result_after.txt`. `-Expect old -FilterOption 0` (`probe/result_244_off.txt`): 45 rows,
+    0 FAIL; identical to 244's `result_option_off.txt`.
+- `help/src/hh/salamand/basicwork_qsearch.htm`: a paragraph on accents and the table; the option
+  remark says the earlier search does not ignore accents. `CHANGELOG.md`: entry under 0.1.11.
+  244 contract: a pointer to the 313 contract.
+- `python tools/check_encoding.py --strict`: TOTAL: 0 finding(s).

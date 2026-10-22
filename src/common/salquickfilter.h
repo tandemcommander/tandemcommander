@@ -29,16 +29,24 @@
 // With 'substring' (the new mode) a name that is not ASCII, or a mask that is
 // not, is matched by comparing KEYS (SalQFBuildKey): the name and each literal
 // segment of the mask, canonically decomposed (NFD) and lower-cased, one key
-// unit remembering the byte offset of the name's character it comes from. A
+// unit remembering the byte offset of the name's character it comes from.
+// Feature 313: the keys ignore diacritics in both directions - the combining
+// marks of the Latin, Greek and Cyrillic diacritical-mark blocks are dropped
+// (U+0300-036F, 1AB0-1AFF, 1DC0-1DFF, 20D0-20FF, FE20-FE2F; marks of other
+// scripts, e.g. the Japanese voiced mark or a virama, stay) and a few letters
+// without a decomposition fold: l, o and d with stroke -> l o d, sharp s ->
+// ss, the ae and oe ligatures -> ae oe, dotless i -> i. A character whose key
+// is empty (a lone mark) adds no unit; the marks after a letter belong to its
+// match. A
 // match starts and ends on character boundaries of the name; the first segment
 // at the start is a prefix match, else the leftmost start wins; later segments
 // are taken at their first occurrence after the previous one; the dot
 // tolerance applies to prefix matches. ASCII masks against ASCII names keep
 // the byte-wise rule. Keys make a test cost one memcmp per start position: the
 // old rule's SalNameEqualCI per position (a normalisation and two allocations
-// each) made typing take seconds in large folders of non-ASCII names. Case and
-// canonical equivalence are as in SalNameEqualCI; its linguistic extras (e.g.
-// "ss" = "sharp s") belong to the 0.1.10 rule only ('substring' FALSE).
+// each) made typing take seconds in large folders of non-ASCII names. The
+// 0.1.10 rule ('substring' FALSE) keeps SalNameEqualCI: case, canonical
+// equivalence and its linguistic extras; accents are not ignored there.
 //
 //*****************************************************************************
 
@@ -85,8 +93,10 @@ namespace SalQFDetail
     struct CCharKeyCache
     {
         WCHAR Units[65536][4];
-        BYTE Count[65536]; // 0 = not computed yet, 0xFF = longer than 4 units (computed every time)
+        BYTE Count[65536]; // 0 = not computed yet, SALQF_KEY_EMPTY = an empty key (feature 313),
+                           // 0xFF = longer than 4 units (computed every time)
     };
+#define SALQF_KEY_EMPTY 0xFE
     inline CCharKeyCache* CharKeyCache()
     {
         static CCharKeyCache cache; // zero-initialised static storage (640 KB), not the heap
@@ -94,11 +104,11 @@ namespace SalQFDetail
     }
 
     // the key units of one character 'w' (1 or 2 UTF-16 units) into 'out' (capacity 'cap');
-    // returns the count, 0 when it does not fit
+    // returns the count (0 = an empty key: only dropped marks), -1 when it does not fit
     inline int CharKey(const WCHAR* w, int wlen, WCHAR* out, int cap)
     {
         if (cap <= 0) // no room left: the caller grows its buffer
-            return 0;
+            return -1;
         if (wlen == 1 && w[0] < 0x80)
         {
             out[0] = (w[0] >= 'A' && w[0] <= 'Z') ? (WCHAR)(w[0] + ('a' - 'A')) : w[0];
@@ -112,24 +122,65 @@ namespace SalQFDetail
             {
                 WCHAR tmp[32];
                 int m = CharKeySystem(w, 1, tmp, _countof(tmp));
-                if (m > 0 && m <= 4)
+                if (m == 0)
+                    n = SALQF_KEY_EMPTY;
+                else if (m > 0 && m <= 4)
                 {
                     memcpy(cache->Units[w[0]], tmp, m * sizeof(WCHAR));
-                    cache->Count[w[0]] = (BYTE)m;
                     n = (BYTE)m;
                 }
                 else
-                    cache->Count[w[0]] = 0xFF;
+                    n = 0xFF;
+                cache->Count[w[0]] = n;
             }
-            if (n != 0 && n != 0xFF)
+            if (n == SALQF_KEY_EMPTY)
+                return 0;
+            if (n != 0xFF)
             {
                 if (n > cap)
-                    return 0;
+                    return -1;
                 memcpy(out, cache->Units[w[0]], n * sizeof(WCHAR));
                 return n;
             }
         }
         return CharKeySystem(w, wlen, out, cap);
+    }
+
+    // a combining mark of the blocks the Latin, Greek and Cyrillic letters decompose into
+    // (feature 313): dropped from keys; the marks of other scripts lie outside these blocks
+    inline BOOL IsFoldedMark(WCHAR c)
+    {
+        return c >= 0x0300 && c <= 0x036F || c >= 0x1AB0 && c <= 0x1AFF || c >= 0x1DC0 && c <= 0x1DFF ||
+               c >= 0x20D0 && c <= 0x20FF || c >= 0xFE20 && c <= 0xFE2F;
+    }
+
+    // the key of a letter without a canonical decomposition that folds (feature 313), else NULL
+    inline const char* FoldLetter(WCHAR c)
+    {
+        switch (c)
+        {
+        case 0x0141: // L with stroke
+        case 0x0142:
+            return "l";
+        case 0x00D8: // O with stroke
+        case 0x00F8:
+            return "o";
+        case 0x0110: // D with stroke
+        case 0x0111:
+            return "d";
+        case 0x00DF: // sharp s, capital sharp s
+        case 0x1E9E:
+            return "ss";
+        case 0x00C6: // ae ligature
+        case 0x00E6:
+            return "ae";
+        case 0x0152: // oe ligature
+        case 0x0153:
+            return "oe";
+        case 0x0131: // dotless i
+            return "i";
+        }
+        return NULL;
     }
 
     inline int CharKeySystem(const WCHAR* w, int wlen, WCHAR* out, int cap)
@@ -141,15 +192,34 @@ namespace SalQFDetail
             n = wlen;
             memcpy(nfd, w, wlen * sizeof(WCHAR));
         }
-        if (n > cap)
-            return 0;
-        int m = LCMapStringEx(LOCALE_NAME_INVARIANT, LCMAP_LOWERCASE, nfd, n, out, cap, NULL, NULL, 0);
+        WCHAR low[32];
+        int m = LCMapStringEx(LOCALE_NAME_INVARIANT, LCMAP_LOWERCASE, nfd, n, low, _countof(low), NULL, NULL, 0);
         if (m <= 0)
         {
-            memcpy(out, nfd, n * sizeof(WCHAR));
+            memcpy(low, nfd, n * sizeof(WCHAR));
             m = n;
         }
-        return m;
+        int count = 0;
+        for (int i = 0; i < m; i++)
+        {
+            if (IsFoldedMark(low[i]))
+                continue;
+            const char* fold = FoldLetter(low[i]);
+            if (fold == NULL)
+            {
+                if (count >= cap)
+                    return -1;
+                out[count++] = low[i];
+                continue;
+            }
+            for (; *fold != 0; fold++)
+            {
+                if (count >= cap)
+                    return -1;
+                out[count++] = (WCHAR)*fold;
+            }
+        }
+        return count;
     }
 
     // the old AgreeQSMaskAux (masks.cpp) with wholeString == FALSE, for ASCII names and masks
@@ -389,11 +459,12 @@ inline BOOL SalQFBuildKey(const char* textU8, int len, CSalQFKey& key)
                 next = p + len8;
             }
             int n = SalQFDetail::CharKey(w, wlen, units + count, cap - count);
-            if (n == 0)
+            if (n < 0)
             {
                 fits = FALSE;
                 break;
             }
+            // n == 0: only dropped marks, the character adds no unit (feature 313)
             for (int i = 0; i < n; i++)
             {
                 offsets[count + i] = (int)(p - textU8);
@@ -451,7 +522,8 @@ inline void SalQFFreeMaskKeys(CSalQFMaskKeys& mk)
     mk.TrailingDot = FALSE;
 }
 
-// FALSE only without memory
+// FALSE only without memory. A segment whose key is empty (only dropped marks, feature 313) is
+// not stored: it stands for nothing, so the wildcards around it join.
 inline BOOL SalQFBuildMaskKeys(const char* mask, CSalQFMaskKeys& mk)
 {
     mk.Count = 0;
@@ -480,6 +552,14 @@ inline BOOL SalQFBuildMaskKeys(const char* mask, CSalQFMaskKeys& mk)
                 SalQFFreeMaskKeys(mk);
                 return FALSE;
             }
+            if (mk.Segs[mk.Count].Count == 0)
+            {
+                SalQFFreeKey(mk.Segs[mk.Count]);
+                p = e;
+                continue;
+            }
+            if (mk.Count == 0 && p != mask) // a wildcard (with dropped segments) before the first one
+                mk.LeadingWild = TRUE;
             mk.Count++;
             if (*e == 0 && e[-1] == '.') // the last segment ends with a dot (PrepareQSMask drops a final '/')
             {
