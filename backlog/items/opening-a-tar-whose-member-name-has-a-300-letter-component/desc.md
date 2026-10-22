@@ -1,16 +1,16 @@
 ---
 title: Opening a tar whose member name has a 300-letter component crashes the program
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: measure:306
 who: agent
 created: 2026-10-22
 updated: 2026-10-22
-verified: -
+verified: 2026-10-22 d92d8278
 effort: M
-feature: -
+feature: 307
 related: []
 depends-on: []
 reason: -
@@ -41,3 +41,5 @@ Severity from the band "crashes in an unusual scenario". The probe row is exclud
 - 2026-10-22 — created (source measure:306)
 - 2026-10-22 — related item tar-plug-in-ignores-pax-extended-headers done in feature 306
 - 2026-10-22 — moved to Next position 1
+- 2026-10-22 — verified at d92d8278: reproduced at d92d8278: pax306 probe GNU-TOOLONG crashes (RTC stack corruption); AddFile skips its name check for a NULL path, the 904-byte name overflows formatedFileName[780] in RefreshListBox
+- 2026-10-22 — run started, feature 307
