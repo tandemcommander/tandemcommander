@@ -144,3 +144,63 @@ already committed `ctrlcon5.cpp` fixed - the `main` run took it from `main`
 
 Checks after review 1: `.\build.cmd` -> `BUILD SUCCEEDED` (`ftp.spl` 08:37); encoding guard
 `TOTAL: 0 finding(s)`; `ftp288_probe.ps1` -> `regress_288.txt` PASS 20, FAIL 0.
+
+### Review 2 (refute-first, independent agent, with review 1's findings) - MUST 1, SHOULD 1, NOTEs 4
+
+- Re-ran `ftp302_probe.ps1` on the branch: PASS 8, FAIL 0 (reproduces).
+- **MUST 1 (open - not fixed in this run)** - Create Directory with a path records an *existing*
+  folder as new and empty. `CUploadListingsOnServer::ReportCreateDirs` (`operats9.cpp`, relative
+  branch `FTPCutFirstDirFromRelativePath` loop and the absolute branch's `FTPCutDirectory` loop)
+  treats every component the cached parent listing does not show as just created:
+  `ReportCreateDir` adds it and `AddEmptyListing(..., ulsReady)` caches an empty listing. A
+  server accepts `MKD a/new` only when `a` exists, so a missing intermediate component means the
+  cached listing is incomplete, not that `a` was made. Two real cases: hidden dot folders (plain
+  `LIST` on vsftpd / Pure-FTPd / ProFTPD hides them) and case-insensitive servers with Unix paths
+  (`docs` vs the existing `Docs`; Unix paths compared case-sensitively, `ftputils.cpp`). Before
+  this branch the swapped arguments kept this code unreachable from F7 - **a regression of this
+  branch**. Reproduction (kept in `probe/review2/`: `ftp302_rv.ps1` - dot-sources the 098
+  library by an absolute path -, `ftpmini_hide.py` - ftpmini that hides dot names on `LIST`
+  without `-a`; logs `rows_head.txt`, `hid_head.txt`, `hid_main.txt`, `case_main.txt`):
+  - MKD-HID: server `/MKD-HID/.cfg/f.txt` = `SRV-F`; upload 1 left open; F7 `.cfg/new`; upload 2
+    of the local `f.txt` (`LOCAL-F`) to `/MKD-HID/.cfg/` - branch: `CWD /MKD-HID/.cfg / PORT /
+    STOR f.txt`, no `LIST`, no question, `.cfg/f.txt` = `LOCAL-F` (FAIL); `main`: `LIST`, the
+    question, `SRV-F` kept (PASS).
+  - MKD-CASE: server `/MKD-CASE/Docs/f.txt` = `SRV-F`; F7 `docs/new`; upload 2 to
+    `/MKD-CASE/docs/` - branch FAIL (`Docs/f.txt` = `LOCAL-F`), `main` PASS.
+  - Reviewer's suggested fix: only the last component of a successful Create Directory is known
+    to be new and empty; for an earlier component the cached parent listing does not contain,
+    invalidate that parent listing and add no empty listing (the same for the absolute branch's
+    upper levels); the upload workers' own single-name reports are unaffected; add MKD-HID and
+    MKD-CASE to `ftp302_probe.ps1`.
+- SHOULD 1: the closing records must state the data loss (review 1 SHOULD), review 2's MUST and
+  that Send FTP Command is checked by reading only.
+- NOTEs: the review-1 fix covers every in-product path the reviewer found (panel Delete /
+  delete operation `ReportDelete`, download-and-move, the upload workers' own reports, Change
+  Attributes changes no names, view only downloads, drag-and-drop / paste start an ordinary
+  upload, a second panel with the same user/host/port shares the cache); pre-existing gaps: Send
+  FTP Command reports only with "Refresh working path" ticked (default ticked), the cache is
+  keyed by the host as typed (`localhost` vs `127.0.0.1` invisible to each other).
+  `InvalidateAllListings` cannot break an upload in progress (from the end; in-progress listings
+  marked outdated and re-fetched through the existing path; `FindPath`'s remembered indexes are
+  re-checked by path; runs under the cache lock after the connection lock is released).
+  `FindPath` stores the slot instead of the index in its lookup cache (`FoundPathIndexes[0] = i`,
+  upstream, performance only). By reading, outside this item: an upload of `B.txt` to a
+  case-insensitive server that has `b.txt` goes without the question (Unix paths and names
+  compared case-sensitively) - Inbox item.
+- The tree was left clean by the reviewer; build of this branch's code (`ftp.spl` 08:55).
+
+## Stopped (stop-rules §3 #3)
+
+The independent review rejected the fix twice (review 1 MUST - fixed; review 2 MUST - open). The
+run stops here as the rules require; nothing is merged to `main`. State of the branch: the
+argument fix (`ctrlcon5.cpp`) and review 1's `InvalidateAllListings` (`operats9.cpp`,
+`operats.h`) are committed; `ftp302_probe.ps1` 8 / 0 on the branch. **Not mergeable as it is**:
+review 2's MUST is a regression of the argument fix (an F7 with a path through a folder the
+cached listing does not show can lead to an upload overwriting without the question). What a
+continuing run does: fix `ReportCreateDirs` as suggested (only the last component of a
+successful Create Directory is new and empty; an earlier component missing from the cached
+parent listing invalidates that listing), add the review-2 rows MKD-HID / MKD-CASE (from
+`probe/review2/ftp302_rv.ps1`, with `ftpmini_hide.py`) to `ftp302_probe.ps1`, run `main` /
+branch / fixed as negative controls, then a fresh review. Owed later to a person (when closed):
+Send FTP Command into an F7 folder while an upload is open (not reachable by the probe).
+
