@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: Move into a key holding a registry link to the source writes into the source
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: data-safety
 source: review:294
@@ -10,7 +10,7 @@ created: 2026-10-22
 updated: 2026-10-22
 verified: 2026-10-22 4420aae1
 effort: ?
-feature: -
+feature: 296
 related: []
 depends-on: []
 reason: -
@@ -51,3 +51,4 @@ reproduced by the item's author. Severity 3 for the rarity; the loss itself woul
 - 2026-10-22 — auto-triage: severity 3 -> 7: a Move can silently lose the moved key in a narrow scenario (a registry link in the target tree), band 7-8; rarity picks the low end
 - 2026-10-22 — moved to Next position 2
 - 2026-10-22 — verified at 4420aae1: reproduced at 4420aae1: new hidden-desktop probe link296_probe 14 PASS / 15 FAIL - F6 into a target holding a link to the source loses the subkey value without a box; F5 writes into the source
+- 2026-10-22 — run started, feature 296

@@ -3,7 +3,7 @@
 **Feature Branch**: `296-regedt-link-target-tree`
 **Created**: 2026-10-22
 **Status**: Draft
-**Input**: Backlog item `registry-editor-move-through-a-link-in-the-target-tree` - "Registry Editor: Move into a key holding a registry link to the source writes into the source"; Expected: "A Copy / Move never writes into a key it reads from or later deletes, also through a registry link in the target tree; or such a link is not followed by the copy (refused or skipped with a message)."
+**Input**: Backlog item `registry-editor-move-through-a-link-in-the-target-tree` - "Registry Editor: Move into a key holding a registry link to the source writes into the source"; Expected: "A Copy / Move never writes into a key it reads from or later deletes, also through a registry link in the target tree; or such a link is not followed by the copy (refused or skipped with a message)." From backlog item registry-editor-move-through-a-link-in-the-target-tree.
 
 ## Measured at 4420aae1 (before this feature)
 
