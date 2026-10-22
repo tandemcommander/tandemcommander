@@ -107,6 +107,15 @@ int wmain(int argc, WCHAR** argv)
         wprintf(L"  Load 0x%08lx | GetPath(MAX_PATH) 0x%08lx len %zu prefix-of-target %d | GetPath(32768) 0x%08lx len %zu whole %d\n",
                 ld, g1, l1, l1 < MAX_PATH && l1 > 0 && _wcsnicmp(shortBuf, tgt.c_str(), l1) == 0, g2, wcslen(big),
                 _wcsicmp(big, tgt.c_str()) == 0);
+        {
+            PIDLIST_ABSOLUTE lp = NULL;
+            WCHAR* fsName = NULL;
+            HRESULT gi = link->GetIDList(&lp);
+            HRESULT gn = lp != NULL ? SHGetNameFromIDList(lp, SIGDN_FILESYSPATH, &fsName) : E_FAIL;
+            wprintf(L"  GetIDList 0x%08lx SIGDN_FILESYSPATH 0x%08lx len %zu: %s\n", gi, gn, fsName ? wcslen(fsName) : 0, fsName ? fsName : L"-");
+            CoTaskMemFree(fsName);
+            CoTaskMemFree(lp);
+        }
         pf->Release();
         link->Release();
         WCHAR* r = SplFileDlgDetail::ResolveNetHoodFolderW(sc.c_str());
