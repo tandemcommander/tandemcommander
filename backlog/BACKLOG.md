@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Quick search ignores diacritics: typing zlut finds a name with žluťoučký](items/quick-search-ignores-diacritics/desc.md) | improvement | 5 | panels-ui | 313 |
 
 ## Next
 

@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 313 |
 
 ## Feature notes
 
@@ -4198,3 +4198,34 @@ a few early ones are out of sequence).
   26 / 0 (13 rows; negative control Validate checks off 5 FAIL; review's control every guard off failed
   its rows); 291's probe 34 / 0, 251's 42 / 0; saltests 27,237 / 0; one refute-first review (no MUST,
   two SHOULDs to the Inbox, a `view-copy-keep` row added).
+- 313-quick-search-diacritics: quick search in the new mode (244) ignored case but not accents -
+  `zlut` did not find the folder `žluťoučký`, `cesky` stuck at `c` and never reached `Český.txt`,
+  `žlut` did not find `zlutý` - now the keys of `salquickfilter.h` drop the nonspacing marks of the
+  Latin/Greek/Cyrillic diacritic blocks (U+0300-036F, 1AB0-1AFF, 1DC0-1DFF, 20D0-20FF, FE20-FE2F;
+  enclosing marks such as the keycap and the negation stroke U+0338 stay) after NFD + lower case, in names and typed text alike,
+  and fold `ł ø đ ß ẞ æ œ ı` (and capitals) to `l o d ss ss ae oe i`. A mark-only character has an
+  empty key (cache marker `SALQF_KEY_EMPTY`, `CharKey` -1 = no room), a mask segment of marks only is
+  not stored; `Starts` = 2 marks a later unit of a folded letter, where a match may end
+  (`KeyEndOffset` reports the whole letter); Left/Backspace of the new mode remove a letter with its
+  ignored marks, and a text of ignored marks only ends the search (`SalQFCutLastLetter`,
+  `SalQFOnlyIgnoredMarks`); Right after a text ending inside a folded letter goes on with the
+  matched part of the name. Traps: the refusal of a keystroke that leaves no match means
+  every partial text must match - "a match covers a folded letter whole" made `strasse` stick at
+  `stra` (review 1; the first probe row could not tell the builds apart, a distractor `Strand.txt`
+  can); dropping marks moves the match end behind them, so Left removing one code point removed only
+  the invisible mark and stuck (review 1); with the end moved behind a folded letter, Right appended
+  the next character to `stras` -> `strase` and was refused (review 2); U+0338 is a Mn of the block
+  but negates symbols (`≠` -> `=`), so it stays; a plain `build.cmd` does not relink saltests after a
+  header-only change - touch `saltests.cpp` for a negative control; PowerShell variable names ignore
+  case (`$exp` vs `[hashtable]$Exp`). Limits: marks of other scripts (Japanese voiced mark, Hebrew
+  points, Indic signs) still count; `ð þ ħ` not folded; Cyrillic `й`/`и` and similar fold (the
+  maintainer's symmetric decision); the option-off 0.1.10 rule is unchanged (accents count); M3
+  compares the 229 folded pairs with 0.1.10 only as a superset. From backlog item
+  `quick-search-ignores-diacritics`. Probe `qs313_probe.ps1` before: D01/D03 show the defect -> after
+  32 rows / 0 FAIL (D12-D15 added by review 1, D16 by review 2; D12 measured on the baseline
+  {Strand, Straße} -> {Straße}; negative control Right fallback off D16 FAIL); option off identical;
+  244 probe 45 / 0 in both modes, identical to its records;
+  Release A/B against the baseline build: no measurable change; saltests 27,401 / 0 (55 folding
+  cases; negative controls 24 and 7 failed checks); two refute-first reviews (round 1: a MUST and
+  two SHOULDs fixed; round 2: no MUST, a SHOULD fixed, the dot tolerance after a typed mark
+  recorded). Person step `quick-search-ignoring-accents-check-with-a-real-keyboard`.
