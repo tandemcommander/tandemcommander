@@ -149,9 +149,12 @@ namespace SalQFDetail
 
     // a nonspacing combining mark of the blocks the Latin, Greek and Cyrillic letters decompose
     // into (feature 313): dropped from keys; the marks of other scripts lie outside these blocks,
-    // and enclosing marks (U+1ABE, U+20DD-20E0, U+20E2-20E4: a keycap, a circle) are kept
+    // and enclosing marks (U+1ABE, U+20DD-20E0, U+20E2-20E4: a keycap, a circle) are kept, as is
+    // U+0338, the stroke of the negated symbols (not-equal decomposes to '=' + U+0338)
     inline BOOL IsFoldedMark(WCHAR c)
     {
+        if (c == 0x0338)
+            return FALSE;
         if (c >= 0x0300 && c <= 0x036F || c >= 0x1DC0 && c <= 0x1DFF || c >= 0xFE20 && c <= 0xFE2F)
             return TRUE;
         if (c >= 0x1AB0 && c <= 0x1AFF)
@@ -806,6 +809,32 @@ inline int SalQFCutLastLetter(const char* text, int len)
             break; // the letter itself is removed too
     }
     return len;
+}
+
+// Does the UTF-8 'text' consist of marks that keys ignore only (feature 313; an empty text too)?
+// Left and Backspace end the search on such a text: it stands for no text at all.
+inline BOOL SalQFOnlyIgnoredMarks(const char* text)
+{
+    const BYTE* b = (const BYTE*)text;
+    while (*b != 0)
+    {
+        DWORD cp;
+        if ((b[0] & 0xE0) == 0xC0 && (b[1] & 0xC0) == 0x80)
+        {
+            cp = ((b[0] & 0x1F) << 6) | (b[1] & 0x3F);
+            b += 2;
+        }
+        else if ((b[0] & 0xF0) == 0xE0 && (b[1] & 0xC0) == 0x80 && (b[2] & 0xC0) == 0x80)
+        {
+            cp = ((b[0] & 0x0F) << 12) | ((b[1] & 0x3F) << 6) | (b[2] & 0x3F);
+            b += 3;
+        }
+        else
+            return FALSE; // ASCII, a longer sequence or an invalid byte: not a mark
+        if (!SalQFDetail::IsFoldedMark((WCHAR)cp))
+            return FALSE;
+    }
+    return TRUE;
 }
 
 // Where the focus goes: 'kinds' holds SALQF_* per item (NONE = no match),

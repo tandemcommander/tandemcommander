@@ -2119,7 +2119,8 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
             {
                 if (QuickSearchMask[0] != 0) // the last letter with the marks keys ignore (feature 313)
                     QuickSearchMask[SalQFCutLastLetter(QuickSearchMask, (int)strlen(QuickSearchMask))] = 0;
-                if (QuickSearchMask[0] == 0 || !QFApply(QuickSearchMask, TRUE))
+                // only marks keys ignore left (feature 313): no text at all
+                if (SalQFOnlyIgnoredMarks(QuickSearchMask) || !QFApply(QuickSearchMask, TRUE))
                     EndQuickSearch(); // the text is empty: every item again
                 return TRUE;
             }
@@ -2152,7 +2153,7 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
                     // the last letter with the marks keys ignore (feature 313): removing only such a
                     // mark would leave the match as it was
                     text[SalQFCutLastLetter(text, len)] = 0;
-                    if (text[0] == 0)
+                    if (SalQFOnlyIgnoredMarks(text)) // also a name starting with a lone mark (feature 313)
                         EndQuickSearch();
                     else
                     {
@@ -2207,12 +2208,34 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
                         while ((name[end + chLen] & 0xC0) == 0x80)
                             chLen++;
                         int len = (int)strlen(QuickSearchMask);
+                        int matchStart = QFMatchStart;
                         if (len + chLen < 3 * MAX_PATH)
                         {
                             memcpy(QuickSearchMask + len, name + end, chLen); // shown by QFApply
                             QuickSearchMask[len + chLen] = 0;
                             if (!QFApply(QuickSearchMask, TRUE))
+                            {
                                 QuickSearchMask[len] = 0;
+                                // feature 313: a text ending inside a folded letter ("stras" on
+                                // "Straße") does not go on with the name's next character; the
+                                // matched part of the name does (as Left takes it)
+                                int part = end - matchStart;
+                                if (part > 0 && part + chLen < 3 * MAX_PATH)
+                                {
+                                    char text[3 * MAX_PATH];
+                                    memcpy(text, name + matchStart, part);
+                                    memcpy(text + part, name + end, chLen);
+                                    text[part + chLen] = 0;
+                                    if (strcmp(text, QuickSearchMask) != 0)
+                                    {
+                                        char old[3 * MAX_PATH];
+                                        strcpy(old, QuickSearchMask);
+                                        strcpy(QuickSearchMask, text); // shown by QFApply
+                                        if (!QFApply(QuickSearchMask, TRUE))
+                                            strcpy(QuickSearchMask, old);
+                                    }
+                                }
+                            }
                         }
                     }
                 }

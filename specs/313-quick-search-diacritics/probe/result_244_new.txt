@@ -1,4 +1,4 @@
-Feature 244 probe 244-new-on-313-review1; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; expect new; registry backup C:\Users\pavel\AppData\Local\Temp\tc244_backup.reg (existed True)
+Feature 244 probe 244-new-on-313-review2; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; expect new; registry backup C:\Users\pavel\AppData\Local\Temp\tc244_backup.reg (existed True)
 export SHA-256 CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
 hidden files shown: False (registry: HKEY_CURRENT_USER\Software\Tandem Commander\0.1\Configuration Hide Hidden and System Files and Directories REG_DWORD 0x1)
 C01        FOCUS  PASS        got {chat.txt} expected {chat.txt} typed 'c'

@@ -14127,6 +14127,7 @@ static void TestQuickFilter244()
             {"x\xC3\x86" "ble", FALSE, "xa", SALQF_PREFIX, 0, 3},
             {"a\xC3\x9F" "b", FALSE, "ssb", SALQF_SUBSTRING, 1, 4},
             {"a\xC3\x9F" "b", FALSE, "sb", SALQF_NONE, 0, 0},
+            {"a\xC3\x9F" "b", FALSE, "a/sb", SALQF_NONE, 0, 0}, // a later segment does not start inside one (review 2)
             {"\xC3\xB0r", FALSE, "dr", SALQF_NONE, 0, 0},                                               // eth: not folded
             {"\xC3\xBEing", FALSE, "thing", SALQF_NONE, 0, 0},                                          // thorn: not folded
             {"\xC4\xA7obz", FALSE, "hobz", SALQF_NONE, 0, 0},                                           // h-stroke: not folded
@@ -14136,6 +14137,9 @@ static void TestQuickFilter244()
             {"\xD7\xA9\xD7\x81\xD7\x9C", FALSE, "\xD7\xA9\xD7\x9C", SALQF_NONE, 0, 0},                // Hebrew shin dot kept
             {"\xE0\xA4\x95\xE0\xA5\x8D\xE0\xA4\xB7", FALSE, "\xE0\xA4\x95\xE0\xA4\xB7", SALQF_NONE, 0, 0}, // virama kept
             {"1\xEF\xB8\x8F\xE2\x83\xA3" "x", FALSE, "1\xEF\xB8\x8F", SALQF_PREFIX, 0, 4},              // keycap (enclosing) kept
+            {"x\xE2\x89\xA0y", FALSE, "x=y", SALQF_NONE, 0, 0},                                         // not-equal stays negated (review 2)
+            {"x=y", FALSE, "x\xE2\x89\xA0y", SALQF_NONE, 0, 0},
+            {"a\xE2\x88\x89" "b", FALSE, "a\xE2\x88\x88" "b", SALQF_NONE, 0, 0},                       // not-an-element is not element-of
             // F4 the marks after the last matched letter are inside the match
             {"z\xCC\x8C" "luty", FALSE, "z", SALQF_PREFIX, 0, 3},
             // F5 a lone mark adds nothing; a mask of marks only matches every name
@@ -14204,7 +14208,7 @@ static void TestQuickFilter244()
             CHECK(SalQFDetail::CharKey(&sharp, 1, out, 1) == -1); // "ss" does not fit into one unit
             CHECK(SalQFDetail::CharKey(&sharp, 1, out, 4) == 2 && out[0] == 's' && out[1] == 's');
             // nonspacing marks only: the enclosing ones stay (a keycap, U+1ABE)
-            static const WCHAR kept[] = {0x20DD, 0x20E0, 0x20E2, 0x20E3, 0x20E4, 0x1ABE, 0x3099, 0x05C1, 0x094D};
+            static const WCHAR kept[] = {0x20DD, 0x20E0, 0x20E2, 0x20E3, 0x20E4, 0x1ABE, 0x3099, 0x05C1, 0x094D, 0x0338};
             for (int i = 0; i < (int)_countof(kept); i++)
                 CHECK(SalQFDetail::CharKey(&kept[i], 1, out, 4) == 1 && out[0] == kept[i]);
             static const WCHAR dropped[] = {0x0300, 0x036F, 0x1AB0, 0x1ABD, 0x1ABF, 0x1DC0, 0x1DFF, 0x20D0, 0x20DC, 0x20E1, 0x20E5, 0x20F0, 0xFE20, 0xFE2F};
@@ -14232,6 +14236,17 @@ static void TestQuickFilter244()
             };
             for (int i = 0; i < (int)_countof(cut); i++)
                 CHECK(SalQFCutLastLetter(cut[i].Text, (int)strlen(cut[i].Text)) == cut[i].Len);
+            // a text of ignored marks only stands for no text: Left and Backspace end the search
+            // (review 2: Left on a name starting with a lone mark kept such a text)
+            CHECK(SalQFOnlyIgnoredMarks(""));
+            CHECK(SalQFOnlyIgnoredMarks("\xCC\x81"));
+            CHECK(SalQFOnlyIgnoredMarks("\xCC\x81\xCC\x8C\xE1\xB7\x80")); // U+0301 U+030C U+1DC0
+            CHECK(!SalQFOnlyIgnoredMarks("a"));
+            CHECK(!SalQFOnlyIgnoredMarks("\xCC\x81" "a"));
+            CHECK(!SalQFOnlyIgnoredMarks("\xE3\x82\x99")); // the voiced mark is kept by keys
+            CHECK(!SalQFOnlyIgnoredMarks("\xCC\xB8"));      // U+0338 is kept by keys
+            CHECK(!SalQFOnlyIgnoredMarks("\xCC"));           // a truncated sequence
+            CHECK(!SalQFOnlyIgnoredMarks("/"));
         }
         // a key of a text with many dropped marks: offsets stay byte offsets of characters
         {

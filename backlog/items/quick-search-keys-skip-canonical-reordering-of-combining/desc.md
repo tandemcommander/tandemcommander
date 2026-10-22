@@ -7,8 +7,8 @@ area: encoding
 source: leftover:244
 who: agent
 created: 2026-10-18
-updated: 2026-10-19
-verified: -
+updated: 2026-10-23
+verified: 2026-10-23 4eb6cdb1
 effort: S
 feature: -
 related: [quick-search-first-keystroke-over-100-000-non-ascii-names]
@@ -38,3 +38,4 @@ Rare (stacked diacritics typed in a different order than stored); case and the c
 
 - 2026-10-18 — created (source leftover:244)
 - 2026-10-19 — moved to Next position 62
+- 2026-10-23 — verified at 4eb6cdb1: feature 313: the new mode drops the marks of U+0300-036F and the other Latin/Greek/Cyrillic mark blocks, so the example (e + U+0323 + U+0302 vs U+00EA + U+0323) now matches; still present for marks outside those blocks (Hebrew points, Arabic vowel signs, Indic signs)

@@ -181,3 +181,47 @@ After the fixes:
 
   No measurable difference from the baseline (SC-003 holds).
 - Header comment wording: "nonspacing marks" (was "combining marks").
+
+### Round 2 (fresh refute-first agent on 4eb6cdb1, with the round-1 findings) - no MUST
+
+The reviewer re-ran the measurement (after 30 / 0, option off D09/D10 as the baseline, saltests
+27,383 / 0), found no data-safety issue (callers enumerated: `QFApply`, `QFResume`, `QSMatch`,
+`SetQuickSearchCaretPos`, Left, Right, Backspace; nothing cut), and confirmed every round-1 fix by
+a negative control of its own (Left/Backspace one code point: 3 checks + D14/D15 fail; end not
+moved: 5; `Starts` = 2 never set: 5; empty-segment block: 2; the new `LeadingWild`: 1; enclosing
+marks dropped: 6; dotless i: 1).
+
+- **SHOULD 1 - Right stuck after a text ending inside a folded letter** (a regression of the
+  round-1 fix): `stras` matches `Straße` with the end behind `ß`, Right appended `e` -> `strase`,
+  which matches nothing and was refused (also `co`/`cœur`, `a`/`Æble`). **Fixed** in
+  `src/fileswn0.cpp` VK_RIGHT: when the text + the next character is refused, the matched part of
+  the name + that character is tried (as Left takes the matched part). Probe row D16 (`stras`,
+  Right x4 with `Straße.doc` and `.txt` -> {Straße.doc}, as the baseline per the reviewer);
+  **negative control** (the fallback disabled): D16 FAIL {Straße.doc, Straße.txt}
+  (`%TEMP%\tc313_neg_d16.txt`); `fileswn0.cpp` restored from a copy, SHA-256 `b9af5d1c...074d`
+  identical, rebuilt.
+- **NOTE 2 - "never starts inside a folded letter" unproven for later segments**: case `a/sb`
+  against `aßb` added (fails when `KeySegAt` accepts a start inside one).
+- **NOTE 3 - Left on a name starting with a lone mark left a text of the mark only** (all names
+  shown, Left without effect): Left and Backspace now end the search when only ignored marks
+  remain (`SalQFOnlyIgnoredMarks`, 9 saltests checks). Not driven in a probe: the visible set is the
+  same either way (a mark-only text matches everything); the difference is the search state shown
+  in the directory line.
+- **NOTE 4 - U+0338 dropped made `≠` match `=`** (`∉`/`∈`): U+0338 is kept now; 3 cases.
+- **NOTE 5 - the dot tolerance is lost when a mark follows the final dot** (`abc.` + U+0301 against
+  the folder `abc`): not changed, recorded - a mark typed after a dot does not happen with a
+  keyboard.
+- The reviewer's own slip: a stale header copy from round 1 in `%TEMP%\tc313rev` was restored into
+  the tree once; the reviewer repaired it with git and verified the hashes; the tree was clean
+  afterwards (`git status` empty, checked here too).
+
+After the fixes: `build.cmd` BUILD SUCCEEDED; `saltests: 27401 checks, 0 failed` ("feature 313
+folding - 55 cases, 0 differ; 311 BMP code points with an empty key"); `qs313_probe -Expect after`
+32 rows, 0 FAIL; `check_encoding --strict` TOTAL: 0.
+- After review 2 also: `-Expect off -FilterOption 0` 32 rows / 0 FAIL, D09/D10 identical to
+  before; 244 probe `-Expect new` 45 / 0, case rows identical to 244's record. The 244 option-off
+  run was not repeated after review 2 (45 / 0 after review 1): the review-2 edits of
+  `fileswn0.cpp` are inside `if (QFMode)` branches.
+- Person step recorded: `quick-search-ignoring-accents-check-with-a-real-keyboard` (real keyboard,
+  6 steps). Related item `quick-search-keys-skip-canonical-reordering-of-combining` verified: its
+  example now matches in the new mode; the gap remains for marks outside the folded blocks.

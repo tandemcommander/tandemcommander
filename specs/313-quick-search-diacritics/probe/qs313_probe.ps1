@@ -208,6 +208,10 @@ try {
     # D15 Left copies a decomposed fragment into the text ('rek' -> 'r'+caron+'e'); two Backspaces remove
     # 'e' and then the whole letter, which ends the search
     Run-Keys 'D15' @() 'rek' @(0x25, 0x08, 0x08) 'VISIBLE' @{ before = $null; after = $allNames; off = $null } "typed 'rek', Left, Backspace, Backspace"
+    # D16 (review 2) Right after a text ending inside a folded letter: 'stras' on Strasse.doc/.txt, then
+    # Right four times goes on with the name ('Straße', 'Straße.', 'Straße.d', 'Straße.do') - only the
+    # focused .doc stays; the first review-1 build refused 'strase' and kept both
+    Run-Keys 'D16' @('Stra' + (S @(0xDF)) + 'e.doc') 'stras' @(0x27, 0x27, 0x27, 0x27) 'VISIBLE' @{ before = @('Stra' + (S @(0xDF)) + 'e.doc'); after = @('Stra' + (S @(0xDF)) + 'e.doc'); off = $null } "typed 'stras', Right x4"
 }
 finally {
     foreach ($p in @($Started)) { if (Test-Alive $p) { Kill-Mine $p } }

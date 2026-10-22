@@ -249,6 +249,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Quick search ignoring accents: check with a real keyboard](items/quick-search-ignoring-accents-check-with-a-real-keyboard/desc.md) | person-step | 2 | panels-ui | leftover:313 | 2026-10-23 |
 
 ## Parked
 
