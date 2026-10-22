@@ -1,7 +1,7 @@
 ---
 title: Undelete skips its same-partition warning when the target volume cannot be told
 type: bug
-status: new
+status: open
 severity: 5
 area: data-safety
 source: measure:301
@@ -63,3 +63,4 @@ whole path) so the answer is known.
 
 - 2026-10-22 — created (source measure:301)
 - 2026-10-22 — severity 7 -> 5: feature 301 closed the measured subst case (review 1)
+- 2026-10-22 — moved to Next position 10

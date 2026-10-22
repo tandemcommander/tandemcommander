@@ -1,7 +1,7 @@
 ---
 title: Check Copy UNC Path on a subst drive with a long non-ASCII target
 type: person-step
-status: new
+status: open
 severity: 3
 area: long-paths
 source: leftover:301
@@ -54,3 +54,4 @@ The clipboard holds the exact `\\machine\share\...` path of the file, or the pro
 
 - 2026-10-22 — created (source leftover:301)
 - 2026-10-22 — title: the real menu command name
+- 2026-10-22 — moved to Person steps position 29
