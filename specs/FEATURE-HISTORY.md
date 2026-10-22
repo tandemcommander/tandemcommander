@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
@@ -3873,3 +3873,23 @@ a few early ones are out of sequence).
   `above294_probe.ps1` 14 / 10 FAIL -> 24 / 0 (English and Czech); 292's probe 33 / 0; saltests
   25,458 / 0 (negative control 1 failed); one refute-first review (no MUST, no SHOULD; its scratch
   rows drove case, multi-selection and access denied).
+- 295-statictext-grow-buffers: when a dialog's static text (`CStaticText` - the file name and status
+  of every progress dialog, many other dialog texts, plug-ins' static texts) had to show a text longer
+  than any before and a later of its up to five `realloc` calls (`Text`, `TextW`, with an ellipsis
+  style `AlpDX`, `Text2`, `Text2W`) failed, `SetText` freed the earlier results - one of them the
+  block `Text` still referred to - and kept `TextW` replaced: crash, double free or heap corruption at
+  the next paint, `SetText` or destructor; `CStatusWindow::SetSize` wrote `Size[0]` before checking
+  `malloc` - now the growth goes through a variadic form of 293's rule, `SalGrowBuffers` /
+  `SalGrowBuffersWith` in `src/common/salgrowpair.h` (each buffer its element type and an `Extra`
+  over the shared capacity, +3 for "..."; every growth attempted in order, each success stored at
+  once, the capacity raised only when all grew, fresh blocks of a failed growth released);
+  `SalGrowBufferPair` is its two-buffer case (same calls, order, sizes); `SetSize` writes only after
+  the check (no size shown, retried at the next update). Traps: a Bash here-doc collapsed the
+  backslashes of a fix-log replacement again (use the editor); a test that writes past blocks after
+  a size regression turns it into a Debug CRT heap dialog that hangs `saltests` (review SHOULD) -
+  `_msize` is checked first. Limits: proven by the `saltests` seam (feature 293's fake heap, every
+  subset of five and of two calls failing) and a reading proof that `gui.cpp` passes the same buffer
+  list - the seam does not run `CStaticText` itself; not on the running program. From backlog item
+  `a-dialog-status-text-and-the-panel-size-field-crash-when`. No probe; saltests 26,304 / 0 (negative
+  controls 77 / 95 / 18 / 70 failed, the review's old-pair-rule control 122); one refute-first review
+  (no MUST, two SHOULD fixed).

@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A dialog status text and the panel size field crash when memory runs out](items/a-dialog-status-text-and-the-panel-size-field-crash-when/desc.md) | bug | 7 | panels-ui | 295 |
 
 ## Next
 

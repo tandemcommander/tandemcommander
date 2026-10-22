@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A dialog's status text or the size field of a panel's path line could crash the program when memory ran out** (feature 295).
+  - **Before:** when a text in a dialog - for example the file name or status in the progress dialog of a copy, move, delete or pack - had to show a text longer than any it had shown before and memory ran out half-way through making room for it, the text gave back memory it was still using; the next repaint, the next text or closing the dialog could crash the program or damage its memory. The free-space field of a panel's path line wrote into memory it had not got when memory ran out.
+  - **Now:** the dialog text keeps showing its previous text and stays usable; the next longer text, once memory is available, is shown normally. Without memory the free-space field shows nothing and tries again at the next update. Nothing changes when memory is available.
+  - **Limitation:** the low-memory case cannot be produced in the running program; it is checked by unit rules that make each step fail.
+
 - **Registry Editor: moving a key into the key above its parent could delete a value without any question** (feature 294).
   - **Before:** when a key held a subkey of its own name - for example `A\K` holding `K`, which holds another `K` with a value - and that middle `K` was moved (F6) into `A\` (so into `A\K`, the key it came from), the copy wrote the innermost key onto the moved key itself and then deleted it: the innermost key's values were gone, with no box and no other copy. The same happened with the target written under another root name (`\HKEY_USERS\<your SID>\...`) and with a longer repeated chain (`A\K\M\K` holding `M\K`, moved into `A\`). Copy (F5) wrote into the key it was copying from.
   - **Now:** such a Copy or Move is refused for that key, before anything is written, with "Name: <key> Error: Can't move a key to itself." (*OK* skips the key, *Cancel* stops). Moving a key into the key above its parent when it does not hold that repeated chain still merges it as before.

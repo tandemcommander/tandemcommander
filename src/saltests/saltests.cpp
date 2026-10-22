@@ -16152,11 +16152,20 @@ static void TestGrowBuffers295()
                          SalGrowBuf(text2, 3), SalGrowBuf(text2W, 3)));
     CHECK(allocated == 65536 && text != NULL && textW != NULL && alpDX != NULL && text2 != NULL &&
           text2W != NULL);
-    text[65535] = 0;
-    textW[65535] = 0;
-    alpDX[65535] = 1;
-    text2[65538] = 0;
-    text2W[65538] = 0;
+    // a size regression is counted, not written past (a Debug CRT heap dialog would hang the run)
+    bool sizes = allocated == 65536 && text != NULL && textW != NULL && alpDX != NULL && text2 != NULL &&
+                 text2W != NULL && _msize(text) >= 65536 && _msize(textW) >= 65536 * sizeof(WCHAR) &&
+                 _msize(alpDX) >= 65536 * sizeof(int) && _msize(text2) >= 65539 &&
+                 _msize(text2W) >= 65539 * sizeof(WCHAR);
+    CHECK(sizes);
+    if (sizes)
+    {
+        text[65535] = 0;
+        textW[65535] = 0;
+        alpDX[65535] = 1;
+        text2[65538] = 0;
+        text2W[65538] = 0;
+    }
     CHECK(SalGrowBuffers(allocated, 16, SalGrowBuf(text), SalGrowBuf(textW))); // fits
     CHECK(allocated == 65536);
     free(text);

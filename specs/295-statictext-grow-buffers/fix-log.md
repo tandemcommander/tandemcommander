@@ -53,7 +53,7 @@ By reading (the item: not reproducible without memory exhaustion between the cal
   failure: `TRACE_E(LOW_MEMORY); return FALSE;` as before.
 - `src/stswnd.cpp` `CStatusWindow::SetSize`: `Size[0] = 0` only when `malloc(30)` succeeded, else
   `TRACE_E(LOW_MEMORY)`.
-- `src/saltests/saltests.cpp` `TestGrowBuffers295` (845 checks) on feature 293's fake heap (fails
+- `src/saltests/saltests.cpp` `TestGrowBuffers295` (846 checks after the review) on feature 293's fake heap (fails
   chosen calls, moves every grown block, poisons and marks released ones): the five-buffer set and
   the two-buffer set, every subset of the growth calls failing (31 + 3 failing subsets), the old
   contents of all forms kept, each released old block really dead, a later growth succeeds, a text
@@ -85,13 +85,33 @@ calls `malloc` again.
 |---|---|---|
 | encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
 | build | `.\build.cmd` | `BUILD SUCCEEDED` (only the pre-existing regedt C4267 warnings) |
-| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 26303 checks, 0 failed` (25,458 before; `TestGrowBufferPair293` passes on the rewritten pair) |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 26304 checks, 0 failed` after the review (26,303 before it; 25,458 before the feature; `TestGrowBufferPair293` passes on the rewritten pair) |
 | negative control A | `SalDropFreshBuffer` replaced by "free every grown block" (the old `SetText`) | `26023 checks, 77 failed` (b.Live 32, live count 32, AllNull 7, the 293 pair 6) |
 | negative control B | `allocated = needed` also on failure | `25996 checks, 95 failed` |
 | negative control C | fresh blocks kept on failure (no `SalDropFreshBuffer`) | `26303 checks, 18 failed` |
-| restore | header copied back, touched, rebuilt | `26303 checks, 0 failed` |
+| negative control D (by the review) | the old pair rule: results stored only when all grew | `26023 checks, 122 failed` (measured by the review) |
+| negative control E | `Extra` ignored (Text2 / Text2W without +3), after the review's SHOULD 2 fix | `26069 checks, 70 failed`, exits (before the fix: a Debug CRT heap dialog hung saltests) |
+| restore | header copied back, touched, rebuilt | `26304 checks, 0 failed` |
 | clang-format | VS LLVM clang-format on the changed regions | clean (the header's lambda call reformatted) |
 
 No GUI probe: memory exhaustion between the calls cannot be produced on the running program (the
 item: "Not reproduced (needs memory exhaustion between the calls)"); the proof is the seam and the
 reading proof above, as the item's Expected allows.
+
+## Review
+
+First refute-first review (independent agent): **no MUST**, two SHOULD, three NOTE.
+
+- SHOULD 1: T005 names the old pair rule (store only when all grew) as a control, but the Checks
+  table did not record it. The review ran it: `26023 checks, 122 failed`. Recorded above as control D.
+- SHOULD 2: the CRT-form part of `TestGrowBuffers295` wrote past the blocks unchecked
+  (`text2[65538] = 0`), so a size regression (`Extra` ignored) became a Debug CRT heap dialog that
+  hung the run. Fixed: the writes run only after `_msize` of every block is checked (`CHECK(sizes)`);
+  control E now fails with 70 and exits; restored, 26,304 / 0.
+- NOTE 1: the seam mirrors the buffer list of `gui.cpp` and does not run `CStaticText` itself - the
+  call is covered by the reading proof (sizes and order checked by the review too).
+- NOTE 2: after a failed growth some buffers may be larger than `Allocated` until the next growth -
+  intended (the capacity never exceeds the smallest buffer).
+- NOTE 3: closing files not yet on the branch - expected before the close step.
+
+No second review: no MUST finding; the SHOULD fixes touch only the test and the record.
