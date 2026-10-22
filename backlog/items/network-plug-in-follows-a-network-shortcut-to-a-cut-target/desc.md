@@ -1,7 +1,7 @@
 ---
 title: Network plug-in follows a network shortcut to a cut target of 260 or more units
 type: bug
-status: new
+status: parked
 severity: 4
 area: other-plugins
 source: review:305
@@ -13,7 +13,7 @@ effort: S
 feature: -
 related: [decide-ship-network-plugin-nethood]
 depends-on: []
-reason: -
+reason: plug-in nethood not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-10-22
 ---
 
 # Network plug-in follows a network shortcut to a cut target of 260 or more units
@@ -63,3 +63,4 @@ at all is the maintainer's decision (`decide-ship-network-plugin-nethood`).
 ## Log
 
 - 2026-10-22 — created (source review:305)
+- 2026-10-22 — moved to Parked: plug-in nethood not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-10-22

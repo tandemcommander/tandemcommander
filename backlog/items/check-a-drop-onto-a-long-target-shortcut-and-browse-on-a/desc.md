@@ -1,7 +1,7 @@
 ---
 title: Check a drop onto a long-target shortcut and Browse on a long network location
 type: person-step
-status: new
+status: open
 severity: 4
 area: long-paths
 source: leftover:305
@@ -61,3 +61,4 @@ Every step below passes on a Debug or Release build of feature 305 or later.
 ## Log
 
 - 2026-10-22 — created (source leftover:305)
+- 2026-10-22 — moved to Person steps position 20
