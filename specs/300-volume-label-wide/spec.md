@@ -26,6 +26,14 @@ HEAD and 40 with the call added to its list - the one new hit is exactly this si
 scan finds no such call. The run is not elevated and the machine has no removable drive, so the
 real write is a step owed to a person.
 
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: What does OK do when the typed label or the volume path cannot be converted to wide text? → A: nothing is written; the existing "Unable to change the drive label" message is shown with the Windows text of the conversion error and the dialog stays with the label field marked (autonomous run: conservative - refuse rather than guess, no new UI string)
+- Q: Should the label field become a wide (Unicode) field so letters outside the code page can be typed? → A: no - the field stays as it is; only the write changes (autonomous run: item - its *Expected* names the write and the checker only)
+- Q: Should the checker's `ansi-api-on-utf8-path` rule become strict, or get a strict guard for the label call? → A: no - the call is added to the rule's list, the rule stays report-only (autonomous run: item - "`SetVolumeLabel` is added to the checker's `ANSI_NAME_API` list")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A non-ASCII label is written as typed (Priority: P1)
@@ -138,11 +146,7 @@ call put back in a scratch copy is reported).
 
 ## Assumptions
 
-- Assumption (autonomous run): a conversion failure reuses the existing error message with the
-  Windows text of the conversion error - no new UI string (conservative; FR-006).
-- Assumption (autonomous run): the label edit field stays a code-page field; making it a wide
-  field is a separate change (the item names only the write).
-- Assumption (autonomous run): the checker rule stays report-only (draft); the item asks only to
-  add the call to its list.
+- The conversion-failure behaviour, the label field and the checker rule's strictness are settled
+  in *Clarifications*.
 - The real write needs an elevated program for a fixed drive or a removable drive; neither is
   available in the run - the confirmation is a person step (the item's `who: both`).
