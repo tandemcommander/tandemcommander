@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
@@ -3979,3 +3979,19 @@ a few early ones are out of sequence).
   `unpack299_probe.ps1` 4 FAIL / 12 -> 12 / 0 (negative control: the before build); 204's `f9-zip`
   2 / 0; saltests 26,443 / 0; one refute-first review (no MUST; its SHOULD - the cut default - to
   the Inbox).
+- 300-volume-label-wide: Drive Information wrote a typed volume label through `SetVolumeLabel`,
+  the code-page `A` call in the core (no `UNICODE`), with the UTF-8 label and volume path - `Zálohy`
+  arrived as `ZĂˇlohy` on code page 1250 - and the encoding checker's `ANSI_NAME_API` list lacked the
+  call. Now `CDriveInfo::Validate` converts both with `SalU8ToWAlloc` and calls `SetVolumeLabelW`; a
+  failed conversion writes nothing and reports through the existing "Unable to change drive label."
+  (`ERROR_NO_UNICODE_TRANSLATION` / `ERROR_NOT_ENOUGH_MEMORY`); `SetVolumeLabel` is in the list (the
+  rule `ansi-api-on-utf8-path` stays report-only: it shows a returning call, `--strict` does not
+  fail on it). Trap: the incremental Debug link kept `SetVolumeLabelA` in the import table after the
+  last reference was gone - read the import check from a clean link (`build.cmd rebuild`). Limit:
+  the label field is a code-page edit (069 note) - letters outside the code page become `?` (Inbox
+  `drive-information-turns-a-volume-label-outside-the-code-page`); the real write is a person step
+  (no elevation, no removable drive in the run). From backlog item
+  `volume-label-written-through-ansi-api`. Import table `SetVolumeLabelA` -> only `SetVolumeLabelW`;
+  checker report 40 -> 39 with negative control `checker_negative_control.py` PASS; probe
+  `vol300_probe.ps1` 6 / 0 before and after (the error path, not the defect); saltests 26,443 / 0;
+  one refute-first review (no MUST; S1 wording fixed, N4 to the Inbox).

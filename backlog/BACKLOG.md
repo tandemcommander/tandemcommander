@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Drive Information writes the volume label through an ANSI API](items/volume-label-written-through-ansi-api/desc.md) | bug | 5 | encoding | 300 |
 
 ## Next
 
@@ -236,6 +235,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check a volume label with accented letters written by Drive Information (300)](items/check-a-volume-label-with-accented-letters-written-by-drive/desc.md) | person-step | 4 | encoding | leftover:300 | 2026-10-22 |
 | [Drive Information turns a volume label outside the code page into question marks](items/drive-information-turns-a-volume-label-outside-the-code-page/desc.md) | bug | 5 | encoding | review:300 | 2026-10-22 |
 
 ## Parked

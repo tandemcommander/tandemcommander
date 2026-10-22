@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Drive Information wrote a new volume label with accented letters garbled** (feature 300).
+  - **Before:** a label typed in Drive Information was handed to Windows in the system code page, although the program held it as UTF-8: every letter outside ASCII arrived as two or three wrong letters - `Zálohy` became `ZĂˇlohy` on the drive.
+  - **Now:** the label (and the drive's path) reach Windows exactly as typed. An unchanged label is still not written, a failed write still shows "Unable to change drive label." and keeps the dialog open.
+  - **Limitation:** the label field still cannot hold letters outside the system code page - a label in another script is shown, and written back after an edit, with question marks - recorded for later.
+
 - **Unpack (Alt+F9) shortened a long target path or file mask and unpacked into another folder or other files - with "Delete archive after unpacking" the archive could go with files never unpacked** (feature 299).
   - **Before:** in the Unpack dialog a target path or an "Unpack files" mask whose text was longer than 259 bytes (as UTF-8; a CJK letter takes three) was shortened silently and used. A long path unpacked the archive into another folder - a shorter path, possibly an existing folder of yours. A shortened mask unpacked other files than the ones named; when "Delete archive after unpacking" was checked, the archive was then deleted although the files the mask named had never been unpacked.
   - **Now:** OK refuses such a text with "The path specified is too long."; the dialog stays open with the whole text in the field, and nothing is created, unpacked or deleted. Text that fits works as before.
