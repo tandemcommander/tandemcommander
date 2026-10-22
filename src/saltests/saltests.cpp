@@ -94,6 +94,7 @@
 #include "salmaskgroup.h"     // feature 298
 #include "salsubst.h"         // feature 301
 #include "salftpupname.h"     // feature 303
+#include "salpaxheader.h"     // feature 306
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -18115,6 +18116,185 @@ static void TestMaskGroupSplit298()
     CHECK(differ == 0);
 }
 
+// feature 306: one PAX record "<len> <key>=<value>\n" with the length computed
+static std::string PaxRec306(const std::string& kv)
+{
+    size_t base = kv.size() + 2; // the space and the newline
+    for (size_t digits = 1;; digits++)
+        if (std::to_string(base + digits).size() == digits) // the length counts its own digits
+            return std::to_string(base + digits) + " " + kv + "\n";
+}
+
+static int PaxApply306(const std::string& data, SalPaxValues* v)
+{
+    return SalPaxApply(data.data(), data.size(), v);
+}
+
+// the effective path of a member after a global header 'g' and a member header 'x' ("<none>" = NULL)
+static std::string PaxPath306(const std::string& g, const std::string& x)
+{
+    CSalPaxValuesHolder gv, xv;
+    if (PaxApply306(g, &gv.V) != SAL_PAX_OK || PaxApply306(x, &xv.V) != SAL_PAX_OK)
+        return "<bad>";
+    const char* p = SalPaxEffectivePath(&gv.V, &xv.V);
+    return p != NULL ? p : "<none>";
+}
+
+static int PaxTime306(const char* s, __int64* sec, unsigned int* frac)
+{
+    *sec = 12345;
+    *frac = 777;
+    return SalPaxParseTime(s, strlen(s), sec, frac);
+}
+
+static void TestPaxHeader306()
+{
+    // the record builder itself (the length counts its own digits): "9 path=a\n" is 9 bytes
+    CHECK(PaxRec306("path=a") == "9 path=a\n");
+    CHECK(PaxRec306("path=abcdefghij").size() == (size_t)atoi(PaxRec306("path=abcdefghij").c_str()));
+
+    // records: what Python's tarfile writes for a 302-byte path and a CJK name
+    std::string longPath = std::string(100, 'd') + "/" + std::string(100, 'e') + "/" + std::string(96, 'f') + ".txt";
+    std::string cjk;
+    for (int i = 0; i < 200; i++)
+    {
+        int c = 0x4E00 + i;
+        cjk += (char)(0xE0 | (c >> 12));
+        cjk += (char)(0x80 | ((c >> 6) & 0x3F));
+        cjk += (char)(0x80 | (c & 0x3F));
+    }
+    cjk += ".txt";
+    CHECK(PaxPath306("", PaxRec306("path=" + longPath)) == longPath);
+    CHECK(PaxPath306("", PaxRec306("path=" + cjk)) == cjk);
+    CHECK(PaxPath306("", PaxRec306("path=a b=c")) == "a b=c"); // a value may hold spaces and '='
+    // several records, unknown keywords ignored, the last one of a keyword wins
+    CHECK(PaxPath306("", PaxRec306("uid=1000") + PaxRec306("path=first") + PaxRec306("SCHILY.xattr.x=1") +
+                             PaxRec306("path=second")) == "second");
+    // precedence: the member's own value, else the global one; an empty member value cancels the global one
+    CHECK(PaxPath306(PaxRec306("path=g"), "") == "g");
+    CHECK(PaxPath306(PaxRec306("path=g"), PaxRec306("path=x")) == "x");
+    CHECK(PaxPath306(PaxRec306("path=g"), PaxRec306("path=")) == "<none>");
+    CHECK(PaxPath306(PaxRec306("comment=0123456789abcdef"), "") == "<none>"); // git archive: nothing applies
+    CHECK(PaxPath306("", "") == "<none>");
+    // NUL bytes after the last record end the data
+    CHECK(PaxPath306("", PaxRec306("path=p") + std::string(5, '\0')) == "p");
+    CHECK(PaxPath306("", std::string(3, '\0')) == "<none>");
+
+    // malformed: refused (BAD), never read on under a guessed layout
+    {
+        CSalPaxValuesHolder v;
+        CHECK(PaxApply306("8 path=a\n", &v.V) == SAL_PAX_BAD);                                // the length does not match (9 bytes)
+        CHECK(PaxApply306("11 path=a\n", &v.V) == SAL_PAX_BAD);                               // longer than the data (10 bytes)
+        CHECK(PaxApply306("10 path=a\n", &v.V) == SAL_PAX_OK);                                // exactly the data
+        CHECK(PaxApply306("9 path=ab", &v.V) == SAL_PAX_BAD);                                 // no newline at the end
+        CHECK(PaxApply306("9 pathxa\n", &v.V) == SAL_PAX_BAD);                                // no '='
+        CHECK(PaxApply306("5 =a\n", &v.V) == SAL_PAX_BAD);                                    // an empty keyword
+        CHECK(PaxApply306("x path=a\n", &v.V) == SAL_PAX_BAD);                                // no length
+        CHECK(PaxApply306("9path=a\n\n", &v.V) == SAL_PAX_BAD);                               // no space after the length
+        CHECK(PaxApply306("3 \n", &v.V) == SAL_PAX_BAD);                                      // shorter than "k=\n"
+        CHECK(PaxApply306("99999999999999999999999 path=a\n", &v.V) == SAL_PAX_BAD);          // no overflow
+        CHECK(PaxApply306(PaxRec306("path=p") + std::string("\0x", 2), &v.V) == SAL_PAX_BAD); // data after a NUL
+        CHECK(PaxApply306(PaxRec306(std::string("path=a\0b", 8)), &v.V) == SAL_PAX_BAD);      // NUL in a name
+        CHECK(PaxApply306(PaxRec306("size=12x"), &v.V) == SAL_PAX_BAD);
+        CHECK(PaxApply306(PaxRec306("size=-1"), &v.V) == SAL_PAX_BAD);
+        CHECK(PaxApply306(PaxRec306("size=9223372036854775808"), &v.V) == SAL_PAX_BAD); // 2^63
+    }
+    // a record "4 k=\n" (an empty value of an unknown keyword) is valid
+    {
+        CSalPaxValuesHolder v;
+        CHECK(PaxApply306("5 k=\n", &v.V) == SAL_PAX_OK);
+    }
+
+    // size
+    {
+        unsigned __int64 s = 1;
+        CHECK(SalPaxParseSize("0", 1, &s) && s == 0);
+        CHECK(SalPaxParseSize("9223372036854775807", 19, &s) && s == 0x7FFFFFFFFFFFFFFFULL);
+        CHECK(!SalPaxParseSize("", 0, &s));
+        CHECK(!SalPaxParseSize("12345678901234567890", 20, &s));
+        CHECK(!SalPaxParseSize("1.5", 3, &s));
+        CSalPaxValuesHolder g, x;
+        CHECK(PaxApply306(PaxRec306("size=8589934592"), &x.V) == SAL_PAX_OK); // 8 GiB: ustar holds 0
+        CHECK(SalPaxEffectiveSize(&g.V, &x.V, &s) && s == 8589934592ULL);
+        CSalPaxValuesHolder g2, x2;
+        CHECK(PaxApply306(PaxRec306("size=5"), &g2.V) == SAL_PAX_OK);
+        CHECK(SalPaxEffectiveSize(&g2.V, &x2.V, &s) && s == 5); // global
+        CHECK(PaxApply306(PaxRec306("size="), &x2.V) == SAL_PAX_OK);
+        CHECK(!SalPaxEffectiveSize(&g2.V, &x2.V, &s)); // cancelled for the member
+        CHECK(!SalPaxEffectiveSize(&g.V, &g.V, &s));   // nothing given
+    }
+
+    // time
+    {
+        __int64 sec;
+        unsigned int frac;
+        CHECK(PaxTime306("1600000000.25", &sec, &frac) == 1 && sec == 1600000000 && frac == 2500000);
+        CHECK(PaxTime306("1600000000", &sec, &frac) == 1 && sec == 1600000000 && frac == 0);
+        CHECK(PaxTime306("1600000000.", &sec, &frac) == 1 && sec == 1600000000 && frac == 0);
+        CHECK(PaxTime306("0.123456789", &sec, &frac) == 1 && sec == 0 && frac == 1234567); // beyond 100 ns dropped
+        CHECK(PaxTime306("-1.5", &sec, &frac) == 1 && sec == -2 && frac == 5000000);       // rounded down
+        CHECK(PaxTime306("-1", &sec, &frac) == 1 && sec == -1 && frac == 0);
+        CHECK(PaxTime306("-11644473600", &sec, &frac) == 1 && sec == SAL_PAX_MTIME_MIN);
+        CHECK(PaxTime306("-11644473600.5", &sec, &frac) == 0); // before 1601
+        CHECK(PaxTime306("910692730085.9999999", &sec, &frac) == 1 && sec == SAL_PAX_MTIME_MAX && frac == 9999999);
+        CHECK(PaxTime306("910692730086", &sec, &frac) == 0);
+        CHECK(PaxTime306("1234567890123456789012", &sec, &frac) == 0 && sec == 12345 && frac == 777); // untouched
+        CHECK(PaxTime306("", &sec, &frac) == -1);
+        CHECK(PaxTime306("-", &sec, &frac) == -1);
+        CHECK(PaxTime306(".5", &sec, &frac) == -1);
+        CHECK(PaxTime306("1e9", &sec, &frac) == -1);
+        CHECK(PaxTime306("+1", &sec, &frac) == -1);
+        CHECK(PaxTime306("1.2.3", &sec, &frac) == -1);
+        // an invalid or unrepresentable mtime is ignored (the ustar time stays); the header stays OK
+        CSalPaxValuesHolder g, x;
+        CHECK(PaxApply306(PaxRec306("mtime=abc") + PaxRec306("path=p"), &x.V) == SAL_PAX_OK);
+        CHECK(x.V.MTimeState == SAL_PAX_UNSET && x.V.PathState == SAL_PAX_SET);
+        CHECK(PaxApply306(PaxRec306("mtime=99999999999999"), &x.V) == SAL_PAX_OK && x.V.MTimeState == SAL_PAX_UNSET);
+        // precedence: g 1500000000; a member without its own value / with 1400000000 / cancelled
+        CHECK(PaxApply306(PaxRec306("mtime=1500000000"), &g.V) == SAL_PAX_OK);
+        CHECK(SalPaxEffectiveMTime(&g.V, &x.V, &sec, &frac) && sec == 1500000000);
+        CSalPaxValuesHolder x2;
+        CHECK(PaxApply306(PaxRec306("mtime=1400000000"), &x2.V) == SAL_PAX_OK);
+        CHECK(SalPaxEffectiveMTime(&g.V, &x2.V, &sec, &frac) && sec == 1400000000);
+        CSalPaxValuesHolder x3;
+        CHECK(PaxApply306(PaxRec306("mtime="), &x3.V) == SAL_PAX_OK);
+        CHECK(!SalPaxEffectiveMTime(&g.V, &x3.V, &sec, &frac));
+        // a later g header with an empty value drops the global value
+        CHECK(PaxApply306(PaxRec306("mtime="), &g.V) == SAL_PAX_OK);
+        CHECK(!SalPaxEffectiveMTime(&g.V, &x.V, &sec, &frac));
+    }
+
+    // a component no file system takes: more than 255 UTF-16 units (also deep in the path, either separator)
+    {
+        std::string c255, c256;
+        for (int i = 0; i < 85; i++)
+            c255 += "\xE4\xB8\x80";    // 85 CJK letters
+        c255 += std::string(170, 'a'); // = 255 units, 425 bytes
+        c256 = c255 + "b";
+        CHECK(!SalPaxPathHasTooLongComponentU8(c255.c_str()));
+        CHECK(SalPaxPathHasTooLongComponentU8(c256.c_str()));
+        CHECK(!SalPaxPathHasTooLongComponentU8(("a/" + c255 + "/b\\" + c255).c_str()));
+        CHECK(SalPaxPathHasTooLongComponentU8(("a/b/" + c256 + "/c.txt").c_str()));
+        CHECK(SalPaxPathHasTooLongComponentU8(("a\\" + c256).c_str()));
+        CHECK(!SalPaxPathHasTooLongComponentU8(longPath.c_str())); // 302 bytes, components 100/100/100
+        CHECK(!SalPaxPathHasTooLongComponentU8(cjk.c_str()));      // 204 units, 604 bytes
+        std::string emoji;
+        for (int i = 0; i < 128; i++)
+            emoji += "\xF0\x9F\x98\x80"; // U+1F600: two units each -> 256
+        CHECK(SalPaxPathHasTooLongComponentU8(emoji.c_str()));
+        CHECK(!SalPaxPathHasTooLongComponentU8(emoji.substr(4).c_str())); // 254 units
+        // the same rule as SalNameTooLongForFileSystemU8 for one component
+        const std::string samples[] = {c255, c256, emoji, emoji.substr(4), cjk, std::string(255, 'x'), std::string(256, 'x'),
+                                       std::string(300, '\xE4')}; // stray bytes count one each
+        int differ = 0;
+        for (const std::string& s : samples)
+            if ((SalPaxPathHasTooLongComponentU8(s.c_str()) ? 1 : 0) != (SalNameTooLongForFileSystemU8(s.c_str()) ? 1 : 0))
+                differ++;
+        CHECK(differ == 0);
+        CHECK(!SalPaxPathHasTooLongComponentU8(""));
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -18260,6 +18440,7 @@ int main(int argc, char** argv)
     TestMaskGroupSplit298();
     TestSubstTarget301();
     TestFtpCaseOnlyName303();
+    TestPaxHeader306();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

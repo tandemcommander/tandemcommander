@@ -20,8 +20,10 @@
                    mtime=1400000000                                                       -> 1500000000 / 1400000000
       GIT-COMMENT  'g' header comment=<40 hex> (git archive); a.txt                       -> a.txt 'A', 1000000000
       GNU-LONG     PAX-LONG's path as a GNU long name (regression)                        -> that path, 'L'
-      PAX-TOOLONG  CJK(300).txt (300 UTF-16 units: no file system takes it)               -> tgt empty, a message
-      GNU-TOOLONG  the same as a GNU long name (comparison)                               -> tgt empty, a message
+      PAX-TOOLONG  CJK(300).txt (300 UTF-16 units: no file system takes it), then ok.txt 'K'
+                                                                -> "(206)" message at open, tgt holds only ok.txt
+      GNU-TOOLONG  CJK(300).txt as a GNU long name - only with -Only GNU-TOOLONG: it crashes the program
+                   (measured before feature 306; an Inbox defect outside it)      -> tgt empty, a message
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -115,7 +117,15 @@ function Run-Row([string]$name) {
         End-Row $name $id $null $before; $id = 0
         $files = @(Tgt-Files $tgt)
         $facts = New-Object System.Collections.ArrayList
-        if ($refuse) {
+        if ($name -eq 'PAX-TOOLONG') {
+            # the system's "(206) file name too long" when the archive is opened, the long member not
+            # created under any name, the other member extracted
+            $msgOk = $openMsgs -match '\(206\)'
+            $okC = '-'; if ($files -ccontains 'ok.txt') { $okC = Content $tgt 'ok.txt' }
+            $ok = $msgOk -and ($files.Count -eq 1) -and ($okC -ceq 'K')
+            [void]$facts.Add(('message (206) at open: {0}; ok.txt: {1}; tgt: {2}' -f $msgOk, $okC, $(if ($files.Count) { Esc-Names $files } else { 'empty' })))
+        }
+        elseif ($refuse) {
             $other = @($r.Messages | Where-Object { $_ -notmatch "^\[#32770 'Copy'\]" })
             $ok = ($files.Count -eq 0) -and (($other.Count + $(if ($openMsgs -ne 'no window') { 1 } else { 0 })) -gt 0)
             [void]$facts.Add('tgt: ' + $(if ($files.Count) { Esc-Names $files } else { 'empty' }))
@@ -150,7 +160,10 @@ try {
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; ACP {2}; python {3}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [Drv098f]::GetACP(), ((& $Python --version 2>&1) -join ' '))
     Out ''
-    foreach ($n in @('PAX-LONG', 'PAX-CJK', 'PAX-TWINS', 'PAX-DEEP', 'PAX-MTIME', 'PAX-SIZE', 'PAX-GLOBAL', 'GIT-COMMENT', 'GNU-LONG', 'PAX-TOOLONG', 'GNU-TOOLONG')) { Run-Row $n }
+    $rowNames = @('PAX-LONG', 'PAX-CJK', 'PAX-TWINS', 'PAX-DEEP', 'PAX-MTIME', 'PAX-SIZE', 'PAX-GLOBAL', 'GIT-COMMENT', 'GNU-LONG', 'PAX-TOOLONG')
+    # GNU-TOOLONG crashes the program (the Inbox defect, outside feature 306): only with -Only GNU-TOOLONG
+    if ($Only -and @($Only | Where-Object { 'GNU-TOOLONG' -like ($_ + '*') }).Count) { $rowNames += 'GNU-TOOLONG' }
+    foreach ($n in $rowNames) { Run-Row $n }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

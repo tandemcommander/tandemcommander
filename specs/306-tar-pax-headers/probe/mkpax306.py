@@ -67,6 +67,8 @@ def main():
             add(tf, 'a.txt', b'A')
         elif row in ('PAX-TOOLONG', 'GNU-TOOLONG'):
             add(tf, cjk(300) + '.txt', b'X')
+            if row == 'PAX-TOOLONG':
+                add(tf, 'ok.txt', b'K')  # the rest of the archive stays usable
         else:
             raise SystemExit('unknown row ' + row)
     raw = buf.getvalue()

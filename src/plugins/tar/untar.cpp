@@ -156,6 +156,8 @@ void SCommonHeader::Initialize()
     Checksum.Set(0, 0);
     Mode.Set(0, 0);
     MTime.Set(0, 0);
+    MTimeFrac = 0;
+    NameFromPax = FALSE;
     Format = e_Unknown;
     IsExtendedTar = FALSE;
 }
@@ -177,6 +179,9 @@ CArchive::CArchive(const char* fileName, CSalamanderForOperationsAbstract* salam
     Silent = 0;
     Ok = TRUE;
     Stream = NULL;
+    SalPaxInit(&GlobalPax);
+    ReportRefusedNames = FALSE;
+    RefusedNameShown = FALSE;
     SalamanderIf = salamander;
     if (fileName == NULL || salamander == NULL)
     {
@@ -199,6 +204,7 @@ CArchive::~CArchive()
     // we can now close the archive
     if (Stream != NULL)
         delete Stream;
+    SalPaxClear(&GlobalPax);
 }
 
 BOOL CArchive::ListArchive(const char* prefix, CSalamanderDirectoryAbstract* dir)
@@ -211,6 +217,7 @@ BOOL CArchive::ListArchive(const char* prefix, CSalamanderDirectoryAbstract* dir
     // first try to detect the archive and read the first header
     Silent = 0;
     Offset.Set(0, 0);
+    ReportRefusedNames = TRUE; // feature 306: the user learns here which members are not listed
     SCommonHeader header;
     int ret = ReadArchiveHeader(header, TRUE);
 
@@ -440,6 +447,8 @@ BOOL CArchive::UnpackWholeArchive(const char* mask, const char* targetPath)
     }
     free(tmp);
 
+    // feature 306: unpacked without a listing - a member refused for its name is reported here
+    ReportRefusedNames = TRUE;
     // and now perform the actual extraction
     return DoUnpackArchive(targetPath, NULL, names);
 }
@@ -907,6 +916,10 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
 
     // clear the structure right away
     header.Initialize();
+    // feature 306: every pass over the archive starts with its first header read with 'probe'
+    // -> the values of global PAX headers apply from their header to the end of that pass only
+    if (probe)
+        SalPaxClear(&GlobalPax);
     // try to read the maximum size - the tar header
     unsigned short preRead = BLOCKSIZE;
     const unsigned char* buffer = Stream->GetBlock(preRead);
@@ -1135,6 +1148,30 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     }
     strcpy(header.Name, tmpName);
     free(tmpName);
+    // feature 306: a PAX path with a component no file system takes (over 255 UTF-16 units) is
+    // refused - not listed, not extracted, never shortened or replaced by the ustar fallback name
+    // (the whole name of such a member crashed the listing, measured with a GNU long name)
+    if (header.NameFromPax && SalPaxPathHasTooLongComponentU8(header.Name))
+    {
+        header.Ignored = TRUE;
+        if (ReportRefusedNames && !RefusedNameShown)
+        {
+            RefusedNameShown = TRUE; // once per operation: the rest of the archive stays usable
+            const char* err = SalamanderGeneral->GetErrorText(ERROR_FILENAME_EXCED_RANGE);
+            size_t msgSize = strlen(err) + 2 + strlen(header.Name) + 1;
+            char* msg = (char*)malloc(msgSize);
+            if (msg != NULL)
+            {
+                strcpy(msg, err); // sized for the whole text: the path is shown whole
+                strcat(msg, "\n\n");
+                strcat(msg, header.Name);
+                SalamanderGeneral->ShowMessageBox(msg, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                free(msg);
+            }
+            else
+                SalamanderGeneral->ShowMessageBox(err, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        }
+    }
     // now analyze the name
     const char* ptr = header.Name + strlen(header.Name) - 1;
     // find the next separator - split name and path
@@ -1195,6 +1232,7 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     // date and time
     header.MTime.Value += 11644473600;      // zero corresponds to 1 Jan 1601
     header.MTime.Value *= 1000 * 1000 * 10; // and convert to 100-nanosecond units
+    header.MTime.Value += header.MTimeFrac; // feature 306: the fraction of a PAX mtime (0 otherwise)
     header.FileInfo.LastWrite.dwLowDateTime = header.MTime.LoDWord;
     header.FileInfo.LastWrite.dwHighDateTime = header.MTime.HiDWord;
     // we already have the type from tar, now handle cpio
@@ -1480,6 +1518,9 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
     // the first header block is already read and validated
     const TTarBlock* tarHeader = (const TTarBlock*)buffer;
     Offset += CQuadWord(BLOCKSIZE, 0);
+    // feature 306: values of the PAX 'x' header(s) of this member (the 'x' header and its member
+    // are read in this one call, as a GNU long name and its member are)
+    CSalPaxValuesHolder memberPax;
 
     for (;;)
     {
@@ -1494,6 +1535,71 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
             SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_HEADER), LoadStr(IDS_TARERR_TITLE),
                                               MSGBOX_ERROR);
             return TAR_ERROR;
+        }
+
+        // feature 306: PAX extended headers - 'x' for the next member, 'g' for every following
+        // member of this pass; their records (path, size, mtime) override the ustar header that
+        // keeps only a fallback (a name cut at 100 bytes, '?' for non-ASCII letters, size 0 ...)
+        if (tarHeader->Header.typeflag == XHDTYPE || tarHeader->Header.typeflag == XGLTYPE)
+        {
+            // a malformed or oversized header refuses the archive: reading on would list the
+            // members under the fallback names, or misread the data after a wrong size
+            if (header.FileInfo.Size > CQuadWord(SAL_PAX_MAX_HEADER_BYTES, 0))
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_HEADER), LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                return TAR_ERROR;
+            }
+            BOOL global = tarHeader->Header.typeflag == XGLTYPE; // tarHeader is invalid after GetBlock
+            DWORD dataSize = header.FileInfo.Size.LoDWord;
+            char* data = (char*)malloc(dataSize + 1);
+            if (data == NULL)
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_MEMORY), LoadStr(IDS_TARERR_TITLE),
+                                                  MSGBOX_ERROR);
+                return TAR_ERROR;
+            }
+            DWORD toread = dataSize;
+            DWORD offs = 0;
+            while (toread > 0)
+            {
+                const unsigned char* ptr = Stream->GetBlock(BLOCKSIZE);
+                if (ptr == NULL)
+                {
+                    free(data);
+                    SalamanderGeneral->ShowMessageBox(LoadErr(Stream->GetErrorCode(), Stream->GetLastErr()),
+                                                      LoadStr(IDS_GZERR_TITLE), MSGBOX_ERROR);
+                    return TAR_ERROR;
+                }
+                Offset += CQuadWord(BLOCKSIZE, 0);
+                DWORD rest = BLOCKSIZE < toread ? BLOCKSIZE : toread;
+                memcpy(data + offs, ptr, rest);
+                offs += rest;
+                toread -= rest;
+            }
+            int paxRet = SalPaxApply(data, dataSize, global ? &GlobalPax : &memberPax.V);
+            free(data);
+            if (paxRet != SAL_PAX_OK)
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStr(paxRet == SAL_PAX_NOMEM ? IDS_TARERR_MEMORY : IDS_TARERR_HEADER),
+                                                  LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                return TAR_ERROR;
+            }
+            // and read the next block for further processing (as after a GNU long name)
+            tarHeader = (const TTarBlock*)Stream->GetBlock(BLOCKSIZE);
+            if (tarHeader == NULL)
+            {
+                SalamanderGeneral->ShowMessageBox(LoadErr(Stream->GetErrorCode(), Stream->GetLastErr()),
+                                                  LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                return TAR_ERROR;
+            }
+            Offset += CQuadWord(BLOCKSIZE, 0);
+            if (!IsTarHeader(tarHeader->RawBlock, header.Finished, header.Format))
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_HEADER), LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                return TAR_ERROR;
+            }
+            // and loop again
+            continue;
         }
 
         // handle long GNU names
@@ -1560,6 +1666,34 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
             // and loop again
             continue;
         }
+        // feature 306: the member's PAX values (its own 'x' header, else the global 'g' ones) beat
+        // the ustar header and a GNU long name; nothing applies to the end-of-archive block
+        if (!header.Finished)
+        {
+            const char* paxPath = SalPaxEffectivePath(&GlobalPax, &memberPax.V);
+            if (paxPath != NULL)
+            {
+                char* name = (char*)malloc(strlen(paxPath) + 1); // header.Name is malloc'd / free'd
+                if (name == NULL)
+                {
+                    SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_MEMORY), LoadStr(IDS_TARERR_TITLE),
+                                                      MSGBOX_ERROR);
+                    return TAR_ERROR;
+                }
+                strcpy(name, paxPath);
+                if (header.Name != NULL)
+                    free(header.Name); // a GNU long name
+                header.Name = name;
+                header.NameFromPax = TRUE;
+            }
+            // the data size: not for links and directories, whose data is never read (size 0 above)
+            unsigned __int64 paxSize;
+            if (tarHeader->Header.typeflag != LNKTYPE && tarHeader->Header.typeflag != SYMTYPE &&
+                tarHeader->Header.typeflag != DIRTYPE && SalPaxEffectiveSize(&GlobalPax, &memberPax.V, &paxSize))
+            {
+                header.FileInfo.Size.Value = paxSize;
+            }
+        }
         // if no long name was read, use the name from the header
         if (header.Name == NULL)
         {
@@ -1604,9 +1738,7 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
         case BLKTYPE:
         case FIFOTYPE:
         case CHRSPEC:
-        case XHDTYPE:
-        case XGLTYPE:
-            // types we cannot handle
+            // types we cannot handle (feature 306: XHDTYPE / XGLTYPE are read above, never here)
             header.Ignored = TRUE;
             break;
         case AREGTYPE:
@@ -1646,6 +1778,15 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
             SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_HEADER), LoadStr(IDS_TARERR_TITLE),
                                               MSGBOX_ERROR);
             return TAR_ERROR;
+        }
+        // feature 306: a PAX mtime (seconds since 1970, possibly negative - the unsigned
+        // conversion in ReadArchiveHeader wraps back into range - and a 100-ns fraction)
+        __int64 paxSec;
+        unsigned int paxFrac;
+        if (!header.Finished && SalPaxEffectiveMTime(&GlobalPax, &memberPax.V, &paxSec, &paxFrac))
+        {
+            header.MTime.Value = (unsigned __int64)paxSec;
+            header.MTimeFrac = paxFrac;
         }
         if (!FromOctalQ((const unsigned char*)tarHeader->Header.mode, sizeof(tarHeader->Header.mode), header.Mode))
         {

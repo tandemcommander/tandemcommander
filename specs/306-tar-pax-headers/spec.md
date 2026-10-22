@@ -100,7 +100,7 @@ a wrong time is visible after extraction.
   classic header / no global value), as POSIX defines.
 - The same keyword twice in one header: the last one wins.
 - A malformed extended header (a record length that does not match, no `=`, an invalid `size`,
-  more data than a reasonable bound): the archive is refused with the plug-in's existing
+  header data over 1 MiB): the archive is refused with the plug-in's existing
   "header" error, never read on under a guessed layout.
 - An invalid or out-of-range `mtime` is ignored (the classic time stays), as Python and GNU tar
   do.

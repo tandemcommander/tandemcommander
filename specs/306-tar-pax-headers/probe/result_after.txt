@@ -1,0 +1,27 @@
+pax306_probe (feature 306) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 11:29; registry key existed True; ACP 1250; python Python 3.14.6
+
+PAX-LONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-LONG   RUN    PASS        dddddddd..[302 chars]..ffff.txt: L t=1000000000; tgt: dddddddd..[302 chars]..ffff.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy directory "dddddddddddddddddddddd..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-CJK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-CJK    RUN    PASS        \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[204 chars]..\u4EC4\u4EC5\u4EC6\u4EC7.txt: C t=1000000000; tgt: \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[204 chars]..\u4EC4\u4EC5\u4EC6\u4EC7.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy file "\u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-TWINS  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-TWINS  RUN    PASS        \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[204 chars]..\u4EC4\u4EC5\u4EC6\u5000.txt: A t=1000000000; \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[204 chars]..\u4EC4\u4EC5\u4EC6\u5001.txt: B t=1000000000; tgt: \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[204 chars]..\u4EC4\u4EC5\u4EC6\u5000.txt, \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[204 chars]..\u4EC4\u4EC5\u4EC6\u5001.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-DEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-DEEP   RUN    PASS        sub/\u4E00\u4E01\u4E02\u4E03..[208 chars]..\u4EC4\u4EC5\u4EC6\u4EC7.txt: D t=1000000000; tgt: sub/\u4E00\u4E01\u4E02\u4E03..[208 chars]..\u4EC4\u4EC5\u4EC6\u4EC7.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy directory "sub" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-MTIME  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-MTIME  RUN    PASS        t.txt: T t=1600000000,25; tgt: t.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy file "t.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-SIZE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-SIZE   RUN    PASS        s.txt: SIZE5 t=1000000000; z.txt: Z t=1000000000; tgt: s.txt, z.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-GLOBAL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-GLOBAL RUN    PASS        g.txt: G t=1500000000; h.txt: H t=1400000000; tgt: g.txt, h.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GIT-COMMENT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GIT-COMMENT RUN    PASS        a.txt: A t=1000000000; tgt: a.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy file "a.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GNU-LONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GNU-LONG   RUN    PASS        dddddddd..[302 chars]..ffff.txt: L t=1000000000; tgt: dddddddd..[302 chars]..ffff.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy directory "dddddddddddddddddddddd..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-TOOLONG RUN    PASS        message (206) at open: True; ok.txt: K; tgt: ok.txt; at open: ...B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F / after D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+
+Rows: PASS 20, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

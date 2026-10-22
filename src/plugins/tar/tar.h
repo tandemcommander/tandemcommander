@@ -5,6 +5,7 @@
 
 #include "names.h"
 #include "dlldefs.h"
+#include "../../common/salpaxheader.h" // feature 306: PAX extended header records
 
 // possible return codes
 #define TAR_OK 0
@@ -260,6 +261,8 @@ struct SCommonHeader
     char* Name;
     CQuadWord Mode;
     CQuadWord MTime;
+    DWORD MTimeFrac;  // feature 306: 100-ns part of a PAX mtime, added after the FILETIME conversion
+    BOOL NameFromPax; // feature 306: Name is a PAX 'path' (a component no file system takes is refused)
 };
 
 class CArchiveAbstract
@@ -285,6 +288,12 @@ private:
     BOOL Ok;
     CQuadWord Offset;
     DWORD Silent;
+    // feature 306: values of the PAX global ('g') headers read so far in this pass (reset at the
+    // first header of every pass); refusing a PAX path no file system takes is reported once,
+    // and only by the listing and the whole-archive unpack (not by F3 / Copy of other members)
+    SalPaxValues GlobalPax;
+    BOOL ReportRefusedNames;
+    BOOL RefusedNameShown;
 
     BOOL ListStream(CSalamanderDirectoryAbstract* dir);
     BOOL UnpackStream(const char* targetPath, BOOL doProgress,

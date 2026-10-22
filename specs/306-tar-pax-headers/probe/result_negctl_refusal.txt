@@ -1,0 +1,9 @@
+pax306_probe (feature 306) negctl-refusal-disabled
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 11:34; registry key existed True; ACP 1250; python Python 3.14.6
+
+PAX-TOOLONG END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 1 ([#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC0110X64-20261022-113404.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.); new reports 1 [TC0110X64-20261022-113404.TXT: Information About Exception: / Exception: open salamander rtc exception / Error Number: 2 / Description: Stack memory corruption / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / CMainWindow::LoadConfig(0) / CFilesWindow::ChangeDir(C:\Users\pavel\AppData\Local\Temp\tc306\PAX-TOOLONG\t.tar, -1, (null), 3, , 1, 0) / CFilesWindow::ChangePathToArchive(C:\Users\pavel\AppData\Local\Temp\tc306\PAX-TOOLONG\t.tar, , -1, (null), 0, , 1, , 0, 1, 0) / CFilesWindow::CommonRefresh(, -1, (null), 1, 1, 0)]
+PAX-TOOLONG RUN    FAIL        message (206) at open: False; ok.txt: -; tgt: empty; at open: no window; windows: no window
+Registry: restored; identical=True; SHA-256 before D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F / after D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+
+Rows: PASS 0, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
