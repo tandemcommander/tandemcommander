@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
@@ -4048,3 +4048,23 @@ a few early ones are out of sequence).
   12 / 0 (reviewer's negative control: the start check off -> 5 / 3); 288 20 / 0, 224 16 / 0;
   saltests 26,577 / 0 (negative controls: no match 7 failed, ASCII fold 2 failed); one
   refute-first review (no MUST; SHOULD 1 fixed, NOTEs recorded).
+- 304-plugin-picker-shortcut-cut: the plug-ins' folder picker (`SplBrowseForFolderU8`, PictView /
+  UnCAB / Undelete) followed a picked network location (folder shortcut) whose target has 260+
+  units to a CUT path - measured: on a volume without 8.3 names `IShellLinkW::GetPath` answers
+  NOERROR with exactly 259 units (`\\?\D:\...` cut mid-name) whatever the buffer (a 32,768-unit
+  buffer alone does not help); with 8.3 names it answers the short form (whole) - now an answer
+  of 259+ units is followed only when the link's item list (`GetIDList` +
+  `SHGetNameFromIDList(SIGDN_FILESYSPATH)`) proves it whole (equal, or the answer begins the
+  longer name - then that name, plain form), otherwise refused with the existing "too long"
+  message (`splfiledlg.h` `WholeFolderShortcutTargetW` pure, `LinkTargetWholeW` the link part,
+  `ResolveNetHoodFolderW(path, &refused)`). Traps: `IShellLinkW::SetPath` refuses 260+ units and
+  `SHParseDisplayName` of a long path gives the 8.3 form - a test link needs an item list built
+  folder by folder; the cut shows only on a volume without 8.3 names (the build folder here, not
+  `%TEMP%`); the shell rebuilds an item list for a link saved without one, so the refusal is
+  driven by a fake `IShellLinkW`. Left: the core's `SalShellLinkGetPathU8` takes the same cut
+  answer (Inbox `a-shortcut-whose-target-path-has-260-or-more-characters-is`); the real dialog
+  (person step `check-the-plug-in-folder-picker-with-a-long-target-network`). From backlog item
+  `plug-in-folder-picker-may-cut-a-folder-shortcut-target-of`. Measurement `probe/measure3.cpp`
+  on D: 4 of 4 cut -> 0 of 4; saltests 26,701 / 0 (negative controls: answer taken as it is 18
+  failed, refusal flag off 3 failed); one refute-first review (no MUST; SHOULD 1-2 fixed, NOTEs
+  recorded).

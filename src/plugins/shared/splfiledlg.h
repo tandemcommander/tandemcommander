@@ -295,6 +295,45 @@ inline WCHAR* WholeFolderShortcutTargetW(const WCHAR* answer, const WCHAR* listN
     return result;
 }
 
+// feature 304: the target of a loaded folder-shortcut link, whole or refused: GetPath (UNC
+// preferred) into 32,768 units; an answer of MAX_PATH - 1 units or more is checked against the
+// file-system name of the link's item list (WholeFolderShortcutTargetW). Returns a malloc'ed
+// target, or NULL with '*refused' TRUE (cannot be read whole, also low memory) or FALSE (the link
+// has no path - the rule before: the picked folder itself).
+inline WCHAR* LinkTargetWholeW(IShellLinkW* link, BOOL* refused)
+{
+    *refused = FALSE;
+    const int tgtUnits = 32768; // the longest path Windows knows
+    WCHAR* tgt = (WCHAR*)malloc(tgtUnits * sizeof(WCHAR));
+    if (tgt == NULL)
+    {
+        *refused = TRUE; // never the shortcut folder silently
+        return NULL;
+    }
+    WCHAR* result = NULL;
+    tgt[0] = 0;
+    if (link->GetPath(tgt, tgtUnits, NULL, SLGP_UNCPRIORITY) == NOERROR && tgt[0] != 0)
+    {
+        WCHAR* listName = NULL;
+        if (wcslen(tgt) >= MAX_PATH - 1) // possibly cut
+        {
+            PIDLIST_ABSOLUTE idList = NULL;
+            if (link->GetIDList(&idList) == S_OK && idList != NULL)
+            {
+                if (FAILED(SHGetNameFromIDList(idList, SIGDN_FILESYSPATH, &listName)))
+                    listName = NULL;
+                CoTaskMemFree(idList);
+            }
+        }
+        result = WholeFolderShortcutTargetW(tgt, listName);
+        if (result == NULL)
+            *refused = TRUE;
+        CoTaskMemFree(listName);
+    }
+    free(tgt);
+    return result;
+}
+
 // feature 121: the core's GetTargetDirectory resolved a picked NetHood folder shortcut to
 // the folder it points at (ResolveNetHoodPath); SplBrowseForFolderU8 returned the shortcut
 // folder itself - a folder holding desktop.ini and target.lnk, not the place the user
@@ -353,36 +392,10 @@ inline WCHAR* ResolveNetHoodFolderW(const WCHAR* path, BOOL* refused = NULL)
                 {
                     if (fileInt->Load(name, STGM_READ) == S_OK)
                     {
-                        const int tgtUnits = 32768; // the longest path Windows knows
-                        WCHAR* tgt = (WCHAR*)malloc(tgtUnits * sizeof(WCHAR));
-                        if (tgt == NULL)
-                        {
-                            if (refused != NULL)
-                                *refused = TRUE; // never the shortcut folder silently
-                        }
-                        else
-                        {
-                            tgt[0] = 0;
-                            if (link->GetPath(tgt, tgtUnits, NULL, SLGP_UNCPRIORITY) == NOERROR && tgt[0] != 0)
-                            {
-                                WCHAR* listName = NULL;
-                                if (wcslen(tgt) >= MAX_PATH - 1) // possibly cut (feature 304)
-                                {
-                                    PIDLIST_ABSOLUTE idList = NULL;
-                                    if (link->GetIDList(&idList) == S_OK && idList != NULL)
-                                    {
-                                        if (FAILED(SHGetNameFromIDList(idList, SIGDN_FILESYSPATH, &listName)))
-                                            listName = NULL;
-                                        CoTaskMemFree(idList);
-                                    }
-                                }
-                                result = WholeFolderShortcutTargetW(tgt, listName);
-                                if (result == NULL && refused != NULL)
-                                    *refused = TRUE;
-                                CoTaskMemFree(listName);
-                            }
-                            free(tgt);
-                        }
+                        BOOL linkRefused = FALSE;
+                        result = LinkTargetWholeW(link, &linkRefused);
+                        if (refused != NULL)
+                            *refused = linkRefused;
                     }
                     fileInt->Release();
                 }

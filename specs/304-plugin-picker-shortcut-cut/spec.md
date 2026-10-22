@@ -61,7 +61,9 @@ target or a refusal - never a path of 259 units that is a prefix of the target.
    **When** the user confirms the pick, **Then** the existing "too long" message appears and
    nothing is picked (the plug-in's own limit, as for any picked folder).
 3. **Given** that whole target and UnCAB (a 780-byte buffer), **When** the user confirms the
-   pick, **Then** UnCAB receives the whole target path in the plain form (no `\\?\` prefix).
+   pick, **Then** UnCAB receives the whole target path in the plain form (no `\\?\` prefix) in
+   its field; its own OK then refuses a cabinet path over 256 bytes (`CB_MAX_CAB_PATH`) as for
+   any typed path - the plug-in's own limit.
 4. **Given** a shortcut whose answer has 259 units or more and whose whole name cannot be
    proven (the item list is missing or names something else), **When** the picker resolves it,
    **Then** the pick is refused with the "too long" message - never followed cut, and never
@@ -96,8 +98,9 @@ a target of 259 units and one in 8.3 form are followed as before.
   refused (fail closed).
 - The item list cannot be read or names no file-system path: an answer of 259 units or more is
   refused; a shorter answer is followed as before.
-- Low memory while reading: the shortcut is treated as unreadable and the pick is refused
-  (never cut, never the shortcut folder silently).
+- Low memory for the 32,768-unit target buffer: the pick is refused (never cut, never the
+  shortcut folder silently). Other failures before the target is read (the shortcut cannot be
+  opened or loaded, it names no path) keep feature 121's behaviour: the picked folder itself.
 
 ## Requirements *(mandatory)*
 

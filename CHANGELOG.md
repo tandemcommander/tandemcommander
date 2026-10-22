@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **PictView, UnCAB and Undelete: picking a network location whose target folder path has 260 or more characters could give a shortened path - another folder** (feature 304).
+  - **Before:** the folder picker of these plug-ins follows a picked network location (a folder shortcut) to the folder it points at. On a drive without 8.3 short names, Windows answers such a long target cut after 259 characters, usually in the middle of a folder name, and the picker took that path - a folder that does not exist, or a parent folder of the target.
+  - **Now:** the picker checks such an answer against the shortcut's own record of its target: it takes the whole path when that proves it, and otherwise refuses the pick with "The filename or extension is too long." - never a shortened path. Shorter targets work exactly as before. A whole path still has to fit the plug-in's own limit (PictView and Undelete refuse paths over 259 bytes, UnCAB's unpack over 256).
+  - **Limitation:** checked with real shortcuts by the program's tests; picking one in the real dialog has not yet been checked by a person. The same cut in the main program (Enter or a drop on such a shortcut) is recorded for later.
+
 - **FTP: an upload of `B.txt` replaced the server's `b.txt` without asking, on servers that show Unix-style paths but ignore case** (feature 303).
   - **Before:** many FTP servers list their folders like a Unix server but store the files on a file system that ignores case - FileZilla Server and other servers running on Windows. Uploading `B.txt` (or `čaj.txt`) into a folder holding `b.txt` (or `Čaj.txt`) was sent without the "Target File Already Exists" question, because the names differ in case, and the server wrote the upload over its `b.txt`.
   - **Now:** a file or link in the target folder whose name differs from the uploaded file's name only in case counts as existing: the question appears (or the answer configured for existing files is applied), and nothing is sent until it is answered. Overwrite uploads the file as before; folders whose names differ only in case do not stop a file upload.

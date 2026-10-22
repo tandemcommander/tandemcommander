@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Plug-in folder picker may cut a folder shortcut target of 260 or more units](items/plug-in-folder-picker-may-cut-a-folder-shortcut-target-of/desc.md) | bug | 5 | other-plugins | 304 |
 
 ## Next
 
@@ -239,6 +238,8 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [A shortcut whose target path has 260 or more characters is followed to a cut path](items/a-shortcut-whose-target-path-has-260-or-more-characters-is/desc.md) | bug | 6 | long-paths | measure:304 | 2026-10-22 |
+| [Check the plug-in folder picker with a long-target network location](items/check-the-plug-in-folder-picker-with-a-long-target-network/desc.md) | person-step | 4 | other-plugins | leftover:304 | 2026-10-22 |
 
 ## Parked
 

@@ -16990,6 +16990,58 @@ static PIDLIST_ABSOLUTE BuildIDList304(const std::wstring& base, const std::vect
     return abs;
 }
 
+// a link that answers what the test says: drives LinkTargetWholeW's refusal, which the real shell
+// never reaches on this machine (it always keeps an item list naming the whole target)
+class CFakeLink304 : public IShellLinkW
+{
+public:
+    std::wstring Answer;
+    HRESULT AnswerRes = NOERROR;
+    PIDLIST_ABSOLUTE IdList = NULL; // not owned; NULL = the link has none
+    int GetIDListCalls = 0;
+
+    STDMETHODIMP QueryInterface(REFIID riid, void** ppv)
+    {
+        if (riid == IID_IUnknown || riid == IID_IShellLinkW)
+        {
+            *ppv = this;
+            return S_OK;
+        }
+        *ppv = NULL;
+        return E_NOINTERFACE;
+    }
+    STDMETHODIMP_(ULONG) AddRef() { return 2; }
+    STDMETHODIMP_(ULONG) Release() { return 1; }
+    STDMETHODIMP GetPath(LPWSTR file, int cch, WIN32_FIND_DATAW*, DWORD)
+    {
+        if (file != NULL && cch > 0)
+            lstrcpynW(file, Answer.c_str(), cch);
+        return AnswerRes;
+    }
+    STDMETHODIMP GetIDList(PIDLIST_ABSOLUTE* ppidl)
+    {
+        GetIDListCalls++;
+        *ppidl = IdList != NULL ? ILCloneFull(IdList) : NULL;
+        return *ppidl != NULL ? S_OK : S_FALSE;
+    }
+    STDMETHODIMP SetIDList(PCIDLIST_ABSOLUTE) { return E_NOTIMPL; }
+    STDMETHODIMP GetDescription(LPWSTR, int) { return E_NOTIMPL; }
+    STDMETHODIMP SetDescription(LPCWSTR) { return E_NOTIMPL; }
+    STDMETHODIMP GetWorkingDirectory(LPWSTR, int) { return E_NOTIMPL; }
+    STDMETHODIMP SetWorkingDirectory(LPCWSTR) { return E_NOTIMPL; }
+    STDMETHODIMP GetArguments(LPWSTR, int) { return E_NOTIMPL; }
+    STDMETHODIMP SetArguments(LPCWSTR) { return E_NOTIMPL; }
+    STDMETHODIMP GetHotkey(WORD*) { return E_NOTIMPL; }
+    STDMETHODIMP SetHotkey(WORD) { return E_NOTIMPL; }
+    STDMETHODIMP GetShowCmd(int*) { return E_NOTIMPL; }
+    STDMETHODIMP SetShowCmd(int) { return E_NOTIMPL; }
+    STDMETHODIMP GetIconLocation(LPWSTR, int, int*) { return E_NOTIMPL; }
+    STDMETHODIMP SetIconLocation(LPCWSTR, int) { return E_NOTIMPL; }
+    STDMETHODIMP SetRelativePath(LPCWSTR, DWORD) { return E_NOTIMPL; }
+    STDMETHODIMP Resolve(HWND, DWORD) { return E_NOTIMPL; }
+    STDMETHODIMP SetPath(LPCWSTR) { return E_NOTIMPL; }
+};
+
 static std::wstring Rule304(const WCHAR* answer, const WCHAR* listName, BOOL* gotNull)
 {
     WCHAR* r = SplFileDlgDetail::WholeFolderShortcutTargetW(answer, listName);
@@ -17066,6 +17118,62 @@ static void TestFolderShortcutCut304()
         bases.push_back(exeDir); // the build folder: often a volume without 8.3 names
     }
     CHECK(!bases.empty());
+
+    // --- the link's part (LinkTargetWholeW) with a fake link: refused / followed / no path ---
+    {
+        CFakeLink304 fake;
+        BOOL refused = FALSE;
+        std::wstring longAnswer = (L"\\\\?\\D:\\" + std::wstring(400, L'q')).substr(0, MAX_PATH - 1);
+        // a possibly cut answer and no item list: refused, never the shortcut folder silently
+        fake.Answer = longAnswer;
+        WCHAR* r = SplFileDlgDetail::LinkTargetWholeW(&fake, &refused);
+        CHECK(r == NULL && refused && fake.GetIDListCalls == 1);
+        free(r);
+        // ... and an item list naming another folder (the temporary folder): refused
+        PIDLIST_ABSOLUTE tempList = NULL;
+        CHECK(!bases.empty() && SUCCEEDED(SHParseDisplayName(bases[0].c_str(), NULL, &tempList, 0, NULL)));
+        fake.IdList = tempList;
+        refused = FALSE;
+        r = SplFileDlgDetail::LinkTargetWholeW(&fake, &refused);
+        CHECK(r == NULL && refused && fake.GetIDListCalls == 2);
+        free(r);
+        // a short answer: as before, the item list is not even read
+        fake.Answer = L"C:\\short";
+        refused = TRUE;
+        r = SplFileDlgDetail::LinkTargetWholeW(&fake, &refused);
+        CHECK(r != NULL && wcscmp(r, L"C:\\short") == 0 && !refused && fake.GetIDListCalls == 2);
+        free(r);
+        // an answer of 259 units that begins with the (shorter) item-list name is not its beginning
+        // - the item list does not prove it whole: refused (the followed case is end to end below)
+        if (tempList != NULL)
+        {
+            WCHAR* tempName = NULL;
+            if (SUCCEEDED(SHGetNameFromIDList(tempList, SIGDN_FILESYSPATH, &tempName)) && tempName != NULL)
+            {
+                fake.Answer = (std::wstring(tempName) + L"\\" + std::wstring(300, L'w')).substr(0, MAX_PATH - 1);
+                refused = FALSE;
+                r = SplFileDlgDetail::LinkTargetWholeW(&fake, &refused);
+                CHECK(r == NULL && refused);
+                free(r);
+                CoTaskMemFree(tempName);
+            }
+            else
+                CHECK(FALSE);
+        }
+        // no path (S_FALSE / "") or GetPath failing: not refused - the picked folder itself, as before
+        fake.Answer = L"";
+        fake.AnswerRes = S_FALSE;
+        refused = TRUE;
+        r = SplFileDlgDetail::LinkTargetWholeW(&fake, &refused);
+        CHECK(r == NULL && !refused);
+        fake.Answer = longAnswer;
+        fake.AnswerRes = E_FAIL;
+        refused = TRUE;
+        r = SplFileDlgDetail::LinkTargetWholeW(&fake, &refused);
+        CHECK(r == NULL && !refused);
+        CoTaskMemFree(tempList);
+    }
+
     const char* ini = "[.ShellClassInfo]\r\nCLSID2={0AFACED1-E828-11D1-9187-B532F1E9575D}\r\nFlags=2\r\n";
     int cutReproduced = 0, noShortNameVolumes = 0;
     for (size_t b = 0; b < bases.size(); b++)
