@@ -28,7 +28,7 @@
 **Goal**: masks of any length are prepared whole and equal to the old algorithm's unbounded result.
 **Independent Test**: saltests `TestMaskGroupSplit298` 0 failed.
 
-- [ ] T007 [US2] Add `TestMaskGroupSplit298` to src/saltests/saltests.cpp (include `salmaskgroup.h`): a reference copy of the old cut / trim / PrepareMask code with unbounded buffers; table of short groups (`;;`, `|`, spaces, `**`, `*?`, control bytes, `\ / < > : "`, UTF-8 letters) compared function by function; 259 / 260 / 261 / 300 / 1000 / 3000-byte single masks (also of 3-byte UTF-8 letters) whole, with guard bytes after the `strlen + 1` storage intact; the old 260-byte storage shown too small for a 300-byte mask (reproduction); call it from `main`
+- [ ] T007 [US2] Add `TestMaskGroupSplit298` to src/saltests/saltests.cpp (include `salmaskgroup.h`): a reference copy of the old cut / trim / PrepareMask code with unbounded buffers; table of short groups (`;;`, `|`, spaces, `**`, `*?`, control bytes, `\ / < > : "`, UTF-8 letters) compared function by function; 259 / 260 / 261 / 300 / 1000 / 3000-byte single masks (also of 3-byte UTF-8 letters, also a long mask after `|` and one holding `;;`) whole, with guard bytes after the `strlen + 1` storage intact; the old 260-byte storage shown too small for a 300-byte mask (reproduction); call it from `main`
 - [ ] T008 [US2] Run saltests (`build\tandemcommander\Debug_x64\saltests\saltests.exe`), record the count in fix-log.md; negative control: break the rule temporarily (e.g. cut at 259) and see the block fail, then restore
 
 ## Phase 5: Polish

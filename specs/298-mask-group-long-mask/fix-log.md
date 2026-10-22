@@ -44,3 +44,10 @@ probe hid the library's `$Started` list (PowerShell names are case-insensitive) 
 - Of the two options the item allows (refuse / a buffer sized to the mask) the sized buffer is taken: the
   mask stays whole, a configuration that worked keeps working, no new UI string (spec Assumptions).
 - `PrepareMask` output is never longer than its input, so the work storage is the group text's length + 1.
+
+## Analyze (speckit-analyze)
+
+No CRITICAL / HIGH. MEDIUM U1 (US2 scenario named matching, which saltests cannot link) - restated as "the
+prepared mask is the whole mask"; MEDIUM C1 (long mask after `|`) - added to T007. LOW C2 (out-of-memory path
+not tested - cannot be forced) and C3 (the directly passed string > 1000 bytes checked through the rule, the
+sizing by review) - accepted.

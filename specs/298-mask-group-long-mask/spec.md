@@ -54,8 +54,8 @@ computed with an unbounded buffer, and nothing is written past the work buffer.
 **Acceptance Scenarios**:
 
 1. **Given** a single mask of 300 bytes ending in a distinct letter, **When** the group is prepared,
-   **Then** the prepared mask holds all 300 bytes (after the usual normalization) and a name equal to the
-   whole mask matches while a name equal to its first 259 bytes does not.
+   **Then** the prepared mask holds all 300 bytes (after the usual normalization) - the mask that matching
+   uses is the whole mask, not its first 259 bytes.
 2. **Given** a mask group string passed directly to the preparation (not stored in the group, longer
    than 1000 bytes), **When** it is prepared, **Then** nothing is overrun and every mask is kept whole.
 
