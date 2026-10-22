@@ -141,9 +141,10 @@ key and as the target key itself.
 - The target key itself a link to an existing key: already refused by feature 292 when it is the
   source or inside it; otherwise unchanged.
 - Quick Rename (F2) of a key to a sibling name that is a dangling link: the same decision at the top
-  of the copy.
+  of the copy (probe row RENAMEDANGLE).
 - A link to the source written under another root name or the merged HKEY_CLASSES_ROOT view: decided
-  by identity (feature 292's rule), each half of an HKCR source.
+  by identity (feature 292's rule), each half of an HKCR source; a link is recognised through the
+  HKCR view too (measured; probe row HKCRMOVE).
 - A registry link inside the **source** tree: not part of this item (assumption below).
 
 ## Requirements *(mandatory)*
@@ -188,9 +189,9 @@ key and as the target key itself.
 ## Assumptions
 
 - Assumption (autonomous run): a registry link inside the source tree (read through the link, and a
-  Move deleting what it points at) is not part of this item; it is recorded separately if found
-  reachable.
+  Move deleting what it points at) is not part of this item; measured reachable, recorded as Inbox
+  `registry-editor-delete-or-move-deletes-a-linked-key`.
 - Assumption (autonomous run): links are recognised by the documented link value; a normal key that
   merely carries such a value is treated as a link and then resolved - harmless, it resolves to itself.
-- The probe creates links under the current user's key only (no elevation); HKLM / HKCR cases follow
-  the same code and are not driven.
+- The probe creates links under the current user's key only (no elevation), also in the user's
+  classes hive (seen as HKEY_CLASSES_ROOT); HKLM cases follow the same code and are not driven.

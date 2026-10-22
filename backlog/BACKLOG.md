@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor: Move into a key holding a registry link to the source writes into the source](items/registry-editor-move-through-a-link-in-the-target-tree/desc.md) | bug | 7 | data-safety | 296 |
 
 ## Next
 

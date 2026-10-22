@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -3893,3 +3893,30 @@ a few early ones are out of sequence).
   `a-dialog-status-text-and-the-panel-size-field-crash-when`. No probe; saltests 26,304 / 0 (negative
   controls 77 / 95 / 18 / 70 failed, the review's old-pair-rule control 122); one refute-first review
   (no MUST, two SHOULD fixed).
+- 296-regedt-link-target-tree: the Registry Editor's Copy / Move (F5 / F6, drag and drop, Quick
+  Rename) of a key into a target whose tree holds a registry link (`REG_OPTION_CREATE_LINK`, makeable
+  without elevation under HKCU) pointing into the source wrote through the link into the source - a
+  Move then deleted what was written there (upstream; review of 294) - measured: the subkey's value
+  lost without a box (also through `\HKEY_USERS\<SID>`, a link to a link, a link two levels above the
+  source with the path back, a link at the second level, the HKCR view); Copy wrote into the source; a
+  dangling link made the copy create keys inside the source (a top-level one an endless self-copy) -
+  now the recursion (`CopyOrMoveKey`, `fs5.cpp`; wrapper + `CopyOrMoveKeyRec` carrying the operation's
+  source) checks each target key before creating it: opened as a link (`REG_OPTION_OPEN_LINK`, value
+  `SymbolicLinkValue` of type `REG_LINK`); a link whose target is in the source, or holds it with 294's
+  chain back (`SafeRegKeyIdsReachSource`, 294's loop now shared), is refused with the existing "Can't
+  move/copy a key to itself." naming the full source key (OK skips, Cancel stops); a dangling link and
+  every other error get the open-error box (`ERROR_CANT_RESOLVE_FILENAME`; fails closed); other links
+  are followed as before. Traps: `RegCreateKeyEx` through a dangling link creates its target; only
+  the last element is opened as a link; `RegDeleteKey` / a recursive delete on a link's name deletes
+  the key it points at (probe cleanup uses `REG_OPTION_OPEN_LINK` + `NtDeleteKey`; the snapshot never
+  follows links); `HKCU\Software\Classes` is itself a link (to `<SID>_Classes`) and HKCR passes
+  `REG_OPTION_OPEN_LINK` through; a parameter named `top` clashed with the recursion's stack index.
+  Limits: decided per level, so what was copied above a refused key stays (a Move keeps its source);
+  the box has no Skip All and does not name the link; a dangling link elsewhere, formerly created
+  through, is refused too; the "other error" path is not driven; Delete / Move of a key holding a
+  link deletes the linked key (Inbox `registry-editor-delete-or-move-deletes-a-linked-key`). From
+  backlog item `registry-editor-move-through-a-link-in-the-target-tree`. Probe `link296_probe.ps1`
+  14 / 15 FAIL -> 29 / 0, after the review 47 / 0 (English and Czech; negative controls: the chain
+  branch off 2 FAIL, the check off 10 FAIL); 292's probe 33 / 0, 294's 24 / 0; saltests 26,304 / 0;
+  one refute-first review (no MUST; SHOULD HKCR measured + row, its five scratch rows moved into the
+  probe).

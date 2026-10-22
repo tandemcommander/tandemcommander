@@ -19,6 +19,14 @@
       Cil5\<K>             holding the LINK Z -> Zdroj\<K>\Nove (does not exist: a dangling link)
       Cil6                 holding the LINK <K> -> Zdroj\<K>\Nove (dangling, the moved key's own name)
       Prazdny              empty     (a real other target)
+      G\H\<K>              a = 1;  G\H\<K>\U  u = 2;  G\H\<K>\U\H\<K>  w = 7
+      CilG\<K>             holding the LINK U -> G (two levels above the moved key G\H\<K>)
+      D\<K>                a = 1;  D\<K>\A\B  b = 3
+      CilD\<K>\A           holding the LINK B -> D\<K> (at the second level of the recursion)
+      L2                   the LINK -> Zdroj\<K>;  CilC\<K> holding the LINK Z -> L2 (a chain)
+      Q\<K>                a = 1;  Q\<K>\Z  z = 9;  Q\R  the LINK -> Q\<K>\X (dangling sibling)
+    and HKCU\Software\Classes\TcProbe296c (= HKEY_CLASSES_ROOT\TcProbe296c, the user's classes hive):
+      Zdroj\<K> a = 1, Zdroj\<K>\Z z = 9; Cil\<K> holding the LINK Z -> Zdroj\<K>
     <K> = "Klic" with its Czech accents. <U> = \HKEY_USERS\<the user's own SID> = \HKEY_CURRENT_USER.
 
       LINKMOVE    F6 of Zdroj\<K> into HKCU\...\Cil\, Cancel: refused with "Name: <the source key
@@ -41,6 +49,16 @@
       LINKOTHER   (control) F6 of Zdroj\<K> into HKCU\...\Cil4\: no box; the link to the unrelated
                   key is followed as before (Jinde holds z = 9), Zdroj\<K> is gone
       MOVE        (regression) F6 of Zdroj\<K> into HKCU\...\Prazdny\: moved whole, no box
+      LINKGRAND   F6 of G\H\<K> into HKCU\...\CilG\ (the link points two levels above the source, the
+                  source holds the path H\<K> back): refused (1067) naming G\H\<K>\U; G unchanged
+      LINKDEEP    F6 of D\<K> into HKCU\...\CilD\ (the link at the second level): refused (1067) naming
+                  D\<K>\A\B; D unchanged
+      LINKCHAIN   F6 of Zdroj\<K> into HKCU\...\CilC\ (a link to a link to the source): refused (1067)
+      RENAMEDANGLE Quick Rename (754) of Q\<K> to R (a dangling link into the source): the open-error
+                  box (1055); the whole fixture unchanged (the copy recursed into itself before)
+      RENAME      (regression) Quick Rename of Q\<K> to Nove3: renamed whole, no box
+      HKCRMOVE    F6 of HKEY_CLASSES_ROOT\TcProbe296c\Zdroj\<K> into \HKEY_CLASSES_ROOT\TcProbe296c\Cil\
+                  (the merged view; the link in the user's classes hive): refused (1067); unchanged
       END         each instance ends with exit code 0, no stray window, no report
 
     On a build without the fix (-Expect before) LINKMOVE / LINKALIAS lose z = 9 without a box,
@@ -159,6 +177,32 @@ $Links['Cil3\' + $K + '\U'] = 'Plochy'
 $Links['Cil4\' + $K + '\Z'] = 'Jinde'
 $Links['Cil5\' + $K + '\Z'] = 'Zdroj\' + $K + '\Nove'
 $Links['Cil6\' + $K] = 'Zdroj\' + $K + '\Nove'
+$Links['CilG\' + $K + '\U'] = 'G'                       # two levels above the source G\H\<K>
+$Links['CilD\' + $K + '\A\B'] = 'D\' + $K               # at the second level of the recursion
+$Links['L2'] = 'Zdroj\' + $K                            # a link to a link to the source
+$Links['CilC\' + $K + '\Z'] = 'L2'
+$Links['Q\R'] = 'Q\' + $K + '\X'                        # a dangling sibling for Quick Rename
+$MainLinks = $Links
+$MainName = $RegName
+# the merged HKEY_CLASSES_ROOT view: HKCU\Software\Classes is a link to the hive <SID>_Classes
+$ClsName = 'TcProbe296c'
+$ClsLinks = [ordered]@{}
+$ClsLinks['Cil\' + $K + '\Z'] = 'Zdroj\' + $K
+$script:Fixture = 'main'
+# switch the fixture the helper functions work on: 'main' (HKCU\Software\TcProbe296) or 'classes'
+# (HKCU\Software\Classes\TcProbe296c, seen as HKEY_CLASSES_ROOT\TcProbe296c)
+function Use-Fixture([string]$Which) {
+    $script:Fixture = $Which
+    if ($Which -eq 'classes') {
+        $script:RegName = $ClsName; $script:RegSub = 'Software\Classes\' + $ClsName
+        $script:RegInt = '\REGISTRY\USER\' + $Sid + '_Classes\' + $ClsName; $script:Links = $ClsLinks
+    }
+    else {
+        $script:RegName = $MainName; $script:RegSub = 'Software\' + $MainName
+        $script:RegInt = '\REGISTRY\USER\' + $Sid + '\' + $script:RegSub; $script:Links = $MainLinks
+    }
+    $script:RegPs = 'HKCU:\' + $script:RegSub
+}
 
 function Sync([int]$Id) { [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000) }
 function Kid([IntPtr]$Dlg, [int]$CtlId) { return @([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq $CtlId }) | Select-Object -First 1 }
@@ -241,6 +285,26 @@ function Make-Fixture {
     New-Key ('Zdroj\' + $K + '\Z')
     Set-Val ('Zdroj\' + $K) 'a' '1'
     Set-Val ('Zdroj\' + $K + '\Z') 'z' '9'
+    if ($script:Fixture -eq 'classes') {
+        New-Key ('Cil\' + $K)
+        foreach ($l in $Links.Keys) {
+            $e = [RegLink296]::Make($RegSub + '\' + $l, $RegInt + '\' + $Links[$l])
+            if ($e -ne 0) { throw ('cannot create the link ' + $l + ': ' + $e) }
+        }
+        return
+    }
+    New-Key ('G\H\' + $K + '\U\H\' + $K)
+    Set-Val ('G\H\' + $K) 'a' '1'
+    Set-Val ('G\H\' + $K + '\U') 'u' '2'
+    Set-Val ('G\H\' + $K + '\U\H\' + $K) 'w' '7'
+    New-Key ('D\' + $K + '\A\B')
+    Set-Val ('D\' + $K) 'a' '1'
+    Set-Val ('D\' + $K + '\A\B') 'b' '3'
+    New-Key ('CilD\' + $K + '\A')
+    New-Key ('Q\' + $K + '\Z')
+    Set-Val ('Q\' + $K) 'a' '1'
+    Set-Val ('Q\' + $K + '\Z') 'z' '9'
+    foreach ($c in @('CilG', 'CilC')) { New-Key ($c + '\' + $K) }
     New-Key ('Hore\' + $K + '\U\' + $K)
     Set-Val ('Hore\' + $K) 'a' '1'
     Set-Val ('Hore\' + $K + '\U') 'u' '2'
@@ -421,12 +485,37 @@ try {
         $gone = -not (Has-Key $ZK)
         Row 'MOVE' 'STATE' (V ($moved -and $gone -and $r.Boxes.Count -eq 0)) ("moved whole: {0}; source gone: {1}; {2}; keys: {3}" -f $moved, $gone, (Box-Facts $r), $r.State)
     }
+    # rows of the review of 296 (its scratch probe, moved here)
+    $tg = Into-Text 1067 $MoveTmpl ('G\H\' + $K + '\U')
+    Row-Op 'LINKGRAND' 728 ($RegFs + '\G\H') $FocusK ('\' + $RegFull + '\CilG\') @(2) { param($r); Kept-Row 'LINKGRAND' 'G' $r (First-Is $r $tg) $tg }
+    $td = Into-Text 1067 $MoveTmpl ('D\' + $K + '\A\B')
+    Row-Op 'LINKDEEP' 728 ($RegFs + '\D') $FocusK ('\' + $RegFull + '\CilD\') @(2) { param($r); Kept-Row 'LINKDEEP' 'D' $r (First-Is $r $td) $td }
+    Row-Op 'LINKCHAIN' 728 $ZF $FocusK ('\' + $RegFull + '\CilC\') @(2) { param($r); Kept-Row 'LINKCHAIN' $ZK $r (First-Is $r $t) $t }
+    Row-Op 'RENAMEDANGLE' 754 ($RegFs + '\Q') $FocusK 'R' @(2) {
+        param($r)
+        Kept-Row 'RENAMEDANGLE' 'Q' $r (First-Has $r $OpenErr) $OpenErr
+        Row 'RENAMEDANGLE' 'ALL' (V $r.Unchanged) ("the whole fixture unchanged: {0}; pre '{1}'" -f $r.Unchanged, (Esc $r.Pre))
+    }
+    Row-Op 'RENAME' 754 ($RegFs + '\Q') $FocusK 'Nove3' $null {
+        param($r)
+        $moved = (ValsOf 'Q\Nove3') -ceq 'a=1' -and (ValsOf 'Q\Nove3\Z') -ceq 'z=9'
+        $gone = -not (Has-Key ('Q\' + $K))
+        Row 'RENAME' 'STATE' (V ($moved -and $gone -and $r.Boxes.Count -eq 0)) ("renamed whole: {0}; old gone: {1}; {2}; keys: {3}" -f $moved, $gone, (Box-Facts $r), $r.State)
+    }
+    # the merged HKEY_CLASSES_ROOT view (review of 296, SHOULD 1)
+    Use-Fixture 'classes'
+    $tk = (Template 1067 $MoveTmpl).Replace('%ls', ('HKEY_CLASSES_ROOT\' + $ClsName + '\' + $ZK + '\Z'))
+    Row-Op 'HKCRMOVE' 728 ('reg:\HKEY_CLASSES_ROOT\' + $ClsName + '\Zdroj') $FocusK ('\HKEY_CLASSES_ROOT\' + $ClsName + '\Cil\') @(2) { param($r); Kept-Row 'HKCRMOVE' $ZK $r (First-Is $r $tk) $tk }
+    Use-Fixture 'main'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
     foreach ($sp in @($Started)) { if (Test-Alive $sp) { Stop-Process -Id $sp -Force } }
     Start-Sleep -Milliseconds 600
+    try { Use-Fixture 'classes'; Remove-Fixture } catch { Out ('CLEANUP ERROR: ' + $_.Exception.Message) }
+    Use-Fixture 'main'
     try { Remove-Fixture } catch { Out ('CLEANUP ERROR: ' + $_.Exception.Message) }
+    $clsGone = -not (Test-Path -LiteralPath ('HKCU:\Software\Classes\' + $ClsName))
     $restored = Restore-Reg $backup $existed
     if ($restored -and (Test-Path -LiteralPath $backup)) { Remove-Item -LiteralPath $backup -Force }
     try { if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) } } catch { }
@@ -435,7 +524,7 @@ finally {
     $nf = @($script:Rows | Where-Object { $_.Verdict -eq 'FAIL' }).Count
     $nn = @($script:Rows | Where-Object { $_.Verdict -eq 'NOT DRIVEN' }).Count
     Out ''
-    Out ("Rows: PASS {0}, FAIL {1}, NOT DRIVEN {2}. Left running: {3}; fixture keys removed: {4}; registry restored+identical: {5}" -f $np, $nf, $nn, $leftover.Count, (-not (Test-Path -LiteralPath $RegPs)), $restored)
+    Out ("Rows: PASS {0}, FAIL {1}, NOT DRIVEN {2}. Left running: {3}; fixture keys removed: {4}; registry restored+identical: {5}" -f $np, $nf, $nn, $leftover.Count, ((-not (Test-Path -LiteralPath $RegPs)) -and $clsGone), $restored)
     if ($OutFile) { [IO.File]::WriteAllLines($OutFile, [string[]]$script:Lines, (New-Object Text.ASCIIEncoding)) }
 }
 exit $nf

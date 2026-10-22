@@ -107,8 +107,9 @@ in a source the user copies unless it really does).
 | saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 26304 checks, 0 failed` (no rule changed) |
 | encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
 
-Not driven (analyze C1 / C2): the "other error" path (needs an ACL change on a link key) and Quick
-Rename onto a dangling-link sibling (same wrapper) - left for the review's scratch rows.
+Not driven: the "other error" path (analyze C1; needs an ACL change on a link key) - read by the
+review. Quick Rename onto a dangling-link sibling (analyze C2) is driven since the review (row
+RENAMEDANGLE below).
 
 ## Out of scope (found while measuring)
 
@@ -117,3 +118,35 @@ Rename onto a dangling-link sibling (same wrapper) - left for the review's scrat
   link points at and leaves the link. So Delete (F8, `DeleteKey`, `fs3.cpp`) and Move of a key
   holding a link remove a key outside the selection. Inbox
   `registry-editor-delete-or-move-deletes-a-linked-key` (`measure:296`).
+
+## Review
+
+One independent refute-first review (general-purpose agent) of the branch at d0f8f47c.
+**No MUST.** It re-ran the feature probe (29 / 0, registry identical) and its own scratch probe
+(fixture `HKCU\Software\TcReview296`, removed; 17 / 0) with rows this probe did not drive: a link two
+levels above the source, a link at the second level of the recursion, a link to a link to the source,
+Quick Rename onto a dangling-link sibling, Quick Rename control; negative control (the check
+returning at once) 8 FAIL on those rows; then reverted and rebuilt (working tree clean). Confirmed:
+every refusal and error path returns before `SafeCreateKey`; a skip keeps a Move's source; callers
+`CopyOrMoveFromFS` and `QuickRename` only; the 294 refactor is equivalent; the refusal name is
+heap-joined, whole, UTF-8.
+
+| Finding | Done |
+|---|---|
+| SHOULD 1 HKCR targets not shown: does `REG_OPTION_OPEN_LINK` pass through the merged HKCR view? | measured (scratch `hkcrlink.ps1`, link under `HKCU\Software\Classes\TcHkcr296`, removed): through HKCR the link opens as a link (type 6), a dangling one too, the followed name is the source's `<SID>_Classes` name. New probe row HKCRMOVE (fixture `HKCU\Software\Classes\TcProbe296c` = `HKEY_CLASSES_ROOT\TcProbe296c`): refused, unchanged |
+| SHOULD 2 the probe lacks Quick Rename, multi-level and chained links | the review's rows moved into `link296_probe.ps1` as LINKGRAND, LINKDEEP, LINKCHAIN, RENAMEDANGLE, RENAME |
+| NOTE the refusal box (OK / Cancel) has no Skip All; it names the source subkey, not the link | accepted (spec Clarification: the existing box, no new string; as 294) |
+| NOTE a dangling link outside the source, formerly created through, is now refused | intended (FR-004, spec Clarification) |
+| NOTE the TEXT rows of a top-level dangling link pass without the fix too | known (Measured section); STATE / ALL rows discriminate |
+| NOTE FR-005 not driven | accepted (analyze C1), read by the review |
+
+After the review:
+
+| Check | Result |
+|---|---|
+| probe (English, 47 rows) `probe/result_after_review.txt`, `probe/link296_after.txt` | **47 PASS / 0 FAIL / 0 NOT DRIVEN**, registry restored identical |
+| probe (Czech) `probe/result_after_czech.txt`, `probe/link296_after_czech.txt` | **47 PASS / 0 FAIL**, registry restored identical |
+| negative control: `SafeCheckTargetLink` returning TRUE at once, rebuilt, `-Only LINKGRAND,LINKDEEP,LINKCHAIN,RENAME,HKCR` -> `probe/link296_negctl_off.txt` | **10 FAIL** (LINKGRAND, LINKDEEP, LINKCHAIN, HKCRMOVE TEXT + STATE; RENAMEDANGLE STATE + ALL); RENAME and the END rows PASS; reverted (`git diff` of `fs5.cpp` empty), rebuilt, full probe 47 / 0 |
+
+The extended probe was not re-run on the build of `main`; the negative control (no check at all)
+stands in for it on the new rows, the original 15 FAIL of `probe/link296_before.txt` for the old ones.
