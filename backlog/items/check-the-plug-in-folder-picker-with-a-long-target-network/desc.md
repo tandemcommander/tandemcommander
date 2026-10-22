@@ -1,7 +1,7 @@
 ---
 title: Check the plug-in folder picker with a long-target network location
 type: person-step
-status: new
+status: open
 severity: 4
 area: other-plugins
 source: leftover:304
@@ -57,3 +57,4 @@ Every step below passes on a Debug or Release build of feature 304 or later.
 ## Log
 
 - 2026-10-22 — created (source leftover:304)
+- 2026-10-22 — moved to Person steps position 19

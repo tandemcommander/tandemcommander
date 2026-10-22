@@ -1,7 +1,7 @@
 ---
 title: A shortcut whose target path has 260 or more characters is followed to a cut path
 type: bug
-status: new
+status: open
 severity: 6
 area: long-paths
 source: measure:304
@@ -77,3 +77,4 @@ Not measured through the panels' Enter / drop (needs a real mouse for the drop).
 ## Log
 
 - 2026-10-22 — created (source measure:304)
+- 2026-10-22 — moved to Next position 1
