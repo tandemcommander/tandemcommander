@@ -34,6 +34,15 @@
 - Alternatives: exact-only for the size lookup - the retry branch (`existingItem == NULL` ->
   item waiting again) would loop: the start check finds the twin again, the size lookup misses it.
 
+## R3b. Folders (review of 303)
+
+- Decision: a listed folder never counts as a case-only match.
+- Rationale: the reviewer measured (`fsutil setCaseSensitiveInfo` on the server folder = a real
+  case-sensitive server) that a folder `b.txt` made the upload of the file `B.txt` stop with
+  "Error Creating Target File ... used for directory" - its dialog has no "create anyway", Retry
+  meets the same answer. On a case-insensitive server the old code was harmless there (the server
+  refuses `STOR` onto a folder).
+
 ## R4. Cost
 
 - Decision: a linear pass over the listing, only after the binary search missed.

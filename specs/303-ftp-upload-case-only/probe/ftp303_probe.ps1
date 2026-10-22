@@ -17,6 +17,10 @@
                 c.txt = LOCAL-C, b.txt keeps SRV-B
       CASE-OVR  the question answered Overwrite (button 1308): PASS = STOR B.txt sent and the
                 server's file holds LOCAL-B (the user's choice is carried out)
+      CS-DIR    (review) the server folder case-sensitive: a folder b.txt; upload of B.txt: PASS =
+                STOR B.txt, the file created beside the folder (a folder twin does not count)
+      CS-FILE   (review) case-sensitive: file b.txt, upload of B.txt answered Overwrite: PASS = the
+                question, B.txt = LOCAL-B created beside b.txt, which keeps SRV-B
     The product's registry key is exported, restored and compared. Exit code = FAIL rows.
 
 .NOTES
@@ -333,6 +337,45 @@ try {
         $b = ReadSrv ($s + '\b.txt')
         @{ Ok = ($asked -and $clicked -and $stor -and $b -ceq 'LOCAL-B')
            Facts = ("question for B.txt: {0}; Overwrite clicked: {1}; STOR B.txt sent: {2}; server file '{3}'; server: {4}; commands: {5}; dialogs: {6}; operation windows: {7}" -f $asked, $clicked, $stor, $b, (Show (Entries $s)), (($cmds | ForEach-Object { Esc $_ }) -join ' / '), $u.Dialogs, (OpDesc $id)) }
+    }
+
+    # review of 303: the server folder made case-SENSITIVE (fsutil setCaseSensitiveInfo) - a real
+    # Unix server. CS-DIR: a folder b.txt does not block the file B.txt (STOR B.txt, the file
+    # created beside it); CS-FILE: the question for B.txt beside the file b.txt, Overwrite creates
+    # B.txt and b.txt keeps SRV-B
+    Row-Case 'CS-DIR' {
+        param($s, $l)
+        fsutil.exe file setCaseSensitiveInfo $s enable | Out-Null
+        NewDir ($s + '\b.txt'); WriteFile ($l + '\B.txt') 'LOCAL-B'
+    } {
+        param($id, $s, $l)
+        $u = Upload-One $id 1 'B.txt'
+        Start-Sleep -Milliseconds 1500; Wait-SrvQuiet
+        $cmds = @(Srv-Cmds $FtpSrv $u.From)
+        $stor = Has-Cmd $cmds '^STOR (.*/)?B\.txt$'
+        $isFile = [IO.File]::Exists($LP + $s + '\B.txt')
+        $bb = ReadSrv ($s + '\B.txt')
+        @{ Ok = ($stor -and $isFile -and $bb -ceq 'LOCAL-B' -and [IO.Directory]::Exists($LP + $s + '\b.txt'))
+           Facts = ("STOR B.txt sent: {0}; file B.txt on the server: {1} '{2}'; server: {3}; commands: {4}; operation windows: {5}" -f $stor, $isFile, $bb, (Show (Entries $s)), (($cmds | ForEach-Object { Esc $_ }) -join ' / '), (OpDesc $id)) }
+    }
+
+    Row-Case 'CS-FILE' {
+        param($s, $l)
+        fsutil.exe file setCaseSensitiveInfo $s enable | Out-Null
+        WriteFile ($s + '\b.txt') 'SRV-B'; WriteFile ($l + '\B.txt') 'LOCAL-B'
+    } {
+        param($id, $s, $l)
+        $u = Upload-One $id 1 'B.txt'
+        $asked = $u.Question -ne [IntPtr]::Zero
+        $clicked = $false
+        if ($asked) {
+            $ov = BtnById $u.Question @(1308)
+            if ($ov) { Click $ov; $clicked = $true; Start-Sleep -Milliseconds 1500; Wait-SrvQuiet }
+        }
+        $cmds = @(Srv-Cmds $FtpSrv $u.From)
+        $b = ReadSrv ($s + '\b.txt'); $bb = ReadSrv ($s + '\B.txt')
+        @{ Ok = ($asked -and $clicked -and $b -ceq 'SRV-B' -and $bb -ceq 'LOCAL-B')
+           Facts = ("question for B.txt: {0}; Overwrite clicked: {1}; b.txt '{2}'; B.txt '{3}'; server: {4}; commands: {5}; operation windows: {6}" -f $asked, $clicked, $b, $bb, (Show (Entries $s)), (($cmds | ForEach-Object { Esc $_ }) -join ' / '), (OpDesc $id)) }
     }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

@@ -798,9 +798,13 @@ BOOL CUploadListingsOnServer::GetListing(const char* path, CFTPServerPathType pa
                     BOOL caseOnly = FALSE;
                     if (!found && caseOnlyCounts) // feature 303: a name differing only in case counts (see the declaration)
                     {
+                        // a folder does not: a case-insensitive server refuses STOR onto it anyway, a
+                        // case-sensitive one stores the file beside it - "cannot create the file" would
+                        // only block that upload (review of 303)
                         TIndirectArray<CUploadListingItem>* items = &listing->ListingItem;
                         index2 = SalFtpFindCaseOnlyName(items->Count, [items](int i)
-                                                        { return (const char*)items->At(i)->Name; }, name);
+                                                        { return items->At(i)->ItemType == ulitDirectory ? (const char*)NULL : (const char*)items->At(i)->Name; },
+                                                        name);
                         found = caseOnly = index2 >= 0;
                     }
                     if (found) // item 'name' found; copy its data into 'existingItem' and set 'nameExists' to TRUE

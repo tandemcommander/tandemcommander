@@ -49,6 +49,11 @@ should.
   the rule's quick rejection of two different ASCII first letters; no second index of the listing
   (autonomous run: conservative - changes least; a folder of 10,000 names costs 10,000 quick
   comparisons per new file).
+- Q (review of 303, SHOULD): a case-only *folder* twin made a file upload stop with "cannot create
+  the file" on a case-sensitive server (a `BUILD` file beside a `build/` folder), with no way to
+  go on but rename or skip - should a folder count? → A: No; only files and links count; a folder
+  of a case-insensitive server refuses the `STOR` itself, as before (autonomous run: conservative -
+  keeps the earlier behaviour where the change protected nothing).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -118,9 +123,8 @@ case nor append to the wrong file.
 
 ### Edge Cases
 
-- A listed folder or link whose name differs from the target file only by case: handled as an
-  exact folder / link of that name is handled today ("cannot create file", or the link is
-  resolved).
+- A listed folder whose name differs from the target file only by case: not a collision (the
+  upload goes on as before); a link: resolved as an exact link of that name is today.
 - Several listed names equal to the target in different cases (a case-sensitive server with
   `b.txt` and `b.TXT`, target `B.txt`): any one of them makes the target "existing" - the question
   is asked once.
@@ -139,8 +143,10 @@ case nor append to the wrong file.
   target name under the file system's name rule (case ignored, feature 092) MUST count as an
   existing item when the exact lookup finds none, on every server path type.
 - **FR-002**: Such an item MUST be handled as an existing item of its kind is handled today (file:
-  the "Target File Already Exists" question or the configured answer; folder: "cannot create
-  file"; link: resolved).
+  the "Target File Already Exists" question or the configured answer; link: resolved). A listed
+  **folder** whose name differs only in case does not count (review of 303): a case-insensitive
+  server refuses to store a file onto a folder anyway, a case-sensitive one stores the file beside
+  it - "cannot create the file" would only block that upload.
 - **FR-003**: Auto-rename MUST treat a new name that matches a listed name under the same rule as
   taken.
 - **FR-004**: The size of an item found only by the case-ignoring rule MUST NOT be used as the

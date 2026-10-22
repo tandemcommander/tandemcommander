@@ -1,0 +1,26 @@
+ftp303_probe (feature 303: an upload to a case-insensitive server with Unix paths)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 09:47; desktop 'tc_probe_19604'; ACP 1250; registry key existed True; export SHA-256 D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+Server  : ftpmini.py utf-8 on 127.0.0.1:2132 (NTFS: case-insensitive, Unix listings) - up
+
+CASE-UP    ROW    PASS        question for B.txt: True; STOR B.txt sent: False; server file 'SRV-B'; server: b.txt; commands: ; dialogs: [Copy] 'ftp://u@127.0.0.1:2132/CASE-UP/*.*' -> 'ftp://u@127.0.0.1:2132/CASE-UP/*.*'; operation windows: 'Target File Already Exists' C:\Users\pavel\AppData\Local\Temp\tcftpcase\start\CASE-UP | B.txt | /CASE-UP | B.txt || '(errors) Copy File "B.txt" to 127.0.0.1' 
+           (closed 2 operation window(s); left: 0)
+CASE-UP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 1; new reports 0
+CASE-CZ    ROW    PASS        question for c-caron: True; STOR sent: False; server file 'SRV-C'; server: \u010Caj.txt; commands: ; dialogs: [Copy] 'ftp://u@127.0.0.1:2132/CASE-CZ/*.*' -> 'ftp://u@127.0.0.1:2132/CASE-CZ/*.*'; operation windows: 'Target File Already Exists' C:\Users\pavel\AppData\Local\Temp\tcftpcase\start\CASE-CZ | \u010Daj.txt | /CASE-CZ | \u010Daj.txt || '(errors) Copy File "\u010Daj.txt" to 127.0.0.1' 
+           (closed 2 operation window(s); left: 0)
+CASE-CZ    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 1; new reports 0
+CASE-NEW   ROW    PASS        question: False; STOR c.txt sent: True; server c.txt 'LOCAL-C', b.txt 'SRV-B'; server: b.txt,c.txt; commands: PORT 127,0,0,1,206,230 / STOR c.txt / NOOP / CWD /CASE-NEW / PWD / PORT 127,0,0,1,206,232 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2132/CASE-NEW/*.*' -> 'ftp://u@127.0.0.1:2132/CASE-NEW/*.*'
+           (closed 0 operation window(s); left: 0)
+CASE-NEW   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+CASE-OVR   ROW    PASS        question for B.txt: True; Overwrite clicked: True; STOR B.txt sent: True; server file 'LOCAL-B'; server: b.txt; commands: PORT 127,0,0,1,242,189 / STOR B.txt / NOOP / CWD /CASE-OVR / PWD / PORT 127,0,0,1,242,191 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2132/CASE-OVR/*.*' -> 'ftp://u@127.0.0.1:2132/CASE-OVR/*.*'; operation windows: none
+           (closed 0 operation window(s); left: 0)
+CASE-OVR   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+CS-DIR     ROW    PASS        STOR B.txt sent: True; file B.txt on the server: True 'LOCAL-B'; server: B.txt,b.txt; commands: PORT 127,0,0,1,242,201 / STOR B.txt / NOOP / CWD /CS-DIR / PWD / PORT 127,0,0,1,242,203 / TYPE A / LIST; operation windows: none
+           (closed 0 operation window(s); left: 0)
+CS-DIR     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+CS-FILE    ROW    PASS        question for B.txt: True; Overwrite clicked: True; b.txt 'SRV-B'; B.txt 'LOCAL-B'; server: B.txt,b.txt; commands: PORT 127,0,0,1,242,97 / STOR B.txt / NOOP / CWD /CS-FILE / PWD / PORT 127,0,0,1,242,99 / TYPE A / LIST; operation windows: none
+           (closed 0 operation window(s); left: 0)
+CS-FILE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+Registry: restored; identical=True; SHA-256 before D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F / after D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+
+Rows: PASS 12, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

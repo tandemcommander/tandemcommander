@@ -17,7 +17,7 @@ template <class GetName> int SalFtpFindCaseOnlyName(int count, GetName getName, 
 
 - Unchanged for `caseOnlyCounts = FALSE`.
 - `caseOnlyCounts = TRUE`, listing ready, `FindItem(name)` fails: `SalFtpFindCaseOnlyName` over the
-  listing; found -> `*nameExists = TRUE`, `*existingItem` = a copy of that item with
+  listing, listed folders skipped (their `getName` is NULL); found -> `*nameExists = TRUE`, `*existingItem` = a copy of that item with
   `ByteSize = UPLOADSIZE_UNKNOWN`.
 - Callers with TRUE: `operatsb.cpp` `fwssWorkStartWork` (file), `fwssWorkUploadGetFileSizeFromListing`,
   `fwssWorkUploadGenNewName`. With FALSE: `operatsa.cpp` `fwssWorkStartWork` (folder),

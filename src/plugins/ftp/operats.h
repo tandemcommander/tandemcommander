@@ -3343,8 +3343,8 @@ public:
     // with that name was found), and TRUE/FALSE in 'nameExists' depending on whether an item
     // named 'name' was found; returns FALSE only on out-of-memory
     // 'caseOnlyCounts' TRUE (feature 303: a file upload's "does the target exist?"): when no item
-    // is named exactly 'name', an item whose name is the same name case ignored (the file system's
-    // rule, salftpupname.h) counts as found - a server with Unix paths may store files on a
+    // is named exactly 'name', a file or link whose name is the same name case ignored (the file
+    // system's rule, salftpupname.h; folders do not count) counts as found - a server with Unix paths may store files on a
     // case-insensitive file system, where uploading "B.txt" writes its "b.txt"; the copy in
     // 'existingItem' then has ByteSize UPLOADSIZE_UNKNOWN (another name's size is not the
     // target's - never a resume offset); FALSE = only the exact name (folders, path identity)

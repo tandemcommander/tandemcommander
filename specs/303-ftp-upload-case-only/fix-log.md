@@ -73,8 +73,8 @@ a case-only item's size is unknown (never a resume offset).
 - A configured automatic answer: the case-only file item has `ItemType == ulitFile`, so the start
   check goes to `fwssWorkUploadFileExists`, whose `GetUploadFileAlreadyExists()` switch (ask /
   auto-rename / resume / resume-or-overwrite / overwrite / skip) applies unchanged; a case-only
-  folder goes to "cannot create file" (`fwssWorkUploadCantCreateFileDirEx`), a link is resolved by
-  `CWD` of `TgtPath/TgtName` as for an exact link.
+  link is resolved by `CWD` of `TgtPath/TgtName` as for an exact link. (A case-only folder first
+  went to "cannot create file" - changed after the review, below: folders do not count.)
 - Resume: `SIZE <TgtName>` is asked first (a case-insensitive server answers with its file's size -
   resume continues that file, what the user chose); when `SIZE` fails or is not supported, the
   listing copy's size is `UPLOADSIZE_UNKNOWN` -> Resume fails with `ITEMPR_UPLOADUNABLETORESUMEUNKSIZ`,
@@ -112,3 +112,47 @@ Commands from the repository root (PowerShell unless noted):
     before the error (no registry backup taken, no program started).
 - Regressions: `probe/regress_288.txt` (288's probe) PASS 20, FAIL 0; `probe/regress_224.txt`
   (224's probe) PASS 16, FAIL 0 - both as recorded by their features.
+
+## Review
+
+### Review 1 (refute-first, independent agent) - MUST 0, SHOULD 1, NOTEs 5
+
+Re-ran on the branch build: saltests 26,577 / 0, encoding guard 0, `ftp303_probe.ps1` 8 / 0.
+Its own probe negative control: only the start check (`operatsb.cpp` `fwssWorkStartWork`) set back
+to FALSE -> PASS 5 / FAIL 3, `STOR B.txt` / `STOR čaj.txt`, files replaced - the same as
+`result_before.txt`; the call is what fixes it and the probe detects it. Callers enumerated - the
+five, as recorded. No data-loss path found (a case-only match only adds a question or a refusal,
+the size is unknown, no path cut, names compared as UTF-8 by 092's rule).
+
+- **SHOULD 1 (fixed)** - a case-only *folder* blocked a file upload on a case-sensitive server: the
+  reviewer made the probe's server folder case-sensitive (`fsutil file setCaseSensitiveInfo <dir>
+  enable` - a real Unix server); folder `b.txt`, upload of the file `B.txt`: branch "Error Creating
+  Target File ... name is already used for directory", no `STOR`, `B.txt` not created (its dialog
+  has Retry / Skip / autorename, no "create anyway"; Retry meets the same lookup); old code:
+  `STOR B.txt`, the file created beside the folder. On a case-insensitive server the old code did
+  no harm there (the server refuses `STOR` onto a folder). Fix: the case-only pass skips listed
+  folders (`operats9.cpp`, the lambda gives NULL for `ulitDirectory`); spec FR-002 / edge case /
+  clarification, contract, data model, research R3b updated. Rows CS-DIR and CS-FILE (from the
+  reviewer's `probe_cs2.ps1`) added to `ftp303_probe.ps1`. The reviewer's CS-DIR on the pre-fix
+  branch build: FAIL (its log `cs_branch.txt`) - the negative control of the new row.
+- NOTE 2 (accepted, stated in the changelog's limits) - with a configured automatic answer a
+  case-only twin on a case-sensitive server is treated as existing: "skip" skips a free `B.txt`,
+  auto-rename uploads it under a new name, resume fails (`SIZE` 550 -> size unknown). The spec's
+  trade-off (a question / answer too many rather than a silent replace).
+- NOTE 3 (accepted) - the "transferred whole?" test after a dropped connection, `SIZE` not
+  supported and only a case-only twin listed: the item now fails with
+  `ITEMPR_UPLOADTESTIFFINISHEDNOTSUP` instead of being retried as a new upload; no data loss.
+- NOTE 4 (recorded) - auto-rename (FR-003) and the unknown resume size (FR-004) are proven by
+  reading and the pure checks only; Resume is not a button of the "Target File Already Exists"
+  dialog (buttons: Retry, Overwrite, Overwrite All, Skip), it is reachable only by configuration,
+  which the probe does not set.
+- NOTE 5 (accepted) - the case-only pass scans the folder listing under the cache lock per new
+  name; cheap for ASCII names, quadratic only for a large upload into a large folder (research R4).
+- NOTE 6 (no change) - Resume on a case-insensitive server continues the server's `b.txt` at the
+  size `SIZE` reports - the user's choice, as for an exact match.
+
+Checks after the fix: `.\build.cmd` -> BUILD SUCCEEDED; saltests 26,577 / 0; encoding guard
+`TOTAL: 0 finding(s)`; `probe/result_review1.txt` PASS 12, FAIL 0 (CASE-UP, CASE-CZ, CASE-NEW,
+CASE-OVR, CS-DIR: `STOR B.txt`, the file beside the folder; CS-FILE: the question, Overwrite ->
+`B.txt` = LOCAL-B beside `b.txt` = SRV-B), registry restored and identical. Only SHOULD findings ->
+no second review required (step 7); the SHOULD was inside the item's scope and is fixed.

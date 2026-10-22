@@ -7,7 +7,7 @@ No stored data changes. In memory:
 - **CUploadListingItem** (existing): `ItemType` (file / directory / link), `Name`, `ByteSize`
   (`UPLOADSIZE_UNKNOWN`, `UPLOADSIZE_NEEDUPDATE` or the size).
 - **The copy GetListing returns** (`existingItem`): as before for an exact match; for a case-only
-  match: the listed item's `Name` and `ItemType`, `ByteSize = UPLOADSIZE_UNKNOWN`; `nameExists` =
+  match (a file or link - folders do not count): the listed item's `Name` and `ItemType`, `ByteSize = UPLOADSIZE_UNKNOWN`; `nameExists` =
   TRUE in both cases.
 - **caseOnlyCounts** (new argument of both `GetListing` functions): TRUE = a case-only match counts
   (file upload start, resume size, file auto-rename); FALSE = exact only (folder upload, folder
