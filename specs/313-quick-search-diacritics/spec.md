@@ -108,9 +108,12 @@ M1 (the 0.1.10 rule) unchanged.
 
 - A name stored decomposed: the marks belong to the letter before them; a match never ends between
   a letter and its marks.
-- A letter that folds to two letters (`ß` -> `ss`, `æ` -> `ae`): the typed text must cover it
-  whole - a typed `s` alone does not match a `ß`, `ss` does; a match starts and ends on character
-  boundaries of the name.
+- A letter that folds to two letters (`ß` -> `ss`, `æ` -> `ae`): the typed text may end inside it,
+  so the letters can be typed one by one (`stras` matches `Straße`, `co` matches `cœur`); the match
+  then covers the whole letter. A match never starts inside such a letter. (Review 313: with the
+  first rule, "the typed text covers it whole", typing `strasse` stuck at `stra`.)
+- Left and Backspace remove the last letter together with the marks the comparison ignores, so
+  they never remove only an invisible mark of a decomposed name (review 313: Left got stuck).
 - A lone combining mark (a mark at the start of a name, or a mark typed alone): it adds nothing to
   the comparison. A typed text consisting only of such marks behaves as a text of only wildcards
   (every name matches, as `/` does since 0.1.10).
@@ -125,8 +128,9 @@ M1 (the 0.1.10 rule) unchanged.
 ### Functional Requirements
 
 - **FR-001**: In the new mode, the comparison of a name and the typed text MUST ignore the
-  combining marks of their canonical decomposition that belong to the blocks of diacritical marks
-  used by the Latin, Greek and Cyrillic scripts: U+0300-U+036F (Combining Diacritical Marks),
+  nonspacing combining marks (enclosing marks such as the keycap U+20E3 stay) of their canonical
+  decomposition that belong to the blocks of diacritical marks used by the Latin, Greek and
+  Cyrillic scripts: U+0300-U+036F (Combining Diacritical Marks),
   U+1AB0-U+1AFF (Extended), U+1DC0-U+1DFF (Supplement), U+20D0-U+20FF (for Symbols),
   U+FE20-U+FE2F (Half Marks) - in the name and in the typed text alike.
 - **FR-002**: Combining marks outside those blocks MUST stay part of the comparison (as in 244).
@@ -135,8 +139,11 @@ M1 (the 0.1.10 rule) unchanged.
   `ß` U+00DF / `ẞ` U+1E9E -> `ss`; `æ` U+00E6 / `Æ` U+00C6 -> `ae`; `œ` U+0153 / `Œ` U+0152 -> `oe`;
   `ı` U+0131 -> `i`. No other letter is folded. The folding applies to the name and to the typed
   text alike (typing `ß` finds `ss`, typing `ss` finds `ß`).
-- **FR-004**: A match MUST start and end on character boundaries of the name; combining marks
-  that follow the last matched letter belong to the match.
+- **FR-004**: A match MUST start on a character boundary of the name and end on one or inside a
+  letter folded by FR-003 (then the reported match covers that letter whole); combining marks that
+  follow the last matched letter belong to the match.
+- **FR-004a**: Left and Backspace in the new mode MUST remove the last letter together with the
+  marks of FR-001 that follow it.
 - **FR-005**: The focused item's match (its start, end and the caret) and the Right-arrow
   extension MUST keep working on whole characters of the original name.
 - **FR-006**: With the option off, quick search MUST be the 0.1.10 rule, unchanged (saltests M1:
@@ -163,7 +170,8 @@ M1 (the 0.1.10 rule) unchanged.
 
 ### Measurable Outcomes
 
-- **SC-001**: Every probe row D01-D08 and D11 (Right on a decomposed name) gives the expected names with the new build (the rows that
+- **SC-001**: Every probe row D01-D08, D11 (Right on a decomposed name) and D12-D15 (folded
+  letters typed one by one, Left and Backspace on a decomposed name) gives the expected names with the new build (the rows that
   differed before now match the item's examples).
 - **SC-002**: With the option off, rows D09/D10 and the 244 probe's option-off run give the same
   result as before the change.

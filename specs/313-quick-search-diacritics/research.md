@@ -46,12 +46,20 @@ This is the symmetric "ignore diacritics" the maintainer decided; a user typing 
 
 ## R4 Boundaries and offsets
 
-- `Starts[i]` = the unit is the first unit of a character with a non-empty key. A folded letter
-  with two units (`ß` -> `ss`) has `Starts` 1, 0, so a typed `s` cannot end inside it.
+- `Starts[i]` = 1 for the first unit of a character with a non-empty key, 2 for a later unit of a
+  folded letter (`ß` -> `ss`: 1, 2), 0 for other later units (`が` -> `か` + U+3099: 1, 0). A later
+  ASCII unit can only come from the fold table (a decomposition's later units are marks), so
+  `SalQFBuildKey` sets 2 for a later unit < 0x80. A match may end before a 2 (review 313: else
+  `strasse` typed letter by letter stuck at `stra`, every partial text being refused); the
+  reported end then moves behind the whole letter (`KeyEndOffset`).
 - `MatchStart = Offsets[s]` is the first byte of a character; `MatchEnd = Offsets[end]` is the
   first byte of the next character that has units (marks in between included) or the length. The
   caret (`QFMatchEnd`) and Right (appends the character at `QFMatchEnd`) therefore stay on whole
   characters of the name.
+
+- Left/Backspace (review 313): the match of a decomposed name now ends behind the marks, so the
+  old "remove the last code point" removed only an ignored mark and the match came back the same
+  (Left stuck). `SalQFCutLastLetter` removes trailing marks of R1 and then the letter.
 
 ## R5 Tests that change
 

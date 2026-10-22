@@ -1,4 +1,4 @@
-Feature 313 probe after; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; expect after; registry backup C:\Users\pavel\AppData\Local\Temp\tc313_backup.reg (existed True)
+Feature 313 probe after-review1; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; expect after; registry backup C:\Users\pavel\AppData\Local\Temp\tc313_backup.reg (existed True)
 export SHA-256 CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
 D01        VISIBLE PASS        got {zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD} expected {zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD} typed 'zlut'
 D01        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -22,5 +22,13 @@ D10        FOCUS  INFO        got {\u010Cesk\u00FD.txt} typed 'cesky' (option of
 D10        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 D11        VISIBLE PASS        got {r\u030Ceka.txt} expected {r\u030Ceka.txt} typed 'r', Right
 D11        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D12        VISIBLE PASS        got {Stra\u00DFe.txt} expected {Stra\u00DFe.txt} typed 'strasse', Strand.txt beside
+D12        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D13        VISIBLE PASS        got {c\u0153ur.txt} expected {c\u0153ur.txt} typed 'coeur', cat.txt beside
+D13        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D14        VISIBLE PASS        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} expected {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed 'r', Left
+D14        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D15        VISIBLE PASS        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} expected {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed 'rek', Left, Backspace, Backspace
+D15        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
-ROWS 22; FAIL 0
+ROWS 30; FAIL 0

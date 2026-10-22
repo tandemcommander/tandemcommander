@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Feature 313 probe: quick search (the new mode of feature 244) ignores diacritics.
 
@@ -46,6 +46,10 @@ $N_Strasse = 'Stra' + (S @(0xDF)) + 'e.txt'                                     
 $N_RekaNfd = ('r' + (S @(0x30C)) + 'eka.txt')                                          # r + combining caron (NFD)
 $N_Kana = (S @(0x304C)) + 'kko.txt'                                                    # Hiragana GA (NFD: KA + U+3099) - kept apart from KA
 $N_Ka = (S @(0x304B)) + 'kko.txt'                                                      # Hiragana KA
+# extra names of single rows (review 313): a distractor sharing a prefix, the oe ligature
+$N_Strand = 'Strand.txt'
+$N_Coeur = 'c' + (S @(0x153)) + 'ur.txt'
+$N_Cat = 'cat.txt'
 
 function Assert-In([string]$p) { if (-not ($p + '\').StartsWith($Root + '\', [StringComparison]::OrdinalIgnoreCase)) { throw "path outside the fixture: $p" } }
 function Clear-Dir([string]$d) {
@@ -53,7 +57,7 @@ function Clear-Dir([string]$d) {
     if (Test-Path -LiteralPath $d) { Get-ChildItem -LiteralPath $d -Force | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force } }
     else { [void][IO.Directory]::CreateDirectory($d) }
 }
-function Make-Fixture([string]$Case) {
+function Make-Fixture([string]$Case, [string[]]$Extra = @()) {
     $d = $Root + '\' + $Case
     Assert-In $d
     if (Test-Path -LiteralPath $d) { Remove-Item -LiteralPath $d -Recurse -Force }
@@ -61,7 +65,7 @@ function Make-Fixture([string]$Case) {
     NewDir ($l + '\' + $N_Zlutoucky); WriteFile ($l + '\' + $N_Zlutoucky + '\inner.txt') 'i'
     NewDir ($l + '\alpha')
     WriteFile ($l + '\beta.md') 'b'
-    foreach ($n in @($N_Zluty, $N_Cesky, $N_Uber, $N_Lodz, $N_Strasse, $N_RekaNfd, $N_Kana, $N_Ka)) { WriteFile ($l + '\' + $n) 'x' }
+    foreach ($n in @($N_Zluty, $N_Cesky, $N_Uber, $N_Lodz, $N_Strasse, $N_RekaNfd, $N_Kana, $N_Ka) + $Extra) { WriteFile ($l + '\' + $n) 'x' }
     NewDir $r
     return [pscustomobject]@{ Dir = $d; Left = $l; Right = $r }
 }
@@ -114,6 +118,22 @@ function Judge([string]$Case, [string]$Step, [string[]]$Got, [hashtable]$Exp, [s
     Row $Case $Step (V ($g -ceq $e)) ("got {0} expected {1} {2}" -f $g, $e, $Note)
 }
 
+# a case with extra fixture names and keys (virtual-key codes) after the text
+function Run-Keys([string]$Case, [string[]]$Extra, [string]$Text, [int[]]$Keys, [string]$Step, [hashtable]$Exp, [string]$Note) {
+    if (-not (Want $Case)) { return }
+    $before = Reports; $id = 0
+    try {
+        $F = Make-Fixture $Case $Extra
+        $id = Start-Tc313 $F
+        Type-Text $id $Text
+        foreach ($k in $Keys) { Key $id $k; Start-Sleep -Milliseconds 150 }
+        if ($Step -eq 'FOCUS') { $got = Copy-Out $id $F } else { $got = Visible-Out $id $F }
+        Judge $Case $Step $got $Exp $Note
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { $fatal = Fatal-Win $id; End-Row $Case $id $fatal $before } }
+}
+
 function Run-Case([string]$Case, [string]$Text, [string]$Step, [hashtable]$Exp, [string]$Note) {
     if (-not (Want $Case)) { return }
     $before = Reports; $id = 0
@@ -148,7 +168,8 @@ try {
     Run-Case 'D04' 'ubersicht' 'VISIBLE' @{ before = $null; after = @($N_Uber); off = $null } "typed 'ubersicht'"
     # D05 'lodz' -> L-stroke (the table) + o-acute + z-acute
     Run-Case 'D05' 'lodz' 'VISIBLE' @{ before = $null; after = @($N_Lodz); off = $null } "typed 'lodz'"
-    # D06 'strasse' -> sharp s = ss (the table)
+    # D06 'strasse' -> sharp s = ss (the table). Recorded only: without a name sharing the prefix
+    # it cannot tell the builds apart (the text sticks at 'stra' before) - D12 can
     Run-Case 'D06' 'strasse' 'VISIBLE' @{ before = @($N_Strasse); after = @($N_Strasse); off = $null } "typed 'strasse'"
     # D07 'reka' -> a name stored decomposed (r + combining caron)
     Run-Case 'D07' 'reka' 'VISIBLE' @{ before = $null; after = @($N_RekaNfd); off = $null } "typed 'reka', NFD name"
@@ -174,6 +195,19 @@ try {
         catch { Row 'D11' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
         finally { if ($id) { $fatal = Fatal-Win $id; End-Row 'D11' $id $fatal $before } }
     }
+    # review 313: rows with extra names or keys after the text
+    # D12 'strasse' typed letter by letter with Strand.txt beside Strasse: 'stras' must match the sharp s
+    # (before: the text sticks at 'stra' and both stay)
+    Run-Keys 'D12' @($N_Strand) 'strasse' @() 'VISIBLE' @{ before = @($N_Strasse, $N_Strand); after = @($N_Strasse); off = $null } "typed 'strasse', Strand.txt beside"
+    # D13 'coeur' typed letter by letter: 'co' must match the oe ligature (before: the text sticks at 'c')
+    Run-Keys 'D13' @($N_Coeur, $N_Cat) 'coeur' @() 'VISIBLE' @{ before = $null; after = @($N_Coeur); off = $null } "typed 'coeur', cat.txt beside"
+    # D14 Left on a decomposed name: 'r' matches r + caron; one Left removes the whole letter and ends the
+    # search (the bug of the first 313 build: Left removed only the ignored mark and stuck)
+    $allNames = @('alpha', 'beta.md', $N_Zlutoucky, $N_Zluty, $N_Cesky, $N_Uber, $N_Lodz, $N_Strasse, $N_RekaNfd, $N_Kana, $N_Ka)
+    Run-Keys 'D14' @() 'r' @(0x25) 'VISIBLE' @{ before = $allNames; after = $allNames; off = $null } "typed 'r', Left"
+    # D15 Left copies a decomposed fragment into the text ('rek' -> 'r'+caron+'e'); two Backspaces remove
+    # 'e' and then the whole letter, which ends the search
+    Run-Keys 'D15' @() 'rek' @(0x25, 0x08, 0x08) 'VISIBLE' @{ before = $null; after = $allNames; off = $null } "typed 'rek', Left, Backspace, Backspace"
 }
 finally {
     foreach ($p in @($Started)) { if (Test-Alive $p) { Kill-Mine $p } }

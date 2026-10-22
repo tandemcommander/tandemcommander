@@ -116,3 +116,57 @@ diacritics.
   SC-003); the first keystroke varies 283-338 ms run to run in **both** builds (the panel layout);
   the 38 ms second Backspace is present in the baseline as well. SC-003's 10 % bound holds against
   the alternated baseline (292 vs 293-329).
+
+## Review
+
+### Round 1 (refute-first agent on cd8e1a96) - not ready: 1 MUST, 2 SHOULD, 3 NOTE
+
+The reviewer re-ran the measurement (baseline Release from 9b79bd82 and the branch Debug build):
+the defect reproduces before and is gone after; saltests 27,333 / 0; encoding 0; no data-safety
+issue (the off path never reaches keys; callers `QFApply`, `QFResume`, `QSMatch`,
+`SetQuickSearchCaretPos`; offsets on character boundaries; nothing cut).
+
+- **MUST 1 - `strasse` typed letter by letter did not find `Straße`** (nor `coeur` `cœur`): the
+  new mode refuses a keystroke that leaves no match, and a match had to end on a character
+  boundary, so `stras` (inside `ss` of `ß`) never matched and the text stuck at `stra`. Probe D06
+  could not tell the builds apart (before and after both {Straße.txt}); the saltests case fed the
+  whole text at once. **Fixed**: `Starts` = 2 for a later ASCII unit (only the fold table makes
+  those), `KeySegAt` lets a match end before such a unit, `KeyEndOffset` moves the reported end
+  behind the whole letter. Spec edge case / FR-004 / contract F4 / research R4 updated.
+  Tests: 5 fold-end cases (`as`/`aß`, `stras`/`Straße.txt` prefix and inside a name, `co`/`cœur`,
+  `xa`/`xÆble`) and `sb`/`aßb` (never starts inside). Probe rows D12 (`strasse` with `Strand.txt`
+  beside: before {Strand, Straße} - measured on the baseline Release build,
+  `probe/result_before_review1_rows.txt`; after {Straße}) and D13 (`coeur` with `cat.txt`: after
+  {cœur.txt}; baseline {cat.txt, cœur.txt, Übersicht.doc}). D06 kept as a recorded row with a note.
+- **SHOULD 2 - Left stuck on a decomposed name** (regression of the first 313 build): the match
+  of NFD `řeka` ends behind the mark, and Left removed one code point - only the ignored mark - so
+  the match came back the same. Backspace after a copied NFD fragment needed an extra press.
+  **Fixed**: `SalQFCutLastLetter` (pure, header) removes trailing marks of the folded blocks and
+  then the letter; used by Left and Backspace of the new mode in `src/fileswn0.cpp`. Tests: 11
+  texts. Probe rows D14 (`r`, Left -> the search ends, all names; same on the baseline) and D15
+  (`rek`, Left, Backspace, Backspace -> the search ends). On the baseline build D15 is INFO: there
+  `rek` keeps only `r`, so the later Backspaces have no search and go up a folder - the copy stayed
+  inside the fixture root (`%TEMP%\tc313`).
+- **SHOULD 3 - probes did not prove the table claims**: covered by D12/D13 above.
+- **NOTE 4 - a negative control that did not fail** (the empty-segment block of
+  `SalQFBuildMaskKeys` disabled, saltests still green): the only differing case is an empty last
+  segment at the end of the name (`KeySegAt` reads `Starts[Count]`). Added `b/`+mark against `ab`
+  and a mark against a name of marks.
+- **NOTE 5 - weaker M3 for 229 pairs**: accepted; exact answers are in the 313 table (now 51 cases).
+- **NOTE 6 - U+20D0-20FF also held enclosing marks** (keycap U+20E3): `IsFoldedMark` now drops
+  nonspacing marks only (U+1ABE, U+20DD-20E0, U+20E2-20E4 stay); a keycap case and per-code-point
+  checks added. Cyrillic `й`->`и` etc. follow the maintainer's symmetric decision (changelog
+  limitation). The FEATURE-HISTORY entry is written at closing.
+
+After the fixes:
+- `build.cmd`: BUILD SUCCEEDED; `saltests: 27383 checks, 0 failed` ("feature 313 folding - 51
+  cases, 0 differ; 312 BMP code points with an empty key"; M1 0 differ; M3 0 differ, 229 folded).
+- **Negative control** (the fold-end `Starts` = 2 and the empty-segment block disabled together,
+  `saltests.cpp` touched so the test project relinks - a plain build does not rebuild saltests
+  after a header-only change, as the reviewer noted): 7 cases differ, 7 checks fail (the five
+  fold-end cases and the two empty-segment cases). Header restored from a copy, SHA-256
+  `1f5ed444...f139` identical, rebuilt.
+- Probes (Debug): `qs313_probe -Expect after` 30 rows, 0 FAIL (D01-D08, D11-D15 PASS);
+  `-Expect off -FilterOption 0` 30 rows, 0 FAIL, D09/D10 identical to before; 244 probe new 45/0,
+  old+off 45/0, both identical to 244's records. Registry restored identical every run.
+- `check_encoding --strict`: TOTAL: 0.

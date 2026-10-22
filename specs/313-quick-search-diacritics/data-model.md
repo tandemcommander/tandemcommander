@@ -7,7 +7,7 @@
 | ASCII | lower-cased ASCII unit (unchanged; the fast path) |
 | 1 | canonical decomposition (`NormalizeString(NormalizationD)`; a lone surrogate stays as it is) |
 | 2 | invariant lower case (`LCMapStringEx(LOCALE_NAME_INVARIANT, LCMAP_LOWERCASE)`) |
-| 3 (new) | each unit in a block of research R1 is dropped |
+| 3 (new) | each nonspacing mark of the blocks of research R1 is dropped (enclosing marks stay) |
 | 4 (new) | each unit of the table of R2 is replaced by its ASCII letters |
 
 Return: number of units (0 = empty key), -1 = does not fit into the caller's room.
@@ -20,8 +20,9 @@ Return: number of units (0 = empty key), -1 = does not fit into the caller's roo
 ## Key of a text (`CSalQFKey`, unchanged layout)
 
 `Units[0..Count)`, `Offsets[0..Count]` (byte offset of the character a unit comes from;
-`Offsets[Count]` = length), `Starts[i]` = first unit of a character. A character with an empty key
-has no unit.
+`Offsets[Count]` = length), `Starts[i]`: 1 = first unit of a character, 2 = later unit of a folded
+letter (a match may end before it), 0 = other later unit (review 313). A character with an empty
+key has no unit.
 
 ## Mask keys (`CSalQFMaskKeys`)
 

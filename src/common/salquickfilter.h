@@ -37,7 +37,8 @@
 // without a decomposition fold: l, o and d with stroke -> l o d, sharp s ->
 // ss, the ae and oe ligatures -> ae oe, dotless i -> i. A character whose key
 // is empty (a lone mark) adds no unit; the marks after a letter belong to its
-// match. A
+// match. A match may end inside a folded letter ("stras" matches "Straße",
+// so its letters can be typed one by one); it then covers the whole letter. A
 // match starts and ends on character boundaries of the name; the first segment
 // at the start is a prefix match, else the leftmost start wins; later segments
 // are taken at their first occurrence after the previous one; the dot
@@ -70,8 +71,8 @@ struct CSalQFMatch
 
 // The key of a UTF-8 (WTF-8) text: Units[0..Count) = the canonical decomposition in lower case;
 // Offsets[i] = byte offset of the character unit i comes from, Offsets[Count] = the text's length;
-// Starts[i] = 1 when unit i is the first unit of a character. One allocation (Block); free with
-// SalQFFreeKey.
+// Starts[i] = 1 when unit i is the first unit of a character, 2 for a later unit of a folded letter
+// (a match may end before it, feature 313), else 0. One allocation (Block); free with SalQFFreeKey.
 struct CSalQFKey
 {
     WCHAR* Units;
@@ -146,12 +147,18 @@ namespace SalQFDetail
         return CharKeySystem(w, wlen, out, cap);
     }
 
-    // a combining mark of the blocks the Latin, Greek and Cyrillic letters decompose into
-    // (feature 313): dropped from keys; the marks of other scripts lie outside these blocks
+    // a nonspacing combining mark of the blocks the Latin, Greek and Cyrillic letters decompose
+    // into (feature 313): dropped from keys; the marks of other scripts lie outside these blocks,
+    // and enclosing marks (U+1ABE, U+20DD-20E0, U+20E2-20E4: a keycap, a circle) are kept
     inline BOOL IsFoldedMark(WCHAR c)
     {
-        return c >= 0x0300 && c <= 0x036F || c >= 0x1AB0 && c <= 0x1AFF || c >= 0x1DC0 && c <= 0x1DFF ||
-               c >= 0x20D0 && c <= 0x20FF || c >= 0xFE20 && c <= 0xFE2F;
+        if (c >= 0x0300 && c <= 0x036F || c >= 0x1DC0 && c <= 0x1DFF || c >= 0xFE20 && c <= 0xFE2F)
+            return TRUE;
+        if (c >= 0x1AB0 && c <= 0x1AFF)
+            return c != 0x1ABE;
+        if (c >= 0x20D0 && c <= 0x20FF)
+            return !(c >= 0x20DD && c <= 0x20E0 || c >= 0x20E2 && c <= 0x20E4);
+        return FALSE;
     }
 
     // the key of a letter without a canonical decomposition that folds (feature 313), else NULL
@@ -468,7 +475,9 @@ inline BOOL SalQFBuildKey(const char* textU8, int len, CSalQFKey& key)
             for (int i = 0; i < n; i++)
             {
                 offsets[count + i] = (int)(p - textU8);
-                starts[count + i] = i == 0 ? 1 : 0;
+                // a later ASCII unit comes only from the fold table ("ss" of sharp s): a match may end
+                // before it (feature 313); a decomposition's later units are marks, never ASCII
+                starts[count + i] = i == 0 ? 1 : units[count + i] < 0x80 ? 2 : 0;
             }
             count += n;
             p = next;
@@ -578,14 +587,24 @@ inline BOOL SalQFBuildMaskKeys(const char* mask, CSalQFMaskKeys& mk)
 
 namespace SalQFDetail
 {
-    // does 'seg' lie at unit 'pos' of 'name', starting and ending on character boundaries
+    // does 'seg' lie at unit 'pos' of 'name', starting on a character boundary and ending on one
+    // or inside a folded letter (feature 313)
     inline BOOL KeySegAt(const CSalQFKey& name, int pos, const CSalQFKey& seg)
     {
-        if (pos + seg.Count > name.Count || !name.Starts[pos])
+        if (pos + seg.Count > name.Count || name.Starts[pos] != 1)
             return FALSE;
-        if (pos + seg.Count < name.Count && !name.Starts[pos + seg.Count])
+        if (pos + seg.Count < name.Count && name.Starts[pos + seg.Count] == 0)
             return FALSE;
         return memcmp(name.Units + pos, seg.Units, seg.Count * sizeof(WCHAR)) == 0;
+    }
+
+    // the byte offset where a match ending before unit 'end' ends: behind the whole character
+    // (a match ending inside a folded letter covers it)
+    inline int KeyEndOffset(const CSalQFKey& name, int end)
+    {
+        while (end < name.Count && name.Starts[end] != 1)
+            end++;
+        return name.Offsets[end];
     }
 } // namespace SalQFDetail
 
@@ -641,14 +660,14 @@ inline BOOL SalQFKeyFind(const CSalQFKey& name, const CSalQFMaskKeys& mk, int mi
         return FALSE;
     for (int s = 0; s + mk.Segs[0].Count <= name.Count; s++)
     {
-        if (name.Offsets[s] < minStart || !name.Starts[s] || !SalQFDetail::KeySegAt(name, s, mk.Segs[0]))
+        if (name.Offsets[s] < minStart || name.Starts[s] != 1 || !SalQFDetail::KeySegAt(name, s, mk.Segs[0]))
             continue;
         int end = SalQFDetail::KeyRest(name, mk, s + mk.Segs[0].Count, FALSE);
         if (end < 0)
             return FALSE; // a later start finds the later segments no sooner
         result.Kind = SALQF_SUBSTRING;
         result.MatchStart = name.Offsets[s];
-        result.MatchEnd = name.Offsets[end];
+        result.MatchEnd = SalQFDetail::KeyEndOffset(name, end);
         return TRUE;
     }
     return FALSE;
@@ -676,13 +695,13 @@ inline BOOL SalQFMatchKeys(const CSalQFKey& name, BOOL hasExtension, const CSalQ
         int lastStart = mk.LeadingWild ? name.Count : 0;
         for (int s = 0; s <= lastStart; s++)
         {
-            if (s < name.Count && !name.Starts[s])
+            if (s < name.Count && name.Starts[s] != 1)
                 continue;
             int end = SalQFDetail::KeyMatchAt(name, mk, s, noDot);
             if (end >= 0)
             {
                 result.Kind = SALQF_PREFIX;
-                result.MatchEnd = name.Offsets[end];
+                result.MatchEnd = SalQFDetail::KeyEndOffset(name, end);
                 return TRUE;
             }
         }
@@ -764,6 +783,29 @@ inline BOOL SalQFMatchName(const char* nameU8, BOOL hasExtension, const char* ma
     }
     SalQFFreeKey(ownName);
     return found;
+}
+
+// The length of the UTF-8 (WTF-8) 'text' ('len' bytes) without its last letter: the last character
+// together with the marks after it that keys ignore (feature 313). Left and Backspace of the new
+// mode use it, so they never remove only an ignored mark (which would leave the match as it was).
+inline int SalQFCutLastLetter(const char* text, int len)
+{
+    while (len > 0)
+    {
+        int start = len - 1;
+        while (start > 0 && (text[start] & 0xC0) == 0x80)
+            start--; // the lead byte of the last UTF-8 sequence
+        const BYTE* b = (const BYTE*)text + start;
+        DWORD cp = 0xFFFFFFFF;
+        if (len - start == 2 && (b[0] & 0xE0) == 0xC0)
+            cp = ((b[0] & 0x1F) << 6) | (b[1] & 0x3F);
+        else if (len - start == 3 && (b[0] & 0xF0) == 0xE0)
+            cp = ((b[0] & 0x0F) << 12) | ((b[1] & 0x3F) << 6) | (b[2] & 0x3F);
+        len = start;
+        if (cp > 0xFFFF || !SalQFDetail::IsFoldedMark((WCHAR)cp))
+            break; // the letter itself is removed too
+    }
+    return len;
 }
 
 // Where the focus goes: 'kinds' holds SALQF_* per item (NONE = no match),

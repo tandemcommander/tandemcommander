@@ -14118,8 +14118,15 @@ static void TestQuickFilter244()
             {"\xC5\x92uvre", FALSE, "oeuvre", SALQF_PREFIX, 0, 6},                                      // OE
             {"kad\xC4\xB1n", FALSE, "kadin", SALQF_PREFIX, 0, 6},                                       // dotless i
             {"\xC4\xB0stanbul", FALSE, "istanbul", SALQF_PREFIX, 0, 9},                                  // I with dot above (NFD)
-            {"a\xC3\x9F", FALSE, "as", SALQF_NONE, 0, 0},                                               // 's' does not end inside sharp s
+            // a match may end inside a folded letter and then covers it (typing it letter by letter,
+            // review 313); it never starts inside one
+            {"a\xC3\x9F", FALSE, "as", SALQF_PREFIX, 0, 3},
+            {"Stra\xC3\x9F" "e.txt", TRUE, "stras", SALQF_PREFIX, 0, 6},
+            {"moje stra\xC3\x9F" "e", FALSE, "stras", SALQF_SUBSTRING, 5, 11},
+            {"c\xC5\x93ur", FALSE, "co", SALQF_PREFIX, 0, 3},
+            {"x\xC3\x86" "ble", FALSE, "xa", SALQF_PREFIX, 0, 3},
             {"a\xC3\x9F" "b", FALSE, "ssb", SALQF_SUBSTRING, 1, 4},
+            {"a\xC3\x9F" "b", FALSE, "sb", SALQF_NONE, 0, 0},
             {"\xC3\xB0r", FALSE, "dr", SALQF_NONE, 0, 0},                                               // eth: not folded
             {"\xC3\xBEing", FALSE, "thing", SALQF_NONE, 0, 0},                                          // thorn: not folded
             {"\xC4\xA7obz", FALSE, "hobz", SALQF_NONE, 0, 0},                                           // h-stroke: not folded
@@ -14128,6 +14135,7 @@ static void TestQuickFilter244()
             {"\xE3\x81\x8B", FALSE, "\xE3\x81\x8C", SALQF_NONE, 0, 0},                                 // KA is not GA
             {"\xD7\xA9\xD7\x81\xD7\x9C", FALSE, "\xD7\xA9\xD7\x9C", SALQF_NONE, 0, 0},                // Hebrew shin dot kept
             {"\xE0\xA4\x95\xE0\xA5\x8D\xE0\xA4\xB7", FALSE, "\xE0\xA4\x95\xE0\xA4\xB7", SALQF_NONE, 0, 0}, // virama kept
+            {"1\xEF\xB8\x8F\xE2\x83\xA3" "x", FALSE, "1\xEF\xB8\x8F", SALQF_PREFIX, 0, 4},              // keycap (enclosing) kept
             // F4 the marks after the last matched letter are inside the match
             {"z\xCC\x8C" "luty", FALSE, "z", SALQF_PREFIX, 0, 3},
             // F5 a lone mark adds nothing; a mask of marks only matches every name
@@ -14135,6 +14143,8 @@ static void TestQuickFilter244()
             {"abc", FALSE, "\xCC\x81", SALQF_PREFIX, 0, 0},
             {"xabyc", FALSE, "a/\xCC\x81/c", SALQF_SUBSTRING, 1, 5},
             {"abc", FALSE, "\xCC\x81/b", SALQF_PREFIX, 0, 2},
+            {"ab", FALSE, "b/\xCC\x81", SALQF_SUBSTRING, 1, 2},  // an empty last segment is not stored
+            {"\xCC\x81", FALSE, "\xCC\x81", SALQF_PREFIX, 0, 0}, // a name of marks only
             // F6 a WTF-8 lone surrogate and an invalid byte
             {"a\xED\xA0\x80" "b\xC3\xA9", FALSE, "\xED\xA0\x80" "be", SALQF_SUBSTRING, 1, 7},
             {"\x80\xC3\xA9" "x", FALSE, "ex", SALQF_SUBSTRING, 1, 4},
@@ -14193,6 +14203,35 @@ static void TestQuickFilter244()
             WCHAR sharp = 0x00DF;
             CHECK(SalQFDetail::CharKey(&sharp, 1, out, 1) == -1); // "ss" does not fit into one unit
             CHECK(SalQFDetail::CharKey(&sharp, 1, out, 4) == 2 && out[0] == 's' && out[1] == 's');
+            // nonspacing marks only: the enclosing ones stay (a keycap, U+1ABE)
+            static const WCHAR kept[] = {0x20DD, 0x20E0, 0x20E2, 0x20E3, 0x20E4, 0x1ABE, 0x3099, 0x05C1, 0x094D};
+            for (int i = 0; i < (int)_countof(kept); i++)
+                CHECK(SalQFDetail::CharKey(&kept[i], 1, out, 4) == 1 && out[0] == kept[i]);
+            static const WCHAR dropped[] = {0x0300, 0x036F, 0x1AB0, 0x1ABD, 0x1ABF, 0x1DC0, 0x1DFF, 0x20D0, 0x20DC, 0x20E1, 0x20E5, 0x20F0, 0xFE20, 0xFE2F};
+            for (int i = 0; i < (int)_countof(dropped); i++)
+                CHECK(SalQFDetail::CharKey(&dropped[i], 1, out, 4) == 0);
+        }
+        // Left and Backspace of the new mode remove the last letter with the marks keys ignore
+        {
+            static const struct
+            {
+                const char* Text;
+                int Len;
+            } cut[] = {
+                {"r\xCC\x8C", 0},                    // r + caron (NFD): the whole letter
+                {"ab\xCC\x8C", 1},                   // a, b + caron
+                {"x\xCC\x81\xCC\x81", 0},            // two marks
+                {"ab", 1},                            // ASCII as before
+                {"a\xC3\x9F", 1},                    // sharp s: one character
+                {"a\xE3\x81\x8C", 1},                // hiragana GA (precomposed)
+                {"ab\xE3\x82\x99", 2},               // a lone voiced mark (kept by keys): only it
+                {"ab\xF0\x9F\x98\x80", 2},           // emoji
+                {"\xCC\x81", 0},                     // a mark alone
+                {"a\x80", 0},                         // a stray continuation byte: as the old code
+                {"", 0},
+            };
+            for (int i = 0; i < (int)_countof(cut); i++)
+                CHECK(SalQFCutLastLetter(cut[i].Text, (int)strlen(cut[i].Text)) == cut[i].Len);
         }
         // a key of a text with many dropped marks: offsets stay byte offsets of characters
         {

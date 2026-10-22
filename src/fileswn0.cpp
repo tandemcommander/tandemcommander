@@ -2117,14 +2117,8 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
         {
             if (QFMode) // feature 244
             {
-                if (QuickSearchMask[0] != 0)
-                {
-                    int len = (int)strlen(QuickSearchMask);
-                    while (len > 1 && (QuickSearchMask[len - 1] & 0xC0) == 0x80)
-                        len--; // the whole trailing UTF-8 sequence
-                    len--;
-                    QuickSearchMask[len] = 0;
-                }
+                if (QuickSearchMask[0] != 0) // the last letter with the marks keys ignore (feature 313)
+                    QuickSearchMask[SalQFCutLastLetter(QuickSearchMask, (int)strlen(QuickSearchMask))] = 0;
                 if (QuickSearchMask[0] == 0 || !QFApply(QuickSearchMask, TRUE))
                     EndQuickSearch(); // the text is empty: every item again
                 return TRUE;
@@ -2155,10 +2149,9 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
                 int len = (int)strlen(text);
                 if (len > 0)
                 {
-                    while (len > 1 && (text[len - 1] & 0xC0) == 0x80)
-                        len--;
-                    len--;
-                    text[len] = 0;
+                    // the last letter with the marks keys ignore (feature 313): removing only such a
+                    // mark would leave the match as it was
+                    text[SalQFCutLastLetter(text, len)] = 0;
                     if (text[0] == 0)
                         EndQuickSearch();
                     else
