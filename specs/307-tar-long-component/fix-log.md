@@ -88,3 +88,49 @@ already protected by feature 222's bound.
   `saltests: 27174 checks, 4 failed` (the four NULL-path refusals) and
   `probe/result_negctl_core.txt` GNU-TOOLONG: END FAIL "Stack memory corruption" - the crash returns.
   Both layers are each measured to do their part.
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+Re-measured: saltests 27174 / 0, probe 14 / 0, 306 probe 28 / 0, negative-control files agree;
+FR-003 holds (with a folder part the rule decides exactly as feature 222's test).
+
+- **MUST-1 (fixed)**: an overflow was left below the new bound - `src/fileswn3.cpp`
+  (`ReadDirectory`, archive panels with *Simple Icons In Archives*, and plug-in FS panels with
+  simple icons) copied the extension unbounded into `char buf[SAL_FIND_NAME_U8]` and then wrote a
+  DWORD of zeroes: `"." + 777 letters` (778 bytes, accepted by the listing) wrote 781 bytes. The
+  reviewer crashed the branch build with a newc cpio (TAR plug-in) holding that name ("Stack
+  memory corruption" under `CommonRefresh`); main crashed on it in any mode. Fix: both loops stop
+  `sizeof(DWORD)` before the end, and an extension that did not fit has no association
+  (`*s == 0 && IsAssociated(...)`) - never looked up cut. The other extension copies of the file
+  write into `fileName[SAL_MAX_PATH_UTF8 + 4]` (safe). Probe rows CPIO-778 and CPIO-TOOLONG
+  (open-only, simple icons on, run last; the registry restored at the end).
+- **SHOULD-1 (fixed)**: a regression against 0.1.10 - an empty top-level folder of 86-255 CJK letters
+  (258-765 bytes) in a GNU tar was now refused (306's folder-name rule applied to GNU names; the
+  reviewer measured 0.1.10 listing and extracting a 100-letter one). 306's rule assumed `AddDir`
+  refuses a folder name over 255 bytes, which it does only with a folder part. Fix in
+  `SalPaxNameFitsListingU8`: the folder-name bound applies only with a folder part or a prefix;
+  the same rule now lists such a top-level PAX folder too (its contents with a folder part over
+  255 bytes are still refused alone). The tar plug-in has no delete / pack (view and unpack only),
+  so feature 222's concern (deleting members never shown) does not apply. saltests: 306's checks
+  of top-level folders corrected (+2); probe row GNU-DIR100.
+- NOTE 1: a cpio / rpm top-level name of 780+ bytes no longer crashes but the whole archive does not
+  open ("Internal error: file data structure corrupted.") - the changelog limitation reworded; an
+  Inbox item records the per-member refusal for cpio (outside the item: GNU long names).
+- NOTE 2 (accepted): regedt / nethood / undelete ignore a failed addition - a 780+ byte name is now
+  simply missing instead of crashing; the changelog says "some leave just that entry out".
+- NOTE 3 (fixed by the new rows): the probe did not reach the 777-779-byte boundary nor simple
+  icons. Whole-archive unpack and GNU-in-.deb are 306's code paths and rows (PAX-DEB, its unpack
+  measurement), unchanged in this feature.
+
+After the fixes: `build.cmd` -> BUILD SUCCEEDED; `saltests: 27176 checks, 0 failed`; encoding
+`TOTAL: 0 finding(s)`; probe `-Label after-review1` -> `probe/result_after.txt` **PASS 20, FAIL 0**;
+306 probe 28 / 0 (`probe/regress_306.txt`; PAX-255DIR now lists the empty folder and names in.txt),
+273 12 / 0.
+
+Negative controls (c) + (d) - both review fixes reverted together (the loops unbounded, the folder
+rule as in 306), `-Only CPIO-778,GNU-DIR100` -> `probe/result_negctl_review1.txt`: PASS 1, FAIL 3 -
+CPIO-778 crashes again ("Stack memory corruption"), GNU-DIR100 "(206)" and the folder not
+extracted; saltests 1 failed (the top-level folder check). Sources restored byte for byte, rebuilt,
+re-measured (above).

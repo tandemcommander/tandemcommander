@@ -1,6 +1,6 @@
-pax306_probe (feature 306) regress-307
+pax306_probe (feature 306) regress-307-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-22 12:58; registry key existed True; ACP 1250; python Python 3.14.6
+Date    : 2026-10-22 13:36; registry key existed True; ACP 1250; python Python 3.14.6
 
 PAX-LONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 PAX-LONG   RUN    PASS        dddddddd..[302 chars]..ffff.txt: L t=1000000000; tgt: dddddddd..[302 chars]..ffff.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy directory "dddddddddddddddddddddd..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
@@ -25,7 +25,7 @@ PAX-TOOLONG RUN    PASS        ok.txt: K t=1000000000; tgt: ok.txt; message (206
 PAX-PATHPART END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 PAX-PATHPART RUN    PASS        a.txt: a t=1000000000; ok.txt: K t=1000000000; tgt: a.txt, ok.txt; message (206) at open: True; at open: ...u4E4A\u4E4B\u4E4C\u4E4D\u4E4E\u4E4F\u4E50\u4E51\u4E52\u4E53\u4E54\u4E55\u4E56\u4E57\u4E58\u4E59\f.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 PAX-255DIR END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-PAX-255DIR RUN    PASS        ok.txt: K t=1000000000; tgt: ok.txt; message (206) at open: True; at open: ...u4EEE\u4EEF\u4EF0\u4EF1\u4EF2\u4EF3\u4EF4\u4EF5\u4EF6\u4EF7\u4EF8\u4EF9\u4EFA\u4EFB\u4EFC\u4EFD\u4EFE | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-255DIR RUN    PASS        ok.txt: K t=1000000000; tgt: ok.txt; message (206) at open: True; at open: ...4EEF\u4EF0\u4EF1\u4EF2\u4EF3\u4EF4\u4EF5\u4EF6\u4EF7\u4EF8\u4EF9\u4EFA\u4EFB\u4EFC\u4EFD\u4EFE\in.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy 1 file and 1 directory from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 PAX-LIMIT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 PAX-LIMIT  RUN    PASS        pppppppp..[261 chars]..pp/f.txt: P t=1000000000; tgt: pppppppp..[261 chars]..pp/f.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy directory "pppppppppppppppppppppp..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 PAX-DEB    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

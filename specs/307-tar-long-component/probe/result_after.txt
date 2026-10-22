@@ -1,6 +1,6 @@
-tar307_probe (feature 307) after-final
+tar307_probe (feature 307) after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-22 13:08; registry key existed True; ACP 1250; python Python 3.14.6
+Date    : 2026-10-22 13:34; registry key existed True; ACP 1250; python Python 3.14.6
 
 GNU-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 GNU-TOOLONG RUN    PASS        ok.txt: K; tgt: ok.txt; message (206) at open: True; at open: ...u4F15\u4F16\u4F17\u4F18\u4F19\u4F1A\u4F1B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
@@ -9,13 +9,19 @@ GNU-DEEP   RUN    PASS        a.txt: a; ok.txt: K; tgt: a.txt, ok.txt; message (
 GNU-255    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 GNU-255    RUN    PASS        \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[255 chars]..\u4EF7\u4EF8\u4EF9\u4EFA.txt: M; tgt: \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[255 chars]..\u4EF7\u4EF8\u4EF9\u4EFA.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy file "\u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 GNU-255DIR END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-GNU-255DIR RUN    PASS        ok.txt: K; tgt: ok.txt; message (206) at open: True; at open: ...EE7\u4EE8\u4EE9\u4EEA\u4EEB\u4EEC\u4EED\u4EEE\u4EEF\u4EF0\u4EF1\u4EF2\u4EF3\u4EF4\u4EF5\u4EF6\u4EF7\u4EF8\u4EF9\u4EFA\u4EFB\u4EFC\u4EFD\u4EFE | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GNU-255DIR RUN    PASS        ok.txt: K; tgt: ok.txt; message (206) at open: True; at open: ...E8\u4EE9\u4EEA\u4EEB\u4EEC\u4EED\u4EEE\u4EEF\u4EF0\u4EF1\u4EF2\u4EF3\u4EF4\u4EF5\u4EF6\u4EF7\u4EF8\u4EF9\u4EFA\u4EFB\u4EFC\u4EFD\u4EFE\in.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy 1 file and 1 directory from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 GNU-LONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 GNU-LONG   RUN    PASS        dddddddd..[302 chars]..ffff.txt: L; tgt: dddddddd..[302 chars]..ffff.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy directory "dddddddddddddddddddddd..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 ZIP-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 ZIP-TOOLONG RUN    PASS        tgt: ok.txt; at open: ...id=2477] Cannot add 1 or more files to the list. The total path is too long. Some directories or files may be missing in the archive listing. | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 7Z-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 7Z-TOOLONG RUN    PASS        tgt: ok.txt; at open: [#32770 '7-Zip'] [Static id=2477] Internal error. | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GNU-DIR100 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GNU-DIR100 RUN    PASS        ok.txt: K; tgt: ok.txt; folder \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[100 chars]..\u4E5C\u4E5D\u4E5E\u4E5F\u4E60\u4E61\u4E62\u4E63 extracted: True; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy 1 file and 1 directory from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+CPIO-778   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CPIO-778   RUN    PASS        the archive opened; at open: no window
+CPIO-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CPIO-TOOLONG RUN    PASS        the archive did not open; panel at: C:\Users\pavel\AppData\Local\Temp\tc307\CPIO-778; at open: [#32770 'TAR Plugin Error'] [Static id=2477] Internal error: file data structure corrupted. | [Button id=1] OK
 Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
 
-Rows: PASS 14, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 20, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -18315,9 +18315,10 @@ static void TestPaxHeader306()
         CHECK(SalPaxNameFitsListingU8((std::string(100, 'a') + "\\" + std::string(100, 'b') + "\\f.txt").c_str(), false));
         CHECK(SalPaxNameFitsListingU8(cjk.c_str(), false));   // a file: 204 units, 604 bytes
         CHECK(SalPaxNameFitsListingU8(cjk90.c_str(), false)); // a file of 270 bytes
-        CHECK(!SalPaxNameFitsListingU8(cjk90.c_str(), true)); // the same as a folder: over 255 bytes
+        CHECK(SalPaxNameFitsListingU8(cjk90.c_str(), true)); // a top-level folder of 270 bytes: listed (307)
+        CHECK(!SalPaxNameFitsListingU8(("sub\\" + cjk90).c_str(), true)); // in a folder part: over 255 bytes
         CHECK(SalPaxNameFitsListingU8(p255.c_str(), true));
-        CHECK(!SalPaxNameFitsListingU8(p256.c_str(), true));
+        CHECK(!SalPaxNameFitsListingU8(p256.c_str(), true)); // 256 units: no file system takes it
         CHECK(SalPaxNameFitsListingU8(("sub\\" + p255).c_str(), true));
         CHECK(!SalPaxNameFitsListingU8(("sub\\" + p256).c_str(), true));
         std::string c256;
@@ -18335,6 +18336,7 @@ static void TestPaxHeader306()
         CHECK(!SalPaxNameFitsListingU8((std::string(125, 'a') + "/" + std::string(125, 'b') + "/f.txt").c_str(), false, 5));
         CHECK(SalPaxNameFitsListingU8("f.txt", false, 8));     // no folder part: the path is the prefix alone
         CHECK(SalPaxNameFitsListingU8(p255.c_str(), true, 8)); // a folder's own name: the prefix is not part of it
+        CHECK(!SalPaxNameFitsListingU8(cjk90.c_str(), true, 5)); // under the prefix the folder name counts (307)
     }
 }
 

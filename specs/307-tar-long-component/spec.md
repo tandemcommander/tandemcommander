@@ -120,13 +120,20 @@ the 904-byte name and `ok.txt`: the program does not crash.
 - **FR-003**: The rules for entries with a folder part MUST stay exactly as they are (feature 222).
 - **FR-004**: The tar plug-in MUST apply feature 306's "fits the listing" rule to a member whose
   effective name comes from a GNU long name: a component over 255 UTF-16 units, or a folder part /
-  folder name over the listing's limit (counting the .deb prefix) refuses that member alone.
+  a folder's name inside a folder part over the listing's limit (counting the .deb prefix) refuses
+  that member alone. A top-level folder (no folder part, no prefix) is not limited by its name's
+  bytes - the listing takes it whole (review 1: 0.1.10 listed an empty top-level folder of 100 CJK
+  letters); the same rule serves PAX paths.
 - **FR-005**: A refused GNU member MUST be reported like a refused PAX member: the system's "(206)"
   text and the whole path, once per listing or whole-archive unpack; never cut, never renamed,
   never silently dropped; the rest of the archive stays usable.
 - **FR-006**: Members named by a classic ustar header and members whose names already pass the
   rule MUST be listed and extracted exactly as before.
 - **FR-007**: The name rule of FR-001 / FR-002 MUST be a pure, unit-tested rule.
+- **FR-008** (review 1): the panel code that looks up an entry's association from its extension
+  ("Simple icons in archives", file-system panels with simple icons) MUST NOT write past its
+  780-byte buffer for any name the listing accepts; an extension that does not fit has no
+  association (never looked up cut).
 
 ### Key Entities
 

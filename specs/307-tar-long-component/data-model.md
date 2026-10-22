@@ -25,3 +25,8 @@ Acceptance (`src/common/sallistingname.h`):
 | `NameFromGnuLong` (307) | a GNU `L` header supplied the name | the same check and refusal |
 
 Both reset in `SCommonHeader::Initialize` (start of every `ReadArchiveHeader`).
+
+`SalPaxNameFitsListingU8(name, isDir, prefixLen)` (review 1 of 307): a folder's own name over
+`MAX_PATH - 5` bytes is refused only when the folder has a folder part or a prefix (.deb); a
+top-level folder goes to `AddDir(NULL, ...)`, which takes it (below 780 bytes; the 255-unit
+component rule already keeps it at most 765).

@@ -51,6 +51,11 @@ def gnu_tar(row, out):
             add_dir(tf, cjk(255))
             add(tf, cjk(255) + '/in.txt', b'I')
             add(tf, 'ok.txt', b'K')
+        elif row == 'GNU-DIR100':
+            # review 1 of feature 307 (SHOULD): an empty top-level folder of 100 CJK letters (300 bytes)
+            # listed and extracted in 0.1.10 - a folder name over 255 bytes is no limit at the top level
+            add_dir(tf, cjk(100))
+            add(tf, 'ok.txt', b'K')
         elif row == 'GNU-LONG':
             add(tf, 'd' * 100 + '/' + 'e' * 100 + '/' + 'f' * 96 + '.txt', b'L')  # regression
         else:
@@ -74,9 +79,33 @@ def seven_zip(out, exe):
             raise SystemExit('7z failed: ' + r.stdout.decode('ascii', 'replace')[-300:])
 
 
+def cpio_newc(out, members):
+    # SVR4 "newc" cpio (opened by the TAR plug-in): a 110-byte ASCII header, the name with its NUL,
+    # padded to 4 bytes, the data padded to 4 bytes; the archive ends with the member TRAILER!!!
+    def pad(n):
+        return b'\0' * ((4 - n % 4) % 4)
+    raw = b''
+    ino = 1
+    for name, data in list(members) + [('TRAILER!!!', b'')]:
+        nb = name.encode('utf-8') + b'\0'
+        mode = 0o100644 if name != 'TRAILER!!!' else 0
+        fields = [ino, mode, 0, 0, 1, 1000000000, len(data), 0, 0, 0, 0, len(nb), 0]
+        hdr = b'070701' + b''.join(b'%08X' % f for f in fields)
+        raw += hdr + nb + pad(len(hdr) + len(nb)) + data + pad(len(data))
+        ino += 1
+    with open(out, 'wb') as f:
+        f.write(raw)
+
+
 def main():
     row, out = sys.argv[1], sys.argv[2]
-    if row == 'ZIP-TOOLONG':
+    if row == 'CPIO-778':
+        # review 1 of feature 307: 778 bytes fit the listing's bound (below 780) - with "simple icons in
+        # archives" the extension (777 bytes) plus 4 zero bytes overflowed a 780-byte buffer
+        cpio_newc(out, [('.' + 'a' * 777, b'X'), ('ok.txt', b'K')])
+    elif row == 'CPIO-TOOLONG':
+        cpio_newc(out, [(TOOLONG, b'X'), ('ok.txt', b'K')])
+    elif row == 'ZIP-TOOLONG':
         zip_arc(out)
     elif row == '7Z-TOOLONG':
         exe = sys.argv[3] if len(sys.argv) > 3 else ''

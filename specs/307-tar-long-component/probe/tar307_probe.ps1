@@ -18,6 +18,13 @@
       GNU-LONG     d*100/e*100/f*96.txt as a GNU long name (regression)       -> that path, 'L'
       ZIP-TOOLONG  t.zip with CJK(300).txt and ok.txt (Python zipfile)       -> no crash; recorded
       7Z-TOOLONG   t.7z with CJK(300).txt and ok.txt (7z.exe -si<name>)       -> no crash; recorded
+      GNU-DIR100   an empty top-level folder CJK(100) (300 bytes), ok.txt (review 1 SHOULD: 0.1.10 listed it)
+                                                       -> no message, tgt holds the folder and ok.txt
+    Open-only rows, with "Simple Icons In Archives" = 1 (review 1 MUST: the icon code copies the
+    extension + 4 zero bytes into a 780-byte buffer); the archive is opened, nothing is copied:
+      CPIO-778     newc cpio: "." + 777 letters (778 bytes, under the listing's 780) and ok.txt
+                                                       -> no crash, the archive opens
+      CPIO-TOOLONG newc cpio: CJK(300).txt and ok.txt -> no crash (the listing refuses the entry)
     A crash is the END row's FAIL (a bug report / a stray error window). For the ZIP / 7Z rows the RUN
     row passes when the archive opened or a message was shown at open (never silent); what was
     extracted is recorded. Every row first reads the panel's path: Copy runs only inside the archive.
@@ -76,17 +83,20 @@ function Esc-Names($files) { return (@($files | ForEach-Object { Esc (Short $_) 
 function Run-Row([string]$name) {
     if (-not (Want $name)) { return }
     $d = $Root + '\' + $name
-    $ext = switch ($name) { 'ZIP-TOOLONG' { 'zip' } '7Z-TOOLONG' { '7z' } default { 'tar' } }
+    $ext = switch -wildcard ($name) { 'ZIP-*' { 'zip' } '7Z-*' { '7z' } 'CPIO-*' { 'cpio' } default { 'tar' } }
     $tgt = $d + '\tgt'; $arc = $d + '\t.' + $ext
     $longPath = ('d' * 100) + '/' + ('e' * 100) + '/' + ('f' * 96) + '.txt'
     # expected: relative path -> content
-    $want = [ordered]@{}; $need206 = $false; $observe = $false
+    $want = [ordered]@{}; $need206 = $false; $observe = $false; $openOnly = $false; $wantDir = $null
     switch ($name) {
         'GNU-TOOLONG' { $want['ok.txt'] = 'K'; $need206 = $true }
         'GNU-DEEP' { $want['a.txt'] = 'a'; $want['ok.txt'] = 'K'; $need206 = $true }
         'GNU-255' { $want[(Cjk 251) + '.txt'] = 'M' }
         'GNU-255DIR' { $want['ok.txt'] = 'K'; $need206 = $true }
         'GNU-LONG' { $want[$longPath] = 'L' }
+        'GNU-DIR100' { $want['ok.txt'] = 'K'; $wantDir = (Cjk 100) }
+        'CPIO-778' { $openOnly = $true }
+        'CPIO-TOOLONG' { $openOnly = $true; $observe = $true }
         default { $observe = $true }
     }
     try {
@@ -107,6 +117,11 @@ function Run-Row([string]$name) {
             Row $name 'RUN' (V $ok) ('the archive did not open; panel at: ' + (Tail $loc 80) + '; at open: ' + (Tail $openMsgs 160))
             return
         }
+        if ($openOnly) {
+            End-Row $name $id $null $before; $id = 0
+            Row $name 'RUN' 'PASS' ('the archive opened; at open: ' + (Tail $openMsgs 160))
+            return
+        }
         Post-Cmd (Get-Main $id) 842; Start-Sleep -Milliseconds 800
         Post-Cmd (Get-Main $id) 727
         $r = Serve $id 40 @(1, 6)
@@ -125,6 +140,11 @@ function Run-Row([string]$name) {
             }
         }
         [void]$facts.Add('tgt: ' + $(if ($files.Count) { Esc-Names $files } else { 'empty' }))
+        if ($wantDir) {
+            $dOk = [IO.Directory]::Exists($LP + $tgt + '\' + $wantDir)
+            if (-not $dOk -or $openMsgs -ne 'no window') { $ok = $false }
+            [void]$facts.Add('folder ' + (Esc (Short $wantDir)) + ' extracted: ' + $dOk)
+        }
         # a refused member: the system's "(206) file name too long" when the archive is opened, the
         # rest of the archive extracted
         if ($need206) { $m = $openMsgs -match '\(206\)'; if (-not $m) { $ok = $false }; [void]$facts.Add('message (206) at open: ' + $m) }
@@ -145,7 +165,12 @@ try {
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; ACP {2}; python {3}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [Drv098f]::GetACP(), ((& $Python --version 2>&1) -join ' '))
     Out ''
-    foreach ($n in @('GNU-TOOLONG', 'GNU-DEEP', 'GNU-255', 'GNU-255DIR', 'GNU-LONG', 'ZIP-TOOLONG', '7Z-TOOLONG')) { Run-Row $n }
+    foreach ($n in @('GNU-TOOLONG', 'GNU-DEEP', 'GNU-255', 'GNU-255DIR', 'GNU-LONG', 'ZIP-TOOLONG', '7Z-TOOLONG', 'GNU-DIR100')) { Run-Row $n }
+    # the open-only rows run last with simple icons in archives (the registry is restored at the end)
+    if ((Want 'CPIO-778') -or (Want 'CPIO-TOOLONG')) {
+        & reg.exe add "$RegKey\0.1\Packers & Unpackers" /v 'Simple Icons In Archives' /t REG_DWORD /d 1 /f | Out-Null
+        foreach ($n in @('CPIO-778', 'CPIO-TOOLONG')) { Run-Row $n }
+    }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
