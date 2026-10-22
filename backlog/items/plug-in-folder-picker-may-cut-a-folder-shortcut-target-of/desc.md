@@ -7,8 +7,8 @@ area: other-plugins
 source: measure:286
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-10-22
+verified: 2026-10-22 3fa858bb
 effort: S
 feature: -
 related: []
@@ -56,3 +56,4 @@ feature 286 R4).
 - 2026-10-21 — created (source measure:286)
 - 2026-10-21 — no relation intended
 - 2026-10-21 — moved to Next position 10
+- 2026-10-22 — verified at 3fa858bb: reproduced at 3fa858bb: standalone program on D: (no 8.3 names), target.lnk by ID list to a 260-400 unit folder: GetPath NOERROR, 259 units, cut; ResolveNetHoodFolderW returns the cut path
