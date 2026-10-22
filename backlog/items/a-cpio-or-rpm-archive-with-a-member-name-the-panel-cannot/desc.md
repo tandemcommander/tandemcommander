@@ -1,7 +1,7 @@
 ---
 title: A cpio or rpm archive with a member name the panel cannot hold fails as a whole
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:307
@@ -37,3 +37,4 @@ Severity from the band "a function does not work, rare": such names do not occur
 ## Log
 
 - 2026-10-22 — created (source review:307)
+- 2026-10-22 — moved to Next position 26

@@ -1,7 +1,7 @@
 ---
 title: Whole-archive Unpack of a PAX tar skips deep members and may delete the archive
 type: bug
-status: new
+status: open
 severity: 8
 area: data-safety
 source: review:307
@@ -39,3 +39,4 @@ Severity from the band "data loss in a narrow scenario" (deep PAX paths + the de
 ## Log
 
 - 2026-10-22 — created (source review:307)
+- 2026-10-22 — moved to Next position 1
