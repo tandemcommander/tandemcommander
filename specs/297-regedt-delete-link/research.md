@@ -47,6 +47,18 @@
   reads; Copy writes a deep chain into the target. Not data loss of the source; recorded as an Inbox
   item (`measure:297`), not fixed here.
 
+## R4a How a link is told (review of 297)
+
+- Decision: by identity, not by value - opened as a link (`REG_OPTION_OPEN_LINK`,
+  `KEY_ENUMERATE_SUB_KEYS`) the key reports its own internal name; opened by name a link reports
+  another key or fails with "not found"; a plain key reports the same name both ways (measured,
+  scratch `linktest.ps1`, `fix-log.md` *Review*).
+- Rationale: a plain key can hold a value `SymbolicLinkValue` of type `REG_LINK` without being a link
+  (review SHOULD 1), and reading values needs `KEY_QUERY_VALUE`, which the delete walk never needed
+  (SHOULD 2); the kernel's link flag (`KeyFlagsInformation`) also needs `KEY_QUERY_VALUE`.
+- Alternatives: the value test of the first version (both findings); `KeyFlagsInformation` (an
+  undocumented flag, and the same access problem).
+
 ## R5 Errors
 
 - Opening as a link fails with "not found" = the key does not exist: Delete and Move go on as before

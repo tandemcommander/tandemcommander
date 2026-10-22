@@ -37,8 +37,9 @@ link made by hand; every link points at `Jinde` (j=5, holding `Sub` s=6), which 
 ### Session 2026-10-22
 
 - Q: Delete (F8) of a key whose tree holds a link, or of the link itself? → A: the link itself is
-  removed (opened as a link), never the key it points at nor anything below it; a dangling link is
-  removed the same way (autonomous run: item - Expected's first option, "the link itself is removed
+  removed (opened as a link), never the key it points at nor anything below it; a dangling link
+  inside the selected tree is removed the same way (a selected link that is itself dangling: see the
+  pre-check Clarification below) (autonomous run: item - Expected's first option, "the link itself is removed
   (opened as a link)"; the link is part of what the user selected)
 - Q: Move (F6, drag and drop) / Quick Rename of a key whose tree holds a link, or of the link itself:
   recreate the link in the target, copy its target, or refuse? → A: refuse that key with the existing

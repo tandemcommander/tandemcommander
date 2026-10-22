@@ -55,9 +55,10 @@ Backlog item `registry-editor-delete-or-move-deletes-a-linked-key` (source measu
 
 ## Implementation
 
-1. `src/plugins/regedt/fs5.cpp`: `RegKeyIsLink` (file-static; open as a link, `SymbolicLinkValue` of
-   type `REG_LINK`) - 296's `SafeCheckTargetLink` now uses it instead of its inline test (same
-   results: no key -> TRUE, no link -> TRUE, a link -> 296's decision, other error -> the box).
+1. `src/plugins/regedt/fs5.cpp`: `RegKeyIsLink` (file-static; first version: open as a link,
+   `SymbolicLinkValue` of type `REG_LINK` - replaced after the review by the identity test
+   `OpenedRegKeyIsLink`, see *Review*) - 296's `SafeCheckTargetLink` now uses it instead of its
+   inline test (no key -> TRUE, no link -> TRUE, a link -> 296's decision, other error -> the box).
    `SafeRegKeyIsLink` (the open-error box; "not found" = no link) and `SafeDeleteRegLink`
    (`REG_OPTION_OPEN_LINK` + `DELETE | KEY_QUERY_VALUE`, the link value re-read on that handle - no
    longer a link = `ERROR_NOT_SUPPORTED`, never deleted -, `NtDeleteKey` / `RtlNtStatusToDosError` by
@@ -90,6 +91,45 @@ Backlog item `registry-editor-delete-or-move-deletes-a-linked-key` (source measu
 
 Not driven: the fail-closed path (analyze C1), Retry / Skip All of the refusal box (C2), drag and
 drop (C3) - read by the review.
+
+## Review
+
+Review 1, an independent refute-first review (general-purpose agent) of the branch at ecd36726.
+**No MUST.** It rebuilt the branch and re-ran the feature probe (30 / 0, registry identical) and 296's
+probe (47 / 0). It also ran its own scratch rows (`%TEMP%\tcrev297`, fixture `HKCU\Software\TcReview297`, removed):
+
+- A link to its own ancestor: F8 removes only the link; F6 refuses.
+- The UTF-8 names in the boxes are whole.
+- Callers enumerated: `DeleteKey` <- `Delete`, itself; `SafeDeleteKey` <- `CopyOrMoveKeyRec`;
+  `CopyOrMoveKey` <- `CopyOrMoveFromFS`, `QuickRename`.
+- The 296 refactor is equivalent.
+
+| Finding | Done |
+|---|---|
+| SHOULD 1: a link was told by its value - a PLAIN key can hold `SymbolicLinkValue` of type `REG_LINK` (set unelevated): F8 then gave `NtDeleteKey` a key with subkeys ("Unable to delete (5)", undeletable), F6 refused it; a link without its value was taken for a plain key | measured (scratch `linktest.ps1`, `HKCU\Software\TcScratch297`, removed): opened as a link with `KEY_ENUMERATE_SUB_KEYS` the key reports its own internal name (`NtQueryKey` KeyNameInformation); opened by name a link reports its target or fails with 2 (dangling, no value); a fake-value key reports the same name both ways; `KeyFlagsInformation` (flag 2 = link) needs `KEY_QUERY_VALUE` (0xC0000022 with enumerate only). Fix: `OpenedRegKeyIsLink` - a link = the key opened by name is another key (292's `AddOpenedRegKeyId` + `SalRegKeyIdsAnySame`) or none; `RegKeyIsLink` / `SafeDeleteRegLink` use it (the delete handle is re-checked the same way). Probe rows FAKEDEL, FAKEMOVE, NOVALDEL |
+| SHOULD 2: the link test asked `KEY_QUERY_VALUE` of every key Delete walks - a child that denies reading values (delete allowed) stopped F8 with "Unable to open (5)" | the new test asks only `KEY_ENUMERATE_SUB_KEYS`, which the old delete walk already needed. Probe row ACLDEL (Deny QueryValues on `AclT\<K>\Child`) |
+| NOTE 3: a selected dangling link itself still cannot be deleted (Delete's pre-check) | intended (spec Clarification on the pre-check; Q1 now says "inside the selected tree"); limit recorded |
+| NOTE 4: the per-level refusal splits a Move / Quick Rename (keys before the link stay moved) | intended (spec Clarification); limit recorded in FEATURE-HISTORY |
+| NOTE 5: `result_*.txt` duplicate the probe outputs; the reworded MOVETREE row was never run on the old build | `result_*.txt` are the hidden-desktop runner's logs, kept as 296 does; the negative control (no link test) fails that row |
+
+The new rows on the reviewed build (value test), `-Only FAKE,ACL,NOVAL,DELHKCRPLAIN` ->
+`probe/link297_review_before.txt`: **4 FAIL** (FAKEDEL, FAKEMOVE, ACLDEL, NOVALDEL), DELHKCRPLAIN and
+END rows PASS, registry restored identical. After the fix (`probe/result_after_review.txt`,
+`probe/link297_after.txt`): **40 PASS / 0 FAIL / 0 NOT DRIVEN**, registry restored identical.
+
+After the review (identity test), on its build:
+
+| Check | Result |
+|---|---|
+| probe (English, 40 rows) `probe/link297_after.txt`; re-run after the negative control `probe/result_after_final.txt` | **40 PASS / 0 FAIL / 0 NOT DRIVEN**, registry restored identical |
+| probe (Czech) `probe/link297_after_czech.txt` | **40 PASS / 0 FAIL**, registry restored identical |
+| 296's probe `probe/link296_on297.txt` (its target check now uses the identity test) | **47 PASS / 0 FAIL**, registry restored identical |
+| 294's probe `probe/above294_on297.txt` | **24 PASS / 0 FAIL**, registry restored identical |
+| 292's probe `probe/alias292_on297.txt` | **33 PASS / 0 FAIL**, registry restored identical |
+| negative control: `OpenedRegKeyIsLink` always "no link" (both branches), rebuilt, `-Only DEL,MOVE,RENAME,NOVAL` -> `probe/link297_negctl_ident.txt` | **15 FAIL** (every link row incl. NOVALDEL, DELHKCR); DEL / MOVE controls PASS; reverted (no mutation left), rebuilt |
+| saltests / encoding guard | `saltests: 26304 checks, 0 failed`; `TOTAL: 0 finding(s)` |
+
+No second review: review 1 had no MUST (SKILL step 7 asks a fresh review only after MUST fixes).
 
 ## Out of scope (found while measuring)
 

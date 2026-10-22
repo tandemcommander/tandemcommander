@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -3920,3 +3920,30 @@ a few early ones are out of sequence).
   branch off 2 FAIL, the check off 10 FAIL); 292's probe 33 / 0, 294's 24 / 0; saltests 26,304 / 0;
   one refute-first review (no MUST; SHOULD HKCR measured + row, its five scratch rows moved into the
   probe).
+- 297-regedt-delete-link: the Registry Editor's Delete (F8) of a key holding a registry link
+  (`REG_OPTION_CREATE_LINK`, makeable unelevated under HKCU), or of the link itself, deleted the key
+  the link points at - a key never selected - and left the link ("Unable to delete a registry key.
+  (5)" for its parent); Move (F6, drag and drop) and Quick Rename first copied the linked key as a
+  plain key, then deleted it (upstream; found by 296) - now `DeleteKey` (`fs3.cpp`) removes a link as
+  the link itself (`REG_OPTION_OPEN_LINK` + `DELETE`, re-checked on that handle, `NtDeleteKey` by
+  `GetProcAddress`), a dangling one too, nothing enumerated through it; a Move's recursion
+  (`CopyOrMoveKeyRec`, `fs5.cpp`) refuses a link source key before anything of it is read or written
+  with the existing `IDS_REMOVESOURCE` box + `ERROR_NOT_SUPPORTED` (Retry / Skip / Skip All / Cancel;
+  Skip keeps it and its parents); Copy unchanged. A link is told by identity, not by value: opened
+  as a link (`KEY_ENUMERATE_SUB_KEYS`) vs. by name, another key or none = a link (292's
+  `AddOpenedRegKeyId` / `SalRegKeyIdsAnySame`; `RegKeyIsLink`, also 296's target check). Traps: the
+  first version read `SymbolicLinkValue` - a PLAIN key can hold that value with type `REG_LINK`
+  (then undeletable / refused), a link without its value passed as plain, and `KEY_QUERY_VALUE` on
+  every walked key broke Delete of a key whose child denies reading values (review SHOULD 1 / 2); the
+  kernel's link flag (`KeyFlagsInformation` & 2) needs `KEY_QUERY_VALUE` too; `RegDeleteKeyW` of a
+  key still holding a link subkey fails with (5); the error box's name field is read back through
+  the code page in a probe (287's trap); a Bash here-doc collapsed `'\Top\'` again (use the editor).
+  Limits: decided per level, so siblings moved before a refused link stay moved; the box does not
+  say "link"; a selected dangling link itself is still refused by Delete's pre-check (delete its
+  parent); Copy / Find through a link to an ancestor loop until the name limit (Inbox
+  `registry-editor-copy-or-find-through-a-link-to-an-ancestor`). From backlog item
+  `registry-editor-delete-or-move-deletes-a-linked-key`. Probe `link297_probe.ps1` 16 / 14 FAIL ->
+  30 / 0, after the review 40 / 0 (English and Czech; negative controls: both link tests off 14 FAIL,
+  the identity test always "no link" 15 FAIL; the review's rows on the first version: 4 FAIL); 296's probe 47 / 0, 294's 24 / 0, 292's 33 / 0;
+  saltests 26,304 / 0; one refute-first review (no MUST; SHOULD 1 / 2 fixed with rows FAKEDEL,
+  FAKEMOVE, ACLDEL, NOVALDEL, DELHKCRPLAIN).

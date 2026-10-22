@@ -37,6 +37,13 @@
       COPYTREE    (control, unchanged behaviour) F5 of Mov\<K> into HKCU\...\Cil\: no box; Cil\<K>\L is
                   a plain key with j = 5 and Sub s = 6 (the link's target copied, as before); Mov and
                   Jinde unchanged
+      FAKEDEL     (review) F8 of Fake\<K> - a PLAIN key holding a value SymbolicLinkValue of type
+                  REG_LINK (settable without elevation) and Z: deleted as before, no error box
+      FAKEMOVE    (review) F6 of the same into HKCU\...\Cil\: moved whole as before, no box
+      ACLDEL      (review) F8 of AclT\<K> whose Child denies the user QueryValues (deleting it is
+                  allowed): deleted as before, no error box
+      NOVALDEL    (review) F8 of NoVal\<K> holding a link L without its value: both gone, no error box
+      DELHKCRPLAIN (review) F8 of HKEY_CLASSES_ROOT\TcProbe297c\Plain\<K> (no link): deleted as before
       DEL         (regression) F8 of Plain\<K>: gone, no error box
       MOVE        (regression) F6 of Plain\<K> into HKCU\...\Cil\: moved whole, no box
       END         each instance ends with exit code 0, no stray window, no report
@@ -88,32 +95,55 @@ public static class RegLink297
     static extern int RegQueryValueExW(UIntPtr h, string name, IntPtr res, out int type, byte[] data, ref int size);
     [DllImport("advapi32.dll")] static extern int RegCloseKey(UIntPtr h);
     [DllImport("ntdll.dll")] static extern int NtDeleteKey(UIntPtr h);
+    [DllImport("ntdll.dll")] static extern int NtQueryKey(UIntPtr h, int cls, byte[] buf, int len, out int got);
     const int REG_OPTION_CREATE_LINK = 2, REG_OPTION_OPEN_LINK = 8, REG_LINK = 6;
     const int KEY_QUERY_VALUE = 1, KEY_SET_VALUE = 2, KEY_CREATE_LINK = 0x20, DELETE = 0x10000;
-    // a new link key 'sub' (below HKCU) pointing at the internal name 'target' (\REGISTRY\USER\...)
+    // a new link key 'sub' (below HKCU) pointing at the internal name 'target' (\REGISTRY\USER\...);
+    // 'target' null = a link without its value (it points nowhere)
     public static int Make(string sub, string target)
     {
         UIntPtr h; int d;
         int e = RegCreateKeyExW(HKCU, sub, 0, null, REG_OPTION_CREATE_LINK, KEY_SET_VALUE | KEY_CREATE_LINK | KEY_QUERY_VALUE, IntPtr.Zero, out h, out d);
         if (e != 0) return e;
         if (d != 1) { RegCloseKey(h); return 183; } // ERROR_ALREADY_EXISTS: never retarget an existing key
-        byte[] b = System.Text.Encoding.Unicode.GetBytes(target); // no terminator
+        if (!string.IsNullOrEmpty(target))   // (PowerShell passes $null as an empty string)
+        {
+            byte[] b = System.Text.Encoding.Unicode.GetBytes(target); // no terminator
+            e = RegSetValueExW(h, "SymbolicLinkValue", 0, REG_LINK, b, b.Length);
+        }
+        RegCloseKey(h);
+        return e;
+    }
+    // review of 297: a PLAIN key 'sub' gets a value SymbolicLinkValue of type REG_LINK (it stays no link)
+    public static int FakeValue(string sub, string target)
+    {
+        UIntPtr h;
+        int e = RegOpenKeyExW(HKCU, sub, 0, KEY_SET_VALUE, out h);
+        if (e != 0) return e;
+        byte[] b = System.Text.Encoding.Unicode.GetBytes(target);
         e = RegSetValueExW(h, "SymbolicLinkValue", 0, REG_LINK, b, b.Length);
         RegCloseKey(h);
         return e;
     }
-    // the target of the link key 'sub', or null when 'sub' is no link (or does not exist)
+    // the target of the link key 'sub' ("(none)" for a link without its value), or null when 'sub'
+    // is no link (or does not exist, or cannot be asked); a link is told by the registry's own key
+    // flag (KeyFlagsInformation, flag 2), not by its value - a plain key may hold the same value
     public static string Target(string sub)
     {
         UIntPtr h;
         if (RegOpenKeyExW(HKCU, sub, REG_OPTION_OPEN_LINK, KEY_QUERY_VALUE, out h) != 0) return null;
-        int type, size = 0;
         string ret = null;
-        if (RegQueryValueExW(h, "SymbolicLinkValue", IntPtr.Zero, out type, null, ref size) == 0 && type == REG_LINK)
+        byte[] f = new byte[12]; int got;
+        if (NtQueryKey(h, 5, f, f.Length, out got) >= 0 && (BitConverter.ToInt32(f, 4) & 2) != 0)
         {
-            byte[] b = new byte[size];
-            if (RegQueryValueExW(h, "SymbolicLinkValue", IntPtr.Zero, out type, b, ref size) == 0)
-                ret = System.Text.Encoding.Unicode.GetString(b, 0, size).TrimEnd('\0');
+            ret = "(none)";
+            int type, size = 0;
+            if (RegQueryValueExW(h, "SymbolicLinkValue", IntPtr.Zero, out type, null, ref size) == 0 && type == REG_LINK)
+            {
+                byte[] b = new byte[size];
+                if (RegQueryValueExW(h, "SymbolicLinkValue", IntPtr.Zero, out type, b, ref size) == 0)
+                    ret = System.Text.Encoding.Unicode.GetString(b, 0, size).TrimEnd('\0');
+            }
         }
         RegCloseKey(h);
         return ret;
@@ -151,6 +181,7 @@ $Links['Del\' + $K + '\L'] = 'Jinde'
 $Links['Top\' + $K] = 'Jinde'
 $Links['Dang\' + $K + '\L'] = 'Nikde'
 $Links['Mov\' + $K + '\L'] = 'Jinde'
+$Links['NoVal\' + $K + '\L'] = $null                    # a link without its value (review of 297)
 $MainLinks = $Links
 $MainName = $RegName
 # the merged HKEY_CLASSES_ROOT view: HKCU\Software\Classes is a link to the hive <SID>_Classes
@@ -238,7 +269,20 @@ function Find-Links([string]$Rel) {
     }
     return $out
 }
+# review of 297: AclT\<K>\Child denies the user QueryValues (deleting it stays allowed)
+$AclRel = 'AclT\' + $K + '\Child'
+$Me = [Security.Principal.WindowsIdentity]::GetCurrent().User
+function Set-DenyQuery([bool]$On) {
+    $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($RegSub + '\' + $AclRel, [Microsoft.Win32.RegistryKeyPermissionCheck]::ReadWriteSubTree, [Security.AccessControl.RegistryRights]'ReadPermissions, ChangePermissions')
+    if (-not $k) { return }
+    $acl = $k.GetAccessControl()
+    $rule = New-Object Security.AccessControl.RegistryAccessRule($Me, [Security.AccessControl.RegistryRights]::QueryValues, [Security.AccessControl.AccessControlType]::Deny)
+    if ($On) { $acl.AddAccessRule($rule) } else { [void]$acl.RemoveAccessRuleAll($rule) }
+    $k.SetAccessControl($acl)
+    $k.Close()
+}
 function Remove-Fixture {
+    if ($script:Fixture -ne 'classes') { Set-DenyQuery $false }
     if ($null -ne [RegLink297]::Target($RegSub)) { throw 'the fixture key itself is a link' }
     foreach ($l in @(Find-Links '')) {
         $e = [RegLink297]::Delete($RegSub + '\' + $l)
@@ -264,12 +308,23 @@ function Make-Fixture {
         Set-Val ('Mov\' + $K) 'a' '1'
         Set-Val ('Mov\' + $K + '\Z') 'z' '9'
         New-Key 'Cil'
-        New-Key ('Plain\' + $K + '\Z')
-        Set-Val ('Plain\' + $K) 'a' '1'
-        Set-Val ('Plain\' + $K + '\Z') 'z' '9'
+        New-Key ('NoVal\' + $K)
+        Set-Val ('NoVal\' + $K) 'a' '1'
+        New-Key ('Fake\' + $K + '\Z')
+        Set-Val ('Fake\' + $K) 'a' '1'
+        Set-Val ('Fake\' + $K + '\Z') 'z' '9'
+        $e = [RegLink297]::FakeValue($RegSub + '\Fake\' + $K, $RegInt + '\Jinde')
+        if ($e -ne 0) { throw ('cannot set the fake link value: ' + $e) }
+        New-Key $AclRel
+        Set-Val ('AclT\' + $K) 'a' '1'
+        Set-Val $AclRel 'c' '3'
+        Set-DenyQuery $true
     }
+    New-Key ('Plain\' + $K + '\Z')
+    Set-Val ('Plain\' + $K) 'a' '1'
+    Set-Val ('Plain\' + $K + '\Z') 'z' '9'
     foreach ($l in $Links.Keys) {
-        $e = [RegLink297]::Make($RegSub + '\' + $l, $RegInt + '\' + $Links[$l])
+        $e = [RegLink297]::Make($RegSub + '\' + $l, $(if ($null -eq $Links[$l]) { $null } else { $RegInt + '\' + $Links[$l] }))
         if ($e -ne 0) { throw ('cannot create the link ' + $l + ': ' + $e) }
     }
 }
@@ -281,9 +336,10 @@ function Snap-Keys([string]$Rel) {
         if ($t.StartsWith($RegInt + '\', [StringComparison]::OrdinalIgnoreCase)) { $t = $t.Substring($RegInt.Length + 1) }
         return @(('{0}|-> {1}' -f $Rel, $t))
     }
-    $item = Get-Item -LiteralPath ($RegPs + '\' + $Rel) -ErrorAction SilentlyContinue
-    if (-not $item) { return @() }
-    $vals = @($item.GetValueNames() | Sort-Object | ForEach-Object { $_ + '=' + $item.GetValue($_) }) -join ';'
+    $item = $null
+    try { $item = Get-Item -LiteralPath ($RegPs + '\' + $Rel) -ErrorAction SilentlyContinue } catch { }
+    if (-not $item) { return @(('{0}|(no access)' -f $Rel)) }    # the ACL row's Child (or a key gone meanwhile)
+    $vals = @($item.GetValueNames() | Sort-Object | ForEach-Object { $_ + '=' + $(if ($_ -eq 'SymbolicLinkValue') { '(link value)' } else { $item.GetValue($_) }) }) -join ';'
     $out += ('{0}|{1}' -f $Rel, $vals)
     foreach ($n in @($item.GetSubKeyNames())) { $out += @(Snap-Keys ($Rel + '\' + $n)) }
     return $out
@@ -459,8 +515,39 @@ try {
         $moved = (Has-Line $s ('Cil\' + $K + '|a=1')) -and (Has-Line $s ('Cil\' + $K + '\Z|z=9')) -and -not (Has-Key $s ('Plain\' + $K))
         Row 'MOVE' 'STATE' (V ($moved -and $r.Boxes.Count -eq 0)) ("moved whole: {0}; {1}; keys: {2}" -f $moved, (Box-Facts $r), $r.State)
     }
+    # rows of the review of 297: keys that are no links behave as before, a link without its value
+    Row-Op 'FAKEDEL' 729 ($RegFs + '\Fake') $FocusK $null $Yes {
+        param($r)
+        $gone = -not (Has-Key $r.Snap1 ('Fake\' + $K))
+        $errs = @(Err-Boxes $r).Count
+        Row 'FAKEDEL' 'STATE' (V ($gone -and $errs -eq 0 -and (Jinde-Ok $r.Snap1))) ("a plain key holding a REG_LINK value SymbolicLinkValue (and Z) deleted as before: {0}; no error box: {1}; {2}" -f $gone, ($errs -eq 0), (Box-Facts $r))
+    }
+    Row-Op 'FAKEMOVE' 728 ($RegFs + '\Fake') $FocusK ('\' + $RegFull + '\Cil\') $null {
+        param($r)
+        $s = $r.Snap1
+        $moved = (Has-Line $s ('Cil\' + $K + '|a=1;SymbolicLinkValue=(link value)')) -and (Has-Line $s ('Cil\' + $K + '\Z|z=9')) -and -not (Has-Key $s ('Fake\' + $K))
+        Row 'FAKEMOVE' 'STATE' (V ($moved -and $r.Boxes.Count -eq 0 -and (Jinde-Ok $s))) ("the same key moved whole as before: {0}; {1}; keys: {2}" -f $moved, (Box-Facts $r), $r.State)
+    }
+    Row-Op 'ACLDEL' 729 ($RegFs + '\AclT') $FocusK $null $Yes {
+        param($r)
+        $gone = -not (Has-Key $r.Snap1 ('AclT\' + $K))
+        $errs = @(Err-Boxes $r).Count
+        Row 'ACLDEL' 'STATE' (V ($gone -and $errs -eq 0)) ("AclT\<K> (Child denies reading values, allows deleting) deleted as before: {0}; no error box: {1}; {2}" -f $gone, ($errs -eq 0), (Box-Facts $r))
+    }
+    Row-Op 'NOVALDEL' 729 ($RegFs + '\NoVal') $FocusK $null $Yes {
+        param($r)
+        $gone = -not (Has-Key $r.Snap1 ('NoVal\' + $K))
+        $errs = @(Err-Boxes $r).Count
+        Row 'NOVALDEL' 'STATE' (V ($gone -and $errs -eq 0 -and (Jinde-Ok $r.Snap1))) ("NoVal\<K> and its link without a value gone: {0}; no error box: {1}; {2}" -f $gone, ($errs -eq 0), (Box-Facts $r))
+    }
     # the merged HKEY_CLASSES_ROOT view
     Use-Fixture 'classes'
+    Row-Op 'DELHKCRPLAIN' 729 ('reg:\HKEY_CLASSES_ROOT\' + $ClsName + '\Plain') $FocusK $null $Yes {
+        param($r)
+        $gone = -not (Has-Key $r.Snap1 ('Plain\' + $K))
+        $errs = @(Err-Boxes $r).Count
+        Row 'DELHKCRPLAIN' 'STATE' (V ($gone -and $errs -eq 0)) ("a plain key under HKEY_CLASSES_ROOT deleted as before: {0}; no error box: {1}; {2}" -f $gone, ($errs -eq 0), (Box-Facts $r))
+    }
     Row-Op 'DELHKCR' 729 ('reg:\HKEY_CLASSES_ROOT\' + $ClsName + '\Del') $FocusK $null $Yes {
         param($r)
         $gone = -not (Has-Key $r.Snap1 ('Del\' + $K))

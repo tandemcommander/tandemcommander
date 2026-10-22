@@ -11,9 +11,9 @@ No stored data. The objects the operations look at:
 
 States of a key at one level of a recursion:
 
-| Test (opened as a link) | Delete | Move / Quick Rename |
+| Test (opened as a link vs. opened by name, review of 297) | Delete | Move / Quick Rename |
 |---|---|---|
 | no such key (`ERROR_FILE_NOT_FOUND`) | as before (its own open reports it) | as before |
-| key, no `SymbolicLinkValue` / other type | as before | as before |
-| link (`REG_LINK`) | the link itself removed (`NtDeleteKey`), nothing below | refused: `IDS_REMOVESOURCE` + `ERROR_NOT_SUPPORTED` box |
+| the same key both ways (a plain key, also one holding a value `SymbolicLinkValue`) | as before | as before |
+| another key by name, or none (a link; dangling or without its value) | the link itself removed (`NtDeleteKey`), nothing below | refused: `IDS_REMOVESOURCE` + `ERROR_NOT_SUPPORTED` box |
 | other error | open-error box (fails closed) | open-error box (fails closed) |

@@ -277,86 +277,6 @@ BOOL SafeDeleteKey(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipA
     return TRUE;
 }
 
-// feature 297 (the test of 296): is 'root'\'key' a registry link (a key created with
-// REG_OPTION_CREATE_LINK)? Only the last element is opened as a link (REG_OPTION_OPEN_LINK); a
-// link holds the value SymbolicLinkValue of type REG_LINK. Returns a Win32 error code
-// (ERROR_FILE_NOT_FOUND = no such key); 'isLink' is TRUE only with ERROR_SUCCESS
-static int RegKeyIsLink(int root, LPCWSTR key, BOOL& isLink)
-{
-    isLink = FALSE;
-    HKEY hKey;
-    int err = RegOpenKeyExW(PredefinedHKeys[root].HKey, key, REG_OPTION_OPEN_LINK, KEY_QUERY_VALUE, &hKey);
-    if (err != ERROR_SUCCESS)
-        return err;
-    DWORD type = REG_NONE, size = 0;
-    err = RegQueryValueExW(hKey, L"SymbolicLinkValue", NULL, &type, NULL, &size);
-    RegCloseKey(hKey);
-    if (err == ERROR_FILE_NOT_FOUND)
-        return ERROR_SUCCESS; // no link
-    if (err == ERROR_SUCCESS)
-        isLink = type == REG_LINK;
-    return err;
-}
-
-// feature 297: RegKeyIsLink with the existing open-error box (Retry / Skip / Skip All / Cancel); a
-// key that does not exist is no link and no error here (the caller's own open reports it). FALSE =
-// do not go on with this key ('skip' tells Skip from Cancel)
-BOOL SafeRegKeyIsLink(int root, LPWSTR key, BOOL& isLink, int errorTitle, BOOL& skip, BOOL& skipAll)
-{
-    while (1)
-    {
-        int err = RegKeyIsLink(root, key, isLink);
-        if (err == ERROR_SUCCESS || err == ERROR_FILE_NOT_FOUND)
-            return TRUE;
-        if (!RegOperationError(err, IDS_OPEN, errorTitle, root, key, &skip, &skipAll))
-            return FALSE;
-    }
-}
-
-// feature 297: removes the registry link 'root'\'key' itself - never the key it points at (deleting
-// a link by name, RegDeleteKey, deletes its target and leaves the link). Opened as a link, checked
-// again on that handle to be a link, deleted with NtDeleteKey; errors in the existing delete-error
-// box (Retry repeats the whole sequence). FALSE = not removed ('skip' tells Skip from Cancel)
-BOOL SafeDeleteRegLink(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipAll)
-{
-    typedef LONG(NTAPI * FNtDeleteKey)(HANDLE);
-    typedef ULONG(NTAPI * FRtlNtStatusToDosError)(LONG);
-    HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
-    FNtDeleteKey deleteKey = ntdll != NULL ? (FNtDeleteKey)GetProcAddress(ntdll, "NtDeleteKey") : NULL;
-    FRtlNtStatusToDosError toDos = ntdll != NULL ? (FRtlNtStatusToDosError)GetProcAddress(ntdll, "RtlNtStatusToDosError") : NULL;
-    while (1)
-    {
-        int err = ERROR_PROC_NOT_FOUND;
-        if (deleteKey != NULL)
-        {
-            HKEY hKey;
-            err = RegOpenKeyExW(PredefinedHKeys[root].HKey, key, REG_OPTION_OPEN_LINK, DELETE | KEY_QUERY_VALUE, &hKey);
-            if (err == ERROR_SUCCESS)
-            {
-                DWORD type = REG_NONE, size = 0;
-                err = RegQueryValueExW(hKey, L"SymbolicLinkValue", NULL, &type, NULL, &size);
-                if (err == ERROR_FILE_NOT_FOUND || err == ERROR_SUCCESS && type != REG_LINK)
-                    err = ERROR_NOT_SUPPORTED; // no longer a link: never delete it here
-                if (err == ERROR_SUCCESS)
-                {
-                    LONG status = deleteKey(hKey);
-                    if (status < 0)
-                    {
-                        err = toDos != NULL ? (int)toDos(status) : ERROR_INVALID_FUNCTION;
-                        if (err == ERROR_SUCCESS)
-                            err = ERROR_INVALID_FUNCTION;
-                    }
-                }
-                RegCloseKey(hKey);
-            }
-        }
-        if (err == ERROR_SUCCESS)
-            return TRUE;
-        if (!RegOperationError(err, IDS_DELETE, errorTitle, root, key, &skip, &skipAll))
-            return FALSE;
-    }
-}
-
 // feature 296: the key the user copies or moves (read, and deleted at the end of a Move) - the
 // recursion appends to its own path buffer, so the path is a copy; its identities are read the
 // first time a registry link stands in the target tree
@@ -898,6 +818,123 @@ static int AddOpenedRegKeyId(HKEY hKey, CSalRegKeyIds& ids)
     memcpy(name, buf + 1, units * sizeof(WCHAR));
     name[units] = 0;
     return SalRegKeyIdsAdd(ids, name, NULL) ? ERROR_SUCCESS : ERROR_FILENAME_EXCED_RANGE;
+}
+
+// feature 297: is the key 'hLink' - 'root'\'key' opened as a link (REG_OPTION_OPEN_LINK) - a
+// registry link (created with REG_OPTION_CREATE_LINK)? Told by what the key is, not by its values (a
+// plain key may hold a value SymbolicLinkValue of type REG_LINK, and reading values needs a right a
+// delete does not - review of 297): the key opened by name, links followed, is another key, or no
+// key at all (a dangling link, a link without its value). Only KEY_ENUMERATE_SUB_KEYS is asked,
+// which deleting or copying the key needs anyway. Returns a Win32 error code; 'isLink' is valid with
+// ERROR_SUCCESS
+static int OpenedRegKeyIsLink(HKEY hLink, int root, LPCWSTR key, BOOL& isLink)
+{
+    isLink = FALSE;
+    HKEY hKey;
+    int err = RegOpenKeyExW(PredefinedHKeys[root].HKey, key, 0, KEY_ENUMERATE_SUB_KEYS, &hKey);
+    if (err == ERROR_FILE_NOT_FOUND)
+    {
+        isLink = TRUE; // the name stands only as a link
+        return ERROR_SUCCESS;
+    }
+    if (err != ERROR_SUCCESS)
+        return err;
+    struct CLinkIds
+    {
+        CSalRegKeyIds Link, Followed;
+    };
+    CLinkIds* ids = (CLinkIds*)malloc(sizeof(CLinkIds));
+    if (ids == NULL)
+        err = ERROR_NOT_ENOUGH_MEMORY;
+    else
+    {
+        ids->Link.Count = 0;
+        ids->Followed.Count = 0;
+        err = AddOpenedRegKeyId(hLink, ids->Link);
+        if (err == ERROR_SUCCESS)
+            err = AddOpenedRegKeyId(hKey, ids->Followed);
+        if (err == ERROR_SUCCESS)
+            isLink = !SalRegKeyIdsAnySame(ids->Link, ids->Followed);
+        free(ids);
+    }
+    RegCloseKey(hKey);
+    return err;
+}
+
+// feature 297 (the test of 296): is 'root'\'key' a registry link? Only the last element is opened
+// as a link. Returns a Win32 error code (ERROR_FILE_NOT_FOUND = no such key); 'isLink' is TRUE only
+// with ERROR_SUCCESS
+static int RegKeyIsLink(int root, LPCWSTR key, BOOL& isLink)
+{
+    isLink = FALSE;
+    if (*key == 0)
+        return ERROR_SUCCESS; // a root itself is no link (and its handle cannot be asked, 292)
+    HKEY hLink;
+    int err = RegOpenKeyExW(PredefinedHKeys[root].HKey, key, REG_OPTION_OPEN_LINK, KEY_ENUMERATE_SUB_KEYS, &hLink);
+    if (err != ERROR_SUCCESS)
+        return err;
+    err = OpenedRegKeyIsLink(hLink, root, key, isLink);
+    RegCloseKey(hLink);
+    return err;
+}
+
+// feature 297: RegKeyIsLink with the existing open-error box (Retry / Skip / Skip All / Cancel); a
+// key that does not exist is no link and no error here (the caller's own open reports it). FALSE =
+// do not go on with this key ('skip' tells Skip from Cancel)
+BOOL SafeRegKeyIsLink(int root, LPWSTR key, BOOL& isLink, int errorTitle, BOOL& skip, BOOL& skipAll)
+{
+    while (1)
+    {
+        int err = RegKeyIsLink(root, key, isLink);
+        if (err == ERROR_SUCCESS || err == ERROR_FILE_NOT_FOUND)
+            return TRUE;
+        if (!RegOperationError(err, IDS_OPEN, errorTitle, root, key, &skip, &skipAll))
+            return FALSE;
+    }
+}
+
+// feature 297: removes the registry link 'root'\'key' itself - never the key it points at (deleting
+// a link by name, RegDeleteKey, deletes its target and leaves the link). Opened as a link, checked
+// again on that handle to be a link, deleted with NtDeleteKey; errors in the existing delete-error
+// box (Retry repeats the whole sequence). FALSE = not removed ('skip' tells Skip from Cancel)
+BOOL SafeDeleteRegLink(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipAll)
+{
+    typedef LONG(NTAPI * FNtDeleteKey)(HANDLE);
+    typedef ULONG(NTAPI * FRtlNtStatusToDosError)(LONG);
+    HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+    FNtDeleteKey deleteKey = ntdll != NULL ? (FNtDeleteKey)GetProcAddress(ntdll, "NtDeleteKey") : NULL;
+    FRtlNtStatusToDosError toDos = ntdll != NULL ? (FRtlNtStatusToDosError)GetProcAddress(ntdll, "RtlNtStatusToDosError") : NULL;
+    while (1)
+    {
+        int err = ERROR_PROC_NOT_FOUND;
+        if (deleteKey != NULL)
+        {
+            HKEY hKey;
+            err = RegOpenKeyExW(PredefinedHKeys[root].HKey, key, REG_OPTION_OPEN_LINK, DELETE | KEY_ENUMERATE_SUB_KEYS, &hKey);
+            if (err == ERROR_SUCCESS)
+            {
+                BOOL isLink;
+                err = OpenedRegKeyIsLink(hKey, root, key, isLink);
+                if (err == ERROR_SUCCESS && !isLink)
+                    err = ERROR_NOT_SUPPORTED; // no longer a link: never delete it here
+                if (err == ERROR_SUCCESS)
+                {
+                    LONG status = deleteKey(hKey);
+                    if (status < 0)
+                    {
+                        err = toDos != NULL ? (int)toDos(status) : ERROR_INVALID_FUNCTION;
+                        if (err == ERROR_SUCCESS)
+                            err = ERROR_INVALID_FUNCTION;
+                    }
+                }
+                RegCloseKey(hKey);
+            }
+        }
+        if (err == ERROR_SUCCESS)
+            return TRUE;
+        if (!RegOperationError(err, IDS_DELETE, errorTitle, root, key, &skip, &skipAll))
+            return FALSE;
+    }
 }
 
 static int AddRegKeyIdOf(HKEY root, LPCWSTR key, CSalRegKeyIds& ids)

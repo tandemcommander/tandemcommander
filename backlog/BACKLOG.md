@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor: Delete or Move of a key holding a registry link deletes the linked key](items/registry-editor-delete-or-move-deletes-a-linked-key/desc.md) | bug | 7 | data-safety | 297 |
 
 ## Next
 
