@@ -37,6 +37,8 @@ folder, a drop would put the files into another folder.
 - Q: How does a refused target reach the user? → A: Through each caller's existing handling of a target that cannot be read - no new text (autonomous run: item - *Expected* "the callers' existing too long / not a valid shortcut handling"; rule - new UI strings need the `.slt` refresh)
 - Q: The raw-path question (environment strings not expanded) - can the item list prove it? → A: No; a raw answer of 259 units or more is refused (autonomous run: item - *Approach* "fail closed")
 - Q: Is a possibly cut answer recognised by its length (259 units or more)? → A: Yes, as feature 304; shorter answers keep today's behaviour (autonomous run: conservative - the measured cut is exactly 259 units)
+- Q: Should a drop onto a shortcut whose target is refused be blocked (stop cursor) instead of taking today's route for a shortcut whose target cannot be read? → A: Today's route, unchanged - the core only stops taking the cut path as the drop folder (autonomous run: conservative - keeps the existing behaviour for every case the item does not name)
+- Q: Should an 8.3 answer (a volume with short names) be expanded to the long form? → A: No - it names the same folder whole; unchanged (autonomous run: conservative - the item does not name it)
 
 ## User Scenarios & Testing *(mandatory)*
 
