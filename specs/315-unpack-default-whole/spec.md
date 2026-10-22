@@ -48,6 +48,7 @@ holding a.k and a.kp; the right panel on a folder L), 6 rows FAIL, 3 controls PA
 - Q: With "Use the archive name as a subfolder", the other panel's path fits but path + archive name does not - offer the bare path (today) or leave the entry out? → A: leave the entry out - the bare path is a cut default (the subfolder cut away) and would unpack straight into the other panel's folder; the setting is kept by the empty / relative entry (autonomous run: item - Evidence names the silent drop; "a default that does not fit ... is never offered cut")
 - Q: A plug-in's unpack mask that does not fit - which default replaces it? → A: the dialog's own default "*.*" (the default when a plug-in passes no mask), visible in the field before OK (autonomous run: item - "an empty / the other default", "the plug-in mask the same")
 - Q: The empty target path falls back to the archive panel's path cut to 259 bytes - fix here? → A: yes - leaving a target out makes the empty entry the default, so the fallback must not cut either: a panel path that does not fit is refused with "The path specified is too long." and the dialog opens again (autonomous run: item - "the later steps refuse with 'The path specified is too long.' - never a cut path"; measured in the same function)
+- Q: Does the empty-target refusal also apply when the user empties the field by hand, and what does the reopened dialog hold? → A: yes - the same fallback serves both; the dialog reopens with the same values as at OK (the empty entry), as after every other refusal of that step (autonomous run: conservative - keeps the existing reopen behaviour, refuses rather than guesses)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -146,8 +147,9 @@ A plug-in opens the Unpack dialog for itself with a mask longer than 259 bytes. 
 - **FR-003**: A plug-in's unpack mask is offered only whole; one that does not fit is replaced by
   "*.*".
 - **FR-004**: After OK, an empty target that would become the archive panel's path is refused with
-  "The path specified is too long." when that path does not fit; nothing is created or unpacked and
-  the dialog opens again.
+  "The path specified is too long." when that path does not fit - whether the empty entry was
+  offered or the user emptied the field; nothing is created or unpacked and the dialog opens again
+  with the values it had at OK.
 - **FR-005**: Defaults that fit are offered and used exactly as before (controls).
 - **FR-006**: No new UI string; the existing "The path specified is too long." is reused.
 
