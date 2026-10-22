@@ -1,16 +1,16 @@
 ---
 title: Unpack with an external unpacker cuts a long target path and mask
 type: bug
-status: open
+status: in-progress
 severity: 6
 area: long-paths
 source: review:291
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-10-22
+verified: 2026-10-22 4787b56b
 effort: S
-feature: -
+feature: 299
 related: []
 depends-on: []
 reason: -
@@ -55,3 +55,5 @@ files land in another folder (overwrite questions still asked), no loss found by
 
 - 2026-10-21 — created (source review:291)
 - 2026-10-21 — moved to Next position 4
+- 2026-10-22 — verified at 4787b56b: reproduced at 4787b56b: Alt+F9 hidden-desktop probe, path 262 bytes unpacked into the cut folder (CJK and ASCII), mask 260 bytes cut to R;*.k unpacked a.k; 3 FAIL, controls PASS
+- 2026-10-22 — run started, feature 299
