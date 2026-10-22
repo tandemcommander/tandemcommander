@@ -134,9 +134,10 @@ a person step).
   path unchanged and report failure (the existing too-long behaviour of the plug-in function);
   its signature and buffer contract MUST NOT change.
 - **FR-004**: Drive Information MUST show the subst target whole for every target `subst.exe` can
-  create (up to 260 UTF-16 units), or no part of a target its line cannot hold.
-- **FR-005**: The Change Drive menu text of a subst drive MUST be the exact target, or empty when
-  it cannot be held.
+  create (fewer than 260 UTF-16 units), or no part of a target its line cannot hold.
+- **FR-005**: The Change Drive menu text of a subst drive to a network path (the only subst drive
+  whose target the menu shows - a remote drive) MUST be the exact target, or empty when it cannot
+  be held.
 - **FR-006**: *Copy Full Path as UNC* MUST use the exact target or report the path as too long
   (feature 101's message) - never a `?` or cut path.
 - **FR-007**: The bug report's drive list MUST show the exact device text or omit it.

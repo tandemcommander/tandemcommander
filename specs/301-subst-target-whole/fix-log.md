@@ -39,3 +39,9 @@ Build: `.\build.cmd` (Debug x64) at HEAD; ACP 1250.
 ## Decisions
 
 See spec *Clarifications*.
+
+## Analyze
+
+`speckit-analyze`: 0 CRITICAL, 0 HIGH; fixed U1 (FR-005 names the subst-to-UNC case - the only
+one the menu shows), U2 (the Copy as UNC person step needs a shared folder), I1 (FR-004 "fewer
+than 260 units"); C1 accepted (FR-009 is a constraint, checked by build and review).
