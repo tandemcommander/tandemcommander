@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4112,3 +4112,20 @@ a few early ones are out of sequence).
   controls: PAX branch off 12 / 8, refusal off - crash, listing checks off 5 / 3); 252, 273, 275
   probes unchanged; saltests 27,152 / 0; two refute-first reviews (review 1 one MUST + one SHOULD,
   fixed; review 2 one SHOULD and two NOTEs fixed).
+- 308-pax-deep-unpack: unpacking a whole PAX tar (Alt+F9) silently left out every member whose folder
+  path was longer than 255 bytes (a deep source tree, `node_modules`) and still succeeded, so "Delete
+  archive after unpacking" deleted the archive with them; a member with a name over 255 characters let
+  it be deleted too - now the listing's bound applies only while the panel listing is built
+  (`SalPaxNameUsableU8`, `salpaxheader.h`; `CArchive::Listing`), every extraction (Unpack, Copy of a
+  folder, one file) takes every member a file system takes, and a member it was asked for that no file
+  system takes is named ("(206)") and fails the operation after the rest is extracted - the core then
+  keeps the archive. Traps: 306's probe row PAX-DEB had encoded the omission (Copy of `data` now brings
+  the deep member - expectation updated); only the first refused member is named; a symlink with a
+  too-long name fails the unpack too (safe side); paths over ~32,767 characters reach the core's
+  Retry / Skip box (Skip = success, the user's choice). GNU long names: the same rule is owed by
+  branch 307 (logged on its item); hard / symbolic links are still dropped silently - Inbox
+  `tar-unpack-drops-hard-links-and-deletes-archive`. From backlog item
+  `whole-archive-unpack-of-a-pax-tar-skips-deep-members-and-may`. Probe `unp308_probe.ps1` 5 / 5 ->
+  12 / 0 (negative controls: listing bound in extraction + result ignored 7 / 5, report removed 4 / 2);
+  306 probe 28 / 0, 252 / 273 / 275 unchanged; saltests 27,170 / 0; one refute-first review (two
+  SHOULDs fixed, five NOTEs).

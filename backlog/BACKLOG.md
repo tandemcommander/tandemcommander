@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Whole-archive Unpack of a PAX tar skips deep members and may delete the archive](items/whole-archive-unpack-of-a-pax-tar-skips-deep-members-and-may/desc.md) | bug | 8 | data-safety | 308 |
 
 ## Next
 
@@ -242,6 +241,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Unpacking a tar leaves hard-linked files out silently and Delete archive after unpacking then deletes the archive](items/tar-unpack-drops-hard-links-and-deletes-archive/desc.md) | bug | 7 | data-safety | review:308 | 2026-10-22 |
 
 ## Parked
 

@@ -42,3 +42,4 @@ Severity from the band "crashes in an unusual scenario". The probe row is exclud
 - 2026-10-22 — related item tar-plug-in-ignores-pax-extended-headers done in feature 306
 - 2026-10-22 — moved to Next position 1
 - 2026-10-22 — blocked: the independent review rejected the fix twice: review 2 MUST - the GNU refusal also runs in whole-archive Unpack, drops extractable deep members and lets Delete archive after unpacking delete the archive (feature 307, branch 307-tar-long-component)
+- 2026-10-22 — feature 308 made the PAX refusal pass-dependent: SalPaxNameUsableU8 (salpaxheader.h) applies the listing bound only while listing (CArchive::Listing); an extraction refuses only a component over 255 UTF-16 units, reports a refused member it was asked for and returns FALSE. When branch 307 is resumed its GNU refusal must use the same rule (fixes its review-2 MUST)

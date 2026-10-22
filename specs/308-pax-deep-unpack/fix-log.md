@@ -95,3 +95,40 @@ Backlog item `whole-archive-unpack-of-a-pax-tar-skips-deep-members-and-may` (rev
   COPY-TOOLONG no box during the copy (C), UNP-TOOLONG-DEL silent and t.tar deleted (B + C);
   UNP-DEEP-DEL still 34/34 (the depth fix is independent).
 - Restored build: `probe/result_after.txt` re-run `-Label after-restored` -> PASS 12 / FAIL 0.
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+Re-measured on the branch: probe 12 / 0, 306 probe 28 / 0, saltests 27170 / 0, encoding 0. Negative
+control by the reviewer: the extraction pass of `SalPaxNameUsableU8` with the listing bound -> saltests
+6 failed; restored (cmp, git status clean), 0 failed. Own rows (copy of the probe in the reviewer's
+%TEMP%\rev308), 16 / 16 PASS: .tgz deep + Delete (34 files, deleted); .tgz CJK(300) + Delete ("(206)",
+kept); mask `*.txt` matching the refused member + Delete (kept); mask `ok*` not matching it (deleted -
+the agreed rule); .deb with a CJK(300) data member + Delete (kept); .deb deep + Delete (deleted, all
+files); Copy from inside a*29 (archiveRoot set, 32 / 32). Callers enumerated: Copy (`src/fileswn7.cpp`),
+drag and drop (`src/salshlib.cpp`), Unpack (`src/fileswn7.cpp`), `deb.cpp`, `UnpackStream`; a FALSE
+from Copy only keeps the selection and removes created empty folders - nothing extracted is deleted;
+the tar plug-in has no Move.
+
+- SHOULD-1 (fixed): `CHANGELOG.md` - feature 306's unreleased entry still said a member deeper than the
+  listing "is left out", and 308's separate entry described as "Before" a behaviour no release had
+  (306 is unreleased too). 308 folded into 306's entry ("features 306, 308"): its *Now* says such
+  members are not shown in the panel but Unpack and copying their folder extract them, and a member
+  no file system takes makes the unpack fail so Delete keeps the archive; the separate entry removed.
+- SHOULD-2 (fixed): the hand-off to branch 307 was not recorded - logged on item
+  `opening-a-tar-whose-member-name-has-a-300-letter-component` (its GNU refusal must use
+  `SalPaxNameUsableU8` with the pass flag when resumed).
+- NOTE 1 (accepted): a symbolic link whose name has a 300-unit component fails the unpack ("(206)",
+  archive kept) although links are never extracted - the safe side; the message is the only cost.
+- NOTE 2 (accepted): a path over ~32,767 characters is not refused by the plug-in; the core shows
+  "(123)" with Retry / Skip / Cancel - Skip lets the unpack succeed (the core's Skip rule, the user's
+  choice; before 308 it was a silent skip and a delete).
+- NOTE 3 (new Inbox item): hard links (and symbolic links) are skipped silently and the whole unpack
+  succeeds, so Delete-after-unpack deletes the archive - inherited behaviour, outside this item ->
+  `tar-unpack-drops-hard-links-and-deletes-archive` (review:308).
+- NOTE 4 (accepted): the box at opening covers members a Copy of their folder will extract; the free
+  space check and the Copy confirmation count only listed members.
+- NOTE 5 (accepted): the `UnpackOneFile` change has no probe row - unreachable from the listing.
+
+After the fixes (documents only - no source changed): encoding guard and backlog check re-run at closing.
