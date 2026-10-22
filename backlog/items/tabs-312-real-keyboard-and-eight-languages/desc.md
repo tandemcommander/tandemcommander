@@ -1,7 +1,7 @@
 ---
 title: Tabs 312: real keyboard in both key modes and the Tabs page in eight languages
 type: person-step
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: measure:312
@@ -62,3 +62,4 @@ branch `312-tabs-browser-keys` or of `main` after it was merged.
 ## Log
 
 - 2026-10-22 — created (source measure:312)
+- 2026-10-22 — moved to Person steps position 34
