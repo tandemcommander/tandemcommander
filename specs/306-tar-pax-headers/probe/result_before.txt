@@ -1,0 +1,29 @@
+pax306_probe (feature 306) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 11:10; registry key existed True; ACP 1250; python Python 3.14.6
+
+PAX-LONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-LONG   RUN    FAIL        missing dddddddd..[302 chars]..ffff.txt; tgt: dddddddd..[100 chars]..dddddddd; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy file "ddddddddddddddddddddddddddd..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-CJK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-CJK    RUN    FAIL        missing \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[204 chars]..\u4EC4\u4EC5\u4EC6\u4EC7.txt; tgt: empty; at open: no window; windows: ...Error: | [Static id=172] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+PAX-TWINS  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-TWINS  RUN    FAIL        missing \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[204 chars]..\u4EC4\u4EC5\u4EC6\u5000.txt; missing \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[204 chars]..\u4EC4\u4EC5\u4EC6\u5001.txt; tgt: empty; at open: no window; windows: ...Error: | [Static id=172] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+PAX-DEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-DEEP   RUN    FAIL        missing sub/\u4E00\u4E01\u4E02\u4E03..[208 chars]..\u4EC4\u4EC5\u4EC6\u4EC7.txt; tgt: empty; at open: no window; windows: ...Error: | [Static id=172] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+PAX-MTIME  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-MTIME  RUN    FAIL        t.txt: T t=1000000000; tgt: t.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy file "t.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-SIZE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-SIZE   RUN    FAIL        missing s.txt; missing z.txt; tgt: t.tar, tgt/t.txt; at open: [#32770 'TAR Plugin Error'] [Static id=2477] Archive format not recognised or not supported. | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] &Copy 1 file and 1 directory to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+PAX-GLOBAL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-GLOBAL RUN    FAIL        g.txt: G t=1000000000; h.txt: H t=1000000000; tgt: g.txt, h.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GIT-COMMENT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GIT-COMMENT RUN    PASS        a.txt: A t=1000000000; tgt: a.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy file "a.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GNU-LONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GNU-LONG   RUN    PASS        dddddddd..[302 chars]..ffff.txt: L t=1000000000; tgt: dddddddd..[302 chars]..ffff.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy directory "dddddddddddddddddddddd..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PAX-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PAX-TOOLONG RUN    PASS        tgt: empty; at open: no window; windows: ...Error: | [Static id=172] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+GNU-TOOLONG END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 1 ([#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC0110X64-20261022-111231.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.); new reports 1 [TC0110X64-20261022-111231.TXT: Information About Exception: / Exception: open salamander rtc exception / Error Number: 2 / Description: Stack memory corruption / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / CMainWindow::LoadConfig(0) / CFilesWindow::ChangeDir(C:\Users\pavel\AppData\Local\Temp\tc306\GNU-TOOLONG\t.tar, -1, (null), 3, , 1, 0) / CFilesWindow::ChangePathToArchive(C:\Users\pavel\AppData\Local\Temp\tc306\GNU-TOOLONG\t.tar, , -1, (null), 0, , 1, , 0, 1, 0) / CFilesWindow::CommonRefresh(, -1, (null), 1, 1, 0)]
+GNU-TOOLONG RUN    FAIL        tgt: empty; at open: no window; windows: no window
+Registry: restored; identical=True; SHA-256 before D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F / after D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+
+Rows: PASS 13, FAIL 9, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

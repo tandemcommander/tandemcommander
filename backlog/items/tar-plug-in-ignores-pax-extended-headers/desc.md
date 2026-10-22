@@ -1,16 +1,16 @@
 ---
 title: tar plug-in ignores PAX extended headers: long or non-ASCII names listed under the ustar fallback name
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: measure:275
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-10-22
+verified: 2026-10-22 8c6f4d68
 effort: M
-feature: -
+feature: 306
 related: []
 depends-on: []
 reason: -
@@ -38,3 +38,5 @@ Not verified on the build: the severity assumes the fallback names really differ
 
 - 2026-10-21 — created (source measure:275)
 - 2026-10-21 — moved to Next position 12
+- 2026-10-22 — verified at 8c6f4d68: reproduced at 8c6f4d68: hidden-desktop probe with Python PAX tars - 302-byte path extracted under its 100-byte cut, CJK names as ? (error 123), PAX size/mtime and g mtime ignored; 9 FAIL / 13 PASS
+- 2026-10-22 — run started, feature 306
