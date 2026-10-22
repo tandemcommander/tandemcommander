@@ -60,6 +60,7 @@ reserved key.
 - Q: Where does the Tabs page go in the Configuration tree, and what about the remembered last page? → A: right after Appearance; a configuration saved before this feature (it has no value of the new option) has its remembered page index moved by one for every page after Appearance, so the same page opens (autonomous run: item - Approach "map old indexes")
 - Q: Which keys does the list on the Tabs page show? → A: every key of the decision table (nine rows) with its action in the mode the checkbox shows, plus Reopen Closed Tab with its key or "no shortcut", and Ctrl+Tab with its unchanged action (autonomous run: item - "lists the tab shortcuts and what they do")
 - Q: Do toolbar tooltips that name Ctrl+T / Ctrl+W, and the strip's New Tab tooltip, follow the mode too? → A: yes, the same rule as the menu labels (autonomous run: item - "Menu labels show the key of the active mode"; a tooltip naming a wrong key would mislead the same way)
+- Q: While *Show tabs in panels* is unchecked on the Tabs page, what does the shortcut list show? → A: it still follows the option's checkbox (what the keys do once tabs are on) and is greyed together with the option (autonomous run: conservative - informative content, and the grey shows that nothing applies without tabs)
 - Q: Is the *Tabs* entry in the toolbar context menu and Options > Show subject to the "N tab(s) will be closed" question when it turns tabs off? → A: yes, the same question as the Configuration dialog; No keeps tabs on (autonomous run: conservative - never close tabs without the question 078 asks)
 
 ## User Scenarios & Testing *(mandatory)*
@@ -220,7 +221,8 @@ remembering a page after Appearance opens that page), `toggle-menus`.
   MUST skip it; a plug-in hot key on Ctrl+Shift+G the user assigned before MUST be kept.
 - **FR-011**: A Tabs page MUST follow Appearance in Configuration with *Show tabs in panels*,
   *Browser-like tab shortcuts* (disabled while *Show tabs in panels* is unchecked) and a read-only
-  list of shortcuts and actions that follows the option's checkbox at once.
+  list of shortcuts and actions that follows the option's checkbox at once (greyed with the option
+  while *Show tabs in panels* is unchecked).
 - **FR-012**: The Appearance page MUST no longer show *Show tabs in panels*; its groups below MUST
   move back up by the space the checkbox took.
 - **FR-013**: The remembered Configuration page of a configuration saved before this feature MUST
