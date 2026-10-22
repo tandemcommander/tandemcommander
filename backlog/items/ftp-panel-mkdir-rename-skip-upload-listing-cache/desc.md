@@ -1,16 +1,16 @@
 ---
 title: FTP: Create Directory and Quick Rename in a panel never update the upload listing cache
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: ftp
 source: measure:288
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-10-22
+verified: 2026-10-22 02eba55f
 effort: S
-feature: -
+feature: 302
 related: []
 depends-on: []
 reason: -
@@ -38,3 +38,5 @@ Severity 5 because the effect is not measured; if the probe shows an upload repl
 
 - 2026-10-21 — created (source measure:288)
 - 2026-10-21 — moved to Next position 8
+- 2026-10-22 — verified at 02eba55f: present at 02eba55f: ctrlcon5.cpp CreateDir/QuickRename pass (host, user) to ReportCreateDirs/ReportRename declared (user, host); FindServer never matches; effect masked by the panel refresh for the panel folder, open for F7 with a path outside it
+- 2026-10-22 — run started, feature 302
