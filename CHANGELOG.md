@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A subst drive mapped to a folder with a long name in another script was handled through a path full of question marks - Delete did not recognise a junction on it** (feature 301).
+  - **Before:** for a subst drive (`subst Z: <folder>`) whose folder path took more than 259 bytes as UTF-8 - for example a folder named by 80 Chinese or Japanese letters - the program asked Windows for the folder in the system code page, so every letter outside it became `?`, and used that wrong path. F8 on a junction of such a drive asked to delete a "directory" instead of the junction, Drive Information showed no drive type and no subst folder, and Copy UNC Path, the Change Drive menu and the bug report used the `?` text.
+  - **Now:** the subst folder is read exactly, at any length. F8 names the junction, Drive Information shows "local drive (subst: <the whole folder>)" with its mount point and volume, and moves inside the drive are still renames on one volume. Where a folder does not fit (Copy UNC Path past 520 bytes, a line that cannot hold it) the program says the path is too long or shows no folder - never a shortened or `?` path.
+  - **Limitation:** Copy UNC Path on such a drive has not yet been checked by a person (it needs the clipboard) - recorded for later.
+
 - **Drive Information wrote a new volume label with accented letters garbled** (feature 300).
   - **Before:** a label typed in Drive Information was handed to Windows in the system code page, although the program held it as UTF-8: every letter outside ASCII arrived as two or three wrong letters - `Zálohy` became `ZĂˇlohy` on the drive.
   - **Now:** the label (and the drive's path) reach Windows exactly as typed. An unchanged label is still not written, a failed write still shows "Unable to change drive label." and keeps the dialog open.

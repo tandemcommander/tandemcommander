@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
@@ -3995,3 +3995,36 @@ a few early ones are out of sequence).
   checker report 40 -> 39 with negative control `checker_negative_control.py` PASS; probe
   `vol300_probe.ps1` 6 / 0 before and after (the error path, not the defect); saltests 26,443 / 0;
   one refute-first review (no MUST; S1 wording fixed, N4 to the Inbox).
+- 301-subst-target-whole: a subst drive whose target folder's UTF-8 form passes 259 bytes (e.g. 80+
+  CJK letters - `subst.exe` takes it) was resolved through the code-page `QueryDosDevice`
+  fallback of `MyQueryDosDevice` - `?` for every letter outside the code page, spliced by
+  `ResolveSubsts` into paths: F8 on a junction of such a drive asked to delete a "directory" (the
+  link not recognised), Drive Information's type line was empty, Copy UNC Path / the Change Drive
+  menu / the bug report used the `?` text; `GetSubstInformation` also cut with `lstrcpyn`. Now the
+  device text is read whole (MAX_PATH stack buffer, then a heap buffer growing on
+  `ERROR_INSUFFICIENT_BUFFER` - `DefineDosDeviceW` takes 359+ units) without any code-page call,
+  and parsed by header-only `salsubst.h` (`SalSubstTargetToPathU8`: `\??\X:` / `\??\UNC\` forms,
+  the size measured first, refused - never cut - when the caller's buffer is too small;
+  `SAL_SUBST_TEXT_U8_MAX` = 3 * MAX_PATH + 1 holds every `subst.exe` target). `GetSubstInformation`
+  gained `BOOL* tooLong`; `ResolveSubsts` (plug-in ABI unchanged) returns FALSE and leaves the
+  path as it is for a refused target - Windows resolves `Z:\...` itself; Drive Information and the
+  remote-drive menu text hold every `subst.exe` target, Copy UNC Path reports 101's "too long".
+  **Trap (review 1, MUST)**: the refusal made the volume checks fail open - the `?` path had the
+  right drive root, the unresolved `Z:\x` has no volume (`GetVolumeNameForVolumeMountPoint` fails
+  up to the subst root), so a move inside the drive became copy + delete and Undelete's
+  same-partition warning would be skipped; fixed with `GetSubstPathVolume` (the whole wide target +
+  the rest, `GetVolumePathNameW` + `GetVolumeNameForVolumeMountPointW`, `\\?\` when long) as the
+  fallback of `PathsAreOnTheSameVolume`, `HasTheSameRootPathAndVolume`,
+  `GetResolvedPathMountPointAndGUID` - **only for a path `ResolveSubsts` cannot resolve and never
+  after a walk that ended on a share** (review 2: `GetVolumePathNameW` does not follow a symbolic
+  link to UNC - a short subst holding such a link showed the local volume). This also fixed the
+  volume of targets over MAX_PATH units (0.1.10: LONG VOL / MOVE FAIL). Traps: `small` is a macro
+  (`rpcndr.h`); Git Bash `sed -i` drops CRLF; Bash heredocs collapse `\\` (the probe got BEL / FF
+  bytes). Left: Copy UNC Path needs the clipboard (person step
+  `check-copy-full-path-as-unc-on-a-subst-drive-with-a-long-non`); Undelete's warning fails open for
+  any other unreadable volume (Inbox `undelete-skips-its-same-partition-warning-when-the-target`).
+  From backlog item `a-subst-drive-whose-target-is-long-or-outside-the-code-page`. Probe
+  `subst_probe.ps1` 7 / 2 (first 9 rows) -> 18 / 0; installed 0.1.10 14 / 4, negative control
+  (`GetSubstPathVolume` off) 14 / 4; `review2_unc_probe.ps1` 4 / 0; import `QueryDosDeviceA` gone;
+  saltests 26,559 / 0 (rule negative control 4 failed); two refute-first reviews (1: M1 fixed, S1
+  rows added, S2 documented; 2: no MUST, S1 fixed).

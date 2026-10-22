@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A subst drive whose target is long or outside the code page resolves to a cut or code-page path](items/a-subst-drive-whose-target-is-long-or-outside-the-code-page/desc.md) | bug | 5 | long-paths | 301 |
 
 ## Next
 
@@ -237,6 +236,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check Copy UNC Path on a subst drive with a long non-ASCII target](items/check-copy-full-path-as-unc-on-a-subst-drive-with-a-long-non/desc.md) | person-step | 3 | long-paths | leftover:301 | 2026-10-22 |
 | [Undelete skips its same-partition warning when the target volume cannot be told](items/undelete-skips-its-same-partition-warning-when-the-target/desc.md) | bug | 5 | data-safety | measure:301 | 2026-10-22 |
 
 ## Parked
