@@ -1,16 +1,16 @@
 ---
 title: Drive Information writes the volume label through an ANSI API
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: encoding
 source: review:270
 who: both
 created: 2026-10-20
-updated: 2026-10-21
-verified: -
+updated: 2026-10-22
+verified: 2026-10-22 82bf0dac
 effort: S
-feature: -
+feature: 300
 related: []
 depends-on: []
 reason: -
@@ -55,3 +55,5 @@ checker are agent work; writing a real label must be confirmed by a person on a 
 
 - 2026-10-20 — created (source review:270)
 - 2026-10-21 — moved to Next position 6
+- 2026-10-22 — verified at 82bf0dac: still present at 82bf0dac: CDriveInfo::Validate calls SetVolumeLabel (A, core has no UNICODE) with UTF-8 label and path; checker list lacks it; write itself not driven (needs admin)
+- 2026-10-22 — run started, feature 300
