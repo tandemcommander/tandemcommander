@@ -1,7 +1,7 @@
 ---
 title: A shortcut whose target path has 260 or more characters is followed to a cut path
 type: bug
-status: open
+status: in-progress
 severity: 6
 area: long-paths
 source: measure:304
@@ -10,7 +10,7 @@ created: 2026-10-22
 updated: 2026-10-22
 verified: 2026-10-22 31239f48
 effort: M
-feature: -
+feature: 305
 related: []
 depends-on: []
 reason: -
@@ -79,3 +79,4 @@ Not measured through the panels' Enter / drop (needs a real mouse for the drop).
 - 2026-10-22 — created (source measure:304)
 - 2026-10-22 — moved to Next position 1
 - 2026-10-22 — verified at 31239f48: reproduced at 31239f48: SalShellLinkGetPathU8 NOERROR with a cut 259-unit answer for 260-400 unit targets on D: (both flags), SalFolderShortcutTargetU8 likewise
+- 2026-10-22 — run started, feature 305
