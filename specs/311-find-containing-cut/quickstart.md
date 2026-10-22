@@ -8,7 +8,7 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\311-find-containing-
 
 Expected: every row PASS (grep, grep-ctl, grep-regex, grep-hex, grep-add, grep-manage, grep-ignore,
 grep-option, view-find, view-ctl, view-copy), the registry restored and identical, the fixture
-removed. Before the change the refusal rows FAIL (measured 8 FAIL at 95145b44).
+removed. Before the change the refusal rows FAIL (measured 7 FAIL at 95145b44, plus the new grep-manage / view-copy rows).
 
 Regression: 291's probe (`specs\291-masks-cut-rest\probe\mask291_probe.ps1`) all PASS.
 

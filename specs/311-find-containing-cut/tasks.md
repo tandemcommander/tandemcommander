@@ -8,12 +8,12 @@ reuses 251's tested `SalWTextFitsU8`).
 
 ## Phase 1: Setup
 
-- [ ] T001 Start `specs/311-find-containing-cut/fix-log.md` with the measurement of step 3 (commands, 8 FAIL rows at 95145b44)
-- [ ] T002 Move the measurement probe into `specs/311-find-containing-cut/probe/grep311_probe.ps1` (label `grep311_probe (feature 311)`, fixture `%TEMP%\tc311_grep`, backup `%TEMP%\tc311_backup.reg`), add rows `grep-manage` (CM_FIND_MANAGE 2248) and `view-copy` (Find with 66 letters + `Z`, then Containing 67 letters, CM_FIND_ALTVIEW 2222, the viewer's Find field must not be the cut 66 letters); copy the before results into `specs/311-find-containing-cut/probe/result_before.txt`
+- [ ] T001 Start `specs/311-find-containing-cut/fix-log.md` with the measurement of step 3 (commands, 7 FAIL refusal rows at 95145b44)
+- [ ] T002 Move the measurement probe into `specs/311-find-containing-cut/probe/grep311_probe.ps1` (label `grep311_probe (feature 311)`, fixture `%TEMP%\tc311_grep`, backup `%TEMP%\tc311_backup.reg`), add rows `grep-manage` (CM_FIND_MANAGE 2248) and `view-copy` (Find with 66 letters + `Z`, then Containing 67 letters, CM_FIND_ALTVIEW 2222, the viewer's Find field must not be the cut 66 letters)
 
 ## Phase 2: Foundational
 
-- [ ] T003 Run the probe's two new rows before the change and record them in `specs/311-find-containing-cut/fix-log.md`
+- [ ] T003 Run the final probe in full on the build before the change -> `probe/result_before.txt`; record it in `specs/311-find-containing-cut/fix-log.md`
 
 ## Phase 3: User Story 1 - Find never searches for a cut Containing text (P1)
 

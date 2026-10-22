@@ -14,7 +14,7 @@ back into the field and stored in the history. Feature 291 fixed the same defect
 field of the same dialog; "Containing" kept it (`review:291`).
 
 Measured at 95145b44 (hidden-desktop probe, driver of 291's probe; fixture `cut.txt` = 66 CJK
-letters + "ZZ", `full.txt` = 67 CJK letters, `other.txt`), 8 rows FAIL:
+letters + "ZZ", `full.txt` = 67 CJK letters, `other.txt`), 7 rows FAIL:
 - Find, "Search file content" on, Containing = 67 CJK letters (201 bytes): no question, **found 2**
   (`cut.txt` does not contain the typed text), the field afterwards holds 66 letters.
 - Regular expression (66 letters + `ZZQ`, 201 bytes): searched as 66 letters + `ZZ`, found 1, field
@@ -146,7 +146,7 @@ searched or stored in the viewer's history.
 
 ### Measurable Outcomes
 
-- **SC-001**: The probe's 8 refusal rows that FAIL at 95145b44 PASS after the change, as do the new rows
+- **SC-001**: The probe's 7 refusal rows that FAIL at 95145b44 PASS after the change, as do the new rows
   `grep-manage` and `view-copy`; its control rows PASS before and after.
 - **SC-002**: The probes of features 291 (Named) and 251 still pass in full.
 - **SC-003**: Encoding guard `TOTAL: 0`, build succeeds, `saltests` 0 failed.
