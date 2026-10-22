@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4129,3 +4129,27 @@ a few early ones are out of sequence).
   12 / 0 (negative controls: listing bound in extraction + result ignored 7 / 5, report removed 4 / 2);
   306 probe 28 / 0, 252 / 273 / 275 unchanged; saltests 27,170 / 0; one refute-first review (two
   SHOULDs fixed, five NOTEs).
+
+- 309-tar-link-members: unpacking a tar (Alt+F9, or Copy of a folder from the opened archive) left out
+  every hard-link member (GNU tar / Python store a file's second name as a link to the first) and every
+  symbolic link without a word and still succeeded, so "Delete archive after unpacking" deleted the
+  archive with them - now a hard link whose target this operation wrote is extracted as a copy of it
+  (`WriteOutLinkCopy`: through `SafeFileCreate`, the source opened read / share-read only, an existing
+  destination that is the source by identity - `salsamefile.h` - is not written), and every other link
+  asked for (symbolic, target not written / outside the selection / skipped / with a `..` component) is
+  named once per operation ("(2)" / "(50)" system text + `name -> link name`) and fails the operation
+  after the rest is extracted - the core keeps the archive. Link names: PAX `linkpath`
+  (`salpaxheader.h`) > GNU 'K' long link name (was read and discarded) > ustar `linkname`, decoded and
+  normalized like member names (the loop moved unchanged into `saltarlink.h`, `SalTarNormalizeNameU8`;
+  `SalTarLinkDecide`). Traps: the legacy normalization resolves `..` wrongly (`sub/../a.txt` becomes
+  `s` + `a.txt`) - review 1 showed a link silently copying the wrong file, so link names with `..` are
+  never matched (member names keep the rule - Inbox `tar-member-name-with-dotdot-extracted-into-wrong-folder`);
+  a Bash here-document collapsed the test escapes (123). Limits: symbolic links are never created, so a
+  whole Unpack of a Linux tarball / `.deb` with symlinks now ends as failed (files extracted the same);
+  link members are still not listed - copying the files shown in a folder leaves hard links out (Inbox
+  `tar-copy-of-listed-files-leaves-hard-links-out`); cpio links unchanged (Inbox
+  `cpio-unpack-drops-links-and-may-delete-archive`); no progress / Cancel during one copy. From backlog
+  item `tar-unpack-drops-hard-links-and-deletes-archive`. Probe `link309_probe.ps1` 8 / 6 -> 16 / 0
+  (negative controls: refusal ignored + copy disabled 7 / 7, identity check removed - the share-read
+  guard still kept a.txt); 308 probe 12 / 0, 306 probe 28 / 0; saltests 27,211 / 0; one refute-first
+  review (one SHOULD fixed, two to Inbox / CHANGELOG, six NOTEs).

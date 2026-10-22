@@ -1,0 +1,9 @@
+link309_probe (feature 309) dotdot-before-review-fix
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 15:35; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-HARD-DOTDOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-DOTDOT-DEL RUN    FAIL        tgt: 3 of 2 files; archive kept: False (want True); box naming the member: False (boxes: 0); windows: no window
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

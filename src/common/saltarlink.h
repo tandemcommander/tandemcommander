@@ -20,7 +20,10 @@
 //
 // The name a link refers to is compared with member names after the same
 // normalization - SalTarNormalizeNameU8, the rule ReadArchiveHeader always used
-// for member names ("./a.txt", "a.txt" and "x/../a.txt" are one name).
+// for member names ("./a.txt" and "a.txt" are one name). That rule resolves ".."
+// wrongly ("x/../a.txt" becomes "x\a.txt" - legacy, member names too), so a link
+// name with a ".." component is never normalized or matched: such a link is
+// reported (SalTarPathHasDotDotU8), never copied from a guessed file.
 //
 //*****************************************************************************
 
@@ -85,6 +88,22 @@ inline void SalTarNormalizeNameU8(const char* src, char* dst)
     }
     // terminate the destination string
     *dst = '\0';
+}
+
+// does the path have a ".." component ('/' and '\' both separate)? (review 1 of feature 309)
+inline bool SalTarPathHasDotDotU8(const char* path)
+{
+    const char* s = path;
+    while (*s != '\0')
+    {
+        const char* end = s;
+        while (*end != '\0' && *end != '/' && *end != '\\')
+            end++;
+        if (end - s == 2 && s[0] == '.' && s[1] == '.')
+            return true;
+        s = *end != '\0' ? end + 1 : end;
+    }
+    return false;
 }
 
 // what an extraction does with a member of type 'typeFlag' that it was asked to extract;

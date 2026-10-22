@@ -76,7 +76,7 @@ Backlog item `tar-unpack-drops-hard-links-and-deletes-archive` (review:308).
     "TAR Plugin Error", once per operation (`LinkReportShown`).
   - `UnpackOneFile`: a link member asked for is reported and fails (unreachable from the listing).
   - `MakeFileInfo(..., const CQuadWord* size = NULL)`.
-- `src/saltests/saltests.cpp`: `TestTarLink309`, 31 checks (normalization incl. `./`, `//`, `/abs`,
+- `src/saltests/saltests.cpp`: `TestTarLink309`, 31 checks (41 after review 1) (normalization incl. `./`, `//`, `/abs`,
   `../../empty`, trailing separator, UTF-8 bytes; linkpath precedence / cancel / NUL / independence from
   path / last record wins; the decision table).
 - Trap met: a Bash here-document inserting the tests collapsed doubled backslashes and the `\x..` escapes (CLAUDE.md 123);
@@ -113,3 +113,47 @@ Backlog item `tar-unpack-drops-hard-links-and-deletes-archive` (review:308).
   link member; Inbox item (measure:309).
 - A hard link whose target was overwritten later in the same operation by another member of the same
   name copies what is on disk then (as a real hard link would show).
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+Re-measured on the branch: saltests 27201 / 0, probe 14 / 0, 308 probe 12 / 0. Own rows (copies of the
+probe in the reviewer's %TEMP%\rev309): REV-COPY-SUBROOT (Copy from inside `top`, archive root set, a
+link chain c -> b -> a, a 70 KB target) PASS - the `header.Name + rootLen` path was untested by the
+probe; REV-COPY-PARTIAL (Copy of `sub` only, the link points outside) PASS - one box, sub/c.txt
+extracted; REV-UNP-EXIST (the link's destination exists) PASS - the overwrite question shows the
+source's size; REV-UNP-DOTDOT FAIL; REV-COPY-SUBROOT-INSIDE FAIL.
+
+- SHOULD-1 (fixed): a hard link whose target name holds `..` was matched through the legacy
+  normalization, which resolves `..` wrongly (`sub/../a.txt` -> `s\a.txt`): with `s/a.txt` in the
+  archive the link silently got that file's content and Delete deleted the archive; the header comment
+  claimed `x/../a.txt` equals `a.txt`. Now `SalTarPathHasDotDotU8` (saltarlink.h): a link name with a
+  `..` component is kept as written and never matches a written member (normalized names never hold
+  `..`), so it is reported. Comment corrected; saltests +10 (the rule, and the legacy result pinned);
+  probe row UNP-HARD-DOTDOT-DEL: on the build before this fix `probe/result_dotdot_before_fix.txt` FAIL
+  (3 of 2 files - b.txt made from s/a.txt -, no box, t.tar deleted); after: one box
+  "(2) ... b.txt -> sub/../a.txt", t.tar KEPT. The member-name rule itself (legacy) -> Inbox
+  `tar-member-name-with-dotdot-extracted-into-wrong-folder`.
+- SHOULD-2 (Inbox): link members are not listed, so a Copy of the files shown inside an archive folder
+  still leaves hard-linked names out silently (no deletion on that path) -> Inbox
+  `tar-copy-of-listed-files-leaves-hard-links-out`.
+- SHOULD-3 (done at closing): the CHANGELOG entry naming the behaviour change for archives with
+  symbolic links.
+- NOTE (accepted): a NUL inside a PAX `linkpath` now refuses the archive (as a NUL in `path` does since
+  306) - malformed archives only; a cut link name could point at another file.
+- NOTE (accepted): no progress / Cancel during the copy of a large target (spec assumption).
+- NOTE (accepted): a `.deb` can show two boxes (control and data parts are separate CArchive objects).
+- NOTE (accepted): a target skipped at an overwrite question is reported as "(2) cannot find the file"
+  - the message is imprecise, failing is the safe side.
+- NOTE (accepted): a link member sharing its name with a later regular member asks one more overwrite
+  question or fails the operation; `UnpackOneFile` reports the first same-named link (it "succeeded"
+  with nothing before).
+- NOTE: checked sound - the identity check + share-read source (control C), incomplete copies deleted,
+  heap paths / messages, 'K' / linkpath precedence, no 'K' leak to the next member, `refused` ANDed,
+  no Move from tar.
+
+After the SHOULD-1 fix: encoding guard TOTAL 0; `.\build.cmd` BUILD SUCCEEDED; saltests **27211 / 0**
+(+41 over 308); probe `probe/result_after.txt` (`-Label after-review1`) **PASS 16 / FAIL 0**; 308 probe
+`probe/regress_308.txt` 12 / 0; 306 probe `probe/regress_306.txt` 28 / 0. No second review: review 1
+had no MUST (the skill asks for a fresh review after MUST findings only).

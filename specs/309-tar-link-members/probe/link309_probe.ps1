@@ -23,6 +23,8 @@
                             -> a.txt, exactly one box (naming s.txt), t.tar KEPT
       UNP-HARD-TWIN-DEL     a.txt, hard link A.TXT -> a.txt (the same file on Windows)
                             -> a.txt with its content (never truncated), nothing asked, t.tar deleted
+      UNP-HARD-DOTDOT-DEL   a.txt, s/a.txt, hard link b.txt -> sub/../a.txt (review 1: the legacy ".." rule
+                            would make it s\a.txt) -> a.txt, s/a.txt, a box naming b.txt, t.tar KEPT
     Copy row: the left panel opens t.tar, the right shows tgt; Select All (842), Copy (727), boxes OK.
       COPY-HARD             the UNP-HARD tar: the listing shows a.txt and sub; copying both
                             -> the 4 files, b.txt and d.txt with a.txt's content, nothing asked
@@ -180,6 +182,7 @@ try {
     Unpack-Row 'UNP-HARD-MISSING-DEL' ([ordered]@{ 'ok.txt' = 'K' }) -BoxName 'b.txt'
     Unpack-Row 'UNP-SYM-DEL' ([ordered]@{ 'a.txt' = 'A' }) -BoxName 's.txt'
     Unpack-Row 'UNP-HARD-TWIN-DEL' ([ordered]@{ 'a.txt' = 'A' }) -ArcGone
+    Unpack-Row 'UNP-HARD-DOTDOT-DEL' ([ordered]@{ 'a.txt' = 'A'; 's/a.txt' = 'S' }) -BoxName 'b.txt'
     Copy-Row 'COPY-HARD' $hard
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

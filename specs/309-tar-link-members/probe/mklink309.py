@@ -54,6 +54,11 @@ def main():
             add(tf, 'a.txt', b'A')
             link(tf, 's.txt', 'a.txt', tarfile.SYMTYPE)
             link(tf, 't.txt', 'a.txt', tarfile.SYMTYPE)       # a second one: still one box
+    elif row.startswith('UNP-HARD-DOTDOT'):
+        def fill(tf):
+            add(tf, 'a.txt', b'A')
+            add(tf, 's/a.txt', b'S')                           # where the legacy ".." rule would point
+            link(tf, 'b.txt', 'sub/../a.txt')                  # review 1: reported, never guessed
     elif row.startswith('UNP-HARD-TWIN'):
         def fill(tf):
             add(tf, 'a.txt', b'A')

@@ -1418,21 +1418,29 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     strcpy(header.Name, tmpName);
     free(tmpName);
     // feature 309: the name a link member refers to - decoded and normalized like the member's name,
-    // so "./a.txt" names the member "a.txt"
+    // so "./a.txt" names the member "a.txt"; a name with a ".." component stays as written (the
+    // normalization resolves ".." wrongly): it matches no written member, so the link is reported
     if (header.LinkType != 0 && header.LinkName != NULL)
     {
-        char* linkName = NULL;
-        if (ConvertNameToU8(header.LinkName))
-            linkName = (char*)malloc(strlen(header.LinkName) + 1);
-        if (linkName == NULL)
+        if (!ConvertNameToU8(header.LinkName))
         {
             SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
                                               MSGBOX_ERROR);
             return TAR_ERROR;
         }
-        SalTarNormalizeNameU8(header.LinkName, linkName);
-        free(header.LinkName);
-        header.LinkName = linkName;
+        if (!SalTarPathHasDotDotU8(header.LinkName))
+        {
+            char* linkName = (char*)malloc(strlen(header.LinkName) + 1);
+            if (linkName == NULL)
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                  MSGBOX_ERROR);
+                return TAR_ERROR;
+            }
+            SalTarNormalizeNameU8(header.LinkName, linkName);
+            free(header.LinkName);
+            header.LinkName = linkName;
+        }
     }
     // feature 306: a PAX path with a component no file system takes (over 255 UTF-16 units) is
     // refused - not listed, not extracted, never shortened or replaced by the ustar fallback name

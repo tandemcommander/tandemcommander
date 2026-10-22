@@ -18439,6 +18439,19 @@ static void TestTarLink309()
         CHECK(v.V.LinkPathState == SAL_PAX_SET && strcmp(v.V.LinkPath, "m") == 0);
     }
 
+    // review 1: the legacy rule resolves ".." wrongly (member names too - Inbox), so a link name with a
+    // ".." component is never matched (it is reported); the rule that finds one
+    CHECK(TarNorm309("sub/../a.txt") == "s\\a.txt"); // legacy - not "a.txt"; why the link rule exists
+    CHECK(SalTarPathHasDotDotU8("sub/../a.txt"));
+    CHECK(SalTarPathHasDotDotU8("..\\a.txt"));
+    CHECK(SalTarPathHasDotDotU8("a/.."));
+    CHECK(SalTarPathHasDotDotU8(".."));
+    CHECK(!SalTarPathHasDotDotU8("a..b/c"));
+    CHECK(!SalTarPathHasDotDotU8(".../a"));
+    CHECK(!SalTarPathHasDotDotU8("./a.txt"));
+    CHECK(!SalTarPathHasDotDotU8("..a/b.."));
+    CHECK(!SalTarPathHasDotDotU8(""));
+
     // the decision: copy a hard link whose target was written, report every other link
     CHECK(SalTarLinkDecide('1', true) == SAL_TAR_LINK_COPY);
     CHECK(SalTarLinkDecide('1', false) == SAL_TAR_LINK_REPORT_MISSING);

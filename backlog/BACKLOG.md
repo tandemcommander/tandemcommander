@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Unpacking a tar leaves hard-linked files out silently and Delete archive after unpacking then deletes the archive](items/tar-unpack-drops-hard-links-and-deletes-archive/desc.md) | bug | 7 | data-safety | 309 |
 
 ## Next
 
@@ -242,6 +241,9 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Unpacking a cpio or rpm leaves links out silently and may delete the archive](items/cpio-unpack-drops-links-and-may-delete-archive/desc.md) | bug | 6 | archives | measure:309 | 2026-10-22 |
+| [Copying the files of a tar folder leaves hard-linked names out silently](items/tar-copy-of-listed-files-leaves-hard-links-out/desc.md) | bug | 5 | archives | review:309 | 2026-10-22 |
+| [A tar member whose name contains .. is extracted into a wrong folder](items/tar-member-name-with-dotdot-extracted-into-wrong-folder/desc.md) | bug | 4 | archives | review:309 | 2026-10-22 |
 
 ## Parked
 
