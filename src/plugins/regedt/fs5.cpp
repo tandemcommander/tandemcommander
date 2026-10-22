@@ -277,6 +277,86 @@ BOOL SafeDeleteKey(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipA
     return TRUE;
 }
 
+// feature 297 (the test of 296): is 'root'\'key' a registry link (a key created with
+// REG_OPTION_CREATE_LINK)? Only the last element is opened as a link (REG_OPTION_OPEN_LINK); a
+// link holds the value SymbolicLinkValue of type REG_LINK. Returns a Win32 error code
+// (ERROR_FILE_NOT_FOUND = no such key); 'isLink' is TRUE only with ERROR_SUCCESS
+static int RegKeyIsLink(int root, LPCWSTR key, BOOL& isLink)
+{
+    isLink = FALSE;
+    HKEY hKey;
+    int err = RegOpenKeyExW(PredefinedHKeys[root].HKey, key, REG_OPTION_OPEN_LINK, KEY_QUERY_VALUE, &hKey);
+    if (err != ERROR_SUCCESS)
+        return err;
+    DWORD type = REG_NONE, size = 0;
+    err = RegQueryValueExW(hKey, L"SymbolicLinkValue", NULL, &type, NULL, &size);
+    RegCloseKey(hKey);
+    if (err == ERROR_FILE_NOT_FOUND)
+        return ERROR_SUCCESS; // no link
+    if (err == ERROR_SUCCESS)
+        isLink = type == REG_LINK;
+    return err;
+}
+
+// feature 297: RegKeyIsLink with the existing open-error box (Retry / Skip / Skip All / Cancel); a
+// key that does not exist is no link and no error here (the caller's own open reports it). FALSE =
+// do not go on with this key ('skip' tells Skip from Cancel)
+BOOL SafeRegKeyIsLink(int root, LPWSTR key, BOOL& isLink, int errorTitle, BOOL& skip, BOOL& skipAll)
+{
+    while (1)
+    {
+        int err = RegKeyIsLink(root, key, isLink);
+        if (err == ERROR_SUCCESS || err == ERROR_FILE_NOT_FOUND)
+            return TRUE;
+        if (!RegOperationError(err, IDS_OPEN, errorTitle, root, key, &skip, &skipAll))
+            return FALSE;
+    }
+}
+
+// feature 297: removes the registry link 'root'\'key' itself - never the key it points at (deleting
+// a link by name, RegDeleteKey, deletes its target and leaves the link). Opened as a link, checked
+// again on that handle to be a link, deleted with NtDeleteKey; errors in the existing delete-error
+// box (Retry repeats the whole sequence). FALSE = not removed ('skip' tells Skip from Cancel)
+BOOL SafeDeleteRegLink(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipAll)
+{
+    typedef LONG(NTAPI * FNtDeleteKey)(HANDLE);
+    typedef ULONG(NTAPI * FRtlNtStatusToDosError)(LONG);
+    HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+    FNtDeleteKey deleteKey = ntdll != NULL ? (FNtDeleteKey)GetProcAddress(ntdll, "NtDeleteKey") : NULL;
+    FRtlNtStatusToDosError toDos = ntdll != NULL ? (FRtlNtStatusToDosError)GetProcAddress(ntdll, "RtlNtStatusToDosError") : NULL;
+    while (1)
+    {
+        int err = ERROR_PROC_NOT_FOUND;
+        if (deleteKey != NULL)
+        {
+            HKEY hKey;
+            err = RegOpenKeyExW(PredefinedHKeys[root].HKey, key, REG_OPTION_OPEN_LINK, DELETE | KEY_QUERY_VALUE, &hKey);
+            if (err == ERROR_SUCCESS)
+            {
+                DWORD type = REG_NONE, size = 0;
+                err = RegQueryValueExW(hKey, L"SymbolicLinkValue", NULL, &type, NULL, &size);
+                if (err == ERROR_FILE_NOT_FOUND || err == ERROR_SUCCESS && type != REG_LINK)
+                    err = ERROR_NOT_SUPPORTED; // no longer a link: never delete it here
+                if (err == ERROR_SUCCESS)
+                {
+                    LONG status = deleteKey(hKey);
+                    if (status < 0)
+                    {
+                        err = toDos != NULL ? (int)toDos(status) : ERROR_INVALID_FUNCTION;
+                        if (err == ERROR_SUCCESS)
+                            err = ERROR_INVALID_FUNCTION;
+                    }
+                }
+                RegCloseKey(hKey);
+            }
+        }
+        if (err == ERROR_SUCCESS)
+            return TRUE;
+        if (!RegOperationError(err, IDS_DELETE, errorTitle, root, key, &skip, &skipAll))
+            return FALSE;
+    }
+}
+
 // feature 296: the key the user copies or moves (read, and deleted at the end of a Move) - the
 // recursion appends to its own path buffer, so the path is a copy; its identities are read the
 // first time a registry link stands in the target tree
@@ -309,6 +389,23 @@ static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWS
 
     HKEY sourceHKey, targetHKey;
     int errorTitle = move ? IDS_MOVEKEY : IDS_COPYKEY;
+
+    // feature 297: a Move of a registry link (by name) would copy the key it points at and then
+    // delete that key, leaving the link - a key the user never selected; such a key is refused before
+    // anything of it is read or written (Skip keeps it, and so its parents, in the source)
+    if (move)
+    {
+        while (1)
+        {
+            BOOL isLink;
+            if (!SafeRegKeyIsLink(sourceRoot, source, isLink, errorTitle, skip, skipAllErrors))
+                return FALSE;
+            if (!isLink)
+                break;
+            if (!RegOperationError(ERROR_NOT_SUPPORTED, IDS_REMOVESOURCE, errorTitle, sourceRoot, source, &skip, &skipAllErrors))
+                return FALSE; // Retry checks again
+        }
+    }
 
     // open the source key
     if (!SafeOpenKey(sourceRoot, source, KEY_READ, sourceHKey,
@@ -984,18 +1081,12 @@ static BOOL SafeCheckTargetLink(int targetRoot, LPWSTR target, int sourceRoot, L
     while (1)
     {
         // only the last element is opened as a link; the elements above it were decided before
-        HKEY hKey;
-        int err = RegOpenKeyExW(PredefinedHKeys[targetRoot].HKey, target, REG_OPTION_OPEN_LINK, KEY_QUERY_VALUE, &hKey);
+        BOOL isLink;
+        int err = RegKeyIsLink(targetRoot, target, isLink);
         if (err == ERROR_FILE_NOT_FOUND)
             return TRUE; // no key there: a new key is created
-        if (err == ERROR_SUCCESS)
-        {
-            DWORD type = REG_NONE, size = 0;
-            err = RegQueryValueExW(hKey, L"SymbolicLinkValue", NULL, &type, NULL, &size);
-            RegCloseKey(hKey);
-            if (err == ERROR_FILE_NOT_FOUND || err == ERROR_SUCCESS && type != REG_LINK)
-                return TRUE; // no link
-        }
+        if (err == ERROR_SUCCESS && !isLink)
+            return TRUE; // no link
         if (err == ERROR_SUCCESS)
         {
             // a link: the identities of the operation's source (once) and of the link's target

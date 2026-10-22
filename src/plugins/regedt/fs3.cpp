@@ -498,6 +498,15 @@ BOOL CPluginFSInterface::DeleteKey(WCHAR* keyName, BOOL& skip,
         return skip = FALSE;
 
     skip = FALSE;
+
+    // feature 297: a registry link is removed as the link itself - opened by name, its subkeys and
+    // then the key it points at were deleted (a key the user never selected) and the link stayed
+    BOOL isLink;
+    if (!SafeRegKeyIsLink(CurrentKeyRoot, keyName, isLink, IDS_DELKEY, skip, skipAllErrors))
+        return FALSE;
+    if (isLink)
+        return SafeDeleteRegLink(CurrentKeyRoot, keyName, IDS_DELKEY, skip, skipAllErrors);
+
     HKEY key;
     while (1)
     {

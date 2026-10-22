@@ -291,6 +291,10 @@ BOOL SafeEnumKey(HKEY hKey, int root, LPWSTR key, DWORD& index,
                  LPWSTR name, FILETIME* time,
                  int errorTitle, BOOL& skip, BOOL& skipAll, BOOL& noMoreItems);
 
+// feature 297: registry links (keys created with REG_OPTION_CREATE_LINK) met by Delete / Move
+BOOL SafeRegKeyIsLink(int root, LPWSTR key, BOOL& isLink, int errorTitle, BOOL& skip, BOOL& skipAll);
+BOOL SafeDeleteRegLink(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipAll);
+
 BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
                    BOOL move, BOOL& skip,
                    BOOL& skipAllErrors, BOOL& skipAllLongNames,

@@ -103,7 +103,8 @@ compares the fixture.
 
 1. **Given** `Mov\<K>` {a=1, `Z` z=9, link `L` -> `Jinde`}, **When** moved into `Cil\` and Cancel in the
    box, **Then** the first box is "Unable to remove the original registry key." naming `Mov\<K>\L`;
-   `Mov` and `Jinde` unchanged; nothing below `Cil\<K>\L`.
+   `Mov\<K>` kept with a=1 and the link, z=9 exactly once (a sibling processed before the link -
+   `Z` - stays moved: decided per level), `Jinde` unchanged; nothing below `Cil\<K>\L`.
 2. **Given** the same, **When** Skip, **Then** exactly that one box; `Z` moved into `Cil\<K>`
    (`Cil\<K>` a=1), `Mov\<K>` kept with a=1 and the link, `Jinde` unchanged, no `Cil\<K>\L`.
 3. **Given** the link `Top\<K>`, **When** moved into `Cil\` (Cancel), **Then** the box names

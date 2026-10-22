@@ -25,7 +25,8 @@
                   (before: the open-error box, nothing deleted)
       DELHKCR     F8 of HKEY_CLASSES_ROOT\TcProbe297c\Del\<K> (the merged view): as DELTREE
       MOVETREE    F6 of Mov\<K> into HKCU\...\Cil\, Cancel: the first box is "Unable to remove the
-                  original registry key." naming Mov\<K>\L; Mov and Jinde unchanged; nothing was
+                  original registry key." naming Mov\<K>\L; Mov\<K> kept with a = 1 and the link, z = 9
+                  exactly once (Z, processed before L, stays moved), Jinde unchanged; nothing was
                   written below Cil\<K>\L (before: Jinde copied into Cil\<K>\L and deleted)
       MOVESKIP    the same with Skip: Z moved into Cil\<K>, Mov\<K> kept with a = 1 and its link,
                   Jinde unchanged, no Cil\<K>\L
@@ -408,10 +409,14 @@ try {
         param($r)
         $first = ($r.Boxes.Count -ge 1) -and $r.Boxes[0].Text.Contains($Removesrc.Trim()) -and (U8-Back $r.Boxes[0].Text).Contains($RegFull + '\' + $MT + '\L' + "`n")
         Row 'MOVETREE' 'TEXT' (V $first) ("the first box names {0}\L with the remove-source error; {1}" -f (Esc $MT), (Box-Facts $r))
-        $kept = (((Sub-Snap $r.Snap0 'Mov') -join "`n") -ceq ((Sub-Snap $r.Snap1 'Mov') -join "`n"))
-        $jok = Jinde-Ok $r.Snap1
-        $nolink = -not (Has-Key $r.Snap1 ('Cil\' + $K + '\L'))
-        Row 'MOVETREE' 'STATE' (V ($kept -and $jok -and $nolink)) ("Mov unchanged: {0}; Jinde unchanged: {1}; nothing below Cil\<K>\L: {2}; keys: {3}" -f $kept, $jok, $nolink, $r.State)
+        # decided per level: a sibling moved before the refused link stays moved (Z is processed
+        # before L); the moved key itself, a = 1 and the link stay in the source, z = 9 exists once
+        $s = $r.Snap1
+        $kept = (Has-Line $s ($MT + '|a=1')) -and (Has-Line $s ($MT + '\L|-> Jinde'))
+        $zOnce = (@($s | Where-Object { $_ -ceq ($MT + '\Z|z=9') -or $_ -ceq ('Cil\' + $K + '\Z|z=9') }).Count -eq 1)
+        $jok = Jinde-Ok $s
+        $nolink = -not (Has-Key $s ('Cil\' + $K + '\L'))
+        Row 'MOVETREE' 'STATE' (V ($kept -and $zOnce -and $jok -and $nolink)) ("Mov\<K> kept with a = 1 and its link: {0}; z = 9 exactly once: {1}; Jinde unchanged: {2}; nothing below Cil\<K>\L: {3}; keys: {4}" -f $kept, $zOnce, $jok, $nolink, $r.State)
     }
     Row-Op 'MOVESKIP' 728 ($RegFs + '\Mov') $FocusK ('\' + $RegFull + '\Cil\') @(173) {
         param($r)
