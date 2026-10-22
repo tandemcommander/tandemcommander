@@ -39,6 +39,7 @@ CJK letters (138 UTF-16 units, 298 bytes of UTF-8) and refuses one over 260 UTF-
 - Q: Should the plug-in function `ResolveSubsts` change (a larger buffer, a new size argument)? → A: no - its signature and its `MAX_PATH` buffer contract stay; only what it does with a target that does not fit changes (refusal instead of a `?` path) (autonomous run: rule - the plug-in ABI is append-only; conservative)
 - Q: Should the display callers (Drive Information, Change Drive menu, Copy as UNC) get larger buffers so that every target `subst.exe` can create is shown whole? → A: yes where the caller already has or can cheaply have room (Drive Information, the menu text, Copy as UNC up to its existing 520-byte buffer); otherwise refused (autonomous run: item - "a subst target is read whole")
 - Q: Does the "related cut" of the Change Drive menu (the remembered remote path, `min(l, MAX_PATH - 1)`) need a change? → A: no - measured by reading: the source buffer is 260 bytes, so the copy never cuts; recorded in the fix-log (autonomous run: measure first)
+- Q: A subst path that is now left unresolved makes the same-volume checks say "different volumes" (a move becomes copy + delete; the Undelete plug-in skips its "restoring to the same partition" warning) - before, the `?` path happened to have the right drive root. Keep the refusal, or keep the `?` path for volume checks? → A: keep the refusal; the same-volume checks already answer "different" for every path whose resolution does not fit 260 bytes (a short target with a long rest of the path), so this is the existing behaviour for one more class of paths; the warning's fail-open is recorded as an Inbox item for its own fix (autonomous run: item - *Expected* "never work with a cut or '?' path"; measured: `GetVolumePathNameW` / `GetVolumeNameForVolumeMountPointW` on a subst path give no volume, so there is no whole-path alternative inside this feature)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -168,7 +169,9 @@ a person step).
 - Assumption (autonomous run): a path on a subst drive that is left unresolved is still a valid
   path - Windows resolves it itself; checks that need the real volume (same-volume decision of a
   move) then fall back to their existing "cannot tell" behaviour, which treats the paths as
-  different volumes (a move becomes copy + delete - slower, never a loss). This is the behaviour
-  such a drive already had for targets over 260 UTF-16 units; it is recorded as a limit.
+  different volumes (a move becomes copy + delete - slower, never a loss; the Undelete plug-in's
+  same-partition warning is not shown - an Inbox item, see *Clarifications*). This is the
+  behaviour such a drive already had for targets over 260 UTF-16 units and for any resolved path
+  over 260 bytes; it is recorded as a limit.
 - Assumption (autonomous run): `Copy Full Path as UNC` cannot be driven on the hidden desktop (no
   clipboard) - its confirmation is a person step.
