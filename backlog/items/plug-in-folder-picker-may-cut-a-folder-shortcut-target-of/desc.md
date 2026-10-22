@@ -1,7 +1,7 @@
 ---
 title: Plug-in folder picker may cut a folder shortcut target of 260 or more units
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: other-plugins
 source: measure:286
@@ -10,7 +10,7 @@ created: 2026-10-21
 updated: 2026-10-22
 verified: 2026-10-22 3fa858bb
 effort: S
-feature: -
+feature: 304
 related: []
 depends-on: []
 reason: -
@@ -57,3 +57,4 @@ feature 286 R4).
 - 2026-10-21 — no relation intended
 - 2026-10-21 — moved to Next position 10
 - 2026-10-22 — verified at 3fa858bb: reproduced at 3fa858bb: standalone program on D: (no 8.3 names), target.lnk by ID list to a 260-400 unit folder: GetPath NOERROR, 259 units, cut; ResolveNetHoodFolderW returns the cut path
+- 2026-10-22 — run started, feature 304
