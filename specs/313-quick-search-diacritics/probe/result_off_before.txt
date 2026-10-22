@@ -1,0 +1,24 @@
+Feature 313 probe off-before; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; expect off; registry backup C:\Users\pavel\AppData\Local\Temp\tc313_backup.reg (existed True)
+export SHA-256 CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+D01        VISIBLE INFO        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed 'zlut'
+D01        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D02        VISIBLE INFO        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed z-caron 'lut'
+D02        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D03        VISIBLE INFO        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed 'cesky'
+D03        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D04        VISIBLE INFO        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed 'ubersicht'
+D04        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D05        VISIBLE INFO        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed 'lodz'
+D05        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D06        VISIBLE INFO        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed 'strasse'
+D06        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D07        VISIBLE INFO        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed 'reka', NFD name
+D07        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D08        VISIBLE INFO        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed KA 'kko'
+D08        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D09        FOCUS  PASS        got {zlut\u00FD.txt} expected {zlut\u00FD.txt} typed 'zlut' (option off)
+D09        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D10        FOCUS  INFO        got {Stra\u00DFe.txt} typed 'cesky' (option off)
+D10        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+ROWS 20; FAIL 0

@@ -1,0 +1,24 @@
+Feature 313 probe before; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; expect before; registry backup C:\Users\pavel\AppData\Local\Temp\tc313_backup.reg (existed True)
+export SHA-256 CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+D01        VISIBLE PASS        got {zlut\u00FD.txt} expected {zlut\u00FD.txt} typed 'zlut'
+D01        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D02        VISIBLE PASS        got {\u017Elu\u0165ou\u010Dk\u00FD} expected {\u017Elu\u0165ou\u010Dk\u00FD} typed z-caron 'lut'
+D02        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D03        VISIBLE PASS        got {\u00DCbersicht.doc} expected {\u00DCbersicht.doc} typed 'cesky'
+D03        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D04        VISIBLE INFO        got {zlut\u00FD.txt} typed 'ubersicht'
+D04        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D05        VISIBLE INFO        got {alpha, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD} typed 'lodz'
+D05        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D06        VISIBLE PASS        got {Stra\u00DFe.txt} expected {Stra\u00DFe.txt} typed 'strasse'
+D06        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D07        VISIBLE INFO        got {Stra\u00DFe.txt} typed 'reka', NFD name
+D07        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D08        VISIBLE PASS        got {\u304Bkko.txt} expected {\u304Bkko.txt} typed KA 'kko'
+D08        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D09        FOCUS  INFO        got {zlut\u00FD.txt} typed 'zlut' (option off)
+D09        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D10        FOCUS  INFO        got {\u00DCbersicht.doc} typed 'cesky' (option off)
+D10        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+ROWS 20; FAIL 0

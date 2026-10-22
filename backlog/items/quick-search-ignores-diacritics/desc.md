@@ -1,16 +1,16 @@
 ---
 title: Quick search ignores diacritics: typing zlut finds a name with žluťoučký
 type: improvement
-status: open
+status: in-progress
 severity: 5
 area: panels-ui
 source: manual
 who: agent
 created: 2026-10-22
 updated: 2026-10-22
-verified: -
+verified: 2026-10-22 9b79bd82
 effort: M
-feature: -
+feature: 313
 related: [quick-search-keys-skip-canonical-reordering-of-combining]
 depends-on: []
 reason: -
@@ -86,3 +86,5 @@ Measure the timing probe before and after.
 
 - 2026-10-22 — created (source manual)
 - 2026-10-22 — moved to Next position 2
+- 2026-10-22 — verified at 9b79bd82: reproduced at 9b79bd82: hidden-desktop probe qs313 - zlut does not find the folder with z-caron, cesky does not find C-caron name
+- 2026-10-22 — run started, feature 313
