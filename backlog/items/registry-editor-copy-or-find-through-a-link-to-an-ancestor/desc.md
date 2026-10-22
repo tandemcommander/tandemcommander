@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: Copy or Find through a link to an ancestor walks in a loop
 type: bug
-status: new
+status: open
 severity: 4
 area: other-plugins
 source: measure:297
@@ -53,3 +53,4 @@ link points into the walked tree".
 ## Log
 
 - 2026-10-22 — created (source measure:297)
+- 2026-10-22 — moved to Next position 25
