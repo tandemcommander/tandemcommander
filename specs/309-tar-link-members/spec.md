@@ -3,7 +3,7 @@
 **Feature Branch**: `309-tar-link-members`
 **Created**: 2026-10-22
 **Status**: Draft
-**Input**: Backlog item `tar-unpack-drops-hard-links-and-deletes-archive` - "Unpacking a tar leaves hard-linked files out silently and Delete archive after unpacking then deletes the archive".
+**Input**: Backlog item `tar-unpack-drops-hard-links-and-deletes-archive` - "Unpacking a tar leaves hard-linked files out silently and Delete archive after unpacking then deletes the archive". From backlog item tar-unpack-drops-hard-links-and-deletes-archive.
 
 ## Measured before the feature (f0187403, `main`, Debug x64)
 
