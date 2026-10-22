@@ -1,0 +1,13 @@
+vol300_probe (feature 300) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 06:10; ACP 1250; registry key existed True; elevated False; drive C:\ Fixed, label ''
+
+vol-fail   RUN    PASS        typed 6 units / 7 bytes 'Z\u00E1lohy'; field at opening ''; dialog stayed: True; asked: [#32770 'Error'] Unable to change drive label. Error: (5) P\u0159\u00EDstup byl odep\u0159en.  |; field at the refusal: 6 units, same as typed: True; next dialog's field: -; label of the drive before '', after ''
+vol-fail   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vol-same   RUN    PASS        typed 0 units / 0 bytes ''; field at opening ''; dialog stayed: False; asked: nothing; field at the refusal: -; next dialog's field: ''; label of the drive before '', after ''
+vol-same   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vol-long   RUN    PASS        typed 140 units / 280 bytes '...\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159\u0159'; field at opening ''; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; field at the refusal: 140 units, same as typed: True; next dialog's field: -; label of the drive before '', after ''
+vol-long   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 6, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -1329,21 +1329,39 @@ void CDriveInfo::Validate(CTransferInfo& ti)
             char volumePathWithBackslash[MAX_PATH];
             lstrcpyn(volumePathWithBackslash, VolumePath, MAX_PATH);
             SalPathAddBackslash(volumePathWithBackslash, MAX_PATH);
-            BOOL handsOffLeft = SalPathIsPrefix(volumePathWithBackslash, MainWindow->LeftPanel->GetPath());
-            BOOL handsOffRight = SalPathIsPrefix(volumePathWithBackslash, MainWindow->RightPanel->GetPath());
-            if (handsOffLeft)
-                MainWindow->LeftPanel->HandsOff(TRUE);
-            if (handsOffRight)
-                MainWindow->RightPanel->HandsOff(TRUE);
-            //      SAD_SetUACParentWindow(HWindow);
-            //      BOOL res = SAD_SetVolumeLabel(volumePathWithBackslash, newName);
-            //      DWORD err = SAD_GetLastError();
-            BOOL res = SetVolumeLabel(volumePathWithBackslash, newName);
-            DWORD err = GetLastError();
-            if (handsOffLeft)
-                MainWindow->LeftPanel->HandsOff(FALSE);
-            if (handsOffRight)
-                MainWindow->RightPanel->HandsOff(FALSE);
+            // feature 300: the label and the path are UTF-8 (WTF-8, 066); the core's SetVolumeLabel is
+            // the code-page A call, which wrote 'Zalohy' with a-acute as mojibake - both go to the wide
+            // call; a text that cannot be converted is refused, never written in another form
+            WCHAR* pathW = SalU8ToWAlloc(volumePathWithBackslash);
+            WCHAR* nameW = pathW != NULL ? SalU8ToWAlloc(newName) : NULL;
+            BOOL res = FALSE;
+            DWORD err;
+            if (pathW == NULL || nameW == NULL)
+            {
+                // convertible input (the size query succeeds) means the allocation failed
+                const char* failed = pathW == NULL ? volumePathWithBackslash : newName;
+                err = SalU8ToW(failed, -1, NULL, 0) != 0 ? ERROR_NOT_ENOUGH_MEMORY : ERROR_NO_UNICODE_TRANSLATION;
+            }
+            else
+            {
+                BOOL handsOffLeft = SalPathIsPrefix(volumePathWithBackslash, MainWindow->LeftPanel->GetPath());
+                BOOL handsOffRight = SalPathIsPrefix(volumePathWithBackslash, MainWindow->RightPanel->GetPath());
+                if (handsOffLeft)
+                    MainWindow->LeftPanel->HandsOff(TRUE);
+                if (handsOffRight)
+                    MainWindow->RightPanel->HandsOff(TRUE);
+                //      SAD_SetUACParentWindow(HWindow);
+                //      BOOL res = SAD_SetVolumeLabel(volumePathWithBackslash, newName);
+                //      DWORD err = SAD_GetLastError();
+                res = SetVolumeLabelW(pathW, nameW);
+                err = GetLastError();
+                if (handsOffLeft)
+                    MainWindow->LeftPanel->HandsOff(FALSE);
+                if (handsOffRight)
+                    MainWindow->RightPanel->HandsOff(FALSE);
+            }
+            free(nameW);
+            free(pathW);
             if (!res)
             {
                 char buf[MAX_PATH + 100];

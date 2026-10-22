@@ -30,7 +30,7 @@ real write is a step owed to a person.
 
 ### Session 2026-10-22
 
-- Q: What does OK do when the typed label or the volume path cannot be converted to wide text? → A: nothing is written; the existing "Unable to change the drive label" message is shown with the Windows text of the conversion error and the dialog stays with the label field marked (autonomous run: conservative - refuse rather than guess, no new UI string)
+- Q: What does OK do when the typed label or the volume path cannot be converted to wide text? → A: nothing is written; the existing "Unable to change drive label." message is shown with the Windows text of the conversion error and the dialog stays with the label field marked (autonomous run: conservative - refuse rather than guess, no new UI string)
 - Q: Should the label field become a wide (Unicode) field so letters outside the code page can be typed? → A: no - the field stays as it is; only the write changes (autonomous run: item - its *Expected* names the write and the checker only)
 - Q: Should the checker's `ansi-api-on-utf8-path` rule become strict, or get a strict guard for the label call? → A: no - the call is added to the rule's list, the rule stays report-only (autonomous run: item - "`SetVolumeLabel` is added to the checker's `ANSI_NAME_API` list")
 
@@ -61,7 +61,7 @@ import list names only the wide variant); the real write on a scratch drive is a
 ### User Story 2 - A failed write is still reported (Priority: P2)
 
 A user without the right to change the label (a fixed drive, the program not elevated) types a new
-label and presses OK. The program shows "Unable to change the drive label" with the Windows error
+label and presses OK. The program shows "Unable to change drive label." with the Windows error
 text (access denied) and keeps the dialog open with the label field marked - as before.
 
 **Why this priority**: the error path must keep working after the call changes.
@@ -97,7 +97,7 @@ call put back in a scratch copy is reported).
 ### Edge Cases
 
 - The typed label cannot be converted to the wide form (not valid UTF-8 / WTF-8, or no memory):
-  nothing is written; the existing "Unable to change the drive label" message is shown with the
+  nothing is written; the existing "Unable to change drive label." message is shown with the
   Windows text of the conversion error and the dialog stays (refuse, never guess).
 - The volume path cannot be converted: the same refusal.
 - An empty label (the user cleared the field): written as empty - the label is removed, as before.
@@ -115,7 +115,7 @@ call put back in a scratch copy is reported).
 - **FR-002**: The volume path given with the label MUST likewise reach the system unchanged (wide
   text), so a mounted-folder path with non-ASCII letters names the right volume.
 - **FR-003**: When the label or the path cannot be converted to the wide form, the program MUST NOT
-  write anything; it MUST show the existing "Unable to change the drive label" message with the
+  write anything; it MUST show the existing "Unable to change drive label." message with the
   conversion error and keep the dialog open with the label field marked.
 - **FR-004**: Every other behaviour of Drive Information MUST stay as it is: no write when the
   label is unchanged, the refusal of a too-long label (270), the panels' hands-off around the write,

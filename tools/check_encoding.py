@@ -281,7 +281,9 @@ ANSI_NAME_API = re.compile(
     r'SetEnvironmentVariable|QueryDosDevice|WNetGetConnection|WNetAddConnection2|'
     r'RegOpenKeyEx|RegCreateKeyEx|RegQueryValueEx|RegSetValueEx|RegDeleteValue|'
     r'RegDeleteKey|RegEnumKeyEx|RegEnumValue|_access|_stat|fopen|_mkdir|_rmdir|'
-    r'_unlink|remove|rename'
+    r'_unlink|remove|rename|'
+    # feature 300: the label and the volume path are UTF-8 like any name
+    r'SetVolumeLabel'
     r')A?\s*\(')
 # the debug handle-tracking shims wrap every API once; they are one boundary,
 # reviewed by hand, not a finding per wrapper
