@@ -49,3 +49,65 @@ cut answer with NOERROR: Enter on a shortcut / Go to Shortcut Target (`fileswn0.
   prefix) - then the item-list name, plain form, is the result (whole). Anything else is refused
   with the picker's existing "too long" message (`SplShowNameTooLongW`), nothing picked.
 - Answers under 259 units: unchanged behaviour.
+
+## Analyze
+
+`speckit-analyze`: 0 CRITICAL, 0 HIGH. MEDIUM C1 (SC-002 names a 250-unit target, T006 did not)
+fixed in tasks.md. LOW C2 (FR-006 "no new text / no interface change" has no task of its own)
+accepted: the build and the review check it.
+
+## Implementation
+
+`src/plugins/shared/splfiledlg.h`:
+- `SplFileDlgDetail::PlainPathAllocW` - the plain form (`\?\UNC\x` -> `\x`, `\?\x` -> `x`).
+- `SplFileDlgDetail::WholeFolderShortcutTargetW(answer, listName)` - the pure rule
+  (data-model.md): under 259 units the answer as before; 259+ units only when the item-list name
+  equals it or extends it (ordinal, case ignored, plain forms) - then the item-list name, plain;
+  otherwise NULL = refuse.
+- `ResolveNetHoodFolderW(path, BOOL* refused = NULL)` - `GetPath` into 32,768 units on the heap
+  (no `WIN32_FIND_DATAW`); for 259+ units `GetIDList` + `SHGetNameFromIDList(SIGDN_FILESYSPATH)`;
+  `*refused` TRUE when the target cannot be read whole (also low memory).
+- `SplBrowseForFolderU8` - a refused target: `SplShowNameTooLongW` (the existing message),
+  nothing picked.
+
+No call site of the plug-ins changed (they call `SplBrowseForFolderU8`); no new UI text; the
+plug-in interface untouched.
+
+`src/saltests/saltests.cpp`:
+- 121 block: `refused == FALSE` for no desktop.ini / no target.lnk / a short target / UNC.
+- `TestFolderShortcutCut304`: the pure rule (every row of data-model.md: short, 259 equal, the
+  measured `\?\D:\` cut, `\?\UNC\` cut, letter case, other name, shorter item-list name, UNC vs
+  drive form, NULL / "" answer, NULL / "" item-list name); end to end with real folder shortcuts
+  (item list built folder by folder) whose target has 250 / 259 / 260 / 300 / 400 units in
+  `%TEMP%` (C:, 8.3 names) and next to `saltests.exe` (E:, no 8.3 names): the result names the
+  target folder by identity (volume serial + file index), in the plain form, whole on a volume
+  without 8.3 names - or the pick is refused; 250 and 259 are followed as before. Negative
+  control inside: the raw `GetPath` answer on the volume without 8.3 names - cut reproduced 3
+  times (260 / 300 / 400).
+
+## Checks
+
+| Check | Command | Result |
+|---|---|---|
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| build | `.\build.cmd` (PowerShell) | `BUILD SUCCEEDED`, exit 0 (saltests, uncab.spl, pictview.spl, undelete.spl rebuilt) |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 26694 checks, 0 failed`; `saltests 304: 1 volume(s) without 8.3 names tested, GetPath's cut reproduced 3 time(s)` |
+| negative control | `WholeFolderShortcutTargetW` made to return every answer as it is (the rule before), rebuilt | `26694 checks, 18 failed` - 9 pure-rule rows and, end to end, 3 x (another folder, `\?\` form, not whole) for 260 / 300 / 400; restored, rebuilt, 0 failed |
+
+## Measurement after
+
+`probe/measure3.cpp` rebuilt against the fixed header:
+- base `D:\Build\tcm_plugpick3c` (no 8.3 names): `ResolveNetHoodFolderW` 259 / 260 / 261 / 300 /
+  400 units, **whole 1, exists 1** for all (before: 259 units, cut, does not exist, for 260+).
+- base `%TEMP%` (C:, 8.3 names): 259 whole; 260+ the 8.3 form (87 - 107 units), exists - as
+  before.
+Fixture folders removed (`tcm_plugpick*` on C: and D:); saltests removes its own.
+
+## Not driven (owed to a person)
+
+Picking a network location in the real dialog needs a real mouse (the Browse tree, hidden desktop
+has none) and a network location whose target is 260+ characters on a drive without 8.3 names.
+Person step: create such a network location (This PC > Add a network location, or a folder
+shortcut in `%APPDATA%\Microsoft\Windows\Network Shortcuts` whose target.lnk names the long
+folder), then in UnCAB's Browse pick it - the field gets the whole path; in PictView Save As /
+Undelete target Browse - the system message "The filename or extension is too long.", nothing picked.

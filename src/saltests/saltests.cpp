@@ -8687,9 +8687,10 @@ static void TestSmallBatch121()
             CreateDirectoryW(rootDir, NULL);
             CreateDirectoryW(sc, NULL);
             CreateDirectoryW(tgt, NULL);
-            // no desktop.ini yet: not a shortcut
-            WCHAR* r = SplFileDlgDetail::ResolveNetHoodFolderW(sc);
-            CHECK(r == NULL);
+            // no desktop.ini yet: not a shortcut (and not refused - the folder itself, feature 304)
+            BOOL refused = TRUE;
+            WCHAR* r = SplFileDlgDetail::ResolveNetHoodFolderW(sc, &refused);
+            CHECK(r == NULL && !refused);
             free(r);
             swprintf(file, MAX_PATH, L"%s\\desktop.ini", sc);
             HANDLE h = CreateFileW(file, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
@@ -8700,9 +8701,10 @@ static void TestSmallBatch121()
                 WriteFile(h, ini, (DWORD)strlen(ini), &wr, NULL);
                 CloseHandle(h);
             }
-            // desktop.ini but no target.lnk: not resolved
-            r = SplFileDlgDetail::ResolveNetHoodFolderW(sc);
-            CHECK(r == NULL);
+            // desktop.ini but no target.lnk: not resolved, not refused
+            refused = TRUE;
+            r = SplFileDlgDetail::ResolveNetHoodFolderW(sc, &refused);
+            CHECK(r == NULL && !refused);
             free(r);
             swprintf(file, MAX_PATH, L"%s\\target.lnk", sc);
             IShellLinkW* link = NULL;
@@ -8719,8 +8721,9 @@ static void TestSmallBatch121()
                 link->Release();
             }
             CHECK(made);
-            r = SplFileDlgDetail::ResolveNetHoodFolderW(sc);
-            CHECK(r != NULL && _wcsicmp(r, tgt) == 0);
+            refused = TRUE;
+            r = SplFileDlgDetail::ResolveNetHoodFolderW(sc, &refused);
+            CHECK(r != NULL && _wcsicmp(r, tgt) == 0 && !refused);
             free(r);
             // with a trailing backslash too
             WCHAR scSlash[MAX_PATH];
@@ -8732,6 +8735,8 @@ static void TestSmallBatch121()
             CHECK(SplFileDlgDetail::ResolveNetHoodFolderW(L"\\\\server\\share") == NULL);
             CHECK(SplFileDlgDetail::ResolveNetHoodFolderW(L"") == NULL);
             CHECK(SplFileDlgDetail::ResolveNetHoodFolderW(NULL) == NULL);
+            refused = TRUE;
+            CHECK(SplFileDlgDetail::ResolveNetHoodFolderW(L"\\\\server\\share", &refused) == NULL && !refused);
             DeleteFileW(file);
             swprintf(file, MAX_PATH, L"%s\\desktop.ini", sc);
             DeleteFileW(file);
@@ -16910,6 +16915,273 @@ static void TestFolderShortcut286()
         CoUninitialize();
 }
 
+// feature 304: the plug-ins' folder picker never takes a cut folder-shortcut target
+// (splfiledlg.h WholeFolderShortcutTargetW / ResolveNetHoodFolderW). Measured: on a volume
+// without 8.3 names IShellLinkW::GetPath answers NOERROR with the first MAX_PATH - 1 units of a
+// longer target, whatever the buffer; the link's item list keeps the whole name.
+static std::wstring LongForm304(const std::wstring& p)
+{
+    return p.length() >= 200 && p.compare(0, 4, L"\\\\?\\") != 0 ? L"\\\\?\\" + p : p;
+}
+
+static BOOL SameFolder304(const std::wstring& a, const std::wstring& b)
+{
+    BY_HANDLE_FILE_INFORMATION ia, ib;
+    BOOL same = FALSE;
+    HANDLE ha = CreateFileW(LongForm304(a).c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    HANDLE hb = CreateFileW(LongForm304(b).c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (ha != INVALID_HANDLE_VALUE && hb != INVALID_HANDLE_VALUE && GetFileInformationByHandle(ha, &ia) &&
+        GetFileInformationByHandle(hb, &ib))
+    {
+        same = ia.dwVolumeSerialNumber == ib.dwVolumeSerialNumber && ia.nFileIndexHigh == ib.nFileIndexHigh &&
+               ia.nFileIndexLow == ib.nFileIndexLow;
+    }
+    if (ha != INVALID_HANDLE_VALUE)
+        CloseHandle(ha);
+    if (hb != INVALID_HANDLE_VALUE)
+        CloseHandle(hb);
+    return same;
+}
+
+// the item list of 'base' + 'parts', built folder by folder: IShellLinkW::SetPath refuses a target
+// of MAX_PATH units or more and SHParseDisplayName of such a path gives the 8.3 form
+static PIDLIST_ABSOLUTE BuildIDList304(const std::wstring& base, const std::vector<std::wstring>& parts)
+{
+    PIDLIST_ABSOLUTE abs = NULL;
+    if (FAILED(SHParseDisplayName(base.c_str(), NULL, &abs, 0, NULL)) || abs == NULL)
+        return NULL;
+    IShellFolder* desk = NULL;
+    IShellFolder* cur = NULL;
+    if (SUCCEEDED(SHGetDesktopFolder(&desk)))
+    {
+        desk->BindToObject(abs, NULL, IID_IShellFolder, (void**)&cur);
+        desk->Release();
+    }
+    for (size_t i = 0; i < parts.size(); i++)
+    {
+        PIDLIST_RELATIVE rel = NULL;
+        if (cur == NULL || FAILED(cur->ParseDisplayName(NULL, NULL, (LPWSTR)parts[i].c_str(), NULL, &rel, NULL)))
+        {
+            if (cur != NULL)
+                cur->Release();
+            CoTaskMemFree(abs);
+            return NULL;
+        }
+        PIDLIST_ABSOLUTE next = ILCombine(abs, rel);
+        IShellFolder* sub = NULL;
+        if (i + 1 < parts.size())
+            cur->BindToObject(rel, NULL, IID_IShellFolder, (void**)&sub);
+        CoTaskMemFree(rel);
+        CoTaskMemFree(abs);
+        cur->Release();
+        abs = next;
+        cur = sub;
+        if (abs == NULL)
+        {
+            if (cur != NULL)
+                cur->Release();
+            return NULL;
+        }
+    }
+    if (cur != NULL)
+        cur->Release();
+    return abs;
+}
+
+static std::wstring Rule304(const WCHAR* answer, const WCHAR* listName, BOOL* gotNull)
+{
+    WCHAR* r = SplFileDlgDetail::WholeFolderShortcutTargetW(answer, listName);
+    *gotNull = r == NULL;
+    std::wstring s = r != NULL ? r : L"";
+    free(r);
+    return s;
+}
+
+static void TestFolderShortcutCut304()
+{
+    // --- the pure rule ---
+    {
+        BOOL isNull;
+        std::wstring a256 = L"C:\\" + std::wstring(256, L'a'); // 259 units: possibly cut
+        std::wstring a255 = L"C:\\" + std::wstring(255, L'a'); // 258 units: as before
+        CHECK(a256.length() == MAX_PATH - 1 && a255.length() == MAX_PATH - 2);
+        // shorter than MAX_PATH - 1: the answer, unchanged, with or without an item-list name
+        CHECK(Rule304(L"C:\\x", NULL, &isNull) == L"C:\\x" && !isNull);
+        CHECK(Rule304(a255.c_str(), NULL, &isNull) == a255 && !isNull);
+        CHECK(Rule304(a255.c_str(), L"Z:\\other", &isNull) == a255 && !isNull);
+        // 259 units: followed only when the item list proves it whole
+        CHECK(Rule304(a256.c_str(), a256.c_str(), &isNull) == a256 && !isNull);
+        Rule304(a256.c_str(), NULL, &isNull);
+        CHECK(isNull);
+        Rule304(a256.c_str(), L"", &isNull);
+        CHECK(isNull);
+        // the measured cut: "\\?\D:\..." of 259 units, the item list "\\?\" + the whole name
+        std::wstring whole = L"D:\\" + std::wstring(100, L'b') + L"\\" + std::wstring(200, L'c');
+        std::wstring cut = (L"\\\\?\\" + whole).substr(0, MAX_PATH - 1);
+        CHECK(cut.length() == MAX_PATH - 1);
+        CHECK(Rule304(cut.c_str(), (L"\\\\?\\" + whole).c_str(), &isNull) == whole && !isNull); // whole, plain form
+        CHECK(Rule304(cut.c_str(), whole.c_str(), &isNull) == whole && !isNull);
+        // letter case ignored (the shell may answer another case)
+        std::wstring upper = whole;
+        for (size_t i = 0; i < upper.length(); i++)
+            upper[i] = (WCHAR)towupper(upper[i]);
+        CHECK(Rule304(cut.c_str(), upper.c_str(), &isNull) == upper && !isNull);
+        // the UNC form
+        std::wstring uncWhole = L"\\\\srv\\share\\" + std::wstring(300, L'u');
+        std::wstring uncCut = (L"\\\\?\\UNC\\" + uncWhole.substr(2)).substr(0, MAX_PATH - 1);
+        CHECK(Rule304(uncCut.c_str(), (L"\\\\?\\UNC\\" + uncWhole.substr(2)).c_str(), &isNull) == uncWhole && !isNull);
+        // another name, a shorter item-list name, another form (the UNC answer of a mapped drive): refused
+        std::wstring other = whole;
+        other[10] = L'x';
+        Rule304(cut.c_str(), other.c_str(), &isNull);
+        CHECK(isNull);
+        Rule304(cut.c_str(), whole.substr(0, 200).c_str(), &isNull);
+        CHECK(isNull);
+        Rule304(uncCut.c_str(), (L"Z:\\" + std::wstring(300, L'u')).c_str(), &isNull);
+        CHECK(isNull);
+        // no answer
+        Rule304(NULL, whole.c_str(), &isNull);
+        CHECK(isNull);
+        Rule304(L"", whole.c_str(), &isNull);
+        CHECK(isNull);
+    }
+
+    // --- end to end: real folder shortcuts whose item list names a target of 250..400 units ---
+    HRESULT coInit = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    std::vector<std::wstring> bases;
+    WCHAR tempW[MAX_PATH], tempLongW[1024];
+    if (GetTempPathW(MAX_PATH, tempW) != 0)
+    {
+        DWORD l = GetLongPathNameW(tempW, tempLongW, _countof(tempLongW));
+        bases.push_back(l > 0 && l < _countof(tempLongW) ? tempLongW : tempW);
+    }
+    WCHAR exeW[MAX_PATH];
+    DWORD exeLen = GetModuleFileNameW(NULL, exeW, MAX_PATH);
+    if (exeLen > 0 && exeLen < MAX_PATH)
+    {
+        std::wstring exeDir(exeW);
+        exeDir.resize(exeDir.find_last_of(L'\\') + 1);
+        bases.push_back(exeDir); // the build folder: often a volume without 8.3 names
+    }
+    CHECK(!bases.empty());
+    const char* ini = "[.ShellClassInfo]\r\nCLSID2={0AFACED1-E828-11D1-9187-B532F1E9575D}\r\nFlags=2\r\n";
+    int cutReproduced = 0, noShortNameVolumes = 0;
+    for (size_t b = 0; b < bases.size(); b++)
+    {
+        std::wstring root = bases[b];
+        if (root.empty() || root.back() != L'\\')
+            root += L'\\';
+        root += L"saltests304_" + std::to_wstring(GetCurrentProcessId());
+        if (root.length() > 150 || !CreateDirectoryW(root.c_str(), NULL))
+            continue; // (a deep build folder leaves no room for the targets below)
+        WCHAR shortW[1024];
+        DWORD sl = GetShortPathNameW(root.c_str(), shortW, _countof(shortW));
+        BOOL noShortNames = sl > 0 && sl < _countof(shortW) && _wcsicmp(shortW, root.c_str()) == 0;
+        if (noShortNames)
+            noShortNameVolumes++;
+        std::wstring sc = root + L"\\sc";
+        CreateDirectoryW(sc.c_str(), NULL);
+        HANDLE h = CreateFileW((sc + L"\\desktop.ini").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD written = 0;
+        CHECK(h != INVALID_HANDLE_VALUE && WriteFile(h, ini, (DWORD)strlen(ini), &written, NULL));
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        std::vector<std::wstring> made; // folders to remove, deepest last
+        const int lens[] = {250, 259, 260, 300, 400};
+        for (int li = 0; li < _countof(lens); li++)
+        {
+            std::wstring tgt = root;
+            std::vector<std::wstring> parts;
+            while ((int)tgt.length() + 1 + 50 < lens[li])
+            {
+                parts.push_back(std::wstring(49, (WCHAR)(L'a' + li)));
+                tgt += L"\\" + parts.back();
+                CreateDirectoryW(LongForm304(tgt).c_str(), NULL);
+                made.push_back(tgt);
+            }
+            parts.push_back(std::wstring(lens[li] - tgt.length() - 1, L'z'));
+            tgt += L"\\" + parts.back();
+            CHECK((int)tgt.length() == lens[li]);
+            CHECK(CreateDirectoryW(LongForm304(tgt).c_str(), NULL));
+            made.push_back(tgt);
+            PIDLIST_ABSOLUTE idList = BuildIDList304(root, parts);
+            CHECK(idList != NULL);
+            if (idList == NULL)
+                continue;
+            BOOL saved = FALSE;
+            IShellLinkW* link = NULL;
+            if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+            {
+                IPersistFile* file = NULL;
+                if (link->SetIDList(idList) == S_OK && link->QueryInterface(IID_IPersistFile, (LPVOID*)&file) == S_OK)
+                {
+                    saved = file->Save((sc + L"\\target.lnk").c_str(), TRUE) == S_OK;
+                    file->Release();
+                }
+                link->Release();
+            }
+            CoTaskMemFree(idList);
+            CHECK(saved);
+            if (!saved)
+                continue;
+            // negative control - the rule before: GetPath's answer taken as it is
+            std::wstring answer;
+            if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+            {
+                IPersistFile* file = NULL;
+                if (link->QueryInterface(IID_IPersistFile, (LPVOID*)&file) == S_OK)
+                {
+                    if (file->Load((sc + L"\\target.lnk").c_str(), STGM_READ) == S_OK)
+                    {
+                        std::vector<WCHAR> buf(32768, 0);
+                        if (link->GetPath(buf.data(), (int)buf.size(), NULL, SLGP_UNCPRIORITY) == NOERROR)
+                            answer = buf.data();
+                    }
+                    file->Release();
+                }
+                link->Release();
+            }
+            CHECK(!answer.empty());
+            if (lens[li] >= MAX_PATH && noShortNames)
+            {
+                // measured on Windows 11: the answer is cut - another folder; recorded, not required
+                if (answer.length() == MAX_PATH - 1 && !SameFolder304(answer, tgt))
+                    cutReproduced++;
+            }
+            // the picker's rule: the target folder itself, or refused - never another folder
+            BOOL refused = TRUE;
+            WCHAR* r = SplFileDlgDetail::ResolveNetHoodFolderW(sc.c_str(), &refused);
+            if (r != NULL)
+            {
+                CHECK(!refused);
+                CHECK(SameFolder304(r, tgt));
+                CHECK(wcsncmp(r, L"\\\\?\\", 4) != 0); // the plain form
+                if (noShortNames)
+                    CHECK(_wcsicmp(r, tgt.c_str()) == 0); // whole
+            }
+            else
+                CHECK(refused);
+            if (lens[li] < MAX_PATH)
+                CHECK(r != NULL); // as before: 250 and 259 units are followed
+            if (noShortNames)
+                CHECK(r != NULL); // the item list proves the whole name
+            free(r);
+            DeleteFileW((sc + L"\\target.lnk").c_str());
+        }
+        DeleteFileW((sc + L"\\desktop.ini").c_str());
+        RemoveDirectoryW(sc.c_str());
+        for (size_t i = made.size(); i-- > 0;)
+            RemoveDirectoryW(LongForm304(made[i]).c_str());
+        CHECK(RemoveDirectoryW(root.c_str()));
+    }
+    printf("saltests 304: %d volume(s) without 8.3 names tested, GetPath's cut reproduced %d time(s)\n",
+           noShortNameVolumes, cutReproduced);
+    if (SUCCEEDED(coInit))
+        CoUninitialize();
+}
+
 // feature 288: a name goes to each FTP server in its own encoding (salftpsrvenc.h) - 224's one
 // set for the whole program sent new names in UTF-8 to a legacy server, and a name seen in the
 // code page on one server in the code page to another
@@ -17499,6 +17771,7 @@ int main(int argc, char** argv)
     TestMoveBack281();
     TestMaskOptimize283();
     TestFolderShortcut286();
+    TestFolderShortcutCut304();
     TestFtpServerEncoding288();
     TestDriveText289();
     TestGrowBufferPair293();

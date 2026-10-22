@@ -34,6 +34,7 @@
 #include <commdlg.h>
 #include <cderr.h> // FNERR_INVALIDFILENAME
 #include <shlobj.h>
+#include <limits.h> // INT_MAX
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
@@ -222,6 +223,78 @@ inline BOOL IsFolderShortcutIni(const char* buf, int len)
     return FALSE;
 }
 
+// feature 304: the plain form of a path: "\\?\UNC\x" -> "\\x", "\\?\x" -> "x", else unchanged.
+// malloc'ed; NULL on low memory.
+inline WCHAR* PlainPathAllocW(const WCHAR* p)
+{
+    const WCHAR* rest = p;
+    BOOL unc = FALSE;
+    if (wcsncmp(p, L"\\\\?\\UNC\\", 8) == 0)
+    {
+        rest = p + 8;
+        unc = TRUE;
+    }
+    else if (wcsncmp(p, L"\\\\?\\", 4) == 0)
+        rest = p + 4;
+    size_t len = wcslen(rest);
+    WCHAR* r = (WCHAR*)malloc((len + 3) * sizeof(WCHAR));
+    if (r != NULL)
+    {
+        size_t at = 0;
+        if (unc)
+        {
+            r[0] = L'\\';
+            r[1] = L'\\';
+            at = 2;
+        }
+        memcpy(r + at, rest, (len + 1) * sizeof(WCHAR));
+    }
+    return r;
+}
+
+// feature 304: the target of a folder shortcut, whole or refused - never cut. 'answer' is what
+// IShellLinkW::GetPath gave; 'listName' the file-system name of the link's item list (NULL when
+// it has none or was not read). Measured (specs/304-plugin-picker-shortcut-cut): on a volume
+// without 8.3 names GetPath answers NOERROR with the first MAX_PATH - 1 units of a longer target
+// ("\\?\D:\..." cut in the middle of a name - another folder), whatever the buffer size; the
+// item list keeps the whole name. So an answer of MAX_PATH - 1 units or more is followed only
+// when the item-list name proves it whole: equal to it, or the answer is the beginning of the
+// longer item-list name (the cut) - the result is then the item-list name. Plain forms are
+// compared ("\\?\" removed), ordinal, letter case ignored. A shorter answer is returned as it
+// is (the rule before). Returns a malloc'ed target, or NULL = refuse (also on low memory).
+inline WCHAR* WholeFolderShortcutTargetW(const WCHAR* answer, const WCHAR* listName)
+{
+    if (answer == NULL || answer[0] == 0)
+        return NULL;
+    size_t answerLen = wcslen(answer);
+    if (answerLen < MAX_PATH - 1)
+    {
+        WCHAR* r = (WCHAR*)malloc((answerLen + 1) * sizeof(WCHAR));
+        if (r != NULL)
+            memcpy(r, answer, (answerLen + 1) * sizeof(WCHAR));
+        return r;
+    }
+    if (listName == NULL || listName[0] == 0)
+        return NULL; // possibly cut, nothing proves it whole
+    WCHAR* a = PlainPathAllocW(answer);
+    WCHAR* l = PlainPathAllocW(listName);
+    WCHAR* result = NULL;
+    if (a != NULL && l != NULL)
+    {
+        size_t aLen = wcslen(a);
+        size_t lLen = wcslen(l);
+        if (aLen > 0 && aLen <= lLen && aLen <= INT_MAX &&
+            CompareStringOrdinal(a, (int)aLen, l, (int)aLen, TRUE) == CSTR_EQUAL)
+        {
+            result = l; // the whole name
+            l = NULL;
+        }
+    }
+    free(a);
+    free(l);
+    return result;
+}
+
 // feature 121: the core's GetTargetDirectory resolved a picked NetHood folder shortcut to
 // the folder it points at (ResolveNetHoodPath); SplBrowseForFolderU8 returned the shortcut
 // folder itself - a folder holding desktop.ini and target.lnk, not the place the user
@@ -230,8 +303,13 @@ inline BOOL IsFolderShortcutIni(const char* buf, int len)
 // link's path (UNC preferred, as the core) without Resolve. 'path' is the picked folder;
 // returns a malloc'ed target or NULL (no shortcut, or it cannot be read). COM must be
 // initialised on the thread (it is for SHBrowseForFolderW).
-inline WCHAR* ResolveNetHoodFolderW(const WCHAR* path)
+// Feature 304: the target is whole or refused (WholeFolderShortcutTargetW); with NULL,
+// '*refused' (when given) is TRUE for a folder shortcut whose target could not be read whole -
+// the caller refuses the pick instead of taking a cut path or the shortcut folder itself.
+inline WCHAR* ResolveNetHoodFolderW(const WCHAR* path, BOOL* refused = NULL)
 {
+    if (refused != NULL)
+        *refused = FALSE;
     if (path == NULL || path[0] == 0 || path[0] == L'\\' || path[1] != L':')
         return NULL; // UNC (or not a drive path) - cannot be NetHood
     WCHAR root[4] = {path[0], L':', L'\\', 0};
@@ -275,14 +353,35 @@ inline WCHAR* ResolveNetHoodFolderW(const WCHAR* path)
                 {
                     if (fileInt->Load(name, STGM_READ) == S_OK)
                     {
-                        WCHAR tgt[MAX_PATH];
-                        WIN32_FIND_DATAW data;
-                        if (link->GetPath(tgt, MAX_PATH, &data, SLGP_UNCPRIORITY) == NOERROR && tgt[0] != 0)
+                        const int tgtUnits = 32768; // the longest path Windows knows
+                        WCHAR* tgt = (WCHAR*)malloc(tgtUnits * sizeof(WCHAR));
+                        if (tgt == NULL)
                         {
-                            size_t tgtLen = wcslen(tgt);
-                            result = (WCHAR*)malloc((tgtLen + 1) * sizeof(WCHAR));
-                            if (result != NULL)
-                                memcpy(result, tgt, (tgtLen + 1) * sizeof(WCHAR));
+                            if (refused != NULL)
+                                *refused = TRUE; // never the shortcut folder silently
+                        }
+                        else
+                        {
+                            tgt[0] = 0;
+                            if (link->GetPath(tgt, tgtUnits, NULL, SLGP_UNCPRIORITY) == NOERROR && tgt[0] != 0)
+                            {
+                                WCHAR* listName = NULL;
+                                if (wcslen(tgt) >= MAX_PATH - 1) // possibly cut (feature 304)
+                                {
+                                    PIDLIST_ABSOLUTE idList = NULL;
+                                    if (link->GetIDList(&idList) == S_OK && idList != NULL)
+                                    {
+                                        if (FAILED(SHGetNameFromIDList(idList, SIGDN_FILESYSPATH, &listName)))
+                                            listName = NULL;
+                                        CoTaskMemFree(idList);
+                                    }
+                                }
+                                result = WholeFolderShortcutTargetW(tgt, listName);
+                                if (result == NULL && refused != NULL)
+                                    *refused = TRUE;
+                                CoTaskMemFree(listName);
+                            }
+                            free(tgt);
                         }
                     }
                     fileInt->Release();
@@ -428,10 +527,13 @@ inline BOOL SplBrowseForFolderU8(HWND parent, HWND centerWindow, const WCHAR* ti
         if (SHGetPathFromIDListW(res, picked)) // a folder without a path cannot be confirmed (BFFM_ENABLEOK)
         {
             // feature 121: a NetHood folder shortcut means the folder it points at (the core's rule)
-            WCHAR* target = SplFileDlgDetail::ResolveNetHoodFolderW(picked);
-            char* u8 = SplWToU8Alloc(target != NULL ? target : picked);
+            BOOL refused = FALSE;
+            WCHAR* target = SplFileDlgDetail::ResolveNetHoodFolderW(picked, &refused);
+            char* u8 = refused ? NULL : SplWToU8Alloc(target != NULL ? target : picked);
             free(target);
-            if (u8 != NULL && (int)strlen(u8) < pathSize)
+            if (refused) // feature 304: a target that could not be read whole - never a cut one
+                SplShowNameTooLongW(parent, titleW);
+            else if (u8 != NULL && (int)strlen(u8) < pathSize)
             {
                 memcpy(path, u8, strlen(u8) + 1);
                 ret = TRUE;
