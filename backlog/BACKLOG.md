@@ -25,7 +25,7 @@ Last triaged: 2026-10-22
 | 1 | [FTP: PWD reply cut at 300 bytes and other long-name leftovers of 215](items/ftp-long-name-and-path-leftovers/desc.md) | bug | 5 | ftp | agent | M | blocked |
 | 2 | [ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut](items/uniso-hfs-btree-trust-and-joliet-cut/desc.md) | bug | 5 | other-plugins | agent | M | blocked |
 | 3 | [Paste fails in a folder whose path contains an exclamation mark](items/vkladanie-zo-schranky-nefunguje-v-adresaroch-s-v-ceste/desc.md) | bug | 5 | file-ops | agent | - | blocked |
-| 4 | [FTP: Create Directory and Quick Rename in a panel never update the upload listing cache](items/ftp-panel-mkdir-rename-skip-upload-listing-cache/desc.md) | bug | 5 | ftp | agent | S | open |
+| 4 | [FTP: Create Directory and Quick Rename in a panel never update the upload listing cache](items/ftp-panel-mkdir-rename-skip-upload-listing-cache/desc.md) | bug | 7 | ftp | agent | S | blocked |
 | 5 | [Plug-in folder picker may cut a folder shortcut target of 260 or more units](items/plug-in-folder-picker-may-cut-a-folder-shortcut-target-of/desc.md) | bug | 5 | other-plugins | agent | S | open |
 | 6 | [tar plug-in ignores PAX extended headers: long or non-ASCII names listed under the ustar fallback name](items/tar-plug-in-ignores-pax-extended-headers/desc.md) | bug | 5 | archives | agent | M | open |
 | 7 | [Find cuts a long Containing text and writes the cut text back](items/find-cuts-a-long-containing-text-and-writes-the-cut-text/desc.md) | bug | 5 | long-paths | agent | S | open |
@@ -238,6 +238,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [FTP: an upload to a case-insensitive server with Unix paths replaces b.txt by B.txt without the question](items/ftp-an-upload-to-a-case-insensitive-server-with-unix-paths/desc.md) | bug | 7 | ftp | review:302 | 2026-10-22 |
 
 ## Parked
 

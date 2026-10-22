@@ -1,19 +1,19 @@
 ---
 title: FTP: Create Directory and Quick Rename in a panel never update the upload listing cache
 type: bug
-status: open
-severity: 5
+status: blocked
+severity: 7
 area: ftp
 source: measure:288
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: the independent review rejected the fix twice - review 2 MUST: Create Directory with a path (.cfg/new, docs/new) caches an existing folder the listing does not show as new and empty, an upload into it then overwrites without the question; continue on the branch, see its fix-log section Stopped (feature 302, branch 302-ftp-upload-cache-args)
 ---
 
 # FTP: Create Directory and Quick Rename in a panel never update the upload listing cache
@@ -38,3 +38,5 @@ Severity 5 because the effect is not measured; if the probe shows an upload repl
 
 - 2026-10-21 — created (source measure:288)
 - 2026-10-21 — moved to Next position 8
+- 2026-10-22 — measured in feature 302: on main an uploaded b.txt replaced a file just renamed to b.txt without the overwrite question (probe row REN-UP) - data loss in a narrow scenario, as the Notes foresaw
+- 2026-10-22 — blocked: the independent review rejected the fix twice - review 2 MUST: Create Directory with a path (.cfg/new, docs/new) caches an existing folder the listing does not show as new and empty, an upload into it then overwrites without the question; continue on the branch, see its fix-log section Stopped (feature 302, branch 302-ftp-upload-cache-args)
