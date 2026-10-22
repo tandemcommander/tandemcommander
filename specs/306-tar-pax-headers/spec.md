@@ -35,6 +35,14 @@ system takes) crashes the program when the archive is opened ("Stack memory corr
 applied - this feature therefore refuses such PAX paths; the GNU route and the crash itself are
 recorded as an Inbox item (outside this item).
 
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: When a PAX path has a component no file system takes, is the whole archive refused or only that member? → A: only that member: it is not listed or extracted, a message names it, the rest of the archive stays usable (autonomous run: conservative - loses no other member, never silent, nothing cut)
+- Q: What happens with a malformed extended header (bad record length, no `=`, invalid `size`)? → A: the archive is refused with the plug-in's existing header error; an invalid `mtime` alone is ignored (autonomous run: conservative - refuses rather than reading on under a guessed layout; a time does not shift the data)
+- Q: Is the fraction of a PAX `mtime` kept? → A: yes, to 100 ns (the precision of a Windows file time) (autonomous run: item - "with the header's time")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Members are listed and extracted under their real names (Priority: P1)
