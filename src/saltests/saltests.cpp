@@ -17290,6 +17290,348 @@ static void TestFolderShortcutCut304()
         CoUninitialize();
 }
 
+// feature 305: the core's shortcut reader (salshelllink.h SalShellLinkGetPathU8) never returns a
+// cut target - the core's twin of feature 304's rule (Enter, Go to Shortcut Target, a drop onto a
+// shortcut, Browse For Folder on a network location)
+static std::wstring Rule305(const WCHAR* answer, const WCHAR* listName, BOOL* gotNull)
+{
+    WCHAR* r = SalShellLinkWholeTargetW(answer, listName);
+    *gotNull = r == NULL;
+    std::wstring s = r != NULL ? r : L"";
+    free(r);
+    return s;
+}
+
+static std::wstring W305(const char* u8)
+{
+    WCHAR* w = SalU8ToWAlloc(u8);
+    std::wstring s = w != NULL ? w : L"";
+    free(w);
+    return s;
+}
+
+static void TestShellLinkWholeTarget305()
+{
+    const HRESULT tooLong = HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
+    // --- the plain form ---
+    {
+        const WCHAR* rows[][2] = {
+            {L"\\\\?\\D:\\a\\b", L"D:\\a\\b"},
+            {L"\\\\?\\UNC\\srv\\share\\x", L"\\\\srv\\share\\x"},
+            {L"D:\\a", L"D:\\a"},
+            {L"\\\\srv\\share", L"\\\\srv\\share"},
+            {L"\\\\?\\", L""},
+            {L"", L""},
+        };
+        for (int i = 0; i < _countof(rows); i++)
+        {
+            WCHAR* p = SalPlainPathAllocW(rows[i][0]);
+            CHECK(p != NULL && wcscmp(p, rows[i][1]) == 0);
+            free(p);
+        }
+        CHECK(SalPlainPathAllocW(NULL) == NULL);
+    }
+
+    // --- the pure rule (the rows of feature 304's twin, and both twins agree) ---
+    {
+        BOOL isNull;
+        std::wstring a256 = L"C:\\" + std::wstring(256, L'a'); // 259 units: possibly cut
+        std::wstring a255 = L"C:\\" + std::wstring(255, L'a'); // 258 units: as before
+        CHECK(a256.length() == MAX_PATH - 1 && a255.length() == MAX_PATH - 2);
+        CHECK(Rule305(L"C:\\x", NULL, &isNull) == L"C:\\x" && !isNull);
+        CHECK(Rule305(a255.c_str(), NULL, &isNull) == a255 && !isNull);
+        CHECK(Rule305(a255.c_str(), L"Z:\\other", &isNull) == a255 && !isNull);
+        CHECK(Rule305(L"\\\\?\\C:\\x", NULL, &isNull) == L"\\\\?\\C:\\x" && !isNull); // short: as it is
+        CHECK(Rule305(a256.c_str(), a256.c_str(), &isNull) == a256 && !isNull);
+        Rule305(a256.c_str(), NULL, &isNull);
+        CHECK(isNull);
+        Rule305(a256.c_str(), L"", &isNull);
+        CHECK(isNull);
+        // the measured cuts: "\\?\E:\..." (before Resolve) and "E:\..." (after it) of 259 units
+        std::wstring whole = L"E:\\" + std::wstring(100, L'b') + L"\\" + std::wstring(200, L'c');
+        std::wstring cutLong = (L"\\\\?\\" + whole).substr(0, MAX_PATH - 1);
+        std::wstring cutPlain = whole.substr(0, MAX_PATH - 1);
+        CHECK(Rule305(cutLong.c_str(), (L"\\\\?\\" + whole).c_str(), &isNull) == whole && !isNull);
+        CHECK(Rule305(cutLong.c_str(), whole.c_str(), &isNull) == whole && !isNull);
+        CHECK(Rule305(cutPlain.c_str(), whole.c_str(), &isNull) == whole && !isNull);
+        // a cut on a backslash: the answer names the parent - the whole name is the child
+        std::wstring parent = L"E:\\" + std::wstring(256, L'p');
+        std::wstring child = parent + L"\\" + std::wstring(40, L'z');
+        CHECK(parent.length() == MAX_PATH - 1);
+        CHECK(Rule305(parent.c_str(), child.c_str(), &isNull) == child && !isNull);
+        // letter case ignored
+        std::wstring upper = whole;
+        for (size_t i = 0; i < upper.length(); i++)
+            upper[i] = (WCHAR)towupper(upper[i]);
+        CHECK(Rule305(cutPlain.c_str(), upper.c_str(), &isNull) == upper && !isNull);
+        // the UNC form
+        std::wstring uncWhole = L"\\\\srv\\share\\" + std::wstring(300, L'u');
+        std::wstring uncCut = (L"\\\\?\\UNC\\" + uncWhole.substr(2)).substr(0, MAX_PATH - 1);
+        CHECK(Rule305(uncCut.c_str(), uncWhole.c_str(), &isNull) == uncWhole && !isNull);
+        // another name, a shorter item-list name, another form: refused
+        std::wstring other = whole;
+        other[10] = L'x';
+        Rule305(cutPlain.c_str(), other.c_str(), &isNull);
+        CHECK(isNull);
+        Rule305(cutPlain.c_str(), whole.substr(0, 200).c_str(), &isNull);
+        CHECK(isNull);
+        Rule305(uncCut.c_str(), (L"Z:\\" + std::wstring(300, L'u')).c_str(), &isNull);
+        CHECK(isNull);
+        Rule305(NULL, whole.c_str(), &isNull);
+        CHECK(isNull);
+        Rule305(L"", whole.c_str(), &isNull);
+        CHECK(isNull);
+        // the twins agree
+        const WCHAR* answers[] = {L"C:\\x", a255.c_str(), a256.c_str(), cutLong.c_str(), cutPlain.c_str(), parent.c_str(), uncCut.c_str()};
+        const WCHAR* lists[] = {NULL, L"", a256.c_str(), whole.c_str(), child.c_str(), other.c_str(), uncWhole.c_str()};
+        for (int i = 0; i < _countof(answers); i++)
+        {
+            for (int j = 0; j < _countof(lists); j++)
+            {
+                WCHAR* c = SalShellLinkWholeTargetW(answers[i], lists[j]);
+                WCHAR* p = SplFileDlgDetail::WholeFolderShortcutTargetW(answers[i], lists[j]);
+                CHECK((c == NULL) == (p == NULL) && (c == NULL || wcscmp(c, p) == 0));
+                free(c);
+                free(p);
+            }
+        }
+    }
+
+    HRESULT coInit = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    std::vector<std::wstring> bases;
+    WCHAR tempW[MAX_PATH], tempLongW[1024];
+    if (GetTempPathW(MAX_PATH, tempW) != 0)
+    {
+        DWORD l = GetLongPathNameW(tempW, tempLongW, _countof(tempLongW));
+        bases.push_back(l > 0 && l < _countof(tempLongW) ? tempLongW : tempW);
+    }
+    WCHAR exeW[MAX_PATH];
+    DWORD exeLen = GetModuleFileNameW(NULL, exeW, MAX_PATH);
+    if (exeLen > 0 && exeLen < MAX_PATH)
+    {
+        std::wstring exeDir(exeW);
+        exeDir.resize(exeDir.find_last_of(L'\\') + 1);
+        bases.push_back(exeDir); // the build folder: often a volume without 8.3 names
+    }
+    CHECK(!bases.empty());
+
+    // --- the reader with a fake link: refused / followed / no path ---
+    {
+        CFakeLink304 fake;
+        char path[2048];
+        std::wstring longAnswer = (L"\\\\?\\D:\\" + std::wstring(400, L'q')).substr(0, MAX_PATH - 1);
+        // a possibly cut answer and no item list: refused, "" - never cut
+        fake.Answer = longAnswer;
+        memset(path, 'X', sizeof(path));
+        CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_UNCPRIORITY) == tooLong && path[0] == 0);
+        CHECK(fake.GetIDListCalls == 1);
+        // ... and an item list naming another folder (the temporary folder): refused
+        PIDLIST_ABSOLUTE tempList = NULL;
+        CHECK(!bases.empty() && SUCCEEDED(SHParseDisplayName(bases[0].c_str(), NULL, &tempList, 0, NULL)));
+        fake.IdList = tempList;
+        memset(path, 'X', sizeof(path));
+        CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_UNCPRIORITY) == tooLong && path[0] == 0);
+        CHECK(fake.GetIDListCalls == 2);
+        // the raw path: refused without asking the item list (environment strings - not comparable)
+        memset(path, 'X', sizeof(path));
+        CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_RAWPATH) == tooLong && path[0] == 0);
+        CHECK(fake.GetIDListCalls == 2);
+        // an answer that begins with the (shorter) item-list name is not its beginning: refused
+        if (tempList != NULL)
+        {
+            WCHAR* tempName = NULL;
+            if (SUCCEEDED(SHGetNameFromIDList(tempList, SIGDN_FILESYSPATH, &tempName)) && tempName != NULL)
+            {
+                fake.Answer = (std::wstring(tempName) + L"\\" + std::wstring(300, L'w')).substr(0, MAX_PATH - 1);
+                memset(path, 'X', sizeof(path));
+                CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_UNCPRIORITY) == tooLong && path[0] == 0);
+                // ... while the item-list name itself as the answer (259+ units only when %TEMP% is
+                // that long - normally a short answer) is followed
+                fake.Answer = tempName;
+                memset(path, 'X', sizeof(path));
+                CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_UNCPRIORITY) == NOERROR);
+                CHECK(W305(path) == std::wstring(tempName));
+                CoTaskMemFree(tempName);
+            }
+            else
+                CHECK(FALSE);
+        }
+        // a short answer: as before, the item list is not even read (both flags)
+        int calls = fake.GetIDListCalls;
+        fake.Answer = L"C:\\short\\%TEMP%";
+        memset(path, 'X', sizeof(path));
+        CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_UNCPRIORITY) == NOERROR && strcmp(path, "C:\\short\\%TEMP%") == 0);
+        memset(path, 'X', sizeof(path));
+        CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_RAWPATH) == NOERROR && strcmp(path, "C:\\short\\%TEMP%") == 0);
+        CHECK(fake.GetIDListCalls == calls);
+        // 258 units: as before (the threshold)
+        fake.Answer = L"C:\\" + std::wstring(255, L'e');
+        memset(path, 'X', sizeof(path));
+        CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_RAWPATH) == NOERROR && strlen(path) == MAX_PATH - 2);
+        CHECK(fake.GetIDListCalls == calls);
+        // no path / GetPath failing: passed on as before, ""
+        fake.Answer = L"";
+        memset(path, 'X', sizeof(path));
+        CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_UNCPRIORITY) == S_FALSE && path[0] == 0);
+        fake.AnswerRes = S_FALSE;
+        memset(path, 'X', sizeof(path));
+        CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_UNCPRIORITY) == S_FALSE && path[0] == 0);
+        fake.Answer = longAnswer;
+        fake.AnswerRes = E_FAIL;
+        memset(path, 'X', sizeof(path));
+        CHECK(SalShellLinkGetPathU8(&fake, path, sizeof(path), SLGP_UNCPRIORITY) == E_FAIL && path[0] == 0);
+        CoTaskMemFree(tempList);
+    }
+
+    // --- end to end: real shortcuts whose item list names a target of 250..400 units ---
+    const char* ini = "[.ShellClassInfo]\r\nCLSID2={0AFACED1-E828-11D1-9187-B532F1E9575D}\r\nFlags=2\r\n";
+    int cutReproduced = 0, noShortNameVolumes = 0;
+    char* big = (char*)malloc(SAL_MAX_PATH_UTF8);
+    CHECK(big != NULL);
+    for (size_t b = 0; b < bases.size() && big != NULL; b++)
+    {
+        std::wstring root = bases[b];
+        if (root.empty() || root.back() != L'\\')
+            root += L'\\';
+        root += L"saltests305_" + std::to_wstring(GetCurrentProcessId());
+        if (root.length() > 150 || !CreateDirectoryW(root.c_str(), NULL))
+            continue; // (a deep build folder leaves no room for the targets below)
+        WCHAR shortW[1024];
+        DWORD sl = GetShortPathNameW(root.c_str(), shortW, _countof(shortW));
+        BOOL noShortNames = sl > 0 && sl < _countof(shortW) && _wcsicmp(shortW, root.c_str()) == 0;
+        if (noShortNames)
+            noShortNameVolumes++;
+        std::wstring sc = root + L"\\sc"; // a folder shortcut (Browse For Folder, feature 286)
+        CreateDirectoryW(sc.c_str(), NULL);
+        HANDLE h = CreateFileW((sc + L"\\desktop.ini").c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD written = 0;
+        CHECK(h != INVALID_HANDLE_VALUE && WriteFile(h, ini, (DWORD)strlen(ini), &written, NULL));
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        std::string scU8 = U8Of286(sc);
+        std::vector<std::wstring> made; // folders to remove, deepest last
+        // { target length, parent length (0 = any) }: the 300-unit target with a 259-unit parent is
+        // the cut on a backslash after Resolve (the answer names the existing parent folder)
+        const int lens[][2] = {{250, 0}, {259, 0}, {260, 0}, {300, 0}, {400, 0}, {300, MAX_PATH - 1}};
+        for (int li = 0; li < _countof(lens); li++)
+        {
+            int len = lens[li][0], parentLen = lens[li][1] != 0 ? lens[li][1] : len - 30;
+            std::wstring tgt = root + L"\\" + std::to_wstring(li);
+            CreateDirectoryW(tgt.c_str(), NULL);
+            made.push_back(tgt);
+            std::vector<std::wstring> parts(1, std::to_wstring(li));
+            while ((int)tgt.length() + 1 + 50 < parentLen)
+            {
+                parts.push_back(std::wstring(49, (WCHAR)(L'a' + li)));
+                tgt += L"\\" + parts.back();
+                CreateDirectoryW(LongForm304(tgt).c_str(), NULL);
+                made.push_back(tgt);
+            }
+            parts.push_back(std::wstring(parentLen - tgt.length() - 1, L'p'));
+            tgt += L"\\" + parts.back();
+            CreateDirectoryW(LongForm304(tgt).c_str(), NULL);
+            made.push_back(tgt);
+            std::wstring parent = tgt;
+            parts.push_back(std::wstring(len - tgt.length() - 1, li == 3 ? (WCHAR)0x017E : L'z')); // one with a Czech letter
+            tgt += L"\\" + parts.back();
+            CHECK((int)tgt.length() == len && (int)parent.length() == parentLen);
+            CHECK(CreateDirectoryW(LongForm304(tgt).c_str(), NULL));
+            made.push_back(tgt);
+            PIDLIST_ABSOLUTE idList = BuildIDList304(root, parts);
+            CHECK(idList != NULL);
+            if (idList == NULL)
+                continue;
+            std::wstring lnk = root + L"\\t" + std::to_wstring(li) + L".lnk";
+            BOOL saved = FALSE;
+            IShellLinkW* link = NULL;
+            if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+            {
+                IPersistFile* file = NULL;
+                if (link->SetIDList(idList) == S_OK && link->QueryInterface(IID_IPersistFile, (LPVOID*)&file) == S_OK)
+                {
+                    saved = file->Save(lnk.c_str(), TRUE) == S_OK && file->Save((sc + L"\\target.lnk").c_str(), FALSE) == S_OK;
+                    file->Release();
+                }
+                link->Release();
+            }
+            CoTaskMemFree(idList);
+            CHECK(saved);
+            if (!saved)
+                continue;
+            if (CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (LPVOID*)&link) == S_OK)
+            {
+                IPersistFile* file = NULL;
+                if (link->QueryInterface(IID_IPersistFile, (LPVOID*)&file) == S_OK)
+                {
+                    CHECK(file->Load(lnk.c_str(), STGM_READ) == S_OK);
+                    for (int resolved = 0; resolved <= 1; resolved++)
+                    {
+                        if (resolved) // as Enter and Go to Shortcut Target do (without UI, without rewriting)
+                            CHECK(link->Resolve(NULL, SLR_NO_UI | SLR_ANY_MATCH) == S_OK);
+                        // negative control - the rule before: GetPath's answer taken as it is
+                        std::vector<WCHAR> raw(32768, 0);
+                        BOOL rawOk = link->GetPath(raw.data(), (int)raw.size(), NULL, SLGP_UNCPRIORITY) == NOERROR;
+                        CHECK(rawOk);
+                        std::wstring answer = raw.data();
+                        if (len >= MAX_PATH && noShortNames && answer.length() == MAX_PATH - 1 && !SameFolder304(answer, tgt))
+                            cutReproduced++; // measured on Windows 11: the answer is cut - another folder
+                        // the reader: the target folder itself, plain, whole on a volume without 8.3 names
+                        memset(big, 'X', SAL_MAX_PATH_UTF8);
+                        HRESULT r = SalShellLinkGetPathU8(link, big, SAL_MAX_PATH_UTF8, SLGP_UNCPRIORITY);
+                        CHECK(r == NOERROR);
+                        if (r == NOERROR)
+                        {
+                            std::wstring got = W305(big);
+                            CHECK(SameFolder304(got, tgt));
+                            CHECK(got.compare(0, 4, L"\\\\?\\") != 0); // the plain form
+                            if (noShortNames)
+                                CHECK(_wcsicmp(got.c_str(), tgt.c_str()) == 0); // whole
+                        }
+                        else
+                            CHECK(big[0] == 0);
+                        // the raw path: as before under MAX_PATH - 1 units, refused from them on
+                        memset(big, 'X', SAL_MAX_PATH_UTF8);
+                        r = SalShellLinkGetPathU8(link, big, SAL_MAX_PATH_UTF8, SLGP_RAWPATH);
+                        if (answer.length() < MAX_PATH - 1)
+                            CHECK(r == NOERROR && SameFolder304(W305(big), tgt));
+                        else
+                            CHECK(r == tooLong && big[0] == 0);
+                    }
+                    file->Release();
+                }
+                link->Release();
+            }
+            // the folder shortcut: whole or "too long" for MAX_PATH bytes - never cut, never S_FALSE
+            char target[MAX_PATH];
+            memset(target, 'X', sizeof(target));
+            HRESULT fr = SalFolderShortcutTargetU8(scU8.c_str(), target, MAX_PATH);
+            if (fr == NOERROR)
+                CHECK(SameFolder304(W305(target), tgt));
+            else
+                CHECK(fr == tooLong && target[0] == 0);
+            if (len < MAX_PATH)
+                CHECK(fr == NOERROR); // as before: 250 and 259 units
+            if (noShortNames && len >= MAX_PATH)
+                CHECK(fr == tooLong);
+            memset(big, 'X', SAL_MAX_PATH_UTF8);
+            fr = SalFolderShortcutTargetU8(scU8.c_str(), big, SAL_MAX_PATH_UTF8);
+            CHECK(fr == NOERROR && SameFolder304(W305(big), tgt));
+            DeleteFileW(lnk.c_str());
+            DeleteFileW((sc + L"\\target.lnk").c_str());
+        }
+        DeleteFileW((sc + L"\\desktop.ini").c_str());
+        RemoveDirectoryW(sc.c_str());
+        for (size_t i = made.size(); i-- > 0;)
+            RemoveDirectoryW(LongForm304(made[i]).c_str());
+        CHECK(RemoveDirectoryW(root.c_str()));
+    }
+    free(big);
+    printf("saltests 305: %d volume(s) without 8.3 names tested, GetPath's cut reproduced %d time(s)\n",
+           noShortNameVolumes, cutReproduced);
+    if (SUCCEEDED(coInit))
+        CoUninitialize();
+}
+
 // feature 288: a name goes to each FTP server in its own encoding (salftpsrvenc.h) - 224's one
 // set for the whole program sent new names in UTF-8 to a legacy server, and a name seen in the
 // code page on one server in the code page to another
@@ -17880,6 +18222,7 @@ int main(int argc, char** argv)
     TestMaskOptimize283();
     TestFolderShortcut286();
     TestFolderShortcutCut304();
+    TestShellLinkWholeTarget305();
     TestFtpServerEncoding288();
     TestDriveText289();
     TestGrowBufferPair293();

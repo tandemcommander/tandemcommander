@@ -23,18 +23,105 @@
 // bytes the function fails (E_FAIL) and 'path' is "" - a cut path would be
 // another folder (CLAUDE.md: a path or name is never cut).
 //
+// Feature 305: the shell itself cuts. Measured (specs/305-core-shortcut-target-cut): for a
+// target of MAX_PATH units or more on a volume without 8.3 names, IShellLinkW::GetPath answers
+// NOERROR with the first MAX_PATH - 1 units ("\\?\E:\..." before Resolve, "E:\..." after it),
+// whatever the buffer size - Enter / Go to Shortcut Target failed or, with the cut on a
+// backslash, silently opened the parent folder. The link's item list keeps the whole name, so an
+// answer of MAX_PATH - 1 units or more is followed only when the item list proves it whole
+// (SalShellLinkWholeTargetW - the core's twin of the plug-ins' WholeFolderShortcutTargetW,
+// feature 304); otherwise the reader refuses with ERROR_FILENAME_EXCED_RANGE.
+//
 // Header-only: saltests checks it against real shortcuts.
 //
 //*****************************************************************************
 
 #include <shlobj.h>
+#include <limits.h> // INT_MAX
 #include "salunicode.h"
 #include "salpath.h"
+
+// Feature 305: the plain form of a path: "\\?\UNC\x" -> "\\x", "\\?\x" -> "x", anything else
+// unchanged. malloc'ed; NULL on low memory (or for NULL).
+inline WCHAR* SalPlainPathAllocW(const WCHAR* p)
+{
+    if (p == NULL)
+        return NULL;
+    const WCHAR* rest = p;
+    BOOL unc = FALSE;
+    if (wcsncmp(p, L"\\\\?\\UNC\\", 8) == 0)
+    {
+        rest = p + 8;
+        unc = TRUE;
+    }
+    else if (wcsncmp(p, L"\\\\?\\", 4) == 0)
+        rest = p + 4;
+    size_t len = wcslen(rest);
+    WCHAR* r = (WCHAR*)malloc((len + 3) * sizeof(WCHAR));
+    if (r != NULL)
+    {
+        size_t at = 0;
+        if (unc)
+        {
+            r[0] = L'\\';
+            r[1] = L'\\';
+            at = 2;
+        }
+        memcpy(r + at, rest, (len + 1) * sizeof(WCHAR));
+    }
+    return r;
+}
+
+// Feature 305: the target of a shortcut, whole or refused - never cut. 'answer' is what
+// IShellLinkW::GetPath gave; 'listName' the file-system name of the link's item list (NULL when
+// it has none or was not read). An answer shorter than MAX_PATH - 1 units is returned as it is
+// (the rule before). A longer one is followed only when the item-list name proves it whole: equal
+// to it, or the answer is the beginning of the longer item-list name (the cut) - the result is
+// then the item-list name. Plain forms are compared ("\\?\" removed), ordinal, letter case
+// ignored. Returns a malloc'ed target in the plain form for long answers, or NULL = refuse (also
+// on low memory). The same rule as SplFileDlgDetail::WholeFolderShortcutTargetW (splfiledlg.h).
+inline WCHAR* SalShellLinkWholeTargetW(const WCHAR* answer, const WCHAR* listName)
+{
+    if (answer == NULL || answer[0] == 0)
+        return NULL;
+    size_t answerLen = wcslen(answer);
+    if (answerLen < MAX_PATH - 1)
+    {
+        WCHAR* r = (WCHAR*)malloc((answerLen + 1) * sizeof(WCHAR));
+        if (r != NULL)
+            memcpy(r, answer, (answerLen + 1) * sizeof(WCHAR));
+        return r;
+    }
+    if (listName == NULL || listName[0] == 0)
+        return NULL; // possibly cut, nothing proves it whole
+    WCHAR* a = SalPlainPathAllocW(answer);
+    WCHAR* l = SalPlainPathAllocW(listName);
+    WCHAR* result = NULL;
+    if (a != NULL && l != NULL)
+    {
+        size_t aLen = wcslen(a);
+        size_t lLen = wcslen(l);
+        if (aLen > 0 && aLen <= lLen && aLen <= INT_MAX &&
+            CompareStringOrdinal(a, (int)aLen, l, (int)aLen, TRUE) == CSTR_EQUAL)
+        {
+            result = l; // the whole name
+            l = NULL;
+        }
+    }
+    free(a);
+    free(l);
+    return result;
+}
 
 // Returns NOERROR when 'path' holds the target path; S_FALSE when the shortcut
 // has no path (a target that is not a file system object, e.g. a server - the
 // caller may then ask for the ID list); a failure code otherwise. 'flags' are
 // the SLGP_xxx flags of IShellLink::GetPath.
+// Feature 305: an answer of MAX_PATH - 1 units or more (possibly cut by the shell) is returned
+// only when the link's item list proves it whole - then the whole name in the plain form;
+// otherwise HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE) ("too long", 'path' is ""). With
+// SLGP_RAWPATH such an answer is always refused: the raw text may hold environment strings, the
+// item list's name is not comparable with it.
 inline HRESULT SalShellLinkGetPathU8(IShellLinkW* link, char* path, int pathSize, DWORD flags)
 {
     if (path == NULL || pathSize <= 0)
@@ -52,10 +139,33 @@ inline HRESULT SalShellLinkGetPathU8(IShellLinkW* link, char* path, int pathSize
     {
         if (pathW[0] == 0)
             res = S_FALSE; // "no path" is reported as success with an empty string by some targets
-        else if (SalWToU8(pathW, -1, path, pathSize) == 0)
+        else
         {
-            path[0] = 0;
-            res = E_FAIL; // does not fit: refused, never cut
+            WCHAR* whole = NULL; // feature 305: the proven whole name of a possibly cut answer
+            if (wcslen(pathW) >= MAX_PATH - 1)
+            {
+                if ((flags & SLGP_RAWPATH) == 0)
+                {
+                    WCHAR* listName = NULL;
+                    PIDLIST_ABSOLUTE idList = NULL;
+                    if (link->GetIDList(&idList) == S_OK && idList != NULL)
+                    {
+                        if (FAILED(SHGetNameFromIDList(idList, SIGDN_FILESYSPATH, &listName)))
+                            listName = NULL;
+                        CoTaskMemFree(idList);
+                    }
+                    whole = SalShellLinkWholeTargetW(pathW, listName);
+                    CoTaskMemFree(listName);
+                }
+                if (whole == NULL)
+                    res = HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE); // possibly cut: refused
+            }
+            if (res == NOERROR && SalWToU8(whole != NULL ? whole : pathW, -1, path, pathSize) == 0)
+            {
+                path[0] = 0;
+                res = E_FAIL; // does not fit: refused, never cut
+            }
+            free(whole);
         }
     }
     free(pathW);
@@ -124,7 +234,8 @@ inline BOOL SalIsFolderShortcutIni(const char* buf, int len)
 // shortcut folder itself as the Browse result. COM must be initialised on the thread.
 // Returns NOERROR: 'target' holds the target; S_FALSE: not a folder shortcut, or its target.lnk is
 // missing, unreadable or names no file-system path ('target' is ""); ERROR_FILENAME_EXCED_RANGE (as
-// an HRESULT): a folder shortcut whose target does not fit - refuse it, never cut ('target' is "");
+// an HRESULT): a folder shortcut whose target does not fit, or (feature 305) cannot be read whole
+// - refuse it, never cut ('target' is "");
 // E_INVALIDARG / E_OUTOFMEMORY.
 inline HRESULT SalFolderShortcutTargetU8(const char* folderU8, char* target, int targetSize)
 {
@@ -184,7 +295,8 @@ inline HRESULT SalFolderShortcutTargetU8(const char* folderU8, char* target, int
                             res = E_OUTOFMEMORY;
                         else
                         {
-                            if (SalShellLinkGetPathU8(link, whole, SAL_MAX_PATH_UTF8, SLGP_UNCPRIORITY) == NOERROR)
+                            HRESULT got = SalShellLinkGetPathU8(link, whole, SAL_MAX_PATH_UTF8, SLGP_UNCPRIORITY);
+                            if (got == NOERROR)
                             {
                                 if (strlen(whole) < (size_t)targetSize)
                                 {
@@ -194,6 +306,8 @@ inline HRESULT SalFolderShortcutTargetU8(const char* folderU8, char* target, int
                                 else
                                     res = HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE);
                             }
+                            else if (got == HRESULT_FROM_WIN32(ERROR_FILENAME_EXCED_RANGE))
+                                res = got; // feature 305: a possibly cut target - refused, never the shortcut folder silently
                             free(whole);
                         }
                     }

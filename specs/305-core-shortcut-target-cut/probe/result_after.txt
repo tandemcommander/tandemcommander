@@ -1,0 +1,18 @@
+lnk305_probe (feature 305), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Fixture : E:\Projects\tandemcommander\build\tc305; volume without 8.3 names: True
+Date    : 2026-10-22 10:45; registry key existed True; export SHA-256 D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+
+ENTER-250  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER-250  TARGET PASS        target 250 units; panel before '...demcommander\build\tc305\links', after 250 units '...zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' = the target; windows: no window
+ENTER-300  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER-300  TARGET PASS        target 300 units; panel before '...demcommander\build\tc305\links', after 300 units '...zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' = the target; windows: no window
+ENTER-SEP  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER-SEP  TARGET PASS        target 300 units; panel before '...demcommander\build\tc305\links', after 300 units '...zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' = the target; windows: no window
+FOCUS-300  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FOCUS-300  TARGET PASS        target 300 units; panel before '...demcommander\build\tc305\links', after 300 units '...zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' = the target; windows: no window
+FOCUS-SEP  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FOCUS-SEP  TARGET PASS        target 300 units; panel before '...demcommander\build\tc305\links', after 300 units '...zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' = the target; windows: no window
+Registry: restored; identical=True; SHA-256 before D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F / after D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

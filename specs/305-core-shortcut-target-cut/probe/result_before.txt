@@ -1,0 +1,18 @@
+lnk305_probe (feature 305), expect: before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Fixture : E:\Projects\tandemcommander\build\tc305; volume without 8.3 names: True
+Date    : 2026-10-22 10:39; registry key existed True; export SHA-256 D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+
+ENTER-250  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER-250  TARGET PASS        target 250 units; panel before '...demcommander\build\tc305\links', after 250 units '...zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' = the target; windows: no window
+ENTER-300  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER-300  TARGET FAIL        target 300 units; panel before '...demcommander\build\tc305\links', after 45 units '...ojects\tandemcommander\build\tc305\links' = still the links folder; windows: [#32770 'Error'] [Static id=2477] The path or file name "E:\Projects\tandemcommander\build\tc305\enter-300\jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj\ jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj\jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj\pppppppppppppppppppppppppppppp\ zzzzzzzzzzzzzzzzzzzzzzzzzzzz" is invalid. | [Button id=1] OK
+ENTER-SEP  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ENTER-SEP  TARGET FAIL        target 300 units; panel before '...demcommander\build\tc305\links', after 259 units '...pppppppppppppppppppppppppppppppppppppppp' = the PARENT of the target (cut on a backslash); windows: no window
+FOCUS-300  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FOCUS-300  TARGET FAIL        target 300 units; panel before '...demcommander\build\tc305\links', after 45 units '...ojects\tandemcommander\build\tc305\links' = still the links folder; windows: [#32770 'Error'] [Static id=2477] Cannot obtain shortcut target or target path is not accessible. | [Button id=1] OK
+FOCUS-SEP  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FOCUS-SEP  TARGET FAIL        target 300 units; panel before '...demcommander\build\tc305\links', after 259 units '...pppppppppppppppppppppppppppppppppppppppp' = the PARENT of the target (cut on a backslash); windows: no window
+Registry: restored; identical=True; SHA-256 before D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F / after D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+
+Rows: PASS 6, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
