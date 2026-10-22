@@ -1,0 +1,7 @@
+Feature 244 probe perf-after-313-rerun; exe C:\Users\pavel\AppData\Local\Temp\tc313reltandemcommander\Release_x64\tandemcommander.exe; expect new; registry backup C:\Users\pavel\AppData\Local\Temp\tc244_backup.reg (existed True)
+export SHA-256 CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+hidden files shown: False (registry: HKEY_CURRENT_USER\Software\Tandem Commander\0.1\Configuration Hide Hidden and System Files and Directories REG_DWORD 0x1)
+P100000cz  TIME   FAIL        ms per character 338,28,17,19,16,15; Backspace 21,38,20,17,302; all items match 334,16,16,14,13; limit 300
+P100000cz  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+ROWS 2; FAIL 1

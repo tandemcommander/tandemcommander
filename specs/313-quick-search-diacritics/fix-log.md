@@ -92,3 +92,27 @@ diacritics.
   remark says the earlier search does not ignore accents. `CHANGELOG.md`: entry under 0.1.11.
   244 contract: a pointer to the 313 contract.
 - `python tools/check_encoding.py --strict`: TOTAL: 0 finding(s).
+
+## 2026-10-22 - timing (Release, scratch trees, 244 probe -Perf)
+
+- New build (`build.cmd release`, `OPENSAL_BUILD_DIR=%TEMP%\tc313rel`, BUILD SUCCEEDED),
+  `probe/result_perf_after.txt`: 10,000 ASCII 3-13 ms; 100,000 ASCII 9-14 ms, all-matching first
+  23 ms; 10,000 Czech 3-34 ms; 100,000 Czech typing 286 ms first, then 15-27 ms; all-matching
+  312 ms first, then 14-20 ms. The row is FAIL against the 244 probe's own 300 ms limit (the known
+  layout cost, `quick-search-first-keystroke-over-100-000-non-ascii-names`); rerun
+  (`result_perf_after_rerun.txt`): 338 ms first, then 15-28 ms.
+- To separate noise from a change: the baseline commit 9b79bd82 exported (`git archive`) and built
+  in `%TEMP%\tc313base` (BUILD SUCCEEDED), then base/new alternated, 100,000 Czech names
+  (`result_perf_ab1-base.txt` .. `ab4-new.txt`):
+
+| run | first char | next chars | Backspace | all-matching first / next |
+|---|---|---|---|---|
+| ab1 base | 329 | 17-29 | 19-38, 296 | 328 / 13-15 |
+| ab2 new | 292 | 16-27 | 18-38, 258 | 288 / 13-15 |
+| ab3 base | 293 | 17-28 | 18-38, 260 | 286 / 14 |
+| ab4 new | 292 | 16-28 | 17-38, 262 | 283 / 13-15 |
+
+- Result: no measurable change. Typing after the first keystroke 15-29 ms in both (<= 32 ms,
+  SC-003); the first keystroke varies 283-338 ms run to run in **both** builds (the panel layout);
+  the 38 ms second Backspace is present in the baseline as well. SC-003's 10 % bound holds against
+  the alternated baseline (292 vs 293-329).
