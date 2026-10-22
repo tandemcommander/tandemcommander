@@ -8,7 +8,7 @@ source: review:302
 who: agent
 created: 2026-10-22
 updated: 2026-10-22
-verified: -
+verified: 2026-10-22 17febaaf
 effort: M
 feature: -
 related: [ftp-server-path-compare-code-page-fold]
@@ -41,3 +41,4 @@ Severity 7 (data loss in a narrow scenario: a case-only name difference on a Win
 
 - 2026-10-22 — created (source review:302)
 - 2026-10-22 — moved to Next position 1
+- 2026-10-22 — verified at 17febaaf: reproduced at 17febaaf: hidden-desktop probe with ftpmini on NTFS - upload of B.txt sent STOR B.txt without the question, server b.txt replaced (also c-caron vs C-caron)
