@@ -86,15 +86,16 @@ disabled (negative control) no longer crashes.
 
 ---
 
-### User Story 3 - ZIP archives with the same name (Priority: P3)
+### User Story 3 - ZIP and 7-Zip archives with the same name (Priority: P3)
 
-**Independent Test**: probe row ZIP-TOOLONG (a ZIP made by Python `zipfile` with the 904-byte name
-and `ok.txt`): the program does not crash; `ok.txt` extracts.
+**Independent Test**: probe rows ZIP-TOOLONG (Python `zipfile`) and 7Z-TOOLONG (7-Zip), each with
+the 904-byte name and `ok.txt`: the program does not crash.
 
 **Acceptance Scenarios**:
 
-1. **Given** that ZIP, **When** opened and copied out, **Then** the program keeps running and
-   `ok.txt` is extracted.
+1. **Given** that ZIP or 7-Zip archive, **When** opened, **Then** the program keeps running;
+   whether `ok.txt` is listed depends on the plug-in's existing handling of a refused entry (the
+   ZIP plug-in skips it, feature 222) and is recorded, not changed by this feature.
 
 ### Edge Cases
 
@@ -150,6 +151,6 @@ and `ok.txt`): the program does not crash; `ok.txt` extracts.
 - Assumption (autonomous run): a plug-in that receives a failed addition already handles it (the
   interface documents that the addition "returns success" and that the caller frees the data on
   failure); no plug-in interface header changes.
-- Assumption (autonomous run): a 7-Zip archive with the 904-byte name cannot be made in the run
-  (no 7-Zip writer available); the ZIP row and the core rule cover the other plug-ins.
+- Assumption (autonomous run): the 7-Zip row's archive is made with the installed 7-Zip
+  (`7z.exe -si<name>`); without it the row is NOT DRIVEN.
 - No UI strings are added: the refusal message is the system's error text and an existing title.
