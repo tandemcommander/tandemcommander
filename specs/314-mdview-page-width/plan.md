@@ -62,7 +62,7 @@ src/plugins/mdview/
 ├── htmlgen.h / htmlgen.cpp   # MdPageWidth levels, MdPageWidthFromStored, article class, CSS rules
 ├── viewer.h / viewer.cpp     # PageWidth member, Page Width submenu, checks, command dispatch
 ├── mdview.h / mdview.cpp     # g_pageWidth, CONFIG_PAGEWIDTH load/save, CM_VIEW_WIDTH_* ids
-├── mdview.rh2                # IDS_MENU_VIEW_PAGEWIDTH + 4 level strings (free slots of bundle 126)
+├── mdview.rh2                # IDS_MENU_VIEW_PAGEWIDTH + 4 level strings (free slots of string block 127)
 ├── lang/lang.rc2             # the English texts
 └── IMPLEMENTATION_NOTES.md   # levels instead of the unwired toggle
 tests/mdview_htmlgen_test/test_main.cpp   # new assertions

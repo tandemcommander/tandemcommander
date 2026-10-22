@@ -16,4 +16,4 @@ Submenu title: string 2027 "Page &Width".
 - State: `g_pageWidth` (stored, used by windows opened later); `CViewerWindow::PageWidth`
   (the page of that window; checked item of its menu).
 - Transition: menu choice `i` != current -> both set to `i`, the window's page rebuilt;
-  `i` == current -> nothing.
+  `i` == current -> only the stored level is set to `i` (no rebuild).

@@ -687,13 +687,17 @@ void CViewerWindow::CycleScheme(int dir)
 
 // feature 314: View > Page Width. The page is rebuilt exactly as for a scheme
 // change (it opens at the top: scripts are off and the shared host has no
-// scroll position), so choosing the level already in use does nothing.
+// scroll position), so choosing the level already in use is not rebuilt - but it
+// is still the user's last choice for the windows opened next (review 1: another
+// window may have stored a different level meanwhile).
 void CViewerWindow::SelectPageWidth(int level)
 {
-    if (level < 0 || level >= MDPW_COUNT || level == PageWidth)
+    if (level < 0 || level >= MDPW_COUNT)
+        return;
+    g_pageWidth = level; // stored with the configuration; used by windows opened next
+    if (level == PageWidth)
         return;
     PageWidth = level;
-    g_pageWidth = level; // stored with the configuration; used by windows opened next
     RefreshSchemeChecks();
     Regenerate();
 }

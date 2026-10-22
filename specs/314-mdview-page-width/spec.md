@@ -98,7 +98,7 @@ today: the column limit is 46rem and the article carries no width class.
 ### Edge Cases
 
 - A stored width value that is not 0-3 (corrupt, written by a later version) reads as Normal.
-- A stored value of the wrong registry type is not read; Normal stays.
+- A stored value of the wrong registry type is not read: the core shows its existing "Error Loading Configuration - Unexpected value type." message (as for every plug-in value of the wrong type, e.g. ZoomPercent) and Normal stays.
 - Two viewer windows open: choosing a level in one rebuilds only that window; the other keeps its
   page and its own check mark until it is rebuilt or closed; documents opened afterwards use the
   last chosen level.

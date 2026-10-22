@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2026 Pavel Stupka
+// SPDX-FileCopyrightText: 2026 Pavel Stupka
 // SPDX-License-Identifier: GPL-2.0-or-later
 //
 // htmlgen.cpp - Markdown (UTF-8) -> HTML document, via md4c's SAX parser.

@@ -249,6 +249,10 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check the Markdown Viewer Page Width submenu on a real screen and in eight languages](items/check-the-markdown-viewer-page-width-submenu-on-a-real/desc.md) | person-step | 3 | other-plugins | leftover:314 | 2026-10-23 |
+| [Markdown Viewer: a scheme, width or View Source change shows the document from the top](items/markdown-viewer-a-scheme-width-or-view-source-change-shows/desc.md) | improvement | 3 | other-plugins | measure:314 | 2026-10-23 |
+| [The 081 Markdown Viewer probe takes a window with an empty title for the viewer](items/the-081-markdown-viewer-probe-takes-a-window-with-an-empty/desc.md) | tech-debt | 1 | tooling | review:314 | 2026-10-23 |
+| [The manual has no page for the Markdown Viewer](items/the-manual-has-no-page-for-the-markdown-viewer/desc.md) | improvement | 2 | help-docs | measure:314 | 2026-10-23 |
 
 ## Parked
 

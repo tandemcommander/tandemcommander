@@ -35,14 +35,15 @@
 ## R4 Per-window state
 
 - Decision: `CViewerWindow::PageWidth` is copied from `g_pageWidth` in the constructor; a choice
-  sets both and rebuilds only this window. Choosing the level already in use does nothing (no
-  needless jump to the top).
+  sets both and rebuilds only this window. Choosing the level already in use is not rebuilt (no
+  needless jump to the top) but is still stored as the last choice (review 1: another window may
+  have stored a different level meanwhile).
 - Rationale: the Clarifications; other windows are not moved.
 
 ## R5 Strings
 
 - Decision: ids 2027 (Page Width), 2028 (Normal), 2029 (Wide), 2016 (Wider), 2017 (Full Window) -
-  all in string bundle 126 (ids 2016-2031), which already holds the View menu texts.
+  all in string block 127 (ids 2016-2031; block = id / 16 + 1), which already holds the View menu texts.
 - Rationale: rule 084 - free slots of an existing bundle; no new bundle.
 - Consequence: `build.cmd full` fails for the enabled languages until the two-stage `.slt` refresh
   runs (rule 084); an autonomous run does not do that (stop-rules §3 #2) - precedent 312.

@@ -38,7 +38,7 @@ radio, two windows) left to the person check (quickstart §5).
 - `mdview.*`: `g_pageWidth`, `PageWidth` REG_DWORD load (through `MdPageWidthFromStored`, a
   failed read keeps Normal) and save beside `ZoomPercent`.
 - Strings 2027 (Page &Width), 2028 (&Normal), 2029 (&Wide), 2016 (Wi&der), 2017 (&Full Window):
-  free slots of bundle 126, which holds the View menu (rule 084).
+  free slots of string block 127 (ids 2016-2031), which holds the View menu (rule 084).
 - `IMPLEMENTATION_NOTES.md`: the levels instead of the unwired "full-width toggle".
 - CHANGELOG entry under 0.1.11 - unreleased.
 
@@ -67,7 +67,7 @@ radio, two windows) left to the person check (quickstart §5).
   have; with PageWidth of type REG_SZ the core shows its existing "Error Loading Configuration /
   Unexpected value type." box (the registry layer's answer to any value of the wrong type) before
   the viewer, which the probe took for the viewer. Fixed in the probe.
-- after: `probe/result_after.txt` - **PASS 14, FAIL 0, NOT DRIVEN 0**. PrintWindow
+- after (first build): **PASS 14, FAIL 0, NOT DRIVEN 0**; after review 1: see *Review*. PrintWindow
   (PW_RENDERFULLCONTENT) captures the WebView2 page on the hidden desktop. Text extents at 100 %
   in a 2284 px client: Normal 681 (allowed 680), Wide 968 (968), Wider 1385 (1384), Full Window
   2228 (2228, left 28 = the padding). Saved `PageWidth = 2 (DWORD)`; restart: Wider checked, the
@@ -79,9 +79,12 @@ radio, two windows) left to the person check (quickstart §5).
   (01-script-tag "3 viewers") - `probe/result_regress081.txt`.
 - HEAD build (plug-in sources stashed): **the same** - smoke 1/5 with the same messages, hostile
   8/9 with the same row - `probe/result_regress081_head.txt`. The probe's first view of each
-  session counts a window with an empty title on the hidden desktop (the 105 record: the WebView2
-  viewer rows behave differently there; 081 recorded its 24 checks on a visible desktop). No
-  regression; the visible-desktop run is owed to a person.
+  session takes a window with an empty title for the viewer (about 80 ms after F3). Identical
+  failures prove nothing either way (review 1, S3): `pw314_probe` reads the full title in its first
+  view on the same desktop, so the likely cause is a race in the 081 probe's `Open-File`, not the
+  desktop - Inbox `the-081-markdown-viewer-probe-takes-a-window-with-an-empty`. SC-004's 081 part
+  stays open; the visible-desktop run is owed to a person. The viewer itself is exercised by
+  `pw314_probe` (menu, every level rebuilt and measured, restart, View Source not driven).
 - Captures kept: `probe/shot_before_normal.png`, `shot_after_normal.png`, `shot_after_Wide.png`,
   `shot_after_Wider.png`, `shot_after_FullWindow.png` - in Full Window the 24-column table of the
   fixture is shown whole, with no horizontal scroll bar.
@@ -94,3 +97,75 @@ radio, two windows) left to the person check (quickstart §5).
   radio bullet in dark menus, two viewer windows open, the eight languages after the refresh, and
   feature 081's `mdview_probe.ps1 -Scenario all` (it fails its first view on the hidden desktop on
   HEAD as well).
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST**. It re-ran the harness (53/0), the build,
+the guard, and a negative control of its own (`RebuildHtml` forced to Normal -> W-WIDE / W-WIDER /
+W-FULL FAIL at 681 px; restored, registry identical).
+
+- S1 (fixed): `SelectPageWidth` returned before storing when the chosen level was already the
+  window's own - with two windows (A -> Wide, then B -> Normal, already B's) the stored level
+  stayed Wide against the spec's "documents opened afterwards use the last chosen level". Now the
+  stored level is set first, only the rebuild is skipped. Probe row **TWOWIN** added: after
+  `PASS` (stored 0); negative control (the committed viewer.cpp of 67d1e782 built and probed):
+  **TWOWIN FAIL, stored 1** - PASS 15, FAIL 1; then rebuilt with the fix.
+- S2 (done): the Inbox items the spec promised were not filed yet - now
+  `markdown-viewer-a-scheme-width-or-view-source-change-shows` (reading position across every
+  rebuild; needs the shared host; the cheap find-fragment step noted there) and
+  `the-manual-has-no-page-for-the-markdown-viewer`. The reading-position deviation from the item's
+  *Expected* is named in the stop record for the maintainer.
+- S3 (done): the 081 regression wording corrected (above); Inbox item for the 081 probe.
+- Notes: the REG_SZ case shows the core's existing "Unexpected value type." box (as for
+  `ZoomPercent`) - spec edge case reworded to say so; the RESTART row now also checks the Wider
+  width itself, not only against the earlier measurement; the "bundle 126" comment corrected to
+  string block 127 (ids 2016-2031); a stray UTF-8 BOM my negative-control restore had added to
+  `htmlgen.cpp` removed (the file is as on `main` at its first line again).
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; harness 53/0; guard TOTAL 0;
+`probe/result_after.txt` **PASS 16, FAIL 0, NOT DRIVEN 0** (registry restored, identical
+SHA-256 CF69145A...). No MUST -> no second review needed.
+
+## Stopped (autonomous run, 2026-10-23)
+
+Everything the item asks is implemented and verified on this branch except the translations: the
+feature adds five UI strings, so the two-stage `.slt` refresh (rule 084) is required, and an
+autonomous run does not do it (stop-rules §3 #2). Measured: `.\build.cmd full` fails for all eight
+languages (`<language>/mdview: import failed`). The run stops before closing the item.
+
+Deviations from the item's *Expected* the maintainer should accept or reject when finishing:
+- Reading position: a width change shows the document from the top, as a scheme change does
+  today (measured by reading: scripts off, no scroll API in the shared host; the item's note keeps
+  the change out of `src/common/webhost/`). Recorded as
+  `markdown-viewer-a-scheme-width-or-view-source-change-shows`.
+- Manual: there is no Markdown Viewer page to extend - `the-manual-has-no-page-for-the-markdown-viewer`.
+- 081 probe: fails on HEAD the same way - `the-081-markdown-viewer-probe-takes-a-window-with-an-empty`.
+
+What the maintainer does to finish (in this order):
+1. On this branch: the two-stage `.slt` refresh for the mdview module (strings 2027 "Page &Width",
+   2028 "&Normal", 2029 "&Wide", 2016 "Wi&der", 2017 "&Full Window"), `--templates` as in rule
+   084; pin texts in `translations/ui-overrides.json` if DeepL drifts; `.\build.cmd full` ->
+   BUILD SUCCEEDED.
+2. Close the item as SKILL.md step 8 does: `BL remove mdview-page-width-levels --feature 314`, the
+   FEATURE-HISTORY entry below (index row "WebView2 viewers (Markdown, Code)": add 314), a closing
+   report; the CHANGELOG entry is already under 0.1.11 - unreleased.
+3. The person step `check-the-markdown-viewer-page-width-submenu-on-a-real`.
+4. `git merge --ff-only 314-mdview-page-width` (or a merge) into main.
+
+Draft FEATURE-HISTORY entry:
+
+- 314-mdview-page-width: the Markdown Viewer kept every document in a 46rem column (about 736 px,
+  80-90 characters a line) - a wider window only added margins, wide tables and code scrolled
+  inside the column, zoom scaled both - now View > Page Width (after Color Scheme) offers Normal
+  46rem (the default, the page of before byte for byte apart from two added CSS rules), Wide
+  64rem, Wider 90rem, Full Window (no limit, the padding stays), radio-checked, applied at once
+  (also in View Source) and stored as `PageWidth` 0-3 beside `ZoomPercent` (unknown -> Normal).
+  The width is per window; a choice also sets the stored level, even when it is the window's
+  own (review 1: two windows). Traps: a rebuild opens the page at the top (scripts off, no scroll
+  API in the shared host - a scheme change does the same; Inbox item); PrintWindow
+  (PW_RENDERFULLCONTENT) does capture the WebView2 page on the hidden desktop - the probe measures
+  the text column (681 / 968 / 1385 / 2228 px in a 2284 px client); a wrong-typed value shows the
+  core's "Unexpected value type." box; the 081 `mdview_probe.ps1` fails its first view on the
+  hidden desktop on HEAD as well (Inbox). From backlog item `mdview-page-width-levels`. Probe
+  `pw314_probe` 5/5 FAIL before -> 16/0; harness 38 -> 53/0 (negative controls fail); one
+  refute-first review (no MUST; S1 fixed).

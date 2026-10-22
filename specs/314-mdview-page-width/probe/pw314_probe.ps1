@@ -282,6 +282,9 @@ try {
         if ($w -ne [IntPtr]::Zero) {
             $ms = Shot $w 'restart'
             $ok = ($m -ne [IntPtr]::Zero) -and ((CheckedIds $m) -eq '222')
+            # review 1: the page itself must have the Wider column, not only the menu check
+            $scale = [Pw314]::GetDpiForWindow($w) / 96.0
+            if ((Extent $ms) -gt 0) { $ok = $ok -and ((Width-Verdict 2 $ms $scale (Inner 1 $scale (ClientW $ms))) -eq 'PASS') }
             if ($wider -gt 0 -and (Extent $ms) -gt 0) { $ok = $ok -and ([Math]::Abs((Extent $ms) - $wider) -le 4) }
             Row 'RESTART' 'RUN' (V $ok) ("checked {0}; extent {1}; Wider before {2}" -f $(if ($m -ne [IntPtr]::Zero) { CheckedIds $m } else { '-' }), $ms, $wider)
             Close-View $w
@@ -289,6 +292,34 @@ try {
     }
     catch { Row 'SECOND' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row 'SECOND' $id $null $before } }
+
+    # review 1 (S1): two windows A and B at Normal; A chooses Wide (stored Wide), then B chooses
+    # Normal - already its level, so B is not rebuilt, but Normal is the last choice and is stored
+    Set-Md 'REG_DWORD' '0'
+    $id = 0; $before = Reports
+    try {
+        $id = Start-Tc $Files
+        [void](Serve $id 10)
+        $a = Open-View $id
+        $b = [IntPtr]::Zero; if ($a -ne [IntPtr]::Zero) { $b = Open-View $id }
+        if ($a -eq [IntPtr]::Zero -or $b -eq [IntPtr]::Zero -or $a -eq $b) { Row 'TWOWIN' 'RUN' 'NOT DRIVEN' ('two viewer windows not opened: ' + $script:NotMd) }
+        else {
+            $ma = [Pw314]::PopupWith($a, 220); $mb = [Pw314]::PopupWith($b, 220)
+            Post-Cmd $a 221
+            Start-Sleep -Milliseconds 2500
+            Post-Cmd $b 220
+            Start-Sleep -Milliseconds 1500
+            $ca = CheckedIds $ma; $cb = CheckedIds $mb
+            Close-View $b; Close-View $a
+            $script:TwoWin = ("A checked {0}; B checked {1}" -f $ca, $cb)
+        }
+    }
+    catch { Row 'TWOWIN-RUN' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row 'TWOWIN-RUN' $id $null $before } }
+    if ($script:TwoWin) {
+        $v = Reg-Width
+        Row 'TWOWIN' 'RUN' (V (($v -eq '0 (DWORD)') -and ($script:TwoWin -eq 'A checked 221; B checked 220'))) ("{0}; stored after exit PageWidth = {1} (want 0: the last choice)" -f $script:TwoWin, $v)
+    }
 
     foreach ($case in @(@('UNKNOWN', 'REG_DWORD', '7'), @('WRONGTYPE', 'REG_SZ', '2'))) {
         Set-Md $case[1] $case[2]
