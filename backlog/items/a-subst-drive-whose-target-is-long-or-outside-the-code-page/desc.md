@@ -1,16 +1,16 @@
 ---
 title: A subst drive whose target is long or outside the code page resolves to a cut or code-page path
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: long-paths
 source: review:289
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-10-22
+verified: 2026-10-22 0f7bd140
 effort: M
-feature: -
+feature: 301
 related: []
 depends-on: []
 reason: -
@@ -64,3 +64,5 @@ other callers never work with a cut or '?' path (CLAUDE.md: a path is never cut)
 
 - 2026-10-21 — created (source review:289)
 - 2026-10-21 — moved to Next position 7
+- 2026-10-22 — verified at 0f7bd140: reproduced at 0f7bd140: subst Z: to an 80-CJK folder (282 UTF-8 bytes) - F8 on junction J asks to delete directory J, Drive Information type line empty; ASCII and over-MAX_PATH controls pass
+- 2026-10-22 — run started, feature 301
