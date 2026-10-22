@@ -11,7 +11,7 @@ changing command of the tool runs it). Manage the backlog with
 Formats: `specs/242-backlog-system/contracts/`. Runs: `RUNS.md`. Release
 procedure: `RELEASE.md`.
 
-Last triaged: 2026-10-22
+Last triaged: 2026-10-23
 
 ## In progress
 
@@ -243,12 +243,12 @@ Last triaged: 2026-10-22
 | 66 | [PictView: check the Exif information menu item is offered only for photos with Exif](items/pictview-check-the-exif-information-menu-item-is-offered/desc.md) | pictview | open |
 | 67 | [Information line of a long-named item: check it on screen (276)](items/information-line-of-a-long-named-item-check-it-on-screen-276/desc.md) | panels-ui | open |
 | 68 | [Share root way up (284) by hand: drop onto .., a real server, Esc in the wait](items/share-root-up-284-person-rows/desc.md) | panels-ui | open |
+| 69 | [Quick search ignoring accents: check with a real keyboard](items/quick-search-ignoring-accents-check-with-a-real-keyboard/desc.md) | panels-ui | open |
 
 ## Inbox
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
-| [Quick search ignoring accents: check with a real keyboard](items/quick-search-ignoring-accents-check-with-a-real-keyboard/desc.md) | person-step | 2 | panels-ui | leftover:313 | 2026-10-23 |
 
 ## Parked
 

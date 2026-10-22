@@ -1,7 +1,7 @@
 ---
 title: Quick search ignoring accents: check with a real keyboard
 type: person-step
-status: new
+status: open
 severity: 2
 area: panels-ui
 source: leftover:313
@@ -48,3 +48,4 @@ Each step below gives the stated result on a build that contains feature 313, wi
 ## Log
 
 - 2026-10-23 — created (source leftover:313)
+- 2026-10-23 — moved to Person steps
