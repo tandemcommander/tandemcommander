@@ -158,6 +158,7 @@ void SCommonHeader::Initialize()
     MTime.Set(0, 0);
     MTimeFrac = 0;
     NameFromPax = FALSE;
+    NameFromGnuLong = FALSE;
     Format = e_Unknown;
     IsExtendedTar = FALSE;
 }
@@ -1153,8 +1154,10 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     // deeper than the panel listing holds (a folder part or a folder name over MAX_PATH - 5 bytes:
     // the listing would fail as a whole), is refused - not listed, not extracted, never shortened
     // or replaced by the ustar fallback name (the whole name of such a member crashed the listing,
-    // measured with a GNU long name); the rest of the archive stays usable
-    if (header.NameFromPax && !SalPaxNameFitsListingU8(header.Name, header.IsDir != FALSE, ListingPrefixLen))
+    // measured with a GNU long name); the rest of the archive stays usable; feature 307: the same for
+    // a GNU long name (300 CJK letters crashed the panel; a deep folder part failed the whole listing)
+    if ((header.NameFromPax || header.NameFromGnuLong) &&
+        !SalPaxNameFitsListingU8(header.Name, header.IsDir != FALSE, ListingPrefixLen))
     {
         header.Ignored = TRUE;
         if (ReportRefusedNames && !RefusedNameShown)
@@ -1651,7 +1654,10 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
             }
             // terminate with a null character...
             if (typeFlag == GNUTYPE_LONGNAME)
+            {
                 *(header.Name + offs) = '\0';
+                header.NameFromGnuLong = TRUE; // feature 307: not bounded like a ustar name
+            }
             // and read the next block for further processing
             tarHeader = (const TTarBlock*)Stream->GetBlock(BLOCKSIZE);
             if (tarHeader == NULL)

@@ -1,0 +1,13 @@
+tar307_probe (feature 307) negctl-tar-refusal-off
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 13:06; registry key existed True; ACP 1250; python Python 3.14.6
+
+GNU-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GNU-TOOLONG RUN    FAIL        the archive did not open; panel at: C:\Users\pavel\AppData\Local\Temp; at open: [#32770 'TAR Plugin Error'] [Static id=2477] Internal error: file data structure corrupted. | [Button id=1] OK
+GNU-DEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GNU-DEEP   RUN    FAIL        the archive did not open; panel at: C:\Users\pavel\AppData\Local\Temp; at open: [#32770 'TAR Plugin Error'] [Static id=2477] Internal error: file data structure corrupted. | [Button id=1] OK
+GNU-255DIR END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GNU-255DIR RUN    FAIL        the archive did not open; panel at: C:\Users\pavel\AppData\Local\Temp; at open: [#32770 'TAR Plugin Error'] [Static id=2477] Internal error: file data structure corrupted. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 3, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -24,4 +24,4 @@ Acceptance (`src/common/sallistingname.h`):
 | `NameFromPax` (306) | a PAX `path` became the name | `SalPaxNameFitsListingU8` check, refusal |
 | `NameFromGnuLong` (307) | a GNU `L` header supplied the name | the same check and refusal |
 
-Both reset in `SCommonHeader::Reset` (every member).
+Both reset in `SCommonHeader::Initialize` (start of every `ReadArchiveHeader`).

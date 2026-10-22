@@ -65,7 +65,7 @@ specs/307-tar-long-component/
 src/common/sallistingname.h      new: SalListingAcceptsFileU8 / SalListingAcceptsDirU8
 src/zip.cpp                      AddFile / AddDir use the rule (path == NULL no longer bypasses it)
 src/plugins/tar/tar.h            SCommonHeader::NameFromGnuLong
-src/plugins/tar/untar.cpp        GNU 'L' branch sets the flag; ReadArchiveHeader's refusal covers it; Reset
+src/plugins/tar/untar.cpp        GNU 'L' branch sets the flag; ReadArchiveHeader's refusal covers it; Initialize
 src/saltests/saltests.cpp        checks of the rule
 ```
 

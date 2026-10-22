@@ -37,7 +37,9 @@ extern "C"
 #include "crypt\sha1.h"
 #include "pwdmngr.h"
 #include "themes.h"
-#include "salmaskname.h" // feature 222: SalNameTooLongForFileSystemU8
+#include "salmaskname.h"    // feature 222: SalNameTooLongForFileSystemU8
+#include "sallistingname.h" // feature 307: SalListingAcceptsFileU8 / SalListingAcceptsDirU8
+static_assert(SAL_LISTING_NAME_MAX_BYTES == SAL_FIND_NAME_U8, "the listing bound is the panel's name buffers");
 
 CPackerConfig PackerConfig;
 CUnpackerConfig UnpackerConfig;
@@ -6088,12 +6090,12 @@ BOOL CSalamanderDirectory::AddFile(const char* path, CFileData& file, CPluginDat
 {
     CALL_STACK_MESSAGE_NONE // time-critical method
 
-        int pathLen = 0;
+        int pathLen = path != NULL ? (int)strlen(path) : 0;
     // feature 222: a name up to 255 UTF-16 units (interface 104 - it was 255 BYTES: an archive with a
-    // member of 86+ CJK letters could not be opened at all); the path part keeps its MAX_PATH - 5
-    if (path != NULL && ((pathLen = (int)strlen(path)) > MAX_PATH - 5 ||
-                         (file.NameLen > MAX_PATH - 5 &&
-                          (file.NameLen >= SAL_FIND_NAME_U8 || SalNameTooLongForFileSystemU8(file.Name)))))
+    // member of 86+ CJK letters could not be opened at all); the path part keeps its MAX_PATH - 5;
+    // feature 307: with no path (file-system plug-ins, an archive's root) a name below the panel's
+    // SAL_FIND_NAME_U8-byte buffers - it skipped every bound and overflowed them (sallistingname.h)
+    if (!SalListingAcceptsFileU8(path, pathLen, file.Name, file.NameLen))
     {
         TRACE_E("Too long path or file name!");
         return FALSE;
@@ -6193,8 +6195,9 @@ BOOL CSalamanderDirectory::AddDir(const char* path, CFileData& dir, CPluginDataI
 
         // feature 222: a FOLDER keeps the 255-byte name - its contents' path part is limited to
         // MAX_PATH - 5 bytes, a longer folder could be listed but never filled (a partial listing;
-        // a delete of members never shown)
-        if (path != NULL && (strlen(path) > MAX_PATH - 5 || dir.NameLen > MAX_PATH - 5))
+        // a delete of members never shown); feature 307: with no path a name below the panel's
+        // SAL_FIND_NAME_U8-byte buffers (sallistingname.h)
+        if (!SalListingAcceptsDirU8(path, path != NULL ? strlen(path) : 0, dir.NameLen))
     {
         TRACE_E("Too long path or file name!");
         return FALSE;

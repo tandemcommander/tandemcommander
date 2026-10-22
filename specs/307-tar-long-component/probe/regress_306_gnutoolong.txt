@@ -1,0 +1,9 @@
+pax306_probe (feature 306) regress-307
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 13:01; registry key existed True; ACP 1250; python Python 3.14.6
+
+GNU-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GNU-TOOLONG RUN    PASS        tgt: empty; at open: ...B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: [#32770 'Information'] [Static id=2477] No matches found. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

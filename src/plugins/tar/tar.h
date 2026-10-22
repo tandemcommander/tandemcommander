@@ -261,8 +261,9 @@ struct SCommonHeader
     char* Name;
     CQuadWord Mode;
     CQuadWord MTime;
-    DWORD MTimeFrac;  // feature 306: 100-ns part of a PAX mtime, added after the FILETIME conversion
-    BOOL NameFromPax; // feature 306: Name is a PAX 'path' (a component no file system takes is refused)
+    DWORD MTimeFrac;      // feature 306: 100-ns part of a PAX mtime, added after the FILETIME conversion
+    BOOL NameFromPax;     // feature 306: Name is a PAX 'path' (a component no file system takes is refused)
+    BOOL NameFromGnuLong; // feature 307: Name is a GNU long name ('L') - the same refusal as a PAX path
 };
 
 class CArchiveAbstract
