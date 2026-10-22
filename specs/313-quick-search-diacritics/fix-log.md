@@ -170,3 +170,14 @@ After the fixes:
   `-Expect off -FilterOption 0` 30 rows, 0 FAIL, D09/D10 identical to before; 244 probe new 45/0,
   old+off 45/0, both identical to 244's records. Registry restored identical every run.
 - `check_encoding --strict`: TOTAL: 0.
+- Timing after the review fixes (scratch Release rebuilt, BUILD SUCCEEDED; 244 probe `-Perf -Only
+  P100000`, alternated, all PASS, registry identical; `probe/result_perf_ab5-new.txt` .. `ab7-new.txt`):
+
+| run | 100,000 ASCII: chars / all-matching first | 100,000 Czech: first, next chars | Czech all-matching first / next |
+|---|---|---|---|
+| ab5 new | 9-21 / 24 | 286, 15-27 | 286 / 12-15 |
+| ab6 base | 9-20 / 24 | 287, 17-28 | 286 / 12-14 |
+| ab7 new | 9-21 / 24 | 287, 15-30 | 287 / 12-16 |
+
+  No measurable difference from the baseline (SC-003 holds).
+- Header comment wording: "nonspacing marks" (was "combining marks").

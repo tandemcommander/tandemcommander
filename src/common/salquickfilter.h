@@ -30,7 +30,7 @@
 // not, is matched by comparing KEYS (SalQFBuildKey): the name and each literal
 // segment of the mask, canonically decomposed (NFD) and lower-cased, one key
 // unit remembering the byte offset of the name's character it comes from.
-// Feature 313: the keys ignore diacritics in both directions - the combining
+// Feature 313: the keys ignore diacritics in both directions - the nonspacing
 // marks of the Latin, Greek and Cyrillic diacritical-mark blocks are dropped
 // (U+0300-036F, 1AB0-1AFF, 1DC0-1DFF, 20D0-20FF, FE20-FE2F; marks of other
 // scripts, e.g. the Japanese voiced mark or a virama, stay) and a few letters
