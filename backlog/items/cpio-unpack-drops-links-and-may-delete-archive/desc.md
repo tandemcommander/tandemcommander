@@ -1,7 +1,7 @@
 ---
 title: Unpacking a cpio or rpm leaves links out silently and may delete the archive
 type: bug
-status: open
+status: in-progress
 severity: 6
 area: archives
 source: measure:309
@@ -10,7 +10,7 @@ created: 2026-10-22
 updated: 2026-10-22
 verified: 2026-10-22 47eb6b83
 effort: M
-feature: -
+feature: 310
 related: [a-cpio-or-rpm-archive-with-a-member-name-the-panel-cannot]
 depends-on: []
 reason: -
@@ -40,3 +40,4 @@ Severity from the tar case (7), one lower because not verified.
 - 2026-10-22 — created (source measure:309)
 - 2026-10-22 — moved to Next position 2
 - 2026-10-22 — verified at 47eb6b83: reproduced at 47eb6b83 by a hidden-desktop probe (cpio310_probe, newc/crc/odc fixtures): symlink dropped silently and archive deleted; newc and crc hard-linked names extracted empty; 13 PASS / 7 FAIL
+- 2026-10-22 — run started, feature 310
