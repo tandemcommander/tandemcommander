@@ -1,7 +1,7 @@
 ---
 title: Drive Information turns a volume label outside the code page into question marks
 type: bug
-status: new
+status: open
 severity: 5
 area: encoding
 source: review:300
@@ -60,3 +60,4 @@ person's check. Related to the closed item `volume-label-written-through-ansi-ap
 ## Log
 
 - 2026-10-22 — created (source review:300)
+- 2026-10-22 — moved to Next position 10

@@ -1,7 +1,7 @@
 ---
 title: Check a volume label with accented letters written by Drive Information (300)
 type: person-step
-status: new
+status: open
 severity: 4
 area: encoding
 source: leftover:300
@@ -52,3 +52,4 @@ clearing the field removes the label, as before.
 ## Log
 
 - 2026-10-22 — created (source leftover:300)
+- 2026-10-22 — moved to Person steps position 17
