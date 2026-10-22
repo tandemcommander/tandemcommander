@@ -133,7 +133,8 @@ M1 (the 0.1.10 rule) unchanged.
 - **FR-003**: The new mode MUST fold these letters, in either case, to the given letters:
   `ł` U+0142 / `Ł` U+0141 -> `l`; `ø` U+00F8 / `Ø` U+00D8 -> `o`; `đ` U+0111 / `Đ` U+0110 -> `d`;
   `ß` U+00DF / `ẞ` U+1E9E -> `ss`; `æ` U+00E6 / `Æ` U+00C6 -> `ae`; `œ` U+0153 / `Œ` U+0152 -> `oe`;
-  `ı` U+0131 -> `i`. No other letter is folded.
+  `ı` U+0131 -> `i`. No other letter is folded. The folding applies to the name and to the typed
+  text alike (typing `ß` finds `ss`, typing `ss` finds `ß`).
 - **FR-004**: A match MUST start and end on character boundaries of the name; combining marks
   that follow the last matched letter belong to the match.
 - **FR-005**: The focused item's match (its start, end and the caret) and the Right-arrow
@@ -146,7 +147,8 @@ M1 (the 0.1.10 rule) unchanged.
 - **FR-009**: Names with invalid UTF-8 bytes or WTF-8 lone surrogates MUST be handled without a
   crash or a read outside the name, as in 244.
 - **FR-010**: The manual's quick search page MUST say that accents are ignored (with an example)
-  in the new mode.
+  in the new mode, and its remark on the option switched off MUST say that the earlier search does
+  not ignore accents.
 - **FR-011**: The decisions MUST be covered by saltests cases: each table letter, NFC and NFD names,
   masks with and without marks, a lone combining mark, a lone surrogate, the kept non-Latin marks,
   and the existing 244 cases adjusted only where the folding changes the answer.
@@ -197,3 +199,7 @@ M1 (the 0.1.10 rule) unchanged.
   decision, "not now").
 - The related item `quick-search-keys-skip-canonical-reordering-of-combining` is removed for the
   marks of FR-001 by this feature; for marks of other scripts it still applies and stays open.
+- Q: Does the folding table apply to the typed text as well as to the names? → A: Yes, in both
+  directions (autonomous run: item - the maintainer's decision "ignored symmetrically").
+- Q: Should the manual say that the option-off search keeps accents? → A: Yes, one clause in the
+  existing remark about the option (autonomous run: conservative - documents unchanged behaviour).
