@@ -24,6 +24,16 @@ not masked when Create Directory names a folder outside the panel's folder (for 
 path typed into F7): only the cache knows of that folder's listing, and an upload into it keeps
 believing the new folder does not exist.
 
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: Should the fix also change how the cache reacts to a rename whose new name holds a path
+  (today only the panel folder's listing is invalidated), or guard the server identification
+  against another swap (a server-key type instead of three loose arguments)? → A: No - only the
+  four calls get the arguments in the declared order; the cache's reactions and the signatures of
+  the 30+ other callers stay as they are (autonomous run: conservative).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A folder created from the panel is known to a running upload (Priority: P1)
