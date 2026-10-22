@@ -27,6 +27,9 @@ holding a.k and a.kp), 3 rows FAIL:
 - mask-cjk: mask of 85 CJK letters + ";*.kp" (260 bytes) cut to "...;*.k": a.k unpacked instead of
   a.kp.
 Controls (a mask of 259 bytes, a path of 255 bytes) were accepted and unpacked as typed.
+Added after analyze (row `both`: both fields too long, "Delete archive after unpacking" checked):
+only a.k unpacked into the cut folder and **the archive deleted** - a.kp, the file the typed mask
+named, was lost with it.
 
 ## Clarifications
 

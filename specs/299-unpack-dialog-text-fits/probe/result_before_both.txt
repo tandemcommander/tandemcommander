@@ -1,0 +1,10 @@
+unpack299_probe (feature 299) before-both
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 05:47; ACP 1250; registry key existed True
+R = 85 CJK letters (255 bytes); fixture C:\Users\pavel\AppData\Local\Temp\tc299_unp
+
+both       RUN    FAIL        field 210 typed 126 units / 262 bytes (path was 0 bytes, mask '*.*'); dialog stayed: False; at the refusal: (not read); asked: nothing; under tgt: ...(75 units) ...\u4EB4\u4EB5\u4EB6\u4EB7\u4EB8\u4EB9\u4EBA\u4EBB\u4EBC\u4EBD\u4EBE\u4EBF\u4EC0\u4EC1\u4EC2\u4EC3\u4EC4x\a.k=K; a.zip kept: False
+both       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

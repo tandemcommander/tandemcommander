@@ -17,6 +17,9 @@
                   PASS = refused, the field whole, nothing under tgt
       mask-cjk    path T + "m", mask R + ";*.kp" (260 bytes): cut to R;*.k - a.k unpacked instead of
                   a.kp. PASS = refused, the mask field whole, nothing under tgt
+      both        path as path-cjk, mask as mask-cjk, "Delete archive after unpacking" (6210) checked:
+                  PASS = refused for the path field (the first), nothing under tgt, a.zip kept
+                  (every refuse row also requires a.zip kept)
       ctl         the control: path T + "c", mask R + ";*.k" (259 bytes, fits): accepted, nothing
                   asked, tgt\c holds a.k only
       ctl-path    the control at the path limit: path P255 (fits), mask "*.k": accepted, nothing
@@ -158,6 +161,11 @@ function Unpack-Row([string]$Case, [scriptblock]$Texts, [int]$Field, [string[]]$
         $wasPath = Get-Field $dlg 210; $wasMask = Get-Field $dlg 521
         if ($null -ne $t.Path) { Set-Field $dlg 210 $t.Path }
         if ($null -ne $t.Mask) { Set-Field $dlg 521 $t.Mask }
+        if ($t.DeleteArc) {
+            $b = Find-Btn $dlg 6210
+            if (-not $b -or -not [Drv098f]::IsWindowEnabled($b)) { throw 'the box "Delete archive after unpacking" (6210) is missing or disabled' }
+            [void][Drv098f]::Send($b, 0x00F1, 1, 0, 5000)   # BM_SETCHECK BST_CHECKED
+        }
         $typed = $(if ($Field -eq 521) { $t.Mask } else { $t.Path })
         Click-Ok $dlg
         Start-Sleep -Milliseconds 800
@@ -174,12 +182,13 @@ function Unpack-Row([string]$Case, [scriptblock]$Texts, [int]$Field, [string[]]$
         }
         Start-Sleep -Milliseconds 500
         $files = @(Under ($d + '\tgt'))
+        $arcKept = [IO.File]::Exists($LP + $d + '\src\a.zip')
         $shown = Shown $r
         if ($Fits) { $verdictOk = (-not $stayed) -and ($shown -eq 'nothing') -and ((($files | Sort-Object) -join '|') -ceq (($Expect | Sort-Object) -join '|')) }
-        else { $verdictOk = $stayed -and ($shown -match $TooLong) -and ($atRefusal -ceq $typed) -and ($files.Count -eq 0) }
+        else { $verdictOk = $stayed -and ($shown -match $TooLong) -and ($atRefusal -ceq $typed) -and ($files.Count -eq 0) -and $arcKept }
         $ok = (-not $fatal) -and (-not $r.TimedOut) -and $verdictOk
         $atText = $(if ($null -ne $atRefusal) { "{0} units, whole: {1}" -f $atRefusal.Length, ($atRefusal -ceq $typed) } else { '(not read)' })
-        Row $Case 'RUN' (V $ok) ("field {0} typed {1} units / {2} bytes (path was {3} bytes, mask '{4}'); dialog stayed: {5}; at the refusal: {6}; asked: {7}; under tgt: {8}{9}" -f $Field, $typed.Length, (U8 $typed), (U8 $wasPath), (Esc $wasMask), $stayed, $atText, $shown, $(if ($files.Count) { ($files | ForEach-Object { Short-Rel $_ }) -join ', ' } else { 'nothing' }), $(if ($r.TimedOut) { '; TIMED OUT' } else { '' }))
+        Row $Case 'RUN' (V $ok) ("field {0} typed {1} units / {2} bytes (path was {3} bytes, mask '{4}'); dialog stayed: {5}; at the refusal: {6}; asked: {7}; under tgt: {8}; a.zip kept: {9}{10}" -f $Field, $typed.Length, (U8 $typed), (U8 $wasPath), (Esc $wasMask), $stayed, $atText, $shown, $(if ($files.Count) { ($files | ForEach-Object { Short-Rel $_ }) -join ', ' } else { 'nothing' }), $arcKept, $(if ($r.TimedOut) { '; TIMED OUT' } else { '' }))
     }
     catch {
         Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace)
@@ -204,6 +213,7 @@ try {
     Unpack-Row 'path-cjk' { param($T) @{ Path = ((Pad-Cjk $T 258) + '\sub'); Mask = $null } } 210 @()
     Unpack-Row 'path-ascii' { param($T) @{ Path = ((Pad-Ascii $T 258) + '\sub'); Mask = $null } } 210 @()
     Unpack-Row 'mask-cjk' { param($T) @{ Path = ($T + 'm'); Mask = ($R + ';*.kp') } } 521 @()
+    Unpack-Row 'both' { param($T) @{ Path = ((Pad-Cjk $T 258) + '\sub'); Mask = ($R + ';*.kp'); DeleteArc = $true } } 210 @()
     Unpack-Row 'ctl' { param($T) @{ Path = ($T + 'c'); Mask = ($R + ';*.k') } } 521 @('c\a.k=K') -Fits
     Unpack-Row 'ctl-path' { param($T) $p = Pad-Cjk $T 255; @{ Path = $p; Mask = '*.k'; Expect = @($p.Substring($T.Length) + '\a.k=K') } } 210 @() -Fits
 }

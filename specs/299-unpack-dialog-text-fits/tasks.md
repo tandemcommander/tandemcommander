@@ -32,8 +32,8 @@ the existing `DlgItemTextFitsU8`).
 ## Phase 5: Polish & verification
 
 - [ ] T005 `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`
-- [ ] T006 PowerShell `.\build.cmd` -> `BUILD SUCCEEDED`; `build\tandemcommander\Debug_x64\saltests\saltests.exe` -> `0 failed`
-- [ ] T007 Run the probe after the fix (quickstart step 2) -> `specs/299-unpack-dialog-text-fits/probe/result_after.txt`: every row PASS, registry restored identical
+- [ ] T006 PowerShell `.\build.cmd` -> `BUILD SUCCEEDED`; `build\tandemcommander\Debug_x64\saltests\saltests.exe` -> `0 failed`; `git diff main -- src/lang` empty (no new string, FR-005)
+- [ ] T007 Run the probe after the fix (quickstart step 2) -> `specs/299-unpack-dialog-text-fits/probe/result_after.txt`: every row PASS, registry restored identical; first add the row `both` to `specs/299-unpack-dialog-text-fits/probe/unpack299_probe.ps1` (path and mask too long, "Delete archive after unpacking" checked: refused for the path field, a.zip kept, nothing under tgt) and run it on the build before the fix too (analyze C1)
 - [ ] T008 Negative control: with `Validate`'s body disabled (temporary, not committed) the probe's 3 refuse rows must FAIL again - or record why the before run already is the negative control - in `specs/299-unpack-dialog-text-fits/fix-log.md`
 - [ ] T009 Regression: 204's probe row `f9-zip` (`specs/204-unpack-short-name-folder/probe/unpack_dir_probe.ps1 -Only f9-zip`) -> `specs/299-unpack-dialog-text-fits/probe/regress_204.txt` PASS
 - [ ] T010 Record after / regression results and commands in `specs/299-unpack-dialog-text-fits/fix-log.md`

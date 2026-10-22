@@ -40,3 +40,17 @@ Consumers of the two buffers after the dialog (`CFilesWindow::Unpack`): `SalGetF
 `DO_AGAIN` loop that re-opens the dialog with `path` / `mask`. All take what the dialog stored; none
 re-reads the dialog. The dialog's only reader of the fields is `Transfer` (ttDataFromWindow), run
 by winlib's OK handling after `ValidateData()` (`CDialog::DialogProc`, `IDOK`).
+
+## speckit-analyze
+
+Run 1: no CRITICAL, no HIGH. MEDIUM C1 - no probe row for both fields too long and for "Delete
+archive after unpacking" (FR-003) - fixed: row `both` added to the probe, T007 extended. LOW C3 (no
+task for "no new string") - T006 checks `git diff main -- src/lang`. LOW C2 (focus not probed) and
+U1 (unpaired surrogate not probed) accepted: both are the shared helper's behaviour
+(`DlgItemTextFitsU8` / `SalWindowTextFitsU8`), proven in 214 / 251 / 291. Run 2: no CRITICAL, no
+HIGH; C2 / U1 remain LOW, accepted.
+
+Row `both` on the build before the fix (`probe/result_before_both.txt`): FAIL - dialog closed,
+nothing asked, only a.k unpacked into the cut 258-byte folder, and **a.zip deleted** (the box was
+checked): a.kp, the file the typed mask named, was never unpacked and its archive is gone. So the
+cut mask with "Delete archive after unpacking" loses data - more than the item's "no loss found".
