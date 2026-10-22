@@ -160,7 +160,7 @@ features 306, 308 and 309 (tar) unchanged.
 
 ### Measurable Outcomes
 
-- **SC-001**: The probe passes every row (20 of 20; before: 13 / 7): all hard-linked names hold the
+- **SC-001**: The probe passes every row (before: 13 PASS / 7 FAIL): all hard-linked names hold the
   content, the symbolic-link row keeps the archive with exactly one box.
 - **SC-002**: No archive whose link was left out is deleted by "Delete archive after unpacking".
 - **SC-003**: The probes of features 306, 308 and 309 give the same results as before; saltests 0
