@@ -1,0 +1,20 @@
+ftpcase_probe (an upload to a case-insensitive server with Unix paths)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 09:09; desktop 'tc_probe_5396'; ACP 1250; registry key existed True; export SHA-256 D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+Server  : ftpmini.py utf-8 on 127.0.0.1:2132 (NTFS: case-insensitive, Unix listings) - up
+
+CASE-UP    ROW    FAIL        question for B.txt: False; STOR B.txt sent: True; server file 'LOCAL-B'; server: b.txt; commands: PORT 127,0,0,1,214,50 / STOR B.txt / NOOP / CWD /CASE-UP / PWD / PORT 127,0,0,1,214,52 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2132/CASE-UP/*.*' -> 'ftp://u@127.0.0.1:2132/CASE-UP/*.*'; operation windows: none
+           (closed 0 operation window(s); left: 0)
+CASE-UP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+CASE-CZ    ROW    FAIL        question for c-caron: False; STOR sent: True; server file 'LOCAL-C'; server: \u010Caj.txt; commands: PORT 127,0,0,1,214,62 / STOR \u010Daj.txt / NOOP / CWD /CASE-CZ / PWD / PORT 127,0,0,1,214,64 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2132/CASE-CZ/*.*' -> 'ftp://u@127.0.0.1:2132/CASE-CZ/*.*'; operation windows: none
+           (closed 0 operation window(s); left: 0)
+CASE-CZ    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+CASE-NEW   ROW    PASS        question: False; STOR c.txt sent: True; server c.txt 'LOCAL-C', b.txt 'SRV-B'; server: b.txt,c.txt; commands: PORT 127,0,0,1,224,230 / STOR c.txt / NOOP / CWD /CASE-NEW / PWD / PORT 127,0,0,1,224,232 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2132/CASE-NEW/*.*' -> 'ftp://u@127.0.0.1:2132/CASE-NEW/*.*'
+           (closed 0 operation window(s); left: 0)
+CASE-NEW   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+CASE-OVR   ROW    FAIL        question for B.txt: False; Overwrite clicked: False; STOR B.txt sent: True; server file 'LOCAL-B'; server: b.txt; commands: PORT 127,0,0,1,224,244 / STOR B.txt / NOOP / CWD /CASE-OVR / PWD / PORT 127,0,0,1,224,246 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2132/CASE-OVR/*.*' -> 'ftp://u@127.0.0.1:2132/CASE-OVR/*.*'; operation windows: none
+           (closed 0 operation window(s); left: 0)
+CASE-OVR   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+Registry: restored; identical=True; SHA-256 before D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F / after D8DA635D3D5D35D65434330138B0EB0A8C6063B623BF77305C15AA6A1A14E56F
+
+Rows: PASS 5, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -1,7 +1,7 @@
 ---
 title: FTP: an upload to a case-insensitive server with Unix paths replaces b.txt by B.txt without the question
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: ftp
 source: review:302
@@ -10,7 +10,7 @@ created: 2026-10-22
 updated: 2026-10-22
 verified: 2026-10-22 17febaaf
 effort: M
-feature: -
+feature: 303
 related: [ftp-server-path-compare-code-page-fold]
 depends-on: []
 reason: -
@@ -42,3 +42,4 @@ Severity 7 (data loss in a narrow scenario: a case-only name difference on a Win
 - 2026-10-22 — created (source review:302)
 - 2026-10-22 — moved to Next position 1
 - 2026-10-22 — verified at 17febaaf: reproduced at 17febaaf: hidden-desktop probe with ftpmini on NTFS - upload of B.txt sent STOR B.txt without the question, server b.txt replaced (also c-caron vs C-caron)
+- 2026-10-22 — run started, feature 303
