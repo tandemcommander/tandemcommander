@@ -1,7 +1,7 @@
 ---
 title: Opening a tar whose member name has a 300-letter component crashes the program
 type: bug
-status: open
+status: blocked
 severity: 7
 area: archives
 source: measure:306
@@ -13,7 +13,7 @@ effort: M
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: the independent review rejected the fix twice: review 2 MUST - the GNU refusal also runs in whole-archive Unpack, drops extractable deep members and lets Delete archive after unpacking delete the archive (feature 307, branch 307-tar-long-component)
 ---
 
 # Opening a tar whose member name has a 300-letter component crashes the program
@@ -41,3 +41,4 @@ Severity from the band "crashes in an unusual scenario". The probe row is exclud
 - 2026-10-22 — created (source measure:306)
 - 2026-10-22 — related item tar-plug-in-ignores-pax-extended-headers done in feature 306
 - 2026-10-22 — moved to Next position 1
+- 2026-10-22 — blocked: the independent review rejected the fix twice: review 2 MUST - the GNU refusal also runs in whole-archive Unpack, drops extractable deep members and lets Delete archive after unpacking delete the archive (feature 307, branch 307-tar-long-component)

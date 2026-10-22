@@ -22,7 +22,7 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Who | Effort | Status |
 |---|---|---|---|---|---|---|---|
-| 1 | [Opening a tar whose member name has a 300-letter component crashes the program](items/opening-a-tar-whose-member-name-has-a-300-letter-component/desc.md) | bug | 7 | archives | agent | M | open |
+| 1 | [Opening a tar whose member name has a 300-letter component crashes the program](items/opening-a-tar-whose-member-name-has-a-300-letter-component/desc.md) | bug | 7 | archives | agent | M | blocked |
 | 2 | [FTP: PWD reply cut at 300 bytes and other long-name leftovers of 215](items/ftp-long-name-and-path-leftovers/desc.md) | bug | 5 | ftp | agent | M | blocked |
 | 3 | [ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut](items/uniso-hfs-btree-trust-and-joliet-cut/desc.md) | bug | 5 | other-plugins | agent | M | blocked |
 | 4 | [Paste fails in a folder whose path contains an exclamation mark](items/vkladanie-zo-schranky-nefunguje-v-adresaroch-s-v-ceste/desc.md) | bug | 5 | file-ops | agent | - | blocked |
@@ -240,6 +240,8 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [A cpio or rpm archive with a member name the panel cannot hold fails as a whole](items/a-cpio-or-rpm-archive-with-a-member-name-the-panel-cannot/desc.md) | bug | 4 | archives | review:307 | 2026-10-22 |
+| [Whole-archive Unpack of a PAX tar skips deep members and may delete the archive](items/whole-archive-unpack-of-a-pax-tar-skips-deep-members-and-may/desc.md) | bug | 8 | data-safety | review:307 | 2026-10-22 |
 
 ## Parked
 
