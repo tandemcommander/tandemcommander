@@ -74,3 +74,27 @@ cut mask with "Delete archive after unpacking" loses data - more than the item's
   `result_before_both.txt`) - 4 FAIL; only the two-line `Validate` differs between the builds.
 - Regression: 204's `unpack_dir_probe.ps1 -Only f9-zip` (Alt+F9 of a ZIP, target typed) ->
   `probe/regress_204.txt` PASS 2 / FAIL 0, registry identical.
+
+## Review
+
+One independent refute-first review (general-purpose agent): **no MUST**.
+- It re-ran `unpack299_probe.ps1` on the hidden desktop: PASS 12 / FAIL 0, registry identical;
+  confirmed the order (`ValidateData` before `TransferData`, `src/common/winlib.cpp`), the size
+  (260 bytes with NUL = the caller's buffers), the combo's edit text is what is measured, the two
+  callers (`mainwnd3.cpp` Alt+F9, `salamdr1.cpp` a plug-in's unpack) and the `DO_AGAIN` loop; the
+  before runs predate the fixed exe (negative control valid).
+- SHOULD (outside the item's scope): the dialog's **default** target - the other panel's path - is
+  copied with `lstrcpyn(..., MAX_PATH)` (`src/fileswn7.cpp` `CFilesWindow::Unpack`), so a panel path
+  over 259 bytes is offered cut and accepted (its scratch probe: `alt-ascii`, `alt-cjk` FAIL on the
+  fixed build). Not typed text - recorded as Inbox item
+  `unpack-dialog-offers-a-long-target-panel-path-cut-and` (source `review:299`), together with
+  NOTE 1 (a plug-in's unpack mask cut by `lstrcpyn`) and NOTE 2 (the archive's subfolder name dropped
+  silently when too long).
+- NOTE 3 (probe gaps: the path limit tested at 255 not 259 bytes; the mask refused at the second OK
+  of `both` not driven; focus not checked): accepted - the measure is the shared helper with the same
+  size for both fields, its exact limit is proven by the mask rows (259 accepted, 260 refused) and
+  by 214 / 291; a 259-byte target would put the unpacked files over MAX_PATH downstream, which tests
+  other code.
+- NOTE 4 (the mask refused with "The path specified is too long."): as the item asks and as 270 / 291.
+- NOTE 5 (state the real impact at closing - the archive deleted with a.kp never unpacked): done in
+  FEATURE-HISTORY and CHANGELOG.

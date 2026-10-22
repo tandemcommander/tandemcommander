@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Unpack with an external unpacker cuts a long target path and mask](items/unpack-with-an-external-unpacker-cuts-a-long-target-path-and/desc.md) | bug | 6 | long-paths | 299 |
 
 ## Next
 
@@ -236,6 +235,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Unpack dialog offers a long target panel path cut and unpacks into the cut folder](items/unpack-dialog-offers-a-long-target-panel-path-cut-and/desc.md) | bug | 5 | long-paths | review:299 | 2026-10-22 |
 
 ## Parked
 

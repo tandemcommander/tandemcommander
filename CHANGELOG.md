@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Unpack (Alt+F9) shortened a long target path or file mask and unpacked into another folder or other files - with "Delete archive after unpacking" the archive could go with files never unpacked** (feature 299).
+  - **Before:** in the Unpack dialog a target path or an "Unpack files" mask whose text was longer than 259 bytes (as UTF-8; a CJK letter takes three) was shortened silently and used. A long path unpacked the archive into another folder - a shorter path, possibly an existing folder of yours. A shortened mask unpacked other files than the ones named; when "Delete archive after unpacking" was checked, the archive was then deleted although the files the mask named had never been unpacked.
+  - **Now:** OK refuses such a text with "The path specified is too long."; the dialog stays open with the whole text in the field, and nothing is created, unpacked or deleted. Text that fits works as before.
+  - **Limitation:** when the other panel shows a path longer than 259 bytes, the dialog still offers that path shortened as a choice of the target field - recorded for later.
+
 - **A single file mask longer than 259 bytes could crash the program, even at every start** (feature 298).
   - **Before:** a mask list (masks separated by `;`) holding one mask longer than 259 bytes overran the program's memory while it was being prepared. Such a mask cannot be typed into the usual fields, but it can come from the settings - a hand edit of the registry, a settings import, a plug-in's thumbnail masks, a tab's filter, saved search criteria - or from a plug-in. With a plug-in's thumbnail masks the program crashed at every start ("A problem has occurred") until the value was removed by hand.
   - **Now:** a mask of any length is prepared whole - never shortened, so it selects exactly the files it describes. Mask lists that worked before give exactly the same result.

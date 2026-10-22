@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
@@ -3965,3 +3965,17 @@ a few early ones are out of sequence).
   `mask-group-prepare-unbounded-mask-copy`. Probe `mask298_probe.ps1` 4 / 4 FAIL -> 8 / 0; saltests 26,443 / 0
   (negative control: a cut at 259 bytes, 72 FAIL); one refute-first review (no MUST, no SHOULD; its own
   negative controls: an undersized heap block failed every probe row, a one-byte overrun 37 saltests FAIL).
+- 299-unpack-dialog-text-fits: the Unpack dialog (Alt+F9, every unpacker - the ZIP plug-in too, not
+  only external ones) read its target path and "Unpack files" mask into the caller's 260-byte
+  buffers cut at a whole character (`EditLine`) - a 262-byte path (CJK, also ASCII: the path combo
+  box has no limit) unpacked into the cut folder, a 260-byte mask `R;*.kp` unpacked a.k; with
+  "Delete archive after unpacking" the archive was deleted although a.kp, the file the typed mask
+  named, was never unpacked (measured) - now `CUnpackDialog::Validate` measures the path, then the
+  mask whole (`DlgItemTextFitsU8`, MAX_PATH) and refuses ("The path specified is too long.", no new
+  string); the dialog stays, nothing created or deleted. Limits: the dialog's default target (the
+  other panel's path) and a plug-in's unpack mask are still cut by `lstrcpyn` before the dialog
+  opens, and offered cut (Inbox `unpack-dialog-offers-a-long-target-panel-path-cut-and`, review). From
+  backlog item `unpack-with-an-external-unpacker-cuts-a-long-target-path-and`. Probe
+  `unpack299_probe.ps1` 4 FAIL / 12 -> 12 / 0 (negative control: the before build); 204's `f9-zip`
+  2 / 0; saltests 26,443 / 0; one refute-first review (no MUST; its SHOULD - the cut default - to
+  the Inbox).
