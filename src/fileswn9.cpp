@@ -2042,7 +2042,13 @@ static BOOL CopyUNCPathToClipboardAux(const char* path, const char* name, BOOL i
     if (nestingLevel < 10 && buff[0] != '\\' && buff[1] == ':')
     {
         char target[2 * MAX_PATH]; // feature 098: target + the rest of the path (was MAX_PATH + unbounded strcat)
-        if (GetSubstInformation(toupper(buff[0]) - 'A', target, MAX_PATH))
+        BOOL substTooLong = FALSE; // feature 301: the whole buffer for the target; a refused one is "too long"
+        if (!GetSubstInformation(toupper(buff[0]) - 'A', target, 2 * MAX_PATH, &substTooLong))
+        {
+            if (substTooLong)
+                *tooLong = TRUE;
+        }
+        else
         {
             if (SalPathAddBackslash(target, 2 * MAX_PATH) && UNCAppend(target, path + 3, 2 * MAX_PATH))
             {

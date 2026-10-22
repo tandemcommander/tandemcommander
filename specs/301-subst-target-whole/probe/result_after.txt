@@ -1,0 +1,19 @@
+subst_probe (feature 301) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 06:48; registry key existed True; ACP 1250
+
+SHORT: Z: -> folder of 41 UTF-16 units / 41 UTF-8 bytes
+SHORT      DEL    PASS        location 'Z:\'; the question names a junction True; J and the target's file kept True; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete junction "J"? | [Button id=6] &Yes | [Button id=7] &No
+SHORT      INFO   PASS        type line 62 chars, target whole True, no part of it False, '?' False: 'local drive (subst: C:\Users\pavel\AppData\Local\Temp\tc301\s)'; dialog: ...ector: | [Static id=1159] Sectors per cluster: | [Static id=1168] Bytes per cluster: | [Static id=1160] Number of clusters: | [Static id=1162] File system name: | [Static id=1163] Long names support: | [Static id=1164] File system flags: | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+SHORT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CJK: Z: -> folder of 120 UTF-16 units / 280 UTF-8 bytes
+CJK        DEL    PASS        location 'Z:\'; the question names a junction True; J and the target's file kept True; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete junction "J"? | [Button id=6] &Yes | [Button id=7] &No
+CJK        INFO   PASS        type line 141 chars, target whole True, no part of it False, '?' False: '...:\Users\pavel\AppData\Local\Temp\tc301\\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C\u4E0D\u4E0E\u4E0F\u4E10\u4E11\u4E12\u4E13\u4E14\u4E15\u4E16\u4E17\u4E18\u4E19\u4E1A\u4E1B\u4E1C\u4E1D\u4E1E\u4E1F\u4E20\u4E21\u4E22\u4E23\u4E24\u4E25\u4E26\u4E27\u4E28\u4E29\u4E2A\u4E2B\u4E2C\u4E2D\u4E2E\u4E2F\u4E30\u4E31\u4E32\u4E33\u4E34\u4E35\u4E36\u4E37\u4E38\u4E39\u4E3A\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42\u4E43\u4E44\u4E45\u4E46\u4E47\u4E48\u4E49\u4E4A\u4E4B\u4E4C\u4E4D\u4E4E\u4E4F\u4E50)'; dialog: ...ector: | [Static id=1159] Sectors per cluster: | [Static id=1168] Bytes per cluster: | [Static id=1160] Number of clusters: | [Static id=1162] File system name: | [Static id=1163] Long names support: | [Static id=1164] File system flags: | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+CJK        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LONG: Z: -> folder of 341 UTF-16 units / 341 UTF-8 bytes
+LONG       DEL    PASS        location 'Z:\'; the question names a junction True; J and the target's file kept True; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete junction "J"? | [Button id=6] &Yes | [Button id=7] &No
+LONG       INFO   PASS        type line 362 chars, target whole True, no part of it False, '?' False: '...aaaaaaaaaaaaaaaaaa\bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb)'; dialog: ...ector: | [Static id=1159] Sectors per cluster: | [Static id=1168] Bytes per cluster: | [Static id=1160] Number of clusters: | [Static id=1162] File system name: | [Static id=1163] Long names support: | [Static id=1164] File system flags: | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+LONG       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 9, FAIL 0, NOT DRIVEN 0. Left running: 0; subst left defined: 0; fixture removed: True; registry restored+identical: True

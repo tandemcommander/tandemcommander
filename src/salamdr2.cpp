@@ -9,6 +9,7 @@
 #include "salfmtinserts.h"  // feature 180
 #include "salreparse.h"     // feature 197
 #include "salbatchtext.h"   // feature 229
+#include "salsubst.h"       // feature 301
 
 #include "cfgdlg.h"
 #include "mainwnd.h"
@@ -1298,7 +1299,8 @@ BOOL ResolveSubsts(char* resPath)
             break;
         }
         char tgt[MAX_PATH];
-        if (GetSubstInformation(LowerCase[resPath[0]] - 'a', tgt, MAX_PATH) && tgt[0] != '\\' /* mapped network disks handled elsewhere */)
+        BOOL tgtTooLong = FALSE;
+        if (GetSubstInformation(LowerCase[resPath[0]] - 'a', tgt, MAX_PATH, &tgtTooLong) && tgt[0] != '\\' /* mapped network disks handled elsewhere */)
         {
             if (!SalPathAppend(tgt, resPath + 2, MAX_PATH))
             {
@@ -1314,7 +1316,14 @@ BOOL ResolveSubsts(char* resPath)
             lstrcpyn(resPath, tgt, MAX_PATH);
         }
         else
+        {
+            if (tgtTooLong) // feature 301: the subst target does not fit MAX_PATH bytes - the path
+            {               // stays as it is (Windows resolves the subst itself), never a cut or '?' path
+                TRACE_E("ResolveSubsts(): too long subst target!");
+                ret = FALSE;
+            }
             break;
+        }
     }
     return ret;
 }
@@ -1932,59 +1941,91 @@ UINT MyGetDriveType(const char* path)
 // GetSubstInformation
 //
 
+// feature 301: the device text of 'driveNum' read whole (the first string of the answer) into a
+// heap buffer the caller frees; NULL when the letter has no device or memory ran out.  A subst
+// target may pass MAX_PATH units (DefineDosDeviceW takes it, measured 359), so the buffer grows
+// on ERROR_INSUFFICIENT_BUFFER.
+static WCHAR* QueryDosDeviceWholeW(BYTE driveNum)
+{
+    WCHAR deviceNameW[3] = {(WCHAR)(driveNum + 'A'), L':', 0};
+    DWORD size = MAX_PATH;
+    while (size <= 0x10000)
+    {
+        WCHAR* buf = (WCHAR*)malloc(size * sizeof(WCHAR));
+        if (buf == NULL)
+            return NULL;
+        DWORD res = QueryDosDeviceW(deviceNameW, buf, size);
+        if (res != 0)
+        {
+            buf[size - 1] = 0; // (the answer is double-terminated; the first string is used)
+            return buf;
+        }
+        DWORD err = GetLastError();
+        free(buf);
+        if (err != ERROR_INSUFFICIENT_BUFFER)
+            return NULL;
+        size *= 2;
+    }
+    return NULL;
+}
+
 BOOL MyQueryDosDevice(BYTE driveNum, char* target, int maxTarget)
 {
-    char deviceName[3];
-    deviceName[0] = driveNum + 'A';
-    deviceName[1] = ':';
-    deviceName[2] = 0;
     // feature 069 (F-P1-13): the ANSI QueryDosDevice returned the subst target
     // in the code page, and ResolveSubsts splices it in front of the UTF-8
     // remainder of the path - a path in neither encoding.  The delete
     // confirmation for a reparse point on such a drive then could not tell it
     // was a link at all (GetFileAttributesW found nothing), so it offered to
     // delete a "directory" and left deleteLink FALSE.
-    WCHAR deviceNameW[3] = {(WCHAR)deviceName[0], L':', 0};
-    WCHAR targetW[MAX_PATH];
-    if (QueryDosDeviceW(deviceNameW, targetW, MAX_PATH) &&
-        SalWToU8(targetW, -1, target, maxTarget) != 0)
-    {
-        return TRUE;
-    }
-    return QueryDosDevice(deviceName, target, maxTarget); // legacy fallback
+    // feature 301: 069 kept the ANSI call as the fallback for a text over MAX_PATH bytes of
+    // UTF-8 - the same '?' target for a long folder; now the wide text is read whole and a text
+    // that does not fit 'maxTarget' is refused, never cut and never asked in the code page
+    if (target != NULL && maxTarget > 0)
+        target[0] = 0;
+    if (target == NULL || maxTarget <= 0)
+        return FALSE;
+    WCHAR* targetW = QueryDosDeviceWholeW(driveNum);
+    if (targetW == NULL)
+        return FALSE;
+    int need = SalWToU8(targetW, -1, NULL, 0);
+    BOOL ok = need > 0 && need <= maxTarget && SalWToU8(targetW, -1, target, maxTarget) == need;
+    if (!ok)
+        target[0] = 0;
+    free(targetW);
+    return ok;
 }
 
-BOOL GetSubstInformation(BYTE driveNum, char* path, int pathMax)
+BOOL GetSubstInformation(BYTE driveNum, char* path, int pathMax, BOOL* tooLong)
 {
-    char target[MAX_PATH];
-    if (MyQueryDosDevice(driveNum, target, MAX_PATH))
-    {
-        //  A (floppy)                          \Device\Floppy0
-        //  C (fixed disk)                      \Device\HarddiskVolume1
-        //  D (fixed disk)                      \Device\HarddiskVolume2
-        //  U -> V:                             \??\V:
-        //  V (mapped \\drak\share)           \Device\LanmanRedirector\;V:00000000000fdf1\drak\share
-        //  W -> \\drak\share:                  \??\UNC\drak\share
-        //  X -> D:                             \??\D:
-        //  Y -> C:\Windows                     \??\C:\Windows
-        if (memcmp(target, "\\??\\", 4) == 0)
-        {
-            if (((target[4] >= 'a' && target[4] <= 'z') || (target[4] >= 'A' && target[4] <= 'Z')) &&
-                target[5] == ':')
-            {
-                lstrcpyn(path, target + 4, pathMax);
-                return TRUE;
-            }
-            if (memcmp(target + 4, "UNC\\", 4) == 0)
-            {
-                lstrcpyn(path, "\\", pathMax);
-                if (pathMax > 2)
-                    lstrcpyn(path + 1, target + 7, pathMax - 1);
-                return TRUE;
-            }
-        }
+    if (tooLong != NULL)
+        *tooLong = FALSE;
+    //  A (floppy)                          \Device\Floppy0
+    //  C (fixed disk)                      \Device\HarddiskVolume1
+    //  D (fixed disk)                      \Device\HarddiskVolume2
+    //  U -> V:                             \??\V:
+    //  V (mapped \\drak\share)           \Device\LanmanRedirector\;V:00000000000fdf1\drak\share
+    //  W -> \\drak\share:                  \??\UNC\drak\share
+    //  X -> D:                             \??\D:
+    //  Y -> C:\Windows                     \??\C:\Windows
+    // feature 301: the device text read whole and parsed by SalSubstTargetToPathU8 (was a
+    // MAX_PATH copy of a possibly code-page text, then lstrcpyn at 'pathMax' - a cut path)
+    WCHAR* targetW = QueryDosDeviceWholeW(driveNum);
+    if (targetW == NULL)
+        return FALSE;
+    int res;
+    if (path != NULL)
+        res = SalSubstTargetToPathU8(targetW, path, pathMax);
+    else
+    { // only "is it a subst drive?": a buffer that holds any answer
+        int size = SalWToU8(targetW, -1, NULL, 0) + 2;
+        char* scratch = size > 2 ? (char*)malloc(size) : NULL;
+        res = scratch != NULL ? SalSubstTargetToPathU8(targetW, scratch, size) : SAL_SUBST_NONE;
+        free(scratch);
     }
-    return FALSE;
+    free(targetW);
+    if (res == SAL_SUBST_TOO_LONG && tooLong != NULL)
+        *tooLong = TRUE;
+    return res == SAL_SUBST_OK;
 }
 
 //****************************************************************************

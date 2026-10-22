@@ -92,6 +92,7 @@
 #include "salftpsrvenc.h"     // feature 288
 #include "saldrivetext.h"     // feature 289
 #include "salmaskgroup.h"     // feature 298
+#include "salsubst.h"         // feature 301
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -16992,6 +16993,72 @@ static void TestFtpServerEncoding288()
 }
 
 // feature 289: drive names and folder type names from the wide shell / volume calls (saldrivetext.h)
+static void TestSubstTarget301()
+{
+    char buf[SAL_SUBST_TEXT_U8_MAX];
+    // the forms
+    CHECK(SalSubstTargetToPathU8(L"\\??\\C:\\Windows", buf, sizeof(buf)) == SAL_SUBST_OK && strcmp(buf, "C:\\Windows") == 0);
+    CHECK(SalSubstTargetToPathU8(L"\\??\\d:", buf, sizeof(buf)) == SAL_SUBST_OK && strcmp(buf, "d:") == 0);
+    CHECK(SalSubstTargetToPathU8(L"\\??\\UNC\\drak\\share", buf, sizeof(buf)) == SAL_SUBST_OK && strcmp(buf, "\\\\drak\\share") == 0);
+    // not a subst drive: the buffer emptied
+    strcpy(buf, "x");
+    CHECK(SalSubstTargetToPathU8(L"\\Device\\HarddiskVolume1", buf, sizeof(buf)) == SAL_SUBST_NONE && buf[0] == 0);
+    CHECK(SalSubstTargetToPathU8(L"\\Device\\LanmanRedirector\\;V:00000000000fdf1\\drak\\share", buf, sizeof(buf)) == SAL_SUBST_NONE);
+    CHECK(SalSubstTargetToPathU8(L"\\??\\Volume{1}", buf, sizeof(buf)) == SAL_SUBST_NONE);
+    CHECK(SalSubstTargetToPathU8(L"\\??\\1:", buf, sizeof(buf)) == SAL_SUBST_NONE);
+    CHECK(SalSubstTargetToPathU8(L"\\??\\", buf, sizeof(buf)) == SAL_SUBST_NONE);
+    CHECK(SalSubstTargetToPathU8(L"", buf, sizeof(buf)) == SAL_SUBST_NONE);
+    CHECK(SalSubstTargetToPathU8(NULL, buf, sizeof(buf)) == SAL_SUBST_NONE);
+    CHECK(SalSubstTargetToPathU8(L"\\??\\C:\\", NULL, 10) == SAL_SUBST_NONE);
+    CHECK(SalSubstTargetToPathU8(L"\\??\\C:\\", buf, 0) == SAL_SUBST_NONE);
+    // a target outside the code page: exact UTF-8 (as measured: CJK letters, here 90 - 278 bytes)
+    {
+        std::wstring dir = L"\\??\\C:\\Temp\\";
+        std::string expect = "C:\\Temp\\";
+        for (int i = 1; i <= 90; i++)
+        {
+            WCHAR one[2] = {(WCHAR)(0x4E00 + i), 0};
+            dir += one[0];
+            char u8[8];
+            CHECK(SalWToU8(one, -1, u8, sizeof(u8)) == 4 && strlen(u8) == 3); // 3 bytes + terminator
+            expect += u8;
+        }
+        CHECK(expect.size() == 8 + 3 * 90);
+        CHECK(SalSubstTargetToPathU8(dir.c_str(), buf, sizeof(buf)) == SAL_SUBST_OK && expect == buf);
+        CHECK(strchr(buf, '?') == NULL);
+        // MAX_PATH bytes (the old buffer) refuse it - never a cut
+        char shortBuf[MAX_PATH];
+        strcpy(shortBuf, "x");
+        CHECK(SalSubstTargetToPathU8(dir.c_str(), shortBuf, sizeof(shortBuf)) == SAL_SUBST_TOO_LONG && shortBuf[0] == 0);
+        // the exact fit and one byte short
+        int need = (int)expect.size() + 1;
+        CHECK(SalSubstTargetToPathU8(dir.c_str(), buf, need) == SAL_SUBST_OK && expect == buf);
+        CHECK(SalSubstTargetToPathU8(dir.c_str(), buf, need - 1) == SAL_SUBST_TOO_LONG && buf[0] == 0);
+    }
+    // the UNC form: the extra '\' is counted
+    {
+        const WCHAR* unc = L"\\??\\UNC\\srv\\sh"; // -> "\\srv\sh" = 8 bytes + terminator
+        CHECK(SalSubstTargetToPathU8(unc, buf, 9) == SAL_SUBST_OK && strcmp(buf, "\\\\srv\\sh") == 0);
+        CHECK(SalSubstTargetToPathU8(unc, buf, 8) == SAL_SUBST_TOO_LONG && buf[0] == 0);
+        CHECK(SalSubstTargetToPathU8(unc, buf, 1) == SAL_SUBST_TOO_LONG && buf[0] == 0);
+    }
+    // the drive form at the boundary: "C:\" + n letters
+    {
+        CHECK(SalSubstTargetToPathU8(L"\\??\\C:\\ab", buf, 6) == SAL_SUBST_OK && strcmp(buf, "C:\\ab") == 0);
+        CHECK(SalSubstTargetToPathU8(L"\\??\\C:\\ab", buf, 5) == SAL_SUBST_TOO_LONG && buf[0] == 0);
+    }
+    // every path subst.exe can create (fewer than MAX_PATH units, 3 bytes each at most) fits
+    {
+        std::wstring longest = L"\\??\\C:\\";
+        while (longest.size() - 4 < MAX_PATH - 1)
+            longest += L'\x6863';
+        CHECK(SalSubstTargetToPathU8(longest.c_str(), buf, sizeof(buf)) == SAL_SUBST_OK);
+        CHECK((int)strlen(buf) == 3 + 3 * (MAX_PATH - 1 - 3));
+    }
+    // a lone surrogate (a name Windows allows) converts as WTF-8, no refusal
+    CHECK(SalSubstTargetToPathU8(L"\\??\\C:\\a\xD800", buf, sizeof(buf)) == SAL_SUBST_OK && strlen(buf) == 4 + 3);
+}
+
 static void TestDriveText289()
 {
     // the drive letter suffix: cut at the last '(' with the spaces before it
@@ -17395,6 +17462,7 @@ int main(int argc, char** argv)
     TestGrowBufferPair293();
     TestGrowBuffers295();
     TestMaskGroupSplit298();
+    TestSubstTarget301();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

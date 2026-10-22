@@ -17,6 +17,7 @@
 #include "worker.h"
 #include "menu.h"
 #include "salurlpwd.h" // feature 085: no password from a typed address in history
+#include "salsubst.h"  // feature 301
 
 //
 // ****************************************************************************
@@ -1763,12 +1764,23 @@ void CDriveInfo::Transfer(CTransferInfo& ti)
             if (volumePathWithBackslash[0] != '\\' && strlen(volumePathWithBackslash) <= 3)
             {
                 char drive = toupper(volumePathWithBackslash[0]);
-                if (GetSubstInformation(drive - 'A', buff, 300))
+                // feature 301: the subst target whole (any target subst.exe can create) - was
+                // buff[300] filled from a MAX_PATH code-page answer; a target the line cannot
+                // hold is not shown at all (and no link text instead of it)
+                char substTarget[SAL_SUBST_TEXT_U8_MAX];
+                BOOL substTooLong = FALSE;
+                if (GetSubstInformation(drive - 'A', substTarget, sizeof(substTarget), &substTooLong))
                 {
                     substInfo = TRUE;
-                    strcat(volumeName, " ");
-                    sprintf(volumeName + strlen(volumeName), LoadStrU8(IDS_INFODLGTYPE7), buff);
+                    const char* fmt = LoadStrU8(IDS_INFODLGTYPE7);
+                    if (strlen(volumeName) + 1 + strlen(fmt) + strlen(substTarget) < sizeof(volumeName))
+                    {
+                        strcat(volumeName, " ");
+                        sprintf(volumeName + strlen(volumeName), fmt, substTarget);
+                    }
                 }
+                else if (substTooLong)
+                    substInfo = TRUE;
             }
             if (!substInfo && junctionOrSymlinkTgt[0] != 0)
             {

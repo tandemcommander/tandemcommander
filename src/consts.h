@@ -1092,6 +1092,8 @@ UINT MyGetDriveType(const char* path);
 
 // nase vlastni QueryDosDevice
 // 'driveNum' je 0-based (0=A: 2=C: ...)
+// feature 301: the first device text as UTF-8, read whole; FALSE also when it does not fit
+// 'maxTarget' bytes (never cut, never the code page)
 BOOL MyQueryDosDevice(BYTE driveNum, char* target, int maxTarget);
 
 // detekuje zda 'driveNum' (0=A: 2=C: ...) je substed a pokud ano, kam je pripojeny
@@ -1100,7 +1102,9 @@ BOOL MyQueryDosDevice(BYTE driveNum, char* target, int maxTarget);
 // ulozi cestu, kam je subst pripojeny
 // pokud je 'path' NULL, cesta nebude vracena
 // muze vratit cestu v UNC tvaru
-BOOL GetSubstInformation(BYTE driveNum, char* path, int pathMax);
+// feature 301: a subst path that does not fit 'pathMax' bytes is refused - FALSE, 'path'
+// empty and '*tooLong' (when not NULL) TRUE; it is never cut and never read in the code page
+BOOL GetSubstInformation(BYTE driveNum, char* path, int pathMax, BOOL* tooLong = NULL);
 
 // nahradi v retezci posledni znak '.' decimalnim separatorem ziskanym ze systemu LOCALE_SDECIMAL
 // delka retezce muze narust, protoze separator muze mit podle MSDN az 4 znaky

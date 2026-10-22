@@ -17,6 +17,7 @@
 #include "gui.h"          // CopyToolTipAnswer (feature 246)
 #include "salnetdrive.h"  // feature 246
 #include "saldrivetext.h" // feature 289
+#include "salsubst.h"     // feature 301
 
 // feature 289: a drive's name in the Change Drive menu / drive bar tooltip is UTF-8 of up to
 // SAL_DRIVE_TEXT_U8_MAX - 1 bytes; with every '&' doubled for the menu it still fits this
@@ -2559,7 +2560,10 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                     else if ((mask & i) == 0 ||
                              !GetMappedDriveNameU8(device, volumeName, &size))
                     {
-                        if (!GetSubstInformation(drive - 'A', volumeName, MAX_PATH))
+                        // feature 301: the subst (to UNC) target whole - any target subst.exe can
+                        // create; the '&' doubling below has DRIVE_MENU_NAME_MAX >= 2x room
+                        static_assert(2 * SAL_SUBST_TEXT_U8_MAX <= DRIVE_MENU_NAME_MAX, "the doubled subst text fits");
+                        if (!GetSubstInformation(drive - 'A', volumeName, SAL_SUBST_TEXT_U8_MAX))
                             volumeName[0] = 0;
                     }
                     // double '&' so that it is not displayed as an underline
