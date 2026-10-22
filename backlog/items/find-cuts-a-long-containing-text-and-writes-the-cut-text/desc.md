@@ -1,7 +1,7 @@
 ---
 title: Find cuts a long Containing text and writes the cut text back
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: long-paths
 source: review:291
@@ -10,7 +10,7 @@ created: 2026-10-21
 updated: 2026-10-22
 verified: 2026-10-22 95145b44
 effort: S
-feature: -
+feature: 311
 related: []
 depends-on: []
 reason: -
@@ -57,3 +57,4 @@ own Find text (`FIND_TEXT_LEN`, "should match") may have the same cut; check it 
 - 2026-10-21 — created (source review:291)
 - 2026-10-21 — moved to Next position 12
 - 2026-10-22 — verified at 95145b44: reproduced at 95145b44: hidden-desktop probe, Containing of 67 CJK letters searched cut (found 2, field cut) in text/regex/hex, Add Current, Ignore, option; viewer Find searched cut too
+- 2026-10-22 — run started, feature 311

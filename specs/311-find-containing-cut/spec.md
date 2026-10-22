@@ -3,7 +3,7 @@
 **Feature Branch**: `311-find-containing-cut`
 **Created**: 2026-10-22
 **Status**: Draft
-**Input**: Backlog item find-cuts-a-long-containing-text-and-writes-the-cut-text (backlog/items/find-cuts-a-long-containing-text-and-writes-the-cut-text/desc.md) - implement exactly what it describes.
+**Input**: Backlog item find-cuts-a-long-containing-text-and-writes-the-cut-text (backlog/items/find-cuts-a-long-containing-text-and-writes-the-cut-text/desc.md) - implement exactly what it describes. From backlog item find-cuts-a-long-containing-text-and-writes-the-cut-text.
 
 ## Background
 
