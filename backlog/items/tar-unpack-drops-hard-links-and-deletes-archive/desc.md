@@ -8,7 +8,7 @@ source: review:308
 who: agent
 created: 2026-10-22
 updated: 2026-10-22
-verified: -
+verified: 2026-10-22 f0187403
 effort: M
 feature: -
 related: []
@@ -38,3 +38,4 @@ Severity from the band "data loss in a narrow scenario" (link members + the dele
 
 - 2026-10-22 — created (source review:308)
 - 2026-10-22 — moved to Next position 2
+- 2026-10-22 — verified at f0187403: reproduced at f0187403: hidden-desktop probe, Unpack+Delete of a tar with hard links or a symlink - links dropped silently, archive deleted (6 of 7 rows FAIL)
