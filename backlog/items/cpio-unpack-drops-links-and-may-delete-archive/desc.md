@@ -8,7 +8,7 @@ source: measure:309
 who: agent
 created: 2026-10-22
 updated: 2026-10-22
-verified: -
+verified: 2026-10-22 47eb6b83
 effort: M
 feature: -
 related: [a-cpio-or-rpm-archive-with-a-member-name-the-panel-cannot]
@@ -39,3 +39,4 @@ Severity from the tar case (7), one lower because not verified.
 
 - 2026-10-22 — created (source measure:309)
 - 2026-10-22 — moved to Next position 2
+- 2026-10-22 — verified at 47eb6b83: reproduced at 47eb6b83 by a hidden-desktop probe (cpio310_probe, newc/crc/odc fixtures): symlink dropped silently and archive deleted; newc and crc hard-linked names extracted empty; 13 PASS / 7 FAIL
