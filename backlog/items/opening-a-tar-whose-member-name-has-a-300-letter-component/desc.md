@@ -1,7 +1,7 @@
 ---
 title: Opening a tar whose member name has a 300-letter component crashes the program
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: measure:306
@@ -40,3 +40,4 @@ Severity from the band "crashes in an unusual scenario". The probe row is exclud
 
 - 2026-10-22 — created (source measure:306)
 - 2026-10-22 — related item tar-plug-in-ignores-pax-extended-headers done in feature 306
+- 2026-10-22 — moved to Next position 1
