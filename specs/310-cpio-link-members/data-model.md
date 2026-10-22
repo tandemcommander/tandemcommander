@@ -29,7 +29,10 @@ A newc / crc member that is a regular file (`(mode & 0170000) == 0100000`) with 
 | no | any | no | - | `SKIP` |
 
 After a `WRITE` / `WRITE_FOR_WAITING`: written -> state `WRITTEN`, every waiting name copied;
-not written (Skip, error) -> state `LOST`, the first waiting name reported, the operation fails.
+not written (Skip, error) -> state `LOST`; the remaining waiting names are reported (the first one)
+and the operation fails. For `WRITE_FOR_WAITING` the name the data was written under is the first
+waiting name itself: Skip there is the user's choice for that name; the other waiting names are then
+reported (they cannot get the data any more) - review 1, NOTE 3.
 
 End of the archive (trailer or end of data): every group still `NONE` writes its waiting names as
 empty files. An operation that fails before (error, Cancel) writes nothing more.

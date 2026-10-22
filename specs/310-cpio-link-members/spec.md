@@ -106,7 +106,10 @@ features 306, 308 and 309 (tar) unchanged.
 ### Edge Cases
 
 - The name holding the data is not asked for (outside the mask / selection) but a name stored with
-  size 0 is: the asked name gets the data; the other name is not written.
+  size 0 is: when the data comes after the asked name (GNU cpio / rpm / libarchive layout) the asked
+  name gets the data and the other name is not written; when the data came before it (already
+  passed, not written) the asked name is reported and the operation fails - never an empty file
+  (review 1).
 - The data name comes before the names stored with size 0: those names are copied from it.
 - No member of the file carries data (a genuinely empty file): every asked name is written empty at
   the end of the operation.
@@ -133,8 +136,9 @@ features 306, 308 and 309 (tar) unchanged.
 - **FR-002**: A name stored with size 0 MUST NOT be written before the operation knows whether the
   file's data is stored with another name; if no name of the file carries data by the end of the
   archive, the asked names MUST be written as empty files.
-- **FR-003**: When the name holding the data was not asked for but another name of the file was, the
-  asked name MUST receive the data.
+- **FR-003**: When the name holding the data was not asked for but another name of the file was and
+  the data comes after that name, the asked name MUST receive the data; when the data came before it,
+  the asked name MUST be reported and the operation MUST fail (FR-005a; review 1).
 - **FR-004**: The extra names MUST be written as copies through the same safe-create path as every
   extracted file (overwrite question, Skip, Cancel) and MUST never truncate the file they are copied
   from (identity check of feature 309).
@@ -144,8 +148,8 @@ features 306, 308 and 309 (tar) unchanged.
 - **FR-005a**: When the data of a group is not written (Skip, an error), every asked name waiting
   for it or coming after it MUST be reported once per operation ("file not found" text, the name and
   the name holding the data) and MUST make the operation fail after the rest is extracted.
-- **FR-006**: odc and binary cpio, devices, named pipes, sockets, tar archives, and the panel listing
-  MUST behave as before.
+- **FR-006**: odc and binary cpio (except their symbolic links, which FR-005 covers in every cpio
+  format), devices, named pipes, sockets, tar archives, and the panel listing MUST behave as before.
 - **FR-007**: Opening a single name stored with size 0 (view / open of one file) MUST give the file's
   content when the archive stores it with a later name (the layout of GNU cpio, rpm, libarchive);
   when the data is stored with an earlier name (already passed - a single-file extraction reads the

@@ -1,6 +1,9 @@
 # Cpio probe fixture: writes one cpio archive per probe row (newc "070701", crc "070702" or odc
 # "070707"), laid out the way GNU cpio / rpm write them.
-# Usage: python -I mkcpio.py <ROW> <out>. Pure ASCII.
+# rpm rows wrap the cpio in a minimal rpm (lead, empty signature and header, gzip payload).
+# Usage: python -I mkcpio310.py <ROW> <out>. Pure ASCII.
+import gzip
+import struct
 import sys
 
 S_IFREG = 0o100000
@@ -57,6 +60,15 @@ def reg(a, name, data, **kw):
     a.member(name, S_IFREG | 0o644, data, **kw)
 
 
+def rpm_wrap(cpio):
+    # review 1 of feature 310: the payload of an rpm is a newc cpio read through the same reader
+    lead = b'\xed\xab\xee\xdb' + bytes([3, 0]) + struct.pack('>hh', 0, 1) + b'tc310-1.0-1'.ljust(66, b'\0') + \
+        struct.pack('>hh', 1, 5) + b'\0' * 16
+    assert len(lead) == 96
+    hdr = b'\x8e\xad\xe8\x01' + b'\0' * 4 + struct.pack('>II', 0, 0)
+    return lead + hdr + hdr + gzip.compress(cpio, compresslevel=0, mtime=0)
+
+
 def main():
     row, out = sys.argv[1], sys.argv[2]
     if row.startswith('CPIO-CRC'):
@@ -65,13 +77,31 @@ def main():
         a = Odc()
     else:
         a = Newc()
-    if row.startswith('CPIO-SYM'):
+    if '-SYM-ALIGN' in row:                                       # review 1: the padding after a target
+        reg(a, 'a.txt', b'A', ino=2)
+        a.member('s.txt', S_IFLNK | 0o777, b'abcdefg', ino=3)      # 7 bytes
+        reg(a, 'z.txt', b'ZZ', ino=4)
+    elif row.startswith('CPIO-SYM-LONG'):
+        reg(a, 'a.txt', b'A', ino=2)
+        a.member('s.txt', S_IFLNK | 0o777, b'x' * 5001, ino=3)     # over 4096 bytes: not read
+        reg(a, 'z.txt', b'ZZ', ino=4)
+    elif row.startswith('CPIO-SYM-4096'):
+        reg(a, 'a.txt', b'A', ino=2)
+        a.member('s.txt', S_IFLNK | 0o777, b'y' * 4095 + b'q', ino=3)  # exactly 4096: shown whole
+        reg(a, 'z.txt', b'ZZ', ino=4)
+    elif row.startswith('CPIO-SYM') or row.startswith('RPM-SYM'):
         reg(a, 'a.txt', b'A', ino=2)
         a.member('s.txt', S_IFLNK | 0o777, b'a.txt', ino=3)        # the target is the data
         a.member('t.txt', S_IFLNK | 0o777, b'a.txt', ino=4)        # a second one: still one box
-    elif row.startswith('CPIO-HARD-FIRST') or row.startswith('VIEW-CPIO-FIRST'):
+    elif row.startswith('CPIO-HARD-FIRST') or row.startswith('VIEW-CPIO-FIRST') or row.startswith('COPY-FIRST-LATER'):
         reg(a, 'a.txt', b'F', ino=7, nlink=2)                      # data with the first name
         reg(a, 'b.txt', b'', ino=7, nlink=2)
+    elif row.startswith('CPIO-HARD-CASEFIRST'):                   # review 1: names that are one file on Windows
+        reg(a, 'a.txt', b'D', ino=5, nlink=2)
+        reg(a, 'A.txt', b'', ino=5, nlink=2)
+    elif row.startswith('CPIO-HARD-CASE'):
+        reg(a, 'A.txt', b'', ino=5, nlink=2)
+        reg(a, 'a.txt', b'D', ino=5, nlink=2)
     elif row.startswith('CPIO-HARD-EMPTY'):
         reg(a, 'e1.txt', b'', ino=9, nlink=2)                      # an empty file with two names
         reg(a, 'e2.txt', b'', ino=9, nlink=2)
@@ -92,14 +122,17 @@ def main():
     elif row.startswith('CPIO-ODC-HARD'):
         reg(a, 'a.txt', b'O', ino=5, nlink=2)                      # odc repeats the data per name
         reg(a, 'b.txt', b'O', ino=5, nlink=2)
-    else:  # CPIO-HARD-DEL, CPIO-CRC-HARD-DEL, COPY-CPIO-ALL: GNU cpio / rpm order (data with the last name)
+    else:  # CPIO-HARD-DEL, CPIO-CRC-HARD-DEL, COPY-CPIO-ALL, RPM-HARD-DEL, CPIO-HARD-SKIPDATA / YES / SKIPCOPY: GNU cpio / rpm order (data with the last name)
         reg(a, 'c.txt', b'C', ino=4)
         a.member('sub', S_IFDIR | 0o755, b'', ino=6, nlink=2)
         reg(a, 'a.txt', b'', ino=5, nlink=3)
         reg(a, 'sub/b.txt', b'', ino=5, nlink=3)
         reg(a, 'sub/d.txt', b'AAA', ino=5, nlink=3)
+    data = a.finish()
+    if row.startswith('RPM'):
+        data = rpm_wrap(data)
     with open(out, 'wb') as f:
-        f.write(a.finish())
+        f.write(data)
 
 
 main()

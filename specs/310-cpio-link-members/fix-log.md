@@ -84,7 +84,42 @@ out silently and may delete the archive".
 ## Limits
 
 - The panel listing is unchanged: names stored with size 0 show size 0; symbolic links are not listed.
-- Viewing (F3) a name whose data is stored with an EARLIER name of the file is reported, not shown (no
-  common writer produces that layout; Unpack / Copy handle it).
+- Data stored with an EARLIER name of the file (no common writer produces that layout): Unpack / Copy
+  that ask for the data name too copy it; a name asked for WITHOUT the data name (Copy of that name
+  alone, F3 of it) is reported and fails - never an empty file (review 1 corrected this line, which
+  said "Unpack / Copy handle it").
 - rpm is the same reader; no rpm fixture was run (the payload is a newc cpio behind `CRPM`).
 - odc / binary cpio: unchanged (they repeat the data with every name).
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST**.
+- It rebuilt (BUILD SUCCEEDED), ran saltests (27,237 / 0), the encoding guard (TOTAL: 0), the probe
+  (26 / 0) and the 309 probe (16 / 0); enumerated the callers (`ListArchive`, `UnpackOneFile`,
+  `UnpackArchive`, `UnpackWholeArchive`, the .deb parts); wrote 13 extra rows in a variant probe (rpm,
+  symlink padding in newc / crc / odc, 5001- and 4096-byte targets, case twins in both orders, Skip /
+  Yes at the overwrite questions, data first with only the later name copied) - all PASS; its own
+  negative control (the end-of-archive empty-file pass disabled, the symlink target bytes not counted)
+  failed CPIO-HARD-EMPTY-DEL and CPIO-SYM-DEL ("Archive format not recognised"); it restored the
+  source (hash equal to HEAD) and rebuilt.
+- SHOULD 1 (fixed): FR-003, the first edge case and the fix-log's Limits promised that an unselected
+  data member always feeds an asked name - false for the data-first layout (reported, fails - safe).
+  The spec, the Limits line and the probe (row COPY-FIRST-LATER, with a box check added to `Copy-Row`)
+  now say and test what the code does.
+- SHOULD 2 (fixed): the shipped probe lacked rows for FR-005a, rpm, symlink padding and case twins -
+  the review's rows and fixtures were merged into `probe/cpio310_probe.ps1` / `probe/mkcpio310.py`
+  (rpm wrapper `rpm_wrap`; its `Unpack-Row` with `-Seed` / `-Answer` / `-Boxes`). Fixtures are
+  byte-identical to the review's except the rpm package name.
+- NOTE 3 (documented in `data-model.md`): Skip on the waiting name that receives the data is that
+  name's Skip; the other waiting names are then reported (safe, stricter than necessary).
+- NOTE 4 (fixed): FR-006 said odc / binary behave as before; their symbolic links are now reported too
+  (FR-005) - wording corrected.
+- NOTE 5 (accepted): an archive cut exactly at a member boundary after a waiting name writes that name
+  empty and succeeds - the same as before for any member after such a cut (pre-existing TAR_EOF rule).
+- NOTE 6 (accepted): two different files sharing (device, inode) with a link count above one (a
+  hand-made archive) - a size-0 name gets the other's content, as GNU cpio does.
+- NOTE 7: FR-008 holds (whole UTF-8 names in the boxes; only the progress line is shortened, at a
+  whole character, as before).
+
+After the fixes (probe and documents only, no source change): `probe/result_after.txt`
+**52 PASS / 0 FAIL** (26 rows), registry restored and identical. No second review needed (no MUST).

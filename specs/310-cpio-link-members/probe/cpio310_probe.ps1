@@ -27,6 +27,14 @@
       COPY-CPIO-ONE        a.txt (size 0), sub, sub/b.txt (the data) one inode; End focuses a.txt,
                            Copy (727) -> tgt holds a.txt = AAA only
     View rows: the left panel opens t.cpio; Home, End, F3 (742); the copy the disk cache made is read.
+      COPY-FIRST-LATER     data with a.txt (not asked), b.txt (size 0) focused and copied -> a box naming b.txt,
+                           nothing written (review 1: never an empty file)
+    Review-1 rows (review of feature 310): RPM-HARD-DEL / RPM-SYM-DEL (the same in a minimal rpm),
+      CPIO-SYM-ALIGN-DEL / CPIO-CRC-SYM-ALIGN-DEL / CPIO-ODC-SYM-ALIGN-DEL (a 7-byte target, then a file),
+      CPIO-SYM-LONG-DEL (5001-byte target: box, empty target), CPIO-SYM-4096-DEL (shown whole),
+      CPIO-HARD-CASE-DEL / CPIO-HARD-CASEFIRST-DEL (A.txt and a.txt one file: never truncated),
+      CPIO-HARD-SKIPDATA-DEL (d.txt exists, Skip -> the waiting names reported, archive KEPT),
+      CPIO-HARD-YES-DEL (a.txt exists, Yes -> all AAA), CPIO-HARD-SKIPCOPY-DEL (a.txt exists, Skip -> stays OLD).
       VIEW-CPIO-PLAIN      control: one file p.txt without links, F3 -> the viewer, cached p.txt = P
       VIEW-CPIO-ONE        the COPY-CPIO-ONE archive, F3 of a.txt (size 0) -> the viewer, cached a.txt = AAA
       VIEW-CPIO-FIRST      the CPIO-HARD-FIRST archive, F3 of b.txt (size 0, its data passed with a.txt)
@@ -94,12 +102,17 @@ function Make-Fixture([string]$Row, [string]$Arc) {
 
 # Unpack (Alt+F9) of the whole archive into tgt with "Delete archive after unpacking"; $Want = expected
 # files; $BoxName = a box naming this member is required (else nothing may be asked); $ArcGone = the
-# archive must be deleted afterwards (else kept)
-function Unpack-Row([string]$Case, $Want, [string]$BoxName, [switch]$ArcGone) {
+# archive must be deleted afterwards (else kept); $Seed = files put into tgt first (name -> text);
+# $Answer = the buttons the boxes are answered with; $Boxes = the number of boxes required (review 1)
+function Unpack-Row([string]$Case, $Want, [string]$BoxName, [switch]$ArcGone, $Seed = $null, [int[]]$Answer = @(1, 6), [int]$Boxes = -1) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
-    $arc = $d + '\src\t.cpio'; $tgt = $d + '\tgt'
-    try { NewDir ($d + '\src'); NewDir $tgt; Make-Fixture $Case $arc }
+    $ext = $(if ($Case.StartsWith('RPM')) { '.rpm' } else { '.cpio' })
+    $arc = $d + '\src\t' + $ext; $tgt = $d + '\tgt'
+    try {
+        NewDir ($d + '\src'); NewDir $tgt; Make-Fixture $Case $arc
+        if ($Seed) { foreach ($k in $Seed.Keys) { $p = $tgt + '\' + $k.Replace('/', '\'); NewDir (Split-Path -Parent $p); WriteFile $p $Seed[$k] } }
+    }
     catch { Row $Case 'RUN' 'NOT DRIVEN' ('fixture: ' + $_.Exception.Message); return }
     $id = 0; $fatal = $null; $before = Reports
     try {
@@ -117,7 +130,7 @@ function Unpack-Row([string]$Case, $Want, [string]$BoxName, [switch]$ArcGone) {
         [void][Drv098f]::Send($b, 0x00F1, 1, 0, 5000)   # BM_SETCHECK BST_CHECKED
         Click-Ok $dlg
         Start-Sleep -Milliseconds 800
-        $r = Serve $id 90 @(1, 6)
+        $r = Serve $id 90 $Answer
         $msgs = Msgs $r
         $fatal = Fatal-Win $id
         End-Row $Case $id $fatal $before; $id = 0
@@ -126,15 +139,18 @@ function Unpack-Row([string]$Case, $Want, [string]$BoxName, [switch]$ArcGone) {
         $asked = ($msgs -ne 'no window')
         $named = $BoxName -and $msgs.Contains($BoxName)
         $ok = $c[0] -and (-not $fatal) -and ($kept -ne [bool]$ArcGone)
-        if ($BoxName) { $ok = $ok -and $named -and ($r.Messages.Count -eq 1) } else { $ok = $ok -and (-not $asked) }
+        $wantBoxes = $(if ($Boxes -ge 0) { $Boxes } elseif ($BoxName) { 1 } else { 0 })
+        if ($BoxName) { $ok = $ok -and $named }
+        $ok = $ok -and ($r.Messages.Count -eq $wantBoxes)
         Row $Case 'RUN' (V $ok) ('{0}; archive kept: {1} (want {2}); box naming the member: {3} (boxes: {5}); windows: {4}' -f $c[1], $kept, (-not $ArcGone), $named, (Tail $msgs 260), $r.Messages.Count)
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $fatal $before } }
 }
 
-# Copy (F5) from the opened archive into tgt: everything (Select All) or the focused last item (-FocusLast)
-function Copy-Row([string]$Case, $Want, [switch]$FocusLast) {
+# Copy (F5) from the opened archive into tgt: everything (Select All) or the focused last item (-FocusLast);
+# $BoxName = a box naming this member is required during the copy
+function Copy-Row([string]$Case, $Want, [switch]$FocusLast, [string]$BoxName) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     $arc = $d + '\t.cpio'; $tgt = $d + '\tgt'
@@ -160,6 +176,8 @@ function Copy-Row([string]$Case, $Want, [switch]$FocusLast) {
         End-Row $Case $id $null $before; $id = 0
         $c = Check-Tgt $tgt $Want
         $ok = $c[0] -and ($openMsgs -eq 'no window')
+        if ($BoxName) { $ok = $ok -and $msgs.Contains('TAR Plugin Error') -and $msgs.Contains($BoxName) }
+        else { $ok = $ok -and -not $msgs.Contains('TAR Plugin Error') }
         Row $Case 'RUN' (V $ok) ('{0}; at open: {1}; during the copy: {2}' -f $c[1], (Tail $openMsgs 120), (Tail $msgs 200))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -213,8 +231,23 @@ try {
     Unpack-Row 'CPIO-ODC-HARD-DEL' ([ordered]@{ 'a.txt' = 'O'; 'b.txt' = 'O' }) -ArcGone
     Unpack-Row 'CPIO-SYM-DEL' ([ordered]@{ 'a.txt' = 'A' }) -BoxName 's.txt'
     Unpack-Row 'CPIO-FIFO-DEL' ([ordered]@{ 'ok.txt' = 'K' }) -ArcGone
+    # review 1 of feature 310: rpm, the padding after a symlink target, names that are one file on Windows,
+    # the overwrite answers (Skip on the data member keeps the archive), data first with only the later name
+    Unpack-Row 'RPM-HARD-DEL' $hard -ArcGone
+    Unpack-Row 'RPM-SYM-DEL' ([ordered]@{ 'a.txt' = 'A' }) -BoxName 's.txt'
+    Unpack-Row 'CPIO-SYM-ALIGN-DEL' ([ordered]@{ 'a.txt' = 'A'; 'z.txt' = 'ZZ' }) -BoxName 's.txt -> abcdefg'
+    Unpack-Row 'CPIO-CRC-SYM-ALIGN-DEL' ([ordered]@{ 'a.txt' = 'A'; 'z.txt' = 'ZZ' }) -BoxName 's.txt -> abcdefg'
+    Unpack-Row 'CPIO-ODC-SYM-ALIGN-DEL' ([ordered]@{ 'a.txt' = 'A'; 'z.txt' = 'ZZ' }) -BoxName 's.txt -> abcdefg'
+    Unpack-Row 'CPIO-SYM-LONG-DEL' ([ordered]@{ 'a.txt' = 'A'; 'z.txt' = 'ZZ' }) -BoxName 's.txt'
+    Unpack-Row 'CPIO-SYM-4096-DEL' ([ordered]@{ 'a.txt' = 'A'; 'z.txt' = 'ZZ' }) -BoxName 'yq'
+    Unpack-Row 'CPIO-HARD-CASE-DEL' ([ordered]@{ 'a.txt' = 'D' }) -ArcGone
+    Unpack-Row 'CPIO-HARD-CASEFIRST-DEL' ([ordered]@{ 'a.txt' = 'D' }) -ArcGone
+    Unpack-Row 'CPIO-HARD-SKIPDATA-DEL' ([ordered]@{ 'c.txt' = 'C'; 'sub/d.txt' = 'OLD' }) -BoxName 'a.txt' -Seed @{ 'sub/d.txt' = 'OLD' } -Answer @(1, 173) -Boxes 2
+    Unpack-Row 'CPIO-HARD-YES-DEL' $hard -ArcGone -Seed @{ 'a.txt' = 'OLD' } -Boxes 1
+    Unpack-Row 'CPIO-HARD-SKIPCOPY-DEL' ([ordered]@{ 'c.txt' = 'C'; 'a.txt' = 'OLD'; 'sub/b.txt' = 'AAA'; 'sub/d.txt' = 'AAA' }) -ArcGone -Seed @{ 'a.txt' = 'OLD' } -Answer @(1, 173) -Boxes 1
     Copy-Row 'COPY-CPIO-ALL' $hard
     Copy-Row 'COPY-CPIO-ONE' ([ordered]@{ 'a.txt' = 'AAA' }) -FocusLast
+    Copy-Row 'COPY-FIRST-LATER' ([ordered]@{ }) -BoxName 'b.txt' -FocusLast
     View-Row 'VIEW-CPIO-PLAIN' 'p.txt' 'P'
     View-Row 'VIEW-CPIO-ONE' 'a.txt' 'AAA'
     View-Row 'VIEW-CPIO-FIRST' 'b.txt' '' 'b.txt'
