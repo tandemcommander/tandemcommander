@@ -26,6 +26,11 @@
       COPY-CPIO-ALL        the CPIO-HARD-DEL archive, Select All (842), Copy (727) -> the 4 files, AAA
       COPY-CPIO-ONE        a.txt (size 0), sub, sub/b.txt (the data) one inode; End focuses a.txt,
                            Copy (727) -> tgt holds a.txt = AAA only
+    View rows: the left panel opens t.cpio; Home, End, F3 (742); the copy the disk cache made is read.
+      VIEW-CPIO-PLAIN      control: one file p.txt without links, F3 -> the viewer, cached p.txt = P
+      VIEW-CPIO-ONE        the COPY-CPIO-ONE archive, F3 of a.txt (size 0) -> the viewer, cached a.txt = AAA
+      VIEW-CPIO-FIRST      the CPIO-HARD-FIRST archive, F3 of b.txt (size 0, its data passed with a.txt)
+                           -> a box naming b.txt, no cached copy (never an empty file)
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -161,6 +166,33 @@ function Copy-Row([string]$Case, $Want, [switch]$FocusLast) {
     finally { if ($id) { End-Row $Case $id $null $before } }
 }
 
+# F3 on the focused last item of the opened archive; the copy the disk cache made (SAL*.tmp folders
+# created during the row) must hold $Want; with $BoxName a box naming that member is required instead
+# and no cached copy may exist
+function View-Row([string]$Case, [string]$Member, [string]$Want, [string]$BoxName) {
+    if (-not (Want $Case)) { return }
+    $d = $Root + '\' + $Case
+    $arc = $d + '\t.cpio'
+    try { NewDir $d; Make-Fixture $Case $arc }
+    catch { Row $Case 'RUN' 'NOT DRIVEN' ('fixture: ' + $_.Exception.Message); return }
+    $id = 0; $before = Reports; $t0 = (Get-Date).AddSeconds(-2)
+    try {
+        $id = Start-Tc $arc
+        Key $id 0x24; Key $id 0x23; Start-Sleep -Milliseconds 500
+        $t = Which-Viewer $id
+        $r = Serve $id 8 @(1)
+        $copies = @([IO.Directory]::GetDirectories($LP + $TempRoot, 'SAL*.tmp') | Where-Object { [IO.Directory]::GetCreationTime($_) -ge $t0 } | ForEach-Object { $_ + '\' + $Member } | Where-Object { [IO.File]::Exists($_) })
+        $content = $(if ($copies.Count) { [IO.File]::ReadAllText($copies[0]) } else { '<no cached copy>' })
+        if ($BoxName) { $ok = ($t -like '<message>*') -and $t.Contains($BoxName) -and ($copies.Count -eq 0) }
+        else { $ok = ($t -notlike '<*') -and ($copies.Count -eq 1) -and ($content -ceq $Want) }
+        Row $Case 'RUN' (V $ok) ('F3: {0}; cached copies: {1}; content: {2} (want {3}){4}' -f (Tail $t 200), $copies.Count, (Esc $content), $(if ($BoxName) { 'a box naming ' + $BoxName } else { $Want }), $(if ((Msgs $r) -ne 'no window') { '; after: ' + (Tail (Msgs $r) 200) } else { '' }))
+        [void](Do-ChangeDir $id $StartDir); [void](Serve $id 8 @(1, 7, 2))
+        End-Row $Case $id $null $before; $id = 0
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row $Case $id $null $before } }
+}
+
 $backup = Join-Path $env:TEMP 'tc310_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
@@ -183,6 +215,9 @@ try {
     Unpack-Row 'CPIO-FIFO-DEL' ([ordered]@{ 'ok.txt' = 'K' }) -ArcGone
     Copy-Row 'COPY-CPIO-ALL' $hard
     Copy-Row 'COPY-CPIO-ONE' ([ordered]@{ 'a.txt' = 'AAA' }) -FocusLast
+    View-Row 'VIEW-CPIO-PLAIN' 'p.txt' 'P'
+    View-Row 'VIEW-CPIO-ONE' 'a.txt' 'AAA'
+    View-Row 'VIEW-CPIO-FIRST' 'b.txt' '' 'b.txt'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

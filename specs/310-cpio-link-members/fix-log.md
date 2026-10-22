@@ -39,4 +39,52 @@ out silently and may delete the archive".
 
 ## Implementation
 
-(running notes below)
+- `src/common/salcpiolink.h` (new, header-only): `SalCpioIsLinkGroupMember` (newc / crc, regular file,
+  `c_nlink` > 1) and `SalCpioLinkDecide` (the table of `data-model.md`). saltests `TestCpioLink310`
+  (+26 checks).
+- `ReadNewASCIIHeader` reads `c_ino`, `c_nlink`, `c_devmajor`, `c_devminor` **silently** (`CpioHex8`):
+  using `TxtToLong` would have shown a message and refused an archive with a non-hex field the reader
+  never needed before - such a member now stays ungrouped (decided while writing it; compatibility).
+- `ReadArchiveHeader`: a cpio `CP_IFLNK` member gets `LinkType = SYMTYPE` and its target (its data,
+  1..4096 bytes) as `LinkName`; the bytes are counted in `Offset` (padding stays right) and the size set
+  to 0. Feature 309's code in `DoUnpackArchive` then reports it (`ERROR_NOT_SUPPORTED`).
+- `DoUnpackArchive`: grouped members go through `WriteOutCpioGroupMember` (map key (dev, ino) ->
+  state / written target / data name / waiting names). Copies through feature 309's `WriteOutLinkCopy`;
+  `FinishCpioWaiting` copies or reports the waiting names after the data member; at the trailer and at
+  the end of data `WriteOutCpioEmptyNames` writes the names of groups that never carried data as empty
+  files (a header with format "unknown" - no data, no padding read). Every `std` operation is guarded;
+  out of memory shows the message and fails (fail closed, never an empty file).
+- Trap met: `UnpackOneFile` passes `header.FileInfo.Name` as the target name, which the next
+  `ReadArchiveHeader` frees - `UnpackOneCpioGroupName` copies it first (found while writing, before
+  the first build).
+- `UnpackOneFile`: a found grouped name with size 0 reads on (`UnpackOneCpioGroupName`); a group whose
+  data passed earlier in this pass (data-first layout) -> reported ("(2)", `b.txt -> a.txt`), FALSE.
+
+## Checks after the fix
+
+- `build.cmd`: BUILD SUCCEEDED (the C4267 warnings at `untar.cpp` `NameLen = strlen` lines are
+  pre-existing).
+- `saltests.exe`: `saltests: 27237 checks, 0 failed` (27,211 before + 26).
+- `python tools/check_encoding.py --strict`: `TOTAL: 0 finding(s)`.
+- Probe, with rows VIEW-CPIO-PLAIN (control), VIEW-CPIO-ONE, VIEW-CPIO-FIRST added:
+  `probe/result_after.txt` **26 PASS / 0 FAIL**, registry restored and identical.
+  CPIO-SYM-DEL: one box `(50) ... s.txt -> a.txt`, `t.cpio` kept. VIEW-CPIO-FIRST: one box
+  `(2) ... b.txt -> a.txt`, no cached copy.
+- The "Debug note: monitored handles" on the F3 rows appears for the plain control row too
+  (`probe/result_view_control.txt`) and in features 095 / 097's pre-fix results: the core's viewer path,
+  not this change.
+- Negative control (grouping off - `IsCpioGroupMember` returning FALSE - and the symlink type not set):
+  `probe/result_negctl.txt` **17 PASS / 9 FAIL** - exactly the 7 rows that failed before plus the two
+  F3 rows (an empty cached copy). Source restored, rebuilt, probe re-run (26 / 0 above).
+- Regressions: `probe/regress_309.txt` 16 / 0, `regress_308.txt` 12 / 0, `regress_306.txt` 28 / 0 (as
+  recorded by those features).
+- clang-format: `salcpiolink.h`, `untar.cpp`, `precomp.h` clean; the new saltests block formatted with
+  `--lines`; the remaining drift in `tar.h` / `saltests.cpp` is pre-existing.
+
+## Limits
+
+- The panel listing is unchanged: names stored with size 0 show size 0; symbolic links are not listed.
+- Viewing (F3) a name whose data is stored with an EARLIER name of the file is reported, not shown (no
+  common writer produces that layout; Unpack / Copy handle it).
+- rpm is the same reader; no rpm fixture was run (the payload is a newc cpio behind `CRPM`).
+- odc / binary cpio: unchanged (they repeat the data with every name).

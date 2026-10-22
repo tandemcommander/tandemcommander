@@ -72,6 +72,34 @@ int TxtToLong(const unsigned char* txt, unsigned long& result)
     return TAR_OK;
 }
 
+// feature 310: an 8-digit hexadecimal cpio field without a message (FALSE = not a number)
+static BOOL CpioHex8(const unsigned char* txt, unsigned long& result)
+{
+    result = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        int c = txt[i];
+        if (c >= '0' && c <= '9')
+            result = result * 16 + (c - '0');
+        else if (c >= 'a' && c <= 'f')
+            result = result * 16 + (c - 'a' + 10);
+        else if (c >= 'A' && c <= 'F')
+            result = result * 16 + (c - 'A' + 10);
+        else
+            return FALSE;
+    }
+    return TRUE;
+}
+
+// feature 310: malloc'd copy of 's' (NULL when out of memory)
+static char* DupU8(const char* s)
+{
+    char* d = (char*)malloc(strlen(s) + 1);
+    if (d != NULL)
+        strcpy(d, s);
+    return d;
+}
+
 int TxtToQuad(const unsigned char* txt, CQuadWord& result)
 {
     CALL_STACK_MESSAGE2("TxtToQuad(%s, )", txt);
@@ -167,6 +195,10 @@ void SCommonHeader::Initialize()
     NameRefused = FALSE;
     Format = e_Unknown;
     IsExtendedTar = FALSE;
+    CpioIno = 0;
+    CpioNLink = 0;
+    CpioDevMajor = 0;
+    CpioDevMinor = 0;
 }
 
 //
@@ -344,6 +376,9 @@ BOOL CArchive::UnpackOneFile(const char* nameInArchive, const CFileData* fileDat
         return FALSE;
     }
     BOOL found = FALSE;
+    // feature 310: the cpio hard-link groups whose data passed before the name asked for (data-first
+    // layout): the member that carried it, for the report
+    std::map<std::pair<unsigned __int64, DWORD>, std::string> cpioDataSeen;
     // we have an archive, so proceed - decode all files from the archive
     for (;;)
     {
@@ -363,6 +398,36 @@ BOOL CArchive::UnpackOneFile(const char* nameInArchive, const CFileData* fileDat
                                          ? ERROR_FILE_NOT_FOUND
                                          : ERROR_NOT_SUPPORTED);
             return FALSE;
+        }
+        // feature 310: a name of a hard-linked file stored with size 0 gets the data stored with a later
+        // name; when the data came earlier (passed - the archive is read once) it is reported, never
+        // written as an empty file
+        if (IsCpioGroupMember(header))
+        {
+            BOOL hasData = header.FileInfo.Size > CQuadWord(0, 0);
+            try
+            {
+                if (found && !hasData)
+                {
+                    std::map<std::pair<unsigned __int64, DWORD>, std::string>::iterator seen =
+                        cpioDataSeen.find(CpioGroupKey(header));
+                    if (seen == cpioDataSeen.end())
+                        return UnpackOneCpioGroupName(header, targetPath,
+                                                      newFileName ? newFileName : header.FileInfo.Name);
+                    free(header.LinkName);
+                    header.LinkName = DupU8(seen->second.c_str());
+                    ReportLinkMember(header, ERROR_FILE_NOT_FOUND);
+                    return FALSE;
+                }
+                if (!found && hasData)
+                    cpioDataSeen[CpioGroupKey(header)] = header.Name;
+            }
+            catch (...)
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                  MSGBOX_ERROR);
+                return FALSE;
+            }
         }
         // if we cannot interpret what we found, skip it; otherwise extract the file
         // What we don't support (everything except files & dirs) has zero size and Ignored set.
@@ -532,6 +597,7 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
     // nor deletes the archive ("Delete archive after unpacking")
     BOOL refused = FALSE;
     CWrittenNames writtenNames; // feature 309
+    CCpioGroups cpioGroups;     // feature 310
     SCommonHeader header;
     int ret = ReadArchiveHeader(header, TRUE);
     // if this is not a supported format, unpack only the outer compression when present
@@ -612,9 +678,15 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         // What we don't support (everything except files & dirs) has zero size and Ignored set.
         // This new condition unlike the old one also extracts empty files.
         BOOL written = FALSE;
-        ret = WriteOutData(header, targetPath, ptr, (header.Ignored || !found), !linkHandled, &written);
+        if (IsCpioGroupMember(header)) // feature 310: a name of a hard-linked file in a newc / crc cpio
+            ret = WriteOutCpioGroupMember(header, targetPath, ptr, found, cpioGroups, refused);
+        else
+            ret = WriteOutData(header, targetPath, ptr, (header.Ignored || !found), !linkHandled, &written);
         if (written && !header.IsDir)
             RecordNameWritten(writtenNames, header.Name);
+        // feature 310: at the end of the data, the names of files that never carried data are empty
+        if (ret == TAR_EOF && WriteOutCpioEmptyNames(cpioGroups, targetPath) != TAR_OK)
+            ret = TAR_ERROR;
         if (ret != TAR_OK)
         {
             SalamanderIf->CloseProgressDialog();
@@ -642,8 +714,10 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         // reached the end of the archive, stop
         if (header.Finished)
         {
+            // feature 310: the names of files that never carried data are empty
+            BOOL emptyOk = WriteOutCpioEmptyNames(cpioGroups, targetPath) == TAR_OK;
             SalamanderIf->CloseProgressDialog();
-            return !refused;
+            return emptyOk && !refused;
         }
     }
 }
@@ -1187,6 +1261,272 @@ DONE:
     return ret;
 }
 
+// feature 310: a header standing for a waiting name (no data, no padding: format unknown) for
+// WriteOutData / WriteOutLinkCopy / ReportLinkMember; FALSE = out of memory (shown)
+BOOL CArchive::MakeCpioWaitingHeader(SCommonHeader& h, const SCpioWaiting& w, const char* linkName)
+{
+    h.Initialize();
+    h.Name = DupU8(w.Name.c_str());
+    h.LinkName = linkName != NULL ? DupU8(linkName) : NULL;
+    h.FileInfo.LastWrite = w.LastWrite;
+    h.FileInfo.Attr = w.Attr;
+    if (h.Name == NULL || (linkName != NULL && h.LinkName == NULL))
+    {
+        SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+BOOL CArchive::IsCpioGroupMember(const SCommonHeader& header)
+{
+    return !header.IsDir && !header.Ignored &&
+           SalCpioIsLinkGroupMember(header.Format == e_NewASCII || header.Format == e_CRCASCII,
+                                    header.Mode.LoDWord, header.CpioNLink);
+}
+
+std::pair<unsigned __int64, DWORD> CArchive::CpioGroupKey(const SCommonHeader& header)
+{
+    return std::make_pair(((unsigned __int64)header.CpioDevMajor << 32) | header.CpioDevMinor, header.CpioIno);
+}
+
+BOOL CArchive::UnpackOneCpioGroupName(SCommonHeader& header, const char* targetPath, const char* targetName)
+{
+    SLOW_CALL_STACK_MESSAGE3("CArchive::UnpackOneCpioGroupName( , %s, %s)", targetPath, targetName);
+    SCpioWaiting w;
+    try
+    {
+        w.Name = header.Name;
+        w.Target = targetName; // it may lie in the header, which the next member replaces
+    }
+    catch (...)
+    {
+        SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        return FALSE;
+    }
+    w.LastWrite = header.FileInfo.LastWrite;
+    w.Attr = header.FileInfo.Attr;
+    std::pair<unsigned __int64, DWORD> key = CpioGroupKey(header);
+    int ret = WriteOutData(header, targetPath, w.Target.c_str(), TRUE, FALSE); // nothing to read but the padding
+    while (ret == TAR_OK)
+    {
+        if (ReadArchiveHeader(header, FALSE) != TAR_OK)
+            return FALSE;
+        if (header.Finished)
+            break;
+        if (IsCpioGroupMember(header) && CpioGroupKey(header) == key && header.FileInfo.Size > CQuadWord(0, 0))
+        {
+            // the group's data, written under the name asked for (the header names it meanwhile - the
+            // overwrite question)
+            char* dataName = header.Name;
+            header.Name = &w.Name[0];
+            ret = WriteOutData(header, targetPath, w.Target.c_str(), FALSE, FALSE);
+            header.Name = dataName;
+            return ret == TAR_OK || ret == TAR_EOF;
+        }
+        ret = WriteOutData(header, targetPath, w.Target.c_str(), TRUE, FALSE);
+    }
+    if (ret != TAR_OK && ret != TAR_EOF)
+        return FALSE;
+    // no member of the file carried data: it is empty
+    SCommonHeader h;
+    if (!MakeCpioWaitingHeader(h, w, NULL))
+        return FALSE;
+    return WriteOutData(h, targetPath, w.Target.c_str(), FALSE, FALSE) == TAR_OK;
+}
+
+int CArchive::FinishCpioWaiting(SCpioGroup& group, const char* targetPath, BOOL& refused)
+{
+    CALL_STACK_MESSAGE2("CArchive::FinishCpioWaiting( , %s, )", targetPath);
+    for (size_t i = 0; i < group.Waiting.size(); i++)
+    {
+        SCommonHeader h;
+        if (!MakeCpioWaitingHeader(h, group.Waiting[i], group.DataName.c_str()))
+            return TAR_ERROR;
+        if (group.State != SAL_CPIO_GROUP_WRITTEN)
+        {
+            // the data was not written (Skip, an error): the names waiting for it are left out
+            ReportLinkMember(h, ERROR_FILE_NOT_FOUND);
+            refused = TRUE;
+            break;
+        }
+        BOOL linkWritten, linkRefused;
+        if (WriteOutLinkCopy(h, targetPath, group.Waiting[i].Target.c_str(), group.WrittenTarget.c_str(),
+                             &linkWritten, &linkRefused) != TAR_OK)
+            return TAR_ERROR;
+        if (linkRefused)
+            refused = TRUE;
+    }
+    group.Waiting.clear();
+    return TAR_OK;
+}
+
+int CArchive::WriteOutCpioGroupMember(SCommonHeader& header, const char* targetPath, const char* targetName,
+                                      BOOL found, CCpioGroups& groups, BOOL& refused)
+{
+    SLOW_CALL_STACK_MESSAGE3("CArchive::WriteOutCpioGroupMember( , %s, %s, , , )", targetPath, targetName);
+    SCpioGroup* group;
+    try
+    {
+        group = &groups[std::make_pair(((unsigned __int64)header.CpioDevMajor << 32) | header.CpioDevMinor,
+                                       header.CpioIno)];
+    }
+    catch (...)
+    {
+        SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        return TAR_ERROR;
+    }
+    BOOL hasData = header.FileInfo.Size > CQuadWord(0, 0);
+    int ret;
+    BOOL written = FALSE;
+    switch (SalCpioLinkDecide(found != FALSE, hasData != FALSE, group->State, !group->Waiting.empty()))
+    {
+    case SAL_CPIO_LINK_WAIT:
+    {
+        try
+        {
+            SCpioWaiting w;
+            w.Name = header.Name;
+            w.Target = targetName;
+            w.LastWrite = header.FileInfo.LastWrite;
+            w.Attr = header.FileInfo.Attr;
+            group->Waiting.push_back(w);
+        }
+        catch (...)
+        {
+            SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+            return TAR_ERROR;
+        }
+        return WriteOutData(header, targetPath, targetName, TRUE, FALSE); // nothing to read but the padding
+    }
+
+    case SAL_CPIO_LINK_COPY:
+    case SAL_CPIO_LINK_REPORT:
+    {
+        free(header.LinkName); // the report names the member that carried the data
+        header.LinkName = DupU8(group->DataName.c_str());
+        if (header.LinkName == NULL)
+        {
+            SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+            return TAR_ERROR;
+        }
+        if (group->State == SAL_CPIO_GROUP_WRITTEN)
+        {
+            BOOL linkWritten, linkRefused;
+            if (WriteOutLinkCopy(header, targetPath, targetName, group->WrittenTarget.c_str(), &linkWritten,
+                                 &linkRefused) != TAR_OK)
+                return TAR_ERROR;
+            if (linkRefused)
+                refused = TRUE;
+        }
+        else
+        {
+            ReportLinkMember(header, ERROR_FILE_NOT_FOUND);
+            refused = TRUE;
+        }
+        return WriteOutData(header, targetPath, targetName, TRUE, FALSE);
+    }
+
+    case SAL_CPIO_LINK_WRITE:
+    {
+        ret = WriteOutData(header, targetPath, targetName, FALSE, TRUE, &written);
+        if (ret == TAR_ERROR || group->State == SAL_CPIO_GROUP_WRITTEN)
+            return ret; // stop, or the data stored once more (the copies were made from the first)
+        try
+        {
+            group->DataName = header.Name;
+            if (written)
+                group->WrittenTarget = targetName;
+        }
+        catch (...)
+        {
+            SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+            return TAR_ERROR;
+        }
+        break;
+    }
+
+    case SAL_CPIO_LINK_WRITE_FOR_WAITING:
+    {
+        // the member carrying the data was not asked for, a name waiting for it was: the data goes
+        // there (the header names that member meanwhile - the overwrite question, the progress)
+        SCpioWaiting w;
+        try
+        {
+            w = group->Waiting.front();
+            group->Waiting.erase(group->Waiting.begin());
+            group->DataName = header.Name;
+        }
+        catch (...)
+        {
+            SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+            return TAR_ERROR;
+        }
+        char* dataName = header.Name;
+        header.Name = &w.Name[0];
+        ret = WriteOutData(header, targetPath, w.Target.c_str(), FALSE, TRUE, &written);
+        header.Name = dataName;
+        if (ret == TAR_ERROR)
+            return ret;
+        if (written)
+        {
+            try
+            {
+                group->WrittenTarget = w.Target;
+            }
+            catch (...)
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                  MSGBOX_ERROR);
+                return TAR_ERROR;
+            }
+        }
+        break;
+    }
+
+    default: // SAL_CPIO_LINK_SKIP
+        ret = WriteOutData(header, targetPath, targetName, TRUE, TRUE);
+        if (hasData && group->State != SAL_CPIO_GROUP_WRITTEN)
+        {
+            group->State = SAL_CPIO_GROUP_LOST; // a name asked for later cannot get the data
+            try
+            {
+                group->DataName = header.Name;
+            }
+            catch (...)
+            {
+            }
+        }
+        return ret;
+    }
+    // the group's data was handled (WRITE / WRITE_FOR_WAITING): the waiting names follow it
+    group->State = written ? SAL_CPIO_GROUP_WRITTEN : SAL_CPIO_GROUP_LOST;
+    if (FinishCpioWaiting(*group, targetPath, refused) != TAR_OK)
+        return TAR_ERROR;
+    return ret;
+}
+
+int CArchive::WriteOutCpioEmptyNames(CCpioGroups& groups, const char* targetPath)
+{
+    CALL_STACK_MESSAGE2("CArchive::WriteOutCpioEmptyNames( , %s)", targetPath);
+    for (CCpioGroups::iterator it = groups.begin(); it != groups.end(); ++it)
+    {
+        if (it->second.State != SAL_CPIO_GROUP_NONE)
+            continue;
+        // no member of the file carried data: it is empty under every name
+        for (size_t i = 0; i < it->second.Waiting.size(); i++)
+        {
+            SCommonHeader h;
+            if (!MakeCpioWaitingHeader(h, it->second.Waiting[i], NULL))
+                return TAR_ERROR;
+            if (WriteOutData(h, targetPath, it->second.Waiting[i].Target.c_str(), FALSE, TRUE) == TAR_ERROR)
+                return TAR_ERROR;
+        }
+        it->second.Waiting.clear();
+    }
+    return TAR_OK;
+}
+
 // skip the unused remainder of the block to reach the next valid one
 int CArchive::SkipBlockPadding(const SCommonHeader& header)
 {
@@ -1369,6 +1709,39 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     {
         header.Finished = TRUE;
         return TAR_OK;
+    }
+    // feature 310: a cpio symbolic link - its target is the member's data; read here (the data pass then
+    // reads nothing; a target over 4096 bytes - Linux allows 4095 - is not read and stays unnamed) so an
+    // extraction asked for it reports "name -> target" and fails, as for a tar symlink (feature 309)
+    if (header.Format != e_TarPosix && header.Format != e_TarOldGnu && header.Format != e_TarV7 &&
+        (header.Mode.LoDWord & CP_IFMT) == CP_IFLNK)
+    {
+        header.LinkType = SAL_TAR_TYPE_SYMLINK;
+        if (header.FileInfo.Size > CQuadWord(0, 0) && header.FileInfo.Size <= CQuadWord(4096, 0))
+        {
+            unsigned short targetSize = (unsigned short)header.FileInfo.Size.Value;
+            const unsigned char* target = Stream->GetBlock(targetSize);
+            if (target == NULL)
+            {
+                if (!Stream->IsOk())
+                    SalamanderGeneral->ShowMessageBox(LoadErr(Stream->GetErrorCode(), Stream->GetLastErr()),
+                                                      LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                else
+                    SalamanderGeneral->ShowMessageBox(LoadStr(IDS_ERR_EOF), LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                return TAR_ERROR;
+            }
+            header.LinkName = (char*)malloc(targetSize + 1);
+            if (header.LinkName == NULL)
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                  MSGBOX_ERROR);
+                return TAR_ERROR;
+            }
+            memcpy(header.LinkName, target, targetSize);
+            header.LinkName[targetSize] = '\0';
+            Offset += CQuadWord(targetSize, 0); // the padding after the data counts these bytes
+            header.FileInfo.Size.Set(0, 0);
+        }
     }
     // format boundary (interface 104): this is the single point where a name read from
     // the archive enters the plugin, so decode it to UTF-8 here and stay UTF-8 afterwards
@@ -1638,6 +2011,18 @@ int CArchive::ReadNewASCIIHeader(SCommonHeader& header)
         return TAR_ERROR;
     if (TxtToQuad(buffer + 12 * 8, header.Checksum) != TAR_OK)
         return TAR_ERROR;
+    // feature 310: what makes members names of one file (c_ino, c_nlink, c_devmajor, c_devminor)
+    // - read silently: fields the reader never needed must not refuse an archive that opened before; a
+    // field that is not hexadecimal leaves the member ungrouped (link count 0), extracted as before
+    unsigned long ino, nlink, devMajor, devMinor;
+    if (CpioHex8(buffer + 0 * 8, ino) && CpioHex8(buffer + 4 * 8, nlink) &&
+        CpioHex8(buffer + 7 * 8, devMajor) && CpioHex8(buffer + 8 * 8, devMinor))
+    {
+        header.CpioIno = ino;
+        header.CpioNLink = nlink;
+        header.CpioDevMajor = devMajor;
+        header.CpioDevMinor = devMinor;
+    }
     // read the name
     return ReadCpioName(namesize, header);
 }

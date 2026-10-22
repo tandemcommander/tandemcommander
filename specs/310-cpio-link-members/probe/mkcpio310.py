@@ -69,7 +69,7 @@ def main():
         reg(a, 'a.txt', b'A', ino=2)
         a.member('s.txt', S_IFLNK | 0o777, b'a.txt', ino=3)        # the target is the data
         a.member('t.txt', S_IFLNK | 0o777, b'a.txt', ino=4)        # a second one: still one box
-    elif row.startswith('CPIO-HARD-FIRST'):
+    elif row.startswith('CPIO-HARD-FIRST') or row.startswith('VIEW-CPIO-FIRST'):
         reg(a, 'a.txt', b'F', ino=7, nlink=2)                      # data with the first name
         reg(a, 'b.txt', b'', ino=7, nlink=2)
     elif row.startswith('CPIO-HARD-EMPTY'):
@@ -83,10 +83,12 @@ def main():
     elif row.startswith('CPIO-FIFO'):
         a.member('p', S_IFIFO | 0o644, b'', ino=11)                # a named pipe: not a file's data
         reg(a, 'ok.txt', b'K', ino=12)
-    elif row.startswith('COPY-CPIO-ONE'):
+    elif row.startswith('COPY-CPIO-ONE') or row.startswith('VIEW-CPIO-ONE'):
         reg(a, 'a.txt', b'', ino=5, nlink=2)                       # listed with size 0
         a.member('sub', S_IFDIR | 0o755, b'', ino=6, nlink=2)
         reg(a, 'sub/b.txt', b'AAA', ino=5, nlink=2)                # the data, not asked for
+    elif row.startswith('VIEW-CPIO-PLAIN'):
+        reg(a, 'p.txt', b'P', ino=3)                               # control: no link at all
     elif row.startswith('CPIO-ODC-HARD'):
         reg(a, 'a.txt', b'O', ino=5, nlink=2)                      # odc repeats the data per name
         reg(a, 'b.txt', b'O', ino=5, nlink=2)

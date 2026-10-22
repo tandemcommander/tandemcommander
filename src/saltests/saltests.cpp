@@ -96,6 +96,7 @@
 #include "salftpupname.h"     // feature 303
 #include "salpaxheader.h"     // feature 306
 #include "saltarlink.h"       // feature 309
+#include "salcpiolink.h"      // feature 310
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -18462,6 +18463,40 @@ static void TestTarLink309()
     CHECK(SalTarLinkDecide('5', true) == SAL_TAR_LINK_NONE);
 }
 
+static void TestCpioLink310()
+{
+    // grouped: a regular file with more than one link in the newc / crc format only
+    CHECK(SalCpioIsLinkGroupMember(true, 0100644, 2));
+    CHECK(SalCpioIsLinkGroupMember(true, 0100000, 3));
+    CHECK(!SalCpioIsLinkGroupMember(true, 0100644, 1)); // one name: nothing to wait for
+    CHECK(!SalCpioIsLinkGroupMember(true, 0100644, 0));
+    CHECK(!SalCpioIsLinkGroupMember(false, 0100644, 2)); // odc / binary repeat the data with every name
+    CHECK(!SalCpioIsLinkGroupMember(true, 0040755, 2));  // a folder
+    CHECK(!SalCpioIsLinkGroupMember(true, 0120777, 2));  // a symbolic link
+    CHECK(!SalCpioIsLinkGroupMember(true, 0010644, 2));  // a named pipe
+    CHECK(!SalCpioIsLinkGroupMember(true, 0060644, 2));  // a block device (0060000 contains 0040000's bit)
+    CHECK(!SalCpioIsLinkGroupMember(true, 0140644, 2));  // a socket (contains 0100000's bit)
+
+    // a member carrying data: its own content; not asked - written for the names waiting for it
+    CHECK(SalCpioLinkDecide(true, true, SAL_CPIO_GROUP_NONE, false) == SAL_CPIO_LINK_WRITE);
+    CHECK(SalCpioLinkDecide(true, true, SAL_CPIO_GROUP_NONE, true) == SAL_CPIO_LINK_WRITE);
+    CHECK(SalCpioLinkDecide(true, true, SAL_CPIO_GROUP_LOST, false) == SAL_CPIO_LINK_WRITE);
+    CHECK(SalCpioLinkDecide(true, true, SAL_CPIO_GROUP_WRITTEN, false) == SAL_CPIO_LINK_WRITE);
+    CHECK(SalCpioLinkDecide(false, true, SAL_CPIO_GROUP_NONE, true) == SAL_CPIO_LINK_WRITE_FOR_WAITING);
+    CHECK(SalCpioLinkDecide(false, true, SAL_CPIO_GROUP_LOST, true) == SAL_CPIO_LINK_WRITE_FOR_WAITING);
+    CHECK(SalCpioLinkDecide(false, true, SAL_CPIO_GROUP_NONE, false) == SAL_CPIO_LINK_SKIP);
+    CHECK(SalCpioLinkDecide(false, true, SAL_CPIO_GROUP_WRITTEN, true) == SAL_CPIO_LINK_SKIP);
+    CHECK(SalCpioLinkDecide(false, true, SAL_CPIO_GROUP_WRITTEN, false) == SAL_CPIO_LINK_SKIP);
+
+    // a name stored with size 0: waits, is copied, or is reported - never written empty by itself
+    CHECK(SalCpioLinkDecide(true, false, SAL_CPIO_GROUP_NONE, false) == SAL_CPIO_LINK_WAIT);
+    CHECK(SalCpioLinkDecide(true, false, SAL_CPIO_GROUP_NONE, true) == SAL_CPIO_LINK_WAIT);
+    CHECK(SalCpioLinkDecide(true, false, SAL_CPIO_GROUP_WRITTEN, false) == SAL_CPIO_LINK_COPY);
+    CHECK(SalCpioLinkDecide(true, false, SAL_CPIO_GROUP_LOST, false) == SAL_CPIO_LINK_REPORT);
+    CHECK(SalCpioLinkDecide(false, false, SAL_CPIO_GROUP_NONE, true) == SAL_CPIO_LINK_SKIP);
+    CHECK(SalCpioLinkDecide(false, false, SAL_CPIO_GROUP_WRITTEN, false) == SAL_CPIO_LINK_SKIP);
+    CHECK(SalCpioLinkDecide(false, false, SAL_CPIO_GROUP_LOST, false) == SAL_CPIO_LINK_SKIP);
+}
 
 int main(int argc, char** argv)
 {
@@ -18611,6 +18646,7 @@ int main(int argc, char** argv)
     TestPaxHeader306();
     TestPaxNameUsable308();
     TestTarLink309();
+    TestCpioLink310();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

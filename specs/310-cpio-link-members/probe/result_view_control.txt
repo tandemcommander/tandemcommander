@@ -1,0 +1,11 @@
+cpio310_probe (feature 310) view-control
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 16:08; registry key existed True; ACP 1250; python Python 3.14.6
+
+VIEW-CPIO-PLAIN RUN    PASS        F3: C:\Users\pavel\AppData\Local\Temp\SAL30C.tmp\p.txt [Plain Text] - Code Viewer; cached copies: 1; content: P (want P)
+VIEW-CPIO-PLAIN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+VIEW-CPIO-ONE RUN    PASS        F3: C:\Users\pavel\AppData\Local\Temp\SAL8.tmp\a.txt [Plain Text] - Code Viewer; cached copies: 1; content: AAA (want AAA)
+VIEW-CPIO-ONE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

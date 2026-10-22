@@ -7,6 +7,7 @@
 #include "dlldefs.h"
 #include "../../common/salpaxheader.h" // feature 306: PAX extended header records
 #include "../../common/saltarlink.h"   // feature 309: link members
+#include "../../common/salcpiolink.h"  // feature 310: hard-linked files in a cpio
 
 // possible return codes
 #define TAR_OK 0
@@ -267,6 +268,12 @@ struct SCommonHeader
     BOOL NameRefused; // feature 308: Name cannot be used in this pass (also Ignored); an extraction asked for it fails
     char LinkType;    // feature 309: LNKTYPE / SYMTYPE for a link member (also Ignored), else 0
     char* LinkName;   // feature 309: malloc'd UTF-8 name the link refers to, normalized like Name; NULL = none
+    // feature 310: newc / crc cpio only (0 otherwise) - c_ino, c_nlink, c_devmajor, c_devminor; the
+    // names of one file share the inode and the device, the data is stored with one of them
+    DWORD CpioIno;
+    DWORD CpioNLink;
+    DWORD CpioDevMajor;
+    DWORD CpioDevMinor;
 };
 
 class CArchiveAbstract
@@ -318,6 +325,39 @@ private:
     // when the source could not be read - reported) / TAR_ERROR (Cancel, a write error - shown)
     int WriteOutLinkCopy(const SCommonHeader& header, const char* targetPath, const char* targetName,
                          const char* sourceName, BOOL* written, BOOL* refused);
+
+    // feature 310: the hard-link groups of one cpio extraction (salcpiolink.h); key: device
+    // (major << 32 | minor) and inode
+    struct SCpioWaiting // an asked name stored with size 0, waiting for its group's data
+    {
+        std::string Name;   // the member's archive name (UTF-8)
+        std::string Target; // where it goes, relative to the target path (as WriteOutData takes it)
+        FILETIME LastWrite;
+        DWORD Attr;
+    };
+    struct SCpioGroup
+    {
+        int State = SAL_CPIO_GROUP_NONE;
+        std::string WrittenTarget; // SAL_CPIO_GROUP_WRITTEN: the file the copies are made from
+        std::string DataName;      // the archive name of the member that carried the data (reports)
+        std::vector<SCpioWaiting> Waiting;
+    };
+    typedef std::map<std::pair<unsigned __int64, DWORD>, SCpioGroup> CCpioGroups;
+    static BOOL IsCpioGroupMember(const SCommonHeader& header);
+    static std::pair<unsigned __int64, DWORD> CpioGroupKey(const SCommonHeader& header);
+    // UnpackOneFile of a name stored with size 0: reads on to the member of its group carrying the data
+    // and writes it as 'targetName'; empty when no later member carries data
+    BOOL UnpackOneCpioGroupName(SCommonHeader& header, const char* targetPath, const char* targetName);
+    // a header standing for a waiting name (no data, no padding); FALSE = out of memory (shown)
+    static BOOL MakeCpioWaitingHeader(SCommonHeader& h, const SCpioWaiting& w, const char* linkName);
+    // extracts a member of a group as SalCpioLinkDecide says; the result of WriteOutData (TAR_OK /
+    // TAR_EOF) or TAR_ERROR (stop: an error shown, Cancel); 'refused' set when a name was left out
+    int WriteOutCpioGroupMember(SCommonHeader& header, const char* targetPath, const char* targetName,
+                                BOOL found, CCpioGroups& groups, BOOL& refused);
+    // the names waiting for 'group' after its data was handled: copies of WrittenTarget, or reported
+    int FinishCpioWaiting(SCpioGroup& group, const char* targetPath, BOOL& refused);
+    // at the end of the archive: the waiting names of groups that never carried data, as empty files
+    int WriteOutCpioEmptyNames(CCpioGroups& groups, const char* targetPath);
 
     int SkipBlockPadding(const SCommonHeader& header);
     void GetArchiveType(const unsigned char* buffer, const unsigned short preRead, SCommonHeader& header);

@@ -14,6 +14,8 @@
 #include <commctrl.h>
 #include <string>        // feature 309: the names written by an extraction
 #include <unordered_set> // (before the Debug 'new' macro below - it breaks placement new)
+#include <map>           // feature 310: the hard-link groups of a cpio extraction
+#include <vector>
 
 #if defined(_DEBUG) && defined(_MSC_VER) // without passing file+line to 'new' operator, list of memory leaks shows only 'crtdbg.h(552)'
 #define new new (_NORMAL_BLOCK, __FILE__, __LINE__)
