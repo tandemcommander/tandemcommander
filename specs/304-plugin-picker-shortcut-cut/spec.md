@@ -27,6 +27,14 @@ Measured with standalone programs (`probe/measure*.cpp`):
 
 So a larger buffer alone does not fix it: the answer must be recognised as possibly cut.
 
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: When the shell's answer is possibly cut and the link's item list names a longer path that begins with the answer, should the picker follow that whole item-list name or refuse? → A: Follow the whole item-list name (plain form); refuse only when it cannot be proven (autonomous run: item - *Expected* "followed whole ... or refused", whole preferred where UnCAB's 780-byte buffer can take it)
+- Q: How is a refusal shown to the user? → A: With the picker's existing "too long" message, nothing picked - no new text (autonomous run: rule - new UI strings need the `.slt` refresh; the picker already refuses a folder that does not fit this way)
+- Q: Is a possibly cut answer recognised by its length alone (259 units or more) or by any length? → A: By length: 259 units or more must be proven; shorter answers keep today's behaviour (autonomous run: conservative - measured cut length is exactly 259; changes nothing below it)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A long folder-shortcut target is never cut (Priority: P1)
