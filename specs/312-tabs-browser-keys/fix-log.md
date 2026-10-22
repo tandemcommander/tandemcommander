@@ -96,7 +96,43 @@ verification with the work on the branch. LOW I1, C1, U1, U2 fixed in research.m
   TABS-OFF pressed Backspace from R (the reopened tab) and so focused the wrong folder. No "before"
   run: a new feature - on a build without 312 the BROWSER rows fail by construction (the value is
   ignored), the CLASSIC rows are the 0.1.10 behaviour.
+- Full build: `.\build.cmd full` -> `BUILD FAILED (exit code: 1)`: "8 pair(s) failed: czech/salamand
+  ... spanish/salamand: import failed" (translator.exe killed after 30 s per language - the `.slt`
+  files no longer match the module structure: 6 new strings, the new dialog `IDD_CFGPAGE_TABS`,
+  the Appearance dialog without `IDC_PANELTABS`). Expected (rule 084): the two-stage `.slt`
+  refresh (`translate.merge`, `--templates`) is owed - an autonomous run does not do it (it
+  spends DeepL characters; stop-rules §3 #2). No translator process left behind; the tree
+  unchanged by the full build.
 - Not driven by the probe (owed to a person): the real keyboard in both modes (panel and command
   line); the menu labels as drawn (custom menus cannot be read from outside - covered by the
   label rule in saltests and by reading the code); the toolbar tooltips; the Tabs page in eight
   languages.
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST**. It re-ran saltests (27343 / 0) and the
+probe (33 PASS, registry identical) and checked the classic mode against the 0.1.10 code, the
+accelerator tables, the plug-in key order, closed-tab lifetime, index bookkeeping (also the refusal
+and out-of-memory paths), the page mapping and the standing rules.
+
+- SHOULD 1 - Clear History left closed tabs reopenable (folder, focused and selected names).
+  Fixed: `CFilesWindow::ClearHistory` empties `Tabs.Closed` (fileswn1.cpp); manual
+  (`configuration_tabs.htm`, `windows_tabstrip.htm`, `configuration_history.htm`), changelog and
+  data-model say so. Not driven by the probe: Clear History also clears plug-in histories, which a
+  probe should not touch on the maintainer's machine; the change is one call.
+- SHOULD 2 - the replace script wrote a UTF-8 BOM into `help/src/salamand.hhc`, `.hhk`, `.hhp`
+  (none on main; HTML Help Workshop reads them as ANSI). Fixed: the three BOMs removed; every
+  other changed file keeps the first bytes it has on main (checked file by file).
+- NOTE - `TogglePanelTabs` had no guard against a running tab switch / locked UI. Fixed: it
+  refuses then (paneltabs.cpp).
+- NOTE (kept, recorded) - `IsSalHotKeyKeptAtLoad` also keeps a third-party plug-in's own default
+  Ctrl+Shift+G (none of the shipped plug-ins has one); in the browser-like mode the program's key
+  wins and the plug-in menu still shows Ctrl+Shift+G - the changelog limitation says so.
+- NOTE (kept) - a configuration saved by 312 and then again by 0.1.10 keeps "Browser Tab Shortcuts"
+  with a 0.1.10 page index: the page opens one step too low once (downgrade only).
+- NOTE (kept) - SC-003 (selection, cursor, filter, view, history restored) holds by construction
+  (the same `CPanelTab` object comes back); the probe measures location, order and sort only.
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 27343 checks, 0 failed; encoding guard
+TOTAL: 0; probe 33 PASS / 0 FAIL / 0 NOT DRIVEN, registry identical (`probe/result_after.txt`).
+No second review: review 1 had no MUST finding (SKILL.md step 7).

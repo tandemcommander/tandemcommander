@@ -1,4 +1,4 @@
-# Data model - 312 tabs browser keys
+﻿# Data model - 312 tabs browser keys
 
 ## Configuration value
 
@@ -42,7 +42,9 @@ Transitions:
   show -> detached again and pushed back (same place at the top).
 - tabs turned off: all deleted.
 - program exit: deleted with the panel (never saved).
-- Clear History / a plug-in FS closed: the closed tabs' histories are cleared like the open tabs'.
+- Clear History (Configuration > History): all closed tabs are forgotten (review 1, SHOULD 1 - they hold
+  folders and selected names).
+- a plug-in FS closed: the closed tabs' histories are cleared like the open tabs'.
 
 ## Remembered Configuration page
 

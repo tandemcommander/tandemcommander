@@ -715,6 +715,9 @@ void CMainWindow::TogglePanelTabs()
     // feature 312: Tabs in Options > Show and in the toolbar context menu = Show tabs in panels
     if (LeftPanel == NULL || RightPanel == NULL)
         return;
+    // turning tabs off deletes tabs: never while one is being switched to or the UI is locked
+    if (HasLockedUI() || LeftPanel->Tabs.SwitchInProgress || RightPanel->Tabs.SwitchInProgress)
+        return;
     if (Configuration.PanelTabs && !ConfirmTabsOff(HWindow))
         return;
     Configuration.PanelTabs = !Configuration.PanelTabs;

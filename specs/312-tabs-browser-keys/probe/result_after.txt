@@ -1,6 +1,6 @@
-tabs312_probe (feature 312) after
+tabs312_probe (feature 312) after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-22 22:29; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc312\R
+Date    : 2026-10-22 22:53; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc312\R
 
 CLASSIC    START  PASS        tabs=1 active=0 [R] panel=R
 CLASSIC    C-T-W-G PASS        Ctrl+T, Ctrl+W, Ctrl+Shift+G in the panel open/close no tab: tabs=1 active=0 [R] panel=R
