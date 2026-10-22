@@ -147,7 +147,9 @@ features 306, 308 and 309 (tar) unchanged.
 - **FR-006**: odc and binary cpio, devices, named pipes, sockets, tar archives, and the panel listing
   MUST behave as before.
 - **FR-007**: Opening a single name stored with size 0 (view / open of one file) MUST give the file's
-  content when the archive stores it with another name.
+  content when the archive stores it with a later name (the layout of GNU cpio, rpm, libarchive);
+  when the data is stored with an earlier name (already passed - a single-file extraction reads the
+  archive once), the name MUST be reported and the operation MUST fail - never an empty file.
 - **FR-008**: Names stay UTF-8 / whole (CLAUDE.md standing rules); no message text is cut.
 
 ### Key Entities
@@ -175,4 +177,5 @@ features 306, 308 and 309 (tar) unchanged.
   4096 bytes is not read (the box then shows an empty target) - Linux limits targets to 4095 bytes.
 - Assumption (autonomous run): no new UI strings (the 309 box and its system texts are reused).
 - Out of scope: creating symbolic links; listing link members or correcting the size shown for names
-  stored with size 0; long cpio names (item `a-cpio-or-rpm-archive-with-a-member-name-the-panel-cannot`).
+  stored with size 0; viewing a name whose data is stored with an earlier name (reported instead,
+  FR-007); long cpio names (item `a-cpio-or-rpm-archive-with-a-member-name-the-panel-cannot`).

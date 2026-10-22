@@ -1,0 +1,42 @@
+# Fix log - 310-cpio-link-members
+
+Backlog item `cpio-unpack-drops-links-and-may-delete-archive` - "Unpacking a cpio or rpm leaves links
+out silently and may delete the archive".
+
+## Measurement before the fix (47eb6b83, `main`)
+
+- `build.cmd` (Debug x64): BUILD SUCCEEDED.
+- Fixtures `probe/mkcpio310.py` (Python 3.14): newc / crc / odc cpio laid out as GNU cpio and rpm write
+  them; `C:\Windows\System32\tar.exe -tvf` (libarchive) lists them as intended (hard links shown as
+  `link to a.txt`, symlinks as `-> a.txt`).
+- Probe `probe/cpio310_probe.ps1` on the hidden desktop
+  (`tools\run_on_hidden_desktop.ps1 ... -Label before`) -> `probe/result_before.txt`:
+  **PASS 13 / FAIL 7**, registry restored and identical.
+  - FAIL CPIO-HARD-DEL / CPIO-CRC-HARD-DEL: `a.txt`, `sub/b.txt` empty, archive deleted, no word.
+  - FAIL CPIO-HARD-FIRST-DEL: `b.txt` empty. FAIL CPIO-HARD-DEV-DEL: `a.txt` empty.
+  - FAIL CPIO-SYM-DEL: no box, archive deleted.
+  - FAIL COPY-CPIO-ALL (`a.txt`, `sub/b.txt` empty), COPY-CPIO-ONE (`a.txt` empty).
+  - PASS (controls): CPIO-HARD-EMPTY-DEL, CPIO-ODC-HARD-DEL, CPIO-FIFO-DEL.
+- Reading: `ReadArchiveHeader` marks every non-regular cpio member `Ignored`; `ReadNewASCIIHeader`
+  reads neither `c_ino` nor `c_nlink` nor the device; rpm is the same reader (`CRPM` is a stream;
+  `CpioDoUnpackArchive` / `CpioUnpackOneFile` are declared in `tar.h` and defined nowhere).
+
+## Consumers (enumerated)
+
+- `CArchive::DoUnpackArchive` <- `UnpackArchive` (F5 Copy / drag from the opened archive) and
+  `UnpackWholeArchive` (Alt+F9 Unpack, the core's "Delete archive after unpacking" acts on its result),
+  both from `tardll.cpp`; `CDEBArchive` delegates to tar archives only (no cpio inside a .deb).
+- `CArchive::UnpackOneFile` <- `CPluginInterfaceForArchiver::UnpackOneFile` (F3 / F4 / Enter through
+  the disk cache).
+- `CArchive::ListArchive`: unchanged (symlinks stay unlisted, grouped names listed with their own size).
+- `ReadArchiveHeader` is shared by tar and cpio; the new code is guarded by the cpio formats.
+
+## Analyze
+
+- Round 1: one HIGH (F1 - FR-007 against research R6 on the data-first layout) - fixed in spec.md
+  (FR-007 qualified, out-of-scope line). Round 2: no CRITICAL / HIGH.
+- Accepted LOW: C1 (FR-008 checked by the encoding guard and the review); T1 ("waiting name" wording).
+
+## Implementation
+
+(running notes below)

@@ -8,7 +8,7 @@ Tests: saltests checks for the pure rule and the hidden-desktop probe are requir
 
 ## Phase 1: Setup
 
-- [ ] T001 Start `specs/310-cpio-link-members/fix-log.md` with the measurement before the fix (commands, `probe/result_before.txt` 13 PASS / 7 FAIL)
+- [X] T001 Start `specs/310-cpio-link-members/fix-log.md` with the measurement before the fix (commands, `probe/result_before.txt` 13 PASS / 7 FAIL)
 
 ## Phase 2: Foundational
 
