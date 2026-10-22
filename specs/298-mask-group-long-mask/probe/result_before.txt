@@ -1,0 +1,15 @@
+mask298_probe (feature 298) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 05:13; registry key existed True; ACP 1250; value HKCU\Software\Tandem Commander\0.1\Plugins\1\ThumbnailMasks
+
+SHORT      START  PASS        252 bytes; main window True; alive True
+SHORT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MULTI      START  PASS        1000 bytes; main window True; alive True
+MULTI      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M300       START  FAIL        300 bytes; main window False; alive True; FATAL: [#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC0110X64-20261022-051358.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.
+M300       END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 1 [TC0110X64-20261022-051358.TXT: Information About Exception: / Exception: open salamander rtc exception / Error Number: 2 / Description: Stack memory corruption / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / CMainWindow::LoadConfig(0) / CPlugins::Load(,) / ThreadBugReportF() / ThreadCacheHandlesBody()]; FATAL: [#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC0110X64-20261022-051358.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.
+M1000      START  FAIL        1000 bytes; main window False; alive True
+M1000      END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 2 ([#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=3] &P\u0159eru\u0161it | [Button id=4] &Opakovat | [Button id=5] Ignor&ovat | [Static id=65535] Insufficient memory to allocate 18446744057809751104 bytes. Try to release some memory (e.g. close some running application) and click Retry. If it does not help, you can click Ignore to pass memory allocation error to this application or click Abort to terminate this application. || [#32770 ''] ); new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 4, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -1,16 +1,16 @@
 ---
 title: A single mask longer than 259 bytes overruns the mask group preparation buffers
 type: bug
-status: open
+status: in-progress
 severity: 6
 area: long-paths
 source: review:283
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-10-22
+verified: 2026-10-22 1bc8f164
 effort: S
-feature: -
+feature: 298
 related: []
 depends-on: []
 reason: -
@@ -56,3 +56,5 @@ the reach is unproven; a reachable stack overrun would be 7-8.
 - 2026-10-21 — created (source review:283)
 - 2026-10-21 — moved to Next position 3
 - 2026-10-21 — related item masks-cut-recycle-bin-find-viewer-compare done in feature 291
+- 2026-10-22 — verified at 1bc8f164: reproduced at 1bc8f164: ThumbnailMasks registry value with one 300-byte mask -> RTC stack corruption in CPlugins::Load at start (hidden-desktop probe mask298)
+- 2026-10-22 — run started, feature 298

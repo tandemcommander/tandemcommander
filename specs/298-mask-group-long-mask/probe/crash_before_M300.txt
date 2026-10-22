@@ -1,0 +1,30 @@
+Tandem Commander Bug Report File
+
+Tandem Commander 0.1.10 (x64) (DEBUG)
+
+Information About Exception:
+  Exception: open salamander rtc exception
+  Exception origin: thread ID = 0x58DC, execution address = 0x00007FFA6D2C408A
+
+RTC Error
+  Error Number: 2
+  Description: Stack memory corruption
+  Line: #0
+  File: 
+  Module: E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+
+
+Call Stacks:
+  Thread with Exception (ID: 0x58DC)
+  WinMainBody(0x0000010004000000, , -t T298 -l "C:\Users\pavel\AppData\Local\Temp\tc298\start" -r "C:\Users\pavel\AppData\Local\Temp\tc298\start" -p 1 , 1)
+  WinMainBody::FindLatestConfiguration
+  WinMainBody::StartupDialog
+  WinMainBody::inicialization
+  WinMainBody::load_config
+  CMainWindow::LoadConfig(0)
+  CPlugins::Load(,)
+  ----
+  Thread ID: 0x6194
+  ThreadBugReportF()
+  ----
+  Thread ID: 0x3494
