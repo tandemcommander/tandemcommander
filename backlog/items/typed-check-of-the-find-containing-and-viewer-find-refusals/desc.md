@@ -1,7 +1,7 @@
 ---
 title: Typed check of the Find Containing and viewer Find refusals (feature 311)
 type: person-step
-status: new
+status: open
 severity: 3
 area: long-paths
 source: leftover:311
@@ -45,3 +45,4 @@ nothing is found and nothing is stored.
 ## Log
 
 - 2026-10-22 — created (source leftover:311)
+- 2026-10-22 — moved to Person steps position 33

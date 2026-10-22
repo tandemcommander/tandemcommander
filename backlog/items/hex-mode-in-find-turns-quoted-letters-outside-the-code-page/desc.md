@@ -1,7 +1,7 @@
 ---
 title: Hex mode in Find turns quoted letters outside the code page into question marks
 type: bug
-status: new
+status: open
 severity: 4
 area: encoding
 source: review:311
@@ -52,3 +52,4 @@ handling (`textLen` bytes) refuses rather than cuts once it reads UTF-8.
 ## Log
 
 - 2026-10-22 — created (source review:311)
+- 2026-10-22 — moved to Next position 27

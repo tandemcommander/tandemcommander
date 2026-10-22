@@ -1,7 +1,7 @@
 ---
 title: Viewer Find pre-fills a non-ASCII selection as code-page text
 type: bug
-status: new
+status: open
 severity: 4
 area: encoding
 source: review:311
@@ -55,3 +55,4 @@ the field from bytes (ASCII digits) and is not affected. Probe driver: 311's
 ## Log
 
 - 2026-10-22 — created (source review:311)
+- 2026-10-22 — moved to Next position 29
