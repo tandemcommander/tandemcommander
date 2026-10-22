@@ -134,3 +134,53 @@ rule as in 306), `-Only CPIO-778,GNU-DIR100` -> `probe/result_negctl_review1.txt
 CPIO-778 crashes again ("Stack memory corruption"), GNU-DIR100 "(206)" and the folder not
 extracted; saltests 1 failed (the top-level folder check). Sources restored byte for byte, rebuilt,
 re-measured (above).
+
+### Review 2 (independent agent, refute-first; review 1 findings given) - rejected
+
+Re-measured: saltests 27176 / 0; probe 20 / 0. Review 1's MUST-1 verified at the boundaries (776
+bytes looked up whole, 777+ no association, the DWORD always inside the buffer; cpio rows with
+779 bytes ending in `.txt`, `.` + 776, `.` + 778, `x.` + 777 - no crash). SHOULD-1 verified
+(a top-level GNU / PAX folder of 100 CJK letters lists; its contents refused with "(206)").
+
+- **MUST-1 (not fixed - the run stops)**: data loss in whole-archive Unpack. The `NameFromGnuLong`
+  refusal sits in `CArchive::ReadArchiveHeader` (`src/plugins/tar/untar.cpp`, the check after the
+  name conversion), which every pass runs - also `UnpackWholeArchive` / `DoUnpackArchive`, where no
+  listing exists. It applies the LISTING-only bound (`SalPaxNameFitsListingU8`: a folder part over
+  255 bytes, `src/common/salpaxheader.h`), so a member NTFS takes (a deep source tree - GNU tar
+  writes an `L` long name for every path over 100 bytes) is skipped, the unpack still returns
+  TRUE, and with "Delete archive after unpacking" the plug-in (`src/plugins/tar/tardll.cpp`, after
+  the unpack) deletes the archive. Reviewer's rows (fixtures in `%TEMP%\rev307b`): 30 files under
+  10 folders of 29 letters (folder part 299 bytes) + ok.txt - 0.1.10 extracts all 31, the branch
+  only ok.txt with one "(206)" box; with Delete-after-unpack the branch deletes t.tar (30 files
+  lost); `x*100/y*100/z*100/f.txt` and `CJK100/in.txt` dropped likewise. On `main` only
+  `NameFromPax` refuses, so for GNU names the regression is feature 307's; feature 306's PAX route
+  has the same mechanism on `main` (recorded as an Inbox item). The fix-log's NOTE 3 of review 1
+  ("whole-archive unpack is 306's code path, unchanged") was wrong for GNU names.
+  Direction given: apply the folder-part / folder-name byte bound only while building a listing
+  (`ListArchive`); in unpack keep only the over-255-unit component refusal; make any refusal during
+  a whole unpack return failure so that "Delete archive after unpacking" never fires.
+- NOTE 1: analyze note D1 is inaccurate - a top-level GNU file of 300 ASCII letters or CJK(258).txt
+  (778 bytes) listed in 0.1.10 without a crash and is now refused (nothing usable is lost: F3 said
+  "resulting filename is too long", extraction failed with (123)); the changelog's *Before* sentence
+  over-generalises (only names of 780+ bytes overflowed RefreshListBox).
+- NOTE 2: a top-level folder of 256-765 bytes is now listed (PAX too) but cannot be entered ("The path
+  specified is too long.") - the same as 0.1.10 for GNU names, no data involved.
+- NOTE 3: F5 of such a folder creates it empty silently; the "(206)" box comes only at open (as 306).
+- NOTE 4: the installed 0.1.10 Release build opened the 777-780-byte cpio names with simple icons
+  without a visible crash - the overflow shows under the Debug run-time checks.
+- Other buffers checked by reading and bounded for names up to 779 bytes: `IsFileLink`, quick search
+  copies, `DrawItemBuff` / `DrawItemAlpDx`, `SplitText`, `ZIPPath[SAL_MAX_PATH_UTF8]`,
+  `NextFocusName`, the info line.
+
+## Stopped (2026-10-22)
+
+Stop rule §3 #3: the independent review rejected the fix twice (review 1 MUST fixed; review 2 MUST
+above). What the branch holds and is sound by both reviews: the core bound for entries with no
+folder part (`src/common/sallistingname.h`, `AddFile` / `AddDir`), the bounded extension copies in
+`src/fileswn3.cpp`, the saltests, the probe and its rows. What must change before closing: the GNU
+refusal (and the folder rule change of review 1) must not act in extraction passes the way they act
+in the listing - restrict the depth / folder-name bound to `ListArchive`, keep only the component
+rule in unpack, and let a refusal fail a whole-archive unpack. Then re-run the probe (add Unpack and
+Unpack + Delete-archive rows with a deep GNU tree, as in the reviewer's `%TEMP%\rev307b` rows),
+the 306 probe and a fresh review. Inbox items recorded on `main`: the PAX (feature 306) unpack data
+loss and the cpio / rpm per-member refusal.
