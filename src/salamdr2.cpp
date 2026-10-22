@@ -1941,23 +1941,31 @@ UINT MyGetDriveType(const char* path)
 // GetSubstInformation
 //
 
-// feature 301: the device text of 'driveNum' read whole (the first string of the answer) into a
-// heap buffer the caller frees; NULL when the letter has no device or memory ran out.  A subst
-// target may pass MAX_PATH units (DefineDosDeviceW takes it, measured 359), so the buffer grows
-// on ERROR_INSUFFICIENT_BUFFER.
-static WCHAR* QueryDosDeviceWholeW(BYTE driveNum)
+// feature 301: the device text of 'driveNum' read whole (the first string of the answer); in
+// 'stackBuf' (MAX_PATH units) when it fits, else in a heap buffer - the caller frees a result
+// other than 'stackBuf' (QueryDosDeviceFree); NULL when the letter has no device or memory ran
+// out.  A subst target may pass MAX_PATH units (DefineDosDeviceW takes it, measured 359), so the
+// heap buffer grows on ERROR_INSUFFICIENT_BUFFER; the common answer needs no allocation (it is
+// also read by the bug report).
+static WCHAR* QueryDosDeviceWholeW(BYTE driveNum, WCHAR* stackBuf)
 {
     WCHAR deviceNameW[3] = {(WCHAR)(driveNum + 'A'), L':', 0};
-    DWORD size = MAX_PATH;
+    if (QueryDosDeviceW(deviceNameW, stackBuf, MAX_PATH) != 0)
+    {
+        stackBuf[MAX_PATH - 1] = 0; // (the answer is double-terminated; the first string is used)
+        return stackBuf;
+    }
+    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+        return NULL;
+    DWORD size = 2 * MAX_PATH;
     while (size <= 0x10000)
     {
         WCHAR* buf = (WCHAR*)malloc(size * sizeof(WCHAR));
         if (buf == NULL)
             return NULL;
-        DWORD res = QueryDosDeviceW(deviceNameW, buf, size);
-        if (res != 0)
+        if (QueryDosDeviceW(deviceNameW, buf, size) != 0)
         {
-            buf[size - 1] = 0; // (the answer is double-terminated; the first string is used)
+            buf[size - 1] = 0;
             return buf;
         }
         DWORD err = GetLastError();
@@ -1967,6 +1975,12 @@ static WCHAR* QueryDosDeviceWholeW(BYTE driveNum)
         size *= 2;
     }
     return NULL;
+}
+
+static void QueryDosDeviceFree(WCHAR* target, WCHAR* stackBuf)
+{
+    if (target != stackBuf)
+        free(target);
 }
 
 BOOL MyQueryDosDevice(BYTE driveNum, char* target, int maxTarget)
@@ -1984,14 +1998,15 @@ BOOL MyQueryDosDevice(BYTE driveNum, char* target, int maxTarget)
         target[0] = 0;
     if (target == NULL || maxTarget <= 0)
         return FALSE;
-    WCHAR* targetW = QueryDosDeviceWholeW(driveNum);
+    WCHAR stackBuf[MAX_PATH];
+    WCHAR* targetW = QueryDosDeviceWholeW(driveNum, stackBuf);
     if (targetW == NULL)
         return FALSE;
     int need = SalWToU8(targetW, -1, NULL, 0);
     BOOL ok = need > 0 && need <= maxTarget && SalWToU8(targetW, -1, target, maxTarget) == need;
     if (!ok)
         target[0] = 0;
-    free(targetW);
+    QueryDosDeviceFree(targetW, stackBuf);
     return ok;
 }
 
@@ -2009,7 +2024,8 @@ BOOL GetSubstInformation(BYTE driveNum, char* path, int pathMax, BOOL* tooLong)
     //  Y -> C:\Windows                     \??\C:\Windows
     // feature 301: the device text read whole and parsed by SalSubstTargetToPathU8 (was a
     // MAX_PATH copy of a possibly code-page text, then lstrcpyn at 'pathMax' - a cut path)
-    WCHAR* targetW = QueryDosDeviceWholeW(driveNum);
+    WCHAR stackBuf[MAX_PATH];
+    WCHAR* targetW = QueryDosDeviceWholeW(driveNum, stackBuf);
     if (targetW == NULL)
         return FALSE;
     int res;
@@ -2022,10 +2038,83 @@ BOOL GetSubstInformation(BYTE driveNum, char* path, int pathMax, BOOL* tooLong)
         res = scratch != NULL ? SalSubstTargetToPathU8(targetW, scratch, size) : SAL_SUBST_NONE;
         free(scratch);
     }
-    free(targetW);
+    QueryDosDeviceFree(targetW, stackBuf);
     if (res == SAL_SUBST_TOO_LONG && tooLong != NULL)
         *tooLong = TRUE;
     return res == SAL_SUBST_OK;
+}
+
+BOOL GetSubstPathVolume(const char* path, char* mountPoint, int mountPointMax,
+                        char* volumeName, int volumeNameMax)
+{
+    if (path == NULL || !((path[0] >= 'a' && path[0] <= 'z') || (path[0] >= 'A' && path[0] <= 'Z')) ||
+        path[1] != ':')
+    {
+        return FALSE;
+    }
+    WCHAR stackBuf[MAX_PATH];
+    WCHAR* targetW = QueryDosDeviceWholeW((BYTE)(LowerCase[path[0]] - 'a'), stackBuf);
+    if (targetW == NULL)
+        return FALSE;
+    BOOL ret = FALSE;
+    // only the "\??\X:..." form: a subst to UNC has no volume name, a subst onto another subst
+    // drive would need the walk again (both left to the caller's existing "cannot tell")
+    WCHAR* restW = SalU8ToWAlloc(path + 2);
+    if (wcsncmp(targetW, L"\\??\\", 4) == 0 &&
+        ((targetW[4] >= L'a' && targetW[4] <= L'z') || (targetW[4] >= L'A' && targetW[4] <= L'Z')) &&
+        targetW[5] == L':' && restW != NULL)
+    {
+        // the whole wide path: "\\?\" (a long one needs it) + the subst target + '\' + the rest of
+        // 'path' + '\' - on the heap, sized from the parts (never cut)
+        const WCHAR* tgt = targetW + 4;
+        size_t tgtLen = wcslen(tgt);
+        size_t restLen = wcslen(restW);
+        size_t size = 4 + tgtLen + 1 + restLen + 1 + 1;
+        WCHAR* full = (WCHAR*)malloc(size * sizeof(WCHAR));
+        WCHAR* volPath = (WCHAR*)malloc(size * sizeof(WCHAR));
+        WCHAR volNameW[MAX_PATH];
+        if (full != NULL && volPath != NULL)
+        {
+            WCHAR* s = full + 4; // the prefix slot, used below when the path is long
+            wcscpy(s, tgt);
+            size_t l = tgtLen;
+            if (l > 0 && s[l - 1] != L'\\' && restW[0] != L'\\')
+                s[l++] = L'\\';
+            wcscpy(s + l, restW);
+            l += restLen;
+            if (l > 0 && s[l - 1] != L'\\')
+                s[l++] = L'\\';
+            s[l] = 0;
+            if (l >= MAX_PATH)
+            {
+                memcpy(full, L"\\\\?\\", 4 * sizeof(WCHAR));
+                s = full;
+            }
+            ret = GetVolumePathNameW(s, volPath, (DWORD)size) &&
+                  GetVolumeNameForVolumeMountPointW(volPath, volNameW, _countof(volNameW));
+        }
+        if (ret)
+        {
+            ret = FALSE;
+            const WCHAR* mp = volPath;
+            if (wcsncmp(mp, L"\\\\?\\", 4) == 0 && mp[4] != 0 && mp[5] == L':') // "\\?\C:\" -> "C:\" (the core's mount point form)
+                mp += 4;
+            int needMp = SalWToU8(mp, -1, NULL, 0);
+            int needVol = SalWToU8(volNameW, -1, NULL, 0);
+            ret = needMp > 0 && needVol > 0 &&
+                  (mountPoint == NULL || needMp <= mountPointMax) &&
+                  (volumeName == NULL || needVol <= volumeNameMax);
+            if (ret && mountPoint != NULL)
+                SalWToU8(mp, -1, mountPoint, mountPointMax);
+            if (ret && volumeName != NULL)
+                SalWToU8(volNameW, -1, volumeName, volumeNameMax);
+        }
+        free(volPath);
+        free(full);
+    }
+    free(restW);
+    QueryDosDeviceFree(targetW, stackBuf);
+    return ret;
 }
 
 //****************************************************************************

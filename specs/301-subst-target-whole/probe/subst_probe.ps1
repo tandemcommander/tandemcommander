@@ -11,10 +11,14 @@
             told it is a link) and nothing was deleted
       INFO  Drive Information (752) on <letter>:\ - the drive type line (551): PASS = no '?' and the
             subst target whole, or no part of it
-    Cases:
+      VOL   the same dialog's mount point (571) and volume GUID (572): PASS = the target's drive root
+            and a \\?\Volume{...}\ name (review 1 of 301: the volume checks of a refused target)
+      MOVE  a second start, left panel <letter>:\a, right <letter>:\J; F6 of a\f.txt, OK: PASS =
+            moved, with the same file id (a rename - the program judged one volume, not copy + delete)
+    Cases (the fixture folder path, %TEMP%\tc301\...):
       SHORT  the control: an ASCII folder
-      CJK    a folder of 80 CJK letters - 138 UTF-16 units, 298 bytes of UTF-8 (subst.exe takes it)
-      LONG   a folder of over MAX_PATH UTF-16 units (DefineDosDeviceW takes it, subst.exe does not)
+      CJK    80 CJK letters - about 120 UTF-16 units, 280 bytes of UTF-8 (subst.exe takes it)
+      LONG   over MAX_PATH UTF-16 units (DefineDosDeviceW takes it, subst.exe does not)
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     The subst definitions are removed at the end. Exit code = number of FAIL rows.
 #>
@@ -40,6 +44,21 @@ public static class SubstP
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] public static extern bool DefineDosDeviceW(uint flags, string dev, string target);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] public static extern uint QueryDosDeviceW(string dev, StringBuilder buf, uint max);
     [DllImport("kernel32.dll")] public static extern uint GetACP();
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BHFI { public uint Attr, C1, C2, A1, A2, W1, W2, Vol, SizeHi, SizeLo, Links, IdxHi, IdxLo; }
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern Microsoft.Win32.SafeHandles.SafeFileHandle CreateFileW(string name, uint access, uint share, IntPtr sa, uint disp, uint flags, IntPtr tmpl);
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool GetFileInformationByHandle(Microsoft.Win32.SafeHandles.SafeFileHandle h, out BHFI info);
+    public static string FileId(string path)
+    {
+        using (var h = CreateFileW(path, 0x80, 7, IntPtr.Zero, 3, 0x02000000, IntPtr.Zero))
+        {
+            BHFI i;
+            if (h.IsInvalid || !GetFileInformationByHandle(h, out i)) return null;
+            return i.Vol.ToString("X8") + ":" + i.IdxHi.ToString("X8") + i.IdxLo.ToString("X8");
+        }
+    }
 }
 '@
 }
@@ -66,6 +85,7 @@ function Run-Case([string]$Case, [string]$Folder, [string]$Target) {
     $id = 0; $before = Reports; $drv = $null
     try {
         NewDir $Folder; NewDir $Target; WriteFile "$Target\precious.txt" 'PRECIOUS'
+        NewDir "$Folder\a"; WriteFile "$Folder\a\f.txt" 'MOVE ME'
         $j = "$Folder\J"
         $r = Cmd ("mklink /J `"\\?\{0}`" `"{1}`"" -f $j, $Target)
         if (-not [IO.Directory]::Exists($LP + $j)) { Row $Case 'SETUP' 'NOT DRIVEN' ('mklink /J refused: ' + $r.Text); return }
@@ -94,13 +114,38 @@ function Run-Case([string]$Case, [string]$Folder, [string]$Target) {
             $ctl = Find-Ctl $dlg 551
             $t = '<no control>'; if ($ctl -ne [IntPtr]::Zero) { $t = [Drv098f]::GetText($ctl, 5000) }
             $d = WinDesc $dlg
+            $mp = '<no control>'; $c = Find-Ctl $dlg 571; if ($c -ne [IntPtr]::Zero) { $mp = [Drv098f]::GetText($c, 5000) }
+            $gu = '<no control>'; $c = Find-Ctl $dlg 572; if ($c -ne [IntPtr]::Zero) { $gu = [Drv098f]::GetText($c, 5000) }
             Close-Win $dlg; Start-Sleep -Milliseconds 400
             $whole = $t.Contains($Folder)
             $none = -not $t.Contains($Root)
             # a target the program can represent is shown whole; the long one whole or not at all
             $ok = ($d -notmatch $FatalRx) -and (-not $t.Contains('?')) -and ($whole -or ($Case -eq 'LONG' -and $none))
             Row $Case 'INFO' (V $ok) ("type line {0} chars, target whole {1}, no part of it {2}, '?' {3}: '{4}'; dialog: {5}" -f $t.Length, $whole, $none, $t.Contains('?'), (Tail $t 120), (Tail $d 300))
+            $okVol = ($mp -ieq $Folder.Substring(0, 3)) -and ($gu -match '^\\\\\?\\Volume\{[0-9a-fA-F-]+\}\\$')
+            Row $Case 'VOL' (V $okVol) ("mount point '{0}' (expected '{1}'), volume '{2}'" -f (Tail $mp 60), $Folder.Substring(0, 3), (Tail $gu 60))
         }
+        End-Row $Case $id $null $before; $id = 0
+        # MOVE: left <letter>:\a, right <letter>:\J - F6 of f.txt
+        $src = "$Folder\a\f.txt"; $dst = "$Target\f.txt"
+        $idBefore = [SubstP]::FileId($LP + $src)
+        $before = Reports
+        $p = Start-Process -FilePath $Exe -ArgumentList @('-t', 'T301', '-l', ('"{0}:\a"' -f $drv), '-r', ('"{0}:\J"' -f $drv), '-p', '1') -PassThru
+        [void]$Started.Add($p.Id); [void]$p.Handle; $script:Procs[$p.Id] = $p; $id = $p.Id
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 60 -and (Test-Alive $id) -and (Get-Main $id) -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 100 }
+        try { [void]$p.WaitForInputIdle(30000) } catch { }
+        Start-Sleep -Milliseconds 2000
+        $locL = Get-Loc $id
+        Key $id 0x24; Key $id 0x28   # Home, Down: ".." then f.txt
+        Start-Sleep -Milliseconds 400
+        Post-Cmd (Get-Main $id) 728  # F6 Move
+        $res = Serve $id 30 @(1, 6)
+        Start-Sleep -Milliseconds 800
+        $moved = [IO.File]::Exists($LP + $dst) -and -not [IO.File]::Exists($LP + $src)
+        $idAfter = $(if ($moved) { [SubstP]::FileId($LP + $dst) } else { $null })
+        $renamed = $moved -and $idBefore -and ($idBefore -eq $idAfter)
+        Row $Case 'MOVE' (V $renamed) ("left '{0}'; moved {1}; file id {2} -> {3} (same = a rename); windows: {4}" -f (Tail $locL 30), $moved, $idBefore, $idAfter, (Tail (Msgs $res) 200))
         End-Row $Case $id $null $before; $id = 0
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

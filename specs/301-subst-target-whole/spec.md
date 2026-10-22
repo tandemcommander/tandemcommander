@@ -39,7 +39,7 @@ CJK letters (138 UTF-16 units, 298 bytes of UTF-8) and refuses one over 260 UTF-
 - Q: Should the plug-in function `ResolveSubsts` change (a larger buffer, a new size argument)? → A: no - its signature and its `MAX_PATH` buffer contract stay; only what it does with a target that does not fit changes (refusal instead of a `?` path) (autonomous run: rule - the plug-in ABI is append-only; conservative)
 - Q: Should the display callers (Drive Information, Change Drive menu, Copy as UNC) get larger buffers so that every target `subst.exe` can create is shown whole? → A: yes where the caller already has or can cheaply have room (Drive Information, the menu text, Copy as UNC up to its existing 520-byte buffer); otherwise refused (autonomous run: item - "a subst target is read whole")
 - Q: Does the "related cut" of the Change Drive menu (the remembered remote path, `min(l, MAX_PATH - 1)`) need a change? → A: no - measured by reading: the source buffer is 260 bytes, so the copy never cuts; recorded in the fix-log (autonomous run: measure first)
-- Q: A subst path that is now left unresolved makes the same-volume checks say "different volumes" (a move becomes copy + delete; the Undelete plug-in skips its "restoring to the same partition" warning) - before, the `?` path happened to have the right drive root. Keep the refusal, or keep the `?` path for volume checks? → A: keep the refusal; the same-volume checks already answer "different" for every path whose resolution does not fit 260 bytes (a short target with a long rest of the path), so this is the existing behaviour for one more class of paths; the warning's fail-open is recorded as an Inbox item for its own fix (autonomous run: item - *Expected* "never work with a cut or '?' path"; measured: `GetVolumePathNameW` / `GetVolumeNameForVolumeMountPointW` on a subst path give no volume, so there is no whole-path alternative inside this feature)
+- Q: A subst path that is now left unresolved would make the same-volume checks say "different volumes" (a move becomes copy + delete; the Undelete plug-in skips its "restoring to the same partition" warning; Drive Information shows no volume) - before, the `?` path happened to have the right drive root. Keep the refusal, or keep the `?` path for volume checks? → A: keep the refusal, and give the volume checks the volume of the whole wide target (`GetSubstPathVolume`: the subst target + the rest of the path, `GetVolumePathNameW` + `GetVolumeNameForVolumeMountPointW`, measured to work at every length) when their own walk ends at the subst root - so no check loses its answer and no cut path is built (autonomous run: item - *Expected* "never work with a cut or '?' path"; rule - a "safe?" check fails closed (098); first answered "keep the refusal, record the fail-open" - rejected by review 1, M1, which showed the whole-path alternative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -110,7 +110,10 @@ a person step).
 - The drive letter is not a subst drive (a hard disk `\Device\HarddiskVolume1`, a mapped network
   drive `\Device\LanmanRedirector\...`): "not a subst" - as before.
 - A subst to a UNC path (`\??\UNC\server\share`): the target is `\\server\share`, exact; path
-  resolution keeps leaving it to the network code (as before).
+  resolution keeps leaving it to the network code (as before). One whose path does not fit
+  `MAX_PATH`: resolution now reports failure (FALSE, the path unchanged) - before it reported
+  success over a `?` path; no caller acts on that return value except the same-path shortcut of
+  the same-volume check, which then is skipped (review 1, S2).
 - A subst to a drive root (`\??\D:`): `D:` - as before (resolution turns `D:` into `D:\`).
 - A target over 260 UTF-16 units: read whole (the buffer grows); refused by every caller whose
   buffer cannot hold it.
@@ -144,6 +147,10 @@ a person step).
 - **FR-008**: The rule that turns the Windows device text into a subst path (the `\??\X:` and
   `\??\UNC\` forms, refusal on a too-small buffer, "not a subst" otherwise) MUST be a pure rule
   under `src/common/` with `saltests` checks.
+- **FR-010**: The volume checks (same volume for a move, Undelete's same-partition warning, Drive
+  Information's mount point and volume name) MUST still tell the volume of a path on a subst drive
+  whose target is refused: from the whole wide target plus the rest of the path, never from a cut
+  or `?` path (review 1, M1).
 - **FR-009**: No user-interface text is added or removed; no plug-in interface change.
 
 ### Key Entities
@@ -157,8 +164,8 @@ a person step).
 
 ### Measurable Outcomes
 
-- **SC-001**: The hidden-desktop probe passes all rows after the fix (9 of 9; before 7 of 9 - the
-  CJK DEL and INFO rows fail).
+- **SC-001**: The hidden-desktop probe passes all rows after the fix (18 of 18 with the VOL and
+  MOVE rows of review 1; the first version: 9 of 9, before 7 of 9 - the CJK DEL and INFO rows fail).
 - **SC-002**: The program no longer imports the code-page device query (0 imports of
   `QueryDosDeviceA` after, 1 before).
 - **SC-003**: `saltests` checks of the pure rule pass, including the refusal at a buffer one byte
@@ -168,11 +175,7 @@ a person step).
 ## Assumptions
 
 - Assumption (autonomous run): a path on a subst drive that is left unresolved is still a valid
-  path - Windows resolves it itself; checks that need the real volume (same-volume decision of a
-  move) then fall back to their existing "cannot tell" behaviour, which treats the paths as
-  different volumes (a move becomes copy + delete - slower, never a loss; the Undelete plug-in's
-  same-partition warning is not shown - an Inbox item, see *Clarifications*). This is the
-  behaviour such a drive already had for targets over 260 UTF-16 units and for any resolved path
-  over 260 bytes; it is recorded as a limit.
+  path - Windows resolves it itself. The checks that need its real volume ask for it with the whole
+  wide target (FR-010) when their own walk ends at the subst root without a volume.
 - Assumption (autonomous run): `Copy Full Path as UNC` cannot be driven on the hidden desktop (no
   clipboard) - its confirmation is a person step.

@@ -1,0 +1,28 @@
+subst_probe (feature 301) before-installed-0.1.10
+Program : C:\Program Files\Tandem Commander\tandemcommander.exe
+Date    : 2026-10-22 07:10; registry key existed True; ACP 1250
+
+SHORT: Z: -> folder of 41 UTF-16 units / 41 UTF-8 bytes
+SHORT      DEL    PASS        location 'Z:\'; the question names a junction True; J and the target's file kept True; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete junction "J"? | [Button id=6] &Yes | [Button id=7] &No
+SHORT      INFO   PASS        type line 62 chars, target whole True, no part of it False, '?' False: 'local drive (subst: C:\Users\pavel\AppData\Local\Temp\tc301\s)'; dialog: ...ector: | [Static id=1159] Sectors per cluster: | [Static id=1168] Bytes per cluster: | [Static id=1160] Number of clusters: | [Static id=1162] File system name: | [Static id=1163] Long names support: | [Static id=1164] File system flags: | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+SHORT      VOL    PASS        mount point 'C:\' (expected 'C:\'), volume '\\?\Volume{42005f8f-a7e6-42c7-9604-d40745a469d2}\'
+SHORT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SHORT      MOVE   PASS        left 'Z:\a'; moved True; file id BA867909:001C000000296964 -> BA867909:001C000000296964 (same = a rename); windows: [#32770 'Move/Rename'] [Static id=209] &Move file "f.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+SHORT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CJK: Z: -> folder of 120 UTF-16 units / 280 UTF-8 bytes
+CJK        DEL    FAIL        location 'Z:\'; the question names a junction False; J and the target's file kept True; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete directory "J"? | [Button id=6] &Yes | [Button id=7] &No
+CJK        INFO   FAIL        type line 0 chars, target whole False, no part of it True, '?' False: ''; dialog: ...ector: | [Static id=1159] Sectors per cluster: | [Static id=1168] Bytes per cluster: | [Static id=1160] Number of clusters: | [Static id=1162] File system name: | [Static id=1163] Long names support: | [Static id=1164] File system flags: | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+CJK        VOL    PASS        mount point 'C:\' (expected 'C:\'), volume '\\?\Volume{42005f8f-a7e6-42c7-9604-d40745a469d2}\'
+CJK        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CJK        MOVE   PASS        left 'Z:\a'; moved True; file id BA867909:001E000000296970 -> BA867909:001E000000296970 (same = a rename); windows: [#32770 'Move/Rename'] [Static id=209] &Move file "f.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+CJK        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LONG: Z: -> folder of 341 UTF-16 units / 341 UTF-8 bytes
+LONG       DEL    PASS        location 'Z:\'; the question names a junction True; J and the target's file kept True; windows: [#32770 'Confirm Delete'] [Static id=2477] Are you sure you want to delete junction "J"? | [Button id=6] &Yes | [Button id=7] &No
+LONG       INFO   PASS        type line 11 chars, target whole False, no part of it True, '?' False: 'local drive'; dialog: ...ector: | [Static id=1159] Sectors per cluster: | [Static id=1168] Bytes per cluster: | [Static id=1160] Number of clusters: | [Static id=1162] File system name: | [Static id=1163] Long names support: | [Static id=1164] File system flags: | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+LONG       VOL    FAIL        mount point '' (expected 'C:\'), volume ''
+LONG       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LONG       MOVE   FAIL        left 'Z:\a'; moved True; file id BA867909:001D00000029697D -> BA867909:001A000000296980 (same = a rename); windows: [#32770 'Move/Rename'] [Static id=209] &Move file "f.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=212] &Options | [Button id=9] Help
+LONG       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+
+Rows: PASS 14, FAIL 4, NOT DRIVEN 0. Left running: 0; subst left defined: 0; fixture removed: True; registry restored+identical: True

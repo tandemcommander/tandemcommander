@@ -1280,7 +1280,10 @@ BOOL HasTheSameRootPathAndVolume(const char* p1, const char* p2)
                 {
                     if (!cutPathIsPossible || !CutDirectory(ourPath))
                     {
-                        strcpy(p1Volume, "fail"); // ani root nevratil uspech, neocekavane (bohuzel se deje na substenych discich pod W2K - ladeno u Bachaalany - pri selhani na obou cestach vracime SHODU, protoze je pravdepodobnejsi)
+                        // feature 301: a subst drive whose target does not fit MAX_PATH (ResolveSubsts
+                        // left the path unresolved) - the volume from the whole wide target
+                        if (!GetSubstPathVolume(p1, NULL, 0, p1Volume, 100))
+                            strcpy(p1Volume, "fail"); // ani root nevratil uspech, neocekavane (bohuzel se deje na substenych discich pod W2K - ladeno u Bachaalany - pri selhani na obou cestach vracime SHODU, protoze je pravdepodobnejsi)
                         break;
                     }
                     SalPathAddBackslash(ourPath, MAX_PATH);
@@ -1303,7 +1306,10 @@ BOOL HasTheSameRootPathAndVolume(const char* p1, const char* p2)
                 {
                     if (!cutPathIsPossible || !CutDirectory(ourPath))
                     {
-                        strcpy(p2Volume, "fail"); // ani root nevratil uspech, neocekavane (bohuzel se deje na substenych discich pod W2K - ladeno u Bachaalany - pri selhani na obou cestach vracime SHODU, protoze je pravdepodobnejsi)
+                        // feature 301: a subst drive whose target does not fit MAX_PATH (ResolveSubsts
+                        // left the path unresolved) - the volume from the whole wide target
+                        if (!GetSubstPathVolume(p2, NULL, 0, p2Volume, 100))
+                            strcpy(p2Volume, "fail"); // ani root nevratil uspech, neocekavane (bohuzel se deje na substenych discich pod W2K - ladeno u Bachaalany - pri selhani na obou cestach vracime SHODU, protoze je pravdepodobnejsi)
                         break;
                     }
                     SalPathAddBackslash(ourPath, MAX_PATH);
@@ -1359,7 +1365,9 @@ BOOL PathsAreOnTheSameVolume(const char* path1, const char* path2, BOOL* resIsOn
                 {
                     if (!cutPathIsPossible || !CutDirectory(ourPath))
                     { // ani root nevratil uspech, neocekavane (bohuzel se deje na substenych discich pod W2K - ladeno u Bachaalany - pri selhani na obou cestach se stejnymi rooty vracime SHODU, protoze je pravdepodobnejsi)
-                        numOfGetVolNamesFailed++;
+                        // feature 301: a subst drive whose target does not fit MAX_PATH - the volume from the whole wide target
+                        if (!GetSubstPathVolume(path1, NULL, 0, p1Volume, 100))
+                            numOfGetVolNamesFailed++;
                         break;
                     }
                     SalPathAddBackslash(ourPath, MAX_PATH);
@@ -1383,7 +1391,9 @@ BOOL PathsAreOnTheSameVolume(const char* path1, const char* path2, BOOL* resIsOn
                     {
                         if (!cutPathIsPossible || !CutDirectory(ourPath))
                         { // ani root nevratil uspech, neocekavane (bohuzel se deje na substenych discich pod W2K - ladeno u Bachaalany - pri selhani na obou cestach se stejnymi rooty vracime SHODU, protoze je pravdepodobnejsi)
-                            numOfGetVolNamesFailed++;
+                            // feature 301: as for path1
+                            if (!GetSubstPathVolume(path2, NULL, 0, p2Volume, 100))
+                                numOfGetVolNamesFailed++;
                             break;
                         }
                         SalPathAddBackslash(ourPath, MAX_PATH);

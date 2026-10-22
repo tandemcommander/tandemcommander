@@ -542,11 +542,23 @@ BOOL GetResolvedPathMountPointAndGUID(const char* path, char* mountPoint, char* 
     }
     else
     {
-        if (!remotePath) // for network paths, it still commonly returns errors = we will not report it, no need to nag
+        DWORD err = GetLastError();
+        // feature 301: a subst drive whose target does not fit MAX_PATH (ResolveSubsts left the
+        // path unresolved): the mount point and volume from the whole wide target
+        char mp[MAX_PATH];
+        if (GetSubstPathVolume(path, mp, MAX_PATH, guidP, sizeof(guidP)))
         {
-            DWORD err = GetLastError();
-            TRACE_E("GetResolvedPathMountPointAndGUID(): GetVolumeNameForVolumeMountPoint() failed: " << GetErrorText(err));
+            if (mountPoint != NULL)
+                strcpy(mountPoint, mp);
+            if (guidPath != NULL)
+            {
+                SalPathAddBackslash(guidP, sizeof(guidP));
+                strcpy(guidPath, guidP);
+            }
+            return TRUE;
         }
+        if (!remotePath) // for network paths, it still commonly returns errors = we will not report it, no need to nag
+            TRACE_E("GetResolvedPathMountPointAndGUID(): GetVolumeNameForVolumeMountPoint() failed: " << GetErrorText(err));
     }
     return FALSE;
 }

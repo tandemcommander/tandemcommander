@@ -1106,6 +1106,16 @@ BOOL MyQueryDosDevice(BYTE driveNum, char* target, int maxTarget);
 // empty and '*tooLong' (when not NULL) TRUE; it is never cut and never read in the code page
 BOOL GetSubstInformation(BYTE driveNum, char* path, int pathMax, BOOL* tooLong = NULL);
 
+// feature 301 (review 1, M1): the volume of a path on a subst drive ("Z:\a"), asked of Windows
+// with the whole wide subst target + the rest of the path - for the volume checks when
+// ResolveSubsts refused a target that does not fit MAX_PATH (a cut path is never built).
+// 'mountPoint' (may be NULL) gets the volume's mount point ("C:\", UTF-8), 'volumeName' (may be
+// NULL) its "\\?\Volume{...}\" name; both are written only on success. FALSE: not a drive path,
+// not a subst drive, a subst to UNC or onto another drive letter's path Windows cannot place,
+// or a result that does not fit.
+BOOL GetSubstPathVolume(const char* path, char* mountPoint, int mountPointMax,
+                        char* volumeName, int volumeNameMax);
+
 // nahradi v retezci posledni znak '.' decimalnim separatorem ziskanym ze systemu LOCALE_SDECIMAL
 // delka retezce muze narust, protoze separator muze mit podle MSDN az 4 znaky
 // vraci TRUE, pokud byl buffer dostatecne veliky a operaci se povedlo dokoncit, jinak vraci FALSE

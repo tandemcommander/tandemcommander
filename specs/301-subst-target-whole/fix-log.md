@@ -105,3 +105,49 @@ than 260 units"); C1 accepted (FR-009 is a constraint, checked by build and revi
 ## Inbox item
 
 - `undelete-skips-its-same-partition-warning-when-the-target` - Undelete skips its same-partition warning when the target volume cannot be told (bug, 7, data-safety, measure:301).
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+Re-ran build, saltests (26559 / 0), the guard (0), imports (only `QueryDosDeviceW`), the probe
+(9 / 0, registry identical); enumerated the callers itself (the table above complete).
+
+- **MUST M1**: the refusal made the volume checks fail open for subst drives whose target passes
+  259 UTF-8 bytes - before, the `?` path kept the right drive root, so `PathsAreOnTheSameVolume`
+  reached `C:\` and Undelete showed `IDS_SAMEPARTITION`; now `Z:\x` -> no volume -> "different" ->
+  no warning. The spec's "no whole-path alternative" was wrong: the whole wide target works with
+  `GetVolumePathNameW` + `GetVolumeNameForVolumeMountPointW`.
+  **Fixed**: measured first (scratch `volpath2.ps1`: the CJK target path 136 / 148 chars, a 357 /
+  361-char path with and without `\?\` -> `C:\` and the C: volume GUID); new
+  `GetSubstPathVolume` (`salamdr2.cpp`, `consts.h`): the "\??\X:" target + the rest of the path,
+  on the heap, `\?\` when >= MAX_PATH, outputs written only on success; called when the volume
+  walk fails in `HasTheSameRootPathAndVolume` (both loops), `PathsAreOnTheSameVolume` (both loops)
+  and `GetResolvedPathMountPointAndGUID` (Drive Information's mount point / GUID, `IsPathOnSSD`).
+  Spec Q5 re-answered, FR-010 added, Assumptions updated; the Inbox item rewritten to the
+  remaining general fail-open, severity 7 -> 5 (no reachable case known).
+- **SHOULD S1**: the probe did not cover the volume results. **Fixed**: rows VOL (571 mount point =
+  the target's root, 572 = `\?\Volume{...}\`) and MOVE (a second start, F6 of `Z:\a\f.txt` into
+  `Z:\J`: the same file id = a rename). First run 15 / 3: the VOL rows read the controls after the
+  dialog was closed (probe bug) -> fixed -> 18 / 0.
+- **SHOULD S2**: a too-long subst-to-UNC target makes `ResolveSubsts` return FALSE (was TRUE over a
+  `?` path). **Documented** (spec edge case): FALSE = not resolved is accurate; the only consumer of
+  the value is the same-path shortcut of `PathsAreOnTheSameVolume`, which is then skipped (the
+  estimation stays) - the conservative side.
+- NOTE heap on hot paths / in the bug report: **fixed** - `QueryDosDeviceWholeW` reads into a
+  caller's MAX_PATH stack buffer first and allocates only on ERROR_INSUFFICIENT_BUFFER.
+- NOTE orphaned comment in saltests: **fixed** (the 289 comment back above `TestDriveText289`).
+- NOTE probe header numbers: **fixed** (the fixture path: about 120 units / 280 bytes).
+- NOTE CHANGELOG / FEATURE-HISTORY: at closing.
+
+Measurements of the round:
+
+| Run | Build | Result |
+|---|---|---|
+| `probe/result_before_installed_0.1.10.txt` | installed 0.1.10 (Release; the subst code as at HEAD) | 14 / 4: CJK DEL, CJK INFO, LONG VOL, LONG MOVE (copy + delete: the file id changed) |
+| `probe/result_negctl_no_volume.txt` | Debug, `GetSubstPathVolume` returning FALSE at once | 14 / 4: CJK VOL, CJK MOVE, LONG VOL, LONG MOVE - the M1 regression made visible |
+| `probe/result_after.txt` | Debug, the fix | **18 / 0**; registry identical; subst left 0; fixture removed |
+
+saltests after the round: 26559 checks, 0 failed; guard `TOTAL: 0 finding(s)`; build succeeded
+(source restored after the negative control, `grep -c "NEGATIVE CONTROL" src/salamdr2.cpp` = 0,
+rebuilt).

@@ -16992,7 +16992,7 @@ static void TestFtpServerEncoding288()
     CHECK(!SalFtpSameServer("host", 21, "u", "other", 21, "u"));
 }
 
-// feature 289: drive names and folder type names from the wide shell / volume calls (saldrivetext.h)
+// feature 301: a subst drive's device text -> its path, whole or refused (salsubst.h)
 static void TestSubstTarget301()
 {
     char buf[SAL_SUBST_TEXT_U8_MAX];
@@ -17059,6 +17059,7 @@ static void TestSubstTarget301()
     CHECK(SalSubstTargetToPathU8(L"\\??\\C:\\a\xD800", buf, sizeof(buf)) == SAL_SUBST_OK && strlen(buf) == 4 + 3);
 }
 
+// feature 289: drive names and folder type names from the wide shell / volume calls (saldrivetext.h)
 static void TestDriveText289()
 {
     // the drive letter suffix: cut at the last '(' with the spaces before it
