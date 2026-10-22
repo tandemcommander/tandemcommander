@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A single mask longer than 259 bytes overruns the mask group preparation buffers](items/mask-group-prepare-unbounded-mask-copy/desc.md) | bug | 6 | long-paths | 298 |
 
 ## Next
 
@@ -236,6 +235,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Filter dialog cuts a long panel filter to 259 bytes after a refused edit](items/filter-dialog-cuts-a-long-panel-filter-to-259-bytes-after-a/desc.md) | bug | 4 | long-paths | review:298 | 2026-10-22 |
 
 ## Parked
 

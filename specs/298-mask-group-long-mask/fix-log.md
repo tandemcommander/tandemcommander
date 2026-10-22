@@ -79,3 +79,28 @@ sizing by review) - accepted.
 The random rows of `TestMaskGroupSplit298` (3000 groups over the bytes that matter) did not fail under the
 negative control - their masks rarely exceed 259 bytes; they guard the equivalence of short groups, the fixed
 long rows guard the length.
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST, no SHOULD**. It rebuilt, re-ran saltests (26443, 0
+failed) and the probe (PASS 8, FAIL 0, registry identical), and made two negative controls of its own:
+
+- the work block shrunk to `malloc(masksLen + 1 + 100)` in `masks.cpp`: the probe failed every row (SHORT,
+  M300, M1000 - "HEAP CORRUPTION DETECTED ... allocated at masks.cpp(423)", exit `0xC0000374`) - the probe
+  catches an undersized heap block too, not only the old stack overrun;
+- a one-byte overrun injected into `SalMaskGroupCutMask`: saltests 37 failed (the guard bytes work).
+
+Both restored byte for byte; saltests 0 failed, probe M300 / M1000 PASS again.
+
+NOTEs and what was done:
+
+1. The saltests "reproduction" row (`m.size() + 1 > MAX_PATH`) is arithmetic only; the sizing in `masks.cpp`
+   is proven by the probe (and by the reviewer's negative control 1), not by saltests - recorded here.
+2. The closing records (CHANGELOG, FEATURE-HISTORY, closing report) - written at closing.
+3. `CMaskGroup::SetMasksString` cuts a group longer than 1000 bytes (TRACE_E only) - existing behaviour and the
+   documented plug-in contract (`spl_gen.h`: the mask string is at most `MAX_GROUPMASK` with the NUL); out of
+   scope, not filed (changing it is a plug-in interface question).
+4. `CFilterDialog::Validate` restores a refused edit from a backup cut to `MAX_PATH` - a long tab filter can end
+   up cut in the panel. Out of scope; filed to the Inbox as
+   `filter-dialog-cuts-a-long-panel-filter-to-259-bytes-after-a` (`review:298`).
+5. The before rows were taken at 1bc8f164 (`main`) - not repeated by the reviewer; the crash report agrees.

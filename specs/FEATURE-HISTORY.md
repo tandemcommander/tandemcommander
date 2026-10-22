@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
@@ -3947,3 +3947,21 @@ a few early ones are out of sequence).
   the identity test always "no link" 15 FAIL; the review's rows on the first version: 4 FAIL); 296's probe 47 / 0, 294's 24 / 0, 292's 33 / 0;
   saltests 26,304 / 0; one refute-first review (no MUST; SHOULD 1 / 2 fixed with rows FAKEDEL,
   FAKEMOVE, ACLDEL, NOVALDEL, DELHKCRPLAIN).
+- 298-mask-group-long-mask: a mask group holding one mask longer than 259 bytes overran the stack
+  while it was prepared (`CMaskGroup::PrepareMasks` cut each mask into `char maskBuf[MAX_PATH]` and
+  normalized it into `char buf[MAX_PATH]` without a bound) - reachable at every start through a plug-in's
+  `ThumbnailMasks` registry value (read with 1001 bytes, prepared in `CPlugins::Load`: RTC "Stack memory
+  corruption" at 300 bytes, a wild allocation at 1000), also a tab filter, criteria `NAMEMASKS`, plug-in
+  groups and the viewer masks passed in directly (no bound at all) - now the two buffers are one heap block
+  of 2 x (`strlen(group text)` + 1) bytes (freed by a local guard on every return; out of memory = FALSE,
+  `errorPos` 0) and every mask is prepared whole. The cut / trim / `PrepareMask` steps moved byte for byte
+  into the header `src/common/salmaskgroup.h` (`SalMaskGroupCutMask`, `SalMaskGroupTrimMask`,
+  `SalPrepareMaskU8`; bytes compared unsigned = the core's `/J`); neither writes more than its input + 1, so
+  the group text's length is enough; `::PrepareMask` (plug-in export) unchanged in contract. Traps: a probe's
+  local `$started` hid the library's `$Started` (PowerShell names are case-insensitive); the random saltests
+  rows do not see a length cut (their masks are short) - the fixed long rows do. Limits: a group stored in
+  `CMaskGroup` is still cut at 1000 bytes by `SetMasksString` (plug-in contract); the Filter dialog's backup
+  cut at `MAX_PATH` (Inbox `filter-dialog-cuts-a-long-panel-filter-to-259-bytes-after-a`). From backlog item
+  `mask-group-prepare-unbounded-mask-copy`. Probe `mask298_probe.ps1` 4 / 4 FAIL -> 8 / 0; saltests 26,443 / 0
+  (negative control: a cut at 259 bytes, 72 FAIL); one refute-first review (no MUST, no SHOULD; its own
+  negative controls: an undersized heap block failed every probe row, a one-byte overrun 37 saltests FAIL).

@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **A single file mask longer than 259 bytes could crash the program, even at every start** (feature 298).
+  - **Before:** a mask list (masks separated by `;`) holding one mask longer than 259 bytes overran the program's memory while it was being prepared. Such a mask cannot be typed into the usual fields, but it can come from the settings - a hand edit of the registry, a settings import, a plug-in's thumbnail masks, a tab's filter, saved search criteria - or from a plug-in. With a plug-in's thumbnail masks the program crashed at every start ("A problem has occurred") until the value was removed by hand.
+  - **Now:** a mask of any length is prepared whole - never shortened, so it selects exactly the files it describes. Mask lists that worked before give exactly the same result.
+  - **Limitation:** a mask list stored in the program is still limited to 1000 bytes in all, as before.
+
 - **Registry Editor: deleting or moving a key that holds a registry link deleted the key the link points at** (feature 297).
   - **Before:** a registry link is a key made as a symbolic link, which any user can create in their own part of the registry. Deleting (F8) a key that held such a link, or the link itself, deleted the key the link pointed at - a key the user never selected, possibly anywhere in their registry - and left the link, so the selected key then could not be removed ("Unable to delete a registry key"). Moving it (F6, also drag and drop) or renaming the link (Quick Rename) first copied the linked key into the target as an ordinary key and then deleted it.
   - **Now:** Delete removes a link as the link itself, never what it points at; a link to a key that does not exist is removed too. A Move or Quick Rename refuses a link, before anything of it is copied, with "Unable to remove the original registry key. The request is not supported." (*Retry*, *Skip*, *Skip All*, *Cancel*); *Skip* leaves the link, and the key holding it, where they were. Keys that are no links are deleted and moved as before, and Copy (F5) still copies what a link points at as an ordinary key.
