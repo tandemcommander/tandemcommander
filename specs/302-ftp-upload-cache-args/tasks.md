@@ -31,6 +31,12 @@ no pure decision).
 - [X] T007 Regression: `specs/288-ftp-per-server-encoding/probe/ftp288_probe.ps1` -> `specs/302-ftp-upload-cache-args/probe/regress_288.txt` (20 / 0 as recorded by 288)
 - [X] T008 Record before / after, commands and results in `specs/302-ftp-upload-cache-args/fix-log.md`
 
+## Phase 6: Review 1 (MUST: an F7 folder cached as empty stays trusted after a rename)
+
+- [X] T009 [US2] `CUploadListingsOnServer::ReportRename` and `::ReportUnknownChange` invalidate every listing of the server through a new `InvalidateAllListings()` in `src/plugins/ftp/operats9.cpp` (declared in `src/plugins/ftp/operats.h`)
+- [X] T010 Add the review rows `MKD-REN` and `REN-PATH` to `specs/302-ftp-upload-cache-args/probe/ftp302_probe.ps1`; run on `main` code, on the argument fix alone (`result_review1_control.txt`) and on the full fix (`result_after.txt`)
+- [X] T011 Rebuild, encoding guard, 288 regression again; record in `specs/302-ftp-upload-cache-args/fix-log.md`
+
 ## Dependencies
 
 T001 -> T002 -> T003, T004 (same file, sequential) -> T005 -> T006, T007 -> T008. US1 and US2 are

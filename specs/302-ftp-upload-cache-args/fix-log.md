@@ -50,7 +50,10 @@ URL had no port; renamed to `$FtpSrv`. Second run - END rows failed on the opera
 probe keeps open; added `Close-Ops` and `End-Row302` (098's End-Row with the unfinished-operations
 exit question expected).
 
-### Before (02eba55f code; final probe, run with the fix stashed) - `result_before.txt`: PASS 2, FAIL 2
+### First round (the argument fix; probe with rows MKD-ABS and REN-UP)
+
+Before (02eba55f code, the fix stashed): PASS 2, FAIL 2 (both ROWs); after: PASS 4, FAIL 0. The
+final numbers of all four rows are in *Review* below; the row details:
 
 - `MKD-ABS` ROW FAIL: F7 `/MKD-ABS/other/new` from the panel at `/MKD-ABS/src` made the folder;
   upload 2 of the local folder `new` into `/MKD-ABS/other` sent `CWD /MKD-ABS/other / MKD new`
@@ -63,7 +66,7 @@ exit question expected).
   *Notes* asked to raise it to the data-loss band if this happened.
 - END rows PASS (exit 0, no reports).
 
-### After (fix) - `result_after.txt`: PASS 4, FAIL 0
+After the argument fix:
 
 - `MKD-ABS` ROW PASS: upload 2 sent `CWD /MKD-ABS/other/new / PWD / TYPE A / PORT / STOR f.txt` -
   no `MKD`, joined the existing folder (default), `f.txt` = `F`.
@@ -93,3 +96,51 @@ exit question expected).
   not driven by the probe - accepted: the same argument-order change as the driven calls, checked
   by reading (the cache then invalidates instead of updating). A1 (LOW) no change.
 - Round 2: no findings above LOW.
+
+## Review
+
+### Review 1 (refute-first, independent agent) - MUST 1, SHOULD 1, NOTEs 6
+
+- **MUST 1** - the argument fix let Create Directory's report reach the cache, which records the
+  new folder as an empty, ready listing (`AddEmptyListing(..., ulsReady)`); `ReportRename`
+  invalidated only the panel folder's listing, so after a Quick Rename into that folder
+  (`x.txt` -> `new/x.txt`) or giving another folder its name (`new` -> `new_old`, `full` -> `new`)
+  the cache still said "empty" and the next upload sent `STOR` without a `LIST` and without the
+  overwrite question - the server's file replaced. Measured by the reviewer (rows MKD-REN,
+  REN-PATH). **Fixed**: `CUploadListingsOnServer::ReportRename` invalidates every listing of the
+  server (`InvalidateAllListings()`, new; from the end - `InvalidateListing` deletes a ready
+  listing). The same for `ReportUnknownChange` (Send FTP Command: a typed command may change any
+  folder, also one F7 cached as empty) - by reading, not driven (the plug-in menu command is not
+  reachable by the probe's command ids); recorded as owed to a person. Spec Clarification /
+  FR-004 / edge cases / SC-004 updated. Rows MKD-REN and REN-PATH added to the probe (from the
+  reviewer's `extra_rows.ps1`; PASS also requires the open overwrite question).
+- **SHOULD 1** - the backlog item still says severity 5 and "masked". The item is removed at the
+  closing (`BL remove`); the data loss is stated in the closing report, FEATURE-HISTORY and the
+  CHANGELOG entry instead.
+- NOTEs: the measurement reproduces (reviewer: fixed 4 / 0 on the first two rows; reverted
+  `MKD new`, `SRV-A` -> `LOCAL-B`); the 4 swapped calls were the only ones (15 files checked);
+  standing rules untouched; "result unknown" branches by reading; on the hidden desktop the
+  panel's refresh after F7 is deferred (an explicit refresh, cmd 725, in the review rows) - the
+  verdicts do not depend on it; 288 not re-run by the reviewer (re-run here).
+
+### Final probe runs (`ftp302_probe.ps1`, four rows + END rows)
+
+| Code | File | MKD-ABS | REN-UP | MKD-REN | REN-PATH | Rows |
+|---|---|---|---|---|---|---|
+| `main` (02eba55f) | `result_before.txt` | FAIL (`MKD new`) | FAIL (`b.txt` replaced) | PASS | PASS | 6 / 2 |
+| argument fix only (review 1 state) | `result_review1_control.txt` | PASS | PASS | FAIL (`f.txt` replaced) | FAIL (`x.txt` replaced) | 6 / 2 |
+| full fix | `result_after.txt` | PASS | PASS | PASS | PASS | 8 / 0 |
+
+Every row fails on exactly one of the earlier versions - each is a negative control. END rows
+PASS in all runs (exit 0, no reports; the expected exit question about the unfinished operations
+the probe leaves). Registry restored + identical in every run. On `main`, MKD-REN / REN-PATH pass
+because F7's report never reached the cache (no empty listing of `new`; the upload lists it).
+
+Traps of this round: `Select-Object -First 5` on the output of `build.cmd` stops the pipeline and
+killed the build before it compiled - the first "after" run tested the review-1 state (kept as
+`result_review1_control.txt`, confirming the MUST); `git stash` of the source files left the
+already committed `ctrlcon5.cpp` fixed - the `main` run took it from `main`
+(`git checkout main -- ...`, restored with `git checkout HEAD -- ...`).
+
+Checks after review 1: `.\build.cmd` -> `BUILD SUCCEEDED` (`ftp.spl` 08:37); encoding guard
+`TOTAL: 0 finding(s)`; `ftp288_probe.ps1` -> `regress_288.txt` PASS 20, FAIL 0.

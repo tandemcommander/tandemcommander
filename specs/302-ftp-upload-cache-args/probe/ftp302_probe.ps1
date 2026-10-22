@@ -18,6 +18,11 @@
                the panel; upload 2 of the local b.txt into /REN: PASS = no STOR b.txt and the
                server's b.txt keeps the content of a.txt (the overwrite question is left open).
                Before the fix: STOR b.txt, the renamed file replaced without the question.
+      MKD-REN  (review 1) F7 "new" (the cache holds its listing as empty), Quick Rename new ->
+               new_old and full -> new, upload 2 of the local folder "new" (f.txt): PASS = the
+               overwrite question for f.txt, no STOR f.txt, the server's new/f.txt keeps SRV-F
+      REN-PATH (review 1) F7 "new", Quick Rename x.txt -> new/x.txt, upload 2 of the local x.txt
+               into /REN-PATH/new: PASS = the question, no STOR x.txt, new/x.txt keeps SRV-X
     The product's registry key is exported, restored and compared. Exit code = FAIL rows.
 
 .NOTES
@@ -303,6 +308,72 @@ try {
         $b = ReadSrv ($s + '\b.txt')
         @{ Ok = ($ren -and -not $stor -and $asked -and $b -ceq 'SRV-A')
            Facts = ("renamed: {0}; upload 2 sent STOR b.txt: {1}; overwrite question for b.txt open: {2}; server b.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; operation windows after upload 1: {8}; at the end: {9}" -f $ren, $stor, $asked, $b, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), $op1, (OpDesc $id)) }
+    }
+    # review 1 of 302 (MUST): F7 "new" (the cache gets an EMPTY ready listing of /MKD-REN/new), Quick Rename
+    # "new" -> "new_old" and "full" -> "new" (ReportRename invalidates only /MKD-REN), upload 2 of
+    # the local folder "new" (f.txt) into /MKD-REN: PASS = the server's new/f.txt (was full/f.txt)
+    # keeps SRV-F and no STOR f.txt is sent
+    Row-Case 'MKD-REN' 'MKD-REN' {
+        param($s, $l)
+        NewDir ($s + '\full'); WriteFile ($s + '\full\f.txt') 'SRV-F'; WriteFile ($s + '\o1.txt') 'SRV-O1'
+        NewDir ($l + '\new'); WriteFile ($l + '\new\f.txt') 'LOCAL-F'; WriteFile ($l + '\o1.txt') 'L1'
+    } {
+        param($id, $s, $l)
+        $same = { param($t) $t }
+        Focus $id 0 2                                              # local o1.txt
+        $t1 = @(Drive $id 727 $same)                               # upload 1 into the panel folder: question
+        $op1 = OpDesc $id
+        KeyIn $id 0 0x09                                           # the server panel
+        $t2 = @(Drive $id 730 { param($t) 'new' })                 # F7 relative "new"
+        $made = [IO.Directory]::Exists($LP + $s + '\new')
+        $tr = @(Drive $id 725 $null 3 30)                          # CM_RIGHTREFRESH
+        Focus $id 1 2                                              # .., full, new, o1.txt -> "new"
+        $t2b = @(Drive $id 754 { param($t) 'new_old' })            # Quick Rename new -> new_old
+        Focus $id 1 1                                              # .., full, new_old, o1.txt -> "full"
+        $t2c = @(Drive $id 754 { param($t) 'new' })                # Quick Rename full -> new
+        $ren = [IO.File]::Exists($LP + $s + '\new\f.txt') -and [IO.Directory]::Exists($LP + $s + '\new_old')
+        KeyIn $id 1 0x09                                           # local
+        Focus $id 0 1                                              # local folder "new"
+        $from = Srv-Count $FtpSrv
+        $t3 = @(Drive $id 727 $same 5 90)                          # upload 2 of the folder "new"
+        $cmds = @(Srv-Cmds $FtpSrv $from)
+        $stor = Has-Cmd $cmds '^STOR (.*/)?f\.txt$'
+        $asked = OpQuestion $id 'f.txt' 8
+        $f = ReadSrv ($s + '\new\f.txt')
+        @{ Ok = ($made -and $ren -and -not $stor -and $asked -and $f -ceq 'SRV-F')
+           Facts = ("F7 made new: {0}; renames done: {1}; upload 2 sent STOR f.txt: {2}; question for f.txt: {3}; server new/f.txt '{4}'; srv: {5}; upload 2 commands: {6}; dialogs: {7} | {8} | {9} | {10} | {11}; op after upload 1: {12}; at the end: {13}" -f $made, $ren, $stor, $asked, $f, (Show (Entries $s)), ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t2b -join ' ; '), ($t2c -join ' ; '), ($t3 -join ' ; '), $op1, (OpDesc $id)) }
+    }
+
+    # review 1 of 302 (MUST): same with a path in the Quick Rename name: F7 "new", Quick Rename x.txt ->
+    # new/x.txt, upload 2 of the local x.txt into /REN-PATH/new: PASS = server new/x.txt keeps SRV-X
+    Row-Case 'REN-PATH' 'REN-PATH' {
+        param($s, $l)
+        WriteFile ($s + '\x.txt') 'SRV-X'; WriteFile ($s + '\o1.txt') 'SRV-O1'
+        WriteFile ($l + '\x.txt') 'LOCAL-X'; WriteFile ($l + '\o1.txt') 'L1'
+    } {
+        param($id, $s, $l)
+        $same = { param($t) $t }
+        Focus $id 0 1                                              # local: .., o1.txt, x.txt -> o1.txt
+        $t1 = @(Drive $id 727 $same)
+        $op1 = OpDesc $id
+        KeyIn $id 0 0x09
+        $t2 = @(Drive $id 730 { param($t) 'new' })
+        $made = [IO.Directory]::Exists($LP + $s + '\new')
+        $tr = @(Drive $id 725 $null 3 30)                          # CM_RIGHTREFRESH
+        Focus $id 1 3                                              # .., new, o1.txt, x.txt -> x.txt
+        $t2b = @(Drive $id 754 { param($t) 'new/x.txt' })
+        $ren = [IO.File]::Exists($LP + $s + '\new\x.txt')
+        KeyIn $id 1 0x09
+        Focus $id 0 2                                              # local x.txt
+        $from = Srv-Count $FtpSrv
+        $toNew = { param($t) $t -replace '/REN-PATH/', '/REN-PATH/new/' }
+        $t3 = @(Drive $id 727 $toNew 5 90)
+        $cmds = @(Srv-Cmds $FtpSrv $from)
+        $stor = Has-Cmd $cmds '^STOR (.*/)?x\.txt$'
+        $asked = OpQuestion $id 'x.txt' 8
+        $x = ReadSrv ($s + '\new\x.txt')
+        @{ Ok = ($made -and $ren -and -not $stor -and $asked -and $x -ceq 'SRV-X')
+           Facts = ("F7 made new: {0}; renamed into new: {1}; upload 2 sent STOR x.txt: {2}; question for x.txt: {3}; server new/x.txt '{4}'; upload 2 commands: {5}; dialogs: {6} | {7} | {8} | {9}; op after upload 1: {10}; at the end: {11}" -f $made, $ren, $stor, $asked, $x, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t2b -join ' ; '), ($t3 -join ' ; '), $op1, (OpDesc $id)) }
     }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

@@ -3211,6 +3211,9 @@ public:
     // invalidates the listing at index 'index' (e.g. after an "unknown change" in this listing)
     void InvalidateListing(int index);
 
+    // feature 302: invalidates every listing of the server (a change whose reach is not known)
+    void InvalidateAllListings();
+
     // for a description, see CUploadListingCache::GetListing()
     // WARNING: do not call directly; call through CUploadListingCache::GetListing()
     BOOL GetListing(const char* path, CFTPServerPathType pathType, int workerMsg,
@@ -3295,7 +3298,8 @@ public:
     // 'user'+'host'+'port' describes the server; 'workPath' is the working path of type 'pathType';
     // 'fromName' is the name (without path) of the file/directory/link being renamed; 'newName'
     // is the target name (provided by the user - may be relative or include a path); 'unknownResult'
-    // is FALSE if the rename completed normally, TRUE if the result is unknown (the relevant listings must be invalidated)
+    // is FALSE if the rename completed normally, TRUE if the result is unknown (the relevant listings must be invalidated);
+    // feature 302: either way every listing of the server is invalidated (what a rename reaches is not resolved)
     void ReportRename(const char* user, const char* host, unsigned short port,
                       const char* workPath, CFTPServerPathType pathType,
                       const char* fromName, const char* newName, BOOL unknownResult);
@@ -3325,7 +3329,8 @@ public:
                             const char* workPath, CFTPServerPathType pathType, const char* name,
                             const CQuadWord& fileSize, BOOL unknownResult);
 
-    // change notification: unknown change (used after sending a custom command to the server), the working path listing must be invalidated;
+    // change notification: unknown change (used after sending a custom command to the server), the server's listings
+    // must be invalidated (feature 302: all of them - the command may change any directory, not only the working path);
     // 'user'+'host'+'port' describes the server; 'workPath' is the working path of type 'pathType'
     void ReportUnknownChange(const char* user, const char* host, unsigned short port,
                              const char* workPath, CFTPServerPathType pathType);

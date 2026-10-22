@@ -68,6 +68,8 @@ No `contracts/`: nothing external changes (internal class of the FTP plug-in).
 
 ```text
 src/plugins/ftp/ctrlcon5.cpp   # CreateDir: 2 calls of ReportCreateDirs; QuickRename: 2 calls of ReportRename
+src/plugins/ftp/operats9.cpp   # review 1: ReportRename / ReportUnknownChange -> InvalidateAllListings()
+src/plugins/ftp/operats.h      # review 1: InvalidateAllListings() declared; report comments
 ```
 
 **Structure Decision**: one source file of the FTP plug-in; the probe reuses

@@ -35,7 +35,16 @@ folder does not exist.
   (today only the panel folder's listing is invalidated), or guard the server identification
   against another swap (a server-key type instead of three loose arguments)? → A: No - only the
   four calls get the arguments in the declared order; the cache's reactions and the signatures of
-  the 30+ other callers stay as they are (autonomous run: conservative).
+  the 30+ other callers stay as they are (autonomous run: conservative). **Superseded in part by
+  review 1** (next bullet) for the cache's reaction to a rename.
+- Q (review 1, MUST): with Create Directory's report now reaching the cache, a new folder is cached
+  as an empty listing; a later Quick Rename into it (`x.txt` -> `new/x.txt`) or giving another
+  folder its name left that listing trusted and an upload overwrote server files without the
+  question - how far must a rename (and a typed FTP command, which reports an "unknown change")
+  invalidate? → A: every cached listing of that server; what a rename or a command reaches is not
+  resolved (VMS, relative paths, links), and an unneeded invalidation only costs a `LIST` while an
+  upload to that server exists (autonomous run: conservative - loses no data; *Never lose the
+  user's data*).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -89,8 +98,10 @@ appears and is answered "Skip", or no `STOR b.txt` reaches the server).
   server (the cache's own lookup normalises the anonymous name - unchanged).
 - User name equal to the host name: the swapped call happened to work; the fixed call works too.
 - No upload operation open: the cache holds no server; the reports change nothing (unchanged).
-- Rename with a path in the new name: the cache only invalidates the panel folder's listing (an
-  upstream simplification, unchanged; out of scope).
+- Rename with a path in the new name (`x.txt` -> `new/x.txt`), or of a folder (its listing and the
+  listings below it move): every cached listing of the server is invalidated (review 1).
+- A folder made by F7 is cached as empty; a later change to it that the cache cannot place (Quick
+  Rename, a typed FTP command) invalidates it with the rest (review 1).
 
 ## Requirements *(mandatory)*
 
@@ -103,8 +114,9 @@ appears and is answered "Skip", or no `STOR b.txt` reaches the server).
   that server, both when the rename finished and when the result is unknown.
 - **FR-003**: Every other report to the upload listing cache MUST keep its current behaviour
   (they already name the server correctly).
-- **FR-004**: The reaction of the cache to a report (which listings are updated or invalidated)
-  MUST stay as it is; only the server identification is corrected.
+- **FR-004**: A reported Quick Rename and a reported unknown change (a typed FTP command) MUST
+  invalidate every cached listing of that server (review 1); the reactions to the other reports
+  (create directories, delete, store, upload finished) stay as they are.
 
 ### Key Entities
 
@@ -124,6 +136,9 @@ appears and is answered "Skip", or no `STOR b.txt` reaches the server).
 - **SC-003**: The existing FTP probe whose rows drive Create Directory, Quick Rename and upload
   against the test server (feature 288, `ftp288_probe.ps1`) gives the same result as recorded
   by 288 (20 / 0).
+- **SC-004**: In the review rows (F7 `new`, then Quick Rename `new` -> `new_old` and `full` ->
+  `new`, or `x.txt` -> `new/x.txt`; then an upload into `new`), the overwrite question appears and
+  the server's file keeps its content (with the argument fix alone: replaced without the question).
 
 ## Assumptions
 
