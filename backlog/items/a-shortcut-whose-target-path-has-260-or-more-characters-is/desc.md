@@ -8,7 +8,7 @@ source: measure:304
 who: agent
 created: 2026-10-22
 updated: 2026-10-22
-verified: -
+verified: 2026-10-22 31239f48
 effort: M
 feature: -
 related: []
@@ -78,3 +78,4 @@ Not measured through the panels' Enter / drop (needs a real mouse for the drop).
 
 - 2026-10-22 — created (source measure:304)
 - 2026-10-22 — moved to Next position 1
+- 2026-10-22 — verified at 31239f48: reproduced at 31239f48: SalShellLinkGetPathU8 NOERROR with a cut 259-unit answer for 260-400 unit targets on D: (both flags), SalFolderShortcutTargetU8 likewise
