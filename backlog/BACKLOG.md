@@ -23,7 +23,7 @@ Last triaged: 2026-10-23
 | # | Item | Type | Sev | Area | Who | Effort | Status |
 |---|---|---|---|---|---|---|---|
 | 1 | [Panel tabs: a Tabs settings page, opt-in browser-like shortcuts, Reopen Closed Tab](items/panel-tabs-chrome-shortcuts-and-reopen-closed-tab/desc.md) | feature | 4 | panels-ui | both | L | blocked |
-| 2 | [Markdown Viewer: choose the page width in View, up to the full window](items/mdview-page-width-levels/desc.md) | improvement | 3 | other-plugins | agent | S | open |
+| 2 | [Markdown Viewer: choose the page width in View, up to the full window](items/mdview-page-width-levels/desc.md) | improvement | 3 | other-plugins | agent | S | blocked |
 | 3 | [Opening a tar whose member name has a 300-letter component crashes the program](items/opening-a-tar-whose-member-name-has-a-300-letter-component/desc.md) | bug | 7 | archives | agent | M | blocked |
 | 4 | [FTP: PWD reply cut at 300 bytes and other long-name leftovers of 215](items/ftp-long-name-and-path-leftovers/desc.md) | bug | 5 | ftp | agent | M | blocked |
 | 5 | [ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut](items/uniso-hfs-btree-trust-and-joliet-cut/desc.md) | bug | 5 | other-plugins | agent | M | blocked |
@@ -249,6 +249,10 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check the Markdown Viewer Page Width submenu on a real screen and in eight languages](items/check-the-markdown-viewer-page-width-submenu-on-a-real/desc.md) | person-step | 3 | other-plugins | leftover:314 | 2026-10-23 |
+| [Markdown Viewer: a scheme, width or View Source change shows the document from the top](items/markdown-viewer-a-scheme-width-or-view-source-change-shows/desc.md) | improvement | 3 | other-plugins | measure:314 | 2026-10-23 |
+| [The 081 Markdown Viewer probe takes a window with an empty title for the viewer](items/the-081-markdown-viewer-probe-takes-a-window-with-an-empty/desc.md) | tech-debt | 1 | tooling | review:314 | 2026-10-23 |
+| [The manual has no page for the Markdown Viewer](items/the-manual-has-no-page-for-the-markdown-viewer/desc.md) | improvement | 2 | help-docs | measure:314 | 2026-10-23 |
 
 ## Parked
 
