@@ -1,8 +1,8 @@
 ---
 title: FTP 303 on real servers: an upload of B.txt beside b.txt asks first
 type: person-step
-status: new
-severity: 4
+status: open
+severity: 6
 area: ftp
 source: leftover:303
 who: person
@@ -41,3 +41,5 @@ On a real case-insensitive server with Unix listings no file is replaced without
 ## Log
 
 - 2026-10-22 — created (source leftover:303)
+- 2026-10-22 — auto-triage: severity 4 -> 6: a person-step guarding a data-loss fix (303: a server file replaced without the question) is 6+
+- 2026-10-22 — moved to Person steps position 5
