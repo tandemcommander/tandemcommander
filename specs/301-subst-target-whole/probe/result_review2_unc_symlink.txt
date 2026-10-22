@@ -1,0 +1,8 @@
+unc_probe (review 2 of 301) after-review2; program E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; 2026-10-22 07:27
+Z: -> C:\Users\pavel\AppData\Local\Temp\tc301r2\s
+PLAIN      VOL    PASS        location '...pavel\AppData\Local\Temp\tc301r2\s\SLunc'; type 'network drive (symlink to: \\localhost\D$\)'; mount point ''; volume ''
+PLAIN      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SUBST      VOL    PASS        location 'Z:\SLunc'; type 'network drive (symlink to: \\localhost\D$\)'; mount point ''; volume ''
+SUBST      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A / after 34FA77DB2392E93C963CF83D9D3C0BC4098C92716C298887CB121E6FD811125A
+Rows: PASS 4, FAIL 0; fixture removed True; registry restored+identical True

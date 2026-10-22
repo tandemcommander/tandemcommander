@@ -2068,19 +2068,28 @@ BOOL GetSubstPathVolume(const char* path, char* mountPoint, int mountPointMax,
         // 'path' + '\' - on the heap, sized from the parts (never cut)
         const WCHAR* tgt = targetW + 4;
         size_t tgtLen = wcslen(tgt);
-        size_t restLen = wcslen(restW);
+        const WCHAR* rest = restW;
+        if (tgtLen > 0 && tgt[tgtLen - 1] == L'\\' && rest[0] == L'\\')
+            rest++; // "\??\D:\" (DefineDosDeviceW keeps the backslash) + "\a": one '\'
+        size_t restLen = wcslen(rest);
+        // review 2 of 301 (S1): only a path ResolveSubsts cannot resolve (its UTF-8 form, as
+        // ResolveSubsts would build it, does not fit MAX_PATH) - a resolvable one is the caller's
+        // own walk, whose answer stands (e.g. a symbolic link to a share is not this volume)
+        int tgtU8 = SalWToU8(tgt, -1, NULL, 0);
+        int restU8 = SalWToU8(rest, -1, NULL, 0);
+        BOOL resolvable = tgtU8 > 0 && restU8 > 0 && (tgtU8 - 1) + 1 + (restU8 - 1) < MAX_PATH;
         size_t size = 4 + tgtLen + 1 + restLen + 1 + 1;
-        WCHAR* full = (WCHAR*)malloc(size * sizeof(WCHAR));
-        WCHAR* volPath = (WCHAR*)malloc(size * sizeof(WCHAR));
+        WCHAR* full = !resolvable ? (WCHAR*)malloc(size * sizeof(WCHAR)) : NULL;
+        WCHAR* volPath = !resolvable ? (WCHAR*)malloc(size * sizeof(WCHAR)) : NULL;
         WCHAR volNameW[MAX_PATH];
         if (full != NULL && volPath != NULL)
         {
             WCHAR* s = full + 4; // the prefix slot, used below when the path is long
             wcscpy(s, tgt);
             size_t l = tgtLen;
-            if (l > 0 && s[l - 1] != L'\\' && restW[0] != L'\\')
+            if (l > 0 && s[l - 1] != L'\\' && rest[0] != L'\\')
                 s[l++] = L'\\';
-            wcscpy(s + l, restW);
+            wcscpy(s + l, rest);
             l += restLen;
             if (l > 0 && s[l - 1] != L'\\')
                 s[l++] = L'\\';

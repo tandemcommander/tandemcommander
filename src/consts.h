@@ -1111,8 +1111,8 @@ BOOL GetSubstInformation(BYTE driveNum, char* path, int pathMax, BOOL* tooLong =
 // ResolveSubsts refused a target that does not fit MAX_PATH (a cut path is never built).
 // 'mountPoint' (may be NULL) gets the volume's mount point ("C:\", UTF-8), 'volumeName' (may be
 // NULL) its "\\?\Volume{...}\" name; both are written only on success. FALSE: not a drive path,
-// not a subst drive, a subst to UNC or onto another drive letter's path Windows cannot place,
-// or a result that does not fit.
+// not a subst drive, a path ResolveSubsts can resolve (the caller's own walk answers it), a subst
+// to UNC or onto another drive letter's path Windows cannot place, or a result that does not fit.
 BOOL GetSubstPathVolume(const char* path, char* mountPoint, int mountPointMax,
                         char* volumeName, int volumeNameMax);
 

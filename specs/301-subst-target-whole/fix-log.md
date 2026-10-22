@@ -151,3 +151,28 @@ Measurements of the round:
 saltests after the round: 26559 checks, 0 failed; guard `TOTAL: 0 finding(s)`; build succeeded
 (source restored after the negative control, `grep -c "NEGATIVE CONTROL" src/salamdr2.cpp` = 0,
 rebuilt).
+
+### Review 2 (fresh independent agent, with the previous findings)
+
+Re-ran build, saltests 26559 / 0, guard 0, `subst_probe.ps1` 18 / 0; an own HUGE probe (a
+343-unit, 943-byte CJK target - over `SAL_SUBST_TEXT_U8_MAX`): the type line "local drive" (no
+part, no '?'), mount point `C:\` + the right GUID, 3 / 0. Checked `GetSubstPathVolume` case by
+case (sizes, prefix, empty rest, drive root, non-subst, subst onto subst -> FALSE, outputs only
+on success, every free). **No MUST.**
+
+- **SHOULD S1**: the fallback ran after every failure of `GetResolvedPathMountPointAndGUID`, also
+  when the walk ended at a UNC root through a symbolic link and when `ResolveSubsts` had resolved
+  the path - `GetVolumePathNameW` does not follow a link to a share, so Drive Information on
+  `Z:\SLunc` (a short subst holding a link to `\localhost\D$\`) showed `C:\` + C's GUID (0.1.10:
+  empty). **Fixed**: `GetSubstPathVolume` answers only a path whose resolution would not fit
+  MAX_PATH (the UTF-8 target + '\' + the rest >= MAX_PATH, the size ResolveSubsts builds) - the
+  gate the comment and the spec already stated; `GetResolvedPathMountPointAndGUID` also skips it
+  when `remotePath`. The reviewer's reproduction kept as `probe/review2_unc_probe.ps1`; after the
+  fix `probe/result_review2_unc_symlink.txt`: PLAIN and SUBST mount point / volume empty, 4 / 0.
+- NOTE N1 (the same ungated fallback in `salamdr1.cpp`): covered by the same gate inside
+  `GetSubstPathVolume`.
+- NOTE N2 (`\??\D:\` from DefineDosDeviceW + `\a` -> `D:\a\`, harmless): **fixed** - one '\' is
+  skipped when the target ends with one and the rest starts with one.
+
+After the round: build succeeded, saltests 26559 / 0, guard `TOTAL: 0 finding(s)`,
+`probe/result_after.txt` **18 / 0** (label after-review2), registry identical, subst left 0.

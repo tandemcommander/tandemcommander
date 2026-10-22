@@ -545,8 +545,9 @@ BOOL GetResolvedPathMountPointAndGUID(const char* path, char* mountPoint, char* 
         DWORD err = GetLastError();
         // feature 301: a subst drive whose target does not fit MAX_PATH (ResolveSubsts left the
         // path unresolved): the mount point and volume from the whole wide target
+        // (not when the walk ended on a network path: that is not the target's volume - review 2)
         char mp[MAX_PATH];
-        if (GetSubstPathVolume(path, mp, MAX_PATH, guidP, sizeof(guidP)))
+        if (!remotePath && GetSubstPathVolume(path, mp, MAX_PATH, guidP, sizeof(guidP)))
         {
             if (mountPoint != NULL)
                 strcpy(mountPoint, mp);
