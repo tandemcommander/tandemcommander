@@ -44,6 +44,11 @@ should.
   reports that it cannot determine the size (or "resume or overwrite" overwrites), as it does today
   for an unknown size (autonomous run: conservative - on a case-sensitive server it is another
   file's size; appending at that offset would make a corrupt file).
+- Q: May the case-ignoring check cost a pass over the whole folder listing for every uploaded
+  file whose name is new? → A: Yes, one pass per lookup that the exact search did not answer, with
+  the rule's quick rejection of two different ASCII first letters; no second index of the listing
+  (autonomous run: conservative - changes least; a folder of 10,000 names costs 10,000 quick
+  comparisons per new file).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -123,7 +128,8 @@ case nor append to the wrong file.
   never equal to a valid UTF-8 name.
 - NFC vs NFD forms (`é` precomposed vs `e` + accent): different names, as the file system rule
   says - no question.
-- A large folder: the extra comparison runs only when the exact lookup finds nothing.
+- A large folder: the extra comparison runs only when the exact lookup finds nothing, one pass
+  over the listing per such lookup (SC-006).
 
 ## Requirements *(mandatory)*
 
@@ -168,6 +174,8 @@ case nor append to the wrong file.
   lookup) fails them.
 - **SC-005**: The existing FTP probes used as regressions (302's is on an unmerged branch; 288's,
   224's) show no new failures.
+- **SC-006**: The check for a name that is not in the listing in any case looks at each listed
+  name at most once.
 
 ## Assumptions
 
