@@ -383,6 +383,7 @@ CViewerWindow::CViewerWindow(int enumFilesSourceUID, int enumFilesCurrentIndex) 
     Name = NULL;
     Web = NULL;
     HSchemeMenu = NULL;
+    HWidthMenu = NULL;
     BgBrush = NULL;
     Theme = MdThemeById(g_scheme);
     if (Theme == NULL)
@@ -395,6 +396,7 @@ CViewerWindow::CViewerWindow(int enumFilesSourceUID, int enumFilesCurrentIndex) 
     RenderPending = false;
     SourceMode = false;
     DarkMenus = false;
+    PageWidth = MdPageWidthFromStored((unsigned)g_pageWidth);
     EnumFilesSourceUID = enumFilesSourceUID;
     EnumFilesCurrentIndex = enumFilesCurrentIndex;
 }
@@ -477,6 +479,13 @@ void CViewerWindow::BuildMenu()
     AppendMenuA(HSchemeMenu, MF_SEPARATOR, 0, NULL);
     AppendMenuA(HSchemeMenu, MF_STRING, CM_VIEW_FOLLOWSYS, LoadStr(IDS_MENU_VIEW_FOLLOWSYS));
     AppendMenuA(view, MF_POPUP, (UINT_PTR)HSchemeMenu, LoadStr(IDS_MENU_VIEW_SCHEME));
+    // feature 314: the width of the text column; item order = MdPageWidth values
+    static const int widthStrIds[MDPW_COUNT] = {IDS_MENU_VIEW_WIDTH_NORMAL, IDS_MENU_VIEW_WIDTH_WIDE,
+                                                IDS_MENU_VIEW_WIDTH_WIDER, IDS_MENU_VIEW_WIDTH_FULL};
+    HWidthMenu = CreatePopupMenu();
+    for (int i = 0; i < MDPW_COUNT; i++)
+        AppendMenuA(HWidthMenu, MF_STRING, CM_VIEW_WIDTH_FIRST + i, LoadStr(widthStrIds[i]));
+    AppendMenuA(view, MF_POPUP, (UINT_PTR)HWidthMenu, LoadStr(IDS_MENU_VIEW_PAGEWIDTH));
     AppendMenuA(view, MF_SEPARATOR, 0, NULL);
     AppendMenuA(view, MF_STRING, CM_VIEW_ZOOMIN, LoadStr(IDS_MENU_VIEW_ZOOMIN));
     AppendMenuA(view, MF_STRING, CM_VIEW_ZOOMOUT, LoadStr(IDS_MENU_VIEW_ZOOMOUT));
@@ -504,6 +513,9 @@ void CViewerWindow::RefreshSchemeChecks()
     CheckMenuRadioItem(HSchemeMenu, CM_SCHEME_FIRST, CM_SCHEME_FIRST + MdThemeCount - 1,
                        CM_SCHEME_FIRST + idx, MF_BYCOMMAND);
     CheckMenuItem(HSchemeMenu, CM_VIEW_FOLLOWSYS, MF_BYCOMMAND | (g_followSys ? MF_CHECKED : MF_UNCHECKED));
+    if (HWidthMenu != NULL)
+        CheckMenuRadioItem(HWidthMenu, CM_VIEW_WIDTH_FIRST, CM_VIEW_WIDTH_FIRST + MDPW_COUNT - 1,
+                           CM_VIEW_WIDTH_FIRST + PageWidth, MF_BYCOMMAND);
     HMENU bar = GetMenu(HWindow);
     if (bar)
     {
@@ -545,9 +557,9 @@ void CViewerWindow::RebuildHtml()
     std::string srcUtf8 = WToUtf8Str(DecodedText);
     std::wstring findTerm = FindText[0] ? std::wstring(FindText) : std::wstring();
     if (SourceMode)
-        MdBuildSourceHtml(srcUtf8, *Theme, Html, findTerm);
+        MdBuildSourceHtml(srcUtf8, *Theme, Html, findTerm, PageWidth);
     else
-        MdRenderHtml(srcUtf8, *Theme, DocDir, Html, findTerm, RemoteAllowed);
+        MdRenderHtml(srcUtf8, *Theme, DocDir, Html, findTerm, RemoteAllowed, PageWidth);
     UpdateTitle();
 }
 
@@ -671,6 +683,19 @@ void CViewerWindow::CycleScheme(int dir)
     int idx = t ? MdThemeIndex(t) : 0;
     idx = (idx + dir + MdThemeCount) % MdThemeCount;
     SelectScheme(idx);
+}
+
+// feature 314: View > Page Width. The page is rebuilt exactly as for a scheme
+// change (it opens at the top: scripts are off and the shared host has no
+// scroll position), so choosing the level already in use does nothing.
+void CViewerWindow::SelectPageWidth(int level)
+{
+    if (level < 0 || level >= MDPW_COUNT || level == PageWidth)
+        return;
+    PageWidth = level;
+    g_pageWidth = level; // stored with the configuration; used by windows opened next
+    RefreshSchemeChecks();
+    Regenerate();
 }
 
 void CViewerWindow::DoFind(BOOL forward, BOOL prompt)
@@ -930,6 +955,11 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (id >= CM_SCHEME_FIRST && id < CM_SCHEME_FIRST + MdThemeCount)
         {
             SelectScheme(id - CM_SCHEME_FIRST);
+            return 0;
+        }
+        if (id >= CM_VIEW_WIDTH_FIRST && id < CM_VIEW_WIDTH_FIRST + MDPW_COUNT)
+        {
+            SelectPageWidth(id - CM_VIEW_WIDTH_FIRST);
             return 0;
         }
         switch (id)

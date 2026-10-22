@@ -162,6 +162,45 @@ int main()
         MdBuildSourceHtml("foo bar foo baz\n", *t, r, L"foo");
         Check("source find marks", Has(r.html, "<mark id=\"mdfind-0\">") && r.matchCount == 2);
     }
+    // feature 314: page width levels
+    {
+        const MdTheme* t = MdThemeById("paper");
+        auto render = [&](int w)
+        {
+            MdHtmlResult r;
+            MdRenderHtml("hi\n", *t, L"C:\\docs", r, L"", false, w);
+            return r.html;
+        };
+        // the default is the article tag of before 314, exactly, with no width class
+        std::string def = Gen("hi\n");
+        Check("314 default tag unchanged", Has(def, "<body><article class=\"markdown-body\">\n<p>hi"));
+        Check("314 default has no width class",
+              !Has(def, "markdown-body wide") && !Has(def, "markdown-body wider") && !Has(def, "markdown-body full"));
+        Check("314 NORMAL == default", render(MDPW_NORMAL) == def);
+        Check("314 CSS keeps 46rem and padding", Has(def, ".markdown-body{max-width:46rem;margin:0 auto;padding:24px 28px 64px;}"));
+        Check("314 CSS level rules", Has(def, ".markdown-body.wide{max-width:64rem;}") &&
+                                         Has(def, ".markdown-body.wider{max-width:90rem;}") &&
+                                         Has(def, ".markdown-body.full{max-width:none;}"));
+        Check("314 CSS tables/images follow the column",
+              Has(def, "display:block;overflow-x:auto;max-width:100%;") && Has(def, "img{max-width:100%;"));
+        Check("314 WIDE class", Has(render(MDPW_WIDE), "<article class=\"markdown-body wide\">"));
+        Check("314 WIDER class", Has(render(MDPW_WIDER), "<article class=\"markdown-body wider\">"));
+        Check("314 FULL class", Has(render(MDPW_FULL), "<article class=\"markdown-body full\">"));
+        // negative control: the levels really differ from each other and from the default
+        Check("314 levels differ", render(MDPW_WIDE) != def && render(MDPW_WIDER) != render(MDPW_WIDE) &&
+                                       render(MDPW_FULL) != render(MDPW_WIDER));
+        Check("314 out-of-range level -> default", render(4) == def && render(-1) == def && render(1000) == def);
+        Check("314 stored 0..3 kept", MdPageWidthFromStored(0) == MDPW_NORMAL && MdPageWidthFromStored(1) == MDPW_WIDE &&
+                                          MdPageWidthFromStored(2) == MDPW_WIDER && MdPageWidthFromStored(3) == MDPW_FULL);
+        Check("314 stored unknown -> NORMAL", MdPageWidthFromStored(4) == MDPW_NORMAL && MdPageWidthFromStored(7) == MDPW_NORMAL &&
+                                                  MdPageWidthFromStored(0xFFFFFFFFu) == MDPW_NORMAL &&
+                                                  MdPageWidthFromStored(0x80000000u) == MDPW_NORMAL);
+        MdHtmlResult s, s0;
+        MdBuildSourceHtml("x\n", *t, s, L"", MDPW_FULL);
+        MdBuildSourceHtml("x\n", *t, s0, L"");
+        Check("314 source view carries the level", Has(s.html, "<article class=\"markdown-body full\">\n<pre class=\"mdsource\">"));
+        Check("314 source view default unchanged", Has(s0.html, "<body><article class=\"markdown-body\">\n<pre class=\"mdsource\">"));
+    }
 
     printf("\n=== htmlgen test: %d passed, %d failed ===\n", g_pass, g_fail);
     return g_fail == 0 ? 0 : 1;

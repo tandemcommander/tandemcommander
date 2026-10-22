@@ -11,6 +11,11 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **The Markdown Viewer kept the text in a narrow column - a wider window only added empty margins, and wide tables and code scrolled inside the column** (feature 314).
+  - **Before:** a document was always shown in a centred column of a fixed width (46rem, about 736 pixels at 100 %, 80-90 characters a line), whatever the window size; zoom made the text and the column larger together, so it did not help.
+  - **Now:** View > Page Width chooses the column: *Normal* (as before, the default), *Wide* (64rem), *Wider* (90rem) or *Full Window* (no limit, the margins stay). The choice applies at once to the open document - also in View Source - and is remembered for the next documents and after a restart. Tables, code blocks and images use the chosen width, so in *Full Window* a wide table needs no scroll bar when the window is wide enough. A user who changes nothing sees the same page as before.
+  - **Limitation:** like a color-scheme change, choosing a width shows the document again from the top. A width chosen in one viewer window does not change other open viewer windows.
+
 - **Quick search did not find names with accents when the text was typed without them - "zlut" did not find "žluťoučký"** (feature 313).
   - **Before:** the new quick search (feature 244 below) ignored case but not accents: typing "zlut" showed "zlutý" but not the folder "žluťoučký", "cesky" never reached "Český", and typing "žlut" did not find "zlutý". The quick way of typing, without accents, and every keyboard without the language's letters found nothing.
   - **Now:** accents are ignored in both directions - "zlut" and "žlut" find both names, "cesky" finds "Český", "ubersicht" finds "Übersicht", also in names stored with separate accent marks. "ł", "ø", "đ", "ß", "æ", "œ" and "ı" are found by "l", "o", "d", "ss", "ae", "oe" and "i" ("lodz" finds "Łódź", "strasse" finds "Straße"). Folded letters can be typed one by one ("stras" already finds "Straße"); the cursor, Left, Right and Backspace work on whole letters of the name, and typing is as fast as before.

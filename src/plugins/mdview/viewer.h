@@ -19,6 +19,7 @@ public:
     CTcWebHost* Web; // the shared WebView2 rendering surface (src/common/webhost/)
 
     HMENU HSchemeMenu; // the "Color Scheme" submenu (for radio/checkmark updates)
+    HMENU HWidthMenu;  // the "Page Width" submenu (feature 314)
 
     HBRUSH BgBrush; // scheme docBg fill for WM_ERASEBKGND - the shared winliblt
                     // class brush is white and would flash before WebView2 paints
@@ -41,6 +42,9 @@ public:
     bool SourceMode;    // "View Source" (Ctrl+U): raw text instead of rendered
     bool DarkMenus;     // IsDarkThemeActive() snapshot at creation; owner-drawn
                         // dark menu when set (036 convention: reopen adopts)
+    int PageWidth;      // MdPageWidth of THIS window's page (feature 314): taken from
+                        // g_pageWidth at creation; a choice sets both, and only this
+                        // window is rebuilt (a rebuild opens the page at the top)
 
     int EnumFilesSourceUID;
     int EnumFilesCurrentIndex;
@@ -65,6 +69,7 @@ protected:
     void SetZoom(int pct);
     void SelectScheme(int idx);
     void CycleScheme(int dir);
+    void SelectPageWidth(int level);
     void DoFind(BOOL forward, BOOL prompt);
     void ActivateLink(const std::wstring& uri);
     void UpdateTitle();

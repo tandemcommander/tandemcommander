@@ -1,0 +1,43 @@
+mdview probe (feature 081)
+  exe      : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+  fixtures : C:\Users\pavel\AppData\Local\Temp\md081
+  scenario : smoke
+
+--- smoke: open the control fixture and exercise every command ---
+  [FAIL] smoke/open: 91 ms, title ''
+  [PASS] smoke/engine: 5 engine process(es) belong to our pid
+  [FAIL] smoke/zoom: 110% -> 120% -> reset 100% (titles: '','','')
+  [FAIL] smoke/source: after first toggle: '', after second: ''
+  [FAIL] smoke/scheme: viewer alive after scheme cycling, 0 dialog(s)
+
+============================================================
+  5 checks, 4 failed
+  FAILED: smoke/open - 91 ms, title ''
+  FAILED: smoke/zoom - 110% -> 120% -> reset 100% (titles: '','','')
+  FAILED: smoke/source - after first toggle: '', after second: ''
+  FAILED: smoke/scheme - viewer alive after scheme cycling, 0 dialog(s)
+============================================================
+scenario smoke: exit 1
+mdview probe (feature 081)
+  exe      : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+  fixtures : C:\Users\pavel\AppData\Local\Temp\md081
+  scenario : hostile
+
+--- hostile: every hostile fixture opens, alone, with no dialog ---
+  [FAIL] hostile/01-script-tag.md: 3 viewer(s), 0 dialog(s), 7 engine proc(s), title ok=False
+  [PASS] hostile/02-event-handlers.md: 1 viewer(s), 0 dialog(s), 7 engine proc(s), title ok=True
+  [PASS] hostile/03-javascript-link.md: 1 viewer(s), 0 dialog(s), 7 engine proc(s), title ok=True
+  [PASS] hostile/04-remote-image.md: 1 viewer(s), 0 dialog(s), 7 engine proc(s), title ok=True
+  [PASS] hostile/05-iframe.md: 1 viewer(s), 0 dialog(s), 7 engine proc(s), title ok=True
+  [PASS] hostile/06-meta-refresh.md: 1 viewer(s), 0 dialog(s), 7 engine proc(s), title ok=True
+  [PASS] hostile/07-form.md: 1 viewer(s), 0 dialog(s), 7 engine proc(s), title ok=True
+  [PASS] hostile/08-path-traversal-image.md: 1 viewer(s), 0 dialog(s), 7 engine proc(s), title ok=True
+  [PASS] hostile/09-download-link.md: 1 viewer(s), 0 dialog(s), 7 engine proc(s), title ok=True
+
+============================================================
+  9 checks, 1 failed
+  FAILED: hostile/01-script-tag.md - 3 viewer(s), 0 dialog(s), 7 engine proc(s), title ok=False
+============================================================
+scenario hostile: exit 1
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+registry restored+identical: True

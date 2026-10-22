@@ -22,6 +22,7 @@ extern int g_followSys;        // follow OS light/dark
 extern char g_schemeLight[32]; // per-polarity slot for follow-system mode
 extern char g_schemeDark[32];
 extern int g_zoom;     // zoom percent (50..300)
+extern int g_pageWidth; // feature 314: MdPageWidth (0..3) for viewer windows opened next
 extern BOOL g_savePos; // persist window placement
 extern WINDOWPLACEMENT g_wndPlacement;
 extern BOOL g_keepReady; // feature 065: keep the WebView2 engine warm
@@ -49,6 +50,7 @@ extern BOOL g_keepReady; // feature 065: keep the WebView2 engine warm
 #define CM_SCHEME_FIRST 200 // 200..209 (one per theme)
 #define CM_SCHEME_NEXT 210
 #define CM_SCHEME_PREV 211
+#define CM_VIEW_WIDTH_FIRST 220 // 220..223: View > Page Width, one per MdPageWidth (feature 314)
 
 void OnAbout(HWND hParent);
 

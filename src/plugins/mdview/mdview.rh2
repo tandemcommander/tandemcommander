@@ -40,6 +40,13 @@
 #define IDS_MENU_VIEW_ZOOMOUT    2024
 #define IDS_MENU_VIEW_ZOOMRESET  2025
 #define IDS_MENU_VIEW_REMOTEIMG  2026
+// feature 314: View > Page Width - free slots of string bundle 126 (2016..2031),
+// which holds the View menu texts (rule 084: no new bundle)
+#define IDS_MENU_VIEW_PAGEWIDTH  2027
+#define IDS_MENU_VIEW_WIDTH_NORMAL 2028
+#define IDS_MENU_VIEW_WIDTH_WIDE   2029
+#define IDS_MENU_VIEW_WIDTH_WIDER  2016
+#define IDS_MENU_VIEW_WIDTH_FULL   2017
 #define IDS_MENU_HELP            2030
 #define IDS_MENU_HELP_ABOUT      2031
 

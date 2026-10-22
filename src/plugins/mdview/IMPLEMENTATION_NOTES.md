@@ -88,7 +88,9 @@ engine.
   the lockdown. Text is HTML-escaped (the XSS boundary); `MD_TEXT_HTML`/
   `MD_BLOCK_HTML` are emitted verbatim.
 - **Tables** = real grids with per-column alignment; **margins/reading measure**
-  (`max-width:46rem`, full-width toggle); **images**: local relative served by
+  (`max-width:46rem` by default; View → Page Width since feature 314: Normal 46rem,
+  Wide 64rem, Wider 90rem, Full Window without a limit - classes `wide` / `wider` / `full`
+  on the article, stored as `PageWidth` 0..3); **images**: local relative served by
   the interceptor, remote blocked + placeholder until per-document consent
   (View → Load Remote Images), absolute/UNC/traversal refused; **syntax
   highlighting** via `highlight.cpp` → `hl-*` CSS classes.
