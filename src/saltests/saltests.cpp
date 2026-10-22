@@ -2098,6 +2098,179 @@ static void TestPanelTabs078()
     }
 }
 
+// feature 312: the tab key table, labels, Reopen Closed Tab, the remembered page
+// (src/common/saltabs.cpp, contracts/tab-keys.md)
+static bool TabLabelIs(const char* label, const char* key, const char* expected)
+{
+    char out[300];
+    return SalTabLabelWithKey(label, key, out, sizeof(out)) && strcmp(out, expected) == 0;
+}
+
+static bool TabKeyTextIs(int action, BOOL browserLike, const char* expected)
+{
+    int vk, mods;
+    char text[64];
+    if (!SalTabKeyForAction(action, browserLike, &vk, &mods))
+        return expected == NULL;
+    return expected != NULL && SalTabKeyText(vk, mods, text, sizeof(text)) && strcmp(text, expected) == 0;
+}
+
+static void TestTabKeys312()
+{
+    const int C = SAL_TABKEY_CTRL, CS = SAL_TABKEY_CTRL | SAL_TABKEY_SHIFT;
+
+    // the mode: browser-like only with tabs on and the option on
+    CHECK(SalTabKeysBrowserLike(TRUE, TRUE));
+    CHECK(!SalTabKeysBrowserLike(FALSE, TRUE));
+    CHECK(!SalTabKeysBrowserLike(TRUE, FALSE));
+    CHECK(!SalTabKeysBrowserLike(FALSE, FALSE));
+
+    // meanings, classic mode (the 0.1.10 behaviour) - every row of the contract
+    CHECK(SalTabKeyMeaning('T', C, FALSE) == stkaGoToShortcut);
+    CHECK(SalTabKeyMeaning('W', C, FALSE) == stkaRestoreSel);
+    CHECK(SalTabKeyMeaning(VK_NEXT, C, FALSE) == stkaEnterFocused);
+    CHECK(SalTabKeyMeaning(VK_PRIOR, C, FALSE) == stkaParentDir);
+    CHECK(SalTabKeyMeaning('T', CS, FALSE) == stkaNewTab);
+    CHECK(SalTabKeyMeaning('W', CS, FALSE) == stkaCloseTab);
+    CHECK(SalTabKeyMeaning('G', CS, FALSE) == stkaNone);
+    CHECK(SalTabKeyMeaning(VK_NEXT, CS, FALSE) == stkaNextTab);
+    CHECK(SalTabKeyMeaning(VK_PRIOR, CS, FALSE) == stkaPrevTab);
+    CHECK(SalTabKeyMeaning(VK_TAB, C, FALSE) == stkaCommandLine);
+    // meanings, browser-like mode
+    CHECK(SalTabKeyMeaning('T', C, TRUE) == stkaNewTab);
+    CHECK(SalTabKeyMeaning('W', C, TRUE) == stkaCloseTab);
+    CHECK(SalTabKeyMeaning(VK_NEXT, C, TRUE) == stkaNextTab);
+    CHECK(SalTabKeyMeaning(VK_PRIOR, C, TRUE) == stkaPrevTab);
+    CHECK(SalTabKeyMeaning('T', CS, TRUE) == stkaReopenTab);
+    CHECK(SalTabKeyMeaning('W', CS, TRUE) == stkaRestoreSel);
+    CHECK(SalTabKeyMeaning('G', CS, TRUE) == stkaGoToShortcut);
+    CHECK(SalTabKeyMeaning(VK_NEXT, CS, TRUE) == stkaNextTab);
+    CHECK(SalTabKeyMeaning(VK_PRIOR, CS, TRUE) == stkaPrevTab);
+    CHECK(SalTabKeyMeaning(VK_TAB, C, TRUE) == stkaCommandLine); // Ctrl+Tab unchanged
+    // outside the table
+    CHECK(SalTabKeyMeaning('T', 0, TRUE) == stkaNone);
+    CHECK(SalTabKeyMeaning('T', SAL_TABKEY_SHIFT, TRUE) == stkaNone);
+    CHECK(SalTabKeyMeaning('T', C | SAL_TABKEY_ALT, TRUE) == stkaNone); // AltGr = Ctrl+Alt: never a tab key
+    CHECK(SalTabKeyMeaning('X', C, TRUE) == stkaNone);
+    CHECK(SalTabKeyMeaning(VK_NEXT, 0, TRUE) == stkaNone);
+    CHECK(SalTabKeyMeaning(VK_NEXT, SAL_TABKEY_SHIFT, TRUE) == stkaNone);
+
+    // dispatch, classic: only the 078 tab keys; Ctrl+T/W/PgDn/PgUp and Ctrl+Tab keep their code,
+    // Ctrl+Shift+G stays free (a plug-in key may hold it)
+    CHECK(SalTabKeyDispatch('T', CS, FALSE) == stkaNewTab);
+    CHECK(SalTabKeyDispatch('W', CS, FALSE) == stkaCloseTab);
+    CHECK(SalTabKeyDispatch(VK_NEXT, CS, FALSE) == stkaNextTab);
+    CHECK(SalTabKeyDispatch(VK_PRIOR, CS, FALSE) == stkaPrevTab);
+    CHECK(SalTabKeyDispatch('T', C, FALSE) == stkaNone);
+    CHECK(SalTabKeyDispatch('W', C, FALSE) == stkaNone);
+    CHECK(SalTabKeyDispatch(VK_NEXT, C, FALSE) == stkaNone);
+    CHECK(SalTabKeyDispatch(VK_PRIOR, C, FALSE) == stkaNone);
+    CHECK(SalTabKeyDispatch('G', CS, FALSE) == stkaNone);
+    CHECK(SalTabKeyDispatch(VK_TAB, C, FALSE) == stkaNone);
+    // dispatch, browser-like: every key of the table except Ctrl+Tab
+    CHECK(SalTabKeyDispatch('T', C, TRUE) == stkaNewTab);
+    CHECK(SalTabKeyDispatch('W', C, TRUE) == stkaCloseTab);
+    CHECK(SalTabKeyDispatch(VK_NEXT, C, TRUE) == stkaNextTab);
+    CHECK(SalTabKeyDispatch(VK_PRIOR, C, TRUE) == stkaPrevTab);
+    CHECK(SalTabKeyDispatch('T', CS, TRUE) == stkaReopenTab);
+    CHECK(SalTabKeyDispatch('W', CS, TRUE) == stkaRestoreSel);
+    CHECK(SalTabKeyDispatch('G', CS, TRUE) == stkaGoToShortcut);
+    CHECK(SalTabKeyDispatch(VK_NEXT, CS, TRUE) == stkaNextTab);
+    CHECK(SalTabKeyDispatch(VK_PRIOR, CS, TRUE) == stkaPrevTab);
+    CHECK(SalTabKeyDispatch(VK_TAB, C, TRUE) == stkaNone);
+    CHECK(SalTabKeyDispatch('T', C | SAL_TABKEY_ALT, TRUE) == stkaNone);
+    CHECK(SalTabKeyDispatch('G', C, TRUE) == stkaNone); // Ctrl+G stays Change Directory
+
+    // rows of the Tabs page
+    {
+        CSalTabKeyRow rows[16];
+        int n = SalTabKeyRows(FALSE, rows, 16);
+        CHECK(n == 11);
+        CHECK(n == 11 && rows[0].Vk == 'T' && rows[0].Mods == C && rows[0].Action == stkaGoToShortcut);
+        CHECK(n == 11 && rows[6].Vk == 'G' && rows[6].Action == stkaNone);
+        CHECK(n == 11 && rows[9].Vk == VK_TAB && rows[9].Action == stkaCommandLine);
+        CHECK(n == 11 && rows[10].Vk == 0 && rows[10].Action == stkaReopenTab); // no key in the classic mode
+        n = SalTabKeyRows(TRUE, rows, 16);
+        CHECK(n == 10);
+        CHECK(n == 10 && rows[0].Action == stkaNewTab && rows[4].Action == stkaReopenTab && rows[6].Action == stkaGoToShortcut);
+        CHECK(SalTabKeyRows(TRUE, rows, 3) == 3);
+        CHECK(SalTabKeyRows(TRUE, NULL, 3) == 0);
+    }
+
+    // the key shown for each labelled action
+    CHECK(TabKeyTextIs(stkaNewTab, FALSE, "Ctrl+Shift+T"));
+    CHECK(TabKeyTextIs(stkaCloseTab, FALSE, "Ctrl+Shift+W"));
+    CHECK(TabKeyTextIs(stkaNextTab, FALSE, "Ctrl+Shift+Page Down"));
+    CHECK(TabKeyTextIs(stkaPrevTab, FALSE, "Ctrl+Shift+Page Up"));
+    CHECK(TabKeyTextIs(stkaReopenTab, FALSE, NULL));
+    CHECK(TabKeyTextIs(stkaRestoreSel, FALSE, "Ctrl+W"));
+    CHECK(TabKeyTextIs(stkaGoToShortcut, FALSE, "Ctrl+T"));
+    CHECK(TabKeyTextIs(stkaNewTab, TRUE, "Ctrl+T"));
+    CHECK(TabKeyTextIs(stkaCloseTab, TRUE, "Ctrl+W"));
+    CHECK(TabKeyTextIs(stkaNextTab, TRUE, "Ctrl+Page Down")); // the plain key first; Ctrl+Shift+Page Down is kept
+    CHECK(TabKeyTextIs(stkaPrevTab, TRUE, "Ctrl+Page Up"));
+    CHECK(TabKeyTextIs(stkaReopenTab, TRUE, "Ctrl+Shift+T"));
+    CHECK(TabKeyTextIs(stkaRestoreSel, TRUE, "Ctrl+Shift+W"));
+    CHECK(TabKeyTextIs(stkaGoToShortcut, TRUE, "Ctrl+Shift+G"));
+    CHECK(TabKeyTextIs(stkaEnterFocused, TRUE, NULL));
+    CHECK(TabKeyTextIs(stkaNone, TRUE, NULL));
+    {
+        char t[16];
+        CHECK(SalTabKeyText(VK_TAB, C, t, sizeof(t)) && strcmp(t, "Ctrl+Tab") == 0);
+        CHECK(SalTabKeyText(0, 0, t, sizeof(t)) && t[0] == 0);
+        CHECK(!SalTabKeyText('T', CS, t, 8) && t[0] == 0); // "Ctrl+Shift+T" does not fit 8 bytes
+        CHECK(!SalTabKeyText(VK_F5, C, t, sizeof(t)));       // not a key of the table
+    }
+
+    // labels: "Text\tKey", "Text (Key)", "Text"
+    CHECK(TabLabelIs("&New Tab\tCtrl+Shift+T", "Ctrl+T", "&New Tab\tCtrl+T"));
+    CHECK(TabLabelIs("&Restore Selection\tCtrl+W", "Ctrl+Shift+W", "&Restore Selection\tCtrl+Shift+W"));
+    CHECK(TabLabelIs("Auswahl wiederhe&rstellen\tStrg+W", "Ctrl+Shift+W", "Auswahl wiederhe&rstellen\tCtrl+Shift+W"));
+    CHECK(TabLabelIs("New Tab (Ctrl+Shift+T)", "Ctrl+T", "New Tab (Ctrl+T)"));
+    CHECK(TabLabelIs("Neue Registerkarte (Ctrl+Shift+T)", "", "Neue Registerkarte"));
+    CHECK(TabLabelIs("Reopen C&losed Tab", "Ctrl+Shift+T", "Reopen C&losed Tab\tCtrl+Shift+T"));
+    CHECK(TabLabelIs("Reopen C&losed Tab", "", "Reopen C&losed Tab"));
+    CHECK(TabLabelIs("&New Tab\tCtrl+Shift+T", "", "&New Tab"));
+    CHECK(TabLabelIs("Nov\xC3\xA1 karta\tCtrl+Shift+T", "Ctrl+T", "Nov\xC3\xA1 karta\tCtrl+T")); // UTF-8 text kept whole
+    CHECK(TabLabelIs("Close (old) tabs\tX", "Ctrl+W", "Close (old) tabs\tCtrl+W"));            // the tab wins over brackets
+    {
+        char out[12];
+        CHECK(!SalTabLabelWithKey("&New Tab\tCtrl+Shift+T", "Ctrl+Shift+T", out, sizeof(out)) && out[0] == 0); // never cut
+        CHECK(SalTabLabelWithKey("New\tA", "Ctrl+T", out, sizeof(out)) && strcmp(out, "New\tCtrl+T") == 0); // exactly fits (10 + 1)
+        CHECK(!SalTabLabelWithKey(NULL, "Ctrl+T", out, sizeof(out)));
+    }
+
+    // Reopen Closed Tab: the old position, at most the end
+    CHECK(SAL_TABS_CLOSED_MAX == 10);
+    CHECK(SalTabsReopenIndex(3, 1) == 1);
+    CHECK(SalTabsReopenIndex(3, 3) == 3);
+    CHECK(SalTabsReopenIndex(1, 3) == 1); // the strip got shorter: appended
+    CHECK(SalTabsReopenIndex(4, 0) == 0);
+    CHECK(SalTabsReopenIndex(4, -2) == 0);
+    {
+        // Close Other Tabs on B of A B C D pushes D (3), C (2), A (0); reopening the newest first
+        // gives the original order again
+        int closedIdx[3] = {3, 2, 0};
+        char strip[5] = "B";
+        for (int k = 2; k >= 0; k--)
+        {
+            int count = (int)strlen(strip);
+            int at = SalTabsReopenIndex(count, closedIdx[k]);
+            char name = (k == 0) ? 'D' : (k == 1 ? 'C' : 'A');
+            memmove(strip + at + 1, strip + at, count - at + 1);
+            strip[at] = name;
+        }
+        CHECK(strcmp(strip, "ABCD") == 0);
+    }
+
+    // the remembered Configuration page of a configuration written before 312
+    CHECK(SalCfgPageIndexFrom311(0) == 0);
+    CHECK(SalCfgPageIndexFrom311(6) == 6); // Appearance
+    CHECK(SalCfgPageIndexFrom311(7) == 8); // Colors
+    CHECK(SalCfgPageIndexFrom311(8) == 9); // Keyboard
+    CHECK(SalCfgPageIndexFrom311(27) == 28);
+}
+
 // feature 079: crash report file name (src/common/salbugreport.cpp), contracts/crash-report.md C2
 static void TestBugReport079()
 {
@@ -18533,6 +18706,7 @@ int main(int argc, char** argv)
     TestEncodingFixes069();
     TestCommandShell071();
     TestPanelTabs078();
+    TestTabKeys312();
     TestBugReport079();
     TestCloseApp080();
     TestSevenZipList084();

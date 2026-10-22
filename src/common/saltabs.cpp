@@ -184,3 +184,239 @@ void SalTabsMove(int count, int from, int to, int* active)
     }
     *active = a;
 }
+
+//
+// feature 312: the tab key table
+//
+
+// one key of the table (contracts/tab-keys.md, rows 1-10 in display order)
+struct CSalTabKeyDef
+{
+    int Vk;
+    int Mods;
+    int Classic; // its action with the option off (rows 5, 6, 8, 9: while tabs are on)
+    int Browser; // its action in the browser-like mode
+};
+
+static const CSalTabKeyDef SalTabKeyTable[] = {
+    {'T', SAL_TABKEY_CTRL, stkaGoToShortcut, stkaNewTab},
+    {'W', SAL_TABKEY_CTRL, stkaRestoreSel, stkaCloseTab},
+    {VK_NEXT, SAL_TABKEY_CTRL, stkaEnterFocused, stkaNextTab},
+    {VK_PRIOR, SAL_TABKEY_CTRL, stkaParentDir, stkaPrevTab},
+    {'T', SAL_TABKEY_CTRL | SAL_TABKEY_SHIFT, stkaNewTab, stkaReopenTab},
+    {'W', SAL_TABKEY_CTRL | SAL_TABKEY_SHIFT, stkaCloseTab, stkaRestoreSel},
+    {'G', SAL_TABKEY_CTRL | SAL_TABKEY_SHIFT, stkaNone, stkaGoToShortcut},
+    {VK_NEXT, SAL_TABKEY_CTRL | SAL_TABKEY_SHIFT, stkaNextTab, stkaNextTab},
+    {VK_PRIOR, SAL_TABKEY_CTRL | SAL_TABKEY_SHIFT, stkaPrevTab, stkaPrevTab},
+    {VK_TAB, SAL_TABKEY_CTRL, stkaCommandLine, stkaCommandLine},
+};
+
+static const CSalTabKeyDef* SalTabKeyFind(int vk, int mods)
+{
+    if ((mods & SAL_TABKEY_ALT) != 0)
+        return NULL;
+    for (int i = 0; i < (int)(sizeof(SalTabKeyTable) / sizeof(SalTabKeyTable[0])); i++)
+    {
+        if (SalTabKeyTable[i].Vk == vk && SalTabKeyTable[i].Mods == mods)
+            return &SalTabKeyTable[i];
+    }
+    return NULL;
+}
+
+static BOOL SalTabKeyIsTabAction(int action)
+{
+    return action == stkaNewTab || action == stkaCloseTab || action == stkaNextTab ||
+           action == stkaPrevTab || action == stkaReopenTab;
+}
+
+BOOL SalTabKeysBrowserLike(BOOL tabsOn, BOOL optionOn)
+{
+    return tabsOn && optionOn;
+}
+
+int SalTabKeyMeaning(int vk, int mods, BOOL browserLike)
+{
+    const CSalTabKeyDef* def = SalTabKeyFind(vk, mods);
+    if (def == NULL)
+        return stkaNone;
+    return browserLike ? def->Browser : def->Classic;
+}
+
+int SalTabKeyDispatch(int vk, int mods, BOOL browserLike)
+{
+    const CSalTabKeyDef* def = SalTabKeyFind(vk, mods);
+    if (def == NULL)
+        return stkaNone;
+    int action = browserLike ? def->Browser : def->Classic;
+    if (action == stkaNone || action == stkaCommandLine)
+        return stkaNone;
+    // a key keeping its classic non-tab meaning stays with its existing code
+    if (action == def->Classic && !SalTabKeyIsTabAction(action))
+        return stkaNone;
+    return action;
+}
+
+int SalTabKeyRows(BOOL browserLike, CSalTabKeyRow* rows, int max)
+{
+    if (rows == NULL || max <= 0)
+        return 0;
+    int n = 0;
+    for (int i = 0; i < (int)(sizeof(SalTabKeyTable) / sizeof(SalTabKeyTable[0])) && n < max; i++)
+    {
+        rows[n].Vk = SalTabKeyTable[i].Vk;
+        rows[n].Mods = SalTabKeyTable[i].Mods;
+        rows[n].Action = browserLike ? SalTabKeyTable[i].Browser : SalTabKeyTable[i].Classic;
+        n++;
+    }
+    if (!browserLike && n < max) // Reopen Closed Tab has no key in the classic mode
+    {
+        rows[n].Vk = 0;
+        rows[n].Mods = 0;
+        rows[n].Action = stkaReopenTab;
+        n++;
+    }
+    return n;
+}
+
+BOOL SalTabKeyForAction(int action, BOOL browserLike, int* vk, int* mods)
+{
+    if (vk != NULL)
+        *vk = 0;
+    if (mods != NULL)
+        *mods = 0;
+    if (action == stkaNone)
+        return FALSE;
+    for (int i = 0; i < (int)(sizeof(SalTabKeyTable) / sizeof(SalTabKeyTable[0])); i++)
+    {
+        int a = browserLike ? SalTabKeyTable[i].Browser : SalTabKeyTable[i].Classic;
+        if (a == action)
+        {
+            if (vk != NULL)
+                *vk = SalTabKeyTable[i].Vk;
+            if (mods != NULL)
+                *mods = SalTabKeyTable[i].Mods;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static BOOL SalTabAppend(char* out, int size, int* len, const char* s)
+{
+    int l = (int)strlen(s);
+    if (*len + l + 1 > size)
+        return FALSE;
+    memcpy(out + *len, s, l + 1);
+    *len += l;
+    return TRUE;
+}
+
+BOOL SalTabKeyText(int vk, int mods, char* out, int size)
+{
+    if (out == NULL || size <= 0)
+        return FALSE;
+    out[0] = 0;
+    if (vk == 0)
+        return TRUE;
+    char key[2] = {0, 0};
+    const char* name;
+    if (vk == VK_NEXT)
+        name = "Page Down";
+    else if (vk == VK_PRIOR)
+        name = "Page Up";
+    else if (vk == VK_TAB)
+        name = "Tab";
+    else if ((vk >= 'A' && vk <= 'Z') || (vk >= '0' && vk <= '9'))
+    {
+        key[0] = (char)vk;
+        name = key;
+    }
+    else
+        return FALSE;
+    int len = 0;
+    BOOL ok = TRUE;
+    if ((mods & SAL_TABKEY_CTRL) != 0)
+        ok = ok && SalTabAppend(out, size, &len, "Ctrl+");
+    if ((mods & SAL_TABKEY_ALT) != 0)
+        ok = ok && SalTabAppend(out, size, &len, "Alt+");
+    if ((mods & SAL_TABKEY_SHIFT) != 0)
+        ok = ok && SalTabAppend(out, size, &len, "Shift+");
+    ok = ok && SalTabAppend(out, size, &len, name);
+    if (!ok)
+        out[0] = 0;
+    return ok;
+}
+
+BOOL SalTabLabelWithKey(const char* label, const char* keyText, char* out, int size)
+{
+    if (out == NULL || size <= 0)
+        return FALSE;
+    out[0] = 0;
+    if (label == NULL)
+        return FALSE;
+    if (keyText == NULL)
+        keyText = "";
+    int textLen;    // the text part of the label
+    BOOL paren = FALSE;
+    const char* tab = strchr(label, '\t');
+    if (tab != NULL)
+        textLen = (int)(tab - label);
+    else
+    {
+        textLen = (int)strlen(label);
+        // "Text (Key)": the parenthesised part at the end is the key
+        if (textLen > 0 && label[textLen - 1] == ')')
+        {
+            const char* open = NULL;
+            for (const char* p = label; *p != 0; p++)
+            {
+                if (p[0] == ' ' && p[1] == '(')
+                    open = p;
+            }
+            if (open != NULL)
+            {
+                textLen = (int)(open - label);
+                paren = TRUE;
+            }
+        }
+    }
+    int keyLen = (int)strlen(keyText);
+    int need = textLen + (keyLen > 0 ? (paren ? keyLen + 3 : keyLen + 1) : 0) + 1;
+    if (need > size)
+        return FALSE;
+    memcpy(out, label, textLen);
+    int len = textLen;
+    if (keyLen > 0)
+    {
+        if (paren)
+        {
+            memcpy(out + len, " (", 2);
+            len += 2;
+            memcpy(out + len, keyText, keyLen);
+            len += keyLen;
+            out[len++] = ')';
+        }
+        else
+        {
+            out[len++] = '\t';
+            memcpy(out + len, keyText, keyLen);
+            len += keyLen;
+        }
+    }
+    out[len] = 0;
+    return TRUE;
+}
+
+int SalTabsReopenIndex(int count, int closedIndex)
+{
+    if (count < 0)
+        count = 0;
+    if (closedIndex < 0)
+        return 0;
+    return closedIndex < count ? closedIndex : count;
+}
+
+int SalCfgPageIndexFrom311(int index)
+{
+    return index >= 7 ? index + 1 : index;
+}

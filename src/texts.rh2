@@ -2656,6 +2656,15 @@
 #define IDS_TABS_TT_NEW                 14221
 #define IDS_TABS_TT_LIST                14222
 #define IDS_TABS_CLOSECONFIRM           14223
+// feature 312: Reopen Closed Tab, the Tabs toggle (Options > Show, toolbar context menu) and the
+// actions listed on Configuration > Tabs that are not menu labels. Free slots of the bundle of
+// 14181 (14176-14191), so no later string bundle changes its ordinal
+#define IDS_MENU_TAB_REOPEN             14176
+#define IDS_MENU_OPT_VSB_TABS           14177
+#define IDS_TABKEY_ENTER                14178
+#define IDS_TABKEY_PARENT               14179
+#define IDS_TABKEY_CMDLINE              14190
+#define IDS_TABKEY_NONE                 14191
 
 // feature 245: settings import from Altap Salamander / Open Salamander (free slots of existing bundles)
 #define IDS_CFGIMP_GRP_HOTPATHS          10200

@@ -383,6 +383,7 @@ CConfiguration::CConfiguration()
     ShowPanelCaption = TRUE;
     ShowPanelZoom = TRUE;
     PanelTabs = TRUE; // feature 078
+    PanelTabsBrowserKeys = FALSE; // feature 312
     strcpy(InfoLineContent, "$(FileName): $(FileSize), $(FileDate), $(FileTime), $(FileAttributes), $(FileDOSName)");
 
     HotPathAutoConfig = TRUE;
@@ -686,12 +687,12 @@ int CConfiguration::GetMainWindowIconIndex()
 CConfigurationDlg::CConfigurationDlg(HWND parent, CUserMenuItems* userMenuItems,
                                      int mode, int param)
     : CTreePropDialog(parent, HLanguage, LoadStr(IDS_CONFIGURATION),
-                      mode == 0 ? Configuration.LastFocusedPage : mode == 1 ? 14
-                                                              : mode == 2   ? 13
-                                                              : mode == 3   ? 22 /* feature 071: +1, Command Shell precedes */
-                                                              : mode == 4   ? 12
+                      mode == 0 ? Configuration.LastFocusedPage : mode == 1 ? 15 /* feature 312: +1, Tabs precedes */
+                                                              : mode == 2   ? 14
+                                                              : mode == 3   ? 23 /* feature 071: +1, Command Shell precedes; 312: +1 */
+                                                              : mode == 4   ? 13
                                                               : mode == 5   ? 1
-                                                                            : 11 /* mode == 6 */,
+                                                                            : 12 /* mode == 6 */,
                       PSH_NOAPPLYNOW | PSH_HASHELP,
                       &Configuration.LastFocusedPage,
                       &Configuration.ConfigurationHeight),
@@ -714,28 +715,29 @@ CConfigurationDlg::CConfigurationDlg(HWND parent, CUserMenuItems* userMenuItems,
     /*04*/ Add(&PageRegional);      // Regional
     /*05*/ Add(&PageMainWindow);    // MainWindow
     /*06*/ Add(&PageAppear);        // Appearance
-    /*07*/ Add(&PageColors);        // Colors
-    /*08*/ Add(&PageKeyboard);      // Keyboard
-    /*09*/ Add(&PageConfirmations); // Confirmations
-    /*10*/ Add(&PageChangeDrive);   // Change Drive Menu
-    /*11*/ Add(&PageDrives);        // Drives
-    /*12*/ Add(&PageView);          // Views
-    /*13*/ Add(&PageUserMenu);      // User Menu
-    /*14*/ Add(&PageHotPath);       // Hot Paths
-    /*15*/ Add(&PageCmdShell);      // Command Shell (feature 071)
-    /*16*/ Add(&PageSecurity);      // Security
-    /*17*/ Add(&PageIconOvrls);     // Icon Overlays
-    /*18*/ Add(&PageViewEdit, NULL, &Configuration.ViewersAndEditorsExpanded);
-    /*19*/ Add(&Page13, &PageViewEdit);
-    /*20*/ Add(&Page14, &PageViewEdit);
-    /*21*/ Add(&Page15, &PageViewEdit);
-    /*22*/ Add(&PageViewer, &PageViewEdit);
-    /*23*/ Add(&PagePP, NULL, &Configuration.PackersAndUnpackersExpanded);
-    /*24*/ Add(&PageP4, &PagePP);
-    /*25*/ Add(&PageP3, &PagePP);
-    /*26*/ Add(&PageP1, &PagePP);
-    /*27*/ Add(&PageP2, &PagePP);
-    /*28*/ //  Add(&PageShellExtensions);
+    /*07*/ Add(&PageTabs);          // Tabs (feature 312; an older remembered page index is mapped at load: SalCfgPageIndexFrom311)
+    /*08*/ Add(&PageColors);        // Colors
+    /*09*/ Add(&PageKeyboard);      // Keyboard
+    /*10*/ Add(&PageConfirmations); // Confirmations
+    /*11*/ Add(&PageChangeDrive);   // Change Drive Menu
+    /*12*/ Add(&PageDrives);        // Drives
+    /*13*/ Add(&PageView);          // Views
+    /*14*/ Add(&PageUserMenu);      // User Menu
+    /*15*/ Add(&PageHotPath);       // Hot Paths
+    /*16*/ Add(&PageCmdShell);      // Command Shell (feature 071)
+    /*17*/ Add(&PageSecurity);      // Security
+    /*18*/ Add(&PageIconOvrls);     // Icon Overlays
+    /*19*/ Add(&PageViewEdit, NULL, &Configuration.ViewersAndEditorsExpanded);
+    /*20*/ Add(&Page13, &PageViewEdit);
+    /*21*/ Add(&Page14, &PageViewEdit);
+    /*22*/ Add(&Page15, &PageViewEdit);
+    /*23*/ Add(&PageViewer, &PageViewEdit);
+    /*24*/ Add(&PagePP, NULL, &Configuration.PackersAndUnpackersExpanded);
+    /*25*/ Add(&PageP4, &PagePP);
+    /*26*/ Add(&PageP3, &PagePP);
+    /*27*/ Add(&PageP1, &PagePP);
+    /*28*/ Add(&PageP2, &PagePP);
+    /*29*/ //  Add(&PageShellExtensions);
            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
            // when the page order changes, update the constructor
            // mode == 0 ? Configuration.LastFocusedPage : 4

@@ -474,6 +474,11 @@
 #define CM_ACTIVE_CLOSETABSRIGHT   2878
 #define CM_LEFT_CLOSETABSRIGHT     2879
 #define CM_RIGHT_CLOSETABSRIGHT    2880
+// feature 312: Reopen Closed Tab (order active, left, right) and the Tabs toggle
+#define CM_ACTIVE_REOPENTAB        2881
+#define CM_LEFT_REOPENTAB          2882
+#define CM_RIGHT_REOPENTAB         2883
+#define CM_TOGGLEPANELTABS         2884
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FREESPACE
 

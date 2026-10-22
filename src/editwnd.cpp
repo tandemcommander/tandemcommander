@@ -809,6 +809,21 @@ CEditLine::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
         }
 
+        // feature 312: the browser-like tab keys (Ctrl+T, Ctrl+W, Ctrl+Shift+T/W/G) work here too;
+        // Page Up / Page Down are forwarded to the panel below, whose handler dispatches them. With
+        // the option off nothing changes (Ctrl+T, Ctrl+W, Ctrl+Shift+T and Ctrl+Shift+W did nothing here)
+        if (SalTabKeysBrowserLike(Configuration.PanelTabs, Configuration.PanelTabsBrowserKeys) &&
+            wParam >= 'A' && wParam <= 'Z')
+        {
+            int tabCmd = TabKeyCommand(wParam, controlPressed, shiftPressed, altPressed);
+            if (tabCmd != 0)
+            {
+                SkipCharacter = TRUE;
+                PostMessage(MainWindow->HWindow, WM_COMMAND, MAKEWPARAM(tabCmd, 0), 0);
+                return 0;
+            }
+        }
+
         if (altPressed && !controlPressed && !shiftPressed)
         {
             // change panel mode

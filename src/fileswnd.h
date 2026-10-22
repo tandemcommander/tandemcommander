@@ -1860,6 +1860,7 @@ public:
     BOOL CloseTab(int index);      // never the only tab; the active one switches to a neighbour first
     void CloseOtherTabs(int keepIndex);
     void CloseTabsToRight(int index);
+    void ReopenClosedTab();        // feature 312: the newest closed tab back at its old position, shown
     void MoveTab(int from, int to);
     void OpenIndexInNewTab(int itemIndex); // a folder of the listing into a new background tab
     void SetTabsEnabled(BOOL on);  // the option changed (or start-up): strip on/off, extra tabs dropped when off

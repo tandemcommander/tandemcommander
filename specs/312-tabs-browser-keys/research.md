@@ -86,8 +86,9 @@ Nothing of it is saved (`mainwnd2.cpp` saves `Tabs` only).
 turning off with background tabs, the 078 question (`IDS_TABS_CLOSECONFIRM`) first; then the same
 apply as `RefreshAfterConfiguration` (`SetTabsEnabled` on both panels, `LayoutWindows`). The
 question is a shared helper (`CMainWindow::ConfirmTabsOff(HWND)`) used by the Tabs page too.
-Options > Show gets the item after Command Line... (checked in `CML_OPTIONS_VISIBLE`), the toolbar
-context menu (main-window part, `OnWmContextMenu`) gets item id 14.
+Options > Show gets the item after *Command Line*, before *Bottom Toolbar* (checked in
+`CML_OPTIONS_VISIBLE`); the toolbar context menu (main-window part, `OnWmContextMenu`) gets it at
+the same place, item id 14.
 
 ## R8 Strings (free slots, rule 084)
 

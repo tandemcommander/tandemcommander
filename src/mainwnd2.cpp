@@ -292,6 +292,7 @@ const char* CONFIG_USEICONTINCTURE_REG = "Use Icon Tincture";
 const char* CONFIG_SHOWPANELCAPTION_REG = "Show Panel Caption";
 const char* CONFIG_SHOWPANELZOOM_REG = "Show Panel Zoom";
 const char* CONFIG_PANELTABS_REG = "Panel Tabs"; // feature 078
+const char* CONFIG_PANELTABSBROWSERKEYS_REG = "Browser Tab Shortcuts"; // feature 312
 const char* CONFIG_INFOLINECONTENT_REG = "Information Line Content";
 const char* CONFIG_IFPATHISINACCESSIBLEGOTOISMYDOCS_REG = "If Path Is Inaccessible Go To My Docs";
 const char* CONFIG_IFPATHISINACCESSIBLEGOTO_REG = "If Path Is Inaccessible Go To";
@@ -1678,6 +1679,8 @@ void CMainWindow::SaveConfig(HWND parent)
                          &Configuration.ShowPanelZoom, sizeof(DWORD));
                 SetValue(actKey, CONFIG_PANELTABS_REG, REG_DWORD,
                          &Configuration.PanelTabs, sizeof(DWORD));
+                SetValue(actKey, CONFIG_PANELTABSBROWSERKEYS_REG, REG_DWORD, // feature 312; its presence also marks
+                         &Configuration.PanelTabsBrowserKeys, sizeof(DWORD)); // a configuration that knows the Tabs page
                 SetValue(actKey, CONFIG_SINGLECLICK_REG, REG_DWORD,
                          &Configuration.SingleClick, sizeof(DWORD));
                 //      SetValue(actKey, CONFIG_SHOWTIPOFTHEDAY_REG, REG_DWORD,
@@ -3325,6 +3328,11 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                      &Configuration.ShowPanelZoom, sizeof(DWORD));
             GetValue(actKey, CONFIG_PANELTABS_REG, REG_DWORD, // absent -> stays on (feature 078)
                      &Configuration.PanelTabs, sizeof(DWORD));
+            // feature 312: absent -> off; absent also means the configuration was written before the
+            // Tabs page was inserted into the Configuration dialog (its remembered page is mapped below)
+            BOOL browserKeysFound = GetValue(actKey, CONFIG_PANELTABSBROWSERKEYS_REG, REG_DWORD,
+                                             &Configuration.PanelTabsBrowserKeys, sizeof(DWORD));
+            Configuration.PanelTabsBrowserKeys = Configuration.PanelTabsBrowserKeys ? TRUE : FALSE;
             GetValue(actKey, CONFIG_SINGLECLICK_REG, REG_DWORD,
                      &Configuration.SingleClick, sizeof(DWORD));
             //      GetValue(actKey, CONFIG_SHOWTIPOFTHEDAY_REG, REG_DWORD,
@@ -3703,8 +3711,10 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
             GetValue(actKey, CONFIG_DRAGDROPMINTIME, REG_DWORD,
                      &Configuration.DragDropMinTime, sizeof(DWORD));
 
-            GetValue(actKey, CONFIG_LASTFOCUSEDPAGE, REG_DWORD,
-                     &Configuration.LastFocusedPage, sizeof(DWORD));
+            if (GetValue(actKey, CONFIG_LASTFOCUSEDPAGE, REG_DWORD,
+                         &Configuration.LastFocusedPage, sizeof(DWORD)) &&
+                !browserKeysFound) // feature 312: the same page as before the Tabs page was inserted
+                Configuration.LastFocusedPage = SalCfgPageIndexFrom311(Configuration.LastFocusedPage);
             GetValue(actKey, CONFIG_CONFIGURATION_HEIGHT, REG_DWORD,
                      &Configuration.ConfigurationHeight, sizeof(DWORD));
             GetValue(actKey, CONFIG_VIEWANDEDITEXPAND, REG_DWORD,

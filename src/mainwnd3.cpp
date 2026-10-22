@@ -4095,8 +4095,17 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         case CM_ACTIVE_CLOSETABSRIGHT:
         case CM_LEFT_CLOSETABSRIGHT:
         case CM_RIGHT_CLOSETABSRIGHT:
+        case CM_ACTIVE_REOPENTAB: // feature 312
+        case CM_LEFT_REOPENTAB:
+        case CM_RIGHT_REOPENTAB:
         {
             HandleTabCommand(LOWORD(wParam));
+            return 0;
+        }
+
+        case CM_TOGGLEPANELTABS: // feature 312: Options > Show > Tabs, the toolbar context menu
+        {
+            TogglePanelTabs();
             return 0;
         }
 
@@ -5189,6 +5198,20 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             popup->EnableItem(left ? CM_LEFT_CLOSEOTHERTABS : CM_RIGHT_CLOSEOTHERTABS, FALSE, count > 1);
             popup->EnableItem(left ? CM_LEFT_CLOSETABSRIGHT : CM_RIGHT_CLOSETABSRIGHT, FALSE,
                               panel->Tabs.ActiveIndex < count - 1);
+            // feature 312: Reopen Closed Tab, and the keys of the mode in effect in the labels
+            popup->EnableItem(left ? CM_LEFT_REOPENTAB : CM_RIGHT_REOPENTAB, FALSE, panel->Tabs.Closed.Count > 0);
+            SetTabKeyLabel(popup, left ? CM_LEFT_NEWTAB : CM_RIGHT_NEWTAB, IDS_MENU_TAB_NEW);
+            SetTabKeyLabel(popup, left ? CM_LEFT_CLOSETAB : CM_RIGHT_CLOSETAB, IDS_MENU_TAB_CLOSE);
+            SetTabKeyLabel(popup, left ? CM_LEFT_NEXTTAB : CM_RIGHT_NEXTTAB, IDS_MENU_TAB_NEXT);
+            SetTabKeyLabel(popup, left ? CM_LEFT_PREVTAB : CM_RIGHT_PREVTAB, IDS_MENU_TAB_PREVIOUS);
+            SetTabKeyLabel(popup, left ? CM_LEFT_REOPENTAB : CM_RIGHT_REOPENTAB, IDS_MENU_TAB_REOPEN);
+            break;
+        }
+
+        case CML_COMMANDS:
+        {
+            // feature 312: Ctrl+T in the classic mode, Ctrl+Shift+G with the browser-like tab shortcuts
+            SetTabKeyLabel(popup, CM_AFOCUSSHORTCUT, IDS_MENU_CMD_FOCUSLNK);
             break;
         }
 
@@ -5276,6 +5299,8 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             mii.Mask = MENU_MASK_STRING;
             mii.String = text;
             popup->SetItemInfo(CM_CLIPPASTE, FALSE, &mii);
+            // feature 312: Ctrl+W in the classic mode, Ctrl+Shift+W with the browser-like tab shortcuts
+            SetTabKeyLabel(popup, CM_RESELECT, IDS_MENU_EDIT_RESELECT);
             break;
         }
 
@@ -5399,6 +5424,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             popup->CheckItem(CM_TOGGLEDRIVEBAR, FALSE, DriveBar->HWindow != NULL && DriveBar2->HWindow == NULL);
             popup->CheckItem(CM_TOGGLEDRIVEBAR2, FALSE, DriveBar2->HWindow != NULL);
             popup->CheckItem(CM_TOGGLEEDITLINE, FALSE, EditPermanentVisible);
+            popup->CheckItem(CM_TOGGLEPANELTABS, FALSE, Configuration.PanelTabs); // feature 312
             popup->CheckItem(CM_TOGGLEBOTTOMTOOLBAR, FALSE, BottomToolBar->HWindow != NULL);
             popup->CheckItem(CM_TOGGLE_UMLABELS, FALSE, Configuration.UserMenuToolbarLabels);
             popup->CheckItem(CM_TOGGLE_GRIPS, FALSE, !Configuration.GripsVisible);

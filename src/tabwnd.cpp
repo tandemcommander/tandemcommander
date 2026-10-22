@@ -639,6 +639,7 @@ MENU_TEMPLATE_ITEM TabStripMenu[] =
   {MNTT_IT, IDS_MENU_TAB_NEW
   {MNTT_IT, IDS_MENU_TAB_DUPLICATE
   {MNTT_IT, IDS_MENU_TAB_CLOSE
+  {MNTT_IT, IDS_MENU_TAB_REOPEN
   {MNTT_IT, IDS_MENU_TAB_CLOSEOTHERS
   {MNTT_IT, IDS_MENU_TAB_CLOSERIGHT
   {MNTT_PE, 0
@@ -660,7 +661,7 @@ void CTabWindow::OpenContextMenu(int index, int xScreen, int yScreen)
     mii.Mask = MENU_MASK_TYPE | MENU_MASK_ID | MENU_MASK_STATE | MENU_MASK_STRING;
     mii.Type = MENU_TYPE_STRING;
 
-    mii.String = LoadStr(IDS_MENU_TAB_NEW);
+    mii.String = (char*)LoadStrTabKeys(IDS_MENU_TAB_NEW); // feature 312: the keys of the mode in effect
     mii.ID = 1;
     mii.State = 0;
     menu.InsertItem(0xffffffff, TRUE, &mii);
@@ -672,9 +673,14 @@ void CTabWindow::OpenContextMenu(int index, int xScreen, int yScreen)
 
     menu.InsertItem(0xffffffff, TRUE, &miiSep);
 
-    mii.String = LoadStr(IDS_MENU_TAB_CLOSE);
+    mii.String = (char*)LoadStrTabKeys(IDS_MENU_TAB_CLOSE);
     mii.ID = 3;
     mii.State = (onTab && count > 1) ? 0 : MENU_STATE_GRAYED;
+    menu.InsertItem(0xffffffff, TRUE, &mii);
+
+    mii.String = (char*)LoadStrTabKeys(IDS_MENU_TAB_REOPEN); // feature 312
+    mii.ID = 6;
+    mii.State = (FilesWindow->Tabs.Closed.Count > 0) ? 0 : MENU_STATE_GRAYED;
     menu.InsertItem(0xffffffff, TRUE, &mii);
 
     mii.String = LoadStr(IDS_MENU_TAB_CLOSEOTHERS);
@@ -712,6 +718,9 @@ void CTabWindow::OpenContextMenu(int index, int xScreen, int yScreen)
         break;
     case 5:
         cm = left ? CM_LEFT_CLOSETABSRIGHT : CM_RIGHT_CLOSETABSRIGHT;
+        break;
+    case 6:
+        cm = left ? CM_LEFT_REOPENTAB : CM_RIGHT_REOPENTAB;
         break;
     }
     if (cm != 0)
@@ -776,7 +785,7 @@ CTabWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         DWORD id = (DWORD)wParam;
         char* text = (char*)lParam;
         if (id == TABSTRIP_TT_PLUS)
-            CopyToolTipAnswer(LoadStrU8(IDS_TABS_TT_NEW), text);
+            CopyToolTipAnswer(LoadStrTabKeys(IDS_TABS_TT_NEW, TRUE), text); // feature 312: the key of the mode
         else if (id == TABSTRIP_TT_LIST)
             CopyToolTipAnswer(LoadStrU8(IDS_TABS_TT_LIST), text);
         else if (id >= TABSTRIP_TT_TAB)

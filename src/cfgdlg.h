@@ -297,6 +297,7 @@ struct CConfiguration
     int ShowPanelCaption; // should the panel caption be shown in color in the directory line?
     int ShowPanelZoom;    // should the Zoom button be shown in the directory line?
     int PanelTabs;        // feature 078: tab strips in the panels (on by default)
+    int PanelTabsBrowserKeys; // feature 312: browser-like tab shortcuts (Ctrl+T, Ctrl+W, ...; off by default, in effect only with tabs on)
 
     char InfoLineContent[200];
 
@@ -1122,6 +1123,27 @@ protected:
 
 //
 // ****************************************************************************
+// feature 312: Configuration > Tabs - Show tabs in panels (moved from Appearance), the
+// browser-like tab shortcuts and a read-only list of the tab shortcuts of the mode the
+// checkbox shows (the table of src/common/saltabs.h)
+
+class CCfgPageTabs : public CCommonPropSheetPage
+{
+public:
+    CCfgPageTabs();
+
+    virtual void Transfer(CTransferInfo& ti);
+    virtual void Validate(CTransferInfo& ti);
+
+protected:
+    void EnableControls();
+    void FillKeyList();
+
+    virtual INT_PTR DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
+};
+
+//
+// ****************************************************************************
 
 class CCfgPageMainWindow : public CCommonPropSheetPage
 {
@@ -1221,6 +1243,7 @@ public:
     CCfgPageEditors Page15;
     CCfgPageIconOvrls PageIconOvrls;
     CCfgPageAppearance PageAppear;
+    CCfgPageTabs PageTabs; // feature 312
     CCfgPageMainWindow PageMainWindow;
     CCfgPageRegional PageRegional;
     CCfgPageHistory PageHistory;

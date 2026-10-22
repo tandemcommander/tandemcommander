@@ -1127,7 +1127,8 @@ void CMainToolBar::OnGetToolTip(LPARAM lParam)
     int tbbeIndex = tt->CustomData;
     if (tbbeIndex < TBBE_TERMINATOR)
     {
-        lstrcpy(tt->Buffer, LoadStr(ToolBarButtons[tbbeIndex].ToolTipResID));
+        // feature 312: Restore Selection / Go to Shortcut name the key of the tab key mode in effect
+        lstrcpy(tt->Buffer, LoadStrTabKeys(ToolBarButtons[tbbeIndex].ToolTipResID));
         if (tbbeIndex == TBBE_CLIPBOARD_PASTE)
         {
             CFilesWindow* activePanel = MainWindow != NULL ? MainWindow->GetActivePanel() : NULL;

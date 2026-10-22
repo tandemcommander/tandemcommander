@@ -11,6 +11,15 @@
 #define CONTROL_ALT (CONTROL | ALT)
 #define ALT_SHIFT (ALT | SHIFT)
 
+BOOL IsSalHotKeyKeptAtLoad(WORD hotKey)
+{
+    // feature 312: Ctrl+Shift+G became the program's key only for the opt-in browser-like tab
+    // shortcuts; a plug-in hot key the user assigned to it earlier keeps working (with the option
+    // off nothing changes; with it on the program's key runs first). Plugins Manager and the
+    // settings import still refuse it as a new assignment (IsSalHotKey).
+    return LOBYTE(hotKey) == 'G' && HIBYTE(hotKey) == (HOTKEYF_CONTROL | HOTKEYF_SHIFT);
+}
+
 BOOL IsSalHotKey(WORD hotKey)
 {
     BYTE vk = LOBYTE(hotKey);
@@ -435,10 +444,11 @@ BOOL IsSalHotKey(WORD hotKey)
     {
         switch (mods)
         {
-        case NONE:    // quick search/type in command line
-        case CONTROL: // change directory
-        case ALT:     // enter menu
-        case SHIFT:   // change drive
+        case NONE:          // quick search/type in command line
+        case CONTROL:       // change directory
+        case ALT:           // enter menu
+        case SHIFT:         // change drive
+        case CONTROL_SHIFT: // go to shortcut or link target, browser-like tab shortcuts (feature 312)
             found = TRUE;
         }
         break;

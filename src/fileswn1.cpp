@@ -1724,6 +1724,12 @@ void CFilesWindow::ClearHistory()
         if (tab != NULL && tab->PathHistory != NULL)
             tab->PathHistory->ClearHistory();
     }
+    for (i = 0; i < Tabs.Closed.Count; i++) // feature 312: the closed tabs Reopen Closed Tab keeps
+    {
+        CPanelTab* tab = Tabs.Closed[i];
+        if (tab != NULL && tab->PathHistory != NULL)
+            tab->PathHistory->ClearHistory();
+    }
     if (PathHistory != NULL && (Tabs.Active() == NULL || Tabs.Active()->PathHistory != PathHistory))
         PathHistory->ClearHistory();
 

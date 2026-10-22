@@ -1184,6 +1184,7 @@ DWORD OnKeyDownHandleSelectAll(DWORD keyCode, HWND hDialog, int editID);
 
 // returns TRUE if the hot key belongs to Salamander
 BOOL IsSalHotKey(WORD hotKey);
+BOOL IsSalHotKeyKeptAtLoad(WORD hotKey); // feature 312: reserved, yet an existing plug-in key on it is kept
 
 // 'showErrors' FALSE: an enumeration error is not reported in a message box (feature 246: the
 // check on main window activation must never show one)

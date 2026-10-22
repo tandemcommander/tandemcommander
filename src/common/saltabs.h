@@ -63,3 +63,82 @@ int SalTabsCycle(int count, int active, BOOL forward);
 // moves tab 'from' so that it lands at index 'to'; '*active' follows the
 // moved tab or shifts with the others
 void SalTabsMove(int count, int from, int to, int* active);
+
+//*****************************************************************************
+//
+// feature 312: the tab key table, Reopen Closed Tab, the Tabs configuration page
+//
+// One table of keys (contract specs/312-tabs-browser-keys/contracts/tab-keys.md)
+// serves the key dispatch of the panel and the command line, the key shown in
+// menu labels and tooltips, and the list on Configuration > Tabs. The classic
+// mode is the 0.1.10 behaviour; the browser-like mode (an opt-in option) is in
+// effect only while tabs are on.
+//
+
+enum CSalTabKeyAction
+{
+    stkaNone = 0,      // not a key of the table / no action
+    stkaNewTab,        // New Tab
+    stkaCloseTab,      // Close Tab
+    stkaNextTab,       // Next Tab
+    stkaPrevTab,       // Previous Tab
+    stkaReopenTab,     // Reopen Closed Tab
+    stkaRestoreSel,    // Restore Selection
+    stkaGoToShortcut,  // Go to Shortcut or Link Target
+    stkaEnterFocused,  // go into the focused folder or archive (classic Ctrl+Page Down)
+    stkaParentDir,     // go to the parent folder (classic Ctrl+Page Up)
+    stkaCommandLine,   // go to the command line (Ctrl+Tab)
+};
+
+// modifier bits of a table key (Alt is never part of a row)
+#define SAL_TABKEY_CTRL 0x01
+#define SAL_TABKEY_SHIFT 0x02
+#define SAL_TABKEY_ALT 0x04
+
+struct CSalTabKeyRow
+{
+    int Vk;     // virtual key; 0 = no key (the "Reopen Closed Tab" row of the classic mode)
+    int Mods;   // SAL_TABKEY_* bits
+    int Action; // CSalTabKeyAction in the mode the row was produced for
+};
+
+// the browser-like mode is in effect: tabs on and the option on
+BOOL SalTabKeysBrowserLike(BOOL tabsOn, BOOL optionOn);
+
+// what the key does in the mode (stkaNone for a key outside the table or with Alt)
+int SalTabKeyMeaning(int vk, int mods, BOOL browserLike);
+
+// the action the tab code runs for the key in the mode, or stkaNone when the
+// existing handling of the key continues (keys outside the table, keys whose
+// meaning is their classic non-tab meaning, Ctrl+Tab, anything with Alt); call
+// only while tabs are on
+int SalTabKeyDispatch(int vk, int mods, BOOL browserLike);
+
+// the rows of the list on the Tabs page for the mode, in display order; returns
+// the number of rows written (at most 'max')
+int SalTabKeyRows(BOOL browserLike, CSalTabKeyRow* rows, int max);
+
+// the key shown for an action in the mode (the first row whose action it is);
+// FALSE when the action has no key in that mode
+BOOL SalTabKeyForAction(int action, BOOL browserLike, int* vk, int* mods);
+
+// "Ctrl+Shift+Page Down" (the English 078 form used in the menu strings of all
+// languages); empty for vk == 0; 'size' includes the terminator; FALSE when it
+// does not fit (out is then empty)
+BOOL SalTabKeyText(int vk, int mods, char* out, int size);
+
+// a label with its key part replaced by 'keyText' (empty = no key):
+// "Text\tKey" -> "Text\t<keyText>" (or "Text"); "Text (Key)" -> "Text (<keyText>)"
+// (or "Text"); "Text" -> "Text\t<keyText>" (or "Text"). FALSE when the result
+// does not fit 'size' (out is then empty and the caller keeps the original label)
+BOOL SalTabLabelWithKey(const char* label, const char* keyText, char* out, int size);
+
+// the most closed tabs a panel remembers for Reopen Closed Tab
+#define SAL_TABS_CLOSED_MAX 10
+
+// where a reopened tab goes: its old index, at most the current count (= append)
+int SalTabsReopenIndex(int count, int closedIndex);
+
+// Configuration > Tabs is page 7 (after Appearance); a remembered page index
+// written before feature 312 is moved past it
+int SalCfgPageIndexFrom311(int index);

@@ -38,6 +38,7 @@ public:
     BOOL UserWorkedOnThisPath;        // whether the leaving path enters the Working Directories list
     CPathHistory* PathHistory;        // this tab's Back/Forward history (owned)
     BOOL Visited;                     // FALSE for a record restored from the registry until first activated
+    int ClosedIndex;                  // feature 312: its index in the strip when it was closed (Reopen Closed Tab); -1 = open
 
     CPanelTab();
     explicit CPanelTab(const CSalTabRecord& rec);
@@ -55,6 +56,11 @@ class CPanelTabs
 {
 public:
     TIndirectArray<CPanelTab> Tabs; // in strip order; at least one entry
+    // feature 312: tabs closed by Close Tab / Close Other Tabs / Close Tabs to the Right, newest
+    // last, at most SAL_TABS_CLOSED_MAX; memory only (never saved), emptied when tabs are turned off.
+    // Each keeps its whole state and its own history, so every walk over the tabs' histories
+    // (ClearHistory, ClearPluginFSFromHistory) covers these too
+    TIndirectArray<CPanelTab> Closed;
     int ActiveIndex;                // the tab the panel shows
     int ContextTabIndex;            // tab under the open context menu, -1 otherwise
     BOOL SwitchInProgress;          // re-entrancy latch for SwitchToTab
@@ -77,4 +83,31 @@ public:
 
     // reorders; ActiveIndex follows the moved tab
     void Move(int from, int to);
+
+    // feature 312: removes tab 'index' as Remove() does but keeps it (with its history) as the
+    // newest closed tab; the oldest beyond SAL_TABS_CLOSED_MAX is deleted
+    void RemoveToClosed(int index);
+
+    // feature 312: inserts a tab (taken from Closed) at 'index'; ActiveIndex shifts with the
+    // others; FALSE when out of memory (the caller still owns the tab)
+    BOOL InsertTab(CPanelTab* tab, int index);
+
+    // feature 312: forgets every closed tab
+    void ClearClosed();
 };
+
+// feature 312: the command a key runs through the tab key table (SalTabKeyDispatch in
+// saltabs.h) in the mode now in effect; 0 = not a tab key, the key's existing handling
+// continues. Call only while tabs are on.
+int TabKeyCommand(WPARAM vk, BOOL ctrl, BOOL shift, BOOL alt);
+
+// feature 312: LoadStr() of a label or tooltip that names a tab key or a key the
+// browser-like mode moves; in the classic mode the loaded text unchanged (the 0.1.10
+// texts, translations included), in the browser-like mode with the key of that mode
+// (SalTabLabelWithKey). Other resource ids are returned as LoadStr() returns them.
+const char* LoadStrTabKeys(int resID, BOOL utf8 = FALSE);
+
+// feature 312: sets the label of menu item 'cmd' to LoadStrTabKeys(resID) (code page, as the
+// menus are loaded); nothing happens when the popup does not hold the item
+void SetTabKeyLabel(CMenuPopup* popup, DWORD cmd, int resID);
+

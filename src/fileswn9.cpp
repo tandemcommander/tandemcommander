@@ -86,6 +86,12 @@ void CFilesWindow::ClearPluginFSFromHistory(CPluginFSInterfaceAbstract* fs)
         if (tab != NULL && tab->PathHistory != NULL)
             tab->PathHistory->ClearPluginFSFromHistory(fs);
     }
+    for (i = 0; i < Tabs.Closed.Count; i++) // feature 312: a closed tab's history may remember it too
+    {
+        CPanelTab* tab = Tabs.Closed[i];
+        if (tab != NULL && tab->PathHistory != NULL)
+            tab->PathHistory->ClearPluginFSFromHistory(fs);
+    }
     if (PathHistory != NULL && (Tabs.Active() == NULL || Tabs.Active()->PathHistory != PathHistory))
         PathHistory->ClearPluginFSFromHistory(fs);
 }

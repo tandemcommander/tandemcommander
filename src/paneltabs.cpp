@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "cfgdlg.h"
+#include "menu.h"
 #include "mainwnd.h"
 #include "stswnd.h"
 #include "plugins.h"
@@ -22,6 +23,7 @@ CPanelTab::CPanelTab()
     PathHistory = new CPathHistory();
     ResetSession();
     Visited = TRUE;
+    ClosedIndex = -1;
 }
 
 CPanelTab::CPanelTab(const CSalTabRecord& rec)
@@ -30,6 +32,7 @@ CPanelTab::CPanelTab(const CSalTabRecord& rec)
     PathHistory = new CPathHistory();
     ResetSession();
     Visited = TRUE;
+    ClosedIndex = -1;
 }
 
 CPanelTab::~CPanelTab()
@@ -53,7 +56,7 @@ void CPanelTab::ResetSession()
 // CPanelTabs
 //
 
-CPanelTabs::CPanelTabs() : Tabs(4, 4)
+CPanelTabs::CPanelTabs() : Tabs(4, 4), Closed(SAL_TABS_CLOSED_MAX + 1, 4)
 {
     ActiveIndex = 0;
     ContextTabIndex = -1;
@@ -113,6 +116,61 @@ void CPanelTabs::Move(int from, int to)
     if (!Tabs.IsGood())
         Tabs.ResetState();
     SalTabsMove(Tabs.Count, from, to, &ActiveIndex);
+}
+
+void CPanelTabs::RemoveToClosed(int index)
+{
+    if (index < 0 || index >= Tabs.Count)
+        return;
+    CPanelTab* tab = Tabs[index];
+    int newActive = SalTabsIndexAfterClose(Tabs.Count, index, ActiveIndex);
+    Tabs.Detach(index); // the tab and its history live on in Closed
+    if (!Tabs.IsGood())
+        Tabs.ResetState();
+    ActiveIndex = newActive;
+    if (ActiveIndex >= Tabs.Count)
+        ActiveIndex = Tabs.Count - 1;
+    if (ActiveIndex < 0)
+        ActiveIndex = 0;
+    ContextTabIndex = -1;
+
+    tab->ClosedIndex = index;
+    Closed.Add(tab);
+    if (!Closed.IsGood())
+    {
+        Closed.ResetState();
+        delete tab; // out of memory: forgotten, as every closed tab was before feature 312
+        return;
+    }
+    while (Closed.Count > SAL_TABS_CLOSED_MAX)
+        Closed.Delete(0); // the oldest
+    if (!Closed.IsGood())
+        Closed.ResetState();
+}
+
+BOOL CPanelTabs::InsertTab(CPanelTab* tab, int index)
+{
+    if (tab == NULL)
+        return FALSE;
+    if (index < 0 || index > Tabs.Count)
+        index = Tabs.Count;
+    Tabs.Insert(index, tab);
+    if (!Tabs.IsGood())
+    {
+        Tabs.ResetState();
+        return FALSE;
+    }
+    if (index <= ActiveIndex && Tabs.Count > 1)
+        ActiveIndex++;
+    tab->ClosedIndex = -1;
+    return TRUE;
+}
+
+void CPanelTabs::ClearClosed()
+{
+    Closed.DestroyMembers();
+    if (!Closed.IsGood())
+        Closed.ResetState();
 }
 
 //
@@ -398,7 +456,7 @@ BOOL CFilesWindow::CloseTab(int index)
         if (!SwitchToTab(neighbour))
             return FALSE; // leaving was refused - the tab stays
     }
-    Tabs.Remove(index);
+    Tabs.RemoveToClosed(index); // feature 312: kept for Reopen Closed Tab
     UpdateTabStrip();
     return TRUE;
 }
@@ -413,7 +471,7 @@ void CFilesWindow::CloseOtherTabs(int keepIndex)
     int i;
     for (i = Tabs.Count() - 1; i >= 0; i--)
         if (i != Tabs.ActiveIndex)
-            Tabs.Remove(i);
+            Tabs.RemoveToClosed(i); // feature 312: each one kept for Reopen Closed Tab
     UpdateTabStrip();
 }
 
@@ -426,7 +484,45 @@ void CFilesWindow::CloseTabsToRight(int index)
         return;
     int i;
     for (i = Tabs.Count() - 1; i > index; i--)
-        Tabs.Remove(i);
+        Tabs.RemoveToClosed(i); // feature 312: each one kept for Reopen Closed Tab
+    UpdateTabStrip();
+}
+
+void CFilesWindow::ReopenClosedTab()
+{
+    CALL_STACK_MESSAGE1("CFilesWindow::ReopenClosedTab()");
+    if (!Configuration.PanelTabs || Tabs.Closed.Count == 0)
+        return;
+    // what SwitchToTab refuses anyway - the closed tab stays in the list
+    if (Tabs.SwitchInProgress || FilesActionInProgress ||
+        (MainWindow != NULL && MainWindow->HasLockedUI()) ||
+        (PathHistory != NULL && PathHistory->IsLocked()))
+        return;
+    int last = Tabs.Closed.Count - 1;
+    CPanelTab* tab = Tabs.Closed[last];
+    int closedIndex = tab->ClosedIndex;
+    Tabs.Closed.Detach(last);
+    if (!Tabs.Closed.IsGood())
+        Tabs.Closed.ResetState();
+    int at = SalTabsReopenIndex(Tabs.Count(), closedIndex);
+    if (!Tabs.InsertTab(tab, at))
+    {
+        Tabs.Closed.Add(tab); // out of memory: back into the list (one place was just freed)
+        if (!Tabs.Closed.IsGood())
+        {
+            Tabs.Closed.ResetState();
+            delete tab;
+        }
+        return;
+    }
+    if (!SwitchToTab(at))
+    {
+        // showing it was refused (a plugin or the user did not let the current tab go):
+        // nothing is lost - it goes back to the top of the list, with its old position
+        Tabs.RemoveToClosed(at);
+        if (Tabs.Closed.Count > 0 && Tabs.Closed[Tabs.Closed.Count - 1] == tab)
+            tab->ClosedIndex = closedIndex;
+    }
     UpdateTabStrip();
 }
 
@@ -468,6 +564,7 @@ void CFilesWindow::SetTabsEnabled(BOOL on)
             if (i != Tabs.ActiveIndex)
                 Tabs.Remove(i);
         Tabs.ActiveIndex = 0;
+        Tabs.ClearClosed(); // feature 312: turning tabs off is not Close Tab - nothing to reopen
         if (TabStrip != NULL && TabStrip->HWindow != NULL)
             ToggleTabStrip();
     }
@@ -555,10 +652,10 @@ BOOL CFilesWindow::OnMButtonUp(WPARAM wParam, LPARAM lParam, LRESULT* lResult)
 void CMainWindow::HandleTabCommand(int cmd)
 {
     CALL_STACK_MESSAGE2("CMainWindow::HandleTabCommand(%d)", cmd);
-    if (!Configuration.PanelTabs || cmd < CM_ACTIVE_NEWTAB || cmd > CM_RIGHT_CLOSETABSRIGHT)
+    if (!Configuration.PanelTabs || cmd < CM_ACTIVE_NEWTAB || cmd > CM_RIGHT_REOPENTAB)
         return;
     int which = (cmd - CM_ACTIVE_NEWTAB) % 3; // 0 = active, 1 = left, 2 = right (the CM_*_CHANGEDIR order)
-    int op = (cmd - CM_ACTIVE_NEWTAB) / 3;    // 0 new, 1 close, 2 next, 3 previous, 4 duplicate, 5 close others, 6 close right
+    int op = (cmd - CM_ACTIVE_NEWTAB) / 3;    // 0 new, 1 close, 2 next, 3 previous, 4 duplicate, 5 close others, 6 close right, 7 reopen (312)
     CFilesWindow* panel = (which == 0) ? GetActivePanel() : (which == 1 ? LeftPanel : RightPanel);
     if (panel == NULL)
         return;
@@ -592,5 +689,122 @@ void CMainWindow::HandleTabCommand(int cmd)
     case 6:
         panel->CloseTabsToRight(target);
         break;
+    case 7:
+        panel->ReopenClosedTab();
+        break;
     }
+}
+
+BOOL CMainWindow::ConfirmTabsOff(HWND parent)
+{
+    CALL_STACK_MESSAGE1("CMainWindow::ConfirmTabsOff()");
+    // feature 078 (FR-005): turning tabs off closes every background tab - say so first
+    if (!Configuration.PanelTabs || LeftPanel == NULL || RightPanel == NULL)
+        return TRUE;
+    int closing = (LeftPanel->Tabs.Count() - 1) + (RightPanel->Tabs.Count() - 1);
+    if (closing <= 0)
+        return TRUE;
+    char msg[500];
+    _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_TABS_CLOSECONFIRM), closing);
+    return SalMessageBox(parent, msg, LoadStrU8(IDS_QUESTION), MB_YESNO | MB_ICONQUESTION) == IDYES;
+}
+
+void CMainWindow::TogglePanelTabs()
+{
+    CALL_STACK_MESSAGE1("CMainWindow::TogglePanelTabs()");
+    // feature 312: Tabs in Options > Show and in the toolbar context menu = Show tabs in panels
+    if (LeftPanel == NULL || RightPanel == NULL)
+        return;
+    if (Configuration.PanelTabs && !ConfirmTabsOff(HWindow))
+        return;
+    Configuration.PanelTabs = !Configuration.PanelTabs;
+    LockWindowUpdate(HWindow); // as the Configuration dialog applies it (RefreshAfterConfiguration)
+    LeftPanel->SetTabsEnabled(Configuration.PanelTabs);
+    RightPanel->SetTabsEnabled(Configuration.PanelTabs);
+    LayoutWindows();
+    LockWindowUpdate(NULL);
+}
+
+//
+// ****************************************************************************
+// feature 312: the tab key table in the program
+//
+
+int TabKeyCommand(WPARAM vk, BOOL ctrl, BOOL shift, BOOL alt)
+{
+    int mods = (ctrl ? SAL_TABKEY_CTRL : 0) | (shift ? SAL_TABKEY_SHIFT : 0) | (alt ? SAL_TABKEY_ALT : 0);
+    BOOL browserLike = SalTabKeysBrowserLike(Configuration.PanelTabs, Configuration.PanelTabsBrowserKeys);
+    switch (SalTabKeyDispatch((int)vk, mods, browserLike))
+    {
+    case stkaNewTab:
+        return CM_ACTIVE_NEWTAB;
+    case stkaCloseTab:
+        return CM_ACTIVE_CLOSETAB;
+    case stkaNextTab:
+        return CM_ACTIVE_NEXTTAB;
+    case stkaPrevTab:
+        return CM_ACTIVE_PREVTAB;
+    case stkaReopenTab:
+        return CM_ACTIVE_REOPENTAB;
+    case stkaRestoreSel:
+        return CM_RESELECT; // what Ctrl+W runs in the classic mode
+    case stkaGoToShortcut:
+        return CM_AFOCUSSHORTCUT; // what Ctrl+T runs in the classic mode
+    }
+    return 0;
+}
+
+// the action whose key a label or tooltip names
+static int TabKeyActionOfString(int resID)
+{
+    switch (resID)
+    {
+    case IDS_MENU_TAB_NEW:
+    case IDS_TABS_TT_NEW:
+        return stkaNewTab;
+    case IDS_MENU_TAB_CLOSE:
+        return stkaCloseTab;
+    case IDS_MENU_TAB_NEXT:
+        return stkaNextTab;
+    case IDS_MENU_TAB_PREVIOUS:
+        return stkaPrevTab;
+    case IDS_MENU_TAB_REOPEN:
+        return stkaReopenTab;
+    case IDS_MENU_EDIT_RESELECT:
+    case IDS_TBTT_RESELECT:
+        return stkaRestoreSel;
+    case IDS_MENU_CMD_FOCUSLNK:
+    case IDS_TBTT_FOCUSSHORTCUT:
+        return stkaGoToShortcut;
+    }
+    return stkaNone;
+}
+
+const char* LoadStrTabKeys(int resID, BOOL utf8)
+{
+    const char* text = utf8 ? LoadStrU8(resID) : LoadStr(resID);
+    int action = TabKeyActionOfString(resID);
+    if (action == stkaNone || !SalTabKeysBrowserLike(Configuration.PanelTabs, Configuration.PanelTabsBrowserKeys))
+        return text; // the classic mode: the 0.1.10 text
+    char key[64];
+    int vk, mods;
+    if (!SalTabKeyForAction(action, TRUE, &vk, &mods) || !SalTabKeyText(vk, mods, key, sizeof(key)))
+        key[0] = 0;
+    static char buffers[4][300]; // a few labels are in use at once (menu items are set one by one)
+    static int next = 0;
+    char* out = buffers[next];
+    next = (next + 1) % 4;
+    if (!SalTabLabelWithKey(text, key, out, sizeof(buffers[0])))
+        return text; // never a cut label
+    return out;
+}
+
+void SetTabKeyLabel(CMenuPopup* popup, DWORD cmd, int resID)
+{
+    if (popup == NULL || popup->FindItemPosition(cmd) == -1)
+        return;
+    MENU_ITEM_INFO mii;
+    mii.Mask = MENU_MASK_STRING;
+    mii.String = (char*)LoadStrTabKeys(resID); // the menu copies the text
+    popup->SetItemInfo(cmd, FALSE, &mii);
 }

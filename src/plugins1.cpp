@@ -4075,7 +4075,7 @@ void CPluginData::HotKeysEnsureIntegrity()
         if (hotKey == 0)
             continue;
         BOOL dirty = HOTKEY_GETDIRTY(item->HotKey);
-        if (IsSalHotKey(hotKey))
+        if (IsSalHotKey(hotKey) && !IsSalHotKeyKeptAtLoad(hotKey))
         {
             // the hot key must not belong to Salamander
             item->HotKey = 0;

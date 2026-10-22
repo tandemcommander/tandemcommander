@@ -2935,7 +2935,6 @@ void CCfgPageAppearance::Transfer(CTransferInfo& ti)
     ti.CheckBox(IDC_ICONTINCTURE, Configuration.UseIconTincture);
     ti.CheckBox(IDC_PANELCAPTION, Configuration.ShowPanelCaption);
     ti.CheckBox(IDC_PANELZOOM, Configuration.ShowPanelZoom);
-    ti.CheckBox(IDC_PANELTABS, Configuration.PanelTabs); // feature 078
     ti.CheckBox(IDC_SINGLECLICK, Configuration.SingleClick);
 
     ti.EditLine(IDC_INFOLINECONTENT, Configuration.InfoLineContent, 200);
@@ -2963,22 +2962,6 @@ void CCfgPageAppearance::Validate(CTransferInfo& ti)
     CALL_STACK_MESSAGE1("CCfgPageAppearance::Validate()");
     HWND hWnd;
 
-    // feature 078 (FR-005): turning tabs off closes every background tab - say so first
-    if (Configuration.PanelTabs && IsDlgButtonChecked(HWindow, IDC_PANELTABS) != BST_CHECKED &&
-        MainWindow != NULL && MainWindow->LeftPanel != NULL && MainWindow->RightPanel != NULL)
-    {
-        int closing = (MainWindow->LeftPanel->Tabs.Count() - 1) + (MainWindow->RightPanel->Tabs.Count() - 1);
-        if (closing > 0)
-        {
-            char msg[500];
-            _snprintf_s(msg, _TRUNCATE, LoadStrU8(IDS_TABS_CLOSECONFIRM), closing);
-            if (SalMessageBox(HWindow, msg, LoadStrU8(IDS_QUESTION), MB_YESNO | MB_ICONQUESTION) != IDYES)
-            {
-                ti.ErrorOn(IDC_PANELTABS);
-                return;
-            }
-        }
-    }
     if (ti.GetControl(hWnd, IDC_INFOLINECONTENT))
     {
         char buff[MAX_PATH];
@@ -3109,6 +3092,186 @@ MENU_TEMPLATE_ITEM CfgPageAppearanceMenu[] =
                              InfoLineContentItems);
             return 0;
         }
+        }
+        break;
+    }
+    }
+    return CCommonPropSheetPage::DialogProc(uMsg, wParam, lParam);
+}
+
+//
+// ****************************************************************************
+// CCfgPageTabs (feature 312)
+//
+
+CCfgPageTabs::CCfgPageTabs()
+    : CCommonPropSheetPage(NULL, HLanguage, IDD_CFGPAGE_TABS, IDD_CFGPAGE_TABS, PSP_USETITLE, NULL)
+{
+}
+
+void CCfgPageTabs::Transfer(CTransferInfo& ti)
+{
+    CALL_STACK_MESSAGE1("CCfgPageTabs::Transfer()");
+    ti.CheckBox(IDC_PANELTABS, Configuration.PanelTabs); // feature 078 (formerly on the Appearance page)
+    ti.CheckBox(IDC_TABS_BROWSERKEYS, Configuration.PanelTabsBrowserKeys);
+    if (ti.Type == ttDataToWindow)
+    {
+        EnableControls();
+        FillKeyList();
+    }
+}
+
+void CCfgPageTabs::Validate(CTransferInfo& ti)
+{
+    CALL_STACK_MESSAGE1("CCfgPageTabs::Validate()");
+    // feature 078 (FR-005): turning tabs off closes every background tab - say so first
+    if (Configuration.PanelTabs && IsDlgButtonChecked(HWindow, IDC_PANELTABS) != BST_CHECKED &&
+        MainWindow != NULL && !MainWindow->ConfirmTabsOff(HWindow))
+    {
+        ti.ErrorOn(IDC_PANELTABS);
+    }
+}
+
+void CCfgPageTabs::EnableControls()
+{
+    // the option is in effect only with tabs on; its value is kept while it is disabled
+    BOOL tabsOn = IsDlgButtonChecked(HWindow, IDC_PANELTABS) == BST_CHECKED;
+    EnableWindow(GetDlgItem(HWindow, IDC_TABS_BROWSERKEYS), tabsOn);
+    EnableWindow(GetDlgItem(HWindow, IDT_TABS_KEYLIST), tabsOn);
+    EnableWindow(GetDlgItem(HWindow, IDC_TABS_KEYLIST), tabsOn);
+}
+
+// the text of an action in the list: a menu label without its key and without the '&' of
+// its access key ("&&" stays one '&'), or a text of its own
+static void TabKeyActionText(int action, WCHAR* out, int size)
+{
+    int resID;
+    switch (action)
+    {
+    case stkaNewTab:
+        resID = IDS_MENU_TAB_NEW;
+        break;
+    case stkaCloseTab:
+        resID = IDS_MENU_TAB_CLOSE;
+        break;
+    case stkaNextTab:
+        resID = IDS_MENU_TAB_NEXT;
+        break;
+    case stkaPrevTab:
+        resID = IDS_MENU_TAB_PREVIOUS;
+        break;
+    case stkaReopenTab:
+        resID = IDS_MENU_TAB_REOPEN;
+        break;
+    case stkaRestoreSel:
+        resID = IDS_MENU_EDIT_RESELECT;
+        break;
+    case stkaGoToShortcut:
+        resID = IDS_MENU_CMD_FOCUSLNK;
+        break;
+    case stkaEnterFocused:
+        resID = IDS_TABKEY_ENTER;
+        break;
+    case stkaParentDir:
+        resID = IDS_TABKEY_PARENT;
+        break;
+    case stkaCommandLine:
+        resID = IDS_TABKEY_CMDLINE;
+        break;
+    default:
+        resID = IDS_TABKEY_NONE;
+        break;
+    }
+    const WCHAR* s = LoadStrW(resID);
+    int len = 0;
+    for (; *s != 0 && *s != L'\t' && len < size - 1; s++)
+    {
+        if (*s == L'&')
+        {
+            if (s[1] != L'&')
+                continue; // the access key mark
+            s++;
+        }
+        out[len++] = *s;
+    }
+    out[len] = 0;
+}
+
+void CCfgPageTabs::FillKeyList()
+{
+    CALL_STACK_MESSAGE1("CCfgPageTabs::FillKeyList()");
+    HWND list = GetDlgItem(HWindow, IDC_TABS_KEYLIST);
+    if (list == NULL)
+        return;
+    BOOL browserLike = IsDlgButtonChecked(HWindow, IDC_TABS_BROWSERKEYS) == BST_CHECKED;
+    CSalTabKeyRow rows[16];
+    int count = SalTabKeyRows(browserLike, rows, 16);
+
+    SendMessageW(list, WM_SETREDRAW, FALSE, 0);
+    SendMessageW(list, LVM_DELETEALLITEMS, 0, 0);
+    for (int i = 0; i < count; i++)
+    {
+        WCHAR key[64];
+        char keyA[64];
+        if (rows[i].Vk == 0 || !SalTabKeyText(rows[i].Vk, rows[i].Mods, keyA, sizeof(keyA)) || keyA[0] == 0)
+            lstrcpynW(key, LoadStrW(IDS_TABKEY_NONE), _countof(key));
+        else
+            MultiByteToWideChar(CP_UTF8, 0, keyA, -1, key, _countof(key)); // ASCII key names
+        WCHAR action[300];
+        TabKeyActionText(rows[i].Action, action, _countof(action));
+
+        LVITEMW lvi;
+        memset(&lvi, 0, sizeof(lvi));
+        lvi.mask = LVIF_TEXT;
+        lvi.iItem = i;
+        lvi.pszText = key;
+        int index = (int)SendMessageW(list, LVM_INSERTITEMW, 0, (LPARAM)&lvi);
+        if (index < 0)
+            continue;
+        lvi.iItem = index;
+        lvi.iSubItem = 1;
+        lvi.pszText = action;
+        SendMessageW(list, LVM_SETITEMTEXTW, index, (LPARAM)&lvi);
+    }
+    SendMessageW(list, LVM_SETCOLUMNWIDTH, 0, LVSCW_AUTOSIZE_USEHEADER);
+    SendMessageW(list, LVM_SETCOLUMNWIDTH, 1, LVSCW_AUTOSIZE_USEHEADER);
+    SendMessageW(list, WM_SETREDRAW, TRUE, 0);
+    InvalidateRect(list, NULL, TRUE);
+}
+
+INT_PTR
+CCfgPageTabs::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    SLOW_CALL_STACK_MESSAGE4("CCfgPageTabs::DialogProc(0x%X, 0x%IX, 0x%IX)", uMsg, wParam, lParam);
+    switch (uMsg)
+    {
+    case WM_INITDIALOG:
+    {
+        HWND list = GetDlgItem(HWindow, IDC_TABS_KEYLIST);
+        if (list != NULL)
+        {
+            SendMessageW(list, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+            LVCOLUMNW lvc;
+            memset(&lvc, 0, sizeof(lvc));
+            lvc.mask = LVCF_TEXT | LVCF_SUBITEM;
+            lvc.pszText = LoadStrW(IDS_PLUGIN_KEY); // "Shortcut Key", as in Plugins Manager
+            lvc.iSubItem = 0;
+            SendMessageW(list, LVM_INSERTCOLUMNW, 0, (LPARAM)&lvc);
+            lvc.pszText = LoadStrW(IDS_PLUGIN_COMMAND); // "Command"
+            lvc.iSubItem = 1;
+            SendMessageW(list, LVM_INSERTCOLUMNW, 1, (LPARAM)&lvc);
+        }
+        break;
+    }
+
+    case WM_COMMAND:
+    {
+        if (HIWORD(wParam) == BN_CLICKED &&
+            (LOWORD(wParam) == IDC_PANELTABS || LOWORD(wParam) == IDC_TABS_BROWSERKEYS))
+        {
+            // the list follows the checkbox at once, before OK
+            EnableControls();
+            FillKeyList();
         }
         break;
     }
