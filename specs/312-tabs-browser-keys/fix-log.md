@@ -136,3 +136,40 @@ and out-of-memory paths), the page mapping and the standing rules.
 After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 27343 checks, 0 failed; encoding guard
 TOTAL: 0; probe 33 PASS / 0 FAIL / 0 NOT DRIVEN, registry identical (`probe/result_after.txt`).
 No second review: review 1 had no MUST finding (SKILL.md step 7).
+
+## Stopped (autonomous run, 2026-10-22)
+
+Everything the item asks is implemented and verified on this branch except the translations: the
+feature adds UI strings and changes two dialogs, so the two-stage `.slt` refresh (rule 084,
+`translate.merge --templates`, DeepL) is required, and an autonomous run does not do it
+(stop-rules §3 #2). Measured: `.\build.cmd full` fails for all eight languages (salamand module
+import) until it runs. The run stops before closing the item.
+
+What the maintainer does to finish (in this order):
+1. On this branch: the two-stage `.slt` refresh for the salamand module (6 new strings 14176-14179,
+   14190, 14191; dialog `IDD_CFGPAGE_TABS`; `IDD_CFGPAGE_APPEARANCE` without `IDC_PANELTABS`),
+   `--templates` as in rule 084; pin texts in `translations/ui-overrides.json` if DeepL drifts
+   (de/fr/nl/es register); `.\build.cmd full` -> BUILD SUCCEEDED.
+2. Close the item as SKILL.md step 8 does: `BL remove panel-tabs-chrome-shortcuts-and-reopen-closed-tab --feature 312`,
+   the FEATURE-HISTORY entry below (index row "User-facing features": add 312), closing report;
+   the CHANGELOG entry is already under 0.1.11 — unreleased.
+3. The person step `tabs-312-real-keyboard-and-eight-languages` (real keys in both modes, panel and
+   command line; the Tabs page and the menus in eight languages).
+4. `git merge --ff-only 312-tabs-browser-keys` (or a merge) into main.
+
+Draft FEATURE-HISTORY entry:
+
+- 312-tabs-browser-keys: panel tabs had only Chrome's keys with Shift added, a closed tab was lost
+  and the tab settings were one Appearance checkbox - now Configuration > Tabs (after Appearance)
+  holds *Show tabs in panels*, an opt-in *Browser-like tab shortcuts* (Ctrl+T / Ctrl+W /
+  Ctrl+PgDn / PgUp for tabs, Ctrl+Shift+T Reopen, Ctrl+Shift+W Restore Selection, Ctrl+Shift+G Go
+  to Shortcut; panel and command line; classic keys unchanged by default) and a list that follows
+  the option; Reopen Closed Tab (10 per panel, memory only, the `CPanelTab` object itself with its
+  history, emptied by tabs off and Clear History); Tabs in Options > Show and the toolbar menu.
+  One pure key table in `saltabs.*` drives dispatch, labels (`LoadStrTabKeys`) and the page. Traps:
+  the command line never ran the Ctrl+letter handler (classic Ctrl+T/W do nothing there - kept);
+  `IsSalHotKey` also clears plug-in keys at load (`IsSalHotKeyKeptAtLoad` keeps Ctrl+Shift+G);
+  closed tabs' histories hold plug-in FS pointers (`ClearPluginFSFromHistory` walks them); the
+  page order is the remembered page index (`SalCfgPageIndexFrom311` when the new value is absent).
+  From backlog item `panel-tabs-chrome-shortcuts-and-reopen-closed-tab`. Probe `tabs312_probe`
+  33 PASS (new feature, classic rows as control); saltests +106; review 1 no MUST, 2 SHOULD fixed.
