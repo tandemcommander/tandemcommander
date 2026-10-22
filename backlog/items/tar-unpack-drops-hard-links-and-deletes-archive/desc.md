@@ -1,7 +1,7 @@
 ---
 title: Unpacking a tar leaves hard-linked files out silently and Delete archive after unpacking then deletes the archive
 type: bug
-status: new
+status: open
 severity: 7
 area: data-safety
 source: review:308
@@ -37,3 +37,4 @@ Severity from the band "data loss in a narrow scenario" (link members + the dele
 ## Log
 
 - 2026-10-22 — created (source review:308)
+- 2026-10-22 — moved to Next position 2
