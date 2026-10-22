@@ -1,7 +1,7 @@
 ---
 title: Whole-archive Unpack of a PAX tar skips deep members and may delete the archive
 type: bug
-status: open
+status: in-progress
 severity: 8
 area: data-safety
 source: review:307
@@ -10,7 +10,7 @@ created: 2026-10-22
 updated: 2026-10-22
 verified: 2026-10-22 aa7f08bb
 effort: M
-feature: -
+feature: 308
 related: [opening-a-tar-whose-member-name-has-a-300-letter-component]
 depends-on: []
 reason: -
@@ -41,3 +41,4 @@ Severity from the band "data loss in a narrow scenario" (deep PAX paths + the de
 - 2026-10-22 — created (source review:307)
 - 2026-10-22 — moved to Next position 1
 - 2026-10-22 — verified at aa7f08bb: reproduced at aa7f08bb by a hidden-desktop probe: whole Unpack of a deep PAX tree extracts 2 of 34 files, with Delete-archive the tar is deleted; CJK(300) member + Delete also deletes it
+- 2026-10-22 — run started, feature 308
