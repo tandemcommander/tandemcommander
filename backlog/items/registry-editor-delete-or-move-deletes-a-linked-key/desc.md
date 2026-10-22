@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: Delete or Move of a key holding a registry link deletes the linked key
 type: bug
-status: new
+status: open
 severity: 7
 area: data-safety
 source: measure:296
@@ -55,3 +55,4 @@ Find, which walk the tree by name too (they only read, but may walk out of the s
 ## Log
 
 - 2026-10-22 — created (source measure:296)
+- 2026-10-22 — moved to Next position 1
