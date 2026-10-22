@@ -17,7 +17,6 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [FTP: an upload to a case-insensitive server with Unix paths replaces b.txt by B.txt without the question](items/ftp-an-upload-to-a-case-insensitive-server-with-unix-paths/desc.md) | bug | 7 | ftp | 303 |
 
 ## Next
 
@@ -239,6 +238,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [FTP 303 on real servers: an upload of B.txt beside b.txt asks first](items/ftp-303-on-real-servers-an-upload-of-b-txt-beside-b-txt-asks/desc.md) | person-step | 4 | ftp | leftover:303 | 2026-10-22 |
 
 ## Parked
 

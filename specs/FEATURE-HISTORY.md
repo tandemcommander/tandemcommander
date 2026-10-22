@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
@@ -4028,3 +4028,23 @@ a few early ones are out of sequence).
   (`GetSubstPathVolume` off) 14 / 4; `review2_unc_probe.ps1` 4 / 0; import `QueryDosDeviceA` gone;
   saltests 26,559 / 0 (rule negative control 4 failed); two refute-first reviews (1: M1 fixed, S1
   rows added, S2 documented; 2: no MUST, S1 fixed).
+- 303-ftp-upload-case-only: an FTP upload of `B.txt` into a folder holding `b.txt` on a server
+  with Unix-style paths went without the overwrite question - on a Windows-backed server
+  (FileZilla Server and others store on a case-insensitive file system) its `b.txt` was replaced
+  (measured with 215's `ftpmini.py` on NTFS; also `čaj.txt` over `Čaj.txt`; the decision came from
+  the panel-seeded listing, `STOR` before any `LIST`) - now a listed file or link that is the same
+  name case ignored (092's rule, header-only `salftpupname.h`, `SalFtpFindCaseOnlyName`) counts as
+  existing when the exact lookup misses, on every path type: the question or the configured answer;
+  the found copy's size is unknown (never a resume offset of another file); the file auto-rename
+  skips such names. `GetListing(.., caseOnlyCounts)`: TRUE at the three file-upload callers, FALSE
+  at the two folder ones (path identity, folder create / join unchanged). Trap (review, SHOULD): a
+  case-only *folder* twin made "cannot create file" block the upload on a case-sensitive server
+  (`BUILD` beside `build/`) - folders do not count; the probe makes a server folder case-sensitive
+  with `fsutil file setCaseSensitiveInfo`. PowerShell 5.1: `$PSScriptRoot` is empty in a parameter
+  default. Limits: on a case-sensitive server a case-only file twin asks once too many and a
+  configured skip / auto-rename / resume applies to it; auto-rename and resume by reading only
+  (person step `ftp-303-on-real-servers-an-upload-of-b-txt-beside-b-txt-asks`). From backlog item
+  `ftp-an-upload-to-a-case-insensitive-server-with-unix-paths`. Probe `ftp303_probe.ps1` 5 / 3 ->
+  12 / 0 (reviewer's negative control: the start check off -> 5 / 3); 288 20 / 0, 224 16 / 0;
+  saltests 26,577 / 0 (negative controls: no match 7 failed, ASCII fold 2 failed); one
+  refute-first review (no MUST; SHOULD 1 fixed, NOTEs recorded).
