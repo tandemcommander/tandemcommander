@@ -1,0 +1,40 @@
+tabs312_probe (feature 312) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 22:29; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc312\R
+
+CLASSIC    START  PASS        tabs=1 active=0 [R] panel=R
+CLASSIC    C-T-W-G PASS        Ctrl+T, Ctrl+W, Ctrl+Shift+G in the panel open/close no tab: tabs=1 active=0 [R] panel=R
+CLASSIC    C-PGDN PASS        Ctrl+PgDn on A: tabs=1 active=0 [A] panel=A
+CLASSIC    C-PGUP PASS        Ctrl+PgUp: tabs=1 active=0 [R] panel=R
+CLASSIC    CS-T   PASS        Ctrl+Shift+T: tabs=2 active=1 [R R] panel=R
+CLASSIC    CS-PGUP PASS        Ctrl+Shift+PgUp: tabs=2 active=0 [R R] panel=R
+CLASSIC    CS-PGDN PASS        Ctrl+Shift+PgDn: tabs=2 active=1 [R R] panel=R
+CLASSIC    CS-W   PASS        Ctrl+Shift+W: tabs=1 active=0 [R] panel=R
+CLASSIC    CMDLINE PASS        Ctrl+T, Ctrl+W, Ctrl+Shift+T, Ctrl+Shift+W in the command line: text 'abc'; tabs=1 active=0 [R] panel=R
+CLASSIC    TOGGLE-NO PASS        question: [#32770 'Question'] [Static id=2477] 1 tab(s) will be closed when tabs are turned off. Continue? | [Button id=6] &Yes | [Button id=7] &No; tabs=2 active=1 [R R] panel=R
+CLASSIC    TOGGLE-YES PASS        question: [#32770 'Question'] [Static id=2477] 1 tab(s) will be closed when tabs are turned off. Continue? | [Button id=6] &Yes | [Button id=7] &No; tabs=1 active=0 [R] panel=R tabsOn=0
+CLASSIC    TOGGLE-ON PASS        tabs=1 active=0 [R] panel=R tabsOn=1; windows: no window
+BROWSER    START  PASS        tabs=1 active=0 [R] panel=R
+BROWSER    REOPEN-EMPTY PASS        Ctrl+Shift+T with nothing closed: tabs=1 active=0 [R] panel=R
+BROWSER    C-T    PASS        Ctrl+T: tabs=2 active=1 [R R] panel=R
+BROWSER    C-PGUP PASS        Ctrl+PgUp: previous tab, no parent: tabs=2 active=0 [R R] panel=R
+BROWSER    C-PGDN PASS        Ctrl+PgDn on A: next tab, A not entered: tabs=2 active=1 [R R] panel=R
+BROWSER    C-W    PASS        Ctrl+W: tabs=1 active=0 [R] panel=R
+BROWSER    CS-T   PASS        Ctrl+Shift+T reopens: tabs=2 active=1 [R R] panel=R
+BROWSER    CS-PGUP PASS        Ctrl+Shift+PgUp kept: tabs=2 active=0 [R R] panel=R
+BROWSER    CS-PGDN PASS        Ctrl+Shift+PgDn kept: tabs=2 active=1 [R R] panel=R
+BROWSER    CMDLINE PASS        Ctrl+T -> 2; Ctrl+W -> 1; Ctrl+Shift+T -> 2; Ctrl+PgDn -> active 0; text 'abc'
+BROWSER    SETUP4 PASS        tabs=4 active=3 [A B C/s3 D/s3] panel=D
+BROWSER    CLOSEOTH PASS        Close Other Tabs on B: tabs=1 active=0 [B] panel=B
+BROWSER    REOPEN3 PASS        Ctrl+Shift+T x3: tabs=4 active=3 [A B C/s3 D/s3] panel=D
+BROWSER    REOPEN-OLDER PASS        the next Ctrl+Shift+T brings the tab closed before: tabs=5 active=1 [A R B C/s3 D/s3] panel=R
+BROWSER    CAP    PASS        12 tabs (12), Close Other Tabs, Ctrl+Shift+T x12 -> 11 tabs
+BROWSER    TABS-OFF PASS        tabs off: Ctrl+T on A -> tabs=1 active=0 [R] panel=R (windows: no window); Ctrl+PgDn on A -> panel A; tabsOn=0
+LASTPG     OPEN   PASS        0.1.10 configuration remembering page 8 (Keyboard) without the new value: the dialog shows 'Keyboard'
+PAGE       CLASSIC PASS        page 'Tabs'; rows: Ctrl+T=Go to Shortcut or Link Target | Ctrl+W=Restore Selection | Ctrl+Page Down=Go into the focused folder or archive | Ctrl+Page Up=Go to the parent folder | Ctrl+Shift+T=New Tab | Ctrl+Shift+W=Close Tab | Ctrl+Shift+G=(none) | Ctrl+Shift+Page Down=Next Tab | Ctrl+Shift+Page Up=Previous Tab | Ctrl+Tab=Move between the panel and the command line | (none)=Reopen Closed Tab
+PAGE       BROWSER PASS        after clicking the option: Ctrl+T=New Tab | Ctrl+W=Close Tab | Ctrl+Page Down=Next Tab | Ctrl+Page Up=Previous Tab | Ctrl+Shift+T=Reopen Closed Tab | Ctrl+Shift+W=Restore Selection | Ctrl+Shift+G=Go to Shortcut or Link Target | Ctrl+Shift+Page Down=Next Tab | Ctrl+Shift+Page Up=Previous Tab | Ctrl+Tab=Move between the panel and the command line
+PAGE       DISABLE PASS        tabs unchecked: option enabled=False, list enabled=False
+PAGE       CANCEL PASS        after Cancel: Panel Tabs=1, Browser Tab Shortcuts=0
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+
+Rows: PASS 33, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

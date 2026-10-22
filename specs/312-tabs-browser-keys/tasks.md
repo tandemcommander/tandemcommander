@@ -45,10 +45,10 @@
 
 ## Phase 6: Polish & cross-cutting
 
-- [ ] T019 [P] Manual: new `help/src/hh/salamand/configuration_tabs.htm`; `help/src/salamand.hhp` / `.hhc` / `.hhk`; `shortcuts_keyboard.htm`, `windows_tabstrip.htm`, `configuration_appea.htm`
-- [ ] T020 Build (`build.cmd`), saltests, encoding guard; record in fix-log
-- [ ] T021 Probe `specs/312-tabs-browser-keys/probe/tabs312_probe.ps1` (quickstart rows): run before (main build) where meaningful and after; record
-- [ ] T022 `CHANGELOG.md` entry under the unreleased section (step 8 of the run)
+- [X] T019 [P] Manual: new `help/src/hh/salamand/configuration_tabs.htm`; `help/src/salamand.hhp` / `.hhc` / `.hhk`; `shortcuts_keyboard.htm`, `windows_tabstrip.htm`, `configuration_appea.htm`
+- [X] T020 Build (`build.cmd`), saltests, encoding guard; record in fix-log
+- [X] T021 Probe `specs/312-tabs-browser-keys/probe/tabs312_probe.ps1` (quickstart rows): run before (main build) where meaningful and after; record
+- [X] T022 `CHANGELOG.md` entry under the unreleased section (step 8 of the run)
 
 ## Dependencies
 

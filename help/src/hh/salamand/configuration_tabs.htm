@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Tabs configuration</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="../salamander_help.css" />
+<link rel="stylesheet" type="text/css" href="../salamander_help_shared.css" />
+</head>
+
+<body>
+<div id="help_page">
+<div class="header">Tandem Commander: Dialog Boxes: Configuration</div>
+<div class="page">
+<h1>Tabs</h1>
+
+<p>Settings of the <a href="windows_tabstrip.htm">Tab Strip</a> of the panels and of
+the keyboard shortcuts that work with tabs.</p>
+
+<h4>Dialog Box Options</h4>
+<dl>
+<dt><i>Show tabs in panels</i></dt>
+<dd>Shows a tab strip above the Directory Line of each panel. On by default. When
+you turn tabs off, the inactive tabs of both panels are closed (the program asks
+first), each panel keeps the tab it shows, and every key does what it does without
+tabs. The same switch is <i>Tabs</i> under <b>Options &gt; Show</b> and in the
+context menu of the toolbars.</dd>
+
+<dt><i>Browser-like tab shortcuts</i></dt>
+<dd>Off by default. Turned on (and with tabs on), the keys known from web browsers
+work with tabs, in the panel and with the focus in the Command Line:
+<table>
+<tr><th>Key</th><th>Browser-like (option on)</th><th>Classic (option off)</th></tr>
+<tr><td>Ctrl+T</td><td>New Tab</td><td>Go to Shortcut or Link Target</td></tr>
+<tr><td>Ctrl+W</td><td>Close Tab</td><td>Restore Selection</td></tr>
+<tr><td>Ctrl+Page Down</td><td>Next Tab</td><td>Go into the focused directory or archive</td></tr>
+<tr><td>Ctrl+Page Up</td><td>Previous Tab</td><td>Go to the parent directory</td></tr>
+<tr><td>Ctrl+Shift+T</td><td>Reopen Closed Tab</td><td>New Tab</td></tr>
+<tr><td>Ctrl+Shift+W</td><td>Restore Selection</td><td>Close Tab</td></tr>
+<tr><td>Ctrl+Shift+G</td><td>Go to Shortcut or Link Target</td><td>-</td></tr>
+<tr><td>Ctrl+Shift+Page Down / Up</td><td>Next / Previous Tab</td><td>Next / Previous Tab</td></tr>
+</table>
+With the option on, Ctrl+Page Up and Ctrl+Page Down have no other key; Backspace
+still goes to the parent directory and Enter into the focused directory or archive.
+Ctrl+Tab moves between the panel and the Command Line in both modes. The keys shown in
+the menus (the <i>Tabs</i> submenus, <i>Edit &gt; Restore Selection</i>,
+<i>Commands &gt; Go to Shortcut or Link Target</i>) and in the tooltips follow the
+option. The option is unavailable while <i>Show tabs in panels</i> is off; it has no
+effect then.</dd>
+
+<dt><i>Tab shortcuts</i></dt>
+<dd>Lists the keys above with what they do in the mode the checkbox shows. Clicking
+<i>Browser-like tab shortcuts</i> updates the list at once, so you can compare both
+modes before you confirm the dialog.</dd>
+</dl>
+
+<h4>Remarks</h4>
+<p><i>Reopen Closed Tab</i> (in the <i>Tabs</i> submenus of the Left and Right menus
+and in the context menu of a tab) brings back the tab closed last in that panel, at
+its old position, with its directory, view, sort order, filter, cursor, selection and
+Back/Forward history. Close Tab, Close Other Tabs, Close Tabs to the Right and a
+middle click on a tab each remember the closed tabs one by one; a panel remembers the
+last 10. The list is kept in memory only: it is not saved with the configuration and
+is empty after a restart or after tabs were turned off. In the classic mode the
+command has no key.</p>
+
+<p>A plugin command that you assigned Ctrl+Shift+G to in an earlier version keeps
+that key; with <i>Browser-like tab shortcuts</i> on, the program's command wins. A
+new plugin shortcut cannot use Ctrl+Shift+G.</p>
+
+<h4>See Also</h4>
+<p>
+<a href="windows_tabstrip.htm">Tab Strip</a><br />
+<a href="shortcuts_keyboard.htm">Keyboard Shortcuts</a><br />
+<a href="configuration_appea.htm">Configuration/Appearance</a><br />
+</p>
+
+</div>
+<div class="footer">&#169; 2026 Pavel Stupka</div>
+</div>
+</body>
+</html>

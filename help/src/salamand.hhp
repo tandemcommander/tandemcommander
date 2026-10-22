@@ -1,4 +1,4 @@
-[OPTIONS]
+﻿[OPTIONS]
 Auto Index=Yes
 Binary Index=Yes
 Compatibility=1.1 or later
@@ -323,6 +323,7 @@ IDD_CFGPAGE_SYSTEM=hh\salamand\configuration_sys.htm
 IDD_CFGPAGE_VIEWERS=hh\salamand\configuration_vwers.htm
 IDD_CFGPAGE_EDITORS=hh\salamand\configuration_edtrs.htm
 IDD_CFGPAGE_APPEARANCE=hh\salamand\configuration_appea.htm
+IDD_CFGPAGE_TABS=hh\salamand\configuration_tabs.htm
 IDD_CFGPAGE_MAINWINDOW=hh\salamand\configuration_mainwnd.htm
 IDD_CFGPAGE_VIEWER=hh\salamand\configuration_intvw.htm
 IDD_CFGPAGE_ARCHIVERS=hh\salamand\configuration_archi.htm

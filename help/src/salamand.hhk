@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <HTML>
 <HEAD>
 <meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
@@ -368,6 +368,10 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Recycle Bin">
 			<param name="Local" value="hh\salamand\configuration_sys.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Tabs">
+			<param name="Local" value="hh\salamand\configuration_tabs.htm">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Unpackers in Unpack Dialog Box">
