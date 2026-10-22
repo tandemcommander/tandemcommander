@@ -1,0 +1,30 @@
+grep311_probe (feature 311) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 17:01; ACP 1250; registry key existed True
+C66 = 66 CJK letters (198 bytes), C67 = 67 (201 bytes); cut.txt = C66 + ZZ, full.txt = C67
+
+grep       RUN    FAIL        text: typed 67 units / 201 bytes; asked: nothing; found: 2; the field after: 66 units / 198 bytes, whole: False
+grep       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-ctl   RUN    PASS        text: typed 67 units / 199 bytes; asked: nothing; found: 1; the field after: 67 units / 199 bytes, whole: True
+grep-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-regex RUN    FAIL        regex: typed 69 units / 201 bytes; asked: nothing; found: 1; the field after: 68 units / 200 bytes, whole: False
+grep-regex END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-hex   RUN    FAIL        hex: typed 74 units / 206 bytes; asked: nothing; found: 2; the field after: 68 units / 200 bytes, whole: False
+grep-hex   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-add   RUN    FAIL        text: typed 67 units / 201 bytes; asked: nothing; found: 0; the field after: 66 units / 198 bytes, whole: False
+grep-add   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-manage RUN    FAIL        text: typed 67 units / 201 bytes; asked: [#32770 'Settings Manager'] Settings &Names: | Named: | *.txt | Look in: | C:\Users\pavel\AppData\Local\Temp\tc311_grep\find | Subdirs: | yes | Containing: | \u4E01\u4E02\u4E0 ...(311)... 37\u4E38\u4E...; found: 0; the field after: 66 units / 198 bytes, whole: False
+grep-manage END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-ignore RUN    FAIL        text: typed 67 units / 201 bytes; asked: [#32770 'Ignore Directory List'] &Directories to skip during search: | To specify path in the root directory (UNC or local) insert one backslash to the beginning. | Checked paths will be skipped durin...; found: 0; the field after: 66 units / 198 bytes, whole: False
+grep-ignore END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-option RUN    FAIL        text: typed 67 units / 201 bytes; after the option the field: 66 units, whole: False; asked: nothing; found: 2; the field after: 66 units / 198 bytes, whole: False
+grep-option END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-find  RUN    FAIL        typed 67 units / 201 bytes; dialog stayed: False; asked: nothing; the field: (closed)
+view-find  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-ctl   RUN    PASS        typed 67 units / 199 bytes; dialog stayed: False; asked: nothing; the field: (closed)
+view-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-copy  RUN    FAIL        the Find field: 67 units / 201 bytes, whole: True; the viewer's Find field: 66 units / 198 bytes, the cut C66: True, '...\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42'
+view-copy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 13, FAIL 9, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

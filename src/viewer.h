@@ -99,6 +99,7 @@ public:
         return *this;
     }
 
+    virtual void Validate(CTransferInfo& ti); // feature 311: a text that does not fit is refused
     virtual void Transfer(CTransferInfo& ti);
 
 protected:

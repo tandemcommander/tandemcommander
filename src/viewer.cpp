@@ -13,6 +13,7 @@
 #include "execute.h"
 #include "gui.h"
 #include "salurlpwd.h" // feature 085
+#include "dialogs.h"   // feature 311: DlgItemTextFitsU8
 
 const char* CVIEWERWINDOW_CLASSNAME = "Salamander's Viewer Window";
 
@@ -336,6 +337,13 @@ void ConvertHexToString(char* text, char* hex, int& len)
 //*****************************************************************************
 // CFindSetDialog
 //
+
+void CFindSetDialog::Validate(CTransferInfo& ti)
+{
+    // feature 311: the field takes FIND_TEXT_LEN - 1 UTF-16 units, the buffer FIND_TEXT_LEN UTF-8
+    // bytes - a longer text is refused before Transfer's HistoryComboBox reads it cut
+    DlgItemTextFitsU8(HWindow, IDC_FINDTEXT, &ti, FIND_TEXT_LEN);
+}
 
 void CFindSetDialog::Transfer(CTransferInfo& ti)
 {

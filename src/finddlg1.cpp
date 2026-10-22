@@ -1772,6 +1772,9 @@ void CFindDialog::Validate(CTransferInfo& ti)
         // feature 291: a mask whose UTF-8 form does not fit is refused - cut, it found other files
         if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, &ti, NAMED_TEXT_LEN))
             return;
+        // feature 311: so is the Containing text (every mode) - cut, it found files without it
+        if (!DlgItemTextFitsU8(HWindow, IDC_FIND_CONTAINING, &ti, GREP_TEXT_LEN))
+            return;
         // back up the data
         char bufNamed[NAMED_TEXT_LEN];
         strcpy(bufNamed, Data.NamedText);
@@ -1865,6 +1868,21 @@ void CFindDialog::LoadControls(int index)
             return;
         }
     }
+    // feature 311: the same for the Containing text (GREP_TEXT_LEN)
+    HWND hGrepWnd = GetDlgItem(HWindow, IDC_FIND_CONTAINING);
+    char* keepGrep = NULL;
+    if (FindOptions.At(index)->GrepText[0] == 0 && hGrepWnd != NULL &&
+        !SalWindowTextFitsU8(hGrepWnd, GREP_TEXT_LEN))
+    {
+        keepGrep = SalGetWindowTextU8Alloc(hGrepWnd);
+        if (keepGrep == NULL)
+        {
+            TRACE_E(LOW_MEMORY); // nothing is loaded
+            if (keepNamed != NULL)
+                free(keepNamed);
+            return;
+        }
+    }
     Data = *FindOptions.At(index);
 
     // if any edit line is empty, keep its previous value (feature 005: UTF-8)
@@ -1872,7 +1890,7 @@ void CFindDialog::LoadControls(int index)
         SalGetDlgItemTextU8(HWindow, IDC_FIND_NAMED, Data.NamedText, NAMED_TEXT_LEN);
     if (Data.LookInText[0] == 0)
         SalGetDlgItemTextU8(HWindow, IDC_FIND_LOOKIN, Data.LookInText, LOOKIN_TEXT_LEN);
-    if (Data.GrepText[0] == 0)
+    if (Data.GrepText[0] == 0 && keepGrep == NULL)
         SalGetDlgItemTextU8(HWindow, IDC_FIND_CONTAINING, Data.GrepText, GREP_TEXT_LEN);
 
     TransferData(ttDataToWindow);
@@ -1881,9 +1899,15 @@ void CFindDialog::LoadControls(int index)
         SalSetWindowTextU8(hNamesWnd, keepNamed);
         free(keepNamed);
     }
+    BOOL grepKept = keepGrep != NULL;
+    if (keepGrep != NULL)
+    {
+        SalSetWindowTextU8(hGrepWnd, keepGrep);
+        free(keepGrep);
+    }
 
     // if Grep contains text and the dialog isn't expanded, expand it
-    if (Data.GrepText[0] != 0 && !Expanded)
+    if ((Data.GrepText[0] != 0 || grepKept) && !Expanded)
     {
         CheckDlgButton(HWindow, IDC_FIND_GREP, TRUE);
         SetContentVisible(TRUE);
@@ -2528,7 +2552,10 @@ BOOL CFindDialog::GetFocusedFile(char* buffer, int bufferLen, int* viewedIndex)
 void CFindDialog::UpdateInternalViewerData()
 {
     // copy the find text to the internal viewer
-    if (Configuration.CopyFindText)
+    // feature 311: a Containing text that does not fit the viewer's text is not copied - the read
+    // below cuts at a whole character; the viewer keeps its find text and history
+    if (Configuration.CopyFindText &&
+        SalWindowTextFitsU8(GetDlgItem(HWindow, IDC_FIND_CONTAINING), FIND_TEXT_LEN))
     { // Alt+F3 never reaches here, so no alternate viewer...
         CFindSetDialog oldGlobalFindDialog = GlobalFindDialog;
 
@@ -3651,7 +3678,8 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             // feature 291: TransferData reads the Named field without Validate and writes what it
             // read back into the field - a mask that does not fit is refused, never kept cut
-            if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN))
+            if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN) ||
+                !DlgItemTextFitsU8(HWindow, IDC_FIND_CONTAINING, NULL, GREP_TEXT_LEN)) // feature 311: as Named
                 return TRUE;
             CFindOptionsItem* item = new CFindOptionsItem();
             if (item != NULL)
@@ -3672,7 +3700,8 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (FindManageInUse)
                 return 0;
-            if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN)) // feature 291: as Add Current
+            if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN) ||   // feature 291: as Add Current
+                !DlgItemTextFitsU8(HWindow, IDC_FIND_CONTAINING, NULL, GREP_TEXT_LEN)) // feature 311
                 return 0;
             FindManageInUse = TRUE;
             TransferData(ttDataFromWindow);
@@ -3687,7 +3716,8 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (FindIgnoreInUse)
                 return 0;
-            if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN)) // feature 291: as Add Current
+            if (!DlgItemTextFitsU8(HWindow, IDC_FIND_NAMED, NULL, NAMED_TEXT_LEN) ||   // feature 291: as Add Current
+                !DlgItemTextFitsU8(HWindow, IDC_FIND_CONTAINING, NULL, GREP_TEXT_LEN)) // feature 311
                 return 0;
             FindIgnoreInUse = TRUE;
             TransferData(ttDataFromWindow);

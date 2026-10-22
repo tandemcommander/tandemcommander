@@ -1,0 +1,42 @@
+mask291_probe (feature 291) regress-311
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 17:13; ACP 1250; registry key existed True
+M = 86 CJK letters (258 bytes), R = 85 (255 bytes)
+
+rb-mask    RUN    PASS        typed 90 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 90 units, same as typed: True
+rb-mask    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+rb-unused  RUN    PASS        typed 90 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 90 units, same as typed: True
+rb-unused  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+rb-ctl     RUN    PASS        typed 89 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 89 units / 259 bytes, same as typed: True, tail '...\u4E54\u4E55;*.k'
+rb-ctl     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-named RUN    PASS        typed 88 units / 260 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 88 units / 260 bytes, whole: True
+find-named END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-ctl   RUN    PASS        typed 87 units / 259 bytes; asked: nothing; found: 2; the field after: 87 units / 259 bytes, whole: True
+find-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-add   RUN    PASS        typed 88 units / 260 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 88 units / 260 bytes, whole: True
+find-add   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-ignore RUN    PASS        typed 88 units / 260 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 88 units / 260 bytes, whole: True
+find-ignore END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+find-option RUN    PASS        typed 88 units / 260 bytes; after the option the field: 88 units, whole: True; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 88 units / 260 bytes, whole: True
+find-option END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-text  RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True
+view-text  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-hex   RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True
+view-hex   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-ctl   RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+view-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cmp-files  RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True
+cmp-files  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cmp-dirs-unused RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True
+cmp-dirs-unused END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+cmp-ctl    RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+cmp-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vname      RUN    PASS        typed 11 units / 33 bytes; row 7 before: ''; edit ended: True; asked: [#32770 'Error'] The path specified is too long. |; row 7 after: 0 units / 0 bytes ''
+vname      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vname-ascii RUN    PASS        typed 30 units / 30 bytes; row 7 before: ''; edit ended: True; asked: [#32770 'Error'] The path specified is too long. |; row 7 after: 0 units / 0 bytes ''
+vname-ascii END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vname-ctl  RUN    PASS        typed 11 units / 29 bytes; row 7 before: ''; edit ended: True; asked: nothing; row 7 after: 11 units / 29 bytes '\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09ab'
+vname-ctl  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 34, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

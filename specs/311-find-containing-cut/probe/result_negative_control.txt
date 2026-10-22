@@ -1,0 +1,18 @@
+grep311_probe (feature 311) negative-control
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 17:09; ACP 1250; registry key existed True
+C66 = 66 CJK letters (198 bytes), C67 = 67 (201 bytes); cut.txt = C66 + ZZ, full.txt = C67
+
+grep       RUN    FAIL        text: typed 67 units / 201 bytes; asked: nothing; found: 2; the field after: 66 units / 198 bytes, whole: False
+grep       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-regex RUN    FAIL        regex: typed 69 units / 201 bytes; asked: nothing; found: 1; the field after: 68 units / 200 bytes, whole: False
+grep-regex END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-hex   RUN    FAIL        hex: typed 74 units / 206 bytes; asked: nothing; found: 2; the field after: 68 units / 200 bytes, whole: False
+grep-hex   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-option RUN    FAIL        text: typed 67 units / 201 bytes; after the option the field: 67 units, whole: True; asked: nothing; found: 2; the field after: 66 units / 198 bytes, whole: False
+grep-option END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-find  RUN    FAIL        typed 67 units / 201 bytes; dialog stayed: False; asked: nothing; the field: (closed)
+view-find  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 5, FAIL 5, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

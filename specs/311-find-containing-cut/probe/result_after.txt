@@ -1,0 +1,32 @@
+grep311_probe (feature 311) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 17:10; ACP 1250; registry key existed True
+C66 = 66 CJK letters (198 bytes), C67 = 67 (201 bytes); cut.txt = C66 + ZZ, full.txt = C67
+
+grep       RUN    PASS        text: typed 67 units / 201 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 67 units / 201 bytes, whole: True
+grep       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-ctl   RUN    PASS        text: typed 67 units / 199 bytes; asked: nothing; found: 1; the field after: 67 units / 199 bytes, whole: True
+grep-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-regex RUN    PASS        regex: typed 69 units / 201 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 69 units / 201 bytes, whole: True
+grep-regex END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-hex   RUN    PASS        hex: typed 74 units / 206 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 74 units / 206 bytes, whole: True
+grep-hex   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-add   RUN    PASS        text: typed 67 units / 201 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 67 units / 201 bytes, whole: True
+grep-add   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-manage RUN    PASS        text: typed 67 units / 201 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 67 units / 201 bytes, whole: True
+grep-manage END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-ignore RUN    PASS        text: typed 67 units / 201 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 67 units / 201 bytes, whole: True
+grep-ignore END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-option RUN    PASS        text: typed 67 units / 201 bytes; after the option the field: 67 units, whole: True; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 67 units / 201 bytes, whole: True
+grep-option END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-find  RUN    PASS        typed 67 units / 201 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; the field: 67 units, whole: True
+view-find  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-ctl   RUN    PASS        typed 67 units / 199 bytes; dialog stayed: False; asked: nothing; the field: (closed)
+view-ctl   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-copy  RUN    PASS        the Find field: 67 units / 201 bytes, whole: True; the viewer's Find field: 0 units / 0 bytes, the cut C66: False, same as the Find field: False, ''
+view-copy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-copy-ctl RUN    PASS        the Find field: 67 units / 199 bytes, whole: True; the viewer's Find field: 67 units / 199 bytes, the cut C66: False, same as the Find field: True, '...\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42Z'
+view-copy-ctl END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 24, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
