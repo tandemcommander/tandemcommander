@@ -1,16 +1,16 @@
 ---
 title: Panel tabs: a Tabs settings page, opt-in browser-like shortcuts, Reopen Closed Tab
 type: feature
-status: open
+status: in-progress
 severity: 4
 area: panels-ui
 source: manual
 who: both
 created: 2026-10-22
 updated: 2026-10-22
-verified: -
+verified: 2026-10-22 4a7d5595
 effort: L
-feature: -
+feature: 312
 related: [panel-tabs-078-release-pass-and-leak-watch]
 depends-on: []
 reason: -
@@ -178,3 +178,5 @@ At bc59b9ac, by reading:
 - 2026-10-22 — created (source manual)
 - 2026-10-22 — maintainer decision 2026-10-22: classic keys stay the default; browser-like tab shortcuts as an opt-in option on a new Tabs configuration page; Reopen Closed Tab; Tabs in the toolbar context menu and Options > Show
 - 2026-10-22 — moved to Next position 1
+- 2026-10-22 — verified at 4a7d5595: gap at 4a7d5595: no browser-like option, no Reopen Closed Tab, no Tabs page; Ctrl+Shift+G unhandled in panel, command line, IsSalHotKey
+- 2026-10-22 — run started, feature 312
