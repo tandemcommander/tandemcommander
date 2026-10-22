@@ -20,6 +20,14 @@
   position today.
 - The manual has no Markdown Viewer page.
 
+## Clarifications
+
+### Session 2026-10-23
+
+- Q: Do the page-width levels get keyboard shortcuts? → A: No; the levels are chosen from the menu only (autonomous run: conservative - the item leaves keys to the spec, the viewer's free Ctrl keys are not obvious, and no key of today changes).
+- Q: Does a choice in one viewer window rebuild the other open viewer windows? → A: No; only the window where the level was chosen is rebuilt; the stored level applies to windows opened afterwards (autonomous run: conservative - a rebuild opens a page at the top, so rebuilding other windows would move their reading position).
+- Q: Must the width change keep the reading position when a scheme change does not? → A: It behaves exactly like a scheme change (FR-009); keeping the position across every rebuild needs the shared host and is a new Inbox item (autonomous run: item - its note keeps the change out of `src/common/webhost/`, and it asks to measure what a scheme change does).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Widen the text column of an open document (Priority: P1)
