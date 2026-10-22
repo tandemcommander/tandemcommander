@@ -22,7 +22,7 @@ Last triaged: 2026-10-22
 
 | # | Item | Type | Sev | Area | Who | Effort | Status |
 |---|---|---|---|---|---|---|---|
-| 1 | [Panel tabs: a Tabs settings page, opt-in browser-like shortcuts, Reopen Closed Tab](items/panel-tabs-chrome-shortcuts-and-reopen-closed-tab/desc.md) | feature | 4 | panels-ui | both | L | open |
+| 1 | [Panel tabs: a Tabs settings page, opt-in browser-like shortcuts, Reopen Closed Tab](items/panel-tabs-chrome-shortcuts-and-reopen-closed-tab/desc.md) | feature | 4 | panels-ui | both | L | blocked |
 | 2 | [Quick search ignores diacritics: typing zlut finds a name with žluťoučký](items/quick-search-ignores-diacritics/desc.md) | improvement | 5 | panels-ui | agent | M | open |
 | 3 | [Markdown Viewer: choose the page width in View, up to the full window](items/mdview-page-width-levels/desc.md) | improvement | 3 | other-plugins | agent | S | open |
 | 4 | [Opening a tar whose member name has a 300-letter component crashes the program](items/opening-a-tar-whose-member-name-has-a-300-letter-component/desc.md) | bug | 7 | archives | agent | M | blocked |
@@ -248,6 +248,7 @@ Last triaged: 2026-10-22
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Tabs 312: real keyboard in both key modes and the Tabs page in eight languages](items/tabs-312-real-keyboard-and-eight-languages/desc.md) | person-step | 3 | panels-ui | measure:312 | 2026-10-22 |
 
 ## Parked
 
