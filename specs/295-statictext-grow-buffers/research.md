@@ -3,7 +3,7 @@
 ## R1 A variant of the 293 rule, or storing each result by hand?
 
 - Decision: a variadic `SalGrowBuffers(allocated, needed, SalGrowBuf(p, extra)...)` in
-  `src/common/salgrowpair.h`, with an allocator-injected form for `saltests`;
+  `src/common/salgrowpair.h`, with the allocator-injected form `SalGrowBuffersWith(reallocFn, freeFn, ...)` for `saltests`;
   `SalGrowBufferPair` is rewritten as its two-buffer case.
 - Rationale: the five buffers of `CStaticText` differ in element type (`char`, `WCHAR`, `int`) and
   size (`Text2` / `Text2W` hold three more elements for "..."), so the pair does not fit (item

@@ -606,7 +606,10 @@ void CStatusWindow::SetSize(const CQuadWord& size)
     if (Size == NULL)
     {
         Size = (char*)malloc(30);
-        Size[0] = 0;
+        if (Size != NULL) // feature 295: it used to write before checking
+            Size[0] = 0;
+        else
+            TRACE_E(LOW_MEMORY); // no size shown; the next call tries again
     }
     if (Size != NULL)
     {

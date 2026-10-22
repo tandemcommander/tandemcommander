@@ -16,6 +16,7 @@
 #include "nanosvg\nanosvgrast.h"
 
 #include "mainwnd.h"
+#include "salgrowpair.h" // feature 295
 
 //****************************************************************************
 //
@@ -565,54 +566,25 @@ BOOL CStaticText::SetText(const char* text)
     int l = (int)strlen(text) + 1;
     if (Allocated < l)
     {
-        char* newText = (char*)realloc(Text, l + ST_ALLOC_GRANULARITY);
-        if (newText == NULL)
-        {
-            TRACE_E(LOW_MEMORY);
-            return FALSE;
-        }
         // feature 005: wide buffers sized in WCHARs; UTF-16 length <= UTF-8 byte
-        // length, so 'l' WCHARs is always enough for TextW and Text2W
-        WCHAR* newTextW = (WCHAR*)realloc(TextW, (l + ST_ALLOC_GRANULARITY) * sizeof(WCHAR));
-        if (newTextW == NULL)
-        {
-            TRACE_E(LOW_MEMORY);
-            free(newText);
-            return FALSE;
-        }
-        TextW = newTextW;
+        // length, so 'Allocated' WCHARs is always enough for TextW and Text2W;
+        // feature 295: each grown buffer is stored at once and Allocated rises only
+        // when all grew - a failure keeps every buffer valid and the old text shown
+        // (it used to release grown blocks the control still referred to)
+        BOOL grown;
         if (Flags & (STF_PATH_ELLIPSIS | STF_END_ELLIPSIS))
         {
-            int* newAlpDX = (int*)realloc(AlpDX, (l + ST_ALLOC_GRANULARITY) * sizeof(int));
-            if (newAlpDX == NULL)
-            {
-                TRACE_E(LOW_MEMORY);
-                free(newText);
-                return FALSE;
-            }
-            char* newText2 = (char*)realloc(Text2, l + ST_ALLOC_GRANULARITY + 3); // 3: space for "..." (I can remove W and add "...")
-            if (newText2 == NULL)
-            {
-                TRACE_E(LOW_MEMORY);
-                free(newText);
-                free(newAlpDX);
-                return FALSE;
-            }
-            WCHAR* newText2W = (WCHAR*)realloc(Text2W, (l + ST_ALLOC_GRANULARITY + 3) * sizeof(WCHAR));
-            if (newText2W == NULL)
-            {
-                TRACE_E(LOW_MEMORY);
-                free(newText);
-                free(newAlpDX);
-                free(newText2);
-                return FALSE;
-            }
-            AlpDX = newAlpDX;
-            Text2 = newText2;
-            Text2W = newText2W;
+            // Text2 / Text2W: 3 more for "..." (I can remove W and add "...")
+            grown = SalGrowBuffers(Allocated, l + ST_ALLOC_GRANULARITY, SalGrowBuf(Text), SalGrowBuf(TextW),
+                                   SalGrowBuf(AlpDX), SalGrowBuf(Text2, 3), SalGrowBuf(Text2W, 3));
         }
-        Text = newText;
-        Allocated = l + ST_ALLOC_GRANULARITY;
+        else
+            grown = SalGrowBuffers(Allocated, l + ST_ALLOC_GRANULARITY, SalGrowBuf(Text), SalGrowBuf(TextW));
+        if (!grown)
+        {
+            TRACE_E(LOW_MEMORY);
+            return FALSE;
+        }
     }
     memmove(Text, text, l);
     TextLen = l - 1;

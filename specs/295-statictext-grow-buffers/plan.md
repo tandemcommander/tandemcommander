@@ -9,7 +9,8 @@
 `AlpDX`, `Text2` and `Text2W`, with up to five `realloc` calls; when a later call fails it `free`s
 the earlier successful results (one of which `Text` may still refer to) and returns with `TextW`
 already replaced - the control is left with released blocks. The growth moves onto a variadic form
-of feature 293's rule in `src/common/salgrowpair.h`: `SalGrowBuffers` grows any number of buffers,
+of feature 293's rule in `src/common/salgrowpair.h`: `SalGrowBuffers` (CRT) /
+`SalGrowBuffersWith` (allocator injected, the `saltests` seam) grows any number of buffers,
 each with its own element type and an extra element count over the shared capacity (3 for the two
 "..." buffers); each successful result is stored at once, the capacity rises only when all grew, a
 fresh block of a buffer that had none is released again. `SalGrowBufferPair` becomes the two-buffer

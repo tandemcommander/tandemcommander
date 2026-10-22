@@ -15996,6 +15996,176 @@ static void TestGrowBufferPair293()
     free(alpDX);
 }
 
+// feature 295: a dialog's static text (CStaticText::SetText) grows Text, TextW and with an
+// ellipsis style AlpDX, Text2 (+3 for "...") and Text2W (+3); a failure of any call must leave
+// every buffer valid, the old contents kept and the capacity at the old size
+struct CStaticTextBufs295
+{
+    char* Text = NULL;
+    WCHAR* TextW = NULL;
+    int* AlpDX = NULL;
+    char* Text2 = NULL;
+    WCHAR* Text2W = NULL;
+    int Allocated = 0;
+    bool Ellipsis = true;
+
+    bool Grow(int needed)
+    {
+        if (Ellipsis)
+            return SalGrowBuffersWith(FakeRealloc293, FakeFree293, Allocated, needed, SalGrowBuf(Text),
+                                      SalGrowBuf(TextW), SalGrowBuf(AlpDX), SalGrowBuf(Text2, 3),
+                                      SalGrowBuf(Text2W, 3));
+        return SalGrowBuffersWith(FakeRealloc293, FakeFree293, Allocated, needed, SalGrowBuf(Text),
+                                  SalGrowBuf(TextW));
+    }
+    int Count() const { return Ellipsis ? 5 : 2; }
+    // every buffer of the set is a live block of the size the capacity promises
+    bool Live() const
+    {
+        size_t n = (size_t)Allocated;
+        bool ok = FakeLive293(Text, n) && FakeLive293(TextW, n * sizeof(WCHAR));
+        if (Ellipsis)
+            ok = ok && FakeLive293(AlpDX, n * sizeof(int)) && FakeLive293(Text2, n + 3) &&
+                 FakeLive293(Text2W, (n + 3) * sizeof(WCHAR));
+        return ok;
+    }
+    bool AllNull() const { return Text == NULL && TextW == NULL && AlpDX == NULL && Text2 == NULL && Text2W == NULL; }
+    void Fill() // the old text "hello" in every form (Text2 with an ellipsis: "he...")
+    {
+        strcpy(Text, "hello");
+        wcscpy(TextW, L"hello");
+        if (Ellipsis)
+        {
+            for (int i = 0; i < 6; i++)
+                AlpDX[i] = 7 * (i + 1);
+            strcpy(Text2, "he...");
+            wcscpy(Text2W, L"he...");
+        }
+    }
+    bool Kept() const
+    {
+        bool ok = strcmp(Text, "hello") == 0 && wcscmp(TextW, L"hello") == 0;
+        if (Ellipsis)
+            ok = ok && AlpDX[0] == 7 && AlpDX[5] == 42 && strcmp(Text2, "he...") == 0 &&
+                 wcscmp(Text2W, L"he...") == 0;
+        return ok;
+    }
+    void FreeAll()
+    {
+        FakeFree293(Text);
+        FakeFree293(TextW);
+        FakeFree293(AlpDX);
+        FakeFree293(Text2);
+        FakeFree293(Text2W);
+        Text = NULL;
+        TextW = NULL;
+        AlpDX = NULL;
+        Text2 = NULL;
+        Text2W = NULL;
+    }
+};
+
+static void TestGrowBuffers295()
+{
+    for (bool ellipsis : {true, false})
+    {
+        int count = ellipsis ? 5 : 2;
+        // a text showing "hello" in buffers of 10, then a growth to 100; calls 0..count-1 build the
+        // starting set, calls count..2*count-1 are the growth - every subset of them fails once
+        for (unsigned subset = 0; subset < (1u << count); subset++)
+        {
+            FakeReset293(subset << count);
+            CStaticTextBufs295 b;
+            b.Ellipsis = ellipsis;
+            CHECK(b.Grow(10));
+            CHECK(b.Allocated == 10 && b.Live());
+            b.Fill();
+            void* old[5] = {b.Text, b.TextW, b.AlpDX, b.Text2, b.Text2W};
+
+            bool ok = b.Grow(100);
+            CHECK(ok == (subset == 0));
+            CHECK(g_fakeCalls293 == 2 * count);    // every growth attempted, in order
+            CHECK(b.Allocated == (ok ? 100 : 10)); // never more than any block holds
+            CHECK(b.Live());
+            CHECK(FakeLiveCount293() == count); // no block lost, none kept twice
+            void* now[5] = {b.Text, b.TextW, b.AlpDX, b.Text2, b.Text2W};
+            for (int i = 0; i < count; i++)
+            {
+                bool failed = (subset & (1u << i)) != 0;
+                CHECK((now[i] != old[i]) == !failed); // a grown buffer is stored, a failed one untouched
+                if (!failed)
+                    CHECK(!FakeHdr293(old[i])->Alive); // the fake really released the old block
+            }
+            // a broken rule is counted above; reading its blocks would hang or crash the run
+            if (b.Allocated != (ok ? 100 : 10) || !b.Live())
+                continue;
+            CHECK(b.Kept()); // the old text stays shown, its measurements and its shortened form too
+
+            // a later long text with memory available grows and fits
+            g_fakeFailMask293 = 0;
+            CHECK(b.Grow(100));
+            CHECK(b.Allocated == 100 && b.Live());
+            if (b.Allocated != 100 || !b.Live())
+                continue;
+            CHECK(b.Kept());
+            memset(b.Text, 'x', 99);
+            b.Text[99] = 0;
+            if (ellipsis)
+                b.Text2W[102] = 0;
+
+            // a text that fits: no allocation at all
+            int calls = g_fakeCalls293;
+            CHECK(b.Grow(50) && b.Grow(100));
+            CHECK(g_fakeCalls293 == calls && b.Allocated == 100);
+
+            b.FreeAll();
+            CHECK(FakeLiveCount293() == 0);
+            CHECK(g_fakeBadFrees293 == 0);
+        }
+
+        // a fresh control (no blocks yet) whose growth fails at any call stays without blocks
+        for (int fail = 0; fail < count; fail++)
+        {
+            FakeReset293(1u << fail);
+            CStaticTextBufs295 b;
+            b.Ellipsis = ellipsis;
+            CHECK(!b.Grow(20));
+            CHECK(g_fakeCalls293 == count);
+            CHECK(b.AllNull() && b.Allocated == 0);
+            CHECK(FakeLiveCount293() == 0); // the fresh blocks were released, not leaked
+            CHECK(g_fakeBadFrees293 == 0);
+            g_fakeFailMask293 = 0;
+            CHECK(b.Grow(20));
+            CHECK(b.Allocated == 20 && b.Live());
+        }
+    }
+    FakeReset293(0);
+
+    // the CRT form used by the core, with the sizes CStaticText asks for
+    char* text = NULL;
+    WCHAR* textW = NULL;
+    int* alpDX = NULL;
+    char* text2 = NULL;
+    WCHAR* text2W = NULL;
+    int allocated = 0;
+    CHECK(SalGrowBuffers(allocated, 65536, SalGrowBuf(text), SalGrowBuf(textW), SalGrowBuf(alpDX),
+                         SalGrowBuf(text2, 3), SalGrowBuf(text2W, 3)));
+    CHECK(allocated == 65536 && text != NULL && textW != NULL && alpDX != NULL && text2 != NULL &&
+          text2W != NULL);
+    text[65535] = 0;
+    textW[65535] = 0;
+    alpDX[65535] = 1;
+    text2[65538] = 0;
+    text2W[65538] = 0;
+    CHECK(SalGrowBuffers(allocated, 16, SalGrowBuf(text), SalGrowBuf(textW))); // fits
+    CHECK(allocated == 65536);
+    free(text);
+    free(textW);
+    free(alpDX);
+    free(text2);
+    free(text2W);
+}
+
 // feature 277: the path of a "257" reply is never cut (salftppwd.h) - the German AIX form was
 // cut at the buffer and taken as the working folder (an ancestor), the quoted form was refused
 // one byte early
@@ -17000,6 +17170,7 @@ int main(int argc, char** argv)
     TestFtpServerEncoding288();
     TestDriveText289();
     TestGrowBufferPair293();
+    TestGrowBuffers295();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
