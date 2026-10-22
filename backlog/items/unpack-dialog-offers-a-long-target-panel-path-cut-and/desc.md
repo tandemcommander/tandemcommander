@@ -1,7 +1,7 @@
 ---
 title: Unpack dialog offers a long target panel path cut and unpacks into the cut folder
 type: bug
-status: new
+status: open
 severity: 5
 area: long-paths
 source: review:299
@@ -62,3 +62,4 @@ the buffers is a design choice of the fix; leaving it out changes least.
 ## Log
 
 - 2026-10-22 — created (source review:299)
+- 2026-10-22 — moved to Next position 10
