@@ -1,7 +1,7 @@
 ---
 title: FTP: an upload to a case-insensitive server with Unix paths replaces b.txt by B.txt without the question
 type: bug
-status: new
+status: open
 severity: 7
 area: ftp
 source: review:302
@@ -40,3 +40,4 @@ Severity 7 (data loss in a narrow scenario: a case-only name difference on a Win
 ## Log
 
 - 2026-10-22 — created (source review:302)
+- 2026-10-22 — moved to Next position 1
