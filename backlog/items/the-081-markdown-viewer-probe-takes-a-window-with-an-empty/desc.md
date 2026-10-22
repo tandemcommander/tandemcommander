@@ -1,7 +1,7 @@
 ---
 title: The 081 Markdown Viewer probe takes a window with an empty title for the viewer
 type: tech-debt
-status: new
+status: open
 severity: 1
 area: tooling
 source: review:314
@@ -54,3 +54,4 @@ show that the Markdown Viewer still works after a change (the backlog item
 
 - 2026-10-23 — created (source review:314)
 - 2026-10-23 — moved to Inbox
+- 2026-10-23 — moved to Next

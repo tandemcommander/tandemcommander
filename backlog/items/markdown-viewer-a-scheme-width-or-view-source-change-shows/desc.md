@@ -1,7 +1,7 @@
 ---
 title: Markdown Viewer: a scheme, width or View Source change shows the document from the top
 type: improvement
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: measure:314
@@ -66,3 +66,4 @@ At 67d1e782 (branch 314-mdview-page-width), by reading:
 
 - 2026-10-23 — created (source measure:314)
 - 2026-10-23 — moved to Inbox
+- 2026-10-23 — moved to Next position 76

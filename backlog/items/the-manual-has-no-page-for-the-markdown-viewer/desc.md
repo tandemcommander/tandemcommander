@@ -1,7 +1,7 @@
 ---
 title: The manual has no page for the Markdown Viewer
 type: improvement
-status: new
+status: open
 severity: 2
 area: help-docs
 source: measure:314
@@ -48,3 +48,4 @@ windows) and `introduction_news.htm`. Feature 314 fix-log, *Measured at da0a455a
 
 - 2026-10-23 — created (source measure:314)
 - 2026-10-23 — moved to Inbox
+- 2026-10-23 — moved to Next position 119
