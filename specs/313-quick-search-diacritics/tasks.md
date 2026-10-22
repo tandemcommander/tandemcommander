@@ -38,7 +38,7 @@ contracts/salquickfilter-fold.md, quickstart)
 
 - [ ] T011 [US4] In `src/saltests/saltests.cpp` add F5 (lone mark at a name's start, a mask of marks only, `a/` + mark + `/c`), F6 (lone surrogate name and mask, invalid bytes), F8 (cache = uncached computation for every BMP code point, twice)
 - [ ] T012 [US4] Build (`.\build.cmd`) and run `saltests.exe`; record the counts in `specs/313-quick-search-diacritics/fix-log.md`
-- [ ] T013 [US4] Run `probe/qs313_probe.ps1 -Expect after` and `-Expect off -FilterOption 0` on the hidden desktop; compare D10 with `result_off_before.txt`; record in `fix-log.md`
+- [ ] T013 [US4] Add probe row D11 to `specs/313-quick-search-diacritics/probe/qs313_probe.ps1` (type `r`, Right: the appended character is the `e` after the marks of the NFD `řeka.txt`, so only it stays visible), then run `probe/qs313_probe.ps1 -Expect after` and `-Expect off -FilterOption 0` on the hidden desktop; compare D10 with `result_off_before.txt`; record in `fix-log.md`
 - [ ] T014 [US4] Run the 244 probe (`specs/244-quick-search-substring-filter/probe/qs244_probe.ps1`) `-Expect new` and `-Expect old -FilterOption 0` on the new Debug build; record in `fix-log.md`
 - [ ] T015 [US4] Rebuild the scratch Release tree (`OPENSAL_BUILD_DIR` = `%TEMP%\tc313rel`) and run the 244 probe `-Perf -Only P` into `specs/313-quick-search-diacritics/probe/result_perf_after.txt`; compare with the baseline in `fix-log.md`
 

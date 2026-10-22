@@ -44,3 +44,10 @@ diacritics.
   20D0-20FF, FE20-FE2F); marks of other scripts kept (conservative).
 - Folding table: the item's list + `ẞ` U+1E9E.
 - A text of marks only = a text of only wildcards.
+
+## 2026-10-22 - speckit-analyze
+
+- 0 CRITICAL, 0 HIGH. C1 (MEDIUM): Right on a decomposed name was not driven by a probe -> row
+  D11 added to T013 and SC-001. A1 (LOW, accepted): SC-003's 10 % bound on the first keystroke is
+  close to the run-to-run noise of the panel layout (244: 291-335 ms); if exceeded, re-run before
+  judging.

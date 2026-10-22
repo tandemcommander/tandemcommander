@@ -163,7 +163,7 @@ M1 (the 0.1.10 rule) unchanged.
 
 ### Measurable Outcomes
 
-- **SC-001**: Every probe row D01-D08 gives the expected names with the new build (the rows that
+- **SC-001**: Every probe row D01-D08 and D11 (Right on a decomposed name) gives the expected names with the new build (the rows that
   differed before now match the item's examples).
 - **SC-002**: With the option off, rows D09/D10 and the 244 probe's option-off run give the same
   result as before the change.
