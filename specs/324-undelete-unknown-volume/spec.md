@@ -46,6 +46,11 @@ same volume. A user who recovers volume X (mounted at `E:\` and at `C:\Zálohy\`
 - Q: A new message for "cannot tell"? → A: No - the existing `IDS_SAMEPARTITION` text already says
   "It seems you are undeleting to the same logical disk"; no UI string changes (autonomous run:
   conservative).
+- Q: Which folder's identity is read when the target cannot be opened - does the read step up to
+  the parent for any error? → A: Only for "not found" (file or path not found): the restore will
+  create that folder below its parent, so the nearest existing ancestor decides; any other error
+  (access denied, a share that does not answer) makes the target's volume unknown → the same
+  volume (autonomous run: conservative - refuses rather than guesses).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -94,7 +99,8 @@ the source volume, but its volume cannot be told by the core.
 ### Edge Cases
 
 - The restore target does not exist yet: the nearest existing parent folder decides (the restore
-  creates the missing folders there).
+  creates the missing folders there). Only "file / path not found" steps up; any other error makes
+  the volume unknown (→ same volume).
 - The target path is longer than 259 characters or holds characters outside the code page: read
   whole with the wide API, never cut.
 - A network target (`\\server\share`, mapped drive): the core is always unsure there; the identity
