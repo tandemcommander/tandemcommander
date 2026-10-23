@@ -1,19 +1,19 @@
 ---
 title: Drive Information turns a volume label outside the code page into question marks
 type: bug
-status: open
+status: blocked
 severity: 5
 area: encoding
 source: review:300
 who: both
 created: 2026-10-22
-updated: 2026-10-22
-verified: -
+updated: 2026-10-23
+verified: 2026-10-23 ae49a67d
 effort: ?
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: not reproduced at ae49a67d: the premise is wrong - IDE_VOLNAME is a comctl32 6 edit (manifest since the initial commit), a Unicode window inside the code-page dialog, and the modal loop is wide; no fix to name. The 069 / 300 comments in CDriveInfo say otherwise. Write of a real non-code-page label owed to a person (USB stick). Maintainer: close or keep. Evidence in evidence/
 ---
 
 # Drive Information turns a volume label outside the code page into question marks
@@ -61,3 +61,5 @@ person's check. Related to the closed item `volume-label-written-through-ansi-ap
 
 - 2026-10-22 — created (source review:300)
 - 2026-10-22 — moved to Next position 10
+- 2026-10-23 — verified at ae49a67d: not reproduced: probe evidence/vol_label_field_probe.ps1 on the Debug build at ae49a67d, ACP 1250 - the label field is a Unicode window (comctl32 6 edit in the code-page dialog); Cyrillic set by WM_SETTEXT and CJK posted as WM_CHAR read back whole; negative controls (code-page subclassed control 565, code-page loop) show the loss as ????1 / ??2
+- 2026-10-23 — blocked: not reproduced at ae49a67d: the premise is wrong - IDE_VOLNAME is a comctl32 6 edit (manifest since the initial commit), a Unicode window inside the code-page dialog, and the modal loop is wide; no fix to name. The 069 / 300 comments in CDriveInfo say otherwise. Write of a real non-code-page label owed to a person (USB stick). Maintainer: close or keep. Evidence in evidence/

@@ -22,7 +22,7 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Who | Effort | Status |
 |---|---|---|---|---|---|---|---|
-| 1 | [Drive Information turns a volume label outside the code page into question marks](items/drive-information-turns-a-volume-label-outside-the-code-page/desc.md) | bug | 5 | encoding | both | ? | open |
+| 1 | [Drive Information turns a volume label outside the code page into question marks](items/drive-information-turns-a-volume-label-outside-the-code-page/desc.md) | bug | 5 | encoding | both | ? | blocked |
 | 2 | [Undelete skips its same-partition warning when the target volume cannot be told](items/undelete-skips-its-same-partition-warning-when-the-target/desc.md) | bug | 5 | data-safety | both | M | open |
 | 3 | [Copying the files of a tar folder leaves hard-linked names out silently](items/tar-copy-of-listed-files-leaves-hard-links-out/desc.md) | bug | 5 | archives | agent | M | open |
 | 4 | [ISO plug-in: Rock Ridge names of xorriso images are not read, the ISO 9660 names are listed](items/iso-plug-in-rock-ridge-names-of-xorriso-images-are-not-read/desc.md) | bug | 5 | other-plugins | agent | M | open |

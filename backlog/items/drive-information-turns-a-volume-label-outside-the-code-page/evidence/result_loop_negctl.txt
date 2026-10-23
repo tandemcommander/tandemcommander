@@ -1,0 +1,3 @@
+wide loop      : edit Unicode True; posted '\u4E2D\u65872', edit holds '\u4E2D\u65872'
+code-page loop : edit Unicode True; posted '\u4E2D\u65872', edit holds '??2'
+ACP 1250
