@@ -7,8 +7,8 @@ area: archives
 source: review:309
 who: agent
 created: 2026-10-22
-updated: 2026-10-22
-verified: -
+updated: 2026-10-23
+verified: 2026-10-23 0991f43c
 effort: M
 feature: -
 related: []
@@ -39,3 +39,4 @@ Not a data-loss path (Copy never deletes the archive). Listing link members chan
 
 - 2026-10-22 — created (source review:309)
 - 2026-10-22 — moved to Next position 11
+- 2026-10-23 — verified at 0991f43c: reproduced at 0991f43c: probe link325 COPY-INSIDE Select All + Copy inside t.tar/sub -> 1 of 3 files, no box; F3 on a link impossible (not listed)
