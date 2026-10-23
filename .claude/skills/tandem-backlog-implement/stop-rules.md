@@ -3,6 +3,18 @@
 Read all of this before step 1 of `SKILL.md`. §1 decides every question a
 run meets; §2 is how the work is done; §3 is when to stop.
 
+**The goal of a run is a closed item.** An item the maintainer planned
+clearly ends `closed`, with everything that belongs to it done: the code,
+the translations, the manual, the changelog entry, the merge into `main`.
+Work that a tool in the repository can do is the run's own work, never a
+reason to stop and never a step handed to the maintainer. A run stops only
+for what needs the maintainer's judgement (§1, the maintainer-owned list),
+a person's hands (a real keyboard, a server, another machine — and then
+only when the change cannot be trusted without them, §3 #4), or a check
+that still fails after three honest attempts. "It is a lot of work",
+"it spends DeepL characters" and "a person may want to look at it" are not
+reasons to stop.
+
 ---
 
 ## §1 Questions: answer yourself, or stop
@@ -36,7 +48,7 @@ or in *Assumptions* as `Assumption (autonomous run): …`.
 | Installer | what the installer or uninstaller writes or removes, `AppId`, privileges, Restart Manager behaviour, `setup/tandemcommander.iss` beyond a bug fix the item names |
 | Shipping | enabling, disabling, shipping or removing a plug-in (`plugins.cfg`) or a language (`translations/languages.cfg`) |
 | Releases | a version number, a build number, a tag, a release, a winget submission |
-| Translations | register / tone, pins in `translations/ui-overrides.json` beyond fixing a wrong text |
+| Translations | changing the register policy itself (the corpus is formal: *Sie*, *vous*, *u*, *usted*), a new glossary term that replaces an established one. Not maintainer-owned: the `.slt` refresh and pins that keep the formal register, keep an established term or correct a wrong machine text — the run's own job (§2.13) |
 | Recorded decisions | anything the item's *Log* records as the maintainer's decision; anything that would reverse a `rejected` item or a "Decided" entry of a feature's spec |
 | Real trade-offs | every option loses something for users ("cut the name or refuse it", "slower or riskier") and neither the item nor a standing rule chooses |
 
@@ -76,8 +88,8 @@ miss.
 6. **Checks that must pass** before closing — the exact commands and
    expected outputs are the table of SKILL.md step 6 (encoding guard
    `TOTAL: 0 finding(s)`, `BUILD SUCCEEDED`, `saltests: <n> checks, 0
-   failed`). New or removed UI strings need the two-stage `.slt` refresh,
-   which a run does not do: stop (§3 reason 2).
+   failed`). New, changed or removed UI strings or dialogs need the
+   two-stage `.slt` refresh: the run does it itself (§2.13).
 7. **GUI probes** run only on the hidden desktop, never on the maintainer's
    desktop, with the **PowerShell tool** (never Bash — it drops the
    backslashes of these paths):
@@ -108,27 +120,169 @@ miss.
     replacing a user's file through a temporary file + `SalReplaceWithTempW`.
 11. **Scope**: only what the item describes. Other defects found on the way
     become *Inbox* items (`measure:<NNN>`), never part of this feature.
-12. **Nothing leaves the machine**: no push, no tag, no release, no winget,
+12. **Nothing leaves the machine** (except the English UI texts the
+    translation merge sends to DeepL, §2.13): no push, no tag, no release, no winget,
     no GitHub post. (The git extension's branch hook runs `git fetch --all
     --prune`: it only reads from the remote and is allowed; nothing else
     talks to the remote.) While `microsoft/winget-pkgs#426090` is open,
     nothing under `tools/winget/templates/` changes; a run treats the PR as
     open as long as the backlog holds an item whose slug contains `426090`.
+13. **Translations are the run's job.** Whenever the feature adds, changes
+    or removes a UI string, a menu text or a dialog (control, size,
+    caption) of a module — the core is the module `salamand`, a plug-in
+    the name of its folder under `src/plugins/` — the run refreshes that
+    module's `.slt` files for every enabled language before the checks of
+    SKILL.md step 6 close. Each block below is **one** PowerShell call from
+    the repository root (the PowerShell tool keeps no variables between
+    calls).
+
+    0. **List the entries** the feature touched, from
+       `git diff $(git merge-base main HEAD) -- <the module's .rc / .rc2 / .rh files>`
+       (never `git diff main`: once `main` moved on it shows `main`'s
+       changes reversed): *new* ids (strings, menu items, dialog controls,
+       a new dialog) and *changed* ids (the English text of an existing id
+       changed, a review's rewording included).
+    1. Build and export — two PowerShell calls, the build with a timeout of
+       at least 600000 ms:
+
+       ```text
+       .\build.cmd                                                     → BUILD SUCCEEDED (builds the English module)
+       src\vcxproj\build_langs.cmd --export-templates --module <mod>   → the module exported to <templates>\<mod>.slt
+       ```
+
+       `<templates>` = `$env:OPENSAL_BUILD_DIR` + `tandemcommander\translator\templates`
+       when that variable is set, else `build\tandemcommander\translator\templates`
+       under the repository root.
+    2. **Changed English keeps its old translation** (`match.py` matches by
+       id; feature 245): for every *changed* entry set its key to
+       `"english_fallback"` in each enabled language's
+       `translations/<language>/<module>.origin`, with the editor or a
+       short script written to a file (never a here-document). **Take the
+       key from the exported template** `<templates>\<mod>.slt`:
+       `<KIND>:<n>:<row>`, where `[<KIND> <n>]` is the section header that
+       holds the row (`DIALOG`, `MENU`, `STRINGTABLE` — for a string table
+       `n` is the section's ordinal in the file, **not** `id/16+1`) and
+       `<row>` is the row's first number; a dialog caption is
+       `DIALOG:<n>:#caption`. Check that each key exists in the `.origin`
+       before changing it — a wrong key does nothing and gives no error.
+       Menu popups all have id 0 and share one key (`MENU:<n>:0`): a
+       changed popup text cannot be targeted this way — pin it instead
+       (step 5, key `#<English>`).
+    3. Dry run — one PowerShell call:
+
+       ```text
+       $tpl = if ($env:OPENSAL_BUILD_DIR) { Join-Path $env:OPENSAL_BUILD_DIR 'tandemcommander\translator\templates' } else { Join-Path (Get-Location).Path 'build\tandemcommander\translator\templates' }; Push-Location tools; python -m translate.merge --module <mod> --templates $tpl --formality prefer_more --dry-run; Pop-Location
+       ```
+
+       It prints per language `N unique gaps, ~C chars`. N counts unique
+       (context, English) pairs and skips texts that need no translation
+       (`""`, `OK`, `%s`, …), so N may be **lower** than the entries of
+       step 0, never higher than them plus the module's leftover
+       `english_fallback` rows (`grep -c english_fallback` in the
+       `.origin` before the change — e.g. `spanish/pictview`; they are
+       translated too and listed in `fix-log.md`):
+       - **0 gaps although texts were added** = the templates-path trap
+         (feature 079: the merge writes nothing, no error) — fix the path;
+       - **more gaps than that** — do not run the real merge: look for
+         renumbered string bundles (rule 084; feature 079 re-sent 46 gaps a
+         language and overwrote human texts) or a stale template; fix the
+         cause, dry-run again.
+    4. The real merge, with `--budget` = twice the sum of the dry run's
+       `~C` over the languages plus 2000 (the count includes protection
+       tags):
+
+       ```text
+       $tpl = if ($env:OPENSAL_BUILD_DIR) { Join-Path $env:OPENSAL_BUILD_DIR 'tandemcommander\translator\templates' } else { Join-Path (Get-Location).Path 'build\tandemcommander\translator\templates' }; Push-Location tools; python -m translate.merge --module <mod> --templates $tpl --formality prefer_more --budget <2 x estimate>; Pop-Location
+       ```
+
+       It prints `DeepL characters sent this run: …` and, when some failed,
+       `validation failures (kept English):` with the entries — pin those
+       (step 5). `--formality prefer_more` is required: the default is the
+       informal register, the corpus is formal (feature 245). A line
+       `budget cap reached …; stopping before <language>` means the merge
+       stopped with exit 0 and **left the rest of the languages
+       unwritten**: find why the estimate was wrong (step 3), then run
+       again — never continue with languages missing.
+    5. **Read every new and changed text back** in all enabled languages
+       (the entries of step 0 in `git diff -- translations`), as feature
+       078 did (fix-log T044). Pin in `translations/ui-overrides.json`
+       every text that: still uses the informal register in de / fr / nl / es (*du*,
+       *tu*, *je* / *jij*, *tú*); names a thing otherwise than the module's
+       existing texts do (look up the same English word in the committed
+       `.slt`); writes key names otherwise than the module's existing
+       texts (e.g. `Strg+Umschalt+T` where the menus say `Ctrl+Shift+T`);
+       changes the number or order of `%s` / `%d`; gives an accelerator
+       `&` that `merge` reports as a duplicate; or failed validation. A pin
+       goes under the module and the language folder; its key is the
+       resource symbol, or `#<the English text>` (it matches every row
+       with that English text in the module) for a dialog caption, a menu
+       popup, or a symbol whose id appears in more than one dialog of the
+       module (a symbol pin rewrites every row with that id — in
+       `salamand` 80 control ids are shared); add a
+       `"_feature_<NNN>": ["why …"]` note list in the module; after
+       pinning check in `git diff` that only the intended rows changed. A
+       brand name the rebrand step must not touch goes into
+       `translations/brand-exempt.json` (feature 245). Then the real merge
+       again (pins are applied as `human`; rows that failed validation are
+       sent to DeepL once more).
+    6. `Push-Location tools; python -m translate.slt --verify; Pop-Location` → `round-trip byte-exact` for every file.
+    7. `.\build.cmd full` (timeout at least 600000 ms) → `BUILD SUCCEEDED` (the language modules import).
+    8. `fix-log.md`, section *Translations*: the entries of step 0, the
+       commands, the gaps per language, the characters, the validation
+       failures, every pin and why, the number of re-laid-out controls.
+
+    **Layout drift.** The merge also refits the geometry of unrelated
+    dialog controls to the current English layout. Features 155 and 173
+    kept only their own entries (with a session script); 244 committed the
+    drift as the pipeline's normal output. **This rule overrides 155 and
+    173**: the drift is committed with the feature (no repository tool
+    separates it; `build.cmd full` imports it), and `fix-log.md` names the
+    count per language. The read-back of step 5 is limited to the entries
+    of step 0.
+
+    **The one exception to §2.12**: the merge sends the module's English UI
+    texts (nothing else) to DeepL — that is how the project translates.
+
+    The committed `.slt`, `.origin`, `ui-overrides.json` and
+    `brand-exempt.json` files belong to the feature's commit. Only DeepL
+    itself failing (no key, quota exhausted, no network) after three
+    attempts is a stop (§3 #2, reason `DeepL unavailable: <message>`).
+    **A note in an item that a run stops for the `.slt` refresh is
+    outdated: this rule overrides it** (§1 step 2 does not apply to it).
+14. **A part of *Expected* the run cannot reach** inside the item's limits
+    (a probe that cannot drive it, an API the binding contract forbids, a
+    manual page that does not exist): when the item's main point is done,
+    do **not** stop — take the conservative way (§1 step 4), record it in
+    the spec (*Assumptions*) and in `fix-log.md` as a deviation with the
+    measurement, add an Inbox item for the missing part (`leftover:<NNN>`),
+    name it in the closing report and close. Stop only when the missing
+    part is the item's main point, or the only way to reach it is
+    maintainer-owned (§1).
 
 ---
 
 ## §3 Stop conditions
+
+**Before any stop except #1, #5, #6 and #7** (a conflict outside SKILL.md
+step 9's table is never resolved to avoid a stop), try to remove its cause: an
+honest fix attempt is a *different* approach each time (another site,
+another design inside the item's limits, another test method — not the
+same change repeated), recorded in `fix-log.md`. A stop whose cause a
+repository tool, a different approach or the conservative answer of §1
+step 4 could remove is not a stop. A safety rule (`CLAUDE.md` *Never lose
+the user's data*, §2.10, the plug-in ABI, nothing leaves the machine) is
+never bent to avoid a stop.
 
 Stop (SKILL.md step 10) — never silently, never by just ending — when:
 
 | # | Condition | Record for the maintainer | Outcome |
 |---|---|---|---|
 | 1 | a maintainer-owned question (§1) | a `decision` item: *Question*, *Options* with consequences, *Recommendation* | `blocked` |
-| 2 | the build, `saltests`, the encoding check or a probe still fail after **three** honest fix attempts (each attempt recorded in `fix-log.md`), or a required step cannot be done in a run (e.g. the `.slt` refresh) | in the item's block reason and `fix-log.md` | `blocked` |
-| 3 | the independent review rejects the fix (MUST findings) **twice** | the review findings in `fix-log.md`; the reason names them | `blocked` |
+| 2 | the build, `saltests`, the encoding check or a probe still fail after **three** honest fix attempts (each attempt recorded in `fix-log.md`), or a tool a required step depends on is unavailable after three attempts (DeepL down, quota exhausted). A step a repository tool can do — the `.slt` refresh, the manual, the changelog, a merge — is never this reason: do it (§2.13) | in the item's block reason and `fix-log.md` | `blocked` |
+| 3 | the independent review rejects the fix (MUST findings) **three times**, or twice with a MUST finding the second review repeats unchanged from the first (no progress) | the review findings in `fix-log.md`; the reason names them | `blocked` |
 | 4 | the change cannot be trusted without a person (real keyboard / clipboard / printer / server / other machine / admin) — when the change is sound and only a confirmation is owed, do **not** stop: finish and record a `person-step` item | a `person-step` item with exact *Steps* | `blocked` |
 | 5 | the item is larger than one feature | one new item per part, each one feature's worth, `related` to the item | `split` |
-| 6 | `git merge --ff-only` into `main` fails | the reason text of SKILL.md step 9, word for word (it carries the merge recipe) | `blocked` |
+| 6 | `main` cannot take the branch: the item changed on `main` during the run (SKILL.md step 9's guard), SKILL.md step 9 found a conflict outside its table, or the checks after merging `main` into the branch still fail after three attempts. (A `main` that only moved on is not this reason — step 9 merges it.) | the reason text of SKILL.md step 9, word for word (it carries the merge recipe) | `blocked` |
 | 7 | the work would need to push, publish, or touch another item's work in progress | reason | `blocked` |
 | 8 | Spec Kit did not create the feature (no branch, or no `specs/<BRANCH>` even after renaming the folder it made) | reason | `blocked` |
 | 9 | `speckit-analyze` still reports CRITICAL after one fix round | the findings in `fix-log.md` | `blocked` |

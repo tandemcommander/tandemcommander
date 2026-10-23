@@ -32,7 +32,10 @@ is English.
 4. **Never**: push, merge from the remote, tag, publish a release, post to
    GitHub, submit to winget, reorder `BACKLOG.md`, change another item's
    status, delete a branch, force anything (`--force`, `reset --hard`,
-   `checkout -f`, `clean`). The only merge is the fast-forward of step 9.
+   `checkout -f`, `clean`; the one exception is `BL remove --force` in the
+   backlog recipe of step 9). The only merges are those of step 9 (the
+   fast-forward of `main`, and merging the local `main` into the branch
+   when `main` moved on).
 5. **Every path ends** with the lock released (if this run acquired it),
    the current branch `main` (except a failed precondition, where nothing
    changed), and the final message of §11.
@@ -71,7 +74,11 @@ is English.
     find where you were — `git rev-parse --abbrev-ref HEAD`,
     `git status --short`, `BL lock status` (it still names this item),
     `specs/<BRANCH>/fix-log.md`, and the last steps above — an interrupted
-    GUI probe first gets its registry restored (stop-rules §2.8); a command
+    GUI probe first gets its registry restored (stop-rules §2.8); a merge
+    of step 9 still open (`git rev-parse -q --verify MERGE_HEAD` prints a
+    commit) is continued from its conflict table, never aborted and
+    restarted; a `.origin` edited by stop-rules §2.13 step 2 is checked
+    before the merge runs again; a command
     that was cut off is checked and repeated only if its result is missing.
     Continue with the first unfinished step; the run still ends with §11.
     A lock older than 24 h shows `STALE` after a long wait for a usage
@@ -168,7 +175,8 @@ Then establish **at HEAD** whether the defect or gap still exists:
 | Finding | Do |
 |---|---|
 | still present | `BL verify <SLUG> --note '<how confirmed, short>'` (it is committed later on the feature branch). Continue with step 4 |
-| not present | `BL verify <SLUG> --note 'not reproduced: <short>'` → `BL block <SLUG> --reason 'not reproduced at <HEAD0>: <one line>'` → `BL run-log --outcome not-reproduced --slug <SLUG> --note '<one line>'` → `BL check` (TOTAL: 0) → `git add backlog` → commit `backlog: <SLUG> not reproduced at <HEAD0>` → `BL lock release --slug <SLUG>` → end `not-reproduced` |
+| not present, **fixed**: you can name the feature or commit that fixed it (`git log -S`, FEATURE-HISTORY) **and** confirm it — the fix's diff touches the *Evidence* site, or the defect reproduces at the parent of that commit — or the code it describes is gone. Then a refute-first check: one Agent (`general-purpose`) given the item's *Problem* / *Evidence* and your finding, asked to show the defect still reachable at HEAD; it shows it → row "still present" | **close it**: `BL verify <SLUG> --note 'not reproduced: <short>'` → a `github#N` item: first a `person-step` item (§0.9, `--who person`, `--source leftover:<NNN of the feature that fixed it>`, else `manual`; *Evidence* cites the issue) titled `Answer GitHub issue #N: <short>`, its *Steps* the answer to post and the issue to close, with the draft in its body (the item's `reply.md` when it holds more than the import placeholder, else written now), and `PERSON` = that slug → `BL remove <SLUG> --reason 'not reproduced at <HEAD0>: <fixed by NNN / commit <hash> / code gone: …>, confirmed by <how>; agent YYYY-MM-DD'` → `BL run-log --outcome not-reproduced --slug <SLUG> --inbox <INBOX> --person '<PERSON>' --note '<one line>'` → `BL check` (TOTAL: 0) → `git add backlog` → commit `backlog: <SLUG> closed - not reproduced at <HEAD0>` → `BL lock release --slug <SLUG>` → end `not-reproduced` |
+| not present, but no fix can be named, or only unreachable in the shipped configuration (an `off` plug-in or language, a guard that hides it — switching it on is the maintainer's, stop-rules §1 *Shipping*) | `BL verify <SLUG> --note 'not reproduced: <short>'` → `BL block <SLUG> --reason 'not reproduced at <HEAD0>: <cause unknown / unreachable because …>'` → `BL run-log --outcome not-reproduced --slug <SLUG> --note '<one line>'` → `BL check` (TOTAL: 0) → `git add backlog` → commit `backlog: <SLUG> not reproduced at <HEAD0>` → `BL lock release --slug <SLUG>` → end `not-reproduced` (no person-step item) |
 | needs a person to tell | stop (step 10, no branch): a `person-step` item with the exact check; reason `needs a person to confirm: <what>` |
 | larger than one feature | stop (step 10, no branch) with outcome `split`: one new item per part |
 | a maintainer-owned question (stop-rules §1) | stop (step 10, no branch): a `decision` item |
@@ -242,6 +250,29 @@ Add to the spec's `**Input**` line: `From backlog item <SLUG>.` Then
 `git add -A` and commit `[<NNN>] start: backlog item <SLUG>` (skip if
 nothing is staged).
 
+**4.6 Carry over a stopped run's work.** When the item's *Log* or block
+reason names an earlier branch `<OLD>` of a stopped run whose work is
+worth keeping (its fix-log says what is done), bring its own changes —
+not its `backlog/`, `specs/`, `.specify/feature.json` or `translations/`
+(the refresh of stop-rules §2.13 redoes those) — into this branch,
+three-way so that `main`'s later changes survive:
+
+```text
+git diff --binary $(git merge-base main <OLD>) <OLD> -- . ':!backlog' ':!specs' ':!.specify/feature.json' ':!translations' > <scratchpad>/carry-<OLD>.patch
+git apply -3 <scratchpad>/carry-<OLD>.patch
+```
+
+`git apply` is all or nothing: exit 1 with `with conflicts` lines =
+applied with conflicts; any other error (nothing applied) → fix the cause,
+never apply part by hand. A conflict is resolved by the item's own logic
+(it is this feature's code), a binary conflict by taking `<OLD>`'s file
+(`git checkout <OLD> -- <file>`); `git add` each resolved file by name.
+Copy the findings, probes and review findings of `specs/<OLD>/` into
+`specs/<BRANCH>/` as the starting record. Commit
+`[<NNN>] carry over the work of <OLD>`. The spec, plan and tasks
+then cover what is still open (the review's MUST findings first). The old
+branch is left as it is (never deleted).
+
 ## 5. The rest of the Spec Kit flow
 
 Run in this order, each with the Skill tool, each to its end:
@@ -251,7 +282,7 @@ Run in this order, each with the Skill tool, each to its end:
 | `speckit-clarify` | For each question it would ask: apply stop-rules §1 steps 1–4 **in order** (maintainer-owned → step 10 with a `decision` item; the item or a rule answers → that; else its Recommended / Suggested option; else the conservative one). Integrate the answer as the skill describes and write the Clarifications bullet exactly as stop-rules §1 says. Never wait for input. |
 | `speckit-plan` | as written |
 | `speckit-tasks` | as written |
-| `speckit-analyze` | Fix every CRITICAL and HIGH finding in `spec.md` / `plan.md` / `tasks.md`, then run it once more. After the second run: CRITICAL left → step 10 (stop-rules §3 #9); HIGH left → if it concerns a requirement of the item, step 10 likewise; otherwise record in `fix-log.md` why it is accepted and continue. MEDIUM / LOW: fix if cheap, else record. |
+| `speckit-analyze` | Fix every CRITICAL and HIGH finding in `spec.md` / `plan.md` / `tasks.md`, then run it once more. After the second run: CRITICAL left → step 10 (stop-rules §3 #9); HIGH left → if it concerns the item's main point, step 10 likewise; if it concerns a secondary part of *Expected* the run cannot reach, stop-rules §2.14 (deviation, Inbox item, continue); otherwise record in `fix-log.md` why it is accepted and continue. MEDIUM / LOW: fix if cheap, else record. |
 | `speckit-implement` | "Some checklists are incomplete. Proceed?" → do not proceed: complete them by fixing the artifacts, then continue. Follow stop-rules §2 throughout. Mark tasks `[X]` as they are done. |
 
 **Optional hooks**: whenever a Spec Kit skill prints an *Optional Hook*
@@ -273,14 +304,17 @@ All must hold before step 7 (command → expected result):
 |---|---|---|
 | tasks | read `specs/<BRANCH>/tasks.md` | every task `[X]`, or the open ones explained in `fix-log.md` as owed to a person |
 | encoding guard | Bash: `python tools/check_encoding.py --strict` | last line `TOTAL: 0 finding(s)`, exit 0 |
+| translations | when UI strings, menus or dialogs changed: stop-rules §2.13 (the run does the two-stage `.slt` refresh itself) | gaps match the new texts, pins recorded, `slt --verify` byte-exact |
 | build | PowerShell: `.\build.cmd` (`.\build.cmd full` when UI strings, language files, resources or plug-in lists changed) | a line `BUILD SUCCEEDED`, exit 0 |
 | unit rules | PowerShell: `& "build\tandemcommander\Debug_x64\saltests\saltests.exe"` (when the core or `src/common/` changed; the build folder is `$env:OPENSAL_BUILD_DIR` when set) | last line `saltests: <n> checks, 0 failed`, exit 0 |
 | probes | stop-rules §2.7 | every row PASS or recorded NOT DRIVEN |
 | the item | the measurement of step 3, repeated | the defect is gone |
 | record | `specs/<BRANCH>/fix-log.md` | before / after, the commands and their results |
 
-UI strings added or removed: the two-stage `.slt` refresh is **not** done
-by a run → step 10 (stop-rules §3 #2) unless the item says how.
+UI strings or dialogs added, changed or removed: the run does the
+two-stage `.slt` refresh itself (stop-rules §2.13) — never a reason to
+stop. A part of *Expected* that cannot be reached: stop-rules §2.14
+(record, Inbox item, close — not a stop).
 
 A check that still fails after three honest fix attempts (each recorded in
 `fix-log.md`) → step 10.
@@ -305,10 +339,11 @@ and a reproduction.
 
 - MUST findings: fix them, repeat the affected checks of step 6, launch a
   fresh review with the same prompt plus `Previous findings: <list>`.
-- A second review with MUST findings → step 10 (stop-rules §3 #3).
+- A third review with MUST findings, or a second one that repeats a MUST
+  finding of the first unchanged → step 10 (stop-rules §3 #3).
 - SHOULD findings: fix those inside the item's scope; others → new items
   (§0.9, `review:<NNN>`).
-- Record both reviews in `fix-log.md`, section *Review*.
+- Record every review in `fix-log.md`, section *Review*.
 
 ## 8. Close the item (on the feature branch)
 
@@ -366,7 +401,10 @@ and a reproduction.
 
 9. `git add -A`; `git status --short` must list only files of this feature
    (its sources, `specs/<BRANCH>/`, `backlog/`, `specs/FEATURE-HISTORY.md`,
-   `CHANGELOG.md`, maybe `CLAUDE.md`); anything else → `git restore
+   `CHANGELOG.md`, the refreshed `translations/<language>/<module>.slt` /
+   `.origin`, `translations/ui-overrides.json` and
+   `translations/brand-exempt.json`, `.specify/feature.json`, the manual under
+   `help/`, maybe `CLAUDE.md`); anything else → `git restore
    --staged <file>` and name it in the closing report. Commit
    `[<NNN>] <the user-visible change, in the project's style>` with a body
    of 2–5 lines (what was wrong, what it does now, the probe numbers).
@@ -379,14 +417,99 @@ git merge --ff-only <BRANCH>
 ```
 
 - Success → `BL lock release --slug <SLUG>` → end `closed`.
-- Failure (someone committed to `main` during the run) → stay on `main`,
-  go to step 10 with exactly this reason, and skip 10.1 and 10.2a:
+- Failure (someone committed to `main` during the run) → merge `main`
+  into the branch yourself.
+
+  **First, the guard on the item**: the start happened on the branch, so
+  on `main` the item stayed `open` and the maintainer could change it
+  during the run. `git diff $(git merge-base main <BRANCH>) main -- backlog/items/<SLUG>`
+  must print nothing. Anything (the item edited, parked, rejected, a
+  decision logged, or removed) → do not merge; go to step 10 with the
+  reason `the item changed on main during the run - finished work on <BRANCH>; the maintainer decides`,
+  skip 10.1 and 10.2a, and in 10.4 block the item only if it is still
+  `open` on `main` (otherwise only the journal row of 10.5).
+
+  Then:
 
   ```text
-  fast-forward failed - finished work on <BRANCH>; merge by hand: git merge <BRANCH>; on conflicts: git rm backlog/items/<SLUG>/desc.md, keep both RUNS.md rows, take the branch's backlog/BACKLOG.md, then python tools/backlog/backlog.py sync and check
+  git checkout <BRANCH>
+  git merge main --no-commit
   ```
 
-  Do not rebase or merge yourself.
+  Files 8.9 left out (unstaged, not this feature's) stay unstaged
+  throughout: never `git add -A` / `git add .` here — add each resolved
+  file by name. If the merge refuses because such a file `would be
+  overwritten`, go to step 10 (the reason below, naming the file).
+
+  Resolve the conflicts that have a fixed recipe, nothing else. The
+  commands name the source branch explicitly, so they do not depend on
+  the merge direction:
+
+  | Conflict | Resolution |
+  |---|---|
+  | `backlog/BACKLOG.md`, `backlog/items/<SLUG>/desc.md` | the backlog recipe below |
+  | `backlog/RUNS.md` | keep both rows (`main`'s first), remove the markers with the editor |
+  | `.specify/feature.json` (every feature's start rewrites it) | `git checkout <BRANCH> -- .specify/feature.json` |
+  | `CHANGELOG.md`, `specs/FEATURE-HISTORY.md` (two features added entries at the same place) | keep both entries (`main`'s first); in the *Index by area* row both features' numbers; remove the markers |
+  | `translations/ui-overrides.json` | keep both sides' pins; the file must stay valid JSON (`python -c "import json; json.load(open('translations/ui-overrides.json', encoding='utf-8'))"`) |
+  | any `translations/<language>/<module>.slt` / `.origin` | for that module, all languages: `git checkout main -- translations/*/<module>.slt translations/*/<module>.origin` (a module `main` does not have: `git checkout <BRANCH> -- …` instead); the module is refreshed **after** the merge commit (step 6 below) |
+
+  **The backlog recipe** — when `backlog/BACKLOG.md` or the item's
+  `desc.md` conflicts, or `BL sync` / `BL check` below refuse. It keeps
+  `main`'s order and triage (the maintainer's) and re-applies this run's
+  backlog changes with the tool:
+
+  1. `git checkout main -- backlog/BACKLOG.md`;
+  2. `git checkout main -- backlog/items/<SLUG>` (the item as `main` has
+     it — unchanged since the run began, by the guard above);
+  3. for each item this run created
+     (`git diff --name-only --diff-filter=A main...<BRANCH> -- 'backlog/items/*/desc.md'`,
+     except `<SLUG>`): `BL move <slug> --section inbox` (adds its row;
+     `orphan` findings until the last one are expected);
+  4. `BL remove <SLUG> --feature <NNN> --force` (on `main` the item is not
+     in progress — this is the only `--force` a run ever passes).
+
+  Then:
+
+  1. `BL sync`, `BL check` → `TOTAL: 0`; `git add backlog` and each
+     resolved file by name.
+  2. `git diff --name-only --diff-filter=U` → nothing left unmerged;
+     `git diff --cached --check | grep 'leftover conflict marker'` →
+     nothing (other `--check` lines are whitespace in `main`'s changes —
+     ignore them).
+  3. The staged files must be `main`'s changes
+     (`git diff --name-only $(git merge-base HEAD MERGE_HEAD) MERGE_HEAD`)
+     plus this feature's files (8.9's list); a staged file in neither set
+     → `git restore --staged <file>`. Never unstage a file of `main`'s set
+     (that would revert `main`'s change in the merge commit).
+  4. Commit `[<NNN>] merge main` (the commit rules of §0.10).
+  5. Repeat the checks of step 6 (encoding guard, build — `full` when
+     translations are involved — `saltests`, the feature's probe). When
+     `main`'s changes touched a file this feature changed, launch a fresh
+     review (step 7) of `git diff main...<BRANCH>`.
+  6. **Translations after the merge** (now `git merge-base main HEAD` is
+     `main`, so stop-rules §2.13 step 0 lists only this feature's
+     entries): for every module whose `.slt` files the table reset, run
+     §2.13 from step 0 (the feature's pins apply again); for every other
+     module whose `.slt` files the branch changed, run §2.13 steps 1, 3
+     and 4 — with 0 gaps the merge needs no DeepL and is deterministic —
+     then `slt --verify`; `git diff` must show no change (a `.slt` git
+     merged without a conflict can still be out of order), else §2.13
+     from step 0. Commit any change as `[<NNN>] translations after merging main`.
+  7. Back to the top of this step (`git checkout main`,
+     `git merge --ff-only <BRANCH>`); a second failure repeats this once
+     more; a third goes to step 10 with the reason below (`main moved
+     three times during the merge`).
+- A conflict outside that table (source code, another item's files), or
+  checks that fail after the merge three times → `git merge --abort` if
+  the merge is still open, `git checkout main`, go to step 10 with exactly
+  this reason, and skip 10.1 and 10.2a:
+
+  ```text
+  merge into main failed - finished work on <BRANCH>; <conflict outside the recipe of SKILL.md step 9: <files> | checks fail after merging main: <which> | a local change would be overwritten: <file> | main moved three times during the merge>; merge by hand: git merge <BRANCH>, backlog files by the backlog recipe of step 9
+  ```
+
+  Never rebase; never resolve a conflict outside the table.
 
 ## 10. Stop
 
@@ -419,11 +542,19 @@ Whenever stop-rules §3 or a step above says "step 10".
      `--related <SLUG>`.
    Source `measure:<NNN>`, or `manual` when no number exists yet.
 4. `BL block <SLUG> --reason '<reason> (feature <NNN>, branch <BRANCH>)'`
-   (without a branch: just the reason). A split also gets
+   (without a branch: just the reason). **A split closes the item
+   instead**, once every part is recorded and each part's *Problem* /
+   *Evidence* / *Expected* carries its share of the item's text (the parts
+   replace it): `BL remove <SLUG> --reason 'split into: <slugs> (feature <NNN>, branch <BRANCH>); agent YYYY-MM-DD'`
+   (the branch part only when one exists; the tool copies the reason into
+   each part's *Log*, which step 4.6 reads).
+   Only when `BL list --needs <SLUG>` lists dependents (removing would
+   release them before the parts are done): block it as above and
    `BL log <SLUG> 'split into: <slugs>'`.
 5. `BL run-log --outcome <blocked|split> --slug <SLUG> [--feature <NNN> --branch <BRANCH>] --inbox <INBOX> --person '<PERSON>' --note '<reason, short>'`
 6. `BL check` → `TOTAL: 0`; `git add backlog`; commit
-   `backlog: <SLUG> blocked (<NNN>)` (no branch: `backlog: <SLUG> blocked before specify`).
+   `backlog: <SLUG> blocked (<NNN>)` (no branch: `backlog: <SLUG> blocked before specify`;
+   a split that closed it: `backlog: <SLUG> split into <n> items`).
 7. **No branch exists but specify ran** (it failed before the branch was
    made): `git status --porcelain` must be empty now — if specify left a
    `specs/<folder>` or a changed `.specify/feature.json` on `main`, remove
