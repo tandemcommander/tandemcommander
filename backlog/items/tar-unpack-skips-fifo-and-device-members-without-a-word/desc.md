@@ -1,7 +1,7 @@
 ---
 title: Tar unpack skips FIFO and device members without a word
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:325
@@ -40,3 +40,4 @@ Pre-existing in every version; found while reviewing feature 325. A whole Unpack
 
 - 2026-10-23 — created (source review:325)
 - 2026-10-23 — related item tar-copy-of-listed-files-leaves-hard-links-out done in feature 325
+- 2026-10-23 — moved to Next position 64
