@@ -8,7 +8,7 @@ source: review:328
 who: agent
 created: 2026-10-23
 updated: 2026-10-23
-verified: -
+verified: 2026-10-23 ae41208d
 effort: S
 feature: -
 related: []
@@ -53,3 +53,4 @@ later folders should still be descended after a read error is a separate questio
 - 2026-10-23 — auto-triage: severity 6 -> 7: data loss in a narrow scenario - files never extracted are lost when Delete archive after unpacking deletes a damaged image
 - 2026-10-23 — moved to Next position 2
 - 2026-10-23 — related item iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses done in feature 329
+- 2026-10-23 — verified at ae41208d: reproduced at ae41208d: rderr.iso (folder A extent past the end), Unpack + Delete archive: 1 of 3 files, image deleted
