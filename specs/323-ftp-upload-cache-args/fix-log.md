@@ -73,3 +73,28 @@ REN-PATH, MKD-HID, MKD-CASE) with the 098 library by a relative path; the server
   `ReportCreateDirs` is unchanged (every reached listing invalidated) and the argument order is the
   same change as in the driven calls; checked by reading. C2, T1 (LOW): covered by the 288
   regression probe; the probe keeps its 302 name for continuity.
+
+## Probe runs (`ftp302_probe.ps1`, six rows + END rows)
+
+| Code | File | MKD-ABS | REN-UP | MKD-REN | REN-PATH | MKD-HID | MKD-CASE | Rows |
+|---|---|---|---|---|---|---|---|---|
+| `main` 4c33e2fc (`git checkout main -- src/plugins/ftp`, rebuilt) | `result_main.txt` | FAIL (`MKD new`, 550) | FAIL (`b.txt` = `LOCAL-B`, no question) | PASS | PASS | PASS | PASS | 10 / 2 |
+| 302's state (carried over, before this run's change) | `result_302state.txt` | PASS | PASS | PASS | PASS | FAIL (`STOR f.txt`, `.cfg/f.txt` = `LOCAL-F`) | FAIL (`Docs/f.txt` = `LOCAL-F`) | 10 / 2 |
+| this feature | `result_after.txt` | PASS | PASS | PASS | PASS | PASS (`CWD /MKD-HID/.cfg / PORT / LIST`, question open) | PASS (`LIST`, question open) | 12 / 0 |
+
+Every ROW fails on exactly one of the earlier versions - each is a negative control. The `main` run
+is the item's measurement at HEAD: the data loss reproduces at 4c33e2fc. END rows PASS in all runs
+(exit 0, no reports, the expected exit question about unfinished operations). Registry restored and
+identical in every run (SHA-256 CF14BE9E...). After the `main` run the sources were restored with
+`git checkout HEAD -- src/plugins/ftp` and rebuilt (`BUILD SUCCEEDED`).
+
+## Checks
+
+- Build: `.\build.cmd` -> `BUILD SUCCEEDED` (`ftp.spl`, `saltests`); no new warnings in the touched
+  files (the C4267 lines are `fs2.cpp` / `parser2.cpp`, untouched).
+- saltests: `saltests: 27793 checks, 0 failed` (with `TestFtpMkdirReport323`).
+- Encoding guard: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- clang-format: the touched lines are formatted (the remaining differences in `operats9.cpp` are
+  feature 303's lambda, in `operats.h` older lines).
+- Regression: `ftp288_probe.ps1` on the fixed build -> `probe/regress_288.txt` PASS 20, FAIL 0.
+- Translations: no UI string, menu or dialog changed - no `.slt` refresh.
