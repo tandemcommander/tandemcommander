@@ -79,7 +79,8 @@ holding unsafe names and checks the safe names, nothing outside the folder, no s
 
 1. **Given** a Joliet image holding `..\..\jesc.txt`, `12:30jaaa.txt`, `con.txtjaaa`,
    `jtrailaaaaa..`, `j/slasha.txt` and a folder `..\..\jd`, **When** its folder is extracted,
-   **Then** the files are `.._.._jesc.txt`, `12_30jaaa.txt`, `_con.txtjaaa`, `jtrailaaaaa__`,
+   **Then** the files are `.._.._jesc.txt`, `12_30jaaa.txt`, `_con.txtjaaa`, `jtrailaaaaa_` (the
+   first dot is the identifier's separator, review 1; a UDF or Xbox name keeps `jtrailaaaaa__`),
    `j_slasha.txt` and `.._.._jd\inner.txt`, each with its content, all inside the extracted folder,
    no alternate stream.
 2. **Given** the same unsafe names as plain ISO 9660 identifiers, UDF names, Xbox names or HFS+
@@ -108,8 +109,11 @@ written outside it.
 - Two names that differ only in characters the rule replaces (`a:b`, `a_b`) end at the same name:
   the usual overwrite question appears (feature 087's accepted class); nothing is lost silently.
 - A device name whose `_` prefix does not fit the buffer: its first character becomes `_`.
-- A name that is entirely dots (`..` stored as a Joliet name) becomes `__`; the records `.` and `..`
-  of the directory itself (identifiers 0 and 1) stay skipped as before.
+- A name that is entirely dots becomes `_`s: a folder `..` -> `__`; an ISO 9660 / Joliet *file*
+  `..` or `.` -> `_` (its separator dot removed first); the records `.` and `..` of the directory
+  itself (identifiers 0 and 1) stay skipped as before.
+- Joliet files `x.` and `x` (made from Linux names) both list as `x` - the overwrite question
+  appears, as for `x.;1` before this feature.
 - Rock Ridge names keep feature 326's handling; the names the plug-in generates itself (boot images
   `s01-bootdisk...ima`, audio tracks, `Session NN`) contain no unsafe characters and are unchanged.
 - The rule keeps every byte of 0x80 and above: a multi-byte UTF-8 letter is never split or changed.

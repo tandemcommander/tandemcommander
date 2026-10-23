@@ -4,7 +4,8 @@ Every name a disc file system stores can hold bytes Windows must not take as the
 refuses or maps them, so the probe makes a valid image with placeholder names and this script
 replaces each placeholder by an unsafe name of the same length (the records keep their layout).
 
-  python -I img327.py patch <in> <out> <set>   replace the placeholders of <set> (plain | joliet | udf)
+  python -I img327.py patch <in> <out> <set>   replace the placeholders of <set> (plain | joliet | udf |
+                                               udflabel | hfslabel)
   python -I img327.py vol <in> <out>           the primary volume identifier set to VOL_ID
   python -I img327.py xbox <out>               build an XDVDFS (Xbox) image holding XBOX_TREE
 
@@ -34,6 +35,11 @@ UNICODE = [
     ("jfolderx", "..\\..\\jd"),
 ]
 VOL_ID = "v\\..\\..\\w"
+# review 2: volume labels of the other label folders - the UDF logical volume identifier of an IMAPI2
+# ISO 9660 + UDF image (both encodings: the label is written as ISO 9660 and UDF identifiers) and the
+# HFS+ root folder name of an xorriso hybrid (UTF-16 only, the ISO 9660 label keeps its text)
+UDF_LABEL = [("TC327LBLAB", "u:\\..\\..\\x")]
+HFS_LABEL = [("TC327HFSLB", "h:\\..\\..\\y")]
 # (name, content or None for a folder, children)
 XBOX_TREE = [
     ("set", None, [
@@ -59,10 +65,12 @@ def replace_all(data, old, new):
 
 def cmd_patch(src, dst, which):
     data = bytearray(open(src, "rb").read())
-    pairs = {"plain": PLAIN, "joliet": UNICODE, "udf": UNICODE}[which]
+    pairs = {"plain": PLAIN, "joliet": UNICODE, "udf": UNICODE, "udflabel": UDF_LABEL, "hfslabel": HFS_LABEL}[which]
     missing = 0
     for old, new in pairs:
-        forms = [(old.encode("ascii"), new.encode("ascii"))]
+        forms = []
+        if which != "hfslabel":
+            forms.append((old.encode("ascii"), new.encode("ascii")))
         if which != "plain":
             forms.append((old.encode("utf-16-be"), new.encode("utf-16-be")))
         total = 0

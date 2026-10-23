@@ -121,3 +121,37 @@ ISO 9660 names are not made safe before extraction.
   omit_version) -> `probe/result_after_review1.txt` **PASS 64, FAIL 0** (NOVER `A.TXT`, `MAKEFILE`,
   `README`); feature 326's probe -> `probe/result_326_after.txt` **28 / 0**; 322's ->
   `probe/result_322_after.txt` **18 / 0**; registry restored identical each run.
+
+### Review 2 - two more launches stopped with their sessions; the third (foreground) completed
+
+- Launch 2 (after 8af7a0f0, `%TEMP%\rev327b`): `iso327_probe` 64 / 0 and `iso326_probe` 28 / 0, both
+  restored the registry identically; then the session ended. No registry backup of this run was left.
+- Launch 3 (foreground, completed): **0 MUST, 1 SHOULD, 5 NOTE.**
+  - Confirmed: every listing site and descent path cleans names read from the image (ISO 9660, Joliet
+    files and folders, UDF, HFS+ incl. its root label record, Xbox, the three label folders);
+    extraction finds data by `CFilePos`, not by name; the 326 fit pass sees the same names; buffers
+    hold the device prefix everywhere (the overwrite fallback is unreachable from the plug-in);
+    `SalSuspCleanRockRidgeName` equivalent to before. Negative control (copy, `MakeSafeName` removed
+    from `MakeListedName`) -> probe 59 / 5 (the `\` rows; the `:` / device / dot / `/` rows are masked by
+    the second cleaning at extraction).
+  - **SHOULD S1 (taken)**: no probe set covered the `UDF (<label>)` and `HFS (<label>)` folders
+    (`udfiso.cpp`). **Added** sets ULABEL (IMAPI2 ISO 9660 + UDF, label `u:\..\..\x` patched in both
+    identifiers by `img327.py udflabel`) and HLABEL (the xorriso hybrid with the label TC327HFSLB, its
+    HFS+ name patched to `h:\..\..\y` by `img327.py hfslabel`). Negative control in the tree (both
+    label `MakeSafeName` calls removed, rebuilt; `udfiso.cpp` restored from a byte copy afterwards,
+    `git diff main` shows only the feature's lines) -> `probe/result_review2_negative.txt` **68 / 9**:
+    both sets wrote outside the target (`<row>\x)\set\top.txt`, `<row>\y)\set\...`). (That run's
+    expected folder names were still mine and wrong - `u_.._.._x`; `:` and `\` both give `_`, so the
+    right name is `u__.._.._x` - corrected; the OUTSIDE rows of the negative run fail either way.)
+    After -> `probe/result_after_review2.txt` **PASS 77, FAIL 0** (`UDF (u__.._.._x)\set\top.txt`,
+    `HFS (h__.._.._y)\set\...`); registry restored identical.
+  - N2 (accepted): the second cleaning at extraction covers file names only; folder names reach
+    `UnpackDir` / `ExtractAllItems` from the listing, which cleans every one (FR-006 names files only).
+  - N3 (taken in the spec): `SalIsoRemoveVersion` also strips one trailing dot of a Joliet file name
+    without `;1` - Joliet `x.` and `x` both list as `x` (the overwrite question; `x.;1` did so before 327);
+    a file `..` / `.` -> `_`. Spec acceptance scenario 1 (`jtrailaaaaa_`) and the edge cases updated.
+  - N4 (pre-existing, unchanged): a crafted ISO 9660 / Joliet name is cut at its first `;` (Joliet
+    forbids `;`; versions `A;1` / `A;2` list as one name) - the version suffix rule of the format.
+  - N5 (accepted, as feature 087): `a:b` and `a_b` collide - the core lists both, extraction asks.
+  - N6 (pre-existing, recorded above): the HFS label's `sprintf(path, ...)` drops a session prefix.
+- No MUST in review 2 - the review is passed (SKILL.md step 7).

@@ -22,7 +22,9 @@
     9660 identifiers 'README.', 'MAKEFILE.', 'A.TXT' - PASS = 'README', 'MAKEFILE', 'A.TXT', the
     separator of an empty extension never becomes '_'). A trailing dot of an ISO 9660 / Joliet file
     identifier loses one separator dot first ('TRAILAAAAA..;1' -> 'TRAILAAAAA_').
-    PLAIN, HFS, VOL and NOVER are NOT DRIVEN without WSL Ubuntu.
+    Review 2: ULABEL (IMAPI2 ISO 9660 + UDF, label 'u:\..\..\x': the folder 'UDF (u__.._.._x)' must
+    hold set\top.txt) and HLABEL (the hybrid with its HFS+ name 'h:\..\..\y': 'HFS (h__.._.._y)').
+    PLAIN, HFS, VOL, NOVER and HLABEL are NOT DRIVEN without WSL Ubuntu.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 #>
@@ -175,6 +177,17 @@ try {
         Extract-Set $case "$s\$case.iso" @(0x24, 0x28) 'set' $want
     }
 
+    # --- review 2: a UDF label folder (IMAPI2 ISO 9660 + UDF, label patched in both identifiers) ---
+    $src = "$s\srcULABEL"; NewDir "$src\set"; WriteFile "$src\set\top.txt" 'TOP'
+    $fsi = New-Object -ComObject IMAPI2FS.MsftFileSystemImage
+    $fsi.FileSystemsToCreate = 5; $fsi.VolumeName = 'TC327LBLAB'; $fsi.Root.AddTree($src, $false)
+    [Iso327]::Save($fsi.CreateResultImage().ImageStream, "$s\ulabel0.iso")
+    if (RunPy @('patch', "$s\ulabel0.iso", "$s\ulabel.iso", 'udflabel')) {
+        # the root holds 'ISO (...)' and 'UDF (...)': End focuses the UDF folder
+        Extract-Set 'ULABEL' "$s\ulabel.iso" @(0x24, 0x23) 'UDF (u__.._.._x)\set' @{ 'top.txt' = 'TOP' }
+    }
+    else { Row 'ULABEL' 'RUN' 'NOT DRIVEN' 'the label placeholder was not found in the IMAPI2 image' }
+
     # --- Xbox (built) ---
     if (RunPy @('xbox', "$s\xbox.iso")) {
         Extract-Set 'XBOX' "$s\xbox.iso" @(0x24, 0x28) 'set' @{ '.._.._xesc.txt' = 'XESC'; '12_30x.txt' = 'XCOLON'; '_con.txt' = 'XDEV'; 'xtrail_' = 'XTDOT'; 'x_slash.txt' = 'XSLASH'; '.._.._xd\inner.txt' = 'INNER'; 'top.txt' = 'TOP' }
@@ -204,6 +217,11 @@ try {
             Extract-Set 'VOL' "$s\vol.iso" @(0x24, 0x23) 'ISO (v_.._.._w)\set' $hfs
         }
         else { Row 'VOL' 'RUN' 'NOT DRIVEN' 'img327.py vol failed' }
+        # review 2: the HFS+ label folder ('HFS (h:\..\..\y)' -> 'HFS (h__.._.._y)'); Home, Down focuses it
+        if ([IO.File]::Exists("$s\hfslabel0.iso") -and (RunPy @('patch', "$s\hfslabel0.iso", "$s\hfslabel.iso", 'hfslabel'))) {
+            Extract-Set 'HLABEL' "$s\hfslabel.iso" @(0x24, 0x28) 'HFS (h__.._.._y)\set' $hfs
+        }
+        else { Row 'HLABEL' 'RUN' 'NOT DRIVEN' 'no hfslabel0.iso or its label was not found' }
     }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

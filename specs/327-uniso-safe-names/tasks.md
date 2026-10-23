@@ -46,6 +46,10 @@ joined safe. **Independent test**: probe sets JOLIET, PLAIN, UDF, XBOX, HFS.
 
 - [X] T018 `SalIsoRemoveVersion` in `src/common/salsusp.h` (version suffix and one separator dot of an ISO 9660 / Joliet file identifier, also without a version) used by `RemoveIsoVersion` in `src/plugins/uniso/iso9660.cpp`; saltests cases in `src/saltests/saltests.cpp`; probe set NOVER and the trailing-dot expectations in `specs/327-uniso-safe-names/probe/iso327_probe.ps1` / `mkimg327.sh`
 
+## Phase 7: Review 2
+
+- [X] T019 Probe sets ULABEL and HLABEL (unsafe UDF and HFS+ labels) in `specs/327-uniso-safe-names/probe/iso327_probe.ps1`, `img327.py` (`udflabel`, `hfslabel`), `mkimg327.sh`; negative control with the two label sites of `src/plugins/uniso/udfiso.cpp` removed; spec acceptance scenario and edge cases aligned with `SalIsoRemoveVersion`
+
 ## Dependencies
 
 T002 -> T003, T004, T005 -> T006..T011 -> T012..T017. US1 and US2 are independent of each other

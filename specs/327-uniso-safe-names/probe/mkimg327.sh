@@ -46,4 +46,7 @@ printf 'M' > "$out/srcnover/set/Makefile"
 printf 'A' > "$out/srcnover/set/a.txt"
 rm -f "$out/nover.iso"
 $XO -outdev "$out/nover.iso" -volid TC327 -compliance omit_version -rockridge off -joliet off -map "$out/srcnover" / >/dev/null 2>&1
+# review 2: the same hybrid source under the label TC327HFSLB (img327.py hfslabel patches its HFS+ name)
+rm -f "$out/hfslabel0.iso"
+$XO -outdev "$out/hfslabel0.iso" -volid TC327HFSLB -joliet off -hfsplus on -map "$out/srchfs" / >/dev/null 2>&1
 ls "$out"
