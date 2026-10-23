@@ -105,6 +105,7 @@
 #include "salsamevolume.h"     // feature 324
 #include "salsusp.h"           // feature 326
 #include "salisonamefit.h"     // feature 328
+#include "salnrgcdtext.h"      // feature 331
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -20496,6 +20497,144 @@ static void TestIsoLeftOut329()
     CHECK(none.Size() == 0);
 }
 
+// feature 331: a block-by-block reference of the CD-Text text a chunk of 'size' bytes holds
+static size_t NrgCdTextRefLen331(size_t size)
+{
+    size_t n = 0;
+    for (size_t pos = SAL_NRG_CDTX_FLAGS; pos < size; pos += SAL_NRG_CDTX_BLOCK)
+        n += size - pos < SAL_NRG_CDTX_TEXT ? size - pos : SAL_NRG_CDTX_TEXT;
+    return n;
+}
+
+static void TestNrgCdText331()
+{
+    // a chunk is read only when its bytes lie within the image (64-bit, no wrap)
+    CHECK(SalNrgChunkFits(100, 0, 100));
+    CHECK(SalNrgChunkFits(100, 20, 120));
+    CHECK(!SalNrgChunkFits(100, 21, 120));
+    CHECK(!SalNrgChunkFits(121, 0, 120));
+    CHECK(!SalNrgChunkFits(100, 0xFFFFFFFFull, 120));            // a size near 4 GiB (wrapped in 32 bits before)
+    CHECK(!SalNrgChunkFits(8, 0xFFFFFFFFFFFFFFF8ull, 120));      // pos + size would wrap in 64 bits
+    CHECK(SalNrgChunkFits(0x10, 0xFFFFFFF0ull, 0x100000000ull)); // a 4 GiB image holds such a chunk
+
+    // the gathered text, every chunk size 0..200: the reference length, never more than the chunk,
+    // the blocks' bytes in order, nothing written past the text, the same text gathered in place
+    bool lenOk = true, contentOk = true, guardOk = true, inPlaceOk = true;
+    for (size_t size = 0; size <= 200; size++)
+    {
+        std::vector<unsigned char> chunk(size + 8, 0xEE); // 8 bytes past the chunk that must never be taken
+        for (size_t i = 0; i < size; i++)
+            chunk[i] = (unsigned char)(i + 1);
+        std::vector<unsigned char> out(size + 8, 0xCC);
+        size_t n = SalNrgCdTextGather(chunk.data(), size, out.data());
+        if (n != SalNrgCdTextLen(size) || n != NrgCdTextRefLen331(size) || n > size)
+            lenOk = false;
+        size_t m = 0;
+        for (size_t pos = SAL_NRG_CDTX_FLAGS; pos < size; pos += SAL_NRG_CDTX_BLOCK)
+            for (size_t j = 0; j < SAL_NRG_CDTX_TEXT && pos + j < size; j++, m++)
+                if (m >= n || out[m] != chunk[pos + j])
+                    contentOk = false;
+        if (m != n)
+            contentOk = false;
+        for (size_t i = n; i < out.size(); i++)
+            if (out[i] != 0xCC)
+                guardOk = false;
+        std::vector<unsigned char> same(chunk);
+        if (SalNrgCdTextGather(same.data(), size, same.data()) != n || (n > 0 && memcmp(same.data(), out.data(), n) != 0))
+            inPlaceOk = false;
+    }
+    CHECK(lenOk);
+    CHECK(contentOk);
+    CHECK(guardOk);
+    CHECK(inPlaceOk);
+    CHECK(SalNrgCdTextLen(4) == 0);
+    CHECK(SalNrgCdTextLen(5) == 1);
+    CHECK(SalNrgCdTextLen(16) == 12);
+    CHECK(SalNrgCdTextLen(22) == 12); // one whole block: the old loop appended 4 bytes from past the chunk
+    CHECK(SalNrgCdTextLen(23) == 13);
+    // sizes near 4 GiB and near the top of size_t: never more than the chunk, 12 bytes per 18
+    bool bigOk = true;
+    const unsigned long long bases[] = {0xFFFFFFFFull - 64, 0x100000000ull - 64 + 128, (unsigned long long)(size_t)-1 - 64};
+    for (unsigned long long b : bases)
+        for (size_t s = (size_t)b; s < (size_t)b + 64; s++)
+        {
+            size_t l = SalNrgCdTextLen(s);
+            if (l > s || SalNrgCdTextLen(s - 18) + 12 != l)
+                bigOk = false;
+        }
+    CHECK(bigOk);
+
+    // the labels: the volume label first, then one per track; a label without a terminator ends at
+    // the text's end; an exhausted text gives no label
+    const unsigned char t[] = {'V', 0, 'A', 'B', 0, 0, 'C'};
+    size_t pos = 0, start = 99, len = 99;
+    CHECK(SalNrgCdTextNext(t, sizeof(t), pos, start, len) && start == 0 && len == 1);
+    CHECK(SalNrgCdTextNext(t, sizeof(t), pos, start, len) && start == 2 && len == 2);
+    CHECK(SalNrgCdTextNext(t, sizeof(t), pos, start, len) && start == 5 && len == 0);
+    CHECK(SalNrgCdTextNext(t, sizeof(t), pos, start, len) && start == 6 && len == 1 && pos == sizeof(t));
+    CHECK(!SalNrgCdTextNext(t, sizeof(t), pos, start, len));
+    pos = 0;
+    CHECK(!SalNrgCdTextNext(t, 0, pos, start, len));
+    const unsigned char x[] = {'X', 0};
+    pos = 0;
+    CHECK(SalNrgCdTextNext(x, sizeof(x), pos, start, len) && len == 1 && pos == 2);
+    CHECK(!SalNrgCdTextNext(x, sizeof(x), pos, start, len));
+    // a label of 300 bytes over several blocks: whole
+    {
+        std::string text = std::string("TC331") + '\0' + "SHORT" + '\0' + std::string(300, 'L') + '\0';
+        size_t blocks = (text.size() + 11) / 12;
+        std::vector<unsigned char> chunk(SAL_NRG_CDTX_FLAGS + SAL_NRG_CDTX_BLOCK * blocks, 0);
+        for (size_t k = 0; k < blocks; k++)
+            for (size_t j = 0; j < 12 && 12 * k + j < text.size(); j++)
+                chunk[SAL_NRG_CDTX_FLAGS + SAL_NRG_CDTX_BLOCK * k + j] = (unsigned char)text[12 * k + j];
+        size_t n = SalNrgCdTextGather(chunk.data(), chunk.size(), chunk.data());
+        pos = 0;
+        std::vector<std::string> labels;
+        while (SalNrgCdTextNext(chunk.data(), n, pos, start, len))
+            labels.push_back(std::string((const char*)chunk.data() + start, len));
+        CHECK(labels.size() >= 3 && labels[0] == "TC331" && labels[1] == "SHORT" && labels[2] == std::string(300, 'L'));
+    }
+
+    // DAOX track numbers: 1..the tracks the CUEX chunk added
+    CHECK(!SalNrgDaoTrackInRange(0, 2));
+    CHECK(SalNrgDaoTrackInRange(1, 2));
+    CHECK(SalNrgDaoTrackInRange(2, 2));
+    CHECK(!SalNrgDaoTrackInRange(3, 2)); // CISOImage::GetTrack took index == count too
+    CHECK(!SalNrgDaoTrackInRange(-1, 2));
+    CHECK(!SalNrgDaoTrackInRange(1, 0));
+    CHECK(SalNrgDaoTrackInRange(255, 255));
+
+    // the listed name: whole for every label length 0..4096 (it was formatted into char[MAX_PATH])
+    bool namesOk = true;
+    const int numbers[] = {1, 9, 10, 99, 100, 1000};
+    for (size_t l = 0; l <= 4096; l++)
+    {
+        std::string label(l, 'L');
+        for (int number : numbers)
+        {
+            char* name = SalNrgAudioTrackNameAlloc(number, label.c_str());
+            if (name == NULL)
+            {
+                namesOk = false;
+                continue;
+            }
+            char num[16];
+            snprintf(num, sizeof(num), "%02d", number);
+            std::string want = l != 0 ? std::string(num) + " " + label : std::string("Audio Track ") + num;
+            if (want != name)
+                namesOk = false;
+            free(name);
+        }
+    }
+    CHECK(namesOk);
+    char* n256 = SalNrgAudioTrackNameAlloc(2, std::string(253, 'L').c_str()); // feature 329's probe label
+    CHECK(n256 != NULL && strlen(n256) == 256);
+    free(n256);
+    char* n303 = SalNrgAudioTrackNameAlloc(2, std::string(300, 'L').c_str());
+    CHECK(n303 != NULL && strlen(n303) == 303 && strncmp(n303, "02 LLL", 6) == 0);
+    free(n303);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -20659,6 +20798,7 @@ int main(int argc, char** argv)
     TestArcItemName327();
     TestIsoNameFit328();
     TestIsoLeftOut329();
+    TestNrgCdText331();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -1582,7 +1582,7 @@ CISOImage::GetTrack(int track)
 {
     CALL_STACK_MESSAGE2("CISOImage::GetTrack(%d)", track);
 
-    if (track >= 0 && track <= Tracks.Count)
+    if (track >= 0 && track < Tracks.Count) // feature 331: was <= (an index equal to the count)
         return Tracks[track];
     else
         return NULL;

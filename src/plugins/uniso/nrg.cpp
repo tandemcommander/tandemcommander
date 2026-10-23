@@ -6,6 +6,7 @@
 
 #include "isoimage.h"
 #include "audio.h"
+#include "../../common/salnrgcdtext.h" // feature 331: the NRG chunks' bounds
 
 #include "uniso.h"
 #include "uniso.rh"
@@ -156,7 +157,7 @@ readDAOX(CFile& file, NRGHeader* header, CISOImage* iso)
     DWORD read;
 
     BYTE daox_hdr[0x16];
-    if (!file.Read(&daox_hdr, sizeof(daox_hdr), &read, NULL, NULL))
+    if (!file.Read(&daox_hdr, sizeof(daox_hdr), &read, NULL, NULL) || read != sizeof(daox_hdr))
         return FALSE;
 
     BYTE firstTrack = daox_hdr[0x14];
@@ -166,10 +167,16 @@ readDAOX(CFile& file, NRGHeader* header, CISOImage* iso)
     for (i = firstTrack; i <= lastTrack; i++)
     {
         BYTE data[0x2A];
-        if (!file.Read(&data, sizeof(data), &read, NULL, NULL))
+        if (!file.Read(&data, sizeof(data), &read, NULL, NULL) || read != sizeof(data))
             return FALSE;
 
+        // feature 331: the track number comes from the image - an entry applies only to a track the
+        // CUEX chunk added (0 gave GetTrack(-1) = NULL, count + 1 a pointer past the track table)
+        if (!SalNrgDaoTrackInRange(i, iso->GetTrackCount()))
+            continue;
         CISOImage::Track* track = iso->GetTrack(i - 1);
+        if (track == NULL)
+            continue;
         track->SectorSize = getWord(data + 0x0C);
         SetTrackTypeMode(track, data[0x0E]);
         track->Start = getLongLong(data + 0x1A);
@@ -255,38 +262,55 @@ readCDTX(CFile& file, NRGHeader* header, CISOImage* iso)
 {
     CALL_STACK_MESSAGE3("readCDTX(, %p, %p)", header, iso);
 
-    DWORD read;
-    char* data = new char[header->Size + (1 + iso->GetTrackCount())];
-
-    if (!file.Read(data, header->Size, &read, NULL, NULL))
+    // feature 331: the chunk's size comes from the image - it is used only when the chunk lies within
+    // the image (the buffer was Size + 1 + tracks in 32-bit arithmetic, which wraps near 4 GiB), else
+    // the chunk is skipped like an unknown one and the tracks keep "Audio Track NN"
+    DWORD fileSizeHi;
+    DWORD fileSizeLo = file.GetFileSize(&fileSizeHi);
+    __int64 pos = file.Seek(0, FILE_CURRENT);
+    if (fileSizeLo == INVALID_FILE_SIZE || pos < 0 || // (as ReadSessionNRG)
+        !SalNrgChunkFits((unsigned long long)pos, header->Size, ((unsigned long long)fileSizeHi << 32) | fileSizeLo) ||
+        header->Size == 0)
     {
-        delete[] data;
+        file.Seek(header->Size, FILE_CURRENT);
         return FALSE;
     }
 
-    char *src, *dst;
-    src = data + 4; // Skip unknown 4 bytes (flags)
-    dst = data;
-    int i;
-    for (i = header->Size; i > 0; i -= 12 + 6)
-    { // Remove some unknown data (there are blocks of 12 bytes of labels followed by unkown 6 bytes)
-        memmove(dst, src, min(12, i));
-        dst += 12;
-        src += 12 + 6;
-    }
-    // Make our life easier by adding as many safety terminators as may be needed
-    memset(dst, 0, 1 + iso->GetTrackCount());
-    src = data;
-    iso->SetLabel(src);
-    src += strlen(src) + 1; // Skip volume label
-    int j;
-    for (j = 0; j < iso->GetTrackCount(); j++)
+    unsigned char* data = (unsigned char*)malloc(header->Size);
+    if (data == NULL)
     {
-        iso->GetTrack(j)->SetLabel(src);
-        src += strlen(src) + 1;
+        file.Seek(header->Size, FILE_CURRENT);
+        return FALSE;
     }
 
-    delete[] data;
+    DWORD read;
+    if (!file.Read(data, header->Size, &read, NULL, NULL) || read != header->Size)
+    {
+        free(data);
+        return FALSE;
+    }
+
+    // the text of the blocks of 12 bytes (after 4 bytes of flags, each followed by 6 other bytes),
+    // gathered in place within the chunk; then the volume label and one label per track, each taken
+    // by its length (a label without a terminator ends at the text's end)
+    size_t textLen = SalNrgCdTextGather(data, header->Size, data);
+    size_t next = 0, start, len;
+    int j;
+    for (j = -1; j < iso->GetTrackCount() && SalNrgCdTextNext(data, textLen, next, start, len); j++)
+    {
+        char* label = (char*)malloc(len + 1);
+        if (label == NULL)
+            break;
+        memcpy(label, data + start, len);
+        label[len] = 0;
+        if (j < 0)
+            iso->SetLabel(label);
+        else
+            iso->GetTrack(j)->SetLabel(label);
+        free(label);
+    }
+
+    free(data);
     return TRUE;
 }
 

@@ -7,6 +7,7 @@
 #include "uniso.h"
 #include "isoimage.h"
 #include "audio.h"
+#include "../../common/salnrgcdtext.h" // feature 331: the NRG chunks' bounds
 
 #include "uniso.rh"
 #include "uniso.rh2"
@@ -93,19 +94,20 @@ BOOL CAudio::ListDirectory(char* path, int session, CSalamanderDirectoryAbstract
 {
     CALL_STACK_MESSAGE3("CAudio::ListDirectory(%s, %d, ,)", path, session);
 
-    char audioTrack[MAX_PATH];
-    const char* label = Image->GetTrack(Track)->GetLabel();
-
-    if (*label)
+    // feature 331: the whole name on the heap - a CD-Text label of any length (it was formatted into
+    // char[MAX_PATH]: a label of 257+ bytes overran the stack); AddFileDir's listing rule lists it or
+    // leaves it out and reports it (329)
+    char* audioTrack = SalNrgAudioTrackNameAlloc(Track + 1, Image->GetTrack(Track)->GetLabel());
+    if (audioTrack == NULL)
     {
-        sprintf(audioTrack, "%02d %s", Track + 1, label);
-    }
-    else
-    {
-        sprintf(audioTrack, "Audio Track %02d", Track + 1);
+        Image->ListingLeftOut.SetIncomplete();
+        Error(IDS_INSUFFICIENT_MEMORY);
+        return FALSE;
     }
 
-    return AddFileDir(path, audioTrack, dir, pluginData);
+    BOOL ret = AddFileDir(path, audioTrack, dir, pluginData);
+    free(audioTrack);
+    return ret;
 }
 
 int CAudio::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* srcPath, const char* path,
