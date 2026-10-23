@@ -31,8 +31,8 @@
                    ok.txt (review 2)          -> "(206)" at open, tgt control/control, data/a.txt, data/ok.txt
                    and (feature 308: Copy extracts what the listing cannot show) data/a*125/b*125/f.txt
     Every row first reads the panel's path: Copy runs only when the panel is inside the archive.
-      GNU-TOOLONG  CJK(300).txt as a GNU long name - only with -Only GNU-TOOLONG: it crashes the program
-                   (measured before feature 306; an Inbox defect outside it)      -> tgt empty, a message
+      GNU-TOOLONG  CJK(300).txt as a GNU long name - it crashed the program until feature 321 (only with
+                   -Only GNU-TOOLONG before; in the default run since 321)        -> tgt empty, a message
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -181,9 +181,8 @@ try {
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; ACP {2}; python {3}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [Drv098f]::GetACP(), ((& $Python --version 2>&1) -join ' '))
     Out ''
-    $rowNames = @('PAX-LONG', 'PAX-CJK', 'PAX-TWINS', 'PAX-DEEP', 'PAX-MTIME', 'PAX-SIZE', 'PAX-GLOBAL', 'GIT-COMMENT', 'GNU-LONG', 'PAX-TOOLONG', 'PAX-PATHPART', 'PAX-255DIR', 'PAX-LIMIT', 'PAX-DEB')
-    # GNU-TOOLONG crashes the program (the Inbox defect, outside feature 306): only with -Only GNU-TOOLONG
-    if ($Only -and @($Only | Where-Object { 'GNU-TOOLONG' -like ($_ + '*') }).Count) { $rowNames += 'GNU-TOOLONG' }
+    # feature 321: GNU-TOOLONG no longer crashes the program - part of the default run
+    $rowNames = @('PAX-LONG', 'PAX-CJK', 'PAX-TWINS', 'PAX-DEEP', 'PAX-MTIME', 'PAX-SIZE', 'PAX-GLOBAL', 'GIT-COMMENT', 'GNU-LONG', 'PAX-TOOLONG', 'PAX-PATHPART', 'PAX-255DIR', 'PAX-LIMIT', 'PAX-DEB', 'GNU-TOOLONG')
     foreach ($n in $rowNames) { Run-Row $n }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

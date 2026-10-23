@@ -114,3 +114,28 @@ the shared `}` after 307's function): `C2601 local function definitions are ille
 
 Entry at the top of `[0.1.11] — unreleased` (feature 321); the 306 / 308 entry's limitation "still
 crashes the program on opening - recorded for later" now says "crashed ... - fixed by feature 321".
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST, no SHOULD
+
+Re-measured on the branch build (df19d6d4): BUILD SUCCEEDED, saltests 27698 / 0, encoding TOTAL 0;
+`pax306_probe -Only GNU-TOOLONG` 2 / 0 (no crash, "(206)" with the path); `tar321_probe` 20 / 0;
+`unp321_probe` 12 / 0 (UNP-DEEP / -DEL 34 of 34, UNP-TOOLONG-DEL ok.txt + "(206)" + archive kept,
+COPY-DEEP 33 of 33). Checked by reading: the folder-part rule of `sallistingname.h` is logically
+identical to feature 222's; `NameFromGnu` set only for `L` (not `K`), reset in `Initialize`;
+`Listing` TRUE only in `ListArchive`; the tar and core bounds agree (255 units <= 765 bytes < 780);
+the `fileswn3.cpp` bounds end at byte 779; callers with no folder part enumerated.
+
+- NOTE 1 (done): a top-level folder over 255 bytes is now listed for PAX too, but cannot be entered
+  ("The path specified is too long.") - as 0.1.10 for GNU; Copy extracts it with its contents
+  (reviewer rows ENTER-GNU / ENTER-PAX / DIRFILE-GNU, no crash). The changelog entry now says so.
+- NOTE 2 (done): `pax306_probe.ps1` still kept GNU-TOOLONG out of the default run as "it crashes";
+  now in the default run -> `probe/regress_306.txt` **30 / 0**.
+- NOTE 3 (recorded, not changed): the "(206)" text ("The filename or extension is too long") names
+  `CJK(n)\in.txt` whose components are all valid - only its folder part is too deep for the listing.
+  The message is features 306 / 308's (PAX paths alike); outside this item.
+- NOTE 4 (recorded limitations): 7Z-TOOLONG "Internal error." at open yet ok.txt lists and copies;
+  CPIO-TOOLONG refuses the whole archive (backlog item
+  `a-cpio-or-rpm-archive-with-a-member-name-the-panel-cannot`); FS plug-ins get a failed addition
+  for 780+ byte names (the changelog says so).

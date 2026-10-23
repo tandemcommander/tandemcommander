@@ -1,6 +1,6 @@
-pax306_probe (feature 306) regress-321
+pax306_probe (feature 306) regress-321-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 09:34; registry key existed True; ACP 1250; python Python 3.14.6
+Date    : 2026-10-23 09:58; registry key existed True; ACP 1250; python Python 3.14.6
 
 PAX-LONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 PAX-LONG   RUN    PASS        dddddddd..[302 chars]..ffff.txt: L t=1000000000; tgt: dddddddd..[302 chars]..ffff.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy directory "dddddddddddddddddddddd..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
@@ -31,6 +31,8 @@ PAX-LIMIT  RUN    PASS        pppppppp..[261 chars]..pp/f.txt: P t=1000000000; t
 PAX-DEB    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 PAX-DEB    RUN    PASS        control/control: Package: x
  t=1000000000; data/a.txt: A t=1000000000; data/aaa..[262 chars]..bb/f.txt: F t=1000000000; data/ok.txt: K t=1000000000; tgt: control/control, data/a.txt, data/aaa..[262 chars]..bb/f.txt, data/ok.txt; message (206) at open: True; at open: ...bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\f.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+GNU-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GNU-TOOLONG RUN    PASS        tgt: empty; at open: ...B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: [#32770 'Information'] [Static id=2477] No matches found. | [Button id=1] OK
 Registry: restored; identical=True; SHA-256 before CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF / after CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF
 
-Rows: PASS 28, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 30, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
