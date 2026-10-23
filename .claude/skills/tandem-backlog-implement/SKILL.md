@@ -333,10 +333,32 @@ item describes (re-run the measurement in the fix-log); can it lose user data
 (CLAUDE.md "Never lose the user's data"); regressions in callers (enumerate them
 yourself); the standing rules of CLAUDE.md (UTF-8 names, never cut a path,
 refuse instead); tests and probes really prove the claims (try a negative
-control). Do not edit files. Report MUST / SHOULD / NOTE findings with file:line
-and a reproduction.
+control). Never edit files in E:\Projects\tandemcommander: a negative control
+that needs old code is built in a copy (git worktree add <your scratchpad>\neg HEAD~1,
+or a copy of the sources under %TEMP%), with its own build folder. Keep within
+about 45 minutes and never wait on a command longer than 10 minutes; if a probe or
+build does not finish, report what you have. Report MUST / SHOULD / NOTE findings
+with file:line and a reproduction.
 ```
 
+- **Never idle on a reviewer that is not running.** The review agent runs
+  in the background; its end arrives as a task notification. Whenever you
+  wake (a notification, a scheduled wakeup) while waiting for it, check
+  first whether it is still running: a notification or task record for it
+  with status `stopped`, `killed`, `failed` or `completed` without a
+  report means it ended — launch a fresh review at once with the same
+  prompt (it does not count as a review round; add `Partial work of a
+  reviewer that stopped: <what it had found>` when it reported anything).
+  A fallback wakeup while waiting is at most 600 s, and the second wakeup
+  without any progress of the reviewer (no new task progress) is treated
+  as a reviewer that stopped. Do not message a running reviewer for its
+  status (a message restarts a finished agent from its transcript).
+- A reviewer must leave the tree as it found it: its prompt says it does
+  not edit files; a negative control that needs old code is done in a
+  copy (`git worktree add <scratchpad>/neg-<NNN> HEAD~n` or a copy of the
+  source under `%TEMP%`), never in the run's working tree. After every
+  review, `git status --short` must be empty (else `git checkout HEAD --
+  <files>` and rebuild) before step 8.
 - MUST findings: fix them, repeat the affected checks of step 6, launch a
   fresh review with the same prompt plus `Previous findings: <list>`.
 - A third review with MUST findings, or a second one that repeats a MUST
