@@ -1,7 +1,7 @@
 ---
 title: Check ISO Rock Ridge names in a Shift-JIS image on a Japanese-locale Windows
 type: person-step
-status: new
+status: open
 severity: 4
 area: archives
 source: leftover:326
@@ -54,3 +54,4 @@ names of a Shift-JIS image are listed and extracted with their own letters; a na
 ## Log
 
 - 2026-10-23 — created (source leftover:326)
+- 2026-10-23 — moved to Person steps position 23

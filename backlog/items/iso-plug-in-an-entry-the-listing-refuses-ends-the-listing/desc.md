@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an entry the listing refuses ends the listing with Error, a folder lost
 type: bug
-status: new
+status: open
 severity: 6
 area: archives
 source: review:326
@@ -56,3 +56,4 @@ than whole ISO 9660 names is a trade-off; not decided here.
 ## Log
 
 - 2026-10-23 — created (source review:326)
+- 2026-10-23 — moved to Next position 1

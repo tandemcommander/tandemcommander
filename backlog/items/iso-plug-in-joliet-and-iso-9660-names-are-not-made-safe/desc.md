@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: Joliet and ISO 9660 names are not made safe before extraction
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:326
@@ -53,3 +53,4 @@ patch of a Joliet identifier, as feature 326's probe patches `rr.iso` in `Make-L
 ## Log
 
 - 2026-10-23 — created (source review:326)
+- 2026-10-23 — moved to Next position 1
