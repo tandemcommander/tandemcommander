@@ -29,6 +29,14 @@ Measured at efb9b0ad (hidden-desktop probe derived from 317's, the ZIP plug-in, 
   `report.v1.zip`, `CONSOLE.zip`, `con bla.zip`, `COM10.zip`, ` typed.zip`, `.cfg.zip` packed; an
   empty entry refused ("Empty name has no sense here.").
 
+## Clarifications
+
+### Session 2026-10-23
+
+- Q: Should a device name with an extension (`CON.zip`) be refused although this Windows 11 build opens it through an ordinary path? → A: yes, refused like a trailing dot or space (autonomous run: item - *Expected* names "a device name" among the names to refuse)
+- Q: Which message does the refusal show? → A: the existing "The path specified is invalid." in a box titled Pack, then the dialog again - the message 317 shows for ` ..` (autonomous run: rule - no new UI string without the `.slt` refresh; conservative - one message for one rule)
+- Q: Is a device name preceded by spaces (` CON.zip`) or a name ending in a control character (a tab) refused too? → A: no - their behaviour is unchanged; Windows does not treat ` CON` as a device and does not trim a tab, the item names neither (autonomous run: conservative - keep the existing behaviour for every case the item does not name)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A trailing dot or space is refused (Priority: P1)
@@ -82,6 +90,8 @@ ctl-com10, ctl-lead-space, ctl-dot-start, ctl-empty: PASS before and after.
 - `report.v1.zip`, `.cfg.zip`, ` typed.zip` (dots inside, a leading dot, a leading space) are packed.
 - `CONSOLE.zip`, `con bla.zip`, `COM10.zip` are not device names - packed.
 - A device name followed by spaces before the extension (`NUL .zip`) is a device name - refused.
+- A device name preceded by spaces (` CON.zip`) and a name ending in a tab are unchanged (see
+  Clarifications).
 - Only the last part of the path is checked; a folder part is the folder the user named (it must
   exist for the packer to write into it).
 - "Use the other panel for packing" on offers an absolute name - the same rule applies to it.
