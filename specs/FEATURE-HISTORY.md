@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4495,3 +4495,29 @@ a few early ones are out of sequence).
   UNP-CASE-DEL and COPY-BADSIG); 306 30 / 0, 308 12 / 0, 309 16 / 0, 310 52 / 0, 321 20 / 0 + 12 / 0
   unchanged; saltests 27,884 / 0; refute-first reviews: review 1 (one MUST + three SHOULD, fixed), review 2
   (partial results: two MUST-level defects fixed; final report no MUST, two SHOULD fixed, five NOTEs).
+- 326-uniso-rrip-without-rr: an ISO image made on Linux with xorriso (Rock Ridge 1.12, no `RR`
+  entry) listed and extracted its files under the upper-case ISO 9660 names - `top.txt` as `TOP.TXT`,
+  a 200-letter name as 31 letters; the plug-in read Rock Ridge only when a record started with `RR` -
+  now a volume whose root `.` record carries the SUSP `SP` entry is read as Rock Ridge
+  (`src/common/salsusp.h`, LEN_SKP honoured), `RR` records as before; a Rock Ridge name keeps a `;`
+  (it was cut there as the ISO version suffix) and is made safe for Windows after its UTF-8
+  conversion (`..\x` -> `.._x`, `12:30.txt` -> `12_30.txt`, `con.txt` -> `_con.txt`, trailing dot ->
+  `_`; feature 087's rule per component, `CISO9660::MakeListedName`); a volume whose Rock Ridge names
+  the panel listing would refuse (a folder part over its bound) is listed as before 326, decided by a
+  fit check pass with the core's rule (`sallistingname.h`); names that differ only in case are listed
+  case-sensitively as TAR / 7-Zip since 252 (`uniso.cpp` `ListArchive`). Traps: review 1's MUST - the
+  uncleaned names wrote `..\escape.txt` two levels above the target and `12:30.txt` into a stream;
+  a deep Rock Ridge tree ended the listing with "Error" and lost a folder (a re-list after `Clear` was
+  rejected: it would wipe a hybrid's other file systems); cleaning the raw bytes changed Shift-JIS
+  letters (review 2); three review launches looked stopped while they waited on their own probes;
+  clang-format reformats unrelated lines of `saltests.cpp` - format `--lines` only; Git Bash turns a
+  `/mnt/c` argument to wsl into a `C:` folder in the repository. Limits: Rock Ridge + Joliet images
+  still list Joliet; a too-deep Rock Ridge tree gets ISO 9660 names as a whole; CD-XA's `SP` not
+  looked for; Joliet / ISO 9660 names still uncleaned and a refused entry still clears the listing of
+  `RR` images (Inbox); the Shift-JIS order owed to a person. From backlog item
+  `iso-plug-in-rock-ridge-names-of-xorriso-images-are-not-read`. Probe `iso326_probe` 13 / 5 -> 28 / 0
+  (rows added after review 1 measured 24 / 4 before their fix; LEGACY = `rr.iso` patched to an `RR`
+  first entry without `SP`); `twins326_probe` (252's probe with an ISO kind) 5 / 3 -> 8 / 0; 322's probe
+  18 / 0; saltests 27,937 / 0 (mutants of each rule fail); refute-first reviews: review 1 (one MUST,
+  fixed; N2 led to DEEP), review 2 (partial results: the case twins, fixed; final report no MUST, one
+  SHOULD fixed, three NOTEs).

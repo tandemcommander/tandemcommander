@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: Rock Ridge names of xorriso images are not read, the ISO 9660 names are listed](items/iso-plug-in-rock-ridge-names-of-xorriso-images-are-not-read/desc.md) | bug | 5 | other-plugins | 326 |
 
 ## Next
 
