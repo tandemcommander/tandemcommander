@@ -14,11 +14,16 @@
 // 'report.zip ', ' ..' (317) or 'CON.zip' would be created as a literal file
 // that ordinary Windows programs cannot open, rename or delete. Such a name is
 // refused, unless a file of exactly that name already exists (the caller's
-// check through \\?\ - adding to it creates nothing new). Header-only, no
-// globals; saltests checks it.
+// check through \\?\ - adding to it creates nothing new). Feature 319: a ':' in
+// the last part ('report:zip', 'rep:x.zip') names an NTFS alternate data
+// stream - the packer created an empty file 'report' and hid the archive in its
+// stream 'zip.zip'. Such a name is always refused (a stream is never a file the
+// panel shows). Header-only, no globals; saltests checks it.
 //
 //   SalPackNameIsNotKeptAsTyped  the last part of a full archive name is not
 //                                a name the file system keeps as typed
+//   SalPackNameHasStreamColon    the last part of a full archive name holds a
+//                                ':' (a data stream, not a file)
 //
 //*****************************************************************************
 
@@ -88,4 +93,26 @@ inline BOOL SalPackNameIsNotKeptAsTyped(const char* fullName)
     if (lastChar == ' ' || lastChar == '.')
         return TRUE;
     return SalPackNameIsReservedDevice(last);
+}
+
+// TRUE when the part of 'fullName' after its last '\' or '/' holds a ':' - NTFS reads 'name:stream'
+// as the alternate data stream 'stream' of the file 'name' (feature 319); a drive prefix (an ASCII
+// letter and ':' as the first two bytes) is skipped, so 'C:\t\a.zip' and 'C:a.zip' are not such names;
+// a ':' only in a folder part ('C:\t\sub:x\a.zip') is not this rule's (the packer refuses it). FALSE
+// for NULL and an empty last part. Reads UTF-8 bytes: ':' is never a byte of a multi-byte character,
+// and the full-width colon U+FF1A is an ordinary name character
+inline BOOL SalPackNameHasStreamColon(const char* fullName)
+{
+    if (fullName == NULL)
+        return FALSE;
+    const char* s = fullName;
+    if (((s[0] >= 'a' && s[0] <= 'z') || (s[0] >= 'A' && s[0] <= 'Z')) && s[1] == ':')
+        s += 2;
+    const char* last = s;
+    for (; *s != 0; s++)
+    {
+        if (*s == '\\' || *s == '/')
+            last = s + 1;
+    }
+    return strchr(last, ':') != NULL;
 }

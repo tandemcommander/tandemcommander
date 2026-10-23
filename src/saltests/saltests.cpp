@@ -18914,6 +18914,47 @@ static void TestPackName318()
     CHECK(!SalPackNameIsReservedDevice(NULL));
 }
 
+// feature 319: a Pack archive name whose last part holds a ':' names an NTFS data stream - always
+// refused (salpackname.h)
+static void TestPackName319()
+{
+    // a ':' in the last part: refused
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report:zip.zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\t\\rep:x.zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report:zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\t\\:zip.zip"));    // a leading colon
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report.zip:")); // a trailing colon
+    CHECK(SalPackNameHasStreamColon("C:\\t\\:"));           // only a colon
+    CHECK(SalPackNameHasStreamColon("C:\\t\\a:b:c.zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\report:zip.zip"));                   // in the root
+    CHECK(SalPackNameHasStreamColon("\\\\server\\share\\d\\rep:x.zip"));      // UNC
+    CHECK(SalPackNameHasStreamColon("C:\\t\\plain/rep:x.zip"));               // after a '/'
+    CHECK(SalPackNameHasStreamColon("C:/t/rep:x.zip"));                       // '/' only
+    CHECK(SalPackNameHasStreamColon("C:\\t\\zpr\xC3\xA1va:zip.zip"));         // a UTF-8 name
+    CHECK(SalPackNameHasStreamColon("C:\\t\\\xE4\xB8\x80:\xE4\xB8\x80.zip")); // CJK around it
+    CHECK(SalPackNameHasStreamColon("rep:x.zip"));                            // no folder at all
+    CHECK(SalPackNameHasStreamColon("C:rep:x.zip"));                          // drive-relative
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report.zip::$DATA"));
+    // a drive prefix only, or a colon outside the last part: not refused by this rule
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\report.zip"));
+    CHECK(!SalPackNameHasStreamColon("c:\\t\\report.zip"));
+    CHECK(!SalPackNameHasStreamColon("C:report.zip")); // drive-relative (SalGetFullName makes it full)
+    CHECK(!SalPackNameHasStreamColon("C:"));
+    CHECK(!SalPackNameHasStreamColon("C:\\"));
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\sub:x\\a.zip")); // a folder part (the packer refuses it)
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\sub:x/a.zip"));
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\report:zip\\")); // no last part
+    CHECK(!SalPackNameHasStreamColon("\\\\server\\share\\d\\a.zip"));
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\report\xEF\xBC\x9Azip.zip")); // full-width colon U+FF1A
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\ report.zip"));
+    CHECK(!SalPackNameHasStreamColon("report.zip"));
+    CHECK(!SalPackNameHasStreamColon(""));
+    CHECK(!SalPackNameHasStreamColon(NULL));
+    // a digit or other byte before ':' is no drive letter
+    CHECK(SalPackNameHasStreamColon("1:x.zip"));
+    CHECK(SalPackNameHasStreamColon("\xC3\xA1:x.zip"));
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -19065,6 +19106,7 @@ int main(int argc, char** argv)
     TestCpioLink310();
     TestUnpackDefault315();
     TestPackName318();
+    TestPackName319();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

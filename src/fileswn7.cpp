@@ -1934,9 +1934,11 @@ _PACK_AGAIN:
         // ('report.', 'report.zip ') or a device name ('CON.zip'): the packers write through \\?\,
         // so such a file was created literally and ordinary programs could not open or delete it.
         // An archive already named so (FileExists goes through \\?\, so 'report' never stands for
-        // 'report.') is added to or overwritten as before - nothing new is created
+        // 'report.') is added to or overwritten as before - nothing new is created. Feature 319: a ':'
+        // in the last part ('report:zip') is always refused - NTFS made it an empty file 'report' with
+        // the archive hidden in its data stream 'zip.zip' (also when 'report' or the stream existed)
         BOOL nameOk = SalGetFullName(fileBuf, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus, NULL, MAX_PATH, TRUE);
-        if (nameOk && SalPackNameIsNotKeptAsTyped(fileBuf) && !FileExists(fileBuf))
+        if (nameOk && (SalPackNameHasStreamColon(fileBuf) || (SalPackNameIsNotKeptAsTyped(fileBuf) && !FileExists(fileBuf))))
         {
             errTextID = IDS_PATHISINVALID;
             nameOk = FALSE;

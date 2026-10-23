@@ -1,0 +1,32 @@
+pack319_probe (feature 319) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 04:58; ACP 1250; registry key existed True; OS Microsoft Windows NT 10.0.26300.0
+Fixture C:\Users\pavel\AppData\Local\Temp\tc319_pack
+
+colon-ext  RUN    FAIL        OK on 'report:zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc319_pack\colon-ext\src\report:zip.zip |  &Volume Size: |   [Button ...(158)... od  |; new: 'src\report', 'src\report:zip.zip'; changed: none; entries: none;  [expected new none; changed none; message 'path specified is invalid']
+colon-ext  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-mid  RUN    FAIL        OK on 'rep:x.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc319_pack\colon-mid\src\rep:x.zip |  &Volume Size: |   [Button id=1 ...(153)... od  |; new: 'src\rep', 'src\rep:x.zip'; changed: none; entries: none;  [expected new none; changed none; message 'path specified is invalid']
+colon-mid  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-exist RUN    FAIL        OK on 'report:zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc319_pack\colon-exist\src\report:zip.zip |  &Volume Size: |   [Butt ...(160)... od  |; new: 'src\report:zip.zip'; changed: none; entries: none;  [expected new none; changed none; message 'path specified is invalid']
+colon-exist END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-stream RUN    FAIL        OK on 'report:zip.zip'; dialog stayed: False; asked: [#32770 'Question'] The file "report:zip.zip" already exists. Do you want to add 1 directory into existing archive or overwrite existing one? | || [#32770 'Add Files to Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc319_pack\colon-stream\src\report:zip.zip |  &Volume Size: |   [But ...(161)... od  | || [#32770 'ZIP'] Cannot replace original archive with temporary working file. Archive was not changed. |; new: 'src\SalA90.tmp'; changed: 'src\report:zip.zip'; entries: none;  [expected new none; changed none; message 'path specified is invalid']
+colon-stream END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-abs  RUN    FAIL        OK on '...(68)<sp>9_pack\colon-abs\src\abs:x.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc319_pack\colon-abs\src\abs:x.zip |  &Volume Size: |   [Button id=1 ...(153)... od  |; new: 'src\abs', 'src\abs:x.zip'; changed: none; entries: none;  [expected new none; changed none; message 'path specified is invalid']
+colon-abs  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-slash RUN    FAIL        OK on 'plain/rep:x.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc319_pack\colon-slash\src\plain/rep:x.zip |  &Volume Size: |   [But ...(161)... od  | || [#32770 'Error'] Name: | Error: | Cannot open or create file. N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  |; new: none; changed: none; entries: none;  [expected new none; changed none; message 'path specified is invalid']
+colon-slash END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-dir  RUN    PASS        OK on 'sub:x\a.zip'; dialog stayed: False; asked: [#32770 'Error'] Name: | Error: | Cannot access file. N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  |; new: none; changed: none; entries: none; 
+colon-dir  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-plain  RUN    PASS        OK on 'plain.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc319_pack\ctl-plain\src\plain.zip |  &Volume Size: |   [Button id=1 ...(153)... od  |; new: 'src\plain.zip'; changed: none; entries: 'plain/f.txt', 'plain/'; 
+ctl-plain  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-drive-abs RUN    PASS        OK on '...(70)<sp>pack\ctl-drive-abs\src\abs.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc319_pack\ctl-drive-abs\src\abs.zip |  &Volume Size: |   [Button id ...(155)... od  |; new: 'src\abs.zip'; changed: none; entries: 'plain/f.txt', 'plain/'; 
+ctl-drive-abs END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-drive-rel RUN    PASS        OK on 'C:rel.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc319_pack\ctl-drive-rel\src\rel.zip |  &Volume Size: |   [Button id ...(155)... od  |; new: 'src\rel.zip'; changed: none; entries: 'plain/f.txt', 'plain/'; 
+ctl-drive-rel END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+trail-dot  RUN    PASS        OK on 'report.'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+trail-dot  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-empty  RUN    PASS        OK on ''; dialog stayed: False; asked: [#32770 'Pack'] Empty name has no sense here. | || the Pack dialog again; new: none; changed: none; entries: none; 
+ctl-empty  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+
+Rows: PASS 18, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
