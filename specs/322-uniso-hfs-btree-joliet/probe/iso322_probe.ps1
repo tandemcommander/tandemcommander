@@ -16,6 +16,8 @@
                 (xorriso writes no 'RR' entry; the plug-in then lists the ISO 9660 name, also before 322)
       HFS       the HFS+ partition of hyb.iso alone: the volume folder TC322 (End, Enter), End
                 focuses top.txt, F5 - PASS = top.txt with 'TOP'
+      HFS-MANY  the HFS+ partition of many.iso alone (1001 files in 40 folders: a catalog of many leaf
+                nodes, review 1): TC322 (End, Enter), End focuses zz.txt, F5 - PASS = zz.txt with 'MANY'
       HYB       hyb.iso (ISO 9660 + Rock Ridge + Joliet + HFS+): opens, the program stays alive (the
                 messages at the open are recorded)
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does
@@ -101,6 +103,29 @@ function Extract-Row([string]$Case, [string]$Image, [string]$Tgt, [int[]]$Keys, 
 }
 function Names([string]$Dir) { return @([IO.Directory]::GetFiles($Dir) | ForEach-Object { [IO.Path]::GetFileName($_) }) }
 function Content([string]$Path) { try { return [IO.File]::ReadAllText($Path) } catch { return '<none>' } }
+function Be16($b, [long]$o) { return ([int]$b[$o] -shl 8) -bor [int]$b[$o + 1] }
+function Be32($b, [long]$o) { return ([long](Be16 $b $o) -shl 16) -bor [long](Be16 $b ($o + 2)) }
+# writes the Apple_HFS partition of a valid xorriso hybrid alone to $Dst (the HFS+ volume header then
+# lies at 1024, as CHFS expects of a partition image); returns a description of its catalog, $null when
+# the image is not laid out so: the partition map, the catalog's node size, leaf records and leaf nodes
+function Hfs-Cut([string]$Src, [string]$Dst) {
+    $b = [IO.File]::ReadAllBytes($Src)
+    if ($b[0] -ne 0x45 -or $b[1] -ne 0x52) { return $null }   # 'ER'
+    $sec = Be16 $b 2; $n = 1; $i = 1; $base = -1
+    while ($i -le $n -and $i -lt 64) {
+        $o = $i * $sec; $n = Be32 $b ($o + 4)
+        if ([Text.Encoding]::ASCII.GetString($b, $o + 48, 9) -ceq 'Apple_HFS') { $base = (Be32 $b ($o + 8)) * $sec }
+        $i++
+    }
+    if ($base -lt 0 -or $b[$base + 1024] -ne 0x48 -or $b[$base + 1025] -ne 0x2B) { return $null }   # 'H+'
+    $vh = $base + 1024; $bs = Be32 $b ($vh + 40)
+    $cat = $base + (Be32 $b ($vh + 0x110 + 16)) * $bs
+    $ns = Be16 $b ($cat + 32); $leafRecords = Be32 $b ($cat + 20)
+    $node = Be32 $b ($cat + 24); $leaves = 0
+    while ($node -ne 0 -and $leaves -lt 100000) { $leaves++; $node = Be32 $b ($cat + $node * $ns) }
+    [IO.File]::WriteAllBytes($Dst, $b[$base..($b.Length - 1)])
+    return ("partition at {0}, node size {1}, leaf records {2}, leaf nodes {3}" -f $base, $ns, $leafRecords, $leaves)
+}
 
 $backup = Join-Path $env:TEMP 'tc322_backup.reg'
 $existed = Backup-Reg $backup
@@ -140,15 +165,13 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath (Join-Path $PSScriptRoot 'mkimg322.sh')) (WslPath $s) 2>&1
     $ErrorActionPreference = $old
     if (-not [IO.File]::Exists("$s\hyb.iso")) {
-        foreach ($c in @('RR', 'PLAIN', 'RR-LONG', 'HFS', 'HYB')) { Row $c 'RUN' 'NOT DRIVEN' ('no xorriso image: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
+        foreach ($c in @('RR', 'PLAIN', 'RR-LONG', 'HFS', 'HFS-MANY', 'HYB')) { Row $c 'RUN' 'NOT DRIVEN' ('no xorriso image: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
     }
     else {
-        # the HFS+ partition alone: the bytes from the Apple_HFS partition start (block 60 of 2048 bytes)
-        $hy = [IO.File]::ReadAllBytes("$s\hyb.iso")
-        $vh = 60 * 2048 + 1024
-        $hfsOk = ($hy[0] -eq 0x45 -and $hy[1] -eq 0x52 -and $hy[$vh] -eq 0x48 -and $hy[$vh + 1] -eq 0x2B)
-        Out ("seeds: {0}; HFS+ volume header at {1}: {2}" -f (((Names $s) | Sort-Object) -join ','), $vh, $hfsOk)
-        if ($hfsOk) { [IO.File]::WriteAllBytes("$s\hfs.iso", $hy[(60 * 2048)..($hy.Length - 1)]) }
+        # the HFS+ partitions alone (the bytes from the Apple_HFS partition start)
+        $hfsInfo = Hfs-Cut "$s\hyb.iso" "$s\hfs.iso"; $hfsOk = ($null -ne $hfsInfo)
+        $manyInfo = $null; if ([IO.File]::Exists("$s\many.iso")) { $manyInfo = Hfs-Cut "$s\many.iso" "$s\hfsmany.iso" }
+        Out ("seeds: {0}; hfs.iso: {1}; hfsmany.iso: {2}" -f (((Names $s) | Sort-Object) -join ','), $hfsInfo, $manyInfo)
 
         foreach ($c in @(@('RR', 'rr.iso', 'top.txt'), @('PLAIN', 'plain.iso', 'TOP.TXT'))) {
             $case = $c[0]; $d = $Root + '\' + $case; NewDir $d; NewDir "$d\tgt"; $tgt = "$d\tgt"; $want = $c[2]
@@ -162,6 +185,13 @@ try {
         else {
             $d = $Root + '\HFS'; NewDir $d; NewDir "$d\tgt"; $tgt = "$d\tgt"
             Extract-Row 'HFS' "$s\hfs.iso" $tgt @(0x24, 0x23, 0x0D, 0x24, 0x23) { $g = Content "$tgt\top.txt"; [pscustomobject]@{ Ok = ($g -ceq 'TOP'); Facts = ("extracted: {0}; content '{1}'" -f ((Names $tgt) -join ','), $g) } }
+        }
+        # review 1: a valid catalog of many leaf nodes (the fLink walk on a real image); zz.txt is the
+        # last item of the volume folder (40 folders before it)
+        if ($null -eq $manyInfo) { Row 'HFS-MANY' 'RUN' 'NOT DRIVEN' 'no many.iso, or another layout than a partition map with Apple_HFS' }
+        else {
+            $d = $Root + '\HFS-MANY'; NewDir $d; NewDir "$d\tgt"; $tgt = "$d\tgt"; $mi = $manyInfo
+            Extract-Row 'HFS-MANY' "$s\hfsmany.iso" $tgt @(0x24, 0x23, 0x0D, 0x24, 0x23) { $g = Content "$tgt\zz.txt"; [pscustomobject]@{ Ok = ($g -ceq 'MANY'); Facts = ("{0}; extracted: {1}; content '{2}'" -f $mi, ((Names $tgt) -join ','), $g) } }
         }
         $id = 0; $before = Reports
         try {

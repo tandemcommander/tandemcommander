@@ -4,6 +4,8 @@
 # $1 = the output folder (a /mnt/c/... path inside the probe's fixture)
 # Writes: hyb.iso (ISO 9660 + Rock Ridge + Joliet + HFS+), rr.iso (ISO 9660 + Rock Ridge),
 #         plain.iso (ISO 9660 only). Each holds folder/note.txt, top.txt.
+#         rrlong.iso (Rock Ridge, a 200-letter name); many.iso (hybrid of 1001 files in 40 folders -
+#         an HFS+ catalog of many leaf nodes)
 set -e
 D="$HOME/tc-xorriso"
 X="$D/root"
@@ -29,4 +31,14 @@ mkdir -p "$out/srclong"
 long="z$(printf 'r%.0s' $(seq 1 195)).txt"
 printf 'LONG' > "$out/srclong/$long"
 $XO -outdev "$out/rrlong.iso" -volid TC322 -joliet off -map "$out/srclong" / >/dev/null 2>&1
+# a catalog of many leaf nodes (review 1): 40 folders of 25 files, and zz.txt sorted after them
+rm -rf "$out/srcmany"
+mkdir -p "$out/srcmany"
+for d in $(seq -w 0 39); do
+    mkdir -p "$out/srcmany/d$d"
+    for f in $(seq -w 0 24); do printf 'x' > "$out/srcmany/d$d/file_with_a_longer_name_$f.txt"; done
+done
+printf 'MANY' > "$out/srcmany/zz.txt"
+rm -f "$out/many.iso"
+$XO -outdev "$out/many.iso" -volid TC322 -hfsplus on -joliet on -map "$out/srcmany" / >/dev/null 2>&1
 ls "$out"

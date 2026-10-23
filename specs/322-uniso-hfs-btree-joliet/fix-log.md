@@ -127,3 +127,29 @@ the existing fallback) and A1 (how the HFS+-only seed is made - measured above) 
   letters) - measured the same before this feature (RR row: `TOP.TXT` in result_before.txt). The
   RR-LONG row therefore checks that the file is extracted whole with its content and records that
   the Rock Ridge name was not used.
+
+## Review
+
+Review 1 (independent, refute-first): **no MUST**. Re-ran the probe (16 / 0, registry identical) and
+saltests (27776 / 0). Negative controls by code mutation in a scratch worktree with its own build
+folder: removing the node bound crashes saltests (0xC0000005); removing the record-offset lower
+bound, swapping `ofs + 2 > areaEnd` for `ofs > nodeSize`, removing the name-in-key check, the
+record-type room or the cycle check each fails 1-3 checks. A valid xorriso catalog of 127 nodes /
+122 leaf nodes / 2082 records walked OK by the shipped header (41 folders, 1000 files, 1041 threads,
+every key and record fits). Callers of `GetRecord` (3) all checked; byte order of `blockSize` and the
+record types verified; the Joliet copy bound matches its only caller's buffer; the new refusals in
+`UnpackFile` come before any target file is created.
+- SHOULD 1 (taken): the probe's HFS+ seed had a single leaf node - row HFS-MANY added (xorriso hybrid
+  of 1001 files in 40 folders, the partition found through the Apple partition map; 103 leaf nodes,
+  2084 records; zz.txt extracted with 'MANY'). Probe after review 1: PASS 18, FAIL 0, NOT DRIVEN 0,
+  registry identical (probe/result_after.txt).
+- NOTE 1 (recorded): `nodeSize > size` is redundant with the node bound, and the record-table check
+  has no check that fails only on it (other bounds stop the walk) - defence in depth, kept.
+- NOTE 2: `Avail` may include the free-space offset's 2 bytes - every read stays inside the node.
+- NOTE 3: the catalog allocation is still sized from the image (bounded now by `totalBlocks *
+  blockSize`, not by the image size) - not an out-of-bounds read; existed before.
+- NOTE 4: the `UnpackFile` refusal text names the partition for one record - unreachable in practice
+  (the listing filters those records).
+- NOTE 5: one bad record offset now refuses the whole catalog (before: read as garbage) - the
+  spec's rule; a MagicISO image with a wrong per-node record count could not be measured.
+- NOTE 6: the `.slt` layout drift (1203 widened in 7 languages) - the pipeline's output.
