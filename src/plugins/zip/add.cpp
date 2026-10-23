@@ -33,6 +33,8 @@
 #include "../../common/salzipmember.h" // feature 113: a replaced member put back
 #include "../../common/salpackvol.h"   // feature 119: the volumes a failed multi-volume pack deletes
 
+#include "../../common/salsafereplace.h" // feature 320: the archive replaced only by a complete file
+
 #ifndef SSZIP
 #include "zip.rh"
 #include "zip.rh2"
@@ -208,11 +210,7 @@ int CZipPack::PackNormal(SalEnumSelection2 next, void* param)
                         SetFileTime(TempFile->File, NULL, NULL, &NewestFileTime);
 
                     CloseCFile(TempFile);
-                    SalamanderGeneral->ClearReadOnlyAttr(ZipName);
-                    if (!DeleteFileU8(ZipName) ||
-                        !MoveFileU8(TempName, ZipName))
-                        ErrorID = IDS_ERRRESTORE;
-                    SetFileAttributesU8(ZipName, ZipAttr | FILE_ATTRIBUTE_ARCHIVE);
+                    ErrorID = ReplaceArchiveWithTemp(); // feature 320: never deletes the archive first
                 }
             }
             else
@@ -1084,6 +1082,66 @@ int CZipPack::ExportName(char* name, CFileInfo* fileInfo, BOOL* isUTF8)
 
     //*dest = NULL;
     return (int)(dest - name);
+}
+
+// feature 320: the complete, closed temporary working file takes the closed archive's place in one
+// step (salsafereplace.h, ReplaceFileW). Before 320 the archive was deleted and the temporary file
+// renamed over it: a failed delete (the archive open elsewhere without delete sharing) left the
+// Sal*.tmp behind, and a failed rename after a successful delete (an archive in a data stream, 319)
+// left the archive gone - both under "Archive was not changed."
+int CZipPack::ReplaceArchiveWithTemp()
+{
+    CALL_STACK_MESSAGE1("CZipPack::ReplaceArchiveWithTemp()");
+    WCHAR* wZip = SplU8ToWExtAlloc(ZipName);
+    WCHAR* wTemp = SplU8ToWExtAlloc(TempName);
+    int errorID = 0;
+    if (wZip == NULL || wTemp == NULL)
+    {
+        DeleteFileU8(TempName); // the archive was not touched
+        errorID = IDS_LOWMEM;
+    }
+    else
+    {
+        DWORD err = 0;
+        switch (SalReplaceWithTempW(wZip, wTemp, TRUE, TRUE, &err))
+        {
+        case srrDone:
+            SetFileAttributesU8(ZipName, ZipAttr | FILE_ATTRIBUTE_ARCHIVE);
+            // ReplaceFileW copies the archive's named streams (Zone.Identifier) into the new file,
+            // which moves its last-write time: "set zip file time to the newest file time" again
+            if (Config.TimeToNewestFile && NewestFileTime.dwLowDateTime != 0 && NewestFileTime.dwHighDateTime != 0)
+            {
+                HANDLE h = CreateFileW(wZip, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                       NULL, OPEN_EXISTING, 0, NULL);
+                if (h != INVALID_HANDLE_VALUE)
+                {
+                    SetFileTime(h, NULL, NULL, &NewestFileTime);
+                    CloseHandle(h);
+                }
+            }
+            break;
+
+        case srrLeftAtTemp: // the archive is gone (a third party): the temporary file is the only copy - kept, named
+            ProcessError(IDS_ERRCREATE, err, ZipName, PE_NORETRY | PE_NOSKIP, NULL, TempName);
+            errorID = IDS_NODISPLAY;
+            break;
+
+        case srrFailedBothGone: // the archive and the temporary file are gone (a third party)
+            ProcessError(IDS_ERRACCESS, err, ZipName, PE_NORETRY | PE_NOSKIP, NULL);
+            errorID = IDS_NODISPLAY;
+            break;
+
+        default: // srrFailedKept: the archive as it was - the message is true now
+            DeleteFileU8(TempName);
+            errorID = IDS_ERRRESTORE;
+            break;
+        }
+    }
+    if (wZip != NULL)
+        free(wZip);
+    if (wTemp != NULL)
+        free(wTemp);
+    return errorID;
 }
 
 int CZipPack::CreateTempFile()

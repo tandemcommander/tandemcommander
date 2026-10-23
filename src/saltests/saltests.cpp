@@ -5159,6 +5159,115 @@ static void TestSafeReplace105()
     CHECK(RemoveDirectoryW(dir.c_str())); // nothing left behind (no stray temporary file)
 }
 
+// feature 320: the ZIP plug-in replaces an archive with its temporary working file through
+// SalReplaceWithTempW - the targets its two replace steps met (src/plugins/zip/add.cpp
+// ReplaceArchiveWithTemp): an archive in a data stream (319), an archive held open elsewhere
+static void TestSafeReplace320()
+{
+    WCHAR tmp[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, tmp);
+    if (n == 0 || n >= MAX_PATH)
+    {
+        printf("skipping TestSafeReplace320 (no temp path)\n");
+        return;
+    }
+    std::wstring dir = std::wstring(L"\\\\?\\") + tmp + L"saltests-320-" + std::to_wstring(GetCurrentProcessId());
+    CHECK(CreateDirectoryW(dir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    auto put = [](const std::wstring& p, const char* text) -> BOOL
+    {
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD w = 0;
+        BOOL ok = h != INVALID_HANDLE_VALUE && WriteFile(h, text, (DWORD)strlen(text), &w, NULL);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        return ok;
+    };
+    auto get = [](const std::wstring& p) -> std::string
+    {
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                               OPEN_EXISTING, 0, NULL);
+        if (h == INVALID_HANDLE_VALUE)
+            return "<missing>";
+        char b[64] = {0};
+        DWORD r = 0;
+        if (!ReadFile(h, b, sizeof(b) - 1, &r, NULL))
+            strcpy_s(b, "<unreadable>");
+        CloseHandle(h);
+        return b;
+    };
+    auto exists = [](const std::wstring& p) -> BOOL
+    { return GetFileAttributesW(p.c_str()) != INVALID_FILE_ATTRIBUTES; };
+    std::wstring host = dir + L"\\report", stream = host + L":zip.zip", a = dir + L"\\a.zip", tmpFile = dir + L"\\Sal320.tmp";
+    DWORD err = 0;
+
+    // 1. an archive in a data stream (319): neither the stream nor its host file changes; the
+    //    temporary file is left to the caller (who deletes it) - before 320 the stream was deleted first
+    CHECK(put(host, "HOST") && put(stream, "OLDARC") && put(tmpFile, "NEWARC"));
+    err = 0;
+    CHECK(SalReplaceWithTempW(stream.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrFailedKept && err != 0);
+    CHECK(get(stream) == "OLDARC" && get(host) == "HOST" && get(tmpFile) == "NEWARC");
+
+    // 2. an archive held open without delete sharing (an indexer, a viewer): kept, 32
+    CHECK(put(a, "OLDARC"));
+    {
+        HANDLE held = CreateFileW(a.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+        CHECK(held != INVALID_HANDLE_VALUE);
+        err = 0;
+        CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrFailedKept && err == ERROR_SHARING_VIOLATION);
+        if (held != INVALID_HANDLE_VALUE)
+            CloseHandle(held);
+    }
+    CHECK(get(a) == "OLDARC" && get(tmpFile) == "NEWARC");
+
+    // 3. held open with delete sharing: replaced as before
+    {
+        HANDLE held = CreateFileW(a.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                                  OPEN_EXISTING, 0, NULL);
+        CHECK(held != INVALID_HANDLE_VALUE);
+        CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
+        if (held != INVALID_HANDLE_VALUE)
+            CloseHandle(held);
+    }
+    CHECK(get(a) == "NEWARC" && !exists(tmpFile));
+
+    // 4. the replacement's last-write time ("set zip file time to the newest file time" sets it on
+    //    the temporary file) is kept by a replace onto an archive without named streams...
+    auto setOld = [](const std::wstring& p) -> BOOL
+    {
+        HANDLE h = CreateFileW(p.c_str(), FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING, 0, NULL);
+        FILETIME ft;
+        ft.dwLowDateTime = 0x12345678;
+        ft.dwHighDateTime = 0x01C00000; // year 1997
+        BOOL ok = h != INVALID_HANDLE_VALUE && SetFileTime(h, NULL, NULL, &ft);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        return ok;
+    };
+    auto isOld = [](const std::wstring& p) -> BOOL
+    {
+        WIN32_FILE_ATTRIBUTE_DATA fa;
+        return GetFileAttributesExW(p.c_str(), GetFileExInfoStandard, &fa) && fa.ftLastWriteTime.dwHighDateTime == 0x01C00000 &&
+               fa.ftLastWriteTime.dwLowDateTime == 0x12345678;
+    };
+    CHECK(put(tmpFile, "NEWER") && setOld(tmpFile));
+    CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
+    CHECK(get(a) == "NEWER" && !exists(tmpFile) && isOld(a));
+
+    // 5. ...while one onto an archive with a named stream (the downloaded-file mark) keeps the
+    //    stream and moves the time (ReplaceFileW copies the stream into the new file, measured) -
+    //    the ZIP plug-in sets the time again after the replace
+    CHECK(put(a + L":Zone.Identifier", "ZONE") && put(tmpFile, "NEWEST") && setOld(tmpFile));
+    CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
+    CHECK(get(a) == "NEWEST" && get(a + L":Zone.Identifier") == "ZONE" && !exists(tmpFile));
+    CHECK(!isOld(a));
+
+    // cleanup (explicit names only)
+    DeleteFileW(tmpFile.c_str());
+    DeleteFileW(a.c_str());
+    DeleteFileW(host.c_str());
+    CHECK(RemoveDirectoryW(dir.c_str())); // nothing left behind
+}
+
 // feature 106: a pack operation's output is never written over one of the files it packs
 // (SalPackOutputIsSource / SalPackTargetInSelection, src/common/salsamefile.h)
 static void TestPackSelf106()
@@ -19011,6 +19120,7 @@ int main(int argc, char** argv)
     TestSameFile103();
     TestPluginFileDlg104();
     TestSafeReplace105();
+    TestSafeReplace320();
     TestPackSelf106();
     TestFolderAlias107();
     TestArchiveEdit108();

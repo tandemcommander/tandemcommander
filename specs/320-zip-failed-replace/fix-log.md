@@ -57,3 +57,61 @@ from the probe (a comment says why). Registry restored, identical (SHA-256 CF691
   `IDS_ERRRESTORE` (true now); `srrLeftAtTemp`: keep the temporary file, `IDS_ERRCREATE` for the
   archive with the system error and the temporary file's name, `IDS_NODISPLAY`; `srrFailedBothGone`:
   `IDS_ERRACCESS` for the archive with the system error, `IDS_NODISPLAY`. No new string.
+
+## speckit-analyze
+
+No CRITICAL / HIGH. Accepted: C1 (MEDIUM) - the "archive gone, temporary file kept" branch of the
+ZIP mapping has no GUI or unit test of its own (needs a third party deleting the archive during the
+operation); the shared rule's 105 checks cover `srrLeftAtTemp`; left to the review to read. C2 (LOW)
+- no probe row for Move to archive with a held archive (the clean-up is skipped on any error, as
+before). U1 (LOW) - the archive now keeps its own named streams / ACL / creation time after a
+replace (ReplaceFileW); checked in saltests (T005).
+
+## Change (T002-T005)
+
+1. `src/plugins/zip/add_del.h` / `add.cpp`: `CZipPack::ReplaceArchiveWithTemp()` - wide names
+   (`SplU8ToWExtAlloc`), `SalReplaceWithTempW(wZip, wTemp, TRUE, TRUE, &err)`, results as D2; on
+   `srrDone` the attributes as before and, with "set zip file time to the newest file time", the
+   time set again on the archive (see the trap below); no memory -> the temporary file deleted,
+   `IDS_LOWMEM`. `#include "../../common/salsafereplace.h"` in its own include block (clang-format
+   would otherwise realign the four include comments above it).
+2. `CZipPack::PackNormal` (`add.cpp`) and `CZipPack::DeleteFromArchive` (`add_del.cpp`): the
+   `ClearReadOnlyAttr` + `DeleteFileU8` + `MoveFileU8` + `SetFileAttributesU8` lines replaced by
+   `ErrorID = ReplaceArchiveWithTemp();`.
+3. `src/saltests/saltests.cpp`: `TestSafeReplace320` (19 checks) after `TestSafeReplace105`: a stream
+   target (`report:zip.zip`) -> kept, stream and host unchanged, temporary file left to the caller;
+   a target held with sharing read + write -> kept, 32; with + delete -> done; the replacement's
+   last-write time kept onto a target without named streams; onto a target with `Zone.Identifier`
+   the stream kept and the time moved.
+
+Trap met (T005): the first version of check 4 expected the replacement's last-write time kept onto
+an archive WITH a named stream - failed. Measured separately (PowerShell, ReplaceFileW with a NULL
+backup name): without a named stream the replacement's time is kept (1997-05-05 stays); with
+`Zone.Identifier` on the target the time becomes "now" - ReplaceFileW copies the stream into the
+replacement. A downloaded archive (the usual case for the mark) with "set zip file time to the newest
+file time" on would have lost that time, so `ReplaceArchiveWithTemp` sets it again after `srrDone`;
+the unit checks were split into 4 (kept) and 5 (moved - documents why the plug-in re-applies it).
+(A first PowerShell attempt passed `$null` for the backup name, which PowerShell turns into "" -
+ReplaceFileW then fails; `[NullString]::Value` fixed the measurement.)
+
+Negative control of shape (b) (the old algorithm on a stream, PowerShell `DeleteFileW(stream)` then
+`MoveFileW(temp, stream)`): delete True, move False (123), the stream gone, the temporary file left -
+exactly what 319 measured. The new rule on the same target: kept, unchanged (saltests check 1).
+
+## Checks after the change
+
+- `.\build.cmd`: BUILD SUCCEEDED, exit 0 (3 builds; the last after the include-block tweak).
+- `saltests: 27559 checks, 0 failed` (27540 + 19; the first run after the first build failed check 4
+  - the trap above). (One run right after the first build printed 27540: it ran an older binary
+  while the output was being produced; every run after shows 27557/27559.)
+- `python tools/check_encoding.py --strict`: `TOTAL: 0 finding(s)`.
+- clang-format (VS 2022 LLVM, `.clang-format`): the changed lines of `add.cpp`, `add_del.cpp`,
+  `add_del.h` and `TestSafeReplace320` clean; the remaining hunks are older lines outside the change.
+- Probe (`probe/result_after.txt`, run on the second build; the third differs only by a blank line):
+  **12 PASS / 0 FAIL** (6 RUN + 6 END); add-locked and del-locked: the replace message, nothing new,
+  nothing changed (before: a new `Sal623.tmp` / `Sal272.tmp`); the four controls as before;
+  registry restored, identical (SHA-256 CF69145A...).
+
+Not driven: "archive gone, temporary file kept" (`srrLeftAtTemp`) and "both gone" - need a third
+party deleting the archive during the operation (analyze C1); Move to archive with a held archive
+(the clean-up runs only without an error, unchanged). No person step is owed.
