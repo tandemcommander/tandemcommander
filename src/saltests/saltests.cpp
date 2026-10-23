@@ -103,6 +103,7 @@
 #include "salhfscatalog.h"    // feature 322
 #include "salftpmkdirreport.h" // feature 323
 #include "salsamevolume.h"     // feature 324
+#include "salsusp.h"           // feature 326
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -19883,6 +19884,121 @@ static void TestSameVolume324()
     RemoveDirectoryW(base.c_str());
 }
 
+// feature 326: an ISO 9660 directory record - the 33-byte fixed part, the identifier, the padding
+// byte (even identifier length), then the System Use area 'su'
+static std::string Susp326Record(const std::string& id, const std::string& su)
+{
+    std::string r(33, '\0');
+    r += id;
+    if (id.size() % 2 == 0)
+        r += '\0';
+    r += su;
+    r[0] = (char)(unsigned char)r.size();
+    r[32] = (char)(unsigned char)id.size();
+    return r;
+}
+static std::string Susp326Entry(const char* sig, const std::string& data)
+{
+    std::string e;
+    e += sig[0];
+    e += sig[1];
+    e += (char)(unsigned char)(4 + data.size());
+    e += '\x01';
+    return e + data;
+}
+
+static void TestSusp326()
+{
+    const std::string sp = Susp326Entry("SP", std::string("\xBE\xEF\x00", 3));
+    const std::string px = Susp326Entry("PX", std::string(32, '\x01'));
+    const std::string tf = Susp326Entry("TF", std::string(22, '\x02'));
+    const std::string ce = Susp326Entry("CE", std::string(24, '\x03'));
+    const std::string nm = Susp326Entry("NM", std::string("\x00top.txt", 8));
+    const std::string rr = Susp326Entry("RR", std::string("\x81", 1));
+    size_t off = 0, len = 0, start = 99;
+    unsigned char skip = 0xFF;
+
+    // the root's '.' record xorriso 1.5.6 writes: SP PX TF CE (identifier 0x00, length 1 - no padding)
+    {
+        std::string dot = Susp326Record(std::string(1, '\0'), sp + px + tf + ce);
+        const unsigned char* d = (const unsigned char*)dot.data();
+        CHECK(SalSuspSystemUseArea(d, dot.size(), &off, &len) && off == 34 && len == dot.size() - 34);
+        CHECK(SalSuspRootHasSp(d, dot.size(), &skip) && skip == 0);
+        // with LEN_SKP 3
+        std::string dot3 = Susp326Record(std::string(1, '\0'), Susp326Entry("SP", std::string("\xBE\xEF\x03", 3)) + px);
+        CHECK(SalSuspRootHasSp((const unsigned char*)dot3.data(), dot3.size(), &skip) && skip == 3);
+        // the record read whole only: one byte short of its length -> refused
+        CHECK(!SalSuspRootHasSp(d, dot.size() - 1, &skip));
+    }
+    // an SP that is not one: wrong check bytes, length 6, version 2, not first, cut by the record
+    {
+        std::string bad1 = Susp326Record(std::string(1, '\0'), Susp326Entry("SP", std::string("\xBE\xEE\x00", 3)) + px);
+        CHECK(!SalSuspRootHasSp((const unsigned char*)bad1.data(), bad1.size(), &skip));
+        std::string sp6 = sp;
+        sp6[2] = 6;
+        std::string bad2 = Susp326Record(std::string(1, '\0'), sp6 + px);
+        CHECK(!SalSuspRootHasSp((const unsigned char*)bad2.data(), bad2.size(), &skip));
+        std::string spv2 = sp;
+        spv2[3] = 2;
+        std::string bad3 = Susp326Record(std::string(1, '\0'), spv2 + px);
+        CHECK(!SalSuspRootHasSp((const unsigned char*)bad3.data(), bad3.size(), &skip));
+        std::string bad4 = Susp326Record(std::string(1, '\0'), px + sp);
+        CHECK(!SalSuspRootHasSp((const unsigned char*)bad4.data(), bad4.size(), &skip));
+        std::string bad5 = Susp326Record(std::string(1, '\0'), sp.substr(0, 6)); // the area ends inside SP
+        CHECK(!SalSuspRootHasSp((const unsigned char*)bad5.data(), bad5.size(), &skip));
+        std::string sp9 = sp;
+        sp9[2] = 9; // longer than the area that holds it
+        std::string bad6 = Susp326Record(std::string(1, '\0'), sp9);
+        CHECK(!SalSuspRootHasSp((const unsigned char*)bad6.data(), bad6.size(), &skip));
+        std::string none = Susp326Record(std::string(1, '\0'), ""); // a plain ISO 9660 '.' record
+        CHECK(SalSuspSystemUseArea((const unsigned char*)none.data(), none.size(), &off, &len) && len == 0);
+        CHECK(!SalSuspRootHasSp((const unsigned char*)none.data(), none.size(), &skip));
+    }
+    // the record lengths: an even identifier has a padding byte; lengths that do not fit are refused
+    {
+        std::string even = Susp326Record("FOLDER", px + nm); // identifier length 6 -> padding byte
+        CHECK(SalSuspSystemUseArea((const unsigned char*)even.data(), even.size(), &off, &len) && off == 40 &&
+              len == px.size() + nm.size());
+        std::string odd = Susp326Record("TOP.TXT;1", px + nm);
+        CHECK(SalSuspSystemUseArea((const unsigned char*)odd.data(), odd.size(), &off, &len) && off == 42);
+        std::string padOnly = Susp326Record("AB", ""); // the padding byte ends the record
+        CHECK(SalSuspSystemUseArea((const unsigned char*)padOnly.data(), padOnly.size(), &off, &len) && len == 0);
+        std::string shortRec = odd;
+        shortRec[0] = 33;
+        CHECK(!SalSuspSystemUseArea((const unsigned char*)shortRec.data(), shortRec.size(), &off, &len));
+        std::string longId = odd;
+        longId[32] = (char)(unsigned char)(odd.size() - 32); // 33 + identifier > length
+        CHECK(!SalSuspSystemUseArea((const unsigned char*)longId.data(), longId.size(), &off, &len));
+        CHECK(!SalSuspSystemUseArea((const unsigned char*)odd.data(), 33, &off, &len));
+        CHECK(!SalSuspSystemUseArea(NULL, 100, &off, &len));
+    }
+    // where a record's Rock Ridge entries start
+    {
+        std::string xo = px + tf + nm; // an xorriso record
+        const unsigned char* x = (const unsigned char*)xo.data();
+        CHECK(!SalSuspRockRidgeStart(x, xo.size(), false, 0, &start)); // no SP on the volume: as before
+        start = 99;
+        CHECK(SalSuspRockRidgeStart(x, xo.size(), true, 0, &start) && start == 0);
+        start = 99;
+        CHECK(SalSuspRockRidgeStart(x, xo.size(), true, 3, &start) && start == 3);
+        // LEN_SKP leaving fewer than 4 bytes, or past the area -> no Rock Ridge name
+        CHECK(!SalSuspRockRidgeStart(x, 6, true, 3, &start));
+        CHECK(SalSuspRockRidgeStart(x, 7, true, 3, &start) && start == 3);
+        CHECK(!SalSuspRockRidgeStart(x, 2, true, 3, &start));
+        CHECK(!SalSuspRockRidgeStart(x, 0, true, 0, &start));
+        CHECK(!SalSuspRockRidgeStart(x, 3, true, 0, &start));
+        // a record starting with RR (genisoimage): from byte 0 on any volume, also when LEN_SKP is set
+        std::string gi = rr + px + nm;
+        const unsigned char* g = (const unsigned char*)gi.data();
+        start = 99;
+        CHECK(SalSuspRockRidgeStart(g, gi.size(), false, 0, &start) && start == 0);
+        start = 99;
+        CHECK(SalSuspRockRidgeStart(g, gi.size(), true, 3, &start) && start == 0);
+        CHECK(!SalSuspRockRidgeStart(g, 3, false, 0, &start)); // RR without a whole header
+        CHECK(!SalSuspRockRidgeStart(NULL, 10, true, 0, &start));
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -20042,6 +20158,7 @@ int main(int argc, char** argv)
     TestHfsCatalog322();
     TestFtpMkdirReport323();
     TestSameVolume324();
+    TestSusp326();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "fs.h"
+#include "../../common/salsusp.h" // feature 326: Rock Ridge recognised by the root's SP entry too
 
 // ****************************************************************************
 //
@@ -261,6 +262,10 @@ protected:
     };
 
     EExt Ext;
+    // feature 326: the root's '.' record carries the SUSP SP entry (RRIP 1.12 images - xorriso -
+    // write no RR entry); SuspSkip = its LEN_SKP
+    BOOL SuspVolume;
+    BYTE SuspSkip;
     CDirectoryRecord Root;
     WORD LogicalBlockSize;
     DWORD ExtentOffset;
@@ -296,7 +301,7 @@ protected:
 
     void ConvJolietName(char* dest, const char* src, int nLen);
 
-    void ExtractExtFileName(char* fileName, const char* src, CDirectoryRecord& dr);
+    BOOL ExtractExtFileName(char* fileName, const char* src, CDirectoryRecord& dr);
     void ExtractFileName(char* fileName, const char* src, CDirectoryRecord& dr);
 
     BOOL AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,

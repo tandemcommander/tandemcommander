@@ -39,6 +39,8 @@ CISO9660::CDirectoryRecord::CDirectoryRecord()
 CISO9660::CISO9660(CISOImage* image, DWORD extent) : CUnISOFSAbstract(image)
 {
     Ext = extNone;
+    SuspVolume = FALSE;
+    SuspSkip = 0;
     ExtentOffset = extent;
 
     BootRecordInfo = NULL;
@@ -117,7 +119,24 @@ BOOL CISO9660::Open(BOOL quiet)
         if (Ext == extJoliet)
             FillDirectoryRecord(Root, SVD.DirectoryRecordForRootDirectory);
         else
+        {
             FillDirectoryRecord(Root, PVD.DirectoryRecordForRootDirectory);
+
+            // feature 326: a volume that uses SUSP carries the SP entry in the root's first record
+            // ('.'); Rock Ridge 1.12 (xorriso) writes no RR entry, so the records are read as Rock
+            // Ridge by this. The block ListDirectoryRe reads first; a failed read: no SUSP (the
+            // listing reports it)
+            DWORD rootBlock = (DWORD)Root.LocationOfExtent - ExtentOffset + Root.ExtendedAttributeRecordLength;
+            BYTE rootSector[SECTOR_SIZE];
+            BYTE lenSkp = 0;
+            if (Root.LocationOfExtent >= ExtentOffset && Root.DataLength > 0 &&
+                Image->ReadBlock(rootBlock, SECTOR_SIZE, rootSector) == SECTOR_SIZE &&
+                SalSuspRootHasSp(rootSector, min((DWORD)SECTOR_SIZE, Root.DataLength), &lenSkp))
+            {
+                SuspVolume = TRUE;
+                SuspSkip = lenSkp;
+            }
+        }
     }
 
     return ret;
@@ -157,7 +176,8 @@ void CISO9660::FillPathTableRecord(CPathTableRecord& record, BYTE bytes[])
 #define ROTATE(a) ((((a) & 0xffff) >> 8) | (((a) & 0xff) << 8))
 
 //
-void CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRecord& dr)
+// feature 326: TRUE when the name is the Rock Ridge one (no ISO 9660 version suffix to remove)
+BOOL CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRecord& dr)
 {
     // processing extensions
     const char* srcSU = src + dr.LengthOfFileIdentifier;
@@ -176,10 +196,17 @@ void CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
         EExt ext = extNone;
 
         CRRExtHeader rrHeader;
-        memcpy(&rrHeader, srcSU, sizeof(rrHeader));
 
-        if (strncmp((char*)rrHeader.Signature, "RR", 2) == 0)
+        // feature 326: a record whose first entry is RR is Rock Ridge (as before); on a volume whose
+        // root carries SP every record is (Rock Ridge 1.12 - xorriso - writes no RR), its entries
+        // starting after the SP entry's LEN_SKP
+        size_t rrStart = 0;
+        if (SalSuspRockRidgeStart((const unsigned char*)srcSU, (size_t)(srcEnd - srcSU), SuspVolume != FALSE,
+                                  SuspSkip, &rrStart))
+        {
             ext = extRockRidge; // this is a RockRidge entry
+            srcSU += rrStart;
+        }
 
         char extFileName[2 * MAX_PATH + 1];
         ZeroMemory(extFileName, sizeof(extFileName));
@@ -259,7 +286,7 @@ void CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
             if (bNM)
             {
                 strcpy(fileName, extFileName);
-                return;
+                return TRUE;
             }
         }
         break;
@@ -277,9 +304,10 @@ void CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
         // letter). The whole name fits 'fileName' (ExtractFileName's 2 * MAX_PATH + 1 bytes): a
         // 255-byte identifier holds at most 127 units, at most 381 UTF-8 bytes.
         lstrcpyn(fileName, src, 2 * MAX_PATH + 1);
-        return;
+        return FALSE;
     }
     lstrcpyn(fileName, src, dr.LengthOfFileIdentifier + 1);
+    return FALSE;
 }
 
 //
@@ -291,10 +319,12 @@ void CISO9660::ExtractFileName(char* fileName, const char* src, CISO9660::CDirec
     char tmpFileName[2 * MAX_PATH + 1];
     ZeroMemory(tmpFileName, sizeof(tmpFileName));
 
-    ExtractExtFileName(tmpFileName, src, dr);
+    // feature 326: a Rock Ridge name is the file's whole name - a ';' in it is part of the name, not
+    // the ISO 9660 version suffix (a file 'a;b.txt' was listed as 'a')
+    BOOL rockRidge = ExtractExtFileName(tmpFileName, src, dr);
 
     // iso filename
-    char* sep2 = strchr(tmpFileName, ISO_SEPARATOR2);
+    char* sep2 = rockRidge ? NULL : strchr(tmpFileName, ISO_SEPARATOR2);
 
     if (sep2 != NULL)
     {
