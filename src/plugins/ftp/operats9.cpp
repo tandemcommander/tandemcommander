@@ -653,11 +653,21 @@ void CUploadListingsOnServer::ReportRename(const char* workPath, CFTPServerPathT
     // fromName is always a name (no path) on workPath - the change on workPath is certain;
     // newName is provided by the user and can be anything - for example, on VMS it is quite complicated to determine
     // what actually happened (a move within the server, changes just to the name/extension ("a." and ".a"),
-    // etc.) - for now we simplify it to only a change on workPath - 99% of cases will be OK
-    // (used only in Quick Rename for now, where it should not even occur to the user to enter a path)
-    int index;
-    if (FindPath(workPath, pathType, index))
-        InvalidateListing(index);
+    // etc.)
+    // feature 302: invalidating only workPath left the listings of a renamed directory, of the
+    // directory 'newName' moves into (Quick Rename accepts a path) and of everything below them
+    // trusted - e.g. the empty listing Create Directory adds for a new directory: an upload into it
+    // after "a.txt" -> "new/a.txt" sent STOR without the overwrite question. What a rename reaches is
+    // not resolved here, so every listing of the server is invalidated (the next upload lists its
+    // target again - a cost only while an upload to this server exists)
+    InvalidateAllListings();
+}
+
+void CUploadListingsOnServer::InvalidateAllListings()
+{
+    int i;
+    for (i = Listing.Count - 1; i >= 0; i--) // InvalidateListing() may delete the item - from the end
+        InvalidateListing(i);
 }
 
 void CUploadListingsOnServer::ReportDelete(const char* workPath, CFTPServerPathType pathType,
@@ -739,9 +749,10 @@ BOOL CUploadListingsOnServer::IsListingFromPanel(const char* path, CFTPServerPat
 
 void CUploadListingsOnServer::ReportUnknownChange(const char* workPath, CFTPServerPathType pathType)
 {
-    int index;
-    if (FindPath(workPath, pathType, index))
-        InvalidateListing(index);
+    // feature 302: a command typed by the user (Send FTP Command) may change any directory, also
+    // one below workPath whose (e.g. empty, from Create Directory) listing is cached - every
+    // listing of the server is invalidated, not only workPath's
+    InvalidateAllListings();
 }
 
 void CUploadListingsOnServer::InvalidateListing(int index)
