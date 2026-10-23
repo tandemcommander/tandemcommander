@@ -3185,6 +3185,13 @@ public:
     void ReportCreateDirs(const char* workPath, CFTPServerPathType pathType, const char* newDirs,
                           BOOL unknownResult);
 
+    // feature 323: ReportCreateDirs() for one named component 'name' of the created path at the
+    // cached listing Listing[index] of its parent 'parentPath'; 'isLastNamed' is TRUE for the last
+    // named component (the folder the command made) - only that one is recorded as a new, empty
+    // folder; an earlier one the listing does not show invalidates the listing (salftpmkdirreport.h)
+    void ReportCreateDirComponent(int index, const char* parentPath, const char* name,
+                                  CFTPServerPathType pathType, BOOL unknownResult, BOOL isLastNamed);
+
     // see CUploadListingCache::ReportRename();
     // WARNING: do not call directly, called through CUploadListingCache::ReportRename()
     void ReportRename(const char* workPath, CFTPServerPathType pathType,
@@ -3289,7 +3296,10 @@ public:
     // 'user'+'host'+'port' describes the server; 'workPath' is the working path of type 'pathType';
     // 'newDirs' is the command parameter for creating directories (may be one or more directories
     // relative or with an absolute path); 'unknownResult' is FALSE if the directories were created,
-    // TRUE if the result is unknown (the relevant listings must be invalidated)
+    // TRUE if the result is unknown (the relevant listings must be invalidated); feature 323: of a
+    // created path only the last named component is recorded as a new, empty directory - an
+    // earlier one that a cached listing does not show existed (the listing missed it: a hidden dot
+    // directory, another case) and that listing is invalidated
     void ReportCreateDirs(const char* user, const char* host, unsigned short port,
                           const char* workPath, CFTPServerPathType pathType, const char* newDirs,
                           BOOL unknownResult);

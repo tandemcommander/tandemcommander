@@ -1,11 +1,14 @@
 <#
 .SYNOPSIS
-    Feature 302: the FTP panel's Create Directory and Quick Rename report their change to the
-    upload listing cache of the right server (user, host, port in their places).
+    Features 302 / 323: the FTP panel's Create Directory and Quick Rename report their change to
+    the upload listing cache of the right server (user, host, port in their places), and Create
+    Directory with a path records only its last component as a new, empty folder (323).
 
 .DESCRIPTION
-    Runs on the hidden desktop (tools\run_on_hidden_desktop.ps1). One of 215's ftpmini.py servers
-    (127.0.0.1 only, UTF-8, user "u") logs every command received. The left panel is local, the
+    Runs on the hidden desktop (tools\run_on_hidden_desktop.ps1). One ftpmini_hide.py server (215's
+    ftpmini.py that omits dot names from a plain LIST, as vsftpd / Pure-FTPd / ProFTPD do; 302
+    review 2) serves an NTFS folder - path components resolve without case - on 127.0.0.1 only,
+    UTF-8, user "u", and logs every command received. The left panel is local, the
     right one the server. The upload listing cache exists only while an upload operation to the
     server exists: each row first starts upload 1 of "o1.txt" to a folder that has it - the
     overwrite question keeps the operation (and its dialogs, which the probe never touches) open.
@@ -23,6 +26,11 @@
                overwrite question for f.txt, no STOR f.txt, the server's new/f.txt keeps SRV-F
       REN-PATH (review 1) F7 "new", Quick Rename x.txt -> new/x.txt, upload 2 of the local x.txt
                into /REN-PATH/new: PASS = the question, no STOR x.txt, new/x.txt keeps SRV-X
+      MKD-HID  (302 review 2) the server has .cfg/f.txt (a plain LIST hides .cfg); F7 ".cfg/new";
+               upload 2 of the local f.txt into /MKD-HID/.cfg: PASS = the question for f.txt, no
+               STOR f.txt, .cfg/f.txt keeps SRV-F (302's state: .cfg cached as new and empty)
+      MKD-CASE (302 review 2) the server has Docs/f.txt; F7 "docs/new"; upload 2 of the local
+               f.txt into /MKD-CASE/docs: PASS = the question, no STOR f.txt, Docs/f.txt keeps SRV-F
     The product's registry key is exported, restored and compared. Exit code = FAIL rows.
 
 .NOTES
@@ -48,7 +56,7 @@ if ($others.Count) { Write-Output ('NOT RUN: tandemcommander.exe already runs: '
 $Root = $TempRoot + '\tc302'
 $StartDir = $Root + '\start'
 $FtpSrv = @{ Root = ($Root + '\srv'); Log = ($Root + '\ftp.log'); Port = $Port; Enc = 'utf-8'; Proc = $null }
-$MiniPy = Join-Path $PSScriptRoot '..\..\215-ftp-long-name-command\probe\ftpmini.py'
+$MiniPy = Join-Path $PSScriptRoot 'ftpmini_hide.py'
 
 function Start-Srv($S) {
     $S.Proc = Start-Process -FilePath $Python -ArgumentList @('-I', ('"{0}"' -f $MiniPy), ('"{0}"' -f $S.Root), $S.Port, ('"{0}"' -f $S.Log), $S.Enc) -PassThru -WindowStyle Hidden
@@ -374,6 +382,65 @@ try {
         $x = ReadSrv ($s + '\new\x.txt')
         @{ Ok = ($made -and $ren -and -not $stor -and $asked -and $x -ceq 'SRV-X')
            Facts = ("F7 made new: {0}; renamed into new: {1}; upload 2 sent STOR x.txt: {2}; question for x.txt: {3}; server new/x.txt '{4}'; upload 2 commands: {5}; dialogs: {6} | {7} | {8} | {9}; op after upload 1: {10}; at the end: {11}" -f $made, $ren, $stor, $asked, $x, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t2b -join ' ; '), ($t3 -join ' ; '), $op1, (OpDesc $id)) }
+    }
+
+    # review 2: F7 ".cfg/new" through an EXISTING folder that plain LIST hides (dot name) - the cache
+    # records ".cfg" as created and empty; upload 2 of the local f.txt into /MKD-HID/.cfg
+    Row-Case 'MKD-HID' 'MKD-HID' {
+        param($s, $l)
+        NewDir ($s + '\.cfg'); WriteFile ($s + '\.cfg\f.txt') 'SRV-F'; WriteFile ($s + '\o1.txt') 'SRV-O1'
+        WriteFile ($l + '\f.txt') 'LOCAL-F'; WriteFile ($l + '\o1.txt') 'L1'
+    } {
+        param($id, $s, $l)
+        $same = { param($t) $t }
+        Focus $id 0 2                                              # local: .., f.txt, o1.txt -> o1.txt
+        $t1 = @(Drive $id 727 $same)
+        $op1 = OpDesc $id
+        KeyIn $id 0 0x09
+        $t2 = @(Drive $id 730 { param($t) '.cfg/new' })
+        $made = [IO.Directory]::Exists($LP + $s + '\.cfg\new')
+        $tr = @(Drive $id 725 $null 3 30)                          # CM_RIGHTREFRESH
+        KeyIn $id 1 0x09
+        Focus $id 0 1                                              # local f.txt
+        $from = Srv-Count $FtpSrv
+        $toCfg = { param($t) $t -replace '/MKD-HID/', '/MKD-HID/.cfg/' }
+        $t3 = @(Drive $id 727 $toCfg 5 90)
+        $cmds = @(Srv-Cmds $FtpSrv $from)
+        $stor = Has-Cmd $cmds '^STOR (.*/)?f\.txt$'
+        $asked = OpQuestion $id 'f.txt' 8
+        $f = ReadSrv ($s + '\.cfg\f.txt')
+        @{ Ok = ($made -and -not $stor -and $asked -and $f -ceq 'SRV-F')
+           Facts = ("F7 made .cfg/new: {0}; upload 2 sent STOR f.txt: {1}; question for f.txt: {2}; server .cfg/f.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; op after upload 1: {8}; at the end: {9}" -f $made, $stor, $asked, $f, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), $op1, (OpDesc $id)) }
+    }
+
+    # review 2: a case-insensitive server with Unix paths (NTFS under ftpmini): existing "Docs" with
+    # f.txt; F7 "docs/new" - the cache (case-sensitive for Unix paths) records "docs" as created and
+    # empty; upload 2 of the local f.txt into /MKD-CASE/docs
+    Row-Case 'MKD-CASE' 'MKD-CASE' {
+        param($s, $l)
+        NewDir ($s + '\Docs'); WriteFile ($s + '\Docs\f.txt') 'SRV-F'; WriteFile ($s + '\o1.txt') 'SRV-O1'
+        WriteFile ($l + '\f.txt') 'LOCAL-F'; WriteFile ($l + '\o1.txt') 'L1'
+    } {
+        param($id, $s, $l)
+        $same = { param($t) $t }
+        Focus $id 0 2
+        $t1 = @(Drive $id 727 $same)
+        $op1 = OpDesc $id
+        KeyIn $id 0 0x09
+        $t2 = @(Drive $id 730 { param($t) 'docs/new' })
+        $made = [IO.Directory]::Exists($LP + $s + '\Docs\new')
+        $tr = @(Drive $id 725 $null 3 30)
+        KeyIn $id 1 0x09
+        Focus $id 0 1
+        $from = Srv-Count $FtpSrv
+        $toDocs = { param($t) $t -replace '/MKD-CASE/', '/MKD-CASE/docs/' }
+        $t3 = @(Drive $id 727 $toDocs 5 90)
+        $cmds = @(Srv-Cmds $FtpSrv $from)
+        $stor = Has-Cmd $cmds '^STOR (.*/)?f\.txt$'
+        $asked = OpQuestion $id 'f.txt' 8
+        $f = ReadSrv ($s + '\Docs\f.txt')
+        @{ Ok = ($made -and -not $stor -and $asked -and $f -ceq 'SRV-F')
+           Facts = ("F7 made Docs/new: {0}; upload 2 sent STOR f.txt: {1}; question for f.txt: {2}; server Docs/f.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; at the end: {8}" -f $made, $stor, $asked, $f, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), (OpDesc $id)) }
     }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

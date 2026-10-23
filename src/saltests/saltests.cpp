@@ -101,6 +101,7 @@
 #include "salpackname.h"      // feature 317
 #include "sallistingname.h"   // feature 321
 #include "salhfscatalog.h"    // feature 322
+#include "salftpmkdirreport.h" // feature 323
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -18361,6 +18362,37 @@ static void TestFtpCaseOnlyName303()
     CHECK(SalFtpFindCaseOnlyName((int)many.size(), [&](int i) { calls++; return many[i]; }, "B.txt") == -1 && calls == 1000);
 }
 
+// feature 323: a reported FTP Create Directory with a path records only its last component as a
+// new, empty folder (salftpmkdirreport.h) - "MKD .cfg/new" recorded the existing, hidden ".cfg" as
+// created and empty, and an upload into it overwrote ".cfg/f.txt" without the question
+static void TestFtpMkdirReport323()
+{
+    // named components
+    CHECK(SalFtpMkdirIsNamedComponent("new"));
+    CHECK(SalFtpMkdirIsNamedComponent(".cfg"));
+    CHECK(SalFtpMkdirIsNamedComponent("..."));
+    CHECK(SalFtpMkdirIsNamedComponent("a.b"));
+    CHECK(SalFtpMkdirIsNamedComponent(" "));
+    CHECK(!SalFtpMkdirIsNamedComponent(""));
+    CHECK(!SalFtpMkdirIsNamedComponent("."));
+    CHECK(!SalFtpMkdirIsNamedComponent(".."));
+    CHECK(!SalFtpMkdirIsNamedComponent(NULL));
+    // the result is unknown: every reached parent listing is invalidated (unchanged)
+    CHECK(SalFtpMkdirComponentAction(true, true, true) == sfmaInvalidateParent);
+    CHECK(SalFtpMkdirComponentAction(true, true, false) == sfmaInvalidateParent);
+    CHECK(SalFtpMkdirComponentAction(true, false, true) == sfmaInvalidateParent);
+    CHECK(SalFtpMkdirComponentAction(true, false, false) == sfmaInvalidateParent);
+    // the last named component was made by the command: recorded as before, whatever the parent
+    // listing showed of it
+    CHECK(SalFtpMkdirComponentAction(false, true, false) == sfmaRecordCreated);
+    CHECK(SalFtpMkdirComponentAction(false, true, true) == sfmaRecordCreated);
+    // an earlier component the parent listing shows: the listing stays
+    CHECK(SalFtpMkdirComponentAction(false, false, true) == sfmaNothing);
+    // the review's case: an earlier component the listing does not show (".cfg", "docs" beside
+    // "Docs") or a listing still being received - never recorded as created, the listing invalidated
+    CHECK(SalFtpMkdirComponentAction(false, false, false) == sfmaInvalidateParent);
+}
+
 // feature 289: drive names and folder type names from the wide shell / volume calls (saldrivetext.h)
 static void TestDriveText289()
 {
@@ -19730,6 +19762,7 @@ int main(int argc, char** argv)
     TestPackName318();
     TestPackName319();
     TestHfsCatalog322();
+    TestFtpMkdirReport323();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -4,8 +4,9 @@
 
 #include "precomp.h"
 
-#include "../../common/salnameorder.h" // feature 277: the file system's name rule (the opened-file lock)
-#include "../../common/salftpupname.h" // feature 303: an upload's name that differs from a listed one only in case
+#include "../../common/salnameorder.h"      // feature 277: the file system's name rule (the opened-file lock)
+#include "../../common/salftpupname.h"      // feature 303: an upload's name that differs from a listed one only in case
+#include "../../common/salftpmkdirreport.h" // feature 323: only the last component of a created path is new
 
 #ifdef _DEBUG
 int CUploadListingsOnServer::FoundPathIndexesInCache = 0; // how many searched paths the cache has caught
@@ -588,34 +589,30 @@ void CUploadListingsOnServer::ReportCreateDirs(const char* workPath, CFTPServerP
     if (FTPIsPathRelative(pathType, newDirs))
     { // call ReportCreateDir sequentially for all directories being created
         char* relPath = longPath;
+        // feature 323: count the named components first - only the last one was made by the command
+        int namedLeft = 0;
+        strcpy(relPath, newDirs);
+        while (FTPCutFirstDirFromRelativePath(pathType, relPath, cutDir, bufSize))
+        {
+            if (SalFtpMkdirIsNamedComponent(cutDir))
+                namedLeft++;
+        }
         strcpy(relPath, newDirs);
         lstrcpyn(path, workPath, FTP_MAX_PATH);
         while (FTPCutFirstDirFromRelativePath(pathType, relPath, cutDir, bufSize))
         {
-            if (strcmp(cutDir, ".") != 0) // assumption: "." is the current directory or is meaningless
+            if (strcmp(cutDir, "..") == 0)
+                FTPCutDirectory(pathType, path, FTP_MAX_PATH, NULL, 0, NULL); // assumption: ".." is the parent directory or is meaningless
+            // assumption: "." is the current directory or is meaningless; an empty component
+            // (feature 323) creates nothing
+            else if (SalFtpMkdirIsNamedComponent(cutDir))
             {
-                if (strcmp(cutDir, "..") == 0)
-                    FTPCutDirectory(pathType, path, FTP_MAX_PATH, NULL, 0, NULL); // assumption: ".." is the parent directory or is meaningless
-                else
-                {
-                    int index;
-                    if (FindPath(path, pathType, index)) // find the path in the cache
-                    {
-                        if (unknownResult)
-                            InvalidateListing(index);
-                        else
-                        {
-                            BOOL dirCreated, lowMem;
-                            Listing[index]->ReportCreateDir(cutDir, &dirCreated, &lowMem);
-                            if (lowMem)
-                                InvalidateListing(index);
-                            if (dirCreated)
-                                AddEmptyListing(path, cutDir, pathType, ulsReady, FALSE); // add an empty listing to the listing cache for the newly created directory
-                        }
-                    }
-                    if (!FTPPathAppend(pathType, path, FTP_MAX_PATH, cutDir, TRUE))
-                        break; // ignore paths that are too long
-                }
+                namedLeft--;
+                int index;
+                if (FindPath(path, pathType, index)) // find the path in the cache
+                    ReportCreateDirComponent(index, path, cutDir, pathType, unknownResult, namedLeft == 0);
+                if (!FTPPathAppend(pathType, path, FTP_MAX_PATH, cutDir, TRUE))
+                    break; // ignore paths that are too long
             }
         }
     }
@@ -624,26 +621,58 @@ void CUploadListingsOnServer::ReportCreateDirs(const char* workPath, CFTPServerP
         strcpy(longPath, newDirs);
         FTPCompleteAbsolutePath(pathType, longPath, bufSize, workPath); // convert the path to a full absolute path if necessary (always fits 'bufSize')
         FTPRemovePointsFromPath(longPath, pathType);                    // assumption: "." is the current directory or is meaningless, ".." is the parent directory or is meaningless
+        BOOL lastNamed = TRUE;                                          // feature 323: cut from the end - the first named component is the one the command made
         while (FTPCutDirectory(pathType, longPath, bufSize, cutDir, bufSize, NULL))
         {
+            if (!SalFtpMkdirIsNamedComponent(cutDir))
+                continue;
             int index;
             if ((int)strlen(longPath) < FTP_MAX_PATH && FindPath(longPath, pathType, index)) // find the path in the cache (a longer one is never there)
-            {
-                if (unknownResult)
-                    InvalidateListing(index);
-                else
-                {
-                    BOOL dirCreated, lowMem;
-                    Listing[index]->ReportCreateDir(cutDir, &dirCreated, &lowMem);
-                    if (lowMem)
-                        InvalidateListing(index);
-                    if (dirCreated)
-                        AddEmptyListing(longPath, cutDir, pathType, ulsReady, FALSE); // add an empty listing to the listing cache for the newly created directory
-                }
-            }
+                ReportCreateDirComponent(index, longPath, cutDir, pathType, unknownResult, lastNamed);
+            lastNamed = FALSE;
         }
     }
     free(bufs);
+}
+
+void CUploadListingsOnServer::ReportCreateDirComponent(int index, const char* parentPath, const char* name,
+                                                       CFTPServerPathType pathType, BOOL unknownResult,
+                                                       BOOL isLastNamed)
+{
+    // feature 323: an earlier component of a created path ("MKD .cfg/new") existed - the server
+    // makes only the last one; if the cached parent listing does not show it as a directory (a dot
+    // directory a plain LIST hides, "Docs" typed as "docs", or the listing is still being received),
+    // the listing missed something and is not trusted any more; recording it as a new, empty
+    // directory let an upload into it overwrite its files without the overwrite question
+    CUploadPathListing* listing = Listing[index];
+    BOOL parentListsIt = FALSE;
+    if (!unknownResult && !isLastNamed &&
+        (listing->ListingState == ulsReady || listing->ListingState == ulsInProgressButObsolete))
+    {
+        int item;
+        parentListsIt = listing->FindItem(name, item) &&
+                        listing->ListingItem[item]->ItemType != ulitFile; // a file cannot have held the new directory
+    }
+    switch (SalFtpMkdirComponentAction(unknownResult != FALSE, isLastNamed != FALSE, parentListsIt != FALSE))
+    {
+    case sfmaInvalidateParent:
+        InvalidateListing(index);
+        break;
+
+    case sfmaRecordCreated:
+    {
+        BOOL dirCreated, lowMem;
+        listing->ReportCreateDir(name, &dirCreated, &lowMem);
+        if (lowMem)
+            InvalidateListing(index);
+        if (dirCreated)
+            AddEmptyListing(parentPath, name, pathType, ulsReady, FALSE); // add an empty listing to the listing cache for the newly created directory
+        break;
+    }
+
+    case sfmaNothing:
+        break;
+    }
 }
 
 void CUploadListingsOnServer::ReportRename(const char* workPath, CFTPServerPathType pathType,
