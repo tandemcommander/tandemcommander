@@ -8,7 +8,7 @@
 - [ ] T001 Start `specs/322-uniso-hfs-btree-joliet/fix-log.md` with the measurement of a222bd88 (code reading, callers) and the test-image tooling (`~/tc-xorriso` in WSL)
 - [ ] T002 [P] Write the WSL image script `specs/322-uniso-hfs-btree-joliet/probe/mkimg322.sh` (fetch xorriso without root if missing; make the hybrid ISO 9660 + Joliet + Rock Ridge + HFS+ seed of a given tree)
 - [ ] T003 [P] Write the mutation script `specs/322-uniso-hfs-btree-joliet/probe/mut322.py` (locate the HFS+ volume header and catalog in a seed, write an HFS+-only image, write targeted catalog damages and seeded random mutations of the catalog and of the ISO 9660 / Joliet / Rock Ridge descriptor and directory sectors)
-- [ ] T004 Write the probe `specs/322-uniso-hfs-btree-joliet/probe/iso322_probe.ps1` in the style of `specs/223-uniso-crafted-image/probe/iso223_probe.ps1` (registry backup / restore, fixture under `%TEMP%\tc322`, rows: valid controls, targeted damages, Joliet CJK, fuzz)
+- [ ] T004 Write the probe `specs/322-uniso-hfs-btree-joliet/probe/iso322_probe.ps1` in the style of `specs/223-uniso-crafted-image/probe/iso223_probe.ps1` (registry backup / restore, fixture under `%TEMP%\tc322`, rows: valid controls, targeted damages, Joliet CJK, fuzz; a row fails on a program exit, a bug report, or a main window that does not answer within 30 s - a hang)
 
 ## Phase 2: Foundational (measure before the fix)
 
