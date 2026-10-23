@@ -9,6 +9,7 @@
 #include "deb/deb.h"
 #include "../../common/salmaskname.h" // feature 260: SalNameTooLongForFileSystemU8
 #include "../../common/salsamefile.h" // feature 309: a hard link's copy never writes the file it names
+#include "../../common/salnameorder.h" // feature 325: "the same name" by the file system's rule
 
 #include "tar.rh"
 #include "tar.rh2"
@@ -456,6 +457,16 @@ static void RecordNameWritten(CWrittenNames& written, const char* name)
     }
 }
 
+// feature 325: archive paths ordered as the file system tells names apart (case ignored, rule 092) -
+// a later member whose name differs only in case writes the same file as a deferred link
+struct CTarNameLessCI
+{
+    bool operator()(const std::string& a, const std::string& b) const
+    {
+        return SalNameOrderCompareCI(a.c_str(), (int)a.size(), b.c_str(), (int)b.size()) < 0;
+    }
+};
+
 // feature 325: CArchive::UnpackOneFilePass - the asked name is a hard link whose data member passed
 #define UNPACK_ONE_LINK 2
 
@@ -728,7 +739,8 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
     // whose data member passed unwritten (written by further passes, ExtractDeferredLinks)
     CSalTarLinkResolver resolver;
     std::vector<SDeferredLink> deferred;
-    std::unordered_map<std::string, size_t> deferredIndex; // a deferred link's name -> its entry
+    std::map<std::string, size_t, CTarNameLessCI> deferredIndex; // a deferred link's name (as the file system
+                                                                 // tells names apart) -> its entry
     SCommonHeader header;
     int ret = ReadArchiveHeader(header, TRUE);
     // if this is not a supported format, unpack only the outer compression when present
@@ -778,7 +790,7 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
             // a later asked member of a deferred link's name replaces it (tar keeps the last one)
             if (found && !deferredIndex.empty())
             {
-                std::unordered_map<std::string, size_t>::iterator it = deferredIndex.find(header.Name);
+                std::map<std::string, size_t, CTarNameLessCI>::iterator it = deferredIndex.find(header.Name);
                 if (it != deferredIndex.end())
                 {
                     deferred[it->second].Superseded = true;

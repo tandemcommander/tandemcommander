@@ -133,8 +133,10 @@ inline int SalTarLinkDecide(char typeFlag, bool targetWritten)
 
 // what an extraction does with a link member it was asked to extract (feature 325):
 // 'targetWritten' - the file the link names was written by this operation; 'targetDeferred' - that
-// name is itself a link deferred by this operation; 'targetAsked' - that name was asked for too;
-// 'linkHasDotDot' - the link name has a ".." component (never matched, feature 309)
+// name is now a link deferred by this operation (its latest definition - it wins over data written
+// under the name earlier, review 2: "a.txt" written, then redefined as a link to "z.txt", then a link
+// to "a.txt" stands for z.txt's data, not for the "a.txt" on disk); 'targetAsked' - that name was
+// asked for too; 'linkHasDotDot' - the link name has a ".." component (never matched, feature 309)
 inline int SalTarLinkDecideAsked(char typeFlag, bool targetWritten, bool targetDeferred, bool targetAsked,
                                  bool linkHasDotDot)
 {
@@ -142,10 +144,12 @@ inline int SalTarLinkDecideAsked(char typeFlag, bool targetWritten, bool targetD
     {
         if (linkHasDotDot)
             return SAL_TAR_LINK_REPORT_MISSING;
+        if (targetDeferred)
+            return SAL_TAR_LINK_DEFER;
         if (targetWritten)
             return SAL_TAR_LINK_COPY;
         // the target was asked for but not written (Skip, a refused name): reported as before (309)
-        return targetDeferred || !targetAsked ? SAL_TAR_LINK_DEFER : SAL_TAR_LINK_REPORT_MISSING;
+        return !targetAsked ? SAL_TAR_LINK_DEFER : SAL_TAR_LINK_REPORT_MISSING;
     }
     if (typeFlag == SAL_TAR_TYPE_SYMLINK)
         return SAL_TAR_LINK_REPORT_UNSUPPORTED;

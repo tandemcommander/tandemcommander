@@ -1,6 +1,6 @@
-cpio310_probe (feature 310) regress325-review1
+cpio310_probe (feature 310) regress325-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 13:56; registry key existed True; ACP 1250; python Python 3.14.6
+Date    : 2026-10-23 14:44; registry key existed True; ACP 1250; python Python 3.14.6
 
 CPIO-HARD-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 CPIO-HARD-DEL RUN    PASS        tgt: 4 of 4 files; archive kept: False (want False); box naming the member: False (boxes: 0); windows: no window
@@ -39,18 +39,18 @@ CPIO-HARD-CASEFIRST-DEL RUN    PASS        tgt: 1 of 1 files; archive kept: Fals
 CPIO-HARD-SKIPDATA-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 CPIO-HARD-SKIPDATA-DEL RUN    PASS        tgt: 2 of 2 files; archive kept: True (want True); box naming the member: True (boxes: 2); windows: ...id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. a.txt -> sub\d.txt | [Button id=1] OK
 CPIO-HARD-YES-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-CPIO-HARD-YES-DEL RUN    PASS        tgt: 4 of 4 files; archive kept: False (want False); box naming the member: False (boxes: 1); windows: ... id=1150] Overwrite file: | [Static id=182] 3, 23.10.2026, 13:58:53, A | [Static id=1151] With file: | [Static id=184] 3, 09.09.2001, 3:46:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+CPIO-HARD-YES-DEL RUN    PASS        tgt: 4 of 4 files; archive kept: False (want False); box naming the member: False (boxes: 1); windows: ... id=1150] Overwrite file: | [Static id=182] 3, 23.10.2026, 14:47:20, A | [Static id=1151] With file: | [Static id=184] 3, 09.09.2001, 3:46:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
 CPIO-HARD-SKIPCOPY-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-CPIO-HARD-SKIPCOPY-DEL RUN    PASS        tgt: 4 of 4 files; archive kept: False (want False); box naming the member: False (boxes: 1); windows: ... id=1150] Overwrite file: | [Static id=182] 3, 23.10.2026, 13:59:02, A | [Static id=1151] With file: | [Static id=184] 3, 09.09.2001, 3:46:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+CPIO-HARD-SKIPCOPY-DEL RUN    PASS        tgt: 4 of 4 files; archive kept: False (want False); box naming the member: False (boxes: 1); windows: ... id=1150] Overwrite file: | [Static id=182] 3, 23.10.2026, 14:47:30, A | [Static id=1151] With file: | [Static id=184] 3, 09.09.2001, 3:46:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
 COPY-CPIO-ALL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 COPY-CPIO-ALL RUN    PASS        tgt: 4 of 4 files; at open: no window; during the copy: [#32770 'Copy'] [Static id=209] Copy 2 files and 1 directory from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 COPY-CPIO-ONE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 COPY-CPIO-ONE RUN    PASS        tgt: 1 of 1 files; at open: no window; during the copy: [#32770 'Copy'] [Static id=209] Copy file "a.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 COPY-FIRST-LATER END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 COPY-FIRST-LATER RUN    PASS        tgt: 0 of 0 files; at open: no window; during the copy: ...id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. b.txt -> a.txt | [Button id=1] OK
-VIEW-CPIO-PLAIN RUN    PASS        F3: C:\Users\pavel\AppData\Local\Temp\SALD1F.tmp\p.txt [Plain Text] - Code Viewer; cached copies: 1; content: P (want P)
+VIEW-CPIO-PLAIN RUN    PASS        F3: C:\Users\pavel\AppData\Local\Temp\SAL9D0.tmp\p.txt [Plain Text] - Code Viewer; cached copies: 1; content: P (want P)
 VIEW-CPIO-PLAIN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
-VIEW-CPIO-ONE RUN    PASS        F3: C:\Users\pavel\AppData\Local\Temp\SAL950.tmp\a.txt [Plain Text] - Code Viewer; cached copies: 1; content: AAA (want AAA)
+VIEW-CPIO-ONE RUN    PASS        F3: C:\Users\pavel\AppData\Local\Temp\SAL600.tmp\a.txt [Plain Text] - Code Viewer; cached copies: 1; content: AAA (want AAA)
 VIEW-CPIO-ONE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
 VIEW-CPIO-FIRST RUN    PASS        F3: <message> [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. b.txt -> a.txt | [Button id=1] OK; cached copies: 0; content: <no cached copy> (want a box naming b.txt)
 VIEW-CPIO-FIRST END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

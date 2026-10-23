@@ -122,6 +122,9 @@ A listed hard link names a member the archive does not hold (or one that holds n
 - A name stored more than once (an archive updated by `tar -u` / `tar -r`): a link stands for the
   LATEST earlier member of the name it refers to, as GNU tar, bsdtar and Python extract it; a later
   asked member of a deferred link's own name replaces it (review 1 of 325, M1).
+- A name redefined as a link after data was written under it: a link to that name stands for the new
+  definition, not for the file on disk (review 2); a later member whose name differs only in case
+  writes the same file on Windows and replaces a deferred link of that name (review 2).
 - A link whose target name holds a `..` component: never matched (feature 309), so it is listed with
   size 0 and reported when copied.
 - A chain of links (a link naming a link) stands for what the earlier link stood for; a link naming no

@@ -19021,6 +19021,9 @@ static void TestTarLink325()
     CHECK(SalTarLinkDecideAsked('2', true, true, true, false) == SAL_TAR_LINK_REPORT_UNSUPPORTED);
     CHECK(SalTarLinkDecideAsked('0', false, false, false, false) == SAL_TAR_LINK_NONE);
     CHECK(SalTarLinkDecideAsked('\0', true, true, true, true) == SAL_TAR_LINK_NONE);
+    // review 2: the target's latest definition is a deferred link - it wins over data written earlier
+    CHECK(SalTarLinkDecideAsked('1', true, true, true, false) == SAL_TAR_LINK_DEFER);
+    CHECK(SalTarLinkDecideAsked('1', true, true, false, false) == SAL_TAR_LINK_DEFER);
     // 309's decision is the same where both apply
     CHECK(SalTarLinkDecideAsked('1', false, false, true, false) == SalTarLinkDecide('1', false));
     CHECK(SalTarLinkDecideAsked('1', true, false, true, false) == SalTarLinkDecide('1', true));

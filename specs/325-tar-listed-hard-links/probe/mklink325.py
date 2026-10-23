@@ -35,7 +35,24 @@ def make(fill, fmt=tarfile.PAX_FORMAT):
 def main():
     row, out = sys.argv[1], sys.argv[2]
     base = row[:-3] if row.endswith('-GZ') else row
-    if base.startswith('COPY-UPD') or base.startswith('UNP-UPD'):
+    if base.startswith('UNP-RELINK'):
+        def fill(tf):
+            # review 2: a.txt written, then redefined as a link to z.txt (tar -u after relinking), then
+            # a link to a.txt - tar extracts both a.txt and sub/b.txt as Z
+            add(tf, 'a.txt', b'A')
+            add(tf, 'z.txt', b'Z')
+            add(tf, 'sub/c.txt', b'C')
+            link(tf, 'a.txt', 'z.txt')
+            link(tf, 'sub/b.txt', 'a.txt')
+    elif base.startswith('UNP-CASE'):
+        def fill(tf):
+            # review 2: a link, then a later data member whose name differs only in case (the same file
+            # on Windows) - the later member wins (NEW)
+            add(tf, 'a.txt', b'A')
+            add(tf, 'sub/c.txt', b'C')
+            link(tf, 'sub/b.txt', 'a.txt')
+            add(tf, 'SUB/B.TXT', b'NEW')
+    elif base.startswith('COPY-UPD') or base.startswith('UNP-UPD'):
         def fill(tf):
             # review 1: the shape "tar -u" gives a file with a hard link - the name stored again; tar
             # extracts the link from the LATEST earlier member (NEWER)

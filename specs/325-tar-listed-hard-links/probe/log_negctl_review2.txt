@@ -1,0 +1,11 @@
+link325_probe (feature 325) negctl-review2-496e8ac3
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 14:39; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-RELINK-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-RELINK-DEL RUN    FAIL        tgt: 2 of 2 files (a.txt, sub/b.txt); wrong content: sub/b.txt; archive kept: False (want False); windows: ...c id=1150] Overwrite file: | [Static id=182] 1, 09.09.2001, 3:46:40, A | [Static id=1151] With file: | [Static id=184] 1, 09.09.2001, 3:46:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+UNP-CASE-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-CASE-DEL RUN    FAIL        tgt: 1 of 1 files (SUB/B.TXT); wrong content: sub/b.txt; archive kept: False (want False); windows: ...c id=1150] Overwrite file: | [Static id=182] 3, 09.09.2001, 3:46:40, A | [Static id=1151] With file: | [Static id=184] 1, 09.09.2001, 3:46:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+Registry: restored; identical=True; SHA-256 before D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39 / after D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39
+
+Rows: PASS 2, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

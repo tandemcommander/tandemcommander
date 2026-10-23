@@ -33,6 +33,12 @@
       COPY-SKIP        the COPY-INSIDE tar, tgt\b.txt exists ('old'); inside sub: Select All, Copy, Skip at
                        the overwrite question -> b.txt 'old', c.txt, d.txt = 'A' (the data is written
                        under the next link of the group), exactly one box (the question)
+    Rows of review 2 (Unpack with a mask + "Delete archive after unpacking"):
+      UNP-RELINK-DEL   a.txt 'A', z.txt 'Z', sub/c.txt, a.txt -> z.txt (a.txt redefined), sub/b.txt ->
+                       a.txt; mask "a.txt;*b.txt" -> a.txt = sub/b.txt = 'Z' (tar's result), archive
+                       deleted; one question: a.txt is written twice by the operation (as on main)
+      UNP-CASE-DEL     a.txt, sub/c.txt, sub/b.txt -> a.txt, then SUB/B.TXT 'NEW' (the same file on
+                       Windows); mask "*b.txt" -> sub/b.txt = 'NEW', nothing asked, archive deleted
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -135,8 +141,9 @@ function Copy-Row([string]$Case, [string]$How, [switch]$Sub, $Want, [string]$Box
 }
 
 # Unpack (Alt+F9) of the whole archive with mask $Mask into tgt, "Delete archive after unpacking"
-# checked; $Want = expected files (paths below tgt); nothing may be asked; $ArcGone = deleted afterwards
-function Unpack-Row([string]$Case, [string]$Mask, $Want, [switch]$ArcGone) {
+# checked; $Want = expected files (paths below tgt); nothing may be asked but $Questions overwrite
+# questions (answered Yes); $ArcGone = deleted afterwards
+function Unpack-Row([string]$Case, [string]$Mask, $Want, [switch]$ArcGone, [int]$Questions = 0) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     $arc = $d + '\src\t.tar'; $tgt = $d + '\tgt'
@@ -169,7 +176,8 @@ function Unpack-Row([string]$Case, [string]$Mask, $Want, [switch]$ArcGone) {
         End-Row $Case $id $fatal $before; $id = 0
         $c = Check-Tgt $tgt $Want
         $kept = [IO.File]::Exists($LP + $arc)
-        $ok = $c[0] -and (-not $fatal) -and ($kept -ne [bool]$ArcGone) -and ($msgs -eq 'no window')
+        $asked = @($r.Messages | Where-Object { $_ -match "^\[#32770 'Confirm File Overwrite'\]" })
+        $ok = $c[0] -and (-not $fatal) -and ($kept -ne [bool]$ArcGone) -and ($r.Messages.Count -eq $Questions) -and ($asked.Count -eq $Questions)
         Row $Case 'RUN' (V $ok) ('{0}; archive kept: {1} (want {2}); windows: {3}' -f $c[1], $kept, (-not $ArcGone), (Tail $msgs 260))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -224,6 +232,8 @@ try {
     View-Row 'VIEW-LINK' 'd.txt' 'A'
     Unpack-Row 'UNP-UPD-DEL' '*.txt' ([ordered]@{ 'sub/b.txt' = 'NEWER'; 'sub/c.txt' = 'C' }) -ArcGone
     Copy-Row 'COPY-UPD' 'all' -Sub ([ordered]@{ 'b.txt' = 'NEWER'; 'c.txt' = 'C' })
+    Unpack-Row 'UNP-RELINK-DEL' 'a.txt;*b.txt' ([ordered]@{ 'a.txt' = 'Z'; 'sub/b.txt' = 'Z' }) -ArcGone -Questions 1
+    Unpack-Row 'UNP-CASE-DEL' '*b.txt' ([ordered]@{ 'sub/b.txt' = 'NEW' }) -ArcGone
     Copy-Row 'COPY-SKIP' 'all' -Sub ([ordered]@{ 'b.txt' = 'old'; 'c.txt' = 'C'; 'd.txt' = 'A' }) -Exist @('b.txt', 'old') -ExistSize ', \d' -Answer @(1, 173)
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

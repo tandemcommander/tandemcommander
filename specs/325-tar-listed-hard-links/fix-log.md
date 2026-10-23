@@ -125,3 +125,35 @@ rebuilt, the full probe again 24 / 0.
   tabs of `\t`) - the probe restored from git and edited with the editor tool.
 - Regression on the fixed build (`probe/regress_*.txt` overwritten): pax306 30 / 0, unp308 12 / 0, link309
   16 / 0, cpio310 52 / 0, tar321 20 / 0, unp321 12 / 0.
+
+### Review 2 (independent agent, refute-first) - stopped without a report; its partial results acted on
+
+Launched 14:06 after 496e8ac3 with review 1's findings. Its own probe (`%TEMP%\rev325c`, real GNU
+`tar -u` fixtures) ran on the branch and on main (14:07-14:10) - every review-1 row now matches tar
+(R-TARU / R-UPD / U-TARU-MASK-DEL: NEWER; R-SKIP: d.txt written; R-DUP NEW; R-RELINK A) - then a run on
+a patched build was interrupted at 14:13 and no further activity followed (two wake-ups, 14:25 and
+14:34, without progress -> treated as stopped). Its probe left the registry changed: restored at
+14:26 from `%TEMP%\tcrev325c_backup.reg` (`reg delete` + `reg import`, export hash
+D36F5B06... identical to the backup and to every probe's pre-run hash today).
+
+Its rows X-RELINK2 and X-CASE showed two defects (branch vs main, mask + "Delete archive after
+unpacking"), both fixed here:
+- X-RELINK2 (MUST-level: wrong content, archive deleted): `a.txt` 'A' written, then redefined as a
+  link to `z.txt`, then `sub/b.txt -> a.txt`; mask `a.txt;*b.txt`. The branch COPIED the on-disk a.txt
+  ('A') into b.txt - tar gives 'Z' - and deleted the archive (main reported and kept it). Fix:
+  `SalTarLinkDecideAsked` checks "target is a deferred link" before "target written" (the latest
+  definition wins); b.txt is deferred with the resolver's target (z.txt #1) and copied from a.txt
+  after a.txt gets Z. saltests +2.
+- X-CASE (MUST-level): a deferred `sub/b.txt -> a.txt`, then a data member `SUB/B.TXT` 'NEW' (the same
+  file on Windows); mask `*b.txt`. The later member did not supersede the deferred link (byte
+  compare); the further pass wrote 'A' over NEW (after an overwrite question) and the archive was
+  deleted; tar's result is NEW. Fix: the deferred index is a `std::map` ordered by
+  `SalNameOrderCompareCI` (`salnameorder.h`, the file system's name rule, rule 092).
+
+Probe rows added: UNP-RELINK-DEL (one overwrite question: a.txt is written twice by the operation, as
+on main), UNP-CASE-DEL. `probe/result_after_review2.txt` PASS 28 / FAIL 0. Negative control (the fix
+stashed, the 496e8ac3 code built): `probe/result_negctl_review2.txt` - UNP-RELINK-DEL sub/b.txt wrong
+content + archive deleted, UNP-CASE-DEL wrong content + archive deleted (PASS 2 / FAIL 2 with the END
+rows); fix rebuilt. saltests 27884 / 0.
+- Regression on the review-2 build: pax306 30 / 0, unp308 12 / 0, link309 16 / 0, cpio310 52 / 0, tar321
+  20 / 0, unp321 12 / 0; encoding guard TOTAL 0.
