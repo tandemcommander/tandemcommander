@@ -1,7 +1,7 @@
 ---
 title: Pack writes the archive into a hidden data stream when its name holds a colon
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:318
@@ -60,3 +60,4 @@ unchanged.
 ## Log
 
 - 2026-10-23 — created (source measure:318)
+- 2026-10-23 — moved to Next position 2
