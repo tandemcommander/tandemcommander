@@ -57,3 +57,8 @@ MVP = US1 (T004-T008) proven by the probe; US2 is the regression proof of the sa
 - [X] T017 `iso9660.cpp` / `.h`: the fit check pass of `ListDirectory` (`FitCheck`, `FitRefused`, quiet errors) - a volume whose Rock Ridge names the listing would refuse is listed as before 326 (FR-009)
 - [X] T018 probe rows DEEP, ESC, COLON, TDOT, DEV (`mkimg326.sh`, `iso326_probe.ps1`); measured before the fix on the branch build and after it
 - [X] T019 Inbox items for the parts outside the item (Joliet / ISO 9660 names not cleaned; a refused entry ends the listing)
+
+## Review 2 (partial work of stopped reviewers: case-only twins)
+
+- [X] T020 `src/plugins/uniso/uniso.cpp` `ListArchive`: built case-sensitively, the flag kept only with case twins (`salcasetwins.h`, as `tardll.cpp` since 252) (FR-010)
+- [X] T021 probe `probe/twins326_probe.ps1` (from 252's `arc252_probe.ps1`, ISO kind by `probe/mkiso326.sh`): before 3 FAIL / 8, after 8 / 0

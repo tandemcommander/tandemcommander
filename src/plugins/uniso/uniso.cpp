@@ -8,6 +8,7 @@
 #include "isoimage.h"
 #include "dialogs.h"
 #include "splloadstru8.h" // feature 130
+#include "../../common/salcasetwins.h" // feature 326: Rock Ridge names that differ only in case (252)
 
 #include "uniso.rh"
 #include "uniso.rh2"
@@ -516,8 +517,17 @@ BOOL CPluginInterfaceForArchiver::ListArchive(CSalamanderForOperationsAbstract* 
     isoImage.DisplayMissingCCDWarning = pd->DisplayMissingCCDWarning;
     if (isoImage.Open(fileName, FALSE))
     {
+        // feature 326: Rock Ridge names keep their case, so an image can hold "a.txt" and "A.txt",
+        // folders "D" and "d" (the ISO 9660 names were upper case). As TAR and 7-Zip since feature
+        // 252: built case-sensitively - the core merged such folders, Hide Selected Names and
+        // Restore Selection took both twins - and the flag is kept only when some folder holds
+        // names that differ only in case; otherwise the listing is the case-insensitive one it was
+        dir->SetFlags(SALDIRFLAG_CASESENSITIVE);
+        BOOL listed = isoImage.ListImage(dir, pluginData);
+        if (!SalDirTreeHasCaseTwins(dir))
+            dir->SetFlags(0);
         // hand over the complete listing to Salamander's core
-        if (isoImage.ListImage(dir, pluginData))
+        if (listed)
         {
             ret = TRUE;
 

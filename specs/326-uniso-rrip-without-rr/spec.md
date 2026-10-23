@@ -63,6 +63,11 @@ a file of a 200-letter Rock Ridge name is extracted under a 31-letter upper-case
   happens? → A: such a volume is listed as before this feature (FR-009), decided by a check pass
   with the listing's own rule before anything is added; a better partial listing is an Inbox item
   (autonomous run: conservative - never worse than before for an image that opened)
+- Q (review 2, partial work of a stopped reviewer): Rock Ridge names keep their case - two names of
+  one folder that differ only in case were merged / both acted on by the panel (feature 252's
+  defect, which the ISO plug-in did not have while its names were upper case) - what happens?
+  → A: the ISO plug-in builds its listing as TAR and 7-Zip do since 252 (FR-010) (autonomous run:
+  rule - feature 252's rule for archive listings; "never lose the user's data")
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -154,6 +159,11 @@ and a Joliet image still extract under their names in the program.
   refuse (a folder part over its bound) MUST be listed with the names it had before this feature
   (ISO 9660 names, `RR` records as before) - never an error and a lost folder where the image
   opened whole before.
+- **FR-010** (review 2): an image whose names differ only in case in one folder (`a.txt` / `A.txt`,
+  folders `D` / `d` - possible with Rock Ridge names, never with upper-case ISO 9660 names) MUST be
+  listed case-sensitively as TAR and 7-Zip are since feature 252 (`salcasetwins.h`): the selected
+  twin, and only it, is hidden, restored and copied; folders `D` and `d` stay two folders. Without
+  twins the listing is the case-insensitive one it was.
 
 ### Key Entities
 

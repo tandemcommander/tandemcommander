@@ -1,6 +1,6 @@
-iso322_probe (feature 322) after-326-review1
+iso322_probe (feature 322) after-326-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 17:10; registry key existed True
+Date    : 2026-10-23 18:51; registry key existed True
 
 J-ASCII    RUN    PASS        extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 J-ASCII    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -21,6 +21,6 @@ HFS-MANY   RUN    PASS        partition at 532480, node size 4096, leaf records 
 HFS-MANY   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 HYB        RUN    PASS        location 'C:\Users\pavel\AppData\Local\Temp\tc322\seeds\hyb.iso'; at the open: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
 HYB        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-Registry: restored; identical=True; SHA-256 before D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39 / after D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39
+Registry: restored; identical=True; SHA-256 before D5303C8EEF59F6C75C8A760B1E36739C66A0373EB5C2E453809BF928C079D8FA / after D5303C8EEF59F6C75C8A760B1E36739C66A0373EB5C2E453809BF928C079D8FA
 
 Rows: PASS 18, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

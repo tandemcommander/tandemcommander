@@ -134,3 +134,35 @@ Checks after the fixes:
   designed fallback lists `TOP.TXT`) - rewritten to check what matters (no message, `deep.txt`
   reachable with its content).
 - Feature 322's probe -> `probe/result_322_after.txt`: **18 / 0**.
+
+### Review 2 - three launches stopped without a report
+
+- Launch 1 (17:14) wrote probe results until 17:23 (`%TEMP%\rev326`: unsafe folder names `..\evil`,
+  `con`, `a:b`, `x.` cleaned, nothing outside the target - 12 / 0; the feature probe 28 / 0), then no
+  progress over two fallback checks (17:25, 17:36) - treated as stopped (SKILL.md step 7), relaunched.
+- Launch 2 (17:36, `%TEMP%\rev326c`): unsafe folder names again clean; a case-only twin image
+  (`Folder\a.txt` / `folder\a.txt`) extracted one `a.txt`; a negative-control run in a worktree
+  left no restore line (its backup file was not left behind) - no progress over two checks (17:58,
+  18:11), relaunched with the partial work.
+- Launch 3 (18:11, `%TEMP%\rev326d`): ran feature 252's probe with an ISO kind on the branch build:
+  ISO-HIDE, ISO-GLOBAL, ISO-TREE FAIL, TAR rows PASS; then no progress over two checks (18:33,
+  18:45) - stopped.
+- **Finding taken from the partial work (data loss, treated as MUST)**: Rock Ridge names keep their
+  case, so an xorriso image can hold `a.txt` and `A.txt`, folders `D` and `d` - feature 252's defect
+  (Hide Selected Names hid both twins, Restore Selection took both, folders merged) reaches the ISO
+  plug-in, whose upper-case ISO 9660 names never had twins. **Fixed** (FR-010): `uniso.cpp`
+  `ListArchive` builds the listing with `SALDIRFLAG_CASESENSITIVE` and clears it unless
+  `SalDirTreeHasCaseTwins` finds twins - exactly `tardll.cpp`'s code of feature 252
+  (`UnpackWholeArchive` lists through `ListArchive` too).
+- Probe `probe/twins326_probe.ps1` (feature 252's `arc252_probe.ps1` with an ISO kind made by
+  `probe/mkiso326.sh` from the case-sensitive source folder): before the fix (branch build
+  7187965d) -> `probe/result_twins_before.txt` **PASS 5, FAIL 3** (ISO-HIDE `z.txt` only, ISO-GLOBAL
+  both twins, ISO-TREE `d/x.txt,d/y.txt` merged); after -> `probe/result_twins_after.txt` **8 / 0**
+  (ISO-HIDE `A.txt=UPPER,z.txt`, ISO-GLOBAL `a.txt=lower`, ISO-TREE `D/x.txt,d/y.txt`, ISO-CONTROL
+  inside `Docs` opened as `DOCS`).
+- After: `.\build.cmd` BUILD SUCCEEDED; saltests `27937 checks, 0 failed`; encoding guard `TOTAL: 0`;
+  `iso326_probe` -> `probe/result_after_review2.txt` **28 / 0**; 322's probe **18 / 0**.
+- The registry hash at a probe's start changed between runs (D36F... until 17:07, BB5A... from 17:19,
+  D530... from 18:15); every finished probe restored its own start state identically and no
+  `tc*326*_backup.reg` was left - the key was changed outside the probes (the program used on the
+  maintainer's desktop), not by an interrupted probe.
