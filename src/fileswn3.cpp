@@ -1286,12 +1286,15 @@ BOOL CFilesWindow::ReadDirectory(HWND parent, BOOL isRefresh)
                         char* s = f->Ext - 1;
                         char buf[SAL_FIND_NAME_U8]; // long UTF-8 extension (feature 027)
                         char* st = buf;
-                        while (*++s != 0)
+                        char* stEnd = buf + sizeof(buf) - sizeof(DWORD); // feature 321: room for the zeroes below
+                        while (*++s != 0 && st < stEnd)
                             *st++ = LowerCase[*s];
                         *(DWORD*)st = 0; // zeroes to the end
                         st = buf;        // lowercase extension
 
-                        f->Association = Associations.IsAssociated(st);
+                        // feature 321: an extension longer than the buffer (a 777+ byte name of an archive or a
+                        // file-system plug-in) has no association - never looked up cut
+                        f->Association = *s == 0 && Associations.IsAssociated(st);
                         f->Archive = FALSE;
                         /*
             }
@@ -1564,12 +1567,15 @@ BOOL CFilesWindow::ReadDirectory(HWND parent, BOOL isRefresh)
                                 char* s = f->Ext - 1;
                                 char buf[SAL_FIND_NAME_U8]; // long UTF-8 extension (feature 027)
                                 char* st = buf;
-                                while (*++s != 0)
+                                char* stEnd = buf + sizeof(buf) - sizeof(DWORD); // feature 321: room for the zeroes below
+                                while (*++s != 0 && st < stEnd)
                                     *st++ = LowerCase[*s];
                                 *(DWORD*)st = 0; // zeroes to the end
                                 st = buf;        // lowercase extension
 
-                                f->Association = Associations.IsAssociated(st);
+                                // feature 321: an extension longer than the buffer (a 777+ byte name of an archive or a
+                                // file-system plug-in) has no association - never looked up cut
+                                f->Association = *s == 0 && Associations.IsAssociated(st);
                                 f->Archive = FALSE;
                                 /*
                 }

@@ -99,6 +99,7 @@
 #include "salcpiolink.h"      // feature 310
 #include "salunpackdefault.h" // feature 315
 #include "salpackname.h"      // feature 317
+#include "sallistingname.h"   // feature 321
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -18820,9 +18821,10 @@ static void TestPaxHeader306()
         CHECK(SalPaxNameFitsListingU8((std::string(100, 'a') + "\\" + std::string(100, 'b') + "\\f.txt").c_str(), false));
         CHECK(SalPaxNameFitsListingU8(cjk.c_str(), false));   // a file: 204 units, 604 bytes
         CHECK(SalPaxNameFitsListingU8(cjk90.c_str(), false)); // a file of 270 bytes
-        CHECK(!SalPaxNameFitsListingU8(cjk90.c_str(), true)); // the same as a folder: over 255 bytes
+        CHECK(SalPaxNameFitsListingU8(cjk90.c_str(), true)); // a top-level folder of 270 bytes: listed (321)
+        CHECK(!SalPaxNameFitsListingU8(("sub\\" + cjk90).c_str(), true)); // in a folder part: over 255 bytes
         CHECK(SalPaxNameFitsListingU8(p255.c_str(), true));
-        CHECK(!SalPaxNameFitsListingU8(p256.c_str(), true));
+        CHECK(!SalPaxNameFitsListingU8(p256.c_str(), true)); // 256 units: no file system takes it
         CHECK(SalPaxNameFitsListingU8(("sub\\" + p255).c_str(), true));
         CHECK(!SalPaxNameFitsListingU8(("sub\\" + p256).c_str(), true));
         std::string c256;
@@ -18840,6 +18842,7 @@ static void TestPaxHeader306()
         CHECK(!SalPaxNameFitsListingU8((std::string(125, 'a') + "/" + std::string(125, 'b') + "/f.txt").c_str(), false, 5));
         CHECK(SalPaxNameFitsListingU8("f.txt", false, 8));     // no folder part: the path is the prefix alone
         CHECK(SalPaxNameFitsListingU8(p255.c_str(), true, 8)); // a folder's own name: the prefix is not part of it
+        CHECK(!SalPaxNameFitsListingU8(cjk90.c_str(), true, 5)); // under the prefix the folder name counts (321)
     }
 }
 
@@ -19237,6 +19240,50 @@ static void TestPackName319()
     // a digit or other byte before ':' is no drive letter
     CHECK(SalPackNameHasStreamColon("1:x.zip"));
     CHECK(SalPackNameHasStreamColon("\xC3\xA1:x.zip"));
+// feature 321: the names the panel listing takes (sallistingname.h); with no folder part (path ==
+// NULL) a 904-byte name used to skip every bound and overflow the panel's 780-byte name buffers
+static void TestListingName321()
+{
+    static_assert(SAL_LISTING_NAME_MAX_BYTES == SAL_FIND_NAME_U8, "the bound is the panel's name buffers");
+    auto cjkName = [](int letters)
+    {
+        std::string s;
+        for (int i = 0; i < letters; i++)
+            s += "\xE4\xB8\x80"; // U+4E00: 3 bytes, 1 unit
+        return s + ".txt";
+    };
+    const std::string c300 = cjkName(300); // the measured name: 904 bytes, 304 units
+    const std::string c251 = cjkName(251); // 757 bytes, 255 units
+    const std::string c255 = cjkName(255); // 769 bytes, 259 units
+    const std::string a300(300, 'a');      // 300 bytes, 300 units
+    const std::string b779(779, 'b'), b780(780, 'b');
+    CHECK(c300.size() == 904 && c251.size() == 757 && c255.size() == 769);
+
+    // no folder part: only the buffer bound, files and folders alike
+    CHECK(!SalListingAcceptsFileU8(NULL, 0, c300.c_str(), c300.size()));
+    CHECK(SalListingAcceptsFileU8(NULL, 0, b779.c_str(), b779.size())); // the last byte count that fits
+    CHECK(!SalListingAcceptsFileU8(NULL, 0, b780.c_str(), b780.size()));
+    CHECK(SalListingAcceptsFileU8(NULL, 0, a300.c_str(), a300.size())); // over 255 units: FS plug-ins list it
+    CHECK(SalListingAcceptsFileU8(NULL, 0, c255.c_str(), c255.size()));
+    CHECK(SalListingAcceptsFileU8(NULL, 0, "a.txt", 5));
+    CHECK(SalListingAcceptsDirU8(NULL, 0, 779));
+    CHECK(!SalListingAcceptsDirU8(NULL, 0, 780));
+    CHECK(SalListingAcceptsDirU8(NULL, 0, 300)); // a folder over 255 bytes: listed as before
+    CHECK(!SalListingAcceptsDirU8(NULL, 0, c300.size()));
+
+    // with a folder part: feature 222 unchanged (the root of an archive given as "")
+    CHECK(!SalListingAcceptsFileU8("", 0, c300.c_str(), c300.size()));
+    CHECK(SalListingAcceptsFileU8("", 0, c251.c_str(), c251.size()));  // 255 units
+    CHECK(!SalListingAcceptsFileU8("", 0, c255.c_str(), c255.size())); // 259 units
+    CHECK(!SalListingAcceptsFileU8("", 0, a300.c_str(), a300.size()));
+    CHECK(SalListingAcceptsFileU8("", 0, std::string(255, 'x').c_str(), 255));
+    const std::string p255(255, 'p'), p256(256, 'p');
+    CHECK(SalListingAcceptsFileU8(p255.c_str(), p255.size(), "f.txt", 5));
+    CHECK(!SalListingAcceptsFileU8(p256.c_str(), p256.size(), "f.txt", 5));
+    CHECK(SalListingAcceptsDirU8(p255.c_str(), p255.size(), 255));
+    CHECK(!SalListingAcceptsDirU8(p256.c_str(), p256.size(), 1));
+    CHECK(!SalListingAcceptsDirU8("", 0, 256));
+    CHECK(SalListingAcceptsDirU8("sub", 3, 255));
 }
 
 int main(int argc, char** argv)
@@ -19387,6 +19434,7 @@ int main(int argc, char** argv)
     TestSubstTarget301();
     TestFtpCaseOnlyName303();
     TestPaxHeader306();
+    TestListingName321();
     TestPaxNameUsable308();
     TestTarLink309();
     TestCpioLink310();

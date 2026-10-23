@@ -1,0 +1,11 @@
+tar307_probe (feature 307) negctl-review1-fixes-off
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 13:33; registry key existed True; ACP 1250; python Python 3.14.6
+
+GNU-DIR100 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GNU-DIR100 RUN    FAIL        ok.txt: K; tgt: ok.txt; folder \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[100 chars]..\u4E5C\u4E5D\u4E5E\u4E5F\u4E60\u4E61\u4E62\u4E63 extracted: False; at open: ...E4C\u4E4D\u4E4E\u4E4F\u4E50\u4E51\u4E52\u4E53\u4E54\u4E55\u4E56\u4E57\u4E58\u4E59\u4E5A\u4E5B\u4E5C\u4E5D\u4E5E\u4E5F\u4E60\u4E61\u4E62\u4E63 | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+CPIO-778   END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 1 ([#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC0110X64-20261022-133330.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.); new reports 1 [TC0110X64-20261022-133330.TXT: Information About Exception: / Exception: open salamander rtc exception / Error Number: 2 / Description: Stack memory corruption / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / CMainWindow::LoadConfig(0) / CFilesWindow::ChangeDir(C:\Users\pavel\AppData\Local\Temp\tc307\CPIO-778\t.cpio, -1, (null), 3, , 1, 0) / CFilesWindow::ChangePathToArchive(C:\Users\pavel\AppData\Local\Temp\tc307\CPIO-778\t.cpio, , -1, (null), 0, , 1, , 0, 1, 0) / CFilesWindow::CommonRefresh(, -1, (null), 1, 1, 0)]
+CPIO-778   RUN    FAIL        the archive did not open; panel at: <no dialog>; at open: no window
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 1, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

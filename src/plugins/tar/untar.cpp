@@ -192,6 +192,7 @@ void SCommonHeader::Initialize()
     MTime.Set(0, 0);
     MTimeFrac = 0;
     NameFromPax = FALSE;
+    NameFromGnu = FALSE;
     NameRefused = FALSE;
     Format = e_Unknown;
     IsExtendedTar = FALSE;
@@ -1821,8 +1822,10 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     // the panel listing is built, also a path deeper than it holds (a folder part or a folder name
     // over MAX_PATH - 5 bytes: the listing would fail as a whole). Feature 308: only the listing
     // applies that depth bound - an extraction takes every member a file system takes, and an
-    // extraction asked for a refused member reports it and fails (DoUnpackArchive, UnpackOneFile)
-    if (header.NameFromPax && !SalPaxNameUsableU8(header.Name, header.IsDir != FALSE, ListingPrefixLen, Listing != FALSE))
+    // extraction asked for a refused member reports it and fails (DoUnpackArchive, UnpackOneFile).
+    // Feature 321: the same for a GNU long name (300 CJK letters at the root crashed the panel; a deep
+    // folder part failed the whole listing) - in every pass exactly the rule of a PAX path
+    if ((header.NameFromPax || header.NameFromGnu) && !SalPaxNameUsableU8(header.Name, header.IsDir != FALSE, ListingPrefixLen, Listing != FALSE))
     {
         header.Ignored = TRUE;
         header.NameRefused = TRUE;
@@ -2311,6 +2314,8 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
             }
             // terminate with a null character...
             *(*longName + offs) = '\0';
+            if (longName == &header.Name)
+                header.NameFromGnu = TRUE; // feature 321: not bounded like a ustar name
             // and read the next block for further processing
             tarHeader = (const TTarBlock*)Stream->GetBlock(BLOCKSIZE);
             if (tarHeader == NULL)

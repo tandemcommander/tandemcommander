@@ -265,6 +265,7 @@ struct SCommonHeader
     CQuadWord MTime;
     DWORD MTimeFrac;  // feature 306: 100-ns part of a PAX mtime, added after the FILETIME conversion
     BOOL NameFromPax; // feature 306: Name is a PAX 'path' (a component no file system takes is refused)
+    BOOL NameFromGnu; // feature 321: Name is a GNU long name ('L') - the same refusal as a PAX path
     BOOL NameRefused; // feature 308: Name cannot be used in this pass (also Ignored); an extraction asked for it fails
     char LinkType;    // feature 309: LNKTYPE / SYMTYPE for a link member (also Ignored), else 0
     char* LinkName;   // feature 309: malloc'd UTF-8 name the link refers to, normalized like Name; NULL = none

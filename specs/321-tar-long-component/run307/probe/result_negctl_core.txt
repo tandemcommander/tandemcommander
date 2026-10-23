@@ -1,0 +1,9 @@
+tar307_probe (feature 307) negctl-tar-and-core-off
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-22 13:07; registry key existed True; ACP 1250; python Python 3.14.6
+
+GNU-TOOLONG END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 1 ([#32770 'Tandem Commander 0.1.10 (x64)'] [Button id=2] OK | [Static id=65535] A problem has occurred, forcing Tandem Commander to close. A bug report has been saved to: C:\Users\pavel\AppData\Local\Tandem Commander\TC0110X64-20261022-130734.TXT Nothing is sent anywhere. If you want to help improve Tandem Commander, please attach this file to an issue at github.com/tandemcommander/tandemcommander/issues.); new reports 1 [TC0110X64-20261022-130734.TXT: Information About Exception: / Exception: open salamander rtc exception / Error Number: 2 / Description: Stack memory corruption / WinMainBody::FindLatestConfiguration / WinMainBody::StartupDialog / WinMainBody::inicialization / WinMainBody::load_config / CMainWindow::LoadConfig(0) / CFilesWindow::ChangeDir(C:\Users\pavel\AppData\Local\Temp\tc307\GNU-TOOLONG\t.tar, -1, (null), 3, , 1, 0) / CFilesWindow::ChangePathToArchive(C:\Users\pavel\AppData\Local\Temp\tc307\GNU-TOOLONG\t.tar, , -1, (null), 0, , 1, , 0, 1, 0) / CFilesWindow::CommonRefresh(, -1, (null), 1, 1, 0)]
+GNU-TOOLONG RUN    FAIL        the archive did not open; panel at: <no dialog>; at open: no window
+Registry: restored; identical=True; SHA-256 before 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218 / after 53F4112E9E8461D13E5A8CF61B786A60D958688E0B5A1B6FAAB09E8E91D2E218
+
+Rows: PASS 0, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
