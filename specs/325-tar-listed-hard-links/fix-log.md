@@ -29,3 +29,44 @@ leaves hard-linked names out silently. Source: review 1 of feature 309.
   is read in a second pass over the archive (reopened stream) - only when such a link exists.
 - Symbolic links stay unlisted (never created by the plug-in - a listed one could only fail).
 - Feature 309's cases unchanged: target written -> copy; target asked but not written -> report.
+
+## speckit-analyze
+
+No CRITICAL / HIGH. C1 (MEDIUM, accepted): Cancel during the second pass has no probe row - the
+second pass uses `WriteOutData(..., doProgress TRUE)` and `ProgressAddSize` like pass 1, checked in
+review; a tiny fixture cannot be cancelled at a chosen moment. I1, U1 LOW - no change.
+
+## Implementation
+
+- `src/common/saltarlink.h`: `SAL_TAR_LINK_DEFER`, `SalTarLinkDecideAsked` (309's decision plus
+  "target neither written nor asked / itself deferred -> DEFER"; a `..` or empty link name -> report),
+  `SalTarResolveHardLink` (chain, bounded by the map size: a cycle is unresolved),
+  `SalTarListedLinkSize`. saltests `TestTarLink325`.
+- `src/plugins/tar/tar.h` / `untar.cpp`:
+  - `CArchive` keeps the archive name (the stream keeps a pointer to this copy), offset and size;
+    `ReopenStream()` opens the same (sub)stream again (gzip etc. included).
+  - `ListArchive`: hard links (not refused, not a folder) are listed as files with the size of the data
+    member their chain ends in (0 if none); the header keeps its own size 0 for the data skip.
+  - `DoUnpackArchive`: every hard link recorded; an asked one -> `SalTarLinkDecideAsked`; DEFER stores
+    `SDeferredLink`; at the end (both exits, after the cpio empty names) `ExtractDeferredLinks`: groups
+    by data name, reopens, second pass with the progress bar reset (Cancel = `ProgressAddSize`), the
+    first data member of each name written under the first link's name (the header's name swapped:
+    overwrite question and progress name the link), the other links copied from it by 309's
+    `WriteOutLinkCopy`, stops once nothing is wanted; unresolved / skipped-first -> 309's report once.
+  - `UnpackOneFile` -> `UnpackOneFilePass`: a found hard link whose chain ends in a data member seen
+    earlier returns `UNPACK_ONE_LINK`; the caller reopens and extracts that member as `newFileName` or the
+    link's file name.
+  - `precomp.h`: `<unordered_map>` before the Debug `new` macro (as `<unordered_set>`).
+- Trap 123 again: a Python here-document turned `'\0'` into NUL bytes in `untar.cpp` - found by a
+  byte count, fixed with a script written by the editor. `sed -i` turned the CRLF file into LF - restored.
+
+## Checks after
+
+- `.\build.cmd` -> BUILD SUCCEEDED; saltests -> `saltests: 27877 checks, 0 failed`.
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- Probe first run after: 17 PASS / 1 FAIL - COPY-EXIST got the COPY-INSIDE fixture (probe bug in
+  `mklink325.py`: no `e.txt` in it); fixed the fixture selection. COPY-INSIDE, -GZ, -CHAIN, -MISSING
+  (one box "(2) ... sub\b.txt -> missing.txt"), -FOCUSED, VIEW-LINK (viewer shows the disk-cache copy
+  `d.txt` holding "A") PASS.
+- The re-run was refused (exit 99): the maintainer started the installed Tandem Commander at 12:45 -
+  probes share the registry key; waited for it to close (never touched).

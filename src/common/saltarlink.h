@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <string>
+#include <unordered_map>
+
 //*****************************************************************************
 //
 // saltarlink.h
@@ -115,4 +118,69 @@ inline int SalTarLinkDecide(char typeFlag, bool targetWritten)
     if (typeFlag == SAL_TAR_TYPE_SYMLINK)
         return SAL_TAR_LINK_REPORT_UNSUPPORTED;
     return SAL_TAR_LINK_NONE;
+}
+
+//*****************************************************************************
+//
+// Feature 325: hard-link members are listed (as files, with the size of the data member
+// they name) and an extraction asked for one whose target it neither wrote nor was asked
+// for takes the target's data from a second pass over the archive - a tar link always
+// names an earlier member, so the single forward pass has passed the data by then.
+//
+//*****************************************************************************
+
+#define SAL_TAR_LINK_DEFER 4 // a hard link whose target's data this pass cannot give: a second pass
+
+// what an extraction does with a link member it was asked to extract (feature 325):
+// 'targetWritten' - the file the link names was written by this operation; 'targetDeferred' - that
+// name is itself a link deferred by this operation; 'targetAsked' - that name was asked for too;
+// 'linkHasDotDot' - the link name has a ".." component (never matched, feature 309)
+inline int SalTarLinkDecideAsked(char typeFlag, bool targetWritten, bool targetDeferred, bool targetAsked,
+                                 bool linkHasDotDot)
+{
+    if (typeFlag == SAL_TAR_TYPE_HARDLINK)
+    {
+        if (linkHasDotDot)
+            return SAL_TAR_LINK_REPORT_MISSING;
+        if (targetWritten)
+            return SAL_TAR_LINK_COPY;
+        // the target was asked for but not written (Skip, a refused name): reported as before (309)
+        return targetDeferred || !targetAsked ? SAL_TAR_LINK_DEFER : SAL_TAR_LINK_REPORT_MISSING;
+    }
+    if (typeFlag == SAL_TAR_TYPE_SYMLINK)
+        return SAL_TAR_LINK_REPORT_UNSUPPORTED;
+    return SAL_TAR_LINK_NONE;
+}
+
+// follows a chain of hard links: 'links' maps the name of every hard-link member to the name it
+// refers to. 'dataName' = the first name of the chain that is not a hard link (the member that
+// should hold the data). false for a cycle (never ends) - nothing to extract.
+inline bool SalTarResolveHardLink(const std::unordered_map<std::string, std::string>& links,
+                                  const std::string& linkName, std::string& dataName)
+{
+    std::string name = linkName;
+    for (size_t steps = 0; steps <= links.size(); steps++)
+    {
+        std::unordered_map<std::string, std::string>::const_iterator it = links.find(name);
+        if (it == links.end())
+        {
+            dataName = name;
+            return true;
+        }
+        name = it->second;
+    }
+    return false; // more steps than links: a cycle
+}
+
+// the size to list for a hard link referring to 'linkName': the size of the data member the chain
+// ends in ('sizes': the data members listed so far), else 0 (no such member, a cycle)
+inline unsigned __int64 SalTarListedLinkSize(const std::unordered_map<std::string, std::string>& links,
+                                             const std::unordered_map<std::string, unsigned __int64>& sizes,
+                                             const std::string& linkName)
+{
+    std::string dataName;
+    if (!SalTarResolveHardLink(links, linkName, dataName))
+        return 0;
+    std::unordered_map<std::string, unsigned __int64>::const_iterator it = sizes.find(dataName);
+    return it != sizes.end() ? it->second : 0;
 }

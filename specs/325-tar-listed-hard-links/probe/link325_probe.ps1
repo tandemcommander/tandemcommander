@@ -19,11 +19,12 @@
                        nothing asked (symbolic links stay unlisted)
       COPY-FOCUSED     the COPY-INSIDE tar; inside sub: End focuses d.txt, Copy -> only d.txt = 'A'
       COPY-EXIST       the COPY-CHAIN tar, tgt\e.txt exists ('old'); inside sub: End focuses e.txt, Copy,
-                       the overwrite question (naming e.txt) answered Yes -> e.txt = a.txt's content
+                       exactly one box: the overwrite question showing the new size 131 072 (a.txt's;
+                       its name fields are not readable by the driver), Yes -> e.txt = a.txt's content
       COPY-ROOT        the COPY-INSIDE tar at the archive root: Select All, Copy -> a.txt, sub/b.txt,
                        sub/c.txt, sub/d.txt (feature 309's COPY-HARD)
       VIEW-LINK        the COPY-INSIDE tar; inside sub: End focuses d.txt, F3 (742) -> a viewer of d.txt,
-                       no message box
+                       no message box, the disk-cache copy it shows holds a.txt's content
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -116,7 +117,7 @@ function Copy-Row([string]$Case, [string]$How, [switch]$Sub, $Want, [string]$Box
         $boxes = @($r.Messages | Where-Object { $_ -notmatch "^\[#32770 'Copy'\]" })
         $ok = $c[0] -and ($openMsgs -eq 'no window')
         if ($BoxName) { $ok = $ok -and ($boxes.Count -eq 1) -and $boxes[0].Contains($BoxName) }
-        elseif ($Exist) { $ok = $ok -and ($boxes.Count -eq 1) -and $boxes[0].Contains($Exist[0]) }
+        elseif ($Exist) { $ok = $ok -and ($boxes.Count -eq 1) -and $boxes[0].Contains("'Confirm File Overwrite'") -and ($boxes[0] -match '131\D?072') }
         else { $ok = $ok -and ($boxes.Count -eq 0) }
         Row $Case 'RUN' (V $ok) ('{0}; boxes besides the Copy dialog: {1}; windows: {2}' -f $c[1], $boxes.Count, (Tail $msgs 300))
     }
@@ -124,7 +125,7 @@ function Copy-Row([string]$Case, [string]$How, [switch]$Sub, $Want, [string]$Box
     finally { if ($id) { End-Row $Case $id $null $before } }
 }
 
-function View-Row([string]$Case, [string]$Name) {
+function View-Row([string]$Case, [string]$Name, [string]$Content) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     $arc = $d + '\t.tar'; $tgt = $d + '\tgt'
@@ -137,9 +138,13 @@ function View-Row([string]$Case, [string]$Name) {
         Start-Sleep -Milliseconds 800
         $title = Which-Viewer $id
         $msgs = Msgs (Serve $id 10)
+        # the viewer's title starts with the disk-cache copy it shows: read it while the program runs
+        $shown = '<not read>'
+        $vp = ($title -split ' \[')[0]
+        if ($vp.EndsWith('\' + $Name) -and [IO.File]::Exists($vp)) { $shown = [IO.File]::ReadAllText($vp) }
         End-Row $Case $id $null $before; $id = 0
-        $ok = ($openMsgs -eq 'no window') -and ($msgs -eq 'no window') -and (-not $title.StartsWith('<')) -and $title.Contains($Name)
-        Row $Case 'RUN' (V $ok) ('viewer: {0}; after: {1}' -f (Tail $title 200), (Tail $msgs 200))
+        $ok = ($openMsgs -eq 'no window') -and ($msgs -eq 'no window') -and (-not $title.StartsWith('<')) -and $title.Contains($Name) -and ($shown -ceq $Content)
+        Row $Case 'RUN' (V $ok) ('viewer: {0}; content shown: {1} (want {2}); after: {3}' -f (Tail $title 200), (Tail $shown 40), $Content, (Tail $msgs 200))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before } }
@@ -165,7 +170,7 @@ try {
     Copy-Row 'COPY-FOCUSED' 'end' -Sub ([ordered]@{ 'd.txt' = 'A' })
     Copy-Row 'COPY-EXIST' 'end' -Sub ([ordered]@{ 'e.txt' = $Big }) -Exist @('e.txt', 'old')
     Copy-Row 'COPY-ROOT' 'all' ([ordered]@{ 'a.txt' = 'A'; 'sub/b.txt' = 'A'; 'sub/c.txt' = 'C'; 'sub/d.txt' = 'A' })
-    View-Row 'VIEW-LINK' 'd.txt'
+    View-Row 'VIEW-LINK' 'd.txt' 'A'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

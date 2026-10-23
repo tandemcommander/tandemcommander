@@ -1,0 +1,25 @@
+link325_probe (feature 325) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 12:49; registry key existed True; ACP 1250; python Python 3.14.6
+
+COPY-INSIDE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-INSIDE RUN    PASS        tgt: 3 of 3 files (b.txt, c.txt, d.txt); boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy 3 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-INSIDE-GZ END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-INSIDE-GZ RUN    PASS        tgt: 3 of 3 files (b.txt, c.txt, d.txt); boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy 3 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-CHAIN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-CHAIN RUN    PASS        tgt: 3 of 3 files (b.txt, c.txt, e.txt); boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy 3 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-MISSING END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-MISSING RUN    PASS        tgt: 1 of 1 files (c.txt); boxes besides the Copy dialog: 1; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. sub\b.txt -> missing.txt | [Button id=1] OK
+COPY-SYM   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-SYM   RUN    PASS        tgt: 1 of 1 files (c.txt); boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy file "c.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-FOCUSED END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-FOCUSED RUN    PASS        tgt: 1 of 1 files (d.txt); boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy file "d.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-EXIST END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-EXIST RUN    PASS        tgt: 1 of 1 files (e.txt); boxes besides the Copy dialog: 1; windows: ... 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 3, 23.10.2026, 12:50:09, A | [Static id=1151] With file: | [Static id=184] 131 072, 09.09.2001, 3:46:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+COPY-ROOT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-ROOT  RUN    PASS        tgt: 4 of 4 files (a.txt, sub/b.txt, sub/c.txt, sub/d.txt); boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy 1 file and 1 directory from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+VIEW-LINK  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+VIEW-LINK  RUN    PASS        viewer: C:\Users\pavel\AppData\Local\Temp\SALA1F.tmp\d.txt [Plain Text] - Code Viewer; content shown: A (want A); after: no window
+Registry: restored; identical=True; SHA-256 before D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39 / after D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39
+
+Rows: PASS 18, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

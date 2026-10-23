@@ -14,6 +14,7 @@
 #include <commctrl.h>
 #include <string>        // feature 309: the names written by an extraction
 #include <unordered_set> // (before the Debug 'new' macro below - it breaks placement new)
+#include <unordered_map> // feature 325: the hard links of a pass (saltarlink.h)
 #include <map>           // feature 310: the hard-link groups of a cpio extraction
 #include <vector>
 

@@ -225,13 +225,26 @@ CArchive::CArchive(const char* fileName, CSalamanderForOperationsAbstract* salam
     LinkReportShown = FALSE;
     ListingPrefixLen = 0;
     SalamanderIf = salamander;
+    InputOffset = offset;
+    InputSize = inputSize;
     if (fileName == NULL || salamander == NULL)
     {
         Ok = FALSE;
         return;
     }
+    // feature 325: kept for ReopenStream; the stream keeps a pointer to this copy
+    try
+    {
+        ArchiveFileName = fileName;
+    }
+    catch (...)
+    {
+        SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        Ok = FALSE;
+        return;
+    }
     // open the input file and determine whether it is compressed
-    Stream = CDecompressFile::CreateInstance(fileName, offset, inputSize);
+    Stream = CDecompressFile::CreateInstance(ArchiveFileName.c_str(), offset, inputSize);
     // verify the stream
     if (Stream == NULL || !Stream->IsOk())
     {
@@ -247,6 +260,26 @@ CArchive::~CArchive()
     if (Stream != NULL)
         delete Stream;
     SalPaxClear(&GlobalPax);
+}
+
+BOOL CArchive::ReopenStream()
+{
+    CALL_STACK_MESSAGE1("CArchive::ReopenStream()");
+    // feature 325: the stream cannot seek back (gzip, bzip2 ... decode forward) - open it anew
+    CDecompressFile* stream = CDecompressFile::CreateInstance(ArchiveFileName.c_str(), InputOffset, InputSize);
+    if (stream == NULL) // the error was shown
+        return FALSE;
+    if (!stream->IsOk())
+    {
+        SalamanderGeneral->ShowMessageBox(LoadErr(stream->GetErrorCode(), stream->GetLastErr()),
+                                          LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        delete stream;
+        return FALSE;
+    }
+    delete Stream;
+    Stream = stream;
+    Offset.Set(0, 0);
+    return TRUE;
 }
 
 BOOL CArchive::ListArchive(const char* prefix, CSalamanderDirectoryAbstract* dir)
@@ -284,11 +317,31 @@ BOOL CArchive::ListArchive(const char* prefix, CSalamanderDirectoryAbstract* dir
         return FALSE;
     }
 
+    // feature 325: a hard-link member is listed as a file with the size of the data member it names
+    // (an earlier member - a chain of links followed); out of memory lists it with size 0
+    CTarLinks links;
+    std::unordered_map<std::string, unsigned __int64> sizes;
     // we have an archive, so proceed - decode all files from the archive
     for (;;)
     {
+        BOOL hardLink = header.LinkType == SAL_TAR_TYPE_HARDLINK && !header.NameRefused && !header.IsDir &&
+                        header.LinkName != NULL && header.Name != NULL;
+        CQuadWord listedSize = header.FileInfo.Size;
+        try
+        {
+            if (hardLink)
+            {
+                listedSize.Value = SalTarListedLinkSize(links, sizes, header.LinkName);
+                links.emplace(header.Name, header.LinkName);
+            }
+            else if (!header.Ignored && !header.IsDir && header.LinkType == 0 && header.Name != NULL)
+                sizes.emplace(header.Name, header.FileInfo.Size.Value); // the first of a name (as the second pass)
+        }
+        catch (...)
+        {
+        }
         // ignore entries we cannot interpret
-        if (!header.Ignored)
+        if (!header.Ignored || hardLink)
         {
             // header.Path is a UTF-8 path inside the archive and is not bounded by
             // MAX_PATH (GNU long names, interface 104) -> build the string on the heap
@@ -312,8 +365,11 @@ BOOL CArchive::ListArchive(const char* prefix, CSalamanderDirectoryAbstract* dir
             if (!header.IsDir)
             {
                 // TODO: also add user data with the file position inside the archive to separate identically named files
-                // this is a file, add the file
-                added = dir->AddFile(prefix ? path : header.Path, header.FileInfo, NULL);
+                // this is a file, add the file (feature 325: a hard link with its target's size; the
+                // header keeps its own size 0 - no data follows it)
+                CFileData fileInfo = header.FileInfo;
+                fileInfo.Size = listedSize;
+                added = dir->AddFile(prefix ? path : header.Path, fileInfo, NULL);
             }
             else
             {
@@ -352,6 +408,50 @@ BOOL CArchive::ListArchive(const char* prefix, CSalamanderDirectoryAbstract* dir
     }
 }
 
+// feature 309: the archive names of the files an extraction wrote (a hard link may copy one of them);
+// out of memory leaves a name unrecorded - a link to it is then reported (the safe side)
+typedef std::unordered_set<std::string> CWrittenNames;
+
+static bool IsNameWritten(const CWrittenNames& written, const char* name)
+{
+    try
+    {
+        return name != NULL && written.count(name) != 0;
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+static void RecordNameWritten(CWrittenNames& written, const char* name)
+{
+    try
+    {
+        written.insert(name);
+    }
+    catch (...)
+    {
+    }
+}
+
+// feature 325: a hard link of the pass - its name -> the name it refers to (the first of a name);
+// out of memory leaves it unrecorded - a link naming it is then reported (the safe side)
+static void RecordLink(std::unordered_map<std::string, std::string>& links, const char* name, const char* linkName)
+{
+    try
+    {
+        if (name != NULL && linkName != NULL)
+            links.emplace(name, linkName);
+    }
+    catch (...)
+    {
+    }
+}
+
+// feature 325: CArchive::UnpackOneFilePass - the asked name is a hard link whose data member passed
+#define UNPACK_ONE_LINK 2
+
 BOOL CArchive::UnpackOneFile(const char* nameInArchive, const CFileData* fileData,
                              const char* targetPath, const char* newFileName)
 {
@@ -359,6 +459,23 @@ BOOL CArchive::UnpackOneFile(const char* nameInArchive, const CFileData* fileDat
 
     if (!IsOk())
         return FALSE;
+
+    std::string linkData, linkFileName;
+    int ret = UnpackOneFilePass(nameInArchive, targetPath, newFileName, &linkData, &linkFileName);
+    if (ret != UNPACK_ONE_LINK)
+        return ret == TRUE;
+    // feature 325: a listed hard link - the data member it names passed before it; read the archive
+    // again and extract that member under the link's name
+    if (!ReopenStream())
+        return FALSE;
+    return UnpackOneFilePass(linkData.c_str(), targetPath, linkFileName.c_str(), NULL, NULL) == TRUE;
+}
+
+// TRUE / FALSE as UnpackOneFile, or UNPACK_ONE_LINK (only with 'linkData'): see tar.h
+int CArchive::UnpackOneFilePass(const char* nameInArchive, const char* targetPath, const char* newFileName,
+                                std::string* linkData, std::string* linkFileName)
+{
+    CALL_STACK_MESSAGE4("CArchive::UnpackOneFilePass(%s, %s, %s, , )", nameInArchive, targetPath, newFileName);
 
     // first try to detect the archive and read the first header
     Silent = 0;
@@ -380,6 +497,9 @@ BOOL CArchive::UnpackOneFile(const char* nameInArchive, const CFileData* fileDat
     // feature 310: the cpio hard-link groups whose data passed before the name asked for (data-first
     // layout): the member that carried it, for the report
     std::map<std::pair<unsigned __int64, DWORD>, std::string> cpioDataSeen;
+    // feature 325: the hard links and the data members passed so far (a listed hard link names one)
+    CTarLinks links;
+    CWrittenNames dataSeen;
     // we have an archive, so proceed - decode all files from the archive
     for (;;)
     {
@@ -391,10 +511,31 @@ BOOL CArchive::UnpackOneFile(const char* nameInArchive, const CFileData* fileDat
             ReportRefusedName(header.Name);
             return FALSE;
         }
-        // feature 309: a link member is never "extracted" as nothing with success (not listed, so not
-        // reachable from the panel; a hard link's target is not written by this one-file operation)
+        // feature 309: a link member is never "extracted" as nothing with success. Feature 325: a hard
+        // link is listed - the data member it names passed earlier: the caller reads the archive again
         if (found && header.LinkType != 0)
         {
+            if (linkData != NULL && header.LinkType == SAL_TAR_TYPE_HARDLINK && header.LinkName != NULL &&
+                *header.LinkName != '\0' && !SalTarPathHasDotDotU8(header.LinkName) &&
+                (newFileName != NULL || header.FileInfo.Name != NULL))
+            {
+                try
+                {
+                    std::string dataName;
+                    if (SalTarResolveHardLink(links, header.LinkName, dataName) && dataSeen.count(dataName) != 0)
+                    {
+                        *linkData = dataName;
+                        *linkFileName = newFileName != NULL ? newFileName : header.FileInfo.Name;
+                        return UNPACK_ONE_LINK;
+                    }
+                }
+                catch (...)
+                {
+                    SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                      MSGBOX_ERROR);
+                    return FALSE;
+                }
+            }
             ReportLinkMember(header, SalTarLinkDecide(header.LinkType, false) == SAL_TAR_LINK_REPORT_MISSING
                                          ? ERROR_FILE_NOT_FOUND
                                          : ERROR_NOT_SUPPORTED);
@@ -429,6 +570,14 @@ BOOL CArchive::UnpackOneFile(const char* nameInArchive, const CFileData* fileDat
                                                   MSGBOX_ERROR);
                 return FALSE;
             }
+        }
+        // feature 325: what a later hard link may name (out of memory: such a link is reported)
+        if (linkData != NULL && !found)
+        {
+            if (header.LinkType == SAL_TAR_TYPE_HARDLINK && header.LinkName != NULL)
+                RecordLink(links, header.Name, header.LinkName);
+            else if (!header.Ignored && !header.IsDir && header.LinkType == 0)
+                RecordNameWritten(dataSeen, header.Name);
         }
         // if we cannot interpret what we found, skip it; otherwise extract the file
         // What we don't support (everything except files & dirs) has zero size and Ignored set.
@@ -553,33 +702,6 @@ BOOL CArchive::UnpackWholeArchive(const char* mask, const char* targetPath)
 // ****************************************************************************
 //
 
-// feature 309: the archive names of the files an extraction wrote (a hard link may copy one of them);
-// out of memory leaves a name unrecorded - a link to it is then reported (the safe side)
-typedef std::unordered_set<std::string> CWrittenNames;
-
-static bool IsNameWritten(const CWrittenNames& written, const char* name)
-{
-    try
-    {
-        return name != NULL && written.count(name) != 0;
-    }
-    catch (...)
-    {
-        return false;
-    }
-}
-
-static void RecordNameWritten(CWrittenNames& written, const char* name)
-{
-    try
-    {
-        written.insert(name);
-    }
-    catch (...)
-    {
-    }
-}
-
 BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, CNames& names)
 {
     CALL_STACK_MESSAGE3("CArchive::DoUnpackArchive(%s, %s, )", targetPath, archiveRoot);
@@ -599,6 +721,11 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
     BOOL refused = FALSE;
     CWrittenNames writtenNames; // feature 309
     CCpioGroups cpioGroups;     // feature 310
+    // feature 325: every hard link of the pass, and the asked ones whose target's data passed unwritten
+    // (written by a second pass, ExtractDeferredLinks)
+    CTarLinks links;
+    std::vector<SDeferredLink> deferred;
+    CWrittenNames deferredNames;
     SCommonHeader header;
     int ret = ReadArchiveHeader(header, TRUE);
     // if this is not a supported format, unpack only the outer compression when present
@@ -639,14 +766,47 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         if (found && !header.Ignored && archiveRoot != NULL)
             ptr += strlen(archiveRoot);
 
+        // feature 325: a chain of links is followed to its data member (the second pass)
+        if (header.LinkType == SAL_TAR_TYPE_HARDLINK)
+            RecordLink(links, header.Name, header.LinkName);
+
         // feature 309: a link member asked for - a hard link to a file written above is extracted as
-        // a copy of it; any other link is reported and fails the operation after the rest is extracted
+        // a copy of it; any other link is reported and fails the operation after the rest is extracted.
+        // Feature 325: a hard link whose target was not asked for (a listed link copied without it) is
+        // written from the target's data by a second pass
         BOOL linkHandled = FALSE;
         if (found && !header.NameRefused && header.LinkType != 0)
         {
             linkHandled = TRUE;
-            switch (SalTarLinkDecide(header.LinkType, IsNameWritten(writtenNames, header.LinkName)))
+            const char* linkName = header.LinkName != NULL ? header.LinkName : "";
+            BOOL hardLink = header.LinkType == SAL_TAR_TYPE_HARDLINK;
+            switch (SalTarLinkDecideAsked(header.LinkType, IsNameWritten(writtenNames, linkName),
+                                          hardLink && IsNameWritten(deferredNames, linkName),
+                                          hardLink && *linkName != '\0' && names.IsNamePresent(linkName),
+                                          *linkName == '\0' || SalTarPathHasDotDotU8(linkName)))
             {
+            case SAL_TAR_LINK_DEFER:
+            {
+                // asked, so it lies below the archive root
+                size_t rootLen = archiveRoot != NULL ? strlen(archiveRoot) : 0;
+                try
+                {
+                    SDeferredLink d;
+                    d.Name = header.Name;
+                    d.LinkName = linkName;
+                    d.Target = header.Name + rootLen;
+                    deferred.push_back(d);
+                    deferredNames.insert(header.Name);
+                }
+                catch (...)
+                {
+                    SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                      MSGBOX_ERROR);
+                    SalamanderIf->CloseProgressDialog();
+                    return FALSE;
+                }
+                break;
+            }
             case SAL_TAR_LINK_COPY:
             {
                 // both names were asked for, so both lie below the archive root
@@ -688,6 +848,9 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         // feature 310: at the end of the data, the names of files that never carried data are empty
         if (ret == TAR_EOF && WriteOutCpioEmptyNames(cpioGroups, targetPath) != TAR_OK)
             ret = TAR_ERROR;
+        // feature 325: the deferred hard links from a second pass
+        if (ret == TAR_EOF && !deferred.empty() && ExtractDeferredLinks(targetPath, deferred, links, refused) != TAR_OK)
+            ret = TAR_ERROR;
         if (ret != TAR_OK)
         {
             SalamanderIf->CloseProgressDialog();
@@ -717,6 +880,9 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         {
             // feature 310: the names of files that never carried data are empty
             BOOL emptyOk = WriteOutCpioEmptyNames(cpioGroups, targetPath) == TAR_OK;
+            // feature 325: the deferred hard links from a second pass
+            if (emptyOk && !deferred.empty() && ExtractDeferredLinks(targetPath, deferred, links, refused) != TAR_OK)
+                emptyOk = FALSE;
             SalamanderIf->CloseProgressDialog();
             return emptyOk && !refused;
         }
@@ -1260,6 +1426,146 @@ DONE:
     free(sourcePath);
     free(extractedName);
     return ret;
+}
+
+// feature 325: a header standing for a deferred link (no data) for WriteOutLinkCopy / ReportLinkMember;
+// the time and attributes of the data member 'data' (NULL: none); FALSE = out of memory (shown)
+static BOOL MakeDeferredLinkHeader(SCommonHeader& h, const std::string& name, const std::string& linkName,
+                                   const SCommonHeader* data)
+{
+    h.Initialize();
+    h.Name = DupU8(name.c_str());
+    h.LinkName = DupU8(linkName.c_str());
+    if (data != NULL)
+    {
+        h.FileInfo.LastWrite = data->FileInfo.LastWrite;
+        h.FileInfo.Attr = data->FileInfo.Attr;
+    }
+    if (h.Name == NULL || h.LinkName == NULL)
+    {
+        SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+int CArchive::ExtractDeferredLinks(const char* targetPath, const std::vector<SDeferredLink>& deferred,
+                                   const CTarLinks& links, BOOL& refused)
+{
+    CALL_STACK_MESSAGE2("CArchive::ExtractDeferredLinks(%s, , , )", targetPath);
+
+    // the data member each deferred link ends in (a chain followed; a cycle ends nowhere) -> the links
+    std::vector<BOOL> handled;
+    std::unordered_map<std::string, std::vector<size_t>> wanted;
+    try
+    {
+        handled.assign(deferred.size(), FALSE);
+        for (size_t i = 0; i < deferred.size(); i++)
+        {
+            std::string dataName;
+            if (SalTarResolveHardLink(links, deferred[i].LinkName, dataName))
+                wanted[dataName].push_back(i);
+        }
+    }
+    catch (...)
+    {
+        SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        return TAR_ERROR;
+    }
+
+    if (!wanted.empty())
+    {
+        // the second pass: from the start of the archive to the last data member wanted
+        if (!ReopenStream())
+            return TAR_ERROR;
+        SalamanderIf->ProgressSetTotalSize(Stream->GetStreamSize(), CQuadWord(-1, -1));
+        SalamanderIf->ProgressSetSize(CQuadWord(0, 0), CQuadWord(-1, -1), TRUE);
+        CQuadWord filePos = Stream->GetStreamPos();
+        SCommonHeader header;
+        if (ReadArchiveHeader(header, TRUE) != TAR_OK)
+            return TAR_ERROR;
+        for (;;)
+        {
+            CQuadWord sizeDelta = Stream->GetStreamPos() - filePos;
+            if (!SalamanderIf->ProgressAddSize((int)sizeDelta.Value, TRUE))
+                return TAR_ERROR; // Cancel
+            if (header.Finished)
+                break;
+            std::unordered_map<std::string, std::vector<size_t>>::iterator it = wanted.end();
+            if (!header.Ignored && !header.IsDir && header.LinkType == 0 && header.Name != NULL)
+            {
+                try
+                {
+                    it = wanted.find(header.Name);
+                }
+                catch (...)
+                {
+                    SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                      MSGBOX_ERROR);
+                    return TAR_ERROR;
+                }
+            }
+            int ret;
+            if (it != wanted.end())
+            {
+                // the first member of that name (a link names an earlier member): its data under the
+                // first link's name - the header names the link meanwhile (the overwrite question, the
+                // progress); the other links of it are copies of that file (identity-safe, feature 309)
+                const std::vector<size_t>& group = it->second;
+                const SDeferredLink& first = deferred[group[0]];
+                char* dataName = header.Name;
+                header.Name = const_cast<char*>(first.Name.c_str());
+                BOOL written = FALSE;
+                ret = WriteOutData(header, targetPath, first.Target.c_str(), FALSE, TRUE, &written);
+                header.Name = dataName;
+                if (ret != TAR_OK && ret != TAR_EOF)
+                    return TAR_ERROR;
+                handled[group[0]] = TRUE; // written, or skipped by the user
+                // the user skipped it: the data is read once - the other links are reported below
+                for (size_t k = 1; written && k < group.size(); k++)
+                {
+                    const SDeferredLink& d = deferred[group[k]];
+                    SCommonHeader h;
+                    if (!MakeDeferredLinkHeader(h, d.Name, d.LinkName, &header))
+                        return TAR_ERROR;
+                    BOOL linkWritten, linkRefused;
+                    if (WriteOutLinkCopy(h, targetPath, d.Target.c_str(), first.Target.c_str(), &linkWritten,
+                                         &linkRefused) != TAR_OK)
+                        return TAR_ERROR;
+                    if (linkRefused)
+                        refused = TRUE;
+                    handled[group[k]] = TRUE;
+                }
+                wanted.erase(it);
+            }
+            else
+            {
+                ret = WriteOutData(header, targetPath, header.Name != NULL ? header.Name : "", TRUE, TRUE);
+                if (ret != TAR_OK && ret != TAR_EOF)
+                    return TAR_ERROR;
+            }
+            if (ret == TAR_EOF || wanted.empty())
+                break;
+            filePos = Stream->GetStreamPos();
+            if (ReadArchiveHeader(header, FALSE) != TAR_OK)
+                return TAR_ERROR;
+        }
+    }
+
+    // links no data member was found for (a missing target, a cycle, a skipped first name): reported
+    for (size_t i = 0; i < deferred.size(); i++)
+    {
+        if (!handled[i])
+        {
+            SCommonHeader h;
+            if (!MakeDeferredLinkHeader(h, deferred[i].Name, deferred[i].LinkName, NULL))
+                return TAR_ERROR;
+            ReportLinkMember(h, ERROR_FILE_NOT_FOUND);
+            refused = TRUE;
+            break; // the report is shown once per operation
+        }
+    }
+    return TAR_OK;
 }
 
 // feature 310: a header standing for a waiting name (no data, no padding: format unknown) for

@@ -35,7 +35,7 @@ def make(fill, fmt=tarfile.PAX_FORMAT):
 def main():
     row, out = sys.argv[1], sys.argv[2]
     base = row[:-3] if row.endswith('-GZ') else row
-    if base.startswith('COPY-CHAIN'):
+    if base.startswith('COPY-CHAIN') or base.startswith('COPY-EXIST'):
         def fill(tf):
             add(tf, 'a.txt', BIG)
             add(tf, 'sub/c.txt', b'C')

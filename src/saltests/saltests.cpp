@@ -19004,6 +19004,63 @@ static void TestTarLink309()
     CHECK(SalTarLinkDecide('5', true) == SAL_TAR_LINK_NONE);
 }
 
+static void TestTarLink325()
+{
+    // the decision for an asked link: copy a written target; a target neither written nor asked for
+    // (or itself deferred) -> the second pass; asked but not written -> reported as in 309
+    CHECK(SalTarLinkDecideAsked('1', true, false, true, false) == SAL_TAR_LINK_COPY);
+    CHECK(SalTarLinkDecideAsked('1', true, false, false, false) == SAL_TAR_LINK_COPY);
+    CHECK(SalTarLinkDecideAsked('1', false, false, false, false) == SAL_TAR_LINK_DEFER);
+    CHECK(SalTarLinkDecideAsked('1', false, true, true, false) == SAL_TAR_LINK_DEFER);
+    CHECK(SalTarLinkDecideAsked('1', false, true, false, false) == SAL_TAR_LINK_DEFER);
+    CHECK(SalTarLinkDecideAsked('1', false, false, true, false) == SAL_TAR_LINK_REPORT_MISSING);
+    // a ".." link name is never matched - reported, never deferred or copied
+    CHECK(SalTarLinkDecideAsked('1', true, false, true, true) == SAL_TAR_LINK_REPORT_MISSING);
+    CHECK(SalTarLinkDecideAsked('1', false, false, false, true) == SAL_TAR_LINK_REPORT_MISSING);
+    CHECK(SalTarLinkDecideAsked('2', false, false, false, false) == SAL_TAR_LINK_REPORT_UNSUPPORTED);
+    CHECK(SalTarLinkDecideAsked('2', true, true, true, false) == SAL_TAR_LINK_REPORT_UNSUPPORTED);
+    CHECK(SalTarLinkDecideAsked('0', false, false, false, false) == SAL_TAR_LINK_NONE);
+    CHECK(SalTarLinkDecideAsked('\0', true, true, true, true) == SAL_TAR_LINK_NONE);
+    // 309's decision is the same where both apply
+    CHECK(SalTarLinkDecideAsked('1', false, false, true, false) == SalTarLinkDecide('1', false));
+    CHECK(SalTarLinkDecideAsked('1', true, false, true, false) == SalTarLinkDecide('1', true));
+
+    // chains: a link to a link ends at the first name that is not a link
+    std::unordered_map<std::string, std::string> links;
+    links["sub\\b.txt"] = "a.txt";
+    links["sub\\d.txt"] = "a.txt";
+    links["sub\\e.txt"] = "sub\\b.txt";
+    links["x"] = "y";
+    links["y"] = "x"; // a cycle
+    links["self"] = "self";
+    std::string data;
+    CHECK(SalTarResolveHardLink(links, "a.txt", data) && data == "a.txt");
+    CHECK(SalTarResolveHardLink(links, "sub\\b.txt", data) && data == "a.txt");
+    CHECK(SalTarResolveHardLink(links, "sub\\e.txt", data) && data == "a.txt");
+    CHECK(SalTarResolveHardLink(links, "missing.txt", data) && data == "missing.txt");
+    data = "keep";
+    CHECK(!SalTarResolveHardLink(links, "x", data) && data == "keep");
+    CHECK(!SalTarResolveHardLink(links, "self", data));
+    std::unordered_map<std::string, std::string> none;
+    CHECK(SalTarResolveHardLink(none, "a", data) && data == "a");
+    // names are bytes: a case twin is another name (as 309 matches written names)
+    CHECK(SalTarResolveHardLink(links, "SUB\\B.TXT", data) && data == "SUB\\B.TXT");
+
+    // the size listed for a link: its data member's, else 0
+    std::unordered_map<std::string, unsigned __int64> sizes;
+    sizes["a.txt"] = 131072;
+    sizes["sub\\c.txt"] = 1;
+    CHECK(SalTarListedLinkSize(links, sizes, "a.txt") == 131072);
+    CHECK(SalTarListedLinkSize(links, sizes, "sub\\b.txt") == 131072);
+    CHECK(SalTarListedLinkSize(links, sizes, "sub\\e.txt") == 131072);
+    CHECK(SalTarListedLinkSize(links, sizes, "sub\\c.txt") == 1);
+    CHECK(SalTarListedLinkSize(links, sizes, "missing.txt") == 0);
+    CHECK(SalTarListedLinkSize(links, sizes, "x") == 0);
+    sizes["big"] = 0x1FFFFFFFFULL; // over 4 GiB
+    links["sub\\big"] = "big";
+    CHECK(SalTarListedLinkSize(links, sizes, "sub\\big") == 0x1FFFFFFFFULL);
+}
+
 static void TestCpioLink310()
 {
     // grouped: a regular file with more than one link in the newc / crc format only
@@ -19949,6 +20006,7 @@ int main(int argc, char** argv)
     TestListingName321();
     TestPaxNameUsable308();
     TestTarLink309();
+    TestTarLink325();
     TestCpioLink310();
     TestUnpackDefault315();
     TestPackName318();

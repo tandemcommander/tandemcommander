@@ -1,0 +1,19 @@
+unp308_probe (feature 308) regress325
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 12:53; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-DEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DEEP   RUN    PASS        tgt: 34 of 34 files; archive kept: True (want True); "(206)" shown: False; windows: no window
+UNP-DEEP-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DEEP-DEL RUN    PASS        tgt: 34 of 34 files; archive kept: False (want False); "(206)" shown: False; windows: no window
+UNP-TOOLONG-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-TOOLONG-DEL RUN    PASS        tgt: 1 of 1 files; archive kept: True (want True); "(206)" shown: True; windows: ...F04\u4F05\u4F06\u4F07\u4F08\u4F09\u4F0A\u4F0B\u4F0C\u4F0D\u4F0E\u4F0F\u4F10\u4F11\u4F12\u4F13\u4F14\u4F15\u4F16\u4F17\u4F18\u4F19\u4F1A\u4F1B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK
+UNP-DEB    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DEB    RUN    PASS        tgt: 5 of 5 files; archive kept: True (want True); "(206)" shown: False; windows: no window
+COPY-DEEP  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-DEEP  RUN    PASS        tgt: 33 of 33 files; "(206)" during the copy: False; at open: ...gg\hhhhhhhhhhhhhhhhhhhhhhhhhhhhh\iiiiiiiiiiiiiiiiiiiiiiiiiiiii\jjjjjjjjjjjjjjjjjjjjjjjjjjjjj\ f01.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy 1 file and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-TOOLONG RUN    PASS        tgt: 2 of 2 files; "(206)" during the copy: True; at open: ...B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: ...F0E\u4F0F\u4F10\u4F11\u4F12\u4F13\u4F14\u4F15\u4F16\u4F17\u4F18\u4F19\u4F1A\u4F1B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39 / after D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39
+
+Rows: PASS 12, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
