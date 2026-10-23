@@ -40,3 +40,67 @@ See spec *Clarifications* and research R3 / R4. Analyze: two LOW findings - R4's
 walk - accepted (same listing).
 
 ## Implementation
+
+- `src/common/salisonamefit.h` (new, header-only): `SalIsoEntryFits`, `SalIsoPickFileName`,
+  `SalIsoFolderKeepsRockRidge`, `CSalListingLeftOut` (count, first 10 whole paths, `Incomplete`,
+  `Text`).
+- `iso9660.cpp/.h`: `AddFileDir` asks the listing rule first and returns listed / left out / failed;
+  a refused entry is noted on the image (`CISOImage::ListingLeftOut`) - no `dir->Clear`, no "Error",
+  `ret` unchanged so later folders are still descended; a core refusal after the rule passed (out of
+  memory) shows `IDS_ERROR` as before, without `Clear`, and marks the listing incomplete. Count walks
+  (`FitCheck`) count entries that fit and entries listed (`FitCount`, `FitListed`), optionally under
+  ISO 9660 names (`FitIsoNames`). The whole-volume fit check now runs for every non-Joliet volume;
+  a refusal switches on `Decide` (it used to switch `SuspVolume` off). `PickDirName` / `CountUnder`
+  decide a Rock Ridge folder's name; `MakeIsoName` gives a Rock Ridge record's ISO 9660 name (the
+  fallback branch of `MakeListedName`, which now calls it). The walk's name buffers are one heap
+  block per directory level (`NAME_BUF`).
+- `uniso.cpp/.h`: `ListArchive` shows `ReportListingLeftOut` (system text 206 + paths,
+  `ShowMessageBox` with a heap text) and sets `CPluginDataInterface::ListingLeftOut`;
+  `UnpackWholeArchive` returns FALSE when it is set (the core then keeps the image).
+- `saltests.cpp`: `TestIsoNameFit328` - the rules at their bounds, a simulator of the walk
+  (`Iso328List`) on the probe's tree (xorriso / genisoimage / Joliet names) and on 400 random trees:
+  never fewer entries listed nor fewer that fit than the whole-volume ISO 9660 listing, exactly the
+  Rock Ridge listing when it fits whole; the report text.
+
+### A finding on the way: listed is not enough (first after run)
+
+The first after run (rule = the listing's rule only) gave 9 / 3: G-COPY and L-COPY copied 3 files -
+the core's Copy from the archive refused `deep.txt` with "Name "deep.txt" with full path is too
+long" (`fileswn7.cpp`, `IDS_NAMEISTOOLONG`: a selection is enumerated with in-image paths below
+MAX_PATH, the listing takes a 255-byte folder part + a name). My first rule named the genisoimage
+tree `a\b\c\d\EXXXXXXX\deep.txt` (261 bytes). Now an entry "fits" when the listing takes it and its
+in-image path is below MAX_PATH (`SalIsoEntryFits`); the folder rule compares both counts (fit and
+listed). Second after: `D...\E...` under `a\b\c` for both tools. (G-UNP-DEL failed on a probe bug:
+the row's `$b` button handle shadowed the script's `$B` folder name - PowerShell names ignore case;
+renamed `$SegA/B/C`.)
+
+## Checks
+
+- Build: `.\build.cmd` -> BUILD SUCCEEDED.
+- saltests: `saltests: 28026 checks, 0 failed` (27,986 on main; +40 in `TestIsoNameFit328`).
+  Negative control of the rule: `SalIsoFolderKeepsRockRidge` returning always true (an earlier form of
+  the test) -> 6 failed (the deep.iso paths, `worse == 0`).
+- Encoding guard: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- clang-format: the changed ranges formatted (`--lines`); the remaining findings of the files are
+  older lines.
+- Probe `probe/iso328_probe.ps1` after -> `probe/result_after.txt`: **PASS 12, FAIL 0** (6 RUN + 6 END;
+  before 0 / 6 RUN rows). Names: G / L `a\b\c\D<8>\E<8>\deep.txt`, X `a\b\c\D<31>\E<31>\deep.txt`,
+  `top.txt`, `zlast\z.txt`, `a<60>\side.txt` lower case; J: the "(206)" box (Czech system text on this
+  machine) with the path of `deep.txt`, three files; J-UNP-DEL image kept; G-UNP-DEL all four files,
+  image deleted.
+- Negative control (probe `result_negctl.txt`): `Decide` never set and `UnpackWholeArchive` not failing
+  -> 7 / 5: G/X/L-COPY lose `deep.txt` (left out under Rock Ridge names), J-UNP-DEL and G-UNP-DEL delete
+  the image after a partial unpack. Code restored with `git checkout HEAD --` and rebuilt.
+- Regressions (`probe/regress_*.txt`): 326 `iso326_probe` 28 / 0 (DEEP: `deep.txt` extracted), 326
+  `twins326_probe` 8 / 0, 327 `iso327_probe` 77 / 0, 322 `iso322_probe` 18 / 0.
+
+## Limits
+
+- J-COPY: the Joliet folder `e<60>` (listed, its contents left out) is 304 bytes deep; a Copy from the
+  root asks "Name ... with full path is too long" for it (the core's own box, OK skips it) - Joliet
+  has no other name; a copy from a deeper folder reaches it.
+- A sibling's Rock Ridge name equal to another entry's ISO 9660 fallback name is not resolved.
+- UDF, Xbox, HFS+ and audio readers keep their old refusal handling: Inbox
+  `iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses`.
+- The report is shown at every listing of the image (the panel lists an archive again after a change
+  of its file), as the old "Error" was.

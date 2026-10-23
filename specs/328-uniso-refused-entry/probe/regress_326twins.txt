@@ -1,0 +1,15 @@
+twins326_probe (feature 326, from 252's arc252_probe) regress-328
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 21:25; registry key existed True; ACP 1250
+
+ISO-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ISO-CONTROL RUN    PASS        panel at: ...sers\pavel\AppData\Local\Temp\tc326tw\ISO-CONTROL\t.iso\Docs
+ISO-HIDE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ISO-HIDE   RUN    PASS        tgt: A.txt,z.txt; steps: content: A.txt=UPPER; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+ISO-GLOBAL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ISO-GLOBAL RUN    PASS        tgt: a.txt; steps: store: ...Button id=2] Cancel | [Button id=9] Help / restore: ...Button id=2] Cancel | [Button id=9] Help / content: a.txt=lower; windows: [#32770 'Copy'] [Static id=209] Copy file "a.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+ISO-TREE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ISO-TREE   RUN    PASS        tgt: D/x.txt,d/y.txt; steps: content: -; windows: [#32770 'Copy'] [Static id=209] Copy 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 4F221E76594DD9F25F9725F90B1075E459FFD134260483E49BE795C780FF51E7 / after 4F221E76594DD9F25F9725F90B1075E459FFD134260483E49BE795C780FF51E7
+
+Rows: PASS 8, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

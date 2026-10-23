@@ -835,7 +835,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
                     listedName = rockRidge ? PickDirName(path, dirRecord, extFileName, isoName, below)
                                            : extFileName;
                 } // if
-            } // if
+            }     // if
             if (listedName != NULL)
             {
                 int added = AddFileDir(path, listedName, dirRecord, dir, pluginData);

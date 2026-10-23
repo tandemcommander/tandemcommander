@@ -20292,8 +20292,10 @@ static void TestIsoNameFit328()
     CHECK(!SalIsoFolderKeepsRockRidge(false, 60, 31, 3, 3, 2, 3)); // as many fit, fewer listed
 
     // the probe's tree: a/b/c/d/e/deep.txt with 60-letter Rock Ridge names, a/side.txt, top.txt, zlast/z.txt
-    auto seg = [](char c) { return std::string(1, c) + std::string(59, 'x'); };
-    auto iso = [](char c, size_t n) { return std::string(1, c) + std::string(n - 1, 'X'); };
+    auto seg = [](char c)
+    { return std::string(1, c) + std::string(59, 'x'); };
+    auto iso = [](char c, size_t n)
+    { return std::string(1, c) + std::string(n - 1, 'X'); };
     auto tree = [&](size_t isoLen)
     {
         Iso328Node e = Iso328Dir(seg('e'), iso('E', isoLen), {Iso328File("deep.txt", "DEEP.TXT")});
