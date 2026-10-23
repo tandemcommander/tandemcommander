@@ -50,6 +50,10 @@ such a listing fails (the image is kept). That path is only reached for names up
 - Q: Should the other NRG readers (CUEX size, SINF session counts, ETNF / ETN2) be hardened too? →
   A: no - outside the item; recorded as an Inbox item if a defect is found (autonomous run: rule -
   scope, stop-rules §2.11)
+- Q: Is a CD-Text chunk that fits in the image also limited by a fixed maximum size? → A: no - the
+  image's own size bounds it and a failed allocation gives no labels; a fixed cap could drop the
+  labels of a real image and is not needed for safety (autonomous run: conservative - changes least
+  for consistent images)
 
 ## User Scenarios & Testing *(mandatory)*
 
