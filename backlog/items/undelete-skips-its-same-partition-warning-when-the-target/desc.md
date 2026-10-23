@@ -1,16 +1,16 @@
 ---
 title: Undelete skips its same-partition warning when the target volume cannot be told
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: data-safety
 source: measure:301
 who: both
 created: 2026-10-22
-updated: 2026-10-22
-verified: -
+updated: 2026-10-23
+verified: 2026-10-23 3162d8b2
 effort: M
-feature: -
+feature: 324
 related: []
 depends-on: []
 reason: -
@@ -64,3 +64,5 @@ whole path) so the answer is known.
 - 2026-10-22 — created (source measure:301)
 - 2026-10-22 — severity 7 -> 5: feature 301 closed the measured subst case (review 1)
 - 2026-10-22 — moved to Next position 10
+- 2026-10-23 — verified at 3162d8b2: still present at 3162d8b2: a mount folder named Zalohy with a-acute - GetVolumeNameForVolumeMountPointA(UTF-8) fails, W succeeds; the core walk cannot cut a mount point, so one volume unread = different; scratch ctypes measure
+- 2026-10-23 — run started, feature 324
