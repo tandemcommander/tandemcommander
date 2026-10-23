@@ -8,7 +8,7 @@ source: measure:317
 who: agent
 created: 2026-10-23
 updated: 2026-10-23
-verified: -
+verified: 2026-10-23 efb9b0ad
 effort: S
 feature: -
 related: []
@@ -53,3 +53,4 @@ tools cannot handle. A probe row per case, before FAIL / after PASS.
 - 2026-10-23 — created (source measure:317)
 - 2026-10-23 — moved to Next position 30
 - 2026-10-23 — moved to Next position 2
+- 2026-10-23 — verified at efb9b0ad: reproduced at efb9b0ad: hidden-desktop probe, report. / report.zip.. / report.zip(sp) / report.(sp) / abs. created as literal files a plain path cannot open; CON.zip, con, NUL .zip, COM1.zip, lpt9.tar.zip, prn.zip created (12 FAIL)
