@@ -98,3 +98,42 @@ identical in every run (SHA-256 CF14BE9E...). After the `main` run the sources w
   feature 303's lambda, in `operats.h` older lines).
 - Regression: `ftp288_probe.ps1` on the fixed build -> `probe/regress_288.txt` PASS 20, FAIL 0.
 - Translations: no UI string, menu or dialog changed - no `.slt` refresh.
+
+## Review
+
+### Review 1 of 323 (refute-first, independent agent) - MUST 0, SHOULD 1, NOTEs 4
+
+- Re-ran: build up to date, saltests 27793 / 0, encoding guard 0, `ftp302_probe.ps1` 12 / 0.
+  Own rows (copy under `%TEMP%`): RV-HIDABS (F7 `/RV-HIDABS/.cfg/new`, absolute) and RV-UPHID
+  (panel at `src`, F7 `../.cfg/new`, parent cached) PASS 4 / 0 on the branch. Negative control:
+  a worktree of HEAD with the absolute branch passing `TRUE` instead of `lastNamed` (302's
+  behaviour) - RV-HIDABS FAILS (`STOR f.txt`, `.cfg/f.txt` = `LOCAL-F`). Kept as
+  `probe/review323/rv_head.txt`, `rv_mut.txt`.
+- Callers enumerated by the reviewer: `ReportCreateDirs` (panel 2, workers `operatsa.cpp` 4 /
+  `operats3.cpp` 2 - single names), `ReportRename` (panel 2), `ReportUnknownChange` (Send FTP
+  Command, `fs3.cpp` 2); no other `MKD` / `RNFR` sender; `InvalidateAllListings` from the end is
+  safe.
+- **SHOULD S1 - fixed**: the absolute branch had no distinguishing probe row. Rows MKD-HIDABS and
+  MKD-UPHID (the reviewer's) added to `ftp302_probe.ps1`; full run `result_after.txt` PASS 16,
+  FAIL 0, registry restored + identical. The reviewer's mutant shows MKD-HIDABS fails without the
+  absolute-branch change.
+- NOTE N1: the safety comes from not recording an earlier component as new and empty; the parent
+  invalidation is an extra re-list (harmless, helps an outdated parent listing) that no row
+  distinguishes - accepted (conservative, costs one `LIST`).
+- NOTE N2: the panel's Create Directory now relies on the old assumption that the last component
+  of a successful `MKD` is new and empty (a server answering success for an existing folder would
+  break it; the upload workers already rely on it; not reproducible with the test server) - no
+  action.
+- NOTE N3: "result unknown" reports and Send FTP Command are not driven (spec C1 / Assumptions);
+  the reviewer's reading agrees. Send FTP Command -> person-step item
+  `ftp-323-by-hand-send-ftp-command-during-an-open-upload-then`.
+- NOTE N4: `a/../new`, `~/x/new` invalidate the parent instead of recording `a` / `~`; empty
+  components are skipped instead of `ReportCreateDir("")`.
+- Tree left clean by the reviewer.
+
+## Owed to a person / Inbox
+
+- `ftp-323-by-hand-send-ftp-command-during-an-open-upload-then` (person-step): Send FTP Command
+  into an F7 folder while an upload is open.
+- `ftp-an-upload-to-a-server-named-another-way-localhost-vs-127` (bug, review:302 NOTE, by
+  reading): the cache is keyed by the host as typed.

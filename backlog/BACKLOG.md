@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [FTP: Create Directory and Quick Rename in a panel never update the upload listing cache](items/ftp-panel-mkdir-rename-skip-upload-listing-cache/desc.md) | bug | 7 | ftp | 323 |
 
 ## Next
 
@@ -243,6 +242,8 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [FTP 323 by hand: Send FTP Command during an open upload, then an upload asks before overwriting](items/ftp-323-by-hand-send-ftp-command-during-an-open-upload-then/desc.md) | person-step | 6 | ftp | leftover:323 | 2026-10-23 |
+| [FTP: an upload to a server named another way (localhost vs 127.0.0.1) misses the panel changes](items/ftp-an-upload-to-a-server-named-another-way-localhost-vs-127/desc.md) | bug | 5 | ftp | review:302 | 2026-10-23 |
 
 ## Parked
 

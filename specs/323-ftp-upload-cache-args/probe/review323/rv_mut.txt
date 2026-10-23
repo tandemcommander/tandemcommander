@@ -1,0 +1,14 @@
+ftp302_probe (feature 302)
+Program : C:\Users\pavel\AppData\Local\Temp\rv323\nb\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 11:30; desktop 'tc_probe_12444'; ACP 1250; registry key existed True; export SHA-256 CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF
+Server  : ftpmini.py utf-8 on 127.0.0.1:2131 - up
+
+RV-HIDABS  ROW    FAIL        F7 made .cfg/new: True; upload 2 sent STOR f.txt: True; question for f.txt: False; server .cfg/f.txt 'LOCAL-F'; upload 2 commands: CWD /RV-HIDABS/.cfg / PORT 127,0,0,1,252,80 / STOR f.txt / NOOP; dialogs: [Copy] 'ftp://u@127.0.0.1:2131/RV-HIDABS/*.*' -> 'ftp://u@127.0.0.1:2131/RV-HIDABS/*.*' | [Create Directory] '' -> '/RV-HIDABS/.cfg/new' ; [#32770 'FTP Client'] [Static id=2477] Connection to FTP server is closed. Do you want to reconnect to FTP server? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2478] &Reconnect without asking next time | [Copy] 'ftp://u@127.0.0.1:2131/RV-HIDABS/*.*' -> 'ftp://u@127.0.0.1:2131/RV-HIDABS/.cfg/*.*'; at the end: 'Target File Already Exists' C:\Users\pavel\AppData\Local\Temp\tc302\start\RV-HIDABS | o1.txt | /RV-HIDABS | o1.txt || '(errors) Copy File "o1.txt" to 127.0.0.1' 
+           (closed 2 operation window(s); left: 0)
+RV-HIDABS  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 1; new reports 0
+RV-UPHID   ROW    PASS        F7 made .cfg/new: True; upload 2 sent STOR f.txt: False; question for f.txt: True; server .cfg/f.txt 'SRV-F'; upload 2 commands: CWD /RV-UPHID/.cfg / PORT 127,0,0,1,240,129 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2131/RV-UPHID/src/*.*' -> 'ftp://u@127.0.0.1:2131/RV-UPHID/*.*' | [Create Directory] '' -> '../.cfg/new' ; [#32770 'FTP Client'] [Static id=2477] Connection to FTP server is closed. Do you want to reconnect to FTP server? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2478] &Reconnect without asking next time | [Copy] 'ftp://u@127.0.0.1:2131/RV-UPHID/src/*.*' -> 'ftp://u@127.0.0.1:2131/RV-UPHID/.cfg/*.*'; at the end: 'Target File Already Exists' C:\Users\pavel\AppData\Local\Temp\tc302\start\RV-UPHID | f.txt | /RV-UPHID/.cfg | f.txt || '(errors) Copy File "f.txt" to 127.0.0.1'  || 'Target File Already Exists' C:\Users\pavel\AppData\Local\Temp\tc302\start\RV-UPHID | o1.txt | /RV-UPHID | o1.txt || '(errors) Copy File "o1.txt" to 127.0.0.1' 
+           (closed 4 operation window(s); left: 0)
+RV-UPHID   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 1; new reports 0
+Registry: restored; identical=True; SHA-256 before CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF / after CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF
+
+Rows: PASS 3, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

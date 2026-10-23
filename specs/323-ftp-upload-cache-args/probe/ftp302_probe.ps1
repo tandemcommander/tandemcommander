@@ -31,6 +31,10 @@
                STOR f.txt, .cfg/f.txt keeps SRV-F (302's state: .cfg cached as new and empty)
       MKD-CASE (302 review 2) the server has Docs/f.txt; F7 "docs/new"; upload 2 of the local
                f.txt into /MKD-CASE/docs: PASS = the question, no STOR f.txt, Docs/f.txt keeps SRV-F
+      MKD-HIDABS (323 review) MKD-HID with the absolute path "/MKD-HIDABS/.cfg/new" (the absolute
+               branch of the cache's Create Directory report)
+      MKD-UPHID (323 review) panel at /MKD-UPHID/src, upload 1 into /MKD-UPHID (cached, .cfg
+               hidden), F7 "../.cfg/new", upload 2 of f.txt into /MKD-UPHID/.cfg: PASS as MKD-HID
     The product's registry key is exported, restored and compared. Exit code = FAIL rows.
 
 .NOTES
@@ -441,6 +445,61 @@ try {
         $f = ReadSrv ($s + '\Docs\f.txt')
         @{ Ok = ($made -and -not $stor -and $asked -and $f -ceq 'SRV-F')
            Facts = ("F7 made Docs/new: {0}; upload 2 sent STOR f.txt: {1}; question for f.txt: {2}; server Docs/f.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; at the end: {8}" -f $made, $stor, $asked, $f, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), (OpDesc $id)) }
+    }
+
+    # review of 323 (S1): MKD-HID with an absolute path (the absolute branch of ReportCreateDirs)
+    Row-Case 'MKD-HIDABS' 'MKD-HIDABS' {
+        param($s, $l)
+        NewDir ($s + '\.cfg'); WriteFile ($s + '\.cfg\f.txt') 'SRV-F'; WriteFile ($s + '\o1.txt') 'SRV-O1'
+        WriteFile ($l + '\f.txt') 'LOCAL-F'; WriteFile ($l + '\o1.txt') 'L1'
+    } {
+        param($id, $s, $l)
+        $same = { param($t) $t }
+        Focus $id 0 2
+        $t1 = @(Drive $id 727 $same)
+        $op1 = OpDesc $id
+        KeyIn $id 0 0x09
+        $t2 = @(Drive $id 730 { param($t) '/MKD-HIDABS/.cfg/new' })
+        $made = [IO.Directory]::Exists($LP + $s + '\.cfg\new')
+        $tr = @(Drive $id 725 $null 3 30)
+        KeyIn $id 1 0x09
+        Focus $id 0 1
+        $from = Srv-Count $FtpSrv
+        $toCfg = { param($t) $t -replace '/MKD-HIDABS/', '/MKD-HIDABS/.cfg/' }
+        $t3 = @(Drive $id 727 $toCfg 5 90)
+        $cmds = @(Srv-Cmds $FtpSrv $from)
+        $stor = Has-Cmd $cmds '^STOR (.*/)?f\.txt$'
+        $asked = OpQuestion $id 'f.txt' 8
+        $f = ReadSrv ($s + '\.cfg\f.txt')
+        @{ Ok = ($made -and -not $stor -and $asked -and $f -ceq 'SRV-F')
+           Facts = ("F7 made .cfg/new: {0}; upload 2 sent STOR f.txt: {1}; question for f.txt: {2}; server .cfg/f.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; at the end: {8}" -f $made, $stor, $asked, $f, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), (OpDesc $id)) }
+    }
+
+    # review of 323: a relative path through ".." to a hidden sibling: panel at /MKD-UPHID/src, F7 "../.cfg/new"
+    Row-Case 'MKD-UPHID' 'MKD-UPHID/src' {
+        param($s, $l)
+        NewDir ($s + '\src'); WriteFile ($s + '\src\z.txt') 'Z'; WriteFile ($s + '\o1.txt') 'SRV-O1'
+        NewDir ($s + '\.cfg'); WriteFile ($s + '\.cfg\f.txt') 'SRV-F'
+        WriteFile ($l + '\f.txt') 'LOCAL-F'; WriteFile ($l + '\o1.txt') 'L1'
+    } {
+        param($id, $s, $l)
+        $toParent = { param($t) $t -replace '/MKD-UPHID/src', '/MKD-UPHID' }
+        Focus $id 0 2
+        $t1 = @(Drive $id 727 $toParent)                            # upload 1 into /MKD-UPHID (cached, .cfg hidden)
+        KeyIn $id 0 0x09
+        $t2 = @(Drive $id 730 { param($t) '../.cfg/new' })
+        $made = [IO.Directory]::Exists($LP + $s + '\.cfg\new')
+        KeyIn $id 1 0x09
+        Focus $id 0 1
+        $from = Srv-Count $FtpSrv
+        $toCfg = { param($t) $t -replace '/MKD-UPHID/src', '/MKD-UPHID/.cfg' }
+        $t3 = @(Drive $id 727 $toCfg 5 90)
+        $cmds = @(Srv-Cmds $FtpSrv $from)
+        $stor = Has-Cmd $cmds '^STOR (.*/)?f\.txt$'
+        $asked = OpQuestion $id 'f.txt' 8
+        $f = ReadSrv ($s + '\.cfg\f.txt')
+        @{ Ok = ($made -and -not $stor -and $asked -and $f -ceq 'SRV-F')
+           Facts = ("F7 made .cfg/new: {0}; upload 2 sent STOR f.txt: {1}; question for f.txt: {2}; server .cfg/f.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; at the end: {8}" -f $made, $stor, $asked, $f, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), (OpDesc $id)) }
     }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

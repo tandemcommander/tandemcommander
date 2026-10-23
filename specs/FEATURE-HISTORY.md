@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
@@ -4423,3 +4423,23 @@ a few early ones are out of sequence).
   `iso322_probe` 11/3 (14 rows) -> 18/0 (RR-LONG, HFS-MANY added; Joliet CJK 12 / 40, HFS+ alone, a 103-leaf catalog, Rock Ridge,
   plain, hybrid); 223's probe ISO-F5 PASS (RR-LONG NOT DRIVEN without Docker); saltests 27776;
   one refute-first review (no MUST; SHOULD taken: the many-leaf row; mutants of each bound fail).
+- 323-ftp-upload-cache-args: while an FTP upload was open, a file Quick-Renamed in the FTP panel
+  to `b.txt` was replaced by an uploaded `b.txt` without the overwrite question, and a folder made
+  by F7 with an absolute path outside the panel folder made the upload send `MKD` again (550) - the
+  panel reported Create Directory / Quick Rename to the upload listing cache with host and user
+  swapped, so `FindServer` dropped them. Now the four calls (`ctrlcon5.cpp`) pass `(user, host,
+  port)`; a Quick Rename or Send FTP Command invalidates every cached listing of the server (what a
+  rename reaches is not resolved); `ReportCreateDirs` records only the last named component of a
+  created path as new and empty - an earlier one its cached parent listing does not show (a dot
+  folder a plain `LIST` hides, `docs` beside `Docs`) invalidates that listing (`salftpmkdirreport.h`,
+  `ReportCreateDirComponent`; empty components skipped). Traps: the stopped first run (302,
+  carried over) was rejected twice - the argument fix made the cache's old reactions reachable and
+  each opened a data-loss path (review 1: an F7 folder cached as empty stayed trusted after a
+  rename into it; review 2: `MKD .cfg/new` cached the existing `.cfg` as empty); reading said the
+  panel's refresh masks the rename case - the probe showed the upload's `STOR` before the panel's
+  `LIST`. Limits: the cache is keyed by the host as typed (`localhost` / `127.0.0.1`, Inbox);
+  Send FTP Command and "result unknown" reports by reading (person step). From backlog item
+  `ftp-panel-mkdir-rename-skip-upload-listing-cache`. Probe `ftp302_probe` (first 12 rows) on `main`
+  10/2 (MKD-ABS, REN-UP), on 302's state 10/2 (MKD-HID, MKD-CASE) -> 12/0, final 16/0 (+ MKD-HIDABS, MKD-UPHID
+  from the review; a mutant of the absolute branch fails MKD-HIDABS); 288 20/0; saltests 27793;
+  one refute-first review (no MUST; SHOULD taken: the absolute-path row).
