@@ -141,8 +141,8 @@ Xbox images: the listed files extracted, the report shown, the image kept.
 
 ### Measurable Outcomes
 
-- **SC-001**: the new probe's UDF, Xbox, HFS+ (and audio, when the crafted image opens) rows fail
-  before the fix and pass after it.
+- **SC-001**: the new probe's 7 rows (U-COPY, X-COPY, H-COPY, U-UNP-DEL, X-UNP-DEL, H-UNP-DEL,
+  A-OPEN) go from 0 / 7 before the fix to 7 / 7 after it.
 - **SC-002**: features 328 (`iso328_probe`), 327 (`iso327_probe`) and 322 (`iso322_probe`) probes stay
   all PASS.
 - **SC-003**: saltests keep 0 failed; the HFS+ subtree decision is covered by new checks.

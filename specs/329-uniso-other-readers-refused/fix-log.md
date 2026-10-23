@@ -40,3 +40,10 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log %TEMP%\tc329_log_before.tx
   after the fix (the refused path leaks `fd.Name`).
 - "Cannot read sector #00000020" at the open of the HFS+ hybrid: known, Inbox item
   `iso-plug-in-a-valid-xorriso-iso-hfs-hybrid-opens-with-cannot` (322 / 327) - not this feature.
+
+## speckit-analyze
+
+- Run 1: 0 CRITICAL / HIGH; MEDIUM I1 (SC-001 still said "audio, when the crafted image opens") fixed
+  in spec.md; LOW U1 (T009's negative control is the before run, result_before.txt 0 / 7) accepted -
+  the independent review builds its own negative control.
+- Run 2 (after the fix): 0 findings above LOW.
