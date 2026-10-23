@@ -157,3 +157,32 @@ content + archive deleted, UNP-CASE-DEL wrong content + archive deleted (PASS 2 
 rows); fix rebuilt. saltests 27884 / 0.
 - Regression on the review-2 build: pax306 30 / 0, unp308 12 / 0, link309 16 / 0, cpio310 52 / 0, tar321
   20 / 0, unp321 12 / 0; encoding guard TOTAL 0.
+
+### Review 2, second launch - stopped without a report
+
+Launched after 786c1d34. Its probe (`%TEMP%\rev325d`) on the branch, 14:58: every earlier row now
+matches tar (R-TARU / U-TARU-MASK-DEL NEWER, R-SKIP d.txt = A, R-DUP NEW, X-RELINK2 a.txt = b.txt = Z,
+X-CASE NEW), N-OVERALL (40 links to a 24 MiB member + 1 file) 4.3 s, N-SKIPALL (Skip All at the
+overwrite question) 4.3 s - one further pass per skipped name, not a hang - N-DEB (a .deb's data tar)
+b.txt = A, N-DOT and N-DEV (below); registry restored identical. A gzip run (`log_gz.txt`, 15:01) was
+interrupted at row N-SKIPALL-GZ (N-OVERALL-GZ: 41 files, 5.1 s) and the agent showed no activity at
+the 15:14 and 15:24 checks -> treated as stopped. Its probe had left the registry changed (export hash
+3DF1D4E2...): restored at 15:15 from `%TEMP%\tcrev325d_backup.reg`, hash D36F5B06... identical.
+- N-DOT (link `sub/b.txt`, later `sub/b.txt.` NEW): two files `b.txt` = A and `b.txt.` = NEW - the
+  plug-in writes a trailing-dot name as its own file through the `\?\` form (pre-existing name
+  handling, not this feature).
+- N-DEV (link `sub/b.txt`, later a FIFO `sub/b.txt`): nothing written, archive deleted, no message -
+  the FIFO supersedes the link (tar's result is the FIFO); the plug-in skips FIFO / device members
+  silently in every version (pre-existing) -> Inbox item.
+
+### Review 2, third launch - stopped without a report
+
+Launched 15:27 with the advice to run probes in the background. Its probe (`%TEMP%\rev325e`, 15:32):
+E-BADSIG (an unknown member type 'A' between the data and the link) b.txt = A - the plug-in's
+"Unknown block signature - skipping" box at opening; E-CANCEL1 / E-CANCEL2 (Cancel at the overwrite
+question in the further pass) archive KEPT. Then it ran this feature's probe (15:33) and stopped at
+row COPY-EXIST; no activity at 15:35 / 15:46, and none of the three review-2 agents was alive any more
+(ListAgents, 15:47). The interrupted feature probe had left the registry changed (0FB44762...):
+restored at 15:47 from `%TEMP%\tc325_backup.reg`, hash D36F5B06... identical; its fixture removed.
+Next attempt, a different method: a review without GUI probes (the GUI evidence is recorded), from
+the code, saltests and a console harness of the header rules.

@@ -245,6 +245,7 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Tar unpack skips FIFO and device members without a word](items/tar-unpack-skips-fifo-and-device-members-without-a-word/desc.md) | bug | 3 | archives | review:325 | 2026-10-23 |
 
 ## Parked
 
