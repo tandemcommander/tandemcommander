@@ -22,6 +22,13 @@ said "Cannot replace original archive with temporary working file. Archive was n
   (Pack refuses such a name since 319; Change Directory refuses the path with error 123), but the
   two-step replace can still lose the archive whenever the second step fails.
 
+## Clarifications
+
+### Session 2026-10-23
+
+- Q: Should the "Cannot replace original archive ..." message also show the system's reason (e.g. "used by another process")? → A: No - the message stays exactly as before; only its truth and the removal of the temporary file change (autonomous run: conservative)
+- Q: Should the archive keep its own attributes, ACL and named streams (e.g. the downloaded-file mark) after a successful replace, or take the temporary file's as before? → A: Keep the archive's own - the one-step replace of the project rule does so, as for every other replaced file since 105 (autonomous run: rule)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Adding to an archive another program holds open (Priority: P1)
