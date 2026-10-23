@@ -82,3 +82,55 @@ first entry `PX` renamed `RR`) - genisoimage's layout without Docker.
 - No UI string, dialog or menu changed: no `.slt` refresh.
 - Not driven: a real genisoimage image (Docker not running) - replaced by the LEGACY rows; feature
   223's probe was not re-run (its RR-LONG row needs Docker).
+
+## Review
+
+### Review 1 (independent agent, refute-first) - 1 MUST, 0 SHOULD, 4 NOTE
+
+- Confirmed: the probe 18 / 0 re-run; a negative control with main's `uniso.spl` in a worktree copy
+  lists ISO 9660 names of its own xorriso images; `salsusp.h` bounds; `Open`'s root block equals
+  `ListDirectoryRe`'s; callers (`ExtractFileName`, `ListDirectoryRe`; `CISO9660` from
+  `isoimage.cpp` and `udfiso.cpp`, both through `Open`).
+- **MUST M1**: Rock Ridge names reached the listing and the extraction uncleaned - now for every
+  xorriso image. Reproduced by the reviewer and again here (probe rows added, run on the branch
+  build before the fix -> `probe/result_review1_before.txt`): ESC `..\escape.txt` written to
+  `%TEMP%\tc326\escape.txt` (two levels above the target, read-only; "Cannot set file attributes.
+  (123)"; the probe's fixture could not be removed - cleaned by hand afterwards), COLON `12:30.txt`
+  -> a 0-byte file `12` and the data in the stream `30.txt`, TDOT `trail.`, DEV `con.txt` as they
+  are. **Fixed**: `SalSuspCleanRockRidgeName` (salsusp.h) - feature 087's per-component rule
+  (`\` and `/` are characters of a POSIX name here, so they become `_` instead of splitting);
+  `ExtractExtFileName` cleans every `NM` name, a name the cleaning cannot hold falls back to the
+  plain name. After: ESC `.._escape.txt`, COLON `12_30.txt`, TDOT `trail_`, DEV `_con.txt`, nothing
+  outside the target, no streams.
+- N1 (case-only twins now both listed; an overwrite question on extraction) - expected, not changed.
+- N2 (a long Latin-1 folder name grows in `EnsureU8Name`, `AddDir` refuses, the listing ends) led to
+  a measurement of the same class with valid names: **DEEP** (five folders of 60 letters, a
+  305-byte folder part) on the branch build: "UnISO - Error" at the open and the folder tree lost
+  (`result_review1_before.txt`), where main's ISO 9660 names (31 letters) list it whole - a
+  regression of this feature. **Fixed** (FR-009): `ListDirectory` first walks a volume recognised
+  by `SP` with `FitCheck` (`AddFileDir` only asks `sallistingname.h`, the core's own rule, with the
+  same path strings; its messages quiet); when an entry would be refused the volume is listed as
+  before 326 (`SuspVolume = FALSE`). Re-listing after a failure was rejected: `dir->Clear` would
+  wipe other file systems' entries of a UDF / HFS+ hybrid or a multi-session image. After: DEEP no
+  message, `deep.txt` extracted with its content under the ISO 9660 names.
+- N3 (a leading `RR` wins over LEN_SKP) - deliberate (FR-003), unchanged.
+- N4 (Joliet still wins over Rock Ridge) - as specified, in the CHANGELOG limitation.
+- Out of the item (Inbox, `review:326`): `iso-plug-in-joliet-and-iso-9660-names-are-not-made-safe`
+  (the same cleaning for Joliet / ISO 9660 names), `iso-plug-in-an-entry-the-listing-refuses-ends-the-listing`
+  (a refused entry clears the listing - genisoimage deep trees, Latin-1 names; a partial Rock Ridge
+  listing instead of the whole fallback).
+
+Checks after the fixes:
+
+- `.\build.cmd` -> BUILD SUCCEEDED; `saltests` -> `27937 checks, 0 failed` (TestSusp326 now 53).
+- Mutants of the cleaning rule (scratch `mutate.py`, restored byte-identical): no-backslash -> 1
+  failed, no-device -> 5 failed, no-trail -> 4 failed.
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- clang-format only on the feature's changed lines (scratch `fmtlines.py`, `--lines` from
+  `git diff -U0 main`).
+- `iso326_probe.ps1` -> `probe/result_after_review1.txt`: **PASS 28, FAIL 0** (14 rows: RR, OLDRR,
+  PLAIN, LEGACY-RR, RR-DIR, LEGACY-DIR, RR-LONG, DEEP, ESC, COLON, TDOT, DEV, SEMI, J-ASCII);
+  registry restored, identical. The DEEP row first expected `top.txt` (wrong expectation: the
+  designed fallback lists `TOP.TXT`) - rewritten to check what matters (no message, `deep.txt`
+  reachable with its content).
+- Feature 322's probe -> `probe/result_322_after.txt`: **18 / 0**.

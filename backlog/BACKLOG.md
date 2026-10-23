@@ -245,6 +245,8 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: an entry the listing refuses ends the listing with Error, a folder lost](items/iso-plug-in-an-entry-the-listing-refuses-ends-the-listing/desc.md) | bug | 6 | archives | review:326 | 2026-10-23 |
+| [ISO plug-in: Joliet and ISO 9660 names are not made safe before extraction](items/iso-plug-in-joliet-and-iso-9660-names-are-not-made-safe/desc.md) | bug | 7 | archives | review:326 | 2026-10-23 |
 
 ## Parked
 

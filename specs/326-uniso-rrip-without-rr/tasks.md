@@ -50,3 +50,10 @@ T004/T005 (rule + tests) can be written while the probe (T001/T002) is written; 
 ## Implementation strategy
 
 MVP = US1 (T004-T008) proven by the probe; US2 is the regression proof of the same change.
+
+## Review 1 (MUST M1 and the DEEP measurement)
+
+- [X] T016 `src/common/salsusp.h`: `SalSuspCleanRockRidgeName`; `iso9660.cpp` cleans every `NM` name (FR-008); saltests cases and mutants
+- [X] T017 `iso9660.cpp` / `.h`: the fit check pass of `ListDirectory` (`FitCheck`, `FitRefused`, quiet errors) - a volume whose Rock Ridge names the listing would refuse is listed as before 326 (FR-009)
+- [X] T018 probe rows DEEP, ESC, COLON, TDOT, DEV (`mkimg326.sh`, `iso326_probe.ps1`); measured before the fix on the branch build and after it
+- [X] T019 Inbox items for the parts outside the item (Joliet / ISO 9660 names not cleaned; a refused entry ends the listing)

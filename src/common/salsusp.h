@@ -29,9 +29,19 @@
 // on any volume, from byte 0), or when the volume carries SP (from LEN_SKP).
 // An area too short for an entry header after that gives no Rock Ridge name.
 //
+// A Rock Ridge name is a POSIX name: it may hold '\', ':', '*', a trailing
+// dot, or be "con.txt". Joined to a target folder as it was, "..\x" was
+// written outside the folder and "12:30.txt" into an NTFS stream (review of
+// feature 326). SalSuspCleanRockRidgeName makes one name safe the way feature
+// 087 cleans archive item names (salarcname.h), for a single component: '\'
+// and '/' are not separators here, they become '_' as well.
+//
 //*****************************************************************************
 
 #include <stddef.h>
+#include <string.h>
+
+#include "salarcname.h" // SalArcNameDetail::IsReservedDeviceName (feature 087)
 
 // The System Use area of a directory record: rec = its first byte, avail =
 // the bytes readable from rec. False when the record's lengths do not fit
@@ -92,4 +102,45 @@ inline bool SalSuspRockRidgeStart(const unsigned char* su, size_t len, bool susp
         return true;
     }
     return false;
+}
+
+// One Rock Ridge name (UTF-8 or raw bytes, terminated, in a buffer of
+// 'size' bytes) made safe in place: control characters, '\', '/', ':', '<',
+// '>', '"', '|', '?', '*' become '_'; trailing dots and spaces become '_'
+// ("." and ".." too); a reserved device name ("con", "com1.txt", ...) gets a
+// '_' prefix; an empty name becomes "_". Bytes >= 0x80 are kept, so a
+// multi-byte character is never split. False (the name unchanged) only when
+// the prefix does not fit the buffer - never a cut name.
+inline bool SalSuspCleanRockRidgeName(char* name, size_t size)
+{
+    if (name == NULL || size == 0)
+        return false;
+    size_t len = strnlen(name, size);
+    if (len >= size)
+        return false; // not terminated inside the buffer
+    bool reserved = len > 0 && SalArcNameDetail::IsReservedDeviceName(name, (int)len);
+    size_t need = (reserved ? 1 : 0) + (len == 0 ? 1 : len);
+    if (need >= size)
+        return false;
+    if (len == 0)
+    {
+        name[0] = '_';
+        name[1] = 0;
+        return true;
+    }
+    for (size_t i = 0; i < len; i++)
+    {
+        unsigned char c = (unsigned char)name[i];
+        if (c < 0x20 || c == '\\' || c == '/' || c == ':' || c == '<' || c == '>' || c == '"' || c == '|' ||
+            c == '?' || c == '*')
+            name[i] = '_';
+    }
+    for (size_t i = len; i > 0 && (name[i - 1] == '.' || name[i - 1] == ' '); i--)
+        name[i - 1] = '_';
+    if (reserved)
+    {
+        memmove(name + 1, name, len + 1);
+        name[0] = '_';
+    }
+    return true;
 }

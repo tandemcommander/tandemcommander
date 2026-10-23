@@ -19997,6 +19997,50 @@ static void TestSusp326()
         CHECK(!SalSuspRockRidgeStart(g, 3, false, 0, &start)); // RR without a whole header
         CHECK(!SalSuspRockRidgeStart(NULL, 10, true, 0, &start));
     }
+    // review 1: a Rock Ridge (POSIX) name made safe for Windows, in place, never cut
+    {
+        struct
+        {
+            const char* in;
+            const char* out;
+        } cases[] = {
+            {"top.txt", "top.txt"},
+            {"semi;colon.txt", "semi;colon.txt"},
+            {"..\\escape.txt", ".._escape.txt"},
+            {"a/b", "a_b"},
+            {"12:30.txt", "12_30.txt"},
+            {"x<y>z\"|?*", "x_y_z____"},
+            {"tab\there", "tab_here"},
+            {"trail.", "trail_"},
+            {"trail. .", "trail___"},
+            {".", "_"},
+            {"..", "__"},
+            {"", "_"},
+            {"con", "_con"},
+            {"con.txt", "_con.txt"},
+            {"COM1.log", "_COM1.log"},
+            {"console.txt", "console.txt"},
+            {"\xC4\x8D\x61\xE4\xB8\x80:", "\xC4\x8D\x61\xE4\xB8\x80_"}, // UTF-8 kept whole
+        };
+        for (const auto& c : cases)
+        {
+            char buf[64];
+            strcpy(buf, c.in);
+            CHECK(SalSuspCleanRockRidgeName(buf, sizeof(buf)) && strcmp(buf, c.out) == 0);
+        }
+        // the '_' prefix of a device name must fit: refused, the name unchanged (never cut)
+        char four[5] = "con";
+        CHECK(SalSuspCleanRockRidgeName(four, sizeof(four)) && strcmp(four, "_con") == 0);
+        char three[4] = "con";
+        CHECK(!SalSuspCleanRockRidgeName(three, sizeof(three)) && strcmp(three, "con") == 0);
+        char full[3] = {'a', 'b', 'c'}; // not terminated inside the buffer
+        CHECK(!SalSuspCleanRockRidgeName(full, sizeof(full)));
+        // idempotent
+        char twice[32] = "..\\x:y.";
+        CHECK(SalSuspCleanRockRidgeName(twice, sizeof(twice)));
+        std::string once = twice;
+        CHECK(SalSuspCleanRockRidgeName(twice, sizeof(twice)) && once == twice);
+    }
 }
 
 int main(int argc, char** argv)

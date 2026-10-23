@@ -54,6 +54,15 @@ a file of a 200-letter Rock Ridge name is extracted under a 31-letter upper-case
   (CD-XA images put a 14-byte XA record first)? → A: no - only at the start, as SUSP 1.12 places it;
   CD-XA images keep today's behaviour (autonomous run: conservative - the item does not name CD-XA;
   today `RR` is looked for only at the start too)
+- Q (review 1, MUST): a Rock Ridge name may hold `..\`, `:`, a trailing dot or a device name - is
+  it listed as it is? → A: no - it is cleaned as feature 087 cleans archive names (FR-008); the
+  ISO 9660 and Joliet names keep today's handling (an Inbox item) (autonomous run: rule - CLAUDE.md
+  "archive item names are cleaned at listing and again at extraction", 087)
+- Q (review 1): a deep tree of Rock Ridge names passes the folder part the listing takes; the
+  plug-in then shows "Error" and loses the folder, where the ISO 9660 names listed it whole - what
+  happens? → A: such a volume is listed as before this feature (FR-009), decided by a check pass
+  with the listing's own rule before anything is added; a better partial listing is an Inbox item
+  (autonomous run: conservative - never worse than before for an image that opened)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -136,6 +145,15 @@ and a Joliet image still extract under their names in the program.
   area; a LEN_SKP that leaves no room for an entry MUST give the plain name.
 - **FR-007**: The decision "is this System Use area an `SP` entry, and what is its LEN_SKP" and
   "where does the entry parsing of a record start" MUST be a pure rule with unit checks.
+- **FR-008** (review 1): every Rock Ridge name (file or folder) MUST be made safe for Windows
+  before it is listed, as feature 087 cleans archive item names: control characters, `\`, `/`,
+  `:`, `<`, `>`, `"`, `|`, `?`, `*` become `_`; trailing dots and spaces become `_`; a reserved
+  device name gets a `_` prefix; an empty name becomes `_`. Nothing is written outside the target
+  folder or into a stream. A name the cleaning cannot hold falls back to the plain ISO 9660 name.
+- **FR-009** (review 1): a volume recognised by `SP` whose Rock Ridge names the panel listing would
+  refuse (a folder part over its bound) MUST be listed with the names it had before this feature
+  (ISO 9660 names, `RR` records as before) - never an error and a lost folder where the image
+  opened whole before.
 
 ### Key Entities
 

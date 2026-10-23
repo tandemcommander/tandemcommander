@@ -4,7 +4,8 @@
 #pragma once
 
 #include "fs.h"
-#include "../../common/salsusp.h" // feature 326: Rock Ridge recognised by the root's SP entry too
+#include "../../common/salsusp.h"        // feature 326: Rock Ridge recognised by the root's SP entry too
+#include "../../common/sallistingname.h" // feature 326: the listing's rule for the fit check
 
 // ****************************************************************************
 //
@@ -266,6 +267,10 @@ protected:
     // write no RR entry); SuspSkip = its LEN_SKP
     BOOL SuspVolume;
     BYTE SuspSkip;
+    // feature 326 (review): the fit check pass of ListDirectory (AddFileDir only asks the listing's
+    // rule) and whether it found an entry the listing refuses
+    BOOL FitCheck;
+    BOOL FitRefused;
     CDirectoryRecord Root;
     WORD LogicalBlockSize;
     DWORD ExtentOffset;

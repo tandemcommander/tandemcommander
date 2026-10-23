@@ -1,0 +1,36 @@
+iso326_probe (feature 326) after-review1
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 17:08; registry key existed True
+
+seeds: colon.iso,deep.iso,dev.iso,esc.iso,legacy.iso,oldrr.iso,plain.iso,rr.iso,rrlong.iso,semi.iso,tdot.iso; legacy.iso: root directory at 102400: SP check bytes cleared, TOP.TXT;1 first entry PX -> RR
+RR         RUN    PASS        want 'top.txt'; extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+RR         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OLDRR      RUN    PASS        want 'top.txt'; extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+OLDRR      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PLAIN      RUN    PASS        want 'TOP.TXT'; extracted: TOP.TXT; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "TOP.TXT" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PLAIN      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LEGACY-RR  RUN    PASS        want 'top.txt'; extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+LEGACY-RR  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RR-DIR     RUN    PASS        want 'folder\note.txt'; extracted folders: folder; inside: note.txt; content 'NOTE'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy directory "folder" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+RR-DIR     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LEGACY-DIR RUN    PASS        want 'FOLDER\NOTE.TXT'; extracted folders: FOLDER; inside: NOTE.TXT; content 'NOTE'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy directory "FOLDER" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+LEGACY-DIR END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RR-LONG    RUN    PASS        the Rock Ridge name used True; content 'LONG'; extracted name lengths: 200; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "zrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+RR-LONG    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DEEP       RUN    PASS        no message at the open True; files extracted 1; deep.txt at '...XXXXXXXXXXXXXXX\CXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\DXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\EXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\DEEP.TXT'; content 'DEEP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy directory "AXXXXXXXXXXXXXXXXXXXXX..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+DEEP       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ESC        RUN    PASS        want '.._escape.txt'; extracted: .._escape.txt; content 'ESC'; written outside the target: ; alternate streams: ; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file ".._escape.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+ESC        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COLON      RUN    PASS        want '12_30.txt'; extracted: 12_30.txt; content 'COLON'; written outside the target: ; alternate streams: ; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "12_30.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COLON      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TDOT       RUN    PASS        want 'trail_'; extracted: trail_; content 'TDOT'; written outside the target: ; alternate streams: ; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "trail_" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+TDOT       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DEV        RUN    PASS        want '_con.txt'; extracted: _con.txt; content 'DEV'; written outside the target: ; alternate streams: ; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "_con.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+DEV        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SEMI       RUN    PASS        want 'semi;colon.txt'; extracted: semi;colon.txt; content 'SEMI'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "semi;colon.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+SEMI       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+J-ASCII    RUN    PASS        extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+J-ASCII    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39 / after D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39
+
+Rows: PASS 28, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

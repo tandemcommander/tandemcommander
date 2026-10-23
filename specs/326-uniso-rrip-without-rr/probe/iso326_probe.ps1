@@ -18,6 +18,14 @@
                  ISO 9660 name, as before 326)
       SEMI       semi.iso (one file named 'semi;colon.txt'): End, F5 - PASS = exactly that name (a ';' in
                  a Rock Ridge name is not the ISO 9660 version suffix)
+      DEEP       deep.iso (review 1): five nested folders of 60 letters (305 bytes, longer than the panel
+                 listing takes) holding deep.txt, and top.txt: the volume is listed with its ISO 9660
+                 names as before 326 - Home, Down, F5 - PASS = no message at the open and deep.txt
+                 extracted with its content (before the review's fix: "Error", the folder lost)
+      ESC, COLON, TDOT, DEV (review 1, MUST): one file named '..\escape.txt' / '12:30.txt' / 'trail.' /
+                 'con.txt': End, F5 - PASS = extracted inside the target under the safe name
+                 ('.._escape.txt' / '12_30.txt' / 'trail_' / '_con.txt'), nothing written outside the
+                 row's folder, no alternate stream
       PLAIN      plain.iso (no Rock Ridge): End, F5 - PASS = 'TOP.TXT' with 'TOP'
       J-ASCII    IMAPI2 ISO 9660 + Joliet image of top.txt: End, F5 - PASS = 'top.txt'
     Names are compared case-sensitively. Every row also fails on a program exit, a bug report, a
@@ -150,7 +158,7 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath (Join-Path $PSScriptRoot 'mkimg326.sh')) (WslPath $s) 2>&1
     $ErrorActionPreference = $old
     if (-not [IO.File]::Exists("$s\rr.iso")) {
-        foreach ($c in @('RR', 'RR-DIR', 'RR-LONG', 'SEMI', 'OLDRR', 'LEGACY-RR', 'LEGACY-DIR', 'PLAIN')) { Row $c 'RUN' 'NOT DRIVEN' ('no xorriso image: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
+        foreach ($c in @('RR', 'RR-DIR', 'RR-LONG', 'DEEP', 'ESC', 'COLON', 'TDOT', 'DEV', 'SEMI', 'OLDRR', 'LEGACY-RR', 'LEGACY-DIR', 'PLAIN')) { Row $c 'RUN' 'NOT DRIVEN' ('no xorriso image: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
     }
     else {
         $legacy = Make-Legacy "$s\rr.iso" "$s\legacy.iso"
@@ -175,6 +183,33 @@ try {
         }
         $d = $Root + '\RR-LONG'; NewDir $d; NewDir "$d\tgt"; $tgt = "$d\tgt"; $long = 'z' + ('r' * 195) + '.txt'
         Extract-Row 'RR-LONG' "$s\rrlong.iso" $tgt @(0x24, 0x23) { $got = @(Names $tgt); $g = '<none>'; if ($got.Count -eq 1) { $g = Content ($tgt + '\' + $got[0]) }; [pscustomobject]@{ Ok = ($got.Count -eq 1 -and $got[0] -ceq $long -and $g -ceq 'LONG'); Facts = ("the Rock Ridge name used {0}; content '{1}'; extracted name lengths: {2}" -f ($got.Count -eq 1 -and $got[0] -ceq $long), $g, (($got | ForEach-Object { $_.Length }) -join ',')) } }
+        # review 1: a folder path longer than the panel listing takes (305 bytes of Rock Ridge names):
+        # the volume is listed with its ISO 9660 names, as before 326 - no message at the open, Home,
+        # Down focuses the top folder, F5 - PASS = deep.txt comes out with its content (nothing lost)
+        if (-not [IO.File]::Exists("$s\deep.iso")) { Row 'DEEP' 'RUN' 'NOT DRIVEN' 'no deep.iso' }
+        else {
+            $d = $Root + '\DEEP'; NewDir $d; NewDir "$d\tgt"; $tgt = "$d\tgt"
+            Extract-Row 'DEEP' "$s\deep.iso" $tgt @(0x24, 0x28) {
+                $all = @([IO.Directory]::GetFiles($LP + $tgt, '*', [IO.SearchOption]::AllDirectories))
+                $deep = @($all | Where-Object { [IO.Path]::GetFileName($_) -ieq 'deep.txt' })
+                $g = '<none>'; if ($deep.Count -eq 1) { $g = [IO.File]::ReadAllText($deep[0]) }
+                $quiet = ((Msgs $r0) -eq 'no window')
+                [pscustomobject]@{ Ok = ($quiet -and $deep.Count -eq 1 -and $g -ceq 'DEEP'); Facts = ("no message at the open {0}; files extracted {1}; deep.txt at '{2}'; content '{3}'" -f $quiet, $all.Count, (($deep | ForEach-Object { Tail $_.Substring($LP.Length + $tgt.Length) 120 }) -join ','), $g) }
+            }
+        }
+        # review 1 (MUST): a Rock Ridge name Windows must not take as it is gets a safe name, inside the
+        # target folder (feature 087's rule); nothing is written outside the row's folder
+        foreach ($c in @(@('ESC', 'esc.iso', '.._escape.txt', 'ESC'), @('COLON', 'colon.iso', '12_30.txt', 'COLON'), @('TDOT', 'tdot.iso', 'trail_', 'TDOT'), @('DEV', 'dev.iso', '_con.txt', 'DEV'))) {
+            $case = $c[0]; $want = $c[2]; $wantC = $c[3]
+            if (-not [IO.File]::Exists("$s\$($c[1])")) { Row $case 'RUN' 'NOT DRIVEN' ("no {0}" -f $c[1]); continue }
+            $d = $Root + '\' + $case; NewDir $d; NewDir "$d\tgt"; $tgt = "$d\tgt"
+            Extract-Row $case "$s\$($c[1])" $tgt @(0x24, 0x23) {
+                $got = @(Names $tgt); $g = '<none>'; if ($got.Count -eq 1) { $g = Content ($tgt + '\' + $got[0]) }
+                $stray = @(@([IO.Directory]::GetFileSystemEntries($d)) + @([IO.Directory]::GetFiles($Root)) | Where-Object { [IO.Path]::GetFileName($_) -ne 'tgt' })
+                $streams = @(Get-ChildItem -LiteralPath $tgt -File | ForEach-Object { Get-Item -LiteralPath $_.FullName -Stream * -ErrorAction SilentlyContinue } | Where-Object { $_.Stream -ne ':$DATA' } | ForEach-Object { $_.Stream })
+                [pscustomobject]@{ Ok = ($got.Count -eq 1 -and $got[0] -ceq $want -and $g -ceq $wantC -and $stray.Count -eq 0 -and $streams.Count -eq 0); Facts = ("want '{0}'; extracted: {1}; content '{2}'; written outside the target: {3}; alternate streams: {4}" -f $want, (($got | ForEach-Object { Esc $_ }) -join ','), $g, (($stray | ForEach-Object { Esc $_ }) -join ','), ($streams -join ',')) }
+            }
+        }
         if (-not [IO.File]::Exists("$s\semi.iso")) { Row 'SEMI' 'RUN' 'NOT DRIVEN' 'no semi.iso' }
         else {
             $d = $Root + '\SEMI'; NewDir $d; NewDir "$d\tgt"; $tgt = "$d\tgt"; $semi = 'semi;colon.txt'

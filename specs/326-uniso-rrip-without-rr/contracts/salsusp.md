@@ -26,3 +26,16 @@ bool SalSuspRockRidgeStart(const unsigned char* su, size_t len, bool suspVolume,
 ```
 
 Never reads outside `[rec, rec + avail)` / `[su, su + len)`.
+
+## Review 1 addition
+
+```cpp
+// One Rock Ridge name made safe in place (feature 087's rule for one component): control
+// characters, '\', '/', ':', '<', '>', '"', '|', '?', '*' -> '_'; trailing dots / spaces -> '_';
+// a reserved device name -> '_' prefix; "" -> "_". Bytes >= 0x80 kept. False (unchanged) only
+// when the prefix does not fit 'size' or the name is not terminated inside it - never cut.
+bool SalSuspCleanRockRidgeName(char* name, size_t size);
+```
+
+The plug-in's fit check pass (`CISO9660::ListDirectory`, `FitCheck`) uses the core's listing rule
+`src/common/sallistingname.h` unchanged.

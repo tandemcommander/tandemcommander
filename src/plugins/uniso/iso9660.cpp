@@ -41,6 +41,8 @@ CISO9660::CISO9660(CISOImage* image, DWORD extent) : CUnISOFSAbstract(image)
     Ext = extNone;
     SuspVolume = FALSE;
     SuspSkip = 0;
+    FitCheck = FALSE;
+    FitRefused = FALSE;
     ExtentOffset = extent;
 
     BootRecordInfo = NULL;
@@ -282,6 +284,10 @@ BOOL CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
             }
             if (broken || nmContinues) // never a cut name: the plain ISO 9660 name then
                 bNM = FALSE;
+            // feature 326 (review): a POSIX name made safe for Windows ("..\x" was written outside the
+            // target folder, "12:30.txt" into a stream); a name the cleaning cannot hold: the plain name
+            if (bNM && !SalSuspCleanRockRidgeName(extFileName, sizeof(extFileName)))
+                bNM = FALSE;
 
             if (bNM)
             {
@@ -373,6 +379,19 @@ void CISO9660::ConvJolietName(char* dest, const char* src, int nLen)
 BOOL CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
                           CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
+    // feature 326 (review): the fit check pass adds nothing - it asks the panel listing's own rule
+    // (sallistingname.h, CSalamanderDirectory::AddFile / AddDir) whether the entry would be taken
+    if (FitCheck)
+    {
+        size_t pathLen = path != NULL ? strlen(path) : 0;
+        size_t nameLen = strlen(fileName);
+        bool fits = (dr.FileFlags & FATTR_DIRECTORY) ? SalListingAcceptsDirU8(path, pathLen, nameLen)
+                                                     : SalListingAcceptsFileU8(path, pathLen, fileName, nameLen);
+        if (!fits)
+            FitRefused = TRUE;
+        return fits ? TRUE : FALSE;
+    }
+
     CFileData fd;
 
     memset(&fd, 0, sizeof(CFileData));
@@ -534,6 +553,35 @@ BOOL CISO9660::ListDirectory(char* path, int session,
     CALL_STACK_MESSAGE3("CISO9660::ListDirectory(%s, %d, , )", path, session);
 
     AddBootRecord(path, session, dir, pluginData);
+
+    // feature 326 (review): a volume read as Rock Ridge by its SP entry first walks its tree with
+    // the listing's rule (FitCheck). Rock Ridge names are longer than the ISO 9660 ones: a deep tree
+    // of them can pass the folder part the panel takes, the entry is refused and the listing ends
+    // with an error, a folder lost - such a volume is listed with the names it had before 326 (the
+    // RR records of genisoimage images as before, the others by their ISO 9660 names)
+    if (SuspVolume)
+    {
+        size_t pathSize = 4 * MAX_PATH + 2; // CISOImage::ListImage's buffer: the walk appends in place
+        size_t used = strlen(path);
+        char* fitPath = used < pathSize ? (char*)malloc(pathSize) : NULL;
+        if (fitPath == NULL)
+            SuspVolume = FALSE; // cannot check: as before 326
+        else
+        {
+            memcpy(fitPath, path, used + 1);
+            FitCheck = TRUE;
+            FitRefused = FALSE;
+            CPluginDataInterfaceAbstract* noData = NULL;
+            ListDirectoryRe(fitPath, &Root, NULL, noData);
+            FitCheck = FALSE;
+            free(fitPath);
+            if (FitRefused)
+            {
+                TRACE_I("CISO9660::ListDirectory(): Rock Ridge names do not fit the listing, ISO 9660 names used");
+                SuspVolume = FALSE;
+            }
+        }
+    }
     return ListDirectoryRe(path, &Root, dir, pluginData) != ERR_TERMINATE;
 }
 
@@ -553,14 +601,14 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
     char* data = new char[size];
     if (data == NULL)
     {
-        Error(IDS_INSUFFICIENT_MEMORY);
+        Error(IDS_INSUFFICIENT_MEMORY, FitCheck);
         return ERR_TERMINATE;
     }
 
     if (Image->ReadBlock(block, size, data) != (DWORD)size)
     {
         delete[] data;
-        Error(IDS_ERROR_LISTING_IMAGE, FALSE, block);
+        Error(IDS_ERROR_LISTING_IMAGE, FitCheck, block);
         // if reading the sector with the root fails
         return (block == (DWORD)Root.LocationOfExtent - ExtentOffset) ? ERR_CONTINUE : ERR_TERMINATE;
     }
@@ -584,7 +632,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
         if ((dirRecord.LocationOfExtent != SWAPDWORD(dirRecord.LocationOfExtentA)) || (dirRecord.DataLength != SWAPDWORD(dirRecord.DataLengthA)))
         {
             delete[] data; // feature 223: it was left allocated
-            Error(IDS_ERROR_LISTING_IMAGE, FALSE, block);
+            Error(IDS_ERROR_LISTING_IMAGE, FitCheck, block);
             return ERR_TERMINATE;
         }
         // feature 223: the record and its name lie inside the data read (its lengths come from the
@@ -593,7 +641,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
             33 + dirRecord.LengthOfFileIdentifier > dirRecord.LengthOfDirectoryRecord)
         {
             delete[] data;
-            Error(IDS_ERROR_LISTING_IMAGE, FALSE, block);
+            Error(IDS_ERROR_LISTING_IMAGE, FitCheck, block);
             return ERR_TERMINATE;
         }
 
