@@ -22,7 +22,11 @@ whole-image unpack of such a listing fail. The plug-in's other readers were left
 
 In every case the listing is not marked incomplete, so Unpack (Alt+F9) of the whole image with
 "Delete archive after unpacking" extracts what was listed, reports success and the image is deleted.
-The measurement with images (probe, before the fix) is recorded in `fix-log.md`.
+Measured on the Debug build before the fix with the new probe `probe/iso329_probe.ps1` (hidden
+desktop; 328's deep tree as a genisoimage `-udf` hybrid, an xorriso ISO 9660 + HFS+ hybrid, a crafted
+Xbox image, and a crafted NRG of two audio tracks) -> `probe/result_before.txt`: **0 of 7 rows
+pass** - "Error" / "too long path" at the open, `zlast\z.txt` missing from the UDF, Xbox and HFS+
+listings, the image deleted by all three unpacks, the audio listing empty.
 
 ## Clarifications
 
@@ -42,6 +46,11 @@ The measurement with images (probe, before the fix) is recorded in `fix-log.md`.
 - Q: Read errors of these readers (an unreadable folder or file entry)? → A: unchanged - the Inbox
   item `iso-plug-in-unpack-deletes-image-with-unreadable-folder` covers read errors (autonomous run:
   conservative - scope)
+- Q: A folder the listing takes whose contents it cannot take (Xbox `e<59x>` at a 244-byte folder
+  part) - list it empty, or leave it out too? → A: list it, as 328 does; a Copy of the whole image
+  then shows the core's own skippable "Name ... with full path is too long" box for it (measured on
+  the build before the fix, X-COPY) - only the refused entries are reported (autonomous run: item -
+  "as feature 328")
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -145,6 +154,5 @@ Xbox images: the listed files extracted, the report shown, the image kept.
   needs the translation refresh and gains nothing).
 - Assumption (autonomous run): read errors keep their handling (Inbox item
   `iso-plug-in-unpack-deletes-image-with-unreadable-folder`).
-- Assumption (autonomous run): the audio row needs a crafted NRG image; if the plug-in does not open
-  the crafted image the row is recorded NOT DRIVEN and the audio part rests on review (stop-rules
-  §2.14).
+- Assumption (autonomous run): the audio row uses a crafted NRG image (CD-Text label of 253 letters);
+  the plug-in opens it (measured before the fix).
