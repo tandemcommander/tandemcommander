@@ -49,6 +49,11 @@ default configuration (`uniso=on`):
   Joliet and Rock Ridge images are opened in the program on the hidden desktop; the pass "finds
   nothing" when every mutation is either listed or refused and the program never closes (autonomous
   run: conservative - the measurable form of the item's *Expected*)
+- Q: If the fuzzing pass makes the program close in the ISO 9660, Joliet or Rock Ridge reader (not
+  only the two named sites), is that fixed in this feature? → A: yes - an out-of-bounds read or an
+  endless loop in these four readers found by the pass is a bounds check of this item's kind and is
+  fixed here; a finding of another kind (or another reader: UDF, Xbox, NRG, ...) becomes an Inbox
+  item (autonomous run: item - *Expected*: "a fuzzing pass ... finds nothing")
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -139,6 +144,8 @@ Ridge images in the program and reports that none closed it.
 - **FR-009**: Valid images (HFS+, ISO 9660, Joliet, Rock Ridge) MUST list and extract as before.
 - **FR-010**: A hidden-desktop fuzzing probe MUST open mutated HFS+, ISO 9660, Joliet and Rock Ridge
   images and report every program exit or bug report as a failure.
+- **FR-011**: An out-of-bounds read or endless loop the pass finds in those four readers MUST be
+  fixed by a bounds check in this feature; other findings become Inbox items.
 
 ### Key Entities
 
