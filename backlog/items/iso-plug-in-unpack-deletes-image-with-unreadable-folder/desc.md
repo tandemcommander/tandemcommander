@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: Unpack with Delete archive deletes an image whose folder could not be read
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:328
@@ -10,7 +10,7 @@ created: 2026-10-23
 updated: 2026-10-23
 verified: 2026-10-23 ae41208d
 effort: S
-feature: -
+feature: 330
 related: []
 depends-on: []
 reason: -
@@ -54,3 +54,4 @@ later folders should still be descended after a read error is a separate questio
 - 2026-10-23 — moved to Next position 2
 - 2026-10-23 — related item iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses done in feature 329
 - 2026-10-23 — verified at ae41208d: reproduced at ae41208d: rderr.iso (folder A extent past the end), Unpack + Delete archive: 1 of 3 files, image deleted
+- 2026-10-23 — run started, feature 330
