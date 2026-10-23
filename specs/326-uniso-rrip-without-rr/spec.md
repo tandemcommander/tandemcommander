@@ -50,6 +50,10 @@ a file of a 200-letter Rock Ridge name is extracted under a 31-letter upper-case
 - Q: What happens with a broken or cut Rock Ridge name in an image recognised by `SP`? → A: the
   same as for `RR` images since feature 223: the plain ISO 9660 name is listed, never a cut name
   (autonomous run: rule - "a path or name is never cut", feature 223)
+- Q: Is an `SP` entry looked for anywhere but at the very start of the root's `.` System Use area
+  (CD-XA images put a 14-byte XA record first)? → A: no - only at the start, as SUSP 1.12 places it;
+  CD-XA images keep today's behaviour (autonomous run: conservative - the item does not name CD-XA;
+  today `RR` is looked for only at the start too)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -110,6 +114,7 @@ and a Joliet image still extract under their names in the program.
 - A damaged `NM` / `CE` chain in a recognised volume: the plain ISO 9660 name (feature 223), never a
   cut name.
 - A record of the root directory's `.` / `..` entries: not listed (as today).
+- A CD-XA image (an XA record before the `SP` entry): `SP` is not recognised; today's behaviour.
 
 ## Requirements *(mandatory)*
 
