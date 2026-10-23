@@ -1,8 +1,8 @@
 ---
 title: Unpack into a subfolder named after an archive whose name starts with a space drops the space
 type: bug
-status: new
-severity: 3
+status: open
+severity: 4
 area: archives
 source: review:315
 who: agent
@@ -46,3 +46,5 @@ PASS.
 
 - 2026-10-23 — created (source review:315)
 - 2026-10-23 — related item unpack-dialog-offers-a-long-target-panel-path-cut-and done in feature 315
+- 2026-10-23 — auto-triage: severity 3 -> 4: a function gives a wrong result (unpacks into another folder than the one shown), a workaround exists
+- 2026-10-23 — moved to Next position 2
