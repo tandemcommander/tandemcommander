@@ -36,3 +36,10 @@ ISO 9660 names are not made safe before extraction.
     leaks!" boxes (Debug build).
   - VOL: the whole set written to `<row>\w)\set\...` - outside the target folder.
   - Opening the xorriso HFS+ hybrid (HFS, VOL): "UnISO: Cannot read sector #00000020."
+
+## speckit-analyze
+
+- Run 1: 0 CRITICAL, 0 HIGH; MEDIUM U1 (T011 said "appended" for the HFS label folder, which
+  `udfiso.cpp` writes with `sprintf(path, ...)` over the path) - fixed in tasks.md; LOW L1 (the edge
+  case "a Joliet `..` name -> `__`" has no probe row) accepted - the unit case `..` -> `__` covers it.
+- Run 2: 0 CRITICAL, 0 HIGH, 0 MEDIUM; coverage 9 / 9.

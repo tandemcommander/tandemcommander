@@ -31,7 +31,7 @@ joined safe. **Independent test**: probe sets JOLIET, PLAIN, UDF, XBOX, HFS.
 
 **Goal**: the volume label folders are safe. **Independent test**: probe set VOL.
 
-- [ ] T011 [US2] `src/plugins/uniso/udfiso.cpp` `ListDirectory`: the components `ISO (<label>)`, `UDF (<label>)`, `HFS (<label>)` cleaned as one name each before they are appended to the path
+- [ ] T011 [US2] `src/plugins/uniso/udfiso.cpp` `ListDirectory`: the components `ISO (<label>)`, `UDF (<label>)` cleaned as one name each (`partPath + 1`) before they are appended to the path; `HFS (<label>)` keeps its existing `sprintf(path, ...)` and the component after its leading `\` is cleaned in place
 
 ## Phase 5: Polish & verification
 
