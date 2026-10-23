@@ -7,8 +7,8 @@ area: archives
 source: measure:329
 who: agent
 created: 2026-10-23
-updated: 2026-10-23
-verified: -
+updated: 2026-10-24
+verified: 2026-10-24 d87666d5
 effort: S
 feature: -
 related: []
@@ -57,3 +57,4 @@ image's sizes and track numbers.
 - 2026-10-23 — created (source measure:329)
 - 2026-10-23 — related item iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses done in feature 329
 - 2026-10-23 — moved to Next position 2
+- 2026-10-24 — verified at d87666d5: still present at d87666d5 by reading: audio.cpp sprintf into char[MAX_PATH], nrg.cpp readCDTX unchecked chunk size, readDAOX unchecked track numbers, GetTrack accepts index == Count
