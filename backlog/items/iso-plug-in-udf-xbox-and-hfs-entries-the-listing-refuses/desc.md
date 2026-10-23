@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: UDF, Xbox and HFS+ entries the listing refuses end their folder with Error
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: measure:328
 who: agent
 created: 2026-10-23
 updated: 2026-10-23
-verified: -
+verified: 2026-10-23 aa939af0
 effort: M
-feature: -
+feature: 329
 related: []
 depends-on: []
 reason: -
@@ -53,3 +53,5 @@ deleted.
 - 2026-10-23 — related item iso-plug-in-an-entry-the-listing-refuses-ends-the-listing done in feature 328
 - 2026-10-23 — auto-triage: severity 6 -> 7: data loss in a narrow scenario - Unpack with Delete archive after unpacking deletes the image after a partial unpack
 - 2026-10-23 — moved to Next position 1
+- 2026-10-23 — verified at aa939af0: still present at aa939af0: udf/xdvdfs AddFileDir Error+throw on refused AddDir/AddFile, hfs.cpp return FALSE, audio Clear; probe before-run on the branch
+- 2026-10-23 — run started, feature 329
