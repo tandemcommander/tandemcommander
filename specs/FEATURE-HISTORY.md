@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 313 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313 |
 
 ## Feature notes
 
@@ -4357,3 +4357,22 @@ a few early ones are out of sequence).
   refute-first review (no MUST; S1 fixed). Blocked only for the `.slt` refresh; finished in a
   maintainer session after merging `main`: 5 strings x 8 languages, 288 DeepL characters, 11 pins
   (meaning and gender of the width levels; Zoom Out was "Zoom In" in de and ro).
+- 312-tabs-browser-keys: panel tabs had only Chrome's keys with Shift added, a closed tab was lost
+  and the tab settings were one Appearance checkbox - now Configuration > Tabs (after Appearance)
+  holds *Show tabs in panels*, an opt-in *Browser-like tab shortcuts* (Ctrl+T / Ctrl+W /
+  Ctrl+PgDn / PgUp for tabs, Ctrl+Shift+T Reopen, Ctrl+Shift+W Restore Selection, Ctrl+Shift+G Go
+  to Shortcut; panel and command line; classic keys unchanged by default) and a list that follows
+  the option; Reopen Closed Tab (10 per panel, memory only, the `CPanelTab` object itself with its
+  history, emptied by tabs off and Clear History); Tabs in Options > Show and the toolbar menu.
+  One pure key table in `saltabs.*` drives dispatch, labels (`LoadStrTabKeys`) and the page. Traps:
+  the command line never ran the Ctrl+letter handler (classic Ctrl+T/W do nothing there - kept);
+  `IsSalHotKey` also clears plug-in keys at load (`IsSalHotKeyKeptAtLoad` keeps Ctrl+Shift+G);
+  closed tabs' histories hold plug-in FS pointers (`ClearPluginFSFromHistory` walks them); the
+  page order is the remembered page index (`SalCfgPageIndexFrom311` when the new value is absent).
+  From backlog item `panel-tabs-chrome-shortcuts-and-reopen-closed-tab`. Probe `tabs312_probe`
+  33 PASS (new feature, classic rows as control); saltests +106; review 1 no MUST, 2 SHOULD fixed.
+  Blocked only for the `.slt` refresh; finished in a maintainer session after merging `main`
+  (review of the merge with 313's quick-search keys: no MUST): 10 entries x 8 languages, 1,832
+  DeepL characters, 24 pins ("Tabs" was the Tab key in de / fr / hu / sk; cs "karty", hu
+  "lap"; menu accelerators checked by script - the core's menus are built from strings); probe
+  after the merge 33/0.

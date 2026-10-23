@@ -7,12 +7,12 @@ area: panels-ui
 source: measure:312
 who: person
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [panel-tabs-chrome-shortcuts-and-reopen-closed-tab, panel-tabs-078-release-pass-and-leak-watch]
-depends-on: [panel-tabs-chrome-shortcuts-and-reopen-closed-tab]
+related: [panel-tabs-078-release-pass-and-leak-watch]
+depends-on: []
 reason: -
 ---
 
@@ -63,3 +63,4 @@ branch `312-tabs-browser-keys` or of `main` after it was merged.
 
 - 2026-10-22 — created (source measure:312)
 - 2026-10-22 — moved to Person steps position 34
+- 2026-10-23 — dependency panel-tabs-chrome-shortcuts-and-reopen-closed-tab done in feature 312

@@ -173,3 +173,46 @@ Draft FEATURE-HISTORY entry:
   page order is the remembered page index (`SalCfgPageIndexFrom311` when the new value is absent).
   From backlog item `panel-tabs-chrome-shortcuts-and-reopen-closed-tab`. Probe `tabs312_probe`
   33 PASS (new feature, classic rows as control); saltests +106; review 1 no MUST, 2 SHOULD fixed.
+
+## Finished (maintainer session, 2026-10-23)
+
+The maintainer asked for the blocked item to be finished and closed; the rules were changed the
+same day so that a run does the `.slt` refresh itself (stop-rules §2.13). Done in this order:
+
+- **Merged `main`** (313-320, 314 and the backlog closures) into the branch: `[312] merge main`.
+  Conflicts only in the backlog files (taken from `main`), `.specify/feature.json` (the branch's)
+  and `CHANGELOG.md` (both entries kept, `main`'s first). `main` (313) and 312 both changed
+  `src/fileswn0.cpp` (313 the quick-search keys at ~2110-2236, 312 the tab keys at ~1711-1726) and
+  `src/saltests/saltests.cpp`; git merged them without conflicts.
+- **Review of the merge** (refute-first agent, read-only): no MUST, no SHOULD. The tab-key block
+  runs before quick search; every route that changes the listing (`SwitchToTab`, close, reopen)
+  ends the search first (`QFEndAtPathChange`), `NewTab` only reads (`CaptureActiveTab`,
+  `QFWriteBackNow`); `saltests.cpp`: 140 registrations = 135 + 1 (312) + 4 (main), none twice.
+  NOTEs only (one tab in the browser-like mode swallows Ctrl+W / Ctrl+PgUp/PgDn - the spec's
+  limitation; a refused switch has already ended the search - since 078/244).
+- **Translations** (stop-rules §2.13): entries = 6 new strings (14176-14179, 14190, 14191) and the
+  new dialog `IDD_CFGPAGE_TABS` (caption, `IDC_PANELTABS` moved from Appearance,
+  `IDC_TABS_BROWSERKEYS`, `IDT_TABS_KEYLIST`); no English changed. `.\build.cmd` -> BUILD
+  SUCCEEDED; export 1/1; dry run `--formality prefer_more`: **10 unique gaps per language**, ~234
+  characters; real merge `--budget 5744`: 1,832 DeepL characters, validation failures 0;
+  duplicate accelerators 147 = the module's old baseline (148 at feature 123; string tables
+  counted as one group), none in dialog 6286. Read back in all eight languages; 24 pins
+  (`salamand`, `_feature_312` note):
+  - meaning - panel tabs are not the Tab key: de "T&abulator-Tasten" / "Tabulator-Ta&stenkombinationen:",
+    fr "Touches de t&abulation", hu "T&abulátorok", sk "Klávesy T&ab";
+  - established terms: cs "karty" (078; the page said "Záložky"), hu "lap" (078; the page said
+    "Fülek" / "Fülparancsok"), cs / sk "adresář / adresár" as the rest of the corpus;
+  - accelerators: the core's menus are built from strings (menu4.cpp), which the merge cannot
+    check - checked by script for the Tabs submenu (IDS_MENU_TAB_*) and Options > Show
+    (IDS_MENU_OPT_VSB_*): cs / sk Reopen collided with Close Others / Close, cs / sk / hu Tabs with
+    Text labels / Lock toolbars / Plugin bar, hu Reopen was moved onto Close's letter by the
+    merge's string-table dedupe -> 0 collisions after the pins;
+  - one register per list: de "Wechseln Sie ..." and ro "Intrați ..." next to infinitive / noun forms.
+  Key names were left as translated (de "Strg+Bild auf/ab", fr / es local names): the German and
+  French corpora name keys that way. Second merge: 0 gaps, 0 characters; `translate.slt
+  --verify`: 298 files round-trip byte-exact; per language 23 + / 11 - lines (the new rows and the
+  Appearance page moving up), no unrelated layout drift.
+- **Checks**: `.\build.cmd full` -> BUILD SUCCEEDED (the eight core language modules rebuilt);
+  `saltests: 27664 checks, 0 failed`; `check_encoding.py --strict` TOTAL 0; probe after the merge
+  `probe/result_after_merge.txt` **PASS 33, FAIL 0, NOT DRIVEN 0**, registry restored identical.
+- Owed to a person: `tabs-312-real-keyboard-and-eight-languages` (unchanged).
