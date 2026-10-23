@@ -7,11 +7,11 @@ area: panels-ui
 source: manual
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-23
 verified: -
 effort: M
 feature: -
-related: [user-menu-messages-and-folder-leftovers, user-menu-unc-folder-pushd]
+related: [user-menu-unc-folder-pushd]
 depends-on: []
 reason: -
 ---
@@ -54,3 +54,4 @@ Severity: wording plus a suspected wrong-folder case; the lower value taken unti
 
 - 2026-10-20 — created (source manual)
 - 2026-10-20 — moved to Next position 52
+- 2026-10-23 — related item user-menu-messages-and-folder-leftovers closed: split into: user-menu-errors-name-the-file-or-folder, user-menu-hidden-batch-silent-early-end, user-menu-shortcut-start-in-folder, user-menu-unc-folder-pushd, command-line-comspec-read-wide, user-menu-long-paths - the parts replace it; maintainer 2026-10-23

@@ -7,11 +7,11 @@ area: archives
 source: manual
 who: person
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-23
 verified: -
 effort: M
 feature: -
-related: [archive-update-change-detection-limits]
+related: []
 depends-on: []
 reason: -
 ---
@@ -48,3 +48,4 @@ C - the case is rare and both A and B cost more than the warning is worth; the o
 
 - 2026-10-21 — created (source manual)
 - 2026-10-21 — moved to Decisions for the maintainer position 5
+- 2026-10-23 — related item archive-update-change-detection-limits closed: split into: archive-update-same-stamp-member-decision, archive-update-archive-same-stamp, archive-update-time-zone-change-mark, archive-refresh-lists-changed-archive-twice - the parts replace it; maintainer 2026-10-23

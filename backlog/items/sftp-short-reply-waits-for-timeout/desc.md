@@ -7,11 +7,11 @@ area: sftp
 source: leftover:140
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-23
 verified: -
 effort: M
 feature: -
-related: [sftp-leaks-and-waits-after-broken-connection]
+related: []
 depends-on: []
 reason: -
 ---
@@ -46,3 +46,4 @@ The exact site is suspected, not confirmed; 140 named the symptom without a site
 - 2026-10-21 — created (source leftover:140)
 - 2026-10-21 — severity as the source item
 - 2026-10-21 — moved to Next position 59
+- 2026-10-23 — related item sftp-leaks-and-waits-after-broken-connection closed: split into: sftp-open-handles-of-lost-connection-leak, sftp-session-leak-after-partial-send-or-disconnect, sftp-short-reply-waits-for-timeout, sftp-key-exchange-soak-1500-connections (and the related sftp-a-copy-posted-right-after-a-failed-upload-and-its) - the parts replace it; maintainer 2026-10-23

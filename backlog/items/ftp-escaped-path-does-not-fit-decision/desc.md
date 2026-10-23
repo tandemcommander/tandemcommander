@@ -7,11 +7,11 @@ area: ftp
 source: manual
 who: person
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [ftp-long-name-and-path-leftovers]
+related: []
 depends-on: []
 reason: -
 ---
@@ -48,3 +48,4 @@ B while interface 108 is unreleased (it removes the defect for every FS plug-in 
 
 - 2026-10-20 — created (source manual)
 - 2026-10-20 — moved to Decisions for the maintainer position 10
+- 2026-10-23 — related item ftp-long-name-and-path-leftovers closed: split into: ftp-pwd-and-created-path-cut (done in 277), ftp-escaped-path-does-not-fit-decision, ftp-local-long-paths, ftp-mask-letters-by-server-encoding - the parts replace it; maintainer 2026-10-23

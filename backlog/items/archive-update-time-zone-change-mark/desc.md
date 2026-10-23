@@ -7,11 +7,11 @@ area: archives
 source: manual
 who: both
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [archive-update-change-detection-limits]
+related: []
 depends-on: []
 reason: -
 ---
@@ -42,3 +42,4 @@ Record the current time-zone bias with the panel's listing of the archive (or at
 
 - 2026-10-21 — created (source manual)
 - 2026-10-21 — moved to Next position 80
+- 2026-10-23 — related item archive-update-change-detection-limits closed: split into: archive-update-same-stamp-member-decision, archive-update-archive-same-stamp, archive-update-time-zone-change-mark, archive-refresh-lists-changed-archive-twice - the parts replace it; maintainer 2026-10-23

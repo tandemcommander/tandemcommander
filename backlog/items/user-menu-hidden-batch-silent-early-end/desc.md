@@ -7,11 +7,11 @@ area: panels-ui
 source: manual
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-23
 verified: -
 effort: M
 feature: -
-related: [user-menu-messages-and-folder-leftovers, user-menu-errors-name-the-file-or-folder]
+related: [user-menu-errors-name-the-file-or-folder]
 depends-on: []
 reason: -
 ---
@@ -50,3 +50,4 @@ The pre-check of (a) covers most cases; an Initial Directory with a `%VAR%` type
 
 - 2026-10-20 — created (source manual)
 - 2026-10-20 — moved to Next position 53
+- 2026-10-23 — related item user-menu-messages-and-folder-leftovers closed: split into: user-menu-errors-name-the-file-or-folder, user-menu-hidden-batch-silent-early-end, user-menu-shortcut-start-in-folder, user-menu-unc-folder-pushd, command-line-comspec-read-wide, user-menu-long-paths - the parts replace it; maintainer 2026-10-23
