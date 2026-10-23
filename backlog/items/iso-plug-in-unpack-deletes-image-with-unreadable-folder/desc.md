@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses]
+related: []
 depends-on: []
 reason: -
 ---
@@ -52,3 +52,4 @@ later folders should still be descended after a read error is a separate questio
 - 2026-10-23 — created (source review:328)
 - 2026-10-23 — auto-triage: severity 6 -> 7: data loss in a narrow scenario - files never extracted are lost when Delete archive after unpacking deletes a damaged image
 - 2026-10-23 — moved to Next position 2
+- 2026-10-23 — related item iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses done in feature 329

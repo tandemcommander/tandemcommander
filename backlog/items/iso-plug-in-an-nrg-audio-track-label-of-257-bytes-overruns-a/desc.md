@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses]
+related: []
 depends-on: []
 reason: -
 ---
@@ -55,3 +55,4 @@ image's sizes and track numbers.
 ## Log
 
 - 2026-10-23 — created (source measure:329)
+- 2026-10-23 — related item iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses done in feature 329

@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4581,3 +4581,30 @@ a few early ones are out of sequence).
   326 28 / 0, 326 twins 8 / 0, 327 77 / 0, 322 18 / 0; saltests 27,986 -> 28,018 / 0 (a mutant of the
   folder rule fails 6); refute-first reviews: 1 and 2 stopped (partial work used), 3 (one MUST, fixed),
   4 (no MUST, two SHOULD: out-of-memory marking taken, spec US3 corrected; read errors to Inbox).
+- 329-uniso-other-readers-refused: the ISO plug-in's other readers still answered an entry the panel
+  listing refuses (a folder part over MAX_PATH - 5 bytes) the old way after 328 - UDF and Xbox: "Error",
+  the rest of the folder dropped and no later folder of the walk descended (`zlast\z.txt` lost); HFS+:
+  "This disk image contains a too long path", every later catalog record dropped; audio tracks (NRG
+  CD-Text name of 256+ bytes): the listing cleared; all three image kinds deleted by Unpack with "Delete
+  archive after unpacking" - now each reader asks the listing's rule first (`sallistingname.h`, as the
+  core's `AddFile` / `AddDir`), records a refused entry in 328's `CISOImage::ListingLeftOut` (one
+  "(206)" report per listing, a whole unpack fails, the image is kept) and goes on: UDF / XDVDFS
+  `AddFileDir` return 328's listed / left out / failed and only a listed folder is descended; HFS+
+  keeps the catalog IDs of left-out folders (`CSalLeftOutIds::Under`, `src/common/salisonamefit.h`) so
+  their contents are skipped - a plain "continue" would have listed them at the HFS+ root (the parent
+  lookup falls back to `rootPath`); out of memory and a core refusal after the rule mark the listing
+  incomplete; the refused name is no longer allocated (the old path leaked it: ~135 Debug-heap "Detected
+  memory leaks!" boxes per U / X row before). Traps: a Python here-document turned `a\b` in a C++
+  comment into a backspace byte (fixed from a script file); the audio box wraps a 253-letter name and
+  the probe's window-text helper joins the lines with a space (the first after run failed A-OPEN on its
+  own match). Limits: an HFS+ folder whose ID is lower than its parent's lists its contents at the root
+  (old; Inbox `iso-plug-in-an-hfs-folder-whose-id-is-lower-than-its-parent`); entries skipped as damaged
+  (UDF `MapICB`, HFS+ odd records, 322's skips) do not mark the listing (Inbox
+  `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let`); an NRG label of 257+ bytes overruns
+  `CAudio::ListDirectory`'s `char[MAX_PATH]` (Inbox `iso-plug-in-an-nrg-audio-track-label-of-257-bytes-overruns-a`);
+  `IDS_ERR_TOO_LONG_PATH` stays unused in the module. From backlog item
+  `iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses`. Probe `iso329_probe` 0 / 7 RUN rows -> 7 / 7
+  (U/X/H-COPY, U/X/H-UNP-DEL, A-OPEN; seeds genisoimage `-udf`, xorriso `-hfsplus`, crafted XDVDFS and NRG
+  by `img329.py`); 328 20 / 0, 327 77 / 0, 322 18 / 0; saltests -> 28,266 / 0 (a mutant of `Under` fails
+  2); refute-first review 1: no MUST, two SHOULD fixed (the HFS+ subtree decision as a tested rule, the
+  probe tree two levels below a left-out folder), reviewer's negative control 0 / 7 and HFS+ mutation FAIL.
