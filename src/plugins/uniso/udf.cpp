@@ -954,6 +954,7 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
 
             if (!(fileChar & UDF_PARENT))
             {
+                MakeSafeName(fileName, sizeof(fileName)); // feature 327: listed and descended with
                 if (!AddFileDir(path, fileName, fileChar, &icb, dir, pluginData))
                     return ERR_TERMINATE;
 
@@ -1091,7 +1092,7 @@ int CUDF::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
             throw UNPACK_ERROR;
         }
         lstrcpyn(name, path, U8_MAX_PATH);
-        if (!SalamanderGeneral->SalPathAppend(name, fileData->Name, U8_MAX_PATH))
+        if (!AppendSafeName(name, fileData->Name, U8_MAX_PATH)) // feature 327: made safe again
         {
             Error(IDS_ERR_TOO_LONG_NAME, silent == 1);
             throw UNPACK_ERROR;

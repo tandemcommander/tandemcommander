@@ -1,0 +1,82 @@
+iso327_probe (feature 327) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 19:44; registry key existed True
+
+img327.py patch: exit 0: joliet: 'jjjjjjjjjj.txt' -> '..\\..\\jesc.txt': 1; joliet: 'jcolonaaa.txt' -> '12:30jaaa.txt': 1; joliet: 'jdevaaa.txt' -> 'con.txtjaaa': 1; joliet: 'jtdotaaaa.txt' -> 'jtrailaaaaa..': 1; joliet: 'jslashaa.txt' -> 'j/slasha.txt': 1; joliet: 'jfolderx' -> '..\\..\\jd': 3
+JOLIET: at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy directory "set" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+JOLIET: extracted below the row folder: tgt\set\.._.._jesc.txt | tgt\set\12_30jaaa.txt | tgt\set\jtrailaaaaa__ | tgt\set\j_slasha.txt | tgt\set\top.txt | tgt\set\_con.txtjaaa | tgt\set\.._.._jd\inner.txt
+JOLIET .._.._jd\inner.txt NAME   PASS        want 'set\.._.._jd\inner.txt' with 'INNER'; content 'INNER'
+JOLIET .._.._jesc.txt NAME   PASS        want 'set\.._.._jesc.txt' with 'JESC'; content 'JESC'
+JOLIET _con.txtjaaa NAME   PASS        want 'set\_con.txtjaaa' with 'JDEV'; content 'JDEV'
+JOLIET 12_30jaaa.txt NAME   PASS        want 'set\12_30jaaa.txt' with 'JCOLON'; content 'JCOLON'
+JOLIET j_slasha.txt NAME   PASS        want 'set\j_slasha.txt' with 'JSLASH'; content 'JSLASH'
+JOLIET jtrailaaaaa__ NAME   PASS        want 'set\jtrailaaaaa__' with 'JTDOT'; content 'JTDOT'
+JOLIET top.txt NAME   PASS        want 'set\top.txt' with 'TOP'; content 'TOP'
+JOLIET OUTSIDE CHECK  PASS        files outside 'set': none
+JOLIET STREAMS CHECK  PASS        alternate streams: none
+JOLIET     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+img327.py patch: exit 0: udf: 'jjjjjjjjjj.txt' -> '..\\..\\jesc.txt': 1; udf: 'jcolonaaa.txt' -> '12:30jaaa.txt': 1; udf: 'jdevaaa.txt' -> 'con.txtjaaa': 1; udf: 'jtdotaaaa.txt' -> 'jtrailaaaaa..': 1; udf: 'jslashaa.txt' -> 'j/slasha.txt': 1; udf: 'jfolderx' -> '..\\..\\jd': 1
+UDF: at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy directory "set" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+UDF: extracted below the row folder: tgt\set\.._.._jesc.txt | tgt\set\12_30jaaa.txt | tgt\set\jtrailaaaaa__ | tgt\set\j_slasha.txt | tgt\set\top.txt | tgt\set\_con.txtjaaa | tgt\set\.._.._jd\inner.txt
+UDF .._.._jd\inner.txt NAME   PASS        want 'set\.._.._jd\inner.txt' with 'INNER'; content 'INNER'
+UDF .._.._jesc.txt NAME   PASS        want 'set\.._.._jesc.txt' with 'UESC'; content 'UESC'
+UDF _con.txtjaaa NAME   PASS        want 'set\_con.txtjaaa' with 'UDEV'; content 'UDEV'
+UDF 12_30jaaa.txt NAME   PASS        want 'set\12_30jaaa.txt' with 'UCOLON'; content 'UCOLON'
+UDF j_slasha.txt NAME   PASS        want 'set\j_slasha.txt' with 'USLASH'; content 'USLASH'
+UDF jtrailaaaaa__ NAME   PASS        want 'set\jtrailaaaaa__' with 'UTDOT'; content 'UTDOT'
+UDF top.txt NAME   PASS        want 'set\top.txt' with 'TOP'; content 'TOP'
+UDF OUTSIDE CHECK  PASS        files outside 'set': none
+UDF STREAMS CHECK  PASS        alternate streams: none
+UDF        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+img327.py xbox: exit 0: xbox: 43 sectors, root at 33
+XBOX: at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy directory "set" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+XBOX: extracted below the row folder: tgt\set\.._.._xesc.txt | tgt\set\12_30x.txt | tgt\set\top.txt | tgt\set\xtrail_ | tgt\set\x_slash.txt | tgt\set\_con.txt | tgt\set\.._.._xd\inner.txt
+XBOX .._.._xd\inner.txt NAME   PASS        want 'set\.._.._xd\inner.txt' with 'INNER'; content 'INNER'
+XBOX .._.._xesc.txt NAME   PASS        want 'set\.._.._xesc.txt' with 'XESC'; content 'XESC'
+XBOX _con.txt NAME   PASS        want 'set\_con.txt' with 'XDEV'; content 'XDEV'
+XBOX 12_30x.txt NAME   PASS        want 'set\12_30x.txt' with 'XCOLON'; content 'XCOLON'
+XBOX top.txt NAME   PASS        want 'set\top.txt' with 'TOP'; content 'TOP'
+XBOX x_slash.txt NAME   PASS        want 'set\x_slash.txt' with 'XSLASH'; content 'XSLASH'
+XBOX xtrail_ NAME   PASS        want 'set\xtrail_' with 'XTDOT'; content 'XTDOT'
+XBOX OUTSIDE CHECK  PASS        files outside 'set': none
+XBOX STREAMS CHECK  PASS        alternate streams: none
+XBOX       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+img327.py patch: exit 0: plain: 'AAAAAAAA.TXT;1' -> '..\\..\\ESC1.T;1': 1; plain: 'BBBBBBBB.TXT;1' -> '12:30AAA.TXT;1': 1; plain: 'CCCCCCCC.TXT;1' -> 'CON.TXTAAAAA;1': 1; plain: 'EEEEEEEE.TXT;1' -> 'TRAILAAAAA..;1': 1; plain: 'FFFFFFFF.TXT;1' -> '1/2FFFFF.TXT;1': 1; plain: 'DDDDDDD' -> '..\\..\\D': 3
+PLAIN: at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy directory "SET" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PLAIN: extracted below the row folder: tgt\SET\.._.._ESC1.T | tgt\SET\12_30AAA.TXT | tgt\SET\1_2FFFFF.TXT | tgt\SET\TOP.TXT | tgt\SET\TRAILAAAAA__ | tgt\SET\_CON.TXTAAAAA | tgt\SET\.._.._D\INNER.TXT
+PLAIN .._.._D\INNER.TXT NAME   PASS        want 'SET\.._.._D\INNER.TXT' with 'INNER'; content 'INNER'
+PLAIN .._.._ESC1.T NAME   PASS        want 'SET\.._.._ESC1.T' with 'PESC'; content 'PESC'
+PLAIN _CON.TXTAAAAA NAME   PASS        want 'SET\_CON.TXTAAAAA' with 'PDEV'; content 'PDEV'
+PLAIN 1_2FFFFF.TXT NAME   PASS        want 'SET\1_2FFFFF.TXT' with 'PSLASH'; content 'PSLASH'
+PLAIN 12_30AAA.TXT NAME   PASS        want 'SET\12_30AAA.TXT' with 'PCOLON'; content 'PCOLON'
+PLAIN TOP.TXT NAME   PASS        want 'SET\TOP.TXT' with 'TOP'; content 'TOP'
+PLAIN TRAILAAAAA__ NAME   PASS        want 'SET\TRAILAAAAA__' with 'PTDOT'; content 'PTDOT'
+PLAIN OUTSIDE CHECK  PASS        files outside 'SET': none
+PLAIN STREAMS CHECK  PASS        alternate streams: none
+PLAIN      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+HFS: at the open: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK; F5: [#32770 'Copy'] [Static id=209] Copy directory "HFS (TC327)" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+HFS: extracted below the row folder: tgt\HFS (TC327)\set\.._.._hesc.txt | tgt\HFS (TC327)\set\12_30h.txt | tgt\HFS (TC327)\set\htrail_ | tgt\HFS (TC327)\set\top.txt | tgt\HFS (TC327)\set\_con.txt | tgt\HFS (TC327)\set\.._.._hd\inner.txt
+HFS .._.._hd\inner.txt NAME   PASS        want 'HFS (TC327)\set\.._.._hd\inner.txt' with 'INNER'; content 'INNER'
+HFS .._.._hesc.txt NAME   PASS        want 'HFS (TC327)\set\.._.._hesc.txt' with 'HESC'; content 'HESC'
+HFS _con.txt NAME   PASS        want 'HFS (TC327)\set\_con.txt' with 'HDEV'; content 'HDEV'
+HFS 12_30h.txt NAME   PASS        want 'HFS (TC327)\set\12_30h.txt' with 'HCOLON'; content 'HCOLON'
+HFS htrail_ NAME   PASS        want 'HFS (TC327)\set\htrail_' with 'HTDOT'; content 'HTDOT'
+HFS top.txt NAME   PASS        want 'HFS (TC327)\set\top.txt' with 'TOP'; content 'TOP'
+HFS OUTSIDE CHECK  PASS        files outside 'HFS (TC327)\set': none
+HFS STREAMS CHECK  PASS        alternate streams: none
+HFS        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+img327.py vol: exit 0: vol: primary volume identifier -> 'v\\..\\..\\w'
+VOL: at the open: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK; F5: [#32770 'Copy'] [Static id=209] Copy directory "ISO (v_.._.._w)" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+VOL: extracted below the row folder: tgt\ISO (v_.._.._w)\set\.._.._hesc.txt | tgt\ISO (v_.._.._w)\set\12_30h.txt | tgt\ISO (v_.._.._w)\set\htrail_ | tgt\ISO (v_.._.._w)\set\top.txt | tgt\ISO (v_.._.._w)\set\_con.txt | tgt\ISO (v_.._.._w)\set\.._.._hd\inner.txt
+VOL .._.._hd\inner.txt NAME   PASS        want 'ISO (v_.._.._w)\set\.._.._hd\inner.txt' with 'INNER'; content 'INNER'
+VOL .._.._hesc.txt NAME   PASS        want 'ISO (v_.._.._w)\set\.._.._hesc.txt' with 'HESC'; content 'HESC'
+VOL _con.txt NAME   PASS        want 'ISO (v_.._.._w)\set\_con.txt' with 'HDEV'; content 'HDEV'
+VOL 12_30h.txt NAME   PASS        want 'ISO (v_.._.._w)\set\12_30h.txt' with 'HCOLON'; content 'HCOLON'
+VOL htrail_ NAME   PASS        want 'ISO (v_.._.._w)\set\htrail_' with 'HTDOT'; content 'HTDOT'
+VOL top.txt NAME   PASS        want 'ISO (v_.._.._w)\set\top.txt' with 'TOP'; content 'TOP'
+VOL OUTSIDE CHECK  PASS        files outside 'ISO (v_.._.._w)\set': none
+VOL STREAMS CHECK  PASS        alternate streams: none
+VOL        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1BAE2EEF491ADE79D499B9513DE2C3A37608ED15FC1B306A8DC9E1473E49EEA0 / after 1BAE2EEF491ADE79D499B9513DE2C3A37608ED15FC1B306A8DC9E1473E49EEA0
+
+Rows: PASS 58, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

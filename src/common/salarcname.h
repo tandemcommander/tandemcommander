@@ -74,6 +74,50 @@ inline bool IsReservedDeviceName(const char* comp, int len)
     return false;
 }
 
+// One name made safe in place (feature 327; the rule of feature 326's SalSuspCleanRockRidgeName):
+// control characters, '\', '/', ':', '<', '>', '"', '|', '?', '*' become '_'; trailing dots and
+// spaces become '_'; a reserved device name gets a '_' prefix; an empty name becomes "_". When the
+// prefix does not fit 'size': 'overwriteWhenFull' -> the name's first character (an ASCII letter of
+// the device name) becomes '_' instead, else false and the name unchanged. False (unchanged) also
+// for a name not terminated inside the buffer. Bytes >= 0x80 are kept.
+inline bool CleanOneName(char* name, size_t size, bool overwriteWhenFull)
+{
+    if (name == NULL || size == 0)
+        return false;
+    size_t len = strnlen(name, size);
+    if (len >= size)
+        return false; // not terminated inside the buffer
+    if (len == 0)
+    {
+        if (size < 2)
+            return false;
+        name[0] = '_';
+        name[1] = 0;
+        return true;
+    }
+    bool reserved = IsReservedDeviceName(name, (int)len);
+    bool prefix = reserved && len + 1 < size;
+    if (reserved && !prefix && !overwriteWhenFull)
+        return false;
+    for (size_t i = 0; i < len; i++)
+    {
+        unsigned char c = (unsigned char)name[i];
+        if (c < 0x20 || c == '\\' || c == '/' || c == ':' || c == '<' || c == '>' || c == '"' || c == '|' ||
+            c == '?' || c == '*')
+            name[i] = '_';
+    }
+    for (size_t i = len; i > 0 && (name[i - 1] == '.' || name[i - 1] == ' '); i--)
+        name[i - 1] = '_';
+    if (prefix)
+    {
+        memmove(name + 1, name, len + 1);
+        name[0] = '_';
+    }
+    else if (reserved)
+        name[0] = '_'; // the prefix does not fit: "con.txt" -> "_on.txt", never a cut name
+    return true;
+}
+
 } // namespace SalArcNameDetail
 
 // N1: 'in' (UTF-8, as stored in the archive) -> 'out', a relative path of clean
@@ -177,6 +221,16 @@ inline BOOL SalArcCleanItemPath(const char* in, char* out, int outSize)
     }
     out[w] = 0;
     return TRUE;
+}
+
+// N3 (feature 327): one item name - a single component, as a disc image's directory stores it - made
+// safe in place by SalArcNameDetail::CleanOneName; a '\' or '/' inside it is a character of the
+// name, not a path step. Never fails for a name terminated inside its buffer (size >= 2): a device
+// name whose '_' prefix does not fit gets '_' as its first character instead. A safe name is left
+// byte for byte. Contract: specs/327-uniso-safe-names/contracts/item-name.md
+inline bool SalArcCleanItemName(char* name, size_t size)
+{
+    return SalArcNameDetail::CleanOneName(name, size, true);
 }
 
 // N2: the archive format by signature (at least 8 bytes of 'head' are read

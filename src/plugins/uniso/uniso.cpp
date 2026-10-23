@@ -9,6 +9,7 @@
 #include "dialogs.h"
 #include "splloadstru8.h" // feature 130
 #include "../../common/salcasetwins.h" // feature 326: Rock Ridge names that differ only in case (252)
+#include "../../common/salarcname.h"   // feature 327: names of the image made safe (087)
 
 #include "uniso.rh"
 #include "uniso.rh2"
@@ -154,6 +155,25 @@ void EnsureU8Name(char* name, int bufSize)
         return; // cannot convert or would not fit -> leave the bytes untouched
     }
     strcpy(name, u8);
+}
+
+void MakeSafeName(char* name, int bufSize)
+{
+    if (name != NULL && bufSize > 0)
+        SalArcCleanItemName(name, (size_t)bufSize);
+}
+
+BOOL AppendSafeName(char* target, const char* name, int targetSize)
+{
+    size_t len = strlen(name);
+    char* safe = (char*)malloc(len + 2); // one byte more for a device name's '_' prefix
+    if (safe == NULL)
+        return FALSE;
+    memcpy(safe, name, len + 1);
+    SalArcCleanItemName(safe, len + 2);
+    BOOL ok = SalamanderGeneral->SalPathAppend(target, safe, targetSize);
+    free(safe);
+    return ok;
 }
 
 int WINAPI SalamanderPluginGetReqVer()

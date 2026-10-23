@@ -20043,6 +20043,73 @@ static void TestSusp326()
     }
 }
 
+// feature 327: one name of a disc image (ISO 9660, Joliet, UDF, HFS+, Xbox, a volume label folder)
+// made safe in place - never cut, never dropped (contract specs/327-uniso-safe-names/contracts/item-name.md)
+static void TestArcItemName327()
+{
+    struct
+    {
+        const char* in;
+        const char* out;
+    } cases[] = {
+        {"top.txt", "top.txt"},
+        {"TOP.TXT", "TOP.TXT"},
+        {"..\\..\\jesc.txt", ".._.._jesc.txt"},
+        {"..\\..\\D", ".._.._D"},
+        {"j/slasha.txt", "j_slasha.txt"},
+        {"12:30jaaa.txt", "12_30jaaa.txt"},
+        {"a<b>c\"d|e?f*g", "a_b_c_d_e_f_g"},
+        {"bell\x07x\x1F", "bell_x_"},
+        {"jtrailaaaaa..", "jtrailaaaaa__"},
+        {"sp. ", "sp__"},
+        {".", "_"},
+        {"..", "__"},
+        {"", "_"},
+        {".hidden", ".hidden"},
+        {"con", "_con"},
+        {"con.txtjaaa", "_con.txtjaaa"},
+        {"CON.TXTAAAAA", "_CON.TXTAAAAA"},
+        {"con .txt", "_con .txt"},
+        {"Lpt9", "_Lpt9"},
+        {"nul.", "_nul_"},
+        {"console.txt", "console.txt"},
+        {"com10", "com10"},
+        {"ISO (v\\..\\..\\w)", "ISO (v_.._.._w)"},
+        {"ISO (con)", "ISO (con)"},
+        {"\xE6\x97\xA5\xE6\x9C\xAC:\xC3\xA9.", "\xE6\x97\xA5\xE6\x9C\xAC_\xC3\xA9_"}, // UTF-8 kept whole
+        {"\xC4\x8D\xC3\xA1st", "\xC4\x8D\xC3\xA1st"},                                 // bytes >= 0x80 are never touched
+    };
+    for (const auto& c : cases)
+    {
+        char buf[64];
+        strcpy(buf, c.in);
+        CHECK(SalArcCleanItemName(buf, sizeof(buf)) && strcmp(buf, c.out) == 0);
+    }
+    // the '_' prefix of a device name that does not fit: its first letter becomes '_' (same length)
+    char exact[8] = "con.txt";
+    CHECK(SalArcCleanItemName(exact, sizeof(exact)) && strcmp(exact, "_on.txt") == 0);
+    char roomy[9] = "con.txt";
+    CHECK(SalArcCleanItemName(roomy, sizeof(roomy)) && strcmp(roomy, "_con.txt") == 0);
+    char fullDot[6] = "nul.:";
+    CHECK(SalArcCleanItemName(fullDot, sizeof(fullDot)) && strcmp(fullDot, "_ul._") == 0);
+    // refused, unchanged: not terminated inside the buffer, an empty name in a 1-byte buffer, NULL
+    char unterminated[3] = {'a', ':', 'c'};
+    CHECK(!SalArcCleanItemName(unterminated, sizeof(unterminated)) && unterminated[1] == ':');
+    char one[1] = {0};
+    CHECK(!SalArcCleanItemName(one, sizeof(one)) && one[0] == 0);
+    CHECK(!SalArcCleanItemName(NULL, 10));
+    char zero[2] = "a";
+    CHECK(!SalArcCleanItemName(zero, 0) && zero[0] == 'a');
+    // idempotent
+    char twice[32] = "..\\x:y. ";
+    CHECK(SalArcCleanItemName(twice, sizeof(twice)));
+    std::string once = twice;
+    CHECK(SalArcCleanItemName(twice, sizeof(twice)) && once == twice);
+    // feature 326's Rock Ridge form keeps its refusal when the prefix does not fit
+    char rr[8] = "con.txt";
+    CHECK(!SalSuspCleanRockRidgeName(rr, sizeof(rr)) && strcmp(rr, "con.txt") == 0);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -20203,6 +20270,7 @@ int main(int argc, char** argv)
     TestFtpMkdirReport323();
     TestSameVolume324();
     TestSusp326();
+    TestArcItemName327();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -353,18 +353,24 @@ BOOL CISO9660::ExtractFileName(char* fileName, const char* src, CISO9660::CDirec
 // name, made safe for Windows ("..\x" was written outside the target folder, "12:30.txt" into a
 // stream). The cleaning runs on the UTF-8 name (review 2): on the raw bytes of a legacy code page it
 // changed letters - a Shift-JIS second byte 0x5C is not a backslash ("\x83\x5C" is one letter). A
-// name the cleaning cannot hold: the plain ISO 9660 name of the record ('src', its raw identifier)
+// name the cleaning cannot hold: the plain ISO 9660 name of the record ('src', its raw identifier).
+// Feature 327: an ISO 9660 identifier or a Joliet name is made safe the same way (MakeSafeName) - an
+// image can store "..\x", "12:30.txt", "con.txt" or "x." there just as well
 void CISO9660::MakeListedName(char* name, int size, BOOL rockRidge, const char* src, CDirectoryRecord& dr,
                               BOOL file)
 {
     EnsureU8Name(name, size);
-    if (!rockRidge || SalSuspCleanRockRidgeName(name, (size_t)size))
+    if (rockRidge && SalSuspCleanRockRidgeName(name, (size_t)size))
         return;
-    ZeroMemory(name, size);
-    lstrcpyn(name, src, min(size, (int)dr.LengthOfFileIdentifier + 1));
-    if (file)
-        RemoveIsoVersion(name);
-    EnsureU8Name(name, size);
+    if (rockRidge)
+    {
+        ZeroMemory(name, size);
+        lstrcpyn(name, src, min(size, (int)dr.LengthOfFileIdentifier + 1));
+        if (file)
+            RemoveIsoVersion(name);
+        EnsureU8Name(name, size);
+    }
+    MakeSafeName(name, size);
 }
 
 #define READ_SIZE 4096
@@ -677,6 +683,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
                     char dirName[2 * MAX_PATH];
                     ZeroMemory(&dirName, sizeof(dirName));
                     ConvJolietName(dirName, (data + offset + 33), dirRecord.LengthOfFileIdentifier);
+                    MakeSafeName(dirName, sizeof(dirName)); // feature 327: listed and descended with
                     if (AddFileDir(path, dirName, dirRecord, dir, pluginData))
                     {
                         int pathLen = (int)strlen(path);
@@ -706,7 +713,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
                     BOOL rockRidge = ExtractExtFileName(extFileName, (data + offset + 33), dirRecord);
                     // format boundary (interface 104): plain ISO9660 (and Rock Ridge)
                     // identifiers are raw bytes with no encoding tag -> make them UTF-8;
-                    // feature 326: a Rock Ridge name then made safe
+                    // feature 326: a Rock Ridge name then made safe; feature 327: every name
                     MakeListedName(extFileName, sizeof(extFileName), rockRidge, (data + offset + 33), dirRecord, FALSE);
 
                     if (AddFileDir(path, extFileName, dirRecord, dir, pluginData))
@@ -746,7 +753,8 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
             // format boundary (interface 104): plain ISO9660 (and Rock Ridge) identifiers
             // are raw bytes with no encoding tag -> make them UTF-8. A no-op for Joliet,
             // which ConvJolietName() already turned into UTF-8 above. Feature 326: a Rock
-            // Ridge name then made safe (never Joliet: 'src' is the raw identifier then)
+            // Ridge name then made safe (never Joliet: 'src' is the raw identifier then);
+            // feature 327: every other name too
             MakeListedName(fileName, sizeof(fileName), rockRidge, src, dirRecord, TRUE);
 
             if (!AddFileDir(path, fileName, dirRecord, dir, pluginData))
@@ -775,7 +783,7 @@ int CISO9660::UnpackFile(CSalamanderForOperationsAbstract* salamander, const cha
         return UNPACK_ERROR;
     }
     lstrcpyn(name, path, U8_MAX_PATH);
-    if (!SalamanderGeneral->SalPathAppend(name, fileData->Name, U8_MAX_PATH))
+    if (!AppendSafeName(name, fileData->Name, U8_MAX_PATH)) // feature 327: made safe again
     {
         Error(IDS_ERR_TOO_LONG_NAME);
         return UNPACK_ERROR;

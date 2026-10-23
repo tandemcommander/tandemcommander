@@ -205,6 +205,17 @@ private:
 // names come from real Unicode fields and are converted directly (SplWToU8).
 void EnsureU8Name(char* name, int bufSize);
 
+// feature 327: a name read from the image (an ISO 9660 / Joliet / UDF / HFS+ / Xbox entry, a volume
+// label folder) made safe for Windows in place, before it is listed - feature 087's rule for one
+// name (SalArcCleanItemName, salarcname.h): no '\' '/' ':' and the like, no trailing dot, no device
+// name; never cut, never dropped. 'name' is UTF-8 (after EnsureU8Name), terminated in 'bufSize'.
+void MakeSafeName(char* name, int bufSize);
+
+// feature 327: 'target' (a folder, UTF-8, in a buffer of 'targetSize') + '\' + the listed 'name' made
+// safe once more (names are cleaned at listing and again at extraction, feature 087); FALSE when the
+// result does not fit (or no memory) - the caller reports the name as too long
+BOOL AppendSafeName(char* target, const char* name, int targetSize);
+
 // Helpers
 #define LOWDWORD(x) (DWORD)(x)
 #define HIDWORD(x) (DWORD)((x) >> 32)

@@ -113,34 +113,7 @@ inline bool SalSuspRockRidgeStart(const unsigned char* su, size_t len, bool susp
 // the prefix does not fit the buffer - never a cut name.
 inline bool SalSuspCleanRockRidgeName(char* name, size_t size)
 {
-    if (name == NULL || size == 0)
-        return false;
-    size_t len = strnlen(name, size);
-    if (len >= size)
-        return false; // not terminated inside the buffer
-    bool reserved = len > 0 && SalArcNameDetail::IsReservedDeviceName(name, (int)len);
-    size_t need = (reserved ? 1 : 0) + (len == 0 ? 1 : len);
-    if (need >= size)
-        return false;
-    if (len == 0)
-    {
-        name[0] = '_';
-        name[1] = 0;
-        return true;
-    }
-    for (size_t i = 0; i < len; i++)
-    {
-        unsigned char c = (unsigned char)name[i];
-        if (c < 0x20 || c == '\\' || c == '/' || c == ':' || c == '<' || c == '>' || c == '"' || c == '|' ||
-            c == '?' || c == '*')
-            name[i] = '_';
-    }
-    for (size_t i = len; i > 0 && (name[i - 1] == '.' || name[i - 1] == ' '); i--)
-        name[i - 1] = '_';
-    if (reserved)
-    {
-        memmove(name + 1, name, len + 1);
-        name[0] = '_';
-    }
-    return true;
+    // feature 327: the shared rule of salarcname.h (SalArcCleanItemName) - here a device name whose
+    // prefix does not fit is refused, the caller then lists the plain ISO 9660 name
+    return SalArcNameDetail::CleanOneName(name, size, false);
 }

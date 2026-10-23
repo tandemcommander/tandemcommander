@@ -346,6 +346,9 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         }
 
         FixIllegalFSChars(fileName);
+        // feature 327: and then the rule of every name of the image (':' '/' '<' '>' '"' '|', a
+        // trailing dot, a device name - HFS+ allows them all); listed and descended with
+        MakeSafeName(fileName, sizeof(fileName));
         memset(&fd, 0, sizeof(CFileData));
         // File Name
         fd.Name = SalamanderGeneral->DupStr(fileName);
@@ -513,7 +516,7 @@ int CHFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
             return UNPACK_ERROR; // this function reports errors by returning, not by throwing
         }
         lstrcpyn(name, path, U8_MAX_PATH);
-        if (!SalamanderGeneral->SalPathAppend(name, fileData->Name, U8_MAX_PATH))
+        if (!AppendSafeName(name, fileData->Name, U8_MAX_PATH)) // feature 327: made safe again
         {
             Error(IDS_ERR_TOO_LONG_NAME, FALSE);
             return UNPACK_ERROR;

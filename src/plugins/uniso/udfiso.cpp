@@ -102,6 +102,9 @@ BOOL CUDFISO::ListDirectory(char* path, int session, CSalamanderDirectoryAbstrac
             sprintf(partPath, "\\ISO (%s)", volId);
         else
             strcpy(partPath, "\\ISO partition");
+        // feature 327: the label is a folder name of the listing - "v\..\..\w" moved every file of
+        // the volume out of the target folder
+        MakeSafeName(partPath + 1, sizeof(partPath) - 1);
 
         strcat(path, partPath);
 
@@ -149,6 +152,7 @@ BOOL CUDFISO::ListDirectory(char* path, int session, CSalamanderDirectoryAbstrac
             sprintf(partPath, "\\UDF (%s)", volId);
         else
             strcpy(partPath, "\\UDF partition");
+        MakeSafeName(partPath + 1, sizeof(partPath) - 1); // feature 327: as the ISO label above
 
         strcat(path, partPath);
 
@@ -164,6 +168,8 @@ BOOL CUDFISO::ListDirectory(char* path, int session, CSalamanderDirectoryAbstrac
         if (HFS->GetRootName(rootName, SizeOf(rootName)))
         {
             sprintf(path, "\\HFS (%s)", rootName);
+            // feature 327: as the ISO label above ("HFS (...)" is never a device name: no growth)
+            MakeSafeName(path + 1, (int)strlen(path + 1) + 1);
         }
         else
         {

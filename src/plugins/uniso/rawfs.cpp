@@ -79,7 +79,7 @@ int CRawFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char*
             throw UNPACK_ERROR;
         }
         lstrcpyn(name, path, U8_MAX_PATH);
-        if (!SalamanderGeneral->SalPathAppend(name, fileData->Name, U8_MAX_PATH))
+        if (!AppendSafeName(name, fileData->Name, U8_MAX_PATH)) // feature 327: made safe again
         {
             Error(IDS_ERR_TOO_LONG_NAME);
             throw UNPACK_ERROR;
