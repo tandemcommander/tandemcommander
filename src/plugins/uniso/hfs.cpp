@@ -293,6 +293,9 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
 {
     CALL_STACK_MESSAGE5("CHFS::ListDirectory(%s, %i, %p, %p)", rootPath, session, dir, pluginData);
     int nRecords = pCatalog->GetNumRecords();
+    // feature 329: the catalog IDs (as stored) of the folders left out - their contents are left out with
+    // them (a record whose parent is not in pFolders is listed at the HFS+ root)
+    CSalLeftOutIds leftOutFolders;
 
     for (int i = 0; i < nRecords; i++)
     {
@@ -349,11 +352,23 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         // feature 327: and then the rule of every name of the image (':' '/' '<' '>' '"' '|', a
         // trailing dot, a device name - HFS+ allows them all); listed and descended with
         MakeSafeName(fileName, sizeof(fileName));
+        // feature 329: inside a left-out folder - left out with it (the folder is the one reported)
+        if (leftOutFolders.Size() != 0 && leftOutFolders.Has(pKey->parentID))
+        {
+            if (*rec.type == kHFSFolderRecord && !leftOutFolders.Add(rec.dir->folderID))
+            {
+                // out of memory: its contents could land at the root - the HFS+ listing ends
+                Image->ListingLeftOut.SetIncomplete();
+                return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
+            }
+            continue;
+        }
         memset(&fd, 0, sizeof(CFileData));
         // File Name
         fd.Name = SalamanderGeneral->DupStr(fileName);
         if (!fd.Name)
         {
+            Image->ListingLeftOut.SetIncomplete(); // feature 329: a whole unpack then fails
             return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
         }
         fd.NameLen = strlen(fd.Name);
@@ -368,6 +383,7 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         if (!filePos)
         {
             SalamanderGeneral->Free(fd.Name);
+            Image->ListingLeftOut.SetIncomplete();
             return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
         }
         filePos->Partition = 0; // Not initialized by ctor
@@ -399,6 +415,22 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         {
             ConvertHFSDate(fd.LastWrite, rec.dir->contentModDate ? rec.dir->contentModDate : rec.dir->createDate);
 
+            // feature 329: the panel listing's own rule first (sallistingname.h, CSalamanderDirectory::
+            // AddDir) - a refused folder is left out with its contents and named in the report
+            // (ListArchive, 328); it showed "too long path" and ended the HFS+ listing
+            if (!SalListingAcceptsDirU8(path, strlen(path), fd.NameLen))
+            {
+                Image->ListingLeftOut.Add(path, fileName);
+                SalamanderGeneral->Free(fd.Name);
+                delete filePos;
+                if (!leftOutFolders.Add(rec.dir->folderID))
+                {
+                    Image->ListingLeftOut.SetIncomplete();
+                    return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
+                }
+                continue;
+            }
+
             size_t strElements = strlen(path) + 1 + strlen(fileName) + 1;
             FolderInfo* fi = (FolderInfo*)malloc(sizeof(FolderInfo) + strElements - 1); // one character is already part of the FolderInfo structure
             if (fi)
@@ -417,6 +449,7 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
                         free(fi);
                         SalamanderGeneral->Free(fd.Name);
                         delete filePos;
+                        Image->ListingLeftOut.SetIncomplete();
                         return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
                     }
                     pFolders = tmp;
@@ -429,12 +462,20 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
                     pFolders[nFolders++] = fi;
                     continue;
                 }
-                // AddDir failed (too long path?) -> continue
+                // feature 329: refused although the rule took it (out of memory) - the listing is kept,
+                // only marked incomplete (a whole unpack fails), the folder left out with its contents
                 free(fi);
-                Error(IDS_ERR_TOO_LONG_PATH, FALSE);
+                SalamanderGeneral->Free(fd.Name);
+                delete filePos;
+                Image->ListingLeftOut.SetIncomplete();
+                Error(IDS_ERROR, FALSE);
+                if (!leftOutFolders.Add(rec.dir->folderID))
+                    return FALSE;
+                continue;
             }
             else
             {
+                Image->ListingLeftOut.SetIncomplete();
                 Error(IDS_INSUFFICIENT_MEMORY, FALSE);
             }
         }
@@ -456,10 +497,19 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
 
             if (!fd.IsLink)
                 fd.IsLink = SalamanderGeneral->IsFileLink(fd.Ext);
-            if (dir->AddFile(path, fd, pluginData))
-                continue;
-            // Failed -> fall through
-            Error(IDS_ERR_TOO_LONG_PATH, FALSE);
+            // feature 329: as a folder above - a refused file is left out alone and named in the report
+            if (!SalListingAcceptsFileU8(path, strlen(path), fd.Name, fd.NameLen))
+                Image->ListingLeftOut.Add(path, fileName);
+            else
+            {
+                if (dir->AddFile(path, fd, pluginData))
+                    continue;
+                Image->ListingLeftOut.SetIncomplete(); // refused although the rule took it (out of memory)
+                Error(IDS_ERROR, FALSE);
+            }
+            SalamanderGeneral->Free(fd.Name);
+            delete filePos;
+            continue;
         }
         SalamanderGeneral->Free(fd.Name);
         delete filePos;

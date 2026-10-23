@@ -34,13 +34,22 @@ BOOL CAudio::DumpInfo(FILE* outStream)
 BOOL CAudio::AddFileDir(const char* path, char* fileName,
                         CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
+    // feature 329: the panel listing's own rule first (sallistingname.h, CSalamanderDirectory::AddFile) -
+    // a refused track name is left out alone and named in the report (ListArchive, 328); it showed
+    // "Error" and cleared the listing (the tracks listed before it)
+    if (!SalListingAcceptsFileU8(path, path != NULL ? strlen(path) : 0, fileName, strlen(fileName)))
+    {
+        Image->ListingLeftOut.Add(path, fileName);
+        return TRUE;
+    }
+
     CFileData fd;
 
     fd.Name = SalamanderGeneral->DupStr(fileName);
     if (fd.Name == NULL)
     {
+        Image->ListingLeftOut.SetIncomplete(); // feature 329: marked incomplete, nothing cleared
         Error(IDS_INSUFFICIENT_MEMORY);
-        dir->Clear(pluginData);
         return FALSE;
     } // if
 
@@ -69,8 +78,10 @@ BOOL CAudio::AddFileDir(const char* path, char* fileName,
     fd.IsOffline = 0;
     if (dir && !dir->AddFile(path, fd, pluginData))
     {
+        // feature 329: refused although the rule took it (out of memory) - marked incomplete, nothing
+        // cleared
         free(fd.Name);
-        dir->Clear(pluginData);
+        Image->ListingLeftOut.SetIncomplete();
         return Error(IDS_ERROR);
     }
 

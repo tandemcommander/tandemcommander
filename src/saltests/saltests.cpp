@@ -20408,6 +20408,49 @@ static void TestIsoNameFit328()
     CHECK(inc.Incomplete && inc.Count == 0);
 }
 
+static void TestIsoLeftOut329()
+{
+    // the probe's trees: UDF / HFS+ under a file-system folder "\UDF (TC329)" (12 bytes) - the folder
+    // e<59 x> under a\b\c\d (256 bytes) is refused; Xbox with no such folder - e is taken (244 bytes),
+    // deep.txt below it (305 bytes) is refused
+    const std::string seg(60, 'x');
+    const std::string udf = "\\UDF (TC329)";
+    const std::string udfD = udf + "\\" + seg + "\\" + seg + "\\" + seg + "\\" + seg;
+    CHECK(udfD.size() == 256);
+    CHECK(!SalListingAcceptsDirU8(udfD.c_str(), udfD.size(), seg.size()));
+    const std::string udfC = udf + "\\" + seg + "\\" + seg + "\\" + seg;
+    CHECK(SalListingAcceptsDirU8(udfC.c_str(), udfC.size(), seg.size()));
+    const std::string xD = "\\" + seg + "\\" + seg + "\\" + seg + "\\" + seg;
+    CHECK(SalListingAcceptsDirU8(xD.c_str(), xD.size(), seg.size()));
+    const std::string xE = xD + "\\" + seg;
+    CHECK(!SalListingAcceptsFileU8(xE.c_str(), xE.size(), "deep.txt", 8));
+    // an audio track "02 " + a 253-byte label (256 bytes, 256 UTF-16 units) under the root "" is refused,
+    // "01 SHORT" is taken
+    const std::string track = "02 " + std::string(253, 'L');
+    CHECK(!SalListingAcceptsFileU8("", 0, track.c_str(), track.size()));
+    CHECK(SalListingAcceptsFileU8("", 0, "01 SHORT", 8));
+
+    // HFS+: the catalog IDs of left-out folders
+    CSalLeftOutIds ids;
+    CHECK(ids.Size() == 0 && !ids.Has(0) && !ids.Has(16));
+    CHECK(ids.Add(21) && ids.Add(17) && ids.Add(30));
+    CHECK(ids.Has(17) && ids.Has(21) && ids.Has(30));
+    CHECK(!ids.Has(16) && !ids.Has(18) && !ids.Has(31) && !ids.Has(2));
+    CHECK(ids.Add(21) && ids.Size() == 3); // a duplicate is kept once
+    CHECK(ids.Add(0xFFFFFFFFu) && ids.Has(0xFFFFFFFFu) && !ids.Has(0xFFFFFFFEu));
+    // a chain as the walk adds it: a left-out folder, then each folder whose parent is left out
+    CSalLeftOutIds chain;
+    CHECK(chain.Add(100));
+    unsigned int parent = 100;
+    for (unsigned int id = 1000; id > 900; id--) // IDs in any order
+    {
+        CHECK(chain.Has(parent));
+        CHECK(chain.Add(id));
+        parent = id;
+    }
+    CHECK(chain.Size() == 101 && chain.Has(901) && !chain.Has(900) && !chain.Has(101));
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -20570,6 +20613,7 @@ int main(int argc, char** argv)
     TestSusp326();
     TestArcItemName327();
     TestIsoNameFit328();
+    TestIsoLeftOut329();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

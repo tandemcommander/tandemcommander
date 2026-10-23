@@ -256,8 +256,16 @@ protected:
     BOOL ReadBlockPhys(Uint32 lbNumber, size_t blocks, unsigned char* data);
     BOOL ReadBlockLog(Uint32 lbNumber, size_t blocks, unsigned char* data);
 
-    BOOL AddFileDir(const char* path, char* fileName, BYTE fileChar, CAD* icb,
-                    CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
+    // feature 329: AddFileDir results - as CISO9660's (328): listed, left out (refused by the listing:
+    // noted on the image, the walk goes on), failed (the directory ends)
+    enum
+    {
+        ADD_FAILED = 0,
+        ADD_LISTED = 1,
+        ADD_LEFT_OUT = 2
+    };
+    int AddFileDir(const char* path, char* fileName, BYTE fileChar, CAD* icb,
+                   CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
 
     int FindPartition(int partnum, CUDF::CPartition* part);
 

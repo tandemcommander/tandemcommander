@@ -248,6 +248,7 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: an NRG audio track label of 257+ bytes overruns a stack buffer](items/iso-plug-in-an-nrg-audio-track-label-of-257-bytes-overruns-a/desc.md) | bug | 7 | archives | measure:329 | 2026-10-23 |
 
 ## Parked
 

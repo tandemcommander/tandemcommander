@@ -197,7 +197,8 @@ function Audio-Row([string]$Case, [string]$Nrg) {
             $msgs = Msgs (Serve $id 30 @(1, 6))
         }
         End-Row $Case $id $null $before; $id = 0
-        $has206 = ($openMsgs -match '\(206\)') -and ($openMsgs -match ('02 ' + ('L' * 253)))
+        # the box wraps the 253 letters - the window text joins its lines with a space
+        $has206 = ($openMsgs -match '\(206\)') -and ($openMsgs -match '02 ((?:L|\s)+)') -and (($Matches[1] -replace '\s', '').Length -eq 253)
         $errBox = ($openMsgs -cmatch '\] Error( \||$)')
         $listed = ($msgs -match 'Audio tracks cannot be extracted')
         $ok = $opened -and $has206 -and (-not $errBox) -and $listed

@@ -12,31 +12,31 @@ probe `probe/iso329_probe.ps1` (written and run before the fix: 0 / 7).
 
 ## Phase 2: Foundational
 
-- [ ] T002 Add `CSalLeftOutIds` (Add / Has of 32-bit catalog IDs, Add returns false on out of memory) to src/common/salisonamefit.h and update its header comment (feature 329)
-- [ ] T003 Add saltests checks for `CSalLeftOutIds` (empty set, added IDs found, others not, many IDs, duplicates) in src/saltests/saltests.cpp
+- [X] T002 Add `CSalLeftOutIds` (Add / Has of 32-bit catalog IDs, Add returns false on out of memory) to src/common/salisonamefit.h and update its header comment (feature 329)
+- [X] T003 Add saltests checks for `CSalLeftOutIds` (empty set, added IDs found, others not, many IDs, duplicates) in src/saltests/saltests.cpp
 
 ## Phase 3: User Story 1 + 2 - UDF / Xbox / HFS+ entries left out and reported; the unpack keeps the image (P1)
 
 **Goal**: a refused entry is left out alone and recorded on the image; the walk goes on; the report and the failing whole unpack follow from 328's record.
 **Independent Test**: probe rows U-COPY, X-COPY, H-COPY, U-UNP-DEL, X-UNP-DEL, H-UNP-DEL.
 
-- [ ] T004 [P] [US1] `CUDF::AddFileDir` returns ADD_FAILED / ADD_LISTED / ADD_LEFT_OUT (rule first via `SalListingAcceptsDirU8` / `SalListingAcceptsFileU8`, `Image->ListingLeftOut.Add`; out of memory and a core refusal after the rule mark the listing incomplete; no leaked name) and `ScanDir` skips a left-out entry, descending only listed folders, in src/plugins/uniso/udf.h and src/plugins/uniso/udf.cpp
-- [ ] T005 [P] [US1] The same for `CXDVDFS::AddFileDir` / `ScanDir` in src/plugins/uniso/xdvdfs.h and src/plugins/uniso/xdvdfs.cpp
-- [ ] T006 [P] [US1] `CHFS::ListDirectory`: record a refused folder / file and continue; skip records whose parent is a left-out folder (`CSalLeftOutIds`), adding skipped folders' IDs; out of memory marks the listing incomplete, in src/plugins/uniso/hfs.cpp
+- [X] T004 [P] [US1] `CUDF::AddFileDir` returns ADD_FAILED / ADD_LISTED / ADD_LEFT_OUT (rule first via `SalListingAcceptsDirU8` / `SalListingAcceptsFileU8`, `Image->ListingLeftOut.Add`; out of memory and a core refusal after the rule mark the listing incomplete; no leaked name) and `ScanDir` skips a left-out entry, descending only listed folders, in src/plugins/uniso/udf.h and src/plugins/uniso/udf.cpp
+- [X] T005 [P] [US1] The same for `CXDVDFS::AddFileDir` / `ScanDir` in src/plugins/uniso/xdvdfs.h and src/plugins/uniso/xdvdfs.cpp
+- [X] T006 [P] [US1] `CHFS::ListDirectory`: record a refused folder / file and continue; skip records whose parent is a left-out folder (`CSalLeftOutIds`), adding skipped folders' IDs; out of memory marks the listing incomplete, in src/plugins/uniso/hfs.cpp
 
 ## Phase 4: User Story 3 - audio track (P3)
 
 **Goal**: a refused track name is left out and recorded; the other tracks stay.
 **Independent Test**: probe row A-OPEN.
 
-- [ ] T007 [US3] `CAudio::AddFileDir`: record a refused name and return TRUE; never `Clear`; out of memory / a core refusal marks the listing incomplete, in src/plugins/uniso/audio.cpp
+- [X] T007 [US3] `CAudio::AddFileDir`: record a refused name and return TRUE; never `Clear`; out of memory / a core refusal marks the listing incomplete, in src/plugins/uniso/audio.cpp
 
 ## Phase 5: Polish & verification
 
-- [ ] T008 Build (`build.cmd`), `saltests`, encoding guard (`python tools/check_encoding.py --strict`); record in specs/329-uniso-other-readers-refused/fix-log.md
-- [ ] T009 Run the probe after the fix -> specs/329-uniso-other-readers-refused/probe/result_after.txt (7 / 7 PASS); a negative control (the probe on the build before the fix is result_before.txt: 0 / 7)
-- [ ] T010 Regression probes 328 / 327 / 322 on the fixed build -> specs/329-uniso-other-readers-refused/probe/regress_328.txt, regress_327.txt, regress_322.txt
-- [ ] T011 Inbox item for the audio track name overrun (`sprintf` into `char[MAX_PATH]` with an NRG CD-Text label of 257+ bytes, src/plugins/uniso/audio.cpp `CAudio::ListDirectory`) - `measure:329`
+- [X] T008 Build (`build.cmd`), `saltests`, encoding guard (`python tools/check_encoding.py --strict`); record in specs/329-uniso-other-readers-refused/fix-log.md
+- [X] T009 Run the probe after the fix -> specs/329-uniso-other-readers-refused/probe/result_after.txt (7 / 7 PASS); a negative control (the probe on the build before the fix is result_before.txt: 0 / 7)
+- [X] T010 Regression probes 328 / 327 / 322 on the fixed build -> specs/329-uniso-other-readers-refused/probe/regress_328.txt, regress_327.txt, regress_322.txt
+- [X] T011 Inbox item for the audio track name overrun (`sprintf` into `char[MAX_PATH]` with an NRG CD-Text label of 257+ bytes, src/plugins/uniso/audio.cpp `CAudio::ListDirectory`) - `measure:329`
 
 ## Dependencies
 

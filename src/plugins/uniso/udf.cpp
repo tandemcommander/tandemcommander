@@ -754,12 +754,25 @@ int CUDF::ReadAllocDesc(BYTE data[], CFileEntry* fe, BYTE* vat, DWORD* o)
     return len;
 }
 
-BOOL CUDF::AddFileDir(const char* path, char* fileName, BYTE fileChar, CAD* icb,
-                      CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
+int CUDF::AddFileDir(const char* path, char* fileName, BYTE fileChar, CAD* icb,
+                     CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
+    // feature 329: the panel listing's own rule first (sallistingname.h, CSalamanderDirectory::AddFile /
+    // AddDir) - a refused entry is left out alone and named in the report (ListArchive, 328); it showed
+    // "Error", and the walk dropped the rest of the folder and descended no later folder
+    size_t pathLen = path != NULL ? strlen(path) : 0;
+    size_t nameLen = strlen(fileName);
+    bool fits = (fileChar & UDF_DIRECTORY) ? SalListingAcceptsDirU8(path, pathLen, nameLen)
+                                           : SalListingAcceptsFileU8(path, pathLen, fileName, nameLen);
+    if (!fits)
+    {
+        Image->ListingLeftOut.Add(path, fileName);
+        return ADD_LEFT_OUT;
+    }
+
     CFileData fd;
     CISOImage::CFilePos* filePos = NULL;
-    BOOL ret = TRUE;
+    int ret = ADD_LISTED;
 
     memset(&fd, 0, sizeof(CFileData));
     try
@@ -767,8 +780,9 @@ BOOL CUDF::AddFileDir(const char* path, char* fileName, BYTE fileChar, CAD* icb,
         fd.Name = SalamanderGeneral->DupStr(fileName);
         if (fd.Name == NULL)
         {
+            Image->ListingLeftOut.SetIncomplete(); // feature 329: a whole unpack then fails
             Error(IDS_INSUFFICIENT_MEMORY);
-            throw FALSE;
+            throw (int)ADD_FAILED;
         } // if
 
         fd.NameLen = strlen(fd.Name);
@@ -781,8 +795,9 @@ BOOL CUDF::AddFileDir(const char* path, char* fileName, BYTE fileChar, CAD* icb,
         filePos = new CISOImage::CFilePos;
         if (filePos == NULL)
         {
+            Image->ListingLeftOut.SetIncomplete();
             Error(IDS_INSUFFICIENT_MEMORY);
-            throw FALSE;
+            throw (int)ADD_FAILED;
         }
 
         filePos->Type = FS_TYPE_UDF;
@@ -823,18 +838,18 @@ BOOL CUDF::AddFileDir(const char* path, char* fileName, BYTE fileChar, CAD* icb,
 
             if (dir && !dir->AddDir(path, fd, pluginData))
             {
+                // feature 329: refused although the rule took it (out of memory) - the listing is kept,
+                // only marked incomplete (a whole unpack fails), as CISO9660 (328)
+                Image->ListingLeftOut.SetIncomplete();
                 Error(IDS_ERROR);
-                throw FALSE;
+                throw (int)ADD_LEFT_OUT;
             }
         }
         else
         {
             CFileEntry fe;
             if (!MapICB(*icb, &fe))
-            {
-                SalamanderGeneral->Free(fd.Name);
-                throw FALSE;
-            }
+                throw (int)ADD_FAILED; // a read error: the directory ends, as before
 
             fd.Size.Value = fe.InformationLength;
             UDFTimeStampToFileTime(fe.mtime, &fd.LastWrite);
@@ -843,13 +858,16 @@ BOOL CUDF::AddFileDir(const char* path, char* fileName, BYTE fileChar, CAD* icb,
             fd.IsLink = SalamanderGeneral->IsFileLink(fd.Ext);
             if (dir && !dir->AddFile(path, fd, pluginData))
             {
+                Image->ListingLeftOut.SetIncomplete(); // feature 329: as for a folder above
                 Error(IDS_ERROR);
-                throw FALSE;
+                throw (int)ADD_LEFT_OUT;
             }
         }
     }
-    catch (BOOL e)
+    catch (int e)
     {
+        if (fd.Name != NULL)
+            SalamanderGeneral->Free(fd.Name); // feature 329: the listing did not take it (it leaked)
         delete filePos;
 
         ret = e;
@@ -955,10 +973,12 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
             if (!(fileChar & UDF_PARENT))
             {
                 MakeSafeName(fileName, sizeof(fileName)); // feature 327: listed and descended with
-                if (!AddFileDir(path, fileName, fileChar, &icb, dir, pluginData))
+                int added = AddFileDir(path, fileName, fileChar, &icb, dir, pluginData);
+                if (added == ADD_FAILED)
                     return ERR_TERMINATE;
 
-                if (fileChar & UDF_DIRECTORY)
+                // feature 329: a left-out entry is skipped alone - a left-out folder is not descended
+                if (added == ADD_LISTED && (fileChar & UDF_DIRECTORY))
                 {
                     char newPath[4 * MAX_PATH + 2]; // feature 222: path + a name of up to 3 * MAX_PATH bytes
                     ZeroMemory(newPath, sizeof(newPath));

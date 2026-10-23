@@ -1,0 +1,26 @@
+iso322_probe (feature 322) regress329
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 23:27; registry key existed True
+
+J-ASCII    RUN    PASS        extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+J-ASCII    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+J-CJK12    RUN    PASS        want 12 letters + .txt (40 UTF-8 bytes); extracted names: \u4E00\u4E07\u4E0E\u4E15\u4E1C\u4E23\u4E2A\u4E31\u4E38\u4E3F\u4E46\u4E4D.txt (UTF-16 lengths 16); content 'CJK12'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "\u4E00\u4E07\u4E0E\u4E15\u4E1C\u4E23\u4E2A\u4E31\u4E38\u4E3F\u4E46\u4E4D.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+J-CJK12    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+J-CJK40    RUN    PASS        want 40 letters + .txt (124 UTF-8 bytes); extracted names: \u4E00\u4E07\u4E0E\u4E15\u4E1C\u4E23\u4E2A\u4E31\u4E38\u4E3F\u4E46\u4E4D\u4E54\u4E5B\u4E62\u4E69\u4E70\u4E77\u4E7E\u4E85\u4E8C\u4E93\u4E9A\u4EA1\u4EA8\u4EAF\u4EB6\u4EBD\u4EC4\u4ECB\u4ED2\u4ED9\u4EE0\u4EE7\u4EEE\u4EF5\u4EFC\u4F03\u4F0A\u4F11.txt (UTF-16 lengths 44); content 'CJK40'; at the open: no window; F5: ...770 'Copy'] [Static id=209] Copy file "\u4E00\u4E07\u4E0E\u4E15\u4E1C\u4E23\u4E2A\u4E31\u4E38\u4E3F\u4E46\u4E4D\u4E54..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+J-CJK40    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+seeds: hfs.iso,hfsmany.iso,hyb.iso,many.iso,plain.iso,rr.iso,rrlong.iso; hfs.iso: partition at 122880, node size 4096, leaf records 8, leaf nodes 1; hfsmany.iso: partition at 532480, node size 4096, leaf records 2084, leaf nodes 103
+RR         RUN    PASS        extracted: top.txt; content of top.txt 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+RR         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PLAIN      RUN    PASS        extracted: TOP.TXT; content of TOP.TXT 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "TOP.TXT" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PLAIN      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RR-LONG    RUN    PASS        one file extracted with its content True; the Rock Ridge name used True; extracted name lengths: 200; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "zrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+RR-LONG    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+HFS        RUN    PASS        extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+HFS        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+HFS-MANY   RUN    PASS        partition at 532480, node size 4096, leaf records 2084, leaf nodes 103; extracted: zz.txt; content 'MANY'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "zz.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+HFS-MANY   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+HYB        RUN    PASS        location 'C:\Users\pavel\AppData\Local\Temp\tc322\seeds\hyb.iso'; at the open: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+HYB        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 4F221E76594DD9F25F9725F90B1075E459FFD134260483E49BE795C780FF51E7 / after 4F221E76594DD9F25F9725F90B1075E459FFD134260483E49BE795C780FF51E7
+
+Rows: PASS 18, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

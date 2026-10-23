@@ -37,11 +37,18 @@
 //     the volume never holds fewer entries than 326's whole-volume ISO 9660
 //     listing, and its shallow folders keep their Rock Ridge names.
 //
+// Feature 329: the plug-in's other readers (UDF, Xbox, HFS+, audio tracks)
+// leave out and record a refused entry the same way. HFS+ lists its catalog
+// record by record, a child under its parent's listed path - CSalLeftOutIds
+// keeps the catalog IDs of left-out folders, so their contents are skipped
+// rather than listed at the volume's root.
+//
 //*****************************************************************************
 
 #include <stddef.h>
 #include <string.h>
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -132,4 +139,32 @@ public:
             t += "\n...";
         return t;
     }
+};
+
+// feature 329: the catalog IDs of the folders a listing left out (HFS+: their contents are skipped)
+class CSalLeftOutIds
+{
+public:
+    // false = out of memory (the ID is not kept)
+    bool Add(unsigned int id)
+    {
+        try
+        {
+            std::vector<unsigned int>::iterator it = std::lower_bound(Ids.begin(), Ids.end(), id);
+            if (it == Ids.end() || *it != id)
+                Ids.insert(it, id);
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
+
+    bool Has(unsigned int id) const { return std::binary_search(Ids.begin(), Ids.end(), id); }
+
+    size_t Size() const { return Ids.size(); }
+
+private:
+    std::vector<unsigned int> Ids; // sorted, unique
 };

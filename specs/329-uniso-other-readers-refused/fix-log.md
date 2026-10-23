@@ -47,3 +47,46 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log %TEMP%\tc329_log_before.tx
   in spec.md; LOW U1 (T009's negative control is the before run, result_before.txt 0 / 7) accepted -
   the independent review builds its own negative control.
 - Run 2 (after the fix): 0 findings above LOW.
+
+## The change
+
+- `src/common/salisonamefit.h`: `CSalLeftOutIds` - the catalog IDs of left-out folders (sorted vector;
+  `Add` false on out of memory). saltests `TestIsoLeftOut329`: the probe trees' decisions (UDF / HFS+
+  folder part 256 bytes refused, Xbox `deep.txt` under 305 bytes refused, the audio name of 256 bytes
+  refused and `01 SHORT` taken) and the ID set (found / not found, duplicates, a 101-folder chain).
+- `udf.cpp` / `udf.h`, `xdvdfs.cpp` / `xdvdfs.h`: `AddFileDir` returns 328's `ADD_FAILED` /
+  `ADD_LISTED` / `ADD_LEFT_OUT`; the listing's rule is asked first (no allocation for a refused
+  entry - the old path leaked the name); out of memory and the core refusing after the rule mark
+  `ListingLeftOut` incomplete; `ScanDir` descends only a listed folder and goes on with the next
+  record. A UDF read error (`MapICB`) still ends the directory (Inbox item for read errors).
+- `hfs.cpp` `CHFS::ListDirectory`: a record whose parent is a left-out folder is skipped (a folder's
+  ID added); a refused folder is recorded, its ID added, the walk goes on; a refused file is
+  recorded; the core refusing after the rule: incomplete + "Error"; every out-of-memory exit marks
+  the listing incomplete. `IDS_ERR_TOO_LONG_PATH` is no longer shown (the string stays, R6).
+- `audio.cpp` `CAudio::AddFileDir`: a refused name is recorded, TRUE; never `Clear`.
+
+## Checks after the fix
+
+- `build.cmd` -> BUILD SUCCEEDED (C4267 warnings at `fd.NameLen = strlen(...)` are the readers' old
+  lines, the same as iso9660.cpp's).
+- `saltests.exe` -> `saltests: 28233 checks, 0 failed`.
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- Probe after (`probe/result_after.txt`): **RUN rows 7 / 7 PASS** (14 / 0 with the END rows), registry
+  restored and identical. The UDF / HFS+ report names `UDF (TC329)\a..\b..\c..\d..\e<59x>` /
+  `HFS (TC329)\...\e<59x>`, the Xbox one `a..\...\e<59x>\deep.txt`, the audio one `02 L...`; no
+  `deep.txt` anywhere in the HFS+ part (FR-006); all three unpacks keep the image; the audio Copy
+  answers "Audio tracks cannot be extracted" for `01 SHORT`. The ~135 Debug-heap "Detected memory
+  leaks!" boxes of the U / X rows are gone (the refused name is no longer allocated).
+- First after run: A-OPEN FAIL on the probe's own match - the box wraps the 253 letters and the
+  window-text helper joins the lines with a space; the match now ignores the whitespace (the before
+  run still fails A-OPEN: "Error", no "(206)", nothing listed).
+- Regression probes on the fixed build: `iso328_probe` 20 / 0 (`probe/regress_328.txt`),
+  `iso327_probe` 77 / 0 (`probe/regress_327.txt`), `iso322_probe` 18 / 0 (`probe/regress_322.txt`) -
+  every registry restored and identical.
+- Known, not this feature: "Cannot read sector #00000020" at the open of the HFS+ hybrid (Inbox item
+  `iso-plug-in-a-valid-xorriso-iso-hfs-hybrid-opens-with-cannot`).
+
+## New Inbox items
+
+- `iso-plug-in-an-nrg-audio-track-label-of-257-bytes-overruns-a` - `CAudio::ListDirectory` formats the
+  track name with `sprintf` into `char[MAX_PATH]` (research R5), not measured.

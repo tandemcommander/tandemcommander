@@ -78,20 +78,35 @@ BOOL CXDVDFS::Open(BOOL quiet)
     return ret;
 }
 
-BOOL CXDVDFS::AddFileDir(const char* path, char* fileName, CDirectoryEntry* de,
-                         CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
+int CXDVDFS::AddFileDir(const char* path, char* fileName, CDirectoryEntry* de,
+                        CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
+    // feature 329: the panel listing's own rule first (sallistingname.h, CSalamanderDirectory::AddFile /
+    // AddDir) - a refused entry is left out alone and named in the report (ListArchive, 328); it showed
+    // "Error", and the walk dropped the rest of the folder and descended no later folder
+    size_t pathLen = path != NULL ? strlen(path) : 0;
+    size_t nameLen = strlen(fileName);
+    bool fits = (de->Attr & XBOX_DIRECTORY) ? SalListingAcceptsDirU8(path, pathLen, nameLen)
+                                            : SalListingAcceptsFileU8(path, pathLen, fileName, nameLen);
+    if (!fits)
+    {
+        Image->ListingLeftOut.Add(path, fileName);
+        return ADD_LEFT_OUT;
+    }
+
     CFileData fd;
     CISOImage::CFilePos* filePos = NULL;
-    BOOL ret = TRUE;
+    int ret = ADD_LISTED;
 
+    fd.Name = NULL;
     try
     {
         fd.Name = SalamanderGeneral->DupStr(fileName);
         if (fd.Name == NULL)
         {
+            Image->ListingLeftOut.SetIncomplete(); // feature 329: a whole unpack then fails
             Error(IDS_INSUFFICIENT_MEMORY);
-            throw FALSE;
+            throw (int)ADD_FAILED;
         } // if
 
         fd.NameLen = strlen(fd.Name);
@@ -104,8 +119,9 @@ BOOL CXDVDFS::AddFileDir(const char* path, char* fileName, CDirectoryEntry* de,
         filePos = new CISOImage::CFilePos;
         if (filePos == NULL)
         {
+            Image->ListingLeftOut.SetIncomplete();
             Error(IDS_INSUFFICIENT_MEMORY);
-            throw FALSE;
+            throw (int)ADD_FAILED;
         }
 
         filePos->Extent = (DWORD)de->StartSector;
@@ -142,8 +158,11 @@ BOOL CXDVDFS::AddFileDir(const char* path, char* fileName, CDirectoryEntry* de,
 
             if (dir && !dir->AddDir(path, fd, pluginData))
             {
+                // feature 329: refused although the rule took it (out of memory) - the listing is kept,
+                // only marked incomplete (a whole unpack fails), as CISO9660 (328)
+                Image->ListingLeftOut.SetIncomplete();
                 Error(IDS_ERROR);
-                throw FALSE;
+                throw (int)ADD_LEFT_OUT;
             }
         }
         else
@@ -154,13 +173,16 @@ BOOL CXDVDFS::AddFileDir(const char* path, char* fileName, CDirectoryEntry* de,
             fd.IsLink = SalamanderGeneral->IsFileLink(fd.Ext);
             if (dir && !dir->AddFile(path, fd, pluginData))
             {
+                Image->ListingLeftOut.SetIncomplete(); // feature 329: as for a folder above
                 Error(IDS_ERROR);
-                throw FALSE;
+                throw (int)ADD_LEFT_OUT;
             }
         }
     }
-    catch (BOOL e)
+    catch (int e)
     {
+        if (fd.Name != NULL)
+            SalamanderGeneral->Free(fd.Name); // feature 329: the listing did not take it (it leaked)
         delete filePos;
 
         ret = e;
@@ -229,13 +251,15 @@ int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryA
         EnsureU8Name(fileName, sizeof(fileName));
         MakeSafeName(fileName, sizeof(fileName)); // feature 327: listed and descended with
 
-        if (!AddFileDir(path, fileName, &de, dir, pluginData))
+        int added = AddFileDir(path, fileName, &de, dir, pluginData);
+        if (added == ADD_FAILED)
         {
             delete[] data;
             return ERR_CONTINUE;
         }
 
-        if ((de.Attr & XBOX_DIRECTORY) && de.FileSize != 0 && de.StartSector != 0)
+        // feature 329: a left-out entry is skipped alone - a left-out folder is not descended
+        if (added == ADD_LISTED && (de.Attr & XBOX_DIRECTORY) && de.FileSize != 0 && de.StartSector != 0)
         {
             int pathLen = (int)strlen(path);
             strcat(path, "\\");
