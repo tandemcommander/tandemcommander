@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Pack with a relative archive name that starts with a space drops the space](items/pack-with-a-relative-archive-name-that-starts-with-a-space/desc.md) | bug | 4 | archives | 317 |
 
 ## Next
 
@@ -253,6 +252,7 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Pack creates an archive with a trailing dot or space Windows tools cannot open](items/pack-archive-name-trailing-dot-or-space/desc.md) | bug | 4 | archives | measure:317 | 2026-10-23 |
 
 ## Parked
 

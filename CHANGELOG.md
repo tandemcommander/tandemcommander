@@ -11,10 +11,15 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Pack dropped a leading space of the archive name - the items went into a differently named archive** (feature 317).
+  - **Before:** packing (Alt+F5) a file or folder whose name starts with a space (" report") offered the archive " report.zip", but OK packed into "report.zip" - another archive; when "report.zip" already existed, the "add or overwrite?" question was about it, and Add or Overwrite changed it. A typed archive name starting with a space lost the space the same way.
+  - **Now:** the archive name keeps its leading spaces: " report.zip" is created, or - when it exists - the question names it and Add or Overwrite work on it; an existing "report.zip" is not touched. A name made only of spaces and dots (" ..", " .") is refused with "The path specified is invalid." and the dialog opens again. Names without a leading space work as before.
+  - **Limitation:** an entry of spaces only gets the extension and keeps its spaces ("   .zip"). A name ending in a dot or a space is still created as typed (recorded for later).
+
 - **Unpack into a subfolder named after the archive dropped a leading space - the files went into a differently named folder** (feature 316).
   - **Before:** with "Use the archive name as a subfolder", an archive whose name starts with a space (" report.zip") was offered the subfolder " report", but OK unpacked into "report" - another folder, merged with it when it already existed (overwrite questions were still asked), even when " report" itself existed. A typed target starting with a space lost the space the same way.
   - **Now:** the target keeps its leading spaces: an existing folder of that name receives the files; a new one is refused with "Error Creating Directory" and the dialog opens again - as for the same folder given with its full path. Targets without a leading space work as before.
-  - **Limitation:** the program does not create a folder whose name starts with a space, so the offered subfolder of such an archive has to be edited (or the folder created first). The Pack dialog still drops a leading space of a typed archive name (recorded for later).
+  - **Limitation:** the program does not create a folder whose name starts with a space, so the offered subfolder of such an archive has to be edited (or the folder created first). The Pack dialog had the same defect - fixed by feature 317 above.
 
 - **Unpack offered the other panel's long folder path shortened - one Enter unpacked into another, newly created folder** (feature 315).
   - **Before:** when the other panel showed a folder whose path is longer than 259 bytes (about 260 characters, or 87 Chinese or Japanese letters), the Unpack dialog (Alt+F9) offered that path cut short - with Chinese or Japanese letters sometimes as unreadable text. The cut path was accepted, so with "Use the other panel for unpacking" a single Enter unpacked the files into a new folder named after the cut path, nothing asked. With "Use the archive name as a subfolder" a path that had no room for the subfolder was offered without it, and the files went straight into the other panel's folder. An empty target in such a long folder unpacked into a cut folder too.

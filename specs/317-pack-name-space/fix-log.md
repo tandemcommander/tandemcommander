@@ -120,4 +120,30 @@ kept the space: ctl-abs-space). No person step is owed: the change is verified o
 - Pack writes an archive name that ends with a dot or a space, or a reserved device name, as a
   literal file (` ..` was measured: the ZIP plug-in uses `\\?\`); `report.` or `CON.zip` typed in
   the Pack dialog - by analogy, not driven - would produce a file ordinary Windows tools cannot
-  open or delete. Recorded as an Inbox item (measure:317).
+  open or delete. Inbox item `pack-archive-name-trailing-dot-or-space` (measure:317).
+
+## Review
+
+One independent refute-first review (general-purpose agent): **no MUST**, one SHOULD, four NOTEs.
+
+- Re-ran the probe on the branch build: 28 / 0, registry identical (matches `result_after.txt`);
+  checked the negative control `result_before.txt` (17 / 11) and the intermediate 26 / 2 run that
+  shows the refusal is needed.
+- Own scratch probe outside the repository (fixture under `%TEMP%`, registry restored and
+  identical), 13 typed names the refusal does not cover: ` ..\x.zip` (also with an existing
+  `x.zip` in the parent, Add and Overwrite), ` .\x.zip` (also with an existing `src\x.zip`,
+  Overwrite), `  ..\x.zip`, ` .. \x.zip`, ` sub\x.zip`, a leading tab, ` ./ ..`, `plain/ ..`,
+  ` /..`, ` ../` - every one a packer error, nothing created, nothing changed, no existing archive
+  asked about or touched.
+- Read: one call site; `MAX_PATH` = `fileBuf`; a name that no longer fits gets `IDS_TOOLONGPATH`
+  (no cut); the rule reads UTF-8 bytes safely; external archivers get `"$(ArchiveFullName)"`
+  quoted; saltests 27,456 / 0, encoding guard 0, clang-format clean on the new lines.
+- SHOULD (fixed): the out-of-scope finding was announced in this log but not yet in the backlog -
+  added as `pack-archive-name-trailing-dot-or-space` (it was planned for closing; now done).
+- NOTEs, accepted: (1) a name starting with a tab is no longer trimmed - the ZIP plug-in refuses
+  it ("syntax is incorrect"), nothing written; the same as Unpack after 316. (2) ` ..\x.zip` used to
+  pack into the parent's `x.zip`; now the packer reports "path not found", nothing written - the
+  name shows a folder ` ..` that does not exist; safe, not refused by the core's own message (the
+  rule checks the last part only). (3) An entry of spaces only packs into `   .zip` (was `.zip`) -
+  chosen in the spec's Clarifications. (4) FEATURE-HISTORY / CHANGELOG / closing report - written
+  at closing.

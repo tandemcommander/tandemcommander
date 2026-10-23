@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4263,3 +4263,20 @@ a few early ones are out of sequence).
   `unpack316_probe.ps1` 6 FAIL / 12 -> 18 / 0 (negative control: the build of main); 315's probe
   22 / 0; saltests 27,440 / 0; one refute-first review (no MUST, no SHOULD; its scratch rows with
   dots and tabs all refused, nothing written).
+- 317-pack-name-space: the Pack dialog (Alt+F5) offered ` report.zip` for an item ` report`, but OK
+  packed into `report.zip` - another archive; an existing `report.zip` got the "add or overwrite?"
+  question and was changed by Add / Overwrite (a typed ` typed.zip` the same): `SalGetFullName`
+  drops the leading spaces of a relative name. Now `CFilesWindow::Pack` passes
+  `allowRelPathWithSpaces = TRUE` (as 316 for Unpack): ` report.zip` is created or, existing, asked
+  about and added to / overwritten; `report.zip` is untouched. Trap: kept as typed, ` ..` / ` .` are
+  not resolved to a folder - the ZIP plug-in opens archives through `\\?\` and created files
+  literally named ` ..` / ` .` (planning expected Win32 trimming; measured otherwise) - so a last
+  part of spaces and dots only is refused through the existing error path (`IDS_PATHISINVALID`,
+  `SalPackNameIsOnlyDotsAndSpaces`, `src/common/salpackname.h`, also for absolute names). Limits:
+  `   ` packs into `   .zip`; ` ..\x.zip` and a leading tab now fail in the packer (nothing written);
+  names ending in a dot / space or device names are still written literally (Inbox
+  `pack-archive-name-trailing-dot-or-space`). From backlog item
+  `pack-with-a-relative-archive-name-that-starts-with-a-space`. Probe `pack317_probe.ps1` 11 FAIL /
+  17 -> 28 / 0 (negative control: `main`'s Pack code); 316's probe 18 / 0, 241's 8 / 0; saltests
+  27,456 / 0; one refute-first review (no MUST; SHOULD - the Inbox item - fixed; 13 scratch names
+  with dots, tabs and slashes: nothing written).
