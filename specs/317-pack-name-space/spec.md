@@ -43,6 +43,7 @@ defaults "Use the other panel for packing" off and the "add to archive?" questio
 - Q: A relative archive name starting with a space - create the archive with the space, or refuse? → A: create it with the space, exactly as the entry shows; the same archive given as an absolute name is already created with the space, and creating a file (unlike a folder, feature 316) is not refused anywhere (autonomous run: item - "OK packs into the archive the entry shows (the leading space kept)")
 - Q: Only the offered name, or also a relative name the user typed? → A: every relative archive name of the Pack dialog - the program cannot tell an offered entry from a typed one, both show the space and both lost it (autonomous run: item - "The same applies to a typed relative name with a leading space")
 - Q: An entry of spaces only (the dialog appends the extension: `   .zip`) - what then? → A: the leading spaces are kept like any other relative name (`   .zip`); before, the spaces were dropped and the archive `.zip` was made - neither is what an empty-looking entry shows, but no rule refuses it today and the item names no such case; an empty entry stays refused ("empty name") (autonomous run: conservative - one rule for every relative name, no new refusal or string)
+- Q: A typed relative name of a space and dots (` ..`, ` .`) - which the system would resolve to the panel's folder itself, while before the fix `..` meant the parent folder - what must happen? → A: no archive is written under any other name or in any other folder, and no existing file or folder is changed, moved or deleted; a refusal or a failure message is acceptable (autonomous run: conservative - loses no data, refuses rather than guesses)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -97,6 +98,8 @@ before.
 - An empty entry stays refused ("empty name"), the dialog again, nothing created.
 - An entry of spaces only gets the extension from the dialog and keeps its spaces (`   .zip`);
   before it became `.zip` (see Clarifications).
+- A typed ` ..` or ` .`: nothing is written outside the panel's folder, no existing file or folder
+  changes; a refusal or a failure message is acceptable (see Clarifications).
 - A relative name starting with spaces and then `\` (`  \x.zip`) keeps its meaning (the root of the
   panel's drive) - unchanged.
 - A drive-letter name with leading spaces (`  C:\x.zip`) keeps today's trimming - unchanged.
@@ -116,7 +119,9 @@ before.
   the spaces.
 - **FR-003**: Absolute archive names, relative names without leading spaces, and an empty entry
   MUST behave as before.
-- **FR-004**: No new UI string; no change to the packers or the plug-in interface.
+- **FR-004**: A relative name of a space and dots (` ..`, ` .`) MUST NOT write an archive outside the
+  panel's folder or change, move or delete any existing file or folder.
+- **FR-005**: No new UI string; no change to the packers or the plug-in interface.
 
 ## Success Criteria *(mandatory)*
 
