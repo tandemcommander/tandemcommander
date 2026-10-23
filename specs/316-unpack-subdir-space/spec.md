@@ -3,7 +3,7 @@
 **Feature Branch**: `316-unpack-subdir-space`
 **Created**: 2026-10-23
 **Status**: Draft
-**Input**: Backlog item unpack-into-a-subfolder-named-after-an-archive-whose-name (backlog/items/unpack-into-a-subfolder-named-after-an-archive-whose-name/desc.md) - implement exactly what it describes.
+**Input**: Backlog item unpack-into-a-subfolder-named-after-an-archive-whose-name (backlog/items/unpack-into-a-subfolder-named-after-an-archive-whose-name/desc.md) - implement exactly what it describes. From backlog item unpack-into-a-subfolder-named-after-an-archive-whose-name.
 
 ## Background
 
