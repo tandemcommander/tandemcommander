@@ -92,3 +92,25 @@ the shared `}` after 307's function): `C2601 local function definitions are ille
   folder path - zip, 7zip, unrar, unole, uniso, unchm, uncab, unmime. Same set as the first run.
 - T010: `fileswn3.cpp` extension copies at HEAD: the two into `buf[SAL_FIND_NAME_U8]` bounded (carried);
   the others write into `fileName[SAL_MAX_PATH_UTF8 + 4]` / `nameU8[3 * MAX_PATH + 4]` (disk names) - safe.
+
+## Negative controls (T015; each source edit restored with `git checkout HEAD -- <file>`, rebuilt, re-measured)
+
+- (c) the GNU refusal with the listing rule in every pass (`header.NameFromGnu ? true : Listing`) -
+  the first run's review-2 defect -> `probe/result_negctl_pass.txt` (`-Only UNP-DEEP,UNP-DEEP-DEL`):
+  PASS 2, FAIL 2 - both Unpack rows write 2 of 34 files (the deep members lost); thanks to 308's
+  failure path the archive is kept even with Delete. The pass-dependent rule is what keeps them.
+- (a) `header.NameFromGnu = TRUE` removed (tar refusal off, core rule on) ->
+  `probe/result_negctl_tar.txt` (GNU-TOOLONG, GNU-DEEP, GNU-255DIR): PASS 3, FAIL 3 - no crash (END
+  PASS: the core refuses the 904-byte root name), but none of the three archives opens ("Internal
+  error: file data structure corrupted.").
+- (b) (a) + both `path == NULL` branches of `sallistingname.h` returning true -> `saltests: 27698
+  checks, 4 failed` and `probe/result_negctl_core.txt` GNU-TOOLONG: END FAIL "A problem has occurred"
+  (the crash returns).
+- Restored: `git status` clean of sources, no `NEGCTL` left; `build.cmd` BUILD SUCCEEDED; `saltests:
+  27698 checks, 0 failed`; encoding `TOTAL: 0 finding(s)`; `tar321_probe -Label after-restored` 20 / 0
+  (`probe/result_after.txt`), `unp321_probe -Label after-restored` 12 / 0 (`probe/unp_after.txt`).
+
+## Changelog (T016)
+
+Entry at the top of `[0.1.11] — unreleased` (feature 321); the 306 / 308 entry's limitation "still
+crashes the program on opening - recorded for later" now says "crashed ... - fixed by feature 321".

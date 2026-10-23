@@ -39,11 +39,11 @@ Independent test: unp321_probe rows UNP-DEEP, UNP-DEEP-DEL, UNP-TOOLONG-DEL, UNP
 
 ## Phase 7: Polish & verification
 
-- [ ] T012 `python tools/check_encoding.py --strict` -> TOTAL: 0
+- [X] T012 `python tools/check_encoding.py --strict` -> TOTAL: 0
 - [X] T013 `.\build.cmd` -> BUILD SUCCEEDED; saltests -> 0 failed
 - [X] T014 Probes after: tar321_probe.ps1 (probe/result_after.txt), unp321_probe.ps1 (probe/unp_after.txt); regressions pax306_probe.ps1 and unp308_probe.ps1 (probe/regress_306.txt, probe/regress_308.txt)
-- [ ] T015 Negative controls in a copy: (a) GNU flag not set; (b) + core NULL branch off; (c) the GNU refusal with the listing rule in every pass (`Listing` forced TRUE) -> the deep Unpack rows lose members (review-2 MUST reproduced)
-- [ ] T016 fix-log.md complete (before / after, negative controls); CHANGELOG entry under `[0.1.11] — unreleased`, the 306 entry's "still crashes" sentence pointed at 321
+- [X] T015 Negative controls in a copy: (a) GNU flag not set; (b) + core NULL branch off; (c) the GNU refusal with the listing rule in every pass (`Listing` forced TRUE) -> the deep Unpack rows lose members (review-2 MUST reproduced)
+- [X] T016 fix-log.md complete (before / after, negative controls); CHANGELOG entry under `[0.1.11] — unreleased`, the 306 entry's "still crashes" sentence pointed at 321
 
 ## Dependencies
 

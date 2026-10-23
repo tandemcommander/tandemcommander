@@ -1,0 +1,11 @@
+unp321_probe (feature 321) negctl-c-listing-rule-in-every-pass
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 09:44; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-DEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DEEP   RUN    FAIL        tgt: 2 of 34 files; missing 32: aaaaaaaa..[307 chars]../f01.txt, aaaaaaaa..[307 chars]../f02.txt, aaaaaaaa..[307 chars]../f03.txt, aaaaaaaa..[307 chars]../f04.txt; archive kept: True (want True); "(206)" shown: True; windows: ...cccccccccccccccccccc\ ddddddddddddddddddddddddddddd\eeeeeeeeeeeeeeeeeeeeeeeeeeeee\fffffffffffffffffffffffffffff\ ggggggggggggggggggggggggggggg\hhhhhhhhhhhhhhhhhhhhhhhhhhhhh\iiiiiiiiiiiiiiiiiiiiiiiiiiiii\jjjjjjjjjjjjjjjjjjjjjjjjjjjjj\ f01.txt | [Button id=1] OK
+UNP-DEEP-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DEEP-DEL RUN    FAIL        tgt: 2 of 34 files; missing 32: aaaaaaaa..[307 chars]../f01.txt, aaaaaaaa..[307 chars]../f02.txt, aaaaaaaa..[307 chars]../f03.txt, aaaaaaaa..[307 chars]../f04.txt; archive kept: True (want False); "(206)" shown: True; windows: ...cccccccccccccccccccc\ ddddddddddddddddddddddddddddd\eeeeeeeeeeeeeeeeeeeeeeeeeeeee\fffffffffffffffffffffffffffff\ ggggggggggggggggggggggggggggg\hhhhhhhhhhhhhhhhhhhhhhhhhhhhh\iiiiiiiiiiiiiiiiiiiiiiiiiiiii\jjjjjjjjjjjjjjjjjjjjjjjjjjjjj\ f01.txt | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF / after CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF
+
+Rows: PASS 2, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
