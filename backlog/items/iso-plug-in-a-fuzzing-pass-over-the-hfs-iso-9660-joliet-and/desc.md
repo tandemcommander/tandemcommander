@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a fuzzing pass over the HFS+, ISO 9660, Joliet and Rock Ridge readers
 type: tech-debt
-status: new
+status: open
 severity: 5
 area: other-plugins
 source: leftover:322
@@ -54,3 +54,4 @@ mutated images live); an autonomous run of feature 322 deliberately made no such
 
 - 2026-10-23 — created (source leftover:322)
 - 2026-10-23 — related item uniso-hfs-btree-trust-and-joliet-cut done in feature 322
+- 2026-10-23 — moved to Person steps position 8

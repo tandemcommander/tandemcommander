@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a valid xorriso ISO + HFS+ hybrid opens with Cannot read sector 00000020
 type: bug
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: measure:322
@@ -48,3 +48,4 @@ map's block 0. Found while making valid seed images for feature 322; not part of
 ## Log
 
 - 2026-10-23 — created (source measure:322)
+- 2026-10-23 — moved to Next position 63
