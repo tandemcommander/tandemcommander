@@ -1,6 +1,6 @@
-unp308_probe (feature 308) regress325-review2
+unp308_probe (feature 308) regress325-final
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 14:42; registry key existed True; ACP 1250; python Python 3.14.6
+Date    : 2026-10-23 16:07; registry key existed True; ACP 1250; python Python 3.14.6
 
 UNP-DEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 UNP-DEEP   RUN    PASS        tgt: 34 of 34 files; archive kept: True (want True); "(206)" shown: False; windows: no window

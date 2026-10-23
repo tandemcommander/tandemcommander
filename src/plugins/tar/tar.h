@@ -312,6 +312,7 @@ private:
     BOOL Listing; // feature 308: this pass builds the panel listing (its bounds apply only then)
     BOOL RefusedNameShown;
     BOOL LinkReportShown; // feature 309: a link member left out is reported once per operation
+    BOOL RepeatPass;      // feature 325: a further pass (ReopenStream) - "Unknown block signature" not again
     DWORD ListingPrefixLen; // feature 306: bytes the listing puts before every path (.deb: "data" + a separator)
 
     BOOL ListStream(CSalamanderDirectoryAbstract* dir);
@@ -323,9 +324,12 @@ private:
     void ReportRefusedName(const char* name); // the system's "(206)" text with the whole name, once
     // feature 309: a link member left out - the system's text for 'err' with "name -> link name", once
     void ReportLinkMember(const SCommonHeader& header, DWORD err);
-    // 'written' (optional): set to TRUE when a file was created and completed (not skipped, not simulated)
+    // 'written' (optional): set to TRUE when a file was created and completed (not skipped, not simulated);
+    // 'openedFile' (feature 325): the target already created by the caller (SafeFileCreate) - written and
+    // closed here (deleted on an error), no overwrite question
     int WriteOutData(const SCommonHeader& header, const char* targetPath,
-                     const char* nameInArchive, BOOL simulate, BOOL doProgress, BOOL* written = NULL);
+                     const char* nameInArchive, BOOL simulate, BOOL doProgress, BOOL* written = NULL,
+                     HANDLE openedFile = INVALID_HANDLE_VALUE);
     // feature 309: extracts a hard-link member as a copy of 'sourceName' (a file written by this
     // operation, relative to 'targetPath' like 'targetName'); TAR_OK (also after Skip; 'refused' set
     // when the source could not be read - reported) / TAR_ERROR (Cancel, a write error - shown)
@@ -345,9 +349,9 @@ private:
     };
     // opens the archive again at its start (the pass before is over); FALSE = an error was shown
     BOOL ReopenStream();
-    // the further passes of an extraction: write the deferred links from their data members (a pass more
-    // when the user skipped the first name of a group), report the rest ('refused'); TAR_OK / TAR_ERROR
-    // (Cancel, a write error - shown). The progress dialog stays open
+    // the further pass of an extraction: writes the deferred links from their data members (the overwrite
+    // question for each link of a group before the data is read), reports the rest ('refused'); TAR_OK /
+    // TAR_ERROR (Cancel, a write error - shown). The progress dialog stays open
     int ExtractDeferredLinks(const char* targetPath, const std::vector<SDeferredLink>& deferred, BOOL& refused);
     // one pass of UnpackOneFile; 'dataOrdinal' != 0: extract the dataOrdinal-th data member named
     // 'nameInArchive'. UNPACK_ONE_LINK (only with 'linkTarget'): 'nameInArchive' is a hard link whose

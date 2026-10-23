@@ -39,6 +39,12 @@
                        deleted; one question: a.txt is written twice by the operation (as on main)
       UNP-CASE-DEL     a.txt, sub/c.txt, sub/b.txt -> a.txt, then SUB/B.TXT 'NEW' (the same file on
                        Windows); mask "*b.txt" -> sub/b.txt = 'NEW', nothing asked, archive deleted
+    Rows of review 2, fourth launch:
+      COPY-BADSIG      a member of unknown type 'A' before a.txt, sub/c.txt, sub/b.txt -> a.txt; inside
+                       sub: Select All, Copy -> b.txt = 'A', c.txt; "Unknown block signature" once at
+                       opening and once during the copy (not again in the further pass)
+      COPY-SKIPALL     the COPY-INSIDE tar, tgt\b.txt and tgt\d.txt exist ('old'); Skip All at the one
+                       overwrite question -> both stay 'old', c.txt written, exactly one box
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -110,12 +116,13 @@ function Start-Arc([string]$Left, [string]$Tgt, [string]$Arc) {
 # $BoxName = exactly one box naming this member is required (else no box but the overwrite question
 # when $Exist); $Exist = file created in tgt before (name, content); $ExistSize = the size the overwrite
 # question must show (regex); $Answer = the button ids answered (OK / Yes, or Skip 173)
-function Copy-Row([string]$Case, [string]$How, [switch]$Sub, $Want, [string]$BoxName, $Exist, [string]$ExistSize = '131\D?072', [int[]]$Answer = @(1, 6)) {
+# $Exist may hold several (name, content) pairs; $OpenBox = the one box the opening must show (the listing)
+function Copy-Row([string]$Case, [string]$How, [switch]$Sub, $Want, [string]$BoxName, $Exist, [string]$ExistSize = '131\D?072', [int[]]$Answer = @(1, 6), [string]$OpenBox) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     $arc = $d + '\t.tar'; if ($Case.EndsWith('-GZ')) { $arc += '.gz' }
     $tgt = $d + '\tgt'
-    try { NewDir $d; NewDir $tgt; Make-Fixture $Case $arc; if ($Exist) { WriteFile ($tgt + '\' + $Exist[0]) $Exist[1] } }
+    try { NewDir $d; NewDir $tgt; Make-Fixture $Case $arc; if ($Exist) { for ($i = 0; $i -lt $Exist.Count; $i += 2) { WriteFile ($tgt + '\' + $Exist[$i]) $Exist[$i + 1] } } }
     catch { Row $Case 'RUN' 'NOT DRIVEN' ('fixture: ' + $_.Exception.Message); return }
     $id = 0; $before = Reports
     try {
@@ -130,11 +137,12 @@ function Copy-Row([string]$Case, [string]$How, [switch]$Sub, $Want, [string]$Box
         End-Row $Case $id $null $before; $id = 0
         $c = Check-Tgt $tgt $Want
         $boxes = @($r.Messages | Where-Object { $_ -notmatch "^\[#32770 'Copy'\]" })
-        $ok = $c[0] -and ($openMsgs -eq 'no window')
+        if ($OpenBox) { $ok = $c[0] -and $openMsgs.Contains($OpenBox) -and -not $openMsgs.Contains(' || ') }
+        else { $ok = $c[0] -and ($openMsgs -eq 'no window') }
         if ($BoxName) { $ok = $ok -and ($boxes.Count -eq 1) -and $boxes[0].Contains($BoxName) }
         elseif ($Exist) { $ok = $ok -and ($boxes.Count -eq 1) -and $boxes[0].Contains("'Confirm File Overwrite'") -and ($boxes[0] -match $ExistSize) }
         else { $ok = $ok -and ($boxes.Count -eq 0) }
-        Row $Case 'RUN' (V $ok) ('{0}; boxes besides the Copy dialog: {1}; windows: {2}' -f $c[1], $boxes.Count, (Tail $msgs 300))
+        Row $Case 'RUN' (V $ok) ('{0}; at open: {1}; boxes besides the Copy dialog: {2}; windows: {3}' -f $c[1], (Tail $openMsgs 120), $boxes.Count, (Tail $msgs 300))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before } }
@@ -234,6 +242,8 @@ try {
     Copy-Row 'COPY-UPD' 'all' -Sub ([ordered]@{ 'b.txt' = 'NEWER'; 'c.txt' = 'C' })
     Unpack-Row 'UNP-RELINK-DEL' 'a.txt;*b.txt' ([ordered]@{ 'a.txt' = 'Z'; 'sub/b.txt' = 'Z' }) -ArcGone -Questions 1
     Unpack-Row 'UNP-CASE-DEL' '*b.txt' ([ordered]@{ 'sub/b.txt' = 'NEW' }) -ArcGone
+    Copy-Row 'COPY-BADSIG' 'all' -Sub ([ordered]@{ 'b.txt' = 'A'; 'c.txt' = 'C' }) -BoxName 'Unknown block signature' -OpenBox 'Unknown block signature'
+    Copy-Row 'COPY-SKIPALL' 'all' -Sub ([ordered]@{ 'b.txt' = 'old'; 'c.txt' = 'C'; 'd.txt' = 'old' }) -Exist @('b.txt', 'old', 'd.txt', 'old') -ExistSize ', \d' -Answer @(1, 174)
     Copy-Row 'COPY-SKIP' 'all' -Sub ([ordered]@{ 'b.txt' = 'old'; 'c.txt' = 'C'; 'd.txt' = 'A' }) -Exist @('b.txt', 'old') -ExistSize ', \d' -Answer @(1, 173)
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

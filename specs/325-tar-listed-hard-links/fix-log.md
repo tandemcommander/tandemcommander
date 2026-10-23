@@ -186,3 +186,36 @@ row COPY-EXIST; no activity at 15:35 / 15:46, and none of the three review-2 age
 restored at 15:47 from `%TEMP%\tc325_backup.reg`, hash D36F5B06... identical; its fixture removed.
 Next attempt, a different method: a review without GUI probes (the GUI evidence is recorded), from
 the code, saltests and a console harness of the header rules.
+
+### Review 2, fourth launch (no GUI probes) - no MUST, two SHOULD, five NOTE
+
+Code reading and hand traces against Python `tarfile` (`_find_link_target`: latest earlier member,
+chains recurse); the recorded GUI results read instead of new probes. Settled: every route where a
+deferred link is not reproduced fails the operation (archive kept); results equal tar's for `tar -u`
+duplicates, links to deferred links, superseded links, X-RELINK2, X-CASE; ordinals agree between the
+passes (`IsTarDataMember` depends only on fixed header fields with `Listing == FALSE`; global PAX
+cleared at every probe read); the reopen keeps name / offset / size (.deb sub-archives, gzip, bzip2,
+rpm); `Silent` carries into the further pass; names stay whole UTF-8; memory failures caught.
+- SHOULD S1 (fixed): "Unknown block signature - skipping." was shown again by every further pass
+  (E-BADSIG2: an unknown member BEFORE the data). Now `RepeatPass` (set by `ReopenStream`) keeps the
+  first pass's box only; the first pass unchanged. Probe row COPY-BADSIG: after - one box at opening,
+  one during the copy; negative control (57e82b1c code) - two during the copy (`result_negctl_review2b.txt`).
+- SHOULD S2 (fixed): Skip / Skip All at a group's first link cost one more archive pass per skipped
+  link (K links = K decompressions). Now the overwrite question is asked for each waiting link in turn
+  BEFORE the data is read (`SafeFileCreate` in `ExtractDeferredLinks`; `WriteOutData` takes the opened
+  file - new optional `openedFile`), so one pass serves the group; the multi-round loop is gone. Probe
+  row COPY-SKIPALL (Skip All with two existing names): both kept, c.txt written, one box - the same
+  result on the old code (the probe cannot count passes); the one-pass rule is in the code.
+- NOTE 1 (fixed): `ReopenStream`'s box title `LoadStr` -> `LoadStrU8` (UTF-8 sink).
+- NOTE 2 (accepted, limit): a link to a data member refused ONLY by the listing's depth bound
+  (308 / 321) is listed with size 0, while a Copy writes it.
+- NOTE 3 (accepted, limit, pre-existing pattern): with duplicate names in the listing (`tar -u`
+  links listed twice), F3 on any entry of the name shows the first member's data; Copy gives the last
+  (duplicate data members always behaved so - the "separate identically named files" TODO).
+- NOTE 4: the N-DEV Inbox item.
+- NOTE 5 (accepted): the resolver's out-of-memory path has no saltests check; Cancel inside the further
+  pass's data copy is not driven (Cancel at its overwrite question is - E-CANCEL1 / 2 keep the archive).
+
+After: build BUILD SUCCEEDED; saltests 27884 / 0; `probe/result_after_review2b.txt` PASS 32 / FAIL 0.
+- Final regression on the closing build: pax306 30 / 0, unp308 12 / 0, link309 16 / 0, cpio310 52 / 0,
+  tar321 20 / 0, unp321 12 / 0.

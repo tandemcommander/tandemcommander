@@ -1,0 +1,13 @@
+link325_probe (feature 325) negctl-review2-fourth-57e82b1c
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 16:03; registry key existed True; ACP 1250; python Python 3.14.6
+
+COPY-BADSIG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-BADSIG RUN    FAIL        tgt: 2 of 2 files (b.txt, c.txt); at open: [#32770 'TAR Plugin Error'] [Static id=2477] Unknown block signature - skipping. | [Button id=1] OK; boxes besides the Copy dialog: 2; windows: ...9] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'TAR Plugin Error'] [Static id=2477] Unknown block signature - skipping. | [Button id=1] OK || [#32770 'TAR Plugin Error'] [Static id=2477] Unknown block signature - skipping. | [Button id=1] OK
+COPY-SKIPALL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-SKIPALL RUN    PASS        tgt: 3 of 3 files (b.txt, c.txt, d.txt); at open: no window; boxes besides the Copy dialog: 1; windows: ...#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 3, 23.10.2026, 16:03:45, A | [Static id=1151] With file: | [Static id=184] 1, 09.09.2001, 3:46:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+COPY-SKIP  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-SKIP  RUN    PASS        tgt: 3 of 3 files (b.txt, c.txt, d.txt); at open: no window; boxes besides the Copy dialog: 1; windows: ...#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 3, 23.10.2026, 16:03:57, A | [Static id=1151] With file: | [Static id=184] 1, 09.09.2001, 3:46:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+Registry: restored; identical=True; SHA-256 before D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39 / after D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39
+
+Rows: PASS 5, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

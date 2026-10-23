@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [tar-copy-of-listed-files-leaves-hard-links-out]
+related: []
 depends-on: []
 reason: -
 ---
@@ -39,3 +39,4 @@ Pre-existing in every version; found while reviewing feature 325. A whole Unpack
 ## Log
 
 - 2026-10-23 — created (source review:325)
+- 2026-10-23 — related item tar-copy-of-listed-files-leaves-hard-links-out done in feature 325

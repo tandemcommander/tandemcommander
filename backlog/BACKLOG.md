@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Copying the files of a tar folder leaves hard-linked names out silently](items/tar-copy-of-listed-files-leaves-hard-links-out/desc.md) | bug | 5 | archives | 325 |
 
 ## Next
 

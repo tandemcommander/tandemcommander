@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4463,3 +4463,35 @@ a few early ones are out of sequence).
   `undelete-skips-its-same-partition-warning-when-the-target`. saltests `TestSameVolume324` (55
   checks run; 27848 / 0): negative controls - the core's answer alone 6 failed, a link-itself read
   2 failed; one refute-first review (no MUST; SHOULD taken: the cross-volume row).
+- 325-tar-listed-hard-links: copying the files shown in a folder of a TAR archive (Select All + Copy
+  inside it) left out every hard-linked second name without a word - link members were never listed,
+  so no panel operation asked for them (309 handled only links that were asked for) - now a hard link
+  (type '1', not refused, not a folder) is listed as a file with the size of the data member it stands
+  for, and an extraction asked for one whose target it neither wrote nor was asked for DEFERS it: after
+  the pass the archive is opened again (`ReopenStream`: same file / offset / size - gzip, bzip2, .deb
+  sub-archives) and one further pass writes the data under the first link the user lets be written
+  (the overwrite question asked for each link of a group before the data is read), the others copied
+  by 309's identity-safe `WriteOutLinkCopy`; F3 / UnpackOneFile resolves the link and re-reads for that
+  member. Links resolve as tar extracts them (`CSalTarLinkResolver`, `saltarlink.h`, O(1) per member):
+  the LATEST earlier definition of the name (an archive updated by `tar -u` / `tar -r` stores it twice),
+  a link redefines its own name, other members clear it, the further pass picks that occurrence
+  (ordinal); a deferred target wins over data written earlier under the name (`SalTarLinkDecideAsked`);
+  a later asked member of a deferred link's name - also one differing only in case
+  (`SalNameOrderCompareCI`) - supersedes it. A link with no earlier data member is reported (309's
+  "(2) name -> link") and fails the operation, so Delete archive keeps it. Traps: review 1 MUST - the
+  first rule took the FIRST member of a name: on a real `tar -u` archive Unpack with a mask + Delete
+  archive wrote stale data and deleted the archive (also quadratic chains, Skip dropping the other
+  names); review 2 (three agents stopped mid-probe, each leaving the registry changed - restored from
+  their backups, hashes identical; a fourth reviewed without GUI probes) - a name redefined as a link
+  after its data was written, a case twin not superseding, the "Unknown block signature" box repeated
+  per pass, one pass per skipped link; trap 123 three times (a here-document made NUL bytes of `'\0'`
+  and tabs of probe paths; `sed -i` dropped CRLF). Limits: symbolic links stay unlisted; FIFO /
+  device members still skipped silently (Inbox `tar-unpack-skips-fifo-and-device-members-without-a-word`);
+  a link to a member refused only by the listing's depth bound is listed with size 0; with a name listed
+  twice F3 shows the first member's data; a name the operation writes twice asks the overwrite question
+  (as on main). From backlog item `tar-copy-of-listed-files-leaves-hard-links-out`. Probe
+  `link325_probe.ps1` 11 / 7 -> 32 / 0 (negative controls: second pass + one-file re-read off 12 / 6;
+  pre-review-1 code fails UNP-UPD-DEL / COPY-UPD / COPY-SKIP; pre-review-2 code fails UNP-RELINK-DEL /
+  UNP-CASE-DEL and COPY-BADSIG); 306 30 / 0, 308 12 / 0, 309 16 / 0, 310 52 / 0, 321 20 / 0 + 12 / 0
+  unchanged; saltests 27,884 / 0; refute-first reviews: review 1 (one MUST + three SHOULD, fixed), review 2
+  (partial results: two MUST-level defects fixed; final report no MUST, two SHOULD fixed, five NOTEs).

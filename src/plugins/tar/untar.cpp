@@ -256,6 +256,7 @@ CArchive::CArchive(const char* fileName, CSalamanderForOperationsAbstract* salam
     Listing = FALSE;
     RefusedNameShown = FALSE;
     LinkReportShown = FALSE;
+    RepeatPass = FALSE;
     ListingPrefixLen = 0;
     SalamanderIf = salamander;
     InputOffset = offset;
@@ -305,13 +306,14 @@ BOOL CArchive::ReopenStream()
     if (!stream->IsOk())
     {
         SalamanderGeneral->ShowMessageBox(LoadErr(stream->GetErrorCode(), stream->GetLastErr()),
-                                          LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
+                                          LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
         delete stream;
         return FALSE;
     }
     delete Stream;
     Stream = stream;
     Offset.Set(0, 0);
+    RepeatPass = TRUE; // what the first pass reported is not reported again
     return TRUE;
 }
 
@@ -979,7 +981,8 @@ void CArchive::MakeFileInfo(const SCommonHeader& header, char* arcfiledata, char
 }
 
 int CArchive::WriteOutData(const SCommonHeader& header, const char* targetPath,
-                           const char* targetName, BOOL simulate, BOOL doProgress, BOOL* written)
+                           const char* targetName, BOOL simulate, BOOL doProgress, BOOL* written,
+                           HANDLE openedFile)
 {
     SLOW_CALL_STACK_MESSAGE5("CArchive::WriteOutData( , %s, %s, %d, %d)",
                              targetPath, targetName, simulate, doProgress);
@@ -997,6 +1000,8 @@ int CArchive::WriteOutData(const SCommonHeader& header, const char* targetPath,
         {
             SalamanderGeneral->ShowMessageBox(LoadStr(IDS_ERR_MEMORY), LoadStr(IDS_GZERR_TITLE),
                                               MSGBOX_ERROR);
+            if (openedFile != INVALID_HANDLE_VALUE)
+                CloseHandle(openedFile);
             return TAR_ERROR;
         }
         strcpy(extractedName, targetPath);
@@ -1009,11 +1014,18 @@ int CArchive::WriteOutData(const SCommonHeader& header, const char* targetPath,
         char* arcfilename = AllocArcFileName(header, arcfilenameSize);
         if (arcfilename == NULL)
         {
+            if (openedFile != INVALID_HANDLE_VALUE)
+                CloseHandle(openedFile);
             free(extractedName);
             return TAR_ERROR;
         }
         MakeFileInfo(header, arcfiledata, arcfilename, arcfilenameSize);
-        if (!simulate)
+        if (!simulate && openedFile != INVALID_HANDLE_VALUE)
+        {
+            file = openedFile; // feature 325: the caller asked the overwrite question already
+            toSkip = FALSE;
+        }
+        else if (!simulate)
         {
             file = SalamanderSafeFile->SafeFileCreate(extractedName, GENERIC_WRITE, 0, FILE_ATTRIBUTE_NORMAL,
                                                       header.IsDir, SalamanderGeneral->GetMainWindowHWND(),
@@ -1500,7 +1512,7 @@ int CArchive::ExtractDeferredLinks(const char* targetPath, const std::vector<SDe
 
     // the links waiting for one data member (the Ordinal-th data member named DataName), in archive order
     typedef std::map<std::pair<std::string, unsigned>, std::vector<size_t>> CLinkGroups;
-    CLinkGroups groups, next;
+    CLinkGroups groups;
     std::vector<BOOL> handled;
     try
     {
@@ -1519,11 +1531,9 @@ int CArchive::ExtractDeferredLinks(const char* targetPath, const std::vector<SDe
         return TAR_ERROR;
     }
 
-    // one pass over the archive per round: each group's data written under its first waiting link, the
-    // other links of the group copied from that file (identity-safe, feature 309); when the user skipped
-    // that link, the group waits for the next round with its next link (the data is read once a pass).
-    // A group whose data member a pass does not meet is dropped - its links are reported below
-    while (!groups.empty())
+    // one more pass over the archive: each group's data written under one of its links, the others copied
+    // from that file; a group whose data member the pass does not meet is reported below
+    if (!groups.empty())
     {
         if (!ReopenStream())
             return TAR_ERROR;
@@ -1577,46 +1587,83 @@ int CArchive::ExtractDeferredLinks(const char* targetPath, const std::vector<SDe
             int ret;
             if (!group.empty())
             {
-                // the data under the first waiting link's name - the header names the link meanwhile
-                // (the overwrite question, the progress)
-                const SDeferredLink& first = deferred[group[0]];
+                // review 2 (S2): the overwrite question for each waiting link in turn BEFORE the data is
+                // read, so one pass serves the group whatever the user skips - the data goes under the
+                // first link the user lets be written, the later links are copies of that file
+                // (identity-safe, feature 309); a skipped link is the user's choice, as for any member
+                size_t writtenAt = group.size();
+                HANDLE opened = INVALID_HANDLE_VALUE;
                 char* dataName = header.Name;
-                header.Name = const_cast<char*>(first.Name.c_str());
+                for (size_t k = 0; k < group.size() && writtenAt == group.size(); k++)
+                {
+                    const SDeferredLink& d = deferred[group[k]];
+                    header.Name = const_cast<char*>(d.Name.c_str()); // the question names the link
+                    char* extractedName = AllocExtractedName(targetPath, d.Target.c_str());
+                    int arcfilenameSize = 0;
+                    char* arcfilename = AllocArcFileName(header, arcfilenameSize);
+                    if (extractedName == NULL || arcfilename == NULL)
+                    {
+                        header.Name = dataName;
+                        free(extractedName);
+                        free(arcfilename);
+                        if (extractedName == NULL)
+                            SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_ERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                              MSGBOX_ERROR);
+                        return TAR_ERROR;
+                    }
+                    char arcfiledata[500];
+                    MakeFileInfo(header, arcfiledata, arcfilename, arcfilenameSize);
+                    BOOL toSkip = TRUE;
+                    HANDLE file = SalamanderSafeFile->SafeFileCreate(extractedName, GENERIC_WRITE, 0, FILE_ATTRIBUTE_NORMAL,
+                                                                     FALSE, SalamanderGeneral->GetMainWindowHWND(),
+                                                                     arcfilename, arcfiledata, &Silent, TRUE, &toSkip,
+                                                                     NULL, 0, NULL, NULL);
+                    free(arcfilename);
+                    free(extractedName);
+                    handled[group[k]] = TRUE; // written below, or skipped by the user
+                    if (file != INVALID_HANDLE_VALUE)
+                    {
+                        opened = file;
+                        writtenAt = k;
+                    }
+                    else if (!toSkip)
+                    {
+                        header.Name = dataName;
+                        return TAR_ERROR; // Cancel or an error the user was already shown
+                    }
+                    else
+                    {
+                        char progresstxt[1000];
+                        _snprintf_s(progresstxt, _TRUNCATE, "%s%s", LoadStrU8(IDS_SKIPPROGRESS_TEXT), d.Name.c_str());
+                        SplU8TrimTornTail(progresstxt);
+                        SalamanderIf->ProgressDialogAddText(progresstxt, TRUE);
+                    }
+                }
                 BOOL written = FALSE;
-                ret = WriteOutData(header, targetPath, first.Target.c_str(), FALSE, TRUE, &written);
+                if (opened != INVALID_HANDLE_VALUE) // the data into that file (closed, or deleted on an error)
+                    ret = WriteOutData(header, targetPath, deferred[group[writtenAt]].Target.c_str(), FALSE, TRUE,
+                                       &written, opened);
+                else // every link of the group skipped: only read past the data
+                    ret = WriteOutData(header, targetPath, deferred[group[0]].Target.c_str(), TRUE, TRUE);
                 header.Name = dataName;
                 if (ret != TAR_OK && ret != TAR_EOF)
                     return TAR_ERROR;
-                handled[group[0]] = TRUE; // written, or skipped by the user
                 if (written)
                 {
-                    for (size_t k = 1; k < group.size(); k++)
+                    const SDeferredLink& source = deferred[group[writtenAt]];
+                    for (size_t k = writtenAt + 1; k < group.size(); k++)
                     {
                         const SDeferredLink& d = deferred[group[k]];
                         SCommonHeader h;
                         if (!MakeDeferredLinkHeader(h, d.Name, d.LinkName, &header))
                             return TAR_ERROR;
                         BOOL linkWritten, linkRefused;
-                        if (WriteOutLinkCopy(h, targetPath, d.Target.c_str(), first.Target.c_str(), &linkWritten,
+                        if (WriteOutLinkCopy(h, targetPath, d.Target.c_str(), source.Target.c_str(), &linkWritten,
                                              &linkRefused) != TAR_OK)
                             return TAR_ERROR;
                         if (linkRefused)
                             refused = TRUE;
                         handled[group[k]] = TRUE;
-                    }
-                }
-                else if (group.size() > 1)
-                {
-                    try
-                    {
-                        group.erase(group.begin());
-                        next[std::make_pair(first.DataName, first.Ordinal)].swap(group);
-                    }
-                    catch (...)
-                    {
-                        SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
-                                                          MSGBOX_ERROR);
-                        return TAR_ERROR;
                     }
                 }
             }
@@ -1632,8 +1679,6 @@ int CArchive::ExtractDeferredLinks(const char* targetPath, const std::vector<SDe
             if (ReadArchiveHeader(header, FALSE) != TAR_OK)
                 return TAR_ERROR;
         }
-        groups.swap(next); // what this pass did not meet is dropped (reported below)
-        next.clear();
     }
 
     // links no data member was met for (no such member, an archive changed meanwhile): reported once, the
@@ -2857,9 +2902,12 @@ int CArchive::ReadTarHeader(const unsigned char* buffer, SCommonHeader& header)
             header.Ignored = TRUE;
             break;
         default:
-            // error
-            SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_BADSIG), LoadStr(IDS_TARERR_TITLE),
-                                              MSGBOX_ERROR);
+            // error (feature 325: shown by the first pass only - a further pass meets the member again)
+            if (!RepeatPass)
+            {
+                SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_BADSIG), LoadStr(IDS_TARERR_TITLE),
+                                                  MSGBOX_ERROR);
+            }
             header.Ignored = TRUE;
             break;
         }

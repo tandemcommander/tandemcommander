@@ -35,6 +35,21 @@ def make(fill, fmt=tarfile.PAX_FORMAT):
 def main():
     row, out = sys.argv[1], sys.argv[2]
     base = row[:-3] if row.endswith('-GZ') else row
+    if base.startswith('COPY-BADSIG'):
+        def fill(tf):
+            # review 2 (S1): a member of a type the plug-in does not know ('A', a Solaris ACL) BEFORE the
+            # data a deferred link stands for - the further pass meets it again
+            ti = tarfile.TarInfo('acl')
+            ti.type = b'A'
+            ti.mtime = 1000000000
+            tf.addfile(ti)
+            add(tf, 'a.txt', b'A')
+            add(tf, 'sub/c.txt', b'C')
+            link(tf, 'sub/b.txt', 'a.txt')
+        raw = make(fill, tarfile.GNU_FORMAT)
+        with open(out, 'wb') as f:
+            f.write(raw)
+        return
     if base.startswith('UNP-RELINK'):
         def fill(tf):
             # review 2: a.txt written, then redefined as a link to z.txt (tar -u after relinking), then
