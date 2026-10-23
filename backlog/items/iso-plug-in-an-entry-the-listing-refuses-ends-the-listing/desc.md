@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: M
 feature: -
-related: [iso-plug-in-joliet-and-iso-9660-names-are-not-made-safe]
+related: []
 depends-on: []
 reason: -
 ---
@@ -57,3 +57,4 @@ than whole ISO 9660 names is a trade-off; not decided here.
 
 - 2026-10-23 — created (source review:326)
 - 2026-10-23 — moved to Next position 1
+- 2026-10-23 — related item iso-plug-in-joliet-and-iso-9660-names-are-not-made-safe done in feature 327

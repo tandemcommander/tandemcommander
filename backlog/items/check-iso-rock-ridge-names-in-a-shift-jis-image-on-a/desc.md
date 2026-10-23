@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-joliet-and-iso-9660-names-are-not-made-safe]
+related: []
 depends-on: []
 reason: -
 ---
@@ -55,3 +55,4 @@ names of a Shift-JIS image are listed and extracted with their own letters; a na
 
 - 2026-10-23 — created (source leftover:326)
 - 2026-10-23 — moved to Person steps position 23
+- 2026-10-23 — related item iso-plug-in-joliet-and-iso-9660-names-are-not-made-safe done in feature 327

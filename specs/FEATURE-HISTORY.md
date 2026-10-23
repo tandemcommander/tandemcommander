@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4521,3 +4521,30 @@ a few early ones are out of sequence).
   18 / 0; saltests 27,937 / 0 (mutants of each rule fail); refute-first reviews: review 1 (one MUST,
   fixed; N2 led to DEEP), review 2 (partial results: the case twins, fixed; final report no MUST, one
   SHOULD fixed, three NOTEs).
+- 327-uniso-safe-names: the ISO plug-in took the names a disc image stores as they were - also from
+  Joliet, plain ISO 9660, UDF, HFS+ and Xbox directories and the volume label folders of hybrids
+  (`ISO (...)`, `UDF (...)`, `HFS (...)`): `12:30.txt` became a file `12` with the data in an NTFS
+  stream, `con...` a device name, `x.` a file with its dot, a `/` or `..\` name was lost with "Error
+  Creating File", and a label `v\..\..\w` made the whole volume be written next to the target folder -
+  now every such name is made safe by feature 087's rule for one name (`SalArcCleanItemName`,
+  `src/common/salarcname.h` N3 - the rule of 326's `SalSuspCleanRockRidgeName`, which now shares it)
+  before it is listed and before it joins the descent path (`iso9660.cpp` `MakeListedName` / Joliet
+  folders, `udf.cpp` `ScanDir`, `hfs.cpp` after `FixIllegalFSChars`, `xdvdfs.cpp` `ScanDir`,
+  `udfiso.cpp` labels), and again where each reader joins the file name to the target
+  (`AppendSafeName`, five `UnpackFile`s); a device name whose `_` prefix does not fit gets `_` as its
+  first letter (never cut). Traps: review 1's partial work - an image without version numbers
+  (`mkisofs -N`, xorriso `omit_version`) stores `README.`, whose separator dot the rule turned into
+  `README_`: `SalIsoRemoveVersion` (salsusp.h) now drops the version and one separator dot first (also
+  `A.B.;1` -> `A.B`; a Joliet `x.` and `x` now both list as `x`); IMAPI2 refuses such names - every probe
+  image is crafted (byte patches of placeholders of the same length, a hand-built Xbox image, HFS+
+  keeps Linux names, `12:30` stored as `12/30`); the probe must answer Skip in "Error Creating File" or
+  most names are never tried; the second cleaning at extraction masks a missing listing-site cleaning
+  for all but `\` names (review 2's negative control); two review launches ended with their sessions,
+  one leaving a registry backup to restore. Limits: folder names are cleaned at listing only;
+  `a:b` / `a_b` collide (overwrite question); the HFS label still overwrites a session prefix
+  (pre-existing); the HFS+ skip leak and the hybrid's "Cannot read sector #00000020" stay (Inbox). From
+  backlog item `iso-plug-in-joliet-and-iso-9660-names-are-not-made-safe`. Probe `iso327_probe` 19 / 39
+  -> 77 / 0 (sets JOLIET, UDF, ULABEL, XBOX, PLAIN, NOVER, HFS, VOL, HLABEL; label sites removed ->
+  68 / 9); 326's probe 28 / 0, 322's 18 / 0; saltests 27,937 -> 27,986 / 0 (mutants of each part fail);
+  refute-first reviews: review 1 (partial results: the version-less separator, fixed), review 2 (no
+  MUST, one SHOULD - label coverage - fixed, five NOTEs).
