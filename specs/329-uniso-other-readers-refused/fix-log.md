@@ -90,3 +90,35 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log %TEMP%\tc329_log_before.tx
 
 - `iso-plug-in-an-nrg-audio-track-label-of-257-bytes-overruns-a` - `CAudio::ListDirectory` formats the
   track name with `sprintf` into `char[MAX_PATH]` (research R5), not measured.
+
+## Review
+
+### Review 1 (independent refute-first agent, on 2abc8895) - no MUST
+
+Its runs: the feature's probe 14 / 0; a negative control (only `uniso.spl` rebuilt from HEAD~1) 0 / 7
+RUN rows (the image deleted in all three unpacks); a mutation with the HFS+ skip of a left-out
+folder's contents switched off - H-COPY / H-UNP-DEL FAIL (`deep.txt` at the HFS+ root); a deeper tree
+(`e/f/g.txt`, `e/f/h/hh.txt`) passes; saltests 28233 / 0. Callers enumerated (`AddFileDir` of the
+three readers, `ListImage` / `ListArchive`, `ListingLeftOut` read only in uniso.cpp); the readers'
+rule matches the core's `AddFile` / `AddDir`; no double free; paths bounded; reports never cut.
+
+- SHOULD 1 - SC-003 claimed more than saltests check: the HFS+ "skip under a left-out folder, keep a
+  skipped folder's ID" decision was inline in hfs.cpp. **Fixed**: `CSalLeftOutIds::Under` in
+  `salisonamefit.h` (results `SAL_ISO_UNDER_LISTED / SKIPPED / NO_MEMORY`), hfs.cpp calls it;
+  saltests walk a simulated catalog of the probe's tree + `e/f/g.txt`, `e/f/h/hh.txt` (listed /
+  reported / skipped names). Negative control: `Under` without keeping a folder's ID -> saltests 2
+  failed (listed and skipped lists); restored -> 28266 / 0.
+- SHOULD 2 - the probe tested one level below the left-out HFS+ folder. **Fixed**: `mkimg329.sh`
+  adds `e<59x>/f/g.txt` and `e<59x>/f/h/hh.txt` (UDF and HFS+ seeds); the exact-3-files check guards
+  them. `probe/result_after_review1.txt`: 14 / 0.
+- NOTE 3 - HFS+ catalog order: a folder whose ID is lower than its parent's lists its contents at the
+  root (old code; also defeats FR-006 for such a folder) -> Inbox
+  `iso-plug-in-an-hfs-folder-whose-id-is-lower-than-its-parent` (review:329).
+- NOTE 4 - UDF `MapICB` failures, HFS+ records of other types and feature 322's skips do not mark the
+  listing incomplete -> Inbox `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let` (review:329;
+  related to the ISO 9660 read-error item).
+- NOTE 5 - audio.cpp freed a `DupStr` name with `free()` in the function this feature changed ->
+  **fixed** (`SalamanderGeneral->Free`).
+
+After the fixes: `build.cmd` BUILD SUCCEEDED; saltests 28266 checks, 0 failed; encoding guard
+TOTAL: 0; probe 14 / 0 (`probe/result_after_review1.txt`). No MUST finding, so no second review round.

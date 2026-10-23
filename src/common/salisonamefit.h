@@ -141,6 +141,11 @@ public:
     }
 };
 
+// CSalLeftOutIds::Under results
+#define SAL_ISO_UNDER_LISTED 0
+#define SAL_ISO_UNDER_SKIPPED 1
+#define SAL_ISO_UNDER_NO_MEMORY 2
+
 // feature 329: the catalog IDs of the folders a listing left out (HFS+: their contents are skipped)
 class CSalLeftOutIds
 {
@@ -164,6 +169,20 @@ public:
     bool Has(unsigned int id) const { return std::binary_search(Ids.begin(), Ids.end(), id); }
 
     size_t Size() const { return Ids.size(); }
+
+    // a catalog record under 'parentId' (a folder: its own ID 'folderId'), met after its parent's record:
+    // SAL_ISO_UNDER_LISTED = not inside a left-out folder (the listing decides); SAL_ISO_UNDER_SKIPPED =
+    // left out with its parent, not reported (a folder's ID is kept, so its contents follow);
+    // SAL_ISO_UNDER_NO_MEMORY = inside, but a folder's ID could not be kept (its contents would land at
+    // the volume's root - the caller ends the listing)
+    int Under(unsigned int parentId, bool isFolder, unsigned int folderId)
+    {
+        if (Ids.empty() || !Has(parentId))
+            return SAL_ISO_UNDER_LISTED;
+        if (isFolder && !Add(folderId))
+            return SAL_ISO_UNDER_NO_MEMORY;
+        return SAL_ISO_UNDER_SKIPPED;
+    }
 
 private:
     std::vector<unsigned int> Ids; // sorted, unique

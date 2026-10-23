@@ -3,7 +3,8 @@
 # under the UDF and HFS+ file systems. genisoimage and xorriso are fetched without root (apt-get
 # download + dpkg -x) once, into ~/tc-genisoimage and ~/tc-xorriso (as features 322 / 326 / 328).
 # $1 = the output folder (a /mnt/... path inside the probe's fixture)
-# The tree: a<59 x>/b<59 x>/c<59 x>/d<59 x>/e<59 x>/deep.txt, a<59 x>/side.txt, top.txt, zlast/z.txt.
+# The tree: a<59 x>/b<59 x>/c<59 x>/d<59 x>/e<59 x>/deep.txt (+ e<59 x>/f/g.txt, e<59 x>/f/h/hh.txt, review 1),
+#           a<59 x>/side.txt, top.txt, zlast/z.txt.
 # Writes: udeep.iso (genisoimage -udf: ISO 9660 level 1 + UDF; the UDF folder "UDF (TC329)" refuses
 #         e<59 x> - its folder part is 256 bytes),
 #         hdeep.iso (xorriso -hfsplus on, no Rock Ridge / Joliet: ISO 9660 + HFS+; the HFS+ folder
@@ -36,6 +37,10 @@ seg="$(printf 'x%.0s' $(seq 1 59))"
 p="$src/a$seg/b$seg/c$seg/d$seg/e$seg"
 mkdir -p "$p"
 printf 'DEEP' > "$p/deep.txt"
+# review 1: two levels below e - the contents of a left-out folder's subfolders are skipped too
+mkdir -p "$p/f/h"
+printf 'G' > "$p/f/g.txt"
+printf 'H' > "$p/f/h/hh.txt"
 printf 'SIDE' > "$src/a$seg/side.txt"
 printf 'TOP' > "$src/top.txt"
 mkdir -p "$src/zlast"

@@ -7,7 +7,8 @@
 
 .DESCRIPTION
     Seed images, all of 328's deep tree a<59 x>/b<59 x>/c<59 x>/d<59 x>/e<59 x>/deep.txt,
-    a<59 x>/side.txt, top.txt, zlast/z.txt (zlast after the deep folder in every directory):
+    a<59 x>/side.txt, top.txt, zlast/z.txt (zlast after the deep folder in every directory); the UDF / HFS+
+    seeds also hold e<59 x>/f/g.txt and e<59 x>/f/h/hh.txt (review 1: two levels below a left-out folder):
       udeep.iso  genisoimage -udf (mkimg329.sh, WSL Ubuntu): ISO 9660 level 1 + UDF; the listing's
                  folder "UDF (TC329)" refuses e<59 x> (its folder part is 256 bytes)
       hdeep.iso  xorriso -hfsplus on, no Rock Ridge / Joliet (mkimg329.sh): ISO 9660 + HFS+; the folder

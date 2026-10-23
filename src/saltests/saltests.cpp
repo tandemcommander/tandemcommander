@@ -20449,6 +20449,51 @@ static void TestIsoLeftOut329()
         parent = id;
     }
     CHECK(chain.Size() == 101 && chain.Has(901) && !chain.Has(900) && !chain.Has(101));
+
+    // review 1: CHFS::ListDirectory's walk over a catalog in its order (by parent ID) - the probe's tree
+    // with e/f/g.txt and e/f/h/hh.txt; the listing refuses e: e is reported, everything below it skipped
+    struct Rec
+    {
+        unsigned int Parent;
+        bool Folder;
+        unsigned int Id;
+        const char* Name;
+        bool Refused;
+    };
+    const Rec cat[] = {
+        {2, true, 16, "a", false}, {2, false, 0, "top.txt", false}, {2, true, 23, "zlast", false},
+        {16, true, 17, "b", false}, {16, false, 0, "side.txt", false}, {17, true, 18, "c", false},
+        {18, true, 19, "d", false}, {19, true, 20, "e", true}, {20, false, 0, "deep.txt", false},
+        {20, true, 21, "f", false}, {21, false, 0, "g.txt", false}, {21, true, 22, "h", false},
+        {22, false, 0, "hh.txt", false}, {23, false, 0, "z.txt", false}};
+    CSalLeftOutIds walk;
+    std::string listed, reported, skipped;
+    for (const Rec& r : cat)
+    {
+        int under = walk.Under(r.Parent, r.Folder, r.Id);
+        CHECK(under != SAL_ISO_UNDER_NO_MEMORY);
+        if (under == SAL_ISO_UNDER_SKIPPED)
+        {
+            skipped += std::string(r.Name) + " ";
+            continue;
+        }
+        if (r.Refused)
+        {
+            reported += std::string(r.Name) + " ";
+            if (r.Folder)
+                CHECK(walk.Add(r.Id));
+            continue;
+        }
+        listed += std::string(r.Name) + " ";
+    }
+    CHECK(listed == "a top.txt zlast b side.txt c d z.txt ");
+    CHECK(reported == "e ");
+    CHECK(skipped == "deep.txt f g.txt h hh.txt ");
+    // nothing left out: every record is listed
+    CSalLeftOutIds none;
+    for (const Rec& r : cat)
+        CHECK(none.Under(r.Parent, r.Folder, r.Id) == SAL_ISO_UNDER_LISTED);
+    CHECK(none.Size() == 0);
 }
 
 int main(int argc, char** argv)

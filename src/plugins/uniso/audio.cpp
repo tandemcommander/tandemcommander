@@ -80,7 +80,7 @@ BOOL CAudio::AddFileDir(const char* path, char* fileName,
     {
         // feature 329: refused although the rule took it (out of memory) - marked incomplete, nothing
         // cleared
-        free(fd.Name);
+        SalamanderGeneral->Free(fd.Name); // review 1 of 329: DupStr's memory (it was free())
         Image->ListingLeftOut.SetIncomplete();
         return Error(IDS_ERROR);
     }

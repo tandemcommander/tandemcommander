@@ -353,16 +353,16 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         // trailing dot, a device name - HFS+ allows them all); listed and descended with
         MakeSafeName(fileName, sizeof(fileName));
         // feature 329: inside a left-out folder - left out with it (the folder is the one reported)
-        if (leftOutFolders.Size() != 0 && leftOutFolders.Has(pKey->parentID))
+        bool isFolder = *rec.type == kHFSFolderRecord;
+        int under = leftOutFolders.Under(pKey->parentID, isFolder, isFolder ? rec.dir->folderID : 0);
+        if (under == SAL_ISO_UNDER_NO_MEMORY)
         {
-            if (*rec.type == kHFSFolderRecord && !leftOutFolders.Add(rec.dir->folderID))
-            {
-                // out of memory: its contents could land at the root - the HFS+ listing ends
-                Image->ListingLeftOut.SetIncomplete();
-                return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
-            }
-            continue;
+            // its contents could land at the root - the HFS+ listing ends
+            Image->ListingLeftOut.SetIncomplete();
+            return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
         }
+        if (under == SAL_ISO_UNDER_SKIPPED)
+            continue;
         memset(&fd, 0, sizeof(CFileData));
         // File Name
         fd.Name = SalamanderGeneral->DupStr(fileName);

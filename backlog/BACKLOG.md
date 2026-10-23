@@ -248,7 +248,9 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: an HFS+ folder whose ID is lower than its parent lists its contents at the root](items/iso-plug-in-an-hfs-folder-whose-id-is-lower-than-its-parent/desc.md) | bug | 5 | archives | review:329 | 2026-10-23 |
 | [ISO plug-in: an NRG audio track label of 257+ bytes overruns a stack buffer](items/iso-plug-in-an-nrg-audio-track-label-of-257-bytes-overruns-a/desc.md) | bug | 7 | archives | measure:329 | 2026-10-23 |
+| [ISO plug-in: UDF and HFS+ entries skipped as damaged let Unpack delete the image](items/iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let/desc.md) | bug | 7 | archives | review:329 | 2026-10-23 |
 
 ## Parked
 
