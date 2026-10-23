@@ -19,18 +19,23 @@ question, Overwrite's aside, the packer, the refresh) uses it. No folder is crea
 create rule is involved; the program and the ZIP plug-in already write ` abs.zip` for an absolute
 name (control row of the measurement).
 
+A name whose last part is only spaces and dots (` ..`, ` .`) is refused after `SalGetFullName`
+through the existing error path (`IDS_PATHISINVALID`) - research R4: kept as typed, the ZIP plug-in
+would create a file literally named ` ..`. The pure rule lives in `src/common/salpackname.h`
+(`SalPackNameIsOnlyDotsAndSpaces`) with saltests checks.
+
 ## Technical Context
 
 **Language/Version**: C++20 (`/std:c++latest`), MSVC v143
 **Primary Dependencies**: WinAPI only
 **Storage**: N/A (no settings change)
 **Testing**: hidden-desktop GUI probe `specs/317-pack-name-space/probe/pack317_probe.ps1` (316's
-driver, 098's library); 316's and 241's probes as regressions; `saltests` run (no new pure rule)
+driver, 098's library); 316's and 241's probes as regressions; `saltests` (`TestPackName317`)
 **Target Platform**: Windows 11 x64
 **Project Type**: desktop application (two-panel file manager)
 **Performance Goals**: N/A
 **Constraints**: no new UI string (the `.slt` refresh is not done by a run); no plug-in ABI change
-**Scale/Scope**: one call site, one argument
+**Scale/Scope**: one call site (one argument + one refusal), one header-only rule
 
 ## Constitution Check
 
@@ -64,7 +69,11 @@ specs/317-pack-name-space/
 ### Source Code (repository root)
 
 ```text
-src/fileswn7.cpp     CFilesWindow::Pack - the SalGetFullName call after CPackDialog
+src/fileswn7.cpp                  CFilesWindow::Pack - the SalGetFullName call after CPackDialog,
+                                  the refusal of a dots-and-spaces name
+src/common/salpackname.h          SalPackNameIsOnlyDotsAndSpaces (header-only pure rule)
+src/saltests/saltests.cpp         TestPackName317
+src/vcxproj/saltests/saltests.vcxproj   the header listed
 ```
 
 No other source file changes. `SalGetFullName` itself is not changed (its callers rely on the

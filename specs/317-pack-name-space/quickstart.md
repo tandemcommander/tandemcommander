@@ -10,7 +10,7 @@
    Expected: every row PASS - the leading-space rows write ` report.zip`, ` notes.zip`,
    `  two.zip`, ` typed.zip`; `report.zip` next to ` report` unchanged and not asked about; the
    controls (`plain.zip`, the absolute ` abs.zip`, the empty entry refused) as before; ` ..` /
-   ` .` write nothing and change nothing. Before the fix (build of d526127f) the leading-space
+   ` .` refused ("The path specified is invalid."), nothing written. Before the fix (build of d526127f) the leading-space
    rows FAIL.
 3. Regressions: 316's probe (`specs/316-unpack-subdir-space/probe/unpack316_probe.ps1`) and 241's
    probe (`specs/241-pack-long-nested-folder/probe/pack241_probe.ps1`) PASS.

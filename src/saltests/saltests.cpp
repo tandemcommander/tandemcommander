@@ -98,6 +98,7 @@
 #include "saltarlink.h"       // feature 309
 #include "salcpiolink.h"      // feature 310
 #include "salunpackdefault.h" // feature 315
+#include "salpackname.h"      // feature 317
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -18832,6 +18833,30 @@ static void TestUnpackDefault315()
     CHECK(!SalUnpackDefaultAddSubdir(buf, 0, "a", 1) && strcmp(buf, "C:\\t") == 0);
 }
 
+// feature 317: a Pack archive name whose last part is only spaces and dots is refused (salpackname.h)
+static void TestPackName317()
+{
+    // only spaces and dots in the last part: refused
+    CHECK(SalPackNameIsOnlyDotsAndSpaces("C:\\t\\ .."));
+    CHECK(SalPackNameIsOnlyDotsAndSpaces("C:\\t\\ ."));
+    CHECK(SalPackNameIsOnlyDotsAndSpaces("C:\\t\\  ...  "));
+    CHECK(SalPackNameIsOnlyDotsAndSpaces("C:\\t\\   "));
+    CHECK(SalPackNameIsOnlyDotsAndSpaces("\\\\server\\share\\d\\ .."));
+    CHECK(SalPackNameIsOnlyDotsAndSpaces(" .."));
+    // a name with any other character - the leading space kept by 317 - is a name
+    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\ report.zip"));
+    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\   .zip"));
+    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\ ..a"));
+    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\.cvspass"));
+    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\ .\\a.zip"));            // only the last part counts
+    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\ \xE4\xB8\x80.zip")); // a CJK name (UTF-8)
+    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\\t.."));              // a tab is not a space
+    // no last part, NULL: not refused by this rule
+    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\"));
+    CHECK(!SalPackNameIsOnlyDotsAndSpaces(""));
+    CHECK(!SalPackNameIsOnlyDotsAndSpaces(NULL));
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -18982,6 +19007,7 @@ int main(int argc, char** argv)
     TestTarLink309();
     TestCpioLink310();
     TestUnpackDefault315();
+    TestPackName317();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

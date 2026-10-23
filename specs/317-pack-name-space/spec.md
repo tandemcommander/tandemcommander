@@ -98,8 +98,8 @@ before.
 - An empty entry stays refused ("empty name"), the dialog again, nothing created.
 - An entry of spaces only gets the extension from the dialog and keeps its spaces (`   .zip`);
   before it became `.zip` (see Clarifications).
-- A typed ` ..` or ` .`: nothing is written outside the panel's folder, no existing file or folder
-  changes; a refusal or a failure message is acceptable (see Clarifications).
+- A typed ` ..` or ` .`: refused ("The path specified is invalid."), nothing written, nothing
+  changed (see Clarifications, FR-004).
 - A relative name starting with spaces and then `\` (`  \x.zip`) keeps its meaning (the root of the
   panel's drive) - unchanged.
 - A drive-letter name with leading spaces (`  C:\x.zip`) keeps today's trimming - unchanged.
@@ -119,8 +119,10 @@ before.
   the spaces.
 - **FR-003**: Absolute archive names, relative names without leading spaces, and an empty entry
   MUST behave as before.
-- **FR-004**: A relative name of a space and dots (` ..`, ` .`) MUST NOT write an archive outside the
-  panel's folder or change, move or delete any existing file or folder.
+- **FR-004**: An archive name whose last part is only spaces and dots (` ..`, ` .`) MUST be refused
+  with the existing "The path specified is invalid." message and the dialog shown again; no archive
+  is written and no existing file or folder is changed, moved or deleted. (Measured: with the space
+  kept and no refusal, the ZIP plug-in created files literally named ` ..` / ` .`.)
 - **FR-005**: No new UI string; no change to the packers or the plug-in interface.
 
 ## Success Criteria *(mandatory)*

@@ -6,6 +6,7 @@
 
 #include "salheapstr.h"       // feature 097
 #include "salunpackdefault.h" // feature 315
+#include "salpackname.h"      // feature 317
 
 #include "cfgdlg.h"
 #include "mainwnd.h"
@@ -1925,7 +1926,17 @@ _PACK_AGAIN:
         BOOL empty = FALSE;
         char nextFocus[MAX_PATH];
         nextFocus[0] = 0;
-        if (SalGetFullName(fileBuf, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus))
+        // feature 317: a relative archive name keeps its leading spaces (as Unpack's target, 316) - the
+        // item ' report' offers ' report.zip'; trimmed, it packed into another archive 'report.zip'.
+        // A name of spaces and dots only (' ..') is refused: trimmed it meant a folder (no archive was
+        // made), kept the packer would create a file literally named ' ..'
+        BOOL nameOk = SalGetFullName(fileBuf, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus, NULL, MAX_PATH, TRUE);
+        if (nameOk && SalPackNameIsOnlyDotsAndSpaces(fileBuf))
+        {
+            errTextID = IDS_PATHISINVALID;
+            nameOk = FALSE;
+        }
+        if (nameOk)
         {
             // feature 119: the existing archive is one of the files to be packed (selected, or inside a
             // selected folder) - refused before the "Add or Overwrite?" question, whose every answer

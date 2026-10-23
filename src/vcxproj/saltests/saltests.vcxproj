@@ -175,6 +175,8 @@
     </ClInclude>
     <ClInclude Include="..\..\common\salunpackdefault.h">
     </ClInclude>
+    <ClInclude Include="..\..\common\salpackname.h">
+    </ClInclude>
     <ClInclude Include="..\..\saltests\precomp.h">
     </ClInclude>
   </ItemGroup>

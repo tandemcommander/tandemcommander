@@ -46,9 +46,20 @@ All in `CFilesWindow::Pack` after OK; they receive the full name with its space:
 
 ## R4 - ` ..` and ` .`
 
-- Before: ` ..` was trimmed to `..` = the parent of the panel's folder (an existing folder; a
-  packer cannot create a file over it). After: `<panel>\ ..` - Win32 path normalization strips the
-  trailing dots and spaces of the last component, so the name resolves to the panel's folder
-  itself. `FileExists` is FALSE for a folder (no question, no Overwrite), and a packer cannot
-  create a file over a folder. Measured by probe rows typed-space-dots / typed-space-dot (spec
-  FR-004): no new file, no file changed.
+- Before: ` ..` was trimmed to `..` = the parent of the panel's folder (an existing folder; the ZIP
+  plug-in failed: "Cannot open or create file. Access denied."), ` .` to the panel's folder - no
+  archive was made.
+- Expected at planning: `<panel>\ ..` resolves to the panel's folder by Win32 normalization (trailing
+  dots and spaces stripped). **Measured wrong**: the first after-run (only R1) created files
+  literally named ` ..` and ` .` in the panel's folder - the ZIP plug-in opens the archive through a
+  `\\?\` path, where no normalization happens. Such names are not addressable by ordinary Windows
+  tools.
+- Decision: refuse an archive name whose last part is only spaces and dots, after `SalGetFullName`,
+  through the existing error path (`errTextID = IDS_PATHISINVALID`, "The path specified is
+  invalid.", the dialog again) - no new string. Pure rule `SalPackNameIsOnlyDotsAndSpaces` in
+  `src/common/salpackname.h`, saltests `TestPackName317`. It also refuses such a last part given in
+  an absolute name (`<folder>\ ..`), which before created the literal file the same way - strictly
+  safer, nothing else changes.
+- Alternatives: `SalIsValidFileNameComponent` on the archive's name - rejected here: it also refuses
+  names ending in a dot or space and reserved names (`CON.zip`), cases the item does not name
+  (recorded as an Inbox item instead).
