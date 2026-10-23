@@ -8,7 +8,7 @@ source: measure:322
 who: agent
 created: 2026-10-23
 updated: 2026-10-23
-verified: -
+verified: 2026-10-23 2c033750
 effort: M
 feature: -
 related: []
@@ -51,3 +51,4 @@ the existing behaviour for every other image. Found while making valid seed imag
 
 - 2026-10-23 — created (source measure:322)
 - 2026-10-23 — moved to Next position 5
+- 2026-10-23 — verified at 2c033750: still present at 2c033750: iso322_probe RR lists TOP.TXT, RR-LONG 31 letters; root dot record has SP + CE->ER RRIP_1991A, no RR entry
