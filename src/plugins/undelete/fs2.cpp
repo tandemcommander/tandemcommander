@@ -16,7 +16,7 @@
 #include "splfiledlg.h"                 // feature 104: the Unicode folder picker
 #include "../../common/salnumbername.h" // feature 148: numbered names that skip the taken ones
 #include "../../common/salheapstr.h"    // feature 163: the disk-cache key of a viewed file, whole
-#include "../../common/salsamevolume.h"  // feature 324: the same-volume guard fails closed
+#include "../../common/salsamevolume.h" // feature 324: the same-volume guard fails closed
 #include "stream.h"
 #include "dialogs.h"
 #include "undelete.h"

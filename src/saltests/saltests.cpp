@@ -19711,8 +19711,8 @@ static void TestSameVolume324()
     wcscpy_s(cut, L"\\\\?\\Volume{0a}\\d\\e");
     CHECK(SalWPathCutLast(cut) && wcscmp(cut, L"\\\\?\\Volume{0a}\\d\\") == 0);
     wcscpy_s(cut, L"rel\\x");
-    CHECK(!SalWPathCutLast(cut) && wcscmp(cut, L"rel\\x") == 0); // never steps up a relative path
-    CHECK(SalVolumeGuardForPaths(NULL, L"\\\\?\\C:\\", FALSE, TRUE)); // not converted: unknown = same
+    CHECK(!SalWPathCutLast(cut) && wcscmp(cut, L"rel\\x") == 0);        // never steps up a relative path
+    CHECK(SalVolumeGuardForPaths(NULL, L"\\\\?\\C:\\", FALSE, TRUE));   // not converted: unknown = same
     CHECK(!SalVolumeGuardForPaths(NULL, L"\\\\?\\C:\\", FALSE, FALSE)); // the core was sure
 
     // --- real folders: the measured cases ---
@@ -19729,8 +19729,8 @@ static void TestSameVolume324()
     std::wstring tgt = base + L"\\tgt";
     std::wstring root = std::wstring(L"\\\\?\\") + driveRoot;
     std::wstring volume = std::wstring(volName).substr(4); // "Volume{...}\"
-    std::wstring mountLike = base + L"\\Z\u00e1lohy";        // a junction to the volume root = a mount folder
-    std::wstring guidSub = base + L"\\jsub";                  // a junction to a volume-GUID folder
+    std::wstring mountLike = base + L"\\Z\u00e1lohy";      // a junction to the volume root = a mount folder
+    std::wstring guidSub = base + L"\\jsub";               // a junction to a volume-GUID folder
     CHECK(CreateDirectoryW(base.c_str(), NULL) && CreateDirectoryW(tgt.c_str(), NULL));
     CHECK(SameVolume324Junction(mountLike, L"\\??\\" + volume));
     CHECK(SameVolume324Junction(guidSub, L"\\??\\" + volume + tgt.substr(7))); // tgt without "\\?\C:\"
@@ -19744,9 +19744,9 @@ static void TestSameVolume324()
     std::wstring t2 = guidSub + L"\\restore";
     CHECK(SalGetNearestVolumeIdentityW(t1.c_str(), &id) && SalVolumeSerialMatch(id, rootId) == simEqual);
     CHECK(SalGetNearestVolumeIdentityW(t2.c_str(), &id) && SalVolumeSerialMatch(id, rootId) == simEqual);
-    CHECK(SalVolumeGuardForPaths(t1.c_str(), root.c_str(), FALSE, TRUE));         // was "different": now same
-    CHECK(SalVolumeGuardForPaths(root.c_str(), t2.c_str(), FALSE, TRUE));         // either order
-    CHECK(!SalVolumeGuardForPaths(t1.c_str(), root.c_str(), FALSE, FALSE));       // a certain answer stands
+    CHECK(SalVolumeGuardForPaths(t1.c_str(), root.c_str(), FALSE, TRUE));            // was "different": now same
+    CHECK(SalVolumeGuardForPaths(root.c_str(), t2.c_str(), FALSE, TRUE));            // either order
+    CHECK(!SalVolumeGuardForPaths(t1.c_str(), root.c_str(), FALSE, FALSE));          // a certain answer stands
     CHECK(SalVolumeGuardForPaths((tgt + L"\\x").c_str(), root.c_str(), TRUE, TRUE)); // "same" stands
 
     // a drive letter that does not exist: unknown -> same
@@ -19775,6 +19775,19 @@ static void TestSameVolume324()
         otherFound = TRUE;
         std::wstring otherPath = std::wstring(L"\\\\?\\") + other + L"saltests-324-missing\\x";
         CHECK(!SalVolumeGuardForPaths(otherPath.c_str(), root.c_str(), FALSE, TRUE));
+        // review 1: the read must follow the link - a junction on this volume to the OTHER volume's root;
+        // reading the junction itself would give this volume's serial and skip the warning
+        WCHAR otherVol[100];
+        if (GetVolumeNameForVolumeMountPointW(other, otherVol, 100))
+        {
+            std::wstring otherRoot = std::wstring(L"\\\\?\\") + other;
+            std::wstring cross = base + L"\\Z\u00e1lohyX";
+            CHECK(SameVolume324Junction(cross, L"\\??\\" + std::wstring(otherVol).substr(4)));
+            std::wstring t3 = cross + L"\\restore\\deeper";
+            CHECK(SalVolumeGuardForPaths(t3.c_str(), otherRoot.c_str(), FALSE, TRUE)); // on the other volume
+            CHECK(!SalVolumeGuardForPaths(t3.c_str(), root.c_str(), FALSE, TRUE));     // not on this one
+            RemoveDirectoryW(cross.c_str());
+        }
     }
     if (!otherFound)
         printf("TestSameVolume324: no second fixed volume - the 'different' row is skipped\n");
