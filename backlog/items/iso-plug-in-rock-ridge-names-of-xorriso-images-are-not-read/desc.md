@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: Rock Ridge names of xorriso images are not read, the ISO 9660 names are listed
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: other-plugins
 source: measure:322
@@ -10,7 +10,7 @@ created: 2026-10-23
 updated: 2026-10-23
 verified: 2026-10-23 2c033750
 effort: M
-feature: -
+feature: 326
 related: []
 depends-on: []
 reason: -
@@ -52,3 +52,4 @@ the existing behaviour for every other image. Found while making valid seed imag
 - 2026-10-23 — created (source measure:322)
 - 2026-10-23 — moved to Next position 5
 - 2026-10-23 — verified at 2c033750: still present at 2c033750: iso322_probe RR lists TOP.TXT, RR-LONG 31 letters; root dot record has SP + CE->ER RRIP_1991A, no RR entry
+- 2026-10-23 — run started, feature 326
