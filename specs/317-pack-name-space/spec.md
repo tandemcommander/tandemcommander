@@ -3,7 +3,7 @@
 **Feature Branch**: `317-pack-name-space`
 **Created**: 2026-10-23
 **Status**: Draft
-**Input**: Backlog item pack-with-a-relative-archive-name-that-starts-with-a-space (backlog/items/pack-with-a-relative-archive-name-that-starts-with-a-space/desc.md) - implement exactly what it describes.
+**Input**: Backlog item pack-with-a-relative-archive-name-that-starts-with-a-space (backlog/items/pack-with-a-relative-archive-name-that-starts-with-a-space/desc.md) - implement exactly what it describes. From backlog item pack-with-a-relative-archive-name-that-starts-with-a-space.
 
 ## Background
 

@@ -1,7 +1,7 @@
 ---
 title: Pack with a relative archive name that starts with a space drops the space
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: archives
 source: measure:316
@@ -10,7 +10,7 @@ created: 2026-10-23
 updated: 2026-10-23
 verified: 2026-10-23 d526127f
 effort: S
-feature: -
+feature: 317
 related: []
 depends-on: []
 reason: -
@@ -56,3 +56,4 @@ PASS.
 - 2026-10-23 — created (source measure:316)
 - 2026-10-23 — moved to Next position 2
 - 2026-10-23 — verified at d526127f: reproduced at d526127f: hidden-desktop pack probe, 5 leading-space rows packed into the trimmed name, an existing report.zip got Add
+- 2026-10-23 — run started, feature 317
