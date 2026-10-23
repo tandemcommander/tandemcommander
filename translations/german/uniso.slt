@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\uniso\uniso.atp"
 TEXTVERSION,"1.37 (x64)"
-VERSION,"1,3,7,185"
+VERSION,"1,3,7,194"
 
 [TRANSLATION]
 LANGID,1031
@@ -13,7 +13,7 @@ COMMENT,"Deutsche Version"
 220,83,1,"UnISO - Konfiguration"
 1201,8,11,208,10,1,"Schreibschutz-&Attribut beim Kopieren aus dem Archiv entfernen"
 1202,8,23,208,10,1,"Die &Session als Verzeichnis zeigen (erlaubt Zugriff auf alle Sessions)"
-1203,8,35,131,10,1,"&Boot-Image-Disk als Datei zeigen"
+1203,8,35,143,10,1,"&Boot-Image-Disk als Datei zeigen"
 3000,2,58,216,1,1,""
 1,108,64,50,14,0,"OK"
 2,163,64,50,14,1,"Abbrechen"
@@ -74,6 +74,7 @@ COMMENT,"Deutsche Version"
 1058,1,"Die Datei '%s' ist in mehr als 8 Teile fragmentiert, das wird nicht unterstützt.\nDie Datei kann nicht entpackt werden."
 1059,1,"Das Datenträgerabbild enthält eine zulange Pfadangabe, diese kann Tandem Commander nicht verarbeiten."
 1060,1,"Vorgang kann nicht beendet werden, weil der Name zu lang ist."
+1061,1,"Die Katalogdatei der HFS-Plus-Partition ist beschädigt.\nDie Partition kann nicht gelesen werden."
 1070,1,"Paketkopf kann nicht gelesen werden. Datei ist zu klein."
 1071,1,"Dieses Paket ist verschlüsslet.\nVerschlüsselte Pakete werden nicht unterstützt."
 

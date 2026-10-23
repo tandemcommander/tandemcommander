@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\uniso\uniso.atp"
 TEXTVERSION,"1.37 (x64)"
-VERSION,"1,3,7,185"
+VERSION,"1,3,7,194"
 
 [TRANSLATION]
 LANGID,1038
@@ -13,7 +13,7 @@ COMMENT,"Magyar változat"
 220,83,1,"UnISO beállítás"
 1201,8,11,208,10,1,"Í&rásvédett attribútum törlése archívumból másoláskor"
 1202,8,23,208,10,1,"Menetek mutatá&sa mappaként (minden menet hozzáférhető)"
-1203,8,35,115,10,1,"&Boot lemez mutatása fájlként"
+1203,8,35,127,10,1,"&Boot lemez mutatása fájlként"
 3000,2,58,216,1,1,""
 1,108,64,50,14,0,"OK"
 2,163,64,50,14,1,"Mégse"
@@ -74,6 +74,7 @@ COMMENT,"Magyar változat"
 1058,1,"A(z) '%s' fájl több, mint 8 darabba van töredezve, ami nem támogatott.\nA fájlt nem lehet kibontani."
 1059,1,"A lemezkép túl hosszú elérési utat tartalmaz, melyet az Tandem Commander nem tud kezelni."
 1060,1,"A művelet nem fejezhető be, mert a fájlnév túl hosszú."
+1061,1,"A HFS Plus partíció katalógusfájlja sérült.\nA partíció nem olvasható."
 1070,1,"Nem olvasható a csomag fejléce. A fájl túl kicsi."
 1071,1,"A csomag titkosítva van.\nA titkosított csomagok nem támogatottak."
 

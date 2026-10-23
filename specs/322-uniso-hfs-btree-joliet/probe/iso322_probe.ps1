@@ -11,6 +11,9 @@
       J-CJK40   the same with 40 CJK letters
       RR        xorriso ISO 9660 + Rock Ridge (rr.iso): End focuses top.txt, F5
       PLAIN     xorriso ISO 9660 only (plain.iso): End, F5 - TOP.TXT with 'TOP'
+      RR-LONG   xorriso Rock Ridge image of a 200-letter name (rrlong.iso): End, F5 - PASS = the file
+                extracted with its content; whether the Rock Ridge name was used is recorded
+                (xorriso writes no 'RR' entry; the plug-in then lists the ISO 9660 name, also before 322)
       HFS       the HFS+ partition of hyb.iso alone: the volume folder TC322 (End, Enter), End
                 focuses top.txt, F5 - PASS = top.txt with 'TOP'
       HYB       hyb.iso (ISO 9660 + Rock Ridge + Joliet + HFS+): opens, the program stays alive (the
@@ -137,7 +140,7 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath (Join-Path $PSScriptRoot 'mkimg322.sh')) (WslPath $s) 2>&1
     $ErrorActionPreference = $old
     if (-not [IO.File]::Exists("$s\hyb.iso")) {
-        foreach ($c in @('RR', 'PLAIN', 'HFS', 'HYB')) { Row $c 'RUN' 'NOT DRIVEN' ('no xorriso image: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
+        foreach ($c in @('RR', 'PLAIN', 'RR-LONG', 'HFS', 'HYB')) { Row $c 'RUN' 'NOT DRIVEN' ('no xorriso image: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
     }
     else {
         # the HFS+ partition alone: the bytes from the Apple_HFS partition start (block 60 of 2048 bytes)
@@ -151,6 +154,10 @@ try {
             $case = $c[0]; $d = $Root + '\' + $case; NewDir $d; NewDir "$d\tgt"; $tgt = "$d\tgt"; $want = $c[2]
             Extract-Row $case "$s\$($c[1])" $tgt @(0x24, 0x23) { $g = Content "$tgt\$want"; [pscustomobject]@{ Ok = ($g -ceq 'TOP'); Facts = ("extracted: {0}; content of {1} '{2}'" -f ((Names $tgt) -join ','), $want, $g) } }
         }
+        $d = $Root + '\RR-LONG'; NewDir $d; NewDir "$d\tgt"; $tgt = "$d\tgt"; $long = 'z' + ('r' * 195) + '.txt'
+        # the plug-in reads Rock Ridge only with an 'RR' entry (genisoimage writes it; xorriso's RRIP 1.12
+        # does not - also before 322, an Inbox item): the file must come out whole under the name it lists
+        Extract-Row 'RR-LONG' "$s\rrlong.iso" $tgt @(0x24, 0x23) { $got = @(Names $tgt); $g = '<none>'; if ($got.Count -eq 1) { $g = Content ($tgt + '\' + $got[0]) }; [pscustomobject]@{ Ok = ($got.Count -eq 1 -and $g -ceq 'LONG'); Facts = ("one file extracted with its content {0}; the Rock Ridge name used {1}; extracted name lengths: {2}" -f ($g -ceq 'LONG'), ($got.Count -eq 1 -and $got[0] -ceq $long), (($got | ForEach-Object { $_.Length }) -join ',')) } }
         if (-not $hfsOk) { Row 'HFS' 'RUN' 'NOT DRIVEN' 'the hybrid seed has another layout than measured' }
         else {
             $d = $Root + '\HFS'; NewDir $d; NewDir "$d\tgt"; $tgt = "$d\tgt"

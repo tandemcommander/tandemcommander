@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\uniso\uniso.atp"
 TEXTVERSION,"1.37 (x64)"
-VERSION,"1,3,7,185"
+VERSION,"1,3,7,194"
 
 [TRANSLATION]
 LANGID,3082
@@ -13,7 +13,7 @@ COMMENT,"Versión en español"
 220,83,1,"Configuración UnISO"
 1201,8,11,208,10,1,"&Borrar atributo de sólo lectura al copiar desde archivo"
 1202,8,23,208,10,1,"&Mostrar sesión como directorio (permitir acceso a todas las sesiones)"
-1203,8,35,180,10,1,"&Ver imagen de disco de arranque como fichero"
+1203,8,35,192,10,1,"&Ver imagen de disco de arranque como fichero"
 3000,2,58,216,1,1,""
 1,108,64,50,14,0,"OK"
 2,163,64,50,14,1,"Cancelar"
@@ -74,6 +74,7 @@ COMMENT,"Versión en español"
 1058,1,"El fichero '%s' está fragmentado en más de 8 fragmentos, lo cual no es admitido.\nEl fichero no será extraído."
 1059,1,"Esta imagen de disco contiene una ruta demasiado larga que Tandem Commander no puede gestionar."
 1060,1,"Imposible terminar la operación porque el nombre es demasiado largo."
+1061,1,"El fichero Catálogo de la partición HFS Plus está dañado.\nNo se puede leer la partición."
 1070,1,"Imposible leer cabecera de paquete. Fichero demasiado pequeño."
 1071,1,"Este paquete está encriptado.\nNo se admiten paquetes encriptados."
 

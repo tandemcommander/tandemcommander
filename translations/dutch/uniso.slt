@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\uniso\uniso.atp"
 TEXTVERSION,"1.37 (x64)"
-VERSION,"1,3,7,185"
+VERSION,"1,3,7,194"
 
 [TRANSLATION]
 LANGID,1043
@@ -13,7 +13,7 @@ COMMENT,"Nederlandse versie"
 220,83,1,"UnISO Configuratie"
 1201,8,11,208,10,1,"&Verwijder het alleen lezen attribuut wanneer er gekopieerd wordt van een archief"
 1202,8,23,208,10,1,"&Toon sessie als map (toegang tot all sessies toegestaan)"
-1203,8,35,131,10,1,"T&oon boot image disk als bestand"
+1203,8,35,143,10,1,"T&oon boot image disk als bestand"
 3000,2,58,216,1,1,""
 1,108,64,50,14,0,"OK"
 2,163,64,50,14,1,"Annuleren"
@@ -74,6 +74,7 @@ COMMENT,"Nederlandse versie"
 1058,1,"Het bestand '%s' is gefragmenteerd in meer dan 8 fragmenten wat ondersteund wordt.\nHet bestand zal niet uitgepakt worden."
 1059,1,"De disk image bevat een te lang pad waar Tandem Commander niet mee om kan gaan."
 1060,1,"Kan bewerking niet afmaken omdat de naam te lang is."
+1061,1,"Het catalogusbestand van de HFS Plus-partitie is beschadigd.\nDe partitie kan niet worden gelezen."
 1070,1,"Kan het pakket kenmerk niet lezen. Bestand is te klein."
 1071,1,"Dit pakket is gecodeerd.\nGecodeerde pakketten worden niet ondersteund."
 

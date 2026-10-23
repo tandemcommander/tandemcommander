@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\uniso\uniso.atp"
 TEXTVERSION,"1.37 (x64)"
-VERSION,"1,3,7,185"
+VERSION,"1,3,7,194"
 
 [TRANSLATION]
 LANGID,1036
@@ -74,6 +74,7 @@ COMMENT,"Version française"
 1058,1,"Le fichier '%s' est fragmenté en plus de 8 fragments, ce qui n'est pas pris en charge.\nLe fichier ne sera pas extrait."
 1059,1,"L'image disque contient un nom de chemin trop long, qu'Tandem Commander ne peut pas prendre en charge."
 1060,1,"Impossible de terminer l'opération en raison d'un nom de fichier trop long."
+1061,1,"Le fichier Catalogue de la partition HFS Plus est endommagé.\nLa partition est illisible."
 1070,1,"Impossible de lire l'entête du paquet. Le fichier est trop petit."
 1071,1,"Le paquet est chiffré.\nLes paquets chiffrés ne sont pas pris en charge."
 

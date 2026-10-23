@@ -20,8 +20,13 @@ out="$1"
 mkdir -p "$out/src/folder"
 printf 'NOTE' > "$out/src/folder/note.txt"
 printf 'TOP' > "$out/src/top.txt"
-rm -f "$out/hyb.iso" "$out/rr.iso" "$out/plain.iso"
+rm -f "$out/hyb.iso" "$out/rr.iso" "$out/plain.iso" "$out/rrlong.iso"
 $XO -outdev "$out/hyb.iso" -volid TC322 -hfsplus on -joliet on -map "$out/src" / >/dev/null 2>&1
 $XO -outdev "$out/rr.iso" -volid TC322 -joliet off -map "$out/src" / >/dev/null 2>&1
 $XO -outdev "$out/plain.iso" -volid TC322 -rockridge off -joliet off -map "$out/src" / >/dev/null 2>&1
+# a Rock Ridge name of 200 letters (feature 223's RR-LONG case, without Docker): 'z' + 195 'r' + '.txt'
+mkdir -p "$out/srclong"
+long="z$(printf 'r%.0s' $(seq 1 195)).txt"
+printf 'LONG' > "$out/srclong/$long"
+$XO -outdev "$out/rrlong.iso" -volid TC322 -joliet off -map "$out/srclong" / >/dev/null 2>&1
 ls "$out"

@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\uniso\uniso.atp"
 TEXTVERSION,"1.37 (x64)"
-VERSION,"1,3,7,185"
+VERSION,"1,3,7,194"
 
 [TRANSLATION]
 LANGID,1029
@@ -13,7 +13,7 @@ COMMENT,"Česká verze"
 220,83,1,"UnISO - Konfigurace"
 1201,8,11,208,10,1,"&Odstranit atribut Jen pro čtení při kopírování z archivu"
 1202,8,23,208,10,1,"Zobrazit &sekce jako adresář (povolí přístup ke všem sekcím)"
-1203,8,35,151,10,1,"Zobrazit &boot image disku jako soubor"
+1203,8,35,163,10,1,"Zobrazit &boot image disku jako soubor"
 3000,2,58,216,1,1,""
 1,108,64,50,14,0,"OK"
 2,163,64,50,14,1,"Storno"
@@ -74,6 +74,7 @@ COMMENT,"Česká verze"
 1058,1,"Soubor '%s' je rozdělen na více než 8 částí, které nejsou podporovány.\nSoubor nebude extrahován."
 1059,1,"Tento obraz disku obsahuje příliš dlouhou cestu, kterou Tandem Commander neumí zpracovat."
 1060,1,"Nelze dokončit operaci kvůli příliš dlouhému názvu."
+1061,1,"Soubor katalogu oddílu HFS Plus je poškozen.\nOddíl nelze přečíst."
 1070,1,"Nelze načíst hlavičku svazku. Soubor je malý."
 1071,1,"Tento svazek je zašifrovaný.\nZašifrované svazky nejsou podporovány."
 

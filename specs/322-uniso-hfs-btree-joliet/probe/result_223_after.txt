@@ -2,3 +2,9 @@ iso223_probe (feature 223) after-322
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
 Date    : 2026-10-23 10:27; registry key existed True
 
+ISO-F5     RUN    PASS        location 'C:\Users\pavel\AppData\Local\Temp\tc223\ISO-F5\a.iso'; top.txt extracted with its content True; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+ISO-F5     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RR-LONG    RUN    NOT DRIVEN  no Rock Ridge image: failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running: open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+Registry: restored; identical=True; SHA-256 before CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF / after CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -7,35 +7,35 @@ Clarifications; the fuzzing pass is an Inbox item).
 
 ## Phase 1: Setup
 
-- [ ] T001 Start `specs/322-uniso-hfs-btree-joliet/fix-log.md` with the measurement of a222bd88 (code reading, callers), the test-image tooling (`~/tc-xorriso` in WSL) and the scope decision
-- [ ] T002 [P] Write the WSL image script `specs/322-uniso-hfs-btree-joliet/probe/mkimg322.sh` (fetch xorriso without root if missing; make valid hybrid / Rock Ridge / plain seeds)
-- [ ] T003 Write the probe `specs/322-uniso-hfs-btree-joliet/probe/iso322_probe.ps1` in the style of `specs/223-uniso-crafted-image/probe/iso223_probe.ps1` (registry backup / restore, fixture under `%TEMP%\tc322`; valid rows only: Joliet ASCII, Joliet CJK 12 and 40 letters (IMAPI2), Rock Ridge, plain ISO 9660, HFS+-only (the partition of the hybrid seed) list + extract, hybrid open; a row fails on a program exit, a bug report, or a main window that does not answer within 30 s)
+- [X] T001 Start `specs/322-uniso-hfs-btree-joliet/fix-log.md` with the measurement of a222bd88 (code reading, callers), the test-image tooling (`~/tc-xorriso` in WSL) and the scope decision
+- [X] T002 [P] Write the WSL image script `specs/322-uniso-hfs-btree-joliet/probe/mkimg322.sh` (fetch xorriso without root if missing; make valid hybrid / Rock Ridge / plain seeds)
+- [X] T003 Write the probe `specs/322-uniso-hfs-btree-joliet/probe/iso322_probe.ps1` in the style of `specs/223-uniso-crafted-image/probe/iso223_probe.ps1` (registry backup / restore, fixture under `%TEMP%\tc322`; valid rows only: Joliet ASCII, Joliet CJK 12 and 40 letters (IMAPI2), Rock Ridge, plain ISO 9660, HFS+-only (the partition of the hybrid seed) list + extract, hybrid open; a row fails on a program exit, a bug report, or a main window that does not answer within 30 s)
 
 ## Phase 2: Foundational (measure before the fix)
 
-- [ ] T004 Build Debug x64 of the unchanged branch (`.\build.cmd`) and run the probe as `result_before.txt`; record in `fix-log.md` (expected: the Joliet CJK rows cut, the other rows pass)
+- [X] T004 Build Debug x64 of the unchanged branch (`.\build.cmd`) and run the probe as `result_before.txt`; record in `fix-log.md` (expected: the Joliet CJK rows cut, the other rows pass)
 
 ## Phase 3: User Story 1 - the HFS+ catalog is bounds-checked (P1)
 
 **Independent test**: `TestHfsCatalog322`; the HFS+ valid rows of the probe.
 
-- [ ] T005 [US1] Create `src/common/salhfscatalog.h` per `contracts/salhfscatalog.md` (walk with bounds, cycle bitmap, record table bounds; key view)
-- [ ] T006 [US1] Add `TestHfsCatalog322` to `src/saltests/saltests.cpp` (catalogs of 1 and 3 leaf nodes built in memory; each single field of research R1 out of range refused; key view cases; empty tree) and register it in `main`
-- [ ] T007 [US1] Use the walk in `CHFS::BTree::BTree` (`src/plugins/uniso/hfs.cpp`): bound `logicalSize` by `totalBlocks * blockSize`, refuse a short / damaged catalog with `IDS_ERR_HFS_BTREE_DAMAGED`, keep `IDS_ERR_HFS_BTREE_NODETYPE` for a non-header first node; `GetRecord` returns the record's available bytes (`src/plugins/uniso/hfs.h`)
-- [ ] T008 [US1] Check the key, name and folder / file data of each record in `CHFS::GetRootName`, `CHFS::ListDirectory` and `CHFS::UnpackFile` (`src/plugins/uniso/hfs.cpp`) with `SalHfsCatalogKeyView`; skip (listing) or refuse (extraction) a record that does not fit
-- [ ] T009 [US1] Add `IDS_ERR_HFS_BTREE_DAMAGED 1061` to `src/plugins/uniso/uniso.rh2` and its English text to `src/plugins/uniso/lang/lang.rc2`
+- [X] T005 [US1] Create `src/common/salhfscatalog.h` per `contracts/salhfscatalog.md` (walk with bounds, cycle bitmap, record table bounds; key view)
+- [X] T006 [US1] Add `TestHfsCatalog322` to `src/saltests/saltests.cpp` (catalogs of 1 and 3 leaf nodes built in memory; each single field of research R1 out of range refused; key view cases; empty tree) and register it in `main`
+- [X] T007 [US1] Use the walk in `CHFS::BTree::BTree` (`src/plugins/uniso/hfs.cpp`): bound `logicalSize` by `totalBlocks * blockSize`, refuse a short / damaged catalog with `IDS_ERR_HFS_BTREE_DAMAGED`, keep `IDS_ERR_HFS_BTREE_NODETYPE` for a non-header first node; `GetRecord` returns the record's available bytes (`src/plugins/uniso/hfs.h`)
+- [X] T008 [US1] Check the key, name and folder / file data of each record in `CHFS::GetRootName`, `CHFS::ListDirectory` and `CHFS::UnpackFile` (`src/plugins/uniso/hfs.cpp`) with `SalHfsCatalogKeyView`; skip (listing) or refuse (extraction) a record that does not fit
+- [X] T009 [US1] Add `IDS_ERR_HFS_BTREE_DAMAGED 1061` to `src/plugins/uniso/uniso.rh2` and its English text to `src/plugins/uniso/lang/lang.rc2`
 
 ## Phase 4: User Story 2 - Joliet names kept whole (P2)
 
 **Independent test**: the probe's Joliet CJK rows.
 
-- [ ] T010 [US2] In `CISO9660::ExtractExtFileName` (`src/plugins/uniso/iso9660.cpp`) copy a Joliet name (already UTF-8) whole instead of to `LengthOfFileIdentifier` bytes
+- [X] T010 [US2] In `CISO9660::ExtractExtFileName` (`src/plugins/uniso/iso9660.cpp`) copy a Joliet name (already UTF-8) whole instead of to `LengthOfFileIdentifier` bytes
 
 ## Phase 5: Polish & cross-cutting
 
-- [ ] T011 `.slt` refresh of module `uniso` for the new string (stop-rules §2.13), pins if needed, `slt --verify`
-- [ ] T012 Checks: `python tools/check_encoding.py --strict`, `.\build.cmd full`, `saltests`, the probe `result_after.txt`, feature 223's `iso223_probe.ps1` as a regression
-- [ ] T013 Complete `fix-log.md` (before / after, commands, translations, the deviation: no fuzzing pass)
+- [X] T011 `.slt` refresh of module `uniso` for the new string (stop-rules §2.13), pins if needed, `slt --verify`
+- [X] T012 Checks: `python tools/check_encoding.py --strict`, `.\build.cmd full`, `saltests`, the probe `result_after.txt`, feature 223's `iso223_probe.ps1` as a regression
+- [X] T013 Complete `fix-log.md` (before / after, commands, translations, the deviation: no fuzzing pass)
 
 ## Dependencies
 
