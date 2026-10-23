@@ -738,10 +738,17 @@ BOOL CISO9660::ListDirectory(char* path, int session,
     }
     std::set<DWORD> visited; // feature 328 (review): each directory walked once
     Visited = &visited;
-    BOOL ret = ListDirectoryRe(path, &Root, dir, pluginData) != ERR_TERMINATE;
+    int walked = ListDirectoryRe(path, &Root, dir, pluginData);
     Visited = NULL;
     Decide = FALSE;
-    return ret;
+    // feature 330: a directory that could not be read (read error, a record failing the checks, out of
+    // memory) ends its walk and every later descent ("descend only when everything is OK"), and its
+    // result reaches the top as ERR_CONTINUE / ERR_TERMINATE - the listing is incomplete, so a whole
+    // unpack fails and "Delete archive after unpacking" keeps the image (it was deleted). A directory
+    // met again (Visited) returns ERR_OK
+    if (walked != ERR_OK)
+        Image->ListingLeftOut.SetIncomplete();
+    return walked != ERR_TERMINATE;
 }
 
 //

@@ -212,6 +212,9 @@ int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryA
     if (Image->ReadBlock(sector, size, data) != size)
     {
         delete[] data;
+        // feature 330: the folder could not be read - the listing is incomplete (and no later folder is
+        // descended), so a whole unpack fails and "Delete archive after unpacking" keeps the image
+        Image->ListingLeftOut.SetIncomplete();
         Error(IDS_ERROR_LISTING_IMAGE, FALSE, sector);
         // if reading the sector with the root fails
         return (sector == VD.RootSector) ? ERR_CONTINUE : ERR_TERMINATE;

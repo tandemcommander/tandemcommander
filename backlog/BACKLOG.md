@@ -250,6 +250,7 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: after a folder that cannot be read, no later folder of the image is listed](items/iso-plug-in-after-a-folder-that-cannot-be-read-no-later/desc.md) | improvement | 4 | archives | leftover:330 | 2026-10-24 |
 
 ## Parked
 

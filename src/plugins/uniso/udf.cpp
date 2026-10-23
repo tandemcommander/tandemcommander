@@ -896,6 +896,7 @@ BOOL CUDF::ListDirectory(char* path, int session, CSalamanderDirectoryAbstract* 
     {
         if (!ReadBlockLog(lbNum, 1, sector))
         {
+            Image->ListingLeftOut.SetIncomplete(); // feature 330: a whole unpack then fails
             Error(IDS_ERROR_LISTING_IMAGE, FALSE, lbNum);
             return ERR_TERMINATE;
         }
@@ -939,6 +940,9 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
     lbNum = LogSector(dirICB.Location, dirICB.Partition);
     if (!ReadBlockPhys(lbNum, 2, directory))
     {
+        // feature 330: the folder could not be read - the listing is incomplete (and no later folder is
+        // descended), so a whole unpack fails and "Delete archive after unpacking" keeps the image
+        Image->ListingLeftOut.SetIncomplete();
         Error(IDS_ERROR_LISTING_IMAGE, FALSE, lbNum);
         // if we are reading from the root (lbNum == 2), return ERR_CONTINUE so we can descend into an empty image
         // we try to behave consistently from the user's point of view
@@ -959,6 +963,7 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
             dirICB.Length -= SECTOR_SIZE;
             if (!ReadBlockPhys(lbNum, 2, directory))
             {
+                Image->ListingLeftOut.SetIncomplete(); // feature 330: as above
                 Error(IDS_ERROR_LISTING_IMAGE, FALSE, lbNum);
                 return ERR_TERMINATE;
             }
