@@ -253,6 +253,7 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Pack with a relative archive name that starts with a space drops the space](items/pack-with-a-relative-archive-name-that-starts-with-a-space/desc.md) | bug | 4 | archives | measure:316 | 2026-10-23 |
 
 ## Parked
 

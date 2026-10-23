@@ -2238,7 +2238,10 @@ void CFilesWindow::Unpack(CFilesWindow* target, int pluginIndex, const char* plu
             char nextFocus[MAX_PATH];
             nextFocus[0] = 0;
             const char* text = NULL;
-            if (!SalGetFullName(path, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus))
+            // feature 316: a relative target keeps its leading spaces (as Copy/Move targets do) - the
+            // archive ' ssss.zip' offers ' ssss'; trimmed, it unpacked into another folder 'ssss'.
+            // A new folder starting with a space is refused by CheckAndCreateDirectory below.
+            if (!SalGetFullName(path, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus, NULL, MAX_PATH, TRUE))
             {
                 if (errTextID == IDS_EMPTYNAMENOTALLOWED)
                 {

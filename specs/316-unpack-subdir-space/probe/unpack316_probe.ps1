@@ -15,18 +15,26 @@
     items are read (CB_GETLBTEXT); the row picks item $Pick, or - $Type rows - puts a text into the
     entry with a wide WM_SETTEXT (not a keyboard), clicks OK and answers the boxes OK / Yes.
     PASS = the dialog closed, nothing fatal, the files and folders under src (but the archive) and
-    under tgt are exactly the expected ones:
+    under tgt are exactly the expected ones, and - "refused" rows - an "Error Creating Directory"
+    box was shown (the program does not create a folder whose name starts with a space; the
+    dialog opens again and is cancelled). Before 316 the leading-space rows unpacked into the
+    folder without the space.
       space-sd        UA=0 SD=1, archive ' ssss.zip', a folder 'ssss' (keep.k = 'OLD') already next
-                      to it; item 0 (' ssss'). Expected: ' ssss\a.k', ' ssss\a.kp'; 'ssss' untouched
+                      to it; item 0 (' ssss'). Refused; 'ssss' untouched, no folder created
       space-sd-long   UA=1 SD=1, L 245 bytes, archive ' ' + 19 letters + '.zip': L\<name> does not fit,
-                      the name alone is offered (feature 315); item 0. Expected under src\<name>
-      space2-sd       UA=0 SD=1, archive '  ss.zip' (two spaces); item 0. Expected under '  ss'
-      typed-space     UA=0 SD=0, the entry set to ' typed'. Expected under ' typed'
-      ctl-abs-space   UA=1 SD=1, L short: item 0 = L\ ssss (absolute) - files in L\ ssss (control:
-                      worked before)
+                      the name alone is offered (feature 315); item 0. Refused, nothing created
+      space2-sd       UA=0 SD=1, archive '  ss.zip' (two spaces); item 0. Refused, nothing created
+      typed-space     UA=0 SD=0, the entry set to ' typed'. Refused, nothing created
+      space-sd-exists UA=0 SD=1, a folder ' ssss' (keep.k) already next to ' ssss.zip'; item 0:
+                      a.k / a.kp unpacked into ' ssss' (next to keep.k)
+      space-file      UA=0 SD=1, a file ' ssss' next to ' ssss.zip'; item 0: refused (the name is
+                      used by a file), the file untouched
+      ctl-abs-space   UA=1 SD=1, L short: item 0 = L\ ssss (absolute) - refused (the same rule,
+                      before and after), nothing created
       ctl-typed       UA=0 SD=0, the entry 'typed': files in 'typed' (control)
       ctl-blank       UA=0 SD=0, the entry '   ' (spaces only): an empty target - next to the
                       archive (control: unchanged)
+    Not driven: the cursor's next focus after unpacking; typing with a keyboard (WM_SETTEXT).
     Driver of 315's probe (098's library). MUST run through tools\run_on_hidden_desktop.ps1.
     Registry exported, restored and verified. Exit code = FAIL rows.
 #>
@@ -237,9 +245,10 @@ function Unpack-Row([string]$Case, [int]$UA, [int]$SD, [int]$Pick, $Type, [scrip
         $c1 = ((@($srcFiles) -join '|') -ceq ((@($t.SrcFiles) | Sort-Object) -join '|'))
         $c2 = ((@($srcDirs) -join '|') -ceq ((@($t.SrcDirs) | Sort-Object) -join '|'))
         $c3 = ((@($tgtFiles) -join '|') -ceq ((@($t.TgtFiles) | Sort-Object) -join '|'))
-        $ok = (-not $fatal) -and (-not $r.TimedOut) -and (-not $stayed) -and $c1 -and $c2 -and $c3
+        $c4 = (-not $t.Refuse) -or ((Shown $r) -match 'Error Creating Directory')
+        $ok = (-not $fatal) -and (-not $r.TimedOut) -and (-not $stayed) -and $c1 -and $c2 -and $c3 -and $c4
         $why = ''
-        if (-not $ok) { $why = (" [expected src files {0}; src folders {1}; tgt files {2}]" -f (Join-Vis $t.SrcFiles), (Join-Vis $t.SrcDirs), (Join-Vis $t.TgtFiles)) }
+        if (-not $ok) { $why = (" [expected src files {0}; src folders {1}; tgt files {2}; refusal expected {3}]" -f (Join-Vis $t.SrcFiles), (Join-Vis $t.SrcDirs), (Join-Vis $t.TgtFiles), [bool]$t.Refuse) }
         Row $Case 'RUN' (V $ok) ("UA={0} SD={1}; archive {2}; items: {3}; OK on {4}; dialog stayed: {5}; asked: {6}; src files: {7}; src folders: {8}; tgt files: {9}{10}{11}" -f $UA, $SD, (Vis $t.Zip), (Join-Vis $items), (Vis $chosen), $stayed, (Shown $r), (Join-Vis $srcFiles), (Join-Vis $srcDirs), (Join-Vis $tgtFiles), $(if ($r.TimedOut) { '; TIMED OUT' } else { '' }), $why)
     }
     catch {
@@ -264,15 +273,15 @@ try {
     Out ''
     $n19 = ' ' + ('s' * 19)
     Unpack-Row 'space-sd' 0 1 0 $null { param($T) @{ L = ($T + '\L'); Zip = ' ssss.zip'; Pre = @{ 'ssss\keep.k' = 'OLD' }
-            SrcFiles = @(' ssss\a.k=K', ' ssss\a.kp=KP', 'ssss\keep.k=OLD'); SrcDirs = @(' ssss', 'ssss') } }
-    Unpack-Row 'space-sd-long' 1 1 0 $null { param($T) @{ L = (Long-Path ($T + '\L') 245); Zip = ($n19 + '.zip')
-            SrcFiles = @(($n19 + '\a.k=K'), ($n19 + '\a.kp=KP')); SrcDirs = @($n19) } }
-    Unpack-Row 'space2-sd' 0 1 0 $null { param($T) @{ L = ($T + '\L'); Zip = '  ss.zip'
-            SrcFiles = @('  ss\a.k=K', '  ss\a.kp=KP'); SrcDirs = @('  ss') } }
-    Unpack-Row 'typed-space' 0 0 0 ' typed' { param($T) @{ L = ($T + '\L'); Zip = 'a.zip'
-            SrcFiles = @(' typed\a.k=K', ' typed\a.kp=KP'); SrcDirs = @(' typed') } }
-    Unpack-Row 'ctl-abs-space' 1 1 0 $null { param($T) @{ L = ($T + '\L'); Zip = ' ssss.zip'
-            TgtFiles = @('L\ ssss\a.k=K', 'L\ ssss\a.kp=KP') } }
+            SrcFiles = @('ssss\keep.k=OLD'); SrcDirs = @('ssss'); Refuse = $true } }
+    Unpack-Row 'space-sd-long' 1 1 0 $null { param($T) @{ L = (Long-Path ($T + '\L') 245); Zip = ($n19 + '.zip'); Refuse = $true } }
+    Unpack-Row 'space2-sd' 0 1 0 $null { param($T) @{ L = ($T + '\L'); Zip = '  ss.zip'; Refuse = $true } }
+    Unpack-Row 'typed-space' 0 0 0 ' typed' { param($T) @{ L = ($T + '\L'); Zip = 'a.zip'; Refuse = $true } }
+    Unpack-Row 'space-sd-exists' 0 1 0 $null { param($T) @{ L = ($T + '\L'); Zip = ' ssss.zip'; Pre = @{ ' ssss\keep.k' = 'OLD' }
+            SrcFiles = @(' ssss\a.k=K', ' ssss\a.kp=KP', ' ssss\keep.k=OLD'); SrcDirs = @(' ssss') } }
+    Unpack-Row 'space-file' 0 1 0 $null { param($T) @{ L = ($T + '\L'); Zip = ' ssss.zip'; Pre = @{ ' ssss' = 'FILE' }
+            SrcFiles = @(' ssss=FILE'); Refuse = $true } }
+    Unpack-Row 'ctl-abs-space' 1 1 0 $null { param($T) @{ L = ($T + '\L'); Zip = ' ssss.zip'; Refuse = $true } }
     Unpack-Row 'ctl-typed' 0 0 0 'typed' { param($T) @{ L = ($T + '\L'); Zip = 'a.zip'
             SrcFiles = @('typed\a.k=K', 'typed\a.kp=KP'); SrcDirs = @('typed') } }
     Unpack-Row 'ctl-blank' 0 0 0 '   ' { param($T) @{ L = ($T + '\L'); Zip = 'a.zip'
