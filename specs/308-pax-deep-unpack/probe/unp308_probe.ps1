@@ -21,8 +21,10 @@
       UNP-DEB          t.deb: control; data.tar with a.txt, a*125/b*125/f.txt (251 bytes, over the listing
                        with its "data\"), DEEP/d.txt, ok.txt -> all 5 files, nothing asked, t.deb kept
     Copy row: the left panel opens t.tar, the right shows tgt; Select All (842), Copy (727), boxes OK.
-      COPY-DEEP        the deep tree: the listing shows a*29 (holding top.txt) and ok.txt; copying the
-                       folder copies its whole subtree -> top.txt, DEEP/f01..f30.txt, ok.txt (32 files)
+      COPY-DEEP        the deep tree: the listing shows a*29 (holding top.txt), the top-level folder CJK(255)
+                       (feature 321: a top-level folder name is not byte-bounded, as in 0.1.10) and ok.txt;
+                       copying the folders copies their whole subtrees -> top.txt, DEEP/f01..f30.txt,
+                       CJK(255)/in.txt, ok.txt (33 files)
       COPY-TOOLONG     a*29/top.txt, a*29/CJK(300).txt, ok.txt: the folder is copied -> top.txt, ok.txt and a
                        "(206)" box DURING the copy (the one at opening is not enough)
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -62,7 +64,8 @@ function Deep-Tree([switch]$Listed) {
     $w = [ordered]@{}
     $w[('a' * 29) + '/top.txt'] = 'T'
     for ($i = 1; $i -le 30; $i++) { $w[('{0}/f{1:00}.txt' -f $Deep, $i)] = ('F{0:00}' -f $i) }
-    if (-not $Listed) { $w[(Cjk 90) + '/c.txt'] = 'C'; $w[(Cjk 255) + '/in.txt'] = 'I' }
+    if (-not $Listed) { $w[(Cjk 90) + '/c.txt'] = 'C' }
+    $w[(Cjk 255) + '/in.txt'] = 'I' # feature 321: its top-level folder is listed, so a copy of it extracts in.txt
     $w['ok.txt'] = 'K'
     return $w
 }

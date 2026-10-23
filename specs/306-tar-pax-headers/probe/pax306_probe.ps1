@@ -25,6 +25,7 @@
       PAX-PATHPART a.txt, CJK(90)/f.txt (folder part 270 bytes), a*130/b*130/g.txt (261 bytes), ok.txt -
                    folder parts over the listing's 255 bytes (review 1)  -> "(206)" at open, tgt a.txt + ok.txt
       PAX-255DIR   folder CJK(255) (765 bytes), CJK(255)/in.txt, ok.txt   -> "(206)" at open, tgt ok.txt
+                   + CJK(255)/in.txt (feature 321: the top-level folder is listed and copied whole)
       PAX-LIMIT    p*255/f.txt (folder part exactly 255 bytes)            -> that path, 'P'
       PAX-DEB      t.deb whose data.tar holds a.txt, a*125/b*125/f.txt (251 bytes + the listing's "data\"),
                    ok.txt (review 2)          -> "(206)" at open, tgt control/control, data/a.txt, data/ok.txt
@@ -107,7 +108,9 @@ function Run-Row([string]$name) {
         'GIT-COMMENT' { $want['a.txt'] = @('A', 1000000000) }
         'PAX-TOOLONG' { $want['ok.txt'] = @('K', $null); $need206 = $true }
         'PAX-PATHPART' { $want['a.txt'] = @('a', $null); $want['ok.txt'] = @('K', $null); $need206 = $true }
-        'PAX-255DIR' { $want['ok.txt'] = @('K', $null); $need206 = $true }
+        # feature 321: the top-level folder CJK(255) is listed (a top-level folder name is not byte-bounded,
+        # as in 0.1.10), so Copy of it extracts in.txt, which only the listing refuses (folder part 765 bytes)
+        'PAX-255DIR' { $want['ok.txt'] = @('K', $null); $want[(Cjk 255) + '/in.txt'] = @('I', $null); $need206 = $true }
         'PAX-LIMIT' { $want[('p' * 255) + '/f.txt'] = @('P', $null) }
         # feature 308: Copy of the selected folder "data" extracts its whole subtree - also the member the
         # listing could not show (251 bytes + "data\" over its 255); only the listing refuses it

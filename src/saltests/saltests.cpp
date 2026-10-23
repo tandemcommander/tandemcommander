@@ -19240,6 +19240,8 @@ static void TestPackName319()
     // a digit or other byte before ':' is no drive letter
     CHECK(SalPackNameHasStreamColon("1:x.zip"));
     CHECK(SalPackNameHasStreamColon("\xC3\xA1:x.zip"));
+}
+
 // feature 321: the names the panel listing takes (sallistingname.h); with no folder part (path ==
 // NULL) a 904-byte name used to skip every bound and overflow the panel's 780-byte name buffers
 static void TestListingName321()
@@ -19284,6 +19286,26 @@ static void TestListingName321()
     CHECK(!SalListingAcceptsDirU8(p256.c_str(), p256.size(), 1));
     CHECK(!SalListingAcceptsDirU8("", 0, 256));
     CHECK(SalListingAcceptsDirU8("sub", 3, 255));
+
+    // the tar plug-in refuses a GNU long name by feature 308's pass-dependent rule (the first run of
+    // this item applied the listing bound in every pass: a whole unpack lost deep members)
+    std::string deep; // ten folders of 29 letters: a folder part of 299 bytes
+    for (int i = 0; i < 10; i++)
+        deep += std::string(29, (char)('a' + i)) + "\\";
+    const std::string deepFile = deep + "f01.txt";
+    CHECK(!SalPaxNameUsableU8(deepFile.c_str(), false, 0, true));  // not in the panel
+    CHECK(SalPaxNameUsableU8(deepFile.c_str(), false, 0, false));  // but extracted
+    CHECK(!SalPaxNameUsableU8(c300.c_str(), false, 0, true));      // the measured name: refused while
+    CHECK(!SalPaxNameUsableU8(c300.c_str(), false, 0, false));     // listing and while extracting
+    CHECK(!SalPaxNameUsableU8((deep + c300).c_str(), false, 0, false));
+    std::string c100; // a top-level folder of 100 CJK letters (300 bytes): listed as in 0.1.10
+    for (int i = 0; i < 100; i++)
+        c100 += "\xE4\xB8\x80";
+    CHECK(SalPaxNameUsableU8(c100.c_str(), true, 0, true));
+    CHECK(!SalPaxNameUsableU8(("sub\\" + c100).c_str(), true, 0, true)); // in a folder part: over 255 bytes
+    CHECK(SalPaxNameUsableU8(("sub\\" + c100).c_str(), true, 0, false)); // extracted
+    CHECK(!SalPaxNameUsableU8((c100 + "\\in.txt").c_str(), false, 0, true));
+    CHECK(SalPaxNameUsableU8((c100 + "\\in.txt").c_str(), false, 0, false));
 }
 
 int main(int argc, char** argv)

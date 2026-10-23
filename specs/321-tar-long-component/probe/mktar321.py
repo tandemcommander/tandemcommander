@@ -1,5 +1,5 @@
-# Feature 307 probe fixture: writes one archive per probe row.
-# Usage: python -I mktar307.py <ROW> <out> [<7z.exe>]. Pure ASCII; CJK names are built with chr().
+# Feature 321 probe fixture (from the first run, 307): writes one archive per probe row.
+# Usage: python -I mktar321.py <ROW> <out> [<7z.exe>]. Pure ASCII; CJK names are built with chr().
 import io
 import os
 import subprocess
@@ -52,7 +52,7 @@ def gnu_tar(row, out):
             add(tf, cjk(255) + '/in.txt', b'I')
             add(tf, 'ok.txt', b'K')
         elif row == 'GNU-DIR100':
-            # review 1 of feature 307 (SHOULD): an empty top-level folder of 100 CJK letters (300 bytes)
+            # review 1 of the first run (307) (SHOULD): an empty top-level folder of 100 CJK letters (300 bytes)
             # listed and extracted in 0.1.10 - a folder name over 255 bytes is no limit at the top level
             add_dir(tf, cjk(100))
             add(tf, 'ok.txt', b'K')
@@ -100,7 +100,7 @@ def cpio_newc(out, members):
 def main():
     row, out = sys.argv[1], sys.argv[2]
     if row == 'CPIO-778':
-        # review 1 of feature 307: 778 bytes fit the listing's bound (below 780) - with "simple icons in
+        # review 1 of the first run (307): 778 bytes fit the listing's bound (below 780) - with "simple icons in
         # archives" the extension (777 bytes) plus 4 zero bytes overflowed a 780-byte buffer
         cpio_newc(out, [('.' + 'a' * 777, b'X'), ('ok.txt', b'K')])
     elif row == 'CPIO-TOOLONG':

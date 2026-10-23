@@ -1,0 +1,21 @@
+unp321_probe (feature 321) before-main-26c31a9d
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 09:22; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-DEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DEEP   RUN    PASS        tgt: 34 of 34 files; archive kept: True (want True); "(206)" shown: False; windows: no window
+UNP-DEEP-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DEEP-DEL RUN    PASS        tgt: 34 of 34 files; archive kept: False (want False); "(206)" shown: False; windows: no window
+UNP-TOOLONG-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-TOOLONG-DEL RUN    FAIL        tgt: 0 of 1 files; missing 1: ok.txt; archive kept: True (want True); "(206)" shown: False; windows: ...tatic id=1150] Name: | [Static id=1151] Error: | [Static id=172] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+UNP-DEB    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DEB    RUN    PASS        tgt: 5 of 5 files; archive kept: True (want True); "(206)" shown: False; windows: no window
+COPY-DEEP  ERROR  FAIL        the archive did not open; panel at: C:\Users\pavel\AppData\Local\Temp\tc321\UNP-DEB\src @ at Copy-Row, E:\Projects\tandemcommander\specs\321-tar-long-component\probe\unp321_probe.ps1: line 164
+at <ScriptBlock>, E:\Projects\tandemcommander\specs\321-tar-long-component\probe\unp321_probe.ps1: line 196
+COPY-DEEP  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-TOOLONG ERROR  FAIL        the archive did not open; panel at: C:\Users\pavel\AppData\Local\Temp\tc321\UNP-DEB\src @ at Copy-Row, E:\Projects\tandemcommander\specs\321-tar-long-component\probe\unp321_probe.ps1: line 164
+at <ScriptBlock>, E:\Projects\tandemcommander\specs\321-tar-long-component\probe\unp321_probe.ps1: line 197
+COPY-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF / after CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF
+
+Rows: PASS 9, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

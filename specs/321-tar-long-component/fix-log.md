@@ -47,3 +47,48 @@ conflicts in `tar.h`, `untar.cpp`, `saltests.cpp`, `CHANGELOG.md`, resolved by t
   and F2 MEDIUM (spec counted 31 files, the reused 308 deep-tree fixture holds 34) fixed in
   `tasks.md` / `spec.md`. C1 LOW (the saltests task serves US1 and US2) accepted.
 - Run 2: no CRITICAL / HIGH / MEDIUM.
+
+## Probes before the change (T004, on main's build 26c31a9d)
+
+- `probe/tar321_probe.ps1 -Label before-main-26c31a9d` -> `probe/result_before.txt`: **PASS 12, FAIL 8**.
+  GNU-TOOLONG, CPIO-778, CPIO-TOOLONG: END FAIL (the crash, "Stack memory corruption" under
+  `CommonRefresh`); GNU-DEEP, GNU-255DIR: RUN FAIL ("Internal error: file data structure
+  corrupted.", the archive does not open). GNU-255, GNU-LONG, GNU-DIR100, ZIP, 7Z: PASS.
+- `probe/unp321_probe.ps1` (308's probe with GNU long names, `mkunp321.py` writes `tarfile.GNU_FORMAT`:
+  33 `L` headers, no PAX header in the deep tree) -> `probe/unp_before.txt`: **PASS 9, FAIL 3**.
+  UNP-DEEP / UNP-DEEP-DEL / UNP-DEB PASS (no GNU refusal on main); UNP-TOOLONG-DEL FAIL (no
+  "(206)": the extraction tries the 300-letter name and fails with "(123) invalid name"; ok.txt was
+  not written in the probe's answer path); COPY-DEEP / COPY-TOOLONG FAIL (the archive does not open).
+
+## Build fix (T001)
+
+The carry-over's `saltests.cpp` merge lost the closing brace of `TestPackName319` (diff3 aligned
+the shared `}` after 307's function): `C2601 local function definitions are illegal`. Brace added.
+
+## Checks after the change
+
+- `.\build.cmd` -> BUILD SUCCEEDED. `saltests.exe` -> `saltests: 27698 checks, 0 failed`.
+- T008: `TestListingName321` (the 22 checks of the first run) + 12 checks of the GNU rule per pass
+  (`SalPaxNameUsableU8`: the deep name refused only while listing, the 300-letter component in both
+  passes, the top-level CJK(100) folder listed, inside a folder part refused while listing only).
+- `probe/tar321_probe.ps1 -Label after` -> `probe/result_after.txt`: **PASS 20, FAIL 0**. The first
+  run's GNU-255DIR expectation ("tgt ok.txt") predated feature 308: the top-level folder CJK(255) is
+  listed, so Copy of it extracts `CJK(255)/in.txt` too (only the listing refuses it, folder part 765
+  bytes) - the row now expects ok.txt + in.txt; "(206)" at open still required.
+- `probe/unp321_probe.ps1 -Label after` -> `probe/unp_after.txt`: **PASS 12, FAIL 0**: UNP-DEEP 34/34,
+  UNP-DEEP-DEL 34/34 and the archive deleted (all extracted), UNP-TOOLONG-DEL ok.txt + "(206)" +
+  archive KEPT, UNP-DEB 5/5, COPY-DEEP 33/33 (expectation +1: `CJK(255)/in.txt`, same reason as
+  above), COPY-TOOLONG 2/2 + "(206)" during the copy.
+- Regression: `pax306_probe.ps1` -> `probe/regress_306.txt` 28 / 0; `unp308_probe.ps1` ->
+  `probe/regress_308.txt` 12 / 0; `link309_probe.ps1` -> `probe/regress_309.txt` 16 / 0;
+  `cpio310_probe.ps1` -> `probe/regress_310.txt` 52 / 0. 306's PAX-255DIR and 308's COPY-DEEP
+  expected the top-level folder CJK(255) not to be listed (306's folder rule); with the first run's
+  review-1 change it is listed for PAX too, and Copy extracts its `in.txt` (more is extracted,
+  nothing is lost). The first run of each failed exactly that row (27/1, 11/1); both rows' expectations
+  updated with a `feature 321` comment, then 28/0 and 12/0.
+- T009: callers of `AddFile` / `AddDir` at HEAD (Grep `(->|\.)Add(File|Dir)\(`): core - `fileswn7.cpp`,
+  `fileswna.cpp` pass `""` (a folder part: rule unchanged), `pack1.cpp` a folder part; NULL path -
+  tar (root members), ftp, sftp, regedt, nethood, undelete, folders, portables, demoplug; with a
+  folder path - zip, 7zip, unrar, unole, uniso, unchm, uncab, unmime. Same set as the first run.
+- T010: `fileswn3.cpp` extension copies at HEAD: the two into `buf[SAL_FIND_NAME_U8]` bounded (carried);
+  the others write into `fileName[SAL_MAX_PATH_UTF8 + 4]` / `nameU8[3 * MAX_PATH + 4]` (disk names) - safe.

@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-    Feature 307 (backlog item opening-a-tar-whose-member-name-has-a-300-letter-component): an archive
+    Feature 321 (backlog item opening-a-tar-whose-member-name-has-a-300-letter-component): an archive
     member whose name the panel listing cannot hold never crashes the program; the tar plug-in refuses
     a GNU long name it cannot list the way feature 306 refuses a PAX path.
 
 .DESCRIPTION
-    Fixture per row (under the probe's %TEMP% folder): <row>\t.<ext> made by mktar307.py (next to this
+    Fixture per row (under the probe's %TEMP% folder): <row>\t.<ext> made by mktar321.py (next to this
     script; Python tarfile GNU format, zipfile, or the installed 7-Zip) and <row>\tgt, an empty folder.
     The left panel opens the archive, the right panel shows tgt; Select All (842), Copy (727, dialogs
     answered OK). CJK(n) = n letters U+4E00, U+4E01, ...
@@ -14,13 +14,16 @@
       GNU-DEEP     a.txt, 12 folders of 200 letters + f.txt (folder part 2411 bytes), ok.txt
                                                        -> "(206)" at open, tgt a.txt + ok.txt
       GNU-255      CJK(251).txt (255 UTF-16 units, 757 bytes) at the root     -> that name, 'M'
-      GNU-255DIR   folder CJK(255) (765 bytes), CJK(255)/in.txt, ok.txt       -> "(206)" at open, tgt ok.txt
+      GNU-255DIR   folder CJK(255) (765 bytes), CJK(255)/in.txt, ok.txt       -> "(206)" at open (in.txt is not
+                   listed: folder part 765 bytes); the top-level folder is listed, so copying it extracts
+                   in.txt too (feature 308: an extraction takes every name a file system takes)
+                                                       -> tgt ok.txt + CJK(255)/in.txt 'I'
       GNU-LONG     d*100/e*100/f*96.txt as a GNU long name (regression)       -> that path, 'L'
       ZIP-TOOLONG  t.zip with CJK(300).txt and ok.txt (Python zipfile)       -> no crash; recorded
       7Z-TOOLONG   t.7z with CJK(300).txt and ok.txt (7z.exe -si<name>)       -> no crash; recorded
-      GNU-DIR100   an empty top-level folder CJK(100) (300 bytes), ok.txt (review 1 SHOULD: 0.1.10 listed it)
+      GNU-DIR100   an empty top-level folder CJK(100) (300 bytes), ok.txt (first run review 1 SHOULD: 0.1.10 listed it)
                                                        -> no message, tgt holds the folder and ok.txt
-    Open-only rows, with "Simple Icons In Archives" = 1 (review 1 MUST: the icon code copies the
+    Open-only rows, with "Simple Icons In Archives" = 1 (first run review 1 MUST: the icon code copies the
     extension + 4 zero bytes into a 780-byte buffer); the archive is opened, nothing is copied:
       CPIO-778     newc cpio: "." + 777 letters (778 bytes, under the listing's 780) and ok.txt
                                                        -> no crash, the archive opens
@@ -54,13 +57,13 @@ if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; e
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $Lib) { $Lib = Join-Path $Here '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1' }
 . $Lib
-$Root = $TempRoot + '\tc307'
+$Root = $TempRoot + '\tc321'
 $StartDir = $Root + '\start'
-$MkTar = Join-Path $Here 'mktar307.py'
+$MkTar = Join-Path $Here 'mktar321.py'
 
 function Cjk([int]$n, [int]$start = 0x4E00) { $sb = New-Object Text.StringBuilder; for ($i = 0; $i -lt $n; $i++) { [void]$sb.Append([char]($start + $i)) }; return $sb.ToString() }
 function Start-Arc([string]$Left, [string]$Right) {
-    $p = Start-Process -FilePath $Exe -ArgumentList @('-t', 'T307', '-l', ('"{0}"' -f $Left), '-r', ('"{0}"' -f $Right), '-p', '1') -PassThru
+    $p = Start-Process -FilePath $Exe -ArgumentList @('-t', 'T321', '-l', ('"{0}"' -f $Left), '-r', ('"{0}"' -f $Right), '-p', '1') -PassThru
     [void]$Started.Add($p.Id); [void]$p.Handle; $script:Procs[$p.Id] = $p
     $sw = [Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 60 -and (Test-Alive $p.Id) -and (Get-Main $p.Id) -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 100 }
@@ -92,7 +95,7 @@ function Run-Row([string]$name) {
         'GNU-TOOLONG' { $want['ok.txt'] = 'K'; $need206 = $true }
         'GNU-DEEP' { $want['a.txt'] = 'a'; $want['ok.txt'] = 'K'; $need206 = $true }
         'GNU-255' { $want[(Cjk 251) + '.txt'] = 'M' }
-        'GNU-255DIR' { $want['ok.txt'] = 'K'; $need206 = $true }
+        'GNU-255DIR' { $want['ok.txt'] = 'K'; $want[(Cjk 255) + '/in.txt'] = 'I'; $need206 = $true }
         'GNU-LONG' { $want[$longPath] = 'L' }
         'GNU-DIR100' { $want['ok.txt'] = 'K'; $wantDir = (Cjk 100) }
         'CPIO-778' { $openOnly = $true }
@@ -154,14 +157,14 @@ function Run-Row([string]$name) {
     finally { if ($id) { End-Row $name $id $null $before } }
 }
 
-$backup = Join-Path $env:TEMP 'tc307_backup.reg'
+$backup = Join-Path $env:TEMP 'tc321_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
 try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir
     Set-Config
-    Out ("tar307_probe (feature 307) {0}" -f $Label)
+    Out ("tar321_probe (feature 321) {0}" -f $Label)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; ACP {2}; python {3}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [Drv098f]::GetACP(), ((& $Python --version 2>&1) -join ' '))
     Out ''
