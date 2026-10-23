@@ -102,6 +102,7 @@
 #include "sallistingname.h"   // feature 321
 #include "salhfscatalog.h"    // feature 322
 #include "salftpmkdirreport.h" // feature 323
+#include "salsamevolume.h"     // feature 324
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -19606,6 +19607,184 @@ static void TestHfsCatalog322()
     }
 }
 
+// feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
+// when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
+// the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
+static BOOL SameVolume324Junction(const std::wstring& link, const std::wstring& substName)
+{
+    if (!CreateDirectoryW(link.c_str(), NULL))
+        return FALSE;
+    HANDLE h = CreateFileW(link.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+                           FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+    if (h == INVALID_HANDLE_VALUE)
+        return FALSE;
+    // REPARSE_DATA_BUFFER of a mount point: tag, data length, reserved; substitute name offset /
+    // length, print name offset / length; the substitute name and an empty print name, terminated
+    USHORT substLen = (USHORT)(substName.size() * sizeof(WCHAR));
+    USHORT dataLen = (USHORT)(8 + substLen + 2 + 2);
+    std::vector<BYTE> buf(8 + dataLen, 0);
+    DWORD tag = IO_REPARSE_TAG_MOUNT_POINT;
+    memcpy(&buf[0], &tag, 4);
+    memcpy(&buf[4], &dataLen, 2);
+    USHORT names[4] = {0, substLen, (USHORT)(substLen + 2), 0};
+    memcpy(&buf[8], names, sizeof(names));
+    memcpy(&buf[16], substName.c_str(), substLen);
+    DWORD ret = 0;
+    BOOL ok = DeviceIoControl(h, 0x000900A4 /* FSCTL_SET_REPARSE_POINT */, buf.data(), (DWORD)buf.size(), NULL, 0, &ret, NULL);
+    CloseHandle(h);
+    return ok;
+}
+
+static void TestSameVolume324()
+{
+    // --- the decision: the core's answer x its estimation flag x the serial match ---
+    struct
+    {
+        BOOL CoreSame, Estimate;
+        int Match;
+        BOOL Same;
+    } rows[] = {
+        {TRUE, FALSE, simUnknown, TRUE},
+        {TRUE, FALSE, simDifferent, TRUE},
+        {TRUE, FALSE, simEqual, TRUE},
+        {TRUE, TRUE, simUnknown, TRUE},
+        {TRUE, TRUE, simDifferent, TRUE}, // "same" stands (as before)
+        {TRUE, TRUE, simEqual, TRUE},
+        {FALSE, FALSE, simUnknown, FALSE}, // both volume names read: a certain "different" stands
+        {FALSE, FALSE, simDifferent, FALSE},
+        {FALSE, FALSE, simEqual, FALSE},
+        {FALSE, TRUE, simUnknown, TRUE}, // the defect: one volume unreadable -> fail closed
+        {FALSE, TRUE, simDifferent, FALSE},
+        {FALSE, TRUE, simEqual, TRUE},
+    };
+    for (const auto& r : rows)
+        CHECK(SalVolumeGuardSame(r.CoreSame, r.Estimate, r.Match) == r.Same);
+
+    // --- the serial match ---
+    CSalFileIdentity a, b;
+    SalFileIdentityClear(&a);
+    SalFileIdentityClear(&b);
+    CHECK(SalVolumeSerialMatch(a, b) == simUnknown); // nothing read
+    a.Valid = b.Valid = TRUE;
+    CHECK(SalVolumeSerialMatch(a, b) == simUnknown); // attribute data only
+    a.Has64 = b.Has64 = TRUE;
+    a.Vsn32 = 0x1234;
+    b.Vsn32 = 0x1234;
+    CHECK(SalVolumeSerialMatch(a, b) == simEqual);
+    b.Vsn32 = 0x9999;
+    CHECK(SalVolumeSerialMatch(a, b) == simDifferent);
+    b.Vsn32 = 0;
+    CHECK(SalVolumeSerialMatch(a, b) == simUnknown); // serial 0 (some servers): unknown
+    b.Vsn32 = 0x1234;
+    a.Has128 = TRUE;
+    a.Vsn64 = 0xAAAA00001234ull;
+    CHECK(SalVolumeSerialMatch(a, b) == simEqual); // one side without the 64-bit serial: the 32-bit ones
+    b.Has128 = TRUE;
+    b.Vsn64 = 0xBBBB00001234ull;
+    CHECK(SalVolumeSerialMatch(a, b) == simDifferent); // both 64-bit: those decide
+    b.Vsn64 = a.Vsn64;
+    CHECK(SalVolumeSerialMatch(a, b) == simEqual);
+    b.Vsn64 = 0;
+    CHECK(SalVolumeSerialMatch(a, b) == simUnknown);
+    b.Valid = FALSE;
+    b.Vsn64 = a.Vsn64;
+    CHECK(SalVolumeSerialMatch(a, b) == simUnknown);
+
+    // --- the walk to the nearest existing folder ---
+    CHECK(SalVolumeIdentityStepsUp(ERROR_FILE_NOT_FOUND) && SalVolumeIdentityStepsUp(ERROR_PATH_NOT_FOUND));
+    CHECK(!SalVolumeIdentityStepsUp(ERROR_ACCESS_DENIED) && !SalVolumeIdentityStepsUp(ERROR_BAD_NETPATH) &&
+          !SalVolumeIdentityStepsUp(ERROR_INVALID_NAME));
+    CHECK(SalWPathRootLength(L"\\\\?\\C:\\") == 7 && SalWPathRootLength(L"\\\\?\\c:\\a\\b") == 7);
+    CHECK(SalWPathRootLength(L"\\\\?\\C:") == 6 && SalWPathRootLength(L"\\\\?\\C:x") == 0);
+    CHECK(SalWPathRootLength(L"\\\\?\\UNC\\srv\\share\\a") == 18 && SalWPathRootLength(L"\\\\?\\unc\\srv\\share") == 17);
+    CHECK(SalWPathRootLength(L"\\\\?\\UNC\\srv\\") == 0 && SalWPathRootLength(L"\\\\?\\UNC\\srv") == 0);
+    CHECK(SalWPathRootLength(L"\\\\?\\Volume{0a}\\x") == 15 && SalWPathRootLength(L"\\\\?\\Volume{0a}") == 14);
+    CHECK(SalWPathRootLength(L"C:\\x") == 3 && SalWPathRootLength(L"x\\y") == 0 && SalWPathRootLength(L"") == 0 &&
+          SalWPathRootLength(NULL) == 0 && SalWPathRootLength(L"\\\\?\\") == 0);
+    WCHAR cut[64];
+    wcscpy_s(cut, L"\\\\?\\C:\\a\\b\\");
+    CHECK(SalWPathCutLast(cut) && wcscmp(cut, L"\\\\?\\C:\\a\\") == 0);
+    CHECK(SalWPathCutLast(cut) && wcscmp(cut, L"\\\\?\\C:\\") == 0);
+    CHECK(!SalWPathCutLast(cut) && wcscmp(cut, L"\\\\?\\C:\\") == 0); // the root stays
+    wcscpy_s(cut, L"\\\\?\\UNC\\srv\\share\\d");
+    CHECK(SalWPathCutLast(cut) && wcscmp(cut, L"\\\\?\\UNC\\srv\\share\\") == 0 && !SalWPathCutLast(cut));
+    wcscpy_s(cut, L"\\\\?\\Volume{0a}\\d\\e");
+    CHECK(SalWPathCutLast(cut) && wcscmp(cut, L"\\\\?\\Volume{0a}\\d\\") == 0);
+    wcscpy_s(cut, L"rel\\x");
+    CHECK(!SalWPathCutLast(cut) && wcscmp(cut, L"rel\\x") == 0); // never steps up a relative path
+    CHECK(SalVolumeGuardForPaths(NULL, L"\\\\?\\C:\\", FALSE, TRUE)); // not converted: unknown = same
+    CHECK(!SalVolumeGuardForPaths(NULL, L"\\\\?\\C:\\", FALSE, FALSE)); // the core was sure
+
+    // --- real folders: the measured cases ---
+    WCHAR tmp[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, tmp);
+    WCHAR volName[100];
+    WCHAR driveRoot[4] = {tmp[0], L':', L'\\', 0};
+    if (n == 0 || n >= MAX_PATH || tmp[1] != L':' || !GetVolumeNameForVolumeMountPointW(driveRoot, volName, 100))
+    {
+        printf("skipping the file part of TestSameVolume324 (no local temp path with a volume name)\n");
+        return;
+    }
+    std::wstring base = std::wstring(L"\\\\?\\") + tmp + L"saltests-324-" + std::to_wstring(GetCurrentProcessId());
+    std::wstring tgt = base + L"\\tgt";
+    std::wstring root = std::wstring(L"\\\\?\\") + driveRoot;
+    std::wstring volume = std::wstring(volName).substr(4); // "Volume{...}\"
+    std::wstring mountLike = base + L"\\Z\u00e1lohy";        // a junction to the volume root = a mount folder
+    std::wstring guidSub = base + L"\\jsub";                  // a junction to a volume-GUID folder
+    CHECK(CreateDirectoryW(base.c_str(), NULL) && CreateDirectoryW(tgt.c_str(), NULL));
+    CHECK(SameVolume324Junction(mountLike, L"\\??\\" + volume));
+    CHECK(SameVolume324Junction(guidSub, L"\\??\\" + volume + tgt.substr(7))); // tgt without "\\?\C:\"
+    // the core cannot name these volumes (measured: the A call with UTF-8 fails / both fail)
+    WCHAR probe[100];
+    CHECK(!GetVolumeNameForVolumeMountPointW((guidSub + L"\\").c_str(), probe, 100));
+
+    CSalFileIdentity rootId, id;
+    CHECK(SalGetNearestVolumeIdentityW(root.c_str(), &rootId));
+    std::wstring t1 = mountLike + L"\\restore\\deeper"; // missing: the walk steps up to the junction
+    std::wstring t2 = guidSub + L"\\restore";
+    CHECK(SalGetNearestVolumeIdentityW(t1.c_str(), &id) && SalVolumeSerialMatch(id, rootId) == simEqual);
+    CHECK(SalGetNearestVolumeIdentityW(t2.c_str(), &id) && SalVolumeSerialMatch(id, rootId) == simEqual);
+    CHECK(SalVolumeGuardForPaths(t1.c_str(), root.c_str(), FALSE, TRUE));         // was "different": now same
+    CHECK(SalVolumeGuardForPaths(root.c_str(), t2.c_str(), FALSE, TRUE));         // either order
+    CHECK(!SalVolumeGuardForPaths(t1.c_str(), root.c_str(), FALSE, FALSE));       // a certain answer stands
+    CHECK(SalVolumeGuardForPaths((tgt + L"\\x").c_str(), root.c_str(), TRUE, TRUE)); // "same" stands
+
+    // a drive letter that does not exist: unknown -> same
+    DWORD drives = GetLogicalDrives();
+    for (int d = 25; d >= 3; d--)
+    {
+        if (drives & (1u << d))
+            continue;
+        WCHAR missing[] = {L'\\', L'\\', L'?', L'\\', (WCHAR)(L'A' + d), L':', L'\\', L'x', 0};
+        CHECK(!SalGetNearestVolumeIdentityW(missing, &id));
+        CHECK(SalVolumeGuardForPaths(missing, root.c_str(), FALSE, TRUE));
+        break;
+    }
+
+    // another fixed volume with another serial: different (no extra warning) - SC-002
+    DWORD tmpSerial = 0;
+    GetVolumeInformationW(driveRoot, NULL, 0, &tmpSerial, NULL, NULL, NULL, 0);
+    BOOL otherFound = FALSE;
+    for (int d = 2; d < 26 && !otherFound; d++)
+    {
+        WCHAR other[4] = {(WCHAR)(L'A' + d), L':', L'\\', 0};
+        DWORD serial = 0;
+        if (!(drives & (1u << d)) || other[0] == driveRoot[0] || GetDriveTypeW(other) != DRIVE_FIXED ||
+            !GetVolumeInformationW(other, NULL, 0, &serial, NULL, NULL, NULL, 0) || serial == tmpSerial)
+            continue;
+        otherFound = TRUE;
+        std::wstring otherPath = std::wstring(L"\\\\?\\") + other + L"saltests-324-missing\\x";
+        CHECK(!SalVolumeGuardForPaths(otherPath.c_str(), root.c_str(), FALSE, TRUE));
+    }
+    if (!otherFound)
+        printf("TestSameVolume324: no second fixed volume - the 'different' row is skipped\n");
+
+    RemoveDirectoryW(guidSub.c_str()); // removes the junctions themselves
+    RemoveDirectoryW(mountLike.c_str());
+    RemoveDirectoryW(tgt.c_str());
+    RemoveDirectoryW(base.c_str());
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -19763,6 +19942,7 @@ int main(int argc, char** argv)
     TestPackName319();
     TestHfsCatalog322();
     TestFtpMkdirReport323();
+    TestSameVolume324();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

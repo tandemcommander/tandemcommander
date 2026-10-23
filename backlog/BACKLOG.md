@@ -244,6 +244,7 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [The core reads volume names with the code-page API on UTF-8 paths](items/the-core-reads-volume-names-with-the-code-page-api-on-utf-8/desc.md) | bug | 3 | encoding | measure:324 | 2026-10-23 |
 
 ## Parked
 

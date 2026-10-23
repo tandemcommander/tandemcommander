@@ -16,6 +16,7 @@
 #include "splfiledlg.h"                 // feature 104: the Unicode folder picker
 #include "../../common/salnumbername.h" // feature 148: numbered names that skip the taken ones
 #include "../../common/salheapstr.h"    // feature 163: the disk-cache key of a viewed file, whole
+#include "../../common/salsamevolume.h"  // feature 324: the same-volume guard fails closed
 #include "stream.h"
 #include "dialogs.h"
 #include "undelete.h"
@@ -212,6 +213,25 @@ int namecmp(char* name1, char* name2)
 }
 
 #define PATHSEP "\\/"
+
+// feature 324: "may these two paths be on one volume?" for the checks that keep the recovered
+// volume from being written (the same-partition warning, the temporary folder of View). The core
+// answers "different" also when it could read the volume name of only one path (a mount folder
+// named outside ASCII, a junction to a volume-GUID folder) - then the volume serials of the
+// nearest existing folders decide, and an unreadable one counts as the same volume
+static BOOL UndPathsMayShareVolume(const char* path1, const char* path2)
+{
+    BOOL estimation = TRUE;
+    BOOL same = SalamanderGeneral->PathsAreOnTheSameVolume(path1, path2, &estimation);
+    if (same || !estimation)
+        return same;
+    WCHAR* w1 = SplU8ToWExtAlloc(path1); // UTF-8 -> wide, whole, \\?\ form; NULL = unknown = same
+    WCHAR* w2 = SplU8ToWExtAlloc(path2);
+    BOOL ret = SalVolumeGuardForPaths(w1, w2, same, estimation);
+    free(w1);
+    free(w2);
+    return ret;
+}
 
 HWND HProgressDlg = NULL;
 
@@ -1411,7 +1431,7 @@ CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsName, HW
     // fixme: test if Volume is open and valid?
 
     // don't undelete to the same volume
-    if (!ConfigDontShowSamePartitionWarning && !Volume.IsImage && SalamanderGeneral->PathsAreOnTheSameVolume(targetPath, Root, NULL))
+    if (!ConfigDontShowSamePartitionWarning && !Volume.IsImage && UndPathsMayShareVolume(targetPath, Root))
     {
         MSGBOXEX_PARAMS mbep;
         memset(&mbep, 0, sizeof(mbep));
@@ -1509,9 +1529,9 @@ BOOL CPluginFSInterface::GetTempDirOutsideRoot(HWND parent, char* buffer, char**
     GetTempPathW(MAX_PATH, pathW); // get system TEMP
     if (SplWToU8(pathW, path, sizeof(path)) <= 0)
         path[0] = 0;
-    if (!Volume.IsImage && SalamanderGeneral->PathsAreOnTheSameVolume(Root, path, NULL))
+    if (!Volume.IsImage && UndPathsMayShareVolume(Root, path))
     {
-        while (ConfigTempPath[0] == 0 || SalamanderGeneral->PathsAreOnTheSameVolume(Root, ConfigTempPath, NULL))
+        while (ConfigTempPath[0] == 0 || UndPathsMayShareVolume(Root, ConfigTempPath))
         {
             char text[1024]; // feature 114: was 200 bytes - the Ukrainian text is 226 (an overrun)
             _snprintf_s(text, _TRUNCATE, String<char>::LoadStr(IDS_TEMPDIR), path[0], path[0]);
