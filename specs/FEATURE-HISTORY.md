@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4548,3 +4548,36 @@ a few early ones are out of sequence).
   68 / 9); 326's probe 28 / 0, 322's 18 / 0; saltests 27,937 -> 27,986 / 0 (mutants of each part fail);
   refute-first reviews: review 1 (partial results: the version-less separator, fixed), review 2 (no
   MUST, one SHOULD - label coverage - fixed, five NOTEs).
+- 328-uniso-refused-entry: an ISO image with an entry deeper than the panel listing takes (a folder
+  part over MAX_PATH - 5 bytes - genisoimage `-R` / `-J` trees, `RR` images without `SP`) opened with a
+  bare "Error": the plug-in cleared what it had listed, descended into no later folder (`zlast\z.txt`
+  lost too), and Unpack with "Delete archive after unpacking" deleted the image after extracting two
+  of four files; xorriso images listed the whole volume under ISO 9660 names (326) - now such an
+  entry is left out alone (`AddFileDir` asks the listing's rule first: listed / left out / failed),
+  named once per listing with the system's "(206)" text and its whole in-image path (up to 10,
+  `CSalListingLeftOut`, `src/common/salisonamefit.h`; a heap text as TAR 321), and a whole unpack of
+  such a listing fails (the image is kept; an out-of-memory entry marks it too). The fit check runs
+  for every non-Joliet volume; when it fails, each Rock Ridge folder whose name is longer than its
+  ISO 9660 one is decided by count walks (`PickDirName` / `CountUnder`: Rock Ridge when its subtree
+  fits whole or lists no fewer entries with ISO 9660 names below - never fewer entries than 326's
+  whole-volume listing, proven on 400 random trees in saltests), a file keeps its Rock Ridge name
+  whenever the listing takes it. Each walk meets a directory once (`Visited`; count walks undo theirs).
+  Traps: review 1 (partial work of a stopped reviewer) - main's "Error" had ended the walk of a crafted
+  folder cycle by accident, the new code hung 150 s+ (LOOP rows; a Joliet loop of 60-letter names did
+  not fail without the fix - the depth bound ends it); review 2 (stopped, its stress images) - a copy of
+  the visited set per count walk was quadratic, count walks for names not longer than the ISO ones
+  walked deep chains per level; review 3's MUST - a reach rule (in-image path below MAX_PATH, added
+  after the core's Copy box "Name ... with full path is too long" skipped deep.txt) renamed listed
+  Rock Ridge files to 8.3 names: reverted, that box counts from the panel's folder and is skippable;
+  a probe row's `$b` button handle shadowed the script's `$B` (PowerShell names ignore case); empty
+  Bash here-documents to `python -` start a REPL that floods the output (twice). Limits: genisoimage's
+  deep tree keeps `d` under its Rock Ridge name on a tie, so a Copy from the root asks about deep.txt
+  (Unpack extracts it); a Joliet folder over the copy bound asks the same; UDF / Xbox / HFS+ / audio and
+  read errors keep their old handling (Inbox `iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses`,
+  `iso-plug-in-unpack-deletes-image-with-unreadable-folder`); the report shows at every listing. From
+  backlog item `iso-plug-in-an-entry-the-listing-refuses-ends-the-listing`. Probe `iso328_probe` 0 / 6
+  RUN rows -> 20 / 0 (G/X/L-COPY, J-COPY, J-UNP-DEL, G-UNP-DEL, LONG-G/X, LOOP-RR/J; negative controls:
+  decision off + unpack not failing 7 / 5, no visited set LOOP 0 / 2, review 2's build LONG 8.3 names);
+  326 28 / 0, 326 twins 8 / 0, 327 77 / 0, 322 18 / 0; saltests 27,986 -> 28,018 / 0 (a mutant of the
+  folder rule fails 6); refute-first reviews: 1 and 2 stopped (partial work used), 3 (one MUST, fixed),
+  4 (no MUST, two SHOULD: out-of-memory marking taken, spec US3 corrected; read errors to Inbox).

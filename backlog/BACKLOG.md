@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an entry the listing refuses ends the listing with Error, a folder lost](items/iso-plug-in-an-entry-the-listing-refuses-ends-the-listing/desc.md) | bug | 6 | archives | 328 |
 
 ## Next
 

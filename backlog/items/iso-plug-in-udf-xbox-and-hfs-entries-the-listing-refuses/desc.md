@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: M
 feature: -
-related: [iso-plug-in-an-entry-the-listing-refuses-ends-the-listing]
+related: []
 depends-on: []
 reason: -
 ---
@@ -50,3 +50,4 @@ deleted.
 ## Log
 
 - 2026-10-23 — created (source measure:328)
+- 2026-10-23 — related item iso-plug-in-an-entry-the-listing-refuses-ends-the-listing done in feature 328
