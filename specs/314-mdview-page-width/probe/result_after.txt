@@ -1,0 +1,25 @@
+pw314_probe (feature 314) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 01:35; registry key existed True; desktop tc_probe_32360
+
+MENU       RUN    PASS        popup True; title 'Page Width @1 after 'Color Scheme''; items 'Normal|Wide|Wider|Full Window'; checked 220; window 'C:\Users\pavel\AppData\Local\Temp\tc314\files\a_doc.md - Markdown Viewer (100%)'; scale 1
+W-NORMAL   RUN    PASS        extent 681;left=794;right=1474;rows=266;client=2284x941;bg=242,243,245; allowed 680
+W-WIDE     RUN    PASS        checked 221; extent 968;left=651;right=1618;rows=266;client=2284x941;bg=242,243,245; allowed 968
+W-WIDER    RUN    PASS        checked 222; extent 1385;left=442;right=1826;rows=286;client=2284x941;bg=242,243,245; allowed 1384
+W-FULL     RUN    PASS        checked 223; extent 2228;left=28;right=2255;rows=216;client=2284x941;bg=242,243,245; allowed 2228
+BACK       RUN    PASS        checked 222
+FIRST      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SAVED      RUN    PASS        PageWidth = 2 (DWORD)
+RESTART    RUN    PASS        checked 222; extent 1385;left=442;right=1826;rows=286;client=2284x941;bg=242,243,245; Wider before 1385
+SECOND     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TWOWIN-RUN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TWOWIN     RUN    PASS        A checked 221; B checked 220; stored after exit PageWidth = 0 (DWORD) (want 0: the last choice)
+UNKNOWN    RUN    PASS        stored REG_DWORD 7; checked 220; core message before the viewer: none
+UNKNOWN-RUN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PageWidth after UNKNOWN: 0 (DWORD)
+WRONGTYPE  RUN    PASS        stored REG_SZ 2; checked 220; core message before the viewer: [#32770 'Error Loading Configuration'] [Static id=2477] Unexpected value type. | [Button id=1] OK
+WRONGTYPE-RUN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PageWidth after WRONGTYPE: 0 (DWORD)
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

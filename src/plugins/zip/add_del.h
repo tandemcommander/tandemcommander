@@ -204,6 +204,8 @@ public:
     int WriteEOCentrDirRecord();
     int ExportName(char* destName, CFileInfo* fileInfo, BOOL* isUTF8);
     int CreateTempFile();
+    // feature 320: the closed TempName takes the closed archive's place in one step (salsafereplace.h)
+    int ReplaceArchiveWithTemp();
     void NTFSCompressFile(HANDLE file);
     int EnumFiles2(SalEnumSelection2 next, void* param);
     int LoadCentralDirectory();

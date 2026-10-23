@@ -574,6 +574,25 @@ int Text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* ud)
 // public API
 // --------------------------------------------------------------------------
 
+int MdPageWidthFromStored(unsigned v)
+{
+    return v < (unsigned)MDPW_COUNT ? (int)v : MDPW_NORMAL;
+}
+
+// The article's opening tag for a page width (feature 314). NORMAL is the tag of
+// before 314, byte for byte; the other levels add the class whose rule
+// MdBuildThemeCss carries.
+static const char* ArticleOpenTag(int pageWidth)
+{
+    switch (pageWidth)
+    {
+    case MDPW_WIDE: return "<article class=\"markdown-body wide\">";
+    case MDPW_WIDER: return "<article class=\"markdown-body wider\">";
+    case MDPW_FULL: return "<article class=\"markdown-body full\">";
+    default: return "<article class=\"markdown-body\">";
+    }
+}
+
 std::string MdBuildThemeCss(const MdTheme& t)
 {
     std::string c;
@@ -608,6 +627,7 @@ std::string MdBuildThemeCss(const MdTheme& t)
         "body{font-family:'Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.6;"
         "-webkit-text-size-adjust:100%;}"
         ".markdown-body{max-width:46rem;margin:0 auto;padding:24px 28px 64px;}"
+        ".markdown-body.wide{max-width:64rem;}.markdown-body.wider{max-width:90rem;}"
         ".markdown-body.full{max-width:none;}"
         "h1,h2,h3,h4,h5,h6{color:var(--hd);line-height:1.25;margin:1.4em 0 .5em;font-weight:600;}"
         "h1{font-size:2em;border-bottom:1px solid var(--tb);padding-bottom:.3em;}"
@@ -644,7 +664,7 @@ std::string MdBuildThemeCss(const MdTheme& t)
 bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
                   const std::wstring& docDir, MdHtmlResult& out,
                   const std::wstring& findTerm, bool allowRemote,
-                  const MdRenderLimits& lim)
+                  int pageWidth, const MdRenderLimits& lim)
 {
     out.html.clear();
     out.images.clear();
@@ -695,7 +715,9 @@ bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
     out.html += dark ? "dark" : "light";
     out.html += "\"><style>\n";
     out.html += MdBuildThemeCss(theme);
-    out.html += "\n</style></head><body><article class=\"markdown-body\">\n";
+    out.html += "\n</style></head><body>";
+    out.html += ArticleOpenTag(pageWidth);
+    out.html += "\n";
     out.html += g.body;
     out.html += "\n</article></body></html>";
     out.bytesOut = out.html.size();
@@ -703,7 +725,7 @@ bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
 }
 
 bool MdBuildSourceHtml(const std::string& srcUtf8, const MdTheme& theme,
-                       MdHtmlResult& out, const std::wstring& findTerm)
+                       MdHtmlResult& out, const std::wstring& findTerm, int pageWidth)
 {
     out.html.clear();
     out.images.clear();
@@ -753,7 +775,9 @@ bool MdBuildSourceHtml(const std::string& srcUtf8, const MdTheme& theme,
                 "font-family:Consolas,'Cascadia Mono',monospace;font-size:.95em;line-height:1.5;"
                 "color:var(--cf);background:var(--cb);border:1px solid var(--tb);"
                 "border-radius:6px;padding:14px 16px;}";
-    out.html += "\n</style></head><body><article class=\"markdown-body\">\n";
+    out.html += "\n</style></head><body>";
+    out.html += ArticleOpenTag(pageWidth);
+    out.html += "\n";
     out.html += body;
     out.html += "\n</article></body></html>";
     out.bytesOut = out.html.size();

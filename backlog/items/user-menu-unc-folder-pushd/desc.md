@@ -7,11 +7,11 @@ area: panels-ui
 source: review:226
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
+updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [user-menu-messages-and-folder-leftovers]
+related: []
 depends-on: []
 reason: -
 ---
@@ -42,3 +42,4 @@ The maintainer stated severity 2-3; the lower value is used.
 
 - 2026-10-16 — maintainer: stays in the backlog (severity about 2-3/10: a "through shell" item, no Initial Directory, a relative name, a UNC panel; a safe fix would be pushd at the start, popd at the end, early ends by goto to it)
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-10-23 — related item user-menu-messages-and-folder-leftovers closed: split into: user-menu-errors-name-the-file-or-folder, user-menu-hidden-batch-silent-early-end, user-menu-shortcut-start-in-folder, user-menu-unc-folder-pushd, command-line-comspec-read-wide, user-menu-long-paths - the parts replace it; maintainer 2026-10-23

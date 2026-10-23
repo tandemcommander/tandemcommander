@@ -30,13 +30,13 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310 |
-| ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319 |
+| ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
-| WebView2 viewers (Markdown, Code) | 081, 085, 262 |
+| WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
 | Privacy and security | 083, 085, 086, 090, 123 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303 |
 | PictView | 105, 111, 120, 267 |
@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 313 |
 
 ## Feature notes
 
@@ -4198,3 +4198,162 @@ a few early ones are out of sequence).
   26 / 0 (13 rows; negative control Validate checks off 5 FAIL; review's control every guard off failed
   its rows); 291's probe 34 / 0, 251's 42 / 0; saltests 27,237 / 0; one refute-first review (no MUST,
   two SHOULDs to the Inbox, a `view-copy-keep` row added).
+- 313-quick-search-diacritics: quick search in the new mode (244) ignored case but not accents -
+  `zlut` did not find the folder `žluťoučký`, `cesky` stuck at `c` and never reached `Český.txt`,
+  `žlut` did not find `zlutý` - now the keys of `salquickfilter.h` drop the nonspacing marks of the
+  Latin/Greek/Cyrillic diacritic blocks (U+0300-036F, 1AB0-1AFF, 1DC0-1DFF, 20D0-20FF, FE20-FE2F;
+  enclosing marks such as the keycap and the negation stroke U+0338 stay) after NFD + lower case, in names and typed text alike,
+  and fold `ł ø đ ß ẞ æ œ ı` (and capitals) to `l o d ss ss ae oe i`. A mark-only character has an
+  empty key (cache marker `SALQF_KEY_EMPTY`, `CharKey` -1 = no room), a mask segment of marks only is
+  not stored; `Starts` = 2 marks a later unit of a folded letter, where a match may end
+  (`KeyEndOffset` reports the whole letter); Left/Backspace of the new mode remove a letter with its
+  ignored marks, and a text of ignored marks only ends the search (`SalQFCutLastLetter`,
+  `SalQFOnlyIgnoredMarks`); Right after a text ending inside a folded letter goes on with the
+  matched part of the name. Traps: the refusal of a keystroke that leaves no match means
+  every partial text must match - "a match covers a folded letter whole" made `strasse` stick at
+  `stra` (review 1; the first probe row could not tell the builds apart, a distractor `Strand.txt`
+  can); dropping marks moves the match end behind them, so Left removing one code point removed only
+  the invisible mark and stuck (review 1); with the end moved behind a folded letter, Right appended
+  the next character to `stras` -> `strase` and was refused (review 2); U+0338 is a Mn of the block
+  but negates symbols (`≠` -> `=`), so it stays; a plain `build.cmd` does not relink saltests after a
+  header-only change - touch `saltests.cpp` for a negative control; PowerShell variable names ignore
+  case (`$exp` vs `[hashtable]$Exp`). Limits: marks of other scripts (Japanese voiced mark, Hebrew
+  points, Indic signs) still count; `ð þ ħ` not folded; Cyrillic `й`/`и` and similar fold (the
+  maintainer's symmetric decision); the option-off 0.1.10 rule is unchanged (accents count); M3
+  compares the 229 folded pairs with 0.1.10 only as a superset. From backlog item
+  `quick-search-ignores-diacritics`. Probe `qs313_probe.ps1` before: D01/D03 show the defect -> after
+  32 rows / 0 FAIL (D12-D15 added by review 1, D16 by review 2; D12 measured on the baseline
+  {Strand, Straße} -> {Straße}; negative control Right fallback off D16 FAIL); option off identical;
+  244 probe 45 / 0 in both modes, identical to its records;
+  Release A/B against the baseline build: no measurable change; saltests 27,401 / 0 (55 folding
+  cases; negative controls 24 and 7 failed checks); two refute-first reviews (round 1: a MUST and
+  two SHOULDs fixed; round 2: no MUST, a SHOULD fixed, the dot tolerance after a typed mark
+  recorded). Person step `quick-search-ignoring-accents-check-with-a-real-keyboard`.
+- 315-unpack-default-whole: the Unpack dialog (Alt+F9) filled its target with the other panel's
+  path cut to 259 bytes (`lstrcpyn`, possibly inside a UTF-8 letter - a CJK cut showed as garbage);
+  the cut fitted, so 299's `Validate` accepted it and one Enter (with "Use the other panel for
+  unpacking") unpacked into a new folder named after the cut component; with "Use the archive name
+  as a subfolder" a path + name that did not fit was offered bare (files straight into the other
+  panel's folder); an empty target became the archive panel's path cut the same way (measured: a
+  new cut folder). Now `salunpackdefault.h`: a default is offered whole or left out (the entry stays
+  empty, as for a non-disk panel), a subfolder that does not fit leaves the path out and offers the
+  archive's name alone (a subfolder next to the archive), a plug-in's unpack mask whole or `*.*`, and
+  the empty target is refused ("The path specified is too long.", the dialog again) when the archive
+  folder - or, with the subfolder setting, the archive's name alone - does not fit. Limits: with "Use
+  the other panel" on and a long other panel the one entry is the empty one - Enter unpacks next to
+  the archive (the item's choice; overwrite questions still asked); the plug-in mask is not driven
+  (no plug-in of the tree passes one); a leading space of the archive name is lost in the subfolder
+  (Inbox `unpack-into-a-subfolder-named-after-an-archive-whose-name`, review). Trap: PowerShell's
+  `@($a + 'x', $b + 'y')` - the comma binds before `+`. From backlog item
+  `unpack-dialog-offers-a-long-target-panel-path-cut-and`. Probe `unpack315_probe.ps1` 6 FAIL / 9 ->
+  11 / 0 (negative control: the build of main); 299's probe 12 / 0; saltests 27,440 / 0 (negative
+  controls 8 and 1 failed); one refute-first review (no MUST; SHOULD 1 - a subfolder name too long
+  alone unpacked without it - fixed, SHOULD 2 accepted as the item's choice, a NOTE to the Inbox).
+- 316-unpack-subdir-space: with "Use the archive name as a subfolder" the Unpack dialog (Alt+F9)
+  offered ` ssss` for an archive ` ssss.zip`, but OK unpacked into `ssss` - another folder, an
+  existing `ssss` merged into (also when ` ssss` existed; a typed ` typed` the same): `SalGetFullName`
+  drops the leading spaces of a relative name unless `allowRelPathWithSpaces`. Now `CFilesWindow::Unpack`
+  passes TRUE (as `SalParsePath` for Copy/Move): an existing ` ssss` is unpacked into, a new one is
+  refused by the existing create rule (`CheckAndCreateDirectory`, `manualCrDir`: "Error Creating
+  Directory", invalid name, the dialog again) - the refusal the absolute entry `<other panel>\ ssss`
+  already got. Limits: the dialog's own offer is refused (edit the entry); the Pack dialog has the
+  same trimming (Inbox `pack-with-a-relative-archive-name-that-starts-with-a-space`, not measured).
+  Trap: `' ..'` (archive `' ...zip'`) trimmed to `..` meant the parent folder (review, read) - now refused. From
+  backlog item `unpack-into-a-subfolder-named-after-an-archive-whose-name`. Probe
+  `unpack316_probe.ps1` 6 FAIL / 12 -> 18 / 0 (negative control: the build of main); 315's probe
+  22 / 0; saltests 27,440 / 0; one refute-first review (no MUST, no SHOULD; its scratch rows with
+  dots and tabs all refused, nothing written).
+- 317-pack-name-space: the Pack dialog (Alt+F5) offered ` report.zip` for an item ` report`, but OK
+  packed into `report.zip` - another archive; an existing `report.zip` got the "add or overwrite?"
+  question and was changed by Add / Overwrite (a typed ` typed.zip` the same): `SalGetFullName`
+  drops the leading spaces of a relative name. Now `CFilesWindow::Pack` passes
+  `allowRelPathWithSpaces = TRUE` (as 316 for Unpack): ` report.zip` is created or, existing, asked
+  about and added to / overwritten; `report.zip` is untouched. Trap: kept as typed, ` ..` / ` .` are
+  not resolved to a folder - the ZIP plug-in opens archives through `\\?\` and created files
+  literally named ` ..` / ` .` (planning expected Win32 trimming; measured otherwise) - so a last
+  part of spaces and dots only is refused through the existing error path (`IDS_PATHISINVALID`,
+  `SalPackNameIsOnlyDotsAndSpaces`, `src/common/salpackname.h`, also for absolute names). Limits:
+  `   ` packs into `   .zip`; ` ..\x.zip` and a leading tab now fail in the packer (nothing written);
+  names ending in a dot / space or device names are still written literally (Inbox
+  `pack-archive-name-trailing-dot-or-space`). From backlog item
+  `pack-with-a-relative-archive-name-that-starts-with-a-space`. Probe `pack317_probe.ps1` 11 FAIL /
+  17 -> 28 / 0 (negative control: `main`'s Pack code); 316's probe 18 / 0, 241's 8 / 0; saltests
+  27,456 / 0; one refute-first review (no MUST; SHOULD - the Inbox item - fixed; 13 scratch names
+  with dots, tabs and slashes: nothing written).
+- 318-pack-name-trailing-dot: the Pack dialog (Alt+F5) created an archive whose name ended in a dot
+  or a space (`report.`, `report.zip `, also absolute) literally - the ZIP plug-in writes through
+  `\\?\`, so Windows did not trim it - and Explorer / plain paths could not open or delete it; device
+  names (`CON.zip`, `con` -> `con.zip`, `NUL .zip`, `COM1.zip`, `lpt9.tar.zip`) were created too.
+  Now a last part that ends in `.` / ` ` or is a reserved device name (CON, PRN, AUX, NUL, COM0-9,
+  LPT0-9, COM/LPT + superscript 1-3, before the first dot, trailing spaces ignored, any case) is
+  refused through 317's path (`IDS_PATHISINVALID`, the dialog again) - `SalPackNameIsNotKeptAsTyped`
+  in `src/common/salpackname.h` replaces 317's `SalPackNameIsOnlyDotsAndSpaces` (a subset); the last
+  part starts after `\` or `/`. Traps: on Windows 11 a device name with an extension is an ordinary
+  file (measured: plain paths open `CON.zip`) - refused because the item names it; the first fix also
+  blocked adding to an existing `aux.zip` / literal `report.` (review) - now refused only when
+  `FileExists` (through `\\?\`, no trimming: `report` never stands for `report.`) finds no file of
+  that name. Limits: a folder part is not checked (the ZIP plug-in refuses `CON\a.zip` itself); a
+  colon writes the archive into an alternate data stream (Inbox
+  `pack-writes-the-archive-into-a-hidden-data-stream-when-its`). From backlog item
+  `pack-archive-name-trailing-dot-or-space`. Probe `pack318_probe.ps1` 12 FAIL / 30 -> 52 / 0
+  (control of the review rows on the first fix: 4 FAIL); 317's probe 28 / 0; saltests 27,508 / 0
+  (negative control: the device part disabled -> 18 failed); one refute-first review (no MUST; SHOULD
+  existing archives and NOTE `/` fixed).
+- 319-pack-name-colon: an archive name typed in the Pack dialog (Alt+F5) with a colon in it
+  (`report:zip`, `rep:x.zip`, also absolute) created an empty file `report` / `rep` and wrote the
+  archive into its NTFS alternate data stream (`report:zip.zip`) - invisible to Explorer and the
+  panel; with an existing `report` the stream was attached to it, and Add into an existing stream
+  archive failed ("Archive was not changed.") yet changed the stream and left a `Sal*.tmp`. Now a
+  last part holding `:` is refused - `SalPackNameHasStreamColon` in `src/common/salpackname.h` (a
+  drive prefix `X:` skipped, the last part after `\` or `/`), checked with 318's rule after
+  `SalGetFullName` through `IDS_PATHISINVALID`, the dialog again - **unconditionally** (not gated by
+  `FileExists` like 318's: a stream is never a file the panel shows). Traps: 318's probe snapshot
+  (`Directory.GetFiles`) cannot see a stream - 319's lists streams (`FindFirstStreamW`) and hashes
+  them through `CreateFileW`; a Bash heredoc collapsed `'\\'` in the new rule (build failed, fixed
+  with the editor); `Copy-Item` restoring the negative-control header kept its old time stamp, so
+  MSBuild did not recompile (that probe run became the probe's negative control). Limits: a colon in
+  a folder part (`sub:x\a.zip`) is left to the packer, which refuses it; the ZIP plug-in's false
+  "Archive was not changed." is Inbox `zip-says-the-archive-was-not-changed-after-a-failed-replace`.
+  From backlog item `pack-writes-the-archive-into-a-hidden-data-stream-when-its`. Probe
+  `pack319_probe.ps1` 6 FAIL / 18 -> 42 / 0 (with the review's 9 rows; negative-control binary 6 FAIL);
+  318's probe 52 / 0; saltests 27,540 / 0 (negative control: the rule off -> 18 failed); one
+  refute-first review (no MUST, no SHOULD; its call-site negative control failed 4 of 5 rows; its rows
+  adopted).
+- 320-zip-failed-replace: the ZIP plug-in (default "create temporary backup of zip") put a changed
+  archive in place by deleting it and renaming its `Sal*.tmp` over it. With the archive open in another
+  program without delete sharing, adding files to it or deleting members from it said "Cannot replace
+  original archive with temporary working file. Archive was not changed." (true) but left the
+  `Sal*.tmp` in the folder; with the temporary file held instead (an antivirus on the new file) or an
+  archive in a data stream (319), the delete succeeded, the rename failed, and the archive was GONE
+  under the same "not changed" message. Now both sites (`PackNormal`, `DeleteFromArchive`) call
+  `CZipPack::ReplaceArchiveWithTemp` -> `SalReplaceWithTempW` (105): one ReplaceFileW step; kept ->
+  the temporary file deleted and the message true; archive vanished -> the temporary file kept and
+  named (`IDS_ERRCREATE`, no new string). Traps: ReplaceFileW copies the target's named streams
+  (Zone.Identifier) into the new file, which moves its last-write time - "set zip file time to the
+  newest file time" is applied again after the replace (measured; saltests prints it, does not pin
+  it); PowerShell passes `$null` as "" to a P/Invoke string (use `[NullString]::Value`). Limits: an
+  archive behind a file symbolic link now fails safe (1464) instead of the link becoming a plain file
+  (Inbox `zip-cannot-update-an-archive-reached-through-a-symbolic-link`); the "only copy" case does not
+  say so (Inbox `zip-does-not-say-the-temporary-file-is-the-only-copy`); a held temporary file cannot
+  be deleted and may remain. From backlog item `zip-says-the-archive-was-not-changed-after-a-failed-replace`.
+  Probe `zipreplace_probe.ps1` 2 FAIL / 10 -> 12 / 0 (add-locked, del-locked); saltests 27,558 / 0
+  (`TestSafeReplace320`); review 1 killed without a report (its probe left the registry changed -
+  person step `restore-registry-after-killed-probe-320`); review 2 refute-first: no MUST, 2 SHOULD
+  (-> Inbox), NOTE 4 fixed.
+- 314-mdview-page-width: the Markdown Viewer kept every document in a 46rem column (about 736 px,
+  80-90 characters a line) - a wider window only added margins, wide tables and code scrolled
+  inside the column, zoom scaled both - now View > Page Width (after Color Scheme) offers Normal
+  46rem (the default, the page of before byte for byte apart from two added CSS rules), Wide
+  64rem, Wider 90rem, Full Window (no limit, the padding stays), radio-checked, applied at once
+  (also in View Source) and stored as `PageWidth` 0-3 beside `ZoomPercent` (unknown -> Normal).
+  The width is per window; a choice also sets the stored level, even when it is the window's
+  own (review 1: two windows). Traps: a rebuild opens the page at the top (scripts off, no scroll
+  API in the shared host - a scheme change does the same; Inbox item); PrintWindow
+  (PW_RENDERFULLCONTENT) does capture the WebView2 page on the hidden desktop - the probe measures
+  the text column (681 / 968 / 1385 / 2228 px in a 2284 px client); a wrong-typed value shows the
+  core's "Unexpected value type." box; the 081 `mdview_probe.ps1` fails its first view on the
+  hidden desktop on HEAD as well (Inbox). From backlog item `mdview-page-width-levels`. Probe
+  `pw314_probe` 5/5 FAIL before -> 16/0; harness 38 -> 53/0 (negative controls fail); one
+  refute-first review (no MUST; S1 fixed). Blocked only for the `.slt` refresh; finished in a
+  maintainer session after merging `main`: 5 strings x 8 languages, 288 DeepL characters, 11 pins
+  (meaning and gender of the width levels; Zoom Out was "Zoom In" in de and ro).

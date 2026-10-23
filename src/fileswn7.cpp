@@ -4,7 +4,9 @@
 
 #include "precomp.h"
 
-#include "salheapstr.h" // feature 097
+#include "salheapstr.h"       // feature 097
+#include "salunpackdefault.h" // feature 315
+#include "salpackname.h"      // feature 317
 
 #include "cfgdlg.h"
 #include "mainwnd.h"
@@ -1924,7 +1926,24 @@ _PACK_AGAIN:
         BOOL empty = FALSE;
         char nextFocus[MAX_PATH];
         nextFocus[0] = 0;
-        if (SalGetFullName(fileBuf, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus))
+        // feature 317: a relative archive name keeps its leading spaces (as Unpack's target, 316) - the
+        // item ' report' offers ' report.zip'; trimmed, it packed into another archive 'report.zip'.
+        // A name of spaces and dots only (' ..') is refused: trimmed it meant a folder (no archive was
+        // made), kept the packer would create a file literally named ' ..'. Feature 318: the same for
+        // every last part the file system would not keep as typed - a trailing dot or space
+        // ('report.', 'report.zip ') or a device name ('CON.zip'): the packers write through \\?\,
+        // so such a file was created literally and ordinary programs could not open or delete it.
+        // An archive already named so (FileExists goes through \\?\, so 'report' never stands for
+        // 'report.') is added to or overwritten as before - nothing new is created. Feature 319: a ':'
+        // in the last part ('report:zip') is always refused - NTFS made it an empty file 'report' with
+        // the archive hidden in its data stream 'zip.zip' (also when 'report' or the stream existed)
+        BOOL nameOk = SalGetFullName(fileBuf, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus, NULL, MAX_PATH, TRUE);
+        if (nameOk && (SalPackNameHasStreamColon(fileBuf) || (SalPackNameIsNotKeptAsTyped(fileBuf) && !FileExists(fileBuf))))
+        {
+            errTextID = IDS_PATHISINVALID;
+            nameOk = FALSE;
+        }
+        if (nameOk)
         {
             // feature 119: the existing archive is one of the files to be packed (selected, or inside a
             // selected folder) - refused before the "Add or Overwrite?" question, whose every answer
@@ -2128,41 +2147,48 @@ void CFilesWindow::Unpack(CFilesWindow* target, int pluginIndex, const char* plu
         pathAlt[0] = 0;
         if (target->Is(ptDisk))
         {
-            // feature 011: the unpack dialog uses MAX_PATH target buffers; a
-            // longer panel path is bounded here (the downstream "< MAX_PATH"
-            // checks then degrade gracefully) - never overflow
+            // feature 315: the unpack dialog uses MAX_PATH target buffers; a longer panel path
+            // is left out (the entry stays empty, as for a non-disk panel) - never offered cut
+            // (a cut path is another folder: the files were unpacked into it)
             if (Configuration.UseAnotherPanelForUnpack)
             {
                 target->UserWorkedOnThisPath = TRUE; // default action = work with the path in the target panel
-                lstrcpyn(path, target->GetPath(), MAX_PATH);
+                if (!SalUnpackDefaultCopy(target->GetPath(), path, MAX_PATH))
+                    TRACE_I("CFilesWindow::Unpack(): the other panel's path is too long to offer");
             }
             else
-                lstrcpyn(pathAlt, target->GetPath(), MAX_PATH);
+            {
+                if (!SalUnpackDefaultCopy(target->GetPath(), pathAlt, MAX_PATH))
+                    TRACE_I("CFilesWindow::Unpack(): the other panel's path is too long to offer");
+            }
         }
         char fileName[SAL_FIND_NAME_U8]; // AlterFileName copies a full name unbounded (feature 027; was MAX_PATH)
         AlterFileName(fileName, file->Name, -1, Configuration.FileNameFormat, 0, FALSE);
+        int subdirNameLen = 0; // feature 315: the subfolder's name length (0 = no subfolder asked)
         if (Configuration.UseSubdirNameByArchiveForUnpack)
         {
+            // the name without ".ext", never past the altered name
+            int nameLen = (int)(file->Ext - file->Name) - (*file->Ext == 0 ? 0 : 1);
+            if (nameLen > (int)strlen(fileName))
+                nameLen = (int)strlen(fileName);
+            subdirNameLen = nameLen;
             int i2;
             for (i2 = 0; i2 < 2; i2++) // for path and pathAlt
             {
-                char* buff = (i2 == 0) ? path : pathAlt;
-                int l = (int)strlen(buff);
-                if (l + (l > 0 && buff[l - 1] != '\\' ? 1 : 0) + (file->Ext - file->Name) - (*file->Ext == 0 ? 0 : 1) < MAX_PATH)
-                {
-                    if (l > 0 && buff[l - 1] != '\\')
-                        buff[l++] = '\\';
-                    memcpy(buff + l, fileName, file->Ext - file->Name);
-                    buff[l + (file->Ext - file->Name) - (*file->Ext == 0 ? 0 : 1)] = 0;
-                }
-                else
-                    TRACE_E("CFilesWindow::Unpack(): too long path to add archive name!");
+                // feature 315: with its subfolder, or the path left out and the name alone (a
+                // subfolder next to the archive) - never the bare path (it unpacked straight into
+                // the other panel's folder)
+                if (!SalUnpackDefaultAddSubdir((i2 == 0) ? path : pathAlt, MAX_PATH, fileName, nameLen))
+                    TRACE_I("CFilesWindow::Unpack(): too long path to add archive name, the path is left out");
             }
         }
-        if (unpackMask != NULL)
-            lstrcpyn(mask, unpackMask, MAX_PATH);
-        else
+        if (unpackMask == NULL)
             strcpy(mask, "*.*");
+        else if (!SalUnpackDefaultCopy(unpackMask, mask, MAX_PATH)) // feature 315: whole or the default
+        {
+            TRACE_E("CFilesWindow::Unpack(): the plugin's unpack mask is too long, offering *.*");
+            strcpy(mask, "*.*");
+        }
         CTruncatedString str;
         str.Set(LoadStrU8(IDS_UNPACKARCHIVE), fileName);
 
@@ -2230,10 +2256,19 @@ void CFilesWindow::Unpack(CFilesWindow* target, int pluginIndex, const char* plu
             char nextFocus[MAX_PATH];
             nextFocus[0] = 0;
             const char* text = NULL;
-            if (!SalGetFullName(path, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus))
+            // feature 316: a relative target keeps its leading spaces (as Copy/Move targets do) - the
+            // archive ' ssss.zip' offers ' ssss'; trimmed, it unpacked into another folder 'ssss'.
+            // A new folder starting with a space is refused by CheckAndCreateDirectory below.
+            if (!SalGetFullName(path, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus, NULL, MAX_PATH, TRUE))
             {
                 if (errTextID == IDS_EMPTYNAMENOTALLOWED)
-                    lstrcpyn(path, GetPath(), MAX_PATH); // bounded (feature 011); MAX_PATH dialog buffer
+                {
+                    // an empty target = next to the archive; feature 315: a panel path that does not
+                    // fit the MAX_PATH buffer is refused (it was cut: unpacked into another folder),
+                    // so is a subfolder name that does not fit even alone (unpacked without it)
+                    if (!SalUnpackEmptyTarget(GetPath(), subdirNameLen, path, MAX_PATH))
+                        text = LoadStr(IDS_TOOLONGPATH);
+                }
                 else
                     text = LoadStr(errTextID);
             }

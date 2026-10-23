@@ -6,6 +6,10 @@ Header-only, depends on `salunicode.h` (`SalNameEqualCI`, `SalU8Next`,
 GUI thread and tests only). The core includes it from `fileswn0.cpp`
 (matching, focus, tint).
 
+*Feature 313 (2026-10-22): the keys also ignore the diacritics of Latin, Greek and Cyrillic letters
+and fold a few letters (so M4's "ss" = sharp s now holds in the new mode too) - see
+`specs/313-quick-search-diacritics/contracts/salquickfilter-fold.md`.*
+
 *Updated at the end of implementation (2026-10-18): the keys of section 1b
 replaced the per-position comparison after review 244 measured seconds per
 keystroke on non-ASCII names; the tint rule of section 3 is the one built.*

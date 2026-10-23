@@ -7,11 +7,11 @@ area: sftp
 source: leftover:217
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [sftp-leaks-and-waits-after-broken-connection]
+related: []
 depends-on: []
 reason: -
 ---
@@ -44,3 +44,4 @@ Needs Docker Desktop running (a run can start it with `docker desktop start`). S
 
 - 2026-10-21 — created (source leftover:217)
 - 2026-10-21 — moved to Next position 56
+- 2026-10-23 — related item sftp-leaks-and-waits-after-broken-connection closed: split into: sftp-open-handles-of-lost-connection-leak, sftp-session-leak-after-partial-send-or-disconnect, sftp-short-reply-waits-for-timeout, sftp-key-exchange-soak-1500-connections (and the related sftp-a-copy-posted-right-after-a-failed-upload-and-its) - the parts replace it; maintainer 2026-10-23

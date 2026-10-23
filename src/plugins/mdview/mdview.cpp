@@ -28,6 +28,7 @@ int g_followSys = 0;
 char g_schemeLight[32] = "paper";
 char g_schemeDark[32] = "graphite";
 int g_zoom = 100;
+int g_pageWidth = MDPW_NORMAL; // feature 314: the page of before 314 is the default
 BOOL g_savePos = TRUE;
 WINDOWPLACEMENT g_wndPlacement = {0};
 BOOL g_keepReady = TRUE; // default on (spec 065 FR-008)
@@ -39,6 +40,7 @@ static const char* CONFIG_FOLLOWSYS = "FollowSystemTheme";
 static const char* CONFIG_SCHEMELIGHT = "SchemeLight";
 static const char* CONFIG_SCHEMEDARK = "SchemeDark";
 static const char* CONFIG_ZOOM = "ZoomPercent";
+static const char* CONFIG_PAGEWIDTH = "PageWidth"; // feature 314: MdPageWidth, 0..3
 static const char* CONFIG_SAVEPOS = "SavePosition";
 static const char* CONFIG_WNDPLACEMENT = "WindowPlacement";
 static const char* CONFIG_KEEPREADY = "KeepReady";
@@ -162,6 +164,9 @@ void WINAPI CPluginInterface::LoadConfiguration(HWND parent, HKEY regKey, CSalam
         registry->GetValue(regKey, CONFIG_SCHEMELIGHT, REG_SZ, g_schemeLight, sizeof(g_schemeLight));
         registry->GetValue(regKey, CONFIG_SCHEMEDARK, REG_SZ, g_schemeDark, sizeof(g_schemeDark));
         registry->GetValue(regKey, CONFIG_ZOOM, REG_DWORD, &g_zoom, sizeof(DWORD));
+        DWORD width = MDPW_NORMAL; // missing or of another type -> stays NORMAL
+        if (registry->GetValue(regKey, CONFIG_PAGEWIDTH, REG_DWORD, &width, sizeof(DWORD)))
+            g_pageWidth = MdPageWidthFromStored(width); // unknown value -> NORMAL
         registry->GetValue(regKey, CONFIG_SAVEPOS, REG_DWORD, &g_savePos, sizeof(DWORD));
         registry->GetValue(regKey, CONFIG_WNDPLACEMENT, REG_BINARY, &g_wndPlacement, sizeof(WINDOWPLACEMENT));
         registry->GetValue(regKey, CONFIG_KEEPREADY, REG_DWORD, &g_keepReady, sizeof(DWORD));
@@ -186,6 +191,8 @@ void WINAPI CPluginInterface::SaveConfiguration(HWND parent, HKEY regKey, CSalam
     registry->SetValue(regKey, CONFIG_SCHEMELIGHT, REG_SZ, g_schemeLight, -1);
     registry->SetValue(regKey, CONFIG_SCHEMEDARK, REG_SZ, g_schemeDark, -1);
     registry->SetValue(regKey, CONFIG_ZOOM, REG_DWORD, &g_zoom, sizeof(DWORD));
+    DWORD width = (DWORD)MdPageWidthFromStored((unsigned)g_pageWidth);
+    registry->SetValue(regKey, CONFIG_PAGEWIDTH, REG_DWORD, &width, sizeof(DWORD));
     registry->SetValue(regKey, CONFIG_SAVEPOS, REG_DWORD, &g_savePos, sizeof(DWORD));
     registry->SetValue(regKey, CONFIG_WNDPLACEMENT, REG_BINARY, &g_wndPlacement, sizeof(WINDOWPLACEMENT));
     registry->SetValue(regKey, CONFIG_KEEPREADY, REG_DWORD, &g_keepReady, sizeof(DWORD));

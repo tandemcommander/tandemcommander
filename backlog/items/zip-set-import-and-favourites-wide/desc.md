@@ -1,19 +1,19 @@
 ---
 title: ZIP: a code-page .set file that looks like UTF-8 is misread on import
 type: bug
-status: blocked
+status: rejected
 severity: 3
 area: archives
 source: leftover:131
 who: agent
 created: 2026-10-13
-updated: 2026-10-21
+updated: 2026-10-23
 verified: 2026-10-21 948da673
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: not reproduced at 948da673: unreachable - no .sfx package ships, ValidateDefSfxFile empties DefSfxFile, so Pack self-extracting, Create SFX and the Advanced SFX dialog (import, favourites) are closed; re-open with zip-comment-and-sfx-stay-code-page if an SFX package ships
+reason: covered by the decision recorded in zip-comment-and-sfx-stay-code-page: no SFX package is shipped, the self-extractor routes (import of .set files, favourites) are unreachable and stay code page; re-open together with that item if an SFX package ships; maintainer 2026-10-23
 ---
 
 # ZIP: a code-page .set file that looks like UTF-8 is misread on import
@@ -39,3 +39,4 @@ The self-extractor routes stay code page by decision (NW §C); the `.set` import
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-21 — verified at 948da673: not reproduced: unreachable - no .sfx package is shipped (no plugins/zip/sfx in the Debug or Release tree), so DefSfxFile is empty and the Advanced SFX dialog (import, favourites) cannot open
 - 2026-10-21 — blocked: not reproduced at 948da673: unreachable - no .sfx package ships, ValidateDefSfxFile empties DefSfxFile, so Pack self-extracting, Create SFX and the Advanced SFX dialog (import, favourites) are closed; re-open with zip-comment-and-sfx-stay-code-page if an SFX package ships
+- 2026-10-23 — moved to Rejected: covered by the decision recorded in zip-comment-and-sfx-stay-code-page: no SFX package is shipped, the self-extractor routes (import of .set files, favourites) are unreachable and stay code page; re-open together with that item if an SFX package ships; maintainer 2026-10-23

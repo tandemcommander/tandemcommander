@@ -161,7 +161,9 @@ Each is one line of a longer story; the number is the feature whose entry in
   `ProductCode` moves with `AppId`. Shipped Microsoft runtime DLLs are never
   re-signed (077).
 - New or removed UI strings break `build.cmd full` until the two-stage `.slt`
-  refresh runs (`translate.merge`, pass `--templates`). Use free slots in an
+  refresh runs (`translate.merge`, pass `--templates`) — the feature's own
+  session or run does it, never left to the maintainer (stop-rules §2.13 of
+  `/tandem-backlog-implement`). Use free slots in an
   existing string bundle; removing whole bundles needs a re-key first (084).
   DeepL drifts to the informal register for de/fr/nl/es — pin in
   `translations/ui-overrides.json`. `PackErrorHandler` shows ids >= 11101 as

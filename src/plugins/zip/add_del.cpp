@@ -339,11 +339,7 @@ int CZipPack::DeleteFromArchive(SalEnumSelection next, void* param)
                         SetFileTime(TempFile->File, NULL, NULL, &NewestFileTime);
 
                     CloseCFile(TempFile);
-                    SalamanderGeneral->ClearReadOnlyAttr(ZipName);
-                    if (!DeleteFileU8(ZipName) ||
-                        !MoveFileU8(TempName, ZipName))
-                        ErrorID = IDS_ERRRESTORE;
-                    SetFileAttributesU8(ZipName, ZipAttr | FILE_ATTRIBUTE_ARCHIVE);
+                    ErrorID = ReplaceArchiveWithTemp(); // feature 320: never deletes the archive first
                 }
             }
             else

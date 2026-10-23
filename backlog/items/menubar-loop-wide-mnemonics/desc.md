@@ -7,11 +7,11 @@ area: panels-ui
 source: measure:256
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [menubar-loop-swallows-typed-characters]
+related: []
 depends-on: []
 reason: -
 ---
@@ -38,3 +38,4 @@ Not named by the item of feature 256 (`menu-popup-loop-wide-mnemonics`), so left
 
 - 2026-10-20 — created (source measure:256)
 - 2026-10-20 — moved to Next position 44
+- 2026-10-23 — related item menubar-loop-swallows-typed-characters closed: not a defect: the probe at fed08ad1 showed a popup closed by activation, cancel-mode or by itself ends the menu bar loop too and typed characters reach the field (probe and result in git at 815fe5fd under backlog/items/menubar-loop-swallows-typed-characters/evidence/); maintainer 2026-10-23

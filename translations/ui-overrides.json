@@ -64,7 +64,13 @@
     }
   },
   "mdview": {
+    "_feature_314": [
+      "Zoom Out was 'Vergrößern' (= Zoom In) in German and 'Mărire înapoi' in Romanian (found while reading the View menu back).",
+      "View > Page Width levels: they qualify the page width (cs/sk 'šířka/šírka', ro 'lățimea' feminine, es 'el ancho' masculine) - DeepL mixed the genders.",
+      "Full Window means the column takes the window's full width, not full-screen mode (de 'Vollbildmodus', fr 'plein écran' were wrong)."
+    ],
     "czech": {
+      "IDS_MENU_VIEW_WIDTH_WIDE": "Ši&roká",
       "IDS_PLUGINNAME": "Markdown Viewer",
       "IDS_MENU_VIEW": "&Zobrazit",
       "IDS_MENU_VIEW_FOLLOWSYS": "Použít motiv s&ystému",
@@ -72,15 +78,21 @@
       "#Nordic Dark": "Severský tmavý"
     },
     "slovak": {
+      "IDS_MENU_VIEW_WIDTH_NORMAL": "&Normálna",
+      "IDS_MENU_VIEW_WIDTH_WIDE": "&Široká",
+      "IDS_MENU_VIEW_WIDTH_WIDER": "Š&iršia",
       "IDS_MENU_VIEW": "&Zobraziť",
       "IDS_MENU_VIEW_FOLLOWSYS": "Použiť motív s&ystému",
       "#&Keep the rendering engine ready for instant viewing": "Udržiavať vy&kresľovací modul pripravený na okamžité zobrazenie"
     },
     "german": {
+      "IDS_MENU_VIEW_ZOOMOUT": "V&erkleinern\\tCtrl+-",
+      "IDS_MENU_VIEW_WIDTH_FULL": "&Volle Fensterbreite",
       "IDS_MENU_VIEW_FOLLOWSYS": "S&ystemdesign folgen",
       "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Markdown-Dateien öffnen sich dann nach der ersten Anzeige sofort; dafür bleibt bis zum Sitzungsende etwas Speicher belegt."
     },
     "french": {
+      "IDS_MENU_VIEW_WIDTH_FULL": "&Toute la fenêtre",
       "IDS_MENU_VIEW": "Afficha&ge",
       "IDS_MENU_VIEW_FOLLOWSYS": "Suivre le thème du s&ystème",
       "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Les fichiers Markdown s’ouvrent ensuite instantanément ; un peu de mémoire reste occupée jusqu’à la fin de la session."
@@ -96,10 +108,14 @@
       "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "A Markdown-fájlok ezután az első megnyitás után azonnal megjelennek; a munkamenet végéig kevés memória foglalt marad."
     },
     "romanian": {
+      "IDS_MENU_VIEW_ZOOMOUT": "Mi&cșorare\\tCtrl+-",
+      "IDS_MENU_VIEW_WIDTH_WIDE": "&Largă",
+      "IDS_MENU_VIEW_WIDTH_WIDER": "&Mai largă",
       "IDS_MENU_VIEW": "&Vizualizare",
       "IDS_MENU_VIEW_FOLLOWSYS": "Urmează tema s&istemului"
     },
     "spanish": {
+      "IDS_MENU_VIEW_WIDTH_WIDER": "&Más ancho",
       "IDS_MENU_VIEW": "&Ver",
       "IDS_MENU_VIEW_FOLLOWSYS": "Seguir el tema del s&istema",
       "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Los archivos Markdown se abren al instante tras la primera vista; hasta el final de la sesión queda ocupada algo de memoria."

@@ -1,0 +1,36 @@
+Feature 313 probe after-review2; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; expect after; registry backup C:\Users\pavel\AppData\Local\Temp\tc313_backup.reg (existed True)
+export SHA-256 CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+D01        VISIBLE PASS        got {zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD} expected {zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD} typed 'zlut'
+D01        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D02        VISIBLE PASS        got {zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD} expected {zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD} typed z-caron 'lut'
+D02        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D03        VISIBLE PASS        got {\u010Cesk\u00FD.txt} expected {\u010Cesk\u00FD.txt} typed 'cesky'
+D03        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D04        VISIBLE PASS        got {\u00DCbersicht.doc} expected {\u00DCbersicht.doc} typed 'ubersicht'
+D04        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D05        VISIBLE PASS        got {\u0141\u00F3d\u017A.txt} expected {\u0141\u00F3d\u017A.txt} typed 'lodz'
+D05        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D06        VISIBLE PASS        got {Stra\u00DFe.txt} expected {Stra\u00DFe.txt} typed 'strasse'
+D06        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D07        VISIBLE PASS        got {r\u030Ceka.txt} expected {r\u030Ceka.txt} typed 'reka', NFD name
+D07        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D08        VISIBLE PASS        got {\u304Bkko.txt} expected {\u304Bkko.txt} typed KA 'kko'
+D08        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D09        FOCUS  INFO        got {\u017Elu\u0165ou\u010Dk\u00FD} typed 'zlut' (option off)
+D09        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D10        FOCUS  INFO        got {\u010Cesk\u00FD.txt} typed 'cesky' (option off)
+D10        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D11        VISIBLE PASS        got {r\u030Ceka.txt} expected {r\u030Ceka.txt} typed 'r', Right
+D11        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D12        VISIBLE PASS        got {Stra\u00DFe.txt} expected {Stra\u00DFe.txt} typed 'strasse', Strand.txt beside
+D12        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D13        VISIBLE PASS        got {c\u0153ur.txt} expected {c\u0153ur.txt} typed 'coeur', cat.txt beside
+D13        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D14        VISIBLE PASS        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} expected {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed 'r', Left
+D14        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D15        VISIBLE PASS        got {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} expected {alpha, beta.md, \u010Cesk\u00FD.txt, \u0141\u00F3d\u017A.txt, r\u030Ceka.txt, Stra\u00DFe.txt, \u00DCbersicht.doc, zlut\u00FD.txt, \u017Elu\u0165ou\u010Dk\u00FD, \u304Bkko.txt, \u304Ckko.txt} typed 'rek', Left, Backspace, Backspace
+D15        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D16        VISIBLE PASS        got {Stra\u00DFe.doc} expected {Stra\u00DFe.doc} typed 'stras', Right x4
+D16        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+ROWS 32; FAIL 0

@@ -97,6 +97,8 @@
 #include "salpaxheader.h"     // feature 306
 #include "saltarlink.h"       // feature 309
 #include "salcpiolink.h"      // feature 310
+#include "salunpackdefault.h" // feature 315
+#include "salpackname.h"      // feature 317
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -5328,6 +5330,117 @@ static void TestSafeReplace105()
     DeleteFileW((sub + L"\\inner.txt").c_str());
     RemoveDirectoryW(sub.c_str());
     CHECK(RemoveDirectoryW(dir.c_str())); // nothing left behind (no stray temporary file)
+}
+
+// feature 320: the ZIP plug-in replaces an archive with its temporary working file through
+// SalReplaceWithTempW - the targets its two replace steps met (src/plugins/zip/add.cpp
+// ReplaceArchiveWithTemp): an archive in a data stream (319), an archive held open elsewhere
+static void TestSafeReplace320()
+{
+    WCHAR tmp[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, tmp);
+    if (n == 0 || n >= MAX_PATH)
+    {
+        printf("skipping TestSafeReplace320 (no temp path)\n");
+        return;
+    }
+    std::wstring dir = std::wstring(L"\\\\?\\") + tmp + L"saltests-320-" + std::to_wstring(GetCurrentProcessId());
+    CHECK(CreateDirectoryW(dir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    auto put = [](const std::wstring& p, const char* text) -> BOOL
+    {
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD w = 0;
+        BOOL ok = h != INVALID_HANDLE_VALUE && WriteFile(h, text, (DWORD)strlen(text), &w, NULL);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        return ok;
+    };
+    auto get = [](const std::wstring& p) -> std::string
+    {
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                               OPEN_EXISTING, 0, NULL);
+        if (h == INVALID_HANDLE_VALUE)
+            return "<missing>";
+        char b[64] = {0};
+        DWORD r = 0;
+        if (!ReadFile(h, b, sizeof(b) - 1, &r, NULL))
+            strcpy_s(b, "<unreadable>");
+        CloseHandle(h);
+        return b;
+    };
+    auto exists = [](const std::wstring& p) -> BOOL
+    { return GetFileAttributesW(p.c_str()) != INVALID_FILE_ATTRIBUTES; };
+    std::wstring host = dir + L"\\report", stream = host + L":zip.zip", a = dir + L"\\a.zip", tmpFile = dir + L"\\Sal320.tmp";
+    DWORD err = 0;
+
+    // 1. an archive in a data stream (319): neither the stream nor its host file changes; the
+    //    temporary file is left to the caller (who deletes it) - before 320 the stream was deleted first
+    CHECK(put(host, "HOST") && put(stream, "OLDARC") && put(tmpFile, "NEWARC"));
+    err = 0;
+    CHECK(SalReplaceWithTempW(stream.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrFailedKept && err != 0);
+    CHECK(get(stream) == "OLDARC" && get(host) == "HOST" && get(tmpFile) == "NEWARC");
+
+    // 2. an archive held open without delete sharing (an indexer, a viewer): kept, 32
+    CHECK(put(a, "OLDARC"));
+    {
+        HANDLE held = CreateFileW(a.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+        CHECK(held != INVALID_HANDLE_VALUE);
+        err = 0;
+        CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrFailedKept && err == ERROR_SHARING_VIOLATION);
+        if (held != INVALID_HANDLE_VALUE)
+            CloseHandle(held);
+    }
+    CHECK(get(a) == "OLDARC" && get(tmpFile) == "NEWARC");
+
+    // 3. held open with delete sharing: replaced as before
+    {
+        HANDLE held = CreateFileW(a.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                                  OPEN_EXISTING, 0, NULL);
+        CHECK(held != INVALID_HANDLE_VALUE);
+        CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
+        if (held != INVALID_HANDLE_VALUE)
+            CloseHandle(held);
+    }
+    CHECK(get(a) == "NEWARC" && !exists(tmpFile));
+
+    // 4. the replacement's last-write time ("set zip file time to the newest file time" sets it on
+    //    the temporary file) is kept by a replace onto an archive without named streams...
+    auto setOld = [](const std::wstring& p) -> BOOL
+    {
+        HANDLE h = CreateFileW(p.c_str(), FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING, 0, NULL);
+        FILETIME ft;
+        ft.dwLowDateTime = 0x12345678;
+        ft.dwHighDateTime = 0x01C00000; // year 1997
+        BOOL ok = h != INVALID_HANDLE_VALUE && SetFileTime(h, NULL, NULL, &ft);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        return ok;
+    };
+    auto isOld = [](const std::wstring& p) -> BOOL
+    {
+        WIN32_FILE_ATTRIBUTE_DATA fa;
+        return GetFileAttributesExW(p.c_str(), GetFileExInfoStandard, &fa) && fa.ftLastWriteTime.dwHighDateTime == 0x01C00000 &&
+               fa.ftLastWriteTime.dwLowDateTime == 0x12345678;
+    };
+    CHECK(put(tmpFile, "NEWER") && setOld(tmpFile));
+    CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
+    CHECK(get(a) == "NEWER" && !exists(tmpFile) && isOld(a));
+
+    // 5. ...while one onto an archive with a named stream (the downloaded-file mark) keeps the
+    //    stream; the time then moved on Windows 11 26300 (ReplaceFileW copies the stream into the
+    //    new file) - the ZIP plug-in sets the time again after the replace. Reported, not checked
+    //    (an OS behaviour, not a rule of ours).
+    CHECK(put(a + L":Zone.Identifier", "ZONE") && put(tmpFile, "NEWEST") && setOld(tmpFile));
+    CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
+    CHECK(get(a) == "NEWEST" && get(a + L":Zone.Identifier") == "ZONE" && !exists(tmpFile));
+    printf("saltests 320: a replace onto a file with a named stream %s the replacement's last-write time\n",
+           isOld(a) ? "kept" : "moved");
+
+    // cleanup (explicit names only)
+    DeleteFileW(tmpFile.c_str());
+    DeleteFileW(a.c_str());
+    DeleteFileW(host.c_str());
+    CHECK(RemoveDirectoryW(dir.c_str())); // nothing left behind
 }
 
 // feature 106: a pack operation's output is never written over one of the files it packs
@@ -13893,6 +14006,29 @@ namespace Legacy244
     }
 } // namespace Legacy244
 
+// does the folding of feature 313 touch 'u8' - a mark of the folded blocks in the canonical
+// decomposition of one of its characters, or a letter of the table? (independent of
+// salquickfilter.h: whole-text decomposition, plain code point lists)
+static BOOL Fold313Touches(const char* u8)
+{
+    static WCHAR w[2048], d[8192];
+    int n = MultiByteToWideChar(CP_UTF8, 0, u8, -1, w, _countof(w));
+    if (n <= 0)
+        return FALSE;
+    int m = NormalizeString(NormalizationD, w, -1, d, _countof(d));
+    const WCHAR* t = m > 0 ? d : w;
+    static const WCHAR table[] = {0x0141, 0x0142, 0x00D8, 0x00F8, 0x0110, 0x0111, 0x00DF, 0x1E9E,
+                                  0x00C6, 0x00E6, 0x0152, 0x0153, 0x0131, 0};
+    for (; *t != 0; t++)
+    {
+        WCHAR c = *t;
+        if (c >= 0x0300 && c <= 0x036F || c >= 0x1AB0 && c <= 0x1AFF || c >= 0x1DC0 && c <= 0x1DFF ||
+            c >= 0x20D0 && c <= 0x20FF || c >= 0xFE20 && c <= 0xFE2F || wcschr(table, c) != NULL)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 static void TestQuickFilter244()
 {
     // names (hasExtension as the panel computes it: a directory has one when its name holds a dot)
@@ -13985,7 +14121,7 @@ static void TestQuickFilter244()
         "a//c",
         "/x",
     };
-    int m1 = 0, m1Diff = 0, m3 = 0, m3Diff = 0;
+    int m1 = 0, m1Diff = 0, m3 = 0, m3Diff = 0, m3Folded = 0;
     for (int n = 0; n < (int)(sizeof(names) / sizeof(names[0])); n++)
     {
         for (int t = 0; t < (int)(sizeof(typed) / sizeof(typed[0])); t++)
@@ -14036,14 +14172,19 @@ static void TestQuickFilter244()
                 }
             }
             m3++;
-            // the one documented difference: the 0.1.10 comparison's linguistic "ss" = "sharp s"
-            // belongs to the old rule; the new mode compares canonical decomposition + case only
-            if (strstr(names[n].Name, "\xC3\x9F") != NULL && strcmp(typed[t], "strasse") == 0)
+            // feature 313: the new mode ignores diacritics, the 0.1.10 rule does not. Where the folding
+            // touches the name or the typed text, every 0.1.10 match is still found (a prefix one as
+            // a prefix); the exact answers of such pairs are the 313 cases below
+            if (Fold313Touches(names[n].Name) || Fold313Touches(typed[t]))
             {
-                CHECK(expKind == SALQF_PREFIX && r.Kind == SALQF_NONE);
-                continue;
+                m3Folded++;
+                if (expKind != SALQF_NONE && (!got || expKind == SALQF_PREFIX && r.Kind != SALQF_PREFIX))
+                {
+                    m3Diff++;
+                    printf("FAIL M3 (folded) name #%d typed #%d: expected %d/%d..%d, got %d/%d..%d\n", n, t, expKind, expStart, expEnd, r.Kind, r.MatchStart, r.MatchEnd);
+                }
             }
-            if (r.Kind != expKind || got != (expKind != SALQF_NONE) || expKind != SALQF_NONE && (r.MatchStart != expStart || r.MatchEnd != expEnd))
+            else if (r.Kind != expKind || got != (expKind != SALQF_NONE) || expKind != SALQF_NONE && (r.MatchStart != expStart || r.MatchEnd != expEnd))
             {
                 m3Diff++;
                 printf("FAIL M3 name #%d typed #%d: expected %d/%d..%d, got %d/%d..%d\n", n, t, expKind, expStart, expEnd, r.Kind, r.MatchStart, r.MatchEnd);
@@ -14058,7 +14199,7 @@ static void TestQuickFilter244()
     }
     CHECK(m1Diff == 0);
     CHECK(m3Diff == 0);
-    printf("TestQuickFilter244: %d prefix cases against the 0.1.10 matcher, %d differ; %d substring cases, %d differ\n", m1, m1Diff, m3, m3Diff);
+    printf("TestQuickFilter244: %d prefix cases against the 0.1.10 matcher, %d differ; %d substring cases (%d touched by the 313 folding), %d differ\n", m1, m1Diff, m3, m3Folded, m3Diff);
 
     // M3/M4/M5 by example
     struct Ex
@@ -14123,9 +14264,9 @@ static void TestQuickFilter244()
     // keys (review 244): character boundaries, decomposition, case, an invalid byte, many names
     {
         CSalQFMatch r;
-        // a base letter of a decomposed character matches only a whole character
-        CHECK(!SalQFMatchName("x\xC3\xBA", FALSE, "u", TRUE, r));                                           // x + NFC u-acute
-        CHECK(SalQFMatchName("xu\xCC\x81", FALSE, "u", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 2);    // NFD: u is a character there
+        // a match covers whole characters; feature 313: the accent is ignored and belongs to its letter
+        CHECK(SalQFMatchName("x\xC3\xBA", FALSE, "u", TRUE, r) && r.Kind == SALQF_SUBSTRING && r.MatchStart == 1 && r.MatchEnd == 3); // x + NFC u-acute
+        CHECK(SalQFMatchName("xu\xCC\x81", FALSE, "u", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 4);    // NFD: the mark is inside the match
         CHECK(SalQFMatchName("xu\xCC\x81y", FALSE, "\xC3\xBAy", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 5); // NFC mask, NFD name
         CHECK(SalQFMatchName("x\xC3\x9Ay", FALSE, "\xC3\xBA", TRUE, r) && r.MatchStart == 1 && r.MatchEnd == 3); // U-acute = u-acute
         CHECK(!SalQFMatchName("ab\x80" "cd", FALSE, "\xC3\xA1" "c", TRUE, r));                              // invalid byte: no crash, no match
@@ -14146,12 +14287,13 @@ static void TestQuickFilter244()
         // review 244 (round 2): a key longer than the 2048-unit scratch area grows on the heap, an ASCII
         // character at the boundary included; offsets stay byte offsets of characters
         {
-            static char longText[6004];
+            static char longText[7504];
             int pos = 0;
             for (int i = 0; i < 1500; i++)
             {
-                memcpy(longText + pos, "ab\xC3\xA1", 4); // a b a-acute: 3 characters, 4 units
-                pos += 4;
+                // a b hiragana GA (KA + the voiced mark, kept by feature 313): 3 characters, 4 units
+                memcpy(longText + pos, "ab\xE3\x81\x8C", 5);
+                pos += 5;
             }
             longText[pos] = 0;
             CSalQFKey lk;
@@ -14220,6 +14362,195 @@ static void TestQuickFilter244()
         for (int i = 0; i < N; i++)
             SalQFFreeKey(keys[i]);
         printf("TestQuickFilter244: 10,000 Czech names: keys built in %u ms, a keystroke scans them in %u ms\n", t1 - t0, t2 - t1);
+    }
+
+    // feature 313: the new mode ignores diacritics (contract specs/313-quick-search-diacritics/
+    // contracts/salquickfilter-fold.md, F1-F6 by example, F8 the cache)
+    {
+        struct Fx
+        {
+            const char* Name;
+            BOOL HasExt;
+            const char* Typed;
+            int Kind, Start, End;
+        };
+        static const Fx fx[] = {
+            // F1 marks of the Latin, Greek and Cyrillic blocks dropped in both directions, NFC and NFD
+            {"\xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD", FALSE, "zlut", SALQF_PREFIX, 0, 6},            // z-caron l u t-caron ...
+            {"zlut\xC3\xBD.txt", TRUE, "\xC5\xBElut", SALQF_PREFIX, 0, 4},                              // typed with the accent
+            {"\xC4\x8C" "esk\xC3\xBD.txt", TRUE, "cesky", SALQF_PREFIX, 0, 7},                         // C-caron esk y-acute
+            {"\xC4\x8C" "esk\xC3\xBD.txt", TRUE, "Cesky", SALQF_PREFIX, 0, 7},
+            {"\xC3\x9C" "bersicht.doc", TRUE, "ubersicht", SALQF_PREFIX, 0, 10},                        // U-diaeresis
+            {"r\xCC\x8C" "eka.txt", TRUE, "reka", SALQF_PREFIX, 0, 6},                                  // NFD name
+            {"r\xCC\x8C" "eka.txt", TRUE, "\xC5\x99" "eka", SALQF_PREFIX, 0, 6},                       // NFC mask, NFD name
+            {"\xC5\x99" "eka.txt", TRUE, "r\xCC\x8C" "eka", SALQF_PREFIX, 0, 5},                       // NFD mask, NFC name
+            {"moje \xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD", FALSE, "LUTOU", SALQF_SUBSTRING, 7, 13}, // inside the name
+            {"x\xE1\xBB\x87y", FALSE, "e", SALQF_SUBSTRING, 1, 4},                                      // U+1EC7: two marks
+            {"\xCE\xAC\xCE\xBB\xCF\x86\xCE\xB1", FALSE, "\xCE\xB1\xCE\xBB", SALQF_PREFIX, 0, 4},     // Greek alpha-tonos
+            {"\xD0\xB9\xD0\xBE\xD0\xB4", FALSE, "\xD0\xB8\xD0\xBE", SALQF_PREFIX, 0, 4},              // Cyrillic short i = i
+            // F2 the table, both directions; nothing else folds
+            {"\xC5\x81\xC3\xB3" "d\xC5\xBA.txt", TRUE, "lodz", SALQF_PREFIX, 0, 7},                    // L-stroke o-acute d z-acute
+            {"lodz.txt", TRUE, "\xC5\x82\xC3\xB3" "d\xC5\xBA", SALQF_PREFIX, 0, 4},
+            {"\xC3\x98" "rsted", FALSE, "orsted", SALQF_PREFIX, 0, 7},                                  // O-stroke
+            {"orsted", FALSE, "\xC3\xB8" "rsted", SALQF_PREFIX, 0, 6},
+            {"\xC4\x90" "akovo", FALSE, "dakovo", SALQF_PREFIX, 0, 7},                                  // D-stroke
+            {"djak \xC4\x91" "ak", FALSE, "dak", SALQF_SUBSTRING, 5, 9},
+            {"Stra\xC3\x9F" "e.txt", TRUE, "strasse", SALQF_PREFIX, 0, 7},                              // sharp s
+            {"Strasse.txt", TRUE, "stra\xC3\x9F" "e", SALQF_PREFIX, 0, 7},
+            {"GRO\xE1\xBA\x9E", FALSE, "gross", SALQF_PREFIX, 0, 6},                                    // capital sharp s
+            {"\xC3\x86" "sop", FALSE, "aesop", SALQF_PREFIX, 0, 5},                                     // AE
+            {"aesop", FALSE, "\xC3\xA6" "sop", SALQF_PREFIX, 0, 5},
+            {"c\xC5\x93ur", FALSE, "coeur", SALQF_PREFIX, 0, 5},                                        // oe
+            {"\xC5\x92uvre", FALSE, "oeuvre", SALQF_PREFIX, 0, 6},                                      // OE
+            {"kad\xC4\xB1n", FALSE, "kadin", SALQF_PREFIX, 0, 6},                                       // dotless i
+            {"\xC4\xB0stanbul", FALSE, "istanbul", SALQF_PREFIX, 0, 9},                                  // I with dot above (NFD)
+            // a match may end inside a folded letter and then covers it (typing it letter by letter,
+            // review 313); it never starts inside one
+            {"a\xC3\x9F", FALSE, "as", SALQF_PREFIX, 0, 3},
+            {"Stra\xC3\x9F" "e.txt", TRUE, "stras", SALQF_PREFIX, 0, 6},
+            {"moje stra\xC3\x9F" "e", FALSE, "stras", SALQF_SUBSTRING, 5, 11},
+            {"c\xC5\x93ur", FALSE, "co", SALQF_PREFIX, 0, 3},
+            {"x\xC3\x86" "ble", FALSE, "xa", SALQF_PREFIX, 0, 3},
+            {"a\xC3\x9F" "b", FALSE, "ssb", SALQF_SUBSTRING, 1, 4},
+            {"a\xC3\x9F" "b", FALSE, "sb", SALQF_NONE, 0, 0},
+            {"a\xC3\x9F" "b", FALSE, "a/sb", SALQF_NONE, 0, 0}, // a later segment does not start inside one (review 2)
+            {"\xC3\xB0r", FALSE, "dr", SALQF_NONE, 0, 0},                                               // eth: not folded
+            {"\xC3\xBEing", FALSE, "thing", SALQF_NONE, 0, 0},                                          // thorn: not folded
+            {"\xC4\xA7obz", FALSE, "hobz", SALQF_NONE, 0, 0},                                           // h-stroke: not folded
+            // F3 marks of other scripts stay
+            {"\xE3\x81\x8C", FALSE, "\xE3\x81\x8B", SALQF_NONE, 0, 0},                                 // GA is not KA
+            {"\xE3\x81\x8B", FALSE, "\xE3\x81\x8C", SALQF_NONE, 0, 0},                                 // KA is not GA
+            {"\xD7\xA9\xD7\x81\xD7\x9C", FALSE, "\xD7\xA9\xD7\x9C", SALQF_NONE, 0, 0},                // Hebrew shin dot kept
+            {"\xE0\xA4\x95\xE0\xA5\x8D\xE0\xA4\xB7", FALSE, "\xE0\xA4\x95\xE0\xA4\xB7", SALQF_NONE, 0, 0}, // virama kept
+            {"1\xEF\xB8\x8F\xE2\x83\xA3" "x", FALSE, "1\xEF\xB8\x8F", SALQF_PREFIX, 0, 4},              // keycap (enclosing) kept
+            {"x\xE2\x89\xA0y", FALSE, "x=y", SALQF_NONE, 0, 0},                                         // not-equal stays negated (review 2)
+            {"x=y", FALSE, "x\xE2\x89\xA0y", SALQF_NONE, 0, 0},
+            {"a\xE2\x88\x89" "b", FALSE, "a\xE2\x88\x88" "b", SALQF_NONE, 0, 0},                       // not-an-element is not element-of
+            // F4 the marks after the last matched letter are inside the match
+            {"z\xCC\x8C" "luty", FALSE, "z", SALQF_PREFIX, 0, 3},
+            // F5 a lone mark adds nothing; a mask of marks only matches every name
+            {"\xCC\x81" "abc", FALSE, "a", SALQF_PREFIX, 0, 3},
+            {"abc", FALSE, "\xCC\x81", SALQF_PREFIX, 0, 0},
+            {"xabyc", FALSE, "a/\xCC\x81/c", SALQF_SUBSTRING, 1, 5},
+            {"abc", FALSE, "\xCC\x81/b", SALQF_PREFIX, 0, 2},
+            {"ab", FALSE, "b/\xCC\x81", SALQF_SUBSTRING, 1, 2},  // an empty last segment is not stored
+            {"\xCC\x81", FALSE, "\xCC\x81", SALQF_PREFIX, 0, 0}, // a name of marks only
+            // F6 a WTF-8 lone surrogate and an invalid byte
+            {"a\xED\xA0\x80" "b\xC3\xA9", FALSE, "\xED\xA0\x80" "be", SALQF_SUBSTRING, 1, 7},
+            {"\x80\xC3\xA9" "x", FALSE, "ex", SALQF_SUBSTRING, 1, 4},
+        };
+        int bad = 0;
+        for (int i = 0; i < (int)(sizeof(fx) / sizeof(fx[0])); i++)
+        {
+            char mask[3 * MAX_PATH];
+            Legacy244::Prepare(mask, fx[i].Typed);
+            CSalQFMatch r;
+            BOOL got = SalQFMatchName(fx[i].Name, fx[i].HasExt, mask, TRUE, r);
+            BOOL ok = got == (fx[i].Kind != SALQF_NONE) && r.Kind == fx[i].Kind &&
+                      (fx[i].Kind == SALQF_NONE || r.MatchStart == fx[i].Start && r.MatchEnd == fx[i].End);
+            CHECK(ok);
+            if (!ok)
+            {
+                bad++;
+                printf("FAIL 313 case #%d: expected %d/%d..%d, got %d/%d/%d..%d\n", i, fx[i].Kind, fx[i].Start, fx[i].End, got, r.Kind, r.MatchStart, r.MatchEnd);
+            }
+            // F7: the option off keeps the 0.1.10 rule (accents not ignored)
+            int off = 0;
+            BOOL legacy = Legacy244::Agree(fx[i].Name, fx[i].HasExt, mask, off);
+            CSalQFMatch ro;
+            BOOL gotOff = SalQFMatchName(fx[i].Name, fx[i].HasExt, mask, FALSE, ro);
+            CHECK(gotOff == legacy && (!legacy || ro.MatchEnd == off));
+        }
+        // the negative control of F1: the option off does not find the accented name
+        {
+            CSalQFMatch ro;
+            CHECK(!SalQFMatchName("\xC5\xBElu\xC5\xA5ou\xC4\x8Dk\xC3\xBD", FALSE, "zlut", FALSE, ro));
+        }
+        // F8: the cached key of every BMP code point equals the uncached computation (twice: the
+        // second pass reads the cache), and no key is longer than its room
+        int cacheBad = 0, empty = 0;
+        for (int pass = 0; pass < 2; pass++)
+        {
+            for (int c = 0; c < 65536; c++)
+            {
+                WCHAR w = (WCHAR)c, a[32], b[32];
+                int na = SalQFDetail::CharKey(&w, 1, a, _countof(a));
+                int nb = c < 0x80 ? na : SalQFDetail::CharKeySystem(&w, 1, b, _countof(b));
+                if (c < 0x80)
+                    memcpy(b, a, sizeof(a));
+                if (na != nb || na < 0 || memcmp(a, b, na * sizeof(WCHAR)) != 0)
+                    cacheBad++;
+                if (pass == 0 && na == 0)
+                    empty++;
+            }
+        }
+        CHECK(cacheBad == 0);
+        CHECK(empty >= 0x70); // at least the Combining Diacritical Marks block (U+0300-036F)
+        {
+            WCHAR acute = 0x0301, out[4];
+            CHECK(SalQFDetail::CharKey(&acute, 1, out, 0) == -1); // no room: the caller grows
+            CHECK(SalQFDetail::CharKey(&acute, 1, out, 4) == 0);  // an empty key
+            WCHAR sharp = 0x00DF;
+            CHECK(SalQFDetail::CharKey(&sharp, 1, out, 1) == -1); // "ss" does not fit into one unit
+            CHECK(SalQFDetail::CharKey(&sharp, 1, out, 4) == 2 && out[0] == 's' && out[1] == 's');
+            // nonspacing marks only: the enclosing ones stay (a keycap, U+1ABE)
+            static const WCHAR kept[] = {0x20DD, 0x20E0, 0x20E2, 0x20E3, 0x20E4, 0x1ABE, 0x3099, 0x05C1, 0x094D, 0x0338};
+            for (int i = 0; i < (int)_countof(kept); i++)
+                CHECK(SalQFDetail::CharKey(&kept[i], 1, out, 4) == 1 && out[0] == kept[i]);
+            static const WCHAR dropped[] = {0x0300, 0x036F, 0x1AB0, 0x1ABD, 0x1ABF, 0x1DC0, 0x1DFF, 0x20D0, 0x20DC, 0x20E1, 0x20E5, 0x20F0, 0xFE20, 0xFE2F};
+            for (int i = 0; i < (int)_countof(dropped); i++)
+                CHECK(SalQFDetail::CharKey(&dropped[i], 1, out, 4) == 0);
+        }
+        // Left and Backspace of the new mode remove the last letter with the marks keys ignore
+        {
+            static const struct
+            {
+                const char* Text;
+                int Len;
+            } cut[] = {
+                {"r\xCC\x8C", 0},                    // r + caron (NFD): the whole letter
+                {"ab\xCC\x8C", 1},                   // a, b + caron
+                {"x\xCC\x81\xCC\x81", 0},            // two marks
+                {"ab", 1},                            // ASCII as before
+                {"a\xC3\x9F", 1},                    // sharp s: one character
+                {"a\xE3\x81\x8C", 1},                // hiragana GA (precomposed)
+                {"ab\xE3\x82\x99", 2},               // a lone voiced mark (kept by keys): only it
+                {"ab\xF0\x9F\x98\x80", 2},           // emoji
+                {"\xCC\x81", 0},                     // a mark alone
+                {"a\x80", 0},                         // a stray continuation byte: as the old code
+                {"", 0},
+            };
+            for (int i = 0; i < (int)_countof(cut); i++)
+                CHECK(SalQFCutLastLetter(cut[i].Text, (int)strlen(cut[i].Text)) == cut[i].Len);
+            // a text of ignored marks only stands for no text: Left and Backspace end the search
+            // (review 2: Left on a name starting with a lone mark kept such a text)
+            CHECK(SalQFOnlyIgnoredMarks(""));
+            CHECK(SalQFOnlyIgnoredMarks("\xCC\x81"));
+            CHECK(SalQFOnlyIgnoredMarks("\xCC\x81\xCC\x8C\xE1\xB7\x80")); // U+0301 U+030C U+1DC0
+            CHECK(!SalQFOnlyIgnoredMarks("a"));
+            CHECK(!SalQFOnlyIgnoredMarks("\xCC\x81" "a"));
+            CHECK(!SalQFOnlyIgnoredMarks("\xE3\x82\x99")); // the voiced mark is kept by keys
+            CHECK(!SalQFOnlyIgnoredMarks("\xCC\xB8"));      // U+0338 is kept by keys
+            CHECK(!SalQFOnlyIgnoredMarks("\xCC"));           // a truncated sequence
+            CHECK(!SalQFOnlyIgnoredMarks("/"));
+        }
+        // a key of a text with many dropped marks: offsets stay byte offsets of characters
+        {
+            static char marks[3 * 3000 + 2];
+            int pos = 0;
+            for (int i = 0; i < 3000; i++)
+            {
+                memcpy(marks + pos, "a\xCC\x81", 3); // a + combining acute: one unit per 3 bytes
+                pos += 3;
+            }
+            marks[pos] = 0;
+            CSalQFKey mk;
+            CHECK(SalQFBuildKey(marks, -1, mk) && mk.Count == 3000 && mk.Offsets[1] == 3 && mk.Offsets[3000] == pos &&
+                  mk.Starts[1] == 1);
+            SalQFFreeKey(mk);
+        }
+        printf("TestQuickFilter244: feature 313 folding - %d cases, %d differ; %d BMP code points with an empty key\n",
+               (int)(sizeof(fx) / sizeof(fx[0])), bad, empty);
     }
 
     // M7 (ASCII names and masks): appending a character only narrows
@@ -18671,6 +19002,243 @@ static void TestCpioLink310()
     CHECK(SalCpioLinkDecide(false, false, SAL_CPIO_GROUP_LOST, false) == SAL_CPIO_LINK_SKIP);
 }
 
+// feature 315: the Unpack dialog's defaults whole or not at all (salunpackdefault.h)
+static void TestUnpackDefault315()
+{
+    char buf[MAX_PATH];
+    // a folder of 'len' bytes: "C:\" + 'p' x (len - 3)
+    auto folder = [](int len) { return std::string("C:\\") + std::string(len - 3, 'p'); };
+    // "C:\" + CJK letters (3 bytes each) + 'x' padding: exactly 'len' bytes of UTF-8
+    auto cjkFolder = [](int len)
+    {
+        std::string s = "C:\\";
+        while ((int)s.size() + 3 <= len)
+            s += "\xE4\xB8\x80";
+        s += std::string(len - s.size(), 'x');
+        return s;
+    };
+    // the buffer holds no prefix of 'full' (a cut); an empty buffer is no cut
+    auto noCut = [](const char* b, const std::string& full)
+    { return b[0] == 0 || (strlen(b) == full.size() && strcmp(b, full.c_str()) == 0); };
+
+    // SalUnpackDefaultCopy: 259 bytes fit MAX_PATH, 260 do not; a refusal leaves the buffer empty
+    std::string f259 = folder(259), f260 = folder(260), f297 = folder(297);
+    strcpy(buf, "old");
+    CHECK(SalUnpackDefaultCopy(f259.c_str(), buf, MAX_PATH) && strcmp(buf, f259.c_str()) == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(f260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(f297.c_str(), buf, MAX_PATH) && noCut(buf, f297) && buf[0] == 0);
+    CHECK(SalUnpackDefaultCopy("", buf, 1) && buf[0] == 0);
+    CHECK(!SalUnpackDefaultCopy("a", buf, 1) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(NULL, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(!SalUnpackDefaultCopy("a", NULL, MAX_PATH));
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy("a", buf, 0) && strcmp(buf, "old") == 0);
+    // CJK: 259 bytes whole; 355 bytes (the measured row) and 260 bytes empty - never a letter split
+    std::string c259 = cjkFolder(259), c260 = cjkFolder(260), c355 = cjkFolder(355);
+    CHECK(c259.size() == 259 && c260.size() == 260 && c355.size() == 355);
+    CHECK(SalUnpackDefaultCopy(c259.c_str(), buf, MAX_PATH) && strcmp(buf, c259.c_str()) == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(c260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(c355.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    // the measured defect: the old copy (lstrcpyn at MAX_PATH) kept a 259-byte prefix - another folder
+    char old[MAX_PATH];
+    lstrcpynA(old, f297.c_str(), MAX_PATH);
+    CHECK(strlen(old) == 259 && !noCut(old, f297));
+    // a plug-in's mask: whole, or refused (the caller offers "*.*" then)
+    std::string m260 = std::string(255, 'm') + ";*.kp";
+    CHECK(SalUnpackDefaultCopy("*.txt;*.doc", buf, MAX_PATH) && strcmp(buf, "*.txt;*.doc") == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(m260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+
+    // SalUnpackDefaultAddSubdir: '\' added unless the buffer ends with one or is empty
+    strcpy(buf, "C:\\t");
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, "arc.zip", 3) && strcmp(buf, "C:\\t\\arc") == 0);
+    strcpy(buf, "C:\\");
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, "arc.zip", 3) && strcmp(buf, "C:\\arc") == 0);
+    buf[0] = 0; // the other panel is not a disk, or its path was left out: the name alone (relative)
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, "arc.zip", 3) && strcmp(buf, "arc") == 0);
+    strcpy(buf, "C:\\t"); // nothing to append (an archive named only by its extension)
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, ".zip", 0) && strcmp(buf, "C:\\t") == 0);
+    // exactly 259 bytes fit, 260 do not (folder 250 + '\' + 8 / 9 bytes)
+    std::string f250 = folder(250), name9 = "123456789.zip";
+    strcpy(buf, f250.c_str());
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, name9.c_str(), 8) && strlen(buf) == 259);
+    strcpy(buf, f250.c_str());
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, name9.c_str(), 9) && strcmp(buf, "123456789") == 0);
+    // the measured row: a 245-byte folder + 20 letters (266 bytes) - the folder left out, the name
+    // alone (a subfolder next to the archive), never the bare folder
+    std::string f245 = folder(245), s20 = std::string(20, 's') + ".zip";
+    strcpy(buf, f245.c_str());
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s20.c_str(), 20) && strcmp(buf, std::string(20, 's').c_str()) == 0);
+    // a name of 259 bytes fits alone, not after a folder
+    std::string s259 = std::string(259, 'n') + ".zip";
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s259.c_str(), 259) && strlen(buf) == 259 && buf[0] == 'n');
+    // a name alone that does not fit: stays empty
+    std::string s300 = std::string(300, 's') + ".zip";
+    buf[0] = 0;
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s300.c_str(), 300) && buf[0] == 0);
+    // ... after a path too: never the bare path
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s300.c_str(), 300) && buf[0] == 0);
+    // a name of 260 bytes does not fit alone either
+    std::string s260 = std::string(260, 's') + ".zip";
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s260.c_str(), 260) && buf[0] == 0);
+
+    // SalUnpackEmptyTarget: the archive's folder whole; a folder of 260+ bytes refused; a subfolder
+    // name that does not fit even alone refused (the empty target would unpack without it)
+    strcpy(buf, "old");
+    CHECK(SalUnpackEmptyTarget(f259.c_str(), 0, buf, MAX_PATH) && strcmp(buf, f259.c_str()) == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget(f260.c_str(), 0, buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget(f297.c_str(), 0, buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget(c355.c_str(), 0, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(SalUnpackEmptyTarget("C:\\t", 259, buf, MAX_PATH) && strcmp(buf, "C:\\t") == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget("C:\\t", 260, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(SalUnpackEmptyTarget("C:\\t", 20, buf, MAX_PATH) && strcmp(buf, "C:\\t") == 0);
+    CHECK(!SalUnpackEmptyTarget(NULL, 0, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(!SalUnpackEmptyTarget("C:\\t", 0, NULL, MAX_PATH));
+    // a CJK name appended whole (byte count, never inside a letter)
+    std::string cjkName = "\xE4\xB8\x80\xE4\xB8\x81.zip";
+    strcpy(buf, "C:\\t");
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, cjkName.c_str(), 6) && strcmp(buf, "C:\\t\\\xE4\xB8\x80\xE4\xB8\x81") == 0);
+    // NULL / size 0: refused, the buffer unchanged
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, NULL, 3) && strcmp(buf, "C:\\t") == 0);
+    CHECK(!SalUnpackDefaultAddSubdir(NULL, MAX_PATH, "a", 1));
+    CHECK(!SalUnpackDefaultAddSubdir(buf, 0, "a", 1) && strcmp(buf, "C:\\t") == 0);
+}
+
+// features 317, 318: a Pack archive name whose last part the file system would not keep as typed
+// (a trailing dot or space, a part of only spaces and dots, a device name) is refused (salpackname.h)
+static void TestPackName318()
+{
+    // 317: only spaces and dots in the last part: refused
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\ .."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\ ."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\  ...  "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\   "));
+    CHECK(SalPackNameIsNotKeptAsTyped("\\\\server\\share\\d\\ .."));
+    CHECK(SalPackNameIsNotKeptAsTyped(" .."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\\t..")); // 318: it ends with a dot (317: a tab is not a space)
+    // 318: a trailing dot or space: refused, relative or absolute
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip.."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report. "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\ report ."));
+    CHECK(SalPackNameIsNotKeptAsTyped("report."));
+    CHECK(SalPackNameIsNotKeptAsTyped("\\\\server\\share\\d\\a.zip "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\\xE4\xB8\x80."));
+    // 318: a reserved device name, any letter case, with or without an extension: refused
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\con.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\prn.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\Aux.7z"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\NUL .zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\nul  .zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\COM0.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\COM1.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\com9.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\LPT0.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\lpt9.tar.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\COM\xC2\xB9.zip")); // superscript one
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\com\xC2\xB2.zip")); // superscript two
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\LPT\xC2\xB3.zip")); // superscript three
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\CON"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\LPT\xC2\xB2"));
+    CHECK(SalPackNameIsNotKeptAsTyped("CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("\\\\server\\share\\aux.zip"));
+    // a '/' separates like '\' (the packers' path conversion turns it into '\')
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\./CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\sub/CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:/t/report."));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CON/a.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip/")); // no last part (the packer refuses it)
+    // a name - the leading space kept by 317, dots inside, a device name only as a prefix - is a name
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ report.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\   .zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ ..a"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\.cvspass"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\.cfg.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\report.v1.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\ .\\a.zip"));            // only the last part counts
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\CON\\a.zip"));           // a device name in a folder part
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t.\\a.zip"));            // a trailing dot in a folder part
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ \xE4\xB8\x80.zip")); // a CJK name (UTF-8)
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CONSOLE.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\con bla.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CON_.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COM10.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COM.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\LPT.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COMX.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COM\xC2\xB4.zip")); // not a superscript digit
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\PRN\xC2\xB9.zip")); // a superscript only after COM / LPT
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ CON.zip"));        // a leading space: not a device
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CO.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip\t")); // a trailing tab is not this rule's
+    // no last part, NULL: not refused by this rule
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\"));
+    CHECK(!SalPackNameIsNotKeptAsTyped(""));
+    CHECK(!SalPackNameIsNotKeptAsTyped(NULL));
+    // the device part alone
+    CHECK(SalPackNameIsReservedDevice("NUL"));
+    CHECK(SalPackNameIsReservedDevice("nul.txt"));
+    CHECK(!SalPackNameIsReservedDevice(".NUL"));
+    CHECK(!SalPackNameIsReservedDevice(""));
+    CHECK(!SalPackNameIsReservedDevice(NULL));
+}
+
+// feature 319: a Pack archive name whose last part holds a ':' names an NTFS data stream - always
+// refused (salpackname.h)
+static void TestPackName319()
+{
+    // a ':' in the last part: refused
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report:zip.zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\t\\rep:x.zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report:zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\t\\:zip.zip"));    // a leading colon
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report.zip:")); // a trailing colon
+    CHECK(SalPackNameHasStreamColon("C:\\t\\:"));           // only a colon
+    CHECK(SalPackNameHasStreamColon("C:\\t\\a:b:c.zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\report:zip.zip"));                   // in the root
+    CHECK(SalPackNameHasStreamColon("\\\\server\\share\\d\\rep:x.zip"));      // UNC
+    CHECK(SalPackNameHasStreamColon("C:\\t\\plain/rep:x.zip"));               // after a '/'
+    CHECK(SalPackNameHasStreamColon("C:/t/rep:x.zip"));                       // '/' only
+    CHECK(SalPackNameHasStreamColon("C:\\t\\zpr\xC3\xA1va:zip.zip"));         // a UTF-8 name
+    CHECK(SalPackNameHasStreamColon("C:\\t\\\xE4\xB8\x80:\xE4\xB8\x80.zip")); // CJK around it
+    CHECK(SalPackNameHasStreamColon("rep:x.zip"));                            // no folder at all
+    CHECK(SalPackNameHasStreamColon("C:rep:x.zip"));                          // drive-relative
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report.zip::$DATA"));
+    // a drive prefix only, or a colon outside the last part: not refused by this rule
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\report.zip"));
+    CHECK(!SalPackNameHasStreamColon("c:\\t\\report.zip"));
+    CHECK(!SalPackNameHasStreamColon("C:report.zip")); // drive-relative (SalGetFullName makes it full)
+    CHECK(!SalPackNameHasStreamColon("C:"));
+    CHECK(!SalPackNameHasStreamColon("C:\\"));
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\sub:x\\a.zip")); // a folder part (the packer refuses it)
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\sub:x/a.zip"));
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\report:zip\\")); // no last part
+    CHECK(!SalPackNameHasStreamColon("\\\\server\\share\\d\\a.zip"));
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\report\xEF\xBC\x9Azip.zip")); // full-width colon U+FF1A
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\ report.zip"));
+    CHECK(!SalPackNameHasStreamColon("report.zip"));
+    CHECK(!SalPackNameHasStreamColon(""));
+    CHECK(!SalPackNameHasStreamColon(NULL));
+    // a digit or other byte before ':' is no drive letter
+    CHECK(SalPackNameHasStreamColon("1:x.zip"));
+    CHECK(SalPackNameHasStreamColon("\xC3\xA1:x.zip"));
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -18728,6 +19296,7 @@ int main(int argc, char** argv)
     TestSameFile103();
     TestPluginFileDlg104();
     TestSafeReplace105();
+    TestSafeReplace320();
     TestPackSelf106();
     TestFolderAlias107();
     TestArchiveEdit108();
@@ -18821,6 +19390,9 @@ int main(int argc, char** argv)
     TestPaxNameUsable308();
     TestTarLink309();
     TestCpioLink310();
+    TestUnpackDefault315();
+    TestPackName318();
+    TestPackName319();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

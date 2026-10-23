@@ -7,11 +7,11 @@ area: panels-ui
 source: manual
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [user-menu-messages-and-folder-leftovers]
+related: []
 depends-on: []
 reason: -
 ---
@@ -38,3 +38,4 @@ If ShellExecuteEx keeps the shortcut's own folder, the item is closed as not rep
 
 - 2026-10-20 — created (source manual)
 - 2026-10-20 — moved to Next position 55
+- 2026-10-23 — related item user-menu-messages-and-folder-leftovers closed: split into: user-menu-errors-name-the-file-or-folder, user-menu-hidden-batch-silent-early-end, user-menu-shortcut-start-in-folder, user-menu-unc-folder-pushd, command-line-comspec-read-wide, user-menu-long-paths - the parts replace it; maintainer 2026-10-23

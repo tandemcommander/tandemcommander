@@ -1,19 +1,19 @@
 ---
 title: Panel tabs: a Tabs settings page, opt-in browser-like shortcuts, Reopen Closed Tab
 type: feature
-status: in-progress
+status: blocked
 severity: 4
 area: panels-ui
 source: manual
 who: both
 created: 2026-10-22
 updated: 2026-10-22
-verified: 2026-10-22 4a7d5595
+verified: -
 effort: L
-feature: 312
+feature: -
 related: [panel-tabs-078-release-pass-and-leak-watch]
 depends-on: []
-reason: -
+reason: implemented and verified on the branch (build, saltests 27343/0, probe 33 PASS, review without MUST); the new UI strings need the two-stage .slt refresh, which a run does not do - build.cmd full fails for all 8 languages until it runs; then close and merge as the fix-log section Stopped says (feature 312, branch 312-tabs-browser-keys)
 ---
 
 # Panel tabs: a Tabs settings page, opt-in browser-like shortcuts, Reopen Closed Tab
@@ -178,5 +178,4 @@ At bc59b9ac, by reading:
 - 2026-10-22 — created (source manual)
 - 2026-10-22 — maintainer decision 2026-10-22: classic keys stay the default; browser-like tab shortcuts as an opt-in option on a new Tabs configuration page; Reopen Closed Tab; Tabs in the toolbar context menu and Options > Show
 - 2026-10-22 — moved to Next position 1
-- 2026-10-22 — verified at 4a7d5595: gap at 4a7d5595: no browser-like option, no Reopen Closed Tab, no Tabs page; Ctrl+Shift+G unhandled in panel, command line, IsSalHotKey
-- 2026-10-22 — run started, feature 312
+- 2026-10-22 — blocked: implemented and verified on the branch (build, saltests 27343/0, probe 33 PASS, review without MUST); the new UI strings need the two-stage .slt refresh, which a run does not do - build.cmd full fails for all 8 languages until it runs; then close and merge as the fix-log section Stopped says (feature 312, branch 312-tabs-browser-keys)

@@ -7,11 +7,11 @@ area: translations
 source: leftover:084
 who: agent
 created: 2026-10-01
-updated: 2026-10-17
+updated: 2026-10-23
 verified: -
 effort: M
 feature: -
-related: [translations-clipped-labels]
+related: []
 depends-on: []
 reason: -
 ---
@@ -37,3 +37,4 @@ Fold 084's `rekey_stringtables.py` logic into `tools/translate` (`match.py`), wi
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
+- 2026-10-23 — related item translations-clipped-labels closed: split into: translations-clipped-labels-cs, -de, -fr, -nl, -hu, -ro, -sk, -es and translate-merge-bundle-rekey - the parts replace it; maintainer 2026-10-23

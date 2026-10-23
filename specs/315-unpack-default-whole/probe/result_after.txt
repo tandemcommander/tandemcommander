@@ -1,0 +1,30 @@
+unpack315_probe (feature 315) after-review1
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 02:19; ACP 1250; registry key existed True
+Fixture C:\Users\pavel\AppData\Local\Temp\tc315_unp
+
+other-ascii RUN    PASS        UA=1 SD=0; L 297 units / 297 bytes; items (1): ''; OK on item 0 (0 bytes); dialog stayed: False; asked: nothing; new under tgt: no file; unpacked next to the archive: a.k=K, a.kp=KP
+other-ascii END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+other-cjk  RUN    PASS        UA=1 SD=0; L 159 units / 355 bytes; items (1): ''; OK on item 0 (0 bytes); dialog stayed: False; asked: nothing; new under tgt: no file; unpacked next to the archive: a.k=K, a.kp=KP
+other-cjk  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+alt-ascii  RUN    PASS        UA=0 SD=0; L 297 units / 297 bytes; items (1): ''; OK on item 0 (0 bytes); dialog stayed: False; asked: nothing; new under tgt: no file; unpacked next to the archive: a.k=K, a.kp=KP
+alt-ascii  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+alt-cjk    RUN    PASS        UA=0 SD=0; L 159 units / 355 bytes; items (1): ''; OK on item 0 (0 bytes); dialog stayed: False; asked: nothing; new under tgt: no file; unpacked next to the archive: a.k=K, a.kp=KP
+alt-cjk    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+subdir     RUN    PASS        UA=1 SD=1; L 245 units / 245 bytes; items (1): 20 units / 20 bytes [] ssssssssssssssssssss; OK on item 0 (20 bytes); dialog stayed: False; asked: nothing; new under tgt: no file; unpacked next to the archive: ssssssssssssssssssss\a.k=K, ssssssssssssssssssss\a.kp=KP
+subdir     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+src-long   RUN    PASS        UA=0 SD=0; L 58 units / 58 bytes; items (2): '' ; 58 units / 58 bytes [L] ...5_unp\src-long\tgt\L; OK on item 0 (0 bytes); dialog stayed: False; asked: [#32770 'Error Unpacking Archive'] The path specified is too long. | || the Unpack dialog again; new under tgt: no file; unpacked next to the archive: nothing [source 297 bytes; files in the row: none; new folders in the row: 0]
+src-long   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+longname-sd RUN    PASS        UA=0 SD=1; L 61 units / 61 bytes; items (1): ''; OK on item 0 (0 bytes); dialog stayed: False; asked: [#32770 'Error Unpacking Archive'] The path specified is too long. | || the Unpack dialog again; new under tgt: no file; unpacked next to the archive: nothing [source 59 bytes; files in the row: none; new folders in the row: 0]
+longname-sd END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+longname-sd-ua RUN    PASS        UA=1 SD=1; L 64 units / 64 bytes; items (1): ''; OK on item 0 (0 bytes); dialog stayed: False; asked: [#32770 'Error Unpacking Archive'] The path specified is too long. | || the Unpack dialog again; new under tgt: no file; unpacked next to the archive: nothing [source 62 bytes; files in the row: none; new folders in the row: 0]
+longname-sd-ua END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl        RUN    PASS        UA=1 SD=0; L 200 units / 200 bytes; items (2): 200 units / 200 bytes [L] ...pppppppppppppppppppp ; ''; OK on item 0 (200 bytes); dialog stayed: False; asked: nothing; new under tgt: ...(154 units) ...pppppppppppppppppp\a.k=K, ...(156 units) ...pppppppppppppppp\a.kp=KP; unpacked next to the archive: nothing
+ctl        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-alt    RUN    PASS        UA=0 SD=0; L 122 units / 250 bytes; items (2): '' ; 122 units / 250 bytes [L] ...\u4EAD\u4EAE\u4EAF\u4EB0\u4EB1\u4EB2\u4EB3\u4EB4\u4EB5\u4EB6\u4EB7\u4EB8\u4EB9\u4EBA\u4EBB\u4EBC\u4EBD\u4EBE\u4EBF\u4EC0; OK on item 1 (250 bytes); dialog stayed: False; asked: nothing; new under tgt: ...(72 units) ...\u4EAF\u4EB0\u4EB1\u4EB2\u4EB3\u4EB4\u4EB5\u4EB6\u4EB7\u4EB8\u4EB9\u4EBA\u4EBB\u4EBC\u4EBD\u4EBE\u4EBF\u4EC0\a.k=K, ...(74 units) ...\u4EB1\u4EB2\u4EB3\u4EB4\u4EB5\u4EB6\u4EB7\u4EB8\u4EB9\u4EBA\u4EBB\u4EBC\u4EBD\u4EBE\u4EBF\u4EC0\a.kp=KP; unpacked next to the archive: nothing
+ctl-alt    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-subdir RUN    PASS        UA=1 SD=1; L 200 units / 200 bytes; items (2): 202 units / 202 bytes [L\a] ...pppppppppppppppppp\a ; 1 units / 1 bytes [] a; OK on item 0 (202 bytes); dialog stayed: False; asked: nothing; new under tgt: ...(149 units) ...pppppppppppppppp\a\a.k=K, ...(151 units) ...pppppppppppppp\a\a.kp=KP; 1 new folder(s); unpacked next to the archive: nothing
+ctl-subdir END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+
+Rows: PASS 22, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
