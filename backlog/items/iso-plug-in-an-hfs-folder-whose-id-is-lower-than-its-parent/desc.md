@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an HFS+ folder whose ID is lower than its parent lists its contents at the root
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:329
@@ -51,3 +51,4 @@ cycles), and a left-out folder's whole subtree stays out of the listing.
 ## Log
 
 - 2026-10-23 — created (source review:329)
+- 2026-10-23 — moved to Next position 4

@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: UDF and HFS+ entries skipped as damaged let Unpack delete the image
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:329
@@ -56,3 +56,4 @@ Thread records and the volume-label record, which are not entries, stay skipped 
 ## Log
 
 - 2026-10-23 — created (source review:329)
+- 2026-10-23 — moved to Next position 3

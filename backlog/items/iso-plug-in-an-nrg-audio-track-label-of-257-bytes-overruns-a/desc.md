@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an NRG audio track label of 257+ bytes overruns a stack buffer
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: measure:329
@@ -56,3 +56,4 @@ image's sizes and track numbers.
 
 - 2026-10-23 — created (source measure:329)
 - 2026-10-23 — related item iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses done in feature 329
+- 2026-10-23 — moved to Next position 2
