@@ -50,6 +50,10 @@ Linux names, and a copy of it whose primary volume identifier is `v\..\..\w`) ->
   `\` `?` `*` and control characters to `_`)? → A: yes, unchanged; the shared rule runs after it
   (autonomous run: conservative - keeps the existing behaviour for every case the item does not
   name)
+- Q: Is the listed name cleaned again when a file is extracted? → A: yes - each reader's extraction
+  joins the target path with the listed name passed through the same rule once more (a no-op for a
+  name the listing already cleaned; it guards a name that reaches extraction another way) (autonomous
+  run: rule - CLAUDE.md "Archive item names are cleaned at listing and again at extraction", 087)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -119,7 +123,8 @@ written outside it.
 - **FR-005**: The rule MUST be a pure function in a header under `src/common/` with unit checks
   (stop-rules §2.5); feature 326's Rock Ridge rule keeps its exact behaviour.
 - **FR-006**: Extraction (F5, unpack whole archive) MUST use the listed (safe) names, as it does for
-  Rock Ridge names: no name from the image reaches a target path uncleaned.
+  Rock Ridge names, and each reader's extraction MUST pass the file name through the same rule again
+  before joining it to the target path: no name from the image reaches a target path uncleaned.
 
 ### Key Entities
 
