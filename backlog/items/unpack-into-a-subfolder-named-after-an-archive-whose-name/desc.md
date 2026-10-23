@@ -8,7 +8,7 @@ source: review:315
 who: agent
 created: 2026-10-23
 updated: 2026-10-23
-verified: -
+verified: 2026-10-23 b125acf7
 effort: S
 feature: -
 related: []
@@ -48,3 +48,4 @@ PASS.
 - 2026-10-23 — related item unpack-dialog-offers-a-long-target-panel-path-cut-and done in feature 315
 - 2026-10-23 — auto-triage: severity 3 -> 4: a function gives a wrong result (unpacks into another folder than the one shown), a workaround exists
 - 2026-10-23 — moved to Next position 2
+- 2026-10-23 — verified at b125acf7: reproduced at b125acf7: hidden-desktop probe unpack316, 4 relative rows with a leading space unpacked into the folder without it (5 FAIL / 9)
