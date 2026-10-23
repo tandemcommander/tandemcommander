@@ -1,0 +1,24 @@
+iso330_probe (feature 330) before-review3-7caf4ae7
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 01:03; registry key existed True
+
+seeds: nest.iso,rd.iso,rd_ext.iso,rd_rec.iso,rd_root.iso,rd_zero.iso,ud.iso,ud_ext.iso,ud_icb.iso,ud_tag.iso,udh.iso,udh_avdp.iso,udh_root.iso,xd.iso,xd_ext.iso
+img330: isoext: folder A's record at 47342 -> extent 0x100000 (image 180 sectors)
+img330: isorec: SIDE.TXT's record at 49356 in folder A (extent 24) -> LE 29, BE 28
+img330: isozero: folder A's record at 47342 -> data length 0
+img330: isoroot: the primary volume's root directory 23 -> 0x100000
+img330: udfext: partition at 257, folder a's file entry at logical block 4, its directory 5 -> 0x100000 (AD type 0)
+img330: udficb: folder a's identifier: ICB 4 -> 0x100000
+img330: udftag: folder a's directory at sector 262: first identifier's tag -> 0x0999
+img330: udfroot: the file set descriptor's root ICB 2 -> 0x100000
+img330: udfavdp: the anchor's main volume descriptor sequence 32 -> 0x100000
+img330: xbox: 39 sectors, root at 33
+img330: xbox: 39 sectors, root at 33; folder a's start sector 34 -> 0x100000
+
+UDH-AVDP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UDH-AVDP   RUN    PASS        files 2: ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows as expected ("Cannot read sector"): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00100000. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00100000. | [Button id=1] OK
+NEST-OK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+NEST-OK    RUN    FAIL        files 2: ISO (TCNEST)/a.img, ISO (TCNEST)/top.txt; files ok: True; image kept: True (want False); windows as expected (none): True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 4F221E76594DD9F25F9725F90B1075E459FFD134260483E49BE795C780FF51E7 / after 4F221E76594DD9F25F9725F90B1075E459FFD134260483E49BE795C780FF51E7
+
+Rows: PASS 3, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

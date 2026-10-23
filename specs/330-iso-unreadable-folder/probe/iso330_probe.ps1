@@ -37,6 +37,10 @@
                  PASS = the image KEPT - before 330 (UDH-AVDP: before review 2): the image deleted
       RD-OK, UD-OK, UDH-OK, XD-OK  (controls) PASS = every file extracted, no window, the image
                  deleted - as before 330
+      NEST-OK    (control, review 3) nest.iso by mkimg330.sh: a valid ISO 9660 image whose file a.img is
+                 a UDF image (the plug-in detects a UDF part that is not there) - PASS = a.img and
+                 top.txt under "ISO (TCNEST)", no window, the image deleted; after review 2's first
+                 fix (a declared UDF part that does not open marked the listing): the image kept
     Names are compared without case (genisoimage's ISO 9660 part is upper case). Every row also fails
     on a program exit, a bug report, a fatal window, or a main window that does not answer within 30 s
     (End-Row). Without WSL Ubuntu the RD / UD rows are NOT DRIVEN.
@@ -85,14 +89,15 @@ function Set-Field([IntPtr]$Dlg, [int]$CtlId, [string]$Text) {
     if ([Drv098f]::GetText($f, 5000) -cne $Text) { throw "field $CtlId did not take the text" }
 }
 
-# exactly the files of $Want (relative path -> content; compared without case) in tgt; @(ok, facts)
+# exactly the files of $Want (relative path -> content, $null = any; compared without case) in tgt;
+# @(ok, facts)
 function Check-Files([string]$Tgt, $Want) {
     $files = @(Tgt-Files $Tgt)
     $low = @($files | ForEach-Object { $_.ToLowerInvariant() })
     $missing = @($Want.Keys | Where-Object { $low -notcontains $_.ToLowerInvariant() })
     $bad = @($Want.Keys | Where-Object { $low -contains $_.ToLowerInvariant() } | Where-Object {
             $k = $_.ToLowerInvariant(); $real = @($files | Where-Object { $_.ToLowerInvariant() -eq $k })[0]
-            (Content $Tgt $real) -cne $Want[$_] })
+            $Want[$_] -ne $null -and (Content $Tgt $real) -cne $Want[$_] })
     $ok = ($files.Count -eq $Want.Count -and $missing.Count -eq 0 -and $bad.Count -eq 0)
     $f = ('files {0}: {1}' -f $files.Count, ((@($files | ForEach-Object { Esc $_ })) -join ', '))
     if ($missing.Count) { $f += ('; missing: ' + ($missing -join ', ')) }
@@ -204,6 +209,7 @@ try {
     Unpack-Row 'UDH-OK' "$s\udh.iso" $udhAll
     Unpack-Row 'UDH-ROOT' "$s\udh_root.iso" $udhIso -Damaged -Box 'Bad root ICB'
     Unpack-Row 'UDH-AVDP' "$s\udh_avdp.iso" $udhIso -Damaged -Box 'Cannot read sector'
+    Unpack-Row 'NEST-OK' "$s\nest.iso" ([ordered]@{ 'ISO (TCNEST)/a.img' = $null; 'ISO (TCNEST)/top.txt' = 'TOP' })
     Unpack-Row 'XD-OK' "$s\xd.iso" $all
     Unpack-Row 'XD-EXT' "$s\xd_ext.iso" $top -Damaged
 }

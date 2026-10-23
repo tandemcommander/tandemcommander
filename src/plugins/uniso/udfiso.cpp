@@ -83,7 +83,19 @@ BOOL CUDFISO::Open(BOOL quiet)
     // cannot be read) is dropped from the listing - the listing is incomplete then (ListDirectory),
     // so a whole unpack fails and "Delete archive after unpacking" keeps the image (it was deleted,
     // files only in that part lost). The HFS part keeps its quiet handling
-    PartMissing = (HasISO && ISO == NULL) || (HasUDF && UDF == NULL);
+    PartMissing = HasISO && ISO == NULL;
+    if (HasUDF && UDF == NULL)
+    {
+        // review 3 of 330: DetectTrackFS finds "NSR02" / "NSR03" in any of sectors 16-128, file data
+        // too (a plain ISO 9660 image holding a UDF image) - only a UDF anchor at sector 256 (ECMA-167,
+        // its tag ID 2 and its own location) shows that a UDF part is there and could not be read
+        BYTE sector[0x800];
+        if (Image->ReadBlock(256, sizeof(sector), sector) == sizeof(sector) && *(WORD*)sector == 2 &&
+            *(DWORD*)(sector + 12) - ExtentOffset == 256)
+        {
+            PartMissing = TRUE;
+        }
+    }
 
     return TRUE;
 }

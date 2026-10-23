@@ -29,7 +29,9 @@ the folder walks never set it. This feature sets it:
 - **Hybrids** (`CUDFISO`, review 2): `CISOImage::OpenTrack` passes which parts the track's type
   declares (ISO 9660, UDF); `CUDFISO::Open` remembers when a declared part did not open
   (`PartMissing`) and `CUDFISO::ListDirectory` marks the listing. HFS+ stays quiet (Inbox
-  `iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is`).
+  `iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is`). A UDF part counts as missing only
+  with a UDF anchor at sector 256 (tag ID 2, its own location) - review 3: `DetectTrackFS` finds
+  "NSR02" in file data too.
 
 No new UI string, no plug-in interface change, no message added or removed.
 

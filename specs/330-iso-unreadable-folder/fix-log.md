@@ -146,3 +146,34 @@ Probe extended (`img330.py` isoroot / udfavdp; rows RD-ROOT, UDH-AVDP):
 - Regressions (hybrids are touched now): `regress_322.txt` 18 / 0 (valid xorriso ISO + HFS+ hybrid,
   row HYB), `regress_327.txt` 77 / 0, `regress_328.txt` 20 / 0, `regress_329.txt` 14 / 0; encoding guard
   TOTAL 0; saltests 28266 / 0. Registry restored identical in every run.
+
+### Review 3 (completed) - no MUST, one SHOULD (fixed)
+
+Re-ran the probe on 7caf4ae7: 28 / 0; traced the ISO 9660, UDF and Xbox walks and the callers again
+(no finding); valid hybrids that open are unaffected (322, UD-OK, UDH-OK).
+- **SHOULD 1**: a VALID ISO 9660 image whose first file is a UDF image (`nest.iso`, its "NSR02" in
+  sector 44) is detected as UDF + ISO 9660 (`CISOImage::DetectTrackFS` scans sectors 16-128, file
+  data too); `CUDF::Open` fails quietly (no anchor at 256), and 7caf4ae7's `PartMissing` marked the
+  listing - every whole unpack of it failed without a word, the image kept (main deletes it after a
+  full unpack). Not data loss, a fail-closed regression. **Fixed**: a declared UDF part that does not
+  open counts as missing only when sector 256 holds a UDF anchor (tag ID 2, tag location 256 + the
+  track's offset - the check `CUDF::Open` makes of its descriptors). UDH-AVDP keeps its anchor (its
+  volume descriptor sequence pointer is what is broken) and stays marked. Limit: a UDF part whose
+  anchor itself is destroyed is not marked (indistinguishable from a false detection).
+- NOTE: NEST-OK and the accepted NOTE 4 rows look alike to a user (image kept, no word) - in favour
+  of the narrow trigger rather than a new text.
+
+Probe: `mkimg330.sh` makes `nest.iso` (after the reviewer's `mknest.sh`); row NEST-OK (control; a.img
+with any content, top.txt, no window, image deleted).
+- 7caf4ae7's build, `-Only NEST-OK,UDH-AVDP` -> `probe/result_before_review3.txt`: NEST-OK **FAIL**
+  (image kept), UDH-AVDP PASS - the negative control of this change.
+- `.\build.cmd` BUILD SUCCEEDED -> `probe/result_after.txt` (replaces the first after-run): **PASS 30,
+  FAIL 0** (15 RUN rows).
+- The final probe on main's build (ae41208d) -> `probe/result_before_final.txt`: **PASS 20, FAIL 10** -
+  all ten damaged rows FAIL (image deleted), the five controls PASS.
+- Regressions: `regress_322.txt` 18 / 0, `regress_329.txt` 14 / 0 (328 20 / 0 and 327 77 / 0 at
+  7caf4ae7 - this change only narrows 7caf4ae7's UDF trigger); encoding guard TOTAL 0; saltests
+  28266 / 0. Registry restored identical in every run.
+
+No further review: review 3 had no MUST (SKILL step 7 asks for a fresh review after MUST findings);
+the SHOULD fix is covered by the negative control above.

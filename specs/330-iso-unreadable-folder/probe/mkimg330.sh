@@ -5,7 +5,7 @@
 # $1 = the output folder (a /mnt/... path inside the probe's fixture)
 # Writes: rd.iso (genisoimage -R: ISO 9660 + Rock Ridge), ud.iso (genisoimage -udf: ISO 9660 + UDF),
 #         udh.iso (as ud.iso, side.txt hidden from the ISO 9660 part - it is only in the UDF part,
-#         after the first reviewer's mkhide.sh), each with the volume id TC330.
+#         after the first reviewer's mkhide.sh), each with the volume id TC330; nest.iso (below).
 set -e
 G="$HOME/tc-genisoimage"
 if [ ! -x "$G/root/usr/bin/genisoimage" ]; then
@@ -28,4 +28,16 @@ $GI -quiet -R -V TC330 -o "$out/rd.iso" "$src"
 $GI -quiet -udf -V TC330 -o "$out/ud.iso" "$src"
 $GI -quiet -udf -V TC330 -hide side.txt -o "$out/udh.iso" "$src"
 rm -rf "$src"
+# review 3: nest.iso - a VALID ISO 9660 (+ Rock Ridge) image whose first file a.img is itself a UDF
+# hybrid (its "NSR02" lies in the outer image's first sectors, the plug-in detects UDF; no anchor at
+# sector 256) and top.txt (TOP); after the third reviewer's mknest.sh
+w="$out/nest330"
+rm -rf "$w"
+mkdir -p "$w/in" "$w/outer"
+printf 'INNER' > "$w/in/inner.txt"
+$GI -quiet -udf -V INNER -o "$w/outer/a.img" "$w/in"
+printf 'TOP' > "$w/outer/top.txt"
+rm -f "$out/nest.iso"
+$GI -quiet -R -V TCNEST -o "$out/nest.iso" "$w/outer"
+rm -rf "$w"
 ls "$out"
