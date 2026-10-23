@@ -40,6 +40,7 @@ archive holding a.k and a.kp):
 
 - Q: A relative target starting with a space names a folder that does not exist yet - create it with the space, or refuse? → A: refuse, by the rule that already applies to the same folder given as an absolute path ("Error Creating Directory", the name is invalid, the dialog again); an existing folder of that name is unpacked into (autonomous run: item - "or the program refuses with a message"; conservative - the existing create rule is kept for every case the item does not name)
 - Q: Only the archive-name default, or also a relative target the user typed? → A: every relative target of the Unpack dialog - the program cannot tell an offered entry from a typed one, both show the space and both lost it; the Copy/Move target already keeps such a space (autonomous run: item - "OK unpacks into the folder the entry shows")
+- Q: A file (not a folder) named like the target, with the space, already exists next to the archive - what then? → A: the existing refusal for a target that names a file ("Error Creating Directory", the name is used by a file, the dialog again); the file is untouched (autonomous run: conservative - existing behaviour, loses no data)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -98,6 +99,7 @@ target = next to the archive) behave as before.
   archive's drive) - unchanged.
 - A drive-letter target with leading spaces (`  C:\x`) keeps today's trimming - unchanged.
 - The cursor's next focus after unpacking names the folder used (the one with the space).
+- A file named like the target (with the space) is refused as today; the file is untouched.
 
 ## Requirements *(mandatory)*
 
