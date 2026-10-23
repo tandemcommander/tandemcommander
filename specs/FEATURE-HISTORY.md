@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4608,3 +4608,31 @@ a few early ones are out of sequence).
   by `img329.py`); 328 20 / 0, 327 77 / 0, 322 18 / 0; saltests -> 28,266 / 0 (a mutant of `Under` fails
   2); refute-first review 1: no MUST, two SHOULD fixed (the HFS+ subtree decision as a tested rule, the
   probe tree two levels below a left-out folder), reviewer's negative control 0 / 7 and HFS+ mutation FAIL.
+- 330-iso-unreadable-folder: a disc image one of whose folders the ISO plug-in could not read ("Error
+  reading directory structure ... Incomplete content of ISO image") was deleted by Unpack with "Delete
+  archive after unpacking" after a partial unpack - the walk descends no later folder after the error
+  and the listing was not marked; also silent cases (an ISO 9660 folder of length 0, a UDF folder
+  whose file entry cannot be read) and a UDF part that does not open at all - now 328's
+  `CISOImage::ListingLeftOut` is marked: ISO 9660, UDF and Xbox `ListDirectory` mark a walk result
+  other than `ERR_OK` (every failure reaches the top: a nested `ERR_TERMINATE` stays `ERR_CONTINUE`;
+  a directory met again returns `ERR_OK`, not marked), UDF also its early returns (File Set
+  Descriptor, root ICB) and a folder whose `MapICB` fails; `CUDFISO` is told the parts the track type
+  declares and marks one that does not open - a UDF part only with an anchor at sector 256 (review
+  3: `DetectTrackFS` finds "NSR02" in file data, a valid ISO holding a UDF image would never unpack
+  whole). Messages unchanged, no UI string. Traps: the first reviewer stopped mid-probe and left
+  `%TEMP%\tc330_backup.reg` - restored first; its partial images found three UDF cases the
+  "Error reading directory structure" sites missed (second approach: the walk result); a row's `$box`
+  was the parameter `$Box` (PowerShell names ignore case, as in 328). Limits: later folders are still
+  not descended after a read error (Inbox `iso-plug-in-after-a-folder-that-cannot-be-read-no-later`);
+  an HFS+ part that does not open and a multi-session track that does not open still let Unpack delete
+  the image (Inbox `iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is`,
+  `iso-plug-in-unpack-with-delete-archive-deletes-a-multi`); a UDF part with a destroyed anchor is not
+  marked; a silent case keeps the image without a message. A UDF file whose entry cannot be read is now
+  marked too (part of Inbox `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let`, its HFS+ part
+  open). From backlog item `iso-plug-in-unpack-deletes-image-with-unreadable-folder`. Probe
+  `iso330_probe` (seeds genisoimage `-R` / `-udf` by `mkimg330.sh`, damaged copies and Xbox images by
+  `img330.py`) on main 20 / 10 (all 10 damaged rows: image deleted) -> 30 / 0 (15 RUN rows, controls
+  RD/UD/UDH/XD/NEST-OK still deleted); 322 18 / 0, 327 77 / 0, 328 20 / 0, 329 14 / 0; saltests 28,266 / 0;
+  refute-first reviews: 1 stopped (partial work: three UDF MUST-level cases, fixed), 2 (one MUST: a UDF
+  part that does not open - fixed; SHOULD multi-session and NOTE HFS+ to Inbox), 3 (no MUST; SHOULD: a
+  valid nested image marked - the anchor condition, negative control NEST-OK FAIL at 7caf4ae7).

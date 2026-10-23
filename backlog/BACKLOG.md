@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: Unpack with Delete archive deletes an image whose folder could not be read](items/iso-plug-in-unpack-deletes-image-with-unreadable-folder/desc.md) | bug | 7 | archives | 330 |
 
 ## Next
 

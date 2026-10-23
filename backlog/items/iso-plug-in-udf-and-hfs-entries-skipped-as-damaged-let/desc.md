@@ -7,11 +7,11 @@ area: archives
 source: review:329
 who: agent
 created: 2026-10-23
-updated: 2026-10-23
+updated: 2026-10-24
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-unpack-deletes-image-with-unreadable-folder]
+related: []
 depends-on: []
 reason: -
 ---
@@ -57,3 +57,4 @@ Thread records and the volume-label record, which are not entries, stay skipped 
 
 - 2026-10-23 — created (source review:329)
 - 2026-10-23 — moved to Next position 3
+- 2026-10-24 — related item iso-plug-in-unpack-deletes-image-with-unreadable-folder done in feature 330
