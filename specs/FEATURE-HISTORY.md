@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4249,3 +4249,17 @@ a few early ones are out of sequence).
   11 / 0 (negative control: the build of main); 299's probe 12 / 0; saltests 27,440 / 0 (negative
   controls 8 and 1 failed); one refute-first review (no MUST; SHOULD 1 - a subfolder name too long
   alone unpacked without it - fixed, SHOULD 2 accepted as the item's choice, a NOTE to the Inbox).
+- 316-unpack-subdir-space: with "Use the archive name as a subfolder" the Unpack dialog (Alt+F9)
+  offered ` ssss` for an archive ` ssss.zip`, but OK unpacked into `ssss` - another folder, an
+  existing `ssss` merged into (also when ` ssss` existed; a typed ` typed` the same): `SalGetFullName`
+  drops the leading spaces of a relative name unless `allowRelPathWithSpaces`. Now `CFilesWindow::Unpack`
+  passes TRUE (as `SalParsePath` for Copy/Move): an existing ` ssss` is unpacked into, a new one is
+  refused by the existing create rule (`CheckAndCreateDirectory`, `manualCrDir`: "Error Creating
+  Directory", invalid name, the dialog again) - the refusal the absolute entry `<other panel>\ ssss`
+  already got. Limits: the dialog's own offer is refused (edit the entry); the Pack dialog has the
+  same trimming (Inbox `pack-with-a-relative-archive-name-that-starts-with-a-space`, not measured).
+  Trap: `' ..'` (archive `' ...zip'`) trimmed to `..` meant the parent folder (review, read) - now refused. From
+  backlog item `unpack-into-a-subfolder-named-after-an-archive-whose-name`. Probe
+  `unpack316_probe.ps1` 6 FAIL / 12 -> 18 / 0 (negative control: the build of main); 315's probe
+  22 / 0; saltests 27,440 / 0; one refute-first review (no MUST, no SHOULD; its scratch rows with
+  dots and tabs all refused, nothing written).

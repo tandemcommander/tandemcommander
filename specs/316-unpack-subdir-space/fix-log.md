@@ -91,3 +91,22 @@ build.
   calls `SalGetFullName` the same way - by code reading, not driven.
 - `ChangePathToArchive` / `ChangePathToDisk` and other callers also trim a relative name; typed
   paths there are navigation, not a target written to - not recorded.
+
+## Review
+
+One independent refute-first review (general-purpose agent): **no MUST, no SHOULD**.
+
+- Re-ran the probe on the branch build: 18 / 0, registry identical (matches `result_after.txt`).
+- Own scratch probe outside the repository (fixture `%TEMP%\tc316r_unp`, registry restored and
+  identical), listing every file of each row folder: typed `' ..'`, `' .'`, `' ..\x'`, a tab +
+  `typed`, archives `' ...zip'` (offers `' ..'`) and `' ..zip'` (offers `' .'`) - all refused,
+  nothing written anywhere (before the fix `' ..'` would have meant the archive's parent folder:
+  `GetFullPathNameW` drops trailing dots); `' ssss\new'` with an existing `' ssss'` - unpacked
+  into `' ssss\new'`.
+- Read: only this caller changed; `nameBufSize` stays MAX_PATH = `path`; an entry that no longer
+  fits with its spaces gets IDS_TOOLONGPATH (no cut); external unpackers get `$(TargetPath)` quoted.
+- NOTEs, accepted: (1) the dialog's own offer ` ssss` is refused - the item's allowed outcome, the
+  setting is off by default, the same as the absolute entry; (2) the probe checks only `src` / `tgt`
+  - the reviewer's whole-row check found nothing outside; (3) next focus and real typing not driven
+  (recorded above); (4) CHANGELOG / FEATURE-HISTORY - written at closing; (5) the Pack twin is in
+  the Inbox, not measured.

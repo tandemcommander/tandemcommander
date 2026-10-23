@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Unpack into a subfolder named after an archive whose name starts with a space drops the space](items/unpack-into-a-subfolder-named-after-an-archive-whose-name/desc.md) | bug | 4 | archives | 316 |
 
 ## Next
 
