@@ -241,6 +241,9 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a fuzzing pass over the HFS+, ISO 9660, Joliet and Rock Ridge readers](items/iso-plug-in-a-fuzzing-pass-over-the-hfs-iso-9660-joliet-and/desc.md) | tech-debt | 5 | other-plugins | leftover:322 | 2026-10-23 |
+| [ISO plug-in: a valid xorriso ISO + HFS+ hybrid opens with Cannot read sector 00000020](items/iso-plug-in-a-valid-xorriso-iso-hfs-hybrid-opens-with-cannot/desc.md) | bug | 3 | other-plugins | measure:322 | 2026-10-23 |
+| [ISO plug-in: Rock Ridge names of xorriso images are not read, the ISO 9660 names are listed](items/iso-plug-in-rock-ridge-names-of-xorriso-images-are-not-read/desc.md) | bug | 5 | other-plugins | measure:322 | 2026-10-23 |
 
 ## Parked
 
