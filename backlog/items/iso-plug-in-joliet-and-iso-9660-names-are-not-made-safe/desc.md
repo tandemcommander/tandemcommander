@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: Joliet and ISO 9660 names are not made safe before extraction
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:326
@@ -10,7 +10,7 @@ created: 2026-10-23
 updated: 2026-10-23
 verified: 2026-10-23 e50d62ad
 effort: M
-feature: -
+feature: 327
 related: [iso-plug-in-a-fuzzing-pass-over-the-hfs-iso-9660-joliet-and]
 depends-on: []
 reason: -
@@ -55,3 +55,4 @@ patch of a Joliet identifier, as feature 326's probe patches `rr.iso` in `Make-L
 - 2026-10-23 — created (source review:326)
 - 2026-10-23 — moved to Next position 1
 - 2026-10-23 — verified at e50d62ad: iso327 probe at e50d62ad: 39 FAIL - Joliet/ISO 9660/UDF/Xbox/HFS+ names keep colon (stream), device, trailing dot; a crafted volume label writes outside the target
+- 2026-10-23 — run started, feature 327
