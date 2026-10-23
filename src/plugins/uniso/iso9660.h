@@ -307,7 +307,8 @@ protected:
     void ConvJolietName(char* dest, const char* src, int nLen);
 
     BOOL ExtractExtFileName(char* fileName, const char* src, CDirectoryRecord& dr);
-    void ExtractFileName(char* fileName, const char* src, CDirectoryRecord& dr);
+    BOOL ExtractFileName(char* fileName, const char* src, CDirectoryRecord& dr);
+    void MakeListedName(char* name, int size, BOOL rockRidge, const char* src, CDirectoryRecord& dr, BOOL file);
 
     BOOL AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
                     CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);

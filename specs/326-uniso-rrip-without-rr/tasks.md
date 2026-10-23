@@ -62,3 +62,4 @@ MVP = US1 (T004-T008) proven by the probe; US2 is the regression proof of the sa
 
 - [X] T020 `src/plugins/uniso/uniso.cpp` `ListArchive`: built case-sensitively, the flag kept only with case twins (`salcasetwins.h`, as `tardll.cpp` since 252) (FR-010)
 - [X] T021 probe `probe/twins326_probe.ps1` (from 252's `arc252_probe.ps1`, ISO kind by `probe/mkiso326.sh`): before 3 FAIL / 8, after 8 / 0
+- [X] T022 review 2 S1: `CISO9660::MakeListedName` cleans the UTF-8 name after `EnsureU8Name`; person-step item for a Japanese-locale check

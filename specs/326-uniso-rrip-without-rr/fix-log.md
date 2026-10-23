@@ -166,3 +166,39 @@ Checks after the fixes:
   D530... from 18:15); every finished probe restored its own start state identically and no
   `tc*326*_backup.reg` was left - the key was changed outside the probes (the program used on the
   maintainer's desktop), not by an interrupted probe.
+
+### Review 2 - fourth launch (completed) - 0 MUST, 1 SHOULD, 3 NOTE
+
+The earlier launches had not stopped: each waited on its own background probe (the harness reported
+"waiting on its own background work"); the fourth launch was given a findings file and finished.
+
+- Confirmed: every path a Rock Ridge name takes (`ExtractExtFileName` only; extraction uses listing
+  names - `UnpackArchive`, `UnpackOneFile`, `ExtractAllItems`); the fit check uses the real pass's
+  strings (path after `AddBootRecord`: `Session NN`, the hybrid's `\ISO (vol)`), the same
+  `sallistingname.h` rule as `AddFile` / `AddDir`, no side effects, buffers large enough; the case
+  flag (archive listings start with flags 0, `UnpackWholeArchive` lists through `ListArchive`, hybrids
+  and sessions are distinct folders). Re-measured: saltests 27937 / 0, `iso326_probe` 28 / 0 on 8228aa00.
+- **SHOULD S1** (taken): the cleaning ran on the raw `NM` bytes before `EnsureU8Name` converted a
+  legacy code page name - on code page 932 a Shift-JIS second byte 0x5C / 0x7C became `_`
+  (`ソフト.txt` -> `ダフト.txt`, `表示` -> `廟示`; the reviewer's byte simulation), a regression for
+  genisoimage (`RR`) images; and `com\xB9` (cp1252) became `com¹` unprefixed. **Fixed**:
+  `CISO9660::MakeListedName` - `EnsureU8Name` first, then `SalSuspCleanRockRidgeName` on the UTF-8
+  name, for folders and files; a name the cleaning cannot hold falls back to the record's plain ISO
+  9660 name (`RemoveIsoVersion` for files, shared with `ExtractFileName`). Not drivable here (ACP
+  1250: single-byte, the order changes nothing) - person-step item
+  `check-iso-rock-ridge-names-in-a-shift-jis-image-on-a`.
+- N1 (taken): the CHANGELOG said genisoimage images keep their names as before - reworded (their
+  Rock Ridge names are now made safe the same way).
+- N2 (accepted, recorded): the fit pass reads each directory of a SUSP volume a second time; a read
+  error's Retry / Cancel dialog (`SafeReadFile`) can appear in both passes, and Cancel in the fit
+  pass leaves the rest unchecked (a later refusal then behaves as before 326 - the class of the Inbox
+  item `iso-plug-in-an-entry-the-listing-refuses-ends-the-listing`).
+- N3 (accepted): two names that collide after cleaning (`a:b`, `a_b`) end at the overwrite question -
+  feature 087's accepted class.
+- The reviewer removed the stale worktree `%TEMP%\rev326c\neg` (it held only a reviewer mutant).
+
+Checks after S1: clang-format on the changed lines only; `.\build.cmd` BUILD SUCCEEDED; saltests
+`27937 checks, 0 failed`; encoding guard `TOTAL: 0 finding(s)`; `iso326_probe` ->
+`probe/result_after_review2.txt` **28 / 0**; `twins326_probe` -> `probe/result_twins_after.txt`
+**8 / 0**; 322's probe -> `probe/result_322_after.txt` **18 / 0**; registry restored identical each run.
+No MUST in review 2 - the review is passed (SKILL.md step 7).

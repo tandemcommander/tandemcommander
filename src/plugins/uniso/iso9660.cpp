@@ -284,10 +284,6 @@ BOOL CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
             }
             if (broken || nmContinues) // never a cut name: the plain ISO 9660 name then
                 bNM = FALSE;
-            // feature 326 (review): a POSIX name made safe for Windows ("..\x" was written outside the
-            // target folder, "12:30.txt" into a stream); a name the cleaning cannot hold: the plain name
-            if (bNM && !SalSuspCleanRockRidgeName(extFileName, sizeof(extFileName)))
-                bNM = FALSE;
 
             if (bNM)
             {
@@ -316,11 +312,27 @@ BOOL CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
     return FALSE;
 }
 
+// the ISO 9660 version suffix of a file name removed: "NAME.EXT;1" -> "NAME.EXT", "NAME.;1" -> "NAME"
+static void RemoveIsoVersion(char* name)
+{
+    char* sep2 = strchr(name, ISO_SEPARATOR2);
+
+    if (sep2 != NULL)
+    {
+        *sep2 = '\0';
+
+        char* sep1 = strchr(name, ISO_SEPARATOR1);
+        if (sep1 && sep2 - sep1 == 1)
+            *sep1 = '\0';
+    }
+}
+
 //
 // Extracts the file name from 'src'
 // used for file names in ISO levels 1, 2, and 3
+// feature 326: TRUE when it is the Rock Ridge name
 //
-void CISO9660::ExtractFileName(char* fileName, const char* src, CISO9660::CDirectoryRecord& dr)
+BOOL CISO9660::ExtractFileName(char* fileName, const char* src, CISO9660::CDirectoryRecord& dr)
 {
     char tmpFileName[2 * MAX_PATH + 1];
     ZeroMemory(tmpFileName, sizeof(tmpFileName));
@@ -330,18 +342,29 @@ void CISO9660::ExtractFileName(char* fileName, const char* src, CISO9660::CDirec
     BOOL rockRidge = ExtractExtFileName(tmpFileName, src, dr);
 
     // iso filename
-    char* sep2 = rockRidge ? NULL : strchr(tmpFileName, ISO_SEPARATOR2);
-
-    if (sep2 != NULL)
-    {
-        *sep2 = '\0';
-
-        char* sep1 = strchr(tmpFileName, ISO_SEPARATOR1);
-        if (sep1 && sep2 - sep1 == 1)
-            *sep1 = '\0';
-    }
+    if (!rockRidge)
+        RemoveIsoVersion(tmpFileName);
 
     strcpy(fileName, tmpFileName);
+    return rockRidge;
+}
+
+// feature 326: the name as it is listed - made UTF-8 (EnsureU8Name) and, when it is a Rock Ridge
+// name, made safe for Windows ("..\x" was written outside the target folder, "12:30.txt" into a
+// stream). The cleaning runs on the UTF-8 name (review 2): on the raw bytes of a legacy code page it
+// changed letters - a Shift-JIS second byte 0x5C is not a backslash ("\x83\x5C" is one letter). A
+// name the cleaning cannot hold: the plain ISO 9660 name of the record ('src', its raw identifier)
+void CISO9660::MakeListedName(char* name, int size, BOOL rockRidge, const char* src, CDirectoryRecord& dr,
+                              BOOL file)
+{
+    EnsureU8Name(name, size);
+    if (!rockRidge || SalSuspCleanRockRidgeName(name, (size_t)size))
+        return;
+    ZeroMemory(name, size);
+    lstrcpyn(name, src, min(size, (int)dr.LengthOfFileIdentifier + 1));
+    if (file)
+        RemoveIsoVersion(name);
+    EnsureU8Name(name, size);
 }
 
 #define READ_SIZE 4096
@@ -680,10 +703,11 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
                 {
                     char extFileName[2 * MAX_PATH + 1];
                     ZeroMemory(extFileName, sizeof(extFileName));
-                    ExtractExtFileName(extFileName, (data + offset + 33), dirRecord);
+                    BOOL rockRidge = ExtractExtFileName(extFileName, (data + offset + 33), dirRecord);
                     // format boundary (interface 104): plain ISO9660 (and Rock Ridge)
-                    // identifiers are raw bytes with no encoding tag -> make them UTF-8
-                    EnsureU8Name(extFileName, sizeof(extFileName));
+                    // identifiers are raw bytes with no encoding tag -> make them UTF-8;
+                    // feature 326: a Rock Ridge name then made safe
+                    MakeListedName(extFileName, sizeof(extFileName), rockRidge, (data + offset + 33), dirRecord, FALSE);
 
                     if (AddFileDir(path, extFileName, dirRecord, dir, pluginData))
                     {
@@ -718,11 +742,12 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
                 src = fileName;
             }
 
-            ExtractFileName(fileName, src, dirRecord);
+            BOOL rockRidge = ExtractFileName(fileName, src, dirRecord);
             // format boundary (interface 104): plain ISO9660 (and Rock Ridge) identifiers
             // are raw bytes with no encoding tag -> make them UTF-8. A no-op for Joliet,
-            // which ConvJolietName() already turned into UTF-8 above.
-            EnsureU8Name(fileName, sizeof(fileName));
+            // which ConvJolietName() already turned into UTF-8 above. Feature 326: a Rock
+            // Ridge name then made safe (never Joliet: 'src' is the raw identifier then)
+            MakeListedName(fileName, sizeof(fileName), rockRidge, src, dirRecord, TRUE);
 
             if (!AddFileDir(path, fileName, dirRecord, dir, pluginData))
                 ret = ERR_TERMINATE;

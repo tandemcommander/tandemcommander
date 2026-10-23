@@ -155,6 +155,8 @@ and a Joliet image still extract under their names in the program.
   `:`, `<`, `>`, `"`, `|`, `?`, `*` become `_`; trailing dots and spaces become `_`; a reserved
   device name gets a `_` prefix; an empty name becomes `_`. Nothing is written outside the target
   folder or into a stream. A name the cleaning cannot hold falls back to the plain ISO 9660 name.
+  The cleaning works on the UTF-8 name the listing shows, after a legacy code page name was
+  converted (review 2: on the raw bytes a Shift-JIS second byte 0x5C or 0x7C changed the letter).
 - **FR-009** (review 1): a volume recognised by `SP` whose Rock Ridge names the panel listing would
   refuse (a folder part over its bound) MUST be listed with the names it had before this feature
   (ISO 9660 names, `RR` records as before) - never an error and a lost folder where the image
