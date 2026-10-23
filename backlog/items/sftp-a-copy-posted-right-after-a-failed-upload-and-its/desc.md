@@ -7,11 +7,11 @@ area: sftp
 source: measure:258
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-23
 verified: -
 effort: ?
 feature: -
-related: [sftp-leaks-and-waits-after-broken-connection]
+related: []
 depends-on: []
 reason: -
 ---
@@ -38,3 +38,4 @@ Not verified with a real keyboard. Severity 3: at worst the user presses F5 agai
 
 - 2026-10-20 — created (source measure:258)
 - 2026-10-20 — moved to Next position 49
+- 2026-10-23 — related item sftp-leaks-and-waits-after-broken-connection closed: split into: sftp-open-handles-of-lost-connection-leak, sftp-session-leak-after-partial-send-or-disconnect, sftp-short-reply-waits-for-timeout, sftp-key-exchange-soak-1500-connections (and the related sftp-a-copy-posted-right-after-a-failed-upload-and-its) - the parts replace it; maintainer 2026-10-23

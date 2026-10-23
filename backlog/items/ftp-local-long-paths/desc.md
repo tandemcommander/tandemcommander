@@ -7,11 +7,11 @@ area: ftp
 source: manual
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-23
 verified: -
 effort: L
 feature: -
-related: [ftp-long-name-and-path-leftovers]
+related: []
 depends-on: []
 reason: -
 ---
@@ -42,3 +42,4 @@ Not a cut today - a refusal (215). Severity 3: deep local folders are rare and t
 
 - 2026-10-20 — created (source manual)
 - 2026-10-20 — moved to Next position 40
+- 2026-10-23 — related item ftp-long-name-and-path-leftovers closed: split into: ftp-pwd-and-created-path-cut (done in 277), ftp-escaped-path-does-not-fit-decision, ftp-local-long-paths, ftp-mask-letters-by-server-encoding - the parts replace it; maintainer 2026-10-23

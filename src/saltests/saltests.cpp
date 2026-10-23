@@ -97,6 +97,8 @@
 #include "salpaxheader.h"     // feature 306
 #include "saltarlink.h"       // feature 309
 #include "salcpiolink.h"      // feature 310
+#include "salunpackdefault.h" // feature 315
+#include "salpackname.h"      // feature 317
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -5155,6 +5157,117 @@ static void TestSafeReplace105()
     DeleteFileW((sub + L"\\inner.txt").c_str());
     RemoveDirectoryW(sub.c_str());
     CHECK(RemoveDirectoryW(dir.c_str())); // nothing left behind (no stray temporary file)
+}
+
+// feature 320: the ZIP plug-in replaces an archive with its temporary working file through
+// SalReplaceWithTempW - the targets its two replace steps met (src/plugins/zip/add.cpp
+// ReplaceArchiveWithTemp): an archive in a data stream (319), an archive held open elsewhere
+static void TestSafeReplace320()
+{
+    WCHAR tmp[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, tmp);
+    if (n == 0 || n >= MAX_PATH)
+    {
+        printf("skipping TestSafeReplace320 (no temp path)\n");
+        return;
+    }
+    std::wstring dir = std::wstring(L"\\\\?\\") + tmp + L"saltests-320-" + std::to_wstring(GetCurrentProcessId());
+    CHECK(CreateDirectoryW(dir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    auto put = [](const std::wstring& p, const char* text) -> BOOL
+    {
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD w = 0;
+        BOOL ok = h != INVALID_HANDLE_VALUE && WriteFile(h, text, (DWORD)strlen(text), &w, NULL);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        return ok;
+    };
+    auto get = [](const std::wstring& p) -> std::string
+    {
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                               OPEN_EXISTING, 0, NULL);
+        if (h == INVALID_HANDLE_VALUE)
+            return "<missing>";
+        char b[64] = {0};
+        DWORD r = 0;
+        if (!ReadFile(h, b, sizeof(b) - 1, &r, NULL))
+            strcpy_s(b, "<unreadable>");
+        CloseHandle(h);
+        return b;
+    };
+    auto exists = [](const std::wstring& p) -> BOOL
+    { return GetFileAttributesW(p.c_str()) != INVALID_FILE_ATTRIBUTES; };
+    std::wstring host = dir + L"\\report", stream = host + L":zip.zip", a = dir + L"\\a.zip", tmpFile = dir + L"\\Sal320.tmp";
+    DWORD err = 0;
+
+    // 1. an archive in a data stream (319): neither the stream nor its host file changes; the
+    //    temporary file is left to the caller (who deletes it) - before 320 the stream was deleted first
+    CHECK(put(host, "HOST") && put(stream, "OLDARC") && put(tmpFile, "NEWARC"));
+    err = 0;
+    CHECK(SalReplaceWithTempW(stream.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrFailedKept && err != 0);
+    CHECK(get(stream) == "OLDARC" && get(host) == "HOST" && get(tmpFile) == "NEWARC");
+
+    // 2. an archive held open without delete sharing (an indexer, a viewer): kept, 32
+    CHECK(put(a, "OLDARC"));
+    {
+        HANDLE held = CreateFileW(a.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+        CHECK(held != INVALID_HANDLE_VALUE);
+        err = 0;
+        CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrFailedKept && err == ERROR_SHARING_VIOLATION);
+        if (held != INVALID_HANDLE_VALUE)
+            CloseHandle(held);
+    }
+    CHECK(get(a) == "OLDARC" && get(tmpFile) == "NEWARC");
+
+    // 3. held open with delete sharing: replaced as before
+    {
+        HANDLE held = CreateFileW(a.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                                  OPEN_EXISTING, 0, NULL);
+        CHECK(held != INVALID_HANDLE_VALUE);
+        CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
+        if (held != INVALID_HANDLE_VALUE)
+            CloseHandle(held);
+    }
+    CHECK(get(a) == "NEWARC" && !exists(tmpFile));
+
+    // 4. the replacement's last-write time ("set zip file time to the newest file time" sets it on
+    //    the temporary file) is kept by a replace onto an archive without named streams...
+    auto setOld = [](const std::wstring& p) -> BOOL
+    {
+        HANDLE h = CreateFileW(p.c_str(), FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING, 0, NULL);
+        FILETIME ft;
+        ft.dwLowDateTime = 0x12345678;
+        ft.dwHighDateTime = 0x01C00000; // year 1997
+        BOOL ok = h != INVALID_HANDLE_VALUE && SetFileTime(h, NULL, NULL, &ft);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        return ok;
+    };
+    auto isOld = [](const std::wstring& p) -> BOOL
+    {
+        WIN32_FILE_ATTRIBUTE_DATA fa;
+        return GetFileAttributesExW(p.c_str(), GetFileExInfoStandard, &fa) && fa.ftLastWriteTime.dwHighDateTime == 0x01C00000 &&
+               fa.ftLastWriteTime.dwLowDateTime == 0x12345678;
+    };
+    CHECK(put(tmpFile, "NEWER") && setOld(tmpFile));
+    CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
+    CHECK(get(a) == "NEWER" && !exists(tmpFile) && isOld(a));
+
+    // 5. ...while one onto an archive with a named stream (the downloaded-file mark) keeps the
+    //    stream; the time then moved on Windows 11 26300 (ReplaceFileW copies the stream into the
+    //    new file) - the ZIP plug-in sets the time again after the replace. Reported, not checked
+    //    (an OS behaviour, not a rule of ours).
+    CHECK(put(a + L":Zone.Identifier", "ZONE") && put(tmpFile, "NEWEST") && setOld(tmpFile));
+    CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
+    CHECK(get(a) == "NEWEST" && get(a + L":Zone.Identifier") == "ZONE" && !exists(tmpFile));
+    printf("saltests 320: a replace onto a file with a named stream %s the replacement's last-write time\n",
+           isOld(a) ? "kept" : "moved");
+
+    // cleanup (explicit names only)
+    DeleteFileW(tmpFile.c_str());
+    DeleteFileW(a.c_str());
+    DeleteFileW(host.c_str());
+    CHECK(RemoveDirectoryW(dir.c_str())); // nothing left behind
 }
 
 // feature 106: a pack operation's output is never written over one of the files it packs
@@ -18716,6 +18829,243 @@ static void TestCpioLink310()
     CHECK(SalCpioLinkDecide(false, false, SAL_CPIO_GROUP_LOST, false) == SAL_CPIO_LINK_SKIP);
 }
 
+// feature 315: the Unpack dialog's defaults whole or not at all (salunpackdefault.h)
+static void TestUnpackDefault315()
+{
+    char buf[MAX_PATH];
+    // a folder of 'len' bytes: "C:\" + 'p' x (len - 3)
+    auto folder = [](int len) { return std::string("C:\\") + std::string(len - 3, 'p'); };
+    // "C:\" + CJK letters (3 bytes each) + 'x' padding: exactly 'len' bytes of UTF-8
+    auto cjkFolder = [](int len)
+    {
+        std::string s = "C:\\";
+        while ((int)s.size() + 3 <= len)
+            s += "\xE4\xB8\x80";
+        s += std::string(len - s.size(), 'x');
+        return s;
+    };
+    // the buffer holds no prefix of 'full' (a cut); an empty buffer is no cut
+    auto noCut = [](const char* b, const std::string& full)
+    { return b[0] == 0 || (strlen(b) == full.size() && strcmp(b, full.c_str()) == 0); };
+
+    // SalUnpackDefaultCopy: 259 bytes fit MAX_PATH, 260 do not; a refusal leaves the buffer empty
+    std::string f259 = folder(259), f260 = folder(260), f297 = folder(297);
+    strcpy(buf, "old");
+    CHECK(SalUnpackDefaultCopy(f259.c_str(), buf, MAX_PATH) && strcmp(buf, f259.c_str()) == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(f260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(f297.c_str(), buf, MAX_PATH) && noCut(buf, f297) && buf[0] == 0);
+    CHECK(SalUnpackDefaultCopy("", buf, 1) && buf[0] == 0);
+    CHECK(!SalUnpackDefaultCopy("a", buf, 1) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(NULL, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(!SalUnpackDefaultCopy("a", NULL, MAX_PATH));
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy("a", buf, 0) && strcmp(buf, "old") == 0);
+    // CJK: 259 bytes whole; 355 bytes (the measured row) and 260 bytes empty - never a letter split
+    std::string c259 = cjkFolder(259), c260 = cjkFolder(260), c355 = cjkFolder(355);
+    CHECK(c259.size() == 259 && c260.size() == 260 && c355.size() == 355);
+    CHECK(SalUnpackDefaultCopy(c259.c_str(), buf, MAX_PATH) && strcmp(buf, c259.c_str()) == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(c260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(c355.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    // the measured defect: the old copy (lstrcpyn at MAX_PATH) kept a 259-byte prefix - another folder
+    char old[MAX_PATH];
+    lstrcpynA(old, f297.c_str(), MAX_PATH);
+    CHECK(strlen(old) == 259 && !noCut(old, f297));
+    // a plug-in's mask: whole, or refused (the caller offers "*.*" then)
+    std::string m260 = std::string(255, 'm') + ";*.kp";
+    CHECK(SalUnpackDefaultCopy("*.txt;*.doc", buf, MAX_PATH) && strcmp(buf, "*.txt;*.doc") == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(m260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+
+    // SalUnpackDefaultAddSubdir: '\' added unless the buffer ends with one or is empty
+    strcpy(buf, "C:\\t");
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, "arc.zip", 3) && strcmp(buf, "C:\\t\\arc") == 0);
+    strcpy(buf, "C:\\");
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, "arc.zip", 3) && strcmp(buf, "C:\\arc") == 0);
+    buf[0] = 0; // the other panel is not a disk, or its path was left out: the name alone (relative)
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, "arc.zip", 3) && strcmp(buf, "arc") == 0);
+    strcpy(buf, "C:\\t"); // nothing to append (an archive named only by its extension)
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, ".zip", 0) && strcmp(buf, "C:\\t") == 0);
+    // exactly 259 bytes fit, 260 do not (folder 250 + '\' + 8 / 9 bytes)
+    std::string f250 = folder(250), name9 = "123456789.zip";
+    strcpy(buf, f250.c_str());
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, name9.c_str(), 8) && strlen(buf) == 259);
+    strcpy(buf, f250.c_str());
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, name9.c_str(), 9) && strcmp(buf, "123456789") == 0);
+    // the measured row: a 245-byte folder + 20 letters (266 bytes) - the folder left out, the name
+    // alone (a subfolder next to the archive), never the bare folder
+    std::string f245 = folder(245), s20 = std::string(20, 's') + ".zip";
+    strcpy(buf, f245.c_str());
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s20.c_str(), 20) && strcmp(buf, std::string(20, 's').c_str()) == 0);
+    // a name of 259 bytes fits alone, not after a folder
+    std::string s259 = std::string(259, 'n') + ".zip";
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s259.c_str(), 259) && strlen(buf) == 259 && buf[0] == 'n');
+    // a name alone that does not fit: stays empty
+    std::string s300 = std::string(300, 's') + ".zip";
+    buf[0] = 0;
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s300.c_str(), 300) && buf[0] == 0);
+    // ... after a path too: never the bare path
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s300.c_str(), 300) && buf[0] == 0);
+    // a name of 260 bytes does not fit alone either
+    std::string s260 = std::string(260, 's') + ".zip";
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s260.c_str(), 260) && buf[0] == 0);
+
+    // SalUnpackEmptyTarget: the archive's folder whole; a folder of 260+ bytes refused; a subfolder
+    // name that does not fit even alone refused (the empty target would unpack without it)
+    strcpy(buf, "old");
+    CHECK(SalUnpackEmptyTarget(f259.c_str(), 0, buf, MAX_PATH) && strcmp(buf, f259.c_str()) == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget(f260.c_str(), 0, buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget(f297.c_str(), 0, buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget(c355.c_str(), 0, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(SalUnpackEmptyTarget("C:\\t", 259, buf, MAX_PATH) && strcmp(buf, "C:\\t") == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget("C:\\t", 260, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(SalUnpackEmptyTarget("C:\\t", 20, buf, MAX_PATH) && strcmp(buf, "C:\\t") == 0);
+    CHECK(!SalUnpackEmptyTarget(NULL, 0, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(!SalUnpackEmptyTarget("C:\\t", 0, NULL, MAX_PATH));
+    // a CJK name appended whole (byte count, never inside a letter)
+    std::string cjkName = "\xE4\xB8\x80\xE4\xB8\x81.zip";
+    strcpy(buf, "C:\\t");
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, cjkName.c_str(), 6) && strcmp(buf, "C:\\t\\\xE4\xB8\x80\xE4\xB8\x81") == 0);
+    // NULL / size 0: refused, the buffer unchanged
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, NULL, 3) && strcmp(buf, "C:\\t") == 0);
+    CHECK(!SalUnpackDefaultAddSubdir(NULL, MAX_PATH, "a", 1));
+    CHECK(!SalUnpackDefaultAddSubdir(buf, 0, "a", 1) && strcmp(buf, "C:\\t") == 0);
+}
+
+// features 317, 318: a Pack archive name whose last part the file system would not keep as typed
+// (a trailing dot or space, a part of only spaces and dots, a device name) is refused (salpackname.h)
+static void TestPackName318()
+{
+    // 317: only spaces and dots in the last part: refused
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\ .."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\ ."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\  ...  "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\   "));
+    CHECK(SalPackNameIsNotKeptAsTyped("\\\\server\\share\\d\\ .."));
+    CHECK(SalPackNameIsNotKeptAsTyped(" .."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\\t..")); // 318: it ends with a dot (317: a tab is not a space)
+    // 318: a trailing dot or space: refused, relative or absolute
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip.."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report. "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\ report ."));
+    CHECK(SalPackNameIsNotKeptAsTyped("report."));
+    CHECK(SalPackNameIsNotKeptAsTyped("\\\\server\\share\\d\\a.zip "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\\xE4\xB8\x80."));
+    // 318: a reserved device name, any letter case, with or without an extension: refused
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\con.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\prn.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\Aux.7z"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\NUL .zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\nul  .zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\COM0.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\COM1.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\com9.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\LPT0.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\lpt9.tar.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\COM\xC2\xB9.zip")); // superscript one
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\com\xC2\xB2.zip")); // superscript two
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\LPT\xC2\xB3.zip")); // superscript three
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\CON"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\LPT\xC2\xB2"));
+    CHECK(SalPackNameIsNotKeptAsTyped("CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("\\\\server\\share\\aux.zip"));
+    // a '/' separates like '\' (the packers' path conversion turns it into '\')
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\./CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\sub/CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:/t/report."));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CON/a.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip/")); // no last part (the packer refuses it)
+    // a name - the leading space kept by 317, dots inside, a device name only as a prefix - is a name
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ report.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\   .zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ ..a"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\.cvspass"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\.cfg.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\report.v1.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\ .\\a.zip"));            // only the last part counts
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\CON\\a.zip"));           // a device name in a folder part
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t.\\a.zip"));            // a trailing dot in a folder part
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ \xE4\xB8\x80.zip")); // a CJK name (UTF-8)
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CONSOLE.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\con bla.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CON_.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COM10.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COM.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\LPT.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COMX.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COM\xC2\xB4.zip")); // not a superscript digit
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\PRN\xC2\xB9.zip")); // a superscript only after COM / LPT
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ CON.zip"));        // a leading space: not a device
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CO.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip\t")); // a trailing tab is not this rule's
+    // no last part, NULL: not refused by this rule
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\"));
+    CHECK(!SalPackNameIsNotKeptAsTyped(""));
+    CHECK(!SalPackNameIsNotKeptAsTyped(NULL));
+    // the device part alone
+    CHECK(SalPackNameIsReservedDevice("NUL"));
+    CHECK(SalPackNameIsReservedDevice("nul.txt"));
+    CHECK(!SalPackNameIsReservedDevice(".NUL"));
+    CHECK(!SalPackNameIsReservedDevice(""));
+    CHECK(!SalPackNameIsReservedDevice(NULL));
+}
+
+// feature 319: a Pack archive name whose last part holds a ':' names an NTFS data stream - always
+// refused (salpackname.h)
+static void TestPackName319()
+{
+    // a ':' in the last part: refused
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report:zip.zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\t\\rep:x.zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report:zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\t\\:zip.zip"));    // a leading colon
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report.zip:")); // a trailing colon
+    CHECK(SalPackNameHasStreamColon("C:\\t\\:"));           // only a colon
+    CHECK(SalPackNameHasStreamColon("C:\\t\\a:b:c.zip"));
+    CHECK(SalPackNameHasStreamColon("C:\\report:zip.zip"));                   // in the root
+    CHECK(SalPackNameHasStreamColon("\\\\server\\share\\d\\rep:x.zip"));      // UNC
+    CHECK(SalPackNameHasStreamColon("C:\\t\\plain/rep:x.zip"));               // after a '/'
+    CHECK(SalPackNameHasStreamColon("C:/t/rep:x.zip"));                       // '/' only
+    CHECK(SalPackNameHasStreamColon("C:\\t\\zpr\xC3\xA1va:zip.zip"));         // a UTF-8 name
+    CHECK(SalPackNameHasStreamColon("C:\\t\\\xE4\xB8\x80:\xE4\xB8\x80.zip")); // CJK around it
+    CHECK(SalPackNameHasStreamColon("rep:x.zip"));                            // no folder at all
+    CHECK(SalPackNameHasStreamColon("C:rep:x.zip"));                          // drive-relative
+    CHECK(SalPackNameHasStreamColon("C:\\t\\report.zip::$DATA"));
+    // a drive prefix only, or a colon outside the last part: not refused by this rule
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\report.zip"));
+    CHECK(!SalPackNameHasStreamColon("c:\\t\\report.zip"));
+    CHECK(!SalPackNameHasStreamColon("C:report.zip")); // drive-relative (SalGetFullName makes it full)
+    CHECK(!SalPackNameHasStreamColon("C:"));
+    CHECK(!SalPackNameHasStreamColon("C:\\"));
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\sub:x\\a.zip")); // a folder part (the packer refuses it)
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\sub:x/a.zip"));
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\report:zip\\")); // no last part
+    CHECK(!SalPackNameHasStreamColon("\\\\server\\share\\d\\a.zip"));
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\report\xEF\xBC\x9Azip.zip")); // full-width colon U+FF1A
+    CHECK(!SalPackNameHasStreamColon("C:\\t\\ report.zip"));
+    CHECK(!SalPackNameHasStreamColon("report.zip"));
+    CHECK(!SalPackNameHasStreamColon(""));
+    CHECK(!SalPackNameHasStreamColon(NULL));
+    // a digit or other byte before ':' is no drive letter
+    CHECK(SalPackNameHasStreamColon("1:x.zip"));
+    CHECK(SalPackNameHasStreamColon("\xC3\xA1:x.zip"));
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -18772,6 +19122,7 @@ int main(int argc, char** argv)
     TestSameFile103();
     TestPluginFileDlg104();
     TestSafeReplace105();
+    TestSafeReplace320();
     TestPackSelf106();
     TestFolderAlias107();
     TestArchiveEdit108();
@@ -18865,6 +19216,9 @@ int main(int argc, char** argv)
     TestPaxNameUsable308();
     TestTarLink309();
     TestCpioLink310();
+    TestUnpackDefault315();
+    TestPackName318();
+    TestPackName319();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

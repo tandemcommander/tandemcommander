@@ -1,7 +1,7 @@
 ---
 title: Check the Markdown Viewer Page Width submenu on a real screen and in eight languages
 type: person-step
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: leftover:314
@@ -61,3 +61,5 @@ Do these after the two-stage `.slt` refresh of the mdview module (feature 314's 
 ## Log
 
 - 2026-10-23 — created (source leftover:314)
+- 2026-10-23 — moved to Inbox
+- 2026-10-23 — moved to Person steps position 35

@@ -7,11 +7,11 @@ area: translations
 source: manual
 who: both
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-23
 verified: -
 effort: M
 feature: -
-related: [translations-clipped-labels]
+related: []
 depends-on: []
 reason: -
 ---
@@ -42,3 +42,4 @@ Split from `translations-clipped-labels` (one item per enabled language). who bo
 
 - 2026-10-21 — created (source manual)
 - 2026-10-21 — moved to Next position 66
+- 2026-10-23 — related item translations-clipped-labels closed: split into: translations-clipped-labels-cs, -de, -fr, -nl, -hu, -ro, -sk, -es and translate-merge-bundle-rekey - the parts replace it; maintainer 2026-10-23

@@ -1,0 +1,22 @@
+unpack316_probe (feature 316) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 02:30; ACP 1250; registry key existed True
+Fixture C:\Users\pavel\AppData\Local\Temp\tc316_unp
+
+space-sd   RUN    FAIL        UA=0 SD=1; archive '<sp>ssss.zip'; items: '<sp>ssss', '...(64)<sp>tc316_unp\space-sd\tgt\L\<sp>ssss'; OK on '<sp>ssss'; dialog stayed: False; asked: nothing; src files: 'ssss\a.k=K', 'ssss\a.kp=KP', 'ssss\keep.k=OLD'; src folders: 'ssss'; tgt files: none [expected src files '<sp>ssss\a.k=K', '<sp>ssss\a.kp=KP', 'ssss\keep.k=OLD'; src folders '<sp>ssss', 'ssss'; tgt files '']
+space-sd   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+space-sd-long RUN    FAIL        UA=1 SD=1; archive '<sp>sssssssssssssssssss.zip'; items: '<sp>sssssssssssssssssss'; OK on '<sp>sssssssssssssssssss'; dialog stayed: False; asked: nothing; src files: 'sssssssssssssssssss\a.k=K', 'sssssssssssssssssss\a.kp=KP'; src folders: 'sssssssssssssssssss'; tgt files: none [expected src files '<sp>sssssssssssssssssss\a.k=K', '<sp>sssssssssssssssssss\a.kp=KP'; src folders '<sp>sssssssssssssssssss'; tgt files '']
+space-sd-long END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+space2-sd  RUN    FAIL        UA=0 SD=1; archive '<sp><sp>ss.zip'; items: '<sp><sp>ss', '...(64)<sp>tc316_unp\space2-sd\tgt\L\<sp><sp>ss'; OK on '<sp><sp>ss'; dialog stayed: False; asked: nothing; src files: 'ss\a.k=K', 'ss\a.kp=KP'; src folders: 'ss'; tgt files: none [expected src files '<sp><sp>ss\a.k=K', '<sp><sp>ss\a.kp=KP'; src folders '<sp><sp>ss'; tgt files '']
+space2-sd  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+typed-space RUN    FAIL        UA=0 SD=0; archive 'a.zip'; items: '', '...(61)<sp>mp\tc316_unp\typed-space\tgt\L'; OK on '<sp>typed'; dialog stayed: False; asked: nothing; src files: 'typed\a.k=K', 'typed\a.kp=KP'; src folders: 'typed'; tgt files: none [expected src files '<sp>typed\a.k=K', '<sp>typed\a.kp=KP'; src folders '<sp>typed'; tgt files '']
+typed-space END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-abs-space RUN    FAIL        UA=1 SD=1; archive '<sp>ssss.zip'; items: '...(69)<sp>_unp\ctl-abs-space\tgt\L\<sp>ssss', '<sp>ssss'; OK on '...(69)<sp>_unp\ctl-abs-space\tgt\L\<sp>ssss'; dialog stayed: False; asked: [#32770 'Error Creating Directory'] Name: | Error: | (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  | || the Unpack dialog again; src files: none; src folders: none; tgt files: none [expected src files ''; src folders ''; tgt files 'L\<sp>ssss\a.k=K', 'L\<sp>ssss\a.kp=KP']
+ctl-abs-space END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-typed  RUN    PASS        UA=0 SD=0; archive 'a.zip'; items: '', 'C:\Users\pavel\AppData\Local\Temp\tc316_unp\ctl-typed\tgt\L'; OK on 'typed'; dialog stayed: False; asked: nothing; src files: 'typed\a.k=K', 'typed\a.kp=KP'; src folders: 'typed'; tgt files: none
+ctl-typed  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-blank  RUN    PASS        UA=0 SD=0; archive 'a.zip'; items: '', 'C:\Users\pavel\AppData\Local\Temp\tc316_unp\ctl-blank\tgt\L'; OK on '<sp><sp><sp>'; dialog stayed: False; asked: nothing; src files: 'a.k=K', 'a.kp=KP'; src folders: none; tgt files: none
+ctl-blank  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+
+Rows: PASS 9, FAIL 5, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

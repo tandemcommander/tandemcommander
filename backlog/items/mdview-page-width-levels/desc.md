@@ -1,19 +1,19 @@
 ---
 title: Markdown Viewer: choose the page width in View, up to the full window
 type: improvement
-status: in-progress
+status: blocked
 severity: 3
 area: other-plugins
 source: manual
 who: agent
 created: 2026-10-22
 updated: 2026-10-23
-verified: 2026-10-23 da0a455a
+verified: -
 effort: S
-feature: 314
+feature: -
 related: []
 depends-on: []
-reason: -
+reason: done and verified on the branch except the two-stage .slt refresh of 5 new mdview strings (build.cmd full fails for 8 languages); the maintainer runs it, closes and merges - fix-log Stopped (feature 314, branch 314-mdview-page-width)
 ---
 
 # Markdown Viewer: choose the page width in View, up to the full window
@@ -73,5 +73,4 @@ At f6c07c31, by reading:
 
 - 2026-10-22 — created (source manual)
 - 2026-10-22 — moved to Next position 3
-- 2026-10-23 — verified at da0a455a: present at da0a455a: CSS fixed max-width 46rem, .full rule never applied, no width command in View; htmlgen test 38/0 asserts 46rem
-- 2026-10-23 — run started, feature 314
+- 2026-10-23 — blocked: done and verified on the branch except the two-stage .slt refresh of 5 new mdview strings (build.cmd full fails for 8 languages); the maintainer runs it, closes and merges - fix-log Stopped (feature 314, branch 314-mdview-page-width)
