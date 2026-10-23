@@ -1,17 +1,20 @@
-# Quickstart - validating 302-ftp-upload-cache-args
+# Quickstart - validating 323-ftp-upload-cache-args
 
-Prerequisites: Debug x64 build (`build.cmd`), Python on PATH (for `ftpmini.py`), no running
+Prerequisites: Debug x64 build (`build.cmd`), Python on PATH (for the test servers), no running
 `tandemcommander.exe`.
 
 1. Build: PowerShell `.\build.cmd` -> `BUILD SUCCEEDED`.
-2. Probe on the hidden desktop (PowerShell):
+2. Unit rule: PowerShell `& "build\tandemcommander\Debug_x64\saltests\saltests.exe"` ->
+   `saltests: <n> checks, 0 failed`.
+3. Probe on the hidden desktop (PowerShell):
 
    ```text
-   powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\302-ftp-upload-cache-args\probe\result_after.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\302-ftp-upload-cache-args\probe\ftp302_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe"
+   powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\323-ftp-upload-cache-args\probe\result_after.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\323-ftp-upload-cache-args\probe\ftp302_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe"
    ```
 
-   Expected: `MKD-ABS` PASS (the second upload sends no `MKD new`, `f.txt` arrives in
-   `/MKD-ABS/other/new`), `REN-UP` PASS (`b.txt` keeps its content), every `END` row PASS, registry
-   restored + identical. Before the fix: `MKD-ABS` FAIL, `REN-UP` FAIL (`b.txt` replaced without the question).
-3. Regressions: `ftp288_probe.ps1` -> 20 / 0 as recorded by 288.
-4. Encoding guard: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+   Expected: rows MKD-ABS, REN-UP, MKD-REN, REN-PATH, MKD-HID, MKD-CASE PASS, every `END` row
+   PASS, registry restored + identical. Negative controls: on `main` MKD-ABS and REN-UP fail; with
+   302's state (argument fix + review 1) MKD-HID and MKD-CASE fail.
+4. Regressions: `specs\288-ftp-per-server-encoding\probe\ftp288_probe.ps1` -> 20 / 0 as recorded
+   by 288.
+5. Encoding guard: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
