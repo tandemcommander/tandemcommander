@@ -10,7 +10,7 @@ size is that of the data member it names (a chain of links followed), so the pan
 panel operation can ask for it. An extraction asked for a hard link whose target it did not write and
 was not asked for records it as *deferred* instead of reporting it; after the single pass, when any
 deferred link exists, the archive is opened again (`CDecompressFile::CreateInstance` with the same
-file, offset and size - compressed archives too) and a second pass writes the first data member each
+file, offset and size - compressed archives too) and a further pass writes the data member (the latest earlier one of the name, review 1) each
 deferred link resolves to under the first link's name, copies the other links of that target from it
 (feature 309's identity-safe `WriteOutLinkCopy`), and stops reading once nothing is wanted. Links still
 unresolved are reported with feature 309's message and fail the operation. Unpacking one listed hard

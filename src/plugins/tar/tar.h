@@ -332,27 +332,29 @@ private:
     int WriteOutLinkCopy(const SCommonHeader& header, const char* targetPath, const char* targetName,
                          const char* sourceName, BOOL* written, BOOL* refused);
 
-    // feature 325: hard links of one operation - the name of every hard-link member read in the pass
-    // -> the name it refers to (saltarlink.h SalTarResolveHardLink)
-    typedef std::unordered_map<std::string, std::string> CTarLinks;
-    struct SDeferredLink // an asked hard link whose target's data has passed unwritten
+    // feature 325: an asked hard link whose target's data passed unwritten (saltarlink.h
+    // CSalTarLinkResolver: the data member it stands for)
+    struct SDeferredLink
     {
         std::string Name;     // the link's archive name (UTF-8)
         std::string LinkName; // the name it refers to, as read (the report)
         std::string Target;   // where it goes, relative to the target path (as WriteOutData takes it)
+        std::string DataName; // the data member it stands for: the Ordinal-th data member of DataName
+        unsigned Ordinal = 0;
+        bool Superseded = false; // a later asked member of the same name replaced it (tar keeps the last)
     };
     // opens the archive again at its start (the pass before is over); FALSE = an error was shown
     BOOL ReopenStream();
-    // the second pass of an extraction: writes the deferred links from their targets' data, reports
-    // the rest ('refused'); TAR_OK / TAR_ERROR (Cancel, a write error - shown). The progress dialog
-    // stays open
-    int ExtractDeferredLinks(const char* targetPath, const std::vector<SDeferredLink>& deferred,
-                             const CTarLinks& links, BOOL& refused);
-    // one pass of UnpackOneFile; UNPACK_ONE_LINK: 'nameInArchive' is a hard link whose data member
-    // 'linkData' passed earlier - the caller reads the archive again for it ('linkFileName': the name
-    // to write it as)
+    // the further passes of an extraction: write the deferred links from their data members (a pass more
+    // when the user skipped the first name of a group), report the rest ('refused'); TAR_OK / TAR_ERROR
+    // (Cancel, a write error - shown). The progress dialog stays open
+    int ExtractDeferredLinks(const char* targetPath, const std::vector<SDeferredLink>& deferred, BOOL& refused);
+    // one pass of UnpackOneFile; 'dataOrdinal' != 0: extract the dataOrdinal-th data member named
+    // 'nameInArchive'. UNPACK_ONE_LINK (only with 'linkTarget'): 'nameInArchive' is a hard link whose
+    // data member passed earlier - the caller reads the archive again for '*linkTarget' and writes it as
+    // '*linkFileName'
     int UnpackOneFilePass(const char* nameInArchive, const char* targetPath, const char* newFileName,
-                          std::string* linkData, std::string* linkFileName);
+                          unsigned dataOrdinal, CSalTarLinkTarget* linkTarget, std::string* linkFileName);
 
     // feature 310: the hard-link groups of one cpio extraction (salcpiolink.h); key: device
     // (major << 32 | minor) and inode

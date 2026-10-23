@@ -1,6 +1,6 @@
-tar321_probe (feature 321) regress325
+tar321_probe (feature 321) regress325-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 13:00; registry key existed True; ACP 1250; python Python 3.14.6
+Date    : 2026-10-23 14:00; registry key existed True; ACP 1250; python Python 3.14.6
 
 GNU-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 GNU-TOOLONG RUN    PASS        ok.txt: K; tgt: ok.txt; message (206) at open: True; at open: ...u4F15\u4F16\u4F17\u4F18\u4F19\u4F1A\u4F1B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help

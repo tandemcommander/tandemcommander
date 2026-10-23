@@ -1,6 +1,6 @@
-pax306_probe (feature 306) regress325
+pax306_probe (feature 306) regress325-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 12:51; registry key existed True; ACP 1250; python Python 3.14.6
+Date    : 2026-10-23 13:51; registry key existed True; ACP 1250; python Python 3.14.6
 
 PAX-LONG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 PAX-LONG   RUN    PASS        dddddddd..[302 chars]..ffff.txt: L t=1000000000; tgt: dddddddd..[302 chars]..ffff.txt; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy directory "dddddddddddddddddddddd..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help

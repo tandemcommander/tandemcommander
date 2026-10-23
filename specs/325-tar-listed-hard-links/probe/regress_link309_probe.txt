@@ -1,6 +1,6 @@
-link309_probe (feature 309) regress325
+link309_probe (feature 309) regress325-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 12:54; registry key existed True; ACP 1250; python Python 3.14.6
+Date    : 2026-10-23 13:55; registry key existed True; ACP 1250; python Python 3.14.6
 
 UNP-HARD-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 UNP-HARD-DEL RUN    PASS        tgt: 4 of 4 files; archive kept: False (want False); box naming the member: False (boxes: 0); windows: no window

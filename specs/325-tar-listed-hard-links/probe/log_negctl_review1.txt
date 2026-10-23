@@ -1,0 +1,13 @@
+link325_probe (feature 325) negctl-review1-b2afe914
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 13:47; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-UPD-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-UPD-DEL RUN    FAIL        tgt: 2 of 2 files (sub/b.txt, sub/c.txt); wrong content: sub/b.txt; archive kept: False (want False); windows: no window
+COPY-UPD   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-UPD   RUN    FAIL        tgt: 2 of 2 files (b.txt, c.txt); wrong content: b.txt; boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy 3 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-SKIP  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-SKIP  RUN    FAIL        tgt: 2 of 3 files (b.txt, c.txt); missing: d.txt; boxes besides the Copy dialog: 2; windows: ...d=184] 1, 09.09.2001, 3:46:40 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel || [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. sub\d.txt -> a.txt | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39 / after D36F5B063A2F53843540C2BBDC26E16C0240E223CA99582F442DDFABA6E69B39
+
+Rows: PASS 3, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

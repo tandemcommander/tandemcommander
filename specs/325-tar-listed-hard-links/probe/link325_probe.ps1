@@ -25,6 +25,14 @@
                        sub/c.txt, sub/d.txt (feature 309's COPY-HARD)
       VIEW-LINK        the COPY-INSIDE tar; inside sub: End focuses d.txt, F3 (742) -> a viewer of d.txt,
                        no message box, the disk-cache copy it shows holds a.txt's content
+    Rows of review 1 (a "tar -u" archive: a.dat 'OLD', sub/c.txt, sub/b.txt -> a.dat, a.dat 'NEWER',
+    sub/b.txt -> a.dat - tar extracts b.txt as NEWER):
+      UNP-UPD-DEL      Unpack (Alt+F9) of <row>\src\t.tar, mask *.txt (521), "Delete archive after
+                       unpacking" -> sub/b.txt = 'NEWER', sub/c.txt, nothing asked, archive deleted
+      COPY-UPD         inside sub: Select All, Copy -> b.txt = 'NEWER', c.txt, nothing asked
+      COPY-SKIP        the COPY-INSIDE tar, tgt\b.txt exists ('old'); inside sub: Select All, Copy, Skip at
+                       the overwrite question -> b.txt 'old', c.txt, d.txt = 'A' (the data is written
+                       under the next link of the group), exactly one box (the question)
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -94,8 +102,9 @@ function Start-Arc([string]$Left, [string]$Tgt, [string]$Arc) {
 
 # $How: 'all' = Select All + Copy; 'end' = End (focus the last item) + Copy; $Sub = open <arc>\sub;
 # $BoxName = exactly one box naming this member is required (else no box but the overwrite question
-# when $Exist); $Exist = file created in tgt before (name, content)
-function Copy-Row([string]$Case, [string]$How, [switch]$Sub, $Want, [string]$BoxName, $Exist) {
+# when $Exist); $Exist = file created in tgt before (name, content); $ExistSize = the size the overwrite
+# question must show (regex); $Answer = the button ids answered (OK / Yes, or Skip 173)
+function Copy-Row([string]$Case, [string]$How, [switch]$Sub, $Want, [string]$BoxName, $Exist, [string]$ExistSize = '131\D?072', [int[]]$Answer = @(1, 6)) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     $arc = $d + '\t.tar'; if ($Case.EndsWith('-GZ')) { $arc += '.gz' }
@@ -110,19 +119,61 @@ function Copy-Row([string]$Case, [string]$How, [switch]$Sub, $Want, [string]$Box
         if ($How -eq 'all') { Post-Cmd (Get-Main $id) 842 } else { Key $id 0x23 }
         Start-Sleep -Milliseconds 800
         Post-Cmd (Get-Main $id) 727
-        $r = Serve $id 60 @(1, 6)
+        $r = Serve $id 60 $Answer
         $msgs = Msgs $r
         End-Row $Case $id $null $before; $id = 0
         $c = Check-Tgt $tgt $Want
         $boxes = @($r.Messages | Where-Object { $_ -notmatch "^\[#32770 'Copy'\]" })
         $ok = $c[0] -and ($openMsgs -eq 'no window')
         if ($BoxName) { $ok = $ok -and ($boxes.Count -eq 1) -and $boxes[0].Contains($BoxName) }
-        elseif ($Exist) { $ok = $ok -and ($boxes.Count -eq 1) -and $boxes[0].Contains("'Confirm File Overwrite'") -and ($boxes[0] -match '131\D?072') }
+        elseif ($Exist) { $ok = $ok -and ($boxes.Count -eq 1) -and $boxes[0].Contains("'Confirm File Overwrite'") -and ($boxes[0] -match $ExistSize) }
         else { $ok = $ok -and ($boxes.Count -eq 0) }
         Row $Case 'RUN' (V $ok) ('{0}; boxes besides the Copy dialog: {1}; windows: {2}' -f $c[1], $boxes.Count, (Tail $msgs 300))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before } }
+}
+
+# Unpack (Alt+F9) of the whole archive with mask $Mask into tgt, "Delete archive after unpacking"
+# checked; $Want = expected files (paths below tgt); nothing may be asked; $ArcGone = deleted afterwards
+function Unpack-Row([string]$Case, [string]$Mask, $Want, [switch]$ArcGone) {
+    if (-not (Want $Case)) { return }
+    $d = $Root + '\' + $Case
+    $arc = $d + '\src\t.tar'; $tgt = $d + '\tgt'
+    try { NewDir ($d + '\src'); NewDir $tgt; Make-Fixture $Case $arc }
+    catch { Row $Case 'RUN' 'NOT DRIVEN' ('fixture: ' + $_.Exception.Message); return }
+    $id = 0; $fatal = $null; $before = Reports
+    try {
+        if (-not $arc.StartsWith($Root + '\') -or -not $tgt.StartsWith($Root + '\')) { throw ('path outside the fixture: ' + $tgt) }
+        $id = Start-Tc ($d + '\src')
+        Key $id 0x24; Key $id 0x23
+        Start-Sleep -Milliseconds 500
+        $dlg = Open-ByCmd $id 851 15
+        if ($dlg -eq [IntPtr]::Zero) { throw 'Unpack (851) opened no window' }
+        if ([Drv098f]::Txt($dlg) -ne 'Unpack') { throw ("851 opened '{0}', not the Unpack dialog" -f [Drv098f]::Txt($dlg)) }
+        Start-Sleep -Milliseconds 400
+        foreach ($f in @(@(210, $tgt), @(521, $Mask))) {
+            $ctl = Find-Ctl $dlg $f[0]
+            if ($ctl -eq [IntPtr]::Zero) { throw ('field {0} not found' -f $f[0]) }
+            [void][Drv098f]::SetText($ctl, $f[1], 5000)
+            if ([Drv098f]::GetText($ctl, 5000) -cne $f[1]) { throw ('field {0} did not take the text' -f $f[0]) }
+        }
+        $b = @([Drv098f]::Kids($dlg) | Where-Object { [Drv098f]::Cls($_) -eq 'Button' -and [Drv098f]::GetDlgCtrlID($_) -eq 6210 }) | Select-Object -First 1
+        if (-not $b -or -not [Drv098f]::IsWindowEnabled($b)) { throw 'the box "Delete archive after unpacking" (6210) is missing or disabled' }
+        [void][Drv098f]::Send($b, 0x00F1, 1, 0, 5000)   # BM_SETCHECK BST_CHECKED
+        Click-Ok $dlg
+        Start-Sleep -Milliseconds 800
+        $r = Serve $id 90 @(1, 6)
+        $msgs = Msgs $r
+        $fatal = Fatal-Win $id
+        End-Row $Case $id $fatal $before; $id = 0
+        $c = Check-Tgt $tgt $Want
+        $kept = [IO.File]::Exists($LP + $arc)
+        $ok = $c[0] -and (-not $fatal) -and ($kept -ne [bool]$ArcGone) -and ($msgs -eq 'no window')
+        Row $Case 'RUN' (V $ok) ('{0}; archive kept: {1} (want {2}); windows: {3}' -f $c[1], $kept, (-not $ArcGone), (Tail $msgs 260))
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row $Case $id $fatal $before } }
 }
 
 function View-Row([string]$Case, [string]$Name, [string]$Content) {
@@ -171,6 +222,9 @@ try {
     Copy-Row 'COPY-EXIST' 'end' -Sub ([ordered]@{ 'e.txt' = $Big }) -Exist @('e.txt', 'old')
     Copy-Row 'COPY-ROOT' 'all' ([ordered]@{ 'a.txt' = 'A'; 'sub/b.txt' = 'A'; 'sub/c.txt' = 'C'; 'sub/d.txt' = 'A' })
     View-Row 'VIEW-LINK' 'd.txt' 'A'
+    Unpack-Row 'UNP-UPD-DEL' '*.txt' ([ordered]@{ 'sub/b.txt' = 'NEWER'; 'sub/c.txt' = 'C' }) -ArcGone
+    Copy-Row 'COPY-UPD' 'all' -Sub ([ordered]@{ 'b.txt' = 'NEWER'; 'c.txt' = 'C' })
+    Copy-Row 'COPY-SKIP' 'all' -Sub ([ordered]@{ 'b.txt' = 'old'; 'c.txt' = 'C'; 'd.txt' = 'A' }) -Exist @('b.txt', 'old') -ExistSize ', \d' -Answer @(1, 173)
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

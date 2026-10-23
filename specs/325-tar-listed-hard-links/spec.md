@@ -117,12 +117,15 @@ A listed hard link names a member the archive does not hold (or one that holds n
 - The target was selected but not written (the user chose Skip at its overwrite question, or its
   name is refused): reported as in feature 309 - unchanged.
 - Several selected links name one unselected target: the target's data is written once, under the
-  first link's name; the other names are copies of that file. If that first name was skipped by the
-  user, the other names are reported (the data is read once per pass).
+  first link's name; the other names are copies of that file. If the user skipped that first name,
+  another pass writes the data under the next name (review 1 of 325, S2).
+- A name stored more than once (an archive updated by `tar -u` / `tar -r`): a link stands for the
+  LATEST earlier member of the name it refers to, as GNU tar, bsdtar and Python extract it; a later
+  asked member of a deferred link's own name replaces it (review 1 of 325, M1).
 - A link whose target name holds a `..` component: never matched (feature 309), so it is listed with
   size 0 and reported when copied.
-- A chain of links (a link naming a link) is followed to the member holding the data; a cycle or a
-  chain that ends in no data member is reported.
+- A chain of links (a link naming a link) stands for what the earlier link stood for; a link naming no
+  earlier data member (a missing name, a "cycle", a name redefined as a folder) is reported.
 - A hard link named like a folder (trailing separator), a hard link whose own name is refused (too
   long, feature 306 / 321): not listed, as before.
 - Symbolic links: stay unlisted (as now) - see Assumptions.
@@ -136,7 +139,8 @@ A listed hard link names a member the archive does not hold (or one that holds n
 
 - **FR-001**: The panel listing of a tar MUST show every hard-link member as a file (not a folder),
   unless its own name is refused or names a folder; its size MUST be the size of the data member it
-  names (following a chain of links), or 0 when there is none.
+  stands for (the latest earlier member of the name it refers to, a chain followed), or 0 when there is
+  none.
 - **FR-002**: An extraction asked for a hard-link member whose target it did not write and was not
   asked for (or whose target is itself such a deferred link) MUST write the target's data under the link's
   name, also when the target lies outside the selection or outside the opened folder.
@@ -145,8 +149,8 @@ A listed hard link names a member the archive does not hold (or one that holds n
   included), within the same operation and progress dialog; Cancel MUST stop it.
 - **FR-004**: Several asked links naming one target MUST each be written with the target's content
   (the data written once, the other names copied from that file - feature 309's identity-safe copy).
-- **FR-005**: A hard link that cannot be reproduced (no data member of that name, a `..` link name, a
-  cycle, the first name of its group skipped) MUST be reported with feature 309's message
+- **FR-005**: A hard link that cannot be reproduced (no earlier data member of that name, a `..` link
+  name) MUST be reported with feature 309's message
   (`name -> link name`, once per operation) and fail the operation after the rest is extracted.
 - **FR-006**: Viewing (or otherwise unpacking one) listed hard-link member MUST extract the content of
   the data member it names under the link's file name.

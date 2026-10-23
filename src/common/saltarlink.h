@@ -123,8 +123,8 @@ inline int SalTarLinkDecide(char typeFlag, bool targetWritten)
 //*****************************************************************************
 //
 // Feature 325: hard-link members are listed (as files, with the size of the data member
-// they name) and an extraction asked for one whose target it neither wrote nor was asked
-// for takes the target's data from a second pass over the archive - a tar link always
+// they stand for) and an extraction asked for one whose target it neither wrote nor was
+// asked for takes the target's data from another pass over the archive - a tar link always
 // names an earlier member, so the single forward pass has passed the data by then.
 //
 //*****************************************************************************
@@ -152,35 +152,83 @@ inline int SalTarLinkDecideAsked(char typeFlag, bool targetWritten, bool targetD
     return SAL_TAR_LINK_NONE;
 }
 
-// follows a chain of hard links: 'links' maps the name of every hard-link member to the name it
-// refers to. 'dataName' = the first name of the chain that is not a hard link (the member that
-// should hold the data). false for a cycle (never ends) - nothing to extract.
-inline bool SalTarResolveHardLink(const std::unordered_map<std::string, std::string>& links,
-                                  const std::string& linkName, std::string& dataName)
+// the data member a hard link stands for: the 'Ordinal'-th data member named 'DataName' in the archive
+// (1 = the first); !Valid = none (no earlier member of that name holds data)
+struct CSalTarLinkTarget
 {
-    std::string name = linkName;
-    for (size_t steps = 0; steps <= links.size(); steps++)
-    {
-        std::unordered_map<std::string, std::string>::const_iterator it = links.find(name);
-        if (it == links.end())
-        {
-            dataName = name;
-            return true;
-        }
-        name = it->second;
-    }
-    return false; // more steps than links: a cycle
-}
+    std::string DataName;
+    unsigned Ordinal = 0;
+    unsigned __int64 Size = 0;
+    bool Valid = false;
+};
 
-// the size to list for a hard link referring to 'linkName': the size of the data member the chain
-// ends in ('sizes': the data members listed so far), else 0 (no such member, a cycle)
-inline unsigned __int64 SalTarListedLinkSize(const std::unordered_map<std::string, std::string>& links,
-                                             const std::unordered_map<std::string, unsigned __int64>& sizes,
-                                             const std::string& linkName)
+// resolves hard links as tar extracts them (review 1 of feature 325): a link names the file that exists
+// under that name when the link is read - the LATEST earlier member of the name, which may be a data
+// member (an archive updated by "tar -u" / "tar -r" stores a name again), another hard link (a chain:
+// it stands for what that link stood for), or anything else (a folder, a symbolic link: no data).
+// Feed every member in archive order; each call is O(1), so no chain is walked again. Out of memory
+// leaves the resolver "broken": every later link is unresolved (reported - never resolved to an older
+// member by a lost update)
+class CSalTarLinkResolver
 {
-    std::string dataName;
-    if (!SalTarResolveHardLink(links, linkName, dataName))
-        return 0;
-    std::unordered_map<std::string, unsigned __int64>::const_iterator it = sizes.find(dataName);
-    return it != sizes.end() ? it->second : 0;
-}
+public:
+    // a member carrying data (a regular file)
+    void AddData(const char* name, unsigned __int64 size)
+    {
+        if (Broken)
+            return;
+        try
+        {
+            unsigned ordinal = ++Count[name];
+            CSalTarLinkTarget& t = Latest[name];
+            t.DataName = name;
+            t.Ordinal = ordinal;
+            t.Size = size;
+            t.Valid = true;
+        }
+        catch (...)
+        {
+            Broken = true;
+        }
+    }
+    // any other member (a folder, a symbolic link, a device ...): its name no longer holds data
+    void AddOther(const char* name)
+    {
+        if (Broken)
+            return;
+        try
+        {
+            Latest[name] = CSalTarLinkTarget();
+        }
+        catch (...)
+        {
+            Broken = true;
+        }
+    }
+    // a hard link 'name' -> 'linkName': what it stands for (also recorded as the latest of 'name')
+    CSalTarLinkTarget AddLink(const char* name, const char* linkName)
+    {
+        CSalTarLinkTarget t;
+        if (Broken)
+            return t;
+        try
+        {
+            std::unordered_map<std::string, CSalTarLinkTarget>::const_iterator it = Latest.find(std::string(linkName));
+            if (it != Latest.end())
+                t = it->second;
+            Latest[name] = t;
+        }
+        catch (...)
+        {
+            Broken = true;
+            return CSalTarLinkTarget();
+        }
+        return t;
+    }
+    bool IsBroken() const { return Broken; }
+
+private:
+    std::unordered_map<std::string, CSalTarLinkTarget> Latest; // name -> what it holds now
+    std::unordered_map<std::string, unsigned> Count;           // name -> data members of it so far
+    bool Broken = false;
+};

@@ -35,7 +35,16 @@ def make(fill, fmt=tarfile.PAX_FORMAT):
 def main():
     row, out = sys.argv[1], sys.argv[2]
     base = row[:-3] if row.endswith('-GZ') else row
-    if base.startswith('COPY-CHAIN') or base.startswith('COPY-EXIST'):
+    if base.startswith('COPY-UPD') or base.startswith('UNP-UPD'):
+        def fill(tf):
+            # review 1: the shape "tar -u" gives a file with a hard link - the name stored again; tar
+            # extracts the link from the LATEST earlier member (NEWER)
+            add(tf, 'a.dat', b'OLD')
+            add(tf, 'sub/c.txt', b'C')
+            link(tf, 'sub/b.txt', 'a.dat')
+            add(tf, 'a.dat', b'NEWER')
+            link(tf, 'sub/b.txt', 'a.dat')
+    elif base.startswith('COPY-CHAIN') or base.startswith('COPY-EXIST'):
         def fill(tf):
             add(tf, 'a.txt', BIG)
             add(tf, 'sub/c.txt', b'C')

@@ -86,3 +86,42 @@ review; a tiny fixture cannot be cancelled at a chosen moment. I1, U1 LOW - no c
   box; COPY-MISSING / -SYM / -ROOT pass in both (they do not depend on the second pass). Restored
   build: `probe/result_after_restored.txt` PASS 18 / FAIL 0.
 - Build warnings C4267 in untar.cpp (lines `NameLen = strlen(...)`) are pre-existing (0991f43c).
+
+## Review
+
+### Review 1 (independent agent, refute-first) - one MUST, three SHOULD
+
+The first reviewer launched stopped making progress at 13:17 (a probe run of its own left without
+rows; its registry backup was restored by the second reviewer, hash identical). A fresh review was
+launched with its partial results (`%TEMP%\rev325`): branch 18 / 0, main 11 / 7 on the feature probe.
+
+- MUST M1 (fixed): a deferred link took the FIRST data member of the name it refers to; tar (GNU tar
+  1.35, bsdtar, Python - measured by the reviewer on a real `tar -u` archive: `a.dat` OLD,
+  `sub/b.txt -> a.dat`, `a.dat` NEWER, `sub/b.txt -> a.dat`) extracts the LATEST earlier member. Unpack
+  with mask `*.txt` + "Delete archive after unpacking": branch wrote b.txt = OLD, no message, archive
+  DELETED (main reported and kept it). Copy of the folder's files gave OLD too. Fix:
+  `CSalTarLinkResolver` (saltarlink.h) - every member fed in archive order, a link resolved when read
+  against the latest definition of its target name (data member name + ordinal; a link redefines its
+  own name, other members clear it); the further pass extracts that occurrence; a later asked member
+  of a deferred link's own name supersedes it (tar keeps the last); listing sizes and UnpackOneFile
+  use the same resolver (ordinal-exact second pass).
+- SHOULD S1 (fixed): chains were walked again per link (N^2/2; 40,000 links 23.5 s Release). The
+  resolver stores each link's resolution - O(1) per link.
+- SHOULD S2 (fixed): Skip at the first name of a group reported the other names "(2) not found";
+  now the group waits for another pass and its data goes under the next name.
+- SHOULD S3 (fixed): probe rows added - UNP-UPD-DEL (Unpack with a mask + Delete archive on the
+  `tar -u` shape), COPY-UPD (Copy of that folder), COPY-SKIP (Skip inside a group).
+- NOTE (accepted): the listing / view record every member name of the pass (memory proportional to
+  the member count - the listing itself holds them all anyway).
+
+After the fixes: build BUILD SUCCEEDED; saltests 27882 / 0 (TestTarLink325 rewritten for the resolver:
+`tar -u` order, redefinition by a link / by a folder, ordinals, unresolved links); encoding guard 0;
+`probe/result_after_review1.txt` PASS 24 / FAIL 0. Negative control: the pre-review code (stash of the
+fix, build of commit b2afe914) with `-Only UNP-UPD-DEL,COPY-UPD,COPY-SKIP` ->
+`probe/result_negctl_review1.txt` PASS 3 / FAIL 3 (UNP-UPD-DEL: sub/b.txt wrong content and the archive
+deleted - M1 reproduced; COPY-UPD wrong content; COPY-SKIP d.txt missing + a "(2)" box); fixed build
+rebuilt, the full probe again 24 / 0.
+- Trap 123 twice more: a Bash here-document collapsed `\` in a probe edit script (Python then made
+  tabs of `\t`) - the probe restored from git and edited with the editor tool.
+- Regression on the fixed build (`probe/regress_*.txt` overwritten): pax306 30 / 0, unp308 12 / 0, link309
+  16 / 0, cpio310 52 / 0, tar321 20 / 0, unp321 12 / 0.

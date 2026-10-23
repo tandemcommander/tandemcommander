@@ -41,3 +41,14 @@
 - Decision: `UnpackOneFile` of a hard link resolves it with the links and data names seen before it;
   then reopens the stream and extracts the data member under `newFileName` or the link's file name.
   An unresolvable link is reported as in 309.
+
+## R6 - Review 1 (MUST M1, SHOULD S1 / S2)
+
+- Decision: links resolve when read, against the latest earlier definition of the name they refer to
+  (`CSalTarLinkResolver`: data member name + its ordinal; a link redefines its own name; other members
+  clear it); the further pass picks that occurrence; a later asked member of a deferred link's name
+  supersedes it; a skipped first name of a group moves its data to the next name in another pass.
+- Rationale: GNU tar 1.35, bsdtar and Python extract a link from the latest earlier member of its
+  name (measured by the reviewer on a real `tar -u` archive); the first-occurrence rule wrote stale
+  data and, through Unpack with a mask and Delete archive, deleted the archive. O(1) per link removes
+  the quadratic chain walk.

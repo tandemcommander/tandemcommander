@@ -19025,40 +19025,65 @@ static void TestTarLink325()
     CHECK(SalTarLinkDecideAsked('1', false, false, true, false) == SalTarLinkDecide('1', false));
     CHECK(SalTarLinkDecideAsked('1', true, false, true, false) == SalTarLinkDecide('1', true));
 
-    // chains: a link to a link ends at the first name that is not a link
-    std::unordered_map<std::string, std::string> links;
-    links["sub\\b.txt"] = "a.txt";
-    links["sub\\d.txt"] = "a.txt";
-    links["sub\\e.txt"] = "sub\\b.txt";
-    links["x"] = "y";
-    links["y"] = "x"; // a cycle
-    links["self"] = "self";
-    std::string data;
-    CHECK(SalTarResolveHardLink(links, "a.txt", data) && data == "a.txt");
-    CHECK(SalTarResolveHardLink(links, "sub\\b.txt", data) && data == "a.txt");
-    CHECK(SalTarResolveHardLink(links, "sub\\e.txt", data) && data == "a.txt");
-    CHECK(SalTarResolveHardLink(links, "missing.txt", data) && data == "missing.txt");
-    data = "keep";
-    CHECK(!SalTarResolveHardLink(links, "x", data) && data == "keep");
-    CHECK(!SalTarResolveHardLink(links, "self", data));
-    std::unordered_map<std::string, std::string> none;
-    CHECK(SalTarResolveHardLink(none, "a", data) && data == "a");
-    // names are bytes: a case twin is another name (as 309 matches written names)
-    CHECK(SalTarResolveHardLink(links, "SUB\\B.TXT", data) && data == "SUB\\B.TXT");
-
-    // the size listed for a link: its data member's, else 0
-    std::unordered_map<std::string, unsigned __int64> sizes;
-    sizes["a.txt"] = 131072;
-    sizes["sub\\c.txt"] = 1;
-    CHECK(SalTarListedLinkSize(links, sizes, "a.txt") == 131072);
-    CHECK(SalTarListedLinkSize(links, sizes, "sub\\b.txt") == 131072);
-    CHECK(SalTarListedLinkSize(links, sizes, "sub\\e.txt") == 131072);
-    CHECK(SalTarListedLinkSize(links, sizes, "sub\\c.txt") == 1);
-    CHECK(SalTarListedLinkSize(links, sizes, "missing.txt") == 0);
-    CHECK(SalTarListedLinkSize(links, sizes, "x") == 0);
-    sizes["big"] = 0x1FFFFFFFFULL; // over 4 GiB
-    links["sub\\big"] = "big";
-    CHECK(SalTarListedLinkSize(links, sizes, "sub\\big") == 0x1FFFFFFFFULL);
+    // the resolver: a link stands for the data member its name holds when the link is read
+    {
+        CSalTarLinkResolver r;
+        r.AddData("a.txt", 131072);
+        r.AddData("sub\\c.txt", 1);
+        CSalTarLinkTarget t = r.AddLink("sub\\b.txt", "a.txt");
+        CHECK(t.Valid && t.DataName == "a.txt" && t.Ordinal == 1 && t.Size == 131072);
+        t = r.AddLink("sub\\e.txt", "sub\\b.txt"); // a chain: what the link stood for
+        CHECK(t.Valid && t.DataName == "a.txt" && t.Ordinal == 1 && t.Size == 131072);
+        t = r.AddLink("sub\\f.txt", "sub\\e.txt"); // a longer chain, still one lookup
+        CHECK(t.Valid && t.DataName == "a.txt" && t.Ordinal == 1);
+        CHECK(!r.AddLink("sub\\m.txt", "missing.txt").Valid);
+        CHECK(!r.AddLink("sub\\n.txt", "sub\\m.txt").Valid); // a link to an unresolved link
+        CHECK(!r.AddLink("self", "self").Valid);             // no earlier member of the name
+        CHECK(!r.AddLink("x", "y").Valid);                   // a "cycle" never resolves: links name earlier members
+        CHECK(!r.AddLink("y", "x").Valid);
+        // names are bytes: a case twin is another name (as 309 matches written names)
+        CHECK(!r.AddLink("SUB\\G.TXT", "A.TXT").Valid);
+        CHECK(r.AddLink("big-link", "sub\\c.txt").Size == 1);
+        r.AddData("big", 0x1FFFFFFFFULL); // over 4 GiB
+        CHECK(r.AddLink("sub\\big", "big").Size == 0x1FFFFFFFFULL);
+        CHECK(!r.IsBroken());
+    }
+    // review 1: an archive updated by "tar -u" stores a name again - a link stands for the LATEST earlier
+    // member of the name (GNU tar, bsdtar and Python extract that one), never the first
+    {
+        CSalTarLinkResolver r;
+        r.AddData("a.dat", 3); // OLD
+        CSalTarLinkTarget t1 = r.AddLink("sub\\b.txt", "a.dat");
+        r.AddData("a.dat", 5); // NEWER
+        CSalTarLinkTarget t2 = r.AddLink("sub\\b.txt", "a.dat");
+        CHECK(t1.Valid && t1.Ordinal == 1 && t1.Size == 3);
+        CHECK(t2.Valid && t2.DataName == "a.dat" && t2.Ordinal == 2 && t2.Size == 5);
+        // a name redefined by a link: links to it follow the new definition
+        r.AddData("z.txt", 7);
+        r.AddLink("a.dat", "z.txt");
+        CSalTarLinkTarget t3 = r.AddLink("c.txt", "a.dat");
+        CHECK(t3.Valid && t3.DataName == "z.txt" && t3.Ordinal == 1 && t3.Size == 7);
+        // a name redefined by something without data (a folder, a symbolic link): nothing to stand for
+        r.AddOther("z.txt");
+        CHECK(!r.AddLink("d.txt", "z.txt").Valid);
+        CHECK(r.AddLink("e.txt", "c.txt").Ordinal == 1); // c.txt still stands for the first z.txt
+        // the ordinal counts data members only - a link or another member of the name does not count
+        r.AddData("z.txt", 9);
+        CSalTarLinkTarget t4 = r.AddLink("f.txt", "z.txt");
+        CHECK(t4.Valid && t4.Ordinal == 2 && t4.Size == 9);
+    }
+    // the same member order a link sees in a later pass: the n-th data member of a name
+    {
+        CSalTarLinkResolver r;
+        r.AddLink("l1", "a"); // a link before any data: unresolved
+        r.AddData("a", 1);
+        r.AddData("b", 2);
+        r.AddData("a", 3);
+        r.AddData("a", 4);
+        CSalTarLinkTarget t = r.AddLink("l2", "a");
+        CHECK(t.Ordinal == 3 && t.Size == 4);
+        CHECK(!r.AddLink("l3", "l1").Valid);
+    }
 }
 
 static void TestCpioLink310()
