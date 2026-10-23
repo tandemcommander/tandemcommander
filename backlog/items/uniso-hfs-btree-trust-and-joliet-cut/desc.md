@@ -8,7 +8,7 @@ source: leftover:223
 who: agent
 created: 2026-10-15
 updated: 2026-10-23
-verified: -
+verified: 2026-10-23 a222bd88
 effort: M
 feature: -
 related: []
@@ -39,3 +39,4 @@ Severity 5 is an estimate: no crash was shown; a crafted image reaching an out-o
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-20 — blocked: run stopped during the measurement, before specify; the maintainer continues it by hand
 - 2026-10-23 — unblocked: the 2026-10-20 run stopped during the measurement (no branch, no decision needed); a new run starts it from the beginning
+- 2026-10-23 — verified at a222bd88: confirmed at a222bd88 by code reading: BTree ctor indexes firstLeafNode/fLink/record offsets unchecked; Joliet UTF-8 name cut by lstrcpyn to UCS-2 byte length; uniso on
