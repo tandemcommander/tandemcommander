@@ -40,8 +40,10 @@ the Rock Ridge names come back and are refused.
 ## R4 The report
 
 - Decision: TAR's form (321 `ReportRefusedName`): `GetErrorText(ERROR_FILENAME_EXCED_RANGE)` +
-  blank line + the left-out in-image paths, one per line, at most 10, then `...`; title
-  `LoadStrU8(IDS_PLUGINNAME)`-style plug-in title via `Error`'s title; shown once per `ListArchive`.
+  blank line + the left-out in-image paths, one per line, at most 10, then `...`; the box is
+  `SalamanderGeneral->ShowMessageBox(text, LoadStrU8(IDS_PLUGINNAME), MSGBOX_ERROR)` with a heap
+  text (the plug-in's `Error()` formats into 1024 bytes - it would cut a path); shown once per
+  `ListArchive`.
   No new string.
 - The image records a left-out entry also when the core's `AddDir` / `AddFile` refuses after the
   rule passed (out of memory): `Error(IDS_ERROR)` as before but without `Clear`, and the listing
