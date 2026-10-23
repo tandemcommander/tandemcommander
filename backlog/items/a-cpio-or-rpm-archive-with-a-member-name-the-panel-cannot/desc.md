@@ -7,11 +7,11 @@ area: archives
 source: review:307
 who: agent
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [opening-a-tar-whose-member-name-has-a-300-letter-component]
+related: []
 depends-on: []
 reason: -
 ---
@@ -38,3 +38,4 @@ Severity from the band "a function does not work, rare": such names do not occur
 
 - 2026-10-22 — created (source review:307)
 - 2026-10-22 — moved to Next position 26
+- 2026-10-23 — related item opening-a-tar-whose-member-name-has-a-300-letter-component done in feature 321

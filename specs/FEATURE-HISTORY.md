@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4388,3 +4388,22 @@ a few early ones are out of sequence).
   DeepL characters, 24 pins ("Tabs" was the Tab key in de / fr / hu / sk; cs "karty", hu
   "lap"; menu accelerators checked by script - the core's menus are built from strings); probe
   after the merge 33/0.
+- 321-tar-long-component: opening a TAR whose GNU long name has a component of 300 CJK letters
+  closed the program ("Stack memory corruption" under `CommonRefresh`), and a GNU name deeper than
+  the panel listing made the whole archive unopenable - now GNU long names get exactly the PAX
+  rule of 306 / 308 (`NameFromGnu`; `SalPaxNameUsableU8(..., Listing)`: the listing bound only
+  while listing, the over-255-unit component in every pass, an extraction asked for a refused
+  member reports it and fails); the core refuses an entry with no folder part (`path == NULL`:
+  archive roots, every FS plug-in) of 780+ bytes (`sallistingname.h`, `AddFile` / `AddDir`), and
+  the simple-icons extension copies in `fileswn3.cpp` are bounded. A top-level folder name is no
+  longer byte-bounded while listing (0.1.10 behaviour; PAX too). Traps: the first run (307) put
+  the listing bound into every pass - review 2 measured deep members lost in Unpack and the
+  archive deleted; carried over onto 308-310 (the GNU branch writes through `char** longName`),
+  the `saltests.cpp` merge lost a closing brace. Limits: such a folder over 255 bytes cannot be
+  entered (as 0.1.10); a cpio / rpm root name of 780+ bytes refuses the whole archive (Inbox); the
+  "(206)" text also names members only too deep for the listing (306 / 308). From backlog item
+  `opening-a-tar-whose-member-name-has-a-300-letter-component`. Probe `tar321_probe` 12/8 ->
+  20/0, `unp321_probe` (308's in GNU format) 9/3 -> 12/0; 306 30/0 (GNU-TOOLONG now in its
+  default run; PAX-255DIR and 308's COPY-DEEP expect the listed folder's member), 308 12/0, 309
+  16/0, 310 52/0; negative controls (listing rule in every pass; GNU flag off; + core bound off)
+  fail as expected; saltests 27698; one refute-first review (no MUST / SHOULD).

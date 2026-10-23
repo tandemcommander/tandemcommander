@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Opening a tar whose member name has a 300-letter component crashes the program](items/opening-a-tar-whose-member-name-has-a-300-letter-component/desc.md) | bug | 7 | archives | 321 |
 
 ## Next
 
