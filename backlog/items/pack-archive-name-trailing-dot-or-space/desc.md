@@ -1,7 +1,7 @@
 ---
 title: Pack creates an archive with a trailing dot or space Windows tools cannot open
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:317
@@ -51,3 +51,5 @@ tools cannot handle. A probe row per case, before FAIL / after PASS.
 ## Log
 
 - 2026-10-23 — created (source measure:317)
+- 2026-10-23 — moved to Next position 30
+- 2026-10-23 — moved to Next position 2
