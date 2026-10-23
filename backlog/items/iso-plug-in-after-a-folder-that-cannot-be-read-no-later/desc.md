@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: after a folder that cannot be read, no later folder of the image is listed
 type: improvement
-status: new
+status: open
 severity: 4
 area: archives
 source: leftover:330
@@ -54,3 +54,4 @@ box is shown once per damaged folder as today (or once per listing - to be decid
 ## Log
 
 - 2026-10-24 — created (source leftover:330)
+- 2026-10-24 — moved to Next position 23

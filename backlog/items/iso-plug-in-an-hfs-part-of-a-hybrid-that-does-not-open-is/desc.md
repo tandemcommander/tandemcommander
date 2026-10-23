@@ -1,8 +1,8 @@
 ---
 title: ISO plug-in: an HFS+ part of a hybrid that does not open is dropped without a mark
 type: bug
-status: new
-severity: 6
+status: open
+severity: 7
 area: archives
 source: review:330
 who: agent
@@ -55,3 +55,5 @@ make every APFS hybrid's whole unpack fail).
 ## Log
 
 - 2026-10-24 — created (source review:330)
+- 2026-10-24 — auto-triage: severity 6 -> 7: data loss in a narrow scenario (a damaged HFS+ hybrid deleted by Unpack with Delete archive loses HFS+-only files)
+- 2026-10-24 — moved to Next position 3

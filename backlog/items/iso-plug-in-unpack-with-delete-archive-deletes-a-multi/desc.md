@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: Unpack with Delete archive deletes a multi-session image whose session track cannot be opened
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:330
@@ -57,3 +57,4 @@ check fails closed). The error box and the listing of the other sessions stay as
 ## Log
 
 - 2026-10-24 — created (source review:330)
+- 2026-10-24 — moved to Next position 4
