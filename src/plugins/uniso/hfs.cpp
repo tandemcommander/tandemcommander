@@ -257,9 +257,14 @@ BOOL CHFS::GetRootName(char* rootName, int maxlen)
 
     for (int i = 0; i < min(5, nRecords); i++)
     {
-        HFSPlusCatalogKey* pKey = (HFSPlusCatalogKey*)pCatalog->GetRecord(i);
-        int keyLen = FromM16(pKey->keyLength);
-        int nameLen = FromM16(pKey->nodeName.length);
+        size_t avail;
+        HFSPlusCatalogKey* pKey = (HFSPlusCatalogKey*)pCatalog->GetRecord(i, &avail);
+        SalHfsCatalogKey key;
+        // feature 322: the key and its name must lie inside the record's node
+        if (!SalHfsCatalogKeyView((const unsigned char*)pKey, avail, &key))
+            continue;
+        int keyLen = (int)key.KeyLength;
+        int nameLen = (int)key.NameLength;
         wchar_t fileNameW[256];
 
         // feature 223: the length is read from the image - over the 255 units of HFSUniStr255 it
@@ -291,9 +296,17 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
 
     for (int i = 0; i < nRecords; i++)
     {
-        HFSPlusCatalogKey* pKey = (HFSPlusCatalogKey*)pCatalog->GetRecord(i);
-        int keyLen = FromM16(pKey->keyLength);
-        int nameLen = FromM16(pKey->nodeName.length);
+        size_t avail;
+        HFSPlusCatalogKey* pKey = (HFSPlusCatalogKey*)pCatalog->GetRecord(i, &avail);
+        SalHfsCatalogKey key;
+        // feature 322: the key, its name and the record type must lie inside the record's node
+        if (!SalHfsCatalogKeyView((const unsigned char*)pKey, avail, &key))
+        {
+            TRACE_E("CHFS::ListDirectory(): a catalog record does not fit its node, skipped");
+            continue;
+        }
+        int keyLen = (int)key.KeyLength;
+        int nameLen = (int)key.NameLength;
         wchar_t fileNameW[256];
         char fileName[256 * 3 + 1]; // UTF-8 needs up to 3 bytes per UTF-16 unit (interface 104)
         CFileData fd;
@@ -312,6 +325,14 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         if (nameLen > 255) // feature 223: as in GetRootName - never past 'fileNameW[256]'
         {
             TRACE_E("CHFS::ListDirectory(): a name longer than 255 units in the catalog, skipped");
+            continue;
+        }
+        // feature 322: a folder / file record must hold its whole structure inside the node
+        rec.type = (SInt16*)((char*)pKey + key.BodyOffset);
+        if ((*rec.type == kHFSFolderRecord && key.BodyAvail < sizeof(HFSPlusCatalogFolder)) ||
+            (*rec.type == kHFSFileRecord && key.BodyAvail < sizeof(HFSPlusCatalogFile)))
+        {
+            TRACE_E("CHFS::ListDirectory(): a catalog record shorter than its structure, skipped");
             continue;
         }
         for (int j = 0; j < nameLen; j++)
@@ -371,7 +392,6 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         {
             path = rootPath;
         }
-        rec.type = (SInt16*)((char*)pKey + keyLen + sizeof(UInt16));
         if (*rec.type == kHFSFolderRecord)
         {
             ConvertHFSDate(fd.LastWrite, rec.dir->contentModDate ? rec.dir->contentModDate : rec.dir->createDate);
@@ -451,8 +471,9 @@ int CHFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
     CALL_STACK_MESSAGE4("CHFS::UnpackFile(, %s, %s, %s,,,)", srcPath, path, nameInArc);
     BOOL ret = UNPACK_OK;
     CISOImage::CFilePos* filePos = (CISOImage::CFilePos*)fileData->PluginData;
-    HFSPlusCatalogKey* pKey = (HFSPlusCatalogKey*)pCatalog->GetRecord(filePos->Extent);
-    int keyLen = FromM16(pKey->keyLength);
+    size_t avail;
+    HFSPlusCatalogKey* pKey = (HFSPlusCatalogKey*)pCatalog->GetRecord(filePos->Extent, &avail);
+    SalHfsCatalogKey key;
     union
     {
         SInt16* type;
@@ -460,7 +481,19 @@ int CHFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
         HFSPlusCatalogFile* file;
     } rec;
 
-    rec.type = (SInt16*)((char*)pKey + keyLen + sizeof(UInt16));
+    // feature 322: the listing took only records that fit their node; checked again before the
+    // file record's forks are read
+    if (!SalHfsCatalogKeyView((const unsigned char*)pKey, avail, &key))
+    {
+        Error(IDS_ERR_HFS_BTREE_DAMAGED, FALSE);
+        return UNPACK_ERROR;
+    }
+    rec.type = (SInt16*)((char*)pKey + key.BodyOffset);
+    if (*rec.type == kHFSFileRecord && key.BodyAvail < sizeof(HFSPlusCatalogFile))
+    {
+        Error(IDS_ERR_HFS_BTREE_DAMAGED, FALSE);
+        return UNPACK_ERROR;
+    }
     if (*rec.type == kHFSFileRecord)
     {
         HFSPlusForkData* fork = &rec.file->dataFork;
@@ -613,6 +646,15 @@ CHFS::BTree::BTree(CHFS* hfs, CHFS::HFSPlusForkData* fork, BOOL quiet)
     bOK = false;
     pBTreeData = NULL;
 
+    // feature 322: the size comes from the image - an empty catalog, or one larger than its blocks
+    // (the load below would fail on it anyway), is refused before it is allocated
+    if (treeSize == 0 || (UInt64)FromM32(fork->totalBlocks) * hfs->VolHeader.blockSize < treeSize)
+    {
+        Error(IDS_ERR_HFS_BTREE_DAMAGED, quiet);
+        return;
+    }
+    size_t loadedSize = treeSize;
+
     char* data = pBTreeData = (char*)malloc(treeSize);
     if (!pBTreeData)
     {
@@ -657,82 +699,30 @@ CHFS::BTree::BTree(CHFS* hfs, CHFS::HFSPlusForkData* fork, BOOL quiet)
         return;
     }
 
-    BTNodeDescriptor* node = (BTNodeDescriptor*)pBTreeData;
-
-    // We require full tree with header node.
-    if (node->kind != kBTHeaderNode)
+    // We require full tree with header node. Feature 322: the node size, the first leaf node, the
+    // links, the record counts and the record offsets come from the image - they were used
+    // unchecked (reads outside the catalog; a link back made the walk endless). The walk now
+    // checks each against the loaded bytes (salhfscatalog.h). The header's leafRecords is not
+    // used: buggy MagicISO 5.2 stores # of nodes and not records there, the walk counts them.
+    SalHfsCatalogRecordRef* refs = NULL;
+    int count = 0;
+    switch (SalHfsCatalogWalk((const unsigned char*)pBTreeData, loadedSize, &refs, &count))
     {
+    case SAL_HFSCAT_OK:
+        break;
+    case SAL_HFSCAT_NOT_HEADER:
         Error(IDS_ERR_HFS_BTREE_NODETYPE, quiet);
         return;
-    }
-
-    // cannot use this because nodeSize is determined by BTHeaderRec.nodeSize
-    //  UInt16 ofs = *(UInt16*)(pBTreeData+blockSize-2);
-    BTHeaderRec* header = (BTHeaderRec*)(pBTreeData + sizeof(BTNodeDescriptor));
-    int nodeSize = FromM16(header->nodeSize);
-    bool keyLenghIsByte = (header->attributes & FromM32(kBTBigKeysMask)) == 0;
-    bool keyVariableLen = (header->attributes & FromM32(kBTVariableIndexKeysMask)) != 0;
-
-    node = (BTNodeDescriptor*)(pBTreeData + FromM32(header->firstLeafNode) * nodeSize);
-
-    nRecords = FromM32(header->leafRecords);
-    pRecords = (void**)malloc(sizeof(void*) * nRecords);
-    if (!pRecords)
-    {
-        nRecords = 0;
+    case SAL_HFSCAT_NOMEM:
         Error(IDS_INSUFFICIENT_MEMORY, quiet);
         return;
+    default:
+        TRACE_E("CHFS::BTree::BTree(): the catalog B-tree does not fit the loaded catalog, refused");
+        Error(IDS_ERR_HFS_BTREE_DAMAGED, quiet);
+        return;
     }
-    int nRecordsCheck = 0;
-    void** pRecord = pRecords; // Each pointer links to the i-th record
-
-    for (;;)
-    {
-        int nRecordsInNode = FromM16(node->numRecords);
-
-        nRecordsCheck += nRecordsInNode;
-        if (nRecordsCheck > nRecords)
-        {
-            // In theory, should not be needed.
-            // But buggy MagicISO 5.2 stores # of nodes and not records in numRecords :-(
-            int currInd = (int)(pRecord - pRecords);
-            void** tmp = (void**)realloc(pRecords, sizeof(void*) * nRecordsCheck);
-            if (!tmp)
-            {
-                Error(IDS_INSUFFICIENT_MEMORY, quiet);
-                return;
-            }
-            nRecords = nRecordsCheck;
-            pRecords = tmp;
-            pRecord = pRecords + currInd;
-        }
-
-        for (int i = 0; i < nRecordsInNode; i++)
-        {
-            UInt16 ofs = *(UInt16*)(((char*)node) + nodeSize - (i + 1) * sizeof(UInt16));
-            *pRecord++ = (char*)node + FromM16(ofs);
-        }
-        // Traverse till the forward link is empty
-        if (!node->fLink)
-            break;
-        node = (BTNodeDescriptor*)(pBTreeData + FromM32(node->fLink) * nodeSize);
-    }
-    if (nRecords > nRecordsCheck)
-    {
-        // Should not be needed. Buggy MagicISO? Save some memory...
-        nRecords = nRecordsCheck;
-        void* tmp = realloc(pRecords, sizeof(void*) * nRecords);
-        if (tmp)
-        {
-            // realloc succeeded
-            pRecords = (void**)tmp;
-        }
-        else if (!nRecords)
-        {
-            // Either realloc failed or nRecord is 0 and thus pRecords was freed
-            pRecords = NULL;
-        }
-    }
+    pRecords = refs;
+    nRecords = count;
 
     bOK = true;
 }
@@ -745,9 +735,13 @@ CHFS::BTree::~BTree()
         free(pRecords);
 }
 
-void* CHFS::BTree::GetRecord(int ind)
+void* CHFS::BTree::GetRecord(int ind, size_t* avail)
 {
-    if (ind < nRecords)
-        return pRecords[ind];
+    if (ind >= 0 && ind < nRecords)
+    {
+        *avail = pRecords[ind].Avail;
+        return pBTreeData + pRecords[ind].Offset;
+    }
+    *avail = 0;
     return NULL;
 }

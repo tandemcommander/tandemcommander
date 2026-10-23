@@ -1,0 +1,22 @@
+iso322_probe (feature 322) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 10:20; registry key existed True
+
+J-ASCII    RUN    PASS        extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+J-ASCII    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+J-CJK12    RUN    FAIL        want 12 letters + .txt (40 UTF-8 bytes); extracted names: \u4E00\u4E07\u4E0E\u4E15\u4E1C\u4E23\u4E2A\u4E31\u4E38\u4E3F\u4E46\u4E4D (UTF-16 lengths 12); content '<none>'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "\u4E00\u4E07\u4E0E\u4E15\u4E1C\u4E23\u4E2A\u4E31\u4E38\u4E3F\u4E46\u4E4D" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+J-CJK12    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+J-CJK40    RUN    FAIL        want 40 letters + .txt (124 UTF-8 bytes); extracted names: \u00E4\u00B8\u20AC\u00E4\u00B8\u2021\u00E4\u00B8\u017D\u00E4\u00B8\u2022\u00E4\u00B8\u015B\u00E4\u00B8\u0141\u00E4\u00B8\u015E\u00E4\u00B8\u00B1\u00E4\u00B8\u00B8\u00E4\u00B8\u017C\u00E4\u0105\u2020\u00E4\u0105\u0164\u00E4\u0105\u201D\u00E4\u0105\u203A\u00E4\u0105\u02D8\u00E4\u0105\u00A9\u00E4\u0105\u00B0\u00E4\u0105\u00B7\u00E4\u0105\u013E\u00E4\u015F\u2026\u00E4\u015F\u015A\u00E4\u015F\u201C\u00E4\u015F\u0161\u00E4\u015F\u02C7\u00E4\u015F\u00A8\u00E4\u015F\u017B\u00E4\u015F\u00B6\u00E4\u015F\u02DD\u00E4\u00BB\u201E\u00E4\u00BB\u2039\u00E4\u00BB (UTF-16 lengths 92); content '<none>'; at the open: no window; F5: ...0B8\u017D\u00E4\u00B8\u2022\u00E4\u00B8\u015B\u00E4\u00B8\u0141\u00E4\u00B8\u015E\u00E4\u00B8\u00B1\u00E4\u00B8\u00B8..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+J-CJK40    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+seeds: hyb.iso,plain.iso,rr.iso; HFS+ volume header at 123904: True
+RR         RUN    PASS        extracted: TOP.TXT; content of top.txt 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "TOP.TXT" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+RR         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+PLAIN      RUN    PASS        extracted: TOP.TXT; content of TOP.TXT 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "TOP.TXT" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+PLAIN      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+HFS        RUN    PASS        extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+HFS        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+HYB        RUN    FAIL        location 'C:\Users\pavel\AppData\Local\Temp\tc322\seeds\hyb.iso'; at the open: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+HYB        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF / after CF14BE9EDEDBAEE483A2E33966411DAD0B10A0706C5BC73A1D0E6185748088EF
+
+Rows: PASS 11, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

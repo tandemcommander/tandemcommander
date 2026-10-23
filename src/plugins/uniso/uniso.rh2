@@ -72,6 +72,7 @@
 
 #define IDS_ERR_TOO_LONG_PATH       1059
 #define IDS_ERR_TOO_LONG_NAME       1060
+#define IDS_ERR_HFS_BTREE_DAMAGED   1061
 
 #define IDS_ERR_DMG_READ_HDR        1070
 #define IDS_ERR_DMG_ENCRYPTED       1071

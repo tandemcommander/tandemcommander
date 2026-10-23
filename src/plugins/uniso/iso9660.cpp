@@ -269,6 +269,16 @@ void CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
         } // switch
     }
 
+    if (Ext == extJoliet)
+    {
+        // feature 322: 'src' is the name ConvJolietName() already made - UTF-8, terminated. A letter
+        // of U+0800 and above takes 3 bytes there but 2 in the UCS-2 identifier, so the copy limited
+        // to the identifier's length cut names of mostly CJK letters (the extension, part of a
+        // letter). The whole name fits 'fileName' (ExtractFileName's 2 * MAX_PATH + 1 bytes): a
+        // 255-byte identifier holds at most 127 units, at most 381 UTF-8 bytes.
+        lstrcpyn(fileName, src, 2 * MAX_PATH + 1);
+        return;
+    }
     lstrcpyn(fileName, src, dr.LengthOfFileIdentifier + 1);
 }
 

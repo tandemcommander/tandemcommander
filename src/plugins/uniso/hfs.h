@@ -4,6 +4,7 @@
 #pragma once
 
 #include "fs.h"
+#include "../../common/salhfscatalog.h" // feature 322: the catalog walk checked against the loaded bytes
 
 // ****************************************************************************
 //
@@ -375,13 +376,15 @@ public:
     private:
         char* pBTreeData;
         int nRecords;
-        void** pRecords;
+        SalHfsCatalogRecordRef* pRecords; // feature 322: each record with the bytes it may use
         bool bOK;
 
     public:
         BTree(CHFS* hfs, HFSPlusForkData* fork, BOOL quiet);
         ~BTree();
-        void* GetRecord(int ind);
+        // the ind-th leaf record and in 'avail' the bytes from it to the end of its node's
+        // record area; NULL for an index out of range
+        void* GetRecord(int ind, size_t* avail);
         int GetNumRecords() { return nRecords; };
         bool IsOK() { return bOK; };
     };

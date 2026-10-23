@@ -100,6 +100,7 @@
 #include "salunpackdefault.h" // feature 315
 #include "salpackname.h"      // feature 317
 #include "sallistingname.h"   // feature 321
+#include "salhfscatalog.h"    // feature 322
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -19308,6 +19309,271 @@ static void TestListingName321()
     CHECK(SalPaxNameUsableU8((c100 + "\\in.txt").c_str(), false, 0, false));
 }
 
+// feature 322: HFS+ catalog B-trees built in memory (TN1150 layout, big-endian)
+static void Hfs322Put16(std::string& s, size_t at, unsigned v)
+{
+    s[at] = (char)(v >> 8);
+    s[at + 1] = (char)v;
+}
+static void Hfs322Put32(std::string& s, size_t at, unsigned v)
+{
+    Hfs322Put16(s, at, v >> 16);
+    Hfs322Put16(s, at + 2, v & 0xFFFF);
+}
+// a catalog leaf record: key (keyLength, parentID, name length, name), record type, data
+static std::string Hfs322Record(unsigned parent, const char* name, unsigned type, size_t bodyLen)
+{
+    size_t n = strlen(name);
+    std::string r(2 + 6 + 2 * n + bodyLen, '\0');
+    Hfs322Put16(r, 0, (unsigned)(6 + 2 * n));
+    Hfs322Put32(r, 2, parent);
+    Hfs322Put16(r, 6, (unsigned)n);
+    for (size_t i = 0; i < n; i++)
+        Hfs322Put16(r, 8 + 2 * i, (unsigned char)name[i]);
+    Hfs322Put16(r, 8 + 2 * n, type);
+    return r;
+}
+// writes node 'index' as a leaf: its records from offset 14, the offset table (and the free-space
+// offset) at its end
+static void Hfs322Leaf(std::string& cat, size_t nodeSize, unsigned index, unsigned fLink,
+                       const std::vector<std::string>& recs)
+{
+    size_t base = index * nodeSize;
+    Hfs322Put32(cat, base, fLink);
+    cat[base + 8] = (char)-1; // kBTLeafNode
+    cat[base + 9] = 1;        // height
+    Hfs322Put16(cat, base + 10, (unsigned)recs.size());
+    size_t ofs = 14;
+    for (size_t i = 0; i < recs.size(); i++)
+    {
+        CHECK(ofs + recs[i].size() <= nodeSize - 2 * (recs.size() + 1)); // the test data fits its node
+        if (ofs + recs[i].size() > nodeSize - 2 * (recs.size() + 1))
+            return;
+        memcpy(&cat[base + ofs], recs[i].data(), recs[i].size());
+        Hfs322Put16(cat, base + nodeSize - 2 * (i + 1), (unsigned)ofs);
+        ofs += recs[i].size();
+    }
+    Hfs322Put16(cat, base + nodeSize - 2 * (recs.size() + 1), (unsigned)ofs);
+}
+// a catalog of 'nodes' nodes: the header node (node 0) and empty nodes
+static std::string Hfs322Catalog(size_t nodeSize, size_t nodes, unsigned firstLeaf)
+{
+    std::string cat(nodeSize * nodes, '\0');
+    cat[8] = 1;                           // kBTHeaderNode
+    Hfs322Put16(cat, 10, 3);              // numRecords of the header node
+    Hfs322Put32(cat, 14 + 10, firstLeaf); // BTHeaderRec::firstLeafNode
+    Hfs322Put16(cat, 14 + 18, (unsigned)nodeSize);
+    Hfs322Put32(cat, 14 + 32, (unsigned)nodes); // totalNodes
+    return cat;
+}
+struct CHfs322Walk
+{
+    int Result;
+    int Count;
+    std::vector<SalHfsCatalogRecordRef> Refs;
+    bool Inside; // every reference lies inside the catalog with at least 2 bytes
+};
+// runs the walk on an exact-size heap copy (a read past it would be a read past the allocation)
+static CHfs322Walk Hfs322Run(const std::string& cat, size_t size = (size_t)-1)
+{
+    if (size == (size_t)-1)
+        size = cat.size();
+    unsigned char* buf = (unsigned char*)malloc(size ? size : 1);
+    memcpy(buf, cat.data(), size);
+    SalHfsCatalogRecordRef* refs = (SalHfsCatalogRecordRef*)1; // must be reset by the walk
+    int count = -1;
+    CHfs322Walk w;
+    w.Result = SalHfsCatalogWalk(buf, size, &refs, &count);
+    w.Count = count;
+    w.Inside = true;
+    if (w.Result != SAL_HFSCAT_OK && (refs != NULL || count != 0))
+        w.Inside = false;
+    for (int i = 0; i < count; i++)
+    {
+        w.Refs.push_back(refs[i]);
+        if (refs[i].Avail < 2 || refs[i].Offset + refs[i].Avail > size)
+            w.Inside = false;
+    }
+    free(refs);
+    free(buf);
+    return w;
+}
+
+static void TestHfsCatalog322()
+{
+    const size_t ns = 1024; // the four records take 512 bytes
+    // the records of the seed image xorriso writes (mkimg322.sh): the root folder, a thread, a folder, a file
+    std::vector<std::string> recs = {Hfs322Record(1, "TC322", 0x0001, 88), Hfs322Record(2, "", 0x0003, 20),
+                                     Hfs322Record(2, "folder", 0x0001, 88), Hfs322Record(2, "top.txt", 0x0002, 248)};
+    std::string one = Hfs322Catalog(ns, 2, 1);
+    Hfs322Leaf(one, ns, 1, 0, recs);
+
+    // a valid catalog: every record, in order, each with the bytes to the record table
+    {
+        CHfs322Walk w = Hfs322Run(one);
+        CHECK(w.Result == SAL_HFSCAT_OK && w.Count == 4 && w.Inside);
+        if (w.Count == 4)
+        {
+            size_t areaEnd = ns - 2 * 4;
+            CHECK(w.Refs[0].Offset == ns + 14 && w.Refs[0].Avail == areaEnd - 14);
+            CHECK(w.Refs[3].Offset == ns + 14 + recs[0].size() + recs[1].size() + recs[2].size());
+            const char* names[] = {"TC322", "", "folder", "top.txt"};
+            size_t bodies[] = {88, 20, 88, 248};
+            for (int i = 0; i < 4; i++)
+            {
+                SalHfsCatalogKey key;
+                const unsigned char* r = (const unsigned char*)one.data() + w.Refs[i].Offset;
+                CHECK(SalHfsCatalogKeyView(r, w.Refs[i].Avail, &key));
+                CHECK(key.NameLength == strlen(names[i]) && key.KeyLength == 6 + 2 * strlen(names[i]));
+                CHECK(key.BodyOffset == 2 + key.KeyLength);
+                CHECK(key.BodyAvail == w.Refs[i].Avail - key.BodyOffset && key.BodyAvail >= bodies[i]);
+            }
+            // the last record's data ends where the free space starts: exactly its own bytes in a full node
+            SalHfsCatalogKey key;
+            CHECK(SalHfsCatalogKeyView((const unsigned char*)one.data() + w.Refs[3].Offset, recs[3].size(), &key) &&
+                  key.BodyAvail == 248);
+        }
+    }
+    // three leaves linked out of node order: 1 -> 3 -> 2; the records in the order of the links
+    {
+        std::string cat = Hfs322Catalog(ns, 4, 1);
+        Hfs322Leaf(cat, ns, 1, 3, {recs[0], recs[1]});
+        Hfs322Leaf(cat, ns, 3, 2, {recs[2]});
+        Hfs322Leaf(cat, ns, 2, 0, {recs[3]});
+        CHfs322Walk w = Hfs322Run(cat);
+        CHECK(w.Result == SAL_HFSCAT_OK && w.Count == 4 && w.Inside);
+        if (w.Count == 4)
+            CHECK(w.Refs[0].Offset == ns + 14 && w.Refs[2].Offset == 3 * ns + 14 && w.Refs[3].Offset == 2 * ns + 14);
+        // a node of no records in the chain is fine
+        Hfs322Leaf(cat, ns, 3, 2, {});
+        w = Hfs322Run(cat);
+        CHECK(w.Result == SAL_HFSCAT_OK && w.Count == 3 && w.Inside);
+    }
+    // an empty tree (firstLeafNode 0): no records, no error
+    {
+        CHfs322Walk w = Hfs322Run(Hfs322Catalog(ns, 1, 0));
+        CHECK(w.Result == SAL_HFSCAT_OK && w.Count == 0 && w.Inside);
+    }
+    // the header node: missing, short, not a header node
+    {
+        CHECK(Hfs322Run(one, 0).Result == SAL_HFSCAT_DAMAGED);
+        CHECK(Hfs322Run(one, SAL_HFSCAT_MIN_NODE - 1).Result == SAL_HFSCAT_DAMAGED);
+        SalHfsCatalogRecordRef* refs = NULL;
+        int count = 0;
+        CHECK(SalHfsCatalogWalk(NULL, 4096, &refs, &count) == SAL_HFSCAT_DAMAGED && refs == NULL && count == 0);
+        std::string cat = one;
+        cat[8] = 0; // kBTIndexNode
+        CHECK(Hfs322Run(cat).Result == SAL_HFSCAT_NOT_HEADER);
+    }
+    // the node size: 0, too small for the header record, larger than the catalog
+    {
+        unsigned sizes[] = {0, 1, SAL_HFSCAT_MIN_NODE - 1, (unsigned)(2 * ns + 1), 0xFFFF};
+        for (unsigned s : sizes)
+        {
+            std::string cat = one;
+            Hfs322Put16(cat, 14 + 18, s);
+            CHfs322Walk w = Hfs322Run(cat);
+            CHECK(w.Result == SAL_HFSCAT_DAMAGED && w.Inside);
+        }
+        // the whole catalog as one node: node 1 lies past it
+        std::string cat = one;
+        Hfs322Put16(cat, 14 + 18, (unsigned)(2 * ns));
+        CHECK(Hfs322Run(cat).Result == SAL_HFSCAT_DAMAGED);
+    }
+    // the first leaf node: just past the catalog, far past it, one whose 32-bit offset wraps
+    {
+        unsigned leaves[] = {2, 3, 0x00800000, 0x00800001, 0xFFFFFFFF};
+        for (unsigned n : leaves)
+        {
+            std::string cat = one;
+            Hfs322Put32(cat, 14 + 10, n);
+            CHfs322Walk w = Hfs322Run(cat);
+            CHECK(w.Result == SAL_HFSCAT_DAMAGED && w.Inside);
+        }
+        // a catalog cut inside its last node: that node is not used
+        CHECK(Hfs322Run(one, 2 * ns - 1).Result == SAL_HFSCAT_DAMAGED);
+    }
+    // the links: past the catalog, to the node itself, a cycle of two
+    {
+        std::string cat = one;
+        Hfs322Put32(cat, ns, 2);
+        CHECK(Hfs322Run(cat).Result == SAL_HFSCAT_DAMAGED);
+        Hfs322Put32(cat, ns, 0xFFFFFFFF);
+        CHECK(Hfs322Run(cat).Result == SAL_HFSCAT_DAMAGED);
+        Hfs322Put32(cat, ns, 1);
+        CHfs322Walk w = Hfs322Run(cat);
+        CHECK(w.Result == SAL_HFSCAT_DAMAGED && w.Inside && w.Count == 0);
+        std::string two = Hfs322Catalog(ns, 3, 1);
+        Hfs322Leaf(two, ns, 1, 2, {recs[0]});
+        Hfs322Leaf(two, ns, 2, 1, {recs[1]});
+        CHECK(Hfs322Run(two).Result == SAL_HFSCAT_DAMAGED);
+        // a link of 0 ends the chain (node 0, the header node, is never reached by a link)
+        Hfs322Leaf(two, ns, 2, 0, {recs[1]});
+        CHECK(Hfs322Run(two).Result == SAL_HFSCAT_OK);
+    }
+    // the record count: the table must fit the node
+    {
+        unsigned counts[] = {(unsigned)((ns - 14) / 2 + 1), 0xFFFF};
+        for (unsigned c : counts)
+        {
+            std::string cat = one;
+            Hfs322Put16(cat, ns + 10, c);
+            CHfs322Walk w = Hfs322Run(cat);
+            CHECK(w.Result == SAL_HFSCAT_DAMAGED && w.Inside);
+        }
+    }
+    // a record offset: into the descriptor, into or past the record table
+    {
+        size_t areaEnd = ns - 2 * 4;
+        struct
+        {
+            unsigned Ofs;
+            int Result;
+        } cases[] = {{0, SAL_HFSCAT_DAMAGED},
+                     {13, SAL_HFSCAT_DAMAGED},
+                     {14, SAL_HFSCAT_OK},
+                     {(unsigned)(areaEnd - 2), SAL_HFSCAT_OK},
+                     {(unsigned)(areaEnd - 1), SAL_HFSCAT_DAMAGED},
+                     {(unsigned)areaEnd, SAL_HFSCAT_DAMAGED},
+                     {(unsigned)ns, SAL_HFSCAT_DAMAGED},
+                     {0xFFFF, SAL_HFSCAT_DAMAGED}};
+        for (auto& c : cases)
+        {
+            std::string cat = one;
+            Hfs322Put16(cat, ns + ns - 2 * 2, c.Ofs); // record 1's offset
+            CHfs322Walk w = Hfs322Run(cat);
+            CHECK(w.Result == c.Result && w.Inside);
+        }
+    }
+    // the key view: key, name and record type inside the record's bytes
+    {
+        SalHfsCatalogKey key;
+        std::string r = Hfs322Record(2, "top.txt", 0x0002, 248); // key 20 + 2, type + data 248
+        const unsigned char* p = (const unsigned char*)r.data();
+        CHECK(!SalHfsCatalogKeyView(NULL, 100, &key));
+        CHECK(!SalHfsCatalogKeyView(p, 0, &key));
+        CHECK(!SalHfsCatalogKeyView(p, 1, &key));
+        CHECK(!SalHfsCatalogKeyView(p, 23, &key)); // the record type would run past
+        CHECK(SalHfsCatalogKeyView(p, 24, &key) && key.BodyOffset == 22 && key.BodyAvail == 2);
+        CHECK(SalHfsCatalogKeyView(p, r.size(), &key) && key.KeyLength == 20 && key.NameLength == 7 && key.BodyAvail == 248);
+        std::string bad = r;
+        Hfs322Put16(bad, 0, 5); // shorter than parentID + name length
+        CHECK(!SalHfsCatalogKeyView((const unsigned char*)bad.data(), bad.size(), &key));
+        Hfs322Put16(bad, 0, 0xFFFF); // past the record
+        CHECK(!SalHfsCatalogKeyView((const unsigned char*)bad.data(), bad.size(), &key));
+        bad = r;
+        Hfs322Put16(bad, 6, 8); // a name longer than its key
+        CHECK(!SalHfsCatalogKeyView((const unsigned char*)bad.data(), bad.size(), &key));
+        Hfs322Put16(bad, 6, 200); // within 223's 255 bound, still past the key
+        CHECK(!SalHfsCatalogKeyView((const unsigned char*)bad.data(), bad.size(), &key));
+        Hfs322Put16(bad, 6, 6); // a shorter name inside its key is accepted
+        CHECK(SalHfsCatalogKeyView((const unsigned char*)bad.data(), bad.size(), &key) && key.NameLength == 6);
+        std::string thread = Hfs322Record(2, "", 0x0003, 20); // key length 6: an empty name
+        CHECK(SalHfsCatalogKeyView((const unsigned char*)thread.data(), thread.size(), &key) && key.KeyLength == 6 &&
+              key.NameLength == 0 && key.BodyAvail == 20);
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -19463,6 +19729,7 @@ int main(int argc, char** argv)
     TestUnpackDefault315();
     TestPackName318();
     TestPackName319();
+    TestHfsCatalog322();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

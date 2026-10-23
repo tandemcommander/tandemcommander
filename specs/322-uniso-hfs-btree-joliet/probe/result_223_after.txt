@@ -1,0 +1,4 @@
+iso223_probe (feature 223) after-322
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 10:27; registry key existed True
+
