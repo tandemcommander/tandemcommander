@@ -4407,3 +4407,19 @@ a few early ones are out of sequence).
   default run; PAX-255DIR and 308's COPY-DEEP expect the listed folder's member), 308 12/0, 309
   16/0, 310 52/0; negative controls (listing rule in every pass; GNU flag off; + core bound off)
   fail as expected; saltests 27698; one refute-first review (no MUST / SHOULD).
+- 322-uniso-hfs-btree-joliet: the ISO plug-in's HFS+ catalog walk took the node size, the first
+  leaf node, the links, record counts and record offsets from the image and read wherever they
+  pointed (a link back never ended); the listing read keys and records past their node; a Joliet
+  file name of mostly CJK letters lost its end (`.txt`, or broke inside a letter into mojibake) -
+  now the walk (`src/common/salhfscatalog.h`) uses a node only inside the loaded catalog and once,
+  record tables and offsets only inside their node, and refuses a damaged catalog with a new
+  message (quietly in a hybrid, as before); a record whose key / name / data does not fit is
+  skipped; Joliet names are copied whole. Traps: the first saltests data spilled past its own
+  512-byte node (the helper now checks); an `ER` partition map image must be cut at its
+  `Apple_HFS` partition to reach the HFS+ reader alone. Limits: the item's fuzzing pass was not
+  done (no mutated images; Inbox, who person); found on the way (Inbox): xorriso's Rock Ridge
+  (no `RR` entry) is not recognised, a valid xorriso hybrid shows the Xbox reader's "Cannot read
+  sector #00000020.". From backlog item `uniso-hfs-btree-trust-and-joliet-cut`. Probe
+  `iso322_probe` 11/3 (14 rows) -> 18/0 (RR-LONG, HFS-MANY added; Joliet CJK 12 / 40, HFS+ alone, a 103-leaf catalog, Rock Ridge,
+  plain, hybrid); 223's probe ISO-F5 PASS (RR-LONG NOT DRIVEN without Docker); saltests 27776;
+  one refute-first review (no MUST; SHOULD taken: the many-leaf row; mutants of each bound fail).

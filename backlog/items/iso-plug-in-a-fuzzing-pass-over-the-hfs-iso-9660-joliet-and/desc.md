@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: M
 feature: -
-related: [uniso-hfs-btree-trust-and-joliet-cut]
+related: []
 depends-on: []
 reason: -
 ---
@@ -53,3 +53,4 @@ mutated images live); an autonomous run of feature 322 deliberately made no such
 ## Log
 
 - 2026-10-23 — created (source leftover:322)
+- 2026-10-23 — related item uniso-hfs-btree-trust-and-joliet-cut done in feature 322

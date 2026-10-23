@@ -7,11 +7,11 @@ area: archives
 source: measure:255
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [uniso-hfs-btree-trust-and-joliet-cut, uniso-joliet-file-names-wtf8-garbled]
+related: [uniso-joliet-file-names-wtf8-garbled]
 depends-on: []
 reason: -
 ---
@@ -61,3 +61,4 @@ images; severity is low for that.
 - 2026-10-20 — set related=uniso-hfs-btree-trust-and-joliet-cut,uniso-joliet-file-names-wtf8-garbled
 - 2026-10-20 — moved to Inbox
 - 2026-10-20 — moved to Next position 85
+- 2026-10-23 — related item uniso-hfs-btree-trust-and-joliet-cut done in feature 322
