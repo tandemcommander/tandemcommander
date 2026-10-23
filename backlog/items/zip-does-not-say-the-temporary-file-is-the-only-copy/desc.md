@@ -1,7 +1,7 @@
 ---
 title: ZIP does not say the temporary file is the only copy when the archive vanished
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:320
@@ -53,3 +53,4 @@ kept as ..."), in all enabled languages.
 
 - 2026-10-23 — created (source review:320)
 - 2026-10-23 — related item zip-says-the-archive-was-not-changed-after-a-failed-replace done in feature 320
+- 2026-10-23 — moved to Next position 64

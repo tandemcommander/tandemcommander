@@ -1,7 +1,7 @@
 ---
 title: ZIP cannot update an archive reached through a symbolic link
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:320
@@ -63,3 +63,4 @@ archive-edit route name such an archive.
 
 - 2026-10-23 — created (source review:320)
 - 2026-10-23 — related item zip-says-the-archive-was-not-changed-after-a-failed-replace done in feature 320
+- 2026-10-23 — moved to Next position 23
