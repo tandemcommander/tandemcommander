@@ -1,7 +1,7 @@
 ---
 title: The core reads volume names with the code-page API on UTF-8 paths
 type: bug
-status: new
+status: open
 severity: 3
 area: encoding
 source: measure:324
@@ -61,3 +61,4 @@ function on UTF-8 paths.
 
 - 2026-10-23 — created (source measure:324)
 - 2026-10-23 — related item undelete-skips-its-same-partition-warning-when-the-target done in feature 324
+- 2026-10-23 — moved to Next position 64

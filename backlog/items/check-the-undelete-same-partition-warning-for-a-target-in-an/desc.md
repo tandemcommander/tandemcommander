@@ -1,7 +1,7 @@
 ---
 title: Check the Undelete same-partition warning for a target in an accented mount folder
 type: person-step
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: leftover:324
@@ -58,3 +58,4 @@ the recovered volume. Results recorded in `specs/324-undelete-unknown-volume/fix
 ## Log
 
 - 2026-10-23 — created (source leftover:324)
+- 2026-10-23 — moved to Person steps position 38
