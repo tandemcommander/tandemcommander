@@ -1,16 +1,16 @@
 ---
 title: Pack writes the archive into a hidden data stream when its name holds a colon
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: archives
 source: measure:318
 who: agent
 created: 2026-10-23
 updated: 2026-10-23
-verified: -
+verified: 2026-10-23 e9c35c2e
 effort: S
-feature: -
+feature: 319
 related: []
 depends-on: []
 reason: -
@@ -61,3 +61,5 @@ unchanged.
 
 - 2026-10-23 — created (source measure:318)
 - 2026-10-23 — moved to Next position 2
+- 2026-10-23 — verified at e9c35c2e: reproduced at e9c35c2e: hidden-desktop probe 6 FAIL - report:zip, rep:x.zip, abs:x.zip create an empty base file and write the archive into its data stream
+- 2026-10-23 — run started, feature 319
