@@ -3019,6 +3019,18 @@ a few early ones are out of sequence).
   Tests 57 (fake claude; Ctrl+Break, pause/stop, orphan claude as processes), mutants 38/39 caught
   (1 near-equivalent), e2e with the real claude 5/5 three times; two refute-first reviews. Person
   step `backlog-loop-person-checks` (typed Ctrl+C in mintty, the first real usage limit).
+  - Amended 2026-10-23 (maintainer session, after 312 / 314 blocked only for translations and 320
+    idling ~1.5 h on a killed reviewer): a run does the two-stage `.slt` refresh itself (stop-rules
+    §2.13: `--formality prefer_more`, changed English set to `english_fallback` by the template's
+    `[KIND n]` key, gap and `--budget` guards, read-back pins, layout drift committed), records an
+    unreachable secondary part of *Expected* as an Inbox item and closes (§2.14), merges a moved
+    `main` into its branch (SKILL.md step 9, conflict table + backlog recipe, guard on the item),
+    carries over a stopped branch's work (4.6, also from `origin/`), closes a confirmed
+    not-reproduced item and a split parent, three review rounds, never idles on a reviewer that
+    stopped. The loop kills and continues a run whose wakeup ticks report nothing changed twice
+    with no background task (`IDLE_WAKEUPS` 2, `MAX_NUDGES` 3; only a tick started by
+    `loop_wakeup` counts, any other turn start resets): replayed over all 111 run logs it fires
+    once, in 320 (log line 967). Three refute-first reviews of the rules, one of the watchdog.
 - 248-folders-column-names: **the Desktop view's column headers were mojibake** on a non-English
   Windows (GitHub issue #13): the Folders plug-in (`fld:`) handed the shell's column names to the
   core as UTF-8 (feature 004), the core draws column names in the code page (MBCS build, `TextOutA`)

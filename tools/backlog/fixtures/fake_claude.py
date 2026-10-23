@@ -13,7 +13,11 @@ limit-noreset, crash, stall, watchdog-stall, context-error, row-keep-lock (an
 interrupted run holding the lock); limit-start, crash-start, refuse,
 refuse-other, lost (a run that never took its item); release (finish a run
 that wrote its row but kept the lock); hang [seconds, then: step] (sleeps
-holding the lock, then plays `then`).  A finished run with `add: slug
+holding the lock, then plays `then`); idle [seconds] (holds the lock, no
+background task, two no-op wakeups, then sleeps - the loop must stop it);
+idle-busy [seconds] (the same wakeups while a background task runs, then
+the task ends, a working wakeup, and the run closes - never stopped).
+A finished run with `add: slug
 [, severity: n]` first records a new Inbox item.  For the loop's
 auto-triage: triage (every Inbox item to Next - severity 7+ at the top -
 and a commit), triage-none (no change, no commit), triage-dirty (a change
@@ -54,6 +58,17 @@ def emit(obj):
 def result(text, error=False, status=None):
     emit({"type": "result", "subtype": "success", "is_error": error, "api_error_status": status,
           "result": text, "session_id": SESSION})
+
+
+def wakeup(noop, tick=True):
+    """A turn started by a scheduled wakeup (tick) that schedules the next one."""
+    if tick:
+        emit({"type": "command_lifecycle", "command_uuid": "fake", "state": "started",
+              "wakeup_source": "loop_wakeup", "session_id": SESSION})
+    emit({"type": "assistant", "message": {"role": "assistant", "content": [
+        {"type": "tool_use", "id": "toolu_fake", "name": "ScheduleWakeup",
+         "input": {"delaySeconds": 600, "noop": noop, "prompt": "continue", "reason": "fake"}}]},
+        "parent_tool_use_id": None, "session_id": SESSION})
 
 
 def lock_slug():
@@ -195,6 +210,24 @@ def play(step, slug):
     if do == "lost":
         print(f"No conversation found with session ID: {SESSION}", file=sys.stderr, flush=True)
         return 1
+    if do in ("idle", "idle-busy"):
+        ensure_lock(slug)
+        busy = do == "idle-busy"
+        emit({"type": "system", "subtype": "background_tasks_changed",
+              "tasks": [{"task_id": "a1", "task_type": "local_agent"}] if busy else []})
+        for _ in range(2):
+            wakeup(noop=True)
+            result("Waiting for the review.")
+        time.sleep(step.get("seconds", 30 if not busy else 1))
+        if not busy:
+            result("Still waiting.")
+            return 0
+        emit({"type": "system", "subtype": "task_notification", "task_id": "a1", "status": "completed"})
+        emit({"type": "system", "subtype": "background_tasks_changed", "tasks": []})
+        wakeup(noop=False)
+        time.sleep(0.5)  # the loop looks at the log meanwhile: a finished task is not idling
+        finish(slug, "closed")
+        return 0
     if do == "hang":
         ensure_lock(slug)
         (Path(os.environ["FAKE_CLAUDE_PLAN"]).parent / "fake.pid").write_text(str(os.getpid()))

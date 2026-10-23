@@ -299,6 +299,68 @@ class RunTests(Base):
         self.assertEqual(len(self.calls()), 3)
         self.assertIn("without finishing", out)
 
+    def test_a_run_that_waits_for_nothing_is_stopped_and_continued_with_a_reminder(self):
+        # seen in 320: the reviewer was killed, the run kept scheduling no-op wakeups
+        self.write_plan([{"do": "idle", "seconds": 30}, "close"])
+        started = time.time()
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertLess(time.time() - started, 20, "the idle run was not stopped")
+        calls = self.calls()
+        self.assertEqual([c["resume"] for c in calls], [False, True])
+        self.assertIn("launch it again now instead of waiting", calls[1]["prompt"])
+        self.assertEqual(calls[1]["session"], calls[0]["session"])
+        self.assertIn("waits for nothing", out)
+        self.assertEqual(self.runs()[-1][2], "closed")
+
+    def test_wakeups_while_a_background_task_runs_are_not_idling(self):
+        self.write_plan([{"do": "idle-busy", "seconds": 1}])
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertEqual([c["resume"] for c in self.calls()], [False])
+        self.assertNotIn("waits for nothing", out)
+        self.assertEqual(self.runs()[-1][2], "closed")
+
+    def test_waiting_for_nothing_is_continued_at_most_max_nudges_times(self):
+        self.write_plan([{"do": "idle", "seconds": 30}] * (loop.MAX_NUDGES + 1) + ["close"])
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 1, out)
+        self.assertEqual(len(self.calls()), loop.MAX_NUDGES + 1)
+        self.assertIn("waited for nothing", out)
+
+    def test_idle_counting_in_the_log(self):
+        def info_of(*objs):
+            info = loop.LogInfo()
+            loop.scan([json.dumps(o) for o in objs], info)
+            return info
+
+        def wake(noop, parent=None):
+            return {"type": "assistant", "parent_tool_use_id": parent, "message": {"content": [
+                {"type": "tool_use", "name": "ScheduleWakeup", "input": {"noop": noop}}]}}
+
+        none = {"type": "system", "subtype": "background_tasks_changed", "tasks": []}
+        busy = {"type": "system", "subtype": "background_tasks_changed", "tasks": [{"task_id": "a"}]}
+        tick = {"type": "command_lifecycle", "state": "started", "wakeup_source": "loop_wakeup"}
+        other = {"type": "command_lifecycle", "state": "started"}  # a message or a prompt started the turn
+        bash = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Bash", "input": {}}]}}
+        self.assertTrue(info_of(none, tick, wake(True), tick, wake(True)).idle)
+        # the 320 pattern: each tick looked at git status, then scheduled the next no-op wakeup
+        self.assertTrue(info_of(none, tick, bash, wake(True), tick, bash, wake(True)).idle)
+        self.assertFalse(info_of(none, tick, wake(True)).idle)  # one is not enough
+        self.assertFalse(info_of(busy, tick, wake(True), tick, wake(True)).idle)  # a reviewer still runs
+        self.assertFalse(info_of(none, tick, wake(True), tick, wake(False), tick, wake(True)).idle)  # progress between
+        self.assertFalse(info_of(tick, wake(True), tick, wake(True), none).idle)  # the list changed after them
+        self.assertFalse(info_of(none, tick, wake(True), {"type": "system", "subtype": "task_progress"},
+                                 tick, wake(True)).idle)
+        self.assertFalse(info_of(none, tick, wake(True), {"type": "user", "parent_tool_use_id": "t"},
+                                 tick, wake(True)).idle)
+        self.assertFalse(info_of(none, tick, wake(True, parent="t"), tick, wake(True, parent="t")).idle)  # a subagent's
+        # heartbeats of a working turn are not ticks (review of the watchdog, SHOULD 1)
+        self.assertFalse(info_of(none, wake(True), wake(True)).idle)
+        self.assertFalse(info_of(none, other, wake(True), bash, wake(True)).idle)
+        self.assertFalse(info_of(none, tick, wake(True), wake(True)).idle)  # twice in one tick counts once
+        self.assertFalse(info_of(none, tick, wake(True), other, tick, wake(True)).idle)  # a message between
+
     def test_a_lost_session_stops_the_loop(self):
         self.write_plan([{"do": "limit", "in": 0}, "lost"])
         code, out = self.run_loop("--until-idle")

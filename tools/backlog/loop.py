@@ -23,6 +23,10 @@ Design (specs/247-backlog-run-loop/spec.md, contract contracts/loop-cli.md):
   while its item still holds the lock is continued in the same session
   (``--resume``) - after the reported reset of a limit, after a growing
   pause for an error, or at once after Ctrl+C.
+* A run that only waits - its main thread schedules wakeups that report
+  nothing changed while no background task runs (a reviewer ended without
+  a report, seen in 320) - is stopped and continued in the same session
+  with a prompt that says so; at most MAX_NUDGES times per run.
 * With --auto-triage, between two runs, whenever the Inbox holds an item
   the last triage did not see (at the start: any item), the loop starts
   ``claude -p '/tandem-backlog auto-triage --commit'`` and waits for it,
@@ -65,6 +69,8 @@ LIMIT_UNKNOWN_WAIT = 1800.0  # a limit without a reported reset: try again after
 MAX_STALLS = 2               # continuations of a run that ended its turn without finishing
 MAX_REFUSALS = 2             # runs in a row that did not take their item
 MAX_LIMITS = 10              # continuations of one run after usage limits (claude waits most out itself)
+IDLE_WAKEUPS = 2             # no-op wakeups in a row, no background task: the run waits for nothing
+MAX_NUDGES = 3               # continuations of one run after such idling
 KEEP_LOGS = 100
 TICK = 1.0                   # how often waits look at pause / stop
 STILL_ACTIVE = 259
@@ -76,6 +82,12 @@ RESUME_PROMPT = (
     "the lock status, the fix-log, the last steps above); if a GUI probe was interrupted, "
     "restore its registry backup first (stop-rules section 2.8). Do not repeat steps "
     "that are complete. One item only; end with the final message of section 11."
+)
+IDLE_WHY = (
+    "the loop stopped it: its wakeups reported nothing changed twice in a row while no background "
+    "task was running, so what it waited for - a reviewer or a command - has ended without a "
+    "report; launch it again now instead of waiting (SKILL.md step 7, 'Never idle on a reviewer "
+    "that is not running')"
 )
 
 TRIAGE_PROMPT = "/tandem-backlog auto-triage --commit"
@@ -275,6 +287,15 @@ class LogInfo:
         self.rate_limit = None   # the last rate_limit_info
         self.lost = False        # --resume found no session
         self.stderr_tail = ""
+        self.bg_tasks = []       # the last background_tasks_changed list
+        self.idle_wakeups = 0    # wakeup ticks that only scheduled a no-op wakeup, since the last sign of work
+        self.in_tick = False     # the current turn was started by a scheduled wakeup
+        self.tick_counted = False
+
+    @property
+    def idle(self) -> bool:
+        """The run waits for nothing: no-op wakeups in a row and no background task."""
+        return self.idle_wakeups >= IDLE_WAKEUPS and not self.bg_tasks
 
     @property
     def is_error(self) -> bool:
@@ -336,10 +357,36 @@ def scan(lines: list, info: LogInfo) -> None:
         except ValueError:
             continue
         kind = obj.get("type")
+        if obj.get("parent_tool_use_id"):
+            info.idle_wakeups = 0  # a subagent is working
+            continue
         if kind == "result":
             info.result = obj
         elif kind == "rate_limit_event" and isinstance(obj.get("rate_limit_info"), dict):
             info.rate_limit = obj["rate_limit_info"]
+        elif kind == "system" and obj.get("subtype") == "background_tasks_changed":
+            info.bg_tasks = list(obj.get("tasks") or [])
+            info.idle_wakeups = 0  # count only the wakeups after the last change (a reviewer that just
+            #                        finished leaves the list empty while the run goes on working)
+        elif kind == "system" and obj.get("subtype") in ("task_progress", "task_notification"):
+            info.idle_wakeups = 0
+        elif kind == "command_lifecycle" and obj.get("state") == "started":
+            # a turn begins: only a turn started by a scheduled wakeup can be an idle tick;
+            # any other start (a message, a prompt) is activity
+            info.in_tick = obj.get("wakeup_source") == "loop_wakeup"
+            info.tick_counted = False
+            if not info.in_tick:
+                info.idle_wakeups = 0
+        elif kind == "assistant":
+            for part in (obj.get("message") or {}).get("content") or []:
+                if isinstance(part, dict) and part.get("type") == "tool_use" and part.get("name") == "ScheduleWakeup":
+                    if (part.get("input") or {}).get("noop") is not True:
+                        info.idle_wakeups = 0
+                    elif info.in_tick and not info.tick_counted:
+                        # a fallback heartbeat in a working turn, or a second one in the same tick,
+                        # does not count (review of the watchdog, SHOULD 1)
+                        info.idle_wakeups += 1
+                        info.tick_counted = True
 
 
 def log_info(run: dict) -> LogInfo:
@@ -528,7 +575,7 @@ class Loop:
         run = {
             "slug": slug, "session": str(uuid.uuid4()), "started": stamp(),
             "log": str(self.repo.logs / f"{name}.jsonl"), "err": str(self.repo.logs / f"{name}.err"),
-            "rows_before": len(self.repo.runs()), "attempts": 0, "stalls": 0, "resumes": 0, "limits": 0,
+            "rows_before": len(self.repo.runs()), "attempts": 0, "stalls": 0, "resumes": 0, "limits": 0, "nudges": 0,
             "lock_started": None, "phase": "new", "wait_until": None, "why": None, "child_pid": None, "child_ident": None,
         }
         save_json(self.repo.run_file, run)
@@ -551,6 +598,9 @@ class Loop:
         else:
             prompt = f"/{SKILL} {run['slug']}"
             session = ["--session-id", run["session"]]
+        # judged per attempt: a reason or an idle mark of an earlier attempt is not replayed later
+        run["why"] = None
+        run.pop("idle", None)
         cmd = list(self.claude) + ["-p", prompt, "--output-format", "stream-json", "--verbose",
                                    "--permission-mode", "bypassPermissions", *session]
         if self.args.model:
@@ -588,6 +638,7 @@ class Loop:
         offset = source.get("offset", 0)
         info = LogInfo()
         told = set()
+        killed_at = 0.0
         while running():
             if self.args.deadline and time.time() - self.started > self.args.deadline:
                 if self.child is not None:
@@ -598,6 +649,17 @@ class Loop:
                 scan(lines, info)
                 if info.rate_limit:
                     self.usage = info.rate_limit
+            # this run's claude - also a previous loop's (pending()), never the auto-triage's
+            pid = self.child.pid if self.child is not None else (source or {}).get("child_pid")
+            if info.idle and pid and source is self.run and time.time() - killed_at > 30:
+                if "idle" not in told:
+                    told.add("idle")
+                    self.run["idle"] = True
+                    self.save_run()
+                    say(f"item {self.run['slug']}: the run waits for nothing (no-op wakeups, no background task) - "
+                        "stopping it to continue it with a reminder")
+                kill_tree(pid)
+                killed_at = time.time()  # tried again after 30 s if it is still alive
             state_detail = detail
             if info.rate_limit and info.rate_limit.get("status") == "rejected":
                 reset = info.reset_at
@@ -680,6 +742,17 @@ class Loop:
         run = self.run
         verdict, detail = self.assess()
         slug = run["slug"]
+        if run.pop("idle", False) and verdict in ("stalled", "error"):  # stopped by watch() while holding its item
+            run["nudges"] = run.get("nudges", 0) + 1
+            if run["nudges"] > MAX_NUDGES:
+                run.update({"phase": "failed", "why": "waited for nothing too often"})
+                self.save_run()
+                say(f"item {slug}: the run waited for nothing {run['nudges']} times - the loop stops; log {run['log']}")
+                raise Stop(1)
+            run.update({"phase": "waiting", "wait_until": time.time(), "why": IDLE_WHY})
+            self.save_run()
+            say(f"item {slug}: continuing the run with a reminder to relaunch what it waits for")
+            return
         if verdict == "finished":
             self.drop_run()
             self.refusals = self.start_errors = 0

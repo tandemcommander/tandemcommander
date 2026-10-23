@@ -35,7 +35,7 @@ seconds and kills its claude — a test that would hang fails instead).
 |---|---|---|
 | `.git/tandem-backlog-run.lock` | the runs (feature 242) | the run lock — the loop only reads it |
 | `.git/tandem-backlog-loop/loop.json` | the loop | pid + process creation time (liveness that survives pid reuse), host, started, state, detail, since, until, slug, session, log, counts, blocked streak, last usage figures; removed when the loop ends |
-| `.git/tandem-backlog-loop/run.json` | the loop | the current run: slug, session id, log, journal rows before, attempts, stalls, resumes, phase (`new`/`running`/`waiting`/`killed`/`failed`/`lost`), wait_until, why, claude pid + creation time; removed when the run finished or never took its item |
+| `.git/tandem-backlog-loop/run.json` | the loop | the current run: slug, session id, log, journal rows before, attempts, stalls, resumes, limits, nudges (idle continuations), phase (`new`/`running`/`waiting`/`killed`/`failed`/`lost`), wait_until, why, claude pid + creation time; removed when the run finished or never took its item |
 | `.git/tandem-backlog-loop/pause`, `stop` | `pause` / `stop` | flags |
 | `.git/tandem-backlog-loop/logs/<date>-<slug>.jsonl` / `.err` | claude | stream-json output and stderr of a run (all its continuations append); the newest 100 kept |
 
@@ -70,6 +70,7 @@ seconds and kills its claude — a test that would hang fails instead).
 | the run holds the lock, an **error** result with status 429, or no result after a `rejected` rate event, or an error result without a status with a usage-limit text | limit | continue after `resetsAt + 120 s` (no reset known: after 30 min); the 11th → phase `failed`, stop (1). A successful result is never a limit (claude waited it out) |
 | the run holds the lock, any other error result or no result (also `Context limit reached`) | error | continue after 1, 5, 15, 30, 60 min; the 6th error → phase `failed`, stop (1) |
 | the run holds the lock, a successful result | stalled | continue at once; the 3rd → phase `failed`, stop (1) |
+| while it runs: since the last change of the background-task list (`background_tasks_changed`), task notification, task progress or subagent line, the main thread scheduled **2** wakeups with `noop: true` in a row, and the last list is empty (added 2026-10-23 after 320: a killed reviewer, the run waited on wakeups) | idle → the loop kills the process | continue at once with the reason "launch again what you wait for" (SKILL.md step 7); the 4th → phase `failed`, stop (1) |
 | the run does not hold the lock, a successful result | refused / unrecorded | drop the record (unrecorded = an `Outcome` other than refused but no journal row: say so); 2 in a row → stop (1) |
 | the run does not hold the lock, a limit | — | wait for the reset, then a fresh start |
 | the run does not hold the lock, an error | — | wait 1, 5, 15, 30, 60 min, then a fresh start; the 6th → stop (1) |
