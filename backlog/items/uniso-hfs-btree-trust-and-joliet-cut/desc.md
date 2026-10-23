@@ -1,19 +1,19 @@
 ---
 title: ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut
 type: bug
-status: blocked
+status: open
 severity: 5
 area: other-plugins
 source: leftover:223
 who: agent
 created: 2026-10-15
-updated: 2026-10-20
+updated: 2026-10-23
 verified: -
 effort: M
 feature: -
 related: []
 depends-on: []
-reason: run stopped during the measurement, before specify; the maintainer continues it by hand
+reason: -
 ---
 
 # ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut
@@ -38,3 +38,4 @@ Severity 5 is an estimate: no crash was shown; a crafted image reaching an out-o
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-20 — blocked: run stopped during the measurement, before specify; the maintainer continues it by hand
+- 2026-10-23 — unblocked: the 2026-10-20 run stopped during the measurement (no branch, no decision needed); a new run starts it from the beginning

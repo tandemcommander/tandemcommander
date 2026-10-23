@@ -1,19 +1,19 @@
 ---
 title: Opening a tar whose member name has a 300-letter component crashes the program
 type: bug
-status: blocked
+status: open
 severity: 7
 area: archives
 source: measure:306
 who: agent
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-10-23
 verified: -
 effort: M
 feature: -
 related: []
 depends-on: []
-reason: the independent review rejected the fix twice: review 2 MUST - the GNU refusal also runs in whole-archive Unpack, drops extractable deep members and lets Delete archive after unpacking delete the archive (feature 307, branch 307-tar-long-component)
+reason: -
 ---
 
 # Opening a tar whose member name has a 300-letter component crashes the program
@@ -43,3 +43,4 @@ Severity from the band "crashes in an unusual scenario". The probe row is exclud
 - 2026-10-22 — moved to Next position 1
 - 2026-10-22 — blocked: the independent review rejected the fix twice: review 2 MUST - the GNU refusal also runs in whole-archive Unpack, drops extractable deep members and lets Delete archive after unpacking delete the archive (feature 307, branch 307-tar-long-component)
 - 2026-10-22 — feature 308 made the PAX refusal pass-dependent: SalPaxNameUsableU8 (salpaxheader.h) applies the listing bound only while listing (CArchive::Listing); an extraction refuses only a component over 255 UTF-16 units, reports a refused member it was asked for and returns FALSE. When branch 307 is resumed its GNU refusal must use the same rule (fixes its review-2 MUST)
+- 2026-10-23 — unblocked: rules of 2026-10-23: a run carries over origin/307-tar-long-component (SKILL.md 4.6), fixes review 2 MUST with the pass-dependent rule of 308 (fix-log Stopped), up to three reviews

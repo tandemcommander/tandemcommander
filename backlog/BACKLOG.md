@@ -22,13 +22,13 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Who | Effort | Status |
 |---|---|---|---|---|---|---|---|
-| 1 | [Opening a tar whose member name has a 300-letter component crashes the program](items/opening-a-tar-whose-member-name-has-a-300-letter-component/desc.md) | bug | 7 | archives | agent | M | blocked |
-| 2 | [ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut](items/uniso-hfs-btree-trust-and-joliet-cut/desc.md) | bug | 5 | other-plugins | agent | M | blocked |
-| 3 | [FTP: Create Directory and Quick Rename in a panel never update the upload listing cache](items/ftp-panel-mkdir-rename-skip-upload-listing-cache/desc.md) | bug | 7 | ftp | agent | S | blocked |
+| 1 | [Opening a tar whose member name has a 300-letter component crashes the program](items/opening-a-tar-whose-member-name-has-a-300-letter-component/desc.md) | bug | 7 | archives | agent | M | open |
+| 2 | [ISO plug-in: HFS+ B-tree loader trusts the image; Joliet names cut](items/uniso-hfs-btree-trust-and-joliet-cut/desc.md) | bug | 5 | other-plugins | agent | M | open |
+| 3 | [FTP: Create Directory and Quick Rename in a panel never update the upload listing cache](items/ftp-panel-mkdir-rename-skip-upload-listing-cache/desc.md) | bug | 7 | ftp | agent | S | open |
 | 4 | [Drive Information turns a volume label outside the code page into question marks](items/drive-information-turns-a-volume-label-outside-the-code-page/desc.md) | bug | 5 | encoding | both | ? | open |
 | 5 | [Undelete skips its same-partition warning when the target volume cannot be told](items/undelete-skips-its-same-partition-warning-when-the-target/desc.md) | bug | 5 | data-safety | both | M | open |
 | 6 | [Copying the files of a tar folder leaves hard-linked names out silently](items/tar-copy-of-listed-files-leaves-hard-links-out/desc.md) | bug | 5 | archives | agent | M | open |
-| 7 | [Read the 78 findings of check_encoding.py --plugins one by one](items/check-encoding-plugin-findings/desc.md) | tech-debt | 4 | encoding | agent | L | blocked |
+| 7 | [Read the 78 findings of check_encoding.py --plugins one by one](items/check-encoding-plugin-findings/desc.md) | tech-debt | 4 | encoding | agent | L | open |
 | 8 | [A path typed in another case into an archive with case twins elsewhere opens its root](items/a-path-typed-in-another-case-into-an-archive-with-case-twins/desc.md) | bug | 4 | archives | agent | S | open |
 | 9 | [Copying into an archive folder typed in another case packs into a new folder beside it](items/copying-into-an-archive-folder-typed-in-another-case-packs/desc.md) | bug | 4 | archives | agent | S | open |
 | 10 | [FTP: a name a listing rule extends (z/VM, AS/400, VxWorks) mixes UTF-8 with raw server bytes](items/ftp-listing-rule-joins-utf8-with-raw-bytes/desc.md) | bug | 4 | ftp | agent | S | open |
@@ -44,7 +44,7 @@ Last triaged: 2026-10-23
 | 20 | [A tar member whose name contains .. is extracted into a wrong folder](items/tar-member-name-with-dotdot-extracted-into-wrong-folder/desc.md) | bug | 4 | archives | agent | S | open |
 | 21 | [Hex mode in Find turns quoted letters outside the code page into question marks](items/hex-mode-in-find-turns-quoted-letters-outside-the-code-page/desc.md) | bug | 4 | encoding | agent | S | open |
 | 22 | [Viewer Find pre-fills a non-ASCII selection as code-page text](items/viewer-find-pre-fills-a-non-ascii-selection-as-code-page/desc.md) | bug | 4 | encoding | agent | S | open |
-| 23 | [Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260](items/renamer-long-new-name-limits/desc.md) | bug | 3 | long-paths | agent | M | blocked |
+| 23 | [Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260](items/renamer-long-new-name-limits/desc.md) | bug | 3 | long-paths | agent | M | open |
 | 24 | [winget: offer a per-user install (--scope user), proven in Windows Sandbox first](items/winget-per-user-scope-entry/desc.md) | improvement | 3 | build-release | both | M | blocked |
 | 25 | [winget manifest fixes (072 audit): DisplayName, ProductCode; PrivacyUrl check](items/winget-manifest-fixes-from-072-audit/desc.md) | bug | 3 | build-release | agent | S | open |
 | 26 | [PictView Update Thumbnail: file time, hard links, per-file box, orientation](items/pictview-update-thumbnail-142-leftovers/desc.md) | improvement | 3 | pictview | agent | M | open |
@@ -240,7 +240,6 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
-| [Restore the product registry key changed by a killed probe of feature 320](items/restore-registry-after-killed-probe-320/desc.md) | person-step | 2 | tooling | leftover:320 | 2026-10-23 |
 | [ZIP cannot update an archive reached through a symbolic link](items/zip-cannot-update-an-archive-reached-through-a-symbolic-link/desc.md) | bug | 4 | archives | review:320 | 2026-10-23 |
 | [ZIP does not say the temporary file is the only copy when the archive vanished](items/zip-does-not-say-the-temporary-file-is-the-only-copy/desc.md) | bug | 3 | archives | review:320 | 2026-10-23 |
 

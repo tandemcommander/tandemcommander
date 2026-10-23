@@ -255,7 +255,13 @@ reason names an earlier branch `<OLD>` of a stopped run whose work is
 worth keeping (its fix-log says what is done), bring its own changes —
 not its `backlog/`, `specs/`, `.specify/feature.json` or `translations/`
 (the refresh of stop-rules §2.13 redoes those) — into this branch,
-three-way so that `main`'s later changes survive:
+three-way so that `main`'s later changes survive. When no local branch
+`<OLD>` exists, use the remote-tracking `origin/<OLD>` (read only; never
+fetch, push or recreate the branch); its record is
+`git show <OLD or origin/OLD>:specs/<OLD>/fix-log.md`. When the old branch
+is hundreds of commits behind `main` and the patch conflicts in most of its
+files, re-implement from its fix-log and keep only what applies cleanly —
+record which in `fix-log.md`:
 
 ```text
 git diff --binary $(git merge-base main <OLD>) <OLD> -- . ':!backlog' ':!specs' ':!.specify/feature.json' ':!translations' > <scratchpad>/carry-<OLD>.patch

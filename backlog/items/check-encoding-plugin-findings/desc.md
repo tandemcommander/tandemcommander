@@ -1,19 +1,19 @@
 ---
 title: Read the 78 findings of check_encoding.py --plugins one by one
 type: tech-debt
-status: blocked
+status: open
 severity: 4
 area: encoding
 source: leftover:239
 who: agent
 created: 2026-10-16
-updated: 2026-10-20
+updated: 2026-10-23
 verified: -
 effort: L
 feature: -
 related: []
 depends-on: []
-reason: independent review rejected the work twice: review 2 found an annotated false positive that is a real FTP defect (ftp-wtf8-name-listing-round-trip); 77 of 78 verdicts and the markers are on the branch, row 41 and two open points remain (feature 255, branch 255-plugin-encoding-findings)
+reason: -
 ---
 
 # Read the 78 findings of check_encoding.py --plugins one by one
@@ -42,3 +42,4 @@ Severity is the migrating agent's estimate for the class (mojibake in plug-ins =
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
 - 2026-10-20 — blocked: independent review rejected the work twice: review 2 found an annotated false positive that is a real FTP defect (ftp-wtf8-name-listing-round-trip); 77 of 78 verdicts and the markers are on the branch, row 41 and two open points remain (feature 255, branch 255-plugin-encoding-findings)
+- 2026-10-23 — unblocked: rules of 2026-10-23: a run continues from origin/255-plugin-encoding-findings (77 of 78 verdicts done; 522 commits behind main - re-apply from its fix-log where the patch conflicts, SKILL.md 4.6); row 41 is the real FTP defect ftp-wtf8-name-listing-round-trip
