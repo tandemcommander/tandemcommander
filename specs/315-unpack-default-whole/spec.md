@@ -45,7 +45,7 @@ holding a.k and a.kp; the right panel on a folder L), 6 rows FAIL, 3 controls PA
 ### Session 2026-10-23
 
 - Q: Leave a default that does not fit out of the dialog, or grow the dialog's buffers and let later steps refuse? → A: leave it out - the dialog offers what it offers when the other panel is not a disk (the empty entry, or the archive's name as a relative subfolder) (autonomous run: item - "leaving it out changes least")
-- Q: With "Use the archive name as a subfolder", the other panel's path fits but path + archive name does not - offer the bare path (today) or leave the entry out? → A: leave the entry out - the bare path is a cut default (the subfolder cut away) and would unpack straight into the other panel's folder; the setting is kept by the empty / relative entry (autonomous run: item - Evidence names the silent drop; "a default that does not fit ... is never offered cut")
+- Q: With "Use the archive name as a subfolder", the other panel's path fits but path + archive name does not - offer the bare path (today) or leave the entry out? → A: leave the path out and offer the archive's name alone (a subfolder next to the archive - what an entry without a path gets) - the bare path is a cut default (the subfolder cut away) and would unpack straight into the other panel's folder; the setting is kept (autonomous run: item - Evidence names the silent drop; "a default that does not fit ... is never offered cut")
 - Q: A plug-in's unpack mask that does not fit - which default replaces it? → A: the dialog's own default "*.*" (the default when a plug-in passes no mask), visible in the field before OK (autonomous run: item - "an empty / the other default", "the plug-in mask the same")
 - Q: The empty target path falls back to the archive panel's path cut to 259 bytes - fix here? → A: yes - leaving a target out makes the empty entry the default, so the fallback must not cut either: a panel path that does not fit is refused with "The path specified is too long." and the dialog opens again (autonomous run: item - "the later steps refuse with 'The path specified is too long.' - never a cut path"; measured in the same function)
 - Q: Does the empty-target refusal also apply when the user empties the field by hand, and what does the reopened dialog hold? → A: yes - the same fallback serves both; the dialog reopens with the same values as at OK (the empty entry), as after every other refusal of that step (autonomous run: conservative - keeps the existing reopen behaviour, refuses rather than guesses)
@@ -89,7 +89,8 @@ the other panel's folder).
 **Acceptance Scenarios**:
 
 1. **Given** subfolder on, the other panel on a 245-byte path, an archive name of 20 letters,
-   **When** Alt+F9, **Then** no entry is the bare other-panel path; OK creates nothing under the
+   **When** Alt+F9, **Then** no entry is the bare other-panel path, the archive's name alone is
+   offered; OK unpacks into that subfolder next to the archive and creates nothing under the
    other panel's tree.
 2. **Given** a 200-byte path, **When** Alt+F9, **Then** the entry is "<path>\a" and OK unpacks into
    it - as before.
@@ -143,7 +144,8 @@ A plug-in opens the Unpack dialog for itself with a mask longer than 259 bytes. 
   subfolder) is offered only whole; when it does not fit the dialog's 260-byte buffer it is left out
   (the entry stays empty, as for a non-disk other panel).
 - **FR-002**: With "Use the archive name as a subfolder", an entry is offered only with its
-  subfolder; when path + subfolder does not fit, the entry is left out (never the bare path).
+  subfolder; when path + subfolder does not fit, the path is left out and the archive's name alone
+  is offered - a subfolder next to the archive (never the bare path).
 - **FR-003**: A plug-in's unpack mask is offered only whole; one that does not fit is replaced by
   "*.*".
 - **FR-004**: After OK, an empty target that would become the archive panel's path is refused with

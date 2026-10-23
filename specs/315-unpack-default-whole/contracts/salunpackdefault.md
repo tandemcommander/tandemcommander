@@ -8,8 +8,10 @@ Internal to the core (not a plug-in interface). Header-only, no globals; `saltes
 BOOL SalUnpackDefaultCopy(const char* text, char* buf, int size);
 
 // 'buf' + '\' + the first 'nameLen' bytes of 'name' (no '\' when 'buf' is empty or ends with one)
-// whole (TRUE); when the result does not fit 'size' bytes, 'buf' is emptied (FALSE); 'nameLen' <= 0
-// or NULL arguments: 'buf' unchanged, FALSE
+// whole (TRUE); when the result does not fit 'size' bytes (FALSE), 'buf' holds the name alone (a
+// subfolder next to the archive, what an empty entry gets), or is empty when even the name does not
+// fit - never the path without its subfolder; 'nameLen' <= 0
+// (nothing to append): 'buf' unchanged, TRUE; NULL arguments / 'size' <= 0: FALSE, 'buf' unchanged
 BOOL SalUnpackDefaultAddSubdir(char* buf, int size, const char* name, int nameLen);
 ```
 

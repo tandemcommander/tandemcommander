@@ -4,7 +4,8 @@
 
 #include "precomp.h"
 
-#include "salheapstr.h" // feature 097
+#include "salheapstr.h"       // feature 097
+#include "salunpackdefault.h" // feature 315
 
 #include "cfgdlg.h"
 #include "mainwnd.h"
@@ -2128,41 +2129,46 @@ void CFilesWindow::Unpack(CFilesWindow* target, int pluginIndex, const char* plu
         pathAlt[0] = 0;
         if (target->Is(ptDisk))
         {
-            // feature 011: the unpack dialog uses MAX_PATH target buffers; a
-            // longer panel path is bounded here (the downstream "< MAX_PATH"
-            // checks then degrade gracefully) - never overflow
+            // feature 315: the unpack dialog uses MAX_PATH target buffers; a longer panel path
+            // is left out (the entry stays empty, as for a non-disk panel) - never offered cut
+            // (a cut path is another folder: the files were unpacked into it)
             if (Configuration.UseAnotherPanelForUnpack)
             {
                 target->UserWorkedOnThisPath = TRUE; // default action = work with the path in the target panel
-                lstrcpyn(path, target->GetPath(), MAX_PATH);
+                if (!SalUnpackDefaultCopy(target->GetPath(), path, MAX_PATH))
+                    TRACE_I("CFilesWindow::Unpack(): the other panel's path is too long to offer");
             }
             else
-                lstrcpyn(pathAlt, target->GetPath(), MAX_PATH);
+            {
+                if (!SalUnpackDefaultCopy(target->GetPath(), pathAlt, MAX_PATH))
+                    TRACE_I("CFilesWindow::Unpack(): the other panel's path is too long to offer");
+            }
         }
         char fileName[SAL_FIND_NAME_U8]; // AlterFileName copies a full name unbounded (feature 027; was MAX_PATH)
         AlterFileName(fileName, file->Name, -1, Configuration.FileNameFormat, 0, FALSE);
         if (Configuration.UseSubdirNameByArchiveForUnpack)
         {
+            // the name without ".ext", never past the altered name
+            int nameLen = (int)(file->Ext - file->Name) - (*file->Ext == 0 ? 0 : 1);
+            if (nameLen > (int)strlen(fileName))
+                nameLen = (int)strlen(fileName);
             int i2;
             for (i2 = 0; i2 < 2; i2++) // for path and pathAlt
             {
-                char* buff = (i2 == 0) ? path : pathAlt;
-                int l = (int)strlen(buff);
-                if (l + (l > 0 && buff[l - 1] != '\\' ? 1 : 0) + (file->Ext - file->Name) - (*file->Ext == 0 ? 0 : 1) < MAX_PATH)
-                {
-                    if (l > 0 && buff[l - 1] != '\\')
-                        buff[l++] = '\\';
-                    memcpy(buff + l, fileName, file->Ext - file->Name);
-                    buff[l + (file->Ext - file->Name) - (*file->Ext == 0 ? 0 : 1)] = 0;
-                }
-                else
-                    TRACE_E("CFilesWindow::Unpack(): too long path to add archive name!");
+                // feature 315: with its subfolder, or the path left out and the name alone (a
+                // subfolder next to the archive) - never the bare path (it unpacked straight into
+                // the other panel's folder)
+                if (!SalUnpackDefaultAddSubdir((i2 == 0) ? path : pathAlt, MAX_PATH, fileName, nameLen))
+                    TRACE_I("CFilesWindow::Unpack(): too long path to add archive name, the path is left out");
             }
         }
-        if (unpackMask != NULL)
-            lstrcpyn(mask, unpackMask, MAX_PATH);
-        else
+        if (unpackMask == NULL)
             strcpy(mask, "*.*");
+        else if (!SalUnpackDefaultCopy(unpackMask, mask, MAX_PATH)) // feature 315: whole or the default
+        {
+            TRACE_E("CFilesWindow::Unpack(): the plugin's unpack mask is too long, offering *.*");
+            strcpy(mask, "*.*");
+        }
         CTruncatedString str;
         str.Set(LoadStrU8(IDS_UNPACKARCHIVE), fileName);
 
@@ -2233,7 +2239,12 @@ void CFilesWindow::Unpack(CFilesWindow* target, int pluginIndex, const char* plu
             if (!SalGetFullName(path, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus))
             {
                 if (errTextID == IDS_EMPTYNAMENOTALLOWED)
-                    lstrcpyn(path, GetPath(), MAX_PATH); // bounded (feature 011); MAX_PATH dialog buffer
+                {
+                    // an empty target = next to the archive; feature 315: a panel path that does not
+                    // fit the MAX_PATH buffer is refused (it was cut: unpacked into another folder)
+                    if (!SalUnpackDefaultCopy(GetPath(), path, MAX_PATH))
+                        text = LoadStr(IDS_TOOLONGPATH);
+                }
                 else
                     text = LoadStr(errTextID);
             }

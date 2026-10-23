@@ -20,7 +20,10 @@
       alt-cjk      UA=0 SD=0, L 355 bytes CJK, item 1. PASS likewise
       subdir       UA=1 SD=1, L 245 bytes ASCII (fits), archive name of 20 letters: L\<name> is 266
                    bytes. PASS = no entry naming L without the subfolder (nor cut), nothing new
-                   under tgt
+                   under tgt, a.k / a.kp unpacked into <src>\<name> (the name alone offered)
+      src-long     UA=0 SD=0, the archive in a 297-byte left panel folder, the empty item 0, OK: the
+                   empty target becomes the archive panel's path. PASS = "too long" shown, no file
+                   but the archive and no new folder in the row (the reopened dialog is cancelled)
       ctl          UA=1 SD=0, L 200 bytes: item 0 = L whole, a.k unpacked into L
       ctl-alt      UA=0 SD=0, L 200 bytes CJK (240+ bytes): item 1 = L whole, a.k unpacked into L
       ctl-subdir   UA=1 SD=1, L 200 bytes: item 0 = L\a whole, a.k unpacked into L\a
@@ -265,7 +268,14 @@ function Unpack-Row([string]$Case, [int]$UA, [int]$SD, [int]$Pick, [scriptblock]
             $verdictOk = (-not $stayed) -and ((Shown $r) -match 'too long') -and ($rowFiles.Count -eq 0) -and ($rowNewDirs.Count -eq 0)
             $why = (" [source {0} bytes; files in the row: {1}; new folders in the row: {2}]" -f (U8 $src), $(if ($rowFiles.Count) { ($rowFiles | ForEach-Object { Short-Rel $_ }) -join ', ' } else { 'none' }), $rowNewDirs.Count)
         }
-        else { $verdictOk = (-not $stayed) -and ($bad.Count -eq 0) -and ($files.Count -eq 0) -and ($newDirs.Count -eq 0) }
+        else {
+            $verdictOk = (-not $stayed) -and ($bad.Count -eq 0) -and ($files.Count -eq 0) -and ($newDirs.Count -eq 0)
+            if ($t.SrcExpect) {   # where OK must have unpacked (next to the archive)
+                $c3 = ((($srcFiles | Sort-Object) -join '|') -ceq ((@($t.SrcExpect) | Sort-Object) -join '|'))
+                $verdictOk = $verdictOk -and $c3
+                if (-not $c3) { $why = (" [expected next to the archive: {0}]" -f ((@($t.SrcExpect) | ForEach-Object { Short-Rel $_ }) -join ', ')) }
+            }
+        }
         $ok = (-not $fatal) -and (-not $r.TimedOut) -and $verdictOk
         $itemText = (@($items | ForEach-Object { Item-Desc $_ $L }) -join ' ; ')
         Row $Case 'RUN' (V $ok) ("UA={0} SD={1}; L {2} units / {3} bytes; items ({4}): {5}; OK on item {6} ({7} bytes); dialog stayed: {8}; asked: {9}; new under tgt: {10}{11}; unpacked next to the archive: {12}{13}" -f $UA, $SD, $L.Length, (U8 $L), $items.Count, $itemText, $used, (U8 $chosen), $stayed, (Shown $r), $(if ($files.Count) { ($files | ForEach-Object { Short-Rel $_ }) -join ', ' } else { 'no file' }), $(if ($newDirs.Count) { '; ' + $newDirs.Count + ' new folder(s)' } else { '' }), $(if ($srcFiles.Count) { ($srcFiles | ForEach-Object { Short-Rel $_ }) -join ', ' } else { 'nothing' }), $(if ($r.TimedOut) { '; TIMED OUT' } else { '' }) + $why)
@@ -294,7 +304,7 @@ try {
     Unpack-Row 'other-cjk' 1 0 0 { param($T) @{ L = (Long-Path ($T + '\L') 355 -Cjk); Zip = 'a.zip' } }
     Unpack-Row 'alt-ascii' 0 0 1 { param($T) @{ L = (Long-Path ($T + '\L') 297); Zip = 'a.zip' } }
     Unpack-Row 'alt-cjk' 0 0 1 { param($T) @{ L = (Long-Path ($T + '\L') 355 -Cjk); Zip = 'a.zip' } }
-    Unpack-Row 'subdir' 1 1 0 { param($T) @{ L = (Long-Path ($T + '\L') 245); Zip = ('s' * 20) + '.zip' } } -NoBareL
+    Unpack-Row 'subdir' 1 1 0 { param($T) @{ L = (Long-Path ($T + '\L') 245); Zip = ('s' * 20) + '.zip'; SrcExpect = @((('s' * 20) + '\a.k=K'), (('s' * 20) + '\a.kp=KP')) } } -NoBareL
     Unpack-Row 'src-long' 0 0 0 { param($T) @{ L = ($T + '\L'); Src = (Long-Path ((Split-Path $T) + '\src\S') 297); Zip = 'a.zip' } } -Refuse
     Unpack-Row 'ctl' 1 0 0 { param($T) $l = Long-Path ($T + '\L') 200; @{ L = $l; Zip = 'a.zip'; Want = $l; Expect = @(($l.Substring($T.Length + 1) + '\a.k=K'), ($l.Substring($T.Length + 1) + '\a.kp=KP')) } } -Fits
     Unpack-Row 'ctl-alt' 0 0 1 { param($T) $l = Long-Path ($T + '\L') 250 -Cjk; @{ L = $l; Zip = 'a.zip'; Want = $l; Expect = @(($l.Substring($T.Length + 1) + '\a.k=K'), ($l.Substring($T.Length + 1) + '\a.kp=KP')) } } -Fits

@@ -10,7 +10,7 @@ that cut (`lstrcpyn`), drops the archive subfolder silently when it does not fit
 an empty target into the archive panel's path cut the same way. A new header-only rule
 `src/common/salunpackdefault.h` copies a default whole or leaves it empty, and appends the archive
 subfolder whole or empties the entry. `Unpack` uses it at the four sites: the other panel's path
-(left out), the subfolder (entry left out), a plug-in's mask (`*.*` instead), the empty-target
+(left out), the subfolder (the path left out, the name alone), a plug-in's mask (`*.*` instead), the empty-target
 fallback (refused with `IDS_TOOLONGPATH`, the dialog again). `saltests` checks the rule. No new
 string, no buffer grown.
 
@@ -46,7 +46,7 @@ Post-design re-check: unchanged, PASS.
 | Site (`CFilesWindow::Unpack`, `src/fileswn7.cpp`) | Today | Change |
 |---|---|---|
 | other panel's path into `path` (UA on) / `pathAlt` (UA off) | `lstrcpyn(..., MAX_PATH)` - cut | `SalUnpackDefaultCopy(target->GetPath(), buf, MAX_PATH)` - whole or left out (empty) |
-| archive subfolder appended (SD on), for `path` and `pathAlt` | fits: appended; not: `TRACE_E`, bare path kept | `SalUnpackDefaultAddSubdir(buf, MAX_PATH, fileName, nameLen)` - appended whole, or the entry emptied (`TRACE_I`) |
+| archive subfolder appended (SD on), for `path` and `pathAlt` | fits: appended; not: `TRACE_E`, bare path kept | `SalUnpackDefaultAddSubdir(buf, MAX_PATH, fileName, nameLen)` - appended whole, or the path left out and the name alone offered (`TRACE_I`) |
 | plug-in mask into `mask` | `lstrcpyn(mask, unpackMask, MAX_PATH)` - cut | `SalUnpackDefaultCopy`; FALSE -> `"*.*"` (`TRACE_E`) |
 | after OK, empty target (`IDS_EMPTYNAMENOTALLOWED`) | `lstrcpyn(path, GetPath(), MAX_PATH)` - cut | `SalUnpackDefaultCopy(GetPath(), path, MAX_PATH)`; FALSE -> `text = LoadStr(IDS_TOOLONGPATH)` -> the existing message + `goto DO_AGAIN` |
 

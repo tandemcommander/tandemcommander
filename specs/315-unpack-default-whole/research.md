@@ -18,7 +18,8 @@
 
 ## R3. Subfolder that does not fit
 
-- Decision: empty the entry (not the bare path).
+- Decision: leave the path out, offer the archive's name alone (as for an empty entry) - not the
+  bare path.
 - Rationale: the bare path unpacks straight into the other panel's folder, ignoring the setting -
   a cut default (the subfolder cut away). Measured: row `subdir` unpacked into L.
 

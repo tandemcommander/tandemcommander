@@ -97,6 +97,7 @@
 #include "salpaxheader.h"     // feature 306
 #include "saltarlink.h"       // feature 309
 #include "salcpiolink.h"      // feature 310
+#include "salunpackdefault.h" // feature 315
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -18716,6 +18717,97 @@ static void TestCpioLink310()
     CHECK(SalCpioLinkDecide(false, false, SAL_CPIO_GROUP_LOST, false) == SAL_CPIO_LINK_SKIP);
 }
 
+// feature 315: the Unpack dialog's defaults whole or not at all (salunpackdefault.h)
+static void TestUnpackDefault315()
+{
+    char buf[MAX_PATH];
+    // a folder of 'len' bytes: "C:\" + 'p' x (len - 3)
+    auto folder = [](int len) { return std::string("C:\\") + std::string(len - 3, 'p'); };
+    // "C:\" + CJK letters (3 bytes each) + 'x' padding: exactly 'len' bytes of UTF-8
+    auto cjkFolder = [](int len)
+    {
+        std::string s = "C:\\";
+        while ((int)s.size() + 3 <= len)
+            s += "\xE4\xB8\x80";
+        s += std::string(len - s.size(), 'x');
+        return s;
+    };
+    // the buffer holds no prefix of 'full' (a cut); an empty buffer is no cut
+    auto noCut = [](const char* b, const std::string& full)
+    { return b[0] == 0 || (strlen(b) == full.size() && strcmp(b, full.c_str()) == 0); };
+
+    // SalUnpackDefaultCopy: 259 bytes fit MAX_PATH, 260 do not; a refusal leaves the buffer empty
+    std::string f259 = folder(259), f260 = folder(260), f297 = folder(297);
+    strcpy(buf, "old");
+    CHECK(SalUnpackDefaultCopy(f259.c_str(), buf, MAX_PATH) && strcmp(buf, f259.c_str()) == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(f260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(f297.c_str(), buf, MAX_PATH) && noCut(buf, f297) && buf[0] == 0);
+    CHECK(SalUnpackDefaultCopy("", buf, 1) && buf[0] == 0);
+    CHECK(!SalUnpackDefaultCopy("a", buf, 1) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(NULL, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(!SalUnpackDefaultCopy("a", NULL, MAX_PATH));
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy("a", buf, 0) && strcmp(buf, "old") == 0);
+    // CJK: 259 bytes whole; 355 bytes (the measured row) and 260 bytes empty - never a letter split
+    std::string c259 = cjkFolder(259), c260 = cjkFolder(260), c355 = cjkFolder(355);
+    CHECK(c259.size() == 259 && c260.size() == 260 && c355.size() == 355);
+    CHECK(SalUnpackDefaultCopy(c259.c_str(), buf, MAX_PATH) && strcmp(buf, c259.c_str()) == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(c260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(c355.c_str(), buf, MAX_PATH) && buf[0] == 0);
+    // the measured defect: the old copy (lstrcpyn at MAX_PATH) kept a 259-byte prefix - another folder
+    char old[MAX_PATH];
+    lstrcpynA(old, f297.c_str(), MAX_PATH);
+    CHECK(strlen(old) == 259 && !noCut(old, f297));
+    // a plug-in's mask: whole, or refused (the caller offers "*.*" then)
+    std::string m260 = std::string(255, 'm') + ";*.kp";
+    CHECK(SalUnpackDefaultCopy("*.txt;*.doc", buf, MAX_PATH) && strcmp(buf, "*.txt;*.doc") == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackDefaultCopy(m260.c_str(), buf, MAX_PATH) && buf[0] == 0);
+
+    // SalUnpackDefaultAddSubdir: '\' added unless the buffer ends with one or is empty
+    strcpy(buf, "C:\\t");
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, "arc.zip", 3) && strcmp(buf, "C:\\t\\arc") == 0);
+    strcpy(buf, "C:\\");
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, "arc.zip", 3) && strcmp(buf, "C:\\arc") == 0);
+    buf[0] = 0; // the other panel is not a disk, or its path was left out: the name alone (relative)
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, "arc.zip", 3) && strcmp(buf, "arc") == 0);
+    strcpy(buf, "C:\\t"); // nothing to append (an archive named only by its extension)
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, ".zip", 0) && strcmp(buf, "C:\\t") == 0);
+    // exactly 259 bytes fit, 260 do not (folder 250 + '\' + 8 / 9 bytes)
+    std::string f250 = folder(250), name9 = "123456789.zip";
+    strcpy(buf, f250.c_str());
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, name9.c_str(), 8) && strlen(buf) == 259);
+    strcpy(buf, f250.c_str());
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, name9.c_str(), 9) && strcmp(buf, "123456789") == 0);
+    // the measured row: a 245-byte folder + 20 letters (266 bytes) - the folder left out, the name
+    // alone (a subfolder next to the archive), never the bare folder
+    std::string f245 = folder(245), s20 = std::string(20, 's') + ".zip";
+    strcpy(buf, f245.c_str());
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s20.c_str(), 20) && strcmp(buf, std::string(20, 's').c_str()) == 0);
+    // a name of 259 bytes fits alone, not after a folder
+    std::string s259 = std::string(259, 'n') + ".zip";
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s259.c_str(), 259) && strlen(buf) == 259 && buf[0] == 'n');
+    // a name alone that does not fit: stays empty
+    std::string s300 = std::string(300, 's') + ".zip";
+    buf[0] = 0;
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s300.c_str(), 300) && buf[0] == 0);
+    // a CJK name appended whole (byte count, never inside a letter)
+    std::string cjkName = "\xE4\xB8\x80\xE4\xB8\x81.zip";
+    strcpy(buf, "C:\\t");
+    CHECK(SalUnpackDefaultAddSubdir(buf, MAX_PATH, cjkName.c_str(), 6) && strcmp(buf, "C:\\t\\\xE4\xB8\x80\xE4\xB8\x81") == 0);
+    // NULL / size 0: refused, the buffer unchanged
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, NULL, 3) && strcmp(buf, "C:\\t") == 0);
+    CHECK(!SalUnpackDefaultAddSubdir(NULL, MAX_PATH, "a", 1));
+    CHECK(!SalUnpackDefaultAddSubdir(buf, 0, "a", 1) && strcmp(buf, "C:\\t") == 0);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -18865,6 +18957,7 @@ int main(int argc, char** argv)
     TestPaxNameUsable308();
     TestTarLink309();
     TestCpioLink310();
+    TestUnpackDefault315();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
