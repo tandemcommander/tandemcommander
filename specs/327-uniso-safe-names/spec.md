@@ -54,6 +54,13 @@ Linux names, and a copy of it whose primary volume identifier is `v\..\..\w`) ->
   joins the target path with the listed name passed through the same rule once more (a no-op for a
   name the listing already cleaned; it guards a name that reaches extraction another way) (autonomous
   run: rule - CLAUDE.md "Archive item names are cleaned at listing and again at extraction", 087)
+- Q (review 1): An ISO 9660 image made without version numbers (mkisofs `-N`, xorriso
+  `omit_version`) stores `README.` - the separator of an empty extension; the rule would list it as
+  `README_`. What is the listed name? → A: `README` - before the rule runs, the version suffix and
+  one separator dot of an ISO 9660 / Joliet file identifier are removed (`NAME.;1` and `NAME.` ->
+  `NAME`, as `NAME.;1` always was); only a further trailing dot is a character of the name and becomes
+  `_` (`TRAILAAAAA..;1` -> `TRAILAAAAA_`) (autonomous run: conservative - an ordinary image keeps its
+  names; ISO 9660 7.5.1 defines the dot as the separator)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -119,7 +126,8 @@ written outside it.
 - **FR-003**: The volume label folders of a hybrid image (`ISO (<label>)`, `UDF (<label>)`,
   `HFS (<label>)`) MUST be made safe as one name.
 - **FR-004**: A name MUST never be cut and never dropped by the rule; a name already safe MUST stay
-  byte for byte as it was.
+  byte for byte as it was. The separator dot of an ISO 9660 / Joliet file identifier with an empty
+  extension (`README.`, `README.;1`) is not part of the name: the file is listed as `README`.
 - **FR-005**: The rule MUST be a pure function in a header under `src/common/` with unit checks
   (stop-rules §2.5); feature 326's Rock Ridge rule keeps its exact behaviour.
 - **FR-006**: Extraction (F5, unpack whole archive) MUST use the listed (safe) names, as it does for

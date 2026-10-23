@@ -18,7 +18,11 @@
     JOLIET (IMAPI2 ISO 9660 + Joliet, patched), UDF (IMAPI2 UDF, patched), XBOX (built by img327.py),
     HFS (xorriso ISO 9660 + Rock Ridge + HFS+ hybrid with the Linux names; the folder 'HFS (...)' is
     extracted), VOL (the same hybrid, its primary volume identifier patched to 'v\..\..\w': the folder
-    'ISO (v_.._.._w)' must hold the set). PLAIN, HFS and VOL are NOT DRIVEN without WSL Ubuntu.
+    'ISO (v_.._.._w)' must hold the set), NOVER (review 1: xorriso -compliance omit_version, plain ISO
+    9660 identifiers 'README.', 'MAKEFILE.', 'A.TXT' - PASS = 'README', 'MAKEFILE', 'A.TXT', the
+    separator of an empty extension never becomes '_'). A trailing dot of an ISO 9660 / Joliet file
+    identifier loses one separator dot first ('TRAILAAAAA..;1' -> 'TRAILAAAAA_').
+    PLAIN, HFS, VOL and NOVER are NOT DRIVEN without WSL Ubuntu.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 #>
@@ -165,6 +169,9 @@ try {
         Make-Imapi $src "$s\$case.raw.iso" $c[1]
         if (-not (RunPy @('patch', "$s\$case.raw.iso", "$s\$case.iso", $c[2]))) { Row $case 'RUN' 'NOT DRIVEN' 'a placeholder was not found in the IMAPI2 image'; continue }
         $want = @{}; foreach ($k in $uni.Keys) { $v = $uni[$k]; if ($v -ne 'INNER' -and $v -ne 'TOP') { $v = $c[3] + $v }; $want[$k] = $v }
+        # review 1: a Joliet file identifier loses its version and one separator dot first ('jtrailaaaaa..'
+        # -> 'jtrailaaaaa.'), then the trailing dot becomes '_'; UDF names have no version suffix
+        if ($case -eq 'JOLIET') { $want.Remove('jtrailaaaaa__'); $want['jtrailaaaaa_'] = 'JTDOT' }
         Extract-Set $case "$s\$case.iso" @(0x24, 0x28) 'set' $want
     }
 
@@ -183,9 +190,13 @@ try {
     }
     else {
         if (RunPy @('patch', "$s\plain0.iso", "$s\plain.iso", 'plain')) {
-            Extract-Set 'PLAIN' "$s\plain.iso" @(0x24, 0x28) 'SET' @{ '.._.._ESC1.T' = 'PESC'; '12_30AAA.TXT' = 'PCOLON'; '_CON.TXTAAAAA' = 'PDEV'; 'TRAILAAAAA__' = 'PTDOT'; '1_2FFFFF.TXT' = 'PSLASH'; '.._.._D\INNER.TXT' = 'INNER'; 'TOP.TXT' = 'TOP' }
+            Extract-Set 'PLAIN' "$s\plain.iso" @(0x24, 0x28) 'SET' @{ '.._.._ESC1.T' = 'PESC'; '12_30AAA.TXT' = 'PCOLON'; '_CON.TXTAAAAA' = 'PDEV'; 'TRAILAAAAA_' = 'PTDOT'; '1_2FFFFF.TXT' = 'PSLASH'; '.._.._D\INNER.TXT' = 'INNER'; 'TOP.TXT' = 'TOP' }
         }
         else { Row 'PLAIN' 'RUN' 'NOT DRIVEN' 'a placeholder was not found in plain0.iso' }
+        # review 1: an image without version numbers - the separator of an empty extension is not a name
+        # character ('README.' -> 'README', never 'README_')
+        if ([IO.File]::Exists("$s\nover.iso")) { Extract-Set 'NOVER' "$s\nover.iso" @(0x24, 0x28) 'SET' @{ 'README' = 'R'; 'MAKEFILE' = 'M'; 'A.TXT' = 'A' } }
+        else { Row 'NOVER' 'RUN' 'NOT DRIVEN' 'no nover.iso' }
         $hfs = @{ '.._.._hesc.txt' = 'HESC'; '12_30h.txt' = 'HCOLON'; '_con.txt' = 'HDEV'; 'htrail_' = 'HTDOT'; '.._.._hd\inner.txt' = 'INNER'; 'top.txt' = 'TOP' }
         Extract-Set 'HFS' "$s\hfs.iso" @(0x24, 0x28) 'HFS (TC327)\set' $hfs
         if (RunPy @('vol', "$s\hfs.iso", "$s\vol.iso")) {

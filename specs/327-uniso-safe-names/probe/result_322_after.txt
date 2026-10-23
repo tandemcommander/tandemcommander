@@ -1,6 +1,6 @@
-iso322_probe (feature 322) 327-after
+iso322_probe (feature 322) 327-after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 19:48; registry key existed True
+Date    : 2026-10-23 20:10; registry key existed True
 
 J-ASCII    RUN    PASS        extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 J-ASCII    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

@@ -20108,6 +20108,41 @@ static void TestArcItemName327()
     // feature 326's Rock Ridge form keeps its refusal when the prefix does not fit
     char rr[8] = "con.txt";
     CHECK(!SalSuspCleanRockRidgeName(rr, sizeof(rr)) && strcmp(rr, "con.txt") == 0);
+
+    // review 1: an ISO 9660 file identifier's version suffix and the separator of an empty extension
+    // ("MAKEFILE." of an image without version numbers was listed as "MAKEFILE_")
+    struct
+    {
+        const char* in;
+        const char* out;
+    } ids[] = {
+        {"TOP.TXT;1", "TOP.TXT"},
+        {"README.;1", "README"},
+        {"README;1", "README"},
+        {"README.", "README"},
+        {"A.TXT", "A.TXT"},
+        {"MAKEFILE", "MAKEFILE"},
+        {"TRAILAAAAA..;1", "TRAILAAAAA."},
+        {"A.B.;1", "A.B"},
+        {".", ""},
+        {"", ""},
+        {";1", ""},
+    };
+    for (const auto& c : ids)
+    {
+        char buf[32];
+        strcpy(buf, c.in);
+        SalIsoRemoveVersion(buf);
+        CHECK(strcmp(buf, c.out) == 0);
+    }
+    // the identifier first, then the safe name: no trailing '_' for the separator
+    char mk[32] = "MAKEFILE.";
+    SalIsoRemoveVersion(mk);
+    CHECK(SalArcCleanItemName(mk, sizeof(mk)) && strcmp(mk, "MAKEFILE") == 0);
+    char td[32] = "TRAILAAAAA..;1";
+    SalIsoRemoveVersion(td);
+    CHECK(SalArcCleanItemName(td, sizeof(td)) && strcmp(td, "TRAILAAAAA_") == 0);
+    SalIsoRemoveVersion(NULL); // no crash
 }
 
 int main(int argc, char** argv)

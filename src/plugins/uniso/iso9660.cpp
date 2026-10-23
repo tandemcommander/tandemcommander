@@ -312,19 +312,12 @@ BOOL CISO9660::ExtractExtFileName(char* fileName, const char* src, CDirectoryRec
     return FALSE;
 }
 
-// the ISO 9660 version suffix of a file name removed: "NAME.EXT;1" -> "NAME.EXT", "NAME.;1" -> "NAME"
+// the ISO 9660 version suffix of a file name removed: "NAME.EXT;1" -> "NAME.EXT", "NAME.;1" -> "NAME";
+// feature 327 (review): also the separator of an image without version numbers ("NAME." -> "NAME") -
+// the safe-name rule would turn that dot into '_' (salsusp.h SalIsoRemoveVersion)
 static void RemoveIsoVersion(char* name)
 {
-    char* sep2 = strchr(name, ISO_SEPARATOR2);
-
-    if (sep2 != NULL)
-    {
-        *sep2 = '\0';
-
-        char* sep1 = strchr(name, ISO_SEPARATOR1);
-        if (sep1 && sep2 - sep1 == 1)
-            *sep1 = '\0';
-    }
+    SalIsoRemoveVersion(name);
 }
 
 //

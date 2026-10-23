@@ -1,6 +1,6 @@
-iso326_probe (feature 326) 327-after
+iso326_probe (feature 326) 327-after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 19:45; registry key existed True
+Date    : 2026-10-23 20:07; registry key existed True
 
 seeds: colon.iso,deep.iso,dev.iso,esc.iso,legacy.iso,oldrr.iso,plain.iso,rr.iso,rrlong.iso,semi.iso,tdot.iso; legacy.iso: root directory at 102400: SP check bytes cleared, TOP.TXT;1 first entry PX -> RR
 RR         RUN    PASS        want 'top.txt'; extracted: top.txt; content 'TOP'; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "top.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help

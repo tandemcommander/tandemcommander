@@ -22,3 +22,15 @@ or an empty name meets a 1-byte buffer - the name is then unchanged.
 `SalSuspCleanRockRidgeName` (salsusp.h, feature 326) is the same rule except at step 3: when the
 prefix does not fit it returns false and leaves the name unchanged (its caller then lists the plain
 ISO 9660 name).
+
+## `SalIsoRemoveVersion` (src/common/salsusp.h, feature 327 review 1)
+
+```cpp
+inline void SalIsoRemoveVersion(char* name);
+```
+
+An ISO 9660 (or Joliet) file identifier reduced to its name, in place, before `SalArcCleanItemName`:
+everything from the first `;` is removed (the version), then one trailing `.` (the separator of an
+empty extension, also when the image omits version numbers): `NAME.EXT;1` -> `NAME.EXT`,
+`NAME.;1` / `NAME;1` / `NAME.` -> `NAME`, `A..;1` -> `A.`. Not used for Rock Ridge names or folder
+identifiers. NULL is ignored.

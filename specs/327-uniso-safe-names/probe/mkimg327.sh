@@ -37,4 +37,13 @@ printf 'HTDOT' > "$out/srchfs/set/htrail."
 printf 'INNER' > "$out/srchfs/set/"'..\..\hd'"/inner.txt"
 printf 'TOP' > "$out/srchfs/set/top.txt"
 $XO -outdev "$out/hfs.iso" -volid TC327 -joliet off -hfsplus on -map "$out/srchfs" / >/dev/null 2>&1
+# review 1: plain ISO 9660 without version numbers (as mkisofs -N): identifiers 'README.', 'MAKEFILE.'
+# (the separator of an empty extension), 'A.TXT' - the separator must not become '_'
+rm -rf "$out/srcnover"
+mkdir -p "$out/srcnover/set"
+printf 'R' > "$out/srcnover/set/README"
+printf 'M' > "$out/srcnover/set/Makefile"
+printf 'A' > "$out/srcnover/set/a.txt"
+rm -f "$out/nover.iso"
+$XO -outdev "$out/nover.iso" -volid TC327 -compliance omit_version -rockridge off -joliet off -map "$out/srcnover" / >/dev/null 2>&1
 ls "$out"

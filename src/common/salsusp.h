@@ -104,6 +104,23 @@ inline bool SalSuspRockRidgeStart(const unsigned char* su, size_t len, bool susp
     return false;
 }
 
+// Feature 327 (review): the name of an ISO 9660 (or Joliet) file identifier, in place - the version
+// suffix and the separator of an empty extension removed: "NAME.EXT;1" -> "NAME.EXT", "NAME.;1" ->
+// "NAME", "NAME;1" -> "NAME", and "NAME." -> "NAME" (an image made with version numbers omitted,
+// mkisofs -N / xorriso omit_version: the separator stays, ISO 9660 7.5.1). Only one dot is removed.
+// Not for Rock Ridge names (a ';' or a trailing dot is part of a POSIX name) nor folder identifiers.
+inline void SalIsoRemoveVersion(char* name)
+{
+    if (name == NULL)
+        return;
+    char* semi = strchr(name, ';');
+    if (semi != NULL)
+        *semi = 0;
+    size_t len = strlen(name);
+    if (len > 0 && name[len - 1] == '.')
+        name[len - 1] = 0;
+}
+
 // One Rock Ridge name (UTF-8 or raw bytes, terminated, in a buffer of
 // 'size' bytes) made safe in place: control characters, '\', '/', ':', '<',
 // '>', '"', '|', '?', '*' become '_'; trailing dots and spaces become '_'

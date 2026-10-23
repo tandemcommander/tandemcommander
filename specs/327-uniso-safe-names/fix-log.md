@@ -92,3 +92,32 @@ ISO 9660 names are not made safe before extraction.
   Cancel without freeing its read buffer (hfs.cpp, `if (toSkip) return UNPACK_ERROR;`). Gone in the
   after run only because no HFS+ name is refused any more -> Inbox item
   `iso-plug-in-an-hfs-file-skipped-or-cancelled-at-extraction` (`measure:327`).
+
+## Review
+
+### Review 1 - the launch stopped without a report (session ended); its partial work taken
+
+- The reviewer (launched after 4b71cd98) re-ran `iso327_probe.ps1` -> 58 / 0 (`%TEMP%\rev327\result_rev.txt`),
+  built mutants of the rule (`%TEMP%\rev327\mut`: no_ctrl, no_quote, no_trailing_space, no_empty,
+  prefix_off_by_one, none) and made plain ISO 9660 images without version numbers (xorriso
+  `-compliance omit_version`, `-as mkisofs -N`: identifiers `README.`, `MAKEFILE.`, `A.TXT`), then ran
+  feature 326's probe, which was cut off when the session ended (its log `p326b.log` stops at SEMI,
+  every row so far PASS). Its registry backup `%TEMP%\tc326_backup.reg` (19:59) was left: restored at
+  the continued run (`reg delete` + `reg import` of `HKCU\Software\Tandem Commander`, re-exported,
+  SHA-256 identical 1BAE2EEF... - the same state every finished probe of the reviewer restored; a
+  first attempt deleted and imported only the `0.1` subkey, then the whole key was restored), the
+  backup file removed. Not counted as a review round (SKILL.md step 7); a fresh review follows.
+- **Finding from the partial work (regression, treated as MUST)**: on the branch build the
+  version-less image lists `MAKEFILE_` and `README_` (`%TEMP%\rev327\resultN2.txt`, row MINUSN) - the
+  separator dot of an empty extension (ISO 9660 7.5.1: `NAME.` without `;1`) was taken for a trailing
+  dot of the name. **Fixed**: `SalIsoRemoveVersion` (salsusp.h) - the version suffix and one separator
+  dot are removed before the safe-name rule (`RemoveIsoVersion` now calls it; files only, never Rock
+  Ridge names or folders); a dot beyond the separator is still `_` (`TRAILAAAAA..;1` -> `TRAILAAAAA_`,
+  Joliet `jtrailaaaaa_`; UDF / Xbox / HFS+ names have no version suffix and keep `..` -> `__`). The old
+  `RemoveIsoVersion` removed the dot only when the first dot stood right before `;` (`A.B.;1` stayed
+  `A.B.`) - now `A.B`.
+- Checks after: `.\build.cmd` BUILD SUCCEEDED; saltests `27986 checks, 0 failed` (+13); mutant
+  "separator dot kept" -> 7 failed, restored byte-identical, 0 failed; probe set NOVER added (xorriso
+  omit_version) -> `probe/result_after_review1.txt` **PASS 64, FAIL 0** (NOVER `A.TXT`, `MAKEFILE`,
+  `README`); feature 326's probe -> `probe/result_326_after.txt` **28 / 0**; 322's ->
+  `probe/result_322_after.txt` **18 / 0**; registry restored identical each run.
