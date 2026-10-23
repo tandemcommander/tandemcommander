@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an NRG session count above the image's tracks lists past the track table
 type: bug
-status: new
+status: open
 severity: 6
 area: archives
 source: measure:331
@@ -50,3 +50,4 @@ incomplete as feature 328 / 330 do), never read past the array.
 ## Log
 
 - 2026-10-24 — created (source measure:331)
+- 2026-10-24 — moved to Next position 4

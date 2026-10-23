@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: NRG audio track names are listed without cleaning or UTF-8 conversion
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:331
@@ -53,3 +53,4 @@ listing's rule decides. It is never cut.
 ## Log
 
 - 2026-10-24 — created (source review:331)
+- 2026-10-24 — moved to Next position 27
