@@ -3,7 +3,7 @@
 **Feature Branch**: `321-tar-long-component`  
 **Created**: 2026-10-23  
 **Status**: Draft  
-**Input**: Backlog item `opening-a-tar-whose-member-name-has-a-300-letter-component` - "Opening a tar whose member name has a 300-letter component crashes the program".
+**Input**: Backlog item `opening-a-tar-whose-member-name-has-a-300-letter-component` - "Opening a tar whose member name has a 300-letter component crashes the program". From backlog item opening-a-tar-whose-member-name-has-a-300-letter-component.
 
 ## Background (measured at 26c31a9d)
 
