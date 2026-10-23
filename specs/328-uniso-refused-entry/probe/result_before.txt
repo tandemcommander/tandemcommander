@@ -1,0 +1,20 @@
+iso328_probe (feature 328) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 20:53; registry key existed True
+
+seeds: gdeep.iso,jdeep.iso,ldeep.iso,xdeep.iso; ldeep.iso: root directory at 47104: SP check bytes cleared
+G-COPY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+G-COPY     RUN    FAIL        files 2: a<59x>/side.txt, top.txt; missing: zlast/z.txt; "(206)" naming deep.txt at the open: False; "Error": False; at the open: [#32770 'UnISO'] [Static id=2477] Error | [Button id=1] OK; copy: [#32770 'Copy'] [Static id=209] Copy 1 file and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+X-COPY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+X-COPY     RUN    FAIL        files 4: A<30X>/B<30X>/C<30X>/D<30X>/E<30X>/DEEP.TXT, A<30X>/SIDE.TXT, TOP.TXT, ZLAST/Z.TXT; missing: a<59x>/side.txt, top.txt, zlast/z.txt; "(206)" naming deep.txt at the open: False; "Error": False; at the open: no window; copy: [#32770 'Copy'] [Static id=209] Copy 1 file and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+L-COPY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-COPY     RUN    FAIL        files 2: a<59x>/side.txt, top.txt; missing: zlast/z.txt; "(206)" naming deep.txt at the open: False; "Error": False; at the open: [#32770 'UnISO'] [Static id=2477] Error | [Button id=1] OK; copy: [#32770 'Copy'] [Static id=209] Copy 1 file and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+J-COPY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+J-COPY     RUN    FAIL        files 2: a<59x>/side.txt, top.txt; missing: zlast/z.txt; "(206)" naming deep.txt at the open: False; "Error": False; at the open: [#32770 'UnISO'] [Static id=2477] Error | [Button id=1] OK; copy: [#32770 'Copy'] [Static id=209] Copy 1 file and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+J-UNP-DEL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+J-UNP-DEL  RUN    FAIL        files 2: a<59x>/side.txt, top.txt; missing: zlast/z.txt; image kept: False (want True); "(206)" naming deep.txt: False; windows: [#32770 'UnISO'] [Static id=2477] Error | [Button id=1] OK
+G-UNP-DEL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+G-UNP-DEL  RUN    FAIL        files 2: a<59x>/side.txt, top.txt; missing: zlast/z.txt; image kept: False (want False); "(206)" naming deep.txt: False; windows: [#32770 'UnISO'] [Static id=2477] Error | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 1BAE2EEF491ADE79D499B9513DE2C3A37608ED15FC1B306A8DC9E1473E49EEA0 / after 1BAE2EEF491ADE79D499B9513DE2C3A37608ED15FC1B306A8DC9E1473E49EEA0
+
+Rows: PASS 6, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

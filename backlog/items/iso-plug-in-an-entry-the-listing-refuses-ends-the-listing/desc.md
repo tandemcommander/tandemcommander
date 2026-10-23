@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: an entry the listing refuses ends the listing with Error, a folder lost
 type: bug
-status: open
+status: in-progress
 severity: 6
 area: archives
 source: review:326
 who: agent
 created: 2026-10-23
 updated: 2026-10-23
-verified: -
+verified: 2026-10-23 d61d0612
 effort: M
-feature: -
+feature: 328
 related: []
 depends-on: []
 reason: -
@@ -58,3 +58,5 @@ than whole ISO 9660 names is a trade-off; not decided here.
 - 2026-10-23 — created (source review:326)
 - 2026-10-23 — moved to Next position 1
 - 2026-10-23 — related item iso-plug-in-joliet-and-iso-9660-names-are-not-made-safe done in feature 327
+- 2026-10-23 — verified at d61d0612: still present at d61d0612: probe iso328 (genisoimage -R / -J, xorriso, no-SP deep trees) 0/6 - Error box, zlast and the deep tree lost, Unpack+Delete deleted the image after a partial unpack
+- 2026-10-23 — run started, feature 328
