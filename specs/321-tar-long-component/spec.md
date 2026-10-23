@@ -72,15 +72,16 @@ names are deeper than a panel listing holds but every component of which a file 
 **Why this priority**: review 2 of feature 307 measured data loss here - members silently skipped,
 the archive then deleted.
 
-**Independent Test**: probe rows with a deep GNU tree (30 files under 10 folders of 29 letters +
-`ok.txt`): whole-archive Unpack extracts all 31; with a member whose component is over 255 units,
+**Independent Test**: probe rows with a deep GNU tree (feature 308's deep-tree fixture written in GNU
+format: 30 files under 10 folders of 29 letters, folders of 90 / 255 CJK letters with files, `ok.txt`
+- 34 files): whole-archive Unpack extracts all 34; with a member whose component is over 255 units,
 the Unpack reports it, fails, and the archive is not deleted.
 
 **Acceptance Scenarios**:
 
-1. **Given** a GNU tar with 30 files whose folder part is 299 bytes and `ok.txt`, **When** the user
-   unpacks the whole archive, **Then** all 31 files are written (as 0.1.10 does).
-2. **Given** the same with "Delete archive after unpacking", **When** unpacked, **Then** all 31
+1. **Given** that GNU tar (30 files whose folder part is 299 bytes among its 34 files), **When** the
+   user unpacks the whole archive, **Then** all 34 files are written (as 0.1.10 does).
+2. **Given** the same with "Delete archive after unpacking", **When** unpacked, **Then** all 34
    files are written before the archive is deleted.
 3. **Given** a GNU tar with the 300-letter component and `ok.txt`, **When** unpacked whole with
    "Delete archive after unpacking", **Then** `ok.txt` is written, the "(206)" text with the path
@@ -173,7 +174,7 @@ the 904-byte name and `ok.txt`: the program does not crash.
 
 - **SC-001**: Opening the GNU-TOOLONG archive: 0 crashes (before: the program closed every time);
   the other member extracts.
-- **SC-002**: Whole-archive Unpack of a deep GNU tree writes every member (31 of 31); with a
+- **SC-002**: Whole-archive Unpack of a deep GNU tree writes every member (34 of 34); with a
   refused member and "Delete archive after unpacking", the archive still exists afterwards.
 - **SC-003**: The 306 and 308 probes' existing rows still pass.
 - **SC-004**: The unit checks of the name rules pass, with the 779 / 780-byte boundary covered.

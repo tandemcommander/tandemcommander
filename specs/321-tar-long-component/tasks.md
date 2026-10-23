@@ -6,13 +6,13 @@ contracts, quickstart); the first run's record in `run307/`.
 
 ## Phase 1: Setup
 
-- [ ] T001 Build the carried-over tree once (`.\build.cmd`) and confirm `BUILD SUCCEEDED`; record in specs/321-tar-long-component/fix-log.md
+- [ ] T001 Build the carried-over tree once (`.\build.cmd`) after T004 (the build folder holds `main`'s 26c31a9d build until then) and confirm `BUILD SUCCEEDED`; record in specs/321-tar-long-component/fix-log.md
 - [ ] T002 [P] Adapt the first run's probe to this feature: specs/321-tar-long-component/probe/tar321_probe.ps1 and mktar321.py (names, `%TEMP%\tc321`, backup `tc321_backup.reg`, the `-t` title)
 - [ ] T003 [P] Create the GNU-format unpack probe specs/321-tar-long-component/probe/unp321_probe.ps1 + mkunp321.py from specs/308-pax-deep-unpack/probe/unp308_probe.ps1 / mkunp308.py with `tarfile.GNU_FORMAT` (every path over 100 bytes becomes a GNU `L` long name)
 
 ## Phase 2: Foundational
 
-- [ ] T004 Probe before the change: run tar321_probe.ps1 and unp321_probe.ps1 on a build of `main` (26c31a9d) in a worktree copy, results specs/321-tar-long-component/probe/result_before.txt and probe/unp_before.txt
+- [ ] T004 Probe before the change: run tar321_probe.ps1 and unp321_probe.ps1 on the existing build of `main` (26c31a9d, made at the measurement, before T001), results specs/321-tar-long-component/probe/result_before.txt and probe/unp_before.txt
 
 ## Phase 3: User Story 1 - A tar with an over-long GNU member name opens (P1)
 
@@ -47,7 +47,7 @@ Independent test: unp321_probe rows UNP-DEEP, UNP-DEEP-DEL, UNP-TOOLONG-DEL, UNP
 
 ## Dependencies
 
-T001 -> T002/T003 -> T004 -> T005-T011 -> T012-T016. US1 and US2 share the tar change (T005/T006).
+T002/T003 -> T004 (on main's build) -> T001 (build the branch) -> T005-T011 -> T012-T016. US1 and US2 share the tar change (T005/T006).
 
 ## Parallel opportunities
 

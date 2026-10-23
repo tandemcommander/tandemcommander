@@ -40,3 +40,10 @@ conflicts in `tar.h`, `untar.cpp`, `saltests.cpp`, `CHANGELOG.md`, resolved by t
 - `CHANGELOG.md`: `main`'s side; the entry is written at closing.
 - The carried code's comments and the test renamed from feature 307 to 321 (307 never reached
   `main`).
+
+## Analyze
+
+- Run 1: no CRITICAL / HIGH. F1 MEDIUM (the before-probe needs `main`'s build, T001 rebuilt first)
+  and F2 MEDIUM (spec counted 31 files, the reused 308 deep-tree fixture holds 34) fixed in
+  `tasks.md` / `spec.md`. C1 LOW (the saltests task serves US1 and US2) accepted.
+- Run 2: no CRITICAL / HIGH / MEDIUM.
