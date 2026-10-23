@@ -515,6 +515,23 @@ BOOL CPluginInterfaceForArchiver::Init()
     return TRUE;
 }
 
+// feature 328: the entries a listing left out - the system's text for a name that is too long (206) and
+// their whole in-image paths (salisonamefit.h), once per listing, as TAR reports a refused member (321);
+// a heap text: Error() formats into 1024 bytes and would cut a path
+static void ReportListingLeftOut(const CSalListingLeftOut& leftOut)
+{
+    const char* err = SalamanderGeneral->GetErrorText(ERROR_FILENAME_EXCED_RANGE);
+    try
+    {
+        std::string text = leftOut.Text(err);
+        SalamanderGeneral->ShowMessageBox(text.c_str(), LoadStrU8(IDS_PLUGINNAME), MSGBOX_ERROR);
+    }
+    catch (...)
+    {
+        SalamanderGeneral->ShowMessageBox(err, LoadStrU8(IDS_PLUGINNAME), MSGBOX_ERROR);
+    }
+}
+
 BOOL CPluginInterfaceForArchiver::ListArchive(CSalamanderForOperationsAbstract* salamander,
                                               const char* fileName,
                                               CSalamanderDirectoryAbstract* dir,
@@ -552,6 +569,14 @@ BOOL CPluginInterfaceForArchiver::ListArchive(CSalamanderForOperationsAbstract* 
             ret = TRUE;
 
             pd->DisplayMissingCCDWarning = isoImage.DisplayMissingCCDWarning;
+            // feature 328: entries the panel listing refused were left out (the listing used to be
+            // cleared with a bare "Error") - named here, and a whole unpack of this listing fails
+            if (isoImage.ListingLeftOut.Incomplete)
+            {
+                pd->ListingLeftOut = TRUE;
+                if (isoImage.ListingLeftOut.Count > 0)
+                    ReportListingLeftOut(isoImage.ListingLeftOut);
+            }
         }
     }
 
@@ -881,6 +906,12 @@ BOOL CPluginInterfaceForArchiver::UnpackWholeArchive(CSalamanderForOperationsAbs
             salamander->CloseProgressDialog();
         }
 
+        // feature 328: the listing left entries out (ListArchive named them) - what it holds is
+        // extracted, but the unpack fails, so "Delete archive after unpacking" keeps the image (it was
+        // deleted after a partial unpack)
+        if (pluginData != NULL && ((CPluginDataInterface*)pluginData)->ListingLeftOut)
+            ret = FALSE;
+
         if (pluginData != NULL)
         {
             dir->Clear(pluginData);
@@ -1028,6 +1059,7 @@ CPluginDataInterface::CPluginDataInterface()
 {
     // initialy display the 'missing CCD file' warning
     DisplayMissingCCDWarning = TRUE;
+    ListingLeftOut = FALSE;
 }
 
 CPluginDataInterface::~CPluginDataInterface()

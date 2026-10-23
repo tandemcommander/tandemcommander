@@ -12,7 +12,12 @@
 #include "uniso.rh2"
 #include "lang\lang.rh"
 
+#include <memory> // feature 328
+
 #define SECTOR_SIZE 0x800
+
+// feature 328: one name buffer of ListDirectoryRe (the size its names always had)
+static const int NAME_BUF = 2 * MAX_PATH + 1;
 
 #define FATTR_HIDDEN 1
 #define FATTR_DIRECTORY 2
@@ -43,6 +48,10 @@ CISO9660::CISO9660(CISOImage* image, DWORD extent) : CUnISOFSAbstract(image)
     SuspSkip = 0;
     FitCheck = FALSE;
     FitRefused = FALSE;
+    FitIsoNames = FALSE;
+    FitCount = 0;
+    FitListed = 0;
+    Decide = FALSE;
     ExtentOffset = extent;
 
     BootRecordInfo = NULL;
@@ -357,12 +366,21 @@ void CISO9660::MakeListedName(char* name, int size, BOOL rockRidge, const char* 
         return;
     if (rockRidge)
     {
-        ZeroMemory(name, size);
-        lstrcpyn(name, src, min(size, (int)dr.LengthOfFileIdentifier + 1));
-        if (file)
-            RemoveIsoVersion(name);
-        EnsureU8Name(name, size);
+        MakeIsoName(name, size, src, dr, file);
+        return;
     }
+    MakeSafeName(name, size);
+}
+
+// feature 328: the ISO 9660 name of a record ('src' = its raw identifier) as it is listed - what
+// MakeListedName gives a record without a Rock Ridge name
+void CISO9660::MakeIsoName(char* name, int size, const char* src, CDirectoryRecord& dr, BOOL file)
+{
+    ZeroMemory(name, size);
+    lstrcpyn(name, src, min(size, (int)dr.LengthOfFileIdentifier + 1));
+    if (file)
+        RemoveIsoVersion(name);
+    EnsureU8Name(name, size);
     MakeSafeName(name, size);
 }
 
@@ -398,20 +416,34 @@ void CISO9660::ConvJolietName(char* dest, const char* src, int nLen)
     strcpy(dest, final);
 }
 
-BOOL CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
-                          CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
+int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
+                         CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
-    // feature 326 (review): the fit check pass adds nothing - it asks the panel listing's own rule
-    // (sallistingname.h, CSalamanderDirectory::AddFile / AddDir) whether the entry would be taken
+    // feature 326 (review): the panel listing's own rule (sallistingname.h, CSalamanderDirectory::
+    // AddFile / AddDir) - the fit check pass adds nothing, it only asks whether the entry would be
+    // taken; feature 328: and counts it - taken, and fitting (SalIsoEntryFits: the core's operations
+    // reach it from the image's root); a count walk descends into every folder the listing takes
+    size_t pathLen = path != NULL ? strlen(path) : 0;
+    size_t nameLen = strlen(fileName);
+    BOOL isDir = (dr.FileFlags & FATTR_DIRECTORY) != 0;
+    bool fits = isDir ? SalListingAcceptsDirU8(path, pathLen, nameLen)
+                      : SalListingAcceptsFileU8(path, pathLen, fileName, nameLen);
     if (FitCheck)
     {
-        size_t pathLen = path != NULL ? strlen(path) : 0;
-        size_t nameLen = strlen(fileName);
-        bool fits = (dr.FileFlags & FATTR_DIRECTORY) ? SalListingAcceptsDirU8(path, pathLen, nameLen)
-                                                     : SalListingAcceptsFileU8(path, pathLen, fileName, nameLen);
-        if (!fits)
+        if (SalIsoEntryFits(isDir != FALSE, path, pathLen, fileName, nameLen))
+            FitCount++;
+        else
             FitRefused = TRUE;
-        return fits ? TRUE : FALSE;
+        if (fits)
+            FitListed++;
+        return fits ? ADD_LISTED : ADD_LEFT_OUT;
+    }
+    // feature 328: an entry the listing refuses is left out alone and reported (ListArchive) - it
+    // cleared the whole listing and showed "Error", the walk then descended no later folder
+    if (!fits)
+    {
+        Image->ListingLeftOut.Add(path, fileName);
+        return ADD_LEFT_OUT;
     }
 
     CFileData fd;
@@ -421,7 +453,7 @@ BOOL CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr
     if (fd.Name == NULL)
     {
         Error(IDS_INSUFFICIENT_MEMORY);
-        return FALSE;
+        return ADD_FAILED;
     } // if
 
     fd.NameLen = strlen(fd.Name);
@@ -434,8 +466,9 @@ BOOL CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr
     CISOImage::CFilePos* filePos = new CISOImage::CFilePos;
     if (!filePos)
     {
+        free(fd.Name);
         Error(IDS_INSUFFICIENT_MEMORY);
-        return FALSE;
+        return ADD_FAILED;
     }
 
     filePos->Extent = (DWORD)dr.LocationOfExtent;
@@ -478,10 +511,13 @@ BOOL CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr
 
         if (dir && !dir->AddDir(path, fd, pluginData))
         {
+            // feature 328: refused although the rule took it (out of memory) - the listing is kept,
+            // only marked incomplete (a whole unpack fails)
             free(fd.Name);
             delete filePos;
-            dir->Clear(pluginData);
-            return Error(IDS_ERROR);
+            Image->ListingLeftOut.SetIncomplete();
+            Error(IDS_ERROR);
+            return ADD_LEFT_OUT;
         }
     }
     else
@@ -492,14 +528,92 @@ BOOL CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr
         fd.IsLink = SalamanderGeneral->IsFileLink(fd.Ext);
         if (dir && !dir->AddFile(path, fd, pluginData))
         {
-            free(fd.Name);
-            dir->Clear(pluginData);
+            free(fd.Name); // feature 328: as for a folder above
             delete filePos;
-            return Error(IDS_ERROR);
+            Image->ListingLeftOut.SetIncomplete();
+            Error(IDS_ERROR);
+            return ADD_LEFT_OUT;
         }
     }
 
-    return TRUE;
+    return ADD_LISTED;
+}
+
+char* CISO9660::PickDirName(char* path, CDirectoryRecord& dr, char* rrName, char* isoName, BOOL& below)
+{
+    below = Decide;
+    if (rrName == NULL)
+        return isoName; // Joliet, plain ISO 9660: the record's one name
+    if (FitCheck)
+        return FitIsoNames ? isoName : rrName; // a count walk: fixed names
+    size_t pathLen = strlen(path);
+    BOOL keepRr = TRUE;
+    if (Decide)
+    {
+        // feature 328 (salisonamefit.h): the Rock Ridge name when the whole subtree fits with Rock Ridge
+        // names (it then leaves the decision mode), when it is not longer, or when it leaves no fewer
+        // entries fitting and no fewer listed than the ISO 9660 name - counted with ISO 9660 names below
+        size_t fitRr = 0, listedRr = 0, fitIso = 0, listedIso = 0;
+        BOOL refused = FALSE;
+        CountUnder(path, dr, rrName, FALSE, &fitRr, &listedRr, &refused);
+        BOOL fits = !refused;
+        size_t rrLen = strlen(rrName), isoLen = strlen(isoName);
+        keepRr = fits || rrLen <= isoLen;
+        if (!keepRr)
+        {
+            CountUnder(path, dr, rrName, TRUE, &fitRr, &listedRr, NULL);
+            CountUnder(path, dr, isoName, TRUE, &fitIso, &listedIso, NULL);
+            keepRr = SalIsoFolderKeepsRockRidge(false, rrLen, isoLen, fitRr, fitIso, listedRr, listedIso);
+        }
+        below = !fits;
+    }
+    // the chosen Rock Ridge name refused by the listing: the ISO 9660 name when the listing takes it
+    if (keepRr && !SalListingAcceptsDirU8(path, pathLen, strlen(rrName)) &&
+        SalListingAcceptsDirU8(path, pathLen, strlen(isoName)))
+    {
+        keepRr = FALSE;
+    }
+    return keepRr ? rrName : isoName;
+}
+
+void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BOOL isoNames, size_t* fit,
+                          size_t* listed, BOOL* refused)
+{
+    size_t pathLen = strlen(path);
+    size_t nameLen = strlen(name);
+    BOOL folderFits = SalIsoEntryFits(true, path, pathLen, name, nameLen);
+    *fit = 0;
+    *listed = 0;
+    if (refused != NULL)
+        *refused = !folderFits;
+    if (!SalListingAcceptsDirU8(path, pathLen, nameLen))
+        return;
+    // a count walk of the subtree (nothing added, errors quiet); the modes of the walk it is part of kept
+    BOOL saveFitCheck = FitCheck, saveFitRefused = FitRefused, saveFitIsoNames = FitIsoNames, saveDecide = Decide;
+    size_t saveFitCount = FitCount, saveFitListed = FitListed;
+    FitCheck = TRUE;
+    FitRefused = FALSE;
+    FitIsoNames = isoNames;
+    FitCount = 0;
+    FitListed = 0;
+    Decide = FALSE;
+    // the folder part and the name are accepted (at most MAX_PATH - 5 bytes each): the walk's
+    // 4 * MAX_PATH + 2 byte buffer holds both
+    path[pathLen] = '\\';
+    memcpy(path + pathLen + 1, name, nameLen + 1);
+    CPluginDataInterfaceAbstract* noData = NULL;
+    ListDirectoryRe(path, &dr, NULL, noData);
+    path[pathLen] = '\0';
+    *fit = (folderFits ? 1 : 0) + FitCount;
+    *listed = 1 + FitListed;
+    if (refused != NULL && FitRefused)
+        *refused = TRUE;
+    FitCheck = saveFitCheck;
+    FitRefused = saveFitRefused;
+    FitIsoNames = saveFitIsoNames;
+    FitCount = saveFitCount;
+    FitListed = saveFitListed;
+    Decide = saveDecide;
 }
 
 char* CISO9660::GetBootRecordTypeStr(EBootRecordType type)
@@ -576,35 +690,42 @@ BOOL CISO9660::ListDirectory(char* path, int session,
 
     AddBootRecord(path, session, dir, pluginData);
 
-    // feature 326 (review): a volume read as Rock Ridge by its SP entry first walks its tree with
-    // the listing's rule (FitCheck). Rock Ridge names are longer than the ISO 9660 ones: a deep tree
-    // of them can pass the folder part the panel takes, the entry is refused and the listing ends
-    // with an error, a folder lost - such a volume is listed with the names it had before 326 (the
-    // RR records of genisoimage images as before, the others by their ISO 9660 names)
-    if (SuspVolume)
+    // feature 326 (review): a volume walks its tree with the listing's rule (FitCheck) first - Rock
+    // Ridge names are longer than the ISO 9660 ones, a deep tree of them can pass the folder part the
+    // panel takes. Feature 328: every non-Joliet volume (genisoimage's RR records were read again after
+    // 326 turned SP off: "Error", folders lost); when something is refused, the listing decides each
+    // Rock Ridge folder's name (Decide, salisonamefit.h) instead of listing the whole volume under its
+    // ISO 9660 names, and leaves out (and reports) what fits under no name
+    Decide = FALSE;
+    if (Ext != extJoliet)
     {
         size_t pathSize = 4 * MAX_PATH + 2; // CISOImage::ListImage's buffer: the walk appends in place
         size_t used = strlen(path);
         char* fitPath = used < pathSize ? (char*)malloc(pathSize) : NULL;
         if (fitPath == NULL)
-            SuspVolume = FALSE; // cannot check: as before 326
+            Decide = TRUE; // cannot check: decide (the same listing, more walks)
         else
         {
             memcpy(fitPath, path, used + 1);
             FitCheck = TRUE;
             FitRefused = FALSE;
+            FitIsoNames = FALSE;
+            FitCount = 0;
+            FitListed = 0;
             CPluginDataInterfaceAbstract* noData = NULL;
             ListDirectoryRe(fitPath, &Root, NULL, noData);
             FitCheck = FALSE;
             free(fitPath);
             if (FitRefused)
             {
-                TRACE_I("CISO9660::ListDirectory(): Rock Ridge names do not fit the listing, ISO 9660 names used");
-                SuspVolume = FALSE;
+                TRACE_I("CISO9660::ListDirectory(): names that do not fit the listing - the Rock Ridge folder names decided");
+                Decide = TRUE;
             }
         }
     }
-    return ListDirectoryRe(path, &Root, dir, pluginData) != ERR_TERMINATE;
+    BOOL ret = ListDirectoryRe(path, &Root, dir, pluginData) != ERR_TERMINATE;
+    Decide = FALSE;
+    return ret;
 }
 
 //
@@ -634,6 +755,17 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
         // if reading the sector with the root fails
         return (block == (DWORD)Root.LocationOfExtent - ExtentOffset) ? ERR_CONTINUE : ERR_TERMINATE;
     }
+
+    // feature 328: a record's names - the listed one and a Rock Ridge record's ISO 9660 one - on the
+    // heap (the walk recurses once per folder level, count walks inside it)
+    std::unique_ptr<char, decltype(&free)> nameBuf((char*)malloc(2 * NAME_BUF), &free);
+    if (!nameBuf)
+    {
+        delete[] data;
+        Error(IDS_INSUFFICIENT_MEMORY, FitCheck);
+        return ERR_TERMINATE;
+    }
+    char* names = nameBuf.get();
 
     int ret = ERR_OK;
     int offset = 0;
@@ -669,6 +801,10 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
 
         if (dirRecord.FileFlags & FATTR_DIRECTORY)
         {
+            // feature 328: the folder's name (the Rock Ridge or the ISO 9660 one, PickDirName), and a
+            // folder the listing refuses is left out alone - it ended this directory ("Error")
+            char* listedName = NULL;
+            BOOL below = Decide;
             if (Ext == extJoliet)
             {
                 if (dirRecord.LengthOfFileIdentifier > 1)
@@ -677,23 +813,8 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
                     ZeroMemory(&dirName, sizeof(dirName));
                     ConvJolietName(dirName, (data + offset + 33), dirRecord.LengthOfFileIdentifier);
                     MakeSafeName(dirName, sizeof(dirName)); // feature 327: listed and descended with
-                    if (AddFileDir(path, dirName, dirRecord, dir, pluginData))
-                    {
-                        int pathLen = (int)strlen(path);
-                        strcat(path, "\\");
-                        strcat(path, dirName);
-                        // descend only when everything is OK
-                        if (ret == ERR_OK)
-                        {
-                            ret = ListDirectoryRe(path, &dirRecord, dir, pluginData);
-                            // if we surface with a termination error, keep processing as much as possible
-                            if (ret == ERR_TERMINATE)
-                                ret = ERR_CONTINUE;
-                        }
-                        path[pathLen] = '\0';
-                    }
-                    else
-                        ret = ERR_TERMINATE;
+                    memcpy(names, dirName, sizeof(dirName));
+                    listedName = names;
                 } // if
             }
             else
@@ -701,39 +822,49 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
                 char firstChar = data[offset + 33];
                 if (firstChar != 0x00 && firstChar != 0x01)
                 {
-                    char extFileName[2 * MAX_PATH + 1];
-                    ZeroMemory(extFileName, sizeof(extFileName));
+                    char* extFileName = names;
+                    ZeroMemory(extFileName, NAME_BUF);
                     BOOL rockRidge = ExtractExtFileName(extFileName, (data + offset + 33), dirRecord);
                     // format boundary (interface 104): plain ISO9660 (and Rock Ridge)
                     // identifiers are raw bytes with no encoding tag -> make them UTF-8;
                     // feature 326: a Rock Ridge name then made safe; feature 327: every name
-                    MakeListedName(extFileName, sizeof(extFileName), rockRidge, (data + offset + 33), dirRecord, FALSE);
-
-                    if (AddFileDir(path, extFileName, dirRecord, dir, pluginData))
-                    {
-                        int pathLen = (int)strlen(path);
-                        strcat(path, "\\");
-                        strcat(path, extFileName);
-                        //          TRACE_I(path);
-                        // descend only when everything is OK
-                        if (ret == ERR_OK)
-                        {
-                            ret = ListDirectoryRe(path, &dirRecord, dir, pluginData);
-                            // if we surface with a termination error, keep processing as much as possible
-                            if (ret == ERR_TERMINATE)
-                                ret = ERR_CONTINUE;
-                        }
-                        path[pathLen] = '\0';
-                    }
-                    else
-                        ret = ERR_TERMINATE;
+                    MakeListedName(extFileName, NAME_BUF, rockRidge, (data + offset + 33), dirRecord, FALSE);
+                    char* isoName = names + NAME_BUF;
+                    if (rockRidge) // feature 328: its ISO 9660 name too
+                        MakeIsoName(isoName, NAME_BUF, (data + offset + 33), dirRecord, FALSE);
+                    listedName = rockRidge ? PickDirName(path, dirRecord, extFileName, isoName, below)
+                                           : extFileName;
                 } // if
             } // if
+            if (listedName != NULL)
+            {
+                int added = AddFileDir(path, listedName, dirRecord, dir, pluginData);
+                if (added == ADD_LISTED)
+                {
+                    int pathLen = (int)strlen(path);
+                    strcat(path, "\\");
+                    strcat(path, listedName);
+                    // descend only when everything is OK
+                    if (ret == ERR_OK)
+                    {
+                        BOOL decide = Decide;
+                        Decide = below;
+                        ret = ListDirectoryRe(path, &dirRecord, dir, pluginData);
+                        Decide = decide;
+                        // if we surface with a termination error, keep processing as much as possible
+                        if (ret == ERR_TERMINATE)
+                            ret = ERR_CONTINUE;
+                    }
+                    path[pathLen] = '\0';
+                }
+                else if (added == ADD_FAILED)
+                    ret = ERR_TERMINATE;
+            }
         }
         else
         {
-            char fileName[2 * MAX_PATH + 1];
-            ZeroMemory(&fileName, sizeof(fileName));
+            char* fileName = names;
+            ZeroMemory(fileName, NAME_BUF);
 
             char* src = (data + offset + 33);
             if (Ext == extJoliet)
@@ -748,9 +879,21 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
             // which ConvJolietName() already turned into UTF-8 above. Feature 326: a Rock
             // Ridge name then made safe (never Joliet: 'src' is the raw identifier then);
             // feature 327: every other name too
-            MakeListedName(fileName, sizeof(fileName), rockRidge, src, dirRecord, TRUE);
+            MakeListedName(fileName, NAME_BUF, rockRidge, src, dirRecord, TRUE);
 
-            if (!AddFileDir(path, fileName, dirRecord, dir, pluginData))
+            // feature 328: a Rock Ridge file the listing refuses goes under its ISO 9660 name when the
+            // listing takes that (a count walk lists fixed names); refused under both: left out alone
+            char* listedName = fileName;
+            if (rockRidge)
+            {
+                char* isoName = names + NAME_BUF;
+                MakeIsoName(isoName, NAME_BUF, src, dirRecord, TRUE);
+                if (FitCheck)
+                    listedName = FitIsoNames ? isoName : fileName;
+                else if (SalIsoPickFileName(path, strlen(path), fileName, isoName) == SAL_ISO_NAME_ISO9660)
+                    listedName = isoName;
+            }
+            if (AddFileDir(path, listedName, dirRecord, dir, pluginData) == ADD_FAILED)
                 ret = ERR_TERMINATE;
         } // if
 

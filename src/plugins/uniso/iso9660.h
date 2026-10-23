@@ -268,9 +268,16 @@ protected:
     BOOL SuspVolume;
     BYTE SuspSkip;
     // feature 326 (review): the fit check pass of ListDirectory (AddFileDir only asks the listing's
-    // rule) and whether it found an entry the listing refuses
+    // rule) and whether it found an entry the listing refuses. Feature 328: such a count walk also
+    // counts the entries that fit and those the listing takes (FitCount, FitListed) and may list Rock Ridge records under their
+    // ISO 9660 names (FitIsoNames); Decide = the listing picks each Rock Ridge folder's name
+    // (salisonamefit.h) because the volume's Rock Ridge names do not all fit
     BOOL FitCheck;
     BOOL FitRefused;
+    BOOL FitIsoNames;
+    size_t FitCount;  // entries that fit (SalIsoEntryFits)
+    size_t FitListed; // entries the listing takes
+    BOOL Decide;
     CDirectoryRecord Root;
     WORD LogicalBlockSize;
     DWORD ExtentOffset;
@@ -309,9 +316,26 @@ protected:
     BOOL ExtractExtFileName(char* fileName, const char* src, CDirectoryRecord& dr);
     BOOL ExtractFileName(char* fileName, const char* src, CDirectoryRecord& dr);
     void MakeListedName(char* name, int size, BOOL rockRidge, const char* src, CDirectoryRecord& dr, BOOL file);
+    void MakeIsoName(char* name, int size, const char* src, CDirectoryRecord& dr, BOOL file);
 
-    BOOL AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
-                    CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
+    // feature 328: AddFileDir results - listed, left out (refused by the listing: noted on the image,
+    // the walk goes on), failed (out of memory: the directory ends)
+    enum
+    {
+        ADD_FAILED = 0,
+        ADD_LISTED = 1,
+        ADD_LEFT_OUT = 2
+    };
+    int AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
+                   CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
+    // feature 328: the name a folder record is listed under ('rrName' NULL = it has no Rock Ridge name);
+    // 'below' = whether its subtree is listed in decision mode
+    char* PickDirName(char* path, CDirectoryRecord& dr, char* rrName, char* isoName, BOOL& below);
+    // feature 328: for folder 'dr' named 'name' under 'path' - the folder itself and its subtree, Rock
+    // Ridge or ISO 9660 names below - the entries that fit (SalIsoEntryFits) and the entries the listing
+    // takes; 'refused' (may be NULL) = an entry does not fit
+    void CountUnder(char* path, CDirectoryRecord& dr, const char* name, BOOL isoNames, size_t* fit,
+                    size_t* listed, BOOL* refused);
 
     BOOL ReadBootRecord(BYTE* data, BOOL quiet);
 

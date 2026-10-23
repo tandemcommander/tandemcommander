@@ -137,6 +137,8 @@ public:
     virtual BOOL WINAPI GetLastWriteTime(const CFileData* file, BOOL isDir, SYSTEMTIME* time) { return FALSE; }
 
     BOOL DisplayMissingCCDWarning;
+    // feature 328: the listing behind this data left entries out (UnpackWholeArchive then fails)
+    BOOL ListingLeftOut;
 };
 
 extern HINSTANCE DLLInstance; // handle to the SPL - language-independent resources

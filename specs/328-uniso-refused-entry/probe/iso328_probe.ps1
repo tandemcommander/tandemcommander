@@ -59,7 +59,7 @@ if (-not $Lib) { $Lib = Join-Path $Here '..\..\098-long-path-overruns\probe\fix_
 $Root = $TempRoot + '\tc328'
 $StartDir = $Root + '\start'
 $Seg = 'x' * 59
-$A = 'a' + $Seg; $B = 'b' + $Seg; $C = 'c' + $Seg
+$SegA = 'a' + $Seg; $SegB = 'b' + $Seg; $SegC = 'c' + $Seg # (not $a / $b / $c: PowerShell names ignore case, rows use $b and $c)
 
 function WslPath([string]$p) { return ('/mnt/' + $p.Substring(0, 1).ToLower() + $p.Substring(2).Replace('\', '/')) }
 function Le32($b, [long]$o) { return [long]$b[$o] -bor ([long]$b[$o + 1] -shl 8) -bor ([long]$b[$o + 2] -shl 16) -bor ([long]$b[$o + 3] -shl 24) }
@@ -84,16 +84,17 @@ function Set-Field([IntPtr]$Dlg, [int]$CtlId, [string]$Text) {
 # the expected result of a whole copy: @(ok, facts). $Left = deep.txt must be missing (left out)
 function Check-All([string]$Tgt, [switch]$Left) {
     $files = @(Tgt-Files $Tgt)
-    $want = [ordered]@{ ($A + '/side.txt') = 'SIDE'; 'top.txt' = 'TOP'; 'zlast/z.txt' = 'Z' }
+    $want = [ordered]@{ ($SegA + '/side.txt') = 'SIDE'; 'top.txt' = 'TOP'; 'zlast/z.txt' = 'Z' }
     $missing = @($want.Keys | Where-Object { $files -cnotcontains $_ })
     $bad = @($want.Keys | Where-Object { $files -ccontains $_ -and (Content $Tgt $_) -cne $want[$_] })
     $deep = @($files | Where-Object { $_ -like '*/deep.txt' })
     $ok = ($missing.Count -eq 0 -and $bad.Count -eq 0)
     if ($Left) { $ok = $ok -and $deep.Count -eq 0 -and $files.Count -eq 3 }
     else {
-        $ok = $ok -and $files.Count -eq 4 -and $deep.Count -eq 1 -and $deep[0].StartsWith($A + '/' + $B + '/' + $C + '/') -and (Content $Tgt $deep[0]) -ceq 'DEEP'
+        $ok = $ok -and $files.Count -eq 4 -and $deep.Count -eq 1 -and $deep[0].StartsWith($SegA + '/' + $SegB + '/' + $SegC + '/') -and (Content $Tgt $deep[0]) -ceq 'DEEP'
     }
     $f = ('files {0}: {1}' -f $files.Count, ((@($files | ForEach-Object { Esc (Short $_) })) -join ', '))
+    if ($deep.Count -eq 1) { $f += ("; deep.txt content '{0}'" -f (Content $Tgt $deep[0])) }
     if ($missing.Count) { $f += ('; missing: ' + ((@($missing | ForEach-Object { Esc (Short $_) })) -join ', ')) }
     if ($bad.Count) { $f += ('; wrong content: ' + ((@($bad | ForEach-Object { Esc (Short $_) })) -join ', ')) }
     return @($ok, $f)
@@ -128,7 +129,7 @@ function Copy-Row([string]$Case, [string]$Iso, [switch]$Left) {
         $errBox = ($openMsgs -cmatch '\] Error( \||$)')
         if ($Left) { $ok = $ok -and $has206 -and -not $errBox }
         else { $ok = $ok -and ($openMsgs -eq 'no window') }
-        Row $Case 'RUN' (V $ok) ('{0}; "(206)" naming deep.txt at the open: {1}; "Error": {2}; at the open: {3}; copy: {4}' -f $c[1], $has206, $errBox, (Tail $openMsgs 400), (Tail $msgs 160))
+        Row $Case 'RUN' (V $ok) ('{0}; "(206)" naming deep.txt at the open: {1}; "Error": {2}; at the open: {3}; copy: {4}' -f $c[1], $has206, $errBox, (Tail $openMsgs 400), (Tail $msgs 700))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before } }
@@ -165,7 +166,7 @@ function Unpack-Row([string]$Case, [string]$Iso, [switch]$Left) {
         $has206 = ($msgs -match '\(206\)') -and ($msgs -match 'deep\.txt')
         $ok = $c[0] -and (-not $fatal)
         if ($Left) { $ok = $ok -and $kept -and $has206 } else { $ok = $ok -and (-not $kept) -and ($msgs -eq 'no window') }
-        Row $Case 'RUN' (V $ok) ('{0}; image kept: {1} (want {2}); "(206)" naming deep.txt: {3}; windows: {4}' -f $c[1], $kept, [bool]$Left, $has206, (Tail $msgs 400))
+        Row $Case 'RUN' (V $ok) ('{0}; files ok: {1}; image kept: {2} (want {3}); "(206)" naming deep.txt: {4}; fatal: {5}; windows: {6}' -f $c[1], $c[0], $kept, [bool]$Left, $has206, (Tail ([string]$fatal) 200), (Tail $msgs 400))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $fatal $before } }

@@ -6,6 +6,8 @@
 #include "file.h"
 #include "hfs.h"
 
+#include "../../common/salisonamefit.h" // feature 328: entries the panel listing left out
+
 class CUnISOFSAbstract;
 
 #define UNPACK_ERROR 0
@@ -99,6 +101,10 @@ public:
 
     // GUI
     BOOL DisplayMissingCCDWarning;
+
+    // feature 328: the entries the panel listing refused while ListImage built it (a file system leaves
+    // such an entry out and goes on; ListArchive reports them, UnpackWholeArchive then fails)
+    CSalListingLeftOut ListingLeftOut;
 
 protected:
     enum ESectorType
