@@ -7,6 +7,8 @@
 #include "../../common/salsusp.h"        // feature 326: Rock Ridge recognised by the root's SP entry too
 #include "../../common/sallistingname.h" // feature 326: the listing's rule for the fit check
 
+#include <set> // feature 328: the directories a walk met
+
 // ****************************************************************************
 //
 // CISO9660
@@ -278,6 +280,9 @@ protected:
     size_t FitCount;  // entries that fit (SalIsoEntryFits)
     size_t FitListed; // entries the listing takes
     BOOL Decide;
+    // feature 328 (review): the directories the current walk met (each is walked once - a crafted image
+    // can point a folder back to its ancestor); NULL outside ListDirectory
+    std::set<DWORD>* Visited;
     CDirectoryRecord Root;
     WORD LogicalBlockSize;
     DWORD ExtentOffset;

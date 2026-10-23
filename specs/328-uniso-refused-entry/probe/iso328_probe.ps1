@@ -29,6 +29,13 @@
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK.
       J-UNP-DEL  PASS = the three listed files, a "(206)" box, the image KEPT
       G-UNP-DEL  PASS = all four files, nothing asked, the image deleted (nothing was left out)
+    Loop rows (review 1, partial work of a stopped reviewer): copies of gdeep.iso (LOOP-RR: the primary
+    volume's root folders AXXXXXXX, ZLAST) and of jloop.iso (LOOP-J: genisoimage -J of the folders a, b;
+    the Joliet root's) whose root folder records point back to the root - a directory cycle with two
+    branches per level. The left panel opens the image.
+      LOOP-RR, LOOP-J  PASS = the main window answers WM_NULL within 5 s, 15 s after the start, and the
+                 panel shows the image - before review 1's fix: busy for 150 s and more (the old
+                 "Error" at the first refused entry happened to end the walk)
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does
     not answer within 30 s (End-Row). Without WSL Ubuntu every row is NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -185,6 +192,62 @@ function Make-NoSp([string]$Src, [string]$Dst) {
     return ("root directory at {0}: SP check bytes cleared" -f $dir)
 }
 
+# review 1: a copy of $Src whose root folder records (not '.' / '..') point back to the root - of the
+# primary volume (descriptor type 1) or of Joliet (type 2); returns a description, $null when not found
+function Make-Loop([string]$Src, [string]$Dst, [int]$Type) {
+    $b = [IO.File]::ReadAllBytes($Src)
+    $root = -1; $len = 0
+    for ($sec = 16; $sec -lt 64; $sec++) {
+        $o = $sec * 2048
+        if ((Ascii $b ($o + 1) 5) -cne 'CD001' -or $b[$o] -eq 255) { break }
+        if ($b[$o] -eq $Type) { $root = Le32 $b ($o + 156 + 2); $len = Le32 $b ($o + 156 + 10) }
+    }
+    if ($root -lt 0) { return $null }
+    $p = $root * 2048; $end = $p + $len; $n = 0
+    while ($p -lt $end) {
+        $l = $b[$p]
+        if ($l -eq 0) { $p = ([math]::Floor($p / 2048) + 1) * 2048; continue }
+        if (($b[$p + 25] -band 2) -and $b[$p + 32] -ge 1 -and -not ($b[$p + 32] -eq 1 -and $b[$p + 33] -le 1)) {
+            for ($i = 0; $i -lt 4; $i++) {
+                $b[$p + 2 + $i] = [byte](($root -shr (8 * $i)) -band 0xFF); $b[$p + 9 - $i] = [byte](($root -shr (8 * $i)) -band 0xFF)
+                $b[$p + 10 + $i] = [byte](($len -shr (8 * $i)) -band 0xFF); $b[$p + 17 - $i] = [byte](($len -shr (8 * $i)) -band 0xFF)
+            }
+            $n++
+        }
+        $p += $l
+    }
+    if ($n -lt 2) { return $null }
+    [IO.File]::WriteAllBytes($Dst, $b)
+    return ("descriptor {0}: {1} root folders point to the root's extent {2}" -f $Type, $n, $root)
+}
+
+# opens $Iso in the left panel; 15 s after the start the main window must answer within 5 s
+function Loop-Row([string]$Case, [string]$Iso) {
+    if (-not (Want $Case)) { return }
+    if (-not $Iso -or -not [IO.File]::Exists($Iso)) { Row $Case 'RUN' 'NOT DRIVEN' ('no image ' + $Iso); return }
+    $d = $Root + '\' + $Case; NewDir $d
+    $img = $d + '\' + [IO.Path]::GetFileName($Iso); [IO.File]::Copy($Iso, $LP + $img)
+    $id = 0; $before = Reports
+    try {
+        $p = Start-Process -FilePath $Exe -ArgumentList @('-t', 'T328', '-l', ('"{0}"' -f $img), '-r', ('"{0}"' -f $d), '-p', '1') -PassThru
+        [void]$Started.Add($p.Id); [void]$p.Handle; $script:Procs[$p.Id] = $p; $id = $p.Id
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 40 -and (Test-Alive $id) -and (Get-Main $id) -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 100 }
+        if ((Get-Main $id) -eq [IntPtr]::Zero) { throw 'the program did not show its main window' }
+        while ($sw.Elapsed.TotalSeconds -lt 15) { Start-Sleep -Milliseconds 200 }
+        $msgs = Msgs (Serve $id 3)
+        $resp = [Drv098f]::Send((Get-Main $id), 0, 0, 0, 5000)
+        $cpu = [math]::Round((Get-Process -Id $id).TotalProcessorTime.TotalSeconds, 1)
+        $loc = '<not asked: no answer>'
+        if ($resp) { $loc = Get-Loc $id }
+        $ok = $resp -and $loc.StartsWith($img, [StringComparison]::OrdinalIgnoreCase)
+        if ($resp) { End-Row $Case $id $null $before; $id = 0 }
+        Row $Case 'RUN' (V $ok) ('answers WM_NULL within 5 s: {0}; CPU {1} s; panel {2}; windows: {3}' -f $resp, $cpu, (Tail $loc 80), (Tail $msgs 300))
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { if (Test-Alive $id) { Kill-Mine $id }; [void](Take-Reports $before) } }
+}
+
 $backup = Join-Path $env:TEMP 'tc328_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
@@ -202,7 +265,7 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath (Join-Path $Here 'mkimg328.sh')) (WslPath $s) 2>&1
     $ErrorActionPreference = $old
     if (-not [IO.File]::Exists("$s\gdeep.iso")) {
-        foreach ($c in @('G-COPY', 'X-COPY', 'L-COPY', 'J-COPY', 'J-UNP-DEL', 'G-UNP-DEL')) { Row $c 'RUN' 'NOT DRIVEN' ('no seed image: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
+        foreach ($c in @('G-COPY', 'X-COPY', 'L-COPY', 'J-COPY', 'J-UNP-DEL', 'G-UNP-DEL', 'LOOP-RR', 'LOOP-J')) { Row $c 'RUN' 'NOT DRIVEN' ('no seed image: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
     }
     else {
         $nosp = Make-NoSp "$s\gdeep.iso" "$s\ldeep.iso"
@@ -213,6 +276,11 @@ try {
         Copy-Row 'J-COPY' "$s\jdeep.iso" -Left
         Unpack-Row 'J-UNP-DEL' "$s\jdeep.iso" -Left
         Unpack-Row 'G-UNP-DEL' "$s\gdeep.iso"
+        $lr = Make-Loop "$s\gdeep.iso" "$s\loop_rr.iso" 1
+        $lj = Make-Loop "$s\jloop.iso" "$s\loop_j.iso" 2
+        Out ("loop_rr.iso: {0}; loop_j.iso: {1}" -f $lr, $lj)
+        Loop-Row 'LOOP-RR' $(if ($lr) { "$s\loop_rr.iso" } else { '' })
+        Loop-Row 'LOOP-J' $(if ($lj) { "$s\loop_j.iso" } else { '' })
     }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

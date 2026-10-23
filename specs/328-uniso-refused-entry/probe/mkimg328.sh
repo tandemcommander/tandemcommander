@@ -45,4 +45,13 @@ rm -f "$out/gdeep.iso" "$out/jdeep.iso" "$out/xdeep.iso"
 $GI -quiet -R -V TC328 -o "$out/gdeep.iso" "$src"
 $GI -quiet -J -V TC328 -o "$out/jdeep.iso" "$src"
 $XO -outdev "$out/xdeep.iso" -volid TC328 -joliet off -map "$src" / >/dev/null 2>&1
+# review 1: jloop.iso (genisoimage -J) of two one-letter folders a, b and top.txt - the probe points
+# both folders back to the root (a cycle whose path grows two bytes a level)
+rm -rf "$out/srcloop"
+mkdir -p "$out/srcloop/a" "$out/srcloop/b"
+printf 'A' > "$out/srcloop/a/fa.txt"
+printf 'B' > "$out/srcloop/b/fb.txt"
+printf 'T' > "$out/srcloop/top.txt"
+rm -f "$out/jloop.iso"
+$GI -quiet -J -V TC328 -o "$out/jloop.iso" "$out/srcloop"
 ls "$out"

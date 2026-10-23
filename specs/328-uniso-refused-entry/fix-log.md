@@ -104,3 +104,34 @@ renamed `$SegA/B/C`.)
   `iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses`.
 - The report is shown at every listing of the image (the panel lists an archive again after a change
   of its file), as the old "Error" was.
+
+## Review
+
+### Review 1 (stopped reviewer - partial work)
+
+The first review agent ended with the session before reporting (task status `stopped`). The run was
+continued: its scratch folder `%TEMP%\rev328` held its work, and `%TEMP%\tcrev328_backup.reg` -
+the registry key exported now had the same SHA-256 as that backup (4F221E76...), nothing to restore;
+the backup was removed. Its partial findings:
+
+- `result_head.txt`: our probe at HEAD 12 / 0 (confirmed).
+- **MUST (DoS)**: crafted loop images (genisoimage plain / `-R` / `-J` of folders `a`, `b`, the root's
+  folder records patched to point to the root - a cycle with two branches per level): at HEAD the
+  program stayed busy (no answer to WM_NULL in 5 s, CPU 7 s at 7 s, 152.9 s at 153 s, 296 MB for
+  Joliet); on main's code (`negexe`) "Error" in 0.6 s, responsive. Cause: on main the first refused
+  entry ("Error") turned `ret` into `ERR_CONTINUE`, which stopped every later descent - that bounded
+  the exponential walk of a cycle (and of any directory referenced twice) by accident; a left-out entry
+  no longer stops anything. Reproduced at our HEAD by the new rows LOOP-RR / LOOP-J.
+- Fix: every walk (fit check, listing, each count walk) keeps the set of directory blocks it met
+  (`CISO9660::Visited`, `std::set<DWORD>`); a directory met again is listed as an empty folder and
+  not walked. A count walk starts from a copy of its listing walk's set (the directories the listing
+  met before stay empty there too). Legitimate images never reference a directory twice ('.' / '..'
+  are skipped before).
+- Probe: rows LOOP-RR (gdeep.iso, PVD root folders AXXXXXXX, ZLAST) and LOOP-J (new seed `jloop.iso`,
+  genisoimage -J of folders `a`, `b` - the first LOOP-J on jdeep.iso's 60-letter names did not fail
+  without the fix: the depth bound ends that cycle after four levels; recorded as a negative control
+  that did not fail, re-thought). After: `probe/result_after_review1.txt` **16 / 0**, LOOP rows CPU 0.6 s.
+  Negative control (the visited check disabled): `probe/result_negctl_loop.txt` LOOP-RR and LOOP-J FAIL
+  (no answer, CPU 21.5 s at 15 s). Regressions again: 326 28 / 0, 326 twins 8 / 0, 327 77 / 0, 322 18 / 0;
+  saltests 28,026 / 0; encoding guard 0.
+- A fresh review is launched with this partial work in its prompt.

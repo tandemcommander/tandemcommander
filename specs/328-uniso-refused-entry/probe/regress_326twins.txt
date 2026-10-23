@@ -1,6 +1,6 @@
-twins326_probe (feature 326, from 252's arc252_probe) regress-328
+twins326_probe (feature 326, from 252's arc252_probe) regress-328-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 21:25; registry key existed True; ACP 1250
+Date    : 2026-10-23 21:56; registry key existed True; ACP 1250
 
 ISO-CONTROL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 ISO-CONTROL RUN    PASS        panel at: ...sers\pavel\AppData\Local\Temp\tc326tw\ISO-CONTROL\t.iso\Docs

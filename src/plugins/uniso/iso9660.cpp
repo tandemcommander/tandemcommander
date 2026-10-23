@@ -52,6 +52,7 @@ CISO9660::CISO9660(CISOImage* image, DWORD extent) : CUnISOFSAbstract(image)
     FitCount = 0;
     FitListed = 0;
     Decide = FALSE;
+    Visited = NULL;
     ExtentOffset = extent;
 
     BootRecordInfo = NULL;
@@ -597,6 +598,20 @@ void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BO
     FitCount = 0;
     FitListed = 0;
     Decide = FALSE;
+    // the directories the walk it is part of met already stay empty here too (a copy: the count walk
+    // marks only its own)
+    std::set<DWORD>* saveVisited = Visited;
+    std::set<DWORD> subVisited;
+    try
+    {
+        if (saveVisited != NULL)
+            subVisited = *saveVisited;
+    }
+    catch (...)
+    {
+        // out of memory: an empty set - each directory still walked once in this count walk
+    }
+    Visited = &subVisited;
     // the folder part and the name are accepted (at most MAX_PATH - 5 bytes each): the walk's
     // 4 * MAX_PATH + 2 byte buffer holds both
     path[pathLen] = '\\';
@@ -604,6 +619,7 @@ void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BO
     CPluginDataInterfaceAbstract* noData = NULL;
     ListDirectoryRe(path, &dr, NULL, noData);
     path[pathLen] = '\0';
+    Visited = saveVisited;
     *fit = (folderFits ? 1 : 0) + FitCount;
     *listed = 1 + FitListed;
     if (refused != NULL && FitRefused)
@@ -712,8 +728,11 @@ BOOL CISO9660::ListDirectory(char* path, int session,
             FitIsoNames = FALSE;
             FitCount = 0;
             FitListed = 0;
+            std::set<DWORD> fitVisited;
+            Visited = &fitVisited;
             CPluginDataInterfaceAbstract* noData = NULL;
             ListDirectoryRe(fitPath, &Root, NULL, noData);
+            Visited = NULL;
             FitCheck = FALSE;
             free(fitPath);
             if (FitRefused)
@@ -723,7 +742,10 @@ BOOL CISO9660::ListDirectory(char* path, int session,
             }
         }
     }
+    std::set<DWORD> visited; // feature 328 (review): each directory walked once
+    Visited = &visited;
     BOOL ret = ListDirectoryRe(path, &Root, dir, pluginData) != ERR_TERMINATE;
+    Visited = NULL;
     Decide = FALSE;
     return ret;
 }
@@ -740,6 +762,24 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
 
     if (block == 0 || size == 0)
         return ERR_TERMINATE;
+
+    // feature 328 (review): a directory is walked once per walk - in a crafted image whose folders
+    // point back to an ancestor (or to one directory twice) the walk never ended: the old "Error" at
+    // the first refused entry stopped every later descent, a left-out entry no longer does. A
+    // directory met again is listed as an empty folder
+    if (Visited != NULL)
+    {
+        try
+        {
+            if (!Visited->insert(block).second)
+                return ERR_OK;
+        }
+        catch (...)
+        {
+            Error(IDS_INSUFFICIENT_MEMORY, FitCheck);
+            return ERR_TERMINATE;
+        }
+    }
 
     char* data = new char[size];
     if (data == NULL)

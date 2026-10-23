@@ -1,0 +1,11 @@
+iso328_probe (feature 328) negctl-no-visited-set
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 21:47; registry key existed True
+
+seeds: gdeep.iso,jdeep.iso,jloop.iso,ldeep.iso,xdeep.iso; ldeep.iso: root directory at 47104: SP check bytes cleared
+loop_rr.iso: descriptor 1: 2 root folders point to the root's extent 23; loop_j.iso: descriptor 2: 2 root folders point to the root's extent 31
+LOOP-RR    RUN    FAIL        answers WM_NULL within 5 s: False; CPU 21,6 s; panel <not asked: no answer>; windows: no window
+LOOP-J     RUN    FAIL        answers WM_NULL within 5 s: False; CPU 21,5 s; panel <not asked: no answer>; windows: no window
+Registry: restored; identical=True; SHA-256 before 4F221E76594DD9F25F9725F90B1075E459FFD134260483E49BE795C780FF51E7 / after 4F221E76594DD9F25F9725F90B1075E459FFD134260483E49BE795C780FF51E7
+
+Rows: PASS 0, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
