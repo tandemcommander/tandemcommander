@@ -1,8 +1,8 @@
 ---
 title: ISO plug-in: Unpack with Delete archive deletes an image whose folder could not be read
 type: bug
-status: new
-severity: 6
+status: open
+severity: 7
 area: archives
 source: review:328
 who: agent
@@ -50,3 +50,5 @@ later folders should still be descended after a read error is a separate questio
 ## Log
 
 - 2026-10-23 — created (source review:328)
+- 2026-10-23 — auto-triage: severity 6 -> 7: data loss in a narrow scenario - files never extracted are lost when Delete archive after unpacking deletes a damaged image
+- 2026-10-23 — moved to Next position 2

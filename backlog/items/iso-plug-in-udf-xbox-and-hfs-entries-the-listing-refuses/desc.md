@@ -1,8 +1,8 @@
 ---
 title: ISO plug-in: UDF, Xbox and HFS+ entries the listing refuses end their folder with Error
 type: bug
-status: new
-severity: 6
+status: open
+severity: 7
 area: archives
 source: measure:328
 who: agent
@@ -51,3 +51,5 @@ deleted.
 
 - 2026-10-23 — created (source measure:328)
 - 2026-10-23 — related item iso-plug-in-an-entry-the-listing-refuses-ends-the-listing done in feature 328
+- 2026-10-23 — auto-triage: severity 6 -> 7: data loss in a narrow scenario - Unpack with Delete archive after unpacking deletes the image after a partial unpack
+- 2026-10-23 — moved to Next position 1
