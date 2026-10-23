@@ -8,7 +8,7 @@ source: measure:316
 who: agent
 created: 2026-10-23
 updated: 2026-10-23
-verified: -
+verified: 2026-10-23 d526127f
 effort: S
 feature: -
 related: []
@@ -55,3 +55,4 @@ PASS.
 
 - 2026-10-23 — created (source measure:316)
 - 2026-10-23 — moved to Next position 2
+- 2026-10-23 — verified at d526127f: reproduced at d526127f: hidden-desktop pack probe, 5 leading-space rows packed into the trimmed name, an existing report.zip got Add
