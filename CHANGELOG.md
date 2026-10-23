@@ -11,10 +11,15 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Pack hid the archive in a hidden part of a file when its name held a colon - no archive could be found** (feature 319).
+  - **Before:** an archive name typed in the Pack dialog (Alt+F5) with a colon in it ("report:zip", "rep:x.zip") created an empty file "report" (or "rep") and wrote the archive into a hidden part of it (an NTFS "alternate data stream"), which Explorer and the panel do not show. With a file "report" already there, the archive was attached to it in the same hidden way; adding to such a hidden archive failed with "Archive was not changed." yet changed it and left a temporary file behind.
+  - **Now:** a name with a colon in its last part is refused with "The path specified is invalid." and the dialog opens again; nothing is created or changed, also when the file or the hidden part already exists, and also with "Use the other panel for packing". A drive letter ("C:\archives\report.zip", "C:report.zip") and the full-width colon "：" work as before.
+  - **Limitation:** the message does not say that the colon is the problem. A colon in a folder part of the name ("sub:x\a.zip") is left to the packer, which refuses it (nothing is created).
+
 - **Pack created an archive whose name ended in a dot or a space - a file other programs could not open or delete** (feature 318).
   - **Before:** an archive name typed in the Pack dialog (Alt+F5) that ended in a dot or a space ("report.", "report.zip ") was created exactly so; Explorer and most programs could not open, rename or delete such a file. A name like a Windows device ("CON.zip", "con", "NUL .zip", "COM1.zip") was created too.
   - **Now:** such a name is refused with "The path specified is invalid." and the dialog opens again; nothing is written. An archive that already exists under such a name can still be added to or overwritten. Names with dots or spaces inside or at the start ("report.v1.zip", " report.zip") and names that only begin like a device ("CONSOLE.zip", "COM10.zip") work as before.
-  - **Limitation:** the message does not say which part of the name is the problem. A colon in the name still puts the archive into a hidden part of a file (recorded for later).
+  - **Limitation:** the message does not say which part of the name is the problem. A colon in the name still put the archive into a hidden part of a file - fixed by feature 319 above.
 
 - **Pack dropped a leading space of the archive name - the items went into a differently named archive** (feature 317).
   - **Before:** packing (Alt+F5) a file or folder whose name starts with a space (" report") offered the archive " report.zip", but OK packed into "report.zip" - another archive; when "report.zip" already existed, the "add or overwrite?" question was about it, and Add or Overwrite changed it. A typed archive name starting with a space lost the space the same way.

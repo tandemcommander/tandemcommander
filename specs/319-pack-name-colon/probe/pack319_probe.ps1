@@ -27,7 +27,19 @@
                        archive: refused too (a ':' is never a file name), the stream unchanged
       colon-abs        '<src>\abs:x.zip'   (an absolute name - the same rule)
       colon-slash      'plain/rep:x.zip'   (a '/' separates like '\')
-      colon-dir        'sub:x\a.zip'       (a ':' in a folder part - measured, not this rule's)
+      colon-dir        'sub:x\a.zip'       (a ':' in a folder part - measured, not this rule's: the
+                       ZIP plug-in refuses it, nothing created)
+      Rows of the review of 319 (run first; refused unless named a control):
+      colon-trail-bs   'report:zip\'       (the full name loses the trailing '\')
+      colon-utf8       'zpr<a acute>va:zip' (a non-ASCII name)
+      ctl-fullwidth    'report<U+FF1A>zip' (the full-width colon is a name character: packed as
+                       'report<U+FF1A>zip.zip')
+      other-colon-abs  '<tgt>\abs:x.zip'   with "Use the other panel for packing" on
+      other-colon-rel  'rep:x.zip'         the same
+      colon-space      ' :zip'
+      colon-data       'report.zip::$DATA' (before 319: an empty 'report.zip')
+      colon-dot        'report.:zip'
+      colon-drive-rel  '<drive>:rep:x.zip' (drive-relative with a ':' in the name)
       Packed (controls):
       ctl-plain        item 0: 'plain.zip'
       ctl-drive-abs    '<src>\abs.zip'     (the drive's ':' at the second character)
@@ -239,7 +251,7 @@ function Zip-Seed([string]$Zip) {
 # $Seed: an archive (rel to src, made through \\?\ with seed.txt) that exists before - when it is $Arc,
 #   the row expects it changed (Add) and holding seed.txt too, not new. $PlainFile: a file (rel to src)
 #   that exists before and must stay unchanged.
-function Pack-Row([string]$Case, $Type, $Arc, [string]$AskRx, [string]$Seed = '', [string]$PlainFile = '') {
+function Pack-Row([string]$Case, $Type, $Arc, [string]$AskRx, [string]$Seed = '', [string]$PlainFile = '', [int]$Another = 0) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     $src = $d + '\src'
@@ -249,11 +261,11 @@ function Pack-Row([string]$Case, $Type, $Arc, [string]$AskRx, [string]$Seed = ''
     if ($PlainFile) { WriteFile ($src + '\' + $PlainFile) 'P' }
     if ($Seed) { Zip-Seed ($src + '\' + $Seed) }
     if ($null -ne $Type) {
-        $Type = $Type.Replace('<src>', $src).Replace('<drive>', $src.Substring(0, 1))
+        $Type = $Type.Replace('<src>', $src).Replace('<tgt>', $L).Replace('<drive>', $src.Substring(0, 1))
         # a rooted name must lie inside the fixture; a relative or drive-relative one resolves in src
-        if (($Type -match '^[A-Za-z]:[\\/]' -or $Type.StartsWith('\') -or $Type.StartsWith('/')) -and -not $Type.StartsWith($src + '\')) { throw "typed path is not inside the fixture: $Type" }
+        if (($Type -match '^[A-Za-z]:[\\/]' -or $Type.StartsWith('\') -or $Type.StartsWith('/')) -and -not $Type.StartsWith($d + '\')) { throw "typed path is not inside the fixture: $Type" }
     }
-    & reg.exe add $PackKey /v 'Use Another Panel' /t REG_DWORD /d 0 /f | Out-Null
+    & reg.exe add $PackKey /v 'Use Another Panel' /t REG_DWORD /d $Another /f | Out-Null
     & reg.exe add $CnfKey /v 'Add To Archive' /t REG_DWORD /d 1 /f | Out-Null
     $snap0 = Snap $d
     $id = 0; $fatal = $null; $before = Reports
@@ -323,6 +335,15 @@ try {
     Out ("Fixture {0}" -f $Root)
     Out ''
     $inv = 'path specified is invalid'
+    Pack-Row 'colon-trail-bs' 'report:zip\' $null $inv
+    Pack-Row 'colon-utf8' ('zpr' + [char]0xE1 + 'va:zip') $null $inv
+    Pack-Row 'ctl-fullwidth' ('report' + [char]0xFF1A + 'zip') ('report' + [char]0xFF1A + 'zip.zip') $null
+    Pack-Row 'other-colon-abs' '<tgt>\abs:x.zip' $null $inv -Another 1
+    Pack-Row 'other-colon-rel' 'rep:x.zip' $null $inv -Another 1
+    Pack-Row 'colon-space' ' :zip' $null $inv
+    Pack-Row 'colon-data' 'report.zip::$DATA' $null $inv
+    Pack-Row 'colon-dot' 'report.:zip' $null $inv
+    Pack-Row 'colon-drive-rel' '<drive>:rep:x.zip' $null $inv
     Pack-Row 'colon-ext' 'report:zip' $null $inv
     Pack-Row 'colon-mid' 'rep:x.zip' $null $inv
     Pack-Row 'colon-exist' 'report:zip' $null $inv -PlainFile 'report'

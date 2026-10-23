@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Pack writes the archive into a hidden data stream when its name holds a colon](items/pack-writes-the-archive-into-a-hidden-data-stream-when-its/desc.md) | bug | 4 | archives | 319 |
 
 ## Next
 
@@ -253,6 +252,7 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ZIP says the archive was not changed after a failed replace, yet it changed and a temp file stays](items/zip-says-the-archive-was-not-changed-after-a-failed-replace/desc.md) | bug | 5 | archives | measure:319 | 2026-10-23 |
 
 ## Parked
 

@@ -1,8 +1,26 @@
-pack319_probe (feature 319) after
+pack319_probe (feature 319) after-review
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 05:01; ACP 1250; registry key existed True; OS Microsoft Windows NT 10.0.26300.0
+Date    : 2026-10-23 05:22; ACP 1250; registry key existed True; OS Microsoft Windows NT 10.0.26300.0
 Fixture C:\Users\pavel\AppData\Local\Temp\tc319_pack
 
+colon-trail-bs RUN    PASS        OK on 'report:zip\'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+colon-trail-bs END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-utf8 RUN    PASS        OK on 'zpr va:zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+colon-utf8 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-fullwidth RUN    PASS        OK on 'report:zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc319_pack\ctl-fullwidth\src\report\uFF1Azip.zip |  &Volume Size: |; new: 'src\report:zip.zip'; changed: none; entries: 'plain/f.txt', 'plain/'; 
+ctl-fullwidth END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+other-colon-abs RUN    PASS        OK on '...(76)<sp>ther-colon-abs\tgt\L\abs:x.zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+other-colon-abs END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+other-colon-rel RUN    PASS        OK on 'rep:x.zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+other-colon-rel END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-space RUN    PASS        OK on '<sp>:zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+colon-space END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-data RUN    PASS        OK on 'report.zip::$DATA'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+colon-data END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-dot  RUN    PASS        OK on 'report.:zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+colon-dot  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+colon-drive-rel RUN    PASS        OK on 'C:rep:x.zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+colon-drive-rel END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 colon-ext  RUN    PASS        OK on 'report:zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
 colon-ext  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 colon-mid  RUN    PASS        OK on 'rep:x.zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
@@ -29,4 +47,4 @@ ctl-empty  RUN    PASS        OK on ''; dialog stayed: False; asked: [#32770 'Pa
 ctl-empty  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
 
-Rows: PASS 24, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 42, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

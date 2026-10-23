@@ -98,3 +98,31 @@ code; colon-stream's "nothing changed" covers the effect).
 Not driven: external archivers and 7-Zip (the check runs before any packer - read); typing with a
 real keyboard (WM_SETTEXT - the dialog reads the same text); "Use the other panel for packing" on (an
 absolute name - colon-abs drives the same branch). No person step is owed.
+
+## Review
+
+One independent refute-first review (general-purpose agent, branch HEAD 17053544): **no MUST, no
+SHOULD**, four NOTEs.
+
+- Re-ran: build, `saltests: 27540 checks, 0 failed`, encoding guard 0; a copy of the probe with 9
+  extra rows: 42 PASS / 0 FAIL, registry identical. Negative control of its own **at the call site**
+  (only `SalPackNameHasStreamColon(fileBuf) ||` removed from `src/fileswn7.cpp`, rebuilt): colon-ext
+  created `report` + the stream again, colon-stream "Add" + the ZIP error + a changed stream + a stray
+  `Sal309.tmp`, the other-panel row created `tgt\L\abs` + stream, `report.zip::$DATA` an empty
+  `report.zip`; restored by hash, time stamp set, rebuilt, subset 6/6.
+- Callers: `SalPackNameHasStreamColon` only in `CFilesWindow::Pack` and saltests; the check precedes
+  the "packed into itself" check, the question and every packer; `\\?\` / `\\.\` names are refused by
+  `SalGetFullName` before. Copy / move / drag & drop into an archive open an existing archive only.
+- NOTE 1 (closing steps): CHANGELOG, FEATURE-HISTORY, closing report - written at closing.
+- NOTE 2 (fixed): the spec's edge cases (other panel, UTF-8 name, full-width colon, trailing `\`)
+  had only saltests evidence. The reviewer's 9 rows were adopted into `probe/pack319_probe.ps1` (row
+  names without the `rv-` prefix; `-Another` sets "Use the other panel for packing", `<tgt>` the right
+  panel's folder; a rooted typed path must lie inside the row's fixture). Re-run
+  (`probe/result_after.txt`, overwritten): **42 PASS / 0 FAIL**, registry restored and identical.
+  `ctl-fullwidth` packs `report<U+FF1A>zip.zip` with the folder's entries.
+- NOTE 3: `report.zip::$DATA` is refused now (before: an empty `report.zip`) - covered by the item's
+  rule, row colon-data.
+- NOTE 4 -> Inbox item (measure:319): the ZIP plug-in's "Archive was not changed." after a failed
+  replace while the archive (a stream here) had changed and a `Sal*.tmp` was left - no longer
+  reachable through Pack; other routes not measured.
+- A second review was not run (no MUST).

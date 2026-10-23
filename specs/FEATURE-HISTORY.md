@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4299,3 +4299,23 @@ a few early ones are out of sequence).
   (control of the review rows on the first fix: 4 FAIL); 317's probe 28 / 0; saltests 27,508 / 0
   (negative control: the device part disabled -> 18 failed); one refute-first review (no MUST; SHOULD
   existing archives and NOTE `/` fixed).
+- 319-pack-name-colon: an archive name typed in the Pack dialog (Alt+F5) with a colon in it
+  (`report:zip`, `rep:x.zip`, also absolute) created an empty file `report` / `rep` and wrote the
+  archive into its NTFS alternate data stream (`report:zip.zip`) - invisible to Explorer and the
+  panel; with an existing `report` the stream was attached to it, and Add into an existing stream
+  archive failed ("Archive was not changed.") yet changed the stream and left a `Sal*.tmp`. Now a
+  last part holding `:` is refused - `SalPackNameHasStreamColon` in `src/common/salpackname.h` (a
+  drive prefix `X:` skipped, the last part after `\` or `/`), checked with 318's rule after
+  `SalGetFullName` through `IDS_PATHISINVALID`, the dialog again - **unconditionally** (not gated by
+  `FileExists` like 318's: a stream is never a file the panel shows). Traps: 318's probe snapshot
+  (`Directory.GetFiles`) cannot see a stream - 319's lists streams (`FindFirstStreamW`) and hashes
+  them through `CreateFileW`; a Bash heredoc collapsed `'\\'` in the new rule (build failed, fixed
+  with the editor); `Copy-Item` restoring the negative-control header kept its old time stamp, so
+  MSBuild did not recompile (that probe run became the probe's negative control). Limits: a colon in
+  a folder part (`sub:x\a.zip`) is left to the packer, which refuses it; the ZIP plug-in's false
+  "Archive was not changed." is Inbox `zip-says-the-archive-was-not-changed-after-a-failed-replace`.
+  From backlog item `pack-writes-the-archive-into-a-hidden-data-stream-when-its`. Probe
+  `pack319_probe.ps1` 6 FAIL / 18 -> 42 / 0 (with the review's 9 rows; negative-control binary 6 FAIL);
+  318's probe 52 / 0; saltests 27,540 / 0 (negative control: the rule off -> 18 failed); one
+  refute-first review (no MUST, no SHOULD; its call-site negative control failed 4 of 5 rows; its rows
+  adopted).
