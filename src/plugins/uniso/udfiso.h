@@ -22,9 +22,14 @@ protected:
     CISO9660* ISO;
     CUDF* UDF;
     CHFS* HFS;
+    // feature 330: the parts the image's descriptors declare (DetectTrackFS); one that does not open
+    // is missing from the listing
+    BOOL HasISO;
+    BOOL HasUDF;
+    BOOL PartMissing;
 
 public:
-    CUDFISO(CISOImage* image, DWORD extent);
+    CUDFISO(CISOImage* image, DWORD extent, BOOL hasISO, BOOL hasUDF);
     virtual ~CUDFISO();
     // methods
 

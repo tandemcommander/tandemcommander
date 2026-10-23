@@ -26,6 +26,10 @@ the folder walks never set it. This feature sets it:
   mapped or not a directory) and, in `CUDF::ScanDir`, a folder whose file entry `MapICB` cannot read
   (it was listed empty without a word, the walk went on with `ERR_OK`). Review 1 (stopped reviewer)
   measured the last three; the first plan marked only the "Error reading directory structure" sites.
+- **Hybrids** (`CUDFISO`, review 2): `CISOImage::OpenTrack` passes which parts the track's type
+  declares (ISO 9660, UDF); `CUDFISO::Open` remembers when a declared part did not open
+  (`PartMissing`) and `CUDFISO::ListDirectory` marks the listing. HFS+ stays quiet (Inbox
+  `iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is`).
 
 No new UI string, no plug-in interface change, no message added or removed.
 

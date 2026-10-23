@@ -118,7 +118,9 @@ way: every file extracted, no box, the image deleted.
 - **FR-002**: A UDF or Xbox listing whose walk failed anywhere (a directory that cannot be read, an
   invalid tag, a file entry that cannot be read, out of memory) MUST be marked incomplete; so MUST a
   UDF listing whose root cannot be found or read (its File Set Descriptor, its root ICB) and one
-  where a folder's file entry cannot be read (the folder listed empty).
+  where a folder's file entry cannot be read (the folder listed empty); and a hybrid whose declared
+  ISO 9660 or UDF part does not open at all (review 2: its volume descriptors cannot be read - the
+  part is dropped from the listing). An HFS+ part keeps its quiet handling (Inbox).
 - **FR-003**: A whole-image unpack of a listing marked incomplete MUST extract the listed entries and
   fail, so "Delete archive after unpacking" keeps the image (feature 328's existing behaviour of the
   mark).

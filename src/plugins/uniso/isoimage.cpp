@@ -1253,9 +1253,17 @@ BOOL CISOImage::OpenTrack(int track, BOOL quiet)
         case fsUDF_ISO9660_APFS:
         case fsISO9660_APFS:
         case fsUDF_APFS:
+        {
+            ETrackFSType t = Tracks[track]->FSType;
             SetTrackParams(track);
-            fileSystem = new CUDFISO(this, ExtentOffset);
+            // feature 330: the parts the descriptors declare - one that does not open marks the listing
+            BOOL hasISO = t == fsUDF_ISO9660 || t == fsUDF_ISO9660_HFS || t == fsISO9660_HFS ||
+                          t == fsUDF_ISO9660_APFS || t == fsISO9660_APFS;
+            BOOL hasUDF = t == fsUDF_ISO9660 || t == fsUDF_ISO9660_HFS || t == fsUDF_HFS ||
+                          t == fsUDF_ISO9660_APFS || t == fsUDF_APFS;
+            fileSystem = new CUDFISO(this, ExtentOffset, hasISO, hasUDF);
             break;
+        }
 
         case fsAPFS:
             Error(IDS_UNSUPPORTED_APFS, quiet);

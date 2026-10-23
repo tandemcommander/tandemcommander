@@ -18,13 +18,19 @@
                                               an invalid tag ("Invalid UDF Tag ID.")
   python -I img330.py udfroot <ud.iso> <out>  UDF: the file set descriptor's root ICB points past the
                                               end ("Bad root ICB") - nothing of the UDF part is listed
+  python -I img330.py udfavdp <ud.iso> <out>  UDF: the anchor's main volume descriptor sequence points
+                                              past the end - the UDF part does not open ("Cannot read
+                                              sector"), the hybrid lists its ISO 9660 part only
+  python -I img330.py isoroot <rd.iso> <out>  ISO 9660: the primary volume's root directory points past
+                                              the end - nothing is listed
   python -I img330.py xbox <out>              an XDVDFS (Xbox) image of a/side.txt, top.txt,
                                               zlast/z.txt (a before zlast)
   python -I img330.py xboxext <out>           the same, folder a's start sector past the end
 
 Each prints what it wrote and exits 3 without writing when the layout is not the expected one.
 The xbox writer follows specs/329-uniso-other-readers-refused/probe/img329.py; isozero, udficb,
-udftag and udfroot follow the images of 330's first (stopped) reviewer.
+udftag and udfroot follow the images of 330's first (stopped) reviewer, udfavdp and isoroot those
+of its second.
 """
 
 import struct
@@ -100,6 +106,27 @@ def cmd_isorec(src, dst):
     struct.pack_into("<I", b, o + 2, good + 1)  # the big-endian copy keeps the true extent
     open(dst, "wb").write(b)
     print("isorec: SIDE.TXT's record at %d in folder A (extent %d) -> LE %d, BE %d" % (o, alba, good + 1, good))
+    return 0
+
+
+def cmd_isoroot(src, dst):
+    b = bytearray(open(src, "rb").read())
+    root, _ = iso_root(b)
+    set_both32(b, 16 * SECTOR + 156 + 2, FAR)
+    open(dst, "wb").write(b)
+    print("isoroot: the primary volume's root directory %d -> %#x" % (root, FAR))
+    return 0
+
+
+def cmd_udfavdp(src, dst):
+    b = bytearray(open(src, "rb").read())
+    if udf_tag(b, 256) != 2:
+        refuse("no anchor volume descriptor pointer at sector 256")
+    o = 256 * SECTOR + 20
+    old = le32(b, o)
+    struct.pack_into("<I", b, o, FAR)
+    open(dst, "wb").write(b)
+    print("udfavdp: the anchor's main volume descriptor sequence %d -> %#x" % (old, FAR))
     return 0
 
 
@@ -324,6 +351,10 @@ def main(argv):
         return cmd_isorec(argv[1], argv[2])
     if len(argv) == 3 and argv[0] == "isozero":
         return cmd_isozero(argv[1], argv[2])
+    if len(argv) == 3 and argv[0] == "isoroot":
+        return cmd_isoroot(argv[1], argv[2])
+    if len(argv) == 3 and argv[0] == "udfavdp":
+        return cmd_udfavdp(argv[1], argv[2])
     if len(argv) == 3 and argv[0] == "udfext":
         return cmd_udfext(argv[1], argv[2])
     if len(argv) == 3 and argv[0] in ("udficb", "udftag", "udfroot"):

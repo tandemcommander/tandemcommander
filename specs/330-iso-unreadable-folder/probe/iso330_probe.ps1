@@ -22,6 +22,9 @@
       udh.iso / udh_root.iso  ISO 9660 + UDF with side.txt hidden from the ISO 9660 part (it is only in
                   the UDF part); udh_root's file set descriptor points the root past the end ("Bad
                   root ICB") - nothing of the UDF part is listed
+      (review 2) udh_avdp.iso  udh.iso whose UDF anchor points the volume descriptors past the end -
+                  the UDF part does not open ("Cannot read sector"); rd_root.iso  ISO 9660: the root
+                  directory past the end (the box, nothing listed)
     Unpack rows: the left panel shows <row>\src, Home, End focuses the image, Alt+F9 (851), the target
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK.
       RD-EXT, RD-REC, UD-EXT, XD-EXT  PASS = the "Error reading directory structure" box, exactly the
@@ -30,6 +33,8 @@
       RD-ZERO, UD-ICB (no window), UD-TAG ("Invalid UDF Tag ID"), UDH-ROOT ("Bad root ICB")  PASS =
                  that box (or none), exactly the listed files, the image KEPT - before review 1 of 330
                  (RD-ZERO: before 330): the image deleted
+      RD-ROOT (the "Error reading directory structure" box, no file), UDH-AVDP ("Cannot read sector")
+                 PASS = the image KEPT - before 330 (UDH-AVDP: before review 2): the image deleted
       RD-OK, UD-OK, UDH-OK, XD-OK  (controls) PASS = every file extracted, no window, the image
                  deleted - as before 330
     Names are compared without case (genisoimage's ISO 9660 part is upper case). Every row also fails
@@ -157,13 +162,17 @@ try {
         $made += & python -I $py isoext "$s\rd.iso" "$s\rd_ext.iso" 2>&1
         $made += & python -I $py isorec "$s\rd.iso" "$s\rd_rec.iso" 2>&1
         $made += & python -I $py isozero "$s\rd.iso" "$s\rd_zero.iso" 2>&1
+        $made += & python -I $py isoroot "$s\rd.iso" "$s\rd_root.iso" 2>&1
     }
     if ([IO.File]::Exists("$s\ud.iso")) {
         $made += & python -I $py udfext "$s\ud.iso" "$s\ud_ext.iso" 2>&1
         $made += & python -I $py udficb "$s\ud.iso" "$s\ud_icb.iso" 2>&1
         $made += & python -I $py udftag "$s\ud.iso" "$s\ud_tag.iso" 2>&1
     }
-    if ([IO.File]::Exists("$s\udh.iso")) { $made += & python -I $py udfroot "$s\udh.iso" "$s\udh_root.iso" 2>&1 }
+    if ([IO.File]::Exists("$s\udh.iso")) {
+        $made += & python -I $py udfroot "$s\udh.iso" "$s\udh_root.iso" 2>&1
+        $made += & python -I $py udfavdp "$s\udh.iso" "$s\udh_avdp.iso" 2>&1
+    }
     $made += & python -I $py xbox "$s\xd.iso" 2>&1
     $made += & python -I $py xboxext "$s\xd_ext.iso" 2>&1
     $ErrorActionPreference = $old
@@ -187,12 +196,14 @@ try {
     Unpack-Row 'RD-EXT' "$s\rd_ext.iso" $top -Damaged
     Unpack-Row 'RD-REC' "$s\rd_rec.iso" $top -Damaged
     Unpack-Row 'RD-ZERO' "$s\rd_zero.iso" $top -Damaged -Box ''
+    Unpack-Row 'RD-ROOT' "$s\rd_root.iso" ([ordered]@{}) -Damaged
     Unpack-Row 'UD-OK' "$s\ud.iso" $udAll
     Unpack-Row 'UD-EXT' "$s\ud_ext.iso" $udTop -Damaged
     Unpack-Row 'UD-ICB' "$s\ud_icb.iso" $udIcb -Damaged -Box ''
     Unpack-Row 'UD-TAG' "$s\ud_tag.iso" $udTop -Damaged -Box 'Invalid UDF Tag ID'
     Unpack-Row 'UDH-OK' "$s\udh.iso" $udhAll
     Unpack-Row 'UDH-ROOT' "$s\udh_root.iso" $udhIso -Damaged -Box 'Bad root ICB'
+    Unpack-Row 'UDH-AVDP' "$s\udh_avdp.iso" $udhIso -Damaged -Box 'Cannot read sector'
     Unpack-Row 'XD-OK' "$s\xd.iso" $all
     Unpack-Row 'XD-EXT' "$s\xd_ext.iso" $top -Damaged
 }

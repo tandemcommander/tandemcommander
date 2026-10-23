@@ -251,6 +251,8 @@ Last triaged: 2026-10-23
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
 | [ISO plug-in: after a folder that cannot be read, no later folder of the image is listed](items/iso-plug-in-after-a-folder-that-cannot-be-read-no-later/desc.md) | improvement | 4 | archives | leftover:330 | 2026-10-24 |
+| [ISO plug-in: an HFS+ part of a hybrid that does not open is dropped without a mark](items/iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is/desc.md) | bug | 6 | archives | review:330 | 2026-10-24 |
+| [ISO plug-in: Unpack with Delete archive deletes a multi-session image whose session track cannot be opened](items/iso-plug-in-unpack-with-delete-archive-deletes-a-multi/desc.md) | bug | 7 | archives | review:330 | 2026-10-24 |
 
 ## Parked
 

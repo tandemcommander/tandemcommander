@@ -17,12 +17,15 @@
 // CUDFISO
 //
 
-CUDFISO::CUDFISO(CISOImage* image, DWORD extent) : CUnISOFSAbstract(image)
+CUDFISO::CUDFISO(CISOImage* image, DWORD extent, BOOL hasISO, BOOL hasUDF) : CUnISOFSAbstract(image)
 {
     ExtentOffset = extent;
     ISO = NULL;
     UDF = NULL;
     HFS = NULL;
+    HasISO = hasISO;
+    HasUDF = hasUDF;
+    PartMissing = FALSE;
 }
 
 CUDFISO::~CUDFISO()
@@ -76,6 +79,12 @@ BOOL CUDFISO::Open(BOOL quiet)
     else
         delete hfs;
 
+    // feature 330: a declared ISO 9660 or UDF part that does not open (e.g. its volume descriptors
+    // cannot be read) is dropped from the listing - the listing is incomplete then (ListDirectory),
+    // so a whole unpack fails and "Delete archive after unpacking" keeps the image (it was deleted,
+    // files only in that part lost). The HFS part keeps its quiet handling
+    PartMissing = (HasISO && ISO == NULL) || (HasUDF && UDF == NULL);
+
     return TRUE;
 }
 
@@ -87,6 +96,9 @@ BOOL CUDFISO::ListDirectory(char* path, int session, CSalamanderDirectoryAbstrac
     char partPath[2 * MAX_PATH + 1];
     ZeroMemory(&partPath, sizeof(partPath));
     int pathLen = (int)strlen(path);
+
+    if (PartMissing) // feature 330: see Open
+        Image->ListingLeftOut.SetIncomplete();
 
     if (ISO != NULL)
     {

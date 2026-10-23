@@ -112,3 +112,37 @@ affected).
 - After, `.\build.cmd` BUILD SUCCEEDED -> `probe/result_after_review1.txt`: **PASS 24, FAIL 0**.
 - Regressions again: `regress_328.txt` 20 / 0, `regress_329.txt` 14 / 0; encoding guard TOTAL 0;
   saltests 28266 / 0. Registry restored identical in every run.
+
+### Review 2 (completed) - one MUST, one SHOULD, NOTEs
+
+Re-checked the diff (return values unchanged, every failure path keeps `ret` non-OK to the top, callers
+unchanged; no names, strings or buffers touched) and ran its own rows on the HEAD build at 91f37bcf:
+UD-ICB, UDH-OK PASS; R2-RD-ROOT (ISO 9660 root past the end) PASS - closes analyze finding C1 by
+measurement.
+- **MUST 1**: a hybrid whose UDF part does not open (`udh.iso` with the UDF anchor's main volume
+  descriptor sequence past the end): "Cannot read sector #00100000." twice, the ISO 9660 part's two
+  files extracted, **image deleted**, side.txt (only in the UDF part) lost - `CUDFISO::Open` dropped the
+  part silently and `CUDFISO::ListDirectory` returned TRUE. **Fixed**: `CISOImage::OpenTrack` passes the
+  declared parts (`hasISO` / `hasUDF` from the track type) to `CUDFISO`; `Open` sets `PartMissing`
+  when a declared ISO 9660 or UDF part did not open; `ListDirectory` marks the listing. HFS+ keeps its
+  quiet open (NOTE 3).
+- SHOULD 2 (by reading; needs a multi-session container): a session track that does not open
+  (`CISOImage::ListImage`, `IDS_ERROR_OPENING_MULTISESSION`) and the single-session fallback accept the
+  listing as complete - outside this feature's unit (whole tracks, not folders / parts) -> Inbox
+  `iso-plug-in-unpack-with-delete-archive-deletes-a-multi` (bug, 7, `review:330`).
+- NOTE 3: an HFS+ part that does not open is dropped quietly, no mark -> Inbox
+  `iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is` (bug, 6, `review:330`; related to the
+  xorriso hybrid item - valid hybrids must be measured first).
+- NOTE 4: UD-ICB, RD-ZERO and an unreadable UDF file entry show no message - the image is kept and
+  nothing says what is missing; the spec's choice (FR-004, no new UI string). Accepted.
+- NOTE 5: a folder cycle is listed empty and not marked (analyze C2). Accepted.
+- NOTE 6: `%TEMP%\tc330seed` was left by this run's first seed test - removed.
+
+Probe extended (`img330.py` isoroot / udfavdp; rows RD-ROOT, UDH-AVDP):
+- before, on main's build (`%TEMP%\rev330\negtree`, ae41208d), `-Only RD-ROOT,UDH-OK,UDH-AVDP` ->
+  `probe/result_before_review2.txt`: RD-ROOT FAIL, UDH-AVDP FAIL (image deleted), UDH-OK PASS.
+- after, `.\build.cmd` BUILD SUCCEEDED -> `probe/result_after_review2.txt`: **PASS 28, FAIL 0** (14 RUN
+  rows).
+- Regressions (hybrids are touched now): `regress_322.txt` 18 / 0 (valid xorriso ISO + HFS+ hybrid,
+  row HYB), `regress_327.txt` 77 / 0, `regress_328.txt` 20 / 0, `regress_329.txt` 14 / 0; encoding guard
+  TOTAL 0; saltests 28266 / 0. Registry restored identical in every run.
