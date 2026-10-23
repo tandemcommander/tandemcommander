@@ -253,6 +253,7 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Pack writes the archive into a hidden data stream when its name holds a colon](items/pack-writes-the-archive-into-a-hidden-data-stream-when-its/desc.md) | bug | 4 | archives | measure:318 | 2026-10-23 |
 
 ## Parked
 

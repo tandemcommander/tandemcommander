@@ -18833,28 +18833,79 @@ static void TestUnpackDefault315()
     CHECK(!SalUnpackDefaultAddSubdir(buf, 0, "a", 1) && strcmp(buf, "C:\\t") == 0);
 }
 
-// feature 317: a Pack archive name whose last part is only spaces and dots is refused (salpackname.h)
-static void TestPackName317()
+// features 317, 318: a Pack archive name whose last part the file system would not keep as typed
+// (a trailing dot or space, a part of only spaces and dots, a device name) is refused (salpackname.h)
+static void TestPackName318()
 {
-    // only spaces and dots in the last part: refused
-    CHECK(SalPackNameIsOnlyDotsAndSpaces("C:\\t\\ .."));
-    CHECK(SalPackNameIsOnlyDotsAndSpaces("C:\\t\\ ."));
-    CHECK(SalPackNameIsOnlyDotsAndSpaces("C:\\t\\  ...  "));
-    CHECK(SalPackNameIsOnlyDotsAndSpaces("C:\\t\\   "));
-    CHECK(SalPackNameIsOnlyDotsAndSpaces("\\\\server\\share\\d\\ .."));
-    CHECK(SalPackNameIsOnlyDotsAndSpaces(" .."));
-    // a name with any other character - the leading space kept by 317 - is a name
-    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\ report.zip"));
-    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\   .zip"));
-    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\ ..a"));
-    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\.cvspass"));
-    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\ .\\a.zip"));            // only the last part counts
-    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\ \xE4\xB8\x80.zip")); // a CJK name (UTF-8)
-    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\t\\\t.."));              // a tab is not a space
+    // 317: only spaces and dots in the last part: refused
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\ .."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\ ."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\  ...  "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\   "));
+    CHECK(SalPackNameIsNotKeptAsTyped("\\\\server\\share\\d\\ .."));
+    CHECK(SalPackNameIsNotKeptAsTyped(" .."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\\t..")); // 318: it ends with a dot (317: a tab is not a space)
+    // 318: a trailing dot or space: refused, relative or absolute
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip.."));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\report. "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\ report ."));
+    CHECK(SalPackNameIsNotKeptAsTyped("report."));
+    CHECK(SalPackNameIsNotKeptAsTyped("\\\\server\\share\\d\\a.zip "));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\\xE4\xB8\x80."));
+    // 318: a reserved device name, any letter case, with or without an extension: refused
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\con.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\prn.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\Aux.7z"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\NUL .zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\nul  .zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\COM0.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\COM1.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\com9.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\LPT0.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\lpt9.tar.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\COM\xC2\xB9.zip")); // superscript one
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\com\xC2\xB2.zip")); // superscript two
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\LPT\xC2\xB3.zip")); // superscript three
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\CON"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\LPT\xC2\xB2"));
+    CHECK(SalPackNameIsNotKeptAsTyped("CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("\\\\server\\share\\aux.zip"));
+    // a name - the leading space kept by 317, dots inside, a device name only as a prefix - is a name
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ report.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\   .zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ ..a"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\.cvspass"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\.cfg.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\report.v1.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\ .\\a.zip"));            // only the last part counts
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\CON\\a.zip"));           // a device name in a folder part
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t.\\a.zip"));            // a trailing dot in a folder part
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ \xE4\xB8\x80.zip")); // a CJK name (UTF-8)
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CONSOLE.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\con bla.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CON_.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COM10.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COM.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\LPT.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COMX.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\COM\xC2\xB4.zip")); // not a superscript digit
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\PRN\xC2\xB9.zip")); // a superscript only after COM / LPT
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ CON.zip"));        // a leading space: not a device
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CO.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip\t")); // a trailing tab is not this rule's
     // no last part, NULL: not refused by this rule
-    CHECK(!SalPackNameIsOnlyDotsAndSpaces("C:\\"));
-    CHECK(!SalPackNameIsOnlyDotsAndSpaces(""));
-    CHECK(!SalPackNameIsOnlyDotsAndSpaces(NULL));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\"));
+    CHECK(!SalPackNameIsNotKeptAsTyped(""));
+    CHECK(!SalPackNameIsNotKeptAsTyped(NULL));
+    // the device part alone
+    CHECK(SalPackNameIsReservedDevice("NUL"));
+    CHECK(SalPackNameIsReservedDevice("nul.txt"));
+    CHECK(!SalPackNameIsReservedDevice(".NUL"));
+    CHECK(!SalPackNameIsReservedDevice(""));
+    CHECK(!SalPackNameIsReservedDevice(NULL));
 }
 
 int main(int argc, char** argv)
@@ -19007,7 +19058,7 @@ int main(int argc, char** argv)
     TestTarLink309();
     TestCpioLink310();
     TestUnpackDefault315();
-    TestPackName317();
+    TestPackName318();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -1929,9 +1929,12 @@ _PACK_AGAIN:
         // feature 317: a relative archive name keeps its leading spaces (as Unpack's target, 316) - the
         // item ' report' offers ' report.zip'; trimmed, it packed into another archive 'report.zip'.
         // A name of spaces and dots only (' ..') is refused: trimmed it meant a folder (no archive was
-        // made), kept the packer would create a file literally named ' ..'
+        // made), kept the packer would create a file literally named ' ..'. Feature 318: the same for
+        // every last part the file system would not keep as typed - a trailing dot or space
+        // ('report.', 'report.zip ') or a device name ('CON.zip'): the packers write through \\?\,
+        // so such a file was created literally and ordinary programs could not open or delete it
         BOOL nameOk = SalGetFullName(fileBuf, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus, NULL, MAX_PATH, TRUE);
-        if (nameOk && SalPackNameIsOnlyDotsAndSpaces(fileBuf))
+        if (nameOk && SalPackNameIsNotKeptAsTyped(fileBuf))
         {
             errTextID = IDS_PATHISINVALID;
             nameOk = FALSE;
