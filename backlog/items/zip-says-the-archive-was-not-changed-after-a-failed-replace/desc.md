@@ -1,7 +1,7 @@
 ---
 title: ZIP says the archive was not changed after a failed replace, yet it changed and a temp file stays
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: measure:319
@@ -60,3 +60,4 @@ without delete sharing, or read-only) shows the before / after state.
 ## Log
 
 - 2026-10-23 — created (source measure:319)
+- 2026-10-23 — moved to Next position 1
