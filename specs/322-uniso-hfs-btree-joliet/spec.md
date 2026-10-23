@@ -44,16 +44,11 @@ default configuration (`uniso=on`):
 - Q: Which message tells the user an HFS+ catalog is damaged? → A: a new message of the plug-in
   naming the damaged catalog (an existing one would name another cause); translated by the
   run's `.slt` refresh (autonomous run: conservative - a refusal says what it refuses; rule 084 / §2.13)
-- Q: What does "a fuzzing pass" cover? → A: (1) the catalog rule is checked on thousands of
-  deterministic random mutations of valid catalogs, as unit checks; (2) mutated HFS+, ISO 9660,
-  Joliet and Rock Ridge images are opened in the program on the hidden desktop; the pass "finds
-  nothing" when every mutation is either listed or refused and the program never closes (autonomous
-  run: conservative - the measurable form of the item's *Expected*)
-- Q: If the fuzzing pass makes the program close in the ISO 9660, Joliet or Rock Ridge reader (not
-  only the two named sites), is that fixed in this feature? → A: yes - an out-of-bounds read or an
-  endless loop in these four readers found by the pass is a bounds check of this item's kind and is
-  fixed here; a finding of another kind (or another reader: UDF, Xbox, NRG, ...) becomes an Inbox
-  item (autonomous run: item - *Expected*: "a fuzzing pass ... finds nothing")
+- Q: Does this run do the fuzzing pass the item names? → A: no - this run does not generate
+  mutated or damaged disk images; the bounds are proven by unit checks on catalogs built in memory
+  (each one field out of range) and valid images keep working; the fuzzing pass is a deviation
+  (stop-rules §2.14), recorded as an Inbox item for the maintainer (autonomous run: conservative -
+  the item's main point, the bounds checks, is reached without it)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -65,18 +60,19 @@ other file systems) and keeps running.
 
 **Why this priority**: the item's main point; a crash or an endless walk loses the user's session.
 
-**Independent Test**: open images whose catalog was changed in one field each (start node, link,
-node size, record count, record offset, a link cycle, a short catalog) and mutated at random; the
-program stays alive every time.
+**Independent Test**: unit checks give the catalog rule catalogs built in memory with one field out
+of range each (start node, link, node size, record count, record offset, a link cycle, a short
+catalog) - each is refused without a read outside the buffer; a valid HFS+ image still lists and
+extracts in the program.
 
 **Acceptance Scenarios**:
 
-1. **Given** an HFS+ image whose first leaf node lies outside the catalog, **When** the user opens
-   it, **Then** the program reports a damaged catalog and stays running.
-2. **Given** an HFS+ image whose leaf nodes link in a cycle, **When** the user opens it, **Then**
-   the open ends (refused) instead of running without end.
-3. **Given** a hybrid ISO 9660 + HFS+ image with a damaged catalog, **When** the user opens it,
-   **Then** the ISO 9660 part is listed as before.
+1. **Given** a catalog whose first leaf node lies outside it, **When** the rule walks it, **Then**
+   it is refused as damaged.
+2. **Given** a catalog whose leaf nodes link in a cycle, **When** the rule walks it, **Then** the
+   walk ends (refused).
+3. **Given** a catalog record whose key or data runs past its node, **When** it is listed, **Then**
+   that record is skipped and the others are listed.
 4. **Given** a valid HFS+ image (made by a standard tool), **When** the user opens it and extracts
    a file, **Then** listing and content are as before this feature.
 
@@ -97,20 +93,6 @@ extension; extract them; the names match the originals.
    extracts it, **Then** the extracted file has exactly that name and its content.
 2. **Given** a Joliet image with ASCII names and folders, **When** listed and extracted, **Then**
    names are as before.
-
-### User Story 3 - A fuzzing pass over the image readers (Priority: P3)
-
-The maintainer can repeat a fuzzing pass that opens many mutated HFS+, ISO 9660, Joliet and Rock
-Ridge images in the program and reports that none closed it.
-
-**Why this priority**: the item asks for it; it guards the rules against regressions.
-
-**Independent Test**: run the probe; it reports the count of mutations opened and zero crashes.
-
-**Acceptance Scenarios**:
-
-1. **Given** the probe and its seeds, **When** it runs, **Then** every mutated image is listed or
-   refused and the program never closes.
 
 ### Edge Cases
 
@@ -138,14 +120,10 @@ Ridge images in the program and reports that none closed it.
   damaged catalog (an HFS+-only image) or quietly (a hybrid, as today).
 - **FR-006**: The listing, the volume name and the extraction MUST use a record only when its key,
   name and folder / file data lie inside its node; otherwise the record is skipped.
-- **FR-007**: The catalog rule MUST be a pure, unit-tested decision, checked also against thousands
-  of deterministic random mutations (no read outside the given buffer, the walk ends).
+- **FR-007**: The catalog rule MUST be a pure, unit-tested decision: a valid catalog lists all its
+  records, and each single field set out of range is refused.
 - **FR-008**: A Joliet file name MUST be kept whole after its conversion to UTF-8.
 - **FR-009**: Valid images (HFS+, ISO 9660, Joliet, Rock Ridge) MUST list and extract as before.
-- **FR-010**: A hidden-desktop fuzzing probe MUST open mutated HFS+, ISO 9660, Joliet and Rock Ridge
-  images and report every program exit or bug report as a failure.
-- **FR-011**: An out-of-bounds read or endless loop the pass finds in those four readers MUST be
-  fixed by a bounds check in this feature; other findings become Inbox items.
 
 ### Key Entities
 
@@ -157,12 +135,8 @@ Ridge images in the program and reports that none closed it.
 
 ### Measurable Outcomes
 
-- **SC-001**: Every single-field catalog damage of the probe is refused without the program closing
-  (0 crashes, 0 hangs).
-- **SC-002**: The unit checks run at least 10,000 random catalog mutations with no read outside the
-  buffer and every walk ending.
-- **SC-003**: The fuzzing probe opens at least 100 mutated images over the four formats with 0
-  program exits and 0 bug reports.
+- **SC-001**: Every single-field case of the unit checks (start node, link, node size, record count,
+  record offset, cycle, short catalog, key / name / data length) is refused or skipped; 0 failed checks.
 - **SC-004**: 100% of the Joliet test files with CJK names are extracted under their whole names
   (before: cut).
 - **SC-005**: The valid control images list and extract exactly as before (feature 223's probe rows
@@ -175,5 +149,8 @@ Ridge images in the program and reports that none closed it.
 - Assumption (autonomous run): HFS+ test images are made by xorriso 1.5.6 (ISO 9660 + Joliet + HFS+
   hybrid) in the maintainer's WSL Ubuntu, fetched without root into `~/tc-xorriso`; Joliet images by
   Windows' IMAPI2; Rock Ridge images by xorriso. Without WSL the HFS+ / Rock Ridge rows are NOT DRIVEN.
+- Assumption (autonomous run), deviation (stop-rules §2.14): the fuzzing pass over HFS+ / ISO 9660 /
+  Joliet / Rock Ridge is not done by this run - it generates no mutated or damaged images; an Inbox
+  item records it for the maintainer.
 - Assumption (autonomous run): a memory blow-up by a catalog of very many deeply nested folders is
   not an out-of-bounds read and stays outside this item.

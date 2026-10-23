@@ -53,16 +53,12 @@ last bytes and `.txt` are lost.
   into `~/tc-xorriso` in the maintainer's WSL - no root): `-hfsplus on -joliet on` writes an Apple
   partition map (`ER`, block size 2048), an HFS+ volume header (measured at offset 123904) and
   ISO 9660 + Rock Ridge + Joliet. Measured: the image of a 2-file tree is 458752 bytes.
-- An HFS+-only image (reaches `CHFS` directly, errors not quiet): cut from the hybrid by the
-  mutation script (the bytes from the HFS+ partition start), or the hybrid with its ISO 9660
-  descriptors removed - decided in the implementation by measurement (fix-log).
+- An HFS+-only image (reaches `CHFS` directly): the bytes of the hybrid from its HFS+ partition
+  start (block 60 of 2048 bytes = offset 122880) - measured: zeros at 0, `H+` at 1024, the catalog
+  (node size 4096, one leaf of 8 records) and both files' data inside.
 
 ## R5. The fuzzing pass
 
-- Unit level: from built valid catalogs, N = 20000 deterministic mutations (an LCG seed; 1-8
-  random bytes overwritten, or a 16/32-bit field set to an edge value 0 / 1 / 0xFFFF / size-ish);
-  each mutation runs the walk on an exact-size heap copy and every returned record is checked to lie
-  inside the buffer; the walk must return (bounded by nodes).
-- Program level: the probe writes M mutated images per seed (HFS+ catalog bytes; ISO 9660 / Rock
-  Ridge / Joliet volume descriptors and directory extents) and opens each in the program; a row
-  fails on a program exit, a bug report or a hang (no main window answer in the time limit).
+- Decision: not done by this run (spec, Clarifications): no mutated or damaged images are
+  generated. The rule is checked by unit checks on catalogs built in memory, each one field out of
+  range; the pass is recorded as an Inbox item for the maintainer.

@@ -12,17 +12,18 @@ header-only pure rule `src/common/salhfscatalog.h` that validates every node and
 loaded buffer, ends on a cycle, and returns per record the bytes it may use; the consumers check
 key, name and folder / file data against that. Joliet file names (`iso9660.cpp`
 `ExtractExtFileName`) are copied whole after their UTF-8 conversion. `saltests` checks the rule
-with hand-built catalogs and a deterministic mutation fuzz; a hidden-desktop probe opens targeted
-and randomly mutated HFS+, ISO 9660, Joliet and Rock Ridge images.
+with catalogs built in memory (each one field out of range); a hidden-desktop probe checks that
+valid HFS+, ISO 9660, Joliet and Rock Ridge images list and extract (Joliet CJK names whole). No
+mutated or damaged images are generated; the fuzzing pass is an Inbox item.
 
 ## Technical Context
 
 **Language/Version**: C++20 (`/std:c++latest`), MSVC v143  
 **Primary Dependencies**: none new; the plug-in includes `../../common/salhfscatalog.h`  
 **Storage**: N/A  
-**Testing**: `saltests` (pure rule + fuzz); PowerShell probe on the hidden desktop
+**Testing**: `saltests` (pure rule); PowerShell probe on the hidden desktop
 (`tools/run_on_hidden_desktop.ps1`), images from IMAPI2 (Joliet) and xorriso 1.5.6 in WSL
-(ISO 9660 + Joliet + Rock Ridge + HFS+), mutated by a Python script in the probe folder  
+(ISO 9660 + Joliet + Rock Ridge + HFS+)  
 **Target Platform**: Windows 11 x64  
 **Project Type**: desktop application plug-in (`uniso.spl`)  
 **Performance Goals**: the walk stays linear in the catalog size (one bit per node for the cycle check)  
@@ -52,7 +53,7 @@ specs/322-uniso-hfs-btree-joliet/
 ├── spec.md, plan.md, research.md, data-model.md, quickstart.md
 ├── contracts/salhfscatalog.md
 ├── fix-log.md
-├── probe/   iso322_probe.ps1, mkimg322.sh (xorriso in WSL), mut322.py (mutations), result_*.txt
+├── probe/   iso322_probe.ps1, mkimg322.sh (xorriso in WSL), result_*.txt
 └── tasks.md
 ```
 
@@ -64,7 +65,7 @@ src/plugins/uniso/hfs.cpp, hfs.h    # BTree uses the rule; consumers check recor
 src/plugins/uniso/iso9660.cpp       # Joliet names copied whole
 src/plugins/uniso/uniso.rh2         # IDS_ERR_HFS_BTREE_DAMAGED 1061
 src/plugins/uniso/lang/lang.rc2     # its English text
-src/saltests/saltests.cpp           # TestHfsCatalog322 (+ fuzz)
+src/saltests/saltests.cpp           # TestHfsCatalog322
 translations/*/uniso.slt, .origin   # the refresh of the new string
 ```
 
