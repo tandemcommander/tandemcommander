@@ -188,4 +188,8 @@ the 904-byte name and `ok.txt`: the program does not crash.
   plug-in interface header changes.
 - Assumption (autonomous run): the 7-Zip row's archive is made with the installed 7-Zip; without
   it the row is NOT DRIVEN.
+- Assumption (autonomous run): a cpio / rpm member (the same TAR plug-in, no GNU long names) whose
+  top-level name the panel cannot hold is out of scope - with this feature it no longer crashes but
+  the core's refusal fails that archive's listing; the per-member refusal is the backlog item
+  `a-cpio-or-rpm-archive-with-a-member-name-the-panel-cannot` (recorded by the first run).
 - No UI strings are added: the refusal message is the system's error text and an existing title.
