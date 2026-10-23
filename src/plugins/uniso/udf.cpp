@@ -911,20 +911,35 @@ BOOL CUDF::ListDirectory(char* path, int session, CSalamanderDirectoryAbstract* 
         lbNum++;
     } while (lbNum < PD.Length);
 
+    // feature 330: the root folder cannot be found or read - nothing of this UDF volume is listed (in a
+    // UDF + ISO 9660 hybrid the other part is), so the listing is incomplete and a whole unpack fails
+    // ("Delete archive after unpacking" deleted the image)
+
     // Sanity checks.
     if (UDF_TAGID_FSD != tag.ID)
+    {
+        Image->ListingLeftOut.SetIncomplete();
         return Error(IDS_UDF_INVALID_TAG_ID);
+    }
 
     // Find root dir
     CAD fileICB;
     CICBTag icbTag;
 
-    if (!MapICB(rootICB, &icbTag, &fileICB))
+    if (!MapICB(rootICB, &icbTag, &fileICB) || icbTag.FileType != 4) // Root dir should be dir
+    {
+        Image->ListingLeftOut.SetIncomplete();
         return Error(IDS_UDF_BAD_ROOT_ICB);
-    if (icbTag.FileType != 4)
-        return Error(IDS_UDF_BAD_ROOT_ICB); // Root dir should be dir
+    }
 
-    return ScanDir(fileICB, path, dir, pluginData) != ERR_TERMINATE;
+    int walked = ScanDir(fileICB, path, dir, pluginData);
+    // feature 330: a folder that could not be read (a read error, an invalid tag, a file entry that
+    // cannot be read) ends its walk and every later descent, and its result reaches the top as
+    // ERR_CONTINUE / ERR_TERMINATE - the listing is incomplete, so a whole unpack fails and "Delete
+    // archive after unpacking" keeps the image (it was deleted)
+    if (walked != ERR_OK)
+        Image->ListingLeftOut.SetIncomplete();
+    return walked != ERR_TERMINATE;
 }
 
 int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
@@ -940,9 +955,6 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
     lbNum = LogSector(dirICB.Location, dirICB.Partition);
     if (!ReadBlockPhys(lbNum, 2, directory))
     {
-        // feature 330: the folder could not be read - the listing is incomplete (and no later folder is
-        // descended), so a whole unpack fails and "Delete archive after unpacking" keeps the image
-        Image->ListingLeftOut.SetIncomplete();
         Error(IDS_ERROR_LISTING_IMAGE, FALSE, lbNum);
         // if we are reading from the root (lbNum == 2), return ERR_CONTINUE so we can descend into an empty image
         // we try to behave consistently from the user's point of view
@@ -963,7 +975,6 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
             dirICB.Length -= SECTOR_SIZE;
             if (!ReadBlockPhys(lbNum, 2, directory))
             {
-                Image->ListingLeftOut.SetIncomplete(); // feature 330: as above
                 Error(IDS_ERROR_LISTING_IMAGE, FALSE, lbNum);
                 return ERR_TERMINATE;
             }
@@ -994,12 +1005,21 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
                     CAD fileICB;
                     CICBTag icbTag;
                     // descend when everything is OK
-                    if (MapICB(icb, &icbTag, &fileICB) && ret == ERR_OK)
+                    if (MapICB(icb, &icbTag, &fileICB))
                     {
-                        ret = ScanDir(fileICB, newPath, dir, pluginData);
-                        // if we surface with a termination error, keep processing as much as possible
-                        if (ret == ERR_TERMINATE)
-                            ret = ERR_CONTINUE;
+                        if (ret == ERR_OK)
+                        {
+                            ret = ScanDir(fileICB, newPath, dir, pluginData);
+                            // if we surface with a termination error, keep processing as much as possible
+                            if (ret == ERR_TERMINATE)
+                                ret = ERR_CONTINUE;
+                        }
+                    }
+                    else
+                    {
+                        // feature 330: the folder's file entry cannot be read - it was listed empty without
+                        // a word; its contents are missing, so a whole unpack fails
+                        Image->ListingLeftOut.SetIncomplete();
                     }
                 }
             }

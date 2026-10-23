@@ -71,3 +71,44 @@ XD-EXT FAIL: the box, the listed files extracted (top.txt; UD-EXT also the three
 
 - `iso-plug-in-after-a-folder-that-cannot-be-read-no-later` (improvement, 4, `leftover:330`): later
   folders are still not descended after a read error.
+
+## Review
+
+### Review 1 (stopped before its report; partial work used)
+
+The reviewer's agent ended with the session (no report). It left its scratch work in
+`%TEMP%\rev330` and an interrupted probe: `%TEMP%\tc330_backup.reg` and the fixture `%TEMP%\tc330`
+remained. The run restored the registry first (stop-rules 2.8): the backup's SHA-256 was the known
+4F221E76...51E7, the live key differed (D982EEE3...); `reg delete` + `reg import`, re-export identical
+(4F221E76...51E7); backup and fixture removed.
+
+Its probe outputs (`%TEMP%\rev330\out1..4.txt`):
+- `iso330_probe.ps1` re-run on the fixed build: 14 / 0 (the claim reproduced).
+- Its own rows (`rev330_probe.ps1`, images `rev330img.py`, `mkhide.sh`) on the fixed build:
+  RD-ZERO (folder A data length 0) PASS - image kept, no box; **UD-ICB** (folder a's identifier ICB
+  past the end: listed empty, no box), **UD-TAG** (folder a's directory first tag invalid: "Invalid UDF
+  Tag ID.") and **UDH-ROOT** (hybrid with side.txt only in the UDF part; the root ICB past the end: "Bad
+  root ICB. Cannot read directory structure.") FAIL - **the image deleted**, side.txt lost in UDH-ROOT.
+  Pure-UDF rows (ISO 9660 descriptor removed) did not open ("Unknown file format") - not usable.
+- Treated as MUST findings (data loss for "a folder that could not be read", inside the item's title).
+
+Fix (second approach for UDF / Xbox, research R2 revised): `CUDF::ListDirectory` and
+`CXDVDFS::ListDirectory` take ISO 9660's top-level rule (walk result != `ERR_OK` -> mark); UDF also
+marks the early returns (FSD tag not found, root ICB not mapped / not a directory - the FSD read error
+mark stays) and, in `ScanDir`, a folder whose `MapICB` fails (now `if (MapICB) { if (ret == ERR_OK)
+descend } else mark` - `MapICB` is still called first, as before). The per-site marks of the first
+version in `ScanDir` were removed (the top-level rule covers them). Side effect: a UDF *file* whose
+entry cannot be read (`ADD_FAILED` ends its directory) is marked too - part of the Inbox item
+`iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let`; its HFS+ part stays open.
+
+Probe extended with the reviewer's cases (`img330.py` isozero / udficb / udftag / udfroot,
+`mkimg330.sh` udh.iso with `-hide side.txt`): rows RD-ZERO, UD-ICB, UD-TAG, UDH-OK, UDH-ROOT; the
+damaged rows now take the expected box text (or none). Trap: the row's `$box` was the parameter
+`$Box` (PowerShell names ignore case) - the text printed "True"; renamed `$winOk` (verdicts were not
+affected).
+- Before, on main's build (ae41208d, the reviewer's `%TEMP%\rev330\negtree`) ->
+  `probe/result_before_review1.txt`: **PASS 16, FAIL 8** - all eight damaged rows FAIL (image
+  deleted), the four controls PASS.
+- After, `.\build.cmd` BUILD SUCCEEDED -> `probe/result_after_review1.txt`: **PASS 24, FAIL 0**.
+- Regressions again: `regress_328.txt` 20 / 0, `regress_329.txt` 14 / 0; encoding guard TOTAL 0;
+  saltests 28266 / 0. Registry restored identical in every run.

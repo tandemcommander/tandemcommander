@@ -18,11 +18,14 @@ the folder walks never set it. This feature sets it:
   directory met again (328's visited set) returns `ERR_OK` - not marked, as the spec says. The fit
   check and count walks (`FitCheck`) are not the listing: their results are not used for the mark
   (the real walk reads the same directories).
-- **UDF** (`CUDF::ListDirectory` / `CUDF::ScanDir`) and **Xbox** (`CXDVDFS::ScanDir`): every site that
-  shows `IDS_ERROR_LISTING_IMAGE` ("Error reading directory structure") marks the listing just before
-  the box - the File Set Descriptor read, the directory's first read and its continuation read (UDF),
-  the directory read (Xbox). Entries skipped as damaged (UDF `MapICB`, an invalid tag) are the other
-  Inbox item and stay unmarked.
+- **Xbox** (`CXDVDFS::ListDirectory`): the same top-level rule (its walk propagates failures the
+  same way: a nested `ERR_TERMINATE` becomes `ERR_CONTINUE`, an out-of-memory entry `ERR_CONTINUE`).
+- **UDF** (`CUDF::ListDirectory`): the same top-level rule (directory read errors, an invalid tag, a
+  file whose entry cannot be read - `ADD_FAILED` - all end their directory with a non-OK result), plus
+  the early returns before the walk (the File Set Descriptor not read / not found, the root ICB not
+  mapped or not a directory) and, in `CUDF::ScanDir`, a folder whose file entry `MapICB` cannot read
+  (it was listed empty without a word, the walk went on with `ERR_OK`). Review 1 (stopped reviewer)
+  measured the last three; the first plan marked only the "Error reading directory structure" sites.
 
 No new UI string, no plug-in interface change, no message added or removed.
 

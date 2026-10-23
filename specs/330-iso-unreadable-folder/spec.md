@@ -24,9 +24,12 @@ its probe row RDERR-UNP-DEL on the hidden desktop: the box above, **1 of 3 files
 
 The plug-in's UDF reader (a UDF image, the UDF part of a hybrid; also its File Set Descriptor) and
 Xbox reader show the same box after a failed directory read and do not mark the listing either - the
-same defect for "an image whose folder could not be read". Entries skipped as damaged (a UDF file or
-folder entry that cannot be mapped, HFS+ catalog records) are the separate Inbox item
-`iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let` and stay as they are.
+same defect for "an image whose folder could not be read". Review 1 (a reviewer that stopped; its
+images) measured three more UDF folders that cannot be read, each deleting the image: a folder whose
+file entry cannot be read (listed empty without a word), a directory starting with an invalid tag
+("Invalid UDF Tag ID."), and a root that cannot be found ("Bad root ICB. Cannot read directory
+structure." - nothing of the UDF part listed). HFS+ catalog records skipped as damaged stay with the
+separate Inbox item `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let`.
 
 ## Clarifications
 
@@ -35,17 +38,20 @@ folder entry that cannot be mapped, HFS+ catalog records) are the separate Inbox
 - Q: Which failures mark the listing incomplete? → A: every failure of the ISO 9660 folder walk that
   leaves something unlisted (a directory read error, a record that fails the safety checks, an empty
   directory extent, out of memory - each already ends the walk of that directory and of every later
-  folder); in the UDF and Xbox readers every place that shows "Error reading directory structure"
-  (autonomous run: item - *Expected* "a listing that met a read error is marked incomplete"; the
-  title "an image whose folder could not be read" covers the other readers' identical box)
+  folder); the same rule for the Xbox walk; for UDF the same rule plus a root that cannot be found or
+  read and a folder whose file entry cannot be read (review 1) (autonomous run: item - *Expected* "a
+  listing that met a read error is marked incomplete"; the title "an image whose folder could not be
+  read" covers the other readers)
 - Q: Should later folders still be descended after a read error (it would list `zlast\z.txt`)? → A:
   no, unchanged in this feature; recorded as a new Inbox idea (autonomous run: item - "a separate
   question"; conservative)
 - Q: Does the user see a new message? → A: no - the existing "Error reading directory structure ...
   Incomplete content of ISO image" box is the report; no second box, no new UI string (autonomous
   run: conservative - the box already says the content is incomplete)
-- Q: Entries a UDF / HFS+ reader skips as damaged? → A: unchanged - the Inbox item
-  `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let` (autonomous run: conservative - scope)
+- Q: Entries a UDF / HFS+ reader skips as damaged? → A: HFS+ unchanged - the Inbox item
+  `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let`; UDF: every such failure ends a folder's
+  walk, so the UDF rule above already marks it (a file entry that cannot be read ends its directory)
+  (autonomous run: conservative - fail closed; review 1)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -72,6 +78,9 @@ error box shown, the image kept.
    the same way, **Then** the box is shown and the image is kept.
 3. **Given** an Xbox image or the UDF part of a hybrid whose folder's directory lies past the end,
    **When** unpacked the same way, **Then** the box is shown and the image is kept.
+4. **Given** a UDF + ISO 9660 hybrid whose UDF folder entry cannot be read, whose UDF directory
+   starts with an invalid tag, or whose UDF root cannot be found, **When** unpacked the same way,
+   **Then** the image is kept (with the existing box, or none where none was shown).
 
 ---
 
@@ -106,8 +115,10 @@ way: every file extracted, no box, the image deleted.
 - **FR-001**: An ISO 9660 listing whose folder walk failed anywhere (a directory that cannot be read,
   a record failing the safety checks, an empty directory extent, out of memory) MUST be marked
   incomplete.
-- **FR-002**: A UDF or Xbox listing that met "Error reading directory structure" (a directory or the
-  UDF File Set Descriptor that cannot be read) MUST be marked incomplete.
+- **FR-002**: A UDF or Xbox listing whose walk failed anywhere (a directory that cannot be read, an
+  invalid tag, a file entry that cannot be read, out of memory) MUST be marked incomplete; so MUST a
+  UDF listing whose root cannot be found or read (its File Set Descriptor, its root ICB) and one
+  where a folder's file entry cannot be read (the folder listed empty).
 - **FR-003**: A whole-image unpack of a listing marked incomplete MUST extract the listed entries and
   fail, so "Delete archive after unpacking" keeps the image (feature 328's existing behaviour of the
   mark).
@@ -125,9 +136,10 @@ way: every file extracted, no box, the image deleted.
 
 ### Measurable Outcomes
 
-- **SC-001**: the new probe's damaged-image Unpack rows (ISO 9660 extent past the end, ISO 9660
-  record failing the checks, Xbox, UDF) go from the image deleted before the fix to the image kept
-  after it; its control rows (the undamaged images) pass before and after.
+- **SC-001**: the new probe's damaged-image Unpack rows (ISO 9660 extent past the end, record failing
+  the checks, empty extent; UDF directory past the end, unreadable folder entry, invalid tag, root
+  not found; Xbox) go from the image deleted before the fix to the image kept after it; its control
+  rows (the undamaged images) pass before and after.
 - **SC-002**: features 328 (`iso328_probe`) and 329 (`iso329_probe`) probes stay all PASS.
 - **SC-003**: saltests keep 0 failed; build and encoding guard clean.
 

@@ -16,13 +16,22 @@
                   is intact)
       xd.iso / xd_ext.iso  Xbox (XDVDFS) images of the tree written by img330.py; xd_ext's folder a
                   starts past the end
+      (review 1) rd_zero.iso  ISO 9660: folder A's record has data length 0 (no box)
+      ud_icb.iso  UDF: folder a's identifier points its file entry past the end (listed empty, no box)
+      ud_tag.iso  UDF: folder a's directory starts with an invalid tag ("Invalid UDF Tag ID.")
+      udh.iso / udh_root.iso  ISO 9660 + UDF with side.txt hidden from the ISO 9660 part (it is only in
+                  the UDF part); udh_root's file set descriptor points the root past the end ("Bad
+                  root ICB") - nothing of the UDF part is listed
     Unpack rows: the left panel shows <row>\src, Home, End focuses the image, Alt+F9 (851), the target
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK.
       RD-EXT, RD-REC, UD-EXT, XD-EXT  PASS = the "Error reading directory structure" box, exactly the
                  listed files extracted with their content (top.txt; UD-EXT also the three files of
                  "ISO (TC330)"), the image KEPT - before 330: the image deleted
-      RD-OK, UD-OK, XD-OK  (controls) PASS = every file extracted, no window, the image deleted - as
-                 before 330
+      RD-ZERO, UD-ICB (no window), UD-TAG ("Invalid UDF Tag ID"), UDH-ROOT ("Bad root ICB")  PASS =
+                 that box (or none), exactly the listed files, the image KEPT - before review 1 of 330
+                 (RD-ZERO: before 330): the image deleted
+      RD-OK, UD-OK, UDH-OK, XD-OK  (controls) PASS = every file extracted, no window, the image
+                 deleted - as before 330
     Names are compared without case (genisoimage's ISO 9660 part is upper case). Every row also fails
     on a program exit, a bug report, a fatal window, or a main window that does not answer within 30 s
     (End-Row). Without WSL Ubuntu the RD / UD rows are NOT DRIVEN.
@@ -87,8 +96,9 @@ function Check-Files([string]$Tgt, $Want) {
 }
 
 # Unpack (Alt+F9) of the whole image into tgt with "Delete archive after unpacking"; $Damaged = the
-# image has an unreadable folder (the box, the image kept), else a control (no window, deleted)
-function Unpack-Row([string]$Case, [string]$Iso, $Want, [switch]$Damaged) {
+# image has an unreadable folder (the image kept; $Box = the box's text, a regex, '' = no window), else
+# a control (no window, the image deleted)
+function Unpack-Row([string]$Case, [string]$Iso, $Want, [switch]$Damaged, [string]$Box = $ReadErr) {
     if (-not (Want $Case)) { return }
     if (-not [IO.File]::Exists($Iso)) { Row $Case 'RUN' 'NOT DRIVEN' ('no image ' + $Iso); return }
     $d = $Root + '\' + $Case; $tgt = $d + '\tgt'; NewDir ($d + '\src'); NewDir $tgt
@@ -115,10 +125,12 @@ function Unpack-Row([string]$Case, [string]$Iso, $Want, [switch]$Damaged) {
         End-Row $Case $id $fatal $before; $id = 0
         $c = Check-Files $tgt $Want
         $kept = [IO.File]::Exists($LP + $img)
-        $box = ($msgs -match [regex]::Escape($ReadErr))
-        $ok = $c[0] -and (-not $fatal)
-        if ($Damaged) { $ok = $ok -and $kept -and $box } else { $ok = $ok -and (-not $kept) -and ($msgs -eq 'no window') }
-        Row $Case 'RUN' (V $ok) ('{0}; files ok: {1}; image kept: {2} (want {3}); "{4}" box: {5}; fatal: {6}; windows: {7}' -f $c[1], $c[0], $kept, [bool]$Damaged, $ReadErr, $box, (Tail ([string]$fatal) 200), (Tail $msgs 400))
+        if (-not $Damaged) { $Box = '' }
+        # (not $box: PowerShell names ignore case - it would overwrite $Box)
+        if ($Box) { $winOk = ($msgs -match $Box) } else { $winOk = ($msgs -eq 'no window') }
+        $ok = $c[0] -and (-not $fatal) -and $winOk
+        if ($Damaged) { $ok = $ok -and $kept } else { $ok = $ok -and (-not $kept) }
+        Row $Case 'RUN' (V $ok) ('{0}; files ok: {1}; image kept: {2} (want {3}); windows as expected ({4}): {5}; fatal: {6}; windows: {7}' -f $c[1], $c[0], $kept, [bool]$Damaged, $(if ($Box) { '"' + $Box + '"' } else { 'none' }), $winOk, (Tail ([string]$fatal) 200), (Tail $msgs 400))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $fatal $before } }
@@ -144,8 +156,14 @@ try {
     if ([IO.File]::Exists("$s\rd.iso")) {
         $made += & python -I $py isoext "$s\rd.iso" "$s\rd_ext.iso" 2>&1
         $made += & python -I $py isorec "$s\rd.iso" "$s\rd_rec.iso" 2>&1
+        $made += & python -I $py isozero "$s\rd.iso" "$s\rd_zero.iso" 2>&1
     }
-    if ([IO.File]::Exists("$s\ud.iso")) { $made += & python -I $py udfext "$s\ud.iso" "$s\ud_ext.iso" 2>&1 }
+    if ([IO.File]::Exists("$s\ud.iso")) {
+        $made += & python -I $py udfext "$s\ud.iso" "$s\ud_ext.iso" 2>&1
+        $made += & python -I $py udficb "$s\ud.iso" "$s\ud_icb.iso" 2>&1
+        $made += & python -I $py udftag "$s\ud.iso" "$s\ud_tag.iso" 2>&1
+    }
+    if ([IO.File]::Exists("$s\udh.iso")) { $made += & python -I $py udfroot "$s\udh.iso" "$s\udh_root.iso" 2>&1 }
     $made += & python -I $py xbox "$s\xd.iso" 2>&1
     $made += & python -I $py xboxext "$s\xd_ext.iso" 2>&1
     $ErrorActionPreference = $old
@@ -160,11 +178,21 @@ try {
         'UDF (TC330)/a/side.txt' = 'SIDE'; 'UDF (TC330)/top.txt' = 'TOP'; 'UDF (TC330)/zlast/z.txt' = 'Z' }
     $udTop = [ordered]@{ 'ISO (TC330)/a/side.txt' = 'SIDE'; 'ISO (TC330)/top.txt' = 'TOP'; 'ISO (TC330)/zlast/z.txt' = 'Z'
         'UDF (TC330)/top.txt' = 'TOP' }
+    $udIcb = [ordered]@{ 'ISO (TC330)/a/side.txt' = 'SIDE'; 'ISO (TC330)/top.txt' = 'TOP'; 'ISO (TC330)/zlast/z.txt' = 'Z'
+        'UDF (TC330)/top.txt' = 'TOP'; 'UDF (TC330)/zlast/z.txt' = 'Z' }
+    $udhAll = [ordered]@{ 'ISO (TC330)/top.txt' = 'TOP'; 'ISO (TC330)/zlast/z.txt' = 'Z'
+        'UDF (TC330)/a/side.txt' = 'SIDE'; 'UDF (TC330)/top.txt' = 'TOP'; 'UDF (TC330)/zlast/z.txt' = 'Z' }
+    $udhIso = [ordered]@{ 'ISO (TC330)/top.txt' = 'TOP'; 'ISO (TC330)/zlast/z.txt' = 'Z' }
     Unpack-Row 'RD-OK' "$s\rd.iso" $all
     Unpack-Row 'RD-EXT' "$s\rd_ext.iso" $top -Damaged
     Unpack-Row 'RD-REC' "$s\rd_rec.iso" $top -Damaged
+    Unpack-Row 'RD-ZERO' "$s\rd_zero.iso" $top -Damaged -Box ''
     Unpack-Row 'UD-OK' "$s\ud.iso" $udAll
     Unpack-Row 'UD-EXT' "$s\ud_ext.iso" $udTop -Damaged
+    Unpack-Row 'UD-ICB' "$s\ud_icb.iso" $udIcb -Damaged -Box ''
+    Unpack-Row 'UD-TAG' "$s\ud_tag.iso" $udTop -Damaged -Box 'Invalid UDF Tag ID'
+    Unpack-Row 'UDH-OK' "$s\udh.iso" $udhAll
+    Unpack-Row 'UDH-ROOT' "$s\udh_root.iso" $udhIso -Damaged -Box 'Bad root ICB'
     Unpack-Row 'XD-OK' "$s\xd.iso" $all
     Unpack-Row 'XD-EXT' "$s\xd_ext.iso" $top -Damaged
 }

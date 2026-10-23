@@ -9,12 +9,22 @@
   python -I img330.py udfext <ud.iso> <out>   UDF part of a genisoimage -udf hybrid: folder a's file
                                               entry keeps its place, its allocation descriptor (the
                                               directory's data) points past the end of the image
+  python -I img330.py isozero <rd.iso> <out>  ISO 9660: folder A's record gets DataLength 0 (the walk
+                                              returns without a word)
+  python -I img330.py udficb <ud.iso> <out>   UDF: folder a's identifier in the root points its file
+                                              entry (ICB) past the end - the folder was listed empty
+                                              without a word
+  python -I img330.py udftag <ud.iso> <out>   UDF: the first identifier of folder a's directory gets
+                                              an invalid tag ("Invalid UDF Tag ID.")
+  python -I img330.py udfroot <ud.iso> <out>  UDF: the file set descriptor's root ICB points past the
+                                              end ("Bad root ICB") - nothing of the UDF part is listed
   python -I img330.py xbox <out>              an XDVDFS (Xbox) image of a/side.txt, top.txt,
                                               zlast/z.txt (a before zlast)
   python -I img330.py xboxext <out>           the same, folder a's start sector past the end
 
 Each prints what it wrote and exits 3 without writing when the layout is not the expected one.
-The xbox writer follows specs/329-uniso-other-readers-refused/probe/img329.py.
+The xbox writer follows specs/329-uniso-other-readers-refused/probe/img329.py; isozero, udficb,
+udftag and udfroot follow the images of 330's first (stopped) reviewer.
 """
 
 import struct
@@ -93,11 +103,99 @@ def cmd_isorec(src, dst):
     return 0
 
 
+def cmd_isozero(src, dst):
+    b = bytearray(open(src, "rb").read())
+    root, size = iso_root(b)
+    o = iso_find(b, root, size, b"A", True)
+    set_both32(b, o + 10, 0)
+    open(dst, "wb").write(b)
+    print("isozero: folder A's record at %d -> data length 0" % o)
+    return 0
+
+
 # --- UDF (ECMA-167 / OSTA UDF as genisoimage writes it) ---
 
 
 def udf_tag(b, sec):
     return le16(b, sec * SECTOR)
+
+
+def udf_layout(b):
+    """(partition start sector, offset of the file set descriptor)"""
+    if udf_tag(b, 256) != 2:
+        refuse("no anchor volume descriptor pointer at sector 256")
+    avdp = 256 * SECTOR
+    vds_len, vds_loc = le32(b, avdp + 16), le32(b, avdp + 20)
+    part_start = fsd_lb = None
+    for sec in range(vds_loc, vds_loc + (vds_len + SECTOR - 1) // SECTOR):
+        tag = udf_tag(b, sec)
+        if tag == 5:
+            part_start = le32(b, sec * SECTOR + 188)
+        elif tag == 6:
+            fsd_lb = le32(b, sec * SECTOR + 248 + 4)
+        elif tag == 8:
+            break
+    if part_start is None or fsd_lb is None:
+        refuse("no partition / logical volume descriptor")
+    fsd = (part_start + fsd_lb) * SECTOR
+    if le16(b, fsd) != 256:
+        refuse("no file set descriptor at %d" % (part_start + fsd_lb))
+    return part_start, fsd
+
+
+def udf_first_ad(b, part_start, lb):
+    """offset of the first allocation descriptor of the file entry at logical block lb"""
+    o = (part_start + lb) * SECTOR
+    tag = le16(b, o)
+    if tag == 261:
+        first = o + 176 + le32(b, o + 168)
+    elif tag == 266:
+        first = o + 216 + le32(b, o + 208)
+    else:
+        refuse("no file entry at logical block %d (tag %d)" % (lb, tag))
+    if le16(b, o + 16 + 18) & 7 not in (0, 1):
+        refuse("file entry at logical block %d: embedded data" % lb)
+    return first
+
+
+def udf_fid_a(b, part_start, fsd):
+    """offset of folder a's file identifier descriptor in the root"""
+    rad = udf_first_ad(b, part_start, le32(b, fsd + 400 + 4))
+    rlen, rpos = le32(b, rad) & 0x3FFFFFFF, le32(b, rad + 4)
+    p = (part_start + rpos) * SECTOR
+    end = p + rlen
+    while p < end:
+        if le16(b, p) != 257:
+            refuse("no file identifier descriptor at %d" % p)
+        lfi, liu = b[p + 19], le16(b, p + 36)
+        if (b[p + 18] & 2) and bytes(b[p + 38 + liu : p + 38 + liu + lfi]) == b"\x08a":
+            return p
+        p += (38 + liu + lfi + 3) & ~3
+    refuse("no folder a in the UDF root")
+
+
+def cmd_udfmore(kind, src, dst):
+    b = bytearray(open(src, "rb").read())
+    ps, fsd = udf_layout(b)
+    if kind == "udfroot":
+        old = le32(b, fsd + 400 + 4)
+        struct.pack_into("<I", b, fsd + 400 + 4, FAR)
+        msg = "the file set descriptor's root ICB %d -> %#x" % (old, FAR)
+    else:
+        p = udf_fid_a(b, ps, fsd)
+        a_lb = le32(b, p + 20 + 4)
+        if kind == "udficb":
+            struct.pack_into("<I", b, p + 20 + 4, FAR)
+            msg = "folder a's identifier: ICB %d -> %#x" % (a_lb, FAR)
+        else:
+            d = (ps + le32(b, udf_first_ad(b, ps, a_lb) + 4)) * SECTOR
+            if le16(b, d) != 257:
+                refuse("folder a's directory does not start with an identifier")
+            struct.pack_into("<H", b, d, 0x0999)
+            msg = "folder a's directory at sector %d: first identifier's tag -> 0x0999" % (d // SECTOR)
+    open(dst, "wb").write(b)
+    print("%s: %s" % (kind, msg))
+    return 0
 
 
 def cmd_udfext(src, dst):
@@ -224,8 +322,12 @@ def main(argv):
         return cmd_isoext(argv[1], argv[2])
     if len(argv) == 3 and argv[0] == "isorec":
         return cmd_isorec(argv[1], argv[2])
+    if len(argv) == 3 and argv[0] == "isozero":
+        return cmd_isozero(argv[1], argv[2])
     if len(argv) == 3 and argv[0] == "udfext":
         return cmd_udfext(argv[1], argv[2])
+    if len(argv) == 3 and argv[0] in ("udficb", "udftag", "udfroot"):
+        return cmd_udfmore(argv[0], argv[1], argv[2])
     if len(argv) == 2 and argv[0] in ("xbox", "xboxext"):
         return cmd_xbox(argv[1], argv[0] == "xboxext")
     print(__doc__)

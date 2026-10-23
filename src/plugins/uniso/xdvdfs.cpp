@@ -196,7 +196,14 @@ BOOL CXDVDFS::ListDirectory(char* path, int session, CSalamanderDirectoryAbstrac
 {
     CALL_STACK_MESSAGE3("CXDVDFS::ListDirectory(%s, %d, , )", path, session);
 
-    return ScanDir(VD.RootSector, VD.RootDirectorySize, path, dir, pluginData) != ERR_TERMINATE;
+    int walked = ScanDir(VD.RootSector, VD.RootDirectorySize, path, dir, pluginData);
+    // feature 330: a folder that could not be read (or out of memory) ends its walk and every later
+    // descent, and its result reaches the top as ERR_CONTINUE / ERR_TERMINATE - the listing is
+    // incomplete, so a whole unpack fails and "Delete archive after unpacking" keeps the image (it was
+    // deleted)
+    if (walked != ERR_OK)
+        Image->ListingLeftOut.SetIncomplete();
+    return walked != ERR_TERMINATE;
 }
 
 int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
@@ -212,9 +219,6 @@ int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryA
     if (Image->ReadBlock(sector, size, data) != size)
     {
         delete[] data;
-        // feature 330: the folder could not be read - the listing is incomplete (and no later folder is
-        // descended), so a whole unpack fails and "Delete archive after unpacking" keeps the image
-        Image->ListingLeftOut.SetIncomplete();
         Error(IDS_ERROR_LISTING_IMAGE, FALSE, sector);
         // if reading the sector with the root fails
         return (sector == VD.RootSector) ? ERR_CONTINUE : ERR_TERMINATE;

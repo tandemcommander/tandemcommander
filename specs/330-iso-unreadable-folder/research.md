@@ -27,6 +27,15 @@
 - **Alternatives**: leave UDF / Xbox for another item - rejected: the item's title ("an image whose
   folder could not be read") and the same box apply; it is three or four lines.
 
+**Revised after review 1** (a reviewer that stopped; its probe rows): marking only the box sites
+left three UDF folders that cannot be read unmarked - a folder whose file entry cannot be mapped
+(listed empty, no box), an invalid tag in a directory, the root ICB not found ("Bad root ICB") - each
+measured deleting the image of a hybrid whose UDF part alone held `side.txt`. Decision now: UDF and
+Xbox use R1's top-level rule, UDF also marks its early returns and the unmapped folder. This also
+marks a UDF *file* whose entry cannot be read (it ends its directory with `ADD_FAILED`), a part of
+the Inbox item `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let` - its HFS+ part stays open.
+The Xbox walk's padding `break` is its normal end of a padded directory: not marked.
+
 ## R3 - A pure rule for saltests?
 
 - **Decision**: none. The decision is one comparison of the plug-in's walk result constants
