@@ -450,6 +450,7 @@ int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
     fd.Name = SalamanderGeneral->DupStr(fileName);
     if (fd.Name == NULL)
     {
+        Image->ListingLeftOut.SetIncomplete(); // feature 328 (review 4): a whole unpack then fails
         Error(IDS_INSUFFICIENT_MEMORY);
         return ADD_FAILED;
     } // if
@@ -465,6 +466,7 @@ int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
     if (!filePos)
     {
         free(fd.Name);
+        Image->ListingLeftOut.SetIncomplete();
         Error(IDS_INSUFFICIENT_MEMORY);
         return ADD_FAILED;
     }

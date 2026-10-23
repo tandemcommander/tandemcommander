@@ -198,3 +198,26 @@ After: `probe/result_after_review2.txt` 16 / 0; 326 28 / 0, 327 77 / 0 again; sa
   unpack fails whenever something was left out, also when the mask would not select it (fails
   closed). Confirmed by the reviewer: the original claims, the loop fix, the undo log, buffers; a
   30-level stress chain 2.0 s CPU (main 0.8 s, "Error").
+
+### Review 4 (completed, foreground) - no MUST
+
+Re-ran the probe at 07b28a40: 20 / 0; saltests 28,018 / 0; registry unchanged; read the walk, the
+count walks, the buffers, the report and the per-entry proof of "never fewer entries".
+
+- SHOULD 1 (pre-existing on main, outside the item): a folder that cannot be read ("Error reading
+  directory structure") leaves the listing incomplete without marking it - Unpack + Delete deletes the
+  image after extracting 1 of 3 files (`%TEMP%\rev328d\rd_head.txt` / `rd_main.txt`). Inbox
+  `iso-plug-in-unpack-deletes-image-with-unreadable-folder` (`review:328`). The part inside this
+  feature's new code - the plug-in's own out-of-memory return `ADD_FAILED` (`DupStr`, `new CFilePos`) -
+  now marks the listing incomplete too.
+- SHOULD 2: spec US3 promised all four files from a Copy of the root for every image; for
+  genisoimage's tree the counts tie at folder `d` and the rule keeps the Rock Ridge name (the item:
+  "keeps its names where they fit"), so `deep.txt` is 261 bytes deep and the core's own Copy box asks
+  about it. Spec US3 / its independent test corrected to what is delivered (Unpack extracts it; xorriso
+  copies it); no tie-break toward ISO 9660 names (it would rename a folder that fits).
+- NOTEs: the cost of the decision mode grows with depth x subtree size (bounded by depth, ~25 levels
+  with real tools); plain ISO 9660 volumes get the whole-volume check walk too (spec assumption
+  corrected); the name collision limit needs a crafted image (genisoimage / xorriso rename a clashing
+  ISO 9660 name, `%TEMP%\rev328d\mkcol.sh`).
+
+After the changes: build, saltests 28,018 / 0, `probe/result_final.txt` **20 / 0**.

@@ -248,6 +248,7 @@ Last triaged: 2026-10-23
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
 | [ISO plug-in: UDF, Xbox and HFS+ entries the listing refuses end their folder with Error](items/iso-plug-in-udf-xbox-and-hfs-entries-the-listing-refuses/desc.md) | bug | 6 | archives | measure:328 | 2026-10-23 |
+| [ISO plug-in: Unpack with Delete archive deletes an image whose folder could not be read](items/iso-plug-in-unpack-deletes-image-with-unreadable-folder/desc.md) | bug | 6 | archives | review:328 | 2026-10-23 |
 
 ## Parked
 

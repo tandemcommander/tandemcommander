@@ -92,9 +92,12 @@ extracted) and G-UNP-DEL (nothing left out: all four files, image deleted).
 
 ### User Story 3 - A deep Rock Ridge tree keeps its names where they fit (Priority: P2)
 
-**Independent Test**: probe rows G-COPY, X-COPY, L-COPY: all four files copy out; `top.txt`,
-`zlast\z.txt`, `a<60>\side.txt` under their Rock Ridge names; `deep.txt` below
-`a<60>\b<60>\c<60>` (the deeper folders under their ISO 9660 names).
+**Independent Test**: probe rows G-COPY, X-COPY, L-COPY, G-UNP-DEL, LONG-G, LONG-X: `top.txt`,
+`zlast\z.txt`, `a<60>\side.txt` under their Rock Ridge names; `deep.txt` listed below
+`a<60>\b<60>\c<60>` (only the folders that must be shorter under their ISO 9660 names) - copied out
+by a Copy from the root when its in-image path is below MAX_PATH bytes (xorriso), else named by the
+core's own skippable Copy box and extracted by Unpack (genisoimage: `a\b\c\d<60>\EXXXXXXX` - on a
+tie the Rock Ridge name is kept, review 4); a 265-byte Rock Ridge file name is kept (review 3).
 
 **Acceptance Scenarios**:
 
@@ -156,5 +159,7 @@ extracted) and G-UNP-DEL (nothing left out: all four files, image deleted).
 - Assumption (autonomous run): a name collision between a sibling's Rock Ridge name and another
   entry's ISO 9660 fallback name is not resolved (rare; the core lists both; an extraction asks
   before overwriting) - recorded as a limit.
-- Assumption (autonomous run): the extra check walks happen only for a volume whose Rock Ridge
-  names do not all fit; their cost (each directory read again per level) is accepted.
+- Assumption (autonomous run): every non-Joliet volume gets one whole-volume check walk (each
+  directory read twice); the per-folder count walks happen only for a volume the listing does not
+  take whole, and only for folders whose Rock Ridge name is longer than the ISO 9660 one; their cost
+  grows with depth x subtree size and is accepted (review 2 / 4 timings in fix-log.md).
