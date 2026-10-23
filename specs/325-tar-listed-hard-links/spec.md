@@ -26,6 +26,29 @@ listed, so nothing is reported; End + Copy copies `c.txt` (the link is not in th
 `c.txt`; a Copy of the archive root (`a.txt` and `sub`) writes all 4 files (feature 309). 11 PASS /
 7 FAIL - the 7 FAIL rows are the defect.
 
+## Clarifications
+
+### Session 2026-10-23
+
+- Q: Should the fix list hard links and extract them from their target's data, or only report the
+  link members a Copy of a folder's files leaves out? → A: List them and extract them from the
+  target's data (the item's first alternative; the report remains for a link that cannot be
+  reproduced) (autonomous run: item).
+- Q: Are symbolic links listed (and then always reported when copied) or left unlisted? → A: Left
+  unlisted, as now (autonomous run: conservative - the item allows it; listing would make every Copy
+  of such a folder fail).
+- Q: When the target of an asked link was asked too but not written (Skip at its overwrite question,
+  a refused name), is the link extracted from the archive's data or reported? → A: Reported, as in
+  feature 309 (autonomous run: conservative - keeps the behaviour of every case the item does not
+  name).
+- Q: May the extraction read the archive a second time when the target's data has already passed? →
+  A: Yes, within the same operation and progress dialog, only when a link needs it (autonomous run:
+  item - "the stream cannot seek back"; the conservative way that never reads twice for archives
+  without such links).
+- Q: Is a hard link whose target the archive does not hold listed? → A: Yes, as a file of size 0; a
+  Copy of it reports it (feature 309's message) and fails, instead of leaving it out silently
+  (autonomous run: item - the second alternative for what cannot be reproduced).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Copying the files shown in an archive folder brings every hard-linked name (Priority: P1)
@@ -115,7 +138,7 @@ A listed hard link names a member the archive does not hold (or one that holds n
   unless its own name is refused or names a folder; its size MUST be the size of the data member it
   names (following a chain of links), or 0 when there is none.
 - **FR-002**: An extraction asked for a hard-link member whose target it did not write and was not
-  asked for (or whose target is itself such a link) MUST write the target's data under the link's
+  asked for (or whose target is itself such a deferred link) MUST write the target's data under the link's
   name, also when the target lies outside the selection or outside the opened folder.
 - **FR-003**: When FR-002 needs data that the single pass over the archive has already passed, the
   extraction MUST read the archive again from its start for that data (compressed archives

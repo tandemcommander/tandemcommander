@@ -1,0 +1,25 @@
+link325_probe (feature 325) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 12:31; registry key existed True; ACP 1250; python Python 3.14.6
+
+COPY-INSIDE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-INSIDE RUN    FAIL        tgt: 1 of 3 files (c.txt); missing: b.txt, d.txt; boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy file "c.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-INSIDE-GZ END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-INSIDE-GZ RUN    FAIL        tgt: 1 of 3 files (c.txt); missing: b.txt, d.txt; boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy file "c.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-CHAIN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-CHAIN RUN    FAIL        tgt: 1 of 3 files (c.txt); missing: b.txt, e.txt; boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy file "c.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-MISSING END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-MISSING RUN    FAIL        tgt: 1 of 1 files (c.txt); boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy file "c.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-SYM   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-SYM   RUN    PASS        tgt: 1 of 1 files (c.txt); boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy file "c.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-FOCUSED END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-FOCUSED RUN    FAIL        tgt: 1 of 1 files (c.txt); missing: d.txt; boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy file "c.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-EXIST END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-EXIST RUN    FAIL        tgt: 2 of 1 files (c.txt, e.txt); wrong content: e.txt; boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy file "c.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-ROOT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-ROOT  RUN    PASS        tgt: 4 of 4 files (a.txt, sub/b.txt, sub/c.txt, sub/d.txt); boxes besides the Copy dialog: 0; windows: [#32770 'Copy'] [Static id=209] Copy 1 file and 1 directory from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+VIEW-LINK  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+VIEW-LINK  RUN    FAIL        viewer: C:\Users\pavel\AppData\Local\Temp\SALEFF.tmp\c.txt [Plain Text] - Code Viewer; after: no window
+Registry: restored; identical=True; SHA-256 before FD2C99468ABD5291AB3B86445076BDC1914BAE94A3F1D1B81FD009D945827E6C / after FD2C99468ABD5291AB3B86445076BDC1914BAE94A3F1D1B81FD009D945827E6C
+
+Rows: PASS 11, FAIL 7, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
