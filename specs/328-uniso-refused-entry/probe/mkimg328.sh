@@ -54,4 +54,14 @@ printf 'B' > "$out/srcloop/b/fb.txt"
 printf 'T' > "$out/srcloop/top.txt"
 rm -f "$out/jloop.iso"
 $GI -quiet -J -V TC328 -o "$out/jloop.iso" "$out/srcloop"
+# review 3: glong.iso (genisoimage -R) / xlong.iso (xorriso) - a Rock Ridge file whose in-image path is
+# 265 bytes (the listing takes it: folder part 62 bytes) and top.txt; nothing is refused
+rm -rf "$out/srclong"
+lf="$out/srclong/Archive/2019/Proceedings of the International Workshop/Session 3"
+mkdir -p "$lf"
+printf 'PAPER' > "$lf/$(printf 'l%.0s' $(seq 1 196)).pdf"
+printf 'TOP' > "$out/srclong/top.txt"
+rm -f "$out/glong.iso" "$out/xlong.iso"
+$GI -quiet -R -V TC328 -o "$out/glong.iso" "$out/srclong"
+$XO -outdev "$out/xlong.iso" -volid TC328 -joliet off -map "$out/srclong" / >/dev/null 2>&1
 ls "$out"

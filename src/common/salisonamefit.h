@@ -21,24 +21,21 @@
 //     (a folder with its subtree), and reported: CSalListingLeftOut keeps
 //     the count and the first SAL_LISTING_LEFT_OUT_SHOWN whole paths; a
 //     whole-image unpack of such a listing fails (the image is not deleted);
-//   - an entry "fits" (SalIsoEntryFits) when the listing takes it and the
-//     panel's operations reach it from the image's root: the core enumerates
-//     a selection with in-image paths below MAX_PATH bytes (fileswn7.cpp,
-//     "Name ... with full path is too long") - a deeper entry is listed but
-//     copied only from a folder nearer to it;
-//   - a Rock Ridge file is listed under its Rock Ridge name when it fits,
-//     else under its ISO 9660 name when that fits, else under the first of
-//     them the listing takes (SalIsoPickFileName);
+//   - a Rock Ridge file is listed under its Rock Ridge name when the listing
+//     takes it, else under its ISO 9660 name (SalIsoPickFileName) - also when
+//     its in-image path reaches MAX_PATH bytes: the core's Copy of a selected
+//     folder then asks about it ("Name ... with full path is too long", a
+//     skippable box counted from the panel's folder), but its name is kept
+//     (review 3: a reach criterion renamed such files to 8.3 names);
 //   - a Rock Ridge folder keeps its Rock Ridge name when its whole subtree
 //     fits with Rock Ridge names, when that name is not longer than its ISO
 //     9660 name, or when - counting its subtree with ISO 9660 names below -
-//     it leaves no fewer entries fitting and no fewer listed than the ISO
-//     9660 name would (SalIsoFolderKeepsRockRidge); the folders below decide
-//     again. Both rules are monotone in the length of the folder part, so
-//     every folder fits and lists at least as many entries as with ISO 9660
-//     names below it: the volume never holds fewer entries, nor fewer that
-//     fit, than 326's whole-volume ISO 9660 listing, and its shallow folders
-//     keep their Rock Ridge names.
+//     it lists no fewer entries than the ISO 9660 name would
+//     (SalIsoFolderKeepsRockRidge); the folders below decide again. The rule
+//     of the listing is monotone in the length of the folder part, so every
+//     folder lists at least as many entries as with ISO 9660 names below it:
+//     the volume never holds fewer entries than 326's whole-volume ISO 9660
+//     listing, and its shallow folders keep their Rock Ridge names.
 //
 //*****************************************************************************
 
@@ -55,43 +52,26 @@
 #define SAL_ISO_NAME_ROCK_RIDGE 1 // 'rr'
 #define SAL_ISO_NAME_ISO9660 2    // 'iso'
 
-// an entry (a folder when 'dir') named 'name' ('nameLen' bytes) under the listed folder part 'path'
-// ('pathLen' bytes with its leading '\', "" = the root): the listing takes it and its in-image path
-// (pathLen - 1 + 1 + nameLen bytes) is below MAX_PATH, as the core's operations need
-inline bool SalIsoEntryFits(bool dir, const char* path, size_t pathLen, const char* name, size_t nameLen)
-{
-    bool listed = dir ? SalListingAcceptsDirU8(path, pathLen, nameLen)
-                      : SalListingAcceptsFileU8(path, pathLen, name, nameLen);
-    return listed && pathLen + nameLen < MAX_PATH;
-}
-
-// a file under 'path' ('pathLen' bytes): its Rock Ridge name 'rr' (NULL = the record has none) when it
-// fits, else its ISO 9660 name 'iso' (NULL = none) when that fits, else the first of them the listing
-// takes, else left out
+// a file under 'path' ('pathLen' bytes): its Rock Ridge name 'rr' (NULL = the record has none) when the
+// listing takes it, else its ISO 9660 name 'iso' (NULL = none), else left out
 inline int SalIsoPickFileName(const char* path, size_t pathLen, const char* rr, const char* iso)
 {
-    size_t rrLen = rr != NULL ? strlen(rr) : 0;
-    size_t isoLen = iso != NULL ? strlen(iso) : 0;
-    if (rr != NULL && SalIsoEntryFits(false, path, pathLen, rr, rrLen))
+    if (rr != NULL && SalListingAcceptsFileU8(path, pathLen, rr, strlen(rr)))
         return SAL_ISO_NAME_ROCK_RIDGE;
-    if (iso != NULL && SalIsoEntryFits(false, path, pathLen, iso, isoLen))
-        return SAL_ISO_NAME_ISO9660;
-    if (rr != NULL && SalListingAcceptsFileU8(path, pathLen, rr, rrLen))
-        return SAL_ISO_NAME_ROCK_RIDGE;
-    if (iso != NULL && SalListingAcceptsFileU8(path, pathLen, iso, isoLen))
+    if (iso != NULL && SalListingAcceptsFileU8(path, pathLen, iso, strlen(iso)))
         return SAL_ISO_NAME_ISO9660;
     return SAL_ISO_NAME_LEFT_OUT;
 }
 
 // a Rock Ridge folder keeps its Rock Ridge name ('rrLen' bytes) rather than its ISO 9660 name ('isoLen'
-// bytes): 'rrSubtreeFits' = the folder and its whole subtree fit with Rock Ridge names (SalIsoEntryFits);
-// 'fitRr' / 'fitIso' = the entries that fit, 'listedRr' / 'listedIso' = the entries the listing takes -
-// the folder itself and its subtree with ISO 9660 names below - under each name (needed only when
-// neither of the first two answers; a longer name never gives more of either)
-inline bool SalIsoFolderKeepsRockRidge(bool rrSubtreeFits, size_t rrLen, size_t isoLen, size_t fitRr,
-                                       size_t fitIso, size_t listedRr, size_t listedIso)
+// bytes): 'rrSubtreeFits' = the listing takes the folder and its whole subtree with Rock Ridge names;
+// 'listedRr' / 'listedIso' = the entries the listing takes - the folder itself and its subtree with ISO
+// 9660 names below - under each name (needed only when neither of the first two answers; a longer name
+// never gives more)
+inline bool SalIsoFolderKeepsRockRidge(bool rrSubtreeFits, size_t rrLen, size_t isoLen, size_t listedRr,
+                                       size_t listedIso)
 {
-    return rrSubtreeFits || rrLen <= isoLen || (fitRr >= fitIso && listedRr >= listedIso);
+    return rrSubtreeFits || rrLen <= isoLen || listedRr >= listedIso;
 }
 
 // the whole paths a report names; more entries left out are shown as "..."

@@ -18,17 +18,23 @@
       jdeep.iso  genisoimage -J (ISO 9660 + Joliet; the plug-in lists Joliet - no other name)
     Copy rows: the left panel opens the image, the right shows <row>\tgt; Select All (842), Copy (727),
     every box answered OK / Yes.
-      G-COPY, X-COPY, L-COPY  PASS = no message at the open; all four files extracted with their
-                 content; top.txt, zlast\z.txt and a<59 x>\side.txt under their Rock Ridge names
-                 (exact case); deep.txt below a<59 x>\b<59 x>\c<59 x> (Rock Ridge names kept where
-                 they fit) - before 328: "Error" and folders lost (G, L), or the whole volume under ISO
-                 9660 names (X, feature 326)
+      G-COPY, X-COPY, L-COPY  PASS = no message at the open; top.txt, zlast\z.txt and a<59 x>\side.txt
+                 extracted under their Rock Ridge names (exact case) with their content; deep.txt
+                 below a<59 x>\b<59 x>\c<59 x> (Rock Ridge names kept where they fit) - extracted,
+                 or (G, L: genisoimage's tree a\b\c\d\EXXXXXXX\deep.txt is 261 bytes deep) named by
+                 the core's own Copy box "Name "deep.txt" with full path is too long" with that
+                 path (a Copy of a selected folder counts from the panel's folder; G-UNP-DEL
+                 extracts it) - before 328: "Error" and folders lost (G, L), or the whole volume
+                 under ISO 9660 names (X, feature 326)
       J-COPY     PASS = a "(206)" box at the open naming deep.txt; side.txt, top.txt, z.txt extracted;
                  no "Error" box - before 328: "Error", the listing cleared
     Unpack rows: the left panel shows <row>\src, Home, End focuses the image, Alt+F9 (851), the target
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK.
       J-UNP-DEL  PASS = the three listed files, a "(206)" box, the image KEPT
       G-UNP-DEL  PASS = all four files, nothing asked, the image deleted (nothing was left out)
+      LONG-G, LONG-X (review 3) glong.iso / xlong.iso: a Rock Ridge file whose in-image path is 265 bytes
+                 (the listing takes it) - PASS = top.txt and exactly that long name extracted, nothing
+                 asked, the image deleted (review 3: a reach rule had renamed it to an 8.3 name)
     Loop rows (review 1, partial work of a stopped reviewer): copies of gdeep.iso (LOOP-RR: the primary
     volume's root folders AXXXXXXX, ZLAST) and of jloop.iso (LOOP-J: genisoimage -J of the folders a, b;
     the Joliet root's) whose root folder records point back to the root - a directory cycle with two
@@ -89,18 +95,24 @@ function Set-Field([IntPtr]$Dlg, [int]$CtlId, [string]$Text) {
 }
 
 # the expected result of a whole copy: @(ok, facts). $Left = deep.txt must be missing (left out)
-function Check-All([string]$Tgt, [switch]$Left) {
+function Check-All([string]$Tgt, [switch]$Left, [string]$CopyMsgs) {
     $files = @(Tgt-Files $Tgt)
     $want = [ordered]@{ ($SegA + '/side.txt') = 'SIDE'; 'top.txt' = 'TOP'; 'zlast/z.txt' = 'Z' }
     $missing = @($want.Keys | Where-Object { $files -cnotcontains $_ })
     $bad = @($want.Keys | Where-Object { $files -ccontains $_ -and (Content $Tgt $_) -cne $want[$_] })
     $deep = @($files | Where-Object { $_ -like '*/deep.txt' })
     $ok = ($missing.Count -eq 0 -and $bad.Count -eq 0)
+    # review 3: the core's Copy of a selected folder asks about a member 260+ bytes deep - the box names
+    # deep.txt and its listed folder path (Rock Ridge names a\b\c first)
+    $coreBox = [bool]$CopyMsgs -and ($CopyMsgs -match ('Name "deep\.txt" with full path is too long\.\s*Path: ' + [regex]::Escape($SegA) + '\\\s*' + [regex]::Escape($SegB) + '\\\s*' + [regex]::Escape($SegC) + '\\'))
     if ($Left) { $ok = $ok -and $deep.Count -eq 0 -and $files.Count -eq 3 }
     else {
-        $ok = $ok -and $files.Count -eq 4 -and $deep.Count -eq 1 -and $deep[0].StartsWith($SegA + '/' + $SegB + '/' + $SegC + '/') -and (Content $Tgt $deep[0]) -ceq 'DEEP'
+        $copied = $files.Count -eq 4 -and $deep.Count -eq 1 -and $deep[0].StartsWith($SegA + '/' + $SegB + '/' + $SegC + '/') -and (Content $Tgt $deep[0]) -ceq 'DEEP'
+        $asked = $files.Count -eq 3 -and $deep.Count -eq 0 -and $coreBox
+        $ok = $ok -and ($copied -or $asked)
     }
     $f = ('files {0}: {1}' -f $files.Count, ((@($files | ForEach-Object { Esc (Short $_) })) -join ', '))
+    if ($coreBox) { $f += '; the core asked about deep.txt under a\b\c\...' }
     if ($deep.Count -eq 1) { $f += ("; deep.txt content '{0}'" -f (Content $Tgt $deep[0])) }
     if ($missing.Count) { $f += ('; missing: ' + ((@($missing | ForEach-Object { Esc (Short $_) })) -join ', ')) }
     if ($bad.Count) { $f += ('; wrong content: ' + ((@($bad | ForEach-Object { Esc (Short $_) })) -join ', ')) }
@@ -130,7 +142,7 @@ function Copy-Row([string]$Case, [string]$Iso, [switch]$Left) {
         Post-Cmd (Get-Main $id) 727
         $msgs = Msgs (Serve $id 60 @(1, 6))
         End-Row $Case $id $null $before; $id = 0
-        $c = Check-All $tgt -Left:$Left
+        $c = Check-All $tgt -Left:$Left -CopyMsgs $msgs
         $ok = $c[0]
         $has206 = ($openMsgs -match '\(206\)') -and ($openMsgs -match 'deep\.txt')
         $errBox = ($openMsgs -cmatch '\] Error( \||$)')
@@ -143,7 +155,7 @@ function Copy-Row([string]$Case, [string]$Iso, [switch]$Left) {
 }
 
 # Unpack (Alt+F9) of the whole image into tgt with "Delete archive after unpacking"
-function Unpack-Row([string]$Case, [string]$Iso, [switch]$Left) {
+function Unpack-Row([string]$Case, [string]$Iso, [switch]$Left, $Want) {
     if (-not (Want $Case)) { return }
     if (-not [IO.File]::Exists($Iso)) { Row $Case 'RUN' 'NOT DRIVEN' ('no image ' + $Iso); return }
     $d = $Root + '\' + $Case; $tgt = $d + '\tgt'; NewDir ($d + '\src'); NewDir $tgt
@@ -168,7 +180,13 @@ function Unpack-Row([string]$Case, [string]$Iso, [switch]$Left) {
         $msgs = Msgs $r
         $fatal = Fatal-Win $id
         End-Row $Case $id $fatal $before; $id = 0
-        $c = Check-All $tgt -Left:$Left
+        if ($Want) {
+            # review 3: exactly these files (case-sensitive) with their content
+            $files = @(Tgt-Files $tgt)
+            $good = @($Want.Keys | Where-Object { $files -ccontains $_ -and (Content $tgt $_) -ceq $Want[$_] })
+            $c = @(($files.Count -eq $Want.Count -and $good.Count -eq $Want.Count), ('files {0}: {1}' -f $files.Count, ((@($files | ForEach-Object { '[{0} B] {1}' -f $Utf8.GetByteCount($_), (Esc (Short ($_ -replace 'l{196}', '<196 l>'))) })) -join ', ')))
+        }
+        else { $c = Check-All $tgt -Left:$Left }
         $kept = [IO.File]::Exists($LP + $img)
         $has206 = ($msgs -match '\(206\)') -and ($msgs -match 'deep\.txt')
         $ok = $c[0] -and (-not $fatal)
@@ -265,7 +283,7 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath (Join-Path $Here 'mkimg328.sh')) (WslPath $s) 2>&1
     $ErrorActionPreference = $old
     if (-not [IO.File]::Exists("$s\gdeep.iso")) {
-        foreach ($c in @('G-COPY', 'X-COPY', 'L-COPY', 'J-COPY', 'J-UNP-DEL', 'G-UNP-DEL', 'LOOP-RR', 'LOOP-J')) { Row $c 'RUN' 'NOT DRIVEN' ('no seed image: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
+        foreach ($c in @('G-COPY', 'X-COPY', 'L-COPY', 'J-COPY', 'J-UNP-DEL', 'G-UNP-DEL', 'LONG-G', 'LONG-X', 'LOOP-RR', 'LOOP-J')) { Row $c 'RUN' 'NOT DRIVEN' ('no seed image: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
     }
     else {
         $nosp = Make-NoSp "$s\gdeep.iso" "$s\ldeep.iso"
@@ -276,6 +294,9 @@ try {
         Copy-Row 'J-COPY' "$s\jdeep.iso" -Left
         Unpack-Row 'J-UNP-DEL' "$s\jdeep.iso" -Left
         Unpack-Row 'G-UNP-DEL' "$s\gdeep.iso"
+        $longRel = 'Archive/2019/Proceedings of the International Workshop/Session 3/' + ('l' * 196) + '.pdf'
+        Unpack-Row 'LONG-G' "$s\glong.iso" -Want ([ordered]@{ 'top.txt' = 'TOP'; $longRel = 'PAPER' })
+        Unpack-Row 'LONG-X' "$s\xlong.iso" -Want ([ordered]@{ 'top.txt' = 'TOP'; $longRel = 'PAPER' })
         $lr = Make-Loop "$s\gdeep.iso" "$s\loop_rr.iso" 1
         $lj = Make-Loop "$s\jloop.iso" "$s\loop_j.iso" 2
         Out ("loop_rr.iso: {0}; loop_j.iso: {1}" -f $lr, $lj)

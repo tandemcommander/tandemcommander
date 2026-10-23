@@ -20174,14 +20174,14 @@ static Iso328Node Iso328File(const std::string& rr, const std::string& iso)
     return n;
 }
 
-// entries that fit (SalIsoEntryFits) and entries the listing takes
+// the entries the listing takes
 struct Iso328Counts
 {
-    size_t Fit, Listed;
+    size_t Listed;
 };
 
 // below folder 'n' (its folder part 'pathLen' bytes) with fixed names: Rock Ridge names where present
-// (isoNames false) or ISO 9660 names; 'refused' set when one does not fit
+// (isoNames false) or ISO 9660 names; 'refused' set when the listing refuses one
 static void Iso328Count(const Iso328Node& n, size_t pathLen, bool isoNames, bool& refused, Iso328Counts& c)
 {
     for (const Iso328Node& k : n.Kids)
@@ -20189,12 +20189,11 @@ static void Iso328Count(const Iso328Node& n, size_t pathLen, bool isoNames, bool
         const std::string& name = (!isoNames && !k.Rr.empty()) ? k.Rr : k.Iso;
         bool listed = k.Dir ? SalListingAcceptsDirU8("", pathLen, name.size())
                             : SalListingAcceptsFileU8("", pathLen, name.c_str(), name.size());
-        if (SalIsoEntryFits(k.Dir, "", pathLen, name.c_str(), name.size()))
-            c.Fit++;
-        else
-            refused = true;
         if (!listed)
+        {
+            refused = true;
             continue;
+        }
         c.Listed++;
         if (k.Dir)
             Iso328Count(k, pathLen + 1 + name.size(), isoNames, refused, c);
@@ -20204,11 +20203,10 @@ static void Iso328Count(const Iso328Node& n, size_t pathLen, bool isoNames, bool
 // folder 'k' named 'name' under a folder part of 'pathLen' bytes, ISO 9660 names below
 static Iso328Counts Iso328CountUnder(const Iso328Node& k, size_t pathLen, const std::string& name)
 {
-    Iso328Counts c = {0, 0};
+    Iso328Counts c = {0};
     if (!SalListingAcceptsDirU8("", pathLen, name.size()))
         return c;
     c.Listed = 1;
-    c.Fit = SalIsoEntryFits(true, "", pathLen, name.c_str(), name.size()) ? 1 : 0;
     bool refused = false;
     Iso328Count(k, pathLen + 1 + name.size(), true, refused, c);
     return c;
@@ -20235,15 +20233,15 @@ static void Iso328List(const Iso328Node& n, const std::string& path, bool decide
         if (rr != NULL && decide && k.Rr.size() > k.Iso.size()) // not longer: Rock Ridge, still deciding below
         {
             bool refused = false;
-            Iso328Counts c = {0, 0};
-            bool fits = SalIsoEntryFits(true, "", path.size(), k.Rr.c_str(), k.Rr.size()) &&
+            Iso328Counts c = {0};
+            bool fits = SalListingAcceptsDirU8("", path.size(), k.Rr.size()) &&
                         (Iso328Count(k, path.size() + 1 + k.Rr.size(), false, refused, c), !refused);
             keepRr = fits || k.Rr.size() <= k.Iso.size();
             if (!keepRr)
             {
                 Iso328Counts r = Iso328CountUnder(k, path.size(), k.Rr);
                 Iso328Counts i = Iso328CountUnder(k, path.size(), k.Iso);
-                keepRr = SalIsoFolderKeepsRockRidge(false, k.Rr.size(), k.Iso.size(), r.Fit, i.Fit, r.Listed, i.Listed);
+                keepRr = SalIsoFolderKeepsRockRidge(false, k.Rr.size(), k.Iso.size(), r.Listed, i.Listed);
             }
             below = !fits;
         }
@@ -20272,24 +20270,19 @@ static void TestIsoNameFit328()
     const std::string a256(256, 'a'); // 256 units: the listing takes no such file name under a folder part
     CHECK(SalIsoPickFileName("\\d", 2, a256.c_str(), "A.TXT") == SAL_ISO_NAME_ISO9660);
     CHECK(SalIsoPickFileName("", 0, "x", "X") == SAL_ISO_NAME_ROCK_RIDGE);
-    // the core's operations reach an in-image path below MAX_PATH bytes (fileswn7.cpp): 249 + 1 + 10 = 260
-    // does not fit, 249 + 1 + 9 = 259 does
+    // review 3: a Rock Ridge file the listing takes keeps its name also when its in-image path reaches
+    // MAX_PATH bytes (the core's Copy of a selected folder asks about it; a reach rule gave 8.3 names)
     const std::string p250 = std::string(1, '\\') + std::string(249, 'p');
-    CHECK(SalIsoEntryFits(false, p250.c_str(), p250.size(), "DEEPN.TXT", 9));
-    CHECK(!SalIsoEntryFits(false, p250.c_str(), p250.size(), "deepn1.txt", 10));
-    CHECK(!SalIsoEntryFits(true, p256.c_str(), p256.size(), "d", 1));
-    CHECK(SalIsoEntryFits(true, "", 0, std::string(259, 'r').c_str(), 259) == false); // over 255: not listed
-    CHECK(SalIsoEntryFits(true, "", 0, "r", 1));
-    CHECK(SalIsoPickFileName(p250.c_str(), p250.size(), "deepn1.txt", "DEEPN.TXT") == SAL_ISO_NAME_ISO9660);
-    CHECK(SalIsoPickFileName(p250.c_str(), p250.size(), "deepn1.txt", "DEEPNAME.TXT") == SAL_ISO_NAME_ROCK_RIDGE); // listed, neither fits
+    const std::string long196 = std::string(196, 'l') + ".pdf";
+    CHECK(SalIsoPickFileName(p250.c_str(), p250.size(), "deepn1.txt", "DEEPN.TXT") == SAL_ISO_NAME_ROCK_RIDGE);
+    CHECK(SalIsoPickFileName("\\Archive\\2019", 13, long196.c_str(), "A_STUDY_.PDF") == SAL_ISO_NAME_ROCK_RIDGE);
     CHECK(SalIsoPickFileName(p250.c_str(), p250.size(), NULL, "DEEPNAME.TXT") == SAL_ISO_NAME_ISO9660);
 
     // folders: whole subtree fits / not longer / no fewer entries that fit and no fewer listed
-    CHECK(SalIsoFolderKeepsRockRidge(true, 60, 31, 0, 99, 0, 99));
-    CHECK(SalIsoFolderKeepsRockRidge(false, 31, 31, 0, 99, 0, 99));
-    CHECK(SalIsoFolderKeepsRockRidge(false, 60, 31, 7, 7, 9, 9));
-    CHECK(!SalIsoFolderKeepsRockRidge(false, 60, 31, 1, 3, 2, 3)); // deep.iso's d of xorriso
-    CHECK(!SalIsoFolderKeepsRockRidge(false, 60, 31, 3, 3, 2, 3)); // as many fit, fewer listed
+    CHECK(SalIsoFolderKeepsRockRidge(true, 60, 31, 0, 99));
+    CHECK(SalIsoFolderKeepsRockRidge(false, 31, 31, 0, 99));
+    CHECK(SalIsoFolderKeepsRockRidge(false, 60, 31, 7, 7));
+    CHECK(!SalIsoFolderKeepsRockRidge(false, 60, 31, 2, 3)); // deep.iso's d of xorriso
 
     // the probe's tree: a/b/c/d/e/deep.txt with 60-letter Rock Ridge names, a/side.txt, top.txt, zlast/z.txt
     auto seg = [](char c)
@@ -20318,13 +20311,12 @@ static void TestIsoNameFit328()
         CHECK(std::find(out.begin(), out.end(), "\\" + seg('a') + "\\side.txt") != out.end());
     }
     {
-        // genisoimage: ISO 9660 level 1 names of 8 letters - under a\b\c\d\EXXXXXXX deep.txt would be
-        // listed (253 + 1 + 8 bytes) but no copy from the root reaches it: d and e take ISO 9660 names
+        // genisoimage: ISO 9660 level 1 names of 8 letters - only e takes its ISO 9660 name
         std::vector<std::string> out;
         size_t left = 0;
         Iso328List(tree(8), "", true, out, left);
         CHECK(left == 0 && out.size() == 10);
-        CHECK(std::find(out.begin(), out.end(), pa + "\\" + iso('D', 8) + "\\" + iso('E', 8) + "\\deep.txt") != out.end());
+        CHECK(std::find(out.begin(), out.end(), pa + "\\" + seg('d') + "\\" + iso('E', 8) + "\\deep.txt") != out.end());
     }
     {
         // Joliet / no Rock Ridge (the names given as ISO 9660 ones): deep.txt left out, the rest listed
@@ -20372,37 +20364,27 @@ static void TestIsoNameFit328()
         }
         return Iso328Dir("", "", kids);
     };
-    int worse = 0, worseFit = 0, notSame = 0, decided = 0, better = 0;
+    int worse = 0, notSame = 0, decided = 0;
     for (int t = 0; t < 400; t++)
     {
         Iso328Node root = make(8);
         bool refusedIso = false, refusedRr = false;
-        Iso328Counts allIso = {0, 0}, allRr = {0, 0};
+        Iso328Counts allIso = {0}, allRr = {0};
         Iso328Count(root, 0, true, refusedIso, allIso);
         Iso328Count(root, 0, false, refusedRr, allRr);
         std::vector<std::string> out;
         size_t left = 0;
         Iso328List(root, "", refusedRr, out, left); // the fit check pass decides the mode
-        size_t fit = 0;
-        for (const std::string& p : out)
-            if (p.size() - 1 < MAX_PATH) // the in-image path without its leading '\'
-                fit++;
         if (out.size() < allIso.Listed)
             worse++;
-        if (fit < allIso.Fit)
-            worseFit++;
         if (!refusedRr && out.size() != allRr.Listed)
             notSame++;
         if (refusedRr)
             decided++;
-        if (refusedRr && fit > allIso.Fit)
-            better++;
     }
     CHECK(worse == 0);
-    CHECK(worseFit == 0);
     CHECK(notSame == 0);
     CHECK(decided > 20); // the trees exercise the decision mode
-    CHECK(better > 0);   // and in some, Rock Ridge names reach more than the ISO 9660 ones
 
     // the report: whole paths without the leading '\', at most 10, then "..."
     CSalListingLeftOut lo;

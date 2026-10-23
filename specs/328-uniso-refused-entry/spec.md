@@ -125,13 +125,12 @@ extracted) and G-UNP-DEL (nothing left out: all four files, image deleted).
 - **FR-003**: A whole-image unpack whose listing left entries out MUST extract the listed entries
   and fail, so "Delete archive after unpacking" keeps the image; with nothing left out it behaves
   as today.
-- **FR-004**: A Rock Ridge entry MUST keep its Rock Ridge name where it fits - the listing takes it
-  and the panel's operations reach it from the image's root (an in-image path below MAX_PATH bytes,
-  as the core's Copy from an archive needs; measured in the first after run): a file under its Rock
-  Ridge name when that fits, else its ISO 9660 name when that fits, else the first name the listing
-  takes, else left out (FR-001); a folder under its Rock Ridge name unless its ISO 9660 name lets
-  more entries of its subtree fit or be listed. The listing MUST hold no fewer entries, and no fewer
-  that fit, than feature 326's whole-volume ISO 9660 listing.
+- **FR-004**: A Rock Ridge entry MUST keep its Rock Ridge name where the listing takes it: a file
+  under its Rock Ridge name when taken (also when its in-image path reaches MAX_PATH bytes - the
+  core's Copy of a selected folder then asks about it with its own skippable box; review 3), else its
+  ISO 9660 name, else left out (FR-001); a folder under its Rock Ridge name unless its ISO 9660 name
+  lets more entries of its subtree be listed. The listing MUST hold no fewer entries than feature
+  326's whole-volume ISO 9660 listing.
 - **FR-005**: A volume whose Rock Ridge names all fit is listed exactly as today (one check pass,
   then the listing); a volume without Rock Ridge names keeps its names.
 - **FR-006**: Names are never cut; the cleaning of features 326 / 327 applies to either name.

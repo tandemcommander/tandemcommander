@@ -1,6 +1,6 @@
-iso327_probe (feature 327) regress-328-review2
+iso327_probe (feature 327) regress-328-review3
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 22:17; registry key existed True
+Date    : 2026-10-23 22:38; registry key existed True
 
 img327.py patch: exit 0: joliet: 'jjjjjjjjjj.txt' -> '..\\..\\jesc.txt': 1; joliet: 'jcolonaaa.txt' -> '12:30jaaa.txt': 1; joliet: 'jdevaaa.txt' -> 'con.txtjaaa': 1; joliet: 'jtdotaaaa.txt' -> 'jtrailaaaaa..': 1; joliet: 'jslashaa.txt' -> 'j/slasha.txt': 1; joliet: 'jfolderx' -> '..\\..\\jd': 3
 JOLIET: at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy directory "set" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help

@@ -62,7 +62,7 @@ walk - accepted (same listing).
   never fewer entries listed nor fewer that fit than the whole-volume ISO 9660 listing, exactly the
   Rock Ridge listing when it fits whole; the report text.
 
-### A finding on the way: listed is not enough (first after run)
+### A finding on the way: listed is not enough (first after run) - reverted by review 3
 
 The first after run (rule = the listing's rule only) gave 9 / 3: G-COPY and L-COPY copied 3 files -
 the core's Copy from the archive refused `deep.txt` with "Name "deep.txt" with full path is too
@@ -166,3 +166,35 @@ review 1's build of d61d0612's uniso in `%TEMP%\rev328\negexe`), CPU at the open
 | chain.iso (`mkchain.sh`, the chain part of mk2.sh) | 0.7 s | 0.7 s |
 
 After: `probe/result_after_review2.txt` 16 / 0; 326 28 / 0, 327 77 / 0 again; saltests 28,026 / 0.
+
+### Review 3 (completed; run in the foreground so it reports before the turn ends)
+
+- **MUST** (fixed): the reach criterion of the first after run (`SalIsoEntryFits`: an in-image path
+  below MAX_PATH) renamed Rock Ridge FILES the listing takes to their ISO 9660 8.3 names and switched
+  a volume the listing takes whole into decision mode. The core's "Name ... with full path is too
+  long" check (`fileswn7.cpp`) only covers members reached through a selected folder, counted from the
+  panel's current folder - a skippable box, not a reason to rename; main kept the real names. Measured
+  by the reviewer (`%TEMP%\rev328c\mk3.sh`, `name_probe.ps1`; copied as `probe/result_review3_before.txt`):
+  a 265-byte `Archive\2019\Proceedings of the International Workshop\Session 3\<196 letters>.pdf` and a
+  262-byte Cyrillic name came out as `A_STUDY_.PDF` / `________.TXT` (xorriso: 31-letter ISO names), the
+  image deleted. My first after run's G-COPY "failure" that led to the criterion was that same core
+  box (deep.txt 261 bytes deep, copied from the root) - not a defect of the listing.
+  Fix: back to the listing's rule only (`salisonamefit.h`: `SalIsoEntryFits` and the "fit" counts
+  removed; `SalIsoPickFileName` = Rock Ridge if listed, else ISO 9660, else left out;
+  `SalIsoFolderKeepsRockRidge(fits, rrLen, isoLen, listedRr, listedIso)`; the plug-in's `FitListed`
+  removed, `CountUnder` returns the listed count). saltests: a listed Rock Ridge file keeps its name
+  (`\Archive\2019` + 196 letters, a 250-byte folder part + `deepn1.txt`); the genisoimage deep tree is
+  `a\b\c\d\EXXXXXXX\deep.txt` again; 28,018 / 0.
+- Probe: G-COPY / L-COPY now pass when deep.txt is copied OR the core's own Copy box names deep.txt
+  under `a<60>\b<60>\c<60>\` (G-UNP-DEL extracts it: `a\b\c\d\E<8>\deep.txt`); new rows LONG-G /
+  LONG-X (`glong.iso` / `xlong.iso`, the reviewer's 265-byte name) - exactly that name extracted,
+  nothing asked, image deleted. `probe/result_after_review3.txt` **20 / 0**. The review-2 build (the
+  reach rule) is the negative control of LONG-* (`result_review3_before.txt`: the 8.3 names).
+  Regressions: 326 28 / 0, 326 twins 8 / 0, 327 77 / 0, 322 18 / 0.
+- NOTEs taken as limits: a long chain of 10-letter Rock Ridge names whose deepest level only fits
+  under ISO 9660 names gets ISO 9660 names from level 1 down (FR-004's "no fewer entries" first); a
+  directory met twice (crafted only) is listed empty without marking the listing incomplete (its
+  content is listed once); an out-of-memory refusal of the core shows one "Error" per entry; a whole
+  unpack fails whenever something was left out, also when the mask would not select it (fails
+  closed). Confirmed by the reviewer: the original claims, the loop fix, the undo log, buffers; a
+  30-level stress chain 2.0 s CPU (main 0.8 s, "Error").

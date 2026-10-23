@@ -50,7 +50,6 @@ CISO9660::CISO9660(CISOImage* image, DWORD extent) : CUnISOFSAbstract(image)
     FitRefused = FALSE;
     FitIsoNames = FALSE;
     FitCount = 0;
-    FitListed = 0;
     Decide = FALSE;
     Visited = NULL;
     VisitedLog = NULL;
@@ -423,8 +422,7 @@ int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
 {
     // feature 326 (review): the panel listing's own rule (sallistingname.h, CSalamanderDirectory::
     // AddFile / AddDir) - the fit check pass adds nothing, it only asks whether the entry would be
-    // taken; feature 328: and counts it - taken, and fitting (SalIsoEntryFits: the core's operations
-    // reach it from the image's root); a count walk descends into every folder the listing takes
+    // taken; feature 328: and counts it
     size_t pathLen = path != NULL ? strlen(path) : 0;
     size_t nameLen = strlen(fileName);
     BOOL isDir = (dr.FileFlags & FATTR_DIRECTORY) != 0;
@@ -432,12 +430,10 @@ int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
                       : SalListingAcceptsFileU8(path, pathLen, fileName, nameLen);
     if (FitCheck)
     {
-        if (SalIsoEntryFits(isDir != FALSE, path, pathLen, fileName, nameLen))
+        if (fits)
             FitCount++;
         else
             FitRefused = TRUE;
-        if (fits)
-            FitListed++;
         return fits ? ADD_LISTED : ADD_LEFT_OUT;
     }
     // feature 328: an entry the listing refuses is left out alone and reported (ListArchive) - it
@@ -555,20 +551,20 @@ char* CISO9660::PickDirName(char* path, CDirectoryRecord& dr, char* rrName, char
         // feature 328 (salisonamefit.h): the Rock Ridge name when it is not longer (no count walk - review
         // 2: a deep chain of short names walked its subtree once per level), when the whole subtree fits
         // with Rock Ridge names (it then leaves the decision mode), or when it leaves no fewer entries
-        // fitting and no fewer listed than the ISO 9660 name - counted with ISO 9660 names below
+        // listed than the ISO 9660 name - counted with ISO 9660 names below
         size_t rrLen = strlen(rrName), isoLen = strlen(isoName);
         if (rrLen > isoLen)
         {
-            size_t fitRr = 0, listedRr = 0, fitIso = 0, listedIso = 0;
+            size_t listedRr = 0, listedIso = 0;
             BOOL refused = FALSE;
-            CountUnder(path, dr, rrName, FALSE, &fitRr, &listedRr, &refused);
+            CountUnder(path, dr, rrName, FALSE, &listedRr, &refused);
             BOOL fits = !refused;
             keepRr = fits;
             if (!keepRr)
             {
-                CountUnder(path, dr, rrName, TRUE, &fitRr, &listedRr, NULL);
-                CountUnder(path, dr, isoName, TRUE, &fitIso, &listedIso, NULL);
-                keepRr = SalIsoFolderKeepsRockRidge(false, rrLen, isoLen, fitRr, fitIso, listedRr, listedIso);
+                CountUnder(path, dr, rrName, TRUE, &listedRr, NULL);
+                CountUnder(path, dr, isoName, TRUE, &listedIso, NULL);
+                keepRr = SalIsoFolderKeepsRockRidge(false, rrLen, isoLen, listedRr, listedIso);
             }
             below = !fits;
         }
@@ -582,26 +578,25 @@ char* CISO9660::PickDirName(char* path, CDirectoryRecord& dr, char* rrName, char
     return keepRr ? rrName : isoName;
 }
 
-void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BOOL isoNames, size_t* fit,
-                          size_t* listed, BOOL* refused)
+void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BOOL isoNames, size_t* listed,
+                          BOOL* refused)
 {
     size_t pathLen = strlen(path);
     size_t nameLen = strlen(name);
-    BOOL folderFits = SalIsoEntryFits(true, path, pathLen, name, nameLen);
-    *fit = 0;
     *listed = 0;
     if (refused != NULL)
-        *refused = !folderFits;
+        *refused = TRUE;
     if (!SalListingAcceptsDirU8(path, pathLen, nameLen))
         return;
+    if (refused != NULL)
+        *refused = FALSE;
     // a count walk of the subtree (nothing added, errors quiet); the modes of the walk it is part of kept
     BOOL saveFitCheck = FitCheck, saveFitRefused = FitRefused, saveFitIsoNames = FitIsoNames, saveDecide = Decide;
-    size_t saveFitCount = FitCount, saveFitListed = FitListed;
+    size_t saveFitCount = FitCount;
     FitCheck = TRUE;
     FitRefused = FALSE;
     FitIsoNames = isoNames;
     FitCount = 0;
-    FitListed = 0;
     Decide = FALSE;
     // the directories the walk it is part of met already stay empty here too; the count walk marks its
     // own in the same set and takes them out afterwards (review 2: a copy of the set per count walk was
@@ -620,15 +615,13 @@ void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BO
     if (Visited != NULL)
         for (size_t i = 0; i < countLog.size(); i++)
             Visited->erase(countLog[i]);
-    *fit = (folderFits ? 1 : 0) + FitCount;
-    *listed = 1 + FitListed;
+    *listed = 1 + FitCount;
     if (refused != NULL && FitRefused)
         *refused = TRUE;
     FitCheck = saveFitCheck;
     FitRefused = saveFitRefused;
     FitIsoNames = saveFitIsoNames;
     FitCount = saveFitCount;
-    FitListed = saveFitListed;
     Decide = saveDecide;
 }
 
@@ -727,7 +720,6 @@ BOOL CISO9660::ListDirectory(char* path, int session,
             FitRefused = FALSE;
             FitIsoNames = FALSE;
             FitCount = 0;
-            FitListed = 0;
             std::set<DWORD> fitVisited;
             Visited = &fitVisited;
             CPluginDataInterfaceAbstract* noData = NULL;
