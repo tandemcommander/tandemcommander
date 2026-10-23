@@ -1,16 +1,16 @@
 ---
 title: ZIP says the archive was not changed after a failed replace, yet it changed and a temp file stays
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: measure:319
 who: agent
 created: 2026-10-23
 updated: 2026-10-23
-verified: -
+verified: 2026-10-23 4252bcb6
 effort: ?
-feature: -
+feature: 320
 related: []
 depends-on: []
 reason: -
@@ -61,3 +61,5 @@ without delete sharing, or read-only) shows the before / after state.
 
 - 2026-10-23 — created (source measure:319)
 - 2026-10-23 — moved to Next position 1
+- 2026-10-23 — verified at 4252bcb6: reproduced at 4252bcb6: archive held open without delete sharing, Pack-add and Delete-in-archive both show the ZIP replace message and leave Sal*.tmp; archive unchanged
+- 2026-10-23 — run started, feature 320
