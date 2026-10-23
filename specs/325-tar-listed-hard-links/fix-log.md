@@ -70,3 +70,19 @@ review; a tiny fixture cannot be cancelled at a chosen moment. I1, U1 LOW - no c
   `d.txt` holding "A") PASS.
 - The re-run was refused (exit 99): the maintainer started the installed Tandem Commander at 12:45 -
   probes share the registry key; waited for it to close (never touched).
+- After the maintainer's instance closed: `probe/result_after.txt` first run 17 / 1 - COPY-EXIST
+  wrote e.txt correctly and showed the overwrite question with the new size 131 072, but the probe
+  looked for "e.txt" in the box text; the Confirm File Overwrite dialog shows the names in controls the
+  driver does not read (not Static). Check changed to: exactly one box, titled Confirm File Overwrite,
+  showing 131 072. Then `probe/result_after.txt` PASS 18 / FAIL 0 (registry restored, identical).
+  (`result_before.txt` was taken with the earlier check texts; both checks only became stricter.)
+- Regression (`probe/run_regress.ps1`, hidden desktop, `probe/regress_*.txt`): pax306 30 / 0, unp308
+  12 / 0, link309 16 / 0, cpio310 52 / 0, tar321 20 / 0, unp321 12 / 0 - no row needed a change (none
+  of them copies a folder's files without the link target).
+- Negative control (DEFER reported instead of deferred, and UnpackOneFile's link re-read off; build of
+  the working tree, then `git checkout HEAD -- src/plugins/tar/untar.cpp` and a rebuild):
+  `probe/result_negctl.txt` PASS 12 / FAIL 6 - COPY-INSIDE / -GZ / -CHAIN 1 of 3 files plus a box,
+  COPY-FOCUSED 0 files + box, COPY-EXIST e.txt not replaced, VIEW-LINK the "(2) sub\d.txt -> a.txt"
+  box; COPY-MISSING / -SYM / -ROOT pass in both (they do not depend on the second pass). Restored
+  build: `probe/result_after_restored.txt` PASS 18 / FAIL 0.
+- Build warnings C4267 in untar.cpp (lines `NameLen = strlen(...)`) are pre-existing (0991f43c).

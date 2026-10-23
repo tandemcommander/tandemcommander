@@ -41,9 +41,9 @@
 ## Phase 6: Polish & cross-cutting
 
 - [X] T011 Build (`.\build.cmd`), saltests, encoding guard (`python tools/check_encoding.py --strict`)
-- [ ] T012 Run link325_probe.ps1 after the change -> specs/325-tar-listed-hard-links/probe/result_after.txt (all PASS); negative control (DEFER disabled) recorded
-- [ ] T013 Regression probes 309, 308, 306, 321 -> specs/325-tar-listed-hard-links/probe/regress_*.txt; update rows that encoded unlisted links, if any
-- [ ] T014 Record before / after, commands and decisions in specs/325-tar-listed-hard-links/fix-log.md
+- [X] T012 Run link325_probe.ps1 after the change -> specs/325-tar-listed-hard-links/probe/result_after.txt (all PASS); negative control (DEFER disabled) recorded
+- [X] T013 Regression probes 309, 308, 306, 321 -> specs/325-tar-listed-hard-links/probe/regress_*.txt; update rows that encoded unlisted links, if any
+- [X] T014 Record before / after, commands and decisions in specs/325-tar-listed-hard-links/fix-log.md
 
 ## Dependencies
 
