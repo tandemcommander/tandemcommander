@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [undelete-skips-its-same-partition-warning-when-the-target]
+related: []
 depends-on: []
 reason: -
 ---
@@ -60,3 +60,4 @@ function on UTF-8 paths.
 ## Log
 
 - 2026-10-23 — created (source measure:324)
+- 2026-10-23 — related item undelete-skips-its-same-partition-warning-when-the-target done in feature 324

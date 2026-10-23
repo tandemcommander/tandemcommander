@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Undelete skips its same-partition warning when the target volume cannot be told](items/undelete-skips-its-same-partition-warning-when-the-target/desc.md) | bug | 5 | data-safety | 324 |
 
 ## Next
 
@@ -244,6 +243,7 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check the Undelete same-partition warning for a target in an accented mount folder](items/check-the-undelete-same-partition-warning-for-a-target-in-an/desc.md) | person-step | 3 | other-plugins | leftover:324 | 2026-10-23 |
 | [The core reads volume names with the code-page API on UTF-8 paths](items/the-core-reads-volume-names-with-the-code-page-api-on-utf-8/desc.md) | bug | 3 | encoding | measure:324 | 2026-10-23 |
 
 ## Parked

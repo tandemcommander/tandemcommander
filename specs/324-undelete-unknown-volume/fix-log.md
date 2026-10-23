@@ -92,7 +92,7 @@ shell is not elevated: `IsInRole(Administrator)` = False).
 Re-ran the measurement (same facts) and saltests (27845 / 0); its own harness against the real
 header: a junction on C: to D:'s root - Root D: -> same, Root C: -> different; a ~900-character
 missing target with Czech letters below it -> D's serial, nothing cut; a loopback share
-(`\localhost\D$`) reports D's serials (now warns - correct); G: (FAT32, has a volume name) is
+(`\\localhost\D$`) reports D's serials (now warns - correct); G: (FAT32, has a volume name) is
 answered by the core as before; D:/E:/F: distinct serials - no new warning.
 
 - SHOULD 1 (taken): the fixture's junctions all pointed back to the temp volume, so a read that

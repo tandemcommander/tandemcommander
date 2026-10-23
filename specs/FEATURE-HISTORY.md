@@ -40,7 +40,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Privacy and security | 083, 085, 086, 090, 123 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323 |
 | PictView | 105, 111, 120, 267 |
-| Undelete | 114, 115, 148 |
+| Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
@@ -4443,3 +4443,23 @@ a few early ones are out of sequence).
   10/2 (MKD-ABS, REN-UP), on 302's state 10/2 (MKD-HID, MKD-CASE) -> 12/0, final 16/0 (+ MKD-HIDABS, MKD-UPHID
   from the review; a mutant of the absolute branch fails MKD-HIDABS); 288 20/0; saltests 27793;
   one refute-first review (no MUST; SHOULD taken: the absolute-path row).
+- 324-undelete-unknown-volume: Undelete restored into a folder of the very volume being recovered
+  without its same-partition warning when the core could not read the target's volume name - a
+  mount folder named outside ASCII (the core asks the code-page `GetVolumeNameForVolumeMountPoint`
+  with the UTF-8 path: error 2, measured on a junction `Zálohy` to the volume root) or a junction to
+  a volume-GUID folder; `PathsAreOnTheSameVolume` answers "different" (estimation) when one volume
+  name is unreadable, and View's temporary-folder check failed open the same way. Now
+  `UndPathsMayShareVolume` (fs2.cpp) keeps the core's "same" and its certain "different", and
+  re-decides an unsure "different" by the volume serials of both paths' nearest existing folders
+  (`src/common/salsamevolume.h` on 103's identity: wide, `\\?\` form, any length, steps up only on
+  not-found); an unreadable serial = the same volume. The core and the plug-in contract are
+  unchanged, no string. Traps: "estimation = same" alone (the item's hint) would warn on every
+  share - the core is always unsure there; review 1: fixture junctions pointing back to the temp
+  volume could not tell a read that opens the link itself (mutant passed) - a junction to a second
+  volume's root added. Limits: a serial-0 volume, an unreachable share or an unopenable source root
+  now warn when the core is unsure; the elevated GUI restore is a person step
+  (`check-the-undelete-same-partition-warning-for-a-target-in-an`); the core's code-page call is
+  Inbox `the-core-reads-volume-names-with-the-code-page-api-on-utf-8`. From backlog item
+  `undelete-skips-its-same-partition-warning-when-the-target`. saltests `TestSameVolume324` (55
+  checks run; 27848 / 0): negative controls - the core's answer alone 6 failed, a link-itself read
+  2 failed; one refute-first review (no MUST; SHOULD taken: the cross-volume row).
