@@ -3,7 +3,7 @@
 **Feature Branch**: `318-pack-name-trailing-dot`
 **Created**: 2026-10-23
 **Status**: Draft
-**Input**: Backlog item pack-archive-name-trailing-dot-or-space (backlog/items/pack-archive-name-trailing-dot-or-space/desc.md) - implement exactly what it describes.
+**Input**: Backlog item pack-archive-name-trailing-dot-or-space (backlog/items/pack-archive-name-trailing-dot-or-space/desc.md) - implement exactly what it describes. From backlog item pack-archive-name-trailing-dot-or-space.
 
 ## Background
 
