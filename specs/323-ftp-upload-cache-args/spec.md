@@ -3,7 +3,7 @@
 **Feature Branch**: `323-ftp-upload-cache-args`
 **Created**: 2026-10-23
 **Status**: Draft
-**Input**: User description: "Backlog item ftp-panel-mkdir-rename-skip-upload-listing-cache - FTP: Create Directory and Quick Rename in a panel never update the upload listing cache."
+**Input**: User description: "Backlog item ftp-panel-mkdir-rename-skip-upload-listing-cache - FTP: Create Directory and Quick Rename in a panel never update the upload listing cache."  From backlog item ftp-panel-mkdir-rename-skip-upload-listing-cache.
 
 ## Background
 

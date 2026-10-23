@@ -1,7 +1,7 @@
 ---
 title: FTP: Create Directory and Quick Rename in a panel never update the upload listing cache
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: ftp
 source: measure:288
@@ -10,7 +10,7 @@ created: 2026-10-21
 updated: 2026-10-23
 verified: 2026-10-23 4c33e2fc
 effort: S
-feature: -
+feature: 323
 related: []
 depends-on: []
 reason: -
@@ -42,3 +42,4 @@ Severity 5 because the effect is not measured; if the probe shows an upload repl
 - 2026-10-22 — blocked: the independent review rejected the fix twice - review 2 MUST: Create Directory with a path (.cfg/new, docs/new) caches an existing folder the listing does not show as new and empty, an upload into it then overwrites without the question; continue on the branch, see its fix-log section Stopped (feature 302, branch 302-ftp-upload-cache-args)
 - 2026-10-23 — unblocked: rules of 2026-10-23: a run carries over origin/302-ftp-upload-cache-args (SKILL.md 4.6) and fixes review 2 MUST in ReportCreateDirs as its fix-log Stopped says, up to three reviews
 - 2026-10-23 — verified at 4c33e2fc: still present at 4c33e2fc: the four ReportCreateDirs/ReportRename calls in ctrlcon5.cpp still swap host and user (unchanged since 02eba55f, where probe REN-UP replaced b.txt without the question)
+- 2026-10-23 — run started, feature 323
