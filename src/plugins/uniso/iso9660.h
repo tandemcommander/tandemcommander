@@ -8,6 +8,7 @@
 #include "../../common/sallistingname.h" // feature 326: the listing's rule for the fit check
 
 #include <set> // feature 328: the directories a walk met
+#include <vector>
 
 // ****************************************************************************
 //
@@ -283,6 +284,8 @@ protected:
     // feature 328 (review): the directories the current walk met (each is walked once - a crafted image
     // can point a folder back to its ancestor); NULL outside ListDirectory
     std::set<DWORD>* Visited;
+    // feature 328 (review 2): a count walk notes the directories it adds to Visited (CountUnder takes them out)
+    std::vector<DWORD>* VisitedLog;
     CDirectoryRecord Root;
     WORD LogicalBlockSize;
     DWORD ExtentOffset;

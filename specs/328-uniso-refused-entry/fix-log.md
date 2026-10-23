@@ -135,3 +135,34 @@ the backup was removed. Its partial findings:
   (no answer, CPU 21.5 s at 15 s). Regressions again: 326 28 / 0, 326 twins 8 / 0, 327 77 / 0, 322 18 / 0;
   saltests 28,026 / 0; encoding guard 0.
 - A fresh review is launched with this partial work in its prompt.
+
+### Review 2 (stopped reviewer - partial work)
+
+The second review agent also ended with the session (status `stopped`, no report); no registry
+backup left, the key's SHA-256 unchanged (4F221E76...). Its scratch `%TEMP%\rev328b` held only
+`mk2.sh`: stress images for the decision mode's count walks - `wide.iso` (20,000 Rock Ridge folders
+`folder_with_a_long_name_<i>` at the root, one file each, plus the deep tree that puts the volume into
+decision mode), `widenodeep.iso` (the same without it) and a chain (100 levels of one-letter folders,
+20,000 files at level 100, 20 more levels, a 200-letter name at the bottom).
+
+Found by reading what it aimed at (my own SHOULD-level findings, fixed):
+
+- review 1's fix copied the listing's visited set for every count walk - with 20,000 decided root
+  folders that is quadratic. Now a count walk marks its directories in the same set and takes them
+  out afterwards (`VisitedLog`).
+- every Rock Ridge folder in decision mode ran a count walk of its whole subtree, also when its Rock
+  Ridge name is not longer than the ISO 9660 name (where it is kept anyway) - a deep chain of short
+  names walked its subtree once per level. Now no count walk then; the subtree stays in decision mode
+  (the same names: in a subtree that fits whole every decision keeps Rock Ridge). The saltests
+  simulator mirrors it (`TestIsoNameFit328` 0 failed).
+
+Measured (`%TEMP%\rev328\loop_probe.ps1` of review 1 as `stress_probe.ps1`, hidden desktop; main =
+review 1's build of d61d0612's uniso in `%TEMP%\rev328\negexe`), CPU at the open, all responsive:
+
+| image | this build | main |
+|---|---|---|
+| wide.iso (decision mode) | 11.3 s | 16.4 s ("Error") |
+| widenodeep.iso | 10.8 s | 10.2 s |
+| chain.iso (`mkchain.sh`, the chain part of mk2.sh) | 0.7 s | 0.7 s |
+
+After: `probe/result_after_review2.txt` 16 / 0; 326 28 / 0, 327 77 / 0 again; saltests 28,026 / 0.

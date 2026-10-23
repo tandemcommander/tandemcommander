@@ -1,0 +1,25 @@
+iso328_probe (feature 328) after-review2
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 22:13; registry key existed True
+
+seeds: gdeep.iso,jdeep.iso,jloop.iso,ldeep.iso,xdeep.iso; ldeep.iso: root directory at 47104: SP check bytes cleared
+G-COPY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+G-COPY     RUN    PASS        files 4: a<59x>/b<59x>/c<59x>/D<7X>/E<7X>/deep.txt, a<59x>/side.txt, top.txt, zlast/z.txt; deep.txt content 'DEEP'; "(206)" naming deep.txt at the open: False; "Error": False; at the open: no window; copy: [#32770 'Copy'] [Static id=209] Copy 1 file and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+X-COPY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+X-COPY     RUN    PASS        files 4: a<59x>/b<59x>/c<59x>/D<30X>/E<30X>/deep.txt, a<59x>/side.txt, top.txt, zlast/z.txt; deep.txt content 'DEEP'; "(206)" naming deep.txt at the open: False; "Error": False; at the open: no window; copy: [#32770 'Copy'] [Static id=209] Copy 1 file and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+L-COPY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-COPY     RUN    PASS        files 4: a<59x>/b<59x>/c<59x>/D<7X>/E<7X>/deep.txt, a<59x>/side.txt, top.txt, zlast/z.txt; deep.txt content 'DEEP'; "(206)" naming deep.txt at the open: False; "Error": False; at the open: no window; copy: [#32770 'Copy'] [Static id=209] Copy 1 file and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+J-COPY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+J-COPY     RUN    PASS        files 3: a<59x>/side.txt, top.txt, zlast/z.txt; "(206)" naming deep.txt at the open: True; "Error": False; at the open: ...p\u0159\u00EDpona souboru je p\u0159\u00EDli\u0161 dlouh\u00E1. axxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ dxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ exxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\deep.txt | [Button id=1] OK; copy: [#32770 'Copy'] [Static id=209] Copy 1 file and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'Error'] [Static id=2477] Name "exxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" with full path is too long. Path: axxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ dxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx | [Button id=1] OK | [Button id=2] Cancel
+J-UNP-DEL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+J-UNP-DEL  RUN    PASS        files 3: a<59x>/side.txt, top.txt, zlast/z.txt; files ok: True; image kept: True (want True); "(206)" naming deep.txt: True; fatal: ; windows: ...p\u0159\u00EDpona souboru je p\u0159\u00EDli\u0161 dlouh\u00E1. axxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ dxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ exxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\deep.txt | [Button id=1] OK
+G-UNP-DEL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+G-UNP-DEL  RUN    PASS        files 4: a<59x>/b<59x>/c<59x>/D<7X>/E<7X>/deep.txt, a<59x>/side.txt, top.txt, zlast/z.txt; deep.txt content 'DEEP'; files ok: True; image kept: False (want False); "(206)" naming deep.txt: False; fatal: ; windows: no window
+loop_rr.iso: descriptor 1: 2 root folders point to the root's extent 23; loop_j.iso: descriptor 2: 2 root folders point to the root's extent 31
+LOOP-RR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LOOP-RR    RUN    PASS        answers WM_NULL within 5 s: True; CPU 0,6 s; panel C:\Users\pavel\AppData\Local\Temp\tc328\LOOP-RR\loop_rr.iso; windows: no window
+LOOP-J     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+LOOP-J     RUN    PASS        answers WM_NULL within 5 s: True; CPU 0,6 s; panel C:\Users\pavel\AppData\Local\Temp\tc328\LOOP-J\loop_j.iso; windows: no window
+Registry: restored; identical=True; SHA-256 before 4F221E76594DD9F25F9725F90B1075E459FFD134260483E49BE795C780FF51E7 / after 4F221E76594DD9F25F9725F90B1075E459FFD134260483E49BE795C780FF51E7
+
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

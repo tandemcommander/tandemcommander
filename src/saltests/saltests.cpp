@@ -20232,7 +20232,7 @@ static void Iso328List(const Iso328Node& n, const std::string& path, bool decide
         }
         bool keepRr = rr != NULL;
         bool below = decide;
-        if (rr != NULL && decide)
+        if (rr != NULL && decide && k.Rr.size() > k.Iso.size()) // not longer: Rock Ridge, still deciding below
         {
             bool refused = false;
             Iso328Counts c = {0, 0};

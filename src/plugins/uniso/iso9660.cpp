@@ -53,6 +53,7 @@ CISO9660::CISO9660(CISOImage* image, DWORD extent) : CUnISOFSAbstract(image)
     FitListed = 0;
     Decide = FALSE;
     Visited = NULL;
+    VisitedLog = NULL;
     ExtentOffset = extent;
 
     BootRecordInfo = NULL;
@@ -551,22 +552,26 @@ char* CISO9660::PickDirName(char* path, CDirectoryRecord& dr, char* rrName, char
     BOOL keepRr = TRUE;
     if (Decide)
     {
-        // feature 328 (salisonamefit.h): the Rock Ridge name when the whole subtree fits with Rock Ridge
-        // names (it then leaves the decision mode), when it is not longer, or when it leaves no fewer
-        // entries fitting and no fewer listed than the ISO 9660 name - counted with ISO 9660 names below
-        size_t fitRr = 0, listedRr = 0, fitIso = 0, listedIso = 0;
-        BOOL refused = FALSE;
-        CountUnder(path, dr, rrName, FALSE, &fitRr, &listedRr, &refused);
-        BOOL fits = !refused;
+        // feature 328 (salisonamefit.h): the Rock Ridge name when it is not longer (no count walk - review
+        // 2: a deep chain of short names walked its subtree once per level), when the whole subtree fits
+        // with Rock Ridge names (it then leaves the decision mode), or when it leaves no fewer entries
+        // fitting and no fewer listed than the ISO 9660 name - counted with ISO 9660 names below
         size_t rrLen = strlen(rrName), isoLen = strlen(isoName);
-        keepRr = fits || rrLen <= isoLen;
-        if (!keepRr)
+        if (rrLen > isoLen)
         {
-            CountUnder(path, dr, rrName, TRUE, &fitRr, &listedRr, NULL);
-            CountUnder(path, dr, isoName, TRUE, &fitIso, &listedIso, NULL);
-            keepRr = SalIsoFolderKeepsRockRidge(false, rrLen, isoLen, fitRr, fitIso, listedRr, listedIso);
+            size_t fitRr = 0, listedRr = 0, fitIso = 0, listedIso = 0;
+            BOOL refused = FALSE;
+            CountUnder(path, dr, rrName, FALSE, &fitRr, &listedRr, &refused);
+            BOOL fits = !refused;
+            keepRr = fits;
+            if (!keepRr)
+            {
+                CountUnder(path, dr, rrName, TRUE, &fitRr, &listedRr, NULL);
+                CountUnder(path, dr, isoName, TRUE, &fitIso, &listedIso, NULL);
+                keepRr = SalIsoFolderKeepsRockRidge(false, rrLen, isoLen, fitRr, fitIso, listedRr, listedIso);
+            }
+            below = !fits;
         }
-        below = !fits;
     }
     // the chosen Rock Ridge name refused by the listing: the ISO 9660 name when the listing takes it
     if (keepRr && !SalListingAcceptsDirU8(path, pathLen, strlen(rrName)) &&
@@ -598,20 +603,12 @@ void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BO
     FitCount = 0;
     FitListed = 0;
     Decide = FALSE;
-    // the directories the walk it is part of met already stay empty here too (a copy: the count walk
-    // marks only its own)
-    std::set<DWORD>* saveVisited = Visited;
-    std::set<DWORD> subVisited;
-    try
-    {
-        if (saveVisited != NULL)
-            subVisited = *saveVisited;
-    }
-    catch (...)
-    {
-        // out of memory: an empty set - each directory still walked once in this count walk
-    }
-    Visited = &subVisited;
+    // the directories the walk it is part of met already stay empty here too; the count walk marks its
+    // own in the same set and takes them out afterwards (review 2: a copy of the set per count walk was
+    // quadratic - 20,000 Rock Ridge folders at a root)
+    std::vector<DWORD> countLog;
+    std::vector<DWORD>* saveLog = VisitedLog;
+    VisitedLog = &countLog;
     // the folder part and the name are accepted (at most MAX_PATH - 5 bytes each): the walk's
     // 4 * MAX_PATH + 2 byte buffer holds both
     path[pathLen] = '\\';
@@ -619,7 +616,10 @@ void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BO
     CPluginDataInterfaceAbstract* noData = NULL;
     ListDirectoryRe(path, &dr, NULL, noData);
     path[pathLen] = '\0';
-    Visited = saveVisited;
+    VisitedLog = saveLog;
+    if (Visited != NULL)
+        for (size_t i = 0; i < countLog.size(); i++)
+            Visited->erase(countLog[i]);
     *fit = (folderFits ? 1 : 0) + FitCount;
     *listed = 1 + FitListed;
     if (refused != NULL && FitRefused)
@@ -769,13 +769,19 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
     // directory met again is listed as an empty folder
     if (Visited != NULL)
     {
+        bool added = false;
         try
         {
             if (!Visited->insert(block).second)
                 return ERR_OK;
+            added = true;
+            if (VisitedLog != NULL) // a count walk: CountUnder takes its directories out again
+                VisitedLog->push_back(block);
         }
         catch (...)
         {
+            if (added)
+                Visited->erase(block);
             Error(IDS_INSUFFICIENT_MEMORY, FitCheck);
             return ERR_TERMINATE;
         }
