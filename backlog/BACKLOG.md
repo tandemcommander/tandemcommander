@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ZIP says the archive was not changed after a failed replace, yet it changed and a temp file stays](items/zip-says-the-archive-was-not-changed-after-a-failed-replace/desc.md) | bug | 5 | archives | 320 |
 
 ## Next
 
@@ -253,6 +252,9 @@ Last triaged: 2026-10-23
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Restore the product registry key changed by a killed probe of feature 320](items/restore-registry-after-killed-probe-320/desc.md) | person-step | 2 | tooling | leftover:320 | 2026-10-23 |
+| [ZIP cannot update an archive reached through a symbolic link](items/zip-cannot-update-an-archive-reached-through-a-symbolic-link/desc.md) | bug | 4 | archives | review:320 | 2026-10-23 |
+| [ZIP does not say the temporary file is the only copy when the archive vanished](items/zip-does-not-say-the-temporary-file-is-the-only-copy/desc.md) | bug | 3 | archives | review:320 | 2026-10-23 |
 
 ## Parked
 

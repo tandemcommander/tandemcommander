@@ -115,3 +115,56 @@ exactly what 319 measured. The new rule on the same target: kept, unchanged (sal
 Not driven: "archive gone, temporary file kept" (`srrLeftAtTemp`) and "both gone" - need a third
 party deleting the archive during the operation (analyze C1); Move to archive with a held archive
 (the clean-up runs only without an error, unchanged). No person step is owed.
+
+## Review
+
+Review 1 (general-purpose agent): killed twice without a report (05:36Z and after a resume; the run
+log `.git/tandem-backlog-loop/logs/20261023-052858-...jsonl` records `killed` / `stopped`; its last
+call - waiting on a control probe - was rejected). It left no findings; it does not count as a review
+round. Its partial work: a control probe run on the pre-feature build reproduced the stray
+`Sal*.tmp` (add-locked, `SalF58.tmp`). It restored `add.cpp` / `add_del.cpp` (tree clean, checked).
+
+Its killed probe left the product registry key changed: `%TEMP%\tc320_backup.reg` (06:02, SHA-256
+CF69145A... = the state every probe run of this feature restored) against the current export
+(C775064F...): only the panel paths / focus (the add-ctl fixture) and `Plugins.ver Version (x64)`
+(00d724bc -> 00d728f2, the Debug build's). Not restored: the maintainer's installed Tandem Commander
+(started 06:43, after the probe) is running on the same key and writes its state on exit; the backup
+is kept for the maintainer (owed to a person). The fixture `%TEMP%\tc320_zipreplace` (probe files
+only) was removed.
+
+Review 2 (fresh, same prompt): without GUI probes (the probe refuses to start while another
+tandemcommander.exe runs) and without temporary source changes; negative controls outside the tree.
+
+Review 2 result: **no MUST**, 2 SHOULD, 5 NOTE. It re-built (up to date), `saltests: 27559 checks,
+0 failed`, encoding guard 0; enumerated the callers (`PackToArchive` from Pack / copy / move /
+archive-edit update; `DeleteFromArchive`; `CleanUpSource` runs only without an error; nothing deletes
+`TempName` after an error); and compared the old and the new replace with standalone P/Invoke
+scripts under `%TEMP%`: archive held (share 3) - old: stray tmp, new: kept + tmp deleted; **the
+temporary file held without delete sharing - old: the archive deleted, rename 32, archive gone under
+"not changed"; new: archive unchanged**; hidden / hidden+system kept; hard link as before; a file
+symbolic link - old: the link replaced by a plain file, real archive stale; new: 1464, nothing
+changed; seven ACL denials on the archive - replaced as before; a WSL network share - replaced. It
+also read the killed reviewer's extended probe (`%TEMP%\rev320\after_review.txt`, not in the
+repository): 30 PASS / 2 FAIL - the 2 FAILs (add-long-*) are the core's Pack dialog refusing a too
+long path before the plug-in; rows symlink, newest-time and `Zone.Identifier` time PASS.
+
+- SHOULD 1 (a file symbolic link can no longer be updated, fails safe with the true message) ->
+  spec *Edge Cases* records it; Inbox item `zip-cannot-update-an-archive-reached-through-a-symbolic-link`
+  (needs the temporary file next to the final path - beyond this item).
+- SHOULD 2 (the "only copy" case does not say so) -> needs a new string, which a run does not add
+  (FR-005, stop-rules 3 #2); Inbox item `zip-does-not-say-the-temporary-file-is-the-only-copy`.
+- NOTE 1 (shape (b) IS reproducible on an ordinary file: the temporary file held without delete
+  sharing) -> recorded here and in the spec's *Edge Cases*; the measurement above corrects the
+  "not reproducible" of *Measurement*.
+- NOTE 2 (in that case the held temporary file cannot be deleted, so it may remain - the archive is
+  intact, the message true) -> spec *Edge Cases*; accepted.
+- NOTE 3 (saltests test the shared rule, not the plug-in's mapping; only the probe catches a revert
+  of the plug-in) -> accepted: the mapping is four lines with side effects, the probe is the guard
+  (its before run FAILs).
+- NOTE 4 (check 5 pinned an OS behaviour) -> fixed: the "time moved" assertion became a printed line
+  (`saltests 320: a replace onto a file with a named stream moved the replacement's last-write
+  time`); rebuilt: BUILD SUCCEEDED, `saltests: 27558 checks, 0 failed`, encoding guard 0.
+- NOTE 5 (the archive keeps its ACL / creation time / named streams, Mark of the Web) -> as the
+  spec's Clarifications decided; FAT/exFAT and SMB/NAS not driven (fail safe by the rule).
+
+No second review round was needed (no MUST).

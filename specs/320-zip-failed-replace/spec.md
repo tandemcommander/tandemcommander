@@ -101,6 +101,13 @@ changed") for every route, not only the ones known today.
 - Self-extracting and multi-volume archives use other code paths (a new file is created) - unchanged.
 - "Move to archive": the source files are deleted only when the archive was updated; on the replace
   failure they stay (as before - the error stops the clean-up).
+- An archive reached through a file symbolic link: the one-step replace refuses (1464) - the
+  archive and the link stay as they were, the replace message is shown (before: the link was
+  replaced by a plain file and the real archive left stale). Updating through a link is Inbox
+  item `zip-cannot-update-an-archive-reached-through-a-symbolic-link` (review of 320).
+- The temporary file held by another program without delete sharing (an antivirus scanning the new
+  `Sal*.tmp`): before 320 the archive was deleted and the rename failed - the archive gone; now the
+  archive stays as it was, and the temporary file, which cannot be deleted while held, may remain.
 - Long or non-ASCII archive paths: the replace works on the full wide path (UTF-8 / WTF-8 converted
   without loss, `\\?\` allowed).
 

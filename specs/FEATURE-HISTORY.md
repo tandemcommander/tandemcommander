@@ -33,7 +33,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319 |
-| ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
+| ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262 |
@@ -4319,3 +4319,24 @@ a few early ones are out of sequence).
   318's probe 52 / 0; saltests 27,540 / 0 (negative control: the rule off -> 18 failed); one
   refute-first review (no MUST, no SHOULD; its call-site negative control failed 4 of 5 rows; its rows
   adopted).
+- 320-zip-failed-replace: the ZIP plug-in (default "create temporary backup of zip") put a changed
+  archive in place by deleting it and renaming its `Sal*.tmp` over it. With the archive open in another
+  program without delete sharing, adding files to it or deleting members from it said "Cannot replace
+  original archive with temporary working file. Archive was not changed." (true) but left the
+  `Sal*.tmp` in the folder; with the temporary file held instead (an antivirus on the new file) or an
+  archive in a data stream (319), the delete succeeded, the rename failed, and the archive was GONE
+  under the same "not changed" message. Now both sites (`PackNormal`, `DeleteFromArchive`) call
+  `CZipPack::ReplaceArchiveWithTemp` -> `SalReplaceWithTempW` (105): one ReplaceFileW step; kept ->
+  the temporary file deleted and the message true; archive vanished -> the temporary file kept and
+  named (`IDS_ERRCREATE`, no new string). Traps: ReplaceFileW copies the target's named streams
+  (Zone.Identifier) into the new file, which moves its last-write time - "set zip file time to the
+  newest file time" is applied again after the replace (measured; saltests prints it, does not pin
+  it); PowerShell passes `$null` as "" to a P/Invoke string (use `[NullString]::Value`). Limits: an
+  archive behind a file symbolic link now fails safe (1464) instead of the link becoming a plain file
+  (Inbox `zip-cannot-update-an-archive-reached-through-a-symbolic-link`); the "only copy" case does not
+  say so (Inbox `zip-does-not-say-the-temporary-file-is-the-only-copy`); a held temporary file cannot
+  be deleted and may remain. From backlog item `zip-says-the-archive-was-not-changed-after-a-failed-replace`.
+  Probe `zipreplace_probe.ps1` 2 FAIL / 10 -> 12 / 0 (add-locked, del-locked); saltests 27,558 / 0
+  (`TestSafeReplace320`); review 1 killed without a report (its probe left the registry changed -
+  person step `restore-registry-after-killed-probe-320`); review 2 refute-first: no MUST, 2 SHOULD
+  (-> Inbox), NOTE 4 fixed.

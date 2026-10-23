@@ -5254,12 +5254,14 @@ static void TestSafeReplace320()
     CHECK(get(a) == "NEWER" && !exists(tmpFile) && isOld(a));
 
     // 5. ...while one onto an archive with a named stream (the downloaded-file mark) keeps the
-    //    stream and moves the time (ReplaceFileW copies the stream into the new file, measured) -
-    //    the ZIP plug-in sets the time again after the replace
+    //    stream; the time then moved on Windows 11 26300 (ReplaceFileW copies the stream into the
+    //    new file) - the ZIP plug-in sets the time again after the replace. Reported, not checked
+    //    (an OS behaviour, not a rule of ours).
     CHECK(put(a + L":Zone.Identifier", "ZONE") && put(tmpFile, "NEWEST") && setOld(tmpFile));
     CHECK(SalReplaceWithTempW(a.c_str(), tmpFile.c_str(), TRUE, TRUE, &err) == srrDone);
     CHECK(get(a) == "NEWEST" && get(a + L":Zone.Identifier") == "ZONE" && !exists(tmpFile));
-    CHECK(!isOld(a));
+    printf("saltests 320: a replace onto a file with a named stream %s the replacement's last-write time\n",
+           isOld(a) ? "kept" : "moved");
 
     // cleanup (explicit names only)
     DeleteFileW(tmpFile.c_str());
