@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
@@ -4229,3 +4229,23 @@ a few early ones are out of sequence).
   cases; negative controls 24 and 7 failed checks); two refute-first reviews (round 1: a MUST and
   two SHOULDs fixed; round 2: no MUST, a SHOULD fixed, the dot tolerance after a typed mark
   recorded). Person step `quick-search-ignoring-accents-check-with-a-real-keyboard`.
+- 315-unpack-default-whole: the Unpack dialog (Alt+F9) filled its target with the other panel's
+  path cut to 259 bytes (`lstrcpyn`, possibly inside a UTF-8 letter - a CJK cut showed as garbage);
+  the cut fitted, so 299's `Validate` accepted it and one Enter (with "Use the other panel for
+  unpacking") unpacked into a new folder named after the cut component; with "Use the archive name
+  as a subfolder" a path + name that did not fit was offered bare (files straight into the other
+  panel's folder); an empty target became the archive panel's path cut the same way (measured: a
+  new cut folder). Now `salunpackdefault.h`: a default is offered whole or left out (the entry stays
+  empty, as for a non-disk panel), a subfolder that does not fit leaves the path out and offers the
+  archive's name alone (a subfolder next to the archive), a plug-in's unpack mask whole or `*.*`, and
+  the empty target is refused ("The path specified is too long.", the dialog again) when the archive
+  folder - or, with the subfolder setting, the archive's name alone - does not fit. Limits: with "Use
+  the other panel" on and a long other panel the one entry is the empty one - Enter unpacks next to
+  the archive (the item's choice; overwrite questions still asked); the plug-in mask is not driven
+  (no plug-in of the tree passes one); a leading space of the archive name is lost in the subfolder
+  (Inbox `unpack-into-a-subfolder-named-after-an-archive-whose-name`, review). Trap: PowerShell's
+  `@($a + 'x', $b + 'y')` - the comma binds before `+`. From backlog item
+  `unpack-dialog-offers-a-long-target-panel-path-cut-and`. Probe `unpack315_probe.ps1` 6 FAIL / 9 ->
+  11 / 0 (negative control: the build of main); 299's probe 12 / 0; saltests 27,440 / 0 (negative
+  controls 8 and 1 failed); one refute-first review (no MUST; SHOULD 1 - a subfolder name too long
+  alone unpacked without it - fixed, SHOULD 2 accepted as the item's choice, a NOTE to the Inbox).

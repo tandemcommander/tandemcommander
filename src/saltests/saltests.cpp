@@ -18797,6 +18797,30 @@ static void TestUnpackDefault315()
     std::string s300 = std::string(300, 's') + ".zip";
     buf[0] = 0;
     CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s300.c_str(), 300) && buf[0] == 0);
+    // ... after a path too: never the bare path
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s300.c_str(), 300) && buf[0] == 0);
+    // a name of 260 bytes does not fit alone either
+    std::string s260 = std::string(260, 's') + ".zip";
+    strcpy(buf, "C:\\t");
+    CHECK(!SalUnpackDefaultAddSubdir(buf, MAX_PATH, s260.c_str(), 260) && buf[0] == 0);
+
+    // SalUnpackEmptyTarget: the archive's folder whole; a folder of 260+ bytes refused; a subfolder
+    // name that does not fit even alone refused (the empty target would unpack without it)
+    strcpy(buf, "old");
+    CHECK(SalUnpackEmptyTarget(f259.c_str(), 0, buf, MAX_PATH) && strcmp(buf, f259.c_str()) == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget(f260.c_str(), 0, buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget(f297.c_str(), 0, buf, MAX_PATH) && buf[0] == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget(c355.c_str(), 0, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(SalUnpackEmptyTarget("C:\\t", 259, buf, MAX_PATH) && strcmp(buf, "C:\\t") == 0);
+    strcpy(buf, "old");
+    CHECK(!SalUnpackEmptyTarget("C:\\t", 260, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(SalUnpackEmptyTarget("C:\\t", 20, buf, MAX_PATH) && strcmp(buf, "C:\\t") == 0);
+    CHECK(!SalUnpackEmptyTarget(NULL, 0, buf, MAX_PATH) && buf[0] == 0);
+    CHECK(!SalUnpackEmptyTarget("C:\\t", 0, NULL, MAX_PATH));
     // a CJK name appended whole (byte count, never inside a letter)
     std::string cjkName = "\xE4\xB8\x80\xE4\xB8\x81.zip";
     strcpy(buf, "C:\\t");

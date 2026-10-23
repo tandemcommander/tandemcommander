@@ -2146,12 +2146,14 @@ void CFilesWindow::Unpack(CFilesWindow* target, int pluginIndex, const char* plu
         }
         char fileName[SAL_FIND_NAME_U8]; // AlterFileName copies a full name unbounded (feature 027; was MAX_PATH)
         AlterFileName(fileName, file->Name, -1, Configuration.FileNameFormat, 0, FALSE);
+        int subdirNameLen = 0; // feature 315: the subfolder's name length (0 = no subfolder asked)
         if (Configuration.UseSubdirNameByArchiveForUnpack)
         {
             // the name without ".ext", never past the altered name
             int nameLen = (int)(file->Ext - file->Name) - (*file->Ext == 0 ? 0 : 1);
             if (nameLen > (int)strlen(fileName))
                 nameLen = (int)strlen(fileName);
+            subdirNameLen = nameLen;
             int i2;
             for (i2 = 0; i2 < 2; i2++) // for path and pathAlt
             {
@@ -2241,8 +2243,9 @@ void CFilesWindow::Unpack(CFilesWindow* target, int pluginIndex, const char* plu
                 if (errTextID == IDS_EMPTYNAMENOTALLOWED)
                 {
                     // an empty target = next to the archive; feature 315: a panel path that does not
-                    // fit the MAX_PATH buffer is refused (it was cut: unpacked into another folder)
-                    if (!SalUnpackDefaultCopy(GetPath(), path, MAX_PATH))
+                    // fit the MAX_PATH buffer is refused (it was cut: unpacked into another folder),
+                    // so is a subfolder name that does not fit even alone (unpacked without it)
+                    if (!SalUnpackEmptyTarget(GetPath(), subdirNameLen, path, MAX_PATH))
                         text = LoadStr(IDS_TOOLONGPATH);
                 }
                 else

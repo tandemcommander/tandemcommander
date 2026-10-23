@@ -16,6 +16,8 @@
 //
 //   SalUnpackDefaultCopy       a text, whole, or the buffer empty
 //   SalUnpackDefaultAddSubdir  buffer + '\' + name, whole, or the name alone
+//   SalUnpackEmptyTarget       an empty target after OK: the archive's folder,
+//                              whole, or refused
 //
 //*****************************************************************************
 
@@ -68,4 +70,19 @@ inline BOOL SalUnpackDefaultAddSubdir(char* buf, int size, const char* name, int
     memcpy(buf + l, name, (size_t)nameLen);
     buf[l + nameLen] = 0;
     return TRUE;
+}
+
+// An empty target after OK means "next to the archive": 'panelPath' (the archive's folder) whole into
+// 'buf' (TRUE). FALSE = refuse ("The path specified is too long."): the folder does not fit 'size'
+// bytes, or 'subdirNameLen' > 0 - with "Use the archive name as a subfolder" the name the subfolder
+// would get - does not fit even alone (then no entry could carry the subfolder; the empty target
+// would unpack without it). 'buf' is empty after FALSE.
+inline BOOL SalUnpackEmptyTarget(const char* panelPath, int subdirNameLen, char* buf, int size)
+{
+    if (buf == NULL || size <= 0)
+        return FALSE;
+    buf[0] = 0;
+    if (subdirNameLen > 0 && subdirNameLen >= size)
+        return FALSE;
+    return SalUnpackDefaultCopy(panelPath, buf, size);
 }

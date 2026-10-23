@@ -75,3 +75,35 @@ FR-006 "no new string" is proved by the build (no `.rc2` change). I1 (LOW, accep
 
 The plug-in mask site is not driven by a probe (no plug-in of the tree passes a mask): saltests rows
 and reading only.
+
+## Review
+
+Review 1 (independent agent, refute-first): no MUST. It re-ran saltests (27,429 / 0), the probe
+(18 PASS lines / 0), 299's probe (12 / 0) and a negative control on the header (8 failed, restored).
+
+- SHOULD 1 (fixed): with the subfolder setting on, an archive name that does not fit even alone
+  (87 CJK letters = 261 bytes) left every entry empty and OK unpacked next to the archive without
+  the subfolder (scratch rows `longname-sd`, `longname-sd-ua` of the reviewer, on the first
+  version). Now `SalUnpackEmptyTarget` refuses the empty target then ("The path specified is too
+  long."); new probe rows `longname-sd` / `longname-sd-ua` PASS; saltests rows for a path + a name
+  too long alone and for the empty target; negative control (the subfolder check removed from
+  `SalUnpackEmptyTarget`): 27,440 checks, 1 failed (the 260-byte name row); restored, 0 failed.
+- SHOULD 2 (accepted, the item's choice): with "Use the other panel" on and a long other panel,
+  the dialog holds only the empty entry, so one Enter unpacks next to the archive. The item's
+  *Expected* allows "the entry is left out (an empty / the other default)" and its *Notes* call
+  leaving it out the least change; overwrite questions are still asked. The probe rows other-* /
+  alt-* now state where the files go (next to the archive) - checked, not only "nothing under tgt".
+- NOTE 3 (to the Inbox): a subfolder named after an archive whose name starts with a space loses
+  the space (`SalGetFullName` strips it) - pre-existing, now also reachable with "Use the other
+  panel" on: `unpack-into-a-subfolder-named-after-an-archive-whose-name`.
+- NOTE 4 (accepted): a plug-in mask that does not fit becomes `*.*` (the item's "other default");
+  unreachable in the tree.
+- NOTE 5: the first saltests negative control ran on the first version; the reviewer re-ran it on
+  the current header (8 failed).
+- NOTE 6: history / changelog entries are written at closing.
+
+After the fixes: `build.cmd` BUILD SUCCEEDED; saltests 27,440 checks, 0 failed; encoding guard
+TOTAL: 0; probe `result_after.txt` 11 rows PASS (22 PASS lines with END), 0 FAIL, registry
+identical; 299's probe 12 / 0 (`regress_299.txt`, run before the review fixes - they touch only the
+empty-target branch with the subfolder setting on, which 299's rows do not use). No MUST, so no
+second review was required.

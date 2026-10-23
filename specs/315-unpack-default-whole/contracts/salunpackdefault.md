@@ -15,4 +15,11 @@ BOOL SalUnpackDefaultCopy(const char* text, char* buf, int size);
 BOOL SalUnpackDefaultAddSubdir(char* buf, int size, const char* name, int nameLen);
 ```
 
+```cpp
+// an empty target after OK ("next to the archive"): 'panelPath' whole into 'buf' (TRUE); FALSE (refuse,
+// 'buf' empty) when it does not fit 'size' bytes, or when 'subdirNameLen' > 0 (the subfolder the
+// setting asks for) does not fit even alone
+BOOL SalUnpackEmptyTarget(const char* panelPath, int subdirNameLen, char* buf, int size);
+```
+
 Guarantees: never writes more than `size` bytes; never leaves a prefix of the input in `buf`.

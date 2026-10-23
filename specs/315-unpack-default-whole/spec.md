@@ -130,8 +130,9 @@ A plug-in opens the Unpack dialog for itself with a mask longer than 259 bytes. 
 
 - The other panel is not a disk (archive, plug-in file system): no other-panel entry - unchanged.
 - The other panel's path is exactly 259 bytes: fits, offered whole; 260 bytes: left out.
-- The archive's name alone does not fit (empty path + name of 260+ bytes): nothing offered (as
-  today), never a cut name.
+- The archive's name alone does not fit (a name of 260+ bytes with the subfolder setting on):
+  nothing offered, never a cut name; OK on the empty entry is refused ("The path specified is too
+  long.") - it would unpack without the subfolder (review 1).
 - Both entries left out: the combo box holds the single empty entry (the empty and the alternative
   entries are equal, shown once - as when the other panel is not a disk).
 - A CJK path is never offered as invalid UTF-8 (no garbage entry).
@@ -150,7 +151,8 @@ A plug-in opens the Unpack dialog for itself with a mask longer than 259 bytes. 
   "*.*".
 - **FR-004**: After OK, an empty target that would become the archive panel's path is refused with
   "The path specified is too long." when that path does not fit - whether the empty entry was
-  offered or the user emptied the field; nothing is created or unpacked and the dialog opens again
+  offered or the user emptied the field - and, with "Use the archive name as a subfolder", when the
+  archive's name does not fit even alone; nothing is created or unpacked and the dialog opens again
   with the values it had at OK.
 - **FR-005**: Defaults that fit are offered and used exactly as before (controls).
 - **FR-006**: No new UI string; the existing "The path specified is too long." is reused.

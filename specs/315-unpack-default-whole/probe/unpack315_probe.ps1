@@ -14,7 +14,9 @@
     (CB_GETLBTEXT); the row picks item $Pick (or item 0 when there is no such item), clicks OK and
     answers the boxes OK / Yes.
     A cut entry = an item that names a folder under <row>\tgt but is neither L nor L\<subfolder>.
-      other-ascii  UA=1 SD=0, L 297 bytes ASCII, item 0. PASS = no cut entry, nothing new under tgt
+      other-ascii  UA=1 SD=0, L 297 bytes ASCII, item 0. PASS = no cut entry, nothing new under tgt,
+                   a.k / a.kp unpacked next to the archive (the empty entry; also the other-* / alt-*
+                   rows)
       other-cjk    UA=1 SD=0, L 355 bytes (CJK letters), item 0. PASS likewise
       alt-ascii    UA=0 SD=0, L 297 bytes ASCII, item 1. PASS likewise
       alt-cjk      UA=0 SD=0, L 355 bytes CJK, item 1. PASS likewise
@@ -24,6 +26,10 @@
       src-long     UA=0 SD=0, the archive in a 297-byte left panel folder, the empty item 0, OK: the
                    empty target becomes the archive panel's path. PASS = "too long" shown, no file
                    but the archive and no new folder in the row (the reopened dialog is cancelled)
+      longname-sd  UA=0 SD=1, the archive named 87 CJK letters + '.zip' (the subfolder name alone 261
+                   bytes), the empty item 0, OK. PASS = "too long", nothing unpacked (review 1 of 315:
+                   the empty entry unpacked next to the archive without the subfolder)
+      longname-sd-ua  the same with UA=1 and a short other panel (the old code offered it bare)
       ctl          UA=1 SD=0, L 200 bytes: item 0 = L whole, a.k unpacked into L
       ctl-alt      UA=0 SD=0, L 200 bytes CJK (240+ bytes): item 1 = L whole, a.k unpacked into L
       ctl-subdir   UA=1 SD=1, L 200 bytes: item 0 = L\a whole, a.k unpacked into L\a
@@ -300,12 +306,14 @@ try {
     Out ("Date    : {0}; ACP {1}; registry key existed {2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [Drv098f]::GetACP(), $existed)
     Out ("Fixture {0}" -f $Root)
     Out ''
-    Unpack-Row 'other-ascii' 1 0 0 { param($T) @{ L = (Long-Path ($T + '\L') 297); Zip = 'a.zip' } }
-    Unpack-Row 'other-cjk' 1 0 0 { param($T) @{ L = (Long-Path ($T + '\L') 355 -Cjk); Zip = 'a.zip' } }
-    Unpack-Row 'alt-ascii' 0 0 1 { param($T) @{ L = (Long-Path ($T + '\L') 297); Zip = 'a.zip' } }
-    Unpack-Row 'alt-cjk' 0 0 1 { param($T) @{ L = (Long-Path ($T + '\L') 355 -Cjk); Zip = 'a.zip' } }
+    Unpack-Row 'other-ascii' 1 0 0 { param($T) @{ L = (Long-Path ($T + '\L') 297); Zip = 'a.zip'; SrcExpect = @('a.k=K', 'a.kp=KP') } }
+    Unpack-Row 'other-cjk' 1 0 0 { param($T) @{ L = (Long-Path ($T + '\L') 355 -Cjk); Zip = 'a.zip'; SrcExpect = @('a.k=K', 'a.kp=KP') } }
+    Unpack-Row 'alt-ascii' 0 0 1 { param($T) @{ L = (Long-Path ($T + '\L') 297); Zip = 'a.zip'; SrcExpect = @('a.k=K', 'a.kp=KP') } }
+    Unpack-Row 'alt-cjk' 0 0 1 { param($T) @{ L = (Long-Path ($T + '\L') 355 -Cjk); Zip = 'a.zip'; SrcExpect = @('a.k=K', 'a.kp=KP') } }
     Unpack-Row 'subdir' 1 1 0 { param($T) @{ L = (Long-Path ($T + '\L') 245); Zip = ('s' * 20) + '.zip'; SrcExpect = @((('s' * 20) + '\a.k=K'), (('s' * 20) + '\a.kp=KP')) } } -NoBareL
     Unpack-Row 'src-long' 0 0 0 { param($T) @{ L = ($T + '\L'); Src = (Long-Path ((Split-Path $T) + '\src\S') 297); Zip = 'a.zip' } } -Refuse
+    Unpack-Row 'longname-sd' 0 1 0 { param($T) @{ L = ($T + '\L'); Zip = ((Cjk 87 0x4E80) + '.zip') } } -Refuse
+    Unpack-Row 'longname-sd-ua' 1 1 0 { param($T) @{ L = ($T + '\L'); Zip = ((Cjk 87 0x4E80) + '.zip') } } -Refuse
     Unpack-Row 'ctl' 1 0 0 { param($T) $l = Long-Path ($T + '\L') 200; @{ L = $l; Zip = 'a.zip'; Want = $l; Expect = @(($l.Substring($T.Length + 1) + '\a.k=K'), ($l.Substring($T.Length + 1) + '\a.kp=KP')) } } -Fits
     Unpack-Row 'ctl-alt' 0 0 1 { param($T) $l = Long-Path ($T + '\L') 250 -Cjk; @{ L = $l; Zip = 'a.zip'; Want = $l; Expect = @(($l.Substring($T.Length + 1) + '\a.k=K'), ($l.Substring($T.Length + 1) + '\a.kp=KP')) } } -Fits
     Unpack-Row 'ctl-subdir' 1 1 0 { param($T) $l = Long-Path ($T + '\L') 200; @{ L = $l; Zip = 'a.zip'; Want = ($l + '\a'); Expect = @(($l.Substring($T.Length + 1) + '\a\a.k=K'), ($l.Substring($T.Length + 1) + '\a\a.kp=KP')) } } -Fits
