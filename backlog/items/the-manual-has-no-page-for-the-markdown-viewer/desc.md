@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [mdview-page-width-levels]
+related: []
 depends-on: []
 reason: -
 ---
@@ -49,3 +49,4 @@ windows) and `introduction_news.htm`. Feature 314 fix-log, *Measured at da0a455a
 - 2026-10-23 — created (source measure:314)
 - 2026-10-23 — moved to Inbox
 - 2026-10-23 — moved to Next position 119
+- 2026-10-23 — related item mdview-page-width-levels done in feature 314

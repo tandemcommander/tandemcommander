@@ -36,7 +36,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
-| WebView2 viewers (Markdown, Code) | 081, 085, 262 |
+| WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
 | Privacy and security | 083, 085, 086, 090, 123 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303 |
 | PictView | 105, 111, 120, 267 |
@@ -4340,3 +4340,20 @@ a few early ones are out of sequence).
   (`TestSafeReplace320`); review 1 killed without a report (its probe left the registry changed -
   person step `restore-registry-after-killed-probe-320`); review 2 refute-first: no MUST, 2 SHOULD
   (-> Inbox), NOTE 4 fixed.
+- 314-mdview-page-width: the Markdown Viewer kept every document in a 46rem column (about 736 px,
+  80-90 characters a line) - a wider window only added margins, wide tables and code scrolled
+  inside the column, zoom scaled both - now View > Page Width (after Color Scheme) offers Normal
+  46rem (the default, the page of before byte for byte apart from two added CSS rules), Wide
+  64rem, Wider 90rem, Full Window (no limit, the padding stays), radio-checked, applied at once
+  (also in View Source) and stored as `PageWidth` 0-3 beside `ZoomPercent` (unknown -> Normal).
+  The width is per window; a choice also sets the stored level, even when it is the window's
+  own (review 1: two windows). Traps: a rebuild opens the page at the top (scripts off, no scroll
+  API in the shared host - a scheme change does the same; Inbox item); PrintWindow
+  (PW_RENDERFULLCONTENT) does capture the WebView2 page on the hidden desktop - the probe measures
+  the text column (681 / 968 / 1385 / 2228 px in a 2284 px client); a wrong-typed value shows the
+  core's "Unexpected value type." box; the 081 `mdview_probe.ps1` fails its first view on the
+  hidden desktop on HEAD as well (Inbox). From backlog item `mdview-page-width-levels`. Probe
+  `pw314_probe` 5/5 FAIL before -> 16/0; harness 38 -> 53/0 (negative controls fail); one
+  refute-first review (no MUST; S1 fixed). Blocked only for the `.slt` refresh; finished in a
+  maintainer session after merging `main`: 5 strings x 8 languages, 288 DeepL characters, 11 pins
+  (meaning and gender of the width levels; Zoom Out was "Zoom In" in de and ro).

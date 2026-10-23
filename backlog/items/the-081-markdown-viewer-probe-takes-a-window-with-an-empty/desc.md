@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [mdview-page-width-levels]
+related: []
 depends-on: []
 reason: -
 ---
@@ -55,3 +55,4 @@ show that the Markdown Viewer still works after a change (the backlog item
 - 2026-10-23 — created (source review:314)
 - 2026-10-23 — moved to Inbox
 - 2026-10-23 — moved to Next
+- 2026-10-23 — related item mdview-page-width-levels done in feature 314

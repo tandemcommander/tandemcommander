@@ -169,3 +169,41 @@ Draft FEATURE-HISTORY entry:
   hidden desktop on HEAD as well (Inbox). From backlog item `mdview-page-width-levels`. Probe
   `pw314_probe` 5/5 FAIL before -> 16/0; harness 38 -> 53/0 (negative controls fail); one
   refute-first review (no MUST; S1 fixed).
+
+## Finished (maintainer session, 2026-10-23)
+
+The maintainer asked for the blocked item to be finished and closed; the rules were changed the
+same day so that a run does the `.slt` refresh itself (stop-rules §2.13). Done in this order:
+
+- **Merged `main`** (62 commits, 313-320 and the backlog closures) into the branch: `[314] merge
+  main`. Conflicts: the backlog files (taken from `main`, where the item and the four items this
+  run had recorded already live), `.specify/feature.json` (the branch's), `CHANGELOG.md` (both
+  entries kept, `main`'s first). `main` changed nothing under `src/plugins/mdview/`,
+  `src/common/webhost/` or `src/plugins/shared/` since the fork (`git diff --stat` empty), so the
+  probe result above still describes this code.
+- **Translations** (stop-rules §2.13): entries = 5 new strings (2027 Page Width, 2028 Normal, 2029
+  Wide, 2016 Wider, 2017 Full Window), none changed. `.\build.cmd` -> BUILD SUCCEEDED;
+  `build_langs.cmd --export-templates --module mdview` -> 1/1; dry run `--formality prefer_more`:
+  **5 unique gaps per language**, ~41 characters each, no leftover `english_fallback`; real merge
+  `--budget 2656`: 288 DeepL characters, validation failures 0, duplicate accelerators 0.
+  Read back in all eight languages; pinned in `translations/ui-overrides.json` (`mdview`,
+  `_feature_314` note):
+  - meaning - *Full Window* is the column at the window's full width, not full-screen mode:
+    de "Vollbildmodus" -> "&Volle Fensterbreite", fr "Fenêtre plein écran" -> "&Toute la
+    fenêtre";
+  - agreement with the noun *width* (cs/sk "šířka/šírka", ro "lățimea" feminine, es "el ancho"
+    masculine): cs "Ši&roký" -> "Ši&roká"; sk "&Normálny / &Široký / Š&irší" -> "&Normálna /
+    &Široká / Š&iršia"; ro "&Larg / &Mai larg" -> "&Largă / &Mai largă"; es "&Más ancha" ->
+    "&Más ancho";
+  - found while reading the View menu back (older than 314): *Zoom Out* was "Vergrößern" (= Zoom
+    In) in German and "Mărire înapoi" in Romanian -> "V&erkleinern\tCtrl+-", "Mi&cșorare\tCtrl+-".
+  The merge also moved German accelerators of the View menu so they stay unique next to
+  "&Seitenbreite" (Farb&schema -> &Farbschema, Vergrößern / Verkleinern, Remote-Bilder &laden);
+  no other layout drift (string tables only). Second merge: 0 gaps, 0 characters, validation 0;
+  `translate.slt --verify`: 298 files round-trip byte-exact.
+- **Checks**: `.\build.cmd full` -> BUILD SUCCEEDED (all eight mdview language modules rebuilt);
+  harness `tests\mdview_htmlgen_test\build_and_run.cmd` 53 passed, 0 failed; `saltests: 27558
+  checks, 0 failed`; `check_encoding.py --strict` TOTAL 0. The GUI probe was not re-run: the
+  maintainer's installed Tandem Commander was open (the probe shares its registry key), and the
+  merge changed no code it measures.
+- The deviations listed under *Stopped* are accepted as recorded (their Inbox items stay).

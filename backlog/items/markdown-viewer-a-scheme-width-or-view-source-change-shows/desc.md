@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: M
 feature: -
-related: [mdview-page-width-levels]
+related: []
 depends-on: []
 reason: -
 ---
@@ -67,3 +67,4 @@ At 67d1e782 (branch 314-mdview-page-width), by reading:
 - 2026-10-23 — created (source measure:314)
 - 2026-10-23 — moved to Inbox
 - 2026-10-23 — moved to Next position 76
+- 2026-10-23 — related item mdview-page-width-levels done in feature 314

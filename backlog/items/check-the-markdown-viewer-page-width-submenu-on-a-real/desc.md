@@ -11,7 +11,7 @@ updated: 2026-10-23
 verified: -
 effort: S
 feature: -
-related: [mdview-page-width-levels]
+related: []
 depends-on: []
 reason: -
 ---
@@ -63,3 +63,4 @@ Do these after the two-stage `.slt` refresh of the mdview module (feature 314's 
 - 2026-10-23 — created (source leftover:314)
 - 2026-10-23 — moved to Inbox
 - 2026-10-23 — moved to Person steps position 35
+- 2026-10-23 — related item mdview-page-width-levels done in feature 314
