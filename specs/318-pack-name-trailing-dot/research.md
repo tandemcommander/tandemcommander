@@ -36,6 +36,20 @@
   (behaviour change beyond scope), it misses `COM0` / the superscripts, and it is not reachable from
   saltests as a header-only rule.
 
+## R2a - Existing files and '/' (review of 318)
+
+- Decision: the refusal applies only when `FileExists(fileBuf)` is FALSE - an archive already named
+  so (an `aux.zip` made elsewhere, a literal `report.` left by an earlier Pack) gets the "add or
+  overwrite?" question as before. `FileExists` (`src/salamdr2.cpp`) reads attributes through
+  `SalPathToWExtAlloc` (`\\?\`, no trimming of dots or spaces - `SalCanonicalizePathW` only folds
+  `.` / `..` segments and `/`), so an existing `report` never stands for `report.`; a folder of that
+  name does not count (FileExists is files only - the packer fails on it, as before).
+- Decision: the rule's last part starts after the last `\` or `/` - `SalPathToWExtAlloc` and the
+  packers turn `/` into `\`, so `./CON.zip` named `CON.zip` (the review measured `./CON.zip`,
+  `sub/CON.zip`, `report./`, `report.zip /` reaching the ZIP plug-in, which refused them itself).
+- Rationale: stop-rules §1 step 4 - the item names new files only; adding to an existing archive is
+  a case it does not name, so its behaviour stays.
+
 ## R3 - 317's rule
 
 - Decision: `SalPackNameIsOnlyDotsAndSpaces` is removed; `SalPackNameIsNotKeptAsTyped` covers it

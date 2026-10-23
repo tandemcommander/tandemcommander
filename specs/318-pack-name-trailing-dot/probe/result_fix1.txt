@@ -1,0 +1,20 @@
+pack318_probe (feature 318) fix1-review-rows
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-23 04:30; ACP 1250; registry key existed True; OS Microsoft Windows NT 10.0.26300.0
+Fixture C:\Users\pavel\AppData\Local\Temp\tc318_pack
+
+slash-dev  RUN    FAIL        OK on './CON.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc318_pack\slash-dev\src\./CON.zip |  &Volume Size: |   [Button id=1 ...(153)... od  | || [#32770 'Error'] Name: | Error: | Cannot open or create file. N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  |; new: none; changed: none; entries: none;  [expected new none; changed none; message 'path specified is invalid']
+slash-dev  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+slash-dev-sub RUN    FAIL        OK on 'plain/CON.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc318_pack\slash-dev-sub\src\plain/CON.zip |  &Volume Size: |   [But ...(161)... od  | || [#32770 'Error'] Name: | Error: | Cannot open or create file. N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1.  |; new: none; changed: none; entries: none;  [expected new none; changed none; message 'path specified is invalid']
+slash-dev-sub END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+trail-dot-plain RUN    PASS        OK on 'report.'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+trail-dot-plain END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+exist-aux  RUN    FAIL        OK on 'aux.zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: 'seed.txt';  [expected new none; changed 'src\aux.zip'; message 'already exists']
+exist-aux  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+exist-trail-dot RUN    FAIL        OK on 'report.'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: 'seed.txt';  [expected new none; changed 'src\report.'; message 'already exists']
+exist-trail-dot END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ctl-plain  RUN    PASS        OK on 'plain.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc318_pack\ctl-plain\src\plain.zip |  &Volume Size: |   [Button id=1 ...(153)... od  |; new: 'src\plain.zip'; changed: none; entries: 'plain/f.txt', 'plain/'; 'src\plain.zip' plain open: yes (first byte 80)
+ctl-plain  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
+
+Rows: PASS 8, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

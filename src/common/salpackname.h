@@ -13,7 +13,9 @@
 // and spaces nor maps a reserved device name. A last part such as 'report.',
 // 'report.zip ', ' ..' (317) or 'CON.zip' would be created as a literal file
 // that ordinary Windows programs cannot open, rename or delete. Such a name is
-// refused. Header-only, no globals; saltests checks it.
+// refused, unless a file of exactly that name already exists (the caller's
+// check through \\?\ - adding to it creates nothing new). Header-only, no
+// globals; saltests checks it.
 //
 //   SalPackNameIsNotKeptAsTyped  the last part of a full archive name is not
 //                                a name the file system keeps as typed
@@ -29,7 +31,7 @@ inline char SalPackNameUpperAscii(char c)
     return (c >= 'a' && c <= 'z') ? (char)(c - 'a' + 'A') : c;
 }
 
-// TRUE when 'part' (one name, no '\') is a reserved device name of Windows: the part before its
+// TRUE when 'part' (one name, no '\' or '/') is a reserved device name of Windows: the part before its
 // first '.' (the whole part when there is none), with its trailing spaces removed, is CON, PRN,
 // AUX, NUL, COM0-COM9, LPT0-LPT9, or COM / LPT followed by a superscript one, two or three
 // (UTF-8 C2 B9, C2 B2, C2 B3), in any letter case - 'NUL .zip' and 'lpt9.tar.zip' are device
@@ -63,17 +65,23 @@ inline BOOL SalPackNameIsReservedDevice(const char* part)
     return s1 == 0xC2 && (s2 == 0xB9 || s2 == 0xB2 || s2 == 0xB3);
 }
 
-// TRUE when the part of 'fullName' after its last '\' (the whole name when there is none) is not
-// empty and either ends with ' ' or '.' (the file system would trim them - also a part of only
-// spaces and dots, feature 317) or is a reserved device name (SalPackNameIsReservedDevice); FALSE
-// otherwise, also for NULL or an empty last part. A trailing tab or other control character is
-// not this rule's (the packer refuses it)
+// TRUE when the part of 'fullName' after its last '\' or '/' (the whole name when there is none -
+// the packers' path conversion turns '/' into '\') is not empty and either ends with ' ' or '.'
+// (the file system would trim them - also a part of only spaces and dots, feature 317) or is a
+// reserved device name (SalPackNameIsReservedDevice); FALSE otherwise, also for NULL or an empty
+// last part. A trailing tab or other control character is not this rule's (the packer refuses it).
+// The caller refuses such a name only when no file of exactly that name exists yet (an archive
+// already named so is added to as before)
 inline BOOL SalPackNameIsNotKeptAsTyped(const char* fullName)
 {
     if (fullName == NULL)
         return FALSE;
-    const char* last = strrchr(fullName, '\\');
-    last = (last != NULL) ? last + 1 : fullName;
+    const char* last = fullName;
+    for (const char* s = fullName; *s != 0; s++)
+    {
+        if (*s == '\\' || *s == '/')
+            last = s + 1;
+    }
     if (*last == 0)
         return FALSE;
     char lastChar = last[strlen(last) - 1];

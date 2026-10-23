@@ -44,6 +44,12 @@ and the dialog again; nothing written.
 - [X] T010 [P] clang-format check of the changed lines in `src/common/salpackname.h`, `src/saltests/saltests.cpp`, `src/fileswn7.cpp`
 - [X] T011 Record before / after, the commands and their results in `specs/318-pack-name-trailing-dot/fix-log.md`; record out-of-scope findings and whether they go to the Inbox
 
+## Phase 7: Review fix (review of 318, SHOULD 1 / NOTE 2)
+
+- [X] T012 Probe rows slash-dev, slash-dev-sub, trail-dot-plain, exist-aux, exist-trail-dot in `specs/318-pack-name-trailing-dot/probe/pack318_probe.ps1`; run on the first-fix build into `probe/result_fix1.txt` (the control: 4 FAIL)
+- [X] T013 `src/common/salpackname.h`: the last part starts after the last `\` or `/`; `src/fileswn7.cpp`: refuse only when `!FileExists(fileBuf)`; `src/saltests/saltests.cpp`: 5 checks for `/`
+- [X] T014 Build, saltests, the whole probe into `probe/result_after.txt`, 317's probe into `probe/regress_317.txt`, the encoding guard and clang-format again
+
 ## Dependencies
 
 T001 -> T002 -> T003 -> T004 -> T005 -> T006 -> T007 -> T008 -> T009, T010 -> T011. US2 and US3

@@ -11,10 +11,15 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Pack created an archive whose name ended in a dot or a space - a file other programs could not open or delete** (feature 318).
+  - **Before:** an archive name typed in the Pack dialog (Alt+F5) that ended in a dot or a space ("report.", "report.zip ") was created exactly so; Explorer and most programs could not open, rename or delete such a file. A name like a Windows device ("CON.zip", "con", "NUL .zip", "COM1.zip") was created too.
+  - **Now:** such a name is refused with "The path specified is invalid." and the dialog opens again; nothing is written. An archive that already exists under such a name can still be added to or overwritten. Names with dots or spaces inside or at the start ("report.v1.zip", " report.zip") and names that only begin like a device ("CONSOLE.zip", "COM10.zip") work as before.
+  - **Limitation:** the message does not say which part of the name is the problem. A colon in the name still puts the archive into a hidden part of a file (recorded for later).
+
 - **Pack dropped a leading space of the archive name - the items went into a differently named archive** (feature 317).
   - **Before:** packing (Alt+F5) a file or folder whose name starts with a space (" report") offered the archive " report.zip", but OK packed into "report.zip" - another archive; when "report.zip" already existed, the "add or overwrite?" question was about it, and Add or Overwrite changed it. A typed archive name starting with a space lost the space the same way.
   - **Now:** the archive name keeps its leading spaces: " report.zip" is created, or - when it exists - the question names it and Add or Overwrite work on it; an existing "report.zip" is not touched. A name made only of spaces and dots (" ..", " .") is refused with "The path specified is invalid." and the dialog opens again. Names without a leading space work as before.
-  - **Limitation:** an entry of spaces only gets the extension and keeps its spaces ("   .zip"). A name ending in a dot or a space is still created as typed (recorded for later).
+  - **Limitation:** an entry of spaces only gets the extension and keeps its spaces ("   .zip"). A name ending in a dot or a space was still created as typed - fixed by feature 318 above.
 
 - **Unpack into a subfolder named after the archive dropped a leading space - the files went into a differently named folder** (feature 316).
   - **Before:** with "Use the archive name as a subfolder", an archive whose name starts with a space (" report.zip") was offered the subfolder " report", but OK unpacked into "report" - another folder, merged with it when it already existed (overwrite questions were still asked), even when " report" itself existed. A typed target starting with a space lost the space the same way.

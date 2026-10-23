@@ -1,6 +1,6 @@
 pack317_probe (feature 317) regress318
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 04:06; ACP 1250; registry key existed True
+Date    : 2026-10-23 04:37; ACP 1250; registry key existed True
 Fixture C:\Users\pavel\AppData\Local\Temp\tc317_pack
 
 space-dir  RUN    PASS        items: '<sp>report.zip', '...(72)<sp>ck\space-dir\tgt\L\<sp>report.zip'; OK on '<sp>report.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc317_pack\space-dir\src\ report.zip |  &Volume Size: |   [Button id ...(155)... od  |; new: 'src\<sp>report.zip'; changed: none; entries: '<sp>report/f.txt', '<sp>report/'

@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4280,3 +4280,22 @@ a few early ones are out of sequence).
   17 -> 28 / 0 (negative control: `main`'s Pack code); 316's probe 18 / 0, 241's 8 / 0; saltests
   27,456 / 0; one refute-first review (no MUST; SHOULD - the Inbox item - fixed; 13 scratch names
   with dots, tabs and slashes: nothing written).
+- 318-pack-name-trailing-dot: the Pack dialog (Alt+F5) created an archive whose name ended in a dot
+  or a space (`report.`, `report.zip `, also absolute) literally - the ZIP plug-in writes through
+  `\\?\`, so Windows did not trim it - and Explorer / plain paths could not open or delete it; device
+  names (`CON.zip`, `con` -> `con.zip`, `NUL .zip`, `COM1.zip`, `lpt9.tar.zip`) were created too.
+  Now a last part that ends in `.` / ` ` or is a reserved device name (CON, PRN, AUX, NUL, COM0-9,
+  LPT0-9, COM/LPT + superscript 1-3, before the first dot, trailing spaces ignored, any case) is
+  refused through 317's path (`IDS_PATHISINVALID`, the dialog again) - `SalPackNameIsNotKeptAsTyped`
+  in `src/common/salpackname.h` replaces 317's `SalPackNameIsOnlyDotsAndSpaces` (a subset); the last
+  part starts after `\` or `/`. Traps: on Windows 11 a device name with an extension is an ordinary
+  file (measured: plain paths open `CON.zip`) - refused because the item names it; the first fix also
+  blocked adding to an existing `aux.zip` / literal `report.` (review) - now refused only when
+  `FileExists` (through `\\?\`, no trimming: `report` never stands for `report.`) finds no file of
+  that name. Limits: a folder part is not checked (the ZIP plug-in refuses `CON\a.zip` itself); a
+  colon writes the archive into an alternate data stream (Inbox
+  `pack-writes-the-archive-into-a-hidden-data-stream-when-its`). From backlog item
+  `pack-archive-name-trailing-dot-or-space`. Probe `pack318_probe.ps1` 12 FAIL / 30 -> 52 / 0
+  (control of the review rows on the first fix: 4 FAIL); 317's probe 28 / 0; saltests 27,508 / 0
+  (negative control: the device part disabled -> 18 failed); one refute-first review (no MUST; SHOULD
+  existing archives and NOTE `/` fixed).

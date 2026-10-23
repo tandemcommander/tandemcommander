@@ -1932,9 +1932,11 @@ _PACK_AGAIN:
         // made), kept the packer would create a file literally named ' ..'. Feature 318: the same for
         // every last part the file system would not keep as typed - a trailing dot or space
         // ('report.', 'report.zip ') or a device name ('CON.zip'): the packers write through \\?\,
-        // so such a file was created literally and ordinary programs could not open or delete it
+        // so such a file was created literally and ordinary programs could not open or delete it.
+        // An archive already named so (FileExists goes through \\?\, so 'report' never stands for
+        // 'report.') is added to or overwritten as before - nothing new is created
         BOOL nameOk = SalGetFullName(fileBuf, &errTextID, Is(ptDisk) ? GetPath() : NULL, nextFocus, NULL, MAX_PATH, TRUE);
-        if (nameOk && SalPackNameIsNotKeptAsTyped(fileBuf))
+        if (nameOk && SalPackNameIsNotKeptAsTyped(fileBuf) && !FileExists(fileBuf))
         {
             errTextID = IDS_PATHISINVALID;
             nameOk = FALSE;

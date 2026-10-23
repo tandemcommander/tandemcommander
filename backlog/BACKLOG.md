@@ -17,7 +17,6 @@ Last triaged: 2026-10-23
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Pack creates an archive with a trailing dot or space Windows tools cannot open](items/pack-archive-name-trailing-dot-or-space/desc.md) | bug | 4 | archives | 318 |
 
 ## Next
 

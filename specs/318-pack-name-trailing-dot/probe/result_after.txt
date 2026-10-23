@@ -1,6 +1,6 @@
 pack318_probe (feature 318) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-23 04:02; ACP 1250; registry key existed True; OS Microsoft Windows NT 10.0.26300.0
+Date    : 2026-10-23 04:32; ACP 1250; registry key existed True; OS Microsoft Windows NT 10.0.26300.0
 Fixture C:\Users\pavel\AppData\Local\Temp\tc318_pack
 
 trail-dot  RUN    PASS        OK on 'report.'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
@@ -29,6 +29,16 @@ abs-dev    RUN    PASS        OK on '...(64)<sp>tc318_pack\abs-dev\src\prn.zip';
 abs-dev    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 space-dots RUN    PASS        OK on '<sp>..'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
 space-dots END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+slash-dev  RUN    PASS        OK on './CON.zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+slash-dev  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+slash-dev-sub RUN    PASS        OK on 'plain/CON.zip'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+slash-dev-sub END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+trail-dot-plain RUN    PASS        OK on 'report.'; dialog stayed: False; asked: [#32770 'Pack'] The path specified is invalid. | || the Pack dialog again; new: none; changed: none; entries: none; 
+trail-dot-plain END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+exist-aux  RUN    PASS        OK on 'aux.zip'; dialog stayed: False; asked: [#32770 'Question'] The file "aux.zip" already exists. Do you want to add 1 directory into existing archive or overwrite existing one? | || [#32770 'Add Files to Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc318_pack\exist-aux\src\aux.zip |  &Volume Size: |   [Button id=105 ...(151)... od  |; new: none; changed: 'src\aux.zip'; entries: 'seed.txt', 'plain/f.txt', 'plain/'; 
+exist-aux  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+exist-trail-dot RUN    PASS        OK on 'report.'; dialog stayed: False; asked: [#32770 'Question'] The file "report." already exists. Do you want to add 1 directory into existing archive or overwrite existing one? | || [#32770 'Add Files to Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc318_pack\exist-trail-dot\src\report. |  &Volume Size: |   [Button  ...(157)... od  |; new: none; changed: 'src\report.'; entries: 'seed.txt', 'plain/f.txt', 'plain/'; 
+exist-trail-dot END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 ctl-plain  RUN    PASS        OK on 'plain.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc318_pack\ctl-plain\src\plain.zip |  &Volume Size: |   [Button id=1 ...(153)... od  |; new: 'src\plain.zip'; changed: none; entries: 'plain/f.txt', 'plain/'; 'src\plain.zip' plain open: yes (first byte 80)
 ctl-plain  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 ctl-mid-dot RUN    PASS        OK on 'report.v1.zip'; dialog stayed: False; asked: [#32770 'Create New Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc318_pack\ctl-mid-dot\src\report.v1.zip |  &Volume Size: |   [Butto ...(159)... od  |; new: 'src\report.v1.zip'; changed: none; entries: 'plain/f.txt', 'plain/'; 'src\report.v1.zip' plain open: yes (first byte 80)
@@ -47,4 +57,4 @@ ctl-empty  RUN    PASS        OK on ''; dialog stayed: False; asked: [#32770 'Pa
 ctl-empty  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01 / after CF69145A373CD3C5FA6D952F0F20D792817E208F4706F523B2C6005A9B9AEF01
 
-Rows: PASS 42, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 52, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

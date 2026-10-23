@@ -89,6 +89,48 @@ Not driven: external archivers (the check runs before any packer - read); typing
 keyboard (WM_SETTEXT - the dialog reads the same text); "Use the other panel for packing" on (an
 absolute name - the rows abs-trail-dot / abs-dev drive the same branch). No person step is owed.
 
+## Review
+
+One independent refute-first review (general-purpose agent, branch HEAD 3b9a6cf0): **no MUST**,
+one SHOULD, four NOTEs.
+
+- Re-ran: build, `saltests: 27503 checks, 0 failed`; the probe 42 / 0, registry identical. Negative
+  control of its own: the refusal at `src/fileswn7.cpp` disabled (`nameOk && FALSE && ...`) -> 29
+  PASS / 13 FAIL (the 12 rows + ` ..`, created through the ZIP plug-in); restored by hash, rebuilt,
+  rows re-checked, `git status` clean.
+- SHOULD 1 (fixed): device names are ordinary files on this Windows 11 (`aux.zip`, `CON.zip`, even
+  `con` created and opened through plain paths) and the refusal also blocked adding to an existing
+  archive: an `aux.zip` made by .NET, Alt+F5 `aux.zip` -> "The path specified is invalid." (before
+  318: the "add or overwrite?" question). Fix: refused only when no file of exactly that name
+  exists (`!FileExists(fileBuf)` - `\\?\`, no trimming; research R2a); spec FR-007 and
+  Clarifications; the wrong premise corrected in the spec's Assumptions (device names are refused
+  because the item names them, not because Windows 11 cannot open them).
+- NOTE 2 (fixed): a `/` passed the rule (`./CON.zip`, `report./`, `report.zip /`, `sub/CON.zip`
+  reached the ZIP plug-in, which refused them itself, nothing created). The rule now starts the last
+  part after `\` or `/`; 5 saltests checks.
+- NOTE 3 (fixed in the spec): the Edge Case "a folder part must exist" was wrong - the ZIP plug-in
+  calls `CheckAndCreateDirectory`; `CON\a.zip`, `newd.\a.zip`, `sub.\a.zip` were refused by ZIP
+  ("path not found"), nothing created. No defect, the wording corrected.
+- NOTE 4 (fixed by SHOULD 1): an existing archive with a trailing dot or space (e.g. on a Samba
+  share) could no longer be added to - now it can (row exist-trail-dot).
+- NOTE 5: CHANGELOG / FEATURE-HISTORY entries - written at closing.
+
+### After the review fix
+
+- Control on the first-fix build (`probe/result_fix1.txt`, rows slash-dev, slash-dev-sub,
+  trail-dot-plain, exist-aux, exist-trail-dot, ctl-plain): **8 PASS / 4 FAIL** - `./CON.zip` and
+  `plain/CON.zip` reached the ZIP plug-in ("Cannot open or create file."), `aux.zip` and `report.`
+  with an existing archive refused; trail-dot-plain (`report.` next to a plain file `report`) PASS.
+- `.\build.cmd`: BUILD SUCCEEDED, exit 0. `saltests: 27508 checks, 0 failed` (+5 for `/`).
+- Probe (`probe/result_after.txt`, overwritten): **52 PASS / 0 FAIL**, registry restored and
+  identical: the 12 item rows and ` ..` refused; `./CON.zip`, `plain/CON.zip`, `report.` next to
+  `report` refused, `report` unchanged; exist-aux: "The file "aux.zip" already exists..." -> Add,
+  `aux.zip` holds seed.txt and f.txt; exist-trail-dot: "The file "report." already exists..." ->
+  Add, the same; the controls as before.
+- 317's probe (`probe/regress_317.txt`): 28 PASS / 0 FAIL.
+- Not driven: Overwrite of an existing `report.` / `aux.zip` (Overwrite's aside, 176) - the same
+  route as before 318 for these names; a second review was not run (no MUST).
+
 ## Out of scope
 
 Measured, not changed (a scratch copy of the probe with four rows, the branch build, registry

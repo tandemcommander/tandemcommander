@@ -32,6 +32,16 @@
       abs-trail-dot    '<src>\abs.'        (an absolute name - the same rule)
       abs-dev          '<src>\prn.zip'
       space-dots       ' ..'               (feature 317 - stays refused)
+      slash-dev        './CON.zip'         (a '/' separates like '\' - review of 318)
+      slash-dev-sub    'plain/CON.zip'
+      trail-dot-plain  'report.' next to an existing plain file 'report' (the trimmed name): refused,
+                       'report' unchanged
+      Existing archives (review of 318: refused only when no file of exactly that name exists -
+      adding to an existing archive works as before; the question is answered Add):
+      exist-aux        an archive 'aux.zip' (seed.txt), the entry 'aux.zip': the "already exists"
+                       question, Add - 'aux.zip' changed, holds seed.txt and f.txt
+      exist-trail-dot  an archive literally named 'report.' (made through \\?\), the entry 'report.':
+                       the same
       Packed (controls):
       ctl-plain        item 0: 'plain.zip'
       ctl-mid-dot      'report.v1.zip'
@@ -190,15 +200,25 @@ function Short([string]$s) {
 }
 function Shown($r) { $m = (@($r.Messages | ForEach-Object { Short $_ }) -join ' || '); if ($m) { return $m } else { return 'nothing' } }
 
+function Zip-Seed([string]$Zip) {
+    $z = [IO.Compression.ZipFile]::Open($LP + $Zip, [IO.Compression.ZipArchiveMode]::Create)
+    try { $w = New-Object IO.StreamWriter($z.CreateEntry('seed.txt').Open()); $w.Write('S'); $w.Dispose() } finally { $z.Dispose() }
+}
+
 # one row. $Type: $null = item 0, else the text put into the entry ('<src>' is replaced by the src path).
 # $Arc: the archive expected (rel to src) - $null = a refusal: nothing created, $AskRx shown.
-function Pack-Row([string]$Case, $Type, $Arc, [string]$AskRx) {
+# $Seed: an archive (rel to src, made through \\?\ with seed.txt) that exists before - when it is $Arc,
+#   the row expects it changed (Add) and holding seed.txt too, not new. $PlainFile: a file (rel to src)
+#   that exists before and must stay unchanged.
+function Pack-Row([string]$Case, $Type, $Arc, [string]$AskRx, [string]$Seed = '', [string]$PlainFile = '') {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     $src = $d + '\src'
     $L = $d + '\tgt\L'
     NewDir ($src + '\plain'); NewDir $L
     WriteFile ($src + '\plain\f.txt') 'F'
+    if ($Seed) { Zip-Seed ($src + '\' + $Seed) }
+    if ($PlainFile) { WriteFile ($src + '\' + $PlainFile) 'P' }
     if ($null -ne $Type) { $Type = $Type.Replace('<src>', $src); if ($Type.Contains('\') -and -not $Type.StartsWith($src + '\')) { throw "typed path is not inside the fixture: $Type" } }
     & reg.exe add $PackKey /v 'Use Another Panel' /t REG_DWORD /d 0 /f | Out-Null
     & reg.exe add $CnfKey /v 'Add To Archive' /t REG_DWORD /d 1 /f | Out-Null
@@ -234,16 +254,19 @@ function Pack-Row([string]$Case, $Type, $Arc, [string]$AskRx) {
         $snap1 = Snap $d
         $new = @($snap1.Keys | Where-Object { -not $snap0.ContainsKey($_) } | Sort-Object)
         $changed = @($snap0.Keys | Where-Object { -not $snap1.ContainsKey($_) -or $snap1[$_] -ne $snap0[$_] } | Sort-Object)
-        $wantNew = @(); if ($Arc) { $wantNew = @('src\' + $Arc) }
+        $seeded = $Arc -and ($Seed -ceq $Arc)
+        $wantNew = @(); if ($Arc -and -not $seeded) { $wantNew = @('src\' + $Arc) }
+        $wantChg = @(); if ($seeded) { $wantChg = @('src\' + $Arc) }
         $c1 = ((@($new) -join '|') -ceq (@($wantNew) -join '|'))
-        $c2 = ($changed.Count -eq 0)
+        $c2 = ((@($changed) -join '|') -ceq (@($wantChg) -join '|'))
         $entries = @(); if ($Arc -and $snap1.ContainsKey('src\' + $Arc)) { $entries = @(Zip-Entries ($src + '\' + $Arc)) }
         $c3 = (-not $Arc) -or (@($entries | Where-Object { $_.EndsWith('f.txt') }).Count -gt 0)
+        if ($seeded -and -not @($entries | Where-Object { $_ -eq 'seed.txt' }).Count) { $c3 = $false }
         $c4 = (-not $AskRx) -or (@($r.Messages | Where-Object { $_ -match $AskRx }).Count -gt 0)
         $plain = @($new | ForEach-Object { (Vis $_) + ' plain open: ' + (Plain-Open ($d + '\' + $_)) })
         $ok = (-not $fatal) -and (-not $r.TimedOut) -and (-not $stayed) -and $c1 -and $c2 -and $c3 -and $c4
         $why = ''
-        if (-not $ok) { $why = (" [expected new {0}; no change; message '{1}']" -f (Join-Vis $wantNew), $AskRx) }
+        if (-not $ok) { $why = (" [expected new {0}; changed {1}; message '{2}']" -f (Join-Vis $wantNew), (Join-Vis $wantChg), $AskRx) }
         Row $Case 'RUN' (V $ok) ("OK on {0}; dialog stayed: {1}; asked: {2}; new: {3}; changed: {4}; entries: {5}; {6}{7}{8}" -f (Vis $chosen), $stayed, (Shown $r), (Join-Vis $new), (Join-Vis $changed), (Join-Vis $entries), ($plain -join '; '), $(if ($r.TimedOut) { '; TIMED OUT' } else { '' }), $why)
     }
     catch {
@@ -280,6 +303,11 @@ try {
     Pack-Row 'abs-trail-dot' '<src>\abs.' $null $inv
     Pack-Row 'abs-dev' '<src>\prn.zip' $null $inv
     Pack-Row 'space-dots' ' ..' $null $inv
+    Pack-Row 'slash-dev' './CON.zip' $null $inv
+    Pack-Row 'slash-dev-sub' 'plain/CON.zip' $null $inv
+    Pack-Row 'trail-dot-plain' 'report.' $null $inv -PlainFile 'report'
+    Pack-Row 'exist-aux' 'aux.zip' 'aux.zip' 'already exists' -Seed 'aux.zip'
+    Pack-Row 'exist-trail-dot' 'report.' 'report.' 'already exists' -Seed 'report.'
     Pack-Row 'ctl-plain' $null 'plain.zip' $null
     Pack-Row 'ctl-mid-dot' 'report.v1.zip' 'report.v1.zip' $null
     Pack-Row 'ctl-console' 'CONSOLE.zip' 'CONSOLE.zip' $null

@@ -12,7 +12,8 @@ relative or absolute) is turned into a full path and handed to the packer. Windo
 trailing dots and spaces from a file name and treats a reserved device name (`CON`, `NUL`, `COM1`,
 ...) as a device - but the ZIP plug-in creates the archive through a path form that skips those
 rules, so the name is written literally. A file named `report.` or `report.zip ` cannot be opened,
-renamed or deleted by ordinary Windows programs.
+renamed or deleted by ordinary Windows programs. (A device name with an extension, `CON.zip`, is an
+ordinary file on this Windows 11 build - see Clarifications.)
 
 The dialog appends the packer's extension only to a name without a dot, so `report.` reaches the
 packer as typed. Feature 317 already refuses a last part made only of spaces and dots (` ..`).
@@ -36,6 +37,8 @@ Measured at efb9b0ad (hidden-desktop probe derived from 317's, the ZIP plug-in, 
 - Q: Should a device name with an extension (`CON.zip`) be refused although this Windows 11 build opens it through an ordinary path? → A: yes, refused like a trailing dot or space (autonomous run: item - *Expected* names "a device name" among the names to refuse)
 - Q: Which message does the refusal show? → A: the existing "The path specified is invalid." in a box titled Pack, then the dialog again - the message 317 shows for ` ..` (autonomous run: rule - no new UI string without the `.slt` refresh; conservative - one message for one rule)
 - Q: Is a device name preceded by spaces (` CON.zip`) or a name ending in a control character (a tab) refused too? → A: no - their behaviour is unchanged; Windows does not treat ` CON` as a device and does not trim a tab, the item names neither (autonomous run: conservative - keep the existing behaviour for every case the item does not name)
+- Q: An archive that already exists under such a name (`aux.zip`, an archive literally named `report.` by an earlier Pack) - may the user still add to it or overwrite it? → A: yes, as before 318: the name is refused only when no file of exactly that name exists (checked through `\\?\`, so an existing `report` never counts for `report.`); nothing new is created by adding (autonomous run: conservative - keep the existing behaviour for every case the item does not name; review of 318, SHOULD 1)
+- Q: Does a `/` in the entry separate the last part like a `\`? → A: yes - the packers' path conversion turns `/` into `\`, so `./CON.zip` and `sub/CON.zip` are refused like `CON.zip` (autonomous run: rule - FR-005 "every name"; review of 318, NOTE 2)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -92,8 +95,12 @@ ctl-com10, ctl-lead-space, ctl-dot-start, ctl-empty: PASS before and after.
 - A device name followed by spaces before the extension (`NUL .zip`) is a device name - refused.
 - A device name preceded by spaces (` CON.zip`) and a name ending in a tab are unchanged (see
   Clarifications).
-- Only the last part of the path is checked; a folder part is the folder the user named (it must
-  exist for the packer to write into it).
+- Only the last part of the path is checked. A folder part with a trailing dot or a device name
+  (`sub.\a.zip`, `CON\a.zip`) is not refused by this rule; the ZIP plug-in refused each such name
+  itself ("path not found"), nothing created (measured by the review of 318).
+- An existing file of exactly the refused name (`aux.zip`, a literal `report.`) is not refused: the
+  "add or overwrite?" question as before. An existing `report` does not count for `report.`.
+- A `/` separates like `\` (`./CON.zip`, `plain/CON.zip` refused).
 - "Use the other panel for packing" on offers an absolute name - the same rule applies to it.
 - The refusal comes before the "add or overwrite?" question and before the "archive is one of the
   packed items" check: nothing is asked, nothing is touched.
@@ -104,7 +111,8 @@ ctl-com10, ctl-lead-space, ctl-dot-start, ctl-empty: PASS before and after.
 
 - **FR-001**: After OK in the Pack dialog, an archive name whose last part ends with a dot or a
   space MUST be refused with the existing "The path specified is invalid." message and the dialog
-  shown again; no archive is written and no existing file is changed, moved or deleted.
+  shown again; no archive is written and no existing file is changed, moved or deleted - unless a
+  file of exactly that name already exists (FR-007).
 - **FR-002**: An archive name whose last part is a reserved device name - `CON`, `PRN`, `AUX`,
   `NUL`, `COM0`-`COM9`, `LPT0`-`LPT9`, `COM`/`LPT` followed by a superscript 1, 2 or 3 - alone or
   followed by spaces and/or an extension (everything from the first dot), compared without regard
@@ -116,6 +124,9 @@ ctl-com10, ctl-lead-space, ctl-dot-start, ctl-empty: PASS before and after.
 - **FR-005**: The rule MUST apply to relative and absolute names alike, to the offered and the typed
   name, for every packer.
 - **FR-006**: No new UI string; no change to the packers or the plug-in interface.
+- **FR-007**: When a file of exactly the typed name already exists (an existence check that does
+  not trim dots or spaces), the name MUST NOT be refused: adding to it or overwriting it works as
+  before 318.
 
 ## Success Criteria *(mandatory)*
 
@@ -131,9 +142,11 @@ ctl-com10, ctl-lead-space, ctl-dot-start, ctl-empty: PASS before and after.
 ## Assumptions
 
 - Assumption (autonomous run): device names are refused although on this Windows 11 build an
-  ordinary path opens `CON.zip` - the item's *Expected* names them, the program's own name rule
-  (used for names coming from archives) treats them as invalid, and such an archive is unusable on
-  older Windows and some tools; the user loses only the ability to name an archive like a device.
+  ordinary path opens and creates `CON.zip`, `aux.zip` and even `con` (measured before the change
+  and by the review) - the item's *Premise* that Windows tools cannot open them does not hold here;
+  they are refused because the item's *Expected* names them and the program's own name rule (used
+  for names coming from archives) treats them as invalid. The user loses only the ability to create
+  a new archive named like a device; an existing one is added to as before (FR-007).
 - Assumption (autonomous run): the device list is Microsoft's documented list of reserved names
   (including `COM0`/`LPT0` and the superscript digits) - refusing a name that is harmless on a
   newer Windows is preferred to writing one that is not on another.

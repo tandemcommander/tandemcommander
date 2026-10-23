@@ -18873,6 +18873,12 @@ static void TestPackName318()
     CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\LPT\xC2\xB2"));
     CHECK(SalPackNameIsNotKeptAsTyped("CON.zip"));
     CHECK(SalPackNameIsNotKeptAsTyped("\\\\server\\share\\aux.zip"));
+    // a '/' separates like '\' (the packers' path conversion turns it into '\')
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\./CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:\\t\\sub/CON.zip"));
+    CHECK(SalPackNameIsNotKeptAsTyped("C:/t/report."));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\CON/a.zip"));
+    CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\report.zip/")); // no last part (the packer refuses it)
     // a name - the leading space kept by 317, dots inside, a device name only as a prefix - is a name
     CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\ report.zip"));
     CHECK(!SalPackNameIsNotKeptAsTyped("C:\\t\\   .zip"));
