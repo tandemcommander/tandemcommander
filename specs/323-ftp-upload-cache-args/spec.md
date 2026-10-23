@@ -51,6 +51,13 @@ stopped run measured the data loss.
   and empty; an earlier component that the cached parent listing does not show is not assumed
   created - that parent listing is invalidated and no empty listing is recorded for the component
   (autonomous run: item *Log* of 2026-10-23 and the stopped run's fix-log *Stopped*).
+- Q: When an earlier path component was missing from its cached listing, may the last component
+  still be recorded as a new, empty folder? → A: Yes - the server created it (the command
+  succeeded), whatever the cache knew of the folders above it; only the earlier components are
+  never given an empty listing (autonomous run: recommended - the 302 review 2 suggested fix).
+- Q: Which component counts as "the last" when the typed path holds `.`, `..` or empty parts
+  (`new/.`, `a/../new`, `new//`)? → A: the last component that is none of `.`, `..` or empty;
+  `.` and empty parts create nothing and are skipped (autonomous run: conservative).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -140,6 +147,8 @@ the overwrite question appears, no `STOR` of the file reaches the server and its
 - Create Directory with a path whose intermediate component the cached listing does not show:
   the listing that should have shown it is invalidated; no component except the last is recorded
   as new and empty.
+- A path with `.`, `..` or empty parts (`new/.`, `a/../new`, `new//`): the last component that is
+  none of these is the created one.
 - Create Directory whose result is unknown: unchanged - the affected listings are invalidated.
 
 ## Requirements *(mandatory)*
@@ -158,8 +167,9 @@ the overwrite question appears, no `STOR` of the file reaches the server and its
 - **FR-005**: A reported successful Create Directory MUST record as a new, empty folder only the
   last component of the created path. A preceding component that the cached listing of its parent
   does not contain MUST NOT be recorded as created: the cached listing of that parent MUST be
-  invalidated (the next upload into it lists the server again) and no empty listing may be cached
-  for that component or any component below it. Components the cached listing does contain are
+  invalidated (the next upload into it lists the server again). No preceding component is ever
+  given an empty listing. "The last component" is the last one that is not `.`, `..` or empty.
+  Components the cached listing does contain, and a Create Directory whose result is unknown, are
   handled as before.
 
 ### Key Entities
