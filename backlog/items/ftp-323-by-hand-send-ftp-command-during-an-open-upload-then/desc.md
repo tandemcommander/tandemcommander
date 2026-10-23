@@ -1,7 +1,7 @@
 ---
 title: FTP 323 by hand: Send FTP Command during an open upload, then an upload asks before overwriting
 type: person-step
-status: new
+status: open
 severity: 6
 area: ftp
 source: leftover:323
@@ -55,3 +55,4 @@ into that folder lists it on the server and asks before overwriting a file of th
 ## Log
 
 - 2026-10-23 — created (source leftover:323)
+- 2026-10-23 — moved to Person steps position 6

@@ -1,7 +1,7 @@
 ---
 title: FTP: an upload to a server named another way (localhost vs 127.0.0.1) misses the panel changes
 type: bug
-status: new
+status: open
 severity: 5
 area: ftp
 source: review:302
@@ -57,3 +57,4 @@ check `PRIVACY.md` / the maintainer-owned list before resolving names.
 ## Log
 
 - 2026-10-23 — created (source review:302)
+- 2026-10-23 — moved to Next position 5
