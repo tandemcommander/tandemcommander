@@ -11,16 +11,19 @@
 // tracks (feature 331). Header-only, no globals; for the ISO plug-in (uniso,
 // nrg.cpp, audio.cpp) and saltests.
 //
-// The CD-Text chunk (CDTX) holds 4 bytes of flags, then blocks of 12 text
-// bytes and 6 other bytes; the text is the volume label and one label per
-// track, each 0-terminated. Its size, the DAOX chunk's track numbers and the
+// The CD-Text chunk (CDTX) holds 18-byte packs of a 4-byte header, 12 text
+// bytes and a 2-byte CRC; the reader skips 4 bytes, then takes 12 and skips
+// 6 (the CRC and the next pack's header) - "4 flag bytes and 18-byte blocks"
+// below. The text is the volume label and one label per track, each
+// 0-terminated. The chunk's size, the DAOX chunk's track numbers and the
 // labels' lengths all come from the image:
 //
 //   - a chunk is read only when its bytes lie within the image
 //     (SalNrgChunkFits) - the reader sized its buffer as Size + 1 + tracks in
 //     32-bit arithmetic, which wraps for a size near 4 GiB;
 //   - the text is gathered from the blocks only within the chunk
-//     (SalNrgCdTextGather; the old loop read up to 4 bytes past it) and split
+//     (SalNrgCdTextGather; for a size that is not a whole number of packs the
+//     old loop read up to 4 bytes past it) and split
 //     by length (SalNrgCdTextNext; a label without a terminator ends at the
 //     text's end) - no terminator area past the text;
 //   - a DAOX entry applies only to a track the CUEX chunk added

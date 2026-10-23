@@ -17,7 +17,6 @@ Last triaged: 2026-10-24
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an NRG audio track label of 257+ bytes overruns a stack buffer](items/iso-plug-in-an-nrg-audio-track-label-of-257-bytes-overruns-a/desc.md) | bug | 7 | archives | 331 |
 
 ## Next
 
@@ -254,6 +253,7 @@ Last triaged: 2026-10-24
 |---|---|---|---|---|---|
 | [ISO plug-in: an NRG CUEX chunk under 16 bytes makes a huge track count](items/iso-plug-in-an-nrg-cuex-chunk-under-16-bytes-makes-a-huge/desc.md) | bug | 5 | archives | measure:331 | 2026-10-24 |
 | [ISO plug-in: an NRG session count above the image's tracks lists past the track table](items/iso-plug-in-an-nrg-session-count-above-the-image-s-tracks/desc.md) | bug | 6 | archives | measure:331 | 2026-10-24 |
+| [ISO plug-in: NRG audio track names are listed without cleaning or UTF-8 conversion](items/iso-plug-in-nrg-audio-track-names-are-listed-without/desc.md) | bug | 4 | archives | review:331 | 2026-10-24 |
 
 ## Parked
 

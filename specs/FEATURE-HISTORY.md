@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4636,3 +4636,25 @@ a few early ones are out of sequence).
   refute-first reviews: 1 stopped (partial work: three UDF MUST-level cases, fixed), 2 (one MUST: a UDF
   part that does not open - fixed; SHOULD multi-session and NOTE HFS+ to Inbox), 3 (no MUST; SHOULD: a
   valid nested image marked - the anchor condition, negative control NEST-OK FAIL at 7caf4ae7).
+- 331-nrg-label-bounds: opening an NRG (Nero) image whose CD-Text gives an audio track a label of 257+
+  bytes overran a stack buffer of the ISO plug-in (`CAudio::ListDirectory` formatted `NN label` into
+  `char[MAX_PATH]`); its CD-Text reader sized its buffer as `Size + 1 + tracks` in 32-bit arithmetic
+  (a size near 4 GiB wrapped to a few bytes the read then filled), read past chunks that are not whole
+  18-byte packs and put its terminators past the buffer for small chunks; the DAOX reader wrote through
+  `GetTrack(number - 1)` for track numbers from the image (0 = NULL; `GetTrack` also took index == count)
+  - now the name is built whole on the heap and 329's listing rule lists it or leaves it out and names it
+  in the "(206)" report; a CD-Text chunk is read only when it lies within the image (one buffer of its
+  size, the text gathered in place by pack, labels split by length); a DAOX entry applies only to
+  tracks 1..count; `GetTrack` returns NULL at the count (`src/common/salnrgcdtext.h`). Traps: uniso
+  includes `src/common` headers as `../../common/...` (the first build failed); real CDTX chunks are
+  whole packs (4 header + 12 text + 2 CRC bytes - review 1), so the old loop overread only odd sizes; a
+  CDTX past the image's end makes the image not open as NRG ("Unknown file format"), as a truncated
+  chunk list did before. Limits: CUEX's size underflow and SINF session counts unchecked (Inbox
+  `iso-plug-in-an-nrg-cuex-chunk-under-16-bytes-makes-a-huge`,
+  `iso-plug-in-an-nrg-session-count-above-the-image-s-tracks`); audio names neither UTF-8 nor cleaned
+  (Inbox `iso-plug-in-nrg-audio-track-names-are-listed-without`). From backlog item
+  `iso-plug-in-an-nrg-audio-track-label-of-257-bytes-overruns-a`. saltests 28,266 -> 28,304 / 0
+  (`TestNrgCdText331`; mutants of the gather bound, the track range and a cut name fail 2 each); 329's
+  A-OPEN 2 / 0; refute-first review 1: no MUST - the reviewer's crafted images (300-byte label, CDTX of
+  22 bytes and 0xFFFFFFFF, DAOX tracks 0 and count + 1) crash the old plug-in 6 / 8 and the fixed one
+  0 / 8; three SHOULD (the record, US2's wording, names to Inbox) taken.

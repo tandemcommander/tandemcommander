@@ -21,10 +21,10 @@
 - Alternatives: keep the terminator area (`Size + 1 + n` in `size_t`) - still needs the clipping
   and keeps a size that depends on a count from another chunk; rejected. A fixed cap - not needed
   (clarification).
-- Behaviour for consistent images: the gathered bytes equal the old ones except for the up to 4
-  bytes past the chunk the old code appended after its last block (always, also for whole blocks:
-  `(Size - 4) % 18 == 0` left a last pass of 4 bytes at `data + Size`) - bytes that never belonged to
-  the image; the labels the text holds are the same strings.
+- Behaviour for consistent images: a real CDTX chunk is a whole number of 18-byte packs (4-byte
+  header, 12 text bytes, 2-byte CRC; review 1) - for such sizes the gathered text is the same 12 bytes
+  per pack in the same order as before. Only for other sizes did the old loop append up to 4 bytes from
+  past the chunk.
 
 ## R3 - DAOX track numbers
 

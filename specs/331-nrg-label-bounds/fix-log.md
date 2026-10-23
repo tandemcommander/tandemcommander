@@ -11,7 +11,8 @@ Backlog item `iso-plug-in-an-nrg-audio-track-label-of-257-bytes-overruns-a`.
     `sprintf(audioTrack, "%02d %s", Track + 1, label)` - present.
   - `src/plugins/uniso/nrg.cpp` `readCDTX`: `new char[header->Size + (1 + trackCount)]` in 32-bit
     unsigned arithmetic; block loop `for (i = Size; i > 0; i -= 18) memmove(dst, src, min(12, i))`
-    with `src = data + 4 + 18k` (reads up to 4 bytes past the chunk on every chunk, also whole ones);
+    with `src = data + 4 + 18k` (reads up to 4 bytes past the chunk when its size is not a whole number of 18-byte packs; review 1:
+    real chunks are whole packs);
     `memset(dst, 0, 1 + n)` at `data + 12 * ceil(Size / 18)` (past the buffer for Size < 36); the read
     count unchecked - present.
   - `readDAOX`: `iso->GetTrack(i - 1)` for `i` = first..last from the image, no NULL / range check;
@@ -60,11 +61,57 @@ Backlog item `iso-plug-in-an-nrg-audio-track-label-of-257-bytes-overruns-a`.
   (`probe/result_329_A_after.txt`): **PASS 2, FAIL 0** - labels `01 SHORT` listed, `02 <253 L>` named in
   the "(206)" box, copy answers "Audio tracks cannot be extracted"; registry restored, identical
   SHA-256.
-- Not driven (spec Assumptions): an image with a 300-byte label or damaged CDTX / DAOX sizes; the
-  rules' checks cover those inputs.
+- Not driven by this run (spec Assumptions): an image with a 300-byte label or damaged CDTX / DAOX
+  sizes; the rules' checks cover those inputs - review 1 drove them (below).
 
 ## Inbox (measure:331)
 
 - `iso-plug-in-an-nrg-session-count-above-the-image-s-tracks` - SINF session counts index past the
   track table in `ListImage`.
 - `iso-plug-in-an-nrg-cuex-chunk-under-16-bytes-makes-a-huge` - `readCUEX`'s size underflow.
+- `iso-plug-in-nrg-audio-track-names-are-listed-without` (source `review:331`) - audio track names
+  neither made UTF-8 nor cleaned (review 1's SHOULD 3; older than this feature).
+
+## Review
+
+### Review 1 (refute-first, general-purpose agent) - no MUST
+
+The reviewer built the uniso plug-in of d86b4e7b (before) and of 0f19a673 (after) in scratch worktrees,
+put each into a copy of the Debug tree and drove 8 crafted NRG images on the hidden desktop with a
+probe based on 329's `Audio-Row` (registry restored with identical SHA-256 each time; worktrees
+removed). Old -> fixed:
+
+| Image | Old plug-in | Fixed plug-in |
+|---|---|---|
+| base (253-byte label, as 329) | survives | survives, "(206)" names `02 <253 L>` |
+| l300 (300-byte label) | "Run-Time Check Failure #2 - Stack around the variable 'audioTrack' was corrupted" | survives; "(206)" names the 300 L, `01 SHORT` listed |
+| l300utf8 (200 bytes of e-acute + 100 L) | the same stack corruption | survives; the name listed whole |
+| cdtx22 (CDTX of 22 bytes) | HEAP CORRUPTION DETECTED (buffer of nrg.cpp) | survives |
+| cdtx5 (CDTX of 5 bytes) | survives (the small overrun not detected) | survives |
+| daox3 (DAOX tracks 1..3 of 2) | TRACE_C "Index is out of range (index = 2, Count = 2)" | survives |
+| daox0 (DAOX track 0) | access violation writing 0x8, bug report | survives |
+| cdtxhuge (CDTX size 0xFFFFFFFF) | TRACE_C "_sal_safe_memcpy: source and destination of memcpy overlap" (the wrapped buffer) | survives; the image does not open as NRG (SHOULD 2) |
+
+saltests from HEAD 0 failed; callers enumerated (`GetTrack`: audio.cpp, nrg.cpp x2, udf.cpp via
+`GetTrackFromExtent` - never above count - 1, 255 with no tracks: NULL before and after;
+`CBufferedFile::Seek(0, FILE_CURRENT)` returns the logical position; `ListingLeftOut.Add` copies the
+name) - no regression; no data-loss path (audio is never extracted; out of memory marks the listing).
+
+- SHOULD 1 (the evidence understates what can be driven): taken as a record - the table above is the
+  driven before / after measurement. The reviewer's scratch generator and probe (images built to crash
+  the old build) are not copied into the repository; the kept regression is `TestNrgCdText331` (its
+  mutants fail) and 329's A-OPEN row.
+- SHOULD 2 (US2 scenario 2 described "no labels" while a CDTX past the image's end makes the image not
+  open as NRG): the spec's scenario now says so. Before this feature the same image ended the chunk list
+  at the end of the file too (after a read into a wrapped buffer), so a consistent outcome, not a new
+  refusal.
+- SHOULD 3 (audio names not made UTF-8 / safe, older): Inbox `iso-plug-in-nrg-audio-track-names-are-listed-without`.
+- NOTE (the CD-Text format is 18-byte packs of 4 header + 12 text + 2 CRC bytes, so real chunks are a
+  whole number of packs and the old loop did not overread them): the header comment, the research R2
+  text, the fix-log measurement and the saltests comment corrected; checks for sizes 18 and 36 added.
+- NOTE (cdtx5 is no detector; large chunks within the image are still read whole; a file whose low size
+  DWORD is 0xFFFFFFFF is refused as ReadSessionNRG already does): accepted, as the clarifications say.
+
+After review 1 (comments, two saltests checks): `.\build.cmd` BUILD SUCCEEDED; `saltests: 28304 checks,
+0 failed`; encoding guard `TOTAL: 0 finding(s)`. No code of the plug-in changed in this round (the
+header's comment only), so 329's A-OPEN result stands.

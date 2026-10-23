@@ -20550,7 +20550,9 @@ static void TestNrgCdText331()
     CHECK(SalNrgCdTextLen(4) == 0);
     CHECK(SalNrgCdTextLen(5) == 1);
     CHECK(SalNrgCdTextLen(16) == 12);
-    CHECK(SalNrgCdTextLen(22) == 12); // one whole block: the old loop appended 4 bytes from past the chunk
+    CHECK(SalNrgCdTextLen(18) == 12); // one 18-byte pack (a real chunk): 12 text bytes, as the old loop took
+    CHECK(SalNrgCdTextLen(36) == 24);
+    CHECK(SalNrgCdTextLen(22) == 12); // not a whole number of packs: the old loop appended 4 bytes from past the chunk
     CHECK(SalNrgCdTextLen(23) == 13);
     // sizes near 4 GiB and near the top of size_t: never more than the chunk, 12 bytes per 18
     bool bigOk = true;

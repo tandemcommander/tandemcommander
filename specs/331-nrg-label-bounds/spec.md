@@ -99,7 +99,9 @@ the n-th label of a text without a final terminator; the DAOX track number range
 1. **Given** a CD-Text chunk of any size from 0 to the bytes left in the image, **When** the labels are
    taken, **Then** no byte outside the chunk is read and no byte outside the buffer is written.
 2. **Given** a CD-Text chunk claiming more bytes than the image holds after it, **When** the image is
-   opened, **Then** no labels are taken from it and no buffer of a wrapped size is allocated.
+   opened, **Then** nothing is allocated or read for it; the reader moves past it, which lies past the
+   end of the image, so the chunk list ends there and the image is not opened as an NRG image ("Unknown
+   file format or not a valid ISO image", as for any truncated chunk list - review 1).
 3. **Given** a DAOX chunk naming track 0 or a track above the CUEX track count, **When** the image is
    opened, **Then** no track outside the table is touched.
 
@@ -156,7 +158,8 @@ the n-th label of a text without a final terminator; the DAOX track number range
 - Assumption (autonomous run): no new UI string - a refused name uses feature 329's "(206)" report; a
   chunk the reader cannot use is skipped silently, like any other damaged NRG chunk today.
 - Assumption (autonomous run): the crash at HEAD is shown by reading the sites (the item's own note:
-  no run reproduced it); the run does not build images that drive the overrun at the old code. The
-  after-fix evidence is the `saltests` checks of the rules plus feature 329's probe (a fitting label).
+  no run reproduced it); the run itself did not build images that drive the overrun at the old code.
+  The after-fix evidence is the `saltests` checks of the rules plus feature 329's probe (a fitting
+  label); review 1 drove eight crafted images on the old and the fixed plug-in (fix-log *Review*).
 - Assumption (autonomous run): the label bytes are passed to the listing as they are (their encoding
   is outside this item).
