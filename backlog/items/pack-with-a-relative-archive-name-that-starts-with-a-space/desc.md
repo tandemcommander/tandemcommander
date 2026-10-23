@@ -1,7 +1,7 @@
 ---
 title: Pack with a relative archive name that starts with a space drops the space
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:316
@@ -54,3 +54,4 @@ PASS.
 ## Log
 
 - 2026-10-23 — created (source measure:316)
+- 2026-10-23 — moved to Next position 2
