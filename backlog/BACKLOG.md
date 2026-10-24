@@ -260,6 +260,10 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 335 with real NRG and CloneCD dumps of Video CDs and a damaged data CD](items/check-feature-335-with-real-nrg-and-clonecd-dumps-of-video/desc.md) | person-step | 6 | archives | leftover:335 | 2026-10-24 |
+| [ISO plug-in: a Form 2 track that no listed file covers is deleted with the image](items/iso-plug-in-a-form-2-track-that-no-listed-file-covers-is/desc.md) | bug | 7 | archives | review:335 | 2026-10-24 |
+| [ISO plug-in: NRG ETNF / ETN2 and multi-session CCD track tables get wrong sector sizes or ends](items/iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables/desc.md) | bug | 5 | archives | review:335 | 2026-10-24 |
+| [ISO plug-in: Video CD MPEG files in Form 2 sectors may extract cut to 2048 bytes a sector](items/iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may/desc.md) | bug | 5 | archives | review:335 | 2026-10-24 |
 
 ## Parked
 
