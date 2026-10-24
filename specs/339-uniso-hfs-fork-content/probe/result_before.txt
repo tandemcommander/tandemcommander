@@ -1,0 +1,35 @@
+iso339_probe (feature 339) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 11:43; registry key existed True
+
+seeds: hdh.iso,hdh_both.iso,hdh_comp.iso,hdh_comp2.iso,hdh_compin.iso,hdh_flag.iso,hdh_nomode.iso,hdh_rsrc.iso,ud.iso
+img339: rsrc: side.txt owner flags 0x0 mode 0o100777 data 4 rsrc 0 -> owner flags 0x0 mode 0o100777 data 0 rsrc 4
+img339: comp: side.txt owner flags 0x0 mode 0o100777 data 4 rsrc 0 -> owner flags 0x20 mode 0o100777 data 0 rsrc 4
+img339: compin: side.txt owner flags 0x0 mode 0o100777 data 4 rsrc 0 -> owner flags 0x20 mode 0o100777 data 0 rsrc 0
+img339: flag: side.txt owner flags 0x0 mode 0o100777 data 4 rsrc 0 -> owner flags 0x20 mode 0o100777 data 4 rsrc 0
+img339: nomode: side.txt owner flags 0x0 mode 0o100777 data 4 rsrc 0 -> owner flags 0x20 mode 0o0 data 4 rsrc 0
+img339: both: side.txt owner flags 0x0 mode 0o100777 data 4 rsrc 0 -> owner flags 0x0 mode 0o100777 data 4 rsrc 4
+img339: comp: side.txt owner flags 0x0 mode 0o100777 data 4 rsrc 0 -> owner flags 0x20 mode 0o100777 data 0 rsrc 4
+img339: comp: top.txt owner flags 0x0 mode 0o100777 data 3 rsrc 0 -> owner flags 0x20 mode 0o100777 data 0 rsrc 3
+
+H-OK       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-OK       RUN    PASS        files 5: HFS (TC332)/a/side.txt=SIDE, HFS (TC332)/top.txt=TOP, HFS (TC332)/zlast/z.txt=Z, ISO (TC332)/TOP.TXT=TOP, ISO (TC332)/ZLAST/Z.TXT=Z; files ok: True; image kept: False (want False); boxes as expected (none, 0 box(es)): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-RSRC     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-RSRC     RUN    FAIL        files 5: HFS (TC332)/a/side.txt=, HFS (TC332)/top.txt=TOP, HFS (TC332)/zlast/z.txt=Z, ISO (TC332)/TOP.TXT=TOP, ISO (TC332)/ZLAST/Z.TXT=Z; files ok: False; image kept: False (want True); boxes as expected ("side\.txt.*resource fork", 0 box(es)): False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-COMP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-COMP     RUN    FAIL        files 5: HFS (TC332)/a/side.txt=, HFS (TC332)/top.txt=TOP, HFS (TC332)/zlast/z.txt=Z, ISO (TC332)/TOP.TXT=TOP, ISO (TC332)/ZLAST/Z.TXT=Z; files ok: False; image kept: False (want True); boxes as expected ("side\.txt.*compressed", 0 box(es)): False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-COMPIN   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-COMPIN   RUN    FAIL        files 5: HFS (TC332)/a/side.txt=, HFS (TC332)/top.txt=TOP, HFS (TC332)/zlast/z.txt=Z, ISO (TC332)/TOP.TXT=TOP, ISO (TC332)/ZLAST/Z.TXT=Z; files ok: False; image kept: False (want True); boxes as expected ("side\.txt.*compressed", 0 box(es)): False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-FLAG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-FLAG     RUN    FAIL        files 5: HFS (TC332)/a/side.txt=SIDE, HFS (TC332)/top.txt=TOP, HFS (TC332)/zlast/z.txt=Z, ISO (TC332)/TOP.TXT=TOP, ISO (TC332)/ZLAST/Z.TXT=Z; files ok: False; image kept: False (want True); boxes as expected ("side\.txt.*compressed", 0 box(es)): False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-SKIPALL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-SKIPALL  RUN    FAIL        files 5: HFS (TC332)/a/side.txt=, HFS (TC332)/top.txt=, HFS (TC332)/zlast/z.txt=Z, ISO (TC332)/TOP.TXT=TOP, ISO (TC332)/ZLAST/Z.TXT=Z; files ok: False; image kept: False (want True); boxes as expected ("side\.txt.*compressed", 0 box(es)): False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-CANCEL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-CANCEL   RUN    FAIL        files 5: HFS (TC332)/a/side.txt, HFS (TC332)/top.txt, HFS (TC332)/zlast/z.txt, ISO (TC332)/TOP.TXT, ISO (TC332)/ZLAST/Z.TXT; files ok: False; image kept: False (want True); boxes as expected ("side\.txt.*compressed", 0 box(es)): False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-NOMODE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-NOMODE   RUN    PASS        files 5: HFS (TC332)/a/side.txt=SIDE, HFS (TC332)/top.txt=TOP, HFS (TC332)/zlast/z.txt=Z, ISO (TC332)/TOP.TXT=TOP, ISO (TC332)/ZLAST/Z.TXT=Z; files ok: True; image kept: False (want False); boxes as expected (none, 0 box(es)): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-BOTH     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-BOTH     RUN    PASS        files 5: HFS (TC332)/a/side.txt=SIDE, HFS (TC332)/top.txt=TOP, HFS (TC332)/zlast/z.txt=Z, ISO (TC332)/TOP.TXT=TOP, ISO (TC332)/ZLAST/Z.TXT=Z; files ok: True; image kept: False (want False); boxes as expected (none, 0 box(es)): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588 / after BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588
+
+Rows: PASS 12, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
