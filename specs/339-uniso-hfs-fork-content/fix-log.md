@@ -27,3 +27,9 @@ data is compressed or only in its resource fork extracts empty.
 See spec *Clarifications*: refuse (count as not extracted) instead of decompressing; a Skip / Skip all /
 Cancel box per refused file (silent after Skip all); the decision as a pure rule; both-forks files unchanged
 (Inbox); TN1150's uninitialised BSD information (file mode type bits 0) -> the flag is not read.
+
+## Analyze
+
+- Run 1: no CRITICAL / HIGH. MEDIUM C1 (FR-003's untouched existing target had no row) -> row H-EXIST added
+  to T007; LOW U1 (symbolic link) -> a unit check in T003. MEDIUM C2 accepted: Copy (F5) and view of a
+  single file reach the same `CHFS::UnpackFile`; the probe drives the whole unpack only (as 338).

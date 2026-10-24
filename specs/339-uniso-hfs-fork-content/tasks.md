@@ -10,7 +10,7 @@
 ## Phase 2: Foundational (the pure rule)
 
 - [ ] T002 Add `SalHfsFileContentKind(rec, avail)` and `SAL_HFSFILE_DATA / COMPRESSED / RESOURCE_ONLY / SHORT` (offsets 41, 42, 88, 168; TN1150's uninitialised file mode) with a header comment to src/common/salhfscatalog.h
-- [ ] T003 Add `TestHfsFileContent339` (ordinary, empty, compressed with resource fork / inline / with data, flag with mode 0, resource only, both forks, short / NULL record, flags of other bits, a type-bits-only mode) to src/saltests/saltests.cpp and call it from main
+- [ ] T003 Add `TestHfsFileContent339` (ordinary, empty, compressed with resource fork / inline / with data, flag with mode 0, resource only, both forks, short / NULL record, flags of other bits, a type-bits-only mode, a symbolic link record with its target in the data fork) to src/saltests/saltests.cpp and call it from main
 - [ ] T004 Build (`.\build.cmd`) and run saltests; run the two mutants (flag ignored, mode check dropped / resource check dropped) and record that each fails checks in fix-log.md
 
 ## Phase 3: User Story 1 - a refused file keeps the image (P1)
@@ -24,7 +24,7 @@
 
 **Independent test**: probe rows H-SKIPALL, H-CANCEL.
 
-- [ ] T007 [US2] Confirm in specs/339-uniso-hfs-fork-content/probe/iso339_probe.ps1 that H-SKIPALL counts one box and both files missing and H-CANCEL only side.txt missing (the T006 code serves both)
+- [ ] T007 [US2] Confirm in specs/339-uniso-hfs-fork-content/probe/iso339_probe.ps1 that H-SKIPALL counts one box and both files missing and H-CANCEL only side.txt missing (the T006 code serves both); add row H-EXIST (FR-003: the target holds the user's own a/side.txt = OLD; hdh_comp.iso answered Skip: side.txt stays OLD, the image kept)
 
 ## Phase 5: User Story 3 - ordinary files unchanged (P3)
 
