@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: a Form 2 track that no listed file covers is deleted with the image
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:335
 who: agent
 created: 2026-10-24
 updated: 2026-10-24
-verified: -
+verified: 2026-10-24 e2e41399
 effort: M
-feature: -
+feature: 336
 related: []
 depends-on: []
 reason: -
@@ -61,3 +61,5 @@ real-vcdimager images (reviewer 3's `probe/review3/gen335c.py`, vcdimager + ffmp
 - 2026-10-24 — created (source review:335)
 - 2026-10-24 — related item iso-plug-in-a-data-track-in-which-no-file-system-is-found done in feature 335
 - 2026-10-24 — moved to Next position 1
+- 2026-10-24 — verified at e2e41399: still present at e2e41399: uniso code unchanged since d9406b9b; 335 probe result_after_review4 rows S-VCD, M-FORM2 (Form 2 track referenced by no file) deleted the image; RawLost = outside or not form2 only
+- 2026-10-24 — run started, feature 336
