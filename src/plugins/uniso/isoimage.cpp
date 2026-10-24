@@ -928,7 +928,7 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                         DWORD sizeHi;
                         DWORD sizeLo = File->GetFileSize(&sizeHi);
                         LONGLONG fileSize = ((LONGLONG)sizeHi << 32) | sizeLo;
-                        Tracks[trk]->OutsideImage = GetSectorOffset(0x10) + SectorUserSize > fileSize;
+                        Tracks[trk]->OutsideImage = SalIsoTrackSectorOutside(GetSectorOffset(0x10), SectorUserSize, fileSize);
                         ret = ERR_OK; // we can handle raw data tracks, so we turn the error into OK (what rascals we are :-D)
                     }
                     if (ret == ERR_TERMINATE)
@@ -1424,9 +1424,10 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
             int track;
             for (track = firstSessionTrack; track < lastSessionTrack; track++)
             {
-                // feature 334: a track that does not open or list, or lies past the end of the image,
-                // marks the listing incomplete (a whole unpack fails, the image is kept) - the box and
-                // the listing of the other sessions stay as they were
+                // feature 334: a track that does not open or list, lies past the end of the image, an
+                // audio track (never extracted) or an unknown one (never listed) marks the listing
+                // incomplete (a whole unpack fails, the image is kept) - the box and the listing of the
+                // other sessions stay as they were
                 switch (Tracks[track]->FSType)
                 {
                 case fsAudio:
@@ -1438,6 +1439,7 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
 
                 case fsUnknown:
                     // nothing we can do about it
+                    MarkTrack(track, SAL_ISO_TRACK_NOT_TRIED);
                     break;
 
                 default:
@@ -1453,6 +1455,10 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
             } // for
             firstSessionTrack += trackCount;
         }
+        // feature 334 (review 1): tracks no session count covers are left out of the listing
+        int track;
+        for (track = firstSessionTrack; track < Tracks.Count; track++)
+            MarkTrack(track, SAL_ISO_TRACK_LEFT_OUT);
 
         if (!ret)
             Error(IDS_ERROR_OPENING_MULTISESSION);
@@ -1465,8 +1471,9 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
         if (OpenTrack(LastTrack))
         {
             BOOL ret = ListDirectory(path, -1, dir, pluginData);
-            // feature 334: only the last data track is listed (by design); another data track that lies
-            // past the end of the image still marks the listing incomplete
+            // feature 334: only the last data track is listed (by design: its directory holds the earlier
+            // sessions' files); an audio or unknown track (review 1: a data + audio disc lost its audio)
+            // or a data track that lies past the end of the image still marks the listing incomplete
             for (track = 0; track < Tracks.Count; track++)
             {
                 if (track != LastTrack)
@@ -1479,8 +1486,8 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
             BOOL ret = FALSE;
             // feature 334: the last data track did not open - the tracks listed below are not all of the
             // image, so the listing is marked incomplete (a whole unpack fails, the image is kept); so is
-            // each track tried below that does not open or list (LastTrack is -1 for an audio CD: then
-            // this is the normal listing)
+            // each track tried below that does not open or list, and an audio track (LastTrack is -1 for
+            // an audio CD: then this is the normal listing, marked for its audio tracks)
             if (LastTrack >= 0 && LastTrack < Tracks.Count)
                 MarkTrack(LastTrack, SAL_ISO_TRACK_NOT_OPENED);
             // we also try to insert audio tracks if there are any

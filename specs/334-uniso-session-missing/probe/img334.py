@@ -14,6 +14,13 @@ Kinds:
   multi_past  as multi, track 2's start in the ETNF chunk past the end of the image
   single      one session of the two tracks (the plug-in lists only the last track)
   single_term as single, track 2's terminator destroyed (the last data track does not open)
+  single_past as single, track 2's start past the end of the image
+  single_raw  as single, track 2 zeros - readable raw data without a file system (Video CD-like)
+  single_mixed one session: track 1 data (s1), track 2 audio
+  multi_mixed as single_mixed, one track a session
+  multi_unknown as multi, track 2's mode byte 0x10 (a mode the plug-in calls unknown)
+  multi_extra as multi, plus a third (audio) track no session count covers
+  audio_cd    one session of two audio tracks
 """
 import struct
 import sys
@@ -49,20 +56,44 @@ def main(argv):
     if kind.endswith("_term"):
         s2, t = kill_terminator(s2)
         note = "terminator of track 2 at its sector %d destroyed" % t
+    if kind == "single_raw":
+        s2 = bytes(len(s2))  # readable raw data, no file system (as a Video CD's MPEG track)
+        note = "track 2 is zeros (no file system)"
     data = s1 + s2
-    starts = [0, len(s1)]
-    if kind == "multi_past":
-        starts[1] = len(data) + 0x10000000
-        note = "track 2 starts at %d, the image has %d bytes of track data" % (starts[1], len(data))
-    etnf = b""
-    for start, length, lba in ((starts[0], len(s1), 0), (starts[1], len(s2), lba2)):
-        etnf += struct.pack(">II", start, length) + bytes([0, 0, 0, 0x00]) + struct.pack(">I", lba) + bytes(4)
-    if kind.startswith("multi"):
-        sinf = chunk(b"SINF", struct.pack(">I", 1)) + chunk(b"SINF", struct.pack(">I", 1))
-    elif kind.startswith("single"):
-        sinf = chunk(b"SINF", struct.pack(">I", 2))
-    else:
+    audio = bytes((i * 7) & 0xFF for i in range(2352 * 300))  # 300 raw audio sectors
+    # (start, length, first sector, mode byte at 0x0B: 0x00 = Mode 1, 0x07 = audio, 0x10 = a mode
+    # the plug-in does not name - "unknown")
+    entries = [(0, len(s1), 0, 0x00), (len(s1), len(s2), lba2, 0x00)]
+    counts = [1, 1] if kind.startswith("multi") else [2]
+    if kind in ("multi_past", "single_past"):
+        entries[1] = (len(data) + 0x10000000, len(s2), lba2, 0x00)
+        note = "track 2 starts at %d, the image has %d bytes of track data" % (entries[1][0], len(data))
+    elif kind == "multi_unknown":
+        entries[1] = (len(s1), len(s2), lba2, 0x10)
+        note = "track 2's mode byte 0x10"
+    elif kind == "multi_extra":
+        entries.append((len(data), len(audio), lba2 + len(s2) // SECTOR, 0x07))
+        data = data + audio
+        note = "a third (audio) track that no session count covers"
+    elif kind == "single_mixed":
+        entries = [(0, len(s1), 0, 0x00), (len(s1), len(audio), lba2, 0x07)]
+        data = s1 + audio
+        note = "one session: a data track and an audio track"
+    elif kind == "multi_mixed":
+        entries = [(0, len(s1), 0, 0x00), (len(s1), len(audio), lba2, 0x07)]
+        data = s1 + audio
+        note = "session 1 a data track, session 2 an audio track"
+    elif kind == "audio_cd":
+        entries = [(0, len(audio), 0, 0x07), (len(audio), len(audio), len(audio) // 2352, 0x07)]
+        data = audio + audio
+        counts = [2]
+        note = "one session of two audio tracks"
+    elif kind not in ("multi", "multi_term", "single", "single_term", "single_raw"):
         raise SystemExit("unknown kind " + kind)
+    etnf = b""
+    for start, length, lba, mode in entries:
+        etnf += struct.pack(">II", start, length) + bytes([0, 0, 0, mode]) + struct.pack(">I", lba) + bytes(4)
+    sinf = b"".join(chunk(b"SINF", struct.pack(">I", c)) for c in counts)
     chunks = chunk(b"ETNF", etnf) + sinf + chunk(b"END!", b"")
     img = data + chunks + b"NER5" + struct.pack(">Q", len(data))
     open(dst, "wb").write(img)

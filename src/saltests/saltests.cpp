@@ -19885,13 +19885,14 @@ static void TestHfsVolumeDeclared333()
 }
 
 // feature 334: a track of a disc image with a track table that the listing could not open, whose
-// listing failed, or a data track past the end of the image marks the listing incomplete (a whole
-// unpack fails, "Delete archive after unpacking" keeps the image); unknown tracks never do
+// listing failed, that no session covers, a data track past the end of the image, and every audio
+// (never extracted) or unknown (never listed) track marks the listing incomplete (a whole unpack
+// fails, "Delete archive after unpacking" keeps the image)
 static void TestIsoTrackMarks334()
 {
     const int kinds[] = {SAL_ISO_TRACK_DATA, SAL_ISO_TRACK_AUDIO, SAL_ISO_TRACK_UNKNOWN};
     const int outcomes[] = {SAL_ISO_TRACK_NOT_TRIED, SAL_ISO_TRACK_NOT_OPENED, SAL_ISO_TRACK_LIST_FAILED,
-                            SAL_ISO_TRACK_LISTED};
+                            SAL_ISO_TRACK_LISTED, SAL_ISO_TRACK_LEFT_OUT};
     for (int kind : kinds)
     {
         for (int outside = 0; outside < 2; outside++)
@@ -19899,32 +19900,48 @@ static void TestIsoTrackMarks334()
             for (int outcome : outcomes)
             {
                 bool want;
-                if (kind == SAL_ISO_TRACK_UNKNOWN)
-                    want = false; // never listed, never marked (as before)
-                else if (kind == SAL_ISO_TRACK_DATA && outside)
+                if (kind != SAL_ISO_TRACK_DATA)
+                    want = true; // audio is never extracted, an unknown track never listed
+                else if (outside)
                     want = true; // nothing of the track can be read, whatever the listing did
                 else
-                    want = outcome == SAL_ISO_TRACK_NOT_OPENED || outcome == SAL_ISO_TRACK_LIST_FAILED;
+                    want = outcome != SAL_ISO_TRACK_NOT_TRIED && outcome != SAL_ISO_TRACK_LISTED;
                 CHECK(SalIsoTrackMarksListing(kind, outside != 0, outcome) == want);
             }
         }
     }
     // the measured cases: a session's track that does not open (M-TERM), a track past the end of the
-    // image that opens as raw data and lists nothing (M-PAST), the last data track that does not open
-    // (S-TERM); the controls: tracks listed, a Video CD's readable raw data track, an audio track
+    // image that opens as raw data and lists nothing (M-PAST, S-PAST), the last data track that does
+    // not open (S-TERM), the audio track of a data + audio disc (S-MIXED), an unknown track (M-UNK),
+    // a track no session covers (M-EXTRA); the controls: tracks listed, a data track a single-session
+    // listing does not try, a readable raw data track (S-RAW)
     CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, false, SAL_ISO_TRACK_NOT_OPENED));
     CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, true, SAL_ISO_TRACK_LISTED));
     CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, true, SAL_ISO_TRACK_NOT_TRIED));
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_AUDIO, false, SAL_ISO_TRACK_NOT_TRIED));
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_AUDIO, false, SAL_ISO_TRACK_LISTED));
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_UNKNOWN, false, SAL_ISO_TRACK_NOT_TRIED));
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, false, SAL_ISO_TRACK_LEFT_OUT));
     CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, false, SAL_ISO_TRACK_LISTED));
     CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, false, SAL_ISO_TRACK_NOT_TRIED));
-    CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_AUDIO, false, SAL_ISO_TRACK_LISTED));
-    // an audio track is never "outside" (it is not detected); an unknown track never marks
-    CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_AUDIO, true, SAL_ISO_TRACK_LISTED));
-    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_AUDIO, false, SAL_ISO_TRACK_NOT_OPENED));
-    CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_UNKNOWN, true, SAL_ISO_TRACK_NOT_OPENED));
-    // an outcome the rule does not know fails closed
+    // a kind or an outcome the rule does not know fails closed
     CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, false, 7));
-    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_AUDIO, false, -1));
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, false, -1));
+    CHECK(SalIsoTrackMarksListing(9, false, SAL_ISO_TRACK_LISTED));
+
+    // the bound: the user data of sector 16 within the image file or not
+    const long long mb = 1024 * 1024;
+    CHECK(!SalIsoTrackSectorOutside(16 * 2048, 2048, mb));
+    CHECK(!SalIsoTrackSectorOutside(mb - 2048, 2048, mb)); // the last whole sector
+    CHECK(SalIsoTrackSectorOutside(mb - 2047, 2048, mb));  // one byte short
+    CHECK(SalIsoTrackSectorOutside(mb, 2048, mb));
+    CHECK(SalIsoTrackSectorOutside(269156352LL + 16 * 2048, 2048, 720976));      // M-PAST's track 2
+    CHECK(SalIsoTrackSectorOutside(-1, 2048, mb));                               // a start read as a negative number
+    CHECK(SalIsoTrackSectorOutside((long long)0x8000000000000000ULL, 2048, mb)); // an overflowed offset
+    CHECK(SalIsoTrackSectorOutside(0x7FFFFFFFFFFFFF00LL, 2048, mb));             // near the top: no overflow in the test
+    CHECK(SalIsoTrackSectorOutside(0, 2048, 0));                                 // an empty file
+    CHECK(SalIsoTrackSectorOutside(0, 2048, -1));                                // a file size that could not be read
+    CHECK(!SalIsoTrackSectorOutside(0, 0, 0));
 }
 
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and

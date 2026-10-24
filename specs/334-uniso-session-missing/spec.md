@@ -40,10 +40,14 @@ unpacking":
   the single-session listing the last data track when it does not open, and every other track the
   fallback then tries that does not open (autonomous run: item - *Expected* "a listing that left out a
   track or session that could not be opened is marked incomplete")
-- Q: Do audio tracks that do not open count (the item's *Notes* leave it to the spec)? → A: yes, they
-  mark the listing like any other track - a "safe to delete?" check fails closed. In practice an audio
-  track always opens (its reader has no open step), so audio CDs and mixed-mode discs behave as today
-  (autonomous run: rule - CLAUDE.md "a safe to delete? check fails closed")
+- Q: Do audio tracks count as missing content (the item's *Notes* leave it to the spec)? → A: yes -
+  revised after review 1: every audio track marks the listing, listed or not. The plug-in never
+  extracts audio (a whole unpack skips an audio track silently, `UNPACK_AUDIO_UNSUP`), and a
+  single-session listing of a data + audio disc does not even show the audio tracks: a whole unpack
+  with "Delete archive after unpacking" deleted the image and its audio (review 1, row S-MIXED; the
+  first answer - "an audio track always opens, so audio and mixed-mode discs behave as today" - kept
+  that loss). Audio CDs and mixed-mode discs are now kept after a whole unpack (autonomous run: rule -
+  CLAUDE.md "a safe to delete? check fails closed")
 - Q: A data track that lies past the end of the image (nothing of it can be read - the plug-in takes it
   as a raw data track that lists nothing)? → A: it is a track that could not be opened: marked, in the
   multi-session and the single-session listing. A raw data track that can be read (no file system the
@@ -51,8 +55,11 @@ unpacking":
   (autonomous run: item - its *Notes* name this image as the probe; conservative for readable raw
   tracks)
 - Q: Tracks of a type the track table does not name ("unknown" tracks, skipped by every listing
-  today)? → A: unchanged - never listed, not marked (autonomous run: conservative - the item does not
-  name them)
+  today)? → A: revised after review 1: they mark the listing - no listing ever shows them, so a whole
+  unpack never extracts them (review 1, row M-UNK: an NRG track of mode byte 0x10). Tracks that no
+  session count covers (a track table with more tracks than its sessions add up to) mark it as well
+  (review 1, row M-EXTRA) (autonomous run: rule - CLAUDE.md "a safe to delete? check fails closed"; the
+  item - "a listing that left out a track")
 - Q: A message? → A: no new message or UI string; the multi-session box stays exactly as it is, a
   silent case stays silent (as feature 330's silent cases) (autonomous run: item - "The error box and
   the listing of the other sessions stay as they are")
@@ -116,9 +123,13 @@ destroyed).
 
 ### Edge Cases
 
-- An audio CD or a mixed-mode disc whose tracks all open: unchanged (unpacks whole, deleted as today).
+- An audio CD or a mixed-mode disc: kept after a whole unpack (audio is never extracted) - before,
+  deleted with its audio (review 1).
 - A Video CD-like image whose later tracks are readable raw data: unchanged (not listed, not marked).
-- An "unknown" track type in the track table: unchanged.
+- An "unknown" track type in the track table, or a track no session count covers: marked (review 1).
+- Limit (by design, review 1 NOTE): a single-session listing shows only the last data track; data
+  tracks before it that are not part of its directory (independent sessions with "Session NN" off) are
+  not listed and not marked - as Windows shows such a disc.
 - An image without a track table (a plain .iso): unchanged - one track, the existing reader marks.
 - No track at all opens: the image does not open, as today.
 - "Session NN" folders turned off: a multi-session image follows the single-session rules.
@@ -129,18 +140,19 @@ destroyed).
 
 ### Functional Requirements
 
-- **FR-001**: In the multi-session listing, a track the listing tries (any type except "unknown")
-  that does not open, whose listing fails, or that lies past the end of the image MUST mark the
-  listing incomplete, so a whole-image unpack fails and "Delete archive after unpacking" keeps the image.
+- **FR-001**: In the multi-session listing, a track that does not open, whose listing fails, that lies
+  past the end of the image, that no session count covers, and every audio or unknown track MUST mark
+  the listing incomplete, so a whole-image unpack fails and "Delete archive after unpacking" keeps the image.
 - **FR-002**: In the single-session listing, when the last data track does not open and the listing
   falls back to the other tracks, the listing MUST be marked incomplete when it is returned; a track the
-  fallback tries that does not open (except "unknown") MUST mark it too.
+  fallback tries that does not open or list MUST mark it too; so MUST every audio or unknown track of
+  the image, tried or not.
 - **FR-003**: In the single-session listing, a data track that lies past the end of the image MUST mark
   the listing incomplete.
 - **FR-004**: The multi-session box, the folders listed and every message MUST stay as they are; no UI
   string is added or changed.
-- **FR-005**: Images whose tracks all open (and readable raw data tracks, audio tracks, "unknown"
-  tracks) MUST unpack whole and be deleted with "Delete archive after unpacking" as before.
+- **FR-005**: Images whose data tracks all open (and readable raw data tracks) and that hold no audio or
+  unknown track MUST unpack whole and be deleted with "Delete archive after unpacking" as before.
 - **FR-006**: The decision which track outcome marks the listing MUST be a pure rule in a header under
   `src/common/` with `saltests` checks (stop-rules §2.5).
 
@@ -155,8 +167,9 @@ destroyed).
 
 ### Measurable Outcomes
 
-- **SC-001**: Probe rows M-TERM, M-PAST and S-TERM: image kept (3 FAIL before the change, PASS after).
-- **SC-002**: Control rows M-OK and S-OK: image deleted, all listed files extracted (PASS before and after).
+- **SC-001**: Probe rows M-TERM, M-PAST and S-TERM: image kept (3 FAIL before the change, PASS after);
+  review 1's rows S-PAST, S-MIXED, M-MIXED, M-UNK, M-EXTRA, A-CD: image kept.
+- **SC-002**: Control rows M-OK, S-OK and S-RAW: image deleted, all listed files extracted (PASS before and after).
 - **SC-003**: The earlier ISO probes (322, 329, 330, 333) keep their results.
 - **SC-004**: `saltests` gains checks of the rule and keeps 0 failures; a mutant of the rule fails them.
 
@@ -169,4 +182,5 @@ destroyed).
   (features 328-333); treating a failed listing of a track as a mark again is harmless.
 - Assumption (autonomous run): the single-session listing keeps listing only the last data track when
   it opens (earlier tracks of one session are not listed, by design - the last track's directory of a
-  multi-session disc includes the earlier ones); only an unreadable data track adds a mark there.
+  multi-session disc includes the earlier ones); an unreadable data track, an audio or an unknown track
+  adds a mark there.

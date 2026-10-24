@@ -24,12 +24,17 @@
   either and loses its content just the same; tracks with a detected file system - not needed: their
   reader opens or not (R1), and their read errors mark (330).
 
-## R3 Audio and unknown tracks
+## R3 Audio and unknown tracks (revised after review 1)
 
-- Decision: audio tracks count like data tracks for "not opened" / "listing failed" (fail closed), never
-  for "outside the image" (they are not detected); unknown tracks never mark.
-- Rationale: spec Clarifications; `OpenTrack` creates `CAudio` without an open step, so an audio track
-  always opens - audio CDs and mixed-mode discs unchanged.
+- Decision: every audio track and every unknown track marks the listing; so does a track that no
+  session count covers (`SAL_ISO_TRACK_LEFT_OUT`).
+- Rationale: the plug-in never extracts audio - `ExtractAllItems` ignores `UNPACK_AUDIO_UNSUP` - and a
+  single-session listing of a data + audio disc does not show the audio tracks at all; an unknown track
+  is shown by no listing. Review 1 measured the loss (rows S-MIXED, M-UNK, M-EXTRA: image deleted).
+  The first decision ("audio counts only when it does not open; unknown never") kept those images'
+  deletion and was wrong about audio CDs and mixed-mode discs being safe.
+- Cost: an audio CD or a mixed-mode disc is never deleted by "Delete archive after unpacking" (its audio
+  was never extracted - nothing to keep it for except the audio itself).
 
 ## R4 The single-session path
 

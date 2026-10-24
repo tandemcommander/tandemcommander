@@ -1,6 +1,6 @@
-iso330_probe (feature 330) regress-334
+iso330_probe (feature 330) regress-334-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-24 04:24; registry key existed True
+Date    : 2026-10-24 04:48; registry key existed True
 
 seeds: nest.iso,rd.iso,rd_ext.iso,rd_rec.iso,rd_root.iso,rd_zero.iso,ud.iso,ud_ext.iso,ud_icb.iso,ud_tag.iso,udh.iso,udh_avdp.iso,udh_root.iso,xd.iso,xd_ext.iso
 img330: isoext: folder A's record at 47342 -> extent 0x100000 (image 180 sectors)

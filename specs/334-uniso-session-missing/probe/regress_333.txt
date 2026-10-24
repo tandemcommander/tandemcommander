@@ -1,6 +1,6 @@
-iso333_probe (feature 333) regress-334
+iso333_probe (feature 333) regress-334-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-24 04:26; registry key existed True
+Date    : 2026-10-24 04:50; registry key existed True
 
 seeds: apm.iso,apm_apmcnt.iso,hdh.iso,hdh_apmcnt.iso,hdh_apmsig.iso,hdh_cat.iso,hdh_ext.iso,hdh_nosig.iso,hdh_size.iso,hdh_ver.iso
 img333: ver: version 4 -> 5 (volume header at 113664) -> C:\Users\pavel\AppData\Local\Temp\tc333\seeds\hdh_ver.iso

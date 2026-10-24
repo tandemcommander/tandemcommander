@@ -12,16 +12,16 @@
 Inputs:
 
 - kind: `SAL_ISO_TRACK_DATA` / `SAL_ISO_TRACK_AUDIO` / `SAL_ISO_TRACK_UNKNOWN`
-- outsideImage: the data track's sector 16 is not in the image
+- outsideImage: the data track's sector 16 is not in the image (`SalIsoTrackSectorOutside`: also a
+  negative or overflowed offset)
 - outcome: `SAL_ISO_TRACK_NOT_TRIED` / `SAL_ISO_TRACK_NOT_OPENED` / `SAL_ISO_TRACK_LIST_FAILED` /
-  `SAL_ISO_TRACK_LISTED`
+  `SAL_ISO_TRACK_LISTED` / `SAL_ISO_TRACK_LEFT_OUT` (no session count covers the track)
 
-Result (true = mark 328's `ListingLeftOut` incomplete):
+Result (true = mark 328's `ListingLeftOut` incomplete), revised after review 1:
 
 | kind | outsideImage | outcome | marks |
 |---|---|---|---|
-| unknown | any | any | no |
+| audio, unknown, or a kind the rule does not know | any | any | yes (audio is never extracted, unknown never listed) |
 | data | true | any | yes |
-| data / audio | false (audio: ignored) | not opened, listing failed | yes |
-| data / audio | false | not tried, listed | no |
-| any other outcome value | - | - | yes (fail closed) |
+| data | false | not opened, listing failed, left out, or an outcome the rule does not know | yes |
+| data | false | not tried, listed | no |

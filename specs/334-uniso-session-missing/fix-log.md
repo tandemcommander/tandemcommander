@@ -76,3 +76,43 @@ window (unchanged).
 - `iso-plug-in-a-data-track-in-which-no-file-system-is-found` (measure:334) - a data track inside the
   image with no file system found (destroyed descriptors) still opens as raw data, lists nothing and
   is not marked; told apart from Video CD raw tracks it is not (a trade-off, see the item).
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+Reviewer's probe variant (`%TEMP%\rev334`, the branch build): M-TERM PASS (kept), S-PAST PASS (kept),
+S-RAW control (deleted, as FR-005), M-UNK FAIL, M-EXTRA FAIL, S-MIXED FAIL (image deleted).
+
+- **MUST 1** - a data + audio disc (one session; also "Session NN" off): the single-session listing
+  shows the last data track only, the audio tracks were passed as NOT_TRIED and the rule never marked
+  an audio track that was not tried - Unpack with "Delete archive after unpacking" deleted the image
+  and its audio (row S-MIXED); the spec's edge case "mixed-mode disc unchanged" was false. **Fixed**:
+  every audio track marks the listing (the plug-in never extracts audio: `ExtractAllItems` ignores
+  `UNPACK_AUDIO_UNSUP`, so even a listed audio track is lost by a whole unpack) - spec Clarifications,
+  FR-001 / FR-002 / FR-005, research R3, data-model revised.
+- **SHOULD 1** - unknown tracks (NRG mode byte 0x10, ...) never listed, never marked (row M-UNK).
+  **Fixed** inside the item's scope ("a listing that left out a track"): an unknown track always marks.
+- **SHOULD 2** - tracks no session count covers are skipped by the multi-session loop (row M-EXTRA).
+  **Fixed**: `SAL_ISO_TRACK_LEFT_OUT` for every track after the last session's, marks.
+- NOTE 1 - single-session listing of independent data tracks lists only the last one (S-OK): named
+  as a limit (by design) in the spec's edge cases.
+- NOTE 2 - a negative / overflowing track start counted as inside the image. **Fixed**:
+  `SalIsoTrackSectorOutside` (negative offset = outside; subtraction instead of addition), saltests.
+- NOTE 3 - `Track::Track()` leaves `FSType` and other fields uninitialised (pre-existing): Inbox
+  `iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an` (review:334).
+- NOTE 4 - saltests cover the rule, not `MarkTrack`: the probe covers those (rows below); the bound
+  helper now has its own checks.
+- NOTE 5 - closing records owed: written at closing.
+
+After the fixes: saltests 28,407 -> 28,425 / 0; encoding TOTAL: 0; build succeeded. Probe extended
+with the reviewer's layouts and two more (`img334.py`: single_past, single_raw, single_mixed,
+multi_mixed, multi_unknown, multi_extra, audio_cd): `result_after_review1.txt` PASS 24, FAIL 0 (12 RUN
+rows: M-OK, M-TERM, M-PAST, S-OK, S-TERM, S-PAST, S-RAW, S-MIXED, M-MIXED, M-UNK, M-EXTRA, A-CD).
+Negative control: the rule with `kind != DATA -> false` (audio / unknown never mark):
+saltests 24 failed, `result_mutant_no_audio_unknown.txt` 19 / 5 - exactly S-MIXED, M-MIXED, M-UNK,
+M-EXTRA, A-CD FAIL (image deleted). Trap: a Bash here-document collapsed `\a` of a probe edit into a
+BEL byte (`"$s<BEL>udio_cd.nrg"`) - found by a control-byte grep, fixed by bytes.
+Regressions after the review-1 fixes: `regress_322.txt` 18 / 0, `regress_329.txt` 14 / 0 (its NRG
+audio A-OPEN row unchanged: the open lists, only a whole unpack is affected), `regress_330.txt` 30 / 0,
+`regress_333.txt` 20 / 0.

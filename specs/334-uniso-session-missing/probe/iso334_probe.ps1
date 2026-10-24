@@ -15,6 +15,14 @@
       single.nrg       one session of both tracks (the plug-in lists only the last track)
       single_term.nrg  as single, track 2's terminator destroyed (the last data track does not open;
                        the plug-in falls back to the other tracks)
+      (review 1, after the reviewer's own rows)
+      single_past.nrg  as single, track 2's start past the end of the image
+      single_raw.nrg   as single, track 2 zeros - readable raw data without a file system (Video CD-like)
+      single_mixed.nrg one session: track 1 data (a.txt), track 2 audio
+      multi_mixed.nrg  session 1 data (a.txt), session 2 audio
+      multi_unknown.nrg as multi, track 2's mode byte 0x10 (a mode the plug-in calls unknown)
+      multi_extra.nrg  as multi, plus a third (audio) track no session count covers
+      audio_cd.nrg     one session of two audio tracks
     Unpack rows: the left panel shows <row>\src, Home, End focuses the image, Alt+F9 (851), the target
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK.
       M-OK       (control) PASS = Session 01/a.txt and Session 02/b.txt extracted, no window, the image deleted
@@ -23,6 +31,13 @@
       M-PAST     PASS = Session 01/a.txt extracted, the image KEPT (track 2 cannot be read at all)
       S-OK       (control) PASS = b.txt (the last track) extracted, no window, the image deleted
       S-TERM     PASS = a.txt extracted, no window, the image KEPT - before 334: deleted, b.txt lost
+      S-PAST     PASS = a.txt extracted, no window, the image KEPT
+      S-RAW      (control) PASS = a.txt extracted, no window, the image deleted (a readable raw track)
+      S-MIXED    PASS = a.txt extracted, no window, the image KEPT (audio is never extracted)
+      M-MIXED    PASS = Session 01/a.txt extracted, no window, the image KEPT
+      M-UNK      PASS = Session 01/a.txt extracted, no window, the image KEPT (an unknown track)
+      M-EXTRA    PASS = both sessions' files extracted, no window, the image KEPT (track 3 left out)
+      A-CD       PASS = nothing extracted, no window, the image KEPT - before 334: deleted
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does not
     answer within 30 s (End-Row). Without WSL Ubuntu every row is NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -145,7 +160,7 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath (Join-Path $Here 'mkimg334.sh')) (WslPath $s) 2>&1
     $made = @()
     if ([IO.File]::Exists("$s\s1.iso") -and [IO.File]::Exists("$s\s2.iso")) {
-        foreach ($k in @('multi', 'multi_term', 'multi_past', 'single', 'single_term')) { $made += & python -I $py $k "$s\s1.iso" "$s\s2.iso" "$s\s2.lba" "$s\$k.nrg" 2>&1 }
+        foreach ($k in @('multi', 'multi_term', 'multi_past', 'single', 'single_term', 'single_past', 'single_raw', 'single_mixed', 'multi_mixed', 'multi_unknown', 'multi_extra', 'audio_cd')) { $made += & python -I $py $k "$s\s1.iso" "$s\s2.iso" "$s\s2.lba" "$s\$k.nrg" 2>&1 }
     }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) }) | Sort-Object) -join ','))
@@ -160,6 +175,14 @@ try {
     Unpack-Row 'M-PAST' "$s\multi_past.nrg" $first -Kept
     Unpack-Row 'S-OK' "$s\single.nrg" ([ordered]@{ 'b.txt' = 'B2' })
     Unpack-Row 'S-TERM' "$s\single_term.nrg" ([ordered]@{ 'a.txt' = 'A1' }) -Kept
+    $a = [ordered]@{ 'a.txt' = 'A1' }
+    Unpack-Row 'S-PAST' "$s\single_past.nrg" $a -Kept
+    Unpack-Row 'S-RAW' "$s\single_raw.nrg" $a
+    Unpack-Row 'S-MIXED' "$s\single_mixed.nrg" $a -Kept
+    Unpack-Row 'M-MIXED' "$s\multi_mixed.nrg" $first -Kept
+    Unpack-Row 'M-UNK' "$s\multi_unknown.nrg" $first -Kept
+    Unpack-Row 'M-EXTRA' "$s\multi_extra.nrg" $both -Kept
+    Unpack-Row 'A-CD' "$s\audio_cd.nrg" ([ordered]@{}) -Kept
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
