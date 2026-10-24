@@ -945,8 +945,10 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                             if (want > 0)
                             {
                                 // review 2: every sector from 16 on (SAL_ISO_FORM2_STREAM_SECTORS of them, those
-                                // within the track and the file; sector 16 always) must be Form 2 - one sector
-                                // overwritten with text can carry a valid subheader
+                                // within the track and the file) must be Form 2 - one sector overwritten with text
+                                // can carry a valid subheader; review 3: sector 16 itself must lie within the track
+                                // when its end is known (a short track before a stream would read the stream's
+                                // sectors) and within the file
                                 LONGLONG limit = fileSize;
                                 if (DataEnd > DataOffset && DataEnd < limit)
                                     limit = DataEnd;
@@ -955,8 +957,12 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                                 for (s = 0x10; form2 && s < 0x10 + SAL_ISO_FORM2_STREAM_SECTORS; s++)
                                 {
                                     LONGLONG at = GetSectorOffset(s) - SectorHeaderSize;
-                                    if (s > 0x10 && (at < 0 || at + (LONGLONG)SectorRawSize > limit))
-                                        break; // past the track or the file: the sectors read decide
+                                    if (at < 0 || at + (LONGLONG)SectorRawSize > limit)
+                                    {
+                                        if (s == 0x10)
+                                            form2 = FALSE; // sector 16 is not in the track: not a stream
+                                        break;             // past the track or the file: the sectors read decide
+                                    }
                                     DWORD got = ReadDataByPos(at, want, raw);
                                     form2 = SalIsoSectorIsForm2(raw, got, SectorRawSize);
                                 }

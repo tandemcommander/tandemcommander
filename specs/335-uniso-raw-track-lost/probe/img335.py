@@ -25,6 +25,8 @@ Track 2 of every kind is session 2's track (s2.iso) or a stand-in of the same le
   multi_txt_f1   the same, overwritten with text (review 1)
   multi_u16_f1   the same, overwritten with UTF-16LE text that starts with four spaces (review 2)
   multi_u16s_f1  the same, overwritten with UTF-16LE spaces (review 2)
+  single_short   one session: track 1 s1, track 2 a 10-sector Form 1 track (2336), track 3 a 64-sector
+                 Form 2 stream - track 2's sector 16 would lie in track 3 (review 3)
 """
 import struct
 import sys
@@ -115,10 +117,20 @@ def main(argv):
         t2 = bytes(t2)
         mode = 0x03
         note = "track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (%s)" % kind
+    elif kind == "single_short":
+        # review 3: one session - track 1 s1, track 2 a 10-sector Mode 2 / 2336 Form 1 track of zeros (its
+        # sector 16 would lie in track 3), track 3 a 64-sector Form 2 stream
+        t2 = b"".join(bytes([0, 0, 8, 0, 0, 0, 8, 0]) + bytes(2328) for _ in range(10))
+        sub = bytes([1, 1, 0x62, 0x0F, 1, 1, 0x62, 0x0F])
+        t3 = b"".join(sub + bytes(((i + k) * 7) & 0xFF for k in range(2324)) + bytes(4) for i in range(64))
+        data = s1 + t2 + t3
+        entries = [(0, len(s1), 0, 0x00), (len(s1), len(t2), lba2, 0x03), (len(s1) + len(t2), len(t3), lba2 + 10, 0x03)]
+        note = "track 2 a 10-sector Mode 2 / 2336 Form 1 track, track 3 a Form 2 stream"
     else:
         raise SystemExit("unknown kind " + kind)
-    data = s1 + t2
-    entries = [(0, len(s1), 0, 0x00), (len(s1), len(t2), lba2, mode)]
+    if kind != "single_short":
+        data = s1 + t2
+        entries = [(0, len(s1), 0, 0x00), (len(s1), len(t2), lba2, mode)]
     counts = [1, 1] if kind.startswith("multi") else [2]
     etnf = b""
     for start, length, lba, m in entries:

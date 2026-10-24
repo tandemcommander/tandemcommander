@@ -1,0 +1,5 @@
+Review 3 of 335 (refute-first) - running notes
+- build.cmd: up to date (BUILD SUCCEEDED, 1 s); saltests 28543 / 0
+- real vcdimager 2.0.1 VCD 2.0 + SVCD (ffmpeg pal-vcd / pal-svcd): every sector from INDEX 01 -150..+59 of each
+  MPEG track is Mode 2 Form 2 with valid XA subheaders (00 00 20 00 pregap; 01 00 60 00 front margin x30;
+  01 01 62 0F video; 01 01 64 7F audio; SVCD 62 80 / 64 80) -> the rule takes them as streams.

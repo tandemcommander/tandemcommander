@@ -42,6 +42,8 @@
       M-U16-F1, M-U16S-F1  PASS = Session 01/a.txt extracted, the image KEPT (review 2: sector 16 overwritten
                  with UTF-16 text whose first bytes form a valid Form 2 subheader)
       C-VCDREAL  (control) PASS = a.txt extracted, the image deleted (vcdimager-like subheaders)
+      S-SHORT    PASS = a.txt extracted, the image KEPT (review 3: a 10-sector damaged track before a Form 2
+                 stream - its sector 16 is not in the track)
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does not
     answer within 30 s (End-Row). Without WSL Ubuntu every row is NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -168,7 +170,7 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath $MkImg) (WslPath $s) 2>&1
     $made = @()
     if ([IO.File]::Exists("$s\s1.iso") -and [IO.File]::Exists("$s\s2.iso")) {
-        foreach ($k in @('multi_nofs', 'multi_ok_2336', 'multi_nofs_f1', 'multi_form2', 'single_vcd', 'single_nofs', 'single_raw', 'multi_ff_f1', 'multi_txt_f1', 'multi_u16_f1', 'multi_u16s_f1')) { $made += & python -I $py $k "$s\s1.iso" "$s\s2.iso" "$s\s2.lba" "$s\$k.nrg" 2>&1 }
+        foreach ($k in @('multi_nofs', 'multi_ok_2336', 'multi_nofs_f1', 'multi_form2', 'single_vcd', 'single_nofs', 'single_raw', 'multi_ff_f1', 'multi_txt_f1', 'multi_u16_f1', 'multi_u16s_f1', 'single_short')) { $made += & python -I $py $k "$s\s1.iso" "$s\s2.iso" "$s\s2.lba" "$s\$k.nrg" 2>&1 }
         $py2 = Join-Path $Here 'ccd335.py'
         foreach ($k in @('ccd_vcd', 'ccd_nofs_m1', 'ccd_nofs_f1', 'ccd_vcdreal')) { $made += & python -I $py2 $k "$s\s1.iso" "$s\s2.iso" "$s\$k.img" 2>&1 }
     }
@@ -196,6 +198,7 @@ try {
     Unpack-Row 'M-U16-F1' "$s\multi_u16_f1.nrg" $first -Kept
     Unpack-Row 'M-U16S-F1' "$s\multi_u16s_f1.nrg" $first -Kept
     Unpack-Row 'C-VCDREAL' "$s\ccd_vcdreal.img" $a
+    Unpack-Row 'S-SHORT' "$s\single_short.nrg" $a -Kept
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

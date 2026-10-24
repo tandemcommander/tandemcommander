@@ -132,3 +132,29 @@ build (`result_after_review2.txt`) 30 / 0. saltests 28,543 / 0 (the per-sector r
 Regressions again: `regress_329.txt` 14 / 0, `regress_334.txt` 23 / 1 (S-RAW, the intended change).
 Encoding guard 0. Residual limit: a damaged track whose sectors 16..31 are all overwritten with data
 that forms valid Form 2 subheaders is still taken as a stream.
+
+### Review 3 (stopped - partial work)
+
+The third reviewer (launched ~07:00) stopped like the first two: its last file at 07:11:42, in the
+middle of its negative-control probe (at 3b0c315f, in its own tree) - `%TEMP%\tc335_backup.reg` and
+the `tc335` fixture left, no tandemcommander.exe. Registry restored from the backup at 07:23 (backup
+F92E57..., the key 9F2928..., after the import identical F92E57...). Its partial work (`%TEMP%\rev335c`;
+scripts kept in `probe/review3/`):
+
+- **real Video CD / SVCD images** (vcdimager 2.0.1, ffmpeg pal-vcd / pal-svcd in WSL): every sector from
+  INDEX 01 -150 .. +59 of each MPEG track is Mode 2 Form 2 with valid XA subheaders (00 00 20 00 pregap;
+  01 00 60 00 front margin x30; 01 01 62 0F video; 01 01 64 7F audio; SVCD 62 80 / 64 80). On the
+  review-2 build: R-VCD-CCD, R-SVCD-CCD, R-VCD-NRG (ETNF 2336) all files extracted, the image deleted
+  (as before the feature); R-VCD-HOLE (track 2's sector 20 zero-filled, a dumper's fill) kept - the
+  accepted cost (fails closed).
+- **a hole (MUST level)**: X-SHORT - one session: s1, a 10-sector Mode 2 / 2336 Form 1 track, then a
+  64-sector Form 2 stream track: the short track's "sector 16" lies in the stream track, so the loop read
+  the stream's sectors and took the damaged track as a stream - the image deleted.
+
+Fix: sector 16 itself must lie within the track (when the track's end is known: `DataEnd` after
+`DataOffset`) and within the file, else the track is not a stream (`CISOImage::Open`). Row taken into
+the probe (`img335.py` single_short, row S-SHORT). Negative control on the review-2 build d1217c5e
+(`result_review3_before.txt`, `-Only S-SHORT,S-VCD,C-VCD,C-VCDREAL`): 7 / 1 (S-SHORT deleted); fixed
+build: `result_after_review3.txt` 32 / 0; the reviewer's real-vcdimager probe on the fixed build
+(`result_review3_realvcd.txt`, its images in `%TEMP%\rev335c\imgs`) 10 / 0 - real VCD (CCD, NRG) and
+SVCD still deleted with all files, the zero-filled VCD kept, X-SHORT kept. saltests 28,543 / 0.
