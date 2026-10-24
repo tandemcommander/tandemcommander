@@ -147,9 +147,11 @@ zeros): `a.txt` extracted, the image kept.
   MUST mark the listing incomplete (a whole unpack then fails and "Delete archive after unpacking"
   keeps the image) unless its sector 16 is a Mode 2 Form 2 sector.
 - **FR-002**: A sector MUST count as Mode 2 Form 2 only when the image stores its header (2352 bytes or
-  more a sector: a valid sync pattern, mode byte 2 and both subheader copies' submode with the Form 2
-  bit; 2336 bytes a sector: both subheader copies' submode with the Form 2 bit) and it says so; every
-  other case (2048-byte sectors, Mode 1, Form 1, a destroyed or unreadable header) is not Form 2.
+  more a sector: a valid sync pattern and mode byte 2; 2336 bytes a sector: no sync) and its subheader
+  is a valid CD-ROM XA subheader (both copies equal, channel below 32, at most one of the data / audio /
+  video bits - review 1: a sector overwritten with 0xFF or text passed) whose submode has the Form 2
+  bit; every other case (2048-byte sectors, Mode 1, Form 1, a destroyed or unreadable header) is not
+  Form 2.
 - **FR-003**: The mark MUST apply in every listing mode (session folders, the single listing of a
   multi-session image, a one-session image), as feature 334's mark of a track past the end does.
 - **FR-004**: A track past the end of the image MUST stay marked (feature 334); tracks with a file
