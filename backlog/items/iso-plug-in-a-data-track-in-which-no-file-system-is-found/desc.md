@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a data track in which no file system is found lists nothing and is not marked
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: measure:334
@@ -10,7 +10,7 @@ created: 2026-10-24
 updated: 2026-10-24
 verified: 2026-10-24 e363177e
 effort: ?
-feature: -
+feature: 335
 related: [iso-plug-in-apfs-original-hfs-and-hfsx-parts-of-a-hybrid-are]
 depends-on: []
 reason: -
@@ -59,3 +59,4 @@ ISO 9660 session is Mode 1 / Mode 2 Form 1 - not verified), or the maintainer de
 - 2026-10-24 — created (source measure:334)
 - 2026-10-24 — moved to Next position 1
 - 2026-10-24 — verified at e363177e: reproduced at e363177e: NRG with a session 2 track whose descriptors are destroyed (Mode 1 and Mode 2/2336 Form 1) - Unpack with Delete archive deletes the image; probe iso335 4 FAIL / 10 PASS
+- 2026-10-24 — run started, feature 335
