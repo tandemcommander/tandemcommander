@@ -1595,7 +1595,17 @@ BOOL CISOImage::ListTracks(CSalamanderDirectoryAbstract* dir, CPluginDataInterfa
         {
             sprintf(path, "\\Session %02d", session + 1);
 
-            int trackCount = Session[session];
+            // feature 340: the session's count comes from the image (an NRG SINF chunk, unsigned): the
+            // session gets at most the tracks left in the track table; a count that does not fit marks
+            // the listing incomplete (a whole unpack fails, the image is kept)
+            bool fits;
+            int trackCount = SalIsoSessionTracks(firstSessionTrack, (unsigned int)Session[session], Tracks.Count, fits);
+            if (!fits)
+            {
+                TRACE_I("CISOImage::ListTracks(): session " << session + 1 << " counts " << (unsigned int)Session[session]
+                                                            << " tracks, " << trackCount << " left in the track table");
+                ListingLeftOut.SetIncomplete();
+            }
             int lastSessionTrack = firstSessionTrack + trackCount;
 
             int track;

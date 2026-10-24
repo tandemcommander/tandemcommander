@@ -22,6 +22,8 @@
 // from a Video CD's MPEG stream (Mode 2 Form 2 sectors) by its sector 16.
 // Feature 336: and so did such a Form 2 stream that no listed file starts in.
 // Feature 337: and so did a stream whose listed files read only part of it.
+// Feature 340: the session counts of an NRG image (one SINF chunk a session) are bounded by the
+// track table: a count above the tracks left read past it.
 //
 //*****************************************************************************
 
@@ -396,4 +398,16 @@ inline bool SalIsoStreamGapsMark(long long trackSectors, long long uncovered, bo
     if (trackSectors <= 0 || uncovered < 0 || uncovered > SAL_ISO_STREAM_GAP_SECTORS)
         return true;
     return !gapsEmpty;
+}
+
+// Feature 340: how many tracks of the image's track table ('trackCount' tracks) a session starting at
+// track 'first' gets, when the image says it holds 'declared' tracks (an NRG SINF chunk: an unsigned
+// 32-bit count - read as an int before, 0xFFFFFFFF became -1). At most the tracks left from 'first' (none
+// when 'first' is outside the table), so the listing never looks past the table; 'fits' = the declared
+// count is no more than the tracks left (a count that does not fit leaves the listing incomplete).
+inline int SalIsoSessionTracks(int first, unsigned int declared, int trackCount, bool& fits)
+{
+    long long left = (first >= 0 && first < trackCount) ? (long long)trackCount - first : 0;
+    fits = (long long)declared <= left;
+    return (int)(fits ? (long long)declared : left);
 }

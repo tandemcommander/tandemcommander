@@ -20581,6 +20581,87 @@ static void TestHfsFileContent339()
     CHECK(SalHfsFileContentKind((const unsigned char*)full.data(), SAL_HFSCAT_FILE_REC_SIZE + 10) == SAL_HFSFILE_RESOURCE_ONLY);
 }
 
+// feature 340: walks the session counts as CISOImage::ListTracks does - sessionOf[t] = the session
+// (1-based) track t is listed in, 0 = no session lists it; returns false when a track index outside
+// [0, trackCount) would be read; 'incomplete' = a count did not fit
+static bool Iso340Walk(const std::vector<unsigned int>& counts, int trackCount, std::vector<int>& sessionOf,
+                       bool& incomplete)
+{
+    sessionOf.assign(trackCount, 0);
+    incomplete = false;
+    int first = 0;
+    for (size_t s = 0; s < counts.size(); s++)
+    {
+        bool fits;
+        int n = SalIsoSessionTracks(first, counts[s], trackCount, fits);
+        if (!fits)
+            incomplete = true;
+        for (int t = first; t < first + n; t++)
+        {
+            if (t < 0 || t >= trackCount)
+                return false;
+            sessionOf[t] = (int)s + 1;
+        }
+        first += n;
+    }
+    return first >= 0 && first <= trackCount;
+}
+
+// feature 340: an NRG image's session counts (SINF chunks, unsigned 32-bit) never take a session past
+// the image's track table (src/common/salisotrack.h); a count that does not fit marks the listing
+static void TestIsoSessionTracks_340()
+{
+    bool fits = false;
+    // counts that fit, a session of zero tracks, the whole table
+    CHECK(SalIsoSessionTracks(0, 1, 2, fits) == 1 && fits);
+    CHECK(SalIsoSessionTracks(1, 1, 2, fits) == 1 && fits);
+    CHECK(SalIsoSessionTracks(0, 0, 2, fits) == 0 && fits);
+    CHECK(SalIsoSessionTracks(0, 2, 2, fits) == 2 && fits);
+    CHECK(SalIsoSessionTracks(2, 0, 2, fits) == 0 && fits);
+    CHECK(SalIsoSessionTracks(0, 99, 99, fits) == 99 && fits);
+    // counts above the tracks left: the tracks left, not fitting
+    CHECK(SalIsoSessionTracks(1, 2, 2, fits) == 1 && !fits);
+    CHECK(SalIsoSessionTracks(1, 1000, 2, fits) == 1 && !fits);
+    CHECK(SalIsoSessionTracks(0, 0xFFFFFFFFu, 2, fits) == 2 && !fits);
+    CHECK(SalIsoSessionTracks(1, 0xFFFFFFFFu, 2, fits) == 1 && !fits);
+    CHECK(SalIsoSessionTracks(0, 0x80000000u, 2, fits) == 2 && !fits);
+    CHECK(SalIsoSessionTracks(0, 0x7FFFFFFFu, 0x7FFFFFFF, fits) == 0x7FFFFFFF && fits);
+    // a session starting at or past the end of the table, or before it, gets no track
+    CHECK(SalIsoSessionTracks(2, 1, 2, fits) == 0 && !fits);
+    CHECK(SalIsoSessionTracks(5, 1, 2, fits) == 0 && !fits);
+    CHECK(SalIsoSessionTracks(-1, 2, 2, fits) == 0 && !fits);
+    CHECK(SalIsoSessionTracks(-1, 0, 2, fits) == 0 && fits);
+    CHECK(SalIsoSessionTracks(0, 1, 0, fits) == 0 && !fits);
+    CHECK(SalIsoSessionTracks(0, 0, 0, fits) == 0 && fits);
+    CHECK(SalIsoSessionTracks(0, 1, -3, fits) == 0 && !fits);
+
+    // the probe's images (two tracks), walked as the listing walks them
+    struct
+    {
+        std::vector<unsigned int> counts;
+        std::vector<int> sessionOf;
+        bool incomplete;
+    } rows[] = {
+        {{1, 1}, {1, 2}, false},                   // F-FIT
+        {{0, 2}, {2, 2}, false},                   // F-ZERO
+        {{1, 2}, {1, 2}, true},                    // S-OVER (read track 2 before)
+        {{1, 1000}, {1, 2}, true},                 // S-OVER1000
+        {{1, 1, 1}, {1, 2}, true},                 // S-EXTRA
+        {{0xFFFFFFFFu, 2}, {1, 1}, true},          // S-NEG (read track -1 before)
+        {{1, 0xFFFFFFFFu}, {1, 2}, true},          // S-NEGEND (track 2 skipped before)
+        {{1}, {1, 0}, false},                      // 334's M-EXTRA: a track no count covers (334 marks it)
+        {{0xFFFFFFFFu, 0xFFFFFFFFu}, {1, 1}, true} // every count huge
+    };
+    for (const auto& r : rows)
+    {
+        std::vector<int> sessionOf;
+        bool incomplete = false;
+        CHECK(Iso340Walk(r.counts, 2, sessionOf, incomplete));
+        CHECK(sessionOf == r.sessionOf);
+        CHECK(incomplete == r.incomplete);
+    }
+}
+
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
 // when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
 // the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
@@ -21694,6 +21775,7 @@ int main(int argc, char** argv)
     TestIsoStreamPartial_337();
     TestIsoWholeUnpack_338();
     TestHfsFileContent339();
+    TestIsoSessionTracks_340();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

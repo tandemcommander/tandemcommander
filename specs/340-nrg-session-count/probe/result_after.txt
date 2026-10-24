@@ -1,0 +1,30 @@
+iso340_probe (feature 340) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 12:28; registry key existed True
+
+seeds: extra.nrg,fit.nrg,neg.nrg,negend.nrg,over.nrg,over1000.nrg,s1.iso,s2.iso,s2.lba,zero.nrg
+img340: fit: 720988 bytes, two tracks, SINF counts 0x1, 0x1
+img340: zero: 720988 bytes, two tracks, SINF counts 0x0, 0x2
+img340: over: 720988 bytes, two tracks, SINF counts 0x1, 0x2
+img340: over1000: 720988 bytes, two tracks, SINF counts 0x1, 0x3E8
+img340: extra: 721000 bytes, two tracks, SINF counts 0x1, 0x1, 0x1
+img340: neg: 720988 bytes, two tracks, SINF counts 0xFFFFFFFF, 0x2
+img340: negend: 720988 bytes, two tracks, SINF counts 0x1, 0xFFFFFFFF
+
+F-FIT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+F-FIT      RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+F-ZERO     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+F-ZERO     RUN    PASS        files 2: Session 02/a.txt, Session 02/b.txt; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+S-OVER     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-OVER     RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: no window
+S-OVER1000 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-OVER1000 RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: no window
+S-EXTRA    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-EXTRA    RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: no window
+S-NEG      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-NEG      RUN    PASS        files 2: Session 01/a.txt, Session 01/b.txt; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: no window
+S-NEGEND   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-NEGEND   RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588 / after BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588
+
+Rows: PASS 14, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

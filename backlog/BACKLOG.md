@@ -268,6 +268,7 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: the image information of an NRG image reads past its session table](items/iso-plug-in-the-image-information-of-an-nrg-image-reads-past/desc.md) | bug | 5 | archives | measure:340 | 2026-10-24 |
 
 ## Parked
 
