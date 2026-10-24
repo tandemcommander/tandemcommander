@@ -295,3 +295,38 @@ inline bool SalHfsApmEntryIsHfs(const unsigned char* e, size_t size, unsigned* s
         *start = Be32(e + 8); // pmPyPartStart
     return true;
 }
+// Feature 339: where the content of an HFS+ file record rec[0..avail) (HFSPlusCatalogFile, its record
+// type first) is. The reader extracts the data fork; macOS keeps some files' content elsewhere and the
+// reader wrote an empty file that counted as extracted whole - a whole unpack with "Delete archive
+// after unpacking" then deleted the image with the file's only content.
+//   COMPRESSED     UF_COMPRESSED (0x20) in the BSD owner flags (byte 41): HFS+ compression (decmpfs), the
+//                  data in the resource fork or in the com.apple.decmpfs attribute; macOS never reads such
+//                  a file's data fork. Read only when the BSD information is initialised: TN1150 - a file
+//                  mode (bytes 42-43) whose type bits (0xF000) are 0 means the whole structure is not
+//                  initialised (Mac OS 9) and its flags are not used.
+//   RESOURCE_ONLY  otherwise an empty data fork (logicalSize, byte 88) and a non-empty resource fork (byte
+//                  168): the content only in the resource fork (a custom icon "Icon\r", classic Mac files).
+//   DATA           otherwise: the data fork is the content (also a file that has a resource fork beside a
+//                  non-empty data fork - only its data fork is extracted, as before).
+//   SHORT          no record or fewer than 248 bytes (the caller refuses such a record first).
+// The caller does not extract COMPRESSED / RESOURCE_ONLY files and counts them as not extracted.
+#define SAL_HFSFILE_DATA 0
+#define SAL_HFSFILE_COMPRESSED 1
+#define SAL_HFSFILE_RESOURCE_ONLY 2
+#define SAL_HFSFILE_SHORT 3
+
+inline int SalHfsFileContentKind(const unsigned char* rec, size_t avail)
+{
+    using namespace SalHfsCatalogDetail;
+    if (rec == NULL || avail < SAL_HFSCAT_FILE_REC_SIZE)
+        return SAL_HFSFILE_SHORT;
+    const unsigned char ufCompressed = 0x20;
+    size_t fileMode = Be16(rec + 42);
+    if ((fileMode & 0xF000) != 0 && (rec[41] & ufCompressed) != 0)
+        return SAL_HFSFILE_COMPRESSED;
+    bool dataEmpty = Be32(rec + 88) == 0 && Be32(rec + 92) == 0;
+    bool rsrcEmpty = Be32(rec + 168) == 0 && Be32(rec + 172) == 0;
+    if (dataEmpty && !rsrcEmpty)
+        return SAL_HFSFILE_RESOURCE_ONLY;
+    return SAL_HFSFILE_DATA;
+}

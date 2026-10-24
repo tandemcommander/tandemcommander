@@ -20522,6 +20522,65 @@ static void TestIsoWholeUnpack_338()
     }
 }
 
+// Feature 339: where an HFS+ file record keeps its content (src/common/salhfscatalog.h). A file whose
+// content is HFS+ compressed or only in its resource fork was extracted as an empty file counted as
+// done - a whole unpack with "Delete archive after unpacking" then deleted the image.
+static std::string Hfs339Record(unsigned char ownerFlags, unsigned fileMode, unsigned long long dataSize,
+                                unsigned long long rsrcSize)
+{
+    std::string r(SAL_HFSCAT_FILE_REC_SIZE, '\0');
+    r[1] = 2; // kHFSPlusFileRecord
+    r[41] = (char)ownerFlags;
+    r[42] = (char)(fileMode >> 8);
+    r[43] = (char)fileMode;
+    for (int i = 0; i < 8; i++)
+    {
+        r[88 + i] = (char)(dataSize >> (56 - 8 * i));
+        r[168 + i] = (char)(rsrcSize >> (56 - 8 * i));
+    }
+    return r;
+}
+
+static int Hfs339Kind(const std::string& r) { return SalHfsFileContentKind((const unsigned char*)r.data(), r.size()); }
+
+static void TestHfsFileContent339()
+{
+    const unsigned reg = 0100644, noMode = 0, typeOnly = 0100000, lnk = 0120755;
+    // the data fork is the content: an ordinary file, an empty file, a file with a resource fork beside
+    // its data (only the data fork is extracted, as before), a symbolic link (its target in the data fork)
+    CHECK(Hfs339Kind(Hfs339Record(0, reg, 4, 0)) == SAL_HFSFILE_DATA);
+    CHECK(Hfs339Kind(Hfs339Record(0, reg, 0, 0)) == SAL_HFSFILE_DATA);
+    CHECK(Hfs339Kind(Hfs339Record(0, reg, 4, 4)) == SAL_HFSFILE_DATA);
+    CHECK(Hfs339Kind(Hfs339Record(0, lnk, 12, 0)) == SAL_HFSFILE_DATA);
+    // compressed (UF_COMPRESSED 0x20): the data in the resource fork (decmpfs type 4), inline in the
+    // attribute (both forks empty), a data fork beside the flag (macOS never reads it), other flags with it
+    CHECK(Hfs339Kind(Hfs339Record(0x20, reg, 0, 4)) == SAL_HFSFILE_COMPRESSED);
+    CHECK(Hfs339Kind(Hfs339Record(0x20, reg, 0, 0)) == SAL_HFSFILE_COMPRESSED);
+    CHECK(Hfs339Kind(Hfs339Record(0x20, reg, 4, 0)) == SAL_HFSFILE_COMPRESSED);
+    CHECK(Hfs339Kind(Hfs339Record(0xFF, reg, 4, 0)) == SAL_HFSFILE_COMPRESSED);
+    CHECK(Hfs339Kind(Hfs339Record(0x20, typeOnly, 4, 0)) == SAL_HFSFILE_COMPRESSED); // only the type bits set
+    // other owner flags are not compression (UF_NODUMP 1, UF_IMMUTABLE 2, UF_HIDDEN 0x80)
+    CHECK(Hfs339Kind(Hfs339Record(0xDF, reg, 4, 0)) == SAL_HFSFILE_DATA);
+    // TN1150: a file mode whose type bits are 0 = the BSD information is not initialised, its flags not read
+    CHECK(Hfs339Kind(Hfs339Record(0x20, noMode, 4, 0)) == SAL_HFSFILE_DATA);
+    CHECK(Hfs339Kind(Hfs339Record(0x20, 0777, 4, 0)) == SAL_HFSFILE_DATA);
+    CHECK(Hfs339Kind(Hfs339Record(0x20, noMode, 0, 4)) == SAL_HFSFILE_RESOURCE_ONLY); // the forks still decide
+    // only in the resource fork: any non-empty resource fork with an empty data fork (sizes past 4 GiB too)
+    CHECK(Hfs339Kind(Hfs339Record(0, reg, 0, 4)) == SAL_HFSFILE_RESOURCE_ONLY);
+    CHECK(Hfs339Kind(Hfs339Record(0, reg, 0, 0x100000000ULL)) == SAL_HFSFILE_RESOURCE_ONLY);
+    CHECK(Hfs339Kind(Hfs339Record(0, reg, 0x100000000ULL, 4)) == SAL_HFSFILE_DATA);
+    // the flag byte read is byte 41 (ownerFlags), not 40 (adminFlags, SF_ARCHIVED 0x01 / SF_IMMUTABLE 0x02)
+    std::string admin = Hfs339Record(0, reg, 4, 0);
+    admin[40] = 0x20;
+    CHECK(Hfs339Kind(admin) == SAL_HFSFILE_DATA);
+    // a record shorter than HFSPlusCatalogFile, or none
+    std::string full = Hfs339Record(0, reg, 0, 4);
+    CHECK(SalHfsFileContentKind((const unsigned char*)full.data(), SAL_HFSCAT_FILE_REC_SIZE - 1) == SAL_HFSFILE_SHORT);
+    CHECK(SalHfsFileContentKind((const unsigned char*)full.data(), 0) == SAL_HFSFILE_SHORT);
+    CHECK(SalHfsFileContentKind(NULL, SAL_HFSCAT_FILE_REC_SIZE) == SAL_HFSFILE_SHORT);
+    CHECK(SalHfsFileContentKind((const unsigned char*)full.data(), SAL_HFSCAT_FILE_REC_SIZE + 10) == SAL_HFSFILE_RESOURCE_ONLY);
+}
+
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
 // when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
 // the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
@@ -21634,6 +21693,7 @@ int main(int argc, char** argv)
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();
     TestIsoWholeUnpack_338();
+    TestHfsFileContent339();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

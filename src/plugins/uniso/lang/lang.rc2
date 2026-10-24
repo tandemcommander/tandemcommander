@@ -65,6 +65,8 @@ STRINGTABLE DISCARDABLE
     IDS_ERR_HFS_BTREE_FRAGMENTED "The Catalog file is fragmented into more than 8 fragments which is not supported."
     IDS_ERR_HFS_FILE_FRAGMENTED "The file '%s' is fragmented into more than 8 fragments which is not supported.\nThe file will not be extracted."
     IDS_ERR_HFS_BTREE_DAMAGED   "The Catalog file of the HFS Plus partition is damaged.\nThe partition cannot be read."
+    IDS_ERR_HFS_FILE_COMPRESSED "The file is compressed by the HFS Plus file system, which is not supported.\nThe file will not be extracted."
+    IDS_ERR_HFS_FILE_RSRC_ONLY  "The content of the file is stored only in its resource fork, which cannot be extracted.\nThe file will not be extracted."
 
     IDS_ERR_TOO_LONG_PATH       "This disk image contains a too long path that Tandem Commander cannot handle."
 

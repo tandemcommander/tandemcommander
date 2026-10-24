@@ -607,6 +607,24 @@ int CHFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
         Error(IDS_ERR_HFS_BTREE_DAMAGED, FALSE);
         return UNPACK_ERROR;
     }
+    // feature 339: a file whose content is not in its data fork (HFS+ compressed, or only in its resource
+    // fork) was written as an empty file counted as extracted - a whole unpack then deleted the image.
+    // It is not extracted (nothing created) and counts as not extracted (SalHfsFileContentKind).
+    int contentKind = SalHfsFileContentKind((const unsigned char*)rec.file, key.BodyAvail);
+    if (contentKind != SAL_HFSFILE_DATA)
+    {
+        if (silent == 0)
+        {
+            int textID = contentKind == SAL_HFSFILE_RESOURCE_ONLY ? IDS_ERR_HFS_FILE_RSRC_ONLY : IDS_ERR_HFS_FILE_COMPRESSED;
+            int userAction = SalamanderGeneral->DialogError(SalamanderGeneral->GetMsgBoxParent(), BUTTONS_SKIPCANCEL,
+                                                            fileData->Name, LoadStrU8(textID), LoadStr(IDS_ERROR));
+            if (userAction == DIALOG_CANCEL)
+                return UNPACK_CANCEL;
+            if (userAction == DIALOG_SKIPALL)
+                silent = 1;
+        }
+        return UNPACK_ERROR;
+    }
     if (*rec.type == kHFSFileRecord)
     {
         HFSPlusForkData* fork = &rec.file->dataFork;
