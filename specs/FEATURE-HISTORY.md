@@ -3031,6 +3031,12 @@ a few early ones are out of sequence).
     with no background task (`IDLE_WAKEUPS` 2, `MAX_NUDGES` 3; only a tick started by
     `loop_wakeup` counts, any other turn start resets): replayed over all 111 run logs it fires
     once, in 320 (log line 967). Three refute-first reviews of the rules, one of the watchdog.
+  - Amended 2026-10-24 (341 failed: its third reviewer, running a probe longer than 10 minutes,
+    was killed three times): `claude -p` stops background tasks 10 minutes after the last turn
+    (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS`, read as a number of ms, 0 = no limit); the loop now
+    sets it to 2 hours (`BG_WAIT_CEILING_MS`, a caller's own value kept) and SKILL.md step 7 ends
+    every turn that waits for a reviewer with a fallback wakeup. The message was in 12 run logs
+    since 2026-10-20.
 - 248-folders-column-names: **the Desktop view's column headers were mojibake** on a non-English
   Windows (GitHub issue #13): the Folders plug-in (`fld:`) handed the shell's column names to the
   core as UTF-8 (feature 004), the core draws column names in the code page (MBCS build, `TextOutA`)

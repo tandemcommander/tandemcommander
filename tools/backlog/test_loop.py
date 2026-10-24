@@ -181,6 +181,7 @@ class RunTests(Base):
             self.assertEqual(c["prompt"], f"/tandem-backlog-implement {c['slug']}")
             self.assertFalse(c["resume"])
             self.assertEqual(c["watchdog"], "1")
+            self.assertEqual(c["bg_ceiling"], loop.BG_WAIT_CEILING_MS)  # a reviewer outlives the turn (341)
             self.assertEqual(Path(c["cwd"]).resolve(), self.root.resolve())
             argv = c["argv"]
             for flag, value in (("--output-format", "stream-json"), ("--permission-mode", "bypassPermissions")):
@@ -200,11 +201,14 @@ class RunTests(Base):
     def test_caller_watchdog_setting_is_kept(self):
         self.write_plan(["close"])
         os.environ["CLAUDE_CODE_RETRY_WATCHDOG"] = "0"
+        os.environ["CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS"] = "0"
         try:
             self.run_loop("--until-idle")
         finally:
             os.environ.pop("CLAUDE_CODE_RETRY_WATCHDOG")
+            os.environ.pop("CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS")
         self.assertEqual(self.calls()[0]["watchdog"], "0")
+        self.assertEqual(self.calls()[0]["bg_ceiling"], "0")
 
     def test_model_is_passed(self):
         self.write_plan(["close"])
@@ -914,6 +918,7 @@ class AutoTriageTests(Base):
         calls = self.calls()
         self.assertEqual(calls[0]["triage_env"], str(os.getpid()))
         self.assertIsNone(calls[1]["triage_env"])
+        self.assertEqual({c["bg_ceiling"] for c in calls}, {loop.BG_WAIT_CEILING_MS})
         argv = calls[0]["argv"]
         self.assertEqual(argv[argv.index("--permission-mode") + 1], "bypassPermissions")
         self.assertIn("--session-id", argv)
