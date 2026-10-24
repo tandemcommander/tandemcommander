@@ -74,3 +74,38 @@ empty name, types 3 / 4), folders a / zlast, files top.txt / side.txt / z.txt.
 | regression | 322 / 328 / 329 / 330 probes -> `probe/regress_*.txt` | 18/0, 20/0, 14/0, 30/0 (as their features recorded) |
 
 Registry restored and identical after every probe run (SHA-256 F92E573A...).
+
+## Review
+
+### Review 1 (refute-first agent, on e135085e)
+
+Confirmed: build, saltests 28,339 / 0, probe 14 / 0 (re-run, registry identical), the mark reaches
+`UnpackWholeArchive` through `ListArchive` for the hybrid; no record skipped before is listed now;
+intact `mkfs.hfsplus` volumes (plain and journaled: root, threads, `.journal`, `.journal_info_block`)
+give no DAMAGED / UNKNOWN record.
+
+- MUST 1: every folder / file record whose name starts with U+0000 was NOT_ENTRY - a damaged
+  `side.txt` with its first unit zeroed was skipped silently and the image deleted (reviewer's row
+  H-NUL). Fixed: NOT_ENTRY only for the folder in the root (parent 2) named exactly
+  "<4 x U+0000>HFS+ Private Data" (the only such name Apple writes); every other U+0000-first record is
+  DAMAGED. Unit checks: other parent, 20 / 21 units with another last letter, the name as a file,
+  "\0ide.txt", "\0x" folder - DAMAGED; the dotted name - FOLDER. Probe row H-NUL added
+  (`img332.py nul`): on the review-1 build FAIL - image deleted (`probe/result_review1_nul.txt`), after
+  the fix PASS. Mutant (no parent check): 1 failed.
+- SHOULD 2: a catalog that 322's walk refuses drops the whole HFS+ part silently and the image is
+  deleted (`udfiso.cpp`, HFS opened quietly, no `PartMissing`). Already the Inbox item
+  `iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is` (330) - not part of this feature.
+- NOTE 3: the mark for a name that does not convert cannot be reached any more (U+0000-first names are
+  classified before; the buffer takes 255 units; CP_UTF8 without flags replaces lone surrogates) - kept
+  as a fail-closed guard, comment added.
+- NOTE 4: an UNKNOWN record inside a folder left out by 329 ended the listing (before: skipped with the
+  folder). Fixed: `leftOutFolders.Under(parent, false, 0) == SAL_ISO_UNDER_SKIPPED` -> skipped (the
+  listing marked). Children of a DAMAGED folder record still land at the HFS+ root (old, spec edge case).
+- NOTE 5: U+0000 inside a name lists it cut ("a\0b" -> "a"); lone surrogates -> U+FFFD. Old; new Inbox
+  item `iso-plug-in-an-hfs-name-with-u-0000-inside-is-listed-cut-at` (review:332), the surrogates are
+  `uniso-hfs-names-lossy-surrogates`.
+- NOTE 6: no message when only damaged records were skipped - the recorded decision (FR-005, as 330).
+
+After the fixes: build BUILD SUCCEEDED; saltests 28,345 / 0; probe `result_after.txt` PASS 16 / FAIL 0
+(H-NUL added); regression 322 18 / 0, 329 14 / 0 (re-run on this build; 328 20 / 0 and 330 30 / 0 on the
+first build - the change since touches only the HFS+ reader they do not open).

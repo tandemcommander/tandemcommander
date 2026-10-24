@@ -213,8 +213,9 @@ inline bool SalHfsCatalogKeyView(const unsigned char* rec, size_t avail, SalHfsC
 
 // The class of the catalog leaf record rec[0..avail); *key is its key (valid unless DAMAGED by the key
 // view). 'rootIsLabel': the root folder's record (parent ID 1) is shown as the volume label, not listed.
-// Thread records have an empty name (TN1150); a folder / file whose name starts with U+0000 is HFS+
-// metadata ("\0\0\0\0HFS+ Private Data", the hard-link folder macOS creates).
+// Thread records have an empty name (TN1150). HFS+ metadata is the one folder TN1150 names: the
+// hard-link folder "\0\0\0\0HFS+ Private Data" in the root (macOS creates it); any other name starting
+// with U+0000 was skipped as an empty name and is DAMAGED (review 1: a file named so was lost).
 inline int SalHfsCatalogRecordClass(const unsigned char* rec, size_t avail, bool rootIsLabel,
                                     SalHfsCatalogKey* key)
 {
@@ -229,19 +230,29 @@ inline int SalHfsCatalogRecordClass(const unsigned char* rec, size_t avail, bool
         return (type == 3 || type == 4 || parent == 1) ? SAL_HFSREC_NOT_ENTRY : SAL_HFSREC_DAMAGED;
     if (key->NameLength > 255) // HFSUniStr255
         return SAL_HFSREC_DAMAGED;
-    bool metadata = Be16(rec + 8) == 0;
+    bool nul = Be16(rec + 8) == 0;
     if (type == 1)
     {
         if (key->BodyAvail < SAL_HFSCAT_FOLDER_REC_SIZE)
             return SAL_HFSREC_DAMAGED;
-        return metadata ? SAL_HFSREC_NOT_ENTRY : SAL_HFSREC_FOLDER;
+        if (!nul)
+            return SAL_HFSREC_FOLDER;
+        static const char privateData[] = "\0\0\0\0HFS+ Private Data"; // 21 units, kHFSRootFolderID 2
+        if (parent != 2 || key->NameLength != sizeof(privateData) - 1)
+            return SAL_HFSREC_DAMAGED;
+        for (size_t i = 0; i < sizeof(privateData) - 1; i++)
+        {
+            if (Be16(rec + 8 + 2 * i) != (unsigned char)privateData[i])
+                return SAL_HFSREC_DAMAGED;
+        }
+        return SAL_HFSREC_NOT_ENTRY;
     }
     if (type == 2)
     {
         if (key->BodyAvail < SAL_HFSCAT_FILE_REC_SIZE)
             return SAL_HFSREC_DAMAGED;
-        return metadata ? SAL_HFSREC_NOT_ENTRY : SAL_HFSREC_FILE;
+        return nul ? SAL_HFSREC_DAMAGED : SAL_HFSREC_FILE;
     }
     // a thread type with a name, or a type HFS+ does not define; a U+0000 name was skipped as empty
-    return metadata ? SAL_HFSREC_DAMAGED : SAL_HFSREC_UNKNOWN;
+    return nul ? SAL_HFSREC_DAMAGED : SAL_HFSREC_UNKNOWN;
 }

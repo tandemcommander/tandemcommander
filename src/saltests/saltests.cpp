@@ -19739,16 +19739,27 @@ static void TestHfsRecordClass332()
     CHECK(Hfs332Class(Hfs322Record(16, "side.txt", 0, 248)) == SAL_HFSREC_UNKNOWN);
     CHECK(Hfs332Class(Hfs322Record(16, "x", 3, 20)) == SAL_HFSREC_UNKNOWN);
     CHECK(Hfs332Class(Hfs322Record(16, "x", 4, 20)) == SAL_HFSREC_UNKNOWN);
-    // HFS+ metadata: a folder / file whose name starts with U+0000 ("\0\0\0\0HFS+ Private Data") is not
-    // an entry; a damaged one or one of another type is damaged (skipped as before, now marked)
+    // HFS+ metadata: only the root's folder "\0\0\0\0HFS+ Private Data" is not an entry; any other
+    // record whose name starts with U+0000 is damaged (skipped as before, now marked - review 1: a file
+    // "\0ide.txt" was lost)
     {
-        std::string meta = Hfs322Record(2, "....HFS+ Private Data", 1, 88);
-        for (int i = 0; i < 4; i++)
-            Hfs322Put16(meta, 8 + 2 * i, 0);
-        CHECK(Hfs332Class(meta) == SAL_HFSREC_NOT_ENTRY);
-        std::string metaFile = Hfs322Record(2, ".x", 2, 248);
+        auto zero4 = [](std::string r) {
+            for (int i = 0; i < 4; i++)
+                Hfs322Put16(r, 8 + 2 * i, 0);
+            return r;
+        };
+        CHECK(Hfs332Class(zero4(Hfs322Record(2, "....HFS+ Private Data", 1, 88))) == SAL_HFSREC_NOT_ENTRY);
+        CHECK(Hfs332Class(zero4(Hfs322Record(16, "....HFS+ Private Data", 1, 88))) == SAL_HFSREC_DAMAGED);
+        CHECK(Hfs332Class(zero4(Hfs322Record(2, "....HFS+ Private Dat", 1, 88))) == SAL_HFSREC_DAMAGED);
+        CHECK(Hfs332Class(zero4(Hfs322Record(2, "....HFS+ Private Datx", 1, 88))) == SAL_HFSREC_DAMAGED);
+        CHECK(Hfs332Class(zero4(Hfs322Record(2, "....HFS+ Private Data", 2, 248))) == SAL_HFSREC_DAMAGED);
+        CHECK(Hfs332Class(Hfs322Record(2, "....HFS+ Private Data", 1, 88)) == SAL_HFSREC_FOLDER); // dots: a name
+        std::string metaFile = Hfs322Record(16, "side.txt", 2, 248);
         Hfs322Put16(metaFile, 8, 0);
-        CHECK(Hfs332Class(metaFile) == SAL_HFSREC_NOT_ENTRY);
+        CHECK(Hfs332Class(metaFile) == SAL_HFSREC_DAMAGED);
+        std::string metaFolder = Hfs322Record(2, ".x", 1, 88);
+        Hfs322Put16(metaFolder, 8, 0);
+        CHECK(Hfs332Class(metaFolder) == SAL_HFSREC_DAMAGED);
         std::string metaShort = Hfs322Record(2, ".x", 1, 40);
         Hfs322Put16(metaShort, 8, 0);
         CHECK(Hfs332Class(metaShort) == SAL_HFSREC_DAMAGED);

@@ -322,9 +322,12 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         }
         if (kind == SAL_HFSREC_UNKNOWN)
         {
-            // as before, the HFS+ listing ends here - now marked incomplete
-            TRACE_E("CHFS::ListDirectory(): a catalog record of a type not handled, the listing ends");
+            // as before, the HFS+ listing ends here - now marked incomplete; inside a folder left out by
+            // 329 it is skipped with that folder, as before (review 1)
             Image->ListingLeftOut.SetIncomplete();
+            if (leftOutFolders.Under(pKey->parentID, false, 0) == SAL_ISO_UNDER_SKIPPED)
+                continue;
+            TRACE_E("CHFS::ListDirectory(): a catalog record of a type not handled, the listing ends");
             return FALSE;
         }
         int nameLen = (int)key.NameLength;
@@ -342,6 +345,8 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         // a folder / file record with its whole structure, a name of 1..255 units (feature 223: never past
         // 'fileNameW[256]') that does not start with U+0000
         rec.type = (SInt16*)((char*)pKey + key.BodyOffset);
+        // (a failed conversion is not expected: the buffer takes 255 units, CP_UTF8 without flags replaces
+        // a lone surrogate - marked anyway, fail closed)
         for (int j = 0; j < nameLen; j++)
             fileNameW[j] = FromM16(pKey->nodeName.unicode[j]);
         fileNameW[nameLen] = 0;

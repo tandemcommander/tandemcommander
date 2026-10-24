@@ -14,14 +14,17 @@
 
 - Decision: thread records (empty name; types 3 folder thread / 4 file thread), the root folder's
   record (parent ID 1) when it is used as the volume label (`bSkipRootParent`), an empty-named root
-  folder record (parent ID 1), and a folder / file record whose name starts with U+0000.
+  folder record (parent ID 1), and the root's folder named exactly "<4 x U+0000>HFS+ Private Data"
+  (review 1: the first decision exempted every U+0000-first folder / file name - a damaged file named
+  so was lost; Apple writes only this one, ".HFS+ Private Directory Data<CR>" starts with a dot).
 - Rationale: TN1150 - thread keys have an empty name; the root folder's parent is 1 and its name is
   the volume name; the metadata folder for hard links is "\0\0\0\0HFS+ Private Data" (macOS creates it).
   The xorriso catalog (img332.py dump): root folder (parent 1, "TC332"), threads with key length 6 and
   types 3 / 4, then folders and files. The metadata folder's contents (iNode files) are listed at the
   HFS+ root today (their parent is not a listed folder), so not marking the folder loses nothing.
-- Alternatives: mark the U+0000 name too (fails closed) - rejected: every Mac-made image with hard
-  links would then never be deleted after an unpack although nothing is missing.
+- Alternatives: mark every U+0000 name (fails closed) - rejected: every Mac-made image with hard
+  links would then never be deleted after an unpack although nothing is missing; exempt every U+0000
+  name - rejected by review 1 (data loss).
 
 ## R3 - Which records are damaged (marked)?
 

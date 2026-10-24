@@ -14,9 +14,11 @@
       hdh_key.iso    the key length 0xFFFF (the record does not fit its node) - skipped
       hdh_long.iso   a name of 256 units in a key that fits - skipped
       hdh_short.iso  a file record shorter than its structure - skipped
+      hdh_nul.iso    (review 1) the first unit of its name U+0000 - skipped (only the root's folder
+                     "<4 x U+0000>HFS+ Private Data" is HFS+ metadata)
     Unpack rows: the left panel shows <row>\src, Home, End focuses the image, Alt+F9 (851), the target
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK.
-      H-TYPE, H-KEY, H-LONG, H-SHORT  PASS = no window, exactly the listed files extracted with their
+      H-TYPE, H-KEY, H-LONG, H-SHORT, H-NUL  PASS = no window, exactly the listed files extracted with their
                  content (side.txt missing), the image KEPT - before 332: the image deleted
       H-OK       (control) PASS = every file extracted, no window, the image deleted - as before 332
     The HFS+ hybrid opens with the known "Cannot read sector #00000020" box (Inbox item
@@ -150,7 +152,7 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath (Join-Path $Here 'mkimg332.sh')) (WslPath $s) 2>&1
     $made = @()
     if ([IO.File]::Exists("$s\hdh.iso")) {
-        foreach ($h in @('type', 'key', 'long', 'short')) { $made += & python -I $py $h "$s\hdh.iso" "$s\hdh_$h.iso" 2>&1 }
+        foreach ($h in @('type', 'key', 'long', 'short', 'nul')) { $made += & python -I $py $h "$s\hdh.iso" "$s\hdh_$h.iso" 2>&1 }
     }
     if ([IO.File]::Exists("$s\ud.iso")) { $made += & python -I $py udffile "$s\ud.iso" "$s\ud_file.iso" 2>&1 }
     $ErrorActionPreference = $old
@@ -171,6 +173,7 @@ try {
     Unpack-Row 'H-KEY' "$s\hdh_key.iso" $skip -Damaged
     Unpack-Row 'H-LONG' "$s\hdh_long.iso" $skip -Damaged
     Unpack-Row 'H-SHORT' "$s\hdh_short.iso" $skip -Damaged
+    Unpack-Row 'H-NUL' "$s\hdh_nul.iso" $skip -Damaged
     $udAll = [ordered]@{ 'ISO (TC332)/a/side.txt' = 'SIDE'; 'ISO (TC332)/top.txt' = 'TOP'; 'ISO (TC332)/zlast/z.txt' = 'Z'
         'UDF (TC332)/a/side.txt' = 'SIDE'; 'UDF (TC332)/top.txt' = 'TOP'; 'UDF (TC332)/zlast/z.txt' = 'Z' }
     $udFile = [ordered]@{ 'ISO (TC332)/a/side.txt' = 'SIDE'; 'ISO (TC332)/top.txt' = 'TOP'; 'ISO (TC332)/zlast/z.txt' = 'Z'

@@ -4,6 +4,8 @@
   python -I img332.py <how> <src> <dst>    a copy whose catalog record of a/side.txt (the file record,
                                            parent = folder a) is damaged:
       type   its record type set to 5 (neither folder nor file nor thread)
+      nul    the first unit of its name set to U+0000 (review 1: only the root's folder
+             "<4 x U+0000>HFS+ Private Data" is HFS+ metadata)
       key    its key length set to 0xFFFF (the key does not fit the record)
       long   its name length set to 256 units, the key length to 518 (the key fits) and the record type
              0x0002 written after that key (the name is longer than 255 units)
@@ -174,7 +176,7 @@ def main(argv):
             print("node %(node)d #%(index)d/%(count)d ofs %(ofs)d avail %(avail)d last %(last)s keylen %(klen)d "
                   "parent %(parent)d type %(type)d name %(name)s" % r)
         return 0
-    if len(argv) != 4 or argv[1] not in ("type", "key", "long", "short"):
+    if len(argv) != 4 or argv[1] not in ("type", "nul", "key", "long", "short"):
         print(__doc__)
         return 2
     how, src, dst = argv[1:]
@@ -183,6 +185,8 @@ def main(argv):
     at = r["at"]
     if how == "type":
         struct.pack_into(">H", img, at + 2 + r["klen"], 5)
+    elif how == "nul":
+        struct.pack_into(">H", img, at + 8, 0)
     elif how == "key":
         struct.pack_into(">H", img, at, 0xFFFF)
     else:

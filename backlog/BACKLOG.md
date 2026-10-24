@@ -254,6 +254,7 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: an HFS+ name with U+0000 inside is listed cut at it](items/iso-plug-in-an-hfs-name-with-u-0000-inside-is-listed-cut-at/desc.md) | bug | 3 | archives | review:332 | 2026-10-24 |
 
 ## Parked
 

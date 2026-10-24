@@ -22,7 +22,8 @@
 | folder, data under 88 bytes / file, data under 248 bytes | DAMAGED | skipped, marked |
 | any other type, name starting with U+0000 | DAMAGED | skipped, marked |
 | any other type | UNKNOWN | marked, the HFS+ listing ends |
-| folder / file, name starting with U+0000 | NOT_ENTRY | skipped (HFS+ metadata) |
+| folder in the root (parent 2) named exactly "<4 x U+0000>HFS+ Private Data" | NOT_ENTRY | skipped (HFS+ metadata) |
+| any other folder / file whose name starts with U+0000 | DAMAGED | skipped, marked (review 1) |
 | folder / file | FOLDER / FILE | listed (329's rules follow) |
 
 `hfs.cpp` adds: a FOLDER / FILE whose name does not convert to UTF-8 - skipped, marked.

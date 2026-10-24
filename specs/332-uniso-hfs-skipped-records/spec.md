@@ -44,7 +44,8 @@ listing mark is the only way the unpack learns that something was left out.
 - Q: Should a record of a type the reader does not handle still end the HFS+ listing, or be skipped
   alone? → A: still end it, as today; only the mark is added (autonomous run: conservative - the item's
   *Expected* asks for the mark only; the existing behaviour is kept for what it does not name)
-- Q: Is a name starting with U+0000 damage (mark) or metadata (no mark)? → A: metadata - TN1150's
+- Q: Is a name starting with U+0000 damage (mark) or metadata (no mark)? → A: metadata only for the
+  exact folder in the root (review 1: a file named so was skipped silently and lost) - TN1150's
   "\0\0\0\0HFS+ Private Data" folder that macOS creates; its contents (hard-link inodes) are listed at
   the HFS+ root today, so nothing is lost; marking it would stop every such Mac image from being
   deleted after an unpack (autonomous run: item - "thread records and the volume-label record, which
@@ -97,9 +98,11 @@ extracted, no new message, the image deleted.
 
 - Thread records (an empty name; folder thread / file thread types) and the root folder's record
   (parent ID 1 - the volume label shown as "HFS (<label>)") are not entries: skipped, never marked.
-- A folder or file record whose name's first unit is U+0000 (TN1150's metadata folder "\0\0\0\0HFS+ Private Data", created by
+- The root's folder record named exactly "<4 x U+0000>HFS+ Private Data" (TN1150's metadata folder "\0\0\0\0HFS+ Private Data", created by
   macOS on HFS+ volumes, skipped today as an empty name): not a user entry - skipped without a mark,
   so Mac-made images still unpack and are deleted when asked.
+- Any other record whose name starts with U+0000 (a file, another folder name, a folder elsewhere):
+  damaged - marked (review 1).
 - A folder or file record with an empty name that is not the root folder: damaged - marked.
 - A record of a thread type that carries a name, or of an unknown type: not handled - marked (the
   listing ends there, as today).
@@ -118,9 +121,9 @@ extracted, no new message, the image deleted.
   name, its name does not convert - MUST be marked incomplete.
 - **FR-002**: An HFS+ listing that met a record of a type it does not handle (neither folder nor file,
   with a name) MUST be marked incomplete; the listing still ends at that record, as today.
-- **FR-003**: Thread records, the root folder's record (the volume label) and a folder or file record
-  whose name starts with U+0000 (HFS+ metadata) MUST stay skipped without a mark. A record of a type
-  the reader does not handle whose name starts with U+0000 is skipped as today and marked (damaged).
+- **FR-003**: Thread records, the root folder's record (the volume label) and the root's folder record
+  named exactly "<4 x U+0000>HFS+ Private Data" (HFS+ metadata) MUST stay skipped without a mark. Any
+  other record whose name starts with U+0000 is skipped as today and marked (damaged, review 1).
 - **FR-004**: A whole-image unpack of a listing marked incomplete MUST extract the listed entries and
   fail, so "Delete archive after unpacking" keeps the image (feature 328's existing behaviour of the
   mark).
@@ -156,6 +159,7 @@ extracted, no new message, the image deleted.
   without a word; no new UI string, no translation refresh, no manual change.
 - Assumption (autonomous run): a record type the reader does not handle still ends the HFS+ listing
   (the existing behaviour; only the mark is added).
-- Assumption (autonomous run): a name starting with U+0000 is HFS+ metadata (TN1150), not damage.
+- Assumption (autonomous run): only the root's folder "<4 x U+0000>HFS+ Private Data" is HFS+ metadata
+  (TN1150); other U+0000-first names are damage (review 1).
 - Assumption (autonomous run): crafted images are made by a probe script from xorriso / genisoimage
   seeds (WSL, as features 329 / 330) patched by a Python writer.
