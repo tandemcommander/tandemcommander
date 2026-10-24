@@ -145,7 +145,9 @@ zeros): `a.txt` extracted, the image kept.
 
 - **FR-001**: A data track of a track table in which no file system is found, lying within the image,
   MUST mark the listing incomplete (a whole unpack then fails and "Delete archive after unpacking"
-  keeps the image) unless its sector 16 is a Mode 2 Form 2 sector.
+  keeps the image) unless its sector 16 and every following sector up to sector 31 (those within the
+  track and the image file) are Mode 2 Form 2 sectors (review 2: one overwritten sector can carry a
+  valid subheader).
 - **FR-002**: A sector MUST count as Mode 2 Form 2 only when the image stores its header (2352 bytes or
   more a sector: a valid sync pattern and mode byte 2; 2336 bytes a sector: no sync) and its subheader
   is a valid CD-ROM XA subheader (both copies equal, channel below 32, at most one of the data / audio /
