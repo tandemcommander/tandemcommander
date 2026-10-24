@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: NRG SINF and ETN2 chunks are read without regard to their size
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:340
@@ -59,3 +59,4 @@ never past its buffer.
 ## Log
 
 - 2026-10-24 — created (source review:340)
+- 2026-10-24 — moved to Next position 9

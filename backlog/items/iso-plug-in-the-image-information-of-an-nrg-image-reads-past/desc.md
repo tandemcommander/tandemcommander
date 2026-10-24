@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: the image information of an NRG image reads past its session table
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: measure:340
@@ -56,3 +56,4 @@ are read as the unsigned numbers the image stores (feature 340's `SalIsoSessionT
 ## Log
 
 - 2026-10-24 — created (source measure:340)
+- 2026-10-24 — moved to Next position 10
