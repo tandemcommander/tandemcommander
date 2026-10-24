@@ -1436,7 +1436,8 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
     return ret;
 }
 
-void CISOImage::NoteListedFileStarts(const CSalamanderDirectoryAbstract* dir, bool* covered)
+void CISOImage::NoteListedFileStarts(const CSalamanderDirectoryAbstract* dir, bool* covered,
+                                     TDirectArray<SalIsoStreamSpan>& spans, const long long* trackSectors)
 {
     // the listed tree, walked without recursion (a deep tree must not exhaust the stack)
     TDirectArray<const CSalamanderDirectoryAbstract*> pending(16, 16);
@@ -1456,16 +1457,27 @@ void CISOImage::NoteListedFileStarts(const CSalamanderDirectoryAbstract* dir, bo
             // the disc address of the file's first sector (review 1: HFS+ gives a catalog record number,
             // UDF a partition-relative block)
             const CFilePos* fp = file != NULL ? (const CFilePos*)file->PluginData : NULL;
-            if (fp != NULL)
-                SalIsoNoteFileStart(covered, Tracks.Count, fp->Extent, file->Size.Value, fp->Type == FS_TYPE_ISO9660,
-                                    [this](int t) -> unsigned long
-                                    { return Tracks[t]->ExtentOffset; });
+            if (fp == NULL)
+                continue;
+            int t = SalIsoFileStartTrack(Tracks.Count, fp->Extent, file->Size.Value, fp->Type == FS_TYPE_ISO9660,
+                                         [this](int k) -> unsigned long
+                                         { return Tracks[k]->ExtentOffset; });
+            if (t < 0)
+                continue;
+            covered[t] = true;
+            // feature 337: the sectors the unpack reads of the stream (salisotrack.h)
+            SalIsoStreamSpan span;
+            span.Track = t;
+            if (Tracks[t]->Form2Stream &&
+                SalIsoFileSectorSpan(fp->Extent, file->Size.Value, Tracks[t]->ExtentOffset, trackSectors[t],
+                                     &span.First, &span.End))
+                spans.Add(span);
         }
         count = d->GetDirsCount();
         for (i = 0; i < count; i++)
             pending.Add(d->GetSalDir(i));
     }
-    if (!pending.IsGood())
+    if (!pending.IsGood() || !spans.IsGood())
     {
         // out of memory: the walk is incomplete - no stream counts as covered (fails closed)
         int t;
@@ -1484,24 +1496,78 @@ void CISOImage::MarkUncoveredStreams(const CSalamanderDirectoryAbstract* dir)
         return;
 
     bool* covered = new bool[Tracks.Count];
-    if (covered == NULL)
+    long long* sectors = new long long[Tracks.Count];
+    if (covered == NULL || sectors == NULL)
     {
         ListingLeftOut.SetIncomplete(); // nothing can be checked: fails closed
+        delete[] covered;
+        delete[] sectors;
         return;
     }
-    for (track = 0; track < Tracks.Count; track++)
-        covered[track] = false;
-    if (dir != NULL)
-        NoteListedFileStarts(dir, covered);
+    // feature 337: the whole stored sectors of each stream track (a wrong track-table end fails closed)
+    DWORD sizeHi;
+    DWORD sizeLo = File->GetFileSize(&sizeHi);
+    LONGLONG fileSize = ((LONGLONG)sizeHi << 32) | sizeLo;
     for (track = 0; track < Tracks.Count; track++)
     {
-        if (SalIsoStreamTrackMarksListing(Tracks[track]->Form2Stream != FALSE, covered[track]))
+        covered[track] = false;
+        Track* t = Tracks[track];
+        sectors[track] = t->Form2Stream ? SalIsoStreamTrackSectors(t->Start, t->End, track + 1 < Tracks.Count ? Tracks[track + 1]->Start : -1,
+                                                                   fileSize, t->SectorSize)
+                                        : 0;
+    }
+    TDirectArray<SalIsoStreamSpan> spans(16, 16);
+    if (dir != NULL)
+        NoteListedFileStarts(dir, covered, spans, sectors);
+    int merged = spans.IsGood() ? SalIsoMergeStreamSpans(spans.GetData(), spans.Count) : 0;
+    for (track = 0; track < Tracks.Count; track++)
+    {
+        if (!Tracks[track]->Form2Stream)
+            continue;
+        if (SalIsoStreamTrackMarksListing(true, covered[track]))
         {
             TRACE_I("CISOImage::MarkUncoveredStreams(): no listed file starts in the Form 2 track " << track << " - the listing is incomplete");
+            ListingLeftOut.SetIncomplete();
+            continue;
+        }
+        // feature 337: the sectors no listed file reads must be empty gaps (at most SAL_ISO_STREAM_GAP_SECTORS)
+        long long uncovered = SalIsoStreamUncovered(spans.GetData(), merged, track, sectors[track]);
+        bool empty = uncovered >= 0 && uncovered <= SAL_ISO_STREAM_GAP_SECTORS &&
+                     StreamGapsEmpty(track, spans.GetData(), merged, sectors[track]);
+        if (SalIsoStreamGapsMark(sectors[track], uncovered, empty))
+        {
+            TRACE_I("CISOImage::MarkUncoveredStreams(): the listed files leave " << uncovered << " of " << sectors[track]
+                                                                                 << " sectors of the Form 2 track " << track << " uncovered and not empty - the listing is incomplete");
             ListingLeftOut.SetIncomplete();
         }
     }
     delete[] covered;
+    delete[] sectors;
+}
+
+BOOL CISOImage::StreamGapsEmpty(int track, const SalIsoStreamSpan* merged, int n, long long trackSectors)
+{
+    Track* t = Tracks[track];
+    long long payloadAt = SalIsoForm2PayloadOffset(t->SectorSize);
+    if (payloadAt < 0)
+        return FALSE;
+    unsigned char payload[SAL_ISO_FORM2_PAYLOAD];
+    long long cursor = 0;
+    long long first, end;
+    while (SalIsoStreamNextGap(merged, n, track, trackSectors, &cursor, &first, &end))
+    {
+        long long s;
+        for (s = first; s < end; s++)
+        {
+            DWORD got = ReadDataByPos(t->Start + s * t->SectorSize + payloadAt, sizeof(payload), payload);
+            if (!SalIsoPayloadEmpty(payload, got))
+            {
+                TRACE_I("CISOImage::StreamGapsEmpty(): sector " << s << " of the Form 2 track " << track << " holds data no listed file reads");
+                return FALSE;
+            }
+        }
+    }
+    return TRUE;
 }
 
 BOOL CISOImage::ListTracks(CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)

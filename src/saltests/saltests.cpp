@@ -20204,6 +20204,156 @@ static void TestIsoStreamCovered_336()
     }
 }
 
+// feature 337: a stream a listed file starts in counts as covered only when the sectors no file reads
+// are at most 300 empty Form 2 sectors (src/common/salisotrack.h)
+static void TestIsoStreamPartial_337()
+{
+    // the start track keeps 336's guards
+    const unsigned long two[] = {0, 184};
+    auto offTwo = [&](int t) -> unsigned long
+    { return two[t]; };
+    CHECK(SalIsoFileStartTrack(2, 184, 2048, true, offTwo) == 1);
+    CHECK(SalIsoFileStartTrack(2, 24, 2, true, offTwo) == 0);
+    CHECK(SalIsoFileStartTrack(2, 184, 0, true, offTwo) == -1);     // zero bytes
+    CHECK(SalIsoFileStartTrack(2, 184, 2048, false, offTwo) == -1); // not a disc address
+    CHECK(SalIsoFileStartTrack(0, 184, 2048, true, offTwo) == -1);  // no tracks
+    auto offMany = [](int t) -> unsigned long
+    { return (unsigned long)t * 100; };
+    CHECK(SalIsoFileStartTrack(300, 255 * 100, 1, true, offMany) == 255);
+    CHECK(SalIsoFileStartTrack(300, 256 * 100, 1, true, offMany) == -1); // above 255
+
+    // the stream's whole stored sectors
+    const long long r = 2352, m2 = 2336;
+    CHECK(SalIsoStreamTrackSectors(450 * r, 897 * r, 897 * r, 1344 * r, r) == 447); // real_vcd.img track 2
+    CHECK(SalIsoStreamTrackSectors(897 * r, 1344 * r, -1, 1344 * r, r) == 447);     // track 3, the last
+    CHECK(SalIsoStreamTrackSectors(1000, 1000 + 64 * m2, -1, 5000000, m2) == 64);   // NRG ETNF
+    CHECK(SalIsoStreamTrackSectors(1000, 0, -1, 1000 + 10 * m2 + 100, m2) == 10);   // end unknown: the image's end
+    CHECK(SalIsoStreamTrackSectors(1000, 1000, -1, 1000 + 10 * m2, m2) == 10);      // end = start: unknown
+    CHECK(SalIsoStreamTrackSectors(0, 5 * r, 8 * r, 20 * r, r) == 8);               // too small: the next track's start
+    CHECK(SalIsoStreamTrackSectors(10 * r, 15 * r, 2 * r, 20 * r, r) == 5);         // a next track earlier in the file
+    CHECK(SalIsoStreamTrackSectors(0, 100 * r, -1, 30 * r + 7, r) == 30);           // past the file: cut at it
+    CHECK(SalIsoStreamTrackSectors(0, 0, 100 * r, 30 * r, r) == 30);                // next track past the file
+    CHECK(SalIsoStreamTrackSectors(30 * r, 40 * r, -1, 30 * r, r) == 0);            // starts at the file's end
+    CHECK(SalIsoStreamTrackSectors(-1, 40 * r, -1, 50 * r, r) == 0);
+    CHECK(SalIsoStreamTrackSectors(0, 40 * r, -1, 50 * r, 0) == 0);
+    CHECK(SalIsoStreamTrackSectors(0, 40 * r, -1, -1, r) == 0);
+
+    // the sectors a file reads (ceil(size / 2048), clipped to the track)
+    long long f = -7, e = -7;
+    CHECK(SalIsoFileSectorSpan(184, 2048, 184, 64, &f, &e) && f == 0 && e == 1);     // S-VCDPART
+    CHECK(SalIsoFileSectorSpan(184, 8 * 2048, 184, 64, &f, &e) && f == 0 && e == 8); // S-VCDCOV
+    CHECK(SalIsoFileSectorSpan(184, 2049, 184, 64, &f, &e) && f == 0 && e == 2);
+    CHECK(SalIsoFileSectorSpan(184, 1, 184, 64, &f, &e) && f == 0 && e == 1);
+    CHECK(SalIsoFileSectorSpan(184, 64 * 2048, 184, 64, &f, &e) && f == 0 && e == 64);  // S-VCDFULL
+    CHECK(SalIsoFileSectorSpan(190, 1ULL << 40, 184, 64, &f, &e) && f == 6 && e == 64); // clipped
+    CHECK(SalIsoFileSectorSpan(190, ~0ULL, 184, 64, &f, &e) && f == 6 && e == 64);
+    CHECK(SalIsoFileSectorSpan(450, 608256, 450, 447, &f, &e) && f == 0 && e == 297); // real AVSEQ01.DAT
+    CHECK(SalIsoFileSectorSpan(247, 2048, 184, 64, &f, &e) && f == 63 && e == 64);
+    f = e = -7;
+    CHECK(!SalIsoFileSectorSpan(248, 2048, 184, 64, &f, &e)); // at the track's end
+    CHECK(!SalIsoFileSectorSpan(183, 2048, 184, 64, &f, &e)); // before the track's first sector
+    CHECK(!SalIsoFileSectorSpan(184, 0, 184, 64, &f, &e));    // zero bytes
+    CHECK(!SalIsoFileSectorSpan(184, 2048, 184, 0, &f, &e));  // no sectors
+    CHECK(f == -7 && e == -7);
+    CHECK(!SalIsoFileSectorSpan(184, 2048, 184, 64, nullptr, &e));
+
+    // merging
+    SalIsoStreamSpan s[] = {{1, 10, 20}, {1, 0, 5}, {1, 5, 8}, {2, 0, 3}, {1, 19, 25}, {1, 30, 30}, {1, 12, 14}};
+    int n = SalIsoMergeStreamSpans(s, 7);
+    CHECK(n == 3);
+    CHECK(s[0].Track == 1 && s[0].First == 0 && s[0].End == 8);
+    CHECK(s[1].Track == 1 && s[1].First == 10 && s[1].End == 25);
+    CHECK(s[2].Track == 2 && s[2].First == 0 && s[2].End == 3);
+    CHECK(SalIsoMergeStreamSpans(nullptr, 3) == 0);
+    CHECK(SalIsoMergeStreamSpans(s, 0) == 0);
+
+    // uncovered sectors and the gaps
+    CHECK(SalIsoStreamUncovered(s, n, 1, 40) == 17);
+    CHECK(SalIsoStreamUncovered(s, n, 2, 3) == 0);
+    CHECK(SalIsoStreamUncovered(s, n, 3, 10) == 10);
+    CHECK(SalIsoStreamUncovered(s, n, 1, 20) == 2 + 0 + 0 + 0); // spans past the track are cut: [8, 10)
+    CHECK(SalIsoStreamUncovered(s, n, 1, 0) == 0);
+    long long cur = 0, gf = 0, ge = 0;
+    CHECK(SalIsoStreamNextGap(s, n, 1, 40, &cur, &gf, &ge) && gf == 8 && ge == 10);
+    CHECK(SalIsoStreamNextGap(s, n, 1, 40, &cur, &gf, &ge) && gf == 25 && ge == 40);
+    CHECK(!SalIsoStreamNextGap(s, n, 1, 40, &cur, &gf, &ge));
+    cur = 0;
+    CHECK(!SalIsoStreamNextGap(s, n, 2, 3, &cur, &gf, &ge));
+    cur = 0;
+    CHECK(SalIsoStreamNextGap(s, n, 3, 10, &cur, &gf, &ge) && gf == 0 && ge == 10);
+    CHECK(!SalIsoStreamNextGap(s, n, 3, 10, &cur, &gf, &ge));
+    SalIsoStreamSpan late[] = {{1, 5, 40}};
+    cur = 0;
+    CHECK(SalIsoStreamNextGap(late, 1, 1, 40, &cur, &gf, &ge) && gf == 0 && ge == 5); // a gap in front
+    CHECK(!SalIsoStreamNextGap(late, 1, 1, 40, &cur, &gf, &ge));
+    cur = 0;
+    CHECK(!SalIsoStreamNextGap(late, 1, 1, 40, &cur, nullptr, &ge));
+
+    // empty sectors
+    CHECK(SalIsoForm2PayloadOffset(2352) == 24);
+    CHECK(SalIsoForm2PayloadOffset(2448) == 24); // with subchannel data
+    CHECK(SalIsoForm2PayloadOffset(2336) == 8);
+    CHECK(SalIsoForm2PayloadOffset(2048) == -1);
+    unsigned char pay[SAL_ISO_FORM2_PAYLOAD] = {};
+    CHECK(SalIsoPayloadEmpty(pay, SAL_ISO_FORM2_PAYLOAD));
+    CHECK(!SalIsoPayloadEmpty(pay, SAL_ISO_FORM2_PAYLOAD - 1)); // a short read
+    CHECK(!SalIsoPayloadEmpty(pay, 0));
+    CHECK(!SalIsoPayloadEmpty(nullptr, SAL_ISO_FORM2_PAYLOAD));
+    pay[SAL_ISO_FORM2_PAYLOAD - 1] = 1;
+    CHECK(!SalIsoPayloadEmpty(pay, SAL_ISO_FORM2_PAYLOAD));
+    pay[SAL_ISO_FORM2_PAYLOAD - 1] = 0;
+    pay[0] = 0x80;
+    CHECK(!SalIsoPayloadEmpty(pay, SAL_ISO_FORM2_PAYLOAD));
+
+    // the decision
+    CHECK(!SalIsoStreamGapsMark(64, 0, true));
+    CHECK(SalIsoStreamGapsMark(64, 63, false));   // S-VCDPART
+    CHECK(!SalIsoStreamGapsMark(447, 150, true)); // a real Video CD
+    CHECK(!SalIsoStreamGapsMark(600, 300, true));
+    CHECK(SalIsoStreamGapsMark(600, 301, true)); // too many to read
+    CHECK(SalIsoStreamGapsMark(0, 0, true));     // no sector
+    CHECK(SalIsoStreamGapsMark(64, -1, true));
+
+    // the probe's and the real images' streams: file spans and which sectors hold data
+    struct
+    {
+        long long Sectors;
+        long long Size[2];
+        unsigned long Extent[2];
+        long long DataEnd; // sectors [0, DataEnd) hold data, the rest are empty
+        bool Marks;
+    } cases[] = {
+        {64, {2048, 0}, {184, 0}, 64, true},                 // S-VCDPART: 1 of 64
+        {64, {8 * 2048, 0}, {184, 0}, 64, true},             // S-VCDCOV, C-VCDCOV, M-FORM2COV: 8 of 64
+        {64, {64 * 2048, 0}, {184, 0}, 64, false},           // S-VCDFULL, C-VCDFULL
+        {64, {48 * 2048, 0}, {184, 0}, 48, false},           // S-VCDGAP: the last 16 sectors empty
+        {64, {48 * 2048, 0}, {184, 0}, 64, true},            // S-VCDTAIL: they hold data
+        {64, {16 * 2048, 40 * 2048}, {184, 208}, 64, true},  // a middle gap of 8 data sectors
+        {64, {16 * 2048, 48 * 2048}, {184, 200}, 64, false}, // two files, no gap
+        {447, {608256, 0}, {450, 0}, 297, false},            // real_vcd AVSEQ01.DAT, 150 empty
+        {1000, {100 * 2048, 0}, {184, 0}, 100, true},        // 900 empty sectors: more than 300
+    };
+    for (const auto& c : cases)
+    {
+        unsigned long first = c.Extent[0] == 450 ? 450 : 184;
+        SalIsoStreamSpan sp[2];
+        int k = 0;
+        for (int i = 0; i < 2; i++)
+        {
+            sp[k].Track = 1;
+            if (SalIsoFileSectorSpan(c.Extent[i], (unsigned long long)c.Size[i], first, c.Sectors, &sp[k].First, &sp[k].End))
+                k++;
+        }
+        k = SalIsoMergeStreamSpans(sp, k);
+        long long unc = SalIsoStreamUncovered(sp, k, 1, c.Sectors);
+        bool empty = unc <= SAL_ISO_STREAM_GAP_SECTORS;
+        long long cr = 0, a = 0, b = 0;
+        while (empty && SalIsoStreamNextGap(sp, k, 1, c.Sectors, &cr, &a, &b))
+            empty = a >= c.DataEnd;
+        CHECK(SalIsoStreamGapsMark(c.Sectors, unc, empty) == c.Marks);
+    }
+}
+
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
 // when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
 // the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
@@ -21314,6 +21464,7 @@ int main(int argc, char** argv)
     TestIsoTrackMarks334();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
+    TestIsoStreamPartial_337();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

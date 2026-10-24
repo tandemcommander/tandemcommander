@@ -1,0 +1,17 @@
+rev335c probe after-337
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 09:31; registry key existed True
+
+R-VCD-CCD  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VCD-CCD  RUN    PASS        files 4: MPEGAV/AVSEQ01.DAT:608256, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; image kept: False (want False); fatal: ; windows: no window
+R-SVCD-CCD END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SVCD-CCD RUN    PASS        files 6: EXT/SCANDATA.DAT:42, MPEG2/AVSEQ01.MPG:292864, SVCD/ENTRIES.SVD:2048, SVCD/INFO.SVD:2048, SVCD/SEARCH.DAT:31, SVCD/TRACKS.SVD:2048; image kept: False (want False); fatal: ; windows: no window
+R-VCD-NRG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VCD-NRG  RUN    PASS        files 4: MPEGAV/AVSEQ01.DAT:608256, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; image kept: False (want False); fatal: ; windows: no window
+R-VCD-HOLE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VCD-HOLE RUN    PASS        files 4: MPEGAV/AVSEQ01.DAT:608256, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; image kept: True (want True); fatal: ; windows: no window
+X-SHORT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+X-SHORT    RUN    PASS        files 1: a.txt:2; image kept: True (want True); fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588 / after BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

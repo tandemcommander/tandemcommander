@@ -199,8 +199,14 @@ protected:
     BOOL ListTracks(CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
     // feature 336: marks ListingLeftOut incomplete for each Form 2 stream track no listed file of more than
     // zero bytes starts in (salisotrack.h); 'dir' = the listing ListTracks built
+    // feature 337: and for each stream track whose listed files leave sectors with data uncovered
     void MarkUncoveredStreams(const CSalamanderDirectoryAbstract* dir);
-    void NoteListedFileStarts(const CSalamanderDirectoryAbstract* dir, bool* covered);
+    // feature 337: also collects in 'spans' the sectors each file reads of the stream track it starts in
+    // ('trackSectors' per track)
+    void NoteListedFileStarts(const CSalamanderDirectoryAbstract* dir, bool* covered,
+                              TDirectArray<SalIsoStreamSpan>& spans, const long long* trackSectors);
+    // feature 337: is every sector of stream track 'track' that no merged span covers an empty Form 2 sector?
+    BOOL StreamGapsEmpty(int track, const SalIsoStreamSpan* merged, int n, long long trackSectors);
 
     // support
     void DetectSectorType();

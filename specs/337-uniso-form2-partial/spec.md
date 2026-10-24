@@ -88,7 +88,7 @@ before.
 
 **Why this priority**: the item's *Expected* - real Video CDs keep today's behaviour.
 
-**Independent Test**: new rows S-VCDFULL (a file over all 64 sectors) and S-VCDGAP (a file over 48
+**Independent Test**: new rows S-VCDFULL and C-VCDFULL (a file over all 64 sectors) and S-VCDGAP (a file over 48
 sectors, the last 16 empty Form 2 sectors) - deleted; feature 335's real vcdimager rows R-VCD-CCD,
 R-SVCD-CCD, R-VCD-NRG - deleted; R-VCD-HOLE, X-SHORT - kept as before.
 

@@ -21,8 +21,11 @@
 // Feature 335: so did a data track within the image whose file system area is damaged - it is told
 // from a Video CD's MPEG stream (Mode 2 Form 2 sectors) by its sector 16.
 // Feature 336: and so did such a Form 2 stream that no listed file starts in.
+// Feature 337: and so did a stream whose listed files read only part of it.
 //
 //*****************************************************************************
+
+#include <algorithm>
 
 // the track's kind in the image's track table
 enum
@@ -180,16 +183,29 @@ inline int SalIsoTrackOfExtent(int trackCount, unsigned long extent, TExtentOffs
 // track and covers nothing (fails closed); so does a file whose 'extent' is not a disc address
 // ('discAddress' false - review 1: an HFS+ catalog record number, a UDF partition-relative block; only
 // ISO 9660 records give the disc address of a file's first sector).
+// Feature 337: the rules of SalIsoNoteFileStart, returning the track (-1 = the file covers no track).
 template <class TExtentOffsetOf>
-inline void SalIsoNoteFileStart(bool* covered, int trackCount, unsigned long extent, unsigned long long size,
-                                bool discAddress, TExtentOffsetOf extentOffsetOf)
+inline int SalIsoFileStartTrack(int trackCount, unsigned long extent, unsigned long long size, bool discAddress,
+                                TExtentOffsetOf extentOffsetOf)
 {
-    if (covered == nullptr || size == 0 || !discAddress)
-        return;
+    if (size == 0 || !discAddress)
+        return -1;
     int t = SalIsoTrackOfExtent(trackCount, extent, extentOffsetOf);
     // review 2: the unpack keeps the track number in a byte (GetTrackFromExtent returns BYTE) - a file of
     // a track above 255 (a malformed track table; a CD has at most 99) is read from another track
     if (t >= 0 && t < trackCount && t <= 255)
+        return t;
+    return -1;
+}
+
+template <class TExtentOffsetOf>
+inline void SalIsoNoteFileStart(bool* covered, int trackCount, unsigned long extent, unsigned long long size,
+                                bool discAddress, TExtentOffsetOf extentOffsetOf)
+{
+    if (covered == nullptr)
+        return;
+    int t = SalIsoFileStartTrack(trackCount, extent, size, discAddress, extentOffsetOf);
+    if (t >= 0)
         covered[t] = true;
 }
 
@@ -201,4 +217,178 @@ inline void SalIsoNoteFileStart(bool* covered, int trackCount, unsigned long ext
 inline bool SalIsoStreamTrackMarksListing(bool form2Stream, bool fileStartsInTrack)
 {
     return form2Stream && !fileStartsInTrack;
+}
+
+// Feature 337: a file that starts in a stream does not cover all of it - a damaged or crafted directory
+// record shorter than its stream extracts only its part. A stream a file starts in counts as covered only
+// when every sector of the track that no such file reads is an empty Form 2 sector (2324 zero bytes of
+// user data) and there are at most SAL_ISO_STREAM_GAP_SECTORS of them. Measured on real vcdimager Video
+// CDs / SVCDs: each AVSEQnn file starts at its track's first sector and leaves the last 150 sectors (the
+// next track's pregap, the post-gap before the lead-out) uncovered - all of them empty; the files' own
+// margins are inside the files. A count alone cannot tell such a disc from a 64-sector stream whose file
+// reads one sector; the content can.
+
+// the sectors of a stream the uncovered part may have at most: a 150-sector pregap and a 150-sector
+// post-gap (2 seconds each); more are not read - the listing is marked
+const long long SAL_ISO_STREAM_GAP_SECTORS = 300;
+// the bytes the unpack reads from each sector of a file (ISO 9660 logical blocks)
+const long long SAL_ISO_FILE_SECTOR_SIZE = 2048;
+// the user data of a Mode 2 Form 2 sector
+const int SAL_ISO_FORM2_PAYLOAD = 2324;
+
+// Feature 337: how many whole stored sectors of 'sectorSize' bytes a stream track holds, from byte
+// 'start' of an image file of 'fileSize' bytes. Fails closed on a wrong track-table end: an end at or
+// before the start is unknown (the image's end is taken); a next track ('nextStart', -1 = none) that
+// starts later in the file than the end extends it (an end too small - the bytes up to the next track
+// are checked too); nothing past the image file counts. 0 = no sector (the caller marks the listing).
+inline long long SalIsoStreamTrackSectors(long long start, long long end, long long nextStart, long long fileSize,
+                                          long long sectorSize)
+{
+    if (start < 0 || sectorSize <= 0 || fileSize < 0 || start >= fileSize)
+        return 0;
+    long long e = end > start ? end : fileSize;
+    if (nextStart > e)
+        e = nextStart;
+    if (e > fileSize)
+        e = fileSize;
+    return (e - start) / sectorSize;
+}
+
+// Feature 337: the sectors [first, end) of a stream track (counted from its first sector, the disc address
+// 'trackFirst'; 'trackSectors' sectors) that a listed file of 'size' bytes starting at disc address
+// 'extent' reads - the unpack's rule: ceil(size / 2048) sectors from the extent on (CRawFS::UnpackFile),
+// clipped to the track. False (nothing covered): an empty file, no sectors, an extent before the track's
+// first sector (the unpack's block number would wrap) or at or after its end.
+inline bool SalIsoFileSectorSpan(unsigned long extent, unsigned long long size, unsigned long trackFirst,
+                                 long long trackSectors, long long* first, long long* end)
+{
+    if (first == nullptr || end == nullptr || size == 0 || trackSectors <= 0 || extent < trackFirst)
+        return false;
+    long long f = (long long)(extent - trackFirst);
+    if (f >= trackSectors)
+        return false;
+    unsigned long long sectors = size / SAL_ISO_FILE_SECTOR_SIZE + (size % SAL_ISO_FILE_SECTOR_SIZE != 0 ? 1 : 0);
+    unsigned long long room = (unsigned long long)(trackSectors - f);
+    *first = f;
+    *end = f + (long long)(sectors < room ? sectors : room);
+    return true;
+}
+
+// Feature 337: the sectors [First, End) of stream track 'Track' a listed file reads
+struct SalIsoStreamSpan
+{
+    int Track;
+    long long First;
+    long long End;
+};
+
+// Feature 337: sorts 'spans' by track and first sector and merges the overlapping or adjacent spans of a
+// track (empty spans are dropped); returns the number of merged spans at the start of 'spans'.
+inline int SalIsoMergeStreamSpans(SalIsoStreamSpan* spans, int n)
+{
+    if (spans == nullptr || n <= 0)
+        return 0;
+    std::sort(spans, spans + n, [](const SalIsoStreamSpan& a, const SalIsoStreamSpan& b)
+              { return a.Track != b.Track ? a.Track < b.Track : a.First < b.First; });
+    int m = 0;
+    for (int i = 0; i < n; i++)
+    {
+        if (spans[i].End <= spans[i].First)
+            continue;
+        if (m > 0 && spans[m - 1].Track == spans[i].Track && spans[i].First <= spans[m - 1].End)
+        {
+            if (spans[i].End > spans[m - 1].End)
+                spans[m - 1].End = spans[i].End;
+        }
+        else
+            spans[m++] = spans[i];
+    }
+    return m;
+}
+
+// Feature 337: how many of the 'trackSectors' sectors of track 'track' no merged span (SalIsoMergeStreamSpans)
+// covers.
+inline long long SalIsoStreamUncovered(const SalIsoStreamSpan* merged, int n, int track, long long trackSectors)
+{
+    if (trackSectors <= 0)
+        return 0;
+    long long covered = 0;
+    for (int i = 0; merged != nullptr && i < n; i++)
+    {
+        if (merged[i].Track != track)
+            continue;
+        long long f = merged[i].First < 0 ? 0 : merged[i].First;
+        long long e = merged[i].End < trackSectors ? merged[i].End : trackSectors;
+        if (e > f)
+            covered += e - f;
+    }
+    return trackSectors - covered;
+}
+
+// Feature 337: the next run [*gapFirst, *gapEnd) of the sectors of track 'track' that no merged span covers, at
+// or after '*cursor' (start with 0; it is moved past the run). False = no further run.
+inline bool SalIsoStreamNextGap(const SalIsoStreamSpan* merged, int n, int track, long long trackSectors,
+                                long long* cursor, long long* gapFirst, long long* gapEnd)
+{
+    if (cursor == nullptr || gapFirst == nullptr || gapEnd == nullptr)
+        return false;
+    long long pos = *cursor < 0 ? 0 : *cursor;
+    for (int i = 0; merged != nullptr && i < n && pos < trackSectors; i++)
+    {
+        if (merged[i].Track != track || merged[i].End <= pos)
+            continue;
+        if (merged[i].First > pos)
+        {
+            *gapFirst = pos;
+            *gapEnd = merged[i].First < trackSectors ? merged[i].First : trackSectors;
+            *cursor = *gapEnd;
+            return true;
+        }
+        pos = merged[i].End;
+    }
+    if (pos < trackSectors)
+    {
+        *gapFirst = pos;
+        *gapEnd = trackSectors;
+        *cursor = trackSectors;
+        return true;
+    }
+    *cursor = pos;
+    return false;
+}
+
+// Feature 337: where a stored sector of 'sectorRawSize' bytes holds its 2324 bytes of Form 2 user data
+// (after the 8-byte subheader): 24 in a raw sector (2352 bytes, also with subchannel data after it), 8 in
+// a 2336-byte Mode 2 sector; -1 = no Form 2 data can be stored (a stream track never has such a size).
+inline long long SalIsoForm2PayloadOffset(long long sectorRawSize)
+{
+    if (sectorRawSize >= 2352)
+        return 24;
+    if (sectorRawSize == 2336)
+        return 8;
+    return -1;
+}
+
+// Feature 337: is a sector's Form 2 user data ('len' bytes read) empty - read whole and all zero? A short
+// read is not (fails closed); a Form 1 sector's ECC lies in these bytes, so it never passes as empty.
+inline bool SalIsoPayloadEmpty(const unsigned char* payload, long long len)
+{
+    if (payload == nullptr || len != SAL_ISO_FORM2_PAYLOAD)
+        return false;
+    for (int i = 0; i < SAL_ISO_FORM2_PAYLOAD; i++)
+    {
+        if (payload[i] != 0)
+            return false;
+    }
+    return true;
+}
+
+// Feature 337: does a stream track that a listed file starts in leave the listing incomplete? Yes when it
+// has no sector, when more than SAL_ISO_STREAM_GAP_SECTORS of its sectors are uncovered (they are not
+// read), or when an uncovered sector is not empty ('gapsEmpty' false - also an unreadable one).
+inline bool SalIsoStreamGapsMark(long long trackSectors, long long uncovered, bool gapsEmpty)
+{
+    if (trackSectors <= 0 || uncovered < 0 || uncovered > SAL_ISO_STREAM_GAP_SECTORS)
+        return true;
+    return !gapsEmpty;
 }
