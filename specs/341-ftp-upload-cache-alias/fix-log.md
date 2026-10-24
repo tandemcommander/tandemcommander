@@ -226,3 +226,16 @@ question; now - upload 2 sends `CWD /ALIAS-REN / PORT ... / TYPE A / LIST`, the 
 Limits (in addition to those above): a panel listing taken before a change under another name is
 not used by an upload into the panel even when the change was elsewhere on the server (one more
 `LIST`); after 1,000 changed server names in one session no panel listing is used.
+
+### Review 3, first attempt (stopped - the session ended during its probe run)
+
+The reviewer's own probe run was cut off; on the next session its registry backup
+(`%TEMP%\tc341_backup.reg`, made 14:17) was found and restored first (`reg delete` + `reg import`
+of the backup, then an export: SHA-256 identical, BFC2D583... - the pre-probe hash of every run of
+this feature); the backup and the fixture `%TEMP%\tc341` were removed afterwards. Its partial
+result (`%TEMP%\rev341\run1.log`, HEAD 53e4ca36): ALIAS-REN, ALIAS-UP, SAME-REN, MULTI-REN,
+SEED-ALIAS, SEED-SAME ROW PASS; its own row USER-REN (upload as user `v`, panel as `u`, same
+server) FAIL - another user of one server, outside this item by the spec (user and port keep
+identifying the server); recorded as Inbox item `ftp-upload-cache-other-user-or-port-of-one-server`
+(`review:341`, severity 7, with the trade-off for the maintainer). A fresh review 3 was launched
+(a stopped reviewer does not count as a round).
