@@ -19807,16 +19807,16 @@ static void TestHfsVolumeDeclared333()
     vh[0] = 'H';
     vh[1] = '+';
     vh[3] = 4;
-    CHECK(Hfs333Declared(vh));     // HFS+ version 4
+    CHECK(Hfs333Declared(vh)); // HFS+ version 4
     vh[3] = 5;
-    CHECK(Hfs333Declared(vh));     // the signature declares it; a wrong version is a volume that does not open
+    CHECK(Hfs333Declared(vh)); // the signature declares it; a wrong version is a volume that does not open
     CHECK(Hfs333Declared(vh.substr(0, 2)));
     CHECK(!Hfs333Declared(vh.substr(0, 1)));
     CHECK(!SalHfsVolumeHeaderDeclaresHfsPlus(NULL, 512));
     CHECK(!SalHfsVolumeHeaderDeclaresHfsPlus((const unsigned char*)vh.data(), 0));
     std::string hx = vh;
     hx[1] = 'X';
-    CHECK(!Hfs333Declared(hx));    // HFSX: not read by the plug-in
+    CHECK(!Hfs333Declared(hx)); // HFSX: not read by the plug-in
     std::string plusH = vh;
     plusH[0] = '+';
     plusH[1] = 'H';
