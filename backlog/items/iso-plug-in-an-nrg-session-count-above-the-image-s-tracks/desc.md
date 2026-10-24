@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: an NRG session count above the image's tracks lists past the track table
 type: bug
-status: open
+status: in-progress
 severity: 6
 area: archives
 source: measure:331
 who: agent
 created: 2026-10-24
 updated: 2026-10-24
-verified: -
+verified: 2026-10-24 2b3f0716
 effort: S
-feature: -
+feature: 340
 related: []
 depends-on: []
 reason: -
@@ -51,3 +51,5 @@ incomplete as feature 328 / 330 do), never read past the array.
 
 - 2026-10-24 — created (source measure:331)
 - 2026-10-24 — moved to Next position 4
+- 2026-10-24 — verified at 2b3f0716: reproduced at 2b3f0716: hidden-desktop probe, NRG with SINF 1,2 / 1,1000 / 1,1,1 / -1,2 -> TRACE_C index out of range in ListTracks; 1,-1 leaves session 2 out
+- 2026-10-24 — run started, feature 340
