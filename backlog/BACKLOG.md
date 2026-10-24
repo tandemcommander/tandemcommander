@@ -267,6 +267,7 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: HFS+ resource forks beside file data are dropped by Unpack](items/iso-plug-in-an-hfs-file-with-data-and-a-resource-fork-loses/desc.md) | decision | 5 | archives | measure:339 | 2026-10-24 |
 
 ## Parked
 

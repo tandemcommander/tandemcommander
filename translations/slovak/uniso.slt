@@ -75,6 +75,8 @@ COMMENT,"Slovenská verzia"
 1059,1,"Tento obraz disku obsahuje príliš dlhú cestu, ktorú Tandem Commander nevie spracovať."
 1060,1,"Nie je možné dokončiť operáciu kvôli príliš dlhému názvu."
 1061,1,"Súbor katalógu oddielu HFS Plus je poškodený.\nOddiel sa nedá prečítať."
+1062,1,"Súbor je komprimovaný súborovým systémom HFS Plus, ktorý nie je podporovaný.\nSúbor nebude extrahovaný."
+1063,1,"Obsah súboru je uložený iba v jeho vetve zdrojov, ktorú nie je možné extrahovať.\nSúbor nebude extrahovaný."
 1070,1,"Nie je možné načítať hlavičku zväzku. Súbor je malý."
 1071,1,"Tento zväzok je zašifrovaný.\nZašifrované zväzky nie sú podporované."
 

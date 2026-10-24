@@ -75,6 +75,8 @@ COMMENT,"Versión en español"
 1059,1,"Esta imagen de disco contiene una ruta demasiado larga que Tandem Commander no puede gestionar."
 1060,1,"Imposible terminar la operación porque el nombre es demasiado largo."
 1061,1,"El fichero Catálogo de la partición HFS Plus está dañado.\nNo se puede leer la partición."
+1062,1,"El fichero está comprimido por el sistema de archivos HFS Plus, lo cual no es admitido.\nEl fichero no será extraído."
+1063,1,"El contenido del fichero está almacenado únicamente en su bifurcación de recursos, que no se puede extraer.\nEl fichero no será extraído."
 1070,1,"Imposible leer cabecera de paquete. Fichero demasiado pequeño."
 1071,1,"Este paquete está encriptado.\nNo se admiten paquetes encriptados."
 

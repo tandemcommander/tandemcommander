@@ -75,6 +75,8 @@ COMMENT,"Versiunea romana"
 1059,1,"Aceasta imagine de disk contine o cale prea lunga pe care Tandem Commander nu o poate rezolva."
 1060,1,"Nu pot termina operatiunea din cauza numelui prea lung."
 1061,1,"Fișierul catalog al partiției HFS Plus este deteriorat.\nPartiția nu poate fi citită."
+1062,1,"Fișierul este comprimat de sistemul de fișiere HFS Plus, care nu este acceptat.\nFișierul nu va fi extras."
+1063,1,"Conținutul fișierului este stocat numai în ramura de resurse a acestuia, care nu poate fi extrasă.\nFișierul nu va fi extras."
 1070,1,"Nu pot citi inceputul pachetului. Fisier prea mic."
 1071,1,"Acest pachet e criptat.\nPachetele criptate nu sunt suportate."
 

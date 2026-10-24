@@ -75,6 +75,8 @@ COMMENT,"Magyar változat"
 1059,1,"A lemezkép túl hosszú elérési utat tartalmaz, melyet az Tandem Commander nem tud kezelni."
 1060,1,"A művelet nem fejezhető be, mert a fájlnév túl hosszú."
 1061,1,"A HFS Plus partíció katalógusfájlja sérült.\nA partíció nem olvasható."
+1062,1,"A fájlt a HFS Plus fájlrendszer tömörítette, amelyet a rendszer nem támogat.\nA fájl nem lesz kibontva."
+1063,1,"A fájl tartalma kizárólag a resource forkban van tárolva, amelyből nem lehet kibontani.\nA fájl nem lesz kibontva."
 1070,1,"Nem olvasható a csomag fejléce. A fájl túl kicsi."
 1071,1,"A csomag titkosítva van.\nA titkosított csomagok nem támogatottak."
 

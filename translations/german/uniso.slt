@@ -75,6 +75,8 @@ COMMENT,"Deutsche Version"
 1059,1,"Das Datenträgerabbild enthält eine zulange Pfadangabe, diese kann Tandem Commander nicht verarbeiten."
 1060,1,"Vorgang kann nicht beendet werden, weil der Name zu lang ist."
 1061,1,"Die Katalogdatei der HFS-Plus-Partition ist beschädigt.\nDie Partition kann nicht gelesen werden."
+1062,1,"Die Datei ist durch das HFS-Plus-Dateisystem komprimiert, das nicht unterstützt wird.\nDie Datei wird nicht entpackt."
+1063,1,"Der Inhalt der Datei ist ausschließlich in ihrer Ressourcen-Fork gespeichert, die nicht entpackt werden kann.\nDie Datei wird nicht entpackt."
 1070,1,"Paketkopf kann nicht gelesen werden. Datei ist zu klein."
 1071,1,"Dieses Paket ist verschlüsslet.\nVerschlüsselte Pakete werden nicht unterstützt."
 

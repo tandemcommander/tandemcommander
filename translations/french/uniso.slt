@@ -75,6 +75,8 @@ COMMENT,"Version française"
 1059,1,"L'image disque contient un nom de chemin trop long, qu'Tandem Commander ne peut pas prendre en charge."
 1060,1,"Impossible de terminer l'opération en raison d'un nom de fichier trop long."
 1061,1,"Le fichier Catalogue de la partition HFS Plus est endommagé.\nLa partition est illisible."
+1062,1,"Le fichier est compressé par le système de fichiers HFS Plus, qui n’est pas pris en charge.\nLe fichier ne sera pas extrait."
+1063,1,"Le contenu du fichier est stocké uniquement dans sa branche de ressources, qui ne peut pas être extraite.\nLe fichier ne sera pas extrait."
 1070,1,"Impossible de lire l'entête du paquet. Le fichier est trop petit."
 1071,1,"Le paquet est chiffré.\nLes paquets chiffrés ne sont pas pris en charge."
 

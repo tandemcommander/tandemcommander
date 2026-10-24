@@ -75,6 +75,8 @@ COMMENT,"Nederlandse versie"
 1059,1,"De disk image bevat een te lang pad waar Tandem Commander niet mee om kan gaan."
 1060,1,"Kan bewerking niet afmaken omdat de naam te lang is."
 1061,1,"Het catalogusbestand van de HFS Plus-partitie is beschadigd.\nDe partitie kan niet worden gelezen."
+1062,1,"Het bestand is gecomprimeerd door het HFS Plus-bestandssysteem, dat niet wordt ondersteund.\nHet bestand wordt niet uitgepakt."
+1063,1,"De inhoud van het bestand is uitsluitend opgeslagen in de resource-fork, die niet kan worden uitgepakt.\nHet bestand wordt niet uitgepakt."
 1070,1,"Kan het pakket kenmerk niet lezen. Bestand is te klein."
 1071,1,"Dit pakket is gecodeerd.\nGecodeerde pakketten worden niet ondersteund."
 

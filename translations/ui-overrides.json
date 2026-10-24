@@ -693,20 +693,28 @@
     "_feature_322": [
       "IDS_ERR_HFS_BTREE_DAMAGED: the module's established term for the Catalog file (strings 1056/1057: cs/sk 'Soubor/Súbor katalogu', fr 'fichier Catalogue', es 'fichero Catálogo'); DeepL left a space before the line break (de/nl/hu/sk) and dropped the full stop (fr/es)."
     ],
+    "_feature_339": [
+      "IDS_ERR_HFS_FILE_COMPRESSED / IDS_ERR_HFS_FILE_RSRC_ONLY: 'The file will not be extracted.' as the module's string 1058 says it (cs 'nebude extrahován' - DeepL 'rozbalen' in one, sk 'nebude extrahovaný', de 'entpackt' - DeepL 'extrahiert' in one, es 'fichero' / 'no será extraído'); es: DeepL dropped a full stop and left a space before the line break."
+    ],
     "czech": {
-      "IDS_ERR_HFS_BTREE_DAMAGED": "Soubor katalogu oddílu HFS Plus je poškozen.\\nOddíl nelze přečíst."
+      "IDS_ERR_HFS_BTREE_DAMAGED": "Soubor katalogu oddílu HFS Plus je poškozen.\\nOddíl nelze přečíst.",
+      "IDS_ERR_HFS_FILE_COMPRESSED": "Soubor je komprimován souborovým systémem HFS Plus, který není podporován.\\nSoubor nebude extrahován."
     },
     "slovak": {
-      "IDS_ERR_HFS_BTREE_DAMAGED": "Súbor katalógu oddielu HFS Plus je poškodený.\\nOddiel sa nedá prečítať."
+      "IDS_ERR_HFS_BTREE_DAMAGED": "Súbor katalógu oddielu HFS Plus je poškodený.\\nOddiel sa nedá prečítať.",
+      "IDS_ERR_HFS_FILE_COMPRESSED": "Súbor je komprimovaný súborovým systémom HFS Plus, ktorý nie je podporovaný.\\nSúbor nebude extrahovaný."
     },
     "german": {
-      "IDS_ERR_HFS_BTREE_DAMAGED": "Die Katalogdatei der HFS-Plus-Partition ist beschädigt.\\nDie Partition kann nicht gelesen werden."
+      "IDS_ERR_HFS_BTREE_DAMAGED": "Die Katalogdatei der HFS-Plus-Partition ist beschädigt.\\nDie Partition kann nicht gelesen werden.",
+      "IDS_ERR_HFS_FILE_RSRC_ONLY": "Der Inhalt der Datei ist ausschließlich in ihrer Ressourcen-Fork gespeichert, die nicht entpackt werden kann.\\nDie Datei wird nicht entpackt."
     },
     "french": {
       "IDS_ERR_HFS_BTREE_DAMAGED": "Le fichier Catalogue de la partition HFS Plus est endommagé.\\nLa partition est illisible."
     },
     "spanish": {
-      "IDS_ERR_HFS_BTREE_DAMAGED": "El fichero Catálogo de la partición HFS Plus está dañado.\\nNo se puede leer la partición."
+      "IDS_ERR_HFS_BTREE_DAMAGED": "El fichero Catálogo de la partición HFS Plus está dañado.\\nNo se puede leer la partición.",
+      "IDS_ERR_HFS_FILE_COMPRESSED": "El fichero está comprimido por el sistema de archivos HFS Plus, lo cual no es admitido.\\nEl fichero no será extraído.",
+      "IDS_ERR_HFS_FILE_RSRC_ONLY": "El contenido del fichero está almacenado únicamente en su bifurcación de recursos, que no se puede extraer.\\nEl fichero no será extraído."
     },
     "dutch": {
       "IDS_ERR_HFS_BTREE_DAMAGED": "Het catalogusbestand van de HFS Plus-partitie is beschadigd.\\nDe partitie kan niet worden gelezen."
