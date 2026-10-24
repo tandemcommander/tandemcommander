@@ -139,6 +139,7 @@ CISOImage::Track::Track()
     FileSystem = NULL;
     Bootable = FALSE;
     RawLost = FALSE;
+    Form2Stream = FALSE;
 }
 
 CISOImage::Track::~Track()
@@ -959,6 +960,8 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                             }
                         }
                         Tracks[trk]->RawLost = outside || !form2;
+                        // feature 336: a stream the listing must find a file for (MarkUncoveredStreams)
+                        Tracks[trk]->Form2Stream = !outside && form2;
                         ret = ERR_OK; // we can handle raw data tracks, so we turn the error into OK (what rascals we are :-D)
                     }
                     if (ret == ERR_TERMINATE)
@@ -1395,15 +1398,9 @@ BYTE CISOImage::GetTrackFromExtent(DWORD extent)
 {
     CALL_STACK_MESSAGE2("CISOImage::GetTrackFromExtent(%u)", extent);
 
-    int track;
-    for (track = 1; track < Tracks.Count; track++)
-    {
-        Track* t = Tracks[track];
-        if (extent < t->ExtentOffset)
-            return track - 1;
-    }
-
-    return Tracks.Count - 1;
+    // feature 336: the rule is shared with MarkUncoveredStreams (salisotrack.h)
+    return (BYTE)SalIsoTrackOfExtent(Tracks.Count, extent, [this](int t) -> unsigned long
+                                     { return Tracks[t]->ExtentOffset; });
 }
 
 BOOL CISOImage::ListDirectory(char* path, int session, CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
@@ -1432,6 +1429,81 @@ void CISOImage::MarkTrack(int track, int outcome)
 BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
     CALL_STACK_MESSAGE1("CISOImage::ListImage(, )");
+
+    BOOL ret = ListTracks(dir, pluginData);
+    // feature 336: a Form 2 stream no listed file starts in is in no listing - in every listing mode
+    MarkUncoveredStreams(dir);
+    return ret;
+}
+
+void CISOImage::NoteListedFileStarts(const CSalamanderDirectoryAbstract* dir, bool* covered)
+{
+    // the listed tree, walked without recursion (a deep tree must not exhaust the stack)
+    TDirectArray<const CSalamanderDirectoryAbstract*> pending(16, 16);
+    pending.Add(dir);
+    while (pending.IsGood() && pending.Count > 0)
+    {
+        const CSalamanderDirectoryAbstract* d = pending[pending.Count - 1];
+        pending.Delete(pending.Count - 1);
+        if (d == NULL)
+            continue;
+        int count = d->GetFilesCount();
+        int i;
+        for (i = 0; i < count; i++)
+        {
+            const CFileData* file = d->GetFile(i);
+            // an audio track's virtual file has no position (NULL)
+            const CFilePos* fp = file != NULL ? (const CFilePos*)file->PluginData : NULL;
+            if (fp != NULL)
+                SalIsoNoteFileStart(covered, Tracks.Count, fp->Extent, file->Size.Value, [this](int t) -> unsigned long
+                                    { return Tracks[t]->ExtentOffset; });
+        }
+        count = d->GetDirsCount();
+        for (i = 0; i < count; i++)
+            pending.Add(d->GetSalDir(i));
+    }
+    if (!pending.IsGood())
+    {
+        // out of memory: the walk is incomplete - no stream counts as covered (fails closed)
+        int t;
+        for (t = 0; t < Tracks.Count; t++)
+            covered[t] = false;
+    }
+}
+
+void CISOImage::MarkUncoveredStreams(const CSalamanderDirectoryAbstract* dir)
+{
+    BOOL anyStream = FALSE;
+    int track;
+    for (track = 0; track < Tracks.Count; track++)
+        anyStream = anyStream || Tracks[track]->Form2Stream;
+    if (!anyStream)
+        return;
+
+    bool* covered = new bool[Tracks.Count];
+    if (covered == NULL)
+    {
+        ListingLeftOut.SetIncomplete(); // nothing can be checked: fails closed
+        return;
+    }
+    for (track = 0; track < Tracks.Count; track++)
+        covered[track] = false;
+    if (dir != NULL)
+        NoteListedFileStarts(dir, covered);
+    for (track = 0; track < Tracks.Count; track++)
+    {
+        if (SalIsoStreamTrackMarksListing(Tracks[track]->Form2Stream != FALSE, covered[track]))
+        {
+            TRACE_I("CISOImage::MarkUncoveredStreams(): no listed file starts in the Form 2 track " << track << " - the listing is incomplete");
+            ListingLeftOut.SetIncomplete();
+        }
+    }
+    delete[] covered;
+}
+
+BOOL CISOImage::ListTracks(CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
+{
+    CALL_STACK_MESSAGE1("CISOImage::ListTracks(, )");
 
     // feature 222: a path part of up to MAX_PATH - 5 bytes + '\\' + a name of up to 3 * MAX_PATH
     // bytes (the core takes names of 255 UTF-16 units now) - the file systems append to it in place

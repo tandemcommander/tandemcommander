@@ -85,6 +85,10 @@ public:
         // or its sector 16 is not a Mode 2 Form 2 sector (a file system area no reader understands - a
         // Video CD's MPEG stream is Form 2): the track's content is in no listing
         BOOL RawLost;
+        // feature 336: no file system was found and the track is a Form 2 stream (RawLost not set) - its
+        // content is extracted only through a listed file that starts in it; without one the listing is
+        // marked incomplete (MarkUncoveredStreams)
+        BOOL Form2Stream;
 
         Track();
         virtual ~Track();
@@ -191,6 +195,12 @@ public:
 protected:
     DWORD ReadDataByPos(LONGLONG position, DWORD size, void* data);
     BOOL ListDirectory(char* path, int session, CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
+    // the listing of the tracks (ListImage before feature 336)
+    BOOL ListTracks(CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
+    // feature 336: marks ListingLeftOut incomplete for each Form 2 stream track no listed file of more than
+    // zero bytes starts in (salisotrack.h); 'dir' = the listing ListTracks built
+    void MarkUncoveredStreams(const CSalamanderDirectoryAbstract* dir);
+    void NoteListedFileStarts(const CSalamanderDirectoryAbstract* dir, bool* covered);
 
     // support
     void DetectSectorType();

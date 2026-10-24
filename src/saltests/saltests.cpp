@@ -20099,6 +20099,94 @@ static void TestIsoSectorForm2_335()
     CHECK(SalIsoForm2SectorsToCheck(0x7FFFFFFFFFFF0000LL, r, 0, 0, 0x7FFFFFFFFFFFFFFFLL) == 16);
 }
 
+// feature 336: a Form 2 stream track (335) marks the listing unless a listed file of more than zero bytes
+// starts in it - by the unpack's own rule for the track a file is read from (GetTrackFromExtent)
+static void TestIsoStreamCovered_336()
+{
+    // the mapping: S-VCD's layout - track 1 from sector 0, track 2 (the stream) from sector 176
+    const unsigned long two[] = {0, 176};
+    auto offTwo = [&](int t) -> unsigned long
+    { return two[t]; };
+    CHECK(SalIsoTrackOfExtent(2, 0, offTwo) == 0);
+    CHECK(SalIsoTrackOfExtent(2, 24, offTwo) == 0); // a.txt
+    CHECK(SalIsoTrackOfExtent(2, 175, offTwo) == 0);
+    CHECK(SalIsoTrackOfExtent(2, 176, offTwo) == 1); // AVSEQ01.DAT at the stream's first sector
+    CHECK(SalIsoTrackOfExtent(2, 239, offTwo) == 1);
+    CHECK(SalIsoTrackOfExtent(2, 0xFFFFFFFFUL, offTwo) == 1); // past every track: the last one
+    // three tracks (S-VCDCOV2): the stream tracks from 176 and 240
+    const unsigned long three[] = {0, 176, 240};
+    auto offThree = [&](int t) -> unsigned long
+    { return three[t]; };
+    CHECK(SalIsoTrackOfExtent(3, 175, offThree) == 0);
+    CHECK(SalIsoTrackOfExtent(3, 176, offThree) == 1);
+    CHECK(SalIsoTrackOfExtent(3, 239, offThree) == 1);
+    CHECK(SalIsoTrackOfExtent(3, 240, offThree) == 2);
+    // one track, none; a first track that does not start at 0 (an extent before it maps to it)
+    CHECK(SalIsoTrackOfExtent(1, 12345, offThree) == 0);
+    CHECK(SalIsoTrackOfExtent(0, 12345, offThree) == -1);
+    const unsigned long late[] = {150, 300};
+    auto offLate = [&](int t) -> unsigned long
+    { return late[t]; };
+    CHECK(SalIsoTrackOfExtent(2, 10, offLate) == 0);
+    // offsets out of order: the first track whose offset is above the extent decides (as the unpack does)
+    const unsigned long odd[] = {0, 300, 200};
+    auto offOdd = [&](int t) -> unsigned long
+    { return odd[t]; };
+    CHECK(SalIsoTrackOfExtent(3, 250, offOdd) == 0);
+    CHECK(SalIsoTrackOfExtent(3, 350, offOdd) == 2);
+
+    // which tracks a listing covers
+    bool cov[3] = {false, false, false};
+    SalIsoNoteFileStart(cov, 3, 24, 2, offThree); // a.txt
+    CHECK(cov[0] && !cov[1] && !cov[2]);
+    SalIsoNoteFileStart(cov, 3, 100, 200 * 2048ULL, offThree); // starts in track 1, runs on into the stream
+    CHECK(!cov[1] && !cov[2]);
+    SalIsoNoteFileStart(cov, 3, 176, 0, offThree); // zero bytes: covers nothing
+    CHECK(!cov[1]);
+    SalIsoNoteFileStart(cov, 3, 176, 8 * 2048ULL, offThree); // AVSEQ01.DAT
+    CHECK(cov[1] && !cov[2]);
+    SalIsoNoteFileStart(cov, 0, 176, 2048, offThree); // no tracks: nothing written
+    SalIsoNoteFileStart(nullptr, 3, 176, 2048, offThree);
+    CHECK(cov[0] && cov[1] && !cov[2]);
+    SalIsoNoteFileStart(cov, 3, 0xFFFFFFFFUL, 1, offThree); // beyond the last track's start: the last track
+    CHECK(cov[2]);
+
+    // the decision
+    CHECK(SalIsoStreamTrackMarksListing(true, false));
+    CHECK(!SalIsoStreamTrackMarksListing(true, true));
+    CHECK(!SalIsoStreamTrackMarksListing(false, false)); // not a stream: 334 / 335 decide
+    CHECK(!SalIsoStreamTrackMarksListing(false, true));
+
+    // the probe's images: does the listing get marked (any stream track uncovered)?
+    struct
+    {
+        int Tracks;
+        bool Stream[3];
+        unsigned long Extent[3];
+        unsigned long long Size[3];
+        int Files;
+        bool Marks;
+    } cases[] = {
+        {2, {false, true}, {24}, {2}, 1, true},                              // S-VCD, C-VCD: a.txt only
+        {2, {false, true}, {24, 176}, {2, 8 * 2048}, 2, false},              // S-VCDCOV, C-VCDCOV
+        {3, {false, true, true}, {24, 176}, {2, 8 * 2048}, 2, true},         // S-VCDCOV2: track 3 uncovered
+        {3, {false, true, true}, {24, 176, 240}, {2, 2048, 2048}, 3, false}, // both streams covered
+        {2, {false, true}, {24, 176}, {2, 0}, 2, true},                      // S-VCDZERO
+        {2, {false, false}, {24}, {2}, 1, false},                            // no stream (a file system track)
+        {3, {false, true, true}, {24, 239}, {2, 1ULL << 40}, 2, true},       // one big file in track 2 only
+    };
+    for (const auto& c : cases)
+    {
+        bool covered[3] = {false, false, false};
+        for (int f = 0; f < c.Files; f++)
+            SalIsoNoteFileStart(covered, c.Tracks, c.Extent[f], c.Size[f], offThree);
+        bool marks = false;
+        for (int t = 0; t < c.Tracks; t++)
+            marks = marks || SalIsoStreamTrackMarksListing(c.Stream[t], covered[t]);
+        CHECK(marks == c.Marks);
+    }
+}
+
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
 // when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
 // the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
@@ -21208,6 +21296,7 @@ int main(int argc, char** argv)
     TestNrgCdText331();
     TestIsoTrackMarks334();
     TestIsoSectorForm2_335();
+    TestIsoStreamCovered_336();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

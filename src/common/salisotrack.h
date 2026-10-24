@@ -20,6 +20,7 @@
 // after unpacking" then deleted the image and the files of that track.
 // Feature 335: so did a data track within the image whose file system area is damaged - it is told
 // from a Video CD's MPEG stream (Mode 2 Form 2 sectors) by its sector 16.
+// Feature 336: and so did such a Form 2 stream that no listed file starts in.
 //
 //*****************************************************************************
 
@@ -157,4 +158,43 @@ inline int SalIsoForm2SectorsToCheck(long long sector16At, long long sectorRawSi
         at += sectorRawSize;
     }
     return n;
+}
+
+// Feature 336: the track a file's start extent (the disc address of its first sector) lies in - the rule
+// of CISOImage::GetTrackFromExtent, by which the unpack picks the track it reads the file from: the track
+// before the first track (from the second on) whose extent offset is above the extent, else the last
+// track (-1 when there is none). 'extentOffsetOf(t)' gives track t's extent offset.
+template <class TExtentOffsetOf>
+inline int SalIsoTrackOfExtent(int trackCount, unsigned long extent, TExtentOffsetOf extentOffsetOf)
+{
+    for (int t = 1; t < trackCount; t++)
+    {
+        if (extent < extentOffsetOf(t))
+            return t - 1;
+    }
+    return trackCount - 1;
+}
+
+// Feature 336: a listed file of 'size' bytes starting at 'extent' covers the track it starts in
+// (covered[t] = true, 'covered' holds 'trackCount' flags). A file of zero bytes extracts nothing of the
+// track and covers nothing (fails closed).
+template <class TExtentOffsetOf>
+inline void SalIsoNoteFileStart(bool* covered, int trackCount, unsigned long extent, unsigned long long size,
+                                TExtentOffsetOf extentOffsetOf)
+{
+    if (covered == nullptr || size == 0)
+        return;
+    int t = SalIsoTrackOfExtent(trackCount, extent, extentOffsetOf);
+    if (t >= 0 && t < trackCount)
+        covered[t] = true;
+}
+
+// Feature 336: does a track leave the listing incomplete because it is a Form 2 stream (feature 335:
+// no file system, sectors 16..31 Mode 2 Form 2) that no listed file starts in? A Video CD's streams are
+// extracted through its AVSEQnn files, which start in them; a stream no file refers to (in a session of
+// its own, or a Video CD whose directory lost the entries) is in no listing - a whole unpack then fails
+// and "Delete archive after unpacking" keeps the image.
+inline bool SalIsoStreamTrackMarksListing(bool form2Stream, bool fileStartsInTrack)
+{
+    return form2Stream && !fileStartsInTrack;
 }
