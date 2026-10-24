@@ -34,6 +34,24 @@ feature keeps that row as a regression check and changes no UDF code.
 HFS+ is read only as part of a hybrid; the hybrid's listing ignores the HFS+ reader's result, so the
 listing mark is the only way the unpack learns that something was left out.
 
+## Clarifications
+
+### Session 2026-10-24
+
+- Q: Does the UDF reader change in this feature? → A: no - feature 330 already marks a UDF file
+  whose entry cannot be read (measured: U-FILE keeps the image at 6070ac51); a probe row keeps it
+  checked (autonomous run: item - its *Log* "related item ... done in feature 330"; measured)
+- Q: Should a record of a type the reader does not handle still end the HFS+ listing, or be skipped
+  alone? → A: still end it, as today; only the mark is added (autonomous run: conservative - the item's
+  *Expected* asks for the mark only; the existing behaviour is kept for what it does not name)
+- Q: Is a name starting with U+0000 damage (mark) or metadata (no mark)? → A: metadata - TN1150's
+  "\0\0\0\0HFS+ Private Data" folder that macOS creates; its contents (hard-link inodes) are listed at
+  the HFS+ root today, so nothing is lost; marking it would stop every such Mac image from being
+  deleted after an unpack (autonomous run: item - "thread records and the volume-label record, which
+  are not entries, stay skipped without a mark" - the same class: records that are not user entries)
+- Q: Does the user see a message when a record is skipped? → A: no new message or UI string - the
+  image is kept silently, as feature 330's silent cases (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Unpack + delete keeps an HFS+ image whose catalog record was skipped (Priority: P1)
