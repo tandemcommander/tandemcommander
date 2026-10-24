@@ -128,7 +128,8 @@ image is kept, since one of the two files now exists only in the image.
 - **FR-002**: A whole unpack MUST end as failed when a folder of the image could not be created in the target.
 - **FR-003**: A whole unpack MUST end as failed when a file it writes lands on a file that the same unpack
   already wrote (decided by the file system's identity of the files, not by their names); a target file
-  that existed before the unpack and is replaced on the user's answer MUST NOT fail it. The overwrite
+  that existed before the unpack and is replaced on the user's answer MUST NOT fail it - except where the
+  identities cannot be read or remembered (see Edge Cases: then it fails closed and the image is kept). The overwrite
   question and the write itself stay as they are - only the unpack's result changes.
 - **FR-004**: Each file system reader of the plug-in MUST report a file whose extraction ended without all
   its data as not extracted, also when no box was shown for its read error.

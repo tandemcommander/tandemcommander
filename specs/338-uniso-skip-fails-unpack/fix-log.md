@@ -21,3 +21,9 @@ Backlog item `iso-plug-in-a-whole-unpack-counts-a-skipped-file-as-success`.
 ## Decisions
 
 See spec *Clarifications* and research R1-R5.
+
+## Analyze
+
+- Run 1: HIGH F1 (FR-003 vs the fail-closed edge case) - FR-003 qualified; MEDIUM E1 (FR-007 without a task)
+  - T018 added; LOW E2 / E3 (saltests mutant, no-UI-string check) - named in T003 / T014.
+- Run 2: no CRITICAL / HIGH; LOW: T018 not in the dependency line (accepted).

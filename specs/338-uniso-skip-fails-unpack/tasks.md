@@ -10,7 +10,7 @@
 ## Phase 2: Foundational (blocking)
 
 - [ ] T002 Create the header-only rules in src/common/salisounpack.h: `SAL_ISO_UNPACK_*` codes, `SalIsoFileUnpackResult`, `SalIsoUnpackItemWhole`, `CSalIsoWholeUnpackTally`, `SalIsoWholeUnpackSucceeded`, `CSalIsoWrittenFiles` (identity keys from src/common/salsamefile.h in hash sets, `Lost` fail-closed)
-- [ ] T003 Add `TestIsoWholeUnpack_338` to src/saltests/saltests.cpp (include salisounpack.h; per-file result table, whole decision, written-set: 128-bit / 64-bit keys, unusable ids, not read, Lost, different volumes) and call it from the runner
+- [ ] T003 Add `TestIsoWholeUnpack_338` to src/saltests/saltests.cpp (include salisounpack.h; per-file result table, whole decision, written-set: 128-bit / 64-bit keys, unusable ids, not read, Lost, different volumes) and call it from the runner; negative control: a mutant of `SalIsoFileUnpackResult` / `SalIsoWholeUnpackSucceeded` fails checks (recorded)
 - [ ] T004 Assert `UNPACK_*` == `SAL_ISO_UNPACK_*` in src/plugins/uniso/isoimage.h (include ../../common/salisounpack.h)
 
 ## Phase 3: User Story 1 - a skipped file keeps the image (P1)
@@ -39,10 +39,11 @@
 
 ## Phase 6: Polish
 
-- [ ] T014 Build (`.\build.cmd`), encoding guard (`python tools/check_encoding.py --strict`), saltests; record in fix-log.md
+- [ ] T014 Build (`.\build.cmd`), encoding guard (`python tools/check_encoding.py --strict`), saltests; FR-005: `git diff main -- '*.rc' '*.rc2' '*.rh'` is empty (no UI string); record in fix-log.md
 - [ ] T015 Probe after: specs/338-uniso-skip-fails-unpack/probe/iso338_probe.ps1 -> 8 RUN rows PASS; negative control (tally ignored) fails the rows again; record
 - [ ] T016 Regressions: probes of 330 (iso330_probe.ps1) and 337 (iso337_probe.ps1) keep their results; record
 - [ ] T017 clang-format of the changed lines only (`--lines`), never whole files (saltests.cpp trap of 334-336)
+- [ ] T018 FR-007: read `UnpackArchive` and `UnpackOneFile` (src/plugins/uniso/uniso.cpp) against the reader changes - their results stay (Copy keeps only Cancel; one file was already `== UNPACK_OK` with a fresh silent mask); record in fix-log.md
 
 ## Dependencies
 
