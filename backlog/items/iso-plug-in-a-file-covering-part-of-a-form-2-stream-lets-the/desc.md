@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a file covering part of a Form 2 stream lets the image be deleted
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:336
@@ -54,3 +54,4 @@ around them) are still deleted - feature 335's reviewer-3 images in `%TEMP%\rev3
 
 - 2026-10-24 — created (source review:336)
 - 2026-10-24 — severity 7: data loss in a narrow scenario (a damaged directory)
+- 2026-10-24 — moved to Next position 1

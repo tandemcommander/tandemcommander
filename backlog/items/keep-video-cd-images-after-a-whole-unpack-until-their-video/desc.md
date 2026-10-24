@@ -1,7 +1,7 @@
 ---
 title: Keep Video CD images after a whole unpack until their video extracts whole?
 type: decision
-status: new
+status: open
 severity: 7
 area: archives
 source: review:336
@@ -72,3 +72,4 @@ narrow scenario (Video CD images with "Delete archive after unpacking").
 ## Log
 
 - 2026-10-24 — created (source review:336)
+- 2026-10-24 — moved to Decisions for the maintainer position 2
