@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4781,3 +4781,31 @@ a few early ones are out of sequence).
   fail 9 / 7, no track-end clamp 6, one sector 12); refute-first reviews: 1-3 stopped (partial work, one
   MUST-level hole each, fixed), 4 (no MUST; SHOULD the window as a tested rule - fixed; SHOULD a Form 2
   track no file covers - Inbox).
+- 336-uniso-form2-uncovered: a disc image (NRG, CCD/IMG) with a Mode 2 Form 2 stream track (335: no file
+  system, sectors 16..31 Form 2 - a Video CD's MPEG track) that no listed file refers to (a stream in a
+  session of its own, a Video CD whose directory lost its AVSEQnn entries) listed nothing and was not
+  marked - Unpack with "Delete archive after unpacking" deleted the image with the stream - now
+  `CISOImage::ListImage` = `ListTracks` + `MarkUncoveredStreams`: when a track is `Track::Form2Stream`
+  (set in `Open` to `!outside && form2`), the listed tree is walked without recursion and each ISO 9660
+  file of more than zero bytes covers the track its start extent maps to by the unpack's own rule
+  (`SalIsoTrackOfExtent`, which `GetTrackFromExtent` now calls; `SalIsoNoteFileStart` in
+  `src/common/salisotrack.h`); an uncovered stream marks `ListingLeftOut` (`SalIsoStreamTrackMarksListing`)
+  - a whole unpack fails, the image is kept. No UI string. Traps: the installed program ran at the start
+  (probes refused until it exited); HFS+ / UDF `CFilePos::Extent` is not a disc address (only ISO 9660
+  entries cover - review 1) and the unpack keeps the track in a BYTE (no track above 255 covers -
+  review 2); a covered real Video CD's video files still extract cut to 2048 of 2324 bytes a sector and
+  the image is deleted (review 1 measured 61,272 bytes lost on a vcdimager VCD - the cut is Inbox
+  `iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may`, the interim choice decision
+  `keep-video-cd-images-after-a-whole-unpack-until-their-video`); a Bash here-document again lost a
+  fix-up's backslashes, and a clang-format call from PowerShell reformatted all of `saltests.cpp`
+  (restored from HEAD). Limits: a file that starts in a stream covers it however little it holds (Inbox
+  `iso-plug-in-a-file-covering-part-of-a-form-2-stream-lets-the`); 335's synthetic C-VCD / C-VCDREAL keep
+  the image now (no file covers them). From backlog item
+  `iso-plug-in-a-form-2-track-that-no-listed-file-covers-is`. Probe `iso336_probe` (335's rows + covered /
+  uncovered stream images by `mkimg336.sh` / `img336.py`) with the mark disabled 36 / 6 -> 44 / 0, with
+  "Session NN" folders off 6 / 0 (review 2's negative control on main fails MF-FORM2); real vcdimager VCD /
+  SVCD (335 reviewer 3's `rev335c_probe`) 10 / 0; 322 18 / 0, 329 14 / 0, 330 30 / 0, 333 20 / 0, 334 23 / 1
+  (S-RAW, 335's intended change); saltests 28,565 -> 28,602 / 0 (`TestIsoStreamCovered_336`; mutants
+  coverage ignored / empty files cover fail 3 / 2); refute-first reviews: 1 (MUST the pre-existing Video
+  CD cut - out of scope, decision item; SHOULD content check, NOTE ISO 9660 only - fixed), 2 (no MUST;
+  NOTEs fixed or Inbox).

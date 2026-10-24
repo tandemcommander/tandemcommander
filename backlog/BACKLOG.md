@@ -17,7 +17,6 @@ Last triaged: 2026-10-24
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a Form 2 track that no listed file covers is deleted with the image](items/iso-plug-in-a-form-2-track-that-no-listed-file-covers-is/desc.md) | bug | 7 | archives | 336 |
 
 ## Next
 
