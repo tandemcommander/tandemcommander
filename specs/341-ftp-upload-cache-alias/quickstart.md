@@ -11,6 +11,7 @@ Prerequisites: Python (for `ftpmini_hide.py`), the Debug x64 build.
    powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\341-ftp-upload-cache-alias\probe\result_after.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\341-ftp-upload-cache-alias\probe\ftp341_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe"
    ```
 
-   Expected: ALIAS-REN, ALIAS-UP, SAME-REN ROW and END PASS (6 / 0); on `main` ALIAS-REN and
-   ALIAS-UP FAIL (`probe/result_main.txt`).
+   Expected: ALIAS-REN, ALIAS-UP, SAME-REN, DIFF-KEEP ROW and END PASS (8 / 0); on `main`
+   ALIAS-REN and ALIAS-UP FAIL (`probe/result_main.txt`). DIFF-KEEP needs a second server on
+   127.0.0.2 (`probe/ftpmini_at.py`, started by the probe).
 4. Regression: feature 323's `ftp302_probe.ps1` -> 16 / 0.

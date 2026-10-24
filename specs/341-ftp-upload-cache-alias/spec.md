@@ -98,7 +98,8 @@ Uploads to two servers whose known addresses differ do not make each other list 
 
 **Why this priority**: keeps the cache's purpose (fewer listings) for the common case.
 
-**Independent Test**: unit checks of the identity rule (saltests).
+**Independent Test**: unit checks of the identity rule (saltests); probe row DIFF-KEEP (a second
+server on 127.0.0.2: a rename there leaves the cache of an upload to `localhost` trusted).
 
 **Acceptance Scenarios**:
 
@@ -151,6 +152,8 @@ Uploads to two servers whose known addresses differ do not make each other list 
 - **SC-001**: Probe rows ALIAS-REN and ALIAS-UP: FAIL on `main` -> PASS (question shown, server
   file unchanged, no store sent before the answer).
 - **SC-002**: Control SAME-REN and feature 323's probe `ftp302_probe` (16 rows) stay PASS.
+- **SC-002a**: Probe row DIFF-KEEP PASS: two servers with known, different addresses keep their
+  caches (upload 2 stores without listing again); it fails when lookups are not remembered.
 - **SC-003**: saltests: the identity rule's checks pass, 0 failed overall.
 - **SC-004**: No new network request: no new lookup call site; the only new code on the lookup
   path records a result already received.

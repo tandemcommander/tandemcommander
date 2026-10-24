@@ -21,6 +21,12 @@
                  n.txt (folder "second") to localhost:/ALIAS-UP: PASS = no second STOR n.txt, the
                  question for n.txt, the server's n.txt keeps upload 2's content.
       SAME-REN   control (feature 323's REN-UP): everything at 127.0.0.1 - must stay PASS.
+      DIFF-KEEP  two different servers keep their caches: a second server (ftpmini_at.py) on
+                 127.0.0.2, same port; upload 1 to localhost (server 1, its lookup records
+                 127.0.0.1) kept open; the panel at 127.0.0.2 renames a.txt; upload 2 of a new
+                 local file to localhost: PASS = it is stored without listing the folder again
+                 (the cache of localhost was kept). Fails when the lookups are not recorded
+                 (an unknown address reads as "maybe the same server").
     The product's registry key is exported, restored and compared. Exit code = FAIL rows.
 
 .NOTES
@@ -33,9 +39,10 @@ param(
     [string[]]$Only,
     [string]$Python = 'python',
     [int]$Port = 2141,
-    [string]$Repo = (Join-Path $PSScriptRoot '..\..\..')
+    [string]$Repo   # the repository root (default: three folders above this script)
 )
 $ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..\..')).Path }
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
 if ($Only) { $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 function Want([string]$n) { return (-not $Only) -or (@($Only | Where-Object { $n -like ($_ + '*') }).Count -gt 0) }
@@ -47,12 +54,16 @@ if ($others.Count) { Write-Output ('NOT RUN: tandemcommander.exe already runs: '
 $Root = $TempRoot + '\tc341'
 $StartDir = $Root + '\start'
 $FtpSrv = @{ Root = ($Root + '\srv'); Log = ($Root + '\ftp.log'); Port = $Port; Enc = 'utf-8'; Proc = $null }
+$FtpSrv2 = @{ Root = ($Root + '\srv2'); Log = ($Root + '\ftp2.log'); Port = $Port; Enc = 'utf-8'; Proc = $null; Addr = '127.0.0.2' }
+$MiniAt = Join-Path $PSScriptRoot 'ftpmini_at.py'
 $MiniPy = Join-Path $Repo 'specs\323-ftp-upload-cache-args\probe\ftpmini_hide.py'
 
 function Start-Srv($S) {
-    $S.Proc = Start-Process -FilePath $Python -ArgumentList @('-I', ('"{0}"' -f $MiniPy), ('"{0}"' -f $S.Root), $S.Port, ('"{0}"' -f $S.Log), $S.Enc) -PassThru -WindowStyle Hidden
+    $addr = '127.0.0.1'; $pre = @(('"{0}"' -f $MiniPy))
+    if ($S.Addr) { $addr = $S.Addr; $pre = @(('"{0}"' -f $MiniAt), $S.Addr) }
+    $S.Proc = Start-Process -FilePath $Python -ArgumentList (@('-I') + $pre + @(('"{0}"' -f $S.Root), $S.Port, ('"{0}"' -f $S.Log), $S.Enc)) -PassThru -WindowStyle Hidden
     $sw = [Diagnostics.Stopwatch]::StartNew(); $up = $false
-    while ($sw.Elapsed.TotalSeconds -lt 15 -and -not $up) { Start-Sleep -Milliseconds 300; try { $c = New-Object Net.Sockets.TcpClient('127.0.0.1', $S.Port); $c.Close(); $up = $true } catch { } }
+    while ($sw.Elapsed.TotalSeconds -lt 15 -and -not $up) { Start-Sleep -Milliseconds 300; try { $c = New-Object Net.Sockets.TcpClient($addr, $S.Port); $c.Close(); $up = $true } catch { } }
     return $up
 }
 function Srv-Lines($S, [int]$From) {
@@ -88,9 +99,9 @@ function Show($names) { return (($names | ForEach-Object { Esc $_ }) -join ',') 
 function ReadSrv([string]$File) { try { return [IO.File]::ReadAllText($LP + $File) } catch { return '<none>' } }
 
 # 288's connect (only before any operation exists: it answers every dialog of the process)
-function Connect([int]$Id, [string]$Dir) {
+function Connect([int]$Id, [string]$Dir, [string]$SrvHost = '127.0.0.1') {
     $notes = @()
-    [void](Do-ChangeDir $Id ('ftp://u:p@127.0.0.1:' + $FtpSrv.Port + '/' + $Dir))
+    [void](Do-ChangeDir $Id ('ftp://u:p@' + $SrvHost + ':' + $FtpSrv.Port + '/' + $Dir))
     $sw = [Diagnostics.Stopwatch]::StartNew(); $quiet = [Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 30 -and $quiet.Elapsed.TotalSeconds -lt 3) {
         $acted = $false
@@ -178,7 +189,7 @@ function Drive([int]$Id, [int]$Cmd, [scriptblock]$Edit, [double]$Quiet = 4, [dou
 }
 
 # one row: $Setup prepares <srv>\<Case> and <start>\<Case>; $Body { param($id, $srv, $local) } returns @{ Ok; Facts }
-function Row-Case([string]$Case, [string]$SrvDir, [scriptblock]$Setup, [scriptblock]$Body) {
+function Row-Case([string]$Case, [string]$SrvDir, [scriptblock]$Setup, [scriptblock]$Body, [string]$SrvHost = '127.0.0.1') {
     if (-not (Want $Case)) { return }
     $before = Reports; $id = 0
     $local = $StartDir + '\' + $Case; $srv = $FtpSrv.Root + '\' + $Case
@@ -188,7 +199,7 @@ function Row-Case([string]$Case, [string]$SrvDir, [scriptblock]$Setup, [scriptbl
         $id = Start-P
         [void](Do-ChangeDir $id $local); Sync $id
         KeyIn $id 0 0x09                       # right panel active
-        $conn = Connect $id $SrvDir
+        $conn = Connect $id $SrvDir $SrvHost
         KeyIn $id 1 0x09                       # left (local) active
         Start-Sleep -Milliseconds 1000; Sync $id
         if (-not $conn.Ok) { Row $Case 'ROW' 'FAIL' ("not connected: '{0}' {1}" -f (Tail $conn.Loc 60), $conn.Notes); return }
@@ -248,14 +259,16 @@ $regHash = $(if ($existed) { (Get-FileHash -LiteralPath $backup).Hash } else { '
 $restored = $false; $nf = 0
 try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
-    NewDir $StartDir; NewDir $FtpSrv.Root
+    NewDir $StartDir; NewDir $FtpSrv.Root; NewDir $FtpSrv2.Root
     Set-Config
     $up = Start-Srv $FtpSrv
+    $up2 = Start-Srv $FtpSrv2
     Out 'ftp341_probe (feature 341)'
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; desktop '{1}'; ACP {2}; registry key existed {3}; export SHA-256 {4}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [DeskLib098]::Name(), [Drv098f]::GetACP(), $existed, $regHash)
     Out ("Server  : ftpmini.py utf-8 on 127.0.0.1:{0} - {1}" -f $FtpSrv.Port, $(if ($up) { 'up' } else { 'NOT UP' }))
     Out ''
+    Out ("Server 2: ftpmini_at.py utf-8 on {0}:{1} - {2}" -f $FtpSrv2.Addr, $FtpSrv2.Port, $(if ($up2) { 'up' } else { 'NOT UP' }))
     if (-not $up) { throw 'the FTP server did not start' }
 
     $toAlias = { param($t) $t -replace '//u@127\.0\.0\.1:', '//u:p@localhost:' }
@@ -340,12 +353,45 @@ try {
         @{ Ok = ($ren -and -not $stor -and $asked -and $b -ceq 'SRV-A')
            Facts = ("renamed: {0}; upload 2 sent STOR b.txt: {1}; overwrite question for b.txt open: {2}; server b.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; operation windows after upload 1: {8}; at the end: {9}" -f $ren, $stor, $asked, $b, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), $op1, (OpDesc $id)) }
     }
+    # two different servers (127.0.0.1 looked up as localhost, 127.0.0.2 typed): a change at one
+    # keeps the cache of the other - upload 2 stores without listing again
+    $toLocal = { param($t) $t -replace '//u@127\.0\.0\.[12]:', '//u:p@localhost:' }
+    if ($up2) {
+        Row-Case 'DIFF-KEEP' 'DIFF-KEEP' {
+            param($s, $l)
+            WriteFile ($s + '\o1.txt') 'SRV-O1'
+            $s2 = $FtpSrv2.Root + '\DIFF-KEEP'; NewDir $s2; WriteFile ($s2 + '\a.txt') 'SRV2-A'
+            WriteFile ($l + '\new.txt') 'NEW'; WriteFile ($l + '\o1.txt') 'L1'
+        } {
+            param($id, $s, $l)
+            $s2 = $FtpSrv2.Root + '\DIFF-KEEP'
+            Focus $id 0 2                                          # local: .., new.txt, o1.txt -> o1.txt
+            $t1 = @(Drive $id 727 $toLocal)                        # upload 1 to localhost (server 1): question
+            $op1 = OpDesc $id
+            KeyIn $id 0 0x09
+            Focus $id 1 1                                          # a.txt on server 2 (the panel, 127.0.0.2)
+            $t2 = @(Drive $id 754 { param($t) 'b.txt' })
+            $ren = [IO.File]::Exists($LP + $s2 + '\b.txt')
+            KeyIn $id 1 0x09
+            Focus $id 0 1                                          # local new.txt
+            $from = Srv-Count $FtpSrv
+            $t3 = @(Drive $id 727 $toLocal 5 90)                   # upload 2 to localhost
+            $cmds = @(Srv-Cmds $FtpSrv $from)
+            $stor = Has-Cmd $cmds '^STOR (.*/)?new\.txt$'
+            $list = Has-Cmd $cmds '^(LIST|NLST|MLSD)'
+            $n = ReadSrv ($s + '\new.txt')
+            @{ Ok = ($ren -and $stor -and -not $list -and $n -ceq 'NEW')
+               Facts = ("renamed on server 2: {0}; upload 2 sent STOR new.txt: {1}; upload 2 listed again: {2}; server 1 new.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; operation windows after upload 1: {8}; at the end: {9}" -f $ren, $stor, $list, $n, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), $op1, (OpDesc $id)) }
+        } '127.0.0.2'
+    }
+    else { Row 'DIFF-KEEP' 'ROW' 'NOT DRIVEN' 'the second server on 127.0.0.2 did not start' }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
     foreach ($p in @($Started)) { if (Test-Alive $p) { Stop-Process -Id $p -Force } }
     Start-Sleep -Milliseconds 600
     if ($FtpSrv.Proc -and -not $FtpSrv.Proc.HasExited) { Stop-Process -Id $FtpSrv.Proc.Id -Force }
+    if ($FtpSrv2.Proc -and -not $FtpSrv2.Proc.HasExited) { Stop-Process -Id $FtpSrv2.Proc.Id -Force }
     Start-Sleep -Milliseconds 500
     $restored = Restore-Reg $backup $existed
     if ($restored -and (Test-Path -LiteralPath $backup)) { Remove-Item -LiteralPath $backup -Force }

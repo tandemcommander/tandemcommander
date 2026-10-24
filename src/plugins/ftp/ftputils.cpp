@@ -4,12 +4,13 @@
 
 #include "precomp.h"
 
-#include "../../common/salftpautoren.h" // feature 141: the shortening step of the automatic rename
-#include "../../common/salftplisting.h" // feature 269: a listing field kept as UTF-8 (WTF-8)
-#include "../../common/salftppwd.h"     // feature 277: the path of a "257" reply, never cut
-#include "../../common/salftpsrvenc.h"  // feature 288: names go to each server in its own encoding
+#include "../../common/salftpautoren.h"     // feature 141: the shortening step of the automatic rename
+#include "../../common/salftplisting.h"     // feature 269: a listing field kept as UTF-8 (WTF-8)
+#include "../../common/salftppwd.h"         // feature 277: the path of a "257" reply, never cut
+#include "../../common/salftpsrvenc.h"      // feature 288: names go to each server in its own encoding
+#include "../../common/salftpserverident.h" // feature 341: the addresses of the plug-in's own lookups
 
-#include "../../common/salurlpwd.h" // feature 085
+#include "../../common/salurlpwd.h"     // feature 085
 #include "../../common/salfmtinserts.h" // feature 180
 
 const char* FTP_ANONYMOUS = "anonymous"; // standard name for an anonymous user
@@ -3574,6 +3575,33 @@ CFTPServerEnc* FTPGetServerEnc(const char* host, unsigned short port, const char
     }
     ReleaseSRWLockExclusive(&FTPServerEncLock);
     return found;
+}
+
+// feature 341: the addresses of the plug-in's own lookups (a leaf lock: nothing is called inside)
+static CSalFtpHostAddrTable FTPHostAddrs;
+static SRWLOCK FTPHostAddrsLock = SRWLOCK_INIT;
+
+void FTPRecordHostAddrs(const char* host, const unsigned int* addrs, int count)
+{
+    AcquireSRWLockExclusive(&FTPHostAddrsLock);
+    FTPHostAddrs.Record(host, addrs, count);
+    ReleaseSRWLockExclusive(&FTPHostAddrsLock);
+}
+
+int FTPGetHostAddrs(const char* host, unsigned int* out, int max)
+{
+    if (host == NULL || host[0] == 0 || out == NULL || max <= 0)
+        return 0;
+    DWORD ip = inet_addr(host); // a typed IPv4 address: what CSocket::GetHostByAddress connects to
+    if (ip != INADDR_NONE)
+    {
+        out[0] = ip;
+        return 1;
+    }
+    AcquireSRWLockShared(&FTPHostAddrsLock);
+    int n = FTPHostAddrs.Lookup(host, out, max);
+    ReleaseSRWLockShared(&FTPHostAddrsLock);
+    return n;
 }
 
 CFTPListingServerScope::CFTPListingServerScope(CFTPServerEnc* srv)

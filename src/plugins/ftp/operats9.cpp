@@ -7,6 +7,7 @@
 #include "../../common/salnameorder.h"      // feature 277: the file system's name rule (the opened-file lock)
 #include "../../common/salftpupname.h"      // feature 303: an upload's name that differs from a listed one only in case
 #include "../../common/salftpmkdirreport.h" // feature 323: only the last component of a created path is new
+#include "../../common/salftpserverident.h" // feature 341: another name of the same server
 
 #ifdef _DEBUG
 int CUploadListingsOnServer::FoundPathIndexesInCache = 0; // how many searched paths the cache has caught
@@ -129,6 +130,37 @@ CUploadListingCache::FindServer(const char* user, const char* host, unsigned sho
     return NULL;
 }
 
+void CUploadListingCache::InvalidateOtherNamesOfServer(const char* user, const char* host, unsigned short port,
+                                                       CUploadListingsOnServer* exact)
+{
+    if (host == NULL)
+        return;
+    if (user != NULL && strcmp(user, FTP_ANONYMOUS) == 0)
+        user = NULL;
+    unsigned int hostAddrs[CSalFtpHostAddrTable::ADDRS];
+    int hostCount = -1; // looked up when the first candidate is met
+    int i;
+    for (i = 0; i < ListingsOnServer.Count; i++)
+    {
+        CUploadListingsOnServer* server = ListingsOnServer[i];
+        if (server == exact || server->Port != port ||
+            !(server->User == NULL && user == NULL ||
+              user != NULL && server->User != NULL && strcmp(server->User, user) == 0))
+        {
+            continue; // the exact entry, or another user or port: as before
+        }
+        if (hostCount < 0)
+            hostCount = FTPGetHostAddrs(host, hostAddrs, CSalFtpHostAddrTable::ADDRS);
+        unsigned int addrs[CSalFtpHostAddrTable::ADDRS];
+        int count = FTPGetHostAddrs(server->Host, addrs, CSalFtpHostAddrTable::ADDRS);
+        if (SalFtpCompareServerNames(SalamanderGeneral->StrICmp(server->Host, host) == 0,
+                                     hostAddrs, hostCount, addrs, count) == sfsnMaybeSame)
+        {
+            server->InvalidateAllListings();
+        }
+    }
+}
+
 void CUploadListingCache::ReportCreateDirs(const char* user, const char* host, unsigned short port,
                                            const char* workPath, CFTPServerPathType pathType, const char* newDirs,
                                            BOOL unknownResult)
@@ -137,6 +169,7 @@ void CUploadListingCache::ReportCreateDirs(const char* user, const char* host, u
     CUploadListingsOnServer* server = FindServer(user, host, port, NULL);
     if (server != NULL)
         server->ReportCreateDirs(workPath, pathType, newDirs, unknownResult);
+    InvalidateOtherNamesOfServer(user, host, port, server); // feature 341
     HANDLES(LeaveCriticalSection(&UploadLstCacheCritSect));
 }
 
@@ -148,6 +181,7 @@ void CUploadListingCache::ReportRename(const char* user, const char* host, unsig
     CUploadListingsOnServer* server = FindServer(user, host, port, NULL);
     if (server != NULL)
         server->ReportRename(workPath, pathType, fromName, newName, unknownResult);
+    InvalidateOtherNamesOfServer(user, host, port, server); // feature 341
     HANDLES(LeaveCriticalSection(&UploadLstCacheCritSect));
 }
 
@@ -159,6 +193,7 @@ void CUploadListingCache::ReportDelete(const char* user, const char* host, unsig
     CUploadListingsOnServer* server = FindServer(user, host, port, NULL);
     if (server != NULL)
         server->ReportDelete(workPath, pathType, name, unknownResult);
+    InvalidateOtherNamesOfServer(user, host, port, server); // feature 341
     HANDLES(LeaveCriticalSection(&UploadLstCacheCritSect));
 }
 
@@ -169,6 +204,7 @@ void CUploadListingCache::ReportStoreFile(const char* user, const char* host, un
     CUploadListingsOnServer* server = FindServer(user, host, port, NULL);
     if (server != NULL)
         server->ReportStoreFile(workPath, pathType, name);
+    InvalidateOtherNamesOfServer(user, host, port, server); // feature 341
     HANDLES(LeaveCriticalSection(&UploadLstCacheCritSect));
 }
 
@@ -180,6 +216,7 @@ void CUploadListingCache::ReportFileUploaded(const char* user, const char* host,
     CUploadListingsOnServer* server = FindServer(user, host, port, NULL);
     if (server != NULL)
         server->ReportFileUploaded(workPath, pathType, name, fileSize, unknownResult);
+    InvalidateOtherNamesOfServer(user, host, port, server); // feature 341
     HANDLES(LeaveCriticalSection(&UploadLstCacheCritSect));
 }
 
@@ -190,6 +227,7 @@ void CUploadListingCache::ReportUnknownChange(const char* user, const char* host
     CUploadListingsOnServer* server = FindServer(user, host, port, NULL);
     if (server != NULL)
         server->ReportUnknownChange(workPath, pathType);
+    InvalidateOtherNamesOfServer(user, host, port, server); // feature 341
     HANDLES(LeaveCriticalSection(&UploadLstCacheCritSect));
 }
 
