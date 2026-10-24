@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
@@ -4917,3 +4917,28 @@ a few early ones are out of sequence).
   (`TestIsoSessionTracks_340`); refute-first review 1: no MUST / SHOULD - its build of
   the code before the fix gives 5 / 9 on the probe; NOTEs on `readSINF` / `readETN2` chunk sizes to Inbox
   `iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard`.
+- 341-ftp-upload-cache-alias: an FTP upload to a server opened under one name (`localhost`) did not
+  learn of changes made under another name of it (`127.0.0.1`, a name and its address): the upload
+  listing cache is keyed by the host as typed (`FindServer`, `StrICmp`), so a Quick Rename `a.txt` ->
+  `b.txt` in a panel at 127.0.0.1 let upload 2 to localhost `STOR b.txt` without the overwrite
+  question (measured, data loss; also a store through one name then an upload through the other).
+  Now every change report (`ReportCreateDirs` / `Rename` / `Delete` / `StoreFile` /
+  `FileUploaded` / `UnknownChange`) calls `CUploadListingCache::InvalidateOtherNamesOfServer`
+  (`operats9.cpp`): every entry of the same user and port under another host invalidates all its
+  listings, and the change is stamped (`StampChange`, `ChangeStamps`, bound 1,000 names, low
+  memory or the bound -> `ChangeStampsLost`, fails closed); `AddOrUpdateListing` refuses a panel
+  listing that started before a stamp of another host (`ChangedUnderOtherName`). Traps: the first
+  design remembered addresses from the plug-in's own lookups and kept names with known disjoint
+  addresses apart - review 1 showed one server answering on 127.0.0.1 and 127.0.0.2 (the client
+  cannot tell; the item's *Expected* and 098 decide: maybe the same server); review 2 found the
+  panel seed (`fs5.cpp`) bringing a stale listing back after the fan-out (the panel is refreshed
+  only by its own host's notifications) -> the stamps. Three review-3 attempts were killed by
+  `claude -p`'s 10-minute background-task ceiling (the loop's fix, 247 amended 2026-10-24); one
+  left the product key changed (restored from its backup, hash identical). Limits: uploads under
+  two names with the same user and port list again after each other's changes (also of two
+  servers); another user / port of one server, the panel refresh and the opened-file lock under
+  two names -> Inbox. From backlog item
+  `ftp-an-upload-to-a-server-named-another-way-localhost-vs-127`. Probe `ftp341_probe.ps1` 4 / 2 on
+  `main` -> 12 / 0 (mutants: fan-out off 4 rows FAIL, stamps off SEED-ALIAS FAIL); 323's
+  `ftp302_probe.ps1` 16 / 0; review 3's in-flight STOR rows 4 / 0; three refute-first reviews
+  (MUST 1, MUST 1, none).

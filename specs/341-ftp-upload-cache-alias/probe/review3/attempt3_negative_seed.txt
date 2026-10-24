@@ -1,0 +1,15 @@
+ftp341_probe (feature 341)
+Program : C:\Users\pavel\AppData\Local\Temp\rev341r3\negbuild\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 14:39; desktop 'tc_probe_33484'; ACP 1250; registry key existed True; export SHA-256 BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588
+Server  : ftpmini.py utf-8 on 127.0.0.1:2141 - up
+
+Server 2: ftpmini_at.py utf-8 on 127.0.0.2:2141 - up
+SEED-ALIAS ROW    FAIL        upload 2 stored n.txt: True; upload 3 sent STOR n.txt: True; question for n.txt open: False; server n.txt 'UP3'; upload 2 commands: USER u / PASS p / SYST / PWD / CWD /SEED-ALIAS / PORT 127,0,0,1,206,197 / TYPE A / LIST / CWD /SEED-ALIAS / PORT 127,0,0,1,206,199 / STOR n.txt / QUIT; upload 3 commands: PORT 127,0,0,1,206,203 / STOR n.txt / NOOP / CWD /SEED-ALIAS / PWD / PORT 127,0,0,1,206,205 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2141/SEED-ALIAS/*.*' -> 'ftp://u:p@localhost:2141/SEED-ALIAS/*.*' | [Copy] 'ftp://u@127.0.0.1:2141/SEED-ALIAS/*.*' -> 'ftp://u@127.0.0.1:2141/SEED-ALIAS/*.*'; op windows after upload 2: none; at the end: none
+           (closed 0 operation window(s); left: 0)
+SEED-ALIAS END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+SEEDC-ALIAS ROW    FAIL        upload 2 stored n.txt: True; LIST during navigation: 1 (1 = folder back from the listing cache); panel at 'ftp://u@127.0.0.1:2141/SEEDC-ALIAS'; upload 3 sent STOR n.txt: True; question: False; server n.txt 'UP3'; nav commands: CWD / / PWD / PORT 127,0,0,1,206,221 / LIST; upload 2 commands: USER u / PASS p / SYST / PWD / CWD /SEEDC-ALIAS / PORT 127,0,0,1,206,216 / TYPE A / LIST / CWD /SEEDC-ALIAS / PORT 127,0,0,1,206,218 / STOR n.txt / QUIT; upload 3 commands: CWD /SEEDC-ALIAS / PORT 127,0,0,1,206,226 / STOR n.txt / NOOP / CWD /SEEDC-ALIAS / PWD / PORT 127,0,0,1,206,228 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2141/SEEDC-ALIAS/*.*' -> 'ftp://u:p@localhost:2141/SEEDC-ALIAS/*.*' | [Copy] 'ftp://u@127.0.0.1:2141/SEEDC-ALIAS/*.*' -> 'ftp://u@127.0.0.1:2141/SEEDC-ALIAS/*.*'
+           (closed 0 operation window(s); left: 0)
+SEEDC-ALIAS END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+Registry: restored; identical=True; SHA-256 before BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588 / after BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588
+
+Rows: PASS 2, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

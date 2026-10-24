@@ -249,3 +249,54 @@ second server did not start in its copy), including its own rows SEEDC-ALIAS / S
 panel folder restored from the plug-in's listing cache, then an upload into it: the question
 appears) - PASS; it had begun a negative-control build and reported no finding. A fresh review 3
 was launched with this partial work.
+
+### Review 3, third attempt (stopped - the run failed; finished in a maintainer session)
+
+Cause of all three stops, found in the loop's `.err` log: `claude -p` stops the background tasks
+still running 10 minutes after the last turn ("Background tasks still running 10m after the last
+turn ... stopping them"), and the run ended its turn with only "the run continues when it reports";
+this round's probe runs longer than 10 minutes. The loop failed the run after the third stall.
+Fixed on `main` (0b0d791d): the loop sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS` to 2 hours and
+SKILL.md step 7 ends every waiting turn with a fallback wakeup.
+
+The third attempt's probe was killed mid-run (14:41) and left its backup
+`%TEMP%\tc341r4_backup.reg` and fixture `%TEMP%\tc341r4`; the product key differed only by the
+probe's histories (tc341r4 paths, `ftp://u@...:2141/...`) and the plug-ins' version stamp. Restored
+in the maintainer session (`reg delete` + `reg import` of the backup): the export of
+`HKCU\Software\Tandem Commander` has SHA-256 BFC2D583... again, identical to the backup; the state
+before the restore kept as `%TEMP%\tc341r4_before_restore.reg`; backup and fixture removed. Its
+partial result (`%TEMP%\rev341r4\head_all.log`, HEAD 273bd9dc): ALIAS-REN, ALIAS-UP, SAME-REN,
+MULTI-REN, SEED-ALIAS, SEED-SAME, SEEDC-ALIAS ROW PASS on the current build; its negative control
+(`ChangedUnderOtherName` disabled, `neg_seed.log`) made SEED-ALIAS and SEEDC-ALIAS FAIL (`STOR n.txt`
+without the question, server `n.txt` UP3). No finding reported. A fresh review 3 was launched with
+this partial work.
+
+### Review 3 (refute-first, independent agent, with the partial work above) - MUST 0, SHOULD 0, NOTEs 7
+
+- New probe of the reviewer (`probe/review3/ftp341r5_probe.ps1` with `ftpmini_slow.py`, which holds
+  the `226` reply of a STOR of `slow*` for 25 s after the file is written): rows INFLIGHT-ALIAS /
+  INFLIGHT-SAME - upload 1 of `slow.txt` to `localhost` (control: `127.0.0.1`) still in its STOR,
+  the local file changed, upload 2 by F5 into the panel at `127.0.0.1`: upload 2 lists the folder
+  itself and asks; server `slow.txt` stays UP1. PASS 4, FAIL 0 (`probe/review3/inflight_result.txt`;
+  registry restored and identical). Why: `ReportStoreFile` is called before the STOR is sent
+  (`operatsb.cpp:1826`), so the change is stamped before the transfer starts - the host-keyed
+  `CanMakeChangesOnPath` leaves no gap.
+- N1 callers re-enumerated, as the table above; `AddOrUpdateListing` has two callers (`fs5.cpp`
+  seed, `fs2.cpp` update only), both ignore its result. N2 other ways into the cache: `GetListing`
+  adds its entry before the LIST (a change under another name marks it outdated, `ListingFinished`
+  drops it); `ReportCreateDirs`' empty listing has a race with a change under another name before
+  the MKD reply - the same race exists with one name (not a regression); rename / delete / MKD are
+  stamped after the reply, as with one name. N3 lock order: the only new nested lock is
+  `IncListingCounterSect` (a leaf, already taken inside the section by `InvalidateListing`). N4 the
+  1,000-name bound and the low-memory paths set `ChangeStampsLost` (fails closed, never reset - a
+  documented cost); stamps freed by the array at unload. N5 `anonymous` normalised alike in all four
+  functions; the user compared exactly, as elsewhere. N6 no fixed buffer, no cut, no `A` API, no new
+  network traffic. N7 the known cost of two uploads under two names (review 2 N2).
+- Copies kept as evidence in `probe/review3/`: attempt 2's probe with the SEEDC rows
+  (`attempt2_probe_with_seedc.ps1`), attempt 3's results (`attempt3_head_partial.txt`,
+  `attempt3_negative_seed.txt`).
+
+## Finished (maintainer session, 2026-10-24)
+
+Review 3 has no MUST: the item closes. Code unchanged since review 2 (53e4ca36); the checks of
+*Checks (after review 2, final code)* stand; after merging `main` they are repeated below.

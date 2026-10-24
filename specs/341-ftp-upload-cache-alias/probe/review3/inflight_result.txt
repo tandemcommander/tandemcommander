@@ -1,0 +1,15 @@
+ftp341_probe (feature 341)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 15:42; desktop 'tc_probe_28868'; ACP 1250; registry key existed True; export SHA-256 BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588
+Server  : ftpmini.py utf-8 on 127.0.0.1:2141 - up
+
+Server 2: ftpmini_at.py utf-8 on 127.0.0.2:2141 - up
+INFLIGHT-ALIAS ROW    PASS        server slow.txt after upload 1's STOR: 'UP1'; upload 2 sent STOR slow.txt: False; question for slow.txt: True; server slow.txt 'UP1'; upload 1 commands: USER u / PASS p / SYST / PWD / CWD /INFLIGHT-ALIAS / PORT 127,0,0,1,239,133 / TYPE A / LIST / CWD /INFLIGHT-ALIAS / PORT 127,0,0,1,239,135 / STOR slow.txt; upload 2 commands: CWD /INFLIGHT-ALIAS / PORT 127,0,0,1,239,138 / LIST; all commands since upload 2: CWD /INFLIGHT-ALIAS / PORT 127,0,0,1,239,138 / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2141/INFLIGHT-ALIAS/*.*' -> 'ftp://u:p@localhost:2141/INFLIGHT-ALIAS/*.*' | [Copy] 'ftp://u@127.0.0.1:2141/INFLIGHT-ALIAS/*.*' -> 'ftp://u@127.0.0.1:2141/INFLIGHT-ALIAS/*.*'; op windows after upload 1: '(100 %) Copy File "slow.txt" to localhost' ; at the end: 'Target File Already Exists' ...\Users\pavel\AppData\Local\Temp\tc341r5\start\INFLIGHT-ALIAS | slow.txt | /INFLIGHT-ALIAS | slow.txt || '(errors) Copy File "slow.txt" to 127.0.0.1'  || '(100 %) Copy File "slow.txt" to localhost' 
+           (closed 3 operation window(s); left: 0)
+INFLIGHT-ALIAS END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 1; new reports 0
+INFLIGHT-SAME ROW    PASS        server slow.txt after upload 1's STOR: 'UP1'; upload 2 sent STOR slow.txt: False; question for slow.txt: True; server slow.txt 'UP1'; upload 1 commands: PORT 127,0,0,1,239,150 / STOR slow.txt; upload 2 commands: USER u / PASS p / SYST; all commands since upload 2: USER u / PASS p / SYST; dialogs: [Copy] 'ftp://u@127.0.0.1:2141/INFLIGHT-SAME/*.*' -> 'ftp://u@127.0.0.1:2141/INFLIGHT-SAME/*.*' | [Copy] 'ftp://u@127.0.0.1:2141/INFLIGHT-SAME/*.*' -> 'ftp://u@127.0.0.1:2141/INFLIGHT-SAME/*.*'; op windows after upload 1: '(100 %) Copy File "slow.txt" to 127.0.0.1' ; at the end: 'Target File Already Exists' ...:\Users\pavel\AppData\Local\Temp\tc341r5\start\INFLIGHT-SAME | slow.txt | /INFLIGHT-SAME | slow.txt || '(errors) Copy File "slow.txt" to 127.0.0.1'  || '(100 %) Copy File "slow.txt" to 127.0.0.1' 
+           (closed 3 operation window(s); left: 0)
+INFLIGHT-SAME END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 1; new reports 0
+Registry: restored; identical=True; SHA-256 before BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588 / after BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

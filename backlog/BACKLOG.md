@@ -17,7 +17,6 @@ Last triaged: 2026-10-24
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [FTP: an upload to a server named another way (localhost vs 127.0.0.1) misses the panel changes](items/ftp-an-upload-to-a-server-named-another-way-localhost-vs-127/desc.md) | bug | 7 | ftp | 341 |
 
 ## Next
 
