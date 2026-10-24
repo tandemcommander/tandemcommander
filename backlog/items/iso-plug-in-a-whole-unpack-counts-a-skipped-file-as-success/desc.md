@@ -8,7 +8,7 @@ source: review:337
 who: agent
 created: 2026-10-24
 updated: 2026-10-24
-verified: -
+verified: 2026-10-24 0cec8e25
 effort: M
 feature: -
 related: [iso-plug-in-a-whole-unpack-of-an-image-with-audio-or-left]
@@ -54,3 +54,4 @@ that answers Skip in the read-error box is feasible: the box is a plug-in dialog
 
 - 2026-10-24 — created (source review:337)
 - 2026-10-24 — moved to Next position 1
+- 2026-10-24 — verified at 0cec8e25: reproduced at 0cec8e25: probe iso338 - read error Skip / Skip all, create error Skip, overwrite Skip, same-name twins Yes, folder not created: image deleted (6 FAIL rows)
