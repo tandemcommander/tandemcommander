@@ -51,6 +51,10 @@ HFS+ volume header's own signature at the place the partition map gives does.
   APFS needs its own decision, the same holds for the other two) (autonomous run: item + conservative)
 - Q: A message when the HFS+ part does not open? → A: no new message or UI string - the quiet open
   stays (autonomous run: item - "The quiet open stays (no new box)")
+- Q: An Apple partition map ("ER") whose entries are damaged or name no `Apple_HFS` partition, so the
+  reader never reaches a volume header - mark it? → A: no; no HFS+ signature is seen, the part is
+  dropped as today (the same limit as a destroyed signature) (autonomous run: conservative - the
+  partition map alone does not show an HFS+ volume, see the first answer)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -101,6 +105,8 @@ files extracted, the image deleted, as before.
   declared, marked.
 - Original HFS ("BD" without an embedded HFS+ volume), HFSX ("HX"), APFS: not declared, unchanged.
 - The volume header cannot be read at all (past the end of the image): no signature seen, not marked.
+- A damaged Apple partition map, or one without an `Apple_HFS` partition: the volume header is never
+  reached, not marked (as today).
 - Out of memory while opening the HFS+ part after its signature was seen: marked (fail closed).
 - The HFS+ part opens: nothing changes (its own records are marked by features 329 / 332).
 
