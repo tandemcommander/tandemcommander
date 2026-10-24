@@ -407,6 +407,9 @@ private:
     int nFolders, nAllocedFolders;
     FolderInfo** pFolders;
     bool bSkipRootParent;
+    // feature 333: Open found an HFS+ volume header signature (SalHfsVolumeHeaderDeclaresHfsPlus) - a
+    // part that then does not open marks the hybrid's listing incomplete (CUDFISO::Open)
+    BOOL Declared;
 
     BOOL SeekSector(int sector); // Seeks on disk (sector is usually 512 or 2048 bytes); TRUE on success
     BOOL SeekBlock(int block);   // Seeks on HFS+ partition (block is usually 4096 bytes); TRUE on success

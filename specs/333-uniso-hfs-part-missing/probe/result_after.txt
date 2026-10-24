@@ -1,0 +1,28 @@
+iso333_probe (feature 333) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 03:26; registry key existed True
+
+seeds: apm.iso,hdh.iso,hdh_cat.iso,hdh_ext.iso,hdh_nosig.iso,hdh_size.iso,hdh_ver.iso
+img333: ver: version 4 -> 5 (volume header at 113664) -> C:\Users\pavel\AppData\Local\Temp\tc333\seeds\hdh_ver.iso
+img333: cat: catalog header node kind 1 -> 0 (at 114696) (volume header at 113664) -> C:\Users\pavel\AppData\Local\Temp\tc333\seeds\hdh_cat.iso
+img333: size: catalog logical size -> 0 (volume header at 113664) -> C:\Users\pavel\AppData\Local\Temp\tc333\seeds\hdh_size.iso
+img333: ext: catalog extent 0 start 1 -> 0xfffff0 (volume header at 113664) -> C:\Users\pavel\AppData\Local\Temp\tc333\seeds\hdh_ext.iso
+img333: nosig: signature H+ -> 0 (volume header at 113664) -> C:\Users\pavel\AppData\Local\Temp\tc333\seeds\hdh_nosig.iso
+
+H-OK       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-OK       RUN    PASS        files 5: HFS (TC333)/a/side.txt, HFS (TC333)/top.txt, HFS (TC333)/zlast/z.txt, ISO (TC333)/TOP.TXT, ISO (TC333)/ZLAST/Z.TXT; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-VER      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-VER      RUN    PASS        files 2: ISO (TC333)/TOP.TXT, ISO (TC333)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-CAT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-CAT      RUN    PASS        files 2: ISO (TC333)/TOP.TXT, ISO (TC333)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-SIZE     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-SIZE     RUN    PASS        files 2: ISO (TC333)/TOP.TXT, ISO (TC333)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-EXT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-EXT      RUN    PASS        files 2: ISO (TC333)/TOP.TXT, ISO (TC333)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-NOSIG    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-NOSIG    RUN    PASS        files 2: ISO (TC333)/TOP.TXT, ISO (TC333)/ZLAST/Z.TXT; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+APM-EFI    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+APM-EFI    RUN    PASS        files 6: ISO (TC333APM)/a/side.txt, ISO (TC333APM)/boot/efi.img, ISO (TC333APM)/isolinux/boot.cat, ISO (TC333APM)/isolinux/isolinux.bin, ISO (TC333APM)/top.txt, s01-bootdisk-noemul.ima; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000200. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000200. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before F92E573A3D6A79D1542E3ABC35F0E518B8E197AF3E585098E9B3C6AD205C38ED / after F92E573A3D6A79D1542E3ABC35F0E518B8E197AF3E585098E9B3C6AD205C38ED
+
+Rows: PASS 14, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

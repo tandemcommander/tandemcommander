@@ -97,6 +97,7 @@ CHFS::CHFS(CISOImage* image) : CUnISOFSAbstract(image)
     nFolders = nAllocedFolders = 0;
     pFolders = NULL;
     bSkipRootParent = false;
+    Declared = FALSE;
 }
 
 CHFS::~CHFS()
@@ -171,6 +172,10 @@ BOOL CHFS::Open(BOOL quiet)
     SeekRel(2 * 512);
     if (!Read(&VolHeader, sizeof(VolHeader), &dwBytesRead))
         return FALSE;
+
+    // feature 333: an HFS+ volume is there (or an HFS wrapper holding one) - every failure from here
+    // on drops a volume whose files are not listed (the caller marks the listing)
+    Declared = SalHfsVolumeHeaderDeclaresHfsPlus((const unsigned char*)&VolHeader, dwBytesRead);
 
     if (sizeof(VolHeader) != dwBytesRead)
         return Error(IDS_ERR_HFS_READ, quiet);

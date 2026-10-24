@@ -256,3 +256,21 @@ inline int SalHfsCatalogRecordClass(const unsigned char* rec, size_t avail, bool
     // a thread type with a name, or a type HFS+ does not define; a U+0000 name was skipped as empty
     return nul ? SAL_HFSREC_DAMAGED : SAL_HFSREC_UNKNOWN;
 }
+
+// Feature 333: does the volume header read 1024 bytes into an HFS part (hdr[0..size)) declare an HFS+
+// volume? The HFS part of a hybrid that did not open was dropped without a mark - a whole unpack with
+// "Delete archive after unpacking" then deleted the image and the files only in the HFS+ part. The
+// part is marked when it declares an HFS+ volume and does not open. Neither the Apple partition map
+// ("ER") nor an "Apple_HFS" partition declares one: Ubuntu / Debian install images (xorriso
+// -isohybrid-apm-hfsplus) carry both and hold the EFI image there. Declared: the signature "H+"
+// (TN1150), or an HFS wrapper "BD" whose master directory block names an embedded "H+" volume
+// (drEmbedSigWord, byte 124). Not declared: original HFS ("BD" alone), HFSX ("HX"), APFS, anything
+// else - the reader never lists them, marking would make every such image's whole unpack fail.
+inline bool SalHfsVolumeHeaderDeclaresHfsPlus(const unsigned char* hdr, size_t size)
+{
+    if (hdr == NULL || size < 2)
+        return false;
+    if (hdr[0] == 'H' && hdr[1] == '+')
+        return true;
+    return hdr[0] == 'B' && hdr[1] == 'D' && size >= 126 && hdr[124] == 'H' && hdr[125] == '+';
+}

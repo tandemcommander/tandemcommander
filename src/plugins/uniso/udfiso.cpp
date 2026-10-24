@@ -74,16 +74,23 @@ BOOL CUDFISO::Open(BOOL quiet)
     }
 
     // Scan HFS part but silently ignore any problem
+    BOOL hfsMissing = FALSE;
     if (hfs->Open((udf || iso) ? TRUE : quiet))
         HFS = hfs;
     else
+    {
+        // feature 333: an HFS part whose volume header declares an HFS+ volume and does not open is
+        // missing, as an ISO 9660 / UDF part below (an Apple partition map alone declares nothing:
+        // install images hold their EFI image in an "Apple_HFS" partition)
+        hfsMissing = hfs->Declared;
         delete hfs;
+    }
 
     // feature 330: a declared ISO 9660 or UDF part that does not open (e.g. its volume descriptors
     // cannot be read) is dropped from the listing - the listing is incomplete then (ListDirectory),
     // so a whole unpack fails and "Delete archive after unpacking" keeps the image (it was deleted,
-    // files only in that part lost). The HFS part keeps its quiet handling
-    PartMissing = HasISO && ISO == NULL;
+    // files only in that part lost). The HFS part stays quiet (no message), feature 333 marks it too
+    PartMissing = (HasISO && ISO == NULL) || hfsMissing;
     if (HasUDF && UDF == NULL)
     {
         // review 3 of 330: DetectTrackFS finds "NSR02" / "NSR03" in any of sectors 16-128, file data

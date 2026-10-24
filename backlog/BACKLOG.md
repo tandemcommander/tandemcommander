@@ -256,6 +256,8 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: an Ubuntu-style install image with an Apple partition map shows Cannot read sector #00000200](items/iso-plug-in-an-ubuntu-style-install-image-with-an-apple/desc.md) | bug | 3 | other-plugins | measure:333 | 2026-10-24 |
+| [ISO plug-in: APFS, original HFS and HFSX parts of a hybrid are never listed - mark them?](items/iso-plug-in-apfs-original-hfs-and-hfsx-parts-of-a-hybrid-are/desc.md) | decision | 6 | other-plugins | measure:333 | 2026-10-24 |
 
 ## Parked
 

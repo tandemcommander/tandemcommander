@@ -19797,6 +19797,64 @@ static void TestHfsRecordClass332()
     }
 }
 
+// feature 333: an HFS part of a hybrid that does not open marks the listing only when its volume
+// header declares an HFS+ volume (src/common/salhfscatalog.h) - an Apple partition map whose
+// "Apple_HFS" partition holds an install image's EFI image must never make a whole unpack fail
+static bool Hfs333Declared(const std::string& h) { return SalHfsVolumeHeaderDeclaresHfsPlus((const unsigned char*)h.data(), h.size()); }
+static void TestHfsVolumeDeclared333()
+{
+    std::string vh(512, '\0');
+    vh[0] = 'H';
+    vh[1] = '+';
+    vh[3] = 4;
+    CHECK(Hfs333Declared(vh));     // HFS+ version 4
+    vh[3] = 5;
+    CHECK(Hfs333Declared(vh));     // the signature declares it; a wrong version is a volume that does not open
+    CHECK(Hfs333Declared(vh.substr(0, 2)));
+    CHECK(!Hfs333Declared(vh.substr(0, 1)));
+    CHECK(!SalHfsVolumeHeaderDeclaresHfsPlus(NULL, 512));
+    CHECK(!SalHfsVolumeHeaderDeclaresHfsPlus((const unsigned char*)vh.data(), 0));
+    std::string hx = vh;
+    hx[1] = 'X';
+    CHECK(!Hfs333Declared(hx));    // HFSX: not read by the plug-in
+    std::string plusH = vh;
+    plusH[0] = '+';
+    plusH[1] = 'H';
+    CHECK(!Hfs333Declared(plusH)); // the bytes in the other order (a little-endian misread)
+    // an HFS wrapper: "BD" with an embedded HFS+ volume (drEmbedSigWord at byte 124) is declared;
+    // original HFS (another embedded signature, none) is not; a header cut before byte 126 is not
+    std::string mdb(512, '\0');
+    mdb[0] = 'B';
+    mdb[1] = 'D';
+    CHECK(!Hfs333Declared(mdb));
+    mdb[124] = 'H';
+    mdb[125] = '+';
+    CHECK(Hfs333Declared(mdb));
+    CHECK(Hfs333Declared(mdb.substr(0, 126)));
+    CHECK(!Hfs333Declared(mdb.substr(0, 125)));
+    std::string mdbOther = mdb;
+    mdbOther[125] = 'X';
+    CHECK(!Hfs333Declared(mdbOther));
+    std::string plusAt124(512, '\0'); // "H+" at byte 124 without the wrapper's "BD"
+    plusAt124[124] = 'H';
+    plusAt124[125] = '+';
+    CHECK(!Hfs333Declared(plusAt124));
+    // no HFS+ volume: zeros (the probe's EFI image), a FAT boot sector's reserved area, an APFS
+    // container ("NXSB" at byte 32 of its block), an ISO 9660 system area of a hybrid MBR
+    CHECK(!Hfs333Declared(std::string(512, '\0')));
+    std::string fat(512, '\0');
+    fat[0] = (char)0xF8;
+    fat[1] = (char)0xFF;
+    CHECK(!Hfs333Declared(fat));
+    std::string apfs(512, '\0');
+    memcpy(&apfs[32], "NXSB", 4);
+    CHECK(!Hfs333Declared(apfs));
+    std::string mbr(512, '\0');
+    mbr[0] = 0x33;
+    mbr[1] = (char)0xED;
+    CHECK(!Hfs333Declared(mbr));
+}
+
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
 // when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
 // the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
@@ -20896,6 +20954,7 @@ int main(int argc, char** argv)
     TestPackName319();
     TestHfsCatalog322();
     TestHfsRecordClass332();
+    TestHfsVolumeDeclared333();
     TestFtpMkdirReport323();
     TestSameVolume324();
     TestSusp326();
