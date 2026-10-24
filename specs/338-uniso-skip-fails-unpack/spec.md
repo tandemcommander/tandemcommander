@@ -22,6 +22,16 @@ showed the image deleted in every row where a file of the image was not extracte
 | TWINS | two listed files of one name (a damaged or crafted directory); the overwrite question for the second answered Yes | **deleted** - the first file's content lost |
 | D-SKIP | the target holds a file of a folder's name; the folder cannot be created, its file is skipped | **deleted** |
 
+## Clarifications
+
+### Session 2026-10-24
+
+- Q: Does Skip in the overwrite question for a file the user already had in the target fail the whole unpack? → A: Yes - the image's file was not extracted; the user's file stays (autonomous run: item - *Expected* "any file was skipped")
+- Q: How is a file written twice by one unpack told from the user's own file of the same name? → A: By the file system's identity of the files this unpack wrote (volume + file id, `salsamefile.h`); where an identity cannot be read the check fails closed (autonomous run: rule - CLAUDE.md "Same-file decisions go by identity, not by name")
+- Q: Does a kept image get a new message saying why? → A: No - each skip already showed its box; a summary message is the related item's subject (autonomous run: conservative)
+- Q: Do Copy (F5) out of an opened image and the extraction of one file change their results? → A: No - only the whole unpack, which is the route that deletes the image (autonomous run: conservative)
+- Q: Does the twin check change what is asked or written (e.g. refuse the second write)? → A: No - the questions and writes stay as they are; only the unpack's result changes (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A skipped file keeps the image (Priority: P1)
@@ -118,7 +128,8 @@ image is kept, since one of the two files now exists only in the image.
 - **FR-002**: A whole unpack MUST end as failed when a folder of the image could not be created in the target.
 - **FR-003**: A whole unpack MUST end as failed when a file it writes lands on a file that the same unpack
   already wrote (decided by the file system's identity of the files, not by their names); a target file
-  that existed before the unpack and is replaced on the user's answer MUST NOT fail it.
+  that existed before the unpack and is replaced on the user's answer MUST NOT fail it. The overwrite
+  question and the write itself stay as they are - only the unpack's result changes.
 - **FR-004**: Each file system reader of the plug-in MUST report a file whose extraction ended without all
   its data as not extracted, also when no box was shown for its read error.
 - **FR-005**: Every file that could be extracted MUST still be extracted (the unpack goes on after a skip as
