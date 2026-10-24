@@ -17,7 +17,6 @@ Last triaged: 2026-10-24
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a file covering part of a Form 2 stream lets the image be deleted](items/iso-plug-in-a-file-covering-part-of-a-form-2-stream-lets-the/desc.md) | bug | 7 | archives | 337 |
 
 ## Next
 
@@ -264,6 +263,7 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a whole unpack counts a skipped file as success and deletes the image](items/iso-plug-in-a-whole-unpack-counts-a-skipped-file-as-success/desc.md) | bug | 7 | archives | review:337 | 2026-10-24 |
 
 ## Parked
 

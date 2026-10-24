@@ -31,7 +31,7 @@
 
 - [X] T009 Encoding guard, `.\build.cmd`, saltests; clang-format on changed lines only
 - [X] T010 Regression runs of `specs/336-uniso-form2-uncovered/probe/iso336_probe.ps1` rows that are unchanged by this feature (recorded verdict changes for its partial rows)
-- [ ] T011 fix-log *Checks*, CHANGELOG entry under the unreleased section, FEATURE-HISTORY entry (at closing)
+- [X] T011 fix-log *Checks*, CHANGELOG entry under the unreleased section, FEATURE-HISTORY entry (at closing)
 
 ## Dependencies
 

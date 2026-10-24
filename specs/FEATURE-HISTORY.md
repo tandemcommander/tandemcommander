@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4809,3 +4809,32 @@ a few early ones are out of sequence).
   coverage ignored / empty files cover fail 3 / 2); refute-first reviews: 1 (MUST the pre-existing Video
   CD cut - out of scope, decision item; SHOULD content check, NOTE ISO 9660 only - fixed), 2 (no MUST;
   NOTEs fixed or Inbox).
+- 337-uniso-form2-partial: a disc image (NRG, CCD/IMG) whose Video CD-like Form 2 stream track a listed
+  file starts in but covers only in part (a damaged or crafted `AVSEQ01.DAT` record shorter than its
+  stream) was deleted by Unpack with "Delete archive after unpacking" with the rest of the stream - 336
+  counted any file starting in the stream as covering it - now the stream counts as covered only when every
+  sector no listed file extracts whole is an empty Form 2 sector (2324 zero bytes, read whole) and there are
+  at most 300 of them (`SAL_ISO_STREAM_GAP_SECTORS`; more mark without reading); otherwise the listing is
+  marked incomplete and the image kept. Measured on the real vcdimager VCD / SVCD images of 335's reviewer
+  3: each `AVSEQnn` file starts at INDEX 01 and leaves 150 empty sectors (the next pregap / the post-gap) -
+  a count tolerance could not separate that from 336's synthetic streams (64 data sectors, files of 1 or 8),
+  the content can. Rules in `salisotrack.h` (`SalIsoFileStartTrack`, `SalIsoStreamTrackSectors`,
+  `SalIsoFileSectorSpan` floor(size / 2048) - review 1: the unpack writes only size % 2048 bytes of the
+  last sector -, span merge / uncovered / next gap, Form 2 payload offset / emptiness, `SalIsoStreamGapsMark`);
+  the track's sectors include a part-stored last sector (review 1: its short read marks) and fail closed on
+  a wrong track-table end - extended to the next track's start, the last track to the image's data end
+  (`CISOImage::ImageDataEnd`: an NRG image's chunk offset from `ReadNRGRoot`, review 2). Traps: 336's
+  "covered" probe rows covered 8 of 64 data sectors - they keep the image now (verdicts changed on
+  purpose); `rev335c_probe.ps1` needs `-Lib` (without it PowerShell waited for input on the hidden desktop -
+  probes since run `-NonInteractive`); two reviewer agents ended with the session without a report (the
+  run's turn ended) - review 2 ran in the foreground. Limits: the 2048-byte cut of Video CD files (decision
+  `keep-video-cd-images-after-a-whole-unpack-until-their-video`) is unchanged; a skipped file still lets a
+  whole unpack succeed (Inbox `iso-plug-in-a-whole-unpack-counts-a-skipped-file-as-success`); other
+  authoring tools' non-zero gap filling keeps the image (fails closed). From backlog item
+  `iso-plug-in-a-file-covering-part-of-a-form-2-stream-lets-the`. Probe `iso337_probe` (336's and 335's rows
+  + partial / full / gap / tail / byte / truncated / middle-gap / overlap / two-stream / too-small-last-end
+  images by `img337.py`) with the gap check disabled 15 / 5, the review rows on the earlier code 6 / 2 and
+  12 / 2 -> 74 / 0, folders off 8 / 0; real vcdimager VCD / SVCD 10 / 0; 334 23 / 1 (S-RAW, 335's intended
+  change); saltests 28,602 -> 28,693 / 0 (`TestIsoStreamPartial_337`; mutant gaps' content ignored fails 5);
+  refute-first reviews: 1 (MUST partial last sector counted, SHOULD part-stored sector dropped - fixed), 2
+  (no MUST; SHOULD too-small last end - fixed; its rows added; skip-on-error -> Inbox).
