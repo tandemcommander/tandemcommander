@@ -57,7 +57,7 @@ Analyze (2 passes): no CRITICAL / HIGH. E1 (MEDIUM, SC-004 had no verification t
 T015. C1 (LOW): short IPv4 forms (`127.1`) are `inet_addr`'s in the plug-in - the pure rule gets
 address lists; covered by reading.
 
-## Implementation
+## Implementation (first design - removed after review 1, M1)
 
 - `src/common/salftpserverident.h` (new, header-only, pure): `SalFtpHostNameEqualAsciiCI`,
   `SalFtpCompareServerNames` (same host text -> same; an address list empty -> maybe the same;
@@ -79,7 +79,7 @@ address lists; covered by reading.
   the leaf. `InvalidateAllListings` of another entry is what feature 302/323 already do inside
   the same section.
 
-## Probe extended (US3)
+## Probe extended (US3, first design)
 
 "Unknown address = maybe the same" means ALIAS-REN / ALIAS-UP pass even when no lookup is ever
 recorded - the probe rows of the item do not prove the recording. Row DIFF-KEEP added: a second
@@ -92,7 +92,7 @@ without listing again (the localhost cache kept: {127.0.0.1} vs {127.0.0.2} = di
 `-Repo` default used `$PSScriptRoot` inside `param()`, empty under Windows PowerShell 5.1 there;
 the first run failed binding parameters, nothing touched - no backup file, no fixture).
 
-## Checks (final code)
+## Checks (first design; its result files are now in `probe/design1/`)
 
 | Check | Command | Result |
 |---|---|---|
@@ -110,7 +110,7 @@ Before / after, the item's row: ALIAS-REN on `main`: `STOR b.txt`, server `b.txt
 question -> after: `... CWD /ALIAS-REN / PORT ... / TYPE A / LIST`, the question for `b.txt` open,
 server `b.txt` = SRV-A.
 
-## Limits
+## Limits (first design - superseded below)
 
 - Through a proxy the plug-in looks up only the proxy's name: the FTP server's name has no known
   address, so concurrent uploads under two names with the same user and port (even of two
@@ -118,3 +118,62 @@ server `b.txt` = SRV-A.
 - Two uploads under two names of one server at once: each store makes the other list again.
 - Two user accounts of one server, or one server on two ports: not recognised (out of scope).
 - IPv4 only (the plug-in's connections are IPv4).
+
+## Review
+
+### Review 1 (refute-first, independent agent) - MUST 1, SHOULD 1, NOTEs
+
+- **M1** (`salftpserverident.h` `sfsnDifferent`, applied in `operats9.cpp`; asserted by US3,
+  SC-002a and row DIFF-KEEP): known, disjoint addresses do not prove two servers - one server
+  answers on 127.0.0.1 and 127.0.0.2, on its LAN and public address (NAT), on several interfaces,
+  and a round-robin name keeps only 8 addresses. Reproduced by the reviewer in a copy of the probe
+  (row MULTI-REN: server 2 on 127.0.0.2 serves server 1's folder; upload 1 to localhost held;
+  Quick Rename a.txt -> b.txt in the panel at 127.0.0.2; upload 2 of b.txt to localhost sent
+  `STOR b.txt` without LIST or question, server b.txt LOCAL-B). From the client, DIFF-KEEP's setup
+  is indistinguishable from it: the row asserted the unsafe outcome. **Taken**: the item's
+  *Expected* ("when the identity of the server cannot be told, the upload does not trust its
+  cached listings") and the fail-closed rule (098) decide it - not a maintainer question. Every
+  other host with the same user and port is now maybe the same server; the address table, the
+  recording in `CGetHostByNameThread::Body`, `FTPRecordHostAddrs` / `FTPGetHostAddrs`,
+  `salftpserverident.h` and `TestFtpServerIdent341` are removed (those files are back to `main`).
+  DIFF-KEEP is replaced by MULTI-REN.
+- **S1**: the item's severity was not raised although the probe showed the data loss. **Taken**:
+  `backlog.py set ... severity=7` (logged in the item).
+- NOTEs (no action): every change report goes through the six methods (callers enumerated again);
+  `FTPHostAddrsLock` was a true leaf (now removed); invalidating an in-progress listing keeps its
+  waiting workers - `ListingFinished` / `ListingFailed` wake them and they list again, no lost
+  wake-up; two uploads under two names into one folder serialize (documented cost); the
+  CHANGELOG / FEATURE-HISTORY entries are written at closing.
+
+## Implementation (after review 1)
+
+- `src/plugins/ftp/operats.h/operats9.cpp`: `CUploadListingCache::InvalidateOtherNamesOfServer`
+  (inside `UploadLstCacheCritSect`): every entry other than the exact one, with the same user
+  (anonymous normalised) and port and another host (`StrICmp`), gets `InvalidateAllListings()`.
+  Called by the six change reports, also when there is no exact entry. Nothing else changes.
+- No pure header: the decision is that one condition; the probe and its negative control prove it.
+
+## Checks (after review 1, final code)
+
+| Check | Command | Result |
+|---|---|---|
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| build | `.\build.cmd` | BUILD SUCCEEDED |
+| clang-format | VS 2022 clang-format on `operats9.cpp`, `operats.h` | no deviation in the new lines (pre-existing ones only) |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 28807 checks, 0 failed` (as on `main`; no new rule) |
+| probe | `ftp341_probe.ps1` -> `probe/result_after.txt` | PASS 8, FAIL 0 (ALIAS-REN, ALIAS-UP, SAME-REN, MULTI-REN ROW + END; registry identical) |
+| negative control | `InvalidateOtherNamesOfServer` returns at once, rebuilt; `-Only ALIAS-REN,ALIAS-UP,MULTI-REN` -> `probe/result_negative.txt` | ALIAS-REN, ALIAS-UP, MULTI-REN ROW FAIL (STOR without the question; b.txt LOCAL-B, n.txt UP3) - restored, rebuilt |
+| regression | 323's `ftp302_probe.ps1` -> `probe/regress_302.txt` | PASS 16, FAIL 0 |
+| SC-004 | `git diff main -- src` | 2 files, 39 added lines; no lookup call, no new lock, nothing stored |
+
+The item's measurement repeated (ALIAS-REN): `main` - `STOR b.txt`, server `b.txt` = LOCAL-B, no
+question; now - upload 2 sends `CWD /ALIAS-REN / PORT ... / TYPE A / LIST`, the question for
+`b.txt` is open, server `b.txt` = SRV-A.
+
+## Limits
+
+- Uploads under two names with the same user and port running at once - of one server or of two
+  different servers (e.g. user `admin`, port 21 on two machines) - make each other list the folder
+  again after every change; slower, never less safe.
+- Two user accounts of one server, or one server on two ports: not taken as the same server (out
+  of scope, as before).

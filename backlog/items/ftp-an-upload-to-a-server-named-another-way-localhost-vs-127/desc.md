@@ -2,7 +2,7 @@
 title: FTP: an upload to a server named another way (localhost vs 127.0.0.1) misses the panel changes
 type: bug
 status: in-progress
-severity: 5
+severity: 7
 area: ftp
 source: review:302
 who: agent
@@ -60,3 +60,4 @@ check `PRIVACY.md` / the maintainer-owned list before resolving names.
 - 2026-10-23 — moved to Next position 5
 - 2026-10-24 — verified at 3034d82f: reproduced at 3034d82f: hidden-desktop probe ftp341, upload 1 open to localhost, Quick Rename in the panel at 127.0.0.1, upload 2 replaced b.txt without the question; also a store through 127.0.0.1 then an upload via localhost
 - 2026-10-24 — run started, feature 341
+- 2026-10-24 — severity raised to 7 (data-loss band): the probe of feature 341 showed the replace without the question (review of 341, S1)

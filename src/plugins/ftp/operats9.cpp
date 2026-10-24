@@ -7,7 +7,6 @@
 #include "../../common/salnameorder.h"      // feature 277: the file system's name rule (the opened-file lock)
 #include "../../common/salftpupname.h"      // feature 303: an upload's name that differs from a listed one only in case
 #include "../../common/salftpmkdirreport.h" // feature 323: only the last component of a created path is new
-#include "../../common/salftpserverident.h" // feature 341: another name of the same server
 
 #ifdef _DEBUG
 int CUploadListingsOnServer::FoundPathIndexesInCache = 0; // how many searched paths the cache has caught
@@ -137,24 +136,18 @@ void CUploadListingCache::InvalidateOtherNamesOfServer(const char* user, const c
         return;
     if (user != NULL && strcmp(user, FTP_ANONYMOUS) == 0)
         user = NULL;
-    unsigned int hostAddrs[CSalFtpHostAddrTable::ADDRS];
-    int hostCount = -1; // looked up when the first candidate is met
+    // whether two names reach one server cannot be told from the client: neither equal nor
+    // different addresses prove it (a server answers on several addresses - 127.0.0.1 and
+    // 127.0.0.2, its LAN and public address; a proxy hides the server's address) - so every other
+    // name is taken as maybe the same server (review of 341)
     int i;
     for (i = 0; i < ListingsOnServer.Count; i++)
     {
         CUploadListingsOnServer* server = ListingsOnServer[i];
-        if (server == exact || server->Port != port ||
-            !(server->User == NULL && user == NULL ||
-              user != NULL && server->User != NULL && strcmp(server->User, user) == 0))
-        {
-            continue; // the exact entry, or another user or port: as before
-        }
-        if (hostCount < 0)
-            hostCount = FTPGetHostAddrs(host, hostAddrs, CSalFtpHostAddrTable::ADDRS);
-        unsigned int addrs[CSalFtpHostAddrTable::ADDRS];
-        int count = FTPGetHostAddrs(server->Host, addrs, CSalFtpHostAddrTable::ADDRS);
-        if (SalFtpCompareServerNames(SalamanderGeneral->StrICmp(server->Host, host) == 0,
-                                     hostAddrs, hostCount, addrs, count) == sfsnMaybeSame)
+        if (server != exact && server->Port == port &&
+            (server->User == NULL && user == NULL ||
+             user != NULL && server->User != NULL && strcmp(server->User, user) == 0) &&
+            SalamanderGeneral->StrICmp(server->Host, host) != 0) // another user or port: another server, as before
         {
             server->InvalidateAllListings();
         }

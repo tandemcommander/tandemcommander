@@ -1,6 +1,23 @@
 # Research - feature 341
 
-## R1. How to recognise one server under two names without new network traffic
+## R0. Revised after review 1 (M1) - supersedes R1, R3 (its "different" half), R4, R5, R6
+
+- **Decision**: one server cannot be recognised under two names from the client; every other host
+  name with the same user and port is maybe the same server and its listings are invalidated on
+  each change report (R2's reaction). No address table, no recording in the lookup thread, no new
+  lock, no pure header.
+- **Rationale**: the review (M1) showed that known, disjoint addresses do not prove two servers -
+  one server answers on 127.0.0.1 and 127.0.0.2 (any address of a machine), on its LAN and public
+  address (NAT), on several interfaces; it reproduced the data loss on the first design (probe row
+  MULTI-REN, one folder served on both loopback addresses: `STOR b.txt` without the question). The
+  item's *Expected* asks that an upload not trust its listings when identity cannot be told, and a
+  safety check fails closed (CLAUDE.md, 098).
+- **Cost**: concurrent uploads under two names with the same user and port - also of two different
+  servers - list again after each change through the other (R3's cost, now for every pair).
+- **Alternatives**: keep the table to save listings for "proven different" pairs - nothing proves
+  it; another signal (welcome text, SYST reply) - not proof either. Rejected.
+
+## R1. (superseded by R0) How to recognise one server under two names without new network traffic
 
 - **Decision**: remember the addresses of the lookups the plug-in already performs. Every
   connection (panel `CControlConnectionSocket` state `sccsGetIP`, operation workers
@@ -26,7 +43,7 @@
 - **Alternatives**: merge both names into one entry (changes the cache's keying for every caller;
   listings in progress and waiting workers would need migrating) - rejected.
 
-## R3. Unknown addresses
+## R3. Unknown addresses (R0: now every other name, known addresses or not)
 
 - **Decision**: a name with no recorded addresses (connection through a proxy - the plug-in looks
   up the proxy's name, not the server's; a name longer than the table slot; a table overflow
@@ -36,7 +53,7 @@
 - **Cost**: through a proxy, concurrent uploads to two different servers with the same user and
   port make each other list again after each change. Correct, slower; recorded as a limit.
 
-## R4. Table bounds and eviction
+## R4. (superseded by R0) Table bounds and eviction
 
 - **Decision**: 64 host slots, 8 addresses each (the first 8 of `h_addr_list`), host text up to
   255 bytes (DNS names are at most 253; `HOST_MAX_SIZE` is 201). A longer host is not recorded.
@@ -45,12 +62,12 @@
 - **Rationale**: a session connects to few servers; an evicted name only becomes "unknown"
   (maybe the same) - never "different".
 
-## R5. Host name comparison in the table
+## R5. (superseded by R0) Host name comparison in the table
 
 - **Decision**: ASCII case-insensitive, other bytes exact (DNS rule).
 - **Note**: the existing exact match (`FindServer`, `SalamanderGeneral->StrICmp`) is unchanged.
 
-## R6. Locking
+## R6. (superseded by R0) Locking
 
 - **Decision**: one `SRWLOCK` around the table in `ftputils.cpp` (as feature 288's
   `FTPServerEncLock`); it is a leaf - taken inside `UploadLstCacheCritSect` by the reports and

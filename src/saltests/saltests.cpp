@@ -102,7 +102,6 @@
 #include "sallistingname.h"   // feature 321
 #include "salhfscatalog.h"    // feature 322
 #include "salftpmkdirreport.h" // feature 323
-#include "salftpserverident.h" // feature 341
 #include "salsamevolume.h"     // feature 324
 #include "salsusp.h"           // feature 326
 #include "salisonamefit.h"     // feature 328
@@ -18401,119 +18400,6 @@ static void TestFtpMkdirReport323()
     CHECK(SalFtpMkdirComponentAction(false, false, false) == sfmaInvalidateParent);
 }
 
-// feature 341: a change made through one name of an FTP server ("127.0.0.1") never reached the upload
-// listing cache of an upload using another name of it ("localhost") - the upload replaced a renamed
-// file without the overwrite question; two names are now compared by the addresses the plug-in's own
-// lookups returned (salftpserverident.h)
-static void TestFtpServerIdent341()
-{
-    const unsigned int lo = 0x0100007F;    // 127.0.0.1 in network byte order
-    const unsigned int lo2 = 0x0200007F;   // 127.0.0.2
-    const unsigned int other = 0x0A0A0A0A; // 10.10.10.10
-    const unsigned int other2 = 0x0B0B0B0B;
-    unsigned int a[2] = {lo, other};
-    unsigned int b[1] = {lo};
-    unsigned int c[2] = {other2, lo2};
-
-    // host names: ASCII case-insensitive, other bytes exact
-    CHECK(SalFtpHostNameEqualAsciiCI("LocalHost", "localhost"));
-    CHECK(SalFtpHostNameEqualAsciiCI("ftp.EXAMPLE.org", "FTP.example.ORG"));
-    CHECK(!SalFtpHostNameEqualAsciiCI("localhost", "localhost."));
-    CHECK(!SalFtpHostNameEqualAsciiCI("a", "ab"));
-    CHECK(!SalFtpHostNameEqualAsciiCI("\xC3\x81", "\xC3\xA1")); // non-ASCII: exact
-    CHECK(SalFtpHostNameEqualAsciiCI("\xC3\x81", "\xC3\x81"));
-    CHECK(SalFtpHostNameEqualAsciiCI(NULL, NULL));
-    CHECK(!SalFtpHostNameEqualAsciiCI(NULL, "a"));
-
-    // the relation
-    CHECK(SalFtpCompareServerNames(true, NULL, 0, NULL, 0) == sfsnSame);
-    CHECK(SalFtpCompareServerNames(true, a, 2, c, 2) == sfsnSame);
-    // the item's case: localhost (looked up: 127.0.0.1) and 127.0.0.1 (typed)
-    CHECK(SalFtpCompareServerNames(false, b, 1, b, 1) == sfsnMaybeSame);
-    // several addresses, one in common (either order)
-    CHECK(SalFtpCompareServerNames(false, a, 2, b, 1) == sfsnMaybeSame);
-    CHECK(SalFtpCompareServerNames(false, b, 1, a, 2) == sfsnMaybeSame);
-    // an address not known for either name (a proxy, a name never looked up): cannot be told
-    CHECK(SalFtpCompareServerNames(false, NULL, 0, b, 1) == sfsnMaybeSame);
-    CHECK(SalFtpCompareServerNames(false, b, 1, NULL, 0) == sfsnMaybeSame);
-    CHECK(SalFtpCompareServerNames(false, a, 0, b, 1) == sfsnMaybeSame);
-    CHECK(SalFtpCompareServerNames(false, NULL, 0, NULL, 0) == sfsnMaybeSame);
-    CHECK(SalFtpCompareServerNames(false, a, -1, b, 1) == sfsnMaybeSame);
-    // known and disjoint: two servers keep their caches
-    CHECK(SalFtpCompareServerNames(false, a, 2, c, 2) == sfsnDifferent);
-    CHECK(SalFtpCompareServerNames(false, b, 1, c, 2) == sfsnDifferent);
-    CHECK(SalFtpCompareServerNames(false, b, 1, c, 1) == sfsnDifferent);
-
-    // the table of looked-up addresses
-    static CSalFtpHostAddrTable t; // ~19 KB: not on the stack
-    t.Clear();
-    unsigned int out[CSalFtpHostAddrTable::ADDRS + 2];
-    CHECK(t.Lookup("localhost", out, 8) == 0); // not known
-    CHECK(t.Record("localhost", b, 1));
-    CHECK(t.Lookup("localhost", out, 8) == 1 && out[0] == lo);
-    CHECK(t.Lookup("LOCALHOST", out, 8) == 1 && out[0] == lo); // case-insensitive
-    CHECK(t.Lookup("localhost.", out, 8) == 0);
-    CHECK(t.Lookup("localhost", out, 0) == 0);
-    CHECK(t.Lookup("localhost", NULL, 8) == 0);
-    CHECK(t.Lookup(NULL, out, 8) == 0);
-    // a new lookup of the name replaces its addresses (latest wins)
-    CHECK(t.Record("LocalHost", c, 2));
-    CHECK(t.Lookup("localhost", out, 8) == 2 && out[0] == other2 && out[1] == lo2);
-    CHECK(t.Lookup("localhost", out, 1) == 1 && out[0] == other2); // at most 'max'
-    // refused: nothing recorded
-    CHECK(!t.Record(NULL, b, 1));
-    CHECK(!t.Record("", b, 1));
-    CHECK(!t.Record("x", NULL, 1));
-    CHECK(!t.Record("x", b, 0));
-    CHECK(t.Lookup("x", out, 8) == 0);
-    // a host name that does not fit a slot is refused, never cut
-    {
-        std::string longest(CSalFtpHostAddrTable::HOST_BYTES - 1, 'h');
-        CHECK(t.Record(longest.c_str(), b, 1));
-        CHECK(t.Lookup(longest.c_str(), out, 8) == 1);
-        std::string tooLong(CSalFtpHostAddrTable::HOST_BYTES, 'h');
-        CHECK(!t.Record(tooLong.c_str(), b, 1));
-        CHECK(t.Lookup(tooLong.c_str(), out, 8) == 0);
-        // its first 255 bytes are another, recorded name - the long one does not match it
-        CHECK(t.Lookup((tooLong.substr(0, CSalFtpHostAddrTable::HOST_BYTES - 1)).c_str(), out, 8) == 1);
-    }
-    // more than ADDRS addresses: the first ADDRS kept
-    {
-        unsigned int many[CSalFtpHostAddrTable::ADDRS + 2];
-        for (int i = 0; i < CSalFtpHostAddrTable::ADDRS + 2; i++)
-            many[i] = 1000 + i;
-        CHECK(t.Record("many", many, CSalFtpHostAddrTable::ADDRS + 2));
-        CHECK(t.Lookup("many", out, CSalFtpHostAddrTable::ADDRS + 2) == CSalFtpHostAddrTable::ADDRS &&
-              out[0] == 1000 && out[CSalFtpHostAddrTable::ADDRS - 1] == 1000 + CSalFtpHostAddrTable::ADDRS - 1);
-    }
-    // a full table replaces the slot recorded longest ago; an evicted name reads as not known
-    {
-        t.Clear();
-        char name[32];
-        for (int i = 0; i < CSalFtpHostAddrTable::SLOTS; i++)
-        {
-            sprintf_s(name, "h%d", i);
-            unsigned int addr = (unsigned int)i + 1;
-            CHECK(t.Record(name, &addr, 1));
-        }
-        CHECK(t.Lookup("h0", out, 8) == 1 && out[0] == 1);
-        unsigned int addr = 500;
-        CHECK(t.Record("new1", &addr, 1));
-        CHECK(t.Lookup("h0", out, 8) == 0);
-        CHECK(t.Lookup("new1", out, 8) == 1 && out[0] == 500);
-        CHECK(t.Lookup("h1", out, 8) == 1 && out[0] == 2);
-        CHECK(t.Record("new2", &addr, 1));
-        CHECK(t.Lookup("h1", out, 8) == 0);
-        sprintf_s(name, "h%d", CSalFtpHostAddrTable::SLOTS - 1);
-        CHECK(t.Lookup(name, out, 8) == 1);
-        // an existing name is updated in place, nothing evicted
-        unsigned int addr2 = 600;
-        CHECK(t.Record("h2", &addr2, 1));
-        CHECK(t.Lookup("h2", out, 8) == 1 && out[0] == 600);
-        CHECK(t.Lookup("h3", out, 8) == 1 && out[0] == 4);
-    }
-}
-
 // feature 289: drive names and folder type names from the wide shell / volume calls (saldrivetext.h)
 static void TestDriveText289()
 {
@@ -21877,7 +21763,6 @@ int main(int argc, char** argv)
     TestHfsRecordClass332();
     TestHfsVolumeDeclared333();
     TestFtpMkdirReport323();
-    TestFtpServerIdent341();
     TestSameVolume324();
     TestSusp326();
     TestArcItemName327();

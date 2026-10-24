@@ -476,14 +476,6 @@ HANDLE FTPFindFirstFileU8(const char* pathName, WIN32_FIND_DATAW* data);
 struct CFTPServerEnc;
 CFTPServerEnc* FTPGetServerEnc(const char* host, unsigned short port, const char* user);
 
-// feature 341: the IPv4 addresses (network byte order) the plug-in's own name lookups returned
-// (CGetHostByNameThread records them; salftpserverident.h) - so the upload listing cache can tell
-// two names of one server; nothing is looked up for it. Safe from any thread (a leaf lock).
-void FTPRecordHostAddrs(const char* host, const unsigned int* addrs, int count);
-// the known addresses of 'host' (at most 'max', to 'out'): a typed IPv4 address as it is, else the
-// recorded lookup; returns their number, 0 = not known
-int FTPGetHostAddrs(const char* host, unsigned int* out, int max);
-
 // feature 288: the server whose listing this thread parses (FTPListingFieldToU8 records its
 // evidence there); set around a parse loop, nests. NULL = no server (the server-type test
 // dialog): the texts are decoded the same way, nothing is recorded.

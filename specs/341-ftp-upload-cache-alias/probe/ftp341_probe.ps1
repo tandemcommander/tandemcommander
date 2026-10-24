@@ -21,12 +21,12 @@
                  n.txt (folder "second") to localhost:/ALIAS-UP: PASS = no second STOR n.txt, the
                  question for n.txt, the server's n.txt keeps upload 2's content.
       SAME-REN   control (feature 323's REN-UP): everything at 127.0.0.1 - must stay PASS.
-      DIFF-KEEP  two different servers keep their caches: a second server (ftpmini_at.py) on
-                 127.0.0.2, same port; upload 1 to localhost (server 1, its lookup records
-                 127.0.0.1) kept open; the panel at 127.0.0.2 renames a.txt; upload 2 of a new
-                 local file to localhost: PASS = it is stored without listing the folder again
-                 (the cache of localhost was kept). Fails when the lookups are not recorded
-                 (an unknown address reads as "maybe the same server").
+      MULTI-REN  (review of 341, M1) one server answering on two addresses that share nothing: a
+                 second ftpmini (ftpmini_at.py) on 127.0.0.2 serves the same folder; upload 1 to
+                 localhost (127.0.0.1) kept open; Quick Rename a.txt -> b.txt in the panel at
+                 127.0.0.2; upload 2 of the local b.txt to localhost: PASS = no STOR b.txt, the
+                 question for b.txt, the server's b.txt keeps the content of a.txt. Disjoint
+                 addresses do not prove two servers.
     The product's registry key is exported, restored and compared. Exit code = FAIL rows.
 
 .NOTES
@@ -54,7 +54,7 @@ if ($others.Count) { Write-Output ('NOT RUN: tandemcommander.exe already runs: '
 $Root = $TempRoot + '\tc341'
 $StartDir = $Root + '\start'
 $FtpSrv = @{ Root = ($Root + '\srv'); Log = ($Root + '\ftp.log'); Port = $Port; Enc = 'utf-8'; Proc = $null }
-$FtpSrv2 = @{ Root = ($Root + '\srv2'); Log = ($Root + '\ftp2.log'); Port = $Port; Enc = 'utf-8'; Proc = $null; Addr = '127.0.0.2' }
+$FtpSrv2 = @{ Root = ($Root + '\srv'); Log = ($Root + '\ftp2.log'); Port = $Port; Enc = 'utf-8'; Proc = $null; Addr = '127.0.0.2' }
 $MiniAt = Join-Path $PSScriptRoot 'ftpmini_at.py'
 $MiniPy = Join-Path $Repo 'specs\323-ftp-upload-cache-args\probe\ftpmini_hide.py'
 
@@ -259,7 +259,7 @@ $regHash = $(if ($existed) { (Get-FileHash -LiteralPath $backup).Hash } else { '
 $restored = $false; $nf = 0
 try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
-    NewDir $StartDir; NewDir $FtpSrv.Root; NewDir $FtpSrv2.Root
+    NewDir $StartDir; NewDir $FtpSrv.Root
     Set-Config
     $up = Start-Srv $FtpSrv
     $up2 = Start-Srv $FtpSrv2
@@ -353,38 +353,36 @@ try {
         @{ Ok = ($ren -and -not $stor -and $asked -and $b -ceq 'SRV-A')
            Facts = ("renamed: {0}; upload 2 sent STOR b.txt: {1}; overwrite question for b.txt open: {2}; server b.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; operation windows after upload 1: {8}; at the end: {9}" -f $ren, $stor, $asked, $b, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), $op1, (OpDesc $id)) }
     }
-    # two different servers (127.0.0.1 looked up as localhost, 127.0.0.2 typed): a change at one
-    # keeps the cache of the other - upload 2 stores without listing again
+    # review of 341 (M1): one file system on 127.0.0.1 and 127.0.0.2 (server 2 serves server 1's
+    # folder); the upload uses localhost, the panel 127.0.0.2 - no address in common
     $toLocal = { param($t) $t -replace '//u@127\.0\.0\.[12]:', '//u:p@localhost:' }
     if ($up2) {
-        Row-Case 'DIFF-KEEP' 'DIFF-KEEP' {
+        Row-Case 'MULTI-REN' 'MULTI-REN' {
             param($s, $l)
-            WriteFile ($s + '\o1.txt') 'SRV-O1'
-            $s2 = $FtpSrv2.Root + '\DIFF-KEEP'; NewDir $s2; WriteFile ($s2 + '\a.txt') 'SRV2-A'
-            WriteFile ($l + '\new.txt') 'NEW'; WriteFile ($l + '\o1.txt') 'L1'
+            WriteFile ($s + '\a.txt') 'SRV-A'; WriteFile ($s + '\o1.txt') 'SRV-O1'
+            WriteFile ($l + '\b.txt') 'LOCAL-B'; WriteFile ($l + '\o1.txt') 'L1'
         } {
             param($id, $s, $l)
-            $s2 = $FtpSrv2.Root + '\DIFF-KEEP'
-            Focus $id 0 2                                          # local: .., new.txt, o1.txt -> o1.txt
-            $t1 = @(Drive $id 727 $toLocal)                        # upload 1 to localhost (server 1): question
+            Focus $id 0 2                                          # local: .., b.txt, o1.txt -> o1.txt
+            $t1 = @(Drive $id 727 $toLocal)                        # upload 1 to localhost: question, stays open
             $op1 = OpDesc $id
             KeyIn $id 0 0x09
-            Focus $id 1 1                                          # a.txt on server 2 (the panel, 127.0.0.2)
-            $t2 = @(Drive $id 754 { param($t) 'b.txt' })
-            $ren = [IO.File]::Exists($LP + $s2 + '\b.txt')
+            Focus $id 1 1                                          # a.txt (the panel at 127.0.0.2)
+            $t2 = @(Drive $id 754 { param($t) 'b.txt' })           # Quick Rename
+            $ren = [IO.File]::Exists($LP + $s + '\b.txt') -and -not [IO.File]::Exists($LP + $s + '\a.txt')
             KeyIn $id 1 0x09
-            Focus $id 0 1                                          # local new.txt
+            Focus $id 0 1                                          # local b.txt
             $from = Srv-Count $FtpSrv
-            $t3 = @(Drive $id 727 $toLocal 5 90)                   # upload 2 to localhost
+            $t3 = @(Drive $id 727 $toLocal 5 90)                   # upload 2 of b.txt to localhost
             $cmds = @(Srv-Cmds $FtpSrv $from)
-            $stor = Has-Cmd $cmds '^STOR (.*/)?new\.txt$'
-            $list = Has-Cmd $cmds '^(LIST|NLST|MLSD)'
-            $n = ReadSrv ($s + '\new.txt')
-            @{ Ok = ($ren -and $stor -and -not $list -and $n -ceq 'NEW')
-               Facts = ("renamed on server 2: {0}; upload 2 sent STOR new.txt: {1}; upload 2 listed again: {2}; server 1 new.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; operation windows after upload 1: {8}; at the end: {9}" -f $ren, $stor, $list, $n, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), $op1, (OpDesc $id)) }
+            $stor = Has-Cmd $cmds '^STOR (.*/)?b\.txt$'
+            $asked = OpQuestion $id 'b.txt'
+            $b = ReadSrv ($s + '\b.txt')
+            @{ Ok = ($ren -and -not $stor -and $asked -and $b -ceq 'SRV-A')
+               Facts = ("renamed through 127.0.0.2: {0}; upload 2 sent STOR b.txt: {1}; overwrite question for b.txt open: {2}; server b.txt '{3}'; upload 2 commands: {4}; dialogs: {5} | {6} | {7}; operation windows after upload 1: {8}; at the end: {9}" -f $ren, $stor, $asked, $b, ($cmds -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), ($t3 -join ' ; '), $op1, (OpDesc $id)) }
         } '127.0.0.2'
     }
-    else { Row 'DIFF-KEEP' 'ROW' 'NOT DRIVEN' 'the second server on 127.0.0.2 did not start' }
+    else { Row 'MULTI-REN' 'ROW' 'NOT DRIVEN' 'the second server on 127.0.0.2 did not start' }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

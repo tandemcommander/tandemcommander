@@ -1,4 +1,5 @@
-"""Feature 341: feature 323's ftpmini_hide.py listening on another loopback address.
+"""Feature 341: feature 323's ftpmini_hide.py listening on another loopback address (row MULTI-REN:
+one folder served on 127.0.0.1 and 127.0.0.2).
 
 Usage: python -I ftpmini_at.py ADDR ROOT PORT LOG [ENC ...] - ADDR is a 127.x.y.z address; the rest
 is passed to ftpmini_hide.py unchanged. The server's control listener binds ADDR; a PORT command

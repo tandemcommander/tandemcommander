@@ -32,21 +32,26 @@ Measured at 3034d82f (hidden-desktop probe `probe/ftp341_probe.ps1`, Debug build
 
 ### Session 2026-10-24
 
-- Q: How is "the same server under another name" recognised - by resolving names anew? → A: No
-  new name lookups and no new network communication: the plug-in already obtains the address of
-  every server it connects to (a typed IPv4 address is read as it is; a name is looked up when a
-  connection is opened). The addresses of those lookups are remembered in memory for the
-  session only and compared. (autonomous run: item Notes + rule - network behaviour is
-  maintainer-owned, so the conservative option that changes none)
+- Q: How is "the same server under another name" recognised? → A: It is not - the client cannot
+  tell: neither equal nor different addresses prove it (a server answers on several addresses -
+  127.0.0.1 and 127.0.0.2, its LAN and its public address; a proxy hides the server's address).
+  Every other host name with the same user and port is taken as maybe the same server; nothing
+  is looked up and nothing is remembered. (autonomous run: item Expected - "when the identity of
+  the server cannot be told, the upload does not trust its cached listings"; rule - a safety
+  check fails closed, 098). Revised after the independent review (M1): the first design
+  remembered the addresses of the plug-in's own lookups and took names with known, disjoint
+  addresses as two servers; the review reproduced the data loss with one folder served on
+  127.0.0.1 and 127.0.0.2 (probe row MULTI-REN).
 - Q: When two names may be one server, is the change applied to the other upload's cache as
   reported, or does that cache stop trusting its listings? → A: The other cache stops trusting
   all of its listings (the upload lists the folder again before deciding). An equal address does
   not prove the same file system (e.g. a proxy in between), and a wrongly applied delete report
   could suppress a needed question; invalidation can never lose data. (autonomous run: item
   Expected - "or ... the upload does not trust its cached listings"; conservative)
-- Q: What when the address of one of the two names is not known (a connection through a proxy,
-  where the plug-in looks up only the proxy)? → A: The identity cannot be told: treated as maybe
-  the same server - the other cache is invalidated. (autonomous run: item Expected)
+- Q: What does fail closed cost? → A: While uploads run under two names with the same user and
+  port - also of two different servers (e.g. user `admin` on two machines, port 21) - each change
+  through one makes the other list the folder again before deciding; slower, never less safe.
+  (autonomous run: item Expected)
 - Q: Do two different user names, or two different ports, count as maybe the same server? → A: No
   - the item is about server names; user and port keep identifying the server as before.
   (autonomous run: conservative - keeps existing behaviour for every case the item does not name)
@@ -92,33 +97,29 @@ other's knowledge: the other asks before overwriting it.
 
 ---
 
-### User Story 3 - Different servers keep their caches (Priority: P3)
+### User Story 3 - One server answering on addresses that share nothing (Priority: P3)
 
-Uploads to two servers whose known addresses differ do not make each other list folders again.
+A server reached as `localhost` (127.0.0.1) by an upload and as `127.0.0.2` (or its LAN and public
+address) by a panel: a change through one still reaches the upload through the other.
 
-**Why this priority**: keeps the cache's purpose (fewer listings) for the common case.
+**Why this priority**: the same data loss; found by the review (M1).
 
-**Independent Test**: unit checks of the identity rule (saltests); probe row DIFF-KEEP (a second
-server on 127.0.0.2: a rename there leaves the cache of an upload to `localhost` trusted).
+**Independent Test**: probe row MULTI-REN (one folder served on 127.0.0.1 and 127.0.0.2).
 
 **Acceptance Scenarios**:
 
-1. **Given** two cached servers with the same user and port whose known addresses have none in
-   common, **When** a change is reported for one, **Then** the other's listings stay trusted.
+1. **Given** upload 1 to `localhost` open and a panel at `127.0.0.2` on the same folder, **When**
+   Quick Rename `a.txt` -> `b.txt` is done in the panel and the local `b.txt` is uploaded to
+   `localhost`, **Then** the overwrite question appears and the server's `b.txt` keeps its content.
 2. **Given** one name everywhere (feature 323's rows), **Then** behaviour is unchanged.
 
 ### Edge Cases
 
-- A name that resolves to several addresses: any address in common counts as maybe the same.
-- A host typed as an IPv4 address (also short forms the plug-in accepts, e.g. `127.1`): its
-  address is known without any lookup.
-- An address not known for either name (proxy, a name never looked up in this session): maybe
-  the same - invalidated.
-- A name whose address changed during the session: the latest lookup counts; an outdated
-  "different" only keeps today's behaviour, an outdated "same" only costs a listing.
-- Two uploads under two names of one server running at once: each store makes the other list
-  again (correct; slower than one name).
-- Different user or port: unchanged behaviour (not identified as the same server).
+- Equal or different addresses, a name with several addresses, a proxy: all the same - another
+  host name with the same user and port is maybe the same server.
+- Two uploads under two names (of one server or of two servers with the same user and port)
+  running at once: each change through one makes the other list again (correct; slower).
+- Different user or port: unchanged behaviour (not taken as the same server).
 
 ## Requirements *(mandatory)*
 
@@ -127,42 +128,34 @@ server on 127.0.0.2: a rename there leaves the cache of an upload to `localhost`
 - **FR-001**: A change reported for a server (user, host, port) MUST, besides the cache entry of
   exactly that host as before, invalidate every cached listing of every other cache entry with the
   same user and port that may be the same server.
-- **FR-002**: Two host names MUST count as maybe the same server when their known addresses have
-  one in common, or when the address of either is not known; as different when both are known
-  and have none in common; equal host text keeps today's exact match.
-- **FR-003**: A host's known addresses MUST come only from what the plug-in already does: a
-  typed IPv4 address read as it is, or the result of a lookup the plug-in made to connect. No new
-  lookup or other network communication is added; nothing is stored beyond the running process.
+- **FR-002**: Another host name (not equal as the cache compares hosts) with the same user and
+  port MUST count as maybe the same server - the client cannot tell two servers apart.
+- **FR-003**: No name lookup or other network communication is added; nothing is stored.
 - **FR-004**: The reports covered: Create Directory, Rename, Delete, store started, file uploaded,
   unknown change (Send FTP Command). Listing bookkeeping (a listing received, failed, updated
   from the panel, invalidated by the upload itself) stays per exact host.
 - **FR-005**: Behaviour for one name everywhere MUST stay unchanged (feature 323's probe rows).
-- **FR-006**: The identity rule MUST be a pure, unit-tested rule (header under `src/common/`).
+- **FR-006**: The decision is one condition inside the cache (same user and port, another host);
+  no pure rule beyond it - the probe proves it (rows ALIAS-REN, ALIAS-UP, MULTI-REN, and the
+  negative control with the fan-out disabled).
 
 ### Key Entities
 
 - **Cached server entry**: user, host as typed, port; its cached folder listings.
-- **Known addresses of a host**: zero or more IPv4 addresses, from a typed address or a lookup
-  the plug-in made in this session.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
 - **SC-001**: Probe rows ALIAS-REN and ALIAS-UP: FAIL on `main` -> PASS (question shown, server
-  file unchanged, no store sent before the answer).
+  file unchanged, no store sent before the answer); MULTI-REN (review M1) PASS, FAIL with the
+  fan-out disabled.
 - **SC-002**: Control SAME-REN and feature 323's probe `ftp302_probe` (16 rows) stay PASS.
-- **SC-002a**: Probe row DIFF-KEEP PASS: two servers with known, different addresses keep their
-  caches (upload 2 stores without listing again); it fails when lookups are not remembered.
-- **SC-003**: saltests: the identity rule's checks pass, 0 failed overall.
-- **SC-004**: No new network request: no new lookup call site; the only new code on the lookup
-  path records a result already received.
+- **SC-003**: saltests: 0 failed (unchanged count - no new pure rule).
+- **SC-004**: No new network request: the change adds no lookup call.
 
 ## Assumptions
 
-- Assumption (autonomous run): IPv4 only - the plug-in's connections use IPv4 addresses
-  (`gethostbyname`, 32-bit addresses); IPv6 does not arise.
-- Assumption (autonomous run): the remembered addresses are a small in-memory table (bounded) for
-  the life of the plug-in; not a stored setting, so `PRIVACY.md` (what is stored) is unaffected.
-- Assumption (autonomous run): host names compare case-insensitively in ASCII (DNS rule).
 - Out of scope: two user accounts sharing folders on one server; the same server on two ports.
+- Assumption (autonomous run): the cost of failing closed (FR-002) is accepted per the item's
+  *Expected*; it lasts only while uploads under two names with the same user and port run.

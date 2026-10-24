@@ -3407,10 +3407,10 @@ protected:
                                         unsigned short port, int* index);
 
     // feature 341: a change was reported for server 'user'+'host'+'port' ('exact' = its entry or
-    // NULL); every other entry of the same user and port whose host may be the same server under
-    // another name ("localhost" / "127.0.0.1": an address in common, or an address not known -
-    // salftpserverident.h, FTPGetHostAddrs) stops trusting all of its listings (the upload lists
-    // again); call only from the UploadLstCacheCritSect critical section
+    // NULL); every other entry of the same user and port has another host name that may reach the
+    // same server ("localhost" / "127.0.0.1", a name and its address - the client cannot tell) and
+    // stops trusting all of its listings (the upload lists again); call only from the
+    // UploadLstCacheCritSect critical section
     void InvalidateOtherNamesOfServer(const char* user, const char* host, unsigned short port,
                                       CUploadListingsOnServer* exact);
 };

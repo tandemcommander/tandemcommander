@@ -4,8 +4,6 @@
 
 #include "precomp.h"
 
-#include "../../common/salftpserverident.h" // feature 341: the addresses of a lookup are remembered
-
 WSADATA WinSocketsData; // information about the Windows Sockets implementation
 
 CThreadQueue SocketsThreadQueue("FTP Sockets"); // queue of all threads used in connection with sockets
@@ -748,23 +746,7 @@ public:
             if (host == NULL)
                 err = WSAGetLastError();
             else
-            {
                 ip = *(DWORD*)(host->h_addr);
-                // feature 341: remember the addresses of this lookup (the upload listing cache tells
-                // two names of one server by them); copied before anything else uses this thread's
-                // HOSTENT
-                unsigned int addrs[CSalFtpHostAddrTable::ADDRS];
-                int count = 0;
-                if (host->h_addrtype == AF_INET && host->h_length == sizeof(DWORD))
-                {
-                    while (count < CSalFtpHostAddrTable::ADDRS && host->h_addr_list[count] != NULL)
-                    {
-                        addrs[count] = *(DWORD*)host->h_addr_list[count];
-                        count++;
-                    }
-                }
-                FTPRecordHostAddrs(Address, addrs, count);
-            }
         }
         // send the result to the "sockets" thread
         HANDLES(EnterCriticalSection(&SocketsThreadCritSect));
