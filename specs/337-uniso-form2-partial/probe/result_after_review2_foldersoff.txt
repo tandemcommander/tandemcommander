@@ -1,0 +1,54 @@
+iso337_probe (feature 337) after-review2 (Session NN folders off)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 10:36; registry key existed True
+
+seeds: ccd_nofs_f1.ccd,ccd_nofs_f1.img,ccd_nofs_m1.ccd,ccd_nofs_m1.img,ccd_vcd.ccd,ccd_vcd.img,ccd_vcdcov.ccd,ccd_vcdcov.img,ccd_vcdfull.ccd,ccd_vcdfull.img,ccd_vcdgap.ccd,ccd_vcdgap.img,ccd_vcdlast.ccd,ccd_vcdlast.img,ccd_vcdreal.ccd,ccd_vcdreal.img,ccd_vcdtrunc.ccd,ccd_vcdtrunc.img,multi_ff_f1.nrg,multi_form2.nrg,multi_form2cov.nrg,multi_form2full.nrg,multi_nofs.nrg,multi_nofs_f1.nrg,multi_ok_2336.nrg,multi_txt_f1.nrg,multi_u16_f1.nrg,multi_u16s_f1.nrg,nrg_vcdlast.nrg,s1.iso,s1c.iso,s2.iso,s2.lba,single_nofs.nrg,single_raw.nrg,single_short.nrg,single_vcd.nrg,single_vcdbyte.nrg,single_vcdcov.nrg,single_vcdcov2.nrg,single_vcdfull.nrg,single_vcdgap.nrg,single_vcdmid.nrg,single_vcdmide.nrg,single_vcdovl.nrg,single_vcdpart.nrg,single_vcdtail.nrg,single_vcdtwo.nrg,single_vcdtwof.nrg,single_vcdzero.nrg
+img: multi_nofs: 720988 bytes, track 2 from sector 176; track 2 Mode 1, 2 volume descriptors destroyed
+img: multi_ok_2336: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, intact
+img: multi_nofs_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, 2 volume descriptors destroyed
+img: multi_form2: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 2 (MPEG-like stream)
+img: single_vcd: 771664 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 2 (MPEG-like stream)
+img: single_nofs: 720976 bytes, track 2 from sector 176; track 2 Mode 1, 2 volume descriptors destroyed
+img: single_raw: 720976 bytes, track 2 from sector 176; track 2 Mode 1 zeros
+img: multi_ff_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (multi_ff_f1)
+img: multi_txt_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (multi_txt_f1)
+img: multi_u16_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (multi_u16_f1)
+img: multi_u16s_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (multi_u16s_f1)
+img: single_short: 533412 bytes, track 2 from sector 176; track 2 a 10-sector Mode 2 / 2336 Form 1 track, track 3 a Form 2 stream
+img: ccd_vcd: 176 + 176 sectors, track 2 mode 2
+img: ccd_nofs_m1: 176 + 176 sectors, track 2 mode 1
+img: ccd_nofs_f1: 176 + 176 sectors, track 2 mode 2
+img: ccd_vcdreal: 176 + 176 sectors, track 2 mode 2
+img: single_vcdcov: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 16384 bytes; stream sectors 64.. empty
+img: single_vcdcov2: 675940 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 16384 bytes; stream sectors 64.. empty
+img: single_vcdzero: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 0 bytes; stream sectors 64.. empty
+img: multi_form2cov: 526428 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 16384 bytes; stream sectors 64.. empty
+img: single_vcdpart: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 2048 bytes; stream sectors 64.. empty
+img: single_vcdfull: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 131072 bytes; stream sectors 64.. empty
+img: multi_form2full: 526428 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 131072 bytes; stream sectors 64.. empty
+img: single_vcdgap: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 98304 bytes; stream sectors 48.. empty
+img: single_vcdtail: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 98304 bytes; stream sectors 64.. empty
+img: single_vcdbyte: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 129025 bytes; stream sectors 64.. empty
+img: single_vcdmid: 526416 bytes; track 1 184 sectors
+img: single_vcdmide: 526416 bytes; track 1 184 sectors
+img: single_vcdovl: 526416 bytes; track 1 184 sectors
+img: single_vcdtwo: 675940 bytes; track 1 184 sectors
+img: single_vcdtwof: 675940 bytes; track 1 184 sectors
+img: nrg_vcdlast: 526416 bytes; track 1 184 sectors
+img: ccd_vcdcov: 583296 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 16384 bytes; stream sectors 64.. empty
+img: ccd_vcdfull: 583296 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 131072 bytes; stream sectors 64.. empty
+img: ccd_vcdgap: 583296 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 98304 bytes; stream sectors 48.. empty
+img: ccd_vcdtrunc: 584496 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 98304 bytes; stream sectors 48.. empty
+img: ccd_vcdlast: 583296 bytes; track 1 184 sectors
+
+MF-FORM2   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MF-FORM2   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+MF-FORM2COV END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MF-FORM2COV RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+MF-FORM2FULL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MF-FORM2FULL RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+MF-NOFS    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MF-NOFS    RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588 / after BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588
+
+Rows: PASS 8, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

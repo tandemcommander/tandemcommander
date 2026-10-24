@@ -332,7 +332,7 @@ readSINF(CFile& file, NRGHeader* header, CISOImage* iso)
 }
 
 static BOOL
-ReadNRGRoot(CFile& file, CISOImage* iso)
+ReadNRGRoot(CFile& file, CISOImage* iso, LONGLONG* chunks)
 {
     CALL_STACK_MESSAGE2("ReadNRGRoot(, %p)", iso);
 
@@ -356,6 +356,8 @@ ReadNRGRoot(CFile& file, CISOImage* iso)
         return FALSE;
 
     offset = getLongLong(&offset);
+    // feature 337 (review 2): the chunks follow the sector data - where the last track's data ends at most
+    *chunks = offset;
 
     // set file pointer to start of session information
     if (file.Seek(offset, FILE_BEGIN) == -1)
@@ -400,7 +402,9 @@ BOOL CISOImage::ReadSessionNRG(BOOL quiet /* = FALSE*/)
     if (File->Seek(pos.QuadPart, FILE_BEGIN) == -1)
         return FALSE;
 
-    BOOL ret = ReadNRGRoot(*File, this);
+    LONGLONG chunks = -1;
+    BOOL ret = ReadNRGRoot(*File, this, &chunks);
+    ImageDataEnd = chunks;
 
     return ret;
 }

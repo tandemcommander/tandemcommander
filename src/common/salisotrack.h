@@ -240,9 +240,10 @@ const int SAL_ISO_FORM2_PAYLOAD = 2324;
 // image file of 'fileSize' bytes - a last sector stored only in part counts too (review 1: its bytes are
 // checked; it cannot be read whole, so it marks the listing unless a file covers it). Fails closed on a
 // wrong track-table end: an end at or before the start is unknown (the image's end is taken); a next
-// track ('nextStart', -1 = none) that starts later in the file than the end extends it (an end too small -
-// the bytes up to the next track are checked too); nothing past the image file counts. 0 = no sector (the
-// caller marks the listing).
+// track ('nextStart', -1 = none; for the last track the caller passes the end of the image's sector data -
+// review 2) that starts later in the file than the end extends it (an end too small - the bytes up to the
+// next track are checked too); nothing past the image file counts. 0 = no sector (the caller marks the
+// listing).
 inline long long SalIsoStreamTrackSectors(long long start, long long end, long long nextStart, long long fileSize,
                                           long long sectorSize)
 {

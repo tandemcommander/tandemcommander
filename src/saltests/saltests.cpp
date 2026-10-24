@@ -20234,8 +20234,12 @@ static void TestIsoStreamPartial_337()
     CHECK(SalIsoStreamTrackSectors(0, 100 * r, -1, 30 * r + 7, r) == 31);           // past the file: cut at it (review 1: the 7 bytes count)
     CHECK(SalIsoStreamTrackSectors(0, 100 * r, -1, 30 * r, r) == 30);
     CHECK(SalIsoStreamTrackSectors(0, 65 * r, -1, 64 * r + 1200, r) == 65); // review 1, R-TRUNC: a sector stored in part
-    CHECK(SalIsoStreamTrackSectors(0, 0, 100 * r, 30 * r, r) == 30);        // next track past the file
-    CHECK(SalIsoStreamTrackSectors(30 * r, 40 * r, -1, 30 * r, r) == 0);    // starts at the file's end
+    // review 2: the last track with a too-small end reaches the image's data end (an NRG image's chunks)
+    CHECK(SalIsoStreamTrackSectors(1000, 1000 + 48 * m2, 1000 + 64 * m2, 1000 + 64 * m2 + 300, m2) == 64); // X-NRGLAST
+    CHECK(SalIsoStreamTrackSectors(0, 48 * r, 64 * r, 64 * r, r) == 64);                                   // X-CCDLAST
+    CHECK(SalIsoStreamTrackSectors(1000, 1000 + 64 * m2, 1000 + 64 * m2, 1000 + 64 * m2 + 300, m2) == 64); // a right end
+    CHECK(SalIsoStreamTrackSectors(0, 0, 100 * r, 30 * r, r) == 30);                                       // next track past the file
+    CHECK(SalIsoStreamTrackSectors(30 * r, 40 * r, -1, 30 * r, r) == 0);                                   // starts at the file's end
     CHECK(SalIsoStreamTrackSectors(-1, 40 * r, -1, 50 * r, r) == 0);
     CHECK(SalIsoStreamTrackSectors(0, 40 * r, -1, 50 * r, 0) == 0);
     CHECK(SalIsoStreamTrackSectors(0, 40 * r, -1, -1, r) == 0);

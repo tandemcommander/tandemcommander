@@ -175,6 +175,8 @@ CISOImage::CISOImage() : Session(10, 5),
     SectorUserSize = 2048;
 
     Label = NULL;
+
+    ImageDataEnd = -1;
 }
 
 CISOImage::~CISOImage()
@@ -1509,11 +1511,14 @@ void CISOImage::MarkUncoveredStreams(const CSalamanderDirectoryAbstract* dir)
     DWORD sizeHi;
     DWORD sizeLo = File->GetFileSize(&sizeHi);
     LONGLONG fileSize = ((LONGLONG)sizeHi << 32) | sizeLo;
+    // review 2: the last track reaches up to the image's sector data end (an NRG image's chunks, else the
+    // file's end) - its track-table end may be too small as well
+    LONGLONG dataEnd = ImageDataEnd > 0 && ImageDataEnd < fileSize ? ImageDataEnd : fileSize;
     for (track = 0; track < Tracks.Count; track++)
     {
         covered[track] = false;
         Track* t = Tracks[track];
-        sectors[track] = t->Form2Stream ? SalIsoStreamTrackSectors(t->Start, t->End, track + 1 < Tracks.Count ? Tracks[track + 1]->Start : -1,
+        sectors[track] = t->Form2Stream ? SalIsoStreamTrackSectors(t->Start, t->End, track + 1 < Tracks.Count ? Tracks[track + 1]->Start : dataEnd,
                                                                    fileSize, t->SectorSize)
                                         : 0;
     }

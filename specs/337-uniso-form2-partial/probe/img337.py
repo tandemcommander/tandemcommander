@@ -29,6 +29,15 @@ with a .ccd beside the .img.
   single_vcdbyte   as single_vcdcov, avseq01.dat of 63 * 2048 + 1 bytes (the last sector extracted in part)
   ccd_vcdtrunc     as ccd_vcdgap, then the first 1200 bytes of a 65th stream sector (data); the lead-out
                    after it - the image ends inside that sector
+  (review 2; a.txt is pointed into a stream too, its record patched like avseq01.dat's)
+  single_vcdmid    one data stream; avseq01.dat over 0..31, a.txt over 40..63 - 32..39 hold data
+  single_vcdmide   as single_vcdmid, sectors 32..39 empty
+  single_vcdovl    one data stream; avseq01.dat over 0..47, a.txt over 40..63 (overlapping, all covered)
+  single_vcdtwo    two data streams; avseq01.dat over all of track 2, a.txt over 8 of track 3's 64 sectors
+  single_vcdtwof   as single_vcdtwo, a.txt over all 64 of track 3
+  nrg_vcdlast      one session; ETNF gives the stream 48 sectors, 64 data sectors are stored before the
+                   chunks; avseq01.dat over 48 (a track-table end too small)
+  ccd_vcdlast      CloneCD; lead-out at track 2 + 48, 64 data sectors in the .img; avseq01.dat over 48
 """
 import struct
 import sys
@@ -58,10 +67,13 @@ KINDS = {
 }
 
 
-def patch_avseq(iso, lba, size):
-    """Points every directory record named AVSEQ01.DAT;1 at 'lba' with 'size' bytes."""
+REVIEW2 = ("single_vcdmid", "single_vcdmide", "single_vcdovl", "single_vcdtwo", "single_vcdtwof", "nrg_vcdlast",
+           "ccd_vcdlast")
+
+
+def patch_avseq(iso, lba, size, name=b"AVSEQ01.DAT;1"):
+    """Points every directory record named 'name' (AVSEQ01.DAT;1) at 'lba' with 'size' bytes."""
     data = bytearray(iso)
-    name = b"AVSEQ01.DAT;1"
     n = 0
     at = data.find(name)
     while at >= 0:
@@ -72,7 +84,7 @@ def patch_avseq(iso, lba, size):
             n += 1
         at = data.find(name, at + 1)
     if n == 0:
-        raise SystemExit("no AVSEQ01.DAT;1 record in the seed")
+        raise SystemExit("no %s record in the seed" % name.decode())
     return bytes(data), n
 
 
@@ -133,11 +145,50 @@ def write_ccd(dst, s1, n1, empty_from, part=0):
     return len(t1) + len(t2)
 
 
+def stream_with(fill, empty):
+    """A 2336-byte stream of STREAM data sectors except the sectors in 'empty'."""
+    return b"".join((EMPTY_SUB + bytes(2324) if s in empty else payload(s, fill, STREAM)) + bytes(4) for s in range(STREAM))
+
+
+def review2(kind, s1, n1, dst):
+    """The rows of review 2 (see the docstring); returns the image's size."""
+    S = SECTOR
+    if kind in ("single_vcdmid", "single_vcdmide", "single_vcdovl"):
+        s, _ = patch_avseq(s1, n1, (48 if kind == "single_vcdovl" else 32) * S)
+        s, _ = patch_avseq(s, n1 + 40, 24 * S, b"A.TXT;1")
+        empty = set(range(32, 40)) if kind == "single_vcdmide" else set()
+        return write_nrg(dst, [(s, 0, 0x00), (stream_with(13, empty), n1, 0x03)], [2])
+    if kind in ("single_vcdtwo", "single_vcdtwof"):
+        s, _ = patch_avseq(s1, n1, STREAM * S)
+        s, _ = patch_avseq(s, n1 + STREAM, (8 if kind == "single_vcdtwo" else STREAM) * S, b"A.TXT;1")
+        return write_nrg(dst, [(s, 0, 0x00), (stream_with(13, set()), n1, 0x03), (stream_with(7, set()), n1 + STREAM, 0x03)], [3])
+    if kind == "nrg_vcdlast":
+        s, _ = patch_avseq(s1, n1, 48 * S)
+        data = s + stream_with(13, set())
+        etnf = struct.pack(">II", 0, len(s)) + bytes([0, 0, 0, 0x00]) + struct.pack(">I", 0) + bytes(4)
+        etnf += struct.pack(">II", len(s), 48 * 2336) + bytes([0, 0, 0, 0x03]) + struct.pack(">I", n1) + bytes(4)
+        chunks = chunk(b"ETNF", etnf) + chunk(b"SINF", struct.pack(">I", 2)) + chunk(b"END!", b"")
+        img = data + chunks + b"NER5" + struct.pack(">Q", len(data))
+        open(dst, "wb").write(img)
+        return len(img)
+    # ccd_vcdlast: the lead-out says 48 sectors, the .img holds 64
+    s, _ = patch_avseq(s1, n1, 48 * S)
+    total = write_ccd(dst, s, n1, STREAM)
+    ccd = open(dst[:-4] + ".ccd").read().replace("PLBA=%d\n" % (n1 + STREAM), "PLBA=%d\n" % (n1 + 48), 1)
+    open(dst[:-4] + ".ccd", "w", newline="\r\n").write(ccd)
+    return total
+
+
 def main(argv):
-    if len(argv) != 3 or argv[0] not in KINDS:
+    if len(argv) != 3 or (argv[0] not in KINDS and argv[0] not in REVIEW2):
         print(__doc__)
         return 2
     kind, p1, dst = argv
+    if kind in REVIEW2:
+        s1 = open(p1, "rb").read()
+        n1 = len(s1) // SECTOR
+        print("%s: %d bytes; track 1 %d sectors" % (kind, review2(kind, s1, n1, dst), n1))
+        return 0
     box, sessions, size, empty_from = KINDS[kind]
     s1 = open(p1, "rb").read()
     if len(s1) % SECTOR:

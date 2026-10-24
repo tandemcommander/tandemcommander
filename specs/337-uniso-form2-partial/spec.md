@@ -47,7 +47,9 @@ offset plus *i* stored sectors and has the disc address `ExtentOffset + i`.
   next track starts later in the file than that end, the bytes up to the next track's start belong to
   the check too; nothing past the image file's end is counted. A wrong end that is too large can only
   add sectors to check (fails closed: kept); one that is too small is extended by the next track's
-  start (autonomous run: item *Notes* "a wrong end must fail closed")
+  start, and the last track's up to the end of the image's sector data - an NRG image's chunk area
+  (named by its footer), else the file's end (review 2) (autonomous run: item *Notes* "a wrong end must
+  fail closed")
 - Q: Which sectors does a listed file cover? → A: those the unpack extracts whole: from its extent,
   `floor(size / 2048)` sectors, clipped to the track (review 1: the unpack reads `ceil(size / 2048)`
   sectors but writes only `size % 2048` bytes of the last one - that sector is left to the gap check); only a file of more than zero bytes, with an ISO 9660 disc

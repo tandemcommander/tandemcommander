@@ -23,6 +23,15 @@
       (review 1) S-VCDBYTE PASS = a.txt and avseq01.dat (63 * 2048 + 1 bytes: the 64th data sector extracted
                  in part) extracted, the image KEPT; C-VCDTRUNC PASS = a.txt and avseq01.dat (48 sectors; 16
                  empty after it, then 1200 bytes of a 65th data sector end the image) extracted, KEPT
+      (review 2; a.txt is pointed into a stream as well, checked by size)
+      S-VCDMID   avseq01.dat over stream sectors 0..31, a.txt over 40..63, 32..39 hold data - KEPT
+      S-VCDMIDE  (control) as S-VCDMID, 32..39 empty - deleted
+      S-VCDOVL   (control) avseq01.dat over 0..47, a.txt over 40..63 (overlapping) - deleted
+      S-VCDTWO   two data streams, avseq01.dat over track 2, a.txt over 8 of track 3's 64 sectors - KEPT
+      S-VCDTWOF  (control) as S-VCDTWO, a.txt over all of track 3 - deleted
+      S-VCDLAST  NRG whose ETNF gives the stream 48 sectors while 64 data sectors are stored before the
+                 chunks, avseq01.dat over 48 - KEPT (a too-small track-table end of the last track)
+      C-VCDLAST  CloneCD whose lead-out says 48 sectors while the .img holds 64 - KEPT
     With -FoldersOff ("Show Session As Directory" = 0 in the UnISO settings) only these run:
       MF-FORM2   PASS = a.txt extracted, KEPT; MF-FORM2COV PASS = a.txt and avseq01.dat (8 of 64), KEPT
       (before: deleted); MF-FORM2FULL (control) a.txt and avseq01.dat (64), deleted; MF-NOFS PASS = KEPT
@@ -184,8 +193,8 @@ try {
     }
     if ([IO.File]::Exists("$s\s1c.iso")) {
         $py3 = Join-Path $Here 'img337.py'
-        foreach ($k in @('single_vcdcov', 'single_vcdcov2', 'single_vcdzero', 'multi_form2cov', 'single_vcdpart', 'single_vcdfull', 'multi_form2full', 'single_vcdgap', 'single_vcdtail', 'single_vcdbyte')) { $made += & python -I $py3 $k "$s\s1c.iso" "$s\$k.nrg" 2>&1 }
-        foreach ($k in @('ccd_vcdcov', 'ccd_vcdfull', 'ccd_vcdgap', 'ccd_vcdtrunc')) { $made += & python -I $py3 $k "$s\s1c.iso" "$s\$k.img" 2>&1 }
+        foreach ($k in @('single_vcdcov', 'single_vcdcov2', 'single_vcdzero', 'multi_form2cov', 'single_vcdpart', 'single_vcdfull', 'multi_form2full', 'single_vcdgap', 'single_vcdtail', 'single_vcdbyte', 'single_vcdmid', 'single_vcdmide', 'single_vcdovl', 'single_vcdtwo', 'single_vcdtwof', 'nrg_vcdlast')) { $made += & python -I $py3 $k "$s\s1c.iso" "$s\$k.nrg" 2>&1 }
+        foreach ($k in @('ccd_vcdcov', 'ccd_vcdfull', 'ccd_vcdgap', 'ccd_vcdtrunc', 'ccd_vcdlast')) { $made += & python -I $py3 $k "$s\s1c.iso" "$s\$k.img" 2>&1 }
     }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) }) | Sort-Object) -join ','))
@@ -205,6 +214,10 @@ try {
     $mfull = [ordered]@{ 'Session 01/a.txt' = 'A1'; 'Session 01/avseq01.dat' = 'stream:13:64' }
     $gap = [ordered]@{ 'a.txt' = 'A1'; 'avseq01.dat' = 'stream:13:48' }
     $byte = [ordered]@{ 'a.txt' = 'A1'; 'avseq01.dat' = 'size:129025' }
+    $mid = [ordered]@{ 'a.txt' = 'size:49152'; 'avseq01.dat' = 'stream:13:32' }
+    $ovl = [ordered]@{ 'a.txt' = 'size:49152'; 'avseq01.dat' = 'stream:13:48' }
+    $two = [ordered]@{ 'a.txt' = 'size:16384'; 'avseq01.dat' = 'stream:13:64' }
+    $twof = [ordered]@{ 'a.txt' = 'size:131072'; 'avseq01.dat' = 'stream:13:64' }
     if ($FoldersOff) {
         # review 2: one listing of the last data track - the same rule
         Unpack-Row 'MF-FORM2' "$s\multi_form2.nrg" $a -Kept
@@ -222,6 +235,14 @@ try {
     # (review 1) the last sector extracted in part; a sector the image stores in part
     Unpack-Row 'S-VCDBYTE' "$s\single_vcdbyte.nrg" $byte -Kept
     Unpack-Row 'C-VCDTRUNC' "$s\ccd_vcdtrunc.img" $gap -Kept
+    # (review 2) a middle gap, overlapping files, two streams, a last track whose table end is too small
+    Unpack-Row 'S-VCDMID' "$s\single_vcdmid.nrg" $mid -Kept
+    Unpack-Row 'S-VCDMIDE' "$s\single_vcdmide.nrg" $mid
+    Unpack-Row 'S-VCDOVL' "$s\single_vcdovl.nrg" $ovl
+    Unpack-Row 'S-VCDTWO' "$s\single_vcdtwo.nrg" $two -Kept
+    Unpack-Row 'S-VCDTWOF' "$s\single_vcdtwof.nrg" $twof
+    Unpack-Row 'S-VCDLAST' "$s\nrg_vcdlast.nrg" $gap -Kept
+    Unpack-Row 'C-VCDLAST' "$s\ccd_vcdlast.img" $gap -Kept
     # (controls) covered wholly, or up to empty gap sectors: deleted
     Unpack-Row 'S-VCDFULL' "$s\single_vcdfull.nrg" $full
     Unpack-Row 'C-VCDFULL' "$s\ccd_vcdfull.img" $full

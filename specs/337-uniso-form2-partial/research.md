@@ -43,8 +43,10 @@
 - Rationale: a wrong end that is too large only adds sectors to check (and the read past the file is cut
   at the file); too small is extended by the next track's start (in DAO NRG the bytes between `End` and
   the next `Start` are the next track's pregap - empty on real discs, within the bound); unknown (`End <=
-  Start`) is the image's end. The last track with a too-small end is not detectable - a limit, the
-  track-table readers are Inbox `iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables`.
+  Start`) is the image's end. Review 2: the last track is extended likewise up to the image's sector
+  data end - an NRG image's chunks (its NER5 footer's offset; in real_vcd.nrg the last ETNF track ends
+  exactly there), a CloneCD .img's end; the track-table readers themselves are Inbox
+  `iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables`.
 
 ## R5 Empty sector
 

@@ -138,3 +138,40 @@ After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 28,690 / 0; encoding gu
 changed lines, dry run no change; `probe/result_after_review1.txt` PASS 60, FAIL 0 (30 rows);
 `probe/result_after_review1_foldersoff.txt` 8 / 0; `probe/result_realvcd_review1.txt` 10 / 0 (real VCD /
 SVCD deleted, R-VCD-HOLE / X-SHORT kept); registry restored + identical each.
+
+### Review 2 (report)
+
+A first review-2 agent stopped with the session without a report (tree clean, no backup, no worktree);
+the fresh one ran in the foreground. No MUST. Confirmed review 1's fixes against `CRawFS::UnpackFile` /
+`CISO9660::UnpackFile` (floor sectors right; the part sector's short read marks); saltests 28,690 / 0;
+encoding 0; real Video CDs 10 / 0 on the hidden desktop; its extra rows in `%TEMP%\rev337b` - middle gap
+with data kept, empty middle gap deleted, overlapping files deleted, two streams 8/64 kept, 64/64 deleted -
+all PASS.
+
+- **SHOULD 1**: a last track whose track-table end is too small did not fail closed (spec Q2 / FR-004): the
+  end was extended only to a next track's start. Review 1's own rows reproduced it at HEAD: X-NRGLAST (ETNF
+  length 48 sectors, 64 data sectors stored before the chunks, file over 48) and X-CCDLAST (lead-out at
+  +48, 64 sectors in the .img) - image deleted, 16 data sectors lost. Suggested: bound the last track by
+  the image's data end (CloneCD: the file size; NRG: the chunk offset).
+- Suggestion: probe rows for the middle gap, overlap and two streams (until then saltests only).
+- NOTEs: Mode 1 bytes 16..23 not checked (crafted only, no action); older than 337 - same-name records and
+  Skip after a read error (`uniso.cpp` `UnpackWholeArchive`: `ExtractAllItems(...) != UNPACK_CANCEL`) can
+  still lose a file with the image - file the Inbox item; old review worktrees of other features left.
+
+Handling:
+- SHOULD 1 (fixed): `ReadNRGRoot` hands back its footer's chunk offset; `CISOImage::ImageDataEnd` keeps it
+  (-1 = the file's end); `MarkUncoveredStreams` passes the image's data end as the last track's "next
+  start", so a too-small last end is extended (fails closed). saltests +3 (X-NRGLAST, X-CCDLAST, a right
+  end) -> 28,693 / 0. Spec Q2 and research R4 updated.
+- Probe rows from both reviewers ported into `img337.py` / `iso337_probe.ps1`: S-VCDMID (kept), S-VCDMIDE,
+  S-VCDOVL (deleted), S-VCDTWO (kept), S-VCDTWOF (deleted), S-VCDLAST (NRG), C-VCDLAST (CloneCD) (kept).
+  Negative control - the three plug-in files of HEAD (review 1 state) built, `-Only` the seven rows ->
+  `probe/result_review2_negative.txt` PASS 12, FAIL 2: S-VCDLAST and C-VCDLAST deleted; the others pass
+  (coverage rows of the existing rule); fixed files restored.
+- NOTE (skip / same-name): Inbox item at closing.
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 28,693 / 0; encoding guard 0; clang-format of the
+changed lines, dry run no change; `probe/result_after_review2.txt` PASS 74, FAIL 0 (37 rows);
+`probe/result_after_review2_foldersoff.txt` 8 / 0; `probe/result_realvcd_review2.txt` 10 / 0;
+`probe/regress_334_review2.txt` 23 / 1 (S-RAW, 335's intended change); registry restored + identical each.
+No MUST in review 2 - no further round (SKILL.md step 7).

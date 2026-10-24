@@ -132,6 +132,10 @@ protected:
 
     LONGLONG DataOffset; // Start of current track
     LONGLONG DataEnd;    // End of current track
+    // feature 337 (review 2): where the image's sector data ends - an NRG image's chunks start there (its
+    // NER5 footer); -1 = the file's end. The last stream track is checked up to it (a track-table end that
+    // is too small fails closed).
+    LONGLONG ImageDataEnd;
 
     // image parameters
     DWORD SectorHeaderSize;
