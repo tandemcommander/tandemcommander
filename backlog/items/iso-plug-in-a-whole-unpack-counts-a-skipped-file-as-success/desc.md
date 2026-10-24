@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a whole unpack counts a skipped file as success and deletes the image
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:337
@@ -53,3 +53,4 @@ that answers Skip in the read-error box is feasible: the box is a plug-in dialog
 ## Log
 
 - 2026-10-24 — created (source review:337)
+- 2026-10-24 — moved to Next position 1
