@@ -88,6 +88,13 @@ inline bool SalIsoTrackSectorOutside(long long at, long long sectorUser, long lo
 // Video CD / SVCD only the MPEG stream tracks are Form 2), so a data track whose sector 16 is Form 2 is a
 // stream, not a lost file system. Anything else - Mode 1, Form 1, a destroyed sync or header, one copy
 // only, too few bytes - is not Form 2 (the caller then marks the track: fails closed).
+//
+// A track is taken as a Form 2 stream only when every sector from its sector 16 on, up to
+// SAL_ISO_FORM2_STREAM_SECTORS of them (those within the track and the image file; sector 16 always),
+// is Form 2 (review 2: a sector 16 overwritten with UTF-16 text that starts with spaces - "20 00 20 00"
+// twice - is a valid Form 2 subheader; the Form 1 sectors after it are not). A Video CD's MPEG track is
+// Form 2 throughout (its front margin, then the stream).
+const int SAL_ISO_FORM2_STREAM_SECTORS = 16;
 inline bool SalIsoSectorIsForm2(const unsigned char* raw, long long len, long long sectorRawSize)
 {
     if (raw == nullptr || len < 0)

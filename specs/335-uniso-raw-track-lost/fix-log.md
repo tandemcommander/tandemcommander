@@ -99,3 +99,36 @@ C-NOFS-M1, C-NOFS-F1). Negative control: the extended probe on the a5af8563 buil
 (`result_review1_before.txt`) 22 / 2 (M-FF-F1, M-TXT-F1 deleted); on the fixed build
 (`result_after_review1.txt`) 24 / 0. (A first attempt to patch the probe from a Bash here-document
 collapsed its backslashes - an assert stopped it, nothing written; done with the editor, CLAUDE.md 123.)
+
+### Review 2 (stopped - partial work)
+
+The fresh reviewer (launched 06:16) wrote its last file at 06:26 and stopped in the middle of a probe
+run: no tandemcommander.exe running, `%TEMP%\tc335_backup.reg` and the `tc335` fixture left. The
+registry was restored from that backup first (its hash F92E57... = the known state; the key differed:
+7F195C...; after the import identical F92E57...). Two wakeups without progress -> treated as stopped.
+Its partial work (`%TEMP%\rev335b`):
+
+- **a hole (MUST level)**: rows X-U16-F1 / X-U16S-F1 - a 2336-byte Form 1 track with destroyed
+  descriptors whose sector 16 is overwritten with UTF-16LE text that starts with spaces ("20 00 20 00"
+  twice: file 0x20, channel 0, submode 0x20 = Form 2, coding 0 - a valid XA subheader): image deleted
+  on the review-1 build.
+- X-VCDREAL (CCD, vcdimager-like subheaders: front margin 0x60, video 0x62 / 0x10 trigger, audio 0x64,
+  file 1, channels 0 / 1): image deleted - correct (a control).
+- F-NOFS / F-FORM2 with "Session NN" off: kept / deleted - correct. F-OK-2336 (flat listing of two
+  intact sessions, s2.iso made without -M) lists only b.txt - feature 334's recorded by-design limit
+  (the reviewer's row expected both files); not this feature.
+- X-VCDFILE: a.txt's directory record patched (no XA attributes) to point into track 2's Form 2
+  sectors - extracted with the wrong content. The ISO 9660 reader's existing handling of file extents in
+  Form 2 sectors, outside this item (it neither lists nor marks anything differently); real Video CD
+  files carry XA attributes - left to the person step with a real Video CD image.
+
+Fix: a track is a Form 2 stream only when every sector from 16 on, up to `SAL_ISO_FORM2_STREAM_SECTORS`
+(16) of them within the track (`DataEnd`, when after `DataOffset`) and the file, is Form 2 - sector 16
+always (`CISOImage::Open`). A Video CD's MPEG track is Form 2 throughout; the Form 1 sectors after a
+damaged sector 16 decide. Rows taken into the probe (`img335.py` multi_u16_f1 / multi_u16s_f1,
+`ccd335.py` ccd_vcdreal; rows M-U16-F1, M-U16S-F1, C-VCDREAL). Negative control: the extended probe on
+the review-1 build e1747a28 (`result_review2_before.txt`) 28 / 2 (M-U16-F1, M-U16S-F1 deleted); fixed
+build (`result_after_review2.txt`) 30 / 0. saltests 28,543 / 0 (the per-sector rule unchanged).
+Regressions again: `regress_329.txt` 14 / 0, `regress_334.txt` 23 / 1 (S-RAW, the intended change).
+Encoding guard 0. Residual limit: a damaged track whose sectors 16..31 are all overwritten with data
+that forms valid Form 2 subheaders is still taken as a stream.

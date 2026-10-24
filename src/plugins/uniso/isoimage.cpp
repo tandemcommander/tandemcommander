@@ -944,8 +944,22 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                                 want = 8; // a Mode 2 sector of 2336 bytes: subheader
                             if (want > 0)
                             {
-                                DWORD got = ReadDataByPos(GetSectorOffset(0x10) - SectorHeaderSize, want, raw);
-                                form2 = SalIsoSectorIsForm2(raw, got, SectorRawSize);
+                                // review 2: every sector from 16 on (SAL_ISO_FORM2_STREAM_SECTORS of them, those
+                                // within the track and the file; sector 16 always) must be Form 2 - one sector
+                                // overwritten with text can carry a valid subheader
+                                LONGLONG limit = fileSize;
+                                if (DataEnd > DataOffset && DataEnd < limit)
+                                    limit = DataEnd;
+                                form2 = TRUE;
+                                int s;
+                                for (s = 0x10; form2 && s < 0x10 + SAL_ISO_FORM2_STREAM_SECTORS; s++)
+                                {
+                                    LONGLONG at = GetSectorOffset(s) - SectorHeaderSize;
+                                    if (s > 0x10 && (at < 0 || at + (LONGLONG)SectorRawSize > limit))
+                                        break; // past the track or the file: the sectors read decide
+                                    DWORD got = ReadDataByPos(at, want, raw);
+                                    form2 = SalIsoSectorIsForm2(raw, got, SectorRawSize);
+                                }
                             }
                         }
                         Tracks[trk]->RawLost = outside || !form2;

@@ -7,6 +7,8 @@ Track 1: s1.iso as Mode 1 raw sectors (CCD MODE=1). Track 2 by kind:
   ccd_nofs_m1   MODE=1, s2.iso with every CD001 destroyed
   ccd_nofs_f1   MODE=2, Form 1 sectors (submode 0x08) of s2.iso with every CD001 destroyed
   ccd_f2hdr_m1  MODE=1 in the CCD, but the sectors carry a Mode 2 Form 2 header (sanity of the header read)
+  ccd_vcdreal   MODE=2, vcdimager-like subheaders (review 2): a front margin of 30 empty Form 2 sectors,
+                then MPEG video (0x62, coding 0x0F) and audio (0x64, 0x7F)
 """
 import struct
 import sys
@@ -69,6 +71,20 @@ def main(argv):
         t2, m2 = mode2(kill(s2), n1, 0x08), 2
     elif kind == "ccd_f2hdr_m1":
         t2, m2 = mode2(s2, n1, 0x62, 7), 1
+    elif kind == "ccd_vcdreal":
+        # review 2: vcdimager-like subheaders - front margin of 30 empty sectors (file 1, channel 0,
+        # Form 2 + real time), then MPEG video (file 1, channel 1, 0x62, coding 0x0F) and audio (0x64, 0x7F)
+        out = bytearray()
+        for i in range(n2):
+            if i < 30:
+                sub4 = bytes([1, 0, 0x60, 0])
+            elif i % 5 == 0:
+                sub4 = bytes([1, 1, 0x64, 0x7F])
+            else:
+                sub4 = bytes([1, 1, 0x62 | (0x10 if i == 30 else 0), 0x0F])
+            body = bytes(((i + k) * 11) & 0xFF for k in range(2324)) + bytes(4)
+            out += hdr(n1 + i, 2) + sub4 + sub4 + body
+        t2, m2 = bytes(out), 2
     else:
         raise SystemExit("kind?")
     open(dst, "wb").write(t1 + t2)

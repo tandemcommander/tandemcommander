@@ -22,6 +22,8 @@
       ccd_vcd.img        track 2 Mode 2 Form 2 (a Video CD's MPEG track)
       ccd_nofs_m1.img    track 2 Mode 1, every volume descriptor destroyed
       ccd_nofs_f1.img    track 2 Mode 2 Form 1, every volume descriptor destroyed
+      (review 2) multi_u16_f1.nrg / multi_u16s_f1.nrg: as multi_nofs_f1, sector 16 overwritten with UTF-16LE
+      text / spaces; ccd_vcdreal.img: track 2 with vcdimager-like Form 2 subheaders
     Unpack rows: the left panel shows <row>\src, Home, End focuses the image, Alt+F9 (851), the target
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK.
       M-NOFS     PASS = Session 01/a.txt extracted, no window, the image KEPT - before 335: deleted
@@ -37,6 +39,9 @@
                  overwritten sector 16 is not a Form 2 stream)
       C-VCD      (control) PASS = a.txt extracted, no window, the image deleted
       C-NOFS-M1, C-NOFS-F1  PASS = a.txt extracted, no window, the image KEPT - before 335: deleted
+      M-U16-F1, M-U16S-F1  PASS = Session 01/a.txt extracted, the image KEPT (review 2: sector 16 overwritten
+                 with UTF-16 text whose first bytes form a valid Form 2 subheader)
+      C-VCDREAL  (control) PASS = a.txt extracted, the image deleted (vcdimager-like subheaders)
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does not
     answer within 30 s (End-Row). Without WSL Ubuntu every row is NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -163,9 +168,9 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath $MkImg) (WslPath $s) 2>&1
     $made = @()
     if ([IO.File]::Exists("$s\s1.iso") -and [IO.File]::Exists("$s\s2.iso")) {
-        foreach ($k in @('multi_nofs', 'multi_ok_2336', 'multi_nofs_f1', 'multi_form2', 'single_vcd', 'single_nofs', 'single_raw', 'multi_ff_f1', 'multi_txt_f1')) { $made += & python -I $py $k "$s\s1.iso" "$s\s2.iso" "$s\s2.lba" "$s\$k.nrg" 2>&1 }
+        foreach ($k in @('multi_nofs', 'multi_ok_2336', 'multi_nofs_f1', 'multi_form2', 'single_vcd', 'single_nofs', 'single_raw', 'multi_ff_f1', 'multi_txt_f1', 'multi_u16_f1', 'multi_u16s_f1')) { $made += & python -I $py $k "$s\s1.iso" "$s\s2.iso" "$s\s2.lba" "$s\$k.nrg" 2>&1 }
         $py2 = Join-Path $Here 'ccd335.py'
-        foreach ($k in @('ccd_vcd', 'ccd_nofs_m1', 'ccd_nofs_f1')) { $made += & python -I $py2 $k "$s\s1.iso" "$s\s2.iso" "$s\$k.img" 2>&1 }
+        foreach ($k in @('ccd_vcd', 'ccd_nofs_m1', 'ccd_nofs_f1', 'ccd_vcdreal')) { $made += & python -I $py2 $k "$s\s1.iso" "$s\s2.iso" "$s\$k.img" 2>&1 }
     }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) }) | Sort-Object) -join ','))
@@ -188,6 +193,9 @@ try {
     Unpack-Row 'C-VCD' "$s\ccd_vcd.img" $a
     Unpack-Row 'C-NOFS-M1' "$s\ccd_nofs_m1.img" $a -Kept
     Unpack-Row 'C-NOFS-F1' "$s\ccd_nofs_f1.img" $a -Kept
+    Unpack-Row 'M-U16-F1' "$s\multi_u16_f1.nrg" $first -Kept
+    Unpack-Row 'M-U16S-F1' "$s\multi_u16s_f1.nrg" $first -Kept
+    Unpack-Row 'C-VCDREAL' "$s\ccd_vcdreal.img" $a
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

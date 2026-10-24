@@ -23,6 +23,8 @@ Track 2 of every kind is session 2's track (s2.iso) or a stand-in of the same le
   single_raw     one session: track 1 s1, track 2 Mode 1 / 2048 zeros (feature 334's S-RAW image)
   multi_ff_f1    as multi_nofs_f1, track 2's sector 16 (subheader included) overwritten with 0xFF (review 1)
   multi_txt_f1   the same, overwritten with text (review 1)
+  multi_u16_f1   the same, overwritten with UTF-16LE text that starts with four spaces (review 2)
+  multi_u16s_f1  the same, overwritten with UTF-16LE spaces (review 2)
 """
 import struct
 import sys
@@ -98,6 +100,17 @@ def main(argv):
         k, n = kill_descriptors(s2)
         t2 = bytearray(mode2_2336(k, 0x08, 0))
         fill = bytes([255]) * 2336 if kind == "multi_ff_f1" else (b"lorem ipsum dolor sit amet " * 100)[:2336]
+        t2[16 * 2336 : 17 * 2336] = fill
+        t2 = bytes(t2)
+        mode = 0x03
+        note = "track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (%s)" % kind
+    elif kind in ("multi_u16_f1", "multi_u16s_f1"):
+        # review 2: sector 16 overwritten with UTF-16LE text that starts with an indent of four spaces
+        # (u16) or with UTF-16LE spaces only (u16s) - "20 00 20 00" twice is a valid Form 2 subheader
+        k, n = kill_descriptors(s2)
+        t2 = bytearray(mode2_2336(k, 0x08, 0))
+        txt = "    <item name=\"x\">value</item>\r\n" * 80 if kind == "multi_u16_f1" else " " * 1200
+        fill = txt.encode("utf-16-le")[:2336]
         t2[16 * 2336 : 17 * 2336] = fill
         t2 = bytes(t2)
         mode = 0x03

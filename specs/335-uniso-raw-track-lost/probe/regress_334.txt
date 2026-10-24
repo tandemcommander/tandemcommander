@@ -1,6 +1,6 @@
-iso334_probe (feature 334) regress-335
+iso334_probe (feature 334) regress-335-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-24 05:35; registry key existed True
+Date    : 2026-10-24 06:59; registry key existed True
 
 seeds: audio_cd.nrg,multi.nrg,multi_extra.nrg,multi_mixed.nrg,multi_past.nrg,multi_term.nrg,multi_unknown.nrg,s1.iso,s2.iso,s2.lba,single.nrg,single_mixed.nrg,single_past.nrg,single_raw.nrg,single_term.nrg
 img334: multi: 720988 bytes, track 2 from sector 176
