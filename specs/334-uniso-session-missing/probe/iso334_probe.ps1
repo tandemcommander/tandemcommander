@@ -29,7 +29,8 @@
       M-TERM     PASS = Session 01/a.txt extracted, the plug-in's multi-session box ("Some error(s) occured
                  while reading multisession image") shown, the image KEPT - before 334: deleted, b.txt lost
       M-PAST     PASS = Session 01/a.txt extracted, the image KEPT (track 2 cannot be read at all)
-      S-OK       (control) PASS = b.txt (the last track) extracted, no window, the image deleted
+      S-OK       PASS = b.txt (the last track) extracted, no window, the image KEPT - review 2: a.txt of
+                 track 1 (an independent ISO 9660 track of the same session) is never listed; before: deleted
       S-TERM     PASS = a.txt extracted, no window, the image KEPT - before 334: deleted, b.txt lost
       S-PAST     PASS = a.txt extracted, no window, the image KEPT
       S-RAW      (control) PASS = a.txt extracted, no window, the image deleted (a readable raw track)
@@ -173,7 +174,7 @@ try {
     Unpack-Row 'M-OK' "$s\multi.nrg" $both
     Unpack-Row 'M-TERM' "$s\multi_term.nrg" $first -Kept -MultiErr
     Unpack-Row 'M-PAST' "$s\multi_past.nrg" $first -Kept
-    Unpack-Row 'S-OK' "$s\single.nrg" ([ordered]@{ 'b.txt' = 'B2' })
+    Unpack-Row 'S-OK' "$s\single.nrg" ([ordered]@{ 'b.txt' = 'B2' }) -Kept
     Unpack-Row 'S-TERM' "$s\single_term.nrg" ([ordered]@{ 'a.txt' = 'A1' }) -Kept
     $a = [ordered]@{ 'a.txt' = 'A1' }
     Unpack-Row 'S-PAST' "$s\single_past.nrg" $a -Kept

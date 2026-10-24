@@ -127,9 +127,12 @@ destroyed).
   deleted with its audio (review 1).
 - A Video CD-like image whose later tracks are readable raw data: unchanged (not listed, not marked).
 - An "unknown" track type in the track table, or a track no session count covers: marked (review 1).
-- Limit (by design, review 1 NOTE): a single-session listing shows only the last data track; data
-  tracks before it that are not part of its directory (independent sessions with "Session NN" off) are
-  not listed and not marked - as Windows shows such a disc.
+- An image of one session with several data tracks (row S-OK): the listing shows only the last data
+  track, whose directory holds no other track - another data track with a file system marks the listing
+  (review 2); a readable raw data track (Video CD) does not.
+- Limit (by design, review 1 NOTE): a multi-session image with "Session NN" turned off is listed by its
+  last data track (whose directory holds the earlier sessions' files on a real multi-session disc);
+  earlier sessions that are not part of it are not listed and not marked.
 - An image without a track table (a plain .iso): unchanged - one track, the existing reader marks.
 - No track at all opens: the image does not open, as today.
 - "Session NN" folders turned off: a multi-session image follows the single-session rules.
@@ -147,6 +150,8 @@ destroyed).
   falls back to the other tracks, the listing MUST be marked incomplete when it is returned; a track the
   fallback tries that does not open or list MUST mark it too; so MUST every audio or unknown track of
   the image, tried or not.
+- **FR-003a** (review 2): In the listing of an image of one session, a data track other than the listed
+  one whose file system was recognised MUST mark the listing incomplete.
 - **FR-003**: In the single-session listing, a data track that lies past the end of the image MUST mark
   the listing incomplete.
 - **FR-004**: The multi-session box, the folders listed and every message MUST stay as they are; no UI
@@ -169,7 +174,8 @@ destroyed).
 
 - **SC-001**: Probe rows M-TERM, M-PAST and S-TERM: image kept (3 FAIL before the change, PASS after);
   review 1's rows S-PAST, S-MIXED, M-MIXED, M-UNK, M-EXTRA, A-CD: image kept.
-- **SC-002**: Control rows M-OK, S-OK and S-RAW: image deleted, all listed files extracted (PASS before and after).
+- **SC-002**: Control rows M-OK and S-RAW: image deleted, all listed files extracted (PASS before and
+  after); row S-OK (one session of two independent ISO 9660 tracks) is kept since review 2.
 - **SC-003**: The earlier ISO probes (322, 329, 330, 333) keep their results.
 - **SC-004**: `saltests` gains checks of the rule and keeps 0 failures; a mutant of the rule fails them.
 

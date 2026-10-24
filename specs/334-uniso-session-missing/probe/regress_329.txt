@@ -1,6 +1,6 @@
-iso329_probe (feature 329) regress-334-review1
+iso329_probe (feature 329) regress-334-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-24 04:46; registry key existed True
+Date    : 2026-10-24 05:03; registry key existed True
 
 seeds: audio.nrg,hdeep.iso,udeep.iso,xdeep.iso; img329: xbox: 44 sectors, root at 33 / nrg: 47664 bytes, chunks at 47040, labels SHORT and 253 x L
 U-COPY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

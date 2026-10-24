@@ -1474,10 +1474,15 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
             // feature 334: only the last data track is listed (by design: its directory holds the earlier
             // sessions' files); an audio or unknown track (review 1: a data + audio disc lost its audio)
             // or a data track that lies past the end of the image still marks the listing incomplete
+            // (review 2) in an image of one session that directory holds no other track: another data track
+            // with a file system is left out; a readable raw data track (fsData, a Video CD's MPEG track)
+            // is not
             for (track = 0; track < Tracks.Count; track++)
             {
-                if (track != LastTrack)
-                    MarkTrack(track, SAL_ISO_TRACK_NOT_TRIED);
+                if (track == LastTrack)
+                    continue;
+                BOOL leftOut = Session.Count <= 1 && Tracks[track]->FSType != fsData;
+                MarkTrack(track, leftOut ? SAL_ISO_TRACK_LEFT_OUT : SAL_ISO_TRACK_NOT_TRIED);
             }
             return ret;
         }

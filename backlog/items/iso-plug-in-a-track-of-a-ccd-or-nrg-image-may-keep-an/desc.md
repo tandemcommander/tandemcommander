@@ -47,6 +47,10 @@ not describe is not listed with garbage bounds.
 
 ## Notes
 
+- Review 2 of feature 334 (NOTE 2): with 334 a garbage `FSType` of 0 (`fsUnknown`) or 1 (`fsAudio`)
+  marks the listing, so a whole unpack of such a CCD image may fail at random in Release (fails safe:
+  the image is kept). No probe drove a CCD image (all NRG, Debug).
+
 - A probe needs a Release build and a CCD/IMG image of a data track (and an NRG whose DAOX skips an
   entry); feature 334's `probe/img334.py` writes NRG images.
 

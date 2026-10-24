@@ -116,3 +116,30 @@ BEL byte (`"$s<BEL>udio_cd.nrg"`) - found by a control-byte grep, fixed by bytes
 Regressions after the review-1 fixes: `regress_322.txt` 18 / 0, `regress_329.txt` 14 / 0 (its NRG
 audio A-OPEN row unchanged: the open lists, only a whole unpack is affected), `regress_330.txt` 30 / 0,
 `regress_333.txt` 20 / 0.
+
+### Review 2 (independent agent, refute-first, with review 1's findings)
+
+No MUST. Reviewer re-ran the probe on the branch build (`%TEMP%\rev334r2`): the 12 rows PASS again, plus
+own rows P-ISO (a plain .iso: deleted, unchanged), CDX (CD-Extra, session 1 audio + session 2 data:
+kept), M-RAW (two sessions, track 2 zeros: deleted - the Inbox item's case); saltests 28,425 / 0.
+Review 1's fixes confirmed; callers: `ListImage` <- `ListArchive` only; `pd->ListingLeftOut` read only by
+`UnpackWholeArchive` - panel listing and single-file copy untouched, no message added.
+
+- **SHOULD 1** - one session of two independent ISO 9660 tracks (row S-OK): only the last track is
+  listed, the other track's files were lost by a whole unpack with "Delete archive after unpacking";
+  the spec's "as Windows shows such a disc" holds for a multi-session image with "Session NN" off, not
+  for one session. **Fixed**: in an image of one session (`Session.Count <= 1`), another data track
+  whose file system was recognised (`FSType != fsData`) is `SAL_ISO_TRACK_LEFT_OUT` (marks); a readable
+  raw data track (Video CD) stays unmarked (S-RAW control still deleted). Spec FR-003a, edge cases,
+  SC-002 revised; probe row S-OK now expects the image kept. `result_after_review2.txt` PASS 24 / 0;
+  negative control = `result_after_review1.txt` (S-OK: image deleted on the build without this change).
+  `regress_329.txt` (the earlier probe with a track-table image) 14 / 0 again; the others list plain
+  images (one track) and do not reach the changed loop.
+- NOTE 1 - a kept image gets no explanation (silent): Inbox
+  `iso-plug-in-a-whole-unpack-of-an-image-with-audio-or-left` (review:334).
+- NOTE 2 - a CCD data track's garbage `FSType` may now mark at random in Release (fails safe): added to
+  Inbox `iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an`.
+- NOTE 3 - the saltests case "file size -1" cannot occur in practice: harmless, kept as a bound check.
+
+No new review round: review 2 had no MUST (SKILL.md step 7); the SHOULD fix is one condition in the
+loop the reviewer named, proven by the probe and its negative control.
