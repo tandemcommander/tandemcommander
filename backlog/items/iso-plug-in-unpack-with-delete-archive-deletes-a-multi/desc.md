@@ -8,7 +8,7 @@ source: review:330
 who: agent
 created: 2026-10-24
 updated: 2026-10-24
-verified: -
+verified: 2026-10-24 21c3ce91
 effort: S
 feature: -
 related: []
@@ -58,3 +58,4 @@ check fails closed). The error box and the listing of the other sessions stay as
 
 - 2026-10-24 — created (source review:330)
 - 2026-10-24 — moved to Next position 4
+- 2026-10-24 — verified at 21c3ce91: reproduced at 21c3ce91: crafted NRG images, multi-session track 2 not opening / past the end and single-session last track not opening - Unpack with Delete archive deleted the image, b.txt lost (probe 3 FAIL rows)
