@@ -239,3 +239,13 @@ server) FAIL - another user of one server, outside this item by the spec (user a
 identifying the server); recorded as Inbox item `ftp-upload-cache-other-user-or-port-of-one-server`
 (`review:341`, severity 7, with the trade-off for the maintainer). A fresh review 3 was launched
 (a stopped reviewer does not count as a round).
+
+### Review 3, second attempt (stopped - the session ended again)
+
+No registry backup or fixture was left (the reviewer used its own fixture root `tc341r3`); the
+product key's export still has the pre-probe hash BFC2D583.... Its partial result
+(`%TEMP%\rev341r3\result_all.txt`, HEAD 915531cc): 14 PASS, 0 FAIL, 1 NOT DRIVEN (MULTI-REN: its
+second server did not start in its copy), including its own rows SEEDC-ALIAS / SEEDC-SAME (a
+panel folder restored from the plug-in's listing cache, then an upload into it: the question
+appears) - PASS; it had begun a negative-control build and reported no finding. A fresh review 3
+was launched with this partial work.
