@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4717,3 +4717,35 @@ a few early ones are out of sequence).
   (`TestHfsVolumeDeclared333`; the always-declared mutant fails 10); refute-first reviews: 1 (no MUST;
   SHOULD the damaged map - fixed; reviewer's negative control 10 / 4), 2 (no MUST, no SHOULD; 21
   adversarial map rows, negative control at the pre-fix commit fails the three kept rows).
+- 334-uniso-session-missing: a disc image with a track table (NRG, CCD/IMG) one of whose tracks the ISO
+  plug-in could not open was deleted by Unpack with "Delete archive after unpacking" after extracting
+  the rest - a session that does not open (the multi-session box, listing not marked), a track past the
+  end of the image (taken as raw data that lists nothing, silent), the last data track of one session
+  (silent fallback to the other tracks); review 1 and 2 added audio tracks (never extracted - `ExtractAllItems`
+  ignores `UNPACK_AUDIO_UNSUP` - and not even shown by a single-session listing of a data + audio disc),
+  unknown tracks (NRG mode byte 0x10), tracks no session count covers and the other data tracks of a
+  one-session image - now `SalIsoTrackMarksListing` (`src/common/salisotrack.h`) decides per track from
+  its kind, `Track::OutsideImage` (set in `Open` for an fsData track whose sector 16 is not in the file,
+  `SalIsoTrackSectorOutside`: a negative start is outside) and what `ListImage` did with it (not tried /
+  not opened / listing failed / listed / left out); a marked listing makes a whole unpack fail (328's
+  `ListingLeftOut`), the image is kept. Box, listing and messages unchanged, no UI string. Audio CDs,
+  CD-Extra and mixed-mode images are now kept after a whole unpack. Traps: the item's suggested probe
+  image (a track past the end) does not fail to open - it becomes fsData and lists nothing (measured
+  first); the first spec answer "an audio track always opens, so audio discs stay as today" kept their
+  loss (review 1's MUST); clang-format of VS 2022 reflowed all of `saltests.cpp` and three unrelated
+  comments (reverted, `--lines`); a Bash here-document turned `\a` of a probe edit into a BEL byte (a
+  control-byte grep found it). Limits: a data track inside the image whose file system is destroyed is
+  still raw data that lists nothing (Video CD tracks look the same; Inbox
+  `iso-plug-in-a-data-track-in-which-no-file-system-is-found`); a multi-session image with "Session NN"
+  off lists its last data track only (by design); a kept image gets no explanation (Inbox
+  `iso-plug-in-a-whole-unpack-of-an-image-with-audio-or-left`); `Track::Track()` leaves `FSType`
+  uninitialised for CCD data tracks (Inbox `iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an`); no
+  real Nero / CCD image tried (person step `check-feature-334-with-real-nrg-and-ccd-disc-images`). From
+  backlog item `iso-plug-in-unpack-with-delete-archive-deletes-a-multi`. Probe `iso334_probe` (seeds two
+  genisoimage sessions by `mkimg334.sh`, NRG images by `img334.py`) on main 7 / 3 (M-TERM, M-PAST, S-TERM:
+  image deleted) -> 24 / 0 (12 RUN rows; S-PAST, S-RAW, S-MIXED, M-MIXED, M-UNK, M-EXTRA, A-CD added by
+  review 1, S-OK kept since review 2); mutants: no outside clause fails M-PAST, audio / unknown never
+  marking fails S-MIXED / M-MIXED / M-UNK / M-EXTRA / A-CD; 322 18 / 0, 329 14 / 0, 330 30 / 0, 333 20 / 0;
+  saltests 28,372 -> 28,425 / 0 (`TestIsoTrackMarks334`); refute-first reviews: 1 (one MUST - audio of a
+  mixed-mode disc - and two SHOULD, fixed), 2 (no MUST; SHOULD a one-session image's other data track -
+  fixed).

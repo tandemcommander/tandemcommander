@@ -17,7 +17,6 @@ Last triaged: 2026-10-24
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: Unpack with Delete archive deletes a multi-session image whose session track cannot be opened](items/iso-plug-in-unpack-with-delete-archive-deletes-a-multi/desc.md) | bug | 7 | archives | 334 |
 
 ## Next
 
@@ -257,6 +256,7 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 334 with real NRG and CCD disc images](items/check-feature-334-with-real-nrg-and-ccd-disc-images/desc.md) | person-step | 4 | archives | leftover:334 | 2026-10-24 |
 | [ISO plug-in: a data track in which no file system is found lists nothing and is not marked](items/iso-plug-in-a-data-track-in-which-no-file-system-is-found/desc.md) | bug | 7 | archives | measure:334 | 2026-10-24 |
 | [ISO plug-in: a track of a CCD or NRG image may keep an uninitialised file-system type](items/iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an/desc.md) | bug | 5 | archives | review:334 | 2026-10-24 |
 | [ISO plug-in: a whole unpack of an image with audio or left-out tracks fails without saying why](items/iso-plug-in-a-whole-unpack-of-an-image-with-audio-or-left/desc.md) | improvement | 3 | archives | review:334 | 2026-10-24 |
