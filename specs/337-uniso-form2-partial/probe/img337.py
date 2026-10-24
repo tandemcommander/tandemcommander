@@ -25,6 +25,10 @@ with a .ccd beside the .img.
   single_vcdgap    the stream's last 16 sectors empty, avseq01.dat over the first 48
   ccd_vcdgap       CloneCD, as single_vcdgap
   single_vcdtail   as single_vcdgap, but the last 16 sectors hold data
+  (review 1)
+  single_vcdbyte   as single_vcdcov, avseq01.dat of 63 * 2048 + 1 bytes (the last sector extracted in part)
+  ccd_vcdtrunc     as ccd_vcdgap, then the first 1200 bytes of a 65th stream sector (data); the lead-out
+                   after it - the image ends inside that sector
 """
 import struct
 import sys
@@ -49,6 +53,8 @@ KINDS = {
     "single_vcdgap": ("nrg", 1, 48 * SECTOR, 48),
     "ccd_vcdgap": ("ccd", 1, 48 * SECTOR, 48),
     "single_vcdtail": ("nrg", 1, 48 * SECTOR, STREAM),
+    "single_vcdbyte": ("nrg", 1, 63 * SECTOR + 1, STREAM),
+    "ccd_vcdtrunc": ("ccd+", 1, 48 * SECTOR, 48),
 }
 
 
@@ -106,15 +112,18 @@ def hdr(lba, mode):
     return SYNC + bytes([bcd(m), bcd(s), bcd(f), mode])
 
 
-def write_ccd(dst, s1, n1, empty_from):
+def write_ccd(dst, s1, n1, empty_from, part=0):
+    """part: the first 'part' bytes of one more stream sector (data) end the image (review 1)."""
     t1 = b"".join(hdr(i, 1) + s1[i * SECTOR : (i + 1) * SECTOR] + bytes(288) for i in range(n1))
     t2 = b"".join(hdr(n1 + i, 2) + payload(i, 13, empty_from) + bytes(4) for i in range(STREAM))
+    if part:
+        t2 += (hdr(n1 + STREAM, 2) + payload(STREAM, 13, STREAM + 1) + bytes(4))[:part]
     open(dst, "wb").write(t1 + t2)
     ccd = [
         "[CloneCD]", "Version=3", "[Disc]", "TocEntries=4", "Sessions=1", "DataTracksScrambled=0",
         "CDTextLength=0", "[Session 1]", "PreGapMode=1", "PreGapSubC=0",
     ]
-    entries = [(0xA0, 1), (0xA1, 2), (0xA2, n1 + STREAM), (0x01, 0), (0x02, n1)]
+    entries = [(0xA0, 1), (0xA1, 2), (0xA2, n1 + STREAM + (1 if part else 0)), (0x01, 0), (0x02, n1)]
     for i, (pt, plba) in enumerate(entries):
         ccd += ["[Entry %d]" % i, "Session=1", "Point=0x%02x" % pt, "ADR=0x01", "Control=0x04", "TrackNo=0",
                 "AMin=0", "ASec=0", "AFrame=0", "ALBA=-150", "Zero=0", "PMin=0", "PSec=0", "PFrame=0",
@@ -137,6 +146,8 @@ def main(argv):
     s1p, nrec = patch_avseq(s1, n1, size)
     if box == "ccd":
         total = write_ccd(dst, s1p, n1, empty_from)
+    elif box == "ccd+":
+        total = write_ccd(dst, s1p, n1, empty_from, 1200)
     elif box == "nrg2":
         total = write_nrg(dst, [(s1p, 0, 0x00), (stream_2336(13, empty_from), n1, 0x03),
                                 (stream_2336(7, STREAM), n1 + STREAM, 0x03)], [3])

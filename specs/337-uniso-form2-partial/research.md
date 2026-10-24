@@ -28,7 +28,8 @@
 - Decision: the unpack's rule: `CISOImage::UnpackFile` picks the track by `GetTrackFromExtent`
   (`SalIsoTrackOfExtent`), `CRawFS::UnpackFile` reads `ceil(size / 2048)` blocks from `fp->Extent -
   ExtentOffset`; block *i* is stored at `Start + i * SectorSize`. A file covers track-relative sectors
-  `[extent - ExtentOffset, + ceil(size / 2048))` clipped to `[0, trackSectors)`; nothing when its extent
+  `[extent - ExtentOffset, + floor(size / 2048))` (review 1: the last, partly written sector is not
+  extracted whole - it is left to the gap check) clipped to `[0, trackSectors)`; nothing when its extent
   lies before the track's first sector (the unpack's block number would wrap) or at/after its end. 336's
   guards stay (size > 0, ISO 9660 disc address, track <= 255) - one function decides the start track for
   both rules.
@@ -37,7 +38,8 @@
 
 - Decision: `trackSectors = (e - Start) / SectorSize` with `e = End` when `End > Start`, else the image
   file's size; then `e = nextStart` when the next track starts later in the file; `e` never past the
-  image file. Whole sectors only (a partial stored sector cannot be read whole).
+  image file. A last sector stored only in part counts (review 1: it cannot be read whole, so the gap
+  check marks it - a truncated image is kept).
 - Rationale: a wrong end that is too large only adds sectors to check (and the read past the file is cut
   at the file); too small is extended by the next track's start (in DAO NRG the bytes between `End` and
   the next `Start` are the next track's pregap - empty on real discs, within the bound); unknown (`End <=

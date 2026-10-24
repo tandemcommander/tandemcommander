@@ -236,11 +236,13 @@ const long long SAL_ISO_FILE_SECTOR_SIZE = 2048;
 // the user data of a Mode 2 Form 2 sector
 const int SAL_ISO_FORM2_PAYLOAD = 2324;
 
-// Feature 337: how many whole stored sectors of 'sectorSize' bytes a stream track holds, from byte
-// 'start' of an image file of 'fileSize' bytes. Fails closed on a wrong track-table end: an end at or
-// before the start is unknown (the image's end is taken); a next track ('nextStart', -1 = none) that
-// starts later in the file than the end extends it (an end too small - the bytes up to the next track
-// are checked too); nothing past the image file counts. 0 = no sector (the caller marks the listing).
+// Feature 337: how many stored sectors of 'sectorSize' bytes a stream track holds, from byte 'start' of an
+// image file of 'fileSize' bytes - a last sector stored only in part counts too (review 1: its bytes are
+// checked; it cannot be read whole, so it marks the listing unless a file covers it). Fails closed on a
+// wrong track-table end: an end at or before the start is unknown (the image's end is taken); a next
+// track ('nextStart', -1 = none) that starts later in the file than the end extends it (an end too small -
+// the bytes up to the next track are checked too); nothing past the image file counts. 0 = no sector (the
+// caller marks the listing).
 inline long long SalIsoStreamTrackSectors(long long start, long long end, long long nextStart, long long fileSize,
                                           long long sectorSize)
 {
@@ -251,23 +253,25 @@ inline long long SalIsoStreamTrackSectors(long long start, long long end, long l
         e = nextStart;
     if (e > fileSize)
         e = fileSize;
-    return (e - start) / sectorSize;
+    return (e - start) / sectorSize + ((e - start) % sectorSize != 0 ? 1 : 0);
 }
 
 // Feature 337: the sectors [first, end) of a stream track (counted from its first sector, the disc address
 // 'trackFirst'; 'trackSectors' sectors) that a listed file of 'size' bytes starting at disc address
-// 'extent' reads - the unpack's rule: ceil(size / 2048) sectors from the extent on (CRawFS::UnpackFile),
-// clipped to the track. False (nothing covered): an empty file, no sectors, an extent before the track's
-// first sector (the unpack's block number would wrap) or at or after its end.
+// 'extent' extracts whole - floor(size / 2048) sectors from the extent on, clipped to the track. Review 1:
+// the unpack reads ceil(size / 2048) sectors (CRawFS::UnpackFile) but writes only size % 2048 bytes of the
+// last one - the rest of that sector is not extracted, so it is left to the gap check. False (nothing
+// covered): a file of less than one sector, no sectors, an extent before the track's first sector (the
+// unpack's block number would wrap) or at or after its end.
 inline bool SalIsoFileSectorSpan(unsigned long extent, unsigned long long size, unsigned long trackFirst,
                                  long long trackSectors, long long* first, long long* end)
 {
-    if (first == nullptr || end == nullptr || size == 0 || trackSectors <= 0 || extent < trackFirst)
+    if (first == nullptr || end == nullptr || trackSectors <= 0 || extent < trackFirst)
         return false;
     long long f = (long long)(extent - trackFirst);
-    if (f >= trackSectors)
+    unsigned long long sectors = size / SAL_ISO_FILE_SECTOR_SIZE;
+    if (f >= trackSectors || sectors == 0)
         return false;
-    unsigned long long sectors = size / SAL_ISO_FILE_SECTOR_SIZE + (size % SAL_ISO_FILE_SECTOR_SIZE != 0 ? 1 : 0);
     unsigned long long room = (unsigned long long)(trackSectors - f);
     *first = f;
     *end = f + (long long)(sectors < room ? sectors : room);

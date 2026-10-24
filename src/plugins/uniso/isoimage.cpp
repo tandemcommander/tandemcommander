@@ -1504,7 +1504,8 @@ void CISOImage::MarkUncoveredStreams(const CSalamanderDirectoryAbstract* dir)
         delete[] sectors;
         return;
     }
-    // feature 337: the whole stored sectors of each stream track (a wrong track-table end fails closed)
+    // feature 337: the stored sectors of each stream track, a last one stored in part included (a wrong
+    // track-table end fails closed)
     DWORD sizeHi;
     DWORD sizeLo = File->GetFileSize(&sizeHi);
     LONGLONG fileSize = ((LONGLONG)sizeHi << 32) | sizeLo;

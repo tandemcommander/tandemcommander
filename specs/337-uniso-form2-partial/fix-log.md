@@ -94,3 +94,47 @@ MF-FORM2COV keep the image now (they cover 1 or 8 of 64 data sectors).
 - The product's registry key changed between two probe runs (09:21 -> 09:31: `Last Focused Page`,
   `Configuration Height`, `Plugins.ver Version`) - a Tandem Commander session outside the probes (none
   ran at the checks); every probe restored the state it found (hash BFC2D583... before = after since).
+
+## Review
+
+A first reviewer stopped with the previous session without a report (no worktree, no probe backup, tree
+clean); a fresh one was launched with the same prompt (not counted as a round).
+
+### Review 1 (report)
+
+Re-ran build (up to date), saltests 28,683 / 0, `iso337_probe.ps1` 56 / 0 (registry restored + identical).
+Reproduced two misses in a copy of the probe (`%TEMP%\rev337`): PASS 6, FAIL 2.
+
+- **MUST 1**: `SalIsoFileSectorSpan` counted `ceil(size / 2048)` sectors as covered, but the unpack writes
+  only `size % 2048` bytes of the last one (`rawfs.cpp` UnpackFile) - its other bytes are lost unchecked.
+  Row R-BYTE: `avseq01.dat` of 63 * 2048 + 1 bytes over a 64-sector data stream - image deleted; one 1-byte
+  file per sector would pass the check whole. Suggested: count `floor(size / 2048)` sectors.
+- **SHOULD 2**: `SalIsoStreamTrackSectors` counted whole stored sectors only, so a partly stored last sector
+  was never checked although spec FR-003 / Q1 say a sector not stored whole marks the listing (research R4
+  said the opposite). Row R-TRUNC: CloneCD, 48 covered, 16 empty, then 1,200 bytes of a 65th sector with
+  data - image deleted.
+- NOTEs: the Video CD 2048-byte cut (backlog items, out of scope); the next-track extension never triggers
+  for CloneCD (tracks are contiguous by construction) - Inbox track-table item; only vcdimager images
+  tested (others fail closed); callers / standing rules - no finding; `uniso.cpp:900` treats any result
+  but cancel as success (a skipped file) - not verified, outside this feature.
+
+Handling:
+- MUST 1 (fixed): `SalIsoFileSectorSpan` counts `floor(size / 2048)` sectors - only sectors the unpack
+  extracts whole; a file of less than one sector covers nothing; the partly written last sector is left to
+  the gap check. The real vcdimager files are whole multiples of 2048 (608,256 / 292,864 bytes).
+- SHOULD 2 (fixed): `SalIsoStreamTrackSectors` counts a last sector stored only in part (`ceil`); its read
+  is short, so the gap check marks it. Spec FR-002 / FR-003 / Q3, research R3 / R4 and the plan now say so.
+- saltests +7 (R-BYTE spans, 1-byte and 2047-byte files, part sectors in the track count, three image
+  cases) -> 28,690 / 0.
+- Probe rows S-VCDBYTE (`img337.py` kind `single_vcdbyte`) and C-VCDTRUNC (`ccd_vcdtrunc`) want the image
+  KEPT. Negative control: the header of HEAD (before these fixes) built, `-Only
+  S-VCDBYTE,C-VCDTRUNC,S-VCDGAP,C-VCDGAP` -> `probe/result_review1_negative.txt` PASS 6, FAIL 2 (both new rows
+  deleted, the gap controls deleted as wanted); fixed header restored.
+- NOTEs: no change (out of scope / Inbox items exist / fail closed). The `uniso.cpp:900` remark (a skipped
+  file counted as success) was not verified by the reviewer and lies outside this feature; checked at
+  closing for an Inbox item.
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 28,690 / 0; encoding guard 0; clang-format of the
+changed lines, dry run no change; `probe/result_after_review1.txt` PASS 60, FAIL 0 (30 rows);
+`probe/result_after_review1_foldersoff.txt` 8 / 0; `probe/result_realvcd_review1.txt` 10 / 0 (real VCD /
+SVCD deleted, R-VCD-HOLE / X-SHORT kept); registry restored + identical each.

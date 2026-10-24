@@ -8,7 +8,7 @@
 Feature 336's `CISOImage::MarkUncoveredStreams` marks the listing incomplete only when no listed file
 starts in a Form 2 stream track. It now also checks *how much* of the stream the files read: the walk of
 the listed tree collects, for every file that starts in a stream track, the track-relative sectors the
-unpack reads (`[extent - ExtentOffset, + ceil(size / 2048))`, clipped to the track). Per stream track the
+unpack extracts whole (`[extent - ExtentOffset, + floor(size / 2048))`, clipped to the track; review 1). Per stream track the
 ranges are sorted and merged; the uncovered sectors are counted; more than 300 mark the listing, else
 each uncovered stored sector is read and must have an all-zero 2324-byte Form 2 user data area (the
 gaps of a real vcdimager disc), otherwise the listing is marked. The track's sector count comes from its

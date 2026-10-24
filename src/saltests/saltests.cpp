@@ -20227,25 +20227,27 @@ static void TestIsoStreamPartial_337()
     CHECK(SalIsoStreamTrackSectors(450 * r, 897 * r, 897 * r, 1344 * r, r) == 447); // real_vcd.img track 2
     CHECK(SalIsoStreamTrackSectors(897 * r, 1344 * r, -1, 1344 * r, r) == 447);     // track 3, the last
     CHECK(SalIsoStreamTrackSectors(1000, 1000 + 64 * m2, -1, 5000000, m2) == 64);   // NRG ETNF
-    CHECK(SalIsoStreamTrackSectors(1000, 0, -1, 1000 + 10 * m2 + 100, m2) == 10);   // end unknown: the image's end
+    CHECK(SalIsoStreamTrackSectors(1000, 0, -1, 1000 + 10 * m2 + 100, m2) == 11);   // end unknown: the image's end (a part sector counts)
     CHECK(SalIsoStreamTrackSectors(1000, 1000, -1, 1000 + 10 * m2, m2) == 10);      // end = start: unknown
     CHECK(SalIsoStreamTrackSectors(0, 5 * r, 8 * r, 20 * r, r) == 8);               // too small: the next track's start
     CHECK(SalIsoStreamTrackSectors(10 * r, 15 * r, 2 * r, 20 * r, r) == 5);         // a next track earlier in the file
-    CHECK(SalIsoStreamTrackSectors(0, 100 * r, -1, 30 * r + 7, r) == 30);           // past the file: cut at it
-    CHECK(SalIsoStreamTrackSectors(0, 0, 100 * r, 30 * r, r) == 30);                // next track past the file
-    CHECK(SalIsoStreamTrackSectors(30 * r, 40 * r, -1, 30 * r, r) == 0);            // starts at the file's end
+    CHECK(SalIsoStreamTrackSectors(0, 100 * r, -1, 30 * r + 7, r) == 31);           // past the file: cut at it (review 1: the 7 bytes count)
+    CHECK(SalIsoStreamTrackSectors(0, 100 * r, -1, 30 * r, r) == 30);
+    CHECK(SalIsoStreamTrackSectors(0, 65 * r, -1, 64 * r + 1200, r) == 65); // review 1, R-TRUNC: a sector stored in part
+    CHECK(SalIsoStreamTrackSectors(0, 0, 100 * r, 30 * r, r) == 30);        // next track past the file
+    CHECK(SalIsoStreamTrackSectors(30 * r, 40 * r, -1, 30 * r, r) == 0);    // starts at the file's end
     CHECK(SalIsoStreamTrackSectors(-1, 40 * r, -1, 50 * r, r) == 0);
     CHECK(SalIsoStreamTrackSectors(0, 40 * r, -1, 50 * r, 0) == 0);
     CHECK(SalIsoStreamTrackSectors(0, 40 * r, -1, -1, r) == 0);
 
-    // the sectors a file reads (ceil(size / 2048), clipped to the track)
+    // the sectors a file extracts whole (floor(size / 2048), clipped to the track - review 1)
     long long f = -7, e = -7;
     CHECK(SalIsoFileSectorSpan(184, 2048, 184, 64, &f, &e) && f == 0 && e == 1);     // S-VCDPART
     CHECK(SalIsoFileSectorSpan(184, 8 * 2048, 184, 64, &f, &e) && f == 0 && e == 8); // S-VCDCOV
-    CHECK(SalIsoFileSectorSpan(184, 2049, 184, 64, &f, &e) && f == 0 && e == 2);
-    CHECK(SalIsoFileSectorSpan(184, 1, 184, 64, &f, &e) && f == 0 && e == 1);
-    CHECK(SalIsoFileSectorSpan(184, 64 * 2048, 184, 64, &f, &e) && f == 0 && e == 64);  // S-VCDFULL
-    CHECK(SalIsoFileSectorSpan(190, 1ULL << 40, 184, 64, &f, &e) && f == 6 && e == 64); // clipped
+    CHECK(SalIsoFileSectorSpan(184, 2049, 184, 64, &f, &e) && f == 0 && e == 1);
+    CHECK(SalIsoFileSectorSpan(184, 63 * 2048 + 1, 184, 64, &f, &e) && f == 0 && e == 63); // R-BYTE
+    CHECK(SalIsoFileSectorSpan(184, 64 * 2048, 184, 64, &f, &e) && f == 0 && e == 64);     // S-VCDFULL
+    CHECK(SalIsoFileSectorSpan(190, 1ULL << 40, 184, 64, &f, &e) && f == 6 && e == 64);    // clipped
     CHECK(SalIsoFileSectorSpan(190, ~0ULL, 184, 64, &f, &e) && f == 6 && e == 64);
     CHECK(SalIsoFileSectorSpan(450, 608256, 450, 447, &f, &e) && f == 0 && e == 297); // real AVSEQ01.DAT
     CHECK(SalIsoFileSectorSpan(247, 2048, 184, 64, &f, &e) && f == 63 && e == 64);
@@ -20253,7 +20255,9 @@ static void TestIsoStreamPartial_337()
     CHECK(!SalIsoFileSectorSpan(248, 2048, 184, 64, &f, &e)); // at the track's end
     CHECK(!SalIsoFileSectorSpan(183, 2048, 184, 64, &f, &e)); // before the track's first sector
     CHECK(!SalIsoFileSectorSpan(184, 0, 184, 64, &f, &e));    // zero bytes
-    CHECK(!SalIsoFileSectorSpan(184, 2048, 184, 0, &f, &e));  // no sectors
+    CHECK(!SalIsoFileSectorSpan(184, 1, 184, 64, &f, &e));    // review 1: one byte extracts no whole sector
+    CHECK(!SalIsoFileSectorSpan(184, 2047, 184, 64, &f, &e));
+    CHECK(!SalIsoFileSectorSpan(184, 2048, 184, 0, &f, &e)); // no sectors
     CHECK(f == -7 && e == -7);
     CHECK(!SalIsoFileSectorSpan(184, 2048, 184, 64, nullptr, &e));
 
@@ -20332,6 +20336,9 @@ static void TestIsoStreamPartial_337()
         {64, {16 * 2048, 48 * 2048}, {184, 200}, 64, false}, // two files, no gap
         {447, {608256, 0}, {450, 0}, 297, false},            // real_vcd AVSEQ01.DAT, 150 empty
         {1000, {100 * 2048, 0}, {184, 0}, 100, true},        // 900 empty sectors: more than 300
+        {64, {63 * 2048 + 1, 0}, {184, 0}, 64, true},        // review 1, R-BYTE: the last sector extracted in part
+        {64, {1, 1}, {184, 185}, 64, true},                  // 1-byte files: no sector extracted whole
+        {64, {48 * 2048 + 5, 0}, {184, 0}, 48, false},       // a part sector over empty sectors: still empty
     };
     for (const auto& c : cases)
     {

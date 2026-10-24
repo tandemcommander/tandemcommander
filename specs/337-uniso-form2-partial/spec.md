@@ -48,8 +48,9 @@ offset plus *i* stored sectors and has the disc address `ExtentOffset + i`.
   the check too; nothing past the image file's end is counted. A wrong end that is too large can only
   add sectors to check (fails closed: kept); one that is too small is extended by the next track's
   start (autonomous run: item *Notes* "a wrong end must fail closed")
-- Q: Which sectors does a listed file cover? → A: those the unpack reads: from its extent, `ceil(size /
-  2048)` sectors, clipped to the track; only a file of more than zero bytes, with an ISO 9660 disc
+- Q: Which sectors does a listed file cover? → A: those the unpack extracts whole: from its extent,
+  `floor(size / 2048)` sectors, clipped to the track (review 1: the unpack reads `ceil(size / 2048)`
+  sectors but writes only `size % 2048` bytes of the last one - that sector is left to the gap check); only a file of more than zero bytes, with an ISO 9660 disc
   address, starting in a track numbered up to 255 (feature 336's guards); a file whose extent lies
   before the track's first sector covers nothing (autonomous run: rule of 336, conservative)
 - Q: Does the unchanged 336 rule (no file starts in the stream → marked) stay? → A: yes (autonomous
@@ -123,9 +124,10 @@ R-SVCD-CCD, R-VCD-NRG - deleted; R-VCD-HOLE, X-SHORT - kept as before.
   its sectors that no listed file starting in it reads is an empty Form 2 sector, and there are at
   most 300 such sectors.
 - **FR-002**: The sectors a listed file reads MUST be determined by the unpack's own rule: from its
-  start extent, `ceil(size / 2048)` sectors, in the track its extent maps to; only files of more than
+  start extent, `floor(size / 2048)` whole sectors (review 1), in the track its extent maps to; only files of more than
   zero bytes with an ISO 9660 disc address in a track up to 255 count.
-- **FR-003**: A sector is empty only when it is stored wholly in the image and its 2324-byte user data
+- **FR-003**: A last sector of the track that the image stores only in part counts as a sector of the
+  track (review 1). A sector is empty only when it is stored wholly in the image and its 2324-byte user data
   area (after the subheader) is all zero; a failed or short read is not empty.
 - **FR-004**: The stream track's extent MUST be taken so that a wrong track-table end fails closed
   (Clarification Q2).
