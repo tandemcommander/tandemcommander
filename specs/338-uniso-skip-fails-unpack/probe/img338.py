@@ -4,6 +4,9 @@
                                                   the end of the image (a read error at unpack)
   python -I img338.py readerr2 <plain.iso> <out>  as readerr, and Z.TXT in folder ZLAST too (two read
                                                   errors: the second comes after "Skip all")
+  python -I img338.py readerrz <plain.iso> <out>  only Z.TXT in folder ZLAST past the end (a read error after the
+                                                  files of the root - after an overwrite question
+                                                  answered All no box is shown for it)
   python -I img338.py twins <plain.iso> <out>     TOU.TXT;1's record in the root is renamed TOP.TXT;1
                                                   - two listed files of one name (contents TOP, TOU)
 
@@ -61,12 +64,14 @@ def set_both32(b, o, value):
     struct.pack_into(">I", b, o + 4, value)
 
 
-def cmd_readerr(src, dst, both):
+def cmd_readerr(src, dst, top, both):
     b = bytearray(open(src, "rb").read())
     root, size = iso_root(b)
-    o = iso_find(b, root, size, b"TOP.TXT", False)
-    set_both32(b, o + 2, FAR)
-    msg = "readerr: TOP.TXT's record at %d -> extent %#x" % (o, FAR)
+    msg = "readerr:"
+    if top:
+        o = iso_find(b, root, size, b"TOP.TXT", False)
+        set_both32(b, o + 2, FAR)
+        msg += " TOP.TXT's record at %d -> extent %#x" % (o, FAR)
     if both:
         z = iso_find(b, root, size, b"ZLAST", True)
         zlba, zsize = le32(b, z + 2), le32(b, z + 10)
@@ -93,8 +98,8 @@ def cmd_twins(src, dst):
 
 
 def main(argv):
-    if len(argv) == 3 and argv[0] in ("readerr", "readerr2"):
-        return cmd_readerr(argv[1], argv[2], argv[0] == "readerr2")
+    if len(argv) == 3 and argv[0] in ("readerr", "readerr2", "readerrz"):
+        return cmd_readerr(argv[1], argv[2], argv[0] != "readerrz", argv[0] != "readerr")
     if len(argv) == 3 and argv[0] == "twins":
         return cmd_twins(argv[1], argv[2])
     print(__doc__)

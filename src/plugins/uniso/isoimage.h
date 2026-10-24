@@ -8,6 +8,7 @@
 
 #include "../../common/salisonamefit.h" // feature 328: entries the panel listing left out
 #include "../../common/salisotrack.h"   // feature 334: tracks that leave the listing incomplete
+#include "../../common/salisounpack.h"  // feature 338: when a whole unpack counts as done
 
 class CUnISOFSAbstract;
 
@@ -15,6 +16,9 @@ class CUnISOFSAbstract;
 #define UNPACK_OK 1
 #define UNPACK_CANCEL 2
 #define UNPACK_AUDIO_UNSUP 3
+static_assert(UNPACK_ERROR == SAL_ISO_UNPACK_ERROR && UNPACK_OK == SAL_ISO_UNPACK_OK &&
+                  UNPACK_CANCEL == SAL_ISO_UNPACK_CANCEL && UNPACK_AUDIO_UNSUP == SAL_ISO_UNPACK_AUDIO_UNSUP,
+              "salisounpack.h mirrors the unpack results");
 
 // three states for errors; there are situations where TRUE/FALSE is not enough.
 // we have an activity during which an error can occur. Sometimes we can and want to continue, sometimes we cannot.
@@ -173,9 +177,12 @@ public:
     // returns one of the UNPACK_XXX constants
     int UnpackDir(const char* dirName, const CFileData* fileData);
 
-    // returns one of the UNPACK_XXX constants
+    // feature 338: a whole unpack - every result goes into 'tally' (a file or folder not extracted whole,
+    // a file written over one this unpack wrote - 'written' holds their identities); returns
+    // UNPACK_CANCEL when the unpack stops, else UNPACK_OK (the tally decides the outcome)
     int ExtractAllItems(CSalamanderForOperationsAbstract* salamander, char* srcPath, CSalamanderDirectoryAbstract const* dir,
-                        const char* mask, char* path, int pathBufSize, DWORD& silent, BOOL& toSkip);
+                        const char* mask, char* path, int pathBufSize, DWORD& silent, BOOL& toSkip,
+                        CSalIsoWholeUnpackTally& tally, CSalIsoWrittenFiles& written);
 
     BOOL DumpInfo(FILE* outStream);
 

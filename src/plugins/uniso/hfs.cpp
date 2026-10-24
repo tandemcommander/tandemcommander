@@ -600,6 +600,13 @@ int CHFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
         Error(IDS_ERR_HFS_BTREE_DAMAGED, FALSE);
         return UNPACK_ERROR;
     }
+    // feature 338: a listed file whose record is not a file record is not extracted (it returned
+    // UNPACK_OK with nothing written, so a whole unpack deleted the image)
+    if (*rec.type != kHFSFileRecord)
+    {
+        Error(IDS_ERR_HFS_BTREE_DAMAGED, FALSE);
+        return UNPACK_ERROR;
+    }
     if (*rec.type == kHFSFileRecord)
     {
         HFSPlusForkData* fork = &rec.file->dataFork;
@@ -714,6 +721,10 @@ int CHFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
             }
         }
         free(buffer);
+        // feature 338: the eight extents ended before the file's size - the file was cut (it was kept
+        // as complete); it is removed as after a read error
+        if (bFileComplete && size > 0)
+            bFileComplete = FALSE;
 
         if (!file.Close(name, NULL))
         {
@@ -738,6 +749,7 @@ int CHFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
         {
             SetFileAttrs(name, attrs);
         }
+        ret = SalIsoFileUnpackResult(ret, bFileComplete); // feature 338
     }
     return ret;
 }

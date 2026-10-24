@@ -1098,7 +1098,8 @@ int CISO9660::UnpackFile(CSalamanderForOperationsAbstract* salamander, const cha
     else
         SetFileAttrs(name, attrs);
 
-    return ret;
+    // feature 338: a read error met without a box (after Skip all) left 'ret' at UNPACK_OK
+    return SalIsoFileUnpackResult(ret, bFileComplete);
 }
 
 BOOL CISO9660::DumpInfo(FILE* outStream)

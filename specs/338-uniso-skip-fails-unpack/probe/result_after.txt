@@ -1,0 +1,31 @@
+iso338_probe (feature 338) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 11:08; registry key existed True
+
+seeds: plain.iso,readerr.iso,readerr2.iso,readerrz.iso,twins.iso
+img338: readerr: TOP.TXT's record at 47206 -> extent 0x100000 (image 180 sectors)
+img338: readerr: TOP.TXT's record at 47206 -> extent 0x100000; Z.TXT's record at 51268 -> extent 0x100000 (image 180 sectors)
+img338: readerr:; Z.TXT's record at 51268 -> extent 0x100000 (image 180 sectors)
+img338: twins: TOU.TXT;1's record at 47248 renamed TOP.TXT;1 (its data stays TOU)
+
+OK         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+OK         RUN    PASS        files 4: A/SIDE.TXT=SIDE, TOP.TXT=TOP, TOU.TXT=TOU, ZLAST/Z.TXT=Z; files ok: True; image kept: False (want False); windows as expected (none, 0 box(es)): True; fatal: ; windows: no window
+R-SKIP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SKIP     RUN    PASS        files 3: A/SIDE.TXT=SIDE, TOU.TXT=TOU, ZLAST/Z.TXT=Z; files ok: True; image kept: True (want True); windows as expected ("Cannot read sector", 1 box(es)): True; fatal: ; windows: [#32770 'Read error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read sector #00100000. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+R-SKIPALL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SKIPALL  RUN    PASS        files 2: A/SIDE.TXT=SIDE, TOU.TXT=TOU; files ok: True; image kept: True (want True); windows as expected ("Cannot read sector", 1 box(es)): True; fatal: ; windows: [#32770 'Read error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read sector #00100000. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+C-SKIP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-SKIP     RUN    PASS        files 3: A/SIDE.TXT=SIDE, TOU.TXT=TOU, ZLAST/Z.TXT=Z; files ok: True; image kept: True (want True); windows as expected ("already been used for a directory", 1 box(es)): True; fatal: ; windows: [#32770 'Error Creating File'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] This name has already been used for a directory. | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+O-SKIP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+O-SKIP     RUN    PASS        files 4: A/SIDE.TXT=SIDE, top.txt=OLD, TOU.TXT=TOU, ZLAST/Z.TXT=Z; files ok: True; image kept: True (want True); windows as expected ("Confirm File Overwrite|top\.txt", 1 box(es)): True; fatal: ; windows: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 3, 24.10.2026, 11:09:11, A | [Static id=1151] With file: | [Static id=184] 3, 24.10.2026, 11:08:34 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+O-YES      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+O-YES      RUN    PASS        files 4: A/SIDE.TXT=SIDE, top.txt=TOP, TOU.TXT=TOU, ZLAST/Z.TXT=Z; files ok: True; image kept: False (want False); windows as expected ("Confirm File Overwrite|top\.txt", 1 box(es)): True; fatal: ; windows: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 3, 24.10.2026, 11:09:20, A | [Static id=1151] With file: | [Static id=184] 3, 24.10.2026, 11:08:34 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+TWINS      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TWINS      RUN    PASS        files 3: A/SIDE.TXT=SIDE, TOP.TXT=TOU, ZLAST/Z.TXT=Z; files ok: True; image kept: True (want True); windows as expected ("Confirm File Overwrite|top\.txt", 1 box(es)): True; fatal: ; windows: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 3, 24.10.2026, 11:08:34 | [Static id=1151] With file: | [Static id=184] 3, 24.10.2026, 11:08:34 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+R-SILENT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SILENT   RUN    PASS        files 3: A/SIDE.TXT=SIDE, top.txt=TOP, TOU.TXT=TOU; files ok: True; image kept: True (want True); windows as expected ("Confirm File Overwrite|top\.txt", 1 box(es)): True; fatal: ; windows: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 3, 24.10.2026, 11:09:39, A | [Static id=1151] With file: | [Static id=184] 3, 24.10.2026, 11:08:34 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+D-SKIP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+D-SKIP     RUN    PASS        files 4: A/SIDE.TXT=SIDE, TOP.TXT=TOP, TOU.TXT=TOU, zlast=F; files ok: True; image kept: True (want True); windows as expected (".", 2 box(es)): True; fatal: ; windows: [#32770 'Error Creating Directory'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] (183) Nelze vytvo\u0159it soubor, kter\u00FD ji\u017E existuje.  | [Button id=4] &Retry | [Button id=2] Cancel || [#32770 'Error Creating Directory'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] This name has already been used for a file. | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+Registry: restored; identical=True; SHA-256 before BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588 / after BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588
+
+Rows: PASS 18, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

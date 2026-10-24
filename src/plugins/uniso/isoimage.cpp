@@ -1768,11 +1768,26 @@ BOOL CISOImage::UnpackDir(const char* dirName, const CFileData* fileData)
     return UNPACK_OK;
 }
 
+// feature 338: the wide target path of a file of a whole unpack, built as the readers build it (the
+// folder + the file's name made safe, AppendSafeName); NULL when it cannot be built (the reader then
+// fails on it too)
+static WCHAR* WholeUnpackTargetW(const char* path, const char* name)
+{
+    CU8PathBuf target;
+    if (!target.IsOk())
+        return NULL;
+    lstrcpyn(target, path, U8_MAX_PATH);
+    if (!AppendSafeName(target, name, U8_MAX_PATH))
+        return NULL;
+    return SplU8ToWExtAlloc(target);
+}
+
 int CISOImage::ExtractAllItems(CSalamanderForOperationsAbstract* salamander, char* srcPath,
                                CSalamanderDirectoryAbstract const* dir, const char* mask,
-                               char* path, int pathBufSize, DWORD& silent, BOOL& toSkip)
+                               char* path, int pathBufSize, DWORD& silent, BOOL& toSkip,
+                               CSalIsoWholeUnpackTally& tally, CSalIsoWrittenFiles& written)
 {
-    CALL_STACK_MESSAGE7("CISOImage::ExtractAllItems(, %s, , %s, %s, %d, %u, %d)", srcPath, mask, path, pathBufSize, silent, toSkip);
+    CALL_STACK_MESSAGE7("CISOImage::ExtractAllItems(, %s, , %s, %s, %d, %u, %d, , )", srcPath, mask, path, pathBufSize, silent, toSkip);
 
     int count = dir->GetFilesCount();
     int i;
@@ -1787,10 +1802,37 @@ int CISOImage::ExtractAllItems(CSalamanderForOperationsAbstract* salamander, cha
 
         if (SalamanderGeneral->AgreeMask(file->Name, mask, file->Ext[0] != 0))
         {
+            // feature 338: does the file land on one this unpack already wrote (two records of one
+            // name, names equal for the file system)? The overwrite question stays the core's; a
+            // write over such a file fails the unpack - one of the two exists only in the image
+            WCHAR* wTarget = WholeUnpackTargetW(path, file->Name);
+            BOOL overOwn = FALSE;
+            if (wTarget != NULL && GetFileAttributesW(wTarget) != INVALID_FILE_ATTRIBUTES)
+            {
+                CSalFileIdentity id;
+                BOOL read = SalGetFileIdentityW(wTarget, FALSE, &id);
+                overOwn = written.WrittenBefore(read, id);
+            }
+
             //      SalamanderGeneral->CheckAndCreateDirectory(path);
-            if (UnpackFile(salamander, srcPath, path, file, silent, toSkip) == UNPACK_CANCEL ||
-                !salamander->ProgressAddSize(1, TRUE))
+            int ret = UnpackFile(salamander, srcPath, path, file, silent, toSkip);
+            if (!tally.File(ret) || !salamander->ProgressAddSize(1, TRUE))
+            {
+                tally.Cancelled = TRUE;
+                free(wTarget);
                 return UNPACK_CANCEL;
+            }
+            if (ret == UNPACK_OK)
+            {
+                if (overOwn)
+                    tally.WroteOverOwn = TRUE;
+                CSalFileIdentity id;
+                BOOL read = wTarget != NULL && SalGetFileIdentityW(wTarget, FALSE, &id);
+                if (!read)
+                    SalFileIdentityClear(&id);
+                written.Note(read, id);
+            }
+            free(wTarget);
         }
     } // for
 
@@ -1805,14 +1847,21 @@ int CISOImage::ExtractAllItems(CSalamanderForOperationsAbstract* salamander, cha
         if (!SalamanderGeneral->SalPathAppend(path, file->Name, pathBufSize))
         {
             Error(IDS_ERR_TOO_LONG_NAME);
+            tally.Cancelled = TRUE;
             return UNPACK_CANCEL;
         }
-        if (UnpackDir(path, file) == UNPACK_CANCEL)
+        int dirRet = UnpackDir(path, file);
+        if (dirRet == UNPACK_CANCEL)
+        {
+            tally.Cancelled = TRUE;
             return UNPACK_CANCEL;
+        }
+        if (dirRet != UNPACK_OK)
+            tally.NotWhole = TRUE; // feature 338: the folder could not be created - its contents cannot be either
 
         CSalamanderDirectoryAbstract const* subDir = dir->GetSalDir(j);
         SalamanderGeneral->SalPathAppend(srcPath, file->Name, ISO_MAX_PATH_LEN);
-        if (ExtractAllItems(salamander, srcPath, subDir, mask, path, pathBufSize, silent, toSkip) == UNPACK_CANCEL)
+        if (ExtractAllItems(salamander, srcPath, subDir, mask, path, pathBufSize, silent, toSkip, tally, written) == UNPACK_CANCEL)
             return UNPACK_CANCEL;
 
         srcPath[srcPathLen] = '\0';

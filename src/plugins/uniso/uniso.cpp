@@ -897,7 +897,15 @@ BOOL CPluginInterfaceForArchiver::UnpackWholeArchive(CSalamanderForOperationsAbs
                     lstrcpyn(strTarget, targetDir, U8_MAX_PATH);
                     char srcPath[ISO_MAX_PATH_LEN];
                     srcPath[0] = '\0';
-                    ret = isoImage.ExtractAllItems(salamander, srcPath, dir, modmask, strTarget, U8_MAX_PATH, silent, toSkip) != UNPACK_CANCEL;
+                    // feature 338: success only when every file and folder asked for was extracted
+                    // whole and none was written over by this unpack - a Skip (or a skip without a box)
+                    // counted as success, and "Delete archive after unpacking" deleted the image with
+                    // the skipped file's only copy
+                    CSalIsoWholeUnpackTally tally;
+                    CSalIsoWrittenFiles written;
+                    isoImage.ExtractAllItems(salamander, srcPath, dir, modmask, strTarget, U8_MAX_PATH, silent, toSkip,
+                                             tally, written);
+                    ret = SalIsoWholeUnpackSucceeded(tally, FALSE); // the listing's mark: below
                 }
                 else
                     Error(IDS_INSUFFICIENT_MEMORY);

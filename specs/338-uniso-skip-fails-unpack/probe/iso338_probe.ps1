@@ -25,6 +25,10 @@
                  replaced on purpose - no file of the image lost)
       TWINS      twins.iso, the overwrite question for the second top.txt answered Yes: top.txt = TOU
                  (the first record's TOP is gone), the image KEPT
+      R-SILENT   readerrz.iso (only z.txt unreadable) into a target holding the user's top.txt: the overwrite
+                 question answered All - the read error of z.txt then shows NO box (the readers' silent
+                 path returned success); side, top (TOP), tou extracted, the image KEPT - the only row
+                 whose sole loss is a silent read error (the readers' rule alone)
       D-SKIP     plain.iso into a target holding a FILE zlast: the folder cannot be created, the boxes
                  answered Skip / OK: side, top, tou extracted (zlast stays the user's file), the image KEPT
     Before 338 every row but OK / O-YES deleted the image. Every row also fails on a program exit, a
@@ -157,6 +161,7 @@ try {
     if ([IO.File]::Exists("$s\plain.iso")) {
         $made += & python -I $py readerr "$s\plain.iso" "$s\readerr.iso" 2>&1
         $made += & python -I $py readerr2 "$s\plain.iso" "$s\readerr2.iso" 2>&1
+        $made += & python -I $py readerrz "$s\plain.iso" "$s\readerrz.iso" 2>&1
         $made += & python -I $py twins "$s\plain.iso" "$s\twins.iso" 2>&1
     }
     $ErrorActionPreference = $old
@@ -171,6 +176,7 @@ try {
     $oldTop = [ordered]@{ 'a/side.txt' = 'SIDE'; 'top.txt' = 'OLD'; 'tou.txt' = 'TOU'; 'zlast/z.txt' = 'Z' }
     $twins = [ordered]@{ 'a/side.txt' = 'SIDE'; 'top.txt' = 'TOU'; 'zlast/z.txt' = 'Z' }
     $noZ = [ordered]@{ 'a/side.txt' = 'SIDE'; 'top.txt' = 'TOP'; 'tou.txt' = 'TOU'; 'zlast' = 'F' }
+    $noZ2 = [ordered]@{ 'a/side.txt' = 'SIDE'; 'top.txt' = 'TOP'; 'tou.txt' = 'TOU' }
     $userTop = { param($t) WriteFile ($t + '\top.txt') 'OLD' }
     Unpack-Row 'OK' "$s\plain.iso" $all @(1, 6) '' 0
     Unpack-Row 'R-SKIP' "$s\readerr.iso" $noTop @(173) $ReadErr 1 -Kept
@@ -179,6 +185,7 @@ try {
     Unpack-Row 'O-SKIP' "$s\plain.iso" $oldTop @(173) 'Confirm File Overwrite|top\.txt' 1 -Kept -Prep $userTop
     Unpack-Row 'O-YES' "$s\plain.iso" $all @(6) 'Confirm File Overwrite|top\.txt' 1 -Prep $userTop
     Unpack-Row 'TWINS' "$s\twins.iso" $twins @(6) 'Confirm File Overwrite|top\.txt' 1 -Kept
+    Unpack-Row 'R-SILENT' "$s\readerrz.iso" $noZ2 @(185) 'Confirm File Overwrite|top\.txt' 1 -Kept -Prep $userTop
     Unpack-Row 'D-SKIP' "$s\plain.iso" $noZ @(173, 1) '.' -1 -Kept -Prep { param($t) WriteFile ($t + '\zlast') 'F' }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

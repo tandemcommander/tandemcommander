@@ -107,6 +107,7 @@
 #include "salisonamefit.h"     // feature 328
 #include "salnrgcdtext.h"      // feature 331
 #include "salisotrack.h"       // features 334, 335
+#include "salisounpack.h"      // feature 338
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -20365,6 +20366,162 @@ static void TestIsoStreamPartial_337()
     }
 }
 
+// feature 338: a whole unpack of a disc image succeeds only when every file and folder asked for was
+// extracted whole and none was written over by the same unpack (src/common/salisounpack.h)
+static CSalFileIdentity Id338(BOOL has128, ULONGLONG vsn64, BYTE id0, BOOL has64, DWORD vsn32, ULONGLONG index64)
+{
+    CSalFileIdentity id;
+    SalFileIdentityClear(&id);
+    id.Valid = TRUE;
+    id.Has128 = has128;
+    id.Vsn64 = vsn64;
+    if (has128)
+    {
+        memset(id.Id128, 0, 16);
+        id.Id128[0] = id0;
+    }
+    id.Has64 = has64;
+    id.Vsn32 = vsn32;
+    id.Index64 = index64;
+    return id;
+}
+
+static void TestIsoWholeUnpack_338()
+{
+    // the readers' end: a file not written whole is not extracted, also when no box set the result
+    CHECK(SalIsoFileUnpackResult(SAL_ISO_UNPACK_OK, TRUE) == SAL_ISO_UNPACK_OK);
+    CHECK(SalIsoFileUnpackResult(SAL_ISO_UNPACK_OK, FALSE) == SAL_ISO_UNPACK_ERROR); // read error after Skip all
+    CHECK(SalIsoFileUnpackResult(SAL_ISO_UNPACK_ERROR, FALSE) == SAL_ISO_UNPACK_ERROR);
+    CHECK(SalIsoFileUnpackResult(SAL_ISO_UNPACK_CANCEL, FALSE) == SAL_ISO_UNPACK_CANCEL);
+    CHECK(SalIsoFileUnpackResult(SAL_ISO_UNPACK_ERROR, TRUE) == SAL_ISO_UNPACK_ERROR); // skipped at creation
+    CHECK(SalIsoFileUnpackResult(SAL_ISO_UNPACK_AUDIO_UNSUP, TRUE) == SAL_ISO_UNPACK_AUDIO_UNSUP);
+
+    // the tally and the whole result
+    {
+        CSalIsoWholeUnpackTally t;
+        CHECK(t.File(SAL_ISO_UNPACK_OK));
+        CHECK(t.File(SAL_ISO_UNPACK_OK));
+        CHECK(SalIsoWholeUnpackSucceeded(t, FALSE));  // row OK
+        CHECK(!SalIsoWholeUnpackSucceeded(t, TRUE));  // the listing left entries out (328)
+        CHECK(t.File(SAL_ISO_UNPACK_ERROR));          // Skip: the unpack goes on
+        CHECK(!SalIsoWholeUnpackSucceeded(t, FALSE)); // rows R-SKIP, C-SKIP, O-SKIP
+        CHECK(t.NotWhole && !t.Cancelled);
+    }
+    {
+        CSalIsoWholeUnpackTally t;
+        CHECK(t.File(SAL_ISO_UNPACK_AUDIO_UNSUP)); // an audio entry is never extracted
+        CHECK(!SalIsoWholeUnpackSucceeded(t, FALSE));
+    }
+    {
+        CSalIsoWholeUnpackTally t;
+        CHECK(!t.File(SAL_ISO_UNPACK_CANCEL)); // Cancel stops
+        CHECK(t.Cancelled && !t.NotWhole);
+        CHECK(!SalIsoWholeUnpackSucceeded(t, FALSE));
+    }
+    {
+        CSalIsoWholeUnpackTally t;
+        t.WroteOverOwn = TRUE; // row TWINS
+        CHECK(!SalIsoWholeUnpackSucceeded(t, FALSE));
+        CSalIsoWholeUnpackTally d;
+        d.NotWhole = TRUE; // row D-SKIP: a folder not created
+        CHECK(!SalIsoWholeUnpackSucceeded(d, FALSE));
+    }
+
+    // the files the unpack wrote, by identity
+    const CSalFileIdentity a = Id338(TRUE, 7, 0x11, TRUE, 7, 0x100);
+    const CSalFileIdentity b = Id338(TRUE, 7, 0x12, TRUE, 7, 0x101);
+    {
+        CSalIsoWrittenFiles w;
+        CHECK(!w.WrittenBefore(TRUE, a));  // nothing written yet: the user's own file (row O-YES)
+        CHECK(!w.WrittenBefore(FALSE, a)); // not even read - nothing written, nothing to lose
+        w.Note(TRUE, a);
+        CHECK(!w.IsLost());
+        CHECK(w.WrittenBefore(TRUE, a));  // row TWINS: the second record lands on the first
+        CHECK(!w.WrittenBefore(TRUE, b)); // another file (the user's own)
+        CHECK(w.WrittenBefore(FALSE, b)); // its identity not read: fails closed
+        CSalFileIdentity inv;
+        SalFileIdentityClear(&inv);
+        CHECK(w.WrittenBefore(TRUE, inv));                                   // not valid: fails closed
+        CHECK(!w.WrittenBefore(TRUE, Id338(TRUE, 8, 0x11, TRUE, 8, 0x100))); // the same ids on another volume
+        // only one key kind on one side: the other kind still matches (as SalFileIdMatch)
+        CHECK(w.WrittenBefore(TRUE, Id338(FALSE, 0, 0, TRUE, 7, 0x100)));
+        CHECK(w.WrittenBefore(TRUE, Id338(TRUE, 7, 0x11, FALSE, 0, 0)));
+        CHECK(!w.WrittenBefore(TRUE, Id338(FALSE, 0, 0, TRUE, 7, 0x102)));
+        // no usable id on the existing file (all zero / all ones): fails closed
+        CHECK(w.WrittenBefore(TRUE, Id338(FALSE, 0, 0, TRUE, 7, 0)));
+        CHECK(w.WrittenBefore(TRUE, Id338(FALSE, 0, 0, TRUE, 7, ~0ULL)));
+        CHECK(w.WrittenBefore(TRUE, Id338(FALSE, 0, 0, FALSE, 0, 0)));
+    }
+    {
+        // a written file without a usable id cannot be told apart: from then on every existing target may be ours
+        CSalIsoWrittenFiles w;
+        w.Note(TRUE, Id338(FALSE, 0, 0, TRUE, 7, 0));
+        CHECK(w.IsLost());
+        CHECK(w.WrittenBefore(TRUE, b));
+        CSalIsoWrittenFiles r;
+        r.Note(FALSE, a); // its identity not read
+        CHECK(r.IsLost());
+        CHECK(r.WrittenBefore(TRUE, b));
+    }
+    {
+        // many files: each found, none of the others
+        CSalIsoWrittenFiles w;
+        for (ULONGLONG i = 1; i <= 2000; i++)
+            w.Note(TRUE, Id338(FALSE, 0, 0, TRUE, 9, i * 3));
+        bool all = true, none = true;
+        for (ULONGLONG i = 1; i <= 2000; i++)
+        {
+            all = all && w.WrittenBefore(TRUE, Id338(FALSE, 0, 0, TRUE, 9, i * 3));
+            none = none && !w.WrittenBefore(TRUE, Id338(FALSE, 0, 0, TRUE, 9, i * 3 + 1));
+        }
+        CHECK(all);
+        CHECK(none);
+    }
+
+    // real files: two written files and a third the "user" made; a hard link to a written file is one
+    // of them (the identity, not the name)
+    WCHAR dir[MAX_PATH + 20];
+    DWORD n = GetTempPathW(MAX_PATH, dir);
+    if (n > 0 && n < MAX_PATH)
+    {
+        wsprintfW(dir + n, L"saltests338_%lu", GetCurrentProcessId());
+        CreateDirectoryW(dir, NULL);
+        WCHAR f1[MAX_PATH + 40], f2[MAX_PATH + 40], f3[MAX_PATH + 40], l1[MAX_PATH + 40];
+        wsprintfW(f1, L"%s\\top.txt", dir);
+        wsprintfW(f2, L"%s\\tou.txt", dir);
+        wsprintfW(f3, L"%s\\user.txt", dir);
+        wsprintfW(l1, L"%s\\TOP-link.txt", dir);
+        const WCHAR* files[] = {f1, f2, f3};
+        for (const WCHAR* f : files)
+        {
+            HANDLE h = CreateFileW(f, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            CHECK(h != INVALID_HANDLE_VALUE);
+            if (h != INVALID_HANDLE_VALUE)
+                CloseHandle(h);
+        }
+        CSalIsoWrittenFiles w;
+        CSalFileIdentity id;
+        BOOL read = SalGetFileIdentityW(f1, FALSE, &id);
+        w.Note(read, id);
+        read = SalGetFileIdentityW(f2, FALSE, &id);
+        w.Note(read, id);
+        CHECK(!w.IsLost());
+        read = SalGetFileIdentityW(f1, FALSE, &id);
+        CHECK(w.WrittenBefore(read, id));
+        read = SalGetFileIdentityW(f3, FALSE, &id);
+        CHECK(!w.WrittenBefore(read, id));
+        if (CreateHardLinkW(l1, f1, NULL))
+        {
+            read = SalGetFileIdentityW(l1, FALSE, &id);
+            CHECK(w.WrittenBefore(read, id));
+            DeleteFileW(l1);
+        }
+        for (const WCHAR* f : files)
+            DeleteFileW(f);
+        RemoveDirectoryW(dir);
+    }
+}
+
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
 // when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
 // the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
@@ -21476,6 +21633,7 @@ int main(int argc, char** argv)
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();
+    TestIsoWholeUnpack_338();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

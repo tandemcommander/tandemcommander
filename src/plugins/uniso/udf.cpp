@@ -1275,6 +1275,9 @@ int CUDF::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
         }
         else
             SetFileAttrs(name, attrs, silent == 1);
+
+        // feature 338: a read error met without a box (after Skip all) left 'ret' at UNPACK_OK
+        ret = SalIsoFileUnpackResult(ret, bFileComplete);
     }
     catch (int e)
     {

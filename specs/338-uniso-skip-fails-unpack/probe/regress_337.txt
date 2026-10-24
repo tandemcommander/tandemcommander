@@ -1,0 +1,120 @@
+iso337_probe (feature 337) regress338
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 11:12; registry key existed True
+
+seeds: ccd_nofs_f1.ccd,ccd_nofs_f1.img,ccd_nofs_m1.ccd,ccd_nofs_m1.img,ccd_vcd.ccd,ccd_vcd.img,ccd_vcdcov.ccd,ccd_vcdcov.img,ccd_vcdfull.ccd,ccd_vcdfull.img,ccd_vcdgap.ccd,ccd_vcdgap.img,ccd_vcdlast.ccd,ccd_vcdlast.img,ccd_vcdreal.ccd,ccd_vcdreal.img,ccd_vcdtrunc.ccd,ccd_vcdtrunc.img,multi_ff_f1.nrg,multi_form2.nrg,multi_form2cov.nrg,multi_form2full.nrg,multi_nofs.nrg,multi_nofs_f1.nrg,multi_ok_2336.nrg,multi_txt_f1.nrg,multi_u16_f1.nrg,multi_u16s_f1.nrg,nrg_vcdlast.nrg,s1.iso,s1c.iso,s2.iso,s2.lba,single_nofs.nrg,single_raw.nrg,single_short.nrg,single_vcd.nrg,single_vcdbyte.nrg,single_vcdcov.nrg,single_vcdcov2.nrg,single_vcdfull.nrg,single_vcdgap.nrg,single_vcdmid.nrg,single_vcdmide.nrg,single_vcdovl.nrg,single_vcdpart.nrg,single_vcdtail.nrg,single_vcdtwo.nrg,single_vcdtwof.nrg,single_vcdzero.nrg
+img: multi_nofs: 720988 bytes, track 2 from sector 176; track 2 Mode 1, 2 volume descriptors destroyed
+img: multi_ok_2336: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, intact
+img: multi_nofs_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, 2 volume descriptors destroyed
+img: multi_form2: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 2 (MPEG-like stream)
+img: single_vcd: 771664 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 2 (MPEG-like stream)
+img: single_nofs: 720976 bytes, track 2 from sector 176; track 2 Mode 1, 2 volume descriptors destroyed
+img: single_raw: 720976 bytes, track 2 from sector 176; track 2 Mode 1 zeros
+img: multi_ff_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (multi_ff_f1)
+img: multi_txt_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (multi_txt_f1)
+img: multi_u16_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (multi_u16_f1)
+img: multi_u16s_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (multi_u16s_f1)
+img: single_short: 533412 bytes, track 2 from sector 176; track 2 a 10-sector Mode 2 / 2336 Form 1 track, track 3 a Form 2 stream
+img: ccd_vcd: 176 + 176 sectors, track 2 mode 2
+img: ccd_nofs_m1: 176 + 176 sectors, track 2 mode 1
+img: ccd_nofs_f1: 176 + 176 sectors, track 2 mode 2
+img: ccd_vcdreal: 176 + 176 sectors, track 2 mode 2
+img: single_vcdcov: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 16384 bytes; stream sectors 64.. empty
+img: single_vcdcov2: 675940 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 16384 bytes; stream sectors 64.. empty
+img: single_vcdzero: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 0 bytes; stream sectors 64.. empty
+img: multi_form2cov: 526428 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 16384 bytes; stream sectors 64.. empty
+img: single_vcdpart: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 2048 bytes; stream sectors 64.. empty
+img: single_vcdfull: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 131072 bytes; stream sectors 64.. empty
+img: multi_form2full: 526428 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 131072 bytes; stream sectors 64.. empty
+img: single_vcdgap: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 98304 bytes; stream sectors 48.. empty
+img: single_vcdtail: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 98304 bytes; stream sectors 64.. empty
+img: single_vcdbyte: 526416 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 129025 bytes; stream sectors 64.. empty
+img: single_vcdmid: 526416 bytes; track 1 184 sectors
+img: single_vcdmide: 526416 bytes; track 1 184 sectors
+img: single_vcdovl: 526416 bytes; track 1 184 sectors
+img: single_vcdtwo: 675940 bytes; track 1 184 sectors
+img: single_vcdtwof: 675940 bytes; track 1 184 sectors
+img: nrg_vcdlast: 526416 bytes; track 1 184 sectors
+img: ccd_vcdcov: 583296 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 16384 bytes; stream sectors 64.. empty
+img: ccd_vcdfull: 583296 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 131072 bytes; stream sectors 64.. empty
+img: ccd_vcdgap: 583296 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 98304 bytes; stream sectors 48.. empty
+img: ccd_vcdtrunc: 584496 bytes; track 1 184 sectors, avseq01.dat (1 records) -> sector 184, 98304 bytes; stream sectors 48.. empty
+img: ccd_vcdlast: 583296 bytes; track 1 184 sectors
+
+S-VCDPART  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDPART  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDCOV   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDCOV   RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+C-VCDCOV   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-VCDCOV   RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-FORM2COV END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-FORM2COV RUN    PASS        files 2: Session 01/a.txt, Session 01/avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDTAIL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDTAIL  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDBYTE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDBYTE  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+C-VCDTRUNC END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-VCDTRUNC RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDMID   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDMID   RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDMIDE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDMIDE  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDOVL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDOVL   RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDTWO   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDTWO   RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDTWOF  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDTWOF  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDLAST  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDLAST  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+C-VCDLAST  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-VCDLAST  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDFULL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDFULL  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+C-VCDFULL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-VCDFULL  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-FORM2FULL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-FORM2FULL RUN    PASS        files 2: Session 01/a.txt, Session 01/avseq01.dat; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDGAP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDGAP   RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+C-VCDGAP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-VCDGAP   RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDCOV2  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDCOV2  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCDZERO  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCDZERO  RUN    PASS        files 2: a.txt, avseq01.dat; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-NOFS     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-NOFS     RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-OK-2336  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-OK-2336  RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-NOFS-F1  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-NOFS-F1  RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-FORM2    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-FORM2    RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCD      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCD      RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-NOFS     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-NOFS     RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-RAW      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-RAW      RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-FF-F1    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-FF-F1    RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-TXT-F1   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-TXT-F1   RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+C-VCD      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-VCD      RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+C-NOFS-M1  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-NOFS-M1  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+C-NOFS-F1  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-NOFS-F1  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-U16-F1   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-U16-F1   RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-U16S-F1  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-U16S-F1  RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+C-VCDREAL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-VCDREAL  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-SHORT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-SHORT    RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588 / after BFC2D5837820BD04F4F141296CFC496DF214418FC88DCA16A03E89D00D0A2588
+
+Rows: PASS 74, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
