@@ -7,8 +7,8 @@ area: ftp
 source: review:302
 who: agent
 created: 2026-10-23
-updated: 2026-10-23
-verified: -
+updated: 2026-10-24
+verified: 2026-10-24 3034d82f
 effort: S
 feature: -
 related: [ftp-323-by-hand-send-ftp-command-during-an-open-upload-then]
@@ -58,3 +58,4 @@ check `PRIVACY.md` / the maintainer-owned list before resolving names.
 
 - 2026-10-23 — created (source review:302)
 - 2026-10-23 — moved to Next position 5
+- 2026-10-24 — verified at 3034d82f: reproduced at 3034d82f: hidden-desktop probe ftp341, upload 1 open to localhost, Quick Rename in the panel at 127.0.0.1, upload 2 replaced b.txt without the question; also a store through 127.0.0.1 then an upload via localhost
