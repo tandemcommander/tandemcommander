@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4749,3 +4749,35 @@ a few early ones are out of sequence).
   saltests 28,372 -> 28,425 / 0 (`TestIsoTrackMarks334`); refute-first reviews: 1 (one MUST - audio of a
   mixed-mode disc - and two SHOULD, fixed), 2 (no MUST; SHOULD a one-session image's other data track -
   fixed).
+- 335-uniso-raw-track-lost: a disc image with a track table (NRG, CCD/IMG) one of whose data tracks shows no
+  file system the ISO plug-in knows (its volume descriptors destroyed, the track within the image) was
+  taken as a raw data track that lists nothing (as a Video CD's MPEG track) and not marked - Unpack with
+  "Delete archive after unpacking" extracted the other sessions and deleted the image - now `CISOImage::Open`
+  sets `Track::RawLost` (334's `OutsideImage`, renamed) for such a track unless it is a Mode 2 Form 2 stream:
+  `SalIsoForm2SectorsToCheck` (`src/common/salisotrack.h`) gives sectors 16..31 within the track and the
+  file (none when sector 16 is not in the track), and each must pass `SalIsoSectorIsForm2` (2352+: sync,
+  mode byte 2; 2336: no sync; a valid CD-ROM XA subheader - equal copies, channel < 32, at most one of
+  data / audio / video - with the Form 2 bit); 334's `SalIsoTrackMarksListing` marks it in every listing
+  path. No UI string. Traps: three reviewers stopped mid-probe without a report (the registry restored from
+  `%TEMP%\tc335_backup.reg` twice), their partial work found three holes in turn - a 2336-byte sector
+  overwritten with 0xFF / text (review 1), UTF-16 text starting with spaces forms a valid subheader
+  (review 2: the 16-sector window), a 10-sector damaged track before a stream read the stream's sectors
+  (review 3: sector 16 inside the track); clang-format with an empty `--lines` list reformatted all of
+  `saltests.cpp` (restored from HEAD); a Bash here-document again collapsed a probe edit's backslashes
+  (an assert stopped it); the maintainer started the installed program during the last probe (registry
+  state saved for them). Limits: a fill forming valid Form 2 subheaders in all of sectors 16..31 passes; a
+  Video CD stream with a zero-filled sector near its start keeps the image; a Form 2 track no listed file
+  covers is still deleted (Inbox `iso-plug-in-a-form-2-track-that-no-listed-file-covers-is`); Video CD
+  MPEG files may extract cut to 2048 bytes a sector (Inbox
+  `iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may`); NRG ETNF modes 0x05 / 0x06, ETN2 ends and
+  multi-session CCD splits are read wrongly (Inbox `iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables`);
+  no physical-disc dump tried (person step `check-feature-335-with-real-nrg-and-clonecd-dumps-of-video`).
+  From backlog item `iso-plug-in-a-data-track-in-which-no-file-system-is-found`. Probe `iso335_probe`
+  (seeds 334's `mkimg334.sh`, NRG images by `img335.py`, CloneCD by `ccd335.py`) on main 10 / 4 -> 32 / 0
+  (16 RUN rows; reviews added M-FF-F1, M-TXT-F1, C-VCD, C-NOFS-M1, C-NOFS-F1, M-U16-F1, M-U16S-F1,
+  C-VCDREAL, S-SHORT, each failing on the build before its fix); reviewer 3's real vcdimager VCD / SVCD
+  (CCD, NRG) still deleted; 322 18 / 0, 329 14 / 0, 330 30 / 0, 333 20 / 0, 334 23 / 1 (S-RAW kept - the
+  intended change); saltests 28,425 -> 28,565 / 0 (`TestIsoSectorForm2_335`; mutants always / never Form 2
+  fail 9 / 7, no track-end clamp 6, one sector 12); refute-first reviews: 1-3 stopped (partial work, one
+  MUST-level hole each, fixed), 4 (no MUST; SHOULD the window as a tested rule - fixed; SHOULD a Form 2
+  track no file covers - Inbox).
