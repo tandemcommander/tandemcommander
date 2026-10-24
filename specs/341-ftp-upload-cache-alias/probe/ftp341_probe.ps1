@@ -27,6 +27,11 @@
                  127.0.0.2; upload 2 of the local b.txt to localhost: PASS = no STOR b.txt, the
                  question for b.txt, the server's b.txt keeps the content of a.txt. Disjoint
                  addresses do not prove two servers.
+      SEED-ALIAS (review 2 of 341) upload 2 of a new n.txt typed to localhost (stored; the
+                 operation ends - the panel at 127.0.0.1 is not refreshed by it); the local n.txt
+                 changes; upload 3 by F5 into the panel: the upload cache is seeded from the panel's
+                 listing (fs5.cpp). PASS = the question for n.txt, no second STOR, server n.txt UP2.
+      SEED-SAME  control: the same with upload 2 to 127.0.0.1 (the panel is refreshed).
     The product's registry key is exported, restored and compared. Exit code = FAIL rows.
 
 .NOTES
@@ -383,6 +388,36 @@ try {
         } '127.0.0.2'
     }
     else { Row 'MULTI-REN' 'ROW' 'NOT DRIVEN' 'the second server on 127.0.0.2 did not start' }
+
+    # review 2 of 341: a panel listing taken before a change made under another name seeds the
+    # upload cache of an upload into the panel (fs5.cpp) - it must not be trusted
+    foreach ($rc in @(@('SEED-ALIAS', $toAlias), @('SEED-SAME', $same))) {
+        $script:rcEdit = $rc[1]
+        Row-Case $rc[0] $rc[0] {
+            param($s, $l)
+            WriteFile ($s + '\x.txt') 'SRV-X'
+            WriteFile ($l + '\n.txt') 'UP2'
+        } {
+            param($id, $s, $l)
+            Focus $id 0 1                                          # local: .., n.txt -> n.txt
+            $from2 = Srv-Count $FtpSrv
+            $t2 = @(Drive $id 727 $script:rcEdit 5 90)             # upload 2 of n.txt (new on the server)
+            $cmds2 = @(Srv-Cmds $FtpSrv $from2)
+            $stored2 = (ReadSrv ($s + '\n.txt')) -ceq 'UP2'
+            $op2 = OpDesc $id
+            Start-Sleep -Milliseconds 3000; Sync $id
+            WriteFile ($l + '\n.txt') 'UP3'                        # the local file changes
+            Focus $id 0 1
+            $from = Srv-Count $FtpSrv
+            $t3 = @(Drive $id 727 $same 5 90)                      # upload 3 by F5 into the panel (127.0.0.1)
+            $cmds = @(Srv-Cmds $FtpSrv $from)
+            $stor = Has-Cmd $cmds '^STOR (.*/)?n\.txt$'
+            $asked = OpQuestion $id 'n.txt'
+            $n = ReadSrv ($s + '\n.txt')
+            @{ Ok = ($stored2 -and -not $stor -and $asked -and $n -ceq 'UP2')
+               Facts = ("upload 2 stored n.txt: {0}; upload 3 sent STOR n.txt: {1}; question for n.txt open: {2}; server n.txt '{3}'; upload 2 commands: {4}; upload 3 commands: {5}; dialogs: {6} | {7}; op windows after upload 2: {8}; at the end: {9}" -f $stored2, $stor, $asked, $n, ($cmds2 -join ' / '), ($cmds -join ' / '), ($t2 -join ' ; '), ($t3 -join ' ; '), $op2, (OpDesc $id)) }
+        }
+    }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

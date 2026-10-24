@@ -23,13 +23,21 @@ addresses. Disjoint addresses do not prove two servers (one server on 127.0.0.1 
 LAN and public address); the review reproduced the data loss (row MULTI-REN). The table, the hook,
 the header and its tests were removed.
 
+**Revised after review 2 (M1)**: an upload into an FTP panel seeds the cache from the panel's
+listing (`fs5.cpp`, `AddOrUpdateListing`); the panel is refreshed only by changes made under its own
+host name, so after a change under another name its listing is stale and the upload trusted it
+(probe row SEED-ALIAS). The cache now stamps every reported change per server name
+(`StampChange`, `IncListingCounter()`, kept after the uploads end; bound 1,000 names, then - or on
+low memory - fails closed) and `AddOrUpdateListing` refuses a listing started before a change
+stamped under another host with the same user and port (`ChangedUnderOtherName`).
+
 ## Technical Context
 
 **Language/Version**: C++20 (`/std:c++latest`), MSVC v143
 **Primary Dependencies**: none new; FTP plug-in (`src/plugins/ftp`)
 **Storage**: N/A
 **Testing**: hidden-desktop probe `specs/341-ftp-upload-cache-alias/probe/ftp341_probe.ps1`
-(ALIAS-REN, ALIAS-UP, SAME-REN, MULTI-REN) with 323's `ftpmini_hide.py` and `probe/ftpmini_at.py`
+(ALIAS-REN, ALIAS-UP, SAME-REN, MULTI-REN, SEED-ALIAS, SEED-SAME) with 323's `ftpmini_hide.py` and `probe/ftpmini_at.py`
 (the same server on 127.0.0.2); regression `specs/323-ftp-upload-cache-args/probe/ftp302_probe.ps1`
 (16 rows); saltests unchanged (0 failed)
 **Target Platform**: Windows 11 x64
@@ -75,8 +83,10 @@ specs/341-ftp-upload-cache-alias/
 ### Source Code (repository root)
 
 ```text
-src/plugins/ftp/operats.h             CUploadListingCache::InvalidateOtherNamesOfServer
-src/plugins/ftp/operats9.cpp          its body; the six reports call it
+src/plugins/ftp/operats.h             CUploadListingCache::InvalidateOtherNamesOfServer, StampChange,
+                                      ChangedUnderOtherName, CUploadChangeStamp
+src/plugins/ftp/operats9.cpp          their bodies; the six reports call the first; AddOrUpdateListing
+                                      refuses a stale panel listing
 ```
 
 **Structure Decision**: the existing FTP plug-in code of features 302 / 323.

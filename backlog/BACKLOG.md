@@ -269,6 +269,8 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [FTP: two operations under two names of one server can open one file at the same time](items/ftp-opened-file-lock-two-names-of-one-server/desc.md) | bug | 6 | ftp | review:341 | 2026-10-24 |
+| [FTP: a panel is not refreshed after a change made under another name of its server](items/ftp-panel-refresh-misses-change-under-another-name/desc.md) | bug | 4 | ftp | review:341 | 2026-10-24 |
 
 ## Parked
 

@@ -177,3 +177,52 @@ question; now - upload 2 sends `CWD /ALIAS-REN / PORT ... / TYPE A / LIST`, the 
   again after every change; slower, never less safe.
 - Two user accounts of one server, or one server on two ports: not taken as the same server (out
   of scope, as before).
+
+### Review 2 (refute-first, independent agent, with review 1's findings) - MUST 1, SHOULD 0, NOTEs 5
+
+- M1 of review 1 confirmed fixed (its re-run of the probe: 8 / 0, MULTI-REN asks).
+- **M1** (new): an upload into an FTP panel seeds the cache from the panel's listing
+  (`fs5.cpp`, `AddOrUpdateListing(..., FALSE)`) when the panel's listing is not marked outdated and
+  no operation of the *same host* can change the path; the panel is refreshed only by change
+  notifications of its own host (`fs3.cpp` `AcceptChangeOnPathNotification`,
+  `FTPHasTheSameRootPath`). The fan-out invalidates only entries that exist at the change; a seed
+  made later brings the stale listing back. Reproduced by the reviewer (copy of the probe, rows
+  SEED-ALIAS / SEED-SAME): upload 2 of a new `n.txt` to `localhost` (stored, the operation ends,
+  the panel at 127.0.0.1 not refreshed), local `n.txt` changed, upload 3 by F5 into the panel:
+  `STOR n.txt` without LIST or question, server `n.txt` UP2 -> UP3. SEED-SAME passed. **Taken**
+  (the item's *Expected*: an upload under another name does not trust its cached listings):
+  - `CUploadChangeStamp` + `CUploadListingCache::ChangeStamps`: every change report stamps its
+    server name (user, host, port) with `IncListingCounter()` (`StampChange`, called from
+    `InvalidateOtherNamesOfServer`, so by all six reports); the stamps stay after the uploads end.
+  - `AddOrUpdateListing` (the panel's seed and update) refuses a listing whose start time is older
+    than a stamp of another host with the same user and port (`ChangedUnderOtherName`) - returns
+    TRUE without adding, the upload lists the path itself.
+  - Bound 1,000 names; past it, or on low memory, `ChangeStampsLost` makes every panel listing
+    refused (fails closed).
+  - The rows SEED-ALIAS and SEED-SAME taken into `probe/ftp341_probe.ps1`.
+- NOTEs: invalidation cannot hide a question (N1); the cost can starve one of two uploads under two
+  names until the other ends, no livelock (N2, documented); every change report is covered (N3);
+  other host-keyed lookups - the panel refresh notification (the root of M1), `CanMakeChangesOnPath`,
+  the opened-file lock, the user name compared exactly (N4) -> Inbox items
+  `ftp-opened-file-lock-two-names-of-one-server` and
+  `ftp-panel-refresh-misses-change-under-another-name` (`review:341`); `CanMakeChangesOnPath` needs
+  none now (a stale seed is refused by the stamps; a running operation's later changes fan out);
+  the user name case is out of scope (spec); no standing-rule issue (N5).
+
+## Checks (after review 2, final code)
+
+| Check | Command | Result |
+|---|---|---|
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| build | `.\build.cmd` | BUILD SUCCEEDED |
+| clang-format | VS 2022 clang-format on `operats9.cpp`, `operats.h` | only pre-existing deviations |
+| saltests | `saltests.exe` | `saltests: 28807 checks, 0 failed` (as on `main`) |
+| probe | `ftp341_probe.ps1` -> `probe/result_after.txt` | PASS 12, FAIL 0 (ALIAS-REN, ALIAS-UP, SAME-REN, MULTI-REN, SEED-ALIAS, SEED-SAME; registry identical) |
+| mutant A | `ChangedUnderOtherName` returns FALSE; `-Only SEED-ALIAS` -> `probe/result_negative_seed.txt` | SEED-ALIAS FAIL (STOR n.txt, UP3) - restored |
+| mutant B | `InvalidateOtherNamesOfServer` returns at once (no fan-out, no stamps); `-Only ALIAS-REN,ALIAS-UP,MULTI-REN,SEED-ALIAS` -> `probe/result_negative.txt` | all 4 FAIL - restored, rebuilt |
+| regression | 323's `ftp302_probe.ps1` -> `probe/regress_302.txt` | PASS 16, FAIL 0 |
+| SC-004 | `git diff main -- src` | `operats.h`, `operats9.cpp` only; no lookup, nothing stored |
+
+Limits (in addition to those above): a panel listing taken before a change under another name is
+not used by an upload into the panel even when the change was elsewhere on the server (one more
+`LIST`); after 1,000 changed server names in one session no panel listing is used.

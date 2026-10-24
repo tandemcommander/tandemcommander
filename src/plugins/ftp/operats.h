@@ -3245,11 +3245,30 @@ public:
                          const char* systReply, const char* suggestedListingServerType);
 };
 
+// feature 341 (review 2): the latest change reported for one server name (see CUploadListingCache::ChangeStamps)
+struct CUploadChangeStamp
+{
+    char* User;          // user name, NULL == anonymous
+    char* Host;          // host address as typed
+    unsigned short Port; // port on which the FTP server runs
+    DWORD Time;          // IncListingCounter() at the latest reported change
+
+    CUploadChangeStamp() : User(NULL), Host(NULL), Port(0), Time(0) {}
+    ~CUploadChangeStamp();
+};
+
 class CUploadListingCache
 {
 protected:
     CRITICAL_SECTION UploadLstCacheCritSect;                  // object critical section
     TIndirectArray<CUploadListingsOnServer> ListingsOnServer; // array of servers for which we have cached listings
+
+    // feature 341 (review 2): the latest change reported under each server name, also after the
+    // uploads to it ended - a panel's listing taken before a change made under another name of the
+    // server (the panel is not refreshed by it) is not added to the cache (AddOrUpdateListing);
+    // 'ChangeStampsLost' (too many names, low memory): every such listing is refused (fails closed)
+    TIndirectArray<CUploadChangeStamp> ChangeStamps;
+    BOOL ChangeStampsLost;
 
 public:
     CUploadListingCache();
@@ -3409,10 +3428,20 @@ protected:
     // feature 341: a change was reported for server 'user'+'host'+'port' ('exact' = its entry or
     // NULL); every other entry of the same user and port has another host name that may reach the
     // same server ("localhost" / "127.0.0.1", a name and its address - the client cannot tell) and
-    // stops trusting all of its listings (the upload lists again); call only from the
-    // UploadLstCacheCritSect critical section
+    // stops trusting all of its listings (the upload lists again); the change is also stamped
+    // (StampChange); call only from the UploadLstCacheCritSect critical section
     void InvalidateOtherNamesOfServer(const char* user, const char* host, unsigned short port,
                                       CUploadListingsOnServer* exact);
+
+    // feature 341 (review 2): records a change reported for 'user'+'host'+'port' (ChangeStamps);
+    // call only from the UploadLstCacheCritSect critical section
+    void StampChange(const char* user, const char* host, unsigned short port);
+
+    // feature 341 (review 2): TRUE when a change may have been made after 'listingStartTime' under
+    // another host name with the same user and port (or the stamps were lost); call only from the
+    // UploadLstCacheCritSect critical section
+    BOOL ChangedUnderOtherName(const char* user, const char* host, unsigned short port,
+                               DWORD listingStartTime);
 };
 
 //

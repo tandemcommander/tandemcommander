@@ -51,6 +51,13 @@ working method and by SC-001..SC-003).
 - [X] T019 Raise the item's severity to 7 (review S1) with `python tools/backlog/backlog.py set`
 - [X] T020 spec, plan, research (R0), data-model, quickstart and fix-log brought in line with the revised design
 
+## Phase 8: Review 2 (M1: the panel's stale listing seeds the upload cache)
+
+- [X] T021 [US4] `CUploadChangeStamp`, `CUploadListingCache::ChangeStamps` / `ChangeStampsLost`, `StampChange` (called from `InvalidateOtherNamesOfServer`) and `ChangedUnderOtherName` in `src/plugins/ftp/operats.h` / `src/plugins/ftp/operats9.cpp`; `AddOrUpdateListing` refuses a listing started before a change stamped under another host with the same user and port
+- [X] T022 [US4] Probe rows SEED-ALIAS and SEED-SAME (from the reviewer's copy) in `specs/341-ftp-upload-cache-alias/probe/ftp341_probe.ps1`
+- [X] T023 Re-run: build, saltests, probe 12 / 0 (`probe/result_after.txt`), mutant A (`ChangedUnderOtherName` FALSE: SEED-ALIAS FAIL, `probe/result_negative_seed.txt`), mutant B (fan-out and stamping off: ALIAS-REN, ALIAS-UP, MULTI-REN, SEED-ALIAS FAIL, `probe/result_negative.txt`), 323's probe 16 / 0
+- [X] T024 Inbox items for the review's other host-keyed lookups (`review:341`); spec, plan, data-model, quickstart, fix-log updated
+
 ## Dependencies
 
 T001 -> T002 -> T003, T004 -> T005, T006 -> T007 -> T008 -> T009 -> T010..T015 -> review 1 -> T016..T020.

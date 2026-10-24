@@ -48,6 +48,12 @@ Measured at 3034d82f (hidden-desktop probe `probe/ftp341_probe.ps1`, Debug build
   not prove the same file system (e.g. a proxy in between), and a wrongly applied delete report
   could suppress a needed question; invalidation can never lose data. (autonomous run: item
   Expected - "or ... the upload does not trust its cached listings"; conservative)
+- Q: An upload into an FTP panel starts from the panel's listing; is it trusted when a change was
+  made under another name of the server (the panel is refreshed only by changes made under its own
+  name)? → A: No - a panel listing taken before a change reported under another host with the same
+  user and port is not used; the upload lists the folder itself. When too many names were changed
+  to remember (or memory runs out), no panel listing is used. (autonomous run: item Expected;
+  review 2 of the run, M1 - reproduced as data loss, probe row SEED-ALIAS)
 - Q: What does fail closed cost? → A: While uploads run under two names with the same user and
   port - also of two different servers (e.g. user `admin` on two machines, port 21) - each change
   through one makes the other list the folder again before deciding; slower, never less safe.
@@ -113,6 +119,21 @@ address) by a panel: a change through one still reaches the upload through the o
    `localhost`, **Then** the overwrite question appears and the server's `b.txt` keeps its content.
 2. **Given** one name everywhere (feature 323's rows), **Then** behaviour is unchanged.
 
+### User Story 4 - An upload into the panel after a change under another name (Priority: P2)
+
+A file stored through `localhost` (the upload ended) and then an upload by F5 into an FTP panel at
+`127.0.0.1` of a file of the same name: the program asks before overwriting.
+
+**Why this priority**: the same data loss through the panel's listing (review 2).
+
+**Independent Test**: probe rows SEED-ALIAS (FAIL before) and SEED-SAME (control).
+
+**Acceptance Scenarios**:
+
+1. **Given** a panel at `127.0.0.1` and a new `n.txt` uploaded through `localhost`, **When** a changed
+   local `n.txt` is uploaded by F5 into the panel, **Then** the question for `n.txt` appears and the
+   server's `n.txt` keeps its content.
+
 ### Edge Cases
 
 - Equal or different addresses, a name with several addresses, a proxy: all the same - another
@@ -135,6 +156,10 @@ address) by a panel: a change through one still reaches the upload through the o
   unknown change (Send FTP Command). Listing bookkeeping (a listing received, failed, updated
   from the panel, invalidated by the upload itself) stays per exact host.
 - **FR-005**: Behaviour for one name everywhere MUST stay unchanged (feature 323's probe rows).
+- **FR-007**: A panel listing MUST NOT be added to (or update) the upload listing cache when a
+  change was reported under another host with the same user and port after that listing was
+  started; when such changes can no longer be remembered (more than 1,000 names, low memory),
+  no panel listing is added (fails closed).
 - **FR-006**: The decision is one condition inside the cache (same user and port, another host);
   no pure rule beyond it - the probe proves it (rows ALIAS-REN, ALIAS-UP, MULTI-REN, and the
   negative control with the fan-out disabled).
@@ -150,6 +175,8 @@ address) by a panel: a change through one still reaches the upload through the o
 - **SC-001**: Probe rows ALIAS-REN and ALIAS-UP: FAIL on `main` -> PASS (question shown, server
   file unchanged, no store sent before the answer); MULTI-REN (review M1) PASS, FAIL with the
   fan-out disabled.
+- **SC-001a**: Probe row SEED-ALIAS: FAIL before (review 2) -> PASS; FAIL with the panel-listing
+  check disabled; SEED-SAME PASS.
 - **SC-002**: Control SAME-REN and feature 323's probe `ftp302_probe` (16 rows) stay PASS.
 - **SC-003**: saltests: 0 failed (unchanged count - no new pure rule).
 - **SC-004**: No new network request: the change adds no lookup call.

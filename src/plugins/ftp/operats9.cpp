@@ -18,8 +18,17 @@ int CUploadListingsOnServer::FoundPathIndexesTotal = 0;   // total number of sea
 // CUploadListingCache
 //
 
-CUploadListingCache::CUploadListingCache() : ListingsOnServer(5, 5)
+CUploadChangeStamp::~CUploadChangeStamp()
 {
+    if (User != NULL)
+        SalamanderGeneral->Free(User);
+    if (Host != NULL)
+        SalamanderGeneral->Free(Host);
+}
+
+CUploadListingCache::CUploadListingCache() : ListingsOnServer(5, 5), ChangeStamps(5, 5)
+{
+    ChangeStampsLost = FALSE;
     HANDLES(InitializeCriticalSection(&UploadLstCacheCritSect));
 }
 
@@ -44,6 +53,12 @@ BOOL CUploadListingCache::AddOrUpdateListing(const char* user, const char* host,
     if (user != NULL && strcmp(user, FTP_ANONYMOUS) == 0)
         user = NULL;
     HANDLES(EnterCriticalSection(&UploadLstCacheCritSect));
+    if (ChangedUnderOtherName(user, host, port, listingStartTime))
+    { // feature 341 (review 2): the panel was not refreshed by that change - its listing is not
+        // trusted; the upload lists the path itself
+        HANDLES(LeaveCriticalSection(&UploadLstCacheCritSect));
+        return TRUE;
+    }
     CUploadListingsOnServer* foundServer = FindServer(user, host, port, NULL);
     if (foundServer == NULL && !onlyUpdate) // the cache does not contain any path from this server yet; create an entry for the server
     {
@@ -136,6 +151,7 @@ void CUploadListingCache::InvalidateOtherNamesOfServer(const char* user, const c
         return;
     if (user != NULL && strcmp(user, FTP_ANONYMOUS) == 0)
         user = NULL;
+    StampChange(user, host, port); // review 2: also for a panel listing taken later (AddOrUpdateListing)
     // whether two names reach one server cannot be told from the client: neither equal nor
     // different addresses prove it (a server answers on several addresses - 127.0.0.1 and
     // 127.0.0.2, its LAN and public address; a proxy hides the server's address) - so every other
@@ -152,6 +168,72 @@ void CUploadListingCache::InvalidateOtherNamesOfServer(const char* user, const c
             server->InvalidateAllListings();
         }
     }
+}
+
+void CUploadListingCache::StampChange(const char* user, const char* host, unsigned short port)
+{
+    if (user != NULL && strcmp(user, FTP_ANONYMOUS) == 0)
+        user = NULL;
+    DWORD now = IncListingCounter();
+    int i;
+    for (i = 0; i < ChangeStamps.Count; i++)
+    {
+        CUploadChangeStamp* stamp = ChangeStamps[i];
+        if (stamp->Port == port && SalamanderGeneral->StrICmp(stamp->Host, host) == 0 &&
+            (stamp->User == NULL && user == NULL ||
+             user != NULL && stamp->User != NULL && strcmp(stamp->User, user) == 0))
+        {
+            stamp->Time = now;
+            return;
+        }
+    }
+    if (ChangeStampsLost)
+        return;
+    if (ChangeStamps.Count >= 1000) // a bound: a session does not change that many servers
+    {
+        ChangeStampsLost = TRUE; // from now on every panel listing is refused (fails closed)
+        return;
+    }
+    CUploadChangeStamp* stamp = new CUploadChangeStamp;
+    if (stamp != NULL)
+    {
+        stamp->Host = SalamanderGeneral->DupStr(host);
+        stamp->User = user != NULL ? SalamanderGeneral->DupStr(user) : NULL;
+        stamp->Port = port;
+        stamp->Time = now;
+        if (stamp->Host != NULL && (user == NULL || stamp->User != NULL))
+        {
+            ChangeStamps.Add(stamp);
+            if (ChangeStamps.IsGood())
+                return;
+            ChangeStamps.ResetState();
+        }
+        delete stamp;
+    }
+    TRACE_E(LOW_MEMORY);
+    ChangeStampsLost = TRUE; // fails closed
+}
+
+BOOL CUploadListingCache::ChangedUnderOtherName(const char* user, const char* host, unsigned short port,
+                                                DWORD listingStartTime)
+{
+    if (ChangeStampsLost)
+        return TRUE;
+    if (user != NULL && strcmp(user, FTP_ANONYMOUS) == 0)
+        user = NULL;
+    int i;
+    for (i = 0; i < ChangeStamps.Count; i++)
+    {
+        CUploadChangeStamp* stamp = ChangeStamps[i];
+        if (stamp->Port == port && stamp->Time > listingStartTime && // changed after the listing started
+            (stamp->User == NULL && user == NULL ||
+             user != NULL && stamp->User != NULL && strcmp(stamp->User, user) == 0) &&
+            SalamanderGeneral->StrICmp(stamp->Host, host) != 0) // under another name: the panel was not refreshed
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 void CUploadListingCache::ReportCreateDirs(const char* user, const char* host, unsigned short port,
