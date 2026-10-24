@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: an HFS+ file whose data is compressed or only in its resource fork extracts empty
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:338
 who: agent
 created: 2026-10-24
 updated: 2026-10-24
-verified: -
+verified: 2026-10-24 75fc0f43
 effort: M
-feature: -
+feature: 339
 related: [iso-plug-in-hfs-hard-links-extract-as-empty-files-their-data]
 depends-on: []
 reason: -
@@ -51,3 +51,5 @@ kept); never an empty file counted as done. Measured first with a Mac-made image
 
 - 2026-10-24 — created (source review:338)
 - 2026-10-24 — moved to Next position 1
+- 2026-10-24 — verified at 75fc0f43: reproduced at 75fc0f43: crafted xorriso HFS+ hybrid, side.txt resource-fork-only / UF_COMPRESSED extracts empty, image deleted (probe iso339 6 FAIL)
+- 2026-10-24 — run started, feature 339
