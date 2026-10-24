@@ -944,25 +944,15 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                                 want = 8; // a Mode 2 sector of 2336 bytes: subheader
                             if (want > 0)
                             {
-                                // review 2: every sector from 16 on (SAL_ISO_FORM2_STREAM_SECTORS of them, those
-                                // within the track and the file) must be Form 2 - one sector overwritten with text
-                                // can carry a valid subheader; review 3: sector 16 itself must lie within the track
-                                // when its end is known (a short track before a stream would read the stream's
-                                // sectors) and within the file
-                                LONGLONG limit = fileSize;
-                                if (DataEnd > DataOffset && DataEnd < limit)
-                                    limit = DataEnd;
-                                form2 = TRUE;
-                                int s;
-                                for (s = 0x10; form2 && s < 0x10 + SAL_ISO_FORM2_STREAM_SECTORS; s++)
+                                // reviews 2, 3: every sector from 16 on within the track and the file (up to
+                                // SAL_ISO_FORM2_STREAM_SECTORS) must be Form 2; none (sector 16 not in the track)
+                                // = not a stream (salisotrack.h)
+                                LONGLONG at = GetSectorOffset(0x10) - SectorHeaderSize;
+                                int n = SalIsoForm2SectorsToCheck(at, SectorRawSize, DataOffset, DataEnd, fileSize);
+                                form2 = n > 0;
+                                int i;
+                                for (i = 0; form2 && i < n; i++, at += SectorRawSize)
                                 {
-                                    LONGLONG at = GetSectorOffset(s) - SectorHeaderSize;
-                                    if (at < 0 || at + (LONGLONG)SectorRawSize > limit)
-                                    {
-                                        if (s == 0x10)
-                                            form2 = FALSE; // sector 16 is not in the track: not a stream
-                                        break;             // past the track or the file: the sectors read decide
-                                    }
                                     DWORD got = ReadDataByPos(at, want, raw);
                                     form2 = SalIsoSectorIsForm2(raw, got, SectorRawSize);
                                 }

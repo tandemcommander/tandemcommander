@@ -20067,6 +20067,36 @@ static void TestIsoSectorForm2_335()
     CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, !SalIsoSectorIsForm2(zero, 24, 2048), SAL_ISO_TRACK_NOT_TRIED)); // S-NOFS, S-RAW
     CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, !SalIsoSectorIsForm2(sub, 8, 2336), SAL_ISO_TRACK_NOT_TRIED));  // S-VCD
     CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, !SalIsoSectorIsForm2(sub, 8, 2336), SAL_ISO_TRACK_LISTED));     // M-FORM2
+
+    // reviews 2, 3 (review 4: the window as a tested rule): how many sectors from sector 16 on decide
+    const long long r = 2336, big = 100000000;
+    CHECK(SAL_ISO_FORM2_STREAM_SECTORS == 16);
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 300 * r, big) == 16);   // a long track: 16..31
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 32 * r, big) == 16);    // exactly 16..31 in the track
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 31 * r, big) == 15);    // the track ends a sector earlier
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 20 * r, big) == 4);     // a track of 20 sectors
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 17 * r, big) == 1);     // only sector 16 in the track
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 17 * r - 1, big) == 0); // sector 16 not whole in the track
+    // S-SHORT: track 2 starts after s1 (176 sectors of 2048 bytes) and has 10 sectors of 2336 bytes - its
+    // sector 16 would lie in track 3 (a Form 2 stream): not a stream
+    const long long t2 = 176 * 2048;
+    CHECK(SalIsoForm2SectorsToCheck(t2 + 16 * r, r, t2, t2 + 10 * r, t2 + 74 * r) == 0);
+    // the track's end unknown (not after its start): the file decides
+    CHECK(SalIsoForm2SectorsToCheck(t2 + 16 * r, r, t2, 0, t2 + 74 * r) == 16);
+    CHECK(SalIsoForm2SectorsToCheck(t2 + 16 * r, r, t2, t2, t2 + 74 * r) == 16);
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 0, 19 * r) == 3);
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 0, 17 * r - 1) == 0);   // a truncated file
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 300 * r, 18 * r) == 2); // the track past the file's end
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 18 * r, 300 * r) == 2); // the file past the track's end
+    CHECK(SalIsoForm2SectorsToCheck(16 * 2352, 2352, 0, 300 * 2352, big) == 16);
+    CHECK(SalIsoForm2SectorsToCheck(16 * 2448, 2448, 0, 300 * 2448, big) == 16);
+    // nonsense fails closed: a negative offset, size or file size; no overflow near the top
+    CHECK(SalIsoForm2SectorsToCheck(-1, r, 0, 300 * r, big) == 0);
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, 0, 0, 300 * r, big) == 0);
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, -r, 0, 300 * r, big) == 0);
+    CHECK(SalIsoForm2SectorsToCheck(16 * r, r, 0, 300 * r, -1) == 0);
+    CHECK(SalIsoForm2SectorsToCheck(0x7FFFFFFFFFFFFF00LL, r, 0, 0, 0x7FFFFFFFFFFFFFFFLL) == 0);
+    CHECK(SalIsoForm2SectorsToCheck(0x7FFFFFFFFFFF0000LL, r, 0, 0, 0x7FFFFFFFFFFFFFFFLL) == 16);
 }
 
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and

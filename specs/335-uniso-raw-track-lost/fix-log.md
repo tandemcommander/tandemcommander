@@ -158,3 +158,33 @@ the probe (`img335.py` single_short, row S-SHORT). Negative control on the revie
 build: `result_after_review3.txt` 32 / 0; the reviewer's real-vcdimager probe on the fixed build
 (`result_review3_realvcd.txt`, its images in `%TEMP%\rev335c\imgs`) 10 / 0 - real VCD (CCD, NRG) and
 SVCD still deleted with all files, the zero-filled VCD kept, X-SHORT kept. saltests 28,543 / 0.
+
+### Review 4 (report)
+
+No MUST. Ran saltests 28,543 / 0 and a probe of an MDF image without .mds (the path without a track
+table): F-MDF-OK deleted with a.txt, F-MDF-NOFS (every CD001 destroyed) 0 files, kept - PASS; registry
+restored + identical.
+
+- **S1 (fixed)**: the stream window of reviews 2 / 3 (sectors 16..31 within the track and the file,
+  sector 16 inside the track) lived only in the plug-in - no saltests check executed it (FR-005, the
+  standing rule on pure decisions). Now `SalIsoForm2SectorsToCheck(sector16At, sectorRawSize,
+  trackStart, trackEnd, fileSize)` in `salisotrack.h` returns how many sectors to read (0 = not a
+  stream); `Open` reads them. saltests +22 -> 28,565 / 0; mutants: no track-end clamp - 6 failed, one
+  sector only - 12 failed. Probe on the final code `result_after_review4.txt` 32 / 0 (registry restored,
+  identical; "fixture removed: False" - an empty `%TEMP%\tc335` folder stayed).
+- **S2 (Inbox)**: a Form 2 track is taken as safe even when no listed file covers it (S-VCD, M-FORM2:
+  the synthetic stream is referenced by no directory; on real Video CDs AVSEQnn.DAT covers it) -
+  a stricter rule (a listed file's extent must start in the Form 2 track) is beyond the item -> Inbox.
+- NOTEs: `DataEnd` per reader (DAOX / ETNF right; ETN2 sets `End` from a length field; a multi-session
+  CloneCD image's session split on `Index == 0` may fail - existing, not this feature's; a corrupt DAOX
+  End < Start skips the clamp - the file bound applies); ETNF's sector size from `mode & 1` reads mode
+  0x06 (raw Mode 2, 2352) as 2048 and 0x05 (raw Mode 1) as 2336 - existing, now such tracks are kept
+  (fails closed) -> Inbox; 2448-byte layouts only reach this code through DAOX; images without a track
+  table never set `RawLost`; the 16-sector window can still be fooled by a 4-byte-periodic fill of all
+  of sectors 16..31 (residual limit, recorded).
+
+Not re-run on the final code: reviewer 3's real-vcdimager probe (the refactor keeps the window; the
+maintainer started the installed Tandem Commander at 07:42:16 from Explorer - while probe
+`after-review4` (07:41 - 07:43:26) had its settings in the shared registry key - so no further GUI probe
+ran; the key's state after the probe's restore, F92E57... = the state before every probe, is saved as
+`%TEMP%\tc335_state_after_probes.reg` for the maintainer, see the closing report).
