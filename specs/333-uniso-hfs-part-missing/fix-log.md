@@ -118,3 +118,20 @@ from a copy (no `MUTANT` line left), rebuilt; saltests 0 failed and the probe 14
 - NOTE 4 (closing steps): done at closing.
 - NOTE 5 (stale worktrees `rev325`, `rev328`, `rev330`, `rev332\neg` of earlier reviews): not this
   feature's; left as they are (a run deletes no worktree or branch).
+
+### Review 2 (refute-first agent, previous findings given; no MUST, no SHOULD)
+
+- Re-ran at f183c6c5: saltests 28,372 / 0, encoding TOTAL: 0, BOMs present, probe 20 / 0 (registry
+  restored, identical).
+- Adversarial images against `DeclaredBehindDamagedMap` (its own mutator and a probe copy, 21 PASS +
+  1 expected): kept - first entry's signature broken, first entry's count 1, every count 9; deleted
+  without a new box, hang or report - block size 0 / 0xFFFF / 512 with a damaged entry, an HFS start of
+  0x7FFFFFFF / 0x80000000 / 300 (past the end); an image cut after the map takes the plain HFS track
+  (its existing "Corrupted Partition Manager structures" box, image kept - not this feature's code).
+- Negative control: `uniso.spl` built at 0f3b1bfe (before the review-1 fix) in a separate worktree and
+  build folder - the three "kept" rows FAIL (image deleted, `side.txt` lost); H-OK passes.
+- NOTE 1 (a damaged block 0 or a start past the end stays unmarked): recorded as an edge case in the
+  spec (limit, as H-NOSIG). NOTE 2 (a volume header / map read cut by the end of the file returns before
+  the scan): the image is cut inside its own HFS metadata, nothing more is lost. NOTE 3 (the scan also
+  runs on the plain HFS track, where `Declared` is unused; on a DMG a start in the last 1 KiB could reach
+  the existing "block undefined" pattern of `Open` itself): not new, left. NOTE 4: review 1's NOTEs.

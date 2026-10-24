@@ -115,6 +115,9 @@ files extracted, the image deleted, as before.
 - A damaged Apple partition map: marked only when an intact `Apple_HFS` entry leads to an HFS+
   volume header signature; a map without an intact `Apple_HFS` entry, or one whose `Apple_HFS`
   partition holds no HFS+ volume: not marked (as today).
+- A damaged block 0 (a block size of 0 / 512 / 0xFFFF where the map uses another) or an `Apple_HFS`
+  start past the end of the image: the volume header is not found, not marked - the same limit as a
+  destroyed signature (review 2 NOTE 1; no known real image).
 - A map with several `Apple_HFS` entries: the reader takes the last; an HFS+ volume in an earlier one
   followed by a non-HFS+ `Apple_HFS` entry is not marked (review 1 NOTE: xorriso refuses to write such
   a map; no real image known).
