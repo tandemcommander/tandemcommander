@@ -8,7 +8,7 @@ source: review:329
 who: agent
 created: 2026-10-23
 updated: 2026-10-24
-verified: -
+verified: 2026-10-24 6070ac51
 effort: S
 feature: -
 related: []
@@ -58,3 +58,4 @@ Thread records and the volume-label record, which are not entries, stay skipped 
 - 2026-10-23 — created (source review:329)
 - 2026-10-23 — moved to Next position 3
 - 2026-10-24 — related item iso-plug-in-unpack-deletes-image-with-unreadable-folder done in feature 330
+- 2026-10-24 — verified at 6070ac51: HFS+ part present at 6070ac51: probe iso332 H-TYPE/KEY/LONG/SHORT image deleted; UDF part fixed by 330 (U-FILE kept)
