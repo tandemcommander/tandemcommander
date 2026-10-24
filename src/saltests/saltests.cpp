@@ -19853,6 +19853,34 @@ static void TestHfsVolumeDeclared333()
     mbr[0] = 0x33;
     mbr[1] = (char)0xED;
     CHECK(!Hfs333Declared(mbr));
+
+    // review 1: an intact "Apple_HFS" partition map entry (signature "PM", pad 0, the type exactly
+    // "Apple_HFS") and its start block - looked for when the map's walk fails
+    std::string pm(136, '\0');
+    pm[0] = 'P';
+    pm[1] = 'M';
+    pm[11] = 55; // pmPyPartStart 55 (big-endian), as the probe's hybrid
+    memcpy(&pm[48], "Apple_HFS", 9);
+    unsigned start = 0;
+    CHECK(SalHfsApmEntryIsHfs((const unsigned char*)pm.data(), pm.size(), &start) && start == 55);
+    CHECK(SalHfsApmEntryIsHfs((const unsigned char*)pm.data(), 58, NULL));    // the type and its zero
+    CHECK(!SalHfsApmEntryIsHfs((const unsigned char*)pm.data(), 57, &start)); // the zero cut off
+    CHECK(!SalHfsApmEntryIsHfs(NULL, 136, &start));
+    std::string pmBadSig = pm;
+    pmBadSig[1] = 'X';
+    CHECK(!SalHfsApmEntryIsHfs((const unsigned char*)pmBadSig.data(), pmBadSig.size(), &start));
+    std::string pmPad = pm;
+    pmPad[3] = 1;
+    CHECK(!SalHfsApmEntryIsHfs((const unsigned char*)pmPad.data(), pmPad.size(), &start));
+    std::string pmLonger = pm; // "Apple_HFSX" is another type
+    pmLonger[57] = 'X';
+    CHECK(!SalHfsApmEntryIsHfs((const unsigned char*)pmLonger.data(), pmLonger.size(), &start));
+    std::string pmIso = pm; // xorriso's "Gap0" entries
+    memcpy(&pmIso[48], "ISO9660_data", 13);
+    CHECK(!SalHfsApmEntryIsHfs((const unsigned char*)pmIso.data(), pmIso.size(), &start));
+    std::string pmMap = pm;
+    memcpy(&pmMap[48], "Apple_partition_map", 20);
+    CHECK(!SalHfsApmEntryIsHfs((const unsigned char*)pmMap.data(), pmMap.size(), &start));
 }
 
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and

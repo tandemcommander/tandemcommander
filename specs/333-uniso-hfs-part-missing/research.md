@@ -44,3 +44,18 @@
 "Cannot read sector #00000020." at the open of every xorriso HFS+ hybrid (existing Inbox item) and
 "Cannot read sector #00000200." for the APM install image (new, measured here - an Inbox item) are
 not this feature's; the probe does not count them.
+
+## R6 A damaged Apple partition map (review 1)
+
+- **Decision**: when `CHFS::Open`'s walk of the map fails (an entry's signature / pad, an entry count
+  that disagrees, no `Apple_HFS` entry reached), `CHFS::DeclaredBehindDamagedMap` looks at blocks 1-64
+  for an intact `Apple_HFS` entry (`SalHfsApmEntryIsHfs`: "PM", pad 0, type exactly "Apple_HFS") whose
+  volume header declares HFS+ (R1); found -> `Declared`, the part marked. The map stays refused.
+- **Rationale**: review 1 reproduced the loss - `hdh.iso` with only the "Gap0" entry damaged (its
+  signature "PX", or its count 3 -> 4): the intact HFS+ volume was dropped unmarked and the image
+  deleted (`probe/result_review1_apm_before_fix.txt`, R-APMSIG / R-APMCNT FAIL). The signature rule
+  still keeps an install image with a damaged map unmarked (its `Apple_HFS` partition holds the EFI
+  image) - probe row APM-EFI-CNT.
+- **Alternatives considered**: open the volume from the found entry (list it) - rejected, beyond the
+  item (it asks for the mark, not for reading damaged maps); keep it unmarked (the first answer) -
+  rejected, it loses the HFS+-only files.

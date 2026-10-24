@@ -51,10 +51,14 @@ HFS+ volume header's own signature at the place the partition map gives does.
   APFS needs its own decision, the same holds for the other two) (autonomous run: item + conservative)
 - Q: A message when the HFS+ part does not open? → A: no new message or UI string - the quiet open
   stays (autonomous run: item - "The quiet open stays (no new box)")
-- Q: An Apple partition map ("ER") whose entries are damaged or name no `Apple_HFS` partition, so the
-  reader never reaches a volume header - mark it? → A: no; no HFS+ signature is seen, the part is
-  dropped as today (the same limit as a destroyed signature) (autonomous run: conservative - the
-  partition map alone does not show an HFS+ volume, see the first answer)
+- Q: An Apple partition map ("ER") whose walk fails (an entry damaged, an entry count that ends the
+  walk early or disagrees), so the reader never reaches a volume header - mark it? → A: (revised after
+  review 1, which reproduced the loss with an intact HFS+ volume behind a damaged "Gap0" entry) mark it
+  when an intact `Apple_HFS` entry of the map leads to a volume header that declares HFS+ (the same
+  signature rule); otherwise - no such entry, or its partition holds no HFS+ volume (an install image's
+  EFI image) - not marked, as before. The map stays refused; nothing is listed from it (autonomous
+  run: rule - CLAUDE.md "a safe to delete? check fails closed"; the first answer's signature rule keeps
+  install images unmarked)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -78,6 +82,9 @@ unpacking": the ISO 9660 files extracted, no new message, the image kept.
 2. **Given** a hybrid whose HFS+ catalog is refused or cannot be read (header node, size 0, extent
    past the end), **When** unpacked the same way, **Then** the ISO 9660 part is extracted and the image
    is kept.
+3. **Given** a hybrid whose Apple partition map has a damaged entry that is not the HFS+ one (its
+   signature, or its entry count), the HFS+ volume intact, **When** unpacked the same way, **Then** the
+   ISO 9660 part is extracted and the image is kept (review 1).
 
 ---
 
@@ -94,8 +101,8 @@ files extracted, the image deleted, as before.
 1. **Given** an intact ISO 9660 + HFS+ hybrid, **When** unpacked whole with "Delete archive after
    unpacking", **Then** every file of both parts is extracted and the image is deleted.
 2. **Given** an image with an Apple partition map whose `Apple_HFS` partition holds no HFS+ volume
-   (the EFI image of an install ISO), **When** unpacked the same way, **Then** its files are extracted
-   and the image is deleted.
+   (the EFI image of an install ISO), also with that map damaged, **When** unpacked the same way,
+   **Then** its files are extracted and the image is deleted.
 
 ### Edge Cases
 
@@ -105,8 +112,12 @@ files extracted, the image deleted, as before.
   declared, marked.
 - Original HFS ("BD" without an embedded HFS+ volume), HFSX ("HX"), APFS: not declared, unchanged.
 - The volume header cannot be read at all (past the end of the image): no signature seen, not marked.
-- A damaged Apple partition map, or one without an `Apple_HFS` partition: the volume header is never
-  reached, not marked (as today).
+- A damaged Apple partition map: marked only when an intact `Apple_HFS` entry leads to an HFS+
+  volume header signature; a map without an intact `Apple_HFS` entry, or one whose `Apple_HFS`
+  partition holds no HFS+ volume: not marked (as today).
+- A map with several `Apple_HFS` entries: the reader takes the last; an HFS+ volume in an earlier one
+  followed by a non-HFS+ `Apple_HFS` entry is not marked (review 1 NOTE: xorriso refuses to write such
+  a map; no real image known).
 - Out of memory while opening the HFS+ part after its signature was seen: marked (fail closed).
 - The HFS+ part opens: nothing changes (its own records are marked by features 329 / 332).
 
@@ -117,11 +128,15 @@ files extracted, the image deleted, as before.
 - **FR-001**: When the HFS+ part of a hybrid shows an HFS+ volume header signature ("H+", or "BD"
   with an embedded "H+") and then does not open, the listing MUST be marked incomplete, so a
   whole-image unpack fails and "Delete archive after unpacking" keeps the image.
+- **FR-001a** (review 1): When the Apple partition map's walk fails before the volume header is
+  read, the listing MUST be marked when an intact `Apple_HFS` entry of the map (within its first 64
+  blocks) leads to a volume header that declares HFS+ (FR-001's signature).
 - **FR-002**: When no such signature is seen (no HFS+ volume, original HFS, HFSX, APFS, an
   unreadable header), the behaviour MUST stay as today: the part is dropped without a mark.
 - **FR-003**: No new message box or UI string; the HFS+ open stays quiet in a hybrid.
-- **FR-004**: The decision "does this volume header declare an HFS+ volume" MUST be a pure rule with
-  unit checks (saltests), including the negative cases.
+- **FR-004**: The decisions "does this volume header declare an HFS+ volume" and "is this partition
+  map entry an intact `Apple_HFS` entry" MUST be pure rules with unit checks (saltests), including the
+  negative cases.
 - **FR-005**: Images whose HFS+ part opens and images without an HFS+ volume MUST unpack and be
   deleted as before (no regression of features 322 / 329 / 330 / 332).
 

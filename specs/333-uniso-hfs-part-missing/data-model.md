@@ -20,3 +20,10 @@ least 126 bytes.
 | TRUE | TRUE | listed under `HFS (<name>)` (as before) |
 | FALSE | TRUE | dropped, `PartMissing` = TRUE -> listing incomplete (new) |
 | FALSE | FALSE | dropped without a mark (as before) |
+
+## Apple partition map entry (review 1)
+
+`SalHfsApmEntryIsHfs(e, size, &start)`: true for "PM" + pad 0 + `pmParType` exactly "Apple_HFS"
+(byte 48, the zero at 57 included; needs 58 bytes); `start` = `pmPyPartStart` (byte 8, big-endian).
+Used only after the map's walk failed: blocks 1-64, damaged entries passed over, a short read ends the
+search; the volume header at `start` x block size + 1024 decides (table above).

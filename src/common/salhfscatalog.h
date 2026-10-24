@@ -274,3 +274,24 @@ inline bool SalHfsVolumeHeaderDeclaresHfsPlus(const unsigned char* hdr, size_t s
         return true;
     return hdr[0] == 'B' && hdr[1] == 'D' && size >= 126 && hdr[124] == 'H' && hdr[125] == '+';
 }
+
+// Feature 333 (review 1): is the Apple partition map entry e[0..size) an intact "Apple_HFS" entry
+// (signature "PM", the reserved pad 0, the type exactly "Apple_HFS")? *start = its first block. The
+// reader walks every entry of the map before it reads the volume header: a damaged entry it does not
+// need, or an entry count that ends the walk early, dropped an intact HFS+ volume without a mark. When
+// the walk fails, the caller looks for such an entry whose volume header declares HFS+
+// (SalHfsVolumeHeaderDeclaresHfsPlus).
+inline bool SalHfsApmEntryIsHfs(const unsigned char* e, size_t size, unsigned* start)
+{
+    using namespace SalHfsCatalogDetail;
+    static const char hfsType[] = "Apple_HFS"; // pmParType at byte 48, the terminating zero included
+    if (e == NULL || size < 48 + sizeof(hfsType))
+        return false;
+    if (e[0] != 'P' || e[1] != 'M' || e[2] != 0 || e[3] != 0)
+        return false;
+    if (memcmp(e + 48, hfsType, sizeof(hfsType)) != 0)
+        return false;
+    if (start != NULL)
+        *start = Be32(e + 8); // pmPyPartStart
+    return true;
+}

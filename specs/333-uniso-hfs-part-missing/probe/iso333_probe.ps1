@@ -24,6 +24,10 @@
       H-OK       (control) PASS = every file of both parts extracted, no window, the image deleted
       APM-EFI    (control) PASS = no window, top.txt and a/side.txt of the ISO part extracted (the boot
                  files too - not compared), the image deleted - as before 333
+      H-APMSIG, H-APMCNT  (review 1) the partition map entry "Gap0" (not the HFS+ one) damaged - its
+                 signature "PX", its entry count + 1; the HFS+ volume intact: PASS = as H-VER (kept)
+      APM-EFI-CNT (control) the APM install image's map refused (entry count + 1 in "EFI"): PASS = as
+                 APM-EFI (deleted) - its intact "Apple_HFS" entry holds no HFS+ volume
       H-NOSIG    (limit, as 330's destroyed UDF anchor) PASS = the ISO 9660 part extracted, no window,
                  the image deleted - nothing shows that an HFS+ part was there
     The HFS+ hybrid opens with the known "Cannot read sector #00000020" box (Inbox item
@@ -154,8 +158,9 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath (Join-Path $Here 'mkimg333.sh')) (WslPath $s) 2>&1
     $made = @()
     if ([IO.File]::Exists("$s\hdh.iso")) {
-        foreach ($h in @('ver', 'cat', 'size', 'ext', 'nosig')) { $made += & python -I $py $h "$s\hdh.iso" "$s\hdh_$h.iso" 2>&1 }
+        foreach ($h in @('ver', 'cat', 'size', 'ext', 'nosig', 'apmsig', 'apmcnt')) { $made += & python -I $py $h "$s\hdh.iso" "$s\hdh_$h.iso" 2>&1 }
     }
+    if ([IO.File]::Exists("$s\apm.iso")) { $made += & python -I $py apmcnt "$s\apm.iso" "$s\apm_apmcnt.iso" 2>&1 }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) }) | Sort-Object) -join ','))
     foreach ($m in $made) { Out ('img333: ' + "$m") }
@@ -173,6 +178,9 @@ try {
     Unpack-Row 'H-NOSIG' "$s\hdh_nosig.iso" $iso
     $apm = [ordered]@{ 'ISO (TC333APM)/top.txt' = 'TOP'; 'ISO (TC333APM)/a/side.txt' = 'SIDE' }
     Unpack-Row 'APM-EFI' "$s\apm.iso" $apm -Contains
+    Unpack-Row 'H-APMSIG' "$s\hdh_apmsig.iso" $iso -Kept
+    Unpack-Row 'H-APMCNT' "$s\hdh_apmcnt.iso" $iso -Kept
+    Unpack-Row 'APM-EFI-CNT' "$s\apm_apmcnt.iso" $apm -Contains
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

@@ -89,3 +89,32 @@ from a copy (no `MUTANT` line left), rebuilt; saltests 0 failed and the probe 14
   of the APM install image (measure:333).
 - `iso-plug-in-apfs-original-hfs-and-hfsx-parts-of-a-hybrid-are` - decision: mark APFS / original HFS
   / HFSX parts that are never listed (measure:333).
+
+## Review
+
+### Review 1 (refute-first agent, no MUST)
+
+- Re-ran the probe on the branch build: 14 / 0. Own negative control (worktree of HEAD with `main`'s
+  `udfiso.cpp`, only `uniso.spl` built and swapped into a copy of the build tree): 10 / 4 - exactly the
+  4 damaged rows (image deleted). saltests 28,363 / 0; clang-format and BOMs clean; callers of `CHFS`
+  enumerated (`CUDFISO::Open` changed, the HFS-only track unchanged; a false mark on a plain UDF + ISO
+  image needs "H+" at byte 1024 and zeros at 0 - negligible); MDB offset 124 confirmed (packed struct).
+- **SHOULD 1 (fixed)**: `CHFS::Open` walks every partition map entry before reading the volume
+  header; a damaged entry it does not need ("Gap0": signature "PX", or its count 3 -> 4) returned before
+  `Declared` was set - an intact HFS+ volume dropped unmarked, the image deleted, `side.txt` lost
+  (reviewer's rows R-APMSIG / R-APMCNT FAIL on the pre-fix build:
+  `probe/result_review1_apm_before_fix.txt`). Fix: `SalHfsApmEntryIsHfs` (pure, 9 saltests checks) and
+  `CHFS::DeclaredBehindDamagedMap` on the three map-failure returns (an intact `Apple_HFS` entry in
+  blocks 1-64 whose volume header declares HFS+ -> `Declared`). Spec clarification revised (it had kept
+  this case unmarked), FR-001a added. Probe rows H-APMSIG / H-APMCNT (kept) and the control APM-EFI-CNT
+  (the install image with its map refused: deleted - its `Apple_HFS` entry holds the EFI image) added:
+  probe 20 / 0 (`probe/result_after.txt`); saltests 28,372 / 0; regressions 322 18/0, 329 14/0, 330
+  30/0, 332 16/0 (re-run); encoding TOTAL: 0.
+- NOTE 1 (the last `Apple_HFS` entry is taken; a real HFS+ entry followed by a non-HFS+ one is not
+  marked; xorriso refuses such a map): recorded in the spec's edge cases as a limit, no item (no known
+  image).
+- NOTE 2 (the "BD" wrapper path only in saltests): no tool here writes an HFS wrapper image; recorded.
+- NOTE 3 (no message when the image is kept): FR-003, as features 330 / 332.
+- NOTE 4 (closing steps): done at closing.
+- NOTE 5 (stale worktrees `rev325`, `rev328`, `rev330`, `rev332\neg` of earlier reviews): not this
+  feature's; left as they are (a run deletes no worktree or branch).

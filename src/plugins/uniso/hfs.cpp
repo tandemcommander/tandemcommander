@@ -141,11 +141,17 @@ BOOL CHFS::Open(BOOL quiet)
                 return FALSE;
 
             if ((sizeof(partition) != dwBytesRead) || (partition.pmSig != HFS_PARTITION_SIGNATURE) || (partition.pmSigPad != 0))
+            {
+                Declared = DeclaredBehindDamagedMap(); // feature 333 (review 1)
                 return Error(IDS_ERR_HFS_INVALID_PARTITION, quiet);
+            }
 
             // Each PM entry contains the same # of items in the entire PM
             if ((i > 0) && (nPartitions != FromM32(partition.pmMapBlkCnt)))
+            {
+                Declared = DeclaredBehindDamagedMap(); // feature 333 (review 1)
                 return Error(IDS_ERR_HFS_INVALID_PARTITION, quiet);
+            }
 
             nPartitions = FromM32(partition.pmMapBlkCnt);
             if (!strcmp(partition.pmParType, "Apple_HFS"))
@@ -154,7 +160,10 @@ BOOL CHFS::Open(BOOL quiet)
             }
         }
         if (!PartStart)
+        {
+            Declared = DeclaredBehindDamagedMap(); // feature 333 (review 1)
             return Error(IDS_ERR_HFS_INVALID_PARTITION, quiet);
+        }
     }
     else if (block0.sbSig == 0)
     { // It may be just a HFS+ partition
@@ -218,6 +227,34 @@ BOOL CHFS::Open(BOOL quiet)
         return FALSE;
 
     return TRUE;
+}
+
+// Feature 333 (review 1): the walk of the Apple partition map in Open failed (an entry it walks is
+// damaged, or the entry count ends the walk before the HFS entry) before the volume header was read -
+// an intact HFS+ volume was dropped without a mark. Looks at the first 64 blocks of the map (Apple's
+// maps hold up to 63 entries) for an intact "Apple_HFS" entry whose volume header declares HFS+; a
+// damaged entry is passed over, a read that fails or comes short ends the search. Only decides
+// 'Declared'; the volume is not opened (the map stays refused, as before).
+BOOL CHFS::DeclaredBehindDamagedMap()
+{
+    CALL_STACK_MESSAGE1("CHFS::DeclaredBehindDamagedMap()");
+
+    for (int i = 1; i <= 64; i++)
+    {
+        unsigned char entry[sizeof(Partition)];
+        DWORD read = 0;
+        if (!SeekSector(i) || !Read(entry, sizeof(entry), &read) || read != sizeof(entry))
+            break;
+        unsigned start = 0;
+        if (!SalHfsApmEntryIsHfs(entry, read, &start) || start == 0 || start > INT_MAX)
+            continue;
+        unsigned char header[sizeof(HFSPlusVolumeHeader)];
+        if (!SeekSector((int)start) || SeekRel(2 * 512) < 0 || !Read(header, sizeof(header), &read))
+            continue;
+        if (SalHfsVolumeHeaderDeclaresHfsPlus(header, read))
+            return TRUE;
+    }
+    return FALSE;
 }
 
 // Seeks on disk (sector is usually 512 or 2048 bytes)

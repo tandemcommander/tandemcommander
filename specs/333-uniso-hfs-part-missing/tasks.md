@@ -36,6 +36,11 @@ Tests: the spec asks for unit checks of the pure rule (FR-004) and probe rows (S
 - [X] T009 `python tools/check_encoding.py --strict` -> TOTAL: 0; record the checks in fix-log.md
 - [X] T010 Inbox items: the APM install image's "Cannot read sector #00000200." box; the decision on APFS / original HFS / HFSX parts that are never listed
 
+## Phase 6: Review 1 (SHOULD 1 - a damaged Apple partition map)
+
+- [X] T011 [US1] Add `SalHfsApmEntryIsHfs` to `src/common/salhfscatalog.h` with saltests checks in `src/saltests/saltests.cpp`; add `CHFS::DeclaredBehindDamagedMap` (`src/plugins/uniso/hfs.cpp` / `hfs.h`) and call it on the three map-failure returns of `CHFS::Open`
+- [X] T012 [US1] Probe rows H-APMSIG, H-APMCNT (kept) and APM-EFI-CNT (deleted) in `probe/iso333_probe.ps1` with `img333.py` modes `apmsig` / `apmcnt`; rerun the probe and the regression probes; record in fix-log.md
+
 ## Dependencies
 
 T001 -> T002 -> T003 -> T004 -> T005 -> T006 -> T007 -> T008 -> T009 -> T010. US2 shares the code of
