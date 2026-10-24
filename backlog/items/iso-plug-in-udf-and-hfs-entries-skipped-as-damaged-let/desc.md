@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: UDF and HFS+ entries skipped as damaged let Unpack delete the image
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:329
@@ -10,7 +10,7 @@ created: 2026-10-23
 updated: 2026-10-24
 verified: 2026-10-24 6070ac51
 effort: S
-feature: -
+feature: 332
 related: []
 depends-on: []
 reason: -
@@ -59,3 +59,4 @@ Thread records and the volume-label record, which are not entries, stay skipped 
 - 2026-10-23 — moved to Next position 3
 - 2026-10-24 — related item iso-plug-in-unpack-deletes-image-with-unreadable-folder done in feature 330
 - 2026-10-24 — verified at 6070ac51: HFS+ part present at 6070ac51: probe iso332 H-TYPE/KEY/LONG/SHORT image deleted; UDF part fixed by 330 (U-FILE kept)
+- 2026-10-24 — run started, feature 332

@@ -3,7 +3,7 @@
 **Feature Branch**: `332-uniso-hfs-skipped-records`  
 **Created**: 2026-10-24  
 **Status**: Draft  
-**Input**: Backlog item `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let` - "ISO plug-in: UDF and HFS+ entries skipped as damaged let Unpack delete the image".
+**Input**: Backlog item `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let` - "ISO plug-in: UDF and HFS+ entries skipped as damaged let Unpack delete the image". From backlog item iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let.
 
 ## Background (traced and measured at 6070ac51)
 
