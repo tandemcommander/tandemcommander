@@ -106,7 +106,7 @@
 #include "salsusp.h"           // feature 326
 #include "salisonamefit.h"     // feature 328
 #include "salnrgcdtext.h"      // feature 331
-#include "salisotrack.h"       // feature 334
+#include "salisotrack.h"       // features 334, 335
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -19944,6 +19944,81 @@ static void TestIsoTrackMarks334()
     CHECK(!SalIsoTrackSectorOutside(0, 0, 0));
 }
 
+// feature 335: a data track in which no file system is found marks the listing unless its sector 16 is
+// a Mode 2 Form 2 sector (a Video CD's MPEG stream) - the stored sector's sync, mode byte and both
+// subheader copies decide; anything else fails closed
+static void TestIsoSectorForm2_335()
+{
+    // a raw sector of 2352 bytes: sync, header (address, mode 2), subheader
+    unsigned char raw[2352] = {0};
+    for (int i = 1; i < 11; i++)
+        raw[i] = 0xFF;
+    raw[15] = 2;
+    unsigned char sub[8] = {0, 0, 0x62, 0, 0, 0, 0x62, 0}; // Form 2, video, real time (Video CD MPEG)
+    memcpy(raw + 16, sub, 8);
+    CHECK(SalIsoSectorIsForm2(raw, 2352, 2352));
+    CHECK(SalIsoSectorIsForm2(raw, 24, 2352));  // the bytes the plug-in reads
+    CHECK(SalIsoSectorIsForm2(raw, 24, 2448));  // with subchannel data (0x990)
+    CHECK(!SalIsoSectorIsForm2(raw, 23, 2352)); // a short read
+    CHECK(!SalIsoSectorIsForm2(raw, 0, 2352));
+    CHECK(!SalIsoSectorIsForm2(raw, -1, 2352));
+    CHECK(!SalIsoSectorIsForm2(nullptr, 24, 2352));
+    CHECK(!SalIsoSectorIsForm2(raw, 24, 2048)); // user data only: never Form 2
+    CHECK(!SalIsoSectorIsForm2(raw, 24, 2056)); // CIF (0x808)
+    CHECK(!SalIsoSectorIsForm2(raw, 24, 2340)); // between the known sizes
+    CHECK(!SalIsoSectorIsForm2(raw, 24, 0));
+    CHECK(!SalIsoSectorIsForm2(raw, 24, -1));
+    // Form 1 (data, submode 0x08), one copy only, the other copy only, an end-of-file submode (0x80)
+    unsigned char f1[24];
+    memcpy(f1, raw, 24);
+    f1[18] = f1[22] = 0x08;
+    CHECK(!SalIsoSectorIsForm2(f1, 24, 2352));
+    f1[18] = 0x20;
+    CHECK(!SalIsoSectorIsForm2(f1, 24, 2352));
+    f1[18] = 0x08;
+    f1[22] = 0x20;
+    CHECK(!SalIsoSectorIsForm2(f1, 24, 2352));
+    f1[18] = f1[22] = 0xA0; // EOF + Form 2
+    CHECK(SalIsoSectorIsForm2(f1, 24, 2352));
+    f1[18] = f1[22] = 0xDF; // every bit but Form 2
+    CHECK(!SalIsoSectorIsForm2(f1, 24, 2352));
+    // Mode 1, mode 0 (a zeroed sector), a destroyed sync byte at each end and inside
+    unsigned char m[24];
+    memcpy(m, raw, 24);
+    m[15] = 1;
+    CHECK(!SalIsoSectorIsForm2(m, 24, 2352));
+    m[15] = 0;
+    CHECK(!SalIsoSectorIsForm2(m, 24, 2352));
+    const int syncAt[] = {0, 1, 5, 10, 11};
+    for (int at : syncAt)
+    {
+        memcpy(m, raw, 24);
+        m[at] ^= 0x01;
+        CHECK(!SalIsoSectorIsForm2(m, 24, 2352));
+    }
+    unsigned char zero[24] = {0};
+    CHECK(!SalIsoSectorIsForm2(zero, 24, 2352));
+
+    // a Mode 2 sector of 2336 bytes: the subheader first (NRG ETNF mode 0x03); no sync or mode byte
+    CHECK(SalIsoSectorIsForm2(sub, 8, 2336));
+    CHECK(!SalIsoSectorIsForm2(sub, 7, 2336));
+    unsigned char s1[8] = {0, 0, 0x08, 0, 0, 0, 0x08, 0}; // Form 1 (M-OK-2336, M-NOFS-F1)
+    CHECK(!SalIsoSectorIsForm2(s1, 8, 2336));
+    s1[2] = 0x20;
+    CHECK(!SalIsoSectorIsForm2(s1, 8, 2336));
+    s1[2] = 0x08;
+    s1[6] = 0x20;
+    CHECK(!SalIsoSectorIsForm2(s1, 8, 2336));
+    CHECK(!SalIsoSectorIsForm2(zero, 8, 2336));
+    CHECK(!SalIsoSectorIsForm2(sub, 8, 2048)); // the same bytes as user data of a 2048-byte track
+
+    // the listing decision with it: a lost raw track marks in every outcome, a Form 2 stream as 334
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, !SalIsoSectorIsForm2(s1, 8, 2336), SAL_ISO_TRACK_LISTED));       // M-NOFS-F1
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, !SalIsoSectorIsForm2(zero, 24, 2048), SAL_ISO_TRACK_NOT_TRIED)); // S-NOFS, S-RAW
+    CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, !SalIsoSectorIsForm2(sub, 8, 2336), SAL_ISO_TRACK_NOT_TRIED));  // S-VCD
+    CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, !SalIsoSectorIsForm2(sub, 8, 2336), SAL_ISO_TRACK_LISTED));     // M-FORM2
+}
+
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
 // when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
 // the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
@@ -21052,6 +21127,7 @@ int main(int argc, char** argv)
     TestIsoLeftOut329();
     TestNrgCdText331();
     TestIsoTrackMarks334();
+    TestIsoSectorForm2_335();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

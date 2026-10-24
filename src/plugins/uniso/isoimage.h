@@ -81,8 +81,10 @@ public:
         BOOL Bootable;
         CUnISOFSAbstract* FileSystem;
         // feature 334: no file system was found and the track's sector 16 is not within the image file -
-        // nothing of it can be read (it is taken as a raw data track that lists nothing)
-        BOOL OutsideImage;
+        // nothing of it can be read (it is taken as a raw data track that lists nothing); feature 335:
+        // or its sector 16 is not a Mode 2 Form 2 sector (a file system area no reader understands - a
+        // Video CD's MPEG stream is Form 2): the track's content is in no listing
+        BOOL RawLost;
 
         Track();
         virtual ~Track();

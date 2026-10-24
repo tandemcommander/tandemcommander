@@ -18,6 +18,8 @@
 // whole unpack fail), and a data track lying past the end of the image was
 // taken as a raw data track that lists nothing - Unpack with "Delete archive
 // after unpacking" then deleted the image and the files of that track.
+// Feature 335: so did a data track within the image whose file system area is damaged - it is told
+// from a Video CD's MPEG stream (Mode 2 Form 2 sectors) by its sector 16.
 //
 //*****************************************************************************
 
@@ -41,21 +43,22 @@ enum
 
 // Feature 334: does this track leave the listing incomplete (a whole unpack then fails and "Delete
 // archive after unpacking" keeps the image)?
-//   - a data track: when it lies outside the image ('outsideImage': no file system was found and its
-//     volume descriptor area is not within the image file - SalIsoTrackSectorOutside), or when the
-//     listing tried it and it did not open or list, or left it out. A data track a single-session
-//     listing does not try is not marked (that listing shows the last data track, whose directory
-//     holds the earlier sessions' files); a raw data track that can be read (a Video CD's MPEG track)
-//     is not marked either.
+//   - a data track: when its content is lost to every listing ('rawLost': no file system was found
+//     and its volume descriptor area is not within the image file - SalIsoTrackSectorOutside - or,
+//     feature 335, is not a Mode 2 Form 2 sector - SalIsoSectorIsForm2), or when the listing tried it
+//     and it did not open or list, or left it out. A data track a single-session listing does not try
+//     is not marked (that listing shows the last data track, whose directory holds the earlier
+//     sessions' files); a raw data track in Form 2 sectors (a Video CD's MPEG track) is not marked
+//     either.
 //   - an audio track: always - the plug-in never extracts audio (a whole unpack skips it silently),
 //     listed or not (review 1: a data + audio disc lost its audio tracks).
 //   - an unknown track: always - no listing ever shows it (review 1).
 //   - a kind or an outcome this rule does not know: marked (fails closed).
-inline bool SalIsoTrackMarksListing(int kind, bool outsideImage, int outcome)
+inline bool SalIsoTrackMarksListing(int kind, bool rawLost, int outcome)
 {
     if (kind != SAL_ISO_TRACK_DATA)
         return true;
-    if (outsideImage)
+    if (rawLost)
         return true;
     return outcome != SAL_ISO_TRACK_NOT_TRIED && outcome != SAL_ISO_TRACK_LISTED;
 }
@@ -68,4 +71,47 @@ inline bool SalIsoTrackSectorOutside(long long at, long long sectorUser, long lo
     if (at < 0 || sectorUser < 0 || fileSize < 0)
         return true;
     return at > fileSize || sectorUser > fileSize - at;
+}
+
+// Feature 335: is a track's sector a CD-ROM XA Mode 2 Form 2 sector? 'raw' holds the first 'len' bytes
+// of the sector as the image stores it, in sectors of 'sectorRawSize' bytes:
+//   - 2352 bytes or more (a raw sector, also with subchannel data after it): the sync pattern
+//     (00 FF x 10 00), the mode byte at 15 = 2 and the subheader at 16..23;
+//   - 2336 bytes (a Mode 2 sector without sync and header): the subheader at 0..7;
+//   - any other size (only the 2048 bytes of user data): a Form 2 sector's 2324 bytes cannot be stored -
+//     never Form 2.
+// The subheader is file, channel, submode, coding - twice; both copies of the submode must carry the
+// Form 2 bit (0x20). A file system's volume descriptors are never in Form 2 sectors (no ECC layer; on a
+// Video CD / SVCD only the MPEG stream tracks are Form 2), so a data track whose sector 16 is Form 2 is a
+// stream, not a lost file system. Anything else - Mode 1, Form 1, a destroyed sync or header, one copy
+// only, too few bytes - is not Form 2 (the caller then marks the track: fails closed).
+inline bool SalIsoSectorIsForm2(const unsigned char* raw, long long len, long long sectorRawSize)
+{
+    if (raw == nullptr || len < 0)
+        return false;
+    int sub; // offset of the subheader in 'raw'
+    if (sectorRawSize >= 2352)
+    {
+        if (len < 24)
+            return false;
+        if (raw[0] != 0x00 || raw[11] != 0x00)
+            return false;
+        for (int i = 1; i < 11; i++)
+        {
+            if (raw[i] != 0xFF)
+                return false;
+        }
+        if (raw[15] != 2)
+            return false;
+        sub = 16;
+    }
+    else if (sectorRawSize == 2336)
+    {
+        if (len < 8)
+            return false;
+        sub = 0;
+    }
+    else
+        return false;
+    return (raw[sub + 2] & 0x20) != 0 && (raw[sub + 6] & 0x20) != 0;
 }

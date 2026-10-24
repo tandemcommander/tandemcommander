@@ -29,3 +29,46 @@ A data track's sector 16 (where every file system the plug-in reads is looked fo
 Form 2 stream (a Video CD's MPEG track - descriptors are never in Form 2 sectors) from a file system
 area no reader understands. Not Form 2 (Mode 1, Form 1, destroyed / unreadable header, 2048-byte
 sectors) -> marked, fails closed. See spec *Clarifications*.
+
+## speckit-analyze
+
+One run: 0 CRITICAL, 0 HIGH. LOW accepted: C1 (FR-006 "no track table unaffected" rests on the code
+site - the change is inside the `ReadSessionInfo` branch of `Open` - and the regression probes of
+322 / 329 / 330 on plain images), C2 (a one-session image whose only data track has no file system -
+unchanged path, not a probe row), A1 (SC-001 counts END + RUN rows).
+
+## Implementation
+
+- `src/common/salisotrack.h`: `SalIsoSectorIsForm2(raw, len, sectorRawSize)` - 2352+ bytes a sector:
+  sync `00 FF x10 00`, mode byte 2 at 15, submode bit 0x20 at 18 and 22; 2336: bit 0x20 at 2 and 6;
+  any other size, a short read, NULL: false. `SalIsoTrackMarksListing`'s second parameter renamed
+  `rawLost` (logic unchanged; 334's tests unchanged).
+- `src/plugins/uniso/isoimage.h` / `.cpp`: `Track::OutsideImage` -> `Track::RawLost`; `Open` sets it
+  for an fsData track to `outside || !form2`, reading 24 bytes (2352+) or 8 bytes (2336) of the stored
+  sector 16 at `GetSectorOffset(0x10) - SectorHeaderSize` with `ReadDataByPos` (only when not outside).
+  `MarkTrack` passes `RawLost`; comments in `ListImage` updated. Only the `ReadSessionInfo` branch
+  (track tables) is touched.
+- `src/saltests/saltests.cpp`: `TestIsoSectorForm2_335` (36 checks).
+- clang-format of the changed lines only (`--lines`, 334's trap); the ternary it laid out over two
+  lines was rewritten as an if-chain.
+
+## Checks
+
+| Check | Command | Result |
+|---|---|---|
+| build | `.\build.cmd` | BUILD SUCCEEDED (warnings C4267 in untouched uniso files, as before) |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | 28,425 -> 28,461 checks, 0 failed |
+| mutant: always Form 2 (the stored header ignored) | the rule's last line `return true;` | saltests 9 failed; probe `result_mutant_form2_always.txt` 13 / 1 (M-NOFS-F1 deleted - a 2336 Form 1 track taken as a stream) |
+| mutant: never Form 2 (every raw track marked) | `return false;` | saltests 7 failed; probe `result_mutant_form2_never.txt` 12 / 2 (S-VCD, M-FORM2 kept - every Video CD's whole unpack would fail) |
+| probe after | `iso335_probe.ps1 -Label after` (hidden desktop) | `result_after.txt` 14 / 0 (before 10 / 4); registry restored, identical |
+| encoding guard | `python tools/check_encoding.py --strict` | TOTAL: 0 finding(s) |
+| regressions | `iso322/329/330/333/334_probe.ps1 -Label regress-335` on the fixed build | `probe/regress_322.txt` 18 / 0, `regress_329.txt` 14 / 0, `regress_330.txt` 30 / 0, `regress_333.txt` 20 / 0, `regress_334.txt` 23 / 1 - the one FAIL is 334's S-RAW (a Mode 1 track of zeros: image now KEPT, want deleted) - the intended change (spec *Clarifications* Q3; the same image is this probe's S-RAW, PASS); registry restored + identical each |
+
+FR-006 (images without a track table unaffected): the plain ISO / UDF / HFS+ / Xbox images of 322, 329,
+330 and 333 pass unchanged.
+
+## Deviations
+
+None from the item. Not driven: a real Video CD / SVCD image and a CCD/IMG (2352-byte) image - no such
+image in the repository and no tool in WSL writes one here; the 2352 layout is covered by saltests only
+(person step at closing).

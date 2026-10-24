@@ -1,0 +1,45 @@
+iso334_probe (feature 334) regress-335
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 05:35; registry key existed True
+
+seeds: audio_cd.nrg,multi.nrg,multi_extra.nrg,multi_mixed.nrg,multi_past.nrg,multi_term.nrg,multi_unknown.nrg,s1.iso,s2.iso,s2.lba,single.nrg,single_mixed.nrg,single_past.nrg,single_raw.nrg,single_term.nrg
+img334: multi: 720988 bytes, track 2 from sector 176
+img334: multi_term: 720988 bytes, track 2 from sector 176; terminator of track 2 at its sector 17 destroyed
+img334: multi_past: 720988 bytes, track 2 from sector 176; track 2 starts at 269156352, the image has 720896 bytes of track data
+img334: single: 720976 bytes, track 2 from sector 176
+img334: single_term: 720976 bytes, track 2 from sector 176; terminator of track 2 at its sector 17 destroyed
+img334: single_past: 720976 bytes, track 2 from sector 176; track 2 starts at 269156352, the image has 720896 bytes of track data
+img334: single_raw: 720976 bytes, track 2 from sector 176; track 2 is zeros (no file system)
+img334: single_mixed: 1066128 bytes, track 2 from sector 176; one session: a data track and an audio track
+img334: multi_mixed: 1066140 bytes, track 2 from sector 176; session 1 a data track, session 2 an audio track
+img334: multi_unknown: 720988 bytes, track 2 from sector 176; track 2's mode byte 0x10
+img334: multi_extra: 1426608 bytes, track 2 from sector 176; a third (audio) track that no session count covers
+img334: audio_cd: 1411280 bytes, track 2 from sector 176; one session of two audio tracks
+
+M-OK       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-OK       RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-TERM     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-TERM     RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box True, want True); fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Some error(s) occured while reading multisession image. Showing only correctly read sessions. | [Button id=1] OK
+M-PAST     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-PAST     RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-OK       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-OK       RUN    PASS        files 1: b.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-TERM     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-TERM     RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-PAST     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-PAST     RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-RAW      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-RAW      RUN    FAIL        files 1: a.txt; files ok: True; image kept: True (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-MIXED    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-MIXED    RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-MIXED    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-MIXED    RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-UNK      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-UNK      RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-EXTRA    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-EXTRA    RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+A-CD       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+A-CD       RUN    PASS        files 0: ; files ok: True; image kept: True (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before F92E573A3D6A79D1542E3ABC35F0E518B8E197AF3E585098E9B3C6AD205C38ED / after F92E573A3D6A79D1542E3ABC35F0E518B8E197AF3E585098E9B3C6AD205C38ED
+
+Rows: PASS 23, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

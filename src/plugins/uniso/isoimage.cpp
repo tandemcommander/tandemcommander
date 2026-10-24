@@ -138,7 +138,7 @@ CISOImage::Track::Track()
 {
     FileSystem = NULL;
     Bootable = FALSE;
-    OutsideImage = FALSE;
+    RawLost = FALSE;
 }
 
 CISOImage::Track::~Track()
@@ -928,7 +928,27 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                         DWORD sizeHi;
                         DWORD sizeLo = File->GetFileSize(&sizeHi);
                         LONGLONG fileSize = ((LONGLONG)sizeHi << 32) | sizeLo;
-                        Tracks[trk]->OutsideImage = SalIsoTrackSectorOutside(GetSectorOffset(0x10), SectorUserSize, fileSize);
+                        BOOL outside = SalIsoTrackSectorOutside(GetSectorOffset(0x10), SectorUserSize, fileSize);
+                        // feature 335: within the image, the track's content is lost to the listing too
+                        // unless its sector 16 is a Mode 2 Form 2 sector (a Video CD's MPEG stream - no file
+                        // system is ever there); the stored sector's sync, header and subheader decide - a
+                        // read that fails or a track of user data only is not Form 2 (fails closed)
+                        BOOL form2 = FALSE;
+                        if (!outside)
+                        {
+                            unsigned char raw[24];
+                            DWORD want = 0; // the bytes up to the end of the subheader
+                            if (SectorRawSize >= 0x930)
+                                want = 24; // a raw sector: sync, header, subheader
+                            else if (SectorRawSize == 0x920)
+                                want = 8; // a Mode 2 sector of 2336 bytes: subheader
+                            if (want > 0)
+                            {
+                                DWORD got = ReadDataByPos(GetSectorOffset(0x10) - SectorHeaderSize, want, raw);
+                                form2 = SalIsoSectorIsForm2(raw, got, SectorRawSize);
+                            }
+                        }
+                        Tracks[trk]->RawLost = outside || !form2;
                         ret = ERR_OK; // we can handle raw data tracks, so we turn the error into OK (what rascals we are :-D)
                     }
                     if (ret == ERR_TERMINATE)
@@ -1392,7 +1412,7 @@ void CISOImage::MarkTrack(int track, int outcome)
     Track* t = Tracks[track];
     int kind = t->FSType == fsUnknown ? SAL_ISO_TRACK_UNKNOWN : t->FSType == fsAudio ? SAL_ISO_TRACK_AUDIO
                                                                                      : SAL_ISO_TRACK_DATA;
-    if (SalIsoTrackMarksListing(kind, t->OutsideImage != FALSE, outcome))
+    if (SalIsoTrackMarksListing(kind, t->RawLost != FALSE, outcome))
     {
         TRACE_I("CISOImage::MarkTrack(): track " << track << " (outcome " << outcome << ") leaves the listing incomplete");
         ListingLeftOut.SetIncomplete();
@@ -1473,10 +1493,11 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
             BOOL ret = ListDirectory(path, -1, dir, pluginData);
             // feature 334: only the last data track is listed (by design: its directory holds the earlier
             // sessions' files); an audio or unknown track (review 1: a data + audio disc lost its audio)
-            // or a data track that lies past the end of the image still marks the listing incomplete
+            // or a data track whose content is lost (past the end of the image; 335: a raw data track that
+            // is not a Form 2 stream) still marks the listing incomplete
             // (review 2) in an image of one session that directory holds no other track: another data track
-            // with a file system is left out; a readable raw data track (fsData, a Video CD's MPEG track)
-            // is not
+            // with a file system is left out; a raw data track in Form 2 sectors (fsData, a Video CD's MPEG
+            // track) is not
             for (track = 0; track < Tracks.Count; track++)
             {
                 if (track == LastTrack)
