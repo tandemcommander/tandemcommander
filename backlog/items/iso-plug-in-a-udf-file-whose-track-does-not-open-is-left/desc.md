@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF file whose track does not open is left partly written in the target
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:338
@@ -42,3 +42,4 @@ is incomplete); the result stays "not extracted".
 ## Log
 
 - 2026-10-24 — created (source review:338)
+- 2026-10-24 — moved to Next position 76

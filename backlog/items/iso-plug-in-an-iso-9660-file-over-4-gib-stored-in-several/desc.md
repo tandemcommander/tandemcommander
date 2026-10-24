@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an ISO 9660 file over 4 GiB stored in several extents extracts wrong
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:338
@@ -48,3 +48,4 @@ is not done, it is at least reported as not extracted. Measured first with such 
 ## Log
 
 - 2026-10-24 — created (source review:338)
+- 2026-10-24 — moved to Next position 10

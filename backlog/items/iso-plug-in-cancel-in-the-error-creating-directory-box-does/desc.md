@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: Cancel in the Error Creating Directory box does not stop a whole unpack
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:338
@@ -46,3 +46,4 @@ answers as now. Measured first with D-SKIP answered Cancel.
 ## Log
 
 - 2026-10-24 — created (source review:338)
+- 2026-10-24 — moved to Next position 79

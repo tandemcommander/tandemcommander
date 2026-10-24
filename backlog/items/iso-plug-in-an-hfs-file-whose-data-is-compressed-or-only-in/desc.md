@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an HFS+ file whose data is compressed or only in its resource fork extracts empty
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:338
@@ -50,3 +50,4 @@ kept); never an empty file counted as done. Measured first with a Mac-made image
 ## Log
 
 - 2026-10-24 — created (source review:338)
+- 2026-10-24 — moved to Next position 1
