@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an HFS+ name with U+0000 inside is listed cut at it
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:332
@@ -51,3 +51,4 @@ incomplete, as feature 332 does for the first unit) or the name is kept whole in
 ## Log
 
 - 2026-10-24 — created (source review:332)
+- 2026-10-24 — moved to Next position 71

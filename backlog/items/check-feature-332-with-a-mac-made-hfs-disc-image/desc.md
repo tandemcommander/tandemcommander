@@ -1,7 +1,7 @@
 ---
 title: Check feature 332 with a Mac-made HFS+ disc image
 type: person-step
-status: new
+status: open
 severity: 3
 area: archives
 source: leftover:332
@@ -53,3 +53,4 @@ feature 332.
 ## Log
 
 - 2026-10-24 — created (source leftover:332)
+- 2026-10-24 — moved to Person steps position 40

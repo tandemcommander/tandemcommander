@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: HFS+ hard links extract as empty files, their data under iNode names
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:332
@@ -55,3 +55,4 @@ what they are). Directory hard links are resolved or reported.
 ## Log
 
 - 2026-10-24 — created (source review:332)
+- 2026-10-24 — moved to Next position 27
