@@ -77,3 +77,31 @@ Backlog item `iso-plug-in-an-nrg-session-count-above-the-image-s-tracks`.
 - `iso-plug-in-the-image-information-of-an-nrg-image-reads-past` - `CISOImage::DumpInfo` (F3 on an image)
   reads `Session[Session.Count]` when the counts add up to fewer tracks than the image holds (by reading,
   not measured).
+- `iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard` (source `review:340`) - `readSINF` reads 4
+  bytes whatever the chunk's size and does not check a short read; `readETN2` reads past its buffer for a
+  chunk under 16 bytes and adds one track per chunk (review 1's NOTEs 3 and 4, confirmed by reading).
+
+## Review
+
+### Review 1 (refute-first, general-purpose agent) - no MUST, no SHOULD
+
+- Re-ran on the branch build: saltests 28807 / 0; `iso340_probe` PASS 14 / FAIL 0.
+- Negative control: `uniso.spl` built from a worktree at b4971538 (before the fix) into a copy of the
+  build tree: `iso340_probe` PASS 5 / FAIL 9 - the same rows as `result_before.txt` (index 2 / -1 range
+  stops, S-NEGEND's b.txt missing). 334's probe 23 / 1 (S-RAW) on both builds, identical rows - SC-002.
+- Code: the bound holds (`first` in `[0, Tracks.Count]`, `n <= Tracks.Count - first`), 334's left-out loop
+  bounded too; an empty track table with two or more sessions lists nothing and marks (before: read
+  `Tracks[0]`); when every count fits `n == declared` - no case where the old code kept an image the new
+  one deletes. Only caller `ListImage` <- `ListArchive`; whole unpack reads the incomplete flag. Other
+  readers of `Session` enumerated (CCD always fits; `DumpInfo` - the Inbox item).
+- NOTE 1 (S-NEG lists both tracks under "Session 01": a real multi-session disc would merge same-named
+  files into one folder): chosen by the spec (*Clarifications*: the tracks left go to the session whose
+  count does not fit); F-ZERO (valid counts 0, 2) already does the same; the listing is marked, so a
+  whole unpack keeps the image. Accepted.
+- NOTE 2 (no message says why the image was kept): as 328 / 334, spec FR-004. Accepted.
+- NOTE 3 (`readSINF` short read / chunk size) and NOTE 4 (`readETN2` one track a chunk): Inbox item
+  `iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard` (review:340) - reading `readETN2` also
+  showed an over-read of a chunk under 16 bytes.
+- NOTE 5 (old reviewers' worktrees registered under `%TEMP%\rev325|328|330|332|335`): not this
+  feature's; left for the maintainer (no `git worktree prune` by a run).
+- `git status --short` after the review: empty.

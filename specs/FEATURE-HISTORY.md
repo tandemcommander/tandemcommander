@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4896,3 +4896,24 @@ a few early ones are out of sequence).
   dropped 3, resource rule dropped 4, byte 40 6, low size half 1); translations 2 texts x 8 languages
   (DeepL 1,936 characters, pins cs / sk / de / es for the module's "will not be extracted"); refute-first
   review 1: no MUST, SHOULD the Mac person step (created), NOTEs accepted.
+- 340-nrg-session-count: an NRG (Nero) image of two or more sessions listed with "Session NN" folders (the
+  default) took each session's track count from its SINF chunk unchecked: counts above the tracks left
+  walked `CISOImage::ListTracks` past the track table (Debug "Index is out of range (index = 2, Count =
+  2)", Release a read past the array), and a count of 2^31+ stored in `TDirectArray<int>` became negative
+  (index -1, or the next session's track silently skipped) - now `SalIsoSessionTracks`
+  (`src/common/salisotrack.h`) gives a session at most the tracks left from where the previous one ended,
+  the count read unsigned and compared in 64 bits; a count that does not fit marks the listing incomplete
+  (328's `ListingLeftOut`: a whole unpack fails, the image is kept), no box, no UI string. Traps: the item
+  named `ListImage` - the loop had moved to `ListTracks` (334); a Python edit of the header wrote LF
+  endings (restored to CRLF before the build); 335's probe now gives 28 / 4 - its four Form 2 stream rows
+  changed on purpose by 336, not by this feature (all 334 / 335 images' counts fit). Limits: the View (F3)
+  information `CISOImage::DumpInfo` reads `Session[Session.Count]` when the counts add up to fewer tracks
+  (Inbox `iso-plug-in-the-image-information-of-an-nrg-image-reads-past`); Release not driven; no real
+  Nero image with damaged counts. From backlog item
+  `iso-plug-in-an-nrg-session-count-above-the-image-s-tracks`. Probe `iso340_probe` (334's `mkimg334.sh`
+  seeds, `img340.py` NRG images with chosen SINF counts) 5 / 9 -> 14 / 0; mutants: no bound -> saltests
+  18 failed, never marking -> saltests 16 failed and the probe's five damaged rows delete the image; 334
+  23 / 1, 335 28 / 4 (recorded intended changes); saltests 28,761 -> 28,807 / 0
+  (`TestIsoSessionTracks_340`); refute-first review 1: no MUST / SHOULD - its build of
+  the code before the fix gives 5 / 9 on the probe; NOTEs on `readSINF` / `readETN2` chunk sizes to Inbox
+  `iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard`.

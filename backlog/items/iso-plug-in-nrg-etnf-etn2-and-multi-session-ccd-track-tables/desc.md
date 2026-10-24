@@ -11,7 +11,7 @@ updated: 2026-10-24
 verified: -
 effort: M
 feature: -
-related: [iso-plug-in-an-nrg-session-count-above-the-image-s-tracks]
+related: []
 depends-on: []
 reason: -
 ---
@@ -62,3 +62,4 @@ the right track ends - each measured with a crafted image (feature 335's `probe/
 
 - 2026-10-24 — created (source review:335)
 - 2026-10-24 — moved to Next position 8
+- 2026-10-24 — related item iso-plug-in-an-nrg-session-count-above-the-image-s-tracks done in feature 340

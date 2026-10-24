@@ -17,7 +17,6 @@ Last triaged: 2026-10-24
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an NRG session count above the image's tracks lists past the track table](items/iso-plug-in-an-nrg-session-count-above-the-image-s-tracks/desc.md) | bug | 6 | archives | 340 |
 
 ## Next
 
@@ -268,6 +267,7 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: NRG SINF and ETN2 chunks are read without regard to their size](items/iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard/desc.md) | bug | 5 | archives | review:340 | 2026-10-24 |
 | [ISO plug-in: the image information of an NRG image reads past its session table](items/iso-plug-in-the-image-information-of-an-nrg-image-reads-past/desc.md) | bug | 5 | archives | measure:340 | 2026-10-24 |
 
 ## Parked

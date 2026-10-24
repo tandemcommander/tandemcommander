@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Opening a damaged or crafted Nero image (NRG) of several sessions could crash the program** (feature 340).
+  - **Before:** each session of an NRG image says how many tracks it holds, and the ISO plug-in believed it. When the sessions counted more tracks than the image has (or a count of 2^31 or more, read as a negative number), listing the image as "Session 01", "Session 02", ... read past the end of the plug-in's track table - in the Debug build a range-check message, in the release build a crash or a read of unrelated memory; with one such count a session's files were silently left out.
+  - **Now:** each session gets at most the tracks the image really has, in order; those are listed in its folder as before. A session count that does not fit marks the listing incomplete, so a whole Unpack (Alt+F9) extracts everything there is and keeps the image, also with "Delete archive after unpacking". Images whose counts fit list and unpack exactly as before.
+  - **Limitation:** no message says why the image was kept. The image information shown by View (F3) still reads the session counts unchecked when they add up to fewer tracks than the image holds (recorded for a later fix). Not tried with a damaged image made by Nero itself.
 - **Unpack with "Delete archive after unpacking" deleted a Mac disc image after writing its compressed files empty** (feature 339).
   - **Before:** on the HFS+ part of a disc image made on a Mac, a file that macOS keeps compressed (HFS+ compression) or whose content is only in its resource fork (for example a custom folder icon) was extracted as an empty file, without a word, and counted as extracted. A whole Unpack (Alt+F9) with "Delete archive after unpacking" then deleted the image with the file's only content; Copy (F5) also produced the empty file.
   - **Now:** such a file is not written. A box names it and says why (compressed, or stored only in its resource fork) with Skip, Skip all and Cancel; a whole unpack then fails, so the image is kept, and everything else is extracted. Ordinary files extract as before.
