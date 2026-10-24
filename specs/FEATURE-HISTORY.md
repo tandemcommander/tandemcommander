@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4688,3 +4688,32 @@ a few early ones are out of sequence).
   1); refute-first reviews: 1 (one MUST fixed, NOTE 4 fixed, SHOULD to the existing Inbox item), 2 (a
   stopped agent's partial work + a fresh one: no MUST - main build 15 / 7 on its 22 rows, a differential
   test of 20,000,000 random records against main's loop 0 mismatches).
+- 333-uniso-hfs-part-missing: a hybrid disc image (ISO 9660 / UDF + HFS+) whose HFS+ part the ISO plug-in
+  could not open (volume header of another version, catalog refused by 322's walk, empty or past the end
+  of the image, a damaged Apple partition map entry) lost that part without a mark - Unpack with "Delete
+  archive after unpacking" extracted the other parts and deleted the image (files only in the HFS+ part
+  lost) - now `CHFS::Open` records whether the volume header declares an HFS+ volume
+  (`SalHfsVolumeHeaderDeclaresHfsPlus`, `src/common/salhfscatalog.h`: "H+", or an HFS wrapper "BD" whose
+  `drEmbedSigWord` is "H+") and `CUDFISO::Open` turns a declared part that does not open into 330's
+  `PartMissing` (listing marked, a whole unpack fails, the image is kept); when the partition map's walk
+  fails before the volume header (review 1: a damaged entry the reader does not need, an entry count),
+  `CHFS::DeclaredBehindDamagedMap` looks for an intact `Apple_HFS` entry (`SalHfsApmEntryIsHfs`) whose
+  volume header declares HFS+. Quiet open kept, no message, no UI string. Trap (measured first): an
+  Apple partition map ("ER") and an `Apple_HFS` partition do not declare HFS+ - Ubuntu / Debian install
+  images (xorriso `-isohybrid-apm-hfsplus`) carry both and hold the FAT EFI image there; marking every
+  HFS part that fails would have made every such image's whole unpack fail (probe rows APM-EFI,
+  APM-EFI-CNT; a mutant that declares every header fails them and H-NOSIG). libisofs refuses an APM
+  unless the MBR template starts with `33 ED` + 30 NOPs (`mkimg333.sh` writes one); a Bash here-document
+  again collapsed backslashes of a probe edit (nothing written - an assert stopped it). Limits: a
+  destroyed signature, a damaged block 0 or an HFS start past the end is not marked (as 330's destroyed
+  UDF anchor); the last `Apple_HFS` entry is the one read; APFS / original HFS / HFSX parts are never
+  listed and not marked (decision, Inbox `iso-plug-in-apfs-original-hfs-and-hfsx-parts-of-a-hybrid-are`);
+  the APM install image shows "Cannot read sector #00000200." (Inbox
+  `iso-plug-in-an-ubuntu-style-install-image-with-an-apple`). From backlog item
+  `iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is`. Probe `iso333_probe` (seeds xorriso
+  `-hfsplus` and an APM install layout by `mkimg333.sh`, damaged copies by `img333.py`) on main 9 / 5
+  (H-VER / CAT / SIZE / EXT: image deleted) -> 20 / 0 (H-APMSIG / H-APMCNT / APM-EFI-CNT added by review
+  1); 322 18 / 0, 329 14 / 0, 330 30 / 0, 332 16 / 0; saltests 28,345 -> 28,372 / 0
+  (`TestHfsVolumeDeclared333`; the always-declared mutant fails 10); refute-first reviews: 1 (no MUST;
+  SHOULD the damaged map - fixed; reviewer's negative control 10 / 4), 2 (no MUST, no SHOULD; 21
+  adversarial map rows, negative control at the pre-fix commit fails the three kept rows).

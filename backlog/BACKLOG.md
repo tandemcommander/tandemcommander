@@ -17,7 +17,6 @@ Last triaged: 2026-10-24
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an HFS+ part of a hybrid that does not open is dropped without a mark](items/iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is/desc.md) | bug | 7 | archives | 333 |
 
 ## Next
 
