@@ -3,7 +3,7 @@
 **Feature Branch**: `334-uniso-session-missing`  
 **Created**: 2026-10-24  
 **Status**: Draft  
-**Input**: Backlog item `iso-plug-in-unpack-with-delete-archive-deletes-a-multi` - "ISO plug-in: Unpack with Delete archive deletes a multi-session image whose session track cannot be opened".
+**Input**: Backlog item `iso-plug-in-unpack-with-delete-archive-deletes-a-multi` - "ISO plug-in: Unpack with Delete archive deletes a multi-session image whose session track cannot be opened". From backlog item iso-plug-in-unpack-with-delete-archive-deletes-a-multi.
 
 ## Background (traced and measured at 21c3ce91)
 

@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: Unpack with Delete archive deletes a multi-session image whose session track cannot be opened
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:330
@@ -10,7 +10,7 @@ created: 2026-10-24
 updated: 2026-10-24
 verified: 2026-10-24 21c3ce91
 effort: S
-feature: -
+feature: 334
 related: []
 depends-on: []
 reason: -
@@ -59,3 +59,4 @@ check fails closed). The error box and the listing of the other sessions stay as
 - 2026-10-24 — created (source review:330)
 - 2026-10-24 — moved to Next position 4
 - 2026-10-24 — verified at 21c3ce91: reproduced at 21c3ce91: crafted NRG images, multi-session track 2 not opening / past the end and single-session last track not opening - Unpack with Delete archive deleted the image, b.txt lost (probe 3 FAIL rows)
+- 2026-10-24 — run started, feature 334
