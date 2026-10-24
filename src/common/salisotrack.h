@@ -177,12 +177,14 @@ inline int SalIsoTrackOfExtent(int trackCount, unsigned long extent, TExtentOffs
 
 // Feature 336: a listed file of 'size' bytes starting at 'extent' covers the track it starts in
 // (covered[t] = true, 'covered' holds 'trackCount' flags). A file of zero bytes extracts nothing of the
-// track and covers nothing (fails closed).
+// track and covers nothing (fails closed); so does a file whose 'extent' is not a disc address
+// ('discAddress' false - review 1: an HFS+ catalog record number, a UDF partition-relative block; only
+// ISO 9660 records give the disc address of a file's first sector).
 template <class TExtentOffsetOf>
 inline void SalIsoNoteFileStart(bool* covered, int trackCount, unsigned long extent, unsigned long long size,
-                                TExtentOffsetOf extentOffsetOf)
+                                bool discAddress, TExtentOffsetOf extentOffsetOf)
 {
-    if (covered == nullptr || size == 0)
+    if (covered == nullptr || size == 0 || !discAddress)
         return;
     int t = SalIsoTrackOfExtent(trackCount, extent, extentOffsetOf);
     if (t >= 0 && t < trackCount)

@@ -69,23 +69,27 @@ the image kept.
 
 ---
 
-### User Story 2 - A real Video CD still unpacks whole and is deleted (Priority: P1)
+### User Story 2 - A real Video CD is still unpacked and deleted as before (Priority: P1)
 
 A user unpacks a whole Video CD or Super Video CD image whose stream tracks are covered by its
-`AVSEQnn` files. Every file is extracted and the image is deleted, as before.
+`AVSEQnn` files. Every file is extracted as before and the image is deleted, as before (the video files
+themselves still extract cut to 2048 bytes of each 2324-byte Form 2 sector - an existing defect, backlog
+item `iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may`; review 1 of this feature measured it on the
+real images; whether whole Video CD unpacks keep the image until it is fixed is a decision for the
+maintainer).
 
 **Why this priority**: without it every Video CD's whole unpack would fail - the cost the item
 accepts only for Video CDs whose directory does not reference a stream.
 
 **Independent Test**: reviewer 3's real vcdimager images (R-VCD-CCD, R-SVCD-CCD, R-VCD-NRG) and new
 synthetic images whose track 1 holds a file whose extent starts in the stream track (rows S-VCDCOV,
-C-VCDCOV): every file extracted, the image deleted.
+C-VCDCOV): every file extracted (the covering file's bytes read from the stream track), the image deleted.
 
 **Acceptance Scenarios**:
 
 1. **Given** a real VCD (CloneCD or NRG) or SVCD (CloneCD) image made by vcdimager, **When** the user
-   unpacks it whole with "Delete archive after unpacking", **Then** every file is extracted and the
-   image is deleted.
+   unpacks it whole with "Delete archive after unpacking", **Then** every file is extracted as before and
+   the image is deleted.
 2. **Given** a synthetic image whose track 1 lists `a.txt` and a file whose extent starts at the Form 2
    track, **When** the user unpacks it whole the same way, **Then** both files are extracted and the
    image is deleted.
@@ -97,6 +101,8 @@ C-VCDCOV): every file extracted, the image deleted.
   (only the start extent counts, as the unpack reads it).
 - A covering file of zero bytes: does not cover (nothing of the track is extracted).
 - A folder whose extent lies in the Form 2 track: does not cover.
+- A file listed by the HFS+ or UDF reader: does not cover (its position is not a disc address -
+  review 1); only ISO 9660 entries count.
 - An audio track's virtual entry (no position data): ignored.
 - The listing with "Session NN" folders off (one listing of the last data track): the same rule.
 - A track that feature 335 already marks (no file system, not Form 2) or a track with a file system:
@@ -112,7 +118,7 @@ C-VCDCOV): every file extracted, the image deleted.
 - **FR-002**: "Starts in" MUST use the same mapping from a file's start position to a track that the
   unpack uses to read the file (one rule, shared, tested).
 - **FR-003**: A Form 2 track that a listed file starts in MUST NOT mark the listing (a real Video CD /
-  SVCD still unpacks whole and is deleted).
+  SVCD is still unpacked and deleted as before).
 - **FR-004**: The rule MUST apply in every listing mode (with and without "Session NN" folders, one or
   more sessions).
 - **FR-005**: The decision (which track a start position maps to; whether a stream track marks) MUST be

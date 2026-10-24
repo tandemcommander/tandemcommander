@@ -20137,18 +20137,22 @@ static void TestIsoStreamCovered_336()
 
     // which tracks a listing covers
     bool cov[3] = {false, false, false};
-    SalIsoNoteFileStart(cov, 3, 24, 2, offThree); // a.txt
+    SalIsoNoteFileStart(cov, 3, 24, 2, true, offThree); // a.txt
     CHECK(cov[0] && !cov[1] && !cov[2]);
-    SalIsoNoteFileStart(cov, 3, 100, 200 * 2048ULL, offThree); // starts in track 1, runs on into the stream
+    SalIsoNoteFileStart(cov, 3, 100, 200 * 2048ULL, true, offThree); // starts in track 1, runs on into the stream
     CHECK(!cov[1] && !cov[2]);
-    SalIsoNoteFileStart(cov, 3, 176, 0, offThree); // zero bytes: covers nothing
+    SalIsoNoteFileStart(cov, 3, 176, 0, true, offThree); // zero bytes: covers nothing
     CHECK(!cov[1]);
-    SalIsoNoteFileStart(cov, 3, 176, 8 * 2048ULL, offThree); // AVSEQ01.DAT
+    SalIsoNoteFileStart(cov, 3, 176, 8 * 2048ULL, false, offThree); // review 1: not a disc address (HFS+, UDF)
+    CHECK(!cov[1]);
+    SalIsoNoteFileStart(cov, 3, 176, 8 * 2048ULL, true, offThree); // AVSEQ01.DAT
     CHECK(cov[1] && !cov[2]);
-    SalIsoNoteFileStart(cov, 0, 176, 2048, offThree); // no tracks: nothing written
-    SalIsoNoteFileStart(nullptr, 3, 176, 2048, offThree);
+    SalIsoNoteFileStart(cov, 0, 176, 2048, true, offThree); // no tracks: nothing written
+    SalIsoNoteFileStart(nullptr, 3, 176, 2048, true, offThree);
     CHECK(cov[0] && cov[1] && !cov[2]);
-    SalIsoNoteFileStart(cov, 3, 0xFFFFFFFFUL, 1, offThree); // beyond the last track's start: the last track
+    SalIsoNoteFileStart(cov, 3, 0xFFFFFFFFUL, 1, false, offThree); // an HFS+ record number above every track
+    CHECK(!cov[2]);
+    SalIsoNoteFileStart(cov, 3, 0xFFFFFFFFUL, 1, true, offThree); // beyond the last track's start: the last track
     CHECK(cov[2]);
 
     // the decision
@@ -20179,7 +20183,7 @@ static void TestIsoStreamCovered_336()
     {
         bool covered[3] = {false, false, false};
         for (int f = 0; f < c.Files; f++)
-            SalIsoNoteFileStart(covered, c.Tracks, c.Extent[f], c.Size[f], offThree);
+            SalIsoNoteFileStart(covered, c.Tracks, c.Extent[f], c.Size[f], true, offThree);
         bool marks = false;
         for (int t = 0; t < c.Tracks; t++)
             marks = marks || SalIsoStreamTrackMarksListing(c.Stream[t], covered[t]);

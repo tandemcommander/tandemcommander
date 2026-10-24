@@ -81,3 +81,42 @@ One run: 0 CRITICAL, 0 HIGH. MEDIUM C1 accepted: the multi-session listing with 
 has no probe row - the check runs once after the listing whatever path built it (`ListImage` =
 `ListTracks` + `MarkUncoveredStreams`). LOW C2 folded into the saltests list; LOW I1 (the item names C-VCD /
 C-VCDREAL as deletion controls, but no file covers their stream) resolved in spec *Clarifications* Q2.
+
+## Review
+
+### Review 1 (report)
+
+Re-ran the build (28,597 / 0) and `iso336_probe.ps1` (42 / 0, registry restored + identical); the
+negative control `result_before.txt` fails exactly the six rows; caller check (`ListImage` - one caller,
+`ListArchive`, used by the panel and `UnpackWholeArchive`; `GetTrackFromExtent` unchanged incl. no
+tracks); standing rules - no finding.
+
+- **MUST (pre-existing, outside the item)**: a covered real Video CD stream is extracted cut - `CRawFS`
+  reads 2048 of each 2324-byte Form 2 payload - and the image is then deleted. Measured on reviewer 3
+  of 335's vcdimager images: `AVSEQ01.DAT` = the first 2048 bytes of each payload, the source MPEG misses
+  276 bytes of every pack (61,272 bytes), SVCD `AVSEQ01.MPG` 39,468 bytes; CCD and NRG alike. The probe
+  rows passed because they checked sizes only. Handling: the cut is backlog item
+  `iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may` (its fix: read Form 2 files with 2324 bytes a
+  sector); this item's *Expected* wants real Video CDs unpacked and deleted as before, and 336 deletes
+  strictly fewer images than main (it only adds marks). Failing closed for every Video CD until the cut is
+  fixed trades every Video CD's whole unpack against the lossy deletion - a real trade-off (stop-rules
+  §1, maintainer-owned) -> decision item `keep-video-cd-images-after-a-whole-unpack-until-their-video`
+  (with the measurement; recommendation: fix the cut next, else fail closed). In scope and fixed: the
+  claims that a real Video CD "still unpacks whole" (spec User Story 2 / FR-003, tasks, CHANGELOG
+  *Limitation* now names the cut and that such an image is still deleted).
+- **SHOULD (fixed)**: the covered rows checked `avseq01.dat` by size only. The probe's `Matches-Want`
+  now takes `stream:<fill>:<sectors>`: the file's bytes must equal the first 2048 bytes of each of the
+  stream's first 8 sectors as `img336.py` writes them (proof that the file is read from the stream track;
+  the cut itself is the related item's). Negative check of the comparison (the function taken from the
+  probe file by the PowerShell parser): right bytes True; another fill, zeros, a wrong length False.
+- **NOTE 2 (fixed)**: `CFilePos::Extent` is a disc address only for ISO 9660 records (HFS+ stores a
+  catalog record number, UDF a partition-relative block); such an extent at or above a stream track's
+  offset counted as covering it. `SalIsoNoteFileStart` takes `discAddress` (`fp->Type ==
+  FS_TYPE_ISO9660`); other entries cover nothing (fails closed). saltests +2 (a non-disc-address file
+  in the stream and above every track) -> 28,599 / 0.
+- NOTE 1 (partial coverage counts - the item's rule, stated in the CHANGELOG), NOTE 3 (folders off not
+  driven - recorded in *Deviations*): no change.
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 28,599 / 0; encoding guard 0;
+`probe/result_after_review1.txt` 42 / 0 (covered rows now with the content check);
+`probe/result_realvcd_review1.txt` 10 / 0; registry restored + identical each.

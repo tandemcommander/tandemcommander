@@ -263,6 +263,7 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Keep Video CD images after a whole unpack until their video extracts whole?](items/keep-video-cd-images-after-a-whole-unpack-until-their-video/desc.md) | decision | 7 | archives | review:336 | 2026-10-24 |
 
 ## Parked
 

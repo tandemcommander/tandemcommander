@@ -1452,10 +1452,13 @@ void CISOImage::NoteListedFileStarts(const CSalamanderDirectoryAbstract* dir, bo
         for (i = 0; i < count; i++)
         {
             const CFileData* file = d->GetFile(i);
-            // an audio track's virtual file has no position (NULL)
+            // an audio track's virtual file has no position (NULL); only an ISO 9660 record's extent is
+            // the disc address of the file's first sector (review 1: HFS+ gives a catalog record number,
+            // UDF a partition-relative block)
             const CFilePos* fp = file != NULL ? (const CFilePos*)file->PluginData : NULL;
             if (fp != NULL)
-                SalIsoNoteFileStart(covered, Tracks.Count, fp->Extent, file->Size.Value, [this](int t) -> unsigned long
+                SalIsoNoteFileStart(covered, Tracks.Count, fp->Extent, file->Size.Value, fp->Type == FS_TYPE_ISO9660,
+                                    [this](int t) -> unsigned long
                                     { return Tracks[t]->ExtentOffset; });
         }
         count = d->GetDirsCount();

@@ -18,7 +18,8 @@
     Rows of 336:
       S-VCD, M-FORM2, C-VCD, C-VCDREAL  PASS = a.txt (Session 01/a.txt) extracted, the image KEPT - before
                  336: deleted (no file covers the stream)
-      S-VCDCOV, C-VCDCOV  (control) PASS = a.txt and avseq01.dat (16384 bytes) extracted, the image deleted
+      S-VCDCOV, C-VCDCOV  (control) PASS = a.txt and avseq01.dat (16384 bytes: the first 2048 bytes of each of
+                 the stream's first 8 sectors - read from the stream track) extracted, the image deleted
       M-FORM2COV (control) PASS = Session 01/a.txt and Session 01/avseq01.dat extracted, the image deleted
       S-VCDCOV2  PASS = a.txt and avseq01.dat extracted, the image KEPT (track 3 uncovered) - before: deleted
       S-VCDZERO  PASS = a.txt and avseq01.dat (0 bytes) extracted, the image KEPT - before: deleted
@@ -101,9 +102,20 @@ function Tgt-Files([string]$Tgt) {
     return @([IO.Directory]::GetFiles($LP + $Tgt, '*', [IO.SearchOption]::AllDirectories) | ForEach-Object { $_.Substring($base.Length).Replace('\', '/') } | Sort-Object)
 }
 function Content([string]$Tgt, [string]$Rel) { try { return [IO.File]::ReadAllText($LP + $Tgt + '\' + $Rel.Replace('/', '\')) } catch { return '<none>' } }
-# 'size:<n>' compares the length (a stream's sectors are binary)
+# 'size:<n>' compares the length; 'stream:<fill>:<sectors>' compares the bytes with the first 2048 user bytes
+# of each of the stream track's first <sectors> sectors as img336.py writes them (((s + i) * fill) & 0xFF) -
+# the file is read from the stream's sectors (review 1; the 2048-byte cut of each 2324-byte Form 2 payload
+# is backlog item iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may)
 function Matches-Want([string]$Tgt, [string]$Rel, [string]$Want) {
-    if ($Want.StartsWith('size:')) { try { return ((New-Object IO.FileInfo($LP + $Tgt + '\' + $Rel.Replace('/', '\'))).Length -eq [long]$Want.Substring(5)) } catch { return $false } }
+    $p = $LP + $Tgt + '\' + $Rel.Replace('/', '\')
+    if ($Want.StartsWith('size:')) { try { return ((New-Object IO.FileInfo($p)).Length -eq [long]$Want.Substring(5)) } catch { return $false } }
+    if ($Want.StartsWith('stream:')) {
+        $w = $Want.Split(':'); $fill = [int]$w[1]; $n = [int]$w[2]
+        try { $got = [IO.File]::ReadAllBytes($p) } catch { return $false }
+        if ($got.Length -ne $n * 2048) { return $false }
+        for ($s = 0; $s -lt $n; $s++) { for ($i = 0; $i -lt 2048; $i++) { if ($got[$s * 2048 + $i] -ne ((($s + $i) * $fill) -band 0xFF)) { return $false } } }
+        return $true
+    }
     return ((Content $Tgt $Rel) -ceq $Want)
 }
 function Find-Btn([IntPtr]$Dlg, [int]$CtlId) {
@@ -212,9 +224,9 @@ try {
     $both = [ordered]@{ 'Session 01/a.txt' = 'A1'; 'Session 02/b.txt' = 'B2' }
     $first = [ordered]@{ 'Session 01/a.txt' = 'A1' }
     $a = [ordered]@{ 'a.txt' = 'A1' }
-    $cov = [ordered]@{ 'a.txt' = 'A1'; 'avseq01.dat' = 'size:16384' }
+    $cov = [ordered]@{ 'a.txt' = 'A1'; 'avseq01.dat' = 'stream:13:8' }
     $zero = [ordered]@{ 'a.txt' = 'A1'; 'avseq01.dat' = 'size:0' }
-    $mcov = [ordered]@{ 'Session 01/a.txt' = 'A1'; 'Session 01/avseq01.dat' = 'size:16384' }
+    $mcov = [ordered]@{ 'Session 01/a.txt' = 'A1'; 'Session 01/avseq01.dat' = 'stream:13:8' }
     # feature 336
     Unpack-Row 'S-VCDCOV' "$s\single_vcdcov.nrg" $cov
     Unpack-Row 'C-VCDCOV' "$s\ccd_vcdcov.img" $cov

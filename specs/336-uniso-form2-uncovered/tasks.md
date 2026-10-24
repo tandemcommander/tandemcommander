@@ -21,7 +21,7 @@
 - [X] T006 [US1] Rename the listing body to `ListTracks`; `ListImage` = `ListTracks` + `MarkUncoveredStreams(dir)` (walk the listed tree, note each file's start track, mark each uncovered Form 2 stream; no `dir` -> every stream marks) in `src/plugins/uniso/isoimage.h` / `isoimage.cpp`
 - [X] T007 [US1] Build (`.\build.cmd`), `saltests` -> 0 failed; mutant (coverage ignored) fails the new checks - recorded in `fix-log.md`
 
-## Phase 4: User Story 2 - a real Video CD still unpacks whole and is deleted (P1)
+## Phase 4: User Story 2 - a real Video CD is still unpacked and deleted as before (P1)
 
 **Independent test**: R-VCD-CCD, R-SVCD-CCD, R-VCD-NRG, S-VCDCOV, C-VCDCOV, M-FORM2COV delete the image with every file.
 
