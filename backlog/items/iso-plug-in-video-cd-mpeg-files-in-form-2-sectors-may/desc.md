@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: Video CD MPEG files in Form 2 sectors may extract cut to 2048 bytes a sector
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:335
@@ -53,3 +53,4 @@ files unchanged.
 ## Log
 
 - 2026-10-24 — created (source review:335)
+- 2026-10-24 — moved to Next position 9

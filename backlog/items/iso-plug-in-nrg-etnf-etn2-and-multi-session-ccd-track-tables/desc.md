@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: NRG ETNF / ETN2 and multi-session CCD track tables get wrong sector sizes or ends
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:335
@@ -61,3 +61,4 @@ the right track ends - each measured with a crafted image (feature 335's `probe/
 ## Log
 
 - 2026-10-24 — created (source review:335)
+- 2026-10-24 — moved to Next position 8

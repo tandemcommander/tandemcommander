@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a Form 2 track that no listed file covers is deleted with the image
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:335
@@ -60,3 +60,4 @@ real-vcdimager images (reviewer 3's `probe/review3/gen335c.py`, vcdimager + ffmp
 
 - 2026-10-24 — created (source review:335)
 - 2026-10-24 — related item iso-plug-in-a-data-track-in-which-no-file-system-is-found done in feature 335
+- 2026-10-24 — moved to Next position 1

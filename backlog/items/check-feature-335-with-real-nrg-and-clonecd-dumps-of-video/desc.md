@@ -1,7 +1,7 @@
 ---
 title: Check feature 335 with real NRG and CloneCD dumps of Video CDs and a damaged data CD
 type: person-step
-status: new
+status: open
 severity: 6
 area: archives
 source: leftover:335
@@ -53,3 +53,4 @@ session without a readable file system keeps the image.
 ## Log
 
 - 2026-10-24 — created (source leftover:335)
+- 2026-10-24 — moved to Person steps position 8
