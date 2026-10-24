@@ -7,6 +7,7 @@
 #include "hfs.h"
 
 #include "../../common/salisonamefit.h" // feature 328: entries the panel listing left out
+#include "../../common/salisotrack.h"   // feature 334: tracks that leave the listing incomplete
 
 class CUnISOFSAbstract;
 
@@ -79,6 +80,9 @@ public:
         ETrackFSType FSType;
         BOOL Bootable;
         CUnISOFSAbstract* FileSystem;
+        // feature 334: no file system was found and the track's sector 16 is not within the image file -
+        // nothing of it can be read (it is taken as a raw data track that lists nothing)
+        BOOL OutsideImage;
 
         Track();
         virtual ~Track();
@@ -150,6 +154,9 @@ public:
     BOOL DetectTrackFS(int track);
 
     BOOL ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
+    // feature 334: marks ListingLeftOut incomplete when what the listing did with 'track'
+    // (SAL_ISO_TRACK_NOT_TRIED / ...) leaves it incomplete (salisotrack.h)
+    void MarkTrack(int track, int outcome);
     // returns one of the UNPACK_XXX constants
     int UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* srcPath, const char* name, const CFileData* fileData,
                    DWORD& silent, BOOL& toSkip);

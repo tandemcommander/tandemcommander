@@ -257,6 +257,7 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a data track in which no file system is found lists nothing and is not marked](items/iso-plug-in-a-data-track-in-which-no-file-system-is-found/desc.md) | bug | 7 | archives | measure:334 | 2026-10-24 |
 
 ## Parked
 

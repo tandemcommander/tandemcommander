@@ -33,3 +33,46 @@ Traced (read at HEAD):
 - Readers' `ListDirectory` FALSE returns: every one marks `ListingLeftOut` already (ISO 9660 / UDF /
   Xbox walk result 330, HFS 329/332, audio 329/331) except the trailing `return FALSE` of
   `CHFS::ListDirectory` (a record type after the class check - unreachable).
+
+## speckit-analyze
+
+One run: 0 CRITICAL, 0 HIGH. LOW I1 (FR-002 names "does not open", T007 also marks a fallback track
+whose listing fails - harmless, the readers mark their own failed listings) and LOW C1 (FR-004 "no UI
+string" has no own task - shown by the diff: no resource file changes) accepted.
+
+## Implementation
+
+- `src/common/salisotrack.h` (new): `SalIsoTrackMarksListing(kind, outsideImage, outcome)` - unknown
+  never marks; a data track outside the image always marks; else marks when the listing tried the
+  track and it did not open or its listing failed; an unknown outcome value marks (fail closed).
+- `src/plugins/uniso/isoimage.h/.cpp`: `Track::OutsideImage` (set in `CISOImage::Open` when
+  `DetectTrackFS` found no file system - the track becomes fsData - and the track's sector 16 + one
+  sector is past the image file's size, the bound `DetectTrackFS` uses); `CISOImage::MarkTrack`;
+  `ListImage`: multi-session branch marks every tried track by its outcome (the box and `ret = FALSE`
+  unchanged); single-session branch: when the last data track lists, every other track `NOT_TRIED`
+  (only an outside-the-image data track marks); when it does not open, `LastTrack` (>= 0) marks as
+  not opened and each track the fallback tries marks by its outcome. No message, no UI string.
+- clang-format: the x64 clang-format of VS 2022 (the ARM64 one on PATH search does not start) reflowed
+  three unrelated comment alignments of `isoimage.cpp` and the whole of `saltests.cpp` - reverted;
+  `saltests.cpp` formatted only on the new lines (`--lines`), as feature 333 did.
+
+## Checks
+
+| Check | Command | Result |
+|---|---|---|
+| encoding guard | `python tools/check_encoding.py --strict` | TOTAL: 0 finding(s) |
+| build | `.\build.cmd` | BUILD SUCCEEDED (C4267 warnings: existing lines of audio / hfs / xdvdfs / udf / iso9660.cpp, recompiled because isoimage.h changed) |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | 28,372 -> 28,407 checks, 0 failed (`TestIsoTrackMarks334`, 35 checks) |
+| mutant | the rule without `if (kind == DATA && outsideImage) return true;` | saltests 4 failed; probe `result_mutant_no_outside.txt` 9 / 1 (M-PAST FAIL: image deleted) |
+| probe after | `iso334_probe.ps1 -Label after` (hidden desktop) | `result_after.txt` PASS 10, FAIL 0; registry restored + identical |
+
+Before / after (rows RUN): M-OK PASS / PASS, M-TERM FAIL / PASS, M-PAST FAIL / PASS, S-OK PASS /
+PASS, S-TERM FAIL / PASS. M-TERM still shows the multi-session box (unchanged), M-PAST and S-TERM no
+window (unchanged).
+| regressions | `iso322/329/330/333_probe.ps1` on the fixed build | `probe/regress_322.txt` 18 / 0, `regress_329.txt` 14 / 0, `regress_330.txt` 30 / 0, `regress_333.txt` 20 / 0 (as their features recorded); registry restored + identical each |
+
+## Inbox
+
+- `iso-plug-in-a-data-track-in-which-no-file-system-is-found` (measure:334) - a data track inside the
+  image with no file system found (destroyed descriptors) still opens as raw data, lists nothing and
+  is not marked; told apart from Video CD raw tracks it is not (a trade-off, see the item).

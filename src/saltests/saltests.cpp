@@ -106,6 +106,7 @@
 #include "salsusp.h"           // feature 326
 #include "salisonamefit.h"     // feature 328
 #include "salnrgcdtext.h"      // feature 331
+#include "salisotrack.h"       // feature 334
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -19883,6 +19884,49 @@ static void TestHfsVolumeDeclared333()
     CHECK(!SalHfsApmEntryIsHfs((const unsigned char*)pmMap.data(), pmMap.size(), &start));
 }
 
+// feature 334: a track of a disc image with a track table that the listing could not open, whose
+// listing failed, or a data track past the end of the image marks the listing incomplete (a whole
+// unpack fails, "Delete archive after unpacking" keeps the image); unknown tracks never do
+static void TestIsoTrackMarks334()
+{
+    const int kinds[] = {SAL_ISO_TRACK_DATA, SAL_ISO_TRACK_AUDIO, SAL_ISO_TRACK_UNKNOWN};
+    const int outcomes[] = {SAL_ISO_TRACK_NOT_TRIED, SAL_ISO_TRACK_NOT_OPENED, SAL_ISO_TRACK_LIST_FAILED,
+                            SAL_ISO_TRACK_LISTED};
+    for (int kind : kinds)
+    {
+        for (int outside = 0; outside < 2; outside++)
+        {
+            for (int outcome : outcomes)
+            {
+                bool want;
+                if (kind == SAL_ISO_TRACK_UNKNOWN)
+                    want = false; // never listed, never marked (as before)
+                else if (kind == SAL_ISO_TRACK_DATA && outside)
+                    want = true; // nothing of the track can be read, whatever the listing did
+                else
+                    want = outcome == SAL_ISO_TRACK_NOT_OPENED || outcome == SAL_ISO_TRACK_LIST_FAILED;
+                CHECK(SalIsoTrackMarksListing(kind, outside != 0, outcome) == want);
+            }
+        }
+    }
+    // the measured cases: a session's track that does not open (M-TERM), a track past the end of the
+    // image that opens as raw data and lists nothing (M-PAST), the last data track that does not open
+    // (S-TERM); the controls: tracks listed, a Video CD's readable raw data track, an audio track
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, false, SAL_ISO_TRACK_NOT_OPENED));
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, true, SAL_ISO_TRACK_LISTED));
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, true, SAL_ISO_TRACK_NOT_TRIED));
+    CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, false, SAL_ISO_TRACK_LISTED));
+    CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, false, SAL_ISO_TRACK_NOT_TRIED));
+    CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_AUDIO, false, SAL_ISO_TRACK_LISTED));
+    // an audio track is never "outside" (it is not detected); an unknown track never marks
+    CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_AUDIO, true, SAL_ISO_TRACK_LISTED));
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_AUDIO, false, SAL_ISO_TRACK_NOT_OPENED));
+    CHECK(!SalIsoTrackMarksListing(SAL_ISO_TRACK_UNKNOWN, true, SAL_ISO_TRACK_NOT_OPENED));
+    // an outcome the rule does not know fails closed
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, false, 7));
+    CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_AUDIO, false, -1));
+}
+
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
 // when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
 // the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
@@ -20990,6 +21034,7 @@ int main(int argc, char** argv)
     TestIsoNameFit328();
     TestIsoLeftOut329();
     TestNrgCdText331();
+    TestIsoTrackMarks334();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

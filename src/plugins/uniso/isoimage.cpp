@@ -138,6 +138,7 @@ CISOImage::Track::Track()
 {
     FileSystem = NULL;
     Bootable = FALSE;
+    OutsideImage = FALSE;
 }
 
 CISOImage::Track::~Track()
@@ -921,6 +922,13 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                     if (ret == ERR_CONTINUE)
                     {
                         Tracks[trk]->FSType = fsData;
+                        // feature 334: no file system found and the track's sector 16 (where every file
+                        // system the plug-in reads is looked for, as DetectTrackFS's bound) is not within the
+                        // image - nothing of the track can be read; the listing marks it (salisotrack.h)
+                        DWORD sizeHi;
+                        DWORD sizeLo = File->GetFileSize(&sizeHi);
+                        LONGLONG fileSize = ((LONGLONG)sizeHi << 32) | sizeLo;
+                        Tracks[trk]->OutsideImage = GetSectorOffset(0x10) + SectorUserSize > fileSize;
                         ret = ERR_OK; // we can handle raw data tracks, so we turn the error into OK (what rascals we are :-D)
                     }
                     if (ret == ERR_TERMINATE)
@@ -1377,6 +1385,20 @@ BOOL CISOImage::ListDirectory(char* path, int session, CSalamanderDirectoryAbstr
     return ret;
 }
 
+void CISOImage::MarkTrack(int track, int outcome)
+{
+    if (track < 0 || track >= Tracks.Count)
+        return;
+    Track* t = Tracks[track];
+    int kind = t->FSType == fsUnknown ? SAL_ISO_TRACK_UNKNOWN : t->FSType == fsAudio ? SAL_ISO_TRACK_AUDIO
+                                                                                     : SAL_ISO_TRACK_DATA;
+    if (SalIsoTrackMarksListing(kind, t->OutsideImage != FALSE, outcome))
+    {
+        TRACE_I("CISOImage::MarkTrack(): track " << track << " (outcome " << outcome << ") leaves the listing incomplete");
+        ListingLeftOut.SetIncomplete();
+    }
+}
+
 BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
     CALL_STACK_MESSAGE1("CISOImage::ListImage(, )");
@@ -1402,11 +1424,16 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
             int track;
             for (track = firstSessionTrack; track < lastSessionTrack; track++)
             {
+                // feature 334: a track that does not open or list, or lies past the end of the image,
+                // marks the listing incomplete (a whole unpack fails, the image is kept) - the box and
+                // the listing of the other sessions stay as they were
                 switch (Tracks[track]->FSType)
                 {
                 case fsAudio:
                     if (OpenTrack(track, TRUE))
-                        ListDirectory(path, session + 1, dir, pluginData);
+                        MarkTrack(track, ListDirectory(path, session + 1, dir, pluginData) ? SAL_ISO_TRACK_LISTED : SAL_ISO_TRACK_LIST_FAILED);
+                    else
+                        MarkTrack(track, SAL_ISO_TRACK_NOT_OPENED);
                     break;
 
                 case fsUnknown:
@@ -1415,9 +1442,12 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
 
                 default:
                     if (OpenTrack(track, TRUE))
-                        ListDirectory(path, session + 1, dir, pluginData);
+                        MarkTrack(track, ListDirectory(path, session + 1, dir, pluginData) ? SAL_ISO_TRACK_LISTED : SAL_ISO_TRACK_LIST_FAILED);
                     else
+                    {
+                        MarkTrack(track, SAL_ISO_TRACK_NOT_OPENED);
                         ret = FALSE;
+                    }
                     break;
                 } // switch
             } // for
@@ -1431,20 +1461,45 @@ BOOL CISOImage::ListImage(CSalamanderDirectoryAbstract* dir, CPluginDataInterfac
     }
     else
     {
+        int track;
         if (OpenTrack(LastTrack))
         {
-            return ListDirectory(path, -1, dir, pluginData);
+            BOOL ret = ListDirectory(path, -1, dir, pluginData);
+            // feature 334: only the last data track is listed (by design); another data track that lies
+            // past the end of the image still marks the listing incomplete
+            for (track = 0; track < Tracks.Count; track++)
+            {
+                if (track != LastTrack)
+                    MarkTrack(track, SAL_ISO_TRACK_NOT_TRIED);
+            }
+            return ret;
         }
         else
         {
             BOOL ret = FALSE;
+            // feature 334: the last data track did not open - the tracks listed below are not all of the
+            // image, so the listing is marked incomplete (a whole unpack fails, the image is kept); so is
+            // each track tried below that does not open or list (LastTrack is -1 for an audio CD: then
+            // this is the normal listing)
+            if (LastTrack >= 0 && LastTrack < Tracks.Count)
+                MarkTrack(LastTrack, SAL_ISO_TRACK_NOT_OPENED);
             // we also try to insert audio tracks if there are any
-            int track;
             for (track = 0; track < Tracks.Count; track++)
             {
-                if (track != LastTrack && OpenTrack(track, TRUE))
+                if (track == LastTrack)
+                    continue;
+                if (OpenTrack(track, TRUE))
+                {
                     if (ListDirectory(path, -1, dir, pluginData))
+                    {
                         ret = TRUE;
+                        MarkTrack(track, SAL_ISO_TRACK_LISTED);
+                    }
+                    else
+                        MarkTrack(track, SAL_ISO_TRACK_LIST_FAILED);
+                }
+                else
+                    MarkTrack(track, SAL_ISO_TRACK_NOT_OPENED);
             } // for
 
             return ret;
