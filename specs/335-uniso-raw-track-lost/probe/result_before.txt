@@ -1,0 +1,30 @@
+iso335_probe (feature 335) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-24 05:15; registry key existed True
+
+seeds: multi_form2.nrg,multi_nofs.nrg,multi_nofs_f1.nrg,multi_ok_2336.nrg,s1.iso,s2.iso,s2.lba,single_nofs.nrg,single_raw.nrg,single_vcd.nrg
+img335: multi_nofs: 720988 bytes, track 2 from sector 176; track 2 Mode 1, 2 volume descriptors destroyed
+img335: multi_ok_2336: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, intact
+img335: multi_nofs_f1: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 1, 2 volume descriptors destroyed
+img335: multi_form2: 771676 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 2 (MPEG-like stream)
+img335: single_vcd: 771664 bytes, track 2 from sector 176; track 2 Mode 2 / 2336 Form 2 (MPEG-like stream)
+img335: single_nofs: 720976 bytes, track 2 from sector 176; track 2 Mode 1, 2 volume descriptors destroyed
+img335: single_raw: 720976 bytes, track 2 from sector 176; track 2 Mode 1 zeros
+
+M-NOFS     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-NOFS     RUN    FAIL        files 1: Session 01/a.txt; files ok: True; image kept: False (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-OK-2336  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-OK-2336  RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-NOFS-F1  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-NOFS-F1  RUN    FAIL        files 1: Session 01/a.txt; files ok: True; image kept: False (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+M-FORM2    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+M-FORM2    RUN    PASS        files 1: Session 01/a.txt; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-VCD      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-VCD      RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-NOFS     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-NOFS     RUN    FAIL        files 1: a.txt; files ok: True; image kept: False (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+S-RAW      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-RAW      RUN    FAIL        files 1: a.txt; files ok: True; image kept: False (want True); windows as expected: True (multi-session box False, want False); fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before F92E573A3D6A79D1542E3ABC35F0E518B8E197AF3E585098E9B3C6AD205C38ED / after F92E573A3D6A79D1542E3ABC35F0E518B8E197AF3E585098E9B3C6AD205C38ED
+
+Rows: PASS 10, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

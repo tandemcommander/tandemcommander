@@ -8,7 +8,7 @@ source: measure:334
 who: agent
 created: 2026-10-24
 updated: 2026-10-24
-verified: -
+verified: 2026-10-24 e363177e
 effort: ?
 feature: -
 related: [iso-plug-in-apfs-original-hfs-and-hfsx-parts-of-a-hybrid-are]
@@ -58,3 +58,4 @@ ISO 9660 session is Mode 1 / Mode 2 Form 1 - not verified), or the maintainer de
 
 - 2026-10-24 — created (source measure:334)
 - 2026-10-24 — moved to Next position 1
+- 2026-10-24 — verified at e363177e: reproduced at e363177e: NRG with a session 2 track whose descriptors are destroyed (Mode 1 and Mode 2/2336 Form 1) - Unpack with Delete archive deletes the image; probe iso335 4 FAIL / 10 PASS
