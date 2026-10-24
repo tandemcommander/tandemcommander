@@ -1,8 +1,8 @@
 ---
 title: ISO plug-in: HFS+ resource forks beside file data are dropped by Unpack
 type: decision
-status: new
-severity: 5
+status: open
+severity: 7
 area: archives
 source: measure:339
 who: person
@@ -69,3 +69,5 @@ narrow (Mac-made HFS+ images), the data the user usually wants is extracted.
 - 2026-10-24 — created (source measure:339)
 - 2026-10-24 — set title=ISO plug-in: HFS+ resource forks beside file data are dropped by Unpack
 - 2026-10-24 — related item iso-plug-in-an-hfs-file-whose-data-is-compressed-or-only-in done in feature 339
+- 2026-10-24 — auto-triage: severity 5 -> 7: data loss in a narrow scenario (a whole unpack with Delete archive after unpacking deletes the image holding the resource fork's only copy), as the sibling Video CD and APFS decisions
+- 2026-10-24 — moved to Decisions for the maintainer position 3

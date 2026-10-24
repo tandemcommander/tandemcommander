@@ -162,22 +162,23 @@ Last triaged: 2026-10-24
 |---|---|---|---|---|
 | 1 | [ISO plug-in: APFS, original HFS and HFSX parts of a hybrid are never listed - mark them?](items/iso-plug-in-apfs-original-hfs-and-hfsx-parts-of-a-hybrid-are/desc.md) | 7 | other-plugins | open |
 | 2 | [Keep Video CD images after a whole unpack until their video extracts whole?](items/keep-video-cd-images-after-a-whole-unpack-until-their-video/desc.md) | 7 | archives | open |
-| 3 | [winget: re-point the open PR #426090 to the current release (072 audit)?](items/winget-repoint-pr-426090-decision/desc.md) | 4 | build-release | open |
-| 4 | [Frozen code-page plug-in services: add wide/UTF-8 variants or keep them (B-5)?](items/plugin-ansi-services-interface-decision/desc.md) | 3 | plugin-api | open |
-| 5 | [Ship the Network plug-in (nethood) enabled?](items/decide-ship-network-plugin-nethood/desc.md) | 3 | other-plugins | open |
-| 6 | [A .gz file whose stored name is too long for Windows: refuse it or use the archive name](items/a-gz-file-whose-stored-name-is-too-long-for-windows-refuse/desc.md) | 3 | archives | open |
-| 7 | [Archive Update: how to tell a member rewritten with the same size and time](items/archive-update-same-stamp-member-decision/desc.md) | 3 | archives | open |
-| 8 | [FTP: should the plug-in ask a server whether it speaks UTF-8 (FEAT)?](items/ftp-ask-server-utf8-feat-decision/desc.md) | 3 | ftp | open |
-| 9 | [State a deliberate minimum Windows version in the program and installer?](items/decide-windows-version-floor/desc.md) | 2 | build-release | open |
-| 10 | [SFTP: a recursive Change Attributes gives one mode to files and folders alike](items/decide-sftp-recursive-change-attributes-modes/desc.md) | 5 | sftp | open |
-| 11 | [PE Viewer: write the dump as UTF-8 with a BOM?](items/decide-peviewer-dump-utf8-with-bom/desc.md) | 2 | other-plugins | open |
-| 12 | [checkver plug-in still checks Open Salamander's site: redirect it or drop it](items/checkver-update-channel-decision/desc.md) | 2 | other-plugins | open |
-| 13 | [Forced Disk Map unload in a shell command: cancel the shell window or terminate](items/forced-disk-map-unload-in-a-shell-command-cancel-the-shell/desc.md) | 2 | other-plugins | open |
-| 14 | [FTP: a path whose escaped form does not fit MAX_PATH is left half-escaped](items/ftp-escaped-path-does-not-fit-decision/desc.md) | 2 | ftp | open |
-| 15 | [Should PRIVACY.md name the sign-in of the share list (285)?](items/should-privacy-md-name-the-sign-in-of-the-share-list-285/desc.md) | 2 | privacy-security | open |
-| 16 | [Should the program come back after a reboot or sign-in (RESTART_NO_REBOOT)?](items/restart-after-reboot-or-sign-out/desc.md) | 1 | plugin-api | open |
-| 17 | [Help > Contents ends in a Help Error box: the product ships no manual](items/help-contents-fails-no-manual-shipped/desc.md) | 4 | help-docs | open |
-| 18 | [Is the missing shell copy hook (drag out of archives into Explorer) intended?](items/copy-hook-for-drag-out-of-archives/desc.md) | 3 | archives | open |
+| 3 | [ISO plug-in: HFS+ resource forks beside file data are dropped by Unpack](items/iso-plug-in-an-hfs-file-with-data-and-a-resource-fork-loses/desc.md) | 7 | archives | open |
+| 4 | [winget: re-point the open PR #426090 to the current release (072 audit)?](items/winget-repoint-pr-426090-decision/desc.md) | 4 | build-release | open |
+| 5 | [Frozen code-page plug-in services: add wide/UTF-8 variants or keep them (B-5)?](items/plugin-ansi-services-interface-decision/desc.md) | 3 | plugin-api | open |
+| 6 | [Ship the Network plug-in (nethood) enabled?](items/decide-ship-network-plugin-nethood/desc.md) | 3 | other-plugins | open |
+| 7 | [A .gz file whose stored name is too long for Windows: refuse it or use the archive name](items/a-gz-file-whose-stored-name-is-too-long-for-windows-refuse/desc.md) | 3 | archives | open |
+| 8 | [Archive Update: how to tell a member rewritten with the same size and time](items/archive-update-same-stamp-member-decision/desc.md) | 3 | archives | open |
+| 9 | [FTP: should the plug-in ask a server whether it speaks UTF-8 (FEAT)?](items/ftp-ask-server-utf8-feat-decision/desc.md) | 3 | ftp | open |
+| 10 | [State a deliberate minimum Windows version in the program and installer?](items/decide-windows-version-floor/desc.md) | 2 | build-release | open |
+| 11 | [SFTP: a recursive Change Attributes gives one mode to files and folders alike](items/decide-sftp-recursive-change-attributes-modes/desc.md) | 5 | sftp | open |
+| 12 | [PE Viewer: write the dump as UTF-8 with a BOM?](items/decide-peviewer-dump-utf8-with-bom/desc.md) | 2 | other-plugins | open |
+| 13 | [checkver plug-in still checks Open Salamander's site: redirect it or drop it](items/checkver-update-channel-decision/desc.md) | 2 | other-plugins | open |
+| 14 | [Forced Disk Map unload in a shell command: cancel the shell window or terminate](items/forced-disk-map-unload-in-a-shell-command-cancel-the-shell/desc.md) | 2 | other-plugins | open |
+| 15 | [FTP: a path whose escaped form does not fit MAX_PATH is left half-escaped](items/ftp-escaped-path-does-not-fit-decision/desc.md) | 2 | ftp | open |
+| 16 | [Should PRIVACY.md name the sign-in of the share list (285)?](items/should-privacy-md-name-the-sign-in-of-the-share-list-285/desc.md) | 2 | privacy-security | open |
+| 17 | [Should the program come back after a reboot or sign-in (RESTART_NO_REBOOT)?](items/restart-after-reboot-or-sign-out/desc.md) | 1 | plugin-api | open |
+| 18 | [Help > Contents ends in a Help Error box: the product ships no manual](items/help-contents-fails-no-manual-shipped/desc.md) | 4 | help-docs | open |
+| 19 | [Is the missing shell copy hook (drag out of archives into Explorer) intended?](items/copy-hook-for-drag-out-of-archives/desc.md) | 3 | archives | open |
 
 ## Person steps
 
@@ -191,83 +192,82 @@ Last triaged: 2026-10-24
 | 6 | [FTP 323 by hand: Send FTP Command during an open upload, then an upload asks before overwriting](items/ftp-323-by-hand-send-ftp-command-during-an-open-upload-then/desc.md) | ftp | open |
 | 7 | [Check feature 334 with real NRG and CCD disc images](items/check-feature-334-with-real-nrg-and-ccd-disc-images/desc.md) | archives | open |
 | 8 | [Check feature 335 with real NRG and CloneCD dumps of Video CDs and a damaged data CD](items/check-feature-335-with-real-nrg-and-clonecd-dumps-of-video/desc.md) | archives | open |
-| 9 | [Paste of a case twin from an archive and SFTP twins by hand (252)](items/paste-of-a-case-twin-from-an-archive-and-sftp-twins-by-hand/desc.md) | archives | open |
-| 10 | [Paste of a long name into its own folder: check the copy name and the too long question](items/paste-of-a-long-name-into-its-own-folder-check-the-copy-name/desc.md) | long-paths | open |
-| 11 | [ISO plug-in: a fuzzing pass over the HFS+, ISO 9660, Joliet and Rock Ridge readers](items/iso-plug-in-a-fuzzing-pass-over-the-hfs-iso-9660-joliet-and/desc.md) | other-plugins | open |
-| 12 | [Check network drive names and disconnected icons with a real SMB server](items/check-network-drive-names-and-disconnected-icons-with-a-real/desc.md) | panels-ui | open |
-| 13 | [Judge the quick-search tint on a real screen and try Shift and Alt keys](items/judge-the-quick-search-tint-on-a-real-screen-and-try-shift/desc.md) | panels-ui | open |
-| 14 | [Backlog loop: Ctrl+C in Git Bash and the first real usage limit](items/backlog-loop-person-checks/desc.md) | tooling | open |
-| 15 | [Check that Change Attributes refuses to encrypt or decrypt a junction (253)](items/check-that-change-attributes-refuses-to-encrypt-or-decrypt-a/desc.md) | data-safety | open |
-| 16 | [SFTP drop folder on a real upload-only service and an ACL on a replaced file (258)](items/sftp-drop-folder-on-a-real-upload-only-service-and-an-acl-on/desc.md) | sftp | open |
-| 17 | [Check that Change Attributes refuses to encrypt or decrypt a file symbolic link (272)](items/check-change-attributes-refuses-encrypting-a-file-link/desc.md) | data-safety | open |
-| 18 | [Confirm a network location with a long target is refused in Browse](items/confirm-a-network-location-with-a-long-target-is-refused-in/desc.md) | long-paths | open |
-| 19 | [FTP 288 on real servers: names to a code-page server, mainframe listings](items/ftp-288-real-server-checks/desc.md) | ftp | open |
-| 20 | [SFTP: a folder uploaded again into a real upload-only service (279)](items/sftp-a-folder-uploaded-again-into-a-real-upload-only-service/desc.md) | sftp | open |
-| 21 | [User Menu from Find results in folders of 260 or more bytes driven by a person](items/user-menu-from-find-results-in-folders-of-260-or-more-bytes/desc.md) | long-paths | open |
-| 22 | [Check a volume label with accented letters written by Drive Information (300)](items/check-a-volume-label-with-accented-letters-written-by-drive/desc.md) | encoding | open |
-| 23 | [Check the plug-in folder picker with a long-target network location](items/check-the-plug-in-folder-picker-with-a-long-target-network/desc.md) | other-plugins | open |
-| 24 | [Check a drop onto a long-target shortcut and Browse on a long network location](items/check-a-drop-onto-a-long-target-shortcut-and-browse-on-a/desc.md) | long-paths | open |
-| 25 | [Check ISO Rock Ridge names in a Shift-JIS image on a Japanese-locale Windows](items/check-iso-rock-ridge-names-in-a-shift-jis-image-on-a/desc.md) | archives | open |
-| 26 | [Disk Map closing with its menu or a shell confirmation open, with a real mouse](items/diskmap-close-real-mouse-rows/desc.md) | other-plugins | open |
-| 27 | [Viewer Copy to File onto a file held open, on a FAT stick or a network share](items/viewer-copy-to-file-on-fat-or-share/desc.md) | data-safety | open |
-| 28 | [Check Ctrl+X ghosting and User Menu compare names with case twins](items/check-ctrl-x-ghosting-and-user-menu-compare-names-with-case/desc.md) | panels-ui | open |
-| 29 | [Confirm reconnecting a remembered drive on a password-protected share (feature 264)](items/confirm-reconnecting-a-remembered-drive-on-a-password/desc.md) | encoding | open |
-| 30 | [On-screen check of the Code Viewer conversion tables (feature 262)](items/on-screen-check-of-the-code-viewer-conversion-tables-feature/desc.md) | other-plugins | open |
-| 31 | [Popup menu hot keys by hand: Russian layout, DBCS and UTF-8 systems, TortoiseSVN](items/popup-hot-keys-real-keyboard-256/desc.md) | panels-ui | open |
-| 32 | [Registry Editor Find: confirm quoted hex letters with a UTF-8 code page](items/regedit-find-hex-utf8-code-page-check-257/desc.md) | other-plugins | open |
-| 33 | [Check drive labels and folder type names outside the code page on real hardware (289)](items/check-drive-labels-and-folder-type-names-outside-the-code/desc.md) | encoding | open |
-| 34 | [FTP 277 on real servers: long PWD paths, AS/400 member names, case-insensitive lock](items/ftp-277-real-server-checks/desc.md) | ftp | open |
-| 35 | [Registry Editor Find: confirm a regexp finds the end of a non-ASCII text on UTF-8](items/registry-editor-find-confirm-a-regexp-finds-the-end-of-a-non/desc.md) | other-plugins | open |
-| 36 | [Share list sign-in (285) by hand: the real Windows dialog on a server that refuses the list](items/share-list-sign-in-285-by-hand-the-real-windows-dialog-on-a/desc.md) | panels-ui | open |
-| 37 | [Check Copy UNC Path on a subst drive with a long non-ASCII target](items/check-copy-full-path-as-unc-on-a-subst-drive-with-a-long-non/desc.md) | long-paths | open |
-| 38 | [Typed check of the Find Containing and viewer Find refusals (feature 311)](items/typed-check-of-the-find-containing-and-viewer-find-refusals/desc.md) | long-paths | open |
-| 39 | [Tabs 312: real keyboard in both key modes and the Tabs page in eight languages](items/tabs-312-real-keyboard-and-eight-languages/desc.md) | panels-ui | open |
-| 40 | [Check the Markdown Viewer Page Width submenu on a real screen and in eight languages](items/check-the-markdown-viewer-page-width-submenu-on-a-real/desc.md) | other-plugins | open |
-| 41 | [Check the Undelete same-partition warning for a target in an accented mount folder](items/check-the-undelete-same-partition-warning-for-a-target-in-an/desc.md) | other-plugins | open |
-| 42 | [Check feature 332 with a Mac-made HFS+ disc image](items/check-feature-332-with-a-mac-made-hfs-disc-image/desc.md) | archives | open |
-| 43 | [Email files on a tree with an unreadable deep folder, with a mail client](items/email-files-deep-folder-with-mapi-client/desc.md) | long-paths | open |
-| 44 | [Plug-in messages of feature 130 not driven (SFTP, Renamer, DiskMap, ...)](items/plugin-mixed-template-rows-130/desc.md) | other-plugins | open |
-| 45 | [User Menu from the Find window driven by a person](items/user-menu-find-route-person/desc.md) | panels-ui | open |
-| 46 | [Real file server rows: shares, other-script names, refused list, SMB timing](items/real-file-server-person-rows/desc.md) | panels-ui | open |
-| 47 | [Delete of a cloud placeholder past 780 characters (OneDrive)](items/cloud-placeholder-deep-path-onedrive/desc.md) | data-safety | open |
-| 48 | [UNC "Checking path" wait window: real Esc / Close, then an immediate exit](items/unc-wait-window-esc-and-exit/desc.md) | panels-ui | open |
-| 49 | [Clipboard and real-screen rows of 124 and 127 (Registry Editor, messages)](items/clipboard-and-screen-rows-124-127/desc.md) | encoding | open |
-| 50 | [Real mouse double-click on a shortcut to an accented folder (GitHub #8)](items/shortcut-accented-folder-double-click/desc.md) | panels-ui | open |
-| 51 | [Start the 0.1.10 build on Windows 7 SP1 / Server 2008 R2 SP1 (GitHub #6)](items/windows-7-start-of-release-build/desc.md) | build-release | open |
-| 52 | [Accented archive edits and long archive paths: rows the probes could not drive](items/archive-edit-and-long-path-rows-owed-to-person/desc.md) | archives | open |
-| 53 | [Submit the current release to winget once PR #426090 has settled](items/winget-submit-release-after-pr-426090/desc.md) | build-release | blocked |
-| 54 | [On-screen sweep of 084 archivers: run the ready probes, then a visual pass](items/onscreen-sweep-084-archivers/desc.md) | archives | open |
-| 55 | [On-screen sweep of 068/069: F1-F8, W1-W20 in cs and hu, V-01 to V-24, G7](items/onscreen-sweep-069-encoding-w-and-v-rows/desc.md) | encoding | open |
-| 56 | [On-screen pass of 075 (small hardening): scenarios S1-S5 and gate G6](items/onscreen-pass-075-small-hardening/desc.md) | viewer | open |
-| 57 | [On-screen pass of the Code Viewer: 070 quickstart scenarios and 074 gutter steps](items/onscreen-pass-codeview-070-074/desc.md) | viewer | open |
-| 58 | [On-screen pass of 081: Markdown Viewer on the shared WebView2 host, sections A-D](items/onscreen-pass-081-mdview-shared-host/desc.md) | webview | open |
-| 59 | [Panel tabs (078) by hand on the Release build, and the 88-byte leak watch](items/panel-tabs-078-release-pass-and-leak-watch/desc.md) | panels-ui | open |
-| 60 | [Privacy fixes of 085 on screen: checks G1-G6](items/privacy-085-gui-checks-g1-g6/desc.md) | privacy-security | open |
-| 61 | [Encrypted ZIP and SFTP passwords by hand: AES round trip, accented passwords](items/zip-sftp-passwords-real-keyboard-086-094/desc.md) | archives | open |
-| 62 | [RAR reading and 7-Zip plug-in by hand: associations, WinRAR (087, 089)](items/rar-and-7zip-checks-087-089/desc.md) | archives | open |
-| 63 | [Closing for a real update: elevated installer, sign-out, open plug-in windows](items/update-close-real-installer-signout-080-088-118/desc.md) | plugin-api | open |
-| 64 | [FTP against real servers: anonymous login, non-ASCII password, SOCKS 5 proxy](items/ftp-real-server-checks-090-116-121/desc.md) | ftp | open |
-| 65 | [Name identity of 092 by hand: accented names that differ only in case](items/name-identity-checks-092/desc.md) | data-safety | open |
-| 66 | [New texts on screen in a translation: Archive Update (153), refusals (155)](items/dialog-texts-on-screen-153-155/desc.md) | translations | open |
-| 67 | [New version check (123): design, real keyboard and mouse, screen reader](items/new-version-check-123-person-steps/desc.md) | panels-ui | open |
-| 68 | [Paste, drag and drop and mouse-only routes by hand (099, 101, 107, 119, 121)](items/clipboard-drag-mouse-routes-099-101-107-119-121/desc.md) | data-safety | open |
-| 69 | [Clean-machine start: the installer on Windows without the Visual C++ runtime](items/clean-machine-start-077/desc.md) | build-release | open |
-| 70 | [Same-file guards on macOS / Samba and case-sensitive shares, snapshots, FAT](items/shares-snapshots-fat-same-folder-guards/desc.md) | data-safety | open |
-| 71 | [Undelete on a mount point with an accented name (admin) and real EFS backups](items/undelete-mount-points-and-efs-114-115/desc.md) | other-plugins | open |
-| 72 | [GitHub housekeeping: real run of the Node 24 workflows, vulnerability reporting](items/github-repo-housekeeping-091-083/desc.md) | build-release | open |
-| 73 | [Antivirus reputation: Avast Whitelisting registration and a FAQ page](items/antivirus-reputation-avast-faq/desc.md) | build-release | open |
-| 74 | [PictView: check the Exif information menu item is offered only for photos with Exif](items/pictview-check-the-exif-information-menu-item-is-offered/desc.md) | pictview | open |
-| 75 | [Information line of a long-named item: check it on screen (276)](items/information-line-of-a-long-named-item-check-it-on-screen-276/desc.md) | panels-ui | open |
-| 76 | [Share root way up (284) by hand: drop onto .., a real server, Esc in the wait](items/share-root-up-284-person-rows/desc.md) | panels-ui | open |
-| 77 | [Quick search ignoring accents: check with a real keyboard](items/quick-search-ignoring-accents-check-with-a-real-keyboard/desc.md) | panels-ui | open |
-| 78 | [Answer GitHub issue #9 (paste fails in a folder with an exclamation mark)](items/answer-github-issue-9-paste-fails-in-a-folder-with-an/desc.md) | file-ops | open |
+| 9 | [Check feature 339 with a Mac-made HFS+ image holding compressed files](items/check-feature-339-with-a-mac-made-hfs-image-holding/desc.md) | archives | open |
+| 10 | [Paste of a case twin from an archive and SFTP twins by hand (252)](items/paste-of-a-case-twin-from-an-archive-and-sftp-twins-by-hand/desc.md) | archives | open |
+| 11 | [Paste of a long name into its own folder: check the copy name and the too long question](items/paste-of-a-long-name-into-its-own-folder-check-the-copy-name/desc.md) | long-paths | open |
+| 12 | [ISO plug-in: a fuzzing pass over the HFS+, ISO 9660, Joliet and Rock Ridge readers](items/iso-plug-in-a-fuzzing-pass-over-the-hfs-iso-9660-joliet-and/desc.md) | other-plugins | open |
+| 13 | [Check network drive names and disconnected icons with a real SMB server](items/check-network-drive-names-and-disconnected-icons-with-a-real/desc.md) | panels-ui | open |
+| 14 | [Judge the quick-search tint on a real screen and try Shift and Alt keys](items/judge-the-quick-search-tint-on-a-real-screen-and-try-shift/desc.md) | panels-ui | open |
+| 15 | [Backlog loop: Ctrl+C in Git Bash and the first real usage limit](items/backlog-loop-person-checks/desc.md) | tooling | open |
+| 16 | [Check that Change Attributes refuses to encrypt or decrypt a junction (253)](items/check-that-change-attributes-refuses-to-encrypt-or-decrypt-a/desc.md) | data-safety | open |
+| 17 | [SFTP drop folder on a real upload-only service and an ACL on a replaced file (258)](items/sftp-drop-folder-on-a-real-upload-only-service-and-an-acl-on/desc.md) | sftp | open |
+| 18 | [Check that Change Attributes refuses to encrypt or decrypt a file symbolic link (272)](items/check-change-attributes-refuses-encrypting-a-file-link/desc.md) | data-safety | open |
+| 19 | [Confirm a network location with a long target is refused in Browse](items/confirm-a-network-location-with-a-long-target-is-refused-in/desc.md) | long-paths | open |
+| 20 | [FTP 288 on real servers: names to a code-page server, mainframe listings](items/ftp-288-real-server-checks/desc.md) | ftp | open |
+| 21 | [SFTP: a folder uploaded again into a real upload-only service (279)](items/sftp-a-folder-uploaded-again-into-a-real-upload-only-service/desc.md) | sftp | open |
+| 22 | [User Menu from Find results in folders of 260 or more bytes driven by a person](items/user-menu-from-find-results-in-folders-of-260-or-more-bytes/desc.md) | long-paths | open |
+| 23 | [Check a volume label with accented letters written by Drive Information (300)](items/check-a-volume-label-with-accented-letters-written-by-drive/desc.md) | encoding | open |
+| 24 | [Check the plug-in folder picker with a long-target network location](items/check-the-plug-in-folder-picker-with-a-long-target-network/desc.md) | other-plugins | open |
+| 25 | [Check a drop onto a long-target shortcut and Browse on a long network location](items/check-a-drop-onto-a-long-target-shortcut-and-browse-on-a/desc.md) | long-paths | open |
+| 26 | [Check ISO Rock Ridge names in a Shift-JIS image on a Japanese-locale Windows](items/check-iso-rock-ridge-names-in-a-shift-jis-image-on-a/desc.md) | archives | open |
+| 27 | [Disk Map closing with its menu or a shell confirmation open, with a real mouse](items/diskmap-close-real-mouse-rows/desc.md) | other-plugins | open |
+| 28 | [Viewer Copy to File onto a file held open, on a FAT stick or a network share](items/viewer-copy-to-file-on-fat-or-share/desc.md) | data-safety | open |
+| 29 | [Check Ctrl+X ghosting and User Menu compare names with case twins](items/check-ctrl-x-ghosting-and-user-menu-compare-names-with-case/desc.md) | panels-ui | open |
+| 30 | [Confirm reconnecting a remembered drive on a password-protected share (feature 264)](items/confirm-reconnecting-a-remembered-drive-on-a-password/desc.md) | encoding | open |
+| 31 | [On-screen check of the Code Viewer conversion tables (feature 262)](items/on-screen-check-of-the-code-viewer-conversion-tables-feature/desc.md) | other-plugins | open |
+| 32 | [Popup menu hot keys by hand: Russian layout, DBCS and UTF-8 systems, TortoiseSVN](items/popup-hot-keys-real-keyboard-256/desc.md) | panels-ui | open |
+| 33 | [Registry Editor Find: confirm quoted hex letters with a UTF-8 code page](items/regedit-find-hex-utf8-code-page-check-257/desc.md) | other-plugins | open |
+| 34 | [Check drive labels and folder type names outside the code page on real hardware (289)](items/check-drive-labels-and-folder-type-names-outside-the-code/desc.md) | encoding | open |
+| 35 | [FTP 277 on real servers: long PWD paths, AS/400 member names, case-insensitive lock](items/ftp-277-real-server-checks/desc.md) | ftp | open |
+| 36 | [Registry Editor Find: confirm a regexp finds the end of a non-ASCII text on UTF-8](items/registry-editor-find-confirm-a-regexp-finds-the-end-of-a-non/desc.md) | other-plugins | open |
+| 37 | [Share list sign-in (285) by hand: the real Windows dialog on a server that refuses the list](items/share-list-sign-in-285-by-hand-the-real-windows-dialog-on-a/desc.md) | panels-ui | open |
+| 38 | [Check Copy UNC Path on a subst drive with a long non-ASCII target](items/check-copy-full-path-as-unc-on-a-subst-drive-with-a-long-non/desc.md) | long-paths | open |
+| 39 | [Typed check of the Find Containing and viewer Find refusals (feature 311)](items/typed-check-of-the-find-containing-and-viewer-find-refusals/desc.md) | long-paths | open |
+| 40 | [Tabs 312: real keyboard in both key modes and the Tabs page in eight languages](items/tabs-312-real-keyboard-and-eight-languages/desc.md) | panels-ui | open |
+| 41 | [Check the Markdown Viewer Page Width submenu on a real screen and in eight languages](items/check-the-markdown-viewer-page-width-submenu-on-a-real/desc.md) | other-plugins | open |
+| 42 | [Check the Undelete same-partition warning for a target in an accented mount folder](items/check-the-undelete-same-partition-warning-for-a-target-in-an/desc.md) | other-plugins | open |
+| 43 | [Check feature 332 with a Mac-made HFS+ disc image](items/check-feature-332-with-a-mac-made-hfs-disc-image/desc.md) | archives | open |
+| 44 | [Email files on a tree with an unreadable deep folder, with a mail client](items/email-files-deep-folder-with-mapi-client/desc.md) | long-paths | open |
+| 45 | [Plug-in messages of feature 130 not driven (SFTP, Renamer, DiskMap, ...)](items/plugin-mixed-template-rows-130/desc.md) | other-plugins | open |
+| 46 | [User Menu from the Find window driven by a person](items/user-menu-find-route-person/desc.md) | panels-ui | open |
+| 47 | [Real file server rows: shares, other-script names, refused list, SMB timing](items/real-file-server-person-rows/desc.md) | panels-ui | open |
+| 48 | [Delete of a cloud placeholder past 780 characters (OneDrive)](items/cloud-placeholder-deep-path-onedrive/desc.md) | data-safety | open |
+| 49 | [UNC "Checking path" wait window: real Esc / Close, then an immediate exit](items/unc-wait-window-esc-and-exit/desc.md) | panels-ui | open |
+| 50 | [Clipboard and real-screen rows of 124 and 127 (Registry Editor, messages)](items/clipboard-and-screen-rows-124-127/desc.md) | encoding | open |
+| 51 | [Real mouse double-click on a shortcut to an accented folder (GitHub #8)](items/shortcut-accented-folder-double-click/desc.md) | panels-ui | open |
+| 52 | [Start the 0.1.10 build on Windows 7 SP1 / Server 2008 R2 SP1 (GitHub #6)](items/windows-7-start-of-release-build/desc.md) | build-release | open |
+| 53 | [Accented archive edits and long archive paths: rows the probes could not drive](items/archive-edit-and-long-path-rows-owed-to-person/desc.md) | archives | open |
+| 54 | [Submit the current release to winget once PR #426090 has settled](items/winget-submit-release-after-pr-426090/desc.md) | build-release | blocked |
+| 55 | [On-screen sweep of 084 archivers: run the ready probes, then a visual pass](items/onscreen-sweep-084-archivers/desc.md) | archives | open |
+| 56 | [On-screen sweep of 068/069: F1-F8, W1-W20 in cs and hu, V-01 to V-24, G7](items/onscreen-sweep-069-encoding-w-and-v-rows/desc.md) | encoding | open |
+| 57 | [On-screen pass of 075 (small hardening): scenarios S1-S5 and gate G6](items/onscreen-pass-075-small-hardening/desc.md) | viewer | open |
+| 58 | [On-screen pass of the Code Viewer: 070 quickstart scenarios and 074 gutter steps](items/onscreen-pass-codeview-070-074/desc.md) | viewer | open |
+| 59 | [On-screen pass of 081: Markdown Viewer on the shared WebView2 host, sections A-D](items/onscreen-pass-081-mdview-shared-host/desc.md) | webview | open |
+| 60 | [Panel tabs (078) by hand on the Release build, and the 88-byte leak watch](items/panel-tabs-078-release-pass-and-leak-watch/desc.md) | panels-ui | open |
+| 61 | [Privacy fixes of 085 on screen: checks G1-G6](items/privacy-085-gui-checks-g1-g6/desc.md) | privacy-security | open |
+| 62 | [Encrypted ZIP and SFTP passwords by hand: AES round trip, accented passwords](items/zip-sftp-passwords-real-keyboard-086-094/desc.md) | archives | open |
+| 63 | [RAR reading and 7-Zip plug-in by hand: associations, WinRAR (087, 089)](items/rar-and-7zip-checks-087-089/desc.md) | archives | open |
+| 64 | [Closing for a real update: elevated installer, sign-out, open plug-in windows](items/update-close-real-installer-signout-080-088-118/desc.md) | plugin-api | open |
+| 65 | [FTP against real servers: anonymous login, non-ASCII password, SOCKS 5 proxy](items/ftp-real-server-checks-090-116-121/desc.md) | ftp | open |
+| 66 | [Name identity of 092 by hand: accented names that differ only in case](items/name-identity-checks-092/desc.md) | data-safety | open |
+| 67 | [New texts on screen in a translation: Archive Update (153), refusals (155)](items/dialog-texts-on-screen-153-155/desc.md) | translations | open |
+| 68 | [New version check (123): design, real keyboard and mouse, screen reader](items/new-version-check-123-person-steps/desc.md) | panels-ui | open |
+| 69 | [Paste, drag and drop and mouse-only routes by hand (099, 101, 107, 119, 121)](items/clipboard-drag-mouse-routes-099-101-107-119-121/desc.md) | data-safety | open |
+| 70 | [Clean-machine start: the installer on Windows without the Visual C++ runtime](items/clean-machine-start-077/desc.md) | build-release | open |
+| 71 | [Same-file guards on macOS / Samba and case-sensitive shares, snapshots, FAT](items/shares-snapshots-fat-same-folder-guards/desc.md) | data-safety | open |
+| 72 | [Undelete on a mount point with an accented name (admin) and real EFS backups](items/undelete-mount-points-and-efs-114-115/desc.md) | other-plugins | open |
+| 73 | [GitHub housekeeping: real run of the Node 24 workflows, vulnerability reporting](items/github-repo-housekeeping-091-083/desc.md) | build-release | open |
+| 74 | [Antivirus reputation: Avast Whitelisting registration and a FAQ page](items/antivirus-reputation-avast-faq/desc.md) | build-release | open |
+| 75 | [PictView: check the Exif information menu item is offered only for photos with Exif](items/pictview-check-the-exif-information-menu-item-is-offered/desc.md) | pictview | open |
+| 76 | [Information line of a long-named item: check it on screen (276)](items/information-line-of-a-long-named-item-check-it-on-screen-276/desc.md) | panels-ui | open |
+| 77 | [Share root way up (284) by hand: drop onto .., a real server, Esc in the wait](items/share-root-up-284-person-rows/desc.md) | panels-ui | open |
+| 78 | [Quick search ignoring accents: check with a real keyboard](items/quick-search-ignoring-accents-check-with-a-real-keyboard/desc.md) | panels-ui | open |
+| 79 | [Answer GitHub issue #9 (paste fails in a folder with an exclamation mark)](items/answer-github-issue-9-paste-fails-in-a-folder-with-an/desc.md) | file-ops | open |
 
 ## Inbox
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
-| [Check feature 339 with a Mac-made HFS+ image holding compressed files](items/check-feature-339-with-a-mac-made-hfs-image-holding/desc.md) | person-step | 6 | archives | leftover:339 | 2026-10-24 |
-| [ISO plug-in: HFS+ resource forks beside file data are dropped by Unpack](items/iso-plug-in-an-hfs-file-with-data-and-a-resource-fork-loses/desc.md) | decision | 5 | archives | measure:339 | 2026-10-24 |
 
 ## Parked
 

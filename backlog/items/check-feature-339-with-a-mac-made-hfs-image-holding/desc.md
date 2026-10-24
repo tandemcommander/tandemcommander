@@ -1,7 +1,7 @@
 ---
 title: Check feature 339 with a Mac-made HFS+ image holding compressed files
 type: person-step
-status: new
+status: open
 severity: 6
 area: archives
 source: leftover:339
@@ -59,3 +59,4 @@ kept; ordinary files extract with their content.
 
 - 2026-10-24 — created (source leftover:339)
 - 2026-10-24 — set related=check-feature-332-with-a-mac-made-hfs-disc-image
+- 2026-10-24 — moved to Person steps position 9
