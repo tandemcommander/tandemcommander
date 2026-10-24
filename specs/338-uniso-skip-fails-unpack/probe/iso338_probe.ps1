@@ -31,7 +31,13 @@
                  whose sole loss is a silent read error (the readers' rule alone)
       D-SKIP     plain.iso into a target holding a FILE zlast: the folder cannot be created, the boxes
                  answered Skip / OK: side, top, tou extracted (zlast stays the user's file), the image KEPT
-    Before 338 every row but OK / O-YES deleted the image. Every row also fails on a program exit, a
+      (review 1) REUNPACK  (control) every target file already exists (the user's), the overwrite question
+                 answered All: every file replaced, the image DELETED - the one control in which the set of
+                 written files is asked about files that are not in it
+      HARDLINK   the user's top.txt and tou.txt are two names of one file, answered All: writing tou.txt
+                 overwrites the top.txt just written (top.txt = TOU), the image KEPT (identity, not names)
+      TWINS-ALL  twins.iso answered All: the image KEPT
+    Before 338 every row but OK / O-YES / REUNPACK deleted the image. Every row also fails on a program exit, a
     bug report, a fatal window, or a main window that does not answer within 30 s (End-Row). The
     "File Overwrite" confirmation is switched on for the run (restored with the registry).
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -187,6 +193,13 @@ try {
     Unpack-Row 'TWINS' "$s\twins.iso" $twins @(6) 'Confirm File Overwrite|top\.txt' 1 -Kept
     Unpack-Row 'R-SILENT' "$s\readerrz.iso" $noZ2 @(185) 'Confirm File Overwrite|top\.txt' 1 -Kept -Prep $userTop
     Unpack-Row 'D-SKIP' "$s\plain.iso" $noZ @(173, 1) '.' -1 -Kept -Prep { param($t) WriteFile ($t + '\zlast') 'F' }
+    # review 1's rows
+    $userAll = { param($t) WriteFile ($t + '\top.txt') 'O1'; WriteFile ($t + '\tou.txt') 'O2'; NewDir ($t + '\a'); WriteFile ($t + '\a\side.txt') 'O3'; NewDir ($t + '\zlast'); WriteFile ($t + '\zlast\z.txt') 'O4' }
+    Unpack-Row 'REUNPACK' "$s\plain.iso" $all @(185) 'Confirm File Overwrite|top\.txt' 1 -Prep $userAll
+    $hl = [ordered]@{ 'a/side.txt' = 'SIDE'; 'top.txt' = 'TOU'; 'tou.txt' = 'TOU'; 'zlast/z.txt' = 'Z' }
+    $userHl = { param($t) WriteFile ($t + '\top.txt') 'OLD'; & cmd.exe /c "mklink /H `"$t\tou.txt`" `"$t\top.txt`" >nul" }
+    Unpack-Row 'HARDLINK' "$s\plain.iso" $hl @(185) 'Confirm File Overwrite|top\.txt' 1 -Kept -Prep $userHl
+    Unpack-Row 'TWINS-ALL' "$s\twins.iso" $twins @(185) 'Confirm File Overwrite|top\.txt' 1 -Kept
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

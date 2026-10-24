@@ -88,9 +88,11 @@ inline BOOL SalIsoWholeUnpackSucceeded(const CSalIsoWholeUnpackTally& t, BOOL li
     return !t.Cancelled && !t.NotWhole && !t.WroteOverOwn && !listingLeftOut;
 }
 
-// The files a whole unpack wrote, by the file system's identity (the SalFileIdMatch order: the 128-bit id
-// where usable, else volume serial + 64-bit index). A key of the other kind can also match (a 64-bit index
-// equal under different 128-bit ids) - that only keeps an image (fails closed).
+// The files a whole unpack wrote, by the file system's identity: every usable key of a file is kept - the
+// 128-bit id (volume serial + FileIdInfo id) and the 64-bit one (volume serial + file index) - and a match
+// on EITHER counts as the same file. That is looser than SalFileIdMatch (which compares only the 128-bit
+// ids when both have them): two files whose 64-bit indexes collide (possible on ReFS) count as one, which
+// only keeps an image (fails closed); it never lets one written over pass.
 class CSalIsoWrittenFiles
 {
 public:

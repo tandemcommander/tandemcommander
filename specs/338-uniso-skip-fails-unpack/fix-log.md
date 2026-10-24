@@ -71,3 +71,38 @@ See spec *Clarifications* and research R1-R5.
   their closing).
 - After clang-format: `.\build.cmd` BUILD SUCCEEDED, saltests 28,740 / 0; `git diff main -- *.rc *.rc2 *.rh`
   empty (FR-005).
+
+## Review
+
+### Review 1 (refute-first, foreground agent)
+
+No MUST. The reviewer rebuilt and re-ran: build OK, saltests 28,740 / 0, encoding 0; its probe copy with three
+added rows PASS 24 / 0 on HEAD; negative control - a worktree at main (0cec8e25) with only `uniso.spl`
+rebuilt into a copy of the build - PASS 15 / FAIL 9 (every row that wants the image kept fails; OK / O-YES /
+REUNPACK pass on both). Callers enumerated: the core deletes only after `CPluginData::UnpackWholeArchive`
+succeeds (`fileswn7.cpp`, on failure only empty new folders removed); `ExtractAllItems` has one caller;
+Copy (`UnpackArchive`) still stops only on Cancel; `UnpackOneFile` now FALSE where a silent read error left
+the file missing. Tree left clean, registry restored, no backup left.
+
+- SHOULD 1 (HFS+ compressed / resource-fork-only files written empty and counted as done) - outside this
+  item (the reader cannot extract them at all) -> Inbox `iso-plug-in-an-hfs-file-whose-data-is-compressed-or-only-in`.
+- SHOULD 2 (ISO 9660 multi-extent files over 4 GiB; the twin check now keeps the image, the extracted file is
+  still wrong) - pre-existing -> Inbox `iso-plug-in-an-iso-9660-file-over-4-gib-stored-in-several`.
+- NOTE identity matching looser than the header said (either key matches; fails closed) - header comment
+  corrected in `salisounpack.h`.
+- NOTE an 8.3 short-name clash can count as "written over" (the core moves the other file aside) - fails
+  closed, accepted.
+- NOTE the mask does not apply to folders - a folder that cannot be created fails the unpack also when it
+  holds no matching file - fails closed, accepted.
+- NOTE the new HFS+ non-file-record box is practically unreachable (the listing adds only file records as
+  files) - kept as a guard; an existing text, no new string.
+- NOTE pre-existing: Cancel in "Error Creating Directory" does not stop a whole unpack -> Inbox
+  `iso-plug-in-cancel-in-the-error-creating-directory-box-does`; UDF leaves a part file when a track does not
+  open -> Inbox `iso-plug-in-a-udf-file-whose-track-does-not-open-is-left`.
+- NOTE only the ISO 9660 reader is driven by the probe; UDF / Xbox / raw / HFS+ changes checked by reading
+  (one line each).
+- The reviewer's rows REUNPACK (the one control in which the written set is asked about other files),
+  HARDLINK (two user names of one file - identity, not names) and TWINS-ALL ported into `iso338_probe.ps1`.
+
+After: `.\build.cmd` BUILD SUCCEEDED, saltests 28,740 / 0; `probe/result_after_review1.txt` **PASS 24, FAIL 0**
+(12 RUN rows), registry restored + identical.

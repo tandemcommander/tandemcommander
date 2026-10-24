@@ -264,6 +264,10 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a UDF file whose track does not open is left partly written in the target](items/iso-plug-in-a-udf-file-whose-track-does-not-open-is-left/desc.md) | bug | 3 | archives | review:338 | 2026-10-24 |
+| [ISO plug-in: an HFS+ file whose data is compressed or only in its resource fork extracts empty](items/iso-plug-in-an-hfs-file-whose-data-is-compressed-or-only-in/desc.md) | bug | 7 | archives | review:338 | 2026-10-24 |
+| [ISO plug-in: an ISO 9660 file over 4 GiB stored in several extents extracts wrong](items/iso-plug-in-an-iso-9660-file-over-4-gib-stored-in-several/desc.md) | bug | 5 | archives | review:338 | 2026-10-24 |
+| [ISO plug-in: Cancel in the Error Creating Directory box does not stop a whole unpack](items/iso-plug-in-cancel-in-the-error-creating-directory-box-does/desc.md) | bug | 3 | archives | review:338 | 2026-10-24 |
 
 ## Parked
 
