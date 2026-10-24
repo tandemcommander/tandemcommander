@@ -135,7 +135,9 @@ and unpacked as before; a whole Unpack with "Delete archive after unpacking" del
 
 - **SC-001**: The probe's five damaged-count rows (S-OVER, S-OVER1000, S-EXTRA, S-NEG, S-NEGEND) pass
   where four stopped the program and one lost a file before (FAIL 9 -> 0); the two controls stay PASS.
-- **SC-002**: Feature 334's and 335's probes give the same results as before this feature.
+- **SC-002**: Feature 334's and 335's probes (all their images' counts fit) give the results the features
+  after them recorded: 334 23 / 1 (S-RAW, changed by 335), 335 28 / 4 (four Form 2 stream rows changed by
+  336) - no row changed by this feature.
 - **SC-003**: The new pure rule's checks pass in saltests, and a mutant that drops the bound fails them.
 
 ## Assumptions

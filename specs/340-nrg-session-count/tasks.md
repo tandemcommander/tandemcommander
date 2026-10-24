@@ -34,7 +34,7 @@ description: "Tasks of feature 340 - NRG session counts bounded by the track tab
 
 **Independent Test**: rows F-FIT, F-ZERO; `iso334_probe.ps1`, `iso335_probe.ps1`.
 
-- [X] T006 [US2] Run 334's and 335's probes on the fixed build -> `specs/340-nrg-session-count/probe/regress_334.txt`, `regress_335.txt` (334: 23 / 1 with S-RAW the known FAIL; 335: 32 / 0); record in `fix-log.md`
+- [X] T006 [US2] Run 334's and 335's probes on the fixed build -> `specs/340-nrg-session-count/probe/regress_334.txt`, `regress_335.txt` (334: 23 / 1 with S-RAW the known FAIL; 335: 28 / 4 measured - M-FORM2, S-VCD, C-VCD, C-VCDREAL changed on purpose by 336, see fix-log); record in `fix-log.md`
 
 ## Phase 5: Polish
 

@@ -56,7 +56,8 @@ Backlog item `iso-plug-in-an-nrg-session-count-above-the-image-s-tracks`.
 | saltests | `saltests.exe` | `saltests: 28807 checks, 0 failed` (28,761 before -> +46) |
 | probe | `iso340_probe.ps1 -Label after` | `probe/result_after.txt` **PASS 14, FAIL 0** (before 5 / 9); registry restored, identical |
 | regression 334 | `iso334_probe.ps1 -Label regress-340` | `probe/regress_334.txt` 23 / 1 - S-RAW, 335's intended change (as 336's and 337's runs) |
-| regression 335 | `iso335_probe.ps1 -Label regress-340` | `probe/regress_335.txt` 28 / 4 - M-FORM2, S-VCD, C-VCD, C-VCDREAL: image kept where 335's rows want it deleted - 336's intended change (a Form 2 stream no file covers; 336's fix-log names the same four rows in its negative control); no other row changed |
+| regression 335 | `iso335_probe.ps1 -Label regress-340` | `probe/regress_335.txt` 28 / 4 - M-FORM2, S-VCD, C-VCD, C-VCDREAL: image kept where 335's rows want it deleted - 336's intended change (a Form 2 stream no file covers; 336's fix-log names the same four rows in its negative control); no other row changed | 
+
 | mutant A (bound removed: `return (int)declared`) | header edited, built, saltests | `28807 checks, 18 failed` |
 | mutant B (bound kept, `fits = true`: never marks) | header edited, built, saltests + probe | saltests 16 failed; `probe/result_mutant_no_mark.txt` PASS 9, FAIL 5 - S-OVER, S-OVER1000, S-EXTRA, S-NEG, S-NEGEND image DELETED: the mark is what keeps them |
 | restore | header copied back, `sha256sum -c` OK, rebuilt | saltests 28807 / 0 |
@@ -72,3 +73,8 @@ Backlog item `iso-plug-in-an-nrg-session-count-above-the-image-s-tracks`.
 - `iso-plug-in-the-image-information-of-an-nrg-image-reads-past` - `CISOImage::DumpInfo` (F3 on an image)
   reads `Session[Session.Count]` when the counts add up to fewer tracks than the image holds (by reading,
   not measured).
+- 334's and 335's images all have session counts that fit (`img334.py`: 1, 1 or 2 for two tracks, 1, 1
+  for M-EXTRA's three tracks; `img335.py`: 1, 1 or 2, and 2 for `single_short`'s three tracks in one
+  session - not the session listing): the rule returns the declared count with `fits` for each, so this
+  feature changes none of their rows; their FAILs are the recorded intended changes of 335 and 336
+  (spec SC-002 and quickstart reworded - they had claimed 335 32 / 0, its result before 336).
