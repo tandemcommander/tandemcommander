@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: a file covering part of a Form 2 stream lets the image be deleted
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:336
 who: agent
 created: 2026-10-24
 updated: 2026-10-24
-verified: -
+verified: 2026-10-24 1c43d7d8
 effort: M
-feature: -
+feature: 337
 related: [keep-video-cd-images-after-a-whole-unpack-until-their-video]
 depends-on: []
 reason: -
@@ -55,3 +55,5 @@ around them) are still deleted - feature 335's reviewer-3 images in `%TEMP%\rev3
 - 2026-10-24 — created (source review:336)
 - 2026-10-24 — severity 7: data loss in a narrow scenario (a damaged directory)
 - 2026-10-24 — moved to Next position 1
+- 2026-10-24 — verified at 1c43d7d8: still present at 1c43d7d8: iso336_probe S-VCDPART (1 of 64 stream sectors covered) and S-VCDCOV/C-VCDCOV (8 of 64) - image deleted
+- 2026-10-24 — run started, feature 337
