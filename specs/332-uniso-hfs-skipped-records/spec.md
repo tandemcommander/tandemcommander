@@ -97,7 +97,7 @@ extracted, no new message, the image deleted.
 
 - Thread records (an empty name; folder thread / file thread types) and the root folder's record
   (parent ID 1 - the volume label shown as "HFS (<label>)") are not entries: skipped, never marked.
-- A name whose first unit is U+0000 (TN1150's metadata folder "\0\0\0\0HFS+ Private Data", created by
+- A folder or file record whose name's first unit is U+0000 (TN1150's metadata folder "\0\0\0\0HFS+ Private Data", created by
   macOS on HFS+ volumes, skipped today as an empty name): not a user entry - skipped without a mark,
   so Mac-made images still unpack and are deleted when asked.
 - A folder or file record with an empty name that is not the root folder: damaged - marked.
@@ -118,8 +118,9 @@ extracted, no new message, the image deleted.
   name, its name does not convert - MUST be marked incomplete.
 - **FR-002**: An HFS+ listing that met a record of a type it does not handle (neither folder nor file,
   with a name) MUST be marked incomplete; the listing still ends at that record, as today.
-- **FR-003**: Thread records, the root folder's record (the volume label) and a record whose name
-  starts with U+0000 (HFS+ metadata) MUST stay skipped without a mark.
+- **FR-003**: Thread records, the root folder's record (the volume label) and a folder or file record
+  whose name starts with U+0000 (HFS+ metadata) MUST stay skipped without a mark. A record of a type
+  the reader does not handle whose name starts with U+0000 is skipped as today and marked (damaged).
 - **FR-004**: A whole-image unpack of a listing marked incomplete MUST extract the listed entries and
   fail, so "Delete archive after unpacking" keeps the image (feature 328's existing behaviour of the
   mark).

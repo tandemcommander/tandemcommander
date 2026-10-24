@@ -42,3 +42,10 @@ empty name, types 3 / 4), folders a / zlast, files top.txt / side.txt / z.txt.
   every Mac-made image with that folder fail to unpack).
 - An unknown record type still ends the HFS+ listing (existing behaviour) - only the mark is added.
 - No message, no UI string (as 330's silent cases).
+
+## speckit-analyze
+
+- Run 1: F1 HIGH - FR-003 exempted every U+0000-named record, data-model marks an unknown-type one
+  (fixed: FR-003 and the edge case name folder / file records); F2 LOW (covered by F1), C1 LOW (FR-005
+  "no message" has no own task - T004 adds no box, the probe checks "no window").
+- Run 2: 0 CRITICAL, 0 HIGH; F2 / C1 accepted as above.
