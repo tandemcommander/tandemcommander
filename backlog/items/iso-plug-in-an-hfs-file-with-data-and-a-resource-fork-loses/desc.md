@@ -11,7 +11,7 @@ updated: 2026-10-24
 verified: -
 effort: ?
 feature: -
-related: [iso-plug-in-an-hfs-file-whose-data-is-compressed-or-only-in]
+related: []
 depends-on: []
 reason: -
 ---
@@ -68,3 +68,4 @@ narrow (Mac-made HFS+ images), the data the user usually wants is extracted.
 
 - 2026-10-24 — created (source measure:339)
 - 2026-10-24 — set title=ISO plug-in: HFS+ resource forks beside file data are dropped by Unpack
+- 2026-10-24 — related item iso-plug-in-an-hfs-file-whose-data-is-compressed-or-only-in done in feature 339

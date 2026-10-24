@@ -82,3 +82,26 @@ Cancel box per refused file (silent after Skip all); the decision as a pure rule
 
 - `iso-plug-in-an-hfs-file-with-data-and-a-resource-fork-loses` (decision, measure:339): the resource fork of a
   file that also has data is dropped while the image is deleted.
+
+## Review
+
+- Review 1 (independent refute-first agent): no MUST. Re-ran the probe on the branch build 20 / 0; negative
+  control (uniso.spl from a3ef6e9f, the commit before the fix, own worktree and build folder) 12 / 8 - H-RSRC,
+  H-COMP, H-COMPIN, H-SKIPALL write side.txt empty and delete the image, H-FLAG writes the data fork and deletes
+  it, H-CANCEL shows no box and deletes it, H-EXIST meets an overwrite question; saltests 28,761 / 0; encoding
+  guard 0; offsets checked against `hfs.h` and TN1150; callers enumerated (whole unpack via `ExtractAllItems`,
+  Copy F5 via `UnpackArchive`, view via `UnpackOneFile` - all through `CHFS::UnpackFile`); the refusal comes
+  before `SafeFileCreate` and the buffer (327's leak item not widened).
+  - SHOULD 1: the person check with a Mac-made image had no item while T011 was ticked -> created at closing
+    (person-step, leftover:339).
+  - NOTE 1: an earlier "All" answer of the same operation (overwrite All / Skip all) also hides the new box; in
+    Copy (F5) the refused file is then missing without a word (before: copied empty) - the readers' existing
+    pattern (`iso9660.cpp`), FR-004's choice. Accepted.
+  - NOTE 2: the box shows the bare file name, no folder (existing pattern). Accepted.
+  - NOTE 3: a SHORT record would show the "compressed" text - unreachable (the 248-byte check comes first).
+    Accepted, no change.
+  - NOTE 4: file mode 0 + the flag + both forks empty extracts empty (crafted only; macOS sets the mode when it
+    compresses; TN1150's rule, unit-checked). Accepted as a limit.
+  - NOTE 5: H-EXIST proves that no overwrite question appears; the user's file was already kept by 338's rule
+    on Skip. Recorded.
+  - NOTE 6: old review worktrees of earlier features are still registered - not this feature's.

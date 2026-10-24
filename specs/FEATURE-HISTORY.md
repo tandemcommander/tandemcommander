@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4870,3 +4870,29 @@ a few early ones are out of sequence).
   R-SILENT FAIL, reviewer's main build 15 / 9); 330 30 / 0, 337 74 / 0; saltests 28,693 -> 28,740 / 0
   (`TestIsoWholeUnpack_338`; the two rules mutated fail 5); refute-first review 1: no MUST, two SHOULD (to
   Inbox), NOTEs (header comment corrected, rows ported, two pre-existing defects to Inbox).
+- 339-uniso-hfs-fork-content: an HFS+ file of a disc image whose content is not in its data fork - HFS+
+  compressed (macOS decmpfs: the data in the resource fork or in an attribute, the data fork empty) or only in
+  its resource fork (a custom icon "Icon\r", classic Mac files) - was written by the ISO plug-in as an empty file
+  counted as extracted whole; Unpack with "Delete archive after unpacking" then deleted the image with the
+  file's only content - now `SalHfsFileContentKind` (`src/common/salhfscatalog.h`) reads the file record:
+  `UF_COMPRESSED` (0x20, BSD owner flags, byte 41) when the file mode's type bits are not 0 (TN1150:
+  uninitialised BSD information, Mac OS 9) -> compressed; else an empty data fork beside a non-empty resource
+  fork -> resource fork only; `CHFS::UnpackFile` refuses such a file before it creates anything: an "Error"
+  box (`DialogError`, Skip / Skip all / Cancel) with one of two new texts (1062, 1063; silent after Skip all
+  or another "All" of the operation), `UNPACK_ERROR` / `UNPACK_CANCEL` - 338's tally fails the whole unpack,
+  the image is kept. No decompression (several methods, the attribute B-tree is not loaded). Traps: the
+  error dialog's file-name field is a `CStaticText` whose text the probe cannot read (the first after-run
+  failed only on the box regex - matched by caption and message now); a PowerShell mutant writer added a
+  second BOM (the mutants did not build - fixed the writer); a Bash here-document again collapsed a probe
+  edit's backslashes (an assert stopped it, edited with the editor). Limits: a file with a resource fork
+  beside a non-empty data fork still extracts its data fork only and the image is deleted (decision
+  `iso-plug-in-an-hfs-file-with-data-and-a-resource-fork-loses`); the listed size stays the data fork's;
+  the flag with file mode 0 and both forks empty (crafted only) extracts empty; no Mac-made image tried
+  (person step `check-feature-339-with-a-mac-made-hfs-image-holding`). From backlog item
+  `iso-plug-in-an-hfs-file-whose-data-is-compressed-or-only-in`. Probe `iso339_probe` (seed 332's
+  `mkimg332.sh`, crafted records by `img339.py`) on main 12 / 6 -> 20 / 0 (10 RUN rows; H-EXIST added by
+  analyze); reviewer's negative control (uniso.spl of the commit before the fix) 12 / 8; 332 16 / 0, 333
+  20 / 0; saltests 28,740 -> 28,761 / 0 (`TestHfsFileContent339`; mutants flag never read 5, mode check
+  dropped 3, resource rule dropped 4, byte 40 6, low size half 1); translations 2 texts x 8 languages
+  (DeepL 1,936 characters, pins cs / sk / de / es for the module's "will not be extracted"); refute-first
+  review 1: no MUST, SHOULD the Mac person step (created), NOTEs accepted.

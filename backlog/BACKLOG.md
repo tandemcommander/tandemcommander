@@ -17,7 +17,6 @@ Last triaged: 2026-10-24
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an HFS+ file whose data is compressed or only in its resource fork extracts empty](items/iso-plug-in-an-hfs-file-whose-data-is-compressed-or-only-in/desc.md) | bug | 7 | archives | 339 |
 
 ## Next
 
@@ -267,6 +266,7 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 339 with a Mac-made HFS+ image holding compressed files](items/check-feature-339-with-a-mac-made-hfs-image-holding/desc.md) | person-step | 6 | archives | leftover:339 | 2026-10-24 |
 | [ISO plug-in: HFS+ resource forks beside file data are dropped by Unpack](items/iso-plug-in-an-hfs-file-with-data-and-a-resource-fork-loses/desc.md) | decision | 5 | archives | measure:339 | 2026-10-24 |
 
 ## Parked
