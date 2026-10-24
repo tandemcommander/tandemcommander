@@ -23,6 +23,10 @@ Design (specs/247-backlog-run-loop/spec.md, contract contracts/loop-cli.md):
   while its item still holds the lock is continued in the same session
   (``--resume``) - after the reported reset of a limit, after a growing
   pause for an error, or at once after Ctrl+C.
+* ``claude -p`` stops the background tasks still running some time after
+  the last turn ended (10 minutes by default): a reviewer whose probe runs
+  longer was killed three times in 341 and the run failed.  The loop lets
+  them run BG_WAIT_CEILING_MS (CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS).
 * A run that only waits - its main thread schedules wakeups that report
   nothing changed while no background task runs (a reviewer ended without
   a report, seen in 320) - is stopped and continued in the same session
@@ -71,6 +75,7 @@ MAX_REFUSALS = 2             # runs in a row that did not take their item
 MAX_LIMITS = 10              # continuations of one run after usage limits (claude waits most out itself)
 IDLE_WAKEUPS = 2             # no-op wakeups in a row, no background task: the run waits for nothing
 MAX_NUDGES = 3               # continuations of one run after such idling
+BG_WAIT_CEILING_MS = "7200000"  # background tasks outlive the last turn this long (reviewers: about 45 min)
 KEEP_LOGS = 100
 TICK = 1.0                   # how often waits look at pause / stop
 STILL_ACTIVE = 259
@@ -210,6 +215,15 @@ def kill_tree(pid: int) -> None:
             os.killpg(os.getpgid(pid), signal.SIGKILL)
         except (ProcessLookupError, PermissionError):
             pass
+
+
+def child_env() -> dict:
+    """The environment of a claude the loop starts; a caller's own setting of a claude variable is kept."""
+    env = os.environ.copy()
+    env.pop("TANDEM_BACKLOG_NOW", None)  # a test clock would date the run's lock wrongly (review 2 N1)
+    env.setdefault("CLAUDE_CODE_RETRY_WATCHDOG", "1")
+    env.setdefault("CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS", BG_WAIT_CEILING_MS)  # a long reviewer is not killed (341)
+    return env
 
 
 def _interrupt(signum, frame):
@@ -605,9 +619,7 @@ class Loop:
                                    "--permission-mode", "bypassPermissions", *session]
         if self.args.model:
             cmd += ["--model", self.args.model]
-        env = os.environ.copy()
-        env.pop("TANDEM_BACKLOG_NOW", None)  # a test clock would date the run's lock wrongly (review 2 N1)
-        env.setdefault("CLAUDE_CODE_RETRY_WATCHDOG", "1")
+        env = child_env()
         flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
         with open(run["log"], "ab") as out, open(run["err"], "ab") as err:
             run["offset"], run["err_offset"] = out.tell(), err.tell()
@@ -974,9 +986,7 @@ class Loop:
                                    "--permission-mode", "bypassPermissions", "--session-id", str(uuid.uuid4())]
         if self.args.model:
             cmd += ["--model", self.args.model]
-        env = os.environ.copy()
-        env.pop("TANDEM_BACKLOG_NOW", None)
-        env.setdefault("CLAUDE_CODE_RETRY_WATCHDOG", "1")
+        env = child_env()
         env[TRIAGE_ENV] = str(os.getpid())
         flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
         with open(source["log"], "ab") as out, open(source["err"], "ab") as err:

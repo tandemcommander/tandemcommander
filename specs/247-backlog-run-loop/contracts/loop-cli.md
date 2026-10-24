@@ -54,7 +54,7 @@ seconds and kills its claude — a test that would hang fails instead).
    the same rule as `backlog.py next`). Nothing eligible + `--until-idle` → end (0).
 5. New run: `uuid4` session id, `run.json`, then
    `claude -p '/tandem-backlog-implement <slug>' --output-format stream-json --verbose --permission-mode bypassPermissions --session-id <uuid> [--model M]`
-   with `CLAUDE_CODE_RETRY_WATCHDOG=1` (unless set by the caller), stdin closed, the
+   with `CLAUDE_CODE_RETRY_WATCHDOG=1` and `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=7200000` (each unless set by the caller), stdin closed, the
    repository root as working directory, a new process group.
 6. When claude ends, the verdict. *The run holds the lock* when the lock names its item, was
    taken after the run started, and — once the loop has seen it — is the same lock (its

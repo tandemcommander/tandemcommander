@@ -249,6 +249,7 @@ def main():
     step = {"do": step} if isinstance(step, str) else step
     plan["calls"].append({"argv": argv, "prompt": prompt, "resume": resume, "session": SESSION, "slug": slug,
                           "step": step["do"], "watchdog": os.environ.get("CLAUDE_CODE_RETRY_WATCHDOG"),
+                          "bg_ceiling": os.environ.get("CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS"),
                           "test_clock": os.environ.get("TANDEM_BACKLOG_NOW"),
                           "triage_env": os.environ.get("TANDEM_BACKLOG_LOOP_TRIAGE"),
                           "pid": os.getpid(), "cwd": str(ROOT)})

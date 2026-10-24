@@ -359,6 +359,13 @@ with file:line and a reproduction.
   without any progress of the reviewer (no new task progress) is treated
   as a reviewer that stopped. Do not message a running reviewer for its
   status (a message restarts a finished agent from its transcript).
+- **Never end a turn on "the run continues when it reports".** In
+  `claude -p` the background tasks still running some time after the
+  last turn ended are stopped (10 minutes by default; the loop allows
+  2 hours) - in 341 a reviewer running a long probe was killed three
+  times and the run failed. While a reviewer runs, end every turn with a
+  scheduled fallback wakeup (the rule above), never with only a text that
+  waits for it.
 - A reviewer must leave the tree as it found it: its prompt says it does
   not edit files; a negative control that needs old code is done in a
   copy (`git worktree add <scratchpad>/neg-<NNN> HEAD~n` or a copy of the
