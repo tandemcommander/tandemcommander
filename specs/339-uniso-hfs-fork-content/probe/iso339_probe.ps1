@@ -27,14 +27,16 @@
     known "Cannot read sector #00000020." box (Inbox item
     iso-plug-in-a-valid-xorriso-iso-hfs-hybrid-opens-with-cannot) - not counted.
       H-OK       (control) hdh.iso: every file, no box, the image DELETED
-      H-RSRC     hdh_rsrc.iso: one box naming side.txt and the resource fork, Skip: side.txt NOT
+      H-RSRC     hdh_rsrc.iso: one box (the resource fork), Skip: side.txt NOT
                  written, the rest extracted, the image KEPT
-      H-COMP     hdh_comp.iso: one box naming side.txt as compressed, Skip: as H-RSRC
+      H-COMP     hdh_comp.iso: one box (compressed), Skip: as H-RSRC
       H-COMPIN   hdh_compin.iso: as H-COMP
       H-FLAG     hdh_flag.iso: as H-COMP (the data fork is not the content)
       H-SKIPALL  hdh_comp2.iso, the first box answered Skip all, the second file silent: side.txt and the
                  HFS+ top.txt not written, ONE box, the image KEPT
       H-CANCEL   hdh_comp.iso, the box answered Cancel: side.txt not written, the image KEPT
+      H-EXIST    hdh_comp.iso into a target holding the user's own HFS (TC332)\a\side.txt (OLD), Skip: no
+                 overwrite question, side.txt stays OLD, the rest extracted, the image KEPT
       H-NOMODE   (control) hdh_nomode.iso: every file (side.txt = SIDE), no box, the image DELETED
       H-BOTH     (control) hdh_both.iso: every file (side.txt = SIDE), no box, the image DELETED (as before)
     Before 339 H-RSRC, H-COMP, H-COMPIN extract side.txt empty and delete the image; H-FLAG extracts SIDE
@@ -106,8 +108,8 @@ function Check-Files([string]$Tgt, $Want) {
 
 # Unpack (Alt+F9) of the whole image into tgt with "Delete archive after unpacking"; $Buttons answer the
 # boxes; $Box = a regex every box text but the known one must match ('' = no box); $Boxes = how many;
-# $Kept = the image must stay
-function Unpack-Row([string]$Case, [string]$Iso, $Want, [int[]]$Buttons, [string]$Box, [int]$Boxes, [switch]$Kept) {
+# $Kept = the image must stay; $Prep runs on the empty tgt first
+function Unpack-Row([string]$Case, [string]$Iso, $Want, [int[]]$Buttons, [string]$Box, [int]$Boxes, [switch]$Kept, [scriptblock]$Prep) {
     if (-not (Want $Case)) { return }
     if (-not [IO.File]::Exists($Iso)) { Row $Case 'RUN' 'NOT DRIVEN' ('no image ' + $Iso); return }
     $d = $Root + '\' + $Case; $tgt = $d + '\tgt'; NewDir ($d + '\src'); NewDir $tgt
@@ -115,6 +117,7 @@ function Unpack-Row([string]$Case, [string]$Iso, $Want, [int[]]$Buttons, [string
     $id = 0; $fatal = $null; $before = Reports
     try {
         if (-not $img.StartsWith($Root + '\') -or -not $tgt.StartsWith($Root + '\')) { throw ('path outside the fixture: ' + $tgt) }
+        if ($Prep) { & $Prep $tgt }
         $id = Start-Tc ($d + '\src')
         Key $id 0x24; Key $id 0x23
         Start-Sleep -Milliseconds 500
@@ -182,8 +185,10 @@ try {
     $noSide = [ordered]@{ 'ISO (TC332)/top.txt' = 'TOP'; 'ISO (TC332)/zlast/z.txt' = 'Z'
         'HFS (TC332)/top.txt' = 'TOP'; 'HFS (TC332)/zlast/z.txt' = 'Z' }
     $noSideTop = [ordered]@{ 'ISO (TC332)/top.txt' = 'TOP'; 'ISO (TC332)/zlast/z.txt' = 'Z'; 'HFS (TC332)/zlast/z.txt' = 'Z' }
-    $rsrcBox = 'side\.txt.*resource fork'
-    $compBox = 'side\.txt.*compressed'
+    # the box's file name field (CStaticText, drawn by the program) has no window text the probe reads -
+    # the box is recognised by its caption and message
+    $rsrcBox = "^\[#32770 'Error'\].*stored only in its resource fork"
+    $compBox = "^\[#32770 'Error'\].*compressed by the HFS Plus file system"
     Unpack-Row 'H-OK' "$s\hdh.iso" $all @(1) '' 0
     Unpack-Row 'H-RSRC' "$s\hdh_rsrc.iso" $noSide @(1, 173) $rsrcBox 1 -Kept
     Unpack-Row 'H-COMP' "$s\hdh_comp.iso" $noSide @(1, 173) $compBox 1 -Kept
@@ -191,6 +196,9 @@ try {
     Unpack-Row 'H-FLAG' "$s\hdh_flag.iso" $noSide @(1, 173) $compBox 1 -Kept
     Unpack-Row 'H-SKIPALL' "$s\hdh_comp2.iso" $noSideTop @(1, 174) $compBox 1 -Kept
     Unpack-Row 'H-CANCEL' "$s\hdh_comp.iso" $null @(1, 2) $compBox 1 -Kept
+    $userSide = [ordered]@{}; foreach ($k in $noSide.Keys) { $userSide[$k] = $noSide[$k] }; $userSide['HFS (TC332)/a/side.txt'] = 'OLD'
+    $userPrep = { param($t) NewDir ($t + '\HFS (TC332)'); NewDir ($t + '\HFS (TC332)\a'); WriteFile ($t + '\HFS (TC332)\a\side.txt') 'OLD' }
+    Unpack-Row 'H-EXIST' "$s\hdh_comp.iso" $userSide @(1, 173) $compBox 1 -Kept -Prep $userPrep
     Unpack-Row 'H-NOMODE' "$s\hdh_nomode.iso" $all @(1) '' 0
     Unpack-Row 'H-BOTH' "$s\hdh_both.iso" $all @(1) '' 0
 }
