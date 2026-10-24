@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an HFS+ part of a hybrid that does not open is dropped without a mark
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:330
@@ -10,7 +10,7 @@ created: 2026-10-24
 updated: 2026-10-24
 verified: 2026-10-24 e9f777da
 effort: S
-feature: -
+feature: 333
 related: [iso-plug-in-a-valid-xorriso-iso-hfs-hybrid-opens-with-cannot]
 depends-on: []
 reason: -
@@ -59,3 +59,4 @@ make every APFS hybrid's whole unpack fail).
 - 2026-10-24 — moved to Next position 3
 - 2026-10-24 — related item iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let done in feature 332
 - 2026-10-24 — verified at e9f777da: reproduced at e9f777da: probe iso333 (xorriso -hfsplus hybrid, volume header version / catalog header / size / extent damaged) - Unpack with Delete archive extracts the ISO part only and deletes the image
+- 2026-10-24 — run started, feature 333

@@ -3,7 +3,7 @@
 **Feature Branch**: `333-uniso-hfs-part-missing`  
 **Created**: 2026-10-24  
 **Status**: Draft  
-**Input**: Backlog item `iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is` - "ISO plug-in: an HFS+ part of a hybrid that does not open is dropped without a mark".
+**Input**: Backlog item `iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is` - "ISO plug-in: an HFS+ part of a hybrid that does not open is dropped without a mark". From backlog item iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is.
 
 ## Background (traced and measured at e9f777da)
 
