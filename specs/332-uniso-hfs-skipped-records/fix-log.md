@@ -49,3 +49,28 @@ empty name, types 3 / 4), folders a / zlast, files top.txt / side.txt / z.txt.
   (fixed: FR-003 and the edge case name folder / file records); F2 LOW (covered by F1), C1 LOW (FR-005
   "no message" has no own task - T004 adds no box, the probe checks "no window").
 - Run 2: 0 CRITICAL, 0 HIGH; F2 / C1 accepted as above.
+
+## Implementation
+
+- `src/common/salhfscatalog.h`: `SalHfsCatalogRecordClass` (FOLDER / FILE / NOT_ENTRY / DAMAGED /
+  UNKNOWN, order as `data-model.md`), `SAL_HFSCAT_FOLDER_REC_SIZE` 88 / `SAL_HFSCAT_FILE_REC_SIZE` 248.
+- `src/plugins/uniso/hfs.cpp` `CHFS::ListDirectory`: the rule replaces 322's / 223's separate checks;
+  NOT_ENTRY skipped; DAMAGED - `ListingLeftOut.SetIncomplete()`, skipped; UNKNOWN - `SetIncomplete()`,
+  `return FALSE` (the listing ends as before); a name that does not convert - `SetIncomplete()`,
+  skipped. `static_assert` of the two record sizes (first placed at file scope: the structs are
+  members of `CHFS` - C2065; moved into the member function).
+- `src/saltests/saltests.cpp`: `TestHfsRecordClass332` (35 checks, 322's `Hfs322Record` builder).
+
+## Checks
+
+| Check | Command | Result |
+|---|---|---|
+| build | `.\build.cmd` | BUILD SUCCEEDED |
+| unit rules | `saltests.exe` | 28,304 -> 28,339 checks, 0 failed |
+| negative control | rule mutant: thread records DAMAGED (`(parent == 1)` only) | 3 failed (lines of the thread checks); reverted, 0 failed |
+| encoding guard | `python tools/check_encoding.py --strict` | TOTAL: 0 finding(s) |
+| clang-format | VS 2022 `clang-format --style=file` on the three files | no hunk in the changed lines (the files' other hunks are older) |
+| probe after | `iso332_probe.ps1` -> `probe/result_after.txt` | PASS 14 / FAIL 0 (before 10 / 4): H-TYPE / KEY / LONG / SHORT image kept |
+| regression | 322 / 328 / 329 / 330 probes -> `probe/regress_*.txt` | 18/0, 20/0, 14/0, 30/0 (as their features recorded) |
+
+Registry restored and identical after every probe run (SHA-256 F92E573A...).

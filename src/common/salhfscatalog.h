@@ -32,7 +32,8 @@
 //
 // SalHfsCatalogKeyView then checks one catalog leaf record: its key, the name
 // inside the key and the record type after it lie inside the record's bytes.
-// The caller checks the folder / file data size against BodyAvail.
+// SalHfsCatalogRecordClass (feature 332) says what the record is for the
+// listing: an entry, not an entry, damaged or of a type not handled.
 //
 //*****************************************************************************
 
@@ -195,4 +196,52 @@ inline bool SalHfsCatalogKeyView(const unsigned char* rec, size_t avail, SalHfsC
     key->BodyOffset = 2 + keyLength;
     key->BodyAvail = avail - 2 - keyLength;
     return true;
+}
+
+// Feature 332: what a catalog leaf record is for the listing. The listing skipped a damaged record
+// without a word and ended at a record type it does not handle - a whole unpack with "Delete archive
+// after unpacking" then deleted the image although an entry was never listed. DAMAGED and UNKNOWN
+// make the listing incomplete (the caller marks it); NOT_ENTRY records hold no entry of the volume.
+#define SAL_HFSREC_FOLDER 0    // a folder record to list
+#define SAL_HFSREC_FILE 1      // a file record to list
+#define SAL_HFSREC_NOT_ENTRY 2 // a thread record, the root folder (the volume label), HFS+ metadata
+#define SAL_HFSREC_DAMAGED 3   // may hold an entry but cannot be listed: skipped, listing incomplete
+#define SAL_HFSREC_UNKNOWN 4   // a named record of a type not handled: the listing ends, incomplete
+
+#define SAL_HFSCAT_FOLDER_REC_SIZE 88 // sizeof(HFSPlusCatalogFolder), the record type included
+#define SAL_HFSCAT_FILE_REC_SIZE 248  // sizeof(HFSPlusCatalogFile)
+
+// The class of the catalog leaf record rec[0..avail); *key is its key (valid unless DAMAGED by the key
+// view). 'rootIsLabel': the root folder's record (parent ID 1) is shown as the volume label, not listed.
+// Thread records have an empty name (TN1150); a folder / file whose name starts with U+0000 is HFS+
+// metadata ("\0\0\0\0HFS+ Private Data", the hard-link folder macOS creates).
+inline int SalHfsCatalogRecordClass(const unsigned char* rec, size_t avail, bool rootIsLabel,
+                                    SalHfsCatalogKey* key)
+{
+    using namespace SalHfsCatalogDetail;
+    if (!SalHfsCatalogKeyView(rec, avail, key))
+        return SAL_HFSREC_DAMAGED;
+    unsigned parent = Be32(rec + 2);
+    size_t type = Be16(rec + key->BodyOffset);
+    if (rootIsLabel && parent == 1)
+        return SAL_HFSREC_NOT_ENTRY;
+    if (key->NameLength == 0)
+        return (type == 3 || type == 4 || parent == 1) ? SAL_HFSREC_NOT_ENTRY : SAL_HFSREC_DAMAGED;
+    if (key->NameLength > 255) // HFSUniStr255
+        return SAL_HFSREC_DAMAGED;
+    bool metadata = Be16(rec + 8) == 0;
+    if (type == 1)
+    {
+        if (key->BodyAvail < SAL_HFSCAT_FOLDER_REC_SIZE)
+            return SAL_HFSREC_DAMAGED;
+        return metadata ? SAL_HFSREC_NOT_ENTRY : SAL_HFSREC_FOLDER;
+    }
+    if (type == 2)
+    {
+        if (key->BodyAvail < SAL_HFSCAT_FILE_REC_SIZE)
+            return SAL_HFSREC_DAMAGED;
+        return metadata ? SAL_HFSREC_NOT_ENTRY : SAL_HFSREC_FILE;
+    }
+    // a thread type with a name, or a type HFS+ does not define; a U+0000 name was skipped as empty
+    return metadata ? SAL_HFSREC_DAMAGED : SAL_HFSREC_UNKNOWN;
 }

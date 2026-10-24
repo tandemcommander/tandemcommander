@@ -291,6 +291,9 @@ BOOL CHFS::GetRootName(char* rootName, int maxlen)
 BOOL CHFS::ListDirectory(char* rootPath, int session,
                          CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
+    // feature 332: the record sizes SalHfsCatalogRecordClass checks
+    static_assert(sizeof(HFSPlusCatalogFolder) == SAL_HFSCAT_FOLDER_REC_SIZE, "HFSPlusCatalogFolder size");
+    static_assert(sizeof(HFSPlusCatalogFile) == SAL_HFSCAT_FILE_REC_SIZE, "HFSPlusCatalogFile size");
     CALL_STACK_MESSAGE5("CHFS::ListDirectory(%s, %i, %p, %p)", rootPath, session, dir, pluginData);
     int nRecords = pCatalog->GetNumRecords();
     // feature 329: the catalog IDs (as stored) of the folders left out - their contents are left out with
@@ -302,13 +305,28 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         size_t avail;
         HFSPlusCatalogKey* pKey = (HFSPlusCatalogKey*)pCatalog->GetRecord(i, &avail);
         SalHfsCatalogKey key;
-        // feature 322: the key, its name and the record type must lie inside the record's node
-        if (!SalHfsCatalogKeyView((const unsigned char*)pKey, avail, &key))
+        // feature 332: what the record is (salhfscatalog.h) - the key, its name and the record must lie
+        // inside the record's node (322), a name of up to 255 units (223), a folder / file record its
+        // whole structure (322). A record that may hold an entry but cannot be listed was skipped without
+        // a mark and a whole unpack with "Delete archive after unpacking" deleted the image - now the
+        // listing is marked incomplete (the unpack fails, the image is kept). Thread records, the volume
+        // label and HFS+ metadata are not entries.
+        int kind = SalHfsCatalogRecordClass((const unsigned char*)pKey, avail, bSkipRootParent, &key);
+        if (kind == SAL_HFSREC_NOT_ENTRY)
+            continue; // threads, the root folder already used as the volume label, metadata
+        if (kind == SAL_HFSREC_DAMAGED)
         {
-            TRACE_E("CHFS::ListDirectory(): a catalog record does not fit its node, skipped");
+            TRACE_E("CHFS::ListDirectory(): a damaged catalog record, skipped");
+            Image->ListingLeftOut.SetIncomplete();
             continue;
         }
-        int keyLen = (int)key.KeyLength;
+        if (kind == SAL_HFSREC_UNKNOWN)
+        {
+            // as before, the HFS+ listing ends here - now marked incomplete
+            TRACE_E("CHFS::ListDirectory(): a catalog record of a type not handled, the listing ends");
+            Image->ListingLeftOut.SetIncomplete();
+            return FALSE;
+        }
         int nameLen = (int)key.NameLength;
         wchar_t fileNameW[256];
         char fileName[256 * 3 + 1]; // UTF-8 needs up to 3 bytes per UTF-16 unit (interface 104)
@@ -321,30 +339,18 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
             HFSPlusCatalogFile* file;
         } rec;
 
-        if ((keyLen <= 6) || (nameLen == 0) || (bSkipRootParent && pKey->parentID == FromM32(kHFSRootParentID)))
-        {
-            continue; // Skip threads with empty name and RootParent already used as volume label
-        }
-        if (nameLen > 255) // feature 223: as in GetRootName - never past 'fileNameW[256]'
-        {
-            TRACE_E("CHFS::ListDirectory(): a name longer than 255 units in the catalog, skipped");
-            continue;
-        }
-        // feature 322: a folder / file record must hold its whole structure inside the node
+        // a folder / file record with its whole structure, a name of 1..255 units (feature 223: never past
+        // 'fileNameW[256]') that does not start with U+0000
         rec.type = (SInt16*)((char*)pKey + key.BodyOffset);
-        if ((*rec.type == kHFSFolderRecord && key.BodyAvail < sizeof(HFSPlusCatalogFolder)) ||
-            (*rec.type == kHFSFileRecord && key.BodyAvail < sizeof(HFSPlusCatalogFile)))
-        {
-            TRACE_E("CHFS::ListDirectory(): a catalog record shorter than its structure, skipped");
-            continue;
-        }
         for (int j = 0; j < nameLen; j++)
             fileNameW[j] = FromM16(pKey->nodeName.unicode[j]);
         fileNameW[nameLen] = 0;
         // format boundary (interface 104): HFS+ names are UTF-16 -> UTF-8 (see GetRootName)
         if ((WideCharToMultiByte(CP_UTF8, 0, fileNameW, nameLen + 1, fileName, sizeof(fileName), NULL, NULL) <= 0) || !fileName[0])
         {
-            // Invalid or empty (thread,...) name -> silently skip
+            // feature 332: an entry whose name does not convert - skipped, the listing incomplete
+            TRACE_E("CHFS::ListDirectory(): a catalog name that does not convert, skipped");
+            Image->ListingLeftOut.SetIncomplete();
             continue;
         }
 

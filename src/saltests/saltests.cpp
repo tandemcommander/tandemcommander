@@ -19696,6 +19696,96 @@ static void TestHfsCatalog322()
     }
 }
 
+// feature 332: what a catalog leaf record is for the listing (SalHfsCatalogRecordClass) - damaged
+// records and types not handled make the listing incomplete; threads, the volume label and HFS+
+// metadata are not entries (they must never make a whole unpack fail)
+static int Hfs332Class(const std::string& r, bool rootIsLabel = true, size_t avail = (size_t)-1)
+{
+    SalHfsCatalogKey key;
+    return SalHfsCatalogRecordClass((const unsigned char*)r.data(), avail == (size_t)-1 ? r.size() : avail,
+                                    rootIsLabel, &key);
+}
+static void TestHfsRecordClass332()
+{
+    // entries: folder 88 bytes of data, file 248 (the record type included); one byte less is damaged
+    CHECK(Hfs332Class(Hfs322Record(2, "a", 1, 88)) == SAL_HFSREC_FOLDER);
+    CHECK(Hfs332Class(Hfs322Record(2, "a", 1, 87)) == SAL_HFSREC_DAMAGED);
+    CHECK(Hfs332Class(Hfs322Record(16, "side.txt", 2, 248)) == SAL_HFSREC_FILE);
+    CHECK(Hfs332Class(Hfs322Record(16, "side.txt", 2, 247)) == SAL_HFSREC_DAMAGED);
+    CHECK(Hfs332Class(Hfs322Record(16, "side.txt", 2, 2)) == SAL_HFSREC_DAMAGED);
+    // thread records (an empty name) are not entries, whatever their parent
+    CHECK(Hfs332Class(Hfs322Record(2, "", 3, 20)) == SAL_HFSREC_NOT_ENTRY);
+    CHECK(Hfs332Class(Hfs322Record(17, "", 4, 20)) == SAL_HFSREC_NOT_ENTRY);
+    CHECK(Hfs332Class(Hfs322Record(17, "", 4, 20), false) == SAL_HFSREC_NOT_ENTRY);
+    // an empty-named folder / file / other record that is not the root folder is damaged
+    CHECK(Hfs332Class(Hfs322Record(16, "", 1, 88)) == SAL_HFSREC_DAMAGED);
+    CHECK(Hfs332Class(Hfs322Record(16, "", 2, 248)) == SAL_HFSREC_DAMAGED);
+    CHECK(Hfs332Class(Hfs322Record(16, "", 5, 20)) == SAL_HFSREC_DAMAGED);
+    // the root folder (parent 1): the volume label when in use, listed as a folder otherwise (as
+    // before); with an empty volume name never an entry
+    CHECK(Hfs332Class(Hfs322Record(1, "TC332", 1, 88)) == SAL_HFSREC_NOT_ENTRY);
+    CHECK(Hfs332Class(Hfs322Record(1, "TC332", 1, 88), false) == SAL_HFSREC_FOLDER);
+    CHECK(Hfs332Class(Hfs322Record(1, "TC332", 1, 10)) == SAL_HFSREC_NOT_ENTRY);
+    CHECK(Hfs332Class(Hfs322Record(1, "", 1, 88), false) == SAL_HFSREC_NOT_ENTRY);
+    // names: 255 units listed, 256 (a key that holds them) damaged
+    {
+        std::string n255(255, 'n'), n256(256, 'n');
+        CHECK(Hfs332Class(Hfs322Record(2, n255.c_str(), 2, 248)) == SAL_HFSREC_FILE);
+        CHECK(Hfs332Class(Hfs322Record(2, n256.c_str(), 2, 248)) == SAL_HFSREC_DAMAGED);
+        CHECK(Hfs332Class(Hfs322Record(2, n256.c_str(), 1, 88)) == SAL_HFSREC_DAMAGED);
+    }
+    // types not handled: a named record of type 5, a thread type with a name - the listing ends
+    CHECK(Hfs332Class(Hfs322Record(16, "side.txt", 5, 248)) == SAL_HFSREC_UNKNOWN);
+    CHECK(Hfs332Class(Hfs322Record(16, "side.txt", 0, 248)) == SAL_HFSREC_UNKNOWN);
+    CHECK(Hfs332Class(Hfs322Record(16, "x", 3, 20)) == SAL_HFSREC_UNKNOWN);
+    CHECK(Hfs332Class(Hfs322Record(16, "x", 4, 20)) == SAL_HFSREC_UNKNOWN);
+    // HFS+ metadata: a folder / file whose name starts with U+0000 ("\0\0\0\0HFS+ Private Data") is not
+    // an entry; a damaged one or one of another type is damaged (skipped as before, now marked)
+    {
+        std::string meta = Hfs322Record(2, "....HFS+ Private Data", 1, 88);
+        for (int i = 0; i < 4; i++)
+            Hfs322Put16(meta, 8 + 2 * i, 0);
+        CHECK(Hfs332Class(meta) == SAL_HFSREC_NOT_ENTRY);
+        std::string metaFile = Hfs322Record(2, ".x", 2, 248);
+        Hfs322Put16(metaFile, 8, 0);
+        CHECK(Hfs332Class(metaFile) == SAL_HFSREC_NOT_ENTRY);
+        std::string metaShort = Hfs322Record(2, ".x", 1, 40);
+        Hfs322Put16(metaShort, 8, 0);
+        CHECK(Hfs332Class(metaShort) == SAL_HFSREC_DAMAGED);
+        std::string metaOdd = Hfs322Record(2, ".x", 5, 20);
+        Hfs322Put16(metaOdd, 8, 0);
+        CHECK(Hfs332Class(metaOdd) == SAL_HFSREC_DAMAGED);
+        std::string inner = Hfs322Record(2, "a.b", 2, 248); // U+0000 inside a name: an entry
+        Hfs322Put16(inner, 10, 0);
+        CHECK(Hfs332Class(inner) == SAL_HFSREC_FILE);
+    }
+    // a record whose key does not fit is damaged (NULL, too short, the key length 0xFFFF)
+    {
+        std::string r = Hfs322Record(16, "side.txt", 2, 248);
+        SalHfsCatalogKey key;
+        CHECK(SalHfsCatalogRecordClass(NULL, 100, true, &key) == SAL_HFSREC_DAMAGED);
+        CHECK(Hfs332Class(r, true, 0) == SAL_HFSREC_DAMAGED);
+        CHECK(Hfs332Class(r, true, 25) == SAL_HFSREC_DAMAGED); // key 22 + 2, the type cut
+        CHECK(Hfs332Class(r, true, 26) == SAL_HFSREC_DAMAGED); // type in, the file record short
+        std::string bad = r;
+        Hfs322Put16(bad, 0, 0xFFFF);
+        CHECK(Hfs332Class(bad) == SAL_HFSREC_DAMAGED);
+    }
+    // the probe's four images (probe/img332.py): type 5, key 0xFFFF, a 256-unit name in a key that
+    // fits, a file record with 10 bytes of data
+    {
+        std::string type5 = Hfs322Record(16, "side.txt", 5, 248);
+        CHECK(Hfs332Class(type5) == SAL_HFSREC_UNKNOWN);
+        std::string longName = Hfs322Record(16, "side.txt", 2, 1000);
+        Hfs322Put16(longName, 0, 6 + 2 * 256);
+        Hfs322Put16(longName, 6, 256);
+        Hfs322Put16(longName, 2 + 6 + 2 * 256, 2);
+        CHECK(Hfs332Class(longName) == SAL_HFSREC_DAMAGED);
+        std::string shortRec = Hfs322Record(16, "side.txt", 2, 10);
+        CHECK(Hfs332Class(shortRec) == SAL_HFSREC_DAMAGED);
+    }
+}
+
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
 // when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
 // the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
@@ -20794,6 +20884,7 @@ int main(int argc, char** argv)
     TestPackName318();
     TestPackName319();
     TestHfsCatalog322();
+    TestHfsRecordClass332();
     TestFtpMkdirReport323();
     TestSameVolume324();
     TestSusp326();
