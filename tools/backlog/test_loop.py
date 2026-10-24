@@ -31,6 +31,7 @@ import loop  # noqa: E402
 VALID = HERE / "fixtures" / "valid"
 FAKE = HERE / "fixtures" / "fake_claude.py"
 LOOP = HERE / "loop.py"
+BIN = HERE.parents[1] / "bin" / "backlog.sh"
 FTP = "ftp-per-server-encoding-flag"
 DISK = "disk-map-context-menu-crash"
 FAST = ["--poll", "0.2", "--tick", "0.05", "--backoff", "0.1,0.2", "--limit-margin", "0",
@@ -775,7 +776,7 @@ class ProcessTests(Base):
             "attempts": 0, "stalls": 0, "resumes": 0, "phase": "running", "wait_until": None, "why": None,
             "child_pid": orphan.pid, "child_ident": loop.process_ident(orphan.pid)})
         _, status = self.ctl("status")
-        self.assertIn("is still working; the next loop-start.sh waits for it", status)  # review 2 N5
+        self.assertIn("is still working; the next bin/backlog.sh start waits for it", status)  # review 2 N5
         p = self.spawn_loop("--until-idle")
         self.wait_for(lambda: "previous loop" in str((loop.load_json(self.repo.loop_file) or {}).get("detail")),
                       what="waiting for the orphan")
@@ -816,32 +817,49 @@ class ControlTests(Base):
         self.assertEqual(self.repo.dir.parent.resolve(), (self.root / ".git").resolve())
         self.assertEqual(git(self.root, "status", "--porcelain"), "")
 
-    def test_wrappers(self):
+    def test_bin_backlog_sh(self):
         bash = git_bash()
         if not bash:
             self.skipTest("needs Git Bash")
 
-        def sh(name, *args):
-            r = subprocess.run([bash, str(HERE / name), "--root", str(self.root), *args], capture_output=True,
-                               text=True, encoding="utf-8")
+        def sh(*args):
+            r = subprocess.run([bash, str(BIN), *args], capture_output=True, text=True, encoding="utf-8")
             return r.returncode, r.stdout + r.stderr
-        self.assertEqual(sh("loop-status.sh")[0], 0)
-        self.assertIn("loop:    not running", sh("loop-status.sh")[1])
-        self.assertIn("starts paused", sh("loop-pause.sh")[1])
-        self.assertIn("pause requested", sh("loop-status.sh")[1])
-        self.assertIn("pause cleared", sh("loop-resume.sh")[1])
-        self.assertIn("no loop is running", sh("loop-stop.sh")[1])
-        code, out = sh("loop-start.sh", "--help")
-        self.assertEqual(code, 0)
-        self.assertIn("--max-items", out)
+        root = ["--root", str(self.root)]
+        self.assertEqual(sh("status", *root)[0], 0)
+        self.assertIn("loop:    not running", sh("status", *root)[1])
+        self.assertIn("starts paused", sh("pause", *root)[1])
+        self.assertIn("pause requested", sh("status", *root)[1])
+        self.assertIn("pause cleared", sh("resume", *root)[1])
+        self.assertIn("no loop is running", sh("stop", *root)[1])
+        for args in (["--help"], ["-h"], ["help"]):
+            code, out = sh(*args)
+            self.assertEqual(code, 0, args)
+            self.assertTrue(out.startswith("Usage: bin/backlog.sh <command>"), out)
+        # every option of start that a user may pass is in the overview
+        start = next(a for a in loop.build_parser()._actions if isinstance(a, loop.argparse._SubParsersAction))
+        for action in start.choices["start"]._actions:
+            if action.help != loop.argparse.SUPPRESS:
+                for flag in action.option_strings:
+                    if flag.startswith("--"):
+                        self.assertIn(flag, out)
+        for command in ("start", "pause", "resume", "stop", "status"):
+            self.assertIn(f"  {command} ", out)
+            code, cout = sh(command, "--help")
+            self.assertEqual(code, 0, command)
+            self.assertIn(f"usage: bin/backlog.sh {command}", cout)
+        self.assertIn("--max-items", sh("start", "--help")[1])
+        self.assertEqual(sh()[0], 2)
+        code, out = sh("bogus")
+        self.assertEqual(code, 2)
+        self.assertIn("unknown command 'bogus'", out)
         self.write_plan(["close"])
         # forward slashes: bash collapses the doubled backslashes of JSON on the way to a native program
         cmd = json.dumps([Path(sys.executable).as_posix(), FAKE.as_posix()])
-        code, out = sh("loop-start.sh", "--claude-cmd", cmd, *FAST, "--until-idle")
+        code, out = sh("start", *root, "--claude-cmd", cmd, *FAST, "--until-idle")
         self.assertEqual(code, 0, out)
         self.assertIn("closed 1", out)
-        for name in ("loop-start.sh", "loop-pause.sh", "loop-resume.sh", "loop-stop.sh", "loop-status.sh"):
-            self.assertNotIn(b"\r", (HERE / name).read_bytes(), name)
+        self.assertNotIn(b"\r", BIN.read_bytes())
 
 
 class LogTests(unittest.TestCase):

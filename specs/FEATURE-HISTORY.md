@@ -3037,6 +3037,12 @@ a few early ones are out of sequence).
     sets it to 2 hours (`BG_WAIT_CEILING_MS`, a caller's own value kept) and SKILL.md step 7 ends
     every turn that waits for a reviewer with a fallback wakeup. The message was in 12 run logs
     since 2026-10-20.
+  - Amended 2026-10-24 (maintainer's request): one command `bin/backlog.sh start|pause|resume|
+    stop|status` replaced the five `tools/backlog/loop-*.sh` wrappers (the loop's messages and the
+    skills name it); `--help` lists the commands and every `start` option, `<command> --help`
+    the options of one. Rule: every script in `bin/` answers `--help` -
+    `tools/test_bin_help.py` (a script without it fails the test, measured); `test_loop.py`
+    checks that the overview names every visible option of `start`.
 - 248-folders-column-names: **the Desktop view's column headers were mojibake** on a non-English
   Windows (GitHub issue #13): the Folders plug-in (`fld:`) handed the shell's column names to the
   core as UTF-8 (feature 004), the core draws column names in the code page (MBCS build, `TextOutA`)

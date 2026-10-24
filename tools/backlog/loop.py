@@ -3,13 +3,13 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Loop over /tandem-backlog-implement - one fresh claude process per item (feature 247).
 
-The maintainer uses the wrappers in tools/backlog/ (Git Bash):
+The maintainer uses bin/backlog.sh (Git Bash; --help lists everything):
 
-  loop-start.sh   run the loop in this window (Ctrl+C = hard stop)
-  loop-pause.sh   finish the running item, then wait for loop-resume.sh
-  loop-resume.sh  continue after a pause (also cancels a pending stop)
-  loop-stop.sh    finish the running item, then end the loop
-  loop-status.sh  what the loop does now
+  bin/backlog.sh start    run the loop in this window (Ctrl+C = hard stop)
+  bin/backlog.sh pause    finish the running item, then wait for resume
+  bin/backlog.sh resume   continue after a pause (also cancels a pending stop)
+  bin/backlog.sh stop     finish the running item, then end the loop
+  bin/backlog.sh status   what the loop does now
 
 Design (specs/247-backlog-run-loop/spec.md, contract contracts/loop-cli.md):
 
@@ -505,7 +505,7 @@ class Loop:
                 other = load_json(self.repo.loop_file) or {}
                 if alive(other.get("pid"), other.get("ident")):
                     print(f"refused: another loop is running (pid {other.get('pid')}, since {other.get('started', '?')}); "
-                          "tools/backlog/loop-status.sh shows it, loop-stop.sh ends it", flush=True)
+                          "bin/backlog.sh status shows it, bin/backlog.sh stop ends it", flush=True)
                     raise Stop(1)
                 say(f"a loop record of pid {other.get('pid', '?')} remained (that loop ended without cleanup); taking over")
                 unlink(self.repo.loop_file)
@@ -784,7 +784,7 @@ class Loop:
             run["why"] = detail
             self.save_run()
             say(f"item {slug}: the session cannot be continued ({detail}). The loop stops.")
-            say(f"the item still holds the run lock; see loop-status.sh for what to do")
+            say(f"the item still holds the run lock; see bin/backlog.sh status for what to do")
             raise Stop(1)
         if verdict == "refused-own":
             run.update({"phase": "failed", "why": f"a continuation refused its own run ({last_words(detail)})"})
@@ -866,7 +866,7 @@ class Loop:
         phase = run.get("phase")
         if phase in ("lost", "failed"):
             say(f"an interrupted run of item {run['slug']} cannot be continued automatically ({run.get('why') or phase}).")
-            say("loop-status.sh says what to do; then loop-start.sh --forget-run")
+            say("bin/backlog.sh status says what to do; then bin/backlog.sh start --forget-run")
             raise Stop(1)
         if alive(run.get("child_pid"), run.get("child_ident")):
             pid, ident = run["child_pid"], run["child_ident"]
@@ -898,7 +898,7 @@ class Loop:
             self.drop_run()
             return
         if not mine:
-            hint = ("; if it is this loop's own run, see loop-status.sh" if lock.get("slug") == run["slug"] else "")
+            hint = ("; if it is this loop's own run, see bin/backlog.sh status" if lock.get("slug") == run["slug"] else "")
             self.wait("waiting", f"waiting: the run lock is held by another run ({lock_words(lock)}), "
                       f"not by the interrupted run of {run['slug']}{hint}", None, recheck=True)
             return
@@ -1011,7 +1011,7 @@ class Loop:
             # the loop never repairs the tree: a person looks at what the triage left (also after an error)
             say(f"after the auto-triage {why} - the loop stops; log {source['log']}")
             say("look at git status and git log; commit or discard (git restore backlog) what it left, "
-                "then loop-start.sh again")
+                "then bin/backlog.sh start again")
             raise Stop(1)
         if info.limited:
             self.triage_limits += 1
@@ -1071,8 +1071,8 @@ class Loop:
                 say("the record of the interrupted run is dropped (--forget-run)")
                 unlink(self.repo.run_file)
             self.prune_logs()
-            say(f"loop started (pid {os.getpid()}); pause: tools/backlog/loop-pause.sh, stop: loop-stop.sh, "
-                "status: loop-status.sh")
+            say(f"loop started (pid {os.getpid()}); pause: bin/backlog.sh pause, stop: bin/backlog.sh stop, "
+                "status: bin/backlog.sh status")
             return self.cycle()
         except Stop as s:
             return s.code
@@ -1089,7 +1089,7 @@ class Loop:
                 say("stop requested - the loop ends")
                 return 0
             if self.paused():
-                self.wait("paused", "paused - waiting for tools/backlog/loop-resume.sh", None)
+                self.wait("paused", "paused - waiting for bin/backlog.sh resume", None)
                 if not self.paused() and not self.stop_requested():
                     say("resumed")
                 continue
@@ -1127,7 +1127,7 @@ class Loop:
             unlink(self.repo.triage_file)
             say("HARD STOP: claude was killed during the auto-triage.")
             say("What it changed and did not commit stays in backlog/ (git status): commit it or discard it "
-                "(git restore backlog); the next loop-start.sh waits for a clean tree.")
+                "(git restore backlog); the next bin/backlog.sh start waits for a clean tree.")
         elif child is not None:
             # also when the same Ctrl+C already ended claude: the item is cut either way (review S4)
             if child.poll() is None:
@@ -1140,15 +1140,15 @@ class Loop:
                         "child_pid": None, "child_ident": None})
             self.save_run()
             say(f"HARD STOP: claude was killed while it worked on item {run['slug']}.")
-            say("The item keeps the run lock; the next loop-start.sh continues it in the same session.")
+            say("The item keeps the run lock; the next bin/backlog.sh start continues it in the same session.")
             say("If a GUI probe was running: restore its registry backup first (%TEMP%\\tcNNN_backup.reg, stop-rules 2.8).")
         elif run and alive(run.get("child_pid"), run.get("child_ident")):
             say(f"stopped (Ctrl+C) - the claude of the previous loop keeps working on item {run['slug']}; "
-                "the next loop-start.sh waits for it")
+                "the next bin/backlog.sh start waits for it")
         elif run and self.repo.run_file.exists():
             # an interrupted run waits (limit, backoff) or its verdict was being taken (review 2 N10)
             say(f"stopped (Ctrl+C) - no claude was running; the interrupted run of item {run['slug']} keeps the "
-                "run lock and the next loop-start.sh continues it")
+                "run lock and the next bin/backlog.sh start continues it")
         else:
             say("stopped (Ctrl+C) - no item of this loop was running")
         return 130
@@ -1232,25 +1232,25 @@ def cmd_status(repo: Repo, args) -> int:
             print(f"           python tools/backlog/backlog.py lock release --force ; git checkout main")
             print(f"           python tools/backlog/backlog.py block {slug} --reason '<why>'")
             print(f"           git add backlog ; git commit -m 'backlog: {slug} blocked'")
-            print("         then tools/backlog/loop-start.sh --forget-run")
+            print("         then bin/backlog.sh start --forget-run")
         elif not d["live"] and alive(run.get("child_pid"), run.get("child_ident")):
-            print(f"         its claude (pid {run['child_pid']}) is still working; the next loop-start.sh waits for it")
+            print(f"         its claude (pid {run['child_pid']}) is still working; the next bin/backlog.sh start waits for it")
         elif not d["live"]:
-            print("         the next tools/backlog/loop-start.sh continues this run in the same session")
+            print("         the next bin/backlog.sh start continues this run in the same session")
             if run.get("phase") in ("running", "killed", "new"):
                 print("         (it was cut off: if a GUI probe was running, its registry backup is restored first -")
                 print("         stop-rules 2.8, %TEMP%\\tcNNN_backup.reg; the continued run is told so)")
     triage = d["triage"]
     if triage and not d["live"] and alive(triage.get("pid"), triage.get("ident")):
         print(f"triage:  the auto-triage claude of the last loop (pid {triage['pid']}) is still working; "
-              "the next loop-start.sh waits for it")
+              "the next bin/backlog.sh start waits for it")
     print(f"lock:    {d['lock_text']}")
     if d["live"]:
         triaging = loop.get("state") == "triage"
         hard = loop.get("ctrl_c_safe") is False and (triaging or (bool(run) and alive(run.get("child_pid"),
                                                                                        run.get("child_ident"))))
         print("Ctrl+C:  " + (f"HARD STOP now ({'the auto-triage' if triaging else 'an item'} is running) - "
-                             "use loop-pause.sh / loop-stop.sh" if hard else "safe now (no item is running)"))
+                             "use bin/backlog.sh pause / bin/backlog.sh stop" if hard else "safe now (no item is running)"))
     return 0
 
 
@@ -1260,18 +1260,18 @@ def cmd_pause(repo: Repo, args) -> int:
     repo.pause_flag.write_text(stamp() + "\n", encoding="utf-8")
     d = describe(repo)
     if not d["live"]:
-        print("pause set: no loop is running; the next loop-start.sh starts paused (loop-resume.sh clears it)")
+        print("pause set: no loop is running; the next bin/backlog.sh start starts paused (bin/backlog.sh resume clears it)")
     elif d["loop"].get("state") in ("running", "triage"):
         what = f"item {d['loop'].get('slug')}" if d["loop"].get("state") == "running" else "the auto-triage"
         print(f"pause {'was already ' if already else ''}requested: the loop finishes {what}, "
-              "then waits for loop-resume.sh (loop-status.sh shows when)")
+              "then waits for bin/backlog.sh resume (bin/backlog.sh status shows when)")
     else:
-        print("paused: the loop waits for loop-resume.sh")
+        print("paused: the loop waits for bin/backlog.sh resume")
     run = d["run"]
     if run and d["lock"] is not None and run.get("phase") not in ("lost", "failed"):
         # review 2 N8: the interrupted run keeps its branch and lock until it is continued
         print(f"note: the interrupted run of item {run['slug']} keeps the run lock and its branch until it is "
-              "continued (loop-resume.sh); the backlog cannot be changed safely before it finishes")
+              "continued (bin/backlog.sh resume); the backlog cannot be changed safely before it finishes")
     return 0
 
 
@@ -1285,7 +1285,7 @@ def cmd_resume(repo: Repo, args) -> int:
     elif live:
         print("resumed: the loop continues" + (" (the pending stop is cancelled)" if had_stop else ""))
     else:
-        print("pause cleared: no loop is running; start it with loop-start.sh")
+        print("pause cleared: no loop is running; start it with bin/backlog.sh start")
     return 0
 
 
@@ -1293,12 +1293,12 @@ def cmd_stop(repo: Repo, args) -> int:
     live = repo.live_loop()
     if not live:
         unlink(repo.stop_flag)
-        print("no loop is running" + (" (a pause is still set: loop-resume.sh clears it)" if repo.pause_flag.exists() else ""))
+        print("no loop is running" + (" (a pause is still set: bin/backlog.sh resume clears it)" if repo.pause_flag.exists() else ""))
         return 0
     repo.stop_flag.write_text(stamp() + "\n", encoding="utf-8")
     if live.get("state") in ("running", "triage"):
         what = f"item {live.get('slug')}" if live.get("state") == "running" else "the auto-triage"
-        print(f"stop requested: the loop finishes {what}, then ends (loop-resume.sh cancels it)")
+        print(f"stop requested: the loop finishes {what}, then ends (bin/backlog.sh resume cancels it)")
     else:
         print("stop requested: the loop ends within a few seconds")
     return 0
@@ -1317,12 +1317,12 @@ def seconds_list(text: str) -> list:
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--root", help="repository root (default: the repository containing this script)")
-    p = argparse.ArgumentParser(prog="loop.py", description="Loop over /tandem-backlog-implement (feature 247).")
+    p = argparse.ArgumentParser(prog="bin/backlog.sh", description="Loop over /tandem-backlog-implement (feature 247).")
     sub = p.add_subparsers(dest="command", required=True)
     s = sub.add_parser("start", parents=[common], help="run the loop in the foreground (Ctrl+C = hard stop)",
                        description="Run /tandem-backlog-implement item after item, one fresh claude process "
-                                   "each (tools/backlog/loop-start.sh). Ctrl+C = hard stop; loop-pause.sh, "
-                                   "loop-resume.sh, loop-stop.sh and loop-status.sh control it from another window.",
+                                   "each. Ctrl+C = hard stop; bin/backlog.sh pause, resume, stop and status "
+                                   "control it from another window.",
                        epilog="Full documentation: specs/247-backlog-run-loop/contracts/loop-cli.md")
     s.add_argument("--max-items", type=int, default=0, help="end after N finished items (default: no limit)")
     s.add_argument("--max-blocked", type=int, default=DEFAULT_MAX_BLOCKED,
@@ -1342,11 +1342,18 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--limit-unknown-wait", type=float, default=LIMIT_UNKNOWN_WAIT, help=argparse.SUPPRESS)
     s.add_argument("--tick", type=float, default=TICK, help=argparse.SUPPRESS)
     s.add_argument("--deadline", type=float, default=0, help=argparse.SUPPRESS)  # a test that would hang fails instead
-    s = sub.add_parser("status", parents=[common], help="what the loop does now")
-    s.add_argument("--json", action="store_true")
-    sub.add_parser("pause", parents=[common], help="finish the running item, then wait for resume")
-    sub.add_parser("resume", parents=[common], help="continue after a pause; cancels a pending stop")
-    sub.add_parser("stop", parents=[common], help="finish the running item, then end the loop")
+    s = sub.add_parser("status", parents=[common], help="what the loop does now",
+                       description="What the loop does now: the running item, waiting and why, usage limits, "
+                                   "an interrupted run, the run lock, whether Ctrl+C is safe.")
+    s.add_argument("--json", action="store_true", help="the data as JSON")
+    sub.add_parser("pause", parents=[common], help="finish the running item, then wait for resume",
+                   description="The running item finishes, then the loop waits for resume. Without a loop "
+                               "the next start waits. Persists until resume.")
+    sub.add_parser("resume", parents=[common], help="continue after a pause; cancels a pending stop",
+                   description="Clear the pause and a pending stop.")
+    sub.add_parser("stop", parents=[common], help="finish the running item, then end the loop",
+                   description="The running item finishes, then the loop ends; a waiting loop ends at once. "
+                               "Without a loop it says so and sets nothing; resume cancels a pending stop.")
     return p
 
 

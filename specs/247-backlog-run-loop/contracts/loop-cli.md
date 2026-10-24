@@ -1,17 +1,20 @@
 # Contract — the backlog loop (feature 247)
 
-`tools/backlog/loop.py` (stdlib only) and five Git Bash wrappers in
-`tools/backlog/`. Each wrapper is one line: `exec python -u loop.py <command> "$@"`
-(`$PYTHON` overrides `python`); options pass through, `--root DIR` selects
-another repository (tests).
+`tools/backlog/loop.py` (stdlib only) and one Git Bash command, `bin/backlog.sh <command>`
+(amended 2026-10-24; it replaced the five wrappers `tools/backlog/loop-<command>.sh`). It
+runs `exec python -u tools/backlog/loop.py <command> "$@"` (`$PYTHON` overrides `python`);
+options pass through, `--root DIR` selects another repository (tests). `bin/backlog.sh
+--help` (also `-h`, `help`) prints the commands and every option of `start` and exits 0;
+`bin/backlog.sh <command> --help` prints that command's options; no command or an unknown one
+exits 2. Like every script in `bin/`, it answers `--help` (`tools/test_bin_help.py`).
 
-| Wrapper | Command | Effect | Exit |
+| Invocation | Command | Effect | Exit |
 |---|---|---|---|
-| `loop-start.sh [options]` | `start` | Runs the loop in the foreground until stop / `--max-items` / `--until-idle` / a stop for a person. | 0 ended as asked; 1 stopped for a person or refused (another loop runs, an interrupted run cannot be continued, claude missing); 2 usage; 130 Ctrl+C / Ctrl+Break |
-| `loop-pause.sh` | `pause` | Sets the pause: a running item finishes, then the loop waits. Without a loop: the next start waits. Persists until `resume`. An interrupted run waiting for a limit or a backoff keeps the lock and its branch while paused — `pause` says so. | 0 |
-| `loop-resume.sh` | `resume` | Clears the pause and a pending stop. | 0 |
-| `loop-stop.sh` | `stop` | A running loop finishes its item and ends; a waiting loop ends within a second. An item interrupted meanwhile (limit, error) is not waited for: the loop ends and the next start continues that run. Without a loop: says so, sets nothing. One-shot: the loop removes it when it ends, and a start removes one left by a killed loop. | 0 |
-| `loop-status.sh [--json]` | `status` | See *Status* below. | 0 |
+| `bin/backlog.sh start [options]` | `start` | Runs the loop in the foreground until stop / `--max-items` / `--until-idle` / a stop for a person. | 0 ended as asked; 1 stopped for a person or refused (another loop runs, an interrupted run cannot be continued, claude missing); 2 usage; 130 Ctrl+C / Ctrl+Break |
+| `bin/backlog.sh pause` | `pause` | Sets the pause: a running item finishes, then the loop waits. Without a loop: the next start waits. Persists until `resume`. An interrupted run waiting for a limit or a backoff keeps the lock and its branch while paused — `pause` says so. | 0 |
+| `bin/backlog.sh resume` | `resume` | Clears the pause and a pending stop. | 0 |
+| `bin/backlog.sh stop` | `stop` | A running loop finishes its item and ends; a waiting loop ends within a second. An item interrupted meanwhile (limit, error) is not waited for: the loop ends and the next start continues that run. Without a loop: says so, sets nothing. One-shot: the loop removes it when it ends, and a start removes one left by a killed loop. | 0 |
+| `bin/backlog.sh status [--json]` | `status` | See *Status* below. | 0 |
 
 ## `start` options
 

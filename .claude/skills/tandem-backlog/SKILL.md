@@ -74,12 +74,12 @@ BL = python tools/backlog/backlog.py
   or break its fast-forward of `main`. A loop that is running and not
   `paused` (`loop: running`, `state:` other than `paused`) can start a run
   between two commits of this operation (feature 247). In either case
-  change nothing; tell the maintainer to run `tools/backlog/loop-pause.sh`
-  and wait until `tools/backlog/loop-status.sh` shows `state: paused` and
+  change nothing; tell the maintainer to run `bin/backlog.sh pause`
+  and wait until `bin/backlog.sh status` shows `state: paused` and
   `lock: free` (or to let a manual run finish), then continue; resuming the
-  loop (`loop-resume.sh`) is the maintainer's step. Read-only operations
+  loop (`bin/backlog.sh resume`) is the maintainer's step. Read-only operations
   (`list`, `show`, `check`) are fine. Agent mode inside a run is
-  unaffected. **The loop's own triage** (`loop-start.sh --auto-triage`,
+  unaffected. **The loop's own triage** (`bin/backlog.sh start --auto-triage`,
   §2.5a *From the loop*) is the exception: it runs while the loop waits
   for it, and the loop starts no run meanwhile.
 - Commands of this skill: `check`, `sync`, `list`, `new`, `import-github`,
@@ -95,7 +95,7 @@ BL = python tools/backlog/backlog.py
 - **The loop's triage**: the prompt is exactly
   `/tandem-backlog auto-triage --commit` and the environment variable
   `TANDEM_BACKLOG_LOOP_TRIAGE` is set (the loop started this session; the
-  maintainer chose it with `loop-start.sh --auto-triage`). Maintainer mode
+  maintainer chose it with `bin/backlog.sh start --auto-triage`). Maintainer mode
   for that one operation only, never for anything else in the session.
 - **Agent mode**: any other case — you record a finding while implementing
   a feature, a reviewer agent reports something, another skill calls this
@@ -444,7 +444,7 @@ or unblocks, and never edits an item's body.
    `git commit -m 'backlog: auto-triage - <n> placed, <n> parked, <n> left in Inbox' -m '<the attribution lines the session's instructions give for commits>'`.
    Never push.
 
-**From the loop** (`loop-start.sh --auto-triage`, feature 247). The loop
+**From the loop** (`bin/backlog.sh start --auto-triage`, feature 247). The loop
 runs `claude -p '/tandem-backlog auto-triage --commit'` between two runs,
 whenever the *Inbox* holds an item its last triage did not see, with
 `TANDEM_BACKLOG_LOOP_TRIAGE` set to the loop's pid. Then:

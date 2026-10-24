@@ -67,7 +67,7 @@ is English.
 10. **Commits**: every commit of the run is
     `git commit -m '<subject>' -m '<body, optional>' -m '<the attribution lines the session's instructions give for commits>'`.
     The templates below give the subject only. English.
-11. **Continued run** (feature 247). The loop (`tools/backlog/loop-start.sh`)
+11. **Continued run** (feature 247). The loop (`bin/backlog.sh start`)
     starts a run with the slug as the argument. When a run is interrupted
     (usage limit, error, Ctrl+C) the loop continues **the same session** with
     a prompt saying so. Then never start over and never take another item:

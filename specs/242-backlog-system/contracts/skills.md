@@ -27,7 +27,7 @@ only reports the plan): an item whose fault lies only in code the default
 build does not build or ship is parked with a reason, an item the rules
 cannot place stays in *Inbox* with a log line; it never rejects, closes or
 edits a body. `--commit` commits the result on `main`; the backlog loop
-(`loop-start.sh --auto-triage`, feature 247) runs `auto-triage --commit`
+(`bin/backlog.sh start --auto-triage`, feature 247) runs `auto-triage --commit`
 between two runs with `TANDEM_BACKLOG_LOOP_TRIAGE` set — maintainer mode
 for that operation only.
 

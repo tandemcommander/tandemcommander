@@ -15,7 +15,7 @@ add *Recent Changes* / *Active Technologies* sections.
 
 | Need | Read |
 |------|------|
-| What to work on next | `backlog/BACKLOG.md` — the ordered backlog (*Next*, *Decisions for the maintainer*, *Person steps*, *Inbox*); one folder per item in `backlog/items/`; manage it with `/tandem-backlog`, run one item autonomously with `/tandem-backlog-implement` (242), item after item with `tools/backlog/loop-start.sh` (+ `loop-pause/resume/stop/status.sh`, 247). `specs/` holds only features being or having been implemented |
+| What to work on next | `backlog/BACKLOG.md` — the ordered backlog (*Next*, *Decisions for the maintainer*, *Person steps*, *Inbox*); one folder per item in `backlog/items/`; manage it with `/tandem-backlog`, run one item autonomously with `/tandem-backlog-implement` (242), item after item with `bin/backlog.sh start` (+ `pause`, `resume`, `stop`, `status`; 247). `specs/` holds only features being or having been implemented |
 | What a feature did, its traps and evidence | `specs/FEATURE-HISTORY.md` — search `^- NNN-` or use its index by area; **read the entries of the area before changing it** |
 | Full record of a feature | `specs/NNN-*/` — `fix-log.md`, `closing-report.md`, `research.md`, `contracts/`, `probe/` |
 | Identity, build policies, key facts in full | `architecture/12-project-reference.md` |
@@ -196,6 +196,8 @@ Each is one line of a longer story; the number is the feature whose entry in
   `unreleased` heading); a release on a later day runs it again (243).
 - Write scripts with the editor tools — Bash here-documents collapse doubled
   backslashes (123).
+- Every script in `bin/` answers `--help` (what it is for, how to run it, exit 0);
+  `tools/test_bin_help.py` checks it (247, amended 2026-10-24).
 
 ## Status (2026-10-17)
 
