@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a whole unpack of an image with audio or left-out tracks fails without saying why
 type: improvement
-status: new
+status: open
 severity: 3
 area: archives
 source: review:334
@@ -50,3 +50,4 @@ without a box on every panel listing; a new UI string with the `.slt` refresh.
 ## Log
 
 - 2026-10-24 — created (source review:334)
+- 2026-10-24 — moved to Next position 74

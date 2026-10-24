@@ -1,8 +1,8 @@
 ---
 title: Check feature 334 with real NRG and CCD disc images
 type: person-step
-status: new
-severity: 4
+status: open
+severity: 6
 area: archives
 source: leftover:334
 who: person
@@ -54,3 +54,5 @@ that images with audio or unreadable tracks are kept.
 ## Log
 
 - 2026-10-24 — created (source leftover:334)
+- 2026-10-24 — auto-triage: severity 4 -> 6: a check guarding a data-loss fix (feature 334 keeps an image whose unpack left content out instead of deleting it)
+- 2026-10-24 — moved to Person steps position 7

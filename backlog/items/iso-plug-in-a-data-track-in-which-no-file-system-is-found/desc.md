@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a data track in which no file system is found lists nothing and is not marked
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: measure:334
@@ -57,3 +57,4 @@ ISO 9660 session is Mode 1 / Mode 2 Form 1 - not verified), or the maintainer de
 ## Log
 
 - 2026-10-24 — created (source measure:334)
+- 2026-10-24 — moved to Next position 1

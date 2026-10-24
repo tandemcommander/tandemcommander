@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a track of a CCD or NRG image may keep an uninitialised file-system type
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:334
@@ -57,3 +57,4 @@ not describe is not listed with garbage bounds.
 ## Log
 
 - 2026-10-24 — created (source review:334)
+- 2026-10-24 — moved to Next position 7
