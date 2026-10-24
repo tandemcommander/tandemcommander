@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4838,3 +4838,35 @@ a few early ones are out of sequence).
   change); saltests 28,602 -> 28,693 / 0 (`TestIsoStreamPartial_337`; mutant gaps' content ignored fails 5);
   refute-first reviews: 1 (MUST partial last sector counted, SHOULD part-stored sector dropped - fixed), 2
   (no MUST; SHOULD too-small last end - fixed; its rows added; skip-on-error -> Inbox).
+- 338-uniso-skip-fails-unpack: a whole Unpack (Alt+F9) of a disc image counted as successful unless the user
+  cancelled - a file skipped after a read error (Skip, Skip all), a file that could not be created or whose
+  overwrite question was answered Skip, a folder that could not be created, and a damaged directory listing
+  two files of one name (the core's `AddFile` keeps both; the second was written over the first) - and
+  "Delete archive after unpacking" deleted the image with the only copy of what was not extracted; after Skip
+  all (or an overwrite answered All, which sets bits of the same `silent` mask) later read errors showed no box
+  and the readers returned `UNPACK_OK` for the deleted part file - now each reader ends with
+  `SalIsoFileUnpackResult(ret, bFileComplete)` (iso9660 / rawfs / udf / xdvdfs / hfs; HFS+ also: extents
+  ending before the size, a listed non-file record), `ExtractAllItems` keeps a `CSalIsoWholeUnpackTally`
+  (any result but OK, a folder `UnpackDir` did not create, Cancel) and remembers the files it wrote by the
+  file system's identity (`CSalIsoWrittenFiles`: both `salsamefile.h` keys in an `unordered_set`; an existing
+  target that is one of them, written over, sets `WroteOverOwn`; a written file without a usable id, an
+  identity not read or no memory fail closed), and `UnpackWholeArchive` succeeds only by
+  `SalIsoWholeUnpackSucceeded` (`src/common/salisounpack.h`). Boxes and texts unchanged, no UI string; Copy
+  (F5) unchanged. Traps: R-SKIPALL could not prove the readers' silent path (its first file is a Skip) - row
+  R-SILENT (overwrite All, then a silent read error) does, and fails with that rule alone mutated; O-YES never
+  asks the written set (the set is empty at top.txt) - review 1's REUNPACK is the real identity control; Bash
+  here-documents again collapsed backslashes (a Python docstring, a fix-log line - fixed with the editor).
+  Limits: no message says why the image was kept; an 8.3 short-name clash or a folder outside the mask that
+  cannot be created keeps the image (fails closed); only the ISO 9660 reader is driven by the probe; HFS+
+  compressed / resource-fork-only files still extract empty and count as done (Inbox
+  `iso-plug-in-an-hfs-file-whose-data-is-compressed-or-only-in`), multi-extent files over 4 GiB extract
+  wrong (Inbox `iso-plug-in-an-iso-9660-file-over-4-gib-stored-in-several`), Cancel in "Error Creating
+  Directory" does not stop the unpack (Inbox `iso-plug-in-cancel-in-the-error-creating-directory-box-does`),
+  a UDF file whose track does not open stays partly written (Inbox
+  `iso-plug-in-a-udf-file-whose-track-does-not-open-is-left`). From backlog item
+  `iso-plug-in-a-whole-unpack-counts-a-skipped-file-as-success`. Probe `iso338_probe` (plain ISO 9660 seed by
+  `mkimg338.sh`, damaged copies by `img338.py`) on main 10 / 6 -> 24 / 0 (12 RUN rows; R-SILENT and review
+  1's REUNPACK / HARDLINK / TWINS-ALL added; negative controls: both rules mutated 10 / 6, readers' rule alone
+  R-SILENT FAIL, reviewer's main build 15 / 9); 330 30 / 0, 337 74 / 0; saltests 28,693 -> 28,740 / 0
+  (`TestIsoWholeUnpack_338`; the two rules mutated fail 5); refute-first review 1: no MUST, two SHOULD (to
+  Inbox), NOTEs (header comment corrected, rows ported, two pre-existing defects to Inbox).

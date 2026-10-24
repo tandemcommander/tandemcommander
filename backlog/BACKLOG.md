@@ -17,7 +17,6 @@ Last triaged: 2026-10-24
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a whole unpack counts a skipped file as success and deletes the image](items/iso-plug-in-a-whole-unpack-counts-a-skipped-file-as-success/desc.md) | bug | 7 | archives | 338 |
 
 ## Next
 
