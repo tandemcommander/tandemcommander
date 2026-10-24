@@ -72,3 +72,30 @@ FR-006 (images without a track table unaffected): the plain ISO / UDF / HFS+ / X
 None from the item. Not driven: a real Video CD / SVCD image and a CCD/IMG (2352-byte) image - no such
 image in the repository and no tool in WSL writes one here; the 2352 layout is covered by saltests only
 (person step at closing).
+
+## Review
+
+### Review 1 (stopped - partial work)
+
+The first reviewer agent wrote no report: its last file (`%TEMP%\rev335\rev_ff.txt`) was written at
+05:47, nothing followed until 06:10 (two wakeups without progress, the agent no longer listed) - treated
+as stopped (SKILL.md step 7). Its partial work, from its files in `%TEMP%\rev335`:
+
+- negative control at 3b0c315f (worktree `rev335\neg`) with its own CloneCD writer (`ccd335.py`, raw
+  2352-byte sectors): before 14 / 6 (C-NOFS-M1, C-NOFS-F1 deleted too; C-VCD control deleted), on the
+  fixed build 20 / 0 - the 2352 layout works as the rule says;
+- **a hole (MUST level)**: rows M-FF-F1 / M-TXT-F1 - a 2336-byte Form 1 track with destroyed descriptors
+  whose sector 16 (subheader included) is overwritten with 0xFF or with text: still taken as a Form 2
+  stream, the image DELETED. A 2336-byte sector has no sync; the rule checked only the Form 2 bit of the
+  two submode copies (0xFF and "lorem ip" both set it).
+
+Fix: `SalIsoSectorIsForm2` accepts a subheader only when it is a valid CD-ROM XA subheader - both
+copies equal (all four bytes), the channel number below 32, at most one of the data / audio / video
+submode bits - and the Form 2 bit is set (for 2352+ in addition to the sync and mode byte). saltests
++82 checks (0xFF / text / equal-copies text, a table of valid and invalid subheaders in both layouts,
+copies differing in each byte) -> 28,543 / 0. The reviewer's rows taken into the feature's probe
+(`img335.py` kinds multi_ff_f1 / multi_txt_f1, `ccd335.py` copied, rows M-FF-F1, M-TXT-F1, C-VCD,
+C-NOFS-M1, C-NOFS-F1). Negative control: the extended probe on the a5af8563 build
+(`result_review1_before.txt`) 22 / 2 (M-FF-F1, M-TXT-F1 deleted); on the fixed build
+(`result_after_review1.txt`) 24 / 0. (A first attempt to patch the probe from a Bash here-document
+collapsed its backslashes - an assert stopped it, nothing written; done with the editor, CLAUDE.md 123.)

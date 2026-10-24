@@ -20012,6 +20012,56 @@ static void TestIsoSectorForm2_335()
     CHECK(!SalIsoSectorIsForm2(zero, 8, 2336));
     CHECK(!SalIsoSectorIsForm2(sub, 8, 2048)); // the same bytes as user data of a 2048-byte track
 
+    // review 1: the subheader must be a valid CD-ROM XA subheader - a 2336-byte sector has no sync, so
+    // a sector 16 overwritten with 0xFF or text (rows M-FF-F1, M-TXT-F1) must not pass as Form 2
+    unsigned char ff[24];
+    memset(ff, 0xFF, sizeof(ff));
+    CHECK(!SalIsoSectorIsForm2(ff, 8, 2336));
+    memcpy(ff, raw, 16); // a raw sector whose sync and header survive, the rest 0xFF
+    CHECK(!SalIsoSectorIsForm2(ff, 24, 2352));
+    const unsigned char* text = (const unsigned char*)"lorem ipsum dolor sit amet";
+    CHECK(!SalIsoSectorIsForm2(text, 8, 2336));
+    const unsigned char twice[8] = {'a', 'm', 'o', 'r', 'a', 'm', 'o', 'r'}; // equal copies of text
+    CHECK(!SalIsoSectorIsForm2(twice, 8, 2336));                             // channel 'm' (109) >= 32
+    unsigned char x[8];
+    struct
+    {
+        unsigned char File, Channel, Submode, Coding;
+        bool Form2;
+    } subs[] = {
+        {0, 0, 0x20, 0, true},    // an empty Form 2 sector (a Video CD's front margin)
+        {1, 1, 0x62, 0x0F, true}, // MPEG video
+        {1, 1, 0x64, 0x7F, true}, // MPEG audio
+        {1, 0, 0x28, 0, true},    // Form 2 data
+        {1, 31, 0xE2, 0, true},   // EOF + real time + video, channel 31
+        {1, 32, 0x62, 0, false},  // channel 32
+        {0, 0, 0x2A, 0, false},   // data + video
+        {0, 0, 0x26, 0, false},   // audio + video
+        {0, 0, 0x2C, 0, false},   // data + audio
+        {0, 0, 0x6E, 0, false},   // all three
+        {0xFF, 0, 0x62, 0, true}, // the file number is free
+        {0, 0, 0x08, 0, false},   // Form 1 data
+        {0, 0, 0x00, 0, false},   // a zeroed subheader
+    };
+    for (const auto& r : subs)
+    {
+        unsigned char one[4] = {r.File, r.Channel, r.Submode, r.Coding};
+        memcpy(x, one, 4);
+        memcpy(x + 4, one, 4);
+        CHECK(SalIsoSectorIsForm2(x, 8, 2336) == r.Form2);
+        unsigned char rs[24];
+        memcpy(rs, raw, 16);
+        memcpy(rs + 16, x, 8);
+        CHECK(SalIsoSectorIsForm2(rs, 24, 2352) == r.Form2);
+        for (int i = 0; i < 4; i++) // copies that differ in any byte
+        {
+            unsigned char d[8];
+            memcpy(d, x, 8);
+            d[4 + i] ^= 0x01;
+            CHECK(!SalIsoSectorIsForm2(d, 8, 2336));
+        }
+    }
+
     // the listing decision with it: a lost raw track marks in every outcome, a Form 2 stream as 334
     CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, !SalIsoSectorIsForm2(s1, 8, 2336), SAL_ISO_TRACK_LISTED));       // M-NOFS-F1
     CHECK(SalIsoTrackMarksListing(SAL_ISO_TRACK_DATA, !SalIsoSectorIsForm2(zero, 24, 2048), SAL_ISO_TRACK_NOT_TRIED)); // S-NOFS, S-RAW

@@ -15,6 +15,13 @@
       single_vcd.nrg     one session: track 1 ISO 9660, track 2 as multi_form2 (a Video CD's layout)
       single_nofs.nrg    one session: track 1 ISO 9660, track 2 as multi_nofs
       single_raw.nrg     one session: track 1 ISO 9660, track 2 Mode 1 zeros (feature 334's S-RAW image)
+      (review 1)
+      multi_ff_f1.nrg    as multi_nofs_f1, track 2's sector 16 (subheader included) overwritten with 0xFF
+      multi_txt_f1.nrg   the same, overwritten with text
+    ccd335.py writes CloneCD images (.img of raw 2352-byte sectors + .ccd), one session of two tracks:
+      ccd_vcd.img        track 2 Mode 2 Form 2 (a Video CD's MPEG track)
+      ccd_nofs_m1.img    track 2 Mode 1, every volume descriptor destroyed
+      ccd_nofs_f1.img    track 2 Mode 2 Form 1, every volume descriptor destroyed
     Unpack rows: the left panel shows <row>\src, Home, End focuses the image, Alt+F9 (851), the target
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK.
       M-NOFS     PASS = Session 01/a.txt extracted, no window, the image KEPT - before 335: deleted
@@ -26,6 +33,10 @@
       S-NOFS     PASS = a.txt extracted, no window, the image KEPT - before 335: deleted
       S-RAW      PASS = a.txt extracted, no window, the image KEPT - feature 334's control S-RAW (a Mode 1
                  track of zeros is not a Video CD's stream); before 335: deleted
+      M-FF-F1, M-TXT-F1  PASS = Session 01/a.txt extracted, no window, the image KEPT (review 1: an
+                 overwritten sector 16 is not a Form 2 stream)
+      C-VCD      (control) PASS = a.txt extracted, no window, the image deleted
+      C-NOFS-M1, C-NOFS-F1  PASS = a.txt extracted, no window, the image KEPT - before 335: deleted
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does not
     answer within 30 s (End-Row). Without WSL Ubuntu every row is NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -99,6 +110,8 @@ function Unpack-Row([string]$Case, [string]$Img0, $Want, [switch]$Kept, [switch]
     if (-not [IO.File]::Exists($Img0)) { Row $Case 'RUN' 'NOT DRIVEN' ('no image ' + $Img0); return }
     $d = $Root + '\' + $Case; $tgt = $d + '\tgt'; NewDir ($d + '\src'); NewDir $tgt
     $img = $d + '\src\' + [IO.Path]::GetFileName($Img0); [IO.File]::Copy($Img0, $LP + $img)
+    # a CloneCD image: its .ccd goes along (the plug-in reads the track table from it)
+    $ccd0 = [IO.Path]::ChangeExtension($Img0, '.ccd'); if ($Img0.EndsWith('.img') -and [IO.File]::Exists($ccd0)) { [IO.File]::Copy($ccd0, $LP + [IO.Path]::ChangeExtension($img, '.ccd')) }
     $id = 0; $fatal = $null; $before = Reports
     try {
         if (-not $img.StartsWith($Root + '\') -or -not $tgt.StartsWith($Root + '\')) { throw ('path outside the fixture: ' + $tgt) }
@@ -150,7 +163,9 @@ try {
     $mk = & wsl -d Ubuntu -- sh (WslPath $MkImg) (WslPath $s) 2>&1
     $made = @()
     if ([IO.File]::Exists("$s\s1.iso") -and [IO.File]::Exists("$s\s2.iso")) {
-        foreach ($k in @('multi_nofs', 'multi_ok_2336', 'multi_nofs_f1', 'multi_form2', 'single_vcd', 'single_nofs', 'single_raw')) { $made += & python -I $py $k "$s\s1.iso" "$s\s2.iso" "$s\s2.lba" "$s\$k.nrg" 2>&1 }
+        foreach ($k in @('multi_nofs', 'multi_ok_2336', 'multi_nofs_f1', 'multi_form2', 'single_vcd', 'single_nofs', 'single_raw', 'multi_ff_f1', 'multi_txt_f1')) { $made += & python -I $py $k "$s\s1.iso" "$s\s2.iso" "$s\s2.lba" "$s\$k.nrg" 2>&1 }
+        $py2 = Join-Path $Here 'ccd335.py'
+        foreach ($k in @('ccd_vcd', 'ccd_nofs_m1', 'ccd_nofs_f1')) { $made += & python -I $py2 $k "$s\s1.iso" "$s\s2.iso" "$s\$k.img" 2>&1 }
     }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) }) | Sort-Object) -join ','))
@@ -168,6 +183,11 @@ try {
     Unpack-Row 'S-VCD' "$s\single_vcd.nrg" $a
     Unpack-Row 'S-NOFS' "$s\single_nofs.nrg" $a -Kept
     Unpack-Row 'S-RAW' "$s\single_raw.nrg" $a -Kept
+    Unpack-Row 'M-FF-F1' "$s\multi_ff_f1.nrg" $first -Kept
+    Unpack-Row 'M-TXT-F1' "$s\multi_txt_f1.nrg" $first -Kept
+    Unpack-Row 'C-VCD' "$s\ccd_vcd.img" $a
+    Unpack-Row 'C-NOFS-M1' "$s\ccd_nofs_m1.img" $a -Kept
+    Unpack-Row 'C-NOFS-F1' "$s\ccd_nofs_f1.img" $a -Kept
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

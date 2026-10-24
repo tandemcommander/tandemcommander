@@ -80,8 +80,11 @@ inline bool SalIsoTrackSectorOutside(long long at, long long sectorUser, long lo
 //   - 2336 bytes (a Mode 2 sector without sync and header): the subheader at 0..7;
 //   - any other size (only the 2048 bytes of user data): a Form 2 sector's 2324 bytes cannot be stored -
 //     never Form 2.
-// The subheader is file, channel, submode, coding - twice; both copies of the submode must carry the
-// Form 2 bit (0x20). A file system's volume descriptors are never in Form 2 sectors (no ECC layer; on a
+// The subheader is file, channel, submode, coding - twice. It counts only when it is a valid CD-ROM XA
+// subheader - both copies equal, the channel number below 32, at most one of the data / audio / video
+// submode bits (0x08 / 0x04 / 0x02) - and its submode carries the Form 2 bit (0x20): a 2336-byte sector
+// has no sync to check, and a sector overwritten with 0xFF or text could otherwise pass (review 1).
+// A file system's volume descriptors are never in Form 2 sectors (no ECC layer; on a
 // Video CD / SVCD only the MPEG stream tracks are Form 2), so a data track whose sector 16 is Form 2 is a
 // stream, not a lost file system. Anything else - Mode 1, Form 1, a destroyed sync or header, one copy
 // only, too few bytes - is not Form 2 (the caller then marks the track: fails closed).
@@ -113,5 +116,15 @@ inline bool SalIsoSectorIsForm2(const unsigned char* raw, long long len, long lo
     }
     else
         return false;
-    return (raw[sub + 2] & 0x20) != 0 && (raw[sub + 6] & 0x20) != 0;
+    for (int i = 0; i < 4; i++)
+    {
+        if (raw[sub + i] != raw[sub + 4 + i])
+            return false;
+    }
+    if (raw[sub + 1] >= 32)
+        return false;
+    unsigned char type = raw[sub + 2] & 0x0E;
+    if (type != 0 && type != 0x08 && type != 0x04 && type != 0x02)
+        return false;
+    return (raw[sub + 2] & 0x20) != 0;
 }

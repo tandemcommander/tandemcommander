@@ -21,6 +21,8 @@ Track 2 of every kind is session 2's track (s2.iso) or a stand-in of the same le
                  ISO 9660 track, then the MPEG track)
   single_nofs    one session: track 1 s1, track 2 as multi_nofs
   single_raw     one session: track 1 s1, track 2 Mode 1 / 2048 zeros (feature 334's S-RAW image)
+  multi_ff_f1    as multi_nofs_f1, track 2's sector 16 (subheader included) overwritten with 0xFF (review 1)
+  multi_txt_f1   the same, overwritten with text (review 1)
 """
 import struct
 import sys
@@ -90,6 +92,16 @@ def main(argv):
         t2 = mode2_2336(s2, 0x62, 13)
         mode = 0x03
         note = "track 2 Mode 2 / 2336 Form 2 (MPEG-like stream)"
+    elif kind in ("multi_ff_f1", "multi_txt_f1"):
+        # review 1: as multi_nofs_f1, sector 16 (with its subheader) overwritten with 0xFF / text - a
+        # 2336-byte sector has no sync, only a valid XA subheader may say Form 2
+        k, n = kill_descriptors(s2)
+        t2 = bytearray(mode2_2336(k, 0x08, 0))
+        fill = bytes([255]) * 2336 if kind == "multi_ff_f1" else (b"lorem ipsum dolor sit amet " * 100)[:2336]
+        t2[16 * 2336 : 17 * 2336] = fill
+        t2 = bytes(t2)
+        mode = 0x03
+        note = "track 2 Mode 2 / 2336 Form 1, descriptors destroyed, sector 16 overwritten (%s)" % kind
     else:
         raise SystemExit("unknown kind " + kind)
     data = s1 + t2
