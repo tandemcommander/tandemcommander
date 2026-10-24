@@ -20155,6 +20155,19 @@ static void TestIsoStreamCovered_336()
     SalIsoNoteFileStart(cov, 3, 0xFFFFFFFFUL, 1, true, offThree); // beyond the last track's start: the last track
     CHECK(cov[2]);
 
+    // review 2: track numbers above 255 (the unpack's BYTE) cover nothing
+    {
+        auto offMany = [](int t) -> unsigned long
+        { return (unsigned long)t * 100; };
+        bool many[300] = {};
+        SalIsoNoteFileStart(many, 300, 255 * 100, 2048, true, offMany);
+        CHECK(many[255]);
+        SalIsoNoteFileStart(many, 300, 256 * 100, 2048, true, offMany);
+        CHECK(!many[256]);
+        SalIsoNoteFileStart(many, 300, 299 * 100 + 5, 2048, true, offMany);
+        CHECK(!many[299]);
+    }
+
     // the decision
     CHECK(SalIsoStreamTrackMarksListing(true, false));
     CHECK(!SalIsoStreamTrackMarksListing(true, true));

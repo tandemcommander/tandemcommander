@@ -23,6 +23,11 @@
       M-FORM2COV (control) PASS = Session 01/a.txt and Session 01/avseq01.dat extracted, the image deleted
       S-VCDCOV2  PASS = a.txt and avseq01.dat extracted, the image KEPT (track 3 uncovered) - before: deleted
       S-VCDZERO  PASS = a.txt and avseq01.dat (0 bytes) extracted, the image KEPT - before: deleted
+      S-VCDPART  (limit, review 2) PASS = a.txt and avseq01.dat (2048 bytes: 1 of the stream's 64 sectors)
+                 extracted, the image deleted - a file that starts in a stream covers it
+    With -FoldersOff ("Show Session As Directory" = 0 in the UnISO settings; review 2) only these run:
+      MF-FORM2   PASS = a.txt extracted, the image KEPT; MF-FORM2COV (control) a.txt and avseq01.dat, deleted;
+      MF-NOFS    PASS = a.txt extracted, the image KEPT
     Feature 335's images (img335.py, see its docstring):
       multi_nofs.nrg     two sessions; track 2 Mode 1 with every volume descriptor destroyed
       multi_ok_2336.nrg  two sessions; track 2 Mode 2 / 2336 Form 1, intact
@@ -76,7 +81,8 @@ param(
     [string]$OutFile,
     [string[]]$Only,
     [string]$Lib,
-    [string]$MkImg
+    [string]$MkImg,
+    [switch]$FoldersOff
 )
 $ErrorActionPreference = 'Stop'
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
@@ -193,7 +199,9 @@ try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir
     Set-Config
-    Out ("iso336_probe (feature 336) {0}" -f $Label)
+    # review 2: the listing without "Session NN" folders (the UnISO setting; the registry backup restores it)
+    if ($FoldersOff) { & reg.exe add "$RegKey\0.1\Plugins Configuration\UnISO" /v 'Show Session As Directory' /t REG_DWORD /d 0 /f | Out-Null }
+    Out ("iso336_probe (feature 336) {0}{1}" -f $Label, $(if ($FoldersOff) { ' (Session NN folders off)' } else { '' }))
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed)
     Out ''
@@ -211,7 +219,7 @@ try {
     }
     if ([IO.File]::Exists("$s\s1c.iso")) {
         $py3 = Join-Path $Here 'img336.py'
-        foreach ($k in @('single_vcdcov', 'single_vcdcov2', 'single_vcdzero', 'multi_form2cov')) { $made += & python -I $py3 $k "$s\s1c.iso" "$s\$k.nrg" 2>&1 }
+        foreach ($k in @('single_vcdcov', 'single_vcdcov2', 'single_vcdzero', 'multi_form2cov', 'single_vcdpart')) { $made += & python -I $py3 $k "$s\s1c.iso" "$s\$k.nrg" 2>&1 }
         $made += & python -I $py3 'ccd_vcdcov' "$s\s1c.iso" "$s\ccd_vcdcov.img" 2>&1
     }
     $ErrorActionPreference = $old
@@ -227,12 +235,22 @@ try {
     $cov = [ordered]@{ 'a.txt' = 'A1'; 'avseq01.dat' = 'stream:13:8' }
     $zero = [ordered]@{ 'a.txt' = 'A1'; 'avseq01.dat' = 'size:0' }
     $mcov = [ordered]@{ 'Session 01/a.txt' = 'A1'; 'Session 01/avseq01.dat' = 'stream:13:8' }
+    $part = [ordered]@{ 'a.txt' = 'A1'; 'avseq01.dat' = 'stream:13:1' }
+    if ($FoldersOff) {
+        # review 2: one listing of the last data track - the same rule
+        Unpack-Row 'MF-FORM2' "$s\multi_form2.nrg" $a -Kept
+        Unpack-Row 'MF-FORM2COV' "$s\multi_form2cov.nrg" $cov
+        Unpack-Row 'MF-NOFS' "$s\multi_nofs.nrg" $a -Kept
+    }
+    else {
     # feature 336
     Unpack-Row 'S-VCDCOV' "$s\single_vcdcov.nrg" $cov
     Unpack-Row 'C-VCDCOV' "$s\ccd_vcdcov.img" $cov
     Unpack-Row 'M-FORM2COV' "$s\multi_form2cov.nrg" $mcov
     Unpack-Row 'S-VCDCOV2' "$s\single_vcdcov2.nrg" $cov -Kept
     Unpack-Row 'S-VCDZERO' "$s\single_vcdzero.nrg" $zero -Kept
+    # (limit, review 2) a file covering 1 of the stream's 64 sectors covers it: the image deleted
+    Unpack-Row 'S-VCDPART' "$s\single_vcdpart.nrg" $part
     # feature 335's rows (S-VCD, M-FORM2, C-VCD, C-VCDREAL turned by 336)
     Unpack-Row 'M-NOFS' "$s\multi_nofs.nrg" $first -Kept
     Unpack-Row 'M-OK-2336' "$s\multi_ok_2336.nrg" $both
@@ -250,6 +268,7 @@ try {
     Unpack-Row 'M-U16S-F1' "$s\multi_u16s_f1.nrg" $first -Kept
     Unpack-Row 'C-VCDREAL' "$s\ccd_vcdreal.img" $a -Kept
     Unpack-Row 'S-SHORT' "$s\single_short.nrg" $a -Kept
+    }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

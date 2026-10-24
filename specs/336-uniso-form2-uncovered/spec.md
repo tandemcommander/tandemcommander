@@ -150,9 +150,10 @@ C-VCDCOV): every file extracted (the covering file's bytes read from the stream 
 - Assumption (autonomous run): GUI probes need the maintainer's installed Tandem Commander closed (they
   share its registry key); when it keeps running through the run, the rows are recorded NOT DRIVEN and
   owed to a person.
-- Assumption (autonomous run): the extents listed by HFS / UDF / Xbox readers are mapped by the same
-  rule; on such discs a Form 2 stream track is not expected - a wrong mapping can only make a stream
-  covered (as before this feature), never lose a mark this feature adds for ISO 9660.
+- Assumption (autonomous run, reviews 1 and 2): only ISO 9660 entries cover a stream - their extent is
+  the disc address of the file's first sector; HFS+ (a catalog record number), UDF (a partition-relative
+  block) and Xbox entries (no type set) cover nothing, nor does a file whose track number is above 255
+  (the unpack keeps it in a byte) - both fail closed (the image is kept).
 - Out of scope: Video CD files read cut to 2048 bytes a sector (Inbox
   `iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may`); NRG ETNF / ETN2 / multi-session CCD
   table defects (Inbox `iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables`).

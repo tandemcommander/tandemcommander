@@ -187,7 +187,9 @@ inline void SalIsoNoteFileStart(bool* covered, int trackCount, unsigned long ext
     if (covered == nullptr || size == 0 || !discAddress)
         return;
     int t = SalIsoTrackOfExtent(trackCount, extent, extentOffsetOf);
-    if (t >= 0 && t < trackCount)
+    // review 2: the unpack keeps the track number in a byte (GetTrackFromExtent returns BYTE) - a file of
+    // a track above 255 (a malformed track table; a CD has at most 99) is read from another track
+    if (t >= 0 && t < trackCount && t <= 255)
         covered[t] = true;
 }
 

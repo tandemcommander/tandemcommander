@@ -120,3 +120,42 @@ tracks); standing rules - no finding.
 After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 28,599 / 0; encoding guard 0;
 `probe/result_after_review1.txt` 42 / 0 (covered rows now with the content check);
 `probe/result_realvcd_review1.txt` 10 / 0; registry restored + identical each.
+
+### Review 2 (report)
+
+No MUST. Re-ran build (28,599 / 0) and the probe on the hidden desktop: 30 / 0 with "Session NN" folders
+on, 6 / 0 with "Show Session As Directory" = 0 (rows MF-FORM2 kept, MF-FORM2COV deleted, MF-NOFS kept -
+the mode analyze C1 / review 1 NOTE 3 left undriven); negative control with main's `uniso.spl`
+(e2e41399, own worktree and build folder): folders on S-VCD, M-FORM2, C-VCD, C-VCDREAL, S-VCDCOV2,
+S-VCDZERO deleted (6 FAIL), folders off MF-FORM2 deleted (FAIL) - the rows test the fix. Caller,
+`RawLost` / `Form2Stream`, walk and standing-rule checks - no finding. Judged review 1's MUST handling
+right for this item (336 deletes strictly fewer images; the item wants covered Video CDs deleted; the
+cut is its own item; failing closed for all Video CDs is the maintainer's trade-off).
+
+- SHOULD: the cut item (`iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may`) still says "may",
+  severity 5, without review 1's measurement. Not changed by this run: the backlog skill's agent mode
+  extends only items the session created; the measurement is in the related decision item
+  `keep-video-cd-images-after-a-whole-unpack-until-their-video` and named in the closing report for the
+  maintainer's triage.
+- NOTE 1 (partial coverage lets the image be deleted, measured as row S-VCDPART: 1 of 64 sectors) ->
+  Inbox `iso-plug-in-a-file-covering-part-of-a-form-2-stream-lets-the` (severity 7); the row is in the
+  probe as a recorded limit (image deleted).
+- NOTE 2 (fixed): `GetTrackFromExtent` returns a BYTE - with more than 256 tracks the unpack reads a
+  file from track `t & 0xFF` while track `t` counted as covered. `SalIsoNoteFileStart` covers no track
+  above 255 (fails closed); saltests +3 -> 28,602 / 0.
+- NOTE 3 (fixed): stale wording - spec *Assumptions* and research R1 now say only ISO 9660 entries cover
+  (Xbox entries set no type, so they cover nothing either).
+- NOTE 4 (taken): the probe got `-FoldersOff` (sets the UnISO "Show Session As Directory" = 0 after
+  `Set-Config`; the registry backup restores it) with the rows MF-FORM2, MF-FORM2COV, MF-NOFS, and the
+  limit row S-VCDPART (`img336.py` kind `single_vcdpart`).
+- NOTE 5: the history entry and closing report come at closing.
+
+Traps met while fixing: a Python fix-up given through a Bash here-document lost its backslashes (Python
+refused it - nothing written; done with the editor, CLAUDE.md 123); a clang-format call from PowerShell
+passed its `--lines` arguments wrongly and reformatted all of `saltests.cpp` (335's trap) - restored from
+HEAD (`git checkout HEAD -- src/saltests/saltests.cpp`), the test block re-added, the dry run of
+`--lines` showed no change.
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 28,602 / 0; encoding guard 0;
+`probe/result_after_review2.txt` 44 / 0; `probe/result_after_review2_foldersoff.txt` 6 / 0;
+`probe/result_realvcd_review2.txt` 10 / 0; registry restored + identical each.

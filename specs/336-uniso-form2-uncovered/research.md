@@ -5,9 +5,10 @@
 - Decision: walk the listed tree (`CSalamanderDirectoryAbstract`: `GetFilesCount` / `GetFile`,
   `GetDirsCount` / `GetSalDir` - as `CISOImage::ExtractAllItems` does) once after `ListImage` has built
   it; each file's `PluginData` is its `CFilePos` (`Extent`), NULL for an audio track's virtual file.
-- Rationale: one place covers every reader (ISO 9660, UDF, HFS, Xbox, raw) and every listing mode
-  (session folders or not); it sees exactly the files the whole unpack extracts (entries the listing
-  refused are already marked by feature 328).
+- Rationale: one place sees every reader's entries and every listing mode (session folders or not); it
+  sees exactly the files the whole unpack extracts (entries the listing refused are already marked by
+  feature 328). Only ISO 9660 entries count (review 1: other readers' `Extent` is not a disc address -
+  see spec *Assumptions*).
 - Alternatives: noting the extent in every reader's add-entry code (five sites, easy to miss one; would
   count entries the panel refused afterwards).
 

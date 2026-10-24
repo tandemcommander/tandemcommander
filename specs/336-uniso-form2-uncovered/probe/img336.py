@@ -13,6 +13,7 @@ ccd335.py write them. NRG layout and ETNF mode bytes as img335.py (0x00 = Mode 1
   single_vcdcov   NRG, one session: track 1 s1c (avseq01.dat -> track 2), track 2 a stream - covered
   single_vcdcov2  NRG, one session: as single_vcdcov, then track 3 a second stream no file refers to
   single_vcdzero  NRG, one session: as single_vcdcov, avseq01.dat of zero bytes (covers nothing)
+  single_vcdpart  NRG, one session: as single_vcdcov, avseq01.dat of 2048 bytes (1 of 64 sectors; review 2)
   multi_form2cov  NRG, two sessions: session 1 s1c (avseq01.dat -> session 2), session 2 a stream
   ccd_vcdcov      CloneCD, one session: track 1 s1c (raw Mode 1), track 2 a raw Form 2 stream - covered
 """
@@ -101,11 +102,11 @@ def main(argv):
     if len(s1) % SECTOR:
         raise SystemExit("s1c.iso is not whole sectors")
     n1 = len(s1) // SECTOR
-    size = 0 if kind == "single_vcdzero" else COVER_SECTORS * SECTOR
+    size = 0 if kind == "single_vcdzero" else (SECTOR if kind == "single_vcdpart" else COVER_SECTORS * SECTOR)
     s1p, nrec = patch_avseq(s1, n1, size)
     if kind == "ccd_vcdcov":
         total = write_ccd(dst, s1p, n1)
-    elif kind in ("single_vcdcov", "single_vcdzero"):
+    elif kind in ("single_vcdcov", "single_vcdzero", "single_vcdpart"):
         total = write_nrg(dst, [(s1p, 0, 0x00), (stream_2336(13), n1, 0x03)], [2])
     elif kind == "single_vcdcov2":
         total = write_nrg(dst, [(s1p, 0, 0x00), (stream_2336(13), n1, 0x03), (stream_2336(7), n1 + STREAM, 0x03)], [3])
