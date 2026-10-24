@@ -60,6 +60,13 @@ unpacking":
   → A: untouched - that decision concerns a part inside a track that opens. A whole track the
   multi-session listing cannot open (whatever its type) already shows the box and is marked by this
   feature (autonomous run: rule - recorded decisions are the maintainer's)
+- Q: When the user turns the "Session NN" folders off, which rule applies to a multi-session image? →
+  A: the single-session rules (FR-002, FR-003) - the plug-in then uses the single-session listing for
+  it (autonomous run: conservative - the listing path decides, nothing else changes)
+- Q: A data track whose start is in the image but whose later sectors are missing (a truncated image)?
+  → A: unchanged by this feature - when its file system opens, the readers' own read errors mark the
+  listing (feature 330); only a track whose descriptor area (sector 16) is not in the image is
+  "past the end" (autonomous run: conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -114,6 +121,8 @@ destroyed).
 - An "unknown" track type in the track table: unchanged.
 - An image without a track table (a plain .iso): unchanged - one track, the existing reader marks.
 - No track at all opens: the image does not open, as today.
+- "Session NN" folders turned off: a multi-session image follows the single-session rules.
+- A truncated track whose file system opens: the readers' read errors mark it (feature 330), unchanged.
 - Copying single files out of the listed sessions still works; only a whole-image unpack fails.
 
 ## Requirements *(mandatory)*
