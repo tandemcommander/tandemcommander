@@ -1,8 +1,8 @@
 ---
 title: ISO plug-in: APFS, original HFS and HFSX parts of a hybrid are never listed - mark them?
 type: decision
-status: new
-severity: 6
+status: open
+severity: 7
 area: other-plugins
 source: measure:333
 who: person
@@ -67,3 +67,5 @@ default; a person step may be needed).
 
 - 2026-10-24 — created (source measure:333)
 - 2026-10-24 — related link set by mistake removed
+- 2026-10-24 — auto-triage: severity 6 -> 7: a user can lose data in a narrow scenario (files only in the unlisted part are deleted with the image by Delete archive after unpacking)
+- 2026-10-24 — moved to Decisions for the maintainer position 1

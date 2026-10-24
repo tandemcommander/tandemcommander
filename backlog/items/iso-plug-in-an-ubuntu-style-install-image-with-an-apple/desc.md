@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an Ubuntu-style install image with an Apple partition map shows Cannot read sector #00000200
 type: bug
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: measure:333
@@ -50,3 +50,4 @@ images are zeros. It may share its cause with the related item (a valid xorriso 
 ## Log
 
 - 2026-10-24 — created (source measure:333)
+- 2026-10-24 — moved to Next position 72
