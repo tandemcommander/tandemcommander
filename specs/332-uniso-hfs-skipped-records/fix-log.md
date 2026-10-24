@@ -109,3 +109,28 @@ give no DAMAGED / UNKNOWN record.
 After the fixes: build BUILD SUCCEEDED; saltests 28,345 / 0; probe `result_after.txt` PASS 16 / FAIL 0
 (H-NUL added); regression 322 18 / 0, 329 14 / 0 (re-run on this build; 328 20 / 0 and 330 30 / 0 on the
 first build - the change since touches only the HFS+ reader they do not open).
+
+### Review 2 (refute-first agent, on d8e666a7)
+
+The first review-2 agent stopped when the session ended, in the middle of its negative-control probe:
+`%TEMP%\tc332_backup.reg` (hash F92E573A..., the clean state) was left and the live key differed - restored
+from it first (identical F92E573A...), the fixture `%TEMP%\tc332` removed. Its partial work (scratch
+`%TEMP%\rev332`) was handed to a fresh review-2 agent (not a new round).
+
+Result: no MUST, no SHOULD.
+- saltests 28,345 / 0; its probe copy with rows R2-PRIV (a folder renamed to the exact metadata name:
+  image deleted, its contents at the HFS+ root - correct), R2-PRIVX (a near-miss of that name: kept) and
+  R2-EMPTY (an empty-named file record: kept) on the branch build 22 PASS / 0 FAIL; on a main build
+  (worktree at 6070ac51, own build folder) 15 PASS / 7 FAIL - H-TYPE, H-KEY, H-LONG, H-SHORT, H-NUL,
+  R2-PRIVX, R2-EMPTY delete the image there (negative control); registry identical after both.
+- Differential test of `SalHfsCatalogRecordClass` against a model of main's loop: 20,000,000 random
+  records, 0 mismatches - every record listed before gets the same class, every record that ended the
+  listing is UNKNOWN, every skipped record is NOT_ENTRY or DAMAGED (only the exact metadata folder stays
+  NOT_ENTRY among the U+0000-first names): an image without such records lists as before (FR-006).
+- UDF: every other early exit of `ScanDir` returns a non-OK result and is marked by 330.
+- `Under(parent, false, 0)` never allocates or changes state.
+- NOTE 1 (old): hard-link data (`iNode<n>` in the metadata folder) listed at the HFS+ root, the link
+  records extract empty - new Inbox item `iso-plug-in-hfs-hard-links-extract-as-empty-files-their-data`
+  (review:332).
+- NOTE 2 (old, narrow): with the volume label in use any record whose parent reads 1 is skipped unmarked.
+- NOTE 3: FR-005, no message (recorded decision). NOTE 4: no Mac-made image tried (WSL has no hfsplus).

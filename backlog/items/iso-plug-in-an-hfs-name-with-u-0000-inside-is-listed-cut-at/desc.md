@@ -28,7 +28,7 @@ first). CLAUDE.md: a path or name is never cut - refuse it instead.
 
 ## Evidence
 
-At 5e567454 (branch 332-uniso-hfs-skipped-records): `src/plugins/uniso/hfs.cpp` `CHFS::ListDirectory`
+At d8e666a7 (branch 332-uniso-hfs-skipped-records): `src/plugins/uniso/hfs.cpp` `CHFS::ListDirectory`
 copies `nameLen` units into `fileNameW`, converts `nameLen + 1` units with
 `WideCharToMultiByte(CP_UTF8, ...)` into `fileName` and then treats `fileName` as a C string
 (`DupStr`, `FixIllegalFSChars`, `MakeSafeName`). The unit check `TestHfsRecordClass332` in
