@@ -300,3 +300,12 @@ this partial work.
 
 Review 3 has no MUST: the item closes. Code unchanged since review 2 (53e4ca36); the checks of
 *Checks (after review 2, final code)* stand; after merging `main` they are repeated below.
+
+## After merging main (0b2bbc21; `main` brought only the loop's fix, no source)
+
+| Check | Command | Result |
+|---|---|---|
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| build | `.\build.cmd` | BUILD SUCCEEDED |
+| saltests | `saltests.exe` | `saltests: 28807 checks, 0 failed` |
+| probe | `ftp341_probe.ps1` -> `probe/result_after_merge.txt` | PASS 12, FAIL 0; registry restored and identical (BFC2D583...) |
