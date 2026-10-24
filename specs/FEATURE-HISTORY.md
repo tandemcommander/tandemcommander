@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -4658,3 +4658,33 @@ a few early ones are out of sequence).
   A-OPEN 2 / 0; refute-first review 1: no MUST - the reviewer's crafted images (300-byte label, CDTX of
   22 bytes and 0xFFFFFFFF, DAOX tracks 0 and count + 1) crash the old plug-in 6 / 8 and the fixed one
   0 / 8; three SHOULD (the record, US2's wording, names to Inbox) taken.
+- 332-uniso-hfs-skipped-records: a disc image with an HFS+ part one of whose catalog records the ISO
+  plug-in skipped as damaged (its key or name past its node, a name over 255 units, a folder / file
+  record shorter than its structure, a name starting with U+0000) or of a type it does not handle (the
+  HFS+ listing ended there) was deleted by Unpack with "Delete archive after unpacking" after extracting
+  what was listed - the skipped file lost - now `SalHfsCatalogRecordClass` (`src/common/salhfscatalog.h`)
+  says what each record is: listed (folder / file), not an entry (thread records, the root folder used
+  as the volume label, TN1150's root folder "<4 x U+0000>HFS+ Private Data"), damaged (skipped, 328's
+  `ListingLeftOut` marked - a whole unpack fails, the image is kept) or of a type not handled (marked,
+  the listing still ends there; inside a folder left out by 329 skipped with it, as before). No message
+  added (as 330's silent cases). The item's UDF part (a file whose entry cannot be read) was already
+  fixed by 330 - measured, kept as probe row U-FILE. Traps: review 1's MUST - the first rule exempted
+  every U+0000-first name as metadata, a damaged `side.txt` whose first unit was zeroed was still lost
+  (row H-NUL; now only the exact folder in the root); the HFS+ structs are members of `CHFS` (a
+  file-scope `static_assert` did not compile); Bash here-documents collapsed `\0` / `\r` in a Python
+  edit twice (NUL bytes in `img332.py`, a line break in `research.md` - fixed from a script file / by
+  bytes); review 2's first agent stopped mid-probe and left `%TEMP%\tc332_backup.reg` - restored first.
+  Limits: a catalog that 322's walk refuses still drops the HFS+ part silently (Inbox
+  `iso-plug-in-an-hfs-part-of-a-hybrid-that-does-not-open-is`); the children of a damaged folder record
+  are listed at the HFS+ root; a U+0000 inside a name lists it cut (Inbox
+  `iso-plug-in-an-hfs-name-with-u-0000-inside-is-listed-cut-at`); hard links extract empty, their data as
+  `iNode<n>` at the HFS+ root (Inbox `iso-plug-in-hfs-hard-links-extract-as-empty-files-their-data`); no
+  Mac-made image tried (person step `check-feature-332-with-a-mac-made-hfs-disc-image`). From backlog
+  item `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let`. Probe `iso332_probe` (seeds xorriso
+  `-hfsplus` with `side.txt` hidden from ISO 9660, genisoimage `-udf` by `mkimg332.sh`; damaged copies by
+  `img332.py`) on main 10 / 4 (H-TYPE / KEY / LONG / SHORT: image deleted) -> 16 / 0 (H-NUL added: FAIL on
+  the review-1 build); 322 18 / 0, 328 20 / 0, 329 14 / 0, 330 30 / 0; saltests 28,304 -> 28,345 / 0
+  (`TestHfsRecordClass332`; mutants: threads damaged fail 3, no root check for the metadata folder fails
+  1); refute-first reviews: 1 (one MUST fixed, NOTE 4 fixed, SHOULD to the existing Inbox item), 2 (a
+  stopped agent's partial work + a fresh one: no MUST - main build 15 / 7 on its 22 rows, a differential
+  test of 20,000,000 random records against main's loop 0 mismatches).

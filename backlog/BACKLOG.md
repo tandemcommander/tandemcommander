@@ -17,7 +17,6 @@ Last triaged: 2026-10-24
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: UDF and HFS+ entries skipped as damaged let Unpack delete the image](items/iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let/desc.md) | bug | 7 | archives | 332 |
 
 ## Next
 
@@ -254,6 +253,7 @@ Last triaged: 2026-10-24
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 332 with a Mac-made HFS+ disc image](items/check-feature-332-with-a-mac-made-hfs-disc-image/desc.md) | person-step | 3 | archives | leftover:332 | 2026-10-24 |
 | [ISO plug-in: an HFS+ name with U+0000 inside is listed cut at it](items/iso-plug-in-an-hfs-name-with-u-0000-inside-is-listed-cut-at/desc.md) | bug | 3 | archives | review:332 | 2026-10-24 |
 | [ISO plug-in: HFS+ hard links extract as empty files, their data under iNode names](items/iso-plug-in-hfs-hard-links-extract-as-empty-files-their-data/desc.md) | bug | 4 | archives | review:332 | 2026-10-24 |
 

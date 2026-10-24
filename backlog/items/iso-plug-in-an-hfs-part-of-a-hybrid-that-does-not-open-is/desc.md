@@ -11,7 +11,7 @@ updated: 2026-10-24
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-a-valid-xorriso-iso-hfs-hybrid-opens-with-cannot, iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let]
+related: [iso-plug-in-a-valid-xorriso-iso-hfs-hybrid-opens-with-cannot]
 depends-on: []
 reason: -
 ---
@@ -57,3 +57,4 @@ make every APFS hybrid's whole unpack fail).
 - 2026-10-24 — created (source review:330)
 - 2026-10-24 — auto-triage: severity 6 -> 7: data loss in a narrow scenario (a damaged HFS+ hybrid deleted by Unpack with Delete archive loses HFS+-only files)
 - 2026-10-24 — moved to Next position 3
+- 2026-10-24 — related item iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let done in feature 332

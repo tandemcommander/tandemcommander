@@ -11,6 +11,10 @@ plugin.
 
 ## [0.1.11] — unreleased
 
+- **Unpack with "Delete archive after unpacking" deleted a disc image whose HFS+ part held a damaged entry** (feature 332).
+  - **Before:** when the ISO plug-in met a damaged record in the HFS+ part of a disc image (a Mac or hybrid CD/DVD image) - a file or folder entry whose data does not fit, whose name is too long or broken, or of a kind the plug-in does not know - it skipped the entry (or stopped listing the HFS+ part) without a word. Unpack (Alt+F9) with "Delete archive after unpacking" then extracted what was listed, reported success and deleted the image: the skipped files were lost.
+  - **Now:** such a listing counts as incomplete: Unpack extracts everything listed and keeps the image even with "Delete archive after unpacking". Undamaged images, including the internal records every HFS+ volume holds, are unpacked and deleted as before. A UDF file whose entry cannot be read already kept the image since feature 330.
+  - **Limitation:** no message says why the image was kept. An HFS+ part whose catalog cannot be read at all, a name with a null character inside, and hard-linked files (extracted empty, their data under internal `iNode` names) are recorded for later fixes.
 - **Opening a damaged or crafted Nero image (NRG) could crash the program or corrupt its memory** (feature 331).
   - **Before:** an audio track whose CD-Text title was longer than 256 bytes overran a fixed buffer of the ISO plug-in while the image was listed; a CD-Text block whose size did not match the image, or a track table naming tracks the image does not have, made the plug-in read or write outside its memory - in the Debug build a run-time check or heap-corruption message, in the release build a crash or silent memory corruption.
   - **Now:** the track's name is kept whole, whatever its length: it is listed, or - when longer than the panel can show - left out and named in the usual message about entries that could not be listed. The CD-Text block is used only when it lies within the image, and track information is applied only to tracks the image has. Undamaged images list exactly as before.
