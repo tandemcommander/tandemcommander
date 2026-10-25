@@ -29,7 +29,9 @@
 //
 // AlreadyMoved: the parent key records that a move has happened. A new root
 // missing after that is the user's reset (deleted, or "Remove Configuration"
-// on a damaged one) - the old copy is never brought back.
+// on a damaged one) - the old copy is never brought back. Going back to 0.1.x
+// after the move is not supported (the maintainer's decision, 2026-10-25).
+// LegacyBackupExists counts only beside the old root (as in 0.1.x).
 //
 // Header-only; checked by saltests (contract
 // specs/343-semver-settings-root/contracts/config-root-migration.md).
@@ -65,3 +67,4 @@ inline CSalCfgMigrateAction SalCfgMigrateDecide(const CSalCfgMigrateState& s)
         return scmaMigrate;
     return scmaFresh;
 }
+

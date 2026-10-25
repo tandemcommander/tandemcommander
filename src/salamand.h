@@ -1168,7 +1168,7 @@ BOOL GetUpgradeInfo(BOOL* autoImportConfig, char* autoImportConfigFromKey, int a
 BOOL FindLatestConfiguration(BOOL* deleteConfigurations, const char*& loadConfiguration);                    // description in mainwnd2.cpp
 BOOL FindLanguageFromPrevVerOfSal(char* slgName);                                                            // description in mainwnd2.cpp
 extern const char* SALCFG_LEGACY_ROOT;                                                                       // feature 343: the 0.1.x root, description in mainwnd2.cpp
-BOOL MigrateConfigurationRoot();                                                                             // feature 343: FALSE = failed, the session runs on SALCFG_LEGACY_ROOT; description in mainwnd2.cpp
+BOOL MigrateConfigurationRoot(BOOL* tellUser);                                                               // feature 343: FALSE = the session runs on SALCFG_LEGACY_ROOT ('tellUser': show the message); mainwnd2.cpp
 extern BOOL CfgMigrateFailed;                                                                                // feature 343: TRUE = tell the user once the main window is up
 extern const char* CfgMigrateNewRoot;                                                                        // feature 343: the root the failed migration wanted (for the message)
 void HoldLegacyConfigSession();                                                                              // feature 343: this session runs on SALCFG_LEGACY_ROOT - no other start moves the configuration under it

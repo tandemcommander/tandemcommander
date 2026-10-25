@@ -22,7 +22,7 @@ reason: -
 
 Since feature 263 the start-up import of a configuration file (config.reg next to the exe, in
 %APPDATA%\Tandem Commander, or the -C file) refuses the whole file when one key or delete line is
-outside HKEY_CURRENT_USER\Software\Tandem Commander\0.1, with the generic "Unable to import the
+outside HKEY_CURRENT_USER\Software\Tandem Commander\Settings (the root since feature 343; \0.1 before), with the generic "Unable to import the
 specified file. It is not a configuration file." The user (often an administrator who edited the
 file, as the help invites) is not told which line caused it, and the help page does not say that
 only the program's own key may be in the file.

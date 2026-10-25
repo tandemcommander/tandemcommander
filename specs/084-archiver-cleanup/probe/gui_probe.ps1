@@ -276,6 +276,8 @@ New-Item -ItemType Directory -Force -Path $Work | Out-Null
 $script:backup = Join-Path $Work ("tc-backup-{0}.reg" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 $r = Reg @('export', $regRoot, $script:backup, '/y')
 if ($r.Code -ne 0) { $script:backup = $null; Bad ("registry backup failed: {0}" -f $r.Out); Finish }
+# feature 343: copy 0.1 to Settings after the backup (what the program does at its first start; the restore removes it)
+& cmd.exe /c "reg query `"$regRoot\Settings\Configuration`" >nul 2>&1 || (reg query `"$regRoot\0.1\Configuration`" >nul 2>&1 && reg copy `"$regRoot\0.1`" `"$regRoot\Settings`" /s /f >nul 2>&1)"
 Copy-Item -LiteralPath $script:backup -Destination (Join-Path $env:TEMP 'tc084-last-registry-backup.reg') -Force
 Note ("registry backed up to {0} (copy in %TEMP%\tc084-last-registry-backup.reg)" -f $script:backup)
 

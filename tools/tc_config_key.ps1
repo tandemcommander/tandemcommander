@@ -14,8 +14,9 @@
     Until a 0.2.0-or-later build has kept a configuration on a machine, only 0.1 holds one. A probe
     that tweaks the configuration before the program starts must then copy 0.1 to Settings after its
     backup (what the program does at its first start) - Copy-TcLegacyToSettings. The shared library
-    specs\098-long-path-overruns\probe\fix_probe_lib.ps1 does it in Backup-Reg; older stand-alone
-    probes with their own backup do not.
+    specs\098-long-path-overruns\probe\fix_probe_lib.ps1 does it in Backup-Reg, the stand-alone
+    probes of older features in their own backup functions (feature 343), and probes that need a
+    fresh configuration delete 0.1 together with Settings.
 #>
 
 $TcParentKeyName = 'Software\Tandem Commander'

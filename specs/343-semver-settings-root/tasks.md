@@ -79,7 +79,7 @@ release tool, the hidden-desktop probe for the end-to-end migration.
 - [X] T036 Re-run the full probe on the final Debug build → `probe/result_final.txt`; regression: one older probe that backs up the key (e.g. `specs/312-*/probe`) runs and restores `Settings`
 - [X] T037 `CHANGELOG.md` entry under `[Unreleased]` (symptom-free "Settings now live under …\Settings; moved automatically; old key kept as a backup"; limitation: a 0.1.x instance's later changes are not carried over; feature 343)
 - [X] T038 Independent refute-first review by an agent (code + probe + records); fix findings; record in `fix-log.md`
-- [X] T039 `specs/FEATURE-HISTORY.md` entry 343; backlog item (Inbox) "Remove the old 0.1 configuration key in a later release" via `bin/backlog.sh new` (source `leftover:343`); closing report `specs/343-semver-settings-root/closing-report.md`
+- [X] T039 `specs/FEATURE-HISTORY.md` entry 343; (completion pass: the backlog items first added here were done or closed - none left) backlog item (Inbox) "Remove the old 0.1 configuration key in a later release" via `bin/backlog.sh new` (source `leftover:343`); closing report `specs/343-semver-settings-root/closing-report.md`
 - [X] T040 Commit on the feature branch (no push); report to the maintainer
 
 ## Dependencies & execution order
@@ -99,3 +99,14 @@ release tool, the hidden-desktop probe for the end-to-end migration.
 MVP = Phases 1–3 (the migration with its failure handling, proven by the probe). Then the import
 mapping (US4) and the release tooling (US3), then records (US5), then translation, full builds,
 review and closing.
+
+## Phase 8: Completion pass (the maintainer: finish everything, leave nothing to the backlog)
+
+- [X] T041 Review-2 race: the legacy-session mutex is checked and held inside `MigrateConfigurationRoot` under the registry mutex (`src/mainwnd2.cpp`)
+- [X] T042 Review NITs: the record only for a moved root, the old backup only beside its root, no move message when another session runs on 0.1 (`tellUser`) (`src/mainwnd2.cpp`, `src/salamdr1.cpp`, `src/salamand.h`, `src/common/salcfgmigrate.h`)
+- [X] T043 Going back to 0.1.x declared not supported (maintainer); spec, contract, changelog
+- [X] T044 `release.py`: the release's feature range ignores older features cited as references (`release_features`) + test (`tools/release/release.py`, `test_release.py`)
+- [X] T045 `test_release.py`: the fixture written as LF (`make_repo`) - `test_crlf_records_stay_crlf` passes
+- [X] T046 Older stand-alone probes copy 0.1 to Settings after their backup (17 scripted, 4 by hand); fresh-configuration probes delete 0.1 too (079, 084)
+- [X] T047 Backlog: the three items added by this feature closed; the open item 263-refusal names the current root
+- [X] T048 Probe row UPGRADE (seam-free); the probe on Debug (38 / 0) and Release (14 / 0); regression of older probes; all builds and checks

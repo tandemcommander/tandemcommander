@@ -945,11 +945,13 @@ BOOL MyRegRenameKey(HKEY key, const char* name, const char* newName)
 // "Settings.backup.migrating.63A7CD13", compares each copy with its source, and only then removes
 // leftovers that hold no configuration and makes the copies the root and its backup by RegRenameKey -
 // the root either does not exist or is complete. A finished move is recorded in the parent key
-// ("Moved To Settings"), so a root the user deletes later is not brought back from the old copy. The
-// old keys are only read, never written or deleted. Side keys of an interrupted migration are deleted
-// and the decision is made again. Returns FALSE when the session must run on SALCFG_LEGACY_ROOT: the
-// move failed (nothing it made is left behind), the old root cannot be read, or another session runs
-// on it; the caller re-points the root, holds the legacy-session mutex and tells the user.
+// ("Moved To Settings"), so a root the user deletes later is not brought back from the old copy
+// (going back to 0.1.x after the move is not supported). The old keys are only read, never written
+// or deleted. Side keys
+// of an interrupted migration are deleted and the decision is made again. Returns FALSE when the
+// session must run on SALCFG_LEGACY_ROOT: the move failed (nothing it made is left behind), the old
+// root cannot be read, or another session runs on it ('*tellUser' FALSE: that session told the user);
+// the caller re-points the root, holds the legacy-session mutex and shows the message.
 // Contract: specs/343-semver-settings-root/contracts/config-root-migration.md
 
 BOOL CfgMigrateFailed = FALSE;
@@ -995,16 +997,18 @@ static int CfgMigProbeConfig(HKEY parent, const WCHAR* root)
     return CfgMigProbeKey(parent, path);
 }
 
-// a DWORD value of 'key' that is non-zero
-static BOOL CfgMigFlagSet(HKEY key, const WCHAR* name)
-{
-    DWORD v = 0, type = 0, size = sizeof(v);
-    return RegQueryValueExW(key, name, NULL, &type, (BYTE*)&v, &size) == ERROR_SUCCESS && type == REG_DWORD && v != 0;
-}
-
-// recorded in the parent key once a move has finished: a new root missing after that is the user's
-// reset (deleted, or "Remove Configuration" on a damaged one) - the old copy is never brought back
+// recorded in the parent key once a move has finished (DWORD 1): a new root missing after that is the
+// user's reset (deleted, or "Remove Configuration" on a damaged one) - the old copy is never brought
+// back (going back to 0.1.x after the move is not supported)
 static const WCHAR* CFGMIG_MOVED_VALUE = L"Moved To Settings";
+
+// the record exists (any type)
+static BOOL CfgMigReadMoved(HKEY parent)
+{
+    DWORD type = 0, size = 0;
+    LSTATUS err = RegQueryValueExW(parent, CFGMIG_MOVED_VALUE, NULL, &type, NULL, &size);
+    return err == ERROR_SUCCESS || err == ERROR_MORE_DATA;
+}
 
 // a session that runs on the old root after a failed move holds this mutex (per user, all sessions);
 // another start never moves the configuration under it (what it saves would be lost)
@@ -1159,9 +1163,10 @@ static BOOL CfgMigCopyTree(HKEY parent, const WCHAR* src, const WCHAR* dst, cons
     return ok;
 }
 
-BOOL MigrateConfigurationRoot()
+BOOL MigrateConfigurationRoot(BOOL* tellUser)
 {
     CALL_STACK_MESSAGE1("MigrateConfigurationRoot()");
+    *tellUser = TRUE;
     char failAt[30];
     failAt[0] = 0;
 #ifdef _DEBUG
@@ -1200,6 +1205,7 @@ BOOL MigrateConfigurationRoot()
     if (CfgMigLegacySessionRuns())
     {
         TRACE_I("MigrateConfigurationRoot(): a session runs on the old root, this one uses it too");
+        *tellUser = FALSE; // nothing was tried; the running session has told the user (review 2)
         HoldLegacyConfigSession();
         LoadSaveToRegistryMutex.Leave();
         return FALSE;
@@ -1224,9 +1230,11 @@ BOOL MigrateConfigurationRoot()
     state.NewHasConfig = newCfg == 1;
     state.NewUnreadable = newRoot == -1 || newCfg == -1;
     state.LegacyHasConfig = legacyCfg == 1;
-    state.LegacyBackupExists = legacyBk == 1;
-    state.LegacyUnreadable = legacyRoot == -1 || legacyCfg == -1 || legacyBk == -1;
-    state.AlreadyMoved = CfgMigFlagSet(parent, CFGMIG_MOVED_VALUE);
+    // the old crash-time backup counts only beside its root (as in 0.1.x: without the root it is
+    // never used - FindLatestConfiguration drops it)
+    state.LegacyBackupExists = legacyBk == 1 && legacyRoot == 1;
+    state.LegacyUnreadable = legacyRoot == -1 || legacyCfg == -1 || (legacyBk == -1 && legacyRoot == 1);
+    state.AlreadyMoved = CfgMigReadMoved(parent);
     BOOL legacySaveInProgress = FALSE;
     if (legacyRoot == 1)
     {
@@ -1248,7 +1256,7 @@ BOOL MigrateConfigurationRoot()
         return FALSE;
     }
     BOOL markMoved = action == scmaUseNew && state.NewHasConfig && !state.AlreadyMoved &&
-                     (state.LegacyHasConfig || state.LegacyBackupExists); // moved by a start that ended before the mark
+                     state.LegacyHasConfig; // moved by a start that ended before the record
     if (action == scmaMigrate || sideLeft == 1 || sideBkLeft == 1 || markMoved)
     {
         if (RegOpenKeyExW(HKEY_CURRENT_USER, parentName, 0, KEY_READ | KEY_WRITE, &parent) != ERROR_SUCCESS)
@@ -1337,7 +1345,7 @@ BOOL MigrateConfigurationRoot()
                 }
                 else
                 {
-                    markMoved = TRUE;
+                    markMoved = mainCopied; // a move of the root, not only of a backup (review 2)
                     TRACE_I("MigrateConfigurationRoot(): done");
                 }
             }

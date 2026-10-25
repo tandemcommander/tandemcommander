@@ -4098,12 +4098,13 @@ int WinMainBody(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR cmdLine,
     // feature 343: the version-free configuration root; a 0.1.x configuration is copied into it once,
     // before anything reads a setting. If that fails, this session runs on the old root (nothing is
     // lost) and the user is told once the main window is up; the next start tries again.
-    if (!MigrateConfigurationRoot())
+    BOOL cfgMigTellUser;
+    if (!MigrateConfigurationRoot(&cfgMigTellUser))
     {
         CfgMigrateNewRoot = SalamanderConfigurationRoots[0];
         SalamanderConfigurationRoots[0] = SALCFG_LEGACY_ROOT;
         HoldLegacyConfigSession();
-        CfgMigrateFailed = TRUE;
+        CfgMigrateFailed = cfgMigTellUser;
     }
 
     // zkusime z aktualni konfigurace vytahnout hodnotu "AutoImportConfig" -> existuje v pripade, ze provadime UPGRADE

@@ -141,6 +141,8 @@ if ($FreshRegistry) {
     }
     Note ("registry backed up to {0} ({1} bytes; Configuration\Language = '{2}')" -f $script:backup, (Get-Item -LiteralPath $script:backup).Length, $script:languageBefore)
     [void](Reg @('delete', $regCfg, '/f'))
+    # feature 343: a fresh start needs the old root gone too - the program would move it to Settings
+    [void](Reg @('delete', "$regRoot\0.1", '/f'))
     if (Test-Path "Registry::$regCfg") { Bad 'could not delete the 0.1 configuration key'; Finish }
     Note 'configuration key 0.1 deleted (fresh registry)'
 }

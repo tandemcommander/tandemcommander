@@ -86,6 +86,7 @@ function Backup-TcRegistry([string]$File) {
     if ($LASTEXITCODE -ne 0) { return $false }
     & cmd.exe /c "reg export `"$script:RegKey`" `"$File`" /y >nul 2>&1"
     if ($LASTEXITCODE -ne 0) { throw "reg export failed" }
+    & cmd.exe /c "reg query `"$script:RegKey\Settings\Configuration`" >nul 2>&1 || (reg query `"$script:RegKey\0.1\Configuration`" >nul 2>&1 && reg copy `"$script:RegKey\0.1`" `"$script:RegKey\Settings`" /s /f >nul 2>&1)"   # feature 343: copy 0.1 to Settings after the backup (what the program does at its first start; the restore removes it)
     return $true
 }
 

@@ -31,7 +31,7 @@ struct CSalCfgMigrateState
     BOOL NewHasConfig;       // Settings\Configuration exists
     BOOL NewUnreadable;      // Settings or Settings\Configuration exists but cannot be opened
     BOOL LegacyHasConfig;    // 0.1\Configuration exists
-    BOOL LegacyBackupExists; // 0.1.backup.63A7CD13 exists
+    BOOL LegacyBackupExists; // 0.1.backup.63A7CD13 exists beside the 0.1 root (alone it is never used, as in 0.1.x)
     BOOL LegacyUnreadable;   // 0.1, 0.1\Configuration or the backup cannot be opened
     BOOL AlreadyMoved;       // the parent's "Moved To Settings" is set
 };
@@ -45,10 +45,12 @@ struct CSalCfgMigrateState
 
 ## Steps - `MigrateConfigurationRoot()` (`src/mainwnd2.cpp`)
 
-0. A session runs on the old root (mutex `Global\TandemCommanderLegacyCfgSession_<SID>` exists, or
-   cannot be opened) → return *legacy root*, touch nothing.
-1. Under `LoadSaveToRegistryMutex`: probe the keys and the value, decide. The parent key cannot be
-   opened → touch nothing, use the new root.
+0. Under `LoadSaveToRegistryMutex` (review 2: no start can slip in between a failing one and its
+   session mutex): a session runs on the old root (mutex `Global\TandemCommanderLegacyCfgSession_<SID>`
+   exists, or cannot be opened) → hold the mutex too, return *legacy root* with `*tellUser = FALSE`
+   (nothing was tried; the running session told the user), touch nothing.
+1. Probe the keys and the value, decide. The parent key cannot be opened → touch nothing, use the
+   new root.
 2. `scmaUseLegacy` → return *legacy root*. `scmaUseNew` / `scmaFresh`: delete side keys of an
    interrupted move if present; with `scmaUseNew`, a moved root and an old configuration but no
    record → write the record.
@@ -59,12 +61,19 @@ struct CSalCfgMigrateState
       failure drop it - fail only when `0.1` carries `Save In Progress` (then the backup is needed);
    4. commit: only now delete leftovers that hold no configuration (a `Settings` without
       `Configuration`, a `Settings.backup.63A7CD13`), rename the backup's side key, rename the root's
-      side key (`RegRenameKey` - the root either does not exist or is complete), write the record;
+      side key (`RegRenameKey` - the root either does not exist or is complete), write the record
+      (only when the root itself moved);
    5. failure: delete every side key and a backup renamed by this run; return *legacy root*.
+   Every path that returns *legacy root* holds the session mutex before it releases the registry
+   mutex.
 4. Nothing in this function writes or deletes anything under `0.1`.
 
 The caller (`WinMainBody`) on *legacy root*: `SalamanderConfigurationRoots[0] = SALCFG_LEGACY_ROOT`,
-`HoldLegacyConfigSession()` (the mutex for the session's lifetime), `CfgMigrateFailed = TRUE`.
+`HoldLegacyConfigSession()` (idempotent; the mutex for the session's lifetime),
+`CfgMigrateFailed = *tellUser`.
+
+Going back to 0.1.x after a move is not supported (the maintainer, 2026-10-25): the record is never
+cleared by the program; a deleted `Settings` is a reset to defaults.
 
 Compare = for every key of the source tree, the same subkey names exist in the copy, and every
 value has the same name, type, size and bytes; the copy has no extra value or subkey (equal counts).

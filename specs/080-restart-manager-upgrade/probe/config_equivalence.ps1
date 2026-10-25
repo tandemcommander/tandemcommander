@@ -59,6 +59,8 @@ function Reset-Config {
     & cmd.exe /c "reg delete `"$key`" /f >nul 2>&1"
     & cmd.exe /c "reg import `"$Backup`" >nul 2>&1"
     if ($LASTEXITCODE -ne 0) { throw "reg import failed: $Backup" }
+    # feature 343: a backup made before 0.2.0 holds only 0.1 - copy it to Settings as the program does at its first start
+    & cmd.exe /c "reg query `"$key\Settings\Configuration`" >nul 2>&1 || (reg query `"$key\0.1\Configuration`" >nul 2>&1 && reg copy `"$key\0.1`" `"$key\Settings`" /s /f >nul 2>&1)"
     & reg.exe add "$key\Settings\Configuration" /v 'Save Configuration On Exit' /t REG_DWORD /d $SaveOnExit /f | Out-Null
     & reg.exe add "$key\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
 }

@@ -337,6 +337,23 @@ function Row-Corrupt {
     $same = ((Tree-Hash $TcLegacyKeyName) -eq $h0) -and ((Tree-Hash $LegacyBackupName) -eq $hb)
     Row 'CORRUPT' 'START' (V ($fromBackup -and $corrupt -and -not $inProgress -and $same -and $w -eq 'no window')) ("Settings holds the backup (marker) {0}; Settings.corrupted made {1}; Settings marked in progress {2}; old keys unchanged {3}; start windows: {4}" -f $fromBackup, $corrupt, $inProgress, $same, $w)
 }
+# the update as a user meets it, without any seam (also for the Release build): one start moves the
+# settings; the subtrees the program does not rewrite at start are byte-identical
+function Row-Upgrade {
+    Seed-Legacy
+    $h0 = Tree-Hash $TcLegacyKeyName
+    $before = Reports
+    $id = Start-One $Exe '' @()
+    $w = Start-Windows $id
+    $subs = @('Plugins Configuration\Probe343', 'Password Manager', 'Hot Paths', 'User Menu', 'Configuration\Confirmation')
+    $eq = @($subs | ForEach-Object { if ((Tree-Hash ($TcConfigKeyName + '\' + $_)) -eq (Tree-Hash ($TcLegacyKeyName + '\' + $_))) { $_ } })
+    $cfg = Key-Exists ($TcConfigKeyName + '\Configuration')
+    End-Row 'UPGRADE' $id $null $before
+    $same = (Tree-Hash $TcLegacyKeyName) -eq $h0
+    $mark = Moved-Mark
+    $sides = (Key-Exists $SideName) -or (Key-Exists $SideBackupName)
+    Row 'UPGRADE' 'START' (V ($cfg -and $eq.Count -eq $subs.Count -and $same -and $mark -eq 1 -and -not $sides -and $w -eq 'no window')) ("Settings\Configuration {0}; identical subtrees {1}/{2} ({3}); 0.1 unchanged after exit {4}; move recorded {5}; side keys {6}; windows: {7}" -f $cfg, $eq.Count, $subs.Count, ($eq -join ', '), $same, ($mark -eq 1), $sides, $w)
+}
 # review 1: a root deleted by the user after the move is not brought back from 0.1
 function Row-Reset {
     Seed-Legacy
@@ -487,6 +504,7 @@ try {
     if (Want 'KILL') { try { Row-Kill } catch { Row 'KILL' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
     foreach ($s in 'copy', 'compare', 'rename') { if (Want ('FAIL-' + $s)) { try { Row-Fail $s } catch { Row ('FAIL-' + $s) 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } } }
     if (Want 'CORRUPT') { try { Row-Corrupt } catch { Row 'CORRUPT' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
+    if (Want 'UPGRADE') { try { Row-Upgrade } catch { Row 'UPGRADE' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
     if (Want 'RESET') { try { Row-Reset } catch { Row 'RESET' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
     if (Want 'DENY-NEW') { try { Row-DenyNew } catch { Row 'DENY-NEW' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
     if (Want 'DENY-OLD') { try { Row-DenyOld } catch { Row 'DENY-OLD' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }

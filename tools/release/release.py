@@ -357,6 +357,20 @@ def cited_features(text: str) -> set[int]:
     return out
 
 
+def release_features(cited: set[int], lines: list[str], secs: list, ip: int) -> set[int]:
+    """The features a release carries: those its sections cite above the newest feature the previous
+    release cites (feature 343). An entry may cite an older feature as a reference - "(the quick search of
+    feature 244 below)", "(since feature 125)" - which is not part of this release. When nothing is
+    above it, all cited features (an odd changelog is not hidden)."""
+    if ip >= len(secs):
+        return cited
+    prev = cited_features("\n".join(lines[secs[ip].start:secs[ip].end]))
+    if not prev:
+        return cited
+    newer = {f for f in cited if f > max(prev)}
+    return newer or cited
+
+
 def feature_numbers(text: str) -> set[int]:
     out: set[int] = set()
     for m in FEATURES_RE.finditer(text):
@@ -554,7 +568,7 @@ def load_context(root: Path, target: Version, date: dt.date, offline: bool) -> C
     secs = changelog_sections(lines)
     ip = next((k for k, s in enumerate(secs) if ctx.prev and s.label == ctx.prev.text), len(secs))
     region = "\n".join(lines[secs[0].start:secs[ip].start if ip < len(secs) else len(lines)]) if secs else ""
-    ctx.features = cited_features(region)
+    ctx.features = release_features(cited_features(region), lines, secs, ip)
     ctx.issues = issue_numbers(region)
     refs = git_out(root, "for-each-ref", "--format=%(refname:short)",
                    f"refs/heads/release-{target.text}*", f"refs/remotes/origin/release-{target.text}*")

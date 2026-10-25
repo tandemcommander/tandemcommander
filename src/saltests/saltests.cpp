@@ -16091,7 +16091,7 @@ static void TestCfgRoot343()
                                     : (st.LegacyHasConfig || st.LegacyBackupExists) ? scmaMigrate
                                                                                     : scmaFresh;
         CHECK(SalCfgMigrateDecide(st) == want);
-        // the move never runs over a new root it cannot read, nor after a finished move
+        // the move never runs over a new root it cannot read, nor repeats a finished one over a reset
         if (st.NewUnreadable || st.AlreadyMoved)
             CHECK(SalCfgMigrateDecide(st) != scmaMigrate);
     }
@@ -16112,11 +16112,10 @@ static void TestCfgRoot343()
         st.AlreadyMoved = FALSE;
         st.LegacyHasConfig = FALSE;
         st.LegacyBackupExists = TRUE;
-        CHECK(SalCfgMigrateDecide(st) == scmaMigrate); // a damaged old root moved aside: its backup moves
+        CHECK(SalCfgMigrateDecide(st) == scmaMigrate); // a damaged old root (its backup counts beside it)
         st.NewHasConfig = TRUE;
         CHECK(SalCfgMigrateDecide(st) == scmaUseNew); // the new root wins: nothing copied over it
     }
-
     const char* root = "Software\\Tandem Commander\\Settings";
     const char* legacy = "Software\\Tandem Commander\\0.1";
     char out[200];

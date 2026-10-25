@@ -62,6 +62,13 @@ def commit(root: Path, msg: str = "change") -> None:
 def make_repo(tmp: Path) -> Path:
     root = tmp / "repo"
     shutil.copytree(FIXTURE, root)
+    # the fixture as git stores it (LF): a checkout with core.autocrlf=true gives CRLF copies, and the
+    # tests that write CRLF records would then change nothing (feature 343)
+    for f in root.rglob("*"):
+        if f.is_file():
+            data = f.read_bytes()
+            if b"\r\n" in data:
+                f.write_bytes(data.replace(b"\r\n", b"\n"))
     git(root, "init", "-q", "-b", "main")
     git(root, "config", "user.name", "Test")
     git(root, "config", "user.email", "test@example.invalid")
@@ -562,6 +569,15 @@ class Check(Base):
         self.assertNotIn("nothing described here differed", pv)
         self.assertIn("carries features 016; previous: 0.1.2 / build 186", read(self.root, release.PATH_CLAUDE))
         self.assertIn("#define VERSINFO_BUILDNUMBER 187", read(self.root, release.PATH_SPL))
+
+    def test_release_features_skip_cited_older_ones(self):
+        # feature 343: an entry citing an older feature as a reference does not widen the range
+        replace(self.root, release.PATH_CHANGELOG, "- **The status bar shows accented names** (feature 012).",
+                "- **The status bar shows accented names** (feature 012; it follows the key login of feature 011).\n\n"
+                "- **An older note** (since feature 010).")
+        commit(self.root, "cite older features")
+        code, out = run(self.root, "status", "0.1.2", "--date", D1)
+        self.assertIn("features: 012-013 (2)", out)
 
     def test_single_feature_range(self):
         ns = type("C", (), {"features": {244}})()

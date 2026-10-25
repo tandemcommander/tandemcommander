@@ -183,3 +183,73 @@ Final evidence after review 2: Debug build; saltests **28,953 / 0**; **probe/res
 36, FAIL 0** (registry identical); regression 241 **8 / 0** (no `Settings` left on the machine);
 `build.cmd full release` BUILD SUCCEEDED; `check_encoding.py --strict` TOTAL 0; `test_release.py`
 44 passed, 1 failed (the pre-existing `test_crlf_records_stay_crlf`, Inbox).
+
+## Completion pass (maintainer, 2026-10-25: "do everything, close it - no new backlog items")
+
+- **Review 2 SHOULD 1** (race) - fixed in the previous pass; the hold now also comes from inside
+  `MigrateConfigurationRoot` on every FALSE path before the registry mutex is released.
+- **Going back to 0.1.x** - the maintainer: not supported ("once he goes back to 0.1.x, that is his
+  problem"). A short-lived variant that re-moved 0.1 when it was written after the move (a
+  last-write time in the record) was removed again at his word; the record is a plain DWORD, a
+  deleted `Settings` is a reset. Spec edge case, contract and changelog say "not supported".
+- **NIT 3** - the record is written only when the root itself moved; the old crash-time backup
+  counts only beside its root (as in 0.1.x, where `FindLatestConfiguration` drops a lone backup) -
+  a lone `0.1.backup` no longer makes every start copy it again.
+- **NIT 4** - a start that finds a running legacy session runs on 0.1 without the move message
+  (`MigrateConfigurationRoot(BOOL* tellUser)`).
+- **NIT 8** - unchanged by decision: the lead's form is fixed by the records contract.
+- **release.py feature range** (was the Inbox item `release-py-plans-a-feature-range-from-125-...`):
+  the changelog cites older features as references ("(feature 125)" in a Before text);
+  `release_features` keeps only the cited features above the newest feature the previous release's
+  section cites. `status 0.2.0`: `features: 244-343 (93)` (242 and 243 have no changelog entry -
+  internal tooling). Test `test_release_features_skip_cited_older_ones`.
+- **test_crlf_records_stay_crlf** (was the Inbox item): the cause was not the global
+  `core.autocrlf` of the test repository (it sets `false`) but the fixture copied from a checkout
+  with `core.autocrlf=true` - already CRLF, so writing CRLF changed nothing. `make_repo` writes the
+  fixture as git stores it (LF). **`test_release.py`: 46 passed, 0 failed.**
+- **Older stand-alone probes**: 17 scripts with their own registry backup (088's `probe_lib`, 092,
+  093 x3, 094 x2, 095, 096, 097 x2, 098 `overrun_probe`, 108, 109, 112, 153) copy 0.1 to Settings
+  right after their backup export (after its `$LASTEXITCODE` check); 084 `gui_probe` and 089
+  `assoc_probe` the same by hand; 080 `config_equivalence` after importing its given backup; 079
+  `startup_probe -FreshRegistry` and 084 `make_cfg_fixtures` (they want a fresh configuration)
+  delete 0.1 together with Settings. Every probe script that names `\Settings` is covered (search).
+- **Backlog**: the three items this feature had added were closed (`remove`): the two fixes with
+  `--feature 343`, the removal of the 0.1 key with the maintainer's choice A (the key stays as the
+  user's backup; not work to do). The open item `a-refused-configuration-file-...` now names the
+  current root.
+- New probe row **UPGRADE** (no seam - also runs on the Release build): one start moves the
+  settings, five subtrees the program does not rewrite at start are byte-identical, the record is
+  set, 0.1 unchanged.
+
+Tests of this pass:
+- saltests **28,953 / 0**; `build.cmd full` (Debug) and `build.cmd full release` BUILD SUCCEEDED.
+- `cfgroot343_probe.ps1` Debug: **PASS 38, FAIL 0** (`probe/result_final.txt`); Release (rows
+  without seams: UPGRADE, FRESH, CORRUPT, RESET, DENY-NEW, DENY-OLD, IMP-LEGACY, IMP-FOREIGN):
+  **PASS 14, FAIL 0** (`probe/result_final_release.txt`; the move message shown in Czech).
+- `test_release.py` 46 / 0; `check_encoding.py --strict` TOTAL 0; `test_bin_help.py` OK;
+  `translate.slt --verify` byte-exact; `backlog.sh check` TOTAL 0.
+- The machine's registry after all runs: only `0.1` and `Bug Reporter` under the parent key, no
+  value on the parent (no record, no `Settings` left).
+
+### Regression of older probes on the final Debug build
+
+| Probe | Result |
+|---|---|
+| 241 `pack241_probe` (fix_probe_lib) | 8 / 0, registry identical, no `Settings` left |
+| 263 `import263_probe` (the import root rule) | 26 / 0 |
+| 312 `tabs312_probe` (Settings\Left Panel\Tabs) | 33 / 0 (as recorded) |
+| 313 `qs313_probe -Expect after` | 32 rows, 0 FAIL (as recorded) |
+| 095 `longarc_probe` (own backup + the new copy) | 60 / 0 |
+| 245 `ci245_e2e` (settings import) | PASS, registry restored |
+| 092 `focus_probe` | NEW 10 / 10 PASS; OLD rows run against a pre-343 reference (which already has 092's fix, so "unexpected" passes there) |
+| 123 `updcheck_probe` | 237 PASS, 3 FAIL, 12 NOT DRIVEN on the new build; the recorded 123-era result is 238 / 0. Measured against a complete pre-343 reference (worktree at 72a02f2b, built with all language modules): G2 FAIL and H1 FAIL there too (H1 hang **and** slow), so they predate 343 - G2 is blocked by feature 245's first-start import offer (this machine has an Open Salamander configuration), H1 is a timing row. The third FAIL was row J, run with an invalid old program (see below): with the installed 0.1.10, J 2 / 0. |
+
+Trip-ups of the regression itself (not product defects):
+- The first old reference (a copy of an incremental Debug build) had only `english.slg`; with the
+  machine's Czech configuration it stopped at "LoadLibrary czech.slg (126)" before its main window -
+  092's OLD rows and 123's row J could not start it. Replaced by a complete pre-343 build.
+- 123's probe writes its result file and screenshots into `specs/123-.../probe/` when no `-Result`
+  is given: the overwritten `updcheck_result.txt` and 61 screenshots were restored from git.
+- The machine's registry hash changed between the morning runs and the afternoon ones (06DB... ->
+  CAFB...) outside any probe (every run restored identical); the installed 0.1.10 used by the
+  maintainer writes `0.1`.

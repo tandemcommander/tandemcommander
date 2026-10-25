@@ -116,7 +116,7 @@ method*).
 4. Probe rows (quickstart §2), fix until green.
 5. Release tool + tests; changelog heading; documents; constitution; skills; probes switched.
 6. `.slt` refresh for the new string; `build.cmd full` Debug and Release; saltests; encoding guard.
-7. Independent refute-first review; fixes; FEATURE-HISTORY; backlog item for removing `0.1` later.
+7. Independent refute-first review; fixes; FEATURE-HISTORY (no backlog items left - completion pass).
 
 ## Complexity Tracking
 

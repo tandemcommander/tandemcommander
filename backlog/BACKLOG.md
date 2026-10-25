@@ -271,9 +271,6 @@ Last triaged: 2026-10-24
 | [FTP: two operations under two names of one server can open one file at the same time](items/ftp-opened-file-lock-two-names-of-one-server/desc.md) | bug | 6 | ftp | review:341 | 2026-10-24 |
 | [FTP: a panel is not refreshed after a change made under another name of its server](items/ftp-panel-refresh-misses-change-under-another-name/desc.md) | bug | 4 | ftp | review:341 | 2026-10-24 |
 | [FTP: an upload as another user or on another port of one server misses the panel changes](items/ftp-upload-cache-other-user-or-port-of-one-server/desc.md) | bug | 7 | ftp | review:341 | 2026-10-24 |
-| [release.py plans a feature range from 125 for the release after 0.1.10](items/release-py-plans-a-feature-range-from-125-for-the-release/desc.md) | bug | 2 | build-release | measure:343 | 2026-10-25 |
-| [Remove the old 0.1 configuration key in a later release](items/remove-the-old-0-1-configuration-key-in-a-later-release/desc.md) | tech-debt | 1 | data-safety | leftover:343 | 2026-10-25 |
-| [test_release.py: test_crlf_records_stay_crlf fails where core.autocrlf is true](items/test-release-py-test-crlf-records-stay-crlf-fails-where-core/desc.md) | tech-debt | 2 | tooling | measure:343 | 2026-10-25 |
 
 ## Parked
 

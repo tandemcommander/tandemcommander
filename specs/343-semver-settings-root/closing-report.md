@@ -30,11 +30,12 @@
 | Check | Result |
 |---|---|
 | saltests (Debug) | 28,953 checks, 0 failed (new: `TestCfgRoot343` - all 64 decision combinations, the legacy-root mapping; dotted bug report names) |
-| `cfgroot343_probe.ps1` (hidden desktop) | **36 PASS / 0 FAIL** (`probe/result_final.txt`; rows BASIC, AGAIN, BOTH, FRESH, KILL, FAIL-copy/compare/rename, CORRUPT, RESET, DENY-NEW, DENY-OLD, SESSION, IMP-LEGACY, IMP-FOREIGN) |
+| `cfgroot343_probe.ps1` Debug (hidden desktop) | **38 PASS / 0 FAIL** (`probe/result_final.txt`; rows BASIC, AGAIN, BOTH, FRESH, KILL, FAIL-copy/compare/rename, CORRUPT, UPGRADE, RESET, DENY-NEW, DENY-OLD, SESSION, IMP-LEGACY, IMP-FOREIGN) |
+| `cfgroot343_probe.ps1` Release (rows without seams) | **14 PASS / 0 FAIL** (`probe/result_final_release.txt`) |
 | negative controls | pre-change build: BASIC and IMP-LEGACY FAIL (`probe/result_before.txt`); pre-review-fix build: RESET, DENY-NEW, SESSION FAIL (`probe/result_review1_control.txt`) |
 | regression 241 (`fix_probe_lib`) | 8 / 0 on the final build (first run 5 / 3: the transition, fixed in `Backup-Reg`, see fix-log) |
 | regression 263 (import root rule) | 26 / 0 |
-| `test_release.py` | 44 passed, 1 failed - `test_crlf_records_stay_crlf`, fails identically at HEAD (machine `core.autocrlf=true`; Inbox) |
+| `test_release.py` | 46 passed, 0 failed (the CRLF test's fixture fixed; the feature-range test added) |
 | `build.cmd full` Debug / `build.cmd full release` | BUILD SUCCEEDED / BUILD SUCCEEDED |
 | `check_encoding.py --strict` | TOTAL 0 |
 | `test_bin_help.py` | OK |
@@ -56,23 +57,16 @@ Two refute-first rounds by an independent agent.
   and the hold happen under the registry mutex; SHOULD 2 (going back to 0.1.x and deleting
   `Settings` gives defaults) taken as a documented limitation; NITs left.
 
-## Left for later (Inbox)
+## Backlog
 
-- `remove-the-old-0-1-configuration-key-in-a-later-release` (clarification A).
-- `test-release-py-test-crlf-records-stay-crlf-fails-where-core` (pre-existing test fragility).
-- `release-py-plans-a-feature-range-from-125-for-the-release` (the planned range of the next release
-  starts at 125, should start at 242).
-
-## Decision for the maintainer (optional)
-
-- Review 2's SHOULD 2 was taken as a documented limitation: after the move, a user who goes back to
-  0.1.x and then deletes `Settings` gets default settings, not the later 0.1.x ones (they stay in
-  `0.1`). If you prefer a one-time notice in that case, it is a new UI string (translation round).
+Nothing left for later. The three items this feature had added were closed: the release tool's
+feature range and the CRLF test were fixed here (`--feature 343`); the removal of the `0.1` key is
+not work to do - it stays as the user's backup by the maintainer's choice A. Going back to 0.1.x
+after the update is not supported (the maintainer).
 
 ## For the maintainer
 
 - The next release can be **0.2.0** (`/tandem-release 0.2.0`); `release.py status 0.2.0` accepts it.
-- Older stand-alone probes (features 079-177 with their own registry backup) meet an empty `Settings`
-  on a machine where no 0.2.0-or-later build has kept a configuration yet - start such a probe after
-  one start of the new build (`tools/tc_config_key.ps1`).
-- Nothing was pushed; the branch holds the feature's commits.
+- Every probe that names the configuration key copies `0.1` to `Settings` after its backup (the
+  shared library and the stand-alone ones), so they run unchanged on a machine that has not moved yet.
+- Nothing was pushed. `main` was fast-forwarded to the branch (the first part by the maintainer at 14:01, the completion pass after it).

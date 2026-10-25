@@ -1,7 +1,7 @@
-cfgroot343_probe (feature 343) final-review2
+cfgroot343_probe (feature 343) final-debug
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
 Legacy  : C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\abe128c2-7edd-44a9-8152-86d8651288ec\scratchpad\pre343\tandemcommander.exe
-Date    : 2026-10-25 13:23; parent key existed True
+Date    : 2026-10-25 14:14; parent key existed True
 Fixture : 0.1 configuration made by -LegacyExe (start windows: [#32770 'Tandem Commander'] [Static id=1150] Select one of the installed languages. | [Button id=1029] Get More &Languages... | [Button id=1028] &Refresh | [Button id=1151] About language version | [Static id=1152] Authors: | [Static id=1154] Web: | [Static id=1155] Comment: | [Static id=1036] English version | [Static id=1156] Help Directory: | [Static id=1038] ENGLISH | [Button id=1] OK | [Button id=2] &Exit; save windows: no window; exit 0x00000000)
 
 BASIC      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -28,18 +28,20 @@ FAIL-rename END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 
 FAIL-rename AGAIN  PASS        next start (seam exit 0x00000004): Settings equal to 0.1 True; then start windows: no window
 CORRUPT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 CORRUPT    START  PASS        Settings holds the backup (marker) True; Settings.corrupted made True; Settings marked in progress False; old keys unchanged True; start windows: no window
+UPGRADE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UPGRADE    START  PASS        Settings\Configuration True; identical subtrees 5/5 (Plugins Configuration\Probe343, Password Manager, Hot Paths, User Menu, Configuration\Confirmation); 0.1 unchanged after exit True; move recorded True; side keys False; windows: no window
 RESET      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 RESET      START  PASS        move recorded True; after deleting Settings: a fresh Settings True; the old settings brought back False; 0.1 unchanged True; exit 0x00000000; windows: ...ti > Importovat nastaven\u00ED z programu Salamander. | [Button id=6] &Importovat nyn\u00ED | [Button id=7] Te\u010F &ne
 DENY-NEW   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 DENY-NEW   START  PASS        Settings kept (Probe343 unchanged) True; Settings\Configuration there True; side keys False; a move recorded False; windows: no window
 DENY-OLD   START  PASS        user told (load error or move message) True; Settings made False; 0.1 kept True; windows: load errors closed: 1 || [#32770 'Chyba p\u0159i na\u010D\u00EDt\u00E1n\u00ED konfigurace'] [Static id=2477] (5) P\u0159\u00EDstup byl odep\u0159en.  | [Button id=1] OK; ...ander\src\common\handles.cpp 796: Called from: E:\Projects\tandemcommander\src\regwork.cpp 51: Error in function RegCreateKeyEx: (5) P\u0159\u00EDstup byl odep\u0159en.  || [SalamanderSaveBits 'Tandem Commander']  || [TandemCommanderMainWindowVer01 'T343 - start - Tandem Commander 0.1.10 (x64) ST'] 
-SESSION    SECOND PASS        first start on 0.1 (seam) told True; the second start made Settings False; side key False; exits 0x00000000 / 0x00000000; second windows: ...m Commander\0.1) and will try again the next time it starts. Nothing was deleted. | [Button id=1] OK
+SESSION    SECOND PASS        first start on 0.1 (seam) told True; the second start made Settings False; side key False; exits 0x00000000 / 0x00000000; second windows: no window
 SESSION    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 SESSION    AFTER  PASS        with no session on 0.1 left, the next start moved it: Settings equal to 0.1 True; windows: no window
 IMP-LEGACY END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 IMP-LEGACY IMPORT PASS        marker imported under Settings True; written under 0.1 False; windows: no window
 IMP-FOREIGN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 IMP-FOREIGN IMPORT PASS        foreign key made False; windows (a refusal expected): ...c id=2477] Unable to import the specified file. It is not a configuration file. File: C:\Users\pavel\AppData\Local\Temp\tc343\imp_foreign.reg | [Button id=1] OK
-Registry: restored; identical=True; SHA-256 before 06DB26401EDCD9BFAD9C504E275BA42CA026D632D103A2AD519EC59ADE58CDB2 / after 06DB26401EDCD9BFAD9C504E275BA42CA026D632D103A2AD519EC59ADE58CDB2
+Registry: restored; identical=True; SHA-256 before CAFB856C3773B6C13C6D176159F46E64AB518F143A8C0B735D7E573AD2683A85 / after CAFB856C3773B6C13C6D176159F46E64AB518F143A8C0B735D7E573AD2683A85
 
-Rows: PASS 36, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 38, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

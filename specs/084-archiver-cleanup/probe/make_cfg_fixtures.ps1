@@ -118,6 +118,8 @@ $r = Reg @('export', $regRoot, $script:backup, '/y')
 if ($r.Code -ne 0 -or (Get-Item -LiteralPath $script:backup).Length -lt 1024) { $script:backup = $null; Bad ("backup failed: {0}" -f $r.Out); Finish }
 Note ("registry backed up to {0} ({1} bytes)" -f $script:backup, (Get-Item -LiteralPath $script:backup).Length)
 [void](Reg @('delete', $regCfg, '/f'))
+# feature 343: a default configuration needs the old root gone too - the program would move it to Settings
+[void](Reg @('delete', "$regRoot\0.1", '/f'))
 if (Test-Path "Registry::$regCfg") { Bad 'could not delete the 0.1 key'; Finish }
 
 $script:proc = Start-Process -FilePath $Exe -WorkingDirectory (Split-Path $Exe) -PassThru

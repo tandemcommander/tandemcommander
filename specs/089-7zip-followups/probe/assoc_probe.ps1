@@ -215,6 +215,8 @@ function Backup-Registry([string]$File) {
     if (-not (Key-Exists $NetRoot)) { return $false }
     $r = Reg-Run @('export', $RegRoot, $File, '/y')
     if ($r.Code -ne 0) { throw "reg export failed: $($r.Out)" }
+    # feature 343: copy 0.1 to Settings after the backup (what the program does at its first start; the restore removes it)
+    & cmd.exe /c "reg query `"$RegRoot\Settings\Configuration`" >nul 2>&1 || (reg query `"$RegRoot\0.1\Configuration`" >nul 2>&1 && reg copy `"$RegRoot\0.1`" `"$RegRoot\Settings`" /s /f >nul 2>&1)"
     return $true
 }
 function Restore-Registry([string]$File, [bool]$Existed) {

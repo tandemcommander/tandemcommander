@@ -146,6 +146,7 @@ function Backup-Reg([string]$File) {
     if ($LASTEXITCODE -ne 0) { return $false }
     & cmd.exe /c "reg export `"$RegKey`" `"$File`" /y >nul 2>&1"
     if ($LASTEXITCODE -ne 0) { throw 'reg export failed' }
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1 || (reg query `"$RegKey\0.1\Configuration`" >nul 2>&1 && reg copy `"$RegKey\0.1`" `"$RegKey\Settings`" /s /f >nul 2>&1)"   # feature 343: copy 0.1 to Settings after the backup (what the program does at its first start; the restore removes it)
     return $true
 }
 function Restore-Reg([string]$File, [bool]$Existed) {

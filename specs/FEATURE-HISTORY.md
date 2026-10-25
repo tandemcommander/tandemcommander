@@ -4999,10 +4999,11 @@ a few early ones are out of sequence).
   `Settings.backup.migrating.63A7CD13`), recursive compare, then leftovers removed and
   `RegRenameKey` - all or nothing; the parent key records `Moved To Settings` (a later deleted
   `Settings` is a reset, never refilled). The old key is only read and never deleted (maintainer:
-  keep it - Inbox item for its later removal). A failed move / unreadable old root / a running
+  keep it as the user's backup, option A). A failed move / unreadable old root / a running
   fallback session: the session runs on `0.1` (`SalamanderConfigurationRoots[0]` re-pointed,
   mutex `Global\TandemCommanderLegacyCfgSession_<SID>` held, taken under the registry mutex),
-  `IDS_CFGMIGRATE_FAILED` once the main window is free. Import of a 0.1.x `.reg` maps its key lines
+  `IDS_CFGMIGRATE_FAILED` once the main window is free (not when another session already runs on
+  0.1). Import of a 0.1.x `.reg` maps its key lines
   (`SalRegMapLegacyRoot`, `Parse(..., legacyRoot)`, heap buffer). Crash report names dotted
   (`TC0.2.0X64-…`). Traps:
   - The upstream upgrade chain (`FindLatestConfiguration` with a second root) would have shown a
@@ -5022,7 +5023,13 @@ a few early ones are out of sequence).
     `compare`, `rename`, `kill-after-copy`).
   - A row run alone on an empty registry meets 245's import offer and End-Row answers Yes: the
     wizard wrote a backup into `%APPDATA%\Tandem Commander\Settings backups` (deleted again).
-  Limits: later 0.1.x changes are not carried over (also not after deleting `Settings` - the
-  record); a 0.2.0 export does not import into 0.1.x. Probe `cfgroot343_probe.ps1` 36 / 0
-  (pre-change build: BASIC, IMP-LEGACY FAIL); regressions 241 8 / 0, 263 26 / 0; saltests 28,953 / 0;
-  two refute-first reviews (MUST 1 + SHOULD 3, then SHOULD 1 - all fixed or documented).
+  - Every probe that names the key copies `0.1` to `Settings` after its own backup (stand-alone
+    079-177 too; 079 / 084 fixtures that want a fresh configuration delete `0.1` with `Settings`).
+  - `release.py` took older features cited as references in `[Unreleased]` ("(feature 125)") for
+    the release's range: `release_features` keeps those above the previous release's newest one.
+  Going back to 0.1.x after the update is not supported (the maintainer); a 0.2.0 export does not
+  import into 0.1.x. Nothing was left in the backlog (the maintainer: finish and close). Probe
+  `cfgroot343_probe.ps1` 38 / 0 Debug, 14 / 0 Release (seam-free rows); pre-change build BASIC,
+  IMP-LEGACY FAIL; pre-review-fix build RESET, DENY-NEW, SESSION FAIL; regressions 241, 263 and the
+  older probes of the closing pass; saltests 28,953 / 0; `test_release.py` 46 / 0; two refute-first
+  reviews (MUST 1 + SHOULD 3, then SHOULD 1 - all fixed).

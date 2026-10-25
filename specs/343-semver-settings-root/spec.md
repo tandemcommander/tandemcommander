@@ -215,14 +215,10 @@ historical or migration reference.
 - A 0.1.x instance (another installation or a portable copy) runs while the new version migrates →
   the new version's first start must not be confused by it; settings the old instance saves later
   go to `…\0.1` and are not merged (documented limitation).
-- The user downgrades to 0.1.x after the migration → 0.1.x finds `…\0.1` in the state of the
-  migration moment (it is kept) and works with it; changes made there are not carried forward
-  when the user upgrades again (`…\Settings` wins).
-- After a finished move the user goes back to 0.1.x, works there, deletes `…\Settings` and starts
-  the new version again → the record of the move makes this a reset: default settings, the later
-  0.1.x changes are not taken over (they stay in `…\0.1`; deleting the record value
-  `Moved To Settings` in the parent key as well makes the next start move them). Documented
-  limitation (review 2), chosen over silently re-filling a deliberately reset configuration.
+- Going back to 0.1.x after the move is **not supported** (the maintainer's decision of
+  2026-10-25: "once he goes back to 0.1.x, that is his problem"). Whatever 0.1.x does with
+  `…\0.1` afterwards is never taken over; a deleted `…\Settings` is a reset to defaults (the record
+  `Moved To Settings` in the parent key).
 - Two users of one machine → each has their own `HKEY_CURRENT_USER`; each migrates at their own
   first start.
 - The configuration is very large (long histories, many FTP sites, thumbnails cache keys) → the
@@ -260,8 +256,8 @@ historical or migration reference.
   time MUST give the same recovery it gives today.
 - **FR-007**: The program MUST NOT write to `…\0.1` after a successful migration.
 - **FR-008**: After a successful migration `…\0.1` MUST stay unchanged as a backup; this feature
-  MUST NOT delete it (neither at once nor in a later start). Removing it is left to a separate,
-  later backlog item, which this feature records. The privacy statement MUST say that the old key
+  MUST NOT delete it (neither at once nor in a later start); it stays as the user's backup for good
+  (no later removal is planned - completion pass). The privacy statement MUST say that the old key
   stays as a backup and that the user may delete it (it is under the key named in *Removing your
   data*).
 - **FR-008a** (review 1): A key the program cannot read (access denied, no resources) MUST never
