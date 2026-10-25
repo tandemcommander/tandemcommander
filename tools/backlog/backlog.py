@@ -24,6 +24,8 @@ Design rules
 * Every changing command validates first, writes atomically, rewrites the
   overview and runs the full check; exit 1 when the check has findings.
 
+Run it as ``bin/backlog.sh <command>`` (feature 342).
+
 Standard library only: the build already requires Python, nothing else.
 Exit codes: 0 success / no findings, 1 findings or refused, 2 usage error.
 """
@@ -1882,7 +1884,9 @@ def import_labelled(bl: Backlog, args) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="backlog.py", description="Check and change the backlog (feature 242).")
+    # bin/backlog.sh names itself (feature 342)
+    p = argparse.ArgumentParser(prog=os.environ.get("TANDEM_BACKLOG_PROG", "backlog.py"),
+                                description="Check and change the backlog (feature 242).")
     p.add_argument("--root", help="repository root (default: the repository containing this script)")
     p.add_argument("--lock-dir", help=argparse.SUPPRESS)  # tests
     sub = p.add_subparsers(dest="command", required=True)

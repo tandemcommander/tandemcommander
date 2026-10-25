@@ -3,13 +3,15 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Loop over /tandem-backlog-implement - one fresh claude process per item (feature 247).
 
-The maintainer uses bin/backlog.sh (Git Bash; --help lists everything):
+The maintainer uses bin/backlog-loop.sh (Git Bash; --help lists everything):
 
-  bin/backlog.sh start    run the loop in this window (Ctrl+C = hard stop)
-  bin/backlog.sh pause    finish the running item, then wait for resume
-  bin/backlog.sh resume   continue after a pause (also cancels a pending stop)
-  bin/backlog.sh stop     finish the running item, then end the loop
-  bin/backlog.sh status   what the loop does now
+  bin/backlog-loop.sh start    run the loop in this window (Ctrl+C = hard stop)
+  bin/backlog-loop.sh pause    finish the running item, then wait for resume
+  bin/backlog-loop.sh resume   continue after a pause (also cancels a pending stop)
+  bin/backlog-loop.sh stop     finish the running item, then end the loop
+  bin/backlog-loop.sh status   what the loop does now
+
+The backlog itself is bin/backlog.sh (tools/backlog/backlog.py).
 
 Design (specs/247-backlog-run-loop/spec.md, contract contracts/loop-cli.md):
 
@@ -18,6 +20,11 @@ Design (specs/247-backlog-run-loop/spec.md, contract contracts/loop-cli.md):
   run lock (released) - never from the model's text.
 * Control and state files live in the git common dir, next to the run
   lock (``.git/tandem-backlog-loop/``): the working tree stays clean.
+* Every run and auto-triage leaves a trace in ``.agent-traces/`` (ignored
+  by git, never deleted by the loop; traces.py, feature 342): claude's
+  output, a separator line before each attempt, meta.json and a line in
+  index.jsonl when the run ends.  The first start after 342 copies the
+  logs of the loop before it (``.git/tandem-backlog-loop/logs/``) once.
 * claude runs in its unattended retry mode (CLAUDE_CODE_RETRY_WATCHDOG=1),
   which waits out a usage limit inside the process.  A run that ends
   while its item still holds the lock is continued in the same session
@@ -62,6 +69,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import backlog  # noqa: E402
+import traces  # noqa: E402
 
 LOOP_DIR = "tandem-backlog-loop"
 SKILL = "tandem-backlog-implement"
@@ -76,7 +84,6 @@ MAX_LIMITS = 10              # continuations of one run after usage limits (clau
 IDLE_WAKEUPS = 2             # no-op wakeups in a row, no background task: the run waits for nothing
 MAX_NUDGES = 3               # continuations of one run after such idling
 BG_WAIT_CEILING_MS = "7200000"  # background tasks outlive the last turn this long (reviewers: about 45 min)
-KEEP_LOGS = 100
 TICK = 1.0                   # how often waits look at pause / stop
 STILL_ACTIVE = 259
 
@@ -244,7 +251,9 @@ class Repo:
         self.triage_file = self.dir / "triage.json"
         self.pause_flag = self.dir / "pause"
         self.stop_flag = self.dir / "stop"
-        self.logs = self.dir / "logs"
+        self.old_logs = self.dir / "logs"          # before 342; imported once, never written
+        self.imported_file = self.dir / "imported.json"
+        self.traces = root / traces.TRACES_DIR
 
     def git(self, *args: str) -> str:
         return backlog.git(self.root, *args)
@@ -417,6 +426,26 @@ def log_info(run: dict) -> LogInfo:
     return info
 
 
+def where(rec: dict | None) -> str:
+    """Where a run's output is, for the window: its trace folder."""
+    if not rec:
+        return "-"
+    if rec.get("trace"):
+        return f"trace {traces.TRACES_DIR}/{Path(rec['trace']).name}"
+    return f"log {rec.get('log')}"  # a record of the loop before 342, not moved yet
+
+
+def claude_version(exe: str) -> str | None:
+    """The first word of `claude --version` (2.1.310), None when it does not answer."""
+    try:
+        res = subprocess.run([exe, "--version"], capture_output=True, text=True, encoding="utf-8",
+                             errors="replace", timeout=30, stdin=subprocess.DEVNULL)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    words = res.stdout.split()
+    return words[0] if res.returncode == 0 and words else None
+
+
 def lock_words(lock: dict) -> str:
     """The lock without its age: a wait's text must not change every few minutes (review 2 N7)."""
     return f"item {lock.get('slug', '-')}, branch {lock.get('branch', '-')}, since {lock.get('started', '?')}"
@@ -491,6 +520,8 @@ class Loop:
         self.triage_errors = 0
         self.triage_limits = 0
         self.triage_refusals = 0
+        self.triage_source = None  # the running auto-triage's record (its trace)
+        self.harness_version = getattr(args, "harness_version", None)
 
     # -- the loop's own record -------------------------------------------
 
@@ -505,7 +536,7 @@ class Loop:
                 other = load_json(self.repo.loop_file) or {}
                 if alive(other.get("pid"), other.get("ident")):
                     print(f"refused: another loop is running (pid {other.get('pid')}, since {other.get('started', '?')}); "
-                          "bin/backlog.sh status shows it, bin/backlog.sh stop ends it", flush=True)
+                          "bin/backlog-loop.sh status shows it, bin/backlog-loop.sh stop ends it", flush=True)
                     raise Stop(1)
                 say(f"a loop record of pid {other.get('pid', '?')} remained (that loop ended without cleanup); taking over")
                 unlink(self.repo.loop_file)
@@ -536,7 +567,7 @@ class Loop:
             "state": state, "detail": detail, "until": stamp(until) if until else None,
             "ctrl_c_safe": self.safe,
             "since": self.since, "updated": stamp(), "slug": (self.run or {}).get("slug"), "session": (self.run or {}).get("session"),
-            "log": (self.run or {}).get("log"), "counts": self.counts, "items": self.items,
+            "trace": (self.run or self.triage_source or {}).get("trace"), "counts": self.counts, "items": self.items,
             "blocked_streak": self.blocked_streak, "usage": self.usage,
             "auto_triage": bool(self.args.auto_triage), "triages": self.triages,
         })
@@ -584,23 +615,185 @@ class Loop:
     # -- one run ----------------------------------------------------------
 
     def new_run(self, slug: str) -> dict:
-        self.repo.logs.mkdir(parents=True, exist_ok=True)
-        name = dt.datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + slug
+        now = time.time()
+        folder = traces.new_run_dir(self.repo.root, slug, now)
         run = {
-            "slug": slug, "session": str(uuid.uuid4()), "started": stamp(),
-            "log": str(self.repo.logs / f"{name}.jsonl"), "err": str(self.repo.logs / f"{name}.err"),
+            "slug": slug, "session": str(uuid.uuid4()), "started": stamp(now), "started_epoch": now, "kind": "item",
+            "trace": str(folder), "log": str(folder / traces.TRACE), "err": str(folder / traces.STDERR),
             "rows_before": len(self.repo.runs()), "attempts": 0, "stalls": 0, "resumes": 0, "limits": 0, "nudges": 0,
             "lock_started": None, "phase": "new", "wait_until": None, "why": None, "child_pid": None, "child_ident": None,
+            "trace_attempts": [], "next_reason": "-", "indexed": False, "base": self.head(),
         }
-        save_json(self.repo.run_file, run)
+        self.run = run
+        self.save_run()
         return run
 
     def save_run(self) -> None:
         save_json(self.repo.run_file, self.run)
+        if self.run.get("phase") in ("failed", "lost"):
+            self.finish_trace(self.run, self.run["phase"])  # a stop for a person: the run is not continued
+        else:
+            self.write_meta(self.run)
 
     def drop_run(self) -> None:
+        if self.run:
+            self.finish_trace(self.run, "done")
         unlink(self.repo.run_file)
         self.run = None
+
+    # -- the trace of a run (traces.py, contract 342) -----------------------
+
+    def head(self) -> str | None:
+        """HEAD now: the commits of a run are the ones made after it (traces)."""
+        try:
+            return self.repo.git("rev-parse", "HEAD")
+        except backlog.Refused:
+            return None
+
+    def loop_info(self) -> dict:
+        return {"pid": os.getpid(), "host": socket.gethostname(), "auto_triage": bool(self.args.auto_triage)}
+
+    def journal_row(self, rec: dict) -> list | None:
+        """The run's row of RUNS.md (written since it started), None for a triage or without one."""
+        if rec.get("kind") == traces.TRIAGE or "rows_before" not in rec:
+            return None
+        for r in self.repo.runs()[rec["rows_before"]:]:
+            if len(r) > 2 and r[1] == rec["slug"]:
+                return r
+        return None
+
+    def open_attempt(self, rec: dict, out, err, resume: bool) -> None:
+        """Before claude starts: the separator and the header, then the offsets of this attempt."""
+        atts = rec.setdefault("trace_attempts", [])
+        n = len(atts) + 1
+        kind = "continue" if resume else "start"
+        reason = (rec.get("next_reason") or "-") if resume else "-"
+        started = traces.iso_local(time.time())
+        for f in (out, err):
+            if not traces.ends_line(f):
+                f.write(b"\n")  # a killed claude left a partial line: the separator starts a line of its own
+        out.write(traces.separator_line(n, kind, reason, started, rec.get("session")))
+        err.write(traces.stderr_header(n, kind, reason, started))
+        out.flush()
+        err.flush()
+        rec["offset"], rec["err_offset"] = out.tell(), err.tell()
+        atts.append(traces.attempt_record(n, kind, reason, started))
+
+    def close_attempt(self, rec: dict, verdict: str | None = None, exit_code: int | None = None) -> None:
+        """The attempt's end in meta.json (once), and the reason of the next one."""
+        atts = rec.get("trace_attempts") or []
+        if not atts or atts[-1].get("ended") is not None:
+            return
+        info = log_info(rec)
+        a = atts[-1]
+        a["ended"] = traces.iso_local(time.time())
+        if info.result is None:
+            a["ending"] = "interrupted"
+        else:
+            a["ending"] = "error" if info.is_error else "success"
+        a["error_kind"] = ("usage-limit" if info.limited else "session-lost" if info.lost
+                           else "other" if a["ending"] == "error" else None)
+        a["resets_at"] = traces.iso_local(info.reset_at) if info.limited else None
+        if exit_code is not None:
+            a["exit_code"] = exit_code
+        a["idle_killed"] = bool(rec.get("idle"))
+        a["usage"] = (info.result or {}).get("usage") or {}
+        rec["next_reason"] = {"limit": "usage-limit", "error": "error", "stalled": "stall"}.get(verdict, "-")
+        if rec.get("idle") and verdict in ("stalled", "error"):
+            rec["next_reason"] = "idle"
+
+    def write_meta(self, rec: dict, phase: str | None = None, final: bool = False, outcome: str | None = None) -> dict | None:
+        if not rec or not rec.get("trace"):
+            return None
+        row = self.journal_row(rec)
+        kind = rec.get("kind", "item")
+        if rec.get("started_epoch") is None:
+            try:
+                rec["started_epoch"] = dt.datetime.strptime(rec["started"], "%Y-%m-%d %H:%M:%S").timestamp()
+            except (KeyError, TypeError, ValueError):
+                pass
+        ended = time.time() if final else None
+        feature = traces.cell(row, 3)
+        commits = []
+        if final and rec.get("started_epoch") is not None:
+            commits = traces.run_commits(self.repo.root, rec["started_epoch"], ended, slug=rec["slug"],
+                                         feature=feature, kind=kind, base=rec.get("base"))
+        model = self.args.model or traces.first_init(Path(rec["log"]))[1]
+        meta = traces.build_meta(rec, phase=phase or rec.get("phase"), ended=traces.iso_local(ended),
+                                 outcome=outcome if outcome is not None else traces.cell(row, 2),
+                                 feature=feature, branch=traces.cell(row, 4), commits=commits, why=rec.get("why"),
+                                 loop_info=self.loop_info(), harness_version=self.harness_version, model=model)
+        try:
+            traces.write_json_atomic(Path(rec["trace"]) / traces.META, meta)
+        except OSError as e:  # the folder was deleted by hand: the run goes on, its record is lost
+            say(f"meta.json of {where(rec)} cannot be written ({e})")
+        return meta
+
+    def finish_trace(self, rec: dict, phase: str, outcome: str | None = None) -> None:
+        """The run ended (finished, dropped, or stopped for a person): final meta.json and its
+        one index line."""
+        if not rec or not rec.get("trace") or rec.get("indexed"):
+            return
+        self.close_attempt(rec)
+        meta = self.write_meta(rec, phase=phase, final=True, outcome=outcome)
+        if meta is None:
+            return
+        try:
+            traces.append_line(self.repo.traces / traces.INDEX, traces.build_index_line(meta, Path(rec["trace"]).name))
+        except OSError as e:
+            say(f"index.jsonl cannot be written ({e})")
+        rec["indexed"] = True
+        if rec is self.run and self.repo.run_file.exists():
+            save_json(self.repo.run_file, rec)
+
+    def migrate_old_run(self) -> None:
+        """A run recorded by the loop before 342 (its log in .git/tandem-backlog-loop/logs/)
+        moves into a run folder of .agent-traces/ before it is continued; offsets stay valid."""
+        run = self.run
+        if run.get("trace") or not run.get("log"):
+            return
+        old_log, old_err = Path(run["log"]), Path(run["err"])
+        name = traces.new_name_for_old(old_log.stem)
+        folder = self.repo.traces / name if name else None
+        if folder is None or folder.exists():
+            folder = traces.new_run_dir(self.repo.root, run["slug"], time.time())
+        else:
+            folder.mkdir(parents=True)
+        for src, dst in ((old_log, traces.TRACE), (old_err, traces.STDERR)):
+            if src.exists():
+                shutil.copyfile(src, folder / dst)
+            else:
+                (folder / dst).write_bytes(b"")
+        n = int(run.get("resumes") or 0) + 1
+        # the earlier attempts are known only by number; the last one stays open for the verdict
+        # only when none was taken yet (cut off: running / killed / new; review S4)
+        open_last = run.get("phase") in ("running", "killed", "new")
+        now = traces.iso_local(time.time())
+        run.update({"trace": str(folder), "log": str(folder / traces.TRACE), "err": str(folder / traces.STDERR),
+                    "kind": "item", "indexed": False, "next_reason": run.get("next_reason") or "-",
+                    "trace_attempts": [dict(traces.attempt_record(k + 1, "start" if k == 0 else "continue", "-", None),
+                                            ended=None if (k == n - 1 and open_last) else now)
+                                       for k in range(n)]})
+        self.save_run()
+        traces.remove_old(old_log, old_err)  # moved (the maintainer's request, 342)
+        try:
+            self.repo.old_logs.rmdir()  # the last old log was this run's
+        except OSError:
+            pass
+        say(f"the interrupted run of item {run['slug']} moved to {where(run)}")
+
+    def move_old_log(self, log: str | None) -> str | None:
+        """Move one log of the loop before 342 (a record that will not be continued: a
+        forgotten run, an orphan triage that ended) into .agent-traces/; its folder."""
+        if not log or not self.repo.old_logs.is_dir():
+            return None
+        stem = Path(log).stem
+        others = {p.stem for p in self.repo.old_logs.iterdir()} - {stem}
+        traces.import_old_logs(self.repo.root, self.repo.old_logs, self.repo.runs(), others,
+                               {"pid": None, "host": None, "auto_triage": None}, move=True)
+        name = traces.new_name_for_old(stem)
+        folder = self.repo.traces / name if name else None
+        return str(folder) if folder is not None and folder.is_dir() else None
 
     def execute(self, resume: bool) -> None:
         """Start claude for self.run and wait until it ends."""
@@ -621,8 +814,10 @@ class Loop:
             cmd += ["--model", self.args.model]
         env = child_env()
         flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
+        Path(run["trace"]).mkdir(parents=True, exist_ok=True)  # deleted by hand meanwhile: recreated
         with open(run["log"], "ab") as out, open(run["err"], "ab") as err:
-            run["offset"], run["err_offset"] = out.tell(), err.tell()
+            # claude writes straight into these files: the separator goes in before it starts
+            self.open_attempt(run, out, err, resume)
             try:
                 self.child = subprocess.Popen(cmd, cwd=str(self.repo.root), stdin=subprocess.DEVNULL, stdout=out,
                                               stderr=err, env=env, creationflags=flags,
@@ -630,15 +825,20 @@ class Loop:
             except OSError as e:
                 if not resume:
                     self.drop_run()
+                else:
+                    self.close_attempt(run)  # its separator is written: the next one gets the next number
+                    run["next_reason"] = "error"
+                    self.save_run()
                 say(f"claude cannot be started ({e}) - the loop stops")
                 raise Stop(1)
         run.update({"phase": "running", "wait_until": None, "child_pid": self.child.pid,
                     "child_ident": process_ident(self.child.pid)})
         self.save_run()
         verb = "continuing" if resume else "running"
-        detail = f"{verb} item {run['slug']} (session {run['session'][:8]}, log {Path(run['log']).name})"
+        detail = f"{verb} item {run['slug']} (session {run['session'][:8]}, {where(run)})"
         self.announce("running", detail, safe=False)
         self.watch(lambda: self.child.poll() is None, detail)
+        run["exit_code"] = self.child.returncode
         self.child = None
         run.update({"child_pid": None, "child_ident": None})
         self.save_run()
@@ -754,12 +954,13 @@ class Loop:
         run = self.run
         verdict, detail = self.assess()
         slug = run["slug"]
+        self.close_attempt(run, verdict, run.pop("exit_code", None))
         if run.pop("idle", False) and verdict in ("stalled", "error"):  # stopped by watch() while holding its item
             run["nudges"] = run.get("nudges", 0) + 1
             if run["nudges"] > MAX_NUDGES:
                 run.update({"phase": "failed", "why": "waited for nothing too often"})
                 self.save_run()
-                say(f"item {slug}: the run waited for nothing {run['nudges']} times - the loop stops; log {run['log']}")
+                say(f"item {slug}: the run waited for nothing {run['nudges']} times - the loop stops; {where(run)}")
                 raise Stop(1)
             run.update({"phase": "waiting", "wait_until": time.time(), "why": IDLE_WHY})
             self.save_run()
@@ -784,20 +985,20 @@ class Loop:
             run["why"] = detail
             self.save_run()
             say(f"item {slug}: the session cannot be continued ({detail}). The loop stops.")
-            say(f"the item still holds the run lock; see bin/backlog.sh status for what to do")
+            say(f"the item still holds the run lock; see bin/backlog-loop.sh status for what to do")
             raise Stop(1)
         if verdict == "refused-own":
             run.update({"phase": "failed", "why": f"a continuation refused its own run ({last_words(detail)})"})
             self.save_run()
             say(f"item {slug}: the continued run refused although it holds the item's lock ({last_words(detail)}) - "
-                f"the loop stops; log {run['log']}")
+                f"the loop stops; {where(run)}")
             raise Stop(1)
         if verdict == "limit":
             run["limits"] = run.get("limits", 0) + 1
             if run["limits"] > MAX_LIMITS:
                 run.update({"phase": "failed", "why": "interrupted by usage limits too often"})
                 self.save_run()
-                say(f"item {slug}: interrupted by a usage limit {run['limits']} times - the loop stops; log {run['log']}")
+                say(f"item {slug}: interrupted by a usage limit {run['limits']} times - the loop stops; {where(run)}")
                 raise Stop(1)
             until = self.limit_until(detail)
             run.update({"phase": "waiting", "wait_until": until, "why": "a usage limit"})
@@ -810,7 +1011,7 @@ class Loop:
                 run.update({"phase": "failed", "why": "errors"})
                 self.save_run()
                 say(f"item {slug}: the run ended with an error {run['attempts']} times - the loop stops; "
-                    f"log {run['log']}")
+                    f"{where(run)}")
                 raise Stop(1)
             until = time.time() + self.backoff[run["attempts"] - 1]
             why = last_words(detail)
@@ -824,14 +1025,14 @@ class Loop:
                 run.update({"phase": "failed", "why": "ended its turn without finishing"})
                 self.save_run()
                 say(f"item {slug}: the run ended {run['stalls']} times without finishing the item - the loop stops; "
-                    f"log {run['log']}")
+                    f"{where(run)}")
                 raise Stop(1)
             run.update({"phase": "waiting", "wait_until": time.time(), "why": "the turn ended before the run finished"})
             self.save_run()
             say(f"item {slug}: the run ended its turn before finishing; continuing it")
             return
         # the run never took its item
-        log = run["log"]
+        log = where(run)
         self.drop_run()
         if verdict in ("refused", "unrecorded"):
             self.refusals += 1
@@ -854,7 +1055,7 @@ class Loop:
         self.start_errors += 1
         why = last_words(detail)
         if self.start_errors > len(self.backoff):
-            say(f"claude ended with an error {self.start_errors} times before taking an item ({why}) - the loop stops; log {log}")
+            say(f"claude ended with an error {self.start_errors} times before taking an item ({why}) - the loop stops; {log}")
             raise Stop(1)
         until = time.time() + self.backoff[self.start_errors - 1]
         say(f"claude ended with an error before taking item {slug} ({why})")
@@ -866,7 +1067,7 @@ class Loop:
         phase = run.get("phase")
         if phase in ("lost", "failed"):
             say(f"an interrupted run of item {run['slug']} cannot be continued automatically ({run.get('why') or phase}).")
-            say("bin/backlog.sh status says what to do; then bin/backlog.sh start --forget-run")
+            say("bin/backlog-loop.sh status says what to do; then bin/backlog-loop.sh start --forget-run")
             raise Stop(1)
         if alive(run.get("child_pid"), run.get("child_ident")):
             pid, ident = run["child_pid"], run["child_ident"]
@@ -874,9 +1075,11 @@ class Loop:
             self.announce("running", detail, safe=True)
             self.watch(lambda: alive(pid, ident), detail, safe=True)  # Ctrl+C here ends only the loop
             run.update({"child_pid": None, "child_ident": None})
+            self.migrate_old_run()  # only now: that claude no longer writes to an old log
             self.save_run()
             self.conclude()
             return
+        self.migrate_old_run()
         wait_until = run.get("wait_until")
         if phase == "waiting" and wait_until and time.time() < wait_until:
             what = "limit" if run.get("why") == "a usage limit" else "backoff"
@@ -898,7 +1101,7 @@ class Loop:
             self.drop_run()
             return
         if not mine:
-            hint = ("; if it is this loop's own run, see bin/backlog.sh status" if lock.get("slug") == run["slug"] else "")
+            hint = ("; if it is this loop's own run, see bin/backlog-loop.sh status" if lock.get("slug") == run["slug"] else "")
             self.wait("waiting", f"waiting: the run lock is held by another run ({lock_words(lock)}), "
                       f"not by the interrupted run of {run['slug']}{hint}", None, recheck=True)
             return
@@ -906,6 +1109,8 @@ class Loop:
             # the loop or its claude ended without a verdict (Ctrl+C in Git Bash kills both at
             # once, a reboot, a closed window): say what a hard stop would have said (review M2, S4)
             run["why"] = run.get("why") or "the loop and claude ended while it ran (a hard stop, a closed window or a restart)"
+            self.close_attempt(run)
+            run["next_reason"] = "killed"
             say(f"the run of item {run['slug']} was interrupted ({run['why']}); it is continued in the same session.")
             say("If a GUI probe was running then, its registry is restored first (stop-rules 2.8; %TEMP%\\tcNNN_backup.reg).")
         self.execute(resume=True)
@@ -930,7 +1135,7 @@ class Loop:
         bl = backlog.Backlog(self.repo.root)
         findings = backlog.check(bl)
         if findings:
-            return "tree", f"python tools/backlog/backlog.py check reports {len(findings)} finding(s)"
+            return "tree", f"bin/backlog.sh check reports {len(findings)} finding(s)"
         if bl.ov is None or not backlog.overview_structurally_ok(bl.ov):
             return "tree", "backlog/BACKLOG.md is missing or malformed"
         return "ok", bl
@@ -958,8 +1163,22 @@ class Loop:
             self.announce("triage", detail, safe=True)
             self.watch(lambda: alive(pid, ident), detail, safe=True, source=rec, what="it", state="triage")
             say("the auto-triage of the previous loop ended")
+        if not rec.get("trace"):
+            self.move_old_log(rec.get("log"))  # a triage of the loop before 342: its log moves now it ended
+        self.finish_triage(rec)
         unlink(self.repo.triage_file)
         return True
+
+    def finish_triage(self, rec: dict, phase: str | None = None) -> None:
+        """An auto-triage ended (it is never continued): its final meta.json and index line."""
+        if not rec.get("trace"):
+            return
+        info = log_info(rec)
+        if phase is None:
+            phase = "done" if not info.is_error else "failed"
+        outcome = "triaged" if phase == "done" and not info.refused else None
+        self.close_attempt(rec, exit_code=rec.pop("exit_code", None))
+        self.finish_trace(rec, phase, outcome=outcome)
 
     def triage_due(self) -> bool:
         """Triage when the Inbox holds an item the last triage did not see; True if it ran."""
@@ -976,32 +1195,42 @@ class Loop:
 
     def triage(self, new: list, inbox: list) -> None:
         """One `/tandem-backlog auto-triage --commit` in a fresh claude; it commits on main itself."""
-        self.repo.logs.mkdir(parents=True, exist_ok=True)
-        name = dt.datetime.now().strftime("%Y%m%d-%H%M%S") + "-auto-triage"
-        source = {"log": str(self.repo.logs / f"{name}.jsonl"), "err": str(self.repo.logs / f"{name}.err")}
+        now = time.time()
+        folder = traces.new_run_dir(self.repo.root, traces.TRIAGE, now)
+        session = str(uuid.uuid4())
         head = self.repo.git("rev-parse", "HEAD")
-        detail = f"auto-triage of {len(new)} new Inbox item(s) (log {Path(source['log']).name})"
+        source = {"kind": traces.TRIAGE, "slug": traces.TRIAGE, "session": session, "started_epoch": now,
+                  "trace": str(folder), "log": str(folder / traces.TRACE), "err": str(folder / traces.STDERR),
+                  "trace_attempts": [], "indexed": False, "base": head}
+        self.triage_source = source
+        detail = f"auto-triage of {len(new)} new Inbox item(s) ({where(source)})"
         self.announce("triage", detail, safe=False)  # before claude starts: the skill checks this state
         cmd = list(self.claude) + ["-p", TRIAGE_PROMPT, "--output-format", "stream-json", "--verbose",
-                                   "--permission-mode", "bypassPermissions", "--session-id", str(uuid.uuid4())]
+                                   "--permission-mode", "bypassPermissions", "--session-id", session]
         if self.args.model:
             cmd += ["--model", self.args.model]
         env = child_env()
         env[TRIAGE_ENV] = str(os.getpid())
         flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
         with open(source["log"], "ab") as out, open(source["err"], "ab") as err:
-            source["offset"], source["err_offset"] = out.tell(), err.tell()
+            self.open_attempt(source, out, err, resume=False)
             try:
                 self.child = subprocess.Popen(cmd, cwd=str(self.repo.root), stdin=subprocess.DEVNULL, stdout=out,
                                               stderr=err, env=env, creationflags=flags,
                                               start_new_session=(os.name != "nt"))
             except OSError as e:
+                self.finish_triage(source, "failed")
+                self.triage_source = None
                 say(f"claude cannot be started ({e}) - the loop stops")
                 raise Stop(1)
+        self.write_meta(source, phase="running")
         # a loop that dies leaves this record: the next one waits for the claude (review S1)
         save_json(self.repo.triage_file, dict(source, pid=self.child.pid, ident=process_ident(self.child.pid)))
         self.watch(lambda: self.child.poll() is None, detail, source=source, what="the auto-triage", state="triage")
+        source["exit_code"] = self.child.returncode
         self.child = None
+        self.finish_triage(source)
+        self.triage_source = None
         unlink(self.repo.triage_file)
         info = log_info(source)
         if info.rate_limit:
@@ -1009,15 +1238,15 @@ class Loop:
         kind, why = self.tree_state()
         if kind == "tree":
             # the loop never repairs the tree: a person looks at what the triage left (also after an error)
-            say(f"after the auto-triage {why} - the loop stops; log {source['log']}")
+            say(f"after the auto-triage {why} - the loop stops; {where(source)}")
             say("look at git status and git log; commit or discard (git restore backlog) what it left, "
-                "then bin/backlog.sh start again")
+                "then bin/backlog-loop.sh start again")
             raise Stop(1)
         if info.limited:
             self.triage_limits += 1
             if self.triage_limits > MAX_LIMITS:
                 say(f"the auto-triage ended at a usage limit {self.triage_limits} times - the loop stops; "
-                    f"log {source['log']}")
+                    f"{where(source)}")
                 raise Stop(1)
             until = self.limit_until(info)
             say("the auto-triage ended at a usage limit")
@@ -1029,7 +1258,7 @@ class Loop:
             words = last_words(info)
             if self.triage_errors > len(self.backoff):
                 say(f"the auto-triage ended with an error {self.triage_errors} times ({words}) - the loop stops; "
-                    f"log {source['log']}")
+                    f"{where(source)}")
                 raise Stop(1)
             until = time.time() + self.backoff[self.triage_errors - 1]
             say(f"the auto-triage ended with an error ({words})")
@@ -1040,10 +1269,10 @@ class Loop:
         if info.refused and not committed:
             # the skill's gating and the loop disagree: the items stay new and are tried again (review S2)
             self.triage_refusals += 1
-            say(f"the auto-triage REFUSED ({last_words(info)}); log {source['log']}")
+            say(f"the auto-triage REFUSED ({last_words(info)}); {where(source)}")
             if self.triage_refusals >= MAX_REFUSALS:
                 say(f"the auto-triage refused {self.triage_refusals} times in a row - the loop stops; "
-                    "look at the log and at SKILL.md section 2.5a 'From the loop'")
+                    "look at its trace and at SKILL.md section 2.5a 'From the loop'")
                 raise Stop(1)
             return
         self.triage_refusals = 0
@@ -1069,10 +1298,16 @@ class Loop:
         try:
             if self.args.forget_run and self.repo.run_file.exists():
                 say("the record of the interrupted run is dropped (--forget-run)")
+                self.run = load_json(self.repo.run_file)
+                if self.run and not self.run.get("trace"):
+                    self.move_old_log(self.run.get("log"))  # a run of the loop before 342 (review S2)
+                elif self.run:
+                    self.finish_trace(self.run, self.run.get("phase") or "failed")  # once: a stop indexed it already
+                self.run = None
                 unlink(self.repo.run_file)
-            self.prune_logs()
-            say(f"loop started (pid {os.getpid()}); pause: bin/backlog.sh pause, stop: bin/backlog.sh stop, "
-                "status: bin/backlog.sh status")
+            self.import_old_logs()
+            say(f"loop started (pid {os.getpid()}); pause: bin/backlog-loop.sh pause, stop: bin/backlog-loop.sh stop, "
+                "status: bin/backlog-loop.sh status")
             return self.cycle()
         except Stop as s:
             return s.code
@@ -1081,7 +1316,37 @@ class Loop:
         finally:
             self.unregister()
             say("loop ended: " + ", ".join(f"{k} {v}" for k, v in self.counts.items() if k != "nothing-to-do")
-                + (f", auto-triage {self.triages}" if self.args.auto_triage else "") + f"; logs in {self.repo.logs}")
+                + (f", auto-triage {self.triages}" if self.args.auto_triage else "")
+                + f"; traces in {traces.TRACES_DIR}/")
+
+    def import_old_logs(self) -> None:
+        """Once (imported.json): move the logs of the loop before 342 into .agent-traces/.  The
+        log of a pending run is left for migrate_old_run (its claude may still write to it)."""
+        if self.repo.imported_file.exists() or not self.repo.old_logs.is_dir():
+            return
+        pending = load_json(self.repo.run_file) or {}
+        old = pending.get("log") and not pending.get("trace")
+        # a run that can still be continued keeps its log for migrate_old_run; a failed or
+        # lost one is only ever dropped (--forget-run), so it moves with the rest
+        stuck = bool(old) and pending.get("phase") in ("failed", "lost")
+        skip = {Path(pending["log"]).stem} if old and not stuck else set()
+        # a 247 auto-triage may still be running and writing its log: orphan_triage moves it
+        # once that claude has ended (review M1)
+        triage = load_json(self.repo.triage_file) or {}
+        if triage.get("log") and not triage.get("trace"):
+            skip.add(Path(triage["log"]).stem)
+        imported, skipped = traces.import_old_logs(self.repo.root, self.repo.old_logs, self.repo.runs(), skip,
+                                                   {"pid": None, "host": None, "auto_triage": None}, move=True)
+        name = traces.new_name_for_old(Path(pending["log"]).stem) if stuck else None
+        if name and (self.repo.traces / name).is_dir():
+            folder = self.repo.traces / name
+            pending.update({"trace": str(folder), "log": str(folder / traces.TRACE),
+                            "err": str(folder / traces.STDERR), "indexed": True})
+            save_json(self.repo.run_file, pending)
+        save_json(self.repo.imported_file, {"date": stamp(), "imported": imported, "skipped": skipped})
+        left = [p.name for p in self.repo.old_logs.iterdir()] if self.repo.old_logs.is_dir() else []
+        say(f"moved {imported} run log(s) of the loop before 342 into {traces.TRACES_DIR}/"
+            + (f"; {len(left)} file(s) left in {self.repo.old_logs}" if left else ""))
 
     def cycle(self) -> int:
         while True:
@@ -1089,7 +1354,7 @@ class Loop:
                 say("stop requested - the loop ends")
                 return 0
             if self.paused():
-                self.wait("paused", "paused - waiting for bin/backlog.sh resume", None)
+                self.wait("paused", "paused - waiting for bin/backlog-loop.sh resume", None)
                 if not self.paused() and not self.stop_requested():
                     say("resumed")
                 continue
@@ -1117,17 +1382,21 @@ class Loop:
 
     def hard_stop(self) -> int:
         child, run = self.child, self.run
-        if child is not None and run is None:  # the auto-triage
-            if child.poll() is None:
+        if run is None and (child is not None or self.triage_source is not None):  # the auto-triage
+            if child is not None and child.poll() is None:
                 kill_tree(child.pid)
                 try:
                     child.wait(timeout=30)
                 except subprocess.TimeoutExpired:
                     pass
+            if self.triage_source is not None:  # also when Ctrl+C came before claude started
+                if child is not None:
+                    self.triage_source["exit_code"] = child.returncode
+                self.finish_triage(self.triage_source, "killed")  # never continued: it ends here
             unlink(self.repo.triage_file)
             say("HARD STOP: claude was killed during the auto-triage.")
             say("What it changed and did not commit stays in backlog/ (git status): commit it or discard it "
-                "(git restore backlog); the next bin/backlog.sh start waits for a clean tree.")
+                "(git restore backlog); the next bin/backlog-loop.sh start waits for a clean tree.")
         elif child is not None:
             # also when the same Ctrl+C already ended claude: the item is cut either way (review S4)
             if child.poll() is None:
@@ -1136,34 +1405,26 @@ class Loop:
                     child.wait(timeout=30)
                 except subprocess.TimeoutExpired:
                     pass
+            atts = run.get("trace_attempts") or []
+            if atts and atts[-1].get("ended") is None:
+                atts[-1]["exit_code"] = child.returncode  # the loop started it, so it is known
             run.update({"phase": "killed", "why": "a hard stop (Ctrl+C) killed the process",
                         "child_pid": None, "child_ident": None})
             self.save_run()
             say(f"HARD STOP: claude was killed while it worked on item {run['slug']}.")
-            say("The item keeps the run lock; the next bin/backlog.sh start continues it in the same session.")
+            say("The item keeps the run lock; the next bin/backlog-loop.sh start continues it in the same session.")
             say("If a GUI probe was running: restore its registry backup first (%TEMP%\\tcNNN_backup.reg, stop-rules 2.8).")
         elif run and alive(run.get("child_pid"), run.get("child_ident")):
             say(f"stopped (Ctrl+C) - the claude of the previous loop keeps working on item {run['slug']}; "
-                "the next bin/backlog.sh start waits for it")
+                "the next bin/backlog-loop.sh start waits for it")
         elif run and self.repo.run_file.exists():
             # an interrupted run waits (limit, backoff) or its verdict was being taken (review 2 N10)
             say(f"stopped (Ctrl+C) - no claude was running; the interrupted run of item {run['slug']} keeps the "
-                "run lock and the next bin/backlog.sh start continues it")
+                "run lock and the next bin/backlog-loop.sh start continues it")
         else:
             say("stopped (Ctrl+C) - no item of this loop was running")
         return 130
 
-    def prune_logs(self) -> None:
-        if not self.repo.logs.is_dir():
-            return
-        logs = sorted(self.repo.logs.glob("*.jsonl"))
-        keep = {Path(p).stem for p in logs[-KEEP_LOGS:]}
-        current = load_json(self.repo.run_file) or {}
-        if current.get("log"):
-            keep.add(Path(current["log"]).stem)
-        for p in self.repo.logs.iterdir():
-            if p.suffix in (".jsonl", ".err") and p.stem not in keep:
-                unlink(p)
 
 
 # ---------------------------------------------------------------------------
@@ -1171,12 +1432,14 @@ class Loop:
 
 
 def cmd_start(repo: Repo, args) -> int:
+    args.harness_version = None  # a test's --claude-cmd is not asked (it would play a step)
     if args.claude_cmd is None:
         exe = shutil.which("claude")
         if not exe:
             print("refused: 'claude' is not on PATH", flush=True)
             return 1
         args.claude_cmd = [exe]
+        args.harness_version = claude_version(exe)
     if os.name == "nt":
         signal.signal(signal.SIGBREAK, _interrupt)
     signal.signal(signal.SIGINT, _interrupt)
@@ -1190,9 +1453,12 @@ def describe(repo: Repo) -> dict:
     loop = load_json(repo.loop_file)
     live = bool(loop and alive(loop.get("pid"), loop.get("ident")))
     run = load_json(repo.run_file)
-    return {"loop": loop, "live": live, "run": run, "triage": load_json(repo.triage_file),
+    triage = load_json(repo.triage_file)
+    trace = (run or {}).get("trace") or ((loop or {}).get("trace") if live else None)
+    return {"loop": loop, "live": live, "run": run, "triage": triage,
             "paused": repo.pause_flag.exists(),
-            "stop": repo.stop_flag.exists(), "lock": repo.lock(), "lock_text": repo.lock_text()}
+            "stop": repo.stop_flag.exists(), "lock": repo.lock(), "lock_text": repo.lock_text(),
+            "trace": trace, "traces_bytes": traces.traces_size(repo.root)}
 
 
 def cmd_status(repo: Repo, args) -> int:
@@ -1217,6 +1483,8 @@ def cmd_status(repo: Repo, args) -> int:
         if loop.get("auto_triage"):
             print(f"triage:  auto, when the Inbox has new items ({loop.get('triages', 0)} done)")
         print(f"usage:   {usage_line(loop.get('usage'))}")
+    trace = d["trace"] or (run or {}).get("log")  # a run of the loop before 342 not moved yet: its log
+    trace_line = f"trace:   {trace or '-'} (traces total: {traces.format_size(d['traces_bytes'])})"
     if run:
         line = f"run:     item {run['slug']}, session {run['session']}, phase {run.get('phase')}"
         if run.get("wait_until"):
@@ -1224,33 +1492,35 @@ def cmd_status(repo: Repo, args) -> int:
         if run.get("why"):
             line += f" ({run['why']})"
         print(line)
-        print(f"log:     {run.get('log')}")
+        print(trace_line)
         if run.get("phase") in ("lost", "failed"):
             slug = run["slug"]
-            print("todo:    the run cannot be continued automatically. Look at its log and its branch (the lock")
+            print("todo:    the run cannot be continued automatically. Look at its trace and its branch (the lock")
             print("         names it), finish the item by hand or stop it as a run would (SKILL.md step 10):")
-            print(f"           python tools/backlog/backlog.py lock release --force ; git checkout main")
-            print(f"           python tools/backlog/backlog.py block {slug} --reason '<why>'")
+            print(f"           bin/backlog.sh lock release --force ; git checkout main")
+            print(f"           bin/backlog.sh block {slug} --reason '<why>'")
             print(f"           git add backlog ; git commit -m 'backlog: {slug} blocked'")
-            print("         then bin/backlog.sh start --forget-run")
+            print("         then bin/backlog-loop.sh start --forget-run")
         elif not d["live"] and alive(run.get("child_pid"), run.get("child_ident")):
-            print(f"         its claude (pid {run['child_pid']}) is still working; the next bin/backlog.sh start waits for it")
+            print(f"         its claude (pid {run['child_pid']}) is still working; the next bin/backlog-loop.sh start waits for it")
         elif not d["live"]:
-            print("         the next bin/backlog.sh start continues this run in the same session")
+            print("         the next bin/backlog-loop.sh start continues this run in the same session")
             if run.get("phase") in ("running", "killed", "new"):
                 print("         (it was cut off: if a GUI probe was running, its registry backup is restored first -")
                 print("         stop-rules 2.8, %TEMP%\\tcNNN_backup.reg; the continued run is told so)")
+    if not run:
+        print(trace_line)
     triage = d["triage"]
     if triage and not d["live"] and alive(triage.get("pid"), triage.get("ident")):
         print(f"triage:  the auto-triage claude of the last loop (pid {triage['pid']}) is still working; "
-              "the next bin/backlog.sh start waits for it")
+              "the next bin/backlog-loop.sh start waits for it")
     print(f"lock:    {d['lock_text']}")
     if d["live"]:
         triaging = loop.get("state") == "triage"
         hard = loop.get("ctrl_c_safe") is False and (triaging or (bool(run) and alive(run.get("child_pid"),
                                                                                        run.get("child_ident"))))
         print("Ctrl+C:  " + (f"HARD STOP now ({'the auto-triage' if triaging else 'an item'} is running) - "
-                             "use bin/backlog.sh pause / bin/backlog.sh stop" if hard else "safe now (no item is running)"))
+                             "use bin/backlog-loop.sh pause / bin/backlog-loop.sh stop" if hard else "safe now (no item is running)"))
     return 0
 
 
@@ -1260,18 +1530,18 @@ def cmd_pause(repo: Repo, args) -> int:
     repo.pause_flag.write_text(stamp() + "\n", encoding="utf-8")
     d = describe(repo)
     if not d["live"]:
-        print("pause set: no loop is running; the next bin/backlog.sh start starts paused (bin/backlog.sh resume clears it)")
+        print("pause set: no loop is running; the next bin/backlog-loop.sh start starts paused (bin/backlog-loop.sh resume clears it)")
     elif d["loop"].get("state") in ("running", "triage"):
         what = f"item {d['loop'].get('slug')}" if d["loop"].get("state") == "running" else "the auto-triage"
         print(f"pause {'was already ' if already else ''}requested: the loop finishes {what}, "
-              "then waits for bin/backlog.sh resume (bin/backlog.sh status shows when)")
+              "then waits for bin/backlog-loop.sh resume (bin/backlog-loop.sh status shows when)")
     else:
-        print("paused: the loop waits for bin/backlog.sh resume")
+        print("paused: the loop waits for bin/backlog-loop.sh resume")
     run = d["run"]
     if run and d["lock"] is not None and run.get("phase") not in ("lost", "failed"):
         # review 2 N8: the interrupted run keeps its branch and lock until it is continued
         print(f"note: the interrupted run of item {run['slug']} keeps the run lock and its branch until it is "
-              "continued (bin/backlog.sh resume); the backlog cannot be changed safely before it finishes")
+              "continued (bin/backlog-loop.sh resume); the backlog cannot be changed safely before it finishes")
     return 0
 
 
@@ -1285,7 +1555,7 @@ def cmd_resume(repo: Repo, args) -> int:
     elif live:
         print("resumed: the loop continues" + (" (the pending stop is cancelled)" if had_stop else ""))
     else:
-        print("pause cleared: no loop is running; start it with bin/backlog.sh start")
+        print("pause cleared: no loop is running; start it with bin/backlog-loop.sh start")
     return 0
 
 
@@ -1293,12 +1563,12 @@ def cmd_stop(repo: Repo, args) -> int:
     live = repo.live_loop()
     if not live:
         unlink(repo.stop_flag)
-        print("no loop is running" + (" (a pause is still set: bin/backlog.sh resume clears it)" if repo.pause_flag.exists() else ""))
+        print("no loop is running" + (" (a pause is still set: bin/backlog-loop.sh resume clears it)" if repo.pause_flag.exists() else ""))
         return 0
     repo.stop_flag.write_text(stamp() + "\n", encoding="utf-8")
     if live.get("state") in ("running", "triage"):
         what = f"item {live.get('slug')}" if live.get("state") == "running" else "the auto-triage"
-        print(f"stop requested: the loop finishes {what}, then ends (bin/backlog.sh resume cancels it)")
+        print(f"stop requested: the loop finishes {what}, then ends (bin/backlog-loop.sh resume cancels it)")
     else:
         print("stop requested: the loop ends within a few seconds")
     return 0
@@ -1317,13 +1587,15 @@ def seconds_list(text: str) -> list:
 def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--root", help="repository root (default: the repository containing this script)")
-    p = argparse.ArgumentParser(prog="bin/backlog.sh", description="Loop over /tandem-backlog-implement (feature 247).")
+    p = argparse.ArgumentParser(prog="bin/backlog-loop.sh",
+                                description="Loop over /tandem-backlog-implement (features 247, 342).")
     sub = p.add_subparsers(dest="command", required=True)
     s = sub.add_parser("start", parents=[common], help="run the loop in the foreground (Ctrl+C = hard stop)",
                        description="Run /tandem-backlog-implement item after item, one fresh claude process "
-                                   "each. Ctrl+C = hard stop; bin/backlog.sh pause, resume, stop and status "
+                                   "each. Ctrl+C = hard stop; bin/backlog-loop.sh pause, resume, stop and status "
                                    "control it from another window.",
-                       epilog="Full documentation: specs/247-backlog-run-loop/contracts/loop-cli.md")
+                       epilog="Full documentation: specs/247-backlog-run-loop/contracts/loop-cli.md; "
+                              "traces: specs/342-backlog-agent-traces/contracts/traces.md")
     s.add_argument("--max-items", type=int, default=0, help="end after N finished items (default: no limit)")
     s.add_argument("--max-blocked", type=int, default=DEFAULT_MAX_BLOCKED,
                    help=f"stop after N blocked runs in a row (default {DEFAULT_MAX_BLOCKED})")

@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243, 247, 265 |
+| Backlog and project tooling | 242, 243, 247, 265, 342 |
 | Releases and pre-release reviews | 056, 068, 243 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -3043,6 +3043,8 @@ a few early ones are out of sequence).
     the options of one. Rule: every script in `bin/` answers `--help` -
     `tools/test_bin_help.py` (a script without it fails the test, measured); `test_loop.py`
     checks that the overview names every visible option of `start`.
+  - Superseded by 342 (2026-10-25): the loop is `bin/backlog-loop.sh` (`bin/backlog.sh` is the
+    backlog tool), and the run output is in `.agent-traces/`, not `.git/tandem-backlog-loop/logs/`.
 - 248-folders-column-names: **the Desktop view's column headers were mojibake** on a non-English
   Windows (GitHub issue #13): the Folders plug-in (`fld:`) handed the shell's column names to the
   core as UTF-8 (feature 004), the core draws column names in the code page (MBCS build, `TextOutA`)
@@ -4954,3 +4956,35 @@ a few early ones are out of sequence).
   `main` -> 12 / 0 (mutants: fan-out off 4 rows FAIL, stamps off SEED-ALIAS FAIL); 323's
   `ftp302_probe.ps1` 16 / 0; review 3's in-flight STOR rows 4 / 0; three refute-first reviews
   (MUST 1, MUST 1, none).
+- 342-backlog-agent-traces: the backlog loop's run output now follows the format of the
+  reference project `2026_hscr_ai_chatbot` (its feature 003): one folder per run (item or
+  auto-triage) `.agent-traces/<YYYYMMDD-HHMMSS>-claude-<slug|triage>/` with `trace.jsonl`
+  (claude's stream unchanged plus a `backlog_loop.attempt` separator line before every
+  attempt), `stderr.log` (a header per attempt), `meta.json` (outcome, feature and branch from
+  `RUNS.md`, the run's commits, every attempt with its ending; replaced atomically), and one line
+  per ended run in `.agent-traces/index.jsonl`. Ignored by git, never deleted by the loop (the
+  newest-100 pruning is gone); `bin/backlog-loop.sh status` shows the run's folder and the total
+  size. Input for a future eval system. Format: `contracts/traces.md` (`tools/backlog/traces.py`).
+  Two commands in `bin/`: `bin/backlog.sh` runs the backlog tool (`BL = bin/backlog.sh` in the
+  skills; `python tools/backlog/backlog.py` is no longer documented) and `bin/backlog-loop.sh` is
+  the loop. An old loop word typed into `bin/backlog.sh` is the tool's usage error (exit 2, nothing
+  written; the maintainer chose no alias). The first `start` moved the 142 old run logs (95
+  item runs, 47 triages, 547 MB) into the new layout once (copy, byte compare, rename from
+  `.part`, then delete; marker `imported.json`); done on this repository and verified against a
+  copy. Traps:
+  - claude writes straight into the trace file (`Popen(stdout=file)`), so the separator is written
+    through the same handle **before** `Popen`, and the verdict's offsets are taken after it; the
+    verdict never reads the separator.
+  - `system/init` repeats at every turn of one claude process (after a wakeup or a task
+    notification): the old logs do not show where an attempt began, so imported runs say
+    `attempts: null`, not a count.
+  - A run's commits are those after `base` (HEAD at its start) whose subject starts with `[NNN]` or
+    `backlog: <slug> ` (triage: `backlog: auto-triage`); with time windows, two triages seconds
+    apart took each other's commit.
+  - A pending `run.json` in phase `failed` / `lost` moves with the old logs (it is only ever
+    dropped); skipping it, as the plan said, would have stranded the 341 run's log for good.
+  - Measured and not taken over from the reference: a lost session is already in claude's stderr
+    (2.1.310 writes it to stderr and `result.errors`), the one real usage limit carried
+    `resetsAt` in its rate event, and a silence timeout would kill reviewers that legitimately
+    wait up to 2 hours. Not taken over either: Codex, `.cmd` twins, a read-only reviewer agent,
+    a `Backlog-Item:` trailer.

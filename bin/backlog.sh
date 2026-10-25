@@ -2,53 +2,39 @@
 # SPDX-FileCopyrightText: 2026 Pavel Stupka
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# The backlog loop from Git Bash: bin/backlog.sh start|pause|resume|stop|status
-# (feature 247; logic in tools/backlog/loop.py). Every script in bin/ answers --help.
+# The backlog from Git Bash: bin/backlog.sh <command> (features 242, 342; logic in
+# tools/backlog/backlog.py). The loop is bin/backlog-loop.sh. Every script in bin/
+# answers --help.
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-loop="$here/../tools/backlog/loop.py"
+tool="$here/../tools/backlog/backlog.py"
+export TANDEM_BACKLOG_PROG=bin/backlog.sh
 
 usage() {
     cat <<'EOF'
-Usage: bin/backlog.sh <command> [options]
+Usage: bin/backlog.sh [--root DIR] <command> [options]
        bin/backlog.sh <command> --help    the options of one command
        bin/backlog.sh --help              this text
 
-Runs /tandem-backlog-implement item after item, one fresh claude process per
-item, and controls that loop from another window (feature 247).
-
-Commands:
-  start    run the loop in this window until it is stopped; Ctrl+C here is a
-           hard stop (kills the running item, the next start continues it)
-  pause    the running item finishes, then the loop waits for resume
-  resume   continue after a pause; also cancels a pending stop
-  stop     the running item finishes, then the loop ends
-  status   what the loop does now: the running item, waiting and why, usage
-           limits, an interrupted run, the run lock, whether Ctrl+C is safe
-
-Options of start:
-  --max-items N      end after N finished items (default: no limit)
-  --max-blocked N    stop after N blocked runs in a row (default 3)
-  --poll SECONDS     how often a waiting loop looks at the backlog (default 60)
-  --model M          the model of the runs (default: claude's own default)
-  --until-idle       end when nothing is eligible instead of waiting
-  --forget-run       drop the record of an interrupted run before starting
-  --auto-triage      before each run, place new Inbox items with
-                     '/tandem-backlog auto-triage --commit'
-Options of status:
-  --json             the data as JSON
-Every command:
-  --root DIR         another repository (default: this one)
+Checks, lists and changes the backlog in backlog/ (feature 242): the
+overview BACKLOG.md, the items in backlog/items/<slug>/desc.md and the run
+journal RUNS.md. Manage it with /tandem-backlog; the skills run this script.
+The loop that implements item after item is bin/backlog-loop.sh.
 
 Environment: PYTHON - the Python to run (default: python).
-Exit: start 0 ended as asked, 1 stopped for a person or refused, 2 usage,
-130 Ctrl+C; the other commands 0 (2 usage).
-Full documentation: specs/247-backlog-run-loop/contracts/loop-cli.md
+Exit: 0 done / no findings, 1 findings or refused (refused: nothing written),
+2 usage.
+Full documentation: specs/242-backlog-system/contracts/cli.md,
+specs/342-backlog-agent-traces/contracts/bin-commands.md
 
 Examples:
-  bin/backlog.sh start --auto-triage
-  bin/backlog.sh pause
-  bin/backlog.sh status
+  bin/backlog.sh next
+  bin/backlog.sh list --section next
+  bin/backlog.sh list --section inbox --json
+  bin/backlog.sh check
+
+The commands of the tool:
 EOF
+    "${PYTHON:-python}" "$tool" --help
 }
 
 case "${1-}" in
@@ -56,15 +42,11 @@ case "${1-}" in
         usage
         exit 0
         ;;
-    start | pause | resume | stop | status)
-        exec "${PYTHON:-python}" -u "$loop" "$@"
-        ;;
     "")
         usage >&2
         exit 2
         ;;
     *)
-        echo "bin/backlog.sh: unknown command '$1' (start, pause, resume, stop, status; --help)" >&2
-        exit 2
+        exec "${PYTHON:-python}" "$tool" "$@"
         ;;
 esac

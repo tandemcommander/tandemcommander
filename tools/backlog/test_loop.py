@@ -27,11 +27,17 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import backlog  # noqa: E402
 import loop  # noqa: E402
+import traces  # noqa: E402
 
 VALID = HERE / "fixtures" / "valid"
 FAKE = HERE / "fixtures" / "fake_claude.py"
 LOOP = HERE / "loop.py"
-BIN = HERE.parents[1] / "bin" / "backlog.sh"
+BIN = HERE.parents[1] / "bin" / "backlog-loop.sh"
+OLD_LOGS = HERE / "fixtures" / "old_logs"
+META_KEYS = ["format_version", "kind", "slug", "harness", "harness_version", "model", "session_id", "started",
+             "ended", "phase", "outcome", "feature", "branch", "commits", "why", "attempts", "counters", "loop"]
+INDEX_KEYS = ["dir", "kind", "slug", "harness", "model", "started", "ended", "phase", "outcome", "feature",
+              "attempts"]
 FTP = "ftp-per-server-encoding-flag"
 DISK = "disk-map-context-menu-crash"
 FAST = ["--poll", "0.2", "--tick", "0.05", "--backoff", "0.1,0.2", "--limit-margin", "0",
@@ -167,6 +173,53 @@ class Base(unittest.TestCase):
     def lock_slug(self):
         return (self.repo.lock() or {}).get("slug")
 
+    # -- traces (feature 342) ------------------------------------------
+
+    def trace_dirs(self):
+        top = self.root / ".agent-traces"
+        return sorted(p for p in top.iterdir() if p.is_dir()) if top.is_dir() else []
+
+    def index(self):
+        p = self.root / ".agent-traces" / "index.jsonl"
+        return [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines()] if p.exists() else []
+
+    def check_trace(self, d, *, kind="item", slug=None, reasons=("-",), phase="done", outcome=None):
+        """A run folder against contracts/traces.md; returns its meta."""
+        text = (d / "trace.jsonl").read_text(encoding="utf-8").splitlines()
+        lines = [json.loads(l) for l in text if l.startswith("{")]  # the fake also prints plain lines
+        self.assertTrue(text[0].startswith('{"type":"backlog_loop.attempt"'), text[0])
+        seps = [o for o in lines if o.get("type") == "backlog_loop.attempt"]
+        self.assertEqual([s["reason"] for s in seps], list(reasons), d.name)
+        self.assertEqual([s["attempt"] for s in seps], list(range(1, len(reasons) + 1)))
+        self.assertEqual([s["kind"] for s in seps], ["start"] + ["continue"] * (len(reasons) - 1))
+        self.assertEqual(lines[0]["type"], "backlog_loop.attempt")  # before anything claude wrote
+        for s in seps:
+            self.assertEqual(s["harness"], "claude")
+            self.assertRegex(s["started"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d[+-]\d\d:\d\d$")
+        headers = [l for l in (d / "stderr.log").read_text(encoding="utf-8").splitlines() if l.startswith("=== attempt ")]
+        self.assertEqual(len(headers), len(reasons))
+        meta = json.loads((d / "meta.json").read_text(encoding="utf-8"))
+        self.assertEqual(list(meta), META_KEYS)
+        self.assertEqual((meta["kind"], meta["harness"], meta["phase"], meta["outcome"]),
+                         (kind, "claude", phase, outcome), d.name)
+        self.assertEqual(len(meta["attempts"]), len(reasons))
+        self.assertEqual([a["reason"] for a in meta["attempts"]], list(reasons))
+        if slug is not None:
+            self.assertEqual(meta["slug"], slug)
+            self.assertTrue(d.name.endswith(f"-claude-{slug}"), d.name)
+        self.assertEqual(meta["model"], "fake-model")
+        self.assertEqual(meta["session_id"], seps[0]["session_id"])
+        if phase in ("done", "failed", "lost"):
+            self.assertIsNotNone(meta["ended"])
+            for a in meta["attempts"]:
+                self.assertIsNotNone(a["ended"])
+                self.assertIn(a["ending"], ("success", "error", "interrupted"))
+        return meta
+
+    def assert_clean_tree(self):
+        self.assertEqual(git(self.root, "status", "--porcelain"), "")
+        self.assertFalse((self.repo.dir / "logs").exists())
+
 
 class RunTests(Base):
     def test_items_one_after_another_then_idle(self):
@@ -196,8 +249,26 @@ class RunTests(Base):
         self.assertIn("nothing eligible", out)
         self.assertFalse(self.repo.loop_file.exists())
         self.assertFalse(self.repo.run_file.exists())
-        logs = list(self.repo.logs.glob("*.jsonl"))
-        self.assertEqual(len(logs), 2)
+        self.assertEqual(len(self.trace_dirs()), 2)
+        dirs = [self.root / ".agent-traces" / i["dir"] for i in self.index()]  # in the order the runs ended
+        for d, slug in zip(dirs, (FTP, DISK)):
+            meta = self.check_trace(d, slug=slug, outcome="closed")
+            row = next(r for r in rows if r[1] == slug)
+            feature = row[3]
+            self.assertRegex(feature, r"^9\d\d$")
+            self.assertEqual((meta["feature"], meta["branch"]), (feature, f"{feature}-{slug}"))
+            subjects = [git(self.root, "log", "-1", "--format=%s", h).strip() for h in meta["commits"]]
+            self.assertEqual(subjects, [f"[{feature}] fake: {slug} closed"])
+            self.assertEqual(meta["attempts"][0]["ending"], "success")
+            self.assertEqual(meta["attempts"][0]["exit_code"], 0)
+            self.assertEqual(meta["attempts"][0]["usage"], {"input_tokens": 1, "output_tokens": 1})
+            self.assertEqual(meta["loop"]["auto_triage"], False)
+            self.assertIsNone(meta["harness_version"])  # --claude-cmd is not asked for its version
+        index = self.index()
+        self.assertEqual([i["dir"] for i in index], [d.name for d in dirs])
+        self.assertEqual([list(i) for i in index], [INDEX_KEYS] * 2)
+        self.assertEqual([(i["outcome"], i["attempts"]) for i in index], [("closed", 1)] * 2)
+        self.assert_clean_tree()
 
     def test_caller_watchdog_setting_is_kept(self):
         self.write_plan(["close"])
@@ -254,6 +325,14 @@ class RunTests(Base):
         self.assertGreaterEqual(time.time() - t0, 1.0)  # resetsAt = int(now + 2) >= now + 1
         self.assertEqual(self.runs()[-1][2], "closed")
         self.assertIn("interrupted by a usage limit", out)
+        (d,) = self.trace_dirs()  # one run, one folder, two attempts
+        meta = self.check_trace(d, slug=FTP, reasons=("-", "usage-limit"), outcome="closed")
+        first = meta["attempts"][0]
+        self.assertEqual((first["ending"], first["error_kind"]), ("error", "usage-limit"))
+        self.assertIsNotNone(first["resets_at"])
+        self.assertEqual(meta["counters"]["limits"], 1)
+        self.assertEqual(len(self.index()), 1)
+        self.assert_clean_tree()
 
     def test_usage_limit_without_a_reset_time_waits_the_default(self):
         self.write_plan(["limit-noreset", "close"])
@@ -269,6 +348,11 @@ class RunTests(Base):
         self.assertEqual([c["resume"] for c in calls], [False, True, True])
         self.assertEqual(len({c["session"] for c in calls}), 1)
         self.assertIn("fake: boom", out)
+        (d,) = self.trace_dirs()
+        meta = self.check_trace(d, slug=FTP, reasons=("-", "error", "error"), outcome="closed")
+        self.assertEqual([a["ending"] for a in meta["attempts"]], ["interrupted", "interrupted", "success"])
+        self.assertEqual(meta["counters"]["errors"], 2)
+        self.assertIn("fake: boom", (d / "stderr.log").read_text(encoding="utf-8"))
 
     def test_too_many_errors_stop_and_the_record_stays(self):
         self.write_plan(["crash", "crash", "crash", "close"])
@@ -277,9 +361,13 @@ class RunTests(Base):
         self.assertEqual(len(self.calls()), 3)
         run = loop.load_json(self.repo.run_file)
         self.assertEqual(run["phase"], "failed")
+        (d,) = self.trace_dirs()
+        self.check_trace(d, slug=FTP, reasons=("-", "error", "error"), phase="failed")
+        self.assertEqual([i["phase"] for i in self.index()], ["failed"])  # indexed at the stop for a person
         _, status = self.ctl("status")
         self.assertIn("cannot be continued automatically", status)
         self.assertIn("--forget-run", status)
+        self.assertIn(f"trace:   {d}", status)
         # a new start refuses to guess
         code, out = self.run_loop("--until-idle")
         self.assertEqual(code, 1, out)
@@ -290,12 +378,17 @@ class RunTests(Base):
         self.assertEqual(code, 0, out)
         self.assertEqual(self.calls()[-1]["step"], "close")
         self.assertFalse(self.calls()[-1]["resume"])
+        # --forget-run did not index the failed run a second time; the new run has its own folder
+        self.assertEqual([i["phase"] for i in self.index()], ["failed", "done"])
+        self.assertEqual(len(self.trace_dirs()), 2)
 
     def test_a_turn_ended_early_is_continued_at_most_twice(self):
         self.write_plan(["stall", "close"])
         code, out = self.run_loop("--until-idle")
         self.assertEqual(code, 0, out)
         self.assertEqual([c["resume"] for c in self.calls()], [False, True])
+        (d,) = self.trace_dirs()
+        self.check_trace(d, slug=FTP, reasons=("-", "stall"), outcome="closed")
         self.tearDown()
         self.setUp()
         self.write_plan(["stall", "stall", "stall", "close"])
@@ -317,6 +410,11 @@ class RunTests(Base):
         self.assertEqual(calls[1]["session"], calls[0]["session"])
         self.assertIn("waits for nothing", out)
         self.assertEqual(self.runs()[-1][2], "closed")
+        (d,) = self.trace_dirs()
+        meta = self.check_trace(d, slug=FTP, reasons=("-", "idle"), outcome="closed")
+        self.assertTrue(meta["attempts"][0]["idle_killed"])
+        self.assertFalse(meta["attempts"][1]["idle_killed"])
+        self.assertEqual(meta["counters"]["idles"], 1)
 
     def test_wakeups_while_a_background_task_runs_are_not_idling(self):
         self.write_plan([{"do": "idle-busy", "seconds": 1}])
@@ -373,6 +471,10 @@ class RunTests(Base):
         self.assertEqual(loop.load_json(self.repo.run_file)["phase"], "lost")
         self.assertIn("cannot be continued", out)
         self.assertEqual(self.lock_slug(), FTP)
+        (d,) = self.trace_dirs()
+        meta = self.check_trace(d, slug=FTP, reasons=("-", "usage-limit"), phase="lost")
+        self.assertEqual(meta["attempts"][1]["error_kind"], "session-lost")
+        self.assertEqual([(i["phase"], i["attempts"]) for i in self.index()], [("lost", 2)])
 
     def test_refusals(self):
         self.write_plan(["refuse", "close"])
@@ -380,6 +482,9 @@ class RunTests(Base):
         self.assertEqual(code, 0, out)
         self.assertEqual(len(self.calls()), 2)
         self.assertIn("did not take the item", out)
+        # the refused run and the closed one: a folder and an index line each
+        self.assertEqual([(i["phase"], i["outcome"]) for i in self.index()], [("done", None), ("done", "closed")])
+        self.assertEqual(len(self.trace_dirs()), 2)
         self.tearDown()
         self.setUp()
         self.write_plan(["refuse", "refuse", "close"])
@@ -505,6 +610,31 @@ class RunTests(Base):
         self.assertEqual(call["session"], "22222222-2222-4222-8222-222222222222")
         self.assertIn("registry", out)
         self.assertIn("closed 1", out)
+
+    def test_a_pending_run_of_the_loop_before_342_moves_into_a_trace_and_is_continued(self):
+        """FR-014: its log (in the old place) becomes the start of a run folder, then deleted."""
+        self.pending_record("running", resumes=1)
+        old_log, old_err = self.tmp / "p.jsonl", self.tmp / "p.err"
+        old_log.write_bytes(b'{"type":"system","subtype":"init","session_id":"22222222-2222-4222-8222-222222222222",'
+                            b'"model":"fake-model"}\n')
+        old_err.write_bytes(b"old stderr\n")
+        before = old_log.read_bytes()
+        self.bl("lock", "acquire", "--slug", FTP)
+        self.write_plan(["close"])
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertTrue(self.calls()[0]["resume"])
+        self.assertFalse(old_log.exists() or old_err.exists())  # moved
+        (d,) = self.trace_dirs()
+        data = (d / "trace.jsonl").read_bytes()
+        self.assertTrue(data.startswith(before))  # the earlier output first, unchanged
+        seps = [json.loads(l) for l in data.decode().splitlines() if '"backlog_loop.attempt"' in l]
+        self.assertEqual([(s["attempt"], s["kind"], s["reason"]) for s in seps], [(3, "continue", "killed")])
+        meta = json.loads((d / "meta.json").read_text(encoding="utf-8"))
+        self.assertEqual([a["reason"] for a in meta["attempts"]], ["-", "-", "killed"])
+        self.assertEqual((meta["phase"], meta["outcome"]), ("done", "closed"))
+        self.assertTrue((d / "stderr.log").read_text(encoding="utf-8").startswith("old stderr\n"))
+        self.assertEqual(len(self.index()), 1)
 
     def test_a_pending_run_waits_while_another_item_holds_the_lock(self):
         self.pending_record("killed", why="a hard stop")
@@ -746,6 +876,10 @@ class ProcessTests(Base):
         self.assertEqual(second["session"], first["session"])
         self.assertIn("hard stop", second["prompt"])
         self.assertEqual(self.runs()[-1][2], "closed")
+        (d,) = self.trace_dirs()  # the killed attempt and its continuation share the folder
+        meta = self.check_trace(d, slug=FTP, reasons=("-", "killed"), outcome="closed")
+        self.assertEqual(meta["attempts"][0]["ending"], "interrupted")
+        self.assertEqual(len(self.index()), 1)
 
     def test_ctrl_c_while_waiting_ends_quietly(self):
         if os.name != "nt":
@@ -776,7 +910,7 @@ class ProcessTests(Base):
             "attempts": 0, "stalls": 0, "resumes": 0, "phase": "running", "wait_until": None, "why": None,
             "child_pid": orphan.pid, "child_ident": loop.process_ident(orphan.pid)})
         _, status = self.ctl("status")
-        self.assertIn("is still working; the next bin/backlog.sh start waits for it", status)  # review 2 N5
+        self.assertIn("is still working; the next bin/backlog-loop.sh start waits for it", status)  # review 2 N5
         p = self.spawn_loop("--until-idle")
         self.wait_for(lambda: "previous loop" in str((loop.load_json(self.repo.loop_file) or {}).get("detail")),
                       what="waiting for the orphan")
@@ -812,12 +946,27 @@ class ControlTests(Base):
         code, out = self.ctl("status", "--json")
         self.assertEqual(json.loads(out)["paused"], False)
 
+    def test_status_shows_the_trace_and_the_size_of_all_traces(self):
+        _, out = self.ctl("status")
+        self.assertIn("trace:   - (traces total: 0 B)", out)
+        self.assertNotIn("log:", out)
+        self.write_plan(["close"])
+        self.run_loop("--until-idle")
+        (d,) = self.trace_dirs()
+        size = traces.traces_size(self.root)
+        self.assertGreater(size, 0)
+        _, out = self.ctl("status")
+        self.assertIn(f"(traces total: {traces.format_size(size)})", out)
+        data = json.loads(self.ctl("status", "--json")[1])
+        self.assertEqual(data["traces_bytes"], size)
+        self.assertIn("trace", data)
+
     def test_files_live_in_the_git_dir_not_in_the_tree(self):
         self.ctl("pause")
         self.assertEqual(self.repo.dir.parent.resolve(), (self.root / ".git").resolve())
         self.assertEqual(git(self.root, "status", "--porcelain"), "")
 
-    def test_bin_backlog_sh(self):
+    def test_bin_backlog_loop_sh(self):
         bash = git_bash()
         if not bash:
             self.skipTest("needs Git Bash")
@@ -835,7 +984,9 @@ class ControlTests(Base):
         for args in (["--help"], ["-h"], ["help"]):
             code, out = sh(*args)
             self.assertEqual(code, 0, args)
-            self.assertTrue(out.startswith("Usage: bin/backlog.sh <command>"), out)
+            self.assertTrue(out.startswith("Usage: bin/backlog-loop.sh <command>"), out)
+            self.assertIn("bin/backlog.sh", out)  # where the backlog itself is
+            self.assertIn(".agent-traces/", out)
         # every option of start that a user may pass is in the overview
         start = next(a for a in loop.build_parser()._actions if isinstance(a, loop.argparse._SubParsersAction))
         for action in start.choices["start"]._actions:
@@ -847,7 +998,7 @@ class ControlTests(Base):
             self.assertIn(f"  {command} ", out)
             code, cout = sh(command, "--help")
             self.assertEqual(code, 0, command)
-            self.assertIn(f"usage: bin/backlog.sh {command}", cout)
+            self.assertIn(f"usage: bin/backlog-loop.sh {command}", cout)
         self.assertIn("--max-items", sh("start", "--help")[1])
         self.assertEqual(sh()[0], 2)
         code, out = sh("bogus")
@@ -943,8 +1094,20 @@ class AutoTriageTests(Base):
         self.assertIn("auto-triage: 1 Inbox item(s) placed (1 new), 0 left in Inbox; next: critical-find", out)
         self.assertIn("auto-triage 2", out)
         self.assertNotIn("REFUSED", out)  # the fake checked the loop's status as the skill does
-        self.assertEqual(len(list(self.repo.logs.glob("*-auto-triage.jsonl"))), 2)
         self.assertFalse(self.repo.triage_file.exists())
+        index = self.index()
+        self.assertEqual([(i["kind"], i["slug"], i["outcome"]) for i in index],
+                         [("triage", "triage", "triaged"), ("item", FTP, "closed"),
+                          ("triage", "triage", "triaged"), ("item", "critical-find", "closed")])
+        for i in index:
+            d = self.root / ".agent-traces" / i["dir"]
+            if i["kind"] == "triage":
+                self.assertRegex(d.name, r"^\d{8}-\d{6}-claude-triage(-\d+)?$")
+                meta = self.check_trace(d, kind="triage", slug="triage", outcome="triaged")
+                subjects = [git(self.root, "log", "-1", "--format=%s", h).strip() for h in meta["commits"]]
+                self.assertEqual(subjects, ["backlog: auto-triage (fake)"])
+                self.assertTrue(meta["loop"]["auto_triage"])
+        self.assert_clean_tree()
 
     def test_the_last_item_of_max_items_is_triaged_after(self):
         self.write_plan(["triage", {"do": "close", "add": "late-find"}, "triage"])
@@ -1023,6 +1186,9 @@ class AutoTriageTests(Base):
         self.assertFalse(loop.alive(fake_pid, fake_ident))
         self.assertFalse(self.repo.triage_file.exists())
         self.assertFalse(self.repo.run_file.exists())
+        (d,) = self.trace_dirs()  # a killed triage is never continued: it ends here, indexed
+        self.check_trace(d, kind="triage", slug="triage", phase="killed")
+        self.assertEqual([i["phase"] for i in self.index()], ["killed"])
 
     def test_stop_and_pause_during_the_triage_wait_for_it(self):
         self.write_plan([{"do": "triage-hang", "seconds": 3}, "close"])
@@ -1080,21 +1246,200 @@ class AutoTriageTests(Base):
         self.assertIn("the working tree is not clean", out)
 
 
-class PruneTests(Base):
-    def test_old_logs_are_pruned_the_current_kept(self):
-        self.repo.logs.mkdir(parents=True)
-        for i in range(loop.KEEP_LOGS + 5):
-            (self.repo.logs / f"2026{i:04d}-x.jsonl").write_text("", encoding="utf-8")
-            (self.repo.logs / f"2026{i:04d}-x.err").write_text("", encoding="utf-8")
-        loop.save_json(self.repo.run_file, {"log": str(self.repo.logs / "20260000-x.jsonl"), "phase": "lost",
-                                            "slug": FTP, "session": "s"})
-        args = loop.build_parser().parse_args(self.start_args())
-        loop.Loop(self.repo, args).prune_logs()
-        names = {p.name for p in self.repo.logs.iterdir()}
-        self.assertEqual(len([n for n in names if n.endswith(".jsonl")]), loop.KEEP_LOGS + 1)
-        self.assertIn("20260000-x.jsonl", names)
-        self.assertIn("20260000-x.err", names)
-        self.assertNotIn("20260001-x.jsonl", names)
+class KeepTracesTests(Base):
+    def test_no_trace_is_ever_deleted(self):
+        """FR-003 / SC-003: the 247 loop kept the newest 100 logs; traces are kept whole."""
+        top = self.root / ".agent-traces"
+        for i in range(105):
+            d = top / f"20260101-{i:06d}-claude-x"
+            d.mkdir(parents=True)
+            (d / "trace.jsonl").write_text("{}\n", encoding="utf-8")
+        self.write_plan(["close"])
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(len(self.trace_dirs()), 106)
+        self.assert_clean_tree()
+
+
+class ImportTests(Base):
+    """The first start after 342 moves the logs of the loop before it into .agent-traces/ once."""
+
+    def old_logs(self):
+        logs = self.repo.dir / "logs"
+        self.repo.dir.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(OLD_LOGS, logs)
+        return logs, {p.name: p.read_bytes() for p in logs.iterdir()}
+
+    def test_the_old_logs_are_moved_once(self):
+        logs, before = self.old_logs()
+        self.write_plan([])
+        self.bl("block", FTP, "--reason", "x")
+        self.commit()
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertIn("moved 5 run log(s) of the loop before 342 into .agent-traces/", out)
+        self.assertFalse(logs.exists())  # empty, removed
+        top = self.root / ".agent-traces"
+        for name, data in before.items():
+            stem, ext = name.rsplit(".", 1)
+            d = top / traces.new_name_for_old(stem)
+            self.assertEqual((d / ("trace.jsonl" if ext == "jsonl" else "stderr.log")).read_bytes(), data, name)
+            self.assertTrue(json.loads((d / "meta.json").read_text(encoding="utf-8"))["imported"])
+        index = self.index()
+        self.assertEqual(len(index), 5)
+        self.assertEqual([i["dir"] for i in index], sorted(i["dir"] for i in index))
+        self.assertEqual(loop.load_json(self.repo.imported_file)["imported"], 5)
+        self.assert_clean_tree()
+        # never again: not even after the maintainer deleted traces and old logs came back
+        shutil.rmtree(top / index[0]["dir"])
+        self.old_logs()
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("moved", out)
+        self.assertEqual(len(self.index()), 5)
+        self.assertFalse((top / index[0]["dir"]).exists())
+
+    def test_the_log_of_a_failed_pending_run_moves_with_the_rest(self):
+        """It is never continued (only --forget-run drops it): its record follows the move."""
+        logs, _ = self.old_logs()
+        stem = "20261024-125035-ftp-an-upload-to-a-server-named-another-way-localhost-vs-127"
+        self.repo.dir.mkdir(parents=True, exist_ok=True)
+        loop.save_json(self.repo.run_file, {
+            "slug": FTP, "session": "22222222-2222-4222-8222-222222222222", "started": "2026-10-24 12:50:35",
+            "log": str(logs / f"{stem}.jsonl"), "err": str(logs / f"{stem}.err"), "rows_before": len(self.runs()),
+            "attempts": 0, "stalls": 3, "resumes": 2, "limits": 0, "lock_started": None, "phase": "failed",
+            "wait_until": None, "why": "ended its turn without finishing", "child_pid": None, "child_ident": None})
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 1, out)  # still a stop for a person
+        self.assertIn("moved 5 run log(s)", out)
+        self.assertFalse(logs.exists())
+        run = loop.load_json(self.repo.run_file)
+        self.assertEqual(Path(run["trace"]).name, traces.new_name_for_old(stem))
+        self.assertTrue(Path(run["log"]).is_file())
+        _, status = self.ctl("status")
+        self.assertIn(f"trace:   {run['trace']}", status)
+        self.write_plan(["close"])
+        code, out = self.run_loop("--until-idle", "--forget-run")
+        self.assertEqual(code, 0, out)
+        dirs = [i["dir"] for i in self.index()]
+        self.assertEqual(dirs.count(traces.new_name_for_old(stem)), 1)  # not indexed again when forgotten
+        self.assertEqual(len(dirs), 6)  # the 5 moved + the new run of the item
+
+    def test_review_r1_a_separator_after_a_partial_line_starts_its_own_line(self):
+        """Review S1: claude killed mid-write left half a line; the next separator must still parse."""
+        d = traces.new_run_dir(self.root, FTP, time.time() - 60)
+        sep = traces.separator_line(1, "start", "-", traces.iso_local(time.time() - 60),
+                                    "22222222-2222-4222-8222-222222222222")
+        (d / "trace.jsonl").write_bytes(sep + b'{"type":"system","subtype":"init","session_id":"x","model":"m"}\n'
+                                        + b'{"type":"assistant","message":{"content":[{"type":"text","te')
+        (d / "stderr.log").write_bytes(b"=== attempt 1 (start, -) x ===\npartial")
+        self.repo.dir.mkdir(parents=True, exist_ok=True)
+        loop.save_json(self.repo.run_file, {
+            "slug": FTP, "session": "22222222-2222-4222-8222-222222222222", "started": loop.stamp(time.time() - 60),
+            "started_epoch": time.time() - 60, "kind": "item", "trace": str(d), "log": str(d / "trace.jsonl"),
+            "err": str(d / "stderr.log"), "rows_before": len(self.runs()), "attempts": 0, "stalls": 0,
+            "resumes": 0, "limits": 0, "nudges": 0, "lock_started": None, "phase": "killed", "wait_until": None,
+            "why": "a hard stop", "child_pid": None, "child_ident": None, "offset": len(sep), "err_offset": 0,
+            "trace_attempts": [traces.attempt_record(1, "start", "-", "x")], "next_reason": "-",
+            "indexed": False, "base": None})
+        self.bl("lock", "acquire", "--slug", FTP)
+        self.write_plan(["close"])
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        seps = []
+        for line in (d / "trace.jsonl").read_text(encoding="utf-8").splitlines():
+            if '"backlog_loop.attempt"' in line:
+                seps.append(json.loads(line)["attempt"])  # each one parses: a line of its own
+        self.assertEqual(seps, [1, 2])
+        headers = [l for l in (d / "stderr.log").read_text(encoding="utf-8").splitlines() if l.startswith("=== attempt")]
+        self.assertEqual(len(headers), 2)
+
+    def test_review_r2_forget_run_after_the_import_moves_the_old_log_of_the_run(self):
+        """Review S2: the import skipped a continuable old run, which was then forgotten."""
+        logs, _ = self.old_logs()
+        stem = "20261024-125035-ftp-an-upload-to-a-server-named-another-way-localhost-vs-127"
+        loop.save_json(self.repo.run_file, {
+            "slug": FTP, "session": "22222222-2222-4222-8222-222222222222", "started": loop.stamp(time.time() - 60),
+            "log": str(logs / f"{stem}.jsonl"), "err": str(logs / f"{stem}.err"), "rows_before": len(self.runs()),
+            "attempts": 0, "stalls": 0, "resumes": 0, "limits": 0, "lock_started": None, "phase": "killed",
+            "wait_until": None, "why": "a hard stop", "child_pid": None, "child_ident": None})
+        self.ctl("pause")
+        code, out = self.run_loop("--until-idle", "--deadline", "2")
+        self.assertEqual(code, 3, out)  # imported, then waited paused
+        self.assertTrue(self.repo.imported_file.exists())
+        self.assertTrue((logs / f"{stem}.jsonl").exists())  # left to its run
+        self.ctl("resume")
+        self.write_plan(["close"])
+        code, out = self.run_loop("--until-idle", "--forget-run")
+        self.assertEqual(code, 0, out)
+        self.assertFalse(logs.exists())  # its log moved when the run was forgotten
+        self.assertIn(traces.new_name_for_old(stem), [i["dir"] for i in self.index()])
+
+    def test_review_r3_the_log_of_a_247_triage_still_running_is_moved_after_it_ends(self):
+        """Review M1: the import must not move a log another process still writes."""
+        logs, _ = self.old_logs()
+        tri = logs / "20261025-080000-auto-triage.jsonl"
+        tri.write_bytes(b'{"type":"system","subtype":"init","session_id":"t","model":"m"}\n')
+        (logs / "20261025-080000-auto-triage.err").write_bytes(b"")
+        writer = subprocess.Popen([sys.executable, "-c",
+                                   "import sys,time\nf=open(sys.argv[1],'ab',buffering=0)\n"
+                                   "for i in range(80):\n f.write(b'{\"type\":\"x\",\"i\":%d}\\n'%i); time.sleep(0.05)\n",
+                                   str(tri)])
+        self.procs.append(writer)
+        time.sleep(0.3)
+        loop.save_json(self.repo.triage_file, {"log": str(tri), "err": str(logs / "20261025-080000-auto-triage.err"),
+                                               "pid": writer.pid, "ident": loop.process_ident(writer.pid)})
+        self.write_plan([])
+        self.bl("block", FTP, "--reason", "x")
+        self.commit()
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertIn("the auto-triage of the previous loop ended", out)
+        d = self.root / ".agent-traces" / "20261025-080000-claude-triage"
+        self.assertEqual((d / "trace.jsonl").read_bytes().count(b"\n"), 81)  # nothing written after a copy was lost
+        self.assertFalse(logs.exists())
+        self.assertEqual([i["dir"] for i in self.index()].count(d.name), 1)
+
+    def test_review_r4_an_import_cut_off_after_the_rename_is_finished_next_time(self):
+        """Review S3: the folder is in place under its final name, but no index line and the old pair stayed."""
+        logs, _ = self.old_logs()
+        stem = "20261024-121738-iso-plug-in-an-nrg-session-count-above-the-image-s-tracks"
+        name = traces.new_name_for_old(stem)
+        # what the import leaves when cut off between os.replace and the index line
+        traces.import_old_logs(self.root, logs, [], {s for s in {p.stem for p in logs.iterdir()} if s != stem}, {})
+        lines = (self.root / ".agent-traces" / "index.jsonl").read_text(encoding="utf-8")
+        (self.root / ".agent-traces" / "index.jsonl").write_text("", encoding="utf-8")
+        self.assertIn(name, lines)
+        self.assertTrue((logs / f"{stem}.jsonl").exists())  # not moved (move=False above)
+        self.write_plan([])
+        self.bl("block", FTP, "--reason", "x")
+        self.commit()
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertFalse(logs.exists())
+        self.assertEqual([i["dir"] for i in self.index()].count(name), 1)
+
+    def test_the_log_of_a_pending_run_is_left_to_its_run(self):
+        logs, _ = self.old_logs()
+        stem = "20261024-125035-ftp-an-upload-to-a-server-named-another-way-localhost-vs-127"
+        self.repo.dir.mkdir(parents=True, exist_ok=True)
+        loop.save_json(self.repo.run_file, {
+            "slug": FTP, "session": "22222222-2222-4222-8222-222222222222", "started": loop.stamp(time.time() - 60),
+            "log": str(logs / f"{stem}.jsonl"), "err": str(logs / f"{stem}.err"), "rows_before": len(self.runs()),
+            "attempts": 0, "stalls": 0, "resumes": 0, "limits": 0, "lock_started": None, "phase": "killed",
+            "wait_until": None, "why": "a hard stop", "child_pid": None, "child_ident": None})
+        self.bl("lock", "acquire", "--slug", FTP)
+        self.write_plan(["close"])
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertIn("moved 4 run log(s)", out)
+        self.assertTrue(self.calls()[0]["resume"])
+        index = self.index()
+        self.assertEqual(len(index), 5)  # 4 imported + the continued run, which ended
+        run_line = index[-1]
+        self.assertEqual((run_line["slug"], run_line["outcome"], run_line["attempts"]), (FTP, "closed", 2))
+        self.assertEqual(run_line["dir"], traces.new_name_for_old(stem))
+        self.assertFalse(logs.exists())
 
 
 if __name__ == "__main__":

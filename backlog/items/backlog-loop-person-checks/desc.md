@@ -7,7 +7,7 @@ area: tooling
 source: leftover:247
 who: person
 created: 2026-10-19
-updated: 2026-10-24
+updated: 2026-10-25
 verified: -
 effort: S
 feature: -
@@ -37,26 +37,26 @@ terminal and the real limit are unconfirmed.
 
 ## Expected
 
-Ctrl+C in the loop window behaves as `bin/backlog.sh status` announces (hard stop
+Ctrl+C in the loop window behaves as `bin/backlog-loop.sh status` announces (hard stop
 while an item runs, a quiet end while waiting), and a run that meets a usage
 limit finishes after the limit resets without a person.
 
 ## Steps
 
-- [ ] Git Bash: `bin/backlog.sh start` while nothing is eligible (or
-      after `bin/backlog.sh pause`): the window says `(Ctrl+C is safe now)`; press
+- [ ] Git Bash: `bin/backlog-loop.sh start` while nothing is eligible (or
+      after `bin/backlog-loop.sh pause`): the window says `(Ctrl+C is safe now)`; press
       Ctrl+C → `stopped (Ctrl+C) - no item of this loop was running`, the
-      prompt returns, `bin/backlog.sh status` → `loop: not running`.
+      prompt returns, `bin/backlog-loop.sh status` → `loop: not running`.
 - [ ] Git Bash, while an item runs (`Ctrl+C now = hard stop`): press Ctrl+C.
       Note which of the two happened: (a) `HARD STOP: claude was killed …` is
-      printed and `bin/backlog.sh status` shows `run: … phase killed`, or (b) the
+      printed and `bin/backlog-loop.sh status` shows `run: … phase killed`, or (b) the
       window returns to the prompt silently (Git Bash ended loop and claude
       together — the review measured this with `kill -TERM`) and
-      `bin/backlog.sh status` shows `run: … phase running` with the registry note.
+      `bin/backlog-loop.sh status` shows `run: … phase running` with the registry note.
       Either way: Task Manager shows no `claude.exe` of the run, `lock:` names
-      the item, and `bin/backlog.sh start` again says the run was interrupted, then
+      the item, and `bin/backlog-loop.sh start` again says the run was interrupted, then
       `continuing item …`, and the item ends with a row in `backlog/RUNS.md`.
-- [ ] The first time a run meets a usage limit: `bin/backlog.sh status` shows
+- [ ] The first time a run meets a usage limit: `bin/backlog-loop.sh status` shows
       `claude waits for the usage limit until …` (claude waited in-process) or
       `run: … phase waiting … (a usage limit)` (the loop waits); after the reset
       the item finishes. Note in this item which of the two happened.
@@ -66,3 +66,4 @@ limit finishes after the limit resets without a person.
 - 2026-10-19 — created (source leftover:247)
 - 2026-10-19 — moved to Person steps position 5
 - 2026-10-24 — maintainer request 2026-10-24: the steps name bin/backlog.sh start / pause / status (it replaced tools/backlog/loop-*.sh)
+- 2026-10-25 — steps name bin/backlog-loop.sh (feature 342: bin/backlog.sh is now the backlog tool)

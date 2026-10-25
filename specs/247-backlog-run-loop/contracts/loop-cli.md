@@ -1,20 +1,22 @@
 # Contract — the backlog loop (feature 247)
 
-`tools/backlog/loop.py` (stdlib only) and one Git Bash command, `bin/backlog.sh <command>`
-(amended 2026-10-24; it replaced the five wrappers `tools/backlog/loop-<command>.sh`). It
-runs `exec python -u tools/backlog/loop.py <command> "$@"` (`$PYTHON` overrides `python`);
-options pass through, `--root DIR` selects another repository (tests). `bin/backlog.sh
+`tools/backlog/loop.py` (stdlib only) and one Git Bash command, `bin/backlog-loop.sh <command>`
+(amended 2026-10-24: it replaced the five wrappers `tools/backlog/loop-<command>.sh`;
+amended 2026-10-25, feature 342: renamed from `bin/backlog.sh`, which is now the backlog
+tool, and the run output moved to `.agent-traces/` — `specs/342-backlog-agent-traces/contracts/`).
+It runs `exec python -u tools/backlog/loop.py <command> "$@"` (`$PYTHON` overrides `python`);
+options pass through, `--root DIR` selects another repository (tests). `bin/backlog-loop.sh
 --help` (also `-h`, `help`) prints the commands and every option of `start` and exits 0;
-`bin/backlog.sh <command> --help` prints that command's options; no command or an unknown one
+`bin/backlog-loop.sh <command> --help` prints that command's options; no command or an unknown one
 exits 2. Like every script in `bin/`, it answers `--help` (`tools/test_bin_help.py`).
 
 | Invocation | Command | Effect | Exit |
 |---|---|---|---|
-| `bin/backlog.sh start [options]` | `start` | Runs the loop in the foreground until stop / `--max-items` / `--until-idle` / a stop for a person. | 0 ended as asked; 1 stopped for a person or refused (another loop runs, an interrupted run cannot be continued, claude missing); 2 usage; 130 Ctrl+C / Ctrl+Break |
-| `bin/backlog.sh pause` | `pause` | Sets the pause: a running item finishes, then the loop waits. Without a loop: the next start waits. Persists until `resume`. An interrupted run waiting for a limit or a backoff keeps the lock and its branch while paused — `pause` says so. | 0 |
-| `bin/backlog.sh resume` | `resume` | Clears the pause and a pending stop. | 0 |
-| `bin/backlog.sh stop` | `stop` | A running loop finishes its item and ends; a waiting loop ends within a second. An item interrupted meanwhile (limit, error) is not waited for: the loop ends and the next start continues that run. Without a loop: says so, sets nothing. One-shot: the loop removes it when it ends, and a start removes one left by a killed loop. | 0 |
-| `bin/backlog.sh status [--json]` | `status` | See *Status* below. | 0 |
+| `bin/backlog-loop.sh start [options]` | `start` | Runs the loop in the foreground until stop / `--max-items` / `--until-idle` / a stop for a person. | 0 ended as asked; 1 stopped for a person or refused (another loop runs, an interrupted run cannot be continued, claude missing); 2 usage; 130 Ctrl+C / Ctrl+Break |
+| `bin/backlog-loop.sh pause` | `pause` | Sets the pause: a running item finishes, then the loop waits. Without a loop: the next start waits. Persists until `resume`. An interrupted run waiting for a limit or a backoff keeps the lock and its branch while paused — `pause` says so. | 0 |
+| `bin/backlog-loop.sh resume` | `resume` | Clears the pause and a pending stop. | 0 |
+| `bin/backlog-loop.sh stop` | `stop` | A running loop finishes its item and ends; a waiting loop ends within a second. An item interrupted meanwhile (limit, error) is not waited for: the loop ends and the next start continues that run. Without a loop: says so, sets nothing. One-shot: the loop removes it when it ends, and a start removes one left by a killed loop. | 0 |
+| `bin/backlog-loop.sh status [--json]` | `status` | See *Status* below. | 0 |
 
 ## `start` options
 
@@ -37,10 +39,11 @@ seconds and kills its claude — a test that would hang fails instead).
 | Path | Written by | Content |
 |---|---|---|
 | `.git/tandem-backlog-run.lock` | the runs (feature 242) | the run lock — the loop only reads it |
-| `.git/tandem-backlog-loop/loop.json` | the loop | pid + process creation time (liveness that survives pid reuse), host, started, state, detail, since, until, slug, session, log, counts, blocked streak, last usage figures; removed when the loop ends |
-| `.git/tandem-backlog-loop/run.json` | the loop | the current run: slug, session id, log, journal rows before, attempts, stalls, resumes, limits, nudges (idle continuations), phase (`new`/`running`/`waiting`/`killed`/`failed`/`lost`), wait_until, why, claude pid + creation time; removed when the run finished or never took its item |
+| `.git/tandem-backlog-loop/loop.json` | the loop | pid + process creation time (liveness that survives pid reuse), host, started, state, detail, since, until, slug, session, trace (342), counts, blocked streak, last usage figures; removed when the loop ends |
+| `.git/tandem-backlog-loop/run.json` | the loop | the current run: slug, session id, log, trace, trace_attempts, next_reason, indexed, base (342), journal rows before, attempts, stalls, resumes, limits, nudges (idle continuations), phase (`new`/`running`/`waiting`/`killed`/`failed`/`lost`), wait_until, why, claude pid + creation time; removed when the run finished or never took its item |
 | `.git/tandem-backlog-loop/pause`, `stop` | `pause` / `stop` | flags |
-| `.git/tandem-backlog-loop/logs/<date>-<slug>.jsonl` / `.err` | claude | stream-json output and stderr of a run (all its continuations append); the newest 100 kept |
+| `.agent-traces/<YYYYMMDD-HHMMSS>-claude-<slug\|triage>/` (repository root, ignored by git; 342) | claude + the loop | `trace.jsonl` (stream-json output of all attempts, a separator line before each), `stderr.log`, `meta.json`; `.agent-traces/index.jsonl` one line per ended run. Never deleted by the loop. Format: `specs/342-backlog-agent-traces/contracts/traces.md` |
+| `.git/tandem-backlog-loop/imported.json` | the loop (342) | the one-time move of the logs of the loop before 342 (`logs/<date>-<slug>.jsonl` / `.err`, formerly the newest 100 kept) into `.agent-traces/` is done |
 
 ## One cycle
 
@@ -85,8 +88,8 @@ prompt says why the run was interrupted and points to SKILL.md *Continued run*.
 
 `claude -p '/tandem-backlog auto-triage --commit'` with the options of a new run (its own
 `uuid4` session, never continued), `TANDEM_BACKLOG_LOOP_TRIAGE=<the loop's pid>` (the skill
-proceeds only when `status` shows that pid in state `triage`), log
-`logs/<date>-auto-triage.jsonl`, state `triage`. The skill commits its changes on `main`
+proceeds only when `status` shows that pid in state `triage`), trace
+`.agent-traces/<date>-claude-triage/` (indexed when it ends, also when killed), state `triage`. The skill commits its changes on `main`
 (`backlog: auto-triage - …`). It takes no run lock and writes no `run.json`. When claude ends:
 
 | After it | Action |
@@ -134,7 +137,7 @@ done:    closed n, blocked n, not-reproduced n, split n (blocked in a row: n)
 triage:  auto, when the Inbox has new items (n done)        (only with --auto-triage)
 usage:   <status>: five_hour x% (resets HH:MM), seven_day y% (resets …)
 run:     item S, session U, phase P[, continues after T] [(why)]
-log:     <path>
+trace:   <run folder> | - (traces total: <size>)          (342; --json: trace, traces_bytes)
 todo:    (phase lost / failed: what the maintainer does)
 lock:    free | <backlog.py lock status>
 Ctrl+C:  HARD STOP now (an item | the auto-triage is running) … | safe now (no item is running)

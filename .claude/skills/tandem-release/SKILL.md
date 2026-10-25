@@ -33,7 +33,7 @@ written into the repository is English.
    decision the maintainer confirms, force anything (`reset --hard`,
    `checkout -f`, `clean`, `--force`).
 3. **Tools**: **Bash** from the repository root for git and Python.
-   `RT` = `python tools/release/release.py`, `BL` = `python tools/backlog/backlog.py`.
+   `RT` = `python tools/release/release.py`, `BL` = `bin/backlog.sh`.
    **Skill** for `/tandem-backlog`. Questions with the question tool
    (AskUserQuestion), **one at a time**, only those of §3.
 4. **No repository text on a command line.** Texts with backticks, `$` or

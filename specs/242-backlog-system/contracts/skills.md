@@ -4,7 +4,8 @@ Both live in `.claude/skills/<name>/` in the format of the Spec Kit skills
 (front matter `name`, `description`, `argument-hint`, `user-invocable: true`,
 `disable-model-invocation: false`). Both accept Czech or English
 instructions and write backlog files in English. Every mechanical change
-goes through `tools/backlog/backlog.py` (`contracts/cli.md`); the skills add
+goes through `tools/backlog/backlog.py` (`contracts/cli.md`), run as
+`bin/backlog.sh` (`BL = bin/backlog.sh`; amended 2026-10-25, feature 342); the skills add
 judgement (wording, grouping, field choice), never bypass the tool. **The
 step-by-step procedures are in the skills themselves** (`SKILL.md`,
 `reference.md`, `stop-rules.md`); this contract states what they guarantee.
@@ -27,7 +28,7 @@ only reports the plan): an item whose fault lies only in code the default
 build does not build or ship is parked with a reason, an item the rules
 cannot place stays in *Inbox* with a log line; it never rejects, closes or
 edits a body. `--commit` commits the result on `main`; the backlog loop
-(`bin/backlog.sh start --auto-triage`, feature 247) runs `auto-triage --commit`
+(`bin/backlog-loop.sh start --auto-triage`, feature 247) runs `auto-triage --commit`
 between two runs with `TANDEM_BACKLOG_LOOP_TRIAGE` set — maintainer mode
 for that operation only.
 

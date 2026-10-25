@@ -19,7 +19,7 @@ Nothing else at the top level of `backlog/` (a check finding otherwise).
 
 <rules paragraph: order is priority; only the maintainer triages and
 reorders; agents add to Inbox only; derived columns are written by
-`python tools/backlog/backlog.py sync`; details per item in items/<slug>/desc.md>
+`bin/backlog.sh sync`; details per item in items/<slug>/desc.md>
 
 Last triaged: 2026-10-17
 

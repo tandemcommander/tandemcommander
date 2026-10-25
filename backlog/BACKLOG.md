@@ -5,7 +5,7 @@ owed to a person. **The order of rows is the priority**, top first. Only the
 maintainer triages and reorders; agents add new items to *Inbox* and nothing
 else. Each row links to its item's description `items/<slug>/desc.md`, which
 is the only source of the item's data: every column except **#** and the
-row's place is written by `python tools/backlog/backlog.py sync` (every
+row's place is written by `bin/backlog.sh sync` (every
 changing command of the tool runs it). Manage the backlog with
 `/tandem-backlog`; run one item autonomously with `/tandem-backlog-implement`.
 Formats: `specs/242-backlog-system/contracts/`. Runs: `RUNS.md`. Release

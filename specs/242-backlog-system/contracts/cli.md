@@ -1,8 +1,13 @@
 # Contract: `tools/backlog/backlog.py`
 
 ```text
-python tools/backlog/backlog.py [--root <repo>] <command> [options]
+bin/backlog.sh [--root <repo>] <command> [options]
 ```
+
+(Amended 2026-10-25, feature 342: `bin/backlog.sh` runs this tool with the same
+arguments, output and exit codes, and is the documented way to run it;
+`specs/342-backlog-agent-traces/contracts/bin-commands.md`. The Python file is
+its implementation.)
 
 `--root` defaults to the repository containing the script. Standard library
 only. Output in English, UTF-8, LF line ends (also on Windows).

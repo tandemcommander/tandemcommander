@@ -9,10 +9,12 @@ seeded-defect cases (one per check rule, SC-004) are mutations of that copy,
 listed in SEEDED below - each changes exactly one thing.
 """
 
+import argparse
 import contextlib
 import io
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -773,6 +775,74 @@ class ImportLabelledTests(Base):
         self.assertEqual(code, 1)
         self.assertIn("cannot list the issues labelled 'ai backlog'", out)
         self.assertEqual(self.items(), before)
+
+
+def git_bash():
+    """Git's bash (on Windows `bash` on PATH may be WSL's)."""
+    if os.name != "nt":
+        return shutil.which("bash")
+    exe = shutil.which("git")
+    if exe:
+        for up in Path(exe).resolve().parents[:3]:
+            cand = up / "bin" / "bash.exe"
+            if cand.is_file():
+                return str(cand)
+    return None
+
+
+class BinTests(Base):
+    """bin/backlog.sh runs this tool (feature 342); the loop is bin/backlog-loop.sh."""
+
+    BIN = HERE.parents[1] / "bin" / "backlog.sh"
+
+    def sh(self, *args):
+        bash = git_bash()
+        if not bash:
+            self.skipTest("needs Git Bash")
+        env = dict(os.environ)
+        env.pop("TANDEM_BACKLOG_NOW", None)
+        r = subprocess.run([bash, str(self.BIN), *args], capture_output=True, text=True, encoding="utf-8", env=env)
+        return r.returncode, r.stdout, r.stderr
+
+    def snapshot(self):
+        return {p.relative_to(self.root).as_posix(): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+
+    def test_help_lists_every_command_and_names_the_loop(self):
+        for args in (["--help"], ["-h"], ["help"]):
+            code, out, _ = self.sh(*args)
+            self.assertEqual(code, 0, args)
+            self.assertTrue(out.startswith("Usage: bin/backlog.sh"), out)
+            self.assertIn("bin/backlog-loop.sh", out)
+            sub = next(a for a in backlog.build_parser()._actions if isinstance(a, argparse._SubParsersAction))
+            for command in sub.choices:
+                self.assertIn(command, out)
+            self.assertIn("usage: bin/backlog.sh", out)  # the tool names the script, not backlog.py
+        code, out, err = self.sh()
+        self.assertEqual(code, 2)
+        self.assertEqual(out, "")
+        self.assertIn("Usage: bin/backlog.sh", err)
+        code, out, _ = self.sh("list", "--help")
+        self.assertEqual(code, 0)
+        self.assertIn("usage: bin/backlog.sh list", out)
+
+    def test_a_command_gives_what_the_tool_gives(self):
+        code, out, _ = self.sh("--root", str(self.root), "list", "--json")
+        self.assertEqual(code, 0)
+        os.environ.pop("TANDEM_BACKLOG_NOW", None)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(backlog.main(["--root", str(self.root), "list", "--json"]), 0)
+        self.assertEqual(out, buf.getvalue())
+        self.assertEqual(self.sh("--root", str(self.root), "check")[:2], (0, "TOTAL: 0\n"))
+
+    def test_the_former_loop_words_are_usage_errors_and_change_nothing(self):
+        """Clarification Q3: no alias and no hint - the tool's own usage error."""
+        before = self.snapshot()
+        for args in (["pause"], ["resume"], ["stop"], ["status"], ["start"], ["start", "--auto-triage"]):
+            code, out, err = self.sh("--root", str(self.root), *args)
+            self.assertEqual(code, 2, args)
+            self.assertIn("usage: bin/backlog.sh", err)
+        self.assertEqual(self.snapshot(), before)
 
 
 if __name__ == "__main__":

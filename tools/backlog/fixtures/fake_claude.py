@@ -57,7 +57,7 @@ def emit(obj):
 
 def result(text, error=False, status=None):
     emit({"type": "result", "subtype": "success", "is_error": error, "api_error_status": status,
-          "result": text, "session_id": SESSION})
+          "result": text, "session_id": SESSION, "usage": {"input_tokens": 1, "output_tokens": 1}})
 
 
 def wakeup(noop, tick=True):
@@ -83,6 +83,11 @@ def ensure_lock(slug):
         bl("lock", "acquire", "--slug", slug)
 
 
+def fake_feature(slug):
+    """A feature number of its own per item, as real runs have."""
+    return str(900 + sum(map(ord, slug)) % 99)
+
+
 def finish(slug, outcome, step=None):
     ensure_lock(slug)
     if (step or {}).get("add"):
@@ -94,9 +99,16 @@ def finish(slug, outcome, step=None):
         bl("remove", slug, "--reason", "fake close")
     else:
         bl("block", slug, "--reason", f"fake {outcome}")
-    bl("run-log", "--outcome", outcome, "--slug", slug, "--note", "fake")
+    if outcome == "closed":  # the skill's subjects, so the trace can name the run's commits (342)
+        feature = fake_feature(slug)
+        bl("run-log", "--outcome", outcome, "--slug", slug, "--feature", feature, "--branch", f"{feature}-{slug}",
+           "--note", "fake")
+        subject = f"[{feature}] fake: {slug} closed"
+    else:
+        bl("run-log", "--outcome", outcome, "--slug", slug, "--note", "fake")
+        subject = f"backlog: {slug} {outcome} (fake)"
     git("add", "-A")
-    git("commit", "-q", "-m", f"fake: {slug} {outcome}")
+    git("commit", "-q", "-m", subject)
     bl("lock", "release", "--slug", slug)
     result(f"Outcome: {outcome}\nItem: {slug}")
 
@@ -254,7 +266,7 @@ def main():
                           "triage_env": os.environ.get("TANDEM_BACKLOG_LOOP_TRIAGE"),
                           "pid": os.getpid(), "cwd": str(ROOT)})
     plan_path.write_text(json.dumps(plan, indent=1), encoding="utf-8")
-    emit({"type": "system", "subtype": "init", "session_id": SESSION})
+    emit({"type": "system", "subtype": "init", "session_id": SESSION, "model": "fake-model"})
     return play(step, slug)
 
 

@@ -1,0 +1,2 @@
+{"type":"system","subtype":"init","cwd":"E:\\repo","session_id":"33333333-3333-4333-8333-333333333333","model":"claude-opus-5-5[1m]","permissionMode":"bypassPermissions"}
+{"type":"result","subtype":"success","is_error":false,"result":"auto-triage: 2 placed","session_id":"33333333-3333-4333-8333-333333333333"}
