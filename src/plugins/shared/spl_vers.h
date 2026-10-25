@@ -31,13 +31,17 @@
 
 // Tandem Commander versioning (feature 032): semantic version MAJOR.MINORA.MINORB,
 // always three components ("0.1.0"), unlike the historical Salamander scheme
-// where MINORB were hundredths appended without a dot (2.53) and a zero was dropped (5.0)
+// where MINORB were hundredths appended without a dot (2.53) and a zero was dropped (5.0).
+// Since feature 343 the numbers follow Semantic Versioning MAJOR.MINOR.PATCH (the rule:
+// backlog/RELEASE.md, "Version numbering"); the configuration root does not depend on them.
 #define VERSINFO_SALAMANDER_MAJOR 0
 #define VERSINFO_SALAMANDER_MINORA 1
 #define VERSINFO_SALAMANDER_MINORB 10
 
 #define VERSINFO_SALAMANDER_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSION_TXT
-#define VERSINFO_SAL_SHORT_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSIONSHORT_TXT
+// the crash report name's version tag: dotted (feature 343) - digits run together are ambiguous
+// once a component has two digits (0.1.10 and 0.11.0 both gave "0110")
+#define VERSINFO_SAL_SHORT_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSIONSHORT_TXT
 
 #ifdef VERSINFO_MAJOR      // je definovane jen pokud se pouziva z pluginu
 #if (VERSINFO_MINORB == 0) // nulu na setinach nepiseme 2.50 -> 2.5

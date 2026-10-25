@@ -82,6 +82,7 @@
 #include "salgrowpair.h"      // feature 293
 #include "salcodetable.h"     // feature 262
 #include "salregroot.h"       // feature 263
+#include "salcfgmigrate.h"    // feature 343
 #include "salexiforient.h"    // feature 267
 #include "salumbalance.h"     // feature 268
 #include "salftplisting.h"    // feature 269
@@ -2346,6 +2347,19 @@ static void TestBugReport079()
     CHECK(!SalFormatBugReportName(name, 64, "01\\8", t, 0) && name[0] == 0);
     CHECK(!SalFormatBugReportName(name, 64, "018 X64", t, 0) && name[0] == 0);
     CHECK(!SalFormatBugReportName(name, 64, NULL, t, 0) && name[0] == 0);
+
+    // feature 343: the version tag carries dots (SemVer components of more than one digit would
+    // otherwise run together: 0.1.10 and 0.11.0 both gave TC0110X64)
+    CHECK(SalFormatBugReportName(name, 64, "0.2.0x64", t, 0) && wcscmp(name, L"TC0.2.0X64-20260919-143007.TXT") == 0);
+    {
+        WCHAR other[64];
+        CHECK(SalFormatBugReportName(name, 64, "0.1.10X64", t, 0) && SalFormatBugReportName(other, 64, "0.11.0X64", t, 0) &&
+              wcscmp(name, other) != 0);
+    }
+    CHECK(!SalFormatBugReportName(name, 64, ".0.2.0X64", t, 0) && name[0] == 0); // a dot first
+    CHECK(!SalFormatBugReportName(name, 64, "0.2.0X64.", t, 0) && name[0] == 0); // a dot last
+    CHECK(!SalFormatBugReportName(name, 64, "0..2X64", t, 0) && name[0] == 0);   // two dots in a row
+    CHECK(!SalFormatBugReportName(name, 64, ".", t, 0) && name[0] == 0);
 
     // out-of-range time field is refused rather than written as garbage
     SYSTEMTIME bad = t;
@@ -16056,6 +16070,77 @@ static void TestRegImportRoot263()
     CHECK(!SalRegKeyIsInsideRoot("Software", root) && !SalRegKeyIsInsideRoot("Software\\Tandem Commander", root)); // never both
 }
 
+// feature 343: the version-free configuration root - the start-up decision (salcfgmigrate.h) and the
+// import of a configuration file written for the 0.1.x root (SalRegMapLegacyRoot, salregroot.h)
+static void TestCfgRoot343()
+{
+    // every combination of the three observations
+    for (int bits = 0; bits < 8; bits++)
+    {
+        CSalCfgMigrateState st;
+        st.NewHasConfig = (bits & 1) != 0;
+        st.LegacyHasConfig = (bits & 2) != 0;
+        st.LegacyBackupExists = (bits & 4) != 0;
+        CSalCfgMigrateAction want = st.NewHasConfig                                 ? scmaUseNew
+                                    : (st.LegacyHasConfig || st.LegacyBackupExists) ? scmaMigrate
+                                                                                    : scmaFresh;
+        CHECK(SalCfgMigrateDecide(st) == want);
+    }
+    {
+        CSalCfgMigrateState all = {TRUE, TRUE, TRUE};
+        CHECK(SalCfgMigrateDecide(all) == scmaUseNew); // the new root wins: nothing copied over it
+        CSalCfgMigrateState onlyLegacy = {FALSE, TRUE, FALSE};
+        CHECK(SalCfgMigrateDecide(onlyLegacy) == scmaMigrate);
+        CSalCfgMigrateState onlyBackup = {FALSE, FALSE, TRUE};
+        CHECK(SalCfgMigrateDecide(onlyBackup) == scmaMigrate); // a damaged old root moved aside: its backup still moves
+        CSalCfgMigrateState none = {FALSE, FALSE, FALSE};
+        CHECK(SalCfgMigrateDecide(none) == scmaFresh);
+    }
+
+    const char* root = "Software\\Tandem Commander\\Settings";
+    const char* legacy = "Software\\Tandem Commander\\0.1";
+    char out[200];
+    CHECK(SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1", root, legacy, out, sizeof(out)) &&
+          strcmp(out, "Software\\Tandem Commander\\Settings") == 0); // the root itself (an export's delete line)
+    CHECK(SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1\\Configuration", root, legacy, out, sizeof(out)) &&
+          strcmp(out, "Software\\Tandem Commander\\Settings\\Configuration") == 0);
+    CHECK(SalRegMapLegacyRoot("software\\TANDEM commander\\0.1\\Plugins\\FTP Client", root, legacy, out, sizeof(out)) &&
+          strcmp(out, "Software\\Tandem Commander\\Settings\\Plugins\\FTP Client") == 0); // letter case of the prefix
+    CHECK(SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1\\\xC5\xBD"
+                              "lu\xC5\xA5",
+                              root, legacy, out, sizeof(out)) &&
+          strcmp(out, "Software\\Tandem Commander\\Settings\\\xC5\xBD"
+                      "lu\xC5\xA5") == 0); // the rest is kept byte for byte
+    CHECK(SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1\\", root, legacy, out, sizeof(out)) &&
+          strcmp(out, "Software\\Tandem Commander\\Settings\\") == 0);
+    CHECK(!SalRegMapLegacyRoot("Software\\Tandem Commander\\0.10", root, legacy, out, sizeof(out)) && out[0] == 0); // a sibling
+    CHECK(!SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1x\\A", root, legacy, out, sizeof(out)) && out[0] == 0);
+    CHECK(!SalRegMapLegacyRoot("Software\\Tandem Commander\\Settings\\A", root, legacy, out, sizeof(out)) && out[0] == 0);
+    CHECK(!SalRegMapLegacyRoot("Software\\Tandem Commander", root, legacy, out, sizeof(out)) && out[0] == 0); // the parent
+    CHECK(!SalRegMapLegacyRoot("Software\\Other", root, legacy, out, sizeof(out)) && out[0] == 0);
+    CHECK(!SalRegMapLegacyRoot("", root, legacy, out, sizeof(out)) && out[0] == 0);
+    CHECK(!SalRegMapLegacyRoot(NULL, root, legacy, out, sizeof(out)) && out[0] == 0);
+    CHECK(!SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1", NULL, legacy, out, sizeof(out)) && out[0] == 0);
+    CHECK(!SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1", "", legacy, out, sizeof(out)) && out[0] == 0);
+    CHECK(!SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1", root, NULL, out, sizeof(out)) && out[0] == 0);
+    CHECK(!SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1", root, "", out, sizeof(out)) && out[0] == 0);
+    CHECK(!SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1", root, legacy, NULL, 10));
+    CHECK(!SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1", root, legacy, out, 0));
+    // the buffer: exactly fitting succeeds, one byte less fails (never a cut name)
+    {
+        const char* name = "Software\\Tandem Commander\\0.1\\Window";
+        const char* want = "Software\\Tandem Commander\\Settings\\Window";
+        int exact = (int)strlen(want) + 1;
+        char tight[100];
+        CHECK(SalRegMapLegacyRoot(name, root, legacy, tight, exact) && strcmp(tight, want) == 0);
+        tight[0] = 'x';
+        CHECK(!SalRegMapLegacyRoot(name, root, legacy, tight, exact - 1) && tight[0] == 0);
+    }
+    // the mapped name is inside the root by the feature-263 rule
+    CHECK(SalRegMapLegacyRoot("Software\\Tandem Commander\\0.1\\Hot Paths", root, legacy, out, sizeof(out)) &&
+          SalRegKeyIsInsideRoot(out, root));
+}
+
 // feature 267: PictView's Exif auto-rotation (salexiforient.h). A picture is a grid of cell
 // numbers; the viewer's operations are applied as the header says (turn first, then mirrors)
 // and the result is compared with the standard's own definition of each tag value.
@@ -21730,6 +21815,7 @@ int main(int argc, char** argv)
     TestCacheTmpPath260();
     TestCodeTable262();
     TestRegImportRoot263();
+    TestCfgRoot343();
     TestNetDriveSameRemote264();
     TestExifOrient267();
     TestUserMenuBalance268();

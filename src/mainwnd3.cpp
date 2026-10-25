@@ -2284,6 +2284,30 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         return 0;
     }
 
+    case WM_USER_CFGMIGRATE_FAILED: // feature 343: once per start, when the main window is free
+    {
+        GUITHREADINFO gti;
+        gti.cbSize = sizeof(gti);
+        BOOL busy = !IsWindowEnabled(HWindow) || GetCapture() != NULL ||
+                    (MenuBar != NULL && MenuBar->IsInMenuLoop()) ||
+                    (GetGUIThreadInfo(GetCurrentThreadId(), &gti) &&
+                     (gti.flags & (GUI_INMENUMODE | GUI_POPUPMENUMODE | GUI_SYSTEMMENUMODE | GUI_INMOVESIZE)) != 0);
+        if (busy)
+        {
+            SetTimer(HWindow, IDT_CFGMIGRATE_FAILED, 1000, NULL);
+            return 0;
+        }
+        if (CfgMigrateFailed && CfgMigrateNewRoot != NULL)
+        {
+            CfgMigrateFailed = FALSE;
+            char buf[1000];
+            // the roots are ASCII; the box shows UTF-8 text (feature 069)
+            _snprintf_s(buf, _TRUNCATE, LoadStrU8(IDS_CFGMIGRATE_FAILED), CfgMigrateNewRoot, SALCFG_LEGACY_ROOT);
+            SalMessageBox(HWindow, buf, SALAMANDER_TEXT_VERSION, MB_OK | MB_ICONWARNING);
+        }
+        return 0;
+    }
+
 #ifdef _DEBUG
     case WM_USER_CFGIMPORT_AUTORUN: // feature 245: the automation seam (research R18)
     {
@@ -6368,6 +6392,13 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         {
             KillTimer(HWindow, IDT_CFGIMPORT_OFFER);
             PostMessage(HWindow, WM_USER_CFGIMPORT_OFFER, 0, 0);
+            break;
+        }
+
+        case IDT_CFGMIGRATE_FAILED: // feature 343: the message waited for a free main window
+        {
+            KillTimer(HWindow, IDT_CFGMIGRATE_FAILED);
+            PostMessage(HWindow, WM_USER_CFGMIGRATE_FAILED, 0, 0);
             break;
         }
 

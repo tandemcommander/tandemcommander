@@ -1351,6 +1351,9 @@ struct COpenViewerData
 #define WM_USER_CFGIMPORT_OFFER WM_APP + 418   // [0, 0]
 #define WM_USER_CFGIMPORT_AUTORUN WM_APP + 419 // [0, 0]
 
+// feature 343: the 0.1.x configuration could not be moved to the version-free root at start
+#define WM_USER_CFGMIGRATE_FAILED WM_APP + 420 // [0, 0]
+
 // states for Shift+F1 help mode
 #define HELP_INACTIVE 0 // not in Shift+F1 help mode (must be 0)
 #define HELP_ACTIVE 1   // in Shift+F1 help mode (non-zero)
@@ -1955,6 +1958,7 @@ DWORD CfgSkillLevelToMenu(BYTE cfgSkillLevel);
 #define IDT_UPDATETASKLIST 951
 #define IDT_UPDATENOTICE 952 // feature 123: retry showing the new-version notification (main window)
 #define IDT_CFGIMPORT_OFFER 953 // feature 245: retry showing the settings import offer (main window)
+#define IDT_CFGMIGRATE_FAILED 954 // feature 343: retry showing the failed configuration move message (main window)
 
 // POZOR: skoro vsechny funkce v teto sekci pri chybe zobrazuji hlaseni o LOAD / SAVE
 //        konfigurace, coz z nich dela nevhodne pro bezny pristup do Registry,

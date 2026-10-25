@@ -1707,6 +1707,7 @@ STRINGTABLE
 
  IDS_CORRUPTEDCONFIGFOUND, "Configuration stored in registry is corrupted, so it cannot be loaded. Tandem Commander was probably terminated during saving configuration. This happens mainly when Tandem Commander is still running when you shutdown system (or log off). To prevent this problem, close Tandem Commander before shutdown (or log off).\n\nYou can backup corrupted configuration now (run RegEdit.exe, rename key HKEY_CURRENT_USER\\%s). Later you can try to get some settings from this backup (User Menu, Hotpaths, FTP bookmarks, etc.), see github.com/tandemcommander/tandemcommander for details.\n\nCorrupted configuration must be removed from registry before starting Tandem Commander."
  IDS_CORRUPTEDCONFIGREMOVEBTN, "&Remove Configuration"
+ IDS_CFGMIGRATE_FAILED, "Tandem Commander could not move your settings to their new place in the registry (HKEY_CURRENT_USER\\%s).\n\nThis time it uses them where they are (HKEY_CURRENT_USER\\%s) and will try again the next time it starts. Nothing was deleted."
  IDS_CHANGEDSHUTDOWNPARS, "You are using nonstandard values of the following parameters used during Log off and Shutdown. It probably causes corruption of Tandem Commander's configuration (it's terminated during save of configuration).\n\nHKEY_CURRENT_USER\\Control Panel\\Desktop\\WaitToKillAppTimeout should be 20000.\nHKEY_CURRENT_USER\\Control Panel\\Desktop\\AutoEndTasks should be 0."
 
  IDS_COMPAREFILESORDIRS, "Please specify if you want to compare files or directories."

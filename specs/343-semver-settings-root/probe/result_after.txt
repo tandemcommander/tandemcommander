@@ -1,0 +1,37 @@
+cfgroot343_probe (feature 343) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Legacy  : C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\abe128c2-7edd-44a9-8152-86d8651288ec\scratchpad\pre343\tandemcommander.exe
+Date    : 2026-10-25 12:10; parent key existed True
+Fixture : 0.1 configuration made by -LegacyExe (start windows: [#32770 'Tandem Commander'] [Static id=1150] Select one of the installed languages. | [Button id=1029] Get More &Languages... | [Button id=1028] &Refresh | [Button id=1151] About language version | [Static id=1152] Authors: | [Static id=1154] Web: | [Static id=1155] Comment: | [Static id=1036] English version | [Static id=1156] Help Directory: | [Static id=1038] ENGLISH | [Button id=1] OK | [Button id=2] &Exit; save windows: no window; exit 0x00000000)
+
+BASIC      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BASIC      MOVE   PASS        0.1 1994 lines; Settings equal to 0.1 while running True; Probe343 equal True; Password Manager equal True (present True); side key False; start windows: no window; 0.1 unchanged after exit True
+AGAIN      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+AGAIN      SAVE   PASS        Settings\Window recreated by the save True; 0.1 unchanged True; start windows: no window; save windows: no window
+BOTH       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BOTH       START  PASS        value only in 0.1 not copied True; marker only in Settings kept True; start windows: no window
+FRESH      START  PASS        Settings\Configuration made True; 0.1 made False; exit 0x00000000; start windows (Cancel/No): [#32770 'Tandem Commander'] [Static id=1150] Select one of the installed languages. | [Button id=1029] Get More &Languages... | [Button id=1028] &Refresh | [Button id=1151] About language version | [Static id=1152] Authors: | [Static id=1154] Web: | [Static id=1155] Comment: | [Static id=1036] English version | [Static id=1156] Help Directory: | [Static id=1038] ENGLISH | [Button id=1] OK | [Button id=2] &Exit || [#32770 'Import Settings from Salamander'] [Static id=2477] Settings of Open Salamander 5.0 were found on this computer. Do you want to import your hot paths, FTP connections, user menu and other settings now? Nothing is changed before you confirm the preview. You can also do it later: Options > Import Settings from Salamander. | [Button id=6] &Import now | [Button id=7] &Not now
+KILL       CUT    PASS        exit 0x00000003; side key left True; Settings made False; 0.1 unchanged True
+KILL       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+KILL       AGAIN  PASS        next start: Settings equal to 0.1 True; side key gone True; start windows: no window
+FAIL-copy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FAIL-copy  SEAM   PASS        message shown True; Settings made False; side key False; Settings.backup False; the session saved into 0.1 (Window) True; Settings after exit False; windows: ...t uses them where they are (HKEY_CURRENT_USER\Software\Tandem Commander\0.1) and will try again the next time it starts. Nothing was deleted. | [Button id=1] OK
+FAIL-copy  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FAIL-copy  AGAIN  PASS        next start: Settings equal to 0.1 True; start windows: no window
+FAIL-compare END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FAIL-compare SEAM   PASS        message shown True; Settings made False; side key False; Settings.backup False; the session saved into 0.1 (Window) True; Settings after exit False; windows: ...t uses them where they are (HKEY_CURRENT_USER\Software\Tandem Commander\0.1) and will try again the next time it starts. Nothing was deleted. | [Button id=1] OK
+FAIL-compare END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FAIL-compare AGAIN  PASS        next start: Settings equal to 0.1 True; start windows: no window
+FAIL-rename END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FAIL-rename SEAM   PASS        message shown True; Settings made False; side key False; Settings.backup False; the session saved into 0.1 (Window) True; Settings after exit False; windows: ...t uses them where they are (HKEY_CURRENT_USER\Software\Tandem Commander\0.1) and will try again the next time it starts. Nothing was deleted. | [Button id=1] OK
+FAIL-rename END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FAIL-rename AGAIN  PASS        next start: Settings equal to 0.1 True; start windows: no window
+CORRUPT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+CORRUPT    START  PASS        Settings holds the backup (marker) True; Settings.corrupted made True; Settings marked in progress False; old keys unchanged True; start windows: no window
+IMP-LEGACY END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IMP-LEGACY IMPORT PASS        marker imported under Settings True; written under 0.1 False; windows: no window
+IMP-FOREIGN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IMP-FOREIGN IMPORT PASS        foreign key made False; windows (a refusal expected): ...c id=2477] Unable to import the specified file. It is not a configuration file. File: C:\Users\pavel\AppData\Local\Temp\tc343\imp_foreign.reg | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 06DB26401EDCD9BFAD9C504E275BA42CA026D632D103A2AD519EC59ADE58CDB2 / after 06DB26401EDCD9BFAD9C504E275BA42CA026D632D103A2AD519EC59ADE58CDB2
+
+Rows: PASS 28, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

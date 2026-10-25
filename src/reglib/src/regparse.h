@@ -73,8 +73,11 @@ CSalamanderRegistryExAbstract* REG_MemRegistryFactory();
 // line must name HKEY_CURRENT_USER + this root or a key below it (SalRegKeyIsInsideRoot), else Parse
 // stops before acting on that line and returns RPE_KEY_OUTSIDE_ROOT - lines before it may already be
 // applied, so the caller parses into a memory registry first
+// 'legacyRoot' (feature 343): with 'onlyUnderHKCU', a key line or delete line inside HKEY_CURRENT_USER +
+// this older root is acted on as the same path under 'onlyUnderHKCU' (SalRegMapLegacyRoot) - a file
+// exported by 0.1.x imports into the version-free root; NULL = no mapping
 eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNotDeleteHiddenKeysAndValues,
-                 LPCTSTR onlyUnderHKCU = NULL);
+                 LPCTSTR onlyUnderHKCU = NULL, LPCTSTR legacyRoot = NULL);
 eRPE_ERROR CopyBranch(LPCTSTR branch, CSalamanderRegistryExAbstract* pInRegistry, CSalamanderRegistryExAbstract* pOutRegistry);
 
 DWORD ConvertIfNeeded(LPTSTR* pBuf, DWORD size);

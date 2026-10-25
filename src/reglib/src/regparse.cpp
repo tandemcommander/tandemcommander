@@ -70,8 +70,13 @@ static LPTSTR SeparateStr(LPTSTR s, BOOL mbcs)
 }
 
 eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNotDeleteHiddenKeysAndValues,
-                 LPCTSTR onlyUnderHKCU)
+                 LPCTSTR onlyUnderHKCU, LPCTSTR legacyRoot)
 {
+#if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
+    char mappedName[2 * MAX_PATH]; // feature 343: a key name of the 0.1.x root mapped to the current root
+#else
+    (void)legacyRoot; // the mapping is char-only (see below)
+#endif
     LPTSTR line;
     HKEY hKey = NULL;
     eRPE_ERROR ret = RPE_OK;
@@ -215,6 +220,11 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
                 { // our own export writes the keys above the root too, without values: nothing to create
                     inParentOfRoot = TRUE;
                     continue;
+                }
+                if (hParentKey == HKEY_CURRENT_USER && legacyRoot != NULL && !SalRegKeyIsInsideRoot(keyName, onlyUnderHKCU))
+                { // feature 343: a key of the 0.1.x root is imported under the version-free root
+                    if (SalRegMapLegacyRoot(keyName, onlyUnderHKCU, legacyRoot, mappedName, (int)sizeof(mappedName)))
+                        keyName = mappedName;
                 }
                 if (hParentKey != HKEY_CURRENT_USER || !SalRegKeyIsInsideRoot(keyName, onlyUnderHKCU))
                 {

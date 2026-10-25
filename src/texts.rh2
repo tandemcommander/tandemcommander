@@ -2340,6 +2340,9 @@
 #define IDS_CHANGEDSHUTDOWNPARS         13751
 // we have found out that configuration stored in registry is corrupted: label of Remove Configuration button
 #define IDS_CORRUPTEDCONFIGREMOVEBTN    13752
+// feature 343: the 0.1.x configuration could not be copied to the version-free root at start;
+// %s = the new root, %s = the old root (both "Software\Tandem Commander\...")
+#define IDS_CFGMIGRATE_FAILED           13753
 
 #define IDS_COMPAREFILESORDIRS          13755
 #define IDS_MSGBOXBTN_FILES             13756

@@ -4095,6 +4095,16 @@ int WinMainBody(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR cmdLine,
 
     LoadSaveToRegistryMutex.Init();
 
+    // feature 343: the version-free configuration root; a 0.1.x configuration is copied into it once,
+    // before anything reads a setting. If that fails, this session runs on the old root (nothing is
+    // lost) and the user is told once the main window is up; the next start tries again.
+    if (!MigrateConfigurationRoot())
+    {
+        CfgMigrateNewRoot = SalamanderConfigurationRoots[0];
+        SalamanderConfigurationRoots[0] = SALCFG_LEGACY_ROOT;
+        CfgMigrateFailed = TRUE;
+    }
+
     // zkusime z aktualni konfigurace vytahnout hodnotu "AutoImportConfig" -> existuje v pripade, ze provadime UPGRADE
     BOOL autoImportConfig = FALSE;
     char autoImportConfigFromKey[200];
@@ -4780,6 +4790,10 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
 #endif
                         if (CfgImpFreshConfigAtStart && CfgImpAnySupportedSourceExists())
                         PostMessage(MainWindow->HWindow, WM_USER_CFGIMPORT_OFFER, 0, 0);
+
+                    // feature 343: the configuration could not be moved to the version-free root
+                    if (CfgMigrateFailed)
+                        PostMessage(MainWindow->HWindow, WM_USER_CFGMIGRATE_FAILED, 0, 0);
 
                     //--- aplikacni smycka
                     CALL_STACK_MESSAGE1("WinMainBody::message_loop");

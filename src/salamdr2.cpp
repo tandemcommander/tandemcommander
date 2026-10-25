@@ -3160,13 +3160,16 @@ BOOL ImportConfiguration(HWND hParent, const char* fileName, BOOL ignoreIfNotExi
 
     if (buf != NULL)
     {
+        // feature 343: a file exported by 0.1.x names the old root; its keys go to the current root
+        // (not when this session itself runs on the old root after a failed migration)
+        const char* legacyRoot = SalamanderConfigurationRoots[0] != SALCFG_LEGACY_ROOT ? SALCFG_LEGACY_ROOT : NULL;
         // first try to parse it into memory; if it contains format errors we will not shove it into the registry at all
         CSalamanderRegistryExAbstract* memReg = REG_MemRegistryFactory();
         LPTSTR bufMem = _tcsdup(buf); // the Parse call changes the buffer, so we must keep the original for the next Parse
         TRACE_I("ImportConfiguration(): Parse to memory: begin");
         // feature 263: only keys (and delete lines) inside our own root - a key of another program,
         // HKEY_CLASSES_ROOT etc. refuses the whole file before anything reaches the registry
-        eRPE_ERROR regerr = bufMem != NULL ? Parse(bufMem, memReg, TRUE, SalamanderConfigurationRoots[0]) : RPE_OUT_OF_MEMORY; // dirty hack: when deleting the configuration key, we do not remove .hidden keys and values (because of the trial version + checkver)
+        eRPE_ERROR regerr = bufMem != NULL ? Parse(bufMem, memReg, TRUE, SalamanderConfigurationRoots[0], legacyRoot) : RPE_OUT_OF_MEMORY; // dirty hack: when deleting the configuration key, we do not remove .hidden keys and values (because of the trial version + checkver)
         TRACE_I("ImportConfiguration(): Parse to memory: end");
         free(bufMem);
         BOOL verIsOK = RPE_OK == regerr; // verify whether the file even contains our configuration version
@@ -3192,7 +3195,7 @@ BOOL ImportConfiguration(HWND hParent, const char* fileName, BOOL ignoreIfNotExi
 
             LoadSaveToRegistryMutex.Enter();
             TRACE_I("ImportConfiguration(): Parse to registry: begin");
-            regerr = Parse(buf, sysReg, TRUE, SalamanderConfigurationRoots[0]); // dirty hack: when deleting the configuration key, we do not remove .hidden keys and values (because of the trial version + checkver)
+            regerr = Parse(buf, sysReg, TRUE, SalamanderConfigurationRoots[0], legacyRoot); // dirty hack: when deleting the configuration key, we do not remove .hidden keys and values (because of the trial version + checkver)
             TRACE_I("ImportConfiguration(): Parse to registry: end");
             if (RPE_OK == regerr)
                 ret = TRUE; // success

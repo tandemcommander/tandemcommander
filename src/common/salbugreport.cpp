@@ -39,6 +39,9 @@ BOOL SalFormatBugReportName(WCHAR* out, int outLen, const char* shortVersion, co
     {
         char c = *s;
         BOOL ok = (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+        // feature 343: dots separate the version's components - never first, last or doubled
+        if (c == '.' && s != shortVersion && s[1] != 0 && s[1] != '.')
+            ok = TRUE;
         if (!ok)
             return FALSE;
     }

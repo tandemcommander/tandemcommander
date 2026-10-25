@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string.h>
+
 //*****************************************************************************
 //
 // The start-up import of a configuration file: pure rule (feature 263)
@@ -13,7 +15,7 @@
 // every delete line must name the program's own root or a key below it.
 // 'name' is the key name after the root key of the line ("Software\X" of
 // "[HKEY_CURRENT_USER\Software\X]"), 'root' the allowed root
-// ("Software\Tandem Commander\0.1"). Inside = equal to 'root' or 'root'
+// ("Software\Tandem Commander\Settings"). Inside = equal to 'root' or 'root'
 // followed by '\'; compared ASCII case-insensitively as the registry does
 // (the root is ASCII); other bytes compare exactly, so a name the registry
 // might fold onto the root through a non-ASCII letter is outside (fail
@@ -25,6 +27,14 @@
 // line names a strict parent of the root: 'root' starts with 'name' followed
 // by '\' (same comparison as above). The importer accepts it but creates
 // nothing for it, and a value under it refuses the file.
+//
+// SalRegMapLegacyRoot (feature 343) - a configuration file written by 0.1.x
+// names the old root ("Software\Tandem Commander\0.1"). A key line inside
+// 'legacyRoot' (same comparison as SalRegKeyIsInsideRoot) is imported as the
+// same path under 'root': 'out' = 'root' + the rest of 'name' after
+// 'legacyRoot'. FALSE (and an empty 'out' when outSize > 0) for NULL or empty
+// arguments, a name not inside 'legacyRoot', or a result that does not fit
+// 'out' (outSize counts the terminating zero) - never a cut name.
 //
 // Header-only; needs <windows.h>; checked by saltests (contract
 // specs/263-import-foreign-reg-keys/contracts/import-root-rule.md).
@@ -68,4 +78,22 @@ inline BOOL SalRegKeyIsParentOfRoot(const char* name, const char* root)
     if (!SalRegRootStartsWithCI(root, name, &r))
         return FALSE;
     return *r == '\\';
+}
+
+inline BOOL SalRegMapLegacyRoot(const char* name, const char* root, const char* legacyRoot,
+                                char* out, int outSize)
+{
+    if (out != NULL && outSize > 0)
+        *out = 0;
+    if (out == NULL || outSize <= 0 || root == NULL || *root == 0 || !SalRegKeyIsInsideRoot(name, legacyRoot))
+        return FALSE;
+    const char* rest;
+    SalRegRootStartsWithCI(name, legacyRoot, &rest); // TRUE: checked by SalRegKeyIsInsideRoot
+    size_t rootLen = strlen(root);
+    size_t restLen = strlen(rest);
+    if (rootLen + restLen + 1 > (size_t)outSize)
+        return FALSE;
+    memcpy(out, root, rootLen);
+    memcpy(out + rootLen, rest, restLen + 1);
+    return TRUE;
 }

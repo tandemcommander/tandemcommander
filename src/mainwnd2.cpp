@@ -24,6 +24,7 @@
 #include "pwdmngr.h"
 #include "salurlpwd.h"    // feature 085
 #include "salumbalance.h" // feature 268
+#include "salcfgmigrate.h" // feature 343
 
 //
 // ConfigVersion - version number of the loaded configuration
@@ -161,11 +162,16 @@ const DWORD THIS_CONFIG_VERSION = 106;
 // !!! Keep the corresponding lines in SalamanderConfigurationVersions up to date
 const char* SalamanderConfigurationRoots[SALCFG_ROOTS_COUNT + 1] =
     {
-        "Software\\Tandem Commander\\0.1" // Tandem Commander 0.1.0 (feature 032): single root, no legacy import chain
+        "Software\\Tandem Commander\\Settings" // feature 343: version-free single root, no legacy import chain
 };
 const char* SalamanderConfigurationVersions[SALCFG_ROOTS_COUNT] =
     {
-        "0.1"};
+        "Settings"};
+
+// The root of Tandem Commander 0.1.0 - 0.1.10 (feature 032). Read once by MigrateConfigurationRoot
+// (copied into SalamanderConfigurationRoots[0]), never written after that, never deleted (feature 343).
+// It becomes SalamanderConfigurationRoots[0] for a session in which the migration failed.
+const char* SALCFG_LEGACY_ROOT = "Software\\Tandem Commander\\0.1";
 
 const char* SALAMANDER_ROOT_REG = NULL; // will be set in salamdr1.cpp
 
@@ -923,6 +929,293 @@ BOOL MyRegRenameKey(HKEY key, const char* name, const char* newName)
         CloseKeyAux(newKey);
         TRACE_E("MyRegRenameKey(): target key already exists: " << newName);
     }
+    return ret;
+}
+
+//****************************************************************************
+//
+// MigrateConfigurationRoot (feature 343)
+//
+// The configuration root is version-free since feature 343 (SalamanderConfigurationRoots[0],
+// "...\Settings"); 0.1.0 - 0.1.10 kept it under SALCFG_LEGACY_ROOT ("...\0.1"). Called at the very
+// start of WinMainBody, before anything reads a setting. Decision: SalCfgMigrateDecide
+// (salcfgmigrate.h). A migration copies the old tree raw (RegCopyTreeW: every value with its name,
+// type and data) into the side key "Settings.migrating.63A7CD13", compares the copy with the source
+// and makes it the root by one RegRenameKey - the root either does not exist or is complete. The old
+// crash-time backup ("0.1.backup.63A7CD13") is copied to "Settings.backup.63A7CD13" first, so a
+// damaged old root gets the same recovery under the new names. The old keys are only read, never
+// written or deleted. A leftover side key (an interrupted migration) is deleted and the decision is
+// made again. Returns FALSE when a migration failed (nothing it made is left behind); the caller then
+// runs the session on SALCFG_LEGACY_ROOT and tells the user (CfgMigrateFailed).
+// Contract: specs/343-semver-settings-root/contracts/config-root-migration.md
+
+BOOL CfgMigrateFailed = FALSE;
+const char* CfgMigrateNewRoot = NULL;
+
+// 'root' is ASCII by definition (the configuration roots): widened byte by byte; FALSE if it does not fit
+static BOOL CfgMigWiden(const char* s, WCHAR* out, int outLen)
+{
+    int i;
+    for (i = 0; s[i] != 0; i++)
+    {
+        if (i + 1 >= outLen || (unsigned char)s[i] >= 0x80)
+        {
+            out[0] = 0;
+            return FALSE;
+        }
+        out[i] = (WCHAR)s[i];
+    }
+    out[i] = 0;
+    return TRUE;
+}
+
+static BOOL CfgMigKeyExists(HKEY parent, const WCHAR* name)
+{
+    HKEY k;
+    if (RegOpenKeyExW(parent, name, 0, KEY_READ, &k) != ERROR_SUCCESS)
+        return FALSE;
+    RegCloseKey(k);
+    return TRUE;
+}
+
+// TRUE when 'root' has the subkey "Configuration" (the upstream rule: only then a key is a configuration)
+static BOOL CfgMigHasConfig(HKEY parent, const WCHAR* root)
+{
+    WCHAR path[200];
+    if (_snwprintf_s(path, _TRUNCATE, L"%s\\%hs", root, SALAMANDER_CONFIG_REG) < 0)
+        return FALSE;
+    return CfgMigKeyExists(parent, path);
+}
+
+// TRUE when the trees under 'a' and 'b' are equal: the same subkey names, and every value with the
+// same name, type, size and bytes; neither has a value or a subkey the other lacks (equal counts)
+static BOOL CfgMigTreesEqual(HKEY a, HKEY b, int depth)
+{
+    if (depth > 512)
+        return FALSE; // the registry nests at most 512 levels; anything deeper is not ours
+    DWORD aKeys, aMaxKey, aVals, aMaxVal, aMaxData;
+    DWORD bKeys, bMaxKey, bVals, bMaxVal, bMaxData;
+    if (RegQueryInfoKeyW(a, NULL, NULL, NULL, &aKeys, &aMaxKey, NULL, &aVals, &aMaxVal, &aMaxData, NULL, NULL) != ERROR_SUCCESS ||
+        RegQueryInfoKeyW(b, NULL, NULL, NULL, &bKeys, &bMaxKey, NULL, &bVals, &bMaxVal, &bMaxData, NULL, NULL) != ERROR_SUCCESS)
+    {
+        return FALSE;
+    }
+    if (aKeys != bKeys || aVals != bVals)
+        return FALSE;
+    BOOL ok = TRUE;
+    DWORD nameMax = (aMaxVal > aMaxKey ? aMaxVal : aMaxKey) + 1;
+    WCHAR* name = (WCHAR*)malloc(nameMax * sizeof(WCHAR));
+    BYTE* dataA = (BYTE*)malloc(aMaxData + 1);
+    BYTE* dataB = (BYTE*)malloc(aMaxData + 1);
+    if (name == NULL || dataA == NULL || dataB == NULL)
+        ok = FALSE;
+    DWORD i;
+    for (i = 0; ok && i < aVals; i++)
+    {
+        DWORD nameLen = nameMax;
+        DWORD typeA, lenA = aMaxData + 1;
+        if (RegEnumValueW(a, i, name, &nameLen, NULL, &typeA, dataA, &lenA) != ERROR_SUCCESS)
+        {
+            ok = FALSE;
+            break;
+        }
+        DWORD typeB, lenB = aMaxData + 1;
+        if (RegQueryValueExW(b, name, NULL, &typeB, dataB, &lenB) != ERROR_SUCCESS ||
+            typeA != typeB || lenA != lenB || (lenA > 0 && memcmp(dataA, dataB, lenA) != 0))
+        {
+            ok = FALSE;
+        }
+    }
+    for (i = 0; ok && i < aKeys; i++)
+    {
+        DWORD nameLen = nameMax;
+        if (RegEnumKeyExW(a, i, name, &nameLen, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+        {
+            ok = FALSE;
+            break;
+        }
+        HKEY subA, subB;
+        if (RegOpenKeyExW(a, name, 0, KEY_READ, &subA) != ERROR_SUCCESS)
+        {
+            ok = FALSE;
+            break;
+        }
+        if (RegOpenKeyExW(b, name, 0, KEY_READ, &subB) != ERROR_SUCCESS)
+            ok = FALSE;
+        else
+        {
+            ok = CfgMigTreesEqual(subA, subB, depth + 1);
+            RegCloseKey(subB);
+        }
+        RegCloseKey(subA);
+    }
+    free(name);
+    free(dataA);
+    free(dataB);
+    return ok;
+}
+
+// copies parent\src raw into the new key parent\dst (which must not exist) and compares the copy
+static BOOL CfgMigCopyTree(HKEY parent, const WCHAR* src, const WCHAR* dst, const char* failAt, BOOL isRoot)
+{
+#ifndef _DEBUG
+    UNREFERENCED_PARAMETER(failAt); // the test seam exists only in Debug builds
+    UNREFERENCED_PARAMETER(isRoot);
+#endif // _DEBUG
+    HKEY s, d;
+    if (RegOpenKeyExW(parent, src, 0, KEY_READ, &s) != ERROR_SUCCESS)
+    {
+        TRACE_E("MigrateConfigurationRoot(): cannot open the source key");
+        return FALSE;
+    }
+    DWORD disp;
+    if (RegCreateKeyExW(parent, dst, 0, NULL, 0, KEY_ALL_ACCESS, NULL, &d, &disp) != ERROR_SUCCESS)
+    {
+        TRACE_E("MigrateConfigurationRoot(): cannot create the target key");
+        RegCloseKey(s);
+        return FALSE;
+    }
+    LSTATUS err = RegCopyTreeW(s, NULL, d);
+    BOOL ok = err == ERROR_SUCCESS;
+    if (!ok)
+        TRACE_E("MigrateConfigurationRoot(): RegCopyTree failed: " << err);
+#ifdef _DEBUG
+    if (isRoot && strcmp(failAt, "copy") == 0)
+        ok = FALSE;
+    if (isRoot && strcmp(failAt, "kill-after-copy") == 0)
+    {
+        TRACE_I("MigrateConfigurationRoot(): test seam: ending the process after the copy");
+        ExitProcess(3);
+    }
+#endif // _DEBUG
+    if (ok && !CfgMigTreesEqual(s, d, 0))
+    {
+        TRACE_E("MigrateConfigurationRoot(): the copy differs from the source");
+        ok = FALSE;
+    }
+#ifdef _DEBUG
+    if (isRoot && strcmp(failAt, "compare") == 0)
+        ok = FALSE;
+#endif // _DEBUG
+    RegCloseKey(d);
+    RegCloseKey(s);
+    return ok;
+}
+
+BOOL MigrateConfigurationRoot()
+{
+    CALL_STACK_MESSAGE1("MigrateConfigurationRoot()");
+    char failAt[30];
+    failAt[0] = 0;
+#ifdef _DEBUG
+    // test seam, Debug builds only (specs/343-semver-settings-root/research.md R4)
+    DWORD seamLen = GetEnvironmentVariableA("TC_CFGMIGRATE_FAIL_AT", failAt, sizeof(failAt));
+    if (seamLen == 0 || seamLen >= sizeof(failAt))
+        failAt[0] = 0;
+#endif // _DEBUG
+
+    // parent key and the leaf names of both roots (they share the parent)
+    WCHAR wRoot[200], wLegacy[200];
+    if (!CfgMigWiden(SalamanderConfigurationRoots[0], wRoot, 200) || !CfgMigWiden(SALCFG_LEGACY_ROOT, wLegacy, 200))
+        return TRUE; // cannot happen (ASCII constants)
+    WCHAR* leaf = wcsrchr(wRoot, L'\\');
+    WCHAR* legacyLeaf = wcsrchr(wLegacy, L'\\');
+    if (leaf == NULL || legacyLeaf == NULL || leaf - wRoot != legacyLeaf - wLegacy ||
+        _wcsnicmp(wRoot, wLegacy, leaf - wRoot) != 0)
+    {
+        TRACE_E("MigrateConfigurationRoot(): the roots do not share the parent key");
+        return TRUE;
+    }
+    *leaf++ = 0;
+    *legacyLeaf++ = 0;
+    const WCHAR* parentName = wRoot;
+    WCHAR side[100], newBackup[100], legacyBackup[100];
+    _snwprintf_s(side, _TRUNCATE, L"%s.migrating.63A7CD13", leaf);
+    _snwprintf_s(newBackup, _TRUNCATE, L"%s.backup.63A7CD13", leaf);
+    _snwprintf_s(legacyBackup, _TRUNCATE, L"%s.backup.63A7CD13", legacyLeaf);
+
+    BOOL ret = TRUE;
+    LoadSaveToRegistryMutex.Enter();
+    HKEY parent;
+    LSTATUS err = RegOpenKeyExW(HKEY_CURRENT_USER, parentName, 0, KEY_READ, &parent);
+    if (err != ERROR_SUCCESS) // no key of the program at all: a fresh start
+    {
+        if (err != ERROR_FILE_NOT_FOUND)
+            TRACE_E("MigrateConfigurationRoot(): cannot open the parent key: " << err);
+        LoadSaveToRegistryMutex.Leave();
+        return TRUE;
+    }
+    CSalCfgMigrateState state;
+    state.NewHasConfig = CfgMigHasConfig(parent, leaf);
+    state.LegacyHasConfig = CfgMigHasConfig(parent, legacyLeaf);
+    state.LegacyBackupExists = CfgMigKeyExists(parent, legacyBackup);
+    BOOL sideLeft = CfgMigKeyExists(parent, side);
+    RegCloseKey(parent);
+    CSalCfgMigrateAction action = SalCfgMigrateDecide(state);
+    if (action == scmaMigrate || sideLeft)
+    {
+        if (RegOpenKeyExW(HKEY_CURRENT_USER, parentName, 0, KEY_READ | KEY_WRITE, &parent) != ERROR_SUCCESS)
+        {
+            TRACE_E("MigrateConfigurationRoot(): cannot open the parent key for writing");
+            if (action == scmaMigrate)
+                ret = FALSE;
+        }
+        else
+        {
+            if (sideLeft)
+            {
+                TRACE_I("MigrateConfigurationRoot(): removing the side key of an interrupted migration");
+                SHDeleteKeyW(parent, side);
+            }
+            if (action == scmaMigrate)
+            {
+                TRACE_I("MigrateConfigurationRoot(): moving the configuration to the version-free root");
+                // leftovers that hold no configuration in use: a root without "Configuration", a backup
+                // copied by an interrupted migration (no genuine backup exists while the root holds none)
+                if (CfgMigKeyExists(parent, leaf))
+                    SHDeleteKeyW(parent, leaf);
+                if (CfgMigKeyExists(parent, newBackup))
+                    SHDeleteKeyW(parent, newBackup);
+                BOOL backupMade = FALSE;
+                if (state.LegacyBackupExists)
+                {
+                    ret = CfgMigCopyTree(parent, legacyBackup, newBackup, failAt, FALSE);
+                    backupMade = TRUE;
+                }
+                if (ret && CfgMigKeyExists(parent, legacyLeaf))
+                {
+                    ret = CfgMigCopyTree(parent, legacyLeaf, side, failAt, TRUE);
+                    if (ret)
+                    {
+                        err = RegRenameKey(parent, side, leaf);
+#ifdef _DEBUG
+                        if (strcmp(failAt, "rename") == 0 && err == ERROR_SUCCESS)
+                        {
+                            RegRenameKey(parent, leaf, side); // undo, as if the rename had failed
+                            err = ERROR_ACCESS_DENIED;
+                        }
+#endif // _DEBUG
+                        if (err != ERROR_SUCCESS)
+                        {
+                            TRACE_E("MigrateConfigurationRoot(): RegRenameKey failed: " << err);
+                            ret = FALSE;
+                        }
+                    }
+                }
+                if (!ret) // nothing made by this run stays; the old keys were only read
+                {
+                    SHDeleteKeyW(parent, side);
+                    if (backupMade)
+                        SHDeleteKeyW(parent, newBackup);
+                    TRACE_E("MigrateConfigurationRoot(): failed, this session uses the old root");
+                }
+                else
+                    TRACE_I("MigrateConfigurationRoot(): done");
+            }
+            RegCloseKey(parent);
+        }
+    }
+    LoadSaveToRegistryMutex.Leave();
     return ret;
 }
 

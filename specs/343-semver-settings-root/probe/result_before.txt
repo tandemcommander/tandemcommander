@@ -1,0 +1,13 @@
+cfgroot343_probe (feature 343) before
+Program : C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\abe128c2-7edd-44a9-8152-86d8651288ec\scratchpad\pre343\tandemcommander.exe
+Legacy  : C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\abe128c2-7edd-44a9-8152-86d8651288ec\scratchpad\pre343\tandemcommander.exe
+Date    : 2026-10-25 12:15; parent key existed True
+Fixture : 0.1 configuration made by -LegacyExe (start windows: [#32770 'Tandem Commander'] [Static id=1150] Select one of the installed languages. | [Button id=1029] Get More &Languages... | [Button id=1028] &Refresh | [Button id=1151] About language version | [Static id=1152] Authors: | [Static id=1154] Web: | [Static id=1155] Comment: | [Static id=1036] English version | [Static id=1156] Help Directory: | [Static id=1038] ENGLISH | [Button id=1] OK | [Button id=2] &Exit; save windows: no window; exit 0x00000000)
+
+BASIC      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BASIC      MOVE   FAIL        0.1 1994 lines; Settings equal to 0.1 while running False first differences: =><missing> ; <=K  ; <=K \Alternative Viewers ; <=K \Alternative Viewers\1; Probe343 equal False; Password Manager equal False (present True); side key False; start windows: no window; 0.1 unchanged after exit True
+IMP-LEGACY END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IMP-LEGACY IMPORT FAIL        marker imported under Settings False; written under 0.1 True; windows: no window
+Registry: restored; identical=True; SHA-256 before 06DB26401EDCD9BFAD9C504E275BA42CA026D632D103A2AD519EC59ADE58CDB2 / after 06DB26401EDCD9BFAD9C504E275BA42CA026D632D103A2AD519EC59ADE58CDB2
+
+Rows: PASS 2, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

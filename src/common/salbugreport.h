@@ -13,10 +13,10 @@
 // itself (the former out-of-process helper is gone). The name
 // carries the product version and the local time of the crash:
 //
-//   TC<shortVersion>-YYYYMMDD-HHMMSS[-suffix].TXT      e.g. TC018X64-20260919-143007.TXT
+//   TC<shortVersion>-YYYYMMDD-HHMMSS[-suffix].TXT      e.g. TC0.2.0X64-20261025-143007.TXT
 //
-// 'shortVersion' is VERSINFO_SAL_SHORT_VERSION (digits of the version plus
-// the platform tag), 'suffix' 1..99 resolves a collision within the same
+// 'shortVersion' is VERSINFO_SAL_SHORT_VERSION (the version's numbers joined
+// by dots plus the platform tag, feature 343), 'suffix' 1..99 resolves a collision within the same
 // second (0 = no suffix). The output is upper-case ASCII, so it never
 // contains a character that is illegal in a file name.
 //
@@ -27,7 +27,7 @@
 // Returns FALSE (and an empty 'out' when outLen > 0) when the name does not
 // fit into 'out' (outLen counts the terminating zero), when 'suffix' is
 // outside 0..99, when 'shortVersion' is empty or contains a character
-// outside A-Z a-z 0-9, or when a date/time field of 't' is out of range.
+// outside A-Z a-z 0-9 and '.' (a dot neither first, last nor doubled), or when a date/time field of 't' is out of range.
 //
 //*****************************************************************************
 
