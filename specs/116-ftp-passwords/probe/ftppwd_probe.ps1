@@ -72,7 +72,7 @@ if ($others.Count) { Write-Output ('REFUSED: tandemcommander.exe already runs: '
 Add-Type -TypeDefinition 'public static class Desk116 { [System.Runtime.InteropServices.DllImport("user32.dll")] public static extern System.IntPtr GetThreadDesktop(uint t); [System.Runtime.InteropServices.DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId(); [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)] public static extern bool GetUserObjectInformationW(System.IntPtr h, int i, System.Text.StringBuilder s, int n, out int need); public static string Name() { var s = new System.Text.StringBuilder(256); int n; GetUserObjectInformationW(GetThreadDesktop(GetCurrentThreadId()), 2, s, 512, out n); return s.ToString(); } }'
 if ([Desk116]::Name() -ieq 'Default') { Write-Output 'REFUSED: run this probe through tools\run_on_hidden_desktop.ps1 (it is on the Default desktop)'; exit 98 }
 # a Master Password makes the stored blob AES-encrypted (the probe cannot read it back) and asks for it
-$mp = Get-ItemProperty -Path 'HKCU:\Software\Tandem Commander\0.1\Password Manager' -Name 'Use Master Password' -ErrorAction SilentlyContinue
+$mp = Get-ItemProperty -Path 'HKCU:\Software\Tandem Commander\Settings\Password Manager' -Name 'Use Master Password' -ErrorAction SilentlyContinue
 if ($mp -and $mp.'Use Master Password' -ne 0) { Write-Output 'REFUSED: a Master Password is in use (Password Manager\Use Master Password = 1)'; exit 97 }
 # -Clipboard copies a test password to the clipboard: Windows clipboard history (Win+V) and the cloud
 # clipboard would record it - refused while either is on
@@ -208,7 +208,7 @@ function Unscramble-Blob([byte[]]$blob) {
 }
 
 # ---- fixtures, server, instances ----------------------------------------------------------
-$FtpKey = 'HKCU:\Software\Tandem Commander\0.1\Plugins Configuration\FTP'
+$FtpKey = 'HKCU:\Software\Tandem Commander\Settings\Plugins Configuration\FTP'
 $FtpBm = $FtpKey + '\Bookmarks\1'
 # re-creates bookmark 1 ('B116', 127.0.0.1:$Port, user 'probe116'); $Blob = the stored password blob or $null
 function Ftp-Fixture([byte[]]$Blob, [int]$Save = 1) {

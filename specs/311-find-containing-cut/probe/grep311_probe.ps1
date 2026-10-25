@@ -58,7 +58,7 @@ if ($others.Count) { Write-Output ('NOT RUN: another tandemcommander.exe is runn
 $Root = $TempRoot + '\tc311_grep'
 $StartDir = $Root + '\start'
 $FindDir = $Root + '\find'
-$Key01 = 'HKCU:\Software\Tandem Commander\0.1'
+$Key01 = 'HKCU:\Software\Tandem Commander\Settings'
 $TooLong = 'too long'
 
 function Cjk([int]$n, [int]$base = 0x4E00) { return (-join (1..$n | ForEach-Object { [char]($base + $_) })) }
@@ -163,7 +163,7 @@ function Find-Count([IntPtr]$Dlg) {
 function Grep-Row([string]$Case, [string]$Text, $Action, [string]$Expect, [string]$Mode = 'text', [switch]$SeedOption) {
     Run-Row $Case {
         if ($SeedOption) {
-            & cmd.exe /c "reg delete `"$RegKey\0.1\Configuration\Find Options`" /f >nul 2>&1"
+            & cmd.exe /c "reg delete `"$RegKey\Settings\Configuration\Find Options`" /f >nul 2>&1"
             Reg-Set 'Configuration\Find Options\1' 'ItemName' 'probe311' String
         }
         $id = Start-Tc $FindDir; $script:RowId = $id

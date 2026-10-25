@@ -507,7 +507,7 @@ function Calc-Finished([int]$Id) {
 # them; the whole key is restored afterwards): File Comparator Ctrl+Shift+C, Disk Map Ctrl+Shift+D,
 # Batch Renamer Ctrl+Shift+R, Checksum Calculate Ctrl+Shift+U and Verify Ctrl+Shift+V
 function Set-HotKeys {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key (defaults; Calculate has no key)' }
     $map = @(
         @{ Dll = 'filecomp\.spl$'; Id = 1; Key = 0x10343 },

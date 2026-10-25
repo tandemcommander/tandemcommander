@@ -419,11 +419,11 @@ function New-Zip([string]$File, [string[]]$Entries) {
 }
 
 function Set-ProbeConfig {
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
     $fresh = ($LASTEXITCODE -ne 0)
     if (-not $fresh) {
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
     }
     return $fresh
 }
@@ -638,15 +638,15 @@ $Euro = [string][char]0x20AC
 $Content = "content of a.txt`r`n"
 
 function Set-WorkConfig {
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
     $fresh = ($LASTEXITCODE -ne 0)
     if (-not $fresh) {
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Panel Tabs' /t REG_DWORD /d 1 /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Archive' /t REG_DWORD /d 1 /f | Out-Null
-        & cmd.exe /c "reg delete `"$RegKey\0.1\Editors`" /f >nul 2>&1"
-        $k = "$RegKey\0.1\Editors\1"
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Panel Tabs' /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Archive' /t REG_DWORD /d 1 /f | Out-Null
+        & cmd.exe /c "reg delete `"$RegKey\Settings\Editors`" /f >nul 2>&1"
+        $k = "$RegKey\Settings\Editors\1"
         & reg.exe add $k /v 'Masks' /t REG_SZ /d '*.*' /f | Out-Null
         & reg.exe add $k /v 'Command' /t REG_SZ /d (Join-Path $env:SystemRoot 'System32\cmd.exe') /f | Out-Null
         Set-ItemProperty -LiteralPath ('Registry::' + $k.Replace('HKCU\', 'HKEY_CURRENT_USER\')) -Name 'Arguments' -Value ('/c echo ' + $Marker + '>>"$(FullName)"')
@@ -766,7 +766,7 @@ function Run-Work($c) {
     function Chk($r, [string]$Where) { if ($r.Fatal -or $r.Died) { throw ('FATAL at ' + $Where + ': ' + (MsgList $r.Messages) + $(if ($r.Died) { ' (process ended)' } else { '' })) } }
     try {
         # the tabs stored by the previous instance would stand between "new tab" and "previous tab"
-        foreach ($side in 'Left Panel', 'Right Panel') { & cmd.exe /c ('reg delete "' + $RegKey + '\0.1\' + $side + '\Tabs" /f >nul 2>&1') }
+        foreach ($side in 'Left Panel', 'Right Panel') { & cmd.exe /c ('reg delete "' + $RegKey + '\Settings\' + $side + '\Tabs" /f >nul 2>&1') }
         # a folder of 520 bytes or more does not fit the -l field (519 bytes; refused with a message
         # since S1): the instance starts in the fixture root and goes there through Change Directory
         $viaDlg = ((U8Len $c.Dir) -ge 520)
@@ -957,7 +957,7 @@ function Run-Work($c) {
 function Run-Clip($c) {
     $before = Reports; $tmpBefore = TmpDirs; $id = 0; $endDone = $false; $rowDone = $false
     try {
-        foreach ($side in 'Left Panel', 'Right Panel') { & cmd.exe /c ('reg delete "' + $RegKey + '\0.1\' + $side + '\Tabs" /f >nul 2>&1') }
+        foreach ($side in 'Left Panel', 'Right Panel') { & cmd.exe /c ('reg delete "' + $RegKey + '\Settings\' + $side + '\Tabs" /f >nul 2>&1') }
         $id = Start-Tc097 $c.Dir $c.Out
         $r = Serve97 $id 10
         Key $id 0x23; EnterItem $id
@@ -1045,7 +1045,7 @@ function Run-HistDead {
         if (-not $drive) { throw 'no free drive letter' }
         & subst.exe ($drive + ':') $src | Out-Null
         if (-not [IO.File]::Exists($drive + ':\arc.zip')) { throw 'subst drive not created' }
-        foreach ($side in 'Left Panel', 'Right Panel') { & cmd.exe /c ('reg delete "' + $RegKey + '\0.1\' + $side + '\Tabs" /f >nul 2>&1') }
+        foreach ($side in 'Left Panel', 'Right Panel') { & cmd.exe /c ('reg delete "' + $RegKey + '\Settings\' + $side + '\Tabs" /f >nul 2>&1') }
         $id = Start-Tc097 $start
         $r = Serve97 $id 10
         $title0 = TitleOf $id

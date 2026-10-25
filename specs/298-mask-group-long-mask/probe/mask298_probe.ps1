@@ -5,7 +5,7 @@
     buffers without a bound).
 
 .DESCRIPTION
-    The source is the registry value ThumbnailMasks of a plug-in (HKCU\...\0.1\Plugins\<n>), read with a
+    The source is the registry value ThumbnailMasks of a plug-in (HKCU\...\Settings\Plugins\<n>), read with a
     MAX_GROUPMASK (1001 byte) cap and prepared while the plug-in list loads at start - a hand edit or a
     settings import delivers it. Per row the value is written, the program started, served, closed with
     WM_CLOSE; the row passes when the start and the end are clean (no run-time check, no crash report,
@@ -35,7 +35,7 @@ if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; e
 . (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
 $Root = $TempRoot + '\tc298'
 $StartDir = $Root + '\start'
-$PlugKey = $RegKey + '\0.1\Plugins\1'
+$PlugKey = $RegKey + '\Settings\Plugins\1'
 
 function Mask-Of([int]$Bytes) { return '*.' + ('b' * ($Bytes - 2)) }
 function Multi-Mask {
@@ -45,7 +45,7 @@ function Multi-Mask {
     return $s + (';*.' + ('c' * (1000 - $s.Length - 3)))
 }
 function Read-Thumb {
-    $k = 'HKCU:\Software\Tandem Commander\0.1\Plugins\1'
+    $k = 'HKCU:\Software\Tandem Commander\Settings\Plugins\1'
     try { return [string](Get-ItemProperty -LiteralPath $k -Name 'ThumbnailMasks' -ErrorAction Stop).ThumbnailMasks } catch { return $null }
 }
 

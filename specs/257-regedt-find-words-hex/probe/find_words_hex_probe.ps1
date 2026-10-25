@@ -149,7 +149,7 @@ function Sync([int]$Id) { [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000) 
 function U16([string]$s) { return [Text.Encoding]::Unicode.GetBytes($s) }
 # Registry Editor's Find command gets Ctrl+Shift+G for this session (the 118/121/124 method)
 function Set-HotKeys {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key' }
     $notes = @()
     foreach ($k in @(Get-ChildItem $plugins)) {

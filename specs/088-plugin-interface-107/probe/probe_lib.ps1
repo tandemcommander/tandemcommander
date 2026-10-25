@@ -109,10 +109,10 @@ function Restore-TcRegistry([string]$File, [bool]$Existed) {
 # The test configuration: the maintainer's own (so the viewer associations are
 # the real ones), English UI, no exit confirmation.
 function Set-TestConfig {
-    & cmd.exe /c "reg query `"$script:RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$script:RegKey\Settings\Configuration`" >nul 2>&1"
     if ($LASTEXITCODE -ne 0) { return }   # a fresh registry: the defaults are English already
-    & reg.exe add "$script:RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
-    & reg.exe add "$script:RegKey\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
+    & reg.exe add "$script:RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
+    & reg.exe add "$script:RegKey\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
 }
 
 # ---- process and windows ---------------------------------------------------

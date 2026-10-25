@@ -417,11 +417,11 @@ function New-Zip([string]$File, [string[]]$Entries) {
 }
 
 function Set-ProbeConfig {
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
     $fresh = ($LASTEXITCODE -ne 0)
     if (-not $fresh) {
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
     }
     return $fresh
 }

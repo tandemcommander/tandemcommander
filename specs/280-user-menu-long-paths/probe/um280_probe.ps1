@@ -66,7 +66,7 @@ $PcDir = $Root + '\pc'
 $pLen = 258 - (U8Len ($PcDir + '\'))
 $P = 'p' * $pLen
 $CutDir = $PcDir + '\' + $P + '\b'
-$UmKey = 'Software\Tandem Commander\0.1\User Menu'
+$UmKey = 'Software\Tandem Commander\Settings\User Menu'
 $Unicode = New-Object Text.UnicodeEncoding($false, $false)
 
 # item -> command, arguments, through a shell (index = position - 1)

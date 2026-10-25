@@ -93,7 +93,7 @@ public static class Cb315
 }
 $Root = $TempRoot + '\tc315_unp'
 $StartDir = $Root + '\start'
-$UnpKey = $RegKey + '\0.1\Packers & Unpackers\Custom Unpackers'
+$UnpKey = $RegKey + '\Settings\Packers & Unpackers\Custom Unpackers'
 
 function Cjk([int]$n, [int]$base = 0x4E00) { return (-join (1..$n | ForEach-Object { [char]($base + $_) })) }
 function U8([string]$s) { return $Utf8.GetByteCount($s) }

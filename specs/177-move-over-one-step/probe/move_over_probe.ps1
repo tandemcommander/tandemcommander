@@ -71,7 +71,7 @@ try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir
     Set-Config
-    & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'File Overwrite' /t REG_DWORD /d 1 /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'File Overwrite' /t REG_DWORD /d 1 /f | Out-Null
     Out ("move_over_probe (feature 177), expect: {0}" -f $Expect)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; export SHA-256 {2}; ACP {3}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, $regHash, [Drv098f]::GetACP())

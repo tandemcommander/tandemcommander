@@ -74,7 +74,7 @@ public static class Drv106
 
 $Root = $TempRoot + '\tc106\pk'
 $StartDir = $Root + '\start'
-$RegCfg = 'HKCU\Software\Tandem Commander\0.1'
+$RegCfg = 'HKCU\Software\Tandem Commander\Settings'
 
 function Rand-File([string]$p, [int]$size, [int]$seed) {
     $b = New-Object byte[] $size; (New-Object Random($seed)).NextBytes($b); [IO.File]::WriteAllBytes($p, $b)

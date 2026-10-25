@@ -38,8 +38,12 @@ add *Recent Changes* / *Active Technologies* sections.
   `tandemcommander-<ver>-x64-setup.exe` and the GitHub release is published
   with it attached (the new-version check builds that address, 123). A bumped
   tree is not a published release — check the git tag.
+- Versions follow **SemVer** (MINOR = a release with features, PATCH = fixes
+  only; rule in `backlog/RELEASE.md` *Version numbering*, 343).
 - Binary `tandemcommander.exe`; registry root
-  `HKCU\Software\Tandem Commander\0.1` (never writes Open Salamander /
+  `HKCU\Software\Tandem Commander\Settings` — version-free since 343; the
+  0.1.x root `…\0.1` is copied once at the first start and never written
+  again (never writes Open Salamander /
   Altap / Newt Commander keys; reads Altap / Open Salamander ones only in the
   user-started settings import and, existence and version only, at the first
   start of a fresh configuration — read-only, 245); https://tandemcommander.org,
@@ -125,6 +129,10 @@ Each is one line of a longer story; the number is the feature whose entry in
   first, and a new path change ends the search before `RefreshPathHistoryData`.
 - Same-file decisions go by identity, not by name: `src/common/salsamefile.h`
   (103, 106, 107, 119).
+- Code reads the configuration only through `SalamanderConfigurationRoots[0]` /
+  `SALAMANDER_ROOT_REG`, never a literal key; the old root `SALCFG_LEGACY_ROOT` is read
+  only by `MigrateConfigurationRoot`, used only for a session whose move failed, and
+  never deleted (343).
 - Replacing a user's file: temporary file + `SalReplaceWithTempW`
   (`salsafereplace.h`, 105). A replaced archive member is deleted only once
   its replacement is stored (110, 113).

@@ -70,8 +70,7 @@ RT status <VER> <DATE_OPT>
   `tag-exists` → the version is released, pick the next; `dirty-tree` →
   commit or discard first (`git status`); `lock-held` → an autonomous
   backlog run is active; `copyright-year` → decide the copyright years
-  first; `line-change` → a MAJOR/MINORA change needs a configuration
-  migration decision; `inconsistent: …` → name the record and line;
+  first; `inconsistent: …` → name the record and line;
   `detached-head` → check out the branch to release; `no-previous-tag` →
   when the tag is only on the remote, `git fetch --tags` first;
   `version-form`, `not-higher` → explain.
@@ -87,7 +86,15 @@ Ask only what applies, in this order; a "no" or no answer → **stop**
 1. **Not on `main`** (`warning: branch-not-main`): "The current branch is
    `<BRANCH>`, not `main`. Releases are prepared on `main`. Prepare
    <VER> on `<BRANCH>` anyway?"
-2. **`minorb-skip`**: "<P> → <VER> skips a version. Go on?"
+2. **`version-step`**: "<P> → <VER> is not the next PATCH, MINOR or MAJOR
+   version (<the three from the warning>). Go on?" Versions follow Semantic
+   Versioning (feature 343, `backlog/RELEASE.md` *Version numbering*): a
+   release with new features is MINOR (`x.(y+1).0`), a fixes-only release
+   PATCH (`x.y.(z+1)`). When the maintainer gave no number, propose the
+   MINOR step for a release from `main` that carries features. A MAJOR or
+   MINOR step needs no configuration migration (the root is version-free).
+   **`patch-kind`** (status or check): a PATCH release whose lead does not
+   name a fix - ask whether the lead or the number is wrong.
 3. **`remote-unknown`**: "The remote tags could not be read; is `v<VER>`
    surely not published yet?" — **`remote-tags-not-fetched`**: "The remote
    has release tags this clone lacks (<tags>). Stop and fetch them first?"

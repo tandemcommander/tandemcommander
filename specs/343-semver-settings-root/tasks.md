@@ -53,31 +53,31 @@ release tool, the hidden-desktop probe for the end-to-end migration.
 **Goal**: the release tool accepts MINOR/MAJOR steps, warns on non-SemVer steps and on a patch with a feature lead; work collects under `[Unreleased]`.
 **Independent test**: `test_release.py`; `release.py status 0.2.0 / 0.1.11 / 0.3.0`.
 
-- [ ] T022 [US3] `tools/release/release.py`: remove `line-change`; replace `minorb-skip` by `version-step` (evaluate); add `patch-kind` (check); update the usage text and docstrings that mention `MAJOR.MINORA` line rules
-- [ ] T023 [US3] `tools/release/test_release.py`: `0.2.0` accepted after `0.1.10`; `version-step` for `0.1.12`, `0.3.0` after `0.1.10`, `0.2.1`; none for `0.1.11`, `0.2.0`, `1.0.0`; `patch-kind` for a patch with lead `Feature release`, none for `Bug-fix release`; run the suite (0 failed)
-- [ ] T024 [US3] `CHANGELOG.md`: preamble states SemVer (pointing to `backlog/RELEASE.md` *Version numbering*); heading `## [0.1.11] — unreleased` → `## [Unreleased]`
-- [ ] T025 [US3] `backlog/RELEASE.md`: new section *Version numbering* (contract `versioning.md` rule, the one place); *Release records* row of `CHANGELOG.md` names `[Unreleased]`; *Preparing the tree* step 2 mentions `version-step` instead of the MAJOR/MINORA refusal
-- [ ] T026 [P] [US3] `.claude/skills/tandem-release/SKILL.md` and `reference.md`: no `line-change`; `version-step` question replaces `minorb-skip`; `patch-kind`; how to choose the number (link to RELEASE.md)
-- [ ] T027 [P] [US3] `.claude/skills/tandem-backlog-implement/SKILL.md` (entries go under `## [Unreleased]`) and `stop-rules.md` (key name `Settings`)
-- [ ] T028 [P] [US3] Crash report name: `VERSINFO_SAL_SHORT_VERSION` with dots and the SemVer comment in `src/plugins/shared/spl_vers.h`; `SalFormatBugReportName` accepts dots in `src/common/salbugreport.cpp` (+ header comment in `salbugreport.h`); saltests for `0.2.0X64`, `0.11.0X64` vs `0.1.10X64`, leading / trailing / double dot refused
+- [X] T022 [US3] `tools/release/release.py`: remove `line-change`; replace `minorb-skip` by `version-step` (evaluate); add `patch-kind` (check); update the usage text and docstrings that mention `MAJOR.MINORA` line rules
+- [X] T023 [US3] `tools/release/test_release.py`: `0.2.0` accepted after `0.1.10`; `version-step` for `0.1.12`, `0.3.0` after `0.1.10`, `0.2.1`; none for `0.1.11`, `0.2.0`, `1.0.0`; `patch-kind` for a patch with lead `Feature release`, none for `Bug-fix release`; run the suite (0 failed)
+- [X] T024 [US3] `CHANGELOG.md`: preamble states SemVer (pointing to `backlog/RELEASE.md` *Version numbering*); heading `## [0.1.11] — unreleased` → `## [Unreleased]`
+- [X] T025 [US3] `backlog/RELEASE.md`: new section *Version numbering* (contract `versioning.md` rule, the one place); *Release records* row of `CHANGELOG.md` names `[Unreleased]`; *Preparing the tree* step 2 mentions `version-step` instead of the MAJOR/MINORA refusal
+- [X] T026 [P] [US3] `.claude/skills/tandem-release/SKILL.md` and `reference.md`: no `line-change`; `version-step` question replaces `minorb-skip`; `patch-kind`; how to choose the number (link to RELEASE.md)
+- [X] T027 [P] [US3] `.claude/skills/tandem-backlog-implement/SKILL.md` (entries go under `## [Unreleased]`) and `stop-rules.md` (key name `Settings`)
+- [X] T028 [P] [US3] Crash report name: `VERSINFO_SAL_SHORT_VERSION` with dots and the SemVer comment in `src/plugins/shared/spl_vers.h`; `SalFormatBugReportName` accepts dots in `src/common/salbugreport.cpp` (+ header comment in `salbugreport.h`); saltests for `0.2.0X64`, `0.11.0X64` vs `0.1.10X64`, leading / trailing / double dot refused
 
 ## Phase 6: User Story 5 - every record, tool, probe and document agrees (P3)
 
 **Goal**: no live reference to the old key or the old version rule.
 **Independent test**: quickstart §4 search.
 
-- [ ] T029 [US5] Switch the 68 probe scripts in `specs/*/probe/*.ps1` from `Tandem Commander\0.1` / `Tandem Commander\\0.1` to `Settings` with a Python one-off (exact replacements, report per file); leave `result_*.txt` files as history; list the files in `fix-log.md`
-- [ ] T030 [P] [US5] `PRIVACY.md`: settings under `…\Tandem Commander\Settings`, `Settings\Update Check`, versions 0.1.x used `…\0.1`, which 0.2.0-and-later copies at first start and keeps unchanged as a backup the user may delete; *Removing your data* still covers both (the parent key)
-- [ ] T031 [P] [US5] `.specify/memory/constitution.md`: replace the last bullet of *Release Documentation* (root version-free, SemVer per RELEASE.md); version 4.0.0 → 4.1.0, *Last Amended* 2026-10-25, Sync Impact Report at the top
-- [ ] T032 [P] [US5] `CLAUDE.md` (product identity: registry root `…\Settings`, `0.1` read once for migration; one standing-rule line citing 343) and `architecture/12-project-reference.md` (registry root, version rule)
-- [ ] T033 [US5] Run the quickstart §4 search; fix or justify every hit in `fix-log.md`
+- [X] T029 [US5] Switch the 68 probe scripts in `specs/*/probe/*.ps1` from `Tandem Commander\0.1` / `Tandem Commander\\0.1` to `Settings` with a Python one-off (exact replacements, report per file); leave `result_*.txt` files as history; list the files in `fix-log.md`
+- [X] T030 [P] [US5] `PRIVACY.md`: settings under `…\Tandem Commander\Settings`, `Settings\Update Check`, versions 0.1.x used `…\0.1`, which 0.2.0-and-later copies at first start and keeps unchanged as a backup the user may delete; *Removing your data* still covers both (the parent key)
+- [X] T031 [P] [US5] `.specify/memory/constitution.md`: replace the last bullet of *Release Documentation* (root version-free, SemVer per RELEASE.md); version 4.0.0 → 4.1.0, *Last Amended* 2026-10-25, Sync Impact Report at the top
+- [X] T032 [P] [US5] `CLAUDE.md` (product identity: registry root `…\Settings`, `0.1` read once for migration; one standing-rule line citing 343) and `architecture/12-project-reference.md` (registry root, version rule)
+- [X] T033 [US5] Run the quickstart §4 search; fix or justify every hit in `fix-log.md`
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] T034 Two-stage `.slt` refresh for `IDS_CFGMIGRATE_FAILED` per `/tandem-backlog-implement` §2.13 (`translate.merge --templates build\tandemcommander\translator\templates --formality prefer_more`, dry run first, read every language back, pin in `translations/ui-overrides.json` if needed)
-- [ ] T035 `build.cmd full` (Debug) and `build.cmd full release`; saltests 0 failed; `python tools/check_encoding.py --strict` TOTAL 0; `python tools/test_bin_help.py`
-- [ ] T036 Re-run the full probe on the final Debug build → `probe/result_final.txt`; regression: one older probe that backs up the key (e.g. `specs/312-*/probe`) runs and restores `Settings`
-- [ ] T037 `CHANGELOG.md` entry under `[Unreleased]` (symptom-free "Settings now live under …\Settings; moved automatically; old key kept as a backup"; limitation: a 0.1.x instance's later changes are not carried over; feature 343)
+- [X] T034 Two-stage `.slt` refresh for `IDS_CFGMIGRATE_FAILED` per `/tandem-backlog-implement` §2.13 (`translate.merge --templates build\tandemcommander\translator\templates --formality prefer_more`, dry run first, read every language back, pin in `translations/ui-overrides.json` if needed)
+- [X] T035 `build.cmd full` (Debug) and `build.cmd full release`; saltests 0 failed; `python tools/check_encoding.py --strict` TOTAL 0; `python tools/test_bin_help.py`
+- [X] T036 Re-run the full probe on the final Debug build → `probe/result_final.txt`; regression: one older probe that backs up the key (e.g. `specs/312-*/probe`) runs and restores `Settings`
+- [X] T037 `CHANGELOG.md` entry under `[Unreleased]` (symptom-free "Settings now live under …\Settings; moved automatically; old key kept as a backup"; limitation: a 0.1.x instance's later changes are not carried over; feature 343)
 - [ ] T038 Independent refute-first review by an agent (code + probe + records); fix findings; record in `fix-log.md`
 - [ ] T039 `specs/FEATURE-HISTORY.md` entry 343; backlog item (Inbox) "Remove the old 0.1 configuration key in a later release" via `bin/backlog.sh new` (source `leftover:343`); closing report `specs/343-semver-settings-root/closing-report.md`
 - [ ] T040 Commit on the feature branch (no push); report to the maintainer

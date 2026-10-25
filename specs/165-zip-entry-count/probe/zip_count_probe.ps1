@@ -118,7 +118,7 @@ try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir
     Set-Config
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Use Recycle Bin' /t REG_DWORD /d 0 /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Use Recycle Bin' /t REG_DWORD /d 0 /f | Out-Null
     Out ("zip_count_probe (feature 165), expect: {0}" -f $Expect)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; export SHA-256 {2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, $regHash)

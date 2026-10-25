@@ -171,7 +171,7 @@ try {
     foreach ($n in @('GNU-TOOLONG', 'GNU-DEEP', 'GNU-255', 'GNU-255DIR', 'GNU-LONG', 'ZIP-TOOLONG', '7Z-TOOLONG', 'GNU-DIR100')) { Run-Row $n }
     # the open-only rows run last with simple icons in archives (the registry is restored at the end)
     if ((Want 'CPIO-778') -or (Want 'CPIO-TOOLONG')) {
-        & reg.exe add "$RegKey\0.1\Packers & Unpackers" /v 'Simple Icons In Archives' /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Packers & Unpackers" /v 'Simple Icons In Archives' /t REG_DWORD /d 1 /f | Out-Null
         foreach ($n in @('CPIO-778', 'CPIO-TOOLONG')) { Run-Row $n }
     }
 }

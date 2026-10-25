@@ -154,8 +154,8 @@ Out ("Feature 313 probe {0}; exe {1}; expect {2}; registry backup {3} (existed {
 if ($existed) { Out ('export SHA-256 ' + (Get-FileHash -LiteralPath $RegBackup).Hash) }
 try {
     Set-Config
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Quick Search Enter Alt' /t REG_DWORD /d 0 /f | Out-Null
-    if ($FilterOption -ge 0) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Quick Search Filter' /t REG_DWORD /d $FilterOption /f | Out-Null }
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Quick Search Enter Alt' /t REG_DWORD /d 0 /f | Out-Null
+    if ($FilterOption -ge 0) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Quick Search Filter' /t REG_DWORD /d $FilterOption /f | Out-Null }
 
     $both = @($N_Zlutoucky, $N_Zluty)
     # D01 typed without accents: 'zlut' -> the folder and the file (before: only zlut + y-acute; off: focus on it)

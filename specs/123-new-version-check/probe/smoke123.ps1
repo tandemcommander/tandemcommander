@@ -73,9 +73,9 @@ $srv = $null
 $id = 0
 try {
     Set-Config
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d "$Lang.slg" /f | Out-Null
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Theme Mode' /t REG_DWORD /d $(if ($Dark) { 1 } else { 0 }) /f | Out-Null
-    & cmd.exe /c "reg delete `"$RegKey\0.1\Update Check`" /f >nul 2>&1"
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d "$Lang.slg" /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Theme Mode' /t REG_DWORD /d $(if ($Dark) { 1 } else { 0 }) /f | Out-Null
+    & cmd.exe /c "reg delete `"$RegKey\Settings\Update Check`" /f >nul 2>&1"
     $srv = Start-Process -FilePath python -ArgumentList @((Join-Path $PSScriptRoot 'updserver.py'), '--port', $Port, '--log', $srvLog) -PassThru -WindowStyle Hidden
     Start-Sleep -Milliseconds 1200
     if (-not $Real) {
@@ -105,7 +105,7 @@ try {
         }
     }
     Out '--- stored state'
-    & cmd.exe /c "reg query `"$RegKey\0.1\Update Check`" 2>&1" | ForEach-Object { if ($_) { Out ("   " + $_) } }
+    & cmd.exe /c "reg query `"$RegKey\Settings\Update Check`" 2>&1" | ForEach-Object { if ($_) { Out ("   " + $_) } }
     Out '--- requests'
     if (Test-Path -LiteralPath $srvLog) { Get-Content -LiteralPath $srvLog | ForEach-Object { Out ("   " + $_) } } else { Out '   (none)' }
     $fatal = Fatal-Win $id

@@ -89,7 +89,7 @@ function Start-P([string]$Left) {
     Start-Sleep -Milliseconds 1500
     return $p.Id
 }
-function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
+function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
 # a template of the language: translations\<lang>\salamand.slt by id (English: the given text)
 function Template([int]$Id, [string]$English) {
     if ($Lang -eq 'english') { return $English }
@@ -330,7 +330,7 @@ function Row-RegDel {
     $regRoot = 'HKCU:\Software\TcProbe127'
     try {
         [void](New-Item -Path ($regRoot + '\' + $Accent + '\sub') -Force)
-        & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Non-empty Dir Del' /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Non-empty Dir Del' /t REG_DWORD /d 1 /f | Out-Null
         $id = Start-P $StartDir
         [void](Do-ChangeDir $id 'reg:\HKEY_CURRENT_USER\Software\TcProbe127')
         Sync $id; Start-Sleep -Milliseconds 1500
@@ -485,7 +485,7 @@ function Row-PackErr {
         NewDir ($Root + '\prg ' + $Accent)
         $prog = $Root + '\prg ' + $Accent + '\7z.exe'
         [IO.File]::WriteAllText($prog, 'this is not a program')
-        $pk = "$RegKey\0.1\Packers & Unpackers\Predefined Packers"
+        $pk = "$RegKey\Settings\Packers & Unpackers\Predefined Packers"
         $set = 0
         foreach ($k in @(Get-ChildItem -LiteralPath ('Registry::HKEY_CURRENT_USER' + $pk.Substring(4)) -ErrorAction SilentlyContinue)) {
             $v = $k.GetValue('Packer Executable')

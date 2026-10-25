@@ -256,7 +256,7 @@ function Dm-Scanning([IntPtr]$H) {
     return (($st -band 3) -eq 0)                         # neither MF_GRAYED nor MF_DISABLED
 }
 function Set-HotKeys {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key (defaults; Calculate has no key)' }
     $map = @(
         @{ Dll = 'filecomp\.spl$'; Id = 1; Key = 0x10343 },

@@ -141,7 +141,7 @@ public static class Pw314
 $Root = $TempRoot + '\tc314'
 $StartDir = $Root + '\start'
 $Files = $Root + '\files'
-$MdKey = 'HKCU\Software\Tandem Commander\0.1\Plugins Configuration\MDVIEW'
+$MdKey = 'HKCU\Software\Tandem Commander\Settings\Plugins Configuration\MDVIEW'
 $Names = @('Normal', 'Wide', 'Wider', 'Full Window')
 $Rems = @(46, 64, 90, 0)
 
@@ -198,7 +198,7 @@ function Width-Verdict([int]$Level, [string]$m, [double]$Scale, [int]$Prev) {
     return (V (($e -le $in + 3) -and ($e -ge 0.8 * $in) -and ($e -gt $Prev)))
 }
 function Reg-Width {
-    $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Tandem Commander\0.1\Plugins Configuration\MDVIEW')
+    $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Tandem Commander\Settings\Plugins Configuration\MDVIEW')
     if (-not $k) { return '<no key>' }
     try { $v = $k.GetValue('PageWidth', '<no value>'); return ('{0} ({1})' -f $v, $(if ($v -is [int]) { 'DWORD' } else { $v.GetType().Name })) } finally { $k.Close() }
 }

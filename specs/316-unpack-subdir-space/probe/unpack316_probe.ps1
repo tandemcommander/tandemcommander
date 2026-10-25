@@ -93,7 +93,7 @@ public static class Cb316
 }
 $Root = $TempRoot + '\tc316_unp'
 $StartDir = $Root + '\start'
-$UnpKey = $RegKey + '\0.1\Packers & Unpackers\Custom Unpackers'
+$UnpKey = $RegKey + '\Settings\Packers & Unpackers\Custom Unpackers'
 
 function U8([string]$s) { return $Utf8.GetByteCount($s) }
 # $Prefix + components of 'p' of at most 100 units each, exactly $Bytes bytes

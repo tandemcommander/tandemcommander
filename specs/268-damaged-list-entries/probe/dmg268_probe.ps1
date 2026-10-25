@@ -50,7 +50,7 @@ if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; e
 . $Lib
 $Root = $TempRoot + '\tc268'
 $StartDir = $Root + '\start'
-$Base = 'Software\Tandem Commander\0.1\'
+$Base = 'Software\Tandem Commander\Settings\'
 $Str = [Microsoft.Win32.RegistryValueKind]::String
 $Dw = [Microsoft.Win32.RegistryValueKind]::DWord
 # the lists: registry key under the configuration, and the value that identifies an entry

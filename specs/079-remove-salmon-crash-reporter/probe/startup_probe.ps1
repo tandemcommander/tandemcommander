@@ -46,7 +46,7 @@ function Dismiss-Dialog([IntPtr]$h) {
 }
 
 $regRoot = 'HKCU\Software\Tandem Commander'
-$regCfg = "$regRoot\0.1"
+$regCfg = "$regRoot\Settings"
 $regBugReporter = "$regRoot\Bug Reporter"
 $bugDir = Join-Path $env:LOCALAPPDATA 'Tandem Commander'
 $failures = New-Object System.Collections.ArrayList
@@ -93,7 +93,7 @@ function Restore-Registry {
     [void](Reg @('delete', $regCfg, '/f'))
     $r = Reg @('import', $script:backup)
     if ($r.Code -ne 0) { Bad ("reg import failed: {0}" -f $r.Out); return }
-    $after = (Get-ItemProperty -Path "HKCU:\Software\Tandem Commander\0.1\Configuration" -Name Language -ErrorAction SilentlyContinue).Language
+    $after = (Get-ItemProperty -Path "HKCU:\Software\Tandem Commander\Settings\Configuration" -Name Language -ErrorAction SilentlyContinue).Language
     if ($after -eq $script:languageBefore) { Note ("registry restored: OK (Configuration\Language = '{0}')" -f $after) }
     else { Bad ("registry restore mismatch: Language before '{0}', after '{1}'" -f $script:languageBefore, $after) }
     $script:backup = $null
@@ -132,7 +132,7 @@ $bugReporterKeyBefore = Test-Path "Registry::$regBugReporter"
 Note ("Bug Reporter key exists before start: {0}" -f $bugReporterKeyBefore)
 
 if ($FreshRegistry) {
-    $script:languageBefore = (Get-ItemProperty -Path "HKCU:\Software\Tandem Commander\0.1\Configuration" -Name Language -ErrorAction SilentlyContinue).Language
+    $script:languageBefore = (Get-ItemProperty -Path "HKCU:\Software\Tandem Commander\Settings\Configuration" -Name Language -ErrorAction SilentlyContinue).Language
     $script:backup = Join-Path $Archive ("tc-backup-{0}.reg" -f $stamp)
     $r = Reg @('export', $regRoot, $script:backup, '/y')
     if ($r.Code -ne 0 -or -not (Test-Path -LiteralPath $script:backup) -or (Get-Item -LiteralPath $script:backup).Length -lt 1024) {

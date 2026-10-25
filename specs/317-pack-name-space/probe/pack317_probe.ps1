@@ -98,8 +98,8 @@ public static class Cb317
 }
 $Root = $TempRoot + '\tc317_pack'
 $StartDir = $Root + '\start'
-$PackKey = $RegKey + '\0.1\Packers & Unpackers\Custom Packers'
-$CnfKey = $RegKey + '\0.1\Configuration\Confirmation'
+$PackKey = $RegKey + '\Settings\Packers & Unpackers\Custom Packers'
+$CnfKey = $RegKey + '\Settings\Configuration\Confirmation'
 
 function Vis([string]$s) { if ($s.Length -gt 60) { $s = '...(' + $s.Length + ') ' + $s.Substring($s.Length - 30) }; return ("'" + ($s -replace ' ', '<sp>') + "'") }
 function Join-Vis($a) { if (@($a).Count) { return ((@($a) | ForEach-Object { Vis $_ }) -join ', ') } return 'none' }

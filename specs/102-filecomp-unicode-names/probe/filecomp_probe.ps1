@@ -169,7 +169,7 @@ $Fixed = ($Expect -eq 'fixed')
 $Root = $TempRoot + '\tc102_fc'
 $StartDir = $Root + '\start'
 $CmpClass = 'SFC Window Class'
-$FcKey = 'HKCU:\Software\Tandem Commander\0.1\Plugins Configuration\File Comparator'
+$FcKey = 'HKCU:\Software\Tandem Commander\Settings\Plugins Configuration\File Comparator'
 function S([int[]]$codes) { return -join ($codes | ForEach-Object { [char]::ConvertFromUtf32($_) }) }
 $Lone = [string][char]0xD800   # ConvertFromUtf32 refuses a lone surrogate
 
@@ -225,7 +225,7 @@ function Disk-Ok {
 }
 
 # ---- registry settings (inside the backup / restore of the whole key) -------------------
-function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
+function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
 function Set-Confirm([bool]$On) {
     $k = Get-Item -LiteralPath $FcKey -ErrorAction SilentlyContinue
     if (-not $k) { throw 'the File Comparator configuration key does not exist (run the plug-in once)' }
@@ -235,7 +235,7 @@ function Set-Confirm([bool]$On) {
     Set-ItemProperty -LiteralPath $FcKey -Name 'Configuration' -Value $blob -Type Binary
 }
 function Set-LoadOnStart([bool]$On) {
-    $pk = Get-ChildItem 'HKCU:\Software\Tandem Commander\0.1\Plugins' | Where-Object { $_.GetValue('DLL') -match 'filecomp\.spl$' } | Select-Object -First 1
+    $pk = Get-ChildItem 'HKCU:\Software\Tandem Commander\Settings\Plugins' | Where-Object { $_.GetValue('DLL') -match 'filecomp\.spl$' } | Select-Object -First 1
     if (-not $pk) { throw 'the File Comparator plug-in key was not found' }
     if ($On) { Set-ItemProperty -LiteralPath $pk.PSPath -Name 'Load On Start' -Value 1 -Type DWord } else { Remove-ItemProperty -LiteralPath $pk.PSPath -Name 'Load On Start' -ErrorAction SilentlyContinue }
     Set-ItemProperty -LiteralPath $FcKey -Name 'Load On Start' -Value $(if ($On) { 1 } else { 0 }) -Type DWord

@@ -79,8 +79,8 @@ try {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [IO.Compression.ZipFile]::CreateFromDirectory($files, $arcDir + '\t.zip')
     Set-Config
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
-    if ($LASTEXITCODE -eq 0) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d 'czech.slg' /f | Out-Null }
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
+    if ($LASTEXITCODE -eq 0) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d 'czech.slg' /f | Out-Null }
     Out ("plural_text_probe (feature 156), UI language czech.slg")
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; ACP {1}; desktop '{2}'" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [Drv098f]::GetACP(), [DeskLib098]::Name())

@@ -143,14 +143,14 @@ try {
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; desktop '{1}'; ACP {2}; registry key existed {3}; export SHA-256 {4}; deep folder {5} bytes" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [DeskLib098]::Name(), [Drv098f]::GetACP(), $existed, $regHash, (U8Len $Deep))
     Out ''
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
     if ($LASTEXITCODE -ne 0) {
         # without a configuration the program would start its default editor (notepad.exe)
         foreach ($c in @('SHORT', 'REL', 'ABS', 'CJK', 'OVER', 'U255', 'U256')) { if (Want $c) { Row $c 'ROW' 'NOT DRIVEN' 'no configuration in the registry - the editor of the run cannot be set' } }
     }
     else {
-        $ed = "$RegKey\0.1\Editors\1"
-        & reg.exe delete "$RegKey\0.1\Editors" /f 2>$null | Out-Null
+        $ed = "$RegKey\Settings\Editors\1"
+        & reg.exe delete "$RegKey\Settings\Editors" /f 2>$null | Out-Null
         & reg.exe add $ed /v 'Masks' /t REG_SZ /d '*.*' /f | Out-Null
         & reg.exe add $ed /v 'Command' /t REG_SZ /d ($env:SystemRoot + '\System32\rundll32.exe') /f | Out-Null
         & reg.exe add $ed /v 'Arguments' /t REG_SZ /d '' /f | Out-Null

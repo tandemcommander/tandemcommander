@@ -134,7 +134,7 @@ function S([int[]]$codes) { return -join ($codes | ForEach-Object { [char]::Conv
 $UniName = 'Kon' + [char]0x00ED + [char]0x010D + 'ek ' + (S 0x65E5, 0x672C) + ' o6.jpg'
 $Py = 'python'
 $Quad = Join-Path $PSScriptRoot 'quad267.py'
-$PvKey = $RegKey + '\0.1\Plugins Configuration\PictView'
+$PvKey = $RegKey + '\Settings\Plugins Configuration\PictView'
 
 function Exists([string]$p) { return [IO.File]::Exists($LP + $p) }
 function Sync([int]$Id) { [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000) }

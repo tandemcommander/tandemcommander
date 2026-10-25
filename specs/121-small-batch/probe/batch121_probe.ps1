@@ -198,7 +198,7 @@ $StartDir = $Root + '\start'
 $WaitClass = 'SalamanderSaveBits'
 $DmClass = 'Zar.DM.MainWin.WC'
 $DmLogClass = 'Zar.DM.LogWin.WC'
-$FcKey = 'HKCU:\Software\Tandem Commander\0.1\Plugins Configuration\File Comparator'
+$FcKey = 'HKCU:\Software\Tandem Commander\Settings\Plugins Configuration\File Comparator'
 $script:HotKeyNote = 'not set'
 
 # ---- names (pure ASCII source: the characters from their codes) ----------------------------------
@@ -278,7 +278,7 @@ function Lv-Count([IntPtr]$Lv) { return [Drv121]::SendR($Lv, 0x1004, 0, 0) }   #
 # Disk Map Ctrl+Shift+D, Checksum Calculate Ctrl+Shift+U, Registry Editor Find Ctrl+Shift+G,
 # FTP Show Logs Ctrl+Shift+L
 function Set-HotKeys {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key' }
     $map = @(
         @{ Dll = 'diskmap\.spl$'; Id = 1; Key = 0x10344 },
@@ -302,9 +302,9 @@ function Set-HotKeys {
     }
     return ($notes -join '; ')
 }
-function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
+function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
 function Set-LoadOnStart([bool]$On) {
-    $pk = Get-ChildItem 'HKCU:\Software\Tandem Commander\0.1\Plugins' -ErrorAction SilentlyContinue | Where-Object { $_.GetValue('DLL') -match 'filecomp\.spl$' } | Select-Object -First 1
+    $pk = Get-ChildItem 'HKCU:\Software\Tandem Commander\Settings\Plugins' -ErrorAction SilentlyContinue | Where-Object { $_.GetValue('DLL') -match 'filecomp\.spl$' } | Select-Object -First 1
     if (-not $pk) { return $false }
     if ($On) { Set-ItemProperty -LiteralPath $pk.PSPath -Name 'Load On Start' -Value 1 -Type DWord } else { Remove-ItemProperty -LiteralPath $pk.PSPath -Name 'Load On Start' -ErrorAction SilentlyContinue }
     if (Test-Path -LiteralPath $FcKey) { Set-ItemProperty -LiteralPath $FcKey -Name 'Load On Start' -Value $(if ($On) { 1 } else { 0 }) -Type DWord }

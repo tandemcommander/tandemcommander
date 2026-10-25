@@ -89,8 +89,8 @@ try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $Root
     Set-Config
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
-    if ($LASTEXITCODE -eq 0) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Command Line' /t REG_DWORD /d 1 /f | Out-Null }
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
+    if ($LASTEXITCODE -eq 0) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Command Line' /t REG_DWORD /d 1 /f | Out-Null }
     Out ("drain_loop_probe (feature 154)")
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; ACP {1}; desktop '{2}'" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [Drv098f]::GetACP(), [DeskLib098]::Name())

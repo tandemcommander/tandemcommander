@@ -422,9 +422,9 @@ try {
     foreach ($k in $Files.Keys) { [IO.File]::WriteAllText((Join-Path $dir $Files[$k]), 'feature 093 probe') }
     Out ("Fixture: {0}\{1}\ with files: {2}" -f (Esc $root), (Hex $dirName), (($Files.Keys | ForEach-Object { "$_=" + (Hex $Files[$_]) }) -join ' ; '))
 
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
     if ($LASTEXITCODE -eq 0) {
-        $cfg = "$RegKey\0.1\Configuration"
+        $cfg = "$RegKey\Settings\Configuration"
         & reg.exe add $cfg /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
         & reg.exe add "$cfg\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
         foreach ($v in @('Close Shell Window', 'Save History', 'Enable CmdLine History', 'Save CmdLine History', 'Save Configuration On Exit', 'Command Line')) {
@@ -650,7 +650,7 @@ try {
     # ---- exit, stored history ----
     Stop-Tc $id
     $hist = @()
-    $hk = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Tandem Commander\0.1\Configuration\Command History')
+    $hk = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Tandem Commander\Settings\Configuration\Command History')
     if ($hk) { foreach ($n in $hk.GetValueNames()) { $hist += [string]$hk.GetValue($n) }; $hk.Close() }
     foreach ($k in $flags.Keys) {
         $ok = ($hist -ccontains $cmds[$k])

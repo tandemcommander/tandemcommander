@@ -14,7 +14,7 @@
 $ErrorActionPreference = 'Stop'
 $script:TCRegPath = 'HKCU\Software\Tandem Commander'
 $script:TCPS = 'HKCU:\Software\Tandem Commander'
-$script:TCRoot = 'HKCU:\Software\Tandem Commander\0.1'
+$script:TCRoot = 'HKCU:\Software\Tandem Commander\Settings'
 $script:FixRel = 'Software\Tandem Commander Test 245'
 $script:FixPS = 'HKCU:\Software\Tandem Commander Test 245'
 $script:Utf8 = New-Object System.Text.UTF8Encoding($false)

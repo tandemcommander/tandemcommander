@@ -156,6 +156,11 @@ function Backup-Reg([string]$File) {
     if ($LASTEXITCODE -ne 0) { return $false }
     & cmd.exe /c "reg export `"$RegKey`" `"$File`" /y >nul 2>&1"
     if ($LASTEXITCODE -ne 0) { throw 'reg export failed' }
+    # feature 343: until a version with the version-free root has started once, the configuration
+    # is only in 0.1; the program copies it to Settings at its first start. Do the same here, after
+    # the backup, so that Set-Config and the rows change the key the program will use (Restore-Reg
+    # deletes the parent key and imports the backup, so the copy never outlives the probe).
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1 || (reg query `"$RegKey\0.1\Configuration`" >nul 2>&1 && reg copy `"$RegKey\0.1`" `"$RegKey\Settings`" /s /f >nul 2>&1)"
     return $true
 }
 function Restore-Reg([string]$File, [bool]$Existed) {
@@ -171,10 +176,10 @@ function Restore-Reg([string]$File, [bool]$Existed) {
     return ($ha -eq $hb)
 }
 function Set-Config {
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
     if ($LASTEXITCODE -eq 0) {
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
     }
 }
 $script:ClipSaved = $null; $script:ClipOk = $false

@@ -121,7 +121,7 @@ $Unlabelled = @(Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DriveType 
 function Run-Lang($L) {
     $lang = $L.Name
     $dump = $Root + '\dump_' + $lang + '.txt'
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d ($lang + '.slg') /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d ($lang + '.slg') /f | Out-Null
     $env:TC_PROBE_DRIVES_DUMP = $dump
     $id = 0
     try {

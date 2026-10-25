@@ -1,7 +1,7 @@
 ﻿<#
 .SYNOPSIS
     Feature 263 probe: the start-up import of a configuration file (-C <file>) never writes a key outside
-    the program's own root HKCU\Software\Tandem Commander\0.1.
+    the program's own root HKCU\Software\Tandem Commander\Settings.
 
 .DESCRIPTION
     Per row a fixture <row>\config.reg (UTF-16 "Windows Registry Editor Version 5.00", as regedit and the
@@ -9,12 +9,12 @@
     answered Yes (6) or OK (1) - the worst case of the old question. After the main window appears the
     program is closed and the registry is read.
       OURS    the control: only keys under our root - imported (Probe263 "v" = "1"), no message
-      OWNDEL  the control: a delete line inside our root ([-...\0.1\Probe263Old]) and a key - Old removed,
+      OWNDEL  the control: a delete line inside our root ([-...\Settings\Probe263Old]) and a key - Old removed,
               Probe263 imported, no message
       MIXED   our key + the foreign key HKCU\Software\TC263ProbeForeign - PASS = a message ("not a
               configuration file"), the foreign key NOT written and our key NOT imported
       NOROOT  only the foreign key - PASS = the foreign key NOT written, the refusal shown, no question
-      DELROOTONLY  only [-HKCU\Software\Tandem Commander\0.1] - refused, no question, the configuration kept
+      DELROOTONLY  only [-HKCU\Software\Tandem Commander\Settings] - refused, no question, the configuration kept
       EMPTY   a .reg file without any key - refused, no question (review 2)
       DELETE  our key + [-HKCU\Software\TC263ProbeVictim] (the victim made by the probe) - PASS = the
               victim still exists
@@ -49,8 +49,8 @@ if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; e
 . (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
 $Root = $TempRoot + '\tc263'
 $StartDir = $Root + '\start'
-$Ours = 'HKEY_CURRENT_USER\Software\Tandem Commander\0.1'
-$PsOurs = 'HKCU:\Software\Tandem Commander\0.1'
+$Ours = 'HKEY_CURRENT_USER\Software\Tandem Commander\Settings'
+$PsOurs = 'HKCU:\Software\Tandem Commander\Settings'
 $Foreign = 'TC263ProbeForeign'
 $Victim = 'TC263ProbeVictim'
 $Class = 'TC263ProbeClass'
@@ -161,7 +161,7 @@ try {
     if (Want 'EXPORTCLEAR') {
         # the export with "clear the key before import": the delete line of the root, the parents, the whole configuration
         $tmp = $Root + '\current.reg'
-        & cmd.exe /c "reg export `"$RegKey\0.1`" `"$tmp`" /y >nul 2>&1"
+        & cmd.exe /c "reg export `"$RegKey\Settings`" `"$tmp`" /y >nul 2>&1"
         $cur = @([IO.File]::ReadAllLines($LP + $tmp, [Text.Encoding]::Unicode) | Select-Object -Skip 1)
         Run-Case 'EXPORTCLEAR' (@("[-$Ours]", '') + $parents + $cur + @('') + $ourKey) $null { param($f) $f.Value -eq '1' -and $f.Config -and $f.Msgs -eq 'no window' }
     }

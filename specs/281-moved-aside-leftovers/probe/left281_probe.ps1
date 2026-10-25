@@ -54,7 +54,7 @@ if ($others.Count) { Write-Output ('NOT RUN: tandemcommander.exe already runs: '
 . (Join-Path $PSScriptRoot '..\..\098-long-path-overruns\probe\fix_probe_lib.ps1')
 $Root = $TempRoot + '\tc281_left'
 $StartDir = $Root + '\start'
-$ConfKey = 'HKCU:\Software\Tandem Commander\0.1\Configuration\Confirmation'
+$ConfKey = 'HKCU:\Software\Tandem Commander\Settings\Configuration\Confirmation'
 $SeamVar = 'TC_PROBE_MOVE_BACK_FAIL'
 $ReopenRx = '^(Create Directory|Edit New File|Quick Rename|Rename File)$'
 

@@ -113,7 +113,7 @@ $Addr = 'ftp://127.0.0.1:' + $Port
 $Server = $null
 
 function Sync([int]$Id) { [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000) }
-function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
+function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
 function Start-P {
     $a = @('-t', 'T134', '-l', ('"{0}"' -f $StartDir), '-r', ('"{0}"' -f $StartDir), '-p', '1')
     $p = Start-Process -FilePath $Exe -ArgumentList $a -PassThru
@@ -191,7 +191,7 @@ function Connect([int]$Id, [string]$RemoteDir) {
     return $loc
 }
 function Set-PluginHotKey([string]$DllRx, [int]$MenuId, [int]$HotKey) {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key' }
     foreach ($k in @(Get-ChildItem $plugins)) {
         $dll = (Get-ItemProperty $k.PSPath -ErrorAction SilentlyContinue).DLL
@@ -234,7 +234,7 @@ function Allow-QueueQuestion {
 
 # sets a DWORD of the FTP plug-in's configuration for this run (the registry key is restored)
 function Set-FtpConfig([string]$Name, [int]$Value) {
-    & reg.exe add "$RegKey\0.1\Plugins Configuration\FTP" /v $Name /t REG_DWORD /d $Value /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Plugins Configuration\FTP" /v $Name /t REG_DWORD /d $Value /f | Out-Null
     return ("'" + $Name + "' = " + $Value + ' (reg exit ' + $LASTEXITCODE + ')')
 }
 

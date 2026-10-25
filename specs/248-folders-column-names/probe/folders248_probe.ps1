@@ -64,7 +64,7 @@ $StartDir = $Root + '\start'
 if (-not $ShotDir) { $ShotDir = $Root + '\shots' }
 
 function Sync([int]$Id) { [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000) }
-function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
+function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
 function Has-NonAscii([string]$s) { foreach ($c in $s.ToCharArray()) { if ([int]$c -gt 127) { return $true } }; return $false }
 
 # the shell's column names of the Desktop (index 0..3)

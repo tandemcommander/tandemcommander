@@ -273,9 +273,9 @@ try {
     [void][IO.Directory]::CreateDirectory($empty)
     Write-Host ("Folder  : {0}  ({1}; created in {2:F1} s)" -f $dir, $what, $sw.Elapsed.TotalSeconds)
 
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
     if ($LASTEXITCODE -eq 0) {
-        & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
     }
 
     # ---- start-up ----

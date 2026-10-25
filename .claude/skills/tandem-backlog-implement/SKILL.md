@@ -403,7 +403,8 @@ with file:line and a reproduction.
    In its *Index by area*, add `<NNN>` to the row whose title fits the
    feature; if no row fits, leave the index unchanged.
 5. `CHANGELOG.md`, when the change is user-visible: an entry at the top of
-   the section whose heading ends `— unreleased` — bold symptom, `(feature
+   the section `## [Unreleased]` (feature 343; older trees: the heading that
+   ends `— unreleased`) — bold symptom, `(feature
    <NNN>)`, what it does now, the limits that remain — in the style of the
    entries around it. No such section → do not create one (versions are
    the maintainer's): put the entry text into `closing-report.md` and add

@@ -80,7 +80,7 @@ public static class Menu262
 $Root = $TempRoot + '\tc262'
 $StartDir = $Root + '\start'
 $Files = $Root + '\files'
-$CvKey = 'HKCU\Software\Tandem Commander\0.1\Plugins Configuration\CODEVIEW'
+$CvKey = 'HKCU\Software\Tandem Commander\Settings\Plugins Configuration\CODEVIEW'
 $Corpus = Join-Path $PSScriptRoot '..\..\..\src\plugins\codeview\test\corpus\encodings'
 
 function Put-Bytes([string]$Path, [byte[]]$Bytes) {
@@ -125,7 +125,7 @@ function Close-View([IntPtr]$W) {
     while ($sw.Elapsed.TotalSeconds -lt 8 -and [Drv098f]::IsWindow($W)) { Start-Sleep -Milliseconds 150 }
 }
 function Reg-Convert {   # the stored value, exactly (UTF-16 from the registry)
-    $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Tandem Commander\0.1\Plugins Configuration\CODEVIEW')
+    $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Tandem Commander\Settings\Plugins Configuration\CODEVIEW')
     if (-not $k) { return '<no key>' }
     try { return [string]$k.GetValue('DefaultConvert', '<no value>') } finally { $k.Close() }
 }
@@ -252,7 +252,7 @@ try {
     catch { Row 'THIRD' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row 'THIRD' $id $null $before } }
     if ($kName) {
-        $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Tandem Commander\0.1\Plugins Configuration\CODEVIEW')
+        $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Tandem Commander\Settings\Plugins Configuration\CODEVIEW')
         $v = '<no key>'; if ($k) { $v = [string]$k.GetValue('DefaultConvert', '<no value>'); $k.Close() }
         Row 'NASAVED' 'RUN' (V ($v -ceq $kName)) ("DefaultConvert = '{0}' (want '{1}')" -f (Esc $v), (Esc $kName))
         $id = 0; $before = Reports

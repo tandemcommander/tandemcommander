@@ -90,7 +90,7 @@ public static class Drv084
 
 $MainClass = 'TandemCommanderMainWindowVer01'
 $regRoot = 'HKCU\Software\Tandem Commander'
-$regCfg = "$regRoot\0.1"
+$regCfg = "$regRoot\Settings"
 $failures = New-Object System.Collections.ArrayList
 $script:backup = $null
 $script:proc = $null

@@ -619,28 +619,28 @@ try {
     }
     Out ("Fixture: {0}\{{{1} | {2} | {3}}}\<test text>.zip" -f (Esc $root), (Hex $NameCyr), (Hex $NameCjk), (Hex $NameEmo))
 
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
     if ($LASTEXITCODE -eq 0) {
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
         # seeded for the Configuration pages (removed again by the registry restore):
         # hot path slot 30 and user-menu item 1 hold text outside the code page
-        $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Tandem Commander\0.1\Hot Paths\30')
+        $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Tandem Commander\Settings\Hot Paths\30')
         $k.SetValue('Name', $TestText, 'String'); $k.SetValue('Path', $dirs['cjk'], 'String'); $k.SetValue('Visible', 1, 'DWord'); $k.Close()
-        $um = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Tandem Commander\0.1\User Menu\1')
+        $um = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Tandem Commander\Settings\User Menu\1')
         if ($um) { $um.Close(); $script:SeededUM = $false }
         else {
-            $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Tandem Commander\0.1\User Menu\1')
+            $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Tandem Commander\Settings\User Menu\1')
             $k.SetValue('Item Name', 'tc093', 'String'); $k.SetValue('Command', ($dirs['cjk'] + '\x.exe'), 'String')
             $k.SetValue('Arguments', $TestText, 'String'); $k.SetValue('Initial Directory', $dirs['cjk'], 'String')
             $k.SetValue('Execute Through Shell', 1, 'DWord'); $k.SetValue('Close Shell Window', 1, 'DWord'); $k.Close()
             # item 2: its arguments make the program ask for the two names to compare
             # (the "Show Names To Compare" confirmation is switched on for the run)
-            $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Tandem Commander\0.1\User Menu\2')
+            $k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Tandem Commander\Settings\User Menu\2')
             $k.SetValue('Item Name', 'tc093cmp', 'String'); $k.SetValue('Command', ($dirs['cjk'] + '\x.exe'), 'String')
             $k.SetValue('Arguments', '$(FileToCompareLeft) $(FileToCompareRight)', 'String'); $k.SetValue('Initial Directory', '', 'String')
             $k.SetValue('Execute Through Shell', 1, 'DWord'); $k.SetValue('Close Shell Window', 1, 'DWord'); $k.Close()
-            & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Show Names To Compare' /t REG_DWORD /d 1 /f | Out-Null
+            & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Show Names To Compare' /t REG_DWORD /d 1 /f | Out-Null
             $script:SeededUM = $true
         }
         Out ("Seeded in the registry: Hot Paths\30 Name=<test text> Path=<cjk folder>; User Menu\1 (seeded={0}) Command=<cjk folder>\x.exe Arguments=<test text> Initial Directory=<cjk folder>" -f $script:SeededUM)

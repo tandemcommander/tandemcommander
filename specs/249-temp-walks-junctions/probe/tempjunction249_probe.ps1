@@ -48,8 +48,8 @@ $Root = $TempRoot + '\tc249'
 $StartDir = $Root + '\start'
 $Fake = $Root + '\fake\7z.exe'
 $FakeCfg = $Root + '\fake\fake7z.cfg'
-$RegPredef = 'HKCU:\Software\Tandem Commander\0.1\Packers & Unpackers\Predefined Packers'
-$RegAssoc = 'HKCU:\Software\Tandem Commander\0.1\Packers & Unpackers\Archive Association'
+$RegPredef = 'HKCU:\Software\Tandem Commander\Settings\Packers & Unpackers\Predefined Packers'
+$RegAssoc = 'HKCU:\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association'
 
 $FakeSource = @'
 using System;
@@ -146,7 +146,7 @@ function Run-Sweep {
     try {
         # "Reload Environment Variables" (on by default) rebuilds the environment from the registry at
         # start - TMP would be the user's again and the sweep would look into the real %TEMP%
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Reload Environment Variables' /t REG_DWORD /d 0 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Reload Environment Variables' /t REG_DWORD /d 0 /f | Out-Null
         $env:TMP = $tmp; $env:TEMP = $tmp
         try { $id = Start-Mine @('-t', 'T249', '-l', ('"{0}"' -f $StartDir), '-r', ('"{0}"' -f $StartDir), '-p', '1') }
         finally { $env:TMP = $oldTmp; $env:TEMP = $oldTemp }

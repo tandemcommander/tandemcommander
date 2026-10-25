@@ -335,7 +335,7 @@ function Run-Move([string]$Case, [string]$Kind, [bool]$Czech) {
     $arc = $OutDir + '\' + $Case + '.zip'
     $before = Reports; $id = 0; $fatal = $null
     try {
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d $(if ($Czech) { 'czech.slg' } else { 'english.slg' }) /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d $(if ($Czech) { 'czech.slg' } else { 'english.slg' }) /f | Out-Null
         $id = Start-Tc $src
         Post-Cmd (Get-Main $id) 842   # select all (one item)
         Settle $id 500
@@ -368,7 +368,7 @@ function Run-Move([string]$Case, [string]$Kind, [bool]$Czech) {
     catch { Row $Case 'ERROR' 'FAIL' $_.Exception.Message }
     finally {
         if ($id) { End-Row $Case $id $fatal $before }
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
         Remove-Fixtures
     }
 }

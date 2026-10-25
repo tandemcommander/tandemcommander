@@ -697,7 +697,7 @@ function Run-UndImage {
 }
 
 # ---- FTP Connect dialog: a refused field (review B1) ----------------------------------------
-$FtpBm = 'HKCU:\Software\Tandem Commander\0.1\Plugins Configuration\FTP\Bookmarks\1'
+$FtpBm = 'HKCU:\Software\Tandem Commander\Settings\Plugins Configuration\FTP\Bookmarks\1'
 function Ftp-Fixture([int]$Port) {
     if (-not (Test-Path $FtpBm)) { [void](New-Item -Path $FtpBm -Force) }
     Set-ItemProperty -Path $FtpBm -Name 'Name' -Value 'B104' -Type String

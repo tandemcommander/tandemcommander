@@ -10,7 +10,7 @@
     tab lists of both panels are removed, so every run starts with one tab per panel.
 
     State is read from the program itself: Options > Save Configuration (posted) writes the tab list
-    of the left panel (HKCU\Software\Tandem Commander\0.1\Left Panel\Tabs\<n>\Path, Sort Type,
+    of the left panel (HKCU\Software\Tandem Commander\Settings\Left Panel\Tabs\<n>\Path, Sort Type,
     Active Tab), which the probe reads after the instance went idle.
 
     Keys with Ctrl / Shift: the probe attaches its thread to the program's input queue
@@ -143,9 +143,9 @@ public static class Tc312
 $Root = $TempRoot + '\tc312'
 $R = $Root + '\R'
 $StartDir = $Root + '\start'
-$Cfg = 'HKCU:\Software\Tandem Commander\0.1\Configuration'
-$CfgReg = $RegKey + '\0.1\Configuration'
-$LeftKey = 'HKCU:\Software\Tandem Commander\0.1\Left Panel'
+$Cfg = 'HKCU:\Software\Tandem Commander\Settings\Configuration'
+$CfgReg = $RegKey + '\Settings\Configuration'
+$LeftKey = 'HKCU:\Software\Tandem Commander\Settings\Left Panel'
 
 # commands (src/resource.rh2)
 $CM_SAVECONFIG = 687; $CM_CONFIGURATION = 686; $CM_EDITLINE = 745; $CM_TOGGLEEDITLINE = 746
@@ -157,7 +157,7 @@ function Prep-Registry([int]$BrowserKeys, [int]$Lfp) {
     & cmd.exe /c "reg query `"$CfgReg`" >nul 2>&1"
     if ($LASTEXITCODE -ne 0) { return $false }
     Set-Config
-    foreach ($p in @('Left Panel', 'Right Panel')) { & cmd.exe /c "reg delete `"$RegKey\0.1\$p\Tabs`" /f >nul 2>&1" }
+    foreach ($p in @('Left Panel', 'Right Panel')) { & cmd.exe /c "reg delete `"$RegKey\Settings\$p\Tabs`" /f >nul 2>&1" }
     & reg.exe add $CfgReg /v 'Panel Tabs' /t REG_DWORD /d 1 /f | Out-Null
     & reg.exe add $CfgReg /v 'Command Line' /t REG_DWORD /d 1 /f | Out-Null
     if ($BrowserKeys -lt 0) { & cmd.exe /c "reg delete `"$CfgReg`" /v `"Browser Tab Shortcuts`" /f >nul 2>&1" }

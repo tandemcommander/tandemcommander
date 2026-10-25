@@ -110,8 +110,8 @@ public static class Cb318
 }
 $Root = $TempRoot + '\tc318_pack'
 $StartDir = $Root + '\start'
-$PackKey = $RegKey + '\0.1\Packers & Unpackers\Custom Packers'
-$CnfKey = $RegKey + '\0.1\Configuration\Confirmation'
+$PackKey = $RegKey + '\Settings\Packers & Unpackers\Custom Packers'
+$CnfKey = $RegKey + '\Settings\Configuration\Confirmation'
 $Sup1 = [string][char]0x00B9   # superscript one
 
 function Vis([string]$s) { if ($s.Length -gt 60) { $s = '...(' + $s.Length + ') ' + $s.Substring($s.Length - 30) }; $s = $s -replace ' ', '<sp>'; $s = $s.Replace($Sup1, '<sup1>'); return ("'" + $s + "'") }

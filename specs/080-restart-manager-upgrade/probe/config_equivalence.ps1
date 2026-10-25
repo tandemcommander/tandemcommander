@@ -59,8 +59,8 @@ function Reset-Config {
     & cmd.exe /c "reg delete `"$key`" /f >nul 2>&1"
     & cmd.exe /c "reg import `"$Backup`" >nul 2>&1"
     if ($LASTEXITCODE -ne 0) { throw "reg import failed: $Backup" }
-    & reg.exe add "$key\0.1\Configuration" /v 'Save Configuration On Exit' /t REG_DWORD /d $SaveOnExit /f | Out-Null
-    & reg.exe add "$key\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
+    & reg.exe add "$key\Settings\Configuration" /v 'Save Configuration On Exit' /t REG_DWORD /d $SaveOnExit /f | Out-Null
+    & reg.exe add "$key\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
 }
 
 function Start-Prepared {
@@ -84,7 +84,7 @@ $id = Start-Prepared
 Invoke-Ps $drive @('-Action', 'close', '-ProcessId', $id) | Out-Null
 Wait-Exit $id
 $manual = Join-Path $OutDir 'cfg-manual-exit.reg'
-& reg.exe export "$key\0.1" $manual /y | Out-Null
+& reg.exe export "$key\Settings" $manual /y | Out-Null
 
 # run 2: the installer's request
 Reset-Config
@@ -92,7 +92,7 @@ $id = Start-Prepared
 Invoke-Ps $rm @('-ExePath', $Exe) | Where-Object { $_ -match 'RmShutdown|Survivors' } | ForEach-Object { Write-Host $_ }
 Wait-Exit $id
 $closeapp = Join-Path $OutDir 'cfg-closeapp.reg'
-& reg.exe export "$key\0.1" $closeapp /y | Out-Null
+& reg.exe export "$key\Settings" $closeapp /y | Out-Null
 
 # compare value by value
 function Read-Reg([string]$file) {
@@ -118,7 +118,7 @@ foreach ($k in $keys) {
         $vb = $b[$k]; if ($null -eq $vb) { $vb = '<absent>' }
         if ($va.Length -gt 70) { $va = $va.Substring(0, 70) + '...' }
         if ($vb.Length -gt 70) { $vb = $vb.Substring(0, 70) + '...' }
-        Write-Host ("DIFF {0}`n     manual  : {1}`n     closeapp: {2}" -f $k.Replace('HKEY_CURRENT_USER\Software\Tandem Commander\0.1', ''), $va, $vb)
+        Write-Host ("DIFF {0}`n     manual  : {1}`n     closeapp: {2}" -f $k.Replace('HKEY_CURRENT_USER\Software\Tandem Commander\Settings', ''), $va, $vb)
     }
 }
 Write-Host ("Values: manual {0}, closeapp {1}; differing: {2}" -f $a.Count, $b.Count, $diff)

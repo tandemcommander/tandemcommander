@@ -432,27 +432,27 @@ $ViewLog = $TempRoot + '\tc112\view.log'
 $ReportDir = Join-Path $env:LOCALAPPDATA 'Tandem Commander'
 $Marker = 'edited112'
 $ArcFix = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\108-archive-edit-name-collision\probe\arcfix.py'))
-$DrvKey = "$RegKey\0.1\Configuration\Drive Special Settings"
+$DrvKey = "$RegKey\Settings\Configuration\Drive Special Settings"
 $Members = @('x.txt', 'y.txt')
 $script:NetDrive = $null
 
 function Set-ProbeConfig {
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
     $fresh = ($LASTEXITCODE -ne 0)
     if (-not $fresh) {
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Archive' /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Archive' /t REG_DWORD /d 1 /f | Out-Null
         $cmd = Join-Path $env:SystemRoot 'System32\cmd.exe'
         $sys = Join-Path $env:SystemRoot 'System32'
-        & cmd.exe /c "reg delete `"$RegKey\0.1\Editors`" /f >nul 2>&1"
-        $k = "$RegKey\0.1\Editors\1"
+        & cmd.exe /c "reg delete `"$RegKey\Settings\Editors`" /f >nul 2>&1"
+        $k = "$RegKey\Settings\Editors\1"
         & reg.exe add $k /v 'Masks' /t REG_SZ /d '*.*' /f | Out-Null
         & reg.exe add $k /v 'Command' /t REG_SZ /d $cmd /f | Out-Null
         Set-ItemProperty -LiteralPath ('Registry::' + $k.Replace('HKCU\', 'HKEY_CURRENT_USER\')) -Name 'Arguments' -Value ('/c echo ' + $Marker + '>>"$(FullName)"')
         & reg.exe add $k /v 'Initial Directory' /t REG_SZ /d $sys /f | Out-Null
-        & cmd.exe /c "reg delete `"$RegKey\0.1\Viewers`" /f >nul 2>&1"
-        $v = "$RegKey\0.1\Viewers\1"
+        & cmd.exe /c "reg delete `"$RegKey\Settings\Viewers`" /f >nul 2>&1"
+        $v = "$RegKey\Settings\Viewers\1"
         & reg.exe add $v /v 'Masks' /t REG_SZ /d '*.*' /f | Out-Null
         & reg.exe add $v /v 'Type' /t REG_DWORD /d 0 /f | Out-Null
         & reg.exe add $v /v 'Command' /t REG_SZ /d $cmd /f | Out-Null

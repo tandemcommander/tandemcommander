@@ -57,9 +57,9 @@ try {
     foreach ($lang in $langs) {
         if (-not (Test-Path -LiteralPath (Join-Path $langDir ($lang + '.slg')))) { Row $lang 'PAGE' 'NOT DRIVEN' 'no language module'; continue }
         Set-Config
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d ($lang + '.slg') /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Last Focused Page' /t REG_DWORD /d 1 /f | Out-Null
-        if ($NoFilterValue) { & cmd.exe /c "reg delete `"$RegKey\0.1\Configuration`" /v `"Quick Search Filter`" /f >nul 2>&1" }
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d ($lang + '.slg') /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Last Focused Page' /t REG_DWORD /d 1 /f | Out-Null
+        if ($NoFilterValue) { & cmd.exe /c "reg delete `"$RegKey\Settings\Configuration`" /v `"Quick Search Filter`" /f >nul 2>&1" }
         $before = Reports; $id = 0
         try {
             $a = @('-t', 'T244G', '-l', ('"{0}\left"' -f $Root), '-r', ('"{0}\right"' -f $Root), '-p', '1')

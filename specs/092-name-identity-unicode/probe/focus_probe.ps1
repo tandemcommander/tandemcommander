@@ -590,8 +590,8 @@ try {
     $dF2x = Join-Path $root 'P4'; $nF2x = @('b1.txt', ($Hc + '.txt'), ($La + '.txt'), 'z1.txt'); New-Files $dF2x $nF2x
     $dF4 = Join-Path $root 'P5'; $dF4c = Join-Path $root 'P5c'
 
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
-    if ($LASTEXITCODE -eq 0) { & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null }
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
+    if ($LASTEXITCODE -eq 0) { & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null }
 
     foreach ($b in @(@('OLD', $OldExe), @('NEW', $NewExe))) {
         $build = $b[0]; $exe = $b[1]

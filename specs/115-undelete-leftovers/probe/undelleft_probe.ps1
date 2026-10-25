@@ -364,7 +364,7 @@ function Run-View($Exp) {
 # gives the plug-in's menu item 2 (Restore Encrypted Files) Ctrl+Shift+U for this session: the item
 # loaded from the registry keeps a "dirty" key (HOTKEY_DIRTY 0x10000) when the plug-in reconnects
 function Set-RestoreHotKey {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key' }
     foreach ($k in @(Get-ChildItem $plugins)) {
         $dll = (Get-ItemProperty $k.PSPath -ErrorAction SilentlyContinue).DLL

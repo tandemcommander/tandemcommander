@@ -35,7 +35,7 @@ if (-not $Lib) { $Lib = Join-Path $PSScriptRoot '..\..\098-long-path-overruns\pr
 $Root = $TempRoot + '\tc256'
 $StartDir = $Root + '\start'
 $OutDir = $Root + '\out'
-$UmKey = 'Software\Tandem Commander\0.1\User Menu'
+$UmKey = 'Software\Tandem Commander\Settings\User Menu'
 $PopupClass = 'PopupMenuClass'
 
 $Items = [ordered]@{

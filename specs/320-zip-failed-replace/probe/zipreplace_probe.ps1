@@ -106,8 +106,8 @@ public static class Cb320
 }
 $Root = $TempRoot + '\tc320_zipreplace'
 $StartDir = $Root + '\start'
-$CnfKey = $RegKey + '\0.1\Configuration\Confirmation'
-$PackKey = $RegKey + '\0.1\Packers & Unpackers\Custom Packers'
+$CnfKey = $RegKey + '\Settings\Configuration\Confirmation'
+$PackKey = $RegKey + '\Settings\Packers & Unpackers\Custom Packers'
 
 function Vis([string]$s) { if ($s.Length -gt 60) { $s = '...(' + $s.Length + ') ' + $s.Substring($s.Length - 30) }; $s = $s -replace ' ', '<sp>'; return ("'" + $s + "'") }
 function Join-Vis($a) { if (@($a).Count) { return ((@($a) | ForEach-Object { Vis $_ }) -join ', ') } return 'none' }

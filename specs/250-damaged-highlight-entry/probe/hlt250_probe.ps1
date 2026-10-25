@@ -40,7 +40,7 @@ if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; e
 . $Lib
 $Root = $TempRoot + '\tc250'
 $StartDir = $Root + '\start'
-$HltSub = 'Software\Tandem Commander\0.1\Colors\Panel Items Hilighting'
+$HltSub = 'Software\Tandem Commander\Settings\Colors\Panel Items Hilighting'
 $Str = [Microsoft.Win32.RegistryValueKind]::String
 $Dw = [Microsoft.Win32.RegistryValueKind]::DWord
 

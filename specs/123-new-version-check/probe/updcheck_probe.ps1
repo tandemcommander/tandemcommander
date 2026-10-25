@@ -157,8 +157,8 @@ $UiaOk = $false
 try { Add-Type -AssemblyName UIAutomationClient; Add-Type -AssemblyName UIAutomationTypes; $UiaOk = $true } catch { }
 # ---- constants ----------------------------------------------------------------
 $Z = [IntPtr]::Zero
-$UcPath = 'Software\Tandem Commander\0.1\Update Check'
-$CfgPath = 'Software\Tandem Commander\0.1\Configuration'
+$UcPath = 'Software\Tandem Commander\Settings\Update Check'
+$CfgPath = 'Software\Tandem Commander\Settings\Configuration'
 $HKCU = [Microsoft.Win32.Registry]::CurrentUser
 $Work = Join-Path $env:TEMP 'tc123_probe'
 $ShotDir = Join-Path $PSScriptRoot 'shots'
@@ -1907,7 +1907,7 @@ try {
                 foreach ($l in $head) { Out ('      | ' + $l) }
                 Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue
             }
-            if (-not (Test-Path "Registry::HKEY_CURRENT_USER\Software\Tandem Commander\0.1\Configuration")) {
+            if (-not (Test-Path "Registry::HKEY_CURRENT_USER\Software\Tandem Commander\Settings\Configuration")) {
                 # group G2 removed the key: bring the user's configuration back for the next groups
                 if ($existed) { & cmd.exe /c "reg delete `"$RegKey`" /f >nul 2>&1"; & cmd.exe /c "reg import `"$RegFile`" >nul 2>&1" }
             }

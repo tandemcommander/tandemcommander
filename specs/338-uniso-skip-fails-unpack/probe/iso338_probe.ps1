@@ -152,8 +152,8 @@ try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir
     Set-Config
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
-    if ($LASTEXITCODE -eq 0) { & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'File Overwrite' /t REG_DWORD /d 1 /f | Out-Null }
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
+    if ($LASTEXITCODE -eq 0) { & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'File Overwrite' /t REG_DWORD /d 1 /f | Out-Null }
     Out ("iso338_probe (feature 338) {0}" -f $Label)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed)

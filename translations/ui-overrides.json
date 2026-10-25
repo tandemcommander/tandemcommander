@@ -331,7 +331,8 @@
       "IDS_UPDATE_ABOUT_LATEST": "Toto je najnovšia verzia (skontrolované %s).",
       "IDS_UPDATE_CHECKNOWLINK": "Skontrolovať teraz",
       "IDS_UPDATE_ERR_START": "Novú verziu sa nepodarilo skontrolovať: kontrolu sa nepodarilo spustiť. Skúste to znova.",
-      "IDC_QUICKSEARCH_FILTER": "Rýchle hľadanie: &text kdekoľvek v názve, zobraziť len zhody"
+      "IDC_QUICKSEARCH_FILTER": "Rýchle hľadanie: &text kdekoľvek v názve, zobraziť len zhody",
+      "IDS_CFGMIGRATE_FAILED": "Program Tandem Commander nemohol presunúť vaše nastavenia na nové miesto v registri (HKEY_CURRENT_USER\\\\%s).\\n\\nTentoraz ich používa tam, kde sa nachádzajú (HKEY_CURRENT_USER\\\\%s), a pri ďalšom spustení to skúsi znova. Nič nebolo odstránené."
     },
     "german": {
       "IDS_MENU_OPT_VSB_TABS": "&Registerkarten",
@@ -520,7 +521,8 @@
       "IDS_UPDATE_ERR_START": "No se ha podido comprobar si hay una nueva versión: no se ha podido iniciar la comprobación. Inténtelo de nuevo.",
       "IDS_PACKINTOITSELF": "No se puede comprimir un archivo en sí mismo. Deje el archivo (o el directorio que lo contiene) fuera de la selección.",
       "IDS_CANNOTMOVEDIRINTOITSELF": "No se puede trasladar un directorio a sí mismo ni a uno de sus subdirectorios.",
-      "IDC_QUICKSEARCH_FILTER": "Búsqueda rápida: texto en cualquier &parte del nombre, solo coincidencias"
+      "IDC_QUICKSEARCH_FILTER": "Búsqueda rápida: texto en cualquier &parte del nombre, solo coincidencias",
+      "IDS_CFGMIGRATE_FAILED": "Tandem Commander no ha podido trasladar su configuración a su nueva ubicación en el Registro (HKEY_CURRENT_USER\\\\%s).\\n\\nEn esta ocasión, la utilizará en su ubicación actual (HKEY_CURRENT_USER\\\\%s) y volverá a intentarlo la próxima vez que se inicie. No se ha eliminado nada."
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -571,6 +573,10 @@
       "Spanish texts were longer and would be clipped, so they are pinned shorter, each with an",
       "accelerator that is free on that page in that language. Hungarian 'Keresés: %s (%d a %d-ből)'",
       "attached the case ending to the wrong number; '(%d / %d)' reads naturally."
+    ],
+    "_feature_343": [
+      "IDS_CFGMIGRATE_FAILED (the configuration could not be moved to the version-free root): sk DeepL said 'to skúsia znova' (plural - 'they will try'); the subject is the program: 'to skúsi znova'.",
+      "es DeepL said 'utilizará la configuración tal y como está' ('as it is'); the text means 'where they are': 'la utilizará en su ubicación actual'."
     ]
   },
   "zip": {

@@ -27,7 +27,7 @@ if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; e
 . (Join-Path 'E:\Projects\tandemcommander\specs\098-long-path-overruns\probe' 'fix_probe_lib.ps1')
 $Root = $TempRoot + '\tc197'
 $StartDir = $Root + '\start'
-$ConfKey = 'HKCU:\Software\Tandem Commander\0.1\Configuration'
+$ConfKey = 'HKCU:\Software\Tandem Commander\Settings\Configuration'
 
 function Cmd([string]$c) {
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'

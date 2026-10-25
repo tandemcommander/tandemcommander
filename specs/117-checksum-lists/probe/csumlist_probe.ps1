@@ -313,7 +313,7 @@ function Run-List([int]$Id, $L) {
 # gives the plug-in's Calculate (menu item ID 1) Ctrl+Shift+U and Verify (ID 2) Ctrl+Shift+V for this
 # session (registry, "dirty" so the plug-in keeps them; the whole key is restored afterwards)
 function Set-CsumHotKeys {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key' }
     foreach ($k in @(Get-ChildItem $plugins)) {
         $dll = (Get-ItemProperty $k.PSPath -ErrorAction SilentlyContinue).DLL

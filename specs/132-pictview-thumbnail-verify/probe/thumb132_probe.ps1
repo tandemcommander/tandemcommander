@@ -131,7 +131,7 @@ function Start-P([string]$Left) {
     return $p.Id
 }
 function Set-PluginHotKey([string]$DllRx, [int]$MenuId, [int]$HotKey) {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key' }
     foreach ($k in @(Get-ChildItem $plugins)) {
         $dll = (Get-ItemProperty $k.PSPath -ErrorAction SilentlyContinue).DLL

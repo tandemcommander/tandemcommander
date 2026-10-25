@@ -140,9 +140,9 @@ Out ("Feature 244 probe {0}; exe {1}; expect {2}; registry backup {3} (existed {
 if ($existed) { Out ('export SHA-256 ' + (Get-FileHash -LiteralPath $RegBackup).Hash) }
 try {
     Set-Config
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Quick Search Enter Alt' /t REG_DWORD /d 0 /f | Out-Null
-    if ($FilterOption -ge 0) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Quick Search Filter' /t REG_DWORD /d $FilterOption /f | Out-Null }
-    $hid = (& reg.exe query "$RegKey\0.1\Configuration" /v 'Hide Hidden and System Files and Directories' 2>$null) -join ' '
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Quick Search Enter Alt' /t REG_DWORD /d 0 /f | Out-Null
+    if ($FilterOption -ge 0) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Quick Search Filter' /t REG_DWORD /d $FilterOption /f | Out-Null }
+    $hid = (& reg.exe query "$RegKey\Settings\Configuration" /v 'Hide Hidden and System Files and Directories' 2>$null) -join ' '
     $script:ShowHidden = -not ($hid -match '0x1\b')
     Out ("hidden files shown: {0} (registry: {1})" -f $script:ShowHidden, ($hid -replace '\s+', ' ').Trim())
     $hs = @(); if ($script:ShowHidden) { $hs = @('secret_chat.txt') }

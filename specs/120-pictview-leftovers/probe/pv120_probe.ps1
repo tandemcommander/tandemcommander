@@ -223,7 +223,7 @@ $CommentA = 'Plain comment'
 $Py = 'python'
 $PilCheck = Join-Path $PSScriptRoot '..\..\111-pictview-shown-image\probe\pilcheck.py'
 $Ref = Join-Path $PSScriptRoot 'ref120.py'
-$PvKey = $RegKey + '\0.1\Plugins Configuration\PictView'
+$PvKey = $RegKey + '\Settings\Plugins Configuration\PictView'
 
 function Bytes([string]$p) { if ([IO.File]::Exists($LP + $p)) { return , [IO.File]::ReadAllBytes($LP + $p) } else { return $null } }
 function Hash([string]$p) { $b = Bytes $p; if ($null -eq $b) { return '<missing>' }; $s = [Security.Cryptography.SHA256]::Create(); return ([BitConverter]::ToString($s.ComputeHash($b)) -replace '-', '').Substring(0, 16) }

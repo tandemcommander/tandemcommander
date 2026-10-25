@@ -31,11 +31,17 @@ affected — in `CLAUDE.md`.
   user/OS-visible surface, kernel-object/IPC names, URLs, translations and the
   installer (new AppId), with **no** config import from the old registry root
 - **Binary**: `tandemcommander.exe` (set via `<TargetName>` in `salamand.vcxproj`)
-- **Registry root**: `HKCU\Software\Tandem Commander\0.1` — never writes
+- **Registry root**: `HKCU\Software\Tandem Commander\Settings` — version-free
+  since feature 343; 0.1.0–0.1.10 used `…\0.1`, which a newer version copies
+  once at its first start (raw copy, compared, committed by one rename) and
+  keeps unchanged as a backup, never written again. Never writes
   Open Salamander/Altap/Newt Commander registry keys; Altap Salamander 2.5–4.0
   and Open Salamander 5.0 keys are read only by the user-started settings
   import (feature 245: *Options → Import Settings from Salamander* and its
   one-time offer at the first start), read-only, into a snapshot
+- **Version numbering**: Semantic Versioning `MAJOR.MINOR.PATCH` since feature
+  343 — MINOR for a release with features, PATCH for fixes only; the one
+  statement of the rule is `backlog/RELEASE.md` *Version numbering*
 - **Websites**: https://tandemcommander.org · repo github.com/tandemcommander/tandemcommander
 - **Copyright rule**: years up to 2026 → "Open Salamander Authors",
   2026 onward → **Pavel Stupka** (sftp+mdview plugins are solely his).

@@ -182,10 +182,10 @@ function Start-P([string]$Left) {
     Start-Sleep -Milliseconds 1500
     return $p.Id
 }
-function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
+function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
 # Registry Editor's Find command gets Ctrl+Shift+G for this session (the 118/121 method)
 function Set-HotKeys {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key' }
     $notes = @()
     foreach ($k in @(Get-ChildItem $plugins)) {

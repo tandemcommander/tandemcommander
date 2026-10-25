@@ -28,7 +28,8 @@ uses the `VERSINFO_*` macros, `translations/*/*.slt` `TEXTVERSION` (written
 by the Translator, ignored on import), `tools/winget/manifests/` (made by
 `publish.ps1` after publishing), older changelog sections, published
 release notes, build/interface history entries of other builds, test data,
-the registry root `Software\Tandem Commander\0.1`, `shellext.rc`'s
+the registry root `Software\Tandem Commander\Settings` (version-free since
+feature 343), `shellext.rc`'s
 `FILE_SALVER` (the shell extension is not shipped).
 
 Copyright years (`src/versinfo.rh2`, plug-in `versinfo.rh2`, standalone

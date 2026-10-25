@@ -33,7 +33,12 @@ inside archives or on FTP and SFTP servers, including the server name and your
 user name there), your hot paths and user menu, the programs you configured as
 viewers, editors and archivers, and the settings of each plugin. They are
 saved when you close the program (*Save configuration on exit*, on by default)
-or when you save the configuration yourself.
+or when you save the configuration yourself. They are kept in the subkey
+`Settings`. Versions 0.1.0 to 0.1.10 kept them in the subkey `0.1`; at its
+first start a newer version copies that subkey to `Settings` on this computer
+(nothing is sent anywhere) and leaves `0.1` unchanged as a backup, which it
+never writes again — you may delete it once you no longer need to go back to
+0.1.x.
 
 Recently used values are kept as history in the same place — for example file
 masks and text you searched for, copy and move targets, folders you changed
@@ -88,7 +93,7 @@ each network drive is connected. It stores and sends nothing of this.
 ### New version check
 
 For the check for a new version (see *Checking for a new version*) the
-program keeps, in the same registry key under `0.1\Update Check`: whether the
+program keeps, in the same registry key under `Settings\Update Check`: whether the
 check at start-up is on, when it last tried and whether the server answered,
 when it last succeeded, the number and release date of the latest version it
 learned of, and a version you chose to skip. These values are written when

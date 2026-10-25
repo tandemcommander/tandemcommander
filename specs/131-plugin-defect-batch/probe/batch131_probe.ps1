@@ -50,7 +50,7 @@ function Start-P([string]$Left) {
     Start-Sleep -Milliseconds 1500
     return $p.Id
 }
-function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
+function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
 
 function Row-FtpPct {
     $before = Reports; $id = 0

@@ -57,7 +57,7 @@ if ($others.Count) { Write-Output ('NOT RUN: another tandemcommander.exe is runn
 $Root = $TempRoot + '\tc270_mask'
 $StartDir = $Root + '\start'
 $OutDir = $Root + '\out'
-$Key01 = 'HKCU:\Software\Tandem Commander\0.1'
+$Key01 = 'HKCU:\Software\Tandem Commander\Settings'
 $WmUserConfiguration = 0x8000 + 115
 $TooLong = 'too long'
 

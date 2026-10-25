@@ -53,7 +53,7 @@ if ($others.Count) { Write-Output 'REFUSED: tandemcommander.exe already runs'; e
 $Root = $TempRoot + '\tc226'
 $StartDir = $Root + '\start'
 $OutDir = $Root + '\out'
-$UmKey = 'Software\Tandem Commander\0.1\User Menu'
+$UmKey = 'Software\Tandem Commander\Settings\User Menu'
 $CzDir = 'p' + [char]0x0159 + [char]0x00ED + 'li' + [char]0x0161
 $CzFile = [string][char]0x017E + 'lu' + [char]0x0165 + 'ou' + [char]0x010D + 'k' + [char]0x00FD + '.txt'
 $JpDir = [string][char]0x6F22 + [char]0x5B57

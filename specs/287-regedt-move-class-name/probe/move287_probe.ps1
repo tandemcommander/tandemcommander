@@ -144,7 +144,7 @@ function Start-P {
     Start-Sleep -Milliseconds 1500
     return $proc.Id
 }
-function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
+function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
 function Template([int]$Id, [string]$English) {
     if ($Lang -eq 'english') { return $English }
     foreach ($line in [IO.File]::ReadAllLines((Join-Path $RepoRoot ("translations\{0}\regedt.slt" -f $Lang)), $Utf8)) {

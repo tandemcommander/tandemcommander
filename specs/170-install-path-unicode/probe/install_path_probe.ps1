@@ -109,7 +109,7 @@ try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir
     Set-Config
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d ($Lang + '.slg') /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d ($Lang + '.slg') /f | Out-Null
     Out ("install_path_probe (feature 170), expect: {0}, language {1}" -f $Expect, $Lang)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; export SHA-256 {2}; ACP {3}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, $regHash, [Drv098f]::GetACP())
@@ -121,12 +121,12 @@ try {
     # FRESH: the first start after an update - plugins.ver is processed (SearchForAddedSPLs,
     # RemoveNoLongerExistingPlugins): every registered plug-in must stay registered
     if (Want 'FRESH') {
-        $plugKey = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+        $plugKey = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
         $n0 = @(Get-ChildItem $plugKey -ErrorAction SilentlyContinue).Count
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Plugins.ver Version (x64)' /t REG_DWORD /d 0 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Plugins.ver Version (x64)' /t REG_DWORD /d 0 /f | Out-Null
         Run-Case 'FRESH' ('Tandem ' + [string][char]0x0416 + 'f')
         $n1 = @(Get-ChildItem $plugKey -ErrorAction SilentlyContinue).Count
-        $ver = (Get-ItemProperty 'HKCU:\Software\Tandem Commander\0.1\Configuration' -Name 'Plugins.ver Version (x64)' -ErrorAction SilentlyContinue).'Plugins.ver Version (x64)'
+        $ver = (Get-ItemProperty 'HKCU:\Software\Tandem Commander\Settings\Configuration' -Name 'Plugins.ver Version (x64)' -ErrorAction SilentlyContinue).'Plugins.ver Version (x64)'
         Row 'FRESH' 'PLUGINS' (V ($n1 -eq $n0 -and $n0 -gt 0 -and $ver -gt 0)) ("registered plug-ins before {0}, after the first start {1}; plugins.ver version stored {2} (0 = not processed)" -f $n0, $n1, $ver)
     }
 }

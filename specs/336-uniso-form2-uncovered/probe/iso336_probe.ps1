@@ -200,7 +200,7 @@ try {
     NewDir $StartDir
     Set-Config
     # review 2: the listing without "Session NN" folders (the UnISO setting; the registry backup restores it)
-    if ($FoldersOff) { & reg.exe add "$RegKey\0.1\Plugins Configuration\UnISO" /v 'Show Session As Directory' /t REG_DWORD /d 0 /f | Out-Null }
+    if ($FoldersOff) { & reg.exe add "$RegKey\Settings\Plugins Configuration\UnISO" /v 'Show Session As Directory' /t REG_DWORD /d 0 /f | Out-Null }
     Out ("iso336_probe (feature 336) {0}{1}" -f $Label, $(if ($FoldersOff) { ' (Session NN folders off)' } else { '' }))
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed)

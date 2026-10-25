@@ -135,7 +135,7 @@ function Start-P([string]$Left) {
     Start-Sleep -Milliseconds 1500
     return $p.Id
 }
-function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
+function Set-Lang([string]$Slg) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d $Slg /f | Out-Null }
 function End-P([string]$Case, [int]$Id, $Before) {
     $fatal = Fatal-Win $Id
     End-Row $Case $Id $fatal $Before
@@ -179,7 +179,7 @@ function Drain([int]$Id, [double]$Seconds = 6) {   # closes whatever boxes follo
 # gives the menu item $MenuId of the plug-in whose DLL matches $DllRx the hot key $HotKey for this
 # run (registry; the whole key is restored afterwards)
 function Set-PluginHotKey([string]$DllRx, [int]$MenuId, [int]$HotKey) {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key' }
     foreach ($k in @(Get-ChildItem $plugins)) {
         $dll = (Get-ItemProperty $k.PSPath -ErrorAction SilentlyContinue).DLL

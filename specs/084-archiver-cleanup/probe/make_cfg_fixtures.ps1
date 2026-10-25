@@ -29,7 +29,7 @@ Add-Type -Namespace TC084F -Name User32 -MemberDefinition @'
 '@
 $WM_CLOSE = 0x0010; $BM_CLICK = 0x00F5
 $regRoot = 'HKCU\Software\Tandem Commander'
-$regCfg = "$regRoot\0.1"
+$regCfg = "$regRoot\Settings"
 $failures = New-Object System.Collections.ArrayList
 $script:proc = $null
 $script:backup = $null

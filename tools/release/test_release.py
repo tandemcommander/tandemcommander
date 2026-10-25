@@ -392,8 +392,14 @@ class Refusals(Base):
         git(self.root, "tag", "-a", "v0.1.5", "-m", "")
         self.assert_refused("not-higher", "0.1.2", "--date", D1)
 
-    def test_line_change(self):
-        self.assert_refused("line-change", "0.2.0", "--date", D1)
+    def test_minor_and_major_steps_accepted(self):
+        # feature 343: the configuration root no longer follows the version - no line-change refusal
+        for ver in ("0.2.0", "1.0.0"):
+            code, out = run(self.root, "status", ver, "--date", D1)
+            self.assertNotIn("refused", out, ver)
+            self.assertNotIn("line-change", out, ver)
+            self.assertNotIn("version-step", out, ver)
+            self.assertIn("state: not-prepared", out, ver)
 
     def test_dirty_tree(self):
         (self.root / "new.txt").write_text("x")
@@ -434,8 +440,24 @@ class Warnings(Base):
         git(self.root, "checkout", "-q", "-b", "work")
         self.assertIn("warning: branch-not-main", self.status("0.1.2", "--date", D1))
 
-    def test_minorb_skip(self):
-        self.assertIn("warning: minorb-skip", self.status("0.1.3", "--date", D1))
+    def test_version_step(self):
+        # feature 343: from the release 0.1.1 the next versions are 0.1.2, 0.2.0 and 1.0.0
+        for ver in ("0.1.3", "0.2.1", "0.3.0", "1.0.1", "2.0.0"):
+            self.assertIn("warning: version-step", self.status(ver, "--date", D1), ver)
+        for ver in ("0.1.2", "0.2.0", "1.0.0"):
+            self.assertNotIn("version-step", self.status(ver, "--date", D1), ver)
+
+    def test_patch_kind(self):
+        # feature 343: a PATCH release carries fixes only - its lead must name a fix
+        run(self.root, "stamp", "0.1.2", "--date", D1)
+        fill_texts(self.root, "0.1.2", 186, D1)
+        code, out = run(self.root, "check", "0.1.2", "--date", D1)
+        self.assertNotIn("patch-kind", out)
+        replace(self.root, release.PATH_CHANGELOG, "Bug-fix release. Two fixes.", "Feature release. Two fixes.")
+        code, out = run(self.root, "check", "0.1.2", "--date", D1)
+        self.assertIn("warning: patch-kind", out)
+        self.assertEqual(code, 0, out)  # a warning, not a finding
+        self.assertIn("warning: patch-kind", self.status("0.1.2", "--date", D1))
 
     def test_build_dir(self):
         os.environ["OPENSAL_BUILD_DIR"] = str(self.root / "elsewhere")

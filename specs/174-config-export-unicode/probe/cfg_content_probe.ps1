@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     Fixture (written wide with .NET into the product's key, which the probe backs up and restores):
-    HKCU\Software\Tandem Commander\0.1\Probe174 with
+    HKCU\Software\Tandem Commander\Settings\Probe174 with
       Ascii   "plain text"                                  (control)
       Cz      Czech letters (inside code page 1250)
       Cyr     Cyrillic letters (outside 1250)
@@ -53,7 +53,7 @@ $Cyr = C @(0x41F, 0x440, 0x438, 0x432, 0x435, 0x442, 0x20, 0x43C, 0x438, 0x440) 
 $Emoji = 'smile ' + (C @(0xD83D, 0xDE00))
 $CyrName = C @(0x418, 0x43C, 0x44F)                                                            # imya
 $CyrKey = C @(0x41A, 0x43B, 0x44E, 0x447)                                                      # klyuch
-$SubPath = 'Software\Tandem Commander\0.1\Probe174'
+$SubPath = 'Software\Tandem Commander\Settings\Probe174'
 $LongName = 'L' + ((C @(0x416)) * 600)       # a value name of 601 characters (the facade's stack buffer holds 511)
 $LongKey = (C @(0x416)) * 200                 # a key name of 200 characters = 400 bytes of UTF-8
 $Expected = [ordered]@{ 'Ascii' = 'plain text'; 'Cz' = $Cz; 'Cyr' = $Cyr; 'Emoji' = $Emoji }
@@ -302,7 +302,7 @@ try {
     Run-ExportImport 'LONG' $false $true
     Run-ExportLocked 'KEEPOLD' ([IO.FileShare]::Read -bor [IO.FileShare]::Delete)
     Run-ExportLocked 'KEEPLOCK' ([IO.FileShare]::Read)
-    $root01 = '[HKEY_CURRENT_USER\Software\Tandem Commander\0.1]'
+    $root01 = '[HKEY_CURRENT_USER\Software\Tandem Commander\Settings]'
     $legacy = "REGEDIT4`r`n`r`n" + $root01 + "`r`n`r`n[HKEY_CURRENT_USER\" + $SubPath + "]`r`n" + '"Legacy"=' + (RegQuote $Cz) + "`r`n"
     Run-FileImport 'LEGACY' ([Text.Encoding]::GetEncoding(1250).GetBytes($legacy)) 'Legacy' $Cz
     $reg5 = "Windows Registry Editor Version 5.00`r`n`r`n" + $root01 + "`r`n`r`n[HKEY_CURRENT_USER\" + $SubPath + "]`r`n" + '"Reg5"=' + (RegQuote $Cyr) + "`r`n"

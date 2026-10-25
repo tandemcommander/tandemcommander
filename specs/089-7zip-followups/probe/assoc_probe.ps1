@@ -34,13 +34,13 @@
     records, then start and exit a second time and compare.
 
     Registry layout (src/mainwnd2.cpp, src/pack3.cpp, src/plugins/7zip/7zip.cpp):
-      HKCU\Software\Tandem Commander\0.1\Packers & Unpackers\Archive Association\<n>
+      HKCU\Software\Tandem Commander\Settings\Packers & Unpackers\Archive Association\<n>
           "Extension List"   REG_SZ     "rar;r##"
           "Packer Supported" REG_DWORD  0 / 1
           "Packer Index"     REG_DWORD  >= 0: external archiver (Predefined Packers\<index+1>)
           "Unpacker Index"   REG_DWORD  < 0 : plug-in, -(n) of Plugins\<n>  (-Index-1, Index zero-based)
-      HKCU\Software\Tandem Commander\0.1\Plugins\<n>            "DLL" = "7zip\7zip.spl"
-      HKCU\Software\Tandem Commander\0.1\Plugins Configuration\7zip   "Version" REG_DWORD
+      HKCU\Software\Tandem Commander\Settings\Plugins\<n>            "DLL" = "7zip\7zip.spl"
+      HKCU\Software\Tandem Commander\Settings\Plugins Configuration\7zip   "Version" REG_DWORD
 
     SAFETY: HKCU\Software\Tandem Commander is exported first and restored in a
     finally block (delete, import, export again, compare line count and
@@ -109,7 +109,7 @@ public static class Drv089
 $MainClass = 'TandemCommanderMainWindowVer01'
 $RegRoot = 'HKCU\Software\Tandem Commander'
 $NetRoot = 'Software\Tandem Commander'
-$NetCfg = "$NetRoot\0.1"
+$NetCfg = "$NetRoot\Settings"
 $NetAssoc = "$NetCfg\Packers & Unpackers\Archive Association"
 $NetPredef = "$NetCfg\Packers & Unpackers\Predefined Packers"
 $Net7z = "$NetCfg\Plugins Configuration\7zip"
@@ -358,14 +358,14 @@ function Run-Fixture([string]$Fx, [string]$File, [bool]$Hard = $true) {
     if ($File) { Print-State $Fx 'before' } else { Write-Host "  [$Fx] before: no HKCU\Software\Tandem Commander key" }
     Run-Once $Fx 'run 1'
     Print-State $Fx 'after run 1'
-    [void](Reg-Run @('export', "$RegRoot\0.1\Packers & Unpackers\Archive Association", (Join-Path $WorkDir "assoc_${Fx}_run1.reg"), '/y'))
+    [void](Reg-Run @('export', "$RegRoot\Settings\Packers & Unpackers\Archive Association", (Join-Path $WorkDir "assoc_${Fx}_run1.reg"), '/y'))
     Check-Assoc $Fx $Hard
     $raw1 = Raw (Get-Assoc); $canon1 = Canon (Get-Assoc)
     $script:Results[$Fx] = $canon1
     $after1 = Join-Path $WorkDir "state_${Fx}_run1.reg"; Save-Fixture $after1
 
     Run-Once $Fx 'run 2'
-    [void](Reg-Run @('export', "$RegRoot\0.1\Packers & Unpackers\Archive Association", (Join-Path $WorkDir "assoc_${Fx}_run2.reg"), '/y'))
+    [void](Reg-Run @('export', "$RegRoot\Settings\Packers & Unpackers\Archive Association", (Join-Path $WorkDir "assoc_${Fx}_run2.reg"), '/y'))
     $raw2 = Raw (Get-Assoc)
     $d = Compare-Object $raw1 $raw2 -SyncWindow 0
     $same = (-not $d) -and ($raw1.Count -eq $raw2.Count)

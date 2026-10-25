@@ -41,9 +41,9 @@ or in *Assumptions* as `Assumption (autonomous run): …`.
 
 | Area | Examples |
 |---|---|
-| Public claims | `PRIVACY.md`, `README.md` promises, the website, winget metadata, the GitHub release text, a **policy** stated in `CHANGELOG.md` (an entry describing this feature's fix under `— unreleased` is the run's own job, SKILL.md step 8.5) |
+| Public claims | `PRIVACY.md`, `README.md` promises, the website, winget metadata, the GitHub release text, a **policy** stated in `CHANGELOG.md` (an entry describing this feature's fix under `## [Unreleased]` is the run's own job, SKILL.md step 8.5) |
 | Network | any new or changed network communication of the product, also a new URL the program opens |
-| Stored data | what is stored, where, how credentials are protected; registry layout (`HKCU\Software\Tandem Commander\0.1`) |
+| Stored data | what is stored, where, how credentials are protected; registry layout (`HKCU\Software\Tandem Commander\Settings`, version-free since 343) |
 | Plug-in interface | `LAST_VERSION_OF_SALAMANDER`, `src/plugins/shared/spl_*.h`, any contract in `specs/NNN-*/contracts/` that plug-ins rely on |
 | Installer | what the installer or uninstaller writes or removes, `AppId`, privileges, Restart Manager behaviour, `setup/tandemcommander.iss` beyond a bug fix the item names |
 | Shipping | enabling, disabling, shipping or removing a plug-in (`plugins.cfg`) or a language (`translations/languages.cfg`) |

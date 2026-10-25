@@ -35,7 +35,7 @@ $StartDir = $Root + '\start'
 $Found = $Root + '\found'
 $OutDir = $Root + '\out'
 $script:FindDriven = $false
-$UmKey = 'Software\Tandem Commander\0.1\User Menu'
+$UmKey = 'Software\Tandem Commander\Settings\User Menu'
 $NoCurDir = $env:NoDefaultCurrentDirectoryInExePath
 Remove-Item Env:NoDefaultCurrentDirectoryInExePath -ErrorAction SilentlyContinue
 

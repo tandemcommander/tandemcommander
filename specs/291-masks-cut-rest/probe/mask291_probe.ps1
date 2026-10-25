@@ -61,7 +61,7 @@ $Root = $TempRoot + '\tc291_mask'
 $StartDir = $Root + '\start'
 $OutDir = $Root + '\out'
 $FindDir = $Root + '\find'
-$Key01 = 'HKCU:\Software\Tandem Commander\0.1'
+$Key01 = 'HKCU:\Software\Tandem Commander\Settings'
 $WmUserConfiguration = 0x8000 + 115
 $TooLong = 'too long'
 
@@ -220,7 +220,7 @@ function Find-Count([IntPtr]$Dlg) {
 function Find-Row([string]$Case, [string]$Text, $Action, [string]$Expect, [switch]$SeedOption) {
     Run-Row $Case {
         if ($SeedOption) {
-            & cmd.exe /c "reg delete `"$RegKey\0.1\Configuration\Find Options`" /f >nul 2>&1"
+            & cmd.exe /c "reg delete `"$RegKey\Settings\Configuration\Find Options`" /f >nul 2>&1"
             Reg-Set 'Configuration\Find Options\1' 'ItemName' 'probe291' String
         }
         $id = Start-Tc $FindDir; $script:RowId = $id

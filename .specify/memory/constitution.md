@@ -1,6 +1,25 @@
 <!--
 Sync Impact Report
 ===================
+Version change: 4.0.0 → 4.1.0 (existing guidance materially changed, no principle redefined)
+Modified sections:
+  - Development Workflow ▸ Release Documentation (feature 343) — the last bullet
+    ("the version in the registry root tracks MAJOR.MINORA only, so a MINORB
+    release MUST NOT move configuration") is replaced: the configuration root
+    is version-free (HKCU\Software\Tandem Commander\Settings; 0.1.x kept it
+    under …\0.1, copied once at the first start of a newer version and kept
+    as a backup), and versions follow Semantic Versioning by the rule stated
+    once in backlog/RELEASE.md "Version numbering".
+  Rationale: the maintainer's decision of 2026-10-25 (feature 343): the 0.1.x
+  numbering raised only the third number however much a release carried; a
+  SemVer MINOR step was impossible while the configuration root followed
+  MAJOR.MINORA. Principle II is unchanged: the root keeps the product's own
+  identity (HKCU\Software\Tandem Commander) and settings are carried over.
+Templates requiring updates: none (generic Constitution Check gate)
+Follow-up TODOs: none
+
+Prior report (3.2.0 → 4.0.0)
+===================
 Version change: 3.2.0 → 4.0.0 (principle II redefined)
 Modified principles:
   - II. Backward Compatibility (feature 245) — "never reads or writes Open
@@ -256,9 +275,12 @@ changed between released versions, and it MUST be kept current:
   The plugin interface version (`LAST_VERSION_OF_SALAMANDER`) changes
   only when the plugin API changes — never merely because the product
   version did.
-- The version in the registry root (`HKCU\Software\Tandem Commander\0.1`)
-  tracks `MAJOR.MINORA` only, so a MINORB release MUST NOT move
-  configuration or require migration.
+- Versions follow Semantic Versioning `MAJOR.MINOR.PATCH` by the rule
+  stated once in `backlog/RELEASE.md` (*Version numbering*). The
+  configuration root (`HKCU\Software\Tandem Commander\Settings`) MUST NOT
+  depend on the version, so no release moves configuration (feature 343;
+  0.1.x kept it under `…\0.1`, which a newer version copies once and keeps
+  unchanged as a backup).
 
 **Rationale**: users of a file manager decide whether to upgrade based on
 what changed, and a bug they reported must be findable in the release
@@ -286,4 +308,4 @@ versioning rules below.
 changes align with this constitution's principles. Violations
 MUST be flagged and resolved before merge.
 
-**Version**: 4.0.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-10-18
+**Version**: 4.1.0 | **Ratified**: 2026-03-20 | **Last Amended**: 2026-10-25

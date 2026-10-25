@@ -104,10 +104,10 @@ try {
     $F = Make-Fixture
     foreach ($s in $schemes) {
         Set-Config
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Quick Search Enter Alt' /t REG_DWORD /d 0 /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Quick Search Filter' /t REG_DWORD /d 1 /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Configuration" /v 'Theme Mode' /t REG_DWORD /d $s.Theme /f | Out-Null
-        & reg.exe add "$RegKey\0.1\Colors" /v 'Color Scheme' /t REG_DWORD /d $s.Scheme /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Quick Search Enter Alt' /t REG_DWORD /d 0 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Quick Search Filter' /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Configuration" /v 'Theme Mode' /t REG_DWORD /d $s.Theme /f | Out-Null
+        & reg.exe add "$RegKey\Settings\Colors" /v 'Color Scheme' /t REG_DWORD /d $s.Scheme /f | Out-Null
         $before = Reports; $id = 0
         try {
             $id = Start-Cap $F

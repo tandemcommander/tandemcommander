@@ -32,8 +32,8 @@ $restored = $false
 try {
     NewDir $StartDir
     Set-Config
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d ($Lang + '.slg') /f | Out-Null
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Last Focused Page' /t REG_DWORD /d $Page /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d ($Lang + '.slg') /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Last Focused Page' /t REG_DWORD /d $Page /f | Out-Null
     $id = Start-Tc $StartDir
     $dlg = Open-ByCmd $id 686 15
     if ($dlg -eq [IntPtr]::Zero) { Row 'SHOT' 'PNG' 'NOT DRIVEN' 'Configuration opened no window' }

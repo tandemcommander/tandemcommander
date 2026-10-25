@@ -27,6 +27,33 @@ repeated per release are items in `BACKLOG.md` (*Person steps*).
   `check_encoding.py --strict` TOTAL 0. The code was built and tested before
   the run; the maintainer builds the signed program.
 
+## Version numbering
+
+The one statement of the rule (feature 343); the constitution, `CLAUDE.md`,
+the changelog preamble and `tools/release/release.py` refer here.
+
+- Versions follow **Semantic Versioning `MAJOR.MINOR.PATCH`** (in the sources
+  the upstream names `VERSINFO_SALAMANDER_MAJOR` / `MINORA` / `MINORB` stay).
+- **MINOR** (`0.2.0`, `0.3.0`, …): a regular release — new features or
+  user-visible changes. A release from `main` is normally a MINOR release.
+- **PATCH** (`0.2.1`): fixes only. When `main` already carries features since
+  the last release, the patch is made from a branch at the release tag
+  (`release-x.y`), with only the fixes picked onto it.
+- **MAJOR**: a deliberate break; `1.0.0` when the maintainer declares the
+  product stable.
+- The build number rises by one with every release, whatever the step.
+- The plug-in interface version (`LAST_VERSION_OF_SALAMANDER`) and the
+  plug-ins' own versions are independent of the product version.
+- The configuration root (`HKCU\Software\Tandem Commander\Settings`) does not
+  depend on the version; any step needs no migration. (Versions up to 0.1.10
+  kept it under `…\0.1`; 0.2.0 and later copy it once at the first start.)
+- `release.py` warns (`version-step`) when the target is not the next PATCH,
+  MINOR or MAJOR version of the last release, and (`patch-kind`) when a PATCH
+  release's lead does not name a fix; it refuses a version that is not higher
+  than the last release or already tagged.
+- Finished work adds its changelog entries under `## [Unreleased]`; the
+  release turns that heading into `## [x.y.z] — YYYY-MM-DD`.
+
 ## Release records
 
 A release changes exactly these eight records, in one commit
@@ -39,7 +66,7 @@ the one list; `CLAUDE.md` and the constitution point here, and
 |--------|----------------------|
 | `src/plugins/shared/spl_vers.h` | `VERSINFO_SALAMANDER_*`, `VERSINFO_BUILDNUMBER` (= the previous release's build + 1) and its history entry naming the version; `LAST_VERSION_OF_SALAMANDER` changes only with the plug-in API |
 | `setup/tandemcommander.iss` | `MyAppVersion` |
-| `CHANGELOG.md` | one section `## [x.y.z] — YYYY-MM-DD` holding everything unreleased, opened by the lead `**Build N.** <Kind> release. …` (the winget summary: ≤ 900 characters, no `#`) |
+| `CHANGELOG.md` | one section `## [x.y.z] — YYYY-MM-DD` holding everything unreleased (the `## [Unreleased]` section), opened by the lead `**Build N.** <Kind> release. …` (the winget summary: ≤ 900 characters, no `#`) |
 | `PRIVACY.md` | "This statement describes Tandem Commander x.y.z … In <previous>, the version before it, …" and "Last updated YYYY-MM-DD." |
 | `CLAUDE.md` | the product line (version, build, release date, features, previous version / build / tag) and *Status* |
 | `architecture/12-project-reference.md` | the product line |
@@ -56,9 +83,10 @@ the one list; `CLAUDE.md` and the constitution point here, and
    hidden desktop (`tools/run_on_hidden_desktop.ps1`), 0 FAIL. Record every
    FAIL or NOT DRIVEN row with its reason (a known intermittent failure, a
    service not running); a row owed to a person becomes a person step.
-2. On `main`, the day of the release: **`/tandem-release <x.y.z>`**. It
-   refuses a released version, a dirty tree, a MAJOR/MINORA change and a
-   copyright year that has passed; asks when not on `main`, when gating
+2. On `main`, the day of the release: **`/tandem-release <x.y.z>`** (the
+   number by *Version numbering*). It refuses a released or lower version, a
+   dirty tree and a copyright year that has passed; asks when the step is not
+   the next PATCH, MINOR or MAJOR version, when not on `main`, when gating
    person steps are open, and when an open decision concerns the release's
    content; reviews the delta since the previous tag (user-visible changes
    all in the changelog, unapplied drafts, privacy triggers); sets the eight

@@ -108,8 +108,8 @@ try {
     NewDir $StartDir
     Set-Config
     # no Recycle Bin: a probe's deleted fixture must not land in the user's bin (restored at the end)
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Use Recycle Bin' /t REG_DWORD /d 0 /f | Out-Null
-    & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Files or Dirs Del' /t REG_DWORD /d 1 /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Use Recycle Bin' /t REG_DWORD /d 0 /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Files or Dirs Del' /t REG_DWORD /d 1 /f | Out-Null
     Out ("temp_selection_probe (feature 163), expect: {0}" -f $Expect)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; export SHA-256 {2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, $regHash)

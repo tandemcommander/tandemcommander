@@ -302,7 +302,7 @@ function Dm-Scanning([IntPtr]$H) {
     return (($st -band 3) -eq 0)                         # neither MF_GRAYED nor MF_DISABLED
 }
 function Set-HotKeys {
-    $plugins = 'HKCU:\Software\Tandem Commander\0.1\Plugins'
+    $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key (defaults; Calculate has no key)' }
     $map = @(
         @{ Dll = 'filecomp\.spl$'; Id = 1; Key = 0x10343 },
@@ -357,7 +357,7 @@ $DmViewClass = 'Zar.DM.DMView.WC'
 $UncRoot = '\\localhost\' + $Root.Substring(0, 1) + '$' + $Root.Substring(2)
 
 function Set-DmConfirm {
-    $k = 'HKCU:\Software\Tandem Commander\0.1\Plugins Configuration\DISKMAP'
+    $k = 'HKCU:\Software\Tandem Commander\Settings\Plugins Configuration\DISKMAP'
     if (-not (Test-Path $k)) { [void](New-Item -Path $k -Force) }
     Set-ItemProperty -LiteralPath $k -Name 'Confirm ESC Close' -Value 1 -Type DWord
 }

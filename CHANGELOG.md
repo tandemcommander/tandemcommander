@@ -4,12 +4,18 @@ All notable changes to Tandem Commander are recorded here, newest first.
 
 Tandem Commander is derived from Open Salamander, which was open-sourced under
 GPLv2 in 2023; this file starts at the first Tandem Commander release and does
-not restate Open Salamander's own history. Versions follow
-`MAJOR.MINORA.MINORB` (see `src/plugins/shared/spl_vers.h`), and each release
-also carries an internal build number shared by the application and every
-plugin.
+not restate Open Salamander's own history. Versions follow Semantic
+Versioning `MAJOR.MINOR.PATCH` (the rule: `backlog/RELEASE.md`, *Version
+numbering*): a release with new features raises MINOR, a fixes-only release
+raises PATCH. Each release also carries an internal build number shared by the
+application and every plugin. Versions up to 0.1.10 raised only the third number.
 
-## [0.1.11] — unreleased
+## [Unreleased]
+
+- **Settings are kept under a key that no longer changes with the version** (feature 343).
+  - **Before:** all settings were stored under `HKEY_CURRENT_USER\Software\Tandem Commander\0.1`, a key named after the version line; a release numbered 0.2.0 would have started with no settings at all, so every release had to stay 0.1.x.
+  - **Now:** settings live under `HKEY_CURRENT_USER\Software\Tandem Commander\Settings`. At the first start of this version they are copied there from the `0.1` key without any question - window layout, panels and tabs, hot paths, user menu, plug-in settings, FTP and SFTP connections with their protected passwords, the update-check state - checked value by value, and used only when the copy is complete. The `0.1` key stays unchanged as a backup (you may delete it). If the copy cannot be made, the program says so, works with the settings where they are and tries again at the next start; nothing is deleted. A configuration file exported by 0.1.x still imports. Crash report names now carry the version with dots (`TC0.2.0X64-...TXT`).
+  - **Limitation:** changes made later by a 0.1.x version (another installation, or after going back to it) stay in the `0.1` key and are not carried over; a configuration file exported by this version cannot be imported into 0.1.x.
 
 - **An FTP upload could replace a renamed or newly uploaded file without asking when the server was reached under two names** (feature 341).
   - **Before:** while an upload to an FTP server opened as `localhost` was still in progress, a change made in an FTP panel connected to the same server as `127.0.0.1` (or under the server's name and its address, or two names of one server) did not reach that upload: a file renamed in the panel to `b.txt` was then replaced by an uploaded `b.txt` without the "Target File Already Exists" question, and a file uploaded through one name was replaced by the next upload through the other. An upload into the panel itself could also trust the panel's older listing.
@@ -365,7 +371,7 @@ plugin.
 
 - **A configuration file imported at start-up could write and delete registry keys of other programs** (feature 263).
   - **Before:** at every start the program imports config.reg from its folder or from %APPDATA%\Tandem Commander, or the file given with `-C`. It wrote every key the file named - also keys of other programs or of HKEY_CLASSES_ROOT - and a line such as `[-HKEY_CURRENT_USER\Software\<other program>]` deleted another program's settings. When the file also held Tandem Commander's settings this happened without any message; a file without them was imported after the question "Do you want to import it anyway?".
-  - **Now:** only Tandem Commander's own key (HKEY_CURRENT_USER\Software\Tandem Commander\0.1) may be written or deleted. A file that names any other key, or holds no Tandem Commander settings at all, is refused as a whole with "Unable to import the specified file. It is not a configuration file." before anything is written, and the question is no longer asked. Files exported by the program, and the settings backups of the settings import, import as before.
+  - **Now:** only Tandem Commander's own key (HKEY_CURRENT_USER\Software\Tandem Commander\Settings since feature 343; a file exported by 0.1.x names the former `0.1` key and is imported into `Settings`) may be written or deleted. A file that names any other key, or holds no Tandem Commander settings at all, is refused as a whole with "Unable to import the specified file. It is not a configuration file." before anything is written, and the question is no longer asked. Files exported by the program, and the settings backups of the settings import, import as before.
   - **Limitation:** the message does not say which line of the file caused the refusal (recorded for a later change), and a refused file is refused again at every start until it is corrected or removed. A configuration file that also sets something outside the program's key (for example file associations) is no longer applied at all.
 
 - **The Code Viewer showed a DOS (CP852), ISO-8859-2 or other single-byte text in another code page with wrong letters, and offered no way to fix it** (feature 262).

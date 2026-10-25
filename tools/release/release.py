@@ -19,6 +19,12 @@ formats in specs/243-tandem-release-skill/contracts/records.md):
   backlog/RELEASE.md                       "## Current release: ...", "Gating person steps:"
   release_notes/release_notes_v<x.y.z>.md  GitHub release body
 
+Versions follow Semantic Versioning MAJOR.MINOR.PATCH (feature 343; the rule is in
+backlog/RELEASE.md, "Version numbering"): a MINOR or MAJOR step is accepted (the
+configuration root no longer depends on the version), a step that skips a version or does
+not reset the lower numbers is a warning (version-step), and a PATCH release whose lead
+does not name a fix is a warning (patch-kind).
+
 Commands (specs/243-tandem-release-skill/contracts/cli.md):
 
   status <ver>   release context, state, refusals, warnings (reads only)
@@ -149,8 +155,13 @@ class Version:
     def installer(self) -> str:
         return f"tandemcommander-{self.text}-x64-setup.exe"
 
-    def same_line(self, other: "Version") -> bool:
-        return (self.major, self.minora) == (other.major, other.minora)
+    def next_versions(self) -> "tuple[Version, Version, Version]":
+        """The SemVer steps from this release: PATCH, MINOR, MAJOR (feature 343)."""
+        return (Version(self.major, self.minora, self.minorb + 1), Version(self.major, self.minora + 1, 0),
+                Version(self.major + 1, 0, 0))
+
+    def is_patch_of(self, other: "Version") -> bool:
+        return self == other.next_versions()[0]
 
     def __str__(self) -> str:
         return self.text
@@ -609,6 +620,22 @@ def load_gating(ctx: Context) -> None:
             ctx.gating_candidates.append({"slug": d.name, "title": h.get("title", "")})
 
 
+def patch_kind_warning(ctx: Context) -> str | None:
+    """A PATCH release carries fixes only (feature 343): its lead's kind must name a fix."""
+    if ctx.prev is None or not ctx.target.is_patch_of(ctx.prev):
+        return None
+    lines = (ctx.rec(PATH_CHANGELOG).text or "").split("\n")
+    mine = [x for x in changelog_sections(lines) if x.label == ctx.target.text]
+    if not mine or not mine[0].lead:
+        return None
+    lead = " ".join(x.strip() for x in mine[0].lead)
+    m = re.match(r"\*\*Build \d+\.\*\*\s+(.*?)\s+release\b", lead)
+    if not m or PLACEHOLDER in m[1] or "fix" in m[1].lower():
+        return None
+    return (f"patch-kind: {ctx.target} is a PATCH release of {ctx.prev}, but its lead says "
+            f"'{m[1]} release' - a PATCH release carries fixes only (MINOR for features)")
+
+
 def evaluate(ctx: Context) -> None:
     """Fill refusals, warnings, state and the stamp plan (records edited in memory)."""
     t = ctx.target
@@ -625,10 +652,6 @@ def evaluate(ctx: Context) -> None:
     latest = ctx.tags[-1] if ctx.tags else None
     if latest and t < latest:
         ctx.refusals.append(f"not-higher: {t} is not higher than the last release {latest}")
-    if not t.same_line(ctx.prev):
-        ctx.refusals.append(f"line-change: {ctx.prev} -> {t} changes MAJOR.MINORA; the configuration root "
-                            f"(HKCU\\Software\\Tandem Commander\\{ctx.prev.major}.{ctx.prev.minora}) follows it - "
-                            "decide the migration first")
     if not ctx.clean:
         ctx.refusals.append("dirty-tree: the working tree has uncommitted changes")
     if ctx.lock != "free":
@@ -640,8 +663,12 @@ def evaluate(ctx: Context) -> None:
         ctx.refusals.append("detached-head: HEAD is not on a branch - check out the branch to release (main)")
     elif ctx.branch != "main":
         ctx.warnings.append(f"branch-not-main: the current branch is '{ctx.branch}', not main")
-    if t.same_line(ctx.prev) and t.minorb != ctx.prev.minorb + 1:
-        ctx.warnings.append(f"minorb-skip: {ctx.prev} -> {t} skips a version")
+    if t not in ctx.prev.next_versions():
+        ctx.warnings.append(f"version-step: {ctx.prev} -> {t} is not the next PATCH, MINOR or MAJOR version ("
+                            + ", ".join(v.text for v in ctx.prev.next_versions()) + ")")
+    pk = patch_kind_warning(ctx)
+    if pk:
+        ctx.warnings.append(pk)
     if ctx.tag_remote == "unknown":
         ctx.warnings.append("remote-unknown: the remote tags were not checked")
     env = os.environ.get("OPENSAL_BUILD_DIR")
@@ -666,7 +693,7 @@ def evaluate(ctx: Context) -> None:
     if ctx.tag_local or ctx.tag_remote == "yes":
         ctx.state = "released"
         return
-    if any(r.startswith(("not-higher", "line-change")) for r in ctx.refusals):
+    if any(r.startswith("not-higher") for r in ctx.refusals):
         ctx.state = "refused"
         return
     # State and plan
@@ -1129,8 +1156,8 @@ def run_check(ctx: Context) -> list[Finding]:
 def context_for(args) -> Context:
     target = Version.parse(args.version)
     if target is None:
-        raise UsageError(f"version-form: '{args.version}' is not MAJOR.MINORA.MINORB without leading zeros "
-                         "(for example 0.1.11)")
+        raise UsageError(f"version-form: '{args.version}' is not MAJOR.MINOR.PATCH without leading zeros "
+                         "(for example 0.2.0)")
     return load_context(args.root, target, args.date, args.offline)
 
 
@@ -1223,6 +1250,9 @@ def cmd_check(args) -> int:
     findings = run_check(ctx)
     for x in findings:
         print(x)
+    pk = patch_kind_warning(ctx)
+    if pk:
+        print("warning: " + pk)
     print(f"findings: {len(findings)}")
     return 1 if findings else 0
 
@@ -1262,7 +1292,7 @@ def parse_date(text: str) -> dt.date:
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="release.py", description="Release preparation of Tandem Commander (feature 243).")
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("version", help="the version to release, MAJOR.MINORA.MINORB")
+    common.add_argument("version", help="the version to release, MAJOR.MINOR.PATCH (Semantic Versioning)")
     common.add_argument("--date", type=parse_date, default=dt.date.today(), help="release date YYYY-MM-DD (default today)")
     common.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2], help="repository root")
     common.add_argument("--offline", action="store_true", help="do not ask the remote for its tags")

@@ -612,11 +612,11 @@ try {
     [IO.File]::WriteAllText((Join-Path $src 'b.txt'), 'second file of the probe')
     $srcCount = 2
 
-    & cmd.exe /c "reg query `"$RegKey\0.1\Configuration`" >nul 2>&1"
+    & cmd.exe /c "reg query `"$RegKey\Settings\Configuration`" >nul 2>&1"
     if ($LASTEXITCODE -ne 0) { throw 'no stored configuration to run with' }
-    & reg.exe add "$RegKey\0.1\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
-    & reg.exe add "$RegKey\0.1\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
-    & reg.exe add "$RegKey\0.1\Plugins Configuration\7zip" /v 'Show Extended Options' /t REG_DWORD /d 1 /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration" /v 'Language' /t REG_SZ /d 'english.slg' /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Configuration\Confirmation" /v 'Close Salamander' /t REG_DWORD /d 0 /f | Out-Null
+    & reg.exe add "$RegKey\Settings\Plugins Configuration\7zip" /v 'Show Extended Options' /t REG_DWORD /d 1 /f | Out-Null
 
     # ---- unpack ----
     Unpack-Row 'U1' "archive by 7-Zip, content encrypted with typed-r; typed: typed-r" $typedR $false $typedR 'extract'

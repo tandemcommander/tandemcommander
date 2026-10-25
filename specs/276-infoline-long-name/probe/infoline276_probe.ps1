@@ -153,7 +153,7 @@ function Focus-Case([string]$Case, [string]$Open, [string]$LongName) {
     finally { if ($id) { End-Row $Case $id $null $before } }
 }
 
-$CfgKey = $RegKey + '\0.1\Configuration'
+$CfgKey = $RegKey + '\Settings\Configuration'
 $DefaultContent = '$(FileName): $(FileSize), $(FileDate), $(FileTime), $(FileAttributes), $(FileDOSName)'
 function Set-Content-Reg([string]$Content) {
     & reg.exe add $CfgKey /v 'Information Line Content' /t REG_SZ /d $Content /f | Out-Null

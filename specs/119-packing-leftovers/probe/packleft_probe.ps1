@@ -146,7 +146,7 @@ function New-Names([string]$Dir, [string]$Like, $Before) {
     return @([IO.Directory]::GetFiles($Dir) | ForEach-Object { [IO.Path]::GetFileName($_) } | Where-Object { $_ -like $Like -and @($Before) -notcontains $_ } | Sort-Object)
 }
 $StartDir = $Root + '\start'
-$RegCfg = 'HKCU\Software\Tandem Commander\0.1'
+$RegCfg = 'HKCU\Software\Tandem Commander\Settings'
 
 function Rand-File([string]$p, [int]$size, [int]$seed) {
     $b = New-Object byte[] $size; (New-Object Random($seed)).NextBytes($b); [IO.File]::WriteAllBytes($p, $b)

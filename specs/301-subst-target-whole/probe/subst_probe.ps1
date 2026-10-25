@@ -64,7 +64,7 @@ public static class SubstP
 }
 $Root = $TempRoot + '\tc301'
 $StartDir = $Root + '\start'
-$ConfKey = 'HKCU:\Software\Tandem Commander\0.1\Configuration'
+$ConfKey = 'HKCU:\Software\Tandem Commander\Settings\Configuration'
 $Cjk = -join (1..80 | ForEach-Object { [char](0x4E00 + $_) })
 $script:Defined = New-Object System.Collections.ArrayList
 
