@@ -417,13 +417,17 @@ project's repository.
 
 ---
 
-This statement describes Tandem Commander 0.1.10 (`CHANGELOG.md`). In 0.1.9,
-the version before it, the program does not ask a server for the list of its
-shared folders. In 0.1.8: there is no check for a
-new version, so the program never contacts the internet on its own and keeps
-no `Update Check` values; a password typed as part
-of an address is saved in history as plain text; a Markdown document can open
-a link without a click; remote images identify as `OpenSalamander-mdview`, and
+This statement describes Tandem Commander 0.2.0 (`CHANGELOG.md`). In 0.1.10,
+the version before it, the settings are kept in the subkey `0.1` (the
+`Update Check` values under `0.1\Update Check`) and no `Moved To Settings`
+value is written; the program offers no import of settings from Altap
+Salamander or Open Salamander, keeps no `Settings backups` folder, and does
+not read the names you gave mapped network drives in File Explorer. In 0.1.9:
+the program does not ask a server for the list of its shared folders. In
+0.1.8: there is no check for a new version, so the program never contacts the
+internet on its own and keeps no `Update Check` values; a password typed as
+part of an address is saved in history as plain text; a Markdown document can
+open a link without a click; remote images identify as `OpenSalamander-mdview`, and
 the viewer may answer a server's request for Windows sign-in with your Windows
 account; cancelling the Master Password prompt saves an SFTP password or
 passphrase scrambled; the viewer engine's crash reports follow your
@@ -432,4 +436,4 @@ FTP login is `name@someserver.com`; a crash that happens while the ZIP
 plugin is using a password can write that password into the crash report; and
 PictView's wallpaper commands wrote no picture file (*Restore Previous* and
 *None* did write the three `Prev...` values).
-Last updated 2026-10-17.
+Last updated 2026-10-25.

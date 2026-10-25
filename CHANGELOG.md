@@ -10,7 +10,19 @@ numbering*): a release with new features raises MINOR, a fixes-only release
 raises PATCH. Each release also carries an internal build number shared by the
 application and every plugin. Versions up to 0.1.10 raised only the third number.
 
-## [Unreleased]
+## [0.2.0] — 2026-10-25
+
+**Build 195.** Feature release. Quick search finds the typed text anywhere in
+a name, also without its accents, and shows only the matching items. Settings
+of Altap Salamander and Open Salamander can be imported after a preview; panel
+tabs get optional browser-like shortcuts and Reopen Closed Tab; the Markdown
+Viewer can use the whole window. Settings move once to a key that no longer
+changes with the version - going back to 0.1.x is not supported. Unpack with
+"Delete archive after unpacking" no longer deletes a disc image or a TAR, cpio
+or rpm archive that was not extracted whole, and ways of losing data in the
+Registry Editor, ZIP, FTP and SFTP are closed. The Desktop view's column
+headers read correctly on a non-English Windows, Linux CD images show their
+real names, and long names are refused, never cut.
 
 - **Settings are kept under a key that no longer changes with the version** (feature 343).
   - **Before:** all settings were stored under `HKEY_CURRENT_USER\Software\Tandem Commander\0.1`, a key named after the version line; a release numbered 0.2.0 would have started with no settings at all, so every release had to stay 0.1.x.
@@ -365,7 +377,7 @@ application and every plugin. Versions up to 0.1.10 raised only the third number
   - **Limitation:** the narrow timing could not be reproduced on purpose; the fix was checked by reading the code and by an independent review. Exiting the program while a Disk Map shell command runs, and answering "force it to unload?" Yes, still ends the map's work at once, as in every release (no crash; a Delete confirmation still waiting keeps the file, but a confirmed Delete or Paste already in progress is cut off; recorded for a later decision).
 
 - **A remembered network drive whose path has letters outside the system's code page, or a long path, could not be reconnected** (feature 264).
-  - **Before:** a remembered (persistent) network drive that Windows did not reconnect at sign-in is shown disconnected in the Change Drive menu and on the drive bars. Picking it, or opening a folder on it, reconnected it with its remembered path converted to the system's code page and cut at 259 bytes. A path with Cyrillic or Chinese letters on a Czech or English Windows (every such letter became "?"), or a path longer than 259 bytes on a double-byte code page, was handed to Windows wrong: the drive stayed disconnected and the program said "The path or file name "Z:\" is invalid." Since 0.1.11 shows such a path exactly in the menu, the failure was easy to run into.
+  - **Before:** a remembered (persistent) network drive that Windows did not reconnect at sign-in is shown disconnected in the Change Drive menu and on the drive bars. Picking it, or opening a folder on it, reconnected it with its remembered path converted to the system's code page and cut at 259 bytes. A path with Cyrillic or Chinese letters on a Czech or English Windows (every such letter became "?"), or a path longer than 259 bytes on a double-byte code page, was handed to Windows wrong: the drive stayed disconnected and the program said "The path or file name "Z:\" is invalid." Since this version shows such a path exactly in the menu (feature 246), the failure was easy to run into.
   - **Now:** the drive is reconnected to exactly the path Windows remembers, whatever letters it holds and up to the longest path Windows accepts for a connection (259 characters). The saved user name and network provider are used as before, the "trying to reconnect, press Esc" window still lets a slow reconnection be cancelled, refused credentials still bring Windows' password dialog, and an unreachable server still reports Windows' own error (for example "The network path was not found"). Drives with ordinary paths reconnect as before.
   - **Limitation:** the password dialog, Esc and a saved user name of another account have been checked by reading only; a person has not yet tried them with a password-protected share. Logging in to a UNC path (\\server\share without a drive letter) whose share name has non-ASCII letters still goes through the code page (recorded for a later fix).
 

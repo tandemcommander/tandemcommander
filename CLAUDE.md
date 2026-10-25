@@ -26,9 +26,9 @@ add *Recent Changes* / *Active Technologies* sections.
 
 ## Product identity
 
-- **Tandem Commander 0.1.10** (internal build 194, release dated 2026-10-17;
-  carries features 124–241; previous: 0.1.9 / build 193 / tag
-  `v0.1.9`). Plugin interface version (`LAST_VERSION_OF_SALAMANDER`) **107**
+- **Tandem Commander 0.2.0** (internal build 195, release dated 2026-10-25;
+  carries features 244–343; previous: 0.1.10 / build 194 / tag
+  `v0.1.10`). Plugin interface version (`LAST_VERSION_OF_SALAMANDER`) **107**
   in 0.1.10, **108** in the tree (245) — independent, changes only with the
   plugin API.
 - **A release** sets the eight *Release records* of `backlog/RELEASE.md`
@@ -207,12 +207,11 @@ Each is one line of a longer story; the number is the feature whose entry in
 - Every script in `bin/` answers `--help` (what it is for, how to run it, exit 0);
   `tools/test_bin_help.py` checks it (247, amended 2026-10-24).
 
-## Status (2026-10-17)
+## Status (2026-10-25)
 
-Features up to 243 are done (0.1.10 carries 124–241; 242–243 are the
-backlog and release tooling). The tree is **prepared for the 0.1.10 release**
-(build 194, commit "Version 0.1.10: the tree prepared for the release
-(2026-10-17)" on `main`, nothing pushed): no person step gates it; then the
-maintainer's steps in `backlog/RELEASE.md` (*Releasing*). **0.1.9** is
-tagged (`v0.1.9`); its winget submission waits until
-`microsoft/winget-pkgs#426090` is settled.
+Features up to 343 are done (0.2.0 carries 244–343). The tree is
+**prepared for the 0.2.0 release** (build 195, commit "Version 0.2.0: the
+tree prepared for the release (2026-10-25)" on `main`, nothing pushed): no
+person step gates it; then the maintainer's steps in `backlog/RELEASE.md`
+(*Releasing*). **0.1.10** is published (`v0.1.10`); winget submissions wait
+until `microsoft/winget-pkgs#426090` is settled.

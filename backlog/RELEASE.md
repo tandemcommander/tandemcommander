@@ -9,18 +9,17 @@ publishing and the winget submission are the maintainer's steps; an agent
 session only prepares the tree. Steps that need a person and are not
 repeated per release are items in `BACKLOG.md` (*Person steps*).
 
-## Current release: 0.1.10 (build 194) — prepared, not published
+## Current release: 0.2.0 (build 195) — prepared, not published
 
-- The state to release is `main` at the commit "Version 0.1.10: the tree
-  prepared for the release (2026-10-17)" (prepared by `/tandem-release`). It
-  carries features 124–241 (everything since `v0.1.9`): the maintainer
-  decided on 2026-10-17 to release from `main` instead of
-  `release-0.1.10-final` (`post-142-fixes-joining-0-1-10-decision`, option
-  C), so the fixes after 142 - 197 and 217 among them - ship in 0.1.10.
-- Branches that must not be tagged: `release-0.1.10` (also on `origin`) —
+- The state to release is `main` at the commit "Version 0.2.0: the tree
+  prepared for the release (2026-10-25)" (prepared by `/tandem-release`). It
+  carries features 244–343 (everything since `v0.1.10`). It is the first
+  MINOR release under Semantic Versioning (feature 343): the settings move
+  once from `…\0.1` to `…\Settings` at the first start.
+- Branches that must not be tagged: `release-0.1.10` (on `origin`) —
   feature 132 without 135, whose *Update Thumbnail* damages the maker notes
-  of real camera files; `release-0.1.10-final` (also on `origin`) — the
-  earlier choice, features 124–142 only, superseded by the decision above.
+  of real camera files; `release-0.1.10-final` (on `origin`) — features
+  124–142 only, superseded by the release of 0.1.10 from `main`.
 - Gating person steps:
   - (none)
 - Verified by the skill: `release.py check` 0 findings,

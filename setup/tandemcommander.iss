@@ -1,5 +1,5 @@
 #define MyAppName "Tandem Commander"
-#define MyAppVersion "0.1.10"
+#define MyAppVersion "0.2.0"
 #define MyAppPublisher "Pavel Stupka"
 #define MyAppURL "https://tandemcommander.org/"
 #define MyAppExeName "tandemcommander.exe"

@@ -35,8 +35,8 @@
 // Since feature 343 the numbers follow Semantic Versioning MAJOR.MINOR.PATCH (the rule:
 // backlog/RELEASE.md, "Version numbering"); the configuration root does not depend on them.
 #define VERSINFO_SALAMANDER_MAJOR 0
-#define VERSINFO_SALAMANDER_MINORA 1
-#define VERSINFO_SALAMANDER_MINORB 10
+#define VERSINFO_SALAMANDER_MINORA 2
+#define VERSINFO_SALAMANDER_MINORB 0
 
 #define VERSINFO_SALAMANDER_VERSION VERSINFO_xstr(VERSINFO_SALAMANDER_MAJOR) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORA) "." VERSINFO_xstr(VERSINFO_SALAMANDER_MINORB) VERSINFO_BETAVERSION_TXT
 // the crash report name's version tag: dotted (feature 343) - digits run together are ambiguous
@@ -183,10 +183,39 @@
 //       207-210; crash report - feature 218; User Menu and Find - features
 //       226, 229, 234, 235; %...% in a folder name - feature 238;
 //       see CHANGELOG.md)
+// 195 - Tandem Commander 0.2.0 (quick search anywhere in a name and
+//       without accents - features 244, 313; settings import from Altap
+//       Salamander and Open Salamander, plugin interface 108 - feature 245;
+//       settings under the version-free key Settings, SemVer versions -
+//       feature 343; panel tabs page and browser-like keys - feature 312;
+//       Markdown Viewer page width - feature 314; Code Viewer conversion
+//       tables - feature 262; PictView Exif rotation - feature 267; network
+//       drive names, icons and reconnection - features 246, 264; the way up
+//       from a share root and the share list sign-in - features 284, 285;
+//       Desktop view headers (GitHub) - feature 248; disc images: safe and
+//       real names, deep trees, crafted NRG images, Unpack keeps an image
+//       not extracted whole - features 322, 326-340; TAR, cpio and rpm:
+//       PAX and GNU long names, hard links - features 306, 308-310, 321,
+//       325; Registry Editor: moves and links that deleted keys, Find -
+//       features 257, 278, 287, 292, 294, 296, 297; FTP uploads that
+//       replaced files, names per server, long paths - features 269, 277,
+//       288, 303, 323, 341; SFTP upload-only folders - features 258, 279;
+//       names differing only in case - features 252, 261, 271, 273, 290;
+//       links in Change Attributes and archives - features 249, 253, 272;
+//       typed text refused, never cut - features 251, 270, 291, 298, 299,
+//       311, 315; long names in archives, dialogs and the User Menu -
+//       features 259, 260, 274-276, 280, 286, 304, 305; Pack and Unpack
+//       names with spaces, dots and colons - features 316-319; ZIP replaced
+//       in one step - feature 320; names outside the code page: drives,
+//       labels, subst, masks, menus, Renamer - features 254, 256, 283, 289,
+//       300, 301; damaged or foreign configuration - features 250, 263,
+//       268; a file left as salNNN - feature 281; low-memory crashes -
+//       features 293, 295; File Comparator close - feature 266; Undelete
+//       warning - feature 324; see CHANGELOG.md)
 
 // ! DULEZITE: nova cisla buildu je nutne zapsat do vetve "default", a pak
 //             teprve do vedlejsi vetve (kompletni seznam je jen v "default" vetvi)
-#define VERSINFO_BUILDNUMBER 194
+#define VERSINFO_BUILDNUMBER 195
 
 // VERSINFO_BETAVERSION_TXT:
 //
@@ -316,6 +345,6 @@
 //         specs/245-settings-import-salamander/contracts/plugin-api-v108.md
 
 #define LAST_VERSION_OF_SALAMANDER 108
-#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 108, first shipped in version 0.1.11."
+#define REQUIRE_LAST_VERSION_OF_SALAMANDER "This plugin requires a newer version of Tandem Commander (" SAL_VER_PLATFORM "): plugin interface 108, first shipped in version 0.2.0."
 
 #endif // __SPL_VERS_H
