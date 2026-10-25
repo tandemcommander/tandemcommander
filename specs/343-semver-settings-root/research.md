@@ -2,6 +2,13 @@
 
 All findings were read from the tree at 72a02f2b (`main`) on 2026-10-25.
 
+**Revised after review 1** (fix-log, *Review 1*): R2's decision gained the unreadable states
+(`NewUnreadable` -> use the new root, `LegacyUnreadable` -> run on the old root) and the record of a
+finished move (`Moved To Settings` in the parent key, `AlreadyMoved` -> fresh); R1's commit now
+copies the backup into its own side key and removes leftovers only after both copies are complete;
+R4's fallback session holds a mutex that keeps other starts from moving under it. The contract
+`contracts/config-root-migration.md` states the current rules.
+
 ## R1 - How the migration copies the tree
 
 **Decision**: a raw copy of the registry tree with the wide API: `RegCopyTreeW` from

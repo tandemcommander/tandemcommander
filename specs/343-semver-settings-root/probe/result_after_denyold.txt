@@ -1,0 +1,10 @@
+cfgroot343_probe (feature 343) after-review1-denyold
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Legacy  : C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\abe128c2-7edd-44a9-8152-86d8651288ec\scratchpad\pre343\tandemcommander.exe
+Date    : 2026-10-25 13:05; parent key existed True
+Fixture : 0.1 configuration made by -LegacyExe (start windows: [#32770 'Tandem Commander'] [Static id=1150] Select one of the installed languages. | [Button id=1029] Get More &Languages... | [Button id=1028] &Refresh | [Button id=1151] About language version | [Static id=1152] Authors: | [Static id=1154] Web: | [Static id=1155] Comment: | [Static id=1036] English version | [Static id=1156] Help Directory: | [Static id=1038] ENGLISH | [Button id=1] OK | [Button id=2] &Exit; save windows: no window; exit 0x00000000)
+
+DENY-OLD   START  PASS        user told (load error or move message) True; Settings made False; 0.1 kept True; windows: load errors closed: 1 || [#32770 'Chyba p\u0159i na\u010D\u00EDt\u00E1n\u00ED konfigurace'] [Static id=2477] (5) P\u0159\u00EDstup byl odep\u0159en.  | [Button id=1] OK; ...ander\src\common\handles.cpp 796: Called from: E:\Projects\tandemcommander\src\regwork.cpp 51: Error in function RegCreateKeyEx: (5) P\u0159\u00EDstup byl odep\u0159en.  || [SalamanderSaveBits 'Tandem Commander']  || [TandemCommanderMainWindowVer01 'T343 - start - Tandem Commander 0.1.10 (x64) ST'] 
+Registry: restored; identical=True; SHA-256 before 06DB26401EDCD9BFAD9C504E275BA42CA026D632D103A2AD519EC59ADE58CDB2 / after 06DB26401EDCD9BFAD9C504E275BA42CA026D632D103A2AD519EC59ADE58CDB2
+
+Rows: PASS 1, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

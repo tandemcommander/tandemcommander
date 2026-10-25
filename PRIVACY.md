@@ -38,7 +38,9 @@ or when you save the configuration yourself. They are kept in the subkey
 first start a newer version copies that subkey to `Settings` on this computer
 (nothing is sent anywhere) and leaves `0.1` unchanged as a backup, which it
 never writes again — you may delete it once you no longer need to go back to
-0.1.x.
+0.1.x. After the copy the program records in the key
+`HKEY_CURRENT_USER\Software\Tandem Commander` the value `Moved To Settings`, so
+that settings you delete or reset later are not filled again from `0.1`.
 
 Recently used values are kept as history in the same place — for example file
 masks and text you searched for, copy and move targets, folders you changed

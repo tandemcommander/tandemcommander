@@ -16074,27 +16074,47 @@ static void TestRegImportRoot263()
 // import of a configuration file written for the 0.1.x root (SalRegMapLegacyRoot, salregroot.h)
 static void TestCfgRoot343()
 {
-    // every combination of the three observations
-    for (int bits = 0; bits < 8; bits++)
+    // every combination of the six observations (review 1 of 343: a key that cannot be read is
+    // never taken for absent; a finished move is never repeated over the user's reset)
+    for (int bits = 0; bits < 64; bits++)
     {
         CSalCfgMigrateState st;
         st.NewHasConfig = (bits & 1) != 0;
-        st.LegacyHasConfig = (bits & 2) != 0;
-        st.LegacyBackupExists = (bits & 4) != 0;
-        CSalCfgMigrateAction want = st.NewHasConfig                                 ? scmaUseNew
+        st.NewUnreadable = (bits & 2) != 0;
+        st.LegacyHasConfig = (bits & 4) != 0;
+        st.LegacyBackupExists = (bits & 8) != 0;
+        st.LegacyUnreadable = (bits & 16) != 0;
+        st.AlreadyMoved = (bits & 32) != 0;
+        CSalCfgMigrateAction want = (st.NewHasConfig || st.NewUnreadable)          ? scmaUseNew
+                                    : st.AlreadyMoved                               ? scmaFresh
+                                    : st.LegacyUnreadable                           ? scmaUseLegacy
                                     : (st.LegacyHasConfig || st.LegacyBackupExists) ? scmaMigrate
                                                                                     : scmaFresh;
         CHECK(SalCfgMigrateDecide(st) == want);
+        // the move never runs over a new root it cannot read, nor after a finished move
+        if (st.NewUnreadable || st.AlreadyMoved)
+            CHECK(SalCfgMigrateDecide(st) != scmaMigrate);
     }
     {
-        CSalCfgMigrateState all = {TRUE, TRUE, TRUE};
-        CHECK(SalCfgMigrateDecide(all) == scmaUseNew); // the new root wins: nothing copied over it
-        CSalCfgMigrateState onlyLegacy = {FALSE, TRUE, FALSE};
-        CHECK(SalCfgMigrateDecide(onlyLegacy) == scmaMigrate);
-        CSalCfgMigrateState onlyBackup = {FALSE, FALSE, TRUE};
-        CHECK(SalCfgMigrateDecide(onlyBackup) == scmaMigrate); // a damaged old root moved aside: its backup still moves
-        CSalCfgMigrateState none = {FALSE, FALSE, FALSE};
-        CHECK(SalCfgMigrateDecide(none) == scmaFresh);
+        CSalCfgMigrateState st;
+        memset(&st, 0, sizeof(st));
+        CHECK(SalCfgMigrateDecide(st) == scmaFresh); // nothing anywhere
+        st.LegacyHasConfig = TRUE;
+        CHECK(SalCfgMigrateDecide(st) == scmaMigrate); // the update from 0.1.x
+        st.NewUnreadable = TRUE;
+        CHECK(SalCfgMigrateDecide(st) == scmaUseNew); // Settings denied: never deleted or replaced
+        st.NewUnreadable = FALSE;
+        st.LegacyUnreadable = TRUE;
+        CHECK(SalCfgMigrateDecide(st) == scmaUseLegacy); // 0.1 denied: run on it, do not start fresh
+        st.LegacyUnreadable = FALSE;
+        st.AlreadyMoved = TRUE;
+        CHECK(SalCfgMigrateDecide(st) == scmaFresh); // Settings deleted by the user after the move
+        st.AlreadyMoved = FALSE;
+        st.LegacyHasConfig = FALSE;
+        st.LegacyBackupExists = TRUE;
+        CHECK(SalCfgMigrateDecide(st) == scmaMigrate); // a damaged old root moved aside: its backup moves
+        st.NewHasConfig = TRUE;
+        CHECK(SalCfgMigrateDecide(st) == scmaUseNew); // the new root wins: nothing copied over it
     }
 
     const char* root = "Software\\Tandem Commander\\Settings";

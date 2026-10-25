@@ -1171,6 +1171,7 @@ extern const char* SALCFG_LEGACY_ROOT;                                          
 BOOL MigrateConfigurationRoot();                                                                             // feature 343: FALSE = failed, the session runs on SALCFG_LEGACY_ROOT; description in mainwnd2.cpp
 extern BOOL CfgMigrateFailed;                                                                                // feature 343: TRUE = tell the user once the main window is up
 extern const char* CfgMigrateNewRoot;                                                                        // feature 343: the root the failed migration wanted (for the message)
+void HoldLegacyConfigSession();                                                                              // feature 343: this session runs on SALCFG_LEGACY_ROOT - no other start moves the configuration under it
 
 // creates and attaches a special class to the edit line/combobox 'ctrlID' that enables
 // capturing keys and sending the WM_USER_KEYDOWN message to the dialog 'hDialog'

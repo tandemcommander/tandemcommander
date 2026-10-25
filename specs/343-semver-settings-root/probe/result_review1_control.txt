@@ -1,0 +1,16 @@
+cfgroot343_probe (feature 343) review1-control-pre-fix
+Program : C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\abe128c2-7edd-44a9-8152-86d8651288ec\scratchpad\prereview343\tandemcommander.exe
+Legacy  : C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\abe128c2-7edd-44a9-8152-86d8651288ec\scratchpad\pre343\tandemcommander.exe
+Date    : 2026-10-25 13:09; parent key existed True
+Fixture : 0.1 configuration made by -LegacyExe (start windows: [#32770 'Tandem Commander'] [Static id=1150] Select one of the installed languages. | [Button id=1029] Get More &Languages... | [Button id=1028] &Refresh | [Button id=1151] About language version | [Static id=1152] Authors: | [Static id=1154] Web: | [Static id=1155] Comment: | [Static id=1036] English version | [Static id=1156] Help Directory: | [Static id=1038] ENGLISH | [Button id=1] OK | [Button id=2] &Exit; save windows: no window; exit 0x00000000)
+
+RESET      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RESET      START  FAIL        move recorded False; after deleting Settings: a fresh Settings True; the old settings brought back True; 0.1 unchanged True; exit 0x00000000; windows: no window
+DENY-NEW   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DENY-NEW   START  FAIL        Settings kept (Probe343 unchanged) False; Settings\Configuration there True; side keys False; a move recorded False; windows: ...ey are (HKEY_CURRENT_USER\Software\Tandem Commander\0.1) and will try again the next time it starts. Nothing was deleted. | [Button id=1] OK
+SESSION    SECOND FAIL        first start on 0.1 (seam) told True; the second start made Settings True; side key False; exits 0x00000000 / 0x00000000; second windows: no window
+SESSION    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+SESSION    AFTER  PASS        with no session on 0.1 left, the next start moved it: Settings equal to 0.1 True; windows: no window
+Registry: restored; identical=True; SHA-256 before 06DB26401EDCD9BFAD9C504E275BA42CA026D632D103A2AD519EC59ADE58CDB2 / after 06DB26401EDCD9BFAD9C504E275BA42CA026D632D103A2AD519EC59ADE58CDB2
+
+Rows: PASS 4, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

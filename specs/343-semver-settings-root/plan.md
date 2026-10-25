@@ -18,6 +18,10 @@ warns on non-SemVer steps and on a feature release numbered as a patch; the chan
 work under `## [Unreleased]`; the constitution, `CLAUDE.md`, `RELEASE.md`, the skills,
 `PRIVACY.md` and the probes are brought in line. Research: [research.md](research.md) R1-R11.
 
+**Revised after review 1**: tri-state key probes (an unreadable key is never absent), the record
+`Moved To Settings` in the parent key, a legacy-session mutex, leftovers removed only at the commit,
+the backup copied into its own side key - `contracts/config-root-migration.md`.
+
 ## Technical Context
 
 **Language/Version**: C++20 (`/std:c++latest`), MSVC v143; Python 3 (release tool); PowerShell 5.1 (probes)

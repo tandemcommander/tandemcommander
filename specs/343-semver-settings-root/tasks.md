@@ -78,9 +78,9 @@ release tool, the hidden-desktop probe for the end-to-end migration.
 - [X] T035 `build.cmd full` (Debug) and `build.cmd full release`; saltests 0 failed; `python tools/check_encoding.py --strict` TOTAL 0; `python tools/test_bin_help.py`
 - [X] T036 Re-run the full probe on the final Debug build → `probe/result_final.txt`; regression: one older probe that backs up the key (e.g. `specs/312-*/probe`) runs and restores `Settings`
 - [X] T037 `CHANGELOG.md` entry under `[Unreleased]` (symptom-free "Settings now live under …\Settings; moved automatically; old key kept as a backup"; limitation: a 0.1.x instance's later changes are not carried over; feature 343)
-- [ ] T038 Independent refute-first review by an agent (code + probe + records); fix findings; record in `fix-log.md`
-- [ ] T039 `specs/FEATURE-HISTORY.md` entry 343; backlog item (Inbox) "Remove the old 0.1 configuration key in a later release" via `bin/backlog.sh new` (source `leftover:343`); closing report `specs/343-semver-settings-root/closing-report.md`
-- [ ] T040 Commit on the feature branch (no push); report to the maintainer
+- [X] T038 Independent refute-first review by an agent (code + probe + records); fix findings; record in `fix-log.md`
+- [X] T039 `specs/FEATURE-HISTORY.md` entry 343; backlog item (Inbox) "Remove the old 0.1 configuration key in a later release" via `bin/backlog.sh new` (source `leftover:343`); closing report `specs/343-semver-settings-root/closing-report.md`
+- [X] T040 Commit on the feature branch (no push); report to the maintainer
 
 ## Dependencies & execution order
 

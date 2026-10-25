@@ -136,6 +136,15 @@ function Start-Windows([int]$Id, [int[]]$Want = @(2, 7), [double]$Seconds = 8) {
     return (Msgs $r)
 }
 
+# only the move: the Debug seam ends the process right after it (exit code 4), before the program
+# writes anything of its own - the moved tree is compared exactly
+function Move-Only {
+    $id = Start-One $Exe 'exit-after-move' @()
+    $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 20 -and (Test-Alive $id)) { Start-Sleep -Milliseconds 100 }
+    if (Test-Alive $id) { Kill-Mine $id; return 'did not end' }
+    return (ExitCodeOf $id)
+}
+
 # ---- seeding ---------------------------------------------------------------
 $U1 = -join @([char]0x017D, 'lu', [char]0x0165, 'ou', [char]0x010D, 'k', [char]0x00FD)  # Zlutoucky with accents
 $U2 = -join @([char]0x65E5, [char]0x672C)                                                # CJK
@@ -154,7 +163,27 @@ function Add-Extras([string]$RootName) {
     $HKCU.CreateSubKey($p + '\empty').Close()
     Set-Val ($p + '\d1\d2\d3\d4\d5\d6') 'deep' 6 ([Microsoft.Win32.RegistryValueKind]::DWord)
 }
-function Clear-Roots { foreach ($n in @($TcConfigKeyName, $SideName, $NewBackupName, $NewCorruptName, $TcLegacyKeyName, $LegacyBackupName)) { Del-Key $n } }
+$MovedValue = 'Moved To Settings'   # the parent key's record of a finished move (review 1)
+$SideBackupName = $TcConfigKeyName + '.backup.migrating' + $TcKeySuffix
+function Moved-Mark { $k = $HKCU.OpenSubKey($TcParentKeyName); if (-not $k) { return $null }; try { return $k.GetValue($MovedValue, $null) } finally { $k.Close() } }
+function Clear-Moved { $k = $HKCU.OpenSubKey($TcParentKeyName, $true); if ($k) { try { $k.DeleteValue($MovedValue, $false) } finally { $k.Close() } } }
+function Clear-Roots { foreach ($n in @($TcConfigKeyName, $SideName, $SideBackupName, $NewBackupName, $NewCorruptName, $TcLegacyKeyName, $LegacyBackupName)) { Del-Key $n }; Clear-Moved }
+# deny the current user reading a key (QueryValues, EnumerateSubKeys): RegOpenKeyEx(KEY_READ) fails
+# with access denied; READ_CONTROL stays, so the probe can lift the rule again
+$script:Denied = New-Object System.Collections.ArrayList
+$DenyRights = [System.Security.AccessControl.RegistryRights]'QueryValues, EnumerateSubKeys, Notify'
+function Deny-RuleFor { return (New-Object System.Security.AccessControl.RegistryAccessRule([Security.Principal.WindowsIdentity]::GetCurrent().User, $DenyRights, 'Deny')) }
+function Deny-Read([string]$Name) {
+    $k = $HKCU.OpenSubKey($Name, [Microsoft.Win32.RegistryKeyPermissionCheck]::ReadWriteSubTree, [System.Security.AccessControl.RegistryRights]'ChangePermissions, ReadPermissions')
+    try { $acl = $k.GetAccessControl(); $acl.AddAccessRule((Deny-RuleFor)); $k.SetAccessControl($acl) } finally { $k.Close() }
+    [void]$script:Denied.Add($Name)
+}
+function Allow-Read([string]$Name) {
+    $k = $HKCU.OpenSubKey($Name, [Microsoft.Win32.RegistryKeyPermissionCheck]::ReadWriteSubTree, [System.Security.AccessControl.RegistryRights]'ChangePermissions, ReadPermissions')
+    if (-not $k) { return }
+    try { $acl = $k.GetAccessControl(); [void]$acl.RemoveAccessRule((Deny-RuleFor)); $k.SetAccessControl($acl) } finally { $k.Close() }
+    $script:Denied.Remove($Name)
+}
 function Seed-Legacy {
     Clear-Roots
     & cmd.exe /c "reg import `"$Fixture`" >nul 2>&1"
@@ -194,9 +223,7 @@ function Make-Fixture {
 function Row-Basic {
     Seed-Legacy
     $h0 = Tree-Hash $TcLegacyKeyName; $n0 = Tree-Count $TcLegacyKeyName
-    $before = Reports
-    $id = Start-One $Exe '' @()
-    $w = Start-Windows $id
+    $mec = Move-Only
     $equal = (Tree-Hash $TcConfigKeyName) -eq $h0
     $diff = ''
     if (-not $equal) {
@@ -207,10 +234,14 @@ function Row-Basic {
     $pwdEq = (Tree-Hash ($TcConfigKeyName + '\Password Manager')) -eq (Tree-Hash ($TcLegacyKeyName + '\Password Manager'))
     $pwdThere = Key-Exists ($TcLegacyKeyName + '\Password Manager')
     $side = Key-Exists $SideName
+    $mark = Moved-Mark
+    $before = Reports
+    $id = Start-One $Exe '' @()
+    $w = Start-Windows $id
     End-Row 'BASIC' $id $null $before
     $h1 = Tree-Hash $TcLegacyKeyName
-    $ok = $equal -and $probeEq -and $pwdEq -and (-not $side) -and ($w -eq 'no window') -and ($h1 -eq $h0)
-    Row 'BASIC' 'MOVE' (V $ok) ("0.1 {0} lines; Settings equal to 0.1 while running {1}{2}; Probe343 equal {3}; Password Manager equal {4} (present {5}); side key {6}; start windows: {7}; 0.1 unchanged after exit {8}" -f $n0, $equal, $diff, $probeEq, $pwdEq, $pwdThere, $side, $w, ($h1 -eq $h0))
+    $ok = $mec -eq '0x00000004' -and $equal -and $probeEq -and $pwdEq -and (-not $side) -and ($w -eq 'no window') -and ($h1 -eq $h0) -and ($mark -eq 1)
+    Row 'BASIC' 'MOVE' (V $ok) ("0.1 {0} lines; the move (seam exit $mec): Settings equal to 0.1 {1}{2}; Probe343 equal {3}; Password Manager equal {4} (present {5}); side key {6}; start windows: {7}; 0.1 unchanged after exit {8}; move recorded {9}" -f $n0, $equal, $diff, $probeEq, $pwdEq, $pwdThere, $side, $w, ($h1 -eq $h0), ($mark -eq 1))
     return $h0
 }
 function Row-Again([string]$H0) {
@@ -255,13 +286,14 @@ function Row-Kill {
     if (Test-Alive $id) { Kill-Mine $id }
     $side = Key-Exists $SideName; $new = Key-Exists $TcConfigKeyName; $h1 = Tree-Hash $TcLegacyKeyName
     Row 'KILL' 'CUT' (V ($ec -eq '0x00000003' -and $side -and -not $new -and $h1 -eq $h0)) ("exit {0}; side key left {1}; Settings made {2}; 0.1 unchanged {3}" -f $ec, $side, $new, ($h1 -eq $h0))
+    $mec = Move-Only
+    $equal = (Tree-Hash $TcConfigKeyName) -eq $h0
+    $side2 = Key-Exists $SideName
     $before = Reports
     $id = Start-One $Exe '' @()
     $w = Start-Windows $id
-    $equal = (Tree-Hash $TcConfigKeyName) -eq $h0
-    $side2 = Key-Exists $SideName
     End-Row 'KILL' $id $null $before
-    Row 'KILL' 'AGAIN' (V ($equal -and -not $side2 -and $w -eq 'no window')) ("next start: Settings equal to 0.1 {0}; side key gone {1}; start windows: {2}" -f $equal, (-not $side2), $w)
+    Row 'KILL' 'AGAIN' (V ($mec -eq '0x00000004' -and $equal -and -not $side2 -and $w -eq 'no window')) ("next start (seam exit {3}): Settings equal to 0.1 {0}; side key gone {1}; then start windows: {2}" -f $equal, (-not $side2), $w, $mec)
 }
 function Row-Fail([string]$Step) {
     $case = 'FAIL-' + $Step
@@ -280,12 +312,13 @@ function Row-Fail([string]$Step) {
     $new2 = Key-Exists $TcConfigKeyName
     Row $case 'SEAM' (V ($told -and -not $new -and -not $side -and -not $bk -and $saved -and -not $new2)) ("message shown {0}; Settings made {1}; side key {2}; Settings.backup {3}; the session saved into 0.1 (Window) {4}; Settings after exit {5}; windows: {6}" -f $told, $new, $side, $bk, $saved, $new2, (Tail $msg 160))
     $h0 = Tree-Hash $TcLegacyKeyName
+    $mec = Move-Only
+    $equal = (Tree-Hash $TcConfigKeyName) -eq $h0
     $before = Reports
     $id = Start-One $Exe '' @()
     $w = Start-Windows $id
-    $equal = (Tree-Hash $TcConfigKeyName) -eq $h0
     End-Row $case $id $null $before
-    Row $case 'AGAIN' (V ($equal -and $w -eq 'no window')) ("next start: Settings equal to 0.1 {0}; start windows: {1}" -f $equal, $w)
+    Row $case 'AGAIN' (V ($mec -eq '0x00000004' -and $equal -and $w -eq 'no window')) ("next start (seam exit {2}): Settings equal to 0.1 {0}; then start windows: {1}" -f $equal, $w, $mec)
 }
 function Row-Corrupt {
     Seed-Legacy
@@ -303,6 +336,93 @@ function Row-Corrupt {
     End-Row 'CORRUPT' $id $null $before
     $same = ((Tree-Hash $TcLegacyKeyName) -eq $h0) -and ((Tree-Hash $LegacyBackupName) -eq $hb)
     Row 'CORRUPT' 'START' (V ($fromBackup -and $corrupt -and -not $inProgress -and $same -and $w -eq 'no window')) ("Settings holds the backup (marker) {0}; Settings.corrupted made {1}; Settings marked in progress {2}; old keys unchanged {3}; start windows: {4}" -f $fromBackup, $corrupt, $inProgress, $same, $w)
+}
+# review 1: a root deleted by the user after the move is not brought back from 0.1
+function Row-Reset {
+    Seed-Legacy
+    $h0 = Tree-Hash $TcLegacyKeyName
+    $before = Reports
+    $id = Start-One $Exe '' @()
+    [void](Start-Windows $id)
+    End-Row 'RESET' $id $null $before
+    $mark = Moved-Mark
+    Del-Key $TcConfigKeyName
+    $id = Start-One $Exe '' @()
+    $w = Start-Windows $id @(1, 7)   # a fresh start: the language selection OK, the import offer No
+    $ec = Close-One $id
+    $fresh = Key-Exists ($TcConfigKeyName + '\Configuration')
+    $back = Key-Exists ($TcConfigKeyName + '\Plugins Configuration\Probe343')
+    $same = (Tree-Hash $TcLegacyKeyName) -eq $h0
+    Row 'RESET' 'START' (V ($mark -eq 1 -and $fresh -and -not $back -and $same)) ("move recorded {0}; after deleting Settings: a fresh Settings {1}; the old settings brought back {2}; 0.1 unchanged {3}; exit {4}; windows: {5}" -f ($mark -eq 1), $fresh, $back, $same, $ec, (Tail $w 120))
+}
+# review 1 (MUST): a Settings\Configuration that cannot be read is never taken for absent
+function Row-DenyNew {
+    Seed-Legacy
+    $before = Reports
+    $id = Start-One $Exe '' @()
+    [void](Start-Windows $id)
+    End-Row 'DENY-NEW' $id $null $before
+    Clear-Moved   # as after a move made before the record existed: the decision rests on reading Settings
+    $hNew = Tree-Hash ($TcConfigKeyName + '\Plugins Configuration\Probe343')
+    Deny-Read ($TcConfigKeyName + '\Configuration')
+    $id = Start-One $Exe '' @()
+    $w = Start-Windows $id @(1, 2) 10
+    if (Test-Alive $id) { Kill-Mine $id }   # what the program then does with an unreadable configuration is not this row's question
+    Allow-Read ($TcConfigKeyName + '\Configuration')
+    $kept = (Tree-Hash ($TcConfigKeyName + '\Plugins Configuration\Probe343')) -eq $hNew
+    $cfg = Key-Exists ($TcConfigKeyName + '\Configuration')
+    $sides = (Key-Exists $SideName) -or (Key-Exists $SideBackupName)
+    $mark = Moved-Mark
+    Row 'DENY-NEW' 'START' (V ($kept -and $cfg -and -not $sides -and $null -eq $mark)) ("Settings kept (Probe343 unchanged) {0}; Settings\Configuration there {1}; side keys {2}; a move recorded {3}; windows: {4}" -f $kept, $cfg, $sides, ($null -ne $mark), (Tail $w 140))
+}
+# review 1: a 0.1\Configuration that cannot be read keeps the session on 0.1 (no fresh Settings)
+function Row-DenyOld {
+    Seed-Legacy
+    Deny-Read ($TcLegacyKeyName + '\Configuration')
+    $id = Start-One $Exe '' @()
+    # the session runs on 0.1 as 0.1.x would: its own "Error Loading Configuration" box (one button,
+    # id 2 - Serve takes such a window for a progress box) comes before the main window
+    $loadErr = @()
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 40 -and (Test-Alive $id) -and (Get-Main $id) -eq [IntPtr]::Zero) {
+        foreach ($h in @(Get-Tops $id | Where-Object { [Drv098f]::Txt($_) -eq 'Error Loading Configuration' })) { $loadErr += (WinDesc $h); $b = Buttons $h | Select-Object -First 1; if ($b) { Click $b } }
+        Start-Sleep -Milliseconds 300
+    }
+    Start-Sleep -Milliseconds 1500
+    $r = Serve $id 15 @(1, 2)
+    $msg = Msgs $r
+    if ($loadErr.Count) { $msg = ('load errors closed: ' + $loadErr.Count + ' || ' + $msg) }
+    $told = $msg -match '13753|could not move your settings|HKEY_CURRENT_USER\\Software\\Tandem Commander\\0\.1\)'
+    $new = Key-Exists $TcConfigKeyName
+    $diag = "alive $(Test-Alive $id); died $($r.Died); timed out $($r.TimedOut); fatal $($r.Fatal); main $((Get-Main $id) -ne [IntPtr]::Zero); tops: " + ((@(Get-Tops $id) | ForEach-Object { WinDesc $_ }) -join ' || ')
+    if (Test-Alive $id) { Kill-Mine $id }
+    Allow-Read ($TcLegacyKeyName + '\Configuration')
+    $kept = Key-Exists ($TcLegacyKeyName + '\Plugins Configuration\Probe343')
+    # told: the session's own load error (as 0.1.x shows it) or the move message; what must hold: no
+    # fresh Settings (the old settings are not abandoned) and 0.1 untouched by the move
+    $told = $told -or $loadErr.Count -gt 0
+    Row 'DENY-OLD' 'START' (V ($told -and -not $new -and $kept)) ("user told (load error or move message) {0}; Settings made {1}; 0.1 kept {2}; windows: {3}; {4}" -f $told, $new, $kept, (Tail $msg 200), (Tail $diag 300))
+}
+# review 1: a second start while a session runs on 0.1 (its move failed) does not move under it
+function Row-Session {
+    Seed-Legacy
+    $before = Reports
+    $a = Start-One $Exe 'copy' @()
+    $ra = Serve $a 15 @(1, 2)
+    $b = Start-One $Exe '' @()
+    $rb = $null; if (Test-Alive $b) { $rb = Serve $b 15 @(1, 2) }
+    $new = Key-Exists $TcConfigKeyName
+    $side = Key-Exists $SideName
+    $ecb = Close-One $b
+    $eca = Close-One $a
+    $h0 = Tree-Hash $TcLegacyKeyName
+    $mec = Move-Only
+    $equal = (Tree-Hash $TcConfigKeyName) -eq $h0
+    Row 'SESSION' 'SECOND' (V (-not $new -and -not $side -and (Msgs $ra) -match 'could not move')) ("first start on 0.1 (seam) told {0}; the second start made Settings {1}; side key {2}; exits {3} / {4}; second windows: {5}" -f ((Msgs $ra) -match 'could not move'), $new, $side, $eca, $ecb, $(if ($rb) { Tail (Msgs $rb) 100 } else { 'ended (handed over)' }))
+    $id = Start-One $Exe '' @()
+    $w = Start-Windows $id
+    End-Row 'SESSION' $id $null $before
+    Row 'SESSION' 'AFTER' (V ($equal -and $w -eq 'no window')) ("with no session on 0.1 left, the next start moved it: Settings equal to 0.1 {0}; windows: {1}" -f $equal, $w)
 }
 function Write-RegFile([string]$Path, [string[]]$Lines) {
     $text = "Windows Registry Editor Version 5.00`r`n`r`n" + ($Lines -join "`r`n") + "`r`n"
@@ -367,6 +487,10 @@ try {
     if (Want 'KILL') { try { Row-Kill } catch { Row 'KILL' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
     foreach ($s in 'copy', 'compare', 'rename') { if (Want ('FAIL-' + $s)) { try { Row-Fail $s } catch { Row ('FAIL-' + $s) 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } } }
     if (Want 'CORRUPT') { try { Row-Corrupt } catch { Row 'CORRUPT' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
+    if (Want 'RESET') { try { Row-Reset } catch { Row 'RESET' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
+    if (Want 'DENY-NEW') { try { Row-DenyNew } catch { Row 'DENY-NEW' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
+    if (Want 'DENY-OLD') { try { Row-DenyOld } catch { Row 'DENY-OLD' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
+    if (Want 'SESSION') { try { Row-Session } catch { Row 'SESSION' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
     if (Want 'IMP-LEGACY') { try { Row-ImpLegacy } catch { Row 'IMP-LEGACY' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
     if (Want 'IMP-FOREIGN') { try { Row-ImpForeign } catch { Row 'IMP-FOREIGN' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) } }
 }
@@ -374,6 +498,7 @@ catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrac
 finally {
     foreach ($p in @($Started)) { if (Test-Alive $p) { Stop-Process -Id $p -Force } }
     Start-Sleep -Milliseconds 600
+    foreach ($n in @($script:Denied)) { try { Allow-Read $n } catch { Out ('ACL: could not lift the deny rule of ' + $n + ': ' + $_.Exception.Message) } }
     Del-Key 'Software\Probe343Foreign'
     $restored = Restore-Reg $backup $existed
     if ($restored -and (Test-Path -LiteralPath $backup)) { Remove-Item -LiteralPath $backup -Force }

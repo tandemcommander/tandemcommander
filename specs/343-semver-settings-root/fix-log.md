@@ -108,3 +108,78 @@ Running log of the implementation (2026-10-25). Newest at the bottom.
   `%APPDATA%\Tandem Commander\Settings backups\before-import-20261025-120928.reg` (a backup of the
   probe's fresh default configuration, no user data); 263's REALBACKUP row picked it up. Deleted;
   the folder holds the earlier backups of feature 245's probes as before.
+
+## Review 1 (refute-first, independent agent) and fixes
+
+Findings (1 MUST, 3 SHOULD, 4 NIT) - all taken:
+
+- **MUST 1** - a key that could not be read counted as absent (`CfgMigKeyExists` FALSE on any
+  error): with `0.1` present the decision became *migrate* and the clean-up `SHDeleteKeyW`'d
+  `Settings` and `Settings.backup` (the user's current settings), the rename failed and the
+  session ran on stale `0.1` - a fail-open "safe to delete?" check (098). **Fix**: tri-state
+  probes (`CfgMigProbeKey`, `ERROR_FILE_NOT_FOUND` only = absent); `NewUnreadable` -> use the new
+  root, copy and delete nothing.
+- **SHOULD 2** - an unreadable `0.1\Configuration` gave *fresh*: the first save made `Settings` and
+  the 0.1 settings were abandoned for good. **Fix**: `LegacyUnreadable` -> `scmaUseLegacy` (the
+  session runs on 0.1 as 0.1.x would, its own load error tells the user).
+- **SHOULD 3** - a second start during a fallback session moved the configuration under it (what
+  the session saved afterwards was lost). **Fix**: the fallback session holds
+  `Global\TandemCommanderLegacyCfgSession_<SID>` (`HoldLegacyConfigSession`); a start that finds it
+  (or cannot open it) runs on 0.1 too.
+- **SHOULD 4** - deleting `Settings` later (a reset, "Remove Configuration" then exit without
+  saving) brought the migration-day settings back. **Fix**: the parent key records the move
+  (`Moved To Settings`, DWORD); `AlreadyMoved` -> fresh. Written after the commit, and by a start
+  that finds a moved root without the record. `PRIVACY.md` names the value.
+- NIT 5 - a mapped key name over 2 x MAX_PATH refused the whole import: `Parse` now maps into a
+  heap buffer sized to the name (RAII, freed on every return; `RPE_OUT_OF_MEMORY` on failure).
+- NIT 6 - "Nothing was deleted" vs the leftover clean-up: leftovers (a `Settings` without
+  `Configuration`, an old-run `Settings.backup`) are now removed only at the commit, after both
+  copies are complete; a failed move before that deletes nothing but its own side keys.
+- NIT 7 - an unreadable old backup blocked every move: the backup is copied into its own side key;
+  a failed copy is dropped unless `0.1` carries `Save In Progress` (then the backup is needed for
+  the recovery and the move fails).
+- NIT 8 (`patch-kind` regex form) - left: the lead's form is fixed by the records contract.
+
+Saltests: the decision is checked over all 64 combinations of the six observations plus named
+cases: **28,953 checks, 0 failed**. New Debug seam `exit-after-move` (`ExitProcess(4)` right after
+a successful move): the probe compares the moved tree before the program writes anything of its
+own - the first post-review run compared while running and saw the new build's own writes
+(`Plugins.ver Version (x64)`, a PictView value) after the start: BASIC and KILL AGAIN FAIL, a probe
+artefact, not a copy defect.
+
+New probe rows: RESET (deleted Settings not brought back), DENY-NEW (an ACL deny on
+`Settings\Configuration`: Settings kept), DENY-OLD (deny on `0.1\Configuration`: no fresh Settings,
+0.1 kept; the session's own "Error Loading Configuration" box - one button id 2, which the shared
+`Serve` takes for a progress window - is closed by the row), SESSION (a second start while a
+fallback session runs does not move). ACL rules are lifted in the probe's `finally` before the
+registry restore.
+
+- **Negative control** (the five source files of 8d65a3de built into a scratch copy,
+  `probe/result_review1_control.txt`): RESET FAIL (old settings brought back), DENY-NEW FAIL
+  (Probe343 deleted from Settings), SESSION SECOND FAIL (the second start made Settings) - all three
+  defects reproduced on the pre-fix build.
+- **probe/result_final.txt: PASS 36, FAIL 0**, registry restored identical.
+  (`result_after.txt` holds the post-review run before the DENY-OLD row was corrected, 35 / 1;
+  `result_after_denyold.txt` the corrected row alone, 1 / 0.)
+
+## Review 2 (same agent, the fixes of review 1)
+
+- **SHOULD 1** (race) - the legacy-session mutex was checked before `LoadSaveToRegistryMutex` and
+  created by the caller after it was released: a start racing with a failing one could take the
+  registry mutex in between and move the configuration while the first ran on 0.1. **Fix**: the
+  check runs under the registry mutex, and every path that returns FALSE calls
+  `HoldLegacyConfigSession()` before `Leave()` (the caller's call stays, idempotent).
+- **SHOULD 2** (by design) - after a move, going back to 0.1.x, deleting `Settings` and starting the
+  new version gives defaults (the record makes it a reset); 0.1 stays intact. **Taken as a
+  documented limitation** (spec edge case, changelog *Limitation* names the record value that makes
+  the next start copy 0.1 again) rather than a new message string.
+- NIT 3 (the record written when only the old backup moved) and NIT 4 (a start that finds a running
+  legacy session shows the move message) - left: harmless, the reviewer agrees.
+- Checked fine by the reviewer: the reordered commit at every crash point, the record's order and
+  export behaviour, the mutex name / namespace / access-denied / lifetime, scmaUseLegacy versus
+  0.1.10, the RAII buffer in `Parse`.
+
+Final evidence after review 2: Debug build; saltests **28,953 / 0**; **probe/result_final.txt PASS
+36, FAIL 0** (registry identical); regression 241 **8 / 0** (no `Settings` left on the machine);
+`build.cmd full release` BUILD SUCCEEDED; `check_encoding.py --strict` TOTAL 0; `test_release.py`
+44 passed, 1 failed (the pre-existing `test_crlf_records_stay_crlf`, Inbox).

@@ -939,14 +939,17 @@ BOOL MyRegRenameKey(HKEY key, const char* name, const char* newName)
 // The configuration root is version-free since feature 343 (SalamanderConfigurationRoots[0],
 // "...\Settings"); 0.1.0 - 0.1.10 kept it under SALCFG_LEGACY_ROOT ("...\0.1"). Called at the very
 // start of WinMainBody, before anything reads a setting. Decision: SalCfgMigrateDecide
-// (salcfgmigrate.h). A migration copies the old tree raw (RegCopyTreeW: every value with its name,
-// type and data) into the side key "Settings.migrating.63A7CD13", compares the copy with the source
-// and makes it the root by one RegRenameKey - the root either does not exist or is complete. The old
-// crash-time backup ("0.1.backup.63A7CD13") is copied to "Settings.backup.63A7CD13" first, so a
-// damaged old root gets the same recovery under the new names. The old keys are only read, never
-// written or deleted. A leftover side key (an interrupted migration) is deleted and the decision is
-// made again. Returns FALSE when a migration failed (nothing it made is left behind); the caller then
-// runs the session on SALCFG_LEGACY_ROOT and tells the user (CfgMigrateFailed).
+// (salcfgmigrate.h); a key that cannot be read is never taken for absent (review 1 of 343). A
+// migration copies the old tree raw (RegCopyTreeW: every value with its name, type and data) into the
+// side key "Settings.migrating.63A7CD13" and the old crash-time backup ("0.1.backup.63A7CD13") into
+// "Settings.backup.migrating.63A7CD13", compares each copy with its source, and only then removes
+// leftovers that hold no configuration and makes the copies the root and its backup by RegRenameKey -
+// the root either does not exist or is complete. A finished move is recorded in the parent key
+// ("Moved To Settings"), so a root the user deletes later is not brought back from the old copy. The
+// old keys are only read, never written or deleted. Side keys of an interrupted migration are deleted
+// and the decision is made again. Returns FALSE when the session must run on SALCFG_LEGACY_ROOT: the
+// move failed (nothing it made is left behind), the old root cannot be read, or another session runs
+// on it; the caller re-points the root, holds the legacy-session mutex and tells the user.
 // Contract: specs/343-semver-settings-root/contracts/config-root-migration.md
 
 BOOL CfgMigrateFailed = FALSE;
@@ -969,22 +972,76 @@ static BOOL CfgMigWiden(const char* s, WCHAR* out, int outLen)
     return TRUE;
 }
 
-static BOOL CfgMigKeyExists(HKEY parent, const WCHAR* name)
+// 1 = the key exists, 0 = it does not, -1 = it may exist but cannot be opened (access denied, no
+// resources, ...) - never taken for "absent": what may be deleted or replaced is decided fail-closed
+static int CfgMigProbeKey(HKEY parent, const WCHAR* name)
 {
     HKEY k;
-    if (RegOpenKeyExW(parent, name, 0, KEY_READ, &k) != ERROR_SUCCESS)
-        return FALSE;
-    RegCloseKey(k);
-    return TRUE;
+    LSTATUS err = RegOpenKeyExW(parent, name, 0, KEY_READ, &k);
+    if (err == ERROR_SUCCESS)
+    {
+        RegCloseKey(k);
+        return 1;
+    }
+    return err == ERROR_FILE_NOT_FOUND ? 0 : -1;
 }
 
-// TRUE when 'root' has the subkey "Configuration" (the upstream rule: only then a key is a configuration)
-static BOOL CfgMigHasConfig(HKEY parent, const WCHAR* root)
+// the subkey "Configuration" of 'root' (the upstream rule: only then a key is a configuration): 1 / 0 / -1
+static int CfgMigProbeConfig(HKEY parent, const WCHAR* root)
 {
     WCHAR path[200];
     if (_snwprintf_s(path, _TRUNCATE, L"%s\\%hs", root, SALAMANDER_CONFIG_REG) < 0)
-        return FALSE;
-    return CfgMigKeyExists(parent, path);
+        return -1;
+    return CfgMigProbeKey(parent, path);
+}
+
+// a DWORD value of 'key' that is non-zero
+static BOOL CfgMigFlagSet(HKEY key, const WCHAR* name)
+{
+    DWORD v = 0, type = 0, size = sizeof(v);
+    return RegQueryValueExW(key, name, NULL, &type, (BYTE*)&v, &size) == ERROR_SUCCESS && type == REG_DWORD && v != 0;
+}
+
+// recorded in the parent key once a move has finished: a new root missing after that is the user's
+// reset (deleted, or "Remove Configuration" on a damaged one) - the old copy is never brought back
+static const WCHAR* CFGMIG_MOVED_VALUE = L"Moved To Settings";
+
+// a session that runs on the old root after a failed move holds this mutex (per user, all sessions);
+// another start never moves the configuration under it (what it saves would be lost)
+static HANDLE CfgLegacySessionMutex = NULL;
+
+static void CfgMigLegacySessionName(char* buf, int size)
+{
+    LPTSTR sid = NULL;
+    if (GetStringSid(&sid) && sid != NULL)
+    {
+        _snprintf_s(buf, size, _TRUNCATE, "Global\\TandemCommanderLegacyCfgSession_%s", sid);
+        LocalFree(sid);
+    }
+    else
+        _snprintf_s(buf, size, _TRUNCATE, "TandemCommanderLegacyCfgSession");
+}
+
+void HoldLegacyConfigSession()
+{
+    if (CfgLegacySessionMutex != NULL)
+        return;
+    char name[300];
+    CfgMigLegacySessionName(name, 300);
+    CfgLegacySessionMutex = NOHANDLES(CreateMutex(NULL, FALSE, name)); // held until the process ends
+    if (CfgLegacySessionMutex == NULL)
+        TRACE_E("HoldLegacyConfigSession(): CreateMutex failed: " << GetLastError());
+}
+
+static BOOL CfgMigLegacySessionRuns()
+{
+    char name[300];
+    CfgMigLegacySessionName(name, 300);
+    HANDLE h = NOHANDLES(OpenMutex(SYNCHRONIZE, FALSE, name));
+    if (h == NULL)
+        return GetLastError() != ERROR_FILE_NOT_FOUND; // it exists but cannot be opened: fail closed
+    NOHANDLES(CloseHandle(h));
+    return TRUE;
 }
 
 // TRUE when the trees under 'a' and 'b' are equal: the same subkey names, and every value with the
@@ -1129,30 +1186,70 @@ BOOL MigrateConfigurationRoot()
     *leaf++ = 0;
     *legacyLeaf++ = 0;
     const WCHAR* parentName = wRoot;
-    WCHAR side[100], newBackup[100], legacyBackup[100];
+    WCHAR side[100], sideBackup[100], newBackup[100], legacyBackup[100];
     _snwprintf_s(side, _TRUNCATE, L"%s.migrating.63A7CD13", leaf);
+    _snwprintf_s(sideBackup, _TRUNCATE, L"%s.backup.migrating.63A7CD13", leaf);
     _snwprintf_s(newBackup, _TRUNCATE, L"%s.backup.63A7CD13", leaf);
     _snwprintf_s(legacyBackup, _TRUNCATE, L"%s.backup.63A7CD13", legacyLeaf);
 
     BOOL ret = TRUE;
     LoadSaveToRegistryMutex.Enter();
+    // a session runs on the old root (its move failed): run on it too, never move under it. Checked
+    // under the registry mutex, and every start that returns FALSE holds the session mutex before it
+    // leaves - a start racing with a failing one cannot slip in between (review 2)
+    if (CfgMigLegacySessionRuns())
+    {
+        TRACE_I("MigrateConfigurationRoot(): a session runs on the old root, this one uses it too");
+        HoldLegacyConfigSession();
+        LoadSaveToRegistryMutex.Leave();
+        return FALSE;
+    }
     HKEY parent;
     LSTATUS err = RegOpenKeyExW(HKEY_CURRENT_USER, parentName, 0, KEY_READ, &parent);
-    if (err != ERROR_SUCCESS) // no key of the program at all: a fresh start
+    if (err != ERROR_SUCCESS) // no key of the program at all (a fresh start), or unreadable: touch nothing
     {
         if (err != ERROR_FILE_NOT_FOUND)
             TRACE_E("MigrateConfigurationRoot(): cannot open the parent key: " << err);
         LoadSaveToRegistryMutex.Leave();
         return TRUE;
     }
+    int newRoot = CfgMigProbeKey(parent, leaf);
+    int newCfg = CfgMigProbeConfig(parent, leaf);
+    int legacyRoot = CfgMigProbeKey(parent, legacyLeaf);
+    int legacyCfg = CfgMigProbeConfig(parent, legacyLeaf);
+    int legacyBk = CfgMigProbeKey(parent, legacyBackup);
+    int sideLeft = CfgMigProbeKey(parent, side);
+    int sideBkLeft = CfgMigProbeKey(parent, sideBackup);
     CSalCfgMigrateState state;
-    state.NewHasConfig = CfgMigHasConfig(parent, leaf);
-    state.LegacyHasConfig = CfgMigHasConfig(parent, legacyLeaf);
-    state.LegacyBackupExists = CfgMigKeyExists(parent, legacyBackup);
-    BOOL sideLeft = CfgMigKeyExists(parent, side);
+    state.NewHasConfig = newCfg == 1;
+    state.NewUnreadable = newRoot == -1 || newCfg == -1;
+    state.LegacyHasConfig = legacyCfg == 1;
+    state.LegacyBackupExists = legacyBk == 1;
+    state.LegacyUnreadable = legacyRoot == -1 || legacyCfg == -1 || legacyBk == -1;
+    state.AlreadyMoved = CfgMigFlagSet(parent, CFGMIG_MOVED_VALUE);
+    BOOL legacySaveInProgress = FALSE;
+    if (legacyRoot == 1)
+    {
+        HKEY k;
+        if (RegOpenKeyExW(parent, legacyLeaf, 0, KEY_READ, &k) == ERROR_SUCCESS)
+        {
+            DWORD v, type, size = sizeof(v);
+            legacySaveInProgress = RegQueryValueExW(k, L"Save In Progress", NULL, &type, (BYTE*)&v, &size) == ERROR_SUCCESS;
+            RegCloseKey(k);
+        }
+    }
     RegCloseKey(parent);
     CSalCfgMigrateAction action = SalCfgMigrateDecide(state);
-    if (action == scmaMigrate || sideLeft)
+    if (action == scmaUseLegacy)
+    {
+        TRACE_E("MigrateConfigurationRoot(): the old root cannot be read, this session uses it");
+        HoldLegacyConfigSession();
+        LoadSaveToRegistryMutex.Leave();
+        return FALSE;
+    }
+    BOOL markMoved = action == scmaUseNew && state.NewHasConfig && !state.AlreadyMoved &&
+                     (state.LegacyHasConfig || state.LegacyBackupExists); // moved by a start that ended before the mark
+    if (action == scmaMigrate || sideLeft == 1 || sideBkLeft == 1 || markMoved)
     {
         if (RegOpenKeyExW(HKEY_CURRENT_USER, parentName, 0, KEY_READ | KEY_WRITE, &parent) != ERROR_SUCCESS)
         {
@@ -1162,60 +1259,106 @@ BOOL MigrateConfigurationRoot()
         }
         else
         {
-            if (sideLeft)
+            // side keys of an interrupted move hold nothing in use
+            if (sideLeft == 1)
             {
                 TRACE_I("MigrateConfigurationRoot(): removing the side key of an interrupted migration");
                 SHDeleteKeyW(parent, side);
             }
+            if (sideBkLeft == 1)
+                SHDeleteKeyW(parent, sideBackup);
             if (action == scmaMigrate)
             {
                 TRACE_I("MigrateConfigurationRoot(): moving the configuration to the version-free root");
-                // leftovers that hold no configuration in use: a root without "Configuration", a backup
-                // copied by an interrupted migration (no genuine backup exists while the root holds none)
-                if (CfgMigKeyExists(parent, leaf))
-                    SHDeleteKeyW(parent, leaf);
-                if (CfgMigKeyExists(parent, newBackup))
-                    SHDeleteKeyW(parent, newBackup);
-                BOOL backupMade = FALSE;
-                if (state.LegacyBackupExists)
-                {
-                    ret = CfgMigCopyTree(parent, legacyBackup, newBackup, failAt, FALSE);
-                    backupMade = TRUE;
-                }
-                if (ret && CfgMigKeyExists(parent, legacyLeaf))
+                // 1) copies into side keys; nothing else is touched until they are complete
+                BOOL mainCopied = FALSE, backupCopied = FALSE;
+                if (sideLeft == -1 || sideBkLeft == -1)
+                    ret = FALSE; // a side key that cannot be cleared
+                if (ret && legacyRoot == 1)
                 {
                     ret = CfgMigCopyTree(parent, legacyLeaf, side, failAt, TRUE);
-                    if (ret)
+                    mainCopied = ret;
+                }
+                if (ret && legacyBk == 1)
+                {
+                    backupCopied = CfgMigCopyTree(parent, legacyBackup, sideBackup, failAt, FALSE);
+                    if (!backupCopied)
                     {
-                        err = RegRenameKey(parent, side, leaf);
-#ifdef _DEBUG
-                        if (strcmp(failAt, "rename") == 0 && err == ERROR_SUCCESS)
+                        SHDeleteKeyW(parent, sideBackup);
+                        if (legacySaveInProgress)
+                            ret = FALSE; // the old root is damaged: its backup is needed for the recovery
+                        else
+                            TRACE_E("MigrateConfigurationRoot(): the old crash-time backup was not copied (not needed)");
+                    }
+                }
+                // 2) commit: leftovers (a new root without "Configuration", a backup of an interrupted move -
+                // no genuine backup exists while the root holds none) go only now, then the renames
+                BOOL backupRenamed = FALSE;
+                if (ret)
+                {
+                    if (newRoot == 1)
+                        SHDeleteKeyW(parent, leaf);
+                    if (CfgMigProbeKey(parent, newBackup) == 1)
+                        SHDeleteKeyW(parent, newBackup);
+                    if (backupCopied)
+                    {
+                        err = RegRenameKey(parent, sideBackup, newBackup);
+                        backupRenamed = err == ERROR_SUCCESS;
+                        if (!backupRenamed)
                         {
-                            RegRenameKey(parent, leaf, side); // undo, as if the rename had failed
-                            err = ERROR_ACCESS_DENIED;
-                        }
-#endif // _DEBUG
-                        if (err != ERROR_SUCCESS)
-                        {
-                            TRACE_E("MigrateConfigurationRoot(): RegRenameKey failed: " << err);
+                            TRACE_E("MigrateConfigurationRoot(): RegRenameKey of the backup failed: " << err);
                             ret = FALSE;
                         }
+                    }
+                }
+                if (ret && mainCopied)
+                {
+                    err = RegRenameKey(parent, side, leaf);
+#ifdef _DEBUG
+                    if (strcmp(failAt, "rename") == 0 && err == ERROR_SUCCESS)
+                    {
+                        RegRenameKey(parent, leaf, side); // undo, as if the rename had failed
+                        err = ERROR_ACCESS_DENIED;
+                    }
+#endif // _DEBUG
+                    if (err != ERROR_SUCCESS)
+                    {
+                        TRACE_E("MigrateConfigurationRoot(): RegRenameKey failed: " << err);
+                        ret = FALSE;
                     }
                 }
                 if (!ret) // nothing made by this run stays; the old keys were only read
                 {
                     SHDeleteKeyW(parent, side);
-                    if (backupMade)
+                    SHDeleteKeyW(parent, sideBackup);
+                    if (backupRenamed)
                         SHDeleteKeyW(parent, newBackup);
                     TRACE_E("MigrateConfigurationRoot(): failed, this session uses the old root");
                 }
                 else
+                {
+                    markMoved = TRUE;
                     TRACE_I("MigrateConfigurationRoot(): done");
+                }
+            }
+            if (ret && markMoved)
+            {
+                DWORD one = 1;
+                RegSetValueExW(parent, CFGMIG_MOVED_VALUE, 0, REG_DWORD, (const BYTE*)&one, sizeof(one));
             }
             RegCloseKey(parent);
         }
     }
+    if (!ret)
+        HoldLegacyConfigSession(); // before the registry mutex is released (review 2)
     LoadSaveToRegistryMutex.Leave();
+#ifdef _DEBUG
+    if (ret && action == scmaMigrate && strcmp(failAt, "exit-after-move") == 0)
+    {
+        TRACE_I("MigrateConfigurationRoot(): test seam: ending the process after the move");
+        ExitProcess(4); // the probe compares the moved tree before the program writes anything
+    }
+#endif // _DEBUG
     return ret;
 }
 

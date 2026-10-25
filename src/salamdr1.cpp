@@ -4102,6 +4102,7 @@ int WinMainBody(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR cmdLine,
     {
         CfgMigrateNewRoot = SalamanderConfigurationRoots[0];
         SalamanderConfigurationRoots[0] = SALCFG_LEGACY_ROOT;
+        HoldLegacyConfigSession();
         CfgMigrateFailed = TRUE;
     }
 

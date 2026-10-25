@@ -73,7 +73,12 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
                  LPCTSTR onlyUnderHKCU, LPCTSTR legacyRoot)
 {
 #if defined(INSIDE_SALAMANDER) && !defined(_UNICODE)
-    char mappedName[2 * MAX_PATH]; // feature 343: a key name of the 0.1.x root mapped to the current root
+    // feature 343: a key name of the 0.1.x root mapped to the current root (heap, freed on every return)
+    struct CMappedName
+    {
+        char* Text = NULL;
+        ~CMappedName() { free(Text); }
+    } mappedName;
 #else
     (void)legacyRoot; // the mapping is char-only (see below)
 #endif
@@ -223,8 +228,13 @@ eRPE_ERROR Parse(LPTSTR buf, CSalamanderRegistryExAbstract* pRegistry, BOOL doNo
                 }
                 if (hParentKey == HKEY_CURRENT_USER && legacyRoot != NULL && !SalRegKeyIsInsideRoot(keyName, onlyUnderHKCU))
                 { // feature 343: a key of the 0.1.x root is imported under the version-free root
-                    if (SalRegMapLegacyRoot(keyName, onlyUnderHKCU, legacyRoot, mappedName, (int)sizeof(mappedName)))
-                        keyName = mappedName;
+                    size_t need = strlen(onlyUnderHKCU) + strlen(keyName) + 1; // the rest is never longer than the name
+                    char* mapped = (char*)realloc(mappedName.Text, need);
+                    if (mapped == NULL)
+                        return RPE_OUT_OF_MEMORY;
+                    mappedName.Text = mapped;
+                    if (SalRegMapLegacyRoot(keyName, onlyUnderHKCU, legacyRoot, mapped, (int)need))
+                        keyName = mapped;
                 }
                 if (hParentKey != HKEY_CURRENT_USER || !SalRegKeyIsInsideRoot(keyName, onlyUnderHKCU))
                 {

@@ -218,6 +218,11 @@ historical or migration reference.
 - The user downgrades to 0.1.x after the migration → 0.1.x finds `…\0.1` in the state of the
   migration moment (it is kept) and works with it; changes made there are not carried forward
   when the user upgrades again (`…\Settings` wins).
+- After a finished move the user goes back to 0.1.x, works there, deletes `…\Settings` and starts
+  the new version again → the record of the move makes this a reset: default settings, the later
+  0.1.x changes are not taken over (they stay in `…\0.1`; deleting the record value
+  `Moved To Settings` in the parent key as well makes the next start move them). Documented
+  limitation (review 2), chosen over silently re-filling a deliberately reset configuration.
 - Two users of one machine → each has their own `HKEY_CURRENT_USER`; each migrates at their own
   first start.
 - The configuration is very large (long histories, many FTP sites, thumbnails cache keys) → the
@@ -259,6 +264,14 @@ historical or migration reference.
   later backlog item, which this feature records. The privacy statement MUST say that the old key
   stays as a backup and that the user may delete it (it is under the key named in *Removing your
   data*).
+- **FR-008a** (review 1): A key the program cannot read (access denied, no resources) MUST never
+  be treated as absent: a new root it cannot read is used as it is (nothing copied over it, nothing
+  deleted); an old root it cannot read keeps the session on the old root (no fresh configuration
+  that would abandon it).
+- **FR-008b** (review 1): A finished move MUST be recorded so that a new root the user deletes or
+  resets later is not filled again from the old copy.
+- **FR-008c** (review 1): While a session runs on the old root after a failed move, another start
+  MUST NOT move the configuration (what that session saves would be lost).
 - **FR-009**: The migration MUST NOT use or revive the dormant upstream upgrade chain (the
   start-up dialog to import and delete older configurations); the list of configuration roots
   the program loads as its own stays one entry.

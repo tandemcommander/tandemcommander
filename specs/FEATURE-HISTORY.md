@@ -26,12 +26,12 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
 | Backlog and project tooling | 242, 243, 247, 265, 342 |
-| Releases and pre-release reviews | 056, 068, 243 |
+| Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -4988,3 +4988,41 @@ a few early ones are out of sequence).
     `resetsAt` in its rate event, and a silence timeout would kill reviewers that legitimately
     wait up to 2 hours. Not taken over either: Codex, `.cmd` twins, a read-only reviewer agent,
     a `Backlog-Item:` trailer.
+- 343-semver-settings-root: the configuration root is version-free - `HKCU\Software\Tandem
+  Commander\Settings` (was `…\0.1`, named after the version line, which made `release.py` refuse
+  any MINOR step: `line-change`) - and releases follow SemVer (rule once in `backlog/RELEASE.md`
+  *Version numbering*; `release.py` warns `version-step` / `patch-kind`; work collects under
+  `## [Unreleased]`; constitution 4.1.0). `MigrateConfigurationRoot` (`mainwnd2.cpp`) runs first in
+  `WinMainBody`, under `LoadSaveToRegistryMutex`: decision `salcfgmigrate.h` (tri-state probes - an
+  unreadable key is never absent; `scmaUseNew` / `Migrate` / `Fresh` / `UseLegacy`); raw
+  `RegCopyTreeW` into `Settings.migrating.63A7CD13` (+ the old backup into
+  `Settings.backup.migrating.63A7CD13`), recursive compare, then leftovers removed and
+  `RegRenameKey` - all or nothing; the parent key records `Moved To Settings` (a later deleted
+  `Settings` is a reset, never refilled). The old key is only read and never deleted (maintainer:
+  keep it - Inbox item for its later removal). A failed move / unreadable old root / a running
+  fallback session: the session runs on `0.1` (`SalamanderConfigurationRoots[0]` re-pointed,
+  mutex `Global\TandemCommanderLegacyCfgSession_<SID>` held, taken under the registry mutex),
+  `IDS_CFGMIGRATE_FAILED` once the main window is free. Import of a 0.1.x `.reg` maps its key lines
+  (`SalRegMapLegacyRoot`, `Parse(..., legacyRoot)`, heap buffer). Crash report names dotted
+  (`TC0.2.0X64-…`). Traps:
+  - The upstream upgrade chain (`FindLatestConfiguration` with a second root) would have shown a
+    dialog and loaded the old key through load/save (lossy) and can delete configurations - not
+    used; the root list stays one entry.
+  - Review 1 (MUST): `RegOpenKeyEx` failing for any reason was "absent" - with `0.1` present the
+    clean-up `SHDeleteKeyW`'d the user's `Settings`; also an unreadable `0.1` was abandoned, a second
+    start moved under a fallback session, a deleted `Settings` was refilled. All reproduced on the
+    pre-fix build (negative control) - rows DENY-NEW, RESET, SESSION.
+  - Probes: the shared `fix_probe_lib.ps1` backs up the parent key (covers both roots); its
+    `Set-Config` gates on `Settings\Configuration`, so on a machine that has not moved yet it set
+    nothing and the program moved the maintainer's Czech configuration - `Backup-Reg` now copies
+    `0.1` to `Settings` after the backup (restored with it). 272 literal / variable `\0.1` forms in
+    122 older probe scripts switched; stand-alone probes 079-177 with their own backup do not copy.
+  - Comparing the moved tree while the program runs sees the new build's own writes
+    (`Plugins.ver Version`): Debug seam `exit-after-move` (`TC_CFGMIGRATE_FAIL_AT`, also `copy`,
+    `compare`, `rename`, `kill-after-copy`).
+  - A row run alone on an empty registry meets 245's import offer and End-Row answers Yes: the
+    wizard wrote a backup into `%APPDATA%\Tandem Commander\Settings backups` (deleted again).
+  Limits: later 0.1.x changes are not carried over (also not after deleting `Settings` - the
+  record); a 0.2.0 export does not import into 0.1.x. Probe `cfgroot343_probe.ps1` 36 / 0
+  (pre-change build: BASIC, IMP-LEGACY FAIL); regressions 241 8 / 0, 263 26 / 0; saltests 28,953 / 0;
+  two refute-first reviews (MUST 1 + SHOULD 3, then SHOULD 1 - all fixed or documented).
