@@ -209,9 +209,10 @@ Each is one line of a longer story; the number is the feature whose entry in
 
 ## Status (2026-10-25)
 
-Features up to 343 are done (0.2.0 carries 244–343). The tree is
+Features up to 343 are done (0.2.0 carries 244–343). The tree was
 **prepared for the 0.2.0 release** (build 195, commit "Version 0.2.0: the
-tree prepared for the release (2026-10-25)" on `main`, nothing pushed): no
-person step gates it; then the maintainer's steps in `backlog/RELEASE.md`
-(*Releasing*). **0.1.10** is published (`v0.1.10`); winget submissions wait
-until `microsoft/winget-pkgs#426090` is settled.
+tree prepared for the release (2026-10-25)") and **0.2.0 is published**:
+tag `v0.2.0`, GitHub release with the installer, `main` pushed; the winget
+workflow submitted it (`microsoft/winget-pkgs#461652`, merged). The catalogue
+holds 0.1.7–0.2.0; `#426090` (0.1.7) was merged on 2026-10-08, nothing waits
+for it any more. Next work: `backlog/BACKLOG.md`.

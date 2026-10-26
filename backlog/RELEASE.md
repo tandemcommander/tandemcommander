@@ -9,9 +9,15 @@ publishing and the winget submission are the maintainer's steps; an agent
 session only prepares the tree. Steps that need a person and are not
 repeated per release are items in `BACKLOG.md` (*Person steps*).
 
-## Current release: 0.2.0 (build 195) — prepared, not published
+## Current release: 0.2.0 (build 195) — published 2026-10-25
 
-- The state to release is `main` at the commit "Version 0.2.0: the tree
+- Published (checked 2026-10-26): tag `v0.2.0` on `origin`, GitHub release
+  with `tandemcommander-0.2.0-x64-setup.exe` (not a draft, not a
+  pre-release), the installer archived in `setup/output`; `main` and
+  `production` on `origin` at the release commit. The **Publish to winget**
+  workflow ran on the release and `microsoft/winget-pkgs#461652` (0.2.0) was
+  merged the same day; the catalogue holds 0.1.7, 0.1.9, 0.1.10 and 0.2.0.
+- The released state is `main` at the commit "Version 0.2.0: the tree
   prepared for the release (2026-10-25)" (prepared by `/tandem-release`). It
   carries features 244–343 (everything since `v0.1.10`). It is the first
   MINOR release under Semantic Versioning (feature 343): the settings move
@@ -102,11 +108,10 @@ the one list; `CLAUDE.md` and the constitution point here, and
    commit before tagging.
 2. `build.cmd full release sign setup` (signed tree and installer).
 3. Tag `v<x.y.z>`.
-4. Before publishing the GitHub release: switch the **Publish to winget**
-   workflow **off** by hand (Actions tab) while
-   `microsoft/winget-pkgs#426090` is not settled — and check in the Actions
-   tab that it really is off before relying on it (for 0.1.8 this was never
-   confirmed).
+4. The **Publish to winget** workflow stays **on**: publishing the GitHub
+   release (step 5) opens the winget pull request by itself (so it did for
+   0.1.10 and 0.2.0). `microsoft/winget-pkgs#426090` (0.1.7) was merged on
+   2026-10-08; the old rule to switch the workflow off no longer applies.
 5. Publish the GitHub release **with the installer attached** under the
    exact name `tandemcommander-<x.y.z>-x64-setup.exe` (the program's
    new-version check, feature 123, offers a release only then; not a draft,
@@ -119,13 +124,12 @@ the one list; `CLAUDE.md` and the constitution point here, and
 - Run one antivirus scan of the Release build (the core makes an outbound
   connection at start-up since 123); submit false positives of the release
   to the vendors (Avast review: `specs/076-avast-false-positive-review/`).
-- winget: once #426090 has settled — *Enable workflow*, then *Run
-  workflow* from `main` (never from the tag), or
-  `tools\winget\publish.ps1 -Version <x.y.z> -Submit`. The pending
-  submission and the manifest fixes are backlog items
-  (`winget-submit-release-after-pr-426090`,
-  `winget-manifest-fixes-from-072-audit`); what to do with the open PR
-  itself is the decision `winget-repoint-pr-426090-decision`.
+- winget: check that the workflow run succeeded and follow the pull request
+  `PavelStupka.TandemCommander version <x.y.z>` in microsoft/winget-pkgs
+  until it is merged. If the run failed, *Run workflow* from `main` (never
+  from the tag) or `tools\winget\publish.ps1 -Version <x.y.z> -Submit`. The
+  manifest fixes of the 072 audit are the backlog item
+  `winget-manifest-fixes-from-072-audit`.
 - A bumped tree is not a published release: check the tag and
   `setup/output` (published installers are archived there; rebuilding an
   unbumped version overwrites them — verify the hash against
