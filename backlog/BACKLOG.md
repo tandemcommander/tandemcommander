@@ -52,7 +52,7 @@ Last triaged: 2026-10-24
 | 28 | [ISO plug-in: NRG audio track names are listed without cleaning or UTF-8 conversion](items/iso-plug-in-nrg-audio-track-names-are-listed-without/desc.md) | bug | 4 | archives | agent | S | open |
 | 29 | [ISO plug-in: HFS+ hard links extract as empty files, their data under iNode names](items/iso-plug-in-hfs-hard-links-extract-as-empty-files-their-data/desc.md) | bug | 4 | archives | agent | M | open |
 | 30 | [Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260](items/renamer-long-new-name-limits/desc.md) | bug | 3 | long-paths | agent | M | open |
-| 31 | [winget: offer a per-user install (--scope user), proven in Windows Sandbox first](items/winget-per-user-scope-entry/desc.md) | improvement | 3 | build-release | both | M | blocked |
+| 31 | [winget: offer a per-user install (--scope user), proven in Windows Sandbox first](items/winget-per-user-scope-entry/desc.md) | improvement | 3 | build-release | both | M | open |
 | 32 | [winget manifest fixes (072 audit): DisplayName, ProductCode; PrivacyUrl check](items/winget-manifest-fixes-from-072-audit/desc.md) | bug | 3 | build-release | agent | S | open |
 | 33 | [PictView Update Thumbnail: file time, hard links, per-file box, orientation](items/pictview-update-thumbnail-142-leftovers/desc.md) | improvement | 3 | pictview | agent | M | open |
 | 34 | [Quick search: first keystroke over 100,000 non-ASCII names takes about 335 ms](items/quick-search-first-keystroke-over-100-000-non-ascii-names/desc.md) | improvement | 3 | panels-ui | agent | M | open |
@@ -163,21 +163,20 @@ Last triaged: 2026-10-24
 | 1 | [ISO plug-in: APFS, original HFS and HFSX parts of a hybrid are never listed - mark them?](items/iso-plug-in-apfs-original-hfs-and-hfsx-parts-of-a-hybrid-are/desc.md) | 7 | other-plugins | open |
 | 2 | [Keep Video CD images after a whole unpack until their video extracts whole?](items/keep-video-cd-images-after-a-whole-unpack-until-their-video/desc.md) | 7 | archives | open |
 | 3 | [ISO plug-in: HFS+ resource forks beside file data are dropped by Unpack](items/iso-plug-in-an-hfs-file-with-data-and-a-resource-fork-loses/desc.md) | 7 | archives | open |
-| 4 | [winget: re-point the open PR #426090 to the current release (072 audit)?](items/winget-repoint-pr-426090-decision/desc.md) | 4 | build-release | open |
-| 5 | [Frozen code-page plug-in services: add wide/UTF-8 variants or keep them (B-5)?](items/plugin-ansi-services-interface-decision/desc.md) | 3 | plugin-api | open |
-| 6 | [Ship the Network plug-in (nethood) enabled?](items/decide-ship-network-plugin-nethood/desc.md) | 3 | other-plugins | open |
-| 7 | [A .gz file whose stored name is too long for Windows: refuse it or use the archive name](items/a-gz-file-whose-stored-name-is-too-long-for-windows-refuse/desc.md) | 3 | archives | open |
-| 8 | [Archive Update: how to tell a member rewritten with the same size and time](items/archive-update-same-stamp-member-decision/desc.md) | 3 | archives | open |
-| 9 | [FTP: should the plug-in ask a server whether it speaks UTF-8 (FEAT)?](items/ftp-ask-server-utf8-feat-decision/desc.md) | 3 | ftp | open |
-| 10 | [State a deliberate minimum Windows version in the program and installer?](items/decide-windows-version-floor/desc.md) | 2 | build-release | open |
-| 11 | [SFTP: a recursive Change Attributes gives one mode to files and folders alike](items/decide-sftp-recursive-change-attributes-modes/desc.md) | 5 | sftp | open |
-| 12 | [PE Viewer: write the dump as UTF-8 with a BOM?](items/decide-peviewer-dump-utf8-with-bom/desc.md) | 2 | other-plugins | open |
-| 13 | [checkver plug-in still checks Open Salamander's site: redirect it or drop it](items/checkver-update-channel-decision/desc.md) | 2 | other-plugins | open |
-| 14 | [Forced Disk Map unload in a shell command: cancel the shell window or terminate](items/forced-disk-map-unload-in-a-shell-command-cancel-the-shell/desc.md) | 2 | other-plugins | open |
-| 15 | [FTP: a path whose escaped form does not fit MAX_PATH is left half-escaped](items/ftp-escaped-path-does-not-fit-decision/desc.md) | 2 | ftp | open |
-| 16 | [Should the program come back after a reboot or sign-in (RESTART_NO_REBOOT)?](items/restart-after-reboot-or-sign-out/desc.md) | 1 | plugin-api | open |
-| 17 | [Help > Contents ends in a Help Error box: the product ships no manual](items/help-contents-fails-no-manual-shipped/desc.md) | 4 | help-docs | open |
-| 18 | [Is the missing shell copy hook (drag out of archives into Explorer) intended?](items/copy-hook-for-drag-out-of-archives/desc.md) | 3 | archives | open |
+| 4 | [Frozen code-page plug-in services: add wide/UTF-8 variants or keep them (B-5)?](items/plugin-ansi-services-interface-decision/desc.md) | 3 | plugin-api | open |
+| 5 | [Ship the Network plug-in (nethood) enabled?](items/decide-ship-network-plugin-nethood/desc.md) | 3 | other-plugins | open |
+| 6 | [A .gz file whose stored name is too long for Windows: refuse it or use the archive name](items/a-gz-file-whose-stored-name-is-too-long-for-windows-refuse/desc.md) | 3 | archives | open |
+| 7 | [Archive Update: how to tell a member rewritten with the same size and time](items/archive-update-same-stamp-member-decision/desc.md) | 3 | archives | open |
+| 8 | [FTP: should the plug-in ask a server whether it speaks UTF-8 (FEAT)?](items/ftp-ask-server-utf8-feat-decision/desc.md) | 3 | ftp | open |
+| 9 | [State a deliberate minimum Windows version in the program and installer?](items/decide-windows-version-floor/desc.md) | 2 | build-release | open |
+| 10 | [SFTP: a recursive Change Attributes gives one mode to files and folders alike](items/decide-sftp-recursive-change-attributes-modes/desc.md) | 5 | sftp | open |
+| 11 | [PE Viewer: write the dump as UTF-8 with a BOM?](items/decide-peviewer-dump-utf8-with-bom/desc.md) | 2 | other-plugins | open |
+| 12 | [checkver plug-in still checks Open Salamander's site: redirect it or drop it](items/checkver-update-channel-decision/desc.md) | 2 | other-plugins | open |
+| 13 | [Forced Disk Map unload in a shell command: cancel the shell window or terminate](items/forced-disk-map-unload-in-a-shell-command-cancel-the-shell/desc.md) | 2 | other-plugins | open |
+| 14 | [FTP: a path whose escaped form does not fit MAX_PATH is left half-escaped](items/ftp-escaped-path-does-not-fit-decision/desc.md) | 2 | ftp | open |
+| 15 | [Should the program come back after a reboot or sign-in (RESTART_NO_REBOOT)?](items/restart-after-reboot-or-sign-out/desc.md) | 1 | plugin-api | open |
+| 16 | [Help > Contents ends in a Help Error box: the product ships no manual](items/help-contents-fails-no-manual-shipped/desc.md) | 4 | help-docs | open |
+| 17 | [Is the missing shell copy hook (drag out of archives into Explorer) intended?](items/copy-hook-for-drag-out-of-archives/desc.md) | 3 | archives | open |
 
 ## Person steps
 
@@ -236,32 +235,31 @@ Last triaged: 2026-10-24
 | 51 | [Real mouse double-click on a shortcut to an accented folder (GitHub #8)](items/shortcut-accented-folder-double-click/desc.md) | panels-ui | open |
 | 52 | [Start the 0.1.10 build on Windows 7 SP1 / Server 2008 R2 SP1 (GitHub #6)](items/windows-7-start-of-release-build/desc.md) | build-release | open |
 | 53 | [Accented archive edits and long archive paths: rows the probes could not drive](items/archive-edit-and-long-path-rows-owed-to-person/desc.md) | archives | open |
-| 54 | [Submit the current release to winget once PR #426090 has settled](items/winget-submit-release-after-pr-426090/desc.md) | build-release | blocked |
-| 55 | [On-screen sweep of 084 archivers: run the ready probes, then a visual pass](items/onscreen-sweep-084-archivers/desc.md) | archives | open |
-| 56 | [On-screen sweep of 068/069: F1-F8, W1-W20 in cs and hu, V-01 to V-24, G7](items/onscreen-sweep-069-encoding-w-and-v-rows/desc.md) | encoding | open |
-| 57 | [On-screen pass of 075 (small hardening): scenarios S1-S5 and gate G6](items/onscreen-pass-075-small-hardening/desc.md) | viewer | open |
-| 58 | [On-screen pass of the Code Viewer: 070 quickstart scenarios and 074 gutter steps](items/onscreen-pass-codeview-070-074/desc.md) | viewer | open |
-| 59 | [On-screen pass of 081: Markdown Viewer on the shared WebView2 host, sections A-D](items/onscreen-pass-081-mdview-shared-host/desc.md) | webview | open |
-| 60 | [Panel tabs (078) by hand on the Release build, and the 88-byte leak watch](items/panel-tabs-078-release-pass-and-leak-watch/desc.md) | panels-ui | open |
-| 61 | [Privacy fixes of 085 on screen: checks G1-G6](items/privacy-085-gui-checks-g1-g6/desc.md) | privacy-security | open |
-| 62 | [Encrypted ZIP and SFTP passwords by hand: AES round trip, accented passwords](items/zip-sftp-passwords-real-keyboard-086-094/desc.md) | archives | open |
-| 63 | [RAR reading and 7-Zip plug-in by hand: associations, WinRAR (087, 089)](items/rar-and-7zip-checks-087-089/desc.md) | archives | open |
-| 64 | [Closing for a real update: elevated installer, sign-out, open plug-in windows](items/update-close-real-installer-signout-080-088-118/desc.md) | plugin-api | open |
-| 65 | [FTP against real servers: anonymous login, non-ASCII password, SOCKS 5 proxy](items/ftp-real-server-checks-090-116-121/desc.md) | ftp | open |
-| 66 | [Name identity of 092 by hand: accented names that differ only in case](items/name-identity-checks-092/desc.md) | data-safety | open |
-| 67 | [New texts on screen in a translation: Archive Update (153), refusals (155)](items/dialog-texts-on-screen-153-155/desc.md) | translations | open |
-| 68 | [New version check (123): design, real keyboard and mouse, screen reader](items/new-version-check-123-person-steps/desc.md) | panels-ui | open |
-| 69 | [Paste, drag and drop and mouse-only routes by hand (099, 101, 107, 119, 121)](items/clipboard-drag-mouse-routes-099-101-107-119-121/desc.md) | data-safety | open |
-| 70 | [Clean-machine start: the installer on Windows without the Visual C++ runtime](items/clean-machine-start-077/desc.md) | build-release | open |
-| 71 | [Same-file guards on macOS / Samba and case-sensitive shares, snapshots, FAT](items/shares-snapshots-fat-same-folder-guards/desc.md) | data-safety | open |
-| 72 | [Undelete on a mount point with an accented name (admin) and real EFS backups](items/undelete-mount-points-and-efs-114-115/desc.md) | other-plugins | open |
-| 73 | [GitHub housekeeping: real run of the Node 24 workflows, vulnerability reporting](items/github-repo-housekeeping-091-083/desc.md) | build-release | open |
-| 74 | [Antivirus reputation: Avast Whitelisting registration and a FAQ page](items/antivirus-reputation-avast-faq/desc.md) | build-release | open |
-| 75 | [PictView: check the Exif information menu item is offered only for photos with Exif](items/pictview-check-the-exif-information-menu-item-is-offered/desc.md) | pictview | open |
-| 76 | [Information line of a long-named item: check it on screen (276)](items/information-line-of-a-long-named-item-check-it-on-screen-276/desc.md) | panels-ui | open |
-| 77 | [Share root way up (284) by hand: drop onto .., a real server, Esc in the wait](items/share-root-up-284-person-rows/desc.md) | panels-ui | open |
-| 78 | [Quick search ignoring accents: check with a real keyboard](items/quick-search-ignoring-accents-check-with-a-real-keyboard/desc.md) | panels-ui | open |
-| 79 | [Answer GitHub issue #9 (paste fails in a folder with an exclamation mark)](items/answer-github-issue-9-paste-fails-in-a-folder-with-an/desc.md) | file-ops | open |
+| 54 | [On-screen sweep of 084 archivers: run the ready probes, then a visual pass](items/onscreen-sweep-084-archivers/desc.md) | archives | open |
+| 55 | [On-screen sweep of 068/069: F1-F8, W1-W20 in cs and hu, V-01 to V-24, G7](items/onscreen-sweep-069-encoding-w-and-v-rows/desc.md) | encoding | open |
+| 56 | [On-screen pass of 075 (small hardening): scenarios S1-S5 and gate G6](items/onscreen-pass-075-small-hardening/desc.md) | viewer | open |
+| 57 | [On-screen pass of the Code Viewer: 070 quickstart scenarios and 074 gutter steps](items/onscreen-pass-codeview-070-074/desc.md) | viewer | open |
+| 58 | [On-screen pass of 081: Markdown Viewer on the shared WebView2 host, sections A-D](items/onscreen-pass-081-mdview-shared-host/desc.md) | webview | open |
+| 59 | [Panel tabs (078) by hand on the Release build, and the 88-byte leak watch](items/panel-tabs-078-release-pass-and-leak-watch/desc.md) | panels-ui | open |
+| 60 | [Privacy fixes of 085 on screen: checks G1-G6](items/privacy-085-gui-checks-g1-g6/desc.md) | privacy-security | open |
+| 61 | [Encrypted ZIP and SFTP passwords by hand: AES round trip, accented passwords](items/zip-sftp-passwords-real-keyboard-086-094/desc.md) | archives | open |
+| 62 | [RAR reading and 7-Zip plug-in by hand: associations, WinRAR (087, 089)](items/rar-and-7zip-checks-087-089/desc.md) | archives | open |
+| 63 | [Closing for a real update: elevated installer, sign-out, open plug-in windows](items/update-close-real-installer-signout-080-088-118/desc.md) | plugin-api | open |
+| 64 | [FTP against real servers: anonymous login, non-ASCII password, SOCKS 5 proxy](items/ftp-real-server-checks-090-116-121/desc.md) | ftp | open |
+| 65 | [Name identity of 092 by hand: accented names that differ only in case](items/name-identity-checks-092/desc.md) | data-safety | open |
+| 66 | [New texts on screen in a translation: Archive Update (153), refusals (155)](items/dialog-texts-on-screen-153-155/desc.md) | translations | open |
+| 67 | [New version check (123): design, real keyboard and mouse, screen reader](items/new-version-check-123-person-steps/desc.md) | panels-ui | open |
+| 68 | [Paste, drag and drop and mouse-only routes by hand (099, 101, 107, 119, 121)](items/clipboard-drag-mouse-routes-099-101-107-119-121/desc.md) | data-safety | open |
+| 69 | [Clean-machine start: the installer on Windows without the Visual C++ runtime](items/clean-machine-start-077/desc.md) | build-release | open |
+| 70 | [Same-file guards on macOS / Samba and case-sensitive shares, snapshots, FAT](items/shares-snapshots-fat-same-folder-guards/desc.md) | data-safety | open |
+| 71 | [Undelete on a mount point with an accented name (admin) and real EFS backups](items/undelete-mount-points-and-efs-114-115/desc.md) | other-plugins | open |
+| 72 | [GitHub housekeeping: real run of the Node 24 workflows, vulnerability reporting](items/github-repo-housekeeping-091-083/desc.md) | build-release | open |
+| 73 | [Antivirus reputation: Avast Whitelisting registration and a FAQ page](items/antivirus-reputation-avast-faq/desc.md) | build-release | open |
+| 74 | [PictView: check the Exif information menu item is offered only for photos with Exif](items/pictview-check-the-exif-information-menu-item-is-offered/desc.md) | pictview | open |
+| 75 | [Information line of a long-named item: check it on screen (276)](items/information-line-of-a-long-named-item-check-it-on-screen-276/desc.md) | panels-ui | open |
+| 76 | [Share root way up (284) by hand: drop onto .., a real server, Esc in the wait](items/share-root-up-284-person-rows/desc.md) | panels-ui | open |
+| 77 | [Quick search ignoring accents: check with a real keyboard](items/quick-search-ignoring-accents-check-with-a-real-keyboard/desc.md) | panels-ui | open |
+| 78 | [Answer GitHub issue #9 (paste fails in a folder with an exclamation mark)](items/answer-github-issue-9-paste-fails-in-a-folder-with-an/desc.md) | file-ops | open |
 
 ## Inbox
 

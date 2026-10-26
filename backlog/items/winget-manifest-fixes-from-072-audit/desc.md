@@ -7,12 +7,12 @@ area: build-release
 source: leftover:072
 who: agent
 created: 2026-09-30
-updated: 2026-10-17
-verified: 2026-10-17 7993914c
+updated: 2026-10-26
+verified: 2026-10-26 5990595b
 effort: S
 feature: -
-related: [winget-repoint-pr-426090-decision, winget-submit-release-after-pr-426090, winget-per-user-scope-entry, winget-records-stale-claims-from-072-audit]
-depends-on: [winget-repoint-pr-426090-decision]
+related: [winget-per-user-scope-entry, winget-records-stale-claims-from-072-audit]
+depends-on: []
 reason: -
 ---
 
@@ -20,23 +20,23 @@ reason: -
 
 ## Problem
 
-The audit of PR #426090 (2026-09-30) found manifest inaccuracies a winget moderator is likely to ask about: AppsAndFeaturesEntries.DisplayName does not match what the installer writes (`AppVerName` is commented out, so Inno Setup writes `Tandem Commander <version>`; the template says `Tandem Commander`), and ProductCode is only in AppsAndFeaturesEntries and not at installer level (schema 1.10.0 asks for both). The installer template comment still gives the refuted reason "the pipeline runs elevated". PrivacyUrl is not a change: the template line exists since feature 083; what is owed is a check that the URL answers 200 on `main` before it goes out with the next push to #426090.
+The winget manifests generated from `tools/winget/templates/` do not state the installed program exactly as the installer writes it: `AppsAndFeaturesEntries.DisplayName` is `Tandem Commander`, but Inno Setup writes `Tandem Commander <version>` (`AppVerName` is commented out), and `ProductCode` is only in `AppsAndFeaturesEntries`, not at installer level (schema 1.10.0 asks for both). The installer template comment still gives the refuted reason "the validation pipeline runs elevated" for dropping the per-user entry. Found by the 072 audit of PR #426090 (2026-09-30) as what a moderator was likely to ask about. That PR was merged on 2026-10-08 and 0.1.9, 0.1.10 and 0.2.0 were accepted with the same manifests; winget list/upgrade works (it matches by ProductCode), so this is manifest accuracy, not a functional defect.
 
 ## Evidence
 
-specs/072-winget-distribution/REMAINING-WORK.md §P0 (P0.3, P0.6, P0.7, 'Repository record fixes' - template comment), re-checked by the migration at 7993914c: DisplayName and installer-level ProductCode still open; `tools/winget/templates/installer.yaml.in:13-21` still has the refuted reason; `locale.en-US.yaml.in:42` has the PrivacyUrl line. Migrated from specs/NEXT-WORK.md §6 ('Read 072/REMAINING-WORK.md § P0 before anything else here') at 7993914c. Plan order corrected by the migration review (`specs/242-backlog-system/ledger/review.md`, M2, N10).
+At 5990595b: `tools/winget/templates/installer.yaml.in` - `AppsAndFeaturesEntries` (DisplayName `Tandem Commander`, ProductCode `{35C0B0DC-DB73-429C-AAA8-FBC41C937F66}_is1`), no installer-level ProductCode, header comment with the refuted elevation reason; `setup/tandemcommander.iss:13` `;AppVerName=...` commented out. The installed 0.2.0 (machine scope) has DisplayName `Tandem Commander 0.2.0` in `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{35C0B0DC-DB73-429C-AAA8-FBC41C937F66}_is1` (read 2026-10-26). The catalogue's 0.2.0 installer manifest (microsoft/winget-pkgs#461652) carries the same values. `locale.en-US.yaml.in:42` has the PrivacyUrl line; the URL answered 200 on 2026-10-26. Source: specs/072-winget-distribution/REMAINING-WORK.md §P0 (P0.6, P0.7, 'Repository record fixes').
 
 ## Expected
 
-The manifests generated from the templates state DisplayName and ProductCode as the installed program reports them, the template comments give the true reasons, and the PrivacyUrl `https://github.com/tandemcommander/tandemcommander/blob/main/PRIVACY.md` was checked to answer 200 before the push - all in the same push as the re-pointed #426090 (072 §P0 *Recommended plan* 2-3), so the repository and the PR stay identical.
+The manifests generated from the templates state DisplayName and ProductCode as the installed program reports them, and the template comments give the true reasons. The fixed templates reach the catalogue through the Publish to winget workflow with the next release; the PrivacyUrl still answers 200 at that time.
 
 ## Approach
 
-Waits for `winget-repoint-pr-426090-decision`. With option A (the audit's plan) the templates change NOW, while #426090 is open, together with the re-pointing push - the audit's step 2, not "only once #426090 is settled": (6) set `UninstallDisplayName=Tandem Commander` in `setup/tandemcommander.iss` from the next release, or render the versioned name into `AppsAndFeaturesEntries.DisplayName`; (7) add `ProductCode` at installer level in `tools/winget/templates/installer.yaml.in`; correct the comment at `installer.yaml.in:13-21`. Render the re-pointed manifest with `tools/winget/publish.ps1 -Version <v>` from `main` (dry run `-LocalFile <installer>`, validate) and push the same files to the fork branch. With option C the templates stay unchanged while the PR is open (072 *Gate*).
+(6) Either set `UninstallDisplayName=Tandem Commander` in `setup/tandemcommander.iss` (from the next release; the Apps & Features name then loses the version) or render the versioned name `Tandem Commander {{VERSION}}` into `AppsAndFeaturesEntries.DisplayName` - the second changes nothing in the installer and is the smaller step; (7) add `ProductCode` at installer level in `tools/winget/templates/installer.yaml.in`; correct the header comment. Check with `tools/winget/publish.ps1 -Version 0.2.0 -LocalFile <installer>` (generate and validate, no submission). The change must be in the commit the next release is tagged from: on a published release the workflow checks out the release's tag and submits the templates found there.
 
 ## Notes
 
-The decision about the open PR (re-point, VC++ runtime risk of 0.1.7, the Policy-Test-1.2 waiver) is `winget-repoint-pr-426090-decision`; later submissions are `winget-submit-release-after-pr-426090`; the stale records outside the templates are `winget-records-stale-claims-from-072-audit`.
+No pull request gates this any more (#426090 merged 2026-10-08; the decision `winget-repoint-pr-426090-decision` was closed as obsolete on 2026-10-26). The stale records outside the templates are `winget-records-stale-claims-from-072-audit`; the per-user entry is `winget-per-user-scope-entry` and does not ride along.
 
 ## Log
 
@@ -47,3 +47,7 @@ The decision about the open PR (re-point, VC++ runtime risk of 0.1.7, the Policy
 - 2026-10-17 — migration review M2/N10: Approach follows the audit plan (templates change with the re-pointing push, not after the PR settles); PrivacyUrl reworded as a check
 - 2026-10-17 — title shortened to 80 characters
 - 2026-10-17 — title shortened to 80 characters
+- 2026-10-26 — related item winget-submit-release-after-pr-426090 closed: done: #426090 merged 2026-10-08, 0.1.9, 0.1.10 and 0.2.0 submitted by the workflow and merged, the catalogue is current and works; maintainer 2026-10-26
+- 2026-10-26 — dependency winget-repoint-pr-426090-decision closed: decided 2026-10-26: obsolete, #426090 merged 2026-10-08 and the catalogue holds 0.2.0; maintainer
+- 2026-10-26 — maintainer decision 2026-10-26: kept; rewritten without the #426090 gate - the fixes reach the catalogue with the next release through the workflow
+- 2026-10-26 — verified at 5990595b: still true: template DisplayName Tandem Commander vs installed Tandem Commander 0.2.0 (HKLM uninstall key), no installer-level ProductCode, same in the catalogue 0.2.0 manifest

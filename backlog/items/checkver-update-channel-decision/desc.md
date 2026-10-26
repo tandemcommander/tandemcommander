@@ -7,11 +7,11 @@ area: other-plugins
 source: leftover:072
 who: person
 created: 2026-08-29
-updated: 2026-10-17
+updated: 2026-10-26
 verified: -
 effort: -
 feature: -
-related: [winget-submit-release-after-pr-426090]
+related: []
 depends-on: []
 reason: -
 ---
@@ -52,3 +52,4 @@ B — feature 123 already checks GitHub Releases from the core, so a second chec
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §5–§8 (feature 242)
 - 2026-10-17 — unblocked
 - 2026-10-17 — migration review S8: unblocked; #426090 mentioned only in Notes; migration remark removed
+- 2026-10-26 — related item winget-submit-release-after-pr-426090 closed: done: #426090 merged 2026-10-08, 0.1.9, 0.1.10 and 0.2.0 submitted by the workflow and merged, the catalogue is current and works; maintainer 2026-10-26

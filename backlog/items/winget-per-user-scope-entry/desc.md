@@ -1,19 +1,19 @@
 ---
 title: winget: offer a per-user install (--scope user), proven in Windows Sandbox first
 type: improvement
-status: blocked
+status: open
 severity: 3
 area: build-release
 source: leftover:072
 who: both
 created: 2026-08-29
-updated: 2026-10-17
+updated: 2026-10-26
 verified: -
 effort: M
 feature: -
-related: [winget-submit-release-after-pr-426090]
+related: []
 depends-on: []
-reason: waits for microsoft/winget-pkgs#426090
+reason: -
 ---
 
 # winget: offer a per-user install (--scope user), proven in Windows Sandbox first
@@ -36,9 +36,12 @@ On a branch: add to tools/winget/templates/installer.yaml.in an x64 entry with '
 
 ## Notes
 
-Do NOT add the per-user entry to tools/winget/templates/ on main while microsoft/winget-pkgs#426090 is open (the only template changes allowed then are those of `winget-manifest-fixes-from-072-audit`, pushed together with a re-pointed PR): the workflow submits on release publication, and a second unreviewed change during moderation is how the first attempt went wrong. The same entry is RW072 P2 and is listed in NW §B 'Release and catalogue housekeeping'. If `winget-repoint-pr-426090-decision` chooses to re-point the open PR, the per-user entry must not ride in that push: it is proven in Windows Sandbox first, on a branch of its own.
+microsoft/winget-pkgs#426090 was merged on 2026-10-08 and the catalogue is current (0.2.0, 2026-10-25), so nothing is under moderation any more. Still: do not add the per-user entry to tools/winget/templates/ on main before it passed the sandbox - the Publish to winget workflow submits the templates on every release publication, and an unproven change in a submission is how the first attempt went wrong. The same entry is RW072 P2 and is listed in NW §B 'Release and catalogue housekeeping'.
 
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §5–§8 (feature 242)
 - 2026-10-17 — migration review N3: migration remark replaced; not part of a re-pointing push
+- 2026-10-26 — related item winget-submit-release-after-pr-426090 closed: done: #426090 merged 2026-10-08, 0.1.9, 0.1.10 and 0.2.0 submitted by the workflow and merged, the catalogue is current and works; maintainer 2026-10-26
+- 2026-10-26 — unblocked: microsoft/winget-pkgs#426090 merged 2026-10-08; the catalogue holds 0.2.0, nothing is under moderation now; maintainer 2026-10-26
+- 2026-10-26 — Notes: the #426090 gate replaced - the PR is merged, the sandbox-first rule stays
