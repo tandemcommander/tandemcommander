@@ -14,7 +14,7 @@
  * - the `RUNS.md` journal (complete since 2026-10-18; from `main`'s git objects during a run) for
  *   runs without a trace;
  * - for the live run's progress: `specs/<branch>/tasks.md` of the working tree (read at most every
- *   five seconds, tolerating its absence) and the branch's commits after the run's base.
+ *   three seconds, tolerating its absence) and the branch's commits after the run's base.
  * A `meta.json` is read only after its run ended: the loop replaces it atomically while the run
  * lives, and a reader could make that replace fail (analysis A2 §5.1).
  */
@@ -35,6 +35,9 @@ import {
 import type { Services } from "../services.ts";
 import { git, showFile } from "../repo/git.ts";
 import { readTraceLines } from "./tailer.ts";
+
+/** Interval of reading the live run's `tasks.md` and commits. */
+const PROGRESS_MS = 3000;
 
 /** Form of a trace folder name. */
 export const RUN_ID_PATTERN = /^\d{8}-\d{6}-claude-[a-z0-9-]+$/;
@@ -319,7 +322,8 @@ export class RunsService {
       live.offset = read.offset;
     }
     if (events.length > 0) for (const listener of this.listeners) listener(live.id, events);
-    if (Date.now() - live.progressAt > 5000) {
+    // Every 3 s: with the 1 s follow tick a ticked task shows within about 4 s (SC-004: 5 s).
+    if (Date.now() - live.progressAt >= PROGRESS_MS) {
       live.progressAt = Date.now();
       void this.readProgress(live);
     }

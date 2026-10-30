@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243, 247, 265, 342 |
+| Backlog and project tooling | 242, 243, 247, 265, 342, 344 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -5033,3 +5033,45 @@ a few early ones are out of sequence).
   IMP-LEGACY FAIL; pre-review-fix build RESET, DENY-NEW, SESSION FAIL; regressions 241, 263 and the
   older probes of the closing pass; saltests 28,953 / 0; `test_release.py` 46 / 0; two refute-first
   reviews (MUST 1 + SHOULD 3, then SHOULD 1 - all fixed).
+- 344-backlog-web-app: a localhost web app `tools/backlog-app/` (Node 24 + TypeScript; Hono on
+  `127.0.0.1`, React 19 / Vite 8 / Tailwind 4, zod schemas shared by both sides), started by
+  `bin/start-backlog-app.sh`, steers development through the backlog: browse, filter (query
+  language in the address), triage, reorder, edit, close, decide, bulk changes; watch the loop and
+  the running item live, start / pause / resume / stop / hard-stop it, run one chosen item; run
+  history with transcripts, feature records, release readiness (no publish action); Claude jobs
+  that propose (draft, ask, placement check, verify) and write nothing until accepted. It changes
+  nothing by itself: `bin/backlog.sh` with texts on stdin (`--input-json -`), `bin/backlog-loop.sh`
+  for the loop (its own console window, never hosted). Changes go to a change tray (undo newest,
+  commit `backlog(app): ...` of `backlog/` paths, auto-committed before a loop start / resume);
+  the edit lock `.git/tandem-backlog-edit.lock` holds the loop's next run, and the write gate keeps
+  the app read-only while a run holds the run lock, the loop runs unpaused or stopped answering,
+  HEAD is not `main`, or a merge is open. Tool additions: `backlog.py` `board` / `show` / `check` /
+  `legend --json`, `--ref main`, `--input-json`, `--json` results with written files, `reorder`,
+  `body`, `step`, `decide`, `reply`, `set --position`; `loop.py` `kill`, `start --new-window` /
+  `--item`, edit-lock precheck, `loop.log`, `last.json`. Security: Host allow-list, Origin /
+  Sec-Fetch-Site, per-start token through a single-use start code, CSP, manifest-only static files,
+  the state folder `.git/tandem-backlog-app/` restricted to the user. Traps:
+  - Reading a file the loop replaces atomically (`loop.json`, `meta.json`, the lock) in a tight
+    loop makes its `os.replace` fail (WinError 5, measured): the app reads only append-only
+    `trace.jsonl` of a live run (open-read-close), `meta.json` only of a run with an index line
+    (the loop appends it after the final `meta.json`), and the loop's files only through
+    `loop.py status --json`.
+  - During a run the board is read from `main`'s git objects (`--ref main`): the working tree is
+    on the run's branch and its backlog files are being written.
+  - A gate check after taking the edit lock must use a loop state polled after the lock
+    (`LoopMonitor.fresh`), and a change must answer only once the read model shows it
+    (`ReadModel.fresh`) - otherwise an undo followed by a reorder was refused as changed underneath.
+  - Inside `.git` the state folder inherits the repository's ACL (on a data drive: every signed-in
+    user may modify): restricted with `icacls` at every start; without it the launcher secret is off.
+  - `start --new-window` makes the loop a child of the waiting command: `taskkill /T` at the app's
+    shutdown would kill it (`keepDescendants`).
+  - TypeDoc's `notDocumented` validation reported nothing for an undocumented export (negative
+    control): the documentation gate is ESLint `jsdoc` + `tsdoc`.
+  - Node 24 type stripping forbids TypeScript parameter properties (`erasableSyntaxOnly`).
+  Evidence: 278 unit / API tests, 26 Playwright tests on Edge (real tools, real loop, fake
+  claude, hidden window), 22 / 22 mutations caught, soak of 20 runs undisturbed, live trace lines within 1.5 s over 20 minutes (SC-004 asks for
+  2 hours - stopped early), task progress within 3 s,
+  508 items filtered in 3-23 ms, first start 17.8 s / later 1.0 s; Q1 on a clone of the real
+  repository equal to `list --json`. One refute-first review (3 MUST, 4 SHOULD, 6 NOTE - fixed;
+  one note to the Inbox: `run-lock-update-release-no-retry`). Owed to a person:
+  `backlog-app-morning-on-real-repo` (SC-002 and one visible `--new-window` start).

@@ -249,3 +249,68 @@ and the run lock were never touched).
 | Q20 | `npm run lint` with the jsdoc/tsdoc rules (TypeDoc's `docs:check` was dropped: its negative control did not fail, see above) | PASS |
 | Q21 | `bin/start-backlog-app.sh` | PASS - 17.8 s first, 1.0 s later |
 | Q22 | Not driven: needs the real repository and a real loop night | PERSON STEP for the maintainer |
+
+## Independent review (T134) and its fixes
+
+A refute-first review agent (security gate, write path, loop control, file handles, docs) found
+3 MUST, 4 SHOULD and 6 NOTE; its own checks that held: Host first (421), Origin and
+Sec-Fetch-Site, JSON + Content-Length, constant-time token, no cookies or CORS, static manifest,
+identifier patterns, no shell anywhere, `claude` with Read/Grep/Glob only, `--ref main` opens no
+working-tree file (audit hook on the real repository).
+
+| # | Finding | Fix | Test (negative control) |
+|---|---|---|---|
+| M1 | The gate after taking the edit lock could use a loop view polled before the lock (`refresh()` returned the last view while a poll ran) - a run could start on a backlog the app was changing | `LoopMonitor.fresh()` / `RepoMonitor.fresh()`: wait for the poll in flight, poll again; used by the write queue, the AI job start, the stale-lock release and the loop start | `LoopMonitor.fresh` test; mutation `loop-fresh` caught |
+| M2 | The state folder inherited `Authenticated Users:(M)` / `Users:(RX)` from `.git` on D: - any local user could read the launcher secret and get a session; undo files named any path | The app restricts the folder to its user and SYSTEM at every start (`icacls /inheritance:r`, by SID; verified with `icacls`); if that fails the launcher secret is off and not written. Undo writes only paths of the change inside `backlog/` | undo with a planted path refused; mutations `undo-path-outside`, `backlog-path` caught |
+| M3 | Tasks T081-T083 named test files that did not exist; 7 mutations survived | `write-gate.test.ts` (every rule), `write-safety.test.ts` (edit lock held and released, item revision, newest-only undo, undo through the gate, item files from the listing, commit path rule, serialisation) | all 22 mutations of `mutate2` caught (below) |
+| S1 | git without time limits inside the edit lock could hold the loop forever | `GIT_TIMEOUT_MS` 60 s on every git call (commit 120 s for hooks, history batch 120 s) | - |
+| S2 | A missing or damaged undo file "undid" nothing and dropped the change | refused, the change stays pending | test; mutation `undo-file-missing` caught |
+| S3 | A tool call that failed after writing (crash, time limit) left unrecorded files | `toolChangeForTray`: the files that differ from the snapshot go into the tray as "failed partway" (undoable) | test with a failing tool; mutation `partial-write` caught |
+| S4 | Bulk `set` put the title on the command line | title on stdin like `/fields` | - |
+| N | Commit without pathspec could include later outside edits of tray files | the commit refuses a tray file whose content is not what the app left, and commits with `-- <paths>`; paths neither on disk nor known to git are dropped (a created-then-deleted path made `git add` fail) | test; mutations `commit-outside-edit`, `commit-filter` caught |
+| N | A live loop that stopped answering ("dead") opened the gate | closed as `loop-between-runs` while the process lives | test; mutation `gate-dead-live` caught |
+| N | `taskkill /T` at shutdown or a start timeout killed the loop being started (a child of `start --new-window`) | `keepDescendants`: only that process is ended | - (not driven: needs a shutdown inside the 15 s start window) |
+| N | Run lock reads by the app's 2 s status poll raise the chance that `backlog.py lock update/release` meets an open handle | not in this feature: Inbox item `run-lock-update-release-no-retry` | - |
+| N | `readProgress` accepted a branch `..` | only `NNN-name` branches are joined into a path | - |
+| Doc | Thin inline comments in `trace-event.ts`, `run-state.ts`, `ai/apply.ts` | comments at the decisions | - |
+
+Found by me while answering it: AI result legend words (`type`, `area`, `who`, `effort`) became
+tool arguments unchecked - now a word pattern (argparse would have refused an option-like value,
+the tool an unknown word; the pattern is the boundary).
+
+**Mutation run** (scratchpad `mutate2.py`, server unit tests, file restored after each): 22 of 22
+caught - the reviewer's 7 survivors (`edit-lock-acquire`, `gate-between-runs`, `revision-item`,
+`undo-newest`, `undo-in-queue`, `item-files`, `commit-filter`), its 6 caught ones again, and 9 for
+the fixes above (`undo-file-missing`, `undo-path-outside`, `commit-outside-edit`,
+`gate-dead-live`, `loop-fresh`, `read-fresh`, `partial-write`, `runs-meta-guard`,
+`backlog-path`). `commit-filter` first survived because the new hash check stopped the planted
+entry earlier; the test now gives it its true hash so only the path rule stands in the way.
+
+**e2e race found while re-running** (not by the review): Q11/Q12 failed 4 of 4, also on the
+committed code - after the app's own change (undo) the answer came before the read model reloaded
+(250 ms debounce + reload), so the page reloaded the old board and its next reorder sent a stale
+revision (409 `changed-underneath`). The write queue now awaits `ReadModel.fresh()` after
+releasing the edit lock; mutation `read-fresh` caught by a test that reads the board right after a
+move. Full e2e afterwards: 26 of 26 (the new Q5 test first failed on its own arguments: a terminal
+start needs `--new-window`, else `spawnSync` waited for the whole loop).
+
+Python suites after the changes: `test_backlog` + `test_loop` 220 OK, `test_traces` OK,
+`tools/test_bin_help.py` OK. Unit tests 278.
+
+## SC-004 live progress (T130 completed)
+
+T130 had been marked done without the SC-004 measurement; done now with two scripts (scratchpad,
+not in the repository), each on a fixture repository with the real loop and the app:
+- **Trace lines**: a wrapper around the fake claude (`hang` step) writes an assistant text line with
+  the wall-clock time into `trace.jsonl` every 2 s; a client follows `/api/runs/{id}/stream` and
+  takes the arrival time of each line. 20 minutes (stopped early at the maintainer's request -
+  SC-004 asks for 2 hours): 600 of 600 lines, median 745 ms, max 1490 ms, none over 5 s; the
+  server's working set 100 MB at 12 and at 20 minutes (private 61 -> 62 MB), no reconnect.
+- **Task progress**: a wrapper sets a feature branch in the run lock and ticks one task of
+  `specs/<branch>/tasks.md` every 4 s; a client follows `/api/events` (`run.changed`). The server
+  read `tasks.md` only when more than 5 s had passed (plus the 1 s follow tick): with that, 8 of 40
+  counts were never shown (the page jumped over them) - a tick could wait up to about 6 s. Now every
+  3 s (`PROGRESS_MS`): 40 of 40 counts shown, median 1652 ms, max 2992 ms. (A first version of the
+  script lost events by racing `reader.read()` against a timer - 1 of 40 seen; fixed before these
+  numbers. The comparison with the corrected "until this or a later count is shown" metric was not
+  repeated for the old interval: stopped with the rest.)

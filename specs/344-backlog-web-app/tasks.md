@@ -297,11 +297,11 @@ and transcript replay.
 - [X] T129 Accessibility and responsiveness pass across all screens (axe in both themes, focus order, reduced motion, 900 px and narrow layouts, tables as cards below 900 px) - `APP/e2e/a11y.spec.ts`
 - [X] T130 Performance checks: SC-004 (live update <= 5 s over a 2-hour fake run), SC-005 (500-item fixture: filter and search < 1 s), SC-001 (fresh clone start < 2 min, later < 10 s) - results in fix-log
 - [X] T131 Soak test Q18 `APP/e2e/soak.spec.ts`: 20 fake-claude loop runs with the app open at full polling - no loop wait caused by the app, no failed atomic replace in `loop.json`/`meta.json`/the lock, lock and loop state never changed by the app
-- [ ] T132 Run `npm run check` (typecheck, lint with the documentation rules, `docs:check`, tests) and `npm run test:e2e`; fix every finding; review "inline comments at important points" file by file in `APP/packages/server/src/` (gate, proc, backlog, loop, runs) and record it
-- [ ] T133 Run every quickstart scenario Q1 - Q22 and record results in `specs/344-backlog-web-app/fix-log.md`; Q22 (morning routine on the real repository) recorded as a person step if not driven
-- [ ] T134 Independent refute-first review by an agent (CLAUDE.md working method): security gate, write path (gate, edit lock, queue, tray, undo), loop control, file-handle hazards, documentation; fix MUST findings, record all
-- [ ] T135 Add serious defects found on the way to the backlog *Inbox* (`/tandem-backlog add`, source `review:344` / `measure:344` / `leftover:344`)
-- [ ] T136 Write `specs/344-backlog-web-app/closing-report.md` and the `- 344-backlog-web-app:` entry of `specs/FEATURE-HISTORY.md` (what, traps, evidence, tests); no CHANGELOG entry (internal tooling)
+- [X] T132 Run `npm run check` (typecheck, lint with the documentation rules, `docs:check`, tests) and `npm run test:e2e`; fix every finding; review "inline comments at important points" file by file in `APP/packages/server/src/` (gate, proc, backlog, loop, runs) and record it
+- [X] T133 Run every quickstart scenario Q1 - Q22 and record results in `specs/344-backlog-web-app/fix-log.md`; Q22 (morning routine on the real repository) recorded as a person step if not driven
+- [X] T134 Independent refute-first review by an agent (CLAUDE.md working method): security gate, write path (gate, edit lock, queue, tray, undo), loop control, file-handle hazards, documentation; fix MUST findings, record all
+- [X] T135 Add serious defects found on the way to the backlog *Inbox* (`/tandem-backlog add`, source `review:344` / `measure:344` / `leftover:344`)
+- [X] T136 Write `specs/344-backlog-web-app/closing-report.md` and the `- 344-backlog-web-app:` entry of `specs/FEATURE-HISTORY.md` (what, traps, evidence, tests); no CHANGELOG entry (internal tooling)
 
 ---
 
