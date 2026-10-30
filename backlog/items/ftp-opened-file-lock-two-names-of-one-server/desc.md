@@ -1,13 +1,13 @@
 ---
 title: FTP: two operations under two names of one server can open one file at the same time
 type: bug
-status: new
+status: open
 severity: 6
 area: ftp
 source: review:341
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-30
 verified: -
 effort: S
 feature: -
@@ -54,3 +54,4 @@ to weigh.
 ## Log
 
 - 2026-10-24 — created (source review:341)
+- 2026-10-30 — moved to Next position 1

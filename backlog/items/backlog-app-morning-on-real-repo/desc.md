@@ -1,7 +1,7 @@
 ---
 title: Backlog app: a morning in the browser on the real repository
 type: person-step
-status: new
+status: open
 severity: 4
 area: tooling
 source: leftover:344
@@ -45,3 +45,4 @@ Every step below done and ticked, with what was seen in the note.
 - 2026-10-30 — created (source leftover:344)
 - 2026-10-30 — steps written from quickstart Q22 and the hidden-window gap
 - 2026-10-30 — relation removed (recorded by mistake)
+- 2026-10-30 — moved to Person steps position 74

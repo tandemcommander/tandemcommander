@@ -1,13 +1,13 @@
 ---
 title: FTP: an upload as another user or on another port of one server misses the panel changes
 type: bug
-status: new
+status: open
 severity: 7
 area: ftp
 source: review:341
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-30
 verified: -
 effort: S
 feature: -
@@ -59,3 +59,4 @@ rows.
 ## Log
 
 - 2026-10-24 — created (source review:341)
+- 2026-10-30 — moved to Next position 1

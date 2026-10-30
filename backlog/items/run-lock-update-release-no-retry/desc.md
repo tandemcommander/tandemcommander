@@ -1,7 +1,7 @@
 ---
 title: Run lock update and release fail when a reader holds the lock open
 type: bug
-status: new
+status: open
 severity: 4
 area: tooling
 source: review:344
@@ -33,3 +33,4 @@ At a34796f5: `tools/backlog/backlog.py` `cmd_lock` (line 1883): `update` calls `
 ## Log
 
 - 2026-10-30 — created (source review:344)
+- 2026-10-30 — moved to Next position 33

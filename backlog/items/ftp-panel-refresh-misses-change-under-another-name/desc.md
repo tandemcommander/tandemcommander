@@ -1,13 +1,13 @@
 ---
 title: FTP: a panel is not refreshed after a change made under another name of its server
 type: bug
-status: new
+status: open
 severity: 4
 area: ftp
 source: review:341
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-30
 verified: -
 effort: S
 feature: -
@@ -49,3 +49,4 @@ may be enough.
 ## Log
 
 - 2026-10-24 — created (source review:341)
+- 2026-10-30 — moved to Next position 31
