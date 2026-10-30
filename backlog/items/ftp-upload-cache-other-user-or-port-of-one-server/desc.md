@@ -1,16 +1,16 @@
 ---
 title: FTP: an upload as another user or on another port of one server misses the panel changes
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: ftp
 source: review:341
 who: agent
 created: 2026-10-24
 updated: 2026-10-30
-verified: -
+verified: 2026-10-30 ad3eb597
 effort: S
-feature: -
+feature: 345
 related: [ftp-opened-file-lock-two-names-of-one-server]
 depends-on: []
 reason: -
@@ -60,3 +60,5 @@ rows.
 
 - 2026-10-24 — created (source review:341)
 - 2026-10-30 — moved to Next position 1
+- 2026-10-30 — verified at ad3eb597: reproduced at ad3eb597: probe rows USER-REN, PORT-REN, ALL-REN, SEED-USER, SEED-PORT FAIL (STOR without question), controls PASS
+- 2026-10-30 — run started, feature 345
