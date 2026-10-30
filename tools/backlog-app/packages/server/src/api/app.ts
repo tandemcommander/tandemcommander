@@ -24,6 +24,7 @@ import type { Services } from "../services.ts";
 import { aheadBehind } from "../repo/git.ts";
 import { backlogReadRoutes } from "./backlog-read.ts";
 import { backlogWriteRoutes } from "./backlog-write.ts";
+import { runRoutes } from "./runs.ts";
 import { errorAnswer, readBody } from "./common.ts";
 
 /** Milliseconds between keep-alive pings on an event stream. */
@@ -46,7 +47,7 @@ export async function stateView(services: Services): Promise<StateView> {
   return {
     gate: services.gate(),
     loop: services.loop.view,
-    run: null,
+    run: services.runs.summary(),
     tray: { pending: services.tray.pending().length, outside: 0 },
     repo: {
       root: services.ctx.repo.root,
@@ -57,7 +58,7 @@ export async function stateView(services: Services): Promise<StateView> {
     },
     source: services.source(),
     check: { total: services.read.peek()?.check.total ?? 0 },
-    unseenEvents: settings.lastSeenEventId >= 0 ? 0 : 0,
+    unseenEvents: services.notifications.after(settings.lastSeenEventId).length,
     dev: services.ctx.dev,
   };
 }
@@ -136,6 +137,7 @@ export function createApi(services: Services): Hono {
   // --- backlog reads ---
   app.route("/", backlogReadRoutes(services));
   app.route("/", backlogWriteRoutes(services));
+  app.route("/", runRoutes(services));
 
   // --- the loop (research R13) ---
   app.get("/loop", async (c) => c.json({ view: services.loop.view ?? (await services.loop.refresh()) }));

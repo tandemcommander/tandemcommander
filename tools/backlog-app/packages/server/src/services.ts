@@ -23,6 +23,8 @@ import { SettingsStore } from "./settings/store.ts";
 import { HistoryService } from "./features/history.ts";
 import { WriteQueue } from "./backlog/write-queue.ts";
 import { ChangeTray } from "./backlog/tray.ts";
+import { RunsService } from "./runs/service.ts";
+import { Notifications } from "./events/notifications.ts";
 import type { SessionAuth } from "./gate/token.ts";
 
 /** All services of one server process. */
@@ -60,6 +62,12 @@ export class Services {
   /** The change tray (uncommitted changes, undo, commit). */
   readonly tray: ChangeTray;
 
+  /** The live run and the run history. */
+  readonly runs: RunsService;
+
+  /** The notification log. */
+  readonly notifications: Notifications;
+
   /** The last published gate (to publish only changes). */
   private lastGate = "";
 
@@ -87,6 +95,37 @@ export class Services {
     this.history = new HistoryService(ctx);
     this.queue = new WriteQueue(this);
     this.tray = new ChangeTray(ctx);
+    this.runs = new RunsService(this);
+    this.notifications = new Notifications(ctx);
+    this.runs.onEnded = (id) => this.announceRunEnd(id);
+  }
+
+  /**
+   * Announces the end of a run once the loop indexed it (its outcome comes from the journal).
+   *
+   * @param id - The run id.
+   */
+  private announceRunEnd(id: string): void {
+    // The loop writes the index line right after the run ends; give it a few seconds.
+    setTimeout(() => {
+      void this.runs
+        .list()
+        .then((runs) => {
+          const run = runs.find((r) => r.id === id);
+          const outcome = run?.outcome ?? "unknown";
+          this.notifications.announce({
+            kind: "run-ended",
+            severity: outcome === "closed" || outcome === "triaged" ? "info" : "attention",
+            title:
+              run?.kind === "triage"
+                ? "The auto-triage ended"
+                : `Run of ${run?.slug ?? "an item"}: ${outcome}`,
+            text: run?.note ?? (run?.feature ? `Feature ${run.feature}.` : "See the run for details."),
+            link: `/runs/${id}`,
+          });
+        })
+        .catch(() => undefined);
+    }, 4000);
   }
 
   /**
@@ -141,6 +180,7 @@ export class Services {
     this.repo.start();
     this.loop.start();
     this.read.start();
+    this.runs.start();
   }
 
   /** Stops every poller and watcher. */
@@ -148,6 +188,7 @@ export class Services {
     this.repo.stop();
     this.loop.stop();
     this.read.stop();
+    this.runs.stop();
   }
 
   /**
@@ -175,6 +216,14 @@ export class Services {
       this.read.invalidate();
     }
     this.publishGate();
+    const snapshot = this.read.peek();
+    this.notifications.observe({
+      loop: this.loop.view,
+      inbox: snapshot
+        ? (snapshot.board.sections.find((sec) => sec.name === "Inbox")?.rows.length ?? 0)
+        : null,
+      check: snapshot ? snapshot.check.total : null,
+    });
   }
 
   /** Publishes the gate when it changed. */

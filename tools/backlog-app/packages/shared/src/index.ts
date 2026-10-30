@@ -16,3 +16,5 @@ export * from "./api/requests.ts";
 export * from "./api/events.ts";
 export * from "./api/responses.ts";
 export * from "./query/filter-language.ts";
+export * from "./runs/trace-event.ts";
+export * from "./runs/run-state.ts";

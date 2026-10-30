@@ -7,13 +7,24 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { evaluateFilter, parseFilter, serializeFilter, type FilterRow } from "../src/query/filter-language.ts";
+import {
+  evaluateFilter,
+  parseFilter,
+  serializeFilter,
+  type FilterRow,
+} from "../src/query/filter-language.ts";
 import type { Legend } from "../src/schemas/backlog.ts";
 
 /** A small legend with the vocabulary the tests use. */
 const legend: Legend = {
-  types: ["bug", "feature", "improvement", "tech-debt", "decision", "person-step"].map((value) => ({ value, meaning: "" })),
-  statuses: ["new", "open", "blocked", "in-progress", "parked", "rejected"].map((value) => ({ value, meaning: "" })),
+  types: ["bug", "feature", "improvement", "tech-debt", "decision", "person-step"].map((value) => ({
+    value,
+    meaning: "",
+  })),
+  statuses: ["new", "open", "blocked", "in-progress", "parked", "rejected"].map((value) => ({
+    value,
+    meaning: "",
+  })),
   areas: ["encoding", "archives", "ftp", "tooling"].map((value) => ({ value, meaning: "" })),
   who: ["agent", "person", "both"].map((value) => ({ value, meaning: "" })),
   efforts: ["S", "M", "L", "?"].map((value) => ({ value, meaning: "" })),
@@ -54,7 +65,10 @@ function row(patch: Partial<FilterRow> = {}): FilterRow {
 
 describe("parseFilter", () => {
   it("splits keys, lists, comparisons, ranges, phrases, negations and free words", () => {
-    const parsed = parseFilter('type:bug,improvement sev>=5 area:encoding -"not reproduced" code page', legend);
+    const parsed = parseFilter(
+      'type:bug,improvement sev>=5 area:encoding -"not reproduced" code page',
+      legend,
+    );
     expect(parsed.errors).toEqual([]);
     expect(parsed.terms).toEqual([
       { kind: "field", key: "type", op: "in", values: ["bug", "improvement"], negate: false },
@@ -68,7 +82,9 @@ describe("parseFilter", () => {
 
   it("parses a severity range", () => {
     const parsed = parseFilter("sev:4..6", legend);
-    expect(parsed.terms).toEqual([{ kind: "field", key: "sev", op: "range", values: ["4", "6"], negate: false }]);
+    expect(parsed.terms).toEqual([
+      { kind: "field", key: "sev", op: "range", values: ["4", "6"], negate: false },
+    ]);
   });
 
   it("reports unknown keys and values outside the legend as errors, never ignoring them", () => {
@@ -82,13 +98,18 @@ describe("parseFilter", () => {
   });
 
   it("keeps an unclosed quote as a phrase to the end", () => {
-    expect(parseFilter('"code page', legend).terms).toEqual([{ kind: "text", text: "code page", phrase: true, negate: false }]);
+    expect(parseFilter('"code page', legend).terms).toEqual([
+      { kind: "text", text: "code page", phrase: true, negate: false },
+    ]);
   });
 });
 
 describe("evaluateFilter", () => {
   it("matches every field condition", () => {
-    const q = parseFilter("type:bug sev>=5 area:encoding who:agent effort:S,M status:open section:next", legend);
+    const q = parseFilter(
+      "type:bug sev>=5 area:encoding who:agent effort:S,M status:open section:next",
+      legend,
+    );
     expect(evaluateFilter(q.terms, row())).toBe(true);
     expect(evaluateFilter(q.terms, row({ severity: 4 }))).toBe(false);
     expect(evaluateFilter(q.terms, row({ area: "ftp" }))).toBe(false);
@@ -119,8 +140,12 @@ describe("evaluateFilter", () => {
     const verified = row({ verified: { date: "2026-09-20", commit: "abc1234" } });
     expect(evaluateFilter(parseFilter("verified:none", legend).terms, verified)).toBe(false);
     expect(evaluateFilter(parseFilter("verified<2026-10-01", legend).terms, verified)).toBe(true);
-    expect(evaluateFilter(parseFilter("related:other", legend).terms, row({ related: ["other"] }))).toBe(true);
-    expect(evaluateFilter(parseFilter("needs:base-item", legend).terms, row({ dependsOn: ["base-item"] }))).toBe(true);
+    expect(evaluateFilter(parseFilter("related:other", legend).terms, row({ related: ["other"] }))).toBe(
+      true,
+    );
+    expect(
+      evaluateFilter(parseFilter("needs:base-item", legend).terms, row({ dependsOn: ["base-item"] })),
+    ).toBe(true);
     expect(evaluateFilter(parseFilter("feature:341", legend).terms, row({ feature: "341" }))).toBe(true);
   });
 
