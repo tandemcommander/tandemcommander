@@ -18,7 +18,12 @@ import { AiJobKindSchema, AiJobSchema, type AiJobKind } from "./app-state.ts";
 import { SectionNameSchema, SlugSchema } from "./backlog.ts";
 
 /** A legend value (type, area, who, effort) as the model proposes it; the tool validates it. */
-const LegendWord = z.string().min(1).max(60);
+const LegendWord = z
+  .string()
+  .max(60)
+  // A word of the legend (`bug`, `panels-ui`, `S`) or `-`: these values become command arguments
+  // of the tool, and the model that proposes them reads repository text it could be steered by.
+  .regex(/^(-|[A-Za-z0-9][A-Za-z0-9-]*)$/);
 
 /** A severity 0-10. */
 const Severity = z.number().int().min(0).max(10);

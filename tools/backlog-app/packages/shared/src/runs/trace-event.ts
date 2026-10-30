@@ -118,7 +118,12 @@ function event(
 }
 
 /**
- * Normalises one line of `trace.jsonl`.
+ * Normalises one line of `trace.jsonl` (claude's `stream-json` output plus the loop's attempt
+ * separators, feature 342) into the events the live and replay views show. One line can carry
+ * several events (an assistant message with text and tool calls), or none (bookkeeping lines).
+ * Every event keeps the byte offsets of its line, so a view can resume a stream exactly there and
+ * the server can name an event by its offset. Texts are clipped; nothing of the line is ever run
+ * or rendered as HTML.
  *
  * @param line - The line without its newline.
  * @param offset - Byte offset of the line's start.
@@ -133,6 +138,8 @@ export function normalizeTraceLine(
   receivedAt: string | null = null,
 ): TraceEvent[] {
   if (!line.trim()) return [];
+  // A line that is not JSON (a half line cannot reach here: the tailer passes complete lines
+  // only) is shown as it is, marked, rather than dropped - it is evidence of a broken stream.
   let raw: Raw;
   try {
     raw = JSON.parse(line) as Raw;
@@ -145,12 +152,17 @@ export function normalizeTraceLine(
     ];
   }
   const type = typeof raw["type"] === "string" ? raw["type"] : "";
+  // claude's lines carry no time of their own; the live view stamps them on arrival, a replay
+  // leaves them without one (receivedAt null) rather than inventing a time.
   const at = typeof raw["timestamp"] === "string" ? raw["timestamp"] : receivedAt;
+  // Lines of a subagent name the Task call that started it: the views indent them under it.
   const parentToolUseId = typeof raw["parent_tool_use_id"] === "string" ? raw["parent_tool_use_id"] : null;
   const base = { offset, end, at, parentToolUseId };
 
   switch (type) {
     case "backlog_loop.attempt":
+      // The loop's separator before every attempt (start, retry after a limit, continuation):
+      // its own `started` stamp is the attempt's time.
       return [
         event({ ...base, at: typeof raw["started"] === "string" ? raw["started"] : at }, "attempt", {
           name: str(raw["kind"], "start"),
@@ -168,6 +180,8 @@ export function normalizeTraceLine(
           }),
         ];
       }
+      // `system/init` repeats at every turn of one claude process (342 trap), so it is shown as a
+      // plain session line, never as the start of an attempt. Token counters are noise.
       if (subtype === "thinking_tokens") return [];
       if (subtype.startsWith("task_")) {
         return [
@@ -204,12 +218,15 @@ export function normalizeTraceLine(
             }),
           );
         } else if (blockType === "thinking") {
+          // The thinking text itself is not shown (it can be long); only that it happened.
           events.push(event(base, "thinking", { summary: "thinking" }));
         }
       }
       return events;
     }
     case "user": {
+      // In stream-json the tool results come back as "user" messages; anything else in them
+      // (the prompt itself) is not part of the run's story.
       const message = (raw["message"] ?? {}) as Raw;
       const content = Array.isArray(message["content"]) ? (message["content"] as Raw[]) : [];
       return content
@@ -243,6 +260,7 @@ export function normalizeTraceLine(
       ];
     }
     default:
+      // Unknown line types (newer claude versions) are skipped, not errors: the run goes on.
       return [];
   }
 }

@@ -129,6 +129,7 @@ export class RunState {
    */
   private advance(next: Phase, at: string | null): void {
     if (this.phase === "stopped" || this.phase === "done") return;
+    // A triage has no Spec Kit phases: it is "triage" until the lock is released.
     if (this.kind === "triage") {
       if (next === "done") {
         this.phase = "done";
@@ -136,6 +137,8 @@ export class RunState {
       }
       return;
     }
+    // Forward only: a run that re-runs a skill or verifies again must not make the view jump
+    // back. The stop path may be taken from any phase.
     if (next !== "stopped" && PHASE_ORDER.indexOf(next) <= PHASE_ORDER.indexOf(this.phase)) return;
     this.phase = next;
     this.timeline.push({ phase: next, at });
@@ -153,6 +156,8 @@ export class RunState {
         const info = event.text
           ? (JSON.parse(event.text) as { attempt?: number; kind?: string; reason?: string })
           : {};
+        // An attempt still open when the next separator comes was cut off (killed, crashed, usage
+        // limit): it ends where the next one starts.
         const previous = this.attempts.at(-1);
         if (previous && previous.ended === null) {
           previous.ended = event.at;
@@ -173,6 +178,8 @@ export class RunState {
       }
       case "tool-use": {
         this.toolCalls++;
+        // Subagents' calls count, but only the main thread decides the phase and the current
+        // tool: a review agent's `git merge` in an explanation must not move the run to "merge".
         if (event.parentToolUseId !== null) return;
         if (event.toolUseId)
           this.open.set(event.toolUseId, {
@@ -195,6 +202,8 @@ export class RunState {
         return;
       }
       case "result": {
+        // The cost in a result is cumulative within one claude process, so the last result of
+        // each attempt is that attempt's cost; the run's cost is the sum (costUsd).
         const cost = event.summary.match(/\$(\d+(?:\.\d+)?)/);
         if (cost) this.costs.set(this.attemptNumber, { usd: Number(cost[1]) });
         const attempt = this.attempts.at(-1);
@@ -214,6 +223,8 @@ export class RunState {
   private markers(event: TraceEvent): void {
     const name = event.name ?? "";
     const summary = event.summary;
+    // Phases are recognised from what the run does, never from what it says: a Spec Kit skill
+    // call, a backlog tool command (lock, start, verify, run-log, block), a merge, a build, a probe.
     if (name === "Skill") {
       const skill = summary.trim().split(/\s+/)[0] ?? "";
       const phase = SKILL_PHASE[skill];
@@ -226,6 +237,7 @@ export class RunState {
       return;
     }
     if (name === "Bash" || name === "PowerShell") {
+      // `block` ends the run on the stop path; `unblock` (of a dependent item) does not.
       if (BLOCK_MARKER.test(summary) && !/\bunblock\b/.test(summary)) {
         this.advance("stopped", event.at);
         return;

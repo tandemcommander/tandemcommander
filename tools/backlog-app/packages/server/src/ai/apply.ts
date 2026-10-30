@@ -128,6 +128,9 @@ export function placementOperations(row: ItemRow, verdict: AiTriageCheckResult):
   };
   let section: SectionName = verdict.section;
   let reason = verdict.reason;
+  // The verdict, not the proposed section, decides where the item goes: a "park" verdict with a
+  // section of Next still parks. Decisions and person steps also change the type (and who), as
+  // the tool would move them there anyway.
   switch (verdict.verdict) {
     case "park":
       section = "Parked";
@@ -201,6 +204,8 @@ export function draftOperations(draft: AiDraftItemResult): ApplyOperation[] {
     "--effort",
     draft.effort,
   ];
+  // Relations proposed by the model go on the command line, so only well-formed slugs pass; the
+  // tool then refuses a slug that does not exist. Every text goes on stdin.
   const related = draft.related.filter((s) => SLUG_PATTERN.test(s));
   const dependsOn = draft.dependsOn.filter((s) => SLUG_PATTERN.test(s));
   if (related.length) args.push("--related", related.join(","));
@@ -248,6 +253,8 @@ export function draftOperations(draft: AiDraftItemResult): ApplyOperation[] {
  * @returns The commands.
  */
 export function verifyOperations(slug: string, result: AiVerifyResult, mainCommit: string): ApplyOperation[] {
+  // Closing is never automatic: "fixed" is the model's opinion, and a close needs the maintainer's
+  // reason (FR-029), so it goes through the close dialog.
   if (result.verdict === "fixed") {
     throw new ApiError(
       "refused",

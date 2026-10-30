@@ -17,6 +17,7 @@
  * - an answer of a change already shows the change (the read model is fresh).
  */
 
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -110,6 +111,27 @@ describe("write path protections", () => {
     expect(existsSync(lockPath)).toBe(false);
   });
 
+  it("runs two concurrent changes one after the other", async () => {
+    const order: string[] = [];
+    let releaseFirst: () => void = () => undefined;
+    const first = app.services.queue.run("first", null, null, async () => {
+      order.push("first started");
+      await new Promise<void>((r) => (releaseFirst = r));
+      order.push("first ended");
+    });
+    const second = app.services.queue.run("second", null, null, () => {
+      order.push("second started");
+      return Promise.resolve();
+    });
+    // Let the queue reach the first operation's wait.
+    for (let i = 0; i < 100 && order.length === 0; i++) await new Promise((r) => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 100));
+    expect(order).toEqual(["first started"]);
+    releaseFirst();
+    await Promise.all([first, second]);
+    expect(order).toEqual(["first started", "first ended", "second started"]);
+  });
+
   it("refuses a change based on a stale item revision and writes nothing", async () => {
     const desc = join(root, "backlog", "items", ITEM, "desc.md");
     const before = readFileSync(desc, "utf8");
@@ -179,7 +201,9 @@ describe("write path protections", () => {
     await log(ITEM, "a note");
     writeFileSync(join(root, "planted.txt"), "planted\n");
     const entries = app.services.ctx.state.readJson("tray.json", z.array(z.unknown()), []) as Change[];
-    entries[0]!.files.push({ path: "planted.txt", before: null, after: null });
+    // With the planted file's true hash, so the hash check passes and only the path rule stops it.
+    const after = createHash("sha256").update("planted\n").digest("hex");
+    entries[0]!.files.push({ path: "planted.txt", before: null, after });
     app.services.ctx.state.writeJson("tray.json", entries);
     const tray = (await app.get("/api/tray")).json as Tray;
     await app.post("/api/tray/commit", { message: tray.proposedMessage, includeOutside: ["planted.txt"] });

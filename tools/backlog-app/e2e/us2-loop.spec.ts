@@ -127,6 +127,7 @@ test("Q5: a loop started outside the app is shown and controlled the same way", 
   try {
     loop(
       "start",
+      "--new-window",
       "--new-window-hidden",
       "--claude-cmd",
       JSON.stringify([process.env["PYTHON"] ?? "python", join(TOOLS_DIR, "fixtures", "fake_claude.py")]),
