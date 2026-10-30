@@ -328,10 +328,13 @@ A check that still fails after three honest fix attempts (each recorded in
 ## 7. Independent review
 
 Launch one Agent (subagent type `general-purpose`) with this prompt,
-filled in:
+filled in. `<ROOT>` is the absolute path of this repository as the run
+sees it (`git rev-parse --show-toplevel`, written in Windows form with
+backslashes) — never a path copied from an older prompt or from this file:
+the repository may live in any folder.
 
 ```text
-Independent refute-first review of feature <NNN> in E:\Projects\tandemcommander
+Independent refute-first review of feature <NNN> in <ROOT>
 (branch <BRANCH>; diff: git diff main...<BRANCH>). It implements backlog item
 <SLUG>: <TITLE>. Spec: specs/<BRANCH>/spec.md; fix-log: specs/<BRANCH>/fix-log.md.
 Assume it is wrong until shown otherwise. Check: does it fix exactly what the
@@ -339,7 +342,7 @@ item describes (re-run the measurement in the fix-log); can it lose user data
 (CLAUDE.md "Never lose the user's data"); regressions in callers (enumerate them
 yourself); the standing rules of CLAUDE.md (UTF-8 names, never cut a path,
 refuse instead); tests and probes really prove the claims (try a negative
-control). Never edit files in E:\Projects\tandemcommander: a negative control
+control). Never edit files in <ROOT>: a negative control
 that needs old code is built in a copy (git worktree add <your scratchpad>\neg HEAD~1,
 or a copy of the sources under %TEMP%), with its own build folder. Keep within
 about 45 minutes and never wait on a command longer than 10 minutes; if a probe or
