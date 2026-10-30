@@ -150,3 +150,42 @@ and the run lock were never touched).
   the `key: value` lines of `issue.md`; a revision read from the working tree (CRLF with
   `core.autocrlf=true`) differs from the same file read from `main` - revisions are compared only
   between reads of the same source.
+
+## Server, web client and end-to-end verification
+
+- Server modules: services with the read-source rule, read/write/tray/loop/runs/settings routes,
+  write queue under the edit lock, change tray with snapshot undo and commit, runs service with
+  trace tailing, notifications. An agent added feature records, the release page and the AI job
+  runner (237 tests at its hand-over; it measured on the real `claude` 2.1.314 with `--model haiku`
+  that `--json-schema` output arrives as `structured_output` of the final `result` event).
+- Measured while building: tight-loop open-read-close reads DO collide with Python's `os.replace`
+  of the same file (WinError 5, a test claimed otherwise and failed - corrected): the app reads only
+  append-only traces of a live run; the loop's replaced files are read by `loop.py status`.
+- Lint of the web client (React Compiler rules) found real defects, fixed without suppression:
+  state copied from properties in effects (now adjusted during render), a component created
+  during render, `Date.now()` during render, and the notification settings applied only on the
+  Settings page (now at app start).
+- End-to-end (Playwright on Edge, fixture repositories, real tool, real loop with the fake claude in
+  a hidden console window, AI fake): 23 tests pass - US1 Q1-Q3 + keyboard; US3 Q8 (mouse drag and
+  Alt+arrow give exactly the tool's `reorder`, no item log lines), triage, block/unblock, Q11/Q12
+  tray undo and commit (only `backlog/`, `backlog(app):`), Q9 read-only while a run holds the lock,
+  bulk; US2 Q4/Q5 start/pause/resume/stop, Q7 hard stop continued by the next start, Q6 app restart
+  during a run; US4 Q13 20,000-character text with shell characters byte-exact and not run (canary
+  file absent), Q14 decision and person step, section edit, close undone; US5 Q15 AI draft from a
+  Czech sentence (nothing written before Create), cancel; US6 Q16 one chosen item, release page
+  without publish; axe WCAG 2.2 AA in both themes on 15 screens; no horizontal scroll at 900 px.
+- Defects the e2e tests found and fixed: rows `aria-disabled` while reordering was not allowed;
+  an item change sent a stale board revision right after the user's own change (spurious
+  "changed underneath" - now only positioned moves carry the board revision, and reorders use the
+  revision the server returned); Ctrl+Z relied on a not-yet-loaded tray; the close button shared its
+  accessible name with the dialog's close button; light `--ok` contrast below AA; `Alert` split
+  mixed text into flex columns.
+- Q18 / SC-006 soak: 20 loop runs with the app open on the live and home pages (polling and
+  streaming): 20 closed rows, no `PermissionError`/`WinError`/"cannot be written" in `loop.log`, no
+  wait caused by the app, lock free, no orphan, tray empty, tree clean (22 s with the fake claude).
+- SC-001 with `bin/start-backlog-app.sh`: first start with `npm ci` and the build 17.8 s; later
+  start 1.0 s; a second launch while one runs reuses it (1.0 s, new start code).
+- SC-005 on a 508-item repository built through the tool: API filter / full-text 3-23 ms; browser
+  from Enter to the filtered rows 176-362 ms.
+- Note: TanStack Router stores a search value with quotes JSON-escaped in the address (deep links
+  work; only the raw address text differs).
