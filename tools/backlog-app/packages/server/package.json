@@ -1,0 +1,16 @@
+{
+  "name": "@backlog-app/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Localhost server of the backlog app: security gate, API, event streams, tool and loop adapters.",
+  "license": "GPL-2.0-or-later",
+  "type": "module",
+  "exports": {
+    ".": "./src/main.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.5",
+    "hono": "4.13.14",
+    "zod": "4.6.7"
+  }
+}

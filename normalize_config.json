@@ -7,7 +7,10 @@
     ],
     "excludes": [
       "./.git/*",
-	  "*/src/plugins/automation/generated/*"
+	  "*/src/plugins/automation/generated/*",
+      "./tools/backlog-app/node_modules/*",
+      "./tools/backlog-app/packages/*/node_modules/*",
+      "./tools/backlog-app/packages/web/dist/*"
     ]
   },
   "textfiles": {
@@ -70,7 +73,10 @@
       "./src/plugins/portables/wtl/*",
       "./src/plugins/unchm/chmlib/*",
       "./tools/.venv/*",
-      "./tools/comments/code_guard_stubs/*"
+      "./tools/comments/code_guard_stubs/*",
+      "./tools/backlog-app/node_modules/*",
+      "./tools/backlog-app/packages/*/node_modules/*",
+      "./tools/backlog-app/packages/web/dist/*"
     ]
   }
 }

@@ -248,9 +248,10 @@ it is not the session token.
 ### Edit lock - `<git-common-dir>/tandem-backlog-edit.lock`
 
 Not under the app folder because the loop reads it (contract
-[loop-cli-additions.md](contracts/loop-cli-additions.md)): four lines `pid`, `ident`,
+[loop-cli-additions.md](contracts/loop-cli-additions.md)): four lines `pid`, `started_epoch`,
 `started`, `purpose`; created with exclusive create for the duration of one queued operation
-or one commit; live = the process with that pid and creation time exists.
+or one commit; live = a process with that pid exists and was created no later than
+`started_epoch` + 2 s.
 
 ### Run cache - `cache/runs/<dir>.json`, `cache/closed.json`
 

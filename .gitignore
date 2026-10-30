@@ -36,3 +36,13 @@ __pycache__/
 
 # feature 342: traces of the backlog loop (input for evals, never committed)
 /.agent-traces/
+
+# feature 344: the backlog web app (npm dependencies, builds, test output; never committed)
+/tools/backlog-app/node_modules/
+/tools/backlog-app/packages/*/node_modules/
+/tools/backlog-app/packages/web/dist/
+/tools/backlog-app/test-results/
+/tools/backlog-app/playwright-report/
+/tools/backlog-app/docs-api/
+/tools/backlog-app/.cache/
+/tools/backlog-app/coverage/

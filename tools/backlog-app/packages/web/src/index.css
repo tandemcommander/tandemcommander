@@ -1,0 +1,257 @@
+/*
+  SPDX-FileCopyrightText: 2026 Pavel Stupka
+  SPDX-License-Identifier: GPL-2.0-or-later
+
+  Styles of the backlog app: Tailwind CSS 4 with one set of colour tokens defined twice, for the
+  light and the dark theme (research R3). Components use only the tokens (`bg-card`,
+  `text-muted-foreground`, `bg-sev-high/15`, ...), so both themes stay consistent. Text and badge
+  tokens are chosen for WCAG AA contrast in both themes (4.5:1 for text, 3:1 for focus rings and
+  badge outlines); the end-to-end tests check them with axe (SC-009).
+*/
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* The dark theme is a class on <html>, set before paint by public/theme-init.js. */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(0.99 0.002 247);
+  --foreground: oklch(0.21 0.02 257);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.02 257);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.02 257);
+  --primary: oklch(0.45 0.13 255);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.955 0.006 247);
+  --secondary-foreground: oklch(0.25 0.02 257);
+  --muted: oklch(0.96 0.005 247);
+  --muted-foreground: oklch(0.47 0.02 257);
+  --accent: oklch(0.94 0.012 247);
+  --accent-foreground: oklch(0.22 0.02 257);
+  --destructive: oklch(0.52 0.2 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.9 0.008 247);
+  --input: oklch(0.86 0.01 247);
+  --ring: oklch(0.5 0.15 255);
+  --sidebar: oklch(0.97 0.005 247);
+  --sidebar-foreground: oklch(0.25 0.02 257);
+  --sidebar-accent: oklch(0.92 0.015 247);
+
+  /* Severity bands (legend anchors: 9-10, 7-8, 4-6, 1-3, 0). */
+  --sev-critical: oklch(0.5 0.2 25);
+  --sev-high: oklch(0.52 0.17 45);
+  --sev-medium: oklch(0.5 0.12 80);
+  --sev-low: oklch(0.48 0.1 245);
+  --sev-trivial: oklch(0.5 0.01 257);
+
+  /* Statuses. */
+  --status-new: oklch(0.48 0.16 295);
+  --status-open: oklch(0.47 0.12 240);
+  --status-blocked: oklch(0.5 0.19 25);
+  --status-in-progress: oklch(0.46 0.12 160);
+  --status-parked: oklch(0.5 0.02 257);
+  --status-rejected: oklch(0.45 0.02 257);
+
+  /* Run outcomes and loop states. */
+  --ok: oklch(0.46 0.12 155);
+  --warn: oklch(0.5 0.12 75);
+  --bad: oklch(0.5 0.19 25);
+  --info: oklch(0.47 0.12 245);
+}
+
+.dark {
+  --background: oklch(0.17 0.012 257);
+  --foreground: oklch(0.94 0.006 247);
+  --card: oklch(0.205 0.014 257);
+  --card-foreground: oklch(0.94 0.006 247);
+  --popover: oklch(0.22 0.015 257);
+  --popover-foreground: oklch(0.94 0.006 247);
+  --primary: oklch(0.72 0.13 245);
+  --primary-foreground: oklch(0.17 0.02 257);
+  --secondary: oklch(0.26 0.015 257);
+  --secondary-foreground: oklch(0.93 0.006 247);
+  --muted: oklch(0.25 0.014 257);
+  --muted-foreground: oklch(0.74 0.015 250);
+  --accent: oklch(0.29 0.02 257);
+  --accent-foreground: oklch(0.95 0.006 247);
+  --destructive: oklch(0.68 0.17 25);
+  --destructive-foreground: oklch(0.17 0.02 257);
+  --border: oklch(0.31 0.016 257);
+  --input: oklch(0.36 0.018 257);
+  --ring: oklch(0.72 0.13 245);
+  --sidebar: oklch(0.19 0.013 257);
+  --sidebar-foreground: oklch(0.92 0.006 247);
+  --sidebar-accent: oklch(0.27 0.02 257);
+
+  --sev-critical: oklch(0.73 0.16 25);
+  --sev-high: oklch(0.76 0.14 50);
+  --sev-medium: oklch(0.82 0.13 85);
+  --sev-low: oklch(0.76 0.1 240);
+  --sev-trivial: oklch(0.72 0.01 257);
+
+  --status-new: oklch(0.76 0.13 295);
+  --status-open: oklch(0.76 0.1 235);
+  --status-blocked: oklch(0.74 0.15 25);
+  --status-in-progress: oklch(0.77 0.12 160);
+  --status-parked: oklch(0.72 0.015 257);
+  --status-rejected: oklch(0.68 0.015 257);
+
+  --ok: oklch(0.77 0.13 155);
+  --warn: oklch(0.82 0.13 80);
+  --bad: oklch(0.73 0.16 25);
+  --info: oklch(0.76 0.1 240);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sev-critical: var(--sev-critical);
+  --color-sev-high: var(--sev-high);
+  --color-sev-medium: var(--sev-medium);
+  --color-sev-low: var(--sev-low);
+  --color-sev-trivial: var(--sev-trivial);
+  --color-status-new: var(--status-new);
+  --color-status-open: var(--status-open);
+  --color-status-blocked: var(--status-blocked);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-parked: var(--status-parked);
+  --color-status-rejected: var(--status-rejected);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-info: var(--info);
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/60;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    font-size: 14px;
+  }
+  /* Visible focus everywhere (keyboard-only use, SC-009). */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Rendered Markdown of item descriptions (react-markdown without raw HTML). */
+@layer components {
+  .prose-backlog {
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+  }
+  .prose-backlog h1,
+  .prose-backlog h2,
+  .prose-backlog h3 {
+    font-weight: 600;
+    margin: 1.1em 0 0.4em;
+  }
+  .prose-backlog h2 {
+    font-size: 1.05rem;
+  }
+  .prose-backlog h3 {
+    font-size: 0.98rem;
+  }
+  .prose-backlog p,
+  .prose-backlog ul,
+  .prose-backlog ol,
+  .prose-backlog pre,
+  .prose-backlog table {
+    margin: 0.5em 0;
+  }
+  .prose-backlog ul {
+    list-style: disc;
+    padding-left: 1.4em;
+  }
+  .prose-backlog ol {
+    list-style: decimal;
+    padding-left: 1.4em;
+  }
+  .prose-backlog code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--muted);
+    border-radius: 4px;
+    padding: 0.05em 0.3em;
+  }
+  .prose-backlog pre {
+    background: var(--muted);
+    border-radius: 6px;
+    padding: 0.7em 0.9em;
+    overflow-x: auto;
+  }
+  .prose-backlog pre code {
+    background: transparent;
+    padding: 0;
+  }
+  .prose-backlog a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .prose-backlog table {
+    border-collapse: collapse;
+    display: block;
+    overflow-x: auto;
+  }
+  .prose-backlog th,
+  .prose-backlog td {
+    border: 1px solid var(--border);
+    padding: 0.25em 0.6em;
+    text-align: left;
+  }
+  .prose-backlog blockquote {
+    border-left: 3px solid var(--border);
+    padding-left: 0.8em;
+    color: var(--muted-foreground);
+  }
+  mark.hit {
+    background: color-mix(in oklch, var(--warn) 30%, transparent);
+    color: inherit;
+    border-radius: 2px;
+  }
+}

@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: 2026 Pavel Stupka
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# The backlog loop from Git Bash: bin/backlog-loop.sh start|pause|resume|stop|status
-# (features 247, 342; logic in tools/backlog/loop.py). The backlog itself is
+# The backlog loop from Git Bash: bin/backlog-loop.sh start|pause|resume|stop|kill|status
+# (features 247, 342, 344; logic in tools/backlog/loop.py). The backlog itself is
 # bin/backlog.sh. Every script in bin/ answers --help.
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 loop="$here/../tools/backlog/loop.py"
@@ -25,6 +25,8 @@ Commands:
   pause    the running item finishes, then the loop waits for resume
   resume   continue after a pause; also cancels a pending stop
   stop     the running item finishes, then the loop ends
+  kill     a hard stop from another window: the loop kills claude and ends
+           as after Ctrl+C in its window (the next start continues the item)
   status   what the loop does now: the running item, waiting and why, usage
            limits, an interrupted run, its trace and the size of all traces,
            the run lock, whether Ctrl+C is safe
@@ -38,6 +40,10 @@ Options of start:
   --forget-run       drop the record of an interrupted run before starting
   --auto-triage      before each run, place new Inbox items with
                      '/tandem-backlog auto-triage --commit'
+  --item SLUG        run this one item, then end (if it is eligible; not with
+                     --until-idle)
+  --new-window       start the loop in a new console window and return once it
+                     runs (Ctrl+C in that window is its hard stop)
 Options of status:
   --json             the data as JSON
 Every command:
@@ -45,8 +51,11 @@ Every command:
 
 Environment: PYTHON - the Python to run (default: python).
 Exit: start 0 ended as asked, 1 stopped for a person or refused, 2 usage,
-130 Ctrl+C; the other commands 0 (2 usage).
+130 Ctrl+C or kill; the other commands 0 (2 usage).
+Files: .git/tandem-backlog-loop/ - loop.json, run.json, loop.log (every line
+the loop prints), last.json (how the last loop ended).
 Full documentation: specs/247-backlog-run-loop/contracts/loop-cli.md,
+additions: specs/344-backlog-web-app/contracts/loop-cli-additions.md,
 traces: specs/342-backlog-agent-traces/contracts/traces.md
 
 Examples:
@@ -61,7 +70,7 @@ case "${1-}" in
         usage
         exit 0
         ;;
-    start | pause | resume | stop | status)
+    start | pause | resume | stop | kill | status)
         exec "${PYTHON:-python}" -u "$loop" "$@"
         ;;
     "")
@@ -69,7 +78,7 @@ case "${1-}" in
         exit 2
         ;;
     *)
-        echo "bin/backlog-loop.sh: unknown command '$1' (start, pause, resume, stop, status; --help)" >&2
+        echo "bin/backlog-loop.sh: unknown command '$1' (start, pause, resume, stop, kill, status; --help)" >&2
         exit 2
         ;;
 esac

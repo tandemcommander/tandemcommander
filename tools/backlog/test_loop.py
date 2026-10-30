@@ -11,9 +11,11 @@ process when pause / stop / Ctrl+Break / a second loop are tested.
 """
 
 import contextlib
+import datetime as dt
 import io
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -219,6 +221,32 @@ class Base(unittest.TestCase):
     def assert_clean_tree(self):
         self.assertEqual(git(self.root, "status", "--porcelain"), "")
         self.assertFalse((self.repo.dir / "logs").exists())
+
+    def pending_record(self, phase, **extra):
+        self.repo.dir.mkdir(parents=True, exist_ok=True)
+        run = {"slug": FTP, "session": "22222222-2222-4222-8222-222222222222", "started": loop.stamp(time.time() - 60),
+               "log": str(self.tmp / "p.jsonl"), "err": str(self.tmp / "p.err"), "rows_before": len(self.runs()),
+               "attempts": 0, "stalls": 0, "resumes": 0, "limits": 0, "lock_started": None, "phase": phase,
+               "wait_until": None, "why": None, "child_pid": None, "child_ident": None}
+        run.update(extra)
+        loop.save_json(self.repo.run_file, run)
+        return run
+
+    # -- feature 344 ---------------------------------------------------
+
+    def last(self):
+        return loop.load_json(self.repo.dir / "last.json")
+
+    def loop_log(self):
+        p = self.repo.dir / "loop.log"
+        return p.read_text(encoding="utf-8") if p.exists() else ""
+
+    def write_edit_lock(self, pid, epoch, purpose="move an item"):
+        started = dt.datetime.fromtimestamp(epoch).strftime("%Y-%m-%dT%H:%M:%S")
+        path = self.repo.dir.parent / "tandem-backlog-edit.lock"
+        path.write_text(f"pid: {pid}\nstarted_epoch: {epoch}\nstarted: {started}\npurpose: {purpose}\n",
+                        encoding="utf-8")
+        return path, started
 
 
 class RunTests(Base):
@@ -588,16 +616,6 @@ class RunTests(Base):
         self.assertEqual(code, 0, out)
         self.assertEqual(len(self.calls()), 1)
 
-    def pending_record(self, phase, **extra):
-        self.repo.dir.mkdir(parents=True, exist_ok=True)
-        run = {"slug": FTP, "session": "22222222-2222-4222-8222-222222222222", "started": loop.stamp(time.time() - 60),
-               "log": str(self.tmp / "p.jsonl"), "err": str(self.tmp / "p.err"), "rows_before": len(self.runs()),
-               "attempts": 0, "stalls": 0, "resumes": 0, "limits": 0, "lock_started": None, "phase": phase,
-               "wait_until": None, "why": None, "child_pid": None, "child_ident": None}
-        run.update(extra)
-        loop.save_json(self.repo.run_file, run)
-        return run
-
     def test_a_run_cut_off_with_its_loop_is_continued_with_the_registry_warning(self):
         """Review M2: Ctrl+C in Git Bash kills loop and claude at once - no HARD STOP was said."""
         self.pending_record("running")
@@ -911,6 +929,7 @@ class ProcessTests(Base):
             "child_pid": orphan.pid, "child_ident": loop.process_ident(orphan.pid)})
         _, status = self.ctl("status")
         self.assertIn("is still working; the next bin/backlog-loop.sh start waits for it", status)  # review 2 N5
+        self.assertTrue(json.loads(self.ctl("status", "--json")[1])["orphan"])  # 344: the same check as data
         p = self.spawn_loop("--until-idle")
         self.wait_for(lambda: "previous loop" in str((loop.load_json(self.repo.loop_file) or {}).get("detail")),
                       what="waiting for the orphan")
@@ -981,6 +1000,7 @@ class ControlTests(Base):
         self.assertIn("pause requested", sh("status", *root)[1])
         self.assertIn("pause cleared", sh("resume", *root)[1])
         self.assertIn("no loop is running", sh("stop", *root)[1])
+        self.assertIn("no loop is running", sh("kill", *root)[1])
         for args in (["--help"], ["-h"], ["help"]):
             code, out = sh(*args)
             self.assertEqual(code, 0, args)
@@ -994,7 +1014,7 @@ class ControlTests(Base):
                 for flag in action.option_strings:
                     if flag.startswith("--"):
                         self.assertIn(flag, out)
-        for command in ("start", "pause", "resume", "stop", "status"):
+        for command in ("start", "pause", "resume", "stop", "kill", "status"):
             self.assertIn(f"  {command} ", out)
             code, cout = sh(command, "--help")
             self.assertEqual(code, 0, command)
@@ -1440,6 +1460,373 @@ class ImportTests(Base):
         self.assertEqual((run_line["slug"], run_line["outcome"], run_line["attempts"]), (FTP, "closed", 2))
         self.assertEqual(run_line["dir"], traces.new_name_for_old(stem))
         self.assertFalse(logs.exists())
+
+
+# ---------------------------------------------------------------------------
+# Feature 344: specs/344-backlog-web-app/contracts/loop-cli-additions.md
+
+
+class KillTests(Base):
+    """`kill`: a hard stop from another process, handled like Ctrl+Break in the loop's window."""
+
+    def test_kill_while_an_item_runs_is_a_hard_stop_and_the_next_start_continues(self):
+        self.write_plan([{"do": "hang", "seconds": 60}, "close"])
+        p = self.spawn_loop()
+        pid_file = self.tmp / "fake.pid"
+        self.wait_for(pid_file.exists, what="the fake's pid")
+        fake_pid = int(pid_file.read_text())
+        fake_ident = loop.process_ident(fake_pid)
+        self.assertIsNotNone(fake_ident)
+        code, out = self.ctl("kill")
+        self.assertEqual(code, 0)
+        self.assertIn("kill requested", out)
+        self.assertEqual(p.wait(timeout=30), 130, self.output(p))
+        said = self.output(p)
+        self.assertIn(f"HARD STOP: claude was killed while it worked on item {FTP}.", said)
+        self.assertIn("registry backup", said)
+        self.assertFalse(loop.alive(fake_pid, fake_ident))
+        run = loop.load_json(self.repo.run_file)
+        self.assertEqual(run["phase"], "killed")
+        self.assertEqual(run["why"], "a hard stop (kill) ended the process")
+        self.assertEqual(self.lock_slug(), FTP)  # the item keeps the lock
+        self.assertFalse(self.repo.loop_file.exists())
+        self.assertFalse((self.repo.dir / "kill").exists())  # handled, removed
+        (d,) = self.trace_dirs()
+        self.assertEqual(json.loads((d / "meta.json").read_text(encoding="utf-8"))["phase"], "killed")
+        last = self.last()
+        self.assertEqual((last["pid"], last["reason"], last["exit_code"]), (p.pid, "hard-stop", 130))
+        self.assertIn("HARD STOP: claude was killed", self.loop_log())
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        first, second = self.calls()
+        self.assertTrue(second["resume"])
+        self.assertEqual(second["session"], first["session"])
+        self.assertIn("a hard stop (kill) ended the process", second["prompt"])
+        self.check_trace(d, slug=FTP, reasons=("-", "killed"), outcome="closed")
+
+    def test_kill_while_waiting_and_the_status_shows_it(self):
+        self.write_plan([])
+        self.bl("block", FTP, "--reason", "x")
+        self.commit()
+        p = self.spawn_loop("--poll", "30", "--tick", "3")
+        self.wait_for(lambda: self.loop_state() == "idle", what="idle")
+        code, out = self.ctl("kill")
+        self.assertEqual(code, 0)
+        self.assertIn("kill requested", out)
+        _, status = self.ctl("status")  # the loop looks at the flag only every 3 s
+        self.assertIn("kill requested", status)
+        self.assertEqual(p.wait(timeout=30), 130, self.output(p))
+        self.assertIn("stopped (kill) - no item of this loop was running", self.output(p))
+        self.assertFalse((self.repo.dir / "kill").exists())
+        self.assertEqual(self.last()["reason"], "hard-stop")
+        self.assertFalse(json.loads(self.ctl("status", "--json")[1])["kill"])
+
+    def test_kill_during_the_auto_triage(self):
+        self.write_plan([{"do": "triage-hang", "seconds": 60}])
+        p = self.spawn_loop("--auto-triage")
+        pid_file = self.tmp / "fake.pid"
+        self.wait_for(pid_file.exists, what="the fake's pid")
+        fake_pid = int(pid_file.read_text())
+        fake_ident = loop.process_ident(fake_pid)
+        self.ctl("kill")
+        self.assertEqual(p.wait(timeout=30), 130, self.output(p))
+        self.assertIn("HARD STOP: claude was killed during the auto-triage", self.output(p))
+        self.assertFalse(loop.alive(fake_pid, fake_ident))
+        self.assertFalse(self.repo.triage_file.exists())
+        (d,) = self.trace_dirs()
+        self.check_trace(d, kind="triage", slug="triage", phase="killed")
+
+    def test_kill_without_a_loop_sets_nothing(self):
+        code, out = self.ctl("kill")
+        self.assertEqual(code, 0)
+        self.assertIn("no loop is running", out)
+        self.assertFalse((self.repo.dir / "kill").exists())
+
+    def test_a_stale_kill_is_removed_by_the_next_start(self):
+        self.repo.dir.mkdir(parents=True)
+        (self.repo.dir / "kill").write_text("x", encoding="utf-8")
+        _, status = self.ctl("status")
+        self.assertNotIn("kill requested", status)  # no loop: nothing is pending
+        self.write_plan(["close"])
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(len(self.calls()), 1)
+        self.assertFalse((self.repo.dir / "kill").exists())
+
+
+class LoopLogTests(Base):
+    def test_every_line_the_loop_says_is_in_loop_log(self):
+        self.write_plan(["close"])
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        lines = self.loop_log().splitlines()
+        for line in lines:
+            self.assertRegex(line, r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d ")
+        said = [l.split("] ", 1)[1] for l in out.splitlines()]
+        self.assertEqual([l[20:] for l in lines], said)
+        self.assertIn("loop started", lines[0])
+        self.assertIn("loop ended", lines[-1])
+
+    def test_loop_log_is_appended_and_rotated(self):
+        self.repo.dir.mkdir(parents=True)
+        log = self.repo.dir / "loop.log"
+        old = b"x" * 1900 + b"\n"
+        log.write_bytes(old)
+        self.write_plan(["close"])
+        keep = loop.LOG_MAX
+        loop.LOG_MAX = 2000
+        try:
+            code, out = self.run_loop("--until-idle")
+        finally:
+            loop.LOG_MAX = keep
+        self.assertEqual(code, 0, out)
+        self.assertEqual((self.repo.dir / "loop.log.1").read_bytes(), old)
+        self.assertLessEqual(log.stat().st_size, 2000)
+        self.assertIn("loop ended", self.loop_log())
+
+    def test_a_refused_start_is_in_the_log(self):
+        self.write_plan([])
+        self.bl("block", FTP, "--reason", "x")
+        self.commit()
+        p = self.spawn_loop()
+        self.wait_for(lambda: self.loop_state() == "idle", what="idle")
+        code, out = self.run_loop()
+        self.assertEqual(code, 1, out)
+        self.assertIn("refused: another loop is running", self.loop_log())
+        self.assertIsNone(self.last())  # the other loop's record is not touched
+        self.ctl("stop")
+        self.assertEqual(p.wait(timeout=30), 0)
+        last = self.last()
+        self.assertEqual((last["pid"], last["reason"], last["exit_code"]), (p.pid, "stop", 0))
+
+
+class LastTests(Base):
+    """last.json: why the last loop ended."""
+
+    def test_until_idle_and_the_fields(self):
+        self.write_plan(["close"])
+        code, out = self.run_loop("--until-idle", "--model", "haiku")
+        self.assertEqual(code, 0, out)
+        last = self.last()
+        self.assertEqual(list(last), ["pid", "started", "ended", "exit_code", "reason", "counts", "items", "options"])
+        self.assertEqual((last["pid"], last["exit_code"], last["reason"], last["items"]),
+                         (os.getpid(), 0, "until-idle", 1))
+        self.assertEqual(last["counts"]["closed"], 1)
+        for key in ("started", "ended"):
+            self.assertRegex(last[key], r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$")
+        self.assertEqual(last["options"], {"max_items": 0, "max_blocked": 3, "poll": 0.2, "model": "haiku",
+                                           "until_idle": True, "forget_run": False, "auto_triage": False,
+                                           "item": None})
+
+    def test_reasons(self):
+        self.add_items(3)
+        self.write_plan(["close"])
+        self.assertEqual(self.run_loop("--max-items", "1")[0], 0)
+        self.assertEqual(self.last()["reason"], "max-items")
+        self.write_plan(["block", "block"])
+        self.assertEqual(self.run_loop("--max-blocked", "2")[0], 1)
+        self.assertEqual(self.last()["reason"], "max-blocked")
+        self.write_plan(["crash", "crash", "crash"])
+        self.assertEqual(self.run_loop()[0], 1)
+        self.assertEqual((self.last()["reason"], self.last()["exit_code"]), ("stopped-for-person", 1))
+
+    def test_an_unexpected_error(self):
+        args = loop.build_parser().parse_args(self.start_args())
+        lp = loop.Loop(self.repo, args)
+
+        def boom():
+            raise RuntimeError("boom")
+        lp.cycle = boom
+        with contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(RuntimeError):
+                lp.main()
+        self.assertEqual((self.last()["reason"], self.last()["exit_code"]), ("error", 1))
+        self.assertFalse(self.repo.loop_file.exists())
+
+
+class EditLockTests(Base):
+    """The backlog app's edit lock (.git/tandem-backlog-edit.lock) holds new runs and the auto-triage."""
+
+    def precheck(self):
+        args = loop.build_parser().parse_args(self.start_args())
+        return loop.Loop(self.repo, args).precheck()
+
+    def test_a_live_lock_waits(self):
+        epoch = time.time()
+        path, started = self.write_edit_lock(os.getpid(), epoch)
+        state, why = self.precheck()
+        self.assertEqual(state, "waiting")
+        self.assertEqual(why, "waiting: the backlog app is changing the backlog (since "
+                              f"{dt.datetime.fromtimestamp(epoch).strftime('%H:%M:%S')})")
+        data = json.loads(self.ctl("status", "--json")[1])
+        self.assertEqual(data["edit_lock"], {"pid": os.getpid(), "started": started, "purpose": "move an item",
+                                             "live": True})
+        self.assertTrue(path.exists())
+
+    def test_a_dead_lock_is_ignored_and_kept(self):
+        dead = subprocess.Popen([sys.executable, "-c", "pass"])
+        dead.wait()
+        path, _ = self.write_edit_lock(dead.pid, time.time())
+        self.assertEqual(self.precheck(), ("ready", FTP))
+        self.assertTrue(path.exists())  # never deleted: the app replaces it
+        self.assertFalse(json.loads(self.ctl("status", "--json")[1])["edit_lock"]["live"])
+
+    def test_a_reused_pid_is_not_the_owner(self):
+        created = loop.process_created(os.getpid())
+        self.assertIsNotNone(created)
+        self.write_edit_lock(os.getpid(), created - 10)  # taken before this process existed
+        self.assertEqual(self.precheck(), ("ready", FTP))
+        self.write_edit_lock(os.getpid(), created - 1)  # within the 2 s slack
+        self.assertEqual(self.precheck()[0], "waiting")
+
+    def test_no_auto_triage_while_the_app_edits(self):
+        self.write_edit_lock(os.getpid(), time.time())
+        self.write_plan(["triage"])
+        code, out = self.run_loop("--auto-triage", "--deadline", "1.5")
+        self.assertEqual(code, 3, out)
+        self.assertFalse(self.plan.exists() and self.calls())
+        self.assertIn("the backlog app is changing the backlog", out)
+
+    def test_a_waiting_loop_starts_when_the_lock_is_gone(self):
+        path, _ = self.write_edit_lock(os.getpid(), time.time())
+        self.write_plan(["close"])
+        p = self.spawn_loop("--until-idle")
+        self.wait_for(lambda: "backlog app" in str((loop.load_json(self.repo.loop_file) or {}).get("detail")),
+                      what="waiting for the edit lock")
+        time.sleep(0.3)
+        self.assertFalse(self.plan.exists() and self.calls())
+        path.unlink()
+        self.assertEqual(p.wait(timeout=30), 0, self.output(p))
+        self.assertEqual(len(self.calls()), 1)
+
+    def test_leaving_pause_writes_starting_resumed_before_the_precheck(self):
+        args = loop.build_parser().parse_args(self.start_args())
+        lp = loop.Loop(self.repo, args)
+        self.ctl("pause")
+        seen = []
+        real_wait = lp.wait
+
+        def wait(state, detail, until, recheck=False):
+            if state == "paused":
+                loop.unlink(self.repo.pause_flag)  # bin/backlog-loop.sh resume from another window
+                return None
+            return real_wait(state, detail, until, recheck)
+
+        def precheck():
+            seen.append(loop.load_json(self.repo.loop_file))
+            raise loop.Stop(0)
+        lp.wait, lp.precheck = wait, precheck
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(lp.main(), 0)
+        self.assertEqual((seen[0]["state"], seen[0]["detail"]), ("starting", "resumed"))
+
+    def test_status_json_has_the_new_keys(self):
+        data = json.loads(self.ctl("status", "--json")[1])
+        for key in ("loop", "live", "run", "triage", "paused", "stop", "lock", "lock_text", "trace", "traces_bytes"):
+            self.assertIn(key, data)
+        self.assertEqual((data["kill"], data["last"], data["edit_lock"], data["orphan"]), (False, None, None, False))
+        self.assertEqual(Path(data["log"]), self.repo.dir / "loop.log")
+        self.write_plan(["close"])
+        self.run_loop("--until-idle")
+        self.assertEqual(json.loads(self.ctl("status", "--json")[1])["last"]["reason"], "until-idle")
+
+
+class ItemTests(Base):
+    """start --item SLUG: one run of a named item."""
+
+    def next_rows(self):
+        return [r.slug for r in backlog.Backlog(self.root).ov.sections[backlog.SEC_NEXT].rows]
+
+    def test_a_named_item_runs_once_and_the_order_stays(self):
+        slugs = self.add_items(2)
+        before = self.next_rows()
+        self.write_plan(["close", "close"])
+        code, out = self.run_loop("--item", slugs[1])
+        self.assertEqual(code, 0, out)
+        self.assertEqual([c["slug"] for c in self.calls()], [slugs[1]])
+        self.assertEqual(self.runs()[-1][1:3], [slugs[1], "closed"])
+        self.assertEqual(self.next_rows(), [s for s in before if s != slugs[1]])
+        (d,) = self.trace_dirs()
+        self.check_trace(d, slug=slugs[1], outcome="closed")
+        last = self.last()
+        self.assertEqual((last["reason"], last["exit_code"]), ("item-done", 0))
+        self.assertEqual((last["options"]["item"], last["options"]["max_items"]), (slugs[1], 1))
+
+    def test_a_named_items_run_is_continued_like_any_run(self):
+        self.write_plan(["stall", "close", "close"])
+        code, out = self.run_loop("--item", FTP)
+        self.assertEqual(code, 0, out)
+        self.assertEqual([c["resume"] for c in self.calls()], [False, True])  # continued as any run
+        self.assertEqual(self.last()["reason"], "item-done")
+
+    def test_a_not_eligible_item_is_refused(self):
+        self.write_plan(["close"])
+        code, out = self.run_loop("--item", DISK)  # blocked in the fixture
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"refused: item {DISK} is not eligible (status blocked)", out)
+        self.assertFalse(self.plan.exists() and self.calls())
+        self.assertFalse(self.repo.loop_file.exists())
+        self.assertEqual((self.last()["reason"], self.last()["exit_code"]), ("refused", 1))
+        code, out = self.run_loop("--item", "no-such-item")
+        self.assertEqual(code, 1, out)
+        self.assertIn("refused: item no-such-item is not eligible", out)
+
+    def test_refused_while_an_interrupted_run_must_be_continued(self):
+        slugs = self.add_items(1)
+        self.pending_record("killed", why="a hard stop")
+        self.bl("lock", "acquire", "--slug", FTP)
+        self.write_plan(["close"])
+        code, out = self.run_loop("--item", slugs[0])
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"an interrupted run of {FTP} must be continued first", out)
+        self.assertFalse(self.plan.exists() and self.calls())
+        self.assertTrue(self.repo.run_file.exists())
+
+    def test_with_until_idle_is_a_usage_error(self):
+        code, out = self.run_loop("--item", FTP, "--until-idle")
+        self.assertEqual(code, 2, out)
+        self.assertFalse(self.repo.loop_file.exists())
+
+
+@unittest.skipUnless(os.name == "nt", "a new console window is Windows")
+class NewWindowTests(Base):
+    """start --new-window, started hidden (--new-window-hidden): no window pops up on the maintainer's desktop."""
+
+    def tearDown(self):
+        live = self.repo.live_loop()
+        if live and live.get("pid") != os.getpid():
+            loop.kill_tree(live["pid"])
+        super().tearDown()
+
+    def test_start_in_a_new_window(self):
+        self.write_plan([])
+        self.bl("block", FTP, "--reason", "x")
+        self.commit()
+        code, out = self.run_loop("--new-window", "--new-window-hidden")
+        self.assertEqual(code, 0, out)
+        m = re.search(r"^started the loop in a new window \(pid (\d+)\)$", out, re.M)
+        self.assertIsNotNone(m, out)
+        pid = int(m.group(1))
+        data = loop.load_json(self.repo.loop_file)
+        self.assertEqual(data["pid"], pid)
+        self.assertTrue(loop.alive(pid, data["ident"]))
+        self.wait_for(lambda: self.loop_state() == "idle", what="idle")
+        code, out = self.run_loop("--new-window", "--new-window-hidden")
+        self.assertEqual(code, 1, out)
+        self.assertIn("another loop is running", out)
+        self.ctl("stop")
+        self.wait_for(lambda: not self.repo.loop_file.exists(), what="the loop ended")
+        self.wait_for(lambda: (self.last() or {}).get("pid") == pid, what="its last.json")
+        self.assertEqual(self.last()["reason"], "stop")
+        self.assertIn(f"loop started (pid {pid})", self.loop_log())
+
+    def test_an_error_of_the_new_loop_is_reported_from_its_log(self):
+        self.write_plan(["close"])
+        code, out = self.run_loop("--new-window", "--new-window-hidden", "--item", DISK)
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"item {DISK} is not eligible (status blocked)", out)
+        self.assertNotIn("started the loop", out)
+        self.assertFalse(self.plan.exists() and self.calls())
 
 
 if __name__ == "__main__":

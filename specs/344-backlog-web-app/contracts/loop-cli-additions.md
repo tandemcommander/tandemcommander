@@ -32,8 +32,12 @@ New first precheck condition (cycle step 4, and before the auto-triage of step 2
 `.git/tandem-backlog-edit.lock` exists and names a live process (pid + creation time, as the
 loop's own liveness check), the loop waits with
 `waiting: the backlog app is changing the backlog (since HH:MM:SS)`. A lock whose process is
-gone is ignored (not deleted: the app replaces it). File: four lines `pid: N`, `ident: N`,
-`started: YYYY-MM-DDTHH:MM:SS`, `purpose: <one line>`.
+gone is ignored (not deleted: the app replaces it). File: four lines `pid: N`,
+`started_epoch: <float seconds since 1970>`, `started: YYYY-MM-DDTHH:MM:SS` (local, for
+people), `purpose: <one line>`. Liveness: a process with that pid exists **and** its creation
+time is not later than `started_epoch + 2` s (a pid reused by a process created after the lock
+was written is not the lock's owner). The writer (Node) cannot read process creation times, so
+the lock carries the time it was taken instead of the loop's `ident`.
 
 When the loop leaves `paused` (after `resume`), it writes `loop.json` with state `starting` and
 detail `resumed` **before** the precheck, so a reader that sees `paused` knows no precheck has

@@ -1,0 +1,14 @@
+{
+  "name": "@backlog-app/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Schemas, types and pure rules shared by the server and the web client of the backlog app.",
+  "license": "GPL-2.0-or-later",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  }
+}

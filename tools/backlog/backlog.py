@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import http.client
 import json
 import os
@@ -169,6 +170,25 @@ def read_text(path: Path) -> str:
     return text.replace("\r\n", "\n")
 
 
+def decode(data: bytes) -> str:
+    """The text of a file's bytes as read_text gives it (raises UnicodeDecodeError)."""
+    return data.decode("utf-8").replace("\r\n", "\n")
+
+
+def sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+# Every file the running command wrote or deleted, in order (feature 344: the
+# 'written' list of a --json result, which lets a caller snapshot and undo).
+_WRITTEN: list = []
+
+
+def record(path: Path) -> None:
+    if path not in _WRITTEN:
+        _WRITTEN.append(path)
+
+
 def write_text(path: Path, text: str) -> None:
     """Atomic write: a uniquely named temporary file in the same folder, then replace."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -183,6 +203,109 @@ def write_text(path: Path, text: str) -> None:
         except OSError:
             pass
         raise
+    record(path)
+
+
+# ---------------------------------------------------------------------------
+# Sources: where the read commands take backlog/ from (feature 344)
+
+
+class TreeSource:
+    """The working tree."""
+
+    ref = None
+
+    def is_dir(self, path: Path) -> bool:
+        return path.is_dir()
+
+    def is_file(self, path: Path) -> bool:
+        return path.is_file()
+
+    def children(self, path: Path) -> list:
+        return sorted(path.iterdir())
+
+    def read_bytes(self, path: Path) -> bytes:
+        with open(path, "rb") as f:
+            return f.read()
+
+
+TREE = TreeSource()
+
+
+class GitSource:
+    """backlog/ and the folder names of specs/ at a git REF, read from the
+    objects (git ls-tree, git cat-file --batch): no file of the working tree
+    is opened, so a run's branch state or a half-written file never shows."""
+
+    def __init__(self, root: Path, ref: str):
+        self.root = root
+        self.ref = ref
+        if ref.startswith("-"):
+            raise Refused(f"'{ref}' is not a ref")
+        commit = self._git("rev-parse", "--verify", "--quiet", ref + "^{commit}", what=f"unknown ref '{ref}'")
+        commit = commit.decode("ascii").strip()
+        self.files: dict = {}  # posix path relative to root -> object id
+        self.dirs: set = set()
+        for entry in self._git("ls-tree", "-r", "-z", commit, "--", "backlog").split(b"\0"):
+            if not entry:
+                continue
+            meta, path = entry.split(b"\t", 1)
+            if meta.split(b" ")[1] != b"blob":
+                continue
+            name = path.decode("utf-8")
+            self.files[name] = meta.split(b" ")[2].decode("ascii")
+            parts = name.split("/")
+            for k in range(1, len(parts)):
+                self.dirs.add("/".join(parts[:k]))
+        for entry in self._git("ls-tree", "-z", commit, "--", "specs/").split(b"\0"):
+            if entry and entry.split(b"\t", 1)[0].split(b" ")[1] == b"tree":
+                self.dirs.add("specs")
+                self.dirs.add(entry.split(b"\t", 1)[1].decode("utf-8"))
+        self.blobs = self._cat(list(dict.fromkeys(self.files.values())))
+
+    def _git(self, *args, what: str = "", data: bytes | None = None) -> bytes:
+        try:
+            res = subprocess.run(["git", "-C", str(self.root), *args], input=data, capture_output=True)
+        except OSError as e:
+            raise Refused(f"cannot run git: {e}")
+        if res.returncode != 0:
+            raise Refused(what or f"git {' '.join(args)} failed: {res.stderr.decode('utf-8', 'replace').strip()}")
+        return res.stdout
+
+    def _cat(self, oids: list) -> dict:
+        if not oids:
+            return {}
+        out = self._git("cat-file", "--batch", data=("\n".join(oids) + "\n").encode("ascii"))
+        blobs, pos = {}, 0
+        for oid in oids:
+            nl = out.index(b"\n", pos)
+            size = int(out[pos:nl].split(b" ")[2])
+            blobs[oid] = out[nl + 1:nl + 1 + size]
+            pos = nl + 1 + size + 1
+        return blobs
+
+    def _rel(self, path: Path) -> str | None:
+        try:
+            return path.relative_to(self.root).as_posix()
+        except ValueError:
+            return None
+
+    def is_dir(self, path: Path) -> bool:
+        return self._rel(path) in self.dirs
+
+    def is_file(self, path: Path) -> bool:
+        return self._rel(path) in self.files
+
+    def children(self, path: Path) -> list:
+        prefix = self._rel(path) + "/"
+        names = {p[len(prefix):].split("/")[0] for p in list(self.files) + list(self.dirs) if p.startswith(prefix)}
+        return sorted(path / n for n in names)
+
+    def read_bytes(self, path: Path) -> bytes:
+        name = self._rel(path)
+        if name not in self.files:
+            raise FileNotFoundError(f"{name} is not in {self.ref}")
+        return self.blobs[self.files[name]]
 
 
 def one_line(text: str, what: str) -> str:
@@ -197,10 +320,10 @@ def flatten(text: str) -> str:
     return re.sub(r"\s+", " ", text or "").strip()
 
 
-def first_line(path: Path) -> str:
+def first_line(path: Path, src=None) -> str:
     """First line of a text file; a marker the format rules never accept if unreadable."""
     try:
-        return read_text(path).split("\n", 1)[0].strip()
+        return decode((src or TREE).read_bytes(path)).split("\n", 1)[0].strip()
     except UnicodeDecodeError:
         return "<not valid UTF-8>"
 
@@ -306,6 +429,7 @@ class Item:
     body_start: int = 0  # 1-based line number of body[0]
     errors: list = field(default_factory=list)  # (line, rule, message)
     ok: bool = False  # header parsed completely
+    revision: str = ""  # SHA-256 of desc.md as read
 
     @property
     def path(self) -> Path:
@@ -335,11 +459,16 @@ def format_header_value(key: str, value) -> str:
     return str(value)
 
 
-def parse_item(folder: Path) -> Item:
+def parse_item(folder: Path, src=None, data: bytes | None = None) -> Item:
+    """The item of folder, read from src (default: the working tree), or from
+    data (the bytes of a desc.md not written yet)."""
     item = Item(slug=folder.name, folder=folder)
     path = item.path
     try:
-        raw = read_text(path)
+        if data is None:
+            data = (src or TREE).read_bytes(path)
+        item.revision = sha256(data)
+        raw = decode(data)
     except UnicodeDecodeError as e:
         item.errors.append((1, "header", f"not valid UTF-8 (byte {e.start}); save the file as UTF-8 without BOM"))
         return item
@@ -490,6 +619,8 @@ class Overview:
     legend: dict = field(default_factory=dict)  # table name -> list of first-column values
     errors: list = field(default_factory=list)  # (lineno, rule, message)
     last_triaged_line: int = -1
+    revision: str = ""  # SHA-256 of BACKLOG.md as read
+    legend_rows: dict = field(default_factory=dict)  # table name -> list of row cells
 
     def section_of(self, slug: str):
         for name in SECTIONS:
@@ -518,14 +649,15 @@ def table_blocks(lines: list, start: int, end: int) -> list:
     return blocks
 
 
-def parse_overview(path: Path) -> Overview:
+def parse_overview(path: Path, src=None) -> Overview:
+    data = (src or TREE).read_bytes(path)
     try:
-        raw = read_text(path)
+        raw = decode(data)
     except UnicodeDecodeError as e:
-        ov = Overview(path=path, lines=[])
+        ov = Overview(path=path, lines=[], revision=sha256(data))
         ov.errors.append((1, "overview", f"not valid UTF-8 (byte {e.start}); save the file as UTF-8 without BOM"))
         return ov
-    ov = Overview(path=path, lines=raw.split("\n"))
+    ov = Overview(path=path, lines=raw.split("\n"), revision=sha256(data))
     if raw.startswith("\ufeff"):
         ov.errors.append((1, "overview", "file starts with a BOM"))
         ov.lines[0] = ov.lines[0][1:]
@@ -593,7 +725,7 @@ def parse_legend(ov: Overview, start: int, end: int) -> None:
     bounds = [i for i, _ in h3] + [end]
     for k, (i, name) in enumerate(h3):
         blocks = table_blocks(lines, i + 1, bounds[k + 1])
-        values = []
+        values, rows = [], []
         if blocks:
             a, b = blocks[0]
             first = a + 2 if b - a >= 2 and is_separator(lines[a + 1]) else a + 1
@@ -601,7 +733,9 @@ def parse_legend(ov: Overview, start: int, end: int) -> None:
                 cells = split_row(lines[r])
                 if cells and cells[0]:
                     values.append(unbacktick(cells[0]))
+                    rows.append(cells)
         ov.legend[name] = values
+        ov.legend_rows[name] = rows
     for name in LEGEND_TABLES:
         if not ov.legend.get(name):
             ov.errors.append((start + 1, "overview", f"legend table '{name}' missing or empty"))
@@ -681,8 +815,9 @@ def overview_structurally_ok(ov: Overview) -> bool:
 
 
 class Backlog:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, src=None):
         self.root = root
+        self.src = src or TREE  # where it is read from: the working tree or a GitSource (read commands)
         self.dir = root / "backlog"
         self.items_dir = self.dir / "items"
         self.overview_path = self.dir / "BACKLOG.md"
@@ -693,12 +828,13 @@ class Backlog:
         self.load()
 
     def load(self) -> None:
+        src = self.src
         self.items = {}
-        if self.items_dir.is_dir():
-            for folder in sorted(p for p in self.items_dir.iterdir() if p.is_dir()):
-                if (folder / "desc.md").is_file():
-                    self.items[folder.name] = parse_item(folder)
-        self.ov = parse_overview(self.overview_path) if self.overview_path.is_file() else None
+        if src.is_dir(self.items_dir):
+            for folder in [p for p in src.children(self.items_dir) if src.is_dir(p)]:
+                if src.is_file(folder / "desc.md"):
+                    self.items[folder.name] = parse_item(folder, src)
+        self.ov = parse_overview(self.overview_path, src) if src.is_file(self.overview_path) else None
 
     def require_overview(self) -> Overview:
         if self.ov is None:
@@ -926,33 +1062,34 @@ def find_cycles(items: dict) -> list:
 def check(bl: Backlog) -> list:
     """All findings as (path, line, rule, message)."""
     root = bl.root
+    src = bl.src
     F = []
 
     def add(path, line, rule, msg):
         F.append((rel(root, path) if isinstance(path, Path) else path, line, rule, msg))
 
-    if not bl.dir.is_dir():
+    if not src.is_dir(bl.dir):
         add(bl.dir, 1, "layout", "backlog/ folder missing")
         return F
-    for entry in sorted(bl.dir.iterdir()):
+    for entry in src.children(bl.dir):
         if entry.name not in TOP_LEVEL:
             add(entry, 1, "layout", "unexpected entry at the top level of backlog/")
     for name in ("BACKLOG.md", "RUNS.md", "RELEASE.md"):
-        if not (bl.dir / name).is_file():
+        if not src.is_file(bl.dir / name):
             add(bl.dir / name, 1, "layout", f"{name} missing")
-    if bl.items_dir.is_dir():  # a missing items/ is an empty backlog (git keeps no empty folder)
-        for entry in sorted(bl.items_dir.iterdir()):
-            if not entry.is_dir():
+    if src.is_dir(bl.items_dir):  # a missing items/ is an empty backlog (git keeps no empty folder)
+        for entry in src.children(bl.items_dir):
+            if not src.is_dir(entry):
                 add(entry, 1, "layout", "only item folders belong in backlog/items/")
                 continue
             if not valid_slug(entry.name):
                 add(entry, 1, "slug", f"folder name '{entry.name}' is not a slug (^[a-z0-9]+(-[a-z0-9]+)*$, max {SLUG_MAX})")
-            if not (entry / "desc.md").is_file():
+            if not src.is_file(entry / "desc.md"):
                 add(entry, 1, "desc-missing", "item folder without desc.md")
-            for sub in sorted(entry.iterdir()):
-                if sub.name in ITEM_FILES and sub.is_file():
+            for sub in src.children(entry):
+                if sub.name in ITEM_FILES and src.is_file(sub):
                     continue
-                if sub.name in ITEM_DIRS and sub.is_dir():
+                if sub.name in ITEM_DIRS and src.is_dir(sub):
                     continue
                 add(sub, 1, "layout", "unexpected file in an item folder (allowed: desc.md, issue.md, reply.md, evidence/)")
 
@@ -975,7 +1112,7 @@ def check(bl: Backlog) -> list:
         h = it.header
         if h["status"] == "in-progress" and FEATURE_RE.match(h["feature"]):
             specs = root / "specs"
-            if not any(p.is_dir() and p.name.startswith(h["feature"] + "-") for p in (specs.iterdir() if specs.is_dir() else [])):
+            if not any(src.is_dir(p) and p.name.startswith(h["feature"] + "-") for p in (src.children(specs) if src.is_dir(specs) else [])):
                 add(it.path, it.header_lines.get("feature", 1), "feature-missing", f"no folder specs/{h['feature']}-* for the in-progress feature")
         for key in ("related", "depends-on"):
             for other in it.list_of(key):
@@ -993,15 +1130,15 @@ def check(bl: Backlog) -> list:
             else:
                 github_seen[num] = slug
             issue = it.folder / "issue.md"
-            if not issue.is_file():
+            if not src.is_file(issue):
                 add(issue, 1, "github", "source github#N needs issue.md")
             else:
-                first = first_line(issue)
+                first = first_line(issue, src)
                 if first != f"number: {num}":
                     add(issue, 1, "github", f"first line must be 'number: {num}'")
         reply = it.folder / "reply.md"
-        if reply.is_file():
-            first = first_line(reply)
+        if src.is_file(reply):
+            first = first_line(reply, src)
             if not REPLY_STATE_RE.match(first):
                 add(reply, 1, "value", "first line must be 'state: not-sent' or 'state: sent YYYY-MM-DD'")
     for cyc in find_cycles(items):
@@ -1041,7 +1178,7 @@ def check(bl: Backlog) -> list:
                     add(bl.overview_path, line, "derived", f"differs from 'sync' in section '{name}'; expected: {w!r}")
                     break
 
-    if bl.runs_path.is_file():
+    if src.is_file(bl.runs_path):
         F.extend(runs_findings(bl))
     F.sort(key=lambda f: (f[0], f[1], f[2]))
     return F
@@ -1051,7 +1188,7 @@ def runs_findings(bl: Backlog) -> list:
     out = []
     path = rel(bl.root, bl.runs_path)
     try:
-        lines = read_text(bl.runs_path).split("\n")
+        lines = decode(bl.src.read_bytes(bl.runs_path)).split("\n")
     except UnicodeDecodeError as e:
         return [(path, 1, "runs", f"not valid UTF-8 (byte {e.start})")]
     blocks = table_blocks(lines, 0, len(lines))
@@ -1079,10 +1216,49 @@ def print_findings(findings: list) -> None:
     print(f"TOTAL: {len(findings)}")
 
 
+@dataclass
+class Output:
+    """What a changing command reports.  With --json (feature 344) it is
+    printed as one result object at the end instead of text lines."""
+    json: bool = False
+    slugs: list = field(default_factory=list)
+    section: str | None = None  # set by a command about a section (reorder)
+    notices: list = field(default_factory=list)
+    findings: list = field(default_factory=list)
+    bl: Backlog | None = None
+
+
+OUT = Output()
+
+
+def notice(text: str) -> None:
+    """A line a person should read (moved, sections added, an issue skipped)."""
+    if OUT.json:
+        OUT.notices.append(text)
+    else:
+        print(text)
+
+
+def emit_slug(slug: str) -> None:
+    """The slug a command created: its first output line, or 'slugs' in JSON."""
+    if slug not in OUT.slugs:
+        OUT.slugs.append(slug)
+    if not OUT.json:
+        print(slug)
+
+
+def finding_json(f) -> dict:
+    path, line, rule, msg = f
+    return {"path": path, "line": line, "rule": rule, "message": msg}
+
+
 def finish(bl: Backlog, ok_message: str | None = None) -> int:
     """Run the full check after a change; report and return the exit code."""
     bl.load()
     findings = check(bl)
+    if OUT.json:
+        OUT.findings = findings
+        return 1 if findings else 0
     if ok_message:
         print(ok_message)
     if findings:
@@ -1244,18 +1420,23 @@ def ensure_type_sections(it: Item) -> list:
 # Item creation
 
 
-def new_item_text(header: dict, problem: str, evidence: str, expected: str) -> str:
+def new_item_text(header: dict, problem: str, evidence: str, expected: str, extra: dict | None = None) -> str:
+    """extra: texts of the further sections (Approach ... Steps) by heading name
+    (--input-json); a section the type requires gets a placeholder."""
     t = header["type"]
+    extra = extra or {}
     body = ["", f"# {header['title']}", "",
             "## Problem", "", problem or "(to be written)", "",
             "## Evidence", "", evidence or "(to be written)", "",
             "## Expected", "", expected or "(to be written)", ""]
-    if t == "decision":
-        body += ["## Question", "", "(to be written)", "",
-                 "## Options", "", "(to be written)", "",
-                 "## Recommendation", "", "(to be written)", ""]
-    if t == "person-step":
-        body += ["## Steps", "", "- [ ] (to be written)", ""]
+    for name in ("Approach", "Notes"):
+        if extra.get(name):
+            body += [f"## {name}", "", extra[name], ""]
+    for name in ("Question", "Options", "Recommendation"):
+        if extra.get(name) or t == "decision":
+            body += [f"## {name}", "", extra.get(name) or "(to be written)", ""]
+    if extra.get("Steps") or t == "person-step":
+        body += ["## Steps", "", extra.get("Steps") or "- [ ] (to be written)", ""]
     body += ["## Log", "", f"- {today()} {EMDASH} created (source {header['source']})"]
     head = ["---"] + [f"{k}: {format_header_value(k, header[k])}" for k in HEADER_KEYS] + ["---"]
     return "\n".join(head + body) + "\n"
@@ -1269,7 +1450,10 @@ def refuse_invalid_header(bl: Backlog, header: dict, slug: str) -> None:
         raise Refused("invalid values: " + "; ".join(errs))
 
 
-def create_item(bl: Backlog, header: dict, slug: str | None, problem="", evidence="", expected="") -> Item:
+def create_item(bl: Backlog, header: dict, slug: str | None, problem="", evidence="", expected="",
+                extra: dict | None = None, check_body: bool = False) -> Item:
+    """check_body: refuse a body that breaks the body rules before anything is
+    written (texts from --input-json, which may contain any Markdown)."""
     ov = bl.require_overview()
     slug = slug or derive_slug(header["title"])
     if not slug:
@@ -1282,8 +1466,13 @@ def create_item(bl: Backlog, header: dict, slug: str | None, problem="", evidenc
         title = other.header.get("title", "?") if other else "?"
         raise Refused(f"item '{slug}' already exists ({title}); choose another title or pass --slug")
     refuse_invalid_header(bl, header, slug)
+    text = new_item_text(header, problem, evidence, expected, extra)
+    if check_body:
+        errs = [m for _, _, m in body_findings(parse_item(folder, data=text.encode("utf-8")))]
+        if errs:
+            raise Refused("the texts break the body rules: " + "; ".join(errs))
     folder.mkdir(parents=True)
-    write_text(folder / "desc.md", new_item_text(header, problem, evidence, expected))
+    write_text(folder / "desc.md", text)
     bl.items[slug] = parse_item(folder)
     bl.place_row(slug, SEC_INBOX)
     bl.save_overview()
@@ -1322,7 +1511,10 @@ def split_csv(text: str | None) -> list:
 
 def cmd_check(bl: Backlog, args) -> int:
     findings = check(bl)
-    print_findings(findings)
+    if args.json:
+        print(json.dumps({"total": len(findings), "findings": [finding_json(f) for f in findings]}, ensure_ascii=False))
+    else:
+        print_findings(findings)
     return 1 if findings else 0
 
 
@@ -1419,8 +1611,10 @@ def cmd_next(bl: Backlog, args) -> int:
 
 def cmd_new(bl: Backlog, args) -> int:
     header = base_header(args, args.source, args.title)
-    it = create_item(bl, header, args.slug, args.problem or "", args.evidence or "", args.expected or "")
-    print(it.slug)
+    extra = {key.capitalize(): getattr(args, key, None) for key in ("approach", "notes", "question", "options", "recommendation", "steps")}
+    it = create_item(bl, header, args.slug, args.problem or "", args.evidence or "", args.expected or "",
+                     extra={k: v for k, v in extra.items() if v}, check_body=args.input_json is not None)
+    emit_slug(it.slug)
     return finish(bl)
 
 
@@ -1449,17 +1643,24 @@ def cmd_set(bl: Backlog, args) -> int:
     errs = validate_item(bl, it)
     if errs:
         raise Refused("invalid values: " + "; ".join(errs))
+    after_section = expected_section(it)
+    moves = bool(after_section) and after_section != before_section
+    if args.position is not None:
+        if args.position < 1:
+            raise Refused("--position counts from 1 (the top)")
+        if not moves:
+            raise Refused("--position places the row when type / who move it to another section; to reorder, use move")
     if any(c.startswith("title=") for c in changes):
         set_title_line(it, it.header["title"])
     added = ensure_type_sections(it)
     touch(it, args.log or "set " + ", ".join(changes))
-    after_section = expected_section(it)
     bl.save_item(it)
     if added:
-        print(f"added the sections {', '.join(added)} with placeholders - write them")
-    if after_section != before_section and after_section:
-        bl.place_row(it.slug, after_section)
-        print(f"moved to '{after_section}' (type / who changed)")
+        notice(f"added the sections {', '.join(added)} with placeholders - write them")
+    if moves:
+        bl.place_row(it.slug, after_section, args.position)
+        notice(f"moved to '{after_section}' (type / who changed)"
+               + (f" at position {args.position}" if args.position is not None else ""))
     bl.save_overview()
     return finish(bl, f"updated {it.slug}")
 
@@ -1495,11 +1696,21 @@ def resolve_section(text: str) -> str:
 
 
 def cmd_move(bl: Backlog, args) -> int:
-    ov = bl.require_overview()
+    bl.require_overview()
     it = bl.item(args.slug)
     target = resolve_section(args.section)
     reason = one_line(args.reason, "--reason") if args.reason else ""
-    if args.position is not None and args.position < 1:
+    current = apply_move(bl, it, target, args.position, reason)
+    bl.save_item(it)
+    bl.save_overview()
+    return finish(bl, f"{it.slug}: {current or 'no row'} -> {target}")
+
+
+def apply_move(bl: Backlog, it: Item, target: str, position: int | None, reason: str) -> str | None:
+    """The move of it to target in memory (status, reason, log line, row,
+    Last triaged); nothing is written.  Returns the section it was in."""
+    ov = bl.require_overview()
+    if position is not None and position < 1:
         raise Refused("--position counts from 1 (the top)")
     if target == SEC_PROGRESS:
         raise Refused("only 'start' moves an item to 'In progress'")
@@ -1536,15 +1747,13 @@ def cmd_move(bl: Backlog, args) -> int:
     if exp != target:
         raise Refused(f"'{it.slug}' (type {it.header['type']}, who {it.header['who']}) belongs in '{exp}', not '{target}'; change type / who with 'set' first")
     text = f"moved to {target}"
-    if args.position and target in ORDERED:
-        text += f" position {args.position}"
+    if position and target in ORDERED:
+        text += f" position {position}"
     touch(it, text + note)
-    bl.save_item(it)
-    bl.place_row(it.slug, target, args.position)
+    bl.place_row(it.slug, target, position)
     if target != SEC_INBOX:
         bl.touch_triaged()
-    bl.save_overview()
-    return finish(bl, f"{it.slug}: {current or 'no row'} -> {target}")
+    return current
 
 
 def cmd_block(bl: Backlog, args) -> int:
@@ -1595,10 +1804,13 @@ def _rmtree(folder: Path) -> None:
         # a read-only file (e.g. in evidence/) - clear the flag and retry once
         os.chmod(path, 0o666)
         func(path)
+    files = sorted(p for p in folder.rglob("*") if p.is_file())
     if sys.version_info >= (3, 12):
         shutil.rmtree(folder, onexc=onexc)
     else:  # pragma: no cover
         shutil.rmtree(folder, onerror=lambda f, p, e: onexc(f, p, e))
+    for path in files:
+        record(path)  # deleted files are part of what the command changed
 
 
 def cmd_remove(bl: Backlog, args) -> int:
@@ -1617,6 +1829,13 @@ def cmd_remove(bl: Backlog, args) -> int:
         if h["status"] == "in-progress":
             raise Refused("an in-progress item is closed by its run ('remove --feature')")
         why = f"closed: {reason}"
+    remove_item(bl, it, why)
+    return finish(bl, f"removed {it.slug} ({why})")
+
+
+def remove_item(bl: Backlog, it: Item, why: str) -> None:
+    """Delete the item's folder, drop it from the others' related / depends-on
+    (logging why there), then its row; BACKLOG.md is written last."""
     # the folder first: if it cannot be deleted, nothing else has changed
     _rmtree(it.folder)
     del bl.items[it.slug]
@@ -1634,7 +1853,6 @@ def cmd_remove(bl: Backlog, args) -> int:
             bl.save_item(other)
     bl.unplace_row(it.slug)
     bl.save_overview()
-    return finish(bl, f"removed {it.slug} ({why})")
 
 
 def cmd_run_log(bl: Backlog, args) -> int:
@@ -1816,7 +2034,7 @@ def cmd_import_github(bl: Backlog, args) -> int:
     if "pull_request" in issue:
         raise Refused(f"#{num} is a pull request, not an issue")
     it = import_issue(bl, issue, args.area, args.type or type_from_labels(issue_labels(issue)), args.severity, args.slug)
-    print(it.slug)
+    emit_slug(it.slug)
     return finish(bl)
 
 
@@ -1853,30 +2071,505 @@ def import_labelled(bl: Backlog, args) -> int:
     done = skipped = failed = 0
     for num, issue, why in plan:
         if why:
-            print(f"skipped #{num}: {why}")
+            notice(f"skipped #{num}: {why}")
             skipped += 1
             continue
         labels = issue_labels(issue)
         type_ = type_from_labels(labels)
         area = args.area or ("help-docs" if type_ == "improvement" else "panels-ui")
         if args.dry_run:
-            print(f"would import #{num} [{', '.join(labels)}] as {type_}, {area}: {issue.get('title', '').strip()}")
+            notice(f"would import #{num} [{', '.join(labels)}] as {type_}, {area}: {issue.get('title', '').strip()}")
             done += 1
             continue
         try:
             it = import_issue(bl, issue, area, type_, args.severity, None)
         except Refused as e:
-            print(f"failed #{num}: {e}")
+            notice(f"failed #{num}: {e}")
             failed += 1
             continue
-        print(f"imported #{num} {it.slug}")
+        OUT.slugs.append(it.slug)
+        notice(f"imported #{num} {it.slug}")
         done += 1
     verb = "would import" if args.dry_run else "imported"
-    print(f"{verb} {done}, skipped {skipped}, failed {failed}")
+    notice(f"{verb} {done}, skipped {skipped}, failed {failed}")
     if args.dry_run:
         return 0
     code = finish(bl)
     return 1 if failed else code
+
+
+# ---------------------------------------------------------------------------
+# Read commands for programs (feature 344): board, show, legend
+
+
+STEP_RE = re.compile(r"^(\s*)- \[([ xX])\] (.*)$")
+# the forms of an option in '## Options': '### A ...', '- **A ...', '- A - ...'
+OPTION_RES = [
+    re.compile(r"^###\s+([A-Z][0-9]?)(?=$|[\s.:)\-–—])"),
+    re.compile(r"^- \*\*([A-Z][0-9]?)(?=[\s.:)\-–—*])"),
+    re.compile(r"^- ([A-Z][0-9]?)\s*[-–—:.)]"),
+]
+
+
+def header_json(h: dict) -> dict:
+    """Header fields for JSON: severity an integer 0-10 (else null), lists as
+    arrays, '-' (and a missing key) as null."""
+    out = {}
+    for key in HEADER_KEYS:
+        v = h.get(key)
+        if key in LIST_KEYS:
+            out[key] = list(v) if isinstance(v, list) else []
+        elif key == "severity":
+            out[key] = int(v) if isinstance(v, str) and re.fullmatch(r"\d{1,2}", v) and int(v) <= 10 else None
+        else:
+            out[key] = None if v in (None, "", "-") else v
+    return out
+
+
+def row_place(ov: Overview | None, slug: str) -> tuple:
+    """(section, position) of the item's row; position counts item rows of an
+    ordered section, None in a sorted one."""
+    for name in SECTIONS:
+        sec = ov.sections.get(name) if ov else None
+        pos = 0
+        for r in (sec.rows if sec else []):
+            if r.slug:
+                pos += 1
+                if r.slug == slug:
+                    return name, (pos if name in ORDERED else None)
+    return None, None
+
+
+def trim_blank(lines: list) -> list:
+    a, b = 0, len(lines)
+    while a < b and not lines[a].strip():
+        a += 1
+    while b > a and not lines[b - 1].strip():
+        b -= 1
+    return lines[a:b]
+
+
+def body_text(text: str) -> str:
+    """A section text as stored: LF line ends, no blank lines around it."""
+    return "\n".join(trim_blank(text.replace("\r\n", "\n").split("\n")))
+
+
+def section_blocks(it: Item) -> list:
+    """(name, heading index, end index) of every '## ' section in file order."""
+    hs = headings(it)
+    return [(n, i, hs[k + 1][1] if k + 1 < len(hs) else len(it.body)) for k, (n, i) in enumerate(hs)]
+
+
+def section_lines(it: Item, name: str) -> list:
+    blk = next((b for b in section_blocks(it) if b[0] == name), None)
+    return it.body[blk[1] + 1:blk[2]] if blk else []
+
+
+def parse_log(it: Item) -> list:
+    out = []
+    for line in section_lines(it, "Log"):
+        m = LOG_RE.match(line)
+        if m:
+            out.append({"date": m.group(1), "text": line[len(f"- {m.group(1)} {EMDASH} "):]})
+    return out
+
+
+def parse_steps(it: Item) -> list:
+    out = []
+    for line in section_lines(it, "Steps"):
+        m = STEP_RE.match(line)
+        if m:
+            out.append({"index": len(out) + 1, "done": m.group(2) != " ", "text": m.group(3).rstrip()})
+    return out
+
+
+def parse_options(it: Item) -> list:
+    """Options of a decision: each starts at '### A', '- **A' or '- A -' and
+    runs to the next one; text = the option's Markdown without the marker."""
+    out, cur = [], None
+    for line in section_lines(it, "Options"):
+        key = None
+        for k, rx in enumerate(OPTION_RES):
+            m = rx.match(line)
+            if m:
+                key = m.group(1)
+                first = line[3:].lstrip() if k == 0 else line[2:]
+                break
+        if key:
+            cur = {"key": key, "lines": [first]}
+            out.append(cur)
+        elif cur:
+            cur["lines"].append(line)
+    return [{"key": o["key"], "text": "\n".join(trim_blank(o["lines"]))} for o in out]
+
+
+def safe_text(src, path: Path) -> str:
+    return src.read_bytes(path).decode("utf-8", "replace").replace("\r\n", "\n")
+
+
+def item_files(bl: Backlog, it: Item) -> dict:
+    src = bl.src
+    issue = reply = None
+    if src.is_file(it.folder / "issue.md"):
+        head = {}
+        for line in safe_text(src, it.folder / "issue.md").split("\n"):
+            if not line.strip():
+                break
+            if ": " in line:
+                k, v = line.split(": ", 1)
+                head[k.strip()] = v.strip()
+        num = head.get("number", "")
+        issue = {"number": int(num) if num.isdigit() else None, "head": head}
+    if src.is_file(it.folder / "reply.md"):
+        first = first_line(it.folder / "reply.md", src)
+        reply = {"state": first[len("state: "):] if first.startswith("state: ") else first}
+    evidence = []
+
+    def walk(folder: Path, prefix: str) -> None:
+        for child in src.children(folder):
+            if src.is_dir(child):
+                walk(child, prefix + child.name + "/")
+            else:
+                evidence.append(prefix + child.name)
+    if src.is_dir(it.folder / "evidence"):
+        walk(it.folder / "evidence", "")
+    return {"issue": issue, "reply": reply, "evidence": evidence}
+
+
+def unreadable_entries(bl: Backlog) -> list:
+    out = []
+    for slug, it in bl.items.items():
+        if not it.ok:
+            msg = it.errors[0][2] if it.errors else "the header cannot be read"
+            out.append({"slug": slug, "path": rel(bl.root, it.path), "finding": msg})
+    listed = [r.slug for sec in (bl.ov.sections.values() if bl.ov else []) for r in sec.rows if r.slug]
+    for slug in dict.fromkeys(listed):
+        if slug not in bl.items:
+            out.append({"slug": slug, "path": f"backlog/items/{slug}/desc.md",
+                        "finding": f"row names '{slug}', which has no items/{slug}/desc.md"})
+    return out
+
+
+def cmd_board(bl: Backlog, args) -> int:
+    ov = bl.require_overview()
+    m = LAST_TRIAGED_RE.match(ov.lines[ov.last_triaged_line]) if ov.last_triaged_line >= 0 else None
+    sections = []
+    for name in SECTIONS:
+        rows, pos = [], 0
+        for r in ov.sections[name].rows:
+            if not r.slug:
+                rows.append({"note": ov.lines[r.lineno - 1]})
+                continue
+            pos += 1
+            it = bl.items.get(r.slug)
+            row = {"position": pos if name in ORDERED else None, "slug": r.slug}
+            row.update(header_json(it.header if it and it.ok else {}))
+            if args.with_body:
+                row["body"] = "\n".join(it.body) if it else None
+                issue = it.folder / "issue.md" if it else None
+                row["issue"] = safe_text(bl.src, issue) if issue and bl.src.is_file(issue) else None
+            rows.append(row)
+        sections.append({"name": name, "ordered": name in ORDERED, "rows": rows})
+    board = {"revision": ov.revision, "last_triaged": m.group(1) if m else None,
+             "sections": sections, "unreadable": unreadable_entries(bl)}
+    if args.json:
+        print(json.dumps(board, ensure_ascii=False))
+        return 0
+    print(f"Last triaged: {board['last_triaged'] or '-'}")
+    for sec in sections:
+        print(f"## {sec['name']}")
+        for row in sec["rows"]:
+            if "note" in row:
+                print(f"       {row['note']}")
+            else:
+                print(f"  {row['position'] or '-':>3}  {row['slug']}  {row['title'] or '(unreadable)'}")
+    for u in board["unreadable"]:
+        print(f"unreadable: {u['path']}: {u['finding']}")
+    return 0
+
+
+def cmd_show(bl: Backlog, args) -> int:
+    it = bl.items.get(args.slug)
+    if it is None:
+        raise Refused(f"no item '{args.slug}'")
+    if not args.json:
+        sys.stdout.write(safe_text(bl.src, it.path))
+        return 0
+    section, position = row_place(bl.ov, it.slug)
+    obj = {"slug": it.slug, "revision": it.revision}
+    obj.update(header_json(it.header))
+    obj["section"], obj["position"] = section, position
+    obj["body"] = [{"name": n, "markdown": "\n".join(trim_blank(it.body[i + 1:end]))} for n, i, end in section_blocks(it)]
+    obj["log"] = parse_log(it)
+    obj["steps"] = parse_steps(it)
+    obj["options"] = parse_options(it)
+    obj["files"] = item_files(bl, it)
+    obj["dependents"] = sorted(s for s, o in bl.items.items() if o.ok and it.slug in o.list_of("depends-on"))
+    folder = rel(bl.root, it.folder)
+    overview_path = rel(bl.root, bl.overview_path)
+    obj["findings"] = [finding_json(f) for f in check(bl)
+                       if f[0] == folder or f[0].startswith(folder + "/")
+                       or f[0] == overview_path and f"'{it.slug}'" in f[3]]
+    reason = eligibility(bl, it) if it.ok else "unreadable item"
+    obj["eligibility"] = {"eligible": reason is None, "reason": reason}
+    print(json.dumps(obj, ensure_ascii=False))
+    return 0
+
+
+LEGEND_JSON = [("types", "Types", "value"), ("statuses", "Statuses", "value"), ("areas", "Areas", "value"),
+               ("who", "Who", "value"), ("efforts", "Effort", "value"), ("sources", "Sources", "form"),
+               ("severity", "Severity", "range")]
+
+
+def cmd_legend(bl: Backlog, args) -> int:
+    ov = bl.ov
+    if ov is None:
+        raise Refused(f"{rel(bl.root, bl.overview_path)} does not exist")
+    out = {}
+    for key, table, first in LEGEND_JSON:
+        entries = []
+        for cells in ov.legend_rows.get(table, []):
+            value = cells[0].replace("`", "").strip() if first == "range" else unbacktick(cells[0])
+            meaning = cells[1].replace("\\|", "|") if len(cells) > 1 else ""
+            entries.append({first: value, "meaning": meaning})
+        out[key] = entries
+    if args.json:
+        print(json.dumps(out, ensure_ascii=False))
+    else:
+        for key, table, first in LEGEND_JSON:
+            print(f"{table}: " + ", ".join(e[first] for e in out[key]))
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Changing commands for programs (feature 344): reorder, body, step, decide, reply
+
+
+def cmd_reorder(bl: Backlog, args) -> int:
+    ov = bl.require_overview()
+    target = resolve_section(args.section)
+    if target not in ORDERED:
+        raise Refused(f"'{target}' is sorted by the tool; reorder takes one of: {', '.join(s for s in SECTIONS if s in ORDERED)}")
+    rows = ov.sections[target].rows
+    current = [r.slug for r in rows if r.slug]
+    order = list(args.order)
+    if sorted(order) != sorted(current):
+        raise Refused(f"the order must name exactly the rows of '{target}'")
+    # a hand-written row moves with the item row above it; rows above every item stay on top
+    lead, groups = [], {}
+    cur = None
+    for r in rows:
+        if r.slug:
+            cur = [r]
+            groups.setdefault(r.slug, []).append(cur)
+        elif cur is None:
+            lead.append(r)
+        else:
+            cur.append(r)
+    new_rows = list(lead)
+    for slug in order:
+        new_rows += groups[slug].pop(0)
+    ov.sections[target].rows = new_rows
+    bl.touch_triaged()
+    bl.save_overview()
+    OUT.slugs, OUT.section = order, target
+    return finish(bl, f"reordered '{target}': {len(order)} rows")
+
+
+def resolve_heading(text: str) -> str:
+    for name in KNOWN_HEADINGS:
+        if name.lower() == text.strip().lower():
+            return name
+    raise Refused(f"unknown section '{text}' (one of: {', '.join(KNOWN_HEADINGS)})")
+
+
+def refuse_new_body_findings(before: list, it: Item) -> None:
+    """Refuse a body change that adds a finding of the body rule (a finding the
+    item already had is not this change's)."""
+    old = [m for _, _, m in before]
+    new = []
+    for _, _, m in body_findings(it):
+        if m in old:
+            old.remove(m)
+        else:
+            new.append(m)
+    if new:
+        raise Refused("the result breaks the body rules: " + "; ".join(new))
+
+
+def cmd_body(bl: Backlog, args) -> int:
+    it = bl.item(args.slug)
+    name = resolve_heading(args.section)
+    if name == "Log":
+        raise Refused("the Log is appended by 'log', never replaced")
+    if (args.markdown is None) == (args.remove is None):
+        raise Refused("give either {\"markdown\": text} or {\"remove\": true}")
+    before = body_findings(it)
+    blk = next((b for b in section_blocks(it) if b[0] == name), None)
+    if args.remove:
+        required = REQUIRED_HEADINGS + TYPE_HEADINGS.get(it.header["type"], [])
+        if name in required:
+            raise Refused(f"'## {name}' is required for a {it.header['type']} item; replace it instead")
+        if blk is None:
+            raise Refused(f"the item has no '## {name}'")
+        del it.body[blk[1]:blk[2]]
+    else:
+        text = body_text(args.markdown)
+        if not text.strip():
+            raise Refused("the markdown is empty (an optional section is dropped with {\"remove\": true})")
+        lines = text.split("\n")
+        if blk:
+            it.body[blk[1] + 1:blk[2]] = [""] + lines + [""]
+        else:
+            # its fixed place: before the first present section that follows it in the order
+            rank = KNOWN_HEADINGS.index(name)
+            at = next((i for n, i, _ in section_blocks(it) if n in KNOWN_HEADINGS and KNOWN_HEADINGS.index(n) > rank), None)
+            if at is None:
+                while it.body and not it.body[-1].strip():
+                    it.body.pop()
+                it.body += ["", f"## {name}", ""] + lines
+            else:
+                it.body[at:at] = [f"## {name}", ""] + lines + [""]
+    refuse_new_body_findings(before, it)
+    touch(it, args.log or f"edited {name}")
+    bl.save_item(it)
+    bl.save_overview()
+    return finish(bl, f"edited {it.slug}: {name}")
+
+
+def cmd_step(bl: Backlog, args) -> int:
+    it = bl.item(args.slug)
+    blk = next((b for b in section_blocks(it) if b[0] == "Steps"), None)
+    if blk is None:
+        raise Refused(f"'{it.slug}' has no '## Steps'")
+    idx = [k for k in range(blk[1] + 1, blk[2]) if STEP_RE.match(it.body[k])]
+    if not 1 <= args.n <= len(idx):
+        raise Refused(f"'{it.slug}' has no step {args.n} (its steps: 1-{len(idx)})" if idx else f"'{it.slug}' has no checklist step")
+    k = idx[args.n - 1]
+    m = STEP_RE.match(it.body[k])
+    done = bool(args.done)
+    if (m.group(2) != " ") == done:
+        raise Refused(f"step {args.n} is already {'done' if done else 'open'}")
+    it.body[k] = f"{m.group(1)}- [{'x' if done else ' '}] {m.group(3)}"
+    text = f"step {args.n} {'done' if done else 'reopened'}"
+    touch(it, text + (f": {args.note}" if args.note else ""))
+    bl.save_item(it)
+    bl.save_overview()
+    return finish(bl, f"{it.slug}: {text}")
+
+
+def split_position(spec: str) -> tuple:
+    """'next@3' -> ('next', 3); 'next' -> ('next', None)."""
+    if "@" not in spec:
+        return spec, None
+    head, pos = spec.rsplit("@", 1)
+    if not pos.isdigit() or int(pos) < 1:
+        raise Refused(f"'@{pos}' is not a position (1 = the top)")
+    return head, int(pos)
+
+
+def change_type(bl: Backlog, it: Item, type_: str, who: str | None = None) -> list:
+    """type (and who) changed in memory, validated as 'set' does, the type's
+    sections added, logged; returns the sections added."""
+    changes = []
+    it.header["type"] = one_line(type_, "the type")
+    changes.append(f"type={it.header['type']}")
+    if who is not None:
+        it.header["who"] = one_line(who, "who")
+        changes.append(f"who={it.header['who']}")
+    errs = validate_item(bl, it)
+    if errs:
+        raise Refused("invalid values: " + "; ".join(errs))
+    added = ensure_type_sections(it)
+    touch(it, "set " + ", ".join(changes))
+    return added
+
+
+DECIDE_ACTIONS = "move:<section>[@N], set-type:<type>[,who:<who>][@N], park, close, keep"
+
+
+def cmd_decide(bl: Backlog, args) -> int:
+    bl.require_overview()
+    it = bl.item(args.slug)
+    if it.header["type"] != "decision":
+        raise Refused(f"'{it.slug}' is a {it.header['type']} item, not a decision")
+    key = one_line(args.option, "--option")
+    if not re.fullmatch(r"[A-Za-z0-9]{1,8}", key):
+        raise Refused(f"--option '{key}' is not an option key (A, B, ...)")
+    keys = [o["key"] for o in parse_options(it)]
+    if keys and key not in keys:
+        raise Refused(f"no option '{key}' in '## Options' (its options: {', '.join(keys)})")
+    decision = flatten(args.decision)
+    if not decision:
+        raise Refused("the decision is empty")
+    kind, _, spec = args.then.partition(":")
+    if kind not in ("move", "set-type", "park", "close", "keep") or (kind in ("park", "close", "keep") and spec) \
+            or (kind in ("move", "set-type") and not spec):
+        raise Refused(f"unknown --then '{args.then}' (one of: {DECIDE_ACTIONS})")
+    if args.type and kind not in ("move", "keep"):
+        raise Refused("--type belongs to --then move:<section> or keep")
+    line = f"maintainer decision {today()}: option {key} - {decision}"
+    if kind == "close":
+        if it.header["status"] == "in-progress":
+            raise Refused("an in-progress item is closed by its run ('remove --feature')")
+        why = f"closed: {decision}"
+        remove_item(bl, it, why)
+        return finish(bl, f"decided {it.slug}: option {key}, removed ({why})")
+    before = expected_section(it)
+    touch(it, line)
+    added, moved = [], None
+    if args.type:
+        added = change_type(bl, it, args.type)
+    if kind == "move":
+        name, pos = split_position(spec)
+        target = resolve_section(name)
+        reopening = it.header["status"] in ("parked", "rejected") or target in (SEC_PARKED, SEC_REJECTED)
+        apply_move(bl, it, target, pos, decision if reopening else "")
+    elif kind == "park":
+        apply_move(bl, it, SEC_PARKED, None, decision)
+    else:
+        pos = None
+        if kind == "set-type":
+            tspec, pos = split_position(spec)
+            parts = tspec.split(",")
+            who = None
+            for p in parts[1:]:
+                if not p.startswith("who:"):
+                    raise Refused(f"unknown --then '{args.then}' (one of: {DECIDE_ACTIONS})")
+                who = p[len("who:"):]
+            if parts[0] == "decision":
+                raise Refused("set-type makes the decision work: a type other than decision")
+            added = change_type(bl, it, parts[0], who)
+        after = expected_section(it)
+        if after and after != before:
+            bl.place_row(it.slug, after, pos)
+            moved = f"moved to '{after}' (type / who changed)" + (f" at position {pos}" if pos else "")
+        elif pos is not None:
+            raise Refused(f"@{pos} places the row when the type / who move it to another section; it stays in '{after}'")
+    bl.save_item(it)
+    if added:
+        notice(f"added the sections {', '.join(added)} with placeholders - write them")
+    if moved:
+        notice(moved)
+    bl.save_overview()
+    return finish(bl, f"decided {it.slug}: option {key}, then {args.then}")
+
+
+def cmd_reply(bl: Backlog, args) -> int:
+    it = bl.item(args.slug)
+    path = it.folder / "reply.md"
+    if not path.is_file():
+        raise Refused(f"'{it.slug}' has no reply.md (only an item imported from GitHub has one)")
+    try:
+        lines = read_text(path).split("\n")
+    except UnicodeDecodeError:
+        raise Refused(f"{rel(bl.root, path)} is not valid UTF-8")
+    lines[0] = "state: " + ("not-sent" if args.state == "not-sent" else f"sent {today()}")
+    touch(it, f"reply marked {args.state}")
+    write_text(path, "\n".join(lines))
+    bl.save_item(it)
+    bl.save_overview()
+    return finish(bl, f"reply of {it.slug}: {lines[0]}")
 
 
 # ---------------------------------------------------------------------------
@@ -1889,12 +2582,29 @@ def build_parser() -> argparse.ArgumentParser:
                                 description="Check and change the backlog (feature 242).")
     p.add_argument("--root", help="repository root (default: the repository containing this script)")
     p.add_argument("--lock-dir", help=argparse.SUPPRESS)  # tests
+    # feature 344: options for programs (the backlog web app)
+    p.add_argument("--json", action="store_true", dest="g_json",
+                   help="JSON output: one result object of a changing command, the JSON form of a read command")
+    p.add_argument("--input-json", metavar="-",
+                   help="take the text fields from one JSON object on standard input")
+    p.add_argument("--ref", dest="g_ref", metavar="REF",
+                   help="board, list, show, next, legend: read backlog/ from the git objects of REF")
     sub = p.add_subparsers(dest="command", required=True)
+    SUBPARSERS.clear()
 
-    sub.add_parser("check", help="run every rule; TOTAL: n")
-    sub.add_parser("sync", help="rewrite derived cells and numbering of BACKLOG.md")
+    def cmd(name, **kw):
+        s = sub.add_parser(name, **kw)
+        SUBPARSERS[name] = s
+        if name != "lock":
+            s.add_argument("--json", action="store_true", help=argparse.SUPPRESS if name in CHANGING else None)
+        if name in READ_REF:
+            s.add_argument("--ref", metavar="REF", help="read backlog/ from the git objects of REF (no working-tree file)")
+        return s
 
-    s = sub.add_parser("list", help="items in backlog order")
+    cmd("check", help="run every rule; TOTAL: n")
+    cmd("sync", help="rewrite derived cells and numbering of BACKLOG.md")
+
+    s = cmd("list", help="items in backlog order")
     s.add_argument("--section")
     s.add_argument("--area")
     s.add_argument("--type")
@@ -1903,14 +2613,20 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--min-severity", type=int)
     s.add_argument("--needs", metavar="SLUG", help="only items whose depends-on names SLUG")
     s.add_argument("--related-to", metavar="SLUG", help="only items whose related names SLUG")
-    s.add_argument("--json", action="store_true")
 
-    s = sub.add_parser("next", help="the item an autonomous run would take")
+    s = cmd("next", help="the item an autonomous run would take")
     s.add_argument("--slug")
-    s.add_argument("--json", action="store_true")
 
-    s = sub.add_parser("new", help="create an item in Inbox")
-    s.add_argument("--title", required=True)
+    s = cmd("board", help="the whole overview: sections, rows, Last triaged, unreadable items")
+    s.add_argument("--with-body", action="store_true", help="add each item's body and issue.md")
+
+    s = cmd("show", help="one item: header, section, body sections, log, steps, options, files, findings")
+    s.add_argument("slug")
+
+    cmd("legend", help="the vocabularies of the legend with their meanings")
+
+    s = cmd("new", help="create an item in Inbox")
+    s.add_argument("--title", help="required (or 'title' from --input-json)")
     s.add_argument("--type", required=True)
     s.add_argument("--severity", required=True, type=int)
     s.add_argument("--area", required=True)
@@ -1924,7 +2640,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--evidence")
     s.add_argument("--expected")
 
-    s = sub.add_parser("import-github", help="create an item from a GitHub issue, or from every new issue with a label")
+    s = cmd("import-github", help="create an item from a GitHub issue, or from every new issue with a label")
     s.add_argument("number", type=int, nargs="?")
     s.add_argument("--label", help="import every open issue with this label not yet in the backlog")
     s.add_argument("--dry-run", action="store_true", help="with --label: list what would be imported, write nothing")
@@ -1933,45 +2649,70 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--severity", type=int, default=5)
     s.add_argument("--slug")
 
-    s = sub.add_parser("set", help="change header fields (not status)")
+    s = cmd("set", help="change header fields (not status)")
     s.add_argument("slug")
-    s.add_argument("pairs", nargs="+", metavar="key=value")
+    s.add_argument("pairs", nargs="*", metavar="key=value")
     s.add_argument("--log")
+    s.add_argument("--position", type=int, help="when type / who move the row to another section: its position there")
 
-    s = sub.add_parser("log", help="append a log line")
+    s = cmd("log", help="append a log line")
     s.add_argument("slug")
-    s.add_argument("text")
+    s.add_argument("text", nargs="?")
 
-    s = sub.add_parser("verify", help="stamp verified with today and a commit")
+    s = cmd("verify", help="stamp verified with today and a commit")
     s.add_argument("slug")
     s.add_argument("--commit")
     s.add_argument("--note")
 
-    s = sub.add_parser("move", help="move an item to a section / position")
+    s = cmd("move", help="move an item to a section / position")
     s.add_argument("slug")
     s.add_argument("--section", required=True)
     s.add_argument("--position", type=int)
     s.add_argument("--reason")
 
-    s = sub.add_parser("block", help="open -> blocked")
+    s = cmd("block", help="open -> blocked")
     s.add_argument("slug")
-    s.add_argument("--reason", required=True)
+    s.add_argument("--reason", help="required (or 'reason' from --input-json)")
 
-    s = sub.add_parser("unblock", help="blocked -> open")
+    s = cmd("unblock", help="blocked -> open")
     s.add_argument("slug")
     s.add_argument("--note")
 
-    s = sub.add_parser("start", help="open -> in-progress (autonomous run)")
+    s = cmd("start", help="open -> in-progress (autonomous run)")
     s.add_argument("slug")
     s.add_argument("--feature", required=True)
 
-    s = sub.add_parser("remove", help="delete an item: its feature closed it (--feature) or it is closed without one (--reason)")
+    s = cmd("remove", help="delete an item: its feature closed it (--feature) or it is closed without one (--reason)")
     s.add_argument("slug")
     s.add_argument("--feature")
     s.add_argument("--reason")
     s.add_argument("--force", action="store_true")
 
-    s = sub.add_parser("run-log", help="append a row to RUNS.md")
+    s = cmd("reorder", help="the new order of an ordered section (stdin {\"order\": [slug, ...]}); no item log line")
+    s.add_argument("--section", required=True)
+
+    s = cmd("body", help="replace, add or remove one body section (stdin {\"markdown\": text} or {\"remove\": true})")
+    s.add_argument("slug")
+    s.add_argument("--section", required=True)
+
+    s = cmd("step", help="tick or untick the n-th checklist line of Steps")
+    s.add_argument("slug")
+    s.add_argument("n", type=int)
+    g = s.add_mutually_exclusive_group(required=True)
+    g.add_argument("--done", action="store_true")
+    g.add_argument("--undone", action="store_true")
+
+    s = cmd("decide", help="record a maintainer decision (stdin {\"decision\": text}) and apply it")
+    s.add_argument("slug")
+    s.add_argument("--option", required=True)
+    s.add_argument("--then", required=True, metavar="ACTION", help=DECIDE_ACTIONS)
+    s.add_argument("--type", help="with move:<section> or keep: change the type first")
+
+    s = cmd("reply", help="mark the reply to a GitHub issue (reply.md) sent or not sent")
+    s.add_argument("slug")
+    s.add_argument("--state", required=True, choices=["not-sent", "sent"])
+
+    s = cmd("run-log", help="append a row to RUNS.md")
     s.add_argument("--outcome", required=True)
     s.add_argument("--slug")
     s.add_argument("--feature")
@@ -1980,7 +2721,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--person")
     s.add_argument("--note")
 
-    s = sub.add_parser("lock", help="the lock of autonomous runs")
+    s = cmd("lock", help="the lock of autonomous runs")
     s.add_argument("action", choices=["acquire", "update", "release", "status"])
     s.add_argument("--slug")
     s.add_argument("--branch")
@@ -1990,14 +2731,153 @@ def build_parser() -> argparse.ArgumentParser:
 
 COMMANDS = {
     "check": cmd_check, "sync": cmd_sync, "list": cmd_list, "next": cmd_next,
+    "board": cmd_board, "show": cmd_show, "legend": cmd_legend,
     "new": cmd_new, "import-github": cmd_import_github, "set": cmd_set,
     "log": cmd_log, "verify": cmd_verify, "move": cmd_move, "block": cmd_block,
     "unblock": cmd_unblock, "start": cmd_start, "remove": cmd_remove,
-    "run-log": cmd_run_log, "lock": cmd_lock,
+    "reorder": cmd_reorder, "body": cmd_body, "step": cmd_step, "decide": cmd_decide,
+    "reply": cmd_reply, "run-log": cmd_run_log, "lock": cmd_lock,
 }
+SUBPARSERS: dict = {}
+READ_REF = ("board", "list", "show", "next", "legend")
+CHANGING = ("sync", "new", "import-github", "set", "log", "verify", "move", "block", "unblock", "start",
+            "remove", "reorder", "body", "step", "decide", "reply", "run-log")
+# changing commands whose positional slug is the item they change
+SLUG_COMMANDS = ("set", "log", "verify", "move", "block", "unblock", "start", "remove", "body", "step",
+                 "decide", "reply", "run-log")
+# --input-json: the keys each command takes (contracts/backlog-cli-additions.md of feature 344)
+BODY_KEYS = ("problem", "evidence", "expected", "approach", "notes", "question", "options", "recommendation", "steps")
+INPUT_KEYS = {
+    "new": ("title",) + BODY_KEYS,
+    "set": ("title", "log"),
+    "log": ("text",),
+    "verify": ("note",),
+    "move": ("reason",), "block": ("reason",), "remove": ("reason",),
+    "unblock": ("note",),
+    "body": ("markdown", "remove", "log"),
+    "decide": ("decision",),
+    "step": ("note",),
+    "reorder": ("order",),
+}
+# attributes a command reads that only --input-json sets
+STDIN_ONLY = ("approach", "notes", "question", "options", "recommendation", "steps", "markdown", "remove",
+              "decision", "order", "log", "note")
+
+
+def usage_exit(message: str) -> None:
+    print(f"usage: {message}", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def read_input_json() -> tuple:
+    """The JSON object on stdin and the keys it repeats; a usage error (exit 2)
+    when it is not one JSON object - nothing has been read from the backlog yet."""
+    buf = getattr(sys.stdin, "buffer", None)
+    try:
+        raw = buf.read().decode("utf-8") if buf is not None else sys.stdin.read()
+    except UnicodeDecodeError as e:
+        usage_exit(f"invalid JSON on stdin (not UTF-8 at byte {e.start})")
+    if raw.startswith("﻿"):
+        raw = raw[1:]
+    repeated = []
+
+    def pairs(items):
+        obj = {}
+        for k, v in items:
+            if k in obj and k not in repeated:
+                repeated.append(k)
+            obj[k] = v
+        return obj
+    try:
+        data = json.loads(raw, object_pairs_hook=pairs)
+    except ValueError as e:
+        usage_exit(f"invalid JSON on stdin ({e})")
+    if not isinstance(data, dict):
+        usage_exit("invalid JSON on stdin (one object {...} expected)")
+    return data, repeated
+
+
+def apply_input_json(args, data: dict, repeated: list) -> None:
+    """Take the text fields from the JSON object into args (refused: a key given
+    twice, an unknown key, a value of the wrong kind)."""
+    if repeated:
+        raise Refused(f"{repeated[0]} given twice")
+    allowed = INPUT_KEYS[args.command]
+    for key, value in data.items():
+        if key not in allowed:
+            raise Refused(f"unknown key '{key}' for '{args.command}' (allowed: {', '.join(allowed)})")
+        if key == "order":
+            if not isinstance(value, list) or not all(isinstance(s, str) for s in value):
+                raise Refused("'order' must be a list of slugs")
+        elif key == "remove":
+            if value is not True:
+                raise Refused("'remove' must be true")
+        elif not isinstance(value, str):
+            raise Refused(f"the value of '{key}' must be a string")
+    for key, value in data.items():
+        if args.command == "set" and key == "title":
+            if any(p.split("=", 1)[0].strip() == "title" for p in args.pairs):
+                raise Refused("title given twice")
+            args.pairs.append("title=" + value)
+            continue
+        attr = "text" if args.command == "log" else key
+        if getattr(args, attr, None) is not None:
+            raise Refused(f"{key} given twice")
+        if key in BODY_KEYS or key == "markdown":
+            value = body_text(value)
+        setattr(args, attr, value)
+
+
+def require_texts(args) -> None:
+    """What argparse required before --input-json existed is still required."""
+    need = {"new": ("title", "--title"), "log": ("text", "text"), "block": ("reason", "--reason"),
+            "decide": ("decision", "{\"decision\": text} from --input-json -"),
+            "reorder": ("order", "{\"order\": [slug, ...]} from --input-json -")}
+    if args.command in need and getattr(args, need[args.command][0], None) is None:
+        SUBPARSERS[args.command].error(f"the following arguments are required: {need[args.command][1]}")
+    if args.command == "set" and not args.pairs:
+        SUBPARSERS["set"].error("the following arguments are required: key=value")
+    if args.command == "body" and args.markdown is None and args.remove is None:
+        SUBPARSERS["body"].error("the following arguments are required: {\"markdown\": text} or {\"remove\": true} from --input-json -")
+
+
+def normalize_args(parser, args) -> None:
+    """Merge the global and the command's --json / --ref; refuse (usage) an
+    option the command does not take."""
+    args.json = bool(getattr(args, "json", False) or args.g_json)
+    ref = getattr(args, "ref", None) or args.g_ref
+    if ref and args.command not in READ_REF:
+        parser.error(f"--ref is for the read commands {', '.join(READ_REF)}, not '{args.command}'")
+    args.ref = ref
+    if args.json and args.command == "lock":
+        parser.error("--json is not available for 'lock'")
+    if args.input_json is not None:
+        if args.input_json != "-":
+            parser.error("--input-json takes '-' (standard input)")
+        if args.command not in INPUT_KEYS:
+            parser.error(f"--input-json is not for '{args.command}'")
+    for attr in STDIN_ONLY:
+        if not hasattr(args, attr):
+            setattr(args, attr, None)
+
+
+def result_json(root: Path, refused: str | None = None) -> str:
+    section = position = None
+    if refused is None:
+        if OUT.section:
+            section = OUT.section
+        elif OUT.slugs and OUT.bl is not None:
+            section, position = row_place(OUT.bl.ov, OUT.slugs[0])
+    return json.dumps({
+        "ok": refused is None, "refused": refused, "slugs": list(OUT.slugs),
+        "section": section, "position": position, "notices": list(OUT.notices),
+        "findings": [finding_json(f) for f in OUT.findings],
+        "written": [rel(root, p) for p in _WRITTEN],
+    }, ensure_ascii=False)
 
 
 def main(argv=None) -> int:
+    global OUT
     try:
         # LF also on Windows: the output is read by shell loops and skills
         sys.stdout.reconfigure(encoding="utf-8", newline="\n")
@@ -2006,15 +2886,33 @@ def main(argv=None) -> int:
     parser = build_parser()
     try:
         args = parser.parse_args(argv)
+        normalize_args(parser, args)
+        data = read_input_json() if args.input_json is not None else None
     except SystemExit as e:
         return 2 if e.code else 0
     root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parents[2]
+    OUT = Output(json=args.json and args.command in CHANGING)
+    _WRITTEN.clear()
+    if args.command in SLUG_COMMANDS and isinstance(getattr(args, "slug", None), str):
+        OUT.slugs.append(args.slug)
     try:
-        bl = Backlog(root)
-        return COMMANDS[args.command](bl, args)
+        if data is not None:
+            apply_input_json(args, *data)
+        require_texts(args)
+        bl = Backlog(root, GitSource(root, args.ref) if args.ref else None)
+        OUT.bl = bl
+        code = COMMANDS[args.command](bl, args)
+    except SystemExit as e:
+        return 2 if e.code else 0
     except Refused as e:
-        print(f"refused: {e}")
+        if OUT.json:
+            print(result_json(root, str(e)))
+        else:
+            print(f"refused: {e}")
         return 1
+    if OUT.json:
+        print(result_json(root))
+    return code
 
 
 if __name__ == "__main__":

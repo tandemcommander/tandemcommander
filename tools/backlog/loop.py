@@ -9,9 +9,17 @@ The maintainer uses bin/backlog-loop.sh (Git Bash; --help lists everything):
   bin/backlog-loop.sh pause    finish the running item, then wait for resume
   bin/backlog-loop.sh resume   continue after a pause (also cancels a pending stop)
   bin/backlog-loop.sh stop     finish the running item, then end the loop
+  bin/backlog-loop.sh kill     a hard stop from another window (as Ctrl+C in the loop's)
   bin/backlog-loop.sh status   what the loop does now
 
 The backlog itself is bin/backlog.sh (tools/backlog/backlog.py).
+
+Feature 344 (contract specs/344-backlog-web-app/contracts/loop-cli-additions.md)
+added what a program needs to drive the loop without hosting it: `kill`,
+`start --new-window` and `start --item SLUG`, the loop's lines in
+``loop.log``, why the last loop ended in ``last.json``, and the backlog
+app's edit lock (``.git/tandem-backlog-edit.lock``), which holds new runs
+and the auto-triage while the app changes the backlog.
 
 Design (specs/247-backlog-run-loop/spec.md, contract contracts/loop-cli.md):
 
@@ -46,8 +54,8 @@ Design (specs/247-backlog-run-loop/spec.md, contract contracts/loop-cli.md):
   that the tree is clean, on main and consistent.
 
 Standard library only.  Exit codes: 0 the loop ended as asked (stop,
---max-items, --until-idle), 1 it stopped for a person or was refused,
-2 usage, 130 Ctrl+C.
+--max-items, --until-idle, --item), 1 it stopped for a person or was refused,
+2 usage, 130 Ctrl+C or kill.
 """
 
 from __future__ import annotations
@@ -84,8 +92,15 @@ MAX_LIMITS = 10              # continuations of one run after usage limits (clau
 IDLE_WAKEUPS = 2             # no-op wakeups in a row, no background task: the run waits for nothing
 MAX_NUDGES = 3               # continuations of one run after such idling
 BG_WAIT_CEILING_MS = "7200000"  # background tasks outlive the last turn this long (reviewers: about 45 min)
-TICK = 1.0                   # how often waits look at pause / stop
+TICK = 1.0                   # how often waits look at pause / stop / kill
 STILL_ACTIVE = 259
+LOG_MAX = 5 * 1024 * 1024    # loop.log is rotated to loop.log.1 beyond this (344)
+EDIT_LOCK_NAME = "tandem-backlog-edit.lock"  # the backlog app's lock, next to the run lock (344)
+EDIT_LOCK_SLACK = 2.0        # its owner was created at most this long after the lock's started_epoch
+EDIT_LOCK_YOUNG = 5.0        # a lock without readable fields this young is being written: live
+NEW_WINDOW_WAIT = 15.0       # start --new-window waits this long for the new loop's loop.json
+WINDOW_TITLE = "Backlog loop"
+FILETIME_EPOCH = 116444736000000000  # 1970-01-01 in FILETIME units (100 ns since 1601)
 
 RESUME_PROMPT = (
     "The run of /tandem-backlog-implement in this session was interrupted ({why}). "
@@ -126,8 +141,50 @@ def clock(t: float) -> str:
     return d.strftime("%Y-%m-%d %H:%M")
 
 
+LOG = {"path": None}  # loop.log of the loop running in this process (set by cmd_start)
+
+
 def say(text: str) -> None:
     print(f"[{dt.datetime.now().strftime('%H:%M')}] {text}", flush=True)
+    log_line(text)
+
+
+def tell(text: str) -> None:
+    """A line without the time (a refusal): printed as before 344, and logged."""
+    print(text, flush=True)
+    log_line(text)
+
+
+def log_line(text: str) -> None:
+    """Append a line to loop.log with the local time: one write per line, the file closed at
+    once (a held handle would block another process's rename).  A log that cannot be written
+    never stops the loop."""
+    path = LOG["path"]
+    if path is None:
+        return
+    now = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data = "".join(f"{now} {line}\n" for line in (str(text).splitlines() or [""])).encode("utf-8")
+    for _ in range(20):
+        try:
+            try:
+                if path.stat().st_size + len(data) > LOG_MAX:
+                    os.replace(path, path.with_name(path.name + ".1"))
+            except FileNotFoundError:
+                pass
+            except PermissionError:
+                pass  # a reader holds it without delete sharing: rotated at a later line
+            with open(path, "ab", buffering=0) as f:
+                f.write(data)
+            return
+        except FileNotFoundError:
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+            except OSError:
+                return
+        except PermissionError:
+            time.sleep(0.05)
+        except OSError:
+            return
 
 
 def load_json(path: Path) -> dict | None:
@@ -214,6 +271,21 @@ def alive(pid: int | None, ident: int | None) -> bool:
     return ident is not None and process_ident(pid) == ident
 
 
+def process_created(pid: int | None) -> float | None:
+    """When a live process was created (seconds since 1970), None if it does not run; 0.0 when
+    it runs but its creation time is unknown (it then counts as older than anything)."""
+    ident = process_ident(pid)
+    if ident is None:
+        return None
+    if os.name == "nt":
+        return (ident - FILETIME_EPOCH) / 1e7
+    try:
+        boot = next(float(l.split()[1]) for l in Path("/proc/stat").read_text().splitlines() if l.startswith("btime "))
+        return boot + ident / os.sysconf("SC_CLK_TCK")
+    except (OSError, ValueError, StopIteration):
+        return 0.0
+
+
 def kill_tree(pid: int) -> None:
     if os.name == "nt":
         subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
@@ -237,6 +309,10 @@ def _interrupt(signum, frame):
     raise KeyboardInterrupt
 
 
+class Killed(KeyboardInterrupt):
+    """`bin/backlog-loop.sh kill` was seen: the hard stop of Ctrl+Break (344)."""
+
+
 # ---------------------------------------------------------------------------
 # The repository
 
@@ -254,6 +330,10 @@ class Repo:
         self.old_logs = self.dir / "logs"          # before 342; imported once, never written
         self.imported_file = self.dir / "imported.json"
         self.traces = root / traces.TRACES_DIR
+        self.kill_flag = self.dir / "kill"         # 344
+        self.log_file = self.dir / "loop.log"
+        self.last_file = self.dir / "last.json"
+        self.edit_lock_path = self.lock_path.parent / EDIT_LOCK_NAME
 
     def git(self, *args: str) -> str:
         return backlog.git(self.root, *args)
@@ -298,6 +378,41 @@ class Repo:
         if data and alive(data.get("pid"), data.get("ident")):
             return data
         return None
+
+    def edit_lock(self) -> dict | None:
+        """The backlog app's edit lock: {pid, started, purpose, live}, None when there is none.
+        Only read, never deleted (the app replaces a dead one).  Live = a process with its pid
+        runs and was created no later than started_epoch + EDIT_LOCK_SLACK (a reused pid is not
+        the owner)."""
+        text = None
+        for _ in range(40):
+            try:
+                text = backlog.read_text(self.edit_lock_path)
+                break
+            except FileNotFoundError:
+                return None
+            except (PermissionError, UnicodeDecodeError):
+                time.sleep(0.05)  # being written or replaced
+        fields = {}
+        for line in (text or "").split("\n"):
+            if ": " in line:
+                k, v = line.split(": ", 1)
+                fields[k.strip()] = v.strip()
+        try:
+            pid = int(fields["pid"])
+            epoch = float(fields["started_epoch"])
+        except (KeyError, ValueError):
+            pid = epoch = None
+        if pid is None:
+            # created with an exclusive create and filled after: young = being written
+            try:
+                live = text is None or time.time() - self.edit_lock_path.stat().st_mtime < EDIT_LOCK_YOUNG
+            except OSError:
+                return None
+        else:
+            created = process_created(pid)
+            live = created is not None and created <= epoch + EDIT_LOCK_SLACK
+        return {"pid": pid, "started": fields.get("started"), "purpose": fields.get("purpose"), "live": live}
 
 
 # ---------------------------------------------------------------------------
@@ -485,11 +600,20 @@ def usage_line(rl: dict | None) -> str:
 
 
 class Stop(Exception):
-    """End the loop with this exit code (the message was said)."""
+    """End the loop with this exit code (the message was said); reason = last.json's (344),
+    by default `stopped-for-person` for 1 and `stop` otherwise."""
 
-    def __init__(self, code: int):
+    def __init__(self, code: int, reason: str | None = None):
         super().__init__(code)
         self.code = code
+        self.reason = reason or ("stopped-for-person" if code == 1 else "stop")
+
+
+def start_options(args) -> dict:
+    """The options of a start, for last.json."""
+    return {"max_items": args.max_items, "max_blocked": args.max_blocked, "poll": args.poll, "model": args.model,
+            "until_idle": bool(args.until_idle), "forget_run": bool(args.forget_run),
+            "auto_triage": bool(args.auto_triage), "item": getattr(args, "item", None)}
 
 
 class Loop:
@@ -522,6 +646,9 @@ class Loop:
         self.triage_refusals = 0
         self.triage_source = None  # the running auto-triage's record (its trace)
         self.harness_version = getattr(args, "harness_version", None)
+        self.item = getattr(args, "item", None)  # start --item (344)
+        self.finished = 0        # runs with a verdict "finished" (any outcome)
+        self.end_reason = None   # last.json's reason of a normal end
 
     # -- the loop's own record -------------------------------------------
 
@@ -535,8 +662,8 @@ class Loop:
             except FileExistsError:
                 other = load_json(self.repo.loop_file) or {}
                 if alive(other.get("pid"), other.get("ident")):
-                    print(f"refused: another loop is running (pid {other.get('pid')}, since {other.get('started', '?')}); "
-                          "bin/backlog-loop.sh status shows it, bin/backlog-loop.sh stop ends it", flush=True)
+                    tell(f"refused: another loop is running (pid {other.get('pid')}, since {other.get('started', '?')}); "
+                         "bin/backlog-loop.sh status shows it, bin/backlog-loop.sh stop ends it")
                     raise Stop(1)
                 say(f"a loop record of pid {other.get('pid', '?')} remained (that loop ended without cleanup); taking over")
                 unlink(self.repo.loop_file)
@@ -546,9 +673,10 @@ class Loop:
             # a stop is meant for a running loop; one left by a loop that was killed
             # (or that ended while the stop was being set) must not end this one (review N1)
             unlink(self.repo.stop_flag)
+            unlink(self.repo.kill_flag)  # the same for a kill (344)
             self.write_state("starting", "-")
             return
-        print("refused: the loop record cannot be created", flush=True)
+        tell("refused: the loop record cannot be created")
         raise Stop(1)
 
     def unregister(self) -> None:
@@ -556,6 +684,21 @@ class Loop:
         if data.get("pid") == os.getpid():
             unlink(self.repo.loop_file)
         unlink(self.repo.stop_flag)
+        unlink(self.repo.kill_flag)
+
+    def write_last(self, code: int, reason: str) -> None:
+        """last.json: how this loop (or this refused start) ended; never over a live loop of
+        another process (344)."""
+        other = self.repo.live_loop()
+        if other and other.get("pid") != os.getpid():
+            return
+        data = {"pid": os.getpid(), "started": stamp(self.started), "ended": stamp(), "exit_code": code,
+                "reason": reason, "counts": self.counts, "items": self.items, "options": start_options(self.args)}
+        try:
+            self.repo.dir.mkdir(parents=True, exist_ok=True)
+            save_json(self.repo.last_file, data)
+        except OSError as e:
+            say(f"last.json cannot be written ({e})")
 
     def write_state(self, state: str, detail: str, until: float | None = None, safe: bool | None = None) -> None:
         if (state, detail) != self.state:
@@ -594,12 +737,18 @@ class Loop:
     def paused(self) -> bool:
         return self.repo.pause_flag.exists()
 
+    def check_kill(self) -> None:
+        """`bin/backlog-loop.sh kill`: the hard stop, at the next tick of any wait (344)."""
+        if self.repo.kill_flag.exists():
+            raise Killed()
+
     def wait(self, state: str, detail: str, until: float | None, recheck: bool = False) -> None:
         """Wait until `until` (None = for ever); returns early on stop / pause, or after
         one poll interval when recheck is set (the caller looks again)."""
         self.announce(state, detail, until)
         end = until if until is not None else (time.time() + self.poll if recheck else None)
         while True:
+            self.check_kill()
             if self.stop_requested():
                 return
             if state != "paused" and self.paused():
@@ -852,6 +1001,7 @@ class Loop:
         told = set()
         killed_at = 0.0
         while running():
+            self.check_kill()
             if self.args.deadline and time.time() - self.started > self.args.deadline:
                 if self.child is not None:
                     kill_tree(self.child.pid)
@@ -974,11 +1124,12 @@ class Loop:
                 self.counts[outcome] += 1
             if outcome != "nothing-to-do":
                 self.items += 1
+            self.finished += 1
             say(f"item {slug}: {outcome}")
             self.blocked_streak = self.blocked_streak + 1 if outcome == "blocked" else 0
             if self.blocked_streak >= self.args.max_blocked:
                 say(f"{self.blocked_streak} runs in a row ended blocked - the loop stops; look at backlog/RUNS.md and the items' block reasons")
-                raise Stop(1)
+                raise Stop(1, "max-blocked")
             return
         if verdict == "lost":
             run["phase"] = "lost"
@@ -1119,7 +1270,12 @@ class Loop:
     # -- before a new run -------------------------------------------------
 
     def tree_state(self) -> tuple:
-        """("ok", the Backlog) when a run or a triage may start; else ("lock", why) or ("tree", why)."""
+        """("ok", the Backlog) when a run or a triage may start; else ("edit", why), ("lock", why)
+        or ("tree", why)."""
+        edit = self.repo.edit_lock()
+        if edit is not None and edit["live"]:  # first: the app is changing the backlog (344)
+            since = (edit.get("started") or "")[11:19] or "?"
+            return "edit", f"the backlog app is changing the backlog (since {since})"
         lock = self.repo.lock()
         if lock is not None:
             return "lock", f"the run lock is held ({lock_words(lock)})"
@@ -1140,10 +1296,22 @@ class Loop:
             return "tree", "backlog/BACKLOG.md is missing or malformed"
         return "ok", bl
 
+    def item_reason(self, bl, slug: str) -> str | None:
+        """Why `slug` may not run now, None when it may (the rule of `backlog next --slug`)."""
+        try:
+            return backlog.eligibility(bl, bl.item(slug))
+        except backlog.Refused as e:
+            return str(e)
+
     def precheck(self) -> tuple:
         kind, bl = self.tree_state()
         if kind != "ok":
             return "waiting", f"waiting: {bl}"
+        if self.item:
+            reason = self.item_reason(bl, self.item)
+            if reason:
+                return "gone", f"item {self.item} is no longer eligible ({reason})"
+            return "ready", self.item
         slug, skipped = backlog.next_eligible(bl, bl.ov)
         if slug is None:
             return "idle", f"nothing eligible in Next ({len(skipped)} row(s) skipped); waiting for an open item"
@@ -1290,11 +1458,33 @@ class Loop:
 
     # -- the loop ---------------------------------------------------------
 
+    def item_refusal(self) -> str | None:
+        """start --item: why it is refused before anything starts, None when it may run (344)."""
+        slug = self.item
+        pending = None if self.args.forget_run else load_json(self.repo.run_file)
+        if pending and pending.get("slug") != slug:
+            return (f"an interrupted run of {pending.get('slug')} must be continued first "
+                    "(bin/backlog-loop.sh start continues it)")
+        if pending:
+            return None  # the interrupted run of this very item: continuing it is its run
+        try:
+            reason = self.item_reason(backlog.Backlog(self.repo.root), slug)
+        except backlog.Refused as e:
+            reason = str(e)
+        return f"item {slug} is not eligible ({reason})" if reason else None
+
     def main(self) -> int:
+        if self.item and not self.repo.live_loop():  # a live loop: register refuses, as for any start
+            why = self.item_refusal()
+            if why:
+                tell(f"refused: {why}")
+                self.write_last(1, "refused")
+                return 1
         try:
             self.register()
         except Stop as s:
             return s.code  # nothing of the other loop is touched
+        code, reason = 1, "error"  # an exception that is not ours: written, then raised
         try:
             if self.args.forget_run and self.repo.run_file.exists():
                 say("the record of the interrupted run is dropped (--forget-run)")
@@ -1308,12 +1498,17 @@ class Loop:
             self.import_old_logs()
             say(f"loop started (pid {os.getpid()}); pause: bin/backlog-loop.sh pause, stop: bin/backlog-loop.sh stop, "
                 "status: bin/backlog-loop.sh status")
-            return self.cycle()
+            code = self.cycle()
+            reason = self.end_reason or "stop"
+            return code
         except Stop as s:
-            return s.code
-        except KeyboardInterrupt:
-            return self.hard_stop()
+            code, reason = s.code, s.reason
+            return code
+        except KeyboardInterrupt as e:
+            code, reason = self.hard_stop("kill" if isinstance(e, Killed) else "Ctrl+C"), "hard-stop"
+            return code
         finally:
+            self.write_last(code, reason)  # before loop.json goes: a reader that misses it finds this
             self.unregister()
             say("loop ended: " + ", ".join(f"{k} {v}" for k, v in self.counts.items() if k != "nothing-to-do")
                 + (f", auto-triage {self.triages}" if self.args.auto_triage else "")
@@ -1350,12 +1545,16 @@ class Loop:
 
     def cycle(self) -> int:
         while True:
+            self.check_kill()
             if self.stop_requested():
                 say("stop requested - the loop ends")
+                self.end_reason = "stop"
                 return 0
             if self.paused():
                 self.wait("paused", "paused - waiting for bin/backlog-loop.sh resume", None)
                 if not self.paused() and not self.stop_requested():
+                    # before any precheck: a reader that saw 'paused' knows none has passed since (344)
+                    self.write_state("starting", "resumed")
                     say("resumed")
                 continue
             if self.orphan_triage():
@@ -1366,13 +1565,22 @@ class Loop:
                 continue
             if self.args.auto_triage and self.triage_due():
                 continue  # look at pause / stop again before the next run
+            if self.item and self.finished:
+                say(f"the run of item {self.item} ended (--item) - the loop ends")
+                self.end_reason = "item-done"
+                return 0
             if self.args.max_items and self.items >= self.args.max_items:
                 say(f"{self.items} item(s) done (--max-items) - the loop ends")
+                self.end_reason = "max-items"
                 return 0
             state, what = self.precheck()
             if state == "idle" and self.args.until_idle:
                 say(what.split(";")[0] + " - the loop ends (--until-idle)")
+                self.end_reason = "until-idle"
                 return 0
+            if state == "gone":
+                say(what + " - the loop ends")
+                raise Stop(1, "refused")
             if state != "ready":
                 self.wait(state, what, None, recheck=True)
                 continue
@@ -1380,7 +1588,16 @@ class Loop:
             self.execute(resume=False)
             self.conclude()
 
-    def hard_stop(self) -> int:
+    def hard_stop(self, how: str = "Ctrl+C") -> int:
+        """Ctrl+C / Ctrl+Break in the window, or `kill` from another one (how = "kill", 344):
+        the same path, only the words name the cause."""
+        try:
+            return self._hard_stop(how)
+        finally:
+            if how == "kill":
+                unlink(self.repo.kill_flag)  # handled
+
+    def _hard_stop(self, how: str) -> int:
         child, run = self.child, self.run
         if run is None and (child is not None or self.triage_source is not None):  # the auto-triage
             if child is not None and child.poll() is None:
@@ -1408,21 +1625,21 @@ class Loop:
             atts = run.get("trace_attempts") or []
             if atts and atts[-1].get("ended") is None:
                 atts[-1]["exit_code"] = child.returncode  # the loop started it, so it is known
-            run.update({"phase": "killed", "why": "a hard stop (Ctrl+C) killed the process",
-                        "child_pid": None, "child_ident": None})
+            why = "a hard stop (kill) ended the process" if how == "kill" else "a hard stop (Ctrl+C) killed the process"
+            run.update({"phase": "killed", "why": why, "child_pid": None, "child_ident": None})
             self.save_run()
             say(f"HARD STOP: claude was killed while it worked on item {run['slug']}.")
             say("The item keeps the run lock; the next bin/backlog-loop.sh start continues it in the same session.")
             say("If a GUI probe was running: restore its registry backup first (%TEMP%\\tcNNN_backup.reg, stop-rules 2.8).")
         elif run and alive(run.get("child_pid"), run.get("child_ident")):
-            say(f"stopped (Ctrl+C) - the claude of the previous loop keeps working on item {run['slug']}; "
+            say(f"stopped ({how}) - the claude of the previous loop keeps working on item {run['slug']}; "
                 "the next bin/backlog-loop.sh start waits for it")
         elif run and self.repo.run_file.exists():
             # an interrupted run waits (limit, backoff) or its verdict was being taken (review 2 N10)
-            say(f"stopped (Ctrl+C) - no claude was running; the interrupted run of item {run['slug']} keeps the "
+            say(f"stopped ({how}) - no claude was running; the interrupted run of item {run['slug']} keeps the "
                 "run lock and the next bin/backlog-loop.sh start continues it")
         else:
-            say("stopped (Ctrl+C) - no item of this loop was running")
+            say(f"stopped ({how}) - no item of this loop was running")
         return 130
 
 
@@ -1432,20 +1649,129 @@ class Loop:
 
 
 def cmd_start(repo: Repo, args) -> int:
-    args.harness_version = None  # a test's --claude-cmd is not asked (it would play a step)
-    if args.claude_cmd is None:
-        exe = shutil.which("claude")
-        if not exe:
-            print("refused: 'claude' is not on PATH", flush=True)
-            return 1
-        args.claude_cmd = [exe]
-        args.harness_version = claude_version(exe)
+    if args.new_window:
+        return start_new_window(repo, args)
+    if args.item:
+        args.max_items = 1  # --item implies one run
+    if args.console_title and os.name == "nt":
+        import ctypes
+        ctypes.WinDLL("kernel32").SetConsoleTitleW(args.console_title)
+    LOG["path"] = repo.log_file
+    try:
+        args.harness_version = None  # a test's --claude-cmd is not asked (it would play a step)
+        if args.claude_cmd is None:
+            exe = shutil.which("claude")
+            if not exe:
+                tell("refused: 'claude' is not on PATH")
+                Loop(repo, args).write_last(1, "refused")
+                return 1
+            args.claude_cmd = [exe]
+            args.harness_version = claude_version(exe)
+        if os.name == "nt":
+            signal.signal(signal.SIGBREAK, _interrupt)
+        signal.signal(signal.SIGINT, _interrupt)
+        if hasattr(signal, "SIGTERM"):
+            signal.signal(signal.SIGTERM, _interrupt)
+        return Loop(repo, args).main()
+    finally:
+        LOG["path"] = None
+
+
+def child_start_argv(repo: Repo, args) -> list:
+    """The start command of the loop in a new window: the options given, from the parsed values
+    (an abbreviated or `--opt=value` spelling is rebuilt the same), without --new-window."""
+    out = ["start", "--root", str(repo.root)]
+    for action in start_parser(build_parser())._actions:
+        dest = action.dest
+        if not action.option_strings or dest in ("help", "root", "new_window", "new_window_hidden", "console_title"):
+            continue
+        value = getattr(args, dest, None)
+        if value is None or value == action.default:
+            continue
+        flag = action.option_strings[-1]
+        if isinstance(action, argparse._StoreTrueAction):
+            out.append(flag)
+        elif dest == "claude_cmd":
+            out += [flag, json.dumps(value)]
+        elif dest == "backoff":
+            out += [flag, ",".join(repr(v) for v in value)]
+        else:
+            out += [flag, str(value)]
+    return out + ["--console-title", WINDOW_TITLE]
+
+
+def log_size(repo: Repo) -> int:
+    try:
+        return repo.log_file.stat().st_size
+    except OSError:
+        return 0
+
+
+def log_since(repo: Repo, offset: int) -> list:
+    """The texts of the loop.log lines written since offset (without their time)."""
+    try:
+        with open(repo.log_file, "rb") as f:
+            if f.seek(0, os.SEEK_END) < offset:
+                offset = 0  # rotated meanwhile
+            f.seek(offset)
+            data = f.read()
+    except OSError:
+        return []
+    lines = data.decode("utf-8", "replace").splitlines()
+    return [re.sub(r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d ", "", l) for l in lines if l.strip()]
+
+
+DETACHED = []  # the loops started by start_new_window in this process
+
+
+def start_new_window(repo: Repo, args) -> int:
+    """start --new-window: the loop runs in a console window of its own (Ctrl+C there is its
+    hard stop); this process returns once the new loop registered loop.json (344)."""
+    other = repo.live_loop()
+    if other:
+        print(f"refused: another loop is running (pid {other.get('pid')}, since {other.get('started', '?')}); "
+              "bin/backlog-loop.sh status shows it, bin/backlog-loop.sh stop ends it", flush=True)
+        return 1
+    cmd = [sys.executable, "-u", str(HERE / "loop.py"), *child_start_argv(repo, args)]
+    offset = log_size(repo)
+    launched = time.time()
+    kw = {}
     if os.name == "nt":
-        signal.signal(signal.SIGBREAK, _interrupt)
-    signal.signal(signal.SIGINT, _interrupt)
-    if hasattr(signal, "SIGTERM"):
-        signal.signal(signal.SIGTERM, _interrupt)
-    return Loop(repo, args).main()
+        kw["creationflags"] = subprocess.CREATE_NEW_CONSOLE
+        if args.new_window_hidden:  # tests: the maintainer works on this machine
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            si.wShowWindow = 0  # SW_HIDE
+            kw["startupinfo"] = si
+    else:
+        kw.update(start_new_session=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                  stderr=subprocess.DEVNULL)
+    try:
+        child = subprocess.Popen(cmd, cwd=str(repo.root), **kw)
+    except OSError as e:
+        print(f"refused: the loop cannot be started in a new window ({e})", flush=True)
+        return 1
+    while time.time() - launched < NEW_WINDOW_WAIT:
+        data = load_json(repo.loop_file)
+        if data and alive(data.get("pid"), data.get("ident")):
+            created = process_created(data.get("pid")) or 0.0
+            # its pid; or, when the Python started is a launcher, a loop created since
+            if data.get("pid") == child.pid or (child.poll() is None and created >= launched - 1):
+                print(f"started the loop in a new window (pid {data.get('pid')})", flush=True)
+                DETACHED.append(child)  # it outlives this call by design: no "still running" warning
+                return 0
+        if child.poll() is not None:
+            break
+        time.sleep(0.1)
+    said = log_since(repo, offset)
+    if said:
+        why = "; ".join(said[-3:])
+    elif child.poll() is not None:
+        why = f"it ended at once (exit {child.returncode})"
+    else:
+        why = f"it did not register within {NEW_WINDOW_WAIT:g} s (pid {child.pid})"
+    print(f"refused: the loop in a new window did not start: {why}", flush=True)
+    return 1
 
 
 def describe(repo: Repo) -> dict:
@@ -1458,7 +1784,14 @@ def describe(repo: Repo) -> dict:
     return {"loop": loop, "live": live, "run": run, "triage": triage,
             "paused": repo.pause_flag.exists(),
             "stop": repo.stop_flag.exists(), "lock": repo.lock(), "lock_text": repo.lock_text(),
-            "trace": trace, "traces_bytes": traces.traces_size(repo.root)}
+            "trace": trace, "traces_bytes": traces.traces_size(repo.root),
+            # 344: a pending kill (a flag without a live loop is stale: the next start removes it)
+            "kill": repo.kill_flag.exists() and live, "last": load_json(repo.last_file),
+            "edit_lock": repo.edit_lock(), "log": str(repo.log_file),
+            # 344: a claude of a dead loop still working (the item's run or the auto-triage) - the
+            # same checks the text output makes, so the backlog app need not test processes itself
+            "orphan": not live and bool((run and alive(run.get("child_pid"), run.get("child_ident")))
+                                        or (triage and alive(triage.get("pid"), triage.get("ident"))))}
 
 
 def cmd_status(repo: Repo, args) -> int:
@@ -1474,7 +1807,8 @@ def cmd_status(repo: Repo, args) -> int:
         print(f"loop:    not running (the loop of pid {loop.get('pid')} ended without cleanup at about {loop.get('updated')})")
     else:
         print("loop:    not running")
-    control = [t for t, on in (("pause requested", d["paused"]), ("stop requested", d["stop"] and d["live"])) if on]
+    control = [t for t, on in (("pause requested", d["paused"]), ("stop requested", d["stop"] and d["live"]),
+                               ("kill requested", d["kill"])) if on]
     print(f"control: {', '.join(control) if control else '-'}")
     if loop:
         counts = loop.get("counts") or {}
@@ -1574,6 +1908,24 @@ def cmd_stop(repo: Repo, args) -> int:
     return 0
 
 
+def cmd_kill(repo: Repo, args) -> int:
+    live = repo.live_loop()
+    if not live:
+        print("no loop is running; nothing to kill")
+        return 0
+    repo.kill_flag.write_text(stamp() + "\n", encoding="utf-8")
+    if live.get("state") == "running":
+        print(f"kill requested: the loop kills claude (item {live.get('slug')}) and ends within a few seconds, as "
+              "after Ctrl+C in its window; the item keeps the run lock and the next bin/backlog-loop.sh start "
+              "continues it")
+    elif live.get("state") == "triage":
+        print("kill requested: the loop kills the auto-triage's claude and ends within a few seconds, as after "
+              "Ctrl+C in its window; what it did not commit stays in backlog/ (git status)")
+    else:
+        print("kill requested: the loop ends within a few seconds (a hard stop, as after Ctrl+C in its window)")
+    return 0
+
+
 def seconds_list(text: str) -> list:
     try:
         values = [float(x) for x in text.split(",") if x.strip()]
@@ -1607,7 +1959,15 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--auto-triage", action="store_true",
                    help="before each run, when the Inbox has items the last triage did not see, run "
                         "'/tandem-backlog auto-triage --commit' (at the start: when the Inbox is not empty)")
+    s.add_argument("--item", metavar="SLUG",
+                   help="run this one item, then end (implies --max-items 1; not with --until-idle); refused when "
+                        "it is not eligible (backlog next --slug) or an interrupted run must be continued first")
+    s.add_argument("--new-window", action="store_true",
+                   help="start the loop with the other options in a new console window and return once it "
+                        "runs (Ctrl+C in that window is its hard stop)")
     # tests
+    s.add_argument("--new-window-hidden", action="store_true", help=argparse.SUPPRESS)  # no window pops up
+    s.add_argument("--console-title", help=argparse.SUPPRESS)  # set by --new-window for the loop it starts
     s.add_argument("--claude-cmd", type=json.loads, default=None, help=argparse.SUPPRESS)
     s.add_argument("--backoff", type=seconds_list, default=BACKOFF, help=argparse.SUPPRESS)
     s.add_argument("--limit-margin", type=float, default=LIMIT_MARGIN, help=argparse.SUPPRESS)
@@ -1626,10 +1986,20 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("stop", parents=[common], help="finish the running item, then end the loop",
                    description="The running item finishes, then the loop ends; a waiting loop ends at once. "
                                "Without a loop it says so and sets nothing; resume cancels a pending stop.")
+    sub.add_parser("kill", parents=[common], help="hard stop from another window: kill claude, end the loop",
+                   description="The hard stop of Ctrl+C in the loop's window, from another one: the loop kills "
+                               "claude's process tree within a second, the item keeps the run lock and the next "
+                               "start continues it (exit 130 of the loop). Without a loop it says so and sets "
+                               "nothing.")
     return p
 
 
-COMMANDS = {"start": cmd_start, "status": cmd_status, "pause": cmd_pause, "resume": cmd_resume, "stop": cmd_stop}
+def start_parser(p: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    return next(a for a in p._actions if isinstance(a, argparse._SubParsersAction)).choices["start"]
+
+
+COMMANDS = {"start": cmd_start, "status": cmd_status, "pause": cmd_pause, "resume": cmd_resume, "stop": cmd_stop,
+            "kill": cmd_kill}
 
 
 def main(argv=None) -> int:
@@ -1644,6 +2014,9 @@ def main(argv=None) -> int:
         return 2 if e.code else 0
     if args.command == "start" and (args.max_items < 0 or args.max_blocked < 1 or args.poll <= 0):
         print("usage: --max-items >= 0, --max-blocked >= 1, --poll > 0", flush=True)
+        return 2
+    if args.command == "start" and args.item and args.until_idle:
+        print("usage: --item runs one item; --until-idle does not apply to it", flush=True)
         return 2
     root = Path(args.root).resolve() if args.root else HERE.parents[1]
     try:

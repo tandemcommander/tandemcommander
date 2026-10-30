@@ -123,10 +123,17 @@ class Base(unittest.TestCase):
         os.environ.pop("TANDEM_BACKLOG_NOW", None)
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def run_tool(self, *args):
+    def run_tool(self, *args, stdin=None):
         buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            code = backlog.main(["--root", str(self.root), "--lock-dir", str(self.lock_dir), *args])
+        saved = sys.stdin
+        if stdin is not None:
+            # a real text stream over bytes, as a pipe gives it (sys.stdin.buffer exists)
+            sys.stdin = io.TextIOWrapper(io.BytesIO(stdin.encode("utf-8")), encoding="utf-8")
+        try:
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+                code = backlog.main(["--root", str(self.root), "--lock-dir", str(self.lock_dir), *args])
+        finally:
+            sys.stdin = saved
         return code, buf.getvalue()
 
     def findings(self):
@@ -775,6 +782,613 @@ class ImportLabelledTests(Base):
         self.assertEqual(code, 1)
         self.assertIn("cannot list the issues labelled 'ai backlog'", out)
         self.assertEqual(self.items(), before)
+
+
+# ---------------------------------------------------------------------------
+# Feature 344: read commands with JSON, --ref, --input-json, --json results,
+# reorder, set --position, body, step, decide, reply
+# (specs/344-backlog-web-app/contracts/backlog-cli-additions.md)
+
+import hashlib  # noqa: E402
+import json  # noqa: E402
+
+PERSON = "release-0-1-10-person-checks"
+DECISION = "ship-network-plugin"
+INBOX = "typed-path-with-a-pipe-brackets"
+ARCHIVE = "archive-pack-refuses-a-long-folder-silently"
+RESULT_KEYS = ["ok", "refused", "slugs", "section", "position", "notices", "findings", "written"]
+# the text a web app sends: shell syntax, quotes, backslashes, Czech letters, many lines
+NASTY = ("Backticks `rm -rf /` and $(rm -rf x) and ${HOME} and 'single' \"double\" quotes;\n"
+         "back\\slash \\\\server\\share\\ and a tab\there; Žluťoučký kůň úpěl ďábelské ódy.\n"
+         "    indented code line\n"
+         "> a quote | with a pipe [and brackets](not/a/link)\n")
+
+
+def tree_bytes(root: Path) -> dict:
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*")
+            if p.is_file() and ".git" not in p.relative_to(root).parts}
+
+
+def changed_paths(before: dict, after: dict) -> set:
+    return {k for k in set(before) | set(after) if before.get(k) != after.get(k)}
+
+
+class F344(Base):
+    def run_json(self, *args, stdin=None):
+        code, out = self.run_tool(*args, stdin=stdin)
+        try:
+            return code, json.loads(out)
+        except ValueError:
+            self.fail(f"not one JSON object (exit {code}): {out!r}")
+
+    def assert_result(self, obj):
+        self.assertEqual(list(obj), RESULT_KEYS)
+
+
+class BoardJsonTests(F344):
+    def test_board_sections_rows_and_revision(self):
+        code, b = self.run_json("board", "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual(b["revision"], hashlib.sha256(overview(self.root).read_bytes()).hexdigest())
+        self.assertEqual(b["last_triaged"], "2026-10-17")
+        self.assertEqual([s["name"] for s in b["sections"]], backlog.SECTIONS)
+        self.assertEqual([s["ordered"] for s in b["sections"]], [True, True, True, True, False, False, False])
+        nxt = b["sections"][1]["rows"]
+        self.assertEqual([(r["position"], r["slug"]) for r in nxt], [(1, DISK), (2, FTP)])
+        self.assertEqual(nxt[0]["title"], "Disk Map context menu crash")
+        self.assertIs(type(nxt[0]["severity"]), int)
+        self.assertEqual(nxt[0]["severity"], 8)
+        self.assertEqual(nxt[0]["depends-on"], [FTP])
+        self.assertIsNone(nxt[1]["verified"])
+        self.assertIsNone(nxt[1]["reason"])
+        inbox = b["sections"][4]["rows"]
+        self.assertEqual(inbox[0]["title"], "Typed path with a | pipe [brackets]")
+        self.assertIsNone(inbox[0]["position"])
+        self.assertEqual(b["unreadable"], [])
+        self.assertNotIn("body", nxt[0])
+
+    def test_note_rows_and_unreadable_items(self):
+        SEEDED_MORE["hand-written-row"][1](self.root)
+        SEEDED["header"](self.root)  # FTP loses 'who'
+        code, b = self.run_json("board", "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual(b["sections"][5]["rows"][0], {"note": "| a note by hand | - | - |"})  # Parked, file order
+        self.assertEqual([u["slug"] for u in b["unreadable"]], [FTP])
+        self.assertEqual(b["unreadable"][0]["path"], f"backlog/items/{FTP}/desc.md")
+        self.assertIn("missing keys", b["unreadable"][0]["finding"])
+        row = b["sections"][1]["rows"][1]
+        self.assertEqual((row["position"], row["slug"], row["title"]), (2, FTP, None))
+
+    def test_with_body_adds_body_and_issue(self):
+        code, b = self.run_json("board", "--json", "--with-body")
+        self.assertEqual(code, 0)
+        rows = {r["slug"]: r for s in b["sections"] for r in s["rows"]}
+        text = item(self.root, FTP).read_text(encoding="utf-8")
+        self.assertEqual(rows[FTP]["body"], text.split("\n---\n", 1)[1])
+        self.assertIsNone(rows[FTP]["issue"])
+        issue = (self.root / "backlog" / "items" / DECISION / "issue.md").read_text(encoding="utf-8")
+        self.assertEqual(rows[DECISION]["issue"], issue)
+
+    def test_board_text(self):
+        code, out = self.run_tool("board")
+        self.assertEqual(code, 0)
+        self.assertIn(FTP, out)
+
+
+class ShowJsonTests(F344):
+    def test_every_field(self):
+        code, s = self.run_json("show", FTP, "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual(s["slug"], FTP)
+        self.assertEqual(s["revision"], hashlib.sha256(item(self.root, FTP).read_bytes()).hexdigest())
+        for key in backlog.HEADER_KEYS:
+            self.assertIn(key, s)
+        self.assertEqual((s["severity"], s["verified"], s["effort"], s["feature"], s["reason"]), (3, None, None, None, None))
+        self.assertEqual((s["related"], s["depends-on"]), ([ARCHIVE], []))
+        self.assertEqual((s["section"], s["position"]), ("Next", 2))
+        self.assertEqual([b["name"] for b in s["body"]], ["Problem", "Evidence", "Expected", "Log"])
+        self.assertEqual(s["body"][0]["markdown"], "(to be written)")
+        self.assertEqual(s["log"], [{"date": "2026-10-17", "text": "created (source leftover:224)"},
+                                    {"date": "2026-10-17", "text": "moved to Next"}])
+        self.assertEqual((s["steps"], s["options"]), ([], []))
+        self.assertEqual(s["files"], {"issue": None, "reply": None, "evidence": []})
+        self.assertEqual(s["dependents"], [DISK])
+        self.assertEqual(s["findings"], [])
+        self.assertEqual(s["eligibility"], {"eligible": True, "reason": None})
+
+    def test_files_eligibility_and_steps(self):
+        s = self.run_json("show", DISK, "--json")[1]
+        self.assertEqual(s["eligibility"], {"eligible": False, "reason": "status blocked"})
+        self.assertEqual(s["files"]["evidence"], ["note.txt"])
+        s = self.run_json("show", DECISION, "--json")[1]
+        self.assertEqual(s["files"]["issue"]["number"], 5)
+        self.assertEqual(s["files"]["issue"]["head"]["author"], "someone")
+        self.assertEqual(s["files"]["reply"], {"state": "not-sent"})
+        self.assertEqual(s["section"], "Decisions for the maintainer")
+        replace_once(item(self.root, PERSON), "- [ ] (to be written)", "- [x] build it\n- [ ] sign it\n  more words")
+        s = self.run_json("show", PERSON, "--json")[1]
+        self.assertEqual(s["steps"], [{"index": 1, "done": True, "text": "build it"},
+                                      {"index": 2, "done": False, "text": "sign it"}])
+
+    def test_options_forms(self):
+        replace_once(item(self.root, DECISION), "## Options\n\n(to be written)",
+                     "## Options\n\nIntro text.\n\n### A - keep it\n\nSome text.\n\n- **B - drop it.** Cheaper.\n  continued\n"
+                     "- C - something else\n- **D**: last")
+        s = self.run_json("show", DECISION, "--json")[1]
+        self.assertEqual([o["key"] for o in s["options"]], ["A", "B", "C", "D"])
+        self.assertEqual(s["options"][0]["text"], "A - keep it\n\nSome text.")
+        self.assertEqual(s["options"][1]["text"], "**B - drop it.** Cheaper.\n  continued")
+
+    def test_unknown_slug_and_own_findings(self):
+        code, out = self.run_tool("show", "no-such-item", "--json")
+        self.assertEqual((code, out.strip()), (1, "refused: no item 'no-such-item'"))
+        SEEDED["value"](self.root)  # FTP severity 11
+        s = self.run_json("show", FTP, "--json")[1]
+        self.assertIsNone(s["severity"])
+        self.assertIn("value", {f["rule"] for f in s["findings"]})
+        self.assertTrue(all(set(f) == {"path", "line", "rule", "message"} for f in s["findings"]))
+        self.assertEqual(self.run_json("show", DISK, "--json")[1]["findings"], [])
+
+
+class CheckLegendJsonTests(F344):
+    def test_check_json(self):
+        self.assertEqual(self.run_json("check", "--json"), (0, {"total": 0, "findings": []}))
+        SEEDED["runs"](self.root)
+        code, c = self.run_json("check", "--json")
+        self.assertEqual(code, 1)
+        self.assertEqual(c["total"], len(c["findings"]))
+        self.assertEqual(c["findings"][0]["rule"], "runs")
+        self.assertEqual(self.run_json("--json", "check")[0], 1)  # the global form
+
+    def test_legend_json(self):
+        code, lg = self.run_json("legend", "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual(list(lg), ["types", "statuses", "areas", "who", "efforts", "sources", "severity"])
+        self.assertEqual([t["value"] for t in lg["types"]][:2], ["bug", "feature"])
+        self.assertEqual(lg["types"][0]["meaning"], "the program does something wrong")
+        self.assertEqual(len(lg["areas"]), 18)
+        self.assertEqual([e["value"] for e in lg["efforts"]], ["S", "M", "L", "?"])
+        self.assertEqual(lg["sources"][1], {"form": "github#N", "meaning": "GitHub issue N (`issue.md` holds its text)"})
+        self.assertEqual([s["range"] for s in lg["severity"]], ["9–10", "7–8", "4–6", "1–3", "0"])
+        self.assertEqual(self.run_tool("legend")[0], 0)
+
+
+class RefTests(F344):
+    def setUp(self):
+        super().setUp()
+        if not shutil.which("git"):
+            self.skipTest("git not installed")
+
+        def g(*a):
+            subprocess.run(["git", "-C", str(self.root), "-c", "user.name=t", "-c", "user.email=t@t",
+                            "-c", "core.autocrlf=false", *a], check=True, capture_output=True)
+        # LF in the tree as in the objects, so that a revision (hash of the bytes) is the same in both
+        for path in self.root.rglob("*"):
+            if path.is_file():
+                path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n"))
+        g("init", "-q")
+        g("symbolic-ref", "HEAD", "refs/heads/main")
+        g("add", "-A")
+        g("commit", "-q", "-m", "fixture")
+        self.reads = [("board", "--json", "--with-body"), ("list", "--json"), ("show", DISK, "--json"),
+                      ("next", "--json"), ("legend", "--json"), ("show", DECISION, "--json")]
+        self.expected = [self.run_tool(*r) for r in self.reads]
+        # the working tree moves on: a run's branch state, an edited legend
+        self.assertEqual(self.run_tool("move", FTP, "--section", "parked", "--reason", "later")[0], 0)
+        replace_once(overview(self.root), "| `tooling` |", "| `tools` |")
+        replace_once(item(self.root, DISK), "## Problem\n", "## Problem\n\nchanged in the tree\n")
+
+    def test_read_commands_give_the_ref(self):
+        self.assertNotEqual(self.run_tool(*self.reads[0]), self.expected[0])  # the tree differs
+        for r, want in zip(self.reads, self.expected):
+            with self.subTest(r=r):
+                self.assertEqual(self.run_tool(*r, "--ref", "main"), want)
+        self.assertEqual(self.run_tool("--ref", "main", "board", "--json", "--with-body"), self.expected[0])
+
+    def test_no_working_tree_file_is_opened(self):
+        shutil.rmtree(self.root / "backlog")  # gone from the tree, present in the commit
+        for r, want in zip(self.reads, self.expected):
+            self.assertEqual(self.run_tool(*r, "--ref", "main"), want, r)
+
+    @unittest.skipUnless(os.name == "nt", "a byte-range lock is a Windows test")
+    def test_a_locked_working_tree_file_does_not_matter(self):
+        import msvcrt
+        path = overview(self.root)
+        with open(path, "r+b") as f:
+            msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, path.stat().st_size)
+            try:
+                with self.assertRaises(PermissionError):  # negative control: the tree is unreadable
+                    self.run_tool("board", "--json")
+                self.assertEqual(self.run_tool("board", "--json", "--with-body", "--ref", "main"), self.expected[0])
+            finally:
+                f.seek(0)
+                msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, path.stat().st_size)
+
+    def test_ref_refused_for_changing_commands_and_check(self):
+        before = tree_bytes(self.root)
+        for args in (["check", "--ref", "main"], ["--ref", "main", "check"], ["--ref", "main", "log", FTP, "x"],
+                     ["--ref", "main", "move", INBOX, "--section", "next"], ["sync", "--ref", "main"]):
+            self.assertEqual(self.run_tool(*args)[0], 2, args)
+        self.assertEqual(tree_bytes(self.root), before)
+
+    def test_unknown_ref_refused(self):
+        code, out = self.run_tool("board", "--json", "--ref", "no-such-branch")
+        self.assertEqual(code, 1)
+        self.assertTrue(out.startswith("refused:"), out)
+
+
+class InputJsonTests(F344):
+    def test_new_takes_every_text_field(self):
+        data = {"title": "Ünïcode title from JSON", "problem": NASTY, "evidence": "ev", "expected": "exp",
+                "approach": "appr", "notes": "nts", "question": "q?", "options": "- A - one", "recommendation": "A",
+                "steps": "- [ ] a step"}
+        code, out = self.run_tool("--input-json", "-", "new", "--type", "bug", "--severity", "5", "--area", "viewer",
+                                  stdin=json.dumps(data))
+        self.assertEqual(code, 0, out)
+        slug = out.split("\n")[0]
+        s = self.run_json("show", slug, "--json")[1]
+        self.assertEqual(s["title"], data["title"])
+        got = {b["name"]: b["markdown"] for b in s["body"]}
+        self.assertEqual(list(got), backlog.KNOWN_HEADINGS)
+        self.assertEqual(got["Problem"], NASTY.rstrip("\n"))
+        self.assertEqual((got["Approach"], got["Notes"], got["Steps"]), ("appr", "nts", "- [ ] a step"))
+        self.assertEqual(self.findings(), [])
+
+    def test_twenty_thousand_characters_round_trip_byte_exact(self):
+        text = (NASTY * 100)[:20000].rstrip("\n ") + " end"
+        self.assertGreaterEqual(len(text), 19990)
+        data = json.dumps({"title": "Long problem", "problem": text})
+        code, out = self.run_tool("--input-json", "-", "new", "--type", "bug", "--severity", "5", "--area", "viewer", stdin=data)
+        self.assertEqual(code, 0, out)
+        s = self.run_json("show", "long-problem", "--json")[1]
+        self.assertEqual(s["body"][0]["markdown"], text)
+        self.assertIn(text.encode("utf-8"), item(self.root, "long-problem").read_bytes())
+
+    def test_round_trip_through_a_real_pipe(self):
+        text = NASTY * 3 + "last line"
+        env = dict(os.environ, TANDEM_BACKLOG_NOW=NOW, PYTHONIOENCODING="cp1250")  # a hostile console encoding
+        tool = str(HERE / "backlog.py")
+        r = subprocess.run([sys.executable, tool, "--root", str(self.root), "--input-json", "-", "new", "--type", "bug",
+                            "--severity", "5", "--area", "viewer", "--json"],
+                           input=json.dumps({"title": "Piped", "problem": text}, ensure_ascii=False).encode("utf-8"),
+                           capture_output=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout.decode("utf-8"))["slugs"], ["piped"])
+        r = subprocess.run([sys.executable, tool, "--root", str(self.root), "show", "piped", "--json"],
+                           capture_output=True, env=env)
+        self.assertNotIn(b"\r\n", r.stdout)
+        self.assertEqual(json.loads(r.stdout.decode("utf-8"))["body"][0]["markdown"], text)
+
+    def test_keys_per_command(self):
+        cases = [
+            (["set", FTP, "severity=4"], {"title": "New FTP title", "log": "retitled"}, "title: New FTP title"),
+            (["log", FTP], {"text": "from json"}, "— from json"),
+            (["verify", FTP, "--commit", "abcdef1"], {"note": "seen"}, "verified at abcdef1: seen"),
+            (["move", INBOX, "--section", "parked"], {"reason": "not now"}, "reason: not now"),
+            (["block", FTP], {"reason": "waiting for x"}, "reason: waiting for x"),
+        ]
+        for args, data, want in cases:
+            with self.subTest(args=args):
+                code, out = self.run_tool("--input-json", "-", *args, stdin=json.dumps(data))
+                self.assertEqual(code, 0, out)
+                slug = args[1]
+                self.assertIn(want, item(self.root, slug).read_text(encoding="utf-8"))
+        self.assertEqual(self.run_tool("--input-json", "-", "unblock", FTP, stdin='{"note": "free"}')[0], 0)
+        self.assertIn("unblocked: free", item(self.root, FTP).read_text(encoding="utf-8"))
+        code, out = self.run_tool("--input-json", "-", "remove", FTP, stdin='{"reason": "done elsewhere"}')
+        self.assertEqual(code, 0, out)
+        self.assertIn(f"dependency {FTP} closed: done elsewhere", item(self.root, DISK).read_text(encoding="utf-8"))
+
+    def test_refusals_write_nothing(self):
+        before = tree_bytes(self.root)
+        refused = [
+            (["log", FTP, "on the line"], {"text": "and in json"}, "text given twice"),
+            (["block", FTP, "--reason", "a"], {"reason": "b"}, "reason given twice"),
+            (["set", FTP, "title=A"], {"title": "B"}, "title given twice"),
+            (["log", FTP], {"text": "x", "colour": "red"}, "unknown key 'colour'"),
+            (["move", INBOX, "--section", "next"], {"title": "x"}, "unknown key 'title'"),
+            (["log", FTP], {"text": 5}, "must be a string"),
+            (["block", FTP], {"reason": "two\nlines"}, "one line"),
+            (["set", FTP], {"title": "two\nlines"}, "one line"),
+            (["new", "--type", "bug", "--severity", "1", "--area", "tooling"], {"title": "t\tab"}, "one line"),
+            (["log", FTP], '{"text": "a", "text": "b"}', "text given twice"),
+        ]
+        for args, data, want in refused:
+            with self.subTest(args=args, data=data):
+                code, out = self.run_tool("--input-json", "-", *args, stdin=data if isinstance(data, str) else json.dumps(data))
+                self.assertEqual(code, 1, out)
+                self.assertTrue(out.startswith("refused:"), out)
+                self.assertIn(want, out)
+        for bad in ("{not json", "", "[1, 2]", '"text"'):
+            with self.subTest(bad=bad):
+                self.assertEqual(self.run_tool("--input-json", "-", "log", FTP, stdin=bad)[0], 2)
+        self.assertEqual(self.run_tool("--input-json", "-", "check", stdin="{}")[0], 2)
+        self.assertEqual(self.run_tool("--input-json", "file.json", "log", FTP)[0], 2)
+        self.assertEqual(tree_bytes(self.root), before)
+
+    def test_required_text_still_required(self):
+        self.assertEqual(self.run_tool("log", FTP)[0], 2)
+        self.assertEqual(self.run_tool("block", FTP)[0], 2)
+        self.assertEqual(self.run_tool("new", "--type", "bug", "--severity", "1", "--area", "tooling")[0], 2)
+        self.assertEqual(self.run_tool("set", FTP)[0], 2)
+        self.assertEqual(self.run_tool("--input-json", "-", "log", FTP, stdin="{}")[0], 2)
+
+    def test_new_body_validated_before_writing(self):
+        code, out = self.run_tool("--input-json", "-", "new", "--type", "bug", "--severity", "1", "--area", "tooling",
+                                  stdin=json.dumps({"title": "Bad body", "problem": "x\n\n## Log\n\n- nothing"}))
+        self.assertEqual(code, 1)
+        self.assertTrue(out.startswith("refused:"), out)
+        self.assertFalse((self.root / "backlog" / "items" / "bad-body").exists())
+
+
+class JsonResultTests(F344):
+    def changing(self, args, stdin=None, want_code=0):
+        before = tree_bytes(self.root)
+        code, obj = self.run_json(*args, stdin=stdin)
+        self.assertEqual(code, want_code, obj)
+        self.assert_result(obj)
+        after = tree_bytes(self.root)
+        # every change is listed; a listed file was written (maybe with the same bytes) or deleted
+        self.assertLessEqual(changed_paths(before, after), set(obj["written"]), args)
+        self.assertTrue(all(w in before or w in after for w in obj["written"]), obj["written"])
+        self.assertEqual(len(obj["written"]), len(set(obj["written"])))
+        return obj
+
+    def test_every_changing_command(self):
+        (self.root / "specs" / "244-ftp").mkdir()
+        o = self.changing(["--json", "new", "--title", "Fresh one", "--type", "bug", "--severity", "2", "--area", "viewer"])
+        self.assertEqual((o["ok"], o["refused"], o["slugs"], o["section"], o["position"]), (True, None, ["fresh-one"], "Inbox", None))
+        self.assertEqual(o["written"], ["backlog/items/fresh-one/desc.md", "backlog/BACKLOG.md"])
+        o = self.changing(["set", DECISION, "type=feature", "--json"])
+        self.assertEqual((o["section"], o["position"]), ("Next", 3))
+        self.assertEqual(o["notices"], ["moved to 'Next' (type / who changed)"])
+        o = self.changing(["--json", "move", "fresh-one", "--section", "next", "--position", "1"])
+        self.assertEqual((o["section"], o["position"]), ("Next", 1))
+        self.changing(["--json", "log", FTP, "a note"])
+        self.changing(["--json", "verify", FTP, "--commit", "abcdef1"])
+        self.changing(["--json", "block", "fresh-one", "--reason", "x"])
+        self.changing(["--json", "unblock", "fresh-one"])
+        o = self.changing(["--json", "start", FTP, "--feature", "244"])
+        self.assertEqual(o["section"], "In progress")
+        o = self.changing(["--json", "remove", FTP, "--feature", "244"])
+        self.assertEqual((o["slugs"], o["section"], o["position"]), ([FTP], None, None))
+        self.assertIn(f"backlog/items/{FTP}/desc.md", o["written"])
+        self.assertIn(f"backlog/items/{DISK}/desc.md", o["written"])
+        self.assertEqual(o["written"][-1], "backlog/BACKLOG.md")
+        o = self.changing(["--json", "block", DISK, "--reason", "x"], want_code=1)
+        self.assertEqual((o["ok"], o["written"]), (False, []))
+        self.assertIn("only an open item", o["refused"])
+        o = self.changing(["--json", "remove", DISK, "--reason", "gone"])
+        self.assertIn(f"backlog/items/{DISK}/evidence/note.txt", o["written"])
+        self.changing(["--json", "sync"])
+        o = self.changing(["--json", "run-log", "--outcome", "closed", "--slug", FTP])
+        self.assertEqual(o["written"], ["backlog/RUNS.md"])
+
+    def test_findings_after_the_write(self):
+        SEEDED["runs"](self.root)
+        o = self.changing(["--json", "log", FTP, "x"], want_code=1)
+        self.assertTrue(o["ok"])
+        self.assertEqual(o["findings"][0]["rule"], "runs")
+        self.assertTrue(o["written"])
+
+    def test_refused_json_and_lock_not_json(self):
+        o = self.changing(["--json", "log", "no-such", "x"], want_code=1)
+        self.assertEqual((o["ok"], o["refused"], o["written"]), (False, "no item 'no-such'", []))
+        o = self.changing(["--json", "--input-json", "-", "log", FTP], stdin='{"bad": "x"}', want_code=1)
+        self.assertFalse(o["ok"])
+        self.assertEqual(self.run_tool("--json", "lock", "status")[0], 2)
+
+    def test_import_github_json(self):
+        saved = backlog.fetch_json
+        backlog.fetch_json = lambda url: {"number": 9, "title": "Crash on F5", "body": "Text.", "html_url": "u",
+                                          "user": {"login": "r"}, "created_at": "2026-10-10T08:00:00Z", "comments": 0}
+        try:
+            o = self.changing(["--json", "import-github", "9", "--area", "file-ops"])
+        finally:
+            backlog.fetch_json = saved
+        self.assertEqual(o["slugs"], ["crash-on-f5"])
+        self.assertIn("backlog/items/crash-on-f5/issue.md", o["written"])
+
+
+class ReorderAndPositionTests(F344):
+    def setUp(self):
+        super().setUp()
+        os.environ["TANDEM_BACKLOG_NOW"] = "2026-10-20T09:00:00"
+
+    def test_reorder(self):
+        items_before = {s: item(self.root, s).read_bytes() for s in (FTP, DISK)}
+        code, out = self.run_tool("--input-json", "-", "reorder", "--section", "next", stdin=json.dumps({"order": [FTP, DISK]}))
+        self.assertEqual(code, 0, out)
+        self.assertIn("reordered 'Next': 2 rows", out)
+        self.assertEqual((self.section_of(FTP), self.section_of(DISK)), (("Next", 0), ("Next", 1)))
+        self.assertEqual({s: item(self.root, s).read_bytes() for s in (FTP, DISK)}, items_before)  # no log line
+        self.assertIn("Last triaged: 2026-10-20", overview(self.root).read_text(encoding="utf-8"))
+        self.assertEqual(self.findings(), [])
+
+    def test_reorder_keeps_note_rows_after_their_item(self):
+        replace_once(overview(self.root), "| blocked |\n", "| blocked |\n| a note under Disk Map |\n")
+        code, o = self.run_json("--json", "--input-json", "-", "reorder", "--section", "Next", stdin=json.dumps({"order": [FTP, DISK]}))
+        self.assertEqual(code, 1)  # the note row is a finding, but the order is written
+        self.assertEqual(o["written"], ["backlog/BACKLOG.md"])
+        lines = overview(self.root).read_text(encoding="utf-8").split("\n")
+        i = next(k for k, ln in enumerate(lines) if f"items/{DISK}/" in ln)
+        self.assertEqual(lines[i + 1], "| a note under Disk Map |")
+        self.assertIn(f"items/{FTP}/", lines[i - 1])
+
+    def test_reorder_refusals(self):
+        before = tree_bytes(self.root)
+        for section, order in (("next", [FTP]), ("next", [FTP, DISK, DISK]), ("next", [FTP, DISK, INBOX]),
+                               ("next", [FTP, "ghost"]), ("inbox", [INBOX])):
+            code, out = self.run_tool("--input-json", "-", "reorder", "--section", section, stdin=json.dumps({"order": order}))
+            self.assertEqual(code, 1, (section, order))
+            self.assertTrue(out.startswith("refused:"), out)
+        self.assertIn("the order must name exactly the rows of 'Next'",
+                      self.run_tool("--input-json", "-", "reorder", "--section", "next", stdin='{"order": []}')[1])
+        self.assertEqual(self.run_tool("reorder", "--section", "next")[0], 2)  # the order comes from stdin
+        self.assertEqual(self.run_tool("--input-json", "-", "reorder", "--section", "next", stdin='{"order": "x"}')[0], 1)
+        self.assertEqual(tree_bytes(self.root), before)
+
+    def test_set_position(self):
+        code, out = self.run_tool("set", DECISION, "type=feature", "--position", "1")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.section_of(DECISION), ("Next", 0))
+        self.assertEqual(self.findings(), [])
+        before = tree_bytes(self.root)
+        code, out = self.run_tool("set", FTP, "severity=5", "--position", "1")
+        self.assertEqual(code, 1)
+        self.assertIn("use move", out)
+        self.assertEqual(self.run_tool("set", PERSON, "type=bug", "who=agent", "--position", "0")[0], 1)
+        self.assertEqual(tree_bytes(self.root), before)
+
+
+class BodyStepTests(F344):
+    def body(self, slug, section, data, *extra):
+        return self.run_tool("--input-json", "-", "body", slug, "--section", section, *extra, stdin=json.dumps(data))
+
+    def sections(self, slug):
+        return [b["name"] for b in self.run_json("show", slug, "--json")[1]["body"]]
+
+    def test_replace_add_remove(self):
+        code, out = self.body(FTP, "Problem", {"markdown": "The real problem.\n\n" + NASTY})
+        self.assertEqual(code, 0, out)
+        s = self.run_json("show", FTP, "--json")[1]
+        self.assertEqual(s["body"][0]["markdown"], "The real problem.\n\n" + NASTY.rstrip("\n"))
+        self.assertEqual(s["log"][-1]["text"], "edited Problem")
+        self.assertEqual(self.body(FTP, "Notes", {"markdown": "a note", "log": "noted"})[0], 0)
+        self.assertEqual(self.body(FTP, "approach", {"markdown": "do it"})[0], 0)
+        self.assertEqual(self.sections(FTP), ["Problem", "Evidence", "Expected", "Approach", "Notes", "Log"])
+        self.assertEqual(self.run_json("show", FTP, "--json")[1]["log"][-2]["text"], "noted")
+        self.assertEqual(self.body(FTP, "Notes", {"remove": True})[0], 0)
+        self.assertEqual(self.sections(FTP), ["Problem", "Evidence", "Expected", "Approach", "Log"])
+        self.assertEqual(self.findings(), [])
+
+    def test_body_refusals(self):
+        before = tree_bytes(self.root)
+        for slug, section, data in ((FTP, "Log", {"markdown": "x"}), (FTP, "Problem", {"remove": True}),
+                                    (DECISION, "Question", {"remove": True}), (PERSON, "Steps", {"remove": True}),
+                                    (FTP, "Notes", {"remove": True}),  # absent
+                                    (FTP, "Problem", {"markdown": "x\n\n## Log\n\n- 2026-10-17 — fake"}),
+                                    (FTP, "Problem", {"markdown": "```\nunclosed fence"}),
+                                    (PERSON, "Steps", {"markdown": "no checklist"}),
+                                    (FTP, "Problem", {"markdown": "x", "remove": True}),
+                                    (FTP, "Problem", {"markdown": "  \n"}),
+                                    (FTP, "Elsewhere", {"markdown": "x"})):
+            with self.subTest(section=section, data=data):
+                code, out = self.body(slug, section, data)
+                self.assertEqual(code, 1, out)
+                self.assertTrue(out.startswith("refused:"), out)
+        self.assertEqual(self.run_tool("body", FTP, "--section", "Notes")[0], 2)  # the text comes from stdin
+        self.assertEqual(tree_bytes(self.root), before)
+
+    def test_remove_question_of_a_bug(self):
+        replace_once(item(self.root, FTP), "## Log\n", "## Question\n\nWhy?\n\n## Log\n")
+        self.assertEqual(self.body(FTP, "Question", {"remove": True})[0], 0)
+        self.assertEqual(self.findings(), [])
+
+    def test_step(self):
+        replace_once(item(self.root, PERSON), "- [ ] (to be written)", "- [ ] build it\n- [ ] sign it")
+        code, out = self.run_tool("--input-json", "-", "step", PERSON, "2", "--done", stdin='{"note": "signed on the box"}')
+        self.assertEqual(code, 0, out)
+        s = self.run_json("show", PERSON, "--json")[1]
+        self.assertEqual([st["done"] for st in s["steps"]], [False, True])
+        self.assertEqual(s["log"][-1]["text"], "step 2 done: signed on the box")
+        self.assertEqual(self.run_tool("step", PERSON, "2", "--undone")[0], 0)
+        s = self.run_json("show", PERSON, "--json")[1]
+        self.assertEqual([st["done"] for st in s["steps"]], [False, False])
+        self.assertEqual(s["log"][-1]["text"], "step 2 reopened")
+        before = tree_bytes(self.root)
+        for args in (["step", PERSON, "3", "--done"], ["step", PERSON, "0", "--done"], ["step", FTP, "1", "--done"],
+                     ["step", PERSON, "1", "--undone"]):
+            code, out = self.run_tool(*args)
+            self.assertEqual(code, 1, args)
+            self.assertTrue(out.startswith("refused:"), out)
+        self.assertEqual(self.run_tool("step", PERSON, "1")[0], 2)
+        self.assertEqual(tree_bytes(self.root), before)
+        self.assertEqual(self.findings(), [])
+
+    def test_reply(self):
+        reply = self.root / "backlog" / "items" / DECISION / "reply.md"
+        code, o = self.run_json("--json", "reply", DECISION, "--state", "sent")
+        self.assertEqual(code, 0, o)
+        self.assertEqual(reply.read_text(encoding="utf-8"), "state: sent 2026-10-17\n\nDraft.\n")
+        self.assertEqual(o["written"], [f"backlog/items/{DECISION}/reply.md", f"backlog/items/{DECISION}/desc.md", "backlog/BACKLOG.md"])
+        self.assertIn("— reply marked sent", item(self.root, DECISION).read_text(encoding="utf-8"))
+        self.assertEqual(self.run_tool("reply", DECISION, "--state", "not-sent")[0], 0)
+        self.assertTrue(reply.read_text(encoding="utf-8").startswith("state: not-sent\n"))
+        code, out = self.run_tool("reply", FTP, "--state", "sent")
+        self.assertEqual(code, 1)
+        self.assertIn("reply.md", out)
+        self.assertEqual(self.findings(), [])
+
+
+class DecideTests(F344):
+    def decide(self, *args, decision="Ship it in 0.3.", slug=DECISION):
+        return self.run_tool("--input-json", "-", "decide", slug, *args, stdin=json.dumps({"decision": decision}))
+
+    def log_texts(self, slug=DECISION):
+        return [e["text"] for e in self.run_json("show", slug, "--json")[1]["log"]]
+
+    def test_keep(self):
+        code, out = self.decide("--option", "A", "--then", "keep")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.log_texts()[-1], "maintainer decision 2026-10-17: option A - Ship it in 0.3.")
+        self.assertEqual(self.section_of(DECISION)[0], "Decisions for the maintainer")
+
+    def test_move_with_type(self):
+        code, out = self.decide("--option", "B", "--then", "move:next@1", "--type", "feature")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.section_of(DECISION), ("Next", 0))
+        h = self.header(DECISION)
+        self.assertEqual((h["type"], h["status"]), ("feature", "open"))
+        self.assertEqual(self.log_texts()[-3:], ["maintainer decision 2026-10-17: option B - Ship it in 0.3.",
+                                                 "set type=feature", "moved to Next position 1"])
+        self.assertEqual(self.findings(), [])
+
+    def test_set_type_with_who_and_position(self):
+        code, out = self.decide("--option", "A", "--then", "set-type:person-step,who:person@1")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.section_of(DECISION), ("Person steps", 0))
+        self.assertIn("## Steps", item(self.root, DECISION).read_text(encoding="utf-8"))
+        self.assertEqual(self.findings(), [])
+
+    def test_park_and_close(self):
+        code, out = self.decide("--option", "C", "--then", "park", decision="Not before 1.0.")
+        self.assertEqual(code, 0, out)
+        h = self.header(DECISION)
+        self.assertEqual((h["status"], h["reason"]), ("parked", "Not before 1.0."))
+        self.assertEqual(self.findings(), [])
+        self.tearDown()
+        self.setUp()
+        replace_once(item(self.root, FTP), "related: [archive-pack-refuses-a-long-folder-silently]",
+                     f"related: [{ARCHIVE}, {DECISION}]")
+        code, out = self.run_tool("--json", "--input-json", "-", "decide", DECISION, "--option", "A", "--then", "close",
+                                  stdin='{"decision": "Shipped already."}')
+        self.assertEqual(code, 0, out)
+        self.assertFalse((self.root / "backlog" / "items" / DECISION).exists())
+        self.assertIn(f"related item {DECISION} closed: Shipped already.", item(self.root, FTP).read_text(encoding="utf-8"))
+        self.assertEqual(self.findings(), [])
+
+    def test_refusals(self):
+        before = tree_bytes(self.root)
+        for args, slug in ((["--option", "A", "--then", "keep"], FTP),
+                           (["--option", "A", "--then", "explode"], DECISION),
+                           (["--option", "A", "--then", "move:in-progress"], DECISION),
+                           (["--option", "A", "--then", "move:next"], DECISION),  # a decision does not go to Next
+                           (["--option", "A", "--then", "set-type:decision"], DECISION),
+                           (["--option", "A", "--then", "set-type:nonsense"], DECISION),
+                           (["--option", "A", "--then", "park", "--type", "bug"], DECISION)):
+            with self.subTest(args=args):
+                code, out = self.decide(*args, slug=slug)
+                self.assertEqual(code, 1, out)
+                self.assertTrue(out.startswith("refused:"), out)
+        self.assertEqual(tree_bytes(self.root), before)
+        replace_once(item(self.root, DECISION), "## Options\n\n(to be written)", "## Options\n\n- **A** - one\n- **B** - two")
+        before = tree_bytes(self.root)
+        code, out = self.decide("--option", "Z", "--then", "keep")
+        self.assertEqual(code, 1)
+        self.assertIn("option 'Z'", out)
+        self.assertEqual(self.run_tool("decide", DECISION, "--option", "A", "--then", "keep")[0], 2)  # no decision text
+        self.assertEqual(tree_bytes(self.root), before)
 
 
 def git_bash():

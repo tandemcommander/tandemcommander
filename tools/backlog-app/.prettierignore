@@ -1,0 +1,9 @@
+node_modules
+**/node_modules
+packages/web/dist
+docs-api
+test-results
+playwright-report
+coverage
+.cache
+package-lock.json

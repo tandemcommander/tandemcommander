@@ -10,6 +10,9 @@
 *.svg        text eol=lf
 *.po         text eol=lf
 
+# feature 344: the backlog web app is formatted with LF (Prettier); UTF-8 without BOM
+tools/backlog-app/** text eol=lf
+
 # Windows batch files require CRLF line endings; cmd.exe misparses LF-only
 # scripts (e.g. skipped characters, "... was unexpected at this time").
 *.cmd        text eol=crlf
