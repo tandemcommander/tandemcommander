@@ -352,6 +352,20 @@ export class BacklogTool {
   }
 
   /**
+   * Releases a stale run lock (`lock release --force`) - only after the maintainer typed the
+   * lock's slug and the server checked that no loop and no run's claude is alive.
+   *
+   * @returns The tool's output.
+   * @throws ApiError `refused` when the tool refuses.
+   */
+  async releaseStaleLock(): Promise<string> {
+    const result = await this.run([], ["lock", "release", "--force"]);
+    const output = `${result.stdout}${result.stderr}`.trim();
+    if (result.code !== 0) throw new ApiError("refused", output || "the lock could not be released");
+    return output;
+  }
+
+  /**
    * Runs a changing command with `--json` and the user's texts on stdin.
    *
    * @param args - The command, the slug and validated non-text options.

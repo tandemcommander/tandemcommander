@@ -48,6 +48,9 @@ export class RepoMonitor {
   /** Listeners of changes. */
   private readonly listeners = new Set<RepoListener>();
 
+  /** True after {@link RepoMonitor.stop}: no further polls. */
+  private stopped = false;
+
   /**
    * Creates the monitor.
    *
@@ -65,6 +68,7 @@ export class RepoMonitor {
 
   /** Stops polling. */
   stop(): void {
+    this.stopped = true;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
   }
@@ -95,10 +99,20 @@ export class RepoMonitor {
    * @returns The new state, or the previous one when git failed.
    */
   refresh(): Promise<RepoState | null> {
+    if (this.stopped) return Promise.resolve(this.current);
     this.inFlight ??= this.poll().finally(() => {
       this.inFlight = null;
     });
     return this.inFlight;
+  }
+
+  /**
+   * Resolves when no poll is running.
+   *
+   * @returns Resolves when idle.
+   */
+  async idle(): Promise<void> {
+    while (this.inFlight) await this.inFlight;
   }
 
   /**

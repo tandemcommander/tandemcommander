@@ -74,6 +74,9 @@ export class ReadModel {
   /** Safety reload timer. */
   private safety: NodeJS.Timeout | null = null;
 
+  /** True after {@link ReadModel.stop}: no further reloads are scheduled. */
+  private stopped = false;
+
   /** The last read failure (the backlog cannot be read: degraded mode). */
   private failure: string | null = null;
 
@@ -98,6 +101,7 @@ export class ReadModel {
 
   /** Stops timers and the watcher. */
   stop(): void {
+    this.stopped = true;
     if (this.safety) clearInterval(this.safety);
     if (this.debounce) clearTimeout(this.debounce);
     this.watcher?.close();
@@ -132,8 +136,19 @@ export class ReadModel {
     return this.current;
   }
 
+  /**
+   * Resolves when no reload is running (at shutdown: a running tool process keeps its working
+   * folder in use, which Windows does not let anyone delete).
+   *
+   * @returns Resolves when idle.
+   */
+  async idle(): Promise<void> {
+    while (this.loading) await this.loading.catch(() => undefined);
+  }
+
   /** Marks the data stale and reloads soon (after the debounce). */
   invalidate(): void {
+    if (this.stopped) return;
     if (this.debounce) clearTimeout(this.debounce);
     this.debounce = setTimeout(() => {
       this.debounce = null;
@@ -149,7 +164,9 @@ export class ReadModel {
     const wanted = this.sourceOf() === "worktree";
     if (wanted && !this.watcher) {
       try {
-        this.watcher = watch(join(this.ctx.repo.root, "backlog"), { recursive: true }, () => this.invalidate());
+        this.watcher = watch(join(this.ctx.repo.root, "backlog"), { recursive: true }, () =>
+          this.invalidate(),
+        );
         this.watcher.on("error", () => {
           // A lost watcher is recreated on the next sync; the safety reload covers the gap.
           this.watcher?.close();
@@ -197,7 +214,9 @@ export class ReadModel {
         this.tool.legend(source),
         this.tool.next(source),
         // The check reads the working tree only; from `main` the last result stands.
-        source === "worktree" ? this.tool.check() : Promise.resolve(this.current?.check ?? { total: 0, findings: [] }),
+        source === "worktree"
+          ? this.tool.check()
+          : Promise.resolve(this.current?.check ?? { total: 0, findings: [] }),
       ]);
       const previous = this.current;
       const snapshot: Snapshot = { source, board, legend, next, check, at: Date.now() };

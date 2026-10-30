@@ -157,12 +157,22 @@ function tokenize(input: string): RawToken[] {
       // A quoted phrase runs to the next quote, or to the end when it is not closed.
       const close = input.indexOf('"', i + 1);
       const end = close < 0 ? input.length : close;
-      tokens.push({ text: input.slice(i + 1, end), original: input.slice(start, close < 0 ? end : end + 1), quoted: true, negate });
+      tokens.push({
+        text: input.slice(i + 1, end),
+        original: input.slice(start, close < 0 ? end : end + 1),
+        quoted: true,
+        negate,
+      });
       i = close < 0 ? input.length : close + 1;
       continue;
     }
     while (i < input.length && !/\s/.test(input[i]!)) i++;
-    tokens.push({ text: input.slice(negate ? start + 1 : start, i), original: input.slice(start, i), quoted: false, negate });
+    tokens.push({
+      text: input.slice(negate ? start + 1 : start, i),
+      original: input.slice(start, i),
+      quoted: false,
+      negate,
+    });
   }
   return tokens.filter((t) => t.text.length > 0);
 }
@@ -189,7 +199,12 @@ function validateField(key: string, op: FilterOp, values: string[], legend: Lege
     return numeric ? null : "severity is a number 0-10";
   }
   if (DATE_KEYS.has(key)) {
-    if (key === "verified" && op === "in" && values.length === 1 && (values[0] === "none" || values[0] === "any")) {
+    if (
+      key === "verified" &&
+      op === "in" &&
+      values.length === 1 &&
+      (values[0] === "none" || values[0] === "any")
+    ) {
       return null;
     }
     return values.every((v) => /^\d{4}-\d{2}-\d{2}$/.test(v)) ? null : `${key} takes a date YYYY-MM-DD`;
@@ -197,11 +212,16 @@ function validateField(key: string, op: FilterOp, values: string[], legend: Lege
   if (op !== "in") return `${key} takes values, not a comparison`;
   if (key === "section") {
     const bad = values.filter((v) => !SECTION_ALIASES[v.toLowerCase()]);
-    return bad.length ? `unknown section ${bad.join(", ")} (next, inbox, decisions, person, parked, rejected, progress)` : null;
+    return bad.length
+      ? `unknown section ${bad.join(", ")} (next, inbox, decisions, person, parked, rejected, progress)`
+      : null;
   }
-  if (key === "is") return values.every((v) => IS_VALUES.has(v)) ? null : `is: takes ${[...IS_VALUES].join(", ")}`;
-  if (key === "has") return values.every((v) => HAS_VALUES.has(v)) ? null : `has: takes ${[...HAS_VALUES].join(", ")}`;
-  if (key === "feature") return values.every((v) => /^\d{3}$/.test(v)) ? null : "feature takes a three-digit number";
+  if (key === "is")
+    return values.every((v) => IS_VALUES.has(v)) ? null : `is: takes ${[...IS_VALUES].join(", ")}`;
+  if (key === "has")
+    return values.every((v) => HAS_VALUES.has(v)) ? null : `has: takes ${[...HAS_VALUES].join(", ")}`;
+  if (key === "feature")
+    return values.every((v) => /^\d{3}$/.test(v)) ? null : "feature takes a three-digit number";
   return null;
 }
 
@@ -268,10 +288,7 @@ export function parseFilter(input: string, legend: Legend): ParsedFilter {
  * @returns The folded text.
  */
 export function foldText(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase();
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }
 
 /**
@@ -284,6 +301,12 @@ export function foldText(text: string): string {
  */
 function compare(actual: number | string, op: FilterOp, values: string[]): boolean {
   const numeric = typeof actual === "number";
+  /**
+   * Converts a term value to the row value's kind.
+   *
+   * @param v - The value as typed.
+   * @returns A number for numeric fields, else the text.
+   */
   const as = (v: string): number | string => (numeric ? Number(v) : v);
   const [first = "", second = ""] = values;
   switch (op) {

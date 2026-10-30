@@ -29,7 +29,14 @@ export interface GateInputs {
 }
 
 /** The loop states in which the loop is between runs and could start one at any moment. */
-const LOOP_BETWEEN_RUNS: ReadonlySet<string> = new Set(["starting", "waiting", "idle", "limit", "backoff", "running"]);
+const LOOP_BETWEEN_RUNS: ReadonlySet<string> = new Set([
+  "starting",
+  "waiting",
+  "idle",
+  "limit",
+  "backoff",
+  "running",
+]);
 
 /**
  * Computes the write gate (pure).
@@ -63,30 +70,52 @@ export function computeGate(inputs: GateInputs): WriteGate {
   });
 
   if (!loop || !repo) return gate("degraded", "starting up - reading the loop and the repository");
-  if (degraded) return gate("degraded", "the backlog cannot be read; it is shown read-only (see the Check page)");
+  if (degraded)
+    return gate("degraded", "the backlog cannot be read; it is shown read-only (see the Check page)");
   if (repo.merging) {
-    return gate("merge-in-progress", "a merge is in progress - finish it in the terminal (keep both rows, sync, check)");
+    return gate(
+      "merge-in-progress",
+      "a merge is in progress - finish it in the terminal (keep both rows, sync, check)",
+    );
   }
   if (loop.lock) {
     if (loop.lock.stale && !loop.live) {
-      return gate("stale-lock", `a stale run lock of ${loop.lock.slug} (since ${loop.lock.started}) - release it only if no run is alive`);
+      return gate(
+        "stale-lock",
+        `a stale run lock of ${loop.lock.slug} (since ${loop.lock.started}) - release it only if no run is alive`,
+      );
     }
     return gate(
       "run-holds-lock",
       `read-only: a run of ${loop.lock.slug} holds the lock (branch ${loop.lock.branch}); the board shows main`,
     );
   }
-  if (loop.shown === "triage" || loop.shown === "pause-pending" || loop.shown === "stop-pending" || loop.shown === "kill-pending") {
+  if (
+    loop.shown === "triage" ||
+    loop.shown === "pause-pending" ||
+    loop.shown === "stop-pending" ||
+    loop.shown === "kill-pending"
+  ) {
     return gate("auto-triage", "read-only while the loop's current step finishes");
   }
   if (!headIsMain) {
-    return gate("not-on-main", `the working tree is on ${branch}; backlog changes are made on main (switch in the terminal)`);
+    return gate(
+      "not-on-main",
+      `the working tree is on ${branch}; backlog changes are made on main (switch in the terminal)`,
+    );
   }
-  if (loop.editLock) {
-    return gate("edit-in-progress", `another backlog app (pid ${loop.editLock.pid}) is changing the backlog: ${loop.editLock.purpose}`);
+  // The app's own edit lock (held during its own change) does not close its own gate.
+  if (loop.editLock && loop.editLock.pid !== process.pid) {
+    return gate(
+      "edit-in-progress",
+      `another backlog app (pid ${loop.editLock.pid}) is changing the backlog: ${loop.editLock.purpose}`,
+    );
   }
   if (loop.live && LOOP_BETWEEN_RUNS.has(loop.shown)) {
-    return gate("loop-between-runs", "the loop runs and may start a run any second - pause it to change the backlog");
+    return gate(
+      "loop-between-runs",
+      "the loop runs and may start a run any second - pause it to change the backlog",
+    );
   }
   if (loop.interruptedRun && !loop.interruptedRun.needsPerson && loop.interruptedRun.phase !== "new") {
     // An interrupted run is continued by the next start on its own branch; the item it works on

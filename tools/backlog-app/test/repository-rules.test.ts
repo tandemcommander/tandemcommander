@@ -87,8 +87,11 @@ function checkedFiles(): string[] {
 // The forbidden patterns are assembled from parts so that this file does not match itself.
 /** Text that would start a process through a shell. */
 const shellTrue = ["shell", ": ", "true"].join("");
-/** Text of a call of child_process.exec / execSync. */
-const execCall = /\bexec(Sync)?\(/;
+/**
+ * Text of a call of child_process.exec / execSync: a call not preceded by a dot or a word
+ * character, so `RegExp.prototype.exec` (`/x/.exec(text)`) is not mistaken for a process.
+ */
+const execCall = /(?<![.\w])exec(Sync)?\(/;
 
 describe("repository rules of the backlog app", () => {
   const files = checkedFiles();
