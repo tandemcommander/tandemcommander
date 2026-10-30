@@ -156,8 +156,15 @@ export default defineConfig(
     languageOptions: { globals: { ...globals.browser } },
   },
   {
-    // shadcn-style component files export their variant helpers next to the components.
-    files: ["packages/web/src/components/ui/**/*.tsx"],
+    // shadcn-style component files export their variant helpers next to the components, feature
+    // modules export their hooks next to the components that use them, and main.tsx is the entry
+    // point. The rule only serves live reload in development: for such a file Vite reloads the
+    // page instead of swapping the component, which is acceptable for this tool.
+    files: [
+      "packages/web/src/components/**/*.tsx",
+      "packages/web/src/features/**/*.tsx",
+      "packages/web/src/main.tsx",
+    ],
     rules: { "react-refresh/only-export-components": "off" },
   },
   {

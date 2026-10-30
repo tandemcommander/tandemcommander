@@ -8,7 +8,8 @@
  * an authenticated same-origin request. Errors of any route become the API's error answers.
  */
 
-import { basename } from "node:path";
+import { readFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { z } from "zod";
@@ -18,6 +19,7 @@ import {
   SavedViewSchema,
   SettingsSchema,
   ConfirmRequestSchema,
+  RunItemRequestSchema,
   type StateView,
 } from "@backlog-app/shared";
 import type { Services } from "../services.ts";
@@ -25,6 +27,8 @@ import { aheadBehind } from "../repo/git.ts";
 import { backlogReadRoutes } from "./backlog-read.ts";
 import { backlogWriteRoutes } from "./backlog-write.ts";
 import { runRoutes } from "./runs.ts";
+import { featureRoutes } from "./features.ts";
+import { aiRoutes } from "./ai.ts";
 import { errorAnswer, readBody } from "./common.ts";
 
 /** Milliseconds between keep-alive pings on an event stream. */
@@ -138,15 +142,37 @@ export function createApi(services: Services): Hono {
   app.route("/", backlogReadRoutes(services));
   app.route("/", backlogWriteRoutes(services));
   app.route("/", runRoutes(services));
+  app.route("/", featureRoutes(services, services.features, services.release));
+  app.route("/", aiRoutes(services, services.ai));
 
   // --- the loop (research R13) ---
-  app.get("/loop", async (c) => c.json({ view: services.loop.view ?? (await services.loop.refresh()) }));
+  app.get("/loop", async (c) => {
+    const view = services.loop.view ?? (await services.loop.refresh());
+    // The loop appends its window lines to loop.log (one write per line, never replaced), so a
+    // short read of its end is safe; the file may not exist on a machine where no loop ran yet.
+    let logTail: string[];
+    try {
+      const text = readFileSync(join(services.ctx.repo.commonDir, "tandem-backlog-loop", "loop.log"), "utf8");
+      logTail = text.split(/\r?\n/).filter(Boolean).slice(-200);
+    } catch {
+      logTail = [];
+    }
+    return c.json({ view, logTail });
+  });
 
   app.post("/loop/start", async (c) => {
     const options = await readBody(c, LoopStartOptionsSchema);
     // The loop starts only on a clean tree: commit the app's own changes first (research R11).
     if (options.commitTray !== false) await services.commitTrayForLoop();
     return c.json(await services.loopControl.start(options));
+  });
+  // One chosen item (FR-018): a single loop run of it in a new window; the order is not changed.
+  app.post("/loop/run-item", async (c) => {
+    const body = await readBody(c, RunItemRequestSchema);
+    if (body.commitTray !== false) await services.commitTrayForLoop();
+    return c.json(
+      await services.loopControl.start({ item: body.slug, ...(body.model ? { model: body.model } : {}) }),
+    );
   });
   app.post("/loop/pause", async (c) => c.json(await services.loopControl.pause()));
   app.post("/loop/resume", async (c) => {

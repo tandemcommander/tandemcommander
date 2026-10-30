@@ -25,6 +25,9 @@ import { WriteQueue } from "./backlog/write-queue.ts";
 import { ChangeTray } from "./backlog/tray.ts";
 import { RunsService } from "./runs/service.ts";
 import { Notifications } from "./events/notifications.ts";
+import { FeaturesService } from "./features/records.ts";
+import { ReleaseService } from "./features/release.ts";
+import { AiJobRunner } from "./ai/runner.ts";
 import type { SessionAuth } from "./gate/token.ts";
 
 /** All services of one server process. */
@@ -68,6 +71,15 @@ export class Services {
   /** The notification log. */
   readonly notifications: Notifications;
 
+  /** Feature records (`specs/NNN-*`). */
+  readonly features: FeaturesService;
+
+  /** Release readiness. */
+  readonly release: ReleaseService;
+
+  /** AI jobs through the local claude CLI (one at a time). */
+  readonly ai: AiJobRunner;
+
   /** The last published gate (to publish only changes). */
   private lastGate = "";
 
@@ -97,6 +109,9 @@ export class Services {
     this.tray = new ChangeTray(ctx);
     this.runs = new RunsService(this);
     this.notifications = new Notifications(ctx);
+    this.features = new FeaturesService(this);
+    this.release = new ReleaseService(this);
+    this.ai = new AiJobRunner(this);
     this.runs.onEnded = (id) => this.announceRunEnd(id);
   }
 
@@ -198,6 +213,7 @@ export class Services {
    */
   async stopAndDrain(): Promise<void> {
     this.stop();
+    await this.ai.stop();
     await this.queue.idle();
     await Promise.all([this.repo.idle(), this.loop.idle(), this.read.idle()]);
   }

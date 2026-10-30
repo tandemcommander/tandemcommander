@@ -201,6 +201,7 @@ const alertVariants = cva("flex gap-2 rounded-md border px-3 py-2 text-sm", {
 export function Alert({
   className,
   tone,
+  children,
   ...props
 }: ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
   return (
@@ -208,6 +209,9 @@ export function Alert({
       role={tone === "bad" ? "alert" : "status"}
       className={cn(alertVariants({ tone }), className)}
       {...props}
-    />
+    >
+      {/* One block for the content: mixed text and inline elements must not become flex items. */}
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
   );
 }
