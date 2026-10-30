@@ -36,9 +36,9 @@ description: "Tasks for 345-ftp-upload-cache-user-port"
 ## Phase 5: Polish & verification
 
 - [X] T005 Build (`build.cmd`), encoding guard (`python tools/check_encoding.py --strict`), saltests
-- [ ] T006 Run `ftp345_probe.ps1` after the fix (`probe/result_after.txt`: 16 / 0) and the regressions `specs/341-ftp-upload-cache-alias/probe/ftp341_probe.ps1` and `specs/323-ftp-upload-cache-args/probe/ftp302_probe.ps1`
-- [ ] T007 Negative control: the fix reverted in a copy (or a mutant build) -> the five rows FAIL; record in `specs/345-ftp-upload-cache-user-port/fix-log.md`
-- [ ] T008 Record before / after, commands and results in `specs/345-ftp-upload-cache-user-port/fix-log.md`
+- [X] T006 Run `ftp345_probe.ps1` after the fix (`probe/result_after.txt`: 16 / 0) and the regressions `specs/341-ftp-upload-cache-alias/probe/ftp341_probe.ps1` and `specs/323-ftp-upload-cache-args/probe/ftp302_probe.ps1`
+- [X] T007 Negative control: the fix reverted in a copy (or a mutant build) -> the five rows FAIL; record in `specs/345-ftp-upload-cache-user-port/fix-log.md`
+- [X] T008 Record before / after, commands and results in `specs/345-ftp-upload-cache-user-port/fix-log.md`
 
 ## Dependencies
 

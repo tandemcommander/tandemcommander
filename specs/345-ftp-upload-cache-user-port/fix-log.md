@@ -37,3 +37,34 @@ server - item *Expected* ("the uploads do not trust their cached listings ... th
 again") and rule 098 (fail closed), as 341. The item's *Notes* middle way (only the same host)
 would leave ALL-REN losing data, because 341 already treats any other host name as maybe the same
 server. Cost: concurrent uploads under different identities list again after each other's changes.
+
+## The fix (commit 2c54ae13)
+
+`src/plugins/ftp/operats.h`, `src/plugins/ftp/operats9.cpp`:
+- new static `CUploadListingCache::SameIdentity(entryUser, entryHost, entryPort, user, host, port)`
+  - the one definition of "own" (host `StrICmp`, user exact with `anonymous` = no user, port);
+  used by `FindServer`, `StampChange` (unchanged behaviour) and `ChangedUnderOtherName`;
+- `InvalidateOtherNamesOfServer`: every entry except `exact` (the reported connection's own entry,
+  the only one `FindServer` can return for it) invalidates all its listings - the same-user /
+  same-port filter is gone;
+- `ChangedUnderOtherName`: a stamp newer than the listing's start counts when its identity is not
+  the listing's own (`!SameIdentity`) - before: only another host with the same user and port.
+- No pure-rule header (research R4): the rule left is the three-field equality `FindServer` always
+  used.
+
+## Checks
+
+- `build.cmd` (Debug x64) -> BUILD SUCCEEDED.
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- `saltests.exe` -> `saltests: 28952 checks, 0 failed`.
+- The maintainer started the installed Tandem Commander during the run: the first after-run
+  printed `NOT RUN: tandemcommander.exe already runs` (exit 3, nothing touched); the run waited
+  until it exited (about 35 s) and ran the probes then.
+- `probe/result_after.txt` (ftp345_probe.ps1 on the fix): **PASS 16, FAIL 0** (8 ROW + 8 END);
+  USER-REN, PORT-REN, ALL-REN: upload 2 lists the folder again, no `STOR b.txt`, the overwrite
+  question for `b.txt` open, server `b.txt` = `SRV-A`; SEED-USER / SEED-PORT: no second `STOR n.txt`,
+  question open, server `n.txt` = `UP2`; controls PASS; registry restored identical.
+- Negative control (SC-003): the same probe on `main` at ad3eb597 - the code without the fix -
+  `probe/result_main.txt`: the five rows FAIL (STOR without the question), the controls PASS.
+- Regression `probe/regress_341.txt` (341's `ftp341_probe.ps1`): PASS 12, FAIL 0.
+- Regression `probe/regress_302.txt` (323's `ftp302_probe.ps1`): PASS 16, FAIL 0; registry restored identical in all three runs.
