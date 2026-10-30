@@ -1,5 +1,9 @@
 # Contract — the backlog loop (feature 247)
 
+(Amended 2026-10-30, feature 344: `kill`, `start --new-window`, `start --item SLUG`, the
+edit-lock precheck, `loop.log`, `last.json`, and the `status --json` keys `kill`, `last`,
+`edit_lock`, `log`, `orphan` - `specs/344-backlog-web-app/contracts/loop-cli-additions.md`.)
+
 `tools/backlog/loop.py` (stdlib only) and one Git Bash command, `bin/backlog-loop.sh <command>`
 (amended 2026-10-24: it replaced the five wrappers `tools/backlog/loop-<command>.sh`;
 amended 2026-10-25, feature 342: renamed from `bin/backlog.sh`, which is now the backlog

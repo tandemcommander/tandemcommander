@@ -15,6 +15,7 @@ add *Recent Changes* / *Active Technologies* sections.
 
 | Need | Read |
 |------|------|
+| Steer the backlog from a browser | `bin/start-backlog-app.sh` — the backlog app (344, `tools/backlog-app/`): view, filter, reorder, triage, edit, watch and control the loop; changes only through `bin/backlog.sh` |
 | What to work on next | `backlog/BACKLOG.md` — the ordered backlog (*Next*, *Decisions for the maintainer*, *Person steps*, *Inbox*); one folder per item in `backlog/items/`; manage it with `/tandem-backlog`, run one item autonomously with `/tandem-backlog-implement` (242), item after item with `bin/backlog-loop.sh start` (+ `pause`, `resume`, `stop`, `status`; 247), traces in `.agent-traces/`; the backlog tool is `bin/backlog.sh` (342). `specs/` holds only features being or having been implemented |
 | What a feature did, its traps and evidence | `specs/FEATURE-HISTORY.md` — search `^- NNN-` or use its index by area; **read the entries of the area before changing it** |
 | Full record of a feature | `specs/NNN-*/` — `fix-log.md`, `closing-report.md`, `research.md`, `contracts/`, `probe/` |

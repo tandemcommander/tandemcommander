@@ -25,7 +25,7 @@ English.** Answer the maintainer in the language they used.
 | File | Role | Who changes it |
 |---|---|---|
 | `backlog/BACKLOG.md` | Overview. **Row order = priority** (top first). Sections in fixed order: *In progress*, *Next*, *Decisions for the maintainer*, *Person steps*, *Inbox*, *Parked*, *Rejected*, then *Legend* (the allowed values). | Only the tool. Every cell except a row's position and section is derived from the items. |
-| `backlog/items/<slug>/desc.md` | One item: a metadata header (15 keys, fixed order) + body sections. **The only source of the item's data.** | Header: only the tool. Body: the Edit tool. |
+| `backlog/items/<slug>/desc.md` | One item: a metadata header (15 keys, fixed order) + body sections. **The only source of the item's data.** | Header: only the tool. Body: `BL body` / `step` / `decide` (feature 344), or the Edit tool. |
 | `backlog/items/<slug>/issue.md`, `reply.md`, `evidence/` | GitHub issue text (verbatim), draft reply, captures | `import-github` / the Edit tool |
 | `backlog/RUNS.md` | Journal of autonomous runs | Only `/tandem-backlog-implement` |
 | `backlog/RELEASE.md` | Release procedure | The maintainer |
@@ -83,9 +83,28 @@ BL = bin/backlog.sh
   §2.5a *From the loop*) is the exception: it runs while the loop waits
   for it, and the loop starts no run meanwhile.
 - Commands of this skill: `check`, `sync`, `list`, `new`, `import-github`,
-  `set`, `log`, `verify`, `move`, `block`, `unblock`, `remove --reason`.
+  `set`, `log`, `verify`, `move`, `block`, `unblock`, `remove --reason`, and
+  since feature 344 `board`, `show`, `legend`, `reorder`, `body`, `step`,
+  `decide`, `reply` (`specs/344-backlog-web-app/contracts/backlog-cli-additions.md`).
   `next`, `start`, `remove --feature`, `run-log` and `lock` belong to
   `/tandem-backlog-implement`; never use them here.
+- **Texts through stdin (feature 344).** `BL --input-json - <command> …`
+  reads the texts (title, problem, evidence, reason, log text, a body
+  section's Markdown, a decision) as one JSON object from stdin - write the
+  JSON to a file in the scratchpad with the Write tool and pipe it
+  (`BL --input-json - body <slug> --section Notes < file.json`). Nothing is
+  on a command line, so backticks, `$`, quotes and **backslashes** are stored
+  exactly (the Bash-tool `\\` trap above does not apply). Prefer
+  `body` / `step` / `decide` / `reply` over hand edits with the Edit tool:
+  the tool validates the body before it writes. `show <slug> --json` reads
+  one item parsed.
+- **The backlog app (feature 344)**, `bin/start-backlog-app.sh`, changes the
+  backlog through this same tool. While it changes something it holds
+  `.git/tandem-backlog-edit.lock` (`bin/backlog-loop.sh status --json` shows
+  `edit_lock` with `live: true`); wait until it is gone before a changing
+  command. Its commits start with `backlog(app):`; its uncommitted changes
+  show in `git status` like yours - commit or leave them, never revert them
+  without asking the maintainer.
 
 ### 0.3 Who is asking — the two modes
 

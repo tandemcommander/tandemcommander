@@ -291,9 +291,9 @@ and transcript replay.
 
 ## Phase 9: Polish and cross-cutting concerns
 
-- [ ] T126 [P] Amend `specs/242-backlog-system/contracts/cli.md` (note + link to contracts/backlog-cli-additions.md) and `specs/247-backlog-run-loop/contracts/loop-cli.md` (note + link to contracts/loop-cli-additions.md); update `bin/backlog.sh --help` / `bin/backlog-loop.sh --help` examples if they list commands
-- [ ] T127 [P] Update `.claude/skills/tandem-backlog/` (SKILL.md and references): body edits, steps, decisions and replies through the new tool commands instead of hand edits; the app's edit lock and `backlog(app):` commits explained; changes refused while the edit lock is live
-- [ ] T128 [P] Add one line to `CLAUDE.md` (*Where things are*: the backlog app and its launcher, feature 344) and the app to the tooling list of `architecture/12-project-reference.md`
+- [X] T126 [P] Amend `specs/242-backlog-system/contracts/cli.md` (note + link to contracts/backlog-cli-additions.md) and `specs/247-backlog-run-loop/contracts/loop-cli.md` (note + link to contracts/loop-cli-additions.md); update `bin/backlog.sh --help` / `bin/backlog-loop.sh --help` examples if they list commands
+- [X] T127 [P] Update `.claude/skills/tandem-backlog/` (SKILL.md and references): body edits, steps, decisions and replies through the new tool commands instead of hand edits; the app's edit lock and `backlog(app):` commits explained; changes refused while the edit lock is live
+- [X] T128 [P] Add one line to `CLAUDE.md` (*Where things are*: the backlog app and its launcher, feature 344) and the app to the tooling list of `architecture/12-project-reference.md`
 - [X] T129 Accessibility and responsiveness pass across all screens (axe in both themes, focus order, reduced motion, 900 px and narrow layouts, tables as cards below 900 px) - `APP/e2e/a11y.spec.ts`
 - [X] T130 Performance checks: SC-004 (live update <= 5 s over a 2-hour fake run), SC-005 (500-item fixture: filter and search < 1 s), SC-001 (fresh clone start < 2 min, later < 10 s) - results in fix-log
 - [X] T131 Soak test Q18 `APP/e2e/soak.spec.ts`: 20 fake-claude loop runs with the app open at full polling - no loop wait caused by the app, no failed atomic replace in `loop.json`/`meta.json`/the lock, lock and loop state never changed by the app

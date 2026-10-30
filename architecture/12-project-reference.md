@@ -88,7 +88,9 @@ src/                   All source code (~2,224 files)
 architecture/          Architecture documentation (see below)
 backlog/               All planned work (feature 242): BACKLOG.md (ordered
                        overview), items/<slug>/desc.md, RUNS.md, RELEASE.md;
-                       managed with /tandem-backlog and tools/backlog/backlog.py
+                       managed with /tandem-backlog and tools/backlog/backlog.py;
+                       steered from a browser with the backlog app (feature 344,
+                       tools/backlog-app/, bin/start-backlog-app.sh)
 specs/                 One folder per feature being or having been implemented
 convert/               Character conversion tables
 doc/                   License files, third-party notices
@@ -203,6 +205,7 @@ Property sheets: `plugins/shared/vcxproj/plugin_base.props` + debug/release vari
 - Windows Registry for configuration (`REG_SZ` string values); NTFS/exFAT/FAT/network file systems as managed objects (004-long-paths-unicode)
 - Translation data: `translations/<language>/<module>.slt` UTF-8-BOM text archives, committed; consumed at build time by `translator.exe` quiet modes to produce `<language>.slg` (038-translations-build-integration)
 - Python 3.13 (`tools/`, `pyproject.toml`) + `anthropic` SDK for offline machine translation — developer-side only, never invoked by the build (038-translations-build-integration)
+- Backlog web app `tools/backlog-app/` — developer-side only, never built, signed or shipped: Node.js 24 (native TypeScript), Hono on `node:http`, React 19 + Vite 8 + Tailwind 4 + Radix, npm workspaces with a committed lock file (`node_modules`, `dist` ignored by git and by `normalize.ps1`); files UTF-8 without BOM, LF; listens on 127.0.0.1 only with a per-start token; changes the backlog only through `tools/backlog/backlog.py` and drives the loop through `tools/backlog/loop.py` (344-backlog-web-app)
 - Language build policy: `translations/languages.cfg` `enabled = on|off` per language; validated and reconciled by `src/vcxproj/lang_policy.ps1` on every `build.cmd` run (039-language-build-policy)
 - Code signing: `tools/codesign/codesign.cfg` (committed profile: certificate SHA-1 thumbprint + Certum timestamp URL) consumed by `tools/codesign/sign_release.ps1` (Windows PowerShell 5.1 sweep, idempotent) and `setup/build_setup.cmd`; signtool.exe from the Windows SDK; Inno Setup 7 for the installer (050-code-signing)
 - SFTP plugin: vendored libssh2 1.11.1_DEV (`src/common/dep/libssh2`) on the WinCNG backend (`LIBSSH2_WINCNG` + `LIBSSH2_ECDSA_WINCNG` — RSA/ECDSA only, no ed25519, no OpenSSL); test harness `src/plugins/sftp/test/` runs against a local Docker reference server (container `tandem-sftp`, localhost:2222) (051-fix-sftp-keyauth-hang)

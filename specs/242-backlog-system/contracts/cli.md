@@ -4,6 +4,13 @@
 bin/backlog.sh [--root <repo>] <command> [options]
 ```
 
+(Amended 2026-10-30, feature 344: read commands with JSON output (`board`, `show`,
+`check --json`, `legend`), `--ref REF` (read git objects, no working-tree file),
+`--input-json -` (texts from stdin), `--json` results of changing commands, and the
+commands `reorder`, `body`, `step`, `decide`, `reply`, `set --position` -
+`specs/344-backlog-web-app/contracts/backlog-cli-additions.md`. Everything below stays
+valid.)
+
 (Amended 2026-10-25, feature 342: `bin/backlog.sh` runs this tool with the same
 arguments, output and exit codes, and is the documented way to run it;
 `specs/342-backlog-agent-traces/contracts/bin-commands.md`. The Python file is
