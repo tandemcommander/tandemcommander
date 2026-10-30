@@ -179,7 +179,11 @@ export function MoveDialog({ item, boardRevision, onClose }: DialogProps) {
         mutation.mutate({
           path: `/api/items/${item.slug}/move`,
           body: {
-            base: { board: boardRevision ?? undefined, item: item.revision },
+            // A position counts rows: then the board must be the one the user saw.
+            base: {
+              ...(ordered && position ? { board: boardRevision ?? undefined } : {}),
+              item: item.revision,
+            },
             section,
             ...(ordered && position ? { position: Number(position) } : {}),
             ...(needsReason ? { reason: reason.trim() } : {}),
@@ -244,13 +248,15 @@ export function MoveDialog({ item, boardRevision, onClose }: DialogProps) {
  */
 export function ReasonDialog({
   item,
-  boardRevision,
   onClose,
   kind,
 }: DialogProps & { /** The change. */ kind: "block" | "unblock" | "park" | "reject" | "reopen" | "close" }) {
   const { mutation, problem } = useChange(onClose);
   const [reason, setReason] = useDraft(`${kind}-reason:${item.slug}`, "");
-  const base = { board: boardRevision ?? undefined, item: item.revision };
+  // These changes do not depend on the order of rows: the item's revision is the whole base. (The
+  // board's revision would refuse a change right after the user's own previous change, before the
+  // page has re-read the board.)
+  const base = { item: item.revision };
   const titles: Record<typeof kind, string> = {
     block: "Block",
     unblock: "Unblock",
@@ -307,7 +313,8 @@ export function ReasonDialog({
       }
       pending={mutation.isPending}
       problem={problem}
-      submitLabel={titles[kind]}
+      // "Close" alone would share its name with the dialog's close button.
+      submitLabel={kind === "close" ? "Close the item" : titles[kind]}
       destructive={kind === "close" || kind === "reject"}
       onClose={onClose}
       onSubmit={submit}
@@ -416,7 +423,7 @@ export function FieldsDialog({ item, boardRevision, legend, onClose }: DialogPro
     mutation.mutate({
       path: `/api/items/${item.slug}/fields`,
       body: {
-        base: { board: boardRevision ?? undefined, item: item.revision },
+        base: { ...(position ? { board: boardRevision ?? undefined } : {}), item: item.revision },
         set,
         ...(reason.trim() ? { reason: reason.trim() } : {}),
         ...(position ? { position: Number(position) } : {}),

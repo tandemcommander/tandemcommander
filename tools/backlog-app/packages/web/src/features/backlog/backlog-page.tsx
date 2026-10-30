@@ -29,6 +29,8 @@ import { ItemView } from "@/features/item/item-view.tsx";
 import { FilterBox } from "./filter-box.tsx";
 import { SectionTable } from "./section-table.tsx";
 import { SortableSection } from "./sortable-section.tsx";
+import { BulkBar } from "./bulk-actions.tsx";
+import { useWriteAccess } from "@/features/gate/gate-banner.tsx";
 
 /** The route's parameters. */
 const route = getRouteApi("/backlog/$section");
@@ -122,6 +124,21 @@ export function BacklogPage() {
   const board = useBoard(q);
   const legend = useLegend();
   const [saving, setSaving] = useState(false);
+  const [marked, setMarked] = useState<ReadonlySet<string>>(new Set());
+  const access = useWriteAccess();
+  /**
+   * Toggles a row's bulk mark.
+   *
+   * @param slug - The row.
+   */
+  const toggleMark = useCallback((slug: string) => {
+    setMarked((current) => {
+      const next = new Set(current);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }, []);
   const wanted = SECTION_BY_PARAM[sectionParam] ?? "all";
 
   const sections: SectionView[] = useMemo(
@@ -186,9 +203,17 @@ export function BacklogPage() {
       { keys: "ArrowUp", label: "Previous row", run: () => step(-1) },
       { keys: "Enter", label: "Open the item", run: () => sel && open(sel) },
       { keys: "o", label: "Open the item", run: () => sel && open(sel) },
-      { keys: "Escape", label: "Clear the selection", run: () => setSearch({ sel: "" }) },
+      { keys: "x", label: "Mark the row for a bulk change", run: () => sel && toggleMark(sel) },
+      {
+        keys: "Escape",
+        label: "Clear the selection and the marks",
+        run: () => {
+          setMarked(new Set());
+          setSearch({ sel: "" });
+        },
+      },
     ],
-    [step, sel, open, setSearch],
+    [step, sel, open, setSearch, toggleMark],
   );
   useShortcuts(shortcuts);
 
@@ -271,6 +296,8 @@ export function BacklogPage() {
                     skipped,
                     onSelect: (slug) => setSearch({ sel: slug }),
                     onOpen: open,
+                    marked,
+                    onToggleMark: toggleMark,
                   }}
                 />
               ) : (
@@ -284,6 +311,8 @@ export function BacklogPage() {
                   skipped={skipped}
                   onSelect={(slug) => setSearch({ sel: slug })}
                   onOpen={open}
+                  marked={marked}
+                  onToggleMark={toggleMark}
                 />
               )}
               {notes.map((note) => (
@@ -297,6 +326,13 @@ export function BacklogPage() {
             </div>
           );
         })}
+        <BulkBar
+          slugs={[...marked]}
+          revision={board.data?.revision ?? null}
+          legend={legend.data ?? null}
+          onClear={() => setMarked(new Set())}
+          disabledReason={access.writable ? "" : access.reason}
+        />
       </section>
       {sel ? (
         <aside

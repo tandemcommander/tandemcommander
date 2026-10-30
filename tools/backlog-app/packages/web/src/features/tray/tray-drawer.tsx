@@ -191,7 +191,6 @@ function TrayPanel({
 export function TrayButton() {
   const pending = useAppStore((s) => s.state?.tray.pending ?? 0);
   const [open, setOpen] = useState(false);
-  const tray = useTray(pending > 0);
   const undo = useUndo();
   const shortcuts = useMemo<Shortcut[]>(
     () => [
@@ -199,12 +198,17 @@ export function TrayButton() {
         keys: "ctrl+z",
         label: "Undo the newest uncommitted change",
         run: () => {
-          const newest = tray.data?.pending.at(-1);
-          if (newest) undo.mutate(newest.id);
+          // Always ask the server: right after a change the cached tray may not know it yet, and
+          // the server undoes only its newest pending change anyway.
+          void apiGet<Tray>("/api/tray").then((fresh) => {
+            const newest = fresh.pending.at(-1);
+            if (newest) undo.mutate(newest.id);
+            else toast.info("Nothing to undo");
+          });
         },
       },
     ],
-    [tray.data, undo],
+    [undo],
   );
   useShortcuts(shortcuts);
   return (

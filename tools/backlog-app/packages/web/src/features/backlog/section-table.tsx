@@ -56,6 +56,10 @@ export interface SectionTableProps {
   onOpen: (slug: string) => void;
   /** Renders the drag handle cell of a row (user story 3), or nothing. */
   handle?: (row: ItemRowView) => ReactNode;
+  /** Rows marked for a bulk change. */
+  marked?: ReadonlySet<string>;
+  /** Toggles a row's bulk mark; when absent there is no mark column. */
+  onToggleMark?: (slug: string) => void;
   /** Wraps a table row element (sortable rows of user story 3). */
   wrapRow?: (row: ItemRowView, element: ReactNode) => ReactNode;
 }
@@ -167,7 +171,21 @@ function columnsOf(
  * @returns The element.
  */
 export function SectionTable(props: SectionTableProps) {
-  const { name, rows, snippets, words, selected, nextUp, skipped, onSelect, onOpen, handle, wrapRow } = props;
+  const {
+    name,
+    rows,
+    snippets,
+    words,
+    selected,
+    nextUp,
+    skipped,
+    onSelect,
+    onOpen,
+    handle,
+    wrapRow,
+    marked,
+    onToggleMark,
+  } = props;
   const [sorting, setSorting] = useState<SortingState>([]);
   const visible = SECTION_COLUMNS[name];
   const columns = useMemo(
@@ -193,6 +211,7 @@ export function SectionTable(props: SectionTableProps) {
     <table className="w-full table-fixed border-collapse text-sm">
       <caption className="sr-only">{name}</caption>
       <colgroup>
+        {onToggleMark ? <col className="w-8" /> : null}
         {showHandles ? <col className="w-7" /> : null}
         {table.getVisibleLeafColumns().map((column) => (
           <col
@@ -213,6 +232,7 @@ export function SectionTable(props: SectionTableProps) {
       <thead className="sticky top-0 z-10 bg-background">
         {table.getHeaderGroups().map((group) => (
           <tr key={group.id} className="border-b text-left text-xs text-muted-foreground">
+            {onToggleMark ? <th className="w-8" aria-label="Marked for a bulk change" /> : null}
             {showHandles ? <th className="w-7" aria-label="Drag to reorder" /> : null}
             {group.headers.map((header) => {
               const sorted = header.column.getIsSorted();
@@ -256,6 +276,16 @@ export function SectionTable(props: SectionTableProps) {
                 isSelected && "bg-accent ring-1 ring-ring/50 outline-none ring-inset",
               )}
             >
+              {onToggleMark ? (
+                <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    aria-label={`Mark ${row.original.title} for a bulk change`}
+                    checked={marked?.has(row.original.slug) ?? false}
+                    onChange={() => onToggleMark(row.original.slug)}
+                  />
+                </td>
+              ) : null}
               {showHandles ? (
                 <td className="px-1 py-1.5 text-muted-foreground">
                   {handle ? handle(row.original) : <GripVerticalIcon className="size-4" />}

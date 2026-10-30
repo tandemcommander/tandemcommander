@@ -84,12 +84,12 @@ and the web shell. No story starts before this phase is done.
 - [X] T024 [P] Define `APP/packages/shared/src/schemas/loop.ts` (LoopView with the `shown` enum and derivation inputs) and `APP/packages/shared/src/schemas/runs.ts` (Run, Phase, Attempt, TraceEvent, run statistics)
 - [X] T025 [P] Define `APP/packages/shared/src/schemas/app-state.ts` (WriteGate, Change, AiJob, Settings, SavedView, NotificationEvent, Instance)
 - [X] T026 [P] Define `APP/packages/shared/src/api/` request/response schemas per route group of contracts/http-api.md, the error codes table (`errors.ts`), the SSE event union (`events.ts`) and route constants (`routes.ts`); export all from `APP/packages/shared/src/index.ts`
-- [ ] T027 [P] Write schema tests `APP/packages/shared/test/schemas.test.ts` parsing real outputs of the Python commands of T014/T016/T020 captured from the fixture repository into `APP/packages/shared/test/fixtures/`
+- [X] T027 [P] Write schema tests `APP/packages/shared/test/schemas.test.ts` parsing real outputs of the Python commands of T014/T016/T020 captured from the fixture repository into `APP/packages/shared/test/fixtures/`
 
 ### Server shell
 
 - [X] T028 Implement the process module `APP/packages/server/src/proc/spawn.ts`: resolve `python` (`PYTHON` honoured) and `claude.exe` once, `spawn` with argument arrays, `shell: false`, `windowsHide`, `cwd` = root, UTF-8 environment, stdin JSON or closed, `StringDecoder` output, timeouts, `killTree(pid)` via `%SystemRoot%\System32\taskkill.exe /T /F`, a registry of the app's own children; tests in `APP/packages/server/test/proc.test.ts` (UTF-8 round trip, stdin text never in the command line, tree kill)
-- [ ] T029 Implement `APP/packages/server/src/repo/git.ts`: repository root, git common dir, current branch, `MERGE_HEAD`, `status --porcelain=v1 -z --no-optional-locks` (paths), `log`, `show`, `ls-tree`, `rev-list --left-right --count origin/main...main`; only read-only commands (an allow-list); tests on a temporary repository
+- [X] T029 Implement `APP/packages/server/src/repo/git.ts`: repository root, git common dir, current branch, `MERGE_HEAD`, `status --porcelain=v1 -z --no-optional-locks` (paths), `log`, `show`, `ls-tree`, `rev-list --left-right --count origin/main...main`; only read-only commands (an allow-list); tests on a temporary repository
 - [X] T030 Implement the app-state folder `APP/packages/server/src/settings/state-dir.ts`: `<git-common-dir>/tandem-backlog-app/`, atomic JSON write (temp + rename), tolerant read; tests
 - [X] T031 Implement the backlog tool adapter `APP/packages/server/src/backlog/tool.ts`: typed read calls (`board`, `show`, `next`, `check`, `legend`, `list`, with `--ref` when asked) validated by the shared schemas; changing calls with `--json --input-json -`, mapping `refused` -> 422, findings -> warning result, crash -> 500 with stderr; tests against a fixture copy in `APP/packages/server/test/backlog-tool.test.ts`
 - [X] T032 Write the security tests first in `APP/packages/server/test/gate.test.ts` (every case of contracts/security.md *Tests*)
@@ -106,7 +106,7 @@ and the web shell. No story starts before this phase is done.
 - [X] T040 [P] Implement `APP/packages/web/src/lib/api.ts` (bootstrap claim, token in session/local storage, typed fetch with the bearer header and error decoding, restart detection) and `APP/packages/web/src/lib/sse.ts` (fetch + eventsource-parser reader, reconnect with `Last-Event-ID` and backoff, typed events)
 - [X] T041 Implement the router and layout in `APP/packages/web/src/app/` (`router.tsx` with typed routes and search params per A4 §2.2, `layout.tsx` with collapsible sidebar, top bar placeholders for loop state, repository state and tray counter, connection-lost banner, `providers.tsx` with TanStack Query invalidation from SSE events)
 - [X] T042 [P] Implement keyboard infrastructure `APP/packages/web/src/lib/hotkeys.ts` (`g` + letter navigation, `/`, `?` sheet, single keys inactive in text fields) and the command palette shell `APP/packages/web/src/features/palette/palette.tsx` (Ctrl+K, navigation commands; later stories register their actions)
-- [ ] T043 Implement the end-to-end fixture builder `APP/e2e/fixture-repo.ts` (temporary git repository from `tools/backlog/fixtures/valid` on `main`, optional `.agent-traces` from recorded traces, fake claude wiring via the loop's hidden `--claude-cmd`) and a smoke e2e `APP/e2e/smoke.spec.ts` (launcher-started app opens, token claimed, both themes without a flash, security headers present)
+- [X] T043 Implement the end-to-end fixture builder `APP/e2e/fixture-repo.ts` (temporary git repository from `tools/backlog/fixtures/valid` on `main`, optional `.agent-traces` from recorded traces, fake claude wiring via the loop's hidden `--claude-cmd`) and a smoke e2e `APP/e2e/smoke.spec.ts` (launcher-started app opens, token claimed, both themes without a flash, security headers present)
 
 **Checkpoint**: `bin/start-backlog-app.sh` opens an empty, themed, secured shell; Python suites, `npm run check` and the smoke e2e pass.
 
@@ -143,7 +143,7 @@ history, closed items, next-up, check and deep links.
 - [X] T059 [P] [US1] Implement the saved-views sidebar entries and *save view* action `APP/packages/web/src/features/backlog/saved-views.tsx`
 - [X] T060 [US1] Implement the Home page counts and next-up card `APP/packages/web/src/features/home/home-page.tsx` (later stories add *Needs you* and *Since your last visit*)
 - [X] T061 [US1] Register US1 palette commands (go to item by title, open view) and keys `j`/`k`, Enter/`o`, Esc in `APP/packages/web/src/features/backlog/commands.ts`
-- [ ] T062 [US1] E2E `APP/e2e/us1-browse.spec.ts`: Q1 (order and fields equal `list --json` of the fixture), Q2 (filters, search, deep link in a new tab), Q3 (detail, history, closed item), keyboard-only browsing, axe in both themes
+- [X] T062 [US1] E2E `APP/e2e/us1-browse.spec.ts`: Q1 (order and fields equal `list --json` of the fixture), Q2 (filters, search, deep link in a new tab), Q3 (detail, history, closed item), keyboard-only browsing, axe in both themes
 
 **Checkpoint**: US1 complete and usable on the real repository (read-only).
 
@@ -177,7 +177,7 @@ history.
 - [X] T076 [US2] Implement the hard-stop dialog `APP/packages/web/src/features/loop/kill-dialog.tsx` (typed slug confirmation, GUI-probe and auto-triage warnings, "the next start continues the run")
 - [X] T077 [US2] Implement the run history list `APP/packages/web/src/features/runs/runs-page.tsx` (filters by outcome, date, item; links to items and features)
 - [X] T078 [US2] Implement notifications in the web `APP/packages/web/src/features/notifications/` (toasts, *Needs you* list, title badge, opt-in browser Notification API with an explanation, settings for events and quiet hours) and add *Needs you* / *Since your last visit* to `APP/packages/web/src/features/home/home-page.tsx`
-- [ ] T079 [US2] E2E `APP/e2e/us2-loop.spec.ts` with the fake claude: Q4 (start in a new window, live updates within 5 s), Q5 (pause/resume/stop; a terminal-started loop controlled the same way), Q6 (app stopped and restarted during a run: run unaffected, state back within 5 s), Q7 (kill: exit 130, phase `killed`, lock kept, next start continues)
+- [X] T079 [US2] E2E `APP/e2e/us2-loop.spec.ts` with the fake claude: Q4 (start in a new window, live updates within 5 s), Q5 (pause/resume/stop; a terminal-started loop controlled the same way), Q6 (app stopped and restarted during a run: run unaffected, state back within 5 s), Q7 (kill: exit 130, phase `killed`, lock kept, next start continues)
 
 **Checkpoint**: US1 + US2 = watch and control without any backlog write.
 
@@ -217,7 +217,7 @@ drag and drop and keys; triage; move, block, park, reject, reopen; field edits; 
 - [X] T096 [US3] Implement the Inbox triage screen `APP/packages/web/src/features/triage/triage-page.tsx` (one item after another, suggestion, keys `n d p k x l s`, `1`-`0` and `+`/`-` severity, progress)
 - [X] T097 [US3] Add the mechanical fixes to the Check page (`sync`, open item) in `APP/packages/web/src/features/check/check-page.tsx` and the findings dialog before writes when the check is not clean
 - [X] T098 [US3] Implement changed-underneath handling and local drafts `APP/packages/web/src/lib/drafts.ts` (per item and field, restored with a notice, never sent before save) and the conflict banner in open editors
-- [ ] T099 [US3] E2E `APP/e2e/us3-order.spec.ts`: Q8 (files equal the same `bin/backlog.sh` commands on a second copy; `check` TOTAL 0; no log lines from reorders), Q9 (gate states disable controls; board from `main` during a run), Q10, Q11 (commit; auto-commit before start; loop does not wait on a dirty tree), Q12 (undo rules); keyboard-only reorder and triage
+- [X] T099 [US3] E2E `APP/e2e/us3-order.spec.ts`: Q8 (files equal the same `bin/backlog.sh` commands on a second copy; `check` TOTAL 0; no log lines from reorders), Q9 (gate states disable controls; board from `main` during a run), Q10, Q11 (commit; auto-commit before start; loop does not wait on a dirty tree), Q12 (undo rules); keyboard-only reorder and triage
 
 **Checkpoint**: MVP (US1 - US3): watch, control, order, triage.
 
@@ -244,7 +244,7 @@ feature pages.
 - [X] T106 [US4] Implement the person-step screen `APP/packages/web/src/features/person-steps/person-step-page.tsx` (checklist with result notes, *record a bug from this* -> new item prefilled, *close when done*, GitHub answer copy + open issue, `reply.md` state)
 - [X] T107 [US4] Implement the close dialog `APP/packages/web/src/features/item/close-dialog.tsx` (reason required, dependents and relations that will be logged, `evidence/` files that will be deleted, `github#N` reminder with "create the answer person step", verification warning) and the GitHub import dialog `APP/packages/web/src/features/import/import-dialog.tsx` (dry run preview, then import)
 - [X] T108 [US4] Implement the feature page `APP/packages/web/src/features/features/feature-page.tsx` (closing report, fix log, spec, tasks progress, probe file list, commits) and the features list
-- [ ] T109 [US4] E2E `APP/e2e/us4-record.spec.ts`: Q13 (20,000-character text with shell characters stored byte-exact, no command line carried it), Q14 (decision B -> Next @3; two steps ticked with notes), new item placed directly, body section edit with conflict, close with undo before commit, feature page
+- [X] T109 [US4] E2E `APP/e2e/us4-record.spec.ts`: Q13 (20,000-character text with shell characters stored byte-exact, no command line carried it), Q14 (decision B -> Next @3; two steps ticked with notes), new item placed directly, body section edit with conflict, close with undo before commit, feature page
 
 **Checkpoint**: the everyday backlog work needs no terminal.
 
@@ -263,7 +263,7 @@ feature pages.
 - [X] T114 [US5] Implement the apply mapping `APP/packages/server/src/ai/apply.ts` (each kind's proposal -> tray changes through the write queue; `verify` with HEAD of `main`; nothing applied without the maintainer's edited proposal)
 - [X] T115 [US5] Implement the Ask page `APP/packages/web/src/features/ask/ask-page.tsx` (structured-filter shortcut for questions the filter language can answer, AI answer with linked items and runs, branch notice) and the job card `APP/packages/web/src/features/ai/job-card.tsx` (state, last tool, elapsed, cost, cancel, failure text)
 - [X] T116 [US5] Add AI actions to the screens: draft from a sentence in `new-item-page.tsx`, *check with AI* in `triage-page.tsx`, *verify (AI)* in `item-view.tsx`, the reviewed auto-triage plan `APP/packages/web/src/features/triage/auto-triage-plan.tsx`, *assess issue* for `github#N` items; all as editable previews
-- [ ] T117 [US5] E2E `APP/e2e/us5-ai.spec.ts` with the job fake: Q15 (answer links items; Czech sentence -> English draft, nothing written before *Create*; cancel keeps partial output); proposing jobs refused while a run holds the lock
+- [X] T117 [US5] E2E `APP/e2e/us5-ai.spec.ts` with the job fake: Q15 (answer links items; Czech sentence -> English draft, nothing written before *Create*; cancel keeps partial output); proposing jobs refused while a run holds the lock
 
 **Checkpoint**: judgement help without leaving the app; no AI writes.
 
@@ -283,7 +283,7 @@ and transcript replay.
 - [X] T122 [US6] Implement the release page `APP/packages/server/src/features/release.ts` + `GET /api/release` (unreleased changelog section, release-blocking person steps and decisions, ahead/behind `origin/main` without fetch, local tags, *Release records* text; no network) and `APP/packages/web/src/features/release/release-page.tsx` (read-only; no build, tag, push or publish control)
 - [X] T123 [US6] Implement the run cache and statistics `APP/packages/server/src/runs/stats.ts` (per ended run: phase timeline, cost, attempts in `cache/runs/<dir>.json`; `GET /api/stats` by outcome, area, week, cost, durations) and the stats panel with Recharts in `APP/packages/web/src/features/runs/run-stats.tsx`
 - [X] T124 [US6] Implement the run detail with transcript replay `APP/packages/web/src/features/runs/run-page.tsx` (attempt split, phase bands, tool calls paired with results, subagents folded, raw line on demand, paged loading for large traces, cancel)
-- [ ] T125 [US6] E2E `APP/e2e/us6-power.spec.ts`: Q16 (one chosen item run with the fake claude, order unchanged; five items bulk-blocked with per-item results; transcript of a past run), release page offers no publish action
+- [X] T125 [US6] E2E `APP/e2e/us6-power.spec.ts`: Q16 (one chosen item run with the fake claude, order unchanged; five items bulk-blocked with per-item results; transcript of a past run), release page offers no publish action
 
 **Checkpoint**: all six stories done.
 
@@ -294,7 +294,7 @@ and transcript replay.
 - [ ] T126 [P] Amend `specs/242-backlog-system/contracts/cli.md` (note + link to contracts/backlog-cli-additions.md) and `specs/247-backlog-run-loop/contracts/loop-cli.md` (note + link to contracts/loop-cli-additions.md); update `bin/backlog.sh --help` / `bin/backlog-loop.sh --help` examples if they list commands
 - [ ] T127 [P] Update `.claude/skills/tandem-backlog/` (SKILL.md and references): body edits, steps, decisions and replies through the new tool commands instead of hand edits; the app's edit lock and `backlog(app):` commits explained; changes refused while the edit lock is live
 - [ ] T128 [P] Add one line to `CLAUDE.md` (*Where things are*: the backlog app and its launcher, feature 344) and the app to the tooling list of `architecture/12-project-reference.md`
-- [ ] T129 Accessibility and responsiveness pass across all screens (axe in both themes, focus order, reduced motion, 900 px and narrow layouts, tables as cards below 900 px) - `APP/e2e/a11y.spec.ts`
+- [X] T129 Accessibility and responsiveness pass across all screens (axe in both themes, focus order, reduced motion, 900 px and narrow layouts, tables as cards below 900 px) - `APP/e2e/a11y.spec.ts`
 - [ ] T130 Performance checks: SC-004 (live update <= 5 s over a 2-hour fake run), SC-005 (500-item fixture: filter and search < 1 s), SC-001 (fresh clone start < 2 min, later < 10 s) - results in fix-log
 - [ ] T131 Soak test Q18 `APP/e2e/soak.spec.ts`: 20 fake-claude loop runs with the app open at full polling - no loop wait caused by the app, no failed atomic replace in `loop.json`/`meta.json`/the lock, lock and loop state never changed by the app
 - [ ] T132 Run `npm run check` (typecheck, lint with the documentation rules, `docs:check`, tests) and `npm run test:e2e`; fix every finding; review "inline comments at important points" file by file in `APP/packages/server/src/` (gate, proc, backlog, loop, runs) and record it

@@ -124,6 +124,10 @@ export function SortableSection({
   const [order, setOrder] = useState(() => rows.map((r) => r.slug));
   const [orderOf, setOrderOf] = useState(rows);
   const pendingTimer = useRef<number | undefined>(undefined);
+  // The board revision the next reorder is based on: the page's, or - right after our own
+  // reorder, before the page has re-read the board - the one the server returned for it.
+  const [base, setBase] = useState({ of: revision, value: revision });
+  if (base.of !== revision) setBase({ of: revision, value: revision });
   // A new board (after a change by anyone) replaces the local order (adjusted during render).
   if (rows !== orderOf) {
     setOrderOf(rows);
@@ -136,10 +140,11 @@ export function SortableSection({
   const save = useMutation({
     mutationFn: (next: string[]) =>
       apiPost<ChangeResult>(`/api/sections/${SECTION_ARG[section]}/order`, {
-        base: { board: revision },
+        base: { board: base.value },
         order: next,
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      setBase((current) => ({ ...current, value: result.board }));
       void queryClient.invalidateQueries({ queryKey: ["board"] });
       void queryClient.invalidateQueries({ queryKey: ["tray"] });
     },
