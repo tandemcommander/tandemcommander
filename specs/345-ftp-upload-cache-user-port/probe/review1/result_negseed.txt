@@ -1,0 +1,18 @@
+ftp345_probe (feature 345)
+Program : C:\Users\pavel\AppData\Local\Temp\rev345\tree\tandemcommander.exe
+Date    : 2026-10-30 17:55; desktop 'tc_probe_15172'; ACP 1250; registry key existed True; export SHA-256 7827CF381658844F08505AD4BE59DECEE7478F189C1B04367E960039995E8BB0
+Server  : ftpmini_hide.py utf-8 on 127.0.0.1:2145 - up
+Server 2: ftpmini_hide.py utf-8 on 127.0.0.1:2146, the same folder - up
+
+USER-REN   ROW    PASS        renamed: True; upload 2 sent STOR b.txt: False; overwrite question for b.txt open: True; server b.txt 'SRV-A'; upload 1 logged in as 'USER v'; upload 2 commands: USER v / PASS p / SYST / PWD / CWD /USER-REN / PORT 127,0,0,1,195,63 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2145/USER-REN/*.*' -> 'ftp://v:p@127.0.0.1:2145/USER-REN/*.*' | [Quick Rename] 'a.txt' -> 'b.txt' | [Copy] 'ftp://u@127.0.0.1:2145/USER-REN/*.*' -> 'ftp://v:p@127.0.0.1:2145/USER-REN/*.*'; operation windows after upload 1: 'Target File Already Exists' C:\Users\pavel\AppData\Local\Temp\tc345\start\USER-REN | o1.txt | /USER-REN | o1.txt || '(errors) Copy File "o1.txt" to 127.0.0.1' ; at the end: 'Target File Already Exists' C:\Users\pavel\AppData\Local\Temp\tc345\start\USER-REN | b.txt | /USER-REN | b.txt || '(errors) Copy File "b.txt" to 127.0.0.1'  || 'Target File Already Exists' C:\Users\pavel\AppData\Local\Temp\tc345\start\USER-REN | o1.txt | /USER-REN | o1.txt || '(errors) Copy File "o1.txt" to 127.0.0.1' 
+           (closed 4 operation window(s); left: 0)
+USER-REN   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 1; new reports 0
+SEED-USER  ROW    FAIL        upload 2 stored n.txt: True; upload 3 sent STOR n.txt: True; question for n.txt open: False; server n.txt 'UP3'; upload 2 commands: USER v / PASS p / SYST / PWD / CWD /SEED-USER / PORT 127,0,0,1,203,224 / TYPE A / LIST / CWD /SEED-USER / PORT 127,0,0,1,203,226 / STOR n.txt / QUIT; upload 3 commands: PORT 127,0,0,1,203,230 / STOR n.txt / NOOP / CWD /SEED-USER / PWD / PORT 127,0,0,1,203,232 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2145/SEED-USER/*.*' -> 'ftp://v:p@127.0.0.1:2145/SEED-USER/*.*' | [Copy] 'ftp://u@127.0.0.1:2145/SEED-USER/*.*' -> 'ftp://u@127.0.0.1:2145/SEED-USER/*.*'; op windows after upload 2: none; at the end: none
+           (closed 0 operation window(s); left: 0)
+SEED-USER  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+SEED-PORT  ROW    FAIL        upload 2 stored n.txt: True; upload 3 sent STOR n.txt: True; question for n.txt open: False; server n.txt 'UP3'; upload 2 commands: USER u / PASS p / SYST / PWD / CWD /SEED-PORT / PORT 127,0,0,1,240,84 / TYPE A / LIST / CWD /SEED-PORT / PORT 127,0,0,1,240,86 / STOR n.txt / QUIT; upload 3 commands: PORT 127,0,0,1,244,92 / STOR n.txt / NOOP / CWD /SEED-PORT / PWD / PORT 127,0,0,1,244,94 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2145/SEED-PORT/*.*' -> 'ftp://u:p@127.0.0.1:2146/SEED-PORT/*.*' | [Copy] 'ftp://u@127.0.0.1:2145/SEED-PORT/*.*' -> 'ftp://u@127.0.0.1:2145/SEED-PORT/*.*'; op windows after upload 2: none; at the end: none
+           (closed 0 operation window(s); left: 0)
+SEED-PORT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; expected exit question (unfinished operations) 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 7827CF381658844F08505AD4BE59DECEE7478F189C1B04367E960039995E8BB0 / after 7827CF381658844F08505AD4BE59DECEE7478F189C1B04367E960039995E8BB0
+
+Rows: PASS 4, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

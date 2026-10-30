@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
@@ -5075,3 +5075,25 @@ a few early ones are out of sequence).
   repository equal to `list --json`. One refute-first review (3 MUST, 4 SHOULD, 6 NOTE - fixed;
   one note to the Inbox: `run-lock-update-release-no-retry`). Owed to a person:
   `backlog-app-morning-on-real-repo` (SC-002 and one visible `--new-window` start).
+- 345-ftp-upload-cache-user-port: an FTP upload running as another user of a server (`ftp://v@...`
+  next to a panel as `u`, two accounts sharing folders) or through another port of it (21 and a
+  forwarded 2121) still trusted its cached listing after a change made in the panel: a Quick
+  Rename `a.txt` -> `b.txt` let the next upload `STOR b.txt` without the overwrite question, and an
+  upload into the panel trusted the panel's listing taken before a file was stored as the other
+  user / port (measured on `main`: 5 rows, data loss). 341 had taken only another host name with
+  the same user and port as maybe the same server. Now every other connection (host, user or port
+  differs) is maybe the same server: `CUploadListingCache::InvalidateOtherNamesOfServer`
+  (`operats9.cpp`) invalidates every entry except the reporting connection's own, and
+  `ChangedUnderOtherName` refuses a panel listing started before a change stamped under any other
+  connection; "own" is one helper, `SameIdentity` (the old `FindServer` rule: host `StrICmp`, user
+  exact with `anonymous` = no user, port). Traps: the item's middle way (only the same host name
+  with another user or port) would keep losing data with another user at another name of the same
+  server (row ALL-REN), because 341 already treats any other name as maybe the same server.
+  Limits: uploads under two connections - also to unrelated servers - list again after each
+  other's changes, and an in-progress listing of a large folder is restarted for as long as the
+  other upload keeps storing files (a stall while it runs, never a lost question; review 1 by
+  reading) -> Inbox decision `ftp-two-uploads-under-different-connections-can-stall-each`. From
+  backlog item `ftp-upload-cache-other-user-or-port-of-one-server`. Probe `ftp345_probe.ps1`
+  11 / 5 on `main` -> 16 / 0 (review 1's partial mutants: each half reverted fails its own rows);
+  341's `ftp341_probe.ps1` 12 / 0, 323's `ftp302_probe.ps1` 16 / 0; one refute-first review
+  (MUST 0, SHOULD 1 - documented, NOTE 3).

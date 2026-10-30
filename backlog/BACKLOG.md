@@ -17,7 +17,6 @@ Last triaged: 2026-10-30
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [FTP: an upload as another user or on another port of one server misses the panel changes](items/ftp-upload-cache-other-user-or-port-of-one-server/desc.md) | bug | 7 | ftp | 345 |
 
 ## Next
 
@@ -270,6 +269,7 @@ Last triaged: 2026-10-30
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [FTP: two uploads under different connections can stall each other while listing](items/ftp-two-uploads-under-different-connections-can-stall-each/desc.md) | decision | 4 | ftp | review:345 | 2026-10-30 |
 
 ## Parked
 

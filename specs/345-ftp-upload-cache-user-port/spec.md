@@ -32,9 +32,14 @@
   341's SEED rule extended; measured as data loss, rows SEED-USER / SEED-PORT)
 - Q: What does failing closed cost? → A: While uploads to two connection identities run at the same
   time - also to two unrelated servers - each change made through one makes the other list its
-  folder again before its next decision: slower, never less safe. A panel upload after any change
-  made elsewhere lists the folder once instead of using the panel's listing. Nothing changes for
-  one upload alone or for uploads that all use one identity. (autonomous run: item *Expected*
+  folder again before its next decision: slower, never less safe. A listing that is still being
+  downloaded when such a change arrives is thrown away and downloaded again (as for a change under
+  the same identity), so while the other upload keeps changing files faster than one listing of a
+  large folder completes, an upload can wait for its listing as long as the other upload runs - a
+  stall, not a hang (the waiting upload makes no changes; review 1, SHOULD, by reading). A panel
+  upload after any change made elsewhere lists the folder once instead of using the panel's
+  listing. Nothing changes for one upload alone or for uploads that all use one identity. A
+  mitigation is the maintainer's choice (Inbox decision item). (autonomous run: item *Expected*
   accepts it - "they list the folder again"; the item's *Notes* name the cost; 341 accepted the same
   cost for host names)
 
@@ -110,7 +115,8 @@ panel's listing, which does not yet show `n.txt`).
 - More than 1,000 identities with changes, or low memory while recording a change: no panel
   listing is trusted any more (fails closed, as 341).
 - Two uploads to two unrelated servers at once: each lists its folder again after the other's
-  changes (the accepted cost).
+  changes (the accepted cost); a listing of a large folder in progress can be restarted for as long
+  as the other upload keeps changing files (a stall while it runs, never a lost question).
 
 ## Requirements *(mandatory)*
 
