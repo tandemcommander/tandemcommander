@@ -3265,7 +3265,8 @@ protected:
 
     // feature 341 (review 2): the latest change reported under each server name, also after the
     // uploads to it ended - a panel's listing taken before a change made under another name of the
-    // server (the panel is not refreshed by it) is not added to the cache (AddOrUpdateListing);
+    // server (the panel is not refreshed by it; since feature 345 also another user or port of it)
+    // is not added to the cache (AddOrUpdateListing);
     // 'ChangeStampsLost' (too many names, low memory): every such listing is refused (fails closed)
     TIndirectArray<CUploadChangeStamp> ChangeStamps;
     BOOL ChangeStampsLost;
@@ -3425,11 +3426,18 @@ protected:
     CUploadListingsOnServer* FindServer(const char* user, const char* host,
                                         unsigned short port, int* index);
 
+    // TRUE when 'entryUser'+'entryHost'+'entryPort' is the connection 'user'+'host'+'port' itself
+    // (host case-insensitive, user exactly - "anonymous" is no user -, port); feature 345: the one
+    // definition of "own" for the entries and the change stamps
+    static BOOL SameIdentity(const char* entryUser, const char* entryHost, unsigned short entryPort,
+                             const char* user, const char* host, unsigned short port);
+
     // feature 341: a change was reported for server 'user'+'host'+'port' ('exact' = its entry or
-    // NULL); every other entry of the same user and port has another host name that may reach the
-    // same server ("localhost" / "127.0.0.1", a name and its address - the client cannot tell) and
-    // stops trusting all of its listings (the upload lists again); the change is also stamped
-    // (StampChange); call only from the UploadLstCacheCritSect critical section
+    // NULL); every other entry stops trusting all of its listings (the upload lists again) - it may
+    // reach the same server: another host name ("localhost" / "127.0.0.1", a name and its address),
+    // and since feature 345 also another user (two accounts sharing folders, "anonymous" and a named
+    // account) or another port (a forwarded port) - the client cannot tell; the change is also
+    // stamped (StampChange); call only from the UploadLstCacheCritSect critical section
     void InvalidateOtherNamesOfServer(const char* user, const char* host, unsigned short port,
                                       CUploadListingsOnServer* exact);
 
@@ -3438,8 +3446,8 @@ protected:
     void StampChange(const char* user, const char* host, unsigned short port);
 
     // feature 341 (review 2): TRUE when a change may have been made after 'listingStartTime' under
-    // another host name with the same user and port (or the stamps were lost); call only from the
-    // UploadLstCacheCritSect critical section
+    // another connection - another host name, user or port (feature 345) - (or the stamps were
+    // lost); call only from the UploadLstCacheCritSect critical section
     BOOL ChangedUnderOtherName(const char* user, const char* host, unsigned short port,
                                DWORD listingStartTime);
 };

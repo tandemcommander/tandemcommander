@@ -115,6 +115,18 @@ void CUploadListingCache::RemoveNotAccessibleListings(const char* user, const ch
     HANDLES(LeaveCriticalSection(&UploadLstCacheCritSect));
 }
 
+BOOL CUploadListingCache::SameIdentity(const char* entryUser, const char* entryHost, unsigned short entryPort,
+                                       const char* user, const char* host, unsigned short port)
+{
+    if (entryUser != NULL && strcmp(entryUser, FTP_ANONYMOUS) == 0)
+        entryUser = NULL;
+    if (user != NULL && strcmp(user, FTP_ANONYMOUS) == 0)
+        user = NULL;
+    return entryPort == port && SalamanderGeneral->StrICmp(entryHost, host) == 0 &&
+           (entryUser == NULL && user == NULL ||
+            user != NULL && entryUser != NULL && strcmp(entryUser, user) == 0);
+}
+
 CUploadListingsOnServer*
 CUploadListingCache::FindServer(const char* user, const char* host, unsigned short port, int* index)
 {
@@ -125,16 +137,11 @@ CUploadListingCache::FindServer(const char* user, const char* host, unsigned sho
         TRACE_E("Unexpected situation in CUploadListingCache::FindServer()!");
         return FALSE;
     }
-    if (user != NULL && strcmp(user, FTP_ANONYMOUS) == 0)
-        user = NULL;
     int i;
     for (i = 0; i < ListingsOnServer.Count; i++)
     {
         CUploadListingsOnServer* server = ListingsOnServer[i];
-        if (SalamanderGeneral->StrICmp(server->Host, host) == 0 &&
-            (server->User == NULL && user == NULL ||
-             user != NULL && server->User != NULL && strcmp(server->User, user) == 0) &&
-            server->Port == port) // server found
+        if (SameIdentity(server->User, server->Host, server->Port, user, host, port)) // server found
         {
             if (index != NULL)
                 *index = i;
@@ -152,21 +159,18 @@ void CUploadListingCache::InvalidateOtherNamesOfServer(const char* user, const c
     if (user != NULL && strcmp(user, FTP_ANONYMOUS) == 0)
         user = NULL;
     StampChange(user, host, port); // review 2: also for a panel listing taken later (AddOrUpdateListing)
-    // whether two names reach one server cannot be told from the client: neither equal nor
-    // different addresses prove it (a server answers on several addresses - 127.0.0.1 and
-    // 127.0.0.2, its LAN and public address; a proxy hides the server's address) - so every other
-    // name is taken as maybe the same server (review of 341)
+    // whether two connections reach one server and see the same folders cannot be told from the
+    // client: neither equal nor different addresses prove it (a server answers on several
+    // addresses - 127.0.0.1 and 127.0.0.2, its LAN and public address; a proxy hides the server's
+    // address; review of 341), two accounts may share their folders (a shared home, "anonymous" and
+    // a named account of a public folder) and two ports may reach one server (a forwarded port;
+    // feature 345) - so every other connection is taken as maybe the same server
     int i;
     for (i = 0; i < ListingsOnServer.Count; i++)
     {
         CUploadListingsOnServer* server = ListingsOnServer[i];
-        if (server != exact && server->Port == port &&
-            (server->User == NULL && user == NULL ||
-             user != NULL && server->User != NULL && strcmp(server->User, user) == 0) &&
-            SalamanderGeneral->StrICmp(server->Host, host) != 0) // another user or port: another server, as before
-        {
+        if (server != exact) // 'exact' is the only entry of this connection (FindServer)
             server->InvalidateAllListings();
-        }
     }
 }
 
@@ -179,9 +183,7 @@ void CUploadListingCache::StampChange(const char* user, const char* host, unsign
     for (i = 0; i < ChangeStamps.Count; i++)
     {
         CUploadChangeStamp* stamp = ChangeStamps[i];
-        if (stamp->Port == port && SalamanderGeneral->StrICmp(stamp->Host, host) == 0 &&
-            (stamp->User == NULL && user == NULL ||
-             user != NULL && stamp->User != NULL && strcmp(stamp->User, user) == 0))
+        if (SameIdentity(stamp->User, stamp->Host, stamp->Port, user, host, port))
         {
             stamp->Time = now;
             return;
@@ -225,10 +227,9 @@ BOOL CUploadListingCache::ChangedUnderOtherName(const char* user, const char* ho
     for (i = 0; i < ChangeStamps.Count; i++)
     {
         CUploadChangeStamp* stamp = ChangeStamps[i];
-        if (stamp->Port == port && stamp->Time > listingStartTime && // changed after the listing started
-            (stamp->User == NULL && user == NULL ||
-             user != NULL && stamp->User != NULL && strcmp(stamp->User, user) == 0) &&
-            SalamanderGeneral->StrICmp(stamp->Host, host) != 0) // under another name: the panel was not refreshed
+        // changed after the listing started, under another connection (another host name, user or
+        // port - feature 345): the panel was not refreshed by it
+        if (stamp->Time > listingStartTime && !SameIdentity(stamp->User, stamp->Host, stamp->Port, user, host, port))
         {
             return TRUE;
         }
