@@ -94,6 +94,18 @@ test("Q3: the item page, its history, and a closed item in the archive", async (
   await expect(page.getByText(/close b-2 for the archive test/)).toBeVisible();
 });
 
+test("the tabs of the detail pane switch (the pane keeps its own tab)", async ({ page }) => {
+  await openApp(page, app, "/backlog/next?sel=ftp-per-server-encoding-flag");
+  const pane = page.locator("article", { has: page.getByRole("heading", { name: /encoding/i }) });
+  await expect(pane.getByRole("tab", { name: "Description" })).toHaveAttribute("aria-selected", "true");
+  for (const name of [/^Log/, /^Relations/, /^Files/, /^History/, /^Runs/, /^Description/]) {
+    await pane.getByRole("tab", { name }).click();
+    await expect(pane.getByRole("tab", { name })).toHaveAttribute("aria-selected", "true");
+  }
+  await pane.getByRole("tab", { name: /^Log/ }).click();
+  await expect(pane.getByRole("tabpanel")).toContainText(/created/);
+});
+
 test("keyboard: j selects, Enter opens, g b goes back to the backlog", async ({ page }) => {
   await openApp(page, app, "/backlog/next");
   await expect(page.locator("tbody tr").first()).toBeVisible();

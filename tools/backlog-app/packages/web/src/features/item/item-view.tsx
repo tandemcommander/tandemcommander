@@ -251,6 +251,11 @@ export function ItemView({
   onTab?: (tab: string) => void;
 }) {
   const item = useItem(slug);
+  // The item page keeps the open tab in its address (`tab` + `onTab`); the detail panes of the
+  // backlog and triage pages pass neither, so the view keeps the tab itself. (A controlled value
+  // without a handler froze the tabs on Description: clicks changed nothing.)
+  const [ownTab, setOwnTab] = useState("description");
+  const openTab = onTab ? tab || "description" : ownTab;
   if (item.isLoading) {
     return (
       <div className="flex flex-col gap-2 p-4">
@@ -338,7 +343,7 @@ export function ItemView({
         ) : null}
         <ItemActions item={data} />
       </header>
-      <Tabs value={tab || "description"} onValueChange={(value) => onTab?.(value)} defaultValue="description">
+      <Tabs value={openTab} onValueChange={(value) => (onTab ? onTab(value) : setOwnTab(value))}>
         <TabsList>
           <TabsTrigger value="description">Description</TabsTrigger>
           <TabsTrigger value="log">Log ({data.log.length})</TabsTrigger>
