@@ -4,7 +4,8 @@
 /**
  * @file End-to-end tests of user story 2 (quickstart Q4 - Q7) with the real loop and the fake claude
  * of feature 247: the loop starts from the app in its own (hidden) console window, the live view
- * shows the running item, pause / resume / stop show their pending states, a hard stop records the
+ * shows the running item, pause / resume / stop show their pending states (also for a loop started
+ * outside the app, as from a terminal), a hard stop records the
  * run as killed and the next start continues it, and closing the app during a run changes nothing
  * for the run.
  */
@@ -116,6 +117,40 @@ test("Q4/Q5: start, see the run live, pause pending, resume, stop pending, the r
   await expect(page.getByRole("row", { name: new RegExp(`closed.*${ITEM}`) })).toBeVisible({
     timeout: 20_000,
   });
+});
+
+test("Q5: a loop started outside the app is shown and controlled the same way", async ({ page }) => {
+  writePlan(plan, [{ do: "hang", seconds: 12, then: "close" }]);
+  // Started like `bin/backlog-loop.sh start --new-window` in a terminal - not through the app.
+  // The fake claude finds its plan in the environment the loop inherits.
+  process.env["FAKE_CLAUDE_PLAN"] = plan;
+  try {
+    loop(
+      "start",
+      "--new-window-hidden",
+      "--claude-cmd",
+      JSON.stringify([process.env["PYTHON"] ?? "python", join(TOOLS_DIR, "fixtures", "fake_claude.py")]),
+      "--tick",
+      "0.05",
+      "--poll",
+      "0.3",
+      "--deadline",
+      "150",
+    );
+  } finally {
+    delete process.env["FAKE_CLAUDE_PLAN"];
+  }
+  await expect.poll(() => status().run?.slug ?? null, { timeout: 30_000 }).toBe(ITEM);
+  await openApp(page, app, "/live");
+  await expect(page.getByRole("link", { name: ITEM }).first()).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Pause the loop", exact: true }).click();
+  await expect(page.getByText(/Pause pending/)).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("button", { name: "Resume the loop", exact: true }).click();
+  await expect(page.getByText(/Pause pending/)).toHaveCount(0, { timeout: 10_000 });
+  await page.getByRole("button", { name: "Stop the loop", exact: true }).click();
+  await expect(page.getByText(/Stop pending/)).toBeVisible({ timeout: 10_000 });
+  await expect.poll(() => status().live, { timeout: 60_000 }).toBe(false);
+  expect(status().run).toBeNull();
 });
 
 test("Q7: a hard stop records the run as killed; the next start continues and closes it", async ({

@@ -149,6 +149,8 @@ export function deriveLoopView(raw: RawStatus, now: number = Date.now()): LoopVi
 
   let shown: LoopShown;
   let detail: string;
+  // The order of the branches is the priority: a live loop is described by itself; without one, a
+  // run a person must look at outranks a crashed loop, which outranks a foreign lock holder.
   if (raw.live && loop) {
     // A live loop: its own state, refined by the pending control flags.
     if (raw.kill) {
@@ -180,6 +182,8 @@ export function deriveLoopView(raw: RawStatus, now: number = Date.now()): LoopVi
     shown = "stopped-for-person";
     detail = `the run of ${run.slug} cannot be continued automatically (${run.phase}${run.why ? `: ${run.why}` : ""})`;
   } else if (loop) {
+    // `loop.json` without a live process: the loop was killed (closed window, crash) before it
+    // could remove its state file.
     shown = "dead";
     detail = `the loop of pid ${loop.pid ?? "?"} ended without cleanup at about ${loop.updated ?? "?"}`;
   } else if (raw.lock && !run) {
@@ -209,6 +213,7 @@ export function deriveLoopView(raw: RawStatus, now: number = Date.now()): LoopVi
     heartbeatAge,
     pid: loop?.pid ?? null,
     started: isoLocal(loop?.started ?? null),
+    // A dead loop's last slug is history, not "the item being implemented now".
     slug: raw.live ? (loop?.slug ?? null) : null,
     trace: raw.trace,
     counts: loop?.counts ?? {},
@@ -221,7 +226,9 @@ export function deriveLoopView(raw: RawStatus, now: number = Date.now()): LoopVi
           sevenDay: windowUse(usage, "seven_day"),
         }
       : null,
+    // Only an explicit `false` warns: older loop states lack the key.
     ctrlCSafe: loop?.ctrl_c_safe !== false,
+    // A stop flag left by a loop that is gone is no pending request any more.
     flags: { pause: raw.paused, stop: raw.stop && raw.live, kill: raw.kill === true },
     lock: raw.lock
       ? {
@@ -229,6 +236,8 @@ export function deriveLoopView(raw: RawStatus, now: number = Date.now()): LoopVi
           branch: raw.lock["branch"] ?? "-",
           started: isoLocal(raw.lock["started"] ?? null) ?? "",
           host: raw.lock["host"] ?? "-",
+          // Stale only suggests the release dialog; releasing still needs the typed slug and a
+          // server check that no loop and no claude of a run is alive.
           stale: lockStarted !== null && now - lockStarted > STALE_LOCK_HOURS * 3600_000,
         }
       : null,

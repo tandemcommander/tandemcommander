@@ -38,6 +38,7 @@ import {
 } from "@backlog-app/shared";
 import type { Services } from "../services.ts";
 import { fileHash, type Base } from "../backlog/write-queue.ts";
+import { toolChangeForTray } from "../backlog/tray.ts";
 import { resolveRef } from "../repo/git.ts";
 import { join } from "node:path";
 import { param, readBody, SLUG_PATTERN } from "./common.ts";
@@ -121,8 +122,12 @@ export function backlogWriteRoutes(services: Services): Hono {
       const findings: ChangeResult["findings"] = [];
       const notices: string[] = [];
       for (const op of operations) {
-        const before = tray.snapshot();
-        const result = await tool.change(op.args, op.texts ?? {});
+        const { result, before } = await toolChangeForTray(tray, tool, op.args, op.texts ?? {}, {
+          operation: op.operation,
+          slugs: slug ? [slug] : [],
+          summary: op.summary,
+          reason: op.reason ?? null,
+        });
         findings.push(...result.findings);
         notices.push(...result.notices);
         last = tray.record({
@@ -523,8 +528,19 @@ export function backlogWriteRoutes(services: Services): Hono {
         case "set":
           op = {
             operation: "set",
-            args: ["set", slug, ...Object.entries(operation.set).map(([k, v]) => `${k}=${setValue(v)}`)],
-            texts: operation.reason ? { log: operation.reason } : {},
+            // The title is the user's text: it goes on stdin like in `/fields`, never into the
+            // arguments (review S4; contract: user text reaches the tools only as JSON on stdin).
+            args: [
+              "set",
+              slug,
+              ...Object.entries(operation.set)
+                .filter(([k]) => k !== "title")
+                .map(([k, v]) => `${k}=${setValue(v)}`),
+            ],
+            texts: {
+              ...(typeof operation.set["title"] === "string" ? { title: operation.set["title"] } : {}),
+              ...(operation.reason ? { log: operation.reason } : {}),
+            },
             summary: `${slug}: set ${Object.keys(operation.set).join(", ")}`,
             reason: operation.reason ?? null,
           };
@@ -552,7 +568,7 @@ export function backlogWriteRoutes(services: Services): Hono {
 
   app.post("/lock/release-stale", async (c) => {
     const { confirm } = await readBody(c, ConfirmRequestSchema);
-    const view = await services.loop.refresh();
+    const view = await services.loop.fresh();
     const lock = view?.lock;
     if (!lock) throw new ApiError("refused", "the run lock is free");
     if (!lock.stale)
@@ -564,7 +580,7 @@ export function backlogWriteRoutes(services: Services): Hono {
       throw new ApiError("refused", "a loop or a claude of a run is still alive - the lock is in use");
     if (confirm !== lock.slug) throw new ApiError("refused", `type '${lock.slug}' to confirm`);
     const result = await services.tool.releaseStaleLock();
-    await services.loop.refresh();
+    await services.loop.fresh();
     services.publishGate();
     return c.json({ output: result });
   });

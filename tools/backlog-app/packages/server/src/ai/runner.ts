@@ -578,7 +578,7 @@ export class AiJobRunner {
     try {
       if (AI_PROPOSING_KINDS.has(kind)) {
         // The gate is evaluated on fresh state, like the write queue does.
-        await Promise.all([this.services.loop.refresh(), this.services.repo.refresh()]);
+        await Promise.all([this.services.loop.fresh(), this.services.repo.fresh()]);
         const gate = this.services.gate();
         if (!PROPOSING_GATES.has(gate.state)) throw new ApiError("gate-closed", gate.reason, gate);
       }

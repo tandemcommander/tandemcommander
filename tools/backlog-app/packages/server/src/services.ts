@@ -89,6 +89,12 @@ export class Services {
   /** The commit of `main` the read model last saw (to reload when `main` moves). */
   private lastMain: string | null = null;
 
+  /** Pending run-end announcements (cleared at stop, so no git runs after shutdown). */
+  private readonly announcements = new Set<NodeJS.Timeout>();
+
+  /** The announcement in progress, if any (stopAndDrain waits for its git reads). */
+  private announcing: Promise<void> = Promise.resolve();
+
   /**
    * Creates and wires every service (nothing runs before {@link Services.start}).
    *
@@ -122,8 +128,9 @@ export class Services {
    */
   private announceRunEnd(id: string): void {
     // The loop writes the index line right after the run ends; give it a few seconds.
-    setTimeout(() => {
-      void this.runs
+    const timer = setTimeout(() => {
+      this.announcements.delete(timer);
+      this.announcing = this.runs
         .list()
         .then((runs) => {
           const run = runs.find((r) => r.id === id);
@@ -141,6 +148,7 @@ export class Services {
         })
         .catch(() => undefined);
     }, 4000);
+    this.announcements.add(timer);
   }
 
   /**
@@ -165,7 +173,10 @@ export class Services {
   source(): ReadRef {
     const repo = this.repo.state;
     const loop = this.loop.view;
+    // Off `main` the working tree holds a feature branch whose backlog is not the maintainer's.
     if (!repo || repo.branch !== "main") return "main";
+    // A run (lock held) or a triage may be rewriting backlog files right now: read git objects,
+    // never the files a run writes. Before the first poll (no view yet) the safe answer is `main`.
     if (!loop || loop.lock || loop.shown === "triage") return "main";
     return "worktree";
   }
@@ -191,6 +202,9 @@ export class Services {
       this.reconcile();
     };
     this.repo.onChange(onChange);
+    // A change of the working tree may be a backlog file edited outside the app: refresh the
+    // tray's outside counter (only on a change, so one extra `git status` at most per change).
+    this.repo.onChange(() => void this.tray.publishCounts());
     this.loop.onChange(onChange);
     this.repo.start();
     this.loop.start();
@@ -204,6 +218,8 @@ export class Services {
     this.loop.stop();
     this.read.stop();
     this.runs.stop();
+    for (const timer of this.announcements) clearTimeout(timer);
+    this.announcements.clear();
   }
 
   /**
@@ -215,7 +231,13 @@ export class Services {
     this.stop();
     await this.ai.stop();
     await this.queue.idle();
-    await Promise.all([this.repo.idle(), this.loop.idle(), this.read.idle()]);
+    await Promise.all([
+      this.repo.idle(),
+      this.loop.idle(),
+      this.read.idle(),
+      this.tray.idle(),
+      this.announcing,
+    ]);
   }
 
   /**

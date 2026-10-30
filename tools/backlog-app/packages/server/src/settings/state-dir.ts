@@ -11,7 +11,8 @@
  * reader never sees half a file.
  */
 
-import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { chmodSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { randomBytes } from "node:crypto";
 import type { ZodType } from "zod";
@@ -32,6 +33,42 @@ export class StateDir {
   constructor(commonDir: string) {
     this.path = join(commonDir, STATE_FOLDER);
     mkdirSync(this.path, { recursive: true });
+  }
+
+  /**
+   * Makes the folder readable and writable only by the user running the app (and SYSTEM): it holds
+   * the launcher secret, which hands out a session (security contract), and the undo files, which
+   * the app writes back into `backlog/`. Inside `.git` the folder inherits the repository's
+   * permissions, which on a data drive commonly give every signed-in user Modify (review M2).
+   *
+   * @returns True when the permissions were set; false when they could not be (no ACLs on the
+   *   drive, `icacls` missing) - the caller then must not store a secret there.
+   */
+  restrictToOwner(): boolean {
+    if (process.platform !== "win32") {
+      try {
+        chmodSync(this.path, 0o700);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    // Full System32 paths: Git for Windows puts its own tools before them on PATH.
+    const system32 = join(process.env["SystemRoot"] ?? "C:\\Windows", "System32");
+    const who = spawnSync(join(system32, "whoami.exe"), ["/user", "/fo", "csv", "/nh"], {
+      encoding: "utf8",
+      windowsHide: true,
+    });
+    const sid = /"(S-1-[\d-]+)"/.exec(who.stdout ?? "")?.[1];
+    if (who.status !== 0 || !sid) return false;
+    // Drop the inherited entries and grant only the owner and SYSTEM, on the folder and on every
+    // file already in it (/T); new files inherit (OI)(CI).
+    const icacls = spawnSync(
+      join(system32, "icacls.exe"),
+      [this.path, "/inheritance:r", "/grant:r", `*${sid}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F", "/T", "/C", "/Q"],
+      { encoding: "utf8", windowsHide: true },
+    );
+    return icacls.status === 0;
   }
 
   /**

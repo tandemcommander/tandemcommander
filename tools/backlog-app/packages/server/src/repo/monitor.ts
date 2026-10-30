@@ -107,6 +107,17 @@ export class RepoMonitor {
   }
 
   /**
+   * A state read entirely after this call (for the write gate after the edit lock was taken; a
+   * shared poll in flight may predate the lock - see `LoopMonitor.fresh`).
+   *
+   * @returns The state of a poll started after the call.
+   */
+  async fresh(): Promise<RepoState | null> {
+    await this.idle();
+    return this.refresh();
+  }
+
+  /**
    * Resolves when no poll is running.
    *
    * @returns Resolves when idle.

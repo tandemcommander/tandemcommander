@@ -111,6 +111,14 @@ export function computeGate(inputs: GateInputs): WriteGate {
       `another backlog app (pid ${loop.editLock.pid}) is changing the backlog: ${loop.editLock.purpose}`,
     );
   }
+  // A loop whose process lives but whose heartbeat stopped is shown "dead"; it may wake up and
+  // start a run, so it keeps the gate closed like a running loop (review note).
+  if (loop.live && loop.shown === "dead") {
+    return gate(
+      "loop-between-runs",
+      "the loop's process lives but has stopped answering - stop it (hard stop) to change the backlog",
+    );
+  }
   if (loop.live && LOOP_BETWEEN_RUNS.has(loop.shown)) {
     return gate(
       "loop-between-runs",

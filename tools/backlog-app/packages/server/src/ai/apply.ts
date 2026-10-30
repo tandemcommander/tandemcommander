@@ -29,6 +29,7 @@ import {
 } from "@backlog-app/shared";
 import type { Services } from "../services.ts";
 import { fileHash, type Base } from "../backlog/write-queue.ts";
+import { toolChangeForTray } from "../backlog/tray.ts";
 import { resolveRef } from "../repo/git.ts";
 import { SECTION_ARG } from "../api/backlog-write.ts";
 import { SLUG_PATTERN } from "../api/common.ts";
@@ -340,9 +341,19 @@ async function runOperations(
     const notices: string[] = [];
     let created = slug ?? "";
     for (const op of operations) {
-      const before = tray.snapshot();
       const args = typeof op.args === "function" ? op.args(created) : op.args;
-      const result = await tool.change(args, op.texts ?? {});
+      /**
+       * The summary of the operation (a new item's summary names the slug the tool chose).
+       *
+       * @returns The one-line summary.
+       */
+      const summaryNow = (): string => (typeof op.summary === "function" ? op.summary(created) : op.summary);
+      const { result, before } = await toolChangeForTray(tray, tool, args, op.texts ?? {}, {
+        operation: op.operation,
+        slugs: created ? [created] : [],
+        summary: summaryNow(),
+        reason: op.reason ?? null,
+      });
       if (op.operation === "new") created = result.slugs[0] ?? created;
       findings.push(...result.findings);
       notices.push(...result.notices);
@@ -350,7 +361,7 @@ async function runOperations(
         tray.record({
           operation: op.operation,
           slugs: result.slugs.length ? result.slugs : created ? [created] : [],
-          summary: typeof op.summary === "function" ? op.summary(created) : op.summary,
+          summary: summaryNow(),
           reason: op.reason ?? null,
           before,
           written: result.written,

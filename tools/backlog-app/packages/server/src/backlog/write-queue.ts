@@ -115,7 +115,7 @@ export class WriteQueue {
   ): Promise<T> {
     this.lock.acquire(purpose);
     try {
-      await Promise.all([this.services.loop.refresh(), this.services.repo.refresh()]);
+      await Promise.all([this.services.loop.fresh(), this.services.repo.fresh()]);
       const gate = this.services.gate();
       if (!gate.writable) throw new ApiError("gate-closed", gate.reason, gate);
       const root = this.services.ctx.repo.root;
@@ -141,8 +141,10 @@ export class WriteQueue {
       }
       return await operation();
     } finally {
+      // The lock goes first (the loop must not wait for our reading); then the answer waits until
+      // the read model shows the change, so the page's next reads are not stale.
       this.lock.release();
-      this.services.read.invalidate();
+      await this.services.read.fresh().catch(() => undefined);
       void this.services.repo.refresh().then(() => this.services.publishGate());
     }
   }

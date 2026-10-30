@@ -282,6 +282,8 @@ export class RunsService {
       return;
     }
     if (!this.live || this.live.id !== id) {
+      // A new run (the next item, or a triage before it): announce the end of the previous one
+      // and fold the new trace from its first byte.
       if (this.live) this.endLive();
       this.live = {
         id,
@@ -304,6 +306,8 @@ export class RunsService {
     const events: TraceEvent[] = [];
     for (let i = 0; i < 50; i++) {
       const read = readTraceLines(live.path, live.offset);
+      // The file is shorter than what was already read: it was truncated or replaced. Fold again
+      // from the start rather than show a state mixed from two files.
       if (read.restarted) live.state = new RunState(live.state.kind);
       for (const line of read.lines) {
         for (const event of normalizeTraceLine(line.text, line.offset, line.end, new Date().toISOString())) {
@@ -352,7 +356,9 @@ export class RunsService {
    */
   private async readProgress(live: LiveRun): Promise<void> {
     const branch = this.services.loop.view?.lock?.branch;
-    if (!branch || branch === "-" || !/^[\w.-]+$/.test(branch)) return;
+    // A feature branch is `NNN-name` (the run's spec folder has the same name); anything else,
+    // `..` included, is never joined into a path.
+    if (!branch || !/^\d{3}-[a-z0-9][a-z0-9.-]*$/.test(branch) || branch.includes("..")) return;
     try {
       // The working tree is on the run's branch; tasks.md exists only from the tasks phase on.
       const text = readFileSync(join(this.services.ctx.repo.root, "specs", branch, "tasks.md"), "utf8");
@@ -362,7 +368,9 @@ export class RunsService {
     } catch {
       live.tasks = null;
     }
-    if (live.base) {
+    // `base` comes from the loop's run record; only a plain commit hash goes to git (a value
+    // starting with `-` would be read as an option).
+    if (live.base && /^[0-9a-f]{7,64}$/.test(live.base)) {
       try {
         const out = await git(this.services.ctx.repo.root, [
           "log",
@@ -439,6 +447,9 @@ export class RunsService {
     const journal = await this.journal();
     const indexed = this.index();
     const usedRows = new Set<number>();
+    // Pair each traced run with its journal row (the journal has the branch and the note). The
+    // journal has no run id, so the first unused row of the same item (and feature) is taken; both
+    // lists are in start order, so repeated runs of one item pair up in order.
     for (const line of indexed) {
       const row = journal.find(
         (r) =>
@@ -508,7 +519,8 @@ export class RunsService {
       started,
       ended,
       durationSeconds: duration !== null && Number.isFinite(duration) ? duration : null,
-      phase: (cached?.phase as Run["phase"] | undefined) ?? (line.kind === "triage" ? "done" : "done"),
+      // Without the cache (the run was never opened) an indexed run is at least over.
+      phase: (cached?.phase as Run["phase"] | undefined) ?? "done",
       phaseTimeline: (cached?.timeline as Run["phaseTimeline"] | undefined) ?? [],
       attempts: [],
       outcome: outcomeOf(line.outcome),
@@ -601,20 +613,29 @@ export class RunsService {
       if (read.offset === offset) break;
       offset = read.offset;
     }
-    let meta: z.infer<typeof MetaSchema> | null;
-    try {
-      meta = MetaSchema.parse(JSON.parse(readFileSync(join(folder, "meta.json"), "utf8")));
-    } catch {
-      meta = null;
+    // The loop appends a run's index line only after its final `meta.json` is written
+    // (`loop.py` finish_trace). A run without one is still running (it started a moment ago and the
+    // follower has not picked it up) or was cut off: its `meta.json` may be replaced atomically
+    // at any time, and an open handle here could make that replace fail (analysis A2 §5.1). So
+    // `meta.json` is read, and the fold cached as final, only for an indexed run.
+    let meta: z.infer<typeof MetaSchema> | null = null;
+    if (line) {
+      try {
+        meta = MetaSchema.parse(JSON.parse(readFileSync(join(folder, "meta.json"), "utf8")));
+      } catch {
+        meta = null;
+      }
     }
     const cost = state.costUsd();
-    this.services.ctx.state.writeJson(`cache/runs/${id}.json`, {
-      phase: state.phase,
-      timeline: state.timeline,
-      attempts: state.attempts,
-      cost,
-      offset,
-    });
+    if (line) {
+      this.services.ctx.state.writeJson(`cache/runs/${id}.json`, {
+        phase: state.phase,
+        timeline: state.timeline,
+        attempts: state.attempts,
+        cost,
+        offset,
+      });
+    }
     return {
       ...base,
       phase: state.phase,

@@ -32,6 +32,12 @@ export interface ProcessOptions {
   env?: Record<string, string>;
   /** Kill the process tree after this many milliseconds (default: no limit). */
   timeoutMs?: number;
+  /**
+   * The process starts something that must outlive it and the app - the loop in its own console
+   * window, which Windows records as its child: a timeout or the app's shutdown ends only this
+   * process, never its descendants (review note: `taskkill /T` killed a loop being started).
+   */
+  keepDescendants?: boolean;
   /** Called with each complete stdout line as it arrives (streams, AI jobs). */
   onStdoutLine?: (line: string) => void;
 }
@@ -58,6 +64,9 @@ export interface StartedProcess {
 
 /** Process ids of the children this server started and that are still running. */
 const liveChildren = new Set<number>();
+
+/** The live children whose descendants must survive them ({@link ProcessOptions.keepDescendants}). */
+const keepDescendantsOf = new Set<number>();
 
 /** Cache of resolved executables by name. */
 const resolved = new Map<string, string>();
@@ -144,7 +153,10 @@ export function startProcess(file: string, args: readonly string[], options: Pro
     windowsHide: true,
     stdio: [options.stdin === undefined ? "ignore" : "pipe", "pipe", "pipe"],
   });
-  if (child.pid !== undefined) liveChildren.add(child.pid);
+  if (child.pid !== undefined) {
+    liveChildren.add(child.pid);
+    if (options.keepDescendants) keepDescendantsOf.add(child.pid);
+  }
 
   const done = new Promise<ProcessResult>((resolve, reject) => {
     // Decoders keep a multi-byte character that is split between two chunks intact.
@@ -182,17 +194,17 @@ export function startProcess(file: string, args: readonly string[], options: Pro
         ? undefined
         : setTimeout(() => {
             timedOut = true;
-            if (child.pid !== undefined) void killTree(child.pid);
+            if (child.pid !== undefined) void killTree(child.pid, !options.keepDescendants);
           }, options.timeoutMs);
 
     child.on("error", (error) => {
       if (timer) clearTimeout(timer);
-      if (child.pid !== undefined) liveChildren.delete(child.pid);
+      if (child.pid !== undefined) forget(child.pid);
       reject(error);
     });
     child.on("close", (code) => {
       if (timer) clearTimeout(timer);
-      if (child.pid !== undefined) liveChildren.delete(child.pid);
+      if (child.pid !== undefined) forget(child.pid);
       takeStdout(outDecoder.end());
       stderr += errDecoder.end();
       if (options.onStdoutLine && pendingLine) options.onStdoutLine(pendingLine);
@@ -230,13 +242,17 @@ export async function runProcess(
  * rule *Git tools shadow System32*).
  *
  * @param pid - The root process of the tree.
+ * @param tree - False ends only the process itself (`/T` left out).
  * @returns Resolves when taskkill has finished; failures (the process is already gone) are ignored.
  */
-export async function killTree(pid: number): Promise<void> {
+export async function killTree(pid: number, tree = true): Promise<void> {
   const systemRoot = process.env["SystemRoot"] ?? "C:\\Windows";
   const taskkill = join(systemRoot, "System32", "taskkill.exe");
   await new Promise<void>((resolve) => {
-    const child = spawn(taskkill, ["/PID", String(pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
+    const child = spawn(taskkill, ["/PID", String(pid), ...(tree ? ["/T"] : []), "/F"], {
+      windowsHide: true,
+      stdio: "ignore",
+    });
     child.on("error", () => resolve());
     child.on("close", () => resolve());
   });
@@ -248,8 +264,19 @@ export async function killTree(pid: number): Promise<void> {
  * @returns Resolves when all have been asked to end.
  */
 export async function killAllChildren(): Promise<void> {
-  await Promise.all([...liveChildren].map((pid) => killTree(pid)));
+  await Promise.all([...liveChildren].map((pid) => killTree(pid, !keepDescendantsOf.has(pid))));
   liveChildren.clear();
+  keepDescendantsOf.clear();
+}
+
+/**
+ * Drops a finished child from the bookkeeping.
+ *
+ * @param pid - Its process id.
+ */
+function forget(pid: number): void {
+  liveChildren.delete(pid);
+  keepDescendantsOf.delete(pid);
 }
 
 /**

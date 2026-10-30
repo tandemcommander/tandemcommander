@@ -30,6 +30,9 @@ export class SessionAuth {
    */
   readonly launcherSecret: string;
 
+  /** False when the secret is turned off ({@link SessionAuth.disableLauncherSecret}). */
+  private launcherEnabled = true;
+
   /** Outstanding bootstrap codes and their expiry times. */
   private readonly bootCodes = new Map<string, number>();
 
@@ -91,7 +94,15 @@ export class SessionAuth {
    * @returns True when it matches.
    */
   verifyLauncherSecret(value: string | undefined): boolean {
-    return value !== undefined && safeEqual(value, this.launcherSecret);
+    return this.launcherEnabled && value !== undefined && safeEqual(value, this.launcherSecret);
+  }
+
+  /**
+   * Turns the launcher secret off for this start: it could not be stored where only this user
+   * can read it, so no second launch may use it (a second launch then reports the port in use).
+   */
+  disableLauncherSecret(): void {
+    this.launcherEnabled = false;
   }
 
   /** Forgets expired bootstrap codes. */

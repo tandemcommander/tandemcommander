@@ -202,6 +202,8 @@ export class BacklogTool {
    * @returns Exit code and output.
    */
   private async run(globalArgs: string[], args: string[], stdin?: string) {
+    // `-X utf8`: the tool reads and prints UTF-8 whatever the console code page is (Czech
+    // titles must not turn into `?`). The arguments go as an array, never through a shell.
     const result = await runProcess(
       pythonExecutable(),
       ["-X", "utf8", BACKLOG_PY, "--root", this.root, ...globalArgs, ...args],
@@ -223,6 +225,8 @@ export class BacklogTool {
     const globalArgs = ["--json", ...(ref === "main" ? ["--ref", "main"] : [])];
     const result = await this.run(globalArgs, args);
     if (result.code !== 0 && !(allowExit1 && result.code === 1)) {
+      // A read command refuses only for an unknown slug or ref; anything else is a failure of the
+      // tool and is shown with its output, never as an empty backlog.
       if (result.stdout.trim().startsWith("refused:") || result.stderr.includes("refused:")) {
         throw new ApiError("not-found", (result.stdout + result.stderr).trim());
       }
@@ -254,6 +258,7 @@ export class BacklogTool {
       name: section.name,
       ordered: section.ordered,
       rows: section.rows.map((row): BoardRow => {
+        // Hand-written note rows keep their place in the section; they are shown, never moved.
         if ("note" in row && !("slug" in row)) return { kind: "note", note: row.note };
         const item = row as z.infer<typeof RawHeaderSchema> & {
           position?: number | null;
@@ -392,7 +397,10 @@ export class BacklogTool {
       if (result.code === 2) throw new ApiError("invalid-request", text || "usage error of backlog.py");
       throw new ApiError("tool-failed", `backlog.py ${args[0] ?? ""} failed`, text.slice(0, 4000));
     }
+    // Refused = nothing written (the tool's contract); its text goes to the page verbatim.
     if (!parsed.ok) throw new ApiError("refused", parsed.refused ?? "refused", { written: parsed.written });
+    // Exit 1 with `ok: true` means: written, but the check found problems. The change stands and is
+    // never retried; the findings are shown with it (analysis A1 §3).
     return {
       ok: true,
       slugs: parsed.slugs,

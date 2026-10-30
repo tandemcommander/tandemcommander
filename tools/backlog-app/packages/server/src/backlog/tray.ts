@@ -18,13 +18,14 @@
  */
 
 import { createHash, randomBytes } from "node:crypto";
-import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { z } from "zod";
 import { ApiError, ChangeSchema, type Change, type Tray } from "@backlog-app/shared";
 import type { ServerContext } from "../context.ts";
 import { runProcess } from "../proc/spawn.ts";
-import { statusEntries } from "../repo/git.ts";
+import type { BacklogTool, ToolChange } from "./tool.ts";
+import { GIT_TIMEOUT_MS, statusEntries } from "../repo/git.ts";
 
 /** The tray file in the state folder. */
 const TRAY_FILE = "tray.json";
@@ -45,6 +46,59 @@ function sha256(bytes: Buffer): string {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
+/**
+ * True for a `/`-separated path inside `backlog/` without empty, `.` or `..` segments and without
+ * a backslash or a drive colon (so it cannot leave the folder whatever the platform).
+ *
+ * @param path - Repository-relative path.
+ * @returns True when the path stays inside `backlog/`.
+ */
+export function isBacklogPath(path: string): boolean {
+  const parts = path.split("/");
+  return (
+    parts[0] === "backlog" &&
+    parts.length > 1 &&
+    parts.every((p) => p !== "" && p !== "." && p !== ".." && !p.includes("\\") && !p.includes(":"))
+  );
+}
+
+/**
+ * Runs one changing tool command for the tray. If the command fails after it wrote something (a
+ * crash, the time limit; a refusal writes nothing by the tool's contract), the files it changed
+ * are recorded as a change marked "failed partway", so they can be undone or committed knowingly
+ * instead of turning up as unexplained outside changes (review S3); then the error is rethrown.
+ *
+ * @param tray - The tray.
+ * @param tool - The backlog tool.
+ * @param args - The command.
+ * @param texts - The user's texts for stdin.
+ * @param failed - How to record a partial write.
+ * @returns The tool's result and the snapshot taken before (for {@link ChangeTray.record}).
+ */
+export async function toolChangeForTray(
+  tray: ChangeTray,
+  tool: BacklogTool,
+  args: string[],
+  texts: Record<string, unknown>,
+  failed: Pick<Change, "operation" | "slugs" | "summary" | "reason">,
+): Promise<{ result: ToolChange; before: Snapshot }> {
+  const before = tray.snapshot();
+  try {
+    return { result: await tool.change(args, texts), before };
+  } catch (error) {
+    const written = tray.changedSince(before);
+    if (written.length > 0) {
+      tray.record({
+        ...failed,
+        summary: `${failed.summary} (failed partway - check before committing)`,
+        before,
+        written,
+      });
+    }
+    throw error;
+  }
+}
+
 /** A snapshot of the `backlog/` folder: bytes by repository-relative path. */
 export type Snapshot = Map<string, Buffer>;
 
@@ -52,6 +106,9 @@ export type Snapshot = Map<string, Buffer>;
 export class ChangeTray {
   /** The server context. */
   private readonly ctx: ServerContext;
+
+  /** The last refresh of the counters (its `git status` may still run). */
+  private counting: Promise<void> = Promise.resolve();
 
   /**
    * Creates the tray.
@@ -91,11 +148,32 @@ export class ChangeTray {
     for (const dropped of entries.filter((c) => !kept.includes(c)))
       this.ctx.state.remove(`undo/${dropped.id}.json`);
     this.ctx.state.writeJson(TRAY_FILE, kept);
-    const outside = 0;
-    this.ctx.hub.publish("tray.changed", {
-      pending: kept.filter((c) => c.state === "pending").length,
-      outside,
-    });
+    void this.publishCounts();
+  }
+
+  /**
+   * Tells every tab the tray's counters. The outside count needs `git status`, so the event goes
+   * out once it is known; a failing git leaves it at 0 rather than holding the event back.
+   *
+   * @returns Resolves once the event is published.
+   */
+  publishCounts(): Promise<void> {
+    const counting = (async () => {
+      const outside = await this.outside().catch(() => []);
+      this.ctx.hub.publish("tray.changed", { pending: this.pending().length, outside: outside.length });
+    })();
+    // Remember the last one so a shutdown can wait for its `git status` (stopAndDrain).
+    this.counting = counting;
+    return counting;
+  }
+
+  /**
+   * Resolves once the last counter refresh finished (no `git status` of the tray runs any more).
+   *
+   * @returns Resolves when idle.
+   */
+  async idle(): Promise<void> {
+    await this.counting;
   }
 
   /**
@@ -123,6 +201,25 @@ export class ChangeTray {
   }
 
   /**
+   * The files under `backlog/` that differ from a snapshot (changed, created or deleted) - for a
+   * tool call that failed after writing, or was killed by its time limit partway (review S3): its
+   * report of written files is missing, so the folder itself is compared.
+   *
+   * @param before - The snapshot taken before the call.
+   * @returns Repository-relative paths.
+   */
+  changedSince(before: Snapshot): string[] {
+    const now = this.snapshot();
+    const changed: string[] = [];
+    for (const [path, bytes] of now) {
+      const old = before.get(path);
+      if (!old || !old.equals(bytes)) changed.push(path);
+    }
+    for (const path of before.keys()) if (!now.has(path)) changed.push(path);
+    return changed;
+  }
+
+  /**
    * Records a change after the tool wrote it.
    *
    * @param input - What happened: operation, items, one-line summary, reason, the snapshot taken
@@ -144,10 +241,15 @@ export class ChangeTray {
     written: string[];
   }): Change {
     const root = this.ctx.repo.root;
+    // Time first, so ids sort by creation; the random part keeps two changes of one millisecond
+    // apart. The id also names the undo file, so it holds only [0-9a-z-].
     const id = `${Date.now().toString(36)}-${randomBytes(3).toString("hex")}`;
     const undo: z.infer<typeof UndoFileSchema> = [];
     const files: Change["files"] = [];
-    for (const path of [...new Set(input.written)]) {
+    // Only the files the tool reports are kept, not the whole snapshot: a change touches a handful
+    // of files, the snapshot is the whole folder.
+    for (const path of [...new Set(input.written)].filter(isBacklogPath)) {
+      // No before-bytes = the change created the file; undo deletes it.
       const old = input.before.get(path) ?? null;
       let now: Buffer | null;
       try {
@@ -192,6 +294,9 @@ export class ChangeTray {
       );
     }
     const root = this.ctx.repo.root;
+    // Check every file before restoring any: an undo is all or nothing. A file whose content is not
+    // what this change left was changed since (a terminal, Claude Code, the loop) - restoring it
+    // would silently drop that later edit.
     for (const file of change.files) {
       let now: Buffer | null;
       try {
@@ -207,7 +312,21 @@ export class ChangeTray {
         );
       }
     }
-    const undo = this.ctx.state.readJson(`undo/${change.id}.json`, UndoFileSchema, []);
+    // The undo file must exist and describe exactly this change's files, each under `backlog/`:
+    // a missing or damaged file would "undo" nothing yet drop the change from the tray (review
+    // S2), and a file edited by someone else must not make the app write elsewhere (review M2).
+    const undo = this.ctx.state.readJson(`undo/${change.id}.json`, UndoFileSchema.nullable(), null);
+    const expected = new Set(change.files.map((f) => f.path));
+    if (
+      !undo ||
+      undo.length !== expected.size ||
+      undo.some((f) => !expected.has(f.path) || !isBacklogPath(f.path))
+    ) {
+      throw new ApiError(
+        "refused",
+        "the saved state of this change is missing or damaged - it cannot be undone; restore the files with git",
+      );
+    }
     for (const file of undo) {
       const target = join(root, ...file.path.split("/"));
       if (file.before === null) {
@@ -291,30 +410,73 @@ export class ChangeTray {
     const pending = entries.filter((c) => c.state === "pending");
     const outside = new Set(await this.outside());
     const extra = includeOutside.filter((p) => outside.has(p));
+    // Ticked outside paths count only when they are still outside changes now (the client may send
+    // a stale list), and nothing outside `backlog/` is ever staged by the app.
     const paths = [...new Set([...pending.flatMap((c) => c.files.map((f) => f.path)), ...extra])].filter(
-      (p) => p.startsWith("backlog/"),
+      isBacklogPath,
     );
     if (paths.length === 0) throw new ApiError("refused", "there is nothing to commit");
+    // A tray file must still hold what the app's newest change of it left: an edit made outside
+    // the app afterwards would otherwise be committed under the app's message (review note).
+    const expected = new Map<string, string | null>();
+    for (const change of pending) for (const file of change.files) expected.set(file.path, file.after);
+    for (const [path, after] of expected) {
+      let now: Buffer | null;
+      try {
+        now = readFileSync(join(root, ...path.split("/")));
+      } catch {
+        now = null;
+      }
+      if ((now ? sha256(now) : null) !== after) {
+        throw new ApiError(
+          "refused",
+          `${path} was changed outside the app after the app changed it - commit it in a terminal, or put back the app's version first`,
+        );
+      }
+    }
     // Never sweep in what someone else staged.
-    const staged = await runProcess("git", ["diff", "--cached", "--name-only"], { cwd: root });
+    const staged = await runProcess("git", ["diff", "--cached", "--name-only"], {
+      cwd: root,
+      timeoutMs: GIT_TIMEOUT_MS,
+    });
     if (staged.stdout.trim()) {
       throw new ApiError(
         "refused",
         `other files are already staged - commit or unstage them in the terminal first:\n${staged.stdout.trim()}`,
       );
     }
-    const add = await runProcess("git", ["add", "-A", "--", ...paths], { cwd: root });
-    if (add.code !== 0) throw new ApiError("refused", `git add failed: ${add.stderr.trim()}`);
-    // The message goes on stdin (`-F -`), never on the command line.
-    const commit = await runProcess("git", ["commit", "-q", "-F", "-"], {
+    // A path that is neither on disk nor known to git (created and deleted again by two pending
+    // changes) has nothing to commit, and git would refuse the whole pathspec for it.
+    const tracked = await runProcess("git", ["ls-files", "-z", "--", ...paths], {
       cwd: root,
+      timeoutMs: GIT_TIMEOUT_MS,
+    });
+    const known = new Set(tracked.stdout.split("\0").filter(Boolean));
+    const committable = paths.filter((p) => known.has(p) || existsSync(join(root, ...p.split("/"))));
+    if (committable.length === 0) throw new ApiError("refused", "there is nothing to commit");
+    paths.splice(0, paths.length, ...committable);
+    const add = await runProcess("git", ["add", "-A", "--", ...paths], {
+      cwd: root,
+      timeoutMs: GIT_TIMEOUT_MS,
+    });
+    if (add.code !== 0) throw new ApiError("refused", `git add failed: ${add.stderr.trim()}`);
+    // The message goes on stdin (`-F -`), never on the command line. The pathspec limits the
+    // commit to these paths even if something was staged between the check above and now.
+    const commit = await runProcess("git", ["commit", "-q", "-F", "-", "--", ...paths], {
+      cwd: root,
+      // Commit hooks may run here; they get twice the usual limit.
+      timeoutMs: 2 * GIT_TIMEOUT_MS,
       stdin: message.endsWith("\n") ? message : `${message}\n`,
     });
     if (commit.code !== 0) {
-      await runProcess("git", ["reset", "-q", "--", ...paths], { cwd: root });
+      // Unstage again (a failing hook, no identity): the index is left as it was, the files keep
+      // their content and the changes stay pending.
+      await runProcess("git", ["reset", "-q", "--", ...paths], { cwd: root, timeoutMs: GIT_TIMEOUT_MS });
       throw new ApiError("refused", `git commit failed: ${(commit.stderr || commit.stdout).trim()}`);
     }
-    const hash = (await runProcess("git", ["rev-parse", "HEAD"], { cwd: root })).stdout.trim();
+    const hash = (
+      await runProcess("git", ["rev-parse", "HEAD"], { cwd: root, timeoutMs: GIT_TIMEOUT_MS })
+    ).stdout.trim();
     for (const change of pending) {
       change.state = "committed";
       change.commit = hash;

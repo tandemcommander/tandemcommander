@@ -119,6 +119,24 @@ export class LoopMonitor {
   }
 
   /**
+   * A view read entirely after this call - for the write gate after the edit lock was taken.
+   * {@link LoopMonitor.refresh} returns the last view while a background poll runs, and that poll
+   * may have read `loop.json` before the lock existed: the loop could have started a run since
+   * (it sets "starting", then checks the edit lock; the app takes the lock, then reads the loop -
+   * the order is only safe when the app's read is new). Review M1.
+   *
+   * @returns The view of a poll started after the call.
+   */
+  async fresh(): Promise<LoopView | null> {
+    for (;;) {
+      await this.idle();
+      if (this.stopped) return this.current;
+      // No await between this check and refresh(): no other poll can start in between.
+      if (!this.polling) return this.refresh();
+    }
+  }
+
+  /**
    * Resolves when no poll is running.
    *
    * @returns Resolves when idle.

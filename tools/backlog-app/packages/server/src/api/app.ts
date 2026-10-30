@@ -52,7 +52,10 @@ export async function stateView(services: Services): Promise<StateView> {
     gate: services.gate(),
     loop: services.loop.view,
     run: services.runs.summary(),
-    tray: { pending: services.tray.pending().length, outside: 0 },
+    tray: {
+      pending: services.tray.pending().length,
+      outside: (await services.tray.outside().catch(() => [])).length,
+    },
     repo: {
       root: services.ctx.repo.root,
       name: basename(services.ctx.repo.root),

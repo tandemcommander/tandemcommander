@@ -13,7 +13,7 @@
 import { z } from "zod";
 import type { ClosedItem, HistoryCommit } from "@backlog-app/shared";
 import type { ServerContext } from "../context.ts";
-import { git, logEntries, showFile } from "../repo/git.ts";
+import { git, GIT_TIMEOUT_MS, logEntries, showFile } from "../repo/git.ts";
 import { runProcess } from "../proc/spawn.ts";
 
 /** The cache file of the archive. */
@@ -61,6 +61,7 @@ async function catFileBatch(root: string, specs: string[]): Promise<(string | nu
   if (specs.length === 0) return [];
   const result = await runProcess("git", ["cat-file", "--batch"], {
     cwd: root,
+    timeoutMs: 2 * GIT_TIMEOUT_MS,
     stdin: `${specs.join("\n")}\n`,
   });
   const out = Buffer.from(result.stdout, "utf8");

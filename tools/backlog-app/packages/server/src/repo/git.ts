@@ -65,12 +65,22 @@ export async function git(root: string, args: readonly string[]): Promise<string
     throw new Error("git tag is allowed only for listing");
   }
   // `-c core.quotepath=false` keeps non-ASCII paths readable instead of octal escapes.
-  const result = await runProcess("git", ["-c", "core.quotepath=false", ...args], { cwd: root });
+  const result = await runProcess("git", ["-c", "core.quotepath=false", ...args], {
+    cwd: root,
+    timeoutMs: GIT_TIMEOUT_MS,
+  });
   if (result.code !== 0) {
     throw new GitError(`git ${args.join(" ")} failed: ${result.stderr.trim()}`, result.code);
   }
   return result.stdout;
 }
+
+/**
+ * Time limit of one git command. A hanging git (a credential prompt, a locked index on a network
+ * drive) must not hang the app - above all not while it holds the edit lock, which the loop waits
+ * for as long as the app lives (review S1).
+ */
+export const GIT_TIMEOUT_MS = 60_000;
 
 /** The git locations of a repository. */
 export interface RepoPaths {

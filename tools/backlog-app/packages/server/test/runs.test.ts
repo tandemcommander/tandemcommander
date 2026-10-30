@@ -10,6 +10,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { z } from "zod";
 import type { LoopView } from "@backlog-app/shared";
 import { deriveEvents, type Observation, type WaitTracker } from "../src/events/notifications.ts";
 import { isoWeek, parseJournal } from "../src/runs/service.ts";
@@ -138,6 +139,27 @@ describe("run history", () => {
     expect(page.events.map((e) => e.kind)).toEqual(["attempt", "tool-use", "assistant-text", "result"]);
     // A path-like id is refused before anything is read.
     expect((await app.get("/api/runs/..%2F..%2Fbacklog")).status).toBe(404);
+  });
+
+  it("never reads meta.json of a run without an index line, nor caches its fold as final", async () => {
+    // A run that just started: the loop replaces its meta.json atomically while it lives, and
+    // only appends the index line after the final one (analysis A2 §5.1).
+    const dir = "20261030-090000-claude-ftp-alias";
+    const folder = join(root, ".agent-traces", dir);
+    mkdirSync(folder, { recursive: true });
+    writeFileSync(
+      join(folder, "trace.jsonl"),
+      `${JSON.stringify({ type: "backlog_loop.attempt", attempt: 1, kind: "start", reason: "-", started: "2026-10-30 09:00:00" })}\n`,
+    );
+    writeFileSync(join(folder, "meta.json"), JSON.stringify({ feature: "999", branch: "999-live-branch" }));
+    const detail = (await app.get(`/api/runs/${dir}`)).json as {
+      feature: string | null;
+      branch: string | null;
+    };
+    expect(detail.feature).toBeNull();
+    expect(detail.branch).toBeNull();
+    const cached = app.services.ctx.state.readJson(`cache/runs/${dir}.json`, z.unknown(), null);
+    expect(cached).toBeNull();
   });
 });
 

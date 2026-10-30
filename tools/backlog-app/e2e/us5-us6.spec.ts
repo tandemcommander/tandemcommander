@@ -3,7 +3,8 @@
 
 /**
  * @file End-to-end tests of user stories 5 and 6 (quickstart Q15 - Q16): an AI draft from a Czech
- * sentence fills the form and writes nothing before *Create*; a running AI job is cancelled; one
+ * sentence fills the form and writes nothing before *Create*; a question is answered with links to
+ * its items; a running AI job is cancelled; one
  * chosen item is run by the loop without changing the order; the release page offers no publish
  * action.
  */
@@ -64,6 +65,26 @@ test("Q15: an AI draft from a Czech sentence fills the form and writes nothing b
   }
 });
 
+test("Q15: a question is answered with links to the items it relies on", async ({ page }) => {
+  const answer = {
+    answer: "One small agent-doable encoding bug: **the FTP flag**.",
+    items: ["ftp-per-server-encoding-flag"],
+    runs: [],
+  };
+  const app = await startApp(fixture.root, { FAKE_CLAUDE_OUTPUT: JSON.stringify(answer) });
+  try {
+    await openApp(page, app, "/ask");
+    await page.getByLabel("Your question").fill("which encoding bugs are agent-doable and small?");
+    await page.getByRole("button", { name: "Ask Claude" }).click();
+    await expect(page.getByText("the FTP flag")).toBeVisible({ timeout: 30_000 });
+    await page.getByRole("link", { name: "ftp-per-server-encoding-flag", exact: true }).click();
+    await expect(page).toHaveURL(/\/items\/ftp-per-server-encoding-flag/);
+    expect(git(fixture.root, ["status", "--porcelain", "--", "backlog"])).toBe("");
+  } finally {
+    app.stop();
+  }
+});
+
 test("Q15: a running AI job is cancelled and nothing is written", async ({ page }) => {
   const app = await startApp(fixture.root, { FAKE_CLAUDE_MODE: "slow" });
   try {
@@ -79,7 +100,7 @@ test("Q15: a running AI job is cancelled and nothing is written", async ({ page 
   }
 });
 
-test("Q16: one chosen item is run by the loop; the order of Next is unchanged; the release page has no publish action", async ({
+test("Q16: one chosen item is run by the loop; the order of Next is unchanged; its transcript opens; the release page has no publish action", async ({
   page,
 }) => {
   const plan = join(fixture.root, "..", `${fixture.root.split(/[\\/]/).pop()}-plan.json`);
@@ -114,6 +135,14 @@ test("Q16: one chosen item is run by the loop; the order of Next is unchanged; t
         { timeout: 30_000 },
       )
       .toBe(false);
+    // The transcript of the past run: its attempt and the turn's end.
+    await page.goto(`${app.base}/runs`);
+    const row = page.getByRole("row", { name: /ftp-per-server-encoding-flag/ });
+    await expect(row.getByText("closed")).toBeVisible({ timeout: 20_000 });
+    await row.getByRole("link").first().click();
+    await expect(page.getByRole("heading", { name: /^Run \d{8}-\d{6}-claude-/ })).toBeVisible();
+    await expect(page.getByText(/^attempt 1 \(start/)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/^turn ended \(success\)/).first()).toBeVisible();
     await page.goto(`${app.base}/release`);
     await expect(page.getByRole("heading", { name: "Release readiness" })).toBeVisible();
     await expect(page.getByRole("button", { name: /publish|push|tag|release/i })).toHaveCount(0);

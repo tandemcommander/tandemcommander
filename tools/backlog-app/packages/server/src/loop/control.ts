@@ -35,12 +35,14 @@ export interface LoopCommandResult {
  * @param ctx - The server context.
  * @param args - The command and its options (validated values only - never user text).
  * @param timeoutMs - Limit for the command.
+ * @param keepDescendants - The command starts the loop, which must outlive it.
  * @returns Exit code and output.
  */
 async function loopCommand(
   ctx: ServerContext,
   args: string[],
   timeoutMs = 30_000,
+  keepDescendants = false,
 ): Promise<LoopCommandResult> {
   const result = await runProcess(
     pythonExecutable(),
@@ -48,6 +50,7 @@ async function loopCommand(
     {
       cwd: ctx.repo.root,
       timeoutMs,
+      keepDescendants,
     },
   );
   return { code: result.code, output: `${result.stdout}${result.stderr}`.trim() };
@@ -99,14 +102,17 @@ export class LoopControl {
    * @throws ApiError `busy` when a loop lives, `refused` when the loop refused.
    */
   async start(options: LoopStartOptions & { item?: string }): Promise<LoopCommandResult> {
-    const view = await this.monitor.refresh();
+    const view = await this.monitor.fresh();
     if (view?.live) throw new ApiError("busy", "a loop is already running - pause, stop or attach to it");
+    // The loop re-launches itself in a new console window as a child of this command; it must
+    // survive this command's timeout and the app's shutdown (keepDescendants).
     const result = await loopCommand(
       this.ctx,
       ["start", "--new-window", ...startArguments(options), ...this.ctx.loopTestArgs],
       40_000,
+      true,
     );
-    await this.monitor.refresh();
+    await this.monitor.fresh();
     if (result.code !== 0) throw new ApiError("refused", result.output || "the loop did not start");
     return result;
   }

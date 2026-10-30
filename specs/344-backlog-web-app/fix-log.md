@@ -189,3 +189,63 @@ and the run lock were never touched).
   from Enter to the filtered rows 176-362 ms.
 - Note: TanStack Router stores a search value with quotes JSON-escaped in the address (deep links
   work; only the raw address text differs).
+
+## Polish: documentation and the inline-comment review (T012, T126-T128, T132)
+
+- T012 had been marked done without `tools/backlog-app/README.md` existing - found while writing
+  the polish documentation, now written (purpose, run, develop, test, architecture on one page,
+  rules, dependencies with licences read from the installed packages: 49 MIT, 3 Apache-2.0, 1 ISC,
+  1 BSD-3-Clause (lint only), 1 MPL-2.0 (axe, accessibility tests only)).
+- T126-T128: the 242 and 247 CLI contracts carry amendment notes pointing to this feature's
+  additions; the `tandem-backlog` skill uses the new commands (body, step, decide, reply, texts on
+  stdin) and explains the app's edit lock and `backlog(app):` commits; `CLAUDE.md` and
+  `architecture/12-project-reference.md` name the app. The `--help` of both launchers already
+  listed the new commands.
+- T132 `npm run check`: typecheck, lint with the documentation rules, format, 248 unit tests - pass.
+- T132 inline comments, measured per file (code lines per inline comment): `backlog/tool.ts` 66,
+  `runs/service.ts` 75, `loop/view.ts` 47, `services.ts` 50, `backlog/tray.ts` 33,
+  `backlog/read-model.ts` 31 were thin; comments added at the decisions (exit 1 written-with-
+  findings vs refused, all-or-nothing undo check, ticked outside paths revalidated, unstage on a
+  failed commit, branch priority of the loop view, stale lock, read source rule, coalesced
+  reloads, degraded mode, journal pairing, truncated trace refold).
+- Defects found by reading for the comments, fixed:
+  - `runs/service.ts` `detail()` read `meta.json` of any run that was not the followed live run -
+    also a run that started a moment ago (before the 1 s follower picked it up), whose `meta.json`
+    the loop replaces atomically (A2 §5.1 hazard), and cached that unfinished fold as final. Now
+    `meta.json` is read and the cache written only for a run with an index line (the loop appends
+    it after the final `meta.json`, `loop.py` `finish_trace`). Test added; negative control: the
+    test fails on the old code.
+  - The tray's `outside` counter in `tray.changed` and the state view was a constant 0; it is now
+    counted from `git status` and refreshed on every repository change.
+  - Two timers outlived `stopAndDrain` (the run-end announcement, 4 s, and the tray counter's
+    `git status`) - the class of leftover process that made fixture cleanup fail with EPERM
+    earlier; both are now cleared or awaited.
+  - `live.base` from the run record went to `git log base..branch` unchecked; only a hex hash
+    passes now.
+
+## Quickstart scenarios Q1-Q22 (T133)
+
+| # | How driven | Result |
+|---|---|---|
+| Q1 | Fixture e2e (`us1-browse`), and on a clone of the real repository (`main` at f7faf9ae): the app's `/api/board` against `backlog.py list --json` | PASS - 257 items in 7 sections, same order, the 11 header fields and relations equal. The only difference: `position` is null in the unordered sections (Inbox, Parked, Rejected) where `list` numbers the rows - by design, now written into `contracts/backlog-cli-additions.md` |
+| Q2 | e2e `us1-browse` (filter in the address, new tab); SC-005 on 508 items | PASS - exact rows, deep link; API 3-23 ms, browser 176-362 ms |
+| Q3 | e2e `us1-browse` | PASS |
+| Q4 | e2e `us2-loop` (real loop, fake claude, hidden console window) | PASS - live view within the 15 s test bound; SC-004 below |
+| Q5 | e2e `us2-loop`: pause/resume/stop from the app on a loop the app started, and (added in T133) on a loop started outside the app with `loop.py start` | PASS |
+| Q6 | e2e `us2-loop` (app stopped during a run, new app) | PASS |
+| Q7 | e2e `us2-loop` (typed hard stop, `killed`, next start continues) | PASS |
+| Q8 | e2e `us3-order` (drag, Alt+Down, triage, block/unblock) + API test against the tool on a second copy | PASS - byte-equal files, `check` 0, no item log lines from reorders |
+| Q9 | e2e `us3-order` (lock held) + API tests (lock, not on `main`) | PASS |
+| Q10 | API test `write-path` (stale board revision -> 409 `changed-underneath`, nothing written) | PASS |
+| Q11 | e2e `us3-order` (tray commit, prefix, only `backlog/`) + `commitTrayForLoop` before start (us2) | PASS |
+| Q12 | e2e (Ctrl+Z) + API test (undo refused after an outside edit) | PASS |
+| Q13 | e2e `us4-record` + API test (20,000 characters, shell characters, canary file absent) | PASS - texts go only through stdin by construction (`--input-json -`), so no command line can carry them |
+| Q14 | e2e `us4-record` | PASS |
+| Q15 | e2e `us5-us6`: draft from a Czech sentence, cancel, and (added in T133) a question answered with item links | PASS (fake claude: the real model's answer quality is not tested) |
+| Q16 | e2e `us5-us6`: one chosen item, order unchanged, (added in T133) the run's transcript opened; bulk with 2 items in `us3-order` (the same per-item path as 5) | PASS |
+| Q17 | 17 security tests + 3 mutants; by hand against the app on the clone: no token 401, foreign Origin 403, used start code 401, foreign Host 421 | PASS |
+| Q18 | e2e `soak` (20 runs) | PASS |
+| Q19 | e2e `a11y` (axe WCAG 2.2 AA, both themes, 15 screens, 900 px) + keyboard journeys of US1 and US3 | PASS |
+| Q20 | `npm run lint` with the jsdoc/tsdoc rules (TypeDoc's `docs:check` was dropped: its negative control did not fail, see above) | PASS |
+| Q21 | `bin/start-backlog-app.sh` | PASS - 17.8 s first, 1.0 s later |
+| Q22 | Not driven: needs the real repository and a real loop night | PERSON STEP for the maintainer |

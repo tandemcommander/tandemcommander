@@ -221,12 +221,19 @@ async function main(): Promise<void> {
     });
     vite = viteServer.middlewares;
   }
+  // The launcher secret hands out sessions: it is stored only once the state folder is readable
+  // by this user alone (review M2); otherwise it is turned off and not written.
+  const privateState = state.restrictToOwner();
+  if (!privateState) {
+    auth.disableLauncherSecret();
+    say("note: the app's state folder could not be made private - a second start cannot reuse this one");
+  }
   state.writeJson("instance.json", {
     pid: process.pid,
     port,
     started: new Date().toISOString(),
     repoRoot: repo.root,
-    launcherSecret: auth.launcherSecret,
+    launcherSecret: privateState ? auth.launcherSecret : "",
   });
   services.start();
 

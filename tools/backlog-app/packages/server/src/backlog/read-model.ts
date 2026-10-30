@@ -146,6 +146,24 @@ export class ReadModel {
     while (this.loading) await this.loading.catch(() => undefined);
   }
 
+  /**
+   * Loads anew now and resolves with a snapshot read after the call - for the end of the app's
+   * own change, so its answer (and every read after it) already shows the change. Without it a
+   * page that reloads the board on the answer gets the previous board and revision, and its next
+   * change is refused as `changed-underneath` (found by the e2e test of Q11/Q12: undo, then
+   * reorder at once).
+   *
+   * @returns The new snapshot.
+   */
+  async fresh(): Promise<Snapshot> {
+    // The debounced reload this replaces would only repeat the work.
+    if (this.debounce) clearTimeout(this.debounce);
+    this.debounce = null;
+    // A load in flight may have started before the change: wait for it, then load again.
+    await this.idle();
+    return this.reload();
+  }
+
   /** Marks the data stale and reloads soon (after the debounce). */
   invalidate(): void {
     if (this.stopped) return;
@@ -188,6 +206,9 @@ export class ReadModel {
    */
   async reload(): Promise<Snapshot> {
     if (this.loading) {
+      // The load in flight may have started before the change that asked for this reload: share
+      // it now, and load once more when it ends. Many requests during one load cost one more load,
+      // not one each. (Writes never depend on this snapshot: their revision check hashes the files.)
       this.reloadAgain = true;
       return this.loading;
     }
@@ -230,6 +251,8 @@ export class ReadModel {
       }
       return snapshot;
     } catch (error) {
+      // Degraded mode: keep showing the last good snapshot rather than an empty backlog; the write
+      // gate is `degraded` (read-only) while `failure` is set.
       this.failure = error instanceof Error ? error.message : String(error);
       if (this.current) return this.current;
       throw error;
