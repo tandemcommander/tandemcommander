@@ -58,7 +58,8 @@ const DOT: Record<string, string> = {
 export function useLoopCommand(command: "pause" | "resume" | "stop") {
   return useMutation({
     mutationFn: () =>
-      apiPost<{ output: string }>(`/api/loop/${command}`, command === "resume" ? { commitTray: true } : {}),
+      // Resume commits the tray as the setting *Auto-commit before loop* says (server side).
+      apiPost<{ output: string }>(`/api/loop/${command}`, {}),
     onSuccess: (answer) => toast.success(answer.output || `${command} sent`),
     onError: (error) => toast.error(error instanceof ApiFailure ? error.message : String(error)),
   });

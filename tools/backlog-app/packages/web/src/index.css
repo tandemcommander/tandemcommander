@@ -255,3 +255,11 @@
     border-radius: 2px;
   }
 }
+
+/* Setting *Density* (settings page): `compact` is the tables' own padding; `comfortable` gives
+   every table row more height. Outside any layer, so it wins over the utility classes. */
+[data-density="comfortable"] table td,
+[data-density="comfortable"] table th {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+}

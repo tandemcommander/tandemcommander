@@ -125,6 +125,13 @@ export function BacklogPage() {
   const legend = useLegend();
   const [saving, setSaving] = useState(false);
   const [marked, setMarked] = useState<ReadonlySet<string>>(new Set());
+  // Marks belong to the rows on screen: another section drops them (the page component stays
+  // mounted across sections, and a bulk change would otherwise cover rows not shown - review).
+  const [markedIn, setMarkedIn] = useState(sectionParam);
+  if (markedIn !== sectionParam) {
+    setMarkedIn(sectionParam);
+    setMarked(new Set());
+  }
   const access = useWriteAccess();
   /**
    * Toggles a row's bulk mark.
@@ -349,7 +356,8 @@ export function BacklogPage() {
               <XIcon />
             </Button>
           </div>
-          <ItemView slug={sel} compact words={words} />
+          {/* Keyed by the item: an open menu or dialog of the previous item never acts on this one. */}
+          <ItemView key={sel} slug={sel} compact words={words} />
         </aside>
       ) : null}
       <SaveViewDialog

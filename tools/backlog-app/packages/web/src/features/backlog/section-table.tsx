@@ -14,6 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type OnChangeFn,
   type SortingState,
 } from "@tanstack/react-table";
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from "lucide-react";
@@ -62,6 +63,10 @@ export interface SectionTableProps {
   onToggleMark?: (slug: string) => void;
   /** Wraps a table row element (sortable rows of user story 3). */
   wrapRow?: (row: ItemRowView, element: ReactNode) => ReactNode;
+  /** The column sort, when the caller keeps it (with {@link SectionTableProps.onSortingChange}). */
+  sorting?: SortingState;
+  /** Called when the column sort changes; required together with `sorting`. */
+  onSortingChange?: OnChangeFn<SortingState>;
 }
 
 /**
@@ -186,7 +191,11 @@ export function SectionTable(props: SectionTableProps) {
     marked,
     onToggleMark,
   } = props;
-  const [sorting, setSorting] = useState<SortingState>([]);
+  // The reorderable section keeps the sort itself (it must stop dragging while rows are sorted);
+  // every other table keeps it here.
+  const [ownSorting, setOwnSorting] = useState<SortingState>([]);
+  const sorting = props.sorting ?? ownSorting;
+  const setSorting = props.onSortingChange ?? setOwnSorting;
   const visible = SECTION_COLUMNS[name];
   const columns = useMemo(
     () => columnsOf(snippets, words, nextUp, skipped).filter((c) => visible.includes(c.id!)),

@@ -87,6 +87,14 @@ export function NewItemPage() {
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [placeIn, setPlaceIn] = useState<SectionName | "">("");
   const [position, setPosition] = useState("");
+  // The page stays mounted when only its address changes (`/new?from=a` -> `/new`, the "New item"
+  // button): take over the new prefill instead of keeping the previous one (review).
+  const [prefillOf, setPrefillOf] = useState(`${typeParam}|${from}`);
+  if (prefillOf !== `${typeParam}|${from}`) {
+    setPrefillOf(`${typeParam}|${from}`);
+    setType(typeParam || "bug");
+    setRelated(from ?? "");
+  }
   const { mutation, problem } = useChange((result) => {
     // The draft is no longer needed once the item exists.
     setTitle("");

@@ -17,8 +17,6 @@ const LIST_SHORTCUTS: { keys: string; label: string }[] = [
   { keys: "Esc", label: "Close the pane or dialog" },
   { keys: "Alt+↑ / Alt+↓", label: "Move the selected item one row (ordered sections)" },
   { keys: "Alt+Shift+↑ / ↓", label: "Move the selected item to the top / bottom" },
-  { keys: "m", label: "Move the selected item to…" },
-  { keys: "b / u", label: "Block / unblock the selected item" },
   { keys: "x", label: "Select the row (bulk changes)" },
   { keys: "Ctrl+Z", label: "Undo the last uncommitted change" },
   { keys: "Ctrl+Enter", label: "Submit the dialog" },

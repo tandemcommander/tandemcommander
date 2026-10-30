@@ -70,7 +70,9 @@ export function CommandPalette({
   const go = (to: string): void => {
     onOpenChange(false);
     setSearch("");
-    void navigate({ to });
+    // An address with a search part (`/backlog/all?q=...`, a saved view) goes as `href`: as `to`
+    // the router would take the whole text for a path.
+    void navigate({ href: to });
   };
 
   return (

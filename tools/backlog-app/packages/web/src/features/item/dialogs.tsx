@@ -115,7 +115,11 @@ function FormDialog({
         <form
           onSubmit={submit}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submit(e);
+            // requestSubmit runs the form's own checks (a required reason) like the button does.
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+              e.preventDefault();
+              e.currentTarget.requestSubmit();
+            }
           }}
           className="flex flex-col gap-3"
         >

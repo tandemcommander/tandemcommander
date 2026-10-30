@@ -31,12 +31,49 @@ export interface Shortcut {
 function isTextField(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
+  // A checkbox or radio (the row marks) takes no typing: the page's keys keep working after one
+  // was clicked.
+  if (target instanceof HTMLInputElement && ["checkbox", "radio", "button", "submit"].includes(target.type)) {
+    return false;
+  }
   return (
     tag === "INPUT" ||
     tag === "TEXTAREA" ||
     tag === "SELECT" ||
     target.isContentEditable ||
     target.closest(".cm-editor") !== null
+  );
+}
+
+/**
+ * Whether the focus is inside a menu, a dialog, a list box or the command palette: their keys
+ * (arrows, Escape, Enter, letters for type-ahead) belong to them, never to the page behind -
+ * otherwise an arrow in an open "More actions" menu also moved the backlog selection, and the
+ * menu then acted on another item.
+ *
+ * @param target - The event target.
+ * @returns True inside such a widget.
+ */
+function inWidget(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element &&
+    target.closest('[role="dialog"],[role="alertdialog"],[role="menu"],[role="listbox"],[cmdk-root]') !== null
+  );
+}
+
+/**
+ * Whether Enter or Space on this target is the target's own action (a focused button, link,
+ * tab, checkbox): then the page must not take the key.
+ *
+ * @param target - The event target.
+ * @returns True for such elements.
+ */
+function isActivatable(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element &&
+    target.closest(
+      'button,a[href],[role="button"],[role="tab"],[role="checkbox"],[role="menuitem"],summary',
+    ) !== null
   );
 }
 
@@ -74,7 +111,9 @@ export function useShortcuts(shortcuts: Shortcut[], enabled = true): void {
      */
     const onKey = (event: KeyboardEvent): void => {
       if (event.repeat && !event.altKey) return;
-      const field = isTextField(event.target);
+      // A widget (Radix menu, dialog, select) already handled the key.
+      if (event.defaultPrevented) return;
+      const field = isTextField(event.target) || inWidget(event.target);
       const key = keyText(event);
       if (pendingG) {
         pendingG = false;
@@ -94,6 +133,7 @@ export function useShortcuts(shortcuts: Shortcut[], enabled = true): void {
       const match = shortcuts.find((s) => s.keys === key);
       if (!match) return;
       if (field && !match.inFields) return;
+      if ((key === "Enter" || key === " ") && isActivatable(event.target)) return;
       event.preventDefault();
       match.run(event);
     };

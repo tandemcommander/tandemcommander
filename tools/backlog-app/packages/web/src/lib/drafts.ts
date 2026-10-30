@@ -51,6 +51,14 @@ function writeDraft(key: string, value: string | null): void {
  */
 export function useDraft(key: string, initial: string): [string, (value: string) => void, () => void] {
   const [value, setValue] = useState(() => readDraft(key) ?? initial);
+  // Another key (the section editor's section select, another item) is another draft: load it in
+  // the same render. Without this the previous field's text stayed in the editor and was saved
+  // into the newly chosen field (review).
+  const [keyOf, setKeyOf] = useState(key);
+  if (keyOf !== key) {
+    setKeyOf(key);
+    setValue(readDraft(key) ?? initial);
+  }
   useEffect(() => {
     writeDraft(key, value === initial || value === "" ? null : value);
   }, [key, value, initial]);

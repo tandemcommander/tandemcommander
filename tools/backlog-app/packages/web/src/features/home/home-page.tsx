@@ -8,6 +8,7 @@
  */
 
 import { Link } from "@tanstack/react-router";
+import { AppLink } from "@/components/app-link.tsx";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRightIcon, BellIcon } from "lucide-react";
 import type { ItemRowView, NotificationEvent } from "@backlog-app/shared";
@@ -45,9 +46,9 @@ function EventLine({ event }: { /** The event. */ event: NotificationEvent }) {
   return (
     <li className={`border-l-4 py-1 pl-2 text-sm ${TONE[event.severity]}`}>
       {event.link ? (
-        <a href={event.link} className="block hover:bg-accent/40">
+        <AppLink href={event.link} className="block hover:bg-accent/40">
           {body}
-        </a>
+        </AppLink>
       ) : (
         body
       )}

@@ -39,6 +39,9 @@ export function TriagePage() {
   const [skipped, setSkipped] = useState<string[]>([]);
   const [reasonKind, setReasonKind] = useState<"park" | "reject" | null>(null);
   const ai = useAiJob();
+  // The item the AI check was started for: its proposal is shown (and applied) only for that item,
+  // never for the next one after a place or a skip (review).
+  const [aiFor, setAiFor] = useState<string | null>(null);
   const { mutation, problem } = useChange();
   const inbox = useMemo(
     () =>
@@ -158,7 +161,7 @@ export function TriagePage() {
     );
   }
   const proposal =
-    ai.job?.state === "done"
+    ai.job?.state === "done" && aiFor === current.slug
       ? (ai.job.proposal as {
           verdict?: string;
           section?: SectionName;
@@ -223,11 +226,14 @@ export function TriagePage() {
         <Button
           variant="secondary"
           disabled={ai.starting || ai.job?.state === "running"}
-          onClick={() => ai.start("triage-check", { slug: current.slug })}
+          onClick={() => {
+            setAiFor(current.slug);
+            ai.start("triage-check", { slug: current.slug });
+          }}
         >
           Check with AI
         </Button>
-        {ai.job ? <JobCard job={ai.job} onCancel={ai.cancel} /> : null}
+        {ai.job && aiFor === current.slug ? <JobCard job={ai.job} onCancel={ai.cancel} /> : null}
         {proposal ? (
           <Card className="flex flex-col gap-2 p-3 text-sm">
             <div className="font-medium">AI: {proposal.verdict ?? "?"}</div>

@@ -11,7 +11,7 @@
  */
 
 import { createParser, type EventSourceMessage } from "eventsource-parser";
-import { currentToken } from "./api.ts";
+import { currentToken, reportSessionLost } from "./api.ts";
 
 /** One received event. */
 export interface StreamEvent {
@@ -54,6 +54,13 @@ export function openStream(path: string, options: StreamOptions): () => void {
     if (token) headers["Authorization"] = `Bearer ${token}`;
     if (lastId) headers["Last-Event-ID"] = lastId;
     const answer = await fetch(path, { headers, signal: controller.signal });
+    // A refused token means the app was restarted: say so (the page shows how to get back in)
+    // and stop - reconnecting with the same token can never succeed (review).
+    if (answer.status === 401) {
+      closed = true;
+      reportSessionLost();
+      return;
+    }
     if (!answer.ok || !answer.body) throw new Error(`stream ${path}: ${answer.status}`);
     attempt = 0;
     options.onConnection?.(true);

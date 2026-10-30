@@ -327,9 +327,14 @@ export function ItemView({
           </Field>
           {data.feature ? (
             <Field label="Feature">
-              <a href={`/features/${data.feature}`} className="text-primary hover:underline">
+              <Link
+                to="/features/$nnn"
+                params={{ nnn: data.feature }}
+                search={{ file: "" }}
+                className="text-primary hover:underline"
+              >
                 {data.feature}
-              </a>
+              </Link>
             </Field>
           ) : null}
           <Field label="Run eligibility">

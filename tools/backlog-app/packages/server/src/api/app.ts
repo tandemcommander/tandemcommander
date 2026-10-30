@@ -163,16 +163,28 @@ export function createApi(services: Services): Hono {
     return c.json({ view, logTail });
   });
 
+  /**
+   * Whether the tray is committed before the loop starts or resumes: the request's explicit
+   * choice (the start dialog's checkbox), else the setting *Auto-commit before loop* - `never`
+   * leaves the tray alone (the loop then waits on the dirty tree), `ask` and `always` commit (the
+   * dialog is where `ask` asks).
+   *
+   * @param explicit - The request's `commitTray`, if given.
+   * @returns True to commit.
+   */
+  const commitBeforeLoop = (explicit: boolean | undefined): boolean =>
+    explicit ?? services.settings.settings().autoCommitBeforeLoop !== "never";
+
   app.post("/loop/start", async (c) => {
     const options = await readBody(c, LoopStartOptionsSchema);
     // The loop starts only on a clean tree: commit the app's own changes first (research R11).
-    if (options.commitTray !== false) await services.commitTrayForLoop();
+    if (commitBeforeLoop(options.commitTray)) await services.commitTrayForLoop();
     return c.json(await services.loopControl.start(options));
   });
   // One chosen item (FR-018): a single loop run of it in a new window; the order is not changed.
   app.post("/loop/run-item", async (c) => {
     const body = await readBody(c, RunItemRequestSchema);
-    if (body.commitTray !== false) await services.commitTrayForLoop();
+    if (commitBeforeLoop(body.commitTray)) await services.commitTrayForLoop();
     return c.json(
       await services.loopControl.start({ item: body.slug, ...(body.model ? { model: body.model } : {}) }),
     );
@@ -180,7 +192,7 @@ export function createApi(services: Services): Hono {
   app.post("/loop/pause", async (c) => c.json(await services.loopControl.pause()));
   app.post("/loop/resume", async (c) => {
     const body = (await c.req.json<{ commitTray?: boolean }>().catch(() => ({}))) as { commitTray?: boolean };
-    if (body.commitTray !== false) await services.commitTrayForLoop();
+    if (commitBeforeLoop(body.commitTray)) await services.commitTrayForLoop();
     return c.json(await services.loopControl.resume());
   });
   app.post("/loop/stop", async (c) => c.json(await services.loopControl.stop()));
@@ -199,7 +211,8 @@ export function createApi(services: Services): Hono {
     c.json({ views: services.settings.saveView(await readBody(c, SavedViewSchema)) }),
   );
   app.delete("/views/:name", (c) =>
-    c.json({ views: services.settings.deleteView(decodeURIComponent(c.req.param("name"))) }),
+    // Hono already decodes the parameter; decoding again broke names with `%` (review).
+    c.json({ views: services.settings.deleteView(c.req.param("name")) }),
   );
 
   return app;

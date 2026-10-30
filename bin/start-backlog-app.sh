@@ -78,6 +78,12 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# --root is read relative to the caller's folder: resolve it before the cd into the app below.
+if ! root="$(cd "$root" 2>/dev/null && pwd)"; then
+    echo "--root: no such folder" >&2
+    exit 2
+fi
+
 if [ -n "$port" ]; then
     case "$port" in
         '' | *[!0-9]*)

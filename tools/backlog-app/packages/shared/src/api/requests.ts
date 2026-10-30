@@ -47,7 +47,8 @@ export const SetFieldsRequestSchema = z.object({
   /** Revisions of the view. */
   base: BaseSchema,
   /** New values; lists as arrays of slugs, severity as a number. */
-  set: z.record(z.enum(SETTABLE_FIELDS), z.union([z.string(), z.number(), z.array(SlugSchema)])),
+  // partialRecord: only the fields being changed (a z.record over an enum requires every key).
+  set: z.partialRecord(z.enum(SETTABLE_FIELDS), z.union([z.string(), z.number(), z.array(SlugSchema)])),
   /** Why (becomes the log line). */
   reason: OneLine.optional(),
   /** Position in the new section when the change moves the row. */
@@ -249,7 +250,7 @@ export const BulkRequestSchema = z.object({
     z.object({ kind: z.literal("move"), section: SectionNameSchema, reason: OneLine.optional() }),
     z.object({
       kind: z.literal("set"),
-      set: z.record(z.enum(SETTABLE_FIELDS), z.union([z.string(), z.number()])),
+      set: z.partialRecord(z.enum(SETTABLE_FIELDS), z.union([z.string(), z.number()])),
       reason: OneLine.optional(),
     }),
   ]),

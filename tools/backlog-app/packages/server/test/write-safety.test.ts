@@ -132,6 +132,46 @@ describe("write path protections", () => {
     expect(order).toEqual(["first started", "first ended", "second started"]);
   });
 
+  it("refuses a bulk change on a stale view before writing anything", async () => {
+    const before = readFileSync(join(root, "backlog", "BACKLOG.md"), "utf8");
+    const answer = await app.post("/api/bulk", {
+      base: { board: "0".repeat(64) },
+      slugs: [ITEM, OTHER],
+      operation: { kind: "set", set: { severity: 3 } },
+    });
+    expect(answer.status).toBe(409);
+    expect(codeOf(answer)).toBe("changed-underneath");
+    expect(readFileSync(join(root, "backlog", "BACKLOG.md"), "utf8")).toBe(before);
+    expect(app.services.tray.pending()).toHaveLength(0);
+  });
+
+  it("changes one header field (only the changed fields are sent)", async () => {
+    // A z.record over the field enum required all nine keys: every real field edit got 400.
+    const answer = await app.post(`/api/items/${ITEM}/fields`, { base: {}, set: { severity: 2 } });
+    expect(answer.status, JSON.stringify(answer.json)).toBe(200);
+    expect(readFileSync(join(root, "backlog", "items", ITEM, "desc.md"), "utf8")).toMatch(/^severity: 2$/m);
+  });
+
+  it("deletes a saved view whose name contains a percent sign", async () => {
+    await app.post("/api/views", { name: "50% done", url: "/backlog/all?q=x", pinned: false });
+    const answer = await app.api.request(`/api/views/${encodeURIComponent("50% done")}`, {
+      method: "DELETE",
+    });
+    expect(answer.status).toBe(200);
+    const views = (await answer.json()) as { views: { name: string }[] };
+    expect(views.views.map((v) => v.name)).not.toContain("50% done");
+  });
+
+  it("leaves the tray uncommitted before a resume when the setting says never", async () => {
+    await log(ITEM, "a note");
+    app.services.settings.saveSettings({
+      ...app.services.settings.settings(),
+      autoCommitBeforeLoop: "never",
+    });
+    await app.post("/api/loop/resume", {});
+    expect(app.services.tray.pending()).toHaveLength(1);
+  });
+
   it("refuses a change based on a stale item revision and writes nothing", async () => {
     const desc = join(root, "backlog", "items", ITEM, "desc.md");
     const before = readFileSync(desc, "utf8");

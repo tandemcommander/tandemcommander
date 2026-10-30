@@ -314,3 +314,53 @@ not in the repository), each on a fixture repository with the real loop and the 
   script lost events by racing `reader.read()` against a timer - 1 of 40 seen; fixed before these
   numbers. The comparison with the corrected "until this or a later count is shown" metric was not
   repeated for the old interval: stopped with the rest.)
+
+## After the merge: tabs of the detail pane, code review of the whole app (2026-10-30)
+
+The maintainer found the tabs of the item detail on the backlog page dead after the merge:
+`ItemView` held the tab as a controlled Radix value and the backlog and triage panes gave no
+handler. Fixed (the view keeps its own tab without one); e2e test fails without the fix.
+
+Then, on the maintainer's request, a code review of the whole app without long probes: two
+independent reviewers (UI wiring; client-server contract) and a pass over the launcher.
+
+Confirmed and fixed:
+- **Field edits always failed (400)**: `z.record(z.enum(fields), ...)` is exhaustive in zod 4 - every
+  key required - so "Edit fields", triage's severity keys and bulk "Set a field" were refused for
+  any real (partial) change. Found by a new bulk test failing with 400 for the wrong reason; now
+  `z.partialRecord`. No earlier test sent a partial `set`.
+- Section editor: switching the section kept the previous section's text and saved it into the
+  new one (`useDraft` loaded only once) - now reloads on a key change.
+- Page shortcuts fired inside open menus and dialogs and took Enter from focused buttons (an arrow
+  in "More actions" moved the backlog selection, so the menu acted on another item) - widgets and
+  `defaultPrevented` keys are left alone; checkboxes no longer swallow the page keys; the pane is
+  keyed by the item.
+- Reordering worked while a column sort was active and saved an order never shown - disabled
+  with a note until the sort is cleared.
+- Triage showed (and applied) the previous item's AI proposal - tied to the item it was asked for.
+- Bulk "Set a field" kept the previous field's value - reset on a field change.
+- Search values were JSON-parsed by the router: `344` and `true` were dropped, a quoted phrase lost
+  its quotes - plain text parse/stringify; palette entries navigate by `href`.
+- The Density setting did nothing - applied to every table.
+- "Auto-commit before loop" was never read - the server follows it when the request does not say.
+- A view named with `%` could not be deleted (decoded twice).
+- A bulk change ignored the view's board revision - checked with the first item.
+- After a run ended, Home kept "Live run of the auto-triage:" - `{id: null}` is stored as no run.
+- Binary or large feature files showed an empty pane; text files rendered as Markdown - a note,
+  and plain text for non-Markdown files.
+- Release page said "no unreleased section" when the section was empty - names the empty section.
+- Check, archive, release and feature views did not refresh on backlog changes - invalidated on
+  `board.changed`.
+- A refused token on the event stream showed "connection lost - retrying" forever - reported as the
+  lost session (the restart page), no reconnect.
+- The loop page loaded forever when the loop's status could not be read - says so.
+- Marks survived a section change; the new-item form kept an old prefill - reset.
+- Plain `<a href>` in-app links reloaded the page - `Link` / `AppLink`; the shortcut sheet listed
+  keys that do not exist (`m`, `b`, `u`); Ctrl+Enter skipped a dialog's required field.
+- Launcher: a relative `--root` was read from `tools/backlog-app` - resolved from the caller's folder.
+- Contract `http-api.md`: a section *As implemented* lists where the code differs.
+
+Tests: 4 new API tests (one header field, bulk on a stale view, a view name with `%`, the `never`
+setting) and 4 new e2e tests (`review-fixes.spec.ts`: text search values, section editor,
+keys in a menu, Edit fields) - each fails on the code before the fix (negative controls run).
+`npm run check` 284 tests; `npm run test:e2e` 31 of 31.

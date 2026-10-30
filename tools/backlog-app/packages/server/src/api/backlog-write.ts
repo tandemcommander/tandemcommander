@@ -493,7 +493,10 @@ export function backlogWriteRoutes(services: Services): Hono {
   app.post("/bulk", async (c) => {
     const body = await readBody(c, BulkRequestSchema);
     const results: { slug: string; ok: boolean; refused?: string; findings?: unknown[] }[] = [];
-    // One queued operation per item, each validated by the tool on its own.
+    // One queued operation per item, each validated by the tool on its own. The view's board
+    // revision is checked with the first item (the later ones follow the app's own changes): a
+    // bulk change on a stale view is refused before anything is written, like every other change.
+    let first = true;
     for (const slug of body.slugs) {
       const { operation } = body;
       let op: Operation;
@@ -547,11 +550,21 @@ export function backlogWriteRoutes(services: Services): Hono {
           break;
       }
       try {
-        const answer = await apply(`bulk ${operation.kind} ${slug}`, {}, slug, [op]);
+        const base = first ? { ...(body.base.board ? { board: body.base.board } : {}) } : {};
+        first = false;
+        const answer = await apply(`bulk ${operation.kind} ${slug}`, base, slug, [op]);
         results.push({ slug, ok: true, findings: answer.findings });
       } catch (error) {
+        // A stale view or a closed gate refuses the whole bulk change, not just this item.
+        if (
+          error instanceof ApiError &&
+          (error.code === "changed-underneath" || error.code === "gate-closed")
+        ) {
+          if (results.length === 0) throw error;
+          results.push({ slug, ok: false, refused: error.message });
+          break;
+        }
         results.push({ slug, ok: false, refused: error instanceof Error ? error.message : String(error) });
-        if (error instanceof ApiError && error.code === "gate-closed") break;
       }
     }
     return c.json({ results });

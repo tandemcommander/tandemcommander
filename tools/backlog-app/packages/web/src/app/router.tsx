@@ -174,8 +174,42 @@ const routeTree = rootRoute.addChildren([
   settingsRoute,
 ]);
 
+/**
+ * Reads the search part of an address as plain text values. The router's default parses values
+ * as JSON and turns `344` into a number and `true` into a boolean, which `validateSearch` then
+ * dropped, and `"code page"` lost its quotes - every search value of this app is text (review).
+ *
+ * @param search - `?q=...&sel=...` or without the `?`.
+ * @returns The values by name.
+ */
+function parseSearch(search: string): Record<string, string> {
+  return Object.fromEntries(new URLSearchParams(search.startsWith("?") ? search.slice(1) : search));
+}
+
+/**
+ * Writes search values as plain text, leaving out empty ones (`?q=` says nothing).
+ *
+ * @param search - The values by name.
+ * @returns `?a=b&...`, or empty.
+ */
+function stringifySearch(search: Record<string, unknown>): string {
+  const params = new URLSearchParams();
+  for (const [name, value] of Object.entries(search)) {
+    if (value !== undefined && value !== null && value !== "")
+      params.set(name, typeof value === "string" ? value : JSON.stringify(value));
+  }
+  const text = params.toString();
+  return text ? `?${text}` : "";
+}
+
 /** The router. */
-export const router = createRouter({ routeTree, defaultPreload: "intent", scrollRestoration: true });
+export const router = createRouter({
+  routeTree,
+  defaultPreload: "intent",
+  scrollRestoration: true,
+  parseSearch,
+  stringifySearch,
+});
 
 declare module "@tanstack/react-router" {
   /** Registers the router's types for typed links and parameters. */

@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { EVENT_KINDS, type Settings } from "@backlog-app/shared";
+import { AppLink } from "@/components/app-link.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import {
   Card,
@@ -248,9 +249,9 @@ export function SettingsPage() {
         <ul className="flex flex-col gap-1 p-4 text-sm">
           {(views.data?.views ?? []).map((view) => (
             <li key={view.name} className="flex items-center gap-2">
-              <a href={view.url} className="text-primary hover:underline">
+              <AppLink href={view.url} className="text-primary hover:underline">
                 {view.name}
-              </a>
+              </AppLink>
               <code className="truncate text-xs text-muted-foreground">{view.url}</code>
               {view.builtIn ? (
                 <span className="ml-auto text-xs text-muted-foreground">built in</span>

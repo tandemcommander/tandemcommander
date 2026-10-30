@@ -30,7 +30,7 @@ import {
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/overlays.tsx";
 import { ChangeProblemBox } from "@/components/change-problem.tsx";
 import { apiPost, ApiFailure } from "@/lib/api.ts";
-import { useBoard, useLiveRun, useLoop } from "@/lib/queries.ts";
+import { useBoard, useLiveRun, useLoop, useSettings } from "@/lib/queries.ts";
 import { formatBytes, relativeTime } from "@/lib/utils.ts";
 import { useAppStore } from "@/app/store.ts";
 import { LOOP_STATE_TEXT, loopLine, useLoopCommand } from "./loop-status.tsx";
@@ -85,7 +85,9 @@ function StartDialog({
   const [untilIdle, setUntilIdle] = useState(false);
   const [autoTriage, setAutoTriage] = useState(false);
   const [forgetRun, setForgetRun] = useState(false);
-  const [commitTray, setCommitTray] = useState(true);
+  // Preset from the setting *Auto-commit before loop* (`never` leaves the box unticked).
+  const settings = useSettings();
+  const [commitTray, setCommitTray] = useState(settings.data?.autoCommitBeforeLoop !== "never");
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
@@ -275,7 +277,8 @@ function RunItemDialog({ onClose }: { /** Closes it. */ onClose: () => void }) {
           className="flex flex-col gap-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (slug) mutation.mutate({ slug, commitTray: true });
+            // No commitTray: the server follows the setting *Auto-commit before loop*.
+            if (slug) mutation.mutate({ slug });
           }}
         >
           <div>
@@ -376,7 +379,21 @@ export function LoopPage() {
   const stop = useLoopCommand("stop");
   const view = loop.data?.view ?? null;
   const logTail = (loop.data as { logTail?: string[] } | undefined)?.logTail ?? [];
-  if (loop.isLoading || !view) return <Skeleton className="m-4 h-60" />;
+  if (loop.isLoading) return <Skeleton className="m-4 h-60" />;
+  // No view: `loop.py status` could not be read (or the request failed) - say so instead of
+  // loading forever (review).
+  if (loop.error || !view) {
+    return (
+      <div className="m-4">
+        <Alert tone="bad">
+          The loop's status cannot be read right now
+          {loop.error ? `: ${loop.error instanceof Error ? loop.error.message : String(loop.error)}` : ""}. It
+          updates as soon as the status can be read; <code>bin/backlog-loop.sh status</code> in a terminal
+          shows the cause.
+        </Alert>
+      </div>
+    );
+  }
   const tone = LOOP_STATE_TEXT[view.shown].tone;
   const expected = view.shown === "triage" ? "triage" : (view.slug ?? "loop");
   return (

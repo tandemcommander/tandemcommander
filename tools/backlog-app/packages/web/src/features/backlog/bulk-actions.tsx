@@ -172,7 +172,11 @@ export function BulkBar({
                     <NativeSelect
                       id="bulk-field"
                       value={field}
-                      onChange={(e) => setField(e.target.value as (typeof BULK_FIELDS)[number])}
+                      onChange={(e) => {
+                        setField(e.target.value as (typeof BULK_FIELDS)[number]);
+                        // A value of the previous field (severity 5) is no value of this one.
+                        setValue("");
+                      }}
                     >
                       {BULK_FIELDS.map((f) => (
                         <option key={f}>{f}</option>

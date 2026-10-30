@@ -48,6 +48,12 @@ export function connectAppEvents(queryClient: QueryClient): () => void {
           void queryClient.invalidateQueries({ queryKey: ["board"] });
           void queryClient.invalidateQueries({ queryKey: ["item"] });
           void queryClient.invalidateQueries({ queryKey: ["next"] });
+          // Views derived from the backlog too: findings can change while their total stays the
+          // same, an item closed by a run moves to the archive, the release page counts items.
+          void queryClient.invalidateQueries({ queryKey: ["check"] });
+          void queryClient.invalidateQueries({ queryKey: ["closed"] });
+          void queryClient.invalidateQueries({ queryKey: ["release"] });
+          void queryClient.invalidateQueries({ queryKey: ["features"] });
           break;
         case "check.changed":
           store.setCheck((data as { total: number }).total);
@@ -58,7 +64,9 @@ export function connectAppEvents(queryClient: QueryClient): () => void {
           void queryClient.invalidateQueries({ queryKey: ["tray"] });
           break;
         case "run.changed":
-          store.setRun(data as StateView["run"]);
+          // The server sends `{ id: null, ... }` when no run is active; the store keeps null then,
+          // so "is a run live?" checks stay a plain truthiness test.
+          store.setRun((data as { id: string | null }).id ? (data as StateView["run"]) : null);
           void queryClient.invalidateQueries({ queryKey: ["run"] });
           void queryClient.invalidateQueries({ queryKey: ["runs"] });
           break;

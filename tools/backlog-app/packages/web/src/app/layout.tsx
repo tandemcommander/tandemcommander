@@ -31,6 +31,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { AppLink } from "@/components/app-link.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Badge, Kbd } from "@/components/ui/primitives.tsx";
 import {
@@ -147,7 +148,6 @@ function ThemeMenu() {
  * @returns The element.
  */
 function Sidebar({ collapsed }: { /** Show icons only. */ collapsed: boolean }) {
-  const navigate = useNavigate();
   const board = useBoard("");
   const views = useViews();
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -199,19 +199,13 @@ function Sidebar({ collapsed }: { /** Show icons only. */ collapsed: boolean }) 
         <>
           <div className="mt-3 px-2 pb-1 text-xs font-medium text-muted-foreground">Saved views</div>
           {pinned.map((view) => (
-            <a
+            <AppLink
               key={view.name}
               href={view.url}
-              // Inside the app: navigate without a page load (a middle click still opens a tab).
-              onClick={(event) => {
-                if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) return;
-                event.preventDefault();
-                void navigate({ href: view.url });
-              }}
               className="truncate rounded-md px-2 py-1 text-[13px] hover:bg-sidebar-accent"
             >
               {view.name}
-            </a>
+            </AppLink>
           ))}
         </>
       ) : null}
@@ -263,6 +257,8 @@ export function Layout() {
   // Desktop notifications follow the stored settings from the start, on every page.
   useEffect(() => {
     if (settings.data) applyNotificationSettings(settings.data);
+    // Row density of every table (index.css reads the attribute).
+    if (settings.data) document.documentElement.dataset["density"] = settings.data.density;
   }, [settings.data]);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);

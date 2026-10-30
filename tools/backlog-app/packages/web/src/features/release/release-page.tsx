@@ -17,8 +17,10 @@ import { apiGet } from "@/lib/api.ts";
 
 /** The answer of `GET /api/release`. */
 interface ReleaseView {
-  /** The unreleased section of CHANGELOG.md (Markdown), or null. */
-  unreleased: string | null;
+  /** The heading of the unreleased section of CHANGELOG.md, or null when there is none. */
+  unreleasedHeading: string | null;
+  /** The body of that section (Markdown; empty when there is none or it is empty). */
+  unreleased: string;
   /** Items that block a release. */
   blockers: { slug: string; title: string; section?: string | null }[];
   /** Commits of main not on origin/main. */
@@ -97,7 +99,11 @@ export function ReleasePage() {
         {data.unreleased ? (
           <Markdown className="p-4">{data.unreleased}</Markdown>
         ) : (
-          <p className="p-4 text-sm text-muted-foreground">No unreleased section in CHANGELOG.md.</p>
+          <p className="p-4 text-sm text-muted-foreground">
+            {data.unreleasedHeading
+              ? `The section "${data.unreleasedHeading}" of CHANGELOG.md is empty.`
+              : "No unreleased section in CHANGELOG.md."}
+          </p>
         )}
       </Card>
       {data.records ? (

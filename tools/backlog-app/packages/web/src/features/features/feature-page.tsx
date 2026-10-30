@@ -122,7 +122,7 @@ export function FeaturePage() {
   const text = useQuery({
     queryKey: ["features", nnn, "file", current],
     queryFn: ({ signal }) =>
-      apiGet<{ text: string }>(
+      apiGet<{ path: string; text: string | null; binary: boolean; size: number }>(
         `/api/features/${nnn}/files/${current.split("/").map(encodeURIComponent).join("/")}`,
         signal,
       ),
@@ -181,8 +181,20 @@ export function FeaturePage() {
           </TabsList>
         </Tabs>
       ) : null}
-      {text.data ? (
-        <Markdown className="rounded-md border p-4">{text.data.text}</Markdown>
+      {text.data && text.data.text !== null ? (
+        current.endsWith(".md") ? (
+          <Markdown className="rounded-md border p-4">{text.data.text}</Markdown>
+        ) : (
+          <pre className="max-h-[70vh] overflow-auto rounded-md border p-4 font-mono text-xs whitespace-pre-wrap">
+            {text.data.text}
+          </pre>
+        )
+      ) : text.data ? (
+        // The server sends no text for binary files and files over 2 MB.
+        <Alert tone="info">
+          {text.data.binary ? "A binary file" : "A large file"} ({Math.round(text.data.size / 1024)} KB) - not
+          shown here; open {current} in the repository.
+        </Alert>
       ) : current ? (
         <Skeleton className="h-40" />
       ) : null}

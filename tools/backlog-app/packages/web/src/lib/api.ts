@@ -118,6 +118,11 @@ export function onSessionLost(listener: () => void): () => void {
   return () => sessionLostListeners.delete(listener);
 }
 
+/** Tells every listener that the server rejected the token (also used by the event stream). */
+export function reportSessionLost(): void {
+  for (const listener of sessionLostListeners) listener();
+}
+
 /**
  * Performs an API call and decodes the JSON answer.
  *
@@ -141,9 +146,7 @@ export async function apiCall<T>(
   if (body !== undefined) init.body = JSON.stringify(body);
   if (signal) init.signal = signal;
   const answer = await fetch(path, init);
-  if (answer.status === 401) {
-    for (const listener of sessionLostListeners) listener();
-  }
+  if (answer.status === 401) reportSessionLost();
   const text = await answer.text();
   if (!answer.ok) {
     let parsed: ErrorBody | null;

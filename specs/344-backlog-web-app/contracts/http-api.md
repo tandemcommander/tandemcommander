@@ -164,3 +164,24 @@ reconnect with `Last-Event-ID` continues from that offset.
 
 `GET /api/ai/jobs/{id}/stream` - `event: progress` (tool and text), `event: done` (the
 proposal or the answer), `event: failed`.
+
+## As implemented (code review after the merge, 2026-10-30)
+
+Where this contract and the code differ, the code is the record:
+
+- Not implemented: `GET /api/home` (the home page reads the other routes), `GET /api/runs/{id}/raw/{offset}`, `POST /api/tray/discard` (an undo of the
+  newest change is the only way back from the app; anything else is a terminal step).
+- Query parameters not read: `/board` `section`, `sort` (the client filters and sorts);
+  `/runs` `from`, `to`; `/runs/{id}/events` `limit` (a page is at most 1 MiB); `/stats` `to`.
+- Not listed above but present: `GET /api/runs/live` (the live run in full) and
+  `POST /api/instance/boot` (launcher only: no `Origin`, `x-launcher-secret`).
+- Event shapes: `hello` carries the state view itself (not `{"state": ...}`); `run.changed` is
+  `{id, slug, phase, tasks}` and `{id: null, ...}` when no run is active; `tray.changed` is
+  `{pending, outside}`; `board.changed` is `{board, ref}` (no `slugs`); the claim answer has no
+  `version`.
+- `POST /api/loop/start`, `/loop/run-item`, `/loop/resume`: without `commitTray` the setting
+  *Auto-commit before loop* decides (`never` = no commit, `ask` / `always` = commit).
+- `POST /api/bulk`: the view's `base.board` is checked with the first item; a stale view or a
+  closed gate refuses the whole request before anything is written.
+- `set` of `/fields` and of bulk changes takes only the fields that change.
+- Search values in the page's addresses are plain text (no JSON encoding).

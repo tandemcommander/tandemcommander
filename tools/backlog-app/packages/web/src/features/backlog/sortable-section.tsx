@@ -31,6 +31,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { SortingState } from "@tanstack/react-table";
 import { GripVerticalIcon } from "lucide-react";
 import { cloneElement, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -135,7 +136,15 @@ export function SortableSection({
   }
   const bySlug = useMemo(() => new Map(rows.map((r) => [r.slug, r])), [rows]);
   const ordered = order.map((slug) => bySlug.get(slug)).filter((r): r is ItemRowView => r !== undefined);
-  const enabled = access.writable && !filtered && Boolean(SECTION_ARG[section]) && section !== "In progress";
+  // Rows sorted by a column are not in the backlog's order: a drop there would save an order the
+  // user never saw (review). Dragging and Alt+arrows wait until the sort is cleared.
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const enabled =
+    access.writable &&
+    !filtered &&
+    sorting.length === 0 &&
+    Boolean(SECTION_ARG[section]) &&
+    section !== "In progress";
 
   const save = useMutation({
     mutationFn: (next: string[]) =>
@@ -215,6 +224,8 @@ export function SortableSection({
     <div className="flex flex-col">
       {filtered ? (
         <p className="pb-1 text-xs text-muted-foreground">Clear the filter to reorder this section.</p>
+      ) : sorting.length > 0 ? (
+        <p className="pb-1 text-xs text-muted-foreground">Clear the column sort to reorder this section.</p>
       ) : null}
       <DndContext
         sensors={sensors}
@@ -231,6 +242,8 @@ export function SortableSection({
           <SectionTable
             {...table}
             rows={ordered}
+            sorting={sorting}
+            onSortingChange={setSorting}
             handle={
               enabled ? () => <GripVerticalIcon className="size-4 cursor-grab" aria-hidden /> : undefined
             }
