@@ -96,3 +96,25 @@ the closing anchor catches it, so C-ANCHORREST was added for that path.
 `before` = `uniso.spl` built from main's `isoimage.cpp` (the header with the new rule present but not
 called - the plug-in behaves as main), saved as `%TEMP%\tcudf\spl\uniso_main.spl`; it is copied over the
 build's `plugins\uniso\uniso.spl` for the before run and the fix's copied back afterwards.
+
+The installed Tandem Commander closed at about 17:13; all probes ran after it, on the hidden desktop
+(`tools\run_on_hidden_desktop.ps1`), registry restored and identical every time (SHA-256 07F63FE1...).
+
+| Run | Result | Rows that failed |
+|---|---|---|
+| `result_before.txt` (main's `uniso.spl`) | **38 PASS / 10 FAIL** | R-TWO, R-TWOIMG, R-TWOABS (the defect: `a.txt` extracted, the image with `b.txt` **deleted**), R-REST17, R-ZERO300, R-ZERO513, R-ZEROLATE, R-SHORT, R-NOANCHOR (deleted); C-U250 (see below) |
+| `result_after.txt` (the fix) | **48 PASS / 0 FAIL** | - |
+| `result_mutant_never_marks.txt` (decision always KEEP) | **39 PASS / 9 FAIL** | the nine R rows |
+| `regress_354.txt` (`iso354_probe.ps1` on the fix) | 28 / 0 | - |
+| `regress_355.txt` (`iso355_probe.ps1` on the fix) | 40 / 0 | - |
+
+- **C-U250 → N-U250.** On main the IMAPI2FS UDF 2.50 image does not list at all ("Cannot read sector
+  #00000000.", "Error reading directory structure at sector #FF567539. Incomplete content of ISO
+  image."; nothing extracted, the image kept) - a defect of the UDF reader outside this item (its
+  logical volume descriptor at 34 precedes the partition descriptor at 35; the metadata partition map is
+  resolved with `PD.Start` still 0). The row was turned into `N-U250` (unchanged: no file, only those
+  read-error boxes, kept) and passes before and after; Inbox item
+  `iso-plug-in-a-udf-2-50-image-written-by-windows-imapi2fs` (measure:356).
+- R-MKHD512 (512-byte blocks) is kept already on main (no file listed, no window) and after.
+- The C-MK rows (empty mkudffs volumes: nothing to extract) are deleted before and after - the plain
+  images of every media type the rule must leave alone, VAT open and closed included.

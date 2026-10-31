@@ -15,7 +15,9 @@
     the target field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK. A .iso row
     must show no window at all; an .img row only "Missing .CCD file" boxes (once per open).
       C-PLAIN     u1 (its last sector is its closing anchor): PASS = a.txt, deleted
-      C-U250      u250 (UDF 2.50, metadata partition): PASS = a.txt, deleted
+      N-U250      u250 (UDF 2.50, metadata partition): the plug-in cannot list it (main as well - measured
+                  before this feature; Inbox item): PASS = nothing extracted, only the read-error boxes,
+                  KEPT - unchanged
       R-TWO       u1 + u2 joined, named .iso: PASS = a.txt, KEPT. Before: deleted, b.txt lost
       R-TWOIMG    the same named .img (no .ccd): PASS = a.txt, KEPT
       R-TWOABS    as R-TWO, u2's last sector an anchor of the later volume addressed as on a disc: PASS =
@@ -111,7 +113,8 @@ function Check-Files([string]$Tgt, $Want) {
 #   $Img0   the seed image; $Name the file name it gets in the row's src folder
 #   $Want   files that must be extracted exactly
 #   $Kept   the image must be kept (else deleted)
-#   $Msg    'none' = no window at all; 'missing' = every window is the missing-.ccd box (once per open)
+#   $Msg    'none' = no window at all; 'missing' = every window is the missing-.ccd box (once per open);
+#           'read' = at least one window, each a sector / directory read error box (N-U250)
 function Unpack-Row([string]$Case, [string]$Img0, [string]$Name, $Want, [switch]$Kept, [string]$Msg = 'none') {
     if (-not (Want $Case)) { return }
     if (-not [IO.File]::Exists($Img0)) { Row $Case 'RUN' 'NOT DRIVEN' ('no image ' + $Img0); return }
@@ -143,6 +146,7 @@ function Unpack-Row([string]$Case, [string]$Img0, [string]$Name, $Want, [switch]
         $all = @(($msgs -split ' \|\| ') | Where-Object { $_ -ne 'no window' })
         switch ($Msg) {
             'none' { $winOk = ($all.Count -eq 0) }
+            'read' { $winOk = ($all.Count -gt 0) -and (@($all | Where-Object { -not $_.Contains('Cannot read sector') -and -not $_.Contains('Error reading directory structure') }).Count -eq 0) }
             'missing' { $winOk = ($all.Count -gt 0) -and (@($all | Where-Object { -not $_.Contains($MissingCcd) }).Count -eq 0) }
         }
         $ok = $c[0] -and (-not $fatal) -and $winOk -and ($isKept -eq [bool]$Kept)
@@ -191,7 +195,7 @@ try {
     $a = [ordered]@{ 'a.txt' = 'A1' }
     $none = [ordered]@{}
     Unpack-Row 'C-PLAIN' "$s\plain.bin" 'plain.iso' $a
-    Unpack-Row 'C-U250' "$s\u250.iso" 'u250.iso' $a
+    Unpack-Row 'N-U250' "$s\u250.iso" 'u250.iso' $none -Kept -Msg 'read'
     Unpack-Row 'R-TWO' "$s\two.bin" 'two.iso' $a -Kept
     Unpack-Row 'R-TWOIMG' "$s\two.bin" 'two.img' $a -Kept -Msg 'missing'
     Unpack-Row 'R-TWOABS' "$s\twoabs.bin" 'twoabs.iso' $a -Kept
