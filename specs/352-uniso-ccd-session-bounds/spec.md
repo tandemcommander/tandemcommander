@@ -32,6 +32,14 @@ an entry without `PLBA` and with `Session` twice: run-time check "plba used with
 initialized". The two controls (one session; two sessions, two splits) extract and delete the image
 correctly.
 
+## Clarifications
+
+### Session 2026-10-31
+
+- Q: Should a `.ccd` the reader refuses also mark the image's listing incomplete, including `.ccd` files refused for a missing row before this feature? → A: Yes - the existing box stays, plain detection continues as today, and the listing is marked incomplete so a whole unpack keeps the image (autonomous run: conservative)
+- Q: When sections and splits disagree, should the `.ccd` be refused instead of opened? → A: No - opened within bounds and marked incomplete; real multi-session dumps have that shape (autonomous run: item - "opens with its listing marked incomplete" - and conservative)
+- Q: Should a value with trailing text after a number (`Session=1x`) count as not parsing? → A: No - parsed as today (the leading number); only a value with no number fails (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A damaged .ccd cannot corrupt memory or cost the user the image (Priority: P1)
