@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: a UDF VAT image cut a few sectors after its partition start may hang the listing
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:358
 who: agent
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 13bcb6a1
 effort: S
-feature: -
+feature: 359
 related: [iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer]
 depends-on: []
 reason: -
@@ -52,3 +52,5 @@ image kept.
 
 - 2026-10-31 — created (source review:358)
 - 2026-10-31 — moved to Next position 1
+- 2026-10-31 — verified at 13bcb6a1: reproduced at 13bcb6a1: raw Mode 1 dump of mk_cdr cut to 260 sectors, partition start 288 - Enter and Unpack hang (WM_NULL timeout); the cooked +3 cut does not hang
+- 2026-10-31 — run started, feature 359
