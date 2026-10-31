@@ -11,7 +11,7 @@ updated: 2026-10-31
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes]
+related: []
 depends-on: []
 reason: -
 ---
@@ -65,3 +65,4 @@ enlarged) shows no crash.
 
 - 2026-10-31 — created (source measure:358)
 - 2026-10-31 — extended: reproduction by review 1 of feature 358 (heap corruption on the Debug build)
+- 2026-10-31 — related item iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes done in feature 358

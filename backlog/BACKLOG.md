@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a UDF image with a VAT and data past it crashes Tandem Commander](items/iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes/desc.md) | bug | 7 | archives | 358 |
 
 ## Next
 
@@ -280,6 +279,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a UDF VAT image cut a few sectors after its partition start may hang the listing](items/iso-plug-in-a-cut-udf-vat-image-may-hang-the-listing/desc.md) | bug | 7 | archives | review:358 | 2026-10-31 |
 | [ISO plug-in: a damaged UDF VAT file entry makes the reader write past its table buffer](items/iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer/desc.md) | bug | 7 | archives | measure:358 | 2026-10-31 |
 | [ISO plug-in: a UDF image with data past its VAT does not open although the VAT is in the file](items/iso-plug-in-a-udf-image-with-data-past-its-vat-does-not-open/desc.md) | improvement | 4 | archives | review:358 | 2026-10-31 |
 

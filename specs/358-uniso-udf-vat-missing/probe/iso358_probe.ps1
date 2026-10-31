@@ -29,6 +29,17 @@
       R-VHDEQ      mk_cdr whose VAT header fills the VAT file (0 entries): KEPT, nothing extracted, only boxes
                    naming sector #FF567539 (virtual block 0 not translated - the reader's invalid sector); main
                    read entry 0, one past the table (#FDFDFDFD, the debug heap's guard bytes)
+    Review 2 rows (hyb358.py: mk_cdr.img with an ISO 9660 part - PVD 16, terminator 17, the UDF recognition
+    sequence 18-20, a root folder with A.TXT 21-22; the ISO volume size covers the whole file, or 354's rest rule
+    would keep every variant):
+      C-HA, C-HN   the hybrid with its anchor at 256 kept / zeroed, the VAT found: PASS = A.TXT, no window, deleted
+      R-HAD100     anchor kept + 100 sectors of 0x5A (no VAT found): PASS = A.TXT, only the missing-VAT box, KEPT
+                   (330's anchor rule)
+      R-HND100     anchor zeroed + 100 sectors: PASS = as R-HAD100 - before review 1's change the image was deleted
+                   (the UDF part dropped without a mark)
+      C-PINNER     a plain ISO 9660 image holding mk_cdr + 100 sectors as the file INNER.IMG (NSR03 at 37):
+                   PASS = A.TXT and INNER.IMG, no window, deleted (not marked by the UDF data inside)
+      L-HND100     Enter on the R-HND100 image: alive, only the missing-VAT box
     Listing rows: the left panel shows <row>\src, Home, End, Enter (posted) on the image; the program must
     stay alive with no bug report.
       L-VCDR100    the R-VCDR100 image: PASS = alive, only "Missing virtual allocation table." boxes
@@ -68,6 +79,7 @@ if (-not [IO.Directory]::Exists((Join-Path $Specs '098-long-path-overruns'))) { 
 if (-not $Lib) { $Lib = Join-Path $Specs '098-long-path-overruns\probe\fix_probe_lib.ps1' }
 if (-not $MkMk) { $MkMk = Join-Path $Specs '356-uniso-udf-rest\probe\mkudf356.sh' }
 if (-not $MkVat) { $MkVat = Join-Path $Here 'mkvat358.sh' }
+$Hyb = Join-Path $Here 'hyb358.py'
 if (-not $Py) { $Py = Join-Path $Here 'vatimg.py' }
 . $Lib
 $Root = $TempRoot + '\tc358'
@@ -97,8 +109,9 @@ function Windows-Ok($r, [string]$Msg) {
     return ($all.Count -gt 0) -and (@($all | Where-Object { -not $_.Contains($Msg) }).Count -eq 0)
 }
 
-# Unpack (Alt+F9) of the whole image into tgt with "Delete archive after unpacking"; nothing may be extracted
-function Unpack-Row([string]$Case, [string]$Img0, [string]$Name, [switch]$Kept, [string]$Msg = 'none') {
+# Unpack (Alt+F9) of the whole image into tgt with "Delete archive after unpacking"; exactly $NFiles files must be
+# extracted (0: nothing - the empty mkudffs volumes, or the volume does not open)
+function Unpack-Row([string]$Case, [string]$Img0, [string]$Name, [switch]$Kept, [string]$Msg = 'none', [int]$NFiles = 0) {
     if (-not (Want $Case)) { return }
     if (-not [IO.File]::Exists($Img0)) { Row $Case 'RUN' 'NOT DRIVEN' ('no image ' + $Img0); return }
     $d = $Root + '\' + $Case; $tgt = $d + '\tgt'; NewDir ($d + '\src'); NewDir $tgt
@@ -126,7 +139,7 @@ function Unpack-Row([string]$Case, [string]$Img0, [string]$Name, [switch]$Kept, 
         $files = @(Tgt-Files $tgt)
         $isKept = [IO.File]::Exists($LP + $img)
         $winOk = Windows-Ok $r $Msg
-        $ok = ($files.Count -eq 0) -and (-not $fatal) -and $winOk -and ($isKept -eq [bool]$Kept)
+        $ok = ($files.Count -eq $NFiles) -and (-not $fatal) -and $winOk -and ($isKept -eq [bool]$Kept)
         Row $Case 'RUN' (V $ok) ('files {0}: {1}; image kept: {2} (want {3}); windows ok ({4}): {5}; fatal: {6}; windows: {7}' -f $files.Count, ($files -join ', '), $isKept, [bool]$Kept, $Msg, $winOk, (Tail ([string]$fatal) 300), (Tail $msgs 500))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -182,6 +195,7 @@ try {
     if ([IO.File]::Exists("$s\mk_cdr.img")) {
         foreach ($k in @('data100', 'toclaim', 'claim16', 'claim100z', 'hdlong', 'hdeq')) { $made += & python -I $Py $k "$s\mk_cdr.img" "$s\v_$k.bin" 2>&1 }
     }
+    if ([IO.File]::Exists("$s\mk_cdr.img")) { $made += & python -I $Hyb "$s\mk_cdr.img" $s 2>&1 }
     foreach ($m in @('cdr150', 'cdrnoefe')) {
         if ([IO.File]::Exists("$s\mk_$m.img")) { $made += & python -I $Py data100 "$s\mk_$m.img" "$s\v_${m}data100.bin" 2>&1 }
     }
@@ -212,6 +226,12 @@ try {
     List-Row 'L-MKCDR' "$s\mk_cdr.img" 'lmk_cdr.iso'
     List-Row 'L-VHDLONG' "$s\v_hdlong.bin" 'lvhdlong.iso' -Msg $NoVat
     List-Row 'L-MK150' "$s\mk_cdr150.img" 'lmk_cdr150.iso'
+    Unpack-Row 'C-HA' "$s\h_vat_anchor.img" 'ha.iso' -NFiles 1
+    Unpack-Row 'C-HN' "$s\h_vat_noanchor.img" 'hn.iso' -NFiles 1
+    Unpack-Row 'R-HAD100' "$s\h_vat_anchor_data100.img" 'had.iso' -Kept -Msg $NoVat -NFiles 1
+    Unpack-Row 'R-HND100' "$s\h_vat_noanchor_data100.img" 'hnd.iso' -Kept -Msg $NoVat -NFiles 1
+    Unpack-Row 'C-PINNER' "$s\p_iso_inner.img" 'pin.iso' -NFiles 2
+    List-Row 'L-HND100' "$s\h_vat_noanchor_data100.img" 'lhnd.iso' -Msg $NoVat
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

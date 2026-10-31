@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5406,3 +5406,29 @@ a few early ones are out of sequence).
   (`TestIsoPlainLayouts_357`; the never-applies mutant fails 16); refute-first review 1: no MUST, no SHOULD - its
   negative control (uniso.spl of HEAD~1) 14 / 6 with its own CIF / 2336 / ECDC-.img rows; NOTEs recorded, one
   comment fixed.
+- 358-uniso-udf-vat-missing: a UDF disc image of a sequentially written medium (a virtual allocation table, VAT -
+  mkudffs `--media-type=cdr` / `dvdr` / `bdr`, packet-written CD-R / DVD-R dumps) whose file held more than the
+  volume (data or zero sectors past it) closed Tandem Commander with an access violation after the box "Missing
+  virtual allocation table." - on Enter and on Unpack (Alt+F9) - now the volume does not open: `CUDF::
+  ReadSupportingTables` fails when the VAT search ends without a VAT (also a terminating error), as an unreadable
+  VAT sector already did, so the track counts as not opened (334's mark; a one-volume image does not open, a whole
+  unpack fails and keeps the image); `LogSector` translates only through `SalIsoUdfVatTranslates` (a table read and
+  `block < entries` - `<=` read one past the table), a VAT 2.00 count only through `SalIsoUdfVat200Entries` (a
+  header longer than the file or a file longer than the table held is not a VAT; `src/common/salisoudfvat.h`); the
+  entry count starts at 0. A UDF + ISO 9660 hybrid whose UDF part has a VAT that is missing or unreadable marks its
+  listing (`CUDF::VatMissing` -> `CUDFISO::PartMissing`), also without 330's anchor at 256 (review 1: the part was
+  dropped unmarked and "Delete archive after unpacking" deleted the image - measured by review 2). No UI string.
+  Traps: the committed probe first covered only VAT 2.00 in extended entries - the UDF 1.50 path crashed too
+  (review 1); "a hybrid cannot be built here" was wrong (review 2 built it in Python - the ISO volume size must
+  cover the file or 354's rule hides the difference); a Bash here-document collapsed a PowerShell path's
+  backslashes again (nothing written - an assert stopped it). Limits: an image whose VAT is in the file but not
+  in its last sectors (a padded dump) does not open (Inbox `iso-plug-in-a-udf-image-with-data-past-its-vat-does-not-open`);
+  the VAT reader still copies allocation descriptors without a bound - reproduced heap corruption (Inbox
+  `iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer`); the VAT search may loop on a file cut just after
+  the partition start (Inbox `iso-plug-in-a-cut-udf-vat-image-may-hang-the-listing`); the viewer's info no longer
+  shows such a volume. From backlog item `iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes`. Probe
+  `iso358_probe` (mkudffs by 356's `mkudf356.sh` + `mkvat358.sh`, `vatimg.py`, `hyb358.py`) on main 14 / 8 ->
+  52 / 0; negative controls: main's `uniso.spl` 7 / 7 on review 1's rows, the build before the hybrid change R-HND100
+  deleted; regression 356 56 / 0; saltests 29,553 -> 29,578 / 0 (`TestIsoUdfVat_358`; the `<=` mutant fails 4);
+  refute-first reviews: 1 (no MUST; SHOULDs taken - rows, the hybrid mark), 2 (no MUST; SHOULD taken - hybrid rows;
+  a possible hang to Inbox).

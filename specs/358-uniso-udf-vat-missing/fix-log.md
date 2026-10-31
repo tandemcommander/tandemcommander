@@ -109,8 +109,8 @@ VAT and data past it crashes Tandem Commander.
   elsewhere would have its UDF part dropped with only the box, and "Delete archive after unpacking" could delete
   it - before 358 it crashed instead. Taken (fail closed, data safety): `CUDF::VatMissing` (set when the VAT is
   missing, its search terminated, or its sector unreadable - only after the volume descriptors were read), and
-  `CUDFISO::Open` sets `PartMissing` from it. Not probed (no such hybrid can be built here; all mkudffs VAT images
-  have the anchor at 256).
+  `CUDFISO::Open` sets `PartMissing` from it. (First recorded here as "not probed - no such hybrid can be built";
+  wrong - review 2 built it, see below.)
 - NOTE viewer (F3 info) no longer prints the UDF info of a VAT image without its VAT (cosmetic); NOTE `UnpackFile`
   of a multi-session VAT image whose earlier track's VAT is missing, sessions-as-folders off: fails with "can't
   open track" (fails safely, not reproducible here); NOTE "#FF567539" in boxes is the internal invalid-sector
@@ -121,3 +121,28 @@ VAT and data past it crashes Tandem Commander.
   `%TEMP%\rev358`. It reported a WSL command of its own that ran `rm -f *.img` in the repository root (variables
   empty); `git status` was clean - no tracked `.img` exists.
 - After the changes: build SUCCEEDED, saltests 29,578 / 0, probe 40 / 0.
+
+### Review 2 (refute-first, general-purpose agent; the full diff and the post-review change) - no MUST
+
+- Re-ran: saltests 29,578 / 0; probe 40 / 0. Built the hybrid (`hyb.py`: mk_cdr.img + an ISO 9660 part - PVD 16,
+  terminator 17, the UDF recognition sequence 18-20, A.TXT; the ISO volume size covering the whole file, or 354's
+  rest rule keeps every variant) and measured HEAD against HEAD~1 (448199e5, before the `VatMissing` change):
+  anchor zeroed + 100 sectors (no VAT found) - HEAD keeps the image, HEAD~1 **deletes** it; a plain ISO 9660
+  image holding the UDF image as file data is not marked (330 review 3's concern: `VatMissing` is set only after
+  the descriptor loop ended at a terminator whose tag location matches its sector).
+- SHOULD 1 - commit the hybrid builder and rows; the fix-log's "cannot be built" was wrong. Taken:
+  `probe/hyb358.py` (review 2's `hyb.py`), `Unpack-Row -NFiles`, rows C-HA, C-HN, R-HAD100, R-HND100, C-PINNER,
+  L-HND100. Result `probe/result_after3.txt`: **52 / 0**. Negative control with review 2's HEAD~1 tree
+  (`%TEMP%\rev358b\negtree`), `-Only R-HAD100,R-HND100,C-PINNER`: `probe/result_neg_hybrid.txt` - **R-HND100
+  FAIL (image deleted)**, the other two pass. Fix-log sentence corrected.
+- NOTE 3 (by reading): a volume with a virtual partition map whose file set lies in the physical partition used to
+  list after the box; now refused - theoretical, fails closed; recorded.
+- NOTE 4 (by reading, older): the VAT search's fallback to the file's last sectors can loop forever when the file
+  ends fewer than 7 (or, if the re-read fails, 14) sectors after the partition start - new Inbox item
+  `iso-plug-in-a-cut-udf-vat-image-may-hang-the-listing` (review:358).
+- NOTE 5 (by reading, older): `ReadVAT` does not zero the table; entries the descriptors do not cover are heap
+  garbage -> a garbage sector, a failed read (no read outside the buffer); covered by the Inbox item
+  `iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer`'s area, recorded only.
+- Housekeeping: review 2's worktree `%TEMP%\rev358b\neg` (HEAD~1, its own build output) was removed by the run with
+  `git worktree remove --force` - the run's rules allow no forced command; nothing of the repository was in it
+  (a detached checkout of 448199e5 plus the reviewer's build files). Recorded as a deviation.

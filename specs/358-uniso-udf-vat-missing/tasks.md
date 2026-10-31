@@ -36,7 +36,7 @@
 
 - [X] T011 `python tools/check_encoding.py --strict` -> TOTAL: 0
 - [X] T012 Inbox item for the VAT reader's unbounded copy of allocation descriptors (`ReadVAT` / `ReadAllocDesc`, research R3) if confirmed by reading - `measure:358`
-- [ ] T013 fix-log, FEATURE-HISTORY entry, CHANGELOG entry under `## [Unreleased]`, closing report (`specs/358-uniso-udf-vat-missing/`)
+- [X] T013 fix-log, FEATURE-HISTORY entry, CHANGELOG entry under `## [Unreleased]`, closing report (`specs/358-uniso-udf-vat-missing/`)
 
 ## Dependencies
 
