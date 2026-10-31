@@ -701,8 +701,8 @@ inline int SalIsoRawRestDecision(bool volumeKnown, unsigned long long volumeSect
 //   - the partition descriptors of the main sequence give each partition's start and length;
 //   - a volume with a virtual partition (VAT, sequentially written media) claims the whole medium in its
 //     partition descriptor, and its last recorded sector is the VAT's (extended) file entry.
-// Measured (fix-log of 356): every plain image ends with its own anchor (at the last sector or 256 before
-// it) or, open VAT, with its VAT; IMAPI2FS fills the sectors past its reserve sequence with its own anchors.
+// Measured (fix-log of 356): every plain image ends with its own anchor at its last sector or, VAT (open or
+// closed), with its VAT there; IMAPI2FS fills the sectors past its reserve sequence with its own anchors.
 
 // the anchor's sector; the most sectors of the main descriptor sequence read for its partition descriptors
 const long long SAL_ISO_UDF_ANCHOR_SECTOR = 256;
@@ -842,14 +842,26 @@ inline bool SalIsoUdfFileEntryAt(const unsigned char* sec, long long len, unsign
            SalIsoUdfTagValid(sec, len, SAL_ISO_UDF_TAG_EXT_FILE_ENTRY, block);
 }
 
+// Feature 356: does the file end with the volume - is its last whole sector 'last' (its first 'len' bytes in
+// 'sec') an anchor of the volume (never the anchor at 256 itself) or, for a volume with a virtual partition
+// map, a file entry of the partition starting at 'partitionStart' (an open VAT volume's VAT)? Only the last
+// sector counts: the sector 256 before it is no proof - IMAPI2FS fills every sector past its reserve
+// sequence with the volume's anchors, so data appended after such a volume would find one there (review 1).
+inline bool SalIsoUdfClosesFile(const unsigned char* sec, long long len, unsigned long long last,
+                                const SalIsoUdfAnchor& vol, bool virtualMap, unsigned long partitionStart)
+{
+    if (last <= (unsigned long long)SAL_ISO_UDF_ANCHOR_SECTOR || len != SAL_ISO_COOKED_SECTOR)
+        return false; // a sector not read whole proves nothing
+    return SalIsoUdfAnchorOf(sec, len, last, vol) ||
+           (virtualMap && SalIsoUdfFileEntryAt(sec, len, partitionStart, last));
+}
+
 // What the plug-in read of a UDF-only cooked image:
 //   AnchorKnown    the anchor at sector 256 is valid (Anchor = its sequences)
 //   PartitionKnown the main sequence (at most SAL_ISO_UDF_VDS_READ sectors) holds a valid partition
 //                  descriptor (PartitionStart = the first one's start)
 //   DescriptorsEnd the sector after the anchor at 256, both sequences and every partition found
-//   ClosedAtEnd    the file's last whole sector, or the one 256 before it, is an anchor of this volume (other
-//                  than the one at 256), or - a volume with a virtual partition map - the last whole sector is
-//                  a file entry of the partition (its VAT): the volume ends where the file ends
+//   ClosedAtEnd    SalIsoUdfClosesFile of the file's last whole sector: the volume ends where the file ends
 struct SalIsoUdfVolume
 {
     bool AnchorKnown;

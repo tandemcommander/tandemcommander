@@ -23,20 +23,21 @@ Where a UDF volume ends (measured on real images; `udfmeasure.py` of this featur
 |---|---|---|---|
 | IMAPI2FS UDF 1.02 / 1.50 / 2.00 / 2.01 (a.txt) | 310 | 576 sectors | anchors of the volume itself, one per sector (each carries its own location and the same descriptor extents), the last at the file's last sector |
 | IMAPI2FS UDF 2.50 | 464 | 736 | the same |
-| mkudffs 2.3 hd / dvd / dvdrw / cdrw / cd | 1999 / 3856 / 3872 | 2000 / 4000 | zero bytes and the volume's own anchors at the file's last sector and 256 before it |
+| mkudffs 2.3 hd / dvd / dvdrw / cdrw / cd | 1999 / 3856 / 3872 | 2000 / 4000 | the volume's own anchor at the file's last sector; dvd / dvdrw / cdrw / cd also 256 before it, zero bytes, dvdrw / cdrw a sparing table |
 | mkudffs dvdr / bdr / cdr (VAT, open) | 4000 (the partition claims the whole medium) | 288 - 320 | - the file ends at the virtual allocation table (VAT) the listing reads, an (extended) file entry at the last sector |
 | mkudffs cdr closed (VAT) | 4000 | 514 | the volume's own anchor at the file's last sector - 256 |
 | mkudffs hd, 512-byte blocks | no anchor at 2048-byte sector 256 | | |
 
-So the descriptors alone never give the end of a plain image: the volume's own closing anchor (at the
-last sector, or 256 before it) and its own anchors in the rest must count as part of the volume, and an
-open VAT volume ends at its VAT.
+So the descriptors alone never give the end of a plain image: the volume's own closing anchor at the
+file's last sector and its own anchors in the rest must count as part of the volume, and a VAT volume
+ends at its VAT. (The anchor 256 sectors before the end is no proof: IMAPI2FS fills its whole rest with
+the volume's anchors, so data appended after such a volume finds one there - review 1.)
 
 ## Clarifications
 
 ### Session 2026-10-31
 
-- Q: Which sectors count as the end of a UDF volume? → A: The volume ends at the file's end when the file's last whole sector, or the sector 256 before it, is an anchor of this volume (a valid anchor descriptor recording its own location and naming the same main and reserve descriptor sequences as the anchor at sector 256), or - for a volume with a virtual partition (VAT) - when the file's last whole sector is a file entry of that volume (its recorded location plus the partition's start is that sector). Otherwise the volume ends after the last of: the anchor at sector 256, the main and the reserve descriptor sequence, and the partitions the main sequence describes (autonomous run: item - its *Notes* name these and ask which marks the end without false positives; the measurement above chose them)
+- Q: Which sectors count as the end of a UDF volume? → A: The volume ends at the file's end when the file's last whole sector (read whole; never the anchor at 256 itself) is an anchor of this volume (a valid anchor descriptor recording its own location and naming the same main and reserve descriptor sequences as the anchor at sector 256), or - for a volume with a virtual partition (VAT) - when the file's last whole sector is a file entry of that volume (its recorded location plus the partition's start is that sector). Otherwise the volume ends after the last of: the anchor at sector 256, the main and the reserve descriptor sequence, and the partitions the main sequence describes (autonomous run: item - its *Notes* name these and ask which marks the end without false positives; the measurement above chose them. Review 1 removed "or the sector 256 before it": it let 1 - 256 sectors of data appended after an IMAPI2FS volume, or exactly 256 after an mkudffs one, delete the image; every measured plain image already closes at its last sector)
 - Q: What counts as an empty rest past a UDF volume? → A: Every sector of it is zero bytes only or an anchor of this volume; anything else marks the listing (autonomous run: item - "whose rest is not zero bytes only marks", narrowed by the measurement: IMAPI2FS fills the rest with the volume's own anchors, which hold neither data nor another volume)
 - Q: Which limits apply? → A: Feature 354's: at most 16 sectors past the volume keep the listing without reading; a rest longer than 512 sectors is not read and marks the listing (autonomous run: item - "by the same rule as feature 354 (SAL_ISO_LATER_VOLUME_SECTOR, SAL_ISO_ZERO_REST_SECTORS)")
 - Q: What when the anchor at sector 256 is missing or invalid, its descriptor sequence names no partition, or the file ends within the volume? → A: The listing is marked incomplete (the size cannot be read or trusted), as features 353 - 355 do (autonomous run: rule - CLAUDE.md "a safe to delete? check fails closed")
@@ -53,7 +54,8 @@ plug-in extracts what it lists, the unpack is treated as not complete, and the i
 
 **Why this priority**: losing the data past the listed volume with the image is the item's main point.
 
-**Independent Test**: probe rows R-TWO, R-TWOIMG, R-TWOABS, R-REST17: `a.txt` extracted, the image kept.
+**Independent Test**: probe rows R-TWO, R-TWOIMG, R-TWOABS, R-JOINISO, R-REST17, R-DATA100, R-MKDVD256,
+R-MKHD256: `a.txt` (or nothing, for the empty mkudffs volumes) extracted, the image kept.
 
 **Acceptance Scenarios**:
 
@@ -81,8 +83,7 @@ extracted, deleted.
 
 **Acceptance Scenarios**:
 
-1. **Given** a UDF-only image whose file ends with its own closing anchor (at the last sector or 256
-   before it), **When** a whole unpack with "Delete archive after unpacking" runs, **Then** the files
+1. **Given** a UDF-only image whose file ends with its own closing anchor at its last sector, **When** a whole unpack with "Delete archive after unpacking" runs, **Then** the files
    are extracted and the image is deleted.
 2. **Given** an open VAT image whose file ends at its VAT, **When** the same unpack runs, **Then** the
    image is deleted.
@@ -149,7 +150,8 @@ and a whole unpack keeps the image.
 ### Key Entities
 
 - **Anchor**: the UDF anchor volume descriptor pointer - at sector 256, and (closed media) at the
-  volume's last sector and 256 before it; it names the main and the reserve descriptor sequence.
+  volume's last sector and 256 before it; it names the main and the reserve descriptor sequence. Only
+  the one at the file's last sector is taken as the volume's end.
 - **Volume end**: the sector after the volume's last sector, by FR-001.
 - **Rest**: the sectors of the file past the volume end.
 

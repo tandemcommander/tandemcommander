@@ -12,9 +12,13 @@ reserve volume descriptor sequence, the partition (IMAPI2FS: 310; its file holds
             file's last sector, its extents moved by u1's length)
   rest16    u1 cut at the descriptors' end + 16 sectors of 0x5A
   rest17    u1 cut at the descriptors' end + 17 sectors of 0x5A
-  zero100   u1 + 100 zero sectors (its last sector zero; the sector 256 before it one of u1's anchors)
-  zero300   u1 + 300 zero sectors (neither the last sector nor the one 256 before it is u1's anchor; 566
-            sectors past the descriptors - more than are read)
+  zero100   u1 + 100 zero sectors (its last sector zero: the rest past the descriptors - u1's anchors and
+            zero bytes, 366 sectors - is read)
+  zero300   u1 + 300 zero sectors (566 sectors past the descriptors - more than are read)
+  data100   u1 + 100 sectors of 0x5A (review 1: the sector 256 before the end is one of u1's anchors)
+  data256   the first image (any, e.g. an mkudffs one) + 256 sectors of 0x5A (review 1: its closing anchor
+            lies 256 before the end)
+  two       with an ISO 9660 image as the second argument: a UDF volume followed by an ISO 9660 one
   anchorrest u1 cut at sector 450 + 1 zero sector (not closed; the rest is u1's own anchors and zero bytes)
   zero512   u1 cut at the descriptors' end + 512 zero sectors
   zero513   u1 cut at the descriptors' end + 513 zero sectors
@@ -86,6 +90,10 @@ def main():
         img = cut + b'\x5a' * (17 * S)
     elif kind == 'zero100':
         img = u1 + bytes(100 * S)
+    elif kind == 'data100':
+        img = u1 + b'\x5a' * (100 * S)
+    elif kind == 'data256':
+        img = u1 + b'\x5a' * (256 * S)
     elif kind == 'zero300':
         img = u1 + bytes(300 * S)
     elif kind == 'anchorrest':

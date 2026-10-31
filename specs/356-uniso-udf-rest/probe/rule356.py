@@ -87,8 +87,6 @@ def decide(data):
         last = whole - 1
         s = rd(last)
         closed = anchor(s, last) == a or (virt and last >= part and (tag_valid(s, 261, last - part) or tag_valid(s, 266, last - part)))
-        if not closed and last > 512:
-            closed = anchor(rd(last - 256), last - 256) == a
     if closed:
         return 'KEEP', f'closed at end (descriptors end {dend})'
     if whole < dend:

@@ -24,9 +24,15 @@
                   a.txt, KEPT
       C-REST16    u1 cut at the descriptors' end + 16 sectors of 0x5A: PASS = a.txt, deleted
       R-REST17    the same with 17 sectors: PASS = a.txt, KEPT
-      C-ZERO100   u1 + 100 zero sectors (its anchor 256 sectors before the end): PASS = a.txt, deleted
-      R-ZERO300   u1 + 300 zero sectors (no anchor of u1 at the end or 256 before it; 566 sectors past the
+      C-ZERO100   u1 + 100 zero sectors (the rest past the descriptors - u1's anchors, zero bytes - is read): PASS =
+                  a.txt, deleted
+      R-ZERO300   u1 + 300 zero sectors (no anchor of u1 at the end; 566 sectors past the
                   descriptors, more than are read): PASS = a.txt, KEPT (a limit: fails closed)
+      R-DATA100   u1 + 100 sectors of 0x5A (review 1: the sector 256 before the end is one of u1's anchors):
+                  PASS = a.txt, KEPT
+      R-JOINISO   u1 followed by an IMAPI2FS ISO 9660 image of b.txt (review 1's R-JISO): PASS = a.txt, KEPT
+      R-MKDVD256, R-MKHD256  an mkudffs dvd / hd volume + 256 sectors of 0x5A (its closing anchor 256 before
+                  the end): PASS = nothing extracted, KEPT
       C-ANCHORREST u1 cut at sector 450 + 1 zero sector (the rest is u1's own anchors and zero bytes): PASS =
                   a.txt, deleted
       C-ZERO512   u1 cut at the descriptors' end + 512 zero sectors: PASS = a.txt, deleted
@@ -171,19 +177,24 @@ try {
     $s = $Root + '\seeds'; NewDir $s
     NewDir "$s\src1"; NewDir "$s\src2"
     [IO.File]::WriteAllText("$s\src1\a.txt", 'A1'); [IO.File]::WriteAllText("$s\src2\b.txt", 'B2')
-    $kinds = @('plain', 'two', 'twoabs', 'rest16', 'rest17', 'zero100', 'zero300', 'anchorrest', 'zero512', 'zero513', 'zerolate', 'short', 'noanchor', 'anchor600')
+    $kinds = @('plain', 'two', 'twoabs', 'rest16', 'rest17', 'zero100', 'zero300', 'data100', 'anchorrest', 'zero512', 'zero513', 'zerolate', 'short', 'noanchor', 'anchor600')
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $mu = @()
     try {
         $mu += & $MkU -SrcDir "$s\src1" -Out "$s\u1.iso" -Revision 0x102 2>&1
         $mu += & $MkU -SrcDir "$s\src2" -Out "$s\u2.iso" -Revision 0x102 2>&1
         $mu += & $MkU -SrcDir "$s\src1" -Out "$s\u250.iso" -Revision 0x250 2>&1
+        $mu += & $MkU -SrcDir "$s\src2" -Out "$s\i2.iso" -FileSystems 1 2>&1
     }
     catch { $mu += ('IMAPI2FS: ' + $_.Exception.Message) }
     $mk = & wsl -d Ubuntu -- bash (WslPath $MkMk) (WslPath $s) 2>&1
     $made = @()
     if ([IO.File]::Exists("$s\u1.iso") -and [IO.File]::Exists("$s\u2.iso")) {
         foreach ($k in $kinds) { $made += & python -I $Py $k "$s\u1.iso" "$s\u2.iso" "$s\$k.bin" 2>&1 }
+        if ([IO.File]::Exists("$s\i2.iso")) { $made += & python -I $Py two "$s\u1.iso" "$s\i2.iso" "$s\joiniso.bin" 2>&1 }
+    }
+    foreach ($m in @('dvd', 'hd')) {
+        if ([IO.File]::Exists("$s\mk_$m.img")) { $made += & python -I $Py data256 "$s\mk_$m.img" "$s\mk_$m.img" "$s\mk${m}256.bin" 2>&1 }
     }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) + '=' + ([IO.FileInfo]$_).Length }) | Sort-Object) -join ','))
@@ -203,6 +214,10 @@ try {
     Unpack-Row 'R-REST17' "$s\rest17.bin" 'rest17.iso' $a -Kept
     Unpack-Row 'C-ZERO100' "$s\zero100.bin" 'zero100.iso' $a
     Unpack-Row 'R-ZERO300' "$s\zero300.bin" 'zero300.iso' $a -Kept
+    Unpack-Row 'R-DATA100' "$s\data100.bin" 'data100.iso' $a -Kept
+    Unpack-Row 'R-JOINISO' "$s\joiniso.bin" 'joiniso.iso' $a -Kept
+    Unpack-Row 'R-MKDVD256' "$s\mkdvd256.bin" 'mkdvd256.iso' $none -Kept
+    Unpack-Row 'R-MKHD256' "$s\mkhd256.bin" 'mkhd256.iso' $none -Kept
     Unpack-Row 'C-ANCHORREST' "$s\anchorrest.bin" 'anchorrest.iso' $a
     Unpack-Row 'C-ZERO512' "$s\zero512.bin" 'zero512.iso' $a
     Unpack-Row 'R-ZERO513' "$s\zero513.bin" 'zero513.iso' $a -Kept

@@ -2,9 +2,10 @@ param(
     [Parameter(Mandatory = $true)][string]$SrcDir,
     [Parameter(Mandatory = $true)][string]$Out,
     [int]$Revision = 0x102,
-    [string]$Label = 'UDF356'
+    [string]$Label = 'UDF356',
+    [int]$FileSystems = 4
 )
-# Writes a UDF-only image of $SrcDir with Windows' IMAPI2FS (FsiFileSystemUDF = 4)
+# Writes a UDF-only image of $SrcDir with Windows' IMAPI2FS (FsiFileSystemUDF = 4; -FileSystems 1 = ISO 9660 only)
 $ErrorActionPreference = 'Stop'
 if (-not ('Imapi356.Stream' -as [type])) {
     Add-Type -TypeDefinition @'
@@ -34,7 +35,7 @@ public static class Stream {
 '@
 }
 $fsi = New-Object -ComObject IMAPI2FS.MsftFileSystemImage
-$fsi.FileSystemsToCreate = 4
+$fsi.FileSystemsToCreate = $FileSystems
 $fsi.UDFRevision = $Revision
 $fsi.VolumeName = $Label
 $fsi.FreeMediaBlocks = 0

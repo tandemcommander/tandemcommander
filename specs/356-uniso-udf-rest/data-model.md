@@ -13,7 +13,8 @@ All in `src/common/salisotrack.h`; sectors are 2048 bytes; offsets per ECMA-167 
 - **File entry** (tag 261) / **extended file entry** (tag 266): its location is partition-relative.
 - **SalIsoUdfVolume**: `anchorKnown`, `anchor`, `partitionKnown`, `partitionStart` (of the first
   partition descriptor), `descriptorsEnd` (max of 257, both sequences' ends, every partition's end),
-  `closedAtEnd` (the file closes with this volume's anchor or, VAT, file entry).
+  `closedAtEnd` (`SalIsoUdfClosesFile`: the file's last whole sector, read whole and past sector 256, is
+  this volume's anchor or, VAT, a file entry of its first partition).
 - **Decision** (`SalIsoUdfRestDecision`): unknown anchor or partition → MARK; `closedAtEnd` → the
   volume size is the file's whole sectors (KEEP); else `SalIsoCookedRestDecision(true, true,
   descriptorsEnd, fileSize, ...)` → KEEP / MARK / CHECK (checkFrom, checkBytes).

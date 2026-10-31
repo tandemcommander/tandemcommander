@@ -4,15 +4,15 @@ The measurement table is in `fix-log.md` (*Where a UDF volume ends*) and the spe
 
 ## R1 - Which structures give the end of a UDF volume
 
-- **Decision**: the file's end, when its last whole sector (or the one 256 before it) is an anchor of
-  this volume, or - a volume with a virtual partition map - its last whole sector is a (extended) file
+- **Decision**: the file's end, when its last whole sector is an anchor of this volume (review 1 removed
+  "or the one 256 before it": IMAPI2FS's rest is all anchors, so data appended after it found one there), or - a volume with a virtual partition map - its last whole sector is a (extended) file
   entry of this volume; otherwise the sector after the last of the anchor at 256, the main and reserve
   descriptor sequences and the partitions of the main sequence.
 - **Rationale**: ECMA-167 / UDF place anchors at 256, N-256 and N (N = the volume's last sector) on
   closed media; a later volume's anchors name its own sequences, so "same extents as the anchor at 256"
   tells this volume's closing anchor from another's. Every measured non-VAT image (IMAPI2FS 1.02 - 2.50,
-  mkudffs hd / dvd / dvdrw / cdrw / cd / closed cdr) closes with such an anchor; open VAT images close with
-  the VAT (UDF: the VAT ICB is the last recorded sector), whose tag location is partition-relative.
+  mkudffs hd / dvd / dvdrw / cdrw / cd) closes with such an anchor at its last sector; VAT images (open
+  and closed) close with the VAT (UDF: the VAT ICB is the last recorded sector), whose tag location is partition-relative.
 - **Alternatives**: the descriptors' end alone - marks every measured plain image (rests of 128 - 272
   non-zero sectors: anchors, sparing tables) - rejected; the partition end alone - VAT volumes claim the
   whole medium, IMAPI2FS's reserve sequence lies past its partition - rejected.

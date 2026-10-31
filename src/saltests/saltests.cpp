@@ -20551,6 +20551,27 @@ static void TestIsoUdfRest_356()
     tag(fe, SAL_ISO_UDF_TAG_ANCHOR, 42);
     CHECK(!SalIsoUdfFileEntryAt(fe, 2048, 257, 299));
 
+    // does the file end with the volume? only its last sector counts (review 1)
+    unsigned char c[2048];
+    anchor(c, 575, 16 * s, 32, 16 * s, 294); // u1's closing anchor at its last sector (C-PLAIN)
+    CHECK(SalIsoUdfClosesFile(c, 2048, 575, v, false, 288));
+    CHECK(SalIsoUdfClosesFile(c, 2048, 575, v, true, 288));
+    CHECK(!SalIsoUdfClosesFile(c, 2047, 575, v, false, 288)); // a partial sector read
+    CHECK(!SalIsoUdfClosesFile(c, 2048, 576, v, false, 288)); // recorded elsewhere: data appended after u1
+    anchor(c, 256, 16 * s, 32, 16 * s, 294);                  // the anchor at 256 itself never closes
+    CHECK(!SalIsoUdfClosesFile(c, 2048, 256, v, false, 288));
+    anchor(c, 1151, 16 * s, 32 + 576, 16 * s, 294 + 576); // a later volume's anchor (R-TWOABS)
+    CHECK(!SalIsoUdfClosesFile(c, 2048, 1151, v, false, 288));
+    memset(c, 0x5A, sizeof(c)); // data appended (the review's R-JDATA100: u1's anchor lies 256 before)
+    CHECK(!SalIsoUdfClosesFile(c, 2048, 675, v, false, 288));
+    memset(c, 0, sizeof(c));
+    CHECK(!SalIsoUdfClosesFile(c, 2048, 675, v, true, 288)); // zero bytes (C-ZERO100: the rest is read)
+    tag(fe, SAL_ISO_UDF_TAG_EXT_FILE_ENTRY, 42);              // a VAT at the last sector (mkudffs cdr)
+    CHECK(SalIsoUdfClosesFile(fe, 2048, 299, v, true, 257));
+    CHECK(!SalIsoUdfClosesFile(fe, 2048, 299, v, false, 257)); // no virtual partition map
+    CHECK(!SalIsoUdfClosesFile(fe, 2048, 299, v, true, 258));  // another partition start
+    CHECK(!SalIsoUdfClosesFile(nullptr, 0, 299, v, true, 257)); // not read
+
     // the decision
     long long from = -7, bytes = -7;
     auto dec = [&](bool anchorKnown, bool partKnown, unsigned long long descEnd, bool closed, long long size)

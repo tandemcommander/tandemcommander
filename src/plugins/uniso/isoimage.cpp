@@ -1231,8 +1231,8 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
 // feature 356: a cooked UDF-only image (2048-byte sectors from offset 0, no ISO 9660 primary descriptor at
 // sector 16) lists the UDF volume its anchor at sector 256 describes. Reads that anchor, the main descriptor
 // sequence it names (at most SAL_ISO_UDF_VDS_READ sectors, up to its terminating descriptor: the partitions
-// and whether a partition map is virtual), the file's last whole sector and the one 256 before it (the
-// volume's closing anchor, or an open VAT volume's VAT), and decides by SalIsoUdfRestDecision; for CHECK, each
+// and whether a partition map is virtual), the file's last whole sector (the volume's closing anchor, or a VAT
+// volume's VAT - SalIsoUdfClosesFile), and decides by SalIsoUdfRestDecision; for CHECK, each
 // sector of the rest must be zero bytes only or this volume's anchor. Every read that fails, and memory that
 // cannot be had, leaves the end unknown or the rest unchecked - the listing is marked (fails closed).
 BOOL CISOImage::UdfRestMarks(LONGLONG fileSize)
@@ -1287,18 +1287,14 @@ BOOL CISOImage::UdfRestMarks(LONGLONG fileSize)
                 break;
         }
 
-        // the volume's closing anchor - never the one at 256 itself - or an open VAT volume's VAT
+        // the volume's closing anchor at the file's last sector - never the one at 256 itself - or a VAT
+        // volume's VAT; the sector 256 before the end is not looked at (review 1: IMAPI2FS fills its rest with
+        // the volume's anchors, so data appended after the volume would find one there)
         if (v.PartitionKnown && whole > anchorAt + 1)
         {
             unsigned long long last = whole - 1;
             got = readSector(last);
-            v.ClosedAtEnd = SalIsoUdfAnchorOf(sec, got, last, v.Anchor) ||
-                            (virtualMap && SalIsoUdfFileEntryAt(sec, got, v.PartitionStart, last));
-            if (!v.ClosedAtEnd && last > 2 * anchorAt)
-            {
-                got = readSector(last - anchorAt);
-                v.ClosedAtEnd = SalIsoUdfAnchorOf(sec, got, last - anchorAt, v.Anchor);
-            }
+            v.ClosedAtEnd = SalIsoUdfClosesFile(sec, got, last, v.Anchor, virtualMap, v.PartitionStart);
         }
     }
 

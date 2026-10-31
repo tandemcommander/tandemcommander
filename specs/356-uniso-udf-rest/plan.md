@@ -9,7 +9,8 @@ Feature 354's block in `CISOImage::Open` (`src/plugins/uniso/isoimage.cpp`, the 
 `cookedIso`) gets a second arm for a cooked image whose sector 16 is not an ISO 9660 primary descriptor
 (`CheckForISO` accepted `BEA01`): a new member `CISOImage::UdfRestMarks` reads the anchor at sector 256,
 the main volume descriptor sequence it names (at most 64 sectors: partition and logical volume
-descriptors, up to the terminating descriptor), the file's last whole sector and the one 256 before it,
+descriptors, up to the terminating descriptor) and the file's last whole sector (`SalIsoUdfClosesFile`:
+an anchor of this volume, or a VAT volume's file entry - never the sector 256 before the end, review 1),
 and fills a `SalIsoUdfVolume` (`src/common/salisotrack.h`). The pure rule `SalIsoUdfRestDecision` turns it
 into the volume's size - the file's whole sectors when the file closes with this volume's own anchor or
 (VAT) its own file entry, else the descriptors' end - and hands it to 354's `SalIsoCookedRestDecision`

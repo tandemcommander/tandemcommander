@@ -42,6 +42,7 @@ therefore takes the volume to end at the file's end when the file closes with th
 (at N-1 or N-257; same MVDS / RVDS extents as the anchor at 256 - a later volume's anchors name its own
 sequences) or, for a VAT volume, with its own file entry at N-1; otherwise at the descriptors' end, with
 354's limits, and a rest sector counts as empty when it is zero bytes only or this volume's anchor.
+**Amended by review 1**: N-257 removed - only the file's last sector closes the volume (see *Review*).
 
 ### GUI (`probe/iso356_probe.ps1`)
 
@@ -68,7 +69,9 @@ See spec *Clarifications*.
   sector 256 before it (an anchor of the volume) - never the anchor at 256 itself (`whole > 257`,
   `last > 512`, so a joined file of 513 sectors cannot pass as closed by it) - and the rest sector by
   sector; `Open`'s `cookedIso` block calls it when `iso9660` is false and marks `ListingLeftOut`.
-- `src/saltests/saltests.cpp`: `TestIsoUdfRest_356` (68 checks).
+  **After review 1**: the sector 256 before the end is no longer read; the closing test is the pure
+  `SalIsoUdfClosesFile` (last sector only, read whole, past sector 256).
+- `src/saltests/saltests.cpp`: `TestIsoUdfRest_356` (68 checks; 80 after review 1).
 
 ## Checks
 
@@ -118,3 +121,40 @@ The installed Tandem Commander closed at about 17:13; all probes ran after it, o
 - R-MKHD512 (512-byte blocks) is kept already on main (no file listed, no window) and after.
 - The C-MK rows (empty mkudffs volumes: nothing to extract) are deleted before and after - the plain
   images of every media type the rule must leave alone, VAT open and closed included.
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+- **MUST-1 (accepted, fixed)**: the "anchor 256 before the end" alternative of the closing test lost data.
+  IMAPI2FS fills every sector past its reserve sequence with the volume's anchors, so 1 - 256 sectors of
+  any data appended after an IMAPI2FS volume (and exactly 256 after a closed mkudffs volume) found an
+  anchor of the volume at "last - 256" → closed → kept listing → the image deleted. The reviewer
+  reproduced it on the branch's build with its own probe copy: R-JISO (u1 + an ISO 9660 image of b.txt)
+  extracted `a.txt` and **deleted** the image, also R-JDATA100, R-JMKDVD256, R-JMKHD256 (8 / 4).
+  Fix: `SalIsoUdfClosesFile` - only the file's last whole sector closes the volume; the N-257 read is
+  gone from `UdfRestMarks`. No measured plain image needed it (each closes at its last sector: the
+  closed VAT `cdr` by its VAT there). Rule mirror after the change over the 27 seeds and the
+  reviewer's 9 joined images: every plain verdict unchanged; C-ZERO100 now kept through the read rest
+  (366 empty sectors); all of the reviewer's joined images MARK.
+- **SHOULD-1 (accepted, fixed)**: nothing tested how `ClosedAtEnd` is derived and C-ZERO100 (zeros)
+  could never catch it. Now the pure `SalIsoUdfClosesFile` with 12 saltests checks (an anchor recorded
+  elsewhere, 0x5A data, zero bytes, the anchor at 256, a later volume's anchor, a partial read, VAT with
+  and without a virtual map, another partition start), and probe rows R-DATA100, R-JOINISO
+  (`imapiudf356.ps1 -FileSystems 1` ISO 9660 image of b.txt joined after u1), R-MKDVD256, R-MKHD256 with
+  non-zero data where "last - 256" is an anchor of the volume. One new check failed first: a partial read
+  of the last sector counted as closing - `SalIsoUdfClosesFile` now requires a whole sector.
+- **SHOULD-2 (accepted, fixed)**: the spec's table said mkudffs hd has anchors at N-1 and N-257; hd has
+  only N-1 (fix-log measured right). Spec table corrected.
+- NOTE-1 (VAT check loose: any file entry at the partition-relative location, the first partition's
+  start, no check that it is the VAT): recorded, not changed - a joined image cannot match the
+  partition-relative location; a crafted one can (as accepted for 353 - 355).
+- NOTE-2 (a partial last sector past a closing... u1 + 1000 bytes is kept): within 354's accepted
+  tolerance (whole sectors count; a partial sector holds no later volume).
+- NOTE-3 (non-conforming images whose UDF signature is at 16 but whose listing comes from another file
+  system): recorded only.
+
+After the fix: build BUILD SUCCEEDED; saltests **29,482 checks, 0 failed**;
+`result_before2.txt` (main's `uniso.spl`, the new rows) **43 / 13** (the 13 R rows deleted, N-U250
+unchanged); `result_after2.txt` (the fix) **56 / 0**; regressions `regress_354.txt` 28 / 0,
+`regress_355.txt` 40 / 0; encoding guard 0.
