@@ -1,7 +1,7 @@
 ---
 title: Check feature 349 with a Mac-made HFS+ image holding a moved folder
 type: person-step
-status: new
+status: open
 severity: 5
 area: archives
 source: leftover:349
@@ -58,3 +58,4 @@ only when everything was extracted.
 ## Log
 
 - 2026-10-31 — created (source leftover:349)
+- 2026-10-31 — moved to Person steps position 13
