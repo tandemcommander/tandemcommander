@@ -8,7 +8,7 @@ source: manual
 who: both
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 e0c3690d
 effort: M
 feature: -
 related: []
@@ -39,3 +39,4 @@ In a disk panel, and in a plug-in FS panel that supports Quick Rename, Shift+F6 
 
 - 2026-10-31 — created (source manual)
 - 2026-10-31 — moved to Next position 82
+- 2026-10-31 — verified at e0c3690d: present at e0c3690d: no Shift+F6 row in IDA_MAINACCELS1/2 or panel key handler; hidden-desktop probe: Shift+F6 sent to the panel opens no in-place edit (file, folder, accented name)
