@@ -7,6 +7,7 @@
 #include "uniso.h"
 #include "isoimage.h"
 #include "udf.h"
+#include "../../common/salisoudfvat.h" // feature 358: the VAT rules
 
 #include "uniso.rh"
 #include "uniso.rh2"
@@ -190,6 +191,8 @@ CUDF::CUDF(CISOImage* image, DWORD extent, int trackno) : CUnISOFSAbstract(image
     ExtentOffset = extent;
     PartitionMapping.Translation = NULL;
     PartitionMapping.VAT = NULL;
+    PartitionMapping.Entries = 0; // feature 358: no table until a VAT is found (was left uninitialized)
+    PartitionMapping.Length = 0;
     PartitionMapping.nMetadataICBs = 0;
 }
 
@@ -226,7 +229,9 @@ Uint32 CUDF::LogSector(Uint32 lbNum, Uint16 part)
         break;
 
     case mapVirtual:
-        if (lbNum >= 0 && lbNum <= PartitionMapping.Entries)
+        // feature 358: only through a table that was read and only its entries 0 .. Entries - 1 (a VAT not
+        // found left Translation NULL - read through NULL; '<=' read one entry past the table)
+        if (SalIsoUdfVatTranslates(lbNum, PartitionMapping.Entries, PartitionMapping.Translation != NULL))
             physBlock = PartitionMapping.Translation[lbNum] - ExtentOffset;
         else
             physBlock = INVALID_SECTOR_NUMBER;
@@ -1405,9 +1410,17 @@ int CUDF::CheckForVAT(BYTE sector[], bool bEFE, CPartitionMapping* pm, BOOL quie
             return ret;
 
         // decode VAT header
+        // feature 358: the header length comes from the table - a table too short to hold it, or a header
+        // longer than the file (the count wrapped and Translation pointed past the table), is not a VAT
+        unsigned long long entries;
+        if (vatLen < 2 || !SalIsoUdfVat200Entries(fe.InformationLength, GET_WORD(vat, 0), vatLen, entries))
+        {
+            delete[] vat;
+            return ERR_CONTINUE;
+        }
         WORD l_hd = GET_WORD(vat, 0);
 
-        pm->Entries = (fe.InformationLength - l_hd) / 4; // definition
+        pm->Entries = entries; // definition: (InformationLength - l_hd) / 4
         pm->Length = vatLen;
         pm->Translation = (DWORD*)(vat + l_hd);
         pm->VAT = vat;
@@ -1512,8 +1525,15 @@ BOOL CUDF::ReadSupportingTables(BOOL quiet)
                 vatLoc++;
             } while (vatLoc < lastVatLoc && vatRet == ERR_CONTINUE);
 
-            if (vatRet == ERR_CONTINUE)
-                Error(IDS_UDF_MISSING_VAT, quiet);
+            // feature 358: without its VAT no block of the volume can be found - the volume does not open
+            // (as when the VAT sector cannot be read above), so the track or UDF part counts as not opened
+            // and the listing is marked; it used to open without a table and LogSector read through NULL
+            if (vatRet != ERR_OK)
+            {
+                if (vatRet == ERR_CONTINUE)
+                    Error(IDS_UDF_MISSING_VAT, quiet);
+                return FALSE; // ERR_TERMINATE: the callee showed its message
+            }
             break;
 
         case mapSparable:

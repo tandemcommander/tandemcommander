@@ -38,3 +38,49 @@ VAT and data past it crashes Tandem Commander.
 - Not finding the VAT (or a terminating error in the search) fails `ReadSupportingTables` -> `CUDF::Open` FALSE,
   the same as the existing "Error reading virtual allocation table" path (C-VCLAIM): conservative, the nearest
   existing behaviour; no new UI string.
+
+## Analyze
+
+- speckit-analyze: CRITICAL 0, HIGH 0. MEDIUM C1 - no probe row for a UDF + ISO 9660 hybrid whose UDF part is a
+  VAT volume without its VAT: accepted - the same `CUDF::Open` FALSE that 330's `CUDFISO::Open` already handles
+  (`PartMissing` when the anchor at 256 is there). LOW U1 (T007's 2-byte table check) kept.
+
+## Implementation
+
+- `src/common/salisoudfvat.h` (new, header-only): `SalIsoUdfVatTranslates(lbNum, entries, hasTable)` = a table
+  and `lbNum < entries`; `SalIsoUdfVat200Entries(infoLen, headerLen, tableLen, entries&)` refuses a header
+  longer than the file or a file longer than the table held.
+- `src/plugins/uniso/udf.cpp`: constructor sets `Entries` / `Length` to 0; `LogSector` (mapVirtual) through
+  the rule; `CheckForVAT` (VAT 2.00) takes the count through the rule (a table under 2 bytes or a refused count
+  -> not a VAT, `ERR_CONTINUE`); `ReadSupportingTables` returns FALSE when the VAT search ends without a VAT
+  (`ERR_CONTINUE`: the existing "Missing virtual allocation table." box; `ERR_TERMINATE`: the callee's box).
+- `src/saltests/saltests.cpp`: `TestIsoUdfVat_358` (25 checks; the 2.00 count rule also over a grid of
+  65 x 24 x 15 lengths, summarized in two checks).
+- Callers enumerated (research R4): `ReadSupportingTables` <- `CUDF::Open` only; `CUDF::Open` <-
+  `CISOImage::OpenTrack` (fsUDF) and `CUDFISO::Open` (hybrids); `LogSector` <- `MapICB`, line 592,
+  `ListDirectory`, `ScanDir`, `UnpackFile` - all take `INVALID_SECTOR_NUMBER` as a failed read.
+
+## Measurements after (Debug x64)
+
+| Check | Command | Result |
+|---|---|---|
+| build | `.\build.cmd` | BUILD SUCCEEDED (one pre-existing C4267 at udf.cpp:793, not a changed line) |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | 29,553 -> **29,578 checks, 0 failed** |
+| negative control | `SalIsoUdfVatTranslates` mutated to `lbNum <= entries`, rebuilt | **4 failed** (0/0, 1/1, 300/300, 0xFFFFFFFF/0xFFFFFFFF); header restored, rebuilt, 0 failed |
+| probe 358 | `iso358_probe.ps1 -Label after` (`probe/result_after.txt`) | **22 / 0** (before 14 / 8 on main 249e35f0: R-VCDR100, R-VCLAIM16, R-VCLAIM100Z, L-VCDR100 crashed) |
+| regression 356 | `specs\356-uniso-udf-rest\probe\iso356_probe.ps1 -Label regress358` (`probe/regress_356.txt`) | **56 / 0** |
+| encoding | `python tools/check_encoding.py --strict` | TOTAL: 0 finding(s) |
+
+- After: each crash row shows exactly one box "Missing virtual allocation table." (the open by the Unpack / the
+  listing), nothing extracted, the image kept, no bug report; C-VCLAIM keeps its "Error reading virtual
+  allocation table" box; the plain mkudffs VAT images (cdr open / closed, dvdr, bdr) unpack with no window and
+  are deleted as before.
+- No UI string, menu or dialog changed - no `.slt` refresh (stop-rules 2.13 does not apply).
+- Limit: the mkudffs images are empty file systems, so the probe's plain VAT rows prove "lists and unpacks
+  successfully" (a failed translation would show "Error listing image" and keep the image) but extract no
+  file; a VAT image with files needs a written disc (person step of 356 covers real images).
+
+## Inbox
+
+- `iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer` (measure:358) - `ReadVAT` / `ReadAllocDesc`
+  copy descriptors into the table buffer without a bound (research R3; found by reading, not probed).

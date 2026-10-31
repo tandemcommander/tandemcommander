@@ -109,6 +109,7 @@
 #include "salnrgcdtext.h"      // feature 331
 #include "salisotrack.h"       // features 334, 335, 351, 352, 353
 #include "salisounpack.h"      // feature 338
+#include "salisoudfvat.h"      // feature 358
 #include "salrenamekey.h"      // feature 346
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
@@ -20436,6 +20437,63 @@ static void TestIsoPlainLayouts_357()
     }
 }
 
+// feature 358: the virtual allocation table of a UDF volume on a sequential medium - which virtual blocks
+// are translated, and the entry count of a VAT 2.00 (src/common/salisoudfvat.h)
+static void TestIsoUdfVat_358()
+{
+    // no table (the VAT was not found): never translated - the reader read entry 0 through NULL
+    CHECK(!SalIsoUdfVatTranslates(0, 0, false));
+    CHECK(!SalIsoUdfVatTranslates(0, 10, false));
+    CHECK(!SalIsoUdfVatTranslates(5, 10, false));
+    // a table of 0 entries translates nothing
+    CHECK(!SalIsoUdfVatTranslates(0, 0, true));
+    // entries 0 .. entries - 1; the entry count itself is one past the table (the reader's '<=')
+    CHECK(SalIsoUdfVatTranslates(0, 1, true));
+    CHECK(!SalIsoUdfVatTranslates(1, 1, true));
+    CHECK(SalIsoUdfVatTranslates(0, 300, true));
+    CHECK(SalIsoUdfVatTranslates(299, 300, true));
+    CHECK(!SalIsoUdfVatTranslates(300, 300, true));
+    CHECK(!SalIsoUdfVatTranslates(301, 300, true));
+    CHECK(!SalIsoUdfVatTranslates(0xFFFFFFFFull, 300, true));
+    CHECK(SalIsoUdfVatTranslates(0xFFFFFFFEull, 0xFFFFFFFFull, true));
+    CHECK(!SalIsoUdfVatTranslates(0xFFFFFFFFull, 0xFFFFFFFFull, true));
+
+    unsigned long long e = 99;
+    // mkudffs' VAT 2.00: a 152-byte header and 300 entries in a table of the file's length
+    CHECK(SalIsoUdfVat200Entries(152 + 300 * 4, 152, 152 + 300 * 4, e) && e == 300);
+    // a remainder of 1 - 3 bytes is not an entry
+    CHECK(SalIsoUdfVat200Entries(152 + 300 * 4 + 3, 152, 152 + 300 * 4 + 3, e) && e == 300);
+    // a header of the whole file: no entry
+    CHECK(SalIsoUdfVat200Entries(152, 152, 152, e) && e == 0);
+    // a table larger than the file claims (the buffer may be larger): the file's length counts
+    CHECK(SalIsoUdfVat200Entries(160, 152, 4096, e) && e == 2);
+    // the header claims more than the file: not a VAT (the count wrapped to ~2^62 entries)
+    e = 99;
+    CHECK(!SalIsoUdfVat200Entries(100, 152, 100, e) && e == 0);
+    CHECK(!SalIsoUdfVat200Entries(0, 1, 0, e) && e == 0);
+    CHECK(!SalIsoUdfVat200Entries(0, 0xFFFF, 0, e));
+    // the file claims more than the table holds (a 64-bit length cut to the 32-bit buffer): not a VAT
+    e = 99;
+    CHECK(!SalIsoUdfVat200Entries(0x100000098ull, 152, 0x98, e) && e == 0);
+    CHECK(!SalIsoUdfVat200Entries(4097, 152, 4096, e));
+    CHECK(SalIsoUdfVat200Entries(4096, 152, 4096, e) && e == (4096 - 152) / 4);
+    // the count never reaches past the table: entries * 4 + header <= table bytes
+    bool allTaken = true, allBounded = true;
+    for (unsigned long long info = 0; info <= 64; info++)
+        for (unsigned long long hd = 0; hd <= 70; hd += 3)
+            for (unsigned long long tab = 0; tab <= 70; tab += 5)
+            {
+                unsigned long long n = 77;
+                bool ok = SalIsoUdfVat200Entries(info, hd, tab, n);
+                if (ok != (hd <= info && info <= tab))
+                    allTaken = false;
+                if (!(!ok ? n == 0 : hd + n * 4 <= tab && hd + n * 4 + 4 > info))
+                    allBounded = false;
+            }
+    CHECK(allTaken);
+    CHECK(allBounded);
+}
+
 // feature 356: a cooked UDF-only image - the UDF descriptors that give its volume's end, and whether the
 // rest past the volume is kept, marked or read (src/common/salisotrack.h)
 static void TestIsoUdfRest_356()
@@ -22801,6 +22859,7 @@ int main(int argc, char** argv)
     TestIsoRawRest_355();
     TestIsoUdfRest_356();
     TestIsoPlainLayouts_357();
+    TestIsoUdfVat_358();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();
