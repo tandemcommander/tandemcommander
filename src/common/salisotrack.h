@@ -862,6 +862,7 @@ inline bool SalIsoUdfClosesFile(const unsigned char* sec, long long len, unsigne
 //                  descriptor (PartitionStart = the first one's start)
 //   DescriptorsEnd the sector after the anchor at 256, both sequences and every partition found
 //   ClosedAtEnd    SalIsoUdfClosesFile of the file's last whole sector: the volume ends where the file ends
+//   VirtualMap     the logical volume descriptor has a virtual partition map (a VAT volume)
 struct SalIsoUdfVolume
 {
     bool AnchorKnown;
@@ -870,13 +871,16 @@ struct SalIsoUdfVolume
     unsigned long PartitionStart;
     unsigned long long DescriptorsEnd;
     bool ClosedAtEnd;
+    bool VirtualMap;
 };
 
 // Feature 356: what to do with the listing of a UDF-only cooked image of 'fileSize' bytes. MARK when the
 // anchor at 256 or a partition descriptor is not known (the volume's end cannot be read - fails closed) or
-// the file size is negative; KEEP_LISTING when the volume closes at the file's end; else feature 354's rule
-// with the descriptors' end as the volume's size (more than 16 whole sectors past it are read, up to 512;
-// fewer whole sectors than it mark). For CHECK, every sector of the rest must pass SalIsoUdfRestSectorEmpty.
+// the file size is negative; KEEP_LISTING when the volume closes at the file's end; MARK for a VAT volume
+// that does not (its partition claims the whole medium, so the descriptors do not tell where it ends -
+// review 2); else feature 354's rule with the descriptors' end as the volume's size (more than 16 whole
+// sectors past it are read, up to 512; fewer whole sectors than it mark). For CHECK, every sector of the rest
+// must pass SalIsoUdfRestSectorEmpty.
 inline int SalIsoUdfRestDecision(const SalIsoUdfVolume& v, long long fileSize, long long& checkFrom,
                                  long long& checkBytes)
 {
@@ -884,6 +888,8 @@ inline int SalIsoUdfRestDecision(const SalIsoUdfVolume& v, long long fileSize, l
         return SAL_ISO_REST_MARK;
     if (v.ClosedAtEnd)
         return SAL_ISO_REST_KEEP_LISTING;
+    if (v.VirtualMap)
+        return SAL_ISO_REST_MARK;
     return SalIsoCookedRestDecision(true, true, v.DescriptorsEnd, fileSize, checkFrom, checkBytes);
 }
 

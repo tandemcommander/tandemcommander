@@ -89,6 +89,8 @@ def decide(data):
         closed = anchor(s, last) == a or (virt and last >= part and (tag_valid(s, 261, last - part) or tag_valid(s, 266, last - part)))
     if closed:
         return 'KEEP', f'closed at end (descriptors end {dend})'
+    if virt:
+        return 'MARK', 'a VAT volume not closed by its VAT (review 2)'
     if whole < dend:
         return 'MARK', f'file ends within the volume ({whole} < {dend})'
     if whole - dend <= 16:

@@ -1296,6 +1296,7 @@ BOOL CISOImage::UdfRestMarks(LONGLONG fileSize)
             got = readSector(last);
             v.ClosedAtEnd = SalIsoUdfClosesFile(sec, got, last, v.Anchor, virtualMap, v.PartitionStart);
         }
+        v.VirtualMap = virtualMap; // review 2: a VAT volume not closed by its VAT is marked
     }
 
     long long checkFrom = 0, checkBytes = 0;

@@ -1,6 +1,6 @@
-iso355_probe (feature 355) regress-356-review1
+iso355_probe (feature 355) regress-356-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-31 17:51; registry key existed True
+Date    : 2026-10-31 18:16; registry key existed True
 
 seeds: audio.raw=1119552,bigpvd.raw=827904,cooked.raw=360448,one.raw=413952,rest16.raw=451584,rest17.raw=453936,run2.raw=418656,s1.iso=360448,s2.iso=360448,s2.lba=3,short.raw=409248,two.raw=827904,xa2.raw=827904,zero150.raw=766752,zero512.raw=1618176,zero513.raw=1620528,zerolate.raw=1119552
 img355: one: 413952 bytes (s1 176 + s2 176 sectors)

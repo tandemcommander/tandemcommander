@@ -20574,7 +20574,8 @@ static void TestIsoUdfRest_356()
 
     // the decision
     long long from = -7, bytes = -7;
-    auto dec = [&](bool anchorKnown, bool partKnown, unsigned long long descEnd, bool closed, long long size)
+    auto dec = [&](bool anchorKnown, bool partKnown, unsigned long long descEnd, bool closed, long long size,
+                   bool vat = false)
     {
         SalIsoUdfVolume u = {};
         u.AnchorKnown = anchorKnown;
@@ -20583,6 +20584,7 @@ static void TestIsoUdfRest_356()
         u.PartitionStart = 288;
         u.DescriptorsEnd = descEnd;
         u.ClosedAtEnd = closed;
+        u.VirtualMap = vat;
         from = -7;
         bytes = -7;
         return SalIsoUdfRestDecision(u, size, from, bytes);
@@ -20609,6 +20611,15 @@ static void TestIsoUdfRest_356()
     CHECK(dec(true, true, 310, false, 300 * s) == SAL_ISO_REST_MARK && untouched());          // R-SHORT
     CHECK(dec(true, true, 4000, false, 320 * s) == SAL_ISO_REST_MARK);                        // VAT + other data
     CHECK(dec(true, true, 0x1FFFFFFFEull, false, 0x7FFFFFFFFFFFFFFFll) == SAL_ISO_REST_MARK); // no overflow
+    // a VAT volume: closed by its VAT at the last sector - kept (mkudffs cdr / dvdr / bdr, open and closed);
+    // not closed - marked, also when the file reaches the size its partition claims (review 2: 300 sectors
+    // of VAT volume + data up to 4000 or 4016 sectors, or + zero sectors past 4000, were kept)
+    CHECK(dec(true, true, 4000, true, 300 * s, true) == SAL_ISO_REST_KEEP_LISTING && untouched());
+    CHECK(dec(true, true, 4000, false, 300 * s, true) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(true, true, 4000, false, 4000 * s, true) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(true, true, 4000, false, 4016 * s, true) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(true, true, 4000, false, 4100 * s, true) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(true, true, 4000, false, 4000 * s, false) == SAL_ISO_REST_KEEP_LISTING); // not a VAT volume: 354's rule
 
     // the sectors of the rest
     unsigned char r[2048] = {};

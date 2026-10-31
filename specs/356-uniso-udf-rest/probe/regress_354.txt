@@ -1,6 +1,6 @@
-iso354_probe (feature 354) regress-356-review1
+iso354_probe (feature 354) regress-356-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-31 17:49; registry key existed True
+Date    : 2026-10-31 18:14; registry key existed True
 
 seeds: bigpvd.bin=720896,plain.bin=360448,rest16.bin=393216,rest17.bin=395264,s1.iso=360448,s2.iso=360448,s2.lba=3,short.bin=356352,two.bin=720896,xdev1.iso=458752,xesp.iso=3325952,xms.iso=524288,zero168.bin=704512,zero512.bin=1409024,zero513.bin=1411072,zerolate.bin=974848
 img354: plain: one volume of 176 sectors

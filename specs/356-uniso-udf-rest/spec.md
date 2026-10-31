@@ -116,8 +116,10 @@ and a whole unpack keeps the image.
 
 - A later volume whose closing anchor sits at the file's last sector but names its own descriptor
   sequences (a later session addressed as on a disc): not this volume's anchor - the rest is checked.
-- A VAT volume followed by other data: its last sector is not its own file entry - the descriptors'
-  end is used (the partition claims the whole medium: more than the file - marked).
+- A VAT volume followed by other data: its last sector is not its own file entry - marked, whatever the
+  file's size (its partition claims the whole medium, so the descriptors do not give its end - review 2).
+  The plug-in's UDF reader crashes on such an image while listing it (an older defect, on main as well:
+  Inbox `iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes`).
 - A UDF image with blocks other than 2048 bytes: no anchor at 2048-byte sector 256 - marked.
 - A sparable volume (its sparing table lies past the reserve sequence) followed by more sectors, so
   that the file does not end with its closing anchor: the sparing table is not an empty sector - marked.
@@ -141,7 +143,8 @@ and a whole unpack keeps the image.
   anchor or its VAT.
 - **FR-004**: The listing MUST be marked incomplete when the anchor at sector 256 is missing or not
   valid, when the main descriptor sequence names no partition, when the file holds fewer whole sectors
-  than the volume's end, or when a sector that must be read cannot be read.
+  than the volume's end, when a VAT volume's file does not end with its VAT, or when a sector that must
+  be read cannot be read.
 - **FR-005**: A UDF-only image whose file ends with its own closing anchor, or (VAT) with its own file
   entry, or holds at most 16 sectors past its volume's end MUST unpack and be deleted as before.
 - **FR-006**: No UI string, message, listing or extraction changes; images with an ISO 9660 descriptor
@@ -181,11 +184,14 @@ and a whole unpack keeps the image.
   trusted.
 - Assumption (autonomous run): a crafted image whose descriptors claim a size close to the file, or a
   joined volume whose descriptors copy the first one's, still hides what lies past it (as 353 - 355).
-- Assumption (autonomous run): a plain image followed by zero bytes whose file then neither ends with the
-  volume's anchor nor holds one 256 sectors before its end, and whose rest past the descriptors is longer
+- Assumption (autonomous run): a plain image followed by zero bytes whose file then does not end with the
+  volume's anchor, and whose rest past the descriptors is longer
   than 512 sectors (an IMAPI2FS image + 300 zero sectors: 566), is kept after a whole unpack - the rest is
   not read in full (354's cap; fails closed).
 - Assumption (autonomous run): an image kept this way gets no new message (as features 353 - 355); no UI
   string changes, so no translation refresh.
 - Assumption (autonomous run): the sessions of a UDF multi-session image are still not read; a VAT
-  volume's listing already reads its newest VAT at the file's end.
+  volume's listing reads the first VAT the plug-in finds in the last 7 sectors of the file (review 2: not
+  necessarily the newest when two lie there - unlikely, writes on a disc are separated by link blocks).
+- Assumption (autonomous run): up to 16 whole sectors (and a partial one) past the volume are not read,
+  as feature 354 decided (an mkudffs hd image + 15 sectors of data is deleted - review 2 NOTE-1).

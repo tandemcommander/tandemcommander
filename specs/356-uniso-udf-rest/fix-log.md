@@ -154,7 +154,38 @@ The installed Tandem Commander closed at about 17:13; all probes ran after it, o
 - NOTE-3 (non-conforming images whose UDF signature is at 16 but whose listing comes from another file
   system): recorded only.
 
-After the fix: build BUILD SUCCEEDED; saltests **29,482 checks, 0 failed**;
+After the review-1 fix: build BUILD SUCCEEDED; saltests **29,482 checks, 0 failed**;
 `result_before2.txt` (main's `uniso.spl`, the new rows) **43 / 13** (the 13 R rows deleted, N-U250
 unchanged); `result_after2.txt` (the fix) **56 / 0**; regressions `regress_354.txt` 28 / 0,
 `regress_355.txt` 40 / 0; encoding guard 0.
+
+### Review 2 (independent agent, refute-first; review 1's findings given)
+
+No MUST. MUST-1 of review 1 verified gone: its four joined images (R-JDATA100, R-JISO, R-JMKDVD256,
+R-JMKHD256) kept on the branch build (were deleted on the review-1 build); its saltests mutants (the
+whole-sector test of `SalIsoUdfClosesFile` dropped; `SalIsoUdfRestSectorEmpty` accepting any anchor)
+each fail one check.
+
+- **SHOULD-1 (accepted, fixed)**: a VAT volume not closed by its VAT took its partition's claimed end
+  (the whole medium) as the volume's end - once the file reached that size (mk_cdr 300 sectors + data up
+  to 4000 / 4016 sectors, or + zero sectors past 4000; also the closed cdr) the listing was kept without
+  looking at the data. Today the reader crashes first (SHOULD-2), so nothing was deleted, but the rule was
+  wrong. Fix: `SalIsoUdfVolume::VirtualMap`; `SalIsoUdfRestDecision` marks a VAT volume that is not
+  closed at the file's end; 6 saltests checks; rule mirror: all five of review 2's VAT images MARK.
+  No probe row: such an image crashes the reader (below).
+- **SHOULD-2 (old defect, not this item → Inbox)**: a VAT image with data past it crashes Tandem
+  Commander while listing (access violation reading 0 in `CUDF::LogSector`: no VAT found,
+  `ReadSupportingTables` still returns TRUE, `Translation` NULL) - with main's `uniso.spl` as well. Inbox
+  `iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes` (review:356, severity 7). The image is kept.
+  The bug reports of review 2's crash rows were removed by the probe library (none left in
+  `%LOCALAPPDATA%\Tandem Commander`).
+- NOTE-1 (mkudffs hd + 15 sectors of data, u1 + 2047 bytes deleted): 354's accepted tolerance of 16
+  sectors - written into the spec's *Assumptions*.
+- NOTE-2 (the reader takes the first VAT found in the last 7 sectors, not necessarily the newest): the
+  spec's assumption corrected.
+- NOTE-3 (stale "256 before its end" in the spec's *Assumptions*): corrected.
+- NOTE-4 (the MUST-1 rows were compared with main's plug-in only): recorded - the comparison with the
+  review-1 build is review 2's own run.
+
+After the review-2 fix: build BUILD SUCCEEDED; saltests **29,488 checks, 0 failed**; `result_after3.txt`
+**56 / 0**; `regress_354.txt` 28 / 0, `regress_355.txt` 40 / 0.
