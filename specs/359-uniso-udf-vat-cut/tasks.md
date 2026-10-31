@@ -17,7 +17,7 @@ description: "Task list for feature 359 - a cut UDF VAT image no longer hangs th
 
 ## Phase 2: Foundational (the pure rule)
 
-- [X] T002 Add `SalIsoUdfVatFallback(fileSectors, partStart, failed, taken, first, last)` to `src/common/salisoudfvat.h` (research R3)
+- [X] T002 Add `SalIsoUdfVatFallback(trackSectors, partStart, extentOffset, failed, taken, first, last)` (after review 1) to `src/common/salisoudfvat.h` (research R3)
 - [X] T003 Add `TestIsoUdfVat_359` to `src/saltests/saltests.cpp` and call it from the test list: the cases of the spec (taken, file ending at / before the partition start, `n + 7 >= failed`, `n < 7`, `n >= 7`, failed below 7, 64-bit file counts) and a simulation of the search loop over a grid (file sectors, partition start, claimed length, readable limit) that must end within 21 reads
 - [X] T004 Mutant control: drop the `taken` guard (or compute `n - 7` in 32 bits) in a scratch copy of the header - `TestIsoUdfVat_359` must fail; record in `fix-log.md`
 

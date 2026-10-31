@@ -11,7 +11,7 @@ sectors for the VAT's file entry. When a read fails it computes the file's parti
 Nothing limits how often: a failed read at a sector below 7 wraps `vatLoc - 7`, the same window is set again,
 and the loop never ends (measured: raw Mode 1 dumps, whose sectors are counted in 2048 bytes). The fix:
 
-1. A pure rule `SalIsoUdfVatFallback(fileSectors, partStart, failed, taken, first, last)` in
+1. A pure rule `SalIsoUdfVatFallback(trackSectors, partStart, extentOffset, failed, taken, first, last)` (track-sector form after review 1; see research R3) in
    `src/common/salisoudfvat.h` (64-bit, no wrap): false when the fallback was taken already, when the file ends
    at or before the partition start, or when `n + 7 >= failed` (`n` = the file's partition sectors - today's
    `nSectors < vatLoc - 7` without the wrap); otherwise the window `[max(n - 7, 0), n)`.

@@ -64,7 +64,8 @@ inline bool SalIsoUdfVat200Entries(unsigned long long infoLen, unsigned long lon
 // continues there. False - the search ends with "Error reading virtual
 // allocation table" - when the fallback was taken already, when the track ends
 // at or before the partition's start in the track (it holds no partition
-// sector), when the failed read lies within 7 sectors past the track's end,
+// sector), when the failed read was not more than 7 sectors past the track's
+// end (inside the track, or just past it),
 // or when no window position is left. The reader used to compute this in
 // 32 bits without a limit: a failed read at a fallback position below 7
 // wrapped "failed - 7", the same window was set again and the search never

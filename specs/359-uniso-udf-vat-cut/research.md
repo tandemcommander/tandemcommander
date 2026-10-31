@@ -23,12 +23,16 @@
 
 ## R3 - The rule
 
-- Decision: `SalIsoUdfVatFallback(fileSectors, partStart, failed, taken, first, last)`, 64-bit:
+- Decision (first version; review 1 moved it to track sectors - below): `SalIsoUdfVatFallback(fileSectors, partStart, failed, taken, first, last)`, 64-bit:
   - `taken` -> false (at most once);
   - `fileSectors <= partStart` -> false (no partition sector in the file: the read error at once);
   - `n = fileSectors - partStart`; `n + 7 >= failed` -> false (today's `nSectors < vatLoc - 7`, without wrap);
   - else `first = n >= 7 ? n - 7 : 0`, `last = n`, true.
 - Since `n + 7 < failed <= 0xFFFFFFFF`, `first` and `last` fit the plug-in's 32-bit `vatLoc`.
+- Review 1 (S1): decided in track sectors - `SalIsoUdfVatFallback(trackSectors, partStart, extentOffset, failed,
+  taken, first, last)`: the failed read's track sector `(partStart + failed) mod 2^32`, the partition's start in
+  the track `partStart - extentOffset` (0 when smaller), the window `[max(T - 7, start), T)` mapped back by
+  subtracting `partStart` mod 2^32, a window that would cross position 0 clipped to start at `partStart`.
 - Alternatives considered: an iteration counter in the loop (bounds the hang but keeps the wrapped numbers).
 
 ## R4 - Callers

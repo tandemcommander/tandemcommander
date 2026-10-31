@@ -20537,6 +20537,11 @@ static void TestIsoUdfVat_359()
     CHECK(!SalIsoUdfVatFallback(257, 30257, 30000, (3743 - 30000 - 7) & 0xFFFFFFFFull, false, f, l));
     CHECK(SalIsoUdfVatFallback(260, 30257, 30000, (3743 - 30000 - 7) & 0xFFFFFFFFull, false, f, l) &&
           f == ((257ull - 30257) & 0xFFFFFFFFull) && l == ((260ull - 30257) & 0xFFFFFFFFull));
+    // the failed track sector is the reader's 32-bit sum (review 2): 1 + 0xFFFFFFFF reads track sector 0, inside a
+    // 2-sector track - no fallback (unmasked, 2^32 looked far past the track)
+    CHECK(!SalIsoUdfVatFallback(2, 1, 0, 0xFFFFFFFFull, false, f, l));
+    // ... and position 0x30 reads track sector 0x20, past a 20-sector track: window 13 .. 20 = positions 0x1D .. 0x24
+    CHECK(SalIsoUdfVatFallback(20, 0xFFFFFFF0ull, 0xFFFFFFF0ull, 0x30, false, f, l) && f == 0x1D && l == 0x24);
     // a window that would cross position 0 (the descriptor's start inside the window) starts at position 0
     CHECK(SalIsoUdfVatFallback(300, 297, 100, 3736, false, f, l) && f == 0 && l == 3);
     CHECK(!SalIsoUdfVatFallback(300, 300, 100, 3736, false, f, l));

@@ -93,7 +93,9 @@ sectors after its partition start may hang the listing.
   track sectors - the failed read's track sector `(partStart + failed) mod 2^32`, the partition's start in the
   track `partStart - extentOffset` (0 when smaller), the window `[max(T - 7, start), T)` mapped back to
   positions by subtracting `partStart` mod 2^32; a window that would cross position 0 starts at `partStart`
-  (empty -> false). For E = 0 every decision is the first version's (all earlier checks unchanged).
+  (empty -> false). For E = 0 the outcome is the first version's (all earlier checks unchanged); review 2: the
+  reported sector may differ - the failed track sector is now the reader's 32-bit sum, so a read before the
+  partition that wrapped (`PD.Start + failed >= 2^32`) takes no fallback, whose reads failed anyway.
   `TestIsoUdfVat_359` now 33 checks: + the later-session window, a later-session track holding no partition
   sector, the crossing clip (2), and the model with an extent dimension (4 extents) and a VAT position (the
   mk_cdr image and the later session find their VAT). saltests 29,611 / 0.
@@ -105,6 +107,24 @@ sectors after its partition start may hang the listing.
 - NOTE N2 (the item's "too short" wording) and N4/N5 (the first window, a failed read below 7 in a first window
   under 14 sectors takes no wrapped fallback now) - by the spec's Clarifications. N3 (sectors 0 .. n-1 now read
   reach `ReadVAT`'s unbounded copy) - the existing item `iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer`.
+
+### Review 2 (refute-first, general-purpose agent, on 0d1292f8) - no MUST
+
+- Model in `%TEMP%\rev359b`: over 141,120 E = 0 searches the outcome never differs from the first version; over
+  2,516,000 searches (E > 0, raw, short files) the old code never ends in 54,372, the new code in none (at most 14
+  reads). Where the old code ended and found a VAT the new does not, the VAT lay outside the partition (the
+  track ending before the partition's start in it, or a VAT just before that start) or the claimed partition
+  was 13 sectors or less on a raw / short file (the accepted first-window case, Clarifications).
+- **SHOULD S1 (fixed)**: the fix-log claimed "every E = 0 decision is the first version's" - the failed track
+  sector is now the reader's 32-bit sum, so `PD.Start + failed >= 2^32` takes no fallback (the outcome is the
+  same: those fallback reads failed too; only the sector in the box differs). Claim reworded; two checks pin the
+  32-bit sum (`(2, 1, 0, 0xFFFFFFFF)` -> false; a wrapped positive window). saltests 29,613 / 0. Negative
+  control: the mask removed -> **1 failed** (`saltests.cpp(20542)`); restored, rebuilt, 0 failed.
+- S2 (the after GUI probes): still pending - PID 7700 (session 30) open.
+- N1 (a later-session track whose partition starts within 7 sectors of the track's end, with `PD.Start < E`:
+  the clip reads only `PD.Start .. T-1`) - no worse than before (the old code read nothing); recorded.
+- N2 (documents with the first version's signature, the header comment's "within 7 past the end") - fixed in
+  plan.md, research.md (R3, review-1 form added), tasks.md and the header comment.
 
 ## Analyze
 
