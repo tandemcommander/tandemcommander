@@ -43,6 +43,12 @@ How common a rest past the ISO 9660 volume is (the item's *Notes*; measured in W
 
 ### Session 2026-10-31
 
+- Q: Should every cooked image with more than 16 sectors past its volume be kept (the item's rule as written), or may a rest that is provably empty still be deleted? → A: A rest of zero bytes only, read in full, is not marked - it holds no later volume (whose descriptors are never zero) and no data; any non-zero byte past the volume marks the listing (autonomous run: item - its *Notes* ask to measure how common a rest is before choosing the rule; the measurement found xorriso's native 168 zero sectors in every such image - and conservative: no case that holds data is deleted)
+- Q: How much of a zero rest is read before the plug-in gives up and keeps the image? → A: At most 512 sectors (1 MiB); a longer rest is marked without reading further, so opening an image never reads more than 1 MiB extra (autonomous run: conservative - a check that does not see everything fails closed; 512 covers xorriso's 168 and isohybrid's alignment to 1 MiB)
+- Q: Which images does the rule apply to? → A: Only cooked images of the plain detection: no CD sync pattern at the start, 2048-byte sectors from offset 0, recognised by the descriptor at sector 16 - whatever the extension (`.iso`, an `.img` without its `.ccd`, ...); images found by the other plain checks (NRG header offset, 2336, NCD, PDI, ECDC, CIF, C2D, Xbox, MDF, HFS, APFS) and every image with a track table are unchanged (autonomous run: item - "a cooked `.iso` or `.img`" - and conservative for the cases it does not name)
+- Q: What about a cooked image whose sector 16 holds no ISO 9660 descriptor (UDF only)? → A: Unchanged; a limit recorded with an Inbox item (autonomous run: item - "a plain one-volume `.iso` unpacks and is deleted as today"; its size would need the UDF descriptors, beyond the item)
+- Q: What when sector 16 holds an ISO 9660 descriptor whose volume size cannot be read, the file ends within the volume, or the rest cannot be read? → A: The listing is marked incomplete, as feature 353 does for raw images (autonomous run: rule - CLAUDE.md "a safe to delete? check fails closed")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A cooked multi-session image is not deleted after a partial unpack (Priority: P1)
