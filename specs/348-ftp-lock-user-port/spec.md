@@ -107,6 +107,10 @@ User Story 1; the conflict table (which access types conflict) is not changed.
 - Accounts whose home folders differ and whose paths are reported absolute (`/home/u/a.txt` vs
   `/home/v/a.txt`): different paths, never conflict (unchanged).
 - Anonymous login (user `anonymous` or no user): no longer matters - the user is not compared.
+- One shared folder seen at two different absolute paths by two accounts (per-account chroot:
+  `u` sees `/home/shared/f`, `v` sees `/shared/f`) or through a symbolic link on the server: still
+  two files to the lock - the client cannot know they are one (limit, named in the closing record;
+  review 1 SHOULD 1).
 - Low memory while recording a lock: unchanged (the lock refuses).
 - Two program instances: never saw each other's locks (unchanged).
 

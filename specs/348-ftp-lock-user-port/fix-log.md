@@ -87,3 +87,28 @@ unchanged: two reads still run together.
   PASS 16 / FAIL 0; 347's `ftp347_probe.ps1` -> `probe/regress_347.txt` PASS 6 / FAIL 0 - its
   facts-only row OTHER-USER now shows 1 STOR hold.txt, 0 while another was in flight, server 'UP1'
   (on 347's branch: 2 / 1 / 'UP2'). Registry restored + identical in all three.
+
+## Review
+
+Review 1 (independent agent, refute-first): **MUST 0**, SHOULD 2, NOTE 3.
+- Re-ran the probe on the branch build: PASS 10 / FAIL 0. Own negative control: `ftp.spl` built
+  from `main` 4e2c8835 in a separate worktree and build folder, dropped into a copy of the branch
+  tree: OTHER-USER, OTHER-PORT, ALL-OTHER FAIL (2 STOR, 1 overlapping, 'UP2', upload 2 not
+  refused); registry restored identical.
+- Enumerated the 9 `OpenFile` sites and the release sites: the change only adds refusals; no
+  waits (no deadlock); one operation = one connection (FTP-to-FTP copy unsupported, `fs4.cpp`), so
+  no self-conflict; a refused upload item fails `ITEMPR_TGTFILEINUSE`, retryable; Move keeps its
+  source. Path compare across two server types bounded (`FTPIsPrefixOfServerPath`).
+- SHOULD 1 (done): limit - a shared folder seen at two different absolute paths (per-account
+  chroot, a symbolic link) is still two files to the lock; the client cannot tell. Added to the
+  spec's *Edge Cases*, the FEATURE-HISTORY entry and the changelog text. No Inbox item: no client
+  rule can see it (comparing names alone would refuse every same-named file on every server).
+- SHOULD 2 (done at closing): FEATURE-HISTORY entry, changelog text, closing report.
+- NOTE 1: the cost is plausible (staging and production uploaded at once: a same-named item
+  refused "in use" while the other stores; a long download of `/x` from server A refuses an
+  upload / delete / rename / view of `/x` on B) - named in the history entry and the changelog
+  text. NOTE 2: the open item `ftp-server-path-compare-code-page-fold` now applies across all
+  connections (same kind of effect: an extra refusal or a missed non-ASCII case match) - named in the closing report (the
+  item itself is left unchanged). NOTE 3: the probe is sound (one folder on two ports; refusal identified by its own
+  window text).
+- `git status --short` empty after the review.

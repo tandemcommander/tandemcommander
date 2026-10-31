@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
@@ -5133,3 +5133,23 @@ a few early ones are out of sequence).
   `ftp-opened-file-lock-two-names-of-one-server`. Probe `ftp347_probe.ps1` 5 / 1 on `main` -> 6 / 0
   (reviewer's negative control: the old `ftp.spl` alone fails ALIAS-LOCK); 341's 12 / 0, 345's
   16 / 0; one refute-first review (MUST 0, SHOULD 2 done, NOTE 3).
+- 348-ftp-lock-user-port: two FTP uploads of one server file as two users of the server (`ftp://v@...`
+  next to a panel as `u`, two accounts sharing a folder) or through two of its ports (a forwarded
+  port) stored it at the same time: the opened-file lock (`FTPOpenedFiles`) still told connections
+  apart by user and port after 347 dropped the host, so both STOR ran and the first upload's file
+  was replaced without a question (measured on `main`: rows OTHER-USER, OTHER-PORT, ALL-OTHER).
+  Now `CFTPOpenedFile::IsSameFile` (`operats9.cpp`) compares only the server path
+  (`FTPIsTheSameServerPath`) and the name (the server type's case rule) - every other connection is
+  maybe the same server (345's rule for the upload listing cache); the second conflicting access is
+  refused as before ("Target File Is Locked By Another Operation", Retry). Cost: a conflicting
+  access to a file of the same server path and name on any other connection - also an unrelated
+  server or account (`/index.html`, chrooted accounts) - is refused while the first one runs (the
+  refused item needs a manual Retry; two reads still run together). Traps: a forwarded port needs
+  one test server listening on two ports with one log (`ftpmini_hold2.py`), two server processes
+  would give two logs with two clocks. Limits: a shared folder seen at two different absolute
+  paths (per-account chroot, a server symbolic link) is still two files to the lock - no client
+  rule can see it (review). From backlog item
+  `ftp-two-uploads-as-another-user-or-port-of-one-server-can`. Probe `ftp348_probe.ps1` 7 / 3 on
+  `main` -> 10 / 0; 341's 12 / 0, 345's 16 / 0, 347's 6 / 0 (its OTHER-USER facts now 1 STOR,
+  0 overlapping, 'UP1'); one refute-first review (MUST 0, SHOULD 2 done,
+  NOTE 3; its negative control: the old `ftp.spl` alone fails the three rows).
