@@ -1,0 +1,47 @@
+iso354_probe (feature 354) mutant-never-marks
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 15:13; registry key existed True
+
+seeds: bigpvd.bin=720896,plain.bin=360448,rest16.bin=393216,rest17.bin=395264,s1.iso=360448,s2.iso=360448,s2.lba=3,short.bin=356352,two.bin=720896,xdev1.iso=458752,xesp.iso=3325952,xms.iso=524288,zero168.bin=704512,zero512.bin=1409024,zero513.bin=1411072,zerolate.bin=974848
+img354: plain: one volume of 176 sectors
+img354: two: two sessions, 176 + 176 sectors
+img354: rest16: one volume of 176 sectors + 16 sectors of 0x5A
+img354: rest17: one volume of 176 sectors + 17 sectors of 0x5A
+img354: zero168: one volume of 176 sectors + 168 sectors of zeros
+img354: zero512: one volume of 176 sectors + 512 sectors of zeros
+img354: zero513: one volume of 176 sectors + 513 sectors of zeros
+img354: zerolate: one volume of 176 sectors + 300 sectors of zeros, the last byte 1
+img354: short: a volume of 176 sectors cut to 174
+img354: bigpvd: two sessions, 176 + 176 sectors, session 1's volume size 400
+
+C-PLAIN    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-PLAIN    RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-TWOISO   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-TWOISO   RUN    FAIL        files 1: a.txt; files ok: True; image kept: False (want True); windows ok (none): True; fatal: ; windows: no window
+R-TWOIMG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-TWOIMG   RUN    FAIL        files 1: a.txt; files ok: True; image kept: False (want True); windows ok (missing): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+C-REST16   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-REST16   RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-REST17   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-REST17   RUN    FAIL        files 1: a.txt; files ok: True; image kept: False (want True); windows ok (none): True; fatal: ; windows: no window
+C-ZERO168  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ZERO168  RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-ZERO512  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ZERO512  RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-ZERO513  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ZERO513  RUN    FAIL        files 1: a.txt; files ok: True; image kept: False (want True); windows ok (none): True; fatal: ; windows: no window
+R-ZEROLATE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ZEROLATE RUN    FAIL        files 1: a.txt; files ok: True; image kept: False (want True); windows ok (none): True; fatal: ; windows: no window
+R-SHORT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SHORT    RUN    FAIL        files 1: a.txt; files ok: True; image kept: False (want True); windows ok (none): True; fatal: ; windows: no window
+R-BIGPVD   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-BIGPVD   RUN    FAIL        files 1: a.txt; files ok: True; image kept: False (want True); windows ok (none): True; fatal: ; windows: no window
+C-XDEV1    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-XDEV1    RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-XMS      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-XMS      RUN    PASS        files 2: a.txt, b.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-XESP     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-XESP     RUN    FAIL        files 1: a.txt; files ok: True; image kept: False (want True); windows ok (none): True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 1DA45396222A51BBD77215E2991681418F608E9DCC6D8E89F35C34EC25E6830A / after 1DA45396222A51BBD77215E2991681418F608E9DCC6D8E89F35C34EC25E6830A
+
+Rows: PASS 20, FAIL 8, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

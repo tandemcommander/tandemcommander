@@ -20272,6 +20272,75 @@ static void TestIsoNoCcdRest_353()
     CHECK(SalIsoNoCcdRestMarks(true, true, 0, 0x7FFFFFFFFFFFFFFFll, 0, raw));
 }
 
+// Feature 354: a cooked (2048-byte sector) image of the plain detection - whether the rest past the volume at
+// its sector 16 is kept, marked or read (src/common/salisotrack.h)
+static void TestIsoCookedRest_354()
+{
+    const long long s = SAL_ISO_COOKED_SECTOR;
+    CHECK(s == 2048 && SAL_ISO_ZERO_REST_SECTORS == 512 && SAL_ISO_LATER_VOLUME_SECTOR == 16);
+    long long from = -7, bytes = -7;
+    auto dec = [&](bool iso, bool known, unsigned long long vol, long long size)
+    {
+        from = -7;
+        bytes = -7;
+        return SalIsoCookedRestDecision(iso, known, vol, size, from, bytes);
+    };
+    auto untouched = [&]()
+    { return from == -7 && bytes == -7; };
+    // no ISO 9660 descriptor at sector 16 (UDF only): the rule does not apply, whatever the sizes
+    CHECK(dec(false, false, 0, 1000 * s) == SAL_ISO_REST_KEEP_LISTING && untouched());
+    CHECK(dec(false, true, 176, 352 * s) == SAL_ISO_REST_KEEP_LISTING && untouched());
+    CHECK(dec(false, true, 176, -1) == SAL_ISO_REST_KEEP_LISTING);
+    // the size not readable, a negative file size: fails closed
+    CHECK(dec(true, false, 176, 176 * s) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(true, true, 176, -1) == SAL_ISO_REST_MARK && untouched());
+    // the file equals the volume (probe C-PLAIN), a rest of up to 16 sectors (C-REST16): kept as today
+    CHECK(dec(true, true, 176, 176 * s) == SAL_ISO_REST_KEEP_LISTING && untouched());
+    CHECK(dec(true, true, 176, 178 * s) == SAL_ISO_REST_KEEP_LISTING);
+    CHECK(dec(true, true, 176, 192 * s) == SAL_ISO_REST_KEEP_LISTING && untouched());
+    // only whole sectors count: 16 sectors and a part of the 17th
+    CHECK(dec(true, true, 176, 193 * s - 1) == SAL_ISO_REST_KEEP_LISTING);
+    CHECK(dec(true, true, 176, 176 * s + 100) == SAL_ISO_REST_KEEP_LISTING); // a few bytes of trailing data
+    // room for a later volume's sector 16: read the rest (R-REST17, R-TWOISO, C-ZERO168)
+    CHECK(dec(true, true, 176, 193 * s) == SAL_ISO_REST_CHECK && from == 176 * s && bytes == 17 * s);
+    CHECK(dec(true, true, 176, 193 * s + 1) == SAL_ISO_REST_CHECK && from == 176 * s && bytes == 17 * s + 1);
+    CHECK(dec(true, true, 176, 352 * s) == SAL_ISO_REST_CHECK && from == 176 * s && bytes == 176 * s);
+    CHECK(dec(true, true, 56, 224 * s) == SAL_ISO_REST_CHECK && from == 56 * s && bytes == 168 * s); // xorriso -dev
+    // the cap: 512 sectors are read (C-ZERO512), a longer rest is marked unread (R-ZERO513, R-XESP)
+    CHECK(dec(true, true, 176, (176 + 512) * s) == SAL_ISO_REST_CHECK && bytes == 512 * s);
+    CHECK(dec(true, true, 176, (176 + 512) * s + 1) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(true, true, 176, (176 + 513) * s) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(true, true, 901, 2491 * s) == SAL_ISO_REST_MARK); // an appended partition (measured)
+    // the file ends within the volume (R-SHORT) or the size claims more than the file (R-BIGPVD): marked
+    CHECK(dec(true, true, 176, 174 * s) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(true, true, 176, 176 * s - 1) == SAL_ISO_REST_MARK);
+    CHECK(dec(true, true, 400, 352 * s) == SAL_ISO_REST_MARK);
+    CHECK(dec(true, true, 176, 0) == SAL_ISO_REST_MARK);
+    CHECK(dec(true, true, 0, 0) == SAL_ISO_REST_KEEP_LISTING);      // an empty volume in an empty file
+    CHECK(dec(true, true, 0, 16 * s) == SAL_ISO_REST_KEEP_LISTING); // the size 0 and 16 sectors
+    CHECK(dec(true, true, 0, 17 * s) == SAL_ISO_REST_CHECK && from == 0 && bytes == 17 * s);
+    // the largest volume (a 32-bit size) and the largest file: no overflow
+    CHECK(dec(true, true, 0xFFFFFFFFull, (0xFFFFFFFFll + 16) * s) == SAL_ISO_REST_KEEP_LISTING);
+    CHECK(dec(true, true, 0xFFFFFFFFull, (0xFFFFFFFFll + 17) * s) == SAL_ISO_REST_CHECK &&
+          from == 0xFFFFFFFFll * s && bytes == 17 * s);
+    CHECK(dec(true, true, 0xFFFFFFFFull, 0x7FFFFFFFFFFFFFFFll) == SAL_ISO_REST_MARK);
+    CHECK(dec(true, true, 0, 0x7FFFFFFFFFFFFFFFll) == SAL_ISO_REST_MARK);
+    CHECK(dec(true, true, 0xFFFFFFFFFFFFFFFFull, 0x7FFFFFFFFFFFFFFFll) == SAL_ISO_REST_MARK); // more than any file
+
+    // the zero test of the rest
+    unsigned char buf[4096] = {};
+    CHECK(SalIsoBytesAllZero(buf, sizeof(buf)));
+    CHECK(SalIsoBytesAllZero(buf, 0));
+    CHECK(SalIsoBytesAllZero(nullptr, 0));
+    CHECK(!SalIsoBytesAllZero(nullptr, 1));
+    buf[4095] = 1; // the last byte (R-ZEROLATE)
+    CHECK(!SalIsoBytesAllZero(buf, sizeof(buf)));
+    CHECK(SalIsoBytesAllZero(buf, sizeof(buf) - 1));
+    buf[4095] = 0;
+    buf[0] = 0x80;
+    CHECK(!SalIsoBytesAllZero(buf, 1));
+}
+
 // feature 335: a data track in which no file system is found marks the listing unless its sector 16 is
 // a Mode 2 Form 2 sector (a Video CD's MPEG stream) - the stored sector's sync, mode byte and both
 // subheader copies decide; anything else fails closed
@@ -22397,6 +22466,7 @@ int main(int argc, char** argv)
     TestIsoCcdTrackKind_351();
     TestIsoCcdBounds_352();
     TestIsoNoCcdRest_353();
+    TestIsoCookedRest_354();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

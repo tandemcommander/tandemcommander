@@ -275,6 +275,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a UDF-only cooked image with more past its volume is still deleted by Unpack](items/iso-plug-in-a-udf-only-cooked-image-with-more-past-its/desc.md) | bug | 5 | archives | leftover:354 | 2026-10-31 |
 
 ## Parked
 

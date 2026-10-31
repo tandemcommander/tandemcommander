@@ -29,6 +29,8 @@
 // Feature 353: a CloneCD .img opened without its .ccd is listed by the plain detection (the volume at
 // its sector 16 - the first session); a raw image that holds room for a later volume past that one
 // leaves the listing incomplete.
+// Feature 354: so does a cooked (2048-byte sector) image of the plain detection whose rest past the
+// volume at its sector 16 is not shown to be zero bytes beyond room for a later volume.
 //
 //*****************************************************************************
 
@@ -585,4 +587,65 @@ inline bool SalIsoNoCcdRestMarks(bool raw, bool volumeKnown, unsigned long long 
     long long whole = fileSize > dataOffset && dataOffset >= 0 ? (fileSize - dataOffset) / sectorRawSize : 0;
     return (unsigned long long)whole < volumeSectors ||
            (unsigned long long)whole > volumeSectors + (unsigned long long)SAL_ISO_LATER_VOLUME_SECTOR;
+}
+
+// Feature 354: the most sectors of a cooked image's rest past its volume that are read to see that the rest
+// is zero bytes only (1 MiB: xorriso's native padding outside the volume measured 168 sectors, isohybrid
+// aligns the file to 1 MiB); a longer rest is not read and marks the listing.
+const long long SAL_ISO_ZERO_REST_SECTORS = 512;
+// the bytes of a cooked sector
+const long long SAL_ISO_COOKED_SECTOR = 2048;
+
+// what SalIsoCookedRestDecision tells the plug-in to do with the listing
+enum
+{
+    SAL_ISO_REST_KEEP_LISTING = 0, // the rest cannot hold a later volume (or the rule does not apply)
+    SAL_ISO_REST_MARK = 1,         // mark the listing incomplete
+    SAL_ISO_REST_CHECK = 2,        // read checkBytes from checkFrom; mark unless all read and all zero
+};
+
+// Feature 354: a cooked image (no CD sync pattern at its start, 2048-byte sectors from offset 0) opened by
+// the plain detection lists the volume whose descriptor is at sector 16 only - a multi-session image's
+// first session; a later session lies past it. 'iso9660' = sector 16 holds an ISO 9660 primary descriptor
+// header (type 1, "CD001"; false for a UDF-only image - the rule does not apply, the listing is kept);
+// 'volumeKnown' / 'volumeSectors' = SalIsoPvdVolumeSectors read its size; 'fileSize' = the file's bytes.
+// MARK when the size is not known, the file size is negative, or the file holds fewer whole sectors than
+// the volume (a size that cannot be trusted, as SalIsoNoCcdRestMarks); KEEP_LISTING when it holds at most
+// SAL_ISO_LATER_VOLUME_SECTOR whole sectors past the volume; MARK when the bytes past the volume are more
+// than SAL_ISO_ZERO_REST_SECTORS sectors (not all checked - fails closed); else CHECK: 'checkFrom' /
+// 'checkBytes' = the bytes from the volume's end to the end of the file (a rest of zero bytes only holds
+// neither a later volume, whose descriptors are not zero, nor data). The outputs are set for CHECK only.
+inline int SalIsoCookedRestDecision(bool iso9660, bool volumeKnown, unsigned long long volumeSectors,
+                                    long long fileSize, long long& checkFrom, long long& checkBytes)
+{
+    if (!iso9660)
+        return SAL_ISO_REST_KEEP_LISTING;
+    if (!volumeKnown || fileSize < 0)
+        return SAL_ISO_REST_MARK;
+    unsigned long long whole = (unsigned long long)(fileSize / SAL_ISO_COOKED_SECTOR);
+    if (whole < volumeSectors)
+        return SAL_ISO_REST_MARK;
+    if (whole - volumeSectors <= (unsigned long long)SAL_ISO_LATER_VOLUME_SECTOR)
+        return SAL_ISO_REST_KEEP_LISTING;
+    // whole >= volumeSectors, so volumeSectors * 2048 <= fileSize: no overflow
+    long long from = (long long)volumeSectors * SAL_ISO_COOKED_SECTOR;
+    long long rest = fileSize - from;
+    if (rest > SAL_ISO_ZERO_REST_SECTORS * SAL_ISO_COOKED_SECTOR)
+        return SAL_ISO_REST_MARK;
+    checkFrom = from;
+    checkBytes = rest;
+    return SAL_ISO_REST_CHECK;
+}
+
+// Feature 354: are all 'len' bytes of 'data' zero? (a null 'data' with bytes to check is not)
+inline bool SalIsoBytesAllZero(const unsigned char* data, long long len)
+{
+    if (len <= 0)
+        return true;
+    if (data == nullptr)
+        return false;
+    for (long long i = 0; i < len; i++)
+        if (data[i] != 0)
+            return false;
+    return true;
 }

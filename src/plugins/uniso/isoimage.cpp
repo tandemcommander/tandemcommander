@@ -1028,9 +1028,15 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
             // a check below picks another layout
             BOOL rawStart = SectorType != stISO;
             SetSectorFormat(SectorType);
+            // feature 354: a cooked image - 2048-byte sectors from offset 0, recognised by its sector 16
+            BOOL cookedIso = FALSE;
 
             if (CheckForISO(quiet))
+            {
                 validISO = TRUE;
+                cookedIso = !rawStart && SectorType == stISO && DataOffset == 0 && SectorRawSize == 0x800 &&
+                            SectorHeaderSize == 0;
+            }
             else if (CheckForNRG(quiet))
                 validISO = TRUE;
             else if (CheckFor2336(quiet))
@@ -1110,6 +1116,47 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                         TRACE_I("CISOImage::Open(): .ccd missing, a raw image of " << track->End
                                                                                    << " bytes past a volume of "
                                                                                    << volumeSectors << " sectors");
+                        ListingLeftOut.SetIncomplete();
+                    }
+                }
+
+                // feature 354: a cooked image lists only the volume at its sector 16 - a multi-session
+                // image's first session; when the file holds room for a later volume past that one and the
+                // rest is not zero bytes only (or cannot be shown to be: too long, not readable, the volume's
+                // size unknown or more than the file), the listing is marked incomplete, so a whole unpack
+                // fails and "Delete archive after unpacking" keeps the image
+                if (cookedIso)
+                {
+                    unsigned char desc[SAL_ISO_PVD_BYTES];
+                    DWORD got = ReadDataByPos(GetSectorOffset(16), (DWORD)sizeof(desc), desc);
+                    unsigned long long volumeSectors = 0;
+                    bool iso9660 = got >= 6 && IsValidCDHeader((char*)desc);
+                    bool known = SalIsoPvdVolumeSectors(desc, got, volumeSectors);
+                    long long checkFrom = 0, checkBytes = 0;
+                    int decision = SalIsoCookedRestDecision(iso9660, known, volumeSectors, track->End, checkFrom,
+                                                            checkBytes);
+                    BOOL mark = decision == SAL_ISO_REST_MARK;
+                    if (decision == SAL_ISO_REST_CHECK)
+                    {
+                        const DWORD piece = 0x10000;
+                        unsigned char* buf = new unsigned char[piece];
+                        mark = buf == NULL; // not checked - fails closed
+                        while (!mark && checkBytes > 0)
+                        {
+                            DWORD want = checkBytes < (long long)piece ? (DWORD)checkBytes : piece;
+                            DWORD read = ReadDataByPos(checkFrom, want, buf);
+                            if (read != want || !SalIsoBytesAllZero(buf, read))
+                                mark = TRUE;
+                            checkFrom += want;
+                            checkBytes -= want;
+                        }
+                        delete[] buf;
+                    }
+                    if (mark)
+                    {
+                        TRACE_I("CISOImage::Open(): a cooked image of " << track->End << " bytes past a volume of "
+                                                                        << volumeSectors << " sectors, decision "
+                                                                        << decision);
                         ListingLeftOut.SetIncomplete();
                     }
                 }
