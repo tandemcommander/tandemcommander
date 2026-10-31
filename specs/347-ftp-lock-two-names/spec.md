@@ -22,6 +22,14 @@ while the first was still in flight; both operations ended "(100 %)" and the ser
 "UP2" - upload 1's file was replaced without any question (row ALIAS-LOCK FAIL). The control with
 one name (SAME-LOCK) sends one store and asks the overwrite question.
 
+## Clarifications
+
+### Session 2026-10-31
+
+- Q: Which other host names count as maybe the same server for the lock? → A: every other host name with the same user and port (feature 341's rule; addresses prove nothing) (autonomous run: item)
+- Q: Should the second conflicting access wait for the first or be refused? → A: refused with the existing "in use" answer of each caller, retryable (autonomous run: conservative)
+- Q: Should another user or another port of the same host also share the lock? → A: no - outside the item's scope ("the same user and port"); the measured OTHER-USER case goes to the backlog Inbox (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Two uploads of one file under two names of one server (Priority: P1)
