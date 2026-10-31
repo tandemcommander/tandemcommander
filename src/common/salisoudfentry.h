@@ -65,14 +65,17 @@ inline bool SalIsoUdfEntryDescs(unsigned long long sectorLen, bool extended, uns
 // the byte length the first descriptor gives (its extent length without the
 // type bits; the embedded data's length) - feature 362.
 // A folder always holds at least the identifier of its parent (ECMA-167
-// 4/14.4; the root one pointing to itself), so an entry that describes no byte
-// is damaged - no descriptor, or a first extent of length 0 (which ends the
-// descriptor sequence, ECMA-167 4/12, review 1): it was walked over length 0,
-// listed empty without a mark, and a whole unpack with "Delete archive after
-// unpacking" deleted the image. False sends it down the unreadable-folder path
-// (the root "Bad root ICB", a sub-folder listed empty with the listing
-// incomplete - feature 330).
+// 4/14.4: a File Identifier Descriptor of 38 bytes + its names, padded to 4 -
+// 40 in every image measured; the root one pointing to itself), so an entry
+// whose first extent cannot hold one is damaged - no descriptor, a first
+// extent of length 0 (which ends the descriptor sequence, ECMA-167 4/12,
+// review 1) or shorter than an identifier (review 2: 20 bytes): it was walked
+// over that length, listed empty without a mark, and a whole unpack with
+// "Delete archive after unpacking" deleted the image. False sends it down the
+// unreadable-folder path (the root "Bad root ICB", a sub-folder listed empty
+// with the listing incomplete - feature 330).
+const unsigned long long SAL_ISO_UDF_MIN_FID = 38;
 inline bool SalIsoUdfFolderEntryWalkable(int stored, unsigned long long firstLen)
 {
-    return (stored > 0 || stored == -1) && firstLen > 0;
+    return (stored > 0 || stored == -1) && firstLen >= SAL_ISO_UDF_MIN_FID;
 }

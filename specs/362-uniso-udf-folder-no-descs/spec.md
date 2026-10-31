@@ -11,6 +11,7 @@
 
 - Q: Does a sub-folder whose entry has no descriptors get a message box? → A: no - the same silent unreadable-folder path as feature 330 (listed empty, listing marked incomplete); no new UI string (autonomous run: conservative)
 - Q: Is a folder entry with descriptors whose first descriptor has length 0 treated as unreadable too? → A: yes (revised after review 1, SHOULD 1): such a first extent ends the descriptor sequence (ECMA-167 4/12), so the entry describes no byte either - the item's harm (listed empty without a mark, image deleted) was measured for it by the reviewer; the earlier answer "no, unchanged" kept the data loss (autonomous run: item - its Expected covers an entry that describes no folder data)
+- Q: Is a folder whose first extent is shorter than one file identifier (1 - 37 bytes) unreadable too? → A: yes (review 2, SHOULD 1): it cannot hold the parent's identifier (38 bytes + names, padded to 4 - 40 in every image of genisoimage, mkudffs and IMAPI2FS measured); the same harm was measured with 20 bytes; the threshold is 38 so that no valid folder is refused (autonomous run: item)
 - Q: Where does the rule live? → A: a pure function in the existing header `src/common/salisoudfentry.h` (feature 361's rules of the same reader) with `saltests` checks; the folder reader applies it (autonomous run: rule, stop-rules §2.5)
 
 ## User Scenarios & Testing *(mandatory)*
@@ -86,8 +87,9 @@ it when asked to.
 ### Edge Cases
 
 - A folder entry with L_AD 0 *and* a reserved descriptor type stays refused by feature 361 (same outcome).
-- A folder entry whose first (only) descriptor has extent length 0 (L_AD kept) describes no byte either: the same
-  unreadable path (review 1; probe rows R-ALEN0, R-ROOTLEN0, L-ROOTLEN0).
+- A folder entry whose first (only) descriptor has extent length 0, or less than 38 bytes (L_AD kept), cannot hold the
+  parent's identifier either: the same unreadable path (reviews 1 and 2; probe rows R-ALEN0, R-ROOTLEN0, L-ROOTLEN0,
+  R-ALEN20, R-ROOTLEN20, L-ROOTLEN20).
 - A folder in more than one extent is read only up to its first extent - older, not this item (Inbox, review:362).
 - A file (not a folder) with L_AD 0 is a real empty file and is unchanged: the folder reader is not used for files.
 - The Release build: with the fix the walk never starts from the terminating descriptor's unset offset for such
@@ -98,17 +100,18 @@ it when asked to.
 ### Functional Requirements
 
 - **FR-001**: A UDF folder file entry (root or sub-folder) that declares no allocation descriptors - L_AD 0 with
-  short, long or extended descriptors, or an embedded (type 3) entry with L_AD 0 - or whose first descriptor gives
-  extent length 0 MUST be treated as an unreadable folder entry, exactly as an entry that cannot be read today.
+  short, long or extended descriptors, or an embedded (type 3) entry with L_AD 0 - or whose first descriptor (or
+  embedded data) gives fewer than 38 bytes, too few for the parent's identifier, MUST be treated as an unreadable
+  folder entry, exactly as an entry that cannot be read today.
 - **FR-002**: For a sub-folder this MUST mean: listed (as today) but not descended, and the listing marked
   incomplete (feature 330), so a whole unpack fails and "Delete archive after unpacking" keeps the image.
 - **FR-003**: For the root folder this MUST mean the existing "Bad root ICB" box, the listing marked incomplete,
   nothing of the UDF part listed.
-- **FR-004**: Folder entries whose first descriptor describes at least one byte, and every file entry, MUST be read as
-  before.
+- **FR-004**: Folder entries whose first descriptor (or embedded data) gives at least 38 bytes, and every file entry,
+  MUST be read as before.
 - **FR-005**: No new UI string, no change of the plug-in interface, no change outside the ISO plug-in's folder
   reader and its rule.
-- **FR-006**: The decision ("a folder entry that describes at least one byte can be walked") MUST be a pure rule with
+- **FR-006**: The decision ("a folder entry whose first extent can hold an identifier can be walked") MUST be a pure rule with
   `saltests` checks (stop-rules §2.5).
 
 ### Key Entities
@@ -121,12 +124,13 @@ it when asked to.
 
 ### Measurable Outcomes
 
-- **SC-001**: In all 7 damaged-image unpack rows (folder a / zlast / embedded a / root / embedded root with L_AD 0;
-  folder a / root with a first extent of length 0) the image is kept (before: deleted in 7 of 7).
-- **SC-002**: All 3 damaged-root listing rows show "Bad root ICB" (before: no window in 3 of 3).
+- **SC-001**: In all 9 damaged-image unpack rows (folder a / zlast / embedded a / root / embedded root with L_AD 0;
+  folder a / root with a first extent of length 0 and of 20 bytes) the image is kept (before: deleted in 9 of 9).
+- **SC-002**: All 4 damaged-root listing rows show "Bad root ICB" (before: no window in 4 of 4).
 - **SC-003**: All 4 control rows (real empty folder listed and unpacked, intact hybrid, empty volume) give the same
   result as before the change (deleted after a full unpack, no window).
-- **SC-004**: The probes of features 330 and 361 give their recorded results.
+- **SC-004**: The probes of features 330, 356 (the roots of every mkudffs media type) and 361 give their recorded
+  results.
 
 ## Assumptions
 

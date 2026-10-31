@@ -12,10 +12,10 @@
 
 | Result | Meaning | Folder walkable (362) |
 |---|---|---|
-| 1 | one descriptor stored, its length > 0 | yes |
-| -1 | embedded data, area non-empty | yes |
+| 1 | one descriptor stored, its length >= 38 | yes |
+| -1 | embedded data, L_AD >= 38 | yes |
 | 0 | no descriptor (L_AD 0, any valid type) | **no** - unreadable folder |
-| 1 or -1 with the first length 0 | a first extent of length 0 (review 1) | **no** - unreadable folder |
+| 1 or -1 with the first length < 38 | a first extent of length 0 (review 1) or too short for an identifier (review 2) | **no** - unreadable folder |
 | -2 (`UDF_FE_REFUSED`) | refused (361) | no |
 
 ## Outcome of "not walkable" (existing, feature 330)

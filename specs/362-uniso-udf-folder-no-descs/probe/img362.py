@@ -14,6 +14,7 @@ kinds (the seed of each is named):
                 embedded file entry (descriptor type 3) gets L_AD 0
     alen0       ud.iso: folder a's first (only) descriptor gets extent length 0, L_AD kept (review 1 of 362)
     rootlen0    ud.iso: the UDF root's first (only) descriptor gets extent length 0, L_AD kept (review 1 of 362)
+    alen20, rootlen20  as alen0 / rootlen0 with extent length 20 - too short for the parent's identifier (review 2)
 
 The reader checks no descriptor CRC or checksum. Each kind prints what it changed and exits 3 without writing
 when the layout is not the expected one.
@@ -135,9 +136,10 @@ def main():
                 break
         else:
             refuse('no root entry')
-    elif kind in ('alen0', 'rootlen0'):
+    elif kind in ('alen0', 'rootlen0', 'alen20', 'rootlen20'):
+        new = 20 if kind.endswith('20') else 0
         ps, fsd = udf_layout(m)
-        if kind == 'rootlen0':
+        if kind.startswith('root'):
             e, who = root_entry(m, ps, fsd), 'root'
         else:
             who = 'folder a'
@@ -146,11 +148,11 @@ def main():
                 refuse('folder a: no file entry')
         ad = first_ad(m, e)
         old = le32(m, ad)
-        if old & 0x3FFFFFFF == 0:
-            refuse('%s: the first extent length is already 0' % who)
-        struct.pack_into('<I', m, ad, old & 0xC0000000)
-        msg = "%s's entry (sector %d): first extent length %d -> 0, L_AD %d kept" % (
-            who, e // S, old & 0x3FFFFFFF, le32(m, lad_at(m, e)))
+        if old & 0x3FFFFFFF <= new:
+            refuse('%s: the first extent length is already %d or less' % (who, new))
+        struct.pack_into('<I', m, ad, (old & 0xC0000000) | new)
+        msg = "%s's entry (sector %d): first extent length %d -> %d, L_AD %d kept" % (
+            who, e // S, old & 0x3FFFFFFF, new, le32(m, lad_at(m, e)))
     elif kind in ('alad0', 'zlad0', 'aemb0', 'rootlad0'):
         ps, fsd = udf_layout(m)
         if kind == 'rootlad0':

@@ -102,3 +102,26 @@ No UI string, dialog or resource changed - no `.slt` refresh (stop-rules 2.13 no
 - NOTE 2 - `UDF_DELETED` is never tested: deleted folder identifiers are listed and descended. Not measured; not
   this item - left as a note (no Inbox item without a measurement).
 - NOTE 3 - the clang-format undo confirmed (source diff only the intended hunks).
+
+### Review 2 (refute-first, general-purpose agent, HEAD 1c528005) - no MUST
+
+- Re-ran: saltests 29,715 / 0; the feature's probe 28 / 0; a negative control - `uniso.spl` built from d9df08bd in a
+  worktree, swapped into a copy of the build tree: L-ROOTLEN0, R-ALEN0, R-ROOTLEN0 FAIL there, R-ALAD0 / C-UD PASS
+  (the probe discriminates); probe 356 56 / 0 (the roots of every mkudffs media type); Windows IMAPI2FS images (UDF
+  1.02 / 1.50 / 2.00 / 2.01, an empty folder, a 13,960-byte folder, 123 files): 28 folder entries all walked, the
+  smallest 40 bytes; whole unpack extracts all and deletes. `file->Length` is always written before it is read
+  (refused: not read; L_AD 0: the terminator's 0; a descriptor: masked length; embedded: L_AD). Extent types 1 - 3 with
+  a length: walked as before (no regression). Callers the same two.
+- SHOULD 1 - a first extent of 1 - 37 bytes cannot hold the parent's identifier but was walked: listed empty, no mark,
+  image deleted (measured with 20: folder a, the root). **Fixed here** (same harm, inside the item):
+  `SAL_ISO_UDF_MIN_FID` = 38, `firstLen >= 38` (the smallest identifier; every writer measured writes 40 or more).
+  saltests **29,720 / 0**; negative control (the length clause back to `> 0`) -> **5 failed**, restored -> 0.
+  Probe kinds `alen20` / `rootlen20`, rows L-ROOTLEN20, R-ALEN20, R-ROOTLEN20: on the review-1 build
+  `probe/result_before_review2.txt` **3 FAIL** (images deleted, no "Bad root ICB"); final build
+  `probe/result_after_review2.txt` **PASS 34, FAIL 0**, registry identical. Regressions: 330 **30 / 0**, 361 **24 / 0**,
+  356 **56 / 0** (its recorded result).
+- The general case (an identifier that crosses the folder's declared end anywhere, `ScanDir`) is not this item and was
+  not measured as a separate harm - not recorded.
+- NOTE 2 - IMAPI 2.50 images fail before the folder reader (older, Inbox item exists
+  `iso-plug-in-a-udf-2-50-image-written-by-windows-imapi2fs`). NOTE 3 - the grid check restates the rule; the probe is
+  the wiring evidence. NOTE 4 - leftover worktrees of older reviews (`%TEMP%/rev325` ...) - not this feature's.

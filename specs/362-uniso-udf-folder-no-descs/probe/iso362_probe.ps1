@@ -18,15 +18,16 @@
       x_rootemb0  mk_cdr.img, the embedded root entry L_AD 0
       x_alen0     ud.iso, folder a's first extent length 0, L_AD kept (review 1)
       x_rootlen0  ud.iso, the UDF root's first extent length 0, L_AD kept (review 1)
+      x_alen20, x_rootlen20  as x_alen0 / x_rootlen0 with length 20 - no identifier fits (review 2)
     Listing rows: the left panel shows <row>\src, Home, End, Enter (posted) on the image.
-      L-ROOTLAD0, L-ROOTEMB0, L-ROOTLEN0  PASS = "Bad root ICB", the program answers (before: no window, an empty UDF part)
+      L-ROOTLAD0, L-ROOTEMB0, L-ROOTLEN0, L-ROOTLEN20  PASS = "Bad root ICB", the program answers (before: no window, an empty UDF part)
       L-UE        (control) ue.iso with a real empty folder: no window
     Unpack rows: Alt+F9 (851), the target field (210) <row>\tgt, "Delete archive after unpacking" (6210)
     checked, OK; exactly the listed files with their content.
-      R-ALAD0, R-AEMB0, R-ALEN0  no window; every file but UDF a/side.txt (folder a listed empty, the listing incomplete),
+      R-ALAD0, R-AEMB0, R-ALEN0, R-ALEN20  no window; every file but UDF a/side.txt (folder a listed empty, the listing incomplete),
                   KEPT (before: deleted)
       R-ZLAD0     no window; every file but UDF zlast/z.txt, KEPT (before: deleted)
-      R-ROOTLAD0, R-ROOTLEN0  "Bad root ICB"; the ISO 9660 part's files, KEPT (before: deleted)
+      R-ROOTLAD0, R-ROOTLEN0, R-ROOTLEN20  "Bad root ICB"; the ISO 9660 part's files, KEPT (before: deleted)
       R-ROOTEMB0  "Bad root ICB", nothing extracted, KEPT (before: deleted)
       C-UD        (control) ud.iso: every file of both parts, no window, deleted
       C-UE        (control) ue.iso: every file of both parts and both empty folders e, no window, deleted
@@ -189,7 +190,7 @@ try {
     $made = @()
     if ([IO.File]::Exists("$s\mk_cdr.img")) { $made += & python -I $Py rootemb0 "$s\mk_cdr.img" "$s\x_rootemb0.bin" 2>&1 }
     if ([IO.File]::Exists("$s\ud.iso")) {
-        foreach ($k in @('alad0', 'zlad0', 'aemb0', 'rootlad0', 'alen0', 'rootlen0')) { $made += & python -I $Py $k "$s\ud.iso" "$s\x_$k.bin" 2>&1 }
+        foreach ($k in @('alad0', 'zlad0', 'aemb0', 'rootlad0', 'alen0', 'rootlen0', 'alen20', 'rootlen20')) { $made += & python -I $Py $k "$s\ud.iso" "$s\x_$k.bin" 2>&1 }
     }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) + '=' + ([IO.FileInfo]$_).Length }) | Sort-Object) -join ','))
@@ -211,6 +212,7 @@ try {
     List-Row 'L-ROOTLAD0' "$s\x_rootlad0.bin" 'rootlad0.iso' $BadRoot
     List-Row 'L-ROOTEMB0' "$s\x_rootemb0.bin" 'rootemb0.iso' $BadRoot
     List-Row 'L-ROOTLEN0' "$s\x_rootlen0.bin" 'rootlen0.iso' $BadRoot
+    List-Row 'L-ROOTLEN20' "$s\x_rootlen20.bin" 'rootlen20.iso' $BadRoot
     List-Row 'L-UE' "$s\ue.iso" 'ue.iso'
     Unpack-Row 'R-ALAD0' "$s\x_alad0.bin" 'alad0.iso' $udNoA -Kept
     Unpack-Row 'R-AEMB0' "$s\x_aemb0.bin" 'aemb0.iso' $udNoA -Kept
@@ -218,6 +220,8 @@ try {
     Unpack-Row 'R-ROOTLAD0' "$s\x_rootlad0.bin" 'rootlad0.iso' $udIso -Kept -Rx $BadRoot
     Unpack-Row 'R-ALEN0' "$s\x_alen0.bin" 'alen0.iso' $udNoA -Kept
     Unpack-Row 'R-ROOTLEN0' "$s\x_rootlen0.bin" 'rootlen0.iso' $udIso -Kept -Rx $BadRoot
+    Unpack-Row 'R-ALEN20' "$s\x_alen20.bin" 'alen20.iso' $udNoA -Kept
+    Unpack-Row 'R-ROOTLEN20' "$s\x_rootlen20.bin" 'rootlen20.iso' $udIso -Kept -Rx $BadRoot
     Unpack-Row 'R-ROOTEMB0' "$s\x_rootemb0.bin" 'rootemb0.iso' ([ordered]@{}) -Kept -Rx $BadRoot
     Unpack-Row 'C-UD' "$s\ud.iso" 'ud.iso' $udAll
     Unpack-Row 'C-UE' "$s\ue.iso" 'ue.iso' $ueAll -Dirs @('ISO (TC362)/e', 'UDF (TC362)/e')

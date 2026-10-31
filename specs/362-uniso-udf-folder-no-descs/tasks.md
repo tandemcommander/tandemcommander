@@ -39,6 +39,12 @@
 - [X] T012 [US1] Add kinds `alen0` / `rootlen0` to `probe/img362.py` and rows L-ROOTLEN0, R-ALEN0, R-ROOTLEN0 to `probe/iso362_probe.ps1`; measure them on the first-fix build (`probe/result_before_review1.txt`) and on the final build (`probe/result_after_review1.txt`)
 - [X] T013 [US3] Re-run probes 330 and 361 (`probe/regress_330.txt`, `probe/regress_361.txt`) and `saltests`
 
+## Phase 7: Review 2 (SHOULD 1 - a first extent shorter than an identifier)
+
+- [X] T014 [US1] Threshold `SAL_ISO_UDF_MIN_FID` (38) in `src/common/salisoudfentry.h`; `TestIsoUdfFolderEntry_362` in `src/saltests/saltests.cpp` with lengths 20, 37, 38, 40
+- [X] T015 [US1] Kinds `alen20` / `rootlen20` in `probe/img362.py`, rows L-ROOTLEN20, R-ALEN20, R-ROOTLEN20 in `probe/iso362_probe.ps1`; before on the review-1 build (`probe/result_before_review2.txt`), after (`probe/result_after_review2.txt`)
+- [X] T016 [US3] Regressions 330, 361 and 356 (`probe/regress_330.txt`, `probe/regress_361.txt`, `probe/regress_356.txt`)
+
 ## Dependencies
 
 T001 → T002 → T003 → T004 → T005 → T006 → (T007 ∥ T008) → T009 → T010. US1 and US2 share the single change T004.
