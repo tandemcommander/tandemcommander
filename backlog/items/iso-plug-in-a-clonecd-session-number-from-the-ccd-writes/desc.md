@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: a CloneCD session number from the .ccd writes outside the reader arrays
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:351
 who: agent
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 2f260c23
 effort: S
-feature: -
+feature: 352
 related: [iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables]
 depends-on: []
 reason: -
@@ -71,3 +71,5 @@ deletes the image. A pure rule for the bounds in `src/common/` with `saltests` c
 
 - 2026-10-31 — created (source review:351)
 - 2026-10-31 — moved to Next position 1
+- 2026-10-31 — verified at 2f260c23: still present at 2f260c23: probe (Debug) R-S0 heap corruption img.cpp(438), R-S200 image deleted, R-S257 RTC, R-ABS TRACE_C Session[1], R-DUP plba uninit
+- 2026-10-31 — run started, feature 352
