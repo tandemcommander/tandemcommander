@@ -1,0 +1,53 @@
+# Tasks: An NRG image's CUEX chunk gives only the tracks it holds
+
+**Input**: Design documents from `specs/350-nrg-cuex-bounds/` (plan.md, spec.md, research.md,
+data-model.md, quickstart.md)
+**Tests**: the project's rules require `saltests` checks for a pure rule and a probe for a GUI-reachable
+defect (CLAUDE.md *Working method*) - included.
+
+## Phase 1: Setup
+
+- [ ] T001 Record the before-measurement (done at cadc65bb) in specs/350-nrg-cuex-bounds/fix-log.md and keep specs/350-nrg-cuex-bounds/probe/result_before.txt
+
+## Phase 2: Foundational (blocking)
+
+- [ ] T002 Add `SalNrgCuexEntryCount(size)` (0 under 16 bytes, else `(size - 16) / 16`) with its comment to src/common/salnrgcdtext.h (header comment's list extended for feature 350)
+- [ ] T003 Add `TestNrgCuex350` to src/saltests/saltests.cpp (sizes 0, 1, 8, 15, 16, 31, 32, 47, 48, 52, 0xFFFFFFF0, 0xFFFFFFFF against a block-by-block reference; never more than size / 16) and call it from the test list
+
+## Phase 3: User Story 1 - A damaged NRG image opens without exhausting memory (P1)
+
+**Goal**: a CUEX chunk under 16 bytes or past the image's end makes no track from the bytes after it.
+**Independent test**: probe rows N-SHORT, N-PAST.
+
+- [ ] T004 [US1] In src/plugins/uniso/nrg.cpp `readCUEX`: take the chunk's position and the file size, skip the chunk (seek past it, return FALSE) when `SalNrgChunkFits` fails; entry count from `SalNrgCuexEntryCount(header->Size)`
+- [ ] T005 [US1] In src/plugins/uniso/nrg.cpp `readCUEX`: the 16-byte header read only when the chunk holds it, every read checked for its full length; a short read makes no track and returns FALSE
+
+## Phase 4: User Story 2 - A CUEX chunk with extra bytes no longer hides the rest (P2)
+
+**Independent test**: probe row N-ODD.
+
+- [ ] T006 [US2] In src/plugins/uniso/nrg.cpp `readCUEX`: after the entries, seek to the chunk's end (`chunk start + Size`) so the next header is read where it starts
+
+## Phase 5: User Story 3 - Intact NRG images open as before (P1)
+
+**Independent test**: probe row N-OK; 329's A-OPEN.
+
+- [ ] T007 [US3] Build (`.\build.cmd`), run saltests (`build\tandemcommander\Debug_x64\saltests\saltests.exe`) → 0 failed; record the numbers in specs/350-nrg-cuex-bounds/fix-log.md
+- [ ] T008 [US3] Run specs/350-nrg-cuex-bounds/probe/nrg350_probe.ps1 on the hidden desktop → specs/350-nrg-cuex-bounds/probe/result_after.txt, all rows PASS
+- [ ] T009 [US3] Run specs/329-uniso-other-readers-refused/probe/iso329_probe.ps1 `-Only A-OPEN` → specs/350-nrg-cuex-bounds/probe/regress_329.txt, PASS
+
+## Phase 6: Polish
+
+- [ ] T010 Negative controls: mutate the rule (underflow back; remainder counted as an entry) → TestNrgCuex350 fails; record in specs/350-nrg-cuex-bounds/fix-log.md, then restore
+- [ ] T011 `python tools/check_encoding.py --strict` → TOTAL: 0; fix-log *Checks* section in specs/350-nrg-cuex-bounds/fix-log.md
+
+## Dependencies
+
+T001 → T002 → T003 → T004 → T005 → T006 → T007 → T008/T009 → T010 → T011. All code tasks touch
+`nrg.cpp` or the header in sequence; T008 and T009 both use the hidden desktop and run one after the
+other.
+
+## Implementation strategy
+
+US1 is the MVP (the item's main point); US2 is the same function's end-of-chunk discipline; US3 is
+the regression guard. One build covers all three.
