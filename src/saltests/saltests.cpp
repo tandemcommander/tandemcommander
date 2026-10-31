@@ -107,7 +107,7 @@
 #include "salsusp.h"           // feature 326
 #include "salisonamefit.h"     // feature 328
 #include "salnrgcdtext.h"      // feature 331
-#include "salisotrack.h"       // features 334, 335
+#include "salisotrack.h"       // features 334, 335, 351
 #include "salisounpack.h"      // feature 338
 #include "salrenamekey.h"      // feature 346
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
@@ -20050,6 +20050,26 @@ static void TestIsoTrackMarks334()
     CHECK(!SalIsoTrackSectorOutside(0, 0, 0));
 }
 
+// feature 351: a CloneCD track's MODE gives its kind - 0 audio, 1 / 2 a data track whose file system is
+// detected, anything else unknown (never detected nor listed, marks the listing); before, a data
+// track kept the heap's type and in Release often did not open
+static void TestIsoCcdTrackKind_351()
+{
+    CHECK(SalIsoCcdTrackKind(0) == SAL_ISO_TRACK_AUDIO);
+    CHECK(SalIsoCcdTrackKind(1) == SAL_ISO_TRACK_DATA);
+    CHECK(SalIsoCcdTrackKind(2) == SAL_ISO_TRACK_DATA);
+    CHECK(SalIsoCcdTrackKind(3) == SAL_ISO_TRACK_UNKNOWN);
+    CHECK(SalIsoCcdTrackKind(-1) == SAL_ISO_TRACK_UNKNOWN);
+    CHECK(SalIsoCcdTrackKind(255) == SAL_ISO_TRACK_UNKNOWN);
+    CHECK(SalIsoCcdTrackKind(0x7FFFFFFF) == SAL_ISO_TRACK_UNKNOWN);
+    CHECK(SalIsoCcdTrackKind((int)0x80000000u) == SAL_ISO_TRACK_UNKNOWN);
+    CHECK(SalIsoCcdTrackKind((int)0xCDCDCDCDu) == SAL_ISO_TRACK_UNKNOWN); // the Debug heap fill
+    // an unknown track marks the listing whatever the listing did; a data track listed does not
+    CHECK(SalIsoTrackMarksListing(SalIsoCcdTrackKind(3), false, SAL_ISO_TRACK_NOT_TRIED));
+    CHECK(!SalIsoTrackMarksListing(SalIsoCcdTrackKind(1), false, SAL_ISO_TRACK_LISTED));
+    CHECK(SalIsoTrackMarksListing(SalIsoCcdTrackKind(0), false, SAL_ISO_TRACK_LISTED));
+}
+
 // feature 335: a data track in which no file system is found marks the listing unless its sector 16 is
 // a Mode 2 Form 2 sector (a Video CD's MPEG stream) - the stored sector's sync, mode byte and both
 // subheader copies decide; anything else fails closed
@@ -22172,6 +22192,7 @@ int main(int argc, char** argv)
     TestNrgCdText331();
     TestNrgCuex350();
     TestIsoTrackMarks334();
+    TestIsoCcdTrackKind_351();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

@@ -136,6 +136,17 @@ BOOL IsValidUDFHeader(char hdr[])
 
 CISOImage::Track::Track()
 {
+    // feature 351: every field has a value before a reader describes the track - a track the track
+    // table does not describe (a CUEX track no DAOX entry names) stays unknown with zero bounds: never
+    // detected nor listed, it marks the listing (334); before, these were the heap's (Release: a
+    // CloneCD data track was often "unknown" and the image did not open)
+    SectorSize = 0;
+    SectorHeaderSize = 0;
+    Mode = mNone;
+    Start = 0;
+    End = 0;
+    ExtentOffset = 0;
+    FSType = fsUnknown;
     FileSystem = NULL;
     Bootable = FALSE;
     RawLost = FALSE;

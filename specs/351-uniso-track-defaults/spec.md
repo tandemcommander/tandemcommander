@@ -131,7 +131,7 @@ the fix give their recorded results.
 
 - **FR-001**: Every track record MUST have a defined value in every field from its construction:
   file-system type "unknown", mode "none", sector size, header size, start, end and extent offset 0,
-  no file system, not bootable, and 334 / 335 / 336's flags off.
+  no file system, not bootable, and the flags `RawLost` (334 / 335) and `Form2Stream` (336) off.
 - **FR-002**: The CloneCD reader MUST give a track of CCD mode 1 or 2 a data file-system type that
   makes the plug-in detect the track's file system, and a track of mode 0 the audio type (as
   before); a track of any other mode MUST stay unknown.

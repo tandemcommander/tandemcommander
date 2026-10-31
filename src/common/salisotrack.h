@@ -79,6 +79,20 @@ inline bool SalIsoTrackSectorOutside(long long at, long long sectorUser, long lo
     return at > fileSize || sectorUser > fileSize - at;
 }
 
+// Feature 351: the kind of a CloneCD track by the MODE of its [TRACK n] section in the .ccd file - 0
+// audio, 1 / 2 a Mode 1 / Mode 2 data track (its file system is detected), any other value unknown
+// (never detected nor listed; it marks the listing). The reader gave only audio a type: a data
+// track kept what the heap held, and in the Release build that was often "unknown" - the image did
+// not open.
+inline int SalIsoCcdTrackKind(int ccdMode)
+{
+    if (ccdMode == 0)
+        return SAL_ISO_TRACK_AUDIO;
+    if (ccdMode == 1 || ccdMode == 2)
+        return SAL_ISO_TRACK_DATA;
+    return SAL_ISO_TRACK_UNKNOWN;
+}
+
 // Feature 335: is a track's sector a CD-ROM XA Mode 2 Form 2 sector? 'raw' holds the first 'len' bytes
 // of the sector as the image stores it, in sectors of 'sectorRawSize' bytes:
 //   - 2352 bytes or more (a raw sector, also with subchannel data after it): the sync pattern

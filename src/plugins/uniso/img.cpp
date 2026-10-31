@@ -455,18 +455,19 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
                         throw Error(IDS_INSUFFICIENT_MEMORY, quiet);
 
                     track->SectorSize = 2048;
-                    // CCD track modes
-                    switch (ccdtrk->Mode)
+                    // CCD track modes; feature 351: a data track gets a data type (Open detects its file
+                    // system and replaces it - the value the NRG reader gives a data track) - it kept the
+                    // heap's, in Release often "unknown" (the image did not open); another mode stays
+                    // unknown (the constructor's mNone / fsUnknown)
+                    switch (SalIsoCcdTrackKind(ccdtrk->Mode))
                     {
-                    case 0:
+                    case SAL_ISO_TRACK_AUDIO:
                         track->Mode = mNone;
                         track->FSType = fsAudio;
                         break;
-                    case 1:
-                        track->Mode = mMode1;
-                        break;
-                    case 2:
-                        track->Mode = mMode2;
+                    case SAL_ISO_TRACK_DATA:
+                        track->Mode = ccdtrk->Mode == 1 ? mMode1 : mMode2;
+                        track->FSType = fsISO9660;
                         break;
                     }
                     track->Start = 0x00;
