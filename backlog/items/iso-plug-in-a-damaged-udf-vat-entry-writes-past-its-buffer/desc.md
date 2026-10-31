@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: a damaged UDF VAT file entry makes the reader write past its table buffer
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: measure:358
 who: agent
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 ddf0465a
 effort: S
-feature: -
+feature: 360
 related: []
 depends-on: []
 reason: -
@@ -67,3 +67,5 @@ enlarged) shows no crash.
 - 2026-10-31 — extended: reproduction by review 1 of feature 358 (heap corruption on the Debug build)
 - 2026-10-31 — related item iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes done in feature 358
 - 2026-10-31 — moved to Next position 2
+- 2026-10-31 — verified at ddf0465a: reproduced at ddf0465a: crafted mkudffs cdr images (IL-4, L_AD 4096, AD type 5, IL+2^32) - HEAP CORRUPTION / RTC / bug report on Debug
+- 2026-10-31 — run started, feature 360
