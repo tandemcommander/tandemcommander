@@ -54,6 +54,7 @@ CM_LEFTZOOMPANEL=hh\salamand\environment_maxrestpanel.htm
 ; Menu - Files
 ;
 CM_RENAMEFILE=hh\salamand\advwork_rename.htm
+CM_QUICKRENAMEINPLACE=hh\salamand\advwork_rename.htm
 CM_VIEW=hh\salamand\basicwork_view.htm
 CM_ALTVIEW=hh\salamand\basicwork_view.htm
 CML_FILES_VIEWWITH=hh\salamand\basicwork_view.htm

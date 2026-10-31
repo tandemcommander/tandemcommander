@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Shift+F6 renames the focused item in place, without the Rename dialog](items/shift-f6-renames-the-focused-item-in-place-without-the/desc.md) | improvement | 3 | panels-ui | 346 |
 
 ## Next
 
@@ -271,6 +270,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check Shift+F6 rename in place with a real keyboard and an FTP/SFTP panel](items/check-shift-f6-rename-in-place-with-a-real-keyboard-and-an/desc.md) | person-step | 3 | panels-ui | leftover:346 | 2026-10-31 |
 | [Plug-in hot keys on F-keys never run; F-keys run commands bound to letters](items/plug-in-hot-keys-on-f-keys-never-run-f-keys-run-commands/desc.md) | bug | 4 | panels-ui | measure:346 | 2026-10-31 |
 
 ## Parked

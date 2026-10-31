@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346 |
 
 ## Feature notes
 
@@ -5097,3 +5097,20 @@ a few early ones are out of sequence).
   11 / 5 on `main` -> 16 / 0 (review 1's partial mutants: each half reverted fails its own rows);
   341's `ftp341_probe.ps1` 12 / 0, 323's `ftp302_probe.ps1` 16 / 0; one refute-first review
   (MUST 0, SHOULD 1 - documented, NOTE 3).
+- 346-shift-f6-inplace-rename: keyboard users could rename only through the Rename dialog (F2) -
+  the in-place edit over the name (Quick Rename window) opened only on a slow click; Shift+F6 did
+  nothing. Now Shift+F6 in a panel and Files > *Rename in Place* (`CM_QUICKRENAMEINPLACE`) open it
+  on the focused item: the revived upstream `QuickRenameOnIndex` (caret into view, the cell's label
+  rectangle from `CFilesBox::GetIndex`, then the unchanged `QuickRenameBegin`) - same selection,
+  same refusals, same plug-in FS stages as the click; nothing on `..`, in archives or an FS without
+  `FS_SERVICE_QUICKRENAME`. The key is checked in `OnSysKeyDown` after the plug-in hot keys
+  (`salrenamekey.h`); `IsSalHotKey` reserves Shift+F6, `IsSalHotKeyKeptAtLoad` keeps an old binding.
+  Traps: `CPlugins::QueryHotKey` upper-cases the virtual key through the character table, so an
+  F-key is looked up as a letter (F6 = U): a plug-in binding of Shift+F6 never ran, and Ctrl+Shift+F6
+  sent past the accelerator opens Undelete (Ctrl+Shift+U) -> Inbox
+  `plug-in-hot-keys-on-f-keys-never-run-f-keys-run-commands`; a probe's `$r` shadows its `$R`
+  (PowerShell names are case-insensitive, callees see the caller's variables). New context-help
+  alias in `help/src/salamand.hhp` (review). From backlog item
+  `shift-f6-renames-the-focused-item-in-place-without-the`. Probe `rip346_probe` 6 FAIL "no edit"
+  on `main` -> 13 / 0; saltests +20; one refute-first review (MUST 0, SHOULD 1 fixed, NOTE 5).
+  Owed to a person: `check-shift-f6-rename-in-place-with-a-real-keyboard-and-an`.

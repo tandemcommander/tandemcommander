@@ -97,3 +97,26 @@ the run ended there (ERROR row). Registry restored identical. To be explained in
 - Second merge: 0 gaps; `python -m translate.slt --verify` → round-trip byte-exact (298 files).
 - Layout drift: none (each `.slt` diff = the new row + the TEXTVERSION/VERSION header).
 - `.\build.cmd full` → BUILD SUCCEEDED (21 modules x 8 languages).
+
+## Review
+
+Review 1 (independent agent, refute-first, on 9a32cf54): **no MUST**.
+- Re-ran saltests (28972 / 0) and the probe (13 PASS / 0 FAIL, registry identical); own probe of the
+  reviewer: quick-search filter on (`b2` typed, Shift+F6, rename `b2.txt` -> `b9.txt`: the right file
+  renamed, nothing else), the focused item scrolled out of view, view modes Alt+1..5 (first rows and
+  last item) - the editor opened on the focused item, inside the panel, every time.
+- Confirmed the plug-in hot-key reading (`QueryHotKey` looks F6 up as U; Shift+U reserved).
+- **S1 (SHOULD, fixed)**: no context-help alias for the new command - What's This (Shift+F1) on
+  Files > Rename in Place would show a help error. Added
+  `CM_QUICKRENAMEINPLACE=hh\salamand\advwork_rename.htm` to `help/src/salamand.hhp` (as 245 did
+  for `CM_IMPORTFROMSALAMANDER`). Not compiled: HTML Help Workshop (`hhc.exe`) is not installed on
+  this machine and the help is not part of `build.cmd`; the line follows the existing pattern
+  (the `.hhp` includes `resource.rh2`, which defines the id).
+- N1: the CS6 row proves nothing about the Ctrl check (Undelete's Ctrl+Shift+U answers first when
+  the key is sent past the accelerator) - covered by `TestRenameInPlaceKey346` instead. Accepted.
+- N2: the "editor already open" guard of `QuickRenameOnIndex` cannot fire through WM_COMMAND (the
+  preamble's `CancelPanelsUI` closes an editor first, without renaming) - kept as a defensive check.
+- N3: in an archive the caret item is scrolled into view before `QuickRenameBegin` refuses -
+  harmless, accepted.
+- N4: the `.slt` header moves to 0.2.0 / 195 - the pipeline's normal catch-up after the release.
+- N5: plug-in FS, horizontal scroll in Detailed view and a real keyboard not probed - person step.

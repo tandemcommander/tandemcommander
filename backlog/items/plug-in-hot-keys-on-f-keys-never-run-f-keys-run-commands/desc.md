@@ -11,7 +11,7 @@ updated: 2026-10-31
 verified: -
 effort: S
 feature: -
-related: [shift-f6-renames-the-focused-item-in-place-without-the]
+related: []
 depends-on: []
 reason: -
 ---
@@ -41,3 +41,4 @@ Only letters are upper-cased (VK 'a'..'z' do not occur as virtual keys anyway; t
 ## Log
 
 - 2026-10-31 — created (source measure:346)
+- 2026-10-31 — related item shift-f6-renames-the-focused-item-in-place-without-the done in feature 346
