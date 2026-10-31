@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF-only cooked image with more past its volume is still deleted by Unpack
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: leftover:354
@@ -10,7 +10,7 @@ created: 2026-10-31
 updated: 2026-10-31
 verified: 2026-10-31 7afab447
 effort: M
-feature: -
+feature: 356
 related: []
 depends-on: []
 reason: -
@@ -59,3 +59,4 @@ and after.
 - 2026-10-31 — auto-triage: severity 5 -> 7: a user can lose data in a narrow scenario (a UDF-only cooked image with a later session, unpacked whole with Delete archive after unpacking, is deleted with data the listing does not cover), band 7-8, as the cooked-image item of 354
 - 2026-10-31 — moved to Next position 2
 - 2026-10-31 — verified at 7afab447: still present at 7afab447: IMAPI2FS UDF-only images have BEA01 at sector 16, SalIsoCookedRestDecision gets iso9660 false and keeps the listing; GUI probe owed (installed app open)
+- 2026-10-31 — run started, feature 356

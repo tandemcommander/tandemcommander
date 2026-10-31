@@ -3,7 +3,7 @@
 **Feature Branch**: `356-uniso-udf-rest`  
 **Created**: 2026-10-31  
 **Status**: Draft  
-**Input**: Backlog item `iso-plug-in-a-udf-only-cooked-image-with-more-past-its` - "ISO plug-in: a UDF-only cooked image with more past its volume is still deleted by Unpack".
+**Input**: Backlog item `iso-plug-in-a-udf-only-cooked-image-with-more-past-its` - "ISO plug-in: a UDF-only cooked image with more past its volume is still deleted by Unpack". From backlog item iso-plug-in-a-udf-only-cooked-image-with-more-past-its.
 
 ## Background (measured at 7afab447)
 
