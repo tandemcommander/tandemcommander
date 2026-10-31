@@ -11,7 +11,7 @@ changing command of the tool runs it). Manage the backlog with
 Formats: `specs/242-backlog-system/contracts/`. Runs: `RUNS.md`. Release
 procedure: `RELEASE.md`.
 
-Last triaged: 2026-10-30
+Last triaged: 2026-10-31
 
 ## In progress
 
@@ -180,6 +180,7 @@ Last triaged: 2026-10-30
 | 15 | [Should the program come back after a reboot or sign-in (RESTART_NO_REBOOT)?](items/restart-after-reboot-or-sign-out/desc.md) | 1 | plugin-api | open |
 | 16 | [Help > Contents ends in a Help Error box: the product ships no manual](items/help-contents-fails-no-manual-shipped/desc.md) | 4 | help-docs | open |
 | 17 | [Is the missing shell copy hook (drag out of archives into Explorer) intended?](items/copy-hook-for-drag-out-of-archives/desc.md) | 3 | archives | open |
+| 18 | [FTP: two uploads under different connections can stall each other while listing](items/ftp-two-uploads-under-different-connections-can-stall-each/desc.md) | 4 | ftp | open |
 
 ## Person steps
 
@@ -269,7 +270,6 @@ Last triaged: 2026-10-30
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
-| [FTP: two uploads under different connections can stall each other while listing](items/ftp-two-uploads-under-different-connections-can-stall-each/desc.md) | decision | 4 | ftp | review:345 | 2026-10-30 |
 
 ## Parked
 

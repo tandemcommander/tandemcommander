@@ -1,13 +1,13 @@
 ---
 title: FTP: two uploads under different connections can stall each other while listing
 type: decision
-status: new
+status: open
 severity: 4
 area: ftp
 source: review:345
 who: person
 created: 2026-10-30
-updated: 2026-10-30
+updated: 2026-10-31
 verified: -
 effort: ?
 feature: -
@@ -84,3 +84,4 @@ the stall for many more questions.
 ## Log
 
 - 2026-10-30 — created (source review:345)
+- 2026-10-31 — moved to Decisions for the maintainer
