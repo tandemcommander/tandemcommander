@@ -20774,10 +20774,15 @@ static void TestIsoUdfEntry_361()
     }
     CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 8, 0xFFFF, f, e, sz));
     // the area past the sector: L_EA 0x10000000 (measured: the 32-bit start 256 MB past the stack sector), L_AD
-    // past the end, the 32-bit sum that wrapped (L_EA 0xFFFFFF00), one byte too many
+    // past the end, L_EA just under 2^32, one byte too many
     CHECK(!SalIsoUdfEntryDescs(2048, false, 0x10000000ull, 8, 0, f, e, sz));
     CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 4096, 0, f, e, sz));
     CHECK(!SalIsoUdfEntryDescs(2048, true, 0xFFFFFF00ull, 8, 0, f, e, sz));
+    // the reader's old 32-bit start that wrapped (review 1): 176 + 0xFFFFFFFF = 175, 216 + 0xFFFFFFFF = 215 -
+    // inside the fixed part, taken as descriptors or as embedded data by a 32-bit rule
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0xFFFFFFFFull, 8, 0, f, e, sz));
+    CHECK(!SalIsoUdfEntryDescs(2048, true, 0xFFFFFFFFull, 40, 3, f, e, sz));
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0xFFFFFF60ull, 16, 1, f, e, sz)); // 176 + 0xFFFFFF60 = 16
     CHECK(!SalIsoUdfEntryDescs(2048, false, 0xFFFFFFFFull, 0xFFFFFFFFull, 1, f, e, sz));
     CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 2048 - 176 + 1, 3, f, e, sz));
     CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 2048 - 176 + 8, 0, f, e, sz));

@@ -96,3 +96,31 @@ copies by `probe/img361.py`. **Rows: PASS 11, FAIL 13** (RUN + END rows); regist
   recorded.
 - C2 LOW: no probe row for an embedded area past the sector - the `saltests` grid covers the rule.
 - U1 LOW: the exact extracted list of the hybrid is fixed by the control row's measurement.
+
+## Review
+
+### Review 1 (refute-first, general-purpose agent, HEAD 5b70f94c) - one MUST
+
+- Re-ran: build, `saltests` 29,697 / 0; the feature's probe on the HEAD build **24 / 0** (the recorded
+  `result_after.txt` predated the last cast change - closed by its run and by `probe/result_after2.txt` below);
+  callers enumerated independently (three, as the fix-log says); a guard-page harness of the new reader over 23,232
+  entries (both kinds, all types, maxAds 0 / 1 / 32): 0 faults, no embedded area past the sector; mutants of the
+  extracted test body: no cut-descriptor check 5 failed (and 1 real fault in its harness - the check is needed for
+  memory safety), a reserved type taken with L_AD 0 4 failed.
+- MUST 1 - a stray file `F250` at the repository root, committed in 8465a220 (left by the manual seed test: a
+  `Set-Content -NoNewline <path> 'F250'` whose arguments PowerShell bound the other way round). Removed.
+- NOTE 1 - the check "the 32-bit sum that wrapped" (L_EA 0xFFFFFF00, extended) does not wrap; a rule computing the
+  area in 32 bits passed the whole group. Taken: three checks with a wrapping start (L_EA 0xFFFFFFFF plain and
+  extended, 0xFFFFFF60 → 16); the comment fixed. Mutant 3 (the area in 32 bits in `salisoudfentry.h`) → **3
+  failed** (exactly the new checks); restored, rebuilt: `saltests: 29700 checks, 0 failed`.
+- NOTE 2 - stricter than needed for malformed-but-readable entries (L_AD not a whole number of descriptors; L_AD
+  past the sector when the caller's limit stops early, e.g. a root entry now "Bad root ICB"): the spec's
+  clarification (360's rule, refuse rather than guess); no real writer known to produce it. Recorded, not changed.
+- NOTE 3 - L-META5 / L-IMAPI250 prove nothing about the metadata caller: the recorded deviation.
+- NOTE 4 - no probe row for embedded data past the sector / a large L_AD at unpack: covered by the `saltests` grid
+  and the reviewer's guard-page harness.
+- NOTE 5 - worktrees of earlier reviews still registered (`%TEMP%\rev325\neg`, `rev328`, `rev330`, `rev332`,
+  `rev335`, `rev341r3`, `.claude/worktrees/agent-a396b9b63fdf41c5a`) - not this feature's; left for the maintainer
+  (named in the closing report).
+- After review 1: `.\build.cmd` BUILD SUCCEEDED, `saltests` 29,700 / 0, encoding `TOTAL: 0 finding(s)`, probe on
+  the final build `probe/result_after2.txt` **24 / 0**, registry restored and identical.
