@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5265,3 +5265,29 @@ a few early ones are out of sequence).
   upper session bound fails 4); refute-first review 1: no MUST - its negative control main's uniso.spl
   10 / 10, mutant without both marks 15 / 5; SHOULD (no row proved the layout mark) taken; NOTEs taken
   or recorded.
+- 353-uniso-noccd-sessions: a CloneCD disc image (`.img`) whose `.ccd` was missing (lost, renamed, not
+  copied) was detected by the ISO plug-in as a plain image that lists only the volume at its sector 16 -
+  the first session of a multi-session dump - and Unpack with "Delete archive after unpacking" deleted
+  it with the later sessions' files, after the "Missing .CCD file" box - now, when the `.ccd` cannot be
+  opened (`CCD::Missing` -> `CISOImage::CcdMissing`) and the file starts with the CD sync pattern (a raw
+  dump, `rawStart` taken right after `DetectSectorType`), `Open`'s plain branch reads the primary volume
+  descriptor at the opened layout's sector 16 (`SalIsoPvdVolumeSectors`: type 1, `CD001`, both copies of
+  the size equal, block size 2048) and marks `ListingLeftOut` incomplete (`SalIsoNoCcdRestMarks`,
+  `src/common/salisotrack.h`) when the file holds more than 16 whole sectors past that volume (room for a
+  later volume's sector 16, `SAL_ISO_LATER_VOLUME_SECTOR`), ends within it, or the size cannot be read -
+  a whole unpack fails, the image is kept; a 2048-byte `.img` and a raw image within 16 sectors of its
+  volume unchanged. No UI string. Traps: the first rule trusted a descriptor claiming more than the file
+  (review 1's SHOULD: a size of 400 over a 352-sector two-session file deleted the image - now the size is
+  not trusted); no row pinned the raw start until C-COOKED17 (review 1); a Python fix-up's `\n` in a probe
+  line became a newline again (fixed with the editor). Limits: every raw single-session dump with more
+  than 16 sectors past its volume (post-gap, run-out + padding, data + audio tracks) is now kept without
+  a message beyond the box; the sessions themselves are still not read (only the first is listed); a
+  cooked (2048-byte) multi-session `.img` / `.iso` still lists one session and is deleted (Inbox
+  `iso-plug-in-a-cooked-multi-session-image-lists-one-session`); crafted images only (person step
+  `check-feature-353-with-real-clonecd-dumps-whose-ccd-is`). From backlog item
+  `iso-plug-in-a-clonecd-image-without-its-ccd-lists-one`. Probe `iso353_probe` (images by `img353.py`
+  from 334's `mkimg334.sh` seeds) on main 10 / 2 (R-NOCCD2, R-REST17 deleted) -> 16 / 0 (R-BIGPVD,
+  C-COOKED17 added by review 1; R-BIGPVD fails on the build before its fix); mutant never marking 10 / 2;
+  352 22 / 0, 351 10 / 0; saltests 29,286 -> 29,325 / 0 (`TestIsoNoCcdRest_353`; the mutant fails 8);
+  refute-first review 1: no MUST - its negative control (uniso.spl before the fix) deleted R-NOCCD2 and a
+  Mode 2 XA two-session image; SHOULD (a size claiming more than the file) fixed; NOTEs fixed or recorded.

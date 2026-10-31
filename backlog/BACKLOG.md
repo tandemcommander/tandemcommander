@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a CloneCD image without its .ccd lists one session, then Unpack deletes it](items/iso-plug-in-a-clonecd-image-without-its-ccd-lists-one/desc.md) | bug | 7 | archives | 353 |
 
 ## Next
 
