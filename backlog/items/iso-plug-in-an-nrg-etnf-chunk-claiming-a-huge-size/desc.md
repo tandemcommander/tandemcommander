@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an NRG ETNF chunk claiming a huge size allocates it whole
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:350
@@ -54,3 +54,4 @@ as the CUEX reader does since feature 350 (`SalNrgCuexSizePlausible` / `SalNrgCu
 
 - 2026-10-31 — created (source review:350)
 - 2026-10-31 — related item iso-plug-in-an-nrg-cuex-chunk-under-16-bytes-makes-a-huge done in feature 350
+- 2026-10-31 — moved to Next position 31

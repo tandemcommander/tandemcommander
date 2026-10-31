@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: NRG CUEX index records are paired into wrong tracks
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:350
@@ -64,3 +64,4 @@ index points list as before (feature 329's, 331's and 350's probe images).
 
 - 2026-10-31 — created (source measure:350)
 - 2026-10-31 — extended: review 3 NOTE 2 of feature 350 (odd record counts now open)
+- 2026-10-31 — moved to Next position 32
