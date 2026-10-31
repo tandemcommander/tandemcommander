@@ -17,6 +17,14 @@ images, s1 + 16 non-zero sectors, s1 + 150 zero-user-data sectors (a post-gap), 
 run-out), s1 + 512 zero sectors and a cooked s1 named `.bin` are deleted (correct); 353's `.img` rows are kept
 with the "Missing .CCD file" box. No real `.bin` / `.cue` / `.mdf` exists on the machine.
 
+## Clarifications
+
+### Session 2026-10-31
+
+- Q: Should a raw image's tail past the volume be read for zero user data before marking (354's zero-rest check), or should every rest of more than 16 sectors mark (353's rule as it is)? → A: read it - more than 16 and at most 512 sectors past the volume mark unless the user data of every whole sector at the opened layout is zero bytes and could be read; more than 512 mark unread (autonomous run: item - *Expected* names 354's zero-rest check, *Notes* ask for real tails; conservative - a zero tail holds no data, so no data can be lost, while a one-session `.bin`'s post-gap stays deletable)
+- Q: Does 353's rule for an `.img` without its `.ccd` gain the zero check too? → A: no, it stays as it is (autonomous run: conservative - it would reverse 353's decided R-REST17 row; the item names only images not named `.img`)
+- Q: What happens when the opened layout's sector 16 is not an ISO 9660 primary descriptor (an HFS or APFS raw image, a damaged descriptor)? → A: the listing is marked - the volume's size is unknown, the rule fails closed as 353's (autonomous run: rule - CLAUDE.md "a safe to delete? check fails closed")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A raw multi-session image is kept by a whole unpack (Priority: P1)
