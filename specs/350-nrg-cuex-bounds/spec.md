@@ -46,6 +46,13 @@ chunk).
   16 bytes? → A: right after the chunk's bytes - the reader takes the whole entries it holds and
   continues after the chunk, as for any other chunk (autonomous run: item - *Expected*, "takes only as
   many entries as its chunk holds"; conservative - a valid chunk is consumed exactly as before)
+- Q: Should the CUEX reader also refuse more than 99 tracks (a CD's maximum) when its chunk lies
+  within the image? → A: No - only the chunk's and the image's bounds the item names; the remaining
+  cost for a crafted image whose chunk offset points far before its end is recorded as a limit
+  (autonomous run: conservative)
+- Q: What happens when a read of the header or an entry returns fewer bytes than asked? → A: no track
+  is made from it, the reader stops taking entries and reports failure as it did before; the chunk list
+  reader goes on as it did before (autonomous run: item - *Expected*; conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -107,7 +114,7 @@ A user opens a well-formed NRG image; it lists exactly the tracks it listed befo
 - A CUEX chunk of exactly 16 bytes (header only): no track, the reader continues after it.
 - A CUEX chunk of 0 bytes: no track, the next chunk header follows directly.
 - A read of an entry that returns fewer than 16 bytes (an I/O error within a chunk that lies within
-  the image): no track is made from it and the reader stops taking entries.
+  the image): no track is made from it, the reader stops taking entries and reports failure.
 - A CUEX chunk lying within the image but holding very many entries (only possible when the image's
   chunk offset points far before its end): bounded by the image's size, as the item asks - see
   Assumptions.
