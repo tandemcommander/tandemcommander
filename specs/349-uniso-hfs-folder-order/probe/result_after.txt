@@ -1,0 +1,21 @@
+iso349_probe (feature 349) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 10:45; registry key existed True
+
+seeds: hfs.iso,hfs_cycle.iso,hfs_long.iso,hfs_move.iso
+img349: move: a (id 16) into b (id 20)
+img349: move: b (id 20) into c (id 22)
+img349: move: k (id 24) into n1/n2/n3/n4 (id 31)
+img349: cycle: a (id 16) and b (id 20) each the other's parent
+
+H-OK       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-OK       RUN    PASS        files 8: HFS (TC349)/a/a.txt=A, HFS (TC349)/a/sub/s.txt=S, HFS (TC349)/b/b.txt=B, HFS (TC349)/c/c.txt=C, HFS (TC349)/k/k.txt=K, HFS (TC349)/k/kd/kd.txt=KD, HFS (TC349)/top.txt=TOP, ISO (TC349)/TOP.TXT=TOP; files ok: True; image kept: False (want False); boxes as expected (none, 0 box(es)): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-MOVE     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-MOVE     RUN    PASS        files 8: HFS (TC349)/c/b/a/a.txt=A, HFS (TC349)/c/b/a/sub/s.txt=S, HFS (TC349)/c/b/b.txt=B, HFS (TC349)/c/c.txt=C, HFS (TC349)/k/k.txt=K, HFS (TC349)/k/kd/kd.txt=KD, HFS (TC349)/top.txt=TOP, ISO (TC349)/TOP.TXT=TOP; files ok: True; image kept: False (want False); boxes as expected (none, 0 box(es)): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-LONG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-LONG     RUN    PASS        files 6: HFS (TC349)/a/a.txt=A, HFS (TC349)/a/sub/s.txt=S, HFS (TC349)/b/b.txt=B, HFS (TC349)/c/c.txt=C, HFS (TC349)/top.txt=TOP, ISO (TC349)/TOP.TXT=TOP; files ok: True; image kept: True (want True); boxes as expected ("\(206\)", 1 box(es)): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] (206) N\u00E1zev nebo p\u0159\u00EDpona souboru je p\u0159\u00EDli\u0161 dlouh\u00E1. HFS (TC349)\n1<60x>\ n2<60x>\ n3<60x>\ n4<60x>\k | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+H-CYCLE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H-CYCLE    RUN    PASS        files 5: HFS (TC349)/c/c.txt=C, HFS (TC349)/k/k.txt=K, HFS (TC349)/k/kd/kd.txt=KD, HFS (TC349)/top.txt=TOP, ISO (TC349)/TOP.TXT=TOP; files ok: True; image kept: True (want True); boxes as expected (none, 0 box(es)): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000020. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 4576C7DA9B95CEBD7C30C12A08385611FC7779F7047555D391B8B3B9A45FBE36 / after 4576C7DA9B95CEBD7C30C12A08385611FC7779F7047555D391B8B3B9A45FBE36
+
+Rows: PASS 8, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -342,8 +342,36 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
     // them (a record whose parent is not in pFolders is listed at the HFS+ root)
     CSalLeftOutIds leftOutFolders;
 
+    // feature 349: the catalog is sorted by parent ID; a folder made first and moved (on a Mac) into a
+    // newer folder keeps its lower ID, so the records inside it come before its own record - they were
+    // listed at the HFS+ root (also the contents of a folder then left out). The folder records the
+    // listing lists are collected first; before a record is taken, the folders above it not taken yet
+    // are taken (listed, left out or skipped by the code of their own record), outermost first.
+    CSalHfsFolderOrder order;
     for (int i = 0; i < nRecords; i++)
     {
+        size_t avail;
+        HFSPlusCatalogKey* pKey = (HFSPlusCatalogKey*)pCatalog->GetRecord(i, &avail);
+        SalHfsCatalogKey key;
+        if (SalHfsCatalogRecordClass((const unsigned char*)pKey, avail, bSkipRootParent, &key) != SAL_HFSREC_FOLDER)
+            continue;
+        HFSPlusCatalogFolder* folder = (HFSPlusCatalogFolder*)((char*)pKey + key.BodyOffset);
+        if (!order.Add(folder->folderID, pKey->parentID, (size_t)i))
+        {
+            Image->ListingLeftOut.SetIncomplete();
+            return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
+        }
+    }
+    if (!order.Seal())
+    {
+        Image->ListingLeftOut.SetIncomplete();
+        return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
+    }
+
+    for (int i = 0; i < nRecords; i++)
+    {
+        if (order.IsTaken(i))
+            continue; // feature 349: a folder taken before its place, with a record below it
         size_t avail;
         HFSPlusCatalogKey* pKey = (HFSPlusCatalogKey*)pCatalog->GetRecord(i, &avail);
         SalHfsCatalogKey key;
@@ -362,6 +390,13 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
             Image->ListingLeftOut.SetIncomplete();
             continue;
         }
+        // feature 349: the folders above it first (none in an ordered catalog); in a loop of parents the
+        // record may be one of the folders left out
+        if (!TakePending(pKey->parentID, rootPath, dir, pluginData, leftOutFolders, order))
+            return FALSE;
+        if (order.IsTaken(i))
+            continue;
+        order.Take(i);
         if (kind == SAL_HFSREC_UNKNOWN)
         {
             // as before, the HFS+ listing ends here - now marked incomplete; inside a folder left out by
@@ -372,203 +407,259 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
             TRACE_E("CHFS::ListDirectory(): a catalog record of a type not handled, the listing ends");
             return FALSE;
         }
-        int nameLen = (int)key.NameLength;
-        wchar_t fileNameW[256];
-        char fileName[256 * 3 + 1]; // UTF-8 needs up to 3 bytes per UTF-16 unit (interface 104)
-        CFileData fd;
-        char* path = rootPath;
-        union
-        {
-            SInt16* type;
-            HFSPlusCatalogFolder* dir;
-            HFSPlusCatalogFile* file;
-        } rec;
+        if (!ListRecord(i, pKey, key, rootPath, dir, pluginData, leftOutFolders))
+            return FALSE;
+    }
+    return TRUE;
+}
 
-        // a folder / file record with its whole structure, a name of 1..255 units (feature 223: never past
-        // 'fileNameW[256]') that does not start with U+0000
-        rec.type = (SInt16*)((char*)pKey + key.BodyOffset);
-        // (a failed conversion is not expected: the buffer takes 255 units, CP_UTF8 without flags replaces
-        // a lone surrogate - marked anyway, fail closed)
-        for (int j = 0; j < nameLen; j++)
-            fileNameW[j] = FromM16(pKey->nodeName.unicode[j]);
-        fileNameW[nameLen] = 0;
-        // format boundary (interface 104): HFS+ names are UTF-16 -> UTF-8 (see GetRootName)
-        if ((WideCharToMultiByte(CP_UTF8, 0, fileNameW, nameLen + 1, fileName, sizeof(fileName), NULL, NULL) <= 0) || !fileName[0])
+// Feature 349: takes the folders above a record under 'parentID' that are not taken yet, outermost first
+// (CSalHfsFolderOrder::Pending), each by the code of its own record (ListRecord). A loop of parents (a
+// damaged catalog: none of its folders reaches the root): its folders are left out with everything in
+// them and the listing is marked incomplete (a whole unpack fails, the image is kept), no message - as
+// 332's damaged records. FALSE = the HFS+ listing ends (out of memory, ListRecord's FALSE).
+BOOL CHFS::TakePending(UInt32 parentID, char* rootPath, CSalamanderDirectoryAbstract* dir,
+                       CPluginDataInterfaceAbstract*& pluginData, CSalLeftOutIds& leftOutFolders,
+                       CSalHfsFolderOrder& order)
+{
+    std::vector<size_t> pending;
+    int res = order.Pending(parentID, pending);
+    if (res == SAL_HFS_PENDING_NO_MEMORY)
+    {
+        Image->ListingLeftOut.SetIncomplete();
+        return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
+    }
+    if (res == SAL_HFS_PENDING_LOOP)
+    {
+        TRACE_E("CHFS::TakePending(): the catalog's folders form a loop of parents, left out");
+        Image->ListingLeftOut.SetIncomplete();
+    }
+    for (size_t r : pending)
+    {
+        order.Take(r);
+        size_t avail;
+        HFSPlusCatalogKey* pKey = (HFSPlusCatalogKey*)pCatalog->GetRecord((int)r, &avail);
+        SalHfsCatalogKey key;
+        // the first pass took only folder records of this class
+        if (SalHfsCatalogRecordClass((const unsigned char*)pKey, avail, bSkipRootParent, &key) != SAL_HFSREC_FOLDER)
+            continue;
+        if (res == SAL_HFS_PENDING_LOOP)
         {
-            // feature 332: an entry whose name does not convert - skipped, the listing incomplete
-            TRACE_E("CHFS::ListDirectory(): a catalog name that does not convert, skipped");
-            Image->ListingLeftOut.SetIncomplete();
+            HFSPlusCatalogFolder* folder = (HFSPlusCatalogFolder*)((char*)pKey + key.BodyOffset);
+            if (!leftOutFolders.Add(folder->folderID))
+                return Error(IDS_INSUFFICIENT_MEMORY, FALSE); // its contents could land at the root
             continue;
         }
+        if (!ListRecord((int)r, pKey, key, rootPath, dir, pluginData, leftOutFolders))
+            return FALSE;
+    }
+    return TRUE;
+}
 
-        FixIllegalFSChars(fileName);
-        // feature 327: and then the rule of every name of the image (':' '/' '<' '>' '"' '|', a
-        // trailing dot, a device name - HFS+ allows them all); listed and descended with
-        MakeSafeName(fileName, sizeof(fileName));
-        // feature 329: inside a left-out folder - left out with it (the folder is the one reported)
-        bool isFolder = *rec.type == kHFSFolderRecord;
-        int under = leftOutFolders.Under(pKey->parentID, isFolder, isFolder ? rec.dir->folderID : 0);
-        if (under == SAL_ISO_UNDER_NO_MEMORY)
-        {
-            // its contents could land at the root - the HFS+ listing ends
-            Image->ListingLeftOut.SetIncomplete();
-            return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
-        }
-        if (under == SAL_ISO_UNDER_SKIPPED)
-            continue;
-        memset(&fd, 0, sizeof(CFileData));
-        // File Name
-        fd.Name = SalamanderGeneral->DupStr(fileName);
-        if (!fd.Name)
-        {
-            Image->ListingLeftOut.SetIncomplete(); // feature 329: a whole unpack then fails
-            return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
-        }
-        fd.NameLen = strlen(fd.Name);
-        // Extension
-        char* ext = strrchr(fd.Name, '.');
-        if (ext != NULL)
-            fd.Ext = ext + 1; // ".cvspass" is extension in Windows
-        else
-            fd.Ext = fd.Name + fd.NameLen;
+// One catalog record that may be listed (a folder or a file record with its whole structure, 332): listed
+// under its parent's path, left out by the listing rule (329) or skipped inside a left-out folder. TRUE =
+// go on, FALSE = the HFS+ listing ends. (The body of ListDirectory's loop before feature 349.)
+BOOL CHFS::ListRecord(int i, HFSPlusCatalogKey* pKey, const SalHfsCatalogKey& key, char* rootPath,
+                      CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData,
+                      CSalLeftOutIds& leftOutFolders)
+{
+    int nameLen = (int)key.NameLength;
+    wchar_t fileNameW[256];
+    char fileName[256 * 3 + 1]; // UTF-8 needs up to 3 bytes per UTF-16 unit (interface 104)
+    CFileData fd;
+    char* path = rootPath;
+    union
+    {
+        SInt16* type;
+        HFSPlusCatalogFolder* dir;
+        HFSPlusCatalogFile* file;
+    } rec;
 
-        CISOImage::CFilePos* filePos = new CISOImage::CFilePos;
-        if (!filePos)
+    // a folder / file record with its whole structure, a name of 1..255 units (feature 223: never past
+    // 'fileNameW[256]') that does not start with U+0000
+    rec.type = (SInt16*)((char*)pKey + key.BodyOffset);
+    // (a failed conversion is not expected: the buffer takes 255 units, CP_UTF8 without flags replaces
+    // a lone surrogate - marked anyway, fail closed)
+    for (int j = 0; j < nameLen; j++)
+        fileNameW[j] = FromM16(pKey->nodeName.unicode[j]);
+    fileNameW[nameLen] = 0;
+    // format boundary (interface 104): HFS+ names are UTF-16 -> UTF-8 (see GetRootName)
+    if ((WideCharToMultiByte(CP_UTF8, 0, fileNameW, nameLen + 1, fileName, sizeof(fileName), NULL, NULL) <= 0) || !fileName[0])
+    {
+        // feature 332: an entry whose name does not convert - skipped, the listing incomplete
+        TRACE_E("CHFS::ListDirectory(): a catalog name that does not convert, skipped");
+        Image->ListingLeftOut.SetIncomplete();
+        return TRUE;
+    }
+
+    FixIllegalFSChars(fileName);
+    // feature 327: and then the rule of every name of the image (':' '/' '<' '>' '"' '|', a
+    // trailing dot, a device name - HFS+ allows them all); listed and descended with
+    MakeSafeName(fileName, sizeof(fileName));
+    // feature 329: inside a left-out folder - left out with it (the folder is the one reported)
+    bool isFolder = *rec.type == kHFSFolderRecord;
+    int under = leftOutFolders.Under(pKey->parentID, isFolder, isFolder ? rec.dir->folderID : 0);
+    if (under == SAL_ISO_UNDER_NO_MEMORY)
+    {
+        // its contents could land at the root - the HFS+ listing ends
+        Image->ListingLeftOut.SetIncomplete();
+        return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
+    }
+    if (under == SAL_ISO_UNDER_SKIPPED)
+        return TRUE;
+    memset(&fd, 0, sizeof(CFileData));
+    // File Name
+    fd.Name = SalamanderGeneral->DupStr(fileName);
+    if (!fd.Name)
+    {
+        Image->ListingLeftOut.SetIncomplete(); // feature 329: a whole unpack then fails
+        return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
+    }
+    fd.NameLen = strlen(fd.Name);
+    // Extension
+    char* ext = strrchr(fd.Name, '.');
+    if (ext != NULL)
+        fd.Ext = ext + 1; // ".cvspass" is extension in Windows
+    else
+        fd.Ext = fd.Name + fd.NameLen;
+
+    CISOImage::CFilePos* filePos = new CISOImage::CFilePos;
+    if (!filePos)
+    {
+        SalamanderGeneral->Free(fd.Name);
+        Image->ListingLeftOut.SetIncomplete();
+        return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
+    }
+    filePos->Partition = 0; // Not initialized by ctor
+    filePos->Extent = i;    // # of record in catalog file
+    filePos->Type = FS_TYPE_HFS;
+    fd.PluginData = (DWORD_PTR)filePos;
+
+    if (fileName[0] == '.')
+    {
+        // Files and folders starting with dot are hidden
+        fd.Attr |= FILE_ATTRIBUTE_HIDDEN;
+        fd.Hidden = 1;
+    }
+    // Find the parent: a listed folder, else the HFS+ root. Feature 349: the catalog is sorted by
+    // parent ID, but a folder moved into a newer folder has its contents before its own record -
+    // ListDirectory has taken every folder above this record first (CSalHfsFolderOrder), so a folder
+    // record of the catalog is listed (or left out) here already.
+    for (int j = 0; j < nFolders; j++)
+    {
+        if (pFolders[j]->id == pKey->parentID)
         {
+            path = pFolders[j]->name;
+            break;
+        }
+    }
+    if (path == rootPath)
+    {
+        path = rootPath;
+    }
+    if (*rec.type == kHFSFolderRecord)
+    {
+        ConvertHFSDate(fd.LastWrite, rec.dir->contentModDate ? rec.dir->contentModDate : rec.dir->createDate);
+
+        // feature 329: the panel listing's own rule first (sallistingname.h, CSalamanderDirectory::
+        // AddDir) - a refused folder is left out with its contents and named in the report
+        // (ListArchive, 328); it showed "too long path" and ended the HFS+ listing
+        if (!SalListingAcceptsDirU8(path, strlen(path), fd.NameLen))
+        {
+            Image->ListingLeftOut.Add(path, fileName);
             SalamanderGeneral->Free(fd.Name);
-            Image->ListingLeftOut.SetIncomplete();
-            return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
-        }
-        filePos->Partition = 0; // Not initialized by ctor
-        filePos->Extent = i;    // # of record in catalog file
-        filePos->Type = FS_TYPE_HFS;
-        fd.PluginData = (DWORD_PTR)filePos;
-
-        if (fileName[0] == '.')
-        {
-            // Files and folders starting with dot are hidden
-            fd.Attr |= FILE_ATTRIBUTE_HIDDEN;
-            fd.Hidden = 1;
-        }
-        // Find the parent. The items are sorted according to parentID which means
-        // our parent must have been parsed already.
-        for (int j = 0; j < nFolders; j++)
-        {
-            if (pFolders[j]->id == pKey->parentID)
+            delete filePos;
+            if (!leftOutFolders.Add(rec.dir->folderID))
             {
-                path = pFolders[j]->name;
-                break;
+                Image->ListingLeftOut.SetIncomplete();
+                return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
             }
+            return TRUE;
         }
-        if (path == rootPath)
-        {
-            path = rootPath;
-        }
-        if (*rec.type == kHFSFolderRecord)
-        {
-            ConvertHFSDate(fd.LastWrite, rec.dir->contentModDate ? rec.dir->contentModDate : rec.dir->createDate);
 
-            // feature 329: the panel listing's own rule first (sallistingname.h, CSalamanderDirectory::
-            // AddDir) - a refused folder is left out with its contents and named in the report
-            // (ListArchive, 328); it showed "too long path" and ended the HFS+ listing
-            if (!SalListingAcceptsDirU8(path, strlen(path), fd.NameLen))
+        size_t strElements = strlen(path) + 1 + strlen(fileName) + 1;
+        FolderInfo* fi = (FolderInfo*)malloc(sizeof(FolderInfo) + strElements - 1); // one character is already part of the FolderInfo structure
+        if (fi)
+        {
+            fi->id = rec.dir->folderID;
+            strcpy_s(fi->name, strElements, path); // due to the FolderInfo structure, the destination buffer size checking via the strcpy_s templates fails
+            strcat_s(fi->name, strElements, "\\");
+            strcat_s(fi->name, strElements, fileName);
+
+            if (nFolders >= nAllocedFolders)
             {
-                Image->ListingLeftOut.Add(path, fileName);
-                SalamanderGeneral->Free(fd.Name);
-                delete filePos;
-                if (!leftOutFolders.Add(rec.dir->folderID))
+                FolderInfo** tmp = (FolderInfo**)realloc(pFolders, (nAllocedFolders + 32) * sizeof(void*));
+                if (!tmp)
                 {
+                    // No more memory to remember more paths
+                    free(fi);
+                    SalamanderGeneral->Free(fd.Name);
+                    delete filePos;
                     Image->ListingLeftOut.SetIncomplete();
                     return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
                 }
-                continue;
+                pFolders = tmp;
+                nAllocedFolders += 32;
             }
-
-            size_t strElements = strlen(path) + 1 + strlen(fileName) + 1;
-            FolderInfo* fi = (FolderInfo*)malloc(sizeof(FolderInfo) + strElements - 1); // one character is already part of the FolderInfo structure
-            if (fi)
+            if (!SortByExtDirsAsFiles)
+                fd.Ext = fd.Name + fd.NameLen; // directories do not have an extension
+            if (dir->AddDir(path, fd, pluginData))
             {
-                fi->id = rec.dir->folderID;
-                strcpy_s(fi->name, strElements, path); // due to the FolderInfo structure, the destination buffer size checking via the strcpy_s templates fails
-                strcat_s(fi->name, strElements, "\\");
-                strcat_s(fi->name, strElements, fileName);
-
-                if (nFolders >= nAllocedFolders)
-                {
-                    FolderInfo** tmp = (FolderInfo**)realloc(pFolders, (nAllocedFolders + 32) * sizeof(void*));
-                    if (!tmp)
-                    {
-                        // No more memory to remember more paths
-                        free(fi);
-                        SalamanderGeneral->Free(fd.Name);
-                        delete filePos;
-                        Image->ListingLeftOut.SetIncomplete();
-                        return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
-                    }
-                    pFolders = tmp;
-                    nAllocedFolders += 32;
-                }
-                if (!SortByExtDirsAsFiles)
-                    fd.Ext = fd.Name + fd.NameLen; // directories do not have an extension
-                if (dir->AddDir(path, fd, pluginData))
-                {
-                    pFolders[nFolders++] = fi;
-                    continue;
-                }
-                // feature 329: refused although the rule took it (out of memory) - the listing is kept,
-                // only marked incomplete (a whole unpack fails), the folder left out with its contents
-                free(fi);
-                SalamanderGeneral->Free(fd.Name);
-                delete filePos;
-                Image->ListingLeftOut.SetIncomplete();
-                Error(IDS_ERROR, FALSE);
-                if (!leftOutFolders.Add(rec.dir->folderID))
-                    return FALSE;
-                continue;
+                pFolders[nFolders++] = fi;
+                return TRUE;
             }
-            else
-            {
-                Image->ListingLeftOut.SetIncomplete();
-                Error(IDS_INSUFFICIENT_MEMORY, FALSE);
-            }
-        }
-        else if (*rec.type == kHFSFileRecord)
-        {
-
-            if ((rec.file->userInfo.fdCreator == kSymLinkCreator) && (rec.file->userInfo.fdType == kSymLinkFileType))
-            {
-                // Symbolic links. The data fork contains UTF8-encoded path to target
-                fd.IsLink = true;
-                //        SalamanderGeneral->Free(fd.Name);
-                //        delete filePos;
-                //        continue;
-            }
-            ConvertHFSDate(fd.LastWrite, rec.file->contentModDate ? rec.file->contentModDate : rec.file->createDate);
-            fd.Size.Value = FromM64(rec.file->dataFork.logicalSize);
-            if (rec.file->flags & FromM16(kHFSFileLockedMask))
-                fd.Attr |= FILE_ATTRIBUTE_READONLY;
-
-            if (!fd.IsLink)
-                fd.IsLink = SalamanderGeneral->IsFileLink(fd.Ext);
-            // feature 329: as a folder above - a refused file is left out alone and named in the report
-            if (!SalListingAcceptsFileU8(path, strlen(path), fd.Name, fd.NameLen))
-                Image->ListingLeftOut.Add(path, fileName);
-            else
-            {
-                if (dir->AddFile(path, fd, pluginData))
-                    continue;
-                Image->ListingLeftOut.SetIncomplete(); // refused although the rule took it (out of memory)
-                Error(IDS_ERROR, FALSE);
-            }
+            // feature 329: refused although the rule took it (out of memory) - the listing is kept,
+            // only marked incomplete (a whole unpack fails), the folder left out with its contents
+            free(fi);
             SalamanderGeneral->Free(fd.Name);
             delete filePos;
-            continue;
+            Image->ListingLeftOut.SetIncomplete();
+            Error(IDS_ERROR, FALSE);
+            if (!leftOutFolders.Add(rec.dir->folderID))
+                return FALSE;
+            return TRUE;
+        }
+        else
+        {
+            Image->ListingLeftOut.SetIncomplete();
+            Error(IDS_INSUFFICIENT_MEMORY, FALSE);
+        }
+    }
+    else if (*rec.type == kHFSFileRecord)
+    {
+
+        if ((rec.file->userInfo.fdCreator == kSymLinkCreator) && (rec.file->userInfo.fdType == kSymLinkFileType))
+        {
+            // Symbolic links. The data fork contains UTF8-encoded path to target
+            fd.IsLink = true;
+            //        SalamanderGeneral->Free(fd.Name);
+            //        delete filePos;
+            //        continue;
+        }
+        ConvertHFSDate(fd.LastWrite, rec.file->contentModDate ? rec.file->contentModDate : rec.file->createDate);
+        fd.Size.Value = FromM64(rec.file->dataFork.logicalSize);
+        if (rec.file->flags & FromM16(kHFSFileLockedMask))
+            fd.Attr |= FILE_ATTRIBUTE_READONLY;
+
+        if (!fd.IsLink)
+            fd.IsLink = SalamanderGeneral->IsFileLink(fd.Ext);
+        // feature 329: as a folder above - a refused file is left out alone and named in the report
+        if (!SalListingAcceptsFileU8(path, strlen(path), fd.Name, fd.NameLen))
+            Image->ListingLeftOut.Add(path, fileName);
+        else
+        {
+            if (dir->AddFile(path, fd, pluginData))
+                return TRUE;
+            Image->ListingLeftOut.SetIncomplete(); // refused although the rule took it (out of memory)
+            Error(IDS_ERROR, FALSE);
         }
         SalamanderGeneral->Free(fd.Name);
         delete filePos;
-        return FALSE;
+        return TRUE;
     }
-    return TRUE;
+    SalamanderGeneral->Free(fd.Name);
+    delete filePos;
+    return FALSE;
 }
 
 int CHFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* srcPath, const char* path,

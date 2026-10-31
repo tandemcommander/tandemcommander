@@ -35,6 +35,9 @@ typedef wchar_t UniChar;
 
 UInt64 FromM64(UInt64 x);
 
+class CSalLeftOutIds;     // salisonamefit.h (feature 329)
+class CSalHfsFolderOrder; // salisonamefit.h (feature 349)
+
 class CHFS : public CUnISOFSAbstract
 {
 public:
@@ -412,6 +415,13 @@ private:
     BOOL Declared;
 
     BOOL DeclaredBehindDamagedMap(); // feature 333 (review 1): see hfs.cpp
+    // feature 349: ListDirectory takes the folders above a record first (see hfs.cpp)
+    BOOL TakePending(UInt32 parentID, char* rootPath, CSalamanderDirectoryAbstract* dir,
+                     CPluginDataInterfaceAbstract*& pluginData, CSalLeftOutIds& leftOutFolders,
+                     CSalHfsFolderOrder& order);
+    BOOL ListRecord(int i, HFSPlusCatalogKey* pKey, const SalHfsCatalogKey& key, char* rootPath,
+                    CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData,
+                    CSalLeftOutIds& leftOutFolders);
     BOOL SeekSector(int sector); // Seeks on disk (sector is usually 512 or 2048 bytes); TRUE on success
     BOOL SeekBlock(int block);   // Seeks on HFS+ partition (block is usually 4096 bytes); TRUE on success
     __int64 SeekRel(int offset); // Seeks relatively; Returns new position
