@@ -1120,6 +1120,45 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                     }
                 }
 
+                // feature 355: a raw image under any other name (a .bin without its .cue, an .mdf, a raw
+                // .iso - no table of sessions is read for them) lists only the volume at its sector 16 too;
+                // when the file holds room for a later volume past that one and the user data of the sectors
+                // there is not zero bytes only (or cannot be shown to be: too many sectors, not readable, the
+                // volume's size unknown or more than the file), the listing is marked incomplete, so a whole
+                // unpack fails and "Delete archive after unpacking" keeps the image
+                if (rawStart && !CcdMissing)
+                {
+                    unsigned char desc[SAL_ISO_PVD_BYTES];
+                    DWORD got = ReadDataByPos(GetSectorOffset(16), (DWORD)sizeof(desc), desc);
+                    unsigned long long volumeSectors = 0;
+                    bool known = SalIsoPvdVolumeSectors(desc, got, volumeSectors);
+                    long long firstSector = 0, sectors = 0;
+                    int decision = SalIsoRawRestDecision(known, volumeSectors, track->End, DataOffset, SectorRawSize,
+                                                         firstSector, sectors);
+                    BOOL mark = decision == SAL_ISO_REST_MARK;
+                    if (decision == SAL_ISO_REST_CHECK)
+                    {
+                        unsigned char* buf = new unsigned char[(size_t)SAL_ISO_RAW_REST_READ];
+                        mark = buf == NULL; // not checked - fails closed
+                        long long i;
+                        for (i = 0; !mark && i < sectors; i++)
+                        {
+                            LONGLONG at = DataOffset + (firstSector + i) * (LONGLONG)SectorRawSize + SectorHeaderSize;
+                            DWORD read = ReadDataByPos(at, (DWORD)SAL_ISO_RAW_REST_READ, buf);
+                            if (read != (DWORD)SAL_ISO_RAW_REST_READ || !SalIsoBytesAllZero(buf, read))
+                                mark = TRUE;
+                        }
+                        delete[] buf;
+                    }
+                    if (mark)
+                    {
+                        TRACE_I("CISOImage::Open(): a raw image of " << track->End << " bytes past a volume of "
+                                                                     << volumeSectors << " sectors, decision "
+                                                                     << decision);
+                        ListingLeftOut.SetIncomplete();
+                    }
+                }
+
                 // feature 354: a cooked image lists only the volume at its sector 16 - a multi-session
                 // image's first session; when the file holds room for a later volume past that one and the
                 // rest is not zero bytes only (or cannot be shown to be: too long, not readable, the volume's

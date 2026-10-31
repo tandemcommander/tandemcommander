@@ -649,3 +649,43 @@ inline bool SalIsoBytesAllZero(const unsigned char* data, long long len)
             return false;
     return true;
 }
+
+// Feature 355: the user-data bytes of each raw sector past the volume SalIsoRawRestDecision has read (one
+// ISO 9660 block - a later volume's descriptor lies within them also when its sectors are Mode 2 XA and the
+// opened layout is Mode 1, 8 bytes earlier)
+const long long SAL_ISO_RAW_REST_READ = 2048;
+
+// Feature 355: a raw image (the file starts with the CD sync pattern) opened by the plain detection under any
+// name but an .img whose .ccd is missing (353's SalIsoNoCcdRestMarks) lists the volume whose descriptor is at
+// the opened layout's sector 16 only - a multi-session image's first session; a later session, or audio
+// tracks of a .bin without its .cue, lie past it. 'volumeKnown' / 'volumeSectors' = SalIsoPvdVolumeSectors of
+// that descriptor; 'fileSize' = the file's bytes; 'dataOffset' / 'sectorRawSize' = the opened layout's offset
+// of sector 0 and stored sector size. MARK when the size is not known (no ISO 9660 descriptor - fails
+// closed), the sector size is not positive, the file size or offset is negative, or the file holds fewer
+// whole sectors than the volume (a size that cannot be trusted, as 353); KEEP_LISTING when it holds at most
+// SAL_ISO_LATER_VOLUME_SECTOR whole sectors past the volume; MARK when more than SAL_ISO_ZERO_REST_SECTORS lie
+// past it (not all checked); else CHECK: read SAL_ISO_RAW_REST_READ bytes of user data of each of 'sectors'
+// sectors from 'firstSector' at the layout, and mark unless every read is whole and zero bytes only (a raw
+// sector's sync, header and error correction are never all zero, so the user data is what is checked; a
+// post-gap or run-out holds zero user data, a later volume's descriptor and audio do not). A partial sector
+// at the end of the file is not counted. The outputs are set for CHECK only.
+inline int SalIsoRawRestDecision(bool volumeKnown, unsigned long long volumeSectors, long long fileSize,
+                                 long long dataOffset, long long sectorRawSize, long long& firstSector,
+                                 long long& sectors)
+{
+    if (!volumeKnown || sectorRawSize <= 0 || fileSize < 0 || dataOffset < 0)
+        return SAL_ISO_REST_MARK;
+    unsigned long long whole =
+        fileSize > dataOffset ? (unsigned long long)((fileSize - dataOffset) / sectorRawSize) : 0;
+    if (whole < volumeSectors)
+        return SAL_ISO_REST_MARK;
+    unsigned long long past = whole - volumeSectors;
+    if (past <= (unsigned long long)SAL_ISO_LATER_VOLUME_SECTOR)
+        return SAL_ISO_REST_KEEP_LISTING;
+    if (past > (unsigned long long)SAL_ISO_ZERO_REST_SECTORS)
+        return SAL_ISO_REST_MARK;
+    // whole >= volumeSectors and whole fits a long long, so volumeSectors does too
+    firstSector = (long long)volumeSectors;
+    sectors = (long long)past;
+    return SAL_ISO_REST_CHECK;
+}

@@ -1,0 +1,63 @@
+iso355_probe (feature 355) mutant-never-zero
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 16:16; registry key existed True
+
+seeds: audio.raw=1119552,bigpvd.raw=827904,cooked.raw=360448,one.raw=413952,rest16.raw=451584,rest17.raw=453936,run2.raw=418656,s1.iso=360448,s2.iso=360448,s2.lba=3,short.raw=409248,two.raw=827904,xa2.raw=827904,zero150.raw=766752,zero512.raw=1618176,zero513.raw=1620528,zerolate.raw=1119552
+img355: one: 413952 bytes (s1 176 + s2 176 sectors)
+img355: two: 827904 bytes (s1 176 + s2 176 sectors)
+img355: rest16: 451584 bytes (s1 176 + s2 176 sectors)
+img355: rest17: 453936 bytes (s1 176 + s2 176 sectors)
+img355: zero150: 766752 bytes (s1 176 + s2 176 sectors)
+img355: run2: 418656 bytes (s1 176 + s2 176 sectors)
+img355: zero512: 1618176 bytes (s1 176 + s2 176 sectors)
+img355: zero513: 1620528 bytes (s1 176 + s2 176 sectors)
+img355: zerolate: 1119552 bytes (s1 176 + s2 176 sectors)
+img355: audio: 1119552 bytes (s1 176 + s2 176 sectors)
+img355: short: 409248 bytes (s1 176 + s2 176 sectors)
+img355: bigpvd: 827904 bytes (s1 176 + s2 176 sectors)
+img355: xa2: 827904 bytes (s1 176 + s2 176 sectors)
+img355: cooked: 360448 bytes (s1 176 + s2 176 sectors)
+
+R-TWOISO   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-TWOISO   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-TWOBIN   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-TWOBIN   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-TWOMDF   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-TWOMDF   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-XA2BIN   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-XA2BIN   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-BIGPVD   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-BIGPVD   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-SHORT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SHORT    RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-REST17   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-REST17   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-ZERO513  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ZERO513  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-ZEROLATE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ZEROLATE RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-AUDIO    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-AUDIO    RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-ONEISO   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ONEISO   RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-ONEBIN   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ONEBIN   RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-ONEMDF   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ONEMDF   RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-REST16   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-REST16   RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-ZERO150  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ZERO150  RUN    FAIL        files 1: a.txt; files ok: True; image kept: True (want False); windows ok (none): True; fatal: ; windows: no window
+C-RUN2     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-RUN2     RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-ZERO512  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ZERO512  RUN    FAIL        files 1: a.txt; files ok: True; image kept: True (want False); windows ok (none): True; fatal: ; windows: no window
+C-COOKEDBIN END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-COOKEDBIN RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+U-TWOIMG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-TWOIMG   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (missing): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+U-ZERO150IMG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-ZERO150IMG RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (missing): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 1DA45396222A51BBD77215E2991681418F608E9DCC6D8E89F35C34EC25E6830A / after 1DA45396222A51BBD77215E2991681418F608E9DCC6D8E89F35C34EC25E6830A
+
+Rows: PASS 38, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
