@@ -7,8 +7,13 @@
 - **Rationale**: plug-in hot keys are dispatched in that handler; the main-window accelerators
   (`IDA_MAINACCELS1/2`) run in the message loop *before* it. An accelerator row would silently take
   Shift+F6 from a user who had bound a plug-in command to it (Shift+F6 was free until now and
-  `IsSalHotKey` accepted it). After the plug-in call, such a binding keeps running; otherwise the
-  panel opens the editor. Posting the command (as Shift+F10 posts `CM_CONTEXTMENU`) runs the same
+  `IsSalHotKey` accepted it). After the plug-in call, such a binding would keep its place; otherwise
+  the panel opens the editor. **Measured during implementation**: an F-key plug-in binding never
+  runs from the key - `CPlugins::QueryHotKey` upper-cases `wParam` through `UpperCase[]` (a
+  character table), so VK_F6 = 0x75 = 'u' is looked up as 'U' (Shift+U is reserved, so Shift+F6
+  reaches the panel's code; Ctrl+Shift+F6 sent past the accelerator ran Undelete's Ctrl+Shift+U in
+  the probe). Pre-existing, outside this item: Inbox. The placement after the plug-ins stays: it is
+  what a fix of that defect needs to keep a stored binding's precedence. Posting the command (as Shift+F10 posts `CM_CONTEXTMENU`) runs the same
   path as the menu, including the WM_COMMAND preamble that ends quick search / a running editor.
 - **Alternatives**: accelerator row `VK_F6, CM_QUICKRENAMEINPLACE, VIRTKEY, SHIFT` - rejected
   (overrides existing user bindings); handling before the plug-ins - rejected for the same reason.

@@ -25,6 +25,7 @@ STRINGTABLE
 
  IDS_MENU_FILES,             "&Files"
  IDS_MENU_FILES_RENAME,      "&Quick Rename...\tF2"
+ IDS_MENU_FILES_RENAMEINPLACE, "Rename in Place\tShift+F6"
  IDS_MENU_FILES_VIEW,        "&View\tF3"
  IDS_MENU_FILES_ALTVIEW,     "A&lternate View\tAlt+F3"
  IDS_MENU_FILES_VIEWWITH,    "View Wit&h\tCtrl+Shift+F3"

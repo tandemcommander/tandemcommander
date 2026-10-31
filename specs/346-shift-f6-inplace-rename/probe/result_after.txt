@@ -1,0 +1,20 @@
+rip346_probe (feature 346) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 08:47; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc346\R
+
+DISK       START  PASS        left panel in C:\Users\pavel\AppData\Local\Temp\tc346\R
+DISK       S6-UPDIR PASS        Shift+F6 on '..': no edit
+DISK       S6-FILE PASS        Shift+F6 on a.txt: edit 'a.txt' sel 0..1
+DISK       S6-ESC PASS        typed zz.txt, Esc: no edit; a.txt True, zz.txt False
+DISK       S6-ENTER PASS        typed a2.txt, Enter: no edit; a2.txt True, a.txt False
+DISK       S6-FOCUS PASS        Shift+F6 again after the rename: edit 'a2.txt' sel 0..2
+DISK       S6-DIR PASS        Shift+F6 on Dir1: edit 'Dir1' sel 0..4
+DISK       S6-UTF8 PASS        Shift+F6 on the accented file: edit 'voil\u00E0 \u00E9.txt' sel 0..7; renamed to the other accented name: True, old False
+DISK       CS6    PASS        Ctrl+Shift+F6 sent to the panel: no edit; key: 'WM_KEYDOWN timed out'; window: [#32770 'Undelete'] [Button id=3000] Select &disk to analyze | [Button id=1104] Disk &Image | [Button id=1402] &Browse... | [Button id=1101] Scan &vacant clusters on FAT partitions | [Button id=1102] Show e&xisting files and directories | [Button id=1106] Show files with &zero size | [Button id=1107] Show &empty directories | [Button id=1108] Show &metafiles | [Button id=1109] Estimate &files damage | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; served: [#32770 'Undelete'] [Button id=3000] Select &disk to analyze | [Button id=1104] Disk &Image | [Button id=1402] &Browse... | [Button id=1101] Scan &vacant clusters on FAT partitions | [Button id=1102] Show e&xisting files and directories | [Button id=1106] Show files with &zero size | [Button id=1107] Show &empty directories | [Button id=1108] Show &metafiles | [Button id=1109] Estimate &files damage | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+DISK       KEEPS  PASS        F6 sent to the panel: no edit; Alt+Shift+F6: no edit
+DISK       MENU   PASS        the menu command on a2.txt: edit 'a2.txt' sel 0..2
+DISK       F2     PASS        CM_RENAMEFILE (F2): [#32770 'Quick Rename'] [Static id=209] Rename file "a2.txt" to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help; after Cancel the folder holds: a2.txt, arch.zip, Dir1, voil\u00E0 \u00FC.txt
+DISK       ARCHIVE PASS        panel in 'C:\Users\pavel\AppData\Local\Temp\tc346\R\arch.zip': Shift+F6 on inner.txt: no edit; menu command: no edit
+Registry: restored; identical=True; SHA-256 before 8E1C2F022385FF0571FADD9DABA611D2224E93191348374F853AE5FDC3A0A1F7 / after 8E1C2F022385FF0571FADD9DABA611D2224E93191348374F853AE5FDC3A0A1F7
+
+Rows: PASS 13, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

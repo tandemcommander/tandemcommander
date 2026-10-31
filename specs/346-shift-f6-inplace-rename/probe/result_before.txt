@@ -1,0 +1,18 @@
+rip346_probe (feature 346) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 08:34; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc346\R
+
+DISK       START  PASS        left panel in C:\Users\pavel\AppData\Local\Temp\tc346\R
+DISK       S6-UPDIR PASS        Shift+F6 on '..': no edit
+DISK       S6-FILE FAIL        Shift+F6 on a.txt: no edit
+DISK       S6-ESC FAIL        no edit to cancel
+DISK       S6-ENTER FAIL        no edit to confirm
+DISK       S6-FOCUS FAIL        no edit
+DISK       S6-DIR FAIL        Shift+F6 on Dir1: no edit
+DISK       S6-UTF8 FAIL        Shift+F6 on the accented file: no edit; renamed to the other accented name: False, old True
+DISK       ERROR  FAIL        key not driven: WM_KEYDOWN timed out @ at KeyM, C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\58c13894-e32b-4263-b0cc-92e473a3a809\scratch\rip_probe.ps1: line 123
+at Run-Disk, C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\58c13894-e32b-4263-b0cc-92e473a3a809\scratch\rip_probe.ps1: line 224
+at <ScriptBlock>, C:\Users\pavel\AppData\Local\Temp\claude\E--Projects-tandemcommander\58c13894-e32b-4263-b0cc-92e473a3a809\scratch\rip_probe.ps1: line 290
+Registry: restored; identical=True; SHA-256 before 8E1C2F022385FF0571FADD9DABA611D2224E93191348374F853AE5FDC3A0A1F7 / after 8E1C2F022385FF0571FADD9DABA611D2224E93191348374F853AE5FDC3A0A1F7
+
+Rows: PASS 2, FAIL 7, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

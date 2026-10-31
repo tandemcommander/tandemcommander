@@ -9,7 +9,7 @@
 
 ### Session 2026-10-31
 
-- Q: When a user already bound a plug-in command to Shift+F6, which runs on Shift+F6 in a panel? → A: the user's plug-in command keeps running (it is kept at load and takes precedence); Plugins Manager and the settings import refuse Shift+F6 as a new binding, like every other program key (autonomous run: conservative; precedent 312 `IsSalHotKeyKeptAtLoad`)
+- Q: When a user already bound a plug-in command to Shift+F6, which runs on Shift+F6 in a panel? → A: the in-place rename. Measured during implementation: such a binding never ran from the key (`CPlugins::QueryHotKey` upper-cases the virtual key through the character table, F6 = 0x75 is looked up as the letter U - a pre-existing defect, recorded in the Inbox). The stored binding is kept, not erased (`IsSalHotKeyKeptAtLoad`), and the panel tries the plug-ins first, so a later fix of that defect keeps the user's choice; Plugins Manager and the settings import refuse Shift+F6 as a new binding like every other program key (autonomous run: conservative; precedent 312)
 - Q: What is the menu command called and where is it? → A: Files menu, right after *Quick Rename... F2*, text *Rename in Place* with the shortcut Shift+F6, same enable rule as the in-place rename, same skill levels as *Quick Rename* (autonomous run: recommended)
 - Q: Does Shift+F6 work while the command line has the focus? → A: no, unchanged; the item names panels only and the menu command covers the other case (autonomous run: conservative)
 
@@ -79,7 +79,8 @@ the keyboard help page lists Shift+F6.
 2. **Given** a focused file, **When** the user chooses Files > *Rename in Place*, **Then** the
    in-place field opens as with Shift+F6.
 3. **Given** a plug-in menu command the user had bound to Shift+F6 before this feature, **When**
-   the user presses Shift+F6, **Then** that command still runs (the user's binding is kept).
+   the program starts, **Then** the binding is kept (not erased); Plugins Manager refuses Shift+F6 as
+   a new binding.
 
 ---
 
@@ -114,8 +115,8 @@ the keyboard help page lists Shift+F6.
   Shift+F6, right after *Quick Rename...*, enabled exactly when the in-place rename is available
   for the focused item.
 - **FR-007**: The keyboard shortcuts help page and the rename help page MUST list Shift+F6.
-- **FR-008**: A plug-in hot key a user already bound to Shift+F6 MUST keep working (it takes
-  precedence); new plug-in bindings of Shift+F6 MUST be refused as other program keys are.
+- **FR-008**: A plug-in hot key a user already bound to Shift+F6 MUST be kept (not erased at
+  load); new plug-in bindings of Shift+F6 MUST be refused as other program keys are.
 - **FR-009**: The new menu text MUST be translated for every enabled language.
 
 ## Success Criteria *(mandatory)*
@@ -132,8 +133,8 @@ the keyboard help page lists Shift+F6.
 ## Assumptions
 
 - Assumption (autonomous run): Shift+F6 is handled by the panel itself, after plug-in hot keys,
-  rather than as a main-window accelerator, so a user's existing plug-in binding of Shift+F6 keeps
-  running (conservative: keeps existing behaviour for every case the item does not name).
+  rather than as a main-window accelerator (conservative: the plug-ins keep their place in front of
+  the program's panel keys; see Clarifications for why an old Shift+F6 binding did not run anyway).
 - Assumption (autonomous run): Shift+F6 while the command line has focus does nothing (as today);
   the item names panels only.
 - Assumption (autonomous run): The new menu command has no `&` access key — every candidate letter

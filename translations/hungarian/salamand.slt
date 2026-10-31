@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\salamand\salamand.atp"
-TEXTVERSION,"0.1.10 (x64)"
-VERSION,"0,1,10,194"
+TEXTVERSION,"0.2.0 (x64)"
+VERSION,"0,2,0,195"
 
 [TRANSLATION]
 LANGID,1038
@@ -3052,6 +3052,7 @@ SLGINCOMPLETE,""
 13016,1,"&Maximalizál/Visszaállít\tCtrl+F11"
 13017,1,"Fel&cserél\tCtrl+U"
 13018,1,"&Rendezési beállítás..."
+13019,1,"Helyben átnevezés\tShift+F6"
 13020,1,"&Fájlok"
 13021,1,"&Gyors átnevezés...\tF2"
 13022,1,"&Nézet\tF3"

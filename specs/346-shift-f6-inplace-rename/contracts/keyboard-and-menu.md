@@ -5,7 +5,7 @@ User-visible interface; no plug-in API change.
 | Input (panel has focus) | Result |
 |---|---|
 | Shift+F6, no plug-in command bound to it | `CM_QUICKRENAMEINPLACE` |
-| Shift+F6, a plug-in command bound to it before 346 | the plug-in command (as before) |
+| Shift+F6, a plug-in command bound to it before 346 | `CM_QUICKRENAMEINPLACE` - the binding is kept but never ran from the key (F-keys are looked up as letters, pre-existing defect, Inbox) |
 | F6 / Ctrl+F6 / Alt+F6 / Ctrl+Shift+F6 / Alt+Shift+F6 | unchanged (Move / sort by size / Unpack / Restore Selection / nothing) |
 | F2 | Rename dialog (unchanged) |
 | Shift+F6 with focus in the command line | nothing (unchanged) |

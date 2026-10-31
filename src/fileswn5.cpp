@@ -2844,27 +2844,38 @@ void CFilesWindow::AdjustQuickRenameWindow()
                  SWP_NOMOVE | SWP_NOZORDER);
 }
 
-/*
-// I ran into a sorting issue: Vista keeps items in place, but Salamander needs to insert them
-// so I'm shelving this for now
-void
-CFilesWindow::QuickRenameOnIndex(int index)
+// feature 346: the keyboard start of the in-place rename (Shift+F6, Files > Rename in Place) - the
+// label rectangle of the item's cell as the mouse start passes it (CFilesBox::GetIndex fills it for
+// every view mode from a point inside the cell). Upstream shelved this for Tab-to-the-next-item
+// (Vista keeps the items in place, Salamander re-sorts them); that part stays out.
+void CFilesWindow::QuickRenameOnIndex(int index)
 {
-  if (index >= 0 && index < Dirs->Count + Files->Count)
-  {
-    QuickRenameIndex = index;
+    CALL_STACK_MESSAGE2("CFilesWindow::QuickRenameOnIndex(%d)", index);
+
+    if (index < 0 || index >= Dirs->Count + Files->Count || IsQuickRenameActive())
+        return;
+
+    KillQuickRenameTimer(); // a pending click start must not open a second editor
     SetCaretIndex(index, FALSE);
+    EnsureItemVisible(index);
 
     RECT r;
-    if (ListBox->GetItemRect(index, &r))
-    {
-      ListBox->GetIndex(r.left, r.top, FALSE, &QuickRenameRect);
-      QuickRenameIndex = index;
-      QuickRenameBegin(index, &QuickRenameRect);
-    }
-  }
+    if (!ListBox->GetItemRect(index, &r))
+        return; // not in view (a panel too small to show the item)
+
+    // a point inside the cell and inside the files area (a cell can be cut at the area's edge)
+    RECT area = ListBox->FilesRect;
+    int x = max(r.left, (int)area.left) + 1;
+    int y = max(r.top, (int)area.top) + 1;
+    if (x >= area.right || y >= area.bottom)
+        return;
+    RECT labelRect;
+    ListBox->GetIndex(x, y, FALSE, &labelRect);
+
+    QuickRenameIndex = index;
+    QuickRenameRect = labelRect;
+    QuickRenameBegin(index, &QuickRenameRect);
 }
-*/
 
 void CFilesWindow::QuickRenameBegin(int index, const RECT* labelRect)
 {

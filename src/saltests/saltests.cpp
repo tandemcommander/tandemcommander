@@ -109,6 +109,7 @@
 #include "salnrgcdtext.h"      // feature 331
 #include "salisotrack.h"       // features 334, 335
 #include "salisounpack.h"      // feature 338
+#include "salrenamekey.h"      // feature 346
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -20647,6 +20648,33 @@ static std::string Hfs339Record(unsigned char ownerFlags, unsigned fileMode, uns
 
 static int Hfs339Kind(const std::string& r) { return SalHfsFileContentKind((const unsigned char*)r.data(), r.size()); }
 
+// feature 346: Shift+F6 opens the in-place rename; the other F6 keys keep their commands
+// (src/common/salrenamekey.h)
+static void TestRenameInPlaceKey346()
+{
+    CHECK(SalIsRenameInPlaceKey(VK_F6, FALSE, TRUE, FALSE));
+    CHECK(!SalIsRenameInPlaceKey(VK_F6, FALSE, FALSE, FALSE)); // F6 Move
+    CHECK(!SalIsRenameInPlaceKey(VK_F6, TRUE, FALSE, FALSE));  // Ctrl+F6 sort by size
+    CHECK(!SalIsRenameInPlaceKey(VK_F6, FALSE, FALSE, TRUE));  // Alt+F6 Unpack
+    CHECK(!SalIsRenameInPlaceKey(VK_F6, TRUE, TRUE, FALSE));   // Ctrl+Shift+F6 Restore Selection
+    CHECK(!SalIsRenameInPlaceKey(VK_F6, FALSE, TRUE, TRUE));   // Alt+Shift+F6
+    CHECK(!SalIsRenameInPlaceKey(VK_F6, TRUE, TRUE, TRUE));
+    CHECK(!SalIsRenameInPlaceKey(VK_F5, FALSE, TRUE, FALSE));
+    CHECK(!SalIsRenameInPlaceKey(VK_F7, FALSE, TRUE, FALSE));
+    CHECK(!SalIsRenameInPlaceKey(VK_F2, FALSE, TRUE, FALSE));
+    CHECK(!SalIsRenameInPlaceKey(VK_SHIFT, FALSE, TRUE, FALSE));
+    // the hot-key form (LOBYTE key, HIBYTE HOTKEYF_*)
+    CHECK(SalIsRenameInPlaceHotKey(MAKEWORD(VK_F6, HOTKEYF_SHIFT)));
+    CHECK(SalIsRenameInPlaceHotKey(MAKEWORD(VK_F6, HOTKEYF_SHIFT | HOTKEYF_EXT)));
+    CHECK(!SalIsRenameInPlaceHotKey(MAKEWORD(VK_F6, 0)));
+    CHECK(!SalIsRenameInPlaceHotKey(MAKEWORD(VK_F6, HOTKEYF_CONTROL)));
+    CHECK(!SalIsRenameInPlaceHotKey(MAKEWORD(VK_F6, HOTKEYF_ALT)));
+    CHECK(!SalIsRenameInPlaceHotKey(MAKEWORD(VK_F6, HOTKEYF_SHIFT | HOTKEYF_CONTROL)));
+    CHECK(!SalIsRenameInPlaceHotKey(MAKEWORD(VK_F6, HOTKEYF_SHIFT | HOTKEYF_ALT)));
+    CHECK(!SalIsRenameInPlaceHotKey(MAKEWORD(VK_F5, HOTKEYF_SHIFT)));
+    CHECK(!SalIsRenameInPlaceHotKey(MAKEWORD('G', HOTKEYF_CONTROL | HOTKEYF_SHIFT)));
+}
+
 static void TestHfsFileContent339()
 {
     const unsigned reg = 0100644, noMode = 0, typeOnly = 0100000, lnk = 0120755;
@@ -21881,6 +21909,7 @@ int main(int argc, char** argv)
     TestIsoWholeUnpack_338();
     TestHfsFileContent339();
     TestIsoSessionTracks_340();
+    TestRenameInPlaceKey346();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

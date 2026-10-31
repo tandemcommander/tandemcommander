@@ -1667,7 +1667,7 @@ public:
     // QuickRenameWindow
     void AdjustQuickRenameRect(const char* text, RECT* r); // adjusts 'r' so it doesn't exceed the panel and is large enough at the same time
     void AdjustQuickRenameWindow();
-    //    void QuickRenameOnIndex(int index); // calls QuickRenameBegin for the given index
+    void QuickRenameOnIndex(int index); // calls QuickRenameBegin for the given index (keyboard start, feature 346)
     void QuickRenameBegin(int index, const RECT* labelRect); // opens QuickRenameWindow
     void QuickRenameEnd();                                   // ends Quick Rename mode
     BOOL IsQuickRenameActive();                              // returns TRUE if QuickRenameWindow is open

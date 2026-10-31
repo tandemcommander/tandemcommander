@@ -11,7 +11,7 @@ through one new command `CM_QUICKRENAMEINPLACE`; its handler revives the comment
 `QuickRenameOnIndex` (bring the caret item into view, compute its label rectangle with
 `CFilesBox::GetItemRect` + `GetIndex(..., &labelRect)`, store `QuickRenameIndex` /
 `QuickRenameRect`, call `QuickRenameBegin`). The key is recognised in the panel's key handler
-**after** plug-in hot keys, so a user's existing plug-in binding of Shift+F6 still wins;
+**after** plug-in hot keys (the plug-ins keep their place in front of panel keys);
 `IsSalHotKey` reserves Shift+F6 for new bindings and `IsSalHotKeyKeptAtLoad` keeps an old one.
 The key predicate is a pure header with `saltests` checks.
 
@@ -32,7 +32,7 @@ The key predicate is a pure header with `saltests` checks.
 | Principle | Check |
 |---|---|
 | I Build reproducibility | No new dependency; `build.cmd full` must stay green (new string refreshed in all enabled `.slt`) |
-| II Backward compatibility | No key changes meaning; F2 / F6 / Ctrl+F6 / Alt+F6 / Ctrl+Shift+F6 untouched; existing plug-in Shift+F6 bindings kept and take precedence; no registry change |
+| II Backward compatibility | No key changes meaning; F2 / F6 / Ctrl+F6 / Alt+F6 / Ctrl+Shift+F6 untouched; existing plug-in Shift+F6 bindings kept (not erased) - they never ran from the key, see research R1; no registry change |
 | III Incremental modernization | Reuses the existing editor; revives the upstream keyboard entry point |
 | IV Windows commitment | WinAPI only |
 | V Plugin architecture | No `spl_*.h` change; plug-in FS goes through the unchanged `QuickRename` modes 1/2 |

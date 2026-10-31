@@ -3872,6 +3872,13 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             return 0;
         }
 
+        case CM_QUICKRENAMEINPLACE: // feature 346: Shift+F6, Files > Rename in Place
+        {
+            activePanel->UserWorkedOnThisPath = TRUE;
+            activePanel->QuickRenameOnIndex(activePanel->GetCaretIndex());
+            return 0;
+        }
+
         case CM_CHANGEATTR:
         {
             if (EnablerChangeAttrs)

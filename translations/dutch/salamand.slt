@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\salamand\salamand.atp"
-TEXTVERSION,"0.1.10 (x64)"
-VERSION,"0,1,10,194"
+TEXTVERSION,"0.2.0 (x64)"
+VERSION,"0,2,0,195"
 
 [TRANSLATION]
 LANGID,1043
@@ -3052,6 +3052,7 @@ SLGINCOMPLETE,""
 13016,1,"Ma&ximaliseren/Restaureren\tCtrl+F11"
 13017,1,"Ver&wisselen\tCtrl+U"
 13018,1,"Sorteer &Opties..."
+13019,1,"Naam ter plaatse veranderen\tShift+F6"
 13020,1,"&Bestanden"
 13021,1,"Snel Naam Veran&deren...\tF2"
 13022,1,"Wee&gave\tF3"

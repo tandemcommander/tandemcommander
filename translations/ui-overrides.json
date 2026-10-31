@@ -302,6 +302,7 @@
       "IDS_CANNOTMOVEDIRINTOITSELF": "Nelze přesunout adresář do sebe sama ani do jednoho z jeho podadresářů."
     },
     "slovak": {
+      "IDS_MENU_FILES_RENAMEINPLACE": "Premenovať na mieste\\tShift+F6",
       "IDS_MENU_OPT_VSB_TABS": "Ka&rty",
       "IDS_MENU_TAB_REOPEN": "Zno&vu otvoriť zatvorenú kartu",
       "IDS_TABKEY_ENTER": "Vstúpiť do adresára alebo archívu pod kurzorom",
@@ -335,6 +336,7 @@
       "IDS_CFGMIGRATE_FAILED": "Program Tandem Commander nemohol presunúť vaše nastavenia na nové miesto v registri (HKEY_CURRENT_USER\\\\%s).\\n\\nTentoraz ich používa tam, kde sa nachádzajú (HKEY_CURRENT_USER\\\\%s), a pri ďalšom spustení to skúsi znova. Nič nebolo odstránené."
     },
     "german": {
+      "IDS_MENU_FILES_RENAMEINPLACE": "An Ort und Stelle umbenennen\\tUmschalt+F6",
       "IDS_MENU_OPT_VSB_TABS": "&Registerkarten",
       "IDT_TABS_KEYLIST": "Ta&stenkombinationen für Registerkarten:",
       "IDS_TABKEY_ENTER": "In den Ordner oder das Archiv unter dem Cursor wechseln",
@@ -382,6 +384,7 @@
       "IDC_QUICKSEARCH_FILTER": "Schnellsuche: Text überall im Namen &finden, nur Treffer anzeigen"
     },
     "french": {
+      "IDS_MENU_FILES_RENAMEINPLACE": "Renommer sur place\\tMaj+F6",
       "IDS_MENU_OPT_VSB_TABS": "O&nglets",
       "IDS_TABKEY_ENTER": "Entrer dans le dossier ou l'archive sous le curseur",
       "IDS_VIEWERCOPYKEPTTEMP": "Le fichier « %s » a été supprimé, mais le nouveau contenu n'a pas pu être mis à sa place.\\nErreur : %s\\n\\nLe nouveau contenu se trouve dans le fichier « %s ». Renommez ce fichier pour le restaurer.",
@@ -418,6 +421,7 @@
       "IDC_QUICKSEARCH_FILTER": "Recherche rapide : texte &partout dans le nom, seuls les résultats affichés"
     },
     "dutch": {
+      "IDS_MENU_FILES_RENAMEINPLACE": "Naam ter plaatse veranderen\\tShift+F6",
       "#Command Shell": "Opdracht Shell",
       "IDT_CMDSHELL_INTRO": "De opdracht Opdracht Shell (Num /, Ctrl+/, de knop op de werkbalk) opent dit programma in de map van het actieve paneel:",
       "IDS_CMDSHELL_PRESETNOTFOUND": "Het geselecteerde programma is niet gevonden op deze computer. Kies een ander programma, of selecteer Aangepast programma en voer het pad ervan in.",
@@ -494,6 +498,7 @@
       "IDC_QUICKSEARCH_FILTER": "Căutare rapidă: text oriunde în n&ume, afișează doar potrivirile"
     },
     "spanish": {
+      "IDS_MENU_FILES_RENAMEINPLACE": "Cambiar nombre en el mismo lugar\\tMays+F6",
       "IDS_VIEWERCOPYKEPTTEMP": "El archivo «%s» se ha eliminado, pero no se ha podido colocar el nuevo contenido en su lugar.\\nError: %s\\n\\nEl nuevo contenido está en el archivo «%s». Cambie el nombre de ese archivo para restaurarlo.",
       "IDS_CMDSHELL_PRESET_WT": "Windows Terminal",
       "IDS_CMDSHELL_PRESETNOTFOUND": "El programa seleccionado no se ha encontrado en este equipo. Elija otro, o seleccione «Programa personalizado» e introduzca su ruta.",
@@ -577,6 +582,9 @@
     "_feature_343": [
       "IDS_CFGMIGRATE_FAILED (the configuration could not be moved to the version-free root): sk DeepL said 'to skúsia znova' (plural - 'they will try'); the subject is the program: 'to skúsi znova'.",
       "es DeepL said 'utilizará la configuración tal y como está' ('as it is'); the text means 'where they are': 'la utilizará en su ubicación actual'."
+    ],
+    "_feature_346": [
+      "IDS_MENU_FILES_RENAMEINPLACE (Files > Rename in Place, Shift+F6): the key names as the module writes them (de 'Umschalt+', fr 'Maj+', es 'Mays+'); sk DeepL said 'Pomenovať' (to name) - the module renames with 'premenovať'; nl and es take the module's established rename term ('Naam ... veranderen', 'Cambiar nombre') instead of DeepL's 'hernoemen' / 'Renombrar'."
     ]
   },
   "zip": {

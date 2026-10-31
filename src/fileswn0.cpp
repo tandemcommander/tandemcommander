@@ -18,6 +18,7 @@
 #include "salshelllink.h"   // feature 128
 #include "salheapstr.h"     // feature 182
 #include "salquickfilter.h" // feature 244
+#include "salrenamekey.h"   // feature 346
 
 //*****************************************************************************
 //
@@ -2829,6 +2830,16 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
     // we'll give plugins a chance; the same is called from the command line
     if (Plugins.HandleKeyDown(wParam, lParam, this, MainWindow->HWindow))
     {
+        *lResult = 0;
+        return TRUE;
+    }
+
+    // feature 346: Shift+F6 renames the focused item in place - after the plug-ins, which keep their
+    // place in front of the panel's keys (a binding of Shift+F6 from before 346 is kept at load,
+    // IsSalHotKeyKeptAtLoad)
+    if (SalIsRenameInPlaceKey(wParam, controlPressed, shiftPressed, altPressed))
+    {
+        PostMessage(MainWindow->HWindow, WM_COMMAND, CM_QUICKRENAMEINPLACE, 0);
         *lResult = 0;
         return TRUE;
     }

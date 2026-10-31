@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 
+#include "salrenamekey.h" // feature 346
+
 #define NONE 0x00
 #define CONTROL 0x01
 #define ALT 0x02
@@ -17,7 +19,11 @@ BOOL IsSalHotKeyKeptAtLoad(WORD hotKey)
     // shortcuts; a plug-in hot key the user assigned to it earlier keeps working (with the option
     // off nothing changes; with it on the program's key runs first). Plugins Manager and the
     // settings import still refuse it as a new assignment (IsSalHotKey).
-    return LOBYTE(hotKey) == 'G' && HIBYTE(hotKey) == (HOTKEYF_CONTROL | HOTKEYF_SHIFT);
+    // feature 346: Shift+F6 became the program's key (rename in place); a plug-in hot key the user
+    // assigned to it earlier is kept, not erased (it never ran from the key: CPlugins::QueryHotKey
+    // looks an F-key up as a letter, F6 as U; the panel tries the plug-ins first)
+    return LOBYTE(hotKey) == 'G' && HIBYTE(hotKey) == (HOTKEYF_CONTROL | HOTKEYF_SHIFT) ||
+           SalIsRenameInPlaceHotKey(hotKey);
 }
 
 BOOL IsSalHotKey(WORD hotKey)
@@ -826,6 +832,7 @@ BOOL IsSalHotKey(WORD hotKey)
         case NONE:          // move
         case CONTROL:       // sort by size
         case ALT:           // unpack
+        case SHIFT:         // rename in place (feature 346)
         case CONTROL_SHIFT: // load selection
             found = TRUE;
         }
