@@ -1,0 +1,71 @@
+"""Feature 350: NRG (Nero) images with damaged CUEX chunks for nrg350_probe.ps1.
+
+  python -I img350.py <kind> <out.nrg>
+
+The NRG layout read by src/plugins/uniso/nrg.cpp ("NER5"): the track data (two audio tracks of 10
+raw sectors each, silence), then the chunks - CUEX (16 bytes of header, then 16 bytes a track: the
+reader makes one audio track per entry), DAOX (0x16 bytes of header, first / last track at 0x14 /
+0x15, then 0x2A bytes a track), SINF (one session of two tracks), END! - and the footer "NER5" + the
+chunks' offset (as feature 329's img329.py).
+
+Kinds:
+  ok     the two audio tracks (a control: the plug-in lists "Audio Track 01" and "Audio Track 02")
+  short  a CUEX chunk of 8 bytes and a padding chunk "PADD" of 96 MiB before ok's chunks: the first
+         CUEX holds no entry (before 350: (8 - 16) / 16 underflowed to 268,435,455 entries and the
+         reader made one track from every 16 bytes of the padding until the end of the file)
+  past   a CUEX chunk claiming 0xFFFFFFF0 bytes (past the end of the image) and the 96 MiB padding
+         before ok's chunks: the chunk does not fit the image - it is skipped, so the chunk list ends
+         at the end of the file and the image does not open as NRG (before 350: the reader made a
+         track from every 16 bytes up to the end of the file first)
+  odd    ok, the CUEX chunk 4 bytes longer than its two entries (16 + 2 x 16 + 4): the reader takes
+         its two entries and continues after the chunk (before 350: the next chunk header was read
+         4 bytes early, "DAOX" taken as a size - the image did not open as NRG)
+"""
+import struct
+import sys
+
+RAW = 2352
+PAD = 96 * 1024 * 1024
+
+
+def chunk(cid, body, size=None):
+    return cid + struct.pack(">I", len(body) if size is None else size) + body
+
+
+def main(argv):
+    if len(argv) != 2 or argv[0] not in ("ok", "short", "past", "odd"):
+        print(__doc__)
+        return 2
+    kind, dst = argv
+    tracks = [(0, 10 * RAW), (10 * RAW, 20 * RAW)]
+    data = bytes(20 * RAW)
+    cuex = bytes(16) + b"".join(bytes(4) + struct.pack(">I", 0) + bytes(8) for _ in tracks)
+    if kind == "odd":
+        cuex += b"\x01\x02\x03\x04"
+    daox = bytearray(0x16)
+    daox[0x14] = 1
+    daox[0x15] = len(tracks)
+    for start, end in tracks:
+        t = bytearray(0x2A)
+        t[0x0C:0x0E] = struct.pack(">H", RAW)
+        t[0x0E] = 0x07
+        t[0x1A:0x22] = struct.pack(">Q", start)
+        t[0x22:0x2A] = struct.pack(">Q", end)
+        daox += t
+    sinf = struct.pack(">I", len(tracks))
+    good = chunk(b"CUEX", cuex) + chunk(b"DAOX", bytes(daox)) + chunk(b"SINF", sinf) + chunk(b"END!", b"")
+    if kind == "short":
+        chunks = chunk(b"CUEX", bytes(8)) + chunk(b"PADD", bytes(PAD)) + good
+    elif kind == "past":
+        chunks = chunk(b"CUEX", b"", 0xFFFFFFF0) + chunk(b"PADD", bytes(PAD)) + good
+    else:
+        chunks = good
+    img = data + chunks + b"NER5" + struct.pack(">Q", len(data))
+    with open(dst, "wb") as f:
+        f.write(img)
+    print("%s: %d bytes, chunks at %d" % (kind, len(img), len(data)))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

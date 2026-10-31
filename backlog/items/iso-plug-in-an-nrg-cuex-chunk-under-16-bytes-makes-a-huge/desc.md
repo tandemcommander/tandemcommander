@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an NRG CUEX chunk under 16 bytes makes a huge track count
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: measure:331
@@ -10,7 +10,7 @@ created: 2026-10-24
 updated: 2026-10-31
 verified: 2026-10-31 cadc65bb
 effort: S
-feature: -
+feature: 350
 related: []
 depends-on: []
 reason: -
@@ -49,3 +49,4 @@ the chunk against the image's size and each read's length, and never builds a tr
 - 2026-10-24 — created (source measure:331)
 - 2026-10-24 — moved to Next position 7
 - 2026-10-31 — verified at cadc65bb: reproduced at cadc65bb: crafted NRG, CUEX of 8 bytes + 96 MiB chunk - peak working set 1036 MB (control 84 MB), 50 s, image not opened
+- 2026-10-31 — run started, feature 350
