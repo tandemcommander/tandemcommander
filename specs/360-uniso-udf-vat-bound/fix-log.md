@@ -70,3 +70,13 @@ identical.
 - Probe after (`probe/result_after.txt`, run from `specs\360-uniso-udf-vat-bound\probe`): **Rows: PASS 36, FAIL
   0** (18 RUN + 18 END rows); every damaged entry now shows only "Missing virtual allocation table.", the image
   is kept, no fatal window, no bug report; the controls unchanged. Registry restored and identical.
+- Regressions on the same build: probe 358 (`probe/regress_358.txt`) **Rows: PASS 52, FAIL 0**; probe 359
+  (`probe/regress_359.txt`) **Rows: PASS 14, FAIL 0** - both as recorded by their features. Registry restored.
+- Negative controls (`saltests`, the header mutated in the working tree, restored with `git checkout HEAD --`
+  and rebuilt): mutant 1 - `SalIsoUdfVatCopyFits` always true → **5 failed** (the IL 156 / L_AD 160 case, two
+  bounds, the grid's `inTable`); mutant 2 - the `lAD > sectorLen - f` bound removed → **5 failed** (L_AD 4096,
+  the area one byte past the sector, the grid's `inSector` and `ends`). Restored: `saltests: 29661 checks, 0
+  failed`.
+- Inbox: `iso-plug-in-a-udf-vat-whose-descriptors-cover-less-than-its` (research R3, source measure:360).
+- CHANGELOG: `CHANGELOG.md` has no `## [Unreleased]` section - the entry is in `closing-report.md` (owed to the
+  maintainer, as in 357 - 359).
