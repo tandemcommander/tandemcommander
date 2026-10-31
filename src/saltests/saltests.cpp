@@ -20184,7 +20184,8 @@ static void TestIsoNoCcdRest_353()
 {
     // a primary volume descriptor of 176 sectors, logical block size 2048 (as genisoimage writes it)
     unsigned char pvd[2048] = {};
-    auto setPvd = [&](unsigned long size, unsigned int block) {
+    auto setPvd = [&](unsigned long size, unsigned int block)
+    {
         memset(pvd, 0, sizeof(pvd));
         pvd[0] = 1;
         memcpy(pvd + 1, "CD001", 5);
@@ -20255,7 +20256,7 @@ static void TestIsoNoCcdRest_353()
     // the layout's data offset is not part of the sectors
     CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 0x4B000 + 192 * raw, 0x4B000, raw));
     CHECK(SalIsoNoCcdRestMarks(true, true, 176, 0x4B000 + 193 * raw, 0x4B000, raw));
-    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 100, 0x4B000, raw)); // the file ends before the offset
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 100, 0x4B000, raw));  // the file ends before the offset
     CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 192 * raw, -1, raw)); // a negative offset counts nothing
     // other stored sector sizes (a raw image opened by another plain check)
     CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 192 * 2336LL, 0, 2336));

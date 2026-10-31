@@ -35,3 +35,36 @@ without its .ccd lists one session, then Unpack deletes it.
 - Run 1: 0 CRITICAL, 0 HIGH; MEDIUM I1 (data-model said 88 bytes, the block-size check needs 132) and
   LOW C1 (FR-005 without a check task) - both fixed in data-model.md / research.md / tasks.md T011.
 - Run 2: no findings above LOW; coverage 7 / 7 FR, 4 / 4 SC.
+
+## Implementation
+
+- `src/common/salisotrack.h`: `SAL_ISO_LATER_VOLUME_SECTOR` (16), `SAL_ISO_PVD_BYTES` (132),
+  `SalIsoPvdVolumeSectors` (type 1, `CD001`, version 1, both copies of the volume space size equal,
+  logical block size 2048 both copies), `SalIsoNoCcdRestMarks` (not raw -> never; unknown volume or
+  sector size <= 0 -> marks; whole sectors from the data offset > volume + 16 -> marks).
+- `src/plugins/uniso/img.cpp`: `CCD::Missing` set where `_wfopen` of the `.ccd` fails;
+  `ReadSessionCCD` copies it to `CISOImage::CcdMissing` (new protected member, `isoimage.h`).
+- `src/plugins/uniso/isoimage.cpp`: constructor and `ReadSessionInfo` reset `CcdMissing`; `Open`'s
+  plain branch keeps `rawStart = SectorType != stISO` right after `DetectSectorType`, and after
+  `DetectTrackFS` of the one track, when `CcdMissing && rawStart`, reads `SAL_ISO_PVD_BYTES` at
+  `GetSectorOffset(16)` and calls `ListingLeftOut.SetIncomplete()` when the rule says so.
+- Consumers enumerated: `CISOImage::Open` is called by `ListArchive` (copies `ListingLeftOut.Incomplete`
+  to `pd->ListingLeftOut`, which `UnpackArchive` / whole unpack checks - feature 328), and by the
+  unpack / viewer paths that open the image again (they ignore the mark). `CcdMissing` is read only in
+  `Open`. No UI string, no `.rc` / `.rc2` / `.rh` change (`git diff main...HEAD --stat`).
+
+## Measurements after
+
+- `.\build.cmd` -> BUILD SUCCEEDED (warnings C4267 only in untouched uniso files, pre-existing).
+- saltests: 29,286 (352's count) -> 29,322 checks, 0 failed (`TestIsoNoCcdRest_353`, 36 checks).
+- Rule mutant (`return false` past the volume): saltests 29,322 / 8 failed; the probe on that build
+  10 / 2 - R-NOCCD2 and R-REST17 deleted (`probe/result_mutant_never_marks.txt`) - the probe rows
+  depend on the mark.
+- Probe after (`probe/result_after_debug.txt`): 12 PASS / 0 FAIL - R-NOCCD2 and R-REST17 kept (a.txt
+  extracted), C-NOCCD, C-REST2, C-REST16, C-COOKED deleted; only "Missing .CCD file" boxes; registry
+  restored identical.
+- Regressions: 352's probe 22 / 0 (`probe/regress_352.txt`), 351's probe 10 / 0
+  (`probe/regress_351.txt`).
+- `python tools/check_encoding.py --strict` -> TOTAL: 0 finding(s).
+- clang-format `--dry-run` on the changed line ranges: three spots reformatted with `-i --lines` on
+  those ranges only (lambda brace, a comment column, a stream continuation).

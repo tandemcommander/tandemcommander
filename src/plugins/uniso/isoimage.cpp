@@ -1108,8 +1108,8 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                                              SectorRawSize))
                     {
                         TRACE_I("CISOImage::Open(): .ccd missing, a raw image of " << track->End
-                                                                                    << " bytes past a volume of "
-                                                                                    << volumeSectors << " sectors");
+                                                                                   << " bytes past a volume of "
+                                                                                   << volumeSectors << " sectors");
                         ListingLeftOut.SetIncomplete();
                     }
                 }
