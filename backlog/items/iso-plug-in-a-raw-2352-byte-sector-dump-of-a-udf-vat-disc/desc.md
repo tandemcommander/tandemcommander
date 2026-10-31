@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a raw 2352-byte-sector dump of a UDF VAT disc does not open
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:359
@@ -53,3 +53,4 @@ before the first sector's data left out), so a raw dump of a whole VAT volume op
 ## Log
 
 - 2026-10-31 — created (source measure:359)
+- 2026-10-31 — moved to Next position 35
