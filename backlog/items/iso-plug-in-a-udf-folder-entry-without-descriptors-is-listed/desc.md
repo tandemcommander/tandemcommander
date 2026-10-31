@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF folder entry without descriptors is listed empty and the image deleted
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:361
@@ -55,3 +55,4 @@ rows on `ud.iso` copies (330's seed) and a control that a real empty folder (gen
 ## Log
 
 - 2026-10-31 — created (source review:361)
+- 2026-10-31 — moved to Next position 1

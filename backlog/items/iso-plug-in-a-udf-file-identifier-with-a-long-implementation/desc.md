@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF file identifier with a long implementation-use field reads past its buffer
 type: bug
-status: new
+status: open
 severity: 6
 area: archives
 source: review:361
@@ -50,3 +50,4 @@ probe row on a `ud.iso` copy (feature 330's seed) whose identifier gets L_IU 0xF
 ## Log
 
 - 2026-10-31 — created (source review:361)
+- 2026-10-31 — moved to Next position 1
