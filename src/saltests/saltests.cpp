@@ -21712,37 +21712,53 @@ static void TestHfsFolderOrder349()
 
     // loops: a folder its own parent; two folders each the other's parent, reached from a folder below them
     CSalHfsFolderOrder self;
-    CHECK(self.Add(5, 5, 0) && self.Seal());
-    CHECK(self.Pending(5, out) == SAL_HFS_PENDING_LOOP && out.size() == 1 && out[0] == 0);
+    CHECK(self.Add(50, 50, 0) && self.Seal());
+    CHECK(self.Pending(50, out) == SAL_HFS_PENDING_LOOP && out.size() == 1 && out[0] == 0);
     CSalHfsFolderOrder two;
-    CHECK(two.Add(10, 11, 0) && two.Add(11, 10, 1) && two.Add(12, 10, 2) && two.Seal());
-    CHECK(two.Pending(12, out) == SAL_HFS_PENDING_LOOP && out.size() == 3);
+    CHECK(two.Add(110, 111, 0) && two.Add(111, 110, 1) && two.Add(112, 110, 2) && two.Seal());
+    CHECK(two.Pending(112, out) == SAL_HFS_PENDING_LOOP && out.size() == 3);
     CHECK(std::count(out.begin(), out.end(), (size_t)0) == 1 && std::count(out.begin(), out.end(), (size_t)1) == 1 &&
           std::count(out.begin(), out.end(), (size_t)2) == 1);
     // the same walk again (the stamps of the earlier walk do not count) - still a loop
-    CHECK(two.Pending(10, out) == SAL_HFS_PENDING_LOOP && out.size() == 2);
+    CHECK(two.Pending(110, out) == SAL_HFS_PENDING_LOOP && out.size() == 2);
     for (size_t r = 0; r < 3; r++)
         two.Take(r);
-    CHECK(two.Pending(12, out) == SAL_HFS_PENDING_OK && out.empty());
+    CHECK(two.Pending(112, out) == SAL_HFS_PENDING_OK && out.empty());
     // not a loop: two walks through the same folders one after another
     CSalHfsFolderOrder twice;
-    CHECK(twice.Add(1, 2, 0) && twice.Add(3, 1, 1) && twice.Seal());
-    CHECK(twice.Pending(3, out) == SAL_HFS_PENDING_OK && out.size() == 2);
-    CHECK(twice.Pending(3, out) == SAL_HFS_PENDING_OK && out.size() == 2 && out[0] == 0 && out[1] == 1);
+    CHECK(twice.Add(101, 2, 0) && twice.Add(103, 101, 1) && twice.Seal());
+    CHECK(twice.Pending(103, out) == SAL_HFS_PENDING_OK && out.size() == 2);
+    CHECK(twice.Pending(103, out) == SAL_HFS_PENDING_OK && out.size() == 2 && out[0] == 0 && out[1] == 1);
 
     // duplicate IDs: the first record is the one found
     CSalHfsFolderOrder dup;
-    CHECK(dup.Add(7, 2, 0) && dup.Add(7, 3, 1) && dup.Seal());
-    CHECK(dup.Pending(7, out) == SAL_HFS_PENDING_OK && out.size() == 1 && out[0] == 0);
+    CHECK(dup.Add(70, 2, 0) && dup.Add(70, 3, 1) && dup.Seal());
+    CHECK(dup.Pending(70, out) == SAL_HFS_PENDING_OK && out.size() == 1 && out[0] == 0);
 
-    // a deep chain whose records all come in reverse: ID k in k + 1, 10,000 levels - iterative
+    // a deep chain whose records all come in reverse: ID 16 + k in 17 + k, 10,000 levels - iterative
     const unsigned int deep = 10000;
     CSalHfsFolderOrder dp;
     bool added = true;
     for (unsigned int k = 1; k <= deep; k++)
-        added = added && dp.Add(k, k == deep ? 0 : k + 1, k - 1);
+        added = added && dp.Add(16 + k, k == deep ? 0 : 17 + k, k - 1);
     CHECK(added && dp.Seal());
-    CHECK(dp.Pending(1, out) == SAL_HFS_PENDING_OK && out.size() == deep && out[0] == deep - 1 && out[deep - 1] == 0);
+    CHECK(dp.Pending(17, out) == SAL_HFS_PENDING_OK && out.size() == deep && out[0] == deep - 1 && out[deep - 1] == 0);
+
+    // reserved IDs (below 16, TN1150; the root folder is 2) are not kept: a damaged folder record with ID 2
+    // is never taken before the records of the root (review 1)
+    CSalHfsFolderOrder rsv;
+    CHECK(rsv.Add(2, 999, 0) && rsv.Add(15, 2, 1) && rsv.Add(16, 2, 2) && rsv.Seal() && rsv.Size() == 1);
+    CHECK(rsv.Pending(2, out) == SAL_HFS_PENDING_OK && out.empty());
+    CHECK(rsv.Pending(15, out) == SAL_HFS_PENDING_OK && out.empty());
+    CHECK(rsv.Pending(16, out) == SAL_HFS_PENDING_OK && out.size() == 1 && out[0] == 2);
+    // the reviewer's catalogs: a stray folder record "c" with ID 2 under an unknown parent (sorted last), and
+    // under a (a walk through ID 2 would have made a loop of the whole volume)
+    const HfsRec349 stray[] = {{2, true, 16, "a"}, {2, false, 0, "top.txt"}, {16, false, 0, "a.txt"}, {999, true, 2, "c"}};
+    HfsWalk349 wst = HfsListing349(stray, sizeof(stray) / sizeof(stray[0]), NULL);
+    CHECK(wst.Listed == "a top.txt a/a.txt c " && wst.Skipped.empty() && !wst.Incomplete);
+    const HfsRec349 strayIn[] = {{2, true, 16, "a"}, {2, false, 0, "top.txt"}, {16, true, 2, "c"}, {16, false, 0, "a.txt"}};
+    HfsWalk349 wsi = HfsListing349(strayIn, sizeof(strayIn) / sizeof(strayIn[0]), NULL);
+    CHECK(wsi.Listed == "a top.txt a/c a/a.txt " && wsi.Skipped.empty() && !wsi.Incomplete);
 
     // the probe's catalogs (iso349_probe: thread records and the root label left out)
     const HfsRec349 moved[] = {

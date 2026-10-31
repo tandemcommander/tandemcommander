@@ -10,6 +10,8 @@ its ID) come before its own record (keyed by the new parent's ID) in the catalog
                                                   folder (a, b, c, k, n1/n2/n3/n4)
   python -I img349.py cycle <src> <dst> <x>:<y>   a copy; folders <x> and <y> each made the other's
                                                   parent (a damaged catalog: neither reaches the root)
+  python -I img349.py stray <src> <dst> <x>       a copy; folder <x>'s record given the root's ID 2 and
+                                                  the parent 999 (damaged; review 1 of feature 349)
 
 A move changes the moved folder's key (parent ID), its thread record's parent ID and the valences of
 the old and the new parent, then sorts the leaf records again by (parent ID, name) as HFS+ keeps them
@@ -189,12 +191,23 @@ def main(argv):
     if len(argv) == 3 and argv[1] == "dump":
         show(leaf(open(argv[2], "rb").read())[3])
         return 0
-    if len(argv) < 5 or argv[1] not in ("move", "cycle"):
+    if len(argv) < 5 or argv[1] not in ("move", "cycle", "stray"):
         print(__doc__)
         return 2
     how, src, dst = argv[1:4]
     img = bytearray(open(src, "rb").read())
     base, ns, nodes, recs = leaf(img)
+    if how == "stray":
+        r = root_folder(recs, argv[4])
+        d = parse(r)
+        b = d["body"]
+        s = set_key_parent(r, 999)
+        s = s[: b + 8] + struct.pack(">I", 2) + s[b + 12 :]
+        recs = [s if x == r else x for x in recs]
+        print("stray: %s (id %d) given the root's id 2 under the parent 999" % (argv[4], d["id"]))
+        write_leaves(img, base, ns, nodes, recs)
+        open(dst, "wb").write(bytes(img))
+        return 0
     for pair in argv[4:]:
         c, par = pair.split(":")
         cr, pr = root_folder(recs, c), root_folder(recs, par)

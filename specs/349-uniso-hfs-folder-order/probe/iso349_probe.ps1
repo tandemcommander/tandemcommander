@@ -16,6 +16,7 @@
       hfs_long.iso   k moved into n4 (k 24 < n4 31): the listing leaves k out (its folder part is over
                      255 bytes) - k.txt, kd and kd.txt come before k's record
       hfs_cycle.iso  a and b each the other's parent (damaged: neither reaches the root)
+      hfs_stray.iso  c's folder record given the root's ID 2 and the parent 999 (damaged; review 1)
     Unpack rows: the left panel shows <row>\src, Home, End focuses the image, Alt+F9 (851), the target
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK. Boxes answered
     with OK / Yes. The HFS+ hybrid opens with the known "Cannot read sector #00000020." box (Inbox item
@@ -28,6 +29,8 @@
                image KEPT. Before 349: k.txt and kd/kd.txt at the HFS+ root
       H-CYCLE  hfs_cycle.iso: a, b and everything in them left out, the listing incomplete: c, k, top
                extracted, no box, the image KEPT. Before 349: a and b listed (misplaced), the image deleted
+      H-STRAY  (control, review 1) hfs_stray.iso: as before 349 - every file in place but c.txt at the HFS+
+               root, no box, the image DELETED (the first 349 build put the whole root into c)
     Names are compared without case (the ISO 9660 part is upper case). Every row also fails on a program
     exit, a bug report, a fatal window, or a main window that does not answer within 30 s (End-Row).
     Without WSL Ubuntu every row is NOT DRIVEN.
@@ -154,6 +157,7 @@ try {
         $made += & python -I $py move "$s\hfs.iso" "$s\hfs_move.iso" 'a:b' 'b:c' 2>&1
         $made += & python -I $py move "$s\hfs.iso" "$s\hfs_long.iso" 'k:n1/n2/n3/n4' 2>&1
         $made += & python -I $py cycle "$s\hfs.iso" "$s\hfs_cycle.iso" 'a:b' 2>&1
+        $made += & python -I $py stray "$s\hfs.iso" "$s\hfs_stray.iso" 'c' 2>&1
     }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) }) | Sort-Object) -join ','))
@@ -176,6 +180,9 @@ try {
     Unpack-Row 'H-MOVE' "$s\hfs_move.iso" $moved '' 0
     Unpack-Row 'H-LONG' "$s\hfs_long.iso" $long '\(206\)' 1 -Kept
     Unpack-Row 'H-CYCLE' "$s\hfs_cycle.iso" $cycle '' 0 -Kept
+    # review 1: as before 349 - c's record (ID 2, parent 999) comes last, c.txt (its old parent gone) at the root
+    $stray = Tree (@{ 'a/a.txt' = 'A'; 'a/sub/s.txt' = 'S'; 'b/b.txt' = 'B'; 'c.txt' = 'C' } + $kTree)
+    Unpack-Row 'H-STRAY' "$s\hfs_stray.iso" $stray '' 0
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

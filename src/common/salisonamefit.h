@@ -197,6 +197,8 @@ private:
 #define SAL_HFS_PENDING_OK 0
 #define SAL_HFS_PENDING_LOOP 1
 #define SAL_HFS_PENDING_NO_MEMORY 2
+// TN1150 kHFSFirstUserCatalogNodeID: the IDs below are reserved (1 the root's parent, 2 the root folder, ...)
+#define SAL_HFS_FIRST_USER_ID 16
 
 // Feature 349: the order in which an HFS+ listing takes its folder records. The catalog is sorted by the
 // parent ID of each record (TN1150); a folder gets its ID when it is made and keeps it when it is moved,
@@ -210,12 +212,17 @@ private:
 class CSalHfsFolderOrder
 {
 public:
-    // a folder record: its catalog ID, its parent's ID, its record index (rising from call to call);
-    // false = out of memory, or a record index not above the last one (nothing kept)
+    // a folder record: its catalog ID, its parent's ID (both in host order), its record index (rising from
+    // call to call); false = out of memory, or a record index not above the last one (nothing kept). An ID
+    // below SAL_HFS_FIRST_USER_ID is reserved (TN1150: the root folder is 2) - never a folder made by a user,
+    // so never moved: it is not kept (true) and a record under it has nothing pending (review 1: a damaged
+    // folder record with ID 2 was taken before every record of the root and the whole volume landed in it)
     bool Add(unsigned int id, unsigned int parent, size_t record)
     {
         if (!Links.empty() && record <= Links.back().Record)
             return false;
+        if (id < SAL_HFS_FIRST_USER_ID)
+            return true;
         try
         {
             Link l = {id, parent, record, false, 0};

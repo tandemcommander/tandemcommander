@@ -356,7 +356,8 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
         if (SalHfsCatalogRecordClass((const unsigned char*)pKey, avail, bSkipRootParent, &key) != SAL_HFSREC_FOLDER)
             continue;
         HFSPlusCatalogFolder* folder = (HFSPlusCatalogFolder*)((char*)pKey + key.BodyOffset);
-        if (!order.Add(folder->folderID, pKey->parentID, (size_t)i))
+        // the order rule compares IDs in host order (reserved IDs below 16 are not kept, review 1)
+        if (!order.Add(FromM32(folder->folderID), FromM32(pKey->parentID), (size_t)i))
         {
             Image->ListingLeftOut.SetIncomplete();
             return Error(IDS_INSUFFICIENT_MEMORY, FALSE);
@@ -413,7 +414,7 @@ BOOL CHFS::ListDirectory(char* rootPath, int session,
     return TRUE;
 }
 
-// Feature 349: takes the folders above a record under 'parentID' that are not taken yet, outermost first
+// Feature 349: takes the folders above a record under 'parentID' (as stored) that are not taken yet, outermost first
 // (CSalHfsFolderOrder::Pending), each by the code of its own record (ListRecord). A loop of parents (a
 // damaged catalog: none of its folders reaches the root): its folders are left out with everything in
 // them and the listing is marked incomplete (a whole unpack fails, the image is kept), no message - as
@@ -423,7 +424,7 @@ BOOL CHFS::TakePending(UInt32 parentID, char* rootPath, CSalamanderDirectoryAbst
                        CSalHfsFolderOrder& order)
 {
     std::vector<size_t> pending;
-    int res = order.Pending(parentID, pending);
+    int res = order.Pending(FromM32(parentID), pending);
     if (res == SAL_HFS_PENDING_NO_MEMORY)
     {
         Image->ListingLeftOut.SetIncomplete();
