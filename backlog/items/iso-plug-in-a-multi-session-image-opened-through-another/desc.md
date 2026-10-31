@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a multi-session image opened through another plain layout lists one session, then Unpack deletes it
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:355
@@ -56,3 +56,4 @@ layout before and after.
 ## Log
 
 - 2026-10-31 — created (source review:355)
+- 2026-10-31 — moved to Next position 2

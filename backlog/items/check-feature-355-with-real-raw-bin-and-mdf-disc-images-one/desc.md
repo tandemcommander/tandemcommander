@@ -1,7 +1,7 @@
 ---
 title: Check feature 355 with real raw .bin and .mdf disc images, one and two sessions
 type: person-step
-status: new
+status: open
 severity: 3
 area: archives
 source: leftover:355
@@ -55,3 +55,4 @@ data CD dumped the same way is kept.
 ## Log
 
 - 2026-10-31 — created (source leftover:355)
+- 2026-10-31 — moved to Person steps position 49
