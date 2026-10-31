@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF image with data past its VAT does not open although the VAT is in the file
 type: improvement
-status: new
+status: open
 severity: 4
 area: archives
 source: review:358
@@ -53,3 +53,4 @@ with "Delete archive after unpacking" keeps the image.
 ## Log
 
 - 2026-10-31 — created (source review:358)
+- 2026-10-31 — moved to Next position 35

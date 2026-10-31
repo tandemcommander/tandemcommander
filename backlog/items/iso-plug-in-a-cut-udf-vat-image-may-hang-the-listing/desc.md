@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF VAT image cut a few sectors after its partition start may hang the listing
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:358
@@ -51,3 +51,4 @@ image kept.
 ## Log
 
 - 2026-10-31 — created (source review:358)
+- 2026-10-31 — moved to Next position 1
