@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer - implement exactly what it describes." From backlog item iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer.
 
+## Clarifications
+
+### Session 2026-10-31
+
+- Q: Should an entry refused by the new bounds get its own message, or end the search? → A: neither - it is "not a VAT": the search continues and, without another VAT, the volume does not open with feature 358's "Missing virtual allocation table." (autonomous run: item)
+- Q: Should a VAT whose descriptors cover less than its information length (the table's tail uncovered) be refused too? → A: no - accepted as before; the item names only descriptors that exceed the length; the uncovered tail goes to an Inbox item (autonomous run: conservative)
+- Q: Should the reserved descriptor types 4 - 7, measured to write past the buffer through an uninitialised descriptor, be refused in this feature? → A: yes - the same defect the item describes ("never writes past the table buffer") (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A damaged VAT entry does not corrupt memory (Priority: P1)
