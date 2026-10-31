@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF image with a VAT and data past it crashes Tandem Commander
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:356
@@ -10,7 +10,7 @@ created: 2026-10-31
 updated: 2026-10-31
 verified: 2026-10-31 249e35f0
 effort: S
-feature: -
+feature: 358
 related: []
 depends-on: []
 reason: -
@@ -61,3 +61,4 @@ that ends with its VAT lists as today (probe 356 rows C-MKCDR, C-MKCDRC, C-MKDVD
 - 2026-10-31 — created (source review:356)
 - 2026-10-31 — moved to Next position 2
 - 2026-10-31 — verified at 249e35f0: reproduced at 249e35f0: iso358 probe, Alt+F9 and Enter on mkudffs cdr + 100 sectors crash (AV read 0), 4 rows
+- 2026-10-31 — run started, feature 358
