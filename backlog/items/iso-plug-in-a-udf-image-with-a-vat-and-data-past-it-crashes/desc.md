@@ -8,7 +8,7 @@ source: review:356
 who: agent
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 249e35f0
 effort: S
 feature: -
 related: []
@@ -60,3 +60,4 @@ that ends with its VAT lists as today (probe 356 rows C-MKCDR, C-MKCDRC, C-MKDVD
 
 - 2026-10-31 — created (source review:356)
 - 2026-10-31 — moved to Next position 2
+- 2026-10-31 — verified at 249e35f0: reproduced at 249e35f0: iso358 probe, Alt+F9 and Enter on mkudffs cdr + 100 sectors crash (AV read 0), 4 rows
