@@ -8,7 +8,7 @@ source: review:355
 who: agent
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 8bf3ebd4
 effort: M
 feature: -
 related: []
@@ -57,3 +57,4 @@ layout before and after.
 
 - 2026-10-31 — created (source review:355)
 - 2026-10-31 — moved to Next position 2
+- 2026-10-31 — verified at 8bf3ebd4: reproduced at 8bf3ebd4: probe iso357 44/16 - two-session images in ten other plain layouts (ECDC, NRG offset, 2336, NCD, PDI, CIF, C2D x2, Roxio, CIF2332) deleted by whole unpack
