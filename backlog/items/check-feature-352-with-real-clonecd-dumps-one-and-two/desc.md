@@ -1,7 +1,7 @@
 ---
 title: Check feature 352 with real CloneCD dumps (one and two sessions)
 type: person-step
-status: new
+status: open
 severity: 3
 area: archives
 source: leftover:352
@@ -58,3 +58,4 @@ with "Delete archive after unpacking"); a real multi-session dump opens, and a w
 ## Log
 
 - 2026-10-31 — created (source leftover:352)
+- 2026-10-31 — moved to Person steps position 46

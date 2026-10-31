@@ -1,8 +1,8 @@
 ---
 title: ISO plug-in: a CloneCD image without its .ccd lists one session, then Unpack deletes it
 type: bug
-status: new
-severity: 5
+status: open
+severity: 7
 area: archives
 source: measure:352
 who: agent
@@ -56,3 +56,5 @@ unpacks and is deleted as today.
 ## Log
 
 - 2026-10-31 — created (source measure:352)
+- 2026-10-31 — auto-triage: severity 5 -> 7: a user can lose data in a narrow scenario (lost .ccd + multi-session dump, image deleted by a whole unpack)
+- 2026-10-31 — moved to Next position 1
