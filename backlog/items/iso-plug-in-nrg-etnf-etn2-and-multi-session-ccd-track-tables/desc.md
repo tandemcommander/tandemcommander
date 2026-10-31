@@ -7,7 +7,7 @@ area: archives
 source: review:335
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-31
 verified: -
 effort: M
 feature: -
@@ -57,9 +57,16 @@ the right track ends - each measured with a crafted image (feature 335's `probe/
   0x03 Mode 2 / 2336, 0x05 Mode 1 / 2352, 0x06 Mode 2 / 2352, 0x07 audio, 0x0F / 0x10 / 0x11 with
   subchannel - not verified).
 - Related: the NRG session-count item.
+- Since feature 352, `ReadSessionCCD` marks the listing incomplete whenever the `[Session n]` sections and
+  the `INDEX 1 = 0` splits disagree (`SalIsoCcdLayoutTrusted`, `src/common/salisotrack.h`) - every real
+  multi-session CloneCD dump (absolute `INDEX 1`) is therefore kept by a whole unpack with "Delete archive
+  after unpacking", without a message. Once the split follows the table of contents, that mark should go
+  only where the sessions are then read correctly (probe rows R-ABS / R-TWOSEC of
+  `specs/352-uniso-ccd-session-bounds/probe/iso352_probe.ps1`).
 
 ## Log
 
 - 2026-10-24 — created (source review:335)
 - 2026-10-24 — moved to Next position 8
 - 2026-10-24 — related item iso-plug-in-an-nrg-session-count-above-the-image-s-tracks done in feature 340
+- 2026-10-31 — note added by feature 352: the layout mark of ReadSessionCCD to lift once the CloneCD split is fixed

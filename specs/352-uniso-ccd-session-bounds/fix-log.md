@@ -89,3 +89,37 @@ window, no bug report, registry identical.
 
 FR-006 "as before" for C-NOCCD is by reading (a missing `.ccd` returns from `processCCDFile` before
 `Refused` can be set) plus the after measurement; the before run predates the row.
+
+## Inbox items added
+
+- `iso-plug-in-a-clonecd-image-without-its-ccd-lists-one` - a CloneCD image without its `.ccd` lists one
+  session, then a whole Unpack with "Delete archive after unpacking" deletes it (measure:352, by reading;
+  FR-006 kept the missing-`.ccd` path unchanged on purpose).
+
+## Review
+
+### Review 1 (independent agent, refute-first) - MUST 0, SHOULD 1, NOTE 3
+
+- Reviewer's runs: saltests 29,286 / 0; probe on the branch 20 / 0; **negative control: main's uniso.spl
+  (worktree build, own build folder) 10 / 10** (R-S0 heap corruption, R-S200 image deleted, R-S257 RTC,
+  R-ABS index out of range, R-MODEX unknown format, R-DUP RTC); mutant without both new marks 15 / 5
+  (R-S0 / S200 / S257 / MODEX / DUP delete the image); encoding guard 0; clang-format 0 lines.
+- SHOULD 1 - no probe row proved the layout mark (sections != splits): R-ABS is kept by 334's mark of the
+  unlisted first track too, R-SPLIT by 338's read-error rule; the probe's R-ABS comment attributed the
+  keep to the 352 mark. **Taken**: row R-TWOSEC (two sections, one split, one track holding s1 whole -
+  `img352.py` kind `ccd_twosec`), comments corrected. Fix 22 / 0 (`probe/result_after_debug_review1.txt`);
+  mutant without the layout mark (`img.cpp` line 517 commented): R-TWOSEC FAIL - a.txt extracted, the
+  image deleted (`probe/result_mutant_no_layout_mark.txt`, R-ABS / R-SPLIT still PASS as the reviewer
+  said); restored, rebuilt, R-TWOSEC PASS again (`probe/result_after_debug_review1_rerun.txt`),
+  saltests 29,286 / 0.
+- NOTE 1 - R-SPLIT extracts nothing now (a split without a section gets offset 0, a.txt's extent maps to
+  the empty track 2 -> "Cannot read sector #00000019"); main's Debug extracted Session 01/a.txt only
+  because the garbage offset 0xFDFDFDFD moved the lookup away (in Release undefined). Nothing lost, the
+  image kept. **Recorded as a limit** (geometry of a damaged table; the related CloneCD geometry item).
+- NOTE 2 - every real multi-session CloneCD dump (absolute INDEX 1) is now marked incomplete and kept,
+  without a message. **Taken**: a note in `iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables`
+  that the mark must be lifted where its geometry fix reads the sessions correctly (`BL log`).
+- NOTE 3 - the comments said a row `"=..."` has no name (strtok skips leading `=`; only an all-`=` row
+  has none) - **corrected**; `processDiscSection`'s unused uninitialised locals - upstream leftover, not
+  read, left as they are.
+- No MUST: no further review round (SKILL step 7).

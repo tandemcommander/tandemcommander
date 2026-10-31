@@ -19,11 +19,15 @@
                     Before 352: R-S0 heap corruption (Debug CRT), R-S200 silent unpack, the image
                     deleted; R-S257 taken as session 1 (deleted); R-MODEX / R-DUP stack values
       R-ABS         two [Session n] sections, one track split (the second track's INDEX 1 absolute).
-                    PASS = no bad-format box, the image KEPT (the listing marked incomplete), no fatal
-                    window. Before 352: the reader read a session count past its list (Debug: the array's
-                    index check)
-      R-SPLIT       one [Session n] section, two track splits. PASS as R-ABS. Before 352: extents[1] read
-                    past a one-element array (silent)
+                    PASS = no bad-format box, the image KEPT, no fatal window. Before 352: the reader read
+                    a session count past its list (Debug: the array's index check). (Review 1: the image
+                    is kept by 334's mark of the unlisted first track as well - this row proves the
+                    bounds, not the layout mark; R-TWOSEC does)
+      R-SPLIT       one [Session n] section, two track splits. PASS as R-ABS (kept also by 338's read
+                    error). Before 352: extents[1] read past a one-element array (silent)
+      R-TWOSEC      two [Session n] sections, one track (one split) holding s1 whole. PASS = a.txt
+                    extracted, no window, the image KEPT - only 352's layout mark (sections != splits)
+                    keeps it (review 1's SHOULD)
       C-NOCCD       (control, FR-006) the image without a .ccd: PASS = only boxes "Missing .CCD file",
                     a.txt extracted, the image deleted (not marked, as before)
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does not
@@ -157,7 +161,7 @@ try {
     Out ''
 
     $s = $Root + '\seeds'; NewDir $s
-    $kinds = @('ccd_m1', 'ccd_m1m1', 'ccd_s0', 'ccd_s200', 'ccd_s257', 'ccd_abs', 'ccd_split', 'ccd_modex', 'ccd_dup')
+    $kinds = @('ccd_m1', 'ccd_m1m1', 'ccd_s0', 'ccd_s200', 'ccd_s257', 'ccd_abs', 'ccd_split', 'ccd_modex', 'ccd_dup', 'ccd_twosec')
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $mk = & wsl -d Ubuntu -- sh (WslPath $MkImg) (WslPath $s) 2>&1
     $made = @()
@@ -182,6 +186,7 @@ try {
     Unpack-Row 'R-SPLIT' "$s\ccd_split.img" $null -Kept -Msg 'nobad'
     Unpack-Row 'R-MODEX' "$s\ccd_modex.img" $null -Kept -Msg 'bad'
     Unpack-Row 'R-DUP' "$s\ccd_dup.img" $null -Kept -Msg 'bad'
+    Unpack-Row 'R-TWOSEC' "$s\ccd_twosec.img" $a -Kept
     Unpack-Row 'C-NOCCD' "$s\noccd.img" $a -Msg 'missing'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

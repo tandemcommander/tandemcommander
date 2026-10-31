@@ -127,7 +127,7 @@ processHeaderSection(TextSection* section)
     for (i = 0; i < section->Rows.Count; i++)
     {
         //    TextRow *row = section->Rows[i];
-        if (section->Rows[i]->Id != NULL && strcmp(section->Rows[i]->Id, "Version") == 0) // feature 352: "=" has no name
+        if (section->Rows[i]->Id != NULL && strcmp(section->Rows[i]->Id, "Version") == 0) // feature 352: a row of "=" only has no name
         {
         }
     }
@@ -145,7 +145,7 @@ processDiscSection(TextSection* section, CCD* ccd)
     int i;
     for (i = 0; i < section->Rows.Count; i++)
     {
-        if (section->Rows[i]->Id == NULL || section->Rows[i]->Value == NULL) // feature 352: "=" / "Sessions="
+        if (section->Rows[i]->Id == NULL || section->Rows[i]->Value == NULL) // feature 352: a row of "=" only / "Sessions="
             continue;
         if (strcmp(section->Rows[i]->Id, "TocEntries") == 0)
         {
@@ -174,7 +174,7 @@ processTrackSection(TextSection* section, CCD* ccd)
     for (i = 0; i < section->Rows.Count; i++)
     {
         const char* id = section->Rows[i]->Id;
-        if (id == NULL) // a row with no name ("=...")
+        if (id == NULL) // a row of "=" only has no name (strtok skips leading "=")
             continue;
         if (strcmp(id, "MODE") == 0)
             fields.Row(1, SalIsoCcdReadInt(section->Rows[i]->Value, false, mode));
