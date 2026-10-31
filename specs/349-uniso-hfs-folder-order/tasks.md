@@ -27,7 +27,7 @@ Tests: the spec asks for unit checks of the rule (FR-007) and the probe rows (SC
 
 **Independent test**: probe row H-LONG.
 
-- [ ] T008 [US2] Verify in `src/plugins/uniso/hfs.cpp` that a pending folder the listing rule refuses goes into `leftOutFolders` before its contents are taken (follows from T007: the folder is taken through `ListRecord`); a folder whose name does not convert is added to `leftOutFolders` too (its contents would otherwise land at the root)
+- [ ] T008 [US2] Verify in `src/plugins/uniso/hfs.cpp` that a pending folder the listing rule refuses goes into `leftOutFolders` before its contents are taken (follows from T007: the folder is taken through `ListRecord`); nothing else of `ListRecord` changes (FR-006 - a folder whose name does not convert stays skipped as before)
 
 ## Phase 5: User Story 3 - a loop of parents (P3)
 

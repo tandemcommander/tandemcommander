@@ -35,3 +35,10 @@ Backlog item `iso-plug-in-an-hfs-folder-whose-id-is-lower-than-its-parent`.
   in 329's left-out set (the subtrees follow), the listing marked incomplete; no message (as 332).
 - A parent that is no listed folder record (volume root used as the label, metadata folder, damaged
   record, unknown ID) - unchanged, the HFS+ root.
+
+## Analyze
+
+- Pass 1: F1 MEDIUM (T008 changed the skipped-name case against FR-006) - fixed in tasks.md; C1 LOW
+  (FR-005 has a unit check, no own probe row) - accepted: H-OK's `top.txt` under the root used as the
+  label is that case.
+- Pass 2: 0 CRITICAL, 0 HIGH, 0 MEDIUM.
