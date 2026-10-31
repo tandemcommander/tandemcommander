@@ -1,0 +1,36 @@
+iso362_probe (feature 362) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 23:50; registry key existed True
+
+seeds: mk_bdr.img=655360,mk_cd.img=8192000,mk_cdr.img=614400,mk_cdrclosed.img=1052672,mk_cdrw.img=8192000,mk_dvd.img=8192000,mk_dvdr.img=589824,mk_dvdrw.img=8192000,mk_hd.img=4096000,mk_hd512.img=4096000,nest.iso=1218560,rd.iso=368640,ud.iso=878592,udh.iso=878592,ue.iso=874496,x_aemb0.bin=878592,x_alad0.bin=878592,x_rootemb0.bin=614400,x_rootlad0.bin=878592,x_zlad0.bin=878592
+img362: rootemb0: root's entry (sector 258, descriptor type 3): L_AD 40 -> 0
+img362: alad0: folder a's entry (sector 261, descriptor type 0): L_AD 8 -> 0
+img362: zlad0: folder zlast's entry (sector 263, descriptor type 0): L_AD 8 -> 0
+img362: aemb0: folder a's entry (sector 261): descriptor type 0 -> 3, L_AD 8 -> 0
+img362: rootlad0: root's entry (sector 259, descriptor type 0): L_AD 8 -> 0
+
+L-ROOTLAD0 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-ROOTLAD0 RUN    PASS        alive: True; windows ok ("Bad root ICB"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad root ICB. Cannot read directory structure. | [Button id=1] OK
+L-ROOTEMB0 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-ROOTEMB0 RUN    PASS        alive: True; windows ok ("Bad root ICB"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad root ICB. Cannot read directory structure. | [Button id=1] OK
+L-UE       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-UE       RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ALAD0    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ALAD0    RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: True (want True); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-AEMB0    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-AEMB0    RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: True (want True); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ZLAD0    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ZLAD0    RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/a/side.txt, UDF (TC330)/top.txt; files ok: True; image kept: True (want True); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ROOTLAD0 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ROOTLAD0 RUN    PASS        files 3: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows ok ("Bad root ICB"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad root ICB. Cannot read directory structure. | [Button id=1] OK
+R-ROOTEMB0 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ROOTEMB0 RUN    PASS        files 0: ; files ok: True; image kept: True (want True); windows ok ("Bad root ICB"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad root ICB. Cannot read directory structure. | [Button id=1] OK
+C-UD       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-UD       RUN    PASS        files 6: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/a/side.txt, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-UE       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-UE       RUN    PASS        files 4: ISO (TC362)/F.TXT, ISO (TC362)/G/H.TXT, UDF (TC362)/f.txt, UDF (TC362)/g/h.txt; folders missing: none; files ok: True; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-MKCDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKCDR    RUN    PASS        files 0: ; files ok: True; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 22, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

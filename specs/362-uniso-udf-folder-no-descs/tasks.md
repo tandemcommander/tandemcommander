@@ -5,33 +5,33 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Start `specs/362-uniso-udf-folder-no-descs/fix-log.md` with the measurement before the fix (probe `probe/result_before.txt`: PASS 15, FAIL 7 at 5d74e338, the commands, the caller enumeration of research R1)
+- [X] T001 Start `specs/362-uniso-udf-folder-no-descs/fix-log.md` with the measurement before the fix (probe `probe/result_before.txt`: PASS 15, FAIL 7 at 5d74e338, the commands, the caller enumeration of research R1)
 
 ## Phase 2: Foundational (the rule)
 
-- [ ] T002 Add `SalIsoUdfFolderEntryWalkable(int stored)` to `src/common/salisoudfentry.h` (true for `stored > 0` or `-1`; false for 0 and any other negative value), with a comment naming feature 362 and why (a folder always holds its parent identifier)
-- [ ] T003 Add `TestIsoUdfFolderEntry_362` to `src/saltests/saltests.cpp` (the rule's values 1, 2, 32, -1 true; 0, -2, -3 false; a grid model of the reader's result over L_EA / L_AD / type 0 - 7 built on `SalIsoUdfEntryDescs` checking walkable == accepted and L_AD > 0) and call it from the test list
+- [X] T002 Add `SalIsoUdfFolderEntryWalkable(int stored)` to `src/common/salisoudfentry.h` (true for `stored > 0` or `-1`; false for 0 and any other negative value), with a comment naming feature 362 and why (a folder always holds its parent identifier)
+- [X] T003 Add `TestIsoUdfFolderEntry_362` to `src/saltests/saltests.cpp` (the rule's values 1, 2, 32, -1 true; 0, -2, -3 false; a grid model of the reader's result over L_EA / L_AD / type 0 - 7 built on `SalIsoUdfEntryDescs` checking walkable == accepted and L_AD > 0) and call it from the test list
 
 ## Phase 3: User Story 1 + 2 - a damaged sub-folder / root folder is unreadable (P1)
 
 **Goal**: L_AD 0 folder entries (sub-folder, root; short or embedded) take the existing unreadable-folder path.
 **Independent Test**: probe rows R-ALAD0, R-AEMB0, R-ZLAD0, R-ROOTLAD0, R-ROOTEMB0, L-ROOTLAD0, L-ROOTEMB0.
 
-- [ ] T004 [US1] In `src/plugins/uniso/udf.cpp`, `CUDF::MapICB(CAD, CICBTag*, CAD*)`: replace the test `n == UDF_FE_REFUSED` with `!SalIsoUdfFolderEntryWalkable(n)` → return 0; update its comment (361 refusal + 362 no descriptors) - one change serves US1 (ScanDir) and US2 (ListDirectory)
-- [ ] T005 [US1] Build (`.\build.cmd`) and run `saltests` → `0 failed`
-- [ ] T006 [US1] Run `probe/iso362_probe.ps1` on the hidden desktop → `probe/result_after.txt`, every row PASS, registry identical
+- [X] T004 [US1] In `src/plugins/uniso/udf.cpp`, `CUDF::MapICB(CAD, CICBTag*, CAD*)`: replace the test `n == UDF_FE_REFUSED` with `!SalIsoUdfFolderEntryWalkable(n)` → return 0; update its comment (361 refusal + 362 no descriptors) - one change serves US1 (ScanDir) and US2 (ListDirectory)
+- [X] T005 [US1] Build (`.\build.cmd`) and run `saltests` → `0 failed`
+- [X] T006 [US1] Run `probe/iso362_probe.ps1` on the hidden desktop → `probe/result_after.txt`, every row PASS, registry identical
 
 ## Phase 4: User Story 3 - real empty folders and intact images unchanged (P2)
 
 **Independent Test**: control rows L-UE, C-UD, C-UE, C-MKCDR of the same run; probes 330 and 361.
 
-- [ ] T007 [P] [US3] Re-run `specs/330-iso-unreadable-folder/probe/iso330_probe.ps1` → `probe/regress_330.txt`, its recorded result
-- [ ] T008 [P] [US3] Re-run `specs/361-uniso-udf-entry-bound/probe/iso361_probe.ps1` → `probe/regress_361.txt`, 24 / 0
+- [X] T007 [P] [US3] Re-run `specs/330-iso-unreadable-folder/probe/iso330_probe.ps1` → `probe/regress_330.txt`, its recorded result
+- [X] T008 [P] [US3] Re-run `specs/361-uniso-udf-entry-bound/probe/iso361_probe.ps1` → `probe/regress_361.txt`, 24 / 0
 
 ## Phase 5: Polish
 
-- [ ] T009 `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`
-- [ ] T010 Record after-measurements, regressions and checks in `specs/362-uniso-udf-folder-no-descs/fix-log.md`
+- [X] T009 `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`
+- [X] T010 Record after-measurements, regressions and checks in `specs/362-uniso-udf-folder-no-descs/fix-log.md`
 
 ## Dependencies
 

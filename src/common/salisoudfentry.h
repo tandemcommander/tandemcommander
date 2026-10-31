@@ -56,3 +56,19 @@ inline bool SalIsoUdfEntryDescs(unsigned long long sectorLen, bool extended, uns
     size = s;
     return true;
 }
+
+// May the ISO plug-in walk a FOLDER whose file entry the reader above read with
+// room for one descriptor - 'stored' is the reader's result: the number of
+// descriptors stored (> 0), -1 for data embedded in the entry (only for a
+// non-empty area), 0 for no descriptor at all (L_AD 0, of any valid type, also
+// an embedded entry), or the refusal (another negative value) - feature 362.
+// A folder always holds at least the identifier of its parent (ECMA-167
+// 4/14.4; the root one pointing to itself), so an entry that describes no byte
+// is damaged: it was walked over length 0, listed empty without a mark, and a
+// whole unpack with "Delete archive after unpacking" deleted the image. False
+// sends it down the unreadable-folder path (the root "Bad root ICB", a
+// sub-folder listed empty with the listing incomplete - feature 330).
+inline bool SalIsoUdfFolderEntryWalkable(int stored)
+{
+    return stored > 0 || stored == -1;
+}

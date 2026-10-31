@@ -20911,6 +20911,59 @@ static void TestIsoUdfEntry_361()
     CHECK(taken > 0 && refused > 0);
 }
 
+// feature 362: a UDF folder entry without descriptors (L_AD 0) is unreadable, not an empty folder
+// (src/common/salisoudfentry.h)
+static void TestIsoUdfFolderEntry_362()
+{
+    // the reader's results: descriptors stored, embedded data - walked; none, the refusal (UDF_FE_REFUSED = -2) -
+    // not walked
+    CHECK(SalIsoUdfFolderEntryWalkable(1));
+    CHECK(SalIsoUdfFolderEntryWalkable(2));
+    CHECK(SalIsoUdfFolderEntryWalkable(32));
+    CHECK(SalIsoUdfFolderEntryWalkable(-1));
+    CHECK(!SalIsoUdfFolderEntryWalkable(0));
+    CHECK(!SalIsoUdfFolderEntryWalkable(-2));
+    CHECK(!SalIsoUdfFolderEntryWalkable(-3));
+
+    // the reader (CUDF::ReadFileEntry with room for one descriptor, as CUDF::MapICB calls it) over a grid of
+    // entries: a folder is walked exactly when the entry is accepted and L_AD > 0 - every L_AD 0 entry of a valid
+    // type (measured: genisoimage folders a / zlast / the root with short descriptors, an embedded folder, mkudffs's
+    // embedded root) goes down the unreadable path; the writers' real shapes (short 8, long 16, embedded 40 - a
+    // folder's parent identifier) are walked
+    const unsigned long long eaList[] = {0, 4, 32, 1832, 0x10000000ull};
+    const unsigned long long adList[] = {0, 1, 8, 16, 20, 40, 60, 1832, 4096};
+    bool rule = true, shapes = true;
+    int walked = 0, notWalked = 0, lad0 = 0;
+    for (int efe = 0; efe < 2; efe++)
+        for (unsigned long long ea : eaList)
+            for (unsigned long long ad : adList)
+                for (unsigned int type = 0; type < 8; type++)
+                {
+                    unsigned long long a0, a1;
+                    int size;
+                    int stored;
+                    bool ok = SalIsoUdfEntryDescs(2048, efe != 0, ea, ad, type, a0, a1, size);
+                    if (!ok)
+                        stored = -2;
+                    else if (size == 0)
+                        stored = a0 < a1 ? -1 : 0;
+                    else
+                        stored = a0 < a1 ? 1 : 0; // room for one descriptor
+                    bool w = SalIsoUdfFolderEntryWalkable(stored);
+                    if (w != (ok && ad > 0))
+                        rule = false;
+                    if (ok && ad == 0)
+                        lad0++;
+                    if (ea == 0 && ((type == 0 && ad == 8) || (type == 1 && ad == 16) || (type == 3 && ad == 40)) && !w)
+                        shapes = false;
+                    (w ? walked : notWalked)++;
+                }
+    CHECK(rule);
+    CHECK(shapes);
+    CHECK(lad0 > 0);
+    CHECK(walked > 0 && notWalked > 0);
+}
+
 // feature 356: a cooked UDF-only image - the UDF descriptors that give its volume's end, and whether the
 // rest past the volume is kept, marked or read (src/common/salisotrack.h)
 static void TestIsoUdfRest_356()
@@ -23280,6 +23333,7 @@ int main(int argc, char** argv)
     TestIsoUdfVat_359();
     TestIsoUdfVat_360();
     TestIsoUdfEntry_361();
+    TestIsoUdfFolderEntry_362();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

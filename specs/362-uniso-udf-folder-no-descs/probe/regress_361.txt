@@ -1,0 +1,38 @@
+iso361_probe (feature 361) regress-362
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 23:54; registry key existed True
+
+seeds: imapi250.iso=1507328,mk_bdr.img=655360,mk_cd.img=8192000,mk_cdr.img=614400,mk_cdrclosed.img=1052672,mk_cdrw.img=8192000,mk_dvd.img=8192000,mk_dvdr.img=589824,mk_dvdrw.img=8192000,mk_hd.img=4096000,mk_hd512.img=4096000,nest.iso=1218560,rd.iso=368640,ud.iso=878592,udh.iso=878592,x_file5.bin=878592,x_fold5.bin=878592,x_foldlea.bin=878592,x_meta5.bin=1507328,x_root5.bin=614400
+img361: rootadt5: root entry sector 258: descriptor type 3 -> 5
+img361: foldadt5: folder a's entry (sector 261): descriptor type 0 -> 5
+img361: foldleabig: folder a's entry (sector 261): L_EA 0 -> 0x10000000
+img361: fileadt5: file top.txt's entry (sector 265): descriptor type 0 -> 5
+img361: metaadt5: metadata file entry sector 288: descriptor type 0 -> 5
+
+L-ROOT5    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-ROOT5    RUN    PASS        alive: True; windows ok ("Bad root ICB"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad root ICB. Cannot read directory structure. | [Button id=1] OK
+L-FOLD5    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-FOLD5    RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+L-FOLDLEA  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-FOLDLEA  RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+L-META5    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-META5    RUN    PASS        alive: True; windows ok (".*"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000000. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #FF567539. Incomplete content of ISO image. | [Button id=1] OK
+L-IMAPI250 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-IMAPI250 RUN    PASS        alive: True; windows ok (".*"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000000. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #FF567539. Incomplete content of ISO image. | [Button id=1] OK
+L-UD       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-UD       RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ROOT5    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ROOT5    RUN    PASS        files 0: ; files ok: True; image kept: True (want True); windows ok ("Bad root ICB"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad root ICB. Cannot read directory structure. | [Button id=1] OK
+R-FOLD5    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-FOLD5    RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: True (want True); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-FOLDLEA  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-FOLDLEA  RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: True (want True); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-FILE5    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-FILE5    RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/a/side.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: True (want True); windows ok ("cannot be extracted"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] File "top.txt" cannot be extracted. Mismatch between file size and ICB blocks. | [Button id=1] OK
+C-UD       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-UD       RUN    PASS        files 6: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/a/side.txt, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-MKCDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKCDR    RUN    PASS        files 0: ; files ok: True; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 24, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
