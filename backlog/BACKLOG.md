@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an HFS+ folder whose ID is lower than its parent lists its contents at the root](items/iso-plug-in-an-hfs-folder-whose-id-is-lower-than-its-parent/desc.md) | bug | 5 | archives | 349 |
 
 ## Next
 
@@ -272,6 +271,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 349 with a Mac-made HFS+ image holding a moved folder](items/check-feature-349-with-a-mac-made-hfs-image-holding-a-moved/desc.md) | person-step | 5 | archives | leftover:349 | 2026-10-31 |
 
 ## Parked
 

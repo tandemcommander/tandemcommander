@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5153,3 +5153,29 @@ a few early ones are out of sequence).
   `main` -> 10 / 0; 341's 12 / 0, 345's 16 / 0, 347's 6 / 0 (its OTHER-USER facts now 1 STOR,
   0 overlapping, 'UP1'); one refute-first review (MUST 0, SHOULD 2 done,
   NOTE 3; its negative control: the old `ftp.spl` alone fails the three rows).
+- 349-uniso-hfs-folder-order: a disc image whose HFS+ part holds a folder made first and moved (on a
+  Mac) into a newer folder listed that folder's contents at the root of `HFS (...)` and Copy / Unpack
+  wrote them there - the catalog is sorted by parent ID, the moved folder keeps its lower ID, so its
+  contents come before its own record and the reader put a record whose folder it had not listed yet
+  at the root; the contents of a folder 329 then left out were already listed at the root too (measured:
+  `a.txt`, `sub/s.txt`, `b.txt`, `k.txt`, `kd/kd.txt` at the root; a damaged loop of parents misplaced
+  files and the image was deleted). Now `CHFS::ListDirectory` collects the folder records first and,
+  before it takes a record, takes the folders above it not taken yet, outermost first
+  (`CSalHfsFolderOrder`, `src/common/salisonamefit.h`; the old loop body is `CHFS::ListRecord`,
+  unchanged) - every entry lands in its folder, a left-out folder's subtree stays out; a loop of parents
+  leaves its folders out with their subtrees and marks the listing incomplete (a whole unpack fails, the
+  image is kept), no message. Traps: review 1's SHOULD - a damaged folder record carrying the root's
+  reserved ID 2 (the root itself is not in the table when it is the volume label) was taken before every
+  root record and swallowed the whole volume (image deleted); reserved IDs below 16 (TN1150) are not kept
+  now, the class compares host-order IDs (`FromM32`); Bash here-documents collapsed backslashes twice
+  (nothing written - asserts / a syntax error stopped them); xorriso's catalog had two leaf nodes and an
+  index node, so `img349.py` re-lays all leaf records and rewrites the index keys. Limits: a parent that
+  is no listed folder record (the root used as the label, metadata folders, damaged records, unknown
+  IDs) still puts the record at the HFS+ root; no Mac-made image tried (person step
+  `check-feature-349-with-a-mac-made-hfs-image-holding-a-moved`). From backlog item
+  `iso-plug-in-an-hfs-folder-whose-id-is-lower-than-its-parent`. Probe `iso349_probe` (seed `mkimg349.sh`
+  xorriso `-hfsplus`, copies by `img349.py`) on `main` 5 / 3 -> 10 / 0 (H-STRAY added by review 1);
+  322 18 / 0, 329 14 / 0, 332 16 / 0, 333 20 / 0, 339 20 / 0; saltests 29,182 / 0
+  (`TestHfsFolderOrder349`; mutants: no walk 17 failed, no loop guard 17, reserved rule removed 6);
+  one refute-first review (MUST 0, SHOULD 1 fixed, NOTE 4; its negative control: uniso.spl before the
+  fix 5 / 3).
