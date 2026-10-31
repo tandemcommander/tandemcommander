@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item iso-plug-in-a-cut-udf-vat-image-may-hang-the-listing - implement exactly what it describes." From backlog item iso-plug-in-a-cut-udf-vat-image-may-hang-the-listing.
 
+## Clarifications
+
+### Session 2026-10-31
+
+- Q: Which message should a file get that holds no sector of the partition, and which one a file that holds a few partition sectors without the VAT? → A: no partition sector - "Error reading virtual allocation table" at once (no fallback); some partition sectors - they are searched, and without a VAT among them feature 358's "Missing virtual allocation table." (autonomous run: item)
+- Q: Should the fix also count a raw dump's sectors in its real sector size (2352 bytes), so that whole raw VAT images open? → A: no - a separate defect, recorded as an Inbox item; this feature only makes the search end (autonomous run: rule - scope, stop-rules 2.11)
+- Q: Should the first search window (around the partition's claimed end), which can also wrap when the claimed length is under 7 sectors, be changed? → A: no - it is read once and bounded (at most 14 reads); only the fallback could repeat (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Opening a cut VAT image does not hang the program (Priority: P1)
