@@ -1,16 +1,16 @@
 ---
 title: FTP: two operations under two names of one server can open one file at the same time
 type: bug
-status: open
-severity: 6
+status: in-progress
+severity: 7
 area: ftp
 source: review:341
 who: agent
 created: 2026-10-24
-updated: 2026-10-30
-verified: -
+updated: 2026-10-31
+verified: 2026-10-31 794b3207
 effort: S
-feature: -
+feature: 347
 related: [ftp-server-path-compare-code-page-fold]
 depends-on: []
 reason: -
@@ -55,3 +55,6 @@ to weigh.
 
 - 2026-10-24 — created (source review:341)
 - 2026-10-30 — moved to Next position 1
+- 2026-10-31 — verified at 794b3207: probe ftp347 on main: uploads under localhost and 127.0.0.1 sent two overlapping STOR of one file, server file ended with the 2nd content
+- 2026-10-31 — severity 7: probe ftp347 measured two concurrent STOR of one file (the Notes rule)
+- 2026-10-31 — run started, feature 347
