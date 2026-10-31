@@ -300,7 +300,7 @@ protected:
     int CheckForVAT(BYTE sector[], bool bEFE, CPartitionMapping* pm, BOOL quiet);
 
     void ReadFileEntry(BYTE sector[], bool bEFE, CFileEntry* fe);
-    int ReadAllocDesc(BYTE data[], CFileEntry* fe, BYTE* vat, DWORD* o);
+    int ReadAllocDesc(BYTE data[], DWORD avail, CFileEntry* fe, BYTE* vat, DWORD vatLength, DWORD* o);
 
     int ReadVAT(BYTE fileEntry[], bool bEFE, BYTE** vat, DWORD* length, BOOL quiet);
     Uint32 LogSector(Uint32 lbNum, Uint16 part);

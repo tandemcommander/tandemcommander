@@ -97,3 +97,81 @@ inline bool SalIsoUdfVatFallback(unsigned long long trackSectors, unsigned long 
     last = (trackSectors - partStart) & mask;
     return first < last;
 }
+
+// Feature 360: the VAT's file entry, read into the table buffer. The reader
+// (CUDF::ReadVAT, ReadAllocDesc) allocated the table with the file's
+// information length cast to 32 bits, took the allocation descriptors' area
+// of the 2048-byte sector at 176 (+40 in an extended entry) + L_EA, L_AD
+// bytes long, in 32 bits without a bound, and copied each descriptor's data
+// (the embedded L_AD bytes, or an extent's length read from the image) into
+// the table without comparing it with the bytes left: a damaged entry wrote
+// past the table (heap corruption) or read past the sector; a reserved
+// descriptor type left the descriptor uninitialised and the walk never
+// advanced. An entry these rules refuse is not taken as a VAT (the search
+// goes on; without a VAT the volume does not open, feature 358).
+
+// The table's length: the VAT file's information length 'infoLen'. False -
+// not a VAT - over 2^32 - 1 (the reader's 32-bit buffer); never cut.
+inline bool SalIsoUdfVatTableLength(unsigned long long infoLen, unsigned long& len)
+{
+    len = 0;
+    if (infoLen > 0xFFFFFFFFull)
+        return false;
+    len = (unsigned long)infoLen;
+    return true;
+}
+
+// The allocation descriptors' area [first, end) of the file entry in its
+// sector of 'sectorLen' bytes: after the entry's fixed part (176 bytes, an
+// extended entry 216) and its extended attributes (lEA bytes), lAD bytes long.
+// False when the area does not lie in the sector (computed without wrap).
+inline bool SalIsoUdfVatDescArea(unsigned long long sectorLen, bool extended, unsigned long long lEA,
+                                 unsigned long long lAD, unsigned long long& first, unsigned long long& end)
+{
+    first = end = 0;
+    unsigned long long fixed = extended ? 216 : 176;
+    if (fixed > sectorLen || lEA > sectorLen - fixed)
+        return false;
+    unsigned long long f = fixed + lEA;
+    if (lAD > sectorLen - f)
+        return false;
+    first = f;
+    end = f + lAD;
+    return true;
+}
+
+// The size of one allocation descriptor of the ICB tag's descriptor type
+// 'type' (flags & 7): short 8, long 16, extended 20 bytes; 0 for data
+// embedded in the entry (type 3 - the whole area is the data); -1 for the
+// reserved types 4 - 7 (not a VAT).
+inline int SalIsoUdfVatDescSize(unsigned int type)
+{
+    switch (type)
+    {
+    case 0:
+        return 8;
+    case 1:
+        return 16;
+    case 2:
+        return 20;
+    case 3:
+        return 0;
+    default:
+        return -1;
+    }
+}
+
+// A descriptor of 'descLen' bytes (> 0) at 'pos' lies in the area ending at
+// 'end'. False for a descriptor cut by the area's end.
+inline bool SalIsoUdfVatDescFits(unsigned long long pos, unsigned long long descLen, unsigned long long end)
+{
+    return descLen > 0 && pos <= end && descLen <= end - pos;
+}
+
+// A copy of 'length' bytes (the embedded data, or one extent) fits the table
+// of 'tableLen' bytes after the 'written' bytes copied so far. False - not a
+// VAT - when the descriptors claim more than the file's information length.
+inline bool SalIsoUdfVatCopyFits(unsigned long long written, unsigned long long length, unsigned long long tableLen)
+{
+    return written <= tableLen && length <= tableLen - written;
+}

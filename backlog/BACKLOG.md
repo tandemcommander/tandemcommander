@@ -282,6 +282,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a UDF VAT whose descriptors cover less than its length is read with heap content](items/iso-plug-in-a-udf-vat-whose-descriptors-cover-less-than-its/desc.md) | bug | 3 | archives | measure:360 | 2026-10-31 |
 
 ## Parked
 

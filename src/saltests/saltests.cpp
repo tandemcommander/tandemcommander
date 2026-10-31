@@ -20614,6 +20614,134 @@ static void TestIsoUdfVat_359()
     CHECK(maxReads <= 21);
 }
 
+// feature 360: the VAT's file entry is read into the table without writing past it or reading past the
+// sector (src/common/salisoudfvat.h)
+static void TestIsoUdfVat_360()
+{
+    unsigned long len = 99;
+    // the table's length: up to 2^32 - 1, never cut (the reader's (int) cast made IL + 2^32 a 160-byte table)
+    CHECK(SalIsoUdfVatTableLength(160, len) && len == 160);
+    CHECK(SalIsoUdfVatTableLength(0, len) && len == 0);
+    CHECK(SalIsoUdfVatTableLength(0xFFFFFFFFull, len) && len == 0xFFFFFFFFul);
+    len = 99;
+    CHECK(!SalIsoUdfVatTableLength(0x100000000ull, len) && len == 0);
+    CHECK(!SalIsoUdfVatTableLength(0x1000000A0ull, len) && len == 0);
+    CHECK(!SalIsoUdfVatTableLength(0xFFFFFFFFFFFFFFFFull, len));
+
+    unsigned long long f = 99, e = 99;
+    // mkudffs' VAT 2.00 in an extended entry: L_EA 0, L_AD 160 - the area 216 .. 376
+    CHECK(SalIsoUdfVatDescArea(2048, true, 0, 160, f, e) && f == 216 && e == 376);
+    // ... in a plain entry: 176 .. 336
+    CHECK(SalIsoUdfVatDescArea(2048, false, 0, 160, f, e) && f == 176 && e == 336);
+    // the area filling the sector to its last byte
+    CHECK(SalIsoUdfVatDescArea(2048, false, 0, 2048 - 176, f, e) && e == 2048);
+    CHECK(SalIsoUdfVatDescArea(2048, true, 32, 2048 - 216 - 32, f, e) && f == 248 && e == 2048);
+    // one byte past the sector: not a VAT (measured: L_AD 4096 - a bug report, heap corruption)
+    f = e = 99;
+    CHECK(!SalIsoUdfVatDescArea(2048, false, 0, 2048 - 176 + 1, f, e) && f == 0 && e == 0);
+    CHECK(!SalIsoUdfVatDescArea(2048, true, 0, 4096, f, e));
+    CHECK(!SalIsoUdfVatDescArea(2048, true, 2048 - 216 + 1, 0, f, e));
+    // L_EA 0xFFFFFF00: the reader's 32-bit 216 + L_EA wrapped to 24 (the descriptor tag read as the table)
+    CHECK(!SalIsoUdfVatDescArea(2048, true, 0xFFFFFF00ull, 160, f, e));
+    CHECK(!SalIsoUdfVatDescArea(2048, false, 0xFFFFFFFFull, 0xFFFFFFFFull, f, e));
+    CHECK(!SalIsoUdfVatDescArea(2048, false, 100, 0xFFFFFFFFull - 50, f, e));
+    // an empty area is an area
+    CHECK(SalIsoUdfVatDescArea(2048, false, 0, 0, f, e) && f == 176 && e == 176);
+    // a sector shorter than the fixed part
+    CHECK(!SalIsoUdfVatDescArea(100, false, 0, 0, f, e));
+
+    // descriptor sizes; the reserved types 4 - 7 are not a VAT (measured: type 5 - an uninitialised descriptor,
+    // the walk never advanced)
+    CHECK(SalIsoUdfVatDescSize(0) == 8);
+    CHECK(SalIsoUdfVatDescSize(1) == 16);
+    CHECK(SalIsoUdfVatDescSize(2) == 20);
+    CHECK(SalIsoUdfVatDescSize(3) == 0);
+    for (unsigned int t = 4; t < 8; t++)
+        CHECK(SalIsoUdfVatDescSize(t) == -1);
+    CHECK(SalIsoUdfVatDescSize(0xFFFF) == -1);
+
+    // a descriptor inside the area; one cut by its end is refused
+    CHECK(SalIsoUdfVatDescFits(176, 8, 184));
+    CHECK(!SalIsoUdfVatDescFits(177, 8, 184));
+    CHECK(SalIsoUdfVatDescFits(2028, 20, 2048));
+    CHECK(!SalIsoUdfVatDescFits(2040, 20, 2048));
+    CHECK(!SalIsoUdfVatDescFits(2049, 0, 2048));
+    CHECK(!SalIsoUdfVatDescFits(100, 0, 2048));
+    CHECK(!SalIsoUdfVatDescFits(0xFFFFFFFFFFFFFFF0ull, 20, 2048));
+
+    // the copy fits the table: L_AD 160 into the table of 160 - taken; IL 156 with L_AD 160 (review 1 of
+    // feature 358: "HEAP CORRUPTION DETECTED") - not a VAT
+    CHECK(SalIsoUdfVatCopyFits(0, 160, 160));
+    CHECK(!SalIsoUdfVatCopyFits(0, 160, 156));
+    CHECK(SalIsoUdfVatCopyFits(0, 156, 160)); // less than the file: taken as before
+    CHECK(SalIsoUdfVatCopyFits(2048, 2048, 4096));
+    CHECK(!SalIsoUdfVatCopyFits(2048, 2049, 4096));
+    CHECK(SalIsoUdfVatCopyFits(4096, 0, 4096));
+    CHECK(!SalIsoUdfVatCopyFits(4097, 0, 4096));
+    CHECK(!SalIsoUdfVatCopyFits(1, 0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFull));
+    CHECK(SalIsoUdfVatCopyFits(0, 0x3FFFFFFFull, 0xFFFFFFFFull));
+
+    // the reader's walk, simulated over a grid of entries: every taken copy lies in the table, every descriptor
+    // read in the sector, and the walk always ends (the reader's loop: while (offset < end))
+    const unsigned long long sector = 2048;
+    const unsigned long long ilList[] = {0, 1, 8, 152, 156, 160, 164, 2048, 4096, 0xFFFFFFFFull, 0x1000000A0ull};
+    const unsigned long long eaList[] = {0, 4, 100, 1832, 1833, 0xFFFFFF00ull, 0xFFFFFFFFull};
+    const unsigned long long adList[] = {0, 1, 7, 8, 16, 20, 40, 156, 160, 161, 1832, 1833, 4096, 0xFFFFFFFFull};
+    bool inTable = true, inSector = true, ends = true, takenAll = true;
+    int taken = 0;
+    for (unsigned long long il : ilList)
+        for (int efe = 0; efe < 2; efe++)
+            for (unsigned long long ea : eaList)
+                for (unsigned long long ad : adList)
+                    for (unsigned int type = 0; type < 8; type++)
+                        for (unsigned long long ext = 0; ext < 4; ext++)
+                        {
+                            unsigned long tl;
+                            unsigned long long a0, a1;
+                            if (!SalIsoUdfVatTableLength(il, tl) || !SalIsoUdfVatDescArea(sector, efe != 0, ea, ad, a0, a1))
+                                continue;
+                            int size = SalIsoUdfVatDescSize(type);
+                            if (size < 0)
+                                continue;
+                            if (a0 > a1 || a1 > sector)
+                                inSector = false;
+                            unsigned long long pos = a0, written = 0, steps = 0;
+                            bool ok = true;
+                            while (pos < a1)
+                            {
+                                if (++steps > sector)
+                                {
+                                    ends = false;
+                                    break;
+                                }
+                                unsigned long long dl = size == 0 ? a1 - pos : (unsigned long long)size;
+                                // an extent: 0, a few bytes, the table's length, the most a descriptor holds
+                                unsigned long long copy = size == 0 ? dl : ext == 0 ? 0 : ext == 1 ? 8 : ext == 2 ? tl : 0x3FFFFFFFull;
+                                if (!SalIsoUdfVatDescFits(pos, dl, a1) || !SalIsoUdfVatCopyFits(written, copy, tl))
+                                {
+                                    ok = false;
+                                    break;
+                                }
+                                if (pos + dl > sector)
+                                    inSector = false;
+                                if (written + copy > tl)
+                                    inTable = false;
+                                written += copy;
+                                pos += dl;
+                            }
+                            if (ok)
+                                taken++;
+                            // mkudffs' entry (embedded, L_AD == IL, no L_EA) is always taken
+                            if (type == 3 && ea == 0 && ad == il && !ok)
+                                takenAll = false;
+                        }
+    CHECK(inTable);
+    CHECK(inSector);
+    CHECK(ends);
+    CHECK(takenAll);
+    CHECK(taken > 0);
+}
+
 // feature 356: a cooked UDF-only image - the UDF descriptors that give its volume's end, and whether the
 // rest past the volume is kept, marked or read (src/common/salisotrack.h)
 static void TestIsoUdfRest_356()
@@ -22981,6 +23109,7 @@ int main(int argc, char** argv)
     TestIsoPlainLayouts_357();
     TestIsoUdfVat_358();
     TestIsoUdfVat_359();
+    TestIsoUdfVat_360();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

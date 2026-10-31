@@ -725,32 +725,42 @@ void CUDF::ReadFileEntry(BYTE sector[], bool bEFE, CFileEntry* fe)
 }
 
 //
-// returns the length of the allocation descriptor read
-int CUDF::ReadAllocDesc(BYTE data[], CFileEntry* fe, BYTE* vat, DWORD* o)
+// returns the length of the allocation descriptor read; -1 when it cannot be read or (feature 360) when it does
+// not fit: 'avail' is the number of bytes left in the descriptors' area at 'data', 'vatLength' the table's length
+// - a descriptor cut by the area's end, or data past the table (more than the file's information length), is
+// not a VAT (the reader copied without a bound and wrote past the table)
+int CUDF::ReadAllocDesc(BYTE data[], DWORD avail, CFileEntry* fe, BYTE* vat, DWORD vatLength, DWORD* o)
 {
     CAD ad;
-    int len = 0;
+    int len = SalIsoUdfVatDescSize(fe->ICBTag.Flags & 0x0007);
 
-    switch (fe->ICBTag.Flags & 0x0007)
+    if (len == 0)
     {
-    case 0:
+        // data embedded in the entry: the whole area
+        if (!SalIsoUdfVatDescFits(0, avail, avail) || !SalIsoUdfVatCopyFits(*o, avail, vatLength))
+            return -1;
+        memcpy(vat + *o, data, avail);
+        *o += avail;
+        return (int)avail;
+    }
+    if (len < 0 || !SalIsoUdfVatDescFits(0, (unsigned long long)len, avail))
+        return -1; // a reserved descriptor type (ReadVAT refuses it first), or a descriptor cut by the area's end
+
+    switch (len)
+    {
+    case 8:
         ShortAD(data, &ad, PD.PartitionNumber);
-        len = 8;
         break;
-    case 1:
+    case 16:
         LongAD(data, &ad);
-        len = 16;
         break;
-    case 2:
+    default:
         ExtAD(data, &ad);
-        len = 20;
         break;
-    case 3:
-        memcpy(vat + *o, data, fe->L_AD);
-        *o += fe->L_AD;
-        return fe->L_AD;
     }
 
+    if (!SalIsoUdfVatCopyFits(*o, ad.Length, vatLength))
+        return -1;
     if (!Image->ReadBlock(PD.Start + ad.Location - ExtentOffset, ad.Length, vat + *o))
     {
         return -1;
@@ -1360,7 +1370,18 @@ int CUDF::ReadVAT(BYTE fileEntry[], bool bEFE, BYTE** vat, DWORD* vatLength, BOO
         return ERR_TERMINATE;
     } // switch
 
-    DWORD length = (int)fe.InformationLength;
+    // feature 360: the table's length is the file's information length, never cut to 32 bits; the descriptors'
+    // area lies in the 2048-byte sector (the reader took it in 32 bits without a bound); a reserved descriptor
+    // type has no descriptor to read - otherwise this entry is not a VAT (the search goes on, feature 358)
+    unsigned long length;
+    unsigned long long areaFirst, areaEnd;
+    if (!SalIsoUdfVatTableLength(fe.InformationLength, length) ||
+        !SalIsoUdfVatDescArea(SECTOR_SIZE, bEFE, fe.L_EA, fe.L_AD, areaFirst, areaEnd) ||
+        SalIsoUdfVatDescSize(fe.ICBTag.Flags & 0x0007) < 0)
+    {
+        return ERR_CONTINUE;
+    }
+
     *vatLength = length;
     *vat = new BYTE[length];
     if (*vat == NULL)
@@ -1369,16 +1390,12 @@ int CUDF::ReadVAT(BYTE fileEntry[], bool bEFE, BYTE** vat, DWORD* vatLength, BOO
         return ERR_TERMINATE;
     }
 
-    DWORD offset = 176 + fe.L_EA, end;
-
-    if (bEFE)
-        offset += 40;
-    end = offset + fe.L_AD;
+    DWORD offset = (DWORD)areaFirst, end = (DWORD)areaEnd;
 
     DWORD o = 0;
     while (offset < end)
     {
-        int ret = ReadAllocDesc(fileEntry + offset, &fe, *vat, &o);
+        int ret = ReadAllocDesc(fileEntry + offset, end - offset, &fe, *vat, length, &o);
 
         if (ret < 0)
         {
