@@ -5,6 +5,13 @@
 **Status**: Draft
 **Input**: User description: "Backlog item iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes - implement exactly what it describes." From backlog item iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes.
 
+## Clarifications
+
+### Session 2026-10-31
+
+- Q: When the VAT of a virtual partition is not found, should the UDF volume fail to open, or open with an empty listing marked incomplete? → A: fail to open, as an unreadable VAT already does ("Error reading virtual allocation table"); the existing not-opened rules mark the listing (autonomous run: conservative)
+- Q: Should the reader search the whole file for a VAT that is not near the claimed end or the file's last sectors? → A: no - out of scope; the item asks that such an image does not crash (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Unpacking a VAT image with data past its volume does not close the program (Priority: P1)
