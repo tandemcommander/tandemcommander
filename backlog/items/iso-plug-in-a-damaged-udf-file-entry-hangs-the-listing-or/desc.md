@@ -8,7 +8,7 @@ source: review:360
 who: agent
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 73bb1246
 effort: S
 feature: -
 related: []
@@ -37,3 +37,4 @@ The general file-entry reader never loops on a reserved descriptor type and neve
 - 2026-10-31 — created (source review:360)
 - 2026-10-31 — auto-triage: severity 6 -> 7: the program stops answering and must be killed (and reads past its sector buffer) on a damaged image - a crash in an unusual scenario, as the sibling VAT item of feature 360
 - 2026-10-31 — moved to Next position 1
+- 2026-10-31 — verified at 73bb1246: still present at 73bb1246: ReadFileEntry(general) unchanged since review 1 of 360 reproduced the hang (rootadt5); no case for types 4-7, 32-bit area unbounded
