@@ -147,3 +147,8 @@ the loop's files somewhere or let Unpack delete the image.
 - Assumption (autonomous run): a moved folder made on macOS keeps its catalog number (TN1150: a catalog
   node ID is assigned at creation and never changes on a move).
 - The Release build is not driven; the reader code is the same.
+- Assumption (autonomous run, review 1 N2): a record of a type not handled takes the folders above it
+  before the HFS+ listing ends there - only in an out-of-order catalog; the listing is marked incomplete
+  as before.
+- Assumption (autonomous run, review 1 S1): catalog IDs below 16 are reserved (TN1150) and never a moved
+  folder - they are not taken first; a damaged record with such an ID is placed as before.

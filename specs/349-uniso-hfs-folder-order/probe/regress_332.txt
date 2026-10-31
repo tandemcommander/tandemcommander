@@ -1,6 +1,6 @@
 iso332_probe (feature 332) regress349
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-31 10:49; registry key existed True
+Date    : 2026-10-31 11:10; registry key existed True
 
 seeds: hdh.iso,hdh_key.iso,hdh_long.iso,hdh_nul.iso,hdh_short.iso,hdh_type.iso,ud.iso,ud_file.iso
 img332: type: side.txt's record (node 1, offset 642, avail 3430) -> C:\Users\pavel\AppData\Local\Temp\tc332\seeds\hdh_type.iso

@@ -1,6 +1,6 @@
 iso339_probe (feature 339) regress349
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-31 10:53; registry key existed True
+Date    : 2026-10-31 11:13; registry key existed True
 
 seeds: hdh.iso,hdh_both.iso,hdh_comp.iso,hdh_comp2.iso,hdh_compin.iso,hdh_flag.iso,hdh_nomode.iso,hdh_rsrc.iso,ud.iso
 img339: rsrc: side.txt owner flags 0x0 mode 0o100777 data 4 rsrc 0 -> owner flags 0x0 mode 0o100777 data 0 rsrc 4

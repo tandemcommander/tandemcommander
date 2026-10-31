@@ -78,3 +78,32 @@ Backlog item `iso-plug-in-an-hfs-folder-whose-id-is-lower-than-its-parent`.
 - Regression probes on the fixed build (`probe/regress_<n>.txt`, each registry restored identical): 322 18 / 0,
   329 14 / 0, 332 16 / 0, 333 20 / 0, 339 20 / 0 - the results their features recorded. saltests 29,154 / 0.
 - No UI string, dialog or resource changed: no `.slt` refresh (stop-rules 2.13 not triggered).
+
+## Review
+
+### Review 1 (refute-first agent, 2026-10-31)
+
+No MUST. Re-ran the measurement: branch 8 / 0, its negative control (uniso.spl of 95fdd8e8 swapped into a
+copy of the build) 5 / 3 - the same three rows; `git diff -w` of the move into `ListRecord` faithful;
+`GetRecord` pointers stay valid (the catalog is in memory); callers `CUDFISO::ListDirectory`,
+`CISOImage::ListDirectory`, `UnpackFile` (by record index) unaffected.
+
+- **S1 SHOULD (fixed)**: a damaged folder record carrying the root's ID 2 (the root itself is not in the
+  table when it is the volume label) was taken before every record of the root - the whole HFS+ root
+  landed in it and the image was deleted (reviewer's GUI row: all files under `c/`); placed under a folder,
+  a walk through ID 2 made a loop of the whole volume. Before 349 that record sorted last and did nothing.
+  Fix: `CSalHfsFolderOrder::Add` does not keep an ID below 16 (`SAL_HFS_FIRST_USER_ID`, TN1150
+  `kHFSFirstUserCatalogNodeID`; reserved IDs are never folders a user made, so never moved); the class now
+  takes IDs in host order (`FromM32` in hfs.cpp at `Add` / `Pending`; `pFolders` / `CSalLeftOutIds` keep
+  the stored order as before). saltests: the direct cases moved to IDs >= 16, a reserved-ID case and the
+  reviewer's two catalogs (stray ID 2 last, and under `a`) - 29,182 / 0; mutant "reserved rule removed" ->
+  6 failed. Probe row H-STRAY (`img349.py stray ... c`): c's record gets ID 2 under parent 999 - as
+  before 349 (c.txt at the root, image deleted). Probe 10 / 0 (`result_after.txt`, label after-review1).
+- N1 (noted): `HfsListing349` is a model of the reader's loop, not its code; hfs.cpp's use of the class is
+  proved by the probe rows (negative control 5 / 3), the mutants only test `Pending` / `Add`.
+- N2 (accepted, recorded in the spec's Assumptions): a record of a type not handled now takes the folders
+  above it before the listing ends there - only in an out-of-order catalog, the listing is incomplete
+  anyway (the image is kept as before).
+- N3: the Mac-made image check becomes a person-step item at closing.
+- N4: the regression probes were re-run after the fix (below).
+- After the review-1 fix: regression probes again 322 18 / 0, 329 14 / 0, 332 16 / 0, 333 20 / 0, 339 20 / 0.
