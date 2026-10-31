@@ -107,7 +107,7 @@ chunk under 16 bytes makes a huge track count". Autonomous run (`/tandem-backlog
   from before, needs an I/O error; the spec's edge case says so. Not changed.
 - **NOTE 3**: closing records not yet written - done at closing.
 
-After the fix: `.uild.cmd` BUILD SUCCEEDED; saltests `29202 checks, 0 failed` (+5);
+After the fix: `build.cmd` BUILD SUCCEEDED; saltests `29202 checks, 0 failed` (+5);
 probe `probe/result_after_review1.txt` PASS 14, FAIL 0 (N-INSIDE opened with its two tracks, 74 MB,
 0.6 s); registry restored, identical. Mutant (the cap removed, `entries <= 0xFFFFFFFF`): saltests 3
 failed (101 entries, the 96 MiB chunk, 0xFFFFFFFF); restored, rebuilt, 29,202 / 0; encoding guard 0.
