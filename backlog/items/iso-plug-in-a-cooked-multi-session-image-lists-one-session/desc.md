@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: a cooked multi-session image lists one session, then Unpack deletes it
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:353
 who: agent
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 64e207ca
 effort: S
-feature: -
+feature: 354
 related: [iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables]
 depends-on: []
 reason: -
@@ -57,3 +57,5 @@ and is deleted as today.
 - 2026-10-31 — created (source review:353)
 - 2026-10-31 — auto-triage: severity 5 -> 7: a user can lose data in a narrow scenario (a multi-session cooked image unpacked whole with Delete archive after unpacking loses the later session), band 7-8, as the raw-image item of 353
 - 2026-10-31 — moved to Next position 1
+- 2026-10-31 — verified at 64e207ca: reproduced at 64e207ca: iso354_probe R-TWOISO / R-TWOIMG (s1+s2 cooked, joined) - a.txt extracted, image deleted, b.txt lost
+- 2026-10-31 — run started, feature 354
