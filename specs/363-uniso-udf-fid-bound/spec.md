@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item iso-plug-in-a-udf-file-identifier-with-a-long-implementation - implement exactly what it describes." From backlog item iso-plug-in-a-udf-file-identifier-with-a-long-implementation.
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: Does the refusal show a message box, or is it silent like feature 362's unreadable folder? → A: the existing box "Invalid UDF Tag ID." - the identifier is refused exactly as the walk refuses an identifier with an invalid tag (autonomous run: item)
+- Q: Does the bound cover only 38 + L_IU + L_FI, or the length padded to 4 bytes? → A: the padded length - it is the step to the next identifier, so the next position never passes the two sectors; no valid identifier exceeds one block (autonomous run: conservative)
+- Q: Where does the rule live? → A: a pure function in the existing header `src/common/salisoudfentry.h` (features 361 / 362's rules of the same UDF reader) with `saltests` checks (autonomous run: rule, stop-rules §2.5)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A damaged file identifier no longer costs the user the image (Priority: P1)
@@ -97,7 +105,8 @@ A valid UDF image lists and unpacks as today; a whole unpack still deletes it wh
 - **FR-004**: Identifiers that fit MUST be read as before (same name, same next position).
 - **FR-005**: No new UI string, no change of the plug-in interface, no change outside the ISO plug-in's UDF
   folder walk and its rule.
-- **FR-006**: The decision MUST be a pure rule in `src/common/` with `saltests` checks (stop-rules §2.5).
+- **FR-006**: The decision MUST be a pure rule in `src/common/salisoudfentry.h` with `saltests` checks (stop-rules
+  §2.5).
 
 ### Key Entities
 
