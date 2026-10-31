@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5291,3 +5291,33 @@ a few early ones are out of sequence).
   352 22 / 0, 351 10 / 0; saltests 29,286 -> 29,325 / 0 (`TestIsoNoCcdRest_353`; the mutant fails 8);
   refute-first review 1: no MUST - its negative control (uniso.spl before the fix) deleted R-NOCCD2 and a
   Mode 2 XA two-session image; SHOULD (a size claiming more than the file) fixed; NOTEs fixed or recorded.
+- 354-uniso-cooked-sessions: a disc image of 2048-byte sectors (a "cooked" `.iso` or `.img`, for example a
+  `dd` copy of a multi-session disc) holding a second session past the first was listed by the ISO
+  plug-in's plain detection as the volume at its sector 16 only, and Unpack with "Delete archive after
+  unpacking" deleted it with the later session's files - now, when `CISOImage::Open`'s plain branch opened
+  the file through `CheckForISO` at the cooked layout (`cookedIso`: no sync at sector 0, 2048 bytes from
+  offset 0) and sector 16 is an ISO 9660 primary descriptor, `SalIsoCookedRestDecision`
+  (`src/common/salisotrack.h`) keeps the listing for a rest of at most 16 whole sectors past the volume
+  (353's `SAL_ISO_LATER_VOLUME_SECTOR`), marks `ListingLeftOut` incomplete when the size cannot be read,
+  the file ends within the volume or the rest is longer than 512 sectors (`SAL_ISO_ZERO_REST_SECTORS`,
+  1 MiB), and otherwise has the rest read (64 KiB pieces) and marked unless it is zero bytes only
+  (`SalIsoBytesAllZero`) - a whole unpack fails, the image is kept. No UI string, no window. Traps: the
+  item's rule as written (more than 16 sectors marks) would have kept every xorriso-native image (measured:
+  168 zero sectors outside the volume) - the item's *Notes* asked for that measurement first, so a rest of
+  zero bytes only is not marked; `mkisofs`-style tools count their padding inside the volume (rest 0); no
+  real `.iso` on the machine; a Python rewrite of a CRLF header nearly wrote it LF (stopped before writing,
+  edited with the editor instead). Limits: images with an appended partition (Ubuntu ISOs since 20.10, by
+  the xorriso measurement) and images whose listing is another file system with data past the ISO volume
+  are now kept without a message; a UDF-only cooked image is unchanged (Inbox
+  `iso-plug-in-a-udf-only-cooked-image-with-more-past-its`); a raw multi-session image not named `.img`
+  is still deleted (review 1, Inbox `iso-plug-in-a-raw-multi-session-image-not-named-img-lists`); the
+  sessions are still not read; crafted images only (person step
+  `check-feature-354-with-real-cooked-disc-images-multi-session`). From backlog item
+  `iso-plug-in-a-cooked-multi-session-image-lists-one-session`. Probe `iso354_probe` (334's seeds,
+  `img354.py`, `mkxorriso354.sh`) on main 20 / 8 (R-TWOISO, R-TWOIMG and six other keep rows deleted) ->
+  28 / 0; mutants: never marking 20 / 8, rest never zero 24 / 4 (the four zero-padding rows); regressions
+  353 16 / 0, 352 22 / 0, 334 23 / 1 (S-RAW, as since 335), 328 20 / 0, 329 14 / 0, 330 30 / 0, 332 16 / 0,
+  333 20 / 0, 338 24 / 0, 339 20 / 0, 349 10 / 0; saltests 29,325 -> 29,363 / 0 (`TestIsoCookedRest_354`;
+  the never-marking mutant fails 19); refute-first review 1: no MUST - its negative control (uniso.spl of
+  HEAD~1) deleted R-TWOISO / R-REST17 / R-XESP, its own image with an 11,400-sector gap between sessions
+  kept; SHOULD (raw images not named `.img`) -> Inbox; NOTEs recorded.

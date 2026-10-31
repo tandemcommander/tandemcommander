@@ -11,7 +11,7 @@ updated: 2026-10-31
 verified: -
 effort: M
 feature: -
-related: [iso-plug-in-a-cooked-multi-session-image-lists-one-session]
+related: []
 depends-on: []
 reason: -
 ---
@@ -55,3 +55,4 @@ and after.
 ## Log
 
 - 2026-10-31 — created (source leftover:354)
+- 2026-10-31 — related item iso-plug-in-a-cooked-multi-session-image-lists-one-session done in feature 354

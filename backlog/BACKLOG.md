@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a cooked multi-session image lists one session, then Unpack deletes it](items/iso-plug-in-a-cooked-multi-session-image-lists-one-session/desc.md) | bug | 7 | archives | 354 |
 
 ## Next
 
@@ -275,6 +274,8 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 354 with real cooked disc images (multi-session dd copy, Linux ISOs)](items/check-feature-354-with-real-cooked-disc-images-multi-session/desc.md) | person-step | 4 | archives | leftover:354 | 2026-10-31 |
+| [ISO plug-in: a raw multi-session image not named .img lists one session, then Unpack deletes it](items/iso-plug-in-a-raw-multi-session-image-not-named-img-lists/desc.md) | bug | 5 | archives | review:354 | 2026-10-31 |
 | [ISO plug-in: a UDF-only cooked image with more past its volume is still deleted by Unpack](items/iso-plug-in-a-udf-only-cooked-image-with-more-past-its/desc.md) | bug | 5 | archives | leftover:354 | 2026-10-31 |
 
 ## Parked

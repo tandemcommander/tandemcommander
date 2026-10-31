@@ -80,3 +80,30 @@ cap counts bytes; a partial sector past 512 whole ones marks - fails closed).
   xorriso measurement; no real image tried) are now kept after a whole unpack with "Delete archive after
   unpacking" - their partition is not listed. No new message (as 334 / 353).
 - The sessions themselves are still not read (only the volume at sector 16 is listed).
+- Review 1 N2: also kept now when data lies past the ISO 9660 volume of an image whose listing is another
+  file system (Xbox, HFS hybrid, a UDF bridge larger than the ISO volume); syslinux `isohybrid -u` images
+  (a backup GPT at the end of the file) not measured. A raw multi-session image not named `.img` is still
+  deleted (review 1 S1, Inbox `iso-plug-in-a-raw-multi-session-image-not-named-img-lists`).
+
+## Review
+
+- Review 1 (independent refute-first agent, general-purpose): **no MUST**. Re-ran saltests (29,363 / 0),
+  the encoding guard (0), the probe on the main build (28 / 0); negative control: `uniso.spl` built from
+  HEAD~1 in a worktree with its own build folder, copied into a copy of the build tree - R-TWOISO, R-REST17,
+  R-XESP FAIL (deleted, b.txt lost), C-PLAIN / C-ZERO168 PASS. An extra seed of the reviewer's own (s1, an
+  11,400-sector zero gap as between sessions of a real disc, s2) is kept. Boundaries, overflow and the
+  fail-closed paths checked by reading; callers of the mark: `ListArchive` (`uniso.cpp`) and
+  `UnpackWholeArchive` only; ISZ / DMG give the uncompressed size, no false mark.
+  - SHOULD S1: a raw (2352-byte) multi-session image not named `.img` (`.bin` without `.cue`, `.mdf`, a raw
+    `.iso`) is still deleted - 353 needs `CcdMissing` (`.img` only), 354 needs `!rawStart`. Outside the
+    item (cooked images), not a regression -> Inbox `iso-plug-in-a-raw-multi-session-image-not-named-img-lists`
+    (review:354).
+  - NOTE N1: a kept `.iso` gets no window at all; the most visible case is an image with an appended
+    partition (Ubuntu since 20.10, by the xorriso measurement) -> said in the changelog and history entry.
+  - NOTE N2: also kept now (no data lost): images whose listing is not the ISO 9660 volume (Xbox, HFS
+    hybrids, a UDF bridge larger than the ISO volume) when data lies past the ISO volume; not measured:
+    syslinux `isohybrid -u` images (a backup GPT at the end of the file) -> recorded under *Limits*.
+  - NOTE N3: `mark = buf == NULL` cannot trigger (MSVC's `new` throws) - kept, the plug-in's own pattern
+    (`DetectTrackFS`); harmless.
+  - NOTE N4: the FEATURE-HISTORY entry was still owed (closing step).
+- `git status --short` after the review: empty.
