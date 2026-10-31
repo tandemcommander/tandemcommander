@@ -26,6 +26,9 @@
 // track table: a count above the tracks left read past it.
 // Feature 352: a CloneCD .ccd's rows, entry session numbers and session layout are checked before
 // the reader indexes its tables with them.
+// Feature 353: a CloneCD .img opened without its .ccd is listed by the plain detection (the volume at
+// its sector 16 - the first session); a raw image that holds room for a later volume past that one
+// leaves the listing incomplete.
 //
 //*****************************************************************************
 
@@ -531,4 +534,52 @@ inline int SalIsoSessionTracks(int first, unsigned int declared, int trackCount,
     long long left = (first >= 0 && first < trackCount) ? (long long)trackCount - first : 0;
     fits = (long long)declared <= left;
     return (int)(fits ? (long long)declared : left);
+}
+
+// Feature 353: a later session's volume descriptors start at its own sector 16, so a file holding no more
+// than this many whole sectors past the listed volume cannot hold another volume.
+const long long SAL_ISO_LATER_VOLUME_SECTOR = 16;
+// the bytes of a primary volume descriptor SalIsoPvdVolumeSectors needs
+const long long SAL_ISO_PVD_BYTES = 132;
+
+// Feature 353: the size in sectors of the volume a primary volume descriptor describes - 'desc' holds the
+// first 'len' bytes of the descriptor (the user data of the volume's sector 16). True only for a valid
+// primary volume descriptor (type 1, "CD001", version 1) whose two copies of the volume space size (bytes
+// 80..83 little-endian, 84..87 big-endian) agree and whose logical block size (128..129 little-endian,
+// 130..131 big-endian) is 2048 - one block a CD sector; 'sectors' is left untouched otherwise.
+inline bool SalIsoPvdVolumeSectors(const unsigned char* desc, long long len, unsigned long long& sectors)
+{
+    if (desc == nullptr || len < SAL_ISO_PVD_BYTES)
+        return false;
+    if (desc[0] != 1 || desc[1] != 'C' || desc[2] != 'D' || desc[3] != '0' || desc[4] != '0' || desc[5] != '1' ||
+        desc[6] != 1)
+        return false;
+    unsigned long le = (unsigned long)desc[80] | ((unsigned long)desc[81] << 8) | ((unsigned long)desc[82] << 16) |
+                       ((unsigned long)desc[83] << 24);
+    unsigned long be = (unsigned long)desc[87] | ((unsigned long)desc[86] << 8) | ((unsigned long)desc[85] << 16) |
+                       ((unsigned long)desc[84] << 24);
+    unsigned int blockLe = (unsigned int)desc[128] | ((unsigned int)desc[129] << 8);
+    unsigned int blockBe = (unsigned int)desc[131] | ((unsigned int)desc[130] << 8);
+    if (le != be || blockLe != 2048 || blockBe != 2048)
+        return false;
+    sectors = le;
+    return true;
+}
+
+// Feature 353: does an .img opened without its .ccd leave the listing incomplete? 'raw' = the .ccd could
+// not be opened and the file starts with the CD sync pattern (a raw dump, as CloneCD writes it; an image of
+// 2048-byte sectors is a plain disk image - never marked). The plain detection lists the volume at sector
+// 16 only (a multi-session dump's first session); a later session lies past it. Marked when the volume's
+// size is not known ('volumeKnown' false - fails closed), when the stored sector size is not positive, or
+// when the file holds more than SAL_ISO_LATER_VOLUME_SECTOR whole sectors (of 'sectorRawSize' bytes, from
+// 'dataOffset') past the volume's 'volumeSectors'. A file that ends within the volume is not marked here.
+inline bool SalIsoNoCcdRestMarks(bool raw, bool volumeKnown, unsigned long long volumeSectors, long long fileSize,
+                                 long long dataOffset, long long sectorRawSize)
+{
+    if (!raw)
+        return false;
+    if (!volumeKnown || sectorRawSize <= 0)
+        return true;
+    long long whole = fileSize > dataOffset && dataOffset >= 0 ? (fileSize - dataOffset) / sectorRawSize : 0;
+    return (unsigned long long)whole > volumeSectors + (unsigned long long)SAL_ISO_LATER_VOLUME_SECTOR;
 }

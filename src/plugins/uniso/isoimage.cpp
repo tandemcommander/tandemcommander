@@ -179,6 +179,7 @@ CISOImage::CISOImage() : Session(10, 5),
 
     // GUI
     DisplayMissingCCDWarning = TRUE;
+    CcdMissing = FALSE;
 
     // default
     SectorHeaderSize = 0;
@@ -730,6 +731,7 @@ BOOL CISOImage::ReadSessionInfo(BOOL quiet /* = FALSE*/)
         return FALSE;
 
     BOOL ret = FALSE;
+    CcdMissing = FALSE; // feature 353: set by ReadSessionCCD
 
     char* fn = SalamanderGeneral->DupStr(FileName);
     if (fn != NULL)
@@ -1022,6 +1024,9 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
             DataOffset = 0x0;
 
             DetectSectorType();
+            // feature 353: sector 0 carries the CD sync pattern - a raw dump (as CloneCD writes it), before
+            // a check below picks another layout
+            BOOL rawStart = SectorType != stISO;
             SetSectorFormat(SectorType);
 
             if (CheckForISO(quiet))
@@ -1087,6 +1092,27 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                     track->FSType = fsData;
                 if (ret == ERR_TERMINATE)
                     throw ERR_TERMINATE;
+
+                // feature 353: a CloneCD .img whose .ccd could not be opened lists only the volume at its
+                // sector 16 - a multi-session dump's first session; when the raw file holds room for a
+                // later volume past that one (or the volume's size cannot be read), the listing is marked
+                // incomplete, so a whole unpack fails and "Delete archive after unpacking" keeps the image
+                // (the "Missing .CCD file" box already says the image could be incomplete)
+                if (CcdMissing && rawStart)
+                {
+                    unsigned char desc[SAL_ISO_PVD_BYTES];
+                    DWORD got = ReadDataByPos(GetSectorOffset(16), (DWORD)sizeof(desc), desc);
+                    unsigned long long volumeSectors = 0;
+                    BOOL known = SalIsoPvdVolumeSectors(desc, got, volumeSectors);
+                    if (SalIsoNoCcdRestMarks(true, known != FALSE, volumeSectors, track->End, DataOffset,
+                                             SectorRawSize))
+                    {
+                        TRACE_I("CISOImage::Open(): .ccd missing, a raw image of " << track->End
+                                                                                    << " bytes past a volume of "
+                                                                                    << volumeSectors << " sectors");
+                        ListingLeftOut.SetIncomplete();
+                    }
+                }
             }
             else
             {

@@ -107,7 +107,7 @@
 #include "salsusp.h"           // feature 326
 #include "salisonamefit.h"     // feature 328
 #include "salnrgcdtext.h"      // feature 331
-#include "salisotrack.h"       // features 334, 335, 351, 352
+#include "salisotrack.h"       // features 334, 335, 351, 352, 353
 #include "salisounpack.h"      // feature 338
 #include "salrenamekey.h"      // feature 346
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
@@ -20178,6 +20178,95 @@ static void TestIsoCcdBounds_352()
     CHECK(!SalIsoCcdLayoutTrusted(0, 0));
 }
 
+// Feature 353: a CloneCD .img opened without its .ccd - the volume the plain detection lists, and whether the
+// rest of a raw image leaves room for a later volume (src/common/salisotrack.h)
+static void TestIsoNoCcdRest_353()
+{
+    // a primary volume descriptor of 176 sectors, logical block size 2048 (as genisoimage writes it)
+    unsigned char pvd[2048] = {};
+    auto setPvd = [&](unsigned long size, unsigned int block) {
+        memset(pvd, 0, sizeof(pvd));
+        pvd[0] = 1;
+        memcpy(pvd + 1, "CD001", 5);
+        pvd[6] = 1;
+        for (int i = 0; i < 4; i++)
+        {
+            pvd[80 + i] = (unsigned char)(size >> (8 * i));
+            pvd[87 - i] = (unsigned char)(size >> (8 * i));
+        }
+        pvd[128] = (unsigned char)block;
+        pvd[129] = (unsigned char)(block >> 8);
+        pvd[131] = (unsigned char)block;
+        pvd[130] = (unsigned char)(block >> 8);
+    };
+    unsigned long long n = 777;
+    setPvd(176, 2048);
+    CHECK(SalIsoPvdVolumeSectors(pvd, 2048, n) && n == 176);
+    n = 777;
+    CHECK(SalIsoPvdVolumeSectors(pvd, SAL_ISO_PVD_BYTES, n) && n == 176); // exactly the bytes needed
+    n = 777;
+    CHECK(!SalIsoPvdVolumeSectors(pvd, SAL_ISO_PVD_BYTES - 1, n) && n == 777); // a short read
+    CHECK(!SalIsoPvdVolumeSectors(nullptr, 2048, n) && n == 777);
+    setPvd(0xFFFFFFFFul, 2048);
+    CHECK(SalIsoPvdVolumeSectors(pvd, 2048, n) && n == 0xFFFFFFFFull); // the whole 32-bit range
+    n = 777;
+    setPvd(176, 2048);
+    pvd[0] = 2; // a supplementary descriptor (Joliet) at sector 16
+    CHECK(!SalIsoPvdVolumeSectors(pvd, 2048, n) && n == 777);
+    setPvd(176, 2048);
+    pvd[0] = 0xFF; // the set terminator
+    CHECK(!SalIsoPvdVolumeSectors(pvd, 2048, n));
+    setPvd(176, 2048);
+    memcpy(pvd + 1, "BEA01", 5); // UDF only
+    CHECK(!SalIsoPvdVolumeSectors(pvd, 2048, n));
+    setPvd(176, 2048);
+    pvd[6] = 2; // another descriptor version
+    CHECK(!SalIsoPvdVolumeSectors(pvd, 2048, n));
+    setPvd(176, 2048);
+    pvd[84] = 1; // the big-endian copy differs
+    CHECK(!SalIsoPvdVolumeSectors(pvd, 2048, n) && n == 777);
+    setPvd(176, 512); // a logical block of 512 bytes: the size is not in sectors
+    CHECK(!SalIsoPvdVolumeSectors(pvd, 2048, n));
+    setPvd(176, 2048);
+    pvd[130] = 0; // the block size copies differ
+    CHECK(!SalIsoPvdVolumeSectors(pvd, 2048, n) && n == 777);
+
+    const long long raw = 2352;
+    // not raw (a cooked .img, or a .ccd that opened): never marked, whatever the size
+    CHECK(!SalIsoNoCcdRestMarks(false, true, 176, 1000 * raw, 0, raw));
+    CHECK(!SalIsoNoCcdRestMarks(false, false, 0, 1000 * raw, 0, raw));
+    // the volume size unknown or no sector size: fails closed
+    CHECK(SalIsoNoCcdRestMarks(true, false, 176, 176 * raw, 0, raw));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 176 * raw, 0, 0));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 176 * raw, 0, -2352));
+    // one session (probe C-NOCCD), a track-at-once run-out (C-REST2), the most without room (C-REST16)
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 176 * raw, 0, raw));
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 178 * raw, 0, raw));
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 192 * raw, 0, raw));
+    // room for a later volume's sector 16 (R-REST17), two sessions (R-NOCCD2)
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 193 * raw, 0, raw));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 352 * raw, 0, raw));
+    // only whole sectors count: 16 sectors and a part of the 17th - no room
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 193 * raw - 1, 0, raw));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 193 * raw + 1, 0, raw));
+    // a file that ends within the volume (truncated): not marked here
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 100 * raw, 0, raw));
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 0, 0, raw));
+    // the layout's data offset is not part of the sectors
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 0x4B000 + 192 * raw, 0x4B000, raw));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 0x4B000 + 193 * raw, 0x4B000, raw));
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 100, 0x4B000, raw)); // the file ends before the offset
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 192 * raw, -1, raw)); // a negative offset counts nothing
+    // other stored sector sizes (a raw image opened by another plain check)
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 192 * 2336LL, 0, 2336));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 193 * 2336LL, 0, 2336));
+    // the largest volume (a 32-bit size) and the largest file: no overflow
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 0xFFFFFFFFull, (0xFFFFFFFFll + 16) * raw, 0, raw));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 0xFFFFFFFFull, (0xFFFFFFFFll + 17) * raw, 0, raw));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 0xFFFFFFFFull, 0x7FFFFFFFFFFFFFFFll, 0, raw));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 0, 0x7FFFFFFFFFFFFFFFll, 0, raw));
+}
+
 // feature 335: a data track in which no file system is found marks the listing unless its sector 16 is
 // a Mode 2 Form 2 sector (a Video CD's MPEG stream) - the stored sector's sync, mode byte and both
 // subheader copies decide; anything else fails closed
@@ -22302,6 +22391,7 @@ int main(int argc, char** argv)
     TestIsoTrackMarks334();
     TestIsoCcdTrackKind_351();
     TestIsoCcdBounds_352();
+    TestIsoNoCcdRest_353();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

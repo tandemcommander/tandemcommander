@@ -108,11 +108,14 @@ struct CCD
     // feature 352: the .ccd exists and was refused (IDS_CCD_BAD_FORMAT) - the image is then detected
     // without it and its listing marked incomplete; a missing .ccd is not refused
     BOOL Refused;
+    // feature 353: the .ccd could not be opened (missing, or not readable) - CISOImage::CcdMissing
+    BOOL Missing;
 
     CCD() : TrackArray(10, 5, dtDelete), EntryArray(100, 10, dtDelete), SessionArray(5, 2, dtDelete)
     {
         DisplayMissingCCDWarning = TRUE;
         Refused = FALSE;
+        Missing = FALSE;
     }
 };
 
@@ -314,6 +317,7 @@ processCCDFile(CISOImage* pISOImage, CFile& File, const char* fileName, CCD* ccd
     free(wFileName);
     if (f == NULL)
     {
+        ccd->Missing = TRUE; // feature 353: the detection without it may list the first session only
         if (ccd->DisplayMissingCCDWarning)
         {
             if (!pISOImage->CheckForBootSectorOrMBR())
@@ -622,6 +626,8 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
     // "Delete archive after unpacking" keeps the image (the box already says it could be incomplete)
     if (ccd->Refused)
         ListingLeftOut.SetIncomplete();
+    // feature 353: a missing .ccd is decided by Open, once it knows what the detection without it lists
+    CcdMissing = ccd->Missing;
 
     DisplayMissingCCDWarning = ccd->DisplayMissingCCDWarning;
     delete ccd;

@@ -121,6 +121,10 @@ public:
     CSalListingLeftOut ListingLeftOut;
 
 protected:
+    // feature 353: an .img whose .ccd could not be opened (missing, or not readable) - set by
+    // ReadSessionCCD, read by Open's detection without a track table (salisotrack.h)
+    BOOL CcdMissing;
+
     enum ESectorType
     {
         stISO,
