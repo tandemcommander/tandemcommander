@@ -45,7 +45,7 @@ chunk under 16 bytes makes a huge track count". Autonomous run (`/tandem-backlog
   consumed exactly as before; a short or odd-sized chunk no longer shifts the next header.
 - A short read of the header or an entry: no track from it, the reader stops (returns FALSE as
   before).
-- No 99-track cap (the item asks only for the chunk / image bounds) - a limit, see the closing report.
+- No 99-track cap at first (the item names only the chunk / image bounds) - revised by review 1: a chunk of more than 99 entries is skipped (see *Review*).
 
 ## Implementation
 
