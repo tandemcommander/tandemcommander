@@ -33,6 +33,9 @@ Kinds:
          99-entry cap refused it)
   idx20  as idx2, 20 audio tracks with index points 1..10 - 222 records, 110 entries; opens with its
          20 tracks
+  many   review 3: 1,270 CUEX chunks of the largest size a disc's CUEX can have (79,216 zero bytes,
+         96 MiB in all), then ok's chunks - each chunk fits, but together they built a track per 16
+         bytes (1563 MB, 178 s); now the first chunk's 4,950 tracks and no more
 """
 import struct
 import sys
@@ -85,7 +88,7 @@ def real_layout(dst, ntracks, nidx):
 
 
 def main(argv):
-    if len(argv) != 2 or argv[0] not in ("ok", "short", "past", "odd", "zero", "shortnz", "inside", "idx2", "idx20"):
+    if len(argv) != 2 or argv[0] not in ("ok", "short", "past", "odd", "zero", "shortnz", "inside", "idx2", "idx20", "many"):
         print(__doc__)
         return 2
     kind, dst = argv
@@ -120,6 +123,9 @@ def main(argv):
         chunks = chunk(b"CUEX", b"ABCDEFGH") + good
     elif kind == "inside":
         chunks = chunk(b"CUEX", bytes(16 + PAD)) + good
+    elif kind == "many":
+        one = chunk(b"CUEX", bytes(8 * (2 + 99 * 100)))
+        chunks = one * (PAD // len(one)) + good
     else:
         chunks = good
     img = data + chunks + b"NER5" + struct.pack(">Q", len(data))

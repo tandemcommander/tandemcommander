@@ -272,6 +272,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: an NRG ETNF chunk claiming a huge size allocates it whole](items/iso-plug-in-an-nrg-etnf-chunk-claiming-a-huge-size/desc.md) | bug | 4 | archives | review:350 | 2026-10-31 |
 | [ISO plug-in: NRG CUEX index records are paired into wrong tracks](items/iso-plug-in-nrg-cuex-index-records-are-paired-into-wrong/desc.md) | bug | 4 | archives | measure:350 | 2026-10-31 |
 
 ## Parked

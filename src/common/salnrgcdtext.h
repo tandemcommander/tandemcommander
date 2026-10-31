@@ -41,7 +41,9 @@
 //     underflowed for a chunk under 16 bytes to 268 million entries, one track
 //     built from every 16 bytes up to the end of the file) and is read only
 //     when it lies within the image and is no larger than a disc's CUEX can be
-//     (SalNrgCuexSizePlausible: 2 + 99 x 100 records).
+//     (SalNrgCuexSizePlausible: 2 + 99 x 100 records), and only while the
+//     image's CUEX chunks together stay within what a disc can give
+//     (SalNrgCuexTotalPlausible, review 3: many chunks of the largest size).
 //
 //*****************************************************************************
 
@@ -129,6 +131,21 @@ inline unsigned long long SalNrgCuexEntryCount(unsigned long long size)
 inline bool SalNrgCuexSizePlausible(unsigned long long size)
 {
     return size <= (unsigned long long)SAL_NRG_CUEX_MAX_RECORDS * SAL_NRG_CUEX_RECORD;
+}
+
+// the most tracks the reader can make from all CUEX chunks of a real image: one chunk a session,
+// together at most 99 tracks of index 0..99 plus a lead-in and a lead-out a session - (2 x sessions
+// + 9,900) records, of which the reader takes (records / 2 - 1) a chunk: 4,950 in all; one more a
+// session (99) as a margin
+#define SAL_NRG_CUEX_MAX_IMAGE_ENTRIES (4950 + 99)
+
+// feature 350 (review 3): true when a CUEX chunk of 'entries' entries may add its tracks to the
+// 'tracks' the image already has - every chunk within SalNrgCuexSizePlausible, but 1,270 chunks of
+// the largest size (96 MiB) still built a track per 16 bytes of them (1563 MB, 178 s); a chunk past
+// the bound is skipped as damaged
+inline bool SalNrgCuexTotalPlausible(unsigned long long tracks, unsigned long long entries)
+{
+    return tracks <= SAL_NRG_CUEX_MAX_IMAGE_ENTRIES && entries <= SAL_NRG_CUEX_MAX_IMAGE_ENTRIES - tracks;
 }
 
 // true when the DAOX track number 'number' (1-based) names one of the 'trackCount' tracks

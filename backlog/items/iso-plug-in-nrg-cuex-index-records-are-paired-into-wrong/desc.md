@@ -55,7 +55,12 @@ index points list as before (feature 329's, 331's and 350's probe images).
   the pairing on purpose (its scope was the size bounds); a new reader must keep those bounds.
 - Related: `iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an` (a track the DAOX chunk does not
   fill keeps uninitialised fields - the extra tracks here are such tracks).
+- Review 3 of feature 350, NOTE 2: a real CUEX chunk of an odd number of records (8 mod 16 bytes,
+  e.g. one track of index 0, 1, 2 = 40 bytes) did not open on main (the next chunk header was read
+  8 bytes early); since 350 it opens through this pairing, so its extent offsets may be wrong - a class
+  of images this item now also covers (read-only, audio extraction is refused).
 
 ## Log
 
 - 2026-10-31 — created (source measure:350)
+- 2026-10-31 — extended: review 3 NOTE 2 of feature 350 (odd record counts now open)

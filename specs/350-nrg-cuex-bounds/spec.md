@@ -58,6 +58,12 @@ chunk).
   100 entries, 20 tracks of index 1..10 are 110) - main opens them. The bound now refuses only what
   no disc can be (autonomous run: item - *Problem*, "a damaged image costs memory and time";
   conservative - keeps every real image as main reads it, refuses rather than guesses)
+- Q: Should the bound also cover all CUEX chunks of an image together? → A: Yes (review 3: 1,270
+  chunks of the largest size, 96 MiB, still built a track per 16 bytes - 1563 MB, 178 s): a chunk is
+  skipped when its tracks would take the image past 4,950 + 99 tracks - every session's CUEX of a
+  real disc together gives at most 4,950 (one chunk a session, 99 tracks of index 0..99 in all, a
+  lead-in and a lead-out a session), 99 more as a margin (autonomous run: item - *Problem*;
+  conservative - refuses only what no disc can be)
 - Q: What happens when a read of the header or an entry returns fewer bytes than asked? → A: no track
   is made from it, the reader stops taking entries and reports failure as it did before; the chunk list
   reader goes on as it did before (autonomous run: item - *Expected*; conservative)
@@ -128,6 +134,8 @@ A user opens a well-formed NRG image; it lists exactly the tracks it listed befo
   probe row N-INSIDE).
 - A real disc with index points (more than 99 entries, e.g. 2 tracks of index 1..99): read as on
   main (probe rows N-IDX2, N-IDX20).
+- Many CUEX chunks each within the size bound: tracks stop at 5,049 for the image, later chunks are
+  skipped (review 3; probe row N-MANY).
 
 ## Requirements *(mandatory)*
 
@@ -136,7 +144,8 @@ A user opens a well-formed NRG image; it lists exactly the tracks it listed befo
 - **FR-001**: The CUEX reader MUST take as entries only the whole 16-byte entries that follow the
   16-byte header within the chunk's own size; a chunk under 32 bytes holds none.
 - **FR-002**: The CUEX reader MUST read a chunk only when the chunk lies within the image file and
-  is no larger than any disc's CUEX can be (2 + 99 x 100 records of 8 bytes); otherwise it MUST skip
+  is no larger than any disc's CUEX can be (2 + 99 x 100 records of 8 bytes), and only while the
+  image's tracks stay within what all CUEX chunks of a disc can give (5,049); otherwise it MUST skip
   the chunk like an unknown one and make no track from it.
 - **FR-003**: The CUEX reader MUST check that every read returned the whole header or entry and MUST
   never make a track from a short read.

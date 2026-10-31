@@ -53,6 +53,12 @@ defect (CLAUDE.md *Working method*) - included.
 - [X] T016 [US3] Add the real-layout kinds idx2, idx20 to specs/350-nrg-cuex-bounds/probe/img350.py and rows N-IDX2, N-IDX20 to specs/350-nrg-cuex-bounds/probe/nrg350_probe.ps1; run → specs/350-nrg-cuex-bounds/probe/result_after_review2.txt
 - [X] T017 Document the 8-byte record layout (src/common/salnrgcdtext.h, spec.md, research.md R5, data-model.md); a 99-entry mutant fails saltests; record in specs/350-nrg-cuex-bounds/fix-log.md
 
+## Phase 9: Review 3 (SHOULD 1, NOTES 1-2)
+
+- [X] T018 [US1] Add `SAL_NRG_CUEX_MAX_IMAGE_ENTRIES` / `SalNrgCuexTotalPlausible` to src/common/salnrgcdtext.h and skip a CUEX chunk past it in src/plugins/uniso/nrg.cpp `readCUEX`; 8 checks in `TestNrgCuex350` (src/saltests/saltests.cpp)
+- [X] T019 [US1] Kind `many` in specs/350-nrg-cuex-bounds/probe/img350.py, row N-MANY in specs/350-nrg-cuex-bounds/probe/nrg350_probe.ps1; run → specs/350-nrg-cuex-bounds/probe/result_after_review3.txt; a loose-total mutant fails saltests
+- [X] T020 Inbox item `iso-plug-in-an-nrg-etnf-chunk-claiming-a-huge-size` (review 3 NOTE 1); NOTE 2 added to `iso-plug-in-nrg-cuex-index-records-are-paired-into-wrong` (backlog/items/)
+
 ## Dependencies
 
 T001 → T002 → T003 → T004 → T005 → T006 → T007 → T008/T009 → T010 → T011. All code tasks touch

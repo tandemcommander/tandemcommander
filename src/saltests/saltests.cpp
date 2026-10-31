@@ -21858,6 +21858,17 @@ static void TestNrgCuex350()
     CHECK(!SalNrgCuexSizePlausible(8 * (2 + 99 * 100) + 1));
     CHECK(!SalNrgCuexSizePlausible(16 + 96ull * 1024 * 1024));
     CHECK(!SalNrgCuexSizePlausible(0xFFFFFFFFull));
+    // (review 3) all CUEX chunks of an image together: a disc's most (one session of 99 tracks of
+    // index 0..99, 4,950 entries) and 99 sessions of one track of index 0..1 are taken; a second chunk
+    // of the largest size, or a chunk past the bound, is not
+    CHECK(SalNrgCuexTotalPlausible(0, SalNrgCuexEntryCount(8 * (2 + 99 * 100))));
+    CHECK(SalNrgCuexTotalPlausible(98, SalNrgCuexEntryCount(8 * (2 + 2))));
+    CHECK(SalNrgCuexTotalPlausible(4950, 99));
+    CHECK(!SalNrgCuexTotalPlausible(4950, 100));
+    CHECK(!SalNrgCuexTotalPlausible(4950, SalNrgCuexEntryCount(8 * (2 + 99 * 100))));
+    CHECK(!SalNrgCuexTotalPlausible(5050, 0));
+    CHECK(!SalNrgCuexTotalPlausible(0, 0xFFFFFFFFFFFFFFFFull)); // no wrap
+    CHECK(SalNrgCuexTotalPlausible(5049, 0));
 }
 
 static void TestNrgCdText331()

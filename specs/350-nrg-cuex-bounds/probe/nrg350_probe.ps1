@@ -15,6 +15,7 @@
       inside.nrg a CUEX chunk of 16 + 96 MiB bytes within the image before the good chunks (review 1)
       idx2.nrg   review 2: Nero's real CUEX layout, 2 audio tracks with index points 1..99 (100 entries)
       idx20.nrg  review 2: Nero's real CUEX layout, 20 audio tracks with index points 1..10 (110 entries)
+      many.nrg   review 3: 1,270 CUEX chunks of 79,216 bytes (96 MiB) before the good chunks
     Each row: the program starts with the image in the left panel (-l); the probe waits until the
     main window answers (at most 180 s), takes the time to that point and the process's peak working
     set, the boxes shown at the open and the panel's location; when the image opened, Select All
@@ -33,6 +34,8 @@
                179 s, 6.3 million tracks)
       N-IDX2, N-IDX20  PASS = opened, "Copy 2 files" / "Copy 20 files" (main: the same; review 1's
                99-entry cap: not opened)
+      N-MANY   PASS = no crash, within the bound (whether it opens is not checked: the first chunk's
+               zero tracks take the DAOX entries); before review 3: 1563 MB, 178 s
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does
     not answer (End-Row).
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -119,7 +122,7 @@ try {
     $s = $Root + '\seeds'; NewDir $s
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $made = @()
-    foreach ($k in @('ok', 'short', 'past', 'odd', 'zero', 'shortnz', 'inside', 'idx2', 'idx20')) { $made += (& python -I (Join-Path $Here 'img350.py') $k "$s\$k.nrg" 2>&1 | ForEach-Object { "$_" }) }
+    foreach ($k in @('ok', 'short', 'past', 'odd', 'zero', 'shortnz', 'inside', 'idx2', 'idx20', 'many')) { $made += (& python -I (Join-Path $Here 'img350.py') $k "$s\$k.nrg" 2>&1 | ForEach-Object { "$_" }) }
     $ErrorActionPreference = $old
     Out ('img350: ' + ($made -join '; '))
     Nrg-Row 'N-OK' "$s\ok.nrg" $true $false
@@ -131,6 +134,7 @@ try {
     Nrg-Row 'N-INSIDE' "$s\inside.nrg" $true $true
     Nrg-Row 'N-IDX2' "$s\idx2.nrg" $true $false 2
     Nrg-Row 'N-IDX20' "$s\idx20.nrg" $true $false 20
+    Nrg-Row 'N-MANY' "$s\many.nrg" $false $true
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

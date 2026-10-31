@@ -140,10 +140,36 @@ failed (2 tracks of index 0..99, 20 tracks of index 0..10, the disc maximum); re
 29,206 / 0; encoding guard 0. Review 2's own run of these images on main and on 0d1af51d is the
 probe's negative control for N-IDX2 / N-IDX20.
 
+### Review 3 (independent agent, refute-first) - no MUST
+
+- Re-ran build, saltests 29,206 / 0, encoding 0; checked the bound against libmirage's NRG parser
+  (fetched): CUEX / CUES are 8-byte records, one CUEX chunk a session, BCD track and index - one
+  session holds at most 9,902 records = 79,216 bytes = `SAL_NRG_CUEX_MAX_RECORDS`; DVD / multi-session
+  images have one chunk a session, ISRC / UPC live in DAOX, CD-TEXT in CDTX - the bound refuses no
+  real disc. Its row R-MAX (99 tracks of index 0..99, exactly 79,216 bytes) opened, "Copy 99 files",
+  74 MB, 0.7 s.
+- **SHOULD 1**: the bound was per chunk - 1,270 back-to-back CUEX chunks of 79,216 bytes (96 MiB,
+  its kind `many`) built a track per 16 bytes again: 1563 MB, 178.2 s, probe killed the program (not
+  a regression - main reads them alike). **Taken**: `SalNrgCuexTotalPlausible(tracks, entries)` - a
+  chunk is skipped when the image's tracks would pass `SAL_NRG_CUEX_MAX_IMAGE_ENTRIES` = 4,950 + 99
+  (all sessions' CUEX of a disc give at most 4,950 of the reader's tracks; 99 as a margin). Row
+  N-MANY added.
+- **NOTE 1**: `readETNF` allocates and zeroes the claimed size unchecked (1 GiB claim in a 47 KB
+  image: 1095 MB) - outside this item: Inbox `iso-plug-in-an-nrg-etnf-chunk-claiming-a-huge-size`
+  (review:350).
+- **NOTE 2**: real CUEX chunks of an odd number of records (8 mod 16 bytes) did not open on main and
+  open now, through the pairing - added to Inbox `iso-plug-in-nrg-cuex-index-records-are-paired-into-wrong`.
+
+After the fix: build BUILD SUCCEEDED; saltests `29214 checks, 0 failed` (+8); probe
+`probe/result_after_review3.txt` PASS 20, FAIL 0 (N-MANY 74 MB, 0.7 s; it opens - the good chunks'
+CUEX still fits the bound after the first zero chunk's 4,950 tracks, "Copy 2 files"); registry
+restored, identical. Mutant (`tracks + entries <= SAL_NRG_CUEX_MAX_IMAGE_ENTRIES * 1000`): saltests 3
+failed; restored, rebuilt, 29,214 / 0; encoding guard 0.
+
 ## Limits
 
 - A short read inside a chunk that fits leaves the next header read from inside the chunk (review 1
   NOTE 2; needs an I/O error; unchanged from before).
-- A damaged CUEX chunk within the image, at most 79,216 bytes, still builds up to 4,950 tracks (no
-  measurable cost).
+- Damaged CUEX chunks within the image still build up to 5,049 tracks for the image (no measurable
+  cost: N-MANY 74 MB).
 - The reader's pairing of Nero's 8-byte records is unchanged (review 2 NOTE 1, Inbox).
