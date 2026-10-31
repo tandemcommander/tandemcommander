@@ -1,8 +1,8 @@
 ---
 title: ISO plug-in: a UDF-only cooked image with more past its volume is still deleted by Unpack
 type: bug
-status: new
-severity: 5
+status: open
+severity: 7
 area: archives
 source: leftover:354
 who: agent
@@ -56,3 +56,5 @@ and after.
 
 - 2026-10-31 — created (source leftover:354)
 - 2026-10-31 — related item iso-plug-in-a-cooked-multi-session-image-lists-one-session done in feature 354
+- 2026-10-31 — auto-triage: severity 5 -> 7: a user can lose data in a narrow scenario (a UDF-only cooked image with a later session, unpacked whole with Delete archive after unpacking, is deleted with data the listing does not cover), band 7-8, as the cooked-image item of 354
+- 2026-10-31 — moved to Next position 2

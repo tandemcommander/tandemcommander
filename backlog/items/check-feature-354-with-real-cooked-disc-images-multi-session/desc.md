@@ -1,7 +1,7 @@
 ---
 title: Check feature 354 with real cooked disc images (multi-session dd copy, Linux ISOs)
 type: person-step
-status: new
+status: open
 severity: 4
 area: archives
 source: leftover:354
@@ -58,3 +58,4 @@ with an appended partition, are kept.
 ## Log
 
 - 2026-10-31 — created (source leftover:354)
+- 2026-10-31 — moved to Person steps position 28
