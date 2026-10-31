@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF folder stored in more than one extent is listed cut and the image deleted
 type: bug
-status: new
+status: open
 severity: 6
 area: archives
 source: review:362
@@ -56,3 +56,4 @@ unpack then keeps the image).
 
 - 2026-11-01 — created (source review:362)
 - 2026-11-01 — related item iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed done in feature 362
+- 2026-11-01 — moved to Next position 2
