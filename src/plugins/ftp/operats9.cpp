@@ -2049,7 +2049,13 @@ void CFTPOpenedFile::Set(int myUID, const char* user, const char* host, unsigned
 BOOL CFTPOpenedFile::IsSameFile(const char* user, const char* host, unsigned short port,
                                 const char* path, CFTPServerPathType pathType, const char* name)
 {
-    return strcmp(User, user) == 0 && SalamanderGeneral->StrICmp(Host, host) == 0 &&
+    // feature 347: the host is not compared - two names of one server (localhost / 127.0.0.1, two of
+    // its addresses) are maybe the same server, and the client cannot tell them from two servers
+    // (feature 341: a server answers on several addresses, a proxy hides its address); two uploads
+    // under two names stored one file at once. Cost: a conflicting access to a file of the same
+    // user, port, path and name on another server is refused "in use" until the first one ends.
+    (void)host;
+    return strcmp(User, user) == 0 &&
            Port == port && FTPIsTheSameServerPath(pathType, Path, path) &&
            // feature 277: a case-insensitive server's names by the file system's rule (092; StrICmp folded
            // UTF-8 bytes by the code page: two other names matched, case twins did not)

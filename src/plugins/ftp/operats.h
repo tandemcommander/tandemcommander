@@ -3477,7 +3477,7 @@ protected:
     CFTPFileAccessType AccessType; // why the file is open (locked)
 
     char User[USER_MAX_SIZE];    // user-name
-    char Host[HOST_MAX_SIZE];    // host-address
+    char Host[HOST_MAX_SIZE];    // host-address (kept for diagnostics; not part of the identity, feature 347)
     unsigned short Port;         // port on which the FTP server runs
     char Path[FTP_MAX_PATH];     // path to the opened file (local on the server)
     CFTPServerPathType PathType; // type of the cached path
@@ -3494,7 +3494,8 @@ public:
              CFTPFileAccessType accessType);
 
     // compares this open file with the file specified by the method parameters; returns TRUE if
-    // they are the same file
+    // they may be the same file: the same user, port, path and name under any host name (feature
+    // 347: two names of one server are maybe the same server; 'host' is not compared)
     BOOL IsSameFile(const char* user, const char* host, unsigned short port,
                     const char* path, CFTPServerPathType pathType, const char* name);
 

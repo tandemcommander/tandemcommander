@@ -43,3 +43,44 @@ the measurement). Branch from `main` 794b3207.
 speckit-analyze: CRITICAL 0, HIGH 0. Accepted: C1 MEDIUM (US2 - other access types under two
 names - by reading only: one decision serves every access type, `IsInConflictWith` unchanged),
 C2 LOW (each caller's refusal answer recorded under T007), C3 LOW (FR-005 checked by the diff).
+
+## Change (T003, T004)
+
+- `src/plugins/ftp/operats9.cpp` `CFTPOpenedFile::IsSameFile`: the term
+  `SalamanderGeneral->StrICmp(Host, host) == 0` removed (the parameter stays - no caller changes);
+  comment names 341's rule and the cost.
+- `src/plugins/ftp/operats.h`: `IsSameFile` comment ("may be the same file ... under any host
+  name") and the `Host` field ("kept for diagnostics; not part of the identity").
+
+## Callers (T007)
+
+Every `FTPOpenedFiles.OpenFile` passes the operation's / connection's own user, host, port, as
+before; each keeps its refusal answer:
+- upload `operatsb.cpp` (lock before store, resume / existing-target branch): item failed
+  `ITEMPR_TGTFILEINUSE` ("Target File Is Locked By Another Operation" - seen in the probe);
+  auto-rename loop: a locked candidate name counts as taken, the next name is tried.
+- download / Move source `operats8.cpp` (ffatRead) and Move's delete (ffatDelete):
+  `ITEMPR_SRCFILEINUSE`.
+- delete `operats4.cpp` (ffatDelete): `ITEMPR_SRCFILEINUSE`.
+- panel view `ctrlcon5.cpp` (ffatRead): `IDS_DOWNLOADFILEERROR` + "locked by another operation";
+  Quick Rename (ffatRename on both names): `IDS_QUICKRENAMEFILEERR` + suffix.
+`IsInConflictWith` unchanged: two reads still run together.
+
+## Measurement after (branch, build of the change)
+
+- `.\build.cmd` -> BUILD SUCCEEDED (only the FTP plug-in's pre-existing C4267 warnings);
+  `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- Probe `probe/result_after.txt`: **PASS 6, FAIL 0**:
+  - ALIAS-LOCK PASS: 1 STOR hold.txt, 0 overlapping; upload 2 sent `CWD / PORT / LIST / CWD / QUIT`
+    and its window shows "Target File Is Locked By Another Operation" `/ALIAS-LOCK | hold.txt`;
+    server file 'UP1'.
+  - SAME-LOCK PASS (unchanged: the overwrite question).
+  - OTHER-USER (facts): still 2 STOR, 1 overlapping, 'UP2' - outside the scope ->
+    Inbox `ftp-two-uploads-as-another-user-or-port-of-one-server-can`.
+  - Registry restored, identical hash.
+- Negative control (T009): the same probe on `main` 794b3207 (`probe/result_main.txt`) -
+  ALIAS-LOCK FAIL (2 STOR, 1 overlapping, 'UP2').
+- saltests: not run - no change under `src/common/` or the core.
+- Regressions (T008): 341's `ftp341_probe.ps1` -> `probe/regress_341.txt` PASS 12 / FAIL 0; 345's
+  `ftp345_probe.ps1` -> `probe/regress_345.txt` PASS 16 / FAIL 0; registry restored + identical in
+  both.
