@@ -1,0 +1,10 @@
+iso329_probe (feature 329) regress350
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 11:33; registry key existed True
+
+seeds: audio.nrg,hdeep.iso,udeep.iso,xdeep.iso; img329: xbox: 44 sectors, root at 33 / nrg: 47664 bytes, chunks at 47040, labels SHORT and 253 x L
+A-OPEN     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+A-OPEN     RUN    PASS        opened: True (panel C:\Users\pavel\AppData\Local\Temp\tc329\A-OPEN\audio.nrg); "(206)" naming 02 <253 L>: True; "Error": False; a track listed (copy answers "Audio tracks cannot be extracted"): True; at the open: [#32770 'UnISO'] [Static id=2477] (206) N\u00E1zev nebo p\u0159\u00EDpona souboru je p\u0159\u00EDli\u0161 dlouh\u00E1. 02 LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL | [Button id=1] OK; copy: [#32770 'Copy'] [Static id=209] Copy file "01 SHORT" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'UnISO'] [Static id=2477] Audio tracks cannot be extracted. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 4576C7DA9B95CEBD7C30C12A08385611FC7779F7047555D391B8B3B9A45FBE36 / after 4576C7DA9B95CEBD7C30C12A08385611FC7779F7047555D391B8B3B9A45FBE36
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

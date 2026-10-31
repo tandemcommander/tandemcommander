@@ -21807,6 +21807,46 @@ static size_t NrgCdTextRefLen331(size_t size)
     return n;
 }
 
+// feature 350: the CUEX entries a chunk of 'size' bytes holds, counted entry by entry (a 16-byte
+// header, then every entry whose 16 bytes all lie within the chunk)
+static unsigned long long NrgCuexRefCount350(unsigned long long size)
+{
+    unsigned long long n = 0;
+    for (unsigned long long end = 32; end <= size; end += 16)
+        n++;
+    return n;
+}
+
+static void TestNrgCuex350()
+{
+    // every size 0..300: the reference count, never more than size / 16, whole entries only
+    bool smallOk = true;
+    for (unsigned long long size = 0; size <= 300; size++)
+    {
+        unsigned long long n = SalNrgCuexEntryCount(size);
+        if (n != NrgCuexRefCount350(size) || n * 16 > size || (n > 0 && 16 + n * 16 > size))
+            smallOk = false;
+    }
+    CHECK(smallOk);
+    CHECK(SalNrgCuexEntryCount(0) == 0);
+    CHECK(SalNrgCuexEntryCount(8) == 0);  // the item's case: (8 - 16) / 16 was 268,435,455 in 32 bits
+    CHECK(SalNrgCuexEntryCount(15) == 0);
+    CHECK(SalNrgCuexEntryCount(16) == 0); // the header alone
+    CHECK(SalNrgCuexEntryCount(31) == 0);
+    CHECK(SalNrgCuexEntryCount(32) == 1);
+    CHECK(SalNrgCuexEntryCount(48) == 2); // two tracks: 16 * (2 + 1), as Nero writes it
+    CHECK(SalNrgCuexEntryCount(52) == 2); // 4 bytes past the second entry: not an entry
+    CHECK(SalNrgCuexEntryCount(63) == 2);
+    CHECK(SalNrgCuexEntryCount(0xFFFFFFF0ull) == 0x0FFFFFFEull); // bounded by the size; the reader checks it fits the image
+    CHECK(SalNrgCuexEntryCount(0xFFFFFFFFull) == 0x0FFFFFFEull);
+    // the old 32-bit formula for sizes under 16 - the defect the rule replaces
+    unsigned int s8 = 8;
+    CHECK((s8 - 0x10) / 0x10 == 0x0FFFFFFFu && SalNrgCuexEntryCount(s8) == 0);
+    // a chunk the image cannot hold is never read (331's rule, used by the CUEX reader since 350)
+    CHECK(!SalNrgChunkFits(47040, 0xFFFFFFF0ull, 100710554));
+    CHECK(SalNrgChunkFits(47040, 48, 47040 + 48 + 8 + 12));
+}
+
 static void TestNrgCdText331()
 {
     // a chunk is read only when its bytes lie within the image (64-bit, no wrap)
@@ -22106,6 +22146,7 @@ int main(int argc, char** argv)
     TestIsoLeftOut329();
     TestHfsFolderOrder349();
     TestNrgCdText331();
+    TestNrgCuex350();
     TestIsoTrackMarks334();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();

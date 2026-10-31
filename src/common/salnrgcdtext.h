@@ -30,7 +30,12 @@
 //     (SalNrgDaoTrackInRange, numbers 1..count);
 //   - an audio track's listed name is built on the heap whole, never cut
 //     (SalNrgAudioTrackNameAlloc; it was formatted into char[MAX_PATH]) -
-//     the panel listing's rule then lists it or leaves it out (feature 329).
+//     the panel listing's rule then lists it or leaves it out (feature 329);
+//   - the CUEX chunk (a 16-byte header, then one 16-byte entry a track) gives
+//     only the whole entries its own size holds (SalNrgCuexEntryCount,
+//     feature 350; (Size - 16) / 16 in 32 bits underflowed for a chunk under
+//     16 bytes to 268 million entries, one track built from every 16 bytes up
+//     to the end of the file) and is read only when it lies within the image.
 //
 //*****************************************************************************
 
@@ -91,6 +96,18 @@ inline bool SalNrgCdTextNext(const unsigned char* text, size_t len, size_t& pos,
     strLen = end - pos;
     pos = end < len ? end + 1 : len;
     return true;
+}
+
+#define SAL_NRG_CUEX_HEADER 16 // bytes of the CUEX chunk's header
+#define SAL_NRG_CUEX_ENTRY 16  // bytes of a CUEX entry (one audio track)
+
+// feature 350: the number of whole entries a CUEX chunk of 'size' bytes holds after its header
+// (0 for a chunk under 16 + 16 bytes; never more than size / 16)
+inline unsigned long long SalNrgCuexEntryCount(unsigned long long size)
+{
+    if (size < SAL_NRG_CUEX_HEADER)
+        return 0;
+    return (size - SAL_NRG_CUEX_HEADER) / SAL_NRG_CUEX_ENTRY;
 }
 
 // true when the DAOX track number 'number' (1-based) names one of the 'trackCount' tracks

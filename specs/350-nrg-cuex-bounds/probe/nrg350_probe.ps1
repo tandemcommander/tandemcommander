@@ -13,14 +13,15 @@
     Each row: the program starts with the image in the left panel (-l); the probe waits until the
     main window answers (at most 180 s), takes the time to that point and the process's peak working
     set, the boxes shown at the open and the panel's location; when the image opened, Select All
-    (842) + Copy (727) must answer "Audio tracks cannot be extracted" (a track is listed).
-      N-OK     PASS = opened, a track listed
-      N-SHORT  PASS = opened, a track listed, peak working set at most N-OK's + 150 MB
+    (842) + Copy (727) must ask "Copy 2 files" and answer "Audio tracks cannot be extracted" (the two
+    tracks are listed). A bound row also needs the window answering within 5 s of the start.
+      N-OK     PASS = opened, two tracks listed
+      N-SHORT  PASS = opened, two tracks listed, peak working set at most N-OK's + 150 MB
                (before 350: not opened; ~6 million tracks built from the padding - the peak grows by
                hundreds of MB)
       N-PAST   PASS = no crash, peak working set at most N-OK's + 150 MB (the image does not open as
                NRG: its chunk list ends at the end of the file); before 350: the same growth as N-SHORT
-      N-ODD    PASS = opened, a track listed (before 350: the next chunk header read 4 bytes early -
+      N-ODD    PASS = opened, two tracks listed (before 350: the next chunk header read 4 bytes early -
                not opened)
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does
     not answer (End-Row).
@@ -82,12 +83,12 @@ function Nrg-Row([string]$Case, [string]$Nrg, [bool]$Open, [bool]$Bound) {
             $msgs = Msgs (Serve $id 30 @(1, 6))
         }
         End-Row $Case $id $null $before; $id = 0
-        $listed = ($msgs -match 'Audio tracks cannot be extracted')
+        $listed = ($msgs -match 'Copy 2 files') -and ($msgs -match 'Audio tracks cannot be extracted')
         if ($Case -eq 'N-OK') { $script:OkPeak = $peak }
         $within = $true
-        if ($Bound) { $within = ($script:OkPeak -ge 0) -and ($peak -le $script:OkPeak + 150) }
+        if ($Bound) { $within = ($script:OkPeak -ge 0) -and ($peak -le $script:OkPeak + 150) -and ($secs -le 5) }
         if ($Open) { $ok = $opened -and $listed -and $within } else { $ok = $within }
-        Row $Case 'RUN' (V $ok) ('opened: {0} (want {1}; panel {2}); a track listed: {3}; peak working set {4} MB (N-OK {5} MB, bound {6}: {7}); answering after {8:N1} s; at the open: {9}; copy: {10}' -f $opened, $Open, (Tail $loc 60), $listed, $peak, $script:OkPeak, $Bound, $within, $secs, (Tail $openMsgs 300), (Tail $msgs 200))
+        Row $Case 'RUN' (V $ok) ('opened: {0} (want {1}; panel {2}); two tracks listed: {3}; peak working set {4} MB (N-OK {5} MB, bound {6}: {7}); answering after {8:N1} s; at the open: {9}; copy: {10}' -f $opened, $Open, (Tail $loc 60), $listed, $peak, $script:OkPeak, $Bound, $within, $secs, (Tail $openMsgs 300), (Tail $msgs 200))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before } }

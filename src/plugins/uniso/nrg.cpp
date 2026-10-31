@@ -126,25 +126,45 @@ readCUEX(CFile& file, NRGHeader* header, CISOImage* iso)
 {
     CALL_STACK_MESSAGE3("readCUEX(, %p, %p)", header, iso);
 
-    DWORD read;
-
-    int trackCount = (header->Size - 0x10) / 0x10;
-
-    BYTE cuex_hdr[0x10];
-    if (!file.Read(&cuex_hdr, sizeof(cuex_hdr), &read, NULL, NULL))
-        return FALSE;
-
-    int i;
-    for (i = 0; i < trackCount; i++)
+    // feature 350: the chunk's size comes from the image - (Size - 16) / 16 underflowed for a chunk
+    // under 16 bytes (268 million entries) and the reader built a track from every 16 bytes up to the
+    // end of the file. Now the chunk is read only when it lies within the image (else skipped like an
+    // unknown chunk, as readCDTX), it gives only the whole entries it holds, no track comes from a
+    // short read, and the next chunk header is read right after the chunk
+    DWORD fileSizeHi;
+    DWORD fileSizeLo = file.GetFileSize(&fileSizeHi);
+    __int64 pos = file.Seek(0, FILE_CURRENT);
+    if (fileSizeLo == INVALID_FILE_SIZE || pos < 0 || // (as ReadSessionNRG)
+        !SalNrgChunkFits((unsigned long long)pos, header->Size, ((unsigned long long)fileSizeHi << 32) | fileSizeLo))
     {
-        BYTE data[0x10];
-        if (!file.Read(&data, sizeof(data), &read, NULL, NULL))
+        file.Seek(header->Size, FILE_CURRENT);
+        return FALSE;
+    }
+
+    DWORD read;
+    unsigned long long entries = SalNrgCuexEntryCount(header->Size);
+    if (header->Size >= SAL_NRG_CUEX_HEADER)
+    {
+        BYTE cuex_hdr[SAL_NRG_CUEX_HEADER];
+        if (!file.Read(&cuex_hdr, sizeof(cuex_hdr), &read, NULL, NULL) || read != sizeof(cuex_hdr))
+            return FALSE;
+    }
+
+    unsigned long long i;
+    for (i = 0; i < entries; i++)
+    {
+        BYTE data[SAL_NRG_CUEX_ENTRY];
+        if (!file.Read(&data, sizeof(data), &read, NULL, NULL) || read != sizeof(data))
             return FALSE;
 
         CISOImage::Track* track = new CAudioTrack;
         track->ExtentOffset = getDWord(data + 0x04);
         iso->AddTrack(track);
     } // for
+
+    // the bytes after the last whole entry (a chunk under 16 bytes: all of it) are not entries
+    if (file.Seek(pos + header->Size, FILE_BEGIN) == -1)
+        return FALSE;
 
     return TRUE;
 }
