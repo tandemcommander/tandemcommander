@@ -8,7 +8,7 @@ source: review:361
 who: agent
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 5d74e338
 effort: S
 feature: -
 related: []
@@ -56,3 +56,4 @@ rows on `ud.iso` copies (330's seed) and a control that a real empty folder (gen
 
 - 2026-10-31 — created (source review:361)
 - 2026-10-31 — moved to Next position 1
+- 2026-10-31 — verified at 5d74e338: reproduced at 5d74e338: probe iso362 7 FAIL - folder a/zlast/root L_AD 0 (short and embedded): image deleted after partial unpack, no window
