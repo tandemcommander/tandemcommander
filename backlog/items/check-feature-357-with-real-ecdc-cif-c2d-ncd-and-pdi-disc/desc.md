@@ -1,7 +1,7 @@
 ---
 title: Check feature 357 with real ECDC, CIF, C2D, NCD and PDI disc images, one and two sessions
 type: person-step
-status: new
+status: open
 severity: 3
 area: archives
 source: leftover:357
@@ -57,3 +57,4 @@ after unpacking"; a real two-session image in the same format is kept.
 ## Log
 
 - 2026-10-31 — created (source leftover:357)
+- 2026-10-31 — moved to Person steps position 51
