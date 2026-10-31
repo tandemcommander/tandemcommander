@@ -1,7 +1,7 @@
 ---
 title: Plug-in hot keys on F-keys never run; F-keys run commands bound to letters
 type: bug
-status: new
+status: open
 severity: 4
 area: panels-ui
 source: measure:346
@@ -42,3 +42,4 @@ Only letters are upper-cased (VK 'a'..'z' do not occur as virtual keys anyway; t
 
 - 2026-10-31 — created (source measure:346)
 - 2026-10-31 — related item shift-f6-renames-the-focused-item-in-place-without-the done in feature 346
+- 2026-10-31 — moved to Next position 33

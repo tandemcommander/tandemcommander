@@ -1,7 +1,7 @@
 ---
 title: Check Shift+F6 rename in place with a real keyboard and an FTP/SFTP panel
 type: person-step
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: leftover:346
@@ -42,3 +42,4 @@ Each step below behaves as written.
 ## Log
 
 - 2026-10-31 — created (source leftover:346)
+- 2026-10-31 — moved to Person steps position 44
