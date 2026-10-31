@@ -145,7 +145,7 @@ extracted and "Delete archive after unpacking" deletes the image, as today.
 
 ### Measurable Outcomes
 
-- **SC-001**: The probe `iso352_probe` goes from 8 PASS / 10 FAIL (main, 18 rows) to 20 PASS / 0 FAIL (20 rows: + C-NOCCD, an image without a `.ccd`, FR-006) on the
+- **SC-001**: The probe `iso352_probe` goes from 8 PASS / 10 FAIL (main, 18 rows) to 22 PASS / 0 FAIL (22 rows: + C-NOCCD, an image without a `.ccd`, FR-006; + R-TWOSEC, the layout mark alone, review 1) on the
   Debug build.
 - **SC-002**: No damaged `.ccd` of the probe deletes its image after a whole unpack with "Delete
   archive after unpacking" (0 of 7).

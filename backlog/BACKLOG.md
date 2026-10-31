@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a CloneCD session number from the .ccd writes outside the reader arrays](items/iso-plug-in-a-clonecd-session-number-from-the-ccd-writes/desc.md) | bug | 7 | archives | 352 |
 
 ## Next
 
@@ -273,6 +272,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 352 with real CloneCD dumps (one and two sessions)](items/check-feature-352-with-real-clonecd-dumps-one-and-two/desc.md) | person-step | 3 | archives | leftover:352 | 2026-10-31 |
 | [ISO plug-in: a CloneCD image without its .ccd lists one session, then Unpack deletes it](items/iso-plug-in-a-clonecd-image-without-its-ccd-lists-one/desc.md) | bug | 5 | archives | measure:352 | 2026-10-31 |
 
 ## Parked

@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5233,3 +5233,35 @@ a few early ones are out of sequence).
   (`TestIsoCcdTrackKind_351`; a rule mutant fails 7); refute-first review 1: no MUST - its own Release
   builds fix 30 / 0, main 27 / 3, Release mutant 21 / 9; SHOULD the `.ccd` session index (pre-existing)
   -> Inbox; NOTEs taken.
+- 352-uniso-ccd-session-bounds: a damaged or crafted CloneCD `.ccd` made the ISO plug-in write or read
+  outside its tables - an `[Entry n]` naming session 0 wrote before the per-session tables (Debug: CRT
+  heap corruption), session 200 far past them (silent; a whole Unpack then deleted the image), session
+  257 became 1 through a byte; `[Session n]` sections and `INDEX 1 = 0` splits that disagree read past
+  the split list (two sections, one split: "Index is out of range") or past the tables (one section, two
+  splits); a row whose value did not parse (`MODE=x`, `MODE=` - a NULL into `sscanf`) or a row given
+  twice while another was missing still counted, leaving stack values. Now the row values are read by
+  `SalIsoCcdReadInt` (as `sscanf` read a valid value; no number or outside 32 bits fails) and each
+  needed row must appear once and parse (`CSalIsoCcdFields`), every entry's session is checked against
+  the sections before anything is built (`SalIsoCcdSessionIndex`, `int`), the sector-format loop runs
+  over the splits and a split takes offsets only from an existing section (`SalIsoCcdSplitSection`,
+  else 0) (`src/common/salisotrack.h`); a refused `.ccd` keeps the "Bad format of .CCD file" box and
+  the plain detection, and marks the listing incomplete (`CCD::Refused`) - a whole unpack keeps the
+  image; sections and splits that disagree open within bounds with the listing marked
+  (`SalIsoCcdLayoutTrusted`); a missing `.ccd` is unchanged. No UI string. Traps: R-ABS and R-SPLIT were
+  kept by 334's and 338's rules as well, so no row proved the layout mark until review 1's R-TWOSEC
+  (two sections, one track holding the image); a Bash here-document turned `\n` of `"$s\noccd.img"` into
+  a newline in the probe (fixed with the editor); the probe's first missing-`.ccd` condition expected
+  one box, the plug-in shows it once per open. Limits: every real multi-session dump (absolute
+  `INDEX 1`) is now kept by a whole unpack without a message (note added to
+  `iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables`); a split without a section gets offset
+  0, so R-SPLIT extracts nothing (main's Debug extracted session 1 only by a garbage offset); an image
+  whose `.ccd` is missing still lists one session and can be deleted (Inbox
+  `iso-plug-in-a-clonecd-image-without-its-ccd-lists-one`); crafted images only (person step
+  `check-feature-352-with-real-clonecd-dumps-one-and-two`). From backlog item
+  `iso-plug-in-a-clonecd-session-number-from-the-ccd-writes`. Probe `iso352_probe` (images by
+  `img352.py` from 334's `mkimg334.sh` seeds) on main 8 / 10 (18 rows) -> 22 / 0 (22 rows; C-NOCCD
+  after analyze, R-TWOSEC after review 1); mutant without the layout mark fails R-TWOSEC; 351 10 / 0,
+  334 23 / 1 as recorded; saltests 29,226 -> 29,286 / 0 (`TestIsoCcdBounds_352`; mutant without the
+  upper session bound fails 4); refute-first review 1: no MUST - its negative control main's uniso.spl
+  10 / 10, mutant without both marks 15 / 5; SHOULD (no row proved the layout mark) taken; NOTEs taken
+  or recorded.
