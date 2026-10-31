@@ -1465,6 +1465,7 @@ BOOL CUDF::ReadSupportingTables(BOOL quiet)
     CALL_STACK_MESSAGE1("CUDF::ReadSupportingTables( )");
 
     DWORD vatLoc, lastVatLoc;
+    bool fallbackTaken;
     BYTE sector[SECTOR_SIZE];
     CDescriptorTag tag;
     BOOL ret = TRUE;
@@ -1491,6 +1492,7 @@ BOOL CUDF::ReadSupportingTables(BOOL quiet)
             vatLoc -= 7;
 
             vatRet = ERR_CONTINUE;
+            fallbackTaken = false;
             do
             {
                 if (!ReadBlockPhys(vatLoc, 1, sector))
@@ -1498,15 +1500,17 @@ BOOL CUDF::ReadSupportingTables(BOOL quiet)
                     LONGLONG size;
 
                     size = Image->GetCurrentTrackEnd(TrackTryingToOpen);
-                    if (size != 0xFFFFFFFFFFFFFFFF)
+                    if (size != 0xFFFFFFFFFFFFFFFF && size >= 0)
                     {
-                        DWORD nSectors;
-
-                        nSectors = (DWORD)((size) / SECTOR_SIZE) - PD.Start;
-                        if (nSectors < vatLoc - 7)
+                        // feature 359: the file's last sectors are searched once, without a wrapped sector
+                        // number (a failed read there used to set the same window again for ever)
+                        unsigned long long first, last;
+                        if (SalIsoUdfVatFallback((unsigned long long)size / SECTOR_SIZE, PD.Start, vatLoc,
+                                                 fallbackTaken, first, last))
                         {
-                            vatLoc = nSectors - 7;
-                            lastVatLoc = nSectors;
+                            fallbackTaken = true;
+                            vatLoc = (DWORD)first;
+                            lastVatLoc = (DWORD)last;
                             continue;
                         }
                     }

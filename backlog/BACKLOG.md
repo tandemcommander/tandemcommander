@@ -282,6 +282,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a raw 2352-byte-sector dump of a UDF VAT disc does not open](items/iso-plug-in-a-raw-2352-byte-sector-dump-of-a-udf-vat-disc/desc.md) | bug | 4 | archives | measure:359 | 2026-10-31 |
 
 ## Parked
 

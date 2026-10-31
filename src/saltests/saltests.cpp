@@ -20494,6 +20494,103 @@ static void TestIsoUdfVat_358()
     CHECK(allBounded);
 }
 
+// feature 359: the VAT search's fallback to the file's last sectors is taken at most once and never with a
+// wrapped sector number (src/common/salisoudfvat.h)
+static void TestIsoUdfVat_359()
+{
+    unsigned long long f = 99, l = 99;
+    // mk_cdr.img (partition start 257) cut to 260 sectors, the read at the claimed end (3743 - 7) fails: the
+    // file's 3 partition sectors are searched from 0 - the reader set the window to 3 - 7 (wrapped)
+    CHECK(SalIsoUdfVatFallback(260, 257, 3736, false, f, l) && f == 0 && l == 3);
+    // ... once: a second failure ends the search
+    f = l = 99;
+    CHECK(!SalIsoUdfVatFallback(260, 257, 0, true, f, l) && f == 0 && l == 0);
+    CHECK(!SalIsoUdfVatFallback(260, 257, 3736, true, f, l));
+    // the measured hang: a raw dump counted as 298 sectors, partition start 288 - window 3 .. 10; the read at 3
+    // fails: no second fallback (the reader's 3 - 7 wrapped and set the same window for ever)
+    CHECK(SalIsoUdfVatFallback(298, 288, 3736, false, f, l) && f == 3 && l == 10);
+    CHECK(!SalIsoUdfVatFallback(298, 288, 3, true, f, l));
+    // without the flag the wrap is gone too: a failed sector below 7 is never "more than 7 past the file"
+    for (unsigned long long failed = 0; failed < 7; failed++)
+        CHECK(!SalIsoUdfVatFallback(298, 288, failed, false, f, l));
+    // the file ends at or before the partition start: no partition sector to search, the read error at once
+    CHECK(!SalIsoUdfVatFallback(257, 257, 3736, false, f, l));
+    CHECK(!SalIsoUdfVatFallback(100, 257, 3736, false, f, l));
+    CHECK(!SalIsoUdfVatFallback(0, 0, 3736, false, f, l));
+    // one partition sector: the window 0 .. 1
+    CHECK(SalIsoUdfVatFallback(258, 257, 3736, false, f, l) && f == 0 && l == 1);
+    // the old condition nSectors < failed - 7 where it did not wrap: n = 43
+    CHECK(!SalIsoUdfVatFallback(300, 257, 50, false, f, l));
+    CHECK(SalIsoUdfVatFallback(300, 257, 51, false, f, l) && f == 36 && l == 43);
+    CHECK(SalIsoUdfVatFallback(300, 257, 3736, false, f, l) && f == 36 && l == 43);
+    // 64-bit counts are not cut to 32 bits (the reader's (DWORD) cast made 2^32 + 16 sectors look like 16)
+    CHECK(!SalIsoUdfVatFallback(0x100000010ull, 0, 0xFFFFFFFFull, false, f, l));
+    CHECK(SalIsoUdfVatFallback(0x100000010ull, 0x100000000ull, 100, false, f, l) && f == 9 && l == 16);
+    // the window always lies below the failed sector, so it fits the reader's 32-bit numbers
+    CHECK(SalIsoUdfVatFallback(0xFFFFFFF0ull, 0, 0xFFFFFFFFull, false, f, l) && f == 0xFFFFFFE9ull &&
+          l == 0xFFFFFFF0ull);
+
+    // the reader's search loop (udf.cpp ReadSupportingTables, case mapVirtual) with 32-bit sector numbers: a
+    // partition sector reads when its physical sector is below 'readable' (a raw dump: fewer sectors than the
+    // 2048-byte count). Result 0 = read error, 1 = window searched to its end; reads never exceed 14 + 7
+    auto search = [](unsigned long long fileSectors, unsigned long partStart, unsigned long claimed,
+                     unsigned long long readable, int& reads) -> int
+    {
+        unsigned long vatLoc = claimed, lastVatLoc;
+        lastVatLoc = vatLoc + 7;
+        vatLoc -= 7;
+        bool taken = false;
+        reads = 0;
+        do
+        {
+            if (++reads > 1000)
+                return -1; // the hang
+            unsigned long phys = partStart + vatLoc;
+            if (phys >= readable)
+            {
+                unsigned long long first, last;
+                if (SalIsoUdfVatFallback(fileSectors, partStart, vatLoc, taken, first, last))
+                {
+                    taken = true;
+                    vatLoc = (unsigned long)first;
+                    lastVatLoc = (unsigned long)last;
+                    continue;
+                }
+                return 0;
+            }
+            vatLoc++;
+        } while (vatLoc < lastVatLoc);
+        return 1;
+    };
+    int reads = 0;
+    CHECK(search(298, 288, 3743, 260, reads) == 0 && reads == 2); // L-RAWCUT: the claimed end, then sector 3
+    CHECK(search(260, 257, 3743, 260, reads) == 1 && reads == 4); // L-CUT3: the claimed end, then 0 .. 2
+    CHECK(search(257, 257, 3743, 257, reads) == 0 && reads == 1); // L-CUT0: the read error at once
+    CHECK(search(300, 257, 3743, 300, reads) == 1 && reads == 8); // the whole image: 36 .. 42 (the VAT at 42)
+    bool allEnd = true;
+    int maxReads = 0;
+    const unsigned long long fileList[] = {0, 1, 3, 6, 7, 8, 13, 14, 15, 20, 40, 300, 0x100000005ull};
+    const unsigned long partList[] = {0, 1, 5, 7, 10, 20, 30, 257, 0xFFFFFFF0ul};
+    const unsigned long claimList[] = {0, 1, 3, 6, 7, 8, 13, 14, 20, 3743, 0xFFFFFFF9ul, 0xFFFFFFFFul};
+    for (unsigned long long fs : fileList)
+        for (unsigned long ps : partList)
+            for (unsigned long cl : claimList)
+                for (int kind = 0; kind < 4; kind++)
+                {
+                    unsigned long long readable = kind == 0   ? fs
+                                                  : kind == 1 ? fs * 2048 / 2352
+                                                  : kind == 2 ? 0
+                                                              : (fs > 3 ? fs - 3 : 0);
+                    int r = 0;
+                    if (search(fs, ps, cl, readable, r) < 0)
+                        allEnd = false;
+                    if (r > maxReads)
+                        maxReads = r;
+                }
+    CHECK(allEnd);
+    CHECK(maxReads <= 21);
+}
+
 // feature 356: a cooked UDF-only image - the UDF descriptors that give its volume's end, and whether the
 // rest past the volume is kept, marked or read (src/common/salisotrack.h)
 static void TestIsoUdfRest_356()
@@ -22860,6 +22957,7 @@ int main(int argc, char** argv)
     TestIsoUdfRest_356();
     TestIsoPlainLayouts_357();
     TestIsoUdfVat_358();
+    TestIsoUdfVat_359();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();
