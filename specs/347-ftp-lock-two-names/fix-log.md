@@ -37,3 +37,9 @@ the measurement). Branch from `main` 794b3207.
 - No header under `src/common/`: the decision is dropping one term of a plug-in-internal
   comparison that also needs the plug-in's path rule (`FTPIsTheSameServerPath`); the probe is the
   test. Recorded here per stop-rules §2.5.
+
+## Analyze
+
+speckit-analyze: CRITICAL 0, HIGH 0. Accepted: C1 MEDIUM (US2 - other access types under two
+names - by reading only: one decision serves every access type, `IsInConflictWith` unchanged),
+C2 LOW (each caller's refusal answer recorded under T007), C3 LOW (FR-005 checked by the diff).
