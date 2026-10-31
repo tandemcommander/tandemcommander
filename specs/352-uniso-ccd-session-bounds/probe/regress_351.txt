@@ -1,0 +1,24 @@
+iso351_probe (feature 351) regress-352-debug
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 13:49; registry key existed True; repeat 1
+
+seeds: ccd_m1.ccd,ccd_m1.img,ccd_m1m1.ccd,ccd_m1m1.img,ccd_m2.ccd,ccd_m2.img,nrg_one.nrg,nrg_undesc.nrg,s1.iso,s2.iso,s2.lba
+img351: ccd_m1: one track, mode 1, 176 sectors
+img351: ccd_m2: one track, mode 2, 176 sectors
+img351: ccd_m1m1: two sessions, mode 1 tracks of 176 and 176 sectors
+img351: nrg_one: one described Mode 1 track
+img351: nrg_undesc: CUEX two tracks, DAOX describes track 1 only
+
+C-M1       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-M1       RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+C-M2       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-M2       RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+C-M1M1     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-M1M1     RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+N-ONE      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+N-ONE      RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+N-UNDESC   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+N-UNDESC   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 1DA45396222A51BBD77215E2991681418F608E9DCC6D8E89F35C34EC25E6830A / after 1DA45396222A51BBD77215E2991681418F608E9DCC6D8E89F35C34EC25E6830A
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

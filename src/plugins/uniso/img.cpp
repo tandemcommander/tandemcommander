@@ -85,12 +85,12 @@ struct CCDTrack
 
 struct CCDEntry
 {
-    BYTE Session;
+    int Session; // feature 352: the whole value (a BYTE made 257 session 1); checked before use
     DWORD Point;
     DWORD PLBA;
     BYTE ADR;
 
-    CCDEntry(BYTE session, DWORD point, DWORD plba, BYTE adr)
+    CCDEntry(int session, DWORD point, DWORD plba, BYTE adr)
     {
         Session = session;
         Point = point;
@@ -105,10 +105,14 @@ struct CCD
     TIndirectArray<CCDEntry> EntryArray;
     TIndirectArray<CCDSession> SessionArray;
     BOOL DisplayMissingCCDWarning;
+    // feature 352: the .ccd exists and was refused (IDS_CCD_BAD_FORMAT) - the image is then detected
+    // without it and its listing marked incomplete; a missing .ccd is not refused
+    BOOL Refused;
 
     CCD() : TrackArray(10, 5, dtDelete), EntryArray(100, 10, dtDelete), SessionArray(5, 2, dtDelete)
     {
         DisplayMissingCCDWarning = TRUE;
+        Refused = FALSE;
     }
 };
 
@@ -123,7 +127,7 @@ processHeaderSection(TextSection* section)
     for (i = 0; i < section->Rows.Count; i++)
     {
         //    TextRow *row = section->Rows[i];
-        if (strcmp(section->Rows[i]->Id, "Version") == 0)
+        if (section->Rows[i]->Id != NULL && strcmp(section->Rows[i]->Id, "Version") == 0) // feature 352: "=" has no name
         {
         }
     }
@@ -141,6 +145,8 @@ processDiscSection(TextSection* section, CCD* ccd)
     int i;
     for (i = 0; i < section->Rows.Count; i++)
     {
+        if (section->Rows[i]->Id == NULL || section->Rows[i]->Value == NULL) // feature 352: "=" / "Sessions="
+            continue;
         if (strcmp(section->Rows[i]->Id, "TocEntries") == 0)
         {
             sscanf(section->Rows[i]->Value, "%d", &tocEntries);
@@ -159,25 +165,24 @@ processTrackSection(TextSection* section, CCD* ccd)
 {
     CALL_STACK_MESSAGE1("processTrackSection(, )");
 
-    int mode, index;
-    int items = 0;
+    // feature 352: a row counts only when its value parses, each needed row once (salisotrack.h) - a row
+    // repeated while another was missing, or MODE=x, left a field uninitialised
+    int mode = 0, index = 0;
+    CSalIsoCcdFields fields;
 
     int i;
     for (i = 0; i < section->Rows.Count; i++)
     {
-        if (strcmp(section->Rows[i]->Id, "MODE") == 0)
-        {
-            sscanf(section->Rows[i]->Value, "%d", &mode);
-            items++;
-        }
-        else if (strncmp(section->Rows[i]->Id, "INDEX 1", 7) == 0)
-        {
-            sscanf(section->Rows[i]->Value, "%d", &index);
-            items++;
-        }
+        const char* id = section->Rows[i]->Id;
+        if (id == NULL) // a row with no name ("=...")
+            continue;
+        if (strcmp(id, "MODE") == 0)
+            fields.Row(1, SalIsoCcdReadInt(section->Rows[i]->Value, false, mode));
+        else if (strncmp(id, "INDEX 1", 7) == 0)
+            fields.Row(2, SalIsoCcdReadInt(section->Rows[i]->Value, false, index));
     }
 
-    if (items == 2)
+    if (fields.Complete(1 | 2))
     {
         ccd->TrackArray.Add(new CCDTrack(mode, index));
         return TRUE;
@@ -191,37 +196,29 @@ processEntrySection(TextSection* section, CCD* ccd)
 {
     CALL_STACK_MESSAGE1("processEntrySection(, )");
 
-    int session, point, plba, adr;
-    int items = 0;
+    // feature 352: each needed row once and parsed (see processTrackSection)
+    int session = 0, point = 0, plba = 0, adr = 0;
+    CSalIsoCcdFields fields;
 
     int i;
     for (i = 0; i < section->Rows.Count; i++)
     {
-        if (strcmp(section->Rows[i]->Id, "Session") == 0)
-        {
-            sscanf(section->Rows[i]->Value, "%d", &session);
-            items++;
-        }
-        else if (strcmp(section->Rows[i]->Id, "Point") == 0)
-        {
-            sscanf(section->Rows[i]->Value, "%x", &point);
-            items++;
-        }
-        else if (strcmp(section->Rows[i]->Id, "PLBA") == 0)
-        {
-            sscanf(section->Rows[i]->Value, "%d", &plba);
-            items++;
-        }
-        else if (strcmp(section->Rows[i]->Id, "ADR") == 0)
-        {
-            sscanf(section->Rows[i]->Value, "%x", &adr);
-            items++;
-        }
+        const char* id = section->Rows[i]->Id;
+        if (id == NULL)
+            continue;
+        if (strcmp(id, "Session") == 0)
+            fields.Row(1, SalIsoCcdReadInt(section->Rows[i]->Value, false, session));
+        else if (strcmp(id, "Point") == 0)
+            fields.Row(2, SalIsoCcdReadInt(section->Rows[i]->Value, true, point));
+        else if (strcmp(id, "PLBA") == 0)
+            fields.Row(4, SalIsoCcdReadInt(section->Rows[i]->Value, false, plba));
+        else if (strcmp(id, "ADR") == 0)
+            fields.Row(8, SalIsoCcdReadInt(section->Rows[i]->Value, true, adr));
     }
 
-    if (items == 4)
+    if (fields.Complete(1 | 2 | 4 | 8))
     {
-        ccd->EntryArray.Add(new CCDEntry(session, point, plba, adr));
+        ccd->EntryArray.Add(new CCDEntry(session, (DWORD)point, (DWORD)plba, (BYTE)adr));
         return TRUE;
     }
     else
@@ -233,25 +230,23 @@ processSessionSection(TextSection* section, CCD* ccd)
 {
     CALL_STACK_MESSAGE1("processSessionSection(, )");
 
-    int preGapMode, preGapSubC;
-    int items = 0;
+    // feature 352: each needed row once and parsed (see processTrackSection)
+    int preGapMode = 0, preGapSubC = 0;
+    CSalIsoCcdFields fields;
 
     int i;
     for (i = 0; i < section->Rows.Count; i++)
     {
-        if (strcmp(section->Rows[i]->Id, "PreGapMode") == 0)
-        {
-            sscanf(section->Rows[i]->Value, "%d", &preGapMode);
-            items++;
-        }
-        else if (strcmp(section->Rows[i]->Id, "PreGapSubC") == 0)
-        {
-            sscanf(section->Rows[i]->Value, "%d", &preGapSubC);
-            items++;
-        }
+        const char* id = section->Rows[i]->Id;
+        if (id == NULL)
+            continue;
+        if (strcmp(id, "PreGapMode") == 0)
+            fields.Row(1, SalIsoCcdReadInt(section->Rows[i]->Value, false, preGapMode));
+        else if (strcmp(id, "PreGapSubC") == 0)
+            fields.Row(2, SalIsoCcdReadInt(section->Rows[i]->Value, false, preGapSubC));
     }
 
-    if (items == 2)
+    if (fields.Complete(1 | 2))
     {
         ccd->SessionArray.Add(new CCDSession(preGapMode, preGapSubC));
         return TRUE;
@@ -395,10 +390,16 @@ processCCDFile(CISOImage* pISOImage, CFile& File, const char* fileName, CCD* ccd
         if (validCCD)
             ret = TRUE;
         else
+        {
+            ccd->Refused = TRUE; // feature 352: the listing is marked (ReadSessionCCD)
             ret = Error(IDS_CCD_BAD_FORMAT, quiet);
+        }
     }
     else
+    {
+        ccd->Refused = TRUE;
         ret = Error(IDS_CCD_BAD_FORMAT, quiet);
+    }
 
     return ret;
 }
@@ -417,7 +418,23 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
 
     if (processCCDFile(this, *File, fileName, ccd, quiet))
     {
-        if (ccd->SessionArray.Count > 0 && ccd->TrackArray.Count > 0 && ccd->EntryArray.Count > 0)
+        // feature 352: every entry must name one of the [Session n] sections - its session indexes the
+        // per-session tables below (Session=0 wrote before them, Session=200 far past them); checked
+        // for all entries before anything is built, a .ccd naming another session is refused
+        BOOL entriesValid = TRUE;
+        int e;
+        for (e = 0; e < ccd->EntryArray.Count; e++)
+        {
+            if (SalIsoCcdSessionIndex(ccd->EntryArray[e]->Session, ccd->SessionArray.Count) < 0)
+            {
+                TRACE_I("CISOImage::ReadSessionCCD(): entry " << e << " names session " << ccd->EntryArray[e]->Session
+                                                              << ", the .ccd has " << ccd->SessionArray.Count);
+                entriesValid = FALSE;
+                break;
+            }
+        }
+
+        if (entriesValid && ccd->SessionArray.Count > 0 && ccd->TrackArray.Count > 0 && ccd->EntryArray.Count > 0)
         {
             // process read ccd info
             int i;
@@ -489,13 +506,23 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
                 } // for
                 AddSessionTracks(ccd->TrackArray.Count - firstTrack);
 
-                // set sector format for tracks in session
-                firstTrack = 0;
-                for (i = 0; i < ccd->SessionArray.Count; i++)
+                // feature 352: the session layout is trusted only when the [Session n] sections and the
+                // splits above agree (a real multi-session dump with absolute INDEX 1 values has one
+                // split); otherwise every loop stays within its own count and the listing is marked
+                // incomplete (a whole unpack fails, the image is kept)
+                if (!SalIsoCcdLayoutTrusted(ccd->SessionArray.Count, Session.Count))
                 {
-                    ETrackFSType fileSystemType = fsUnknown;
+                    TRACE_I("CISOImage::ReadSessionCCD(): " << ccd->SessionArray.Count << " session sections, "
+                                                            << Session.Count << " track splits");
+                    ListingLeftOut.SetIncomplete();
+                }
+
+                // set sector format for tracks in session (feature 352: over the splits - it went over
+                // the [Session n] sections and read Session[i] past the split list)
+                firstTrack = 0;
+                for (i = 0; i < Session.Count; i++)
+                {
                     WORD sectorSize = 0x930;
-                    CCDSession* ccdSession = ccd->SessionArray[i];
 
                     int j;
                     for (j = 0; j < Session[i]; j++)
@@ -520,7 +547,7 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
                 for (i = 0; i < ccd->EntryArray.Count; i++)
                 {
                     CCDEntry* entry = ccd->EntryArray[i];
-                    int session = entry->Session - 1;
+                    int session = SalIsoCcdSessionIndex(entry->Session, ccd->SessionArray.Count); // checked above
                     if (entry->ADR == 1 && entry->Point < pointMin[session])
                     {
                         pointMin[session] = entry->Point;
@@ -538,17 +565,24 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
                 firstTrack = 0;
                 for (i = 0; i < Session.Count; i++)
                 {
+                    // feature 352: a split takes its offsets from its [Session n] section's row only when
+                    // the .ccd has that section (it read extents[i] past the tables); none: 0 (the
+                    // listing is marked above)
+                    int row = SalIsoCcdSplitSection(i, ccd->SessionArray.Count);
+                    DWORD extent = row >= 0 ? extents[row] : 0;
+                    DWORD extentEnd = row >= 0 ? extentsEnd[row] : 0;
+
                     int j;
                     for (j = 0; j < Session[i]; j++)
                     {
                         CISOImage::Track* track = Tracks[firstTrack + j];
-                        track->ExtentOffset += extents[i]; // the extent is counted from zero within the session -> we want the absolute position in the image
+                        track->ExtentOffset += extent; // the extent is counted from zero within the session -> we want the absolute position in the image
 
                         DWORD endSector;
                         if (j < Session[i] - 1)
                             endSector = ccd->TrackArray[firstTrack + j + 1]->Index;
                         else
-                            endSector = extentsEnd[i] - extents[i];
+                            endSector = extentEnd - extent;
 
                         CCDTrack* ccdTrack = ccd->TrackArray[firstTrack + j];
                         DWORD sectorCount = endSector - ccdTrack->Index;
@@ -575,10 +609,19 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
             delete[] pointMax;
         }
         else
+        {
+            ccd->Refused = TRUE;
             ret = Error(IDS_CCD_BAD_FORMAT, quiet);
+        }
     }
     else
         ret = FALSE;
+
+    // feature 352: a .ccd that exists but was refused leaves the image to the detection without it,
+    // which lists the first session only - the listing is marked incomplete, so a whole unpack fails and
+    // "Delete archive after unpacking" keeps the image (the box already says it could be incomplete)
+    if (ccd->Refused)
+        ListingLeftOut.SetIncomplete();
 
     DisplayMissingCCDWarning = ccd->DisplayMissingCCDWarning;
     delete ccd;

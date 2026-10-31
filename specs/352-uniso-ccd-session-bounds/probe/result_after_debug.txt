@@ -1,0 +1,39 @@
+iso352_probe (feature 352) after-debug
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 13:47; registry key existed True
+
+seeds: ccd_abs.ccd,ccd_abs.img,ccd_dup.ccd,ccd_dup.img,ccd_m1.ccd,ccd_m1.img,ccd_m1m1.ccd,ccd_m1m1.img,ccd_modex.ccd,ccd_modex.img,ccd_s0.ccd,ccd_s0.img,ccd_s200.ccd,ccd_s200.img,ccd_s257.ccd,ccd_s257.img,ccd_split.ccd,ccd_split.img,noccd.img,s1.iso,s2.iso,s2.lba
+img352: ccd_m1: one Mode 1 track of 176 sectors
+img352: ccd_m1m1: two sessions / two splits, 176 + 176 sectors
+img352: ccd_s0: one Mode 1 track of 176 sectors
+img352: ccd_s200: one Mode 1 track of 176 sectors
+img352: ccd_s257: one Mode 1 track of 176 sectors
+img352: ccd_abs: two sessions / one split (INDEX 1 absolute), 176 + 176 sectors
+img352: ccd_split: one session / two splits, 176 + 176 sectors
+img352: ccd_modex: one Mode 1 track of 176 sectors
+img352: ccd_dup: one Mode 1 track of 176 sectors
+img352: noccd: one Mode 1 track of 176 sectors, no .ccd
+
+C-M1       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-M1       RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-M1M1     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-M1M1     RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-S0       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-S0       RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (bad): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad format of .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Bad format of .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+R-S200     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-S200     RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (bad): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad format of .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Bad format of .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+R-S257     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-S257     RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (bad): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad format of .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Bad format of .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+R-ABS      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ABS      RUN    PASS        files 1: b.txt; files ok: True; image kept: True (want True); windows ok (nobad): True; fatal: ; windows: no window
+R-SPLIT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SPLIT    RUN    PASS        files 0: ; files ok: True; image kept: True (want True); windows ok (nobad): True; fatal: ; windows: [#32770 'Read error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read sector #00000019. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+R-MODEX    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-MODEX    RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (bad): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad format of .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Bad format of .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+R-DUP      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-DUP      RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (bad): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad format of .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Bad format of .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+C-NOCCD    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-NOCCD    RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (missing): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 1DA45396222A51BBD77215E2991681418F608E9DCC6D8E89F35C34EC25E6830A / after 1DA45396222A51BBD77215E2991681418F608E9DCC6D8E89F35C34EC25E6830A
+
+Rows: PASS 20, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

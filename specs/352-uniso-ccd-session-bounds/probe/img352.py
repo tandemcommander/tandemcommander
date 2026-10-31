@@ -19,6 +19,7 @@ Kinds:
   ccd_modex  as ccd_m1, [TRACK 1] MODE=x - the mode stayed an uninitialised stack value
   ccd_dup    as ccd_m1, [Entry 3] (the track's entry) without PLBA but with Session= twice - the row
              count matched, PLBA stayed an uninitialised stack value
+  noccd      ccd_m1's image without a .ccd beside it (FR-006: unchanged, never marked)
 """
 import sys
 
@@ -91,6 +92,9 @@ def main(argv):
                 return rows[: at + 1] + body + rows[end:]
         write_ccd(dst, 1, tracks, entries, edit)
         note = "one Mode 1 track of %d sectors" % n1
+    elif kind == "noccd":
+        open(dst, "wb").write(mode1(s1, 0))
+        note = "one Mode 1 track of %d sectors, no .ccd" % n1
     elif kind == "ccd_m1m1":
         open(dst, "wb").write(mode1(s1, 0) + mode1(s2, n1))
         write_ccd(dst, 2, [(1, 0), (1, 0)], two)

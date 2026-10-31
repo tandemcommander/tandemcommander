@@ -107,7 +107,7 @@
 #include "salsusp.h"           // feature 326
 #include "salisonamefit.h"     // feature 328
 #include "salnrgcdtext.h"      // feature 331
-#include "salisotrack.h"       // features 334, 335, 351
+#include "salisotrack.h"       // features 334, 335, 351, 352
 #include "salisounpack.h"      // feature 338
 #include "salrenamekey.h"      // feature 346
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
@@ -20070,6 +20070,114 @@ static void TestIsoCcdTrackKind_351()
     CHECK(SalIsoTrackMarksListing(SalIsoCcdTrackKind(0), false, SAL_ISO_TRACK_LISTED));
 }
 
+// feature 352: a .ccd row counts only when its value parses (as sscanf read a valid value), each needed
+// row once; an entry's session must name a [Session n] section; a split takes a table row only when
+// the section exists; sections and splits that disagree are not trusted (the listing is marked)
+static void TestIsoCcdBounds_352()
+{
+    int v = 12345;
+    // decimal: as sscanf("%d")
+    CHECK(SalIsoCcdReadInt("1", false, v) && v == 1);
+    CHECK(SalIsoCcdReadInt("0", false, v) && v == 0);
+    CHECK(SalIsoCcdReadInt("-150", false, v) && v == -150);
+    CHECK(SalIsoCcdReadInt("+7", false, v) && v == 7);
+    CHECK(SalIsoCcdReadInt("  42", false, v) && v == 42);
+    CHECK(SalIsoCcdReadInt("1x", false, v) && v == 1);      // trailing text ignored, as sscanf
+    CHECK(SalIsoCcdReadInt("200\r", false, v) && v == 200); // a CR left by a CRLF row
+    CHECK(SalIsoCcdReadInt("2147483647", false, v) && v == 2147483647);
+    CHECK(SalIsoCcdReadInt("-2147483648", false, v) && v == (int)0x80000000u);
+    v = 77;
+    CHECK(!SalIsoCcdReadInt("2147483648", false, v) && v == 77); // outside the int range: refused, 'out' untouched
+    CHECK(!SalIsoCcdReadInt("-2147483649", false, v) && v == 77);
+    CHECK(!SalIsoCcdReadInt("99999999999999999999999", false, v) && v == 77);
+    CHECK(!SalIsoCcdReadInt("x", false, v) && v == 77); // MODE=x
+    CHECK(!SalIsoCcdReadInt("", false, v) && v == 77);  // an empty value
+    CHECK(!SalIsoCcdReadInt("   ", false, v) && v == 77);
+    CHECK(!SalIsoCcdReadInt("-", false, v) && v == 77);
+    CHECK(!SalIsoCcdReadInt(nullptr, false, v) && v == 77);
+    CHECK(SalIsoCcdReadInt("0xa0", false, v) && v == 0); // decimal reads the 0 before the x
+    CHECK(!SalIsoCcdReadInt("a0", false, v));
+    // hex: as sscanf("%x")
+    CHECK(SalIsoCcdReadInt("0xa0", true, v) && v == 0xA0);
+    CHECK(SalIsoCcdReadInt("0XA2", true, v) && v == 0xA2);
+    CHECK(SalIsoCcdReadInt("a1", true, v) && v == 0xA1);
+    CHECK(SalIsoCcdReadInt("0x01", true, v) && v == 1);
+    CHECK(SalIsoCcdReadInt("0", true, v) && v == 0);
+    CHECK(SalIsoCcdReadInt("0x", true, v) && v == 0); // "0" then text
+    CHECK(SalIsoCcdReadInt("0xFFFFFFFF", true, v) && v == -1);
+    CHECK(SalIsoCcdReadInt("-1", true, v) && v == -1);
+    v = 77;
+    CHECK(!SalIsoCcdReadInt("0x100000000", true, v) && v == 77);
+    CHECK(SalIsoCcdReadInt("0xg", true, v) && v == 0); // "0" then text
+    CHECK(!SalIsoCcdReadInt("g", true, v));
+    CHECK(!SalIsoCcdReadInt("", true, v));
+
+    // the rows of a section
+    {
+        CSalIsoCcdFields f;
+        f.Row(1, true);
+        f.Row(2, true);
+        CHECK(f.Complete(3));
+    }
+    {
+        CSalIsoCcdFields f; // only one of two rows
+        f.Row(1, true);
+        CHECK(!f.Complete(3));
+    }
+    {
+        CSalIsoCcdFields f; // MODE=x
+        f.Row(1, false);
+        f.Row(2, true);
+        CHECK(!f.Complete(3));
+    }
+    {
+        CSalIsoCcdFields f; // a row twice while another is missing (R-DUP: the count matched)
+        f.Row(1, true);
+        f.Row(1, true);
+        CHECK(!f.Complete(3));
+    }
+    {
+        CSalIsoCcdFields f; // a row twice, the section otherwise complete (refused before 352 too)
+        f.Row(1, true);
+        f.Row(2, true);
+        f.Row(2, true);
+        CHECK(!f.Complete(3));
+    }
+    {
+        CSalIsoCcdFields f; // four entry fields
+        for (unsigned int b = 1; b <= 8; b <<= 1)
+            f.Row(b, true);
+        CHECK(f.Complete(15));
+        CHECK(!CSalIsoCcdFields().Complete(15));
+        CHECK(CSalIsoCcdFields().Complete(0));
+    }
+
+    // an entry's session
+    CHECK(SalIsoCcdSessionIndex(1, 1) == 0);
+    CHECK(SalIsoCcdSessionIndex(2, 2) == 1);
+    CHECK(SalIsoCcdSessionIndex(0, 1) == -1);   // R-S0: wrote before the tables
+    CHECK(SalIsoCcdSessionIndex(2, 1) == -1);   // one past
+    CHECK(SalIsoCcdSessionIndex(200, 1) == -1); // R-S200: about 800 bytes past
+    CHECK(SalIsoCcdSessionIndex(257, 1) == -1); // R-S257: a byte made it session 1
+    CHECK(SalIsoCcdSessionIndex(-1, 5) == -1);
+    CHECK(SalIsoCcdSessionIndex((int)0x80000000u, 5) == -1);
+    CHECK(SalIsoCcdSessionIndex(0x7FFFFFFF, 5) == -1);
+    CHECK(SalIsoCcdSessionIndex(1, 0) == -1); // no section at all
+    CHECK(SalIsoCcdSessionIndex(99, 99) == 98);
+
+    // a split's table row; the layout
+    CHECK(SalIsoCcdSplitSection(0, 1) == 0);
+    CHECK(SalIsoCcdSplitSection(1, 1) == -1); // R-SPLIT: extents[1] of a one-element table
+    CHECK(SalIsoCcdSplitSection(1, 2) == 1);
+    CHECK(SalIsoCcdSplitSection(-1, 2) == -1);
+    CHECK(SalIsoCcdSplitSection(0, 0) == -1);
+    CHECK(SalIsoCcdLayoutTrusted(1, 1));
+    CHECK(SalIsoCcdLayoutTrusted(2, 2));
+    CHECK(!SalIsoCcdLayoutTrusted(2, 1)); // R-ABS: absolute INDEX 1, one split
+    CHECK(!SalIsoCcdLayoutTrusted(1, 2)); // R-SPLIT
+    CHECK(!SalIsoCcdLayoutTrusted(0, 0));
+}
+
 // feature 335: a data track in which no file system is found marks the listing unless its sector 16 is
 // a Mode 2 Form 2 sector (a Video CD's MPEG stream) - the stored sector's sync, mode byte and both
 // subheader copies decide; anything else fails closed
@@ -22193,6 +22301,7 @@ int main(int argc, char** argv)
     TestNrgCuex350();
     TestIsoTrackMarks334();
     TestIsoCcdTrackKind_351();
+    TestIsoCcdBounds_352();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

@@ -24,6 +24,8 @@
 // Feature 337: and so did a stream whose listed files read only part of it.
 // Feature 340: the session counts of an NRG image (one SINF chunk a session) are bounded by the
 // track table: a count above the tracks left read past it.
+// Feature 352: a CloneCD .ccd's rows, entry session numbers and session layout are checked before
+// the reader indexes its tables with them.
 //
 //*****************************************************************************
 
@@ -91,6 +93,111 @@ inline int SalIsoCcdTrackKind(int ccdMode)
     if (ccdMode == 1 || ccdMode == 2)
         return SAL_ISO_TRACK_DATA;
     return SAL_ISO_TRACK_UNKNOWN;
+}
+
+// Feature 352: the integer value of a .ccd row ("MODE=1", "Point=0xa0", "PLBA=-150"), read as the
+// reader's sscanf("%d") / sscanf("%x") read a valid value - leading blanks, an optional sign, for hex an
+// optional "0x", then digits; text after the digits is ignored - but a value with no number ("x", "")
+// fails instead of leaving the field uninitialised, and so does one outside 32 bits (decimal: the int
+// range; hex: up to 0xFFFFFFFF, stored as the int sscanf gave). 'out' is written only on success.
+inline bool SalIsoCcdReadInt(const char* value, bool hex, int& out)
+{
+    if (value == nullptr)
+        return false;
+    const char* s = value;
+    while (*s == ' ' || *s == '\t' || *s == '\r' || *s == '\n' || *s == '\v' || *s == '\f')
+        s++;
+    bool neg = false;
+    if (*s == '+' || *s == '-')
+    {
+        neg = *s == '-';
+        s++;
+    }
+    auto digit = [hex](char c) -> int
+    {
+        if (c >= '0' && c <= '9')
+            return c - '0';
+        if (hex && c >= 'a' && c <= 'f')
+            return c - 'a' + 10;
+        if (hex && c >= 'A' && c <= 'F')
+            return c - 'A' + 10;
+        return -1;
+    };
+    if (hex && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') && digit(s[2]) >= 0)
+        s += 2;
+    const long long base = hex ? 16 : 10;
+    const long long limit = hex ? 0xFFFFFFFFLL : (neg ? 0x80000000LL : 0x7FFFFFFFLL);
+    long long v = 0;
+    int n = 0;
+    for (; digit(*s) >= 0; s++, n++)
+    {
+        v = v * base + digit(*s);
+        if (v > limit)
+            return false;
+    }
+    if (n == 0)
+        return false;
+    if (hex)
+    {
+        unsigned int u = (unsigned int)v;
+        if (neg)
+            u = 0u - u;
+        out = (int)u;
+    }
+    else
+        out = (int)(neg ? -v : v);
+    return true;
+}
+
+// Feature 352: the needed rows of one .ccd section ([TRACK n]: MODE, INDEX 1; [Entry n]: Session,
+// Point, PLBA, ADR; [Session n]: PreGapMode, PreGapSubC). The reader counted a row whether its value
+// parsed or not, so a row repeated while another was missing, or a value that did not parse, left a
+// field uninitialised. Each needed row must now appear once and parse.
+struct CSalIsoCcdFields
+{
+    unsigned int Seen = 0; // the fields (one bit each) whose row was read
+    bool Bad = false;      // a row repeated or not parsed
+
+    // a row of the field 'bit' was read; 'parsed' = its value parsed
+    void Row(unsigned int bit, bool parsed)
+    {
+        if (!parsed || (Seen & bit) != 0)
+            Bad = true;
+        Seen |= bit;
+    }
+
+    // every field of 'required' was read once and parsed
+    bool Complete(unsigned int required) const { return !Bad && (Seen & required) == required; }
+};
+
+// Feature 352: the row of the reader's per-session tables (one per [Session n] section, 'sections')
+// for an [Entry n] naming session 'session' (1-based); -1 when the .ccd has no such section - the
+// reader then refuses the .ccd. It used session - 1 unchecked (stored in a byte): Session=0 wrote
+// before the tables, Session=200 far past them, Session=257 became session 1.
+inline int SalIsoCcdSessionIndex(int session, int sections)
+{
+    if (sections <= 0 || session < 1 || session > sections)
+        return -1;
+    return session - 1;
+}
+
+// Feature 352: the reader splits the track list into sessions where a track's INDEX 1 is 0 ('splits'
+// runs); the table of contents gives per-[Session n] section offsets. The row of the per-session
+// tables for split 'split' (0-based), or -1 when the .ccd has fewer sections than splits (the split
+// then gets no offset: 0).
+inline int SalIsoCcdSplitSection(int split, int sections)
+{
+    if (split < 0 || split >= sections)
+        return -1;
+    return split;
+}
+
+// Feature 352: the session layout can be trusted only when the sections and the splits agree; a real
+// multi-session dump whose INDEX 1 values are absolute has more sections than splits (one split) -
+// read within bounds, its listing is marked incomplete (a whole unpack fails, the image is kept).
+inline bool SalIsoCcdLayoutTrusted(int sections, int splits)
+{
+    return sections > 0 && sections == splits;
 }
 
 // Feature 335: is a track's sector a CD-ROM XA Mode 2 Form 2 sector? 'raw' holds the first 'len' bytes

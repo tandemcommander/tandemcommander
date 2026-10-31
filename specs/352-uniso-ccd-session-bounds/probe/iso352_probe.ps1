@@ -24,6 +24,8 @@
                     index check)
       R-SPLIT       one [Session n] section, two track splits. PASS as R-ABS. Before 352: extents[1] read
                     past a one-element array (silent)
+      C-NOCCD       (control, FR-006) the image without a .ccd: PASS = only boxes "Missing .CCD file",
+                    a.txt extracted, the image deleted (not marked, as before)
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does not
     answer within 30 s (End-Row). Without WSL Ubuntu every row is NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -59,6 +61,7 @@ if (-not $Py) { $Py = Join-Path $Here 'img352.py' }
 $Root = $TempRoot + '\tc352'
 $StartDir = $Root + '\start'
 $BadCcd = 'Bad format of .CCD file'
+$MissingCcd = 'Missing .CCD file'
 
 function WslPath([string]$p) { return ('/mnt/' + $p.Substring(0, 1).ToLower() + $p.Substring(2).Replace('\', '/')) }
 function Tgt-Files([string]$Tgt) {
@@ -96,7 +99,8 @@ function Check-Files([string]$Tgt, $Want) {
 # Unpack (Alt+F9) of the whole image into tgt with "Delete archive after unpacking".
 #   $Want   files that must be extracted exactly ($null = not checked, only recorded)
 #   $Kept   the image must be kept (else deleted)
-#   $Msg    'none' = no window may show; 'bad' = the bad-format box must show; 'nobad' = it must not
+#   $Msg    'none' = no window may show; 'bad' = the bad-format box must show; 'nobad' = it must not;
+#           'missing' = every window is the missing-.ccd box (it shows once per open of the image)
 function Unpack-Row([string]$Case, [string]$Img0, $Want, [switch]$Kept, [string]$Msg = 'none') {
     if (-not (Want $Case)) { return }
     if (-not [IO.File]::Exists($Img0)) { Row $Case 'RUN' 'NOT DRIVEN' ('no image ' + $Img0); return }
@@ -130,6 +134,7 @@ function Unpack-Row([string]$Case, [string]$Img0, $Want, [switch]$Kept, [string]
         switch ($Msg) {
             'none' { $winOk = ($all.Count -eq 0) }
             'bad' { $winOk = $hasBad }
+            'missing' { $winOk = ($all.Count -gt 0) -and (@($all | Where-Object { -not $_.Contains($MissingCcd) }).Count -eq 0) }
             'nobad' { $winOk = -not $hasBad }
         }
         $ok = $c[0] -and (-not $fatal) -and $winOk -and ($isKept -eq [bool]$Kept)
@@ -158,6 +163,7 @@ try {
     $made = @()
     if ([IO.File]::Exists("$s\s1.iso") -and [IO.File]::Exists("$s\s2.iso")) {
         foreach ($k in $kinds) { $made += & python -I $Py $k "$s\s1.iso" "$s\s2.iso" "$s\$k.img" 2>&1 }
+        $made += & python -I $Py noccd "$s\s1.iso" "$s\s2.iso" "$s\noccd.img" 2>&1
     }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) }) | Sort-Object) -join ','))
@@ -176,6 +182,7 @@ try {
     Unpack-Row 'R-SPLIT' "$s\ccd_split.img" $null -Kept -Msg 'nobad'
     Unpack-Row 'R-MODEX' "$s\ccd_modex.img" $null -Kept -Msg 'bad'
     Unpack-Row 'R-DUP' "$s\ccd_dup.img" $null -Kept -Msg 'bad'
+    Unpack-Row 'C-NOCCD' "$s\noccd.img" $a -Msg 'missing'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
