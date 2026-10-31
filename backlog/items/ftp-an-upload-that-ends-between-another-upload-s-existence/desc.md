@@ -1,7 +1,7 @@
 ---
 title: FTP: an upload that ends between another upload's existence check and its lock
 type: bug
-status: new
+status: open
 severity: 3
 area: ftp
 source: review:347
@@ -52,3 +52,4 @@ reported under another connection; whether that covers this window was not check
 ## Log
 
 - 2026-10-31 — created (source review:347)
+- 2026-10-31 — moved to Next position 82

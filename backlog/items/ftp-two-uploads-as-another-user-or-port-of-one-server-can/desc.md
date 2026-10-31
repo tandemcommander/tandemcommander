@@ -1,7 +1,7 @@
 ---
 title: FTP: two uploads as another user or port of one server can store one file at once
 type: bug
-status: new
+status: open
 severity: 6
 area: ftp
 source: measure:347
@@ -59,3 +59,4 @@ cost). Related: `ftp-opened-file-lock-two-names-of-one-server` (feature 347, the
 
 - 2026-10-31 — created (source measure:347)
 - 2026-10-31 — related item ftp-opened-file-lock-two-names-of-one-server done in feature 347
+- 2026-10-31 — moved to Next position 1
