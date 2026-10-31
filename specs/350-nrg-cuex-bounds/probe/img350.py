@@ -20,6 +20,13 @@ Kinds:
   odd    ok, the CUEX chunk 4 bytes longer than its two entries (16 + 2 x 16 + 4): the reader takes
          its two entries and continues after the chunk (before 350: the next chunk header was read
          4 bytes early, "DAOX" taken as a size - the image did not open as NRG)
+  zero   ok's chunks after a CUEX chunk of 0 bytes (no entry; before 350: its "header" was read from
+         the next chunk - the image did not open)
+  shortnz ok's chunks after a CUEX chunk of 8 bytes "ABCDEFGH" (no entry; the next header is read
+         after them - review 1: unlike short's zeros, these bytes are no empty chunk header)
+  inside a CUEX chunk of 16 + 96 MiB bytes lying within the image, then ok's chunks (review 1: it
+         fits the image but claims 6.3 million entries - more than a CD's 99 tracks, skipped; before
+         the cap the fixed reader built every one of them, 1.5 GB, 3 minutes)
 """
 import struct
 import sys
@@ -33,7 +40,7 @@ def chunk(cid, body, size=None):
 
 
 def main(argv):
-    if len(argv) != 2 or argv[0] not in ("ok", "short", "past", "odd"):
+    if len(argv) != 2 or argv[0] not in ("ok", "short", "past", "odd", "zero", "shortnz", "inside"):
         print(__doc__)
         return 2
     kind, dst = argv
@@ -58,6 +65,12 @@ def main(argv):
         chunks = chunk(b"CUEX", bytes(8)) + chunk(b"PADD", bytes(PAD)) + good
     elif kind == "past":
         chunks = chunk(b"CUEX", b"", 0xFFFFFFF0) + chunk(b"PADD", bytes(PAD)) + good
+    elif kind == "zero":
+        chunks = chunk(b"CUEX", b"") + good
+    elif kind == "shortnz":
+        chunks = chunk(b"CUEX", b"ABCDEFGH") + good
+    elif kind == "inside":
+        chunks = chunk(b"CUEX", bytes(16 + PAD)) + good
     else:
         chunks = good
     img = data + chunks + b"NER5" + struct.pack(">Q", len(data))

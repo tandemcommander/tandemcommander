@@ -41,6 +41,12 @@ defect (CLAUDE.md *Working method*) - included.
 - [X] T010 Negative controls: mutate the rule (underflow back; remainder counted as an entry) → TestNrgCuex350 fails; record in specs/350-nrg-cuex-bounds/fix-log.md, then restore
 - [X] T011 `python tools/check_encoding.py --strict` → TOTAL: 0; fix-log *Checks* section in specs/350-nrg-cuex-bounds/fix-log.md
 
+## Phase 7: Review 1 (SHOULD 1, NOTE 1)
+
+- [X] T012 [US1] Add `SAL_NRG_MAX_TRACKS` / `SalNrgCuexEntriesPlausible` to src/common/salnrgcdtext.h and skip a CUEX chunk of more than 99 entries in src/plugins/uniso/nrg.cpp `readCUEX`; 5 checks in `TestNrgCuex350` (src/saltests/saltests.cpp)
+- [X] T013 [US1] Add kinds zero, shortnz, inside to specs/350-nrg-cuex-bounds/probe/img350.py and rows N-ZERO, N-SHORTNZ, N-INSIDE to specs/350-nrg-cuex-bounds/probe/nrg350_probe.ps1
+- [X] T014 Rebuild, saltests, probe → specs/350-nrg-cuex-bounds/probe/result_after_review1.txt; a no-cap mutant fails saltests; record in specs/350-nrg-cuex-bounds/fix-log.md
+
 ## Dependencies
 
 T001 → T002 → T003 → T004 → T005 → T006 → T007 → T008/T009 → T010 → T011. All code tasks touch

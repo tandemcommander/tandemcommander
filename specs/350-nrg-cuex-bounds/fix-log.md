@@ -86,7 +86,33 @@ chunk under 16 bytes makes a huge track count". Autonomous run (`/tandem-backlog
   seek.
 - Each mutant restored from a copy; `grep MUTANT` -> 0; rebuilt; saltests 29,197 / 0.
 
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+- Re-ran the build (OK), saltests (29,197 / 0), the encoding guard (0), the probe on the fix (4 rows
+  PASS as recorded, plus its own rows N-ZERO, N-HDR20 = a 20-byte chunk, N-SHORTNZ PASS) and on the
+  old `nrg.cpp` in a copy (N-SHORT 1037 MB / 50.2 s, N-PAST 1039 MB / 50.1 s, N-ODD / N-ZERO /
+  N-SHORTNZ not opened) - the probe separates old from new. Callers: `ReadNRGRoot` only (ignores
+  the result, as before); a well-formed chunk consumes the same bytes; `CBufferedFile::Seek(0,
+  FILE_CURRENT)` is the logical position. No data-loss path (read-only open).
+- **SHOULD 1**: a CUEX chunk of 16 + 96 MiB lying within the image (kind `inside`) still built every
+  entry on the first fix: 1565 MB, 179 s, 6.3 million tracks (probe killed the program) - worse than
+  the item's case. **Taken** (inside the item's *Problem*): `SalNrgCuexEntriesPlausible` - a chunk of
+  more than 99 entries (a CD's tracks) is skipped like one that does not fit. The spec's
+  clarification "no 99-track cap" revised, FR-002 extended.
+- **NOTE 1**: N-SHORT cannot catch a missing seek (zero bytes) - **taken**: rows N-ZERO and N-SHORTNZ
+  ("ABCDEFGH") added (and N-INSIDE for SHOULD 1). N-HDR20 not added (N-ZERO / N-SHORTNZ cover it).
+- **NOTE 2**: a short read inside a fitting chunk leaves the position inside the chunk - unchanged
+  from before, needs an I/O error; the spec's edge case says so. Not changed.
+- **NOTE 3**: closing records not yet written - done at closing.
+
+After the fix: `.uild.cmd` BUILD SUCCEEDED; saltests `29202 checks, 0 failed` (+5);
+probe `probe/result_after_review1.txt` PASS 14, FAIL 0 (N-INSIDE opened with its two tracks, 74 MB,
+0.6 s); registry restored, identical. Mutant (the cap removed, `entries <= 0xFFFFFFFF`): saltests 3
+failed (101 entries, the 96 MiB chunk, 0xFFFFFFFF); restored, rebuilt, 29,202 / 0; encoding guard 0.
+
 ## Limits
 
-- No 99-track cap: a CUEX chunk that lies within the image can still hold (file size - 16) / 16
-  entries when the footer's chunk offset points far before the end of the file (crafted only).
+- A short read inside a chunk that fits leaves the next header read from inside the chunk (review 1
+  NOTE 2; needs an I/O error; unchanged from before).

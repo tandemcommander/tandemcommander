@@ -10,6 +10,9 @@
       short.nrg  a CUEX chunk of 8 bytes and a 96 MiB padding chunk before the good chunks
       past.nrg   a CUEX chunk claiming 0xFFFFFFF0 bytes and the 96 MiB padding before the good chunks
       odd.nrg    the good chunks, the CUEX chunk 4 bytes longer than its two entries
+      zero.nrg   a CUEX chunk of 0 bytes before the good chunks
+      shortnz.nrg a CUEX chunk of 8 bytes "ABCDEFGH" before the good chunks (review 1)
+      inside.nrg a CUEX chunk of 16 + 96 MiB bytes within the image before the good chunks (review 1)
     Each row: the program starts with the image in the left panel (-l); the probe waits until the
     main window answers (at most 180 s), takes the time to that point and the process's peak working
     set, the boxes shown at the open and the panel's location; when the image opened, Select All
@@ -23,6 +26,9 @@
                NRG: its chunk list ends at the end of the file); before 350: the same growth as N-SHORT
       N-ODD    PASS = opened, two tracks listed (before 350: the next chunk header read 4 bytes early -
                not opened)
+      N-ZERO, N-SHORTNZ  PASS = opened, two tracks listed (before 350: not opened)
+      N-INSIDE PASS = opened, two tracks listed, within the bound (the fix before review 1's cap: 1565 MB,
+               179 s, 6.3 million tracks)
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does
     not answer (End-Row).
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -109,13 +115,16 @@ try {
     $s = $Root + '\seeds'; NewDir $s
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $made = @()
-    foreach ($k in @('ok', 'short', 'past', 'odd')) { $made += (& python -I (Join-Path $Here 'img350.py') $k "$s\$k.nrg" 2>&1 | ForEach-Object { "$_" }) }
+    foreach ($k in @('ok', 'short', 'past', 'odd', 'zero', 'shortnz', 'inside')) { $made += (& python -I (Join-Path $Here 'img350.py') $k "$s\$k.nrg" 2>&1 | ForEach-Object { "$_" }) }
     $ErrorActionPreference = $old
     Out ('img350: ' + ($made -join '; '))
     Nrg-Row 'N-OK' "$s\ok.nrg" $true $false
     Nrg-Row 'N-SHORT' "$s\short.nrg" $true $true
     Nrg-Row 'N-PAST' "$s\past.nrg" $false $true
     Nrg-Row 'N-ODD' "$s\odd.nrg" $true $false
+    Nrg-Row 'N-ZERO' "$s\zero.nrg" $true $false
+    Nrg-Row 'N-SHORTNZ' "$s\shortnz.nrg" $true $false
+    Nrg-Row 'N-INSIDE' "$s\inside.nrg" $true $true
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

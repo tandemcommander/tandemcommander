@@ -35,7 +35,8 @@
 //     only the whole entries its own size holds (SalNrgCuexEntryCount,
 //     feature 350; (Size - 16) / 16 in 32 bits underflowed for a chunk under
 //     16 bytes to 268 million entries, one track built from every 16 bytes up
-//     to the end of the file) and is read only when it lies within the image.
+//     to the end of the file) and is read only when it lies within the image
+//     and holds at most 99 entries (SalNrgCuexEntriesPlausible, a CD's tracks).
 //
 //*****************************************************************************
 
@@ -108,6 +109,16 @@ inline unsigned long long SalNrgCuexEntryCount(unsigned long long size)
     if (size < SAL_NRG_CUEX_HEADER)
         return 0;
     return (size - SAL_NRG_CUEX_HEADER) / SAL_NRG_CUEX_ENTRY;
+}
+
+#define SAL_NRG_MAX_TRACKS 99 // tracks a CD holds (Red Book; Nero writes track numbers 01..99)
+
+// feature 350 (review 1): true when a CUEX chunk of 'entries' entries can describe a disc - a chunk
+// that lies within the image could still claim one track per 16 bytes of it (a 96 MiB chunk built
+// 6.3 million tracks, 1.5 GB, 3 minutes); such a chunk is skipped as damaged
+inline bool SalNrgCuexEntriesPlausible(unsigned long long entries)
+{
+    return entries <= SAL_NRG_MAX_TRACKS;
 }
 
 // true when the DAOX track number 'number' (1-based) names one of the 'trackCount' tracks

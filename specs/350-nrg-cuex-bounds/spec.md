@@ -47,9 +47,11 @@ chunk).
   continues after the chunk, as for any other chunk (autonomous run: item - *Expected*, "takes only as
   many entries as its chunk holds"; conservative - a valid chunk is consumed exactly as before)
 - Q: Should the CUEX reader also refuse more than 99 tracks (a CD's maximum) when its chunk lies
-  within the image? → A: No - only the chunk's and the image's bounds the item names; the remaining
-  cost for a crafted image whose chunk offset points far before its end is recorded as a limit
-  (autonomous run: conservative)
+  within the image? → A: Yes (revised after review 1, which measured a 96 MiB CUEX chunk inside a
+  100 MB image on the first fix: 6.3 million tracks, 1565 MB, 179 s - the item's own symptom, worse):
+  a chunk claiming more entries than a CD has tracks is skipped like one that does not fit; no real
+  disc image has more than 99 tracks, so nothing is lost (autonomous run: item - *Problem*, "a damaged
+  image costs memory and time"; conservative - refuses rather than guesses)
 - Q: What happens when a read of the header or an entry returns fewer bytes than asked? → A: no track
   is made from it, the reader stops taking entries and reports failure as it did before; the chunk list
   reader goes on as it did before (autonomous run: item - *Expected*; conservative)
@@ -115,9 +117,8 @@ A user opens a well-formed NRG image; it lists exactly the tracks it listed befo
 - A CUEX chunk of 0 bytes: no track, the next chunk header follows directly.
 - A read of an entry that returns fewer than 16 bytes (an I/O error within a chunk that lies within
   the image): no track is made from it, the reader stops taking entries and reports failure.
-- A CUEX chunk lying within the image but holding very many entries (only possible when the image's
-  chunk offset points far before its end): bounded by the image's size, as the item asks - see
-  Assumptions.
+- A CUEX chunk lying within the image but holding more than 99 entries (only possible when the
+  image's chunk offset points far before its end): skipped, no track (review 1; probe row N-INSIDE).
 
 ## Requirements *(mandatory)*
 
@@ -125,8 +126,9 @@ A user opens a well-formed NRG image; it lists exactly the tracks it listed befo
 
 - **FR-001**: The CUEX reader MUST take as entries only the whole 16-byte entries that follow the
   16-byte header within the chunk's own size; a chunk under 32 bytes holds none.
-- **FR-002**: The CUEX reader MUST read a chunk only when the chunk lies within the image file;
-  otherwise it MUST skip the chunk like an unknown one and make no track from it.
+- **FR-002**: The CUEX reader MUST read a chunk only when the chunk lies within the image file and
+  holds at most 99 entries (a CD's tracks); otherwise it MUST skip the chunk like an unknown one and
+  make no track from it.
 - **FR-003**: The CUEX reader MUST check that every read returned the whole header or entry and MUST
   never make a track from a short read.
 - **FR-004**: After a CUEX chunk that lies within the image, the next chunk header MUST be read from
@@ -156,10 +158,8 @@ A user opens a well-formed NRG image; it lists exactly the tracks it listed befo
 
 ## Assumptions
 
-- Assumption (autonomous run): no upper limit on the track count beyond the chunk's size is added
-  (a CD holds at most 99 tracks, but the item asks only for the chunk and image bounds; a crafted
-  image whose chunk offset points far before its end can still give one track per 16 bytes of the
-  image) - recorded as a limit.
+- Assumption (autonomous run): a CUEX chunk of more than 99 entries describes no disc (Red Book's
+  track limit; Nero numbers tracks 01..99) - it is treated as damaged (review 1).
 - Assumption (autonomous run): a chunk that does not fit the image makes the image not open as NRG
   (the skip seeks past the end of the file, so the next header cannot be read) - the same result as
   before, without building tracks first, and the same behaviour as 331's CD-Text reader.

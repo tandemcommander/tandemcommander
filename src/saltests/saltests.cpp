@@ -21845,6 +21845,13 @@ static void TestNrgCuex350()
     // a chunk the image cannot hold is never read (331's rule, used by the CUEX reader since 350)
     CHECK(!SalNrgChunkFits(47040, 0xFFFFFFF0ull, 100710554));
     CHECK(SalNrgChunkFits(47040, 48, 47040 + 48 + 8 + 12));
+    // (review 1) at most a CD's 99 tracks: a 99-track chunk (16 * 100 bytes) is read, one more entry
+    // or a 96 MiB chunk lying within the image is not
+    CHECK(SalNrgCuexEntriesPlausible(0));
+    CHECK(SalNrgCuexEntriesPlausible(SalNrgCuexEntryCount(16 * 100)));
+    CHECK(!SalNrgCuexEntriesPlausible(SalNrgCuexEntryCount(16 * 101)));
+    CHECK(!SalNrgCuexEntriesPlausible(SalNrgCuexEntryCount(16 + 96ull * 1024 * 1024)));
+    CHECK(!SalNrgCuexEntriesPlausible(SalNrgCuexEntryCount(0xFFFFFFFFull)));
 }
 
 static void TestNrgCdText331()
