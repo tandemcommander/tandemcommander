@@ -273,6 +273,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a CloneCD image without its .ccd lists one session, then Unpack deletes it](items/iso-plug-in-a-clonecd-image-without-its-ccd-lists-one/desc.md) | bug | 5 | archives | measure:352 | 2026-10-31 |
 
 ## Parked
 
