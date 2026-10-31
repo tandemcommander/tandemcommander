@@ -41,6 +41,7 @@ open VAT volume ends at its VAT.
 - Q: Which limits apply? → A: Feature 354's: at most 16 sectors past the volume keep the listing without reading; a rest longer than 512 sectors is not read and marks the listing (autonomous run: item - "by the same rule as feature 354 (SAL_ISO_LATER_VOLUME_SECTOR, SAL_ISO_ZERO_REST_SECTORS)")
 - Q: What when the anchor at sector 256 is missing or invalid, its descriptor sequence names no partition, or the file ends within the volume? → A: The listing is marked incomplete (the size cannot be read or trusted), as features 353 - 355 do (autonomous run: rule - CLAUDE.md "a safe to delete? check fails closed")
 - Q: Which images does the rule apply to? → A: Only cooked images of the plain detection (feature 354's `cookedIso`) whose sector 16 holds no ISO 9660 primary descriptor; images with an ISO 9660 descriptor keep feature 354's rule, raw images feature 353's / 355's, images with a track table and the other plain formats are unchanged (autonomous run: item, and conservative for what it does not name)
+- Q: Does a sparing table (or another descriptor of the volume that is not an anchor) in the rest count as empty when the file does not end with the volume's closing anchor? → A: No - only zero bytes and the volume's own anchors count as empty; such an image (a sparable `dvdrw` / `cdrw` volume followed by more sectors) is kept after a whole unpack (autonomous run: conservative - the rule recognises the fewest structures, a check that is unsure fails closed; a sparable image that ends with its closing anchor, as mkudffs writes it, is unaffected)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -117,6 +118,8 @@ and a whole unpack keeps the image.
 - A VAT volume followed by other data: its last sector is not its own file entry - the descriptors'
   end is used (the partition claims the whole medium: more than the file - marked).
 - A UDF image with blocks other than 2048 bytes: no anchor at 2048-byte sector 256 - marked.
+- A sparable volume (its sparing table lies past the reserve sequence) followed by more sectors, so
+  that the file does not end with its closing anchor: the sparing table is not an empty sector - marked.
 - A cooked image with an ISO 9660 descriptor at sector 16 (a UDF bridge image): feature 354's rule,
   unchanged.
 - Listing and single-file extraction: unchanged; only whether a whole unpack counts as complete.
