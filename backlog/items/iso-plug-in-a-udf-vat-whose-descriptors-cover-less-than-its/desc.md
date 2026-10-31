@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF VAT whose descriptors cover less than its length is read with heap content
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: measure:360
@@ -35,3 +35,4 @@ A VAT whose descriptors do not cover its information length is either refused (n
 ## Log
 
 - 2026-10-31 — created (source measure:360)
+- 2026-10-31 — moved to Next position 86
