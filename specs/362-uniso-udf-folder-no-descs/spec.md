@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed - implement exactly what it describes." From backlog item iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed.
 
+## Clarifications
+
+### Session 2026-10-31
+
+- Q: Does a sub-folder whose entry has no descriptors get a message box? → A: no - the same silent unreadable-folder path as feature 330 (listed empty, listing marked incomplete); no new UI string (autonomous run: conservative)
+- Q: Is a folder entry with descriptors whose first descriptor has length 0 treated as unreadable too? → A: no, unchanged - the item names L_AD 0 only (autonomous run: item)
+- Q: Where does the rule live? → A: a pure function in the existing header `src/common/salisoudfentry.h` (feature 361's rules of the same reader) with `saltests` checks; the folder reader applies it (autonomous run: rule, stop-rules §2.5)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A damaged sub-folder no longer costs the user the image (Priority: P1)
