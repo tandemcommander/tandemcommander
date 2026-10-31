@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a damaged UDF file entry hangs the listing or reads past its sector
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:360
@@ -10,7 +10,7 @@ created: 2026-10-31
 updated: 2026-10-31
 verified: 2026-10-31 73bb1246
 effort: S
-feature: -
+feature: 361
 related: []
 depends-on: []
 reason: -
@@ -38,3 +38,4 @@ The general file-entry reader never loops on a reserved descriptor type and neve
 - 2026-10-31 — auto-triage: severity 6 -> 7: the program stops answering and must be killed (and reads past its sector buffer) on a damaged image - a crash in an unusual scenario, as the sibling VAT item of feature 360
 - 2026-10-31 — moved to Next position 1
 - 2026-10-31 — verified at 73bb1246: still present at 73bb1246: ReadFileEntry(general) unchanged since review 1 of 360 reproduced the hang (rootadt5); no case for types 4-7, 32-bit area unbounded
+- 2026-10-31 — run started, feature 361
