@@ -1030,37 +1030,76 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
             SetSectorFormat(SectorType);
             // feature 354: a cooked image - 2048-byte sectors from offset 0, recognised by its sector 16
             BOOL cookedIso = FALSE;
+            // feature 357: the check that opened the file (SAL_ISO_PLAIN_*, salisotrack.h)
+            int plainLayout = SAL_ISO_PLAIN_NONE;
 
             if (CheckForISO(quiet))
             {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_ISO;
                 cookedIso = !rawStart && SectorType == stISO && DataOffset == 0 && SectorRawSize == 0x800 &&
                             SectorHeaderSize == 0;
             }
             else if (CheckForNRG(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_NRG;
+            }
             else if (CheckFor2336(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_2336;
+            }
             else if (CheckForNCD(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_NCD;
+            }
             else if (CheckForPDI(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_PDI;
+            }
             else if (CheckForECDC(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_ECDC;
+            }
             else if (CheckForCIF(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_CIF;
+            }
             else if (CheckForC2D(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_C2D;
+            }
             else if (CheckForCIF2332(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_CIF2332;
+            }
             else if (CheckForXbox(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_XBOX;
+            }
             else if (CheckForMDF(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_MDF;
+            }
             else if (CheckForHFS(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_HFS;
+            }
             else if (CheckForAPFS(quiet))
+            {
                 validISO = TRUE;
+                plainLayout = SAL_ISO_PLAIN_APFS;
+            }
 
             if (validISO)
             {
@@ -1125,8 +1164,11 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                 // when the file holds room for a later volume past that one and the user data of the sectors
                 // there is not zero bytes only (or cannot be shown to be: too many sectors, not readable, the
                 // volume's size unknown or more than the file), the listing is marked incomplete, so a whole
-                // unpack fails and "Delete archive after unpacking" keeps the image
-                if (rawStart && !CcdMissing)
+                // unpack fails and "Delete archive after unpacking" keeps the image.
+                // feature 357: the same for a file without a raw start that a CD layout other than "cooked from
+                // offset 0" opened (Easy CD Creator, the NRG offset, 2336, NCD, PDI, CIF, C2D, CIF 2332) - the
+                // rule reads the user data at the opened layout (SalIsoPlainRawRuleApplies)
+                if (SalIsoPlainRawRuleApplies(rawStart != FALSE, CcdMissing != FALSE, plainLayout))
                 {
                     unsigned char desc[SAL_ISO_PVD_BYTES];
                     DWORD got = ReadDataByPos(GetSectorOffset(16), (DWORD)sizeof(desc), desc);

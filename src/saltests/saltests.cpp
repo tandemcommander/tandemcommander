@@ -20406,6 +20406,36 @@ static void TestIsoRawRest_355()
     CHECK(dec(true, 0xFFFFFFFFFFFFFFFFull, 0x7FFFFFFFFFFFFFFFll, 0, 1) == SAL_ISO_REST_MARK);
 }
 
+// feature 357: which images of the plain detection get 355's rule of the rest past the listed volume
+static void TestIsoPlainLayouts_357()
+{
+    const int covered[] = {SAL_ISO_PLAIN_NRG, SAL_ISO_PLAIN_2336, SAL_ISO_PLAIN_NCD, SAL_ISO_PLAIN_PDI,
+                           SAL_ISO_PLAIN_ECDC, SAL_ISO_PLAIN_CIF, SAL_ISO_PLAIN_C2D, SAL_ISO_PLAIN_CIF2332};
+    const int left[] = {SAL_ISO_PLAIN_NONE, SAL_ISO_PLAIN_ISO, SAL_ISO_PLAIN_XBOX, SAL_ISO_PLAIN_MDF,
+                        SAL_ISO_PLAIN_HFS, SAL_ISO_PLAIN_APFS, -1, SAL_ISO_PLAIN_APFS + 1};
+    // the order of the detection's checks (the values are not stored anywhere; they only must differ)
+    CHECK(SAL_ISO_PLAIN_NONE == 0 && SAL_ISO_PLAIN_ISO == 1 && SAL_ISO_PLAIN_CIF2332 == 9 &&
+          SAL_ISO_PLAIN_APFS == 13);
+    for (int l : covered)
+    {
+        // without a raw start (ECDC, NRG offset, ... - the item's defect): the rule applies, a missing .ccd or not
+        CHECK(SalIsoPlainRawRuleApplies(false, false, l));
+        CHECK(SalIsoPlainRawRuleApplies(false, true, l));
+        // a raw start: as 355 (applies) unless the .ccd is missing (353's rule)
+        CHECK(SalIsoPlainRawRuleApplies(true, false, l));
+        CHECK(!SalIsoPlainRawRuleApplies(true, true, l));
+    }
+    for (int l : left)
+    {
+        // cooked from offset 0 (354), Xbox, HFS, APFS, MDF without a raw start, nothing opened, unknown values
+        CHECK(!SalIsoPlainRawRuleApplies(false, false, l));
+        CHECK(!SalIsoPlainRawRuleApplies(false, true, l));
+        // a raw start keeps 355's and 353's choice whatever check opened the file
+        CHECK(SalIsoPlainRawRuleApplies(true, false, l));
+        CHECK(!SalIsoPlainRawRuleApplies(true, true, l));
+    }
+}
+
 // feature 356: a cooked UDF-only image - the UDF descriptors that give its volume's end, and whether the
 // rest past the volume is kept, marked or read (src/common/salisotrack.h)
 static void TestIsoUdfRest_356()
@@ -22770,6 +22800,7 @@ int main(int argc, char** argv)
     TestIsoCookedRest_354();
     TestIsoRawRest_355();
     TestIsoUdfRest_356();
+    TestIsoPlainLayouts_357();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

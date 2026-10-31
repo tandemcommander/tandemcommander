@@ -1,0 +1,100 @@
+iso357_probe (feature 357) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 18:38; registry key existed True
+
+seeds: 2336-one.raw=411136,2336-two.raw=822272,c2dm2-one.raw=897824,c2dm2-two.raw=1311776,c2d-one.raw=491520,c2d-two.raw=851968,cif2332-one.raw=410432,cif2332-two.raw=820864,cif-one.raw=361900,cif-two.raw=723756,ecdc-one.raw=413952,ecdc-rest16.raw=451584,ecdc-rest17.raw=453936,ecdc-short.raw=409248,ecdc-two.raw=827904,ecdc-zero150.raw=766752,ecdc-zero513.raw=1620528,ncd-one.raw=454222,ncd-two.raw=814670,nrg-one.raw=667648,nrg-rest16.raw=700416,nrg-rest17.raw=702464,nrg-short.raw=663552,nrg-two.raw=1028096,nrg-zero150.raw=974848,nrg-zero513.raw=1718272,pdi-one.raw=360752,pdi-two.raw=721200,roxio-two.raw=721184,roxio-zero150.raw=667936,s1.iso=360448,s2.iso=360448,s2.lba=3
+img357: ecdc-two: 827904 bytes, 352 data sectors, detected as ecdc
+img357: ecdc-one: 413952 bytes, 176 data sectors, detected as ecdc
+img357: nrg-two: 1028096 bytes, 352 data sectors, detected as nrg
+img357: nrg-one: 667648 bytes, 176 data sectors, detected as nrg
+img357: 2336-two: 822272 bytes, 352 data sectors, detected as 2336
+img357: 2336-one: 411136 bytes, 176 data sectors, detected as 2336
+img357: ncd-two: 814670 bytes, 352 data sectors, detected as ncd
+img357: ncd-one: 454222 bytes, 176 data sectors, detected as ncd
+img357: pdi-two: 721200 bytes, 352 data sectors, detected as pdi
+img357: pdi-one: 360752 bytes, 176 data sectors, detected as pdi
+img357: cif-two: 723756 bytes, 352 data sectors, detected as cif
+img357: cif-one: 361900 bytes, 176 data sectors, detected as cif
+img357: c2d-two: 851968 bytes, 352 data sectors, detected as c2d
+img357: c2d-one: 491520 bytes, 176 data sectors, detected as c2d
+img357: c2dm2-two: 1311776 bytes, 352 data sectors, detected as c2dm2
+img357: c2dm2-one: 897824 bytes, 176 data sectors, detected as c2dm2
+img357: roxio-two: 721184 bytes, 352 data sectors, detected as roxio
+img357: roxio-one: the detection would pick none, not roxio - not written
+img357: cif2332-two: 820864 bytes, 352 data sectors, detected as cif2332
+img357: cif2332-one: 410432 bytes, 176 data sectors, detected as cif2332
+img357: roxio-zero150: 667936 bytes, 326 data sectors, detected as roxio
+img357: ecdc-rest17: 453936 bytes, 193 data sectors, detected as ecdc
+img357: ecdc-zero513: 1620528 bytes, 689 data sectors, detected as ecdc
+img357: ecdc-short: 409248 bytes, 174 data sectors, detected as ecdc
+img357: ecdc-rest16: 451584 bytes, 192 data sectors, detected as ecdc
+img357: ecdc-zero150: 766752 bytes, 326 data sectors, detected as ecdc
+img357: nrg-rest17: 702464 bytes, 193 data sectors, detected as nrg
+img357: nrg-zero513: 1718272 bytes, 689 data sectors, detected as nrg
+img357: nrg-short: 663552 bytes, 174 data sectors, detected as nrg
+img357: nrg-rest16: 700416 bytes, 192 data sectors, detected as nrg
+img357: nrg-zero150: 974848 bytes, 326 data sectors, detected as nrg
+
+R-ECDC-TWO END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ECDC-TWO RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-ECDC-ONE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ECDC-ONE RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-NRG-TWO  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-NRG-TWO  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-NRG-ONE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-NRG-ONE  RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-2336-TWO END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-2336-TWO RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-2336-ONE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-2336-ONE RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-NCD-TWO  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-NCD-TWO  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-NCD-ONE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-NCD-ONE  RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-PDI-TWO  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-PDI-TWO  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-PDI-ONE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-PDI-ONE  RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-CIF-TWO  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-CIF-TWO  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-CIF-ONE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-CIF-ONE  RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-C2D-TWO  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-C2D-TWO  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-C2D-ONE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-C2D-ONE  RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-C2DM2-TWO END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-C2DM2-TWO RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-C2DM2-ONE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-C2DM2-ONE RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-ROXIO-TWO END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ROXIO-TWO RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-CIF2332-TWO END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-CIF2332-TWO RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-CIF2332-ONE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-CIF2332-ONE RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-ROXIO-ZERO150 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ROXIO-ZERO150 RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-ECDC-REST17 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ECDC-REST17 RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-ECDC-ZERO513 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ECDC-ZERO513 RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-ECDC-SHORT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ECDC-SHORT RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-ECDC-REST16 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ECDC-REST16 RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-ECDC-ZERO150 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ECDC-ZERO150 RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-NRG-REST17 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-NRG-REST17 RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-NRG-ZERO513 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-NRG-ZERO513 RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-NRG-SHORT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-NRG-SHORT RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-NRG-REST16 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-NRG-REST16 RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-NRG-ZERO150 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-NRG-ZERO150 RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 60, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

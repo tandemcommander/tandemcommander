@@ -692,6 +692,54 @@ inline int SalIsoRawRestDecision(bool volumeKnown, unsigned long long volumeSect
     return SAL_ISO_REST_CHECK;
 }
 
+// Feature 357: the check of CISOImage::Open's plain detection (no table of sessions read) that opened the file,
+// in the order the detection tries them
+enum
+{
+    SAL_ISO_PLAIN_NONE = 0, // no check opened the file
+    SAL_ISO_PLAIN_ISO,      // CheckForISO - at the detected layout (without a raw start: cooked from offset 0, 354)
+    SAL_ISO_PLAIN_NRG,      // CheckForNRG - sector 0 at 0x4B000
+    SAL_ISO_PLAIN_2336,     // CheckFor2336 - Mode 2 sectors of 2336 bytes
+    SAL_ISO_PLAIN_NCD,      // CheckForNCD - sector 0 at 0x16E4E
+    SAL_ISO_PLAIN_PDI,      // CheckForPDI - sector 0 at 0x130
+    SAL_ISO_PLAIN_ECDC,     // CheckForECDC - Easy CD Creator: 2352-byte sectors, sync and header zeroed
+    SAL_ISO_PLAIN_CIF,      // CheckForCIF - RIFF chunks, then sectors of 2056 bytes
+    SAL_ISO_PLAIN_C2D,      // CheckForC2D - WinOnCD (0x20000; 0x76220 Mode 2) and Roxio (0x120)
+    SAL_ISO_PLAIN_CIF2332,  // CheckForCIF2332 - sectors of 2332 bytes
+    SAL_ISO_PLAIN_XBOX,     // CheckForXbox - XDVDFS
+    SAL_ISO_PLAIN_MDF,      // CheckForMDF - needs the sync pattern at offset 0
+    SAL_ISO_PLAIN_HFS,      // CheckForHFS
+    SAL_ISO_PLAIN_APFS,     // CheckForAPFS
+};
+
+// Feature 357: does feature 355's rule of the rest past the listed volume (SalIsoRawRestDecision at the opened
+// layout) apply to an image the plain detection opened? 'rawStart' = the file starts with the CD sync pattern;
+// 'ccdMissing' = an .img whose .ccd could not be opened; 'layout' = SAL_ISO_PLAIN_*. A raw start applies as 355
+// decided (any layout) unless the .ccd is missing (353's rule). Without a raw start the rule applies to the CD
+// layouts whose listed volume is an ISO 9660 volume at the layout's sector 16 and whose sectors carry the user
+// data at a fixed place - NRG offset, 2336, NCD, PDI, ECDC, CIF, C2D, CIF 2332: a later session of a
+// multi-session disc lies past that volume. Not to ISO (cooked from offset 0 - 354's rule), Xbox (XDVDFS: no ISO
+// 9660 size, no sessions), HFS, APFS (no CD sessions), MDF (always a raw start) or an unknown value.
+inline bool SalIsoPlainRawRuleApplies(bool rawStart, bool ccdMissing, int layout)
+{
+    if (rawStart)
+        return !ccdMissing;
+    switch (layout)
+    {
+    case SAL_ISO_PLAIN_NRG:
+    case SAL_ISO_PLAIN_2336:
+    case SAL_ISO_PLAIN_NCD:
+    case SAL_ISO_PLAIN_PDI:
+    case SAL_ISO_PLAIN_ECDC:
+    case SAL_ISO_PLAIN_CIF:
+    case SAL_ISO_PLAIN_C2D:
+    case SAL_ISO_PLAIN_CIF2332:
+        return true;
+    default:
+        return false;
+    }
+}
+
 // Feature 356: a cooked image whose sector 16 holds the UDF volume recognition sequence and no ISO 9660
 // primary descriptor (a UDF-only image - IMAPI2FS, mkudffs, Blu-ray) is listed from its UDF descriptors (the
 // plug-in's CUDF reads 2048-byte blocks, the anchor at sector 256 first). Feature 354's rule needs the
