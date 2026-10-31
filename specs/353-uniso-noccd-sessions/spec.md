@@ -41,6 +41,7 @@ Every row shows the "Missing .CCD file" box (once per open of the image).
 - Q: Which images without a `.ccd` does the check apply to? → A: Only raw images (2352-byte sectors with the CD sync pattern at the start, as CloneCD writes them); a plain `.img` of 2048-byte sectors (a disk image) is unchanged (autonomous run: item - "a plain single-volume `.img` (disk image, one session) unpacks and is deleted as today" - and conservative: keeps the existing behaviour for the case the item does not name)
 - Q: What when the size of the listed volume cannot be read (no primary volume descriptor at sector 16 - for example a UDF-only or HFS raw dump)? → A: The listing is marked incomplete (autonomous run: conservative - refuses rather than guesses)
 - Q: Is a new message shown for a kept image? → A: No - the existing "Missing .CCD file. Displayed image could be incomplete." box already says the listing may be incomplete; no UI string changes (autonomous run: conservative; as feature 352)
+- Q: When the start of the file has the CD sync pattern (raw) but the image is then opened by one of the other plain checks (not the volume descriptor at sector 16 of the raw layout), does the rule still apply? → A: Yes - "raw" is decided by the sync pattern at the start of the file alone; the listed volume's size is read where the opened layout puts sector 16, and when no primary volume descriptor is there the listing is marked (autonomous run: conservative - one simple rule that fails closed rather than a list of exceptions)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -103,8 +104,8 @@ deleted.
 
 ### Functional Requirements
 
-- **FR-001**: When an `.img` is opened without its `.ccd` and detected as a raw image (2352-byte
-  sectors), and the file holds more than 16 whole sectors past the end of the volume the plain
+- **FR-001**: When an `.img` is opened without its `.ccd` and detected as a raw image (the CD sync
+  pattern at the start of the file, 2352-byte sectors - whichever plain check then opens it), and the file holds more than 16 whole sectors past the end of the volume the plain
   detection lists, the plug-in MUST mark the listing incomplete, so that a whole unpack fails and
   "Delete archive after unpacking" keeps the image.
 - **FR-002**: When the size of the listed volume cannot be read for such a raw image, the listing MUST be
