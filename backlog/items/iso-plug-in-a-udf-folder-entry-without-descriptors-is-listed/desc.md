@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF folder entry without descriptors is listed empty and the image deleted
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:361
@@ -10,7 +10,7 @@ created: 2026-10-31
 updated: 2026-10-31
 verified: 2026-10-31 5d74e338
 effort: S
-feature: -
+feature: 362
 related: []
 depends-on: []
 reason: -
@@ -57,3 +57,4 @@ rows on `ud.iso` copies (330's seed) and a control that a real empty folder (gen
 - 2026-10-31 — created (source review:361)
 - 2026-10-31 — moved to Next position 1
 - 2026-10-31 — verified at 5d74e338: reproduced at 5d74e338: probe iso362 7 FAIL - folder a/zlast/root L_AD 0 (short and embedded): image deleted after partial unpack, no window
+- 2026-10-31 — run started, feature 362

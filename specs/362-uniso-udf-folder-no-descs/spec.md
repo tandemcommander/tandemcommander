@@ -3,7 +3,7 @@
 **Feature Branch**: `362-uniso-udf-folder-no-descs`
 **Created**: 2026-10-31
 **Status**: Draft
-**Input**: User description: "Backlog item iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed - implement exactly what it describes."
+**Input**: User description: "Backlog item iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed - implement exactly what it describes." From backlog item iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed.
 
 ## User Scenarios & Testing *(mandatory)*
 
