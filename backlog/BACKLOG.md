@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a multi-session image opened through another plain layout lists one session, then Unpack deletes it](items/iso-plug-in-a-multi-session-image-opened-through-another/desc.md) | bug | 7 | archives | 357 |
 
 ## Next
 
@@ -280,6 +279,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 357 with real ECDC, CIF, C2D, NCD and PDI disc images, one and two sessions](items/check-feature-357-with-real-ecdc-cif-c2d-ncd-and-pdi-disc/desc.md) | person-step | 3 | archives | leftover:357 | 2026-10-31 |
 
 ## Parked
 

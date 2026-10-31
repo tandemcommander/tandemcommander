@@ -719,7 +719,8 @@ enum
 // layouts whose listed volume is an ISO 9660 volume at the layout's sector 16 and whose sectors carry the user
 // data at a fixed place - NRG offset, 2336, NCD, PDI, ECDC, CIF, C2D, CIF 2332: a later session of a
 // multi-session disc lies past that volume. Not to ISO (cooked from offset 0 - 354's rule), Xbox (XDVDFS: no ISO
-// 9660 size, no sessions), HFS, APFS (no CD sessions), MDF (always a raw start) or an unknown value.
+// 9660 size, no sessions), HFS, APFS (no CD sessions), MDF (it needs the sync pattern at offset 0, which is a raw
+// start unless sector 0's mode byte is neither 1 nor 2 - such a file is left as before) or an unknown value.
 inline bool SalIsoPlainRawRuleApplies(bool rawStart, bool ccdMissing, int layout)
 {
     if (rawStart)

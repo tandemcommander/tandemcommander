@@ -61,3 +61,20 @@ Backlog item `iso-plug-in-a-multi-session-image-opened-through-another` (source 
 - Regressions (hidden desktop, this build): `probe/regress_353.txt` 16 / 0, `regress_354.txt` 28 / 0,
   `regress_355.txt` 40 / 0, `regress_356.txt` 56 / 0 - as those features recorded; registry restored and
   identical each time.
+
+## Review
+
+- Review 1 (refute-first, independent agent): **no MUST, no SHOULD**. Re-ran the probe with its own extra rows
+  (zero tails of 150 sectors for 2336, CIF, C2D Mode 2, CIF 2332, PDI, NCD, C2D - deleted; 17 non-zero sectors for
+  CIF and 2336 - kept; an ECDC two-session `.img` without `.ccd` - kept with the "Missing .CCD" box; its
+  one-session `.img` - deleted): 30 / 0. Negative control (`uniso.spl` of HEAD~1 in its own worktree and build
+  folder): 14 / 6 - every R row deleted the image, every C row passed. Read stays inside each sector for every
+  layout (CIF 2056 bytes exactly). The mark is consumed only by the whole unpack (`uniso.cpp`), so a wrong mark
+  only keeps an image.
+- NOTEs: (1) crafted images only - a real CIF / C2D / NCD / PDI / NRG-offset file ending with more than 16 sectors
+  of non-zero vendor data would be kept (no loss; recorded as a limit and person step); (2) a UDF-only volume at
+  the NRG offset is always marked (decided, fails closed); (3) the header comment said MDF is "always a raw
+  start" - a sync with a mode byte other than 1 / 2 is not; **fixed** (comment and data-model); rebuilt, saltests
+  29,553 / 0, encoding guard 0; (4) the Roxio image shorter than 0x7F53E bytes that never opens - an older limit,
+  nothing is extracted or deleted, so no data at stake: recorded here and in the closing report, not an Inbox item;
+  (5) old review worktrees of other features still registered - not this feature's.

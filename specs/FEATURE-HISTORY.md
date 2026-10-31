@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5382,3 +5382,27 @@ a few early ones are out of sequence).
   the first 48 rows (saltests 12 failed); regressions 354 28 / 0, 355 40 / 0; saltests 29,402 -> 29,488 / 0
   (`TestIsoUdfRest_356`); refute-first review 1: MUST (N-256 anchor) fixed, SHOULDs fixed; review 2: no
   MUST, SHOULD (VAT end) fixed, SHOULD (VAT reader crash, on main too) -> Inbox; NOTEs recorded.
+- 357-uniso-other-layouts: a disc image the ISO plug-in's plain detection opened through a layout other than
+  "raw with the CD sync pattern at offset 0" (355) or "cooked from offset 0" (354) - Easy CD Creator (2352-byte
+  sectors, sync and header zeroed), the NRG offset, 2336-byte Mode 2, NCD, PDI, CIF, WinOnCD C2D (cooked and Mode
+  2), Roxio, CIF 2332 - and holding a second session past the listed volume was deleted by Unpack with "Delete
+  archive after unpacking" with the later session's files - now `CISOImage::Open`'s plain branch records which
+  check opened the file (`plainLayout`, `SAL_ISO_PLAIN_*`) and 355's block runs when
+  `SalIsoPlainRawRuleApplies` (`src/common/salisotrack.h`) says so: a raw start as before (unless the `.ccd` is
+  missing, 353), and without one for those eight checks; 355's rule and block body unchanged (the user data at
+  the opened layout, at most 512 sectors, zero = kept). Xbox, HFS, APFS (no CD sessions; 355's rule would mark
+  every Xbox image - no ISO 9660 size) and ISO from offset 0 (354) unchanged. No UI string, no window. Traps:
+  the item's *Notes* asked to measure which layouts can carry a later session - a builder `img357.py` mirrors the
+  detection's order and refuses an image an earlier check would open otherwise; a Roxio image shorter than
+  0x7F53E bytes never opens (`CheckForC2D` returns before its Roxio check - older, nothing extracted or deleted);
+  `rawStart` is only sync + mode byte 1 / 2, so the header's first "MDF is always a raw start" was wrong (review
+  1 NOTE, comment fixed). Limits: a real image of those formats ending with more than 16 sectors of non-zero
+  vendor data is now kept without a message; a UDF-only volume at the NRG offset is always marked; the sessions
+  are still not read; crafted images only (person step
+  `check-feature-357-with-real-ecdc-cif-c2d-ncd-and-pdi-disc`). From backlog item
+  `iso-plug-in-a-multi-session-image-opened-through-another`. Probe `iso357_probe` (334's seeds, `img357.py`,
+  ten layouts) on main 44 / 16 (every R-<layout>-TWO and the ECDC / NRG REST17, ZERO513, SHORT rows deleted) ->
+  60 / 0; regressions 353 16 / 0, 354 28 / 0, 355 40 / 0, 356 56 / 0; saltests 29,488 -> 29,553 / 0
+  (`TestIsoPlainLayouts_357`; the never-applies mutant fails 16); refute-first review 1: no MUST, no SHOULD - its
+  negative control (uniso.spl of HEAD~1) 14 / 6 with its own CIF / 2336 / ECDC-.img rows; NOTEs recorded, one
+  comment fixed.

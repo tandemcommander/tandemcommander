@@ -17,7 +17,7 @@ The check of `CISOImage::Open`'s plain branch that opened the file, in the order
 | `SAL_ISO_PLAIN_C2D` | `CheckForC2D` (WinOnCD, Mode 2, Roxio) | yes |
 | `SAL_ISO_PLAIN_CIF2332` | `CheckForCIF2332` | yes |
 | `SAL_ISO_PLAIN_XBOX` | `CheckForXbox` | no |
-| `SAL_ISO_PLAIN_MDF` | `CheckForMDF` (needs the sync: always a raw start) | no |
+| `SAL_ISO_PLAIN_MDF` | `CheckForMDF` (needs the sync: a raw start unless sector 0's mode byte is not 1 / 2) | no |
 | `SAL_ISO_PLAIN_HFS` | `CheckForHFS` | no |
 | `SAL_ISO_PLAIN_APFS` | `CheckForAPFS` | no |
 
