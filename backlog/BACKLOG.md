@@ -271,6 +271,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Plug-in hot keys on F-keys never run; F-keys run commands bound to letters](items/plug-in-hot-keys-on-f-keys-never-run-f-keys-run-commands/desc.md) | bug | 4 | panels-ui | measure:346 | 2026-10-31 |
 
 ## Parked
 
