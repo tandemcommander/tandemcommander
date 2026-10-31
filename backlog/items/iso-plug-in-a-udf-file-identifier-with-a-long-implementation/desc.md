@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: a UDF file identifier with a long implementation-use field reads past its buffer
 type: bug
-status: open
+status: in-progress
 severity: 6
 area: archives
 source: review:361
 who: agent
 created: 2026-10-31
-updated: 2026-10-31
-verified: -
+updated: 2026-11-01
+verified: 2026-11-01 443ee778
 effort: S
-feature: -
+feature: 363
 related: []
 depends-on: []
 reason: -
@@ -51,3 +51,5 @@ probe row on a `ud.iso` copy (feature 330's seed) whose identifier gets L_IU 0xF
 
 - 2026-10-31 — created (source review:361)
 - 2026-10-31 — moved to Next position 1
+- 2026-11-01 — verified at 443ee778: iso363 probe at 443ee778: L_IU 0xFFFF / 0x1000 / L_FI past buffer - name read past buffer listed as _, image deleted by unpack, 8 FAIL
+- 2026-11-01 — run started, feature 363
