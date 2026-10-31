@@ -48,10 +48,20 @@ information length over the 32-bit buffer is refused, not cut. The rule pure in 
 with `saltests` checks; a crafted image probe (mkudffs cdr image with its VAT entry's `L_AD` / extent length
 enlarged) shows no crash.
 
+- Reproduced by review 1 of feature 358 (`specs/358-uniso-udf-vat-missing/fix-log.md`, *Review*): mkudffs
+  `--media-type=cdr` image (`specs/356-uniso-udf-rest/probe/mkudf356.sh`, `mk_cdr.img`) whose VAT extended file
+  entry (the last file entry of file type 248) has its InformationLength (offset 56) lowered from 160 to 156,
+  L_AD (offset 212) kept at 160; Alt+F9 on the Debug build of 358 -> the CRT box "HEAP CORRUPTION DETECTED:
+  after Normal block ... CRT detected that the application wrote to memory after end of heap buffer", the block
+  allocated at udf.cpp(1364) (`ReadVAT`). 358's `SalIsoUdfVat200Entries` in `CheckForVAT` refuses this table, but
+  only after `ReadVAT` has written it.
+
 ## Notes
 
-- Not verified by a probe (found by reading); the crafted image is not built yet.
+- A probe row can be added to `specs/358-uniso-udf-vat-missing/probe/iso358_probe.ps1` (a `vatimg.py` kind that
+  lowers the VAT entry's InformationLength by 4).
 
 ## Log
 
 - 2026-10-31 — created (source measure:358)
+- 2026-10-31 — extended: reproduction by review 1 of feature 358 (heap corruption on the Debug build)

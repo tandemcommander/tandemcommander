@@ -84,3 +84,40 @@ VAT and data past it crashes Tandem Commander.
 
 - `iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer` (measure:358) - `ReadVAT` / `ReadAllocDesc`
   copy descriptors into the table buffer without a bound (research R3; found by reading, not probed).
+
+## Review
+
+### Review 1 (refute-first, general-purpose agent) - no MUST
+
+- Re-ran: saltests 29,578 / 0; probe 22 / 0 on the final build; 11 own rows on HEAD (UDF 1.50 VAT open / closed,
+  VAT 2.00 without extended entries, both + 100 sectors, header longer than the file, header = file, one entry)
+  all pass except X-OVF (the Inbox item). Negative control (main's `uniso.spl` in a copied tree): the 1.50 +
+  data image crashes too (the committed probe did not cover the 1.50 path), the 0-entry header reads
+  `Translation[0]` (#FDFDFDFD, the debug heap's guard bytes), the long header a garbage sector.
+- SHOULD 1 - the Inbox item `iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer` reproduced (InformationLength
+  160 -> 156, L_AD 160: Debug CRT "HEAP CORRUPTION DETECTED", block from `ReadVAT`; 358's count rule runs after the
+  write). Taken: the reproduction recorded on the item (out of 358's scope).
+- SHOULD 2 - the probe covered only VAT 2.00 in extended file entries and had no in-program control of the `<`
+  bound. Taken: `probe/mkvat358.sh` (mkudffs UDF 1.50 open / closed, `--noefe`), `vatimg.py` kinds `hdlong`,
+  `hdeq`; rows C-MK150, C-MK150C, C-MKNOEFE, R-V150D100, R-VNOEFED100, R-VHDLONG, R-VHDEQ (needs the invalid-sector
+  box #FF567539 - the bound), L-VHDLONG, L-MK150. Result `probe/result_after2.txt`: **40 / 0**. Negative control
+  with main's `uniso.spl` (reviewer's `%TEMP%\rev358\negtree`), new rows only:
+  `probe/result_neg_main_uniso.txt` **7 / 7** (R-V150D100, R-VNOEFED100 crash; R-VHDLONG, L-VHDLONG read
+  #8AAF3465 / #77A65B1F; R-VHDEQ #FDFDFDFD; C-MK150, L-MK150 pass).
+- NOTE hybrid (by reading): `CUDFISO::Open` marked a UDF part that does not open only when an anchor is at
+  sector 256 (330's sign); a UDF + ISO 9660 hybrid of a sequential medium whose VAT is missing and whose anchor is
+  elsewhere would have its UDF part dropped with only the box, and "Delete archive after unpacking" could delete
+  it - before 358 it crashed instead. Taken (fail closed, data safety): `CUDF::VatMissing` (set when the VAT is
+  missing, its search terminated, or its sector unreadable - only after the volume descriptors were read), and
+  `CUDFISO::Open` sets `PartMissing` from it. Not probed (no such hybrid can be built here; all mkudffs VAT images
+  have the anchor at 256).
+- NOTE viewer (F3 info) no longer prints the UDF info of a VAT image without its VAT (cosmetic); NOTE `UnpackFile`
+  of a multi-session VAT image whose earlier track's VAT is missing, sessions-as-folders off: fails with "can't
+  open track" (fails safely, not reproducible here); NOTE "#FF567539" in boxes is the internal invalid-sector
+  marker (old, cosmetic) - recorded, not changed.
+- NOTE padded real dumps (the VAT is in the file, sector 299 of 400) are refused - new Inbox item
+  `iso-plug-in-a-udf-image-with-data-past-its-vat-does-not-open` (review:358).
+- Housekeeping: the reviewer's bug report from its control run was already gone; its scratch is in
+  `%TEMP%\rev358`. It reported a WSL command of its own that ran `rm -f *.img` in the repository root (variables
+  empty); `git status` was clean - no tracked `.img` exists.
+- After the changes: build SUCCEEDED, saltests 29,578 / 0, probe 40 / 0.

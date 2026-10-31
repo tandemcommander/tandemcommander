@@ -60,10 +60,17 @@ BOOL CUDFISO::Open(BOOL quiet)
         return FALSE;
     }
 
+    // feature 358: a UDF volume found whose VAT is missing or unreadable does not open - it is a UDF part
+    // that is not listed, also without an anchor at sector 256 (330's sign below; a sequential medium may
+    // have its anchor elsewhere)
+    BOOL udfVatMissing = FALSE;
     if (udf->Open(quiet))
         UDF = udf;
     else
+    {
+        udfVatMissing = udf->VatMissing;
         delete udf;
+    }
 
     // scan udf part
     CHFS* hfs = new CHFS(Image);
@@ -91,7 +98,9 @@ BOOL CUDFISO::Open(BOOL quiet)
     // so a whole unpack fails and "Delete archive after unpacking" keeps the image (it was deleted,
     // files only in that part lost). The HFS part stays quiet (no message), feature 333 marks it too
     PartMissing = (HasISO && ISO == NULL) || hfsMissing;
-    if (HasUDF && UDF == NULL)
+    if (HasUDF && UDF == NULL && udfVatMissing)
+        PartMissing = TRUE;
+    if (HasUDF && UDF == NULL && !PartMissing)
     {
         // review 3 of 330: DetectTrackFS finds "NSR02" / "NSR03" in any of sectors 16-128, file data
         // too (a plain ISO 9660 image holding a UDF image) - only a UDF anchor at sector 256 (ECMA-167,

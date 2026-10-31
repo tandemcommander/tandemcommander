@@ -281,6 +281,7 @@ Last triaged: 2026-10-31
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
 | [ISO plug-in: a damaged UDF VAT file entry makes the reader write past its table buffer](items/iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer/desc.md) | bug | 7 | archives | measure:358 | 2026-10-31 |
+| [ISO plug-in: a UDF image with data past its VAT does not open although the VAT is in the file](items/iso-plug-in-a-udf-image-with-data-past-its-vat-does-not-open/desc.md) | improvement | 4 | archives | review:358 | 2026-10-31 |
 
 ## Parked
 

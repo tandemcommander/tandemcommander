@@ -194,6 +194,7 @@ CUDF::CUDF(CISOImage* image, DWORD extent, int trackno) : CUnISOFSAbstract(image
     PartitionMapping.Entries = 0; // feature 358: no table until a VAT is found (was left uninitialized)
     PartitionMapping.Length = 0;
     PartitionMapping.nMetadataICBs = 0;
+    VatMissing = FALSE;
 }
 
 CUDF::~CUDF()
@@ -1510,6 +1511,7 @@ BOOL CUDF::ReadSupportingTables(BOOL quiet)
                         }
                     }
 
+                    VatMissing = TRUE; // feature 358: see udf.h
                     return Error(IDS_UDF_ERROR_READING_VAT, quiet, vatLoc);
                 }
 
@@ -1530,6 +1532,7 @@ BOOL CUDF::ReadSupportingTables(BOOL quiet)
             // and the listing is marked; it used to open without a table and LogSector read through NULL
             if (vatRet != ERR_OK)
             {
+                VatMissing = TRUE;
                 if (vatRet == ERR_CONTINUE)
                     Error(IDS_UDF_MISSING_VAT, quiet);
                 return FALSE; // ERR_TERMINATE: the callee showed its message

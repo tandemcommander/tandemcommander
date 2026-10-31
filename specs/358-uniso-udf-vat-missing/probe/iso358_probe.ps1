@@ -20,10 +20,21 @@
       C-MKCDR, C-MKCDRC (closed), C-MKDVDR, C-MKBDR  plain mkudffs VAT images (the file ends with the VAT):
                    PASS = nothing extracted (the volumes are empty), no window, deleted - as 356's rows
       C-MKHD       a plain mkudffs hd image (no VAT): as above
+    Review 1 rows (mkvat358.sh, vatimg.py hdlong / hdeq):
+      C-MK150, C-MK150C, C-MKNOEFE  plain mkudffs cdr images with a UDF 1.50 VAT (open, closed) and a VAT 2.00
+                   in plain file entries: as C-MKCDR
+      R-V150D100, R-VNOEFED100  those (open) + 100 sectors of 0x5A: as R-VCDR100 (main: the 1.50 one crashed)
+      R-VHDLONG    mk_cdr whose VAT header is 8 bytes longer than the VAT file: as R-VCDR100 (main read a sector
+                   through the wrapped count)
+      R-VHDEQ      mk_cdr whose VAT header fills the VAT file (0 entries): KEPT, nothing extracted, only boxes
+                   naming sector #FF567539 (virtual block 0 not translated - the reader's invalid sector); main
+                   read entry 0, one past the table (#FDFDFDFD, the debug heap's guard bytes)
     Listing rows: the left panel shows <row>\src, Home, End, Enter (posted) on the image; the program must
     stay alive with no bug report.
       L-VCDR100    the R-VCDR100 image: PASS = alive, only "Missing virtual allocation table." boxes
       L-MKCDR      mk_cdr.img: PASS = alive, no window (the archive opens)
+      L-VHDLONG    the R-VHDLONG image: as L-VCDR100
+      L-MK150      mk_cdr150.img: as L-MKCDR
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does not
     answer within 30 s (End-Row). Without WSL Ubuntu the rows are NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -41,6 +52,7 @@ param(
     [string[]]$Only,
     [string]$Lib,
     [string]$MkMk,
+    [string]$MkVat,
     [string]$Py
 )
 $ErrorActionPreference = 'Stop'
@@ -55,6 +67,7 @@ $Specs = Join-Path $PSScriptRoot '..\..'
 if (-not [IO.Directory]::Exists((Join-Path $Specs '098-long-path-overruns'))) { $Specs = 'E:\Projects\tandemcommander\specs' }
 if (-not $Lib) { $Lib = Join-Path $Specs '098-long-path-overruns\probe\fix_probe_lib.ps1' }
 if (-not $MkMk) { $MkMk = Join-Path $Specs '356-uniso-udf-rest\probe\mkudf356.sh' }
+if (-not $MkVat) { $MkVat = Join-Path $Here 'mkvat358.sh' }
 if (-not $Py) { $Py = Join-Path $Here 'vatimg.py' }
 . $Lib
 $Root = $TempRoot + '\tc358'
@@ -164,14 +177,19 @@ try {
     $s = $Root + '\seeds'; NewDir $s
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $mk = & wsl -d Ubuntu -- bash (WslPath $MkMk) (WslPath $s) 2>&1
+    $mk2 = & wsl -d Ubuntu -- bash (WslPath $MkVat) (WslPath $s) 2>&1
     $made = @()
     if ([IO.File]::Exists("$s\mk_cdr.img")) {
-        foreach ($k in @('data100', 'toclaim', 'claim16', 'claim100z')) { $made += & python -I $Py $k "$s\mk_cdr.img" "$s\v_$k.bin" 2>&1 }
+        foreach ($k in @('data100', 'toclaim', 'claim16', 'claim100z', 'hdlong', 'hdeq')) { $made += & python -I $Py $k "$s\mk_cdr.img" "$s\v_$k.bin" 2>&1 }
+    }
+    foreach ($m in @('cdr150', 'cdrnoefe')) {
+        if ([IO.File]::Exists("$s\mk_$m.img")) { $made += & python -I $Py data100 "$s\mk_$m.img" "$s\v_${m}data100.bin" 2>&1 }
     }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) + '=' + ([IO.FileInfo]$_).Length }) | Sort-Object) -join ','))
     foreach ($m in $made) { Out ('vatimg: ' + "$m") }
     if (-not [IO.File]::Exists("$s\mk_cdr.img")) { Out ('mkudf356.sh: ' + (($mk | ForEach-Object { "$_" }) -join ' ')) }
+    if (-not [IO.File]::Exists("$s\mk_cdr150.img")) { Out ('mkvat358.sh: ' + (($mk2 | ForEach-Object { "$_" }) -join ' ')) }
     Out ''
 
     Unpack-Row 'R-VCDR100' "$s\v_data100.bin" 'vcdr100.iso' -Kept -Msg $NoVat
@@ -183,8 +201,17 @@ try {
     Unpack-Row 'C-MKDVDR' "$s\mk_dvdr.img" 'mk_dvdr.iso'
     Unpack-Row 'C-MKBDR' "$s\mk_bdr.img" 'mk_bdr.iso'
     Unpack-Row 'C-MKHD' "$s\mk_hd.img" 'mk_hd.iso'
+    Unpack-Row 'C-MK150' "$s\mk_cdr150.img" 'mk_cdr150.iso'
+    Unpack-Row 'C-MK150C' "$s\mk_cdr150c.img" 'mk_cdr150c.iso'
+    Unpack-Row 'C-MKNOEFE' "$s\mk_cdrnoefe.img" 'mk_cdrnoefe.iso'
+    Unpack-Row 'R-V150D100' "$s\v_cdr150data100.bin" 'v150d100.iso' -Kept -Msg $NoVat
+    Unpack-Row 'R-VNOEFED100' "$s\v_cdrnoefedata100.bin" 'vnoefed100.iso' -Kept -Msg $NoVat
+    Unpack-Row 'R-VHDLONG' "$s\v_hdlong.bin" 'vhdlong.iso' -Kept -Msg $NoVat
+    Unpack-Row 'R-VHDEQ' "$s\v_hdeq.bin" 'vhdeq.iso' -Kept -Msg '#FF567539'
     List-Row 'L-VCDR100' "$s\v_data100.bin" 'lvcdr100.iso' -Msg $NoVat
     List-Row 'L-MKCDR' "$s\mk_cdr.img" 'lmk_cdr.iso'
+    List-Row 'L-VHDLONG' "$s\v_hdlong.bin" 'lvhdlong.iso' -Msg $NoVat
+    List-Row 'L-MK150' "$s\mk_cdr150.img" 'lmk_cdr150.iso'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

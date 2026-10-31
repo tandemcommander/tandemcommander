@@ -241,6 +241,11 @@ protected:
     CPartitionMapping PartitionMapping;
 
 public:
+    // feature 358: Open found a UDF volume (its descriptors were read) whose virtual partition's VAT is
+    // missing or unreadable - the volume does not open; a UDF + ISO 9660 hybrid marks its listing incomplete
+    // from this (the anchor at 256, 330's sign of a UDF part, may be missing on a sequential medium)
+    BOOL VatMissing;
+
     CUDF(CISOImage* image, DWORD extent, int trackno);
     virtual ~CUDF();
     // methods
