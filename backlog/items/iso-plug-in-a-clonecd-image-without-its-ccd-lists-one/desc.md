@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: a CloneCD image without its .ccd lists one session, then Unpack deletes it
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: measure:352
 who: agent
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 b9272d3e
 effort: S
-feature: -
+feature: 353
 related: [iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables]
 depends-on: []
 reason: -
@@ -58,3 +58,5 @@ unpacks and is deleted as today.
 - 2026-10-31 — created (source measure:352)
 - 2026-10-31 — auto-triage: severity 5 -> 7: a user can lose data in a narrow scenario (lost .ccd + multi-session dump, image deleted by a whole unpack)
 - 2026-10-31 — moved to Next position 1
+- 2026-10-31 — verified at b9272d3e: reproduced at b9272d3e: probe iso353 R-NOCCD2 (two raw sessions, no .ccd) extracts a.txt only and deletes the image
+- 2026-10-31 — run started, feature 353
