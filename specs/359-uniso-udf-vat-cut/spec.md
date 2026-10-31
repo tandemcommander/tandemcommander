@@ -97,7 +97,10 @@ features 356 and 358 stay as they are.
   open, feature 358's state).
 - **FR-004**: The fallback condition MUST keep today's meaning where it did not wrap: taken only when the failed
   sector lies more than 7 sectors past the file's partition sectors.
-- **FR-005**: The decision of FR-001 to FR-004 MUST be a pure rule in `src/common/salisoudfvat.h` checked by
+- **FR-007** (review 1): the fallback MUST be decided in the track's own sectors - for a track of a later session
+  (whose partition start is a disc address past the track's sectors) the track's last 7 sectors are searched
+  as before, where the VAT of such a track is.
+- **FR-005**: The decision of FR-001 to FR-004 and FR-007 MUST be a pure rule in `src/common/salisoudfvat.h` checked by
   `saltests`.
 - **FR-006**: No UI string, dialog or message changes; VAT images whose VAT is found list and unpack as before.
 

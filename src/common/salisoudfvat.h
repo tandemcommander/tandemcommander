@@ -47,35 +47,52 @@ inline bool SalIsoUdfVat200Entries(unsigned long long infoLen, unsigned long lon
     return true;
 }
 
-// Feature 359: the VAT search's fallback to the file's last sectors. The
-// reader looks for the VAT's file entry in a window of partition sectors
-// around the partition's claimed end; when a read there fails, it looks at
-// the last 7 partition sectors the file holds instead - once.
-//   fileSectors  the file's (track's) length in 2048-byte sectors
-//   partStart    the partition's first sector
-//   failed       the partition sector whose read failed
-//   taken        the fallback was taken already in this search
-// True and the new window [first, last) of partition sectors when the search
+// Feature 359: the VAT search's fallback to the track's last sectors. The
+// reader looks for the VAT's file entry in a window around the partition's
+// claimed end; when a read there fails, it looks at the last 7 sectors of the
+// track (the file, or the file's part up to the next track) instead - once.
+// The reader reads its search position 'vatLoc' at the track sector
+// partStart + vatLoc (32-bit, wrapping) and subtracts the track's extent
+// offset from its numbers: in a later session the partition descriptor's start
+// is an address on the disc, past the track's own sectors.
+//   trackSectors  the track's length in 2048-byte sectors
+//   partStart     the partition descriptor's start (PD.Start)
+//   extentOffset  the track's first sector on the disc (ExtentOffset)
+//   failed        the search position whose read failed
+//   taken         the fallback was taken already in this search
+// True and the new window [first, last) of search positions when the search
 // continues there. False - the search ends with "Error reading virtual
-// allocation table" - when the fallback was taken already, when the file ends
-// at or before the partition start (it holds no partition sector), or when
-// the failed sector lies within 7 sectors past the file's partition sectors.
-// The reader used to compute this in 32 bits without a limit: a failed read at
-// a fallback sector below 7 wrapped "failed - 7", the same window was set
-// again and the search never ended (Tandem Commander stopped answering - a raw
-// 2352-byte dump cut short, whose sectors are counted in 2048 bytes).
-// 'first' < 'last' <= 'failed', so both fit the reader's 32-bit sector numbers.
-inline bool SalIsoUdfVatFallback(unsigned long long fileSectors, unsigned long long partStart,
-                                 unsigned long long failed, bool taken,
+// allocation table" - when the fallback was taken already, when the track ends
+// at or before the partition's start in the track (it holds no partition
+// sector), when the failed read lies within 7 sectors past the track's end,
+// or when no window position is left. The reader used to compute this in
+// 32 bits without a limit: a failed read at a fallback position below 7
+// wrapped "failed - 7", the same window was set again and the search never
+// ended (Tandem Commander stopped answering - a raw 2352-byte dump cut short,
+// whose sectors are counted in 2048 bytes). 'first' < 'last' < 2^32.
+inline bool SalIsoUdfVatFallback(unsigned long long trackSectors, unsigned long long partStart,
+                                 unsigned long long extentOffset, unsigned long long failed, bool taken,
                                  unsigned long long& first, unsigned long long& last)
 {
+    const unsigned long long mask = 0xFFFFFFFFull;
     first = last = 0;
-    if (taken || fileSectors <= partStart)
+    if (taken)
         return false;
-    unsigned long long n = fileSectors - partStart; // the partition's sectors in the file, at least 1
-    if (n + 7 >= failed)
+    // where the partition starts in the track
+    unsigned long long start = partStart >= extentOffset ? partStart - extentOffset : 0;
+    if (trackSectors <= start)
         return false;
-    first = n >= 7 ? n - 7 : 0;
-    last = n;
-    return true;
+    // the track sector the failed read asked for (the reader's sum wraps in 32 bits)
+    unsigned long long failedAt = (partStart + failed) & mask;
+    if (trackSectors + 7 >= failedAt)
+        return false;
+    unsigned long long from = trackSectors >= start + 7 ? trackSectors - 7 : start;
+    // positions below partStart wrap to the top of the 32-bit range: the window must not cross 0
+    if (from < partStart && partStart <= trackSectors)
+        from = partStart;
+    if (from >= trackSectors)
+        return false;
+    first = (from - partStart) & mask;
+    last = (trackSectors - partStart) & mask;
+    return first < last;
 }

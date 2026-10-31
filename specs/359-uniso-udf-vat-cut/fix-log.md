@@ -50,7 +50,7 @@ sectors after its partition start may hang the listing.
 
 ## Implementation
 
-- `src/common/salisoudfvat.h`: `SalIsoUdfVatFallback(fileSectors, partStart, failed, taken, first, last)` -
+- `src/common/salisoudfvat.h` (first version; see *Review* for the track-sector form): `SalIsoUdfVatFallback(fileSectors, partStart, failed, taken, first, last)` -
   64-bit; false when taken already, when `fileSectors <= partStart`, or when `n + 7 >= failed`; else the window
   `[max(n - 7, 0), n)` (`n` = the file's partition sectors).
 - `src/plugins/uniso/udf.cpp` `ReadSupportingTables` (mapVirtual): a local `fallbackTaken` (reset per search);
@@ -75,6 +75,36 @@ sectors after its partition start may hang the listing.
 - No UI string, menu or dialog changed - no `.slt` refresh (stop-rules 2.13 does not apply).
 - Inbox: `iso-plug-in-a-raw-2352-byte-sector-dump-of-a-udf-vat-disc` (measure:359) - the raw count, row
   L-RAWFULL.
+
+## Review
+
+### Review 1 (refute-first, general-purpose agent, on af3084ca) - no MUST
+
+- Standalone negative controls in `%TEMP%\rev359`: fixed header 0 / 28 failures; old 32-bit arithmetic 20 / 28
+  (41,608 of 1,040,000 modelled searches never end); without `taken` 1 / 28; a wider sweep found no endless
+  search with the fix. No data-loss path (every failure is the existing "does not open" path, the image kept).
+- **SHOULD S1 (fixed)**: the rule compared the track's sector count with the absolute `PD.Start`. The reader
+  reads position `vatLoc` at track sector `PD.Start + vatLoc` (32-bit) and subtracts `ExtentOffset` from its
+  numbers (`vatLoc = PD.Length - ExtentOffset`, `ReadAllocDesc`), so for a VAT track of a later session (E > 0,
+  `PD.Start` a disc address past the track's sectors) the old wrapped arithmetic still fell back to the track's
+  last 7 sectors, where the VAT is - the first version refused it ("Error reading virtual allocation table").
+  Model: E = 30000, `PD.Start` 30257, `PD.Length` 3743, a track of 3000 sectors, the VAT at track sector 2999.
+  Fix: `SalIsoUdfVatFallback(trackSectors, partStart, extentOffset, failed, taken, first, last)` decides in
+  track sectors - the failed read's track sector `(partStart + failed) mod 2^32`, the partition's start in the
+  track `partStart - extentOffset` (0 when smaller), the window `[max(T - 7, start), T)` mapped back to
+  positions by subtracting `partStart` mod 2^32; a window that would cross position 0 starts at `partStart`
+  (empty -> false). For E = 0 every decision is the first version's (all earlier checks unchanged).
+  `TestIsoUdfVat_359` now 33 checks: + the later-session window, a later-session track holding no partition
+  sector, the crossing clip (2), and the model with an extent dimension (4 extents) and a VAT position (the
+  mk_cdr image and the later session find their VAT). saltests 29,611 / 0.
+  Negative control: the rule with `start = partStart` (the first version) -> **3 failed** (the two later-session
+  checks and the later-session model); restored, rebuilt, 0 failed.
+- S2 (the after probes not yet run): pending - another `tandemcommander.exe` (PID 7700, logon session 30, the
+  maintainer's console session, not started by this run) is open, and every GUI probe refuses while one runs
+  (they share the registry key); the run does not stop it.
+- NOTE N2 (the item's "too short" wording) and N4/N5 (the first window, a failed read below 7 in a first window
+  under 14 sectors takes no wrapped fallback now) - by the spec's Clarifications. N3 (sectors 0 .. n-1 now read
+  reach `ReadVAT`'s unbounded copy) - the existing item `iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer`.
 
 ## Analyze
 

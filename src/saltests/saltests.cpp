@@ -20500,43 +20500,55 @@ static void TestIsoUdfVat_359()
 {
     unsigned long long f = 99, l = 99;
     // mk_cdr.img (partition start 257) cut to 260 sectors, the read at the claimed end (3743 - 7) fails: the
-    // file's 3 partition sectors are searched from 0 - the reader set the window to 3 - 7 (wrapped)
-    CHECK(SalIsoUdfVatFallback(260, 257, 3736, false, f, l) && f == 0 && l == 3);
+    // track's 3 partition sectors are searched from 0 - the reader set the window to 3 - 7 (wrapped)
+    CHECK(SalIsoUdfVatFallback(260, 257, 0, 3736, false, f, l) && f == 0 && l == 3);
     // ... once: a second failure ends the search
     f = l = 99;
-    CHECK(!SalIsoUdfVatFallback(260, 257, 0, true, f, l) && f == 0 && l == 0);
-    CHECK(!SalIsoUdfVatFallback(260, 257, 3736, true, f, l));
+    CHECK(!SalIsoUdfVatFallback(260, 257, 0, 0, true, f, l) && f == 0 && l == 0);
+    CHECK(!SalIsoUdfVatFallback(260, 257, 0, 3736, true, f, l));
     // the measured hang: a raw dump counted as 298 sectors, partition start 288 - window 3 .. 10; the read at 3
     // fails: no second fallback (the reader's 3 - 7 wrapped and set the same window for ever)
-    CHECK(SalIsoUdfVatFallback(298, 288, 3736, false, f, l) && f == 3 && l == 10);
-    CHECK(!SalIsoUdfVatFallback(298, 288, 3, true, f, l));
-    // without the flag the wrap is gone too: a failed sector below 7 is never "more than 7 past the file"
+    CHECK(SalIsoUdfVatFallback(298, 288, 0, 3736, false, f, l) && f == 3 && l == 10);
+    CHECK(!SalIsoUdfVatFallback(298, 288, 0, 3, true, f, l));
+    // without the flag the wrap is gone too: a failed position below 7 is never "more than 7 past the track"
     for (unsigned long long failed = 0; failed < 7; failed++)
-        CHECK(!SalIsoUdfVatFallback(298, 288, failed, false, f, l));
-    // the file ends at or before the partition start: no partition sector to search, the read error at once
-    CHECK(!SalIsoUdfVatFallback(257, 257, 3736, false, f, l));
-    CHECK(!SalIsoUdfVatFallback(100, 257, 3736, false, f, l));
-    CHECK(!SalIsoUdfVatFallback(0, 0, 3736, false, f, l));
+        CHECK(!SalIsoUdfVatFallback(298, 288, 0, failed, false, f, l));
+    // the track ends at or before the partition start: no partition sector to search, the read error at once
+    CHECK(!SalIsoUdfVatFallback(257, 257, 0, 3736, false, f, l));
+    CHECK(!SalIsoUdfVatFallback(100, 257, 0, 3736, false, f, l));
+    CHECK(!SalIsoUdfVatFallback(0, 0, 0, 3736, false, f, l));
     // one partition sector: the window 0 .. 1
-    CHECK(SalIsoUdfVatFallback(258, 257, 3736, false, f, l) && f == 0 && l == 1);
+    CHECK(SalIsoUdfVatFallback(258, 257, 0, 3736, false, f, l) && f == 0 && l == 1);
     // the old condition nSectors < failed - 7 where it did not wrap: n = 43
-    CHECK(!SalIsoUdfVatFallback(300, 257, 50, false, f, l));
-    CHECK(SalIsoUdfVatFallback(300, 257, 51, false, f, l) && f == 36 && l == 43);
-    CHECK(SalIsoUdfVatFallback(300, 257, 3736, false, f, l) && f == 36 && l == 43);
-    // 64-bit counts are not cut to 32 bits (the reader's (DWORD) cast made 2^32 + 16 sectors look like 16)
-    CHECK(!SalIsoUdfVatFallback(0x100000010ull, 0, 0xFFFFFFFFull, false, f, l));
-    CHECK(SalIsoUdfVatFallback(0x100000010ull, 0x100000000ull, 100, false, f, l) && f == 9 && l == 16);
-    // the window always lies below the failed sector, so it fits the reader's 32-bit numbers
-    CHECK(SalIsoUdfVatFallback(0xFFFFFFF0ull, 0, 0xFFFFFFFFull, false, f, l) && f == 0xFFFFFFE9ull &&
+    CHECK(!SalIsoUdfVatFallback(300, 257, 0, 50, false, f, l));
+    CHECK(SalIsoUdfVatFallback(300, 257, 0, 51, false, f, l) && f == 36 && l == 43);
+    CHECK(SalIsoUdfVatFallback(300, 257, 0, 3736, false, f, l) && f == 36 && l == 43);
+    // a track counted past 2^32 sectors is not cut to 32 bits (the reader's (DWORD) cast made it 16 sectors)
+    CHECK(!SalIsoUdfVatFallback(0x100000010ull, 0, 0, 0xFFFFFFFFull, false, f, l));
+    // the window fits the reader's 32-bit numbers
+    CHECK(SalIsoUdfVatFallback(0xFFFFFFF0ull, 0, 0, 0xFFFFFFFFull, false, f, l) && f == 0xFFFFFFE9ull &&
           l == 0xFFFFFFF0ull);
+    // a later session (review 1): the partition descriptor's start 30257 is a disc address, the track starts at
+    // disc sector 30000 and holds 3000 sectors - the window is the track's sectors 2993 .. 2999, read at the
+    // wrapped positions 2993 - 30257 .. 3000 - 30257 (the old wrapped arithmetic found them too)
+    CHECK(SalIsoUdfVatFallback(3000, 30257, 30000, (3743 - 30000 - 7) & 0xFFFFFFFFull, false, f, l) &&
+          f == ((2993ull - 30257) & 0xFFFFFFFFull) && l == ((3000ull - 30257) & 0xFFFFFFFFull) && f < l);
+    // ... and its partition starts at track sector 257: a track of 257 sectors holds none of it
+    CHECK(!SalIsoUdfVatFallback(257, 30257, 30000, (3743 - 30000 - 7) & 0xFFFFFFFFull, false, f, l));
+    CHECK(SalIsoUdfVatFallback(260, 30257, 30000, (3743 - 30000 - 7) & 0xFFFFFFFFull, false, f, l) &&
+          f == ((257ull - 30257) & 0xFFFFFFFFull) && l == ((260ull - 30257) & 0xFFFFFFFFull));
+    // a window that would cross position 0 (the descriptor's start inside the window) starts at position 0
+    CHECK(SalIsoUdfVatFallback(300, 297, 100, 3736, false, f, l) && f == 0 && l == 3);
+    CHECK(!SalIsoUdfVatFallback(300, 300, 100, 3736, false, f, l));
 
-    // the reader's search loop (udf.cpp ReadSupportingTables, case mapVirtual) with 32-bit sector numbers: a
-    // partition sector reads when its physical sector is below 'readable' (a raw dump: fewer sectors than the
-    // 2048-byte count). Result 0 = read error, 1 = window searched to its end; reads never exceed 14 + 7
-    auto search = [](unsigned long long fileSectors, unsigned long partStart, unsigned long claimed,
-                     unsigned long long readable, int& reads) -> int
+    // the reader's search loop (udf.cpp ReadSupportingTables, case mapVirtual) with 32-bit numbers: position v
+    // is read at track sector partStart + v, which reads when below 'readable' (a raw dump: fewer sectors than the
+    // 2048-byte count) and holds the VAT when it is 'vatAt'. Result 0 = read error, 1 = window searched to its
+    // end, 2 = the VAT found; reads never exceed 14 + 7
+    auto search = [](unsigned long long trackSectors, unsigned long partStart, unsigned long extent,
+                     unsigned long claimed, unsigned long long readable, unsigned long long vatAt, int& reads) -> int
     {
-        unsigned long vatLoc = claimed, lastVatLoc;
+        unsigned long vatLoc = claimed - extent, lastVatLoc;
         lastVatLoc = vatLoc + 7;
         vatLoc -= 7;
         bool taken = false;
@@ -20545,11 +20557,11 @@ static void TestIsoUdfVat_359()
         {
             if (++reads > 1000)
                 return -1; // the hang
-            unsigned long phys = partStart + vatLoc;
-            if (phys >= readable)
+            unsigned long at = partStart + vatLoc;
+            if (at >= readable)
             {
                 unsigned long long first, last;
-                if (SalIsoUdfVatFallback(fileSectors, partStart, vatLoc, taken, first, last))
+                if (SalIsoUdfVatFallback(trackSectors, partStart, extent, vatLoc, taken, first, last))
                 {
                     taken = true;
                     vatLoc = (unsigned long)first;
@@ -20558,35 +20570,41 @@ static void TestIsoUdfVat_359()
                 }
                 return 0;
             }
+            if (at == vatAt)
+                return 2;
             vatLoc++;
         } while (vatLoc < lastVatLoc);
         return 1;
     };
     int reads = 0;
-    CHECK(search(298, 288, 3743, 260, reads) == 0 && reads == 2); // L-RAWCUT: the claimed end, then sector 3
-    CHECK(search(260, 257, 3743, 260, reads) == 1 && reads == 4); // L-CUT3: the claimed end, then 0 .. 2
-    CHECK(search(257, 257, 3743, 257, reads) == 0 && reads == 1); // L-CUT0: the read error at once
-    CHECK(search(300, 257, 3743, 300, reads) == 1 && reads == 8); // the whole image: 36 .. 42 (the VAT at 42)
+    const unsigned long long none = 0xFFFFFFFFFFull;
+    CHECK(search(298, 288, 0, 3743, 260, none, reads) == 0 && reads == 2); // L-RAWCUT: the claimed end, then 3
+    CHECK(search(260, 257, 0, 3743, 260, none, reads) == 1 && reads == 4); // L-CUT3: the claimed end, then 0 .. 2
+    CHECK(search(257, 257, 0, 3743, 257, none, reads) == 0 && reads == 1); // L-CUT0: the read error at once
+    CHECK(search(300, 257, 0, 3743, 300, 299, reads) == 2 && reads == 8);  // mk_cdr.img: the VAT in sector 299
+    CHECK(search(3000, 30257, 30000, 3743, 3000, 2999, reads) == 2);       // a later session: found as before
     bool allEnd = true;
     int maxReads = 0;
-    const unsigned long long fileList[] = {0, 1, 3, 6, 7, 8, 13, 14, 15, 20, 40, 300, 0x100000005ull};
-    const unsigned long partList[] = {0, 1, 5, 7, 10, 20, 30, 257, 0xFFFFFFF0ul};
+    const unsigned long long trackList[] = {0, 1, 3, 6, 7, 8, 13, 14, 15, 20, 40, 300, 3000, 0x100000005ull};
+    const unsigned long partList[] = {0, 1, 5, 7, 10, 20, 30, 257, 300, 30257, 0xFFFFFFF0ul};
+    const unsigned long extentList[] = {0, 3, 100, 30000};
     const unsigned long claimList[] = {0, 1, 3, 6, 7, 8, 13, 14, 20, 3743, 0xFFFFFFF9ul, 0xFFFFFFFFul};
-    for (unsigned long long fs : fileList)
+    for (unsigned long long ts : trackList)
         for (unsigned long ps : partList)
-            for (unsigned long cl : claimList)
-                for (int kind = 0; kind < 4; kind++)
-                {
-                    unsigned long long readable = kind == 0   ? fs
-                                                  : kind == 1 ? fs * 2048 / 2352
-                                                  : kind == 2 ? 0
-                                                              : (fs > 3 ? fs - 3 : 0);
-                    int r = 0;
-                    if (search(fs, ps, cl, readable, r) < 0)
-                        allEnd = false;
-                    if (r > maxReads)
-                        maxReads = r;
-                }
+            for (unsigned long ex : extentList)
+                for (unsigned long cl : claimList)
+                    for (int kind = 0; kind < 4; kind++)
+                    {
+                        unsigned long long readable = kind == 0   ? ts
+                                                      : kind == 1 ? ts * 2048 / 2352
+                                                      : kind == 2 ? 0
+                                                                  : (ts > 3 ? ts - 3 : 0);
+                        int r = 0;
+                        if (search(ts, ps, ex, cl, readable, none, r) < 0)
+                            allEnd = false;
+                        if (r > maxReads)
+                            maxReads = r;
+                    }
     CHECK(allEnd);
     CHECK(maxReads <= 21);
 }

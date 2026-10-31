@@ -1502,11 +1502,11 @@ BOOL CUDF::ReadSupportingTables(BOOL quiet)
                     size = Image->GetCurrentTrackEnd(TrackTryingToOpen);
                     if (size != 0xFFFFFFFFFFFFFFFF && size >= 0)
                     {
-                        // feature 359: the file's last sectors are searched once, without a wrapped sector
-                        // number (a failed read there used to set the same window again for ever)
+                        // feature 359: the track's last sectors are searched once, without a wrapped window
+                        // (a failed read there used to set the same window again for ever)
                         unsigned long long first, last;
-                        if (SalIsoUdfVatFallback((unsigned long long)size / SECTOR_SIZE, PD.Start, vatLoc,
-                                                 fallbackTaken, first, last))
+                        if (SalIsoUdfVatFallback((unsigned long long)size / SECTOR_SIZE, PD.Start, ExtentOffset,
+                                                 vatLoc, fallbackTaken, first, last))
                         {
                             fallbackTaken = true;
                             vatLoc = (DWORD)first;
