@@ -572,7 +572,9 @@ inline bool SalIsoPvdVolumeSectors(const unsigned char* desc, long long len, uns
 // 16 only (a multi-session dump's first session); a later session lies past it. Marked when the volume's
 // size is not known ('volumeKnown' false - fails closed), when the stored sector size is not positive, or
 // when the file holds more than SAL_ISO_LATER_VOLUME_SECTOR whole sectors (of 'sectorRawSize' bytes, from
-// 'dataOffset') past the volume's 'volumeSectors'. A file that ends within the volume is not marked here.
+// 'dataOffset') past the volume's 'volumeSectors'. Review 1: also when the file ends within the volume the
+// descriptor claims - the size cannot be trusted then (a damaged or crafted descriptor claiming more than
+// the first session hides the later one); a truncated image kept loses nothing (feature 338).
 inline bool SalIsoNoCcdRestMarks(bool raw, bool volumeKnown, unsigned long long volumeSectors, long long fileSize,
                                  long long dataOffset, long long sectorRawSize)
 {
@@ -581,5 +583,6 @@ inline bool SalIsoNoCcdRestMarks(bool raw, bool volumeKnown, unsigned long long 
     if (!volumeKnown || sectorRawSize <= 0)
         return true;
     long long whole = fileSize > dataOffset && dataOffset >= 0 ? (fileSize - dataOffset) / sectorRawSize : 0;
-    return (unsigned long long)whole > volumeSectors + (unsigned long long)SAL_ISO_LATER_VOLUME_SECTOR;
+    return (unsigned long long)whole < volumeSectors ||
+           (unsigned long long)whole > volumeSectors + (unsigned long long)SAL_ISO_LATER_VOLUME_SECTOR;
 }

@@ -20250,14 +20250,18 @@ static void TestIsoNoCcdRest_353()
     // only whole sectors count: 16 sectors and a part of the 17th - no room
     CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 193 * raw - 1, 0, raw));
     CHECK(SalIsoNoCcdRestMarks(true, true, 176, 193 * raw + 1, 0, raw));
-    // a file that ends within the volume (truncated): not marked here
-    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 100 * raw, 0, raw));
-    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 0, 0, raw));
+    // review 1: a file that ends within the volume the descriptor claims (truncated, or a size claiming more
+    // than the first session - a later one hidden inside it): the size is not trusted, marked
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 100 * raw, 0, raw));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 0, 0, raw));
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 176 * raw - 1, 0, raw)); // the last sector of the volume cut
+    CHECK(SalIsoNoCcdRestMarks(true, true, 400, 352 * raw, 0, raw));     // two sessions, a size claiming 400
     // the layout's data offset is not part of the sectors
     CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 0x4B000 + 192 * raw, 0x4B000, raw));
     CHECK(SalIsoNoCcdRestMarks(true, true, 176, 0x4B000 + 193 * raw, 0x4B000, raw));
-    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 100, 0x4B000, raw));  // the file ends before the offset
-    CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 192 * raw, -1, raw)); // a negative offset counts nothing
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 100, 0x4B000, raw));  // the file ends before the offset
+    CHECK(SalIsoNoCcdRestMarks(true, true, 176, 192 * raw, -1, raw)); // a negative offset counts nothing
+    CHECK(!SalIsoNoCcdRestMarks(true, true, 0, 0, 0, raw));           // an empty volume in an empty file
     // other stored sector sizes (a raw image opened by another plain check)
     CHECK(!SalIsoNoCcdRestMarks(true, true, 176, 192 * 2336LL, 0, 2336));
     CHECK(SalIsoNoCcdRestMarks(true, true, 176, 193 * 2336LL, 0, 2336));

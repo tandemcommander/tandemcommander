@@ -20,6 +20,9 @@
       C-REST16    one raw session + 16 sectors (no later volume's sector 16 fits): PASS = deleted
       R-REST17    one raw session + 17 sectors (a later volume's sector 16 fits): PASS = a.txt, KEPT
       C-COOKED    s1.iso named .img (2048-byte sectors, a plain disk image): PASS = a.txt, deleted
+      R-BIGPVD    as R-NOCCD2, session 1's volume size patched to 400 (more than the file holds - review 1):
+                  PASS = a.txt, the image KEPT
+      C-COOKED17  s1.iso + 17 sectors of 2048 bytes, named .img (not raw - review 1): PASS = a.txt, deleted
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does not
     answer within 30 s (End-Row). Without WSL Ubuntu every row is NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -147,7 +150,7 @@ try {
     Out ''
 
     $s = $Root + '\seeds'; NewDir $s
-    $kinds = @('noccd', 'noccd2', 'noccd_r2', 'noccd_r16', 'noccd_r17', 'cooked')
+    $kinds = @('noccd', 'noccd2', 'noccd_r2', 'noccd_r16', 'noccd_r17', 'cooked', 'noccd2_big', 'cooked_r17')
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $mk = & wsl -d Ubuntu -- sh (WslPath $MkImg) (WslPath $s) 2>&1
     $made = @()
@@ -167,6 +170,8 @@ try {
     Unpack-Row 'C-REST16' "$s\noccd_r16.img" $a
     Unpack-Row 'R-REST17' "$s\noccd_r17.img" $a -Kept
     Unpack-Row 'C-COOKED' "$s\cooked.img" $a -Msg 'any'
+    Unpack-Row 'R-BIGPVD' "$s\noccd2_big.img" $a -Kept
+    Unpack-Row 'C-COOKED17' "$s\cooked_r17.img" $a -Msg 'any'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

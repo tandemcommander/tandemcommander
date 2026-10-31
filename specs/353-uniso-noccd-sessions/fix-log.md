@@ -68,3 +68,32 @@ without its .ccd lists one session, then Unpack deletes it.
 - `python tools/check_encoding.py --strict` -> TOTAL: 0 finding(s).
 - clang-format `--dry-run` on the changed line ranges: three spots reformatted with `-i --lines` on
   those ranges only (lambda brace, a comment column, a stream continuation).
+
+## Review
+
+- Review 1 (refute-first agent, general-purpose): MUST 0.
+  - Its own measurement: build + saltests 29,322 / 0; negative control `uniso.spl` of 268ef8bb (before
+    the fix) in a copy of the build tree: R-NOCCD2 deleted (b.txt lost), its X-XA2 (two raw Mode 2 XA
+    sessions) deleted, X-POSTGAP150 deleted; the fix: all kept. Callers enumerated (ListArchive ->
+    pd->ListingLeftOut -> UnpackArchive / UnpackWholeArchive; UnpackOneFile, ViewFile, CanViewFile open
+    and ignore the mark). Standing rules not touched.
+  - SHOULD 1: a descriptor claiming a volume larger than the file (its `bigpvd2`: R-NOCCD2's image with
+    session 1's size patched to 400 > 352 sectors) was not marked - deleted, b.txt lost. **Fixed**:
+    `SalIsoNoCcdRestMarks` also marks `whole < volumeSectors`; checks updated / added (the file ending
+    within the volume, the last sector cut, a size of 400 over 352 sectors, an empty volume in an empty
+    file - saltests 29,322 -> 29,325); spec FR-002 / edge case and data-model updated. Probe row R-BIGPVD
+    added: on the pre-fix build FAIL (deleted, `probe/result_review1_before_fix.txt`, 15 / 1), after PASS.
+  - NOTE 1: a cooked (2048-byte) multi-session image (`.img` or `.iso`) lists session 1 and is deleted
+    (its X-COOKED2IMG / X-COOKED2ISO) - outside the item (FR-003), pre-existing -> Inbox
+    `iso-plug-in-a-cooked-multi-session-image-lists-one-session` (review:353).
+  - NOTE 2: every raw single-session dump with more than 16 sectors past its volume (150-sector post-gap,
+    data + audio tracks, cdrecord `-pad` 15 + TAO run-out 2 = 17) is now kept by a whole unpack with only
+    the "Missing .CCD file" box - accepted by the spec's Assumptions (fails closed, nothing lost); recorded
+    as a limit; real dumps owed to a person (`check-feature-353-with-real-clonecd-dumps-whose-ccd-is`).
+  - NOTE 3: no row pinned `rawStart` (C-COOKED's file equals its volume). **Fixed**: row C-COOKED17 (a
+    cooked `.img` + 17 sectors, expected deleted) - a `rawStart = TRUE` mutant would keep it.
+  - NOTE 4: closing records not yet written - done at closing.
+- After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 29,325 / 0; probe
+  `probe/result_after_debug_review1.txt` 16 PASS / 0 FAIL (8 RUN rows + 8 END rows); 352's probe 22 / 0
+  (`probe/regress_352_review1.txt`); encoding guard TOTAL: 0; clang-format on the changed lines only.
+- No MUST finding, so no second review round is required (SKILL.md step 7).

@@ -17,7 +17,8 @@
   - not `raw` -> false (unchanged behaviour);
   - not `volumeKnown`, or `sectorRawSize` <= 0 -> true (fails closed);
   - whole sectors = (fileSize - dataOffset) / sectorRawSize (0 when fileSize <= dataOffset);
-  - true when whole sectors > volumeSectors + `SAL_ISO_LATER_VOLUME_SECTOR` (16).
+  - true when whole sectors > volumeSectors + `SAL_ISO_LATER_VOLUME_SECTOR` (16), or whole sectors <
+    volumeSectors (review 1: a size claiming more than the file holds is not trusted).
 
 ## State
 

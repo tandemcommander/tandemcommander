@@ -14,6 +14,10 @@ Kinds:
   noccd_r16  s1 + 16 raw sectors of zeros - the most that cannot hold a later volume's sector 16
   noccd_r17  s1 + 17 raw sectors of zeros - a later volume's sector 16 would fit
   cooked     s1.iso as it is (2048-byte sectors, a plain disk image) - unchanged
+  noccd2_big as noccd2, session 1's volume size patched to 400 in both copies (claims more than the
+             file's 352 sectors - review 1: a size that cannot be trusted)
+  cooked_r17 s1.iso + 17 sectors of 2048 zero bytes (a plain disk image with a rest - not raw, unchanged;
+             review 1: proves the rule keys on the raw start)
 """
 import sys
 
@@ -57,6 +61,16 @@ def main(argv):
     elif kind == "cooked":
         data = s1
         note = "one session of %d sectors of 2048 bytes" % n1
+    elif kind == "noccd2_big":
+        p = bytearray(s1)
+        at = 16 * SECTOR
+        p[at + 80 : at + 84] = (400).to_bytes(4, "little")
+        p[at + 84 : at + 88] = (400).to_bytes(4, "big")
+        data = mode1(bytes(p), 0) + mode1(s2, n1)
+        note = "two Mode 1 sessions, %d + %d raw sectors, session 1's volume size 400" % (n1, n2)
+    elif kind == "cooked_r17":
+        data = s1 + bytes(SECTOR * 17)
+        note = "one session of %d sectors of 2048 bytes + 17 sectors of zeros" % n1
     else:
         raise SystemExit("unknown kind " + kind)
     open(dst, "wb").write(data)

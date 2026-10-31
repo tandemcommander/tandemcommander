@@ -1,0 +1,33 @@
+iso353_probe (feature 353) after-review1
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 14:42; registry key existed True
+
+seeds: cooked.img,cooked_r17.img,noccd.img,noccd_r16.img,noccd_r17.img,noccd_r2.img,noccd2.img,noccd2_big.img,s1.iso,s2.iso,s2.lba
+img353: noccd: one Mode 1 session of 176 raw sectors
+img353: noccd2: two Mode 1 sessions, 176 + 176 raw sectors
+img353: noccd_r2: one Mode 1 session of 176 raw sectors + 2 raw sectors of zeros
+img353: noccd_r16: one Mode 1 session of 176 raw sectors + 16 raw sectors of zeros
+img353: noccd_r17: one Mode 1 session of 176 raw sectors + 17 raw sectors of zeros
+img353: cooked: one session of 176 sectors of 2048 bytes
+img353: noccd2_big: two Mode 1 sessions, 176 + 176 raw sectors, session 1's volume size 400
+img353: cooked_r17: one session of 176 sectors of 2048 bytes + 17 sectors of zeros
+
+C-NOCCD    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-NOCCD    RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (missing): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+R-NOCCD2   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-NOCCD2   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (missing): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+C-REST2    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-REST2    RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (missing): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+C-REST16   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-REST16   RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (missing): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+R-REST17   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-REST17   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (missing): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+C-COOKED   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-COOKED   RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (any): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+R-BIGPVD   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-BIGPVD   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (missing): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+C-COOKED17 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-COOKED17 RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (any): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing .CCD file. Displayed image could be incomplete. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 1DA45396222A51BBD77215E2991681418F608E9DCC6D8E89F35C34EC25E6830A / after 1DA45396222A51BBD77215E2991681418F608E9DCC6D8E89F35C34EC25E6830A
+
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

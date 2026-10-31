@@ -274,6 +274,8 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 353 with real CloneCD dumps whose .ccd is removed](items/check-feature-353-with-real-clonecd-dumps-whose-ccd-is/desc.md) | person-step | 3 | archives | leftover:353 | 2026-10-31 |
+| [ISO plug-in: a cooked multi-session image lists one session, then Unpack deletes it](items/iso-plug-in-a-cooked-multi-session-image-lists-one-session/desc.md) | bug | 5 | archives | review:353 | 2026-10-31 |
 
 ## Parked
 

@@ -92,8 +92,9 @@ deleted.
 - The `.ccd` cannot be opened for another reason (access denied, locked): treated as missing - the
   plug-in cannot tell, and the image is detected without it in both cases.
 - The raw image's sector 16 holds no primary volume descriptor (UDF only, HFS): marked (fails closed).
-- The file ends before the listed volume does (a truncated image): this feature does not mark it (the
-  rest is not past the volume); unchanged.
+- The file ends before the listed volume does (a truncated image, or a damaged / crafted descriptor
+  claiming more than the first session - a later session hidden inside the claimed size): the size is
+  not trusted, the listing is marked (review 1's SHOULD; a kept truncated image loses nothing).
 - The file's length is not a whole number of sectors: only whole sectors count.
 - A raw image whose sector 0 has no sync pattern (for example a first audio track): the plain
   detection does not treat it as raw; unchanged.
@@ -108,8 +109,8 @@ deleted.
   pattern at the start of the file, 2352-byte sectors - whichever plain check then opens it), and the file holds more than 16 whole sectors past the end of the volume the plain
   detection lists, the plug-in MUST mark the listing incomplete, so that a whole unpack fails and
   "Delete archive after unpacking" keeps the image.
-- **FR-002**: When the size of the listed volume cannot be read for such a raw image, the listing MUST be
-  marked incomplete.
+- **FR-002**: When the size of the listed volume cannot be read for such a raw image, or the file ends
+  within the volume the descriptor claims, the listing MUST be marked incomplete.
 - **FR-003**: A raw image without `.ccd` whose file ends within 16 sectors past its volume, and an `.img`
   without `.ccd` detected with 2048-byte sectors, MUST list, unpack and be deleted as before this
   feature.
