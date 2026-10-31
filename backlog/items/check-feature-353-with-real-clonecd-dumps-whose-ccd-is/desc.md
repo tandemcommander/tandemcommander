@@ -1,7 +1,7 @@
 ---
 title: Check feature 353 with real CloneCD dumps whose .ccd is removed
 type: person-step
-status: new
+status: open
 severity: 3
 area: archives
 source: leftover:353
@@ -55,3 +55,4 @@ dump without its `.ccd` is kept.
 ## Log
 
 - 2026-10-31 — created (source leftover:353)
+- 2026-10-31 — moved to Person steps position 47

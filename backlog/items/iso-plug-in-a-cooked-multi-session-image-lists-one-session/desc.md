@@ -1,8 +1,8 @@
 ---
 title: ISO plug-in: a cooked multi-session image lists one session, then Unpack deletes it
 type: bug
-status: new
-severity: 5
+status: open
+severity: 7
 area: archives
 source: review:353
 who: agent
@@ -55,3 +55,5 @@ and is deleted as today.
 ## Log
 
 - 2026-10-31 — created (source review:353)
+- 2026-10-31 — auto-triage: severity 5 -> 7: a user can lose data in a narrow scenario (a multi-session cooked image unpacked whole with Delete archive after unpacking loses the later session), band 7-8, as the raw-image item of 353
+- 2026-10-31 — moved to Next position 1
