@@ -130,8 +130,8 @@ readCUEX(CFile& file, NRGHeader* header, CISOImage* iso)
     // under 16 bytes (268 million entries) and the reader built a track from every 16 bytes up to the
     // end of the file. Now the chunk is read only when it lies within the image (else skipped like an
     // unknown chunk, as readCDTX), it gives only the whole entries it holds, no track comes from a
-    // short read, a chunk of more entries than a CD has tracks is skipped (review 1), and the next
-    // chunk header is read right after the chunk
+    // short read, a chunk larger than any disc's CUEX is skipped (reviews 1, 2), and the next chunk
+    // header is read right after the chunk
     DWORD fileSizeHi;
     DWORD fileSizeLo = file.GetFileSize(&fileSizeHi);
     __int64 pos = file.Seek(0, FILE_CURRENT);
@@ -144,10 +144,11 @@ readCUEX(CFile& file, NRGHeader* header, CISOImage* iso)
 
     DWORD read;
     unsigned long long entries = SalNrgCuexEntryCount(header->Size);
-    if (!SalNrgCuexEntriesPlausible(entries))
+    if (!SalNrgCuexSizePlausible(header->Size))
     {
-        // (review 1) more tracks than a CD holds - a damaged chunk lying within the image would still
-        // build one track per 16 bytes of it: skipped like a chunk that does not fit, no track
+        // (reviews 1, 2) larger than any disc's CUEX (99 tracks of index 0..99) - a damaged chunk
+        // lying within the image would still build one track per 16 bytes of it: skipped like a chunk
+        // that does not fit, no track
         file.Seek(pos + header->Size, FILE_BEGIN);
         return FALSE;
     }

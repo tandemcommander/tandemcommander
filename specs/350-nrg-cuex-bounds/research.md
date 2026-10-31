@@ -35,8 +35,14 @@
 - Rationale: item *Expected* - never a track from a short read. Within a chunk that fits the image a
   short read is only an I/O error.
 
-## R5 - No cap at 99 tracks
+## R5 - The largest CUEX chunk a disc can have (reviews 1 and 2)
 
-- Decision: none added (spec Clarifications). A chunk that fits can still hold up to
-  (file size - 16) / 16 entries when the footer's chunk offset points far before the end; recorded as
-  a limit (Inbox item at closing).
+- Decision: a chunk larger than (2 + 99 x 100) x 8 = 79,216 bytes is skipped like one that does not
+  fit (`SalNrgCuexSizePlausible`).
+- Rationale: the first fix (no bound) still built 6.3 million tracks from a 96 MiB chunk inside the
+  image (review 1: 1565 MB, 179 s). Review 1's 99-entry bound refused real discs with index points
+  (review 2: 2 tracks of index 1..99 = 100 entries, 20 tracks of index 1..10 = 110 - main opens them;
+  libmirage reads CUEX as 8-byte records, one chunk a session). The record bound accepts every disc
+  the Red Book allows and keeps the cost of a damaged chunk at most 4,950 tracks.
+- Alternatives: reading at most 99 entries and ignoring the rest (review 2's option 1) - changes the
+  track table of real images with index points (fewer, different tracks than main) for no gain.

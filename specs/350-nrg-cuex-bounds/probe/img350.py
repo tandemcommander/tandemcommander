@@ -27,6 +27,12 @@ Kinds:
   inside a CUEX chunk of 16 + 96 MiB bytes lying within the image, then ok's chunks (review 1: it
          fits the image but claims 6.3 million entries - more than a CD's 99 tracks, skipped; before
          the cap the fixed reader built every one of them, 1.5 GB, 3 minutes)
+  idx2   review 2: Nero's real CUEX layout (8-byte index records: lead-in, per track index 0 and
+         index 1..99, lead-out) for 2 audio tracks of 10 sectors with index points 1..99 - 202
+         records, 100 of the reader's entries; a real disc, it opens with its 2 tracks (review 1's
+         99-entry cap refused it)
+  idx20  as idx2, 20 audio tracks with index points 1..10 - 222 records, 110 entries; opens with its
+         20 tracks
 """
 import struct
 import sys
@@ -39,11 +45,54 @@ def chunk(cid, body, size=None):
     return cid + struct.pack(">I", len(body) if size is None else size) + body
 
 
+def bcd(n):
+    return ((n // 10) << 4) | (n % 10)
+
+
+def rec(track, index, lba):
+    # a Nero CUEX index record: mode, track (BCD, 0xAA = lead-out), index (BCD), 0, LBA (BE, signed)
+    return struct.pack(">BBBBi", 0x01, track, index, 0, lba)
+
+
+def real_layout(dst, ntracks, nidx):
+    # (review 2, after its imgrev.py) audio tracks of 10 raw sectors, the CUEX in Nero's real layout
+    sect = 10
+    data = bytes(ntracks * sect * RAW)
+    cuex = rec(0, 0, -150)
+    for t in range(1, ntracks + 1):
+        base = (t - 1) * sect
+        cuex += rec(bcd(t), 0, base - (150 if t == 1 else 0))
+        for i in range(1, nidx + 1):
+            cuex += rec(bcd(t), bcd(i), base + (i - 1) * sect // nidx)
+    cuex += rec(0xAA, 1, ntracks * sect)
+    daox = bytearray(0x16)
+    daox[0x14] = 1
+    daox[0x15] = ntracks
+    for t in range(ntracks):
+        e = bytearray(0x2A)
+        e[0x0C:0x0E] = struct.pack(">H", RAW)
+        e[0x0E] = 0x07
+        e[0x1A:0x22] = struct.pack(">Q", t * sect * RAW)
+        e[0x22:0x2A] = struct.pack(">Q", (t + 1) * sect * RAW)
+        daox += e
+    sinf = struct.pack(">I", ntracks)
+    chunks = chunk(b"CUEX", cuex) + chunk(b"DAOX", bytes(daox)) + chunk(b"SINF", sinf) + chunk(b"END!", b"")
+    img = data + chunks + b"NER5" + struct.pack(">Q", len(data))
+    with open(dst, "wb") as f:
+        f.write(img)
+    print("%d tracks: %d bytes, CUEX %d bytes = %d records = %d entries" % (ntracks, len(img), len(cuex), len(cuex) // 8, (len(cuex) - 16) // 16))
+    return 0
+
+
 def main(argv):
-    if len(argv) != 2 or argv[0] not in ("ok", "short", "past", "odd", "zero", "shortnz", "inside"):
+    if len(argv) != 2 or argv[0] not in ("ok", "short", "past", "odd", "zero", "shortnz", "inside", "idx2", "idx20"):
         print(__doc__)
         return 2
     kind, dst = argv
+    if kind == "idx2":
+        return real_layout(dst, 2, 99)
+    if kind == "idx20":
+        return real_layout(dst, 20, 10)
     tracks = [(0, 10 * RAW), (10 * RAW, 20 * RAW)]
     data = bytes(20 * RAW)
     cuex = bytes(16) + b"".join(bytes(4) + struct.pack(">I", 0) + bytes(8) for _ in tracks)

@@ -31,12 +31,17 @@
 //   - an audio track's listed name is built on the heap whole, never cut
 //     (SalNrgAudioTrackNameAlloc; it was formatted into char[MAX_PATH]) -
 //     the panel listing's rule then lists it or leaves it out (feature 329);
-//   - the CUEX chunk (a 16-byte header, then one 16-byte entry a track) gives
-//     only the whole entries its own size holds (SalNrgCuexEntryCount,
-//     feature 350; (Size - 16) / 16 in 32 bits underflowed for a chunk under
-//     16 bytes to 268 million entries, one track built from every 16 bytes up
-//     to the end of the file) and is read only when it lies within the image
-//     and holds at most 99 entries (SalNrgCuexEntriesPlausible, a CD's tracks).
+//   - the CUEX chunk: Nero writes 8-byte index records (the lead-in, per track
+//     index 0 and each index 1..99, the lead-out); the reader takes the first
+//     16 bytes as a header and makes one audio track per following 16 bytes
+//     (an "entry" - one track only when every track has index 0 and 1; with
+//     more index points it makes extra tracks the DAOX chunk does not fill,
+//     as before). The chunk gives only the whole entries its own size holds
+//     (SalNrgCuexEntryCount, feature 350; (Size - 16) / 16 in 32 bits
+//     underflowed for a chunk under 16 bytes to 268 million entries, one track
+//     built from every 16 bytes up to the end of the file) and is read only
+//     when it lies within the image and is no larger than a disc's CUEX can be
+//     (SalNrgCuexSizePlausible: 2 + 99 x 100 records).
 //
 //*****************************************************************************
 
@@ -99,8 +104,8 @@ inline bool SalNrgCdTextNext(const unsigned char* text, size_t len, size_t& pos,
     return true;
 }
 
-#define SAL_NRG_CUEX_HEADER 16 // bytes of the CUEX chunk's header
-#define SAL_NRG_CUEX_ENTRY 16  // bytes of a CUEX entry (one audio track)
+#define SAL_NRG_CUEX_HEADER 16 // bytes the reader takes as the CUEX chunk's header (2 records)
+#define SAL_NRG_CUEX_ENTRY 16  // bytes the reader makes one audio track of (2 records)
 
 // feature 350: the number of whole entries a CUEX chunk of 'size' bytes holds after its header
 // (0 for a chunk under 16 + 16 bytes; never more than size / 16)
@@ -111,14 +116,19 @@ inline unsigned long long SalNrgCuexEntryCount(unsigned long long size)
     return (size - SAL_NRG_CUEX_HEADER) / SAL_NRG_CUEX_ENTRY;
 }
 
-#define SAL_NRG_MAX_TRACKS 99 // tracks a CD holds (Red Book; Nero writes track numbers 01..99)
+#define SAL_NRG_CUEX_RECORD 8 // bytes of a Nero CUEX index record
+// the most records a disc's CUEX chunk holds (Red Book: 99 tracks of index 0..99, plus the lead-in
+// and the lead-out) - 79,216 bytes, 4,950 of the reader's entries
+#define SAL_NRG_CUEX_MAX_RECORDS (2 + 99 * 100)
 
-// feature 350 (review 1): true when a CUEX chunk of 'entries' entries can describe a disc - a chunk
-// that lies within the image could still claim one track per 16 bytes of it (a 96 MiB chunk built
-// 6.3 million tracks, 1.5 GB, 3 minutes); such a chunk is skipped as damaged
-inline bool SalNrgCuexEntriesPlausible(unsigned long long entries)
+// feature 350 (reviews 1 and 2): true when a CUEX chunk of 'size' bytes is no larger than any disc's
+// can be - a chunk that lies within the image could still claim one track per 16 bytes of it (a
+// 96 MiB chunk built 6.3 million tracks, 1.5 GB, 3 minutes); a larger chunk is skipped as damaged.
+// (Review 2: a bound of 99 entries refused real discs with index points - 2 tracks of index 1..99
+// are 100 entries.)
+inline bool SalNrgCuexSizePlausible(unsigned long long size)
 {
-    return entries <= SAL_NRG_MAX_TRACKS;
+    return size <= (unsigned long long)SAL_NRG_CUEX_MAX_RECORDS * SAL_NRG_CUEX_RECORD;
 }
 
 // true when the DAOX track number 'number' (1-based) names one of the 'trackCount' tracks

@@ -112,7 +112,38 @@ probe `probe/result_after_review1.txt` PASS 14, FAIL 0 (N-INSIDE opened with its
 0.6 s); registry restored, identical. Mutant (the cap removed, `entries <= 0xFFFFFFFF`): saltests 3
 failed (101 entries, the 96 MiB chunk, 0xFFFFFFFF); restored, rebuilt, 29,202 / 0; encoding guard 0.
 
+### Review 2 (independent agent, refute-first) - one MUST
+
+- **MUST 1**: review 1's bound counted the reader's 16-byte units as tracks, but Nero's CUEX is 8-byte
+  index records (lead-in, per track index 0 and each index 1..99, lead-out; libmirage reads it so, one
+  chunk a session). A real disc with index points has more than 99 units: 2 tracks of index 1..99 =
+  100, 20 tracks of index 1..10 = 110. The reviewer's real-layout images (its `imgrev.py`): main
+  opened them ("Copy 2 files", "Copy 20 files"), the branch at 0d1af51d did not ("Unknown file
+  format"). **Fixed**: the bound is now the largest CUEX a disc can have -
+  `SAL_NRG_CUEX_MAX_RECORDS` = 2 + 99 x 100 records of 8 bytes (79,216 bytes, 4,950 units),
+  `SalNrgCuexSizePlausible(size)`; a larger chunk is skipped like one that does not fit. Review 2's
+  option 2; option 1 (read at most 99 units, ignore the rest) rejected - it changes real images'
+  track tables against main.
+- **SHOULD 1**: the code and the spec stated "one 16-byte entry a track" as fact - **taken**: the
+  header comment, spec (Background, Clarifications, Edge Cases, FR-002, Key Entities, Assumptions),
+  research R5 and the data model now state the 8-byte record layout and the reader's pairing as a
+  known limit.
+- **NOTE 1**: with index points the pairing gives misaligned extent offsets and extra tracks; on a
+  multi-session image session 2's track numbers drift from its DAOX - upstream since ever, not this
+  feature: Inbox item `iso-plug-in-nrg-cuex-index-records-are-paired-into-wrong` (measure:350).
+
+After the fix: build BUILD SUCCEEDED; saltests `29206 checks, 0 failed` (TestNrgCuex350 now 24 checks);
+probe `probe/result_after_review2.txt` PASS 18, FAIL 0 (rows N-IDX2 "Copy 2 files", N-IDX20 "Copy 20
+files" added - real-layout discs with index points; N-INSIDE still 73 MB, 0.6 s); registry restored,
+identical. Mutant (the bound back to 99 units, `SAL_NRG_CUEX_MAX_RECORDS (2 + 2 * 99)`): saltests 3
+failed (2 tracks of index 0..99, 20 tracks of index 0..10, the disc maximum); restored, rebuilt,
+29,206 / 0; encoding guard 0. Review 2's own run of these images on main and on 0d1af51d is the
+probe's negative control for N-IDX2 / N-IDX20.
+
 ## Limits
 
 - A short read inside a chunk that fits leaves the next header read from inside the chunk (review 1
   NOTE 2; needs an I/O error; unchanged from before).
+- A damaged CUEX chunk within the image, at most 79,216 bytes, still builds up to 4,950 tracks (no
+  measurable cost).
+- The reader's pairing of Nero's 8-byte records is unchanged (review 2 NOTE 1, Inbox).

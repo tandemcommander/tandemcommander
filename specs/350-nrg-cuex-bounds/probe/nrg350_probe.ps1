@@ -13,6 +13,8 @@
       zero.nrg   a CUEX chunk of 0 bytes before the good chunks
       shortnz.nrg a CUEX chunk of 8 bytes "ABCDEFGH" before the good chunks (review 1)
       inside.nrg a CUEX chunk of 16 + 96 MiB bytes within the image before the good chunks (review 1)
+      idx2.nrg   review 2: Nero's real CUEX layout, 2 audio tracks with index points 1..99 (100 entries)
+      idx20.nrg  review 2: Nero's real CUEX layout, 20 audio tracks with index points 1..10 (110 entries)
     Each row: the program starts with the image in the left panel (-l); the probe waits until the
     main window answers (at most 180 s), takes the time to that point and the process's peak working
     set, the boxes shown at the open and the panel's location; when the image opened, Select All
@@ -29,6 +31,8 @@
       N-ZERO, N-SHORTNZ  PASS = opened, two tracks listed (before 350: not opened)
       N-INSIDE PASS = opened, two tracks listed, within the bound (the fix before review 1's cap: 1565 MB,
                179 s, 6.3 million tracks)
+      N-IDX2, N-IDX20  PASS = opened, "Copy 2 files" / "Copy 20 files" (main: the same; review 1's
+               99-entry cap: not opened)
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does
     not answer (End-Row).
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -61,7 +65,7 @@ $script:OkPeak = -1
 
 # opens $Nrg in the left panel; $Open = the image must open (else: must not crash); $Bound = the peak
 # working set must stay within N-OK's + 150 MB
-function Nrg-Row([string]$Case, [string]$Nrg, [bool]$Open, [bool]$Bound) {
+function Nrg-Row([string]$Case, [string]$Nrg, [bool]$Open, [bool]$Bound, [int]$Files = 2) {
     if (-not (Want $Case)) { return }
     if (-not [IO.File]::Exists($Nrg)) { Row $Case 'RUN' 'NOT DRIVEN' ('no image ' + $Nrg); return }
     $d = $Root + '\' + $Case; $tgt = $d + '\tgt'; NewDir $tgt
@@ -89,12 +93,12 @@ function Nrg-Row([string]$Case, [string]$Nrg, [bool]$Open, [bool]$Bound) {
             $msgs = Msgs (Serve $id 30 @(1, 6))
         }
         End-Row $Case $id $null $before; $id = 0
-        $listed = ($msgs -match 'Copy 2 files') -and ($msgs -match 'Audio tracks cannot be extracted')
+        $listed = ($msgs -match ('Copy {0} files' -f $Files)) -and ($msgs -match 'Audio tracks cannot be extracted')
         if ($Case -eq 'N-OK') { $script:OkPeak = $peak }
         $within = $true
         if ($Bound) { $within = ($script:OkPeak -ge 0) -and ($peak -le $script:OkPeak + 150) -and ($secs -le 5) }
         if ($Open) { $ok = $opened -and $listed -and $within } else { $ok = $within }
-        Row $Case 'RUN' (V $ok) ('opened: {0} (want {1}; panel {2}); two tracks listed: {3}; peak working set {4} MB (N-OK {5} MB, bound {6}: {7}); answering after {8:N1} s; at the open: {9}; copy: {10}' -f $opened, $Open, (Tail $loc 60), $listed, $peak, $script:OkPeak, $Bound, $within, $secs, (Tail $openMsgs 300), (Tail $msgs 200))
+        Row $Case 'RUN' (V $ok) ('opened: {0} (want {1}; panel {2}); {11} tracks listed: {3}; peak working set {4} MB (N-OK {5} MB, bound {6}: {7}); answering after {8:N1} s; at the open: {9}; copy: {10}' -f $opened, $Open, (Tail $loc 60), $listed, $peak, $script:OkPeak, $Bound, $within, $secs, (Tail $openMsgs 300), (Tail $msgs 200), $Files)
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before } }
@@ -115,7 +119,7 @@ try {
     $s = $Root + '\seeds'; NewDir $s
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $made = @()
-    foreach ($k in @('ok', 'short', 'past', 'odd', 'zero', 'shortnz', 'inside')) { $made += (& python -I (Join-Path $Here 'img350.py') $k "$s\$k.nrg" 2>&1 | ForEach-Object { "$_" }) }
+    foreach ($k in @('ok', 'short', 'past', 'odd', 'zero', 'shortnz', 'inside', 'idx2', 'idx20')) { $made += (& python -I (Join-Path $Here 'img350.py') $k "$s\$k.nrg" 2>&1 | ForEach-Object { "$_" }) }
     $ErrorActionPreference = $old
     Out ('img350: ' + ($made -join '; '))
     Nrg-Row 'N-OK' "$s\ok.nrg" $true $false
@@ -125,6 +129,8 @@ try {
     Nrg-Row 'N-ZERO' "$s\zero.nrg" $true $false
     Nrg-Row 'N-SHORTNZ' "$s\shortnz.nrg" $true $false
     Nrg-Row 'N-INSIDE' "$s\inside.nrg" $true $true
+    Nrg-Row 'N-IDX2' "$s\idx2.nrg" $true $false 2
+    Nrg-Row 'N-IDX20' "$s\idx20.nrg" $true $false 20
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

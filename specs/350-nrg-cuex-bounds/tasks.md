@@ -47,6 +47,12 @@ defect (CLAUDE.md *Working method*) - included.
 - [X] T013 [US1] Add kinds zero, shortnz, inside to specs/350-nrg-cuex-bounds/probe/img350.py and rows N-ZERO, N-SHORTNZ, N-INSIDE to specs/350-nrg-cuex-bounds/probe/nrg350_probe.ps1
 - [X] T014 Rebuild, saltests, probe → specs/350-nrg-cuex-bounds/probe/result_after_review1.txt; a no-cap mutant fails saltests; record in specs/350-nrg-cuex-bounds/fix-log.md
 
+## Phase 8: Review 2 (MUST 1, SHOULD 1)
+
+- [X] T015 [US1] Replace review 1's 99-entry bound by `SAL_NRG_CUEX_MAX_RECORDS` / `SalNrgCuexSizePlausible` (2 + 99 x 100 records of 8 bytes) in src/common/salnrgcdtext.h and src/plugins/uniso/nrg.cpp; 9 checks in `TestNrgCuex350` (src/saltests/saltests.cpp)
+- [X] T016 [US3] Add the real-layout kinds idx2, idx20 to specs/350-nrg-cuex-bounds/probe/img350.py and rows N-IDX2, N-IDX20 to specs/350-nrg-cuex-bounds/probe/nrg350_probe.ps1; run → specs/350-nrg-cuex-bounds/probe/result_after_review2.txt
+- [X] T017 Document the 8-byte record layout (src/common/salnrgcdtext.h, spec.md, research.md R5, data-model.md); a 99-entry mutant fails saltests; record in specs/350-nrg-cuex-bounds/fix-log.md
+
 ## Dependencies
 
 T001 → T002 → T003 → T004 → T005 → T006 → T007 → T008/T009 → T010 → T011. All code tasks touch
