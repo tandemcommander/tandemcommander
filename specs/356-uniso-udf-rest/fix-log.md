@@ -52,3 +52,47 @@ are never run beside it, and a run never stops it (precedent 336, 345). Retried 
 ## Decisions
 
 See spec *Clarifications*.
+
+## Implementation
+
+- `src/common/salisotrack.h`: UDF parsers (`SalIsoUdfTagValid` - identifier, checksum, location;
+  `SalIsoUdfReadAnchor` / `SalIsoUdfAnchorOf` - an anchor of the volume = the same four extent values as
+  the anchor at 256; `SalIsoUdfExtentEnd`, `SalIsoUdfDescriptorsEnd`; `SalIsoUdfPartition`;
+  `SalIsoUdfLvdHasVirtualMap` - the map table walked within the sector; `SalIsoUdfFileEntryAt` - tag 261 /
+  266 at a partition-relative location), `SalIsoUdfVolume`, `SalIsoUdfRestDecision` (unknown anchor or
+  partition → MARK; closed at the end → KEEP; else 354's `SalIsoCookedRestDecision` with the descriptors'
+  end) and `SalIsoUdfRestSectorEmpty` (zero bytes, or a whole sector holding this volume's anchor).
+- `src/plugins/uniso/isoimage.cpp` / `.h`: `CISOImage::UdfRestMarks(fileSize)` reads sector 256, at most
+  64 sectors of the main sequence (stops at a short read or the terminating descriptor), the file's last
+  whole sector (an anchor of the volume, or with a virtual map a file entry of the first partition) and the
+  sector 256 before it (an anchor of the volume) - never the anchor at 256 itself (`whole > 257`,
+  `last > 512`, so a joined file of 513 sectors cannot pass as closed by it) - and the rest sector by
+  sector; `Open`'s `cookedIso` block calls it when `iso9660` is false and marks `ListingLeftOut`.
+- `src/saltests/saltests.cpp`: `TestIsoUdfRest_356` (68 checks).
+
+## Checks
+
+- `.\build.cmd` → BUILD SUCCEEDED (warnings only the old C4267 in hfs / xdvdfs / audio / udf / iso9660).
+- saltests 29,402 → **29,470 checks, 0 failed**.
+- Negative control (mutant: `SalIsoUdfRestDecision` returns KEEP_LISTING first): saltests **12 failed**
+  (all MARK / CHECK rows of the decision); its `uniso.spl` kept as `%TEMP%\tcudf\spl\uniso_mutant.spl` for
+  the probe. Header restored (`git checkout HEAD --`), rebuilt, 0 failed.
+- `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`.
+
+### Rule mirror over the images (`probe/rule356.py`, before the GUI run)
+
+All IMAPI2FS (1.02, 1.50, 2.00, 2.01, 2.50) and mkudffs (hd, dvd, dvdrw, cdrw, cd, dvdr, bdr, cdr, cdr
+closed) images: KEEP (closed at the end); mkudffs hd 512-byte blocks: MARK (no anchor at 256). Composed
+(`img356.py` from IMAPI2FS u1 a.txt / u2 b.txt): plain, anchor600, zero100 (its anchor 256 before the end),
+rest16, zero512, anchorrest (141 empty sectors: u1's anchors + one zero sector) KEEP; two, twoabs (842 past,
+more than 512), rest17, short, noanchor, zero513, zerolate MARK; **zero300 MARK** - u1 + 300 zero sectors:
+neither the last sector nor the one 256 before it is u1's anchor, 566 sectors past the descriptors (more
+than are read) - a limit that fails closed, recorded as probe row R-ZERO300 and in the spec's
+*Assumptions*. C-ZERO100 was first meant to exercise the "own anchors in the rest" path; the mirror showed
+the closing anchor catches it, so C-ANCHORREST was added for that path.
+
+### Probes
+
+`before` = `uniso.spl` built from main's `isoimage.cpp` (the header with the new rule present but not
+called - the plug-in behaves as main), saved as `%TEMP%\tcudf\spl\uniso_main.spl`; it is copied over the
+build's `plugins\uniso\uniso.spl` for the before run and the fix's copied back afterwards.

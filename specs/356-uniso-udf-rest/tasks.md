@@ -21,11 +21,11 @@
 
 ## Phase 4: User Story 2 - plain one-volume UDF images still deleted (P2)
 
-- [ ] T008 [US2] Probe rows C-PLAIN, C-U250, C-REST16, C-ZERO100, C-ZERO512, C-ANCHOR600, C-MKHD, C-MKDVD, C-MKCDRW, C-MKCDR, C-MKCDRC, C-MKDVDR, C-MKBDR (after)
+- [ ] T008 [US2] Probe rows C-PLAIN, C-U250, C-REST16, C-ZERO100, C-ANCHORREST, C-ZERO512, C-ANCHOR600, C-MKHD, C-MKDVD, C-MKCDRW, C-MKCDR, C-MKCDRC, C-MKDVDR, C-MKBDR (after)
 
 ## Phase 5: User Story 3 - an end that cannot be read keeps the image (P3)
 
-- [ ] T009 [US3] Probe rows R-ZERO513, R-ZEROLATE, R-SHORT, R-NOANCHOR, R-MKHD512 (after)
+- [ ] T009 [US3] Probe rows R-ZERO513, R-ZERO300, R-ZEROLATE, R-SHORT, R-NOANCHOR, R-MKHD512 (after)
 
 ## Phase 6: Polish
 

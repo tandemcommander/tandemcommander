@@ -12,8 +12,10 @@ reserve volume descriptor sequence, the partition (IMAPI2FS: 310; its file holds
             file's last sector, its extents moved by u1's length)
   rest16    u1 cut at the descriptors' end + 16 sectors of 0x5A
   rest17    u1 cut at the descriptors' end + 17 sectors of 0x5A
-  zero100   u1 + 100 zero sectors (its closing anchor no longer the file's last sector; the rest is u1's own
-            anchors and zero bytes)
+  zero100   u1 + 100 zero sectors (its last sector zero; the sector 256 before it one of u1's anchors)
+  zero300   u1 + 300 zero sectors (neither the last sector nor the one 256 before it is u1's anchor; 566
+            sectors past the descriptors - more than are read)
+  anchorrest u1 cut at sector 450 + 1 zero sector (not closed; the rest is u1's own anchors and zero bytes)
   zero512   u1 cut at the descriptors' end + 512 zero sectors
   zero513   u1 cut at the descriptors' end + 513 zero sectors
   zerolate  u1 cut at the descriptors' end + 300 zero sectors, the file's last byte 1
@@ -84,6 +86,10 @@ def main():
         img = cut + b'\x5a' * (17 * S)
     elif kind == 'zero100':
         img = u1 + bytes(100 * S)
+    elif kind == 'zero300':
+        img = u1 + bytes(300 * S)
+    elif kind == 'anchorrest':
+        img = u1[:450 * S] + bytes(S)
     elif kind == 'zero512':
         img = cut + bytes(512 * S)
     elif kind == 'zero513':

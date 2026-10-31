@@ -76,7 +76,7 @@ extracted and the image is deleted.
 **Why this priority**: the item's *Expected*: a plain one-volume UDF image unpacks and is deleted as
 today.
 
-**Independent Test**: probe rows C-PLAIN, C-U250, C-REST16, C-ZERO100, C-ZERO512, C-ANCHOR600, C-MK*:
+**Independent Test**: probe rows C-PLAIN, C-U250, C-REST16, C-ZERO100, C-ANCHORREST, C-ZERO512, C-ANCHOR600, C-MK*:
 extracted, deleted.
 
 **Acceptance Scenarios**:
@@ -100,7 +100,7 @@ and a whole unpack keeps the image.
 
 **Why this priority**: a "safe to delete?" check fails closed (CLAUDE.md *Never lose the user's data*).
 
-**Independent Test**: probe rows R-ZERO513, R-ZEROLATE, R-SHORT, R-NOANCHOR, R-MKHD512: the image kept.
+**Independent Test**: probe rows R-ZERO513, R-ZERO300, R-ZEROLATE, R-SHORT, R-NOANCHOR, R-MKHD512: the image kept.
 
 **Acceptance Scenarios**:
 
@@ -179,6 +179,10 @@ and a whole unpack keeps the image.
   trusted.
 - Assumption (autonomous run): a crafted image whose descriptors claim a size close to the file, or a
   joined volume whose descriptors copy the first one's, still hides what lies past it (as 353 - 355).
+- Assumption (autonomous run): a plain image followed by zero bytes whose file then neither ends with the
+  volume's anchor nor holds one 256 sectors before its end, and whose rest past the descriptors is longer
+  than 512 sectors (an IMAPI2FS image + 300 zero sectors: 566), is kept after a whole unpack - the rest is
+  not read in full (354's cap; fails closed).
 - Assumption (autonomous run): an image kept this way gets no new message (as features 353 - 355); no UI
   string changes, so no translation refresh.
 - Assumption (autonomous run): the sessions of a UDF multi-session image are still not read; a VAT

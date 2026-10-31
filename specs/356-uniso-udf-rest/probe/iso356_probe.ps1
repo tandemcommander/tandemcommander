@@ -22,8 +22,11 @@
                   a.txt, KEPT
       C-REST16    u1 cut at the descriptors' end + 16 sectors of 0x5A: PASS = a.txt, deleted
       R-REST17    the same with 17 sectors: PASS = a.txt, KEPT
-      C-ZERO100   u1 + 100 zero sectors (its own anchors and zero bytes past the descriptors): PASS = a.txt,
-                  deleted
+      C-ZERO100   u1 + 100 zero sectors (its anchor 256 sectors before the end): PASS = a.txt, deleted
+      R-ZERO300   u1 + 300 zero sectors (no anchor of u1 at the end or 256 before it; 566 sectors past the
+                  descriptors, more than are read): PASS = a.txt, KEPT (a limit: fails closed)
+      C-ANCHORREST u1 cut at sector 450 + 1 zero sector (the rest is u1's own anchors and zero bytes): PASS =
+                  a.txt, deleted
       C-ZERO512   u1 cut at the descriptors' end + 512 zero sectors: PASS = a.txt, deleted
       R-ZERO513   the same with 513 (more than is read): PASS = a.txt, KEPT
       R-ZEROLATE  u1 cut + 300 zero sectors, the last byte 1: PASS = a.txt, KEPT
@@ -164,7 +167,7 @@ try {
     $s = $Root + '\seeds'; NewDir $s
     NewDir "$s\src1"; NewDir "$s\src2"
     [IO.File]::WriteAllText("$s\src1\a.txt", 'A1'); [IO.File]::WriteAllText("$s\src2\b.txt", 'B2')
-    $kinds = @('plain', 'two', 'twoabs', 'rest16', 'rest17', 'zero100', 'zero512', 'zero513', 'zerolate', 'short', 'noanchor', 'anchor600')
+    $kinds = @('plain', 'two', 'twoabs', 'rest16', 'rest17', 'zero100', 'zero300', 'anchorrest', 'zero512', 'zero513', 'zerolate', 'short', 'noanchor', 'anchor600')
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $mu = @()
     try {
@@ -195,6 +198,8 @@ try {
     Unpack-Row 'C-REST16' "$s\rest16.bin" 'rest16.iso' $a
     Unpack-Row 'R-REST17' "$s\rest17.bin" 'rest17.iso' $a -Kept
     Unpack-Row 'C-ZERO100' "$s\zero100.bin" 'zero100.iso' $a
+    Unpack-Row 'R-ZERO300' "$s\zero300.bin" 'zero300.iso' $a -Kept
+    Unpack-Row 'C-ANCHORREST' "$s\anchorrest.bin" 'anchorrest.iso' $a
     Unpack-Row 'C-ZERO512' "$s\zero512.bin" 'zero512.iso' $a
     Unpack-Row 'R-ZERO513' "$s\zero513.bin" 'zero513.iso' $a -Kept
     Unpack-Row 'R-ZEROLATE' "$s\zerolate.bin" 'zerolate.iso' $a -Kept
