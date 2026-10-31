@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a track of a CCD or NRG image may keep an uninitialised file-system type](items/iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an/desc.md) | bug | 5 | archives | 351 |
 
 ## Next
 
@@ -273,6 +272,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a CloneCD session number from the .ccd writes outside the reader arrays](items/iso-plug-in-a-clonecd-session-number-from-the-ccd-writes/desc.md) | bug | 7 | archives | review:351 | 2026-10-31 |
 
 ## Parked
 

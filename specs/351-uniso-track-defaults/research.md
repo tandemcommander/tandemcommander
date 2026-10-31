@@ -39,5 +39,9 @@
 - **Rationale**: an unknown track is never detected (`Open`), never listed, and marks the listing
   (`ListTracks` `case fsUnknown` -> `SAL_ISO_TRACK_NOT_TRIED`; the single-session path's left-out
   rule) - 334's `SalIsoTrackMarksListing` marks every unknown track. The item's "not listed with
-  garbage bounds" holds. Real Nero images with CUEX index points (350's limit) get such extra
-  tracks; they are audio discs, whose listing 334 already marks.
+  garbage bounds" holds. Real Nero images with CUEX index points (350's limit: the reader pairs index
+  records into tracks) get such extra tracks - an audio disc, whose listing 334 already marks, and
+  also a data disc with index points, whose listing is now always marked (the image kept after a
+  whole unpack). That is fail-safe and what the 0.2.0 Release build did most of the time (heap value
+  0 = unknown); the pairing itself is Inbox `iso-plug-in-nrg-cuex-index-records-are-paired-into-wrong`
+  (review 1, NOTE 3).

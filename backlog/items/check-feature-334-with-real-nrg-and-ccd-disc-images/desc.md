@@ -7,11 +7,11 @@ area: archives
 source: leftover:334
 who: person
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-31
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an]
+related: []
 depends-on: []
 reason: -
 ---
@@ -56,3 +56,4 @@ that images with audio or unreadable tracks are kept.
 - 2026-10-24 — created (source leftover:334)
 - 2026-10-24 — auto-triage: severity 4 -> 6: a check guarding a data-loss fix (feature 334 keeps an image whose unpack left content out instead of deleting it)
 - 2026-10-24 — moved to Person steps position 7
+- 2026-10-31 — related item iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an done in feature 351

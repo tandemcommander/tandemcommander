@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5205,3 +5205,31 @@ a few early ones are out of sequence).
   seek: probe N-ODD fails); four refute-first reviews (MUST 0 / 1 / 0 / 0 - the 99-unit bound; SHOULD
   1 / 1 / 1 / 0 all taken; the reviewers' negative controls: old `nrg.cpp` fails N-SHORT / N-PAST /
   N-ODD, 3b697c6d's fails N-MANY).
+- 351-uniso-track-defaults: a CloneCD disc image (`.img` + `.ccd`) of a data disc often did not open in
+  the Release build ("Unknown file format or not a valid ISO image", nothing extracted) - at random:
+  the ISO plug-in's track record left its file-system type, mode, sector sizes, start, end and extent
+  offset as the heap held them, and the CloneCD reader gave a type only to an audio track, so a Mode 1
+  / Mode 2 data track was detected only when the heap's value happened to be neither "unknown" (often
+  0 in Release) nor "audio"; a Nero CUEX track that no DAOX entry describes kept every field the heap
+  held (detected at garbage bounds, or listed as audio of garbage size) - now `CISOImage::Track::Track()`
+  gives every field a value (`fsUnknown`, `mNone`, zero sizes / bounds / extent), and the CloneCD
+  reader maps `MODE=` by `SalIsoCcdTrackKind` (`src/common/salisotrack.h`: 0 audio, 1 / 2 data - typed
+  `fsISO9660`, which `Open` detects and replaces, as the Nero reader's data tracks - anything else
+  unknown); an undescribed Nero track stays unknown with zero bounds, never detected nor listed, and
+  marks the listing (334). Traps: the Debug heap's 0xCD fill hid it (Debug passed every row, the item
+  said "would show only in Release (not verified)" - measured: the 0.2.0 Release build failed 7 of 9
+  CloneCD rows, main's plug-in in Release 6 / 9 and 3 / 9 in the reviewer's run); the "after" Release
+  measurement built only `uniso.vcxproj` (Release x64, `OPENSAL_BUILD_DIR` under `%TEMP%`) into a copy of
+  the 0.2.0 tree, so the measured tree stayed as it was; once the constructor gives `fsUnknown`, the
+  defect is deterministic in Debug (mutant). Limits: a data NRG whose CUEX index points are paired into
+  extra tracks (350's limit) now always marks its listing (the image kept - fail-safe); a `.ccd` entry's
+  session number indexes the reader's arrays unchecked (heap corruption, an image deleted after a silent
+  overrun) and unparsed rows still leave stack values (Inbox
+  `iso-plug-in-a-clonecd-session-number-from-the-ccd-writes`); crafted images only. From backlog item
+  `iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an`. Probe `iso351_probe` (images by `img351.py` from
+  334's `mkimg334.sh` seeds) on the 0.2.0 Release tree 23 / 7 (`-Repeat 3`), main's plug-in in Release
+  24 / 6 -> the fix 30 / 0 in Release, 10 / 0 in Debug; Debug mutant without the CloneCD data type
+  7 / 3; 334 23 / 1, 335 28 / 4 (Debug and Release), 350 20 / 0 as recorded; saltests 29,214 -> 29,226 / 0
+  (`TestIsoCcdTrackKind_351`; a rule mutant fails 7); refute-first review 1: no MUST - its own Release
+  builds fix 30 / 0, main 27 / 3, Release mutant 21 / 9; SHOULD the `.ccd` session index (pre-existing)
+  -> Inbox; NOTEs taken.

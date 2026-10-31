@@ -157,7 +157,9 @@ the fix give their recorded results.
 - **SC-001**: On a Release build of the fix, the CloneCD rows C-M1, C-M2 and C-M1M1 pass in every
   one of at least three runs (before: 7 of 9 runs failed with "Unknown file format").
 - **SC-002**: N-UNDESC passes on Debug and Release (an undescribed NRG track keeps the image, no
-  window); N-ONE passes.
+  window); N-ONE passes. (A regression row: N-UNDESC passes before the fix too - the heap's value
+  marked the listing either way; that the undescribed track's fields are now defined rests on
+  reading, fix-log T009 and review 1.)
 - **SC-003**: The Debug build, with the CloneCD reader's data type removed (a mutant), fails C-M1,
   C-M2 and C-M1M1 every time - the probe sees the defect deterministically once the constructor
   gives "unknown".

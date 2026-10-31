@@ -7,11 +7,11 @@ area: archives
 source: review:334
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-31
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an]
+related: []
 depends-on: []
 reason: -
 ---
@@ -51,3 +51,4 @@ without a box on every panel listing; a new UI string with the `.slt` refresh.
 
 - 2026-10-24 — created (source review:334)
 - 2026-10-24 — moved to Next position 74
+- 2026-10-31 — related item iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an done in feature 351

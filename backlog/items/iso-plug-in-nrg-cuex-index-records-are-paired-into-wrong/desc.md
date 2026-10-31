@@ -11,7 +11,7 @@ updated: 2026-10-31
 verified: -
 effort: M
 feature: -
-related: [iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an]
+related: []
 depends-on: []
 reason: -
 ---
@@ -65,3 +65,4 @@ index points list as before (feature 329's, 331's and 350's probe images).
 - 2026-10-31 — created (source measure:350)
 - 2026-10-31 — extended: review 3 NOTE 2 of feature 350 (odd record counts now open)
 - 2026-10-31 — moved to Next position 32
+- 2026-10-31 — related item iso-plug-in-a-track-of-a-ccd-or-nrg-image-may-keep-an done in feature 351

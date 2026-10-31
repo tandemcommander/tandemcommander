@@ -92,3 +92,30 @@ Every probe ran on the hidden desktop; the registry restored and identical after
 (SHA-256 1DA45396...).
 
 No UI string, dialog or menu changed - no `.slt` refresh.
+
+## Review
+
+### Review 1 (refute-first, general-purpose agent, foreground) - no MUST
+
+- Re-measured on Release: the reviewer built `uniso.vcxproj` Release x64 itself from three detached
+  worktrees into copies of the 0.2.0 tree, `-Repeat 3`: the fix 30 / 0; main d760ed1a 27 / 3 (C-M2#2,
+  C-M1M1#2, C-M1M1#3 - the failures move between runs: 23 / 7, 24 / 6, 27 / 3); a Release mutant (the
+  fix's constructor with main's `img.cpp`) 21 / 9 - C-M1, C-M2, C-M1M1 fail in all 3 runs. saltests
+  29,226 / 0; registry identical after each run; tree left clean, worktrees removed.
+- Callers enumerated (every reader that makes a track, every reader of the fields): each still writes
+  what it wrote; an undescribed track takes the fail-safe branch everywhere. No data loss.
+- **SHOULD 1** (pre-existing, outside the item): `ReadSessionCCD` indexes `pointMin` / `pointMax` /
+  `extents` / `extentsEnd` by an `[Entry]`'s `Session - 1` from the `.ccd` unchecked - `Session=0`
+  gave Debug "HEAP CORRUPTION DETECTED", `Session=200` wrote past the array silently and the unpack
+  deleted the image; `Session[i]` read past its end when the `.ccd` declares more sessions than
+  `INDEX 1=0` splits (by reading). -> Inbox `iso-plug-in-a-clonecd-session-number-from-the-ccd-writes`
+  (review:351), with NOTE 1.
+- NOTE 1: `processTrackSection` / `processEntrySection` / `processSessionSection` count a row whose
+  `sscanf` failed - `ExtentOffset` / `End` from stack garbage for a malformed `.ccd` (the type and
+  mode are always defined since 351). -> in the same Inbox item.
+- NOTE 2: N-UNDESC passes before the fix too - SC-002 now says it is a regression row; the NRG half
+  rests on reading (T009), which the reviewer's reading confirms.
+- NOTE 3: research R4 limited the extra CUEX tracks of real index-point images to audio discs; a data
+  disc with index points gets them too and its listing is now always marked (fail-safe, as 0.2.0
+  Release mostly did) - R4 corrected.
+- NOTE 4: CHANGELOG / FEATURE-HISTORY entries come at closing.
