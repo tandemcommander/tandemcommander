@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an HFS+ folder whose ID is lower than its parent lists its contents at the root
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:329
@@ -10,7 +10,7 @@ created: 2026-10-23
 updated: 2026-10-31
 verified: 2026-10-31 5cf6564a
 effort: M
-feature: -
+feature: 349
 related: []
 depends-on: []
 reason: -
@@ -53,3 +53,4 @@ cycles), and a left-out folder's whole subtree stays out of the listing.
 - 2026-10-23 — created (source review:329)
 - 2026-10-23 — moved to Next position 4
 - 2026-10-31 — verified at 5cf6564a: reproduced at 5cf6564a: crafted xorriso HFS+ images (folders moved into newer ones, catalog re-sorted) - Unpack writes a.txt, b.txt, sub/s.txt, k.txt, kd/kd.txt at the HFS root; probe 5/3
+- 2026-10-31 — run started, feature 349
