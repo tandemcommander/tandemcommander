@@ -11,7 +11,7 @@ updated: 2026-10-31
 verified: -
 effort: S
 feature: -
-related: [ftp-opened-file-lock-two-names-of-one-server]
+related: []
 depends-on: []
 reason: -
 ---
@@ -58,3 +58,4 @@ cost). Related: `ftp-opened-file-lock-two-names-of-one-server` (feature 347, the
 ## Log
 
 - 2026-10-31 — created (source measure:347)
+- 2026-10-31 — related item ftp-opened-file-lock-two-names-of-one-server done in feature 347

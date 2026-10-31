@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
@@ -5114,3 +5114,22 @@ a few early ones are out of sequence).
   `shift-f6-renames-the-focused-item-in-place-without-the`. Probe `rip346_probe` 6 FAIL "no edit"
   on `main` -> 13 / 0; saltests +20; one refute-first review (MUST 0, SHOULD 1 fixed, NOTE 5).
   Owed to a person: `check-shift-f6-rename-in-place-with-a-real-keyboard-and-an`.
+- 347-ftp-lock-two-names: two FTP uploads of one server file under two names of the server
+  (`localhost` and `127.0.0.1`, same user and port) stored it at the same time: the opened-file lock
+  (`FTPOpenedFiles`) told servers apart by the typed host, so both STOR ran, both operations ended
+  "(100 %)" and the first upload's file was replaced without a question (measured on `main`). Now
+  `CFTPOpenedFile::IsSameFile` (`operats9.cpp`) no longer compares the host: the same user, port,
+  path and name under any host name are maybe the same file (341's rule - addresses prove nothing);
+  the second access is refused as before ("Target File Is Locked By Another Operation", Retry).
+  Cost: two different servers with the same user, port, folder and file name refuse each other's
+  conflicting access while one runs (the refused item needs a manual Retry; two reads still run
+  together). Traps: with the file already on the server the listing cache asks the overwrite
+  question first and the lock is never reached - the probe's server (`ftpmini_hold.py`) holds a
+  STOR before creating the file; the first verdict passed even if upload 2 never ran (review).
+  Limits: another user or port of one server still stores one file twice at once (measured, row
+  OTHER-USER) -> Inbox `ftp-two-uploads-as-another-user-or-port-of-one-server-can`; the existence
+  check runs before the lock (by reading) -> Inbox
+  `ftp-an-upload-that-ends-between-another-upload-s-existence`. From backlog item
+  `ftp-opened-file-lock-two-names-of-one-server`. Probe `ftp347_probe.ps1` 5 / 1 on `main` -> 6 / 0
+  (reviewer's negative control: the old `ftp.spl` alone fails ALIAS-LOCK); 341's 12 / 0, 345's
+  16 / 0; one refute-first review (MUST 0, SHOULD 2 done, NOTE 3).

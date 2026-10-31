@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [FTP: two operations under two names of one server can open one file at the same time](items/ftp-opened-file-lock-two-names-of-one-server/desc.md) | bug | 7 | ftp | 347 |
 
 ## Next
 
@@ -272,6 +271,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [FTP: an upload that ends between another upload's existence check and its lock](items/ftp-an-upload-that-ends-between-another-upload-s-existence/desc.md) | bug | 3 | ftp | review:347 | 2026-10-31 |
 | [FTP: two uploads as another user or port of one server can store one file at once](items/ftp-two-uploads-as-another-user-or-port-of-one-server-can/desc.md) | bug | 6 | ftp | measure:347 | 2026-10-31 |
 
 ## Parked

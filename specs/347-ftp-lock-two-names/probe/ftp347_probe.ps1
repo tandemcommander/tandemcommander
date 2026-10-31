@@ -15,7 +15,11 @@
                   changes to "UP2"; upload 2 by F5 into the panel (127.0.0.1). PASS = no second
                   STOR hold.txt while the first one is in flight (the lock refuses upload 2's item:
                   "in use"). Before the fix: two STOR of one file at the same time.
-      SAME-LOCK   control: both uploads at 127.0.0.1 - one name; must be PASS on every build.
+                  The verdict also requires that upload 2 listed the folder, that its window shows
+                  "Target File Is Locked By Another Operation" and that the server keeps "UP1".
+      SAME-LOCK   control: both uploads at 127.0.0.1 - one name; must be PASS on every build (upload
+                  2 stops at the overwrite question - the listing cache knows the file; the lock
+                  itself is not reached here).
       OTHER-USER  scope control: upload 1 typed as user "v" (ftp://v:p@127.0.0.1) - another user
                   stays another lock owner (feature 347 covers another host name of the same user
                   and port only); records whether upload 2 stored (facts only, PASS = the probe
@@ -261,7 +265,10 @@ function Two-Uploads([int]$Id, [string]$Srv, [string]$Local, [scriptblock]$Edit1
     Wait-StorsDone $FtpSrv $from1 'hold.txt' ($HoldSeconds + 25)
     $o = Overlapping-Stor $FtpSrv $from1 'hold.txt'
     $cmds2 = @(Srv-Cmds $FtpSrv $from2)
+    $listed2 = [bool](@($cmds2 | Where-Object { $_ -match '^(LIST|NLST|MLSD)' }).Count)
+    $locked2 = ($op2 -match 'Target File Is Locked By Another Operation')
     return [pscustomobject]@{ Stor1 = ($held.Stors -ge 1 -and $held.Done -eq 0); Stors = $o.Stors; Overlap = $o.Overlap; Content = (ReadSrv ($Srv + '\hold.txt'))
+        Listed2 = $listed2; Locked2 = $locked2
         Facts = ("upload 1's STOR held: {0}; STOR hold.txt in all: {1}; STOR hold.txt while another was in flight: {2}; server hold.txt '{3}'; upload 1 commands: {4}; upload 2 commands: {5}; dialogs: {6} | {7}; op windows after upload 1: {8}; after upload 2: {9}; at the end: {10}" -f ($held.Stors -ge 1 -and $held.Done -eq 0), $o.Stors, $o.Overlap, (Esc (ReadSrv ($Srv + '\hold.txt'))), ($cmds1 -join ' / '), ($cmds2 -join ' / '), ($t1 -join ' ; '), ($t2 -join ' ; '), $op1, $op2, (OpDesc $Id)) }
 }
 
@@ -288,7 +295,9 @@ try {
     Row-Case 'ALIAS-LOCK' $setup {
         param($id, $s, $l)
         $r = Two-Uploads $id $s $l { param($t) $t -replace '//u@127\.0\.0\.1:', '//u:p@localhost:' }
-        @{ Ok = ($r.Stor1 -and $r.Overlap -eq 0); Facts = $r.Facts }
+        # review of 347 (SHOULD 1): upload 2 must really have run (its listing) and met the lock
+        @{ Ok = ($r.Stor1 -and $r.Overlap -eq 0 -and $r.Listed2 -and $r.Locked2 -and $r.Content -ceq 'UP1')
+           Facts = ("upload 2 listed: {0}; upload 2 refused by the lock: {1}; {2}" -f $r.Listed2, $r.Locked2, $r.Facts) }
     }
     # control: one name
     Row-Case 'SAME-LOCK' $setup {

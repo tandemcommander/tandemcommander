@@ -84,3 +84,27 @@ before; each keeps its refusal answer:
 - Regressions (T008): 341's `ftp341_probe.ps1` -> `probe/regress_341.txt` PASS 12 / FAIL 0; 345's
   `ftp345_probe.ps1` -> `probe/regress_345.txt` PASS 16 / FAIL 0; registry restored + identical in
   both.
+
+## Review
+
+Review 1 (independent agent, refute-first): **MUST 0**, SHOULD 2, NOTE 3.
+- Re-ran the probe on the branch build: PASS 6 / FAIL 0. Own negative control: only `ftp.spl`
+  built from the parent commit (old `IsSameFile`) dropped into a copy of the branch tree,
+  `-Only ALIAS-LOCK` -> FAIL (2 STOR, 1 overlapping, 'UP2', both "(100 %)").
+- Enumerated 8 `OpenFile` sites; no self-block (one lock per worker; Quick Rename locks two names on
+  one connection), no waits (no deadlock), every refusal fails the item or shows a message; a
+  refused Move keeps its source.
+- SHOULD 1 (fixed): the ALIAS-LOCK verdict could pass if upload 2 never ran. It now also requires
+  upload 2's LIST, its window "Target File Is Locked By Another Operation" and the server content
+  'UP1'. Re-run `probe/result_after_review.txt`: PASS 6 / FAIL 0 (ALIAS-LOCK: listed True, refused
+  by the lock True).
+- SHOULD 2 (done at closing): the cost (two different servers with the same user, port, folder and
+  name refuse each other's conflicting access; the refused item needs a manual Retry) is named in
+  the FEATURE-HISTORY entry and the changelog text of `closing-report.md`.
+- NOTE 1: SAME-LOCK stops at the overwrite question (listing cache), it does not reach the lock -
+  documented in the probe header. NOTE 2: user / port still separate the lock - Inbox
+  `ftp-two-uploads-as-another-user-or-port-of-one-server-can`. NOTE 3 (by reading, not measured, not
+  introduced by 347): the existence check runs before the lock - an upload finishing between
+  upload 2's check and its lock can be overwritten without a question; the same window exists under
+  one name. Recorded, not filed (pre-existing, not measured, needs exact timing).
+- `git status --short` empty after the review.

@@ -11,7 +11,7 @@ updated: 2026-10-31
 verified: -
 effort: ?
 feature: -
-related: [ftp-opened-file-lock-two-names-of-one-server]
+related: []
 depends-on: []
 reason: -
 ---
@@ -85,3 +85,4 @@ the stall for many more questions.
 
 - 2026-10-30 — created (source review:345)
 - 2026-10-31 — moved to Decisions for the maintainer
+- 2026-10-31 — related item ftp-opened-file-lock-two-names-of-one-server done in feature 347
