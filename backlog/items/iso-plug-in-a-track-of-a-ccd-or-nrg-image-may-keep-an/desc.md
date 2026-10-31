@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: a track of a CCD or NRG image may keep an uninitialised file-system type
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:334
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
-verified: -
+updated: 2026-10-31
+verified: 2026-10-31 d760ed1a
 effort: S
-feature: -
+feature: 351
 related: []
 depends-on: []
 reason: -
@@ -59,3 +59,5 @@ not describe is not listed with garbage bounds.
 - 2026-10-24 — created (source review:334)
 - 2026-10-24 — moved to Next position 7
 - 2026-10-24 — related item iso-plug-in-a-data-track-in-which-no-file-system-is-found done in feature 335
+- 2026-10-31 — verified at d760ed1a: reproduced at d760ed1a: 0.2.0 Release build, CloneCD image of one Mode 1 / Mode 2 / two-session data track - Unknown file format in 7 of 9 opens (random); Debug passes by 0xCD fill
+- 2026-10-31 — run started, feature 351
