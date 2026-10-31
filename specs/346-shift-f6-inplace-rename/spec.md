@@ -5,6 +5,14 @@
 **Status**: Draft  
 **Input**: User description: "Backlog item shift-f6-renames-the-focused-item-in-place-without-the - implement exactly what it describes." From backlog item shift-f6-renames-the-focused-item-in-place-without-the.
 
+## Clarifications
+
+### Session 2026-10-31
+
+- Q: When a user already bound a plug-in command to Shift+F6, which runs on Shift+F6 in a panel? → A: the user's plug-in command keeps running (it is kept at load and takes precedence); Plugins Manager and the settings import refuse Shift+F6 as a new binding, like every other program key (autonomous run: conservative; precedent 312 `IsSalHotKeyKeptAtLoad`)
+- Q: What is the menu command called and where is it? → A: Files menu, right after *Quick Rename... F2*, text *Rename in Place* with the shortcut Shift+F6, same enable rule as the in-place rename, same skill levels as *Quick Rename* (autonomous run: recommended)
+- Q: Does Shift+F6 work while the command line has the focus? → A: no, unchanged; the item names panels only and the menu command covers the other case (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Rename the focused item in place from the keyboard (Priority: P1)
@@ -103,7 +111,8 @@ the keyboard help page lists Shift+F6.
 - **FR-005**: F2 (Rename dialog), F6, Ctrl+F6, Alt+F6 and Shift+Ctrl+F6 MUST keep their current
   commands.
 - **FR-006**: The Files menu MUST offer the command *Rename in Place* showing the shortcut
-  Shift+F6, enabled exactly when the in-place rename is available for the focused item.
+  Shift+F6, right after *Quick Rename...*, enabled exactly when the in-place rename is available
+  for the focused item.
 - **FR-007**: The keyboard shortcuts help page and the rename help page MUST list Shift+F6.
 - **FR-008**: A plug-in hot key a user already bound to Shift+F6 MUST keep working (it takes
   precedence); new plug-in bindings of Shift+F6 MUST be refused as other program keys are.
