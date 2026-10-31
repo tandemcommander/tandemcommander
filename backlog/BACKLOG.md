@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a raw multi-session image not named .img lists one session, then Unpack deletes it](items/iso-plug-in-a-raw-multi-session-image-not-named-img-lists/desc.md) | bug | 7 | archives | 355 |
 
 ## Next
 
@@ -277,6 +276,8 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 355 with real raw .bin and .mdf disc images, one and two sessions](items/check-feature-355-with-real-raw-bin-and-mdf-disc-images-one/desc.md) | person-step | 3 | archives | leftover:355 | 2026-10-31 |
+| [ISO plug-in: a multi-session image opened through another plain layout lists one session, then Unpack deletes it](items/iso-plug-in-a-multi-session-image-opened-through-another/desc.md) | bug | 7 | archives | review:355 | 2026-10-31 |
 
 ## Parked
 

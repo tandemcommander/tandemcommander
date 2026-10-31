@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5321,3 +5321,31 @@ a few early ones are out of sequence).
   the never-marking mutant fails 19); refute-first review 1: no MUST - its negative control (uniso.spl of
   HEAD~1) deleted R-TWOISO / R-REST17 / R-XESP, its own image with an 11,400-sector gap between sessions
   kept; SHOULD (raw images not named `.img`) -> Inbox; NOTEs recorded.
+- 355-uniso-raw-sessions: a raw disc image (2352-byte sectors with the CD sync pattern - a `.bin` without its
+  `.cue`, an Alcohol 120% `.mdf`, a raw dump named `.iso`) holding a second session past the first was
+  listed by the ISO plug-in's plain detection as the volume at its sector 16 only, and Unpack with "Delete
+  archive after unpacking" deleted it with the later session's files (353 covered only an `.img` whose
+  `.ccd` is missing, 354 only cooked images) - now, when `CISOImage::Open`'s plain branch opened a file with
+  a raw start (`rawStart`) and 353's block does not apply (`!CcdMissing`), `SalIsoRawRestDecision`
+  (`src/common/salisotrack.h`) keeps the listing for at most 16 whole sectors past the volume (at the opened
+  layout), marks `ListingLeftOut` incomplete when no ISO 9660 descriptor gives the size, the file ends within
+  the volume or more than 512 sectors lie past it, and otherwise has the 2048 user-data bytes of every sector
+  past the volume read (`SAL_ISO_RAW_REST_READ`) and marks unless all are zero - a whole unpack fails, the
+  image is kept. No UI string, no window. Traps: a raw sector's sync, header and EDC are never zero, so 354's
+  byte check of the whole rest could not be reused - the user data is checked (a later session's descriptor
+  lies inside the 2048 bytes also when it is Mode 2 XA under a Mode 1 layout); no real `.bin` / `.mdf` on the
+  machine (the item's *Notes* asked for its tail first - reasoned: a post-gap is zero user data, a run-out
+  zero bytes). Limits: 353's `.img` rule still keeps zero tails (left unchanged - its decided row); raw
+  HFS-only / UDF-only images and data + audio `.bin`s without their `.cue` are now kept without a message;
+  images opened through the ECDC and other non-sync plain checks still lose a later session (review 1, Inbox
+  `iso-plug-in-a-multi-session-image-opened-through-another`); a crafted descriptor claiming a size close
+  to the file still hides a later session (as 353 / 354); the sessions are still not read; crafted images
+  only (person step `check-feature-355-with-real-raw-bin-and-mdf-disc-images-one`). From backlog item
+  `iso-plug-in-a-raw-multi-session-image-not-named-img-lists`. Probe `iso355_probe` (334's seeds,
+  `img355.py`) on main 30 / 10 (the 10 R rows - two sessions as `.iso` / `.bin` / `.mdf`, XA, a size of
+  400, a short file, 17 non-zero sectors, 513 zero sectors, a late non-zero byte, an audio tail - deleted)
+  -> 40 / 0; mutants: never marking 30 / 10 (saltests 26 failed), zero check never passing 38 / 2
+  (C-ZERO150, C-ZERO512); regressions 354 28 / 0, 353 16 / 0, 352 22 / 0, 334 23 / 1 (S-RAW, as since 335);
+  saltests 29,363 -> 29,402 / 0 (`TestIsoRawRest_355`); refute-first review 1: no MUST - its negative
+  control (uniso.spl of main) 30 / 10, its own 2448-byte `.mdf`, XA post-gap and gap rows behaved; SHOULD
+  (ECDC and other layouts) -> Inbox; NOTEs recorded.

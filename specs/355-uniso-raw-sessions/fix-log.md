@@ -78,3 +78,26 @@ multi-session image not named .img lists one session, then Unpack deletes it.
   sectors (e.g. a data + audio `.bin` without its `.cue`) is kept - intended, the audio is never extracted;
   353's `.img` rule still keeps zero tails (unchanged by decision); the sessions are still not read (only
   the first is listed); a kept image gets no explanation.
+
+## Review
+
+- Review 1 (independent refute-first agent, general-purpose): **no MUST**.
+  - Its own measurement: build up to date at b4ff2965, saltests 29,402 / 0; `iso355_probe` 40 / 0 on the
+    fix; negative control (`uniso.spl` built from main 4cc97934 in a scratch worktree, run from a copy of
+    the Debug tree) 30 / 10 - the same 10 R rows deleted.
+  - Six rows of its own (fix / main): X-MDF2448TWO (two sessions in 2448-byte sectors with subchannel,
+    `.mdf`) kept / deleted; X-MDF2448ONE deleted / deleted; X-MDF2448ZERO150 (zero data, non-zero
+    subchannel) deleted / deleted; X-XAPOSTGAP (XA + 150 zero Form 2 sectors) deleted / deleted;
+    X-GAP150TWO (150 zero sectors, then session 2) kept / deleted; X-ECDCTWO (two XA sessions, sync and
+    header zeroed) deleted / deleted.
+  - SHOULD S1: images opened through the ECDC and the other non-sync plain checks get no rule (X-ECDCTWO
+    deleted, b.txt lost, on both builds) - outside the item (FR-001: a sync start), not a regression ->
+    Inbox `iso-plug-in-a-multi-session-image-opened-through-another` (review:355).
+  - NOTE N1: a crafted descriptor claiming a size between the first session and the file (16 or fewer
+    sectors left) hides the later session - the same in 353 and 354; real descriptors do not claim it.
+    Recorded, no item (crafted or damaged images only).
+  - NOTE N2: false marks (audio tails, UDF/HFS-only raw, missing run-out) only keep the image - the whole
+    unpack still extracts everything (`uniso.cpp`, `UnpackWholeArchive` returns FALSE without a window).
+  - NOTE N3 / N4: offsets match `GetSectorOffset`, no overflow, no overlap with 353 / 354, tests pin the
+    edges; real dumps untested (person step).
+- `git status --short` after the review: empty (before the Inbox item was added).
