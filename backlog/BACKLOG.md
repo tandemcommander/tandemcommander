@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a damaged UDF VAT file entry makes the reader write past its table buffer](items/iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer/desc.md) | bug | 7 | archives | 360 |
 
 ## Next
 
@@ -282,6 +281,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a damaged UDF file entry hangs the listing or reads past its sector](items/iso-plug-in-a-damaged-udf-file-entry-hangs-the-listing-or/desc.md) | bug | 6 | archives | review:360 | 2026-10-31 |
 | [ISO plug-in: a UDF VAT whose descriptors cover less than its length is read with heap content](items/iso-plug-in-a-udf-vat-whose-descriptors-cover-less-than-its/desc.md) | bug | 3 | archives | measure:360 | 2026-10-31 |
 
 ## Parked

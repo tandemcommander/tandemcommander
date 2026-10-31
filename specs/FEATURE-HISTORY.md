@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5450,3 +5450,23 @@ a few early ones are out of sequence).
   14 / 0; regression 358 52 / 0; saltests 29,578 -> 29,613 / 0 (`TestIsoUdfVat_359`, a model of the search loop;
   mutants: old 32-bit arithmetic 20 failed, no extent offset 3, no 32-bit mask 1); refute-first reviews: 1 (no
   MUST; SHOULD taken - track sectors), 2 (no MUST; SHOULD taken - the mask pinned, a claim corrected).
+- 360-uniso-udf-vat-bound: a damaged or crafted UDF disc image of a sequentially written medium (a virtual
+  allocation table, VAT) whose VAT file entry claimed more table bytes than the file's length, a descriptor area
+  longer than its sector, a reserved descriptor type or a length over 4 GB made the ISO plug-in write past its
+  table buffer while the image was listed or unpacked (the Debug build: "HEAP CORRUPTION DETECTED", run-time check
+  failures, a bug report; Release: memory corrupted silently) - now such an entry is not taken as a VAT: the
+  volume does not open ("Missing virtual allocation table.", feature 358) and a whole unpack keeps the image.
+  Rules in `src/common/salisoudfvat.h` (`SalIsoUdfVatTableLength`, `DescArea`, `DescSize`, `DescFits`,
+  `CopyFits`; 64-bit, no wrap) used by `CUDF::ReadVAT` / `ReadAllocDesc`. Traps: the reserved types 4 - 7 left
+  the descriptor uninitialised and returned 0 - the walk never advanced while `ReadBlock` wrote (found by the
+  measurement, not named by the item); an L_EA of 0xFFFFFF00 wrapped the area's 32-bit offset to the sector's
+  start and failed silently; every mkudffs image embeds the table, so the extent path needed review 1's
+  `vatext360.py`. Limits: descriptors covering less than the length are taken as before (the table's tail is heap
+  content - Inbox `iso-plug-in-a-udf-vat-whose-descriptors-cover-less-than-its`); a last extent rounded up to a
+  whole block is refused, not clamped; the general file-entry reader `CUDF::ReadFileEntry` has the same defect
+  class and hangs on a reserved type (Inbox `iso-plug-in-a-damaged-udf-file-entry-hangs-the-listing-or`). From
+  backlog item `iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer`. Probe `iso360_probe` (mkudffs images
+  changed by `vat360.py`, `vatext360.py`) 9 RUN rows failing -> 50 / 0 (25 rows + END rows); regressions 358 52 / 0,
+  359 14 / 0; saltests 29,613 -> 29,661 / 0 (`TestIsoUdfVat_360`, a grid model of the walk; mutants: copy bound
+  dropped 5 failed, area bound dropped 5 failed); refute-first review 1 (no MUST; negative control with the old
+  `uniso.spl` 8 FAIL; SHOULD taken - extent rows; SHOULD to Inbox - `ReadFileEntry`).

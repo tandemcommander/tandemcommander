@@ -1,0 +1,44 @@
+iso360_probe (feature 360) review-neg-2ad18c49-uniso
+Program : C:\Users\pavel\AppData\Local\Temp\rev360\bld\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 22:37; registry key existed True
+
+seeds: mk_bdr.img=655360,mk_cd.img=8192000,mk_cdr.img=614400,mk_cdr150.img=614400,mk_cdr150c.img=1052672,mk_cdrclosed.img=1052672,mk_cdrnoefe.img=614400,mk_cdrw.img=8192000,mk_dvd.img=8192000,mk_dvdr.img=589824,mk_dvdrw.img=8192000,mk_hd.img=4096000,mk_hd512.img=4096000,v_150ilm4.bin=614400,v_adtype5.bin=614400,v_ilhuge.bin=614400,v_ilm4.bin=614400,v_ladbig.bin=614400,v_leahuge.bin=614400,v_noefeilm4.bin=614400,x_extok.bin=614400,x_ladok.bin=614400,x_rootadt5.bin=614400,x_sad2.bin=614400,x_sadbig.bin=614400,x_sadcut.bin=614400,x_sadok.bin=614400,x_sadround.bin=614400
+vat360: ilm4 sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: ladbig sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: adtype5 sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: leahuge sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: ilhuge sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: ilm4 sector 299 efe False IL 160 L_AD 160 flags 3
+vat360: ilm4 sector 299 efe False IL 44 L_AD 44 flags 3
+vat360: sadok vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sadbig vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sadround vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sadcut vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sad2 vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: ladok vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: extok vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: rootadt5 root entry sector 258
+
+R-ILM4     END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0; FATAL: [#32770 'Microsoft Visual C++ Runtime Library'] [Button id=3] &P\u0159eru\u0161it | [Button id=4] &Opakovat | [Button id=5] Ignor&ovat | [Static id=65535] Debug Error! Program: ...Temp\rev360\bld\tandemcommander\Debug_x64\tandemcommander.exe HEAP CORRUPTION DETECTED: after Normal block (#27637) at 0x000000010F71AFC0. CRT detected that the application wrote to memory after end of heap buffer. Memory allocated at C:\Users\pavel\AppData\Local\Temp\rev360\neg\src\plugins\uniso\udf.cpp(1365). (Press Retry to debug the application) 
+R-ILM4     RUN    FAIL        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): False; timed out: False; fatal: ...ander.exe HEAP CORRUPTION DETECTED: after Normal block (#27637) at 0x000000010F71AFC0. CRT detected that the application wrote to memory after end of heap buffer. Memory allocated at C:\Users\pavel\AppData\Local\Temp\rev360\neg\src\plugins\uniso\udf.cpp(1365). (Press Retry to debug the application) ; windows: [#32770 'UnISO'] [Static id=2477] Bad root ICB. Cannot read directory structure. | [Button id=1] OK
+R-ADT5     END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0; FATAL: [#32770 'Microsoft Visual C++ Runtime Library'] [Button id=3] &P\u0159eru\u0161it | [Button id=4] &Opakovat | [Button id=5] Ignor&ovat | [Static id=65535] Debug Error! Program: ...\rev360\bld\tandemcommander\Debug_x64\plugins\uniso\uniso.spl Module: ...\rev360\bld\tandemcommander\Debug_x64\plugins\uniso\uniso.spl File: Run-Time Check Failure #3 - The variable 'ad' is being used without being initialized. (Press Retry to debug the application) 
+R-ADT5     RUN    FAIL        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): False; timed out: False; fatal: ...=65535] Debug Error! Program: ...\rev360\bld\tandemcommander\Debug_x64\plugins\uniso\uniso.spl Module: ...\rev360\bld\tandemcommander\Debug_x64\plugins\uniso\uniso.spl File: Run-Time Check Failure #3 - The variable 'ad' is being used without being initialized. (Press Retry to debug the application) ; windows: no window
+C-MKCDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKCDR    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+X-SADOK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+X-SADOK    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+X-SAD2     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+X-SAD2     RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+X-LADOK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+X-LADOK    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+X-EXTOK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+X-EXTOK    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+X-SADBIG   END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0; FATAL: [#32770 'Microsoft Visual C++ Runtime Library'] [Button id=3] &P\u0159eru\u0161it | [Button id=4] &Opakovat | [Button id=5] Ignor&ovat | [Static id=65535] Debug Error! Program: ...Temp\rev360\bld\tandemcommander\Debug_x64\tandemcommander.exe HEAP CORRUPTION DETECTED: after Normal block (#9218) at 0x000000010C466540. CRT detected that the application wrote to memory after end of heap buffer. Memory allocated at C:\Users\pavel\AppData\Local\Temp\rev360\neg\src\plugins\uniso\udf.cpp(1365). (Press Retry to debug the application) 
+X-SADBIG   RUN    FAIL        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): False; timed out: False; fatal: ...mander.exe HEAP CORRUPTION DETECTED: after Normal block (#9218) at 0x000000010C466540. CRT detected that the application wrote to memory after end of heap buffer. Memory allocated at C:\Users\pavel\AppData\Local\Temp\rev360\neg\src\plugins\uniso\udf.cpp(1365). (Press Retry to debug the application) ; windows: no window
+X-SADROUND END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0; FATAL: [#32770 'Microsoft Visual C++ Runtime Library'] [Button id=3] &P\u0159eru\u0161it | [Button id=4] &Opakovat | [Button id=5] Ignor&ovat | [Static id=65535] Debug Error! Program: ...Temp\rev360\bld\tandemcommander\Debug_x64\tandemcommander.exe HEAP CORRUPTION DETECTED: after Normal block (#9213) at 0x000000010C1564A0. CRT detected that the application wrote to memory after end of heap buffer. Memory allocated at C:\Users\pavel\AppData\Local\Temp\rev360\neg\src\plugins\uniso\udf.cpp(1365). (Press Retry to debug the application) 
+X-SADROUND RUN    FAIL        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): False; timed out: False; fatal: ...mander.exe HEAP CORRUPTION DETECTED: after Normal block (#9213) at 0x000000010C1564A0. CRT detected that the application wrote to memory after end of heap buffer. Memory allocated at C:\Users\pavel\AppData\Local\Temp\rev360\neg\src\plugins\uniso\udf.cpp(1365). (Press Retry to debug the application) ; windows: no window
+X-SADCUT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+X-SADCUT   RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 12, FAIL 8, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

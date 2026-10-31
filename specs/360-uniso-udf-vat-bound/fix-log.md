@@ -80,3 +80,36 @@ identical.
 - Inbox: `iso-plug-in-a-udf-vat-whose-descriptors-cover-less-than-its` (research R3, source measure:360).
 - CHANGELOG: `CHANGELOG.md` has no `## [Unreleased]` section - the entry is in `closing-report.md` (owed to the
   maintainer, as in 357 - 359).
+
+## Review
+
+### Review 1 (refute-first, general-purpose agent, HEAD 65c7e6a3) - no MUST
+
+- Re-ran: build, `saltests` 29,661 / 0, encoding 0, clang-format clean; the feature's probe plus 7 rows of its own
+  on the hidden desktop **50 / 0**; negative control - `uniso.spl` built from 2ad18c49 (before the fix) in its own
+  worktree and build folder, HEAD's exe: **12 PASS / 8 FAIL** (`probe/result_neg_review1.txt`: R-ILM4 heap
+  corruption in the block from `ReadVAT`, R-ADT5 RTC #3 on `ad`, its extent rows X-SADBIG / X-SADROUND heap
+  corruption; the well-formed controls pass in both). Callers enumerated independently - as the fix-log says;
+  `CISOImage::ReadBlock` copies exactly `size` bytes, so the `ad.Length` check bounds the write. Every refused
+  image is kept with "Delete archive after unpacking".
+- SHOULD 1 - the extent path (`SalIsoUdfVatCopyFits(*o, ad.Length, vatLength)` in `ReadAllocDesc`) was not
+  covered: every probe image embedded the table, and the `saltests` grid reproduces the walk rather than calling
+  the reader. Taken: the reviewer's builder as `probe/vatext360.py` (kinds `sadok`, `sad2`, `ladok`, `extok`
+  open; `sadbig`, `sadround`, `sadcut` refused) and rows C-SADOK, C-SAD2, C-LADOK, C-EXTOK, R-SADBIG,
+  R-SADROUND, R-SADCUT in `iso360_probe.ps1`.
+- SHOULD 2 - the same defect class in the general file-entry reader `CUDF::ReadFileEntry(Uint8*, bool, Uint16,
+  CICBTag*, CAD*, int)`: area in 32 bits without a sector bound, no case for descriptor types 4 - 7 → a hang
+  (reproduced: kind `rootadt5`, row L-ROOTADT5 - the main window stopped answering;
+  `probe/result_rootadt5_review1.txt`). Outside the item's scope: Inbox item
+  `iso-plug-in-a-damaged-udf-file-entry-hangs-the-listing-or` (review:360).
+- NOTE 1 - an extent longer than the information length is refused, also a last extent rounded up to a whole
+  block (`sadround`); the item asks for exactly this (*Expected*: descriptors that exceed the length are not a
+  VAT); a lenient reader would clamp. No real writer known to round the VAT's last extent; recorded, not changed.
+- NOTE 2 - the probe's R-ILHUGE description contradicted the measurement (RTC, not 358's rule). Fixed.
+- NOTE 3 - FEATURE-HISTORY entry and closing report come at closing (step 8). NOTE 4 - a zero-length extent is
+  still refused (`ReadBlock` returns 0) - unchanged, older.
+- Housekeeping: the reviewer left `git status` clean and removed its worktree; its scratch is in
+  `%TEMP%\rev360`.
+- After review 1: `probe/result_after2.txt` **Rows: PASS 50, FAIL 0** (25 RUN + 25 END rows; the extent rows
+  C-SADOK, C-SAD2, C-LADOK, C-EXTOK open, R-SADBIG, R-SADROUND, R-SADCUT show only the missing-VAT box and keep
+  the image). No source change after the review - no second review round needed (no MUST).

@@ -11,7 +11,7 @@ updated: 2026-10-31
 verified: -
 effort: M
 feature: -
-related: [iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer]
+related: []
 depends-on: []
 reason: -
 ---
@@ -54,3 +54,4 @@ with "Delete archive after unpacking" keeps the image.
 
 - 2026-10-31 — created (source review:358)
 - 2026-10-31 — moved to Next position 35
+- 2026-10-31 — related item iso-plug-in-a-damaged-udf-vat-entry-writes-past-its-buffer done in feature 360

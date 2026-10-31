@@ -1,0 +1,26 @@
+iso360_probe (feature 360) review-head-rootadt5
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 22:38; registry key existed True
+
+seeds: mk_bdr.img=655360,mk_cd.img=8192000,mk_cdr.img=614400,mk_cdr150.img=614400,mk_cdr150c.img=1052672,mk_cdrclosed.img=1052672,mk_cdrnoefe.img=614400,mk_cdrw.img=8192000,mk_dvd.img=8192000,mk_dvdr.img=589824,mk_dvdrw.img=8192000,mk_hd.img=4096000,mk_hd512.img=4096000,v_150ilm4.bin=614400,v_adtype5.bin=614400,v_ilhuge.bin=614400,v_ilm4.bin=614400,v_ladbig.bin=614400,v_leahuge.bin=614400,v_noefeilm4.bin=614400,x_extok.bin=614400,x_ladok.bin=614400,x_rootadt5.bin=614400,x_sad2.bin=614400,x_sadbig.bin=614400,x_sadcut.bin=614400,x_sadok.bin=614400,x_sadround.bin=614400
+vat360: ilm4 sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: ladbig sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: adtype5 sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: leahuge sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: ilhuge sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: ilm4 sector 299 efe False IL 160 L_AD 160 flags 3
+vat360: ilm4 sector 299 efe False IL 44 L_AD 44 flags 3
+vat360: sadok vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sadbig vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sadround vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sadcut vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sad2 vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: ladok vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: extok vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: rootadt5 root entry sector 258
+
+L-ROOTADT5 END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0
+L-ROOTADT5 RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

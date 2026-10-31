@@ -24,9 +24,15 @@
       R-LEAHUGE    mk_cdr whose L_EA is 0xFFFFFF00 (the 32-bit area offset wrapped to the sector's start):
                    as R-ILM4
       R-ILHUGE     mk_cdr whose InformationLength is 2^32 longer (the buffer length was cut to 32 bits):
-                   as R-ILM4 (also at HEAD before the fix: 358's count rule refused it after the copy)
+                   as R-ILM4 (before: a Run-Time Check Failure - the cast to a smaller type lost data)
       C-MKCDR, C-MKCDRC (closed), C-MKDVDR, C-MKBDR, C-MK150, C-MK150C, C-MKNOEFE  plain mkudffs VAT images:
                    PASS = nothing extracted (the volumes are empty), no window, deleted - as 358's rows
+    Review 1 rows (vatext360.py: the table moved from the entry into an extent - the extent path):
+      C-SADOK, C-SAD2, C-LADOK, C-EXTOK  one short / two short / one long / one extended descriptor of the
+                   table's length: as C-MKCDR (the VAT read through the extents)
+      R-SADBIG     a short descriptor of 4096 bytes against the length 160: as R-ILM4 (before: heap corruption)
+      R-SADROUND   a short descriptor of one whole block (2048): as R-ILM4 (before: heap corruption)
+      R-SADCUT     L_AD 12 (a second descriptor cut by the area's end): as R-ILM4
     Listing rows: the left panel shows <row>\src, Home, End, Enter (posted) on the image; the program must
     stay alive with no bug report.
       L-ILM4, L-ADT5, L-LADBIG  the R- images: PASS = alive, only "Missing virtual allocation table." boxes
@@ -177,6 +183,9 @@ try {
     if ([IO.File]::Exists("$s\mk_cdr.img")) {
         foreach ($k in @('ilm4', 'ladbig', 'adtype5', 'leahuge', 'ilhuge')) { $made += & python -I $Py $k "$s\mk_cdr.img" "$s\v_$k.bin" 2>&1 }
     }
+    if ([IO.File]::Exists("$s\mk_cdr.img")) {
+        foreach ($k in @('sadok', 'sad2', 'ladok', 'extok', 'sadbig', 'sadround', 'sadcut')) { $made += & python -I (Join-Path $Here 'vatext360.py') $k "$s\mk_cdr.img" "$s\x_$k.bin" 2>&1 }
+    }
     if ([IO.File]::Exists("$s\mk_cdrnoefe.img")) { $made += & python -I $Py ilm4 "$s\mk_cdrnoefe.img" "$s\v_noefeilm4.bin" 2>&1 }
     if ([IO.File]::Exists("$s\mk_cdr150.img")) { $made += & python -I $Py ilm4 "$s\mk_cdr150.img" "$s\v_150ilm4.bin" 2>&1 }
     $ErrorActionPreference = $old
@@ -200,6 +209,13 @@ try {
     Unpack-Row 'C-MK150' "$s\mk_cdr150.img" 'mk_cdr150.iso'
     Unpack-Row 'C-MK150C' "$s\mk_cdr150c.img" 'mk_cdr150c.iso'
     Unpack-Row 'C-MKNOEFE' "$s\mk_cdrnoefe.img" 'mk_cdrnoefe.iso'
+    Unpack-Row 'C-SADOK' "$s\x_sadok.bin" 'x_sadok.iso'
+    Unpack-Row 'C-SAD2' "$s\x_sad2.bin" 'x_sad2.iso'
+    Unpack-Row 'C-LADOK' "$s\x_ladok.bin" 'x_ladok.iso'
+    Unpack-Row 'C-EXTOK' "$s\x_extok.bin" 'x_extok.iso'
+    Unpack-Row 'R-SADBIG' "$s\x_sadbig.bin" 'x_sadbig.iso' -Kept -Msg $NoVat
+    Unpack-Row 'R-SADROUND' "$s\x_sadround.bin" 'x_sadround.iso' -Kept -Msg $NoVat
+    Unpack-Row 'R-SADCUT' "$s\x_sadcut.bin" 'x_sadcut.iso' -Kept -Msg $NoVat
     List-Row 'L-ILM4' "$s\v_ilm4.bin" 'lilm4.iso' -Msg $NoVat
     List-Row 'L-ADT5' "$s\v_adtype5.bin" 'ladt5.iso' -Msg $NoVat
     List-Row 'L-LADBIG' "$s\v_ladbig.bin" 'lladbig.iso' -Msg $NoVat
