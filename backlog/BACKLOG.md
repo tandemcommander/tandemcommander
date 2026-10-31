@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an NRG CUEX chunk under 16 bytes makes a huge track count](items/iso-plug-in-an-nrg-cuex-chunk-under-16-bytes-makes-a-huge/desc.md) | bug | 5 | archives | 350 |
 
 ## Next
 

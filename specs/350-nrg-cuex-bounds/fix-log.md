@@ -166,6 +166,23 @@ CUEX still fits the bound after the first zero chunk's 4,950 tracks, "Copy 2 fil
 restored, identical. Mutant (`tracks + entries <= SAL_NRG_CUEX_MAX_IMAGE_ENTRIES * 1000`): saltests 3
 failed; restored, rebuilt, 29,214 / 0; encoding guard 0.
 
+### Review 4 (independent agent, refute-first) - no MUST, no SHOULD
+
+- Re-ran build, saltests 29,214 / 0, encoding 0 (BOM and clang-format of the changed sources
+  checked), the probe on the branch PASS 20 / 0. Negative control: `uniso.spl` of 3b697c6d (before
+  review 3's change) in a copied build tree - N-MANY FAIL (1563 MB, 178.7 s), N-OK / N-INSIDE
+  PASS (the swapped plug-in was loaded).
+- The image-wide bound refuses no real image: a session's CUEX of (2 + t) records gives floor(t / 2)
+  entries, a disc's t together at most 9,900 -> 4,950; one CUEX chunk a session (libmirage); TAO
+  (ETNF / ETN2) tracks counted first leave the total at most 4,950; DVD track counts far below.
+  Boundary checks in saltests right, no wrap.
+- **NOTE 1**: N-MANY printed "want False" while not checking the open - **taken**: rows that do not
+  check the open print "want any".
+- **NOTE 2**: `img350.py`'s `many` text said "4,950 tracks and no more" - 4,952 (the good chunks' 2
+  fit) - **taken**.
+- **NOTE 3**: a damaged image that used up the budget skips its later genuine CUEX chunks - no worse
+  than main; in *Limits*.
+
 ## Limits
 
 - A short read inside a chunk that fits leaves the next header read from inside the chunk (review 1
@@ -173,3 +190,5 @@ failed; restored, rebuilt, 29,214 / 0; encoding guard 0.
 - Damaged CUEX chunks within the image still build up to 5,049 tracks for the image (no measurable
   cost: N-MANY 74 MB).
 - The reader's pairing of Nero's 8-byte records is unchanged (review 2 NOTE 1, Inbox).
+- A damaged image whose CUEX chunks use up the 5,049-track budget has its later genuine CUEX chunks
+  skipped (review 4 NOTE 3; main read them after building the junk tracks).

@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5179,3 +5179,29 @@ a few early ones are out of sequence).
   (`TestHfsFolderOrder349`; mutants: no walk 17 failed, no loop guard 17, reserved rule removed 6);
   one refute-first review (MUST 0, SHOULD 1 fixed, NOTE 4; its negative control: uniso.spl before the
   fix 5 / 3).
+- 350-nrg-cuex-bounds: opening an NRG (Nero) image whose CUEX chunk claimed fewer than 16 bytes, or more
+  than the image held, made the ISO plug-in build one audio track from every 16 bytes up to the end of
+  the file ((Size - 16) / 16 underflowed to 268 million in 32 bits; reads unchecked) - measured: a 96 MiB
+  chunk after an 8-byte CUEX grew the program to 1036 MB, froze its window for 50 s and the image did
+  not open; a CUEX chunk a few bytes longer than its entries shifted the next chunk header and the image
+  did not open. Now `readCUEX` reads a chunk only when it lies within the image, takes only the whole
+  16-byte units its size holds (`SalNrgCuexEntryCount`), never a track from a short read, continues
+  right after the chunk, and skips a chunk larger than any disc's CUEX (2 + 99 x 100 records of 8
+  bytes, `SalNrgCuexSizePlausible`) or one that would take the image past what all CUEX chunks of a
+  disc give (4,950 + 99 tracks, `SalNrgCuexTotalPlausible`; `src/common/salnrgcdtext.h`). Traps: Nero's
+  CUEX is 8-byte index records (lead-in, per track index 0 and 1..99, lead-out; one chunk a session -
+  libmirage), which the reader pairs into 16-byte units - review 1's suggested 99-entry cap refused real
+  discs with index points (2 tracks of index 1..99 = 100 units; review 2's MUST), and a per-chunk bound
+  still let 1,270 chunks of the largest size build a track per 16 bytes (review 3: 1563 MB, 178 s);
+  Bash here-documents turned `\b` into a backspace in the fix-log. Limits: the pairing gives extra
+  tracks and wrong extent offsets with index points and opens odd-record chunks main refused (Inbox
+  `iso-plug-in-nrg-cuex-index-records-are-paired-into-wrong`); the ETNF reader allocates the size its
+  chunk claims (Inbox `iso-plug-in-an-nrg-etnf-chunk-claiming-a-huge-size`); a damaged image that uses
+  up the track budget has its later genuine CUEX chunks skipped; crafted images only (real Nero layout
+  per libmirage). From backlog item `iso-plug-in-an-nrg-cuex-chunk-under-16-bytes-makes-a-huge`. Probe
+  `nrg350_probe` (images by `img350.py`) on `main` 5 / 3 (4 rows) -> 20 / 0 (10 rows; N-ZERO, N-SHORTNZ,
+  N-INSIDE, N-IDX2, N-IDX20, N-MANY added by the reviews); 329's A-OPEN 2 / 0; saltests 29,182 -> 29,214
+  / 0 (`TestNrgCuex350`; mutants: underflow 5 failed, remainder 5, 99-unit bound 3, loose total 3; no
+  seek: probe N-ODD fails); four refute-first reviews (MUST 0 / 1 / 0 / 0 - the 99-unit bound; SHOULD
+  1 / 1 / 1 / 0 all taken; the reviewers' negative controls: old `nrg.cpp` fails N-SHORT / N-PAST /
+  N-ODD, 3b697c6d's fails N-MANY).

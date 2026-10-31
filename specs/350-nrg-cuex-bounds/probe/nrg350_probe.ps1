@@ -101,7 +101,7 @@ function Nrg-Row([string]$Case, [string]$Nrg, [bool]$Open, [bool]$Bound, [int]$F
         $within = $true
         if ($Bound) { $within = ($script:OkPeak -ge 0) -and ($peak -le $script:OkPeak + 150) -and ($secs -le 5) }
         if ($Open) { $ok = $opened -and $listed -and $within } else { $ok = $within }
-        Row $Case 'RUN' (V $ok) ('opened: {0} (want {1}; panel {2}); {11} tracks listed: {3}; peak working set {4} MB (N-OK {5} MB, bound {6}: {7}); answering after {8:N1} s; at the open: {9}; copy: {10}' -f $opened, $Open, (Tail $loc 60), $listed, $peak, $script:OkPeak, $Bound, $within, $secs, (Tail $openMsgs 300), (Tail $msgs 200), $Files)
+        Row $Case 'RUN' (V $ok) ('opened: {0} (want {1}; panel {2}); {11} tracks listed: {3}; peak working set {4} MB (N-OK {5} MB, bound {6}: {7}); answering after {8:N1} s; at the open: {9}; copy: {10}' -f $opened, $(if ($Open) { 'True' } else { 'any' }), (Tail $loc 60), $listed, $peak, $script:OkPeak, $Bound, $within, $secs, (Tail $openMsgs 300), (Tail $msgs 200), $Files)
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $Case $id $null $before } }

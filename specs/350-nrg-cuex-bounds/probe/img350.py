@@ -35,7 +35,8 @@ Kinds:
          20 tracks
   many   review 3: 1,270 CUEX chunks of the largest size a disc's CUEX can have (79,216 zero bytes,
          96 MiB in all), then ok's chunks - each chunk fits, but together they built a track per 16
-         bytes (1563 MB, 178 s); now the first chunk's 4,950 tracks and no more
+         bytes (1563 MB, 178 s); now the first chunk's 4,950 tracks, the later zero chunks skipped,
+         and the good chunks' 2 (the DAOX entries fill the zero chunk's tracks 1 and 2)
 """
 import struct
 import sys
