@@ -20406,6 +20406,210 @@ static void TestIsoRawRest_355()
     CHECK(dec(true, 0xFFFFFFFFFFFFFFFFull, 0x7FFFFFFFFFFFFFFFll, 0, 1) == SAL_ISO_REST_MARK);
 }
 
+// feature 356: a cooked UDF-only image - the UDF descriptors that give its volume's end, and whether the
+// rest past the volume is kept, marked or read (src/common/salisotrack.h)
+static void TestIsoUdfRest_356()
+{
+    const long long s = 2048;
+    CHECK(SAL_ISO_UDF_ANCHOR_SECTOR == 256 && SAL_ISO_UDF_VDS_READ == 64);
+    auto put32 = [](unsigned char* p, unsigned long v)
+    {
+        p[0] = (unsigned char)v;
+        p[1] = (unsigned char)(v >> 8);
+        p[2] = (unsigned char)(v >> 16);
+        p[3] = (unsigned char)(v >> 24);
+    };
+    // a descriptor tag of identifier 'id' at 'loc' with its checksum
+    auto tag = [&](unsigned char* sec, unsigned int id, unsigned long loc)
+    {
+        sec[0] = (unsigned char)id;
+        sec[1] = (unsigned char)(id >> 8);
+        sec[2] = 2; // descriptor version
+        put32(sec + 12, loc);
+        unsigned int sum = 0;
+        for (int i = 0; i < 16; i++)
+            if (i != 4)
+                sum += sec[i];
+        sec[4] = (unsigned char)sum;
+    };
+    auto anchor = [&](unsigned char* sec, unsigned long loc, unsigned long ml, unsigned long mloc, unsigned long rl,
+                      unsigned long rloc)
+    {
+        memset(sec, 0, 2048);
+        put32(sec + 16, ml);
+        put32(sec + 20, mloc);
+        put32(sec + 24, rl);
+        put32(sec + 28, rloc);
+        tag(sec, SAL_ISO_UDF_TAG_ANCHOR, loc);
+    };
+
+    // the tag: identifier, checksum, location; short or missing data
+    unsigned char a[2048];
+    anchor(a, 256, 16 * s, 32, 16 * s, 294); // IMAPI2FS (measured)
+    CHECK(SalIsoUdfTagValid(a, 2048, 2, 256));
+    CHECK(SalIsoUdfTagValid(a, 16, 2, 256));
+    CHECK(!SalIsoUdfTagValid(a, 15, 2, 256));
+    CHECK(!SalIsoUdfTagValid(nullptr, 2048, 2, 256));
+    CHECK(!SalIsoUdfTagValid(a, 2048, 5, 256));
+    CHECK(!SalIsoUdfTagValid(a, 2048, 2, 257));                  // recorded elsewhere (a joined volume)
+    CHECK(!SalIsoUdfTagValid(a, 2048, 2, 256 + 0x100000000ull)); // no 32-bit wrap
+    a[4]++;
+    CHECK(!SalIsoUdfTagValid(a, 2048, 2, 256)); // a wrong checksum
+    a[4]--;
+    a[3] = 0x77; // a byte the checksum covers
+    CHECK(!SalIsoUdfTagValid(a, 2048, 2, 256));
+    a[3] = 0;
+    a[100] = 0x55; // the body is not covered (no CRC check)
+    CHECK(SalIsoUdfTagValid(a, 2048, 2, 256));
+    a[100] = 0;
+
+    // the anchor and the volume's own anchors
+    SalIsoUdfAnchor v = {7, 7, 7, 7};
+    CHECK(!SalIsoUdfReadAnchor(a, 31, 256, v) && v.MainLength == 7); // untouched on failure
+    CHECK(SalIsoUdfReadAnchor(a, 2048, 256, v) && v.MainLength == 16 * s && v.MainLocation == 32 &&
+          v.ReserveLength == 16 * s && v.ReserveLocation == 294);
+    CHECK(SalIsoUdfDescriptorsEnd(v) == 310);
+    unsigned char b[2048];
+    anchor(b, 575, 16 * s, 32, 16 * s, 294); // its closing anchor at N-1
+    CHECK(SalIsoUdfAnchorOf(b, 2048, 575, v));
+    CHECK(!SalIsoUdfAnchorOf(b, 2048, 576, v));
+    anchor(b, 1151, 16 * s, 32 + 576, 16 * s, 294 + 576); // a later volume's anchor, addressed as on a disc
+    CHECK(!SalIsoUdfAnchorOf(b, 2048, 1151, v));
+    anchor(b, 1151, 16 * s, 32, 32 * s, 294); // another reserve length
+    CHECK(!SalIsoUdfAnchorOf(b, 2048, 1151, v));
+    anchor(b, 575, 16 * s, 32, 16 * s, 294);
+    b[0] = 5; // not an anchor
+    CHECK(!SalIsoUdfAnchorOf(b, 2048, 575, v));
+    // the descriptors' end: at least the anchor at 256; an extent's partial sector counts whole
+    SalIsoUdfAnchor m = {16 * s, 96, 16 * s, 1983}; // mkudffs hd (measured)
+    CHECK(SalIsoUdfDescriptorsEnd(m) == 1999);
+    SalIsoUdfAnchor z = {0, 0, 0, 0};
+    CHECK(SalIsoUdfDescriptorsEnd(z) == 257);
+    SalIsoUdfAnchor p = {16 * s + 1, 300, 1, 100};
+    CHECK(SalIsoUdfDescriptorsEnd(p) == 317);
+    SalIsoUdfAnchor big = {0xFFFFFFFFul, 0xFFFFFFFFul, 0, 0};
+    CHECK(SalIsoUdfDescriptorsEnd(big) == 0xFFFFFFFFull + 2097152ull); // no overflow
+    CHECK(SalIsoUdfExtentEnd(10, 0) == 10 && SalIsoUdfExtentEnd(10, 1) == 11 && SalIsoUdfExtentEnd(10, 2048) == 11);
+
+    // the partition descriptor
+    unsigned char pd[2048] = {};
+    put32(pd + 188, 288);
+    put32(pd + 192, 6);
+    tag(pd, SAL_ISO_UDF_TAG_PARTITION, 35);
+    unsigned long start = 7;
+    unsigned long long end = 7;
+    CHECK(SalIsoUdfPartition(pd, 2048, 35, start, end) && start == 288 && end == 294);
+    CHECK(!SalIsoUdfPartition(pd, 195, 35, start, end));
+    CHECK(!SalIsoUdfPartition(pd, 2048, 36, start, end));
+    put32(pd + 188, 0xFFFFFFFFul);
+    put32(pd + 192, 0xFFFFFFFFul);
+    tag(pd, SAL_ISO_UDF_TAG_PARTITION, 35);
+    CHECK(SalIsoUdfPartition(pd, 2048, 35, start, end) && end == 0x1FFFFFFFEull);
+
+    // the logical volume descriptor's virtual partition map
+    unsigned char lvd[2048] = {};
+    put32(lvd + 264, 6 + 64);
+    put32(lvd + 268, 2);
+    lvd[440] = 1; // type 1, the physical partition
+    lvd[441] = 6;
+    lvd[446] = 2; // type 2
+    lvd[447] = 64;
+    memcpy(lvd + 446 + 5, "*UDF Virtual Partition", 22);
+    tag(lvd, SAL_ISO_UDF_TAG_LOGICAL_VOLUME, 97);
+    CHECK(SalIsoUdfLvdHasVirtualMap(lvd, 2048, 97));
+    CHECK(!SalIsoUdfLvdHasVirtualMap(lvd, 2048, 98));
+    CHECK(!SalIsoUdfLvdHasVirtualMap(lvd, 439, 97));
+    CHECK(!SalIsoUdfLvdHasVirtualMap(lvd, 446 + 30, 97)); // the map lies past the bytes given
+    put32(lvd + 268, 1);                                   // the count names the physical map only
+    tag(lvd, SAL_ISO_UDF_TAG_LOGICAL_VOLUME, 97);
+    CHECK(!SalIsoUdfLvdHasVirtualMap(lvd, 2048, 97));
+    put32(lvd + 268, 2);
+    put32(lvd + 264, 6 + 20); // the table ends within the virtual map
+    tag(lvd, SAL_ISO_UDF_TAG_LOGICAL_VOLUME, 97);
+    CHECK(!SalIsoUdfLvdHasVirtualMap(lvd, 2048, 97));
+    put32(lvd + 264, 6 + 64);
+    memcpy(lvd + 446 + 5, "*UDF Sparable Partition", 23);
+    tag(lvd, SAL_ISO_UDF_TAG_LOGICAL_VOLUME, 97);
+    CHECK(!SalIsoUdfLvdHasVirtualMap(lvd, 2048, 97));
+    memcpy(lvd + 446 + 5, "*UDF Virtual Partition\0", 23);
+    lvd[441] = 0; // a map of length 0 stops the walk
+    tag(lvd, SAL_ISO_UDF_TAG_LOGICAL_VOLUME, 97);
+    CHECK(!SalIsoUdfLvdHasVirtualMap(lvd, 2048, 97));
+    lvd[441] = 6;
+    put32(lvd + 268, 0xFFFFFFFFul); // a huge count is bounded by the table
+    tag(lvd, SAL_ISO_UDF_TAG_LOGICAL_VOLUME, 97);
+    CHECK(SalIsoUdfLvdHasVirtualMap(lvd, 2048, 97));
+
+    // the VAT's file entry: its location is partition-relative (mkudffs cdr: 42 at sector 299, start 257)
+    unsigned char fe[2048] = {};
+    tag(fe, SAL_ISO_UDF_TAG_EXT_FILE_ENTRY, 42);
+    CHECK(SalIsoUdfFileEntryAt(fe, 2048, 257, 299));
+    CHECK(!SalIsoUdfFileEntryAt(fe, 2048, 257, 298));
+    CHECK(!SalIsoUdfFileEntryAt(fe, 2048, 300, 299)); // before the partition
+    tag(fe, SAL_ISO_UDF_TAG_FILE_ENTRY, 42);
+    CHECK(SalIsoUdfFileEntryAt(fe, 2048, 257, 299));
+    tag(fe, SAL_ISO_UDF_TAG_ANCHOR, 42);
+    CHECK(!SalIsoUdfFileEntryAt(fe, 2048, 257, 299));
+
+    // the decision
+    long long from = -7, bytes = -7;
+    auto dec = [&](bool anchorKnown, bool partKnown, unsigned long long descEnd, bool closed, long long size)
+    {
+        SalIsoUdfVolume u = {};
+        u.AnchorKnown = anchorKnown;
+        u.Anchor = v;
+        u.PartitionKnown = partKnown;
+        u.PartitionStart = 288;
+        u.DescriptorsEnd = descEnd;
+        u.ClosedAtEnd = closed;
+        from = -7;
+        bytes = -7;
+        return SalIsoUdfRestDecision(u, size, from, bytes);
+    };
+    auto untouched = [&]()
+    { return from == -7 && bytes == -7; };
+    // the end cannot be read: no anchor at 256 (R-NOANCHOR, 512-byte blocks), no partition - marked, also when
+    // something claims the volume closes at the file's end
+    CHECK(dec(false, true, 310, false, 576 * s) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(false, true, 310, true, 576 * s) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(true, false, 310, true, 576 * s) == SAL_ISO_REST_MARK && untouched());
+    CHECK(dec(true, true, 310, true, -1) == SAL_ISO_REST_MARK);
+    // the file closes with the volume (C-PLAIN, C-ANCHOR600, mkudffs, open VAT whose partition claims more)
+    CHECK(dec(true, true, 310, true, 576 * s) == SAL_ISO_REST_KEEP_LISTING && untouched());
+    CHECK(dec(true, true, 4000, true, 300 * s) == SAL_ISO_REST_KEEP_LISTING && untouched());
+    CHECK(dec(true, true, 310, true, (310 + 601) * s) == SAL_ISO_REST_KEEP_LISTING);
+    // not closed: 354's rule from the descriptors' end
+    CHECK(dec(true, true, 310, false, 326 * s) == SAL_ISO_REST_KEEP_LISTING && untouched()); // C-REST16
+    CHECK(dec(true, true, 310, false, 327 * s) == SAL_ISO_REST_CHECK && from == 310 * s && bytes == 17 * s);
+    CHECK(dec(true, true, 310, false, 676 * s) == SAL_ISO_REST_CHECK && from == 310 * s && bytes == 366 * s);
+    CHECK(dec(true, true, 310, false, 822 * s) == SAL_ISO_REST_CHECK && bytes == 512 * s);   // C-ZERO512
+    CHECK(dec(true, true, 310, false, 823 * s) == SAL_ISO_REST_MARK && untouched());          // R-ZERO513
+    CHECK(dec(true, true, 310, false, 1152 * s) == SAL_ISO_REST_MARK && untouched());         // R-TWO
+    CHECK(dec(true, true, 310, false, 300 * s) == SAL_ISO_REST_MARK && untouched());          // R-SHORT
+    CHECK(dec(true, true, 4000, false, 320 * s) == SAL_ISO_REST_MARK);                        // VAT + other data
+    CHECK(dec(true, true, 0x1FFFFFFFEull, false, 0x7FFFFFFFFFFFFFFFll) == SAL_ISO_REST_MARK); // no overflow
+
+    // the sectors of the rest
+    unsigned char r[2048] = {};
+    CHECK(SalIsoUdfRestSectorEmpty(r, 2048, 400, v));
+    CHECK(SalIsoUdfRestSectorEmpty(r, 100, 400, v)); // a partial last sector of zero bytes
+    anchor(r, 400, 16 * s, 32, 16 * s, 294);          // the volume's own anchor (IMAPI2FS)
+    CHECK(SalIsoUdfRestSectorEmpty(r, 2048, 400, v));
+    CHECK(!SalIsoUdfRestSectorEmpty(r, 2048, 401, v)); // recorded at another sector
+    CHECK(!SalIsoUdfRestSectorEmpty(r, 100, 400, v));  // not a whole sector
+    anchor(r, 400, 16 * s, 32 + 576, 16 * s, 294 + 576);
+    CHECK(!SalIsoUdfRestSectorEmpty(r, 2048, 400, v)); // another volume's anchor
+    memset(r, 0, sizeof(r));
+    memcpy(r, "\0BEA01", 6); // a later volume's recognition sequence
+    CHECK(!SalIsoUdfRestSectorEmpty(r, 2048, 576 + 16, v));
+    memset(r, 0, sizeof(r));
+    r[2047] = 1; // R-ZEROLATE
+    CHECK(!SalIsoUdfRestSectorEmpty(r, 2048, 400, v));
+    memset(r, 0x5A, sizeof(r)); // R-REST17
+    CHECK(!SalIsoUdfRestSectorEmpty(r, 2048, 400, v));
+    CHECK(!SalIsoUdfRestSectorEmpty(nullptr, 2048, 400, v));
+}
+
 // feature 335: a data track in which no file system is found marks the listing unless its sector 16 is
 // a Mode 2 Form 2 sector (a Video CD's MPEG stream) - the stored sector's sync, mode byte and both
 // subheader copies decide; anything else fails closed
@@ -22533,6 +22737,7 @@ int main(int argc, char** argv)
     TestIsoNoCcdRest_353();
     TestIsoCookedRest_354();
     TestIsoRawRest_355();
+    TestIsoUdfRest_356();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

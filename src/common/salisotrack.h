@@ -31,6 +31,8 @@
 // leaves the listing incomplete.
 // Feature 354: so does a cooked (2048-byte sector) image of the plain detection whose rest past the
 // volume at its sector 16 is not shown to be zero bytes beyond room for a later volume.
+// Feature 356: and so does a cooked UDF-only image (no ISO 9660 descriptor at sector 16) whose file holds
+// more than its UDF volume - the volume's end read from its anchors, descriptor sequences and partitions.
 //
 //*****************************************************************************
 
@@ -688,4 +690,198 @@ inline int SalIsoRawRestDecision(bool volumeKnown, unsigned long long volumeSect
     firstSector = (long long)volumeSectors;
     sectors = (long long)past;
     return SAL_ISO_REST_CHECK;
+}
+
+// Feature 356: a cooked image whose sector 16 holds the UDF volume recognition sequence and no ISO 9660
+// primary descriptor (a UDF-only image - IMAPI2FS, mkudffs, Blu-ray) is listed from its UDF descriptors (the
+// plug-in's CUDF reads 2048-byte blocks, the anchor at sector 256 first). Feature 354's rule needs the
+// volume's size; here it is read from the UDF structures (ECMA-167 / OSTA UDF), all in 2048-byte sectors:
+//   - the anchor volume descriptor pointer at sector 256 names the main and the reserve volume descriptor
+//     sequence; a closed volume has its own anchors also at its last sector and 256 before it;
+//   - the partition descriptors of the main sequence give each partition's start and length;
+//   - a volume with a virtual partition (VAT, sequentially written media) claims the whole medium in its
+//     partition descriptor, and its last recorded sector is the VAT's (extended) file entry.
+// Measured (fix-log of 356): every plain image ends with its own anchor (at the last sector or 256 before
+// it) or, open VAT, with its VAT; IMAPI2FS fills the sectors past its reserve sequence with its own anchors.
+
+// the anchor's sector; the most sectors of the main descriptor sequence read for its partition descriptors
+const long long SAL_ISO_UDF_ANCHOR_SECTOR = 256;
+const long long SAL_ISO_UDF_VDS_READ = 64;
+// descriptor tag identifiers
+const unsigned int SAL_ISO_UDF_TAG_ANCHOR = 2;
+const unsigned int SAL_ISO_UDF_TAG_PARTITION = 5;
+const unsigned int SAL_ISO_UDF_TAG_LOGICAL_VOLUME = 6;
+const unsigned int SAL_ISO_UDF_TAG_TERMINATING = 8;
+const unsigned int SAL_ISO_UDF_TAG_FILE_ENTRY = 261;
+const unsigned int SAL_ISO_UDF_TAG_EXT_FILE_ENTRY = 266;
+
+inline unsigned long SalIsoUdfLe32(const unsigned char* p)
+{
+    return (unsigned long)p[0] | ((unsigned long)p[1] << 8) | ((unsigned long)p[2] << 16) |
+           ((unsigned long)p[3] << 24);
+}
+
+// Is the descriptor tag in the first 16 of 'len' bytes of 'sec' a valid tag of identifier 'id' recorded at
+// 'location'? The identifier (bytes 0-1), the checksum (byte 4 = the sum of bytes 0-3 and 5-15, modulo 256)
+// and the tag location (bytes 12-15) are checked; the descriptor CRC is not (as the plug-in's UDF reader).
+inline bool SalIsoUdfTagValid(const unsigned char* sec, long long len, unsigned int id, unsigned long long location)
+{
+    if (sec == nullptr || len < 16)
+        return false;
+    if (((unsigned int)sec[0] | ((unsigned int)sec[1] << 8)) != id)
+        return false;
+    unsigned int sum = 0;
+    for (int i = 0; i < 16; i++)
+        if (i != 4)
+            sum += sec[i];
+    if ((sum & 0xFF) != sec[4])
+        return false;
+    return (unsigned long long)SalIsoUdfLe32(sec + 12) == location;
+}
+
+// the descriptor sequences an anchor names (extent lengths in bytes, locations in sectors)
+struct SalIsoUdfAnchor
+{
+    unsigned long MainLength;
+    unsigned long MainLocation;
+    unsigned long ReserveLength;
+    unsigned long ReserveLocation;
+};
+
+// Is 'sec' (its first 'len' bytes) a valid anchor recorded at sector 'at'? Fills 'a' only then.
+inline bool SalIsoUdfReadAnchor(const unsigned char* sec, long long len, unsigned long long at, SalIsoUdfAnchor& a)
+{
+    if (len < 32 || !SalIsoUdfTagValid(sec, len, SAL_ISO_UDF_TAG_ANCHOR, at))
+        return false;
+    a.MainLength = SalIsoUdfLe32(sec + 16);
+    a.MainLocation = SalIsoUdfLe32(sec + 20);
+    a.ReserveLength = SalIsoUdfLe32(sec + 24);
+    a.ReserveLocation = SalIsoUdfLe32(sec + 28);
+    return true;
+}
+
+// Is 'sec' an anchor of the volume whose anchor at sector 256 is 'vol' - valid at sector 'at' and naming the
+// same two descriptor sequences? (A later or joined volume's anchors name its own sequences.)
+inline bool SalIsoUdfAnchorOf(const unsigned char* sec, long long len, unsigned long long at, const SalIsoUdfAnchor& vol)
+{
+    SalIsoUdfAnchor a;
+    return SalIsoUdfReadAnchor(sec, len, at, a) && a.MainLength == vol.MainLength &&
+           a.MainLocation == vol.MainLocation && a.ReserveLength == vol.ReserveLength &&
+           a.ReserveLocation == vol.ReserveLocation;
+}
+
+// the sector after an extent of 'lengthBytes' bytes from sector 'location'
+inline unsigned long long SalIsoUdfExtentEnd(unsigned long location, unsigned long lengthBytes)
+{
+    return (unsigned long long)location + ((unsigned long long)lengthBytes + 2047) / 2048;
+}
+
+// the sector after the anchor at 256 and both descriptor sequences it names
+inline unsigned long long SalIsoUdfDescriptorsEnd(const SalIsoUdfAnchor& a)
+{
+    unsigned long long end = (unsigned long long)SAL_ISO_UDF_ANCHOR_SECTOR + 1;
+    end = (std::max)(end, SalIsoUdfExtentEnd(a.MainLocation, a.MainLength));
+    end = (std::max)(end, SalIsoUdfExtentEnd(a.ReserveLocation, a.ReserveLength));
+    return end;
+}
+
+// Is 'sec' a valid partition descriptor recorded at sector 'at'? Then 'start' = its starting sector and
+// 'end' = the sector after its last (start + length, bytes 188-191 and 192-195).
+inline bool SalIsoUdfPartition(const unsigned char* sec, long long len, unsigned long long at, unsigned long& start,
+                               unsigned long long& end)
+{
+    if (len < 196 || !SalIsoUdfTagValid(sec, len, SAL_ISO_UDF_TAG_PARTITION, at))
+        return false;
+    start = SalIsoUdfLe32(sec + 188);
+    end = (unsigned long long)start + SalIsoUdfLe32(sec + 192);
+    return true;
+}
+
+// Is 'sec' a valid logical volume descriptor recorded at sector 'at' with a virtual partition map - a type 2
+// map (byte 0 = 2, byte 1 = its length) whose partition type identifier (bytes 5.. of the map) is
+// "*UDF Virtual Partition"? The maps (from byte 440, the table's length at 264, their count at 268) are
+// walked within 'len' bytes only.
+inline bool SalIsoUdfLvdHasVirtualMap(const unsigned char* sec, long long len, unsigned long long at)
+{
+    if (len < 440 || !SalIsoUdfTagValid(sec, len, SAL_ISO_UDF_TAG_LOGICAL_VOLUME, at))
+        return false;
+    static const char virt[] = "*UDF Virtual Partition";
+    const long long idLen = (long long)sizeof(virt) - 1;
+    unsigned long count = SalIsoUdfLe32(sec + 268);
+    long long end = 440 + (long long)SalIsoUdfLe32(sec + 264);
+    if (end > len)
+        end = len;
+    long long off = 440;
+    for (unsigned long i = 0; i < count && off + 2 <= end; i++)
+    {
+        long long mapLen = sec[off + 1];
+        if (mapLen < 2 || off + mapLen > end)
+            break;
+        if (sec[off] == 2 && 5 + idLen <= mapLen)
+        {
+            bool same = true;
+            for (long long k = 0; k < idLen && same; k++)
+                same = sec[off + 5 + k] == (unsigned char)virt[k];
+            if (same)
+                return true;
+        }
+        off += mapLen;
+    }
+    return false;
+}
+
+// Is 'sec' a valid (extended) file entry of the partition starting at 'partitionStart', read from sector
+// 'at'? (Its tag location is the logical block within the partition.) The VAT of an open VAT volume.
+inline bool SalIsoUdfFileEntryAt(const unsigned char* sec, long long len, unsigned long partitionStart,
+                                 unsigned long long at)
+{
+    if (at < partitionStart)
+        return false;
+    unsigned long long block = at - partitionStart;
+    return SalIsoUdfTagValid(sec, len, SAL_ISO_UDF_TAG_FILE_ENTRY, block) ||
+           SalIsoUdfTagValid(sec, len, SAL_ISO_UDF_TAG_EXT_FILE_ENTRY, block);
+}
+
+// What the plug-in read of a UDF-only cooked image:
+//   AnchorKnown    the anchor at sector 256 is valid (Anchor = its sequences)
+//   PartitionKnown the main sequence (at most SAL_ISO_UDF_VDS_READ sectors) holds a valid partition
+//                  descriptor (PartitionStart = the first one's start)
+//   DescriptorsEnd the sector after the anchor at 256, both sequences and every partition found
+//   ClosedAtEnd    the file's last whole sector, or the one 256 before it, is an anchor of this volume (other
+//                  than the one at 256), or - a volume with a virtual partition map - the last whole sector is
+//                  a file entry of the partition (its VAT): the volume ends where the file ends
+struct SalIsoUdfVolume
+{
+    bool AnchorKnown;
+    SalIsoUdfAnchor Anchor;
+    bool PartitionKnown;
+    unsigned long PartitionStart;
+    unsigned long long DescriptorsEnd;
+    bool ClosedAtEnd;
+};
+
+// Feature 356: what to do with the listing of a UDF-only cooked image of 'fileSize' bytes. MARK when the
+// anchor at 256 or a partition descriptor is not known (the volume's end cannot be read - fails closed) or
+// the file size is negative; KEEP_LISTING when the volume closes at the file's end; else feature 354's rule
+// with the descriptors' end as the volume's size (more than 16 whole sectors past it are read, up to 512;
+// fewer whole sectors than it mark). For CHECK, every sector of the rest must pass SalIsoUdfRestSectorEmpty.
+inline int SalIsoUdfRestDecision(const SalIsoUdfVolume& v, long long fileSize, long long& checkFrom,
+                                 long long& checkBytes)
+{
+    if (!v.AnchorKnown || !v.PartitionKnown || fileSize < 0)
+        return SAL_ISO_REST_MARK;
+    if (v.ClosedAtEnd)
+        return SAL_ISO_REST_KEEP_LISTING;
+    return SalIsoCookedRestDecision(true, true, v.DescriptorsEnd, fileSize, checkFrom, checkBytes);
+}
+
+// Feature 356: is a sector of the rest past a UDF volume empty - zero bytes only, or a whole sector holding
+// an anchor of this volume (as IMAPI2FS fills the rest) at its own sector 'at'? Anything else (data, a later
+// volume, a sparing table) is not.
+inline bool SalIsoUdfRestSectorEmpty(const unsigned char* sec, long long len, unsigned long long at,
+                                     const SalIsoUdfAnchor& vol)
+{
+    if (SalIsoBytesAllZero(sec, len))
+        return true;
+    return len == SAL_ISO_COOKED_SECTOR && SalIsoUdfAnchorOf(sec, len, at, vol);
 }

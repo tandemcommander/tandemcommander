@@ -222,6 +222,9 @@ protected:
                               TDirectArray<SalIsoStreamSpan>& spans, const long long* trackSectors);
     // feature 337: is every sector of stream track 'track' that no merged span covers an empty Form 2 sector?
     BOOL StreamGapsEmpty(int track, const SalIsoStreamSpan* merged, int n, long long trackSectors);
+    // feature 356: does a cooked UDF-only image of 'fileSize' bytes (2048-byte sectors from offset 0) hold
+    // more than its UDF volume - or can its volume's end not be read? (salisotrack.h, SalIsoUdfRestDecision)
+    BOOL UdfRestMarks(LONGLONG fileSize);
 
     // support
     void DetectSectorType();

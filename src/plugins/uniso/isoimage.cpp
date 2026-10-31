@@ -1198,6 +1198,11 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
                                                                         << decision);
                         ListingLeftOut.SetIncomplete();
                     }
+                    // feature 356: sector 16 is not an ISO 9660 primary descriptor - CheckForISO accepted the UDF
+                    // volume recognition sequence (a UDF-only image); its volume's end is read from its UDF
+                    // descriptors, and the rest past it is treated by the same rule
+                    if (!iso9660 && UdfRestMarks(track->End))
+                        ListingLeftOut.SetIncomplete();
                 }
             }
             else
@@ -1221,6 +1226,107 @@ BOOL CISOImage::Open(const char* fileName, BOOL quiet /* = FALSE*/)
     }
 
     return (ret == ERR_OK);
+}
+
+// feature 356: a cooked UDF-only image (2048-byte sectors from offset 0, no ISO 9660 primary descriptor at
+// sector 16) lists the UDF volume its anchor at sector 256 describes. Reads that anchor, the main descriptor
+// sequence it names (at most SAL_ISO_UDF_VDS_READ sectors, up to its terminating descriptor: the partitions
+// and whether a partition map is virtual), the file's last whole sector and the one 256 before it (the
+// volume's closing anchor, or an open VAT volume's VAT), and decides by SalIsoUdfRestDecision; for CHECK, each
+// sector of the rest must be zero bytes only or this volume's anchor. Every read that fails, and memory that
+// cannot be had, leaves the end unknown or the rest unchecked - the listing is marked (fails closed).
+BOOL CISOImage::UdfRestMarks(LONGLONG fileSize)
+{
+    CALL_STACK_MESSAGE1("CISOImage::UdfRestMarks()");
+
+    const DWORD sectorSize = (DWORD)SAL_ISO_COOKED_SECTOR;
+    unsigned char* sec = new unsigned char[sectorSize];
+    if (sec == NULL)
+        return TRUE; // not checked - fails closed
+
+    // only whole sectors of the file are read as descriptors
+    const unsigned long long whole = fileSize > 0 ? (unsigned long long)(fileSize / sectorSize) : 0;
+    auto readSector = [&](unsigned long long n) -> DWORD
+    {
+        if (n >= whole)
+            return 0;
+        return ReadDataByPos((LONGLONG)n * sectorSize, sectorSize, sec);
+    };
+
+    SalIsoUdfVolume v;
+    memset(&v, 0, sizeof(v));
+    const unsigned long long anchorAt = (unsigned long long)SAL_ISO_UDF_ANCHOR_SECTOR;
+    DWORD got = readSector(anchorAt);
+    v.AnchorKnown = SalIsoUdfReadAnchor(sec, got, anchorAt, v.Anchor);
+    if (v.AnchorKnown)
+    {
+        v.DescriptorsEnd = SalIsoUdfDescriptorsEnd(v.Anchor);
+        bool virtualMap = false;
+        unsigned long long first = v.Anchor.MainLocation;
+        unsigned long long count = SalIsoUdfExtentEnd(v.Anchor.MainLocation, v.Anchor.MainLength) - first;
+        if (count > (unsigned long long)SAL_ISO_UDF_VDS_READ)
+            count = (unsigned long long)SAL_ISO_UDF_VDS_READ;
+        for (unsigned long long i = 0; i < count; i++)
+        {
+            unsigned long long at = first + i;
+            got = readSector(at);
+            if (got != sectorSize)
+                break; // a partition not found is an end not known
+            unsigned long start = 0;
+            unsigned long long end = 0;
+            if (SalIsoUdfPartition(sec, got, at, start, end))
+            {
+                if (!v.PartitionKnown)
+                    v.PartitionStart = start;
+                v.PartitionKnown = true;
+                v.DescriptorsEnd = (std::max)(v.DescriptorsEnd, end);
+            }
+            else if (SalIsoUdfLvdHasVirtualMap(sec, got, at))
+                virtualMap = true;
+            else if (SalIsoUdfTagValid(sec, got, SAL_ISO_UDF_TAG_TERMINATING, at))
+                break;
+        }
+
+        // the volume's closing anchor - never the one at 256 itself - or an open VAT volume's VAT
+        if (v.PartitionKnown && whole > anchorAt + 1)
+        {
+            unsigned long long last = whole - 1;
+            got = readSector(last);
+            v.ClosedAtEnd = SalIsoUdfAnchorOf(sec, got, last, v.Anchor) ||
+                            (virtualMap && SalIsoUdfFileEntryAt(sec, got, v.PartitionStart, last));
+            if (!v.ClosedAtEnd && last > 2 * anchorAt)
+            {
+                got = readSector(last - anchorAt);
+                v.ClosedAtEnd = SalIsoUdfAnchorOf(sec, got, last - anchorAt, v.Anchor);
+            }
+        }
+    }
+
+    long long checkFrom = 0, checkBytes = 0;
+    int decision = SalIsoUdfRestDecision(v, fileSize, checkFrom, checkBytes);
+    BOOL mark = decision == SAL_ISO_REST_MARK;
+    if (decision == SAL_ISO_REST_CHECK)
+    {
+        // checkFrom is a whole sector (the descriptors' end); the file's partial last sector is read as it is
+        while (!mark && checkBytes > 0)
+        {
+            DWORD want = checkBytes < (long long)sectorSize ? (DWORD)checkBytes : sectorSize;
+            DWORD read = ReadDataByPos(checkFrom, want, sec);
+            if (read != want ||
+                !SalIsoUdfRestSectorEmpty(sec, read, (unsigned long long)(checkFrom / sectorSize), v.Anchor))
+                mark = TRUE;
+            checkFrom += want;
+            checkBytes -= want;
+        }
+    }
+    delete[] sec;
+
+    if (mark)
+        TRACE_I("CISOImage::UdfRestMarks(): a UDF-only cooked image of "
+                << fileSize << " bytes, anchor " << v.AnchorKnown << ", partition " << v.PartitionKnown
+                << ", descriptors end " << v.DescriptorsEnd << ", closed " << v.ClosedAtEnd << ", decision "
+                << decision);
+    return mark;
 }
 
 int CISOImage::DetectTrackFS(int track)
