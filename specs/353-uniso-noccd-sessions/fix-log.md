@@ -29,3 +29,9 @@ without its .ccd lists one session, then Unpack deletes it.
 - Rule (spec Clarifications): raw image (DetectSectorType found the sync -> 2352-byte sectors) opened
   without its `.ccd`; listed volume size = PVD volume space size at sector 16; whole sectors of the file
   past the volume > 16 -> listing incomplete; no PVD -> incomplete; cooked .img unchanged.
+
+## Analyze
+
+- Run 1: 0 CRITICAL, 0 HIGH; MEDIUM I1 (data-model said 88 bytes, the block-size check needs 132) and
+  LOW C1 (FR-005 without a check task) - both fixed in data-model.md / research.md / tasks.md T011.
+- Run 2: no findings above LOW; coverage 7 / 7 FR, 4 / 4 SC.

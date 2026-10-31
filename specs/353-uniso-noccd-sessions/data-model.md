@@ -5,7 +5,7 @@
 | Name | Meaning |
 |---|---|
 | `raw` | the `.ccd` could not be opened and sector 0 of the file has the CD sync pattern |
-| descriptor bytes | the first 132 bytes (at least 88 needed) at sector 16 of the opened layout |
+| descriptor bytes | the first 132 bytes at sector 16 (fewer = not readable) of the opened layout |
 | `volumeSectors` | volume space size of the primary volume descriptor (type 1, `CD001`, version 1, both copies equal, logical block size 2048) |
 | `fileSize`, `dataOffset`, `sectorRawSize` | the file's length, the layout's data offset and stored sector size |
 

@@ -31,7 +31,7 @@
 
 ## Phase 5: Polish
 
-- [ ] T011 `python tools/check_encoding.py --strict` -> TOTAL: 0; clang-format only the changed lines of src/common/salisotrack.h, src/saltests/saltests.cpp, src/plugins/uniso/*.cpp
+- [ ] T011 `python tools/check_encoding.py --strict` -> TOTAL: 0; `git diff main...HEAD --stat` shows no `.rc` / `.rc2` / `.rh` change (FR-005); clang-format only the changed lines of src/common/salisotrack.h, src/saltests/saltests.cpp, src/plugins/uniso/*.cpp
 - [ ] T012 Update fix-log.md (after measurements, checks) in specs/353-uniso-noccd-sessions/fix-log.md
 
 ## Dependencies

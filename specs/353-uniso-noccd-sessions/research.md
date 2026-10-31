@@ -5,7 +5,7 @@
 - Decision: compare the listed volume's size (primary volume descriptor, volume space size, bytes
   80..83 little-endian and 84..87 big-endian, logical block size 2048 at 128..129 / 130..131) with the
   whole sectors the file holds past the opened layout's data offset.
-- Rationale: one read of 88..132 bytes; needs no knowledge of where a later session lies. A later
+- Rationale: one read of 132 bytes; needs no knowledge of where a later session lies. A later
   session cannot be within the listed volume (the volume space size of the first session covers that
   session only) - it must be past it.
 - Alternatives: scanning the rest of the file for a sync + `CD001` (reads the whole image on every
