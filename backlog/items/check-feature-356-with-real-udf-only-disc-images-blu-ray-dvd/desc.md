@@ -1,7 +1,7 @@
 ---
 title: Check feature 356 with real UDF-only disc images (Blu-ray, DVD, packet-written CD-R)
 type: person-step
-status: new
+status: open
 severity: 3
 area: archives
 source: leftover:356
@@ -59,3 +59,4 @@ appended (`copy /b a.iso + b.iso c.iso`) is kept.
 ## Log
 
 - 2026-10-31 — created (source leftover:356)
+- 2026-10-31 — moved to Person steps position 50

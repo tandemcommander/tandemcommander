@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF 2.50 image written by Windows (IMAPI2FS) does not list
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: measure:356
@@ -62,3 +62,4 @@ partition descriptor is known (or defer the metadata file entry read to `ReadSup
 ## Log
 
 - 2026-10-31 — created (source measure:356)
+- 2026-10-31 — moved to Next position 8
