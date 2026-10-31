@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5349,3 +5349,36 @@ a few early ones are out of sequence).
   saltests 29,363 -> 29,402 / 0 (`TestIsoRawRest_355`); refute-first review 1: no MUST - its negative
   control (uniso.spl of main) 30 / 10, its own 2448-byte `.mdf`, XA post-gap and gap rows behaved; SHOULD
   (ECDC and other layouts) -> Inbox; NOTEs recorded.
+- 356-uniso-udf-rest: a UDF-only disc image of 2048-byte sectors (sector 16 holds `BEA01`, no ISO 9660
+  descriptor - as Windows' IMAPI2FS, mkudffs and Blu-ray authoring write them) whose file held a second
+  volume or other data past its UDF volume was listed from that volume only, and Unpack with "Delete
+  archive after unpacking" deleted it with the data the listing did not cover (354's rule needed the ISO
+  9660 size and kept every UDF-only listing) - now `CISOImage::UdfRestMarks` (`isoimage.cpp`, called from
+  354's `cookedIso` block when `iso9660` is false) reads the anchor at sector 256, at most 64 sectors of the
+  main descriptor sequence (partitions, a virtual partition map) and the file's last whole sector, and
+  `SalIsoUdfRestDecision` (`src/common/salisotrack.h`) keeps the listing when the file ends with the
+  volume's own closing anchor (the same four sequence extents as the anchor at 256, `SalIsoUdfClosesFile`)
+  or, for a VAT volume, its VAT; marks a VAT volume that does not end so, an unreadable anchor at 256 or
+  no partition descriptor; else applies 354's rule to the descriptors' end (anchor 256, both sequences,
+  partitions), a rest sector counting as empty when it is zero bytes or the volume's own anchor
+  (`SalIsoUdfRestSectorEmpty`). No UI string, no window. Traps: the descriptors alone mark every plain
+  image (IMAPI2FS fills its whole rest with the volume's anchors, mkudffs puts sparing tables and closing
+  anchors past the reserve sequence, a VAT volume's partition claims the whole medium) - the item's
+  *Notes* asked for that measurement first; the anchor 256 sectors before the end (ECMA-167's N-256) let
+  data appended after an IMAPI2FS volume pass as closed (review 1 MUST, removed); a VAT volume not closed by
+  its VAT took the claimed medium size as its end (review 2, marked now); the Windows probe was refused
+  while the maintainer's installed program ran (retried after it closed, never stopped). Limits: a plain
+  image followed by enough zero sectors that its rest past the descriptors exceeds 512, a sparable volume followed by data, and UDF
+  images of 512-byte blocks are now kept; up to 16 sectors past the volume are still not read (354); a
+  crafted copy of the volume's anchor at the end still hides what lies before it; IMAPI2FS UDF 2.50 images
+  do not list at all (older, Inbox `iso-plug-in-a-udf-2-50-image-written-by-windows-imapi2fs`); a VAT image
+  with data past it crashes the UDF reader (older, Inbox
+  `iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes`); no real Blu-ray or packet-written dump on
+  the machine (person step `check-feature-356-with-real-udf-only-disc-images-blu-ray-dvd`). From backlog
+  item `iso-plug-in-a-udf-only-cooked-image-with-more-past-its`. Probe `iso356_probe` (IMAPI2FS seeds by
+  `imapiudf356.ps1`, `img356.py`, mkudffs by `mkudf356.sh`; rule mirror `rule356.py`) with main's
+  `uniso.spl` 43 / 13 (R-TWO, R-TWOIMG, R-TWOABS, R-JOINISO, R-DATA100, R-MKDVD256, R-MKHD256, R-REST17,
+  R-ZERO300, R-ZERO513, R-ZEROLATE, R-SHORT, R-NOANCHOR deleted) -> 56 / 0; mutant never marking 39 / 9 of
+  the first 48 rows (saltests 12 failed); regressions 354 28 / 0, 355 40 / 0; saltests 29,402 -> 29,488 / 0
+  (`TestIsoUdfRest_356`); refute-first review 1: MUST (N-256 anchor) fixed, SHOULDs fixed; review 2: no
+  MUST, SHOULD (VAT end) fixed, SHOULD (VAT reader crash, on main too) -> Inbox; NOTEs recorded.

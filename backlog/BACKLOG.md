@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a UDF-only cooked image with more past its volume is still deleted by Unpack](items/iso-plug-in-a-udf-only-cooked-image-with-more-past-its/desc.md) | bug | 7 | archives | 356 |
 
 ## Next
 
@@ -278,6 +277,7 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 356 with real UDF-only disc images (Blu-ray, DVD, packet-written CD-R)](items/check-feature-356-with-real-udf-only-disc-images-blu-ray-dvd/desc.md) | person-step | 3 | archives | leftover:356 | 2026-10-31 |
 | [ISO plug-in: a UDF 2.50 image written by Windows (IMAPI2FS) does not list](items/iso-plug-in-a-udf-2-50-image-written-by-windows-imapi2fs/desc.md) | bug | 5 | archives | measure:356 | 2026-10-31 |
 | [ISO plug-in: a UDF image with a VAT and data past it crashes Tandem Commander](items/iso-plug-in-a-udf-image-with-a-vat-and-data-past-it-crashes/desc.md) | bug | 7 | archives | review:356 | 2026-10-31 |
 
