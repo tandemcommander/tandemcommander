@@ -8,7 +8,7 @@ source: review:354
 who: agent
 created: 2026-10-31
 updated: 2026-10-31
-verified: -
+verified: 2026-10-31 4cc97934
 effort: S
 feature: -
 related: []
@@ -57,3 +57,4 @@ measured with the reviewer's seed (raw s1 + s2 named `.iso` / `.bin` / `.mdf`) b
 - 2026-10-31 — related item iso-plug-in-a-cooked-multi-session-image-lists-one-session done in feature 354
 - 2026-10-31 — auto-triage: severity 5 -> 7: a user can lose data in a narrow scenario (a raw multi-session image not named .img, unpacked whole with Delete archive after unpacking, is deleted with the later session), band 7-8, as the cooked-image item of 354
 - 2026-10-31 — moved to Next position 1
+- 2026-10-31 — verified at 4cc97934: still present at 4cc97934: probe iso355 raw s1+s2 named .iso/.bin/.mdf, XA, rest17, audio tail - 10 rows image deleted after a whole unpack
