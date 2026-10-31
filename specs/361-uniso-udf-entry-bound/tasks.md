@@ -39,13 +39,13 @@
 **Independent test**: controls C-MKCDR, C-UD, L-UD; probes 330 and 360.
 
 - [X] T012 [US3] Build (`build.cmd`), `saltests`, run `iso361_probe.ps1` after the fix (`probe/result_after.txt`)
-- [ ] T013 [US3] Regressions: `specs/330-iso-unreadable-folder/probe/iso330_probe.ps1` and `specs/360-uniso-udf-vat-bound/probe/iso360_probe.ps1` on the same build (`probe/regress_330.txt`, `probe/regress_360.txt`)
+- [X] T013 [US3] Regressions: `specs/330-iso-unreadable-folder/probe/iso330_probe.ps1` and `specs/360-uniso-udf-vat-bound/probe/iso360_probe.ps1` on the same build (`probe/regress_330.txt`, `probe/regress_360.txt`)
 
 ## Phase 6: Polish
 
-- [ ] T014 Negative controls: mutate the rule (drop the reserved-type refusal; drop the sector bound) → `saltests` fails; restore with `git checkout HEAD --` and rebuild
-- [ ] T015 `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`; clang-format the changed sources
-- [ ] T016 Complete `fix-log.md` (before / after, commands, results)
+- [X] T014 Negative controls: mutate the rule (drop the reserved-type refusal; drop the sector bound) → `saltests` fails; restore with `git checkout HEAD --` and rebuild
+- [X] T015 `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`; clang-format the changed sources
+- [X] T016 Complete `fix-log.md` (before / after, commands, results)
 
 ## Dependencies
 

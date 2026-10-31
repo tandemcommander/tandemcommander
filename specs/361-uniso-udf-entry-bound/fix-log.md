@@ -69,6 +69,26 @@ copies by `probe/img361.py`. **Rows: PASS 11, FAIL 13** (RUN + END rows); regist
 - `saltests.exe` → `saltests: 29697 checks, 0 failed` (29,661 before).
 - clang-format: the changed lines formatted (`--lines`); the files keep main's count of legacy findings
   (udf.cpp 3, saltests.cpp include block as on main).
+- `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`.
+- Probe after (`probe/result_after.txt`, same command with `-Label after`): **Rows: PASS 24, FAIL 0** - L-ROOT5 /
+  R-ROOT5 "Bad root ICB. Cannot read directory structure.", nothing extracted, image kept; L-FOLD5 / L-FOLDLEA no
+  window; R-FOLD5 / R-FOLDLEA no window, 5 files (ISO 9660 part whole, UDF top.txt and zlast/z.txt), image kept;
+  R-FILE5 the box 'File "top.txt" cannot be extracted. Mismatch between file size and ICB blocks.', 5 files (all
+  but UDF top.txt), image kept; controls unchanged (C-UD 6 files deleted, C-MKCDR deleted, L-UD no window).
+  Registry restored and identical.
+- Regressions on the same build: probe 330 (`probe/regress_330.txt`) **30 / 0**, probe 360 (`probe/regress_360.txt`)
+  **50 / 0** - as recorded by those features. Registry restored and identical.
+- Negative controls (`saltests`; the work committed first, the header mutated in the working tree, restored with
+  `git checkout HEAD -- src/common/salisoudfentry.h` and rebuilt): mutant 1 - the reserved types taken as embedded
+  data → **11 failed** (the reserved-type cases, `asBefore`, `oldBadRefused`); mutant 2 - the area without a sector
+  bound → **10 failed** (L_EA 0x10000000, L_AD 4096, the wrapped L_EA, one byte past, `inSector`, `asBefore`,
+  `oldBadRefused`). Restored: `saltests: 29697 checks, 0 failed`.
+- Deviation (analyze C1): the metadata-partition caller has no probe row that reaches it - mkudffs here refuses
+  `--udfrev=0x0250` ("UDF revision above 2.01 is not currently supported for specified media type"), and the
+  IMAPI2FS 2.50 image fails before the metadata entry is read (L-META5 / L-IMAPI250: "Cannot read sector
+  #00000000", before and after - the older Inbox item `iso-plug-in-a-udf-2-50-image-written-by-windows-imapi2fs`).
+  The caller's change is one line (`n == UDF_FE_REFUSED ? 0 : n`), the rule is covered by `saltests`. Not part of
+  the item's *Expected* - no new Inbox item.
 
 ## Analyze (speckit-analyze, one run - no CRITICAL / HIGH)
 
