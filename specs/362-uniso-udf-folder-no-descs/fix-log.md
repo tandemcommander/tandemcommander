@@ -125,3 +125,24 @@ No UI string, dialog or resource changed - no `.slt` refresh (stop-rules 2.13 no
 - NOTE 2 - IMAPI 2.50 images fail before the folder reader (older, Inbox item exists
   `iso-plug-in-a-udf-2-50-image-written-by-windows-imapi2fs`). NOTE 3 - the grid check restates the rule; the probe is
   the wiring evidence. NOTE 4 - leftover worktrees of older reviews (`%TEMP%/rev325` ...) - not this feature's.
+
+### Review 3 (refute-first, general-purpose agent, HEAD 8ed54e06) - no MUST, no SHOULD
+
+- Re-ran: saltests 29,720 / 0; the feature's probe 34 / 34 PASS; boundary rows of its own copy: first extent 37 ->
+  "Bad root ICB" / image kept, 38 and 40 -> walked (the threshold is wired in the program, not only in saltests).
+  Another writer, pycdlib (UDF 2.60): every folder >= 40 bytes (empty root, empty and nested empty folders, a
+  4,120-byte folder), whole unpack of 126 files + empty folders, image deleted; mkudffs embedded EFE roots (40 bytes)
+  walked; IMAPI2FS 1.02 - 2.01 re-run on the final build: all extracted, deleted. Callers the same two; no stream
+  directory reaches the folder reader. A short type-3 first extent is now refused instead of walked into "invalid tag"
+  - both mark the listing (not a regression). No data loss path: every refusal takes 330's path.
+- NOTE 1 - one extent shorter than the entry's Information Length (38 / 40 of 88) is still listed short and the image
+  deleted - added to the Inbox item `iso-plug-in-a-udf-folder-stored-in-more-than-one-extent-is` (its Expected covers
+  "a folder that is not read whole").
+- NOTE 2 - the comment in `MapICB` still named only L_AD 0 / length 0 - updated (comment only; rebuilt, saltests
+  29,720 / 0).
+- NOTE 3 - the saltests grid restates the rule (known); the probe rows are the wiring evidence.
+
+## Closing
+
+Item removed (`BL remove --feature 362`); FEATURE-HISTORY entry and index; no `## [Unreleased]` section in
+`CHANGELOG.md` - the entry is in `closing-report.md`, owed to the maintainer. New Inbox item: 1.

@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5498,3 +5498,26 @@ a few early ones are out of sequence).
   same descriptors for every taken entry, every looping or overreading entry refused; mutants: reserved type taken
   11 failed, no sector bound 10, 32-bit area 3); refute-first reviews: 1 (MUST stray file - removed; NOTE wrap check
   taken), 2 (no MUST; SHOULD L_AD 0 folder and NOTE identifier bound -> Inbox).
+- 362-uniso-udf-folder-no-descs: a damaged UDF disc image whose folder's file entry describes no folder data - no
+  allocation descriptors (L_AD 0, also an embedded entry), a first extent of length 0 or one too short for the
+  parent's identifier - was listed by the ISO plug-in as an empty folder without a mark (the root: an empty UDF
+  part), and Unpack with "Delete archive after unpacking" deleted the image after a partial unpack - now
+  `SalIsoUdfFolderEntryWalkable(stored, firstLen)` (`src/common/salisoudfentry.h`; the reader's result and the
+  first descriptor's length, at least `SAL_ISO_UDF_MIN_FID` = 38 bytes - a folder always holds its parent's
+  identifier, 40 bytes in every image of genisoimage, mkudffs, IMAPI2FS and pycdlib measured) decides in the folder
+  reader `CUDF::MapICB(CAD, CICBTag*, CAD*)` (its only callers: the root in `ListDirectory`, sub-folders in
+  `ScanDir`), which returns 0 and so takes 330's unreadable-folder path: the root "Bad root ICB", a sub-folder
+  listed empty with the listing incomplete; the image is kept. Traps: the item named L_AD 0 only - reviews 1 and
+  2 measured the same loss with a first extent of 0 and of 20 bytes (taken here; the first clarification "unchanged"
+  was the run's own answer); clang-format of VS 2022 reflowed ~2,000 unrelated lines of `saltests.cpp` and comment
+  alignment in `udf.cpp` (undone, only the feature's hunks kept); a Bash here-document collapsed the probe's
+  backslashes (edited with the editor). Limits: a folder in more than one extent, or with one extent shorter than
+  its Information Length, is still read short and the image deleted (Inbox
+  `iso-plug-in-a-udf-folder-stored-in-more-than-one-extent-is`); deleted folder identifiers (`UDF_DELETED`) are
+  still listed (not measured). From backlog item `iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed`.
+  Probe `iso362_probe` (ud.iso by 330's `mkimg330.sh`, mk_cdr by 356's `mkudf356.sh`, ue.iso with a real empty
+  folder by `mkimg362.sh`, changed by `img362.py`) 15 / 7 -> 22 / 0, with the review rows 34 / 0 (each review's rows
+  3 FAIL on the build before); regressions 330 30 / 0, 361 24 / 0, 356 56 / 0; saltests 29,700 -> 29,720 / 0
+  (`TestIsoUdfFolderEntry_362`; negative controls 3 and 5 failed); refute-first reviews: 1 (no MUST; SHOULD length
+  0 taken, SHOULD multi-extent folder -> Inbox), 2 (no MUST; SHOULD 20-byte extent taken), 3 (no MUST / SHOULD;
+  NOTE Information Length added to the Inbox item, comment updated).

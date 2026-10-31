@@ -11,7 +11,7 @@ updated: 2026-11-01
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed]
+related: []
 depends-on: []
 reason: -
 ---
@@ -34,6 +34,11 @@ A UDF folder whose entry has several allocation descriptors is read only up to i
   `ReadFileEntry(..., file, 1)` - room for one descriptor; the reader stops at the second (`maxAds <= 0`,
   "UNSUPPORTED: Not enough CAD structures" trace only); `CUDF::ScanDir` walks `dirICB.Length` of the first extent
   only and returns `ERR_OK` - the listing is not marked (feature 330's `ListingLeftOut`).
+- Review 3 of feature 362 (fix-log *Review*, NOTE 1), HEAD 8ed54e06: the same loss with ONE extent shorter than the
+  entry's Information Length - folder a's extent set to 38 or 40 bytes, its Information Length kept 88 (genisoimage
+  writes them equal: 172/172, 88/88, 84/84): `UDF a/side.txt` not extracted, no window, image **deleted** (rows
+  B-ALEN38 / B-ALEN40 of the reviewer's probe copy, `%TEMP%/rev362c`, not kept). A folder read short of its
+  Information Length is detectable either way.
 - Older than 362 (the one-descriptor call predates it); not run on a `main` build. Files are read in several
   extents (`UnpackFile`, `icbs[32]`); only folders take one.
 
@@ -50,3 +55,4 @@ unpack then keeps the image).
 ## Log
 
 - 2026-11-01 — created (source review:362)
+- 2026-11-01 — related item iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed done in feature 362

@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a UDF folder entry without descriptors is listed empty and the image deleted](items/iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed/desc.md) | bug | 7 | archives | 362 |
 
 ## Next
 
