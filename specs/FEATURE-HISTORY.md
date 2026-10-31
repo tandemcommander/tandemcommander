@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5470,3 +5470,31 @@ a few early ones are out of sequence).
   359 14 / 0; saltests 29,613 -> 29,661 / 0 (`TestIsoUdfVat_360`, a grid model of the walk; mutants: copy bound
   dropped 5 failed, area bound dropped 5 failed); refute-first review 1 (no MUST; negative control with the old
   `uniso.spl` 8 FAIL; SHOULD taken - extent rows; SHOULD to Inbox - `ReadFileEntry`).
+- 361-uniso-udf-entry-bound: a damaged or crafted UDF disc image whose folder or file entry declared a reserved
+  allocation-descriptor type (4 - 7) made Tandem Commander stop answering while it was listed (Enter) or unpacked -
+  the ISO plug-in's general file-entry reader `CUDF::ReadFileEntry(data, bEFE, part, icbTag, ad, maxAds)` never
+  advanced its walk; an entry whose L_EA / L_AD put the descriptor area past its 2048-byte sector made it read past
+  the buffer (L_EA 0x10000000: an access violation and a bug report) - now `SalIsoUdfEntryDescs`
+  (`src/common/salisoudfentry.h`, on 360's `SalIsoUdfVatDescArea` / `DescSize`; 64-bit, no wrap) decides the area,
+  the descriptor size and the refusal (reserved type also with L_AD 0, area outside the sector, a cut descriptor)
+  before the walk, which then always ends inside the sector; the reader returns `UDF_FE_REFUSED` and each caller
+  takes its existing unreadable-entry path: the root "Bad root ICB", a sub-folder listed empty with the listing
+  incomplete (330), a file at unpack "File ... cannot be extracted. Mismatch between file size and ICB blocks."
+  (no new string), the metadata partition no extents. A whole unpack with "Delete archive after unpacking" keeps
+  the image. Traps: a manual seed test's `Set-Content -NoNewline <path> 'F250'` bound its arguments the other way
+  round and left a file `F250` in the root, committed (review 1 MUST); a saltests check named a 32-bit wrap that
+  did not wrap, so a 32-bit-area mutant passed (review 1; three wrapping checks added); a Bash here-document turned
+  `\r` in a backlog path into a carriage return (fixed with a byte replace). Limits: an L_AD that is not a whole
+  number of descriptors, or past the sector when the caller would stop early, is refused where the old reader read
+  it (360's rule); the metadata-partition caller is reached by no probe (mkudffs here refuses UDF 2.50, the IMAPI2FS
+  2.50 image fails before - Inbox `iso-plug-in-a-udf-2-50-image-written-by-windows-imapi2fs`); a folder entry with
+  L_AD 0 is still listed empty unmarked (Inbox `iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed`); a
+  file identifier's L_IU / L_FI read past `ScanDir`'s buffer (Inbox
+  `iso-plug-in-a-udf-file-identifier-with-a-long-implementation`). From backlog item
+  `iso-plug-in-a-damaged-udf-file-entry-hangs-the-listing-or`. Probe `iso361_probe` (mk_cdr by 356's
+  `mkudf356.sh`, ud.iso by 330's `mkimg330.sh`, IMAPI2FS 2.50 by 356's `imapiudf356.ps1`, changed by `img361.py`)
+  11 / 13 (L/R-ROOT5, L/R-FOLD5, R-FILE5 hung; L/R-FOLDLEA access violation) -> 24 / 0; regressions 330 30 / 0,
+  360 50 / 0; saltests 29,661 -> 29,700 / 0 (`TestIsoUdfEntry_361`, a grid with the old 32-bit walk beside the new:
+  same descriptors for every taken entry, every looping or overreading entry refused; mutants: reserved type taken
+  11 failed, no sector bound 10, 32-bit area 3); refute-first reviews: 1 (MUST stray file - removed; NOTE wrap check
+  taken), 2 (no MUST; SHOULD L_AD 0 folder and NOTE identifier bound -> Inbox).

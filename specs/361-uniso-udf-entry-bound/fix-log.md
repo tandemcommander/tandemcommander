@@ -124,3 +124,21 @@ copies by `probe/img361.py`. **Rows: PASS 11, FAIL 13** (RUN + END rows); regist
   (named in the closing report).
 - After review 1: `.\build.cmd` BUILD SUCCEEDED, `saltests` 29,700 / 0, encoding `TOTAL: 0 finding(s)`, probe on
   the final build `probe/result_after2.txt` **24 / 0**, registry restored and identical.
+
+### Review 2 (refute-first, general-purpose agent, HEAD 46806c89) - no MUST
+
+- Re-ran: build up to date, `saltests` 29,700 / 0; the feature's probe on the HEAD build **24 / 0** (registry
+  identical); callers enumerated independently (the same three); well-formed entries as before (descriptors, count,
+  embedded offset, L_AD 0 embedded returns 0, maxAds 1 stops after one); a refused file fails before
+  `SafeFileCreate` (no target touched); no UI string; the header has its BOM.
+- SHOULD 1 - a folder entry with L_AD 0 (no descriptors) is listed empty without a mark and a whole unpack deletes
+  the image (reproduced by the reviewer on `ud.iso` copies, folder zlast / a). The same path on main; not a hang
+  nor a read past the sector - outside this item (stop-rules 2.11): Inbox
+  `iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed` (review:361).
+- NOTE 1 - `ReadFileIdentifier` takes L_IU / L_FI without a bound and reads past `ScanDir`'s two-sector stack
+  buffer (code reading). Older, outside the item: Inbox
+  `iso-plug-in-a-udf-file-identifier-with-a-long-implementation` (review:361).
+- NOTE 2 - a refused file's box says "Mismatch between file size and ICB blocks" also for a reserved type: the
+  spec's no-new-string decision. NOTE 3 - the reviewer did not rebuild main for a fresh before run (time); the
+  before evidence is `probe/result_before.txt`. Review 1's NOTEs stand.
+- No source change after review 2 - no further review round.

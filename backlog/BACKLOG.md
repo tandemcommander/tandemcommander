@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a damaged UDF file entry hangs the listing or reads past its sector](items/iso-plug-in-a-damaged-udf-file-entry-hangs-the-listing-or/desc.md) | bug | 7 | archives | 361 |
 
 ## Next
 
@@ -283,6 +282,8 @@ Last triaged: 2026-10-31
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a UDF file identifier with a long implementation-use field reads past its buffer](items/iso-plug-in-a-udf-file-identifier-with-a-long-implementation/desc.md) | bug | 6 | archives | review:361 | 2026-10-31 |
+| [ISO plug-in: a UDF folder entry without descriptors is listed empty and the image deleted](items/iso-plug-in-a-udf-folder-entry-without-descriptors-is-listed/desc.md) | bug | 7 | archives | review:361 | 2026-10-31 |
 
 ## Parked
 
