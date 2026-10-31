@@ -1,0 +1,73 @@
+iso360_probe (feature 360) regress-361
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 23:11; registry key existed True
+
+seeds: mk_bdr.img=655360,mk_cd.img=8192000,mk_cdr.img=614400,mk_cdr150.img=614400,mk_cdr150c.img=1052672,mk_cdrclosed.img=1052672,mk_cdrnoefe.img=614400,mk_cdrw.img=8192000,mk_dvd.img=8192000,mk_dvdr.img=589824,mk_dvdrw.img=8192000,mk_hd.img=4096000,mk_hd512.img=4096000,v_150ilm4.bin=614400,v_adtype5.bin=614400,v_ilhuge.bin=614400,v_ilm4.bin=614400,v_ladbig.bin=614400,v_leahuge.bin=614400,v_noefeilm4.bin=614400,x_extok.bin=614400,x_ladok.bin=614400,x_sad2.bin=614400,x_sadbig.bin=614400,x_sadcut.bin=614400,x_sadok.bin=614400,x_sadround.bin=614400
+vat360: ilm4 sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: ladbig sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: adtype5 sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: leahuge sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: ilhuge sector 299 efe True IL 160 L_AD 160 flags 3
+vat360: sadok vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sad2 vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: ladok vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: extok vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sadbig vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sadround vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: sadcut vat sector 299 efe True IL 160 pstart 257 data at 280 281
+vat360: ilm4 sector 299 efe False IL 160 L_AD 160 flags 3
+vat360: ilm4 sector 299 efe False IL 44 L_AD 44 flags 3
+
+R-ILM4     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ILM4     RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-NILM4    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-NILM4    RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-V150ILM4 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-V150ILM4 RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-LADBIG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-LADBIG   RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-ADT5     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ADT5     RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-LEAHUGE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-LEAHUGE  RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-ILHUGE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ILHUGE   RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+C-MKCDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKCDR    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-MKCDRC   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKCDRC   RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-MKDVDR   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKDVDR   RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-MKBDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKBDR    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-MK150    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MK150    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-MK150C   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MK150C   RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-MKNOEFE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKNOEFE  RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-SADOK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-SADOK    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-SAD2     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-SAD2     RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-LADOK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-LADOK    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-EXTOK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-EXTOK    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-SADBIG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SADBIG   RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-SADROUND END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SADROUND RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-SADCUT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SADCUT   RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+L-ILM4     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-ILM4     RUN    PASS        alive: True; windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+L-ADT5     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-ADT5     RUN    PASS        alive: True; windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+L-LADBIG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-LADBIG   RUN    PASS        alive: True; windows ok (Missing virtual allocation table.): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+L-MKCDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-MKCDR    RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 50, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -143,4 +143,9 @@ as today; the probes of features 330, 358, 359 and 360 keep their recorded resul
   an empty folder or file would let a whole unpack succeed and delete the image).
 - Assumption (autonomous run): the second reader `ReadFileEntry(BYTE*, bool, CFileEntry*)` (size and time only,
   no descriptors) and the folder walk's other limits are outside the item.
+- Assumption (autonomous run): the metadata-partition caller is covered by the shared rule's `saltests` checks
+  only - the one UDF 2.50 writer on the machine (Windows IMAPI2FS; mkudffs here refuses 2.50) makes images the
+  plug-in fails to open before it reads the metadata entry ("Cannot read sector #00000000" - the older limit of
+  feature 356, Inbox `iso-plug-in-a-udf-2-50-image-written-by-windows-imapi2fs`); probe row L-META5 shows only
+  that the program answers (deviation, measured before and after).
 - The block size of these readers is 2048 bytes (one sector into a 2048-byte buffer).

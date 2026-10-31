@@ -7,7 +7,8 @@
 #include "uniso.h"
 #include "isoimage.h"
 #include "udf.h"
-#include "../../common/salisoudfvat.h" // feature 358: the VAT rules
+#include "../../common/salisoudfvat.h"   // feature 358: the VAT rules
+#include "../../common/salisoudfentry.h" // feature 361: the file entry's descriptor area
 
 #include "uniso.rh"
 #include "uniso.rh2"
@@ -362,8 +363,10 @@ int CUDF::ReadPartitionMap(BYTE data[])
             if ((UDF_TAGID_EXTFENTRY == tag.ID) || (UDF_TAGID_FENTRY == tag.ID))
             {
                 // It is assumed that there is no more than 1 Metadata partition present
-                PartitionMapping.nMetadataICBs = ReadFileEntry(sector, UDF_TAGID_EXTFENTRY == tag.ID, 0 /*??*/, &icbTag,
-                                                               PartitionMapping.MetadataICBs, sizeof(PartitionMapping.MetadataICBs) / sizeof(PartitionMapping.MetadataICBs[0]));
+                int n = ReadFileEntry(sector, UDF_TAGID_EXTFENTRY == tag.ID, 0 /*??*/, &icbTag,
+                                      PartitionMapping.MetadataICBs, sizeof(PartitionMapping.MetadataICBs) / sizeof(PartitionMapping.MetadataICBs[0]));
+                // feature 361: a refused entry leaves no metadata extents (the walk hung on a reserved type)
+                PartitionMapping.nMetadataICBs = n == UDF_FE_REFUSED ? 0 : n;
             }
         }
         break;
@@ -476,63 +479,62 @@ void CUDF::ReadICBTag(BYTE data[], CICBTag* icb)
 //
 // out:
 //    fileType, partition, ad
+//
+// returns the number of descriptors stored, -1 for data embedded in the entry, or (feature 361)
+// UDF_FE_REFUSED when the entry is refused (salisoudfentry.h): a reserved descriptor type (4 - 7 - the walk
+// never advanced and Tandem Commander stopped answering), a descriptor area outside the sector (read past
+// the buffer; the area was computed in 32 bits without a bound) or one that is not a whole number of
+// descriptors; nothing is stored then. 'data' is one sector (SECTOR_SIZE bytes).
 int CUDF::ReadFileEntry(Uint8* data, bool bEFE, Uint16 part, CICBTag* icbTag, CUDF::CAD* ad, int maxAds)
 {
-    Uint32 l_ea, l_ad;
-    unsigned int p;
     int cnt = maxAds;
 
     ReadICBTag(data + 16, icbTag);
 
-    if (bEFE)
+    // File Entry: 176; Extended File Entry (UDF 2.50+): 176 + 40
+    unsigned int fixed = bEFE ? 176 + 40 : 176;
+    Uint32 l_ea = GET_DWORD(data, fixed - 8);
+    Uint32 l_ad = GET_DWORD(data, fixed - 4);
+    unsigned long long first, end;
+    int size;
+    if (!SalIsoUdfEntryDescs(SECTOR_SIZE, bEFE, l_ea, l_ad, icbTag->Flags & 0x0007, first, end, size))
+        return UDF_FE_REFUSED;
+
+    if (size == 0)
     {
-        p = 176 + 40; // Extended File Entry (UDF 2.50+)
+        if (first < end && maxAds > 0)
+        {
+            ad->Offset = (Uint16)first; // < SECTOR_SIZE: the area lies in the sector
+            ad->Flags = UDF_EXT_ALLOCATED;
+            ad->Length = l_ad;
+            ad->Location = 0; // To be determined by the caller
+            ad->Partition = part;
+            return -1; // -1 tells the caller the data is inlined, but Location is not set
+        }
     }
     else
     {
-        p = 176; // File Entry
-    }
-    l_ea = GET_DWORD(data, p - 8);
-    l_ad = GET_DWORD(data, p - 4);
-    p += l_ea;
-    l_ea = p;
-    while (p < l_ea + l_ad)
-    {
-        if (maxAds > 0)
+        for (unsigned long long p = first; p < end; p += (unsigned long long)size)
         {
-            switch (icbTag->Flags & 0x0007)
+            if (maxAds <= 0)
             {
-            case 0:
-                ShortAD(&data[p], ad, part);
-                p += 8;
-                ad++;
-                maxAds--;
+                TRACE_E("UnISO: UNSUPPORTED: Not enough CAD structures");
                 break;
-            case 1:
-                LongAD(&data[p], ad);
-                p += 16;
-                ad++;
-                maxAds--;
-                break;
-            case 2:
-                ExtAD(&data[p], ad);
-                p += 20;
-                ad++;
-                maxAds--;
-                break;
-            case 3:
-                ad->Offset = p;
-                ad->Flags = UDF_EXT_ALLOCATED;
-                ad->Length = l_ad;
-                ad->Location = 0; // To be determined by the caller
-                ad->Partition = part;
-                return -1; // -1 tells the caller the data is inlined, but Location is not set
             }
-        }
-        else
-        {
-            TRACE_E("UnISO: UNSUPPORTED: Not enough CAD structures");
-            break;
+            switch (size)
+            {
+            case 8:
+                ShortAD(&data[p], ad, part);
+                break;
+            case 16:
+                LongAD(&data[p], ad);
+                break;
+            default:
+                ExtAD(&data[p], ad);
+                break;
+            }
+            ad++;
+            maxAds--;
         }
     }
     cnt -= maxAds; // # of used ad entries
@@ -579,7 +581,12 @@ int CUDF::MapICB(CUDF::CAD icb, CICBTag* icbTag, CUDF::CAD* file)
 
         if ((UDF_TAGID_FENTRY == tag.ID) || (UDF_TAGID_EXTFENTRY == tag.ID))
         {
-            if (-1 == ReadFileEntry(sector, (UDF_TAGID_EXTFENTRY == tag.ID), icb.Partition, icbTag, file, 1))
+            int n = ReadFileEntry(sector, (UDF_TAGID_EXTFENTRY == tag.ID), icb.Partition, icbTag, file, 1);
+            // feature 361: a refused entry cannot be read - as an unreadable one ("Bad root ICB" for the root, a
+            // sub-folder listed empty and the listing incomplete, feature 330); the walk hung on a reserved type
+            if (n == UDF_FE_REFUSED)
+                return 0;
+            if (-1 == n)
             {
                 file->Location = lbNum;
             }
@@ -1109,6 +1116,14 @@ int CUDF::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* s
         // No longer needed
         delete[] fileEntry;
         fileEntry = NULL;
+
+        // feature 361: a refused entry (a reserved descriptor type hung the walk, a descriptor area past the
+        // sector was read past the buffer) - the file is not extracted, the unpack fails (the image is kept)
+        if (nicbs == UDF_FE_REFUSED)
+        {
+            Error(IDS_UDF_ICB_AND_FILESIZE_MISMATCH, silent == 1, fileData->Name);
+            throw UNPACK_ERROR;
+        }
 
         // Verify that the icbs describe as many bytes as needed by the file
         ULONGLONG acc = 0;

@@ -110,6 +110,7 @@
 #include "salisotrack.h"       // features 334, 335, 351, 352, 353
 #include "salisounpack.h"      // feature 338
 #include "salisoudfvat.h"      // feature 358
+#include "salisoudfentry.h"    // feature 361
 #include "salrenamekey.h"      // feature 346
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
@@ -20742,6 +20743,169 @@ static void TestIsoUdfVat_360()
     CHECK(taken > 0);
 }
 
+// feature 361: the general UDF file-entry reader's descriptor walk never loops and reads only its sector
+// (src/common/salisoudfentry.h)
+static void TestIsoUdfEntry_361()
+{
+    unsigned long long f = 99, e = 99;
+    int sz = 99;
+    // genisoimage -udf: a plain entry, one short descriptor - the area 176 .. 184
+    CHECK(SalIsoUdfEntryDescs(2048, false, 0, 8, 0, f, e, sz) && f == 176 && e == 184 && sz == 8);
+    // mkudffs: an extended entry with embedded data (the root folder, 40 bytes) - 216 .. 256
+    CHECK(SalIsoUdfEntryDescs(2048, true, 0, 40, 3, f, e, sz) && f == 216 && e == 256 && sz == 0);
+    // long and extended descriptors, several of them, with extended attributes
+    CHECK(SalIsoUdfEntryDescs(2048, false, 32, 48, 1, f, e, sz) && f == 208 && e == 256 && sz == 16);
+    CHECK(SalIsoUdfEntryDescs(2048, true, 0, 60, 2, f, e, sz) && f == 216 && e == 276 && sz == 20);
+    // an empty area of a valid type: an empty file or folder, as before
+    for (unsigned int t = 0; t < 4; t++)
+        CHECK(SalIsoUdfEntryDescs(2048, false, 0, 0, t, f, e, sz) && f == 176 && e == 176);
+    // the area filling the sector to its last byte
+    CHECK(SalIsoUdfEntryDescs(2048, false, 0, 2048 - 176, 0, f, e, sz) && e == 2048);
+    CHECK(SalIsoUdfEntryDescs(2048, true, 0, 2048 - 216, 3, f, e, sz) && e == 2048);
+
+    // the reserved types 4 - 7 (measured: type 5 in the root's entry - Tandem Commander stopped answering), also
+    // with an empty area
+    for (unsigned int t = 4; t < 8; t++)
+    {
+        f = e = 99;
+        sz = 99;
+        CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 8, t, f, e, sz) && f == 0 && e == 0 && sz == -1);
+        CHECK(!SalIsoUdfEntryDescs(2048, true, 0, 0, t, f, e, sz));
+    }
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 8, 0xFFFF, f, e, sz));
+    // the area past the sector: L_EA 0x10000000 (measured: the 32-bit start 256 MB past the stack sector), L_AD
+    // past the end, the 32-bit sum that wrapped (L_EA 0xFFFFFF00), one byte too many
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0x10000000ull, 8, 0, f, e, sz));
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 4096, 0, f, e, sz));
+    CHECK(!SalIsoUdfEntryDescs(2048, true, 0xFFFFFF00ull, 8, 0, f, e, sz));
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0xFFFFFFFFull, 0xFFFFFFFFull, 1, f, e, sz));
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 2048 - 176 + 1, 3, f, e, sz));
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 2048 - 176 + 8, 0, f, e, sz));
+    // embedded data past the sector: the unpack copied the bytes after the sector buffer into the file
+    CHECK(!SalIsoUdfEntryDescs(2048, true, 0, 2048 - 216 + 1, 3, f, e, sz));
+    // a descriptor cut by the area's end (not a whole number of descriptors)
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 12, 0, f, e, sz));
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 8, 1, f, e, sz));
+    CHECK(!SalIsoUdfEntryDescs(2048, false, 0, 30, 2, f, e, sz));
+    // a sector shorter than the fixed part
+    CHECK(!SalIsoUdfEntryDescs(100, false, 0, 0, 0, f, e, sz));
+
+    // the reader's walk over a grid of entries: for a taken entry the walk ends, every descriptor (or the
+    // embedded data) lies in the sector, and the descriptors read are exactly those the old 32-bit walk read
+    // (well-formed entries as before); the old walk loops (no progress) or reads past the sector only on
+    // entries the rule refuses
+    const unsigned long long sector = 2048;
+    const unsigned long long eaList[] = {0, 4, 32, 100, 1832, 1833, 1872, 0x10000000ull, 0xFFFFFF00ull, 0xFFFFFFFFull};
+    const unsigned long long adList[] = {0, 1, 7, 8, 12, 16, 20, 24, 40, 60, 80, 160, 256, 1832, 1833, 1872, 4096,
+                                         0xFFFFFFFFull};
+    const int maxList[] = {1, 32};
+    bool ends = true, inSector = true, asBefore = true, oldBadRefused = true, shapesTaken = true;
+    int taken = 0, refused = 0;
+    for (int efe = 0; efe < 2; efe++)
+        for (unsigned long long ea : eaList)
+            for (unsigned long long ad : adList)
+                for (unsigned int type = 0; type < 8; type++)
+                    for (int maxAds : maxList)
+                    {
+                        // the old walk, in its 32-bit arithmetic (at most 4096 steps: more = no progress)
+                        unsigned int p = (efe ? 216u : 176u) + (unsigned int)ea;
+                        unsigned int lea = p;
+                        unsigned int lad = (unsigned int)ad;
+                        int left = maxAds, oldSteps = 0;
+                        bool oldLoops = false, oldPast = false, oldEmbedded = false;
+                        unsigned long long oldDescs[64];
+                        int oldN = 0;
+                        while (p < lea + lad)
+                        {
+                            if (++oldSteps > 4096)
+                            {
+                                oldLoops = true;
+                                break;
+                            }
+                            if (left <= 0)
+                                break;
+                            int step = type == 0 ? 8 : type == 1 ? 16
+                                                   : type == 2   ? 20
+                                                   : type == 3   ? -1
+                                                                 : 0;
+                            if (step < 0)
+                            {
+                                oldEmbedded = true;
+                                if ((unsigned long long)p + lad > sector)
+                                    oldPast = true;
+                                break;
+                            }
+                            if (step == 0)
+                                continue; // reserved: no progress
+                            if ((unsigned long long)p + (unsigned long long)step > sector)
+                                oldPast = true;
+                            if (oldN < 64)
+                                oldDescs[oldN++] = p;
+                            p += step;
+                            left--;
+                        }
+
+                        unsigned long long a0, a1;
+                        int size;
+                        bool ok = SalIsoUdfEntryDescs(sector, efe != 0, ea, ad, type, a0, a1, size);
+                        if (!ok)
+                        {
+                            refused++;
+                            // the measured shapes of real writers are never refused
+                            if (ea == 0 && ((type == 0 && ad == 8) || (type == 3 && ad == 40) || (type == 1 && ad == 16)))
+                                shapesTaken = false;
+                            continue;
+                        }
+                        taken++;
+                        if (oldLoops || oldPast)
+                            oldBadRefused = false;
+                        // the new walk, as the reader does it
+                        unsigned long long descs[64];
+                        int n = 0, steps = 0;
+                        bool embedded = false;
+                        if (size == 0)
+                        {
+                            if (a0 < a1 && maxAds > 0)
+                            {
+                                embedded = true;
+                                if (a0 + ad > sector)
+                                    inSector = false;
+                            }
+                        }
+                        else
+                        {
+                            int room = maxAds;
+                            for (unsigned long long q = a0; q < a1; q += (unsigned long long)size)
+                            {
+                                if (++steps > (int)sector)
+                                {
+                                    ends = false;
+                                    break;
+                                }
+                                if (room <= 0)
+                                    break;
+                                if (q + (unsigned long long)size > sector)
+                                    inSector = false;
+                                if (n < 64)
+                                    descs[n++] = q;
+                                room--;
+                            }
+                        }
+                        if (embedded != oldEmbedded || n != oldN)
+                            asBefore = false;
+                        else
+                            for (int i = 0; i < n; i++)
+                                if (descs[i] != oldDescs[i])
+                                    asBefore = false;
+                    }
+    CHECK(ends);
+    CHECK(inSector);
+    CHECK(asBefore);
+    CHECK(oldBadRefused);
+    CHECK(shapesTaken);
+    CHECK(taken > 0 && refused > 0);
+}
+
 // feature 356: a cooked UDF-only image - the UDF descriptors that give its volume's end, and whether the
 // rest past the volume is kept, marked or read (src/common/salisotrack.h)
 static void TestIsoUdfRest_356()
@@ -23110,6 +23274,7 @@ int main(int argc, char** argv)
     TestIsoUdfVat_358();
     TestIsoUdfVat_359();
     TestIsoUdfVat_360();
+    TestIsoUdfEntry_361();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

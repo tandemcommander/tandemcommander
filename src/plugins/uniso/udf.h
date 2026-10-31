@@ -291,6 +291,13 @@ protected:
     void ReadICBTag(BYTE data[], CICBTag* icb);
     int MapICB(CUDF::CAD icb, CICBTag* icbTag, CUDF::CAD* file);
     int MapICB(CUDF::CAD icb, CFileEntry* fe);
+    // the descriptors of a file entry: their count, -1 for embedded data, UDF_FE_REFUSED for an entry refused by
+    // salisoudfentry.h (feature 361: a reserved descriptor type hung the walk, a large L_EA / L_AD read past the
+    // sector)
+    enum
+    {
+        UDF_FE_REFUSED = -2
+    };
     int ReadFileEntry(Uint8* data, bool bEFE, Uint16 part, CICBTag* icbTag, CUDF::CAD* ad, int maxAds);
     int ReadFileIdentifier(Uint8* sector, Uint8* fileChar, char* fileName, CAD* fileICB);
 
