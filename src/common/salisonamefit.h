@@ -43,6 +43,11 @@
 // keeps the catalog IDs of left-out folders, so their contents are skipped
 // rather than listed at the volume's root.
 //
+// Feature 349: CSalHfsFolderOrder - an HFS+ folder moved into a newer folder
+// has its contents before its own record in the catalog; the listing takes
+// the folders above a record first, so every entry lands in its own folder
+// (and a left-out folder's subtree stays out) whatever the catalog order.
+//
 //*****************************************************************************
 
 #include <stddef.h>
@@ -186,4 +191,157 @@ public:
 
 private:
     std::vector<unsigned int> Ids; // sorted, unique
+};
+
+// CSalHfsFolderOrder::Pending results
+#define SAL_HFS_PENDING_OK 0
+#define SAL_HFS_PENDING_LOOP 1
+#define SAL_HFS_PENDING_NO_MEMORY 2
+
+// Feature 349: the order in which an HFS+ listing takes its folder records. The catalog is sorted by the
+// parent ID of each record (TN1150); a folder gets its ID when it is made and keeps it when it is moved,
+// so a folder made first and moved (on a Mac) into a newer folder has a lower ID than its new parent - the
+// records inside it come before its own record. The listing found each record's folder among the folders
+// listed so far and put the rest at the volume's root (also the contents of a folder it then left out).
+// Now the listing collects its folder records first (Add, Seal) and, before it takes a record, takes the
+// folders above it that it has not taken yet (Pending), outermost first - each folder is listed or left
+// out before anything inside it, whatever the catalog order. A walk that meets a folder twice is a loop of
+// parents (a damaged catalog): none of its folders reaches the root.
+class CSalHfsFolderOrder
+{
+public:
+    // a folder record: its catalog ID, its parent's ID, its record index (rising from call to call);
+    // false = out of memory, or a record index not above the last one (nothing kept)
+    bool Add(unsigned int id, unsigned int parent, size_t record)
+    {
+        if (!Links.empty() && record <= Links.back().Record)
+            return false;
+        try
+        {
+            Link l = {id, parent, record, false, 0};
+            Links.push_back(l);
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
+
+    // after the last Add; false = out of memory
+    bool Seal()
+    {
+        try
+        {
+            ById.resize(Links.size());
+            for (size_t i = 0; i < Links.size(); i++)
+                ById[i] = i;
+            const std::vector<Link>& links = Links;
+            // by ID, then record (Links is in record order: a stable sort keeps it) - Find gives the
+            // first record of an ID, as the listing's search of its listed folders did
+            std::stable_sort(ById.begin(), ById.end(),
+                             [&links](size_t a, size_t b) { return links[a].Id < links[b].Id; });
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
+
+    size_t Size() const { return Links.size(); }
+
+    // the folder record 'record' was taken (listed, left out or skipped); a record not added is never taken
+    bool IsTaken(size_t record) const
+    {
+        size_t i = AtRecord(record);
+        return i != NONE && Links[i].Taken;
+    }
+    void Take(size_t record)
+    {
+        size_t i = AtRecord(record);
+        if (i != NONE)
+            Links[i].Taken = true;
+    }
+
+    // the folders above a record under 'parentId' not taken yet: SAL_HFS_PENDING_OK - 'out' = their records,
+    // outermost first (empty: the parent is taken, or no folder of the table); SAL_HFS_PENDING_LOOP - the
+    // walk met a folder twice: 'out' = the records of the walk, each once (none of them reaches the root);
+    // SAL_HFS_PENDING_NO_MEMORY - 'out' empty. Iterative; each folder is met at most once per walk.
+    int Pending(unsigned int parentId, std::vector<size_t>& out)
+    {
+        out.clear();
+        if (++Walk == 0) // the stamps wrapped (2^32 walks): clear them
+        {
+            for (size_t i = 0; i < Links.size(); i++)
+                Links[i].Stamp = 0;
+            Walk = 1;
+        }
+        try
+        {
+            unsigned int cur = parentId;
+            for (;;)
+            {
+                size_t i = Find(cur);
+                if (i == NONE || Links[i].Taken)
+                    break;
+                if (Links[i].Stamp == Walk)
+                    return SAL_HFS_PENDING_LOOP;
+                Links[i].Stamp = Walk;
+                out.push_back(Links[i].Record);
+                cur = Links[i].Parent;
+            }
+            std::reverse(out.begin(), out.end());
+            return SAL_HFS_PENDING_OK;
+        }
+        catch (...)
+        {
+            out.clear();
+            return SAL_HFS_PENDING_NO_MEMORY;
+        }
+    }
+
+private:
+    struct Link
+    {
+        unsigned int Id;
+        unsigned int Parent;
+        size_t Record;
+        bool Taken;
+        unsigned int Stamp; // the walk that last met it
+    };
+    static const size_t NONE = (size_t)-1;
+
+    std::vector<Link> Links;   // in record order
+    std::vector<size_t> ById;  // indices into Links, by (Id, Record)
+    unsigned int Walk = 0;     // the current walk's stamp
+
+    size_t AtRecord(size_t record) const
+    {
+        size_t lo = 0, hi = Links.size();
+        while (lo < hi)
+        {
+            size_t mid = lo + (hi - lo) / 2;
+            if (Links[mid].Record < record)
+                lo = mid + 1;
+            else
+                hi = mid;
+        }
+        return (lo < Links.size() && Links[lo].Record == record) ? lo : NONE;
+    }
+
+    // the first link of folder ID 'id' (needs Seal)
+    size_t Find(unsigned int id) const
+    {
+        size_t lo = 0, hi = ById.size();
+        while (lo < hi)
+        {
+            size_t mid = lo + (hi - lo) / 2;
+            if (Links[ById[mid]].Id < id)
+                lo = mid + 1;
+            else
+                hi = mid;
+        }
+        return (lo < ById.size() && Links[ById[lo]].Id == id) ? ById[lo] : NONE;
+    }
 };

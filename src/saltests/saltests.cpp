@@ -21595,6 +21595,193 @@ static void TestIsoLeftOut329()
     CHECK(none.Size() == 0);
 }
 
+// feature 349: CHFS::ListDirectory's walk over a catalog in its order (thread records and the root used as
+// the volume label left out) with CSalHfsFolderOrder and 329's CSalLeftOutIds, as hfs.cpp takes records
+struct HfsRec349
+{
+    unsigned int Parent;
+    bool Folder;
+    unsigned int Id;
+    const char* Name;
+};
+
+struct HfsWalk349
+{
+    std::string Listed, Reported, Skipped;
+    bool Incomplete = false;
+};
+
+static HfsWalk349 HfsListing349(const HfsRec349* cat, size_t n, const char* refusedName)
+{
+    HfsWalk349 w;
+    CSalHfsFolderOrder order;
+    CSalLeftOutIds leftOut;
+    std::vector<std::pair<unsigned int, std::string>> paths; // listed folders: ID -> path
+    for (size_t i = 0; i < n; i++)
+        if (cat[i].Folder)
+            CHECK(order.Add(cat[i].Id, cat[i].Parent, i));
+    CHECK(order.Seal());
+    auto take = [&](size_t r)
+    {
+        const HfsRec349& rec = cat[r];
+        int under = leftOut.Under(rec.Parent, rec.Folder, rec.Id);
+        CHECK(under != SAL_ISO_UNDER_NO_MEMORY);
+        if (under == SAL_ISO_UNDER_SKIPPED)
+        {
+            w.Skipped += std::string(rec.Name) + " ";
+            return;
+        }
+        std::string path; // the HFS+ root when the parent is no listed folder
+        for (const auto& p : paths)
+            if (p.first == rec.Parent)
+            {
+                path = p.second + "/";
+                break;
+            }
+        if (refusedName != NULL && strcmp(rec.Name, refusedName) == 0)
+        {
+            w.Reported += std::string(rec.Name) + " ";
+            if (rec.Folder)
+                CHECK(leftOut.Add(rec.Id));
+            return;
+        }
+        w.Listed += path + rec.Name + " ";
+        if (rec.Folder)
+            paths.push_back(std::make_pair(rec.Id, path + rec.Name));
+    };
+    std::vector<size_t> pending;
+    for (size_t i = 0; i < n; i++)
+    {
+        if (order.IsTaken(i))
+            continue;
+        int res = order.Pending(cat[i].Parent, pending);
+        CHECK(res != SAL_HFS_PENDING_NO_MEMORY);
+        for (size_t r : pending)
+        {
+            order.Take(r);
+            if (res == SAL_HFS_PENDING_LOOP)
+                CHECK(leftOut.Add(cat[r].Id));
+            else
+                take(r);
+        }
+        if (res == SAL_HFS_PENDING_LOOP)
+            w.Incomplete = true;
+        if (order.IsTaken(i))
+            continue;
+        order.Take(i);
+        take(i);
+    }
+    return w;
+}
+
+static void TestHfsFolderOrder349()
+{
+    std::vector<size_t> out;
+
+    // in order: nothing is ever pending
+    CSalHfsFolderOrder in;
+    CHECK(in.Add(16, 2, 0) && in.Add(18, 16, 3) && in.Seal() && in.Size() == 2);
+    CHECK(in.Pending(2, out) == SAL_HFS_PENDING_OK && out.empty()); // the root used as the label: no folder
+    in.Take(0);
+    CHECK(in.IsTaken(0) && !in.IsTaken(3));
+    CHECK(in.Pending(16, out) == SAL_HFS_PENDING_OK && out.empty());
+    in.Take(3);
+    CHECK(in.Pending(18, out) == SAL_HFS_PENDING_OK && out.empty());
+    CHECK(in.Pending(99, out) == SAL_HFS_PENDING_OK && out.empty()); // an unknown parent
+    // a record not added is never taken
+    in.Take(1);
+    CHECK(!in.IsTaken(1) && !in.IsTaken(99));
+    // records must rise
+    CHECK(!in.Add(30, 2, 3) && !in.Add(30, 2, 2) && in.Size() == 2);
+
+    // a moved chain: a 16 in b 20 in c 22 (records in catalog order: c, a, b)
+    CSalHfsFolderOrder mv;
+    CHECK(mv.Add(22, 2, 1) && mv.Add(16, 20, 5) && mv.Add(20, 22, 8) && mv.Seal());
+    CHECK(mv.Pending(16, out) == SAL_HFS_PENDING_OK && out.size() == 3 && out[0] == 1 && out[1] == 8 && out[2] == 5);
+    mv.Take(1);
+    CHECK(mv.Pending(16, out) == SAL_HFS_PENDING_OK && out.size() == 2 && out[0] == 8 && out[1] == 5);
+    mv.Take(8);
+    CHECK(mv.Pending(16, out) == SAL_HFS_PENDING_OK && out.size() == 1 && out[0] == 5);
+    mv.Take(5);
+    CHECK(mv.Pending(16, out) == SAL_HFS_PENDING_OK && out.empty());
+    // a taken folder in the middle stops the walk
+    CSalHfsFolderOrder mid;
+    CHECK(mid.Add(22, 2, 1) && mid.Add(16, 20, 5) && mid.Add(20, 22, 8) && mid.Seal());
+    mid.Take(8);
+    CHECK(mid.Pending(16, out) == SAL_HFS_PENDING_OK && out.size() == 1 && out[0] == 5);
+
+    // loops: a folder its own parent; two folders each the other's parent, reached from a folder below them
+    CSalHfsFolderOrder self;
+    CHECK(self.Add(5, 5, 0) && self.Seal());
+    CHECK(self.Pending(5, out) == SAL_HFS_PENDING_LOOP && out.size() == 1 && out[0] == 0);
+    CSalHfsFolderOrder two;
+    CHECK(two.Add(10, 11, 0) && two.Add(11, 10, 1) && two.Add(12, 10, 2) && two.Seal());
+    CHECK(two.Pending(12, out) == SAL_HFS_PENDING_LOOP && out.size() == 3);
+    CHECK(std::count(out.begin(), out.end(), (size_t)0) == 1 && std::count(out.begin(), out.end(), (size_t)1) == 1 &&
+          std::count(out.begin(), out.end(), (size_t)2) == 1);
+    // the same walk again (the stamps of the earlier walk do not count) - still a loop
+    CHECK(two.Pending(10, out) == SAL_HFS_PENDING_LOOP && out.size() == 2);
+    for (size_t r = 0; r < 3; r++)
+        two.Take(r);
+    CHECK(two.Pending(12, out) == SAL_HFS_PENDING_OK && out.empty());
+    // not a loop: two walks through the same folders one after another
+    CSalHfsFolderOrder twice;
+    CHECK(twice.Add(1, 2, 0) && twice.Add(3, 1, 1) && twice.Seal());
+    CHECK(twice.Pending(3, out) == SAL_HFS_PENDING_OK && out.size() == 2);
+    CHECK(twice.Pending(3, out) == SAL_HFS_PENDING_OK && out.size() == 2 && out[0] == 0 && out[1] == 1);
+
+    // duplicate IDs: the first record is the one found
+    CSalHfsFolderOrder dup;
+    CHECK(dup.Add(7, 2, 0) && dup.Add(7, 3, 1) && dup.Seal());
+    CHECK(dup.Pending(7, out) == SAL_HFS_PENDING_OK && out.size() == 1 && out[0] == 0);
+
+    // a deep chain whose records all come in reverse: ID k in k + 1, 10,000 levels - iterative
+    const unsigned int deep = 10000;
+    CSalHfsFolderOrder dp;
+    bool added = true;
+    for (unsigned int k = 1; k <= deep; k++)
+        added = added && dp.Add(k, k == deep ? 0 : k + 1, k - 1);
+    CHECK(added && dp.Seal());
+    CHECK(dp.Pending(1, out) == SAL_HFS_PENDING_OK && out.size() == deep && out[0] == deep - 1 && out[deep - 1] == 0);
+
+    // the probe's catalogs (iso349_probe: thread records and the root label left out)
+    const HfsRec349 moved[] = {
+        {2, true, 22, "c"}, {2, true, 24, "k"}, {2, true, 28, "n1"}, {2, false, 0, "top.txt"},
+        {16, false, 0, "a.txt"}, {16, true, 18, "sub"}, {18, false, 0, "s.txt"},
+        {20, true, 16, "a"}, {20, false, 0, "b.txt"}, {22, true, 20, "b"}, {22, false, 0, "c.txt"},
+        {24, false, 0, "k.txt"}, {24, true, 26, "kd"}, {26, false, 0, "kd.txt"},
+        {28, true, 29, "n2"}, {29, true, 30, "n3"}, {30, true, 31, "n4"}};
+    HfsWalk349 wm = HfsListing349(moved, sizeof(moved) / sizeof(moved[0]), NULL);
+    CHECK(wm.Listed == "c k n1 top.txt c/b c/b/a c/b/a/a.txt c/b/a/sub c/b/a/sub/s.txt c/b/b.txt c/c.txt "
+                       "k/k.txt k/kd k/kd/kd.txt n1/n2 n1/n2/n3 n1/n2/n3/n4 ");
+    CHECK(wm.Reported.empty() && wm.Skipped.empty() && !wm.Incomplete);
+    // k moved into n4; the listing refuses k (its path is too long): k reported, its subtree skipped
+    const HfsRec349 lng[] = {
+        {2, true, 16, "a"}, {2, true, 20, "b"}, {2, true, 22, "c"}, {2, true, 28, "n1"}, {2, false, 0, "top.txt"},
+        {16, false, 0, "a.txt"}, {16, true, 18, "sub"}, {18, false, 0, "s.txt"}, {20, false, 0, "b.txt"},
+        {22, false, 0, "c.txt"}, {24, false, 0, "k.txt"}, {24, true, 26, "kd"}, {26, false, 0, "kd.txt"},
+        {28, true, 29, "n2"}, {29, true, 30, "n3"}, {30, true, 31, "n4"}, {31, true, 24, "k"}};
+    HfsWalk349 wl = HfsListing349(lng, sizeof(lng) / sizeof(lng[0]), "k");
+    CHECK(wl.Listed == "a b c n1 top.txt a/a.txt a/sub a/sub/s.txt b/b.txt c/c.txt n1/n2 n1/n2/n3 n1/n2/n3/n4 ");
+    CHECK(wl.Reported == "k " && wl.Skipped == "k.txt kd kd.txt " && !wl.Incomplete);
+    // a and b each the other's parent: both and everything in them left out, the listing incomplete
+    const HfsRec349 cyc[] = {
+        {2, true, 22, "c"}, {2, true, 24, "k"}, {2, true, 28, "n1"}, {2, false, 0, "top.txt"},
+        {16, false, 0, "a.txt"}, {16, true, 20, "b"}, {16, true, 18, "sub"}, {18, false, 0, "s.txt"},
+        {20, true, 16, "a"}, {20, false, 0, "b.txt"}, {22, false, 0, "c.txt"},
+        {24, false, 0, "k.txt"}, {24, true, 26, "kd"}, {26, false, 0, "kd.txt"},
+        {28, true, 29, "n2"}, {29, true, 30, "n3"}, {30, true, 31, "n4"}};
+    HfsWalk349 wc = HfsListing349(cyc, sizeof(cyc) / sizeof(cyc[0]), NULL);
+    CHECK(wc.Listed == "c k n1 top.txt c/c.txt k/k.txt k/kd k/kd/kd.txt n1/n2 n1/n2/n3 n1/n2/n3/n4 ");
+    CHECK(wc.Skipped == "a.txt sub s.txt b.txt " && wc.Reported.empty() && wc.Incomplete);
+    // an in-order catalog lists exactly as the record-by-record walk did (the seed)
+    const HfsRec349 seed[] = {
+        {2, true, 16, "a"}, {2, true, 20, "b"}, {2, false, 0, "top.txt"}, {16, false, 0, "a.txt"},
+        {16, true, 18, "sub"}, {18, false, 0, "s.txt"}, {20, false, 0, "b.txt"}};
+    HfsWalk349 ws = HfsListing349(seed, sizeof(seed) / sizeof(seed[0]), NULL);
+    CHECK(ws.Listed == "a b top.txt a/a.txt a/sub a/sub/s.txt b/b.txt " && ws.Skipped.empty() && !ws.Incomplete);
+}
+
 // feature 331: a block-by-block reference of the CD-Text text a chunk of 'size' bytes holds
 static size_t NrgCdTextRefLen331(size_t size)
 {
@@ -21901,6 +22088,7 @@ int main(int argc, char** argv)
     TestArcItemName327();
     TestIsoNameFit328();
     TestIsoLeftOut329();
+    TestHfsFolderOrder349();
     TestNrgCdText331();
     TestIsoTrackMarks334();
     TestIsoSectorForm2_335();
