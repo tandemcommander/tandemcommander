@@ -20911,56 +20911,75 @@ static void TestIsoUdfEntry_361()
     CHECK(taken > 0 && refused > 0);
 }
 
-// feature 362: a UDF folder entry without descriptors (L_AD 0) is unreadable, not an empty folder
+// feature 362: a UDF folder entry that describes no byte (L_AD 0, a first extent of length 0) is unreadable, not
+// an empty folder
 // (src/common/salisoudfentry.h)
 static void TestIsoUdfFolderEntry_362()
 {
-    // the reader's results: descriptors stored, embedded data - walked; none, the refusal (UDF_FE_REFUSED = -2) -
-    // not walked
-    CHECK(SalIsoUdfFolderEntryWalkable(1));
-    CHECK(SalIsoUdfFolderEntryWalkable(2));
-    CHECK(SalIsoUdfFolderEntryWalkable(32));
-    CHECK(SalIsoUdfFolderEntryWalkable(-1));
-    CHECK(!SalIsoUdfFolderEntryWalkable(0));
-    CHECK(!SalIsoUdfFolderEntryWalkable(-2));
-    CHECK(!SalIsoUdfFolderEntryWalkable(-3));
+    // the reader's results with the first descriptor's length: descriptors stored, embedded data - walked when they
+    // describe a byte; none, the refusal (UDF_FE_REFUSED = -2) - not walked
+    CHECK(SalIsoUdfFolderEntryWalkable(1, 88));   // genisoimage folder a: one short descriptor of 88 bytes
+    CHECK(SalIsoUdfFolderEntryWalkable(1, 172));  // genisoimage root
+    CHECK(SalIsoUdfFolderEntryWalkable(-1, 40));  // mkudffs root: 40 bytes embedded
+    CHECK(SalIsoUdfFolderEntryWalkable(2, 1));
+    CHECK(SalIsoUdfFolderEntryWalkable(32, 0x3FFFFFFFull));
+    CHECK(!SalIsoUdfFolderEntryWalkable(0, 0));   // L_AD 0 (the terminator's length 0)
+    CHECK(!SalIsoUdfFolderEntryWalkable(0, 88));  // L_AD 0 whatever the length says
+    CHECK(!SalIsoUdfFolderEntryWalkable(1, 0));   // review 1: a first extent of length 0 (L_AD 8, folder a 88 -> 0)
+    CHECK(!SalIsoUdfFolderEntryWalkable(-1, 0));
+    CHECK(!SalIsoUdfFolderEntryWalkable(-2, 88));
+    CHECK(!SalIsoUdfFolderEntryWalkable(-3, 88));
 
     // the reader (CUDF::ReadFileEntry with room for one descriptor, as CUDF::MapICB calls it) over a grid of
-    // entries: a folder is walked exactly when the entry is accepted and L_AD > 0 - every L_AD 0 entry of a valid
-    // type (measured: genisoimage folders a / zlast / the root with short descriptors, an embedded folder, mkudffs's
-    // embedded root) goes down the unreadable path; the writers' real shapes (short 8, long 16, embedded 40 - a
-    // folder's parent identifier) are walked
+    // entries and first-extent lengths: a folder is walked exactly when the entry is accepted, L_AD > 0 and the
+    // first descriptor describes a byte - every L_AD 0 entry of a valid type (measured: genisoimage folders a / zlast
+    // / the root with short descriptors, an embedded folder, mkudffs's embedded root) and every first extent of
+    // length 0 (measured by review 1: folder a, the root) goes down the unreadable path; the writers' real shapes
+    // (short 8, long 16, embedded 40 - a folder's parent identifier) are walked
     const unsigned long long eaList[] = {0, 4, 32, 1832, 0x10000000ull};
     const unsigned long long adList[] = {0, 1, 8, 16, 20, 40, 60, 1832, 4096};
+    const unsigned long long lenList[] = {0, 1, 38, 88, 0x3FFFFFFFull};
     bool rule = true, shapes = true;
-    int walked = 0, notWalked = 0, lad0 = 0;
+    int walked = 0, notWalked = 0, lad0 = 0, len0 = 0;
     for (int efe = 0; efe < 2; efe++)
         for (unsigned long long ea : eaList)
             for (unsigned long long ad : adList)
                 for (unsigned int type = 0; type < 8; type++)
-                {
-                    unsigned long long a0, a1;
-                    int size;
-                    int stored;
-                    bool ok = SalIsoUdfEntryDescs(2048, efe != 0, ea, ad, type, a0, a1, size);
-                    if (!ok)
-                        stored = -2;
-                    else if (size == 0)
-                        stored = a0 < a1 ? -1 : 0;
-                    else
-                        stored = a0 < a1 ? 1 : 0; // room for one descriptor
-                    bool w = SalIsoUdfFolderEntryWalkable(stored);
-                    if (w != (ok && ad > 0))
-                        rule = false;
-                    if (ok && ad == 0)
-                        lad0++;
-                    if (ea == 0 && ((type == 0 && ad == 8) || (type == 1 && ad == 16) || (type == 3 && ad == 40)) && !w)
-                        shapes = false;
-                    (w ? walked : notWalked)++;
-                }
+                    for (unsigned long long len : lenList)
+                    {
+                        unsigned long long a0, a1;
+                        int size;
+                        int stored;
+                        unsigned long long first = 0; // the terminator's length when nothing is stored
+                        bool ok = SalIsoUdfEntryDescs(2048, efe != 0, ea, ad, type, a0, a1, size);
+                        if (!ok)
+                            stored = -2;
+                        else if (size == 0)
+                        {
+                            stored = a0 < a1 ? -1 : 0;
+                            first = a0 < a1 ? ad : 0; // embedded: the length is L_AD
+                        }
+                        else
+                        {
+                            stored = a0 < a1 ? 1 : 0; // room for one descriptor
+                            first = a0 < a1 ? len : 0;
+                        }
+                        bool w = SalIsoUdfFolderEntryWalkable(stored, first);
+                        bool describes = ok && ad > 0 && (size == 0 || len > 0);
+                        if (w != describes)
+                            rule = false;
+                        if (ok && ad == 0)
+                            lad0++;
+                        if (ok && ad > 0 && size > 0 && len == 0)
+                            len0++;
+                        if (ea == 0 && len > 0 &&
+                            ((type == 0 && ad == 8) || (type == 1 && ad == 16) || (type == 3 && ad == 40)) && !w)
+                            shapes = false;
+                        (w ? walked : notWalked)++;
+                    }
     CHECK(rule);
     CHECK(shapes);
-    CHECK(lad0 > 0);
+    CHECK(lad0 > 0 && len0 > 0);
     CHECK(walked > 0 && notWalked > 0);
 }
 

@@ -33,6 +33,12 @@
 - [X] T009 `python tools/check_encoding.py --strict` → `TOTAL: 0 finding(s)`
 - [X] T010 Record after-measurements, regressions and checks in `specs/362-uniso-udf-folder-no-descs/fix-log.md`
 
+## Phase 6: Review 1 (SHOULD 1 - a first extent of length 0)
+
+- [X] T011 [US1] Extend the rule to `SalIsoUdfFolderEntryWalkable(int stored, unsigned long long firstLen)` in `src/common/salisoudfentry.h` and call it in `src/plugins/uniso/udf.cpp` `MapICB` with `file->Length` (a refused entry is not read); extend `TestIsoUdfFolderEntry_362` in `src/saltests/saltests.cpp` with first-extent lengths
+- [X] T012 [US1] Add kinds `alen0` / `rootlen0` to `probe/img362.py` and rows L-ROOTLEN0, R-ALEN0, R-ROOTLEN0 to `probe/iso362_probe.ps1`; measure them on the first-fix build (`probe/result_before_review1.txt`) and on the final build (`probe/result_after_review1.txt`)
+- [X] T013 [US3] Re-run probes 330 and 361 (`probe/regress_330.txt`, `probe/regress_361.txt`) and `saltests`
+
 ## Dependencies
 
 T001 → T002 → T003 → T004 → T005 → T006 → (T007 ∥ T008) → T009 → T010. US1 and US2 share the single change T004.

@@ -74,3 +74,31 @@ image **kept**; R-ROOTLAD0 "Bad root ICB", ISO 9660 part extracted, kept; R-ROOT
 L-UE, C-UD, C-UE (real empty folders e extracted), C-MKCDR unchanged (deleted).
 
 No UI string, dialog or resource changed - no `.slt` refresh (stop-rules 2.13 not triggered).
+
+## Review
+
+### Review 1 (refute-first, general-purpose agent, HEAD d9df08bd) - no MUST
+
+- Re-ran: callers enumerated independently (the same two); saltests 29,711 / 0; the negative control reasoned
+  through; the feature's probe from a copy 22 / 0 (before 15 / 7); registry identical; `git status` empty.
+- SHOULD 1 - a folder entry with L_AD 8 whose only descriptor has extent length 0 still walked 0 bytes: listed empty,
+  no mark, image deleted (folder a 88 -> 0, root 172 -> 0). By ECMA-167 4/12 a length-0 extent ends the descriptor
+  sequence - the entry describes no byte, the item's own harm. **Fixed here** (the clarification "unchanged" was
+  this run's own conservative answer, not a maintainer's decision; it kept the data loss):
+  `SalIsoUdfFolderEntryWalkable(int stored, unsigned long long firstLen)` - walkable only when something is stored
+  and the first descriptor's length (extent length without the type bits; the embedded data's length) is > 0;
+  `MapICB` passes `file->Length` and does not read `file` for a refused entry (`n == UDF_FE_REFUSED ||`).
+  saltests group extended with first-extent lengths: **29,715 checks, 0 failed**; negative control (the length
+  clause disabled) -> **3 failed** (`!Walkable(1, 0)`, `!Walkable(-1, 0)`, `rule`), restored -> 0.
+  Probe: kinds `alen0` / `rootlen0` (img362.py), rows L-ROOTLEN0, R-ALEN0, R-ROOTLEN0. On the first-fix build
+  (d9df08bd): `probe/result_before_review1.txt` **3 FAIL** (no "Bad root ICB", images deleted); on the final build:
+  `probe/result_after_review1.txt` **PASS 28, FAIL 0**, registry identical. Regressions again: 330 **30 / 0**,
+  361 **24 / 0**.
+- SHOULD 2 - a folder in more than one extent is read only to its first extent (`MapICB` reads one descriptor), the
+  rest unlisted, no mark, image deleted (reviewer: 40-file root split 2,048 + 872 -> 68 of 80 files, deleted). Older
+  than 362, outside the item: Inbox `iso-plug-in-a-udf-folder-stored-in-more-than-one-extent-is` (review:362).
+- NOTE 1 - the saltests group models the reader instead of calling udf.cpp; the wiring is proven by the probe's
+  before / after runs (they discriminate). Accepted (plug-in code is not linked into saltests).
+- NOTE 2 - `UDF_DELETED` is never tested: deleted folder identifiers are listed and descended. Not measured; not
+  this item - left as a note (no Inbox item without a measurement).
+- NOTE 3 - the clang-format undo confirmed (source diff only the intended hunks).

@@ -1,6 +1,6 @@
-iso361_probe (feature 361) regress-362
+iso361_probe (feature 361) regress-362-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-10-31 23:54; registry key existed True
+Date    : 2026-11-01 00:10; registry key existed True
 
 seeds: imapi250.iso=1507328,mk_bdr.img=655360,mk_cd.img=8192000,mk_cdr.img=614400,mk_cdrclosed.img=1052672,mk_cdrw.img=8192000,mk_dvd.img=8192000,mk_dvdr.img=589824,mk_dvdrw.img=8192000,mk_hd.img=4096000,mk_hd512.img=4096000,nest.iso=1218560,rd.iso=368640,ud.iso=878592,udh.iso=878592,x_file5.bin=878592,x_fold5.bin=878592,x_foldlea.bin=878592,x_meta5.bin=1507328,x_root5.bin=614400
 img361: rootadt5: root entry sector 258: descriptor type 3 -> 5

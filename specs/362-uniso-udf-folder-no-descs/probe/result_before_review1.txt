@@ -1,0 +1,22 @@
+iso362_probe (feature 362) before-review1-d9df08bd
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 00:03; registry key existed True
+
+seeds: mk_bdr.img=655360,mk_cd.img=8192000,mk_cdr.img=614400,mk_cdrclosed.img=1052672,mk_cdrw.img=8192000,mk_dvd.img=8192000,mk_dvdr.img=589824,mk_dvdrw.img=8192000,mk_hd.img=4096000,mk_hd512.img=4096000,nest.iso=1218560,rd.iso=368640,ud.iso=878592,udh.iso=878592,ue.iso=874496,x_aemb0.bin=878592,x_alad0.bin=878592,x_alen0.bin=878592,x_rootemb0.bin=614400,x_rootlad0.bin=878592,x_rootlen0.bin=878592,x_zlad0.bin=878592
+img362: rootemb0: root's entry (sector 258, descriptor type 3): L_AD 40 -> 0
+img362: alad0: folder a's entry (sector 261, descriptor type 0): L_AD 8 -> 0
+img362: zlad0: folder zlast's entry (sector 263, descriptor type 0): L_AD 8 -> 0
+img362: aemb0: folder a's entry (sector 261): descriptor type 0 -> 3, L_AD 8 -> 0
+img362: rootlad0: root's entry (sector 259, descriptor type 0): L_AD 8 -> 0
+img362: alen0: folder a's entry (sector 261): first extent length 88 -> 0, L_AD 8 kept
+img362: rootlen0: root's entry (sector 259): first extent length 172 -> 0, L_AD 8 kept
+
+L-ROOTLEN0 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-ROOTLEN0 RUN    FAIL        alive: True; windows ok ("Bad root ICB"): False; timed out: False; fatal: ; windows: no window
+R-ALEN0    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ALEN0    RUN    FAIL        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: False (want True); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ROOTLEN0 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ROOTLEN0 RUN    FAIL        files 3: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT; files ok: True; image kept: False (want True); windows ok ("Bad root ICB"): False; timed out: False; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 3, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

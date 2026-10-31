@@ -584,10 +584,11 @@ int CUDF::MapICB(CUDF::CAD icb, CICBTag* icbTag, CUDF::CAD* file)
             int n = ReadFileEntry(sector, (UDF_TAGID_EXTFENTRY == tag.ID), icb.Partition, icbTag, file, 1);
             // feature 361: a refused entry cannot be read - as an unreadable one ("Bad root ICB" for the root, a
             // sub-folder listed empty and the listing incomplete, feature 330); the walk hung on a reserved type.
-            // Feature 362: so is a folder entry that describes no byte (L_AD 0, also embedded) - a folder holds at
-            // least its parent's identifier; it was walked over length 0 (from the terminator's unset Offset),
-            // listed empty without a mark, and a whole unpack deleted the image (salisoudfentry.h)
-            if (!SalIsoUdfFolderEntryWalkable(n))
+            // Feature 362: so is a folder entry that describes no byte (L_AD 0, also embedded; a first extent of
+            // length 0) - a folder holds at least its parent's identifier; it was walked over length 0 (with no
+            // descriptor from the terminator's unset Offset), listed empty without a mark, and a whole unpack
+            // deleted the image (salisoudfentry.h). A refused entry stored nothing in 'file' - not read.
+            if (n == UDF_FE_REFUSED || !SalIsoUdfFolderEntryWalkable(n, file->Length))
                 return 0;
             if (-1 == n)
             {
