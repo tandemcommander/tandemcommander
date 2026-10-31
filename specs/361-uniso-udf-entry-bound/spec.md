@@ -5,6 +5,15 @@
 **Status**: Draft
 **Input**: User description: "Backlog item iso-plug-in-a-damaged-udf-file-entry-hangs-the-listing-or - implement exactly what it describes." From backlog item iso-plug-in-a-damaged-udf-file-entry-hangs-the-listing-or.
 
+## Clarifications
+
+### Session 2026-10-31
+
+- Q: How is a file whose entry is refused reported at unpack? → A: with the existing box "File ... cannot be extracted. Mismatch between file size and ICB blocks." (`IDS_UDF_ICB_AND_FILESIZE_MISMATCH`), the file not extracted, the unpack failing - no new UI string (autonomous run: conservative)
+- Q: Is a descriptor area that is not a whole number of descriptors (a descriptor cut by the area's end) refused, or its tail ignored? → A: refused, as feature 360 refuses it for the VAT - the item asks for the rules shared with 360 (autonomous run: item)
+- Q: Is a reserved descriptor type with an empty area (L_AD 0, no hang today) refused too? → A: yes - the entry is invalid, and listing it as an empty folder or file would let a whole unpack succeed and delete the image (autonomous run: conservative)
+- Q: What does a refused metadata-partition entry (UDF 2.50) leave? → A: no metadata extents (the count 0, not the refusal value): the volume's metadata blocks are not translated, its folders cannot be read, as an unreadable metadata entry today (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A damaged folder entry does not hang the program (Priority: P1)
