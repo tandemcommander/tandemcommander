@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a CloneCD session number from the .ccd writes outside the reader arrays
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:351
@@ -70,3 +70,4 @@ deletes the image. A pure rule for the bounds in `src/common/` with `saltests` c
 ## Log
 
 - 2026-10-31 — created (source review:351)
+- 2026-10-31 — moved to Next position 1
