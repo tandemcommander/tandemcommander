@@ -3,7 +3,7 @@
 **Feature Branch**: `355-uniso-raw-sessions`
 **Created**: 2026-10-31
 **Status**: Draft
-**Input**: User description: "Backlog item iso-plug-in-a-raw-multi-session-image-not-named-img-lists - implement exactly what it describes: a raw disc image (2352-byte sectors with the CD sync pattern - a `.bin` without its `.cue`, an Alcohol 120% `.mdf`, a raw dump named `.iso`) holding a second session past the first is listed as the first session only, and a whole Unpack with Delete archive after unpacking deletes it with the later session's files."
+**Input**: User description: "Backlog item iso-plug-in-a-raw-multi-session-image-not-named-img-lists - implement exactly what it describes: a raw disc image (2352-byte sectors with the CD sync pattern - a `.bin` without its `.cue`, an Alcohol 120% `.mdf`, a raw dump named `.iso`) holding a second session past the first is listed as the first session only, and a whole Unpack with Delete archive after unpacking deletes it with the later session's files." From backlog item iso-plug-in-a-raw-multi-session-image-not-named-img-lists.
 
 ## Measured before (main at 4cc97934)
 

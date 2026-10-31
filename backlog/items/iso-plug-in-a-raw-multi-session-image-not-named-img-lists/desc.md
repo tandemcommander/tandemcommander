@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a raw multi-session image not named .img lists one session, then Unpack deletes it
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:354
@@ -10,7 +10,7 @@ created: 2026-10-31
 updated: 2026-10-31
 verified: 2026-10-31 4cc97934
 effort: S
-feature: -
+feature: 355
 related: []
 depends-on: []
 reason: -
@@ -58,3 +58,4 @@ measured with the reviewer's seed (raw s1 + s2 named `.iso` / `.bin` / `.mdf`) b
 - 2026-10-31 — auto-triage: severity 5 -> 7: a user can lose data in a narrow scenario (a raw multi-session image not named .img, unpacked whole with Delete archive after unpacking, is deleted with the later session), band 7-8, as the cooked-image item of 354
 - 2026-10-31 — moved to Next position 1
 - 2026-10-31 — verified at 4cc97934: still present at 4cc97934: probe iso355 raw s1+s2 named .iso/.bin/.mdf, XA, rest17, audio tail - 10 rows image deleted after a whole unpack
+- 2026-10-31 — run started, feature 355
