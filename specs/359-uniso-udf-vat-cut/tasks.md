@@ -32,17 +32,17 @@ description: "Task list for feature 359 - a cut UDF VAT image no longer hangs th
 
 **Goal**: L-CUT0 read error, L-CUT3 / R-CUT3 missing-VAT box. **Independent test**: probe rows L-CUT0, L-CUT3, R-CUT3.
 
-- [ ] T007 [US2] Run `specs/359-uniso-udf-vat-cut/probe/iso359_probe.ps1` (after) on the hidden desktop -> every row PASS; result in `probe/result_after.txt`
+- [X] T007 [US2] Run `specs/359-uniso-udf-vat-cut/probe/iso359_probe.ps1` (after) on the hidden desktop -> every row PASS; result in `probe/result_after.txt`
 
 ## Phase 5: User Story 3 - whole VAT images as before (P2)
 
-- [ ] T008 [US3] Re-run `specs/358-uniso-udf-vat-missing/probe/iso358_probe.ps1` on the build -> 40 / 0; result in `specs/359-uniso-udf-vat-cut/probe/regress_358.txt`
+- [X] T008 [US3] Re-run `specs/358-uniso-udf-vat-missing/probe/iso358_probe.ps1` on the build -> 52 / 0 (rows END + RUN); result in `specs/359-uniso-udf-vat-cut/probe/regress_358.txt`
 
 ## Phase 6: Polish
 
 - [X] T009 `python tools/check_encoding.py --strict` -> TOTAL: 0
 - [X] T010 Inbox item (measure:359) for counting a raw dump's sectors in 2048 bytes (row L-RAWFULL)
-- [ ] T011 `fix-log.md`: after measurements, commands, results
+- [X] T011 `fix-log.md`: after measurements, commands, results
 
 ## Dependencies
 

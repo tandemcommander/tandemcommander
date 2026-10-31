@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5432,3 +5432,21 @@ a few early ones are out of sequence).
   deleted; regression 356 56 / 0; saltests 29,553 -> 29,578 / 0 (`TestIsoUdfVat_358`; the `<=` mutant fails 4);
   refute-first reviews: 1 (no MUST; SHOULDs taken - rows, the hybrid mark), 2 (no MUST; SHOULD taken - hybrid rows;
   a possible hang to Inbox).
+- 359-uniso-udf-vat-cut: a UDF disc image of a sequentially written medium (a virtual allocation table, VAT) cut
+  short could make Tandem Commander stop answering for ever while the ISO plug-in looked for the VAT (Enter,
+  Unpack) - now the search falls back to the track's last sectors at most once and never with a wrapped sector
+  number: `SalIsoUdfVatFallback` (`src/common/salisoudfvat.h`) decides in track sectors (the failed read's track
+  sector is the reader's 32-bit `PD.Start + vatLoc`, the partition's start in the track `PD.Start -
+  ExtentOffset`), a track that holds no partition sector shows "Error reading virtual allocation table" at once,
+  otherwise the old condition (more than 7 sectors past the track's end) without the wrap. Traps: the item's
+  trigger (a 2048-byte image ending under 7 sectors after the partition start) did not hang - `continue` in the
+  do-while re-tests the wrapped window and ends; the hang needs a failed read at a fallback position below 7,
+  measured with a raw 2352-byte Mode 1 dump (its sectors are counted in 2048 bytes, so the window lies past the
+  file); the first version compared the track's count with the absolute `PD.Start` and took a later session's
+  fallback away (review 1). Limits: a raw dump of a whole VAT volume still does not open (Inbox
+  `iso-plug-in-a-raw-2352-byte-sector-dump-of-a-udf-vat-disc`); the first window around the claimed end is
+  unchanged (bounded). From backlog item `iso-plug-in-a-cut-udf-vat-image-may-hang-the-listing`. Probe
+  `iso359_probe` (mk_cdr by 356's `mkudf356.sh`, cut / raw by `rawimg359.py`) 9 / 5 (L-RAWCUT, R-RAWCUT hung) ->
+  14 / 0; regression 358 52 / 0; saltests 29,578 -> 29,613 / 0 (`TestIsoUdfVat_359`, a model of the search loop;
+  mutants: old 32-bit arithmetic 20 failed, no extent offset 3, no 32-bit mask 1); refute-first reviews: 1 (no
+  MUST; SHOULD taken - track sectors), 2 (no MUST; SHOULD taken - the mask pinned, a claim corrected).

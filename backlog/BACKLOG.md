@@ -17,7 +17,6 @@ Last triaged: 2026-10-31
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a UDF VAT image cut a few sectors after its partition start may hang the listing](items/iso-plug-in-a-cut-udf-vat-image-may-hang-the-listing/desc.md) | bug | 7 | archives | 359 |
 
 ## Next
 

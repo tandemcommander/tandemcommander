@@ -67,7 +67,7 @@ features 356 and 358 stay as they are.
 
 **Why this priority**: no regression of the readable case.
 
-**Independent Test**: probe row L-MKCDR; probe 358 (40 rows) re-run.
+**Independent Test**: probe row L-MKCDR; probe 358 (52 rows) re-run.
 
 **Acceptance Scenarios**:
 
@@ -116,7 +116,7 @@ features 356 and 358 stay as they are.
 - **SC-001**: The hang rows L-RAWCUT and R-RAWCUT go from FAIL (main window not answering, killed) to PASS
   (answers, only the read-error box, image kept).
 - **SC-002**: L-CUT0 goes from "Missing virtual allocation table." to "Error reading virtual allocation table";
-  L-CUT3, R-CUT3, L-RAWFULL, L-MKCDR stay PASS; probe 358 stays 40 / 0.
+  L-CUT3, R-CUT3, L-RAWFULL, L-MKCDR stay PASS; probe 358 stays 52 / 0.
 - **SC-003**: `saltests` passes with the new checks; a mutant that drops the at-most-once guard or computes the
   window in 32 bits fails them.
 

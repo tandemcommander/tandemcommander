@@ -26,7 +26,7 @@ and the loop never ends (measured: raw Mode 1 dumps, whose sectors are counted i
 **Primary Dependencies**: none new; `src/common/salisoudfvat.h` (header-only, feature 358)
 **Storage**: N/A
 **Testing**: `saltests` (`TestIsoUdfVat_359`); hidden-desktop probe `probe/iso359_probe.ps1` (mkudffs images by
-356's `mkudf356.sh` in WSL, `probe/rawimg359.py`); regression: probe 358 (`iso358_probe.ps1`, 40 rows)
+356's `mkudf356.sh` in WSL, `probe/rawimg359.py`); regression: probe 358 (`iso358_probe.ps1`, 52 rows)
 **Target Platform**: Windows 11 x64
 **Project Type**: desktop application plug-in (`uniso.spl`)
 **Performance Goals**: the search reads at most 14 + 7 sectors

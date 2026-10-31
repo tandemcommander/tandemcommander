@@ -12,4 +12,4 @@
    Expected: every row PASS (L-RAWCUT / R-RAWCUT answer with the read-error box, L-CUT0 the read error,
    L-CUT3 / R-CUT3 the missing-VAT box, L-RAWFULL the read error, L-MKCDR no window); registry restored,
    identical.
-4. Regression: `specs\358-uniso-udf-vat-missing\probe\iso358_probe.ps1` the same way -> 40 / 0.
+4. Regression: `specs\358-uniso-udf-vat-missing\probe\iso358_probe.ps1` the same way -> 52 / 0.

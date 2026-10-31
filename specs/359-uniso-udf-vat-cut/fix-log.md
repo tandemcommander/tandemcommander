@@ -76,6 +76,21 @@ sectors after its partition start may hang the listing.
 - Inbox: `iso-plug-in-a-raw-2352-byte-sector-dump-of-a-udf-vat-disc` (measure:359) - the raw count, row
   L-RAWFULL.
 
+## Probes after (Debug x64, HEAD 9858ced4)
+
+- The after probes waited 20:20 - 22:00: another `tandemcommander.exe` (PID 7700, logon session 30 - the
+  maintainer's console instance, not started by the run) was open and every probe refuses while one runs (the
+  shared registry key); the run did not touch it and ran the probes once it had closed.
+- `probe/iso359_probe.ps1 -Label after` -> `probe/result_after.txt`: **PASS 14, FAIL 0** (before 9 / 5).
+  L-RAWCUT / R-RAWCUT: the main window answers, one box "Error reading virtual allocation table at sector
+  #00000003.", nothing extracted, the image kept. L-CUT0: "... at sector #00000E98." (at once, no fallback).
+  L-CUT3 / R-CUT3: "Missing virtual allocation table." (sectors 0 .. 2 searched). L-RAWFULL unchanged (#00000050 -
+  the Inbox item). L-MKCDR: no window. Registry restored, identical (SHA-256 07F63FE1...).
+- Regression `specs/358-uniso-udf-vat-missing/probe/iso358_probe.ps1` -> `probe/regress_358.txt`: **PASS 52,
+  FAIL 0** (358's own result 52 / 0). Registry restored, identical.
+- The item's measurement repeated: the hang (L-RAWCUT) is gone; the item's own row (cut to partition start + 3,
+  L-CUT3 / R-CUT3) alive within 30 s, the image kept.
+
 ## Review
 
 ### Review 1 (refute-first, general-purpose agent, on af3084ca) - no MUST

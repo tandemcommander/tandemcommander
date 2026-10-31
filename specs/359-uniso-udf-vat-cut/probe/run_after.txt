@@ -1,0 +1,27 @@
+iso359_probe (feature 359) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-10-31 21:45; registry key existed True
+
+seeds: cut0.img=526336,cut3.img=532480,mk_bdr.img=655360,mk_cd.img=8192000,mk_cdr.img=614400,mk_cdrclosed.img=1052672,mk_cdrw.img=8192000,mk_dvd.img=8192000,mk_dvdr.img=589824,mk_dvdrw.img=8192000,mk_hd.img=4096000,mk_hd512.img=4096000,rawcut.bin=611520,rawfull.bin=705600
+rawimg359: C:\Users\pavel\AppData\Local\Temp\tc359\seeds\rawcut.bin 611520 bytes 260 sectors raw 2352
+rawimg359: C:\Users\pavel\AppData\Local\Temp\tc359\seeds\cut3.img 532480 bytes 260 sectors cooked
+rawimg359: C:\Users\pavel\AppData\Local\Temp\tc359\seeds\cut0.img 526336 bytes 257 sectors cooked
+rawimg359: C:\Users\pavel\AppData\Local\Temp\tc359\seeds\rawfull.bin 705600 bytes 300 sectors raw 2352
+
+L-RAWCUT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-RAWCUT   RUN    PASS        alive: True; windows ok (Error reading virtual allocation table): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading virtual allocation table at sector #00000003. | [Button id=1] OK
+R-RAWCUT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-RAWCUT   RUN    PASS        files 0: ; image kept: True (want True); windows ok (Error reading virtual allocation table): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading virtual allocation table at sector #00000003. | [Button id=1] OK
+L-CUT3     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-CUT3     RUN    PASS        alive: True; windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-CUT3     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-CUT3     RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+L-CUT0     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-CUT0     RUN    PASS        alive: True; windows ok (Error reading virtual allocation table): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading virtual allocation table at sector #00000E98. | [Button id=1] OK
+L-RAWFULL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-RAWFULL  RUN    PASS        alive: True; windows ok (Error reading virtual allocation table): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading virtual allocation table at sector #00000050. | [Button id=1] OK
+L-MKCDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-MKCDR    RUN    PASS        alive: True; windows ok (none): True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 14, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
