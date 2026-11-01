@@ -5,8 +5,8 @@ findings at 3e0da39c (rows 79-82). *Site* is the line at 3e0da39c before the mar
 (`baseline_3e0da39c.txt`; a fixed row keeps its line at e849e68c). *Shipped* is the plug-in's
 `plugins.cfg` value (`shared` = shared code). A *false positive* carries the same reason in a
 `// encoding-check: allow <rule> - <reason>` marker on or above its line; a *real defect* is left
-unannotated and has a backlog item; *fixed* is gone from the scan. Totals: 67 false positives,
-14 real defects, 1 fixed (generated and checked by a script: every false-positive reason is read
+unannotated and has a backlog item; *fixed* is gone from the scan. Totals: 64 false positives,
+17 real defects, 1 fixed (generated and checked by a script: every false-positive reason is read
 from its marker; every row's file, rule and text matched between the two baselines).
 
 | # | Site | Rule | Shipped | Verdict | Reason / item |
@@ -42,9 +42,9 @@ from its marker; every row's file, rule and text matched between the two baselin
 | 29 | `plugins/automation/fileinfo.cpp:250` | lossy-lenient-at-intake | off | false positive | the text is only shown (DialogError / DialogOverwrite / DialogQuestion), never used to find a file (255) |
 | 30 | `plugins/automation/fileinfo.cpp:260` | lossy-lenient-at-intake | off | false positive | the text is only shown (DialogError / DialogOverwrite / DialogQuestion), never used to find a file (255) |
 | 31 | `plugins/automation/fileinfo.cpp:265` | lossy-lenient-at-intake | off | false positive | the text is only shown (DialogError / DialogOverwrite / DialogQuestion), never used to find a file (255) |
-| 32 | `plugins/automation/strconv.cpp:48` | lossy-lenient-at-intake | off | false positive | OLE2A serves a question text and a trace only - shown, never a name for an operation (255) |
-| 33 | `plugins/automation/strconv.cpp:55` | lossy-lenient-at-intake | off | false positive | OLE2A serves a question text and a trace only - shown, never a name for an operation (255) |
-| 34 | `plugins/automation/strconv.cpp:59` | lossy-lenient-at-intake | off | false positive | OLE2A serves a question text and a trace only - shown, never a name for an operation (255) |
+| 32 | `plugins/automation/strconv.cpp:48` | lossy-lenient-at-intake | off | real defect | `automation-ole2t-captions-and-value-names` (379 review 1; 255 had: false positive) |
+| 33 | `plugins/automation/strconv.cpp:55` | lossy-lenient-at-intake | off | real defect | `automation-ole2t-captions-and-value-names` (379 review 1; 255 had: false positive) |
+| 34 | `plugins/automation/strconv.cpp:59` | lossy-lenient-at-intake | off | real defect | `automation-ole2t-captions-and-value-names` (379 review 1; 255 had: false positive) |
 | 35 | `plugins/checkver/logwnd.cpp:172` | strict-probe-rejects-wtf8 | off | real defect | `checkver-log-script-path-garbled` |
 | 36 | `plugins/codeview/intake.cpp:164` | lossy-lenient-at-intake | on | false positive | decoded file contents for the viewer (shown), not a name (255) |
 | 37 | `plugins/codeview/intake.cpp:169` | lossy-lenient-at-intake | on | false positive | decoded file contents for the viewer (shown), not a name (255) |
@@ -89,7 +89,7 @@ from its marker; every row's file, rule and text matched between the two baselin
 | 76 | `plugins/unole/unole2.cpp:213` | lossy-lenient-at-intake | off | false positive | fallback after SplWToU8 (WTF-8, total since 089), which fails only on a too small buffer; an OLE element name (<= 31 units) always fits 'name' (255) |
 | 77 | `plugins/zip/common.cpp:1703` | lossy-lenient-at-intake | on | false positive | the input was decoded from the code page just above - valid Unicode by construction (255) |
 | 78 | `plugins/zip/common.cpp:1709` | lossy-lenient-at-intake | on | false positive | the input was decoded from the code page just above - valid Unicode by construction (255) |
-| 79 | `plugins/codeview/config.cpp:79` | strict-probe-rejects-wtf8 | on | false positive | a conversion table name in code-page bytes (EnumConversionTables, 262), not a name from the core; one that does not convert exactly is stored as "" - the system code page (379) |
-| 80 | `plugins/codeview/config.cpp:83` | strict-probe-rejects-wtf8 | on | false positive | a conversion table name in code-page bytes (EnumConversionTables, 262), not a name from the core; one that does not convert exactly is stored as "" - the system code page (379) |
+| 79 | `plugins/codeview/config.cpp:79` | strict-probe-rejects-wtf8 | on | false positive | a code-page probe of a conversion table name (convert.cfg bytes via EnumConversionTables, 262), never a file name; one that does not decode exactly is stored as "" - the system code page (379) |
+| 80 | `plugins/codeview/config.cpp:83` | strict-probe-rejects-wtf8 | on | false positive | a code-page probe of a conversion table name (convert.cfg bytes via EnumConversionTables, 262), never a file name; one that does not decode exactly is stored as "" - the system code page (379) |
 | 81 | `plugins/codeview/config.cpp:100` | strict-probe-rejects-wtf8 | on | false positive | the table name this plug-in stored from code-page bytes (262), never a file name; one that does not convert exactly falls back to "" - the system code page (379) |
 | 82 | `plugins/codeview/config.cpp:104` | strict-probe-rejects-wtf8 | on | false positive | the table name this plug-in stored from code-page bytes (262), never a file name; one that does not convert exactly falls back to "" - the system code page (379) |

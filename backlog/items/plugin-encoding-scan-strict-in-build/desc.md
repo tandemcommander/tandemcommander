@@ -66,3 +66,4 @@ Items for the plug-ins that are off (`automation-script-folder-list-code-page`,
 - 2026-10-20 — moved to Next position 77
 - 2026-10-20 — dependency ftp-wtf8-name-listing-round-trip done in feature 269
 - 2026-11-01 — feature 379: two more real defects in shipped plug-ins block a strict scan - tar-wtf8-names-read-in-code-page, uncab-wtf8-flagged-name-refused (adding them to depends-on is the maintainer's step)
+- 2026-11-01 — feature 379 review 1: rows 32-34 (automation/strconv.cpp) are a real defect too - automation-ole2t-captions-and-value-names (plug-in off)

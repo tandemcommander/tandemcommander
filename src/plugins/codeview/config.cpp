@@ -76,12 +76,12 @@ static BOOL CvCodePageNameToUtf8(const char* name, std::string& out)
     out.clear();
     if (name == NULL || *name == 0)
         return TRUE;
-    // encoding-check: allow strict-probe-rejects-wtf8 - a conversion table name in code-page bytes (EnumConversionTables, 262), not a name from the core; one that does not convert exactly is stored as "" - the system code page (379)
+    // encoding-check: allow strict-probe-rejects-wtf8 - a code-page probe of a conversion table name (convert.cfg bytes via EnumConversionTables, 262), never a file name; one that does not decode exactly is stored as "" - the system code page (379)
     int wn = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, name, -1, NULL, 0);
     if (wn <= 0)
         return FALSE;
     std::wstring w(wn, L'\0');
-    // encoding-check: allow strict-probe-rejects-wtf8 - a conversion table name in code-page bytes (EnumConversionTables, 262), not a name from the core; one that does not convert exactly is stored as "" - the system code page (379)
+    // encoding-check: allow strict-probe-rejects-wtf8 - a code-page probe of a conversion table name (convert.cfg bytes via EnumConversionTables, 262), never a file name; one that does not decode exactly is stored as "" - the system code page (379)
     if (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, name, -1, &w[0], wn) <= 0)
         return FALSE;
     int un = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, w.c_str(), -1, NULL, 0, NULL, NULL);

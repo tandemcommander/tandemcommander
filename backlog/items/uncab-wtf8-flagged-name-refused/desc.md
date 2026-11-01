@@ -1,8 +1,8 @@
 ---
-title: UnCAB: a UTF-8 cabinet name with an unpaired surrogate is refused
+title: UnCAB: one UTF-8 cabinet name with an unpaired surrogate makes the whole cabinet fail
 type: bug
 status: new
-severity: 4
+severity: 5
 area: archives
 source: measure:379
 who: agent
@@ -16,11 +16,11 @@ depends-on: []
 reason: -
 ---
 
-# UnCAB: a UTF-8 cabinet name with an unpaired surrogate is refused
+# UnCAB: one UTF-8 cabinet name with an unpaired surrogate makes the whole cabinet fail
 
 ## Problem
 
-The UnCAB plug-in (shipped) checks a cabinet entry's name with a strict UTF-8 probe. When the entry carries `_A_NAME_IS_UTF`, a name that fails the probe is refused (`CabNameToU8` returns FALSE), so the entry cannot be listed or extracted. A Windows packer that writes an unpaired surrogate (a name NTFS allows) as the 3-byte WTF-8 form, as the vendored 7-Zip converter does, produces exactly such a name. Without the flag (`fdintPARTIAL_FILE`) the same bytes are read in the code page - another name.
+The UnCAB plug-in (shipped) checks a cabinet entry's name with a strict UTF-8 probe. When the entry carries `_A_NAME_IS_UTF`, a name that fails the probe is refused (`CabNameToU8` returns FALSE); the notify callback then returns -1, which aborts `FDICopy`, so `ListArchive` shows an FDI error and fails: **one such entry makes the whole cabinet impossible to open**, and an extraction stops part-way. A Windows packer that writes an unpaired surrogate (a name NTFS allows) as the 3-byte WTF-8 form, as the vendored 7-Zip converter does, produces exactly such a name. Without the flag (`fdintPARTIAL_FILE`) the same bytes are read in the code page - another name.
 
 ## Evidence
 
@@ -41,3 +41,5 @@ Severity at the lower end of the band: only names with an unpaired surrogate, an
 ## Log
 
 - 2026-11-01 — created (source measure:379)
+- 2026-11-01 — Problem corrected and severity 4 -> 5 after review 1 of feature 379 (the refusal aborts the whole cabinet)
+- 2026-11-01 — severity and title after review 1 of feature 379

@@ -68,8 +68,8 @@ bytes), ZIP `add.cpp` (still inside the `/* … */` block: last `/*` line 3480, 
 ## State after the carry-over
 
 `python tools/check_encoding.py --plugins` → `TOTAL: 14 finding(s)`: 255's 10 real-defect sites +
-CheckVer `dialogs.cpp`, TAR, UnCAB, UnMIME `parser.cpp`. `git diff main -- src`: 71 added lines
-(67 + 4), all markers.
+CheckVer `dialogs.cpp`, TAR, UnCAB, UnMIME `parser.cpp`. `git diff main -- src`: 67 added lines
+(63 carried + 4 Code Viewer), all markers.
 
 ## Items (T006, T007)
 
@@ -115,3 +115,45 @@ lines; every real-defect slug (12 items) exists in `backlog/items/`.
   ending `(255)` / `(…, 255)` / `(379)` removed → `check_encoding.py --plugins` → 81 findings,
   equal to `baseline_3e0da39c.txt` (file + rule + text, sorted `diff`: none) - every marker sits on
   its own finding and suppresses nothing else.
+
+## Review
+
+### Review 1 (independent agent, refute-first)
+
+Reproduced: scan `TOTAL: 14` = the 14 real rows, 12 slugs exist; core `--strict` 0; 67 added /
+0 deleted, BOM and CRLF kept; its own negative control (markers stripped in a copy → 81 =
+baseline); 67/67 reasons equal their markers. Every marker in the files `main` changed since 255
+re-checked and holds (N5); the re-judged rows 3, 67, 68, 75 and their items confirmed (N6).
+
+- **MUST 1** - Automation `strconv.cpp` (rows 32-34) marked "OLE2A serves a question text and a
+  trace only": false. Without `_UNICODE`, `strconv.h` defines `OLE2T(s)` as `OLE2A(s)`, used for
+  window captions passed to `CreateWindowEx` (A) in `guibutton/guilabel/guichkbox/guitxtbox/
+  guiform.cpp`, the `InputBox` prompt, and registry value names in `persistence.cpp`
+  (`DeleteValue`, `SetValue` `REG_DWORD`). Confirmed by reading (`grep OLE2T`). **Fixed**: the three
+  markers removed, rows 32-34 → real defect, item `automation-ole2t-captions-and-value-names`
+  (review:379, severity 1, plug-in off); a log line on `plugin-encoding-scan-strict-in-build`.
+- **SHOULD 1** - core `src/regwork.cpp` `DeleteValueAux` uses `RegDeleteValue` (A) with a UTF-8
+  name (measured by the reviewer: `RegDeleteValueA` of `číslo` → error 2, the value stays);
+  `CreateKeyAux` / `OpenKeyAux` / `DeleteKeyAux` use A too. Confirmed by reading. Outside the item
+  (core) → item `registry-wide-deletevalue-and-key-names` (review:379, severity 2).
+- **SHOULD 2** - the UnCAB item understated the effect: a refused name returns -1 from the notify
+  callback, `FDICopy` aborts and the whole cabinet fails to list (`uncab.cpp` `ListArchive`).
+  Confirmed by reading. **Fixed**: the item's *Problem*, title and severity 4 → 5.
+- NOTE 1 - the fix-log said "71 added lines (67 + 4)". **Fixed** (67 = 63 carried + 4).
+- NOTE 2 - Code Viewer markers: the `CP_ACP` probes are not about WTF-8 and the table names come
+  through a core service. **Fixed**: the wording of the two `CP_ACP` markers ("a code-page probe of a
+  conversion table name (convert.cfg bytes via EnumConversionTables, 262), never a file name; …").
+  The verdict holds; on cp932 a non-ASCII table name drops the remembered default to "" (a
+  setting, not data) - recorded here only.
+- NOTE 3 - Markdown Viewer `viewer.cpp` `UriDecode` (row 48): the real limit is that it converts
+  one UTF-16 unit at a time (a surrogate pair would be split); it holds because WebView2 hands over
+  canonical percent-encoded URIs. Verdict kept; recorded here only.
+- NOTE 4 - ZIP `common.cpp` bounds a converted entry name to `MAX_HEADER_SIZE - 1` (64 KiB) bytes,
+  at a whole UTF-8 character. No Windows name reaches that length (a hostile archive's header can);
+  not an encoding finding - recorded here only, no item.
+
+After the fixes: `check_encoding.py --plugins` → `TOTAL: 17` = the 17 real rows of the regenerated
+`verdicts.md` (64 false positives, 17 real defects, 1 fixed; sorted lists equal); `--strict` →
+`TOTAL: 0`; `git diff main -- src` 31 files, 64 added / 0 deleted, all markers; `.\build.cmd` →
+`BUILD SUCCEEDED` (`codeview.spl` rebuilt 18:50 after the marker change; Automation is off, not
+built); `BL check` → `TOTAL: 0`.

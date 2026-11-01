@@ -2,7 +2,7 @@
 
 From the repository root (Bash):
 
-1. `python tools/check_encoding.py --plugins | tail -1` → `TOTAL: 14 finding(s)` (the number of
+1. `python tools/check_encoding.py --plugins | tail -1` → `TOTAL: 17 finding(s)` (the number of
    *real defect* rows in `verdicts.md`).
 2. `python tools/check_encoding.py --plugins --format list` → exactly the *real defect* sites of
    `verdicts.md` (compare the sorted lists).

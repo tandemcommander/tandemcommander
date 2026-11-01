@@ -293,9 +293,11 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Automation: non-ASCII GUI captions show as mojibake and persistent value names collide](items/automation-ole2t-captions-and-value-names/desc.md) | bug | 1 | other-plugins | review:379 | 2026-11-01 |
 | [CheckVer: a non-ASCII module name in the filter list is shown garbled](items/checkver-filter-names-code-page/desc.md) | bug | 1 | other-plugins | measure:379 | 2026-11-01 |
+| [Registry facade: deleting a value and opening keys use the ANSI API with UTF-8 names](items/registry-wide-deletevalue-and-key-names/desc.md) | bug | 2 | plugin-api | review:379 | 2026-11-01 |
 | [TAR: a name with an unpaired surrogate stored as WTF-8 is read as another name](items/tar-wtf8-names-read-in-code-page/desc.md) | bug | 4 | archives | measure:379 | 2026-11-01 |
-| [UnCAB: a UTF-8 cabinet name with an unpaired surrogate is refused](items/uncab-wtf8-flagged-name-refused/desc.md) | bug | 4 | archives | measure:379 | 2026-11-01 |
+| [UnCAB: one UTF-8 cabinet name with an unpaired surrogate makes the whole cabinet fail](items/uncab-wtf8-flagged-name-refused/desc.md) | bug | 5 | archives | measure:379 | 2026-11-01 |
 | [UnMIME: an attachment name with an unpaired surrogate is read in the code page](items/unmime-wtf8-name-read-in-code-page/desc.md) | bug | 1 | other-plugins | measure:379 | 2026-11-01 |
 
 ## Parked
