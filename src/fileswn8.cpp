@@ -269,8 +269,13 @@ static void RespellTypedArchiveRoot383(HWND parent, CFilesWindow* panel, const c
     if (listing != NULL)
     {
         char resolved[MAX_PATH]; // 'root' is shorter than MAX_PATH (the caller's check)
+        // a component re-spelled only when it is the same name by the file system's rule (review of
+        // 383: the listing's byte fold takes "Č" and "Ĝ" as equal - the files went into "Ĝ")
         if (listing->ResolvePathCase(root, resolved, _countof(resolved)))
-            SalArcPathApplyResolved(root, resolved);
+        {
+            SalArcPathApplyResolved(root, resolved, [](const char* a, int aLen, const char* b, int bLen)
+                                    { return SalNameEqualOrdinalCI(a, aLen, b, bLen) != FALSE; });
+        }
     }
 
     if (ownDir != NULL) // the listing's plug-in data released as salamdr3.cpp / salshlib.cpp do

@@ -133,7 +133,11 @@ pack into the wrong twin.
 - **FR-002**: A component MUST be matched by the rule a panel uses when the same path is
   typed to open the archive (features 273 / 382): exact first; else the folder the listing's
   comparison finds; in a case-sensitive listing only the single folder equal ignoring case,
-  and not when a file of that name exists there.
+  and not when a file of that name exists there. A found folder's name MUST replace the typed
+  component only when the file system's rule (`SalNameEqualOrdinalCI`, 092) takes the two as the
+  same name - the listing's byte fold also takes some different letters as equal (`Č` / `Ĝ`
+  under cp1250 / cp1252, review of 383); from the first component that is not, the rest stays
+  as typed.
 - **FR-003**: From the first component that names no existing folder on, the typed spelling
   MUST be kept.
 - **FR-004**: The listing MUST be a panel's listing of the same archive only when the archive
@@ -165,8 +169,10 @@ pack into the wrong twin.
 - **SC-001**: The probe rows TYPED, DEEP, NEWTAIL, MOVE and TWINS pass for 7z and ZIP (10 rows
   that fail at e3dfe127).
 - **SC-002**: The control rows EXACT, TWINEX and AMBIG keep passing and the row PANEL (the other
-  panel shows the archive, its listing is reused) passes, for 7z and ZIP - all 18 RUN rows pass
-  (the probe's total also counts one END row per RUN row: PASS 36, FAIL 0).
+  panel shows the archive, its listing is reused) passes, and the rows FOLD / FOLDOW (typed `Č`,
+  the archive holds only `Ĝ`: packed into a new `Č`, an existing `Ĝ\n.txt` neither asked about
+  nor replaced) pass, for 7z and ZIP - all 22 RUN rows pass (the probe's total also counts one
+  END row per RUN row: PASS 44, FAIL 0).
 - **SC-003**: The probes of features 273 and 382 keep their results (12 / 0 and 24 / 0).
 - **SC-004**: `saltests` passes with the new checks; a negative control (the re-spelling
   disabled) makes the probe fail again.
@@ -181,3 +187,6 @@ pack into the wrong twin.
   more for the listing; Cancel keeps the typed spelling (FR-005). Not probed.
 - Assumption (autonomous run): two folders that match the typed name ignoring case (twins,
   none exact) keep the typed spelling - the behaviour before the feature; no message is added.
+- Assumption (autonomous run, review of 383): a case difference of a non-ASCII letter (`Č` typed,
+  the archive holds `č`) is not one the listing's byte fold sees, so it keeps the typed spelling
+  and packs beside it, as before - limit; Inbox `typed-archive-target-non-ascii-case-makes-a-twin`.

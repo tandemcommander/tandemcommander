@@ -85,3 +85,51 @@ disk into an archive folder typed in another case packs into a new folder beside
 | 382 probe | `arctwins382_probe.ps1` | 24 / 0 (`probe/regress_382_after.txt`) |
 
 Every probe run: registry restored, identical SHA-256; fixture removed; nothing left running.
+
+## Review
+
+### Review 1 (independent agent, refute-first) - 1 MUST, 1 SHOULD, 2 NOTE
+
+- **MUST M1 - another letter taken as the same name, a member overwritten.** The listing's comparison
+  in a case-insensitive listing (`SalDirStrCmpEx` = `StrICmpEx`, the code page's `CharLowerA` on UTF-8
+  bytes) folds 0x8C to 0x9C under cp1250 / cp1252: `Č` (C4 8C) == `Ĝ` (C4 9C). Archive folder `Ĝ`,
+  typed `x.7z\Č\` -> 383 packed into `Ĝ\n.txt`; with `Ĝ\n.txt` present an overwrite question came and
+  (answered Yes) the member `OLDCONTENT` was replaced. New with 383 (before, the typed text went
+  through unchanged). **Fixed**: `SalArcPathApplyResolved` takes a same-name callback and lays a
+  resolved component over the typed one only when the file system's rule (`SalNameEqualOrdinalCI` in
+  the core, `SalNameOrderCompareCI` in saltests) takes it as the same name; from the first component
+  that is not, the rest stays as typed (deeper names were resolved inside the wrong folder); the
+  resolution's shape (separators at the same places) is required. saltests +11 (C caron / G
+  circumflex direct and composed, a real case pair C caron / c caron taken, shape mismatch, a rule
+  that takes nothing). Probe rows FOLD / FOLDOW added (from the reviewer's `fold_probe.ps1`): typed
+  `\Č\` into an archive with `Ĝ` -> `Č\n.txt`; FOLDOW: `Ĝ\n.txt` keeps `OLDCONTENT`, no overwrite
+  question. Archive paths now listed with `-sccUTF-8`.
+- **SHOULD S1 - the PANEL rows did not prove the panel branch** (the committed negative control
+  disabled both branches). **Done**: branch control with only the own listing disabled
+  (`if (FALSE && listing == NULL && ...)`) -> **34 / 10** (`probe/result_negative_ownlisting.txt`):
+  PANEL passes on the panel's listing alone, the 10 rows without a panel fail.
+- NOTE N1 - non-ASCII case pairs (`Č` typed, archive `č`) are not equal by the listing's fold and are
+  still packed beside it (before and after) -> limit, spec *Assumptions*; Inbox
+  `typed-archive-target-non-ascii-case-makes-a-twin` (review:383).
+- NOTE N2 - an extra listing before a typed Copy / Move into an archive no panel shows (time for a
+  large archive; a header-encrypted 7z may ask for its password; a listing error may come before the
+  packer's error) -> accepted, the item's *Notes* name the read; limit in the closing report.
+- The reviewer's last remark: the panel route opens `Ĝ` for typed `Č` (273 / 382, older) -> Inbox
+  `archive-path-typed-opens-another-letter-equal-by-byte-fold` (review:383).
+
+After the fixes:
+
+| Check | Result |
+|---|---|
+| build | BUILD SUCCEEDED |
+| saltests | `30477 checks, 0 failed` |
+| saltests negative control (the same-name test disabled in the header) | 6 failed (the C caron / G circumflex checks and the rule that takes nothing) |
+| probe negative control (same binary), `-Only 7Z-FOLD,ZIP-FOLD` (matches FOLDOW too) | 4 / 4 (`probe/result_negative_samename.txt`: `Ĝ\n.txt`; FOLDOW: overwrite question) |
+| probe after | **44 / 0** (`probe/result_after.txt`) |
+| branch control (own listing off) | 34 / 10 |
+| restored build recheck `-Only 7Z-TYPED,ZIP-FOLD` | 6 / 0 |
+| encoding guard | TOTAL: 0 |
+
+Trap met: a Python replacement run from a Bash here-document wrote the C escapes of the new saltests
+lines as real bytes and turned the file's line ends into LF (`git checkout HEAD -- src/saltests/saltests.cpp`,
+redone with the editor).

@@ -1,6 +1,6 @@
-arctarget383_probe (feature 383) after
+arctarget383_probe (feature 383) after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-01 20:59; registry key existed True; ACP 1250
+Date    : 2026-11-01 21:28; registry key existed True; ACP 1250
 
 7Z-TYPED   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 7Z-TYPED   RUN    PASS        typed: \DOCS\; archive: [Docs, Docs\f.txt, Docs\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
@@ -20,6 +20,10 @@ Date    : 2026-11-01 20:59; registry key existed True; ACP 1250
 7Z-AMBIG   RUN    PASS        typed: \docs\; archive: [Docs, DOCS, Docs\f.txt, DOCS\g.txt, docs\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 7Z-PANEL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 7Z-PANEL   RUN    PASS        typed: \DOCS\; archive: [Docs, Docs\f.txt, Docs\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-FOLD    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-FOLD    RUN    PASS        typed: \\u010C\; archive: [\u010C\n.txt, \u011C, \u011C\f.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-FOLDOW  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-FOLDOW  RUN    PASS        typed: \\u010C\; archive: [\u010C\n.txt, \u011C, \u011C\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 ZIP-TYPED  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 ZIP-TYPED  RUN    PASS        typed: \DOCS\; archive: [Docs, Docs\f.txt, Docs\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
 ZIP-EXACT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -38,6 +42,10 @@ ZIP-AMBIG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0
 ZIP-AMBIG  RUN    PASS        typed: \docs\; archive: [Docs, DOCS, Docs\f.txt, DOCS\g.txt, docs\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
 ZIP-PANEL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 ZIP-PANEL  RUN    PASS        typed: \DOCS\; archive: [Docs, Docs\f.txt, Docs\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-FOLD   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-FOLD   RUN    PASS        typed: \\u010C\; archive: [\u010C\n.txt, \u011C, \u011C\f.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-FOLDOW END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-FOLDOW RUN    PASS        typed: \\u010C\; archive: [\u010C\n.txt, \u011C, \u011C\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
 Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
 
-Rows: PASS 36, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 44, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

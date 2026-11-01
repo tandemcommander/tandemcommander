@@ -1,0 +1,15 @@
+arctarget383_probe (feature 383) negative-samename-off
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 21:27; registry key existed True; ACP 1250
+
+7Z-FOLD    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-FOLD    RUN    FAIL        typed: \\u010C\; archive: [\u011C, \u011C\f.txt, \u011C\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-FOLDOW  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-FOLDOW  RUN    FAIL        typed: \\u010C\; archive: [\u011C, \u011C\n.txt]; src n.txt left: True; windows: ...| [Static id=184] 1, 01.11.2026, 21:27:37 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+ZIP-FOLD   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-FOLD   RUN    FAIL        typed: \\u010C\; archive: [\u011C, \u011C\f.txt, \u011C\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-FOLDOW END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-FOLDOW RUN    FAIL        typed: \\u010C\; archive: [\u011C, \u011C\n.txt]; src n.txt left: True; windows: ...| [Static id=184] 1, 01.11.2026, 21:27:56 | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 4, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

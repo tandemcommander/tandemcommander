@@ -17413,11 +17413,18 @@ static void TestArcPathResolveCase382()
 }
 
 // feature 383: the typed packing root of Copy / Move into an archive, as the core composes it -
-// resolved by SalArcPathResolveCase (382), laid over the typed root by SalArcPathApplyResolved
+// resolved by SalArcPathResolveCase (382), laid over the typed root by SalArcPathApplyResolved, a
+// component only when it is the same name by the file system's rule (the core passes
+// SalNameEqualOrdinalCI; here its header-only twin SalNameOrderCompareCI)
+static bool SameName383(const char* a, int aLen, const char* b, int bLen)
+{
+    return SalNameOrderCompareCI(a, aLen, b, bLen) == 0;
+}
+
 static std::string ApplyStr383(const char* typed, const char* resolved, bool* changed)
 {
     std::vector<char> buf(typed, typed + strlen(typed) + 1);
-    *changed = SalArcPathApplyResolved(buf.data(), resolved);
+    *changed = SalArcPathApplyResolved(buf.data(), resolved, SameName383);
     return std::string(buf.data());
 }
 
@@ -17428,7 +17435,7 @@ static std::string PackRoot383(const FakeDir252* root, const char* typed, bool c
     Access382 acc;
     acc.Access273::CaseSensitive = cs;
     if (SalArcPathResolveCase(root, rootBuf.data(), resolved.data(), outSize, acc) == SAL_ARCRESPELL_OK)
-        SalArcPathApplyResolved(rootBuf.data(), resolved.data());
+        SalArcPathApplyResolved(rootBuf.data(), resolved.data(), SameName383);
     return std::string(rootBuf.data());
 }
 
@@ -17451,10 +17458,28 @@ static void TestArcPathApplyResolved383()
     CHECK(ApplyStr383("", "", &ch) == "" && !ch);
     CHECK(ApplyStr383("\\", "", &ch) == "\\" && !ch);
     CHECK(ApplyStr383("\\\\", "", &ch) == "\\\\" && !ch);
-    CHECK(!SalArcPathApplyResolved(NULL, "Docs"));
+    CHECK(!SalArcPathApplyResolved(NULL, "Docs", SameName383));
     {
         char t[] = "DOCS\\";
-        CHECK(!SalArcPathApplyResolved(t, NULL) && strcmp(t, "DOCS\\") == 0);
+        CHECK(!SalArcPathApplyResolved(t, NULL, SameName383) && strcmp(t, "DOCS\\") == 0);
+    }
+    // review of 383: a resolved name that is ANOTHER name by the file system's rule is not taken - the
+    // listing's byte fold (cp1250 / cp1252: 0x8C -> 0x9C) takes C caron (C4 8C) and G circumflex
+    // (C4 9C) as equal; the typed C caron stays, and so do the components after it
+    CHECK(ApplyStr383("\xC4\x8C\\", "\xC4\x9C", &ch) == "\xC4\x8C\\" && !ch);
+    CHECK(ApplyStr383("\xC4\x8C\\SUB\\", "\xC4\x9C\\Sub", &ch) == "\xC4\x8C\\SUB\\" && !ch);
+    CHECK(ApplyStr383("DOCS\\\xC4\x8C\\SUB\\", "Docs\\\xC4\x9C\\Sub", &ch) == "Docs\\\xC4\x8C\\SUB\\" && ch);
+    // a real case pair of the file system's rule is taken (C4 8D = c caron)
+    CHECK(ApplyStr383("\xC4\x8C\\", "\xC4\x8D", &ch) == "\xC4\x8D\\" && ch);
+    // the resolution's shape is required: a separator elsewhere than in the typed root - nothing more taken
+    CHECK(ApplyStr383("AB\\CD\\", "A\\BCD", &ch) == "AB\\CD\\" && !ch);
+    CHECK(ApplyStr383("DOCS\\SUB", "Docs\\S\\B", &ch) == "Docs\\SUB" && ch);
+    // a rule that takes nothing as the same name keeps the typed root
+    {
+        char t[] = "DOCS\\";
+        CHECK(!SalArcPathApplyResolved(t, "Docs", [](const char*, int, const char*, int)
+                                       { return false; }) &&
+              strcmp(t, "DOCS\\") == 0);
     }
     // composed with the resolution over the probe's archives
     FakeDir252 sub, docs, root;
@@ -17486,6 +17511,15 @@ static void TestArcPathApplyResolved383()
     // a resolution that does not fit keeps the typed root (never cut)
     CHECK(PackRoot383(&root, "dOCS\\sUB\\", false, 8) == "dOCS\\sUB\\");
     CHECK(PackRoot383(&root, "dOCS\\sUB\\", false, 9) == "Docs\\Sub\\");
+    // review of 383 (FOLD): the folder G circumflex, typed C caron - whatever the listing's fold takes as
+    // equal, the typed name is kept; the exact name and a real case pair are re-spelled
+    FakeDir252 g, gr;
+    g.AddFile("f.txt");
+    gr.AddDir("\xC4\x9C", &g);
+    CHECK(PackRoot383(&gr, "\xC4\x8C\\", false) == "\xC4\x8C\\");
+    CHECK(PackRoot383(&gr, "\xC4\x8C\\", true) == "\xC4\x8C\\");
+    CHECK(PackRoot383(&gr, "\xC4\x9C\\", false) == "\xC4\x9C\\");
+    CHECK(PackRoot383(&root, "dOCS\\sUB\\", true) == "Docs\\Sub\\");
 }
 
 // feature 283: which masks of a mask group take the byte shortcut (salmaskopt.h)

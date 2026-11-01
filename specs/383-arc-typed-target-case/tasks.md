@@ -30,7 +30,7 @@
 
 **Independent test**: probe rows EXACT, TWINEX, AMBIG for 7Z and ZIP.
 
-- [X] T008 [US3] Add the row PANEL (right panel opened on the archive, typed `\DOCS\` - the panel's listing is reused) to specs/383-arc-typed-target-case/probe/arctarget383_probe.ps1, run the whole probe after the fix on the hidden desktop -> specs/383-arc-typed-target-case/probe/result_after.txt (PASS 36, FAIL 0)
+- [X] T008 [US3] Add the row PANEL (right panel opened on the archive, typed `\DOCS\` - the panel's listing is reused) to specs/383-arc-typed-target-case/probe/arctarget383_probe.ps1, run the whole probe after the fix on the hidden desktop -> specs/383-arc-typed-target-case/probe/result_after.txt (PASS 44, FAIL 0)
 - [X] T009 [US3] Negative control: the call of T005 disabled in a copy of the tree (worktree under the scratchpad, own build folder) -> the probe fails again (10 FAIL); record in specs/383-arc-typed-target-case/fix-log.md
 
 ## Phase 6: Polish & cross-cutting

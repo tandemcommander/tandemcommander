@@ -297,6 +297,8 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [A path typed into an archive opens another letter equal only by the byte fold](items/archive-path-typed-opens-another-letter-equal-by-byte-fold/desc.md) | bug | 4 | archives | review:383 | 2026-11-01 |
+| [A typed archive target in another case of a non-ASCII letter still makes a twin](items/typed-archive-target-non-ascii-case-makes-a-twin/desc.md) | bug | 3 | archives | review:383 | 2026-11-01 |
 
 ## Parked
 

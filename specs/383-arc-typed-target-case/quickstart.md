@@ -12,7 +12,7 @@ Prerequisites: `C:\Program Files\7-Zip\7z.exe` (fixtures), a Debug x64 build, no
    powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\383-arc-typed-target-case\probe\result_after_log.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\383-arc-typed-target-case\probe\arctarget383_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Label after -OutFile specs\383-arc-typed-target-case\probe\result_after.txt"
    ```
 
-   Expected: `Rows: PASS 36, FAIL 0` (18 RUN + 18 END rows); registry restored+identical True.
+   Expected: `Rows: PASS 44, FAIL 0` (22 RUN + 22 END rows); registry restored+identical True.
    Before the fix: PASS 22, FAIL 10 (`probe/result_before.txt`).
 4. Regressions: `specs\273-tar-case-root\probe\arccase273_probe.ps1` (12 / 0) and
    `specs\382-arc-case-twins-path\probe\arctwins382_probe.ps1` (24 / 0).

@@ -24,6 +24,11 @@
                                                   PASS = neither Docs\n.txt nor DOCS\n.txt
       PANEL    Docs\f.txt; the RIGHT panel shows the archive (its listing is reused); typed \DOCS\
                                                   PASS = Docs\n.txt, no path DOCS...
+      FOLD     <G circumflex>\f.txt; typed \<C caron>\ (equal only by the listing's cp1250 / cp1252 byte
+               fold - another letter; review of 383)  PASS = <C caron>\n.txt, no <G circumflex>\n.txt
+      FOLDOW   <G circumflex>\n.txt = 'OLDCONTENT'; typed \<C caron>\
+                                                  PASS = <C caron>\n.txt, the member keeps OLDCONTENT,
+                                                  no overwrite question
     Each row for 7Z and ZIP. MUST run through tools\run_on_hidden_desktop.ps1. Registry exported,
     restored and verified. Exit code = number of FAIL rows.
 
@@ -70,9 +75,20 @@ function Make-Archive([string]$Kind, [string]$Src, [string]$Dir) {
 function Arc-Paths([string]$Arc) {
     if (-not [IO.File]::Exists($Arc)) { return @('(no archive)') }
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
-    $l = & $SevenZip l -ba -slt $Arc 2>&1; $ErrorActionPreference = $old
+    $oe = [Console]::OutputEncoding
+    try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
+    $l = & $SevenZip l -ba -slt -sccUTF-8 $Arc 2>&1; $ErrorActionPreference = $old
+    try { [Console]::OutputEncoding = $oe } catch { }
     return @(@($l | ForEach-Object { "$_" } | Where-Object { $_ -match '^Path = ' } | ForEach-Object { ($_ -replace '^Path = ', '').Replace('/', '\') }) | Sort-Object)
 }
+# the content of one member (UTF-8 name), '' when missing
+function Arc-Member([string]$Arc, [string]$Member) {
+    $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    $o = & $SevenZip e -so -sccUTF-8 $Arc $Member 2>$null; $ErrorActionPreference = $old
+    return (($o | ForEach-Object { "$_" }) -join '|')
+}
+$CC = [string][char]0x010C   # C with caron (typed); UTF-8 C4 8C
+$GC = [string][char]0x011C   # G with circumflex (in the archive); UTF-8 C4 9C - equal to C caron by the cp1250 / cp1252 byte fold
 function Has([string[]]$a, [string]$p) { return ($a -ccontains $p) }
 function HasPrefix([string[]]$a, [string]$p) { return (@($a | Where-Object { $_.StartsWith($p, [StringComparison]::Ordinal) }).Count -gt 0) }
 
@@ -96,6 +112,8 @@ function Run-Case([string]$Kind, [string]$Case) {
                 Make-CsDir ($a + '\Docs'); WriteFile ($a + '\Docs\f.txt') 'F'
                 Make-CsDir ($a + '\DOCS'); WriteFile ($a + '\DOCS\g.txt') 'G'
             }
+            'FOLD' { Make-CsDir ($a + '\' + $GC); WriteFile ($a + '\' + $GC + '\f.txt') 'F' }
+            'FOLDOW' { Make-CsDir ($a + '\' + $GC); WriteFile ($a + '\' + $GC + '\n.txt') 'OLDCONTENT' }
             default { Make-CsDir ($a + '\Docs'); WriteFile ($a + '\Docs\f.txt') 'F' }
         }
         $arc = Make-Archive $Kind $a $d
@@ -106,6 +124,7 @@ function Run-Case([string]$Kind, [string]$Case) {
         'DEEP' { $typed = '\dOCS\sUB\' }
         'NEWTAIL' { $typed = '\DOCS\New\' }
         'AMBIG' { $typed = '\docs\' }
+        { $_ -eq 'FOLD' -or $_ -eq 'FOLDOW' } { $typed = '\' + $CC + '\' }
         default { $typed = '\DOCS\' }
     }
     if ($Case -eq 'MOVE') { $cmd = 728 }
@@ -138,10 +157,16 @@ function Run-Case([string]$Kind, [string]$Case) {
             'MOVE' { $ok = (Has $p 'Docs\n.txt') -and -not (HasPrefix $p 'DOCS') -and -not $srcLeft }
             'TWINEX' { $ok = (Has $p 'DOCS\n.txt') -and -not (Has $p 'Docs\n.txt') }
             'AMBIG' { $ok = -not (Has $p 'Docs\n.txt') -and -not (Has $p 'DOCS\n.txt') }
+            'FOLD' { $ok = (Has $p ($CC + '\n.txt')) -and -not (Has $p ($GC + '\n.txt')) }
+            'FOLDOW' {
+                $member = Arc-Member $arc ($GC + '\n.txt')
+                $msgs = 'member ' + $GC + '\n.txt: ' + $member + '; ' + $msgs
+                $ok = (Has $p ($CC + '\n.txt')) -and ($member -ceq 'OLDCONTENT') -and @($r.Messages | Where-Object { $_ -match 'Overwrite' }).Count -eq 0
+            }
             default { $ok = (Has $p 'Docs\n.txt') -and -not (HasPrefix $p 'DOCS') }
         }
         $ok = $ok -and (-not $fatal) -and ($back -ceq $target)
-        Row $name 'RUN' (V $ok) ("typed: {0}; archive: [{1}]; src n.txt left: {2}; windows: {3}{4}" -f $typed, ($p -join ', '), $srcLeft, (Tail $msgs 160), $(if ($fatal) { '; FATAL ' + $fatal } else { '' }))
+        Row $name 'RUN' (V $ok) ("typed: {0}; archive: [{1}]; src n.txt left: {2}; windows: {3}{4}" -f (Esc $typed), (Esc ($p -join ', ')), $srcLeft, (Tail $msgs 160), $(if ($fatal) { '; FATAL ' + $fatal } else { '' }))
     }
     catch { Row $name 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row $name $id $fatal $before } }
@@ -159,7 +184,7 @@ try {
     Out ("Date    : {0}; registry key existed {1}; ACP {2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [Drv098f]::GetACP())
     Out ''
     foreach ($k in @('7Z', 'ZIP')) {
-        foreach ($c in @('TYPED', 'EXACT', 'DEEP', 'NEWTAIL', 'MOVE', 'TWINS', 'TWINEX', 'AMBIG', 'PANEL')) { Run-Case $k $c }
+        foreach ($c in @('TYPED', 'EXACT', 'DEEP', 'NEWTAIL', 'MOVE', 'TWINS', 'TWINEX', 'AMBIG', 'PANEL', 'FOLD', 'FOLDOW')) { Run-Case $k $c }
     }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

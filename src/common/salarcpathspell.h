@@ -248,13 +248,25 @@ int SalArcPathResolveCase(TDirPtr root, const char* path, char* out, int outSize
 // SalArcPathResolveCase (what the panel opens for the same text) and lays the
 // result over the typed root: 'resolved' has no leading or trailing '\\', so it
 // replaces the part between them when its length equals that part's length
-// (the resolution keeps the length); anything else leaves 'typed' as it is.
+// (the resolution keeps the length of every component); anything else leaves
+// 'typed' as it is.
+//
+// The listing's comparison is the legacy byte fold of the code page, applied to
+// UTF-8 bytes - it takes some DIFFERENT letters as equal (cp1250 / cp1252 fold
+// 0x8C to 0x9C: "Č" C4 8C equals "Ĝ" C4 9C; review of 383 - files typed for a
+// new folder "Č" went into the existing "Ĝ" and replaced its member). The
+// packing root is a name the user typed, so a resolved component is taken only
+// when 'sameName' (the file system's rule, SalNameEqualOrdinalCI in the core)
+// takes it as the same name as the typed one; from the first component that is
+// not, the rest stays as typed (deeper names were resolved inside the wrong
+// folder). 'sameName(a, aLen, b, bLen)' returns non-zero for the same name.
 // Writes only inside 'typed' (never past its terminating NUL); returns true
 // when a byte changed.
 //
 //*****************************************************************************
 
-inline bool SalArcPathApplyResolved(char* typed, const char* resolved)
+template <class TSameName>
+bool SalArcPathApplyResolved(char* typed, const char* resolved, const TSameName& sameName)
 {
     if (typed == NULL || resolved == NULL)
         return false;
@@ -272,14 +284,34 @@ inline bool SalArcPathApplyResolved(char* typed, const char* resolved)
         resolvedLen++;
     if (resolvedLen != coreLen)
         return false;
+    char* core = typed + lead;
     bool changed = false;
-    for (int i = 0; i < coreLen; i++)
+    int pos = 0;
+    while (pos < coreLen)
     {
-        if (typed[lead + i] != resolved[i])
+        int end = pos;
+        while (end < coreLen && core[end] != '\\')
+            end++;
+        // the resolution keeps every component's length: its separator must stand at the same place
+        if (end < coreLen && resolved[end] != '\\')
+            break;
+        bool differs = false;
+        for (int i = pos; i < end; i++)
         {
-            typed[lead + i] = resolved[i];
+            if (resolved[i] == '\\')
+                return changed; // not the shape the resolution produces - nothing more taken
+            if (core[i] != resolved[i])
+                differs = true;
+        }
+        if (differs)
+        {
+            if (!sameName(core + pos, end - pos, resolved + pos, end - pos))
+                break; // another name by the file system's rule: kept as typed from here on
+            for (int i = pos; i < end; i++)
+                core[i] = resolved[i];
             changed = true;
         }
+        pos = end + 1;
     }
     return changed;
 }
