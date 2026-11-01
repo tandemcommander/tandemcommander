@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: the image information of an NRG image reads past its session table
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: measure:340
@@ -10,7 +10,7 @@ created: 2026-10-24
 updated: 2026-11-01
 verified: 2026-11-01 2c1c1279
 effort: S
-feature: -
+feature: 370
 related: []
 depends-on: []
 reason: -
@@ -59,3 +59,4 @@ are read as the unsigned numbers the image stores (feature 340's `SalIsoSessionT
 - 2026-10-24 — moved to Next position 10
 - 2026-11-01 — review:365 NOTE - since feature 365 an ETN2 chunk with more entries than its SINF count also makes more tracks than the sessions add up to (as ETNF already could), so the image information reads Session past its counts this way too
 - 2026-11-01 — verified at 2c1c1279: reproduced at 2c1c1279: probe iso370 - F3 on NRG with SINF 1 / none / multi_extra hits the Debug range check of Session[]; counts 0xFFFFFFFF print -1 and drop session 2
+- 2026-11-01 — run started, feature 370
