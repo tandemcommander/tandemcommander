@@ -1,7 +1,7 @@
 ---
 title: Every activation of the program blocks it ~150 ms in the idle clipboard check
 type: bug
-status: open
+status: in-progress
 severity: 3
 area: panels-ui
 source: measure:372
@@ -10,7 +10,7 @@ created: 2026-11-01
 updated: 2026-11-01
 verified: 2026-11-01 e1b1e2c9
 effort: M
-feature: -
+feature: 375
 related: []
 depends-on: []
 reason: -
@@ -57,3 +57,4 @@ feature 372 (row LOCAL) before and after.
 - 2026-11-01 — related item switching-back-to-tandem-commander-freezes-it-briefly-while done in feature 372
 - 2026-11-01 — moved to Next position 3
 - 2026-11-01 — verified at e1b1e2c9: reproduced at e1b1e2c9 only while another program holds the clipboard open: 140-142 ms at +15 ms per activation (IsTextOnClipboard retry 10 x Sleep(10)); clipboard free: max 2.3 ms
+- 2026-11-01 — run started, feature 375
