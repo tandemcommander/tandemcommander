@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5970,3 +5970,25 @@ a few early ones are out of sequence).
   negative control (strict rule) 10 failed; plug-in scan 17 -> 16; refute-first review: no MUST /
   SHOULD (reviewer's negative control with the old `uncab.spl`: 14 / 4), NOTE CESU-8 comment and vector
   fixed.
+- 382-arc-case-twins-path: a folder of a TAR or 7z archive opened by a path typed in another case
+  (`t.tar\DOCS` for `Docs` - command line, Change Directory, hot path) opened the archive's ROOT,
+  silently, when any other folder held case twins (`X\a.txt`, `X\A.txt`: the whole listing is
+  case-sensitive since 252) - a following Select All + F5 copied the whole root. Now
+  `ChangePathToArchive` resolves the typed path in a case-sensitive listing before its shortening
+  loop (`SalArcPathResolveCase`, `src/common/salarcpathspell.h`, saltests; core accessor
+  `CSalamanderDirectory::ResolvePathCase`): each leading component exactly first (first match, as
+  `GetFiles`), else by the ONLY folder equal ignoring case - accepted by the legacy fold `StrICmpEx`
+  (what 273 opens without twins), counted by `StrICmpEx` or `SalNameCompareOrdinalCI` and by the
+  folder's FILES (a file `DOCS` beside the folder `Docs` keeps `DOCS` focused - review SHOULD); the
+  rest stays as typed for the loop; before the "same path" check. Traps: the listing's comparison
+  rule (`SalDirStrCmp`, its consumers) is untouched - only the typed path is lenient; a Bash
+  here-document wrote a form feed and a tab into the probe (123's trap - fixed with a script file);
+  the legacy fold takes `Ú` / `Ê` (C3 9A / C3 8A, cp1250) as equal, so typed `\Ú` opens `Ê` -
+  as a twin-free archive already does since 273. Limits: two twins equal to the typed name (`Docs` /
+  `DOCS`, typed `docs`) still open the root silently (Inbox
+  `a-path-typed-into-an-archive-that-matches-two-case-twins`); covers every case-sensitive listing
+  (Unix-made ZIP, UnISO - not probed); the panel already inside the archive is proven by reading. From
+  backlog item `a-path-typed-in-another-case-into-an-archive-with-case-twins`. Probe
+  `arctwins382_probe.ps1` 14 / 6 -> 24 / 0 (FILEX row added by the review); negative control (the
+  loose step disabled) saltests 12 failed, probe 14 / 6; 273's probe 12 / 0, 252's 16 / 0; one
+  refute-first review (no MUST; SHOULD file twin fixed, SHOULD ambiguous case -> Inbox).

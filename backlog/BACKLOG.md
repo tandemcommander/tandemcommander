@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A path typed in another case into an archive with case twins elsewhere opens its root](items/a-path-typed-in-another-case-into-an-archive-with-case-twins/desc.md) | bug | 4 | archives | 382 |
 
 ## Next
 
