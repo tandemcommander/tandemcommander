@@ -1,0 +1,23 @@
+act_probe before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 12:15; registry key existed True; WSL path \\wsl.localhost\Ubuntu\ reachable True; limit 50 ms; 3 activations a row
+
+  waits (start ms after activation + length ms): LOCAL #0: 15+140LOCAL #1: 16+141LOCAL #2: 15+141
+LOCAL      ACTIVATE FAIL        left 'C:\Users\pavel\AppData\Local\Temp\tcact\local'; at rest max 5,7 ms; per activation max wait [ms]: 140,1, 141,4, 140,7; blocked (waits > 16 ms) [ms]: 140,1, 141,4, 140,7; title 'TACT - local - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+LOCAL      CURSOR NOT DRIVEN  the busy cursor of another process is not readable on the hidden desktop
+LOCAL      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+  waits (start ms after activation + length ms): WSLROOT #0: 15+141 219+395
+  waits (start ms after activation + length ms): WSLROOT #1: 15+141 220+392
+  waits (start ms after activation + length ms): WSLROOT #2: 16+139 218+394
+WSLROOT    ACTIVATE FAIL        left '\\wsl.localhost\Ubuntu\'; at rest max 0,3 ms; per activation max wait [ms]: 394,8, 391,9, 393,9; blocked (waits > 16 ms) [ms]: 535,9, 532,9, 533,1; title '...T - \\wsl.localhost\Ubuntu - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+WSLROOT    CURSOR NOT DRIVEN  the busy cursor of another process is not readable on the hidden desktop
+WSLROOT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+  waits (start ms after activation + length ms): WSLBIG #0: 15+140 217+408
+  waits (start ms after activation + length ms): WSLBIG #1: 15+142 220+410
+  waits (start ms after activation + length ms): WSLBIG #2: 15+141 217+410
+WSLBIG     ACTIVATE FAIL        left '\\wsl.localhost\Ubuntu\usr\bin'; at rest max 0,2 ms; per activation max wait [ms]: 408,4, 409,9, 409,8; blocked (waits > 16 ms) [ms]: 548, 551,8, 551,3; title 'TACT - bin - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+WSLBIG     CURSOR NOT DRIVEN  the busy cursor of another process is not readable on the hidden desktop
+WSLBIG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 555016158FE814604FA68BC40D77D7F3AC96301287B45AE535925CCFE57060F0 / after 555016158FE814604FA68BC40D77D7F3AC96301287B45AE535925CCFE57060F0
+
+Rows: PASS 3, FAIL 3, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True

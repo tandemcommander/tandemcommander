@@ -1,0 +1,16 @@
+act_probe before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 12:14; registry key existed True; WSL path \\wsl.localhost\Ubuntu\ reachable True; limit 50 ms; 5 activations a row
+
+LOCAL      ACTIVATE FAIL        left 'C:\Users\pavel\AppData\Local\Temp\tcact\local'; at rest max 5,4 ms; per activation max wait [ms]: 139,7, 139,5, 140,8, 141,2, 141; blocked (waits > 16 ms) [ms]: 139,7, 139,5, 140,8, 141,2, 141; title 'TACT - local - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+LOCAL      CURSOR NOT DRIVEN  the busy cursor of another process is not readable on the hidden desktop
+LOCAL      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+WSLROOT    ACTIVATE FAIL        left '\\wsl.localhost\Ubuntu\'; at rest max 0,2 ms; per activation max wait [ms]: 394,6, 407,8, 395,5, 406,5, 393,6; blocked (waits > 16 ms) [ms]: 536,4, 546,5, 535,8, 546,8, 534,6; title '...T - \\wsl.localhost\Ubuntu - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+WSLROOT    CURSOR NOT DRIVEN  the busy cursor of another process is not readable on the hidden desktop
+WSLROOT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+WSLBIG     ACTIVATE FAIL        left '\\wsl.localhost\Ubuntu\usr\bin'; at rest max 0,3 ms; per activation max wait [ms]: 413,1, 410,4, 413,7, 412,3, 408,4; blocked (waits > 16 ms) [ms]: 555,1, 551,8, 554,6, 554,3, 548,5; title 'TACT - bin - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+WSLBIG     CURSOR NOT DRIVEN  the busy cursor of another process is not readable on the hidden desktop
+WSLBIG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 555016158FE814604FA68BC40D77D7F3AC96301287B45AE535925CCFE57060F0 / after 555016158FE814604FA68BC40D77D7F3AC96301287B45AE535925CCFE57060F0
+
+Rows: PASS 3, FAIL 3, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True
