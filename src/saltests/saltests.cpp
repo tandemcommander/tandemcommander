@@ -22913,6 +22913,72 @@ static void TestIsoSessionTracks_340()
     }
 }
 
+// feature 370: the image information (CISOImage::DumpInfo, viewer.cpp) walks the sessions as the listing
+// does - the skeleton the probe iso370_probe.ps1 reads from the dump: "S<session> n<its tracks>" and
+// "T<track>" (1-based), then "U" and the tracks no session covers; "<out of range>" when a session index or
+// a track index outside the tables would be read
+static std::string Iso370Dump(const std::vector<unsigned int>& counts, int trackCount)
+{
+    std::string out;
+    auto add = [&out](const std::string& s)
+    {
+        if (!out.empty())
+            out += ' ';
+        out += s;
+    };
+    int first = 0;
+    for (size_t s = 0; s < counts.size(); s++)
+    {
+        bool fits;
+        int n = SalIsoSessionTracks(first, counts[s], trackCount, fits);
+        add("S" + std::to_string(s + 1) + " n" + std::to_string(n));
+        for (int t = first; t < first + n; t++)
+        {
+            if (t < 0 || t >= trackCount)
+                return "<out of range>";
+            add("T" + std::to_string(t + 1));
+        }
+        first += n;
+    }
+    if (first < 0 || first > trackCount)
+        return "<out of range>";
+    if (first < trackCount)
+    {
+        add("U");
+        for (int t = first; t < trackCount; t++)
+            add("T" + std::to_string(t + 1));
+    }
+    return out;
+}
+
+// feature 370: the image information of an NRG image never reads past its session table - the tracks no
+// session count covers are listed under their own line; counts read unsigned, at most the tracks left
+static void TestIsoSessionDump_370()
+{
+    struct
+    {
+        std::vector<unsigned int> counts;
+        int tracks;
+        const char* want;
+    } rows[] = {
+        {{1, 1}, 2, "S1 n1 T1 S2 n1 T2"},           // F-FIT (unchanged)
+        {{0, 2}, 2, "S1 n0 S2 n2 T1 T2"},           // F-ZERO (both tracks under session 1 before)
+        {{1, 2}, 2, "S1 n1 T1 S2 n1 T2"},           // S-OVER (session 2 "2 tracks" before)
+        {{1}, 2, "S1 n1 T1 U T2"},                  // S-SHORT (read Session[1] of 1 before)
+        {{}, 2, "U T1 T2"},                         // S-NONE (read Session[0] of 0 before)
+        {{0xFFFFFFFFu, 2}, 2, "S1 n2 T1 T2 S2 n0"}, // S-NEG (-1, session 2 missing before)
+        {{1, 0xFFFFFFFFu}, 2, "S1 n1 T1 S2 n1 T2"}, // S-NEGEND (-1 before)
+        {{1, 1}, 3, "S1 n1 T1 S2 n1 T2 U T3"},      // S-EXTRA3, 334's multi_extra (read Session[2] of 2)
+        {{1, 1, 1}, 2, "S1 n1 T1 S2 n1 T2 S3 n0"},  // more sessions than tracks
+        {{0x80000000u, 0x80000000u}, 3, "S1 n3 T1 T2 T3 S2 n0"},
+        {{}, 0, ""},          // nothing at all
+        {{2}, 0, "S1 n0"},    // a session over an empty track table
+        {{1}, 1, "S1 n1 T1"}, // a plain ISO image (one session of one track)
+    };
+    for (const auto& r : rows)
+        CHECK(Iso370Dump(r.counts, r.tracks) == r.want);
+}
+
 // feature 324: Undelete's same-volume guard (src/common/salsamevolume.h) - the core's answer, and
 // when it is an unsure "different", the volume serials of the nearest existing folders; unknown =
 // the same volume. The real-file part makes junctions under %TEMP% (no administrator rights).
@@ -24317,6 +24383,7 @@ int main(int argc, char** argv)
     TestIsoMultiExtent_368();
     TestHfsFileContent339();
     TestIsoSessionTracks_340();
+    TestIsoSessionDump_370();
     TestRenameInPlaceKey346();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);

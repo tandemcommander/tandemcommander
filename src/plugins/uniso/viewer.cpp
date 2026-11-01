@@ -140,6 +140,19 @@ getTrackTypeStr(CISOImage::Track* track)
     return buffer;
 }
 
+// one track of the image information: its number, type, size and label, then its file system's details
+void CISOImage::DumpTrackInfo(FILE* outStream, int track)
+{
+    CALL_STACK_MESSAGE2("CISOImage::DumpTrackInfo(, %d)", track);
+
+    DWORD size = (DWORD)((Tracks[track]->End - Tracks[track]->Start) / 1024);
+    fprintf(outStream, LoadStr(*Tracks[track]->GetLabel() ? IDS_INFO_TRACK_TYPE_SIZE_LABEL : IDS_INFO_TRACK_TYPE_SIZE), track + 1, getTrackTypeStr(Tracks[track]), size, Tracks[track]->GetLabel());
+    if (OpenTrack(track, TRUE))
+    {
+        Tracks[track]->FileSystem->DumpInfo(outStream);
+    }
+}
+
 BOOL CISOImage::DumpInfo(FILE* outStream)
 {
     CALL_STACK_MESSAGE1("CISOImage::DumpInfo( )");
@@ -148,27 +161,31 @@ BOOL CISOImage::DumpInfo(FILE* outStream)
     fprintf(outStream, LoadStr(*GetLabel() ? IDS_INFO_LABEL_LABEL : IDS_INFO_LABEL), GetLabel());
     fprintf(outStream, LoadStr(IDS_INFO_CNT_SESSIONS), Session.Count);
 
-    int session = 0;
-    int limit = 0;
-    int i;
-    for (i = 0; i < Tracks.Count; i++)
+    // feature 370: walk the sessions, not the tracks - each session gets the tracks feature 340's rule
+    // gives it (the image's count read unsigned, at most the tracks left: an NRG image's SINF counts may
+    // cover fewer or more tracks than its track table holds, or be missing); the tracks no session
+    // covers follow under a line of their own. Before, the walk over the tracks read Session[] past its
+    // end and took a count of 2^31 or more as a negative number.
+    int first = 0;
+    int session;
+    for (session = 0; session < Session.Count; session++)
     {
-        if (i == limit)
-        {
-            int trks = Session[session];
-            limit += Session[session];
-            session++;
-            fprintf(outStream, LoadStr(IDS_INFO_SESSION_NUM), session);
-            fprintf(outStream, LoadStr(IDS_INFO_CNT_TRACKS), trks);
-        }
-
-        DWORD size = (DWORD)((Tracks[i]->End - Tracks[i]->Start) / 1024);
-        fprintf(outStream, LoadStr(*Tracks[i]->GetLabel() ? IDS_INFO_TRACK_TYPE_SIZE_LABEL : IDS_INFO_TRACK_TYPE_SIZE), i + 1, getTrackTypeStr(Tracks[i]), size, Tracks[i]->GetLabel());
-        if (OpenTrack(i, TRUE))
-        {
-            Tracks[i]->FileSystem->DumpInfo(outStream);
-        }
-    } // for
+        bool fits;
+        int trackCount = SalIsoSessionTracks(first, (unsigned int)Session[session], Tracks.Count, fits);
+        fprintf(outStream, LoadStr(IDS_INFO_SESSION_NUM), session + 1);
+        fprintf(outStream, LoadStr(IDS_INFO_CNT_TRACKS), trackCount);
+        int i;
+        for (i = first; i < first + trackCount; i++)
+            DumpTrackInfo(outStream, i);
+        first += trackCount;
+    }
+    if (first < Tracks.Count)
+    {
+        fprintf(outStream, "%s", LoadStr(IDS_INFO_NO_SESSION));
+        int i;
+        for (i = first; i < Tracks.Count; i++)
+            DumpTrackInfo(outStream, i);
+    }
 
     /*
   fprintf(outStream, "Bootable:                      %s\n", Bootable ? LoadStr(IDS_YES): LoadStr(IDS_NO));

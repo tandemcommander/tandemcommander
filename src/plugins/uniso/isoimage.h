@@ -238,6 +238,8 @@ public:
                         CSalIsoWholeUnpackTally& tally, CSalIsoWrittenFiles& written);
 
     BOOL DumpInfo(FILE* outStream);
+    // feature 370: one track of DumpInfo's text (its number, type, size, label and file system details)
+    void DumpTrackInfo(FILE* outStream, int track);
 
     void SetLabel(const char* label);
     const char* GetLabel();

@@ -24,6 +24,8 @@
 // Feature 337: and so did a stream whose listed files read only part of it.
 // Feature 340: the session counts of an NRG image (one SINF chunk a session) are bounded by the
 // track table: a count above the tracks left read past it.
+// Feature 370: so are they in the image information (CISOImage::DumpInfo): it walks the sessions by the
+// same rule and lists the tracks no session count covers under a line of their own.
 // Feature 352: a CloneCD .ccd's rows, entry session numbers and session layout are checked before
 // the reader indexes its tables with them.
 // Feature 353: a CloneCD .img opened without its .ccd is listed by the plain detection (the volume at

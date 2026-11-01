@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\uniso\uniso.atp"
 TEXTVERSION,"1.37 (x64)"
-VERSION,"1,3,7,194"
+VERSION,"1,3,7,195"
 
 [TRANSLATION]
 LANGID,1038
@@ -111,4 +111,5 @@ COMMENT,"Magyar változat"
 1154,1,"  Sávok száma: %d\n"
 1155,1,"  Sáv: %d, %s, Méret: %d Kbájt\n"
 1156,1,"  Sáv: %d, %s, Méret: %d Kbájt - "%s"\n"
+1157,1,"\nSávok, amelyek egyik menethez sem tartoznak\n"
 

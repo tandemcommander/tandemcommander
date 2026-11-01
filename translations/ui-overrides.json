@@ -712,11 +712,13 @@
     ],
     "czech": {
       "IDS_ERR_HFS_BTREE_DAMAGED": "Soubor katalogu oddílu HFS Plus je poškozen.\\nOddíl nelze přečíst.",
-      "IDS_ERR_HFS_FILE_COMPRESSED": "Soubor je komprimován souborovým systémem HFS Plus, který není podporován.\\nSoubor nebude extrahován."
+      "IDS_ERR_HFS_FILE_COMPRESSED": "Soubor je komprimován souborovým systémem HFS Plus, který není podporován.\\nSoubor nebude extrahován.",
+      "IDS_INFO_NO_SESSION": "\\nStopy, které nepatří do žádné sekce\\n"
     },
     "slovak": {
       "IDS_ERR_HFS_BTREE_DAMAGED": "Súbor katalógu oddielu HFS Plus je poškodený.\\nOddiel sa nedá prečítať.",
-      "IDS_ERR_HFS_FILE_COMPRESSED": "Súbor je komprimovaný súborovým systémom HFS Plus, ktorý nie je podporovaný.\\nSúbor nebude extrahovaný."
+      "IDS_ERR_HFS_FILE_COMPRESSED": "Súbor je komprimovaný súborovým systémom HFS Plus, ktorý nie je podporovaný.\\nSúbor nebude extrahovaný.",
+      "IDS_INFO_NO_SESSION": "\\nStopy, ktoré nepatria do žiadnej sekcie\\n"
     },
     "german": {
       "IDS_ERR_HFS_BTREE_DAMAGED": "Die Katalogdatei der HFS-Plus-Partition ist beschädigt.\\nDie Partition kann nicht gelesen werden.",
@@ -734,7 +736,14 @@
       "IDS_ERR_HFS_BTREE_DAMAGED": "Het catalogusbestand van de HFS Plus-partitie is beschadigd.\\nDe partitie kan niet worden gelezen."
     },
     "hungarian": {
-      "IDS_ERR_HFS_BTREE_DAMAGED": "A HFS Plus partíció katalógusfájlja sérült.\\nA partíció nem olvasható."
+      "IDS_ERR_HFS_BTREE_DAMAGED": "A HFS Plus partíció katalógusfájlja sérült.\\nA partíció nem olvasható.",
+      "IDS_INFO_NO_SESSION": "\\nSávok, amelyek egyik menethez sem tartoznak\\n"
+    },
+    "_feature_370": [
+      "IDS_INFO_NO_SESSION: the module's terms of the image information (strings 1152-1156): cs/sk 'stopa' and 'sekce/sekcia' (DeepL 'skladby' / 'relace/relácia'), hu 'sáv' and 'menet' (DeepL 'számok' / 'munkamenet'), ro 'track' and 'sesiune' (DeepL 'piese')."
+    ],
+    "romanian": {
+      "IDS_INFO_NO_SESSION": "\\nTrack-uri care nu fac parte din nicio sesiune\\n"
     }
   }
 }
