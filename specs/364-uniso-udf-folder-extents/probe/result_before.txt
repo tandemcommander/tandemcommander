@@ -1,0 +1,45 @@
+iso364_probe (feature 364) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 01:43; registry key existed True
+
+seeds: big364.iso=1206272,nest.iso=1218560,rd.iso=368640,ud.iso=878592,udh.iso=878592,x_alen38.bin=878592,x_alen40.bin=878592,x_rootcont.bin=1206272,x_rootfrag.bin=1206272,x_rootsplit.bin=1206272,x_rootunrec.bin=1206272,x_subfrag.bin=1206272,x_subsplit.bin=1206272
+img364: rootsplit: the root (entry at sector 259, 8-byte descriptors): 2964 bytes at 3 -> 2048 at 3 + 916 of type 0 at 4
+img364: rootfrag: the root (entry at sector 259, 8-byte descriptors): 2964 bytes at 3 -> 2048 at 3 + 916 of type 0 at 89, block 4 copied to free block 89 and zeroed
+img364: subsplit: folder sub (entry at sector 262, 8-byte descriptors): 2920 bytes at 6 -> 2048 at 6 + 872 of type 0 at 7
+img364: subfrag: folder sub (entry at sector 262, 8-byte descriptors): 2920 bytes at 6 -> 2048 at 6 + 872 of type 0 at 89, block 7 copied to free block 89 and zeroed
+img364: rootcont: the root (entry at sector 259, 8-byte descriptors): 2964 bytes at 3 -> 2048 at 3 + 2048 of type 3 at 89
+img364: rootunrec: the root (entry at sector 259, 8-byte descriptors): 2964 bytes at 3 -> 2048 at 3 + 916 of type 1 at 4
+img364: alen38: folder a (entry at sector 261): extent 88 -> 38 bytes, Information Length kept 88
+img364: alen40: folder a (entry at sector 261): extent 88 -> 40 bytes, Information Length kept 88
+
+L-ROOTFRAG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-ROOTFRAG RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+L-SUBFRAG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-SUBFRAG  RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+L-ROOTCONT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-ROOTCONT RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+L-BIG      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-BIG      RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ROOTSPLIT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ROOTSPLIT RUN    FAIL        files 28 (want 80); missing 52: UDF (TC364)/sub/a_rather_long_file_name_00.txt, UDF (TC364)/sub/a_rather_long_file_name_01.txt, UDF (TC364)/sub/a_rather_long_file_name_02.txt, UDF (TC364)/sub/a_rather_long_file_name_03.txt, UDF (TC364)/sub/a_rather_long_file_name_04.txt, UDF (TC364)/sub/a_rather_long_file_name_05.txt, ...; files ok: False; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ROOTFRAG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ROOTFRAG RUN    FAIL        files 28 (want 80); missing 53: UDF (TC364)/sub/a_rather_long_file_name_00.txt, UDF (TC364)/sub/a_rather_long_file_name_01.txt, UDF (TC364)/sub/a_rather_long_file_name_02.txt, UDF (TC364)/sub/a_rather_long_file_name_03.txt, UDF (TC364)/sub/a_rather_long_file_name_04.txt, UDF (TC364)/sub/a_rather_long_file_name_05.txt, ...; extra 1: UDF (TC364)/a_rather_long_file_name_2; files ok: False; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-SUBSPLIT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SUBSPLIT RUN    FAIL        files 68 (want 80); missing 12: UDF (TC364)/sub/a_rather_long_file_name_28.txt, UDF (TC364)/sub/a_rather_long_file_name_29.txt, UDF (TC364)/sub/a_rather_long_file_name_30.txt, UDF (TC364)/sub/a_rather_long_file_name_31.txt, UDF (TC364)/sub/a_rather_long_file_name_32.txt, UDF (TC364)/sub/a_rather_long_file_name_33.txt, ...; files ok: False; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-SUBFRAG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SUBFRAG  RUN    FAIL        files 68 (want 80); missing 13: UDF (TC364)/sub/a_rather_long_file_name_27.txt, UDF (TC364)/sub/a_rather_long_file_name_28.txt, UDF (TC364)/sub/a_rather_long_file_name_29.txt, UDF (TC364)/sub/a_rather_long_file_name_30.txt, UDF (TC364)/sub/a_rather_long_file_name_31.txt, UDF (TC364)/sub/a_rather_long_file_name_32.txt, ...; extra 1: UDF (TC364)/sub/a_rather_long_file_name_2; files ok: False; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ROOTCONT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ROOTCONT RUN    FAIL        files 28 (want 28); files ok: True; image kept: False (want True); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ROOTUNREC END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ROOTUNREC RUN    FAIL        files 28 (want 28); files ok: True; image kept: False (want True); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-BIG      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-BIG      RUN    PASS        files 80 (want 80); files ok: True; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ALEN38   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ALEN38   RUN    FAIL        files 5 (want 5); files ok: True; image kept: False (want True); windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-ALEN40   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ALEN40   RUN    FAIL        files 5 (want 5); files ok: True; image kept: False (want True); windows ok (none): True; timed out: False; fatal: ; windows: no window
+C-UD       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-UD       RUN    PASS        files 6 (want 6); files ok: True; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 20, FAIL 8, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
