@@ -1,7 +1,7 @@
 ---
 title: A typed archive target in another case of a non-ASCII letter still makes a twin
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:383
@@ -41,3 +41,4 @@ Severity 3: nothing is lost; the archive gets two folders differing in case, as 
 ## Log
 
 - 2026-11-01 — created (source review:383)
+- 2026-11-01 — moved to Next position 90

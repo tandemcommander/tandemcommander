@@ -1,7 +1,7 @@
 ---
 title: A path typed into an archive opens another letter equal only by the byte fold
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:383
@@ -41,3 +41,4 @@ Differs from the rejected B-2 item (`b2-systemic-name-comparison-not-implemented
 ## Log
 
 - 2026-11-01 — created (source review:383)
+- 2026-11-01 — moved to Next position 31
