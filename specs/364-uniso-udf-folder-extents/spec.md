@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "Backlog item iso-plug-in-a-udf-folder-stored-in-more-than-one-extent-is - implement exactly what it describes." From backlog item iso-plug-in-a-udf-folder-stored-in-more-than-one-extent-is.
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: Walk every extent, or only mark a folder read short? → A: both - every recorded extent is walked (up to 32), and a folder still read short of its Information Length marks the listing incomplete (autonomous run: item - *Expected* allows either; walking keeps the user's files, the mark covers what cannot be walked)
+- Q: Does a folder marked incomplete show a message box? → A: no - silent, as feature 330's unreadable sub-folder and 362's folder without data; no new UI string (autonomous run: conservative)
+- Q: Are descriptors continued in an allocation extent (type 3) followed? → A: no - not followed (files do not follow them either); the folder is marked when read short (autonomous run: conservative; item Notes call it "the same case")
+- Q: Is the walk cut to the Information Length when the extents are longer? → A: no - the existing walk over the extents' length is kept; cutting could hide entries of a folder whose entry understates its size without a mark (autonomous run: conservative)
+- Q: Where does the decision live? → A: a pure function in `src/common/salisoudfentry.h` (features 361 - 363's rules of the same reader) with `saltests` checks (autonomous run: rule, stop-rules §2.5)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A fragmented folder is listed and unpacked whole (Priority: P1)
