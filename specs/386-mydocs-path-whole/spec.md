@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item my-documents-drive-opens-a-cut-path-when-documents-needs - implement exactly what it describes." From backlog item my-documents-drive-opens-a-cut-path-when-documents-needs.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: When the Documents path exists but does not fit the asking part's buffer, is the Desktop used instead or is the request refused? → A: refused ("not available"); the Desktop is used only when Documents has no file-system path (autonomous run: item)
+- Q: Should the rescue path ("If the path is inaccessible, go to Documents") be widened to hold a long Documents path? → A: no; it keeps its 260-byte limit and takes its existing fallback (widening touches the settings layout and the plug-in configuration value, maintainer-owned) (autonomous run: conservative)
+- Q: Should the Documents drive and Ctrl+; show a message when the Documents path is refused? → A: no new message; they hold every path the system reports, so a refusal cannot occur there, and on any other failure they keep their existing silent route (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The Documents drive opens the Documents folder (Priority: P1)
