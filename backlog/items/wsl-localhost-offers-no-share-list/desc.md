@@ -1,16 +1,16 @@
 ---
 title: Server path of WSL (wsl.localhost) offers no share list: error 53 skips the provider fallback
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: panels-ui
 source: manual
 who: agent
 created: 2026-11-01
 updated: 2026-11-01
-verified: -
+verified: 2026-11-01 5b62b037
 effort: S
-feature: -
+feature: 373
 related: [real-file-server-person-rows, decide-ship-network-plugin-nethood]
 depends-on: []
 reason: -
@@ -49,3 +49,5 @@ Severity 4: a function does not work, and a workaround exists (type `\\wsl.local
 - 2026-11-01 — moved to Next position 34
 - 2026-11-01 — moved to Next position 2
 - 2026-11-01 — Notes: the NAS route is measured only against the local server, not a real NAS
+- 2026-11-01 — verified at 5b62b037: probe at 5b62b037: `\\wsl.localhost`, `\\wsl$` and Backspace at `\\wsl.localhost\Ubuntu` show error (53); NetShareEnum 53, WNetOpenEnumW lists the distros
+- 2026-11-01 — run started, feature 373
