@@ -7,8 +7,8 @@ area: archives
 source: review:335
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
-verified: -
+updated: 2026-11-01
+verified: 2026-11-01 308896b0
 effort: M
 feature: -
 related: []
@@ -54,3 +54,4 @@ files unchanged.
 
 - 2026-10-24 — created (source review:335)
 - 2026-10-24 — moved to Next position 9
+- 2026-11-01 — verified at 308896b0: reproduced at 308896b0: real vcdimager VCD (CCD, NRG) and SVCD AVSEQ01 extract as the 2048-byte cut; source MPEG only in 2324-byte payloads; image deleted
