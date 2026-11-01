@@ -44,3 +44,11 @@ LOC (panel in `big`), BACK (Backspace -> parent, cursor on `big`) and END pass.
   share it. Other path changes during a search (`QFEndAtPathChange` sites: Alt+Left history,
   drive menu, Change Directory, hot paths, ...) go through `EndQuickSearch` too and may draw the
   parent the same way; outside the item -> Inbox item.
+
+## Analyze (speckit-analyze)
+
+- Round 1: 0 CRITICAL, 0 HIGH; MEDIUM C1 (FR-004 check implicit) and C2 (SC-003 no task) fixed
+  in T007; LOW U1 (a paint during the read is not driven - covered by design: the layout-only
+  mode sets the list box's item count, top index and offset for the whole listing, so any paint
+  draws a consistent whole listing) and U2 (double click / Ctrl+PageDown not driven - they reach
+  the same `Execute`) accepted here.

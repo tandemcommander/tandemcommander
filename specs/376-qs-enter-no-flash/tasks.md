@@ -21,7 +21,7 @@ rule (no pure decision changes).
 
 - [ ] T005 [US1] In src/fileswn0.cpp: `EndQuickSearch(deferPaint)` passes it to `QFEndView`; `QFEndView(repaint, deferPaint)` with a filtered view and `deferPaint` lays out without drawing (`RefreshListBox(-1, -1, FocusedIndex, TRUE, FALSE, FALSE)`), sets `QFPaintDeferred` and leaves `QFUpdateIndication` to the finish; add `QFFinishDeferredPaint()` (draws the laid-out listing once if still owed, then `QFUpdateIndication()`)
 - [ ] T006 [US1] In `CFilesWindow::Execute` in src/fileswn2.cpp: a scope guard declared before the filtered-view block, armed when that block calls `EndQuickSearch(TRUE)`; its destructor calls `QFFinishDeferredPaint()` on every return; update the 244 comment there
-- [ ] T007 [US1] Build (`.\build.cmd`) and run the probe (quickstart V1) -> probe/result_after.txt; FLASH PASS in every round
+- [ ] T007 [US1] Build (`.\build.cmd`) and run the probe (quickstart V1) -> probe/result_after.txt; FLASH PASS in every round; the settled class `NEW` (>= 70 % normal background, < 5 % tint) is the FR-004 check that the search ended; compare the start of the `NEW` run with the before-run (307-309 ms) for SC-003
 
 ## Phase 4: User Story 2 - everything around the opening stays (P2)
 
