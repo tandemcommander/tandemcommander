@@ -39,6 +39,34 @@ one guard: the item the run works on must not change on `main` meanwhile. That i
 this feature builds on: changes made during a run land on the main line and the run picks them up
 at its end; the running item is the only thing that stays frozen.
 
+## Clarifications
+
+### Session 2026-11-01
+
+The maintainer is away (the request says so); each question was answered with the recommended
+option, and the answer is recorded here so the maintainer can overrule it in the closing review.
+
+- Q: Where do changes made while the loop is alive but no run holds the lock go - committed at
+  once, or held in the tray while the loop waits for the maintainer's commit? → A: committed at
+  once (one commit per change), like changes made during a run; the loop then never waits on the
+  app's uncommitted files, and "while the loop lives, changes are committed at once" is one rule
+  the maintainer can remember. The tray behaviour stays for the time no loop lives.
+- Q: Does a typed position or "Move to the top" write a log line into the item (a move) or change
+  the section's order silently (a reorder, as a drag does)? → A: a reorder without a log line: a
+  position is an ordering act of the maintainer, not an event of the item; the commit message
+  records it.
+- Q: What may Claude do in a conversation about an item - read files only, read files and the
+  repository's history, or everything with the maintainer approving each command? → A: read files
+  and the repository's history (read-only history commands), nothing that changes state: the
+  conversation is for understanding an item, and the backlog is changed only through the app's own
+  controls.
+- Q: When a change during a run is refused because it would alter the running item, should the
+  app queue it to apply after the run ends? → A: no; it refuses with the reason and the maintainer
+  repeats it after the run (a queue would act later on a backlog the maintainer no longer sees).
+- Q: Should the backlog be editable while the working tree is on another branch with no run (the
+  maintainer's own manual work)? → A: no; read-only with the reason, as today: the maintainer
+  chose to work there and a commit on the main line under them would surprise.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Change the backlog while a run is in progress (Priority: P1)
