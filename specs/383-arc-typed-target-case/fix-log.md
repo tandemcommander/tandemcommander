@@ -133,3 +133,19 @@ After the fixes:
 Trap met: a Python replacement run from a Bash here-document wrote the C escapes of the new saltests
 lines as real bytes and turned the file's line ends into LF (`git checkout HEAD -- src/saltests/saltests.cpp`,
 redone with the editor).
+
+### Review 2 (independent agent, refute-first) - no MUST, no SHOULD, 3 NOTE
+
+Re-ran saltests (30477 / 0) and a scratch copy of the probe with own rows: 52 / 0 at HEAD. Data
+safety of the new collision (typed `\DOCS\` now lands in an existing `Docs` holding `n.txt`): Copy
+shows "Confirm File Overwrite" first (OWQ); Move answered Cancel / Skip there keeps the member's
+OLDCONTENT and the source `n.txt` (OWCANCEL / OWSKIP / OWSKIPEX 12 / 0). Callers enumerated (three
+`PackCompress` sites); the own listing is built as the other `PackList` callers do; `packRoot` fits.
+- NOTE N1 - a plain F5 into an archive panel (the default target is the panel's own path) also runs
+  the re-spelling; it reuses the panel's listing, a second listing only when the archive changed
+  since it was listed - widens the accepted extra-listing limit. Accepted (closing report).
+- NOTE N2 - the comment of `ArchiveCanBeListed383` said "without a message", but `PackList` can still
+  report (an archive name too long for an external lister or an older plug-in) - comment corrected.
+- NOTE N3 - a cancelled listing (password prompt) packs with the typed spelling - by design (FR-005).
+
+No MUST -> no third review.

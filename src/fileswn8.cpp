@@ -179,8 +179,11 @@ void PluginFSConvertPathToExternal(char* path)
     }
 }
 
-// feature 383: can the archive be listed without a message? - the conditions PackList checks before
-// it lists (a plug-in with panel view, or an external archiver with a list command and parser)
+// feature 383: does the archive's format list at all? - the conditions PackList checks before it
+// lists (a plug-in with panel view, or an external archiver with a list command and parser); a format
+// that cannot list is not tried (no message). PackList itself may still report, e.g. an archive name
+// too long for an external lister or an older plug-in (review 2 of 383) - then the packer reports too
+// and the typed root is used.
 static BOOL ArchiveCanBeListed383(const char* archive)
 {
     int format = PackerFormatConfig.PackIsArchive(archive);
