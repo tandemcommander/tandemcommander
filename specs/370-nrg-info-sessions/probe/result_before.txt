@@ -1,0 +1,142 @@
+iso370_probe (feature 370) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 07:05; registry key existed True
+
+seeds: extra3.nrg,fit.nrg,neg.nrg,negend.nrg,none.nrg,over.nrg,s1.iso,s2.iso,s2.lba,short.nrg,zero.nrg
+img: fit: 720988 bytes, two tracks, SINF counts 0x1, 0x1
+img: zero: 720988 bytes, two tracks, SINF counts 0x0, 0x2
+img: over: 720988 bytes, two tracks, SINF counts 0x1, 0x2
+img: short: 720976 bytes, two tracks, SINF counts 0x1
+img: none: 720964 bytes, two tracks, SINF counts none
+img: neg: 720988 bytes, two tracks, SINF counts 0xFFFFFFFF, 0x2
+img: negend: 720988 bytes, two tracks, SINF counts 0x1, 0xFFFFFFFF
+img: multi_extra: 1426608 bytes, track 2 from sector 176; a third (audio) track that no session count covers
+
+F-FIT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+F-FIT      RUN    PASS        skeleton [N2 S1 n1 T1 S2 n1 T2] (want [N2 S1 n1 T1 S2 n1 T2]); dumps found 1; viewer: C:\Users\pavel\AppData\Local\Temp\tc370\F-FIT\src\fit.nrg - UnISO; fatal: 
+    | Information on image
+    | 
+    | Number of sessions: 2
+    | Session 1
+    |   Number of tracks: 1
+    |   Track: 1, ISO 9660 (Mode 1), Size: 352 KBytes
+    |     System Identifier:        LINUX
+    |     Volume:                   TC334A
+    |     Application:              GENISOIMAGE ISO 9660/HFS FILESYSTEM CREATOR (C) 1993 E.YOUNGDALE (C) 1997-2006 J.PEARSON/J.SCHILLING (C) 2006-2007 CDRKIT TEAM
+    |     Volume Creation Date:     01.11.2026 7:05:51
+    |     Volume Modification Date: 01.11.2026 7:05:51
+    |     Volume Effective Date:    01.11.2026 7:05:51
+    | 
+    | Session 2
+    |   Number of tracks: 1
+    |   Track: 2, ISO 9660 (Mode 1), Size: 352 KBytes
+    |     System Identifier:        LINUX
+    |     Volume:                   TC334B
+    |     Application:              GENISOIMAGE ISO 9660/HFS FILESYSTEM CREATOR (C) 1993 E.YOUNGDALE (C) 1997-2006 J.PEARSON/J.SCHILLING (C) 2006-2007 CDRKIT TEAM
+    |     Volume Creation Date:     01.11.2026 7:05:51
+    |     Volume Modification Date: 01.11.2026 7:05:51
+    |     Volume Effective Date:    01.11.2026 7:05:51
+    | 
+F-ZERO     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+F-ZERO     RUN    FAIL        skeleton [N2 S1 n0 T1 T2] (want [N2 S1 n0 S2 n2 T1 T2]); dumps found 1; viewer: C:\Users\pavel\AppData\Local\Temp\tc370\F-ZERO\src\zero.nrg - UnISO; fatal: 
+    | Information on image
+    | 
+    | Number of sessions: 2
+    | Session 1
+    |   Number of tracks: 0
+    |   Track: 1, ISO 9660 (Mode 1), Size: 352 KBytes
+    |     System Identifier:        LINUX
+    |     Volume:                   TC334A
+    |     Application:              GENISOIMAGE ISO 9660/HFS FILESYSTEM CREATOR (C) 1993 E.YOUNGDALE (C) 1997-2006 J.PEARSON/J.SCHILLING (C) 2006-2007 CDRKIT TEAM
+    |     Volume Creation Date:     01.11.2026 7:05:51
+    |     Volume Modification Date: 01.11.2026 7:05:51
+    |     Volume Effective Date:    01.11.2026 7:05:51
+    |   Track: 2, ISO 9660 (Mode 1), Size: 352 KBytes
+    |     System Identifier:        LINUX
+    |     Volume:                   TC334B
+    |     Application:              GENISOIMAGE ISO 9660/HFS FILESYSTEM CREATOR (C) 1993 E.YOUNGDALE (C) 1997-2006 J.PEARSON/J.SCHILLING (C) 2006-2007 CDRKIT TEAM
+    |     Volume Creation Date:     01.11.2026 7:05:51
+    |     Volume Modification Date: 01.11.2026 7:05:51
+    |     Volume Effective Date:    01.11.2026 7:05:51
+    | 
+S-OVER     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-OVER     RUN    FAIL        skeleton [N2 S1 n1 T1 S2 n2 T2] (want [N2 S1 n1 T1 S2 n1 T2]); dumps found 1; viewer: C:\Users\pavel\AppData\Local\Temp\tc370\S-OVER\src\over.nrg - UnISO; fatal: 
+    | Information on image
+    | 
+    | Number of sessions: 2
+    | Session 1
+    |   Number of tracks: 1
+    |   Track: 1, ISO 9660 (Mode 1), Size: 352 KBytes
+    |     System Identifier:        LINUX
+    |     Volume:                   TC334A
+    |     Application:              GENISOIMAGE ISO 9660/HFS FILESYSTEM CREATOR (C) 1993 E.YOUNGDALE (C) 1997-2006 J.PEARSON/J.SCHILLING (C) 2006-2007 CDRKIT TEAM
+    |     Volume Creation Date:     01.11.2026 7:05:51
+    |     Volume Modification Date: 01.11.2026 7:05:51
+    |     Volume Effective Date:    01.11.2026 7:05:51
+    | 
+    | Session 2
+    |   Number of tracks: 2
+    |   Track: 2, ISO 9660 (Mode 1), Size: 352 KBytes
+    |     System Identifier:        LINUX
+    |     Volume:                   TC334B
+    |     Application:              GENISOIMAGE ISO 9660/HFS FILESYSTEM CREATOR (C) 1993 E.YOUNGDALE (C) 1997-2006 J.PEARSON/J.SCHILLING (C) 2006-2007 CDRKIT TEAM
+    |     Volume Creation Date:     01.11.2026 7:05:51
+    |     Volume Modification Date: 01.11.2026 7:05:51
+    |     Volume Effective Date:    01.11.2026 7:05:51
+    | 
+S-SHORT    END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0; FATAL: [#32770 'Debug Message'] [Button id=2] OK | [Static id=65535] TRACE_C message received! File: E:\Projects\tandemcommander\src\plugins\shared\arraylt.h Line: 115 Message: Index is out of range (index = 1, Count = 1). TRACE_C message means that fatal error has occured. Application will be crashed by "access violation" exception after clicking OK. Please send us bug report to help us fix this problem. If you want to copy this message to clipboard, use Ctrl+C key.
+S-SHORT    RUN    FAIL        skeleton [<no dump>] (want [N1 S1 n1 T1 U T2]); dumps found 0; viewer: Debug Message; fatal: ...sage: Index is out of range (index = 1, Count = 1). TRACE_C message means that fatal error has occured. Application will be crashed by "access violation" exception after clicking OK. Please send us bug report to help us fix this problem. If you want to copy this message to clipboard, use Ctrl+C key.
+S-NONE     END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0; FATAL: [#32770 'Debug Message'] [Button id=2] OK | [Static id=65535] TRACE_C message received! File: E:\Projects\tandemcommander\src\plugins\shared\arraylt.h Line: 115 Message: Index is out of range (index = 0, Count = 0). TRACE_C message means that fatal error has occured. Application will be crashed by "access violation" exception after clicking OK. Please send us bug report to help us fix this problem. If you want to copy this message to clipboard, use Ctrl+C key.
+S-NONE     RUN    FAIL        skeleton [<no dump>] (want [N0 U T1 T2]); dumps found 0; viewer: Debug Message; fatal: ...sage: Index is out of range (index = 0, Count = 0). TRACE_C message means that fatal error has occured. Application will be crashed by "access violation" exception after clicking OK. Please send us bug report to help us fix this problem. If you want to copy this message to clipboard, use Ctrl+C key.
+S-NEG      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-NEG      RUN    FAIL        skeleton [N2 S1 n-1 T1 T2] (want [N2 S1 n2 T1 T2 S2 n0]); dumps found 1; viewer: C:\Users\pavel\AppData\Local\Temp\tc370\S-NEG\src\neg.nrg - UnISO; fatal: 
+    | Information on image
+    | 
+    | Number of sessions: 2
+    | Session 1
+    |   Number of tracks: -1
+    |   Track: 1, ISO 9660 (Mode 1), Size: 352 KBytes
+    |     System Identifier:        LINUX
+    |     Volume:                   TC334A
+    |     Application:              GENISOIMAGE ISO 9660/HFS FILESYSTEM CREATOR (C) 1993 E.YOUNGDALE (C) 1997-2006 J.PEARSON/J.SCHILLING (C) 2006-2007 CDRKIT TEAM
+    |     Volume Creation Date:     01.11.2026 7:05:51
+    |     Volume Modification Date: 01.11.2026 7:05:51
+    |     Volume Effective Date:    01.11.2026 7:05:51
+    |   Track: 2, ISO 9660 (Mode 1), Size: 352 KBytes
+    |     System Identifier:        LINUX
+    |     Volume:                   TC334B
+    |     Application:              GENISOIMAGE ISO 9660/HFS FILESYSTEM CREATOR (C) 1993 E.YOUNGDALE (C) 1997-2006 J.PEARSON/J.SCHILLING (C) 2006-2007 CDRKIT TEAM
+    |     Volume Creation Date:     01.11.2026 7:05:51
+    |     Volume Modification Date: 01.11.2026 7:05:51
+    |     Volume Effective Date:    01.11.2026 7:05:51
+    | 
+S-NEGEND   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-NEGEND   RUN    FAIL        skeleton [N2 S1 n1 T1 S2 n-1 T2] (want [N2 S1 n1 T1 S2 n1 T2]); dumps found 1; viewer: C:\Users\pavel\AppData\Local\Temp\tc370\S-NEGEND\src\negend.nrg - UnISO; fatal: 
+    | Information on image
+    | 
+    | Number of sessions: 2
+    | Session 1
+    |   Number of tracks: 1
+    |   Track: 1, ISO 9660 (Mode 1), Size: 352 KBytes
+    |     System Identifier:        LINUX
+    |     Volume:                   TC334A
+    |     Application:              GENISOIMAGE ISO 9660/HFS FILESYSTEM CREATOR (C) 1993 E.YOUNGDALE (C) 1997-2006 J.PEARSON/J.SCHILLING (C) 2006-2007 CDRKIT TEAM
+    |     Volume Creation Date:     01.11.2026 7:05:51
+    |     Volume Modification Date: 01.11.2026 7:05:51
+    |     Volume Effective Date:    01.11.2026 7:05:51
+    | 
+    | Session 2
+    |   Number of tracks: -1
+    |   Track: 2, ISO 9660 (Mode 1), Size: 352 KBytes
+    |     System Identifier:        LINUX
+    |     Volume:                   TC334B
+    |     Application:              GENISOIMAGE ISO 9660/HFS FILESYSTEM CREATOR (C) 1993 E.YOUNGDALE (C) 1997-2006 J.PEARSON/J.SCHILLING (C) 2006-2007 CDRKIT TEAM
+    |     Volume Creation Date:     01.11.2026 7:05:51
+    |     Volume Modification Date: 01.11.2026 7:05:51
+    |     Volume Effective Date:    01.11.2026 7:05:51
+    | 
+S-EXTRA3   END    FAIL        exit ended by the probe; alive True; WM_NULL False; stray 0; new reports 0; FATAL: [#32770 'Debug Message'] [Button id=2] OK | [Static id=65535] TRACE_C message received! File: E:\Projects\tandemcommander\src\plugins\shared\arraylt.h Line: 115 Message: Index is out of range (index = 2, Count = 2). TRACE_C message means that fatal error has occured. Application will be crashed by "access violation" exception after clicking OK. Please send us bug report to help us fix this problem. If you want to copy this message to clipboard, use Ctrl+C key.
+S-EXTRA3   RUN    FAIL        skeleton [<no dump>] (want [N2 S1 n1 T1 S2 n1 T2 U T3]); dumps found 0; viewer: Debug Message; fatal: ...sage: Index is out of range (index = 2, Count = 2). TRACE_C message means that fatal error has occured. Application will be crashed by "access violation" exception after clicking OK. Please send us bug report to help us fix this problem. If you want to copy this message to clipboard, use Ctrl+C key.
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 6, FAIL 10, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
