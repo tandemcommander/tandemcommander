@@ -61,6 +61,10 @@ Open after it: CheckVer `dialogs.cpp` row 3 (review 2 SHOULD 1) and the archive-
   only when the input can hold an unpaired surrogate and the result is later used as a name; a
   text that is only shown, or valid Unicode by construction, is a false positive (autonomous run:
   recommended - feature 066).
+- Q: Do the re-judged archive-name defects (TAR, UnCAB, UnMIME) get one item for the class or one
+  per plug-in? → A: one item per plug-in, each naming the shared cause (the 3-byte form written by
+  the vendored 7-Zip converter); CheckVer row 3 gets its own item too (autonomous run: item -
+  *Approach* "split real defects per plug-in into features").
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -115,8 +119,9 @@ reported; remove it.
   (slug of a backlog item) or *fixed* (the feature that removed it).
 - **FR-002**: Every *false positive* site MUST carry `// encoding-check: allow <rule> - <reason>`
   on the reported line or the line above, so the scan no longer reports it.
-- **FR-003**: Every *real defect* MUST have a backlog item naming its sites, the user-visible
-  effect, whether the plug-in is shipped and a fix direction; its sites stay unannotated.
+- **FR-003**: Every *real defect* MUST have a backlog item (one per plug-in and defect class)
+  naming its sites, the user-visible effect, whether the plug-in is shipped and a fix direction; its
+  sites stay unannotated.
 - **FR-004**: Source changes MUST be comment lines only: no behaviour of a plug-in or the core
   changes.
 - **FR-005**: The core scan (`check_encoding.py --strict`) MUST stay `TOTAL: 0`; `--plugins` MUST
