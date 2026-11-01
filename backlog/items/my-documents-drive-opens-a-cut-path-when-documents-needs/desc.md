@@ -1,7 +1,7 @@
 ---
 title: My Documents drive opens a cut path when Documents needs more than 259 bytes
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: long-paths
 source: review:286
@@ -10,7 +10,7 @@ created: 2026-10-21
 updated: 2026-11-02
 verified: 2026-11-02 10eb1994
 effort: S
-feature: -
+feature: 386
 related: []
 depends-on: []
 reason: -
@@ -55,3 +55,4 @@ My Documents drive. `buff` itself (`2 * MAX_PATH` bytes) also limits the long-pa
 - 2026-10-21 — created (source review:286)
 - 2026-10-21 — moved to Next position 18
 - 2026-11-02 — verified at 10eb1994: still present at 10eb1994: GetMyDocumentsOrDesktopPath lstrcpyn(path, buff, pathLen) cuts; drive bar Documents button and Ctrl+; pass MAX_PATH (code read; GUI probe with a seam on the branch)
+- 2026-11-02 — run started, feature 386
