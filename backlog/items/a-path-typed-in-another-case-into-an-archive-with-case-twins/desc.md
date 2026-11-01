@@ -7,8 +7,8 @@ area: archives
 source: review:273
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-11-01
+verified: 2026-11-01 59053ae5
 effort: S
 feature: -
 related: []
@@ -42,3 +42,4 @@ Severity 4: nothing is lost, the panel shows the root (visible), but a following
 
 - 2026-10-21 — created (source review:273)
 - 2026-10-21 — moved to Next position 11
+- 2026-11-01 — verified at 59053ae5: reproduced at 59053ae5: probe arctwins (copy of 273 probe), TAR and 7z, twins in X, typed DOCS opens root, F5 copies whole root - 6 FAIL
