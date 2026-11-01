@@ -116,8 +116,9 @@ int SalArcPathRespell(TDirPtr root, const char* path, char* out, int outSize, co
 //      sub-folder equal ignoring case - accepted by acc.FoldEqual (the legacy byte
 //      fold a listing without twins uses, so the folder is the one the same
 //      archive without twins opens, feature 273), counted by acc.AnyCaseEqual
-//      (either rule that makes twins, salcasetwins.h); two or more such folders
-//      = ambiguous, never guessed;
+//      (either rule that makes twins, salcasetwins.h); two or more such folders,
+//      or any FILE of the folder with that name (exactly or ignoring case - the
+//      caller focuses a file named by the last component) = ambiguous, never guessed;
 //   3. else the component does not resolve: it and the rest of the path are kept
 //      as typed (the caller's shortening and file focusing handle them as before).
 // Fold-equal names have the typed component's byte length, so the result has the
@@ -126,6 +127,8 @@ int SalArcPathRespell(TDirPtr root, const char* path, char* out, int outSize, co
 //
 // The accessor adds to the one of SalArcPathRespell:
 //   bool acc.CaseSensitive(TDirPtr d)                    - the folder compares exactly
+//   int acc.FileCount(TDirPtr d)                         - number of files
+//   const char* acc.FileName(TDirPtr d, int i, int* len) - file i's name
 //   bool acc.FoldEqual(const char* name, int nameLen,
 //                      const char* comp, int compLen)    - equal by the legacy fold
 //   bool acc.AnyCaseEqual(const char* name, int nameLen,
@@ -191,6 +194,18 @@ int SalArcPathResolveCase(TDirPtr root, const char* path, char* out, int outSize
                         if (acc.FoldEqual(n, l, path + pos, compLen))
                             foldIndex = i;
                     }
+                }
+                // files of the folder take part (review of 382): a file with the typed name - exactly
+                // or ignoring case - is what the caller focuses when the path is shortened, so the
+                // folder is not taken in its place (the typed name is then ambiguous, not resolved)
+                int files = acc.FileCount(dir);
+                for (int i = 0; i < files && equalCount < 2; i++)
+                {
+                    int l = 0;
+                    const char* n = acc.FileName(dir, i, &l);
+                    if (acc.AnyCaseEqual(n, l, path + pos, compLen) ||
+                        acc.Equal(dir, n, l, path + pos, compLen))
+                        equalCount = 2;
                 }
                 if (equalCount == 1 && foldIndex >= 0)
                 {

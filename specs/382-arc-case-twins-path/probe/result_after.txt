@@ -1,6 +1,6 @@
-arctwins382_probe (feature 382) after
+arctwins382_probe (feature 382) after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-01 20:17; registry key existed True; ACP 1250
+Date    : 2026-11-01 20:34; registry key existed True; ACP 1250
 
 TAR-MIXED  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 TAR-MIXED  RUN    PASS        typed: \DOCS; panel at: ...ta\Local\Temp\tc382\TAR-MIXED\t.tar\Docs; tgt: f.txt; content: F; windows: [#32770 'Copy'] [Static id=209] Copy file "f.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
@@ -12,6 +12,8 @@ TAR-EXACT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0
 TAR-EXACT  RUN    PASS        typed: \DOCS; panel at: ...ta\Local\Temp\tc382\TAR-EXACT\t.tar\DOCS; tgt: g.txt; content: G; windows: [#32770 'Copy'] [Static id=209] Copy file "g.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 TAR-AMBIG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 TAR-AMBIG  RUN    PASS        typed: \docs; panel at: ...AppData\Local\Temp\tc382\TAR-AMBIG\t.tar; tgt: empty; content: -; windows: -
+TAR-FILEX  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+TAR-FILEX  RUN    PASS        typed: \DOCS; panel at: ...AppData\Local\Temp\tc382\TAR-FILEX\t.tar; tgt: DOCS; content: D; windows: [#32770 'Copy'] [Static id=209] Copy file "DOCS" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 7Z-MIXED   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 7Z-MIXED   RUN    PASS        typed: \DOCS; panel at: ...Data\Local\Temp\tc382\7Z-MIXED\t.7z\Docs; tgt: f.txt; content: F; windows: [#32770 'Copy'] [Static id=209] Copy file "f.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 7Z-MIXDEEP END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
@@ -22,6 +24,8 @@ TAR-AMBIG  RUN    PASS        typed: \docs; panel at: ...AppData\Local\Temp\tc38
 7Z-EXACT   RUN    PASS        typed: \DOCS; panel at: ...Data\Local\Temp\tc382\7Z-EXACT\t.7z\DOCS; tgt: g.txt; content: G; windows: [#32770 'Copy'] [Static id=209] Copy file "g.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 7Z-AMBIG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 7Z-AMBIG   RUN    PASS        typed: \docs; panel at: ...l\AppData\Local\Temp\tc382\7Z-AMBIG\t.7z; tgt: empty; content: -; windows: -
+7Z-FILEX   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-FILEX   RUN    PASS        typed: \DOCS; panel at: ...l\AppData\Local\Temp\tc382\7Z-FILEX\t.7z; tgt: DOCS; content: D; windows: [#32770 'Copy'] [Static id=209] Copy file "DOCS" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
 
-Rows: PASS 20, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 24, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

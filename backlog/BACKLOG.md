@@ -297,6 +297,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [A path typed into an archive that matches two case twins opens the root silently](items/a-path-typed-into-an-archive-that-matches-two-case-twins/desc.md) | bug | 3 | archives | leftover:382 | 2026-11-01 |
 
 ## Parked
 

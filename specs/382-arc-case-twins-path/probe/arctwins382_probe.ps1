@@ -23,6 +23,9 @@
       TAR-AMBIG / 7Z-AMBIG      Docs\f.txt, DOCS\g.txt; opened at <archive>\docs (two folders of
                                 that name ignoring case - no guess).
                                 PASS = the panel is in neither \Docs nor \DOCS
+      TAR-FILEX / 7Z-FILEX      Docs\f.txt and the FILE DOCS ('D'); opened at <archive>\DOCS (the
+                                file's exact name; from the review of 382); Copy without Select All.
+                                PASS = panel at the archive root and tgt holds only DOCS = 'D'
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -99,7 +102,7 @@ function Run-Case([string]$Kind, [string]$Case) {
     if ($Kind -eq '7Z' -and -not (Test-Path -LiteralPath $SevenZip)) { Row $name 'RUN' 'NOT DRIVEN' 'no 7z.exe'; return }
     $d = $Root + '\' + $name
     $src = $d + '\src'; $tgt = $d + '\tgt'
-    $ambig = $false
+    $ambig = $false; $noSelAll = $false
     try {
         Make-CsDir $src; Make-CsDir $tgt
         if ($Case -eq 'MIXED' -or $Case -eq 'MIXMISS') {
@@ -118,6 +121,10 @@ function Run-Case([string]$Kind, [string]$Case) {
             WriteFile ($src + '\Docs\f.txt') 'F'; WriteFile ($src + '\DOCS\g.txt') 'G'; WriteFile ($src + '\X\a.txt') 'a'
             $typed = '\DOCS'; $wantLoc = '\DOCS'; $wantFile = 'g.txt'; $wantText = 'G'
         }
+        elseif ($Case -eq 'FILEX') {
+            Make-Sub ($src + '\Docs'); WriteFile ($src + '\Docs\f.txt') 'F'; WriteFile ($src + '\DOCS') 'D'
+            $typed = '\DOCS'; $wantLoc = $(if ($Kind -eq 'TAR') { '\t.tar' } else { '\t.7z' }); $wantFile = 'DOCS'; $wantText = 'D'; $noSelAll = $true
+        }
         else {
             Make-Sub ($src + '\Docs'); Make-Sub ($src + '\DOCS')
             WriteFile ($src + '\Docs\f.txt') 'F'; WriteFile ($src + '\DOCS\g.txt') 'G'
@@ -134,7 +141,7 @@ function Run-Case([string]$Kind, [string]$Case) {
         $loc = Get-Loc $id
         $msgs = '-'
         if (-not $ambig) {
-            Post-Cmd (Get-Main $id) 842; Start-Sleep -Milliseconds 800
+            if (-not $noSelAll) { Post-Cmd (Get-Main $id) 842; Start-Sleep -Milliseconds 800 }
             Post-Cmd (Get-Main $id) 727
             $r = Serve $id 40 @(1, 6)
             $msgs = Msgs $r
@@ -172,6 +179,7 @@ try {
         Run-Case $k 'MIXMISS'
         Run-Case $k 'EXACT'
         Run-Case $k 'AMBIG'
+        Run-Case $k 'FILEX'
     }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

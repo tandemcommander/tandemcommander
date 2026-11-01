@@ -30,7 +30,7 @@ data-model.md, contracts/arcpath-resolve.md, quickstart.md)
 
 ## Phase 5: Polish
 
-- [X] T009 Negative controls: the loose step of `SalArcPathResolveCase` disabled -> saltests checks FAIL; the call in `ChangePathToArchive` disabled -> probe MIXED rows FAIL (in a scratch build or by restoring after; record in `fix-log.md`)
+- [X] T009 Negative controls: the loose step of `SalArcPathResolveCase` disabled -> saltests checks FAIL and probe MIXED rows FAIL (equivalent to disabling the call in `ChangePathToArchive`) (in a scratch build or by restoring after; record in `fix-log.md`)
 - [X] T010 Encoding guard `python tools/check_encoding.py --strict` -> TOTAL: 0
 - [X] T011 Update `specs/382-arc-case-twins-path/fix-log.md` (after measurements, checks, negative controls)
 

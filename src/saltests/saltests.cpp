@@ -17290,6 +17290,12 @@ static void TestArcPathRespell273()
 struct Access382 : Access273
 {
     bool CaseSensitive(const FakeDir252*) const { return Access273::CaseSensitive; }
+    int FileCount(const FakeDir252* d) const { return d->GetFilesCount(); }
+    const char* FileName(const FakeDir252* d, int i, int* len) const
+    {
+        *len = (int)d->GetFile(i)->NameLen;
+        return d->GetFile(i)->Name;
+    }
     bool FoldEqual(const char* name, int nameLen, const char* comp, int compLen) const
     {
         return SalNameOrderDetail::LegacyCompareCI(name, nameLen, comp, compLen) == 0;
@@ -17349,6 +17355,18 @@ static void TestArcPathResolveCase382()
     CHECK(Resolve382(&tw, "x", true, &r) == "X");
     // an empty folder (no contents object): nothing below it resolves
     CHECK(Resolve382(&tw, "x\\a", true, &r) == "X\\a");
+    // a file with the typed name - exactly or ignoring case - is not replaced by a folder of another
+    // case (review of 382: Docs\ and the file DOCS - the caller focuses the file)
+    FakeDir252 fx;
+    fx.AddDir("Docs", &a);
+    fx.AddFile("DOCS");
+    fx.AddFile("Readme");
+    fx.AddDir("README.d", NULL);
+    CHECK(Resolve382(&fx, "DOCS", true, &r) == "DOCS"); // the exact file
+    CHECK(Resolve382(&fx, "docs", true, &r) == "docs"); // folder and file equal ignoring case
+    CHECK(Resolve382(&fx, "DOCS\\x", true, &r) == "DOCS\\x");
+    CHECK(Resolve382(&fx, "Docs", true, &r) == "Docs");         // the exact folder still wins
+    CHECK(Resolve382(&fx, "readme.D", true, &r) == "README.d"); // a file of another name does not matter
     // a case-insensitive listing: the listing's own lookup (first equal), nothing more
     CHECK(Resolve382(&tw, "docs", false, &r) == "Docs");
     CHECK(Resolve382(&root, "dOCS\\SUB", false, &r) == "Docs\\Sub");

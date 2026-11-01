@@ -79,3 +79,42 @@ MIXED, MIXDEEP, MIXMISS, TAR and 7z). Restored, rebuilt, results above re-measur
 ## Translations
 
 No UI string, menu or dialog changed - no `.slt` refresh needed.
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST**. It rebuilt the branch (BUILD SUCCEEDED,
+saltests 30434 / 0), built the old core from a worktree of `main` 59053ae5 into its own folder,
+and ran an extended copy of the probe on both: old 26 PASS / 6 FAIL / 2 NOT DRIVEN (the fix-log's
+before reproduced), branch 32 / 0 / 2; 273's probe 12 / 0.
+- SHOULD 1 - an exact FILE name lost to a folder of another case: `Docs\f.txt` and the file
+  `DOCS` (twins, so the listing is case-sensitive), opened at `<archive>\DOCS`, F5 without Select
+  All: `main` focused the file `DOCS` and copied it; the branch opened `\Docs` and copied nothing.
+  **Fixed**: the loose step also looks at the folder's files - a file equal to the typed component
+  exactly or ignoring case makes it ambiguous (not resolved). `SalArcPathResolveCase` accessor
+  gained `FileCount` / `FileName` (core: `GetFilesCount` / `GetFile`); saltests rows (file `DOCS`
+  beside folder `Docs`: `DOCS`, `docs`, `DOCS\x` unresolved, `Docs` exact, a file of another name
+  irrelevant); probe row FILEX (TAR, 7z): panel at the root, F5 copies `DOCS` = 'D'. The
+  reviewer's branch build (without the file check) is the negative control of FILEX (copied
+  nothing).
+- SHOULD 2 - the ambiguous case (`Docs` / `DOCS`, typed `docs`) still opens the root silently and
+  Select All + F5 copies the whole root (same on `main`); the item's *Expected* allowed "or the
+  user is told", the spec chose the unambiguous folder and kept the old shortening (conservative).
+  -> Inbox `a-path-typed-into-an-archive-that-matches-two-case-twins` (leftover:382). The probe's
+  AMBIG row checks only that no twin is opened.
+- NOTE 1 - the accepting rule is the legacy byte fold (`StrICmpEx`): in code page 1250 the UTF-8
+  names `Ú` (C3 9A) and `Ê` (C3 8A) fold equal, so typed `\Ú` opens the folder `Ê` (7z row
+  LEGACYFOLD; TAR NOT DRIVEN - tar.exe cannot read the name). The same archive without twins does
+  so already since 273 (row LEGACYFOLD0, both builds) - as designed (FR-003), recorded in the
+  feature history.
+- NOTE 2 - FR-007 (panel already in the archive) is proven by reading only (accepted, Analyze C1).
+- NOTE 3 - the rule covers every case-sensitive listing (Unix-made ZIP, UnISO) - intended (spec
+  *Assumptions*), not probed.
+- NOTE 4 - T009 named "the call disabled", the fix-log disabled step 2 of the rule: equivalent (the
+  call then keeps the typed path); tasks.md wording aligned.
+- NOTE 5 - standing rules hold (nothing cut, UTF-8, one caller).
+- NOTE 6 - old reviewer worktrees of earlier features are registered (`%TEMP%\rev325` ...) -
+  housekeeping, not this feature.
+
+After the SHOULD 1 fix: `.\build.cmd` BUILD SUCCEEDED; saltests **30439 checks, 0 failed**; probe
+**24 PASS / 0 FAIL** (`probe/result_after.txt`); 273's probe 12 / 0; 252's probe 16 / 0.
+Only SHOULD findings -> no second review (SKILL step 7).

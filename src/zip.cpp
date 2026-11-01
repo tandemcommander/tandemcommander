@@ -6819,6 +6819,13 @@ BOOL CSalamanderDirectory::GetPathSpelling(const char* path, char* out, int outS
 struct CSalDirResolveCaseAccess : CSalDirRespellAccess
 {
     bool CaseSensitive(CSalamanderDirectory* d) const { return (d->GetFlags() & SALDIRFLAG_CASESENSITIVE) != 0; }
+    int FileCount(CSalamanderDirectory* d) const { return d->GetFilesCount(); }
+    const char* FileName(CSalamanderDirectory* d, int i, int* len) const
+    {
+        const CFileData* f = d->GetFile(i);
+        *len = (int)f->NameLen;
+        return f->Name;
+    }
     bool FoldEqual(const char* name, int nameLen, const char* comp, int compLen) const
     {
         return StrICmpEx(name, nameLen, comp, compLen) == 0;
