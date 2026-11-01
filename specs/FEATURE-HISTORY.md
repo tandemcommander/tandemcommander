@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5884,3 +5884,32 @@ a few early ones are out of sequence).
   356's `imapiudf356.ps1`, `img377.py swap` / `metafar`) 10 / 2 (C-U250, C-U250SUB) -> 12 / 0; regressions 356
   56 / 0, 358 52 / 0, 361 24 / 0; saltests 30,237 / 0 (no new rule); refute-first review 1 (no MUST; negative
   control with main's `uniso.spl` 10 / 2; SHOULD unset map type fixed; NOTE map count -> Inbox).
+- 378-uniso-udf-partition-maps: a damaged or crafted UDF disc image whose logical volume descriptor declared more
+  partition maps than its sector or map table held (or a map of length 0) was opened as if valid - the ISO
+  plug-in walked the maps by the declared count and each map's own length, past its 2048-byte sector buffer on
+  the stack (other bytes taken as partition maps) and, with a length of 0, recorded one map per declared map
+  (up to 2^32) - now the maps are read only inside the sector and the declared table, and a count, map length
+  or table that does not fit refuses the UDF volume before any map is recorded ("Error reading directory
+  structure at sector #..." with the descriptor's sector, `quiet` honoured): a UDF-only track does not open, an
+  ISO 9660 + UDF image lists its ISO 9660 part with the listing marked, a whole unpack with "Delete archive
+  after unpacking" keeps the image. Rule `src/common/salisoudfmaps.h` (`SalIsoUdfLvdMapsFit`: the area
+  [440, min(held, 440 + MT_L)), each map's header, length >= 2 and >= the bytes read from its type - type 1: 6,
+  type 2: 44 - and end inside it; count 0 and a table longer than the sector whose maps fit are read as before);
+  `CUDF::ReadLVD` returns BOOL, `CUDF::MapsRefused` is read by `CUDFISO::Open` like 358's `VatMissing`. No UI
+  string. Traps: the read past the buffer never crashed in the GUI (the stack bytes past the sector gave maps
+  that were taken) - the probe tells the builds apart by acceptance, the rule's saltests by a guard page;
+  review 1: an ISO 9660 + UDF image **without the UDF anchor at 256** was not marked (330's sign of a UDF part is
+  the anchor) and a whole unpack deleted it after extracting the ISO part - the flag fixed it; review 2: the
+  mark is set without `HasUDF` (ISO 9660 + HFS / APFS tracks also open a UDF part; not probed). The maintainer's
+  Tandem Commander was running at the start: the before run used a frozen copy of the HEAD build
+  (`%TEMP%\tcudfmaps_before`). Limits: compatibility measured with IMAPI2FS images only (stricter than Linux for a
+  count past the maps in the table); the first bad descriptor refuses the volume (no reserve sequence, older);
+  an unknown map type still leaves its translation undefined (Inbox
+  `iso-plug-in-an-unknown-udf-partition-map-type-leaves-its`); a well-formed IMAPI2FS ISO 9660 + UDF image is kept
+  by a whole unpack (rest rule, older, Inbox `iso-plug-in-an-iso-9660-udf-image-written-by-windows-is-kept`). From
+  backlog item `iso-plug-in-a-crafted-udf-partition-map-count-reads-past-the`. Probe `iso378_probe` (IMAPI2FS
+  seeds, `img378.py` count / len0 / table / run / many / noanchor) 11 / 7 -> 22 / 0 (frozen HEAD build on all 22
+  rows: 15 / 7); regressions 356 56 / 0, 358 52 / 0, 361 24 / 0, 377 12 / 0; saltests 30,275 / 0 (+38; mutants of
+  the table bound and of the header bound fail - the latter by an access violation at the guard page);
+  refute-first reviews: review 1 (MUST no-anchor hybrid deleted, fixed; SHOULD guard-page test and helper name,
+  fixed), review 2 (no MUST / SHOULD; NOTE HFS / APFS hybrids fixed, NOTE unset map type -> Inbox).
