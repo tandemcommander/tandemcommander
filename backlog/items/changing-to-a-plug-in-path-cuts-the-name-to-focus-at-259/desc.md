@@ -1,7 +1,7 @@
 ---
 title: Changing to a plug-in path cuts the name to focus at 259 bytes and may focus another item
 type: bug
-status: new
+status: open
 severity: 3
 area: long-paths
 source: review:380
@@ -54,3 +54,4 @@ focusing an existing other item.
 ## Log
 
 - 2026-11-01 — created (source review:380)
+- 2026-11-01 — moved to Next position 88

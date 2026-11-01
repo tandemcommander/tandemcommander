@@ -1,7 +1,7 @@
 ---
 title: Relative path under a deep plug-in file-system path is refused: the core buffer for GetFullFSPath is MAX_PATH
 type: improvement
-status: new
+status: open
 severity: 3
 area: long-paths
 source: leftover:380
@@ -57,3 +57,4 @@ not a wrong result, reached only under deep keys.
 ## Log
 
 - 2026-11-01 — created (source leftover:380)
+- 2026-11-01 — moved to Next position 89
