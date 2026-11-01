@@ -1,7 +1,7 @@
 ---
 title: Every activation of the program blocks it ~150 ms in the idle clipboard check
 type: bug
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: measure:372
@@ -55,3 +55,4 @@ feature 372 (row LOCAL) before and after.
 
 - 2026-11-01 — created (source measure:372)
 - 2026-11-01 — related item switching-back-to-tandem-commander-freezes-it-briefly-while done in feature 372
+- 2026-11-01 — moved to Next position 3

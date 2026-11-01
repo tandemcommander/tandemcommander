@@ -1,7 +1,7 @@
 ---
 title: Check by hand: switching back with a WSL folder in a panel no longer freezes
 type: person-step
-status: new
+status: open
 severity: 4
 area: panels-ui
 source: leftover:372
@@ -56,3 +56,4 @@ warm and with a stopped distribution; the panel still shows the folder's current
 ## Log
 
 - 2026-11-01 — created (source leftover:372)
+- 2026-11-01 — moved to Person steps position 30
