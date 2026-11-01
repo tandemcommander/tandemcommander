@@ -75,3 +75,24 @@ Backlog item `ftp-server-path-compare-code-page-fold` (source review:277). HEAD0
 - Not driven: the opened-file lock (two concurrent operations on one file) - it goes through the
   same function (`CFTPOpenedFile::IsSameFile` -> `FTPIsTheSameServerPath`), covered by saltests;
   VMS / MVS / z/VM / Tandem / AS/400 servers by saltests only (no such server here).
+
+## Review
+
+- Review 1 (independent, refute-first, general-purpose agent): **no MUST**. It built the old FTP
+  plug-in (8bd858ba) in its own worktree: `ftp385_probe.ps1` 5 / 1, CROSS `STOR x.txt` without
+  the question, server x.txt `LOCAL-X`; on the fix 6 / 0; saltests 30,586 / 0; its own harness over
+  z/VM, Tandem, MVS, AS/400, VMS with case pairs of different UTF-8 length, OS/2 drive, `ß`: all
+  by the 092 rule (100,000 non-ASCII calls 16 ms). Callers enumerated by itself: the 22 of R2,
+  every changed answer conservative or the right one.
+  - SHOULD 1 (the regression probes use a UNIX-type server, they do not reach the changed kinds):
+    stated above under *Checks after the fix*.
+  - SHOULD 2 (VMS / AS/400: whether the server joins `Č` / `č` is unknown; the new rule joins
+    them): recorded in spec.md *Assumptions* as accepted (the item asks for the 092 rule on every
+    case-insensitive type).
+  - NOTE 3 (`FindPath` stores the slot instead of the index - speed only, older than 385): Inbox
+    `ftp-upload-listing-cache-lookup-remembers-a-slot-number`.
+  - NOTE 4 (`FTPIsCaseSensitive` takes unknown / empty types as case-insensitive, the path rule as
+    byte-exact; the lock errs towards more conflicts, older than 385): recorded, no change.
+  - NOTE 5 (clang-format of the new header): formatted (0 warnings); build + saltests 30,586 / 0
+    again (formatting only).
+  - NOTE 6 (the closing record says data loss): done in the history and changelog entries.

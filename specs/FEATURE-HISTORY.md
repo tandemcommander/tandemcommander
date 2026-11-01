@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
@@ -6045,3 +6045,29 @@ a few early ones are out of sequence).
   added by review 1; main fails MIX-HEADCP, the first version fails REG-COINC); 288 20 / 0, 269
   14 / 0, 224 16 / 0; saltests 30,496 / 0; two refute-first reviews (1: MUST fixed by the byte
   provenance, SHOULD mixed rows added; 2: no MUST, SHOULD cut keeps the bytes fixed).
+- 385-ftp-path-name-rule: on an FTP server of a case-insensitive path type (Windows, NetWare, OS/2,
+  VMS, MVS, IBM z/VM, Tandem, AS/400) "the same server folder" was decided by the code-page byte fold
+  over UTF-8 bytes: on code page 1250 the folders `Č` and `Ĝ` were one folder and `Č` / `č` two. An
+  upload into `/Ĝ` while another upload into `/Č` was open took `/Č`'s cached listing and stored
+  over the existing `x.txt` without the overwrite question - **data loss**, measured (the item
+  assumed none) - and the cache missed its own folder spelled in another case. Now
+  `FTPIsPrefixOfServerPath` calls the header-only `salftpsrvpath.h` (`SalFtpServerPathIsPrefix`):
+  the paths are walked separator by separator and name by name, each name by the 092 rule
+  (`SalNameOrderEqualCI`); byte counts are never compared across the two paths (case pairs differ
+  in UTF-8 length, U+0250 / U+2C6F); the trailing-separator, root, `[000000` and VMS escape rules
+  are the old ones; Unix / unknown types stay byte-exact. All 22 callers unchanged (upload listing
+  cache, opened-file lock, listing cache and its invalidation, panel path / history, Create
+  Directory, change notification, the explore's cycle check - which still detects every real
+  cycle, `CExploredPaths` stays the byte-exact backstop). Traps: PowerShell variable names ignore
+  case (`$Ccaron` / `$ccaron` were one variable - the first probe run compared `č` with `Ĝ` and
+  passed); 323's ftpmini answers SYST as UNIX - the copy takes `FTPMINI_SYST`; `-OutFile` must not
+  be the `-Log` file of `run_on_hidden_desktop.ps1`. Limits: whether a VMS / AS/400 server joins
+  `Č` / `č` is unknown (the 092 rule is assumed, review SHOULD); the regression probes 215 / 224 /
+  233 / 277 use a UNIX-type server and do not reach the changed kinds; the opened-file lock not
+  driven in the GUI (saltests); the upload cache's `FindPath` slot bug is older (Inbox
+  `ftp-upload-listing-cache-lookup-remembers-a-slot-number`). From backlog item
+  `ftp-server-path-compare-code-page-fold`. Probe `ftp385_probe.ps1` (Windows-type ftpmini) 5 / 1
+  -> 6 / 0; 215 12 / 0, 224 16 / 0, 233 3 / 3 as recorded, 277 10 / 0; `TestFtpServerPath385`
+  (exhaustive ASCII equivalence with a copy of the old rule, 0 differences over 1.2 M - 4.9 M pairs
+  per kind; 38 non-ASCII rows, the old rule fails the 22 marked ones); saltests 30,586 / 0; one
+  refute-first review (no MUST; SHOULDs recorded, NOTEs: one Inbox item, header formatted).

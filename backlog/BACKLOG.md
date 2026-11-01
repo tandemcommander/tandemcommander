@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [FTP: server folder names compared by the code-page case rule on UTF-8 bytes](items/ftp-server-path-compare-code-page-fold/desc.md) | bug | 4 | ftp | 385 |
 
 ## Next
 
