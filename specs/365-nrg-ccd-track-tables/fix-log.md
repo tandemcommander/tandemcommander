@@ -114,3 +114,21 @@ CRITICAL / HIGH).
 `iso365_probe` -> `probe/result_after.txt`: **18 PASS / 0 FAIL** (before 12 / 6). Every R row: Session 01/a.txt
 and Session 02/b.txt with their content, no window, image deleted; controls unchanged. Registry restored,
 identical (SHA-256 07F63FE1...).
+
+## Regressions (Debug x64, branch, hidden desktop, `probe/regress_<NNN>.txt`)
+
+| Probe | Result | Recorded before | Note |
+|---|---|---|---|
+| 352 | 21 / 1 | 22 / 0 | **R-ABS** (INDEX 1 counted from the disc, no gap): now Session 01/a.txt + Session 02/b.txt extracted with their content, image deleted - the item's note ("that mark should go only where the sessions are then read correctly"); the row's old "kept" expectation fails by design. R-TWOSEC still KEPT (sections 2, sessions holding tracks 1). R-SPLIT now extracts b.txt (one section, two tracks of one session - its last data track), still kept (334's other-data-track mark) |
+| 351 | 10 / 0 | 10 / 0 | as recorded |
+| 334 | 23 / 1 | 23 / 1 | S-RAW kept - 335's intended change, as recorded |
+| 335 | 28 / 4 | 28 / 4 | M-FORM2, S-VCD, C-VCD, C-VCDREAL - 336 / 337's intended changes, as recorded (351's `regress_335.txt` same rows) |
+| 353 | 16 / 0 | 16 / 0 | as recorded |
+
+## Inbox items added (INBOX = 3)
+
+- `iso-plug-in-an-nrg-image-of-nero-v1-nero-footer-is-opened` (measure:365) - v1 "NERO" images are never read
+  through their track table (only "NER5" footers), so ETNF is reached only inside NER5 images.
+- `iso-plug-in-nrg-tracks-of-the-subchannel-modes-0x0f-0x10` (leftover:365) - modes 0x0F / 0x10 / 0x11 keep the
+  old type / size (layout not known).
+- `check-feature-365-with-real-nero-tao-and-clonecd-multi` (person step, leftover:365) - real dumps.

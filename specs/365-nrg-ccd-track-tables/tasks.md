@@ -37,10 +37,10 @@ description: "Tasks for feature 365 - NRG ETNF / ETN2 and CloneCD track tables"
 
 ## Phase 6: Polish & verification
 
-- [ ] T009 `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`; `.\build.cmd` -> `BUILD SUCCEEDED`; saltests -> 0 failed
-- [ ] T010 Run `specs/365-nrg-ccd-track-tables/probe/iso365_probe.ps1` on the hidden desktop -> 18 / 0 (`probe/result_after.txt`)
-- [ ] T011 Regressions on the hidden desktop: 352 (R-ABS changes by design, others PASS), 351, 334, 335, 353 probes -> `probe/regress_<NNN>.txt`, compared with their recorded results
-- [ ] T012 Update `specs/365-nrg-ccd-track-tables/fix-log.md` (after, checks, mutants, regressions)
+- [X] T009 `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`; `.\build.cmd` -> `BUILD SUCCEEDED`; saltests -> 0 failed
+- [X] T010 Run `specs/365-nrg-ccd-track-tables/probe/iso365_probe.ps1` on the hidden desktop -> 18 / 0 (`probe/result_after.txt`)
+- [X] T011 Regressions on the hidden desktop: 352 (R-ABS changes by design, others PASS), 351, 334, 335, 353 probes -> `probe/regress_<NNN>.txt`, compared with their recorded results
+- [X] T012 Update `specs/365-nrg-ccd-track-tables/fix-log.md` (after, checks, mutants, regressions)
 
 ## Dependencies
 
