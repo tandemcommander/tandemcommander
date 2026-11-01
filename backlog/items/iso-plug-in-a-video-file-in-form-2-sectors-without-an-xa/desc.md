@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a video file in Form 2 sectors without an XA Form 2 attribute extracts cut
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:366
@@ -10,7 +10,7 @@ created: 2026-11-01
 updated: 2026-11-01
 verified: 2026-11-01 56a44fba
 effort: M
-feature: -
+feature: 367
 related: [keep-video-cd-images-after-a-whole-unpack-until-their-video]
 depends-on: []
 reason: -
@@ -64,3 +64,4 @@ disc, the Form 1 files of a Video CD and 366's Form 2 files unchanged.
 - 2026-11-01 — auto-triage: severity 5 -> 7: data loss in a narrow scenario - 276 bytes of each Form 2 sector lost and the image deleted by a whole Unpack with Delete archive after unpacking (images without an XA Form 2 attribute)
 - 2026-11-01 — moved to Next position 1
 - 2026-11-01 — verified at 56a44fba: reproduced at 56a44fba: iso366_probe rows C-MIXED, C-NOXA, C-F1SUB extract the video file as 608,256 bytes (2048-byte read), image deleted
+- 2026-11-01 — run started, feature 367
