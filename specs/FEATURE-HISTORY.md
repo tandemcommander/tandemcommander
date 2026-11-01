@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5521,3 +5521,22 @@ a few early ones are out of sequence).
   (`TestIsoUdfFolderEntry_362`; negative controls 3 and 5 failed); refute-first reviews: 1 (no MUST; SHOULD length
   0 taken, SHOULD multi-extent folder -> Inbox), 2 (no MUST; SHOULD 20-byte extent taken), 3 (no MUST / SHOULD;
   NOTE Information Length added to the Inbox item, comment updated).
+- 363-uniso-udf-fid-bound: a damaged or crafted UDF disc image one of whose folders held a file identifier whose
+  implementation-use length (L_IU, 16 bits) or name length put its name past the two sectors the ISO plug-in's folder
+  walk holds - `CUDF::ReadFileIdentifier` decoded the name at 38 + L_IU without a bound (L_IU 0xFFFF: 64 KB past a stack
+  buffer, no crash measured), the empty name was listed as `_` (folder `a` as `_`, `top.txt` as an empty `_`), the walk
+  went on unmarked and a whole Unpack with "Delete archive after unpacking" deleted the image - now
+  `SalIsoUdfFidLength(held, pos, lFI, lIU, len)` (`src/common/salisoudfentry.h`; the padded length - the step to the
+  next identifier - must lie in the held bytes, computed by subtracting from what is left, no wrap) decides before the
+  name is read; `ReadFileIdentifier` returns 0 and `ScanDir` takes its existing invalid-tag path: the box "Invalid UDF
+  Tag ID.", the folder's walk ends, the listing is incomplete (330), the image is kept (no new string). A valid
+  identifier (at most one block, read at most one sector into the two) is never refused. Traps: a Bash here-document
+  collapsed the backslashes of a probe edit script (written with the editor); the before-probe ran from a temporary
+  folder on `main` with `-Specs` so the spec folder was not made before specify. Limits: an identifier longer than one
+  block that still fits the buffer is read (invalid by UDF, nothing past the buffer); deleted identifiers and
+  multi-extent folders unchanged (other Inbox items). From backlog item
+  `iso-plug-in-a-udf-file-identifier-with-a-long-implementation`. Probe `iso363_probe` (ud.iso by 330's `mkimg330.sh`
+  changed by `img363.py`; big.iso by `mkbig363.sh`) 12 / 8 -> 20 / 0, with the review rows 24 / 0; regressions 330
+  30 / 0, 361 24 / 0, 362 34 / 0; saltests 29,720 -> 29,748 / 0 (`TestIsoUdfFid_363`; negative control no bound 18
+  failed, the reviewer's mutants 4 - 6 each); refute-first review 1 (no MUST; SHOULD a valid multi-sector folder row -
+  taken, the same PASS on the old build; NOTE a check tightened).

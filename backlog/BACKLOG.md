@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a UDF file identifier with a long implementation-use field reads past its buffer](items/iso-plug-in-a-udf-file-identifier-with-a-long-implementation/desc.md) | bug | 6 | archives | 363 |
 
 ## Next
 
