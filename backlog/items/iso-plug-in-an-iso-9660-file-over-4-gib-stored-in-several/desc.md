@@ -7,8 +7,8 @@ area: archives
 source: review:338
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
-verified: -
+updated: 2026-11-01
+verified: 2026-11-01 192383f1
 effort: M
 feature: -
 related: []
@@ -49,3 +49,4 @@ is not done, it is at least reported as not extracted. Measured first with such 
 
 - 2026-10-24 — created (source review:338)
 - 2026-10-24 — moved to Next position 10
+- 2026-11-01 — verified at 192383f1: reproduced at 192383f1: iso368_probe 10/10 RUN rows FAIL - each extent listed as its own file, unpack writes them over each other (xorriso 4 GiB+3000 file extracted as 5048 bytes, F5 copies one part)
