@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5704,3 +5704,17 @@ a few early ones are out of sequence).
   14 / 0, 350 20 / 0, 365 22 / 0; saltests 30,063 -> 30,078 / 0 (`TestNrgSinf369`); refute-first review 1: no
   MUST (its own pre-fix build gives 6 / 4), SHOULD (oversized SINF -> fallback) recorded with an Inbox item,
   NOTEs recorded.
+- 370-nrg-info-sessions: the ISO plug-in's image information (F3 on a disc image) of an NRG image whose
+  session counts cover fewer tracks than the image holds (one SINF chunk short, none at all, or 334's
+  `multi_extra`) read the session table past its end - Debug stopped on the array's range check, Release
+  printed an arbitrary count - and a count of 2^31 or more printed -1 and hid the later sessions; a count
+  of 0 put the next session's tracks under it - now `CISOImage::DumpInfo` walks the sessions by 340's
+  `SalIsoSessionTracks` (unsigned, at most the tracks left), prints each session with the tracks it gets,
+  and lists the tracks no session covers under a new line "Tracks not in any session" (`IDS_INFO_NO_SESSION`
+  1157, translated; cs/sk/hu/ro pinned to the module's terms). Limits: every declared session is printed,
+  also empty ones (a crafted image with many SINF chunks gives a long text); the saltests rows
+  (`TestIsoSessionDump_370`) copy the loop, the probe is the proof. From backlog item
+  `iso-plug-in-the-image-information-of-an-nrg-image-reads-past`. Probe `iso370_probe` (F3 by command 742,
+  the dump read from the disk cache's `iso_dump.txt`; images `img370.py` + 334's `img334.py multi_extra`)
+  6 / 10 -> 16 / 0; regression 340 14 / 0; saltests 30,091 / 0; refute-first review 1: no MUST / SHOULD,
+  its own pre-fix build 6 / 10, three NOTEs recorded.

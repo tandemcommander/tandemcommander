@@ -90,3 +90,23 @@ Backlog item `iso-plug-in-the-image-information-of-an-nrg-image-reads-past`.
   (Diacritics omitted in this log; the files hold them.)
 - Merge again (pins applied as human); `python -m translate.slt --verify` -> round-trip byte-exact (298
   files). Re-laid-out controls: 0 - every `uniso.slt` changed in row 1157 only.
+
+## Review
+
+Refute-first review 1 (independent agent): **no MUST, no SHOULD**.
+- Re-ran saltests (30091 / 0) and the probe on the branch build: 16 / 0, registry identical.
+- Its own negative control: `main` (2c1c1279) in a worktree, only `uniso.vcxproj` built into its own folder,
+  the old `uniso.spl` swapped into a copied runtime tree: 6 / 10, the same rows and messages as
+  `probe/result_before.txt`.
+- Callers and writers of `Session` enumerated independently (the only caller of `DumpInfo` is the F3 view);
+  read-only view, no user data at risk; only row 1157 (and the template's VERSION stamp, the tool's normal
+  output) changed in the `.slt` files; the texts use the module's terms.
+- NOTE 1: `Iso370Dump` in saltests is a copy of the loop, so it re-checks `SalIsoSessionTracks`, not
+  `viewer.cpp` - the probe is the proof (already analyze I1). Accepted.
+- NOTE 2: a crafted NRG with many empty SINF chunks now prints a heading for each (about 40 bytes of text
+  for each 12-byte chunk) where the old walk printed at most one a track - FR-002 ("every session the
+  image declares"); linear, a hostile image only, into a temporary file. Accepted, not an Inbox item.
+- NOTE 3: the `.slt` VERSION stamp moved 194 -> 195 with the refresh (normal); an empty track table with a
+  session prints "Session 1 / Number of tracks: 0" (analyze U1, no way to reach found). Accepted.
+- The reviewer saw an installed Tandem Commander started from Explorer while its first probe ran (the
+  maintainer's own start); the restored key compared identical afterwards.
