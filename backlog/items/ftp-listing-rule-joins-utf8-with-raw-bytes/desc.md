@@ -7,8 +7,8 @@ area: ftp
 source: review:288
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-11-01
+verified: 2026-11-01 7ba0dcb8
 effort: S
 feature: -
 related: []
@@ -38,3 +38,4 @@ Severity 4: only legacy z/VM (and the other listed types) servers with non-ASCII
 
 - 2026-10-21 — created (source review:288)
 - 2026-10-21 — moved to Next position 14
+- 2026-11-01 — verified at 7ba0dcb8: reproduced at 7ba0dcb8: probe ftp384 (ftpmini z/VM listing, cp1250) shows nameÄŤ.extč, DELE/RETR fail; controls pass
