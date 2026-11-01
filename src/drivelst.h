@@ -44,6 +44,14 @@ extern COneDriveBusinessStorages OneDriveBusinessStorages; // for business accou
 void InitOneDrivePath();
 int GetOneDriveStorages();
 
+// feature 374: the WSL distributions of the current user, read from the registry only (never starts
+// WSL or its virtual machine): installed ones (State absent or 1) whose name can form a path
+// (SalWslDistroUsableW), as UTF-8 names allocated with malloc, sorted as the file system orders
+// names, without case-insensitive duplicates; 'names' is emptied first; returns their count
+int GetWslDistributions(TDirectArray<char*>& names);
+// frees the names of GetWslDistributions and empties the array
+void FreeWslDistributions(TDirectArray<char*>& names);
+
 //*****************************************************************************
 //
 // CDrivesList
@@ -73,6 +81,9 @@ enum CDriveTypeEnum
     drvtPluginFS,             // the plugin item: opened FS (active/disconnected)
     drvtPluginCmd,            // the plugin item: FS command
     drvtPluginFSInOtherPanel, // the plugin item: FS opened in other panel
+    // feature 374: appended at the end, so that the numbers above stay (the probe dumps of 246 / 289)
+    drvtWSL,     // the item is a WSL distribution (\\wsl.localhost\<name>); Param = index into CDrivesList::WslDistros
+    drvtWSLMenu, // the item is a selection from several WSL distributions (only in DriveBar, not added to Change Drive menu)
 };
 
 struct CDriveData
@@ -119,6 +130,10 @@ protected:
     // does not change CachedDrivesMask, so the drive bars compare this one too
     DWORD CachedNetDisconnectedMask;
 
+    // feature 374: the WSL distributions listed by the last BuildData() (UTF-8 names, sorted);
+    // drvtWSL items refer to them by index (CDriveData::Param); allocated with malloc
+    TDirectArray<char*> WslDistros;
+
 public:
     // input:
     //   driveType = dummy
@@ -127,6 +142,7 @@ public:
                 DWORD_PTR* driveTypeParam, int* postCmd, void** postCmdParam, BOOL* fromContextMenu);
     ~CDrivesList()
     {
+        FreeWslDistributions(WslDistros);
         delete Drives;
         Drives = NULL;
     }

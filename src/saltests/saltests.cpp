@@ -114,6 +114,7 @@
 #include "salisoudfentry.h"    // feature 361
 #include "salrenamekey.h"      // feature 346
 #include "salbkgndcheck.h"     // feature 372
+#include "salwsl.h"            // feature 374
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -10031,6 +10032,113 @@ static void TestUncShareListSignIn285()
 
 // feature 373: the share list asks the network providers also after "network path not found" (53) -
 // SalUncServerNotFoundErr, SalUncShareListAsksProviders, SalUncProviderListError of saluncserver.h
+// feature 374: the WSL distributions in the Change Drive menu and the drive bar (salwsl.h)
+static BOOL WslPath374(const char* name, int size, const char* expected)
+{
+    char buf[64];
+    memset(buf, 'x', sizeof(buf));
+    BOOL ok = SalWslDistroPathU8(name, buf, size);
+    if (expected == NULL)
+        return !ok && (size <= 0 || buf[0] == 0);
+    return ok && strcmp(buf, expected) == 0;
+}
+
+static BOOL WslText374(const char* label, const char* name, BOOL amp, const char* expected)
+{
+    char* t = SalWslItemTextAlloc(label, name, amp);
+    BOOL ok = expected == NULL ? t == NULL : t != NULL && strcmp(t, expected) == 0;
+    free(t);
+    return ok;
+}
+
+static void TestWslDistros374()
+{
+    // usable names
+    CHECK(SalWslDistroUsableW(L"Ubuntu"));
+    CHECK(SalWslDistroUsableW(L"docker-desktop"));
+    CHECK(SalWslDistroUsableW(L"Ubuntu-24.04"));
+    CHECK(SalWslDistroUsableW(L"my distro"));
+    CHECK(SalWslDistroUsableW(L"Debian&Co"));
+    static const WCHAR czech[] = {0x010C, L'e', 0x0161, L't', L'i', L'n', L'a', 0};
+    CHECK(SalWslDistroUsableW(czech)); // non-ASCII is kept
+    static const WCHAR penguin[] = {0xD83D, 0xDC27, 0}; // a surrogate pair
+    CHECK(SalWslDistroUsableW(penguin));
+    CHECK(SalWslDistroUsableW(L".x")); // a name that starts with a dot
+    CHECK(SalWslDistroUsableW(L"..."));
+    CHECK(!SalWslDistroUsableW(NULL));
+    CHECK(!SalWslDistroUsableW(L""));
+    CHECK(!SalWslDistroUsableW(L"."));
+    CHECK(!SalWslDistroUsableW(L".."));
+    const WCHAR* bad[] = {L"a\\b", L"a/b", L"a:b", L"a*", L"a?", L"a\"", L"<a", L"a>", L"a|b", L"a\tb", L"\x1F"};
+    for (int i = 0; i < (int)(sizeof(bad) / sizeof(bad[0])); i++)
+        CHECK(!SalWslDistroUsableW(bad[i]));
+    WCHAR longName[SAL_WSL_NAME_MAX + 2];
+    for (int i = 0; i < SAL_WSL_NAME_MAX; i++)
+        longName[i] = L'a';
+    longName[SAL_WSL_NAME_MAX] = 0;
+    CHECK(SalWslDistroUsableW(longName)); // exactly the limit
+    longName[SAL_WSL_NAME_MAX] = L'a';
+    longName[SAL_WSL_NAME_MAX + 1] = 0;
+    CHECK(!SalWslDistroUsableW(longName)); // one over
+
+    // the path: built whole or refused
+    CHECK(WslPath374("Ubuntu", 64, "\\\\wsl.localhost\\Ubuntu"));
+    CHECK(WslPath374("Ubuntu", 23, "\\\\wsl.localhost\\Ubuntu")); // 16 + 6 + terminator = 23
+    CHECK(WslPath374("Ubuntu", 22, NULL));                         // one byte short: refused, empty
+    CHECK(WslPath374("\xC4\x8C", 64, "\\\\wsl.localhost\\\xC4\x8C")); // UTF-8 bytes kept
+    CHECK(WslPath374("", 64, NULL));
+    CHECK(WslPath374(NULL, 64, NULL));
+    CHECK(WslPath374("Ubuntu", 0, NULL));
+    CHECK(!SalWslDistroPathU8("Ubuntu", NULL, 10));
+
+    // a panel path on a distribution
+    CHECK(SalWslPathOnDistroU8("\\\\wsl.localhost\\Ubuntu", "Ubuntu"));
+    CHECK(SalWslPathOnDistroU8("\\\\wsl.localhost\\Ubuntu\\", "Ubuntu"));
+    CHECK(SalWslPathOnDistroU8("\\\\wsl.localhost\\Ubuntu\\home\\user", "Ubuntu"));
+    CHECK(SalWslPathOnDistroU8("\\\\WSL.LOCALHOST\\ubuntu\\home", "Ubuntu"));
+    CHECK(SalWslPathOnDistroU8("\\\\wsl$\\Ubuntu\\etc", "Ubuntu"));
+    CHECK(SalWslPathOnDistroU8("\\\\WSL$\\Ubuntu", "Ubuntu"));
+    CHECK(SalWslPathOnDistroU8("\\\\wsl.localhost\\\xC4\x8C"
+                               "e\\x",
+                               "\xC4\x8D"
+                               "E")); // the file system's case rule
+    CHECK(!SalWslPathOnDistroU8("\\\\wsl.localhost\\Ubuntu-24.04", "Ubuntu")); // a name that only starts with it
+    CHECK(!SalWslPathOnDistroU8("\\\\wsl.localhost\\Ubunt", "Ubuntu"));
+    CHECK(!SalWslPathOnDistroU8("\\\\wsl.localhost\\", "Ubuntu"));
+    CHECK(!SalWslPathOnDistroU8("\\\\wsl.localhost", "Ubuntu"));
+    CHECK(!SalWslPathOnDistroU8("\\\\wsl.localhostX\\Ubuntu", "Ubuntu"));
+    CHECK(!SalWslPathOnDistroU8("\\\\server\\Ubuntu", "Ubuntu"));
+    CHECK(!SalWslPathOnDistroU8("C:\\Ubuntu", "Ubuntu"));
+    CHECK(!SalWslPathOnDistroU8("", "Ubuntu"));
+    CHECK(!SalWslPathOnDistroU8(NULL, "Ubuntu"));
+    CHECK(!SalWslPathOnDistroU8("\\\\wsl.localhost\\Ubuntu", ""));
+    CHECK(!SalWslPathOnDistroU8("\\\\wsl.localhost\\Ubuntu", NULL));
+
+    // the item text
+    CHECK(WslText374("Linux", "Ubuntu", TRUE, "Linux - Ubuntu"));
+    CHECK(WslText374("Linux", "A&B", TRUE, "Linux - A&&B"));
+    CHECK(WslText374("Linux", "A&B", FALSE, "Linux - A&B"));
+    CHECK(WslText374("Linux", "&&", TRUE, "Linux - &&&&"));
+    CHECK(WslText374("L&inux", "x", TRUE, "L&inux - x")); // the label is taken as it is
+    CHECK(WslText374("Linux", "\xC4\x8C", TRUE, "Linux - \xC4\x8C"));
+    CHECK(WslText374(NULL, "x", TRUE, NULL));
+    CHECK(WslText374("Linux", NULL, TRUE, NULL));
+
+    // the fingerprint: stable, order- and boundary-sensitive, 24 bits
+    DWORD a = SalWslFingerprintAdd(SalWslFingerprintAdd(SAL_WSL_FINGERPRINT_START, "Ubuntu"), "docker-desktop");
+    DWORD a2 = SalWslFingerprintAdd(SalWslFingerprintAdd(SAL_WSL_FINGERPRINT_START, "Ubuntu"), "docker-desktop");
+    DWORD b = SalWslFingerprintAdd(SalWslFingerprintAdd(SAL_WSL_FINGERPRINT_START, "docker-desktop"), "Ubuntu");
+    DWORD c1 = SalWslFingerprintAdd(SalWslFingerprintAdd(SAL_WSL_FINGERPRINT_START, "ab"), "c");
+    DWORD c2 = SalWslFingerprintAdd(SalWslFingerprintAdd(SAL_WSL_FINGERPRINT_START, "a"), "bc");
+    DWORD one = SalWslFingerprintAdd(SAL_WSL_FINGERPRINT_START, "Ubuntu");
+    CHECK(a == a2);
+    CHECK(SalWslFingerprintFold(a) != SalWslFingerprintFold(b));
+    CHECK(SalWslFingerprintFold(c1) != SalWslFingerprintFold(c2));
+    CHECK(SalWslFingerprintFold(a) != SalWslFingerprintFold(one));
+    CHECK((SalWslFingerprintFold(a) & 0xFF000000u) == 0);
+    CHECK((SalWslFingerprintFold(0xFFFFFFFFu) & 0xFF000000u) == 0);
+}
+
 static void TestUncShareListProviders373()
 {
     // the "not reached" set of 125, unchanged
@@ -24364,6 +24472,7 @@ int main(int argc, char** argv)
     TestUncShareRoot284();
     TestUncShareListSignIn285();
     TestUncShareListProviders373();
+    TestWslDistros374();
     TestPackageApi126();
     TestInserts127();
     TestShellLink128();

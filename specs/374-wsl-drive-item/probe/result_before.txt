@@ -1,0 +1,26 @@
+wsl374 (feature 374) before-30268b7c
+Program : C:\Users\pavel\AppData\Local\Temp\tc374negbuild\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 14:32; registry key existed True; running distributions before: ''
+Real registration: docker-desktop, Ubuntu
+
+[on] menus opened 5/5; builds 6 (menu 5, bar 1)
+REAL-MENU  RUN    FAIL        items '' (expected 'Linux - docker-desktop | Linux - Ubuntu'); after cloud / before Network False; 
+REAL-BAR   RUN    FAIL        drop-down buttons 0 (''), single buttons 0; tooltip 'Linux' False
+SAVED      RUN    FAIL        value after the exit of a run without it: ''
+[off] menus opened 5/5; builds 6 (menu 5, bar 1)
+OPT-OFF    RUN    FAIL        WSL items 0; builds not 'on=0 count=0' 6; e.g. 
+REGRESS    RUN    PASS        17 other items with the option on, 17 off; identical True
+TIME       RUN    FAIL        WSL part us 0,0,0,0,0 (median 0); build us on -1,-1,-1,-1,-1 / off -1,-1,-1,-1,-1 (medians -1 / -1)
+[mix] menus opened 1/1; builds 2 (menu 1, bar 1)
+FAKE-MIX   RUN    FAIL        items '' (expected 'Linux - alpha | Linux - R&&D | Linux - Zeta')
+[one] menus opened 1/1; builds 2 (menu 1, bar 1)
+FAKE-ONE   RUN    FAIL        menu ''; bar single '', drop-down 0; tooltip 'Linux - Solo' False
+[none] menus opened 1/1; builds 2 (menu 1, bar 1)
+FAKE-NONE  RUN    FAIL        WSL items 0; builds 'on=1 count=0' 0/2
+NO-VM      RUN    PASS        running before '', after the builds ''
+OPEN-MENU  RUN    FAIL        item position -1; panel 'C:\Users\pavel\AppData\Local\Temp\tc374\start' after 60,4 s
+FOCUS      RUN    FAIL        checked idx -2, 'Linux - Ubuntu' idx 
+OPEN-BAR   RUN    FAIL        drop-down button idx ; panel before 'C:\Users\pavel\AppData\Local\Temp\tc374\start', after '<not run>'
+Registry: restored; identical=True; SHA-256 before 6AA0889486446211300E2C922222E1CCA2A511947313F28831587E5C356A45EC / after 6AA0889486446211300E2C922222E1CCA2A511947313F28831587E5C356A45EC
+
+Rows: PASS 2, FAIL 11, NOT DRIVEN 0. Left running: 0; fixture removed: True; fake key removed: True; registry restored+identical: True

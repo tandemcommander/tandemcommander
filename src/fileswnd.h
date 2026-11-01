@@ -1329,6 +1329,8 @@ public:
     BOOL ChangeDirLite(const char* newDir);
 
     BOOL ChangePathToDrvType(HWND parent, int driveType, const char* displayName = NULL);
+    // feature 374: opens the WSL distribution 'name' (UTF-8): \\wsl.localhost\<name>
+    BOOL ChangePathToWslDistro(HWND parent, const char* name);
 
     // called after a new listing is obtained ... change notifications collected for the old
     // listing must be invalidated

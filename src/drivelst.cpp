@@ -18,6 +18,7 @@
 #include "salnetdrive.h"  // feature 246
 #include "saldrivetext.h" // feature 289
 #include "salsubst.h"     // feature 301
+#include "salwsl.h"       // feature 374
 
 // feature 289: a drive's name in the Change Drive menu / drive bar tooltip is UTF-8 of up to
 // SAL_DRIVE_TEXT_U8_MAX - 1 bytes; with every '&' doubled for the menu it still fits this
@@ -1519,6 +1520,7 @@ void DisplayMenuAux2(IContextMenu2* contextMenu, HMENU h)
 CDrivesList::CDrivesList(CFilesWindow* filesWindow, const char* currentPath,
                          CDriveTypeEnum* driveType, DWORD_PTR* driveTypeParam,
                          int* postCmd, void** postCmdParam, BOOL* fromContextMenu)
+    : WslDistros(4, 4)
 {
     CALL_STACK_MESSAGE_NONE
     Drives = new TDirectArray<CDriveData>(30, 30);
@@ -2326,6 +2328,123 @@ int GetOneDriveStorages()
     return (OneDrivePath[0] != 0 ? 1 : 0) + OneDriveBusinessStorages.Count;
 }
 
+void FreeWslDistributions(TDirectArray<char*>& names)
+{
+    for (int i = 0; i < names.Count; i++)
+        free(names[i]);
+    names.DetachMembers();
+}
+
+int GetWslDistributions(TDirectArray<char*>& names)
+{
+    CALL_STACK_MESSAGE1("GetWslDistributions()");
+    FreeWslDistributions(names);
+
+    // WSL keeps one subkey per distribution of the user here; reading it starts nothing
+    // (feature 374, measured: no distribution running before or after)
+    const WCHAR* lxssKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
+#ifdef _DEBUG
+    // probe seam (feature 374, specs/374-wsl-drive-item/contracts/probe-seam.md): another subkey of
+    // HKCU, so that a probe can show no / one / unusable distributions without touching WSL's own
+    WCHAR probeKey[300];
+    DWORD probeLen = GetEnvironmentVariableW(L"TC_PROBE_WSL_LXSS", probeKey, _countof(probeKey));
+    if (probeLen > 0 && probeLen < _countof(probeKey))
+        lxssKey = probeKey;
+#endif // _DEBUG
+
+    HKEY hKey;
+    if (HANDLES_Q(RegOpenKeyExW(HKEY_CURRENT_USER, lxssKey, 0, KEY_READ, &hKey)) != ERROR_SUCCESS)
+        return 0; // no WSL (or no distribution was ever registered)
+
+    for (DWORD i = 0;; i++)
+    {
+        WCHAR subName[256]; // a GUID; a longer subkey name is not a distribution of WSL
+        DWORD subNameLen = _countof(subName);
+        LONG res = RegEnumKeyExW(hKey, i, subName, &subNameLen, NULL, NULL, NULL, NULL);
+        if (res == ERROR_MORE_DATA)
+            continue;
+        if (res != ERROR_SUCCESS)
+            break; // ERROR_NO_MORE_ITEMS or an error: the end of the list
+
+        HKEY hDistro;
+        if (HANDLES_Q(RegOpenKeyExW(hKey, subName, 0, KEY_READ, &hDistro)) != ERROR_SUCCESS)
+            continue;
+
+        DWORD state = 0;
+        DWORD size = sizeof(state);
+        DWORD type;
+        LONG stateRes = RegQueryValueExW(hDistro, L"State", NULL, &type, (BYTE*)&state, &size);
+        BOOL installed = stateRes == ERROR_FILE_NOT_FOUND || // no state: taken as installed
+                         stateRes == ERROR_SUCCESS && type == REG_DWORD && size == sizeof(DWORD) && state == 1;
+
+        // the name: at most SAL_WSL_NAME_MAX characters (a longer one is left out, never cut)
+        WCHAR name[SAL_WSL_NAME_MAX + 2];
+        size = sizeof(name) - sizeof(WCHAR); // room for a terminator the registry may not store
+        LONG nameRes = installed ? RegQueryValueExW(hDistro, L"DistributionName", NULL, &type, (BYTE*)name, &size)
+                                 : ERROR_FILE_NOT_FOUND;
+        HANDLES(RegCloseKey(hDistro));
+        if (nameRes != ERROR_SUCCESS || type != REG_SZ || size < sizeof(WCHAR) || (size % sizeof(WCHAR)) != 0)
+            continue;
+        name[size / sizeof(WCHAR)] = 0;
+        if (!SalWslDistroUsableW(name))
+            continue;
+
+        char* nameU8 = SalWToU8Alloc(name);
+        if (nameU8 == NULL)
+        {
+            TRACE_E(LOW_MEMORY);
+            continue;
+        }
+        // sorted in (the file system's order of names), a case-insensitive duplicate is dropped
+        int at = 0;
+        BOOL duplicate = FALSE;
+        for (; at < names.Count; at++)
+        {
+            int cmp = SalNameOrderCompareCI(nameU8, -1, names[at], -1);
+            if (cmp == 0)
+                duplicate = TRUE;
+            if (cmp <= 0)
+                break;
+        }
+        if (duplicate)
+        {
+            free(nameU8);
+            continue;
+        }
+        names.Insert(at, nameU8);
+        if (!names.IsGood())
+        {
+            names.ResetState();
+            free(nameU8);
+        }
+    }
+    HANDLES(RegCloseKey(hKey));
+    return names.Count;
+}
+
+// feature 374: the icon of the WSL items - the Tux of the Windows WSL launcher (an icon resource of
+// System32\wsl.exe: the file is read as data, never run), else the Network icon
+static HICON LoadWslIcon(int iconSize)
+{
+    WCHAR path[MAX_PATH];
+    UINT len = GetSystemDirectoryW(path, _countof(path));
+    HICON icon = NULL;
+    if (len > 0 && len + 9 < _countof(path))
+    {
+        wcscat_s(path, L"\\wsl.exe");
+        HICON iconSmall = NULL; // ('small' is a macro of the Windows headers)
+        if (SHDefExtractIconW(path, 0, 0, &icon, &iconSmall, (UINT)iconSize) != S_OK)
+            icon = NULL;
+        if (iconSmall != NULL)
+            DestroyIcon(iconSmall);
+        if (icon != NULL)
+            HANDLES_ADD(__htIcon, __hoLoadImage, icon);
+    }
+    if (icon == NULL)
+        icon = SalLoadIcon(ImageResDLL, 152, iconSize); // the Network icon
+    return icon;
+}
+
 void CDrivesList::AddToDrives(CDriveData& drv, int textResId, char hotkey, CDriveTypeEnum driveType,
                               BOOL getGrayIcons, HICON icon, BOOL destroyIcon, const char* itemText)
 {
@@ -2357,6 +2476,10 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                             DWORD copyCachedNetDisconnectedMask, BOOL quiet)
 {
     CALL_STACK_MESSAGE4("CDrivesList::BuildData(%d, , , %d, %d)", noTimeout, getGrayIcons, forDriveBar);
+#ifdef _DEBUG
+    LARGE_INTEGER probeBuildStart; // probe seam (feature 374): the time of the whole build
+    QueryPerformanceCounter(&probeBuildStart);
+#endif // _DEBUG
 
     int neighborhoodIndex = -1;
     int currentDiskIndex = -1;
@@ -2857,6 +2980,65 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
             delete sqlite3_Dyn_InOut; // release sqlite.dll which is no longer needed
     }
 
+    // feature 374: the WSL distributions (\\wsl.localhost\<name>), read from the registry only
+    int wslFocusIndex = -1;
+    {
+#ifdef _DEBUG
+        LARGE_INTEGER probeWslStart;
+        QueryPerformanceCounter(&probeWslStart);
+#endif // _DEBUG
+        FreeWslDistributions(WslDistros);
+        DWORD wslFingerprint = SAL_WSL_FINGERPRINT_START;
+        if (Configuration.ChangeDriveShowWSL && GetWslDistributions(WslDistros) > 0)
+        {
+            for (int w = 0; w < WslDistros.Count; w++)
+                wslFingerprint = SalWslFingerprintAdd(wslFingerprint, WslDistros[w]);
+            // the drive bars are rebuilt when the set of distributions changes (RebuildDriveBarsIfNeeded)
+            CachedCloudStoragesMask |= 0x20 /* WSL */ | (SalWslFingerprintFold(wslFingerprint) << 8);
+
+            HICON wslIcon = LoadWslIcon(iconSize);
+            if (forDriveBar && WslDistros.Count > 1) // drive bar, several distributions: one drop-down button
+            {
+                AddToDrives(drv, IDS_WSLLINUX, 0, drvtWSLMenu, getGrayIcons, wslIcon);
+                wslIcon = NULL; // owned by the item now
+            }
+            else // the Change Drive menu, or the drive bar with one distribution: one item per distribution
+            {
+                for (int w = 0; w < WslDistros.Count; w++)
+                {
+                    HICON icon = wslIcon != NULL ? CopyIcon(wslIcon) : NULL; // each item owns its icon
+                    if (icon != NULL)
+                        HANDLES_ADD(__htIcon, __hoLoadImage, icon);
+                    // the menu and the bar's tooltip show '&' as the hot key mark: doubled (289)
+                    char* itemText = SalWslItemTextAlloc(LoadStrU8(IDS_WSLLINUX), WslDistros[w], TRUE);
+                    if (itemText == NULL)
+                    {
+                        TRACE_E(LOW_MEMORY);
+                        if (icon != NULL)
+                            HANDLES(DestroyIcon(icon));
+                        continue;
+                    }
+                    AddToDrives(drv, 0, 0, drvtWSL, getGrayIcons, icon, TRUE, itemText);
+                    free(itemText);
+                    Drives->At(Drives->Count - 1).Param = (DWORD)w;
+                    if (wslFocusIndex == -1 && CurrentPath[0] != 0 && SalWslPathOnDistroU8(CurrentPath, WslDistros[w]))
+                        wslFocusIndex = Drives->Count - 1; // the panel shows this distribution (FocusIndex below)
+                }
+            }
+            if (wslIcon != NULL)
+                HANDLES(DestroyIcon(wslIcon));
+        }
+#ifdef _DEBUG
+        // probe seam (feature 374): the WSL part's time and result
+        LARGE_INTEGER probeWslEnd, probeFreq;
+        QueryPerformanceCounter(&probeWslEnd);
+        QueryPerformanceFrequency(&probeFreq);
+        ProbeDrivesDump("WSL on=%d count=%d us=%d fp=%06X bar=%d", Configuration.ChangeDriveShowWSL ? 1 : 0,
+                        WslDistros.Count, (int)((probeWslEnd.QuadPart - probeWslStart.QuadPart) * 1000000 / probeFreq.QuadPart),
+                        WslDistros.Count > 0 ? SalWslFingerprintFold(wslFingerprint) : 0, forDriveBar ? 1 : 0);
+#endif // _DEBUG
+    }
+
     // adding Network Neighborhood
     CPluginData* nethoodPlugin = NULL;
     BOOL existsNethoodPlugin = Plugins.GetFirstNethoodPluginFSName(NULL, &nethoodPlugin);
@@ -2904,10 +3086,16 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
         {
             if (currentDiskIndex != -1)
                 FocusIndex = currentDiskIndex;
+            if (FocusIndex == -1 && wslFocusIndex != -1) // feature 374: the panel shows a WSL distribution
+                FocusIndex = wslFocusIndex;
             if (FocusIndex == -1 && neighborhoodIndex != -1)
                 FocusIndex = neighborhoodIndex;
         }
     }
+#ifdef _DEBUG
+    // probe seam (feature 374): the item checked in the Change Drive menu
+    ProbeDrivesDump("FOCUS idx=%d", FocusIndex);
+#endif // _DEBUG
 
     // adding Another Panel
     if (Configuration.ChangeDriveShowAnother)
@@ -3039,6 +3227,12 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
         if (probeItem->DriveType != drvtSeparator && probeItem->DriveText != NULL)
             ProbeDrivesDump("ALL idx=%d type=%d text=%s", probeIndex, (int)probeItem->DriveType, probeItem->DriveText);
     }
+    // probe seam (feature 374): the time of the whole build
+    LARGE_INTEGER probeBuildEnd, probeBuildFreq;
+    QueryPerformanceCounter(&probeBuildEnd);
+    QueryPerformanceFrequency(&probeBuildFreq);
+    ProbeDrivesDump("TIME bar=%d us=%d", forDriveBar ? 1 : 0,
+                    (int)((probeBuildEnd.QuadPart - probeBuildStart.QuadPart) * 1000000 / probeBuildFreq.QuadPart));
 #endif // _DEBUG
     return TRUE;
 }
@@ -3210,6 +3404,62 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
         break;
     }
 
+    case drvtWSL: // feature 374: the name of the distribution (the executor frees it)
+    {
+        char* name = item->Param < (DWORD)WslDistros.Count ? DupStr(WslDistros[(int)item->Param]) : NULL;
+        if (name == NULL)
+        {
+            TRACE_E("CDrivesList::ExecuteItem(): no WSL distribution for the item");
+            ret = FALSE;
+        }
+        else
+            *DriveTypeParam = (DWORD_PTR)name;
+        break;
+    }
+
+    case drvtWSLMenu: // feature 374: the drop-down menu of the drive bar's WSL button
+    {
+        if (fromDropDown != NULL)
+            *fromDropDown = TRUE;
+        GetWslDistributions(WslDistros); // the list as it is now
+        if (!Configuration.ChangeDriveShowWSL || WslDistros.Count == 0 || exclude == NULL)
+        { // nothing to choose from any more: rebuild both drive bars, so that the button disappears or updates
+            if (MainWindow != NULL && MainWindow->HWindow != NULL)
+                PostMessage(MainWindow->HWindow, WM_USER_DRIVES_CHANGE, 0, 0);
+            ret = FALSE;
+        }
+        else
+        {
+            CMenuPopup menu;
+            MENU_ITEM_INFO mii;
+            mii.Mask = MENU_MASK_TYPE | MENU_MASK_STRING | MENU_MASK_ID;
+            mii.Type = MENU_TYPE_STRING;
+            for (int w = 0; w < WslDistros.Count; w++)
+            {
+                char* itemText = SalWslItemTextAlloc(LoadStrU8(IDS_WSLLINUX), WslDistros[w], TRUE);
+                if (itemText == NULL)
+                {
+                    TRACE_E(LOW_MEMORY);
+                    continue;
+                }
+                mii.String = itemText;
+                mii.ID = w + 1;
+                menu.InsertItem(-1, TRUE, &mii);
+                free(itemText);
+            }
+            int cmd = menu.Track(MENU_TRACK_RETURNCMD, exclude->left, exclude->bottom, hwnd, exclude);
+            char* name = cmd > 0 && cmd <= WslDistros.Count ? DupStr(WslDistros[cmd - 1]) : NULL;
+            if (name != NULL)
+            {
+                *DriveType = drvtWSL;
+                *DriveTypeParam = (DWORD_PTR)name;
+            }
+            else
+                ret = FALSE;
+        }
+        break;
+    }
+
     case drvtHotPath:
     {
         *DriveTypeParam = item->Param;
@@ -3363,6 +3613,8 @@ BOOL IncludeDriveInDriveBar(CDriveTypeEnum dt)
     case drvtOneDrive:
     case drvtOneDriveBus:
     case drvtOneDriveMenu:
+    case drvtWSL:     // feature 374
+    case drvtWSLMenu: // feature 374
     case drvtNeighborhood:
     case drvtPluginCmd:
         return TRUE;
@@ -3402,10 +3654,11 @@ BOOL CDrivesList::FillDriveBar(CDriveBar* driveBar, BOOL bar2)
         char buff[80];
         TLBI_ITEM_INFO2 tii;
         tii.Mask = TLBI_MASK_STYLE | TLBI_MASK_IMAGEINDEX | TLBI_MASK_OVERLAY | TLBI_MASK_ID;
-        tii.Style = item->DriveType == drvtOneDriveMenu ? TLBI_STYLE_WHOLEDROPDOWN | TLBI_STYLE_DROPDOWN : TLBI_STYLE_NOPREFIX;
+        tii.Style = item->DriveType == drvtOneDriveMenu || item->DriveType == drvtWSLMenu ? TLBI_STYLE_WHOLEDROPDOWN | TLBI_STYLE_DROPDOWN : TLBI_STYLE_NOPREFIX;
         if (item->DriveType != drvtMyDocuments && item->DriveType != drvtNeighborhood && item->DriveType != drvtPluginCmd &&
             item->DriveType != drvtGoogleDrive && item->DriveType != drvtDropbox && item->DriveType != drvtOneDrive &&
-            item->DriveType != drvtOneDriveBus && item->DriveType != drvtOneDriveMenu)
+            item->DriveType != drvtOneDriveBus && item->DriveType != drvtOneDriveMenu &&
+            item->DriveType != drvtWSL && item->DriveType != drvtWSLMenu) // feature 374: icon only, as the cloud storages
         {
             tii.Mask |= TLBI_MASK_TEXT;
             tii.Style |= TLBI_STYLE_SHOWTEXT;
@@ -3569,7 +3822,12 @@ BOOL CDrivesList::GetDriveBarToolTip(int index, char* text)
     case drvtNeighborhood:
         strcpy(text, LoadStrU8(IDS_NETWORKDRIVE));
         break;
+    case drvtWSLMenu: // feature 374
+        strcpy(text, LoadStrU8(IDS_WSLLINUX));
+        break;
 
+    case drvtWSL: // feature 374: "Linux - <name>" ('&' doubled, as every tooltip of the bar, 289; at most
+                  // 255 characters of a name - it fits TOOLTIP_TEXT_MAX whole)
     case drvtOneDriveBus:
     {
         const char* s = item->DriveText;
@@ -3812,8 +4070,10 @@ BOOL CDrivesList::OnContextMenu(BOOL posByMouse, int itemIndex, int panel, const
     case drvtOneDrive:
     case drvtOneDriveBus:
     case drvtOneDriveMenu:
+    case drvtWSL:     // feature 374
+    case drvtWSLMenu: // feature 374
     {
-        // no context menu for Documents, Network, As Other Panel, or Cloud Storages
+        // no context menu for Documents, Network, As Other Panel, Cloud Storages or WSL distributions
         return FALSE;
     }
 
@@ -4049,6 +4309,24 @@ BOOL CDrivesList::FindPanelPathIndex(CFilesWindow* panel, DWORD* index)
         {
             if (path[2] == '.' && path[3] == '\\' && path[4] != 0 && path[5] == ':')
                 return FALSE; // path of the "\\.\C:\" type
+            // feature 374: a WSL distribution's path -> its button (or the drop-down button of several)
+            for (int i = 0; i < Drives->Count; i++)
+            {
+                CDriveData* item = &Drives->At(i);
+                BOOL onWsl = FALSE;
+                if (item->DriveType == drvtWSL)
+                    onWsl = item->Param < (DWORD)WslDistros.Count && SalWslPathOnDistroU8(path, WslDistros[(int)item->Param]);
+                if (item->DriveType == drvtWSLMenu)
+                {
+                    for (int w = 0; !onWsl && w < WslDistros.Count; w++)
+                        onWsl = SalWslPathOnDistroU8(path, WslDistros[w]);
+                }
+                if (onWsl)
+                {
+                    *index = i;
+                    return TRUE;
+                }
+            }
             CPluginData* nethoodPlugin = NULL;
             Plugins.GetFirstNethoodPluginFSName(NULL, &nethoodPlugin);
             int i;

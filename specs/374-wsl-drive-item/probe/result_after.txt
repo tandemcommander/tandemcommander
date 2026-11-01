@@ -1,0 +1,27 @@
+wsl374 (feature 374) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 14:34; registry key existed True; running distributions before: ''
+Real registration: docker-desktop, Ubuntu
+
+[on] menus opened 5/5; builds 7 (menu 5, bar 2)
+REAL-MENU  RUN    PASS        items 'Linux - docker-desktop | Linux - Ubuntu' (expected 'Linux - docker-desktop | Linux - Ubuntu'); after cloud / before Network True; WSL on=1 count=2 us=1038 fp=0BDF5E bar=0
+REAL-BAR   RUN    PASS        drop-down buttons 1 ('Linux'), single buttons 0; tooltip 'Linux' True
+SAVED      RUN    PASS        value after the exit of a run without it: '1'
+[off] menus opened 5/5; builds 6 (menu 5, bar 1)
+OPT-OFF    RUN    PASS        WSL items 0; builds not 'on=0 count=0' 0; e.g. WSL on=0 count=0 us=0 fp=000000 bar=0
+REGRESS    RUN    PASS        17 other items with the option on, 17 off; identical True
+TIME       RUN    PASS        WSL part us 1038,732,921,872,959 (median 921); build us on 11314,10154,11318,12029,12689 / off 9299,10774,10391,11969,10672 (medians 11318 / 10672)
+[mix] menus opened 1/1; builds 2 (menu 1, bar 1)
+FAKE-MIX   RUN    PASS        items 'Linux - alpha | Linux - R&&D | Linux - Zeta' (expected 'Linux - alpha | Linux - R&&D | Linux - Zeta')
+[one] menus opened 1/1; builds 2 (menu 1, bar 1)
+FAKE-ONE   RUN    PASS        menu 'Linux - Solo'; bar single 'Linux - Solo', drop-down 0; tooltip 'Linux - Solo' True
+[none] menus opened 1/1; builds 2 (menu 1, bar 1)
+FAKE-NONE  RUN    PASS        WSL items 0; builds 'on=1 count=0' 2/2
+NO-VM      RUN    PASS        running before '', after the builds ''
+OPEN-MENU  RUN    PASS        item position 8; panel '\\wsl.localhost\Ubuntu' after 2,8 s
+FOCUS      RUN    PASS        checked idx 9, 'Linux - Ubuntu' idx 9
+OPEN-BAR   RUN    PASS        drop-down button idx 8; panel before 'C:\Users\pavel\AppData\Local\Temp\tc374\start', after '\\wsl.localhost\Ubuntu'
+Registry: restored; identical=True; SHA-256 before 6AA0889486446211300E2C922222E1CCA2A511947313F28831587E5C356A45EC / after 6AA0889486446211300E2C922222E1CCA2A511947313F28831587E5C356A45EC
+Ubuntu did not run before: terminated again
+
+Rows: PASS 13, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; fake key removed: True; registry restored+identical: True

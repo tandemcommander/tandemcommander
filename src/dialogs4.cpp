@@ -471,6 +471,8 @@ CConfiguration::CConfiguration()
     ChangeDriveShowAnother = TRUE;
     ChangeDriveShowNet = TRUE;
     ChangeDriveCloudStorage = TRUE;
+    // feature 374
+    ChangeDriveShowWSL = TRUE;
 
     MenuIndex = 0;
     MenuBreak = TRUE;

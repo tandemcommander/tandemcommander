@@ -2593,6 +2593,8 @@
 #define IDS_ONEDRIVE                    14167
 // Change Drive window: text of OneDrive Personal item (displayed as: OneDrive - Personal)
 #define IDS_ONEDRIVEPERSONAL            14168
+// feature 374: Change Drive window and drive bar: the WSL distributions, named as File Explorer names them (displayed as: Linux - Ubuntu)
+#define IDS_WSLLINUX                    14169
 
 // Copy/Move operation: when it founds link, it tries to resolve it (junction/symlink/volume-mount-point + get target path): what's displayed if it fails
 #define IDS_UNABLETORESOLVELINK         14170

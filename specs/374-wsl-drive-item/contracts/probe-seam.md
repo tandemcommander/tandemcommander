@@ -7,9 +7,13 @@ Extends the seam `TC_PROBE_DRIVES_DUMP=<file>` of features 246 / 289
 New lines, one per `CDrivesList::BuildData`:
 
 ```text
-WSL on=<0|1> count=<n> us=<microseconds of the WSL part> fp=<hex fingerprint>
+WSL on=<0|1> count=<n> us=<microseconds of the WSL part> fp=<hex fingerprint> bar=<0|1>
+FOCUS idx=<the item checked in the Change Drive menu, -1 none>
 TIME bar=<0|1> us=<microseconds of the whole BuildData>
 ```
+
+Order within one build: `BUILD` (246), `TYPES`, `ITEM` lines, (bar builds: `TIP` of the drives),
+`WSL`, `FOCUS`, `ALL` lines (289), `TIME`.
 
 - `on=0`: the option is off - no registry access, `count=0`.
 - The existing `ALL idx=<i> type=<t> text=<text>` lines list the new items with `type=19`

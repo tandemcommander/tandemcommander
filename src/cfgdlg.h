@@ -399,6 +399,7 @@ struct CConfiguration
     int ChangeDriveShowAnother;  // display the Another panel path item
     int ChangeDriveShowNet;      // display the Network item
     int ChangeDriveCloudStorage; // display items for cloud storage (Google Drive, etc.)
+    int ChangeDriveShowWSL;      // feature 374: display items for the WSL distributions (Linux - Ubuntu, etc.)
 
     // Packers / Unpackers
     int UseAnotherPanelForPack;

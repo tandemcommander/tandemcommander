@@ -134,7 +134,8 @@ saved, loaded and imported from an older configuration like the Network option.
   and MUST NOT add a noticeable delay (the time to build the Alt+F1 list grows by less than
   10 ms).
 - **FR-005**: A distribution is usable when its name is non-empty, holds no `\`, `/`, `:`,
-  `*`, `?`, `"`, `<`, `>`, `|` or control character, and the path fits; a registered entry
+  `*`, `?`, `"`, `<`, `>`, `|` or control character, is not `.` or `..`, has at most 255
+  characters, and the path fits; a registered entry
   whose `State` is present and not "installed" is left out.
 - **FR-006**: When the panel's path is on a distribution (`\\wsl.localhost\<d>` or
   `\\wsl$\<d>`, with or without a deeper folder), its item MUST be the current (checked)

@@ -19,6 +19,7 @@
 #include "shiconov.h"
 #include "salheapstr.h"   // feature 098
 #include "saluncserver.h" // feature 284
+#include "salwsl.h"       // feature 374
 
 //
 // ****************************************************************************
@@ -2669,6 +2670,21 @@ BOOL CFilesWindow::ChangeDirLite(const char* newDir)
            failReason == CHPPFR_SUCCESS /* non-sense, but we are not bothered by it */;
 }
 
+// feature 374: opens the WSL distribution 'name' (UTF-8) - \\wsl.localhost\<name> - through the
+// ordinary disk path change (its errors, its wait); a path that does not fit is refused, never cut
+BOOL CFilesWindow::ChangePathToWslDistro(HWND parent, const char* name)
+{
+    CALL_STACK_MESSAGE1("CFilesWindow::ChangePathToWslDistro()");
+    char path[SAL_MAX_PATH_UTF8];
+    if (!SalWslDistroPathU8(name, path, _countof(path)))
+    {
+        TRACE_E("CFilesWindow::ChangePathToWslDistro(): the path does not fit");
+        SalMessageBox(parent, LoadStr(IDS_TOOLONGPATH), LoadStr(IDS_ERRORCHANGINGDIR), MB_OK | MB_ICONEXCLAMATION);
+        return FALSE;
+    }
+    return ChangePathToDisk(parent, path);
+}
+
 BOOL CFilesWindow::ChangePathToDrvType(HWND parent, int driveType, const char* displayName)
 {
     char path[MAX_PATH];
@@ -2741,6 +2757,18 @@ void CFilesWindow::ChangeDrive(char drive)
         case drvtOneDriveMenu:
             TRACE_E("CFilesWindow::ChangeDrive(): unexpected drive type: drvtOneDriveMenu");
             break;
+
+        case drvtWSLMenu: // feature 374: only on the drive bar
+            TRACE_E("CFilesWindow::ChangeDrive(): unexpected drive type: drvtWSLMenu");
+            break;
+
+        // feature 374: a WSL distribution - \\wsl.localhost\<name>
+        case drvtWSL:
+        {
+            ChangePathToWslDistro(HWindow, (const char*)driveTypeParam);
+            free((char*)driveTypeParam);
+            return;
+        }
 
         // is it Network?
         case drvtNeighborhood:

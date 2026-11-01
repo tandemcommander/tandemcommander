@@ -3372,6 +3372,7 @@ void CCfgPageChangeDrive::Transfer(CTransferInfo& ti)
     ti.CheckBox(IDC_CHD_SHOWANOTHER, Configuration.ChangeDriveShowAnother);
     ti.CheckBox(IDC_CHD_SHOWNET, Configuration.ChangeDriveShowNet);
     ti.CheckBox(IDC_CHD_SHOWCLOUDSTORAGE, Configuration.ChangeDriveCloudStorage);
+    ti.CheckBox(IDC_CHD_SHOWWSL, Configuration.ChangeDriveShowWSL); // feature 374
 
     if (ti.Type == ttDataToWindow)
     {

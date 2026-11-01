@@ -169,6 +169,18 @@ void CDriveBar::Execute(DWORD id)
                 TRACE_E("CDriveBar::Execute(): unexpected drive type: drvtOneDriveMenu");
                 return;
 
+            // feature 374: a WSL distribution - the button itself, or chosen from its drop-down menu
+            case drvtWSL:
+            {
+                panel->ChangePathToWslDistro(HWindow, (const char*)DriveTypeParam);
+                free((char*)DriveTypeParam);
+                return;
+            }
+
+            case drvtWSLMenu:
+                TRACE_E("CDriveBar::Execute(): unexpected drive type: drvtWSLMenu");
+                return;
+
             // jde o Network?
             case drvtNeighborhood:
             {
