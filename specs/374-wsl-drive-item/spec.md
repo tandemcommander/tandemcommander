@@ -36,6 +36,8 @@ Measured at `30268b7c` (by reading the code and on this computer):
 - Q: Which distributions are listed - also helper distributions such as `docker-desktop`? → A: Every installed distribution the registry lists, as File Explorer's *Linux* node and the share list of 373 do (autonomous run: conservative - no guessing which distribution is "real").
 - Q: What do the entries say? → A: `Linux - <distribution>` (a new text "Linux", the name File Explorer uses), in the style of `OneDrive - <name>`; the drive bar's drop-down button's tooltip is "Linux" (autonomous run: conservative - existing pattern).
 - Q: Where do they stand in the list? → A: After the cloud storages, before Network (autonomous run: conservative - with the other "places", the Network item keeps its place last).
+- Q: Does the Network option or the "no Network Neighborhood" policy also hide the WSL items? → A: No - only the new WSL option hides them; WSL is a local subsystem, not the network neighbourhood (autonomous run: conservative - the existing options keep exactly their meaning).
+- Q: How many distributions can be listed? → A: All usable ones (in practice a handful); the drive bar always holds a single WSL button, so its width does not grow with the count (autonomous run: item - the OneDrive pattern).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -138,7 +140,8 @@ saved, loaded and imported from an older configuration like the Network option.
   `\\wsl$\<d>`, with or without a deeper folder), its item MUST be the current (checked)
   item of the menu, as a drive is.
 - **FR-007**: A new option *Linux Distributions (WSL)* on the Change Drive configuration page
-  (on by default) MUST hide all WSL entries when off; it MUST be saved and loaded with the
+  (on by default) MUST hide all WSL entries when off (it is the only setting that hides them:
+  the Network option and the no-Network-Neighborhood policy do not); it MUST be saved and loaded with the
   configuration and imported from an exported configuration, like the Network option.
 - **FR-008**: The drive bars MUST be rebuilt when the set of distributions changed since they
   were built (checked when the Change Drive menu opens, as for the cloud storages).
