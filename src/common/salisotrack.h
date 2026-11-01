@@ -353,45 +353,58 @@ inline int SalIsoCcdTocLayout(const SalIsoCcdTocEntry* e, int n, int trackCount,
 // lost file system. Anything else - Mode 1, Form 1, a destroyed sync or header, one copy only, too few
 // bytes - is not Form 2 (the caller then marks the track: fails closed). A whole track is decided by
 // SalIsoForm2SectorsToCheck below.
-inline bool SalIsoSectorIsForm2(const unsigned char* raw, long long len, long long sectorRawSize)
+// Feature 367: the form of a stored sector by the checks above - a valid CD-ROM XA Mode 2 subheader with
+// the Form 2 bit is Form 2 (2324 bytes of user data), a valid one without it is Form 1 (2048 bytes of user
+// data, its EDC / ECC after them), anything else (no sync or mode 2 in a raw sector, unequal copies, a
+// channel of 32 or more, two type bits, too few bytes, a size that holds no subheader) is unknown - whether
+// it held 2048 or 2324 bytes of user data cannot be told.
+const int SAL_ISO_SECTOR_UNKNOWN = 0;
+const int SAL_ISO_SECTOR_FORM1 = 1;
+const int SAL_ISO_SECTOR_FORM2 = 2;
+inline int SalIsoSectorForm(const unsigned char* raw, long long len, long long sectorRawSize)
 {
     if (raw == nullptr || len < 0)
-        return false;
+        return SAL_ISO_SECTOR_UNKNOWN;
     int sub; // offset of the subheader in 'raw'
     if (sectorRawSize >= 2352)
     {
         if (len < 24)
-            return false;
+            return SAL_ISO_SECTOR_UNKNOWN;
         if (raw[0] != 0x00 || raw[11] != 0x00)
-            return false;
+            return SAL_ISO_SECTOR_UNKNOWN;
         for (int i = 1; i < 11; i++)
         {
             if (raw[i] != 0xFF)
-                return false;
+                return SAL_ISO_SECTOR_UNKNOWN;
         }
         if (raw[15] != 2)
-            return false;
+            return SAL_ISO_SECTOR_UNKNOWN;
         sub = 16;
     }
     else if (sectorRawSize == 2336)
     {
         if (len < 8)
-            return false;
+            return SAL_ISO_SECTOR_UNKNOWN;
         sub = 0;
     }
     else
-        return false;
+        return SAL_ISO_SECTOR_UNKNOWN;
     for (int i = 0; i < 4; i++)
     {
         if (raw[sub + i] != raw[sub + 4 + i])
-            return false;
+            return SAL_ISO_SECTOR_UNKNOWN;
     }
     if (raw[sub + 1] >= 32)
-        return false;
+        return SAL_ISO_SECTOR_UNKNOWN;
     unsigned char type = raw[sub + 2] & 0x0E;
     if (type != 0 && type != 0x08 && type != 0x04 && type != 0x02)
-        return false;
-    return (raw[sub + 2] & 0x20) != 0;
+        return SAL_ISO_SECTOR_UNKNOWN;
+    return (raw[sub + 2] & 0x20) != 0 ? SAL_ISO_SECTOR_FORM2 : SAL_ISO_SECTOR_FORM1;
+}
+
+inline bool SalIsoSectorIsForm2(const unsigned char* raw, long long len, long long sectorRawSize)
+{
+    return SalIsoSectorForm(raw, len, sectorRawSize) == SAL_ISO_SECTOR_FORM2;
 }
 
 // Feature 335 (reviews 2, 3): which sectors decide whether a raw data track is a Form 2 stream. A track
@@ -699,6 +712,104 @@ inline unsigned long long SalIsoForm2FileSize(unsigned long long dataLength)
 {
     unsigned long long sectors = dataLength / SAL_ISO_FILE_SECTOR_SIZE + (dataLength % SAL_ISO_FILE_SECTOR_SIZE != 0 ? 1 : 0);
     return sectors * SAL_ISO_FORM2_PAYLOAD;
+}
+
+// Feature 367: a file stored in Form 2 sectors that SalIsoXaIsForm2File does not recognise - no CD-XA record
+// (a plain ISO 9660 directory pointing into a Video CD's stream), mixed attributes (Form 1 + Form 2, as
+// interleaved game streams), a Form 1 first sector followed by Form 2 sectors - was read 2048 bytes a sector
+// (276 bytes of each Form 2 sector lost) and its stream counted as extracted. Such a file is now examined at
+// listing: the subheader of each of its sectors decides what is read of it.
+
+// Feature 367: is a listed ISO 9660 file examined sector by sector? Not when feature 366 already reads it as
+// Form 2 ('readAsForm2'), when its track does not store Form 2 user data where the plug-in reads user data
+// ('trackStoresForm2', SalIsoTrackStoresForm2) or when it has no bytes. Otherwise yes when it starts in a
+// Form 2 stream track ('startsInStream', feature 336), when its CD-XA attributes ('xaKnown', 'xaAttrs') carry
+// the Form 2 bit and not the directory bit (also with the Form 1 bit), or when its first sector is a Form 2
+// sector ('firstSectorForm2'). A plain Mode 2 Form 1 disc's files have none of these - they cost one read of
+// their first sector's head, never a read of all their sectors.
+inline bool SalIsoFileNeedsSectorScan(bool readAsForm2, bool trackStoresForm2, unsigned long long dataLength,
+                                      bool startsInStream, bool xaKnown, unsigned xaAttrs, bool firstSectorForm2)
+{
+    if (readAsForm2 || !trackStoresForm2 || dataLength == 0)
+        return false;
+    if (startsInStream || firstSectorForm2)
+        return true;
+    return xaKnown && (xaAttrs & SAL_ISO_XA_FORM2) != 0 && (xaAttrs & SAL_ISO_XA_DIRECTORY) == 0;
+}
+
+// Feature 367: the result of examining a file's sectors in order (SalIsoSectorScanInit, then
+// SalIsoSectorScanAdd with SalIsoSectorForm of each sector). The reader writes per sector: 2324 bytes of a
+// Form 2 sector, 2048 of any other - of a last sector that is not Form 2, only the record's remaining bytes.
+struct SalIsoSectorScan
+{
+    unsigned long long Sectors; // the sectors the record spans: ceil(length / 2048)
+    unsigned long long LastLen; // the record's bytes in its last sector (1..2048)
+    unsigned long long Seen;    // sectors added
+    unsigned long long Form2;   // Form 2 sectors among them
+    unsigned long long Whole;   // the leading run of sectors the reader reads whole
+    bool Stopped;               // the leading run has ended
+    int LastForm;               // the form of the last sector added
+};
+
+inline void SalIsoSectorScanInit(SalIsoSectorScan& s, unsigned long long dataLength)
+{
+    s.Sectors = dataLength / SAL_ISO_FILE_SECTOR_SIZE + (dataLength % SAL_ISO_FILE_SECTOR_SIZE != 0 ? 1 : 0);
+    s.LastLen = dataLength - (s.Sectors > 0 ? (s.Sectors - 1) * SAL_ISO_FILE_SECTOR_SIZE : 0);
+    s.Seen = 0;
+    s.Form2 = 0;
+    s.Whole = 0;
+    s.Stopped = false;
+    s.LastForm = SAL_ISO_SECTOR_UNKNOWN;
+}
+
+// Adds the next sector's form (sectors past s.Sectors are ignored). The leading run of sectors read whole
+// (what the stream coverage of feature 337 may count) takes a Form 2 sector, and a Form 1 sector (its 2048
+// bytes are all its user data) unless the record ends inside it; it stops at the first unknown sector - its
+// form, and so whether 276 bytes of it are lost, cannot be told: the gap check reads it (fails closed).
+inline void SalIsoSectorScanAdd(SalIsoSectorScan& s, int form)
+{
+    if (s.Seen >= s.Sectors)
+        return;
+    bool last = s.Seen + 1 == s.Sectors;
+    s.Seen++;
+    s.LastForm = form;
+    if (form == SAL_ISO_SECTOR_FORM2)
+        s.Form2++;
+    bool whole = form == SAL_ISO_SECTOR_FORM2 ||
+                 (form == SAL_ISO_SECTOR_FORM1 && (!last || s.LastLen == SAL_ISO_FILE_SECTOR_SIZE));
+    if (!s.Stopped && whole)
+        s.Whole++;
+    else
+        s.Stopped = true;
+}
+
+// What the scan decides: the file stays as before (no Form 2 sector), is read as a Form 2 file (every sector
+// Form 2 - as feature 366's files) or sector by sector (mixed). A scan that did not see every sector decides
+// nothing (stays as before).
+const int SAL_ISO_SCAN_NONE = 0;
+const int SAL_ISO_SCAN_FORM2 = 1;
+const int SAL_ISO_SCAN_MIXED = 2;
+inline int SalIsoSectorScanKind(const SalIsoSectorScan& s)
+{
+    if (s.Sectors == 0 || s.Seen != s.Sectors || s.Form2 == 0)
+        return SAL_ISO_SCAN_NONE;
+    return s.Form2 == s.Sectors ? SAL_ISO_SCAN_FORM2 : SAL_ISO_SCAN_MIXED;
+}
+
+// The size the file is listed and extracted with: 2324 bytes of each Form 2 sector, 2048 of each other one
+// before the last, and of a last sector that is not Form 2 the record's remaining bytes. Equals the record's
+// length when no sector is Form 2 and SalIsoForm2FileSize when all are.
+inline unsigned long long SalIsoSectorScanSize(const SalIsoSectorScan& s)
+{
+    if (s.Sectors == 0)
+        return 0;
+    if (s.Seen != s.Sectors) // not every sector seen: the record's length (nothing decided)
+        return (s.Sectors - 1) * SAL_ISO_FILE_SECTOR_SIZE + s.LastLen;
+    bool lastForm2 = s.LastForm == SAL_ISO_SECTOR_FORM2;
+    unsigned long long others = s.Sectors - s.Form2; // sectors that are not Form 2
+    if (lastForm2)
+        return s.Form2 * SAL_ISO_FORM2_PAYLOAD + others * SAL_ISO_FILE_SECTOR_SIZE;
+    return s.Form2 * SAL_ISO_FORM2_PAYLOAD + (others - 1) * SAL_ISO_FILE_SECTOR_SIZE + s.LastLen;
 }
 
 // Feature 337: is a sector's Form 2 user data ('len' bytes read) empty - read whole and all zero? A short

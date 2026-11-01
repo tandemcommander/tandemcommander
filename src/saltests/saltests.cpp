@@ -22073,6 +22073,131 @@ static void TestIsoXaForm2_366()
     CHECK(!SalIsoFileSectorSpan(450, 690228, 450, 447, &f, &e, -2324));
 }
 
+// feature 367: a file in Form 2 sectors without an XA Form 2 attribute (no XA record, mixed 0x3D55, a Form 1
+// first sector) is examined at listing - each sector's subheader decides what is read of it
+static void TestIsoSectorScan_367()
+{
+    // sector forms: a raw sector (sync, mode 2, subheader) and a 2336-byte one (subheader only)
+    unsigned char raw[24] = {0};
+    for (int i = 1; i < 11; i++)
+        raw[i] = 0xFF;
+    raw[15] = 2;
+    auto setSub = [](unsigned char* p, unsigned char ch, unsigned char sm)
+    {
+        p[0] = p[4] = 1;
+        p[1] = p[5] = ch;
+        p[2] = p[6] = sm;
+        p[3] = p[7] = 0;
+    };
+    setSub(raw + 16, 1, 0x62); // Form 2, video, real time (Video CD MPEG)
+    CHECK(SalIsoSectorForm(raw, 24, 2352) == SAL_ISO_SECTOR_FORM2);
+    CHECK(SalIsoSectorForm(raw, 24, 2448) == SAL_ISO_SECTOR_FORM2);
+    setSub(raw + 16, 1, 0x08); // Form 1, data (INFO.VCD; the probe's C-F1SUB first sector)
+    CHECK(SalIsoSectorForm(raw, 24, 2352) == SAL_ISO_SECTOR_FORM1);
+    CHECK(!SalIsoSectorIsForm2(raw, 24, 2352));
+    setSub(raw + 16, 0, 0x00); // an empty subheader: valid, Form 1
+    CHECK(SalIsoSectorForm(raw, 24, 2352) == SAL_ISO_SECTOR_FORM1);
+    setSub(raw + 16, 1, 0x62);
+    raw[22] = 0x08; // the copies differ: unknown
+    CHECK(SalIsoSectorForm(raw, 24, 2352) == SAL_ISO_SECTOR_UNKNOWN);
+    setSub(raw + 16, 32, 0x62); // channel 32
+    CHECK(SalIsoSectorForm(raw, 24, 2352) == SAL_ISO_SECTOR_UNKNOWN);
+    setSub(raw + 16, 1, 0x0C); // data + audio
+    CHECK(SalIsoSectorForm(raw, 24, 2352) == SAL_ISO_SECTOR_UNKNOWN);
+    setSub(raw + 16, 1, 0x28); // Form 2 bit with data: Form 2
+    CHECK(SalIsoSectorForm(raw, 24, 2352) == SAL_ISO_SECTOR_FORM2);
+    raw[15] = 1; // Mode 1
+    CHECK(SalIsoSectorForm(raw, 24, 2352) == SAL_ISO_SECTOR_UNKNOWN);
+    raw[15] = 2;
+    raw[5] = 0; // sync destroyed
+    CHECK(SalIsoSectorForm(raw, 24, 2352) == SAL_ISO_SECTOR_UNKNOWN);
+    raw[5] = 0xFF;
+    CHECK(SalIsoSectorForm(raw, 23, 2352) == SAL_ISO_SECTOR_UNKNOWN); // a short read
+    CHECK(SalIsoSectorForm(raw, 24, 2048) == SAL_ISO_SECTOR_UNKNOWN); // cooked: no subheader
+    CHECK(SalIsoSectorForm(nullptr, 24, 2352) == SAL_ISO_SECTOR_UNKNOWN);
+    unsigned char s36[8];
+    setSub(s36, 1, 0x62);
+    CHECK(SalIsoSectorForm(s36, 8, 2336) == SAL_ISO_SECTOR_FORM2);
+    setSub(s36, 1, 0x08);
+    CHECK(SalIsoSectorForm(s36, 8, 2336) == SAL_ISO_SECTOR_FORM1);
+    CHECK(SalIsoSectorForm(s36, 7, 2336) == SAL_ISO_SECTOR_UNKNOWN);
+    memset(s36, 0xFF, sizeof(s36)); // 0xFF fill: channel 255
+    CHECK(SalIsoSectorForm(s36, 8, 2336) == SAL_ISO_SECTOR_UNKNOWN);
+
+    // which files are examined
+    const unsigned L = 608256;
+    CHECK(!SalIsoFileNeedsSectorScan(true, true, L, true, true, 0x1555, true));     // 366 reads it as Form 2
+    CHECK(!SalIsoFileNeedsSectorScan(false, false, L, true, true, 0x1555, true));   // cooked / Mode 1 track
+    CHECK(!SalIsoFileNeedsSectorScan(false, true, 0, true, true, 0x1555, true));    // no bytes
+    CHECK(SalIsoFileNeedsSectorScan(false, true, L, true, false, 0, false));        // in a stream (C-F1SUB, X-VCDFILE)
+    CHECK(SalIsoFileNeedsSectorScan(false, true, L, false, false, 0, true));        // first sector Form 2 (C-NOXA in a .bin)
+    CHECK(SalIsoFileNeedsSectorScan(false, true, L, false, true, 0x3D55, false));   // mixed attributes (C-MIXED)
+    CHECK(SalIsoFileNeedsSectorScan(false, true, L, false, true, 0x1555, false));   // Form 2 attribute, Form 1 first sector
+    CHECK(!SalIsoFileNeedsSectorScan(false, true, L, false, true, 0x9555, false));  // a directory bit
+    CHECK(!SalIsoFileNeedsSectorScan(false, true, L, false, true, 0x0D55, false));  // a Form 1 file (INFO.VCD)
+    CHECK(!SalIsoFileNeedsSectorScan(false, true, L, false, false, 0x1555, false)); // no XA record: attributes ignored
+
+    // the scan: all Form 2 -> 366's size; none -> the record; mixed -> per sector
+    SalIsoSectorScan s;
+    SalIsoSectorScanInit(s, L); // 297 sectors
+    CHECK(s.Sectors == 297 && s.LastLen == 2048);
+    for (int i = 0; i < 297; i++)
+        SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    CHECK(SalIsoSectorScanKind(s) == SAL_ISO_SCAN_FORM2 && SalIsoSectorScanSize(s) == 690228ULL && s.Whole == 297);
+    CHECK(SalIsoSectorScanSize(s) == SalIsoForm2FileSize(L));
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_UNKNOWN); // past the record: ignored
+    CHECK(s.Seen == 297 && s.Whole == 297 && SalIsoSectorScanKind(s) == SAL_ISO_SCAN_FORM2);
+
+    SalIsoSectorScanInit(s, L); // C-F1SUB: a Form 1 first sector, 296 Form 2 sectors
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM1);
+    for (int i = 1; i < 297; i++)
+        SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    CHECK(SalIsoSectorScanKind(s) == SAL_ISO_SCAN_MIXED && SalIsoSectorScanSize(s) == 689952ULL && s.Whole == 297);
+
+    SalIsoSectorScanInit(s, 1000); // none Form 2, one part sector: the record's length, nothing whole
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM1);
+    CHECK(SalIsoSectorScanKind(s) == SAL_ISO_SCAN_NONE && SalIsoSectorScanSize(s) == 1000 && s.Whole == 0);
+    SalIsoSectorScanInit(s, 4096 + 5); // none Form 2: as 337's floor(size / 2048)
+    for (int i = 0; i < 3; i++)
+        SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM1);
+    CHECK(SalIsoSectorScanKind(s) == SAL_ISO_SCAN_NONE && SalIsoSectorScanSize(s) == 4101 && s.Whole == 2);
+
+    SalIsoSectorScanInit(s, 2 * 2048 + 1000); // C-LASTF1: Form 2, Form 2, a Form 1 last sector the record ends in
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM1);
+    CHECK(SalIsoSectorScanKind(s) == SAL_ISO_SCAN_MIXED && SalIsoSectorScanSize(s) == 2 * 2324 + 1000ULL && s.Whole == 2);
+    SalIsoSectorScanInit(s, 2 * 2048 + 1000); // a Form 2 last sector is read whole whatever the record says
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM1);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM1);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    CHECK(SalIsoSectorScanKind(s) == SAL_ISO_SCAN_MIXED && SalIsoSectorScanSize(s) == 2 * 2048 + 2324ULL && s.Whole == 3);
+
+    SalIsoSectorScanInit(s, 5 * 2048); // C-BADSUB: an unknown sector stops the run, later ones do not count
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_UNKNOWN);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    CHECK(SalIsoSectorScanKind(s) == SAL_ISO_SCAN_MIXED && SalIsoSectorScanSize(s) == 4 * 2324 + 2048ULL && s.Whole == 2);
+    SalIsoSectorScanInit(s, 3 * 2048); // an unknown first sector: nothing counts
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_UNKNOWN);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    CHECK(SalIsoSectorScanKind(s) == SAL_ISO_SCAN_MIXED && s.Whole == 0);
+
+    SalIsoSectorScanInit(s, 3 * 2048); // not every sector seen: nothing decided, the record's length
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    CHECK(SalIsoSectorScanKind(s) == SAL_ISO_SCAN_NONE && SalIsoSectorScanSize(s) == 3 * 2048ULL);
+    SalIsoSectorScanInit(s, 0);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    CHECK(s.Sectors == 0 && s.Seen == 0 && SalIsoSectorScanKind(s) == SAL_ISO_SCAN_NONE && SalIsoSectorScanSize(s) == 0);
+
+    // the largest 32-bit record, all Form 2: 366's size, no overflow
+    SalIsoSectorScanInit(s, 0xFFFFFFFFULL);
+    CHECK(s.Sectors == 2097152ULL && s.LastLen == 2047);
+}
+
 static void TestIsoStreamPartial_337()
 {
     // the start track keeps 336's guards
@@ -23953,6 +24078,7 @@ int main(int argc, char** argv)
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();
     TestIsoXaForm2_366();
+    TestIsoSectorScan_367();
     TestIsoWholeUnpack_338();
     TestHfsFileContent339();
     TestIsoSessionTracks_340();

@@ -100,20 +100,33 @@ public:
         virtual void SetLabel(const char* label);
     };
 
+    // feature 367: CFilePos::Form2 of a file whose sectors are of both forms
+    enum
+    {
+        FORM2_MIXED = 2
+    };
+
     struct CFilePos
     {
         DWORD Extent;
         WORD Partition;
         BYTE Type; // used in UDF/ISO bridge
         // feature 366: an ISO 9660 file stored in Mode 2 Form 2 sectors (a Video CD's video) - listed and read
-        // 2324 bytes a sector (CISOImage::FileIsForm2, ReadForm2Block)
+        // 2324 bytes a sector (CISOImage::FileIsForm2, ReadForm2Block); feature 367: FORM2_MIXED = its sectors
+        // are of both forms - listed with the sum and read sector by sector (ReadMixedBlock)
         BYTE Form2;
+        // feature 367: the file was examined at listing (CISOImage::ExamineFileSectors) - its stream coverage
+        // counts its first WholeSectors sectors (what the readers read whole, SalIsoSectorScanAdd)
+        BYTE Scanned;
+        DWORD WholeSectors;
 
         CFilePos()
         {
             Extent = 0;
             Type = FS_TYPE_NONE;
             Form2 = FALSE;
+            Scanned = FALSE;
+            WholeSectors = 0;
         }
     };
 
@@ -176,6 +189,16 @@ public:
     // sector is at disc address 'extent' read 2324 bytes a sector - the track of the extent stores Form 2
     // data where its user data is read, and the first sector is a Mode 2 Form 2 sector (SalIsoSectorIsForm2)?
     BOOL FileIsForm2(DWORD extent);
+    // feature 367: a file that feature 366 does not read as Form 2, with its first sector at disc address
+    // 'extent' and a record of 'dataLength' bytes ('xaKnown', 'xaAttrs': its CD-XA attributes) - examined when
+    // SalIsoFileNeedsSectorScan says so: the subheaders of all its sectors are read and decide 'form'
+    // (SAL_ISO_SCAN_*), the listed 'size' (SalIsoSectorScanSize) and 'wholeSectors'. FALSE = not examined (the
+    // outputs untouched; out of memory also marks the listing incomplete).
+    BOOL ExamineFileSectors(DWORD extent, unsigned long long dataLength, BOOL xaKnown, unsigned xaAttrs, int* form,
+                            unsigned long long* size, DWORD* wholeSectors);
+    // feature 367: reads sector 'block' of the open track as its subheader says - 2324 bytes of a Form 2
+    // sector (ReadForm2Block), 2048 of any other (ReadBlock); returns the bytes read, 0 on a read error
+    DWORD ReadMixedBlock(DWORD block, void* data);
 
     // Opens the ISO image named 'fileName'. The 'quiet' parameter determines whether
     // message boxes with errors will pop up

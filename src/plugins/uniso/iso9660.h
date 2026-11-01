@@ -334,10 +334,13 @@ protected:
         ADD_LEFT_OUT = 2
     };
     // feature 366: 'xaForm2' = the record's CD-XA attributes say Form 2 (SalIsoXaIsForm2File) - a file then
-    // confirmed by CISOImage::FileIsForm2 is listed with sectors x 2324 bytes and read 2324 bytes a sector
+    // confirmed by CISOImage::FileIsForm2 is listed with sectors x 2324 bytes and read 2324 bytes a sector;
+    // feature 367: 'examine' = a file record of the directory (not a folder, not the boot record's virtual
+    // record) - when it is not such a Form 2 file, CISOImage::ExamineFileSectors decides by its sectors
+    // ('xaKnown', 'xaAttrs': the record's CD-XA attributes)
     int AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
                    CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData,
-                   BOOL xaForm2 = FALSE);
+                   BOOL xaForm2 = FALSE, BOOL examine = FALSE, BOOL xaKnown = FALSE, unsigned xaAttrs = 0);
     // feature 328: the name a folder record is listed under ('rrName' NULL = it has no Rock Ridge name);
     // 'below' = whether its subtree is listed in decision mode
     char* PickDirName(char* path, CDirectoryRecord& dr, char* rrName, char* isoName, BOOL& below);

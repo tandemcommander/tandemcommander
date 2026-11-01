@@ -65,8 +65,10 @@ int CRawFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char*
 
         // feature 366: a Form 2 file (a Video CD's video) is read 2324 bytes a sector - its listed size counts
         // them; it was read 2048 bytes a sector (276 bytes of each lost)
-        BOOL form2 = fp != NULL && fp->Form2 != FALSE;
-        DWORD sectorBytes = form2 ? (DWORD)SAL_ISO_FORM2_PAYLOAD : SECTOR_SIZE;
+        // feature 367: a file of both forms is read sector by sector (2324 or 2048 bytes, as each subheader says)
+        BOOL mixed = fp != NULL && fp->Form2 == CISOImage::FORM2_MIXED;
+        BOOL form2 = fp != NULL && fp->Form2 != FALSE && !mixed;
+        DWORD sectorBytes = form2 || mixed ? (DWORD)SAL_ISO_FORM2_PAYLOAD : SECTOR_SIZE;
 
         // unpack file
         sector = new BYTE[sectorBytes];
@@ -130,10 +132,17 @@ int CRawFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char*
         DWORD nbytes = sectorBytes;
         while (remain.Value > 0)
         {
+            DWORD got = 0;
+            if (mixed)
+            {
+                got = Image->ReadMixedBlock(block, sector);
+                nbytes = got;
+            }
             if (remain.Value < nbytes)
                 nbytes = remain.LoDWord; // !!! the buffer size must not exceed DWORD
 
-            if (form2 ? !Image->ReadForm2Block(block, sector) : !ReadBlockPhys(block, 1, sector))
+            if (mixed ? got == 0 : form2 ? !Image->ReadForm2Block(block, sector)
+                                         : !ReadBlockPhys(block, 1, sector))
             {
                 if (silent == 0)
                 {

@@ -419,7 +419,7 @@ void CISO9660::ConvJolietName(char* dest, const char* src, int nLen)
 
 int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
                          CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData,
-                         BOOL xaForm2)
+                         BOOL xaForm2, BOOL examine, BOOL xaKnown, unsigned xaAttrs)
 {
     // feature 326 (review): the panel listing's own rule (sallistingname.h, CSalamanderDirectory::
     // AddFile / AddDir) - the fit check pass adds nothing, it only asks whether the entry would be
@@ -530,6 +530,26 @@ int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
         {
             fd.Size.Value = SalIsoForm2FileSize(dr.DataLength);
             filePos->Form2 = TRUE;
+        }
+        else if (examine && dr.DataLength > 0)
+        {
+            // feature 367: a file in Form 2 sectors without an XA Form 2 attribute (no XA record, mixed
+            // attributes, a Form 1 first sector) - its sectors' subheaders decide what is read of it; it was
+            // read 2048 bytes a sector (276 bytes of each Form 2 sector lost)
+            int form = SAL_ISO_SCAN_NONE;
+            unsigned long long size = 0;
+            DWORD whole = 0;
+            if (Image->ExamineFileSectors((DWORD)dr.LocationOfExtent, dr.DataLength, xaKnown, xaAttrs, &form, &size,
+                                          &whole))
+            {
+                filePos->Scanned = TRUE;
+                filePos->WholeSectors = whole;
+                if (form != SAL_ISO_SCAN_NONE)
+                {
+                    fd.Size.Value = size;
+                    filePos->Form2 = form == SAL_ISO_SCAN_FORM2 ? TRUE : CISOImage::FORM2_MIXED;
+                }
+            }
         }
 
         // file
@@ -950,10 +970,11 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
             }
             // feature 366: the record's CD-XA attributes (a Video CD's video files say Form 2)
             unsigned xaAttrs = 0;
-            BOOL xaForm2 = SalIsoXaAttributes((const unsigned char*)(data + offset), dirRecord.LengthOfDirectoryRecord,
-                                              xaAttrs) &&
-                           SalIsoXaIsForm2File(xaAttrs);
-            if (AddFileDir(path, listedName, dirRecord, dir, pluginData, xaForm2) == ADD_FAILED)
+            BOOL xaKnown = SalIsoXaAttributes((const unsigned char*)(data + offset), dirRecord.LengthOfDirectoryRecord,
+                                              xaAttrs);
+            BOOL xaForm2 = xaKnown && SalIsoXaIsForm2File(xaAttrs);
+            // feature 367: a file without that attribute may still be stored in Form 2 sectors - examined
+            if (AddFileDir(path, listedName, dirRecord, dir, pluginData, xaForm2, TRUE, xaKnown, xaAttrs) == ADD_FAILED)
                 ret = ERR_TERMINATE;
         } // if
 
@@ -1014,9 +1035,11 @@ int CISO9660::UnpackFile(CSalamanderForOperationsAbstract* salamander, const cha
     CISOImage::CFilePos* fp = (CISOImage::CFilePos*)fileData->PluginData;
     DWORD block = fp->Extent - ExtentOffset;
     CQuadWord remain = fileData->Size;
-    // feature 366: a Form 2 file is read 2324 bytes a sector (its listed size counts them)
-    BOOL form2 = fp->Form2 != FALSE;
-    DWORD sectorUserSize = form2 ? (DWORD)SAL_ISO_FORM2_PAYLOAD : 0x800;
+    // feature 366: a Form 2 file is read 2324 bytes a sector (its listed size counts them); feature 367: a
+    // file of both forms sector by sector (2324 or 2048 bytes, as each subheader says)
+    BOOL mixed = fp->Form2 == CISOImage::FORM2_MIXED;
+    BOOL form2 = fp->Form2 != FALSE && !mixed;
+    DWORD sectorUserSize = form2 || mixed ? (DWORD)SAL_ISO_FORM2_PAYLOAD : 0x800;
     DWORD nbytes = sectorUserSize;
     BYTE* buffer = new BYTE[sectorUserSize];
     if (!buffer)
@@ -1031,10 +1054,17 @@ int CISO9660::UnpackFile(CSalamanderForOperationsAbstract* salamander, const cha
 */
     while (remain.Value > 0)
     {
+        DWORD got = 0;
+        if (mixed)
+        {
+            got = Image->ReadMixedBlock(block, buffer);
+            nbytes = got;
+        }
         if (remain.Value < nbytes)
             nbytes = remain.LoDWord; // !!! the buffer size must not exceed DWORD
 
-        if (form2 ? !Image->ReadForm2Block(block, buffer) : !Image->ReadBlock(block, sectorUserSize, buffer))
+        if (mixed ? got == 0 : form2 ? !Image->ReadForm2Block(block, buffer)
+                                     : !Image->ReadBlock(block, sectorUserSize, buffer))
         {
             if (silent == 0)
             {

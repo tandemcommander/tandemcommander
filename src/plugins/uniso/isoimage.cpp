@@ -1699,6 +1699,78 @@ BOOL CISOImage::FileIsForm2(DWORD extent)
     return SalIsoSectorIsForm2(raw, got, t->SectorSize) ? TRUE : FALSE;
 }
 
+BOOL CISOImage::ExamineFileSectors(DWORD extent, unsigned long long dataLength, BOOL xaKnown, unsigned xaAttrs,
+                                   int* form, unsigned long long* size, DWORD* wholeSectors)
+{
+    CALL_STACK_MESSAGE2("CISOImage::ExamineFileSectors(%u, , , , , , )", extent);
+
+    // feature 367: the file is read from the track its first sector lies in (as FileIsForm2)
+    if (form == NULL || size == NULL || wholeSectors == NULL || dataLength == 0 || Tracks.Count <= 0)
+        return FALSE;
+    int track = GetTrackFromExtent(extent);
+    if (track < 0 || track >= Tracks.Count || Tracks[track] == NULL)
+        return FALSE;
+    const Track* t = Tracks[track];
+    bool stores = SalIsoTrackStoresForm2(t->SectorSize, t->SectorHeaderSize);
+    if (!stores || extent < t->ExtentOffset)
+        return FALSE;
+    LONGLONG at = t->Start + (LONGLONG)(extent - t->ExtentOffset) * t->SectorSize;
+    unsigned char head[24];
+    DWORD got = ReadDataByPos(at, sizeof(head), head);
+    bool firstForm2 = SalIsoSectorIsForm2(head, got, t->SectorSize);
+    if (!SalIsoFileNeedsSectorScan(false, stores, dataLength, t->Form2Stream != FALSE, xaKnown != FALSE, xaAttrs,
+                                   firstForm2))
+        return FALSE;
+
+    // every sector's subheader, 64 stored sectors a read
+    const DWORD chunkSectors = 64;
+    unsigned char* buf = new unsigned char[(size_t)chunkSectors * t->SectorSize];
+    if (buf == NULL)
+    {
+        ListingLeftOut.SetIncomplete(); // the file cannot be examined: fails closed
+        return FALSE;
+    }
+    SalIsoSectorScan scan;
+    SalIsoSectorScanInit(scan, dataLength);
+    while (scan.Seen < scan.Sectors)
+    {
+        unsigned long long left = scan.Sectors - scan.Seen;
+        DWORD n = left < chunkSectors ? (DWORD)left : chunkSectors;
+        DWORD read = ReadDataByPos(at + (LONGLONG)scan.Seen * t->SectorSize, n * t->SectorSize, buf);
+        DWORD i;
+        for (i = 0; i < n; i++)
+        {
+            // a sector past the end of the image (a short read) is unknown: its read fails at unpack
+            long long avail = (long long)read - (long long)i * t->SectorSize;
+            SalIsoSectorScanAdd(scan, avail > 0 ? SalIsoSectorForm(buf + (size_t)i * t->SectorSize, avail, t->SectorSize)
+                                                : SAL_ISO_SECTOR_UNKNOWN);
+        }
+    }
+    delete[] buf;
+
+    *form = SalIsoSectorScanKind(scan);
+    *size = SalIsoSectorScanSize(scan);
+    *wholeSectors = (DWORD)scan.Whole; // a 32-bit record spans at most 2^21 sectors
+    TRACE_I("CISOImage::ExamineFileSectors(): extent " << extent << ": " << scan.Form2 << " of " << scan.Sectors
+                                                       << " sectors Form 2, " << scan.Whole << " read whole");
+    return TRUE;
+}
+
+DWORD
+CISOImage::ReadMixedBlock(DWORD block, void* data)
+{
+    SLOW_CALL_STACK_MESSAGE3("CISOImage::ReadMixedBlock(%u, 0x%p)", block, data);
+
+    // feature 367: the stored sector of the open track from its start - its subheader decides the form
+    if (!SalIsoTrackStoresForm2(SectorRawSize, SectorHeaderSize))
+        return 0;
+    unsigned char head[24];
+    DWORD got = ReadDataByPos(GetSectorOffset(block) - SectorHeaderSize, sizeof(head), head);
+    if (SalIsoSectorForm(head, got, SectorRawSize) == SAL_ISO_SECTOR_FORM2)
+        return ReadForm2Block(block, data);
+    return ReadBlock(block, (DWORD)SAL_ISO_FILE_SECTOR_SIZE, data) == (DWORD)SAL_ISO_FILE_SECTOR_SIZE ? (DWORD)SAL_ISO_FILE_SECTOR_SIZE : 0;
+}
+
 BYTE CISOImage::GetTrackFromExtent(DWORD extent)
 {
     CALL_STACK_MESSAGE2("CISOImage::GetTrackFromExtent(%u)", extent);
@@ -1771,13 +1843,18 @@ void CISOImage::NoteListedFileStarts(const CSalamanderDirectoryAbstract* dir, bo
                 continue;
             covered[t] = true;
             // feature 337: the sectors the unpack reads of the stream (salisotrack.h); feature 366: a Form 2
-            // file reads 2324 bytes of each
+            // file reads 2324 bytes of each; feature 367: an examined file covers the leading run of sectors
+            // it reads whole (an unknown sector and what follows it are left to the gap check)
             SalIsoStreamSpan span;
             span.Track = t;
+            unsigned long long bytes = fp->Scanned ? (unsigned long long)fp->WholeSectors * SAL_ISO_FILE_SECTOR_SIZE
+                                                   : file->Size.Value;
+            long long perSector = fp->Scanned ? SAL_ISO_FILE_SECTOR_SIZE
+                                  : fp->Form2 ? SAL_ISO_FORM2_PAYLOAD
+                                              : SAL_ISO_FILE_SECTOR_SIZE;
             if (Tracks[t]->Form2Stream &&
-                SalIsoFileSectorSpan(fp->Extent, file->Size.Value, Tracks[t]->ExtentOffset, trackSectors[t],
-                                     &span.First, &span.End,
-                                     fp->Form2 ? SAL_ISO_FORM2_PAYLOAD : SAL_ISO_FILE_SECTOR_SIZE))
+                SalIsoFileSectorSpan(fp->Extent, bytes, Tracks[t]->ExtentOffset, trackSectors[t],
+                                     &span.First, &span.End, perSector))
                 spans.Add(span);
         }
         count = d->GetDirsCount();
