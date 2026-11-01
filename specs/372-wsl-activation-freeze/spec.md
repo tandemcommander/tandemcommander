@@ -150,10 +150,10 @@ A local folder in both panels: activation behaves as before or better.
 
 ### Measurable Outcomes
 
-- **SC-001**: With `\\wsl.localhost\<distro>\` or `...\usr\bin` in the left panel, the longest
-  time the main window does not answer during the 1.5 s after an activation is under 50 ms on 5
-  of 5 activations, compared with 392-410 ms before (the part caused by the WSL folder; see
-  SC-003 for the part every activation pays).
+- **SC-001**: With `\\wsl.localhost\<distro>\` or `...\usr\bin` in the left panel, every time the
+  main window does not answer that starts later than 100 ms after an activation (after the block
+  every activation pays, SC-003) is under 50 ms, on 5 of 5 activations, compared with 392-411 ms
+  starting at +218 ms before.
 - **SC-002**: A file created in the WSL folder while the program is inactive is shown in the
   panel within 2 s after the activation.
 - **SC-003**: The LOCAL control's longest wait after activation is not longer than before (140 ms
