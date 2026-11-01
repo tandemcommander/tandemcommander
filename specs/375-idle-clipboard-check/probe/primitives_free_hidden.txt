@@ -1,0 +1,4 @@
+clip_primitives: apartment STA; session 29
+#0: seq 227; open-window 0 (pid 0); owner 129894288; OpenClipboard True err 1400 0,11 ms, text True, with Get+Close 0,77 ms; IsTextOnClipboard loop 0,01 ms (0 failed opens); IsClipboardFormatAvailable(CF_HDROP) False 0,10 ms; OleGetClipboard hr 0x00000000 1,07 ms, EnumFormatEtc 4 formats 0,11 ms
+#1: seq 227; open-window 0 (pid 0); owner 129894288; OpenClipboard True err 1400 0,00 ms, text True, with Get+Close 0,01 ms; IsTextOnClipboard loop 0,01 ms (0 failed opens); IsClipboardFormatAvailable(CF_HDROP) False 0,00 ms; OleGetClipboard hr 0x00000000 0,01 ms, EnumFormatEtc 4 formats 0,01 ms
+#2: seq 227; open-window 0 (pid 0); owner 129894288; OpenClipboard True err 1400 0,00 ms, text True, with Get+Close 0,02 ms; IsTextOnClipboard loop 0,01 ms (0 failed opens); IsClipboardFormatAvailable(CF_HDROP) False 0,00 ms; OleGetClipboard hr 0x00000000 0,00 ms, EnumFormatEtc 4 formats 0,01 ms

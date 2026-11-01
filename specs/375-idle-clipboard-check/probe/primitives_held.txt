@@ -1,0 +1,7 @@
+holder ready: True
+clip_primitives: apartment STA; session 29
+#0: seq 237; open-window 20450106 (pid 47756); owner 129894288; OpenClipboard False err 5 0,11 ms, text False, with Get+Close 0,11 ms; IsTextOnClipboard loop 165,50 ms (11 failed opens); IsClipboardFormatAvailable(CF_HDROP) False 0,14 ms; OleGetClipboard hr 0x800401D0 0,62 ms, EnumFormatEtc -1 formats 0,00 ms
+#1: seq 237; open-window 20450106 (pid 47756); owner 129894288; OpenClipboard False err 5 0,00 ms, text False, with Get+Close 0,00 ms; IsTextOnClipboard loop 154,87 ms (11 failed opens); IsClipboardFormatAvailable(CF_HDROP) False 0,00 ms; OleGetClipboard hr 0x800401D0 0,01 ms, EnumFormatEtc -1 formats 0,00 ms
+after the holder closed:
+clip_primitives: apartment STA; session 29
+#0: seq 237; open-window 0 (pid 0); owner 129894288; OpenClipboard True err 1400 0,00 ms, text True, with Get+Close 0,87 ms; IsTextOnClipboard loop 0,01 ms (0 failed opens); IsClipboardFormatAvailable(CF_HDROP) False 0,00 ms; OleGetClipboard hr 0x00000000 0,03 ms, EnumFormatEtc 4 formats 0,14 ms

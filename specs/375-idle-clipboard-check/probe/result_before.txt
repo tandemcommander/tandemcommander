@@ -1,0 +1,21 @@
+act375_probe (feature 375) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 15:00; registry key existed True; limit 30 ms; 5 activations a row; at start: clipboard not open
+
+  waits (start ms after activation + length ms): FREE #0: 
+  waits (start ms after activation + length ms): FREE #1: 
+  waits (start ms after activation + length ms): FREE #2: 
+  waits (start ms after activation + length ms): FREE #3: 
+  waits (start ms after activation + length ms): FREE #4: 
+FREE       ACTIVATE PASS        longest 2,3 ms < 30; clipboard not open; at rest max 4,8 ms; per activation max [ms]: 0,4, 0,4, 0,4, 2,3, 0,4; after the row max 0,2 ms; title 'T375 - local - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+FREE       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+  waits (start ms after activation + length ms): HELD #0: 15+142
+  waits (start ms after activation + length ms): HELD #1: 15+142
+  waits (start ms after activation + length ms): HELD #2: 15+142
+  waits (start ms after activation + length ms): HELD #3: 15+140
+  waits (start ms after activation + length ms): HELD #4: 15+141
+HELD       ACTIVATE FAIL        longest 142,0 ms < 30; clipboard open by window 77204050 of pid 8788; at rest max 0,2 ms; per activation max [ms]: 141,8, 141,7, 142, 139,7, 140,8; after the row max 0,1 ms; title 'T375 - local - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+HELD       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 6AA0889486446211300E2C922222E1CCA2A511947313F28831587E5C356A45EC / after 6AA0889486446211300E2C922222E1CCA2A511947313F28831587E5C356A45EC
+
+Rows: PASS 3, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; clipboard not open; registry restored+identical: True
