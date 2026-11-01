@@ -65,3 +65,52 @@ with wrong data (the image is kept, so nothing is deleted, but the extracted fil
 ## Decisions
 
 (see spec Clarifications / Assumptions)
+
+## Analyze
+
+Run 1: CRITICAL 0, HIGH 0. LOW C1 (FR-008 proved only implicitly) - fixed in T004 (saltests compare the
+relative table with 41f18c08's formula); LOW U1 (an ETN2 audio entry becomes a plain track record of audio
+type, as ETNF always made it) - accepted, recorded as a limit; LOW I1 (352's R-ABS reports FAIL against its
+old "kept" expectation by design) - stated in spec SC-003 and quickstart. No second run needed (no
+CRITICAL / HIGH).
+
+## Implementation
+
+- `src/common/salnrgcdtext.h`: `SalNrgModeVerified`, `SalNrgEtnSectorSize(mode, v2)` (verified modes by
+  libmirage's table; others keep the earlier size - ETNF bit 0, ETN2 2048), `SalNrgEtnEntry` /
+  `SalNrgBigEndian` / `SalNrgEtnDecode`, `SalNrgEtnEnd` (saturated), `SalNrgEtnEntryCount`,
+  `SalNrgEtn2ChunkPlausible` (at most 99 entries).
+- `src/common/salisotrack.h`: `SalIsoCcdSectorCount` (negative -> 0 + inconsistent), `SalIsoCcdTocFind`,
+  `SalIsoCcdTocLayout` (NONE / OK / INCONSISTENT). While writing the tests a gap showed: with fewer
+  `[TRACK n]` sections than track points the last section would have run to the session's lead-out - the
+  rule now also requires as many distinct ADR-1 track points (1..99) as sections (else NONE; spec edge
+  case and research R3 updated).
+- `nrg.cpp`: `readETNF` sector size by `SalNrgEtnSectorSize(mode, false)`; `readETN2` rewritten - chunk read
+  only when `SalNrgChunkFits` and `SalNrgEtn2ChunkPlausible`, a track per whole 32-byte entry (start, end =
+  start + length, verified mode -> `SetTrackTypeMode`, else Mode 1 / ISO 9660 as before, sector size,
+  header size, extent = first-sector field), the next chunk header right after the chunk. This also ends
+  41f18c08's 16-byte over-read of an ETN2 chunk under 16 bytes (the ETN2 half of Inbox item
+  `iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard`; its SINF half stays open).
+- `img.cpp` `ReadSessionCCD`: `SalIsoCcdTocLayout` after the tracks are built; followed -> sessions = its
+  runs, `ExtentOffset` = PLBA, `Start` / `End` from first sector and count (0x930 a sector), INCONSISTENT
+  marks the listing; NONE -> the 41f18c08 INDEX-1 path, its counts now signed through
+  `SalIsoCcdSectorCount` (negative -> 0 + mark). 352's sections / splits mark after both.
+- clang-format only on the changed line ranges (`--lines` from `git diff -U0`), BOM kept.
+
+## Checks
+
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- `.\build.cmd` -> `BUILD SUCCEEDED`, no warning in the changed files.
+- saltests 29,791 -> **29,887 / 0** (`TestNrgEtn365`, `TestIsoCcdToc365`, +96 checks). (A first build piped
+  through `Select-Object -First 20` was cut short and left the old saltests.exe - re-run after a full build.)
+- Mutants (`mutants.ps1`: one header edit, MSBuild of saltests only with `OPENSAL_BUILD_DIR` set, run,
+  restore; a first run without `OPENSAL_BUILD_DIR` built into a stray `src/vcxproj/saltests/tandemcommander`
+  folder and ran the old exe - removed, re-run): ETNF bit 0 for all modes 3 failed; ETN2 end = length 2;
+  no 99-entry bound 2; CCD count unclamped (DWORD wrap) 5; no points-count check 1; no session-order check
+  1; lead-out of any session 9. Restored: 0 failed.
+
+## Measurement after (Debug x64, branch)
+
+`iso365_probe` -> `probe/result_after.txt`: **18 PASS / 0 FAIL** (before 12 / 6). Every R row: Session 01/a.txt
+and Session 02/b.txt with their content, no window, image deleted; controls unchanged. Registry restored,
+identical (SHA-256 07F63FE1...).

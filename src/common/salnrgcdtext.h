@@ -171,3 +171,106 @@ inline char* SalNrgAudioTrackNameAlloc(int number, const char* label)
         snprintf(name, (size_t)n + 1, "Audio Track %02d", number);
     return name;
 }
+
+// Feature 365: the track-at-once tables of an NRG image - ETNF (Nero v1, 20 bytes a track: start and
+// length in bytes as 32 bits at 0 / 4, the mode byte at 11, the track's first disc sector at 12) and
+// ETN2 (the 64-bit form, 32 bytes a track: start / length at 0 / 8, mode at 19, first sector at 20); all
+// big-endian (libmirage's NRG_ETN_Block). The reader took the stored sector size of an ETNF track from
+// bit 0 of the mode byte (raw Mode 1 = 0x05 became 2336 bytes, raw Mode 2 = 0x06 2048) and read only the
+// first ETN2 entry of a chunk, with Mode 1 / 2048, first sector 0 and an end equal to its length.
+#define SAL_NRG_ETNF_ENTRY 20      // bytes of an ETNF entry
+#define SAL_NRG_ETN2_ENTRY 32      // bytes of an ETN2 entry
+#define SAL_NRG_ETN_MAX_ENTRIES 99 // a disc holds at most 99 tracks
+
+// true for a Nero mode byte whose stored sector size is known (libmirage's
+// mirage_parser_nrg_decode_mode): 0x00 Mode 1 / 2048, 0x02 Mode 2 Form 1 / 2048, 0x03 Mode 2 / 2336,
+// 0x05 Mode 1 / 2352, 0x06 Mode 2 / 2352, 0x07 audio / 2352. The subchannel modes 0x0F / 0x10 / 0x11 are
+// not: how their track-at-once data stores the 96 subchannel bytes is not known
+inline bool SalNrgModeVerified(unsigned char mode)
+{
+    return mode == 0x00 || mode == 0x02 || mode == 0x03 || mode == 0x05 || mode == 0x06 || mode == 0x07;
+}
+
+// the stored bytes a sector of an ETNF ('v2' false) or ETN2 ('v2' true) track of Nero mode 'mode'; a mode
+// SalNrgModeVerified does not know keeps the size the reader gave it before (ETNF: 2336 when bit 0 is
+// set, else 2048; ETN2: 2048)
+inline unsigned int SalNrgEtnSectorSize(unsigned char mode, bool v2)
+{
+    switch (mode)
+    {
+    case 0x00:
+    case 0x02:
+        return 2048;
+    case 0x03:
+        return 2336;
+    case 0x05:
+    case 0x06:
+    case 0x07:
+        return 2352;
+    }
+    if (v2)
+        return 2048;
+    return (mode & 1) != 0 ? 2336 : 2048;
+}
+
+struct SalNrgEtnEntry
+{
+    unsigned long long Start;  // byte of the image the track's data starts at
+    unsigned long long Length; // bytes of the track's data
+    unsigned char Mode;        // Nero's mode byte
+    unsigned long Sector;      // the track's first disc sector
+};
+
+// the big-endian unsigned number of 'bytes' bytes at 'p'
+inline unsigned long long SalNrgBigEndian(const unsigned char* p, int bytes)
+{
+    unsigned long long v = 0;
+    int i;
+    for (i = 0; i < bytes; i++)
+        v = (v << 8) | p[i];
+    return v;
+}
+
+// decodes the ETNF ('v2' false, SAL_NRG_ETNF_ENTRY bytes at 'p') or ETN2 ('v2' true, SAL_NRG_ETN2_ENTRY
+// bytes) entry at 'p'
+inline void SalNrgEtnDecode(const unsigned char* p, bool v2, SalNrgEtnEntry& e)
+{
+    if (v2)
+    {
+        e.Start = SalNrgBigEndian(p, 8);
+        e.Length = SalNrgBigEndian(p + 8, 8);
+        e.Mode = p[19];
+        e.Sector = (unsigned long)SalNrgBigEndian(p + 20, 4);
+    }
+    else
+    {
+        e.Start = SalNrgBigEndian(p, 4);
+        e.Length = SalNrgBigEndian(p + 4, 4);
+        e.Mode = p[11];
+        e.Sector = (unsigned long)SalNrgBigEndian(p + 12, 4);
+    }
+}
+
+// the byte after a track that starts at 'start' and holds 'length' bytes - start + length, at most the
+// largest signed 64-bit value (the track record keeps signed positions)
+inline unsigned long long SalNrgEtnEnd(unsigned long long start, unsigned long long length)
+{
+    const unsigned long long top = 0x7FFFFFFFFFFFFFFFull;
+    if (start >= top || length > top - start)
+        return top;
+    return start + length;
+}
+
+// the whole entries an ETNF / ETN2 chunk of 'size' bytes holds (the bytes after the last are not read)
+inline unsigned long long SalNrgEtnEntryCount(unsigned long long size, bool v2)
+{
+    return size / (v2 ? SAL_NRG_ETN2_ENTRY : SAL_NRG_ETNF_ENTRY);
+}
+
+// true when an ETN2 chunk of 'size' bytes holds no more tracks than a disc can (99) - the reader made one
+// track a chunk before feature 365; a larger chunk is skipped as damaged rather than make one track per
+// 32 bytes of it (as features 331 / 350 skip CDTX / CUEX chunks)
+inline bool SalNrgEtn2ChunkPlausible(unsigned long long size)
+{
+    return SalNrgEtnEntryCount(size, true) <= SAL_NRG_ETN_MAX_ENTRIES;
+}

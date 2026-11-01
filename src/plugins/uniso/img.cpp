@@ -447,6 +447,7 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
             DWORD* pointMax = NULL;
             DWORD* extents = NULL;
             DWORD* extentsEnd = NULL;
+            SalIsoCcdTocTrack* layout = NULL; // feature 365
 
             try
             {
@@ -497,23 +498,65 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
                     AddTrack(track);
                 } // for
 
+                // feature 365: the layout from the table of contents (salisotrack.h) - a track's session and
+                // first disc sector from its [Entry n], its end at the next track's or the session's lead-out,
+                // the sessions one after another in the .img. The split where INDEX 1 is 0 read only tables
+                // whose INDEX values count from the session (CloneCD's own): with INDEX counted from the disc
+                // two sessions were one split, the second session not listed, the last track's count wrapped.
+                // For a consistent table of CloneCD's form both give the same tracks; a table the layout
+                // cannot follow keeps the split below
+                int tocResult = SAL_ISO_CCD_TOC_NONE;
+                {
+                    SalIsoCcdTocEntry* toc = new SalIsoCcdTocEntry[ccd->EntryArray.Count];
+                    layout = new SalIsoCcdTocTrack[ccd->TrackArray.Count];
+                    if (toc == NULL || layout == NULL)
+                    {
+                        delete[] toc;
+                        throw Error(IDS_INSUFFICIENT_MEMORY, quiet);
+                    }
+                    for (i = 0; i < ccd->EntryArray.Count; i++)
+                    {
+                        CCDEntry* entry = ccd->EntryArray[i];
+                        toc[i].Session = entry->Session;
+                        toc[i].Point = (int)entry->Point;
+                        toc[i].Adr = entry->ADR;
+                        toc[i].Plba = (int)entry->PLBA; // read as an int (SalIsoCcdReadInt), kept in a DWORD
+                    }
+                    tocResult = SalIsoCcdTocLayout(toc, ccd->EntryArray.Count, ccd->TrackArray.Count, layout);
+                    delete[] toc;
+                }
+
                 // count tracks for each session
                 int firstTrack = 0;
-                for (i = 1; i < ccd->TrackArray.Count; i++)
+                if (tocResult != SAL_ISO_CCD_TOC_NONE)
                 {
-                    CCDTrack* track = ccd->TrackArray[i];
-                    if (track->Index == 0)
+                    for (i = 1; i < ccd->TrackArray.Count; i++)
                     {
-                        AddSessionTracks(i - firstTrack);
-                        firstTrack = i;
+                        if (layout[i].Session != layout[i - 1].Session)
+                        {
+                            AddSessionTracks(i - firstTrack);
+                            firstTrack = i;
+                        }
                     }
-                } // for
+                }
+                else
+                {
+                    for (i = 1; i < ccd->TrackArray.Count; i++)
+                    {
+                        CCDTrack* track = ccd->TrackArray[i];
+                        if (track->Index == 0)
+                        {
+                            AddSessionTracks(i - firstTrack);
+                            firstTrack = i;
+                        }
+                    } // for
+                }
                 AddSessionTracks(ccd->TrackArray.Count - firstTrack);
 
                 // feature 352: the session layout is trusted only when the [Session n] sections and the
-                // splits above agree (a real multi-session dump with absolute INDEX 1 values has one
-                // split); otherwise every loop stays within its own count and the listing is marked
-                // incomplete (a whole unpack fails, the image is kept)
+                // splits above agree (feature 365: the sessions holding tracks by the table of contents, or
+                // the INDEX 1 splits when it cannot be followed); otherwise every loop stays within its own
+                // count and the listing is marked incomplete (a whole unpack fails, the image is kept)
                 if (!SalIsoCcdLayoutTrusted(ccd->SessionArray.Count, Session.Count))
                 {
                     TRACE_I("CISOImage::ReadSessionCCD(): " << ccd->SessionArray.Count << " session sections, "
@@ -539,67 +582,96 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
                     firstTrack += Session[i];
                 }
 
-                // set ExtentOffset in sessions
-                for (i = 0; i < ccd->SessionArray.Count; i++)
+                if (tocResult != SAL_ISO_CCD_TOC_NONE)
                 {
-                    pointMin[i] = 0xFFFFFFFF;
-                    pointMax[i] = 0x00000000;
-                    extents[i] = 0;
-                    extentsEnd[i] = 0;
-                }
-
-                for (i = 0; i < ccd->EntryArray.Count; i++)
-                {
-                    CCDEntry* entry = ccd->EntryArray[i];
-                    int session = SalIsoCcdSessionIndex(entry->Session, ccd->SessionArray.Count); // checked above
-                    if (entry->ADR == 1 && entry->Point < pointMin[session])
+                    // feature 365: the table of contents' layout - the first disc sector, the start and the
+                    // end of every track in the .img; a track whose end came before its start has no sectors
+                    // and the listing is marked incomplete
+                    for (i = 0; i < Tracks.Count; i++)
                     {
-                        pointMin[session] = entry->Point;
-                        extents[session] = entry->PLBA;
+                        CISOImage::Track* track = Tracks[i];
+                        track->ExtentOffset = (DWORD)layout[i].Extent;
+                        track->Start = layout[i].FirstSector * track->SectorSize;
+                        track->End = track->Start + layout[i].Sectors * track->SectorSize;
                     }
-
-                    if (entry->ADR == 1 && entry->Point > pointMax[session])
+                    if (tocResult == SAL_ISO_CCD_TOC_INCONSISTENT)
                     {
-                        pointMax[session] = entry->Point;
-                        extentsEnd[session] = entry->PLBA;
+                        TRACE_I("CISOImage::ReadSessionCCD(): a track ends before it starts");
+                        ListingLeftOut.SetIncomplete();
                     }
                 }
-
-                LONGLONG start = 0x0;
-                firstTrack = 0;
-                for (i = 0; i < Session.Count; i++)
+                else
                 {
-                    // feature 352: a split takes its offsets from its [Session n] section's row only when
-                    // the .ccd has that section (it read extents[i] past the tables); none: 0 (the
-                    // listing is marked above)
-                    int row = SalIsoCcdSplitSection(i, ccd->SessionArray.Count);
-                    DWORD extent = row >= 0 ? extents[row] : 0;
-                    DWORD extentEnd = row >= 0 ? extentsEnd[row] : 0;
-
-                    int j;
-                    for (j = 0; j < Session[i]; j++)
+                    // set ExtentOffset in sessions
+                    for (i = 0; i < ccd->SessionArray.Count; i++)
                     {
-                        CISOImage::Track* track = Tracks[firstTrack + j];
-                        track->ExtentOffset += extent; // the extent is counted from zero within the session -> we want the absolute position in the image
-
-                        DWORD endSector;
-                        if (j < Session[i] - 1)
-                            endSector = ccd->TrackArray[firstTrack + j + 1]->Index;
-                        else
-                            endSector = extentEnd - extent;
-
-                        CCDTrack* ccdTrack = ccd->TrackArray[firstTrack + j];
-                        DWORD sectorCount = endSector - ccdTrack->Index;
-                        track->End = start + (track->SectorSize * sectorCount);
-                        start = track->End;
+                        pointMin[i] = 0xFFFFFFFF;
+                        pointMax[i] = 0x00000000;
+                        extents[i] = 0;
+                        extentsEnd[i] = 0;
                     }
 
-                    firstTrack += Session[i];
-                }
+                    for (i = 0; i < ccd->EntryArray.Count; i++)
+                    {
+                        CCDEntry* entry = ccd->EntryArray[i];
+                        int session = SalIsoCcdSessionIndex(entry->Session, ccd->SessionArray.Count); // checked above
+                        if (entry->ADR == 1 && entry->Point < pointMin[session])
+                        {
+                            pointMin[session] = entry->Point;
+                            extents[session] = entry->PLBA;
+                        }
 
-                for (i = 0; i < Tracks.Count - 1; i++)
-                {
-                    Tracks[i + 1]->Start = Tracks[i]->End;
+                        if (entry->ADR == 1 && entry->Point > pointMax[session])
+                        {
+                            pointMax[session] = entry->Point;
+                            extentsEnd[session] = entry->PLBA;
+                        }
+                    }
+
+                    LONGLONG start = 0x0;
+                    firstTrack = 0;
+                    for (i = 0; i < Session.Count; i++)
+                    {
+                        // feature 352: a split takes its offsets from its [Session n] section's row only when
+                        // the .ccd has that section (it read extents[i] past the tables); none: 0 (the
+                        // listing is marked above)
+                        int row = SalIsoCcdSplitSection(i, ccd->SessionArray.Count);
+                        DWORD extent = row >= 0 ? extents[row] : 0;
+                        DWORD extentEnd = row >= 0 ? extentsEnd[row] : 0;
+
+                        int j;
+                        for (j = 0; j < Session[i]; j++)
+                        {
+                            CISOImage::Track* track = Tracks[firstTrack + j];
+                            track->ExtentOffset += extent; // the extent is counted from zero within the session -> we want the absolute position in the image
+
+                            // feature 365: in signed arithmetic - as DWORDs a track starting after its end (the
+                            // session's lead-out, or the next track's INDEX 1) got about 4 billion sectors
+                            long long endSector;
+                            if (j < Session[i] - 1)
+                                endSector = ccd->TrackArray[firstTrack + j + 1]->Index;
+                            else
+                                endSector = (long long)extentEnd - (long long)extent;
+
+                            CCDTrack* ccdTrack = ccd->TrackArray[firstTrack + j];
+                            bool inconsistent = false;
+                            long long sectorCount = SalIsoCcdSectorCount(ccdTrack->Index, endSector, inconsistent);
+                            if (inconsistent)
+                            {
+                                TRACE_I("CISOImage::ReadSessionCCD(): track " << firstTrack + j + 1 << " ends before it starts");
+                                ListingLeftOut.SetIncomplete();
+                            }
+                            track->End = start + (track->SectorSize * sectorCount);
+                            start = track->End;
+                        }
+
+                        firstTrack += Session[i];
+                    }
+
+                    for (i = 0; i < Tracks.Count - 1; i++)
+                    {
+                        Tracks[i + 1]->Start = Tracks[i]->End;
+                    }
                 }
             }
             catch (BOOL e)
@@ -607,6 +679,7 @@ BOOL CISOImage::ReadSessionCCD(char* fileName, BOOL quiet /* = FALSE*/)
                 ret = e;
             }
 
+            delete[] layout;
             delete[] extents;
             delete[] extentsEnd;
             delete[] pointMin;

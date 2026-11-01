@@ -21227,6 +21227,243 @@ static void TestIsoUdfFolderExtents_364()
     CHECK(grids > 1000);
 }
 
+// feature 365: the NRG track-at-once tables (ETNF / ETN2) - Nero's mode bytes give the stored sector size,
+// every ETN2 entry is decoded whole
+static void TestNrgEtn365()
+{
+    const unsigned char verified[] = {0x00, 0x02, 0x03, 0x05, 0x06, 0x07};
+    for (unsigned char m : verified)
+        CHECK(SalNrgModeVerified(m));
+    const unsigned char other[] = {0x01, 0x04, 0x08, 0x0F, 0x10, 0x11, 0x20, 0xFF};
+    for (unsigned char m : other)
+        CHECK(!SalNrgModeVerified(m));
+    // the verified modes, both tables (libmirage's mirage_parser_nrg_decode_mode)
+    for (int v2 = 0; v2 < 2; v2++)
+    {
+        CHECK(SalNrgEtnSectorSize(0x00, v2 != 0) == 2048);
+        CHECK(SalNrgEtnSectorSize(0x02, v2 != 0) == 2048);
+        CHECK(SalNrgEtnSectorSize(0x03, v2 != 0) == 2336);
+        CHECK(SalNrgEtnSectorSize(0x05, v2 != 0) == 2352); // the item: ETNF read it as 2336 (bit 0)
+        CHECK(SalNrgEtnSectorSize(0x06, v2 != 0) == 2352); // the item: ETNF read it as 2048
+        CHECK(SalNrgEtnSectorSize(0x07, v2 != 0) == 2352);
+    }
+    // any other mode keeps the size the readers gave it before: ETNF by bit 0, ETN2 always 2048
+    CHECK(SalNrgEtnSectorSize(0x01, false) == 2336);
+    CHECK(SalNrgEtnSectorSize(0x04, false) == 2048);
+    CHECK(SalNrgEtnSectorSize(0x0F, false) == 2336);
+    CHECK(SalNrgEtnSectorSize(0x10, false) == 2048);
+    CHECK(SalNrgEtnSectorSize(0x11, false) == 2336);
+    CHECK(SalNrgEtnSectorSize(0x01, true) == 2048);
+    CHECK(SalNrgEtnSectorSize(0x0F, true) == 2048);
+    CHECK(SalNrgEtnSectorSize(0x11, true) == 2048);
+    // an ETNF entry (img365.py's etnf_06 track 2): start 360448, length 413696, mode 0x06, sector 11576
+    const unsigned char etnf[SAL_NRG_ETNF_ENTRY] = {0x00, 0x05, 0x80, 0x00, 0x00, 0x06, 0x50, 0x00, 0, 0,
+                                                    0, 0x06, 0x00, 0x00, 0x2D, 0x38, 0xAA, 0xBB, 0xCC, 0xDD};
+    SalNrgEtnEntry e = {1, 1, 0xEE, 1};
+    SalNrgEtnDecode(etnf, false, e);
+    CHECK(e.Start == 360448 && e.Length == 413696 && e.Mode == 0x06 && e.Sector == 11576);
+    // an ETN2 entry: start above 4 GiB, length 0x58000, mode 0x03 at 19, sector 11576 at 20
+    const unsigned char etn2[SAL_NRG_ETN2_ENTRY] = {0x00, 0x00, 0x00, 0x01, 0x00, 0x05, 0x80, 0x00, 0x00, 0x00, 0x00,
+                                                    0x00, 0x00, 0x05, 0x80, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00,
+                                                    0x2D, 0x38, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+    SalNrgEtnDecode(etn2, true, e);
+    CHECK(e.Start == 0x100058000ull && e.Length == 0x58000 && e.Mode == 0x03 && e.Sector == 11576);
+    // the same bytes as an ETNF entry give other fields (the layouts differ)
+    SalNrgEtnDecode(etn2, false, e);
+    CHECK(e.Start == 1 && e.Length == 0x00058000 && e.Mode == 0x00 && e.Sector == 0x00058000);
+    // the end: start + length (the item: ETN2's end was its length), saturated
+    const unsigned long long top = 0x7FFFFFFFFFFFFFFFull;
+    CHECK(SalNrgEtnEnd(360448, 360448) == 720896);
+    CHECK(SalNrgEtnEnd(0, 360448) == 360448);
+    CHECK(SalNrgEtnEnd(top - 1, 1) == top);
+    CHECK(SalNrgEtnEnd(top - 1, 5) == top);
+    CHECK(SalNrgEtnEnd(top, 0) == top);
+    CHECK(SalNrgEtnEnd(0xFFFFFFFFFFFFFFFFull, 0) == top);
+    CHECK(SalNrgEtnEnd(0, 0xFFFFFFFFFFFFFFFFull) == top);
+    // whole entries only (41f18c08 read 16 bytes of a smaller ETN2 chunk past its buffer)
+    CHECK(SalNrgEtnEntryCount(0, true) == 0);
+    CHECK(SalNrgEtnEntryCount(16, true) == 0);
+    CHECK(SalNrgEtnEntryCount(31, true) == 0);
+    CHECK(SalNrgEtnEntryCount(32, true) == 1);
+    CHECK(SalNrgEtnEntryCount(63, true) == 1);
+    CHECK(SalNrgEtnEntryCount(64, true) == 2);
+    CHECK(SalNrgEtnEntryCount(19, false) == 0);
+    CHECK(SalNrgEtnEntryCount(40, false) == 2);
+    CHECK(SalNrgEtnEntryCount(59, false) == 2);
+    // at most a disc's 99 tracks a chunk
+    CHECK(SalNrgEtn2ChunkPlausible(0));
+    CHECK(SalNrgEtn2ChunkPlausible(32));
+    CHECK(SalNrgEtn2ChunkPlausible(99 * 32));
+    CHECK(SalNrgEtn2ChunkPlausible(99 * 32 + 31));
+    CHECK(!SalNrgEtn2ChunkPlausible(100 * 32));
+    CHECK(!SalNrgEtn2ChunkPlausible(0xFFFFFFFFull));
+}
+
+// feature 365: entries of a CloneCD table of contents for TestIsoCcdToc365
+static void CcdTocAdd365(SalIsoCcdTocEntry* e, int& n, int session, int point, int adr, long long plba)
+{
+    e[n].Session = session;
+    e[n].Point = point;
+    e[n].Adr = adr;
+    e[n].Plba = plba;
+    n++;
+}
+
+// feature 365: a two-session table as CloneCD writes it (img365.py): session 1 = track 1 of 'n1' sectors
+// from sector 0, session 2 = track 2 of 'n2' sectors from 'lba2' (11400 sectors after session 1)
+static int CcdTocTwo365(SalIsoCcdTocEntry* e, long long n1, long long lba2, long long n2)
+{
+    int n = 0;
+    CcdTocAdd365(e, n, 1, 0xA0, 1, 4350); // PMin = the first track: its "PLBA" is no position
+    CcdTocAdd365(e, n, 1, 0xA1, 1, 4350);
+    CcdTocAdd365(e, n, 1, 0xA2, 1, n1);
+    CcdTocAdd365(e, n, 1, 0x01, 1, 0);
+    CcdTocAdd365(e, n, 1, 0xB0, 5, lba2); // ADR 5: not a position entry
+    CcdTocAdd365(e, n, 1, 0xC0, 5, 436350);
+    CcdTocAdd365(e, n, 2, 0xA0, 1, 8850);
+    CcdTocAdd365(e, n, 2, 0xA1, 1, 8850);
+    CcdTocAdd365(e, n, 2, 0xA2, 1, lba2 + n2);
+    CcdTocAdd365(e, n, 2, 0x02, 1, lba2);
+    return n;
+}
+
+static void TestIsoCcdToc365()
+{
+    bool inc = false;
+    CHECK(SalIsoCcdSectorCount(5, 10, inc) == 5 && !inc);
+    CHECK(SalIsoCcdSectorCount(10, 10, inc) == 0 && !inc);
+    CHECK(SalIsoCcdSectorCount(10, 5, inc) == 0 && inc); // the DWORD subtraction wrapped to 4294967291
+    inc = false;
+    CHECK(SalIsoCcdSectorCount(11576, 176, inc) == 0 && inc); // R-CCDABS's last track at 41f18c08
+
+    SalIsoCcdTocEntry e[40];
+    SalIsoCcdTocTrack t[100];
+    // two sessions (the probe's C-CCDREL / R-CCDABS: the INDEX values are not read)
+    int n = CcdTocTwo365(e, 176, 11576, 176);
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_OK);
+    CHECK(t[0].Session == 1 && t[0].Extent == 0 && t[0].FirstSector == 0 && t[0].Sectors == 176);
+    CHECK(t[1].Session == 2 && t[1].Extent == 11576 && t[1].FirstSector == 176 && t[1].Sectors == 176);
+    // FR-008: 41f18c08's formula for the same table with INDEX 1 counted from the session (0, 0) - extent =
+    // INDEX 1 + the session's first track PLBA, the session's last track's sectors = lead-out - first PLBA
+    // - INDEX 1, each track starting where the one before ended - gives the same records
+    {
+        const long long index1[2] = {0, 0}, firstPlba[2] = {0, 11576}, leadout[2] = {176, 11752};
+        long long start = 0;
+        bool same = true;
+        for (int k = 0; k < 2; k++)
+        {
+            long long extent = index1[k] + firstPlba[k];
+            long long sectors = leadout[k] - firstPlba[k] - index1[k];
+            if (extent != t[k].Extent || sectors != t[k].Sectors || start != t[k].FirstSector)
+                same = false;
+            start += sectors;
+        }
+        CHECK(same);
+    }
+    // a larger gap (a third session's 6900) and other lengths
+    n = CcdTocTwo365(e, 300000, 311400, 25);
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_OK);
+    CHECK(t[1].FirstSector == 300000 && t[1].Sectors == 25 && t[1].Extent == 311400);
+    // one session of three tracks (an audio CD): ends at the next track's start, the last at the lead-out
+    n = 0;
+    CcdTocAdd365(e, n, 1, 0xA0, 1, 4350);
+    CcdTocAdd365(e, n, 1, 0xA2, 1, 2000);
+    CcdTocAdd365(e, n, 1, 0x01, 1, 0);
+    CcdTocAdd365(e, n, 1, 0x02, 1, 1000);
+    CcdTocAdd365(e, n, 1, 0x03, 1, 1500);
+    CHECK(SalIsoCcdTocLayout(e, n, 3, t) == SAL_ISO_CCD_TOC_OK);
+    CHECK(t[0].Sectors == 1000 && t[1].Sectors == 500 && t[2].Sectors == 500);
+    CHECK(t[0].FirstSector == 0 && t[1].FirstSector == 1000 && t[2].FirstSector == 1500);
+    CHECK(t[0].Session == 1 && t[1].Session == 1 && t[2].Session == 1);
+    // fewer [TRACK n] sections than track points: not followed (the last would run to the lead-out)
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_NONE);
+    // more sections than points: track 4 has no entry
+    CHECK(SalIsoCcdTocLayout(e, n, 4, t) == SAL_ISO_CCD_TOC_NONE);
+    // the same entry twice is one entry; two that disagree cannot be followed
+    CcdTocAdd365(e, n, 1, 0x02, 1, 1000);
+    CHECK(SalIsoCcdTocLayout(e, n, 3, t) == SAL_ISO_CCD_TOC_OK);
+    CcdTocAdd365(e, n, 1, 0x02, 1, 1001);
+    CHECK(SalIsoCcdTocLayout(e, n, 3, t) == SAL_ISO_CCD_TOC_NONE);
+    // a disc whose first track is number 2
+    n = 0;
+    CcdTocAdd365(e, n, 1, 0xA2, 1, 700);
+    CcdTocAdd365(e, n, 1, 0x02, 1, 0);
+    CcdTocAdd365(e, n, 1, 0x03, 1, 300);
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_OK && t[0].Sectors == 300 && t[1].Sectors == 400);
+    // a hole in the points (tracks 1 and 3 of two sections)
+    n = 0;
+    CcdTocAdd365(e, n, 1, 0xA2, 1, 700);
+    CcdTocAdd365(e, n, 1, 0x01, 1, 0);
+    CcdTocAdd365(e, n, 1, 0x03, 1, 300);
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_NONE);
+    // a track point of ADR 5 only is no position entry
+    n = 0;
+    CcdTocAdd365(e, n, 1, 0xA2, 1, 700);
+    CcdTocAdd365(e, n, 1, 0x01, 5, 0);
+    CHECK(SalIsoCcdTocLayout(e, n, 1, t) == SAL_ISO_CCD_TOC_NONE);
+    // a session holding tracks without a lead-out (session 2's 0xA2 missing)
+    n = CcdTocTwo365(e, 176, 11576, 176);
+    e[8].Point = 0xA1;
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_NONE);
+    // a lead-out of another session does not serve (only session 1 has one)
+    n = 0;
+    CcdTocAdd365(e, n, 1, 0xA2, 1, 176);
+    CcdTocAdd365(e, n, 1, 0x01, 1, 0);
+    CcdTocAdd365(e, n, 2, 0x02, 1, 11576);
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_NONE);
+    // two lead-outs of one session that disagree
+    n = CcdTocTwo365(e, 176, 11576, 176);
+    CcdTocAdd365(e, n, 2, 0xA2, 1, 11800);
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_NONE);
+    // a negative PLBA (a track before the disc) and a negative lead-out
+    n = CcdTocTwo365(e, 176, 11576, 176);
+    e[3].Plba = -150;
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_NONE);
+    n = CcdTocTwo365(e, 176, 11576, 176);
+    e[2].Plba = -1;
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_NONE);
+    // sessions going backwards (track 1 in session 2, track 2 in session 1)
+    n = 0;
+    CcdTocAdd365(e, n, 1, 0xA2, 1, 900);
+    CcdTocAdd365(e, n, 2, 0xA2, 1, 300);
+    CcdTocAdd365(e, n, 2, 0x01, 1, 0);
+    CcdTocAdd365(e, n, 1, 0x02, 1, 500);
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_NONE);
+    // a track point in two sessions
+    n = CcdTocTwo365(e, 176, 11576, 176);
+    CcdTocAdd365(e, n, 2, 0x01, 1, 0);
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_NONE);
+    // no tracks, no entries, more than 99 tracks, a track number above 99
+    n = CcdTocTwo365(e, 176, 11576, 176);
+    CHECK(SalIsoCcdTocLayout(e, n, 0, t) == SAL_ISO_CCD_TOC_NONE);
+    CHECK(SalIsoCcdTocLayout(e, 0, 1, t) == SAL_ISO_CCD_TOC_NONE);
+    CHECK(SalIsoCcdTocLayout(e, n, 100, t) == SAL_ISO_CCD_TOC_NONE);
+    n = 0;
+    CcdTocAdd365(e, n, 1, 0xA2, 1, 700);
+    CcdTocAdd365(e, n, 1, 99, 1, 0);
+    CHECK(SalIsoCcdTocLayout(e, n, 1, t) == SAL_ISO_CCD_TOC_OK);
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_NONE); // track 100
+    // inconsistent tables are followed with a 0-sector track and reported (the listing is marked)
+    n = 0;
+    CcdTocAdd365(e, n, 1, 0xA2, 1, 100); // a lead-out before the track
+    CcdTocAdd365(e, n, 1, 0x01, 1, 150);
+    CHECK(SalIsoCcdTocLayout(e, n, 1, t) == SAL_ISO_CCD_TOC_INCONSISTENT && t[0].Sectors == 0);
+    n = 0;
+    CcdTocAdd365(e, n, 1, 0xA2, 1, 1000);
+    CcdTocAdd365(e, n, 1, 0x01, 1, 500); // positions going backwards
+    CcdTocAdd365(e, n, 1, 0x02, 1, 100);
+    CHECK(SalIsoCcdTocLayout(e, n, 2, t) == SAL_ISO_CCD_TOC_INCONSISTENT);
+    CHECK(t[0].Sectors == 0 && t[1].FirstSector == 0 && t[1].Sectors == 900);
+    // 352's R-TWOSEC: two [Session n] sections, the tracks in session 1 only - followed as one session
+    // (the reader's sections / sessions check marks it)
+    n = 0;
+    CcdTocAdd365(e, n, 1, 0xA2, 1, 176);
+    CcdTocAdd365(e, n, 1, 0x01, 1, 0);
+    CcdTocAdd365(e, n, 2, 0xA0, 1, 2);
+    CcdTocAdd365(e, n, 2, 0xA2, 1, 176);
+    CHECK(SalIsoCcdTocLayout(e, n, 1, t) == SAL_ISO_CCD_TOC_OK && t[0].Session == 1 && t[0].Sectors == 176);
+}
+
 // feature 356: a cooked UDF-only image - the UDF descriptors that give its volume's end, and whether the
 // rest past the volume is kept, marked or read (src/common/salisotrack.h)
 static void TestIsoUdfRest_356()
@@ -23599,6 +23836,8 @@ int main(int argc, char** argv)
     TestIsoUdfFolderEntry_362();
     TestIsoUdfFid_363();
     TestIsoUdfFolderExtents_364();
+    TestNrgEtn365();
+    TestIsoCcdToc365();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

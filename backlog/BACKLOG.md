@@ -283,6 +283,9 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 365 with real Nero TAO and CloneCD multi-session dumps](items/check-feature-365-with-real-nero-tao-and-clonecd-multi/desc.md) | person-step | 5 | archives | leftover:365 | 2026-11-01 |
+| [ISO plug-in: an NRG image of Nero v1 (NERO footer) is opened without its track table](items/iso-plug-in-an-nrg-image-of-nero-v1-nero-footer-is-opened/desc.md) | bug | 4 | archives | measure:365 | 2026-11-01 |
+| [ISO plug-in: NRG tracks of the subchannel modes 0x0F / 0x10 / 0x11 get a wrong type or size](items/iso-plug-in-nrg-tracks-of-the-subchannel-modes-0x0f-0x10/desc.md) | bug | 3 | archives | leftover:365 | 2026-11-01 |
 
 ## Parked
 

@@ -143,7 +143,8 @@ last track, the same in the INDEX-1 split).
   stays open).
 - An ETN2 chunk that does not lie within the image, or holds more than 99 entries: skipped like an
   unknown chunk, no track (the next chunk header is read right after it).
-- A CloneCD table in which a track has no ADR-1 entry with its number, two entries for one track
+- A CloneCD table in which a track has no ADR-1 entry with its number, the track points outnumber the
+  `[TRACK n]` sections, two entries for one track
   disagree, a later track belongs to an earlier session, or a session holding tracks has no lead-out
   entry: the table of contents cannot be followed - the `INDEX 1` split of 41f18c08 is used, with 352's
   mark when sections and splits disagree.

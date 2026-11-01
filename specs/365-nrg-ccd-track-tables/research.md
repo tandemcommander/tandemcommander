@@ -31,7 +31,7 @@
   first + k (first = the smallest ADR-1 point 1..99); its entry (ADR 1, that point) gives its session and
   PLBA; within a session a track ends at the next track's PLBA, the last at the session's 0xA2 PLBA;
   sessions follow each other in the `.img`. Not followed (NONE -> the 41f18c08 split) when a track has no
-  entry, two entries of one track disagree, a PLBA is negative, sessions go backwards, a session
+  entry, the track points outnumber the sections, two entries of one track disagree, a PLBA is negative, sessions go backwards, a session
   holding tracks has no lead-out, or more than 99 tracks.
 - Rationale: libmirage builds exactly this layout from PLBA; psx-spx says INDEX values are counted from
   the session start, PLBA from the disc start; DiscImageCreator issue 121: the 11400 sectors between

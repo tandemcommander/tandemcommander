@@ -238,11 +238,9 @@ readETNF(CFile& file, NRGHeader* header, CISOImage* iso)
     {
         CISOImage::Track* track = new CISOImage::Track;
 
-        // sector size
-        if (data[offset + 0x0B] & 1)
-            track->SectorSize = 0x920;
-        else
-            track->SectorSize = 0x800;
+        // sector size; feature 365: by Nero's mode byte - bit 0 made raw Mode 1 (0x05, 2352 bytes) 2336
+        // and raw Mode 2 (0x06) 2048, so such a track's file system was not found (salnrgcdtext.h)
+        track->SectorSize = (WORD)SalNrgEtnSectorSize(data[offset + 0x0B], false);
 
         track->Start = (LONGLONG)getDWord(data + offset + 0x00);
         track->End = track->Start + (LONGLONG)getDWord(data + offset + 0x04);
@@ -263,27 +261,59 @@ readETN2(CFile& file, NRGHeader* header, CISOImage* iso)
 {
     CALL_STACK_MESSAGE3("readETN2(, %p, %p)", header, iso);
 
-    DWORD read;
-    BYTE* data = new BYTE[header->Size];
-    ZeroMemory(data, header->Size);
-
-    if (!file.Read(data, header->Size, &read, NULL, NULL))
+    // feature 365: one track per whole 32-byte entry, as readETNF - the reader took only the first entry
+    // of a chunk, as Mode 1 / 2048 from disc sector 0 with its end at its length: the second session of a
+    // two-session image was not found and a file of the first was read from the second's bytes (both
+    // tracks at extent 0). A chunk outside the image, or with more entries than a disc has tracks, is
+    // skipped like an unknown chunk (as readCUEX / readCDTX); the next chunk header follows the chunk
+    DWORD fileSizeHi;
+    DWORD fileSizeLo = file.GetFileSize(&fileSizeHi);
+    __int64 pos = file.Seek(0, FILE_CURRENT);
+    if (fileSizeLo == INVALID_FILE_SIZE || pos < 0 || // (as ReadSessionNRG)
+        !SalNrgChunkFits((unsigned long long)pos, header->Size, ((unsigned long long)fileSizeHi << 32) | fileSizeLo))
     {
-        delete[] data;
+        file.Seek(header->Size, FILE_CURRENT);
+        return FALSE;
+    }
+    if (!SalNrgEtn2ChunkPlausible(header->Size))
+    {
+        file.Seek(pos + header->Size, FILE_BEGIN);
         return FALSE;
     }
 
-    CISOImage::Track* track = new CISOImage::Track;
-    track->SectorSize = 2048;
-    track->FSType = CISOImage::fsISO9660;
-    track->Mode = CISOImage::mMode1;
-    track->SectorHeaderSize = CISOImage::GetHeaderSizeFromMode(CISOImage::mMode1, track->SectorSize);
-    track->Start = getLongLong(data + 0x00);
-    track->End = getLongLong(data + 0x08);
-    track->ExtentOffset = 0;
-    iso->AddTrack(track);
+    DWORD read;
+    unsigned long long entries = SalNrgEtnEntryCount(header->Size, true);
+    unsigned long long i;
+    for (i = 0; i < entries; i++)
+    {
+        BYTE data[SAL_NRG_ETN2_ENTRY];
+        if (!file.Read(&data, sizeof(data), &read, NULL, NULL) || read != sizeof(data))
+            return FALSE;
 
-    delete[] data;
+        SalNrgEtnEntry entry;
+        SalNrgEtnDecode(data, true, entry);
+
+        CISOImage::Track* track = new CISOImage::Track;
+        track->SectorSize = (WORD)SalNrgEtnSectorSize(entry.Mode, true);
+        if (SalNrgModeVerified(entry.Mode))
+            SetTrackTypeMode(track, entry.Mode);
+        else
+        {
+            // another mode keeps what the reader gave every ETN2 track before
+            track->FSType = CISOImage::fsISO9660;
+            track->Mode = CISOImage::mMode1;
+        }
+        track->SectorHeaderSize = CISOImage::GetHeaderSizeFromMode(track->Mode, track->SectorSize);
+        track->Start = (LONGLONG)entry.Start;
+        track->End = (LONGLONG)SalNrgEtnEnd(entry.Start, entry.Length);
+        track->ExtentOffset = entry.Sector;
+        iso->AddTrack(track);
+    }
+
+    // the bytes after the last whole entry are not entries
+    if (file.Seek(pos + header->Size, FILE_BEGIN) == -1)
+        return FALSE;
+
     return TRUE;
 }
 

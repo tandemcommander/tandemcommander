@@ -207,6 +207,136 @@ inline bool SalIsoCcdLayoutTrusted(int sections, int splits)
     return sections > 0 && sections == splits;
 }
 
+// Feature 365: the sectors of a CloneCD track that starts at disc sector 'start' and ends before
+// 'end' - end - start; a table where the end comes before the start (a damaged one: positions going
+// backwards, a lead-out before a track) gives 0 and sets 'inconsistent' (the reader marks the listing
+// incomplete). The reader subtracted as a DWORD: the count wrapped to about 4 billion sectors.
+inline long long SalIsoCcdSectorCount(long long start, long long end, bool& inconsistent)
+{
+    if (end < start)
+    {
+        inconsistent = true;
+        return 0;
+    }
+    return end - start;
+}
+
+// Feature 365: the layout of a CloneCD image from its table of contents ([Entry n] rows), as libmirage
+// builds it: the PLBA of an entry counts from the start of the disc, the [TRACK n] INDEX values from the
+// start of their session (psx-spx) - or, in tables some readers met, from the start of the disc; the
+// .img holds the sessions one after another, without the 11400 (6900) sectors of lead-out, lead-in and
+// pregap between them (DiscImageCreator issue 121). The reader split the tracks where INDEX 1 is 0,
+// which reads only the first form.
+#define SAL_ISO_CCD_TOC_NONE 0         // the table cannot be followed: the reader keeps its INDEX 1 split
+#define SAL_ISO_CCD_TOC_OK 1           // followed
+#define SAL_ISO_CCD_TOC_INCONSISTENT 2 // followed, a track's negative sector count made 0 - mark the listing
+#define SAL_ISO_CCD_POINT_LEADOUT 0xA2 // the entry point of a session's lead-out
+
+struct SalIsoCcdTocEntry
+{
+    int Session; // 1-based (checked against the [Session n] sections by feature 352)
+    int Point;   // 1..99 a track, 0xA0 / 0xA1 / 0xA2 / 0xB0 / 0xC0 ...
+    int Adr;     // 1 = a position entry (the only ones taken)
+    long long Plba;
+};
+
+struct SalIsoCcdTocTrack
+{
+    int Session;           // 1-based
+    long long Extent;      // the track's first disc sector (its PLBA)
+    long long FirstSector; // the index of its first sector in the .img
+    long long Sectors;     // its sectors in the .img
+};
+
+// the PLBA of the ADR-1 entry of 'point' in 'session' (any session when 'session' is 0) through
+// 'plba' and its session through 'foundSession'; false when there is none, or two such entries disagree
+inline bool SalIsoCcdTocFind(const SalIsoCcdTocEntry* e, int n, int point, int session, long long& plba,
+                             int& foundSession)
+{
+    bool found = false;
+    int i;
+    for (i = 0; i < n; i++)
+    {
+        if (e[i].Adr != 1 || e[i].Point != point || (session != 0 && e[i].Session != session))
+            continue;
+        if (found && (e[i].Plba != plba || e[i].Session != foundSession))
+            return false;
+        found = true;
+        plba = e[i].Plba;
+        foundSession = e[i].Session;
+    }
+    return found;
+}
+
+// The layout of 'trackCount' tracks (the [TRACK n] sections in their order: the k-th is track number
+// first + k, first = the smallest ADR-1 track point 1..99) from the 'n' entries 'e' into 'out'. A track
+// belongs to the session of its ADR-1 entry and starts at the disc sector of its PLBA; within a session
+// it ends where the next track starts, the session's last track at the session's lead-out (0xA2); each
+// session starts in the .img where the previous one ended. SAL_ISO_CCD_TOC_NONE (out undefined) when
+// a track has no entry, the table has more track points than [TRACK n] sections, two entries of a
+// track or a lead-out disagree, a PLBA is negative, a track
+// belongs to an earlier session than the one before it, a session holding tracks has no lead-out, or
+// there are no or more than 99 tracks.
+inline int SalIsoCcdTocLayout(const SalIsoCcdTocEntry* e, int n, int trackCount, SalIsoCcdTocTrack* out)
+{
+    if (trackCount <= 0 || trackCount > 99 || n <= 0)
+        return SAL_ISO_CCD_TOC_NONE;
+    int first = 0;
+    int i;
+    for (i = 0; i < n; i++)
+    {
+        if (e[i].Adr == 1 && e[i].Point >= 1 && e[i].Point <= 99 && (first == 0 || e[i].Point < first))
+            first = e[i].Point;
+    }
+    if (first == 0 || first + trackCount - 1 > 99)
+        return SAL_ISO_CCD_TOC_NONE;
+    // as many track points as [TRACK n] sections (fewer sections would end the last at the lead-out)
+    int points = 0;
+    int p;
+    for (p = 1; p <= 99; p++)
+    {
+        for (i = 0; i < n; i++)
+        {
+            if (e[i].Adr == 1 && e[i].Point == p)
+            {
+                points++;
+                break;
+            }
+        }
+    }
+    if (points != trackCount)
+        return SAL_ISO_CCD_TOC_NONE;
+    int k;
+    for (k = 0; k < trackCount; k++)
+    {
+        long long plba = 0;
+        int session = 0;
+        if (!SalIsoCcdTocFind(e, n, first + k, 0, plba, session) || plba < 0 || session < 1 ||
+            (k > 0 && session < out[k - 1].Session))
+            return SAL_ISO_CCD_TOC_NONE;
+        out[k].Session = session;
+        out[k].Extent = plba;
+    }
+    bool inconsistent = false;
+    long long at = 0; // the next sector of the .img
+    for (k = 0; k < trackCount; k++)
+    {
+        long long end;
+        if (k + 1 < trackCount && out[k + 1].Session == out[k].Session)
+            end = out[k + 1].Extent;
+        else
+        {
+            int session = 0;
+            if (!SalIsoCcdTocFind(e, n, SAL_ISO_CCD_POINT_LEADOUT, out[k].Session, end, session) || end < 0)
+                return SAL_ISO_CCD_TOC_NONE;
+        }
+        out[k].FirstSector = at;
+        out[k].Sectors = SalIsoCcdSectorCount(out[k].Extent, end, inconsistent);
+        at += out[k].Sectors;
+    }
+    return inconsistent ? SAL_ISO_CCD_TOC_INCONSISTENT : SAL_ISO_CCD_TOC_OK;
+}
+
 // Feature 335: is a track's sector a CD-ROM XA Mode 2 Form 2 sector? 'raw' holds the first 'len' bytes
 // of the sector as the image stores it, in sectors of 'sectorRawSize' bytes:
 //   - 2352 bytes or more (a raw sector, also with subchannel data after it): the sync pattern
