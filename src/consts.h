@@ -409,6 +409,25 @@ BOOL SalGetFullName(char* name, int* errTextID = NULL, const char* curDir = NULL
 // jinak vraci standardni Windowsovy kod chyby nebo ERROR_USER_TERMINATED v pripade, ze
 // user pouzil klavesu ESC k preruseni testu
 DWORD SalCheckPath(BOOL echo, const char* path, DWORD err, BOOL postRefresh, HWND parent);
+// feature 372: the accessibility test of the check-path thread (it may hang on a network path -
+// call it only on a worker thread unless the path is local); FALSE + *error when not accessible
+BOOL SalTestPathAccessible(const char* path, DWORD* error);
+// feature 372: the data of one background path check; owned by the worker until it is posted,
+// then by the panel (which deletes it)
+struct CBkgndPathCheckData
+{
+    HWND Panel;    // the panel window the result goes to
+    int PanelType; // CPanelType of the panel when the check started
+    char* Path;    // heap copy of the checked path (UTF-8, whole)
+    BOOL Valid;    // result: the folder is accessible
+    DWORD Error;   // result: the error when it is not
+
+    CBkgndPathCheckData() : Panel(NULL), PanelType(0), Path(NULL), Valid(FALSE), Error(ERROR_SUCCESS) {}
+    ~CBkgndPathCheckData() { free(Path); }
+};
+// feature 372: starts the background check of 'path' for the panel window 'panel'; the result is
+// posted to it as WM_USER_BKGNDCHECK_DONE; FALSE when the worker could not be started
+BOOL StartBkgndPathCheck(HWND panel, const char* path, int panelType);
 
 // zkusi jestli je cesta 'path' pristupna, prip. obnovi sitova spojeni pomoci funkci
 // CheckAndRestoreNetworkConnection a CheckAndConnectUNCNetworkPath; vraci TRUE pokud
@@ -1353,6 +1372,7 @@ struct COpenViewerData
 
 // feature 343: the 0.1.x configuration could not be moved to the version-free root at start
 #define WM_USER_CFGMIGRATE_FAILED WM_APP + 420 // [0, 0]
+#define WM_USER_BKGNDCHECK_DONE WM_APP + 421 // feature 372: [0, CBkgndPathCheckData*] - a panel's background path check finished (the panel frees the data)
 
 // states for Shift+F1 help mode
 #define HELP_INACTIVE 0 // not in Shift+F1 help mode (must be 0)
@@ -1959,6 +1979,7 @@ DWORD CfgSkillLevelToMenu(BYTE cfgSkillLevel);
 #define IDT_UPDATENOTICE 952 // feature 123: retry showing the new-version notification (main window)
 #define IDT_CFGIMPORT_OFFER 953 // feature 245: retry showing the settings import offer (main window)
 #define IDT_CFGMIGRATE_FAILED 954 // feature 343: retry showing the failed configuration move message (main window)
+#define IDT_AUTOREFRESHVERIFY 955 // feature 372: a panel without automatic refresh checks its folder 400 ms after a refresh (panel)
 
 // POZOR: skoro vsechny funkce v teto sekci pri chybe zobrazuji hlaseni o LOAD / SAVE
 //        konfigurace, coz z nich dela nevhodne pro bezny pristup do Registry,

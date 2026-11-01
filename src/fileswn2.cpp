@@ -20,6 +20,7 @@
 #include "salheapstr.h"     // feature 095
 #include "salinfolinebuf.h" // feature 276
 #include "saluncserver.h"   // feature 284
+#include "salbkgndcheck.h"  // feature 372
 #include "toolbar.h"
 extern "C"
 {
@@ -1989,11 +1990,12 @@ BOOL CFilesWindow::ChangePathToDisk(HWND parent, const char* path, int suggested
             // we'll let the new path load its contents
             BOOL cannotList;
             cannotList = !CommonRefresh(parent, suggestedTopIndex, suggestedFocusName, refreshListBox, TRUE, isRefresh);
-            if (isRefresh && !cannotList && GetMonitorChanges() && !AutomaticRefresh)
-            {                                                                                                                // auto-refresh failure; we verify whether the directory displayed in the panel is being deleted (happened to me while deleting through the network from another machine) ... If ignored, the panel will never refresh (because auto-refresh is broken)
-                Sleep(400);                                                                                                  // we take a break, so the deletion can proceed (so the directory becomes deleted enough to become unlistable)
-                                                                                                                             //        TRACE_I("Calling CommonRefresh again... (unable to receive change notifications, first listing was OK, but maybe current directory is being deleted)");
-                cannotList = !CommonRefresh(parent, suggestedTopIndex, suggestedFocusName, refreshListBox, TRUE, isRefresh); // repeat the listing; this one should fail
+            if (SalNeedsAutoRefreshVerify(isRefresh, !cannotList, GetMonitorChanges(), AutomaticRefresh))
+            { // auto-refresh failure; we verify whether the directory displayed in the panel is being deleted (happened to me while deleting through the network from another machine) ... If ignored, the panel will never refresh (because auto-refresh is broken)
+                // feature 372: this used to be Sleep(400) + a second listing here, on the UI thread - 400 ms
+                // on every refresh of a WSL folder (9P has no change notification); now the folder is
+                // checked in the background 400 ms later and refreshed again only when it is gone
+                StartAutoRefreshVerify();
             }
             if (cannotList)
             { // the selected path can't be listed ("access denied" or low_memory) or it was alreadydeleted

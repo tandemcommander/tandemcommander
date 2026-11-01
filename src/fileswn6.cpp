@@ -21,6 +21,7 @@
 #include "filesbox.h"
 #include "zip.h"        // feature 108: CSalamanderDirectory::GetUpperDir
 #include "salarcedit.h" // feature 108
+#include "salbkgndcheck.h" // feature 372
 
 // helper variables for the dialogs in BuildScriptXXX()
 BOOL ConfirmADSLossAll = FALSE;
@@ -270,6 +271,21 @@ void CFilesWindow::Activate(BOOL shares)
         if (!SkipOneActivateRefresh && (!GetNetworkDrive() || !Configuration.DrvSpecRemoteDoNotRefreshOnAct) ||
             InactiveRefreshTimerSet) // delayed refresh in an inactive window must be performed immediately upon activation
         {
+            // feature 372: a network folder (a WSL folder above all) is checked in the background -
+            // the synchronous CheckPath below made the activation wait for the network (a stopped
+            // WSL distribution answers after ~2 s); the result posts the same refreshes as the code
+            // below (OnBkgndPathCheckDone), for a network folder always the refresh
+            if (SalBkgndCheckRoute(TRUE, GetNetworkDrive()) && RequestBkgndPathCheck(SAL_BKCHK_ACTIVATE))
+            {
+                if (InactiveRefreshTimerSet) // the refresh that follows the check covers it
+                {
+                    KillTimer(HWindow, IDT_INACTIVEREFRESH);
+                    InactiveRefreshTimerSet = FALSE;
+                }
+                needToRefreshIcons = FALSE; // the refresh reads the icons again
+                goto ACTIVATE_ICONS;
+            }
+
             DWORD checkPathRet;
             if ((checkPathRet = CheckPath(FALSE)) != ERROR_SUCCESS)
             {
@@ -330,6 +346,9 @@ void CFilesWindow::Activate(BOOL shares)
                 PostMessage(HWindow, WM_USER_REFRESH_PLUGINFS, 0, 0);
         }
     }
+
+ACTIVATE_ICONS:
+
     if (needToRefreshIcons)
     {
         //    TRACE_I("Refreshing icons/thumbnails/icon-overlays (we have read only visible ones)");
@@ -337,6 +356,74 @@ void CFilesWindow::Activate(BOOL shares)
         InactWinOptimizedReading = FALSE;
         WakeupIconCacheThread();
     }
+}
+
+// feature 372: the background path check of the panel (contracts/background-path-check.md)
+BOOL CFilesWindow::RequestBkgndPathCheck(int purpose)
+{
+    CALL_STACK_MESSAGE2("CFilesWindow::RequestBkgndPathCheck(%d)", purpose);
+    if (BkgndCheckRunning) // at most one worker per panel; its result serves this request too
+    {
+        BkgndCheckWanted |= purpose;
+        return TRUE;
+    }
+    if (!StartBkgndPathCheck(HWindow, GetPath(), (int)GetPanelType()))
+        return FALSE;
+    BkgndCheckRunning = TRUE;
+    BkgndCheckWanted |= purpose;
+    return TRUE;
+}
+
+void CFilesWindow::OnBkgndPathCheckDone(CBkgndPathCheckData* data)
+{
+    CALL_STACK_MESSAGE1("CFilesWindow::OnBkgndPathCheckDone()");
+    BkgndCheckRunning = FALSE;
+    int wanted = BkgndCheckWanted;
+    BkgndCheckWanted = 0;
+    // the result describes the folder it was taken for: only while the panel still shows it
+    BOOL diskOrArchive = Is(ptDisk) || Is(ptZIPArchive);
+    BOOL samePath = diskOrArchive && data->PanelType == (int)GetPanelType() &&
+                    SalPathEqualOrdinalCI(data->Path, GetPath());
+    switch (SalBkgndCheckAction(wanted, samePath, data->Valid))
+    {
+    case sbcaRefreshEx: // the activation's refresh, as the synchronous code posted it
+    {
+        HANDLES(EnterCriticalSection(&TimeCounterSection));
+        int t1 = MyTimeCounter++;
+        HANDLES(LeaveCriticalSection(&TimeCounterSection));
+        PostMessage(HWindow, WM_USER_REFRESH_DIR_EX, FALSE, t1); // we know this is probably an unnecessary refresh
+        break;
+    }
+
+    case sbcaRefresh: // not accessible: the refresh shows the error and leaves the folder (as before)
+    {
+        HANDLES(EnterCriticalSection(&TimeCounterSection));
+        int t1 = MyTimeCounter++;
+        HANDLES(LeaveCriticalSection(&TimeCounterSection));
+        PostMessage(HWindow, WM_USER_REFRESH_DIR, 0, t1);
+        break;
+    }
+
+    case sbcaRestart: // the panel shows another folder now; a request may have come for it
+    {
+        if (diskOrArchive)
+            RequestBkgndPathCheck(wanted);
+        break;
+    }
+
+    default:
+        break;
+    }
+    delete data;
+}
+
+void CFilesWindow::StartAutoRefreshVerify()
+{
+    CALL_STACK_MESSAGE_NONE
+    KillTimer(HWindow, IDT_AUTOREFRESHVERIFY); // a newer refresh starts the 400 ms again
+    AutoRefreshVerifyTimerSet = SetTimer(HWindow, IDT_AUTOREFRESHVERIFY, 400, NULL) != 0;
+    if (!AutoRefreshVerifyTimerSet)
+        TRACE_E("CFilesWindow::StartAutoRefreshVerify(): SetTimer failed");
 }
 
 BOOL CFilesWindow::MakeFileList(HANDLE hFile)

@@ -124,6 +124,121 @@ void ReleaseCheckThreads()
     }
 }
 
+// feature 372: the directory accessibility test of the check-path thread, shared with the
+// background path check of a panel (StartBkgndPathCheck) so that both decide alike; unchanged
+// from the thread body it was taken from. It may hang on a network path.
+BOOL SalTestPathAccessible(const char* path, DWORD* error)
+{
+    BOOL valid = (SalGetFileAttributes(path) != 0xFFFFFFFF);
+    DWORD err = valid ? ERROR_SUCCESS : GetLastError();
+    if (!valid && err == ERROR_INVALID_PARAMETER) // reports on the root of removable media (CD/DVD, ZIP)
+        err = ERROR_NOT_READY;                    // bit of a hack,but basically it is about the "not ready" issue and not "invalid parameter" ;-)
+
+    // We are bypassing an error when reading attributes (since W2K, reading attributes can be disabled in Properties/Security), at least on fixed disks.
+    if (!valid && err == ERROR_ACCESS_DENIED &&
+        (path[0] >= 'a' && path[0] <= 'z' ||
+         path[0] >= 'A' && path[0] <= 'Z') &&
+        path[1] == ':')
+    {
+        char root[20];
+        root[0] = path[0];
+        strcpy(root + 1, ":\\");
+        if (GetDriveType(root) == DRIVE_FIXED)
+        {
+            // heap buffer: the path may be long (feature 004) - never cut it
+            size_t len = strlen(path);
+            char* mask = (char*)malloc(len + 3);
+            if (mask != NULL)
+            {
+                memcpy(mask, path, len + 1);
+                SalPathAppend(mask, "*", (int)(len + 3));
+                WIN32_FIND_DATAW dataW; // long-path + Unicode capable find (feature 010)
+                HANDLE find = SalFindFirstFile(mask, &dataW);
+                if (find != INVALID_HANDLE_VALUE)
+                {
+                    // the path is probably OK after all (cannot be used without the fixed-disk test, unfortunately FindFirstFile
+                    // most likely runs from the cache because a disconnected network disk happily starts listing, so
+                    // for check-path it is unusable (we already had it and had to replace it))
+                    valid = TRUE;
+                    HANDLES(FindClose(find));
+                }
+                free(mask);
+            }
+        }
+    }
+    *error = err;
+    return valid;
+}
+
+//
+// feature 372: the background path check of a panel - a worker thread runs SalTestPathAccessible
+// on a copy of the panel's path and posts the result to the panel (WM_USER_BKGNDCHECK_DONE); the
+// UI thread never waits for it
+//
+
+unsigned BkgndPathCheckBody(void* param)
+{
+    CALL_STACK_MESSAGE1("BkgndPathCheckBody()");
+    SetThreadNameInVCAndTrace("BkgndPathCheck");
+    CBkgndPathCheckData* data = (CBkgndPathCheckData*)param;
+    data->Valid = SalTestPathAccessible(data->Path, &data->Error); // may hang on a network path
+    if (!PostMessage(data->Panel, WM_USER_BKGNDCHECK_DONE, 0, (LPARAM)data))
+        delete data; // the panel is gone (closing): nobody takes the data
+    return 0;
+}
+
+unsigned BkgndPathCheckEH(void* param)
+{
+#ifndef CALLSTK_DISABLE
+    __try
+    {
+#endif // CALLSTK_DISABLE
+        return BkgndPathCheckBody(param);
+#ifndef CALLSTK_DISABLE
+    }
+    __except (CCallStack::HandleException(GetExceptionInformation()))
+    {
+        TRACE_I("Thread BkgndPathCheck: calling ExitProcess(1).");
+        TerminateProcess(GetCurrentProcess(), 1); // harder exit (this one still calls something)
+        return 1;
+    }
+#endif // CALLSTK_DISABLE
+}
+
+DWORD WINAPI BkgndPathCheckThread(void* param)
+{
+#ifndef CALLSTK_DISABLE
+    CCallStack stack;
+#endif // CALLSTK_DISABLE
+    return BkgndPathCheckEH(param);
+}
+
+BOOL StartBkgndPathCheck(HWND panel, const char* path, int panelType)
+{
+    CALL_STACK_MESSAGE2("StartBkgndPathCheck(, %s, )", path);
+    CBkgndPathCheckData* data = new CBkgndPathCheckData;
+    if (data == NULL)
+        return FALSE;
+    data->Panel = panel;
+    data->PanelType = panelType;
+    data->Path = _strdup(path); // the whole path (long paths, feature 004), never cut
+    if (data->Path == NULL)
+    {
+        delete data;
+        return FALSE;
+    }
+    DWORD threadID;
+    HANDLE thread = HANDLES(CreateThread(NULL, 0, BkgndPathCheckThread, data, 0, &threadID));
+    if (thread == NULL)
+    {
+        TRACE_E("Unable to start the background path check thread.");
+        delete data;
+        return FALSE;
+    }
+    AddAuxThread(thread, TRUE); // a network call may hang: the thread is terminated at the program's end
+    return TRUE;
+}
+
 unsigned ThreadCheckPathFBody(void* param) // directory accessibility test
 {
     CALL_STACK_MESSAGE1("ThreadCheckPathFBody()");
@@ -155,35 +270,8 @@ CPF_AGAIN:
     ThreadCheckState[i] |= ctsCanTerminate; // the main thread can now terminate
 
     // it can hang here, which is why we do all this circus around it
-    BOOL threadValid = (SalGetFileAttributes(threadPath) != 0xFFFFFFFF);
-    DWORD error = GetLastError();
-    if (!threadValid && error == ERROR_INVALID_PARAMETER) // reports on the root of removable media (CD/DVD, ZIP)
-        error = ERROR_NOT_READY;                          // bit of a hack,but basically it is about the "not ready" issue and not "invalid parameter" ;-)
-
-    // We are bypassing an error when reading attributes (since W2K, reading attributes can be disabled in Properties/Security), at least on fixed disks.
-    if (!threadValid && error == ERROR_ACCESS_DENIED &&
-        (threadPath[0] >= 'a' && threadPath[0] <= 'z' ||
-         threadPath[0] >= 'A' && threadPath[0] <= 'Z') &&
-        threadPath[1] == ':')
-    {
-        char root[20];
-        root[0] = threadPath[0];
-        strcpy(root + 1, ":\\");
-        if (GetDriveType(root) == DRIVE_FIXED)
-        {
-            SalPathAppend(threadPath, "*", sizeof(threadPath));
-            WIN32_FIND_DATAW dataW; // long-path + Unicode capable find (feature 010)
-            HANDLE find = SalFindFirstFile(threadPath, &dataW);
-            if (find != INVALID_HANDLE_VALUE)
-            {
-                // the path is probably OK after all (cannot be used without the fixed-disk test, unfortunately FindFirstFile
-                // most likely runs from the cache because a disconnected network disk happily starts listing, so
-                // for check-path it is unusable (we already had it and had to replace it))
-                threadValid = TRUE;
-                HANDLES(FindClose(find));
-            }
-        }
-    }
+    DWORD error;
+    BOOL threadValid = SalTestPathAccessible(threadPath, &error);
 
     if (i == 0) // first check-path thread (optimization: runs continuously)
     {

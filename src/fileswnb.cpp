@@ -22,6 +22,7 @@ extern "C"
 #include "salshlib.h"
 #include "zip.h"
 #include "saluncserver.h" // feature 125
+#include "salbkgndcheck.h" // feature 372
 
 //****************************************************************************
 
@@ -402,10 +403,28 @@ CFilesWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                         InactiveRefreshTimerSet = FALSE;
                         return 0;
                     }
+                    if (wParam == IDT_AUTOREFRESHVERIFY) // feature 372: verify a folder without automatic refresh
+                    {
+                        KillTimer(HWindow, IDT_AUTOREFRESHVERIFY);
+                        if (AutoRefreshVerifyTimerSet && (Is(ptDisk) || Is(ptZIPArchive)) && // not just a stray WM_TIMER
+                            !RequestBkgndPathCheck(SAL_BKCHK_VERIFY))
+                        {
+                            TRACE_E("IDT_AUTOREFRESHVERIFY: the background path check could not be started");
+                        }
+                        AutoRefreshVerifyTimerSet = FALSE;
+                        return 0;
+                    }
                 }
             }
         }
         break;
+    }
+
+    case WM_USER_BKGNDCHECK_DONE: // feature 372: the background path check of this panel finished
+    {
+        if (lParam != 0)
+            OnBkgndPathCheckDone((CBkgndPathCheckData*)lParam); // deletes the data
+        return 0;
     }
 
     case WM_USER_REFRESH_DIR_EX:

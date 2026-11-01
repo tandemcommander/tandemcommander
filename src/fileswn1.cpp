@@ -1574,6 +1574,9 @@ CFilesWindow::CFilesWindow(CMainWindow* parent)
     InactiveRefreshTimerSet = FALSE;
     InactRefreshLParam = 0;
     LastInactiveRefreshStart = LastInactiveRefreshEnd = 0;
+    BkgndCheckRunning = FALSE; // feature 372
+    BkgndCheckWanted = 0;
+    AutoRefreshVerifyTimerSet = FALSE;
 
     NeedRefreshAfterIconsReading = FALSE;
     RefreshAfterIconsReadingTime = 0;

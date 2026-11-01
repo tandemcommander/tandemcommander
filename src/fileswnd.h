@@ -931,6 +931,11 @@ public:
     DWORD LastInactiveRefreshStart; // info about the last snooper-initiated refresh in an inactive window: when did it start + matching the line below...
     DWORD LastInactiveRefreshEnd;   // info about the last snooper-initiated refresh in an inactive window: when did it finish + equality with LastInactiveRefreshStart means that no such refresh has occurred since the last deactivation
 
+    // feature 372: the background path check of this panel (salbkgndcheck.h)
+    BOOL BkgndCheckRunning;         // a worker checks this panel's folder (at most one)
+    int BkgndCheckWanted;           // SAL_BKCHK_* bits asked for since the worker started
+    BOOL AutoRefreshVerifyTimerSet; // TRUE when the timer IDT_AUTOREFRESHVERIFY is running
+
     BOOL NeedRefreshAfterIconsReading; // is a refresh needed after icon reading finishes?
     int RefreshAfterIconsReadingTime;  // "time" of the latest refresh that arrived while icons were being read
 
@@ -1060,6 +1065,14 @@ public:
 
     // called when Salamander's main window is activated/deactivated
     void Activate(BOOL shares);
+
+    // feature 372: asks for a background accessibility check of the panel's folder ('purpose' is a
+    // SAL_BKCHK_* bit); FALSE when no worker runs and none could be started (nothing was asked for)
+    BOOL RequestBkgndPathCheck(int purpose);
+    // feature 372: the worker's result arrived (WM_USER_BKGNDCHECK_DONE); deletes 'data'
+    void OnBkgndPathCheckDone(CBkgndPathCheckData* data);
+    // feature 372: a refresh listed a folder without automatic refresh - check it again in 400 ms
+    void StartAutoRefreshVerify();
 
     // called to inform the panel about changes on 'path'; when 'includingSubdirs' is TRUE,
     // changes may also occur in subdirectories

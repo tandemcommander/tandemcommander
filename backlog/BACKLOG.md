@@ -289,6 +289,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Every activation of the program blocks it ~150 ms in the idle clipboard check](items/every-activation-of-the-program-blocks-it-150-ms-in-the-idle/desc.md) | bug | 3 | panels-ui | measure:372 | 2026-11-01 |
 
 ## Parked
 

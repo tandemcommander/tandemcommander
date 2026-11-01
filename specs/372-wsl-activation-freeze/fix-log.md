@@ -84,3 +84,72 @@ derived from the code and the primitive measurement.
 - Pass 1: 0 CRITICAL, 2 HIGH (F1 scenario 1 vs SC-001; F2 sequence number vs the one-at-a-time
   design) - both fixed in spec.md / fix-log; pass 2: 0 CRITICAL, 0 HIGH. MEDIUM F3 (cold distribution has no automated
   test - a person-step, T016), LOW F4 (FR-003 names a timer) accepted.
+
+## Implementation
+
+- `src/common/salbkgndcheck.h` (new): `SalBkgndCheckRoute`, `SalNeedsAutoRefreshVerify`,
+  `SalBkgndCheckAction` (the table of `contracts/background-path-check.md`).
+- `src/salamdr5.cpp`: `SalTestPathAccessible` = the accessibility test of `ThreadCheckPathFBody`
+  moved into a function (same calls and error mapping; the `*` mask of the fixed-disk fallback is
+  now a heap buffer of the path's length instead of the thread's `SAL_MAX_PATH_UTF8 + 8` stack copy
+  - never cut); `StartBkgndPathCheck` + worker `BkgndPathCheckThread` (call-stack and exception
+  wrapper as `ThreadCheckPathF`, `AddAuxThread`, data freed when the post fails).
+- `src/consts.h`: `WM_USER_BKGNDCHECK_DONE` (`WM_APP + 421`), `IDT_AUTOREFRESHVERIFY` (955) - both
+  numbers unused in `src/` before; `CBkgndPathCheckData`.
+- `src/fileswnd.h`, `src/fileswn1.cpp`: panel members (`BkgndCheckRunning`, `BkgndCheckWanted`,
+  `AutoRefreshVerifyTimerSet`) and their initialization.
+- `src/fileswn6.cpp`: `CFilesWindow::Activate` - a network disk/archive folder starts the
+  background check (falls back to the old synchronous code when no worker can be started);
+  `RequestBkgndPathCheck`, `OnBkgndPathCheckDone`, `StartAutoRefreshVerify`.
+- `src/fileswn2.cpp`: `ChangePathToDisk` - `Sleep(400)` + second `CommonRefresh` replaced by
+  `StartAutoRefreshVerify()` under the same condition.
+- `src/fileswnb.cpp`: the panel handles `IDT_AUTOREFRESHVERIFY` and `WM_USER_BKGNDCHECK_DONE`.
+- No UI string, menu or dialog changed: no `.slt` refresh (stop-rules §2.13 does not apply).
+- clang-format: the edited legacy files were not clang-format-clean at HEAD (trailing-comment
+  alignment in untouched code); the new header is clean; the edited files were left in the
+  style of their surroundings.
+
+Consumers enumerated (stop-rules §2.2): `CFilesWindow::Activate` is called only from
+`WM_USER_END_SUSPMODE` (`mainwnd3.cpp`, both panels, `Activate(FALSE)`) - no other caller; the `Sleep(400)` branch existed only in `ChangePathToDisk` (`grep Sleep(400)`:
+one site); `ThreadCheckPathFBody` is the only user of the extracted test besides the new worker.
+
+## Checks
+
+| Check | Command | Result |
+|---|---|---|
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| build | `.\build.cmd` (Debug x64) | `BUILD SUCCEEDED` |
+| unit rules | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 30115 checks, 0 failed` (`TestBkgndPathCheck372`) |
+| probe | `act372_probe.ps1 -Label after` on the hidden desktop | PASS 12, FAIL 0, NOT DRIVEN 4 (`probe/result_after.txt`) |
+
+### Probe after the fix (`probe/result_after.txt`)
+
+| Row | Before (late waits) | After: late (after +100 ms) max | Longest |
+|---|---|---|---|
+| LOCAL | - | 0.1-2.3 ms | 126-143 ms (the clipboard block) |
+| WSLROOT | 392-408 ms at +218 ms | 1.4-4.9 ms | 141-143 ms |
+| WSLBIG | 408-411 ms at +218 ms | 0.4-4.7 ms | 140-143 ms |
+| WSLNEW | - | 4.8 ms; a folder created while inactive was entered after the activation | PASS |
+| WSLDEL | - | 0.2 ms; the panel left the deleted folder for its parent, no message | PASS |
+| SHARE `\\localhost\C$\...` | - | 0.2-1.8 ms | 125-143 ms |
+
+CURSOR rows: NOT DRIVEN (hidden desktop). Registry restored, identical SHA-256.
+
+Negative control: the before-run (`probe/result_before.txt`, `result_before_offsets.txt`) used the
+same measurement (WM_NULL pings, waits with offsets) on the build of `main`: its late waits of
+392-411 ms fail the new verdict (`< 50 ms`); WSLNEW / WSLDEL / SHARE describe behaviour the old
+code also had (they guard against a regression, not the defect).
+
+### Deviation (stop-rules §2.14)
+
+The item's *Expected* says the time from the activation until the message loop runs again stays
+under ~50 ms. The ~140 ms block that every activation pays (also with local folders) remains: it is
+the idle clipboard check, not a wait for a panel folder (fix-log *Where the time goes*). The
+conservative way is taken: this feature removes every wait the WSL / network folder caused (late
+waits now <= 5 ms); the clipboard block is the Inbox item
+`every-activation-of-the-program-blocks-it-150-ms-in-the-idle` (`measure:372`).
+
+## Findings outside the scope
+
+- `every-activation-of-the-program-blocks-it-150-ms-in-the-idle` - the idle clipboard check blocks
+  every activation ~150 ms (Inbox, measure:372).

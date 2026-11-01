@@ -113,6 +113,7 @@
 #include "salisoudfvat.h"      // feature 358
 #include "salisoudfentry.h"    // feature 361
 #include "salrenamekey.h"      // feature 346
+#include "salbkgndcheck.h"     // feature 372
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -22794,6 +22795,38 @@ static void TestRenameInPlaceKey346()
     CHECK(!SalIsRenameInPlaceHotKey(MAKEWORD('G', HOTKEYF_CONTROL | HOTKEYF_SHIFT)));
 }
 
+// feature 372: the background path check of a panel (src/common/salbkgndcheck.h)
+static void TestBkgndPathCheck372()
+{
+    // the route: only disk / archive panels on a network folder
+    CHECK(SalBkgndCheckRoute(TRUE, TRUE));
+    CHECK(!SalBkgndCheckRoute(TRUE, FALSE));  // local folder: the synchronous check as before
+    CHECK(!SalBkgndCheckRoute(FALSE, TRUE));  // plug-in file system: its own activation refresh
+    CHECK(!SalBkgndCheckRoute(FALSE, FALSE));
+    // the deferred verification: the old Sleep(400) condition, every input matters
+    CHECK(SalNeedsAutoRefreshVerify(TRUE, TRUE, TRUE, FALSE));
+    CHECK(!SalNeedsAutoRefreshVerify(FALSE, TRUE, TRUE, FALSE)); // a path change, not a refresh
+    CHECK(!SalNeedsAutoRefreshVerify(TRUE, FALSE, TRUE, FALSE)); // the listing failed (the panel leaves it)
+    CHECK(!SalNeedsAutoRefreshVerify(TRUE, TRUE, FALSE, FALSE)); // changes not monitored (manual refresh)
+    CHECK(!SalNeedsAutoRefreshVerify(TRUE, TRUE, TRUE, TRUE));   // automatic refresh works
+    // the action table of contracts/background-path-check.md
+    const int A = SAL_BKCHK_ACTIVATE, V = SAL_BKCHK_VERIFY;
+    for (int same = 0; same < 2; same++)
+        for (int valid = 0; valid < 2; valid++)
+            CHECK(SalBkgndCheckAction(0, same, valid) == sbcaNone); // nothing wanted
+    CHECK(SalBkgndCheckAction(A, TRUE, TRUE) == sbcaRefreshEx);
+    CHECK(SalBkgndCheckAction(A | V, TRUE, TRUE) == sbcaRefreshEx);
+    CHECK(SalBkgndCheckAction(V, TRUE, TRUE) == sbcaNone); // accessible after the refresh: never re-listed (no loop)
+    CHECK(SalBkgndCheckAction(A, TRUE, FALSE) == sbcaRefresh);
+    CHECK(SalBkgndCheckAction(V, TRUE, FALSE) == sbcaRefresh);
+    CHECK(SalBkgndCheckAction(A | V, TRUE, FALSE) == sbcaRefresh);
+    CHECK(SalBkgndCheckAction(A, FALSE, TRUE) == sbcaRestart); // the panel moved: never act on the old folder
+    CHECK(SalBkgndCheckAction(A, FALSE, FALSE) == sbcaRestart);
+    CHECK(SalBkgndCheckAction(V, FALSE, FALSE) == sbcaRestart);
+    CHECK(SalBkgndCheckAction(A | V, FALSE, TRUE) == sbcaRestart);
+    CHECK(SalBkgndCheckAction(0x04, TRUE, FALSE) == sbcaNone); // an unknown bit asks for nothing
+}
+
 static void TestHfsFileContent339()
 {
     const unsigned reg = 0100644, noMode = 0, typeOnly = 0100000, lnk = 0120755;
@@ -24385,6 +24418,7 @@ int main(int argc, char** argv)
     TestIsoSessionTracks_340();
     TestIsoSessionDump_370();
     TestRenameInPlaceKey346();
+    TestBkgndPathCheck372();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
