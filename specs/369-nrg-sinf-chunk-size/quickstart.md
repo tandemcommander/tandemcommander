@@ -14,5 +14,5 @@ Prerequisites: WSL Ubuntu with genisoimage (334's `mkimg334.sh`), Python, a Debu
    Expected: PASS 10, FAIL 0 (before: 6 / 4) - F-FIT both sessions, image deleted; S-SINF8 /
    S-SINF8TAIL / S-SINF2 `b.txt`, image kept, no box; S-SINF0 both sessions, image kept, no box.
 4. Regressions: `specs\340-nrg-session-count\probe\iso340_probe.ps1` (14 / 0),
-   `specs\350-*\probe` (its recorded result), `specs\365-nrg-ccd-track-tables\probe\iso365_probe.ps1`
+   `specs\350-nrg-cuex-bounds\probe\nrg350_probe.ps1` (20 / 0, `result_final.txt`), `specs\365-nrg-ccd-track-tables\probe\iso365_probe.ps1`
    (22 / 0).
