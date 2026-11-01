@@ -1,0 +1,43 @@
+arctarget383_probe (feature 383) negative-control
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 21:06; registry key existed True; ACP 1250
+
+7Z-TYPED   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-TYPED   RUN    FAIL        typed: \DOCS\; archive: [Docs, Docs\f.txt, DOCS\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-EXACT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-EXACT   RUN    PASS        typed: \Docs\; archive: [Docs, Docs\f.txt, Docs\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-DEEP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-DEEP    RUN    FAIL        typed: \dOCS\sUB\; archive: [Docs, Docs\Sub, Docs\Sub\g.txt, dOCS\sUB\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-NEWTAIL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-NEWTAIL RUN    FAIL        typed: \DOCS\New\; archive: [Docs, Docs\f.txt, DOCS\New\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-MOVE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-MOVE    RUN    FAIL        typed: \DOCS\; archive: [Docs, Docs\f.txt, DOCS\n.txt]; src n.txt left: False; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-TWINS   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-TWINS   RUN    FAIL        typed: \DOCS\; archive: [Docs, Docs\f.txt, DOCS\n.txt, X, X\A.txt, X\a.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-TWINEX  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-TWINEX  RUN    PASS        typed: \DOCS\; archive: [Docs, DOCS, Docs\f.txt, DOCS\g.txt, DOCS\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-AMBIG   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-AMBIG   RUN    PASS        typed: \docs\; archive: [Docs, DOCS, Docs\f.txt, DOCS\g.txt, docs\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+7Z-PANEL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+7Z-PANEL   RUN    FAIL        typed: \DOCS\; archive: [Docs, Docs\f.txt, DOCS\n.txt]; src n.txt left: True; windows: ...this dialog box again (you can change it later in config dialog) | [Button id=1217] C&onfigure... | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+ZIP-TYPED  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-TYPED  RUN    FAIL        typed: \DOCS\; archive: [Docs, Docs\f.txt, DOCS\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-EXACT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-EXACT  RUN    PASS        typed: \Docs\; archive: [Docs, Docs\f.txt, Docs\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-DEEP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-DEEP   RUN    FAIL        typed: \dOCS\sUB\; archive: [Docs, Docs\Sub, Docs\Sub\g.txt, dOCS\sUB\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-NEWTAIL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-NEWTAIL RUN    FAIL        typed: \DOCS\New\; archive: [Docs, Docs\f.txt, DOCS\New\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-MOVE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-MOVE   RUN    FAIL        typed: \DOCS\; archive: [Docs, Docs\f.txt, DOCS\n.txt]; src n.txt left: False; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-TWINS  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-TWINS  RUN    FAIL        typed: \DOCS\; archive: [Docs, Docs\f.txt, DOCS\n.txt, X, X\A.txt, X\a.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-TWINEX END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-TWINEX RUN    PASS        typed: \DOCS\; archive: [Docs, DOCS, Docs\f.txt, DOCS\g.txt, DOCS\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-AMBIG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-AMBIG  RUN    PASS        typed: \docs\; archive: [Docs, DOCS, Docs\f.txt, DOCS\g.txt, docs\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+ZIP-PANEL  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+ZIP-PANEL  RUN    FAIL        typed: \DOCS\; archive: [Docs, Docs\f.txt, DOCS\n.txt]; src n.txt left: True; windows: ... this dialog box again (you can change it later in config dialog) | [Button id=1] OK | [Button id=2] Cancel | [Button id=109] &Configure... | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 24, FAIL 12, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

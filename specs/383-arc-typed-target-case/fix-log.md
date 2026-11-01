@@ -46,3 +46,42 @@ disk into an archive folder typed in another case packs into a new folder beside
 - Round 2: no CRITICAL / HIGH. Accepted LOW: U1 the Copy dialog history keeps the typed text - by
   reading (the dialog stores the history before FilesAction acts; the re-spelled root is a copy);
   U2 a stale panel listing (archive changed since listed) is re-listed - by reading, not probed.
+
+## Implementation
+
+- `src/common/salarcpathspell.h`: `SalArcPathApplyResolved(typed, resolved)` - lays the resolved
+  names over the typed root between its optional leading / trailing `\`, only when the lengths are
+  equal; writes only inside `typed`; true when a byte changed.
+- `src/fileswn8.cpp`: `ArchiveCanBeListed383` (the conditions `PackList` checks before it lists:
+  a plug-in with `SupportPanelView`, or an external archiver with list command and parser - else no
+  listing and no message) and `RespellTypedArchiveRoot383` (a panel's `ArchiveDir` of the same
+  archive - `SalPathEqualOrdinalCI` - when the file's date / size equal the panel's and the name does
+  not lead elsewhere (145); else `PackList` into an own `CSalamanderDirectory` with the wait window;
+  `ResolvePathCase` + `SalArcPathApplyResolved`; the own listing's plug-in data released as in
+  `salamdr3.cpp`, only after a successful listing). Called in the archive branch of `FilesAction`
+  after the zero-size test, only with a typed path and a non-zero-size archive, on the copy
+  `packRoot[MAX_PATH]`; `PackCompress` gets `packRoot`; `path` / `secondPart` stay as typed.
+  `zip.h` included for `CSalamanderDirectory` (first build: C2027 incomplete type).
+- `src/saltests/saltests.cpp`: `TestArcPathApplyResolved383` - 32 checks (separators kept, length
+  mismatch / empty / NULL untouched, unchanged = false, and composed with `SalArcPathResolveCase`
+  over the probe's archives incl. TOOLONG at size 8 keeping the typed root).
+- No UI string, dialog or resource changed (the wait window uses the existing `IDS_LISTINGARCHIVE`)
+  -> no `.slt` refresh needed.
+- Trap met: a Bash here-document collapsed `\\` in a Python replacement of the probe header (123's
+  trap) - the replacement simply did not match; fixed with the editor, control characters checked
+  (none).
+
+## Measurements after
+
+| Check | Command | Result |
+|---|---|---|
+| build | `.\build.cmd` | BUILD SUCCEEDED |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `30466 checks, 0 failed` |
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| probe | `arctarget383_probe.ps1 -Label after` (hidden desktop) | **36 / 0** (`probe/result_after.txt`; before 22 / 10) |
+| negative control | the call disabled (`if (FALSE && !nullFile)`) in the tree, rebuilt, probe, restored, rebuilt | **24 / 12** (`probe/result_negative.txt`: the 10 rows of before + both PANEL rows) |
+| recheck | restored build, `-Only 7Z-TYPED,ZIP-PANEL` | 4 / 0 |
+| 273 probe | `arccase273_probe.ps1` | 12 / 0 (`probe/regress_273_after.txt`) |
+| 382 probe | `arctwins382_probe.ps1` | 24 / 0 (`probe/regress_382_after.txt`) |
+
+Every probe run: registry restored, identical SHA-256; fixture removed; nothing left running.

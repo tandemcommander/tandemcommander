@@ -11,10 +11,12 @@
 #include "dialogs.h"
 #include "snooper.h"
 #include "worker.h"
+#include "zip.h" // feature 383: CSalamanderDirectory (the target archive's listing)
 #include "pack.h"
 #include "mapi.h"
 #include "salheapstr.h"   // feature 097
 #include "saluncserver.h" // feature 284
+#include "salarcpathspell.h" // feature 383
 
 //
 // ****************************************************************************
@@ -174,6 +176,120 @@ void PluginFSConvertPathToExternal(char* path)
         CPluginData* plugin = Plugins.Get(index);
         if (plugin != NULL && plugin->InitDLL(MainWindow->HWindow, FALSE, TRUE)) // the plugin may not be loaded, let it load if needed
             plugin->GetPluginInterfaceForFS()->ConvertPathToExternal(fsName, fsNameIndex, fsUserPart);
+    }
+}
+
+// feature 383: can the archive be listed without a message? - the conditions PackList checks before
+// it lists (a plug-in with panel view, or an external archiver with a list command and parser)
+static BOOL ArchiveCanBeListed383(const char* archive)
+{
+    int format = PackerFormatConfig.PackIsArchive(archive);
+    if (format == 0)
+        return FALSE;
+    int index = PackerFormatConfig.GetUnpackerIndex(format - 1);
+    if (index < 0)
+    {
+        CPluginData* plugin = Plugins.Get(-index - 1);
+        return plugin != NULL && plugin->SupportPanelView;
+    }
+    const SPackBrowseTable* browseTable = ArchiverConfig.GetUnpackerConfigTable(index);
+    return browseTable != NULL && browseTable->ListCommand != NULL && browseTable->ListParser != NULL;
+}
+
+// feature 383: Copy (F5) / Move (F6) from disk with a typed target "<archive>\DOCS\" gave the archive
+// plug-in the typed text as the folder to pack into - the files landed in a new folder "DOCS" beside
+// the archive's "Docs" (7z and ZIP, measured). 'root' (the typed path inside 'archive', a copy the
+// caller owns) is re-spelled in place by the rule the panel applies to the same typed path
+// (ResolvePathCase, features 273 / 382): the leading components that name folders get the
+// listing's names, the rest stays as typed; the length never changes (nothing cut). The listing is a
+// panel's listing of the same archive when the file's date and size are still those the panel
+// listed (as the paste of salshlib.cpp checks a stored listing), else the archive is listed here
+// (PackList, as the edited-member check of salamdr3.cpp). No listing (a format that cannot list, a
+// failed or cancelled listing, low memory) = 'root' stays as typed - the pack goes on as before.
+static void RespellTypedArchiveRoot383(HWND parent, CFilesWindow* panel, const char* archive, char* root)
+{
+    CALL_STACK_MESSAGE3("RespellTypedArchiveRoot383(, , %s, %s)", archive, root);
+    if (root[0] == 0 || (root[0] == '\\' && root[1] == 0))
+        return;
+    FILETIME archiveDate;
+    CQuadWord archiveSize;
+    DWORD err = NO_ERROR;
+    BOOL haveStamp = FALSE;
+    HANDLE file = SalCreateFile(archive, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file != INVALID_HANDLE_VALUE)
+    {
+        haveStamp = GetFileTime(file, NULL, NULL, &archiveDate) &&
+                    SalGetFileSize(file, archiveSize, err) && err == NO_ERROR;
+        HANDLES(CloseHandle(file));
+    }
+
+    CSalamanderDirectory* listing = NULL; // a panel's listing (borrowed) or 'ownDir'
+    if (haveStamp && MainWindow != NULL)
+    {
+        for (int j = 0; j < 2 && listing == NULL; j++)
+        {
+            CFilesWindow* p = j == 0 ? MainWindow->LeftPanel : MainWindow->RightPanel;
+            if (p != NULL && p->Is(ptZIPArchive) && p->GetArchiveDir() != NULL &&
+                SalPathEqualOrdinalCI(p->GetZIPArchive(), archive))
+            {
+                FILETIME panelDate = p->GetZIPArchiveDate();
+                if (CompareFileTime(&panelDate, &archiveDate) == 0 && p->IsSameZIPArchiveSize(archiveSize) &&
+                    !p->ArchiveNameLeadsElsewhere(archive, NULL))
+                {
+                    listing = p->GetArchiveDir();
+                }
+            }
+        }
+    }
+
+    CSalamanderDirectory* ownDir = NULL;
+    BOOL listed = FALSE;
+    CPluginDataInterfaceAbstract* pluginData = NULL;
+    CPluginData* plugin = NULL;
+    if (listing == NULL && ArchiveCanBeListed383(archive))
+    {
+        ownDir = new CSalamanderDirectory(FALSE);
+        if (ownDir == NULL)
+            TRACE_E(LOW_MEMORY);
+        else
+        {
+            ownDir->AllocAddCache();
+            SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+            CreateSafeWaitWindow(LoadStr(IDS_LISTINGARCHIVE), NULL, 2000, FALSE, parent);
+            listed = PackList(panel, archive, *ownDir, pluginData, plugin);
+            DestroySafeWaitWindow();
+            SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+            ownDir->FreeAddCache();
+            if (listed)
+                listing = ownDir;
+        }
+    }
+
+    if (listing != NULL)
+    {
+        char resolved[MAX_PATH]; // 'root' is shorter than MAX_PATH (the caller's check)
+        if (listing->ResolvePathCase(root, resolved, _countof(resolved)))
+            SalArcPathApplyResolved(root, resolved);
+    }
+
+    if (ownDir != NULL) // the listing's plug-in data released as salamdr3.cpp / salshlib.cpp do
+    {
+        // only after a successful listing - a plug-in whose ListArchive fails may leave 'pluginData'
+        // pointing at what it deleted already (salamdr3.cpp, review of 153)
+        if (listed && pluginData != NULL && plugin != NULL)
+        {
+            CPluginDataInterfaceEncapsulation data(pluginData, plugin->DLLName, plugin->Version,
+                                                   plugin->GetPluginInterface()->GetInterface(), plugin->BuiltForVersion);
+            BOOL releaseFiles = data.CallReleaseForFiles();
+            BOOL releaseDirs = data.CallReleaseForDirs();
+            if (releaseFiles || releaseDirs)
+                ownDir->ReleasePluginData(data, releaseFiles, releaseDirs);
+            CPluginInterfaceEncapsulation pluginIface(data.GetPluginInterface(), data.GetBuiltForVersion());
+            pluginIface.ReleasePluginDataInterface(data.GetInterface());
+        }
+        ownDir->Clear(NULL);
+        delete ownDir;
     }
 }
 
@@ -715,10 +831,21 @@ void CFilesWindow::FilesAction(CActionType type, CFilesWindow* target, int count
                                     ClearReadOnlyAttr(path, nullFileAttrs); // so it's possible to delete even read-only files
                                     SalDeleteFile(path);
                                 }
+                                // feature 383: the typed path inside the archive spelled as the archive
+                                // spells its folders ("DOCS\" for "Docs" packed into a new folder beside
+                                // it); a copy - 'secondPart' stays as typed for the way back to the dialog
+                                char packRoot[MAX_PATH]; // 'secondPart' is shorter (checked above)
+                                packRoot[0] = 0;
+                                if (hasPath)
+                                {
+                                    strcpy_s(packRoot, secondPart + 1);
+                                    if (!nullFile) // a zero-size archive was deleted: nothing to list
+                                        RespellTypedArchiveRoot383(HWindow, this, path, packRoot);
+                                }
                                 //---  custom packing
                                 SetCurrentDirectory(GetPath());
                                 SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
-                                if (PackCompress(HWindow, this, path, hasPath ? secondPart + 1 : "",
+                                if (PackCompress(HWindow, this, path, packRoot,
                                                  type == atMove, GetPath(), PanelEnumDiskSelection, &data))
                                 {                   // packing succeeded
                                     if (nullFile && // a zero-size file might have a different compressed attribute; set the archive to the same

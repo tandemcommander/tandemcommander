@@ -17412,6 +17412,82 @@ static void TestArcPathResolveCase382()
     }
 }
 
+// feature 383: the typed packing root of Copy / Move into an archive, as the core composes it -
+// resolved by SalArcPathResolveCase (382), laid over the typed root by SalArcPathApplyResolved
+static std::string ApplyStr383(const char* typed, const char* resolved, bool* changed)
+{
+    std::vector<char> buf(typed, typed + strlen(typed) + 1);
+    *changed = SalArcPathApplyResolved(buf.data(), resolved);
+    return std::string(buf.data());
+}
+
+static std::string PackRoot383(const FakeDir252* root, const char* typed, bool cs, int outSize = 260)
+{
+    std::vector<char> rootBuf(typed, typed + strlen(typed) + 1);
+    std::vector<char> resolved(outSize > 0 ? outSize : 1, 'x');
+    Access382 acc;
+    acc.Access273::CaseSensitive = cs;
+    if (SalArcPathResolveCase(root, rootBuf.data(), resolved.data(), outSize, acc) == SAL_ARCRESPELL_OK)
+        SalArcPathApplyResolved(rootBuf.data(), resolved.data());
+    return std::string(rootBuf.data());
+}
+
+static void TestArcPathApplyResolved383()
+{
+    bool ch = false;
+    // the separators of the typed root are kept, the names replaced
+    CHECK(ApplyStr383("DOCS\\", "Docs", &ch) == "Docs\\" && ch);
+    CHECK(ApplyStr383("\\DOCS\\", "Docs", &ch) == "\\Docs\\" && ch);
+    CHECK(ApplyStr383("\\DOCS", "Docs", &ch) == "\\Docs" && ch);
+    CHECK(ApplyStr383("DOCS", "Docs", &ch) == "Docs" && ch);
+    CHECK(ApplyStr383("dOCS\\sUB\\", "Docs\\Sub", &ch) == "Docs\\Sub\\" && ch);
+    // already spelled as resolved: unchanged, not reported as a change
+    CHECK(ApplyStr383("Docs\\", "Docs", &ch) == "Docs\\" && !ch);
+    // another length (never produced by the resolution) leaves the typed root alone - nothing cut
+    CHECK(ApplyStr383("DOCS\\", "Doc", &ch) == "DOCS\\" && !ch);
+    CHECK(ApplyStr383("DOCS\\", "Docsx", &ch) == "DOCS\\" && !ch);
+    CHECK(ApplyStr383("DOCS\\", "", &ch) == "DOCS\\" && !ch);
+    // nothing to lay over
+    CHECK(ApplyStr383("", "", &ch) == "" && !ch);
+    CHECK(ApplyStr383("\\", "", &ch) == "\\" && !ch);
+    CHECK(ApplyStr383("\\\\", "", &ch) == "\\\\" && !ch);
+    CHECK(!SalArcPathApplyResolved(NULL, "Docs"));
+    {
+        char t[] = "DOCS\\";
+        CHECK(!SalArcPathApplyResolved(t, NULL) && strcmp(t, "DOCS\\") == 0);
+    }
+    // composed with the resolution over the probe's archives
+    FakeDir252 sub, docs, root;
+    sub.AddFile("g.txt");
+    docs.AddFile("f.txt");
+    docs.AddDir("Sub", &sub);
+    root.AddDir("Docs", &docs);
+    CHECK(PackRoot383(&root, "DOCS\\", false) == "Docs\\");                  // TYPED
+    CHECK(PackRoot383(&root, "Docs\\", false) == "Docs\\");                  // EXACT
+    CHECK(PackRoot383(&root, "dOCS\\sUB\\", false) == "Docs\\Sub\\");        // DEEP
+    CHECK(PackRoot383(&root, "DOCS\\New\\", false) == "Docs\\New\\");        // NEWTAIL: the new tail as typed
+    CHECK(PackRoot383(&root, "DOCS\\New\\SUB\\", false) == "Docs\\New\\SUB\\"); // below a new folder nothing resolves
+    CHECK(PackRoot383(&root, "New\\DOCS\\", false) == "New\\DOCS\\");
+    CHECK(PackRoot383(&root, "DOCS\\F.TXT\\", false) == "Docs\\F.TXT\\");    // a file is no folder to pack into
+    FakeDir252 x, tws;                                                        // TWINS: twins in another folder
+    x.AddFile("a.txt");
+    x.AddFile("A.txt");
+    tws.AddDir("Docs", &docs);
+    tws.AddDir("X", &x);
+    CHECK(PackRoot383(&tws, "DOCS\\", true) == "Docs\\");
+    FakeDir252 a, b, tw; // TWINEX / AMBIG: the folders Docs and DOCS
+    a.AddFile("f.txt");
+    b.AddFile("g.txt");
+    tw.AddDir("Docs", &a);
+    tw.AddDir("DOCS", &b);
+    CHECK(PackRoot383(&tw, "DOCS\\", true) == "DOCS\\");
+    CHECK(PackRoot383(&tw, "Docs\\", true) == "Docs\\");
+    CHECK(PackRoot383(&tw, "docs\\", true) == "docs\\"); // never guessed
+    // a resolution that does not fit keeps the typed root (never cut)
+    CHECK(PackRoot383(&root, "dOCS\\sUB\\", false, 8) == "dOCS\\sUB\\");
+    CHECK(PackRoot383(&root, "dOCS\\sUB\\", false, 9) == "Docs\\Sub\\");
+}
+
 // feature 283: which masks of a mask group take the byte shortcut (salmaskopt.h)
 
 // the classification of CMaskGroup::PrepareMasks at cb0d80f5, copied as the reference
@@ -25035,6 +25111,7 @@ int main(int argc, char** argv)
     TestFtpListingField269();
     TestArcPathRespell273();
     TestArcPathResolveCase382();
+    TestArcPathApplyResolved383();
     TestInfoLineBuf276();
     TestFtpPwdReply277();
     TestUserMenuValue280();

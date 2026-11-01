@@ -237,3 +237,49 @@ int SalArcPathResolveCase(TDirPtr root, const char* path, char* out, int outSize
     }
     return SAL_ARCRESPELL_OK;
 }
+
+//*****************************************************************************
+//
+// Feature 383: a typed packing root laid over by its resolved spelling.
+//
+// Copy (F5) / Move (F6) from disk with a typed target "<archive>\DOCS\" gave the
+// archive plug-in the typed text as the folder to pack into - the files landed
+// in a new folder "DOCS" beside "Docs". The core resolves the typed root with
+// SalArcPathResolveCase (what the panel opens for the same text) and lays the
+// result over the typed root: 'resolved' has no leading or trailing '\\', so it
+// replaces the part between them when its length equals that part's length
+// (the resolution keeps the length); anything else leaves 'typed' as it is.
+// Writes only inside 'typed' (never past its terminating NUL); returns true
+// when a byte changed.
+//
+//*****************************************************************************
+
+inline bool SalArcPathApplyResolved(char* typed, const char* resolved)
+{
+    if (typed == NULL || resolved == NULL)
+        return false;
+    int typedLen = 0;
+    while (typed[typedLen] != 0)
+        typedLen++;
+    int lead = (typedLen > 0 && typed[0] == '\\') ? 1 : 0;
+    int coreLen = typedLen - lead;
+    if (coreLen > 0 && typed[typedLen - 1] == '\\')
+        coreLen--;
+    if (coreLen <= 0)
+        return false;
+    int resolvedLen = 0;
+    while (resolved[resolvedLen] != 0)
+        resolvedLen++;
+    if (resolvedLen != coreLen)
+        return false;
+    bool changed = false;
+    for (int i = 0; i < coreLen; i++)
+    {
+        if (typed[lead + i] != resolved[i])
+        {
+            typed[lead + i] = resolved[i];
+            changed = true;
+        }
+    }
+    return changed;
+}

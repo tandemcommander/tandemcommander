@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Backlog item copying-into-an-archive-folder-typed-in-another-case-packs: Copy (F5) / Move (F6) of a
+    Feature 383 (backlog item copying-into-an-archive-folder-typed-in-another-case-packs): Copy (F5) / Move (F6) of a
     disk file into an archive whose target is TYPED in the Copy dialog as a folder inside the archive
     in another case than the archive spells it (<x.7z>\DOCS\ while the archive holds Docs) must pack
     into the existing folder Docs, not into a new folder DOCS beside it.
@@ -22,6 +22,8 @@
       TWINEX   Docs\f.txt, DOCS\g.txt; typed \DOCS\ (exact twin) PASS = DOCS\n.txt, no Docs\n.txt
       AMBIG    Docs\f.txt, DOCS\g.txt; typed \docs\ (two folders of that name ignoring case: no guess)
                                                   PASS = neither Docs\n.txt nor DOCS\n.txt
+      PANEL    Docs\f.txt; the RIGHT panel shows the archive (its listing is reused); typed \DOCS\
+                                                  PASS = Docs\n.txt, no path DOCS...
     Each row for 7Z and ZIP. MUST run through tools\run_on_hidden_desktop.ps1. Registry exported,
     restored and verified. Exit code = number of FAIL rows.
 
@@ -111,7 +113,9 @@ function Run-Case([string]$Kind, [string]$Case) {
     try {
         $target = $arc + $typed
         if (-not $target.StartsWith($Root + '\')) { throw ('typed path outside the fixture: ' + $target) }
-        $id = Start-Tc $src
+        $saveStart = $StartDir
+        if ($Case -eq 'PANEL') { $script:StartDir = $arc }   # Start-Tc opens the right panel on $StartDir
+        try { $id = Start-Tc $src } finally { $script:StartDir = $saveStart }
         Key $id 0x24; Key $id 0x23
         $dlg = Open-ByCmd $id $cmd
         if ($dlg -eq [IntPtr]::Zero) { throw ('command ' + $cmd + ' opened no window') }
@@ -155,7 +159,7 @@ try {
     Out ("Date    : {0}; registry key existed {1}; ACP {2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [Drv098f]::GetACP())
     Out ''
     foreach ($k in @('7Z', 'ZIP')) {
-        foreach ($c in @('TYPED', 'EXACT', 'DEEP', 'NEWTAIL', 'MOVE', 'TWINS', 'TWINEX', 'AMBIG')) { Run-Case $k $c }
+        foreach ($c in @('TYPED', 'EXACT', 'DEEP', 'NEWTAIL', 'MOVE', 'TWINS', 'TWINEX', 'AMBIG', 'PANEL')) { Run-Case $k $c }
     }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
