@@ -36,7 +36,7 @@
 
 - [X] T012 `python tools/check_encoding.py --strict` -> TOTAL: 0; `.\build.cmd` -> BUILD SUCCEEDED; saltests -> 0 failed
 - [X] T013 Run the probe after the fix -> `specs/386-mydocs-path-whole/probe/result_after.txt` (all PASS); record before / after in fix-log.md; record Ctrl+; and the File dialog fallback as NOT DRIVEN (same helper; code reading)
-- [ ] T014 Add the Inbox leftover for a rescue path that holds a long Documents path (`leftover:386`) if the review or the measurement shows it is worth an item
+- [X] T014 Add the Inbox leftover for a rescue path that holds a long Documents path (`leftover:386`) if the review or the measurement shows it is worth an item
 
 ## Dependencies
 

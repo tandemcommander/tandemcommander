@@ -298,6 +298,9 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Confirm Ctrl+; opens a long Documents folder whole on a real keyboard](items/confirm-ctrl-opens-a-long-documents-folder-whole-on-a-real/desc.md) | person-step | 3 | long-paths | leftover:386 | 2026-11-02 |
+| [Environment variables passed to the program arrive as question marks outside the code page](items/environment-variables-passed-to-the-program-arrive-as/desc.md) | bug | 4 | encoding | measure:386 | 2026-11-02 |
+| [Rescue path goes to the Windows drive root when Documents needs more than 259 bytes](items/rescue-path-goes-to-the-windows-drive-root-when-documents/desc.md) | improvement | 2 | long-paths | leftover:386 | 2026-11-02 |
 
 ## Parked
 

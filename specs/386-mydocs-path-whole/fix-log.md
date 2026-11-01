@@ -83,3 +83,12 @@ depends on the start-up route reaching the rescue path) - checked in the before-
   state on the hidden desktop), the Alt+F1/F2 menu item (same `ChangePathToDrvType` as the
   button), the File Open / Save fallback (only when the common dialog refuses its initial folder),
   the rescue path (see T002-T004). Owed to a person: Ctrl+; with a long Documents.
+
+### T014 - items added (Inbox)
+
+- `environment-variables-passed-to-the-program-arrive-as` (bug, measure:386) - the code-page copy
+  of the environment at start (`CEnvVariables`).
+- `rescue-path-goes-to-the-windows-drive-root-when-documents` (improvement, leftover:386) - the
+  rescue path keeps MAX_PATH (decided C1 of analyze: worth an item).
+- `confirm-ctrl-opens-a-long-documents-folder-whole-on-a-real` (person-step, leftover:386) -
+  Ctrl+; and Alt+F1 with the seam on a real keyboard.
