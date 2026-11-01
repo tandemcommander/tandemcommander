@@ -74,6 +74,13 @@ derived from the code and the primitive measurement.
   did: accessible -> `WM_USER_REFRESH_DIR_EX` (the refresh as today), not accessible ->
   `WM_USER_REFRESH_DIR` (as the old "another path error" branch). The ESC branch of the old code
   (switch to a fixed drive) cannot occur: there is no wait window.
-- D3: a result is applied only if the panel still shows the same folder (`SalPathEqualOrdinalCI`,
-  same panel type) and no newer check of that panel started (sequence number). Pure rule in
-  `src/common/salactcheck.h` with `saltests` checks.
+- D3: at most one background check per panel; a request while one runs is served by it. A
+  result is applied only if the panel still shows the same folder (`SalPathEqualOrdinalCI`, same
+  panel type); otherwise it is dropped and a still wanted check restarts on the current folder.
+  Pure rule in `src/common/salbkgndcheck.h` with `saltests` checks.
+
+## speckit-analyze
+
+- Pass 1: 0 CRITICAL, 2 HIGH (F1 scenario 1 vs SC-001; F2 sequence number vs the one-at-a-time
+  design) - both fixed in spec.md / fix-log; pass 2: 0 CRITICAL, 0 HIGH. MEDIUM F3 (cold distribution has no automated
+  test - a person-step, T016), LOW F4 (FR-003 names a timer) accepted.

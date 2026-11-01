@@ -51,8 +51,9 @@ does not answer after an activation, before and after the fix.
 **Acceptance Scenarios**:
 
 1. **Given** a panel on `\\wsl.localhost\Ubuntu\`, **When** the program is deactivated and
-   activated again, **Then** the main window answers within 50 ms at every moment of the
-   1.5 s after the activation (it answered after ~400 ms before).
+   activated again, **Then** the WSL folder adds no wait: after the block every activation pays
+   (SC-003) the main window answers within 50 ms at every moment of the 1.5 s after the
+   activation (it did not answer for ~400 ms before, SC-001).
 2. **Given** a panel on a WSL folder and a file created in that folder from WSL while the
    program was inactive, **When** the program is activated, **Then** the new file appears in the
    panel without any user action (as it does today).
@@ -101,7 +102,7 @@ A local folder in both panels: activation behaves as before or better.
   the activation has finished: the user's action wins; a late result of the activation check
   must not change the panel to another folder or re-read a folder the panel no longer shows.
 - The user deactivates and activates the program several times quickly: at most one check of a
-  panel runs at a time; results of older activations are dropped.
+  panel runs at a time; the activations meanwhile are served by its result (one refresh).
 - The folder became unreachable (share disconnected, distribution unregistered): the existing
   error handling (message, rescue path) still happens, but only after the window is responsive,
   and only for the folder the panel still shows.
@@ -130,8 +131,9 @@ A local folder in both panels: activation behaves as before or better.
   it does today for that case (the same messages and the same rescue path), on the UI thread,
   and only when the panel still shows the folder that was checked and no newer path change
   happened.
-- **FR-006**: A result of an activation check MUST be dropped when the panel's path or panel
-  type changed since the check started, or a newer activation check started.
+- **FR-006**: At most one background check of a panel runs at a time; a request while one runs
+  is served by its result. A result MUST be dropped when the panel's path or panel type changed
+  since the check started; a check still wanted then starts again on the panel's current folder.
 - **FR-007**: Local folders, archives on local disks, and plug-in file systems MUST keep their
   activation behaviour (no change in what is checked or refreshed).
 - **FR-008**: `DrvSpecRemoteDoNotRefreshOnAct` MUST keep its meaning (no check, no refresh on
@@ -142,9 +144,9 @@ A local folder in both panels: activation behaves as before or better.
 
 ### Key Entities
 
-- **Activation check**: one background accessibility check of one panel's folder started by an
-  activation; it carries the panel, the folder it checked and a sequence number; its result is
-  applied only if it still matches the panel.
+- **Background check**: one accessibility check of one panel's folder, started by an activation
+  or by the deferred verification of a refresh; it carries the panel, the folder it checked and
+  the panel type; its result is applied only if it still matches the panel.
 
 ## Success Criteria *(mandatory)*
 
