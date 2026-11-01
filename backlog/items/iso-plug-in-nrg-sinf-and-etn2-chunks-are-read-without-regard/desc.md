@@ -8,7 +8,7 @@ source: review:340
 who: agent
 created: 2026-10-24
 updated: 2026-11-01
-verified: -
+verified: 2026-11-01 720a7472
 effort: S
 feature: -
 related: []
@@ -61,3 +61,4 @@ never past its buffer.
 - 2026-10-24 — created (source review:340)
 - 2026-10-24 — moved to Next position 9
 - 2026-11-01 — related item iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables done in feature 365
+- 2026-11-01 — verified at 720a7472: SINF still present at 720a7472: iso369 probe 6/4 - a SINF chunk of 8, 2 or 0 bytes loses session 2 (Unknown track type box); ETN2 part already fixed by 365
