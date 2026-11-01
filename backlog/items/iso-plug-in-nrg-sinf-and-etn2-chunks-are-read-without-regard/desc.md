@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: NRG SINF and ETN2 chunks are read without regard to their size
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:340
@@ -10,7 +10,7 @@ created: 2026-10-24
 updated: 2026-11-01
 verified: 2026-11-01 720a7472
 effort: S
-feature: -
+feature: 369
 related: []
 depends-on: []
 reason: -
@@ -62,3 +62,4 @@ never past its buffer.
 - 2026-10-24 — moved to Next position 9
 - 2026-11-01 — related item iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables done in feature 365
 - 2026-11-01 — verified at 720a7472: SINF still present at 720a7472: iso369 probe 6/4 - a SINF chunk of 8, 2 or 0 bytes loses session 2 (Unknown track type box); ETN2 part already fixed by 365
+- 2026-11-01 — run started, feature 369
