@@ -109,10 +109,10 @@ fix must not open the wrong twin.
   as typed so the existing shortening and file focusing behave as before.
 - **FR-005**: Listings that are not case-sensitive, and paths that resolve exactly, MUST behave
   exactly as before.
-- **FR-007**: The rule MUST apply whether the archive is opened anew or the panel is already
-  inside the same archive.
 - **FR-006**: The rule MUST be a pure decision with unit checks; it MUST never cut a path (a
   result that does not fit is refused and the typed path is kept).
+- **FR-007**: The rule MUST apply whether the archive is opened anew or the panel is already
+  inside the same archive.
 
 ### Key Entities
 

@@ -39,3 +39,10 @@ the result is what 273 opens for a twin-free archive); counted for ambiguity = e
 rule of `salcasetwins.h` (`StrICmpEx` or `SalNameOrderCompareCI`). From the first component that
 does not resolve, the rest stays as typed for the existing loop. Pure rule in
 `src/common/salarcpathspell.h` (saltests); the listing's comparison rule is not changed.
+
+## Analyze
+
+speckit-analyze (two passes): no CRITICAL, no HIGH. LOW F1 (FR order) fixed. MEDIUM C1 accepted:
+FR-007 (the panel already inside the same archive) is served by the same single call placed
+before the "same path" check for both routes; the probe drives the fresh open (command line)
+only - a typed path change inside an open archive needs a keyboard on the hidden desktop.
