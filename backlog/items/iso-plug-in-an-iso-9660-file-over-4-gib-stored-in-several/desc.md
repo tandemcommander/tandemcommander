@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an ISO 9660 file over 4 GiB stored in several extents extracts wrong
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:338
@@ -10,7 +10,7 @@ created: 2026-10-24
 updated: 2026-11-01
 verified: 2026-11-01 192383f1
 effort: M
-feature: -
+feature: 368
 related: []
 depends-on: []
 reason: -
@@ -50,3 +50,4 @@ is not done, it is at least reported as not extracted. Measured first with such 
 - 2026-10-24 — created (source review:338)
 - 2026-10-24 — moved to Next position 10
 - 2026-11-01 — verified at 192383f1: reproduced at 192383f1: iso368_probe 10/10 RUN rows FAIL - each extent listed as its own file, unpack writes them over each other (xorriso 4 GiB+3000 file extracted as 5048 bytes, F5 copies one part)
+- 2026-11-01 — run started, feature 368
