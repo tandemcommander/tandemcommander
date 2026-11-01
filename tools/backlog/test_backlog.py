@@ -338,6 +338,23 @@ class RunTests(Base):
         code, out = self.run_tool("next")
         self.assertIn(f"skipped: {DISK}: depends-on {FTP}", out)
 
+    def test_next_except_leaves_the_running_item_out(self):
+        # 371: on main the item a run works on is still an open row; the app asks what runs next
+        code, out = self.run_tool("next", "--except", FTP)
+        self.assertEqual(code, 0, out)
+        self.assertIn(f"skipped: {DISK}: status blocked", out)
+        self.assertNotIn(FTP, out)
+        code, out = self.run_tool("next", "--except", FTP, "--json")
+        data = json.loads(out)
+        self.assertNotEqual(data["slug"], FTP)
+        self.assertNotIn(FTP, [s["slug"] for s in data["skipped"]])
+        # an unknown slug changes nothing
+        self.assertEqual(self.run_tool("next", "--except", "no-such-item")[1], self.run_tool("next")[1])
+        # with --slug the option is refused
+        code, out = self.run_tool("next", "--slug", FTP, "--except", DISK)
+        self.assertEqual(code, 1)
+        self.assertIn("--except is for the search without --slug", out)
+
     def test_next_nothing_to_do_and_ineligible_slug(self):
         self.run_tool("block", FTP, "--reason", "x")
         code, out = self.run_tool("next")

@@ -18,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { BoardView, ChangeResult, ItemRowView, Tray } from "@backlog-app/shared";
 import { BacklogTool } from "../src/backlog/tool.ts";
 import { EditLock } from "../src/backlog/edit-lock.ts";
-import { fixtureRepo, gitIn } from "./helpers/fixture-repo.ts";
+import { fixtureRepo, gitIn, writeRunLock } from "./helpers/fixture-repo.ts";
 import { testApp, type TestApp } from "./helpers/services.ts";
 
 /**
@@ -140,11 +140,14 @@ describe("write path", () => {
     expect(((await app.get("/api/tray")).json as Tray).pending).toHaveLength(0);
   });
 
+  it("shows a lock older than 24 hours as stale (negative control of the dated fixture)", async () => {
+    writeRunLock(root, 25);
+    await app.refresh();
+    expect(app.services.gate().state).toBe("stale-lock");
+  });
+
   it("closes the gate while a run holds the run lock, and refuses changes", async () => {
-    writeFileSync(
-      join(root, ".git", "tandem-backlog-run.lock"),
-      "started: 2026-10-30T10:00:00\nslug: some-item\nbranch: 345-some-item\nhost: test\n",
-    );
+    writeRunLock(root);
     await app.refresh();
     expect(app.services.gate().state).toBe("run-holds-lock");
     expect(app.services.source()).toBe("main");

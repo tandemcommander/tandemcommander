@@ -188,6 +188,24 @@ export const ReadRefSchema = z.enum(["worktree", "main"]);
 /** `worktree` (the files on disk) or `main` (git objects of the main line, during runs). */
 export type ReadRef = z.infer<typeof ReadRefSchema>;
 
+/**
+ * The item a run works on (feature 371): on `main` it is still an open row of its section, so
+ * the app overlays the board read from `main` and shows it in *In progress*.
+ */
+export const RunningItemSchema = z.object({
+  /** The slug from the run lock. */
+  slug: z.string(),
+  /** The run's branch from the lock (`-` until the run created it). */
+  branch: z.string(),
+  /** The feature number (the `NNN` prefix of the branch), or null before the branch exists. */
+  feature: z.string().nullable(),
+  /** When the lock was taken (local time). */
+  started: z.string(),
+});
+
+/** The running item. */
+export type RunningItem = z.infer<typeof RunningItemSchema>;
+
 /** The whole overview: sections, rows, revision. */
 export const BoardSchema = z.object({
   /** SHA-256 of `BACKLOG.md` as read; changing requests on the order carry it (research R12). */
@@ -200,6 +218,8 @@ export const BoardSchema = z.object({
   sections: z.array(SectionSchema),
   /** Items that cannot be read. */
   unreadable: z.array(UnreadableItemSchema),
+  /** The item a run works on, shown in *In progress* by the overlay (feature 371), else null. */
+  running: RunningItemSchema.nullable().default(null),
 });
 
 /** The backlog overview. */

@@ -50,6 +50,8 @@ export interface BoardView {
   matches: number;
   /** What the next autonomous run would take. */
   next: NextUp;
+  /** The item a run works on, shown in *In progress* by the overlay (feature 371), else null. */
+  running: Board["running"];
 }
 
 /** The answer of `GET /api/state` and the `hello` event. */

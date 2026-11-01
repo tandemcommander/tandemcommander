@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: 2026 Pavel Stupka
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# The backlog loop from Git Bash: bin/backlog-loop.sh start|pause|resume|stop|kill|status
-# (features 247, 342, 344; logic in tools/backlog/loop.py). The backlog itself is
+# The backlog loop from Git Bash: bin/backlog-loop.sh start|pause|resume|stop|kill|status|returning
+# (features 247, 342, 344, 371; logic in tools/backlog/loop.py). The backlog itself is
 # bin/backlog.sh. Every script in bin/ answers --help.
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 loop="$here/../tools/backlog/loop.py"
@@ -30,6 +30,9 @@ Commands:
   status   what the loop does now: the running item, waiting and why, usage
            limits, an interrupted run, its trace and the size of all traces,
            the run lock, whether Ctrl+C is safe
+  returning  for a run (the skill's step 9): announce the return to main and
+           wait until no change of the backlog app is in progress and the
+           loop holds its edit lock (feature 371); --timeout SECONDS
 
 Options of start:
   --max-items N      end after N finished items (default: no limit)
@@ -70,7 +73,7 @@ case "${1-}" in
         usage
         exit 0
         ;;
-    start | pause | resume | stop | kill | status)
+    start | pause | resume | stop | kill | status | returning)
         exec "${PYTHON:-python}" -u "$loop" "$@"
         ;;
     "")
@@ -78,7 +81,7 @@ case "${1-}" in
         exit 2
         ;;
     *)
-        echo "bin/backlog-loop.sh: unknown command '$1' (start, pause, resume, stop, kill, status; --help)" >&2
+        echo "bin/backlog-loop.sh: unknown command '$1' (start, pause, resume, stop, kill, status, returning; --help)" >&2
         exit 2
         ;;
 esac

@@ -201,13 +201,13 @@ export class BacklogTool {
    * @param stdin - JSON text for `--input-json -`.
    * @returns Exit code and output.
    */
-  private async run(globalArgs: string[], args: string[], stdin?: string) {
+  private async run(globalArgs: string[], args: string[], stdin?: string, root: string = this.root) {
     // `-X utf8`: the tool reads and prints UTF-8 whatever the console code page is (Czech
     // titles must not turn into `?`). The arguments go as an array, never through a shell.
     const result = await runProcess(
       pythonExecutable(),
-      ["-X", "utf8", BACKLOG_PY, "--root", this.root, ...globalArgs, ...args],
-      { cwd: this.root, timeoutMs: 120_000, ...(stdin === undefined ? {} : { stdin }) },
+      ["-X", "utf8", BACKLOG_PY, "--root", root, ...globalArgs, ...args],
+      { cwd: root, timeoutMs: 120_000, ...(stdin === undefined ? {} : { stdin }) },
     );
     return result;
   }
@@ -346,13 +346,15 @@ export class BacklogTool {
    * @param ref - Where to read from.
    * @returns The next-up answer.
    */
-  async next(ref: ReadRef): Promise<NextUp> {
+  async next(ref: ReadRef, except: string | null = null): Promise<NextUp> {
+    // `--except` (feature 371): the item a run works on is still an open row of Next on `main`;
+    // "next up" is what the next run would take after it.
     const raw = z
       .object({
         slug: z.string().nullable(),
         skipped: z.array(z.object({ slug: z.string(), reason: z.string() })).optional(),
       })
-      .parse(await this.readJson(["next"], ref, true));
+      .parse(await this.readJson(["next", ...(except ? ["--except", except] : [])], ref, true));
     return NextUpSchema.parse({ slug: raw.slug, skipped: raw.skipped ?? [] });
   }
 
@@ -378,12 +380,20 @@ export class BacklogTool {
    * @returns The change.
    * @throws ApiError `refused` (nothing written; the tool's text verbatim) or `tool-failed`.
    */
-  async change(args: string[], texts: Record<string, unknown> = {}): Promise<ToolChange> {
+  async change(
+    args: string[],
+    texts: Record<string, unknown> = {},
+    options: {
+      /** Another tree to act on (the app's side worktree of `main`, feature 371). */
+      root?: string;
+    } = {},
+  ): Promise<ToolChange> {
     const hasTexts = Object.keys(texts).length > 0;
     const result = await this.run(
       ["--json", ...(hasTexts ? ["--input-json", "-"] : [])],
       args,
       hasTexts ? JSON.stringify(texts) : undefined,
+      options.root ?? this.root,
     );
     let parsed: z.infer<typeof RawChangeSchema> | null;
     try {

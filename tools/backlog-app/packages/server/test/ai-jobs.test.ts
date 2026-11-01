@@ -25,7 +25,7 @@ import { aiRoutes } from "../src/api/ai.ts";
 import { errorAnswer } from "../src/api/common.ts";
 import { AiJobRunner } from "../src/ai/runner.ts";
 import type { ApplyAnswer } from "../src/ai/apply.ts";
-import { fixtureRepo } from "./helpers/fixture-repo.ts";
+import { fixtureRepo, writeRunLock } from "./helpers/fixture-repo.ts";
 import { testApp, type TestApp } from "./helpers/services.ts";
 
 /** The fake claude script. */
@@ -242,10 +242,7 @@ describe("AI jobs", () => {
   });
 
   it("refuses proposing kinds while a run holds the run lock, but answers questions", async () => {
-    writeFileSync(
-      join(root, ".git", "tandem-backlog-run.lock"),
-      "started: 2026-10-30T10:00:00\nslug: some-item\nbranch: 345-some-item\nhost: test\n",
-    );
+    writeRunLock(root);
     await app.refresh();
     expect(app.services.gate().state).toBe("run-holds-lock");
     const refused = await call("POST", "/api/ai/jobs", { kind: "draft-item", input: { text: "a sentence" } });

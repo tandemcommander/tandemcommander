@@ -6,7 +6,7 @@
  * run the real tools. The real repository's `backlog/` is never used by a test.
  */
 
-import { cpSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { cpSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TOOLS_DIR } from "../../src/context.ts";
@@ -26,6 +26,41 @@ export async function gitIn(cwd: string, args: string[]): Promise<string> {
   const result = await runProcess("git", args, { cwd });
   if (result.code !== 0) throw new Error(`git ${args.join(" ")}: ${result.stderr}`);
   return result.stdout;
+}
+
+/**
+ * The text of a run lock taken `ageHours` ago (0 = now), in the tool's local time stamp form.
+ * The date is computed, never written down: a fixed date turned stale after 24 hours and failed
+ * two tests on 2026-10-31 (feature 371, research R9).
+ *
+ * @param ageHours - How long ago the lock was taken.
+ * @param slug - The item of the lock.
+ * @param branch - The run's branch (`-` before the run created it).
+ * @returns The lock file's content.
+ */
+export function lockText(ageHours = 0, slug = "some-item", branch = "345-some-item"): string {
+  const at = new Date(Date.now() - ageHours * 3600_000);
+  /**
+   * Two-digit field.
+   *
+   * @param n - The number.
+   * @returns It with a leading zero.
+   */
+  const pad = (n: number): string => String(n).padStart(2, "0");
+  const stamp = `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}T${pad(at.getHours())}:${pad(at.getMinutes())}:${pad(at.getSeconds())}`;
+  return `started: ${stamp}\nslug: ${slug}\nbranch: ${branch}\nhost: test\n`;
+}
+
+/**
+ * Writes a run lock into a fixture repository's git directory.
+ *
+ * @param root - The repository root.
+ * @param ageHours - How long ago the lock was taken.
+ * @param slug - The item of the lock.
+ * @param branch - The run's branch.
+ */
+export function writeRunLock(root: string, ageHours = 0, slug = "some-item", branch = "345-some-item"): void {
+  writeFileSync(join(root, ".git", "tandem-backlog-run.lock"), lockText(ageHours, slug, branch));
 }
 
 /**

@@ -1287,11 +1287,13 @@ def eligibility(bl: Backlog, item: Item) -> str | None:
     return None
 
 
-def next_eligible(bl: Backlog, ov: Overview) -> tuple:
-    """(the first eligible slug of Next or None, the rows skipped above it with their reasons)."""
+def next_eligible(bl: Backlog, ov: Overview, except_slug: str | None = None) -> tuple:
+    """(the first eligible slug of Next or None, the rows skipped above it with their reasons).
+    except_slug (371): a row left out as if it were not in Next - the item a run works on, which
+    on main is still an open row."""
     skipped = []
     for row in ov.sections[SEC_NEXT].rows:
-        if not row.slug:
+        if not row.slug or row.slug == except_slug:
             continue
         it = bl.items.get(row.slug)
         if not it or not it.ok:
@@ -1585,6 +1587,9 @@ def cmd_list(bl: Backlog, args) -> int:
 def cmd_next(bl: Backlog, args) -> int:
     ov = bl.require_overview()
     skipped = []
+    except_slug = getattr(args, "except_slug", None)
+    if args.slug and except_slug:
+        raise Refused("--except is for the search without --slug")
     if args.slug:
         try:
             it = bl.item(args.slug)
@@ -1599,7 +1604,7 @@ def cmd_next(bl: Backlog, args) -> int:
             return 1
         chosen = args.slug
     else:
-        chosen, skipped = next_eligible(bl, ov)
+        chosen, skipped = next_eligible(bl, ov, except_slug)
     if args.json:
         print(json.dumps({"slug": chosen, "skipped": skipped}, ensure_ascii=False))
     else:
@@ -2616,6 +2621,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = cmd("next", help="the item an autonomous run would take")
     s.add_argument("--slug")
+    s.add_argument("--except", dest="except_slug", metavar="SLUG",
+                   help="leave this row out as if it were not in Next (the item a run works on; 371)")
 
     s = cmd("board", help="the whole overview: sections, rows, Last triaged, unreadable items")
     s.add_argument("--with-body", action="store_true", help="add each item's body and issue.md")

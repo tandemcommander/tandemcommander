@@ -11,11 +11,15 @@
 
 import { z } from "zod";
 
-/** States of the write gate (research R9, analysis A4 §4.1). */
+/**
+ * States of the write gate (research R9 of 344, redefined by feature 371: a live loop and a run
+ * in progress no longer close the gate; `run-starting` and `run-on-main` name the two windows in
+ * which a run itself is on `main`).
+ */
 export const GATE_STATES = [
   "free",
-  "loop-between-runs",
-  "run-holds-lock",
+  "run-starting",
+  "run-on-main",
   "auto-triage",
   "not-on-main",
   "merge-in-progress",
@@ -30,12 +34,30 @@ export const GateStateSchema = z.enum(GATE_STATES);
 /** A write-gate state. */
 export type GateState = z.infer<typeof GateStateSchema>;
 
+/**
+ * How a change is applied (feature 371): `tray` - in the working tree, pending until the
+ * maintainer commits; `commit` - in the working tree and committed at once (a loop lives);
+ * `main-ref` - in the app's side worktree of `main`, committed there and landed on `main` with a
+ * compare-and-swap (a run holds the run lock and works on its branch).
+ */
+export const WRITE_CHANNELS = ["tray", "commit", "main-ref"] as const;
+
+/** One write channel. */
+export const WriteChannelSchema = z.enum(WRITE_CHANNELS);
+
+/** A write channel. */
+export type WriteChannel = z.infer<typeof WriteChannelSchema>;
+
 /** Whether the backlog may be changed now, and why not. */
 export const WriteGateSchema = z.object({
   /** The state. */
   state: GateStateSchema,
   /** True only in `free`: changing controls are enabled. */
   writable: z.boolean(),
+  /** How a change is applied now; null while not writable. */
+  channel: WriteChannelSchema.nullable(),
+  /** The item a run works on (never changed by the app), else null. */
+  frozenSlug: z.string().nullable(),
   /** The reason in words, shown at every disabled control. */
   reason: z.string(),
   /** False when the consistency check has findings (writes ask first). */
@@ -106,6 +128,8 @@ export const ChangeSchema = z.object({
   state: z.enum(["pending", "committed", "undone"]),
   /** The commit that recorded it, once committed. */
   commit: z.string().nullable(),
+  /** How it was applied (feature 371); older entries without the field were tray changes. */
+  channel: WriteChannelSchema.default("tray"),
 });
 
 /** One change. */
@@ -119,6 +143,8 @@ export const TraySchema = z.object({
   outside: z.array(z.string()),
   /** The commit message the app proposes. */
   proposedMessage: z.string(),
+  /** Changes committed at once in the last hour (feature 371), newest first. */
+  committedRecently: z.array(ChangeSchema).default([]),
 });
 
 /** The tray. */
@@ -178,6 +204,8 @@ export const SettingsSchema = z.object({
   autoCommitBeforeLoop: z.enum(["ask", "always", "never"]).default("ask"),
   /** Budget in US dollars per AI job. */
   aiBudgetUsd: z.number().min(0.1).max(50).default(2),
+  /** Budget in US dollars per conversation process about an item (feature 371). */
+  chatBudgetUsd: z.number().min(0.5).max(50).default(5),
   /** Visible columns per section. */
   columns: z.record(z.string(), z.array(z.string())).default({}),
   /** Id of the newest notification event the maintainer has seen. */

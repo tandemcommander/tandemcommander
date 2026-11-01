@@ -334,6 +334,7 @@ class Repo:
         self.log_file = self.dir / "loop.log"
         self.last_file = self.dir / "last.json"
         self.edit_lock_path = self.lock_path.parent / EDIT_LOCK_NAME
+        self.returning_flag = self.dir / "returning"  # 371: a run announces its return to main
 
     def git(self, *args: str) -> str:
         return backlog.git(self.root, *args)
@@ -413,6 +414,47 @@ class Repo:
             created = process_created(pid)
             live = created is not None and created <= epoch + EDIT_LOCK_SLACK
         return {"pid": pid, "started": fields.get("started"), "purpose": fields.get("purpose"), "live": live}
+
+    def edit_lock_take(self, purpose: str) -> bool:
+        """371: the loop takes the edit lock itself while a run starts (until the run is on its
+        branch) and while a run returns to main, so the backlog app never changes main in those
+        moments.  False when another live process holds it; a dead one is replaced; our own is
+        rewritten with the new purpose."""
+        for _ in range(2):
+            try:
+                fd = os.open(self.edit_lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            except FileExistsError:
+                other = self.edit_lock()
+                if other is not None and other["live"] and not self.edit_lock_mine():
+                    return False
+                unlink(self.edit_lock_path)
+                continue
+            now = time.time()
+            text = (f"pid: {os.getpid()}\nstarted_epoch: {now:.3f}\n"
+                    f"started: {dt.datetime.fromtimestamp(now).strftime('%Y-%m-%dT%H:%M:%S')}\n"
+                    f"purpose: {purpose}\n")
+            with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+                f.write(text)
+            self.edit_lock_text = text
+            return True
+        return False
+
+    def edit_lock_mine(self) -> bool:
+        """The edit lock holds exactly what this Repo wrote (not merely our pid: the tests run the
+        loop in the process that plays the app)."""
+        text = getattr(self, "edit_lock_text", None)
+        if not text:
+            return False
+        try:
+            return backlog.read_text(self.edit_lock_path) == text
+        except (FileNotFoundError, PermissionError, UnicodeDecodeError):
+            return False
+
+    def edit_lock_release(self) -> None:
+        """Removes the edit lock when this process holds it (never another holder's)."""
+        if self.edit_lock_mine():
+            unlink(self.edit_lock_path)
+        self.edit_lock_text = None
 
 
 # ---------------------------------------------------------------------------
@@ -649,6 +691,23 @@ class Loop:
         self.item = getattr(args, "item", None)  # start --item (344)
         self.finished = 0        # runs with a verdict "finished" (any outcome)
         self.end_reason = None   # last.json's reason of a normal end
+        self.holds_edit = False  # 371: this loop holds the backlog app's edit lock
+
+    # -- the edit lock (371) ---------------------------------------------
+
+    def take_edit(self, purpose: str) -> bool:
+        """Hold the backlog app's edit lock (a run starts, or returns to main); False when the
+        app is changing the backlog right now (the caller waits and looks again)."""
+        if self.repo.edit_lock_take(purpose):
+            self.holds_edit = True
+        else:
+            self.holds_edit = False
+        return self.holds_edit
+
+    def release_edit(self) -> None:
+        if self.holds_edit:
+            self.repo.edit_lock_release()
+            self.holds_edit = False
 
     # -- the loop's own record -------------------------------------------
 
@@ -674,17 +733,20 @@ class Loop:
             # (or that ended while the stop was being set) must not end this one (review N1)
             unlink(self.repo.stop_flag)
             unlink(self.repo.kill_flag)  # the same for a kill (344)
+            unlink(self.repo.returning_flag)  # a run of an earlier loop announced a return (371)
             self.write_state("starting", "-")
             return
         tell("refused: the loop record cannot be created")
         raise Stop(1)
 
     def unregister(self) -> None:
+        self.release_edit()
         data = load_json(self.repo.loop_file) or {}
         if data.get("pid") == os.getpid():
             unlink(self.repo.loop_file)
         unlink(self.repo.stop_flag)
         unlink(self.repo.kill_flag)
+        unlink(self.repo.returning_flag)
 
     def write_last(self, code: int, reason: str) -> None:
         """last.json: how this loop (or this refused start) ended; never over a live loop of
@@ -745,6 +807,7 @@ class Loop:
     def wait(self, state: str, detail: str, until: float | None, recheck: bool = False) -> None:
         """Wait until `until` (None = for ever); returns early on stop / pause, or after
         one poll interval when recheck is set (the caller looks again)."""
+        self.release_edit()  # a wait is not the start of a run: the app may change the backlog (371)
         self.announce(state, detail, until)
         end = until if until is not None else (time.time() + self.poll if recheck else None)
         while True:
@@ -989,6 +1052,8 @@ class Loop:
         self.watch(lambda: self.child.poll() is None, detail)
         run["exit_code"] = self.child.returncode
         self.child = None
+        unlink(self.repo.returning_flag)  # the return is over with claude (371)
+        self.release_edit()
         run.update({"child_pid": None, "child_ident": None})
         self.save_run()
 
@@ -1006,6 +1071,7 @@ class Loop:
                 if self.child is not None:
                     kill_tree(self.child.pid)
                 self.stop_requested()  # raises Stop
+            self.edit_during_run(source)
             lines, offset = read_lines(Path(source["log"]), offset)
             if lines:
                 scan(lines, info)
@@ -1033,6 +1099,22 @@ class Loop:
                     say(text)
             self.announce(state, state_detail, safe=safe)
             time.sleep(self.tick)
+
+    def edit_during_run(self, source: dict | None) -> None:
+        """371: the edit lock during a run.  Held from the start until the run lock names the
+        run's branch (the run works on main until then: preconditions, measurements, the
+        specification); taken again when the run announces its return to main (the flag
+        `returning`, written by `bin/backlog-loop.sh returning` at skill step 9) and released when
+        claude ends (execute)."""
+        if source is not self.run and source is not None:
+            return  # the auto-triage: the loop state keeps the app read-only
+        if self.holds_edit:
+            lock = self.repo.lock()
+            if lock is not None and lock.get("branch", "-") != "-" and not self.repo.returning_flag.exists():
+                self.release_edit()
+        elif self.repo.returning_flag.exists():
+            slug = (self.run or {}).get("slug") or "-"
+            self.take_edit(f"loop: the run of {slug} returns to main")  # retried next tick while the app changes
 
     def our_row(self, rows: list) -> str | None:
         """The outcome of a journal row of this run's item written since it started."""
@@ -1273,7 +1355,7 @@ class Loop:
         """("ok", the Backlog) when a run or a triage may start; else ("edit", why), ("lock", why)
         or ("tree", why)."""
         edit = self.repo.edit_lock()
-        if edit is not None and edit["live"]:  # first: the app is changing the backlog (344)
+        if edit is not None and edit["live"] and not self.repo.edit_lock_mine():  # first: the app is changing the backlog (344)
             since = (edit.get("started") or "")[11:19] or "?"
             return "edit", f"the backlog app is changing the backlog (since {since})"
         lock = self.repo.lock()
@@ -1557,36 +1639,55 @@ class Loop:
                     self.write_state("starting", "resumed")
                     say("resumed")
                 continue
-            if self.orphan_triage():
+            # 371: from here to the start of a run (or the decision not to start one) the loop holds
+            # the backlog app's edit lock: the app changes the backlog only between the loop's steps
+            if not self.take_edit("loop: starting a run"):
+                edit = self.repo.edit_lock() or {}
+                since = (edit.get("started") or "")[11:19] or "?"
+                self.wait("waiting", f"waiting: the backlog app is changing the backlog (since {since})", None,
+                          recheck=True)
                 continue
-            self.run = load_json(self.repo.run_file)
-            if self.run:
-                self.pending()
-                continue
-            if self.args.auto_triage and self.triage_due():
-                continue  # look at pause / stop again before the next run
-            if self.item and self.finished:
-                say(f"the run of item {self.item} ended (--item) - the loop ends")
-                self.end_reason = "item-done"
-                return 0
-            if self.args.max_items and self.items >= self.args.max_items:
-                say(f"{self.items} item(s) done (--max-items) - the loop ends")
-                self.end_reason = "max-items"
-                return 0
-            state, what = self.precheck()
-            if state == "idle" and self.args.until_idle:
-                say(what.split(";")[0] + " - the loop ends (--until-idle)")
-                self.end_reason = "until-idle"
-                return 0
-            if state == "gone":
-                say(what + " - the loop ends")
-                raise Stop(1, "refused")
-            if state != "ready":
-                self.wait(state, what, None, recheck=True)
-                continue
-            self.run = self.new_run(what)
-            self.execute(resume=False)
-            self.conclude()
+            try:
+                ended = self.cycle_step()
+            finally:
+                self.release_edit()
+            if ended is not None:
+                return ended
+
+    def cycle_step(self) -> int | None:
+        """One step of the cycle under the edit lock (371): a pending run, the auto-triage, or
+        the next run.  Returns the loop's exit code when it ends, else None."""
+        if self.orphan_triage():
+            return None
+        self.run = load_json(self.repo.run_file)
+        if self.run:
+            self.pending()
+            return None
+        if self.args.auto_triage and self.triage_due():
+            return None  # look at pause / stop again before the next run
+        if self.item and self.finished:
+            say(f"the run of item {self.item} ended (--item) - the loop ends")
+            self.end_reason = "item-done"
+            return 0
+        if self.args.max_items and self.items >= self.args.max_items:
+            say(f"{self.items} item(s) done (--max-items) - the loop ends")
+            self.end_reason = "max-items"
+            return 0
+        state, what = self.precheck()
+        if state == "idle" and self.args.until_idle:
+            say(what.split(";")[0] + " - the loop ends (--until-idle)")
+            self.end_reason = "until-idle"
+            return 0
+        if state == "gone":
+            say(what + " - the loop ends")
+            raise Stop(1, "refused")
+        if state != "ready":
+            self.wait(state, what, None, recheck=True)
+            return None
+        self.run = self.new_run(what)
+        self.execute(resume=False)
+        self.conclude()
+        return None
 
     def hard_stop(self, how: str = "Ctrl+C") -> int:
         """Ctrl+C / Ctrl+Break in the window, or `kill` from another one (how = "kill", 344):
@@ -1781,13 +1882,17 @@ def describe(repo: Repo) -> dict:
     run = load_json(repo.run_file)
     triage = load_json(repo.triage_file)
     trace = (run or {}).get("trace") or ((loop or {}).get("trace") if live else None)
+    edit = repo.edit_lock()
+    if edit is not None:  # 371: who holds it - the loop (a run starts or returns) or another process (the app)
+        edit["holder"] = "loop" if live and edit.get("pid") == loop.get("pid") else "other"
     return {"loop": loop, "live": live, "run": run, "triage": triage,
+            "returning": repo.returning_flag.exists(),
             "paused": repo.pause_flag.exists(),
             "stop": repo.stop_flag.exists(), "lock": repo.lock(), "lock_text": repo.lock_text(),
             "trace": trace, "traces_bytes": traces.traces_size(repo.root),
             # 344: a pending kill (a flag without a live loop is stale: the next start removes it)
             "kill": repo.kill_flag.exists() and live, "last": load_json(repo.last_file),
-            "edit_lock": repo.edit_lock(), "log": str(repo.log_file),
+            "edit_lock": edit, "log": str(repo.log_file),
             # 344: a claude of a dead loop still working (the item's run or the auto-triage) - the
             # same checks the text output makes, so the backlog app need not test processes itself
             "orphan": not live and bool((run and alive(run.get("child_pid"), run.get("child_ident")))
@@ -1849,6 +1954,12 @@ def cmd_status(repo: Repo, args) -> int:
         print(f"triage:  the auto-triage claude of the last loop (pid {triage['pid']}) is still working; "
               "the next bin/backlog-loop.sh start waits for it")
     print(f"lock:    {d['lock_text']}")
+    edit = d["edit_lock"]
+    if edit and edit.get("live"):  # 371
+        who = "the loop" if edit.get("holder") == "loop" else f"the backlog app (pid {edit.get('pid')})"
+        print(f"edit:    held by {who} since {edit.get('started')} - {edit.get('purpose')}")
+    if d["returning"]:
+        print("return:  the run announced its return to main (bin/backlog-loop.sh returning)")
     if d["live"]:
         triaging = loop.get("state") == "triage"
         hard = loop.get("ctrl_c_safe") is False and (triaging or (bool(run) and alive(run.get("child_pid"),
@@ -1926,6 +2037,42 @@ def cmd_kill(repo: Repo, args) -> int:
     return 0
 
 
+def cmd_returning(repo: Repo, args) -> int:
+    """371: a run announces its return to main (skill step 9, before `git checkout main`): the
+    flag `returning` is written; then the command waits until no change of the backlog app is in
+    progress (its edit lock) and, when a loop runs this item, until the loop holds the edit lock
+    (it takes it within a tick of seeing the flag).  The app never moves main while the loop
+    holds the lock, and the loop releases it when claude ends."""
+    lock = repo.lock()
+    slug = (lock or {}).get("slug") or "-"
+    repo.dir.mkdir(parents=True, exist_ok=True)
+    repo.returning_flag.write_text(f"{slug} {stamp()}\n", encoding="utf-8")
+    deadline = time.time() + args.timeout
+    told = False
+    while True:
+        live = repo.live_loop()
+        running = bool(live and live.get("state") in ("running",) and live.get("slug") == slug)
+        edit = repo.edit_lock()
+        if edit is not None and edit["live"]:
+            if live and edit["pid"] == live.get("pid"):
+                print(f"ok: main is yours (the loop holds the edit lock: {edit.get('purpose')})", flush=True)
+                return 0
+            if not told:
+                print(f"waiting: the backlog app is changing the backlog ({edit.get('purpose')})", flush=True)
+                told = True
+        elif not running:
+            print("ok: main is yours (no loop runs this item; no change of the backlog app is in progress)",
+                  flush=True)
+            return 0
+        if time.time() >= deadline:
+            unlink(repo.returning_flag)
+            print(f"refused: after {args.timeout:g} s the "
+                  + ("backlog app is still changing the backlog" if edit and edit["live"]
+                     else "loop did not take the edit lock") + "; the app checks the tree itself", flush=True)
+            return 1
+        time.sleep(0.2)
+
+
 def seconds_list(text: str) -> list:
     try:
         values = [float(x) for x in text.split(",") if x.strip()]
@@ -1991,6 +2138,13 @@ def build_parser() -> argparse.ArgumentParser:
                                "claude's process tree within a second, the item keeps the run lock and the next "
                                "start continues it (exit 130 of the loop). Without a loop it says so and sets "
                                "nothing.")
+    s = sub.add_parser("returning", parents=[common],
+                       help="a run announces its return to main (the skill's step 9, feature 371)",
+                       description="Called by /tandem-backlog-implement before `git checkout main`: writes the "
+                                   "flag `returning`, waits until no change of the backlog app is in progress "
+                                   "and - when a loop runs this item - until the loop holds the app's edit lock; "
+                                   "then main is the run's until claude ends. Exit 1 after the timeout.")
+    s.add_argument("--timeout", type=float, default=300.0, help="seconds to wait (default 300)")
     return p
 
 
@@ -1999,7 +2153,7 @@ def start_parser(p: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 
 COMMANDS = {"start": cmd_start, "status": cmd_status, "pause": cmd_pause, "resume": cmd_resume, "stop": cmd_stop,
-            "kill": cmd_kill}
+            "kill": cmd_kill, "returning": cmd_returning}
 
 
 def main(argv=None) -> int:

@@ -16,7 +16,10 @@ that wrote its row but kept the lock); hang [seconds, then: step] (sleeps
 holding the lock, then plays `then`); idle [seconds] (holds the lock, no
 background task, two no-op wakeups, then sleeps - the loop must stop it);
 idle-busy [seconds] (the same wakeups while a background task runs, then
-the task ends, a working wakeup, and the run closes - never stopped).
+the task ends, a working wakeup, and the run closes - never stopped);
+branch-hang [seconds] (371: a run on a feature branch as the skill makes
+it - start, the branch in the lock, a wait, the close, `returning` and the
+return to main with the backlog recipe when main moved).
 A finished run with `add: slug
 [, severity: n]` first records a new Inbox item.  For the loop's
 auto-triage: triage (every Inbox item to Next - severity 7+ at the top -
@@ -111,6 +114,82 @@ def finish(slug, outcome, step=None):
     git("commit", "-q", "-m", subject)
     bl("lock", "release", "--slug", slug)
     result(f"Outcome: {outcome}\nItem: {slug}")
+
+
+def git_out(*args) -> str:
+    return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True,
+                          encoding="utf-8").stdout
+
+
+def git_try(*args) -> bool:
+    return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True).returncode == 0
+
+
+def note_call(**fields):
+    """Adds fields to this invocation's record in the plan (read by the tests)."""
+    plan_path = Path(os.environ["FAKE_CLAUDE_PLAN"])
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    plan["calls"][-1].update(fields)
+    plan_path.write_text(json.dumps(plan, indent=1), encoding="utf-8")
+
+
+def branch_run(slug, step):
+    """branch-hang (371): a run the way the skill does it - the lock, `start`, a feature branch,
+    a wait while the backlog app may change main, the close on the branch, and the return to
+    main (skill step 9): `returning`, the fast-forward, else the backlog recipe and the
+    fast-forward again.  Records whether the first fast-forward succeeded (`ff_first`) and what
+    `git status` showed at the start (`status_at_start`)."""
+    note_call(status_at_start=git_out("status", "--porcelain"))
+    ensure_lock(slug)
+    time.sleep(step.get("before_branch", 0))  # the skill's measurements on main (step 3)
+    feature = fake_feature(slug)
+    branch = f"{feature}-{slug}"
+    git("checkout", "-q", "-b", branch)
+    folder = ROOT / "specs" / branch
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "spec.md").write_text(f"# {slug}\n", encoding="utf-8")
+    bl("start", slug, "--feature", feature)
+    bl("lock", "update", "--slug", slug, "--branch", branch)
+    git("add", "-A")
+    git("commit", "-q", "-m", f"[{feature}] start: backlog item {slug}")
+    (Path(os.environ["FAKE_CLAUDE_PLAN"]).parent / "fake.pid").write_text(str(os.getpid()))
+    time.sleep(step.get("seconds", 60))
+    # step 8: close on the branch
+    bl("remove", slug, "--feature", feature)
+    bl("run-log", "--outcome", "closed", "--slug", slug, "--feature", feature, "--branch", branch, "--note", "fake")
+    git("add", "-A")
+    git("commit", "-q", "-m", f"[{feature}] fake: {slug} closed")
+    # step 9: the return to main
+    loop_py = Path(__file__).resolve().parents[1] / "loop.py"
+    returning = subprocess.run([sys.executable, str(loop_py), "returning", "--root", str(ROOT), "--timeout", "60"],
+                               capture_output=True, text=True, encoding="utf-8")
+    git("checkout", "-q", "main")
+    ff_first = git_try("merge", "--ff-only", branch)
+    merges = 0
+    while not ff_first and merges < 3:
+        merges += 1
+        git("checkout", "-q", branch)
+        git_try("merge", "main", "--no-commit")  # conflicts are expected: the recipe resolves them
+        # the backlog recipe: main's order and triage win, this run's close is re-applied
+        git("checkout", "main", "--", "backlog/BACKLOG.md")
+        git("checkout", "main", "--", f"backlog/items/{slug}")
+        bl("remove", slug, "--feature", feature, "--force")
+        bl("sync")
+        runs_md = ROOT / "backlog" / "RUNS.md"
+        text = runs_md.read_text(encoding="utf-8")
+        if "<<<<<<<" in text:  # keep both rows, main's first
+            lines = [l for l in text.split("\n") if not l.startswith(("<<<<<<<", "=======", ">>>>>>>"))]
+            runs_md.write_text("\n".join(lines), encoding="utf-8")
+        bl("check")
+        git("add", "-A")
+        git("commit", "-q", "-m", f"[{feature}] merge main")
+        git("checkout", "-q", "main")
+        if git_try("merge", "--ff-only", branch):
+            break
+    note_call(ff_first=ff_first, merges=merges, returning=returning.stdout.strip() + returning.stderr.strip(),
+              returning_code=returning.returncode)
+    bl("lock", "release", "--slug", slug)
+    result(f"Outcome: closed\nItem: {slug}")
 
 
 def loop_gate():
@@ -245,6 +324,9 @@ def play(step, slug):
         (Path(os.environ["FAKE_CLAUDE_PLAN"]).parent / "fake.pid").write_text(str(os.getpid()))
         time.sleep(step.get("seconds", 60))
         return play({"do": step.get("then", "close")}, slug)
+    if do == "branch-hang":
+        branch_run(slug, step)
+        return 0
     raise SystemExit(f"fake: unknown step {do}")
 
 

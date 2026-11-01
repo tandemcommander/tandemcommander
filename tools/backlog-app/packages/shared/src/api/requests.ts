@@ -12,7 +12,7 @@
 
 import { z } from "zod";
 import { FindingSchema, SectionNameSchema, SlugSchema } from "../schemas/backlog.ts";
-import { ChangeSchema } from "../schemas/app-state.ts";
+import { ChangeSchema, WriteChannelSchema } from "../schemas/app-state.ts";
 
 /** The revisions a view was based on. */
 export const BaseSchema = z.object({
@@ -272,6 +272,10 @@ export const ChangeResultSchema = z.object({
   item: z.string().nullable(),
   /** Text output of the tool for dry runs and imports. */
   output: z.string().optional(),
+  /** How the change was applied (feature 371). */
+  channel: WriteChannelSchema.default("tray"),
+  /** The commit the change became when it was committed at once, else null. */
+  commit: z.string().nullable().default(null),
 });
 
 /** The answer of a changing route. */

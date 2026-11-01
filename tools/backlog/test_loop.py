@@ -1660,7 +1660,8 @@ class EditLockTests(Base):
                               f"{dt.datetime.fromtimestamp(epoch).strftime('%H:%M:%S')})")
         data = json.loads(self.ctl("status", "--json")[1])
         self.assertEqual(data["edit_lock"], {"pid": os.getpid(), "started": started, "purpose": "move an item",
-                                             "live": True})
+                                             "live": True, "holder": "other"})
+        self.assertFalse(data["returning"])
         self.assertTrue(path.exists())
 
     def test_a_dead_lock_is_ignored_and_kept(self):
@@ -1698,6 +1699,77 @@ class EditLockTests(Base):
         path.unlink()
         self.assertEqual(p.wait(timeout=30), 0, self.output(p))
         self.assertEqual(len(self.calls()), 1)
+
+    # -- 371: the loop holds the edit lock while a run starts and while it returns --------
+
+    def edit_lock(self):
+        return self.repo.edit_lock()
+
+    def test_the_loop_holds_the_edit_lock_until_the_run_is_on_its_branch(self):
+        self.write_plan([{"do": "branch-hang", "before_branch": 1.5, "seconds": 1.5}])
+        p = self.spawn_loop("--until-idle")
+        # W1: the run lock is taken, no branch yet - the loop holds the edit lock
+        self.wait_for(lambda: self.lock_slug() == FTP, what="the run lock")
+        edit = self.edit_lock()
+        self.assertTrue(edit and edit["live"], edit)
+        self.assertEqual(edit["purpose"], "loop: starting a run")
+        data = json.loads(self.ctl("status", "--json")[1])
+        self.assertEqual(data["edit_lock"]["holder"], "loop")
+        # W2: the run wrote its branch into the lock - the loop releases the edit lock
+        self.wait_for(lambda: (self.repo.lock() or {}).get("branch", "-") != "-", what="the branch in the lock")
+        self.wait_for(lambda: self.edit_lock() is None, timeout=5, what="the edit lock released")
+        # W3: the run announced its return - the loop holds the edit lock again until claude ends
+        self.wait_for(lambda: self.repo.returning_flag.exists() or p.poll() is not None, what="the returning flag")
+        if p.poll() is None:
+            self.wait_for(lambda: (self.edit_lock() or {}).get("purpose", "").startswith("loop: the run of")
+                          or p.poll() is not None, timeout=5, what="the loop's hold for the return")
+        self.assertEqual(p.wait(timeout=60), 0, self.output(p))
+        call = self.calls()[0]
+        self.assertTrue(call["ff_first"], call)
+        self.assertEqual(call["returning_code"], 0, call)
+        self.assertIn("ok: main is yours (the loop holds the edit lock", call["returning"])
+        self.assertIsNone(self.edit_lock())
+        self.assertFalse(self.repo.returning_flag.exists())
+        self.assertEqual(git(self.root, "rev-parse", "--abbrev-ref", "HEAD").strip(), "main")
+        self.assertTrue(any(r[1] == FTP and r[2] == "closed" for r in self.runs()), self.runs())
+
+    def test_returning_without_a_loop(self):
+        # an app change in progress: the command waits, then gives up after the timeout
+        path, _ = self.write_edit_lock(os.getpid(), time.time(), purpose="move an item")
+        code, out = self.ctl("returning", "--timeout", "0.6")
+        self.assertEqual(code, 1, out)
+        self.assertIn("waiting: the backlog app is changing the backlog (move an item)", out)
+        self.assertIn("refused: after 0.6 s the backlog app is still changing the backlog", out)
+        self.assertFalse(self.repo.returning_flag.exists())
+        path.unlink()
+        # nothing in progress and no loop: main is the run's at once
+        code, out = self.ctl("returning", "--timeout", "0.6")
+        self.assertEqual(code, 0, out)
+        self.assertIn("ok: main is yours (no loop runs this item", out)
+        self.assertTrue(self.repo.returning_flag.exists())
+        self.assertTrue(json.loads(self.ctl("status", "--json")[1])["returning"])
+        self.assertIn("return:  the run announced its return to main", self.ctl("status")[1])
+
+    def test_a_leftover_returning_flag_goes_at_the_next_start(self):
+        self.repo.dir.mkdir(parents=True, exist_ok=True)
+        self.repo.returning_flag.write_text("x\n", encoding="utf-8")
+        self.write_plan(["close"])
+        code, out = self.run_loop("--until-idle")
+        self.assertEqual(code, 0, out)
+        self.assertFalse(self.repo.returning_flag.exists())
+        self.assertIsNone(self.edit_lock())
+
+    def test_a_precheck_that_waits_releases_the_edit_lock(self):
+        # nothing eligible: the loop waits between looks and holds no edit lock meanwhile
+        self.bl("block", FTP, "--reason", "x")
+        self.commit()
+        self.write_plan([])
+        p = self.spawn_loop()
+        self.wait_for(lambda: self.loop_state() == "idle", what="idle")
+        time.sleep(0.3)
+        self.assertIsNone(self.edit_lock())
+        self.ctl("stop")
+        self.assertEqual(p.wait(timeout=30), 0, self.output(p))
 
     def test_leaving_pause_writes_starting_resumed_before_the_precheck(self):
         args = loop.build_parser().parse_args(self.start_args())
