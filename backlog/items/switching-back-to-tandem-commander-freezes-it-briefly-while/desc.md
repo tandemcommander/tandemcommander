@@ -1,16 +1,16 @@
 ---
 title: Switching back to Tandem Commander freezes it briefly while a panel shows a WSL folder
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: panels-ui
 source: manual
 who: both
 created: 2026-11-01
 updated: 2026-11-01
-verified: -
+verified: 2026-11-01 50c47081
 effort: M
-feature: -
+feature: 372
 related: []
 depends-on: []
 reason: -
@@ -42,3 +42,5 @@ Switching back to Tandem Commander with a WSL folder (and any slow network share
 
 - 2026-11-01 — created (source manual)
 - 2026-11-01 — moved to Next position 1
+- 2026-11-01 — verified at 50c47081: reproduced at 50c47081: hidden-desktop probe, WM_ACTIVATEAPP cycles; WSL panel blocks UI ~140 ms at activation + ~400 ms at the 200 ms refresh timer; local control 140 ms
+- 2026-11-01 — run started, feature 372
