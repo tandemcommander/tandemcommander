@@ -1,7 +1,7 @@
 ---
 title: Share list: a list a server never finishes (more data without an end) is shown as if it were whole
 type: bug
-status: new
+status: open
 severity: 2
 area: panels-ui
 source: review:373
@@ -37,3 +37,4 @@ A share list that was not read to its end is not offered as if it were complete:
 
 - 2026-11-01 — created (source review:373)
 - 2026-11-01 — related item wsl-localhost-offers-no-share-list done in feature 373
+- 2026-11-01 — moved to Next position 133
