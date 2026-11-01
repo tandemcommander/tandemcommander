@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an ISO 9660 + UDF image written by Windows is kept after a whole unpack
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:378
@@ -55,3 +55,4 @@ unpacking"; an image with foreign data appended past both volumes is still kept.
 ## Log
 
 - 2026-11-01 — created (source measure:378)
+- 2026-11-01 — moved to Next position 31

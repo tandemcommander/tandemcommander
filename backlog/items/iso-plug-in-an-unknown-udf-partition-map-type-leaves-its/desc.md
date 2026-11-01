@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an unknown UDF partition map type leaves its translation undefined
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:378
@@ -57,3 +57,4 @@ listing is marked) - never a translation by an undefined value. Well-formed imag
 
 - 2026-11-01 — created (source review:378)
 - 2026-11-01 — related cleared (set by mistake at creation)
+- 2026-11-01 — moved to Next position 86
