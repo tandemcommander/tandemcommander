@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
@@ -6015,3 +6015,33 @@ a few early ones are out of sequence).
   only the own listing disabled 34 / 10 (PANEL passes alone), the same-name test disabled saltests
   6 failed and FOLD rows 4 / 4; 273's probe 12 / 0, 382's 24 / 0; two refute-first reviews (1: MUST
   fold fixed, SHOULD branch control done; 2: no MUST / SHOULD, a comment corrected).
+- 384-ftp-joined-column: a file on a code-page (legacy) FTP server whose name a listing rule builds
+  from several parts (IBM z/VM CMS lists `NAME TYPE`; the rule joins name, `.` and type with
+  `add_string_to_column`) was shown and addressed under another name when both parts had letters
+  outside ASCII - the column's value, already decoded to UTF-8, was joined with the next part's raw
+  bytes and decoded again, so the first part was read in the code page twice (`nameč.extč` ->
+  `nameÄŤ.extč`; DELE / RETR / rename reached no file) - now the parser keeps, thread-locally for
+  the line being parsed, the listing bytes each name / text column was assigned from
+  (`CFTPLineRawColumns`, `parser2.cpp`; reset with `emptyCol` per line and rule attempt; a cut of
+  white space cuts the bytes too, `assign(<col>, <col>)` copies them), and the join decodes the
+  listed bytes once - main's decode with the listed head instead of its UTF-8, so right wherever
+  main was right. Only a column whose bytes are unknown (re-assigned by `cut_end_of_string`; no
+  built-in rule joins after that) falls back to decoding the parts one by one
+  (`FTPListingJoinFieldU8`, which remembers the joined value as a code-page name of the server for
+  a "mixed" server; pure rules `SalFtpJoinBuild` / `SalFtpJoinPartHandling` /
+  `SalFtpJoinedFieldIsCodePageName` in `salftpsrvenc.h`, saltests). Traps: the first version never
+  decoded the head again - a code-page head whose bytes happen to be valid UTF-8 (cp1250 `zĂ©` = C3
+  A9 = UTF-8 `zé`) became another file's name and F8 deleted that file (review 1 MUST); rebuilding
+  the head's bytes from the server's code-page name set fails on the same case (the other file
+  registers `zé`); ftpmini needs a z/VM SYST reply or a UNIX rule takes the listing; a "mixed" server
+  is made with ftpmini by a cp1250 name whose bytes are valid UTF-8; End focuses another item once
+  names sort right (A-breve sorts with "a") - rows position by Home + Down; clang-format of whole
+  `saltests.cpp` / `ftputils.*` reformats hundreds of unrelated lines. Limits: a non-ASCII literal
+  in a rule joined to a code-page head is decoded in the code page (as before); `assign(<name>,
+  <column>)` still decodes a decoded text with name evidence (Inbox
+  `ftp-a-listing-rule-assigning-one-column-to-another-decodes`); no real z/VM server. From backlog
+  item `ftp-listing-rule-joins-utf8-with-raw-bytes`. Probe `ftp384_probe.ps1` (ftpmini with a z/VM
+  listing form, LISTFMT `zvm`) 6 / 2 -> 16 / 0 (MIX-HEADCP / MIX-BOTH / MIX-TAILCP and REG-COINC
+  added by review 1; main fails MIX-HEADCP, the first version fails REG-COINC); 288 20 / 0, 269
+  14 / 0, 224 16 / 0; saltests 30,496 / 0; two refute-first reviews (1: MUST fixed by the byte
+  provenance, SHOULD mixed rows added; 2: no MUST, SHOULD cut keeps the bytes fixed).

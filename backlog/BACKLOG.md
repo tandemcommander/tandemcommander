@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [FTP: a name a listing rule extends (z/VM, AS/400, VxWorks) mixes UTF-8 with raw server bytes](items/ftp-listing-rule-joins-utf8-with-raw-bytes/desc.md) | bug | 4 | ftp | 384 |
 
 ## Next
 
