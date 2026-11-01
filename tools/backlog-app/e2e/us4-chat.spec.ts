@@ -56,20 +56,28 @@ test("Q7: the conversation window shows the essentials, streams a reply, keeps i
   await chat.getByLabel("Your message").fill("What is this about?");
   await chat.getByLabel("Your message").press("Enter");
   await expect(chat.getByLabel("You").first()).toContainText("What is this about?");
-  await expect(chat.getByLabel("Claude").first()).toContainText("You asked: What is this about?", { timeout: 20_000 });
+  await expect(chat.getByLabel("Claude").first()).toContainText("You asked: What is this about?", {
+    timeout: 20_000,
+  });
   await expect(chat.getByRole("button", { name: /1 tool use/ })).toBeVisible();
   await expect(chat.getByText(/Cost so far/)).toBeVisible({ timeout: 10_000 });
   // The transcript survives a reload.
   await chat.reload();
-  await expect(chat.getByLabel("Claude").first()).toContainText("You asked: What is this about?", { timeout: 20_000 });
+  await expect(chat.getByLabel("Claude").first()).toContainText("You asked: What is this about?", {
+    timeout: 20_000,
+  });
   // A second message continues; the input is free again after the reply.
   await chat.getByLabel("Your message").fill("And then?");
   await chat.getByLabel("Your message").press("Enter");
   await expect(chat.getByLabel("Claude").nth(1)).toContainText("You asked: And then?", { timeout: 20_000 });
   await expect(chat.getByRole("button", { name: "Send" })).toBeVisible();
   // Accessibility of the page.
-  const result = await new AxeBuilder({ page: chat }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
-  expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
+  const result = await new AxeBuilder({ page: chat })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(
+    result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`),
+  ).toEqual([]);
   // A new conversation is empty.
   await chat.getByRole("button", { name: "New conversation" }).click();
   await expect(chat.getByLabel("Claude")).toHaveCount(0, { timeout: 10_000 });

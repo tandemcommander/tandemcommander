@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243, 247, 265, 342, 344 |
+| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -5718,3 +5718,42 @@ a few early ones are out of sequence).
   the dump read from the disk cache's `iso_dump.txt`; images `img370.py` + 334's `img334.py multi_extra`)
   6 / 10 -> 16 / 0; regression 340 14 / 0; saltests 30,091 / 0; refute-first review 1: no MUST / SHOULD,
   its own pre-fix build 6 / 10, three NOTEs recorded.
+- 371-backlog-app-live-editing: the backlog app (344) was read-only whenever the loop lived and for
+  the whole of a run (hours), and *In progress* showed 0 during a run (the board is read from
+  `main`, where the running item is still an open row) - now the backlog can be changed at any time
+  but the two short moments a run itself is on `main`: while a loop lives a change is committed on
+  `main` at once; while a run holds the run lock on its branch the backlog tool runs in the app's
+  sparse detached side worktree of `main` (`.git/tandem-backlog-app/main-worktree/`), the change is
+  committed there and `main` moves by compare-and-swap (`git update-ref` with the expected old
+  value), the primary working tree is never touched, the running item is frozen (its own and
+  indirect changes refused, the hidden row put back into reorders), and the run merges `main` at
+  its end by the recipe of step 9. The loop holds the app's edit lock while a run starts (until the
+  run lock names a branch) and while it returns (`bin/backlog-loop.sh returning`, called by the
+  skill at step 9); the gate shows `run-starting` / `run-on-main` then and opens again by itself.
+  The running item is overlaid into *In progress* with its feature number, "next up" leaves it out
+  (`backlog.py next --except`); a typed position and *Move to the top* on the item page and in the
+  tables (a reorder); a conversation with Claude about one item in a window of its own (one
+  `claude -p` process in bidirectional stream-json mode, the file tools only, transcripts in the
+  state folder, a budget setting). Traps:
+  - Moving `main` while the primary tree has `main` checked out leaves that tree with a staged
+    reversal of the change (measured by the first side-worktree test): the swap happens only when
+    the primary HEAD is a branch, checked under the edit lock; the loop's holds close the windows.
+  - The revisions a page holds during a run are blob hashes (LF); the maintainer's repository checks
+    out CRLF (`core.autocrlf true`, `text=auto`), so the side worktree's files would never match
+    (review MUST): the worktree is configured `--worktree core.autocrlf false`, `core.eol lf`
+    (possible because `sparse-checkout` enables `extensions.worktreeConfig`); the fixtures, whose
+    blobs are CRLF, pass the same way. A sparse pattern `specs/*/spec.md` missed feature folders
+    without that file (`feature-missing` findings): the folders are created empty from the tree.
+  - A read-only git allow-list is not read-only: `git log --output=<file> --format=<text>` writes
+    any file (review MUST) - the conversation has Read, Grep and Glob only.
+  - The loop tests play the app from the test's own process: the loop recognises its hold by the
+    lock's exact text, not by pid. A waiting loop holds the lock for a second at every precheck: the
+    gate ignores that hold (the queue waits for it), else the banner flickered.
+  - Two fixtures wrote a run lock dated 2026-10-30, stale after 24 hours: dates are computed.
+  Evidence: test_loop 113 / 113 (4 new), test_backlog 112 / 112, vitest 329 / 329 (new: gate 15, side
+  worktree 6, channels 8, overlay 4, chat 9; the soak opt-in), Playwright 34 / 34 on Edge (new: live edit during a
+  `branch-hang` run with the merge recipe, positions, the chat window), soak 20 branch runs x 3 changes 60 / 60 and 200 changes against 20 branch runs 200 / 200 (0 lost, 0 runs on a dirty
+  tree), every page of
+  the app browsed on a copy of this repository (24 pages, 0 console errors, writes 2 / 2); one
+  refute-first review (2 MUST, 4 SHOULD, 5 NOTE - fixed or recorded). Owed to a person:
+  `backlog-app-live-edit-real-run` (the first real run with a change made during it).

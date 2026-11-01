@@ -284,6 +284,8 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Backlog app: the first real run with a change made during it (feature 371)](items/backlog-app-live-edit-real-run/desc.md) | person-step | 4 | tooling | leftover:371 | 2026-11-01 |
+| [Backlog app: a new item placed at Next #1 during a run twice landed at the end (not reproduced)](items/backlog-app-new-item-position-lost-during-a-run/desc.md) | bug | 3 | tooling | measure:371 | 2026-11-01 |
 | [ISO plug-in: NRG tracks of the subchannel modes 0x0F / 0x10 / 0x11 get a wrong type or size](items/iso-plug-in-nrg-tracks-of-the-subchannel-modes-0x0f-0x10/desc.md) | bug | 3 | archives | leftover:365 | 2026-11-01 |
 
 ## Parked

@@ -102,3 +102,38 @@ packages/server/test/chat.test.ts`, `npx playwright test e2e/us1-live-edit.spec.
   is the intended behaviour).
 - The e2e `us1-live-edit` asserted main's head after the run; the loop's next run could already
   close the new item. It now asserts the order in the run's `merge main` commit.
+
+## 2026-11-01 - the page review, the soak's first run
+
+- Every page of the app browsed headlessly on a shallow clone of this repository (Edge through
+  Playwright; the Chrome extension was not connected): 24 pages, 0 console errors or page errors,
+  the only failed requests were fetches aborted by the next navigation; a typed position 6 -> 3
+  and *Move to the top* -> 1 applied (tray channel, 2 pending, `backlog(app): 2 x reorder`); the
+  conversation page without the frame, composer present (no message sent: the real claude).
+- Soak, first run: both scenarios failed in the test, not the system - the fixture's own eligible
+  item was the first run (the plan's steps shifted), a loop that had already ended was awaited
+  through an `exit` event that never comes, and 2-second branch phases were shorter than three
+  changes (each change takes about 2.6 s in the `commit` channel: the tool, the commit and the
+  read model's four tool runs). The loop log of the kept fixture showed the system fine: 20 runs
+  closed, the runs with changes during them merged `main` (`ff_first` false, `merges` 1).
+  `BACKLOG_APP_KEEP=1` now keeps the fixture of a failed soak.
+
+## 2026-11-01 - the soak, final
+
+- SC-002: 20 `branch-hang` runs (12 s on the branch) with 3 changes each: 60 / 60 on main, every
+  run `ff_first` false, `merges` 1, closed; 147 s.
+- SC-007: first with bare `close` runs - all 20 ended in 13 s, before the first change (each change
+  takes about 2.7 s in the `commit` channel: the tool, the commit, the read model's four tool
+  runs), and with `--until-idle` the loop was gone, so the channel was `tray` for all 200 (the
+  `--until-idle` flag of the helper was also still on by a failed script edit). Then with `hang`
+  runs of 25 s: a run that never takes a branch holds the edit lock for its whole length, so the
+  changes queued behind every run and the test timed out at 600 s - that is the W1 window by
+  design, not a defect. Final shape: 20 `branch-hang` runs of 10 s, the loop kept alive: 200 / 200
+  commits on main, 0 lost, 20 runs with `status_at_start` empty, no app change in a run's commit,
+  the tree clean, the check clean; 400 s.
+
+## 2026-11-01 - closing
+
+- Final: `npm run check` 329 / 329 (format fixed in four files first), test_loop 113 / 113,
+  test_backlog 112 / 112, test_bin_help OK, encoding guard 0, Playwright 34 / 34, soak SC-002 and
+  SC-007 green. History entry, closing report, README, contracts, CLAUDE.md rule written.

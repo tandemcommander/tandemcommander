@@ -112,7 +112,6 @@ function useLiveTurn(slug: string, running: Turn | null): LiveTurn | null {
     });
     return close;
     // The transcript's running turn is the trigger; its fields are read once at the start.
-     
   }, [slug, runningId, queryClient]);
   return live;
 }

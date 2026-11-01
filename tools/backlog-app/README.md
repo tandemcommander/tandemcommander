@@ -17,7 +17,7 @@ It changes nothing by itself: every change of the backlog goes through
 `bin/backlog-loop.sh` (`tools/backlog/loop.py`). The specification, the
 design and every measured result are in `specs/344-backlog-web-app/`; the
 changes of feature 371 (editing while a run is in progress, the running item
-in *In progress*, typed positions, the conversation) in
+in _In progress_, typed positions, the conversation) in
 `specs/371-backlog-app-live-editing/`.
 
 ## Run

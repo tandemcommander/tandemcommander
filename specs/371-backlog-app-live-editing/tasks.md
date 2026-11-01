@@ -147,7 +147,7 @@ run is never disturbed.
       an item naming the frozen one refused; after the run: both the close and the changes on
       `main`, the recipe ran (the fake's record), the loop's next run takes the new item (depends on
       T003, T019, T021, T022)
-- [ ] T026 [US1] Soak `tools/backlog-app/packages/server/test/write-race.test.ts` (opt-in
+- [x] T026 [US1] Soak `tools/backlog-app/packages/server/test/write-race.test.ts` (opt-in
       `BACKLOG_APP_SOAK=1`): 200 changes against a loop at `--tick 0.05` with fake `close` runs,
       0 lost, 0 runs started on a dirty tree; 20 `branch-hang` runs x 3 changes, 0 lost (SC-002,
       SC-007); record the numbers in `specs/371-backlog-app-live-editing/fix-log.md`
@@ -265,12 +265,12 @@ run is never disturbed.
 
 **Independent Test**: `npm run check`, `npm run test:e2e`, quickstart by hand.
 
-- [ ] T045 [US5] Browse every page of the app on a copy of the real repository (`--root <copy>`,
+- [x] T045 [US5] Browse every page of the app on a copy of the real repository (`--root <copy>`,
       Chrome): Home, every section, item, triage, new item, loop, live, runs, run, features,
       release, ask, check, settings, closed; fix what fails inside this feature, record the rest
       with evidence as Inbox items (`/tandem-backlog add`, source `review:371`); log in
       `specs/371-backlog-app-live-editing/fix-log.md`
-- [ ] T046 [US5] Review `specs/344-backlog-web-app/contracts/http-api.md` and `security.md` against the
+- [x] T046 [US5] Review `specs/344-backlog-web-app/contracts/http-api.md` and `security.md` against the
       new routes; update the app's `README.md` rules (changes during a run, the side worktree, the
       chat) and `architecture/12-project-reference.md` where it describes the app's gate
 
@@ -278,13 +278,13 @@ run is never disturbed.
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T047 `npm run check` and `npm run test:e2e` green; `python tools/backlog/test_backlog.py`,
+- [x] T047 `npm run check` and `npm run test:e2e` green; `python tools/backlog/test_backlog.py`,
       `test_loop.py`, `tools/test_bin_help.py` green; `python tools/check_encoding.py --strict`
       TOTAL: 0 (the app's files are out of its scope; the skills and tools are not)
 - [x] T048 Independent refute-first review of the finished change (an agent; the project rule): the
       write channels, the loop's holds, the frozen check, the chat's tool allow-list; fix the
       findings; record them in `specs/371-backlog-app-live-editing/fix-log.md`
-- [ ] T049 Closing: `specs/FEATURE-HISTORY.md` entry (traps, evidence, numbers), the closing report
+- [x] T049 Closing: `specs/FEATURE-HISTORY.md` entry (traps, evidence, numbers), the closing report
       `specs/371-backlog-app-live-editing/closing-report.md`, `CLAUDE.md` *Standing rules* one line if
       a rule emerged (the primary tree is never touched while a run holds the lock; the loop holds
       the edit lock while a run starts or returns)
