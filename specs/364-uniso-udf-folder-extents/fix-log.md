@@ -47,3 +47,9 @@ Registry restored, identical (SHA-256 07F63FE1...).
   entries without a mark.
 - A non-last extent not a whole number of blocks ends the walk (ECMA-167 4/12.1: only the last may end inside a
   block); a first descriptor that is not type 0 leaves nothing to walk -> 362's refusal.
+
+## Analyze
+
+`speckit-analyze` (one run): 0 CRITICAL, 0 HIGH; LOW C1 (listing rows only for the non-contiguous images - the
+unpack rows list the contiguous ones first) and LOW U1 (embedded folders not named in T005 - data-model covers
+them) accepted.
