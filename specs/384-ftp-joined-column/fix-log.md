@@ -115,6 +115,36 @@ REG-COINC needed Home + 2 Down instead of End: with the names right, `zĂ©` (A-
 `zé`, and End had focused the other file. The negative controls of the new rows are the reviewer's
 runs on main and on the first version (`probe/review1_*_neg.txt` / `review1_dup_after.txt`).
 
+### Review 2 (refute-first agent, 2026-11-01) - accepted: no MUST, 1 SHOULD, 6 NOTE
+
+The reviewer re-ran the probe (16 / 0, registry identical), saltests (30,496 / 0) and the encoding
+guard. They traced every write route of a name / text column: listing reads record bytes,
+re-assignments forget them, `assign(<col>, <col>)` copies them, and there is a reset per line, per
+rule attempt and per skipped line.
+
+- **SHOULD 1** (fixed): a `cut_white_spaces*` step that really cut something forgot the column's
+  bytes, so a later join fell back to the part-by-part path and brought back MUST 1 for a custom
+  rule that cuts a fixed-width name before joining (reviewer's simulation: `zĂ©.extč` -> `zé.extč`,
+  F8 deletes the other file). No built-in rule cuts a name before a join (MVS cuts `<unit>`, display
+  text). **Fix**: the cut is applied to the recorded bytes too. A byte <= 0x20 is never part of a
+  multi-byte letter (UTF-8, ANSI and DBCS code pages), and `char` is unsigned (`/J` in
+  `plugin_base.props` - checked, the comparison `<= ' '` does not take bytes >= 0x80). So cutting
+  the bytes and decoding equals decoding and cutting. The fallback remains only for
+  `cut_end_of_string` before a join (no built-in rule). NOT DRIVEN in the GUI: it needs a
+  user-defined server type (the probe would have to write one into the configuration); the MVS
+  rule (`cut_white_spaces(<unit>)`, then `add_string_to_column(<unit>, " ")` and
+  `(<unit>, <name>)`) now takes the bytes path with ASCII text - same result as before.
+- **NOTE 1** (Inbox): `assign(<name>, <column>)` still decodes the decoded text with name
+  evidence - older, out of scope -> `ftp-a-listing-rule-assigning-one-column-to-another-decodes`.
+- **NOTE 2**: the unit checks test pure rules only (as SHOULD 1 of review 1); the probe is the proof.
+- **NOTE 3**: review 1's REG-COINC-ASCII row (`zĂ©.EXT`) not carried over - the bytes path treats it
+  exactly as main did; optional, not added.
+- **NOTE 4**: a non-ASCII UTF-8 literal joined to a code-page head is decoded in the code page as
+  a whole (as main did; built-in literals are ASCII). FR-004 describes the fallback.
+- **NOTE 5**: `thread_local` with a destructor - a plug-in unload leaks a few small buffers of
+  other threads; harmless.
+- **NOTE 6**: 288's limit unchanged (a z/VM head alone may count as UTF-8 evidence).
+
 ## Decisions
 
 - Raw part (`pptStateVar`): decoded by the listing-field rule of the server (`FTPFieldToU8` with

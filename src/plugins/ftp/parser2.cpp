@@ -1844,11 +1844,39 @@ BOOL CFTPParserFunction::UseFunction(CFileData* file, BOOL* isDir,
                             break;
                         }
                         memcpy(str, newBeg, newEnd - newBeg);
+                        // feature 384 (review 2): the column's listing bytes get the same cut - a
+                        // byte <= ' ' is never part of a multi-byte letter (UTF-8, the ANSI and DBCS
+                        // code pages; 'char' is unsigned, /J), so cutting the bytes and decoding
+                        // gives the cut text; a later add_string_to_column then joins the bytes
+                        // (forgotten, the part-by-part fallback took a code-page head whose bytes
+                        // happen to be UTF-8 for UTF-8 - another file's name)
+                        const char* raw;
+                        int rawLen;
+                        char* rawCut = NULL;
+                        int rawCutLen = 0;
+                        if (FTPLineRaw.Get(i, &raw, &rawLen))
+                        {
+                            const char* rb = raw;
+                            const char* re = raw + rawLen;
+                            if (Function == fpfCut_white_spaces_start || Function == fpfCut_white_spaces)
+                                while (rb < re && *rb <= ' ')
+                                    rb++;
+                            if (Function == fpfCut_white_spaces_end || Function == fpfCut_white_spaces)
+                                while (re > rb && *(re - 1) <= ' ')
+                                    re--;
+                            rawCutLen = (int)(re - rb);
+                            rawCut = (char*)malloc(rawCutLen + 1);
+                            if (rawCut != NULL && rawCutLen > 0) // low memory: the bytes become unknown
+                                memcpy(rawCut, rb, rawCutLen);
+                        }
                         if (!AssignStringToColumn(i, columns, str, str + (newEnd - newBeg),
                                                   lowMemErr, emptyCol, file, dataIface, FALSE /* re-assigned */))
                         {
                             ret = FALSE;
                         }
+                        else if (rawCut != NULL)
+                            FTPLineRaw.Set(i, rawCut, rawCutLen);
+                        free(rawCut);
                         free(str);
                     }
                     break;

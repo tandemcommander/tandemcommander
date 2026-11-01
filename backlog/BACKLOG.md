@@ -298,6 +298,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [FTP: a listing rule assigning one column to another decodes the decoded text again](items/ftp-a-listing-rule-assigning-one-column-to-another-decodes/desc.md) | bug | 2 | ftp | review:384 | 2026-11-01 |
 
 ## Parked
 
