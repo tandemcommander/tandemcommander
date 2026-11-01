@@ -8,7 +8,7 @@ source: manual
 who: both
 created: 2026-11-01
 updated: 2026-11-01
-verified: -
+verified: 2026-11-01 30268b7c
 effort: M
 feature: -
 related: []
@@ -40,3 +40,4 @@ On a computer with at least one WSL distribution, the Alt+F1 / Alt+F2 menu and t
 - 2026-11-01 — created (source manual)
 - 2026-11-01 — moved to Next position 89
 - 2026-11-01 — moved to Next position 3
+- 2026-11-01 — verified at 30268b7c: still present at 30268b7c: BuildData adds no WSL entry, src has no Lxss/wsl.localhost reference outside 372/373; machine has Ubuntu and docker-desktop in HKCU Lxss
