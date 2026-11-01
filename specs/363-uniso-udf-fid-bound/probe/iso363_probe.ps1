@@ -25,6 +25,12 @@
       R-SIU       "Invalid UDF Tag ID"; the ISO 9660 part and UDF top.txt (folder a's walk ends; 330: no later
                   folder is descended after a folder that could not be read), KEPT
       C-UD        (control) ud.iso: every file of both parts, no window, deleted
+    Review 1 (SHOULD 1): big.iso by mkbig363.sh (this folder; genisoimage -udf -R, root and sub with 140 files each,
+    names 1 - 150 characters: each folder about 17.5 KB, identifiers cross sector boundaries) - valid data meets the
+    new bound sector by sector:
+      L-BIG       (control) no window
+      C-BIG       (control) the UDF part's 280 files with their content (the ISO 9660 part is not compared - its
+                  Rock Ridge names), no window, deleted
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does not answer
     within 10 s. Without WSL Ubuntu the rows are NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -53,6 +59,7 @@ $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $Specs) { $Specs = Join-Path $Here '..\..' }
 if (-not $Lib) { $Lib = Join-Path $Specs '098-long-path-overruns\probe\fix_probe_lib.ps1' }
 $MkUd = Join-Path $Specs '330-iso-unreadable-folder\probe\mkimg330.sh'
+$MkBig = Join-Path $Here 'mkbig363.sh'
 $Py = Join-Path $Here 'img363.py'
 . $Lib
 $Root = $TempRoot + '\tc363'
@@ -60,10 +67,11 @@ $StartDir = $Root + '\start'
 $BadTag = 'Invalid UDF Tag ID'
 
 function WslPath([string]$p) { return ('/mnt/' + $p.Substring(0, 1).ToLower() + $p.Substring(2).Replace('\', '/')) }
+$script:Part = ''   # when set, only the extracted files under this folder are compared
 function Tgt-Files([string]$Tgt) {
     if (-not [IO.Directory]::Exists($LP + $Tgt)) { return @() }
     $base = ($LP + $Tgt + '\')
-    return @([IO.Directory]::GetFiles($LP + $Tgt, '*', [IO.SearchOption]::AllDirectories) | ForEach-Object { $_.Substring($base.Length).Replace('\', '/') } | Sort-Object)
+    return @([IO.Directory]::GetFiles($LP + $Tgt, '*', [IO.SearchOption]::AllDirectories) | ForEach-Object { $_.Substring($base.Length).Replace('\', '/') } | Where-Object { -not $script:Part -or $_.StartsWith($script:Part + '/') } | Sort-Object)
 }
 function Content([string]$Tgt, [string]$Rel) { try { return [IO.File]::ReadAllText($LP + $Tgt + '\' + $Rel.Replace('/', '\')) } catch { return '<none>' } }
 function Find-Btn([IntPtr]$Dlg, [int]$CtlId) {
@@ -83,7 +91,8 @@ function Check-Files([string]$Tgt, $Want) {
             $k = $_.ToLowerInvariant(); $real = @($files | Where-Object { $_.ToLowerInvariant() -eq $k })[0]
             $Want[$_] -ne $null -and (Content $Tgt $real) -cne $Want[$_] })
     $ok = ($files.Count -eq $Want.Count -and $missing.Count -eq 0 -and $bad.Count -eq 0)
-    $f = ('files {0}: {1}' -f $files.Count, ((@($files | ForEach-Object { Esc $_ })) -join ', '))
+    $shown = @($files | Select-Object -First 8 | ForEach-Object { Esc $_ }); if ($files.Count -gt 8) { $shown += '...' }
+    $f = ('files {0}: {1}' -f $files.Count, ($shown -join ', '))
     if ($missing.Count) { $f += ('; missing: ' + ($missing -join ', ')) }
     if ($bad.Count) { $f += ('; wrong content: ' + ($bad -join ', ')) }
     return @($ok, $f)
@@ -175,6 +184,7 @@ try {
     $s = $Root + '\seeds'; NewDir $s
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $mk = & wsl -d Ubuntu -- sh (WslPath $MkUd) (WslPath $s) 2>&1
+    $mkb = & wsl -d Ubuntu -- sh (WslPath $MkBig) (WslPath $s) 2>&1
     $made = @()
     if ([IO.File]::Exists("$s\ud.iso")) {
         foreach ($k in @('aiu', 'tiu', 'siu', 'aiu4k', 'afi')) { $made += & python -I $Py $k "$s\ud.iso" "$s\x_$k.bin" 2>&1 }
@@ -203,6 +213,18 @@ try {
     Unpack-Row 'R-AIU4K' "$s\x_aiu4k.bin" 'aiu4k.iso' $udIso -Kept -Rx $BadTag
     Unpack-Row 'R-AFI' "$s\x_afi.bin" 'afi.iso' $udIso -Kept -Rx $BadTag
     Unpack-Row 'C-UD' "$s\ud.iso" 'ud.iso' $udAll
+
+    if (-not [IO.File]::Exists("$s\big.iso")) { Out ('mkbig363.sh: ' + (($mkb | ForEach-Object { "$_" }) -join ' ')) }
+    $bigAll = [ordered]@{}
+    for ($i = 0; $i -lt 140; $i++) {
+        $pad = 'x' * ((($i * 37) % 150) + 1)
+        $bigAll["UDF (TCBIG)/r${i}_$pad.txt"] = "R$i"
+        $bigAll["UDF (TCBIG)/sub/s${i}_$pad.txt"] = "S$i"
+    }
+    List-Row 'L-BIG' "$s\big.iso" 'big.iso'
+    $script:Part = 'UDF (TCBIG)'
+    Unpack-Row 'C-BIG' "$s\big.iso" 'big.iso' $bigAll
+    $script:Part = ''
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

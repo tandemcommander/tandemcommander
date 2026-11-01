@@ -21015,7 +21015,7 @@ static void TestIsoUdfFid_363()
     CHECK(SalIsoUdfFidLength(held, 4096 - 40, 2, 0, len) && len == 40);
     CHECK(!SalIsoUdfFidLength(held, 4096 - 41, 3, 0, len) && len == 0); // 41 bytes, padded 44: the padding is past
     CHECK(!SalIsoUdfFidLength(held, 4096 - 37, 0, 0, len) && len == 0); // not even the 38-byte head
-    CHECK(SalIsoUdfFidLength(held, 4096 - 38, 0, 2, len) == false);     // 40 bytes from 38 left
+    CHECK(!SalIsoUdfFidLength(held, 4096 - 38, 0, 2, len) && len == 0); // 40 bytes from 38 left
     CHECK(!SalIsoUdfFidLength(held, 4097, 0, 0, len) && len == 0);      // a position past the buffer
     // wrap: values a 32- or 64-bit sum would wrap to a small length
     CHECK(!SalIsoUdfFidLength(held, 0, 0, 0xFFFFFFFFFFFFFFF0ull, len) && len == 0);

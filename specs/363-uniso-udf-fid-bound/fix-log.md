@@ -56,3 +56,24 @@ Backlog item `iso-plug-in-a-udf-file-identifier-with-a-long-implementation` (sou
 - No UI string, dialog or resource changed: no `.slt` refresh needed (stop-rules §2.13 not triggered).
 - Regressions (hidden desktop, same build): `probe/regress_330.txt` **30 / 0**, `probe/regress_361.txt` **24 / 0**,
   `probe/regress_362.txt` **34 / 0** (the recorded results of those features); registry restored, identical each.
+
+## Review
+
+### Review 1 (refute-first, general-purpose agent) - no MUST
+
+- Re-ran the measurement: old `uniso.spl` built in a scratch worktree, `iso363_probe` 12 / 8 (as `result_before.txt`);
+  the current build 20 / 0. Callers enumerated (`ReadFileIdentifier` <- `ScanDir` <- `ListDirectory` / itself); `p`
+  is at most 2048 at every read (`Offset` < 2048 by 361), so the tag and the 38-byte head stay inside.
+- Mutants of the rule, each failing `saltests`: no bound 18, no padding 4, 32-bit wrapping sum 5, off by one (an exact
+  fit refused) 6, too strict (more than one block refused) 4.
+- Regressions: saltests 29,748 / 0, probe 362 34 / 0, encoding 0, backlog check 0.
+- **SHOULD 1** (taken): no probe row walked a valid folder of more than one sector (identifiers crossing a sector
+  boundary, the step) - added `probe/mkbig363.sh` (after the reviewer's `mkbig.sh`: genisoimage `-udf -R`, root and
+  `sub` with 140 files each, names 1 - 150 characters, about 17.5 KB a folder) and rows L-BIG / C-BIG (the UDF part's
+  280 files with their content, no window, image deleted). The reviewer measured the same rows on the old build: PASS
+  too (a control, not a reproduction). `probe/result_after_review1.txt`: **24 / 0**.
+- NOTE 1: an identifier longer than one block (invalid by UDF) that still fits the buffer is read - nothing past the
+  buffer; as the spec and item ask. Unchanged.
+- NOTE 2: closing steps not done yet at review time - done in the closing.
+- NOTE 3 (taken): one check tested `== false` without `len == 0` - tightened (`saltests.cpp`, `4096 - 38`).
+- After: `.\build.cmd` BUILD SUCCEEDED, saltests 29,748 / 0.
