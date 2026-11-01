@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a failed NRG table read leaves its tracks for the plain-image fallback
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:369
@@ -56,3 +56,4 @@ stays marked incomplete so the image is kept.
 ## Log
 
 - 2026-11-01 — created (source review:369)
+- 2026-11-01 — moved to Next position 32

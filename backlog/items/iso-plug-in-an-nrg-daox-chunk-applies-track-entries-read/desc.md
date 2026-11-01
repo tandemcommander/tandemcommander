@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an NRG DAOX chunk applies track entries read past its own end
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:369
@@ -51,3 +51,4 @@ none beyond them and marks the listing incomplete (a whole unpack fails, the ima
 ## Log
 
 - 2026-11-01 — created (source measure:369)
+- 2026-11-01 — moved to Next position 33
