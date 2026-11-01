@@ -18,7 +18,7 @@ the first 259 bytes behind - the program then goes to that cut path.
   (`result_before.txt`): under `reg:\HKEY_CURRENT_USER\Software\TcProbe380\<150 x 'x'>`, typing
   100 x 'r' (full path 294 bytes) put the panel, without any message, into the **other existing
   key** `...\<65 x 'r'>` - the path cut at 259 bytes. Under a CJK key, typing 40 CJK letters cut the
-  path inside a character; the plug-in then reported "Unable to open registry key ...�".
+  path inside a character; the plug-in then reported "Unable to open registry key ...\uFFFD".
   The control (typing `s`) went to `...\s`.
 - The same conversion's result is not checked where the plug-in hands a name back to the panel to
   focus after a rename: Quick Rename (F2, 260 bytes) and a rename by Move (F6 to a new name in the
@@ -67,7 +67,7 @@ silently different key is the worst outcome of this defect.
    the first 65 letters of the typed name, **When** the user types a 100-letter relative name,
    **Then** the "too long path" message appears and the panel stays at the original key.
 2. **Given** a CJK key, **When** the user types a CJK relative path whose full path exceeds 259
-   bytes, **Then** the "too long path" message appears (not "unable to open ...�") and the
+   bytes, **Then** the "too long path" message appears (not "unable to open ...\uFFFD") and the
    panel stays.
 3. **Given** the same key, **When** the user types a short relative name, **Then** the panel goes
    to it as before (control).

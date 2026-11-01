@@ -12,7 +12,7 @@
      with the backslash), typed 100 x 'r' (full path 294 bytes): **no message, the panel went to
      `...\<65 x 'r'>`**, another existing key (the path cut at 259 bytes);
    - CJK FAIL - 40 CJK letters typed under a 40-CJK-letter key: the path cut inside a character,
-     "Unable to open registry key `...�`", the panel stayed;
+     "Unable to open registry key `...\uFFFD`", the panel stayed;
    - EXACT (added after analyze, `result_before_exact.txt`): typed the 65-letter name - full path
      exactly 259 bytes - PASS, the panel at `...\<65 x 'r'>` (the boundary is accepted before).
    - Registry restored identical (SHA-256), fixture key removed.
@@ -59,7 +59,7 @@ write into buffers three times the wide maximum (cannot fail). The helper is unc
 - Probe `result_after.txt`: SHORT PASS, EXACT PASS (259 bytes still accepted), LONG PASS (message
   "Unable to finish operation because of too long path name." + the system text of error 122, the
   panel stays at `...\X`, the core re-opens Change Directory for correction), CJK PASS (same message,
-  instead of "Unable to open ...�"); 8/8 rows, registry restored identical, fixture key removed.
+  instead of "Unable to open ...\uFFFD"); 8/8 rows, registry restored identical, fixture key removed.
   Negative control: the same probe on the build of HEAD0 (`result_before.txt`) - LONG and CJK FAIL.
 - SC-002: `grep -n WStrToU8` over the four files - the unchecked calls left are the display /
   comparison ones of research R5 (`fs3.cpp` AcceptChangeOnPathNotification, `fs5.cpp` overwrite and
