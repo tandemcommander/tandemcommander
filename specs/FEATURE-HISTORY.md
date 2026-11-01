@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
@@ -5935,3 +5935,20 @@ a few early ones are out of sequence).
   Automation `OLE2A` rows, fixed; SHOULD core registry facade -> Inbox, UnCAB item understated,
   fixed), review 2 (no MUST; SHOULD `_bstr_t` layer added to the item, Registry Editor cut path ->
   Inbox).
+- 380-regedt-full-path-cut: in a Registry Editor key, a path typed relative to it (Change Directory,
+  command line `cd`) whose full path is over 259 bytes of UTF-8 sent the panel, without a word, to the
+  path cut at 259 bytes - another existing key when one had that name (measured), or a cut inside a
+  character ("Unable to open ...\uFFFD"). `GetFullFSPath` tested the `DWORD` result of `WStrToU8` with
+  `>= 0` (always true) and `WideCharToMultiByte(CP_UTF8)` fills the buffer before failing (error 122).
+  Now the plug-in refuses it ("too long path name", `success = FALSE`, the panel stays, Change Directory
+  re-opens), also for a failed conversion of the typed path; the focus names after Quick Rename and a
+  rename by Move are empty instead of cut (the rename itself stays done, as New key already did); Find's
+  *Focus* checks both conversions. Traps: an unsigned result compared `>= 0`; `Error()` appends the last
+  error's text - clear it. Limits: the core's buffer is `MAX_PATH`, so every relative path under a key
+  deeper than 259 bytes is refused (Inbox `relative-path-under-a-deep-plug-in-file-system-path-is`); the
+  core cuts the focus name of `ChangePathToPluginFS` (Inbox
+  `changing-to-a-plug-in-path-cuts-the-name-to-focus-at-259`); the rename and Find guards are proven by
+  reading. From backlog item `regedt-full-path-cut-reported-as-success`. Probe `regpath380_probe`
+  (SHORT / EXACT 259 bytes / LONG / CJK) 6 / 2 -> 8 / 0 (reviewer's own negative control with the old
+  `regedt.spl`: 6 / 2); refute-first review: no MUST / SHOULD; NOTEs last-error text and Find message
+  parent fixed, core focus-name cut -> Inbox.

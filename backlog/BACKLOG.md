@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor: a too long full key path is cut and reported as success](items/regedt-full-path-cut-reported-as-success/desc.md) | bug | 5 | other-plugins | 380 |
 
 ## Next
 
