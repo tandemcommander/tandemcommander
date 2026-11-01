@@ -3,7 +3,7 @@
 **Feature Branch**: `385-ftp-path-name-rule`
 **Created**: 2026-11-01
 **Status**: Draft
-**Input**: User description: "Backlog item ftp-server-path-compare-code-page-fold - implement exactly what it describes (FTP: server folder names compared by the code-page case rule on UTF-8 bytes)."
+**Input**: User description: "Backlog item ftp-server-path-compare-code-page-fold - implement exactly what it describes (FTP: server folder names compared by the code-page case rule on UTF-8 bytes)." From backlog item ftp-server-path-compare-code-page-fold.
 
 ## User Scenarios & Testing *(mandatory)*
 

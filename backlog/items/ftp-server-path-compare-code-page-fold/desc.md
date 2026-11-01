@@ -1,7 +1,7 @@
 ---
 title: FTP: server folder names compared by the code-page case rule on UTF-8 bytes
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: ftp
 source: review:277
@@ -10,7 +10,7 @@ created: 2026-10-21
 updated: 2026-11-01
 verified: 2026-11-01 6428f7e9
 effort: M
-feature: -
+feature: 385
 related: []
 depends-on: []
 reason: -
@@ -42,3 +42,4 @@ Severity 4: a wrong "same folder" answer needs non-ASCII folder names on a case-
 - 2026-10-21 — created (source review:277)
 - 2026-10-21 — moved to Next position 16
 - 2026-11-01 — verified at 6428f7e9: still present at 6428f7e9: FTPIsPrefixOfServerPath folds UTF-8 bytes by CharLowerA (ACP 1250: C-caron != c-caron, C-caron == G-circumflex); callers enumerated
+- 2026-11-01 — run started, feature 385
