@@ -1,16 +1,16 @@
 ---
 title: Opening a folder found by quick search briefly shows the whole parent folder
 type: bug
-status: open
+status: in-progress
 severity: 2
 area: panels-ui
 source: manual
 who: agent
 created: 2026-11-01
 updated: 2026-11-01
-verified: -
+verified: 2026-11-01 d4fb03e7
 effort: S
-feature: -
+feature: 376
 related: []
 depends-on: []
 reason: -
@@ -40,3 +40,5 @@ Pressing Enter on a folder in a filtered panel goes straight from the filtered v
 
 - 2026-11-01 — created (source manual)
 - 2026-11-01 — moved to Next position 2
+- 2026-11-01 — verified at d4fb03e7: reproduced at d4fb03e7: pixel-sampling probe, parent listing drawn ~290 ms after Enter in 3 of 3 rounds (30000-file target)
+- 2026-11-01 — run started, feature 376

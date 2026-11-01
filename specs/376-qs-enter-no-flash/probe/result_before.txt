@@ -1,0 +1,20 @@
+Feature 376 probe before; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; rounds 3; files in 'big' 30000; registry backup C:\Users\pavel\AppData\Local\Temp\tc376_backup.reg (existed True)
+export SHA-256 67F5526EE271066697F6EBDFB68EB0A01500CF3521A0C47B8B182171F2ED33BF
+fixture C:\Users\pavel\AppData\Local\Temp\tc376 ready in 8,4 s
+R1         CTRL   PASS        panel 773x889; bg FFFFFF tint F0F4F8; rows end y=129; area below y=137..289; FULL->PARENT FILT->FILT settled->NEW
+R1         FLASH  FAIL        samples 613; PARENT 39; runs: FILT x1 @0-0ms, PARENT x39 @7-303ms, NEW x573 @307-3996ms
+R1         LOC    PASS        panel at C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R1         BACK   PASS        after Backspace at C:\Users\pavel\AppData\Local\Temp\tc376\left; Enter on the cursor opened C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R2         CTRL   PASS        panel 773x889; bg FFFFFF tint F0F4F8; rows end y=129; area below y=137..289; FULL->PARENT FILT->FILT settled->NEW
+R2         FLASH  FAIL        samples 610; PARENT 38; runs: FILT x1 @0-0ms, PARENT x38 @21-301ms, NEW x571 @308-3998ms
+R2         LOC    PASS        panel at C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R2         BACK   PASS        after Backspace at C:\Users\pavel\AppData\Local\Temp\tc376\left; Enter on the cursor opened C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R3         CTRL   PASS        panel 773x889; bg FFFFFF tint F0F4F8; rows end y=129; area below y=137..289; FULL->PARENT FILT->FILT settled->NEW
+R3         FLASH  FAIL        samples 616; PARENT 38; runs: FILT x1 @0-0ms, PARENT x38 @6-295ms, OTHER x1 @302-302ms, NEW x576 @309-3997ms
+R3         LOC    PASS        panel at C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R3         BACK   PASS        after Backspace at C:\Users\pavel\AppData\Local\Temp\tc376\left; Enter on the cursor opened C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 67F5526EE271066697F6EBDFB68EB0A01500CF3521A0C47B8B182171F2ED33BF / after 67F5526EE271066697F6EBDFB68EB0A01500CF3521A0C47B8B182171F2ED33BF
+ROWS 15; FAIL 3
