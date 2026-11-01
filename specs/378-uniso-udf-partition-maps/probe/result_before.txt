@@ -1,0 +1,36 @@
+iso378_probe before
+Program : C:\Users\pavel\AppData\Local\Temp\tcudfmaps_before\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 17:27; registry key existed True
+
+seeds: b201.iso=1179648,bcount.bin=1179648,count.bin=1179648,len0.bin=1179648,many.bin=1179648,run.bin=1179648,table.bin=1179648,u201.iso=1179648,u250.iso=1507328
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc378\seeds\u201.iso: 1179648 bytes, 576 blocks
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc378\seeds\u250.iso: 1507328 bytes, 736 blocks
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc378\seeds\b201.iso: 1179648 bytes, 576 blocks
+img378: count: 1179648 bytes, LVD at 34, map count 1 -> 100000
+img378: len0: 1179648 bytes, LVD at 34, first map length 6 -> 0
+img378: table: 1179648 bytes, LVD at 34, map table length 6 -> 4
+img378: run: 1179648 bytes, LVD at 34, map count 1 -> 100000, sector after the maps 0xFF
+img378: many: 1179648 bytes, LVD at 34, map table length 6 -> 1608, count 1 -> 300, the first map repeated
+img378: count: 1179648 bytes, LVD at 34, map count 1 -> 100000
+
+C-U201     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-U201     RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-U250     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-U250     RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-B201     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-B201     RUN    FAIL        files 2: ISO (UDF356)/A.TXT, UDF (UDF356)/a.txt; missing: a.txt; files ok: False; image kept: True (want False); windows ok (none): True; fatal: ; windows: no window
+R-COUNT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-COUNT    RUN    FAIL        files 1: a.txt; files ok: False; image kept: False (want True); windows ok (any): False; fatal: ; windows: no window
+R-LEN0     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-LEN0     RUN    FAIL        files 1: a.txt; files ok: False; image kept: False (want True); windows ok (any): False; fatal: ; windows: no window
+R-TABLE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-TABLE    RUN    FAIL        files 1: a.txt; files ok: False; image kept: False (want True); windows ok (any): False; fatal: ; windows: no window
+R-RUN      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-RUN      RUN    FAIL        files 1: a.txt; files ok: False; image kept: False (want True); windows ok (any): False; fatal: ; windows: no window
+R-MANY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-MANY     RUN    FAIL        files 1: a.txt; files ok: False; image kept: False (want True); windows ok (any): False; fatal: ; windows: no window
+R-BCOUNT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-BCOUNT   RUN    FAIL        files 2: ISO (UDF356)/A.TXT, UDF (UDF356)/a.txt; missing: a.txt; files ok: False; image kept: True (want True); windows ok (any): False; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 5CD3A980D43BAB9C86C80CCC02B6F6345398DEADDF28C3B2844518A348F1FDAD / after 5CD3A980D43BAB9C86C80CCC02B6F6345398DEADDF28C3B2844518A348F1FDAD
+
+Rows: PASS 11, FAIL 7, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
