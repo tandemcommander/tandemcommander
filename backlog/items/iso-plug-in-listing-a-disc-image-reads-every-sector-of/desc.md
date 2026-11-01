@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: listing a disc image reads every sector of examined Form 2 files
 type: improvement
-status: new
+status: open
 severity: 3
 area: archives
 source: review:367
@@ -62,3 +62,4 @@ features 337 and 367 stay).
 - 2026-11-01 — created (source review:367)
 - 2026-11-01 — set title=ISO plug-in: listing a disc image reads every sector of examined Form 2 files
 - 2026-11-01 — related item iso-plug-in-a-video-file-in-form-2-sectors-without-an-xa done in feature 367
+- 2026-11-01 — moved to Next position 86
