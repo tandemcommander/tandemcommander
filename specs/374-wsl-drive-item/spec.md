@@ -142,7 +142,8 @@ saved, loaded and imported from an older configuration like the Network option.
 - **FR-007**: A new option *Linux Distributions (WSL)* on the Change Drive configuration page
   (on by default) MUST hide all WSL entries when off (it is the only setting that hides them:
   the Network option and the no-Network-Neighborhood policy do not); it MUST be saved and loaded with the
-  configuration and imported from an exported configuration, like the Network option.
+  configuration like the Network option and travel with the program's own configuration export /
+  import. It is not added to the import of Altap / Open Salamander settings (see Assumptions).
 - **FR-008**: The drive bars MUST be rebuilt when the set of distributions changed since they
   were built (checked when the Change Drive menu opens, as for the cloud storages).
 - **FR-009**: The new texts (the item label "Linux" and the checkbox) MUST be translated into
@@ -167,7 +168,7 @@ saved, loaded and imported from an older configuration like the Network option.
   before).
 - **SC-004**: The Alt+F1 list build takes less than 10 ms longer than before (median of
   repeated builds, before / after).
-- **SC-005**: The option survives a restart and an import.
+- **SC-005**: The option survives a restart (saved and loaded under the configuration key).
 
 ## Assumptions
 
@@ -180,3 +181,9 @@ saved, loaded and imported from an older configuration like the Network option.
   no context menu (as the cloud storages and Network).
 - Assumption (autonomous run): the configuration value is a new value under the existing
   configuration key, as the other Change Drive options (no layout change).
+- Assumption (autonomous run, deviation from the item): the item asks for the option to be
+  "imported like `ChangeDriveShowNet`". That import (`cfgimport.cpp`, feature 245) reads the
+  settings of Altap / Open Salamander, which have no WSL option, and its rule FR-016 keeps
+  Tandem Commander's own settings off its allow-list (checked by `saltests`, 112 entries). So the
+  option is not put on that list; the program's own configuration export / import (a `.reg` of the
+  whole configuration key) carries it with no change (rule: feature 245 FR-016).
