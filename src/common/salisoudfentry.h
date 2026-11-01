@@ -79,3 +79,42 @@ inline bool SalIsoUdfFolderEntryWalkable(int stored, unsigned long long firstLen
 {
     return (stored > 0 || stored == -1) && firstLen >= SAL_ISO_UDF_MIN_FID;
 }
+
+// May the folder walk read the File Identifier Descriptor at position 'pos' of
+// a buffer of 'held' bytes, whose name length is lFI (8 bits) and whose
+// implementation-use length is lIU (16 bits), both from the image? True with
+// 'len' = the identifier's length padded to 4 bytes (ECMA-167 4/14.4:
+// 38 + L_IU + L_FI, the step to the next identifier) when the whole padded
+// identifier lies in [pos, held); false with 'len' 0 otherwise (computed in
+// 64 bits by subtracting from what is left, so nothing wraps) -
+// feature 363. The walk (uniso: CUDF::ScanDir, two sectors, each identifier
+// read at most one sector in) took the name at 38 + L_IU, L_FI bytes, and the
+// next position without comparing them with its buffer: an L_IU of 0xFFFF read
+// the name 64 KB past it, listed the entry as "_" and went on, and a whole
+// unpack with "Delete archive after unpacking" deleted the image. UDF limits
+// an identifier to one logical block (2.01, 2.3.4), so a valid one read at most
+// one sector into two sectors always fits; false sends the folder down the
+// invalid-tag path (its walk ends, the listing is incomplete - feature 330).
+inline bool SalIsoUdfFidLength(unsigned long long held, unsigned long long pos, unsigned long long lFI,
+                               unsigned long long lIU, unsigned long long& len)
+{
+    len = 0;
+    if (pos > held)
+        return false;
+    unsigned long long rest = held - pos; // the bytes from the identifier to the buffer's end
+    if (rest < SAL_ISO_UDF_MIN_FID)
+        return false;
+    rest -= SAL_ISO_UDF_MIN_FID;
+    if (lIU > rest)
+        return false;
+    rest -= lIU;
+    if (lFI > rest)
+        return false;
+    rest -= lFI;
+    unsigned long long n = SAL_ISO_UDF_MIN_FID + lIU + lFI; // <= held: no wrap
+    unsigned long long pad = (4 - n % 4) % 4;
+    if (pad > rest)
+        return false;
+    len = n + pad;
+    return true;
+}

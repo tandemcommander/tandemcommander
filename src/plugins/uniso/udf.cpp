@@ -550,7 +550,11 @@ int CUDF::ReadFileEntry(Uint8* data, bool bEFE, Uint16 part, CICBTag* icbTag, CU
     return cnt;
 }
 
-int CUDF::ReadFileIdentifier(Uint8* sector, Uint8* fileChar, char* fileName, CAD* fileICB)
+// 'held' = the bytes the caller holds from 'sector' (at least the 38-byte head). Returns the identifier's padded
+// length, or (feature 363) 0 when the identifier does not lie whole in those bytes (salisoudfentry.h): its L_IU /
+// L_FI from the image put the name 64 KB past the walk's buffer, which was read, listed as "_" and walked on; the
+// name is not decoded then.
+int CUDF::ReadFileIdentifier(Uint8* sector, unsigned int held, Uint8* fileChar, char* fileName, CAD* fileICB)
 {
     Uint8 fi;
     Uint16 iu;
@@ -559,11 +563,17 @@ int CUDF::ReadFileIdentifier(Uint8* sector, Uint8* fileChar, char* fileName, CAD
     fi = GET_BYTE(sector, 19);
     LongAD(sector + 20, fileICB);
     iu = GET_WORD(sector, 36);
+    unsigned long long len;
+    if (!SalIsoUdfFidLength(held, 0, fi, iu, len))
+    {
+        fileName[0] = '\0';
+        return 0;
+    }
     if (fi)
         DecodeOSTACompressed(sector + 38 + iu, fi, fileName);
     else
         fileName[0] = '\0';
-    return 4 * ((38 + fi + iu + 3) / 4);
+    return (int)len; // <= held
 }
 
 int CUDF::MapICB(CUDF::CAD icb, CICBTag* icbTag, CUDF::CAD* file)
@@ -1011,7 +1021,15 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
         if (UDF_TAGID_FID == tag.ID)
         {
             CAD icb;
-            p += ReadFileIdentifier(directory + p, &fileChar, fileName, &icb);
+            // p <= SECTOR_SIZE: the 38-byte head lies in the buffer; feature 363: an identifier that does not lie
+            // whole in it is refused like an invalid tag - the walk ends, the listing is incomplete (feature 330)
+            int fidLen = ReadFileIdentifier(directory + p, (unsigned int)(sizeof(directory) - p), &fileChar, fileName, &icb);
+            if (fidLen == 0)
+            {
+                Error(IDS_UDF_INVALID_TAG_ID);
+                return ERR_CONTINUE;
+            }
+            p += fidLen;
 
             if (!(fileChar & UDF_PARENT))
             {

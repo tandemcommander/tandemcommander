@@ -1,0 +1,34 @@
+iso363_probe (feature 363) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 01:04; registry key existed True
+
+seeds: nest.iso=1218560,rd.iso=368640,ud.iso=878592,udh.iso=878592,x_afi.bin=878592,x_aiu.bin=878592,x_aiu4k.bin=878592,x_siu.bin=878592,x_tiu.bin=878592
+img363: aiu: the root's identifier of folder a (byte 532520, sector 260 + 40): L_IU 0 -> 65535
+img363: tiu: the root's identifier of top.txt (byte 532560, sector 260 + 80): L_IU 0 -> 65535
+img363: siu: folder a's identifier of side.txt (byte 536616, sector 262 + 40): L_IU 0 -> 65535
+img363: aiu4k: the root's identifier of folder a (byte 532520, sector 260 + 40): L_IU 0 -> 4096
+img363: afi: the root's identifier of folder a (byte 532520, sector 260 + 40): L_IU 0 -> 4000, L_FI 2 -> 255
+
+L-AIU      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-AIU      RUN    PASS        alive: True; windows ok ("Invalid UDF Tag ID"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Invalid UDF Tag ID. | [Button id=1] OK
+L-AIU4K    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-AIU4K    RUN    PASS        alive: True; windows ok ("Invalid UDF Tag ID"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Invalid UDF Tag ID. | [Button id=1] OK
+L-AFI      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-AFI      RUN    PASS        alive: True; windows ok ("Invalid UDF Tag ID"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Invalid UDF Tag ID. | [Button id=1] OK
+L-UD       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-UD       RUN    PASS        alive: True; windows ok (none): True; timed out: False; fatal: ; windows: no window
+R-AIU      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-AIU      RUN    PASS        files 3: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows ok ("Invalid UDF Tag ID"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Invalid UDF Tag ID. | [Button id=1] OK
+R-TIU      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-TIU      RUN    PASS        files 4: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/a/side.txt; files ok: True; image kept: True (want True); windows ok ("Invalid UDF Tag ID"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Invalid UDF Tag ID. | [Button id=1] OK
+R-SIU      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SIU      RUN    PASS        files 4: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/top.txt; files ok: True; image kept: True (want True); windows ok ("Invalid UDF Tag ID"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Invalid UDF Tag ID. | [Button id=1] OK
+R-AIU4K    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-AIU4K    RUN    PASS        files 3: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows ok ("Invalid UDF Tag ID"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Invalid UDF Tag ID. | [Button id=1] OK
+R-AFI      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-AFI      RUN    PASS        files 3: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows ok ("Invalid UDF Tag ID"): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Invalid UDF Tag ID. | [Button id=1] OK
+C-UD       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-UD       RUN    PASS        files 6: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/a/side.txt, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: False (want False); windows ok (none): True; timed out: False; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 20, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

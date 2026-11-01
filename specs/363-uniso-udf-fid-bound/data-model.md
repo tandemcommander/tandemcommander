@@ -18,8 +18,8 @@ Length = `4 * ((38 + L_IU + L_FI + 3) / 4)`; UDF: at most one logical block.
 ## Rule `SalIsoUdfFidLength(held, pos, lFI, lIU, len)`
 
 - Inputs: `held` - bytes of the buffer; `pos` - the identifier's position in it; `lFI`, `lIU` - from the image.
-- True, `len` = padded length: `pos <= held` and `len <= held - pos` (64-bit, each of `lFI`, `lIU` first compared
-  with `held` so the sum cannot wrap).
+- True, `len` = padded length: `pos <= held` and `len <= held - pos` (64-bit; the head, `lIU`, `lFI` and the
+  padding are each subtracted from what is left, so nothing can wrap).
 - False, `len` = 0: otherwise. The caller then reads nothing past the 38-byte head and refuses the folder.
 
 ## Walk state (`ScanDir`)

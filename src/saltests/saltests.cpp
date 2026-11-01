@@ -20990,6 +20990,85 @@ static void TestIsoUdfFolderEntry_362()
     CHECK(walked > 0 && notWalked > 0);
 }
 
+// feature 363: a UDF file identifier whose L_IU / L_FI put it past the folder walk's two-sector buffer is refused,
+// not read past the buffer (src/common/salisoudfentry.h)
+static void TestIsoUdfFid_363()
+{
+    const unsigned long long held = 4096; // CUDF::ScanDir: Uint8 directory[2 * SECTOR_SIZE]
+    unsigned long long len = 1;
+    // genisoimage's identifiers (ud.iso, the probe's seed): parent 40 bytes, "a" 44, "top.txt" 48, at 0 / 40 / 80
+    CHECK(SalIsoUdfFidLength(held, 0, 0, 0, len) && len == 40);
+    CHECK(SalIsoUdfFidLength(held, 40, 2, 0, len) && len == 40);
+    CHECK(SalIsoUdfFidLength(held, 80, 8, 0, len) && len == 48);
+    CHECK(SalIsoUdfFidLength(held, 2048, 255, 0, len) && len == 296);
+    CHECK(SalIsoUdfFidLength(held, 2048, 255, 1755, len) && len == 2048); // one whole block at the last position
+    // the probe's damaged identifiers (img363.py): refused, len 0
+    CHECK(!SalIsoUdfFidLength(held, 40, 2, 0xFFFF, len) && len == 0);   // aiu
+    CHECK(!SalIsoUdfFidLength(held, 80, 8, 0xFFFF, len) && len == 0);   // tiu
+    CHECK(!SalIsoUdfFidLength(held, 40, 9, 0xFFFF, len) && len == 0);   // siu (folder a's side.txt)
+    CHECK(!SalIsoUdfFidLength(held, 40, 2, 0x1000, len) && len == 0);   // aiu4k
+    CHECK(!SalIsoUdfFidLength(held, 40, 255, 4000, len) && len == 0);   // afi: the name starts inside, ends past
+    CHECK(!SalIsoUdfFidLength(held, 0, 0, 0xFFFF, len) && len == 0);    // the parent identifier (L_FI 0) too
+    // the bound: the padded identifier ends exactly at the buffer's end - taken; one byte more - refused
+    CHECK(SalIsoUdfFidLength(held, 2048, 2, 2008, len) && len == 2048);
+    CHECK(!SalIsoUdfFidLength(held, 2052, 2, 2008, len) && len == 0);
+    CHECK(SalIsoUdfFidLength(held, 4096 - 40, 2, 0, len) && len == 40);
+    CHECK(!SalIsoUdfFidLength(held, 4096 - 41, 3, 0, len) && len == 0); // 41 bytes, padded 44: the padding is past
+    CHECK(!SalIsoUdfFidLength(held, 4096 - 37, 0, 0, len) && len == 0); // not even the 38-byte head
+    CHECK(SalIsoUdfFidLength(held, 4096 - 38, 0, 2, len) == false);     // 40 bytes from 38 left
+    CHECK(!SalIsoUdfFidLength(held, 4097, 0, 0, len) && len == 0);      // a position past the buffer
+    // wrap: values a 32- or 64-bit sum would wrap to a small length
+    CHECK(!SalIsoUdfFidLength(held, 0, 0, 0xFFFFFFFFFFFFFFF0ull, len) && len == 0);
+    CHECK(!SalIsoUdfFidLength(held, 0, 0xFFFFFFFFFFFFFFD8ull, 0, len) && len == 0);
+    CHECK(!SalIsoUdfFidLength(held, 0, 0xFFFFFFFFull, 0xFFFFFFF0ull, len) && len == 0);
+    CHECK(!SalIsoUdfFidLength(~0ull, 0, ~0ull, ~0ull, len) && len == 0);
+    CHECK(!SalIsoUdfFidLength(~0ull, ~0ull - 40, 2, ~0ull - 100, len) && len == 0);
+    CHECK(SalIsoUdfFidLength(~0ull, ~0ull - 40, 2, 0, len) && len == 40);
+
+    // a model of the walk (CUDF::ScanDir): each identifier is read at p <= 2048 of the 4096-byte buffer; over a grid
+    // of positions, L_FI (8 bits) and L_IU (16 bits) - an accepted identifier lies whole in the buffer and the next
+    // position, after the one-sector step, is again at most 2048 (the next tag / head in the buffer); every
+    // identifier of at most one block (2048 bytes, UDF 2.01 2.3.4) is accepted with the old length
+    // 4 * ((38 + fi + iu + 3) / 4); every larger one past the buffer is refused
+    const unsigned long long iuList[] = {0, 1, 2, 3, 4, 32, 1000, 1755, 1756, 1757, 2008, 2009, 2048, 3000, 4000,
+                                         4058, 4096, 0x1000 + 1, 0x7FFF, 0x8000, 0xFFFE, 0xFFFF};
+    bool inside = true, valid = true, refused = true;
+    int taken = 0, notTaken = 0;
+    for (unsigned long long p = 0; p <= 2048; p += (p < 64 || p > 1980) ? 1 : 52)
+        for (unsigned long long fi = 0; fi <= 255; fi += (fi < 8 || fi >= 230) ? 1 : 37)
+            for (unsigned long long iu : iuList)
+            {
+                unsigned long long l = 7;
+                bool ok = SalIsoUdfFidLength(held, p, fi, iu, l);
+                unsigned long long old = 4 * ((38 + fi + iu + 3) / 4);
+                if (ok)
+                {
+                    taken++;
+                    unsigned long long next = p + l;
+                    if (l != old || 38 + iu + fi > held - p || next > held)
+                        inside = false;
+                    if (next > 2048)
+                        next -= 2048; // the walk's step: "if (p > SECTOR_SIZE) { ++lbNum; p -= SECTOR_SIZE; }"
+                    if (next > 2048)
+                        inside = false;
+                }
+                else
+                {
+                    notTaken++;
+                    if (l != 0)
+                        refused = false;
+                    if (old <= 2048) // an identifier of at most one block, read at most one sector in
+                        valid = false;
+                    if (p + old <= held) // refused although it fitted
+                        refused = false;
+                }
+            }
+    CHECK(inside);
+    CHECK(valid);
+    CHECK(refused);
+    CHECK(taken > 0 && notTaken > 0);
+}
+
 // feature 356: a cooked UDF-only image - the UDF descriptors that give its volume's end, and whether the
 // rest past the volume is kept, marked or read (src/common/salisotrack.h)
 static void TestIsoUdfRest_356()
@@ -23360,6 +23439,7 @@ int main(int argc, char** argv)
     TestIsoUdfVat_360();
     TestIsoUdfEntry_361();
     TestIsoUdfFolderEntry_362();
+    TestIsoUdfFid_363();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();

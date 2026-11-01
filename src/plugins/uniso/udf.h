@@ -299,7 +299,7 @@ protected:
         UDF_FE_REFUSED = -2
     };
     int ReadFileEntry(Uint8* data, bool bEFE, Uint16 part, CICBTag* icbTag, CUDF::CAD* ad, int maxAds);
-    int ReadFileIdentifier(Uint8* sector, Uint8* fileChar, char* fileName, CAD* fileICB);
+    int ReadFileIdentifier(Uint8* sector, unsigned int held, Uint8* fileChar, char* fileName, CAD* fileICB);
 
     void ReadStrategy(BYTE data[], Uint16* entries, Uint16* strategy, Uint16* strategyParam);
 
