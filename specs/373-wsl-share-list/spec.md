@@ -42,6 +42,8 @@ question and adds no second timeout.
 ### Session 2026-11-01
 
 - Q: Which errors of the first way lead to the second way? → A: "Network path not found" (53) - the one measured for WSL - in addition to the refusals that lead there today; "network unreachable" (1231), "host unreachable" (1232) and "the remote computer is not available" (51) keep today's behaviour (one error, no second question) (autonomous run: conservative - the item names 53 and only "possibly" 51; 51 was never measured, and the other two say the network itself does not reach the name).
+- Q: When both ways fail for a server, which error does the box show - the first way's (53) or the second way's (1203)? → A: The first way's, 53 - the box the user sees today, word for word (autonomous run: item - "a server that really does not exist still shows one error"; the existing rule of 125 for refused lists already reports the first error).
+- Q: For `\\wsl$` the providers return `\\wsl.localhost\<distro>`; which server does the opened path use? → A: The server the user typed (`\\wsl$\<distro>`); the share name is the part after the last backslash, as the second way of 125 already does (autonomous run: conservative - no change to how the path is built).
 
 ## User Scenarios & Testing *(mandatory)*
 
