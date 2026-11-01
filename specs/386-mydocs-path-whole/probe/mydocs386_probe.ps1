@@ -13,8 +13,12 @@
       LONG    Documents = <root>\<90 CJK letters> (fewer than 260 UTF-16 units, more than 259 bytes
               of UTF-8); the folder named like its 259-byte prefix exists too.
               PASS = the panel shows the whole folder; FAIL = the prefix folder (the cut)
-      RESCUE  NOT DRIVEN (a drive letter that does not exist only gives "path invalid"; the
-              rescue route needs a root that exists but cannot be listed) - code reading
+      LONG200 Documents = <root>\<200 CJK letters> (240 units, 640 bytes - more than the old
+              520-byte intermediate buffer); PASS = the whole folder (before: the Desktop)
+      RESCUE-SHORT / RESCUE-LONG  the rescue path "Documents": the left panel on a subst drive
+              whose folder then denies listing to this user (icacls, removed at once), refresh
+              (CM_LEFTREFRESH 724). SHORT PASS = the short folder; LONG PASS = not the prefix
+              folder (the whole folder or a drive root - the rescue path holds MAX_PATH bytes)
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 #>
@@ -46,6 +50,15 @@ function Cut-U8([string]$s, [int]$max) {
     return $s.Substring(0, $n)
 }
 $PrefixDir = Cut-U8 $LongDir 259
+# review 1 of 386, SHOULD 2: 200 letters (240 units, 640 bytes) - more than the old 520-byte
+# intermediate buffer held: the old code gave the Desktop even to the long-path drive bar route
+$Long200Dir = $Root + '\' + (-join (1..200 | ForEach-Object { [char](0x4E00 + $_) }))
+# a free letter for the RESCUE rows' subst drive: not listed, not remembered as a network drive
+$usedLetters = @([IO.DriveInfo]::GetDrives() | ForEach-Object { $_.Name.Substring(0, 1).ToUpper() })
+$remembered = @(Get-ChildItem 'HKCU:\Network' -ErrorAction SilentlyContinue | ForEach-Object { $_.PSChildName.ToUpper() })
+$script:SubstLetter = @([char[]]'YXWVUTSRQPONMLKJ' | ForEach-Object { [string]$_ } | Where-Object { $usedLetters -notcontains $_ -and $remembered -notcontains $_ } | Select-Object -First 1)
+if ($script:SubstLetter.Count) { $script:SubstLetter = $script:SubstLetter[0] } else { $script:SubstLetter = $null }
+$script:SubstMade = $false; $script:DenyOn = $null
 
 function Dump-Lines([string]$f) { if (Test-Path -LiteralPath $f) { return @([IO.File]::ReadAllLines($f, $Utf8)) } else { return @() } }
 # index of the Documents item (type 7) in the last drive bar 1 build of the dump, or -1
@@ -89,6 +102,7 @@ function Loc-Name([string]$loc) {
     if ($loc -ceq $LongDir -or $loc -ceq ($LongDir + '\')) { return 'the whole Documents folder' }
     if ($loc -ceq $PrefixDir -or $loc -ceq ($PrefixDir + '\')) { return 'the PREFIX folder (cut path)' }
     if ($loc -ceq $ShortDir -or $loc -ceq ($ShortDir + '\')) { return 'the short Documents folder' }
+    if ($loc -ceq $Long200Dir -or $loc -ceq ($Long200Dir + '\')) { return 'the whole 200-letter Documents folder' }
     return 'other'
 }
 function Press-Docs([int]$Id, [string]$Dump) {
@@ -133,8 +147,10 @@ try {
         & reg.exe add "$RegKey\Settings\Configuration" /v 'If Path Is Inaccessible Go To My Docs' /t REG_DWORD /d 1 /f | Out-Null
     }
 
-    foreach ($row in @(@{ Case = 'SHORT'; Docs = $ShortDir; Want = $ShortDir }, @{ Case = 'LONG'; Docs = $LongDir; Want = $LongDir })) {
+    foreach ($row in @(@{ Case = 'SHORT'; Docs = $ShortDir; Want = $ShortDir }, @{ Case = 'LONG'; Docs = $LongDir; Want = $LongDir },
+            @{ Case = 'LONG200'; Docs = $Long200Dir; Want = $Long200Dir })) {
         if (-not (Want $row.Case)) { continue }
+        if ($row.Case -eq 'LONG200' -and -not (Test-Path -LiteralPath ($LP + $Long200Dir))) { NewDir $Long200Dir }
         $dump = $Root + '\dump_' + $row.Case + '.txt'
         $s = Start-Row $row.Docs $StartDir $dump
         try {
@@ -147,14 +163,54 @@ try {
         finally { Stop-Tc $s.Id }
     }
 
-    # RESCUE (the rescue path "Documents") is NOT DRIVEN: a left panel on a drive letter that does
-    # not exist only shows "The path or file name ... is invalid" and stays (measured 2026-11-02);
-    # the rescue route needs a root that exists but cannot be listed. Checked by code reading.
-    Out 'RESCUE     -      NOT DRIVEN  the rescue route is not reachable without a root that cannot be listed (code reading)'
+    # RESCUE (review 1 of 386, SHOULD 1): a root that exists but cannot be listed - a subst drive
+    # on <root>\substroot, the left panel on it, then the listing right of that folder denied to
+    # this user and the panel refreshed (CM_LEFTREFRESH 724); the panel takes the rescue path
+    # "Documents". (A drive letter that does not exist only gives "path invalid".)
+    if ((Want 'RESCUE') -and $script:SubstLetter) {
+        $subT = $Root + '\substroot'
+        NewDir $subT
+        $me = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+        & subst.exe ($script:SubstLetter + ':') $subT | Out-Null
+        if ($LASTEXITCODE -ne 0) { Row 'RESCUE' 'SUBST' 'FAIL' ('subst {0}: failed' -f $script:SubstLetter) }
+        else {
+            $script:SubstMade = $true
+            try {
+                foreach ($row in @(@{ Case = 'RESCUE-SHORT'; Docs = $ShortDir }, @{ Case = 'RESCUE-LONG'; Docs = $LongDir })) {
+                    if (-not (Want $row.Case)) { continue }
+                    $dump = $Root + '\dump_' + $row.Case + '.txt'
+                    $s = Start-Row $row.Docs ($script:SubstLetter + ':\') $dump
+                    try {
+                        $start = Get-Loc $s.Id
+                        & icacls.exe $subT /deny ($me + ':(RD)') | Out-Null
+                        $script:DenyOn = $subT
+                        Post-Cmd (Get-Main $s.Id) 724   # CM_LEFTREFRESH
+                        Start-Sleep -Milliseconds 1500
+                        $r = Serve $s.Id 10
+                        & icacls.exe $subT /remove:d $me | Out-Null
+                        $script:DenyOn = $null
+                        $loc = Get-Loc $s.Id
+                        $name = Loc-Name $loc
+                        if ($row.Case -eq 'RESCUE-SHORT') { $ok = $name -eq 'the short Documents folder' }
+                        else { $ok = $name -ne 'the PREFIX folder (cut path)' -and ($name -eq 'the whole Documents folder' -or $loc -match '^[A-Za-z]:\\$') }
+                        Row $row.Case 'RESCUE' (V $ok) ('start {0}; windows: {1}; panel: {2} = {3}' -f (Tail $start 20), (Msgs $r), $name, (Tail $loc 60))
+                    }
+                    finally {
+                        if ($script:DenyOn) { & icacls.exe $script:DenyOn /remove:d $me | Out-Null; $script:DenyOn = $null }
+                        Stop-Tc $s.Id
+                    }
+                }
+            }
+            finally { & subst.exe ($script:SubstLetter + ':') /d | Out-Null; $script:SubstMade = $false }
+        }
+    }
+    elseif (Want 'RESCUE') { Row 'RESCUE' 'SUBST' 'FAIL' 'no free drive letter for subst' }
 }
 catch { Row 'PROBE' 'ERROR' 'FAIL' $_.Exception.Message }
 finally {
     foreach ($id in $Started) { if (Test-Alive $id) { Kill-Mine $id } }
+    if ($script:DenyOn) { & icacls.exe $script:DenyOn /remove:d ([Security.Principal.WindowsIdentity]::GetCurrent().Name) | Out-Null }
+    if ($script:SubstMade) { & subst.exe ($script:SubstLetter + ':') /d | Out-Null }
     if ($backedUp) { $regOk = Restore-Reg $RegBackup $existed }
     if (Test-Path -LiteralPath $Root) { Remove-Item -LiteralPath ($LP + $Root) -Recurse -Force -ErrorAction SilentlyContinue }
 }

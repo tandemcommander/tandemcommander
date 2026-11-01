@@ -92,3 +92,44 @@ depends on the start-up route reaching the rescue path) - checked in the before-
   rescue path keeps MAX_PATH (decided C1 of analyze: worth an item).
 - `confirm-ctrl-opens-a-long-documents-folder-whole-on-a-real` (person-step, leftover:386) -
   Ctrl+; and Alt+F1 with the seam on a real keyboard.
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+Re-measured: build, saltests 30699 / 0 failed, encoding guard 0; probe after SHORT / LONG PASS;
+negative control = a worktree at 66a9dfcc (the seam with the old code) built in
+`%TEMP%\rev386\build`: LONG FAIL (the prefix folder). All 8 callers enumerated; no data written
+or deleted; a refusal empties the buffer.
+
+- SHOULD 1 (fixed): the RESCUE row can be driven - a subst drive on a fixture folder, the left
+  panel on it, the folder's listing right denied to the user (`icacls /deny <me>:(RD)`, removed
+  right after), `WM_COMMAND 724` (CM_LEFTREFRESH). Added as rows RESCUE-SHORT / RESCUE-LONG (free
+  subst letter, deny and subst removed in `finally`). Settles analyze U1.
+- SHOULD 2 (fixed): FR-006 had no probe row - the LONG row (310 bytes) fits the old 520-byte
+  buffer. Added row LONG200 (200 letters, 240 units, 640 bytes): the old code opened the
+  **Desktop** (`C:\Users\pavel\Desktop`) silently even on the long-path drive bar route - a second
+  "another folder" the fix removes.
+- NOTE 1 (-> Inbox): a Documents path of 260 or more UTF-16 units still falls silently to the
+  Desktop (`SHGetPathFromIDListW` is MAX_PATH-bound) - recorded in the spec's edge cases; item
+  added.
+- NOTE 2 (-> the rescue-path item's Notes): the settings page and the configuration load compare
+  with `GetIfPathIsInaccessibleGoTo(path, TRUE)`, which is the drive root for such a user - the
+  page shows `C:\` for "Documents", and typing `C:\` switches to Documents mode.
+- NOTE 3 (accepted): the 96 KB local in the Ctrl+; handler frame (`OnSysKeyDown`), not recursive,
+  3 MB stack.
+- NOTE 4 (recorded): the Release build was not compiled by the reviewer (the code outside
+  `_DEBUG` is plain); the closing run builds Debug - see *Checks*.
+
+### Probe after the review fixes (same probe, both builds)
+
+| Row | before (66a9dfcc, the reviewer's negative-control build) | after (this branch) |
+|---|---|---|
+| SHORT | PASS | PASS |
+| LONG | FAIL - the PREFIX folder | PASS - the whole folder |
+| LONG200 | FAIL - `C:\Users\pavel\Desktop` | PASS - the whole folder |
+| RESCUE-SHORT | PASS | PASS |
+| RESCUE-LONG | FAIL - the PREFIX folder | PASS - `C:\` (refused, the drive-root fallback) |
+
+`probe/result_before.txt` (3 FAIL), `probe/result_after.txt` (5 rows, 0 FAIL); registry restored
+identical in both; no subst drive left (`subst` empty).

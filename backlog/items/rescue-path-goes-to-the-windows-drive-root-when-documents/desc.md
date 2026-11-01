@@ -49,6 +49,13 @@ for `SALCFG_IFPATHISINACCESSIBLEGOTO` stays within the plug-in interface (append
 
 ## Notes
 
+Review 1 of 386 (NOTE 2): the settings page (`src/dialogs5.cpp`, `IDE_DRVSPEC_ONERRGOTO`) and the
+configuration load (`src/mainwnd2.cpp`, a configuration without the "Go To My Docs" value) compare
+the typed or stored path with `GetIfPathIsInaccessibleGoTo(path, TRUE)` - for such a user that is
+the drive root, so the page shows `C:\` for "Documents" and a typed `C:\` switches to the
+Documents mode. The same feature's probe drives the rescue route (rows RESCUE-SHORT /
+RESCUE-LONG: a subst drive whose folder denies listing).
+
 The plug-in value and the stored configuration are maintainer-owned areas (plug-in interface,
 stored data); a feature may need a decision first. Severity 2: only users with such a Documents
 folder, and the fallback is a safe folder, not another one.

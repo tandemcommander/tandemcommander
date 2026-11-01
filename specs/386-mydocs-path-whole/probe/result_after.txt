@@ -2,6 +2,8 @@
 Documents LONG: 130 units, 310 bytes of UTF-8; prefix folder 113 units, 259 bytes
 SHORT      DRIVE  PASS        button idx 6; windows: no window; panel before C:\Users\pavel\AppData\Local\Temp\tc386\start; after: the short Documents folder = C:\Users\pavel\AppData\Local\Temp\tc386\docs_short
 LONG       DRIVE  PASS        button idx 6; windows: no window; panel before C:\Users\pavel\AppData\Local\Temp\tc386\start; after: the whole Documents folder = ...\u4E1F\u4E20\u4E21\u4E22\u4E23\u4E24\u4E25\u4E26\u4E27\u4E28\u4E29\u4E2A\u4E2B\u4E2C\u4E2D\u4E2E\u4E2F\u4E30\u4E31\u4E32\u4E33\u4E34\u4E35\u4E36\u4E37\u4E38\u4E39\u4E3A\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42\u4E43\u4E44\u4E45\u4E46\u4E47\u4E48\u4E49\u4E4A\u4E4B\u4E4C\u4E4D\u4E4E\u4E4F\u4E50\u4E51\u4E52\u4E53\u4E54\u4E55\u4E56\u4E57\u4E58\u4E59\u4E5A
-RESCUE     -      NOT DRIVEN  the rescue route is not reachable without a root that cannot be listed (code reading)
+LONG200    DRIVE  PASS        button idx 6; windows: no window; panel before C:\Users\pavel\AppData\Local\Temp\tc386\start; after: the whole 200-letter Documents folder = ...\u4E8D\u4E8E\u4E8F\u4E90\u4E91\u4E92\u4E93\u4E94\u4E95\u4E96\u4E97\u4E98\u4E99\u4E9A\u4E9B\u4E9C\u4E9D\u4E9E\u4E9F\u4EA0\u4EA1\u4EA2\u4EA3\u4EA4\u4EA5\u4EA6\u4EA7\u4EA8\u4EA9\u4EAA\u4EAB\u4EAC\u4EAD\u4EAE\u4EAF\u4EB0\u4EB1\u4EB2\u4EB3\u4EB4\u4EB5\u4EB6\u4EB7\u4EB8\u4EB9\u4EBA\u4EBB\u4EBC\u4EBD\u4EBE\u4EBF\u4EC0\u4EC1\u4EC2\u4EC3\u4EC4\u4EC5\u4EC6\u4EC7\u4EC8
+RESCUE-SHORT RESCUE PASS        start Y:\; windows: no window; panel: the short Documents folder = C:\Users\pavel\AppData\Local\Temp\tc386\docs_short
+RESCUE-LONG RESCUE PASS        start Y:\; windows: no window; panel: other = C:\
 Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
-RESULT: 2 row(s), 0 FAIL; registry restored True
+RESULT: 5 row(s), 0 FAIL; registry restored True
