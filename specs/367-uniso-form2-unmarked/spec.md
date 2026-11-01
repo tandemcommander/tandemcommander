@@ -152,9 +152,11 @@ D-DIFF2-CCD, D-DIFF2-NRG unchanged; 337's, 365's and 334's probes unchanged.
 - **FR-005**: When the sectors are mixed, the file MUST be listed with the sum of FR-002 and both readers (the
   ISO 9660 reader, the raw-track reader) MUST read it sector by sector by the same rule, never writing more
   than the listed size.
-- **FR-006**: The stream coverage check (features 336/337) MUST count, for an examined file, exactly the sectors
-  the reader reads whole: all of them for an all-Form-2 file; for a mixed file, every sector except a last
-  non-Form-2 sector whose record ends inside it.
+- **FR-006**: The stream coverage check (features 336/337) MUST count, for an examined file, only the leading
+  run of sectors the reader reads whole: a Form 2 sector (2324 bytes), or a valid Form 1 sector (its 2048 bytes
+  are all its user data) that the record does not end inside; the run stops at the first sector whose subheader
+  is not valid (its form, and so whether bytes are lost, is unknown) - the rest is left to feature 337's gap
+  check (fails closed).
 - **FR-007**: Files not examined (FR-001 not met) and 366's Form 2 files MUST be listed, read and counted as
   before.
 - **FR-008**: No UI text, dialog or option changes.
