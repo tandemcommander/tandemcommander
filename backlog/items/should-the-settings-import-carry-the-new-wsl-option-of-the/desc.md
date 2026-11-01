@@ -1,7 +1,7 @@
 ---
 title: Should the settings import carry the new WSL option of the Change Drive page (374)
 type: decision
-status: new
+status: open
 severity: 1
 area: panels-ui
 source: leftover:374
@@ -60,3 +60,4 @@ A - there is nothing in the old settings to import.
 ## Log
 
 - 2026-11-01 — created (source leftover:374)
+- 2026-11-01 — moved to Decisions for the maintainer

@@ -1,7 +1,7 @@
 ---
 title: Check by hand the WSL items of the Change Drive menu and the drive bar (374)
 type: person-step
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: leftover:374
@@ -52,3 +52,4 @@ The items look right and work with the real mouse and keyboard on a computer wit
 ## Log
 
 - 2026-11-01 — created (source leftover:374)
+- 2026-11-01 — moved to Person steps position 55
