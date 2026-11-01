@@ -16,7 +16,7 @@
 
 **Independent test**: probe rows TYPED, DEEP, MOVE, TWINS for 7Z and ZIP.
 
-- [ ] T004 [US1] Add the static helper `RespellTypedArchiveRoot` (panel listing of the same unchanged archive, else `PackList` with the wait window; `ResolvePathCase` + `SalArcPathApplyResolved`; listing and plug-in data released as in src/salamdr3.cpp) in src/fileswn8.cpp
+- [ ] T004 [US1] Add the static helper `RespellTypedArchiveRoot` (panel listing of the same unchanged archive, else - when the format's unpacker can list - `PackList` with the wait window; `ResolvePathCase` + `SalArcPathApplyResolved`; listing and plug-in data released as in src/salamdr3.cpp) in src/fileswn8.cpp
 - [ ] T005 [US1] Call it in the archive branch of `CFilesWindow::FilesAction` after the zero-size test, only when `hasPath`, and pass the re-spelled copy to `PackCompress` (typed `path` / `secondPart` untouched) in src/fileswn8.cpp
 - [ ] T006 [US1] Build (`.\build.cmd`) and run saltests (`build\tandemcommander\Debug_x64\saltests\saltests.exe`)
 
@@ -30,7 +30,7 @@
 
 **Independent test**: probe rows EXACT, TWINEX, AMBIG for 7Z and ZIP.
 
-- [ ] T008 [US3] Run the whole probe after the fix on the hidden desktop -> specs/383-arc-typed-target-case/probe/result_after.txt (PASS 32, FAIL 0)
+- [ ] T008 [US3] Add the row PANEL (right panel opened on the archive, typed `\DOCS\` - the panel's listing is reused) to specs/383-arc-typed-target-case/probe/arctarget383_probe.ps1, run the whole probe after the fix on the hidden desktop -> specs/383-arc-typed-target-case/probe/result_after.txt (PASS 36, FAIL 0)
 - [ ] T009 [US3] Negative control: the call of T005 disabled in a copy of the tree (worktree under the scratchpad, own build folder) -> the probe fails again (10 FAIL); record in specs/383-arc-typed-target-case/fix-log.md
 
 ## Phase 6: Polish & cross-cutting

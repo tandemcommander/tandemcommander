@@ -164,8 +164,9 @@ pack into the wrong twin.
 
 - **SC-001**: The probe rows TYPED, DEEP, NEWTAIL, MOVE and TWINS pass for 7z and ZIP (10 rows
   that fail at e3dfe127).
-- **SC-002**: The control rows EXACT, TWINEX and AMBIG keep passing for 7z and ZIP (16 / 0 in
-  total).
+- **SC-002**: The control rows EXACT, TWINEX and AMBIG keep passing and the row PANEL (the other
+  panel shows the archive, its listing is reused) passes, for 7z and ZIP - all 18 RUN rows pass
+  (the probe's total also counts one END row per RUN row: PASS 36, FAIL 0).
 - **SC-003**: The probes of features 273 and 382 keep their results (12 / 0 and 24 / 0).
 - **SC-004**: `saltests` passes with the new checks; a negative control (the re-spelling
   disabled) makes the probe fail again.

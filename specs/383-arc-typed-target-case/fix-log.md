@@ -37,3 +37,12 @@ disk into an archive folder typed in another case packs into a new folder beside
 - Listing: a panel showing the same archive whose recorded date and size equal the file's now (the
   stored-listing check of `salshlib.cpp`), else `PackList` (as `salshlib.cpp` paste and the 153
   edited-member check in `salamdr3.cpp`), plug-in data released as there.
+
+## Analyze
+
+- Round 1: HIGH C1 (the panel-listing branch had no probe row) -> row PANEL added to T008 / SC-002;
+  MEDIUM I1 (the "can the format list" check missing from plan / T004) -> added; MEDIUM I2 (row
+  counts) -> SC-002 / quickstart count RUN and END rows (PASS 36).
+- Round 2: no CRITICAL / HIGH. Accepted LOW: U1 the Copy dialog history keeps the typed text - by
+  reading (the dialog stores the history before FilesAction acts; the re-spelled root is a copy);
+  U2 a stale panel listing (archive changed since listed) is re-listed - by reading, not probed.

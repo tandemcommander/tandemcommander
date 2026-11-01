@@ -77,7 +77,9 @@ src/saltests/saltests.cpp      # + TestArcPathApplyResolved383
      `SalPathEqualOrdinalCI(GetZIPArchive(), path)` and whose `GetZIPArchiveDate()` /
      `IsSameZIPArchiveSize()` equal the file's now (read with `SalCreateFile` +
      `GetFileTime` / `SalGetFileSize`) and not `ArchiveNameLeadsElsewhere` → its `GetArchiveDir()`;
-   - else `PackList` into a new `CSalamanderDirectory(FALSE)` with the add cache and the
+   - else, only when the format's unpacker can list (a plug-in with panel view, or an external
+     archiver with a list command - the conditions `PackList` itself checks; otherwise no listing and
+     no message), `PackList` into a new `CSalamanderDirectory(FALSE)` with the add cache and the
      "listing archive" safe wait window (as `salshlib.cpp`); afterwards the plug-in data and the
      listing released as `salamdr3.cpp` does (only after a successful listing);
    - `ResolvePathCase(root, resolved, MAX_PATH)` → `SalArcPathApplyResolved(root, resolved)`.
