@@ -2,7 +2,10 @@
 
 The single source of the shapes is the zod schemas in `tools/backlog-app/packages/shared`; this
 document is their reference. Entities: [data-model.md](../data-model.md). Access rules for every
-route: [security.md](security.md).
+route: [security.md](security.md). Feature 371 amends it: the gate's states and channels, the
+answers of changing routes (`channel`, `commit`), `Board.running`, the conversation routes and two
+error codes - see
+[371/contracts/http-api-additions.md](../../371-backlog-app-live-editing/contracts/http-api-additions.md).
 
 ## Conventions
 
@@ -24,7 +27,9 @@ route: [security.md](security.md).
 | 404 | `not-found` | unknown slug, run, feature, job or view |
 | 409 | `changed-underneath` | `base` revision differs (`detail` = the new revisions) |
 | 409 | `gate-closed` | the write gate is not `free` (`detail` = the gate) |
-| 409 | `busy` | an AI job already runs; the loop already lives (start) |
+| 409 | `busy` | an AI job already runs; the loop already lives (start); the loop holds the edit lock (371); a reply is being written (371) |
+| 409 | `frozen-item` | the change would alter the item a run works on (371) |
+| 409 | `check-findings` | a change that would leave check findings was reverted in a committing channel (371) |
 | 413 | `too-large` | body over 256 KiB |
 | 415 | `unsupported-media-type` | changing request not `application/json` |
 | 421 | `misdirected` | Host header not allowed (no body detail) |

@@ -103,7 +103,10 @@ async function answer(text) {
     appendFileSync(process.env.FAKE_CHAT_STDIN_FILE, `${text}\n---\n`, "utf8");
   if (mode === "hang") return;
   const pause = mode === "slow" ? 300 : 0;
-  const firstLine = text.split("\n").find((line) => line.trim() !== "") ?? "";
+  // The first message carries the context block; the maintainer's text follows its marker.
+  const marker = "# The maintainer's message";
+  const body = text.includes(marker) ? (text.split(marker).pop() ?? "") : text;
+  const firstLine = body.split("\n").find((line) => line.trim() !== "") ?? "";
   const reply = `You asked: ${firstLine.slice(0, 120)}`;
   emit(delta("You "));
   if (mode === "crash") {

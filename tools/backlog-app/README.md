@@ -9,12 +9,16 @@ A localhost web application that steers Tandem Commander development through
 the backlog (feature 344): browse and filter `backlog/`, reorder and triage
 items, edit them, watch the loop and the item being implemented live, start,
 pause, resume and stop the loop, read run history and traces, see feature
-records and release readiness, and draft items or ask questions with Claude.
+records and release readiness, draft items or ask questions with Claude, and talk with
+Claude about one item in a window of its own (feature 371).
 
 It changes nothing by itself: every change of the backlog goes through
 `bin/backlog.sh` (`tools/backlog/backlog.py`), every loop control through
 `bin/backlog-loop.sh` (`tools/backlog/loop.py`). The specification, the
-design and every measured result are in `specs/344-backlog-web-app/`.
+design and every measured result are in `specs/344-backlog-web-app/`; the
+changes of feature 371 (editing while a run is in progress, the running item
+in *In progress*, typed positions, the conversation) in
+`specs/371-backlog-app-live-editing/`.
 
 ## Run
 
@@ -80,8 +84,25 @@ browser (React 19, Vite build)          server (Node 24, Hono on node:http, 127.
   `--input-json -` (stdin), never through the command line. The app never
   writes a file of `backlog/` itself and never writes outside it.
 - Every change takes the edit lock `.git/tandem-backlog-edit.lock`, checks the
-  revision the page saw and lands in the change tray; nothing is committed
-  until the maintainer commits the tray (or the loop start commits it).
+  revision the page saw and is applied through one of three channels the write
+  gate decides (feature 371): `tray` - no loop lives: the working tree, pending
+  until the maintainer commits the tray (or the loop start commits it);
+  `commit` - a loop lives: the working tree, committed at once; `main-ref` - a
+  run holds the run lock and works on its branch: the backlog tool runs in the
+  app's sparse detached side worktree of `main`
+  (`.git/tandem-backlog-app/main-worktree/`), the change is committed there and
+  `main` is moved with a compare-and-swap. The primary working tree is never
+  touched while a run holds the lock; the item the run works on is frozen
+  (also against indirect changes); the run merges `main` at its end by the
+  recipe of `/tandem-backlog-implement` step 9.
+- The loop holds the app's edit lock while a run starts (until the run is on
+  its branch) and while it returns to `main` (`bin/backlog-loop.sh returning`
+  at step 9); then the gate is read-only for a moment (`run-starting`,
+  `run-on-main`) and opens again by itself.
+- The conversation about an item runs one `claude -p` process in bidirectional
+  stream-json mode with read-only tools (files and read-only git commands);
+  transcripts live in the state folder (`chats/`); nothing it does changes a
+  file (`specs/371-backlog-app-live-editing/contracts/chat.md`).
 - The app never touches the run lock or the loop's state; it starts the loop
   in its own window and controls it only through `loop.py` commands.
 - Traces are read open-read-close, append-only files only (measured: reading

@@ -49,6 +49,19 @@ function firstOf(board: BoardView, section: string): ItemRowView {
 }
 
 /**
+ * The item slugs of a section of a board answer.
+ *
+ * @param board - The board.
+ * @param section - The section.
+ * @returns The slugs in order.
+ */
+function rowsOf(board: BoardView, section: string): string[] {
+  return (board.sections.find((s) => s.name === section)?.rows ?? [])
+    .filter((r): r is ItemRowView => r.kind === "item")
+    .map((r) => r.slug);
+}
+
+/**
  * The slugs of a section of the board as `main` has it, read through git.
  *
  * @param root - The repository.
@@ -176,6 +189,28 @@ describe("write channels (371)", () => {
     expect((bulk.json as { results: { ok: boolean; refused?: string }[] }).results[0]).toMatchObject({
       ok: false,
     });
+  });
+
+  it("puts the hidden running item back into a reorder of its section", async () => {
+    await runOnBranch(DISK);
+    const board = (await app.get("/api/board")).json as BoardView;
+    const inbox = firstOf(board, "Inbox");
+    const placed = await app.post(`/api/items/${inbox.slug}/move`, {
+      base: { board: board.revision },
+      section: "Next",
+      position: 1,
+    });
+    expect(placed.status, JSON.stringify(placed.json)).toBe(200);
+    expect(await mainSection(root, "Next")).toEqual([inbox.slug, DISK, FTP]);
+    // The page shows Next without DISK (it is in In progress): [inbox, FTP]; the maintainer puts FTP first.
+    const after = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(after, "Next")).toEqual([inbox.slug, FTP]);
+    const ordered = await app.post("/api/sections/next/order", {
+      base: { board: after.revision },
+      order: [FTP, inbox.slug],
+    });
+    expect(ordered.status, JSON.stringify(ordered.json)).toBe(200);
+    expect(await mainSection(root, "Next")).toEqual([FTP, DISK, inbox.slug]);
   });
 
   it("is read-only while a run holds the lock with the primary tree on main", async () => {

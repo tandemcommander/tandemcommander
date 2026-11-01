@@ -139,7 +139,6 @@ def branch_run(slug, step):
     main (skill step 9): `returning`, the fast-forward, else the backlog recipe and the
     fast-forward again.  Records whether the first fast-forward succeeded (`ff_first`) and what
     `git status` showed at the start (`status_at_start`)."""
-    note_call(status_at_start=git_out("status", "--porcelain"))
     ensure_lock(slug)
     time.sleep(step.get("before_branch", 0))  # the skill's measurements on main (step 3)
     feature = fake_feature(slug)
@@ -349,6 +348,7 @@ def main():
                           "pid": os.getpid(), "cwd": str(ROOT)})
     plan_path.write_text(json.dumps(plan, indent=1), encoding="utf-8")
     emit({"type": "system", "subtype": "init", "session_id": SESSION, "model": "fake-model"})
+    note_call(status_at_start=git_out("status", "--porcelain"))  # 371: a run must start on a clean tree
     return play(step, slug)
 
 

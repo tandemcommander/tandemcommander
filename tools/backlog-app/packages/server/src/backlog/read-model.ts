@@ -80,6 +80,8 @@ export interface Snapshot {
   source: ReadRef;
   /** The board, with item bodies and issue texts (stripped before sending to clients). */
   board: Board;
+  /** The board as read, before the running-item overlay (feature 371): the rows as the files have them. */
+  rawBoard: Board;
   /** The legend. */
   legend: Legend;
   /** The next-up answer. */
@@ -313,7 +315,7 @@ export class ReadModel {
       ]);
       const board = overlayRunning(read, running);
       const previous = this.current;
-      const snapshot: Snapshot = { source, board, legend, next, check, at: Date.now() };
+      const snapshot: Snapshot = { source, board, rawBoard: read, legend, next, check, at: Date.now() };
       this.current = snapshot;
       this.failure = null;
       if (

@@ -148,7 +148,9 @@ test("Q11/Q12: the tray undoes with Ctrl+Z and commits only backlog/ with the ap
   await page.locator("body").press("Control+z");
   await expectNextOrder(before);
   // The page must show the restored order before the next key press computes from it.
-  await expect(page.locator("tbody tr").first()).toHaveAttribute("data-slug", before[0]!, { timeout: 15_000 });
+  await expect(page.locator("tbody tr").first()).toHaveAttribute("data-slug", before[0]!, {
+    timeout: 15_000,
+  });
   // A new change, then the commit through the tray.
   await page.locator(`tr[data-slug="${before[2]}"]`).click();
   await page.locator("body").press("Alt+ArrowUp");
@@ -164,7 +166,9 @@ test("Q11/Q12: the tray undoes with Ctrl+Z and commits only backlog/ with the ap
   expect(git(fixture.root, ["status", "--porcelain"])).toContain("unrelated.txt");
 });
 
-test("Q9: a run's lock with the tree on main is read-only for the moment, read from main", async ({ page }) => {
+test("Q9: a run's lock with the tree on main is read-only for the moment, read from main", async ({
+  page,
+}) => {
   // The lock's time is computed: a fixed date turned stale after 24 hours (feature 371, R9).
   const now = new Date();
   const pad = (n: number): string => String(n).padStart(2, "0");

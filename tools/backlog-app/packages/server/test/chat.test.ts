@@ -10,7 +10,7 @@
  * item's data, never on the command line; an unknown item is refused.
  */
 
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -114,9 +114,13 @@ describe("conversation", () => {
     await until(() => turns()[1]?.state === "done");
     expect(turns()[1]?.assistant).toBe("You asked: And the second?");
     expect(readFileSync(join(scratch, "stdin.txt"), "utf8").split("---").length).toBe(3);
-    expect(chat.get(FTP).costUsd).toBeCloseTo(0.03, 3);
+    expect(chat.get(FTP).costUsd).toBeCloseTo(0.02, 3);
     // The transcript is on disk and survives a new service.
-    const stored = app.services.ctx.state.readJson(`chats/${FTP}.json`, (await import("@backlog-app/shared")).ConversationSchema.nullable(), null);
+    const stored = app.services.ctx.state.readJson(
+      `chats/${FTP}.json`,
+      (await import("@backlog-app/shared")).ConversationSchema.nullable(),
+      null,
+    );
     expect(stored?.turns.length).toBe(2);
   });
 
@@ -134,9 +138,9 @@ describe("conversation", () => {
     expect(fresh.turns).toEqual([]);
     expect(fresh.sessionId).not.toBe(session);
     expect(chat.liveSlugs()).toEqual([]);
-    const archived = existsSync(app.services.ctx.state.file("chats"))
-      ? (await import("node:fs")).readdirSync(app.services.ctx.state.file("chats")).filter((n) => n.startsWith(`${FTP}.`))
-      : [];
+    const archived = readdirSync(app.services.ctx.state.file("chats")).filter((n) =>
+      /^ftp-per-server-encoding-flag\.\d{8}-\d{6}\.json$/.test(n),
+    );
     expect(archived.length).toBe(1);
   });
 
@@ -188,7 +192,10 @@ describe("conversation", () => {
   it("serves the routes: transcript, context, message, stop, reset", async () => {
     const empty = (await app.get(`/api/items/${FTP}/chat`)).json as Conversation;
     expect(empty.turns).toEqual([]);
-    const context = (await app.get(`/api/items/${FTP}/chat/context`)).json as { item: { slug: string }; branch: string };
+    const context = (await app.get(`/api/items/${FTP}/chat/context`)).json as {
+      item: { slug: string };
+      branch: string;
+    };
     expect(context.item.slug).toBe(FTP);
     expect(context.branch).toBe("main");
     const sent = await app.post(`/api/items/${FTP}/chat/messages`, { text: "hello" });
@@ -207,13 +214,37 @@ describe("conversation", () => {
 describe("chat line reading and arguments", () => {
   it("reads deltas, texts, tool uses and results", () => {
     expect(
-      readChatLine(JSON.stringify({ type: "stream_event", event: { type: "content_block_delta", delta: { type: "text_delta", text: "Hi" } } })),
+      readChatLine(
+        JSON.stringify({
+          type: "stream_event",
+          event: { type: "content_block_delta", delta: { type: "text_delta", text: "Hi" } },
+        }),
+      ),
     ).toEqual({ delta: "Hi" });
-    expect(readChatLine(JSON.stringify({ type: "assistant", message: { content: [{ type: "text", text: "Full" }] } }))).toEqual({ text: "Full" });
     expect(
-      readChatLine(JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", id: "t", name: "Grep", input: { pattern: "x" } }] } })),
-    ).toMatchObject({ progress: expect.stringContaining("Grep") });
-    expect(readChatLine(JSON.stringify({ type: "result", subtype: "success", is_error: false, result: "ok", total_cost_usd: 0.5 }))).toEqual({
+      readChatLine(
+        JSON.stringify({ type: "assistant", message: { content: [{ type: "text", text: "Full" }] } }),
+      ),
+    ).toEqual({ text: "Full" });
+    expect(
+      readChatLine(
+        JSON.stringify({
+          type: "assistant",
+          message: { content: [{ type: "tool_use", id: "t", name: "Grep", input: { pattern: "x" } }] },
+        }),
+      ),
+    ).toMatchObject({ progress: "Grep: x" });
+    expect(
+      readChatLine(
+        JSON.stringify({
+          type: "result",
+          subtype: "success",
+          is_error: false,
+          result: "ok",
+          total_cost_usd: 0.5,
+        }),
+      ),
+    ).toEqual({
       result: { subtype: "success", isError: false, text: "ok", errors: [], cost: 0.5 },
     });
     expect(readChatLine("not json")).toBeNull();

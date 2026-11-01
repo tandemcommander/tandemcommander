@@ -125,7 +125,12 @@ interface LiveChat {
  * @param model - A model name, or null for claude's default.
  * @returns The arguments.
  */
-export function chatArgs(sessionId: string, resume: boolean, budgetUsd: number, model: string | null): string[] {
+export function chatArgs(
+  sessionId: string,
+  resume: boolean,
+  budgetUsd: number,
+  model: string | null,
+): string[] {
   return [
     "-p",
     "--input-format",
@@ -256,7 +261,8 @@ export function readChatLine(
     const event = r["event"] as Record<string, unknown> | undefined;
     if (event?.["type"] === "content_block_delta") {
       const delta = event["delta"] as Record<string, unknown> | undefined;
-      if (delta?.["type"] === "text_delta" && typeof delta["text"] === "string") return { delta: delta["text"] };
+      if (delta?.["type"] === "text_delta" && typeof delta["text"] === "string")
+        return { delta: delta["text"] };
     }
     return null;
   }
@@ -275,10 +281,21 @@ export function readChatLine(
     const message = r["message"] as Record<string, unknown> | undefined;
     const content = message?.["content"];
     if (Array.isArray(content)) {
-      const texts = content
-        .filter((c): c is { type: string; text: string } => !!c && typeof c === "object" && c.type === "text")
+      const parts = content as unknown[];
+      /**
+       * The `type` of a content part.
+       *
+       * @param part - The part.
+       * @returns Its type, or empty.
+       */
+      const typeOf = (part: unknown): string =>
+        part && typeof part === "object" && typeof (part as { type?: unknown }).type === "string"
+          ? (part as { type: string }).type
+          : "";
+      const texts = parts
+        .filter((c): c is { type: string; text: string } => typeOf(c) === "text")
         .map((c) => c.text);
-      if (texts.length > 0 && !content.some((c) => c && typeof c === "object" && c.type === "tool_use")) {
+      if (texts.length > 0 && !parts.some((c) => typeOf(c) === "tool_use")) {
         return { text: texts.join("") };
       }
     }
@@ -303,6 +320,9 @@ export class ChatService {
 
   /** Listeners of turn events. */
   private readonly listeners = new Set<ChatListener>();
+
+  /** Processes asked to end whose exit is still awaited (stopAll waits for them). */
+  private readonly dying = new Set<Promise<unknown>>();
 
   /** The resolved claude command (once). */
   private command: ClaudeCommand | null = null;
@@ -346,7 +366,8 @@ export class ChatService {
     for (const name of names) {
       if (!/^[a-z0-9-]+\.\d{8}-\d{6}\.json$/.test(name)) continue;
       try {
-        if (statSync(`${folder}/${name}`).mtimeMs < cutoff) this.services.ctx.state.remove(`${CHATS_FOLDER}/${name}`);
+        if (statSync(`${folder}/${name}`).mtimeMs < cutoff)
+          this.services.ctx.state.remove(`${CHATS_FOLDER}/${name}`);
       } catch {
         // Gone meanwhile.
       }
@@ -390,7 +411,11 @@ export class ChatService {
   get(slug: string): Conversation {
     const known = this.conversations.get(slug);
     if (known) return known;
-    const loaded = this.services.ctx.state.readJson(`${CHATS_FOLDER}/${slug}.json`, ConversationSchema.nullable(), null);
+    const loaded = this.services.ctx.state.readJson(
+      `${CHATS_FOLDER}/${slug}.json`,
+      ConversationSchema.nullable(),
+      null,
+    );
     const conversation: Conversation = loaded ?? this.empty(slug);
     // A turn left running by a stopped app is over.
     for (const turn of conversation.turns) {
@@ -412,7 +437,15 @@ export class ChatService {
    */
   private empty(slug: string): Conversation {
     const now = new Date().toISOString();
-    return { slug, sessionId: randomUUID(), createdAt: now, updatedAt: now, costUsd: 0, turns: [], model: null };
+    return {
+      slug,
+      sessionId: randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+      costUsd: 0,
+      turns: [],
+      model: null,
+    };
   }
 
   /**
@@ -422,7 +455,8 @@ export class ChatService {
    */
   private save(conversation: Conversation): void {
     conversation.updatedAt = new Date().toISOString();
-    if (conversation.turns.length > MAX_TURNS) conversation.turns.splice(0, conversation.turns.length - MAX_TURNS);
+    if (conversation.turns.length > MAX_TURNS)
+      conversation.turns.splice(0, conversation.turns.length - MAX_TURNS);
     this.services.ctx.state.writeJson(`${CHATS_FOLDER}/${conversation.slug}.json`, conversation);
     this.lastSave.set(conversation.slug, Date.now());
   }
@@ -482,7 +516,9 @@ export class ChatService {
       );
     }
     const first = conversation.turns.length === 0;
-    const message = first ? firstMessage(await this.context(slug), await repositoryFacts(this.services), text) : text;
+    const message = first
+      ? firstMessage(await this.context(slug), await repositoryFacts(this.services), text)
+      : text;
     const turn: Turn = {
       id: (conversation.turns.at(-1)?.id ?? 0) + 1,
       at: new Date().toISOString(),
@@ -503,12 +539,21 @@ export class ChatService {
     }
     process.turn = turn;
     process.streamed = false;
-    process.limit = setTimeout(() => void this.stop(slug, "the reply took longer than the time limit"), this.turnTimeoutMs);
+    process.limit = setTimeout(
+      () => void this.stop(slug, "the reply took longer than the time limit"),
+      this.turnTimeoutMs,
+    );
     this.services.ctx.hub.publish("chat.changed", { slug, turn: turn.id, state: "running" });
     try {
-      process.stdin?.write(`${JSON.stringify({ type: "user", message: { role: "user", content: message } })}\n`);
+      process.stdin?.write(
+        `${JSON.stringify({ type: "user", message: { role: "user", content: message } })}\n`,
+      );
     } catch (error) {
-      this.finishTurn(process, "failed", `the message could not be sent: ${error instanceof Error ? error.message : String(error)}`);
+      this.finishTurn(
+        process,
+        "failed",
+        `the message could not be sent: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
     return turn;
   }
@@ -553,7 +598,12 @@ export class ChatService {
         return result;
       },
       (error: unknown) => {
-        const result = { code: null, stdout: "", stderr: error instanceof Error ? error.message : String(error), timedOut: false };
+        const result = {
+          code: null,
+          stdout: "",
+          stderr: error instanceof Error ? error.message : String(error),
+          timedOut: false,
+        };
         this.onExit(live, result);
         return result;
       },
@@ -596,10 +646,9 @@ export class ChatService {
         conversation.costUsd = Math.round((conversation.costUsd + turn.costUsd) * 10_000) / 10_000;
       }
       if (result.isError || result.subtype !== "success") {
-        const error =
-          /budget/i.test(result.subtype)
-            ? "budget reached - the next message starts a fresh process with a fresh budget"
-            : result.errors.join("; ") || `claude ended the reply with ${result.subtype || "an error"}`;
+        const error = /budget/i.test(result.subtype)
+          ? "budget reached - the next message starts a fresh process with a fresh budget"
+          : result.errors.join("; ") || `claude ended the reply with ${result.subtype || "an error"}`;
         this.finishTurn(live, "failed", error);
         // A failed result ends the usefulness of this process; the next message resumes.
         this.end(live);
@@ -671,6 +720,7 @@ export class ChatService {
     if (live.idle) clearTimeout(live.idle);
     live.idle = null;
     if (this.live.get(live.slug) === live) this.live.delete(live.slug);
+    this.awaitExit(live);
     try {
       live.stdin?.end();
     } catch {
@@ -698,6 +748,7 @@ export class ChatService {
     const turn = live.turn;
     if (turn && turn.state === "running") this.finishTurn(live, "stopped", why);
     if (this.live.get(slug) === live) this.live.delete(slug);
+    this.awaitExit(live);
     if (live.pid !== null) await killTree(live.pid);
     await live.done;
     return turn ?? conversation.turns.at(-1) ?? null;
@@ -733,12 +784,25 @@ export class ChatService {
   }
 
   /**
+   * Remembers a process until it has exited, so a shutdown (and a test's cleanup) can wait for
+   * it; a killed process may hold the repository folder for a moment.
+   *
+   * @param live - The process.
+   */
+  private awaitExit(live: LiveChat): void {
+    const done = live.done.catch(() => undefined);
+    this.dying.add(done);
+    void done.finally(() => this.dying.delete(done));
+  }
+
+  /**
    * Ends every process (at shutdown).
    *
    * @returns Resolves when all ended.
    */
   async stopAll(): Promise<void> {
     await Promise.all([...this.live.keys()].map((slug) => this.stop(slug, "the app stopped")));
+    await Promise.all([...this.dying]);
   }
 
   /**

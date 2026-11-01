@@ -92,7 +92,16 @@ export function computeGate(inputs: GateInputs): WriteGate {
   const frozen = loop.lock?.slug ?? null;
   // 5-6: a live edit lock of another process (the app's own does not close its own gate).
   if (loop.editLock && loop.editLock.pid !== process.pid) {
-    if (loop.live && loop.editLock.pid === loop.pid) {
+    // The loop also holds the lock for a second at every precheck of a waiting loop; only a run
+    // that starts or returns (the loop runs claude) closes the gate - the write queue waits for the
+    // short hold by itself.
+    const loopHolds = loop.live && loop.editLock.pid === loop.pid;
+    const loopBusy =
+      loop.shown === "starting" ||
+      loop.shown === "running" ||
+      loop.shown === "pause-pending" ||
+      loop.shown === "stop-pending";
+    if (loopHolds && loopBusy) {
       return gate(
         "run-starting",
         frozen
@@ -102,10 +111,12 @@ export function computeGate(inputs: GateInputs): WriteGate {
         frozen,
       );
     }
-    return gate(
-      "edit-in-progress",
-      `another backlog app (pid ${loop.editLock.pid}) is changing the backlog: ${loop.editLock.purpose}`,
-    );
+    if (!loopHolds) {
+      return gate(
+        "edit-in-progress",
+        `another backlog app (pid ${loop.editLock.pid}) is changing the backlog: ${loop.editLock.purpose}`,
+      );
+    }
   }
   // 7-8: a run holds the run lock.
   if (loop.lock) {

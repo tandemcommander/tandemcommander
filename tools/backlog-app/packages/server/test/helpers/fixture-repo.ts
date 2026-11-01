@@ -83,5 +83,9 @@ export async function fixtureRepo(
   await gitIn(root, ["config", "commit.gpgsign", "false"]);
   await gitIn(root, ["add", "-A"]);
   await gitIn(root, ["commit", "-q", "-m", "fixture"]);
-  return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
+  // A process ended a moment ago may still hold a handle: retry (Windows).
+  return {
+    root,
+    cleanup: () => rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }),
+  };
 }

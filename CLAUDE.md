@@ -138,6 +138,10 @@ Each is one line of a longer story; the number is the feature whose entry in
   (`salsafereplace.h`, 105). A replaced archive member is deleted only once
   its replacement is stored (110, 113).
 - Security-relevant random bytes: `SalGenRandom` (`salrandom.h`, 086).
+- The backlog app never touches the primary working tree while a run holds the run lock: a
+  change then runs in its side worktree of `main` and lands with a compare-and-swap; the
+  running item is frozen; the loop holds the app's edit lock while a run starts or returns
+  (`bin/backlog-loop.sh returning` in step 9 of the implement skill) (371).
 - Archive item names are cleaned at listing and again at extraction
   (`salarcname.h`, 087); a password typed as part of an address never reaches
   a history (`salurlpwd.*`, 085).

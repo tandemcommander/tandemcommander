@@ -34,6 +34,7 @@ import {
   VerifyRequestSchema,
   type Change,
   type ChangeResult,
+  type ItemRow,
   type SectionName,
 } from "@backlog-app/shared";
 import type { Services } from "../services.ts";
@@ -258,12 +259,21 @@ export function backlogWriteRoutes(services: Services): Hono {
     const body = await readBody(c, OrderRequestSchema);
     const frozen = services.gate().frozenSlug;
     if (frozen && body.order.includes(frozen)) assertNotFrozen(frozen);
+    // The running item is shown in In progress, so the page's order of its section lacks it; the
+    // tool wants every row: it goes back where the files have it (feature 371).
+    let order = body.order;
+    if (frozen) {
+      const raw = (await services.read.snapshot()).rawBoard.sections.find((s) => s.name === name)?.rows ?? [];
+      const slugs = raw.filter((r): r is ItemRow => r.kind === "item").map((r) => r.slug);
+      const at = slugs.indexOf(frozen);
+      if (at >= 0) order = [...order.slice(0, at), frozen, ...order.slice(at)];
+    }
     return c.json(
       await apply(`reorder ${name}`, body.base, null, [
         {
           operation: "reorder",
           args: ["reorder", "--section", SECTION_ARG[name]],
-          texts: { order: body.order },
+          texts: { order },
           summary: `${name} reordered`,
         },
       ]),

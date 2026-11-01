@@ -73,12 +73,19 @@ function useLiveTurn(slug: string, running: Turn | null): LiveTurn | null {
   const queryClient = useQueryClient();
   const [live, setLive] = useState<LiveTurn | null>(null);
   const runningId = running?.id ?? null;
+  // A new running turn resets the live text to what the transcript has (adjusted during render,
+  // not in the effect).
+  const [liveOf, setLiveOf] = useState<number | null>(null);
+  if (runningId !== liveOf) {
+    setLiveOf(runningId);
+    setLive(
+      runningId === null
+        ? null
+        : { turn: runningId, text: running?.assistant ?? "", progress: running?.progress ?? [] },
+    );
+  }
   useEffect(() => {
-    if (runningId === null) {
-      setLive(null);
-      return;
-    }
-    setLive({ turn: runningId, text: running?.assistant ?? "", progress: running?.progress ?? [] });
+    if (runningId === null) return;
     const close = openStream(`/api/items/${slug}/chat/stream`, {
       onEvent: ({ event, data }) => {
         const payload = data as { turn: number; text?: string; whole?: boolean; at?: string; error?: string };
@@ -105,7 +112,7 @@ function useLiveTurn(slug: string, running: Turn | null): LiveTurn | null {
     });
     return close;
     // The transcript's running turn is the trigger; its fields are read once at the start.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [slug, runningId, queryClient]);
   return live;
 }
@@ -156,7 +163,10 @@ function Essentials({ context }: { /** The context. */ context: ChatContext }) {
         </div>
         <div>
           <dt className="text-[11px] text-muted-foreground uppercase">Feature</dt>
-          <dd>{item.feature ?? "-"}{context.featureFolder ? ` (${context.featureFolder})` : ""}</dd>
+          <dd>
+            {item.feature ?? "-"}
+            {context.featureFolder ? ` (${context.featureFolder})` : ""}
+          </dd>
         </div>
         <div>
           <dt className="text-[11px] text-muted-foreground uppercase">Runs</dt>
@@ -193,7 +203,9 @@ function Essentials({ context }: { /** The context. */ context: ChatContext }) {
             .filter((s) => s.name !== "Log")
             .map((s) => (
               <section key={s.name}>
-                <h3 className="mt-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{s.name}</h3>
+                <h3 className="mt-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  {s.name}
+                </h3>
                 <Markdown>{s.markdown}</Markdown>
               </section>
             ))}
@@ -215,7 +227,10 @@ function TurnView({ turn, live }: { /** The turn. */ turn: Turn; /** Live text. 
   const [showProgress, setShowProgress] = useState(false);
   return (
     <li className="flex flex-col gap-2" aria-label={`Turn ${turn.id}`}>
-      <div className="self-end rounded-lg bg-primary/10 px-3 py-2 text-sm whitespace-pre-wrap" aria-label="You">
+      <div
+        className="self-end rounded-lg bg-primary/10 px-3 py-2 text-sm whitespace-pre-wrap"
+        aria-label="You"
+      >
         {turn.user}
       </div>
       <div className="rounded-lg border px-3 py-2 text-sm" aria-label="Claude">
@@ -328,8 +343,8 @@ export function ChatPage() {
         {turns.length === 0 && !conversation.isLoading ? (
           <p className="text-sm text-muted-foreground">
             <MessageSquareTextIcon className="mr-1 inline size-4" aria-hidden />
-            Ask about this item: what to check first, which files it touches, what the last run did. Claude reads the
-            repository and never changes anything.
+            Ask about this item: what to check first, which files it touches, what the last run did. Claude
+            reads the repository and never changes anything.
           </p>
         ) : null}
         <ol className="flex flex-col gap-4">

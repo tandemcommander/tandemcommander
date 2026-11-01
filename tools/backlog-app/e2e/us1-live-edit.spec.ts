@@ -13,7 +13,18 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
-import { backlog, fixtureRepo, git, openApp, run, startApp, TOOLS_DIR, writePlan, type App, type Fixture } from "./harness.ts";
+import {
+  backlog,
+  fixtureRepo,
+  git,
+  openApp,
+  run,
+  startApp,
+  TOOLS_DIR,
+  writePlan,
+  type App,
+  type Fixture,
+} from "./harness.ts";
 
 let fixture: Fixture;
 let app: App;
@@ -63,8 +74,28 @@ function mainSection(section: string): string[] {
  *
  * @returns The calls.
  */
-function calls(): { slug: string; ff_first?: boolean; merges?: number; returning?: string; status_at_start?: string }[] {
+function calls(): {
+  slug: string;
+  ff_first?: boolean;
+  merges?: number;
+  returning?: string;
+  status_at_start?: string;
+}[] {
   return (JSON.parse(readFileSync(plan, "utf8")) as { calls: never[] }).calls;
+}
+
+/**
+ * The log part of an item's description on `main` (diagnostics of a failed placement).
+ *
+ * @param slug - The item.
+ * @returns The log text, or a note that the item is not on main.
+ */
+function itemLogOnMain(slug: string): string {
+  try {
+    return git(fixture.root, ["show", `main:backlog/items/${slug}/desc.md`]).split("## Log")[1] ?? "(no log)";
+  } catch {
+    return "(no item on main)";
+  }
 }
 
 /**
@@ -89,7 +120,14 @@ test.beforeEach(async () => {
 test.afterEach(() => {
   try {
     if (status().live)
-      run(fixture.root, process.env["PYTHON"] ?? "python", ["-X", "utf8", join(TOOLS_DIR, "loop.py"), "kill", "--root", fixture.root]);
+      run(fixture.root, process.env["PYTHON"] ?? "python", [
+        "-X",
+        "utf8",
+        join(TOOLS_DIR, "loop.py"),
+        "kill",
+        "--root",
+        fixture.root,
+      ]);
   } catch {
     // Already gone.
   }
@@ -138,9 +176,14 @@ test("Q1-Q5: a change during a run lands on main, the running item is in progres
   await page.getByLabel("Expected").fill("on main at once, the run untouched");
   await page.getByLabel("Place it").selectOption("Next");
   await page.getByLabel("Position").fill("1");
+  await expect(page.getByLabel("Position")).toHaveValue("1");
   const mainBefore = git(fixture.root, ["rev-parse", "main"]).trim();
   await page.getByRole("button", { name: "Create" }).click();
-  await expect.poll(() => mainSection("Next")[0], { timeout: 15_000 }).toBe("live-edit-during-a-run");
+  await expect
+    .poll(() => `${mainSection("Next").join(",")} | ${itemLogOnMain("live-edit-during-a-run")}`, {
+      timeout: 15_000,
+    })
+    .toMatch(/^live-edit-during-a-run,/);
   expect(git(fixture.root, ["log", "-1", "--format=%s", "main"]).trim()).toMatch(/^backlog\(app\): /);
   expect(git(fixture.root, ["rev-parse", "main~1"]).trim()).toBe(mainBefore);
   // The run is untouched: still alive, on its branch, its tree clean.
@@ -168,15 +211,21 @@ test("Q1-Q5: a change during a run lands on main, the running item is in progres
   await expect.poll(() => calls()[0]?.ff_first).toBe(false);
   expect(calls()[0]?.returning).toMatch(/^ok: main is yours \(the loop holds the edit lock/);
   await expect.poll(() => mainSection("Next").includes(ITEM), { timeout: 60_000 }).toBe(false);
-  expect(mainSection("Next")[0]).toBe("live-edit-during-a-run");
-  expect(git(fixture.root, ["show", "main:backlog/RUNS.md"])).toMatch(new RegExp(`\\| ${ITEM} \\| closed \\|`));
+  const mainLog = git(fixture.root, ["log", "--oneline", "-8", "main"]).split(/\r?\n/).join(" / ");
+  expect(`${mainSection("Next").join(",")} | log: ${mainLog} | calls: ${JSON.stringify(calls()[0])}`).toMatch(
+    /^live-edit-during-a-run,/,
+  );
+  expect(git(fixture.root, ["show", "main:backlog/RUNS.md"])).toMatch(
+    new RegExp(`\\| ${ITEM} \\| closed \\|`),
+  );
   // The loop's next run takes the new item (the fake closes it), then the loop ends (until idle).
   await expect.poll(() => calls()[1]?.slug ?? null, { timeout: 90_000 }).toBe("live-edit-during-a-run");
   await expect.poll(() => status().live, { timeout: 90_000 }).toBe(false);
   expect(calls()[0]?.status_at_start ?? "").toBe("");
   expect(git(fixture.root, ["rev-parse", "--abbrev-ref", "HEAD"]).trim()).toBe("main");
   expect(Number(backlog(fixture.root, ["check"]).match(/TOTAL: (\d+)/)?.[1])).toBe(0);
-  // In progress is empty again.
+  // In progress holds only the fixture's own in-progress item again.
   await page.goto(`${app.base}/backlog/progress`);
-  await expect(page.locator("tbody tr")).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.locator("tbody tr")).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator(`tr[data-slug="${ITEM}"]`)).toHaveCount(0);
 });

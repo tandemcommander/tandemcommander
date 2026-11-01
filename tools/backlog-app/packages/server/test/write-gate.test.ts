@@ -125,6 +125,13 @@ describe("computeGate", () => {
     expect(
       gateOf({ loop: loop({ live: true, pid: LOOP_PID, shown: "running", editLock: starting }) }),
     ).toMatchObject({ state: "run-starting", writable: false, frozenSlug: null });
+    // The short hold of a waiting loop's precheck does not close the gate (the queue waits for it).
+    expect(
+      gateOf({ loop: loop({ live: true, pid: LOOP_PID, shown: "idle", editLock: starting }) }),
+    ).toMatchObject({
+      state: "free",
+      channel: "commit",
+    });
     const withLock = gateOf({
       loop: loop({ live: true, pid: LOOP_PID, shown: "running", editLock: starting, lock: LOCK }),
       repo: repo({ branch: "main" }),

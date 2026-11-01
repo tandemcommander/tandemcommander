@@ -13,7 +13,15 @@
  */
 
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  cpSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -166,13 +174,17 @@ export async function startApp(root: string, env: Record<string, string> = {}): 
     const timer = setTimeout(() => reject(new Error(`the app did not start: ${output}`)), 30_000);
     child.stdout?.on("data", (chunk: Buffer) => {
       output += chunk.toString("utf8");
+      if (process.env["BACKLOG_APP_E2E_LOG"]) appendFileSync(process.env["BACKLOG_APP_E2E_LOG"], chunk);
       const match = /Backlog app: (http:\/\/127\.0\.0\.1:\d+\/\?boot=[\w-]+)/.exec(output);
       if (match) {
         clearTimeout(timer);
         resolve(match[1]!);
       }
     });
-    child.stderr?.on("data", (chunk: Buffer) => (output += chunk.toString("utf8")));
+    child.stderr?.on("data", (chunk: Buffer) => {
+      output += chunk.toString("utf8");
+      if (process.env["BACKLOG_APP_E2E_LOG"]) appendFileSync(process.env["BACKLOG_APP_E2E_LOG"], chunk);
+    });
     child.on("exit", (code) => {
       clearTimeout(timer);
       reject(new Error(`the app exited with ${String(code)}: ${output}`));

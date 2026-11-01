@@ -75,8 +75,10 @@ export function chatRoutes(services: Services): Hono {
       // The running turn so far (a reconnect, or a second window): its text and progress at once.
       const running: Turn | undefined = chat.get(slug).turns.find((t) => t.state === "running");
       if (running) {
-        if (running.assistant) await send("delta", running.id, { turn: running.id, text: running.assistant, whole: true });
-        for (const line of running.progress) await send("progress", running.id, { turn: running.id, ...line });
+        if (running.assistant)
+          await send("delta", running.id, { turn: running.id, text: running.assistant, whole: true });
+        for (const line of running.progress)
+          await send("progress", running.id, { turn: running.id, ...line });
       }
       const queue: ChatEvent[] = [];
       let wake: (() => void) | null = null;

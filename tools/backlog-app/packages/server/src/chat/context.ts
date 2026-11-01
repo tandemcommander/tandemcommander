@@ -48,10 +48,19 @@ export async function buildChatContext(services: Services, slug: string): Promis
   if (running && running.slug === slug) {
     item = { ...item, section: "In progress", position: 1, status: "in-progress", feature: running.feature };
   }
-  const runs = (await services.runs.list({ slug })).sort((a, b) => (a.started ?? "") < (b.started ?? "") ? 1 : -1);
+  const runs = (await services.runs.list({ slug })).sort((a, b) =>
+    (a.started ?? "") < (b.started ?? "") ? 1 : -1,
+  );
   const journal = runs
     .filter((r) => r.id.startsWith("runs-md-") || r.branch || r.feature)
-    .map((r) => [r.started ?? "-", r.slug ?? "-", r.outcome, r.feature ?? "-", r.branch ?? "-", r.note ?? "-"]);
+    .map((r) => [
+      r.started ?? "-",
+      r.slug ?? "-",
+      r.outcome,
+      r.feature ?? "-",
+      r.branch ?? "-",
+      r.note ?? "-",
+    ]);
   const branch = services.repo.state?.branch ?? (await currentBranch(root).catch(() => "?"));
   return {
     item,
