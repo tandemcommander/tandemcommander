@@ -18,7 +18,9 @@ and multi-session CCD track tables get wrong sector sizes or ends. Autonomous ru
     2352 + 96; 0x11 Mode 2 2352 + 96; default audio 2352. (The item's note had 0x10 / 0x11 swapped.)
   - libmirage ties ETNF to "NERO" (v1) files and ETN2 to "NER5"; this plug-in reads only "NER5" footers,
     so ETNF is reached through an NER5 image holding an ETNF chunk (as 334 / 335 build their images).
-  - CloneCD: libmirage builds the layout from the TOC entries' PLBA only: track_start = PLBA - pregap,
+  - CloneCD: libmirage builds the layout from the TOC entries' PLBA with a pregap taken from INDEX
+    (pregap = INDEX 1 - INDEX 0, also for a session's first track - corrected after review 1; the first
+    wording here said "PLBA only"): track_start = PLBA - pregap,
     track_end = the next entry's PLBA (the session's 0xA2 for its last track); fragments appended back to
     back (`offset += fragment_length`) - the `.img` packs the sessions. Its comment: "Index addresses seem
     to be relative to session start".
@@ -30,7 +32,7 @@ and multi-session CCD track tables get wrong sector sizes or ends. Autonomous ru
   "CloneCD's *.CCD relies on the 11400 sectors being omitted".
 - **So the item's CCD premise ("a real multi-session image (absolute INDEX 1 values) is not split") is
   doubtful**: CloneCD's own form counts INDEX from the session, which HEAD splits on `INDEX 1 = 0`. The
-  table-of-contents layout (PLBA) reads both forms - the item's note ("once the split follows the table
+  table-of-contents layout (PLBA, INDEX not read - unlike libmirage) reads both forms - the item's note ("once the split follows the table
   of contents") asks for exactly that.
 
 ## Measurement before (41f18c08, Debug x64)
@@ -132,3 +134,41 @@ identical (SHA-256 07F63FE1...).
 - `iso-plug-in-nrg-tracks-of-the-subchannel-modes-0x0f-0x10` (leftover:365) - modes 0x0F / 0x10 / 0x11 keep the
   old type / size (layout not known).
 - `check-feature-365-with-real-nero-tao-and-clonecd-multi` (person step, leftover:365) - real dumps.
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+Its negative control: `uniso.spl` of `main` (41f18c08) in a copy of the Debug tree, `iso365_probe` 12 / 6 row for
+row as `result_before.txt` (R-ETN200's box and the wrong a.txt content included); HEAD (264eda44) 18 / 0;
+saltests 29,887 / 0. Hostile images (its own generator, `%TEMP%\rev365`): an ETN2 chunk of 16 bytes - main read
+past the chunk and deleted the image, the branch shows "Unknown file format" and keeps it; one ETN2 chunk with
+two entries - main lost b.txt and deleted the image, the branch extracts b.txt and keeps it; ETN2 mode 0x0F -
+main wrote a.txt with wrong content, the branch writes it right; CloneCD data + audio + data - identical.
+
+- SHOULD 1 (taken): `nrg.cpp` took the ETN2 extent from the entry's first-sector field, which libmirage never
+  uses; a one-session ETN2 image whose field is 150 opened on main (extent 0) and not on the branch ("Error
+  reading directory structure at sector #FFFFFF81", image kept - fail-closed, but a regression for Nero 6+
+  images if real dumps hold another origin). Fix: `SalNrgEtnExtent(sector, firstSector)` - the image's first
+  ETN2 track is disc sector 0, the others by the difference of their fields (smaller -> 0, the pre-365 value);
+  `ReadNRGRoot` keeps the first field (`etnFirstSector`). saltests +6 (`SalNrgEtnExtent`); probe rows
+  R-ETN2ONE150 / R-ETN2150 (fields + 150) added.
+- SHOULD 2 (taken): spec, research R3 and this log said libmirage builds the CloneCD layout "from PLBA alone";
+  its code subtracts a stored pregap of INDEX 1 - INDEX 0 (also for a session's first track). Corrected; a
+  stored pregap before a later session's first track (`INDEX 0=0`, `INDEX 1=150`) is a limit of 365 - the
+  reviewer measured: session 2 not listed, the image kept on both main and the branch (fail-closed); the
+  person step now asks to note `INDEX 0` rows.
+- NOTE (logged on the existing item): `viewer.cpp` `DumpInfo` reads `Session[]` past the counts - Inbox item
+  `iso-plug-in-the-image-information-of-an-nrg-image-reads-past`; an ETN2 chunk with more entries than its SINF
+  count now reaches it too (as ETNF did) - `BL log` on that item.
+- NOTE (taken): `Start` cast from an unsigned 64-bit value without a cap - now `SalNrgEtnEnd(start, 0)`.
+- NOTE (accepted): a short read inside a chunk returns without seeking to its end (only on an I/O error - the
+  chunk was checked to fit); an ETN2 chunk under 32 bytes or over 99 entries now leaves the image unopened when
+  it is the only table ("Unknown file format", kept - fails closed); the probe's sessions are independent (no
+  `genisoimage -M`); the person step covers real dumps.
+- NOTE: FEATURE-HISTORY, CHANGELOG text and closing report are written at closing.
+
+After the fixes: build `BUILD SUCCEEDED`; saltests **29,893 / 0**; encoding guard `TOTAL: 0 finding(s)`;
+`iso365_probe` -> `probe/result_after_review1.txt` **22 PASS / 0 FAIL** (registry identical). The pre-fix
+plug-in's failure of the one-session +150 case is the reviewer's measurement (negative control).
+`git status` after the review: clean (the reviewer left the tree as found).

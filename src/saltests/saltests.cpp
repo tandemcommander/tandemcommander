@@ -21280,6 +21280,13 @@ static void TestNrgEtn365()
     CHECK(SalNrgEtnEnd(top, 0) == top);
     CHECK(SalNrgEtnEnd(0xFFFFFFFFFFFFFFFFull, 0) == top);
     CHECK(SalNrgEtnEnd(0, 0xFFFFFFFFFFFFFFFFull) == top);
+    // review 1: the extent relative to the image's first ETN2 track (disc sector 0 by definition)
+    CHECK(SalNrgEtnExtent(0, 0) == 0);
+    CHECK(SalNrgEtnExtent(11576, 0) == 11576);
+    CHECK(SalNrgEtnExtent(150, 150) == 0);       // one session whose field counts with the pregap
+    CHECK(SalNrgEtnExtent(11726, 150) == 11576); // its second session moves alike
+    CHECK(SalNrgEtnExtent(100, 150) == 0);       // below the first: 0, as every ETN2 track before 365
+    CHECK(SalNrgEtnExtent(0xFFFFFFFFul, 0) == 0xFFFFFFFFul);
     // whole entries only (41f18c08 read 16 bytes of a smaller ETN2 chunk past its buffer)
     CHECK(SalNrgEtnEntryCount(0, true) == 0);
     CHECK(SalNrgEtnEntryCount(16, true) == 0);

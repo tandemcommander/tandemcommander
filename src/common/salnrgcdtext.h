@@ -261,6 +261,17 @@ inline unsigned long long SalNrgEtnEnd(unsigned long long start, unsigned long l
     return start + length;
 }
 
+// review 1 of feature 365: the first disc sector of an ETN2 track whose first-sector field holds 'sector',
+// in an image whose first ETN2 track's field held 'firstSector'. libmirage never uses the field (each
+// track-at-once track is a 150-sector pregap and its data), so what Nero stores there is not known: the
+// image's first track is disc sector 0 by definition, the others are placed by the difference of their
+// fields (a field counting from another origin, e.g. with the pregap, moves them all alike); a field below
+// the first one gives 0 - every ETN2 track's extent before feature 365
+inline unsigned long SalNrgEtnExtent(unsigned long sector, unsigned long firstSector)
+{
+    return sector >= firstSector ? sector - firstSector : 0;
+}
+
 // the whole entries an ETNF / ETN2 chunk of 'size' bytes holds (the bytes after the last are not read)
 inline unsigned long long SalNrgEtnEntryCount(unsigned long long size, bool v2)
 {

@@ -256,8 +256,9 @@ readETNF(CFile& file, NRGHeader* header, CISOImage* iso)
     return TRUE;
 }
 
+// 'firstSector': the first-sector field of the image's first ETN2 entry, -1 until one was read
 static BOOL
-readETN2(CFile& file, NRGHeader* header, CISOImage* iso)
+readETN2(CFile& file, NRGHeader* header, CISOImage* iso, LONGLONG* firstSector)
 {
     CALL_STACK_MESSAGE3("readETN2(, %p, %p)", header, iso);
 
@@ -304,9 +305,13 @@ readETN2(CFile& file, NRGHeader* header, CISOImage* iso)
             track->Mode = CISOImage::mMode1;
         }
         track->SectorHeaderSize = CISOImage::GetHeaderSizeFromMode(track->Mode, track->SectorSize);
-        track->Start = (LONGLONG)entry.Start;
+        track->Start = (LONGLONG)SalNrgEtnEnd(entry.Start, 0); // (review 1: capped as the end)
         track->End = (LONGLONG)SalNrgEtnEnd(entry.Start, entry.Length);
-        track->ExtentOffset = entry.Sector;
+        // review 1: the image's first ETN2 track is disc sector 0, the others are placed by the difference
+        // of their first-sector fields (what Nero stores in the field is not known - salnrgcdtext.h)
+        if (*firstSector < 0)
+            *firstSector = entry.Sector;
+        track->ExtentOffset = SalNrgEtnExtent(entry.Sector, (unsigned long)*firstSector);
         iso->AddTrack(track);
     }
 
@@ -397,6 +402,7 @@ ReadNRGRoot(CFile& file, CISOImage* iso, LONGLONG* chunks)
     CALL_STACK_MESSAGE2("ReadNRGRoot(, %p)", iso);
 
     BOOL ret = FALSE;
+    LONGLONG etnFirstSector = -1; // feature 365 (review 1): readETN2
 
     // check header
     NRGHeader header;
@@ -437,7 +443,7 @@ ReadNRGRoot(CFile& file, CISOImage* iso, LONGLONG* chunks)
         else if (strncmp(header.ID, "ETNF", 4) == 0)
             readETNF(file, &header, iso);
         else if (strncmp(header.ID, "ETN2", 4) == 0)
-            readETN2(file, &header, iso);
+            readETN2(file, &header, iso, &etnFirstSector);
         else if (strncmp(header.ID, "CDTX", 4) == 0)
             readCDTX(file, &header, iso);
         else if (file.Seek(header.Size, FILE_CURRENT) == -1)

@@ -22,6 +22,9 @@ Kinds (.nrg):
   etn2_00    ETN2, two sessions (a chunk each), Mode 1 / 2048 - track 2's end was its length
   etn2_03    ETN2, two sessions, track 2 Mode 2 / 2336 Form 1 (0x03) - read as 2048 before 365
   etn2_06    ETN2, two sessions, track 2 raw Mode 2 Form 1 (0x06)
+  etn2_one150, etn2_150
+             as etn2_one / etn2_00, the first-sector fields 150 higher (review 1: libmirage never reads
+             the field - an origin other than 0 must not move the image's first track off sector 0)
 Kinds (.img + .ccd, raw Mode 1 sectors of 2352 bytes, the TOC as CloneCD writes it: A0 / A1 / A2 / track
 points per session, B0 / C0 (ADR 5) closing session 1, PLBA from the start of the disc):
   ccd_rel    (control) [TRACK n] INDEX 1 counted from the start of its session (both 0) - CloneCD's
@@ -87,17 +90,19 @@ def nrg(dst, s1, s2, lba2, kind):
         t2, m2 = raw_mode2_f1(s2, lba2), 0x06
     elif kind == "etn2_03":
         t2, m2 = mode2_2336_f1(s2), 0x03
-    if kind == "etn2_one":
+    # review 1: first-sector fields counted from another origin (+150, as if with the pregap)
+    base = 150 if kind in ("etn2_one150", "etn2_150") else 0
+    if kind in ("etn2_one", "etn2_one150"):
         data = s1
-        chunks = chunk(b"ETN2", etn2_entry(0, len(s1), 0, 0x00)) + chunk(b"SINF", struct.pack(">I", 1))
+        chunks = chunk(b"ETN2", etn2_entry(0, len(s1), base, 0x00)) + chunk(b"SINF", struct.pack(">I", 1))
     elif kind.startswith("etnf"):
         data = s1 + t2
         chunks = chunk(b"ETNF", etnf_entry(0, len(s1), 0, 0x00) + etnf_entry(len(s1), len(t2), lba2, m2))
         chunks += chunk(b"SINF", struct.pack(">I", 1)) + chunk(b"SINF", struct.pack(">I", 1))
     else:
         data = s1 + t2
-        chunks = chunk(b"ETN2", etn2_entry(0, len(s1), 0, 0x00)) + chunk(b"SINF", struct.pack(">I", 1))
-        chunks += chunk(b"ETN2", etn2_entry(len(s1), len(t2), lba2, m2)) + chunk(b"SINF", struct.pack(">I", 1))
+        chunks = chunk(b"ETN2", etn2_entry(0, len(s1), base, 0x00)) + chunk(b"SINF", struct.pack(">I", 1))
+        chunks += chunk(b"ETN2", etn2_entry(len(s1), len(t2), lba2 + base, m2)) + chunk(b"SINF", struct.pack(">I", 1))
     img = data + chunks + chunk(b"END!", b"") + b"NER5" + struct.pack(">Q", len(data))
     open(dst, "wb").write(img)
     return "%d bytes, track 2 mode 0x%02x from byte %d, sector %d" % (len(img), m2, len(s1), lba2)

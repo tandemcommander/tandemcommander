@@ -7,7 +7,7 @@ area: archives
 source: measure:340
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-11-01
 verified: -
 effort: S
 feature: -
@@ -57,3 +57,4 @@ are read as the unsigned numbers the image stores (feature 340's `SalIsoSessionT
 
 - 2026-10-24 — created (source measure:340)
 - 2026-10-24 — moved to Next position 10
+- 2026-11-01 — review:365 NOTE - since feature 365 an ETN2 chunk with more entries than its SINF count also makes more tracks than the sessions add up to (as ETNF already could), so the image information reads Session past its counts this way too

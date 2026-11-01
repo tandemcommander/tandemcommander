@@ -33,7 +33,9 @@
   sessions follow each other in the `.img`. Not followed (NONE -> the 41f18c08 split) when a track has no
   entry, the track points outnumber the sections, two entries of one track disagree, a PLBA is negative, sessions go backwards, a session
   holding tracks has no lead-out, or more than 99 tracks.
-- Rationale: libmirage builds exactly this layout from PLBA; psx-spx says INDEX values are counted from
+- Rationale: libmirage builds this layout from PLBA, but subtracts a stored pregap of INDEX 1 - INDEX 0
+  (review 1 - the first wording said "exactly this layout"); this feature does not read INDEX (a stored
+  pregap before a later session's first track is a limit: such an image stays marked, as on 41f18c08); psx-spx says INDEX values are counted from
   the session start, PLBA from the disc start; DiscImageCreator issue 121: the 11400 sectors between
   sessions are not in the `.img`. For CloneCD's own form (INDEX from the session) the layout equals
   41f18c08's (extent = INDEX + session's first PLBA = PLBA; counts from INDEX differences = PLBA

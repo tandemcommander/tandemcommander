@@ -23,6 +23,9 @@
                     ETN2, a chunk a session, track 2 Mode 1 / 2048 (0x00), Mode 2 / 2336 (0x03), raw
                     Mode 2 (0x06). PASS as R-ETNF05. Before 365: track 2's end was its length, its mode
                     Mode 1 / 2048 and its first sector 0 whatever the entry said
+      R-ETN2ONE150, R-ETN2150
+                    (review 1) as C-ETN2ONE / R-ETN200 with first-sector fields 150 higher. PASS as
+                    C-ETN2ONE / R-ETN200. Before review 1's fix R-ETN2ONE150 opened nothing (main: passed)
       R-CCDABS      CloneCD, track 2's INDEX 1 = its PLBA (from the start of the disc). PASS as R-ETNF05.
                     Before 365: one INDEX-1 split for two [Session n] sections - the listing marked
                     (352), the last track's sector count underflowed
@@ -148,7 +151,7 @@ try {
     Out ''
 
     $s = $Root + '\seeds'; NewDir $s
-    $kinds = @('etnf_00', 'etnf_05', 'etnf_06', 'etn2_one', 'etn2_00', 'etn2_03', 'etn2_06', 'ccd_rel', 'ccd_abs')
+    $kinds = @('etnf_00', 'etnf_05', 'etnf_06', 'etn2_one', 'etn2_00', 'etn2_03', 'etn2_06', 'etn2_one150', 'etn2_150', 'ccd_rel', 'ccd_abs')
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $mk = & wsl -d Ubuntu -- sh (WslPath $MkImg) (WslPath $s) 2>&1
     $made = @()
@@ -173,6 +176,8 @@ try {
     Unpack-Row 'R-ETN200' "$s\etn2_00.nrg" $both
     Unpack-Row 'R-ETN203' "$s\etn2_03.nrg" $both
     Unpack-Row 'R-ETN206' "$s\etn2_06.nrg" $both
+    Unpack-Row 'R-ETN2ONE150' "$s\etn2_one150.nrg" $a
+    Unpack-Row 'R-ETN2150' "$s\etn2_150.nrg" $both
     Unpack-Row 'C-CCDREL' "$s\ccd_rel.img" $both
     Unpack-Row 'R-CCDABS' "$s\ccd_abs.img" $both
 }

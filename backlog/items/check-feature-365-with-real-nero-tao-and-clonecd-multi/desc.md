@@ -44,8 +44,13 @@ that "Delete archive after unpacking" deletes the image only then.
   ETN2 chunks). Open it in Tandem Commander: expected two folders `Session 01`, `Session 02` with the
   files of each session. Alt+F9 (Unpack), tick "Delete archive after unpacking", OK: expected every file
   extracted with its content (compare with the disc), no message, the image deleted.
+- [ ] A one-session data CD burnt track-at-once and dumped with Nero 6 or later (`.nrg`): opened and
+  unpacked whole, the image deleted (review 1: the ETN2 first-sector field is now read relative to the
+  first track; a one-session image must still open as before 365).
 - [ ] The same disc dumped with CloneCD (`.img` + `.ccd` + `.sub`): the same result. Note whether the
-  `.ccd`'s `[TRACK 2]` `INDEX 1` is 0 (counted from the session) or the track's PLBA.
+  `.ccd`'s `[TRACK 2]` `INDEX 1` is 0 (counted from the session) or the track's PLBA, and whether it has an
+  `INDEX 0` row (a stored pregap before session 2's first track is a known limit of 365: the session is
+  not listed and the image is kept).
 - [ ] A CD-Extra / Enhanced CD (audio tracks in session 1, a data session 2) dumped with CloneCD: the
   data session's files listed and extracted; the image KEPT (audio tracks are never extracted).
 - [ ] If a session is missing, a file has wrong content, or an image is deleted without every file:

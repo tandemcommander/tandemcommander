@@ -47,13 +47,19 @@ start u64 @0, length u64 @8, mode @19, first sector u32 @20 (all big-endian). Ne
 2352, 0x0F Mode 1 + subchannel, 0x10 audio + subchannel, 0x11 Mode 2 + subchannel (the item's note had 0x10
 / 0x11 swapped). CloneCD: the table-of-contents entries' PLBA count from the start of the disc, the
 `[TRACK n]` `INDEX` values from the start of their session; the 11400 sectors between sessions are not in
-the `.img` (sessions follow each other); libmirage builds the layout from the PLBA values alone (a track
-starts at its PLBA, the session's last track ends at the session's lead-out, entry 0xA2).
+the `.img` (sessions follow each other); libmirage lays the tracks out back to back from the PLBA values
+with a stored pregap of INDEX 1 - INDEX 0 subtracted (`track_start = PLBA - pregap`, also for a
+session's first track; the session's last track ends at the session's lead-out, entry 0xA2). (Corrected
+after review 1, which read libmirage's code: an earlier wording said "from the PLBA values alone".)
 
 **Finding against the item's premise**: CloneCD itself writes `INDEX 1` counted from the session (the
 form C-CCDREL uses), which 41f18c08 already reads correctly; a table with `INDEX 1` counted from the disc
-start (the item's "real multi-session image") is what R-CCDABS reads wrongly. Following the table of
-contents reads both forms the same way.
+start (the item's "real multi-session image") is what R-CCDABS reads wrongly. The layout of this feature
+(PLBA only, INDEX not read) reads both forms the same way. libmirage would read the second form
+differently (a session-2 `INDEX 1` of 11576 as an 11576-sector pregap), and it reads a stored pregap
+before a later session's first track (`INDEX 0=0`, `INDEX 1=150`) which this feature does not - such an
+image keeps its listing marked as on 41f18c08 (review 1 measured: session 2 not listed, image kept; a
+limit, Clarification 1).
 
 ## Clarifications
 
