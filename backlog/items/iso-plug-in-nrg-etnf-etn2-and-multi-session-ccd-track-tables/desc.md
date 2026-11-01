@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: NRG ETNF / ETN2 and multi-session CCD track tables get wrong sector sizes or ends
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:335
@@ -10,7 +10,7 @@ created: 2026-10-24
 updated: 2026-11-01
 verified: 2026-11-01 41f18c08
 effort: M
-feature: -
+feature: 365
 related: []
 depends-on: []
 reason: -
@@ -71,3 +71,4 @@ the right track ends - each measured with a crafted image (feature 335's `probe/
 - 2026-10-24 — related item iso-plug-in-an-nrg-session-count-above-the-image-s-tracks done in feature 340
 - 2026-10-31 — note added by feature 352: the layout mark of ReadSessionCCD to lift once the CloneCD split is fixed
 - 2026-11-01 — verified at 41f18c08: still present at 41f18c08: crafted-image probe 12/6 - ETNF 0x05/0x06 and ETN2 session 2 lost (ETN2 also wrong a.txt content), CCD absolute INDEX 1 kept unsplit; session-relative CCD control passes
+- 2026-11-01 — run started, feature 365

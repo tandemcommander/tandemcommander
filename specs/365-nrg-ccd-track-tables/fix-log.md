@@ -1,0 +1,67 @@
+# Fix log - 365-nrg-ccd-track-tables
+
+Backlog item `iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables` - ISO plug-in: NRG ETNF / ETN2
+and multi-session CCD track tables get wrong sector sizes or ends. Autonomous run (tandem-backlog-implement),
+2026-11-01, `main` at 41f18c08.
+
+## Research (before measuring)
+
+- Read: FEATURE-HISTORY 334, 335, 336, 350, 351, 352, 353; `nrg.cpp` (`readETNF`, `readETN2`,
+  `SetTrackTypeMode`, `ReadNRGRoot`), `img.cpp` (`ReadSessionCCD`, `processTrackSection`,
+  `processEntrySection`), `isoimage.cpp` (`GetHeaderSizeFromMode`, `GetSectorOffset`, `Open`'s track loop).
+- libmirage sources (web, `libmirage/images/image-nrg/parser.c`, `image-nrg.h`, `image-ccd/parser.c`):
+  - ETN entry (`NRG_ETN_Block`): ETNF (v1, 20 bytes) offset u32 @0, size u32 @4, mode @11, sector u32 @12;
+    ETN2 (v2, 32 bytes) offset u64 @0, size u64 @8, mode @19, sector u32 @20. Track-at-once: sector count =
+    size / main sector size; data from `offset`.
+  - `mirage_parser_nrg_decode_mode`: 0x00 Mode 1 2048; 0x02 Mode 2 Form 1 2048; 0x03 Mode 2 Form 2 2336;
+    0x05 Mode 1 2352; 0x06 Mode 2 mixed 2352; 0x07 audio 2352; 0x0F Mode 1 2352 + 96 sub; 0x10 audio
+    2352 + 96; 0x11 Mode 2 2352 + 96; default audio 2352. (The item's note had 0x10 / 0x11 swapped.)
+  - libmirage ties ETNF to "NERO" (v1) files and ETN2 to "NER5"; this plug-in reads only "NER5" footers,
+    so ETNF is reached through an NER5 image holding an ETNF chunk (as 334 / 335 build their images).
+  - CloneCD: libmirage builds the layout from the TOC entries' PLBA only: track_start = PLBA - pregap,
+    track_end = the next entry's PLBA (the session's 0xA2 for its last track); fragments appended back to
+    back (`offset += fragment_length`) - the `.img` packs the sessions. Its comment: "Index addresses seem
+    to be relative to session start".
+- psx-spx (nocash) CloneCD page: "The INDEX values in the [TRACK N] entries are originated at the begin of
+  the corresponding session, whilst PLBA values in [Entry N] entries are always originated at the begin
+  of the disk."
+- DiscImageCreator issue 121: "The session overhead, lead-out, lead-in and pregap of the first track in the
+  second session are completely omitted from the image" (11400 sectors for the first transition);
+  "CloneCD's *.CCD relies on the 11400 sectors being omitted".
+- **So the item's CCD premise ("a real multi-session image (absolute INDEX 1 values) is not split") is
+  doubtful**: CloneCD's own form counts INDEX from the session, which HEAD splits on `INDEX 1 = 0`. The
+  table-of-contents layout (PLBA) reads both forms - the item's note ("once the split follows the table
+  of contents") asks for exactly that.
+
+## Measurement before (41f18c08, Debug x64)
+
+`build.cmd` (incremental, up to date), then on the hidden desktop:
+
+```text
+powershell -File tools\run_on_hidden_desktop.ps1 -Log ...\result_before.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File ...\iso365_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Label before -OutFile ..."
+```
+
+Seeds `mkimg365.sh` (genisoimage in WSL: s1.iso a.txt "A1"; s2.iso b.txt "B2" addressed from 176 + 11400 =
+11576), images `img365.py`. Result `probe/result_before.txt`: **12 PASS / 6 FAIL**:
+
+| Row | Result |
+|---|---|
+| C-ETNF00 | PASS - both sessions, image deleted |
+| R-ETNF05 | FAIL - Session 01/a.txt only, image kept |
+| R-ETNF06 | FAIL - Session 01/a.txt only, image kept |
+| C-ETN2ONE | PASS - a.txt, image deleted |
+| R-ETN200 | FAIL - Session 01/a.txt with WRONG content, b.txt missing, box "Error reading directory structure at sector #00002D4F", image kept |
+| R-ETN203 | FAIL - a.txt wrong content, b.txt missing, image kept |
+| R-ETN206 | FAIL - a.txt wrong content, b.txt missing, image kept |
+| C-CCDREL | PASS - both sessions, image deleted (CloneCD's INDEX-from-session form) |
+| R-CCDABS | FAIL - a.txt only (no session folders), image kept (352's mark) |
+
+Wrong content in the ETN2 rows: both ETN2 tracks get extent offset 0, so a.txt's extent maps to track 2
+(the last track whose extent offset is not above it) and is read from session 2's bytes - a file written
+with wrong data (the image is kept, so nothing is deleted, but the extracted file is wrong).
+
+`BL verify` recorded "still present".
+
+## Decisions
+
+(see spec Clarifications / Assumptions)

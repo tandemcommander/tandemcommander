@@ -1,0 +1,36 @@
+iso365_probe (feature 365) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 02:46; registry key existed True
+
+seeds: ccd_abs.ccd,ccd_abs.img,ccd_rel.ccd,ccd_rel.img,etn2_00.nrg,etn2_03.nrg,etn2_06.nrg,etn2_one.nrg,etnf_00.nrg,etnf_05.nrg,etnf_06.nrg,s1.iso,s2.iso,s2.lba
+img365: etnf_00: 720988 bytes, track 2 mode 0x00 from byte 360448, sector 11576
+img365: etnf_05: 774492 bytes, track 2 mode 0x05 from byte 360448, sector 11576
+img365: etnf_06: 774492 bytes, track 2 mode 0x06 from byte 360448, sector 11576
+img365: etn2_one: 360520 bytes, track 2 mode 0x00 from byte 360448, sector 11576
+img365: etn2_00: 721020 bytes, track 2 mode 0x00 from byte 360448, sector 11576
+img365: etn2_03: 771708 bytes, track 2 mode 0x03 from byte 360448, sector 11576
+img365: etn2_06: 774524 bytes, track 2 mode 0x06 from byte 360448, sector 11576
+img365: ccd_rel: 2 sessions, 176 + 176 sectors, session 2 from sector 11576
+img365: ccd_abs: 2 sessions, 176 + 176 sectors, session 2 from sector 11576
+
+C-ETNF00   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ETNF00   RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+R-ETNF05   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ETNF05   RUN    FAIL        files 1: Session 01/a.txt; missing: Session 02/b.txt; files ok: False; image kept: True (want False); no window: True; fatal: ; windows: no window
+R-ETNF06   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ETNF06   RUN    FAIL        files 1: Session 01/a.txt; missing: Session 02/b.txt; files ok: False; image kept: True (want False); no window: True; fatal: ; windows: no window
+C-ETN2ONE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ETN2ONE  RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+R-ETN200   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ETN200   RUN    FAIL        files 1: Session 01/a.txt; missing: Session 02/b.txt; wrong content: Session 01/a.txt; files ok: False; image kept: True (want False); no window: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00002D4F. Incomplete content of ISO image. | [Button id=1] OK
+R-ETN203   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ETN203   RUN    FAIL        files 1: Session 01/a.txt; missing: Session 02/b.txt; wrong content: Session 01/a.txt; files ok: False; image kept: True (want False); no window: True; fatal: ; windows: no window
+R-ETN206   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ETN206   RUN    FAIL        files 1: Session 01/a.txt; missing: Session 02/b.txt; wrong content: Session 01/a.txt; files ok: False; image kept: True (want False); no window: True; fatal: ; windows: no window
+C-CCDREL   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-CCDREL   RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+R-CCDABS   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-CCDABS   RUN    FAIL        files 1: a.txt; missing: Session 01/a.txt, Session 02/b.txt; files ok: False; image kept: True (want False); no window: True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 12, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
