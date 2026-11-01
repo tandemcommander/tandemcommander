@@ -112,6 +112,7 @@
 #include "salisoextent.h"      // feature 368
 #include "salisoudfvat.h"      // feature 358
 #include "salisoudfentry.h"    // feature 361
+#include "salisoudfmaps.h"     // feature 378
 #include "salrenamekey.h"      // feature 346
 #include "salbkgndcheck.h"     // feature 372
 #include "salclipcheck.h"      // feature 375
@@ -21245,6 +21246,200 @@ static void TestIsoUdfFid_363()
     CHECK(taken > 0 && notTaken > 0);
 }
 
+// feature 378: a logical volume descriptor's 2048-byte sector with map table length 'mapLen' and map count 'count'
+static void IsoUdfLvd378(unsigned char* lvd, unsigned int mapLen, unsigned int count)
+{
+    memset(lvd, 0, 2048);
+    lvd[0] = 6; // tag identifier 6: logical volume descriptor
+    for (int i = 0; i < 4; i++)
+    {
+        lvd[264 + i] = (unsigned char)(mapLen >> (8 * i));
+        lvd[268 + i] = (unsigned char)(count >> (8 * i));
+    }
+}
+
+// feature 378: the old reader's walk (CUDF::ReadLVD before 378) over 'lvd' - true when it stays in the area
+// [440, min(held, 440 + MT_L)) with every map at least its type's minimum (it never read past the sector there);
+// false at its first step that leaves the area or takes a map shorter than that (a read past the area, or a
+// length of 0 / 1 that does not move on). The walk ends: every good step moves at least 2 bytes in a bounded area.
+static bool IsoUdfOldWalkInArea378(const unsigned char* lvd, unsigned long long held, unsigned long long mapLen,
+                                   unsigned long long count)
+{
+    unsigned long long end = 440 + mapLen < held ? 440 + mapLen : held;
+    unsigned long long pos = 440;
+    for (unsigned long long i = 0; i < count; i++)
+    {
+        if (pos + 2 > end)
+            return false;
+        unsigned long long len = lvd[pos + 1];
+        if (len < 2 || len < SalIsoUdfPartitionMapMinLen(lvd[pos]) || pos + len > end)
+            return false;
+        pos += len;
+    }
+    return true;
+}
+
+// feature 378: the partition maps of a UDF logical volume descriptor are read only inside the sector and the
+// declared map table; a count or a map length that does not fit is refused (src/common/salisoudfmaps.h)
+static void TestIsoUdfMaps_378()
+{
+    unsigned char lvd[2048];
+    unsigned long long n = 99;
+    // the minimum lengths the reader takes
+    CHECK(SalIsoUdfPartitionMapMinLen(1) == 6);
+    CHECK(SalIsoUdfPartitionMapMinLen(2) == 44);
+    CHECK(SalIsoUdfPartitionMapMinLen(0) == 2 && SalIsoUdfPartitionMapMinLen(3) == 2 &&
+          SalIsoUdfPartitionMapMinLen(255) == 2);
+
+    // IMAPI2FS UDF 2.01 (measured): table 6, one type 1 map "01 06 01 00 00 00"
+    IsoUdfLvd378(lvd, 6, 1);
+    lvd[440] = 1, lvd[441] = 6, lvd[442] = 1;
+    CHECK(SalIsoUdfLvdMapsFit(lvd, 2048, n) && n == 1);
+    // IMAPI2FS UDF 2.50 (measured): table 70, a type 1 map and a 64-byte metadata map
+    IsoUdfLvd378(lvd, 70, 2);
+    lvd[440] = 1, lvd[441] = 6;
+    lvd[446] = 2, lvd[447] = 64;
+    memcpy(lvd + 451, "*UDF Metadata Partition", 23);
+    CHECK(SalIsoUdfLvdMapsFit(lvd, 2048, n) && n == 2);
+    // a count of 0: nothing read, as before
+    IsoUdfLvd378(lvd, 0, 0);
+    CHECK(SalIsoUdfLvdMapsFit(lvd, 2048, n) && n == 0);
+    // a table longer than the sector whose maps lie in the sector: read as before
+    IsoUdfLvd378(lvd, 0xFFFFFFFFu, 1);
+    lvd[440] = 1, lvd[441] = 6;
+    CHECK(SalIsoUdfLvdMapsFit(lvd, 2048, n) && n == 1);
+    // the sector filled to its last byte: 268 six-byte maps (440 + 268 * 6 = 2048)
+    IsoUdfLvd378(lvd, 1608, 268);
+    for (int i = 0; i < 268; i++)
+        lvd[440 + 6 * i] = 1, lvd[441 + 6 * i] = 6;
+    CHECK(SalIsoUdfLvdMapsFit(lvd, 2048, n) && n == 268);
+    // a type 2 map of 44 bytes (what the reader takes) and an unknown type of 2 bytes
+    IsoUdfLvd378(lvd, 46, 2);
+    lvd[440] = 2, lvd[441] = 44;
+    lvd[484] = 7, lvd[485] = 2;
+    CHECK(SalIsoUdfLvdMapsFit(lvd, 2048, n) && n == 2);
+
+    // refused - the probe's crafted images (img378.py), from the UDF 2.01 shape
+    // count: 100000, the bytes after the one map are zero (a length of 0 that does not move on)
+    IsoUdfLvd378(lvd, 6, 100000);
+    lvd[440] = 1, lvd[441] = 6;
+    n = 99;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n) && n == 0);
+    // count 2 with a table of 6: the second map lies past the table
+    IsoUdfLvd378(lvd, 6, 2);
+    lvd[440] = 1, lvd[441] = 6, lvd[446] = 1, lvd[447] = 6;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    // len0: the map's length 0; and 1
+    IsoUdfLvd378(lvd, 6, 1);
+    lvd[440] = 1, lvd[441] = 0;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    lvd[440] = 5, lvd[441] = 1;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    // table: 4 (shorter than the 6-byte map)
+    IsoUdfLvd378(lvd, 4, 1);
+    lvd[440] = 1, lvd[441] = 6;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    // run: count 100000, the rest of the sector 0xFF (maps of type 255, length 255 walking off the sector)
+    IsoUdfLvd378(lvd, 6, 100000);
+    lvd[440] = 1, lvd[441] = 6;
+    memset(lvd + 446, 0xFF, 2048 - 446);
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    // the same with the table covering the sector: refused at the sector's end
+    lvd[264] = 0x48, lvd[265] = 0x06; // 1608
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    // many: 268 maps fill the sector, the count says 300 - map 269 would start at byte 2048
+    IsoUdfLvd378(lvd, 1608, 300);
+    for (int i = 0; i < 268; i++)
+        lvd[440 + 6 * i] = 1, lvd[441 + 6 * i] = 6;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    // a map that starts at the sector's last byte (its length byte would be past it): six maps of 255 bytes and
+    // one of 77 end at 2047, the count says 8
+    IsoUdfLvd378(lvd, 0xFFFFFFFFu, 8);
+    for (int i = 0; i < 6; i++)
+        lvd[440 + 255 * i] = 0, lvd[441 + 255 * i] = 255;
+    lvd[1970] = 0, lvd[1971] = 77;
+    lvd[2047] = 0;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    lvd[268] = 7; // the same maps with a count of 7 end at 2047: taken
+    CHECK(SalIsoUdfLvdMapsFit(lvd, 2048, n) && n == 7);
+    // a map running past the sector's end by two bytes
+    IsoUdfLvd378(lvd, 0xFFFFFFFFu, 8);
+    for (int i = 0; i < 7; i++)
+        lvd[440 + 230 * i] = 9, lvd[441 + 230 * i] = 230; // 440 + 7 * 230 = 2050: the seventh map ends past it
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    // a type 1 map shorter than 6, a type 2 map shorter than 44 (the reader reads up to byte 43)
+    IsoUdfLvd378(lvd, 6, 1);
+    lvd[440] = 1, lvd[441] = 5;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    IsoUdfLvd378(lvd, 64, 1);
+    lvd[440] = 2, lvd[441] = 43;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    // a count of 2^32 - 1 with the bytes zero: refused at once (the reader allocated a map per step)
+    IsoUdfLvd378(lvd, 1608, 0xFFFFFFFFu);
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    // fewer bytes than the fixed part, no buffer
+    IsoUdfLvd378(lvd, 0, 0);
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 439, n));
+    CHECK(!SalIsoUdfLvdMapsFit(nullptr, 2048, n));
+    // a smaller held area bounds the walk as the sector does: 446 bytes hold the 6-byte map exactly
+    IsoUdfLvd378(lvd, 6, 1);
+    lvd[440] = 1, lvd[441] = 6;
+    CHECK(SalIsoUdfLvdMapsFit(lvd, 446, n) && n == 1);
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 445, n));
+
+    // a grid: table lengths x counts x fill bytes x first maps. The rule accepts exactly the descriptors whose
+    // old walk stayed in the area with every map long enough, and for an accepted one the walk of 'count'
+    // steps reads only bytes of the area (checked by the same walk) - so the reader never reads past the sector
+    // and records at most (2048 - 440) / 2 maps
+    const unsigned int tables[] = {0, 1, 2, 4, 5, 6, 7, 44, 64, 70, 128, 1000, 1607, 1608, 1609, 4096, 0xFFFFFFFFu};
+    const unsigned int counts[] = {0, 1, 2, 3, 7, 10, 100, 267, 268, 269, 804, 805, 100000, 0xFFFFFFFFu};
+    const unsigned char fills[] = {0, 1, 2, 5, 6, 43, 44, 64, 200, 255};
+    const unsigned char firstTypes[] = {0, 1, 2, 3, 0xFF};
+    bool asOld = true, inArea = true, bounded = true;
+    int accepted = 0, refused = 0;
+    for (unsigned int t : tables)
+        for (unsigned int c : counts)
+            for (unsigned char f : fills)
+                for (unsigned char ft : firstTypes)
+                {
+                    IsoUdfLvd378(lvd, t, c);
+                    // maps of type f, length f after a first map of type ft and its minimum length
+                    for (int i = 442; i < 2048; i++)
+                        lvd[i] = f;
+                    lvd[440] = ft;
+                    lvd[441] = (unsigned char)SalIsoUdfPartitionMapMinLen(ft);
+                    bool fit = SalIsoUdfLvdMapsFit(lvd, 2048, n);
+                    bool old = IsoUdfOldWalkInArea378(lvd, 2048, t, c);
+                    if (fit != old)
+                        asOld = false;
+                    if (fit)
+                    {
+                        accepted++;
+                        if (n != c || n > (2048 - 440) / 2)
+                            bounded = false;
+                        unsigned long long end = 440ull + t < 2048 ? 440ull + t : 2048;
+                        unsigned long long pos = 440;
+                        for (unsigned long long i = 0; i < n && inArea; i++)
+                        {
+                            if (pos + 2 > end || pos + lvd[pos + 1] > end || lvd[pos + 1] < 2)
+                                inArea = false;
+                            else
+                                pos += lvd[pos + 1];
+                        }
+                    }
+                    else
+                    {
+                        refused++;
+                        if (n != 0)
+                            bounded = false;
+                    }
+                }
+    CHECK(asOld);
+    CHECK(inArea);
+    CHECK(bounded);
+    CHECK(accepted > 0 && refused > 0);
+}
+
 // feature 364: a UDF folder in several extents is walked over every recorded extent, and a folder read short of its
 // Information Length is reported so the listing is marked (src/common/salisoudfentry.h)
 static void TestIsoUdfFolderExtents_364()
@@ -24615,6 +24810,7 @@ int main(int argc, char** argv)
     TestIsoUdfFolderEntry_362();
     TestIsoUdfFid_363();
     TestIsoUdfFolderExtents_364();
+    TestIsoUdfMaps_378();
     TestNrgEtn365();
     TestNrgSinf369();
     TestIsoCcdToc365();

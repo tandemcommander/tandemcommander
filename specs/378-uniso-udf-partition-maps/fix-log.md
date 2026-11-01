@@ -49,3 +49,42 @@ reads past the descriptor buffer in the ISO plug-in.
 
 Run 1: 0 CRITICAL; HIGH F1 (US2 / SC-002 said the ISO 9660 + UDF seed is deleted - measured kept by the rest
 rule) - fixed (US2 scenario 2, SC-002); LOW F2 (T003 wording) accepted. Run 2: 0 CRITICAL, 0 HIGH.
+
+## Implementation
+
+- `src/common/salisoudfmaps.h` (new, header-only): `SalIsoUdfPartitionMapMinLen(type)` (1 -> 6, 2 -> 44,
+  others 2) and `SalIsoUdfLvdMapsFit(lvd, held, count)` - the area [440, min(held, 440 + MT_L)), every declared
+  map's header, length (>= 2, >= its type's minimum) and end inside it, 64-bit arithmetic by subtraction.
+- `udf.cpp` `CUDF::ReadLVD` returns `BOOL`: the rule first (nothing read, no `CPartitionMap` created when it
+  refuses), then the unchanged walk over the checked count. `udf.h`: the declaration.
+- `udf.cpp` `CUDF::Open`, `UDF_TAGID_LOGVOL`: a refused descriptor -> `Error(IDS_ERROR_LISTING_IMAGE, quiet,
+  block)` and `return FALSE` (the existing path of a sector that cannot be read). No UI string, resource or
+  plug-in interface change (no `.slt` refresh).
+- `saltests.cpp` `TestIsoUdfMaps_378` (+31 checks): the measured IMAPI2FS shapes, count 0, a table longer
+  than the sector, 268 maps filling the sector, the five crafted shapes, a map starting at byte 2047, a map
+  ending 2 bytes past the sector, short type 1 / type 2 maps, count 2^32 - 1, short buffers; a grid (17 table
+  lengths x 14 counts x 10 fill bytes x 5 first map types) - the rule accepts exactly the descriptors whose old
+  walk stayed inside the area with long-enough maps, an accepted walk stays inside the area, the count is at
+  most 804.
+- Negative control: the rule with the table bound removed (`if (false && mapLen < ...)`) -> saltests 30268
+  checks, **4 failed** (table 4, run with table 1608, grid `asOld`, `inArea`); restored -> 0 failed.
+
+## Probes
+
+`iso378_probe.ps1` (seeds by IMAPI2FS, crafted by `img378.py`):
+
+| Row | before (frozen HEAD build, 514396d3) | after |
+|---|---|---|
+| C-U201 | PASS - a.txt, no window, deleted | PASS - the same |
+| C-U250 | PASS - a.txt, no window, deleted | PASS - the same |
+| C-B201 | PASS - both folders, no window, kept (rest rule, Inbox) | PASS - the same |
+| R-COUNT | FAIL - a.txt, no window, deleted | PASS - nothing, "Error reading directory structure at sector #00000022. Incomplete content of ISO image.", kept |
+| R-LEN0 | FAIL - as R-COUNT | PASS - as R-COUNT |
+| R-TABLE | FAIL - as R-COUNT | PASS - as R-COUNT |
+| R-RUN | FAIL - as R-COUNT (the walk past the sector gave no crash) | PASS - as R-COUNT |
+| R-MANY | FAIL - as R-COUNT | PASS - as R-COUNT |
+| R-BCOUNT | FAIL - both folders, no window | PASS - only `ISO (UDF356)/A.TXT`, the box twice (presumably once per opening of the image - the listing succeeds, the unpack opens it again; not traced), kept |
+
+Totals (RUN + END rows): before 11 / 7 (`probe/result_before.txt`; bridge rows re-run with the corrected
+expectation: `probe/result_before2.txt`, C-B201 PASS, R-BCOUNT FAIL), after 18 / 0 (`probe/result_after.txt`).
+Registry restored and identical every run. Sector #00000022 = 34, the descriptor's sector.

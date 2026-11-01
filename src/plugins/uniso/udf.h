@@ -301,7 +301,7 @@ protected:
     void ReadEntityID(BYTE sector[], CEntityID* entityID);
     void ReadAVDP(BYTE sector[], CAVDP* avdp);
     void ReadPD(BYTE sector[], CPD* pd);
-    void ReadLVD(BYTE sector[], CLVD* lvd);
+    BOOL ReadLVD(BYTE sector[], CLVD* lvd); // feature 378: FALSE = the partition maps do not fit
     void ReadDescriptorTag(BYTE sector[], CDescriptorTag* tag);
     int ReadPartitionMap(BYTE data[]);
     int ShortAD(Uint8* data, CUDF::CAD* ad, WORD partNumber);

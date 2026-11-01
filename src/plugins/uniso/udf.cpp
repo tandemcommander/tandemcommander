@@ -9,6 +9,7 @@
 #include "udf.h"
 #include "../../common/salisoudfvat.h"   // feature 358: the VAT rules
 #include "../../common/salisoudfentry.h" // feature 361: the file entry's descriptor area
+#include "../../common/salisoudfmaps.h"  // feature 378: the partition map table
 
 #include "uniso.rh"
 #include "uniso.rh2"
@@ -361,20 +362,26 @@ int CUDF::ReadPartitionMap(BYTE data[])
     return GET_BYTE(data, 1);
 }
 
-void CUDF::ReadLVD(BYTE sector[], CLVD* lvd)
+// returns FALSE (feature 378) when the descriptor's partition maps do not fit its sector and its map table
+// (salisoudfmaps.h) - nothing is read then and no partition map is recorded; the volume is refused
+BOOL CUDF::ReadLVD(BYTE sector[], CLVD* lvd)
 {
+    unsigned long long mapCount = 0;
+    if (!SalIsoUdfLvdMapsFit(sector, SECTOR_SIZE, mapCount))
+        return FALSE;
+
     lvd->VDSN = GET_DWORD(sector, 16);
     lvd->LogicalBlockSize = GET_DWORD(sector, 212);
     GETN(sector, 84, 128, lvd->LogicalVolumeIdentifier);
 
     LongAD(sector + 248, &lvd->FSD);
 
-    DWORD mapLen = GET_DWORD(sector, 264);
-    DWORD mapCount = GET_DWORD(sector, 268);
+    // every declared map lies in [440, min(SECTOR_SIZE, 440 + map table length)) and is at least as long as the
+    // bytes ReadPartitionMap takes from it: the walk ends after mapCount (at most 804) steps inside the sector
     int offset = 440;
-    DWORD i;
-    for (i = 0; i < mapCount; i++)
+    for (unsigned long long i = 0; i < mapCount; i++)
         offset += ReadPartitionMap(sector + offset);
+    return TRUE;
 }
 
 void CUDF::ReadDescriptorTag(BYTE sector[], CDescriptorTag* tag)
@@ -711,7 +718,13 @@ BOOL CUDF::Open(BOOL quiet)
                 ReadPD(sector, &PD);
                 break;
             case UDF_TAGID_LOGVOL:
-                ReadLVD(sector, &LVD);
+                if (!ReadLVD(sector, &LVD))
+                {
+                    // feature 378: partition maps that do not fit the descriptor - the volume does not open (a
+                    // UDF-only track is not opened; an ISO 9660 + UDF image marks its listing, CUDFISO::Open)
+                    Error(IDS_ERROR_LISTING_IMAGE, quiet, block);
+                    return FALSE;
+                }
                 break;
 
             case UDF_TAGID_TERM:
