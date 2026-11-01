@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5862,3 +5862,25 @@ a few early ones are out of sequence).
   sampling of the list box while a 30,000-file folder is read) FLASH 35-39 PARENT samples per
   round -> 0, NEW at ~306 ms unchanged; feature 244 probe 45/0; one refute-first review (no MUST,
   SHOULD 1 fix-log corrected); person step `check-by-hand-that-opening-a-folder-found-by-quick-search`.
+- 377-uniso-udf-metadata-order: a UDF 2.50 disc image written by Windows' own image writer IMAPI2FS (a metadata
+  partition, the revision of Blu-ray discs) did not list in the ISO plug-in - Enter and Unpack showed "Cannot read
+  sector #00000000." and "Error reading directory structure at sector #FF567539. Incomplete content of ISO image.",
+  no file could be extracted (the image was kept) - now it lists and unpacks like the UDF 2.01 image of the same
+  files: `CUDF::ReadPartitionMap` only records the metadata file's location (`CPartitionMap::MetadataFileLocation`,
+  `HasMetadataFile`), and `CUDF::ReadSupportingTables` reads the metadata file entry after the whole main
+  descriptor sequence (the same read, box and 361 refusal as before). IMAPI2FS writes the logical volume
+  descriptor (sector 34) before the partition descriptor (35); the entry was read from `PD.Start + 0` while
+  `PD` was not read yet (uninitialised - the read failed). No UI string. Traps: a PD-first copy of the same image
+  (`img377.py swap`) lists on main too - the control that proved the order is the cause; keying the moved read on
+  `Type == mapMetadata` alone would have started a read for an unknown map whose unset `Type` reads 3 in Release
+  (review 1, flag added); a Bash here-document collapsed a probe edit's backslashes again (nothing written).
+  Limits: Enter is driven only by 361's `L-IMAPI250` (Enter on a 2.50 image: no window now; the listed names are
+  not checked - the same `Open` / `ListDirectory` path as Unpack); the metadata mirror file is still
+  unused; a folder of several blocks in a metadata partition is still read physically after its first block
+  (Inbox `iso-plug-in-a-udf-folder-of-several-blocks-in-a-vat`); the LVD's partition map count is unbounded
+  (older, Inbox `iso-plug-in-a-crafted-udf-partition-map-count-reads-past-the`); no real Blu-ray image. 356's
+  probe row `N-U250` is now `C-U250` (extracted, deleted); 361's `L-META5` now reaches the metadata caller. From
+  backlog item `iso-plug-in-a-udf-2-50-image-written-by-windows-imapi2fs`. Probe `iso377_probe` (IMAPI2FS seeds by
+  356's `imapiudf356.ps1`, `img377.py swap` / `metafar`) 10 / 2 (C-U250, C-U250SUB) -> 12 / 0; regressions 356
+  56 / 0, 358 52 / 0, 361 24 / 0; saltests 30,237 / 0 (no new rule); refute-first review 1 (no MUST; negative
+  control with main's `uniso.spl` 10 / 2; SHOULD unset map type fixed; NOTE map count -> Inbox).
