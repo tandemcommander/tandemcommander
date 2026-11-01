@@ -8,7 +8,7 @@ source: review:366
 who: agent
 created: 2026-11-01
 updated: 2026-11-01
-verified: -
+verified: 2026-11-01 56a44fba
 effort: M
 feature: -
 related: [keep-video-cd-images-after-a-whole-unpack-until-their-video]
@@ -63,3 +63,4 @@ disc, the Form 1 files of a Video CD and 366's Form 2 files unchanged.
 - 2026-11-01 — created (source review:366)
 - 2026-11-01 — auto-triage: severity 5 -> 7: data loss in a narrow scenario - 276 bytes of each Form 2 sector lost and the image deleted by a whole Unpack with Delete archive after unpacking (images without an XA Form 2 attribute)
 - 2026-11-01 — moved to Next position 1
+- 2026-11-01 — verified at 56a44fba: reproduced at 56a44fba: iso366_probe rows C-MIXED, C-NOXA, C-F1SUB extract the video file as 608,256 bytes (2048-byte read), image deleted
