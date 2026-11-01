@@ -318,6 +318,7 @@ int CUDF::ReadPartitionMap(BYTE data[])
 {
     CPartitionMap* partMap = new CPartitionMap;
     partMap->MetadataFileLocation = 0; // feature 377: set below for a metadata partition map only
+    partMap->HasMetadataFile = FALSE;
     CEntityID entityID;
 
     BYTE partType = GET_BYTE(data, 0);
@@ -350,6 +351,7 @@ int CUDF::ReadPartitionMap(BYTE data[])
             // entry is read in ReadSupportingTables - the logical volume descriptor may precede the partition
             // descriptor (Windows' IMAPI2FS, UDF 2.50), and the read needs PD.Start
             partMap->MetadataFileLocation = GET_DWORD(data, 40) - ExtentOffset;
+            partMap->HasMetadataFile = TRUE;
         }
         break;
     } // switch
@@ -1651,6 +1653,9 @@ BOOL CUDF::ReadSupportingTables(BOOL quiet)
             // descriptor was parsed - before a partition descriptor that follows it, from PD.Start not yet set)
             Uint32 location = PartitionMaps[i]->MetadataFileLocation;
             CICBTag icbTag;
+
+            if (!PartitionMaps[i]->HasMetadataFile)
+                break; // an unrecognised map whose (unset) Type happens to read as mapMetadata: nothing read, as before
 
             if (!ReadBlockLog(location, 1, sector))
             {

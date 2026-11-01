@@ -292,6 +292,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a crafted UDF partition map count reads past the descriptor buffer](items/iso-plug-in-a-crafted-udf-partition-map-count-reads-past-the/desc.md) | bug | 5 | archives | review:377 | 2026-11-01 |
 
 ## Parked
 

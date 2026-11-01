@@ -221,6 +221,9 @@ protected:
         // feature 377: mapMetadata only - the metadata file's block (minus ExtentOffset); its entry is read
         // in ReadSupportingTables, once the whole descriptor sequence (also a later partition descriptor) is read
         Uint32 MetadataFileLocation;
+        // feature 377 (review 1): TRUE only for a map recognised as "*UDF Metadata Partition" - Type is not set
+        // for an unknown map, so the read in ReadSupportingTables goes by this, not by Type alone
+        BOOL HasMetadataFile;
     };
 
     struct CPartitionMapping

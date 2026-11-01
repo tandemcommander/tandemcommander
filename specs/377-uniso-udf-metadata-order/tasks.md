@@ -32,7 +32,7 @@
 
 ## Phase 5: Polish
 
-- [ ] T011 Independent refute-first review; record in specs/377-uniso-udf-metadata-order/fix-log.md (section Review)
+- [X] T011 Independent refute-first review; record in specs/377-uniso-udf-metadata-order/fix-log.md (section Review)
 - [ ] T012 Closing: FEATURE-HISTORY entry, CHANGELOG `[Unreleased]` entry, closing-report.md in specs/377-uniso-udf-metadata-order/
 
 ## Dependencies

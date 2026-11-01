@@ -78,3 +78,22 @@ descriptors is the cause (the item's reasoning, not verified in a debugger, is n
   window (it lists); `L-META5` (the metadata file entry with descriptor type 5) now reaches 361's refusal in
   the metadata caller - only "Error reading directory structure ... Incomplete content", no "Cannot read
   sector" - the 361 limit "the metadata-partition caller is reached by no probe" is reached now.
+
+## Review
+
+Review 1 (independent refute-first agent): **no MUST**. It rebuilt main's `uniso.spl` in a scratch worktree
+(negative control): `iso377_probe` 10 / 2 as `result_before.txt` (C-U250, C-U250SUB fail; the PD-first swap
+passes); this branch 12 / 0, 356 56 / 0, 361 24 / 0; registry restored identical every time.
+- SHOULD S1 (`udf.cpp` `ReadPartitionMap`): `CPartitionMap::Type` is not set for an unknown map type or an
+  unknown type-2 identifier; with the read moved to `ReadSupportingTables` keyed on `Type == mapMetadata`, a
+  Release heap value of 3 would start a metadata read at block 0 (before: nothing). **Fixed**: a
+  `HasMetadataFile` flag set only for a recognised metadata map; the read requires it. Rebuilt; `iso377_probe`
+  12 / 0 (`probe/result_after2.txt`), `iso361_probe` 24 / 0 (`probe/regress_361b.txt`); encoding guard 0.
+  (Setting a default `Type` was not chosen: it would change how an unknown map translates blocks.)
+- NOTE N1 (`ReadLVD` map count / offset unbounded, older) → Inbox
+  `iso-plug-in-a-crafted-udf-partition-map-count-reads-past-the` (review:377).
+- NOTE N2 (R-U250FAR passes on both builds - it shows FR-004 kept, not the fix): accepted, C-U250 / C-U250SUB
+  are the distinguishing rows. N3 (Enter not driven; same `Open` / `ListDirectory` path): accepted, recorded.
+  N4 (two PDs around the LVD: the metadata entry now goes through the last PD, as every other read): accepted.
+  N5 (361's L-META5 accepts any window): recorded. N6 tasks T011 / T012: closed with this record and the
+  closing. N7: confirmed. N8 (stale worktrees of earlier reviews under %TEMP%): not this feature's; left.
