@@ -1,7 +1,7 @@
 ---
 title: Backlog app: the first real run with a change made during it (feature 371)
 type: person-step
-status: new
+status: open
 severity: 4
 area: tooling
 source: leftover:371
@@ -40,3 +40,4 @@ A real run ends closed after the maintainer added an item at Next #1 and reorder
 ## Log
 
 - 2026-11-01 — created (source leftover:371)
+- 2026-11-01 — moved to Person steps position 85

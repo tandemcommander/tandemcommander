@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: NRG tracks of the subchannel modes 0x0F / 0x10 / 0x11 get a wrong type or size
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: leftover:365
@@ -55,3 +55,4 @@ before and after.
 
 - 2026-11-01 — created (source leftover:365)
 - 2026-11-01 — auto-triage: left in Inbox - who agent contradicts its own text: the 2448-byte sizing in Expected waits for a real Nero track-at-once image with subchannel data (a person); consider who=both or splitting the safe type change
+- 2026-11-01 — moved to Next position 86
