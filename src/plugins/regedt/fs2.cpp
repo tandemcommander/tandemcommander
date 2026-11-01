@@ -582,6 +582,7 @@ BOOL CPluginFSInterface::ListCurrentPath(CSalamanderDirectoryAbstract* dir,
                             pd->DataSize = 0; // nothing to show until the preview is stored
                             int units = (int)min(size / 2, MAX_DATASIZE);
                             char preview[3 * MAX_DATASIZE + 4];
+                            // encoding-check: allow lossy-lenient-at-intake - a preview of a registry value's data (shown in the panel), not a name (255)
                             int len = units > 0 ? WideCharToMultiByte(CP_UTF8, 0, (WCHAR*)data, units, preview, 3 * MAX_DATASIZE, NULL, NULL) : 0;
                             int textLen = 0;
                             while (textLen < len && preview[textLen] != 0)

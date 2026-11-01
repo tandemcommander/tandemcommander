@@ -170,6 +170,7 @@ void LabelToU8(const char* label, char* buf, int bufSize)
     if (label == NULL)
         return;
     WCHAR w[300];
+    // encoding-check: allow strict-probe-rejects-wtf8 - an encoding label (e.g. 'UTF-8', 'windows-1250'), not a name (255)
     if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, label, -1, NULL, 0) > 0) // already UTF-8 (ASCII too)
     {
         CopyU8Truncated(buf, bufSize, label);

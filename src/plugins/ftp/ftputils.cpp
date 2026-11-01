@@ -3722,12 +3722,14 @@ static char* FTPFieldToU8(const char* beg, int len, CFTPServerEnc* srv, int evid
         if (w != NULL)
         {
             MultiByteToWideChar(CP_ACP, 0, beg, len, w, wLen);
+            // encoding-check: allow lossy-lenient-at-intake - the input was decoded from the code page just above - valid Unicode by construction (255)
             int u8Len = WideCharToMultiByte(CP_UTF8, 0, w, wLen, NULL, 0, NULL, NULL);
             if (u8Len > 0)
             {
                 char* str = (char*)SalamanderGeneral->Alloc(u8Len + 1);
                 if (str != NULL)
                 {
+                    // encoding-check: allow lossy-lenient-at-intake - the input was decoded from the code page just above - valid Unicode by construction (255)
                     WideCharToMultiByte(CP_UTF8, 0, w, wLen, str, u8Len, NULL, NULL);
                     str[u8Len] = 0;
                     if (srv != NULL) // feature 224 / 288: this server speaks the code page

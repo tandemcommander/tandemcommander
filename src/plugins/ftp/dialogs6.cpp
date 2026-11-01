@@ -117,6 +117,7 @@ COperationDlg::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         ListView_SetExtendedListViewStyle(ItemsListView, ListView_GetExtendedListViewStyle(ItemsListView) |
                                                              LVS_EX_FULLROWSELECT); // 4.70
         ItemsListViewObj.Attach(ItemsListView, this, FALSE);
+        // encoding-check: allow dead-dispinfow - both list views get ListView_SetUnicodeFormat(TRUE) below, so the W handler runs (010, 255)
         // feature 010: Unicode notification format so item texts (UTF-8 remote
         // names/paths) are requested via LVN_GETDISPINFOW and render losslessly
         ListView_SetUnicodeFormat(ConsListView, TRUE);

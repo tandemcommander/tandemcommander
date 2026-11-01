@@ -1574,6 +1574,7 @@ BOOL InitEXIF(HWND hParent, BOOL bSilent)
         if (!bSilent)
         {
             TCHAR errText[2 * MAX_PATH];
+            // encoding-check: allow mixed-composition - path is converted to the code page just above (CP_ACP), like the LoadStr template (255)
             _snprintf_s(errText, _TRUNCATE, LoadStr(IDS_LOADEXIF), path); // bounded (feature 131)
             SalamanderGeneral->SalMessageBox(hParent, errText, LoadStr(IDS_PLUGINNAME),
                                              MB_ICONEXCLAMATION | MB_OK);

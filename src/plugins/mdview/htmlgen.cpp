@@ -35,9 +35,11 @@ std::wstring Utf8ToW(const std::string& s) { return Utf8ToW(s.data(), s.size());
 std::string WToUtf8(const std::wstring& w)
 {
     if (w.empty()) return std::string();
+    // encoding-check: allow lossy-lenient-at-intake - document text for the page (shown), not a name (255)
     int need = WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), NULL, 0, NULL, NULL);
     std::string s;
     s.resize(need > 0 ? need : 0);
+    // encoding-check: allow lossy-lenient-at-intake - document text for the page (shown), not a name (255)
     if (need > 0) WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), &s[0], need, NULL, NULL);
     return s;
 }

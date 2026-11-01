@@ -254,6 +254,7 @@ int Unicode16ToAnsi(char* lpStr, LPCWSTR wstr, int len, int new_len)
 {
     int ret;
 
+    // encoding-check: allow lossy-lenient-at-intake - an ID3 tag text (shown), not a name (255)
     // The last two arguments must be NULL for CP_UTF8
     ret = WideCharToMultiByte(CP_UTF8, 0, wstr, len, lpStr, new_len, NULL, NULL);
     if (lpStr)

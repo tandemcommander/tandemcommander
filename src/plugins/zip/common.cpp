@@ -1700,12 +1700,14 @@ int CZipCommon::ProcessName(CFileHeader* fileHeader, char* outputName)
                 wlen = MultiByteToWideChar(cp, 0, sour, (int)len, wsour, wlen);
                 if (wlen > 0)
                 {
+                    // encoding-check: allow lossy-lenient-at-intake - the input was decoded from the code page just above - valid Unicode by construction (255)
                     int lenUTF8 = WideCharToMultiByte(CP_UTF8, 0, wsour, wlen, NULL, 0, NULL, NULL);
                     if (lenUTF8 > 0)
                     {
                         sourUTF8 = (char*)malloc(lenUTF8);
                         if (sourUTF8)
                         {
+                            // encoding-check: allow lossy-lenient-at-intake - the input was decoded from the code page just above - valid Unicode by construction (255)
                             len = WideCharToMultiByte(CP_UTF8, 0, wsour, wlen, sourUTF8, lenUTF8, NULL, NULL);
                             sour = sourUTF8;
                         }
