@@ -1,8 +1,8 @@
 ---
 title: ISO plug-in: a video file in Form 2 sectors without an XA Form 2 attribute extracts cut
 type: bug
-status: new
-severity: 5
+status: open
+severity: 7
 area: archives
 source: review:366
 who: agent
@@ -61,3 +61,5 @@ disc, the Form 1 files of a Video CD and 366's Form 2 files unchanged.
 ## Log
 
 - 2026-11-01 — created (source review:366)
+- 2026-11-01 — auto-triage: severity 5 -> 7: data loss in a narrow scenario - 276 bytes of each Form 2 sector lost and the image deleted by a whole Unpack with Delete archive after unpacking (images without an XA Form 2 attribute)
+- 2026-11-01 — moved to Next position 1

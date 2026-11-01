@@ -1,7 +1,7 @@
 ---
 title: Check feature 366 with a real Video CD dump: the extracted video plays whole
 type: person-step
-status: new
+status: open
 severity: 3
 area: archives
 source: leftover:366
@@ -49,3 +49,4 @@ The Steps confirm on real dumps that the video files extract whole and play to t
 ## Log
 
 - 2026-11-01 — created (source leftover:366)
+- 2026-11-01 — moved to Person steps position 53
