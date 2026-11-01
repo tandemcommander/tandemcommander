@@ -11,7 +11,7 @@ updated: 2026-11-01
 verified: -
 effort: M
 feature: -
-related: [switching-back-to-tandem-commander-freezes-it-briefly-while]
+related: []
 depends-on: []
 reason: -
 ---
@@ -54,3 +54,4 @@ feature 372 (row LOCAL) before and after.
 ## Log
 
 - 2026-11-01 — created (source measure:372)
+- 2026-11-01 — related item switching-back-to-tandem-commander-freezes-it-briefly-while done in feature 372

@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372 |
 
 ## Feature notes
 
@@ -5757,3 +5757,24 @@ a few early ones are out of sequence).
   the app browsed on a copy of this repository (24 pages, 0 console errors, writes 2 / 2); one
   refute-first review (2 MUST, 4 SHOULD, 5 NOTE - fixed or recorded). Owed to a person:
   `backlog-app-live-edit-real-run` (the first real run with a change made during it).
+- 372-wsl-activation-freeze: every switch back to the program with a WSL folder
+  (`\\wsl.localhost\Ubuntu`) in a panel froze it ~400 ms with the busy cursor - now the window
+  answers at once. The cause was not the listing (1-12 ms on 9P) but `ChangePathToDisk`'s
+  `Sleep(400)` + second listing on every refresh of a monitored folder whose change notification
+  failed (9P has none) - it ran on the UI thread 200 ms after each activation; and a stopped
+  distribution (~2 s first answer) blocked the synchronous `CheckPath` of `CFilesWindow::Activate`.
+  Both now ask a per-panel worker (`StartBkgndPathCheck`, the check-path thread's own test moved
+  into `SalTestPathAccessible`) and act on its posted answer only while the panel still shows the
+  folder (rule `src/common/salbkgndcheck.h`): activation of a network folder -> the same refreshes
+  as before; 400 ms after such a refresh -> refresh again only when the folder is gone (no
+  re-listing, no loop). A hung worker (dead redirector) is abandoned after 10 s or when the panel
+  shows another folder (generation number; review 1). Limits: the ~150 ms idle clipboard check
+  that every activation pays, also locally, remains (Inbox
+  `every-activation-of-the-program-blocks-it-150-ms-in-the-idle`); the ESC "go to a fixed drive"
+  escape of the synchronous check is gone for network folders; a folder that exists but cannot be
+  listed is no longer left by the verification. Trap: a negative-control copy built under `%TEMP%`
+  (MSB8029) kept stale objects - rebuild it. From backlog item
+  `switching-back-to-tandem-commander-freezes-it-briefly-while`. Probe `act372_probe.ps1` WSL late
+  waits 392-411 ms -> <= 5.1 ms (16 PASS, 4 NOT DRIVEN: cursor); saltests 30120 / 0; two
+  refute-first reviews (0 MUST; hung-worker negative control `probe/review2`). Owed to a person:
+  `check-by-hand-switching-back-with-a-wsl-folder-in-a-panel-no`.

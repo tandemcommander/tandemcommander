@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Switching back to Tandem Commander freezes it briefly while a panel shows a WSL folder](items/switching-back-to-tandem-commander-freezes-it-briefly-while/desc.md) | bug | 5 | panels-ui | 372 |
 
 ## Next
 
@@ -289,6 +288,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check by hand: switching back with a WSL folder in a panel no longer freezes](items/check-by-hand-switching-back-with-a-wsl-folder-in-a-panel-no/desc.md) | person-step | 4 | panels-ui | leftover:372 | 2026-11-01 |
 | [Every activation of the program blocks it ~150 ms in the idle clipboard check](items/every-activation-of-the-program-blocks-it-150-ms-in-the-idle/desc.md) | bug | 3 | panels-ui | measure:372 | 2026-11-01 |
 
 ## Parked
