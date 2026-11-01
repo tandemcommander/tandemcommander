@@ -296,6 +296,8 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Changing to a plug-in path cuts the name to focus at 259 bytes and may focus another item](items/changing-to-a-plug-in-path-cuts-the-name-to-focus-at-259/desc.md) | bug | 3 | long-paths | review:380 | 2026-11-01 |
+| [Relative path under a deep plug-in file-system path is refused: the core buffer for GetFullFSPath is MAX_PATH](items/relative-path-under-a-deep-plug-in-file-system-path-is/desc.md) | improvement | 3 | long-paths | leftover:380 | 2026-11-01 |
 
 ## Parked
 

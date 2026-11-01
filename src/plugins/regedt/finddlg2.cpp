@@ -952,7 +952,10 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                         // feature 380: a conversion that does not fit is refused, never sent cut
                         if (WStrToU8(path + 1, sizeof(path) - 1, data->Path) == 0 ||
                             WStrToU8(name, sizeof(name), data->Name) == 0)
-                            Error(IDS_LONGNAME);
+                        {
+                            SetLastError(ERROR_SUCCESS); // Error() adds the text of the last error
+                            Error(HWindow, IDS_LONGNAME);
+                        }
                         else if (!InterfaceForMenuExt.PostFocusCommand(path, name))
                             SG->SalMessageBox(HWindow, LoadStr(IDS_BUSY), LoadStr(IDS_PLUGINNAME),
                                               MB_ICONINFORMATION);

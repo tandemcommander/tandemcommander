@@ -210,6 +210,7 @@ BOOL CPluginFSInterface::GetFullFSPath(HWND parent, const char* fsName, char* pa
         WCHAR buffer[MAX_FULL_KEYNAME];
         if (U8ToWStr(buffer, MAX_FULL_KEYNAME, path) == 0)
         {
+            SetLastError(ERROR_SUCCESS);   // Error() adds the text of the last error
             success = Error(IDS_LONGNAME); // FALSE
             return TRUE;
         }
@@ -222,6 +223,7 @@ BOOL CPluginFSInterface::GetFullFSPath(HWND parent, const char* fsName, char* pa
         int l = (int)strlen(path);
         if (l + 1 >= pathSize || WStrToU8(path + l, pathSize - l, buffer) == 0)
         {
+            SetLastError(ERROR_SUCCESS);   // Error() adds the text of the last error (122 here)
             success = Error(IDS_LONGNAME); // FALSE: refused, never cut
             return TRUE;
         }

@@ -68,3 +68,27 @@ write into buffers three times the wide maximum (cannot fail). The helper is unc
   panel, driving the Find window); proven by reading - each now tests the result and never hands on a
   cut name. Not a person step: the changes are guards on paths that the probe's conversion failure
   already exercises in `GetFullFSPath`.
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST, no SHOULD**. It re-ran the probe on the fixed
+build (8 PASS) and built its own negative control (worktree at c825e93b, only `regedt.vcxproj`, a
+separate build folder, the old `regedt.spl` in a copy of the build tree): SHORT and EXACT PASS, LONG
+FAIL (the panel went to the other existing key), CJK FAIL - the probe tells the old plug-in from the
+new one. Callers enumerated (one core caller of `GetFullFSPath`), no data-loss route, all 30
+conversion calls re-checked. NOTEs:
+
+1. `Error()` appends the text of the last error (122, "data area too small") to the new messages -
+   **fixed**: `SetLastError(ERROR_SUCCESS)` before each new `Error(IDS_LONGNAME)` (the plug-in's own
+   convention, `finddlg2.cpp` hex pattern). Probe re-run (`result_after.txt`, label after-review): 8/8
+   PASS, the message is now only "Unable to finish operation because of too long path name.".
+2. The rename and Find guards are proven by reading only (NOT DRIVEN) - as recorded above; the Quick
+   Rename one is reachable (200 x U+010D = 400 bytes over `MAX_PATH`).
+3. The core cuts the focus name at `MAX_PATH` in `ChangePathToPluginFS` (`fileswn2.cpp`, `backup3`) -
+   outside the item: Inbox item `changing-to-a-plug-in-path-cuts-the-name-to-focus-at-259`
+   (`review:380`).
+4. The Find window's message box was parented to the main window (`DialogStackPeek()` empty on the
+   Find thread) - **fixed** for the new message: `Error(HWindow, IDS_LONGNAME)`.
+
+No MUST → no second review. After the NOTE fixes: `.\build.cmd` BUILD SUCCEEDED, encoding guard
+`TOTAL: 0 finding(s)`, probe 8/8 PASS, registry restored identical.
