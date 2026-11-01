@@ -29,6 +29,13 @@ case can be decided at listing by reading the sectors' subheaders, so the cut is
 keeping the image. That is option C of the open decision `keep-video-cd-images-after-a-whole-unpack-until-their-video`
 ("fix the cut first") and needs no maintainer decision.
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: In a file whose other sectors are Form 2, should a sector with a damaged (invalid) subheader be read as 2324 bytes too? → A: No - decided by feature 335's rule alone (not Form 2 = 2048 bytes); in a stream track the 276 bytes left behind are then found by feature 337's gap check and the image is kept (fails closed). (autonomous run: conservative)
+- Q: Should examining a file at listing be limited to a number of sectors, to keep listing fast? → A: No limit - an examined file's subheaders are all read (in blocks of sectors, not one read per sector); only files FR-001 names are examined, so a plain data disc pays one subheader read per file. (autonomous run: conservative - a limit would leave the cut for long files)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A video file without an XA Form 2 record extracts whole (Priority: P1)
@@ -173,7 +180,8 @@ D-DIFF2-CCD, D-DIFF2-NRG unchanged; 337's, 365's and 334's probes unchanged.
 - **SC-004**: `saltests` passes with new checks for the rules of FR-009; each rule mutated makes at least one
   check fail.
 - **SC-005**: Listing an image whose files are not examined does no extra reads beyond one subheader read per
-  file on a track that stores Form 2 data.
+  file on a track that stores Form 2 data; an examined file's subheaders are read in blocks of sectors, never
+  one read per sector.
 
 ## Assumptions
 
