@@ -1,7 +1,7 @@
 ---
 title: Check by hand the paste commands after switching back with a busy clipboard (375)
 type: person-step
-status: new
+status: open
 severity: 3
 area: panels-ui
 source: leftover:375
@@ -59,3 +59,4 @@ also when the clipboard was busy at the moment of switching back and is released
 ## Log
 
 - 2026-11-01 — created (source leftover:375)
+- 2026-11-01 — moved to Person steps position 56
