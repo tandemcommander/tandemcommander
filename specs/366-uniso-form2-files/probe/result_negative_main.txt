@@ -1,0 +1,27 @@
+iso366 probe negative-main-uniso
+Program : C:\Users\pavel\AppData\Local\Temp\tc366negtree\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 03:59; registry key existed True
+
+R-VCD-CCD  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VCD-CCD  RUN    FAIL        files 4: MPEGAV/AVSEQ01.DAT:608256, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; mismatches: MPEGAV/AVSEQ01.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b) | MPEGAV/AVSEQ02.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b) | MPEGAV/AVSEQ01.DAT does not contain v.mpg; source v.mpg (515928 bytes) whole in it: False; image kept: False (want False); fatal: ; windows: no window
+R-VCD-NRG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VCD-NRG  RUN    FAIL        files 4: MPEGAV/AVSEQ01.DAT:608256, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; mismatches: MPEGAV/AVSEQ01.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b) | MPEGAV/AVSEQ02.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b) | MPEGAV/AVSEQ01.DAT does not contain v.mpg; source v.mpg (515928 bytes) whole in it: False; image kept: False (want False); fatal: ; windows: no window
+R-SVCD-CCD END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SVCD-CCD RUN    FAIL        files 6: EXT/SCANDATA.DAT:42, MPEG2/AVSEQ01.MPG:292864, SVCD/ENTRIES.SVD:2048, SVCD/INFO.SVD:2048, SVCD/SEARCH.DAT:31, SVCD/TRACKS.SVD:2048; mismatches: MPEG2/AVSEQ01.MPG 292864 bytes e6adfb021dd6 (want 332332 5575d18cdb96) | MPEG2/AVSEQ01.MPG does not contain s.mpg; source s.mpg (332332 bytes) whole in it: False; image kept: False (want False); fatal: ; windows: no window
+R-VCD-BIN  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VCD-BIN  RUN    FAIL        files 4: MPEGAV/AVSEQ01.DAT:608256, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; mismatches: MPEGAV/AVSEQ01.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b) | MPEGAV/AVSEQ02.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b) | MPEGAV/AVSEQ01.DAT does not contain v.mpg; source v.mpg (515928 bytes) whole in it: False; image kept: True (want any); fatal: ; windows: no window
+C-MIXED    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MIXED    RUN    FAIL        files 4: MPEGAV/AVSEQ01.DAT:608256, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; mismatches: MPEGAV/AVSEQ02.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b); image kept: False (want False); fatal: ; windows: no window
+C-NOXA     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-NOXA     RUN    FAIL        files 4: MPEGAV/AVSEQ01.DAT:608256, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; mismatches: MPEGAV/AVSEQ02.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b); image kept: False (want False); fatal: ; windows: no window
+C-F1SUB    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-F1SUB    RUN    FAIL        files 4: MPEGAV/AVSEQ01.DAT:608256, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; mismatches: MPEGAV/AVSEQ01.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b); image kept: False (want False); fatal: ; windows: no window
+C-COOKED   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-COOKED   RUN    PASS        files 4: MPEGAV/AVSEQ01.DAT:608256, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; mismatches: none; image kept: True (want any); fatal: ; windows: no window
+C-CUT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-CUT      RUN    FAIL        files 3: MPEGAV/AVSEQ01.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; mismatches: MPEGAV/AVSEQ01.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b); image kept: True (want True); fatal: ; windows: [#32770 'Read error'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Cannot read sector #00000122. | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel
+C-SHORT240 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-SHORT240 RUN    FAIL        files 4: MPEGAV/AVSEQ01.DAT:491520, MPEGAV/AVSEQ02.DAT:608256, VCD/ENTRIES.VCD:2048, VCD/INFO.VCD:2048; mismatches: MPEGAV/AVSEQ01.DAT 491520 bytes 8b97cafcdd1c (want 557760 c0a275009989) | MPEGAV/AVSEQ02.DAT 608256 bytes 6ea59589087f (want 690228 7f9f0df5777b); image kept: True (want True); fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 11, FAIL 9, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -22046,8 +22046,8 @@ static void TestIsoXaForm2_366()
     CHECK(!SalIsoTrackStoresForm2(2352, 16)); // Mode 1
     CHECK(!SalIsoTrackStoresForm2(2352, 0));  // audio
     CHECK(!SalIsoTrackStoresForm2(2336, 0));
-    CHECK(!SalIsoTrackStoresForm2(2048, 0)); // cooked
-    CHECK(!SalIsoTrackStoresForm2(2056, 8)); // Mode 1 / 2056
+    CHECK(!SalIsoTrackStoresForm2(2048, 0));  // cooked
+    CHECK(!SalIsoTrackStoresForm2(2056, 8));  // Mode 1 / 2056
     CHECK(!SalIsoTrackStoresForm2(0x91C, 8)); // CIF
     CHECK(!SalIsoTrackStoresForm2(0, 0));
     CHECK(!SalIsoTrackStoresForm2(-2352, 24));
@@ -22057,17 +22057,17 @@ static void TestIsoXaForm2_366()
     CHECK(SalIsoForm2FileSize(1) == 2324);
     CHECK(SalIsoForm2FileSize(2048) == 2324);
     CHECK(SalIsoForm2FileSize(2049) == 2 * 2324);
-    CHECK(SalIsoForm2FileSize(608256) == 690228ULL); // real VCD AVSEQ01.DAT: 297 sectors
-    CHECK(SalIsoForm2FileSize(292864) == 332332ULL); // real SVCD AVSEQ01.MPG = s.mpg
+    CHECK(SalIsoForm2FileSize(608256) == 690228ULL);                // real VCD AVSEQ01.DAT: 297 sectors
+    CHECK(SalIsoForm2FileSize(292864) == 332332ULL);                // real SVCD AVSEQ01.MPG = s.mpg
     CHECK(SalIsoForm2FileSize(0xFFFFFFFFULL) == 2097152ULL * 2324); // the largest 32-bit DataLength
 
     // feature 337's span counts a Form 2 file's sectors by 2324
     long long f = -1, e = -1;
     CHECK(SalIsoFileSectorSpan(450, 690228, 450, 447, &f, &e, SAL_ISO_FORM2_PAYLOAD) && f == 0 && e == 297);
-    CHECK(SalIsoFileSectorSpan(450, 690228, 450, 447, &f, &e) && f == 0 && e == 337); // by 2048: 40 sectors too many
-    CHECK(SalIsoFileSectorSpan(450, 608256, 450, 447, &f, &e) && f == 0 && e == 297); // a 2048 file as before
+    CHECK(SalIsoFileSectorSpan(450, 690228, 450, 447, &f, &e) && f == 0 && e == 337);  // by 2048: 40 sectors too many
+    CHECK(SalIsoFileSectorSpan(450, 608256, 450, 447, &f, &e) && f == 0 && e == 297);  // a 2048 file as before
     CHECK(SalIsoFileSectorSpan(450, 2324 * 10 - 1, 450, 447, &f, &e, 2324) && e == 9); // a part sector is not whole
-    CHECK(SalIsoFileSectorSpan(450, 2324 * 500, 450, 447, &f, &e, 2324) && e == 447);   // clipped to the track
+    CHECK(SalIsoFileSectorSpan(450, 2324 * 500, 450, 447, &f, &e, 2324) && e == 447);  // clipped to the track
     CHECK(!SalIsoFileSectorSpan(450, 2323, 450, 447, &f, &e, 2324));
     CHECK(!SalIsoFileSectorSpan(450, 690228, 450, 447, &f, &e, 0));
     CHECK(!SalIsoFileSectorSpan(450, 690228, 450, 447, &f, &e, -2324));
