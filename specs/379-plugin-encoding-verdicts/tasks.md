@@ -24,25 +24,26 @@ quickstart.md)
 - [X] T004 [US1] Drop the markers of rows 3, 67, 68, 75 in `src/plugins/checkver/dialogs.cpp`,
   `src/plugins/tar/tardll.cpp`, `src/plugins/uncab/uncab.cpp`, `src/plugins/unmime/parser.cpp`
 - [X] T005 [US1] Add the 4 false-positive markers in `src/plugins/codeview/config.cpp`
-- [ ] T006 [US1] Create the backlog items (bin/backlog.sh, Inbox, source `measure:379`): CheckVer
+- [X] T006 [US1] Create the backlog items (bin/backlog.sh, Inbox, source `measure:379`): CheckVer
   filter names, TAR / UnCAB / UnMIME archive names in WTF-8 - one per plug-in, bodies complete
-- [ ] T007 [US1] Add the TAR and UnCAB items to `depends-on` of
-  `backlog/items/plugin-encoding-scan-strict-in-build/desc.md` (via bin/backlog.sh)
-- [ ] T008 [US1] Write `specs/379-plugin-encoding-verdicts/verdicts.md`: 82 rows with lines at HEAD
+- [X] T007 [US1] Add the TAR and UnCAB items to `depends-on` of
+  `backlog/items/plugin-encoding-scan-strict-in-build/desc.md` (via bin/backlog.sh) - done as a
+  `BL log` line on that item: agent mode may not change another item's fields (deviation, fix-log)
+- [X] T008 [US1] Write `specs/379-plugin-encoding-verdicts/verdicts.md`: 82 rows with lines at HEAD
   (scripted from 255's table, the scan and the markers), each false-positive reason equal to its
   marker
-- [ ] T009 [US1] Check: the scan's `--format list` sites equal the *real defect* rows; every
+- [X] T009 [US1] Check: the scan's `--format list` sites equal the *real defect* rows; every
   *real defect* slug exists in `backlog/items/`; every false-positive reason equals its marker
 
 ## Phase 4: User Story 2 - a new defect stands out (P2)
 
-- [ ] T010 [US2] Negative control: one bad line appended to `src/plugins/dbviewer/dialogs.cpp` is
+- [X] T010 [US2] Negative control: one bad line appended to `src/plugins/dbviewer/dialogs.cpp` is
   reported, file restored; markers stripped in a copy of `tools/` + `src/plugins` under %TEMP% give
   back the 81 of `baseline_3e0da39c.txt`
 
 ## Phase 5: Polish
 
-- [ ] T011 `python tools/check_encoding.py --strict` → `TOTAL: 0`; source diff comments only;
+- [X] T011 `python tools/check_encoding.py --strict` → `TOTAL: 0`; source diff comments only;
   `.\build.cmd` → `BUILD SUCCEEDED`; record in `fix-log.md`
 
 ## Dependencies

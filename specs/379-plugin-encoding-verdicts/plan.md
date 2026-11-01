@@ -26,7 +26,7 @@ stripped in a copy give back the baseline)
 **Performance Goals**: N/A
 **Constraints**: plug-ins are built without `UNICODE` - un-suffixed Win32 calls are ANSI; plug-in
 text from the core is UTF-8, names WTF-8 (066, 089, interface 104)
-**Scale/Scope**: 82 sites (78 of 239 + 4 new) in 23 plug-ins (+ `shared/lukas`)
+**Scale/Scope**: 82 sites (78 of 239 + 4 new) in 19 plug-ins (+ `shared/lukas`)
 
 ## Constitution Check
 

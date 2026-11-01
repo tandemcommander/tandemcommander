@@ -153,5 +153,9 @@ reported; remove it.
   their own features.
 - Assumption (autonomous run): plug-ins are built without UNICODE (un-suffixed Win32 calls are
   ANSI), as feature 255 measured.
+- Assumption (autonomous run): FR-007 is met by a log line on `plugin-encoding-scan-strict-in-build`
+  naming the two new shipped-plug-in items - an agent may not change the fields of an item it did
+  not create (`/tandem-backlog` agent mode); adding them to its `depends-on` is the maintainer's
+  step (deviation, stop-rules §2.14).
 - Assumption (autonomous run): feature 255's markers are carried over (SKILL.md 4.6) and each is
   re-checked against its line at HEAD before it is kept.
