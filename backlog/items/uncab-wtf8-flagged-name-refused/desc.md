@@ -1,16 +1,16 @@
 ---
 title: UnCAB: one UTF-8 cabinet name with an unpaired surrogate makes the whole cabinet fail
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: measure:379
 who: agent
 created: 2026-11-01
 updated: 2026-11-01
-verified: -
+verified: 2026-11-01 bd7cc15e
 effort: M
-feature: -
+feature: 381
 related: [tar-wtf8-names-read-in-code-page]
 depends-on: []
 reason: -
@@ -44,3 +44,5 @@ Severity at the lower end of the band: only names with an unpaired surrogate, an
 - 2026-11-01 — Problem corrected and severity 4 -> 5 after review 1 of feature 379 (the refusal aborts the whole cabinet)
 - 2026-11-01 — severity and title after review 1 of feature 379
 - 2026-11-01 — moved to Next position 2
+- 2026-11-01 — verified at bd7cc15e: reproduced at bd7cc15e: hidden-desktop probe, flagged WTF-8 name (ED A0 80 / ED B0 80) -> cabinet neither lists nor unpacks, silently
+- 2026-11-01 — run started, feature 381
