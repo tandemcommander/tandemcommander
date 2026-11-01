@@ -2024,6 +2024,7 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
             if (useSelection) // only when it concerns items in the panel (not the current path in the panel)
             {
                 // if command states need to be computed, do it (ArchiveMenu.UpdateItemsState uses them)
+                RequestIdleClipCheckIfBusy(); // feature 375: a clipboard busy at the last check is looked at again
                 MainWindow->OnEnterIdle();
 
                 // let the enabler set the states and open the menu
@@ -2039,6 +2040,7 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                 if (onlyPanelMenu) // context menu in the panel (behind the items) -> paste only
                 {
                     // if command states need to be computed, do it (ArchivePanelMenu.UpdateItemsState uses them)
+                    RequestIdleClipCheckIfBusy(); // feature 375: a clipboard busy at the last check is looked at again
                     MainWindow->OnEnterIdle();
 
                     // let the enabler set the states and open the menu
@@ -2194,6 +2196,10 @@ void ShellAction(CFilesWindow* panel, CShellAction action, BOOL useSelection,
                     char cmdName[2000]; // we intentionally use 2000 instead of 200; shell extensions sometimes write twice as much (idea: Unicode = 2 * "number of characters"), etc.
                     if (onlyPanelMenu)
                     {
+                        // feature 375: the Paste items below read the Enabler* values; a clipboard
+                        // busy at the last check is looked at again first
+                        if (RequestIdleClipCheckIfBusy())
+                            MainWindow->RefreshCommandStates(); // only the command states (not the rest of OnEnterIdle)
                         if (panel->ContextSubmenuNew->MenuIsAssigned())
                         {
                             HMENU bckgndMenu = panel->ContextSubmenuNew->GetMenu();

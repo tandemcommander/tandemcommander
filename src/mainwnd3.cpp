@@ -1977,13 +1977,10 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         else
             UserMenuIconBkgndReader.EndUserMenuIconsInUse();
 
-        // feature 375: the clipboard was busy at the last check and a later look is pending -
-        // look now, so the menu shows the paste commands as the clipboard is now (a new series)
-        if (uMsg == WM_USER_ENTERMENULOOP && IdleClipCheckRetryPending)
-        {
-            IdleRefreshStates = TRUE;
-            IdleCheckClipboard = TRUE;
-        }
+        // feature 375: the clipboard was busy at the last check - look now, so the menu shows
+        // the paste commands as the clipboard is now (a new series of later looks if still busy)
+        if (uMsg == WM_USER_ENTERMENULOOP)
+            RequestIdleClipCheckIfBusy();
 
         // Ensure the enablers are set correctly so enabled items in the menu reflect
         // the real state. Also update the bottom toolbar status.

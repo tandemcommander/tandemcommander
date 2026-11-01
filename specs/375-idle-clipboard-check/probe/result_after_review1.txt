@@ -1,0 +1,14 @@
+act375_probe (feature 375) after-review1
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 15:28; registry key existed True; limit 30 ms; 5 activations a row; at start: clipboard not open
+
+  waits (start ms after activation + length ms): FREE #0: 
+  waits (start ms after activation + length ms): FREE #1: 
+  waits (start ms after activation + length ms): FREE #2: 
+  waits (start ms after activation + length ms): FREE #3: 
+  waits (start ms after activation + length ms): FREE #4: 
+FREE       ACTIVATE PASS        longest 1,9 ms < 30; clipboard not open; at rest max 4,9 ms; per activation max [ms]: 0,4, 0,6, 0,3, 1,9, 0,3; after the row max 0,1 ms; title 'T375 - local - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+FREE       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 67F5526EE271066697F6EBDFB68EB0A01500CF3521A0C47B8B182171F2ED33BF / after 67F5526EE271066697F6EBDFB68EB0A01500CF3521A0C47B8B182171F2ED33BF
+
+Rows: PASS 2, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; clipboard not open; registry restored+identical: True

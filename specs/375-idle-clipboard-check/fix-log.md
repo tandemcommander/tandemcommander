@@ -113,3 +113,52 @@ Registry restored, identical SHA-256. Negative control: the same probe on the bu
 NOT DRIVEN: the enabled state of the paste commands (the program's own menus and toolbars cannot
 be read on the hidden desktop) - the later looks are covered by `TestClipCheck375` and owed to a
 person on a real desktop (T012 -> person-step item at closing).
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+Re-ran build, saltests (30237 / 0), encoding guard (0) and the probe on the branch build (FREE
+2.3 ms, HELD 2.9 ms, PASS 4); negative control = `e1b1e2c9` built in a worktree: HELD 15+141,
+16+142, 16+141, 16+141, 15+141 ms (FAIL) - the probe detects the defect. It also proved the later
+looks, which neither saltests nor the probe show: a cdb breakpoint on `IsTextOnClipboard` counted
+11 checks 500 ms apart after one activation with the clipboard busy for 7 s (pre-fix: 1), the
+series restarting on a menu-loop message, and 0 checks in 3 s with nothing pending.
+
+- SHOULD 1: FR-003 held only for the main menu - the archive item / archive panel context menus
+  (`shellsup.cpp`, `OnEnterIdle` + `UpdateItemsState` before `Track`) and the disk panel background
+  menu (reads `EnablerPaste*` before `Track`) read the enablers before `WM_USER_ENTERMENULOOP`.
+  -> **fixed**: `RequestIdleClipCheckIfBusy()` (`mainwnd1.cpp`) requests the check when the last
+  check found the clipboard busy; called in `WM_USER_ENTERMENULOOP` and before the two archive
+  menus' `OnEnterIdle`; the disk background menu calls it and then `RefreshCommandStates()` before
+  its Paste items. FR-003 and the contract updated.
+- NOTE 4 (menus stale after an exhausted series): **fixed** by the same helper - it keys on
+  `IdleClipCheckLastBusy` (the last check's result), not on a pending look.
+- NOTE 2 (holds < ~150 ms: all four states FALSE for up to 500 ms instead of the text state being
+  right after the wait; then all corrected, *Paste* of files included, which the old code left
+  wrong) - accepted, the spec's FR-005 / clarification Q1.
+- NOTE 3 (only the text query reports busy; a hold released between `OleGetClipboard` and
+  `OpenClipboard` leaves *Paste* of files disabled without a retry) - a race that existed before;
+  accepted, recorded (the next trigger corrects it).
+- NOTE 6 (a trigger between the timer message and the idle counts as a retry; a timer during a
+  modal dialog only sets flags) - bounded, accepted.
+- NOTE 5 (machine state): from ~15:17 (`LogonUI.exe` started - the session was locked) no process
+  could open the clipboard (`OpenClipboard` error 5, `GetOpenClipboardWindow` NULL). Confirmed by
+  this run at 15:28 (`probe/clip_primitives.ps1`: error 5, `IsTextOnClipboard` loop 151.7 ms).
+
+After the fix: `build.cmd` BUILD SUCCEEDED, `saltests: 30237 checks, 0 failed`. With the
+clipboard held by the locked session (the helper cannot open it then, so row HELD cannot run; row
+FREE meets the external hold):
+
+| Build | Row FREE under the external hold | File |
+|---|---|---|
+| this branch | 0.3-1.9 ms, no wait > 16 ms - PASS | `probe/result_after_review1.txt` |
+| pre-fix `e1b1e2c9` (reviewer's worktree build) | 14+141, 15+140, 30+126, 15+143, 15+141 ms - FAIL | `probe/result_neg_locked.txt` |
+
+The pre-fix range 125-143 ms is exactly feature 372's LOCAL row: 372's "every activation" block was
+very likely measured while the workstation was locked (the unattended loop runs while the
+maintainer is away) - the item's note "the hidden desktop may make the queries slower" is answered:
+not the desktop, the clipboard being unopenable. On a user's unlocked desktop the block occurs
+while another program keeps the clipboard open (clipboard managers, remote-desktop clipboard
+sharing, a hung program); the change removes it in every case. A second review was not required
+(no MUST); the SHOULD fix is small and follows the archive menus' existing `OnEnterIdle` pattern.

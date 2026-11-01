@@ -2982,6 +2982,7 @@ void CMainWindow_RefreshCommandStates(CMainWindow* obj)
             // waiting for it here - the wait blocked every activation ~150 ms
             UINT nextLook = SalClipCheckNextLook(clipBusy, IdleClipCheckIsRetry, &IdleClipCheckRetries);
             IdleClipCheckIsRetry = FALSE;
+            IdleClipCheckLastBusy = clipBusy; // a menu looks again before it shows the paste commands
             if (nextLook != 0)
                 IdleClipCheckRetryPending = SetTimer(obj->HWindow, IDT_CLIPCHECKRETRY, nextLook, NULL) != 0;
             else
@@ -3222,6 +3223,18 @@ void CMainWindow_RefreshCommandStates(CMainWindow* obj)
     }
     obj->IdleStatesChanged = FALSE;
     IdleForceRefresh = FALSE;
+}
+
+BOOL RequestIdleClipCheckIfBusy()
+{
+    // feature 375: the idle check does not wait for a busy clipboard; a menu showing the paste
+    // commands looks again (one try, ~1 ms) while the last result was "busy" - also after the
+    // series of later looks has ended
+    if (!IdleClipCheckLastBusy)
+        return FALSE;
+    IdleRefreshStates = TRUE;
+    IdleCheckClipboard = TRUE;
+    return TRUE;
 }
 
 void CMainWindow::RefreshCommandStates()

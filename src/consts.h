@@ -2102,6 +2102,10 @@ extern BOOL IdleCheckClipboard; // pokud je IdleRefreshStates==TRUE a zaroven je
 extern BOOL IdleClipCheckIsRetry;      // the pending clipboard check was requested by IDT_CLIPCHECKRETRY
 extern int IdleClipCheckRetries;       // looks of the current series
 extern BOOL IdleClipCheckRetryPending; // IDT_CLIPCHECKRETRY is set on the main window
+extern BOOL IdleClipCheckLastBusy;     // the last idle clipboard check could not open the clipboard
+// a menu that shows the paste commands is about to read the Enabler* values: if the last check
+// found the clipboard busy, request the check (the next OnEnterIdle runs it); TRUE = requested
+BOOL RequestIdleClipCheckIfBusy();
 
 // ".." neni pocitano mezi soubory|adresare
 extern DWORD EnablerUpDir;                // existuje parent directory?

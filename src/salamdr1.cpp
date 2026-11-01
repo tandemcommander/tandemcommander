@@ -414,6 +414,7 @@ BOOL IdleCheckClipboard = TRUE; // koukneme taky na clipboard
 BOOL IdleClipCheckIsRetry = FALSE;      // feature 375
 int IdleClipCheckRetries = 0;           // feature 375
 BOOL IdleClipCheckRetryPending = FALSE; // feature 375
+BOOL IdleClipCheckLastBusy = FALSE;     // feature 375
 
 DWORD EnablerUpDir = FALSE;
 DWORD EnablerRootDir = FALSE;

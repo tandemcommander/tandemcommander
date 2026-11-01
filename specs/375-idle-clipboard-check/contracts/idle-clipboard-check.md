@@ -34,7 +34,10 @@ pending = TRUE; `delay == 0` and pending -> `KillTimer`, pending = FALSE.
 `KillTimer`, pending = FALSE, `IdleClipCheckIsRetry = TRUE`, `IdleRefreshStates = TRUE`,
 `IdleCheckClipboard = TRUE` (the idle after the timer message runs the check).
 
-## Menu (`WM_USER_ENTERMENULOOP`)
+## Menus (`RequestIdleClipCheckIfBusy`, review 1)
 
-Before its `OnEnterIdle()`: if pending -> `IdleRefreshStates = IdleCheckClipboard = TRUE` (not a
-retry: the series restarts).
+`IdleClipCheckLastBusy` = the `busy` of the last idle check. Before a menu reads the paste
+enablers - `WM_USER_ENTERMENULOOP` (main menu), the archive item and archive panel context menus
+(`shellsup.cpp`, before their `OnEnterIdle`), the disk panel background menu (before its Paste
+items; then `RefreshCommandStates`) - `RequestIdleClipCheckIfBusy()`: if `IdleClipCheckLastBusy`
+-> `IdleRefreshStates = IdleCheckClipboard = TRUE` (not a retry: the series restarts).

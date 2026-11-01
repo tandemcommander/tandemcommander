@@ -106,8 +106,9 @@ probe cannot read (a person-step confirms it on a real desktop).
 - **FR-002**: When that check found the clipboard busy, the program MUST look again after
   0.5 s, at most 10 times in a row; a look that finds the clipboard free, or a new trigger of
   the check, ends or restarts that series.
-- **FR-003**: Opening a menu while a later look is pending MUST look at once, so the menu shows
-  the current state.
+- **FR-003**: Opening a menu that shows the paste commands (the main menu, the panel and archive
+  context menus) while the last check found the clipboard busy MUST look at once (also after the
+  series of later looks ended), so the menu shows the current state (review 1 SHOULD 1, NOTE 4).
 - **FR-004**: The result of a check that could read the clipboard MUST be the same as today
   (the same paste commands offered for the same clipboard content).
 - **FR-005**: The result of a check that found the clipboard busy MUST be the same as today's
