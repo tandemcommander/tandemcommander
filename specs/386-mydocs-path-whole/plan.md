@@ -11,7 +11,7 @@ header-only rule `src/common/salmydocs.h` (`SalDocumentsOrDesktopToU8`, saltests
 helper reads the two folders wide and hands them to the rule, without the 520-byte intermediate
 buffer. The long-path capable callers (drive bar / Alt+F1/F2 Documents, Ctrl+;, the wide File
 Open / Save fallbacks) get buffers of `SAL_MAX_PATH_UTF8`; the rescue path keeps `MAX_PATH` and
-its existing fallback. A Debug-only seam `TC_PROBE_MYDOCS_PATH` lets a hidden-desktop probe name
+its existing fallback. A Debug-only seam `TC_PROBE_MYDOCS_FILE` lets a hidden-desktop probe name
 the Documents folder; it is committed before the fix so the probe measures the defect first.
 
 ## Technical Context

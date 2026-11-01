@@ -125,7 +125,7 @@ whose drive is not reachable, with the rescue path set to Documents).
 - Assumption (autonomous run): a Documents path the system reports as "too long" for the caller
   is not replaced by the Desktop (the item's *Expected*: refused).
 - Assumption (autonomous run): the GUI reproduction uses a Debug-only environment seam
-  (`TC_PROBE_MYDOCS_PATH`) instead of redirecting the real Documents folder (which would change
+  (`TC_PROBE_MYDOCS_FILE`) instead of redirecting the real Documents folder (which would change
   the maintainer's live profile); the seam is committed before the fix so the "before" run shows
   the defect.
 - No UI string, dialog or menu changes; no translation refresh is needed.

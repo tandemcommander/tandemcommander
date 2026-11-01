@@ -1,0 +1,7 @@
+386 probe, exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Documents LONG: 130 units, 310 bytes of UTF-8; prefix folder 113 units, 259 bytes
+SHORT      DRIVE  PASS        button idx 6; windows: no window; panel before C:\Users\pavel\AppData\Local\Temp\tc386\start; after: the short Documents folder = C:\Users\pavel\AppData\Local\Temp\tc386\docs_short
+LONG       DRIVE  FAIL        button idx 6; windows: no window; panel before C:\Users\pavel\AppData\Local\Temp\tc386\start; after: the PREFIX folder (cut path) = ...\u4E0E\u4E0F\u4E10\u4E11\u4E12\u4E13\u4E14\u4E15\u4E16\u4E17\u4E18\u4E19\u4E1A\u4E1B\u4E1C\u4E1D\u4E1E\u4E1F\u4E20\u4E21\u4E22\u4E23\u4E24\u4E25\u4E26\u4E27\u4E28\u4E29\u4E2A\u4E2B\u4E2C\u4E2D\u4E2E\u4E2F\u4E30\u4E31\u4E32\u4E33\u4E34\u4E35\u4E36\u4E37\u4E38\u4E39\u4E3A\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42\u4E43\u4E44\u4E45\u4E46\u4E47\u4E48\u4E49
+RESCUE     -      NOT DRIVEN  the rescue route is not reachable without a root that cannot be listed (code reading)
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+RESULT: 2 row(s), 1 FAIL; registry restored True

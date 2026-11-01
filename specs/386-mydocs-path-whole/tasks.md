@@ -9,7 +9,7 @@
 
 ## Phase 2: Foundational (measure first)
 
-- [ ] T002 Add the Debug-only seam `TC_PROBE_MYDOCS_PATH` to `GetMyDocumentsOrDesktopPath` in `src/shellib.cpp` (old behaviour otherwise unchanged), per contracts/salmydocs.md
+- [ ] T002 Add the Debug-only seam `TC_PROBE_MYDOCS_FILE` to `GetMyDocumentsOrDesktopPath` in `src/shellib.cpp` (old behaviour otherwise unchanged), per contracts/salmydocs.md
 - [ ] T003 Write the probe `specs/386-mydocs-path-whole/probe/mydocs386_probe.ps1` (rows LONG, SHORT, RESCUE; registry backup / restore via `specs/098-long-path-overruns/probe/fix_probe_lib.ps1`; fixture under `%TEMP%\tc386`)
 - [ ] T004 Build Debug (`.\build.cmd`), run the probe on the hidden desktop -> `specs/386-mydocs-path-whole/probe/result_before.txt`; record in fix-log.md (expected: LONG and RESCUE FAIL = the prefix folder, SHORT PASS); commit the seam and probe
 

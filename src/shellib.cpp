@@ -2883,13 +2883,64 @@ STDMETHODIMP CTextDataObject::GetData(FORMATETC* formatEtc, STGMEDIUM* medium)
 // GetMyDocumentsOrDesktopPath
 //
 
+#ifdef _DEBUG
+// probe seam, Debug builds only (feature 386, specs/386-mydocs-path-whole/contracts/salmydocs.md):
+// with TC_PROBE_MYDOCS_FILE=<file> the Documents folder is the UTF-8 text of that file (without a
+// BOM and line ends) instead of the folder the shell reports. A file, not the variable itself: the
+// environment is copied through the code page at start (CEnvVariables, salamdr7.cpp), so a value
+// with letters outside it would arrive as '?'. Returns a heap copy (free()) or NULL.
+static WCHAR* ProbeDocumentsPathW()
+{
+    WCHAR file[MAX_PATH];
+    DWORD len = GetEnvironmentVariableW(L"TC_PROBE_MYDOCS_FILE", file, _countof(file));
+    if (len == 0 || len >= _countof(file))
+        return NULL;
+    HANDLE h = CreateFileW(file, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h == INVALID_HANDLE_VALUE)
+        return NULL;
+    char* text = (char*)malloc(65536 + 1);
+    DWORD read = 0;
+    BOOL ok = text != NULL && ReadFile(h, text, 65536, &read, NULL);
+    CloseHandle(h);
+    WCHAR* ret = NULL;
+    if (ok)
+    {
+        text[read] = 0;
+        while (read > 0 && (text[read - 1] == '\r' || text[read - 1] == '\n'))
+            text[--read] = 0;
+        const char* start = text;
+        if (read >= 3 && (unsigned char)start[0] == 0xEF && (unsigned char)start[1] == 0xBB && (unsigned char)start[2] == 0xBF)
+            start += 3;
+        ret = SalU8ToWAlloc(start, -1);
+    }
+    free(text);
+    return ret;
+}
+#endif // _DEBUG
+
 BOOL GetMyDocumentsOrDesktopPath(char* path, int pathLen)
 {
     char buff[2 * MAX_PATH];
 
     BOOL ret = FALSE;
     ITEMIDLIST* pidl = NULL;
+#ifdef _DEBUG
+    // probe seam (feature 386): the Documents folder named by the probe instead of the shell
+    BOOL probeDocs = FALSE;
+    {
+        WCHAR* probeW = ProbeDocumentsPathW();
+        if (probeW != NULL)
+        {
+            probeDocs = TRUE;
+            if (SalWToU8(probeW, -1, buff, 2 * MAX_PATH) != 0)
+                ret = TRUE;
+            free(probeW);
+        }
+    }
+    if (!probeDocs && SHGetSpecialFolderLocation(NULL, CSIDL_PERSONAL, &pidl) == NOERROR)
+#else
     if (SHGetSpecialFolderLocation(NULL, CSIDL_PERSONAL, &pidl) == NOERROR)
+#endif
     {
         if (SalSHGetPathFromIDListU8(pidl, buff, 2 * MAX_PATH))
             ret = TRUE;

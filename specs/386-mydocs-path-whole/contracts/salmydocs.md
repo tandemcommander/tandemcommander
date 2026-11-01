@@ -22,8 +22,11 @@ int SalDocumentsOrDesktopToU8(const WCHAR* docsW, const WCHAR* desktopW, char* p
 `BOOL GetMyDocumentsOrDesktopPath(char* path, int pathLen)` - unchanged signature; TRUE only for
 `SAL_DOCS_OK`. A refusal for `SAL_DOCS_TOO_LONG` writes `TRACE_E`.
 
-## Probe seam TC_PROBE_MYDOCS_PATH (Debug builds only)
+## Probe seam TC_PROBE_MYDOCS_FILE (Debug builds only)
 
-When the environment variable `TC_PROBE_MYDOCS_PATH` is set (read wide, up to 32767 units), its
-value replaces the Documents folder the shell reports, as if `SHGetPathFromIDListW` had given it
-(the probe keeps it below 260 units). Release builds do not read it.
+When the environment variable `TC_PROBE_MYDOCS_FILE` names a file (a path below `MAX_PATH`
+units), the file's UTF-8 text (a BOM and trailing line ends dropped, at most 64 KB) replaces the
+Documents folder the shell reports, as if `SHGetPathFromIDListW` had given it (the probe keeps it
+below 260 units). A file and not the value itself: the program copies its environment through the
+code page at start (`CEnvVariables`, `salamdr7.cpp`, measured: 90 CJK letters arrived as 90 `?`).
+Release builds do not read it.

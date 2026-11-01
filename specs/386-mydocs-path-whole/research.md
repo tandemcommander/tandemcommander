@@ -29,7 +29,7 @@ so the two new local arrays follow the existing pattern.
 
 ## R3 Measuring without touching the user's Documents
 
-- Decision: a Debug-only environment seam `TC_PROBE_MYDOCS_PATH` (wide) replaces the Documents path
+- Decision: a Debug-only environment seam `TC_PROBE_MYDOCS_FILE` (wide) replaces the Documents path
   the shell reports; committed before the fix.
 - Rationale: redirecting the real Documents changes the maintainer's live profile (Explorer, other
   programs) - not acceptable on a working machine. Drive bar buttons are driven by
