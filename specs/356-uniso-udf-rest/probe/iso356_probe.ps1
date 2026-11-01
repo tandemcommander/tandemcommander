@@ -15,9 +15,9 @@
     the target field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK. A .iso row
     must show no window at all; an .img row only "Missing .CCD file" boxes (once per open).
       C-PLAIN     u1 (its last sector is its closing anchor): PASS = a.txt, deleted
-      N-U250      u250 (UDF 2.50, metadata partition): the plug-in cannot list it (main as well - measured
-                  before this feature; Inbox item): PASS = nothing extracted, only the read-error boxes,
-                  KEPT - unchanged
+      C-U250      u250 (UDF 2.50, metadata partition): PASS = a.txt, deleted (feature 377; until then row
+                  N-U250 - nothing extracted, only the read-error boxes, KEPT: the metadata file entry was read
+                  before the partition descriptor that follows the logical volume descriptor)
       R-TWO       u1 + u2 joined, named .iso: PASS = a.txt, KEPT. Before: deleted, b.txt lost
       R-TWOIMG    the same named .img (no .ccd): PASS = a.txt, KEPT
       R-TWOABS    as R-TWO, u2's last sector an anchor of the later volume addressed as on a disc: PASS =
@@ -206,7 +206,7 @@ try {
     $a = [ordered]@{ 'a.txt' = 'A1' }
     $none = [ordered]@{}
     Unpack-Row 'C-PLAIN' "$s\plain.bin" 'plain.iso' $a
-    Unpack-Row 'N-U250' "$s\u250.iso" 'u250.iso' $none -Kept -Msg 'read'
+    Unpack-Row 'C-U250' "$s\u250.iso" 'u250.iso' $a
     Unpack-Row 'R-TWO' "$s\two.bin" 'two.iso' $a -Kept
     Unpack-Row 'R-TWOIMG' "$s\two.bin" 'two.img' $a -Kept -Msg 'missing'
     Unpack-Row 'R-TWOABS' "$s\twoabs.bin" 'twoabs.iso' $a -Kept

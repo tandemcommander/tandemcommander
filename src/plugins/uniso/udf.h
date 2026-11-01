@@ -218,6 +218,9 @@ protected:
         EPartitionMapping Type;
         WORD VolumeSequenceNumber;
         WORD PartitionNumber;
+        // feature 377: mapMetadata only - the metadata file's block (minus ExtentOffset); its entry is read
+        // in ReadSupportingTables, once the whole descriptor sequence (also a later partition descriptor) is read
+        Uint32 MetadataFileLocation;
     };
 
     struct CPartitionMapping

@@ -1,0 +1,34 @@
+iso356_probe (feature 356) regress377
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 16:42; registry key existed True
+
+seeds: anchor600.bin=1865728,anchorrest.bin=923648,data100.bin=1384448,i2.iso=45056,joiniso.bin=1224704,mk_bdr.img=655360,mk_cd.img=8192000,mk_cdr.img=614400,mk_cdrclosed.img=1052672,mk_cdrw.img=8192000,mk_dvd.img=8192000,mk_dvdr.img=589824,mk_dvdrw.img=8192000,mk_hd.img=4096000,mk_hd512.img=4096000,mkdvd256.bin=8716288,mkhd256.bin=4620288,noanchor.bin=1179648,plain.bin=1179648,rest16.bin=667648,rest17.bin=669696,short.bin=614400,two.bin=2359296,twoabs.bin=2359296,u1.iso=1179648,u2.iso=1179648,u250.iso=1507328,zero100.bin=1384448,zero300.bin=1794048,zero512.bin=1683456,zero513.bin=1685504,zerolate.bin=1249280
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc356\seeds\u1.iso: 1179648 bytes, 576 blocks
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc356\seeds\u2.iso: 1179648 bytes, 576 blocks
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc356\seeds\u250.iso: 1507328 bytes, 736 blocks
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc356\seeds\i2.iso: 45056 bytes, 22 blocks
+img356: plain: 1179648 bytes, 576 sectors, descriptors end 310
+img356: two: 2359296 bytes, 1152 sectors, descriptors end 310
+img356: twoabs: 2359296 bytes, 1152 sectors, descriptors end 310
+img356: rest16: 667648 bytes, 326 sectors, descriptors end 310
+img356: rest17: 669696 bytes, 327 sectors, descriptors end 310
+img356: zero100: 1384448 bytes, 676 sectors, descriptors end 310
+img356: zero300: 1794048 bytes, 876 sectors, descriptors end 310
+img356: data100: 1384448 bytes, 676 sectors, descriptors end 310
+img356: anchorrest: 923648 bytes, 451 sectors, descriptors end 310
+img356: zero512: 1683456 bytes, 822 sectors, descriptors end 310
+img356: zero513: 1685504 bytes, 823 sectors, descriptors end 310
+img356: zerolate: 1249280 bytes, 610 sectors, descriptors end 310
+img356: short: 614400 bytes, 300 sectors, descriptors end 310
+img356: noanchor: 1179648 bytes, 576 sectors, descriptors end 310
+img356: anchor600: 1865728 bytes, 911 sectors, descriptors end 310
+img356: two: 1224704 bytes, 598 sectors, descriptors end 310
+img356: data256: 8716288 bytes, 4256 sectors, descriptors end 3856
+img356: data256: 4620288 bytes, 2256 sectors, descriptors end 1999
+
+C-PLAIN    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-PLAIN    RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-U250     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-U250     RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-TWO      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-TWO      RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window

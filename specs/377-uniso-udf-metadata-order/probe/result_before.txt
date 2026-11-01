@@ -1,0 +1,27 @@
+iso377_probe (feature 377) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 16:39; registry key existed True
+
+seeds: far.bin=1507328,swap.bin=1507328,u102.iso=1179648,u201sub.iso=1179648,u250.iso=1507328,u250sub.iso=1507328
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc377\seeds\u250.iso: 1507328 bytes, 736 blocks
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc377\seeds\u250sub.iso: 1507328 bytes, 736 blocks
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc377\seeds\u201sub.iso: 1179648 bytes, 576 blocks
+imapiudf356: C:\Users\pavel\AppData\Local\Temp\tc377\seeds\u102.iso: 1179648 bytes, 576 blocks
+img377: swap: 1507328 bytes, PD now at 34, LVD at 35
+img377: metafar: 1507328 bytes, metadata file location 0 -> 0x00FFFF00
+
+C-U250     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-U250     RUN    FAIL        files 0: ; missing: a.txt; files ok: False; image kept: True (want False); windows ok (none): False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000000. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #FF567539. Incomplete content of ISO image. | [Button id=1] OK
+C-U250SUB  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-U250SUB  RUN    FAIL        files 0: ; missing: a.txt, sub/b.txt; files ok: False; image kept: True (want False); windows ok (none): False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00000000. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #FF567539. Incomplete content of ISO image. | [Button id=1] OK
+C-U250SWAP END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-U250SWAP RUN    PASS        files 2: a.txt, sub/b.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-U201SUB  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-U201SUB  RUN    PASS        files 2: a.txt, sub/b.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-PLAIN    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-PLAIN    RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-U250FAR  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-U250FAR  RUN    PASS        files 0: ; files ok: True; image kept: True (want True); windows ok (read): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00FFFF00. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #FF567539. Incomplete content of ISO image. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 2BA002890B71312196611D3260E2DC02984E2C5092482B9EAF821109D0D73E7B / after 2BA002890B71312196611D3260E2DC02984E2C5092482B9EAF821109D0D73E7B
+
+Rows: PASS 10, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

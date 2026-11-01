@@ -317,6 +317,7 @@ void CUDF::ReadPD(BYTE sector[], CPD* pd)
 int CUDF::ReadPartitionMap(BYTE data[])
 {
     CPartitionMap* partMap = new CPartitionMap;
+    partMap->MetadataFileLocation = 0; // feature 377: set below for a metadata partition map only
     CEntityID entityID;
 
     BYTE partType = GET_BYTE(data, 0);
@@ -343,31 +344,12 @@ int CUDF::ReadPartitionMap(BYTE data[])
         }
         else if (strncmp(entityID.Identifier, "*UDF Metadata Partition", 23) == 0)
         {
-            CICB icb;
-            BYTE sector[0x800];
-            CDescriptorTag tag;
-            CICBTag icbTag;
-
             partMap->Type = mapMetadata;
 
-            // Parsing struct part_map_meta
-            icb.Partition = GET_WORD(data, 38);
-            icb.Location = GET_DWORD(data, 40) - ExtentOffset;
-
-            if (!ReadBlockLog(icb.Location, 1, sector))
-            {
-                Error(IDS_ERROR_READING_SECTOR, false, icb.Location);
-                break;
-            }
-            ReadDescriptorTag(sector, &tag);
-            if ((UDF_TAGID_EXTFENTRY == tag.ID) || (UDF_TAGID_FENTRY == tag.ID))
-            {
-                // It is assumed that there is no more than 1 Metadata partition present
-                int n = ReadFileEntry(sector, UDF_TAGID_EXTFENTRY == tag.ID, 0 /*??*/, &icbTag,
-                                      PartitionMapping.MetadataICBs, sizeof(PartitionMapping.MetadataICBs) / sizeof(PartitionMapping.MetadataICBs[0]));
-                // feature 361: a refused entry leaves no metadata extents (the walk hung on a reserved type)
-                PartitionMapping.nMetadataICBs = n == UDF_FE_REFUSED ? 0 : n;
-            }
+            // Parsing struct part_map_meta. Feature 377: only the metadata file's location is kept here; its
+            // entry is read in ReadSupportingTables - the logical volume descriptor may precede the partition
+            // descriptor (Windows' IMAPI2FS, UDF 2.50), and the read needs PD.Start
+            partMap->MetadataFileLocation = GET_DWORD(data, 40) - ExtentOffset;
         }
         break;
     } // switch
@@ -1664,7 +1646,28 @@ BOOL CUDF::ReadSupportingTables(BOOL quiet)
             break;
 
         case mapMetadata:
+        {
+            // feature 377: read here, after the whole descriptor sequence (it was read while the logical volume
+            // descriptor was parsed - before a partition descriptor that follows it, from PD.Start not yet set)
+            Uint32 location = PartitionMaps[i]->MetadataFileLocation;
+            CICBTag icbTag;
+
+            if (!ReadBlockLog(location, 1, sector))
+            {
+                Error(IDS_ERROR_READING_SECTOR, false, location);
+                break;
+            }
+            ReadDescriptorTag(sector, &tag);
+            if ((UDF_TAGID_EXTFENTRY == tag.ID) || (UDF_TAGID_FENTRY == tag.ID))
+            {
+                // It is assumed that there is no more than 1 Metadata partition present
+                int n = ReadFileEntry(sector, UDF_TAGID_EXTFENTRY == tag.ID, 0 /*??*/, &icbTag,
+                                      PartitionMapping.MetadataICBs, sizeof(PartitionMapping.MetadataICBs) / sizeof(PartitionMapping.MetadataICBs[0]));
+                // feature 361: a refused entry leaves no metadata extents (the walk hung on a reserved type)
+                PartitionMapping.nMetadataICBs = n == UDF_FE_REFUSED ? 0 : n;
+            }
             break;
+        }
         } // switch
     } // loop over all partitions
 

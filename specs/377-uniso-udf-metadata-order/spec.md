@@ -50,9 +50,10 @@ listing is complete).
 1. **Given** an IMAPI2FS UDF 2.50 image of `a.txt` ("A1"), **When** the user unpacks it whole with "Delete
    archive after unpacking", **Then** `a.txt` is extracted with its content, no window appears and the
    image is deleted.
-2. **Given** an IMAPI2FS UDF 2.50 image of `a.txt` and `sub\b.txt`, **When** the user opens it with Enter
-   and copies everything out, **Then** both files and the folder appear with their contents and no error
-   box is shown.
+2. **Given** an IMAPI2FS UDF 2.50 image of `a.txt` and `sub\b.txt`, **When** the user unpacks it whole
+   with "Delete archive after unpacking", **Then** both files appear with their contents in their folders,
+   no error box is shown and the image is deleted. (Enter lists the image through the same listing code
+   a whole unpack uses.)
 
 ---
 
