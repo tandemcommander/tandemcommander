@@ -36,6 +36,13 @@ Result (`probe/result_before.txt`, ACP 1250): PASS 6, FAIL 2.
 - ZVM-UTF-DEL PASS (UTF-8 server).
 - Registry restored, identical.
 
+## Analyze (speckit-analyze)
+
+No CRITICAL / HIGH. U1 (MEDIUM, name limit not named in T005) fixed in tasks.md. Accepted:
+C1 (MEDIUM) - no probe row for a "mixed" server (ftpmini lists one encoding per server; a folder
+with both would need surrogate-escaped names on disk): FR-005 is covered by the saltests rule and
+the review; C2 (LOW) - the probe drives delete and download, not view / rename (same listed name).
+
 ## Decisions
 
 - Raw part (`pptStateVar`): decoded by the listing-field rule of the server (`FTPFieldToU8` with
