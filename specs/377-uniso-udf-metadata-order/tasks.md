@@ -27,7 +27,7 @@
 **Goal**: no regression for PD-first, VAT, hybrid and damaged images.
 **Independent test**: regression probes give their recorded results.
 
-- [ ] T009 [US2] Run iso356_probe.ps1 (N-U250 now extracts - expected deviation from its old expectation), iso358_probe.ps1, iso361_probe.ps1 on the new build → specs/377-uniso-udf-metadata-order/probe/regress_356.txt, regress_358.txt, regress_361.txt; explain every changed row in fix-log.md
+- [X] T009 [US2] Run iso356_probe.ps1 (N-U250 now extracts - expected deviation from its old expectation), iso358_probe.ps1, iso361_probe.ps1 on the new build → specs/377-uniso-udf-metadata-order/probe/regress_356.txt, regress_358.txt, regress_361.txt; explain every changed row in fix-log.md
 - [X] T010 [US2] Run saltests and `python tools/check_encoding.py --strict`; record in specs/377-uniso-udf-metadata-order/fix-log.md
 
 ## Phase 5: Polish

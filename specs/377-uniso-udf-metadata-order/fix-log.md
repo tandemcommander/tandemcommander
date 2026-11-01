@@ -67,3 +67,14 @@ descriptors is the cause (the item's reasoning, not verified in a debugger, is n
 - `.\build.cmd` → `BUILD SUCCEEDED` (warning C4267 at `udf.cpp` `AddFileDir` `fd.NameLen = strlen(...)` is
   older code, not this change).
 - `saltests.exe` → `saltests: 30237 checks, 0 failed` (no new check - research R3).
+
+## Regressions (new build)
+
+- `iso356_probe.ps1` → 56 / 0 (`probe/regress_356.txt`; as recorded by 356, with row `C-U250` - formerly
+  `N-U250` - now a.txt extracted, no window, image deleted).
+- `iso358_probe.ps1` → 52 / 0 (`probe/regress_358.txt`; as recorded).
+- `iso361_probe.ps1` → 24 / 0 (`probe/regress_361.txt`). Changed windows, both rows accept any box:
+  `L-IMAPI250` (the unchanged 2.50 image) before "Cannot read sector #00000000." + directory error, now no
+  window (it lists); `L-META5` (the metadata file entry with descriptor type 5) now reaches 361's refusal in
+  the metadata caller - only "Error reading directory structure ... Incomplete content", no "Cannot read
+  sector" - the 361 limit "the metadata-partition caller is reached by no probe" is reached now.
