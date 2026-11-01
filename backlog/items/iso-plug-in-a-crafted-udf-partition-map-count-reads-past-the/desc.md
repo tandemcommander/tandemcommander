@@ -8,7 +8,7 @@ source: review:377
 who: agent
 created: 2026-11-01
 updated: 2026-11-01
-verified: -
+verified: 2026-11-01 514396d3
 effort: S
 feature: -
 related: []
@@ -50,3 +50,4 @@ as not opened, the listing is marked, a whole unpack keeps the image), never a r
 
 - 2026-11-01 — created (source review:377)
 - 2026-11-01 — moved to Next position 1
+- 2026-11-01 — verified at 514396d3: present at 514396d3: ReadLVD loop unbounded by sector and table; crafted IMAPI2FS images made, GUI probe waits for the user TC to close
