@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: a UDF 2.50 image written by Windows (IMAPI2FS) does not list
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: measure:356
 who: agent
 created: 2026-10-31
-updated: 2026-10-31
-verified: -
+updated: 2026-11-01
+verified: 2026-11-01 aac7105e
 effort: M
-feature: -
+feature: 377
 related: []
 depends-on: []
 reason: -
@@ -63,3 +63,5 @@ partition descriptor is known (or defer the metadata file entry read to `ReadSup
 
 - 2026-10-31 — created (source measure:356)
 - 2026-10-31 — moved to Next position 8
+- 2026-11-01 — verified at aac7105e: reproduced at aac7105e: iso356_probe N-U250 - Cannot read sector #00000000 and directory error, nothing extracted; LVD at 34 before PD at 35
+- 2026-11-01 — run started, feature 377
