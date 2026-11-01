@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5992,3 +5992,26 @@ a few early ones are out of sequence).
   `arctwins382_probe.ps1` 14 / 6 -> 24 / 0 (FILEX row added by the review); negative control (the
   loose step disabled) saltests 12 failed, probe 14 / 6; 273's probe 12 / 0, 252's 16 / 0; one
   refute-first review (no MUST; SHOULD file twin fixed, SHOULD ambiguous case -> Inbox).
+- 383-arc-typed-target-case: Copy (F5) / Move (F6) from disk with the target typed as a folder
+  inside an archive in another case than the archive spells it (`x.7z\DOCS\` for `Docs`, also
+  `\dOCS\sUB\`, `\DOCS\New\`, with case twins elsewhere) packed into a new folder `DOCS` beside
+  `Docs` (7z and ZIP alike - ZIP has no case rule of its own) - now `FilesAction` (`src/fileswn8.cpp`,
+  `RespellTypedArchiveRoot383`) re-spells a copy of the typed root before `PackCompress` with 382's
+  `ResolvePathCase` over the archive's listing (a panel's listing of the same archive when its date
+  and size are unchanged, else `PackList`, released as 153 does) and lays it over the typed root with
+  `SalArcPathApplyResolved` (`src/common/salarcpathspell.h`, saltests): a component only when the
+  file system's rule (`SalNameEqualOrdinalCI`) takes it as the same name, the missing tail as typed.
+  Traps: the listing's byte fold takes different letters as equal (`Č` C4 8C == `Ĝ` C4 9C under
+  cp1250 / cp1252) - the first version packed typed `Č\` into `Ĝ` and replaced its member after an
+  overwrite question (review MUST); a Python replacement from a Bash here-document wrote the C
+  escapes of saltests as bytes and LF line ends (restored, redone with the editor); `CSalamanderDirectory`
+  needs `zip.h`. Limits: a non-ASCII case pair (`Č` typed, `č` in the archive) still packs beside it
+  (Inbox `typed-archive-target-non-ascii-case-makes-a-twin`); the panel route still opens `Ĝ` for a
+  typed `Č` (Inbox `archive-path-typed-opens-another-letter-equal-by-byte-fold`); one extra listing
+  per Copy / Move into an archive no panel shows unchanged (also a plain F5 into an archive panel
+  whose archive changed); a cancelled listing packs with the typed spelling. From backlog item
+  `copying-into-an-archive-folder-typed-in-another-case-packs`. Probe `arctarget383_probe.ps1`
+  22 / 10 -> 44 / 0 (rows PANEL and FOLD / FOLDOW added); negative controls: the call disabled 24 / 12,
+  only the own listing disabled 34 / 10 (PANEL passes alone), the same-name test disabled saltests
+  6 failed and FOLD rows 4 / 4; 273's probe 12 / 0, 382's 24 / 0; two refute-first reviews (1: MUST
+  fold fixed, SHOULD branch control done; 2: no MUST / SHOULD, a comment corrected).
