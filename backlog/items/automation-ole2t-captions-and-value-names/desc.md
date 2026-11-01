@@ -1,5 +1,5 @@
 ---
-title: Automation: non-ASCII GUI captions show as mojibake and persistent value names collide
+title: Automation: non-ASCII texts and captions garbled, persistent value names may collide
 type: bug
 status: new
 severity: 1
@@ -16,11 +16,13 @@ depends-on: []
 reason: -
 ---
 
-# Automation: non-ASCII GUI captions show as mojibake and persistent value names collide
+# Automation: non-ASCII texts and captions garbled, persistent value names may collide
 
 ## Problem
 
 Automation (not shipped: `plugins.cfg` automation=off) is built without `_UNICODE`, so `OLE2T(s)` is `OLE2A(s)` - a lenient UTF-16 to UTF-8 conversion (`WideCharToMultiByte(CP_UTF8, 0, …)`). Its results go where UTF-8 does not belong or where a lossy name hurts: (1) window captions of script GUI controls - `CreateWindowEx` here is the A function, so any non-ASCII caption a script sets before the window exists shows as mojibake (button, label, check box, text box, form title); the `InputBox` prompt goes through `OLE2A` as well; (2) persistent value names - `registry->DeleteValue` and the `REG_DWORD` `registry->SetValue` take `OLE2T(name)`, so two names that differ only in an unpaired surrogate both become U+FFFD and collide, while the `REG_SZ` path writes the exact name.
+
+A second narrowing layer does the same through `_bstr_t`: its `operator const char*` converts with `CP_ACP` and best-fit, and the plug-in hands the result to text sinks that expect UTF-8 or show code page - the message box prompt and caption (`salamanderaut.cpp`, `MsgBox`), the error and question dialog titles and an error text from a variant (`salamanderaut.cpp`), `ProgressDialogAddText` (`progressaut.cpp`), and the script error source / description (`aututils.cpp`). Letters outside the code page become `?` or best-fit look-alikes there.
 
 ## Evidence
 
@@ -32,7 +34,7 @@ A script's GUI controls and the input box show non-ASCII captions and prompts co
 
 ## Approach
 
-Make `OLE2A` total and exact (`SplWToU8`, WTF-8) for names; create the GUI windows with `CreateWindowExW` from the BSTR directly. The value-name part also needs `registry-wide-deletevalue-and-key-names` (the core facade's `DeleteValue` uses the A API).
+Make `OLE2A` total and exact (`SplWToU8`, WTF-8) for names; create the GUI windows with `CreateWindowExW` from the BSTR directly; replace every `_bstr_t` → `const char*` narrowing that reaches a text sink by an exact UTF-8 conversion (`SplWToU8Alloc`) or a wide call (`grep -n _bstr_t src/plugins/automation`). The value-name part also needs `registry-wide-deletevalue-and-key-names` (the core facade's `DeleteValue` uses the A API).
 
 ## Notes
 
@@ -41,3 +43,6 @@ The plug-in is not shipped, hence severity 1; fix before enabling it. Same plug-
 ## Log
 
 - 2026-11-01 — created (source review:379)
+- 2026-11-01 — extended after review 2 of feature 379: the _bstr_t narrowing layer
+- 2026-11-01 — approach extended after review 2 of feature 379
+- 2026-11-01 — title after review 2 of feature 379

@@ -157,3 +157,34 @@ After the fixes: `check_encoding.py --plugins` → `TOTAL: 17` = the 17 real row
 `TOTAL: 0`; `git diff main -- src` 31 files, 64 added / 0 deleted, all markers; `.\build.cmd` →
 `BUILD SUCCEEDED` (`codeview.spl` rebuilt 18:50 after the marker change; Automation is off, not
 built); `BL check` → `TOTAL: 0`.
+
+### Review 2 (fresh independent agent, with review 1's findings)
+
+No MUST. Reproduced: scan `TOTAL: 17` = the 17 real rows; core `--strict` 0; markers stripped in a
+copy → 81 = baseline (the 64 markers hide exactly the 64 false-positive rows); 31 files, 64 added /
+0 deleted, all markers; all 13 real-defect slugs exist; review 1's fixes in place. Every one of the
+64 false positives traced to its callers and held (Automation `fileinfo.cpp`, 7-Zip static text,
+ZIP self-extractor and `add.cpp` block, UnISO / UnOLE bounds, the code-page sources, Code Viewer,
+Markdown Viewer, File Comparator, Registry Editor, `shared/lukas`).
+
+- SHOULD 1 - the Automation item missed a second narrowing layer: `_bstr_t`'s `operator const
+  char*` (CP_ACP, best fit) feeds the message box, dialog titles, `ProgressDialogAddText` and the
+  script error texts (`salamanderaut.cpp`, `progressaut.cpp`, `aututils.cpp`). Confirmed by `grep
+  _bstr_t`. **Fixed**: the item's *Problem*, *Approach* and title extended (it is this run's item).
+- SHOULD 2 - Registry Editor `fs2.cpp` `GetFullFSPath`: `WStrToU8(...) >= 0` on a `DWORD` is always
+  true, so a full key path that does not fit `MAX_PATH` is returned cut as success (also unchecked in
+  `fs3.cpp` rename and `finddlg2.cpp`). Confirmed by reading (`utils.h` `WStrToU8` returns `DWORD`
+  and terminates a failed buffer). Not a scan site, outside the item → item
+  `regedt-full-path-cut-reported-as-success` (review:379, severity 5).
+- NOTE 1 - PictView row 13: the marker holds for `mixed-composition`, but the path is converted with
+  `CP_ACP` (best fit) for an error text; display only. Recorded here only.
+- NOTE 2 - Renamer row 60: false positive by the spec's criterion; a name with an unpaired surrogate
+  silently gets no case change. Recorded here only (the item `renamer-wtf8-names-shown-as-mojibake`
+  belongs to 255; an agent does not change it).
+- NOTE 3 - row 28's marker sits on top of a commented-out block above its line (the scanner walks the
+  block). Recorded.
+- NOTE 4 - ZIP `add_del.cpp` default SFX vendor `©` literal compiled in the build machine's code page
+  (the ZIP project has no `/execution-charset`). Trivial; recorded here only.
+- NOTE 5 - header blind spot already tracked in `check-encoding-skips-header-files`.
+
+After the fixes: `BL check` → `TOTAL: 0`; the source tree unchanged by review 2 (no source edit).
