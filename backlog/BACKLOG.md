@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Every activation of the program blocks it ~150 ms in the idle clipboard check](items/every-activation-of-the-program-blocks-it-150-ms-in-the-idle/desc.md) | bug | 3 | panels-ui | 375 |
 
 ## Next
 
@@ -291,6 +290,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check by hand the paste commands after switching back with a busy clipboard (375)](items/check-by-hand-the-paste-commands-after-switching-back-with-a/desc.md) | person-step | 3 | panels-ui | leftover:375 | 2026-11-01 |
 
 ## Parked
 

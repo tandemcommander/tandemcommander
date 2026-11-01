@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375 |
 
 ## Feature notes
 
@@ -5818,3 +5818,26 @@ a few early ones are out of sequence).
   `TC_PROBE_DRIVES_DUMP` + new `TC_PROBE_WSL_LXSS`, negative control = `main` built in a worktree)
   2 PASS / 11 FAIL -> 13 / 0; saltests 30155 -> 30227; one refute-first review (no MUST / SHOULD,
   NOTEs 1-3 fixed); person step `check-by-hand-the-wsl-items-of-the-change-drive-menu-and-the`.
+- 375-idle-clipboard-check: switching back to the program blocked it ~140 ms on every activation,
+  also with local folders, while another program kept the clipboard open - now it answers at once.
+  The idle clipboard check that every activation requests (`CMainWindow_RefreshCommandStates`) ran
+  `IsTextOnClipboard`, which retried `OpenClipboard` 10 x `Sleep(10)` (~155 ms) and then gave up;
+  it now tries once (`IsTextOnClipboard(noWait, &busy)`) and a busy clipboard is looked at again
+  every 500 ms, at most 10 times (pure rule `src/common/salclipcheck.h`, main-window timer
+  `IDT_CLIPCHECKRETRY` 956); a menu showing the paste commands (main menu, archive and panel
+  context menus) looks again at once while the last check found the clipboard busy
+  (`RequestIdleClipCheckIfBusy`, review 1). *Restore Selection* keeps the waiting form. Results
+  are as before for a readable clipboard and for a busy one (all FALSE). **Traps**: the block is
+  not a hidden-desktop effect - the queries cost < 1.1 ms on both desktops; feature 372's
+  "every activation" was measured while the workstation was locked (no process can open the
+  clipboard then: pre-fix build 125-143 ms under that state, the same range); a clipboard holder
+  that opens with a NULL window did not block other openers - the probe helper uses a window; a
+  PowerShell local `$holder` shadowed the parameter `$Holder` (names are case-insensitive).
+  Limits: only the text query reports busy (a hold released between `OleGetClipboard` and
+  `OpenClipboard` leaves *Paste* of files off until the next trigger, as before); for holds
+  shorter than ~150 ms the states are off for up to 500 ms. From backlog item
+  `every-activation-of-the-program-blocks-it-150-ms-in-the-idle`. Probe `act375_probe.ps1`
+  (rows FREE / HELD, helper `clip_hold.ps1`) HELD 15+140..142 ms FAIL -> <= 2.9 ms PASS; saltests
+  30227 -> 30237; one refute-first review (no MUST; SHOULD 1 and NOTE 4 fixed, its cdb count
+  proved the later looks); person step
+  `check-by-hand-the-paste-commands-after-switching-back-with-a`.
