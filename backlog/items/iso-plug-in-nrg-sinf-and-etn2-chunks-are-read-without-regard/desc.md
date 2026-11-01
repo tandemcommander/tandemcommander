@@ -7,11 +7,11 @@ area: archives
 source: review:340
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-11-01
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables]
+related: []
 depends-on: []
 reason: -
 ---
@@ -60,3 +60,4 @@ never past its buffer.
 
 - 2026-10-24 — created (source review:340)
 - 2026-10-24 — moved to Next position 9
+- 2026-11-01 — related item iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables done in feature 365

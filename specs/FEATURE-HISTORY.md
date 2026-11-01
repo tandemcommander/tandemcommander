@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5563,3 +5563,40 @@ a few early ones are out of sequence).
   358 52 / 0, 361 24 / 0, 362 34 / 0, 363 24 / 0; saltests 29,748 -> 29,791 / 0 (`TestIsoUdfFolderExtents_364`);
   refute-first review 1 (no MUST / SHOULD; negative control with three mutations 22 / 6, each caught by its own rows;
   NOTE wording taken, NOTE VAT mapping -> Inbox).
+- 365-nrg-ccd-track-tables: a Nero disc image (`.nrg`) burnt track-at-once lost a session, or wrote a file with
+  another file's content - its ETNF table's raw tracks (modes 0x05 / 0x06, 2352 bytes a sector) were read as
+  2336 / 2048-byte sectors (the size came from bit 0 of the mode byte), and an ETN2 table gave only its first
+  entry a track, as Mode 1 / 2048 from disc sector 0 with its end at its length, so in a two-session image
+  both tracks started at extent 0 and `Session 01/a.txt` was read from session 2's bytes ("Error reading
+  directory structure", the image kept by 330 / 335's marks); a CloneCD image whose `[TRACK n]` `INDEX 1`
+  counts from the disc start was one session (352's mark kept it). Now `SalNrgEtnSectorSize` follows Nero's
+  verified modes (0x00 / 0x02 2048, 0x03 2336, 0x05 / 0x06 / 0x07 2352; others as before), `readETN2` makes a
+  track of every whole 32-byte entry (mode, sector size, end = start + length, extent = the first-sector
+  field relative to the image's first ETN2 track - `SalNrgEtnExtent`; a chunk outside the image or of more
+  than 99 entries is skipped) (`src/common/salnrgcdtext.h`), and `ReadSessionCCD` lays CloneCD tracks out by
+  the table of contents - a track's session and extent from its ADR-1 entry, its end at the next track or
+  the session's lead-out, the sessions one after another in the `.img` (`SalIsoCcdTocLayout`,
+  `src/common/salisotrack.h`); a table it cannot follow keeps the `INDEX 1 = 0` split; a negative sector
+  count is 0 and marks the listing in both paths (`SalIsoCcdSectorCount`, it wrapped as a DWORD). Traps:
+  the item's premise "a real multi-session CloneCD image has absolute INDEX 1" is doubtful - libmirage,
+  psx-spx and DiscImageCreator issue 121 say INDEX counts from the session and the 11400 sectors between
+  sessions are not in the `.img`, which `main` already read correctly (control C-CCDREL measured first);
+  the item's mode note had 0x10 / 0x11 swapped; review 1's SHOULD - the ETN2 first-sector field (libmirage
+  never reads it) made a one-session image with a field of 150 unopenable, now relative to the first
+  track; while writing the tests, fewer `[TRACK n]` sections than track points ran the last to the lead-out
+  (now not followed); a PowerShell `Select-Object -First` cut the first build short and a direct MSBuild of
+  saltests without `OPENSAL_BUILD_DIR` built into `src/vcxproj` (the old exe ran - removed, re-run); Bash
+  here-documents again collapsed backslashes in two scripts (written with the editor). Limits: Nero v1
+  ("NERO" footer) images are never read through their table (Inbox
+  `iso-plug-in-an-nrg-image-of-nero-v1-nero-footer-is-opened`); modes 0x0F / 0x10 / 0x11 keep their old
+  type / size (Inbox `iso-plug-in-nrg-tracks-of-the-subchannel-modes-0x0f-0x10`); a stored pregap before a
+  later CloneCD session's first track (INDEX 0 / INDEX 1, which libmirage reads) is not read - the session
+  stays unlisted and the image kept; crafted images only (person step
+  `check-feature-365-with-real-nero-tao-and-clonecd-multi`). From backlog item
+  `iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables`. Probe `iso365_probe` (seeds `mkimg365.sh`,
+  images `img365.py`) 12 / 6 -> 22 / 0 (R-ETN2ONE150 / R-ETN2150 added by review 1); regressions 352 21 / 1
+  (R-ABS now extracts both sessions and deletes the image - the item's note; R-TWOSEC still kept), 351 10 / 0,
+  334 23 / 1, 335 28 / 4, 353 16 / 0 as recorded; saltests 29,791 -> 29,893 / 0 (`TestNrgEtn365`,
+  `TestIsoCcdToc365`; seven mutants fail 1 to 9 checks each); refute-first review 1 (no MUST; negative control
+  main's `uniso.spl` 12 / 6; SHOULD the ETN2 extent field and the libmirage wording - fixed; NOTEs taken or
+  logged).

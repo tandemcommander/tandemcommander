@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: NRG ETNF / ETN2 and multi-session CCD track tables get wrong sector sizes or ends](items/iso-plug-in-nrg-etnf-etn2-and-multi-session-ccd-track-tables/desc.md) | bug | 5 | archives | 365 |
 
 ## Next
 
