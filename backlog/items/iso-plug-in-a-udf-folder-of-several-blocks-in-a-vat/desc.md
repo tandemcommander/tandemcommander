@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a UDF folder of several blocks in a VAT partition is read past its mapping
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:364
@@ -51,3 +51,4 @@ that cannot be read so is refused and the listing marked incomplete (feature 330
 ## Log
 
 - 2026-11-01 — created (source review:364)
+- 2026-11-01 — moved to Next position 86
