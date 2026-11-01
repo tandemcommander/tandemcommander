@@ -283,6 +283,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a UDF folder of several blocks in a VAT partition is read past its mapping](items/iso-plug-in-a-udf-folder-of-several-blocks-in-a-vat/desc.md) | bug | 3 | archives | review:364 | 2026-11-01 |
 
 ## Parked
 

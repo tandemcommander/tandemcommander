@@ -81,3 +81,26 @@ them) accepted.
 - Regressions (same build): 330 30 / 0, 361 24 / 0, 362 34 / 0, 363 24 / 0, 356 56 / 0, 358 52 / 0
   (`probe/regress_*.txt`) - the recorded counts.
 - No UI string, dialog or menu changed - no `.slt` refresh.
+
+## Review
+
+Review 1 (independent agent, refute-first, ~15 min): **no MUST, no SHOULD**.
+
+- Re-ran the measurement: `iso364_probe` 28 / 0 on the branch build; saltests 29,791 / 0; regression 362 34 / 0.
+- Negative control (HEAD's sources copied to `%TEMP%\rev364\neg`, uniso built into its own folder, three mutations
+  of `udf.cpp`): **22 / 6** - root not marked -> R-ROOTCONT, R-ROOTUNREC FAIL (deleted); window always two
+  physically consecutive blocks -> R-ROOTFRAG, R-SUBFRAG FAIL (garbled name, deleted); sub-folder not marked ->
+  R-ALEN38, R-ALEN40 FAIL (deleted). Each mutation caught by exactly its own rows.
+- Own variants: a second recorded 2048-byte extent past the Information Length of a one-extent root / sub - 80 files,
+  deleted, no window (the first extent is not a whole number of blocks, so the walk stops).
+- Callers enumerated: `MapICB(CAD, CICBTag*, CUDFFolder*)` and `ScanDir` only from `ListDirectory` and `ScanDir`.
+- NOTE 1: the listing rows prove only "alive, no window" (they passed under every mutation) - the unpack rows carry
+  the evidence; the fix-log calls them controls. Accepted.
+- NOTE 2: "walked as today" for extents past a smaller Information Length was imprecise - a later recorded extent
+  is now walked (fails closed: invalid tag, marked). Taken: spec edge case and the header comment reworded.
+- NOTE 3: a short folder can list a name from the block physically after its walked extents (the old "past the last
+  extent" read; R-ROOTUNREC's file 27) - the listing is marked; accepted (the old behaviour for the last extent).
+- NOTE 4: the walk translates only an extent's first block (`LogSector(Location) + b`), wrong for VAT / metadata
+  partitions, and passes `INVALID_SECTOR_NUMBER + b` to `ReadBlockPhys` - predates the feature -> Inbox
+  `iso-plug-in-a-udf-folder-of-several-blocks-in-a-vat` (review:364).
+- NOTE 5: stack +~530 bytes per folder level, bounded depth - no risk. NOTE 6: closing files come at closing.

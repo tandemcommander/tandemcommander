@@ -138,8 +138,8 @@ const int SAL_ISO_UDF_FOLDER_MAX_EXTENTS = 32;
 // 32 x 2^30 cannot wrap). True when the walked bytes cover 'infoLen', the entry's Information Length (the folder's
 // size, ECMA-167 4/14.9.10) - whatever stopped the walk, nothing of the folder is missing then; false marks the
 // listing incomplete (feature 330: a whole unpack fails and keeps the image). An Information Length smaller than
-// the extents does not shorten the walk (the walk over the extents is the plug-in's behaviour since its start;
-// cutting it would hide entries without a mark). With 'walk' 0 the folder cannot be walked at all - the caller's
+// the extents does not shorten the walk (the one extent was walked whole before feature 364; cutting the walk
+// would hide entries without a mark - a later extent past such a length fails closed: an invalid tag, marked). With 'walk' 0 the folder cannot be walked at all - the caller's
 // SalIsoUdfFolderEntryWalkable (feature 362) refuses it.
 inline bool SalIsoUdfFolderExtents(const unsigned int types[], const unsigned long long lens[], int count,
                                    unsigned long long blockLen, unsigned long long infoLen, int& walk,

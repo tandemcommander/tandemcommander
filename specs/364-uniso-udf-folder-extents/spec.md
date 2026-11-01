@@ -97,8 +97,10 @@ A valid UDF image whose folders each lie in one extent lists and unpacks as toda
 - A first descriptor that is not a recorded extent (type 1, 2 or 3) - nothing can be walked; the folder takes
   feature 362's unreadable-folder path (the root "Bad root ICB", a sub-folder listed empty with the listing
   incomplete).
-- An Information Length smaller than the extents (the extents say more than the entry) - the extents are walked
-  as today (the walk is not cut to the Information Length; such a folder is not marked).
+- An Information Length smaller than the extents (the extents say more than the entry) - the walked extents are
+  walked whole, as the one extent was before (the walk is not cut to the Information Length; such a folder is not
+  marked). A later recorded extent past that length is walked too (new - review 1, NOTE 2): a valid image never
+  has one; its bytes fail closed (an invalid tag, the listing marked).
 - A folder whose data is embedded in its entry - unchanged (one piece; marked only when shorter than its
   Information Length).
 - Every existing refusal (feature 361's refused entry, 362's folder without data, 363's identifier past the
