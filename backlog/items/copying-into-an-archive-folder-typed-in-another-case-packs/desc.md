@@ -1,16 +1,16 @@
 ---
 title: Copying into an archive folder typed in another case packs into a new folder beside it
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: archives
 source: review:273
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-11-01
+verified: 2026-11-01 e3dfe127
 effort: S
-feature: -
+feature: 383
 related: []
 depends-on: []
 reason: -
@@ -42,3 +42,5 @@ Severity 4 (suspected): nothing is lost, the files land in an unexpected second 
 
 - 2026-10-21 — created (source review:273)
 - 2026-10-21 — moved to Next position 13
+- 2026-11-01 — verified at e3dfe127: reproduced at e3dfe127: hidden-desktop probe, F5/F6 to typed x.7z/x.zip\DOCS\ packs into a new DOCS folder beside Docs (7z and ZIP, 10 of 16 rows FAIL)
+- 2026-11-01 — run started, feature 383
