@@ -578,15 +578,17 @@ void CUncSharesJob::Read()
         }
     } while (res == ERROR_MORE_DATA);
 
-    // a server that was not found is not asked a second time (another network timeout)
-    BOOL notFound = firstErr == ERROR_BAD_NETPATH || firstErr == ERROR_REM_NOT_LIST ||
-                    firstErr == ERROR_NETWORK_UNREACHABLE || firstErr == ERROR_HOST_UNREACHABLE;
-    if (notFound)
-        Error = firstErr;
-    else if (firstErr != ERROR_SUCCESS && Count == 0)
+    // feature 373: the network providers are the second question when NetShareEnum gave nothing -
+    // also at "network path not found" (53), the only answer of a server that is no SMB server
+    // (WSL's \\wsl.localhost, \\wsl$: its Plan 9 provider lists the distributions). Asked after
+    // NetShareEnum failed, they answer a missing server within milliseconds (Windows knows it
+    // then); asked first they would wait a network timeout of their own - keep this order.
+    // 51, 1231, 1232 (the server not reached at all) are still not asked a second time.
+    if (SalUncShareListAsksProviders(firstErr, Count))
     {
-        // the share list was refused (commonly ERROR_ACCESS_DENIED): the visible disk shares as
-        // the network provider enumerates them for the session Windows already has
+        // the share list was refused (commonly ERROR_ACCESS_DENIED) or not found by SMB: the
+        // visible disk shares as the network providers enumerate them for the session Windows
+        // already has
         NETRESOURCEW nr;
         memset(&nr, 0, sizeof(nr));
         nr.dwScope = RESOURCE_GLOBALNET;
@@ -624,10 +626,13 @@ void CUncSharesJob::Read()
             free(buf);
             WNetCloseEnum(hEnum);
         }
-        // the first refusal is the one reported when the second way fails too - or answers with
-        // nothing: "no shared folder" would hide that the list was refused
-        Error = err == NO_ERROR && Count > 0 ? ERROR_SUCCESS : firstErr;
+        // the first error is the one reported when the second way fails too - or answers with
+        // nothing: "no shared folder" would hide that the list was refused, and a missing server
+        // keeps its familiar "network path not found" (the providers say 1203)
+        Error = SalUncProviderListError(firstErr, err, Count);
     }
+    else if (SalUncServerNotFoundErr(firstErr))
+        Error = firstErr; // the server was not reached (51, 1231, 1232 - or 53 after shares were read)
     else if (firstErr == ERROR_MORE_DATA)
         Error = firstErr; // a list without an end (see the loop): not shown as if it were whole
     if (Count > 1)

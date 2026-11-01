@@ -196,11 +196,13 @@ function Row-Wsl([string]$Case, [string]$Act, [string]$Where, [string]$Kind, [st
         $loc = Get-LocOf $id 862
         $facts = ("{0} '{1}': list opened {2} after {3} ms; error box {4}; windows: {5}; location '{6}'" -f $Act, (Esc $Where), $hadMenu, $w.Ms, $w.Box, (Msgs $r), (Esc $loc))
         $ok = -not $fatal
+        # a Change Directory typed in the dialog that fails or is cancelled reopens the dialog
+        # (normal behaviour, Serve closes it): not counted as a window of the share list
+        $box = @($r.Messages | Where-Object { $_ -ne 'Change Directory dialog opened' })
         switch ($Kind) {
-            'pick'  { $ok = $ok -and $hadMenu -and $r.Messages.Count -eq 0 -and $loc -ieq $Expected }
-            'esc'   { $ok = $ok -and $hadMenu -and $r.Messages.Count -eq 0 -and $loc -ieq $Expected }
+            'pick'  { $ok = $ok -and $hadMenu -and $box.Count -eq 0 -and $loc -ieq $Expected }
+            'esc'   { $ok = $ok -and $hadMenu -and $box.Count -eq 0 -and $loc -ieq $Expected }
             'error' {
-                $box = @($r.Messages)
                 $ok = $ok -and (-not $hadMenu) -and $box.Count -eq 1 -and ($box[0] -match [regex]::Escape('\\' + $Server)) -and ($ErrRx -eq '' -or $box[0] -match $ErrRx) -and $loc -ieq $Expected -and $w.Ms -lt ($MaxS * 1000)
             }
         }

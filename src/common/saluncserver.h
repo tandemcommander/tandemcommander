@@ -30,6 +30,11 @@
 //                         a name and password
 //   SalUncSignInTarget    (feature 285) "\\server\IPC$", the name the sign-in
 //                         connects - refused when it does not fit, never cut
+//   SalUncServerNotFoundErr, SalUncShareListAsksProviders, SalUncProviderListError
+//                         (feature 373) when the job asks the network providers
+//                         after NetShareEnum failed - also at "network path not
+//                         found" (53), the only answer WSL (\\wsl.localhost) gives
+//                         it - and which error it reports when they give nothing
 //
 // Names are UTF-8 (WTF-8), as everywhere in the core. Header-only.
 //
@@ -195,6 +200,40 @@ inline int SalUncShareListStep(int count, DWORD error, BOOL logonFailure, BOOL s
     if (logonFailure && !signInTried)
         return SALUNC_LIST_SIGNIN;
     return SALUNC_LIST_ERROR;
+}
+
+// Feature 373: the errors of NetShareEnum that say the server was not reached at
+// all. Before 373 none of them led to the network providers.
+inline BOOL SalUncServerNotFoundErr(DWORD error)
+{
+    return error == ERROR_BAD_NETPATH || error == ERROR_REM_NOT_LIST || error == ERROR_NETWORK_UNREACHABLE ||
+           error == ERROR_HOST_UNREACHABLE;
+}
+
+// Feature 373: TRUE when the share-list job asks the network providers
+// (WNetOpenEnumW) after NetShareEnum ended with 'error' and gave 'count' shares.
+// Asked only when NetShareEnum gave nothing and failed: a refused list (feature
+// 125) and - since 373 - "network path not found" (53), the answer of every
+// non-SMB provider such as WSL's (\\wsl.localhost, \\wsl$). The providers are
+// always the SECOND question: right after NetShareEnum failed, Windows answers
+// them for a missing server within milliseconds (measured, 1203), while asked
+// first they wait a network timeout of their own (21 s for an address that never
+// answers). 51, 1231 and 1232 keep the route of 125: the error, no second question.
+inline BOOL SalUncShareListAsksProviders(DWORD error, int count)
+{
+    if (error == 0 || count > 0)
+        return FALSE;
+    return error == ERROR_BAD_NETPATH || !SalUncServerNotFoundErr(error);
+}
+
+// Feature 373 (the rule of feature 125, moved here): the error of the list after
+// the providers were asked - 0 when they ended normally with at least one folder
+// share, otherwise NetShareEnum's own error 'firstError': an empty or failed
+// answer of the providers neither turns a refusal into "no shared folder" nor
+// replaces the user's familiar "network path not found" with their 1203.
+inline DWORD SalUncProviderListError(DWORD firstError, DWORD providerError, int count)
+{
+    return providerError == 0 && count > 0 ? 0 : firstError;
 }
 
 // Feature 285: "\\server\IPC$" into 'buf' - the server's inter-process share,

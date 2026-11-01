@@ -1,0 +1,23 @@
+wslshares_probe (backlog item wsl-localhost-offers-no-share-list), expect: fixed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 13:43; desktop 'tc_probe_41360'; computer PC-DOMA; registry key existed True; export SHA-256 6AA0889486446211300E2C922222E1CCA2A511947313F28831587E5C356A45EC
+WSL     : the provider lists 2 distribution(s): docker-desktop, Ubuntu; picked 'Ubuntu' (item 2)
+Plug-in : plugins\nethood\nethood.spl present next to the program: False
+
+W1         ACT    PASS        cd '\\wsl.localhost': list opened True after 12 ms; error box False; windows: no window; location '\\wsl.localhost\Ubuntu'
+W1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+W2         ACT    PASS        cd '\\wsl.localhost\': list opened True after 6 ms; error box False; windows: no window; location '\\wsl.localhost\Ubuntu'
+W2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+W3         ACT    PASS        cd '\\wsl$': list opened True after 7 ms; error box False; windows: no window; location '\\wsl$\Ubuntu'
+W3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+W4         ACT    PASS        bs '\\wsl.localhost\Ubuntu': list opened True after 129 ms; error box False; windows: no window; location '\\wsl.localhost\Ubuntu'
+W4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C1         ACT    PASS        cd '\\localhost': list opened True after 6 ms; error box False; windows: Change Directory dialog opened; location 'C:\Users\pavel\AppData\Local\Temp\tcwslshares\start'
+C1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+N1         ACT    PASS        cd '\\nosuch-tc373-7acc404a': list opened False after 1346 ms; error box True; windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "\\nosuch-tc373-7acc404a" Error: (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK || Change Directory dialog opened; location 'C:\Users\pavel\AppData\Local\Temp\tcwslshares\start'
+N1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U1         ACT    PASS        cd '\\192.0.2.1': list opened False after 21020 ms; error box True; windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "\\192.0.2.1" Error: (53) Cesta v s\u00EDti nebyla nalezena.  | [Button id=1] OK || Change Directory dialog opened; location 'C:\Users\pavel\AppData\Local\Temp\tcwslshares\start'
+U1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 6AA0889486446211300E2C922222E1CCA2A511947313F28831587E5C356A45EC / after 6AA0889486446211300E2C922222E1CCA2A511947313F28831587E5C356A45EC
+
+Rows: PASS 14, FAIL 0, NOT DRIVEN 0, INFO 0. Left running: 0; registry restored+identical: True

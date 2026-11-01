@@ -10029,6 +10029,64 @@ static void TestUncShareListSignIn285()
     }
 }
 
+// feature 373: the share list asks the network providers also after "network path not found" (53) -
+// SalUncServerNotFoundErr, SalUncShareListAsksProviders, SalUncProviderListError of saluncserver.h
+static void TestUncShareListProviders373()
+{
+    // the "not reached" set of 125, unchanged
+    CHECK(SalUncServerNotFoundErr(ERROR_BAD_NETPATH));
+    CHECK(SalUncServerNotFoundErr(ERROR_REM_NOT_LIST));
+    CHECK(SalUncServerNotFoundErr(ERROR_NETWORK_UNREACHABLE));
+    CHECK(SalUncServerNotFoundErr(ERROR_HOST_UNREACHABLE));
+    CHECK(!SalUncServerNotFoundErr(0));
+    CHECK(!SalUncServerNotFoundErr(ERROR_ACCESS_DENIED));
+    CHECK(!SalUncServerNotFoundErr(ERROR_LOGON_FAILURE));
+    CHECK(!SalUncServerNotFoundErr(ERROR_MORE_DATA));
+    CHECK(!SalUncServerNotFoundErr(ERROR_NO_NET_OR_BAD_PATH));
+    CHECK(!SalUncServerNotFoundErr(RPC_S_INVALID_NET_ADDR));
+
+    // the change of 373: 53 with no share asks the providers (WSL answers only them)
+    CHECK(SalUncShareListAsksProviders(ERROR_BAD_NETPATH, 0));
+    // 53 after shares were read (a later round failed): no second question, the list is shown
+    CHECK(!SalUncShareListAsksProviders(ERROR_BAD_NETPATH, 1));
+    CHECK(!SalUncShareListAsksProviders(ERROR_BAD_NETPATH, 40));
+    // the rest of the "not reached" set keeps the route of 125: the error, no second question
+    CHECK(!SalUncShareListAsksProviders(ERROR_REM_NOT_LIST, 0));
+    CHECK(!SalUncShareListAsksProviders(ERROR_NETWORK_UNREACHABLE, 0));
+    CHECK(!SalUncShareListAsksProviders(ERROR_HOST_UNREACHABLE, 0));
+    // refusals and other errors with no share: the providers, as in 125
+    CHECK(SalUncShareListAsksProviders(ERROR_ACCESS_DENIED, 0));
+    CHECK(SalUncShareListAsksProviders(ERROR_LOGON_FAILURE, 0));
+    CHECK(SalUncShareListAsksProviders(RPC_S_INVALID_NET_ADDR, 0)); // 1707: a repeated question to \\wsl.localhost
+    CHECK(SalUncShareListAsksProviders(ERROR_MORE_DATA, 0));        // a list without an end that gave nothing
+    CHECK(SalUncShareListAsksProviders(ERROR_NOT_SUPPORTED, 0));
+    // shares read: never a second question
+    CHECK(!SalUncShareListAsksProviders(ERROR_ACCESS_DENIED, 3));
+    CHECK(!SalUncShareListAsksProviders(ERROR_MORE_DATA, 2));
+    // NetShareEnum succeeded: never a second question, with or without shares
+    CHECK(!SalUncShareListAsksProviders(0, 0));
+    CHECK(!SalUncShareListAsksProviders(0, 5));
+
+    // the error after the providers: 0 only when they ended normally with a folder share
+    // WSL: two distributions, one
+    CHECK(SalUncProviderListError(ERROR_BAD_NETPATH, 0, 2) == 0);
+    CHECK(SalUncProviderListError(ERROR_BAD_NETPATH, 0, 1) == 0);
+    // a missing server (the providers say 1203), an empty answer, an answer that ended early: 53
+    CHECK(SalUncProviderListError(ERROR_BAD_NETPATH, ERROR_NO_NET_OR_BAD_PATH, 0) == ERROR_BAD_NETPATH);
+    CHECK(SalUncProviderListError(ERROR_BAD_NETPATH, 0, 0) == ERROR_BAD_NETPATH);
+    CHECK(SalUncProviderListError(ERROR_BAD_NETPATH, ERROR_NOT_ENOUGH_MEMORY, 1) == ERROR_BAD_NETPATH);
+    // 125: a refused list read the second way; an empty answer is not "no shared folder"
+    CHECK(SalUncProviderListError(ERROR_ACCESS_DENIED, 0, 3) == 0);
+    CHECK(SalUncProviderListError(ERROR_ACCESS_DENIED, 0, 0) == ERROR_ACCESS_DENIED);
+    CHECK(SalUncProviderListError(ERROR_ACCESS_DENIED, ERROR_EXTENDED_ERROR, 0) == ERROR_ACCESS_DENIED);
+
+    // the whole route for a server that does not exist: the user sees error 53, never a sign-in (285)
+    CHECK(SalUncShareListStep(0, SalUncProviderListError(ERROR_BAD_NETPATH, ERROR_NO_NET_OR_BAD_PATH, 0), FALSE,
+                              FALSE) == SALUNC_LIST_ERROR);
+    // and for WSL: the list
+    CHECK(SalUncShareListStep(2, SalUncProviderListError(ERROR_BAD_NETPATH, 0, 2), FALSE, FALSE) == SALUNC_LIST_SHOW);
+}
+
 // feature 126 (GitHub #6): the package lookup of the command-shell presets takes its two
 // kernel32 functions as a table - absent on Windows 7 / 8.0, where the answer is "not found"
 namespace Pkg126
@@ -24304,6 +24362,7 @@ int main(int argc, char** argv)
     TestUncServer125();
     TestUncShareRoot284();
     TestUncShareListSignIn285();
+    TestUncShareListProviders373();
     TestPackageApi126();
     TestInserts127();
     TestShellLink128();
