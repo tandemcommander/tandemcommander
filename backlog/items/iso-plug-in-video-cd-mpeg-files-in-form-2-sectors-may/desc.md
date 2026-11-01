@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: Video CD MPEG files in Form 2 sectors may extract cut to 2048 bytes a sector
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:335
@@ -10,7 +10,7 @@ created: 2026-10-24
 updated: 2026-11-01
 verified: 2026-11-01 308896b0
 effort: M
-feature: -
+feature: 366
 related: []
 depends-on: []
 reason: -
@@ -55,3 +55,4 @@ files unchanged.
 - 2026-10-24 — created (source review:335)
 - 2026-10-24 — moved to Next position 9
 - 2026-11-01 — verified at 308896b0: reproduced at 308896b0: real vcdimager VCD (CCD, NRG) and SVCD AVSEQ01 extract as the 2048-byte cut; source MPEG only in 2324-byte payloads; image deleted
+- 2026-11-01 — run started, feature 366
