@@ -14,8 +14,9 @@
 // attributes carry _A_NAME_IS_UTF - in UTF-8. A Windows file name may hold an
 // unpaired UTF-16 surrogate; written as UTF-8 it becomes the 3-byte WTF-8 form,
 // which a strict UTF-8 test rejects. Such a name is accepted byte for byte (the
-// program's names are WTF-8 since feature 066); bytes that are not even WTF-8
-// are refused when flagged, never guessed into another name.
+// program's names are WTF-8 since feature 066; like the core, a pair written as
+// two 3-byte surrogate sequences is read as that pair - SplIsWtf8); bytes that are
+// not even that are refused when flagged, never guessed into another name.
 //
 
 #include "../shared/splunicode.h" // SplIsWtf8

@@ -23213,6 +23213,13 @@ static void TestCabName381()
     {
         WCHAR w[16];
         CHECK(SplU8ToW("a\xED\xA0\x80.txt", w, _countof(w)) == 7 && wcscmp(w, L"a\xD800.txt") == 0);
+        // review 1 NOTE 1: a pair as two 3-byte sequences (CESU-8 style) is accepted and reads as the
+        // same pair as its 4-byte form - the core's reading (SalU8ToW), one name, never another
+        const char* cesu = "\xED\xA0\xBD\xED\xB8\x80.txt"; // U+D83D U+DE00 = U+1F600
+        CHECK(SplIsWtf8(cesu) && CabNameReadAs(cesu, utf) == CABNAME_UTF8);
+        CHECK(SplU8ToW(cesu, w, _countof(w)) == 7 && wcscmp(w, L"\xD83D\xDE00.txt") == 0);
+        WCHAR core[16];
+        CHECK(SalU8ToW(cesu, -1, core, _countof(core)) == 7 && wcscmp(core, w) == 0);
     }
 
     // (2) refused when flagged, code page otherwise: not even WTF-8

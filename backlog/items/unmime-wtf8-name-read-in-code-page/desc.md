@@ -11,7 +11,7 @@ updated: 2026-11-01
 verified: -
 effort: S
 feature: -
-related: [tar-wtf8-names-read-in-code-page, uncab-wtf8-flagged-name-refused, unmime-progress-title-name-mojibake]
+related: [tar-wtf8-names-read-in-code-page, unmime-progress-title-name-mojibake]
 depends-on: []
 reason: plug-in unmime not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-11-01
 ---
@@ -42,3 +42,4 @@ The plug-in is not shipped, hence severity 1; fix before enabling it. Sibling it
 
 - 2026-11-01 — created (source measure:379)
 - 2026-11-01 — moved to Parked: plug-in unmime not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-11-01
+- 2026-11-01 — related item uncab-wtf8-flagged-name-refused done in feature 381

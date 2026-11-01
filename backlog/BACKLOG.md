@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [UnCAB: one UTF-8 cabinet name with an unpaired surrogate makes the whole cabinet fail](items/uncab-wtf8-flagged-name-refused/desc.md) | bug | 5 | archives | 381 |
 
 ## Next
 
@@ -297,6 +296,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [UnCAB: a cabinet whose entry name is refused fails without any message](items/uncab-a-cabinet-whose-entry-name-is-refused-fails-without/desc.md) | bug | 4 | archives | measure:381 | 2026-11-01 |
 
 ## Parked
 

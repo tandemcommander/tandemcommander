@@ -80,3 +80,28 @@ surrogate makes the whole cabinet fail. HEAD at the start: `bd7cc15e` (main).
 - clang-format (VS x64 clang-format, `--style=file`): `cabname.h`, `uncab.cpp` clean; the changed
   lines of `splunicode.h` and `saltests.cpp` clean (the rest of those files has older drift, untouched).
 - No UI string, menu or dialog changed -> no `.slt` refresh.
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST, no SHOULD.** It rebuilt, re-ran saltests
+(30401 / 0), both scans (strict 0; plug-ins 16, no UnCAB line) and the probe (18 / 0, registry
+identical); negative control: the old `uncab.spl` built from `main` in its own worktree and build
+folder, same probe -> 14 / 4 with exactly U-WTF8, U-WTF8L, L-WTF8, L-WTF8L failing. Its own extra
+probe (12 / 0): F5 of the surrogate entry from inside the cabinet, F5 of one of `ab.txt` /
+`a<U+D800>b.txt` / `c.txt` (no confusion - `CompareStringW` tells them apart), F3 on the surrogate
+entry, a CESU-8 pair next to its 4-byte form (one name -> the overwrite question, nothing replaced
+silently), a refused entry after a good one (`c.txt` out, cabinet kept). All four `CabNameToU8`
+callers checked; "delete after unpacking" keeps the cabinet whenever `FDICopy` fails.
+
+- NOTE 1 (comments said "valid WTF-8"; the decoder also reads a pair written as two 3-byte
+  sequences, CESU-8 style, as the core does): **fixed** - the comments of `SplIsWtf8` and
+  `cabname.h` say so; `TestCabName381` gained a CESU-8 vector (accepted, decodes to the same
+  U+D83D U+DE00 as the 4-byte form and as the core's `SalU8ToW`). Rebuilt: BUILD SUCCEEDED,
+  `saltests: 30404 checks, 0 failed`, strict scan 0, clang-format clean on the changed lines. The
+  plug-in change is comment-only, so the probe result stands.
+- NOTE 2 (the unflagged guess accepts `ED A0..BF 80..BF` code-page bytes as a surrogate): accepted -
+  spec Clarification 1 (the item's Approach; keeps a continued entry's name equal to its start).
+- NOTE 3 (refusal still silent, extraction stops part-way): out of scope, Inbox item
+  `uncab-a-cabinet-whose-entry-name-is-refused-fails-without` (written before the review).
+- NOTE 4 (six old review worktrees under `%TEMP%\rev3xx\neg` from earlier sessions): not this
+  feature's; named in the closing report for the maintainer.

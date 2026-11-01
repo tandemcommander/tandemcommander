@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378 |
@@ -5952,3 +5952,21 @@ a few early ones are out of sequence).
   (SHORT / EXACT 259 bytes / LONG / CJK) 6 / 2 -> 8 / 0 (reviewer's own negative control with the old
   `regedt.spl`: 6 / 2); refute-first review: no MUST / SHOULD; NOTEs last-error text and Find message
   parent fixed, core focus-name cut -> Inbox.
+- 381-uncab-wtf8-name: a cabinet whose entry was flagged UTF-8 and named with an unpaired surrogate (the
+  3-byte WTF-8 form a Windows packer writes for a name NTFS allows) could not be opened or unpacked at
+  all - not even its other files - and without any message: UnCAB's strict UTF-8 test refused the name,
+  the notify callback returned -1 and `FDICopy` ended as a user abort, which `FDIError` shows silently.
+  Now such a name is listed and extracted byte for byte under its exact name; a flagged name that is not
+  even WTF-8 is still refused; unflagged and next-cabinet names stay code page. The rule is the
+  header-only `src/plugins/uncab/cabname.h` (`CabNameReadAs`) on a new plug-in helper `SplIsWtf8`
+  (`splunicode.h`, the feature 089 decoder). Traps: the item claimed an "FDI error" window - measured,
+  there is none; `SplIsWtf8` also reads a pair written as two 3-byte sequences (CESU-8 style) as that
+  pair, as the core's `SalU8ToW` does (review NOTE). Limits: a refused name still fails the cabinet
+  silently (Inbox `uncab-a-cabinet-whose-entry-name-is-refused-fails-without`); continued entries of a
+  multi-cabinet set (now also WTF-8 when guessed) are proven by unit checks and reading only; which real
+  CAB writers produce such names is not measured. From backlog item `uncab-wtf8-flagged-name-refused`.
+  Fixture `probe/cab381.py` (stored MS-CAB writer, accepted by `expand.exe`); probe `cab381_probe`
+  14 / 4 -> 18 / 0; saltests `TestCabName381` exhaustive over all 1-3 byte strings against the core,
+  negative control (strict rule) 10 failed; plug-in scan 17 -> 16; refute-first review: no MUST /
+  SHOULD (reviewer's negative control with the old `uncab.spl`: 14 / 4), NOTE CESU-8 comment and vector
+  fixed.

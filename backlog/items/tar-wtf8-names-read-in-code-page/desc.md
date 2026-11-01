@@ -11,7 +11,7 @@ updated: 2026-11-01
 verified: -
 effort: M
 feature: -
-related: [uncab-wtf8-flagged-name-refused, unmime-wtf8-name-read-in-code-page]
+related: [unmime-wtf8-name-read-in-code-page]
 depends-on: []
 reason: -
 ---
@@ -43,3 +43,4 @@ Severity at the lower end of the band: the name must hold an unpaired surrogate,
 - 2026-11-01 — created (source measure:379)
 - 2026-11-01 — linked its sibling items (379)
 - 2026-11-01 — moved to Next position 32
+- 2026-11-01 — related item uncab-wtf8-flagged-name-refused done in feature 381
