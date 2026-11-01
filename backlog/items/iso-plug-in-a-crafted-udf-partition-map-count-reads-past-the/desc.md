@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a crafted UDF partition map count reads past the descriptor buffer
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:377
@@ -49,3 +49,4 @@ as not opened, the listing is marked, a whole unpack keeps the image), never a r
 ## Log
 
 - 2026-11-01 — created (source review:377)
+- 2026-11-01 — moved to Next position 1
