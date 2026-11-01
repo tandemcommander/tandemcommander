@@ -1432,7 +1432,12 @@ BOOL CPluginFSInterface::CopyOrMoveFromFS(BOOL copy, int mode, const char* fsNam
 
             // this is a rename
             if (!copy)
-                WStrToU8(nextFocus, 2 * MAX_PATH, targetName); // focus name returned as UTF-8
+            {
+                // focus name returned as UTF-8; one that does not fit is not handed back cut
+                // (it could name another item): no focus name (feature 380)
+                if (WStrToU8(nextFocus, 2 * MAX_PATH, targetName) == 0)
+                    nextFocus[0] = 0;
+            }
             sourceEqualsTarget = TRUE;
         }
 

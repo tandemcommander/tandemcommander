@@ -203,9 +203,16 @@ BOOL CPluginFSInterface::GetFullFSPath(HWND parent, const char* fsName, char* pa
     }
     else
     {
+        // feature 380: every failure sets 'success' to FALSE (the caller starts with TRUE and then
+        // uses 'path' as the full path). WStrToU8 returns a DWORD, 0 on failure, and leaves the
+        // buffer filled with the path cut at its end - the old test '>= 0' was always true, so a
+        // full path over 'pathSize' bytes was handed back cut (possibly naming another key)
         WCHAR buffer[MAX_FULL_KEYNAME];
-        if (U8ToWStr(buffer, MAX_FULL_KEYNAME, path) <= 0)
+        if (U8ToWStr(buffer, MAX_FULL_KEYNAME, path) == 0)
+        {
+            success = Error(IDS_LONGNAME); // FALSE
             return TRUE;
+        }
         GetFullFSPathW(buffer, MAX_FULL_KEYNAME, success);
         if (!success)
             return TRUE;
@@ -213,7 +220,12 @@ BOOL CPluginFSInterface::GetFullFSPath(HWND parent, const char* fsName, char* pa
         lstrcpyn(path, fsName, pathSize);
         StrNCat(path, ":", pathSize);
         int l = (int)strlen(path);
-        success = WStrToU8(path + l, pathSize - l, buffer) >= 0 || Error(IDS_LONGNAME);
+        if (l + 1 >= pathSize || WStrToU8(path + l, pathSize - l, buffer) == 0)
+        {
+            success = Error(IDS_LONGNAME); // FALSE: refused, never cut
+            return TRUE;
+        }
+        success = TRUE;
         return TRUE;
     }
 }

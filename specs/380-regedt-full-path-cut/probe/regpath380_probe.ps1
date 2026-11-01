@@ -17,6 +17,8 @@
     probe answers every message with OK and closes a re-opened Change Directory. The panel's
     location is then read from the Change Directory field.
       SHORT  type "s": the panel is at ...\X\s (control - passes before and after)
+      EXACT  type D: the full path is exactly 259 bytes (fits with its terminator) - the panel is at
+             ...\X\D, no message (the boundary - passes before and after)
       LONG   type R: PASS = a message "too long" and the panel stays at ...\X
                      (before the fix: the panel goes to ...\X\D, an existing other key)
       CJK    type T under C: PASS = a message "too long" and the panel stays at ...\C
@@ -100,6 +102,7 @@ try {
     Out ("Date    : {0}; registry key existed {1}; ACP {2}; base {3} bytes; cut key D {4} chars" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [Drv098f]::GetACP(), (U8Len ($baseX + '\')), $D.Length)
     Out ''
     Run-Case 'SHORT' $baseX 's' ($baseX + '\s') $false $null
+    Run-Case 'EXACT' $baseX $D ($baseX + '\' + $D) $false $null
     Run-Case 'LONG' $baseX $R $baseX $true ($baseX + '\' + $D)
     Run-Case 'CJK' ($FsPrefix + '\' + $C) $T ($FsPrefix + '\' + $C) $true $null
 }

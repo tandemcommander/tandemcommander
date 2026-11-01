@@ -949,9 +949,11 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                         // path and focus name are handed to the panel as UTF-8 (interface 104)
                         char path[3 * MAX_FULL_KEYNAME + 1] = "\\";
                         char name[3 * MAX_KEYNAME];
-                        WStrToU8(path + 1, sizeof(path) - 1, data->Path);
-                        WStrToU8(name, sizeof(name), data->Name);
-                        if (!InterfaceForMenuExt.PostFocusCommand(path, name))
+                        // feature 380: a conversion that does not fit is refused, never sent cut
+                        if (WStrToU8(path + 1, sizeof(path) - 1, data->Path) == 0 ||
+                            WStrToU8(name, sizeof(name), data->Name) == 0)
+                            Error(IDS_LONGNAME);
+                        else if (!InterfaceForMenuExt.PostFocusCommand(path, name))
                             SG->SalMessageBox(HWindow, LoadStr(IDS_BUSY), LoadStr(IDS_PLUGINNAME),
                                               MB_ICONINFORMATION);
                     }

@@ -192,7 +192,11 @@ BOOL CPluginFSInterface::QuickRename(const char* fsName, int mode, HWND parent, 
 
     if (success)
     {
-        WStrToU8(newName, MAX_PATH, keyName); // returned to the panel as UTF-8
+        // returned to the panel as UTF-8, only to focus the item after the refresh; a name over
+        // MAX_PATH bytes is not handed back cut (it could name another item): no focus name
+        // (feature 380, as CreateDir does)
+        if (WStrToU8(newName, MAX_PATH, keyName) == 0)
+            newName[0] = 0;
         cancel = FALSE;
         return TRUE;
     }
