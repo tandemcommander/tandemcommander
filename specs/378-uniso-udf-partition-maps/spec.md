@@ -3,7 +3,7 @@
 **Feature Branch**: `378-uniso-udf-partition-maps`
 **Created**: 2026-11-01
 **Status**: Draft
-**Input**: Backlog item iso-plug-in-a-crafted-udf-partition-map-count-reads-past-the (backlog/items/iso-plug-in-a-crafted-udf-partition-map-count-reads-past-the/desc.md) - implement exactly what it describes.
+**Input**: Backlog item iso-plug-in-a-crafted-udf-partition-map-count-reads-past-the (backlog/items/iso-plug-in-a-crafted-udf-partition-map-count-reads-past-the/desc.md) - implement exactly what it describes. From backlog item iso-plug-in-a-crafted-udf-partition-map-count-reads-past-the.
 
 ## Background
 

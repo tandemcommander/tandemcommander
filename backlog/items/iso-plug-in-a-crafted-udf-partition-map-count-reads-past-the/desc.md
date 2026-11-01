@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a crafted UDF partition map count reads past the descriptor buffer
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:377
@@ -10,7 +10,7 @@ created: 2026-11-01
 updated: 2026-11-01
 verified: 2026-11-01 514396d3
 effort: S
-feature: -
+feature: 378
 related: []
 depends-on: []
 reason: -
@@ -51,3 +51,4 @@ as not opened, the listing is marked, a whole unpack keeps the image), never a r
 - 2026-11-01 — created (source review:377)
 - 2026-11-01 — moved to Next position 1
 - 2026-11-01 — verified at 514396d3: present at 514396d3: ReadLVD loop unbounded by sector and table; crafted IMAPI2FS images made, GUI probe waits for the user TC to close
+- 2026-11-01 — run started, feature 378
