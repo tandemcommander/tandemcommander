@@ -22,6 +22,14 @@ desktop): rows MIXED (typed `\DOCS`), MIXDEEP (typed `\dOCS\SUB`) and MIXMISS (t
 rows EXACT (twins `Docs` / `DOCS`, typed `\DOCS`) and AMBIG (twins `Docs` / `DOCS`, typed
 `\docs`) PASS. 14 PASS / 6 FAIL.
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: Should a typed component be accepted when it equals a folder only by the Unicode ordinal case rule but not by the byte fold a listing without twins uses? → A: No - accepted only by the byte fold (what the same archive without twins opens since 273); the ordinal rule only counts towards ambiguity (autonomous run: conservative)
+- Q: Should an ambiguous typed name (two folders equal ignoring case) show a message? → A: No - it is handled as any path not found inside an archive today (shortened); the item's *Expected* is met by opening the unambiguous folder (autonomous run: conservative)
+- Q: Does the rule apply both when the archive is opened anew and when the panel is already inside the same archive? → A: Yes - every path change inside an archive (command line, Change Directory, hot path, history) goes through the same lookup (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Open a folder of an archive with twins elsewhere by a path in another case (Priority: P1)
@@ -101,6 +109,8 @@ fix must not open the wrong twin.
   as typed so the existing shortening and file focusing behave as before.
 - **FR-005**: Listings that are not case-sensitive, and paths that resolve exactly, MUST behave
   exactly as before.
+- **FR-007**: The rule MUST apply whether the archive is opened anew or the panel is already
+  inside the same archive.
 - **FR-006**: The rule MUST be a pure decision with unit checks; it MUST never cut a path (a
   result that does not fit is refused and the typed path is kept).
 
