@@ -29,7 +29,7 @@
 
 **Independent test**: the control rows and the regression probes.
 
-- [ ] T012 [US2] Control rows in img366.py / iso366_probe.ps1: mixed attributes 0x3D55, no XA record, Form 1 first sector under a Form 2 attribute, cooked 2048-byte image - each extracts the 2048-byte content (main's result) in specs/366-uniso-form2-files/probe/
+- [ ] T012 [US2] Control rows in img366.py / iso366_probe.ps1: mixed attributes 0x3D55, no XA record, Form 1 first sector under a Form 2 attribute, cooked 2048-byte image - each extracts the 2048-byte content (main's result); and a VCD image cut inside the last video track (the Form 2 file's last sectors missing: a read error, no file written whole, the image kept) in specs/366-uniso-form2-files/probe/
 - [ ] T013 [US2] Run the probe on main's build (negative control: the US1 rows fail, the control rows pass) and on the feature build; record in specs/366-uniso-form2-files/fix-log.md
 
 ## Phase 5: User Story 3 - coverage counts the new size (P2)

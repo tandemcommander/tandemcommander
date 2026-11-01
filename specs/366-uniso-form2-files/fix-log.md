@@ -40,3 +40,10 @@ Form 2 sectors may extract cut to 2048 bytes a sector.
   block x stored sector size + header size. Mode 2 tracks: header 24 (2352) / 8 (2336) - the same place the
   Form 2 user data starts (after the subheader); `GetHeaderSizeFromMode` gives Mode 2 / 2448 a header of 16
   (not the Form 2 position) - such tracks stay unchanged.
+
+## Analyze
+
+- Run 1: 0 CRITICAL, 0 HIGH. MEDIUM C1 (no row for a Form 2 file past the image's end) - fixed: T012 adds a cut
+  image row. MEDIUM C2 (only a whole Unpack is driven) - accepted: one file, a selection and F3 (UnpackOneFile)
+  reach the same `CISOImage::UnpackFile` -> file system `UnpackFile` (callers enumerated in *Sites*); the
+  listed size is the same object. LOW L1 (2448/16 layout only in saltests) - accepted.
