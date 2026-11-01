@@ -34,6 +34,7 @@ is why it looked intermittent.
 
 - Q: Which ways of opening a folder are in scope? → A: Every way that opens a folder from the filtered view through the panel's "open the item" action (Enter, double click, Ctrl+PageDown on a folder) - they share one code path; other path changes made while a search runs (Backspace is a search key there; Alt+Left, the drive menu, Change Directory, a hot path) are outside the item and stay as they are (autonomous run: item - it names Enter on a folder in a filtered panel).
 - Q: What does the panel show if opening the folder fails and the panel stays in the parent folder (access denied, the folder vanished)? → A: The whole parent folder, as today, drawn once after the failure (autonomous run: conservative - same end state as today).
+- Q: Should the column header and the scroll bars also keep the filtered state until the new folder is drawn? → A: Yes - nothing of the panel (items, column header, scroll bars) is redrawn for the parent's whole listing; the opened folder's drawing replaces all of it (autonomous run: recommended).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -99,7 +100,8 @@ and saltests.
 ### Functional Requirements
 
 - **FR-001**: Opening a folder from a filtered panel MUST NOT draw the unfiltered parent listing
-  before the opened folder's listing is drawn, when opening succeeds.
+  before the opened folder's listing is drawn, when opening succeeds - neither the items nor the
+  column header nor the scroll bars.
 - **FR-002**: The whole listing MUST still be back in the panel before the path changes, and the
   remembered position (top item and cursor) for a return MUST be that of the whole listing with
   the opened folder under the cursor, as today.
