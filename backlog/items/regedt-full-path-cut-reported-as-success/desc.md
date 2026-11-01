@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: a too long full key path is cut and reported as success
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: other-plugins
 source: review:379
@@ -10,7 +10,7 @@ created: 2026-11-01
 updated: 2026-11-01
 verified: 2026-11-01 823f2873
 effort: S
-feature: -
+feature: 380
 related: [check-encoding-skips-header-files]
 depends-on: []
 reason: -
@@ -43,3 +43,4 @@ Severity 5: a wrong result reached only with deep keys and long names (narrow), 
 - 2026-11-01 — created (source review:379)
 - 2026-11-01 — moved to Next position 1
 - 2026-11-01 — verified at 823f2873: still present at 823f2873: hidden-desktop probe regpath380 LONG - panel went to another existing key cut at 259 bytes; CJK cut mid-character
+- 2026-11-01 — run started, feature 380
