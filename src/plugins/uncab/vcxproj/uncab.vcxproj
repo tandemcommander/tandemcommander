@@ -151,6 +151,8 @@
     </ClInclude>
     <ClInclude Include="..\..\shared\spl_view.h">
     </ClInclude>
+    <ClInclude Include="..\cabname.h">
+    </ClInclude>
     <ClInclude Include="..\dialogs.h">
     </ClInclude>
     <ClInclude Include="..\precomp.h">

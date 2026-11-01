@@ -29,6 +29,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\cabname.h">
+      <Filter>h</Filter>
+    </ClInclude>
     <ClInclude Include="..\dialogs.h">
       <Filter>h</Filter>
     </ClInclude>

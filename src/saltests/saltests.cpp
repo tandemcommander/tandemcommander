@@ -121,6 +121,7 @@
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
 #include "../plugins/shared/splloadstru8.h" // feature 130: a plug-in's resource text as UTF-8
+#include "../plugins/uncab/cabname.h"       // feature 381: how UnCAB reads a stored cabinet name
 
 #include <deque>
 #include <map>
@@ -23184,6 +23185,98 @@ static std::string Hfs339Record(unsigned char ownerFlags, unsigned fileMode, uns
 
 static int Hfs339Kind(const std::string& r) { return SalHfsFileContentKind((const unsigned char*)r.data(), r.size()); }
 
+// feature 381: UnCAB reads a flagged cabinet name that is valid WTF-8 (an unpaired surrogate in
+// its 3-byte form) as UTF-8 instead of refusing it - and with it the whole cabinet
+// (src/plugins/uncab/cabname.h, SplIsWtf8 in src/plugins/shared/splunicode.h)
+static void TestCabName381()
+{
+    const int utf = CABNAME_A_NAME_IS_UTF | 0x20; // flagged (+ _A_ARCH)
+    // (1) accepted: strict UTF-8 and the WTF-8 forms - UTF-8 when flagged or guessed, code page unflagged
+    static const char* const good[] = {
+        "", "c.txt", "a\xC3\xA9.txt",                      // ASCII, U+00E9
+        "a\xED\xA0\x80.txt", "a\xED\xB0\x80.txt",          // lone high U+D800, lone low U+DC00
+        "\xED\xBF\xBF", "\xED\xAF\xBF",                    // U+DFFF, U+DBFF
+        "\xED\xB0\x80\xED\xA0\x80",                        // a reversed pair = two lone surrogates
+        "\xF0\x9F\x98\x80 x", "\xE4\xB8\xAD\xEF\xBF\xBF"}; // U+1F600, U+4E2D U+FFFF
+    for (int i = 0; i < _countof(good); i++)
+    {
+        CHECK(SplIsWtf8(good[i]));
+        CHECK(CabNameReadAs(good[i], utf) == CABNAME_UTF8);
+        CHECK(CabNameReadAs(good[i], -1) == CABNAME_UTF8);
+        CHECK(CabNameReadAs(good[i], 0x20) == CABNAME_CODEPAGE);
+        CHECK(CabNameReadAs(good[i], 0) == CABNAME_CODEPAGE);
+        WCHAR* w = SplU8ToWAlloc(good[i]); // the name the plug-in later converts (target file, compare)
+        CHECK(w != NULL);
+        free(w);
+    }
+    // the item's case decodes to exactly the lone surrogate
+    {
+        WCHAR w[16];
+        CHECK(SplU8ToW("a\xED\xA0\x80.txt", w, _countof(w)) == 7 && wcscmp(w, L"a\xD800.txt") == 0);
+    }
+
+    // (2) refused when flagged, code page otherwise: not even WTF-8
+    static const char* const bad[] = {
+        "a\xFF.txt", "a\xC0\x80.txt",           // invalid byte, overlong NUL (the probe's U-BAD, U-OVER)
+        "caf\xE9.txt", "\xC1\xBF",              // code-page byte, overlong
+        "\xE0\x80\xAF",                         // overlong 3-byte
+        "\xF4\x90\x80\x80", "\xF5\x80\x80\x80", // above U+10FFFF, invalid lead byte
+        "\x80", "a\xBF",                        // stray continuation
+        "\xE2\x82", "\xED\xA0", "a\xED"};       // truncated, truncated surrogate
+    for (int i = 0; i < _countof(bad); i++)
+    {
+        CHECK(!SplIsWtf8(bad[i]));
+        CHECK(CabNameReadAs(bad[i], utf) == CABNAME_REFUSE);
+        CHECK(CabNameReadAs(bad[i], -1) == CABNAME_CODEPAGE);
+        CHECK(CabNameReadAs(bad[i], 0) == CABNAME_CODEPAGE);
+        CHECK(SplU8ToWAlloc(bad[i]) == NULL);
+    }
+    CHECK(!SplIsWtf8(NULL));
+
+    // (3) exhaustive over every string of 1, 2 and 3 non-NUL bytes: SplIsWtf8 is exactly the
+    // core's WTF-8 acceptance (SalU8ToW), contains strict UTF-8, and adds exactly the 2,048 lone
+    // surrogate sequences ED A0..BF 80..BF
+    {
+        int disagreeCore = 0, strictRejected = 0, extra = 0, extraNotSurrogate = 0;
+        unsigned char s[4];
+        WCHAR w[8];
+        for (int len = 1; len <= 3; len++)
+        {
+            int total = 1;
+            for (int k = 0; k < len; k++)
+                total *= 255;
+            for (int n = 0; n < total; n++)
+            {
+                int v = n;
+                for (int k = len - 1; k >= 0; k--)
+                {
+                    s[k] = (unsigned char)(1 + v % 255);
+                    v /= 255;
+                }
+                s[len] = 0;
+                const char* p = (const char*)s;
+                BOOL wtf8 = SplIsWtf8(p);
+                BOOL core = SalU8ToW(p, -1, w, _countof(w)) > 0;
+                BOOL strict = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, p, -1, NULL, 0) > 0; // encoding-check: allow strict-probe-rejects-wtf8 - the reference the test compares with
+                if (wtf8 != core)
+                    disagreeCore++;
+                if (strict && !wtf8)
+                    strictRejected++;
+                if (wtf8 && !strict)
+                {
+                    extra++;
+                    if (!(len == 3 && s[0] == 0xED && s[1] >= 0xA0 && s[1] <= 0xBF && s[2] >= 0x80 && s[2] <= 0xBF))
+                        extraNotSurrogate++;
+                }
+            }
+        }
+        CHECK(disagreeCore == 0);
+        CHECK(strictRejected == 0);
+        CHECK(extra == 2048);
+        CHECK(extraNotSurrogate == 0);
+    }
+}
+
 // feature 346: Shift+F6 opens the in-place rename; the other F6 keys keep their commands
 // (src/common/salrenamekey.h)
 static void TestRenameInPlaceKey346()
@@ -24874,6 +24967,7 @@ int main(int argc, char** argv)
     TestRenameInPlaceKey346();
     TestBkgndPathCheck372();
     TestClipCheck375();
+    TestCabName381();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

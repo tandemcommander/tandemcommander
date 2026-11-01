@@ -191,6 +191,16 @@ inline WCHAR* SplU8ToWAlloc(const char* u8)
     return w;
 }
 
+// TRUE when the null-terminated 's' is valid WTF-8 - strict UTF-8, or UTF-8 whose
+// 3-byte sequences may encode a lone surrogate - i.e. exactly the bytes SplU8ToW /
+// SplU8ToWAlloc convert; FALSE for NULL and any other malformed input (feature 381).
+// Use it instead of a strict MultiByteToWideChar(MB_ERR_INVALID_CHARS) probe, which
+// rejects a name with an unpaired surrogate.
+inline BOOL SplIsWtf8(const char* s)
+{
+    return s != NULL && SplUnicodeDetail::Wtf8ToW(s, NULL, 0) > 0;
+}
+
 // UTF-16 -> UTF-8 (WTF-8: total, an unpaired surrogate is encoded as its
 // 3-byte sequence); free() the result
 inline char* SplWToU8Alloc(const WCHAR* w)

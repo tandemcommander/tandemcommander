@@ -1,0 +1,31 @@
+cab381_probe after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 19:39; registry key existed True
+
+cab381: ok: 102 bytes, names 61c3a92e747874, 632e747874
+cab381: wtf8: 104 bytes, names 61eda080622e747874, 632e747874
+cab381: wtf8l: 104 bytes, names 61edb080622e747874, 632e747874
+cab381: bad: 102 bytes, names 61ff622e747874, 632e747874
+cab381: over: 103 bytes, names 61c080622e747874, 632e747874
+
+U-OK       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-OK       RUN    PASS        files 2: a\u00E9.txt, c.txt; files ok: True; cabinet kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+U-WTF8     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-WTF8     RUN    PASS        files 2: a\uD800b.txt, c.txt; files ok: True; cabinet kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+U-WTF8L    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-WTF8L    RUN    PASS        files 2: a\uDC00b.txt, c.txt; files ok: True; cabinet kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+U-BAD      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-BAD      RUN    PASS        files 0: ; files ok: True; cabinet kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+U-OVER     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-OVER     RUN    PASS        files 0: ; files ok: True; cabinet kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+L-OK       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-OK       RUN    PASS        location: C:\Users\pavel\AppData\Local\Temp\tc381\L-OK\src\ok.cab (want inside ok.cab); fatal: ; windows: no window
+L-WTF8     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-WTF8     RUN    PASS        location: C:\Users\pavel\AppData\Local\Temp\tc381\L-WTF8\src\wtf8.cab (want inside wtf8.cab); fatal: ; windows: no window
+L-WTF8L    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-WTF8L    RUN    PASS        location: C:\Users\pavel\AppData\Local\Temp\tc381\L-WTF8L\src\wtf8l.cab (want inside wtf8l.cab); fatal: ; windows: no window
+L-BAD      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-BAD      RUN    PASS        location: C:\Users\pavel\AppData\Local\Temp\tc381\L-BAD\src (want the src folder); fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 18, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

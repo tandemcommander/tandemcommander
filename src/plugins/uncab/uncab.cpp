@@ -7,6 +7,7 @@
 
 #include "fdi.h"
 #include "uncab.h"
+#include "cabname.h" // feature 381
 #include "dialogs.h"
 #include "splloadstru8.h" // feature 130
 
@@ -199,21 +200,27 @@ int GetDlgItemTextU8(HWND dlg, int id, char* buf, int bufSize)
     return ret;
 }
 
+static_assert(CABNAME_A_NAME_IS_UTF == _A_NAME_IS_UTF, "cabname.h must use fdi.h's flag");
+
 // CAB format boundary: a name inside a cabinet is stored either in the local ANSI
 // code page or - when _A_NAME_IS_UTF is set in the entry's attributes - already in
 // UTF-8. Interface 104 wants UTF-8 on the Salamander interface, so decode here,
 // once, and keep UTF-8 from this point on. Pass 'attribs' = -1 where FDI does not
 // report the attributes (fdintPARTIAL_FILE): the bytes are then taken as UTF-8 when
-// they decode as such and as ANSI otherwise. Returns FALSE when the name cannot be
-// decoded or does not fit into 'buf'.
+// they decode as such and as ANSI otherwise. "UTF-8" is WTF-8 here (feature 381): a
+// name with an unpaired surrogate in its 3-byte form is accepted as stored - a strict
+// test refused it, and the refusal aborted the whole cabinet (CabNameReadAs in
+// cabname.h). Returns FALSE when the name cannot be decoded or does not fit into
+// 'buf' (never cut).
 static BOOL CabNameToU8(const char* name, int attribs, char* buf, int bufSize)
 {
-    BOOL validU8 = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, NULL, 0) > 0;
-    BOOL isUTF = attribs >= 0 ? (attribs & _A_NAME_IS_UTF) != 0 : validU8;
-    if (isUTF)
+    CCabNameRead how = CabNameReadAs(name, attribs);
+    if (how == CABNAME_REFUSE)
+        return FALSE; // flagged UTF-8, but not even WTF-8: never guess another name
+    if (how == CABNAME_UTF8)
     {
         // already UTF-8 -> pass the bytes through verbatim (never rewrite name bytes)
-        if (!validU8 || lstrlen(name) >= bufSize)
+        if (lstrlen(name) >= bufSize)
             return FALSE;
         lstrcpy(buf, name);
         return TRUE;
