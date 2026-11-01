@@ -8,7 +8,7 @@ source: review:379
 who: agent
 created: 2026-11-01
 updated: 2026-11-01
-verified: -
+verified: 2026-11-01 823f2873
 effort: S
 feature: -
 related: [check-encoding-skips-header-files]
@@ -42,3 +42,4 @@ Severity 5: a wrong result reached only with deep keys and long names (narrow), 
 
 - 2026-11-01 — created (source review:379)
 - 2026-11-01 — moved to Next position 1
+- 2026-11-01 — verified at 823f2873: still present at 823f2873: hidden-desktop probe regpath380 LONG - panel went to another existing key cut at 259 bytes; CJK cut mid-character
