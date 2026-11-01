@@ -10071,7 +10071,8 @@ static void TestUncShareListProviders373()
     // WSL: two distributions, one
     CHECK(SalUncProviderListError(ERROR_BAD_NETPATH, 0, 2) == 0);
     CHECK(SalUncProviderListError(ERROR_BAD_NETPATH, 0, 1) == 0);
-    // a missing server (the providers say 1203), an empty answer, an answer that ended early: 53
+    // a missing server (the providers say 1203), an empty answer: 53; an answer that ended early keeps
+    // the error 53 too (the shares it gave are still shown: SalUncShareListStep shows any list)
     CHECK(SalUncProviderListError(ERROR_BAD_NETPATH, ERROR_NO_NET_OR_BAD_PATH, 0) == ERROR_BAD_NETPATH);
     CHECK(SalUncProviderListError(ERROR_BAD_NETPATH, 0, 0) == ERROR_BAD_NETPATH);
     CHECK(SalUncProviderListError(ERROR_BAD_NETPATH, ERROR_NOT_ENOUGH_MEMORY, 1) == ERROR_BAD_NETPATH);

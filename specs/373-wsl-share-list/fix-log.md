@@ -107,3 +107,35 @@ ran in between); each probe compares against its own backup.
 - saltests -> `saltests: 30155 checks, 0 failed` (+35).
 - `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
 - No UI string, menu or dialog changed -> no `.slt` refresh; `build.cmd full` not needed.
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST, no SHOULD
+
+Re-ran the probe `-Expect fixed`: PASS 14 / FAIL 0 (N1 1,329 ms, U1 21,074 ms), registry
+identical. Own P/Invoke timing in the core's order: WSL 53 then the providers list both
+distributions in 7-8 ms; four missing servers 1203 in 6-9 ms after `NetShareEnum`; asked first
+the providers wait the full timeout (1,285 / 21,052 ms) - the order matters. Listing
+`\\wsl.localhost` does not start a stopped distribution. saltests negative control: the 35 new
+checks compiled against the pre-373 rule fail exactly the key check
+(`SalUncShareListAsksProviders(ERROR_BAD_NETPATH, 0)`). Callers and the case-by-case route
+equivalence confirmed; UTF-8, never-cut, `PRIVACY.md` confirmed.
+
+NOTE findings and what was done:
+
+1. "53 is the only answer WSL gives" (header list, `shares.cpp` comment): WSL alternates 53 /
+   1707 - **fixed** (wording in `saluncserver.h` x2, `shares.cpp`).
+2. The saltests label "an answer that ended early: 53" describes no user-visible result (a
+   non-empty list is shown, `SalUncShareListStep`) - **fixed** (label). The older half - a list
+   cut off by `ERROR_MORE_DATA` (or a later failed round) is shown as if whole, against the 125
+   comment - is outside this item: **Inbox item**
+   `share-list-a-list-a-server-never-finishes-more-data-without` (`review:373`).
+3. A provider that returns deeper remote names (`\\server\a\b`, e.g. an NFS client, not installed
+   here) would be offered as `b` and opened as `\\server\b` (an error, no data at risk) - code of
+   125, unmeasured; recorded here, no item (no such provider measured).
+4. Not measured with the WebClient (WebDAV) service running - already in the spec's
+   *Assumptions*; the wait stays behind the wait window with Esc / Close.
+5. FEATURE-HISTORY / closing report owed at closing - done in the closing commit.
+
+After the fixes (comments only): `.\build.cmd` -> `BUILD SUCCEEDED`; saltests 30155 checks, 0
+failed; encoding guard `TOTAL: 0 finding(s)`. No code path changed, so no second review.

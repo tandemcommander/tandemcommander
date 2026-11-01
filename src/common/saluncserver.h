@@ -33,8 +33,9 @@
 //   SalUncServerNotFoundErr, SalUncShareListAsksProviders, SalUncProviderListError
 //                         (feature 373) when the job asks the network providers
 //                         after NetShareEnum failed - also at "network path not
-//                         found" (53), the only answer WSL (\\wsl.localhost) gives
-//                         it - and which error it reports when they give nothing
+//                         found" (53), the answer WSL (\\wsl.localhost) gives it
+//                         (or 1707 when asked again) - and which error it reports
+//                         when they give nothing
 //
 // Names are UTF-8 (WTF-8), as everywhere in the core. Header-only.
 //
@@ -213,8 +214,9 @@ inline BOOL SalUncServerNotFoundErr(DWORD error)
 // Feature 373: TRUE when the share-list job asks the network providers
 // (WNetOpenEnumW) after NetShareEnum ended with 'error' and gave 'count' shares.
 // Asked only when NetShareEnum gave nothing and failed: a refused list (feature
-// 125) and - since 373 - "network path not found" (53), the answer of every
-// non-SMB provider such as WSL's (\\wsl.localhost, \\wsl$). The providers are
+// 125) and - since 373 - "network path not found" (53), what NetShareEnum says
+// for a name that a non-SMB provider serves, such as WSL's (\\wsl.localhost,
+// \\wsl$; a repeated question there may say 1707, which was asked before 373 too). The providers are
 // always the SECOND question: right after NetShareEnum failed, Windows answers
 // them for a missing server within milliseconds (measured, 1203), while asked
 // first they wait a network timeout of their own (21 s for an address that never

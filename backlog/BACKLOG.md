@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Server path of WSL (wsl.localhost) offers no share list: error 53 skips the provider fallback](items/wsl-localhost-offers-no-share-list/desc.md) | bug | 4 | panels-ui | 373 |
 
 ## Next
 
@@ -290,6 +289,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Share list: a list a server never finishes (more data without an end) is shown as if it were whole](items/share-list-a-list-a-server-never-finishes-more-data-without/desc.md) | bug | 2 | panels-ui | review:373 | 2026-11-01 |
 
 ## Parked
 

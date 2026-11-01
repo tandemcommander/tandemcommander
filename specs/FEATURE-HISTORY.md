@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373 |
 
 ## Feature notes
 
@@ -5778,3 +5778,20 @@ a few early ones are out of sequence).
   waits 392-411 ms -> <= 5.1 ms (16 PASS, 4 NOT DRIVEN: cursor); saltests 30120 / 0; two
   refute-first reviews (0 MUST; hung-worker negative control `probe/review2`). Owed to a person:
   `check-by-hand-switching-back-with-a-wsl-folder-in-a-panel-no`.
+- 373-wsl-share-list: `\\wsl.localhost`, `\\wsl.localhost\`, `\\wsl$` in Change Directory and the
+  way up from `\\wsl.localhost\<distro>` (284) ended in "(53) The network path was not found"
+  instead of the share list of 125 - now they offer the WSL distributions. WSL is no SMB server:
+  `NetShareEnum` answers 53 (sometimes 1707 when asked again), and 53 skipped the second way
+  (`WNetOpenEnumW`, the network providers), which WSL's Plan 9 provider answers at once. Now 53
+  with no share asks the providers too (rules `SalUncShareListAsksProviders`,
+  `SalUncProviderListError`, `SalUncServerNotFoundErr` in `saluncserver.h`); 51 / 1231 / 1232 keep
+  the old route; both ways failing -> the familiar 53. **Trap: keep the order** - asked right after
+  `NetShareEnum` failed, the providers answer a missing server 1203 within milliseconds (Windows
+  knows the name then); asked first they wait their own full timeout (21 s for an address that
+  never answers) - so no second timeout today, a cold provider question would cost one. Limits:
+  measured with the WebClient (WebDAV) service stopped; a provider returning deeper remote names
+  (`\\server\a\b`) would be offered by the last part (125's code, unmeasured). From backlog item
+  `wsl-localhost-offers-no-share-list`. Probe `wslshares_probe.ps1` (real route, no seam): negative
+  W1/W3/W4 FAIL -> 14 / 14 PASS, times to the 53 box unchanged (1.3 s, 21 s); saltests 30120 ->
+  30155; one refute-first review (no MUST / SHOULD; NOTE 2's older half -> Inbox
+  `share-list-a-list-a-server-never-finishes-more-data-without`).

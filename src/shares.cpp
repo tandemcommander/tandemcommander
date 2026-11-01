@@ -579,8 +579,8 @@ void CUncSharesJob::Read()
     } while (res == ERROR_MORE_DATA);
 
     // feature 373: the network providers are the second question when NetShareEnum gave nothing -
-    // also at "network path not found" (53), the only answer of a server that is no SMB server
-    // (WSL's \\wsl.localhost, \\wsl$: its Plan 9 provider lists the distributions). Asked after
+    // also at "network path not found" (53), what NetShareEnum says for a server that is no SMB
+    // server (WSL's \\wsl.localhost, \\wsl$: its Plan 9 provider lists the distributions). Asked after
     // NetShareEnum failed, they answer a missing server within milliseconds (Windows knows it
     // then); asked first they would wait a network timeout of their own - keep this order.
     // 51, 1231, 1232 (the server not reached at all) are still not asked a second time.
