@@ -95,6 +95,7 @@
 #include "salmaskgroup.h"     // feature 298
 #include "salsubst.h"         // feature 301
 #include "salftpupname.h"     // feature 303
+#include "salftpsrvpath.h"    // feature 385
 #include "salpaxheader.h"     // feature 306
 #include "saltarlink.h"       // feature 309
 #include "salcpiolink.h"      // feature 310
@@ -18890,6 +18891,300 @@ static void TestSubstTarget301()
     CHECK(SalSubstTargetToPathU8(L"\\??\\C:\\a\xD800", buf, sizeof(buf)) == SAL_SUBST_OK && strlen(buf) == 4 + 3);
 }
 
+// feature 385: FTP server paths of the case-insensitive path types compared name by name by the
+// file system's rule (salftpsrvpath.h) - the code-page byte fold over UTF-8 bytes made the folders
+// "C-caron" and "G-circumflex" one folder on code page 1250 (an upload stored over an existing
+// file of the other folder without the question) and "C-caron" / "c-caron" two folders.
+
+// the old FTPIsPrefixOfServerPath (ftputils.cpp before 385), its byte fold = the core's LowerCase
+static int OldNICmp385(const char* s1, const char* s2, int n) // = the core's StrNICmp (x64)
+{
+    const BYTE* lower = SalNameOrderDetail::LegacyLowerTable();
+    while (n--)
+    {
+        int res = (int)lower[(BYTE)*s1] - (int)lower[(BYTE)*s2++];
+        if (res != 0)
+            return res < 0 ? -1 : 1;
+        if (*s1++ == 0)
+            return 0;
+    }
+    return 0;
+}
+
+static BOOL OldPrefix385(ESalFtpSrvPathKind kind, const char* prefix, const char* path, BOOL mustBeSame)
+{
+    const BYTE* lower = SalNameOrderDetail::LegacyLowerTable();
+    switch (kind)
+    {
+    case sfspkVms:
+    {
+        int l1 = (int)strlen(prefix);
+        int l2 = (int)strlen(path);
+        if (l1 > 1 && prefix[l1 - 1] == ']' && !SalFtpVmsEscaped(prefix, prefix + (l1 - 1)))
+        {
+            l1--;
+            if (prefix[l1 - 1] == '.' && !SalFtpVmsEscaped(prefix, prefix + (l1 - 1)))
+                l1--;
+            if (l1 >= 7 && strncmp(prefix + l1 - 7, "[000000", 7) == 0 && !SalFtpVmsEscaped(prefix, prefix + (l1 - 7)))
+                l1 -= 6;
+        }
+        if (l2 > 1 && path[l2 - 1] == ']' && !SalFtpVmsEscaped(path, path + (l2 - 1)))
+        {
+            l2--;
+            if (path[l2 - 1] == '.' && !SalFtpVmsEscaped(path, path + (l2 - 1)))
+                l2--;
+            if (l2 >= 7 && strncmp(path + l2 - 7, "[000000", 7) == 0 && !SalFtpVmsEscaped(path, path + (l2 - 7)))
+                l2 -= 6;
+        }
+        // (the old code read prefix[-1] here for an empty prefix; the copy guards it as the new one does)
+        return (l1 == l2 || !mustBeSame && l1 < l2) && OldNICmp385(prefix, path, l1) == 0 &&
+               (l1 == l2 || l1 > 0 && prefix[l1 - 1] == '[' && !SalFtpVmsEscaped(prefix, prefix + (l1 - 1)) ||
+                (path[l1] == '.' || path[l1] == ']') && !SalFtpVmsEscaped(path, path + l1));
+    }
+    case sfspkMvs:
+    {
+        int l1 = (int)strlen(prefix);
+        int l2 = (int)strlen(path);
+        if (l1 > 1 && prefix[l1 - 1] == '\'')
+        {
+            l1--;
+            if (prefix[l1 - 1] == '.')
+                l1--;
+        }
+        if (l2 > 1 && path[l2 - 1] == '\'')
+        {
+            l2--;
+            if (path[l2 - 1] == '.')
+                l2--;
+        }
+        return (l1 == l2 || !mustBeSame && l1 < l2) && OldNICmp385(prefix, path, l1) == 0 &&
+               (l1 == l2 || path[l1] == '.' || path[l1] == '\'');
+    }
+    case sfspkSlashes:
+    {
+        const char* s1 = prefix;
+        const char* s2 = path;
+        while (*s1 != 0 && ((*s1 == '/' || *s1 == '\\') && (*s2 == '/' || *s2 == '\\') ||
+                            lower[(BYTE)*s1] == lower[(BYTE)*s2]))
+        {
+            s1++;
+            s2++;
+        }
+        if (*s1 == '/' || *s1 == '\\')
+            s1++;
+        if (*s2 == '/' || *s2 == '\\')
+            s2++;
+        return *s1 == 0 && *s2 == 0 || !mustBeSame && *s1 == 0 && s2 > path && (*(s2 - 1) == '/' || *(s2 - 1) == '\\');
+    }
+    case sfspkDotted:
+    {
+        int l1 = (int)strlen(prefix);
+        int l2 = (int)strlen(path);
+        if (l1 > 1 && prefix[l1 - 1] == '.')
+            l1--;
+        if (l2 > 1 && path[l2 - 1] == '.')
+            l2--;
+        return (l1 == l2 || !mustBeSame && l1 < l2) && OldNICmp385(prefix, path, l1) == 0 &&
+               (l1 == l2 || path[l1] == '.');
+    }
+    case sfspkAs400:
+    {
+        const char* s1 = prefix;
+        const char* s2 = path;
+        while (*s1 != 0 && lower[(BYTE)*s1] == lower[(BYTE)*s2])
+        {
+            s1++;
+            s2++;
+        }
+        if (*s1 == '/')
+            s1++;
+        if (*s2 == '/')
+            s2++;
+        return *s1 == 0 && *s2 == 0 || !mustBeSame && *s1 == 0 && s2 > path && *(s2 - 1) == '/';
+    }
+    default:
+    {
+        int l1 = (int)strlen(prefix);
+        int l2 = (int)strlen(path);
+        if (l1 > 0 && prefix[l1 - 1] == '/')
+            l1--;
+        if (l2 > 0 && path[l2 - 1] == '/')
+            l2--;
+        return (l1 == l2 || !mustBeSame && l1 < l2) && strncmp(prefix, path, l1) == 0 && (l1 == l2 || path[l1] == '/');
+    }
+    }
+}
+
+// every string of up to 'maxLen' characters of 'alphabet', plus 'extra'
+static std::vector<std::string> AsciiPaths385(const char* alphabet, int maxLen, std::initializer_list<const char*> extra)
+{
+    std::vector<std::string> out(1, std::string());
+    size_t from = 0;
+    int n = (int)strlen(alphabet);
+    for (int len = 1; len <= maxLen; len++)
+    {
+        size_t to = out.size();
+        for (size_t k = from; k < to; k++)
+            for (int c = 0; c < n; c++)
+                out.push_back(out[k] + alphabet[c]);
+        from = to;
+    }
+    for (const char* e : extra)
+        out.push_back(e);
+    return out;
+}
+
+static void TestFtpServerPath385()
+{
+    // ---- ASCII paths: every answer is the old one (every pair of the set, both modes) ----------
+    struct
+    {
+        ESalFtpSrvPathKind Kind;
+        const char* Alphabet;
+        int MaxLen;
+        std::initializer_list<const char*> Extra;
+    } sets[] = {
+        {sfspkSlashes, "aA/\\b", 4, {"/pub/Altap", "\\PUB\\altap\\", "C:/DIR1/dir2", "c:\\dir1", "/", "//", "/a//"}},
+        {sfspkAs400, "aA/b.", 4, {"/QSYS.LIB", "/qsys.lib/GARY.LIB", "/QDLS/oetst", "/QSYS.LIB/"}},
+        {sfspkVms, "aA.[]^", 4, {"DKA0:[000000]", "dka0:[000000.]", "DKA0:[USERS]", "dka0:[users.PETR]", "[000000]", "[a^.b]", "[A^.B.c]", "[a^]]", "PUB$DEVICE:[PUB.VMS]"}},
+        {sfspkMvs, "aA.'", 5, {"'VEA0016.MAIN.CLIST'", "'vea0016.main'", "'VEA0016.'", "''"}},
+        {sfspkDotted, "aA.:", 5, {"ACADEM:ANONYMOU.PICS", "academ:anonymou.", "\\SYSTEM.$VVVVV.SUBVOLUM", "\\system.$vvvvv"}},
+        {sfspkCaseSensitive, "aA/", 6, {"/pub/altap", "/PUB/altap/"}},
+    };
+    for (auto& set : sets)
+    {
+        std::vector<std::string> paths = AsciiPaths385(set.Alphabet, set.MaxLen, set.Extra);
+        int pairs = 0;
+        int differ = 0;
+        for (auto& p : paths)
+            for (auto& q : paths)
+                for (int same = 0; same < 2; same++)
+                {
+                    pairs++;
+                    if (SalFtpServerPathIsPrefix(set.Kind, p.c_str(), q.c_str(), same) !=
+                        OldPrefix385(set.Kind, p.c_str(), q.c_str(), same))
+                    {
+                        if (differ++ < 3)
+                            printf("  385 ASCII differs: kind %d '%s' '%s' same %d\n", (int)set.Kind, p.c_str(), q.c_str(), same);
+                    }
+                }
+        CHECK(differ == 0 && pairs > 1000000);
+    }
+
+    // ---- non-ASCII rows: the new answer; the old one where it differed (code page 1250) --------
+#define C_CAP "\xC4\x8C"   // U+010C C-caron
+#define C_SMALL "\xC4\x8D" // U+010D c-caron
+#define G_CAP "\xC4\x9C"   // U+011C G-circumflex: the old fold made it C-caron on code page 1250
+#define H_SMALL "\xC4\xA5" // U+0125 h-circumflex = L-acute U+0139 by the old fold (1250)
+#define L_CAP "\xC4\xB9"
+#define TURNED_A "\xC9\x90"      // U+0250, 2 bytes
+#define TURNED_A_CAP "\xE2\xB1\xAF" // U+2C6F, 3 bytes: the same letter for Windows
+    struct Row
+    {
+        ESalFtpSrvPathKind Kind;
+        const char* Prefix;
+        const char* Path;
+        BOOL MustBeSame;
+        BOOL Expected;
+        BOOL OldDiffers1250; // the old rule answered the other way on code page 1250
+    } rows[] = {
+        // Windows / NetWare / OS/2: the item's cases
+        {sfspkSlashes, "/CROSS/" C_CAP, "/CROSS/" C_SMALL, TRUE, TRUE, TRUE},
+        {sfspkSlashes, "/CROSS/" C_CAP, "/CROSS/" G_CAP, TRUE, FALSE, TRUE},
+        {sfspkSlashes, "/CROSS/" C_SMALL, "/CROSS/" G_CAP "/x", FALSE, FALSE, FALSE},
+        {sfspkSlashes, "/" C_SMALL "aj", "/" C_CAP "AJ/a/b", FALSE, TRUE, TRUE},
+        {sfspkSlashes, "/" C_SMALL "aj", "/" C_CAP "AJ/a/b", TRUE, FALSE, FALSE},
+        {sfspkSlashes, "/" H_SMALL, "/" L_CAP "/x", FALSE, FALSE, TRUE},
+        {sfspkSlashes, "\\" C_CAP "\\a", "/" C_SMALL "/A/", TRUE, TRUE, TRUE},
+        {sfspkSlashes, "C:/" C_CAP, "c:\\" C_SMALL "\\d", FALSE, TRUE, TRUE},
+        // a case pair of different UTF-8 lengths: the boundary is found in the path, not by count
+        {sfspkSlashes, "/" TURNED_A, "/" TURNED_A_CAP, TRUE, TRUE, TRUE},
+        {sfspkSlashes, "/" TURNED_A "/", "/" TURNED_A_CAP "/x", FALSE, TRUE, TRUE},
+        {sfspkSlashes, "/" TURNED_A_CAP, "/" TURNED_A "/x", FALSE, TRUE, TRUE},
+        {sfspkSlashes, "/" TURNED_A, "/" TURNED_A_CAP "x", FALSE, FALSE, FALSE},
+        // no non-ASCII letter equals an ASCII one; NFC / NFD stay apart
+        {sfspkSlashes, "/\xE2\x84\xAA", "/k", TRUE, FALSE, FALSE}, // KELVIN SIGN
+        {sfspkSlashes, "/caf\xC3\xA9", "/cafe\xCC\x81", TRUE, FALSE, FALSE},
+        // text that is not UTF-8: the legacy fold for it, never equal to valid text, and it does
+        // not spoil the names beside it
+        {sfspkSlashes, "/\xC4", "/\xC4", TRUE, TRUE, FALSE},
+        {sfspkSlashes, "/\x8C", "/\x9C", TRUE, TRUE, FALSE},
+        {sfspkSlashes, "/\xFF" "a", "/\xFF" "A", TRUE, TRUE, FALSE},
+        {sfspkSlashes, "/\xFF" "a", "/" C_CAP, TRUE, FALSE, FALSE},
+        {sfspkSlashes, "/\xFF/" C_CAP, "/\xFF/" C_SMALL, TRUE, TRUE, TRUE},
+        // AS/400
+        {sfspkAs400, "/QDLS/" C_CAP "aj", "/qdls/" C_SMALL "AJ", TRUE, TRUE, TRUE},
+        {sfspkAs400, "/QDLS/" C_CAP, "/QDLS/" G_CAP, TRUE, FALSE, TRUE},
+        {sfspkAs400, "/QDLS", "/qdls/" C_SMALL, FALSE, TRUE, FALSE},
+        // VMS
+        {sfspkVms, "DKA0:[" C_CAP "AJ.A]", "dka0:[" C_SMALL "aj.a]", TRUE, TRUE, TRUE},
+        {sfspkVms, "[" C_SMALL "aj]", "[" C_CAP "AJ.SUB]", FALSE, TRUE, TRUE},
+        {sfspkVms, "[" C_CAP "]", "[" G_CAP "]", TRUE, FALSE, TRUE},
+        {sfspkVms, "DKA0:[000000]", "dka0:[" C_CAP "aj]", FALSE, TRUE, FALSE},
+        {sfspkVms, "[A^." C_CAP "]", "[a^." C_SMALL "]", TRUE, TRUE, TRUE},
+        {sfspkVms, "[A]", "[a^." C_SMALL "]", FALSE, FALSE, FALSE}, // an escaped '.' is no separator
+        {sfspkVms, "[" TURNED_A "]", "[" TURNED_A_CAP ".B]", FALSE, TRUE, TRUE},
+        // MVS
+        {sfspkMvs, "'USER." C_CAP "AJ'", "'user." C_SMALL "aj'", TRUE, TRUE, TRUE},
+        {sfspkMvs, "'USER'", "'user." C_SMALL "aj.x'", FALSE, TRUE, FALSE},
+        {sfspkMvs, "'U." C_CAP "'", "'U." G_CAP "'", TRUE, FALSE, TRUE},
+        // IBM z/VM, Tandem
+        {sfspkDotted, "ACADEM:" C_CAP "AJ.A", "academ:" C_SMALL "aj.a", TRUE, TRUE, TRUE},
+        {sfspkDotted, "\\SYS.$" C_CAP, "\\sys.$" C_SMALL ".F", FALSE, TRUE, TRUE},
+        {sfspkDotted, "\\SYS.$" C_CAP, "\\SYS.$" G_CAP, TRUE, FALSE, TRUE},
+        // Unix: still case-sensitive, bytes compared exactly
+        {sfspkCaseSensitive, "/" C_CAP, "/" C_SMALL, TRUE, FALSE, FALSE},
+        {sfspkCaseSensitive, "/" C_CAP, "/" G_CAP, TRUE, FALSE, FALSE},
+        {sfspkCaseSensitive, "/" C_CAP, "/" C_CAP "/", TRUE, TRUE, FALSE},
+    };
+    BOOL cp1250 = GetACP() == 1250;
+    int oldFailed = 0;
+    for (const Row& r : rows)
+    {
+        BOOL got = SalFtpServerPathIsPrefix(r.Kind, r.Prefix, r.Path, r.MustBeSame);
+        CHECK(got == r.Expected);
+        if (got != r.Expected)
+            printf("  385 row: kind %d same %d expected %d\n", (int)r.Kind, r.MustBeSame, r.Expected);
+        BOOL old = OldPrefix385(r.Kind, r.Prefix, r.Path, r.MustBeSame);
+        if (old != r.Expected)
+            oldFailed++;
+        if (cp1250) // negative control: the old rule answered the other way exactly where noted
+            CHECK((old != r.Expected) == r.OldDiffers1250);
+    }
+    if (cp1250)
+        CHECK(oldFailed == 22);
+
+    // a long non-ASCII name (over salnameorder's 519-byte stack buffer) compares whole
+    {
+        std::string a = "/x/", b = "/X/", c = "/x/";
+        for (int i = 0; i < 300; i++)
+        {
+            a += C_CAP;
+            b += C_SMALL;
+            c += (i == 299 ? G_CAP : C_SMALL);
+        }
+        CHECK(SalFtpServerPathIsPrefix(sfspkSlashes, a.c_str(), b.c_str(), TRUE));
+        CHECK(!SalFtpServerPathIsPrefix(sfspkSlashes, a.c_str(), c.c_str(), TRUE));
+        CHECK(SalFtpServerPathIsPrefix(sfspkSlashes, a.c_str(), (b + "/sub").c_str(), FALSE));
+        CHECK(SalFtpServerPathIsPrefix(sfspkMvs, ("'" + a.substr(3) + "'").c_str(), ("'" + b.substr(3) + ".X'").c_str(), FALSE));
+    }
+
+    // the VMS escape rule is the plug-in's one
+    {
+        const char* s = "a^^^.b^^.c";
+        CHECK(SalFtpVmsEscaped(s, s + 4));  // three '^': escaped
+        CHECK(!SalFtpVmsEscaped(s, s + 8)); // two '^': not escaped
+        CHECK(!SalFtpVmsEscaped(s, s));     // nothing before it
+    }
+#undef C_CAP
+#undef C_SMALL
+#undef G_CAP
+#undef H_SMALL
+#undef L_CAP
+#undef TURNED_A
+#undef TURNED_A_CAP
+}
+
 // feature 303: an FTP upload's target name that differs from a listed name only in case counts
 // as existing (salftpupname.h) - "B.txt" into a folder of a Windows-backed server with Unix paths
 // holding "b.txt" was sent without the overwrite question and replaced it
@@ -25194,6 +25489,7 @@ int main(int argc, char** argv)
     TestShellLinkWholeTarget305();
     TestFtpServerEncoding288();
     TestFtpJoinedColumn384();
+    TestFtpServerPath385();
     TestDriveText289();
     TestGrowBufferPair293();
     TestGrowBuffers295();

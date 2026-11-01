@@ -8,6 +8,7 @@
 #include "../../common/salftplisting.h" // feature 269: a listing field kept as UTF-8 (WTF-8)
 #include "../../common/salftppwd.h"     // feature 277: the path of a "257" reply, never cut
 #include "../../common/salftpsrvenc.h"  // feature 288: names go to each server in its own encoding
+#include "../../common/salftpsrvpath.h" // feature 385: server paths compared name by name (092 rule)
 
 #include "../../common/salurlpwd.h" // feature 085
 #include "../../common/salfmtinserts.h" // feature 180
@@ -725,124 +726,35 @@ BOOL FTPIsTheSameServerPath(CFTPServerPathType type, const char* p1, const char*
 BOOL FTPIsPrefixOfServerPath(CFTPServerPathType type, const char* prefix, const char* path,
                              BOOL mustBeSame)
 {
+    // feature 385: the rule lives in salftpsrvpath.h - on the case-insensitive path types each
+    // folder name is compared by the file system's rule (092), no longer by the code-page byte
+    // fold over UTF-8 bytes (on code page 1250 "C-caron" and "G-circumflex" were one folder)
+    ESalFtpSrvPathKind kind;
     switch (type)
     {
-    case ftpsptOpenVMS: // case-insensitive + VMS path
-    {
-        int l1 = (int)strlen(prefix);
-        int l2 = (int)strlen(path);
-        if (l1 > 1 && prefix[l1 - 1] == ']' && !FTPIsVMSEscapeSequence(prefix, prefix + (l1 - 1)))
-        {
-            l1--;
-            if (prefix[l1 - 1] == '.' && !FTPIsVMSEscapeSequence(prefix, prefix + (l1 - 1)))
-                l1--;
-            if (l1 >= 7 && strncmp(prefix + l1 - 7, "[000000", 7) == 0 &&
-                !FTPIsVMSEscapeSequence(prefix, prefix + (l1 - 7)))
-            {
-                l1 -= 6;
-            }
-        }
-        if (l2 > 1 && path[l2 - 1] == ']' && !FTPIsVMSEscapeSequence(path, path + (l2 - 1)))
-        {
-            l2--;
-            if (path[l2 - 1] == '.' && !FTPIsVMSEscapeSequence(path, path + (l2 - 1)))
-                l2--;
-            if (l2 >= 7 && strncmp(path + l2 - 7, "[000000", 7) == 0 &&
-                !FTPIsVMSEscapeSequence(path, path + (l2 - 7)))
-            {
-                l2 -= 6;
-            }
-        }
-        return (l1 == l2 || !mustBeSame && l1 < l2) &&
-               SalamanderGeneral->StrNICmp(prefix, path, l1) == 0 &&
-               (l1 == l2 ||
-                prefix[l1 - 1] == '[' && !FTPIsVMSEscapeSequence(prefix, prefix + (l1 - 1)) ||
-                (path[l1] == '.' || path[l1] == ']') && !FTPIsVMSEscapeSequence(path, path + l1));
-    }
-
-    case ftpsptMVS: // case-insensitive + MVS path
-    {
-        int l1 = (int)strlen(prefix);
-        int l2 = (int)strlen(path);
-        if (l1 > 1 && prefix[l1 - 1] == '\'')
-        {
-            l1--;
-            if (prefix[l1 - 1] == '.')
-                l1--;
-        }
-        if (l2 > 1 && path[l2 - 1] == '\'')
-        {
-            l2--;
-            if (path[l2 - 1] == '.')
-                l2--;
-        }
-        return (l1 == l2 || !mustBeSame && l1 < l2) && SalamanderGeneral->StrNICmp(prefix, path, l1) == 0 &&
-               (l1 == l2 || path[l1] == '.' || path[l1] == '\'');
-    }
-
+    case ftpsptOpenVMS:
+        kind = sfspkVms;
+        break;
+    case ftpsptMVS:
+        kind = sfspkMvs;
+        break;
     case ftpsptNetware:
     case ftpsptWindows:
-    case ftpsptOS2: // case-insensitive + '/' is equivalent to '\\'
-    {
-        const char* s1 = prefix;
-        const char* s2 = path;
-        while (*s1 != 0 &&
-               ((*s1 == '/' || *s1 == '\\') && (*s2 == '/' || *s2 == '\\') ||
-                LowerCase[*s1] == LowerCase[*s2]))
-        {
-            s1++;
-            s2++;
-        }
-        if (*s1 == '/' || *s1 == '\\')
-            s1++;
-        if (*s2 == '/' || *s2 == '\\')
-            s2++;
-        return *s1 == 0 && *s2 == 0 ||
-               !mustBeSame && *s1 == 0 && s2 > path && (*(s2 - 1) == '/' || *(s2 - 1) == '\\');
-    }
-
-    case ftpsptIBMz_VM: // case-insensitive + IBM_z/VM path
-    case ftpsptTandem:  // case-insensitive + Tandem path
-    {
-        int l1 = (int)strlen(prefix);
-        int l2 = (int)strlen(path);
-        if (l1 > 1 && prefix[l1 - 1] == '.')
-            l1--;
-        if (l2 > 1 && path[l2 - 1] == '.')
-            l2--;
-        return (l1 == l2 || !mustBeSame && l1 < l2) && SalamanderGeneral->StrNICmp(prefix, path, l1) == 0 &&
-               (l1 == l2 || path[l1] == '.');
-    }
-
-    case ftpsptAS400: // case-insensitive
-    {
-        const char* s1 = prefix;
-        const char* s2 = path;
-        while (*s1 != 0 && LowerCase[*s1] == LowerCase[*s2])
-        {
-            s1++;
-            s2++;
-        }
-        if (*s1 == '/')
-            s1++;
-        if (*s2 == '/')
-            s2++;
-        return *s1 == 0 && *s2 == 0 ||
-               !mustBeSame && *s1 == 0 && s2 > path && *(s2 - 1) == '/';
-    }
-
+    case ftpsptOS2:
+        kind = sfspkSlashes;
+        break;
+    case ftpsptIBMz_VM:
+    case ftpsptTandem:
+        kind = sfspkDotted;
+        break;
+    case ftpsptAS400:
+        kind = sfspkAs400;
+        break;
     default: // unix + others
-    {
-        int l1 = (int)strlen(prefix);
-        int l2 = (int)strlen(path);
-        if (l1 > 0 && prefix[l1 - 1] == '/')
-            l1--;
-        if (l2 > 0 && path[l2 - 1] == '/')
-            l2--;
-        return (l1 == l2 || !mustBeSame && l1 < l2) && strncmp(prefix, path, l1) == 0 &&
-               (l1 == l2 || path[l1] == '/');
+        kind = sfspkCaseSensitive;
+        break;
     }
-    }
+    return SalFtpServerPathIsPrefix(kind, prefix, path, mustBeSame);
 }
 
 BOOL FTPIsTheSamePath(CFTPServerPathType type, const char* p1, const char* p2,
