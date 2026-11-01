@@ -32,6 +32,13 @@ With "Delete archive after unpacking" the image - the only copy of the full stre
 cut extraction (the decision item `keep-video-cd-images-after-a-whole-unpack-until-their-video` asks what to
 do until this is fixed; its option C is this feature).
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: Is a file whose XA attributes have the Form 2 and the interleaved bits but not the Form 1 bit read as a Form 2 file? → A: Yes - the item names "a file whose ISO 9660 XA attribute says Form 2"; without the Form 1 bit every sector of it is Form 2 (autonomous run: item)
+- Q: Should a Video CD video file on an image that stores only 2048 bytes a sector (a cooked `.iso`) get a message or mark the listing? → A: No - nothing more is stored to extract; it lists and extracts as before (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A Video CD's video files extract whole (Priority: P1)
@@ -119,7 +126,8 @@ new size, or a file would count as covering more sectors than it reads.
 ### Functional Requirements
 
 - **FR-001**: A file of an ISO 9660 directory is a Form 2 file when its directory record carries a CD-XA
-  system-use record whose attributes have the Form 2 bit and not the Form 1 bit (nor the directory bit), the
+  system-use record whose attributes have the Form 2 bit and not the Form 1 bit (nor the directory bit; the
+  interleaved bit does not matter), the
   track its first sector lies in stores the full Form 2 user data at the position the plug-in reads user data
   from, and that first sector is a valid Mode 2 Form 2 sector by its subheader (feature 335's rule).
 - **FR-002**: A Form 2 file is listed with the size sectors x 2324, where sectors is the record's size in
