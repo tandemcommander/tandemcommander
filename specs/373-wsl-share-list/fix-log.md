@@ -25,7 +25,8 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log %TEMP%\tc-wslshares\result
 ```
 
 (the probe was written before the branch existed; the copy in `probe/` differs only in two
-names: `WslNet384` -> `WslNet373`, `nosuch-tc384-` -> `nosuch-tc373-`). Result
+names: `WslNet384` -> `WslNet373`, `nosuch-tc384-` -> `nosuch-tc373-`, and later in the verdicts
+of `-Expect fixed` - *Probe fix* below; the measure-mode rows are INFO either way). Result
 `probe/result_before.txt`:
 
 | Row | What | Before |
@@ -54,7 +55,7 @@ Directory and from the way up of 284 in the default configuration (no Network pl
 - `CUncSharesJob::Start` / `Read`: only `CFilesWindow::PickServerShare` (`src/fileswnb.cpp`),
   called from `CFilesWindow::ChangeDir` (`src/fileswn3.cpp`, the branch for a server-only UNC
   path without a Network plug-in). The way up of 284 (`..`, Backspace, Parent directory, Go to
-  root, Open in other panel) hands `\server\` to that `ChangeDir`; 285 reads the list again
+  root, Open in other panel) hands `\\server\` to that `ChangeDir`; 285 reads the list again
   after the sign-in through the same `Start`.
 - `job->Error` is read only in `PickServerShare`: `SalUncShareListStep(Count, Error,
   IsLogonFailureErr(Error), ...)` and the error box (`GetErrorText(job->Error)`). 53 is not of
@@ -86,13 +87,13 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\373-wsl-share-list\p
 
 | Row | negative (main build, `result_negative.txt`) | after (`result_after.txt`) |
 |---|---|---|
-| W1 `\wsl.localhost` | FAIL - (53) box | PASS - list after 12 ms, `\wsl.localhost\Ubuntu` |
-| W2 `\wsl.localhost\` | PASS (1707 by chance) | PASS - list after 6 ms |
-| W3 `\wsl$` | FAIL - (53) box | PASS - list after 7 ms, `\wsl$\Ubuntu` |
-| W4 Backspace at `\wsl.localhost\Ubuntu` | FAIL - (53) box | PASS - list after 129 ms, Esc stays |
-| C1 `\localhost` | PASS | PASS |
+| W1 `\\wsl.localhost` | FAIL - (53) box | PASS - list after 12 ms, `\\wsl.localhost\Ubuntu` |
+| W2 `\\wsl.localhost\` | PASS (1707 by chance) | PASS - list after 6 ms |
+| W3 `\\wsl$` | FAIL - (53) box | PASS - list after 7 ms, `\\wsl$\Ubuntu` |
+| W4 Backspace at `\\wsl.localhost\Ubuntu` | FAIL - (53) box | PASS - list after 129 ms, Esc stays |
+| C1 `\\localhost` | PASS | PASS |
 | N1 missing name | PASS - (53) after 1,335 ms | PASS - (53) after 1,346 ms |
-| U1 `\192.0.2.1` | PASS - (53) after 21,113 ms | PASS - (53) after 21,020 ms |
+| U1 `\\192.0.2.1` | PASS - (53) after 21,113 ms | PASS - (53) after 21,020 ms |
 
 Negative: PASS 11 / FAIL 3 (W1, W3, W4); after: PASS 14 / FAIL 0. Times to the error unchanged
 (before 1,265-1,335 ms and 21,006-21,113 ms over three runs): no second timeout. Each run
