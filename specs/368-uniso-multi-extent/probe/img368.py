@@ -23,6 +23,11 @@ Images
                not extracted, the image kept
   dirflag.iso  plain.iso, SUB's record flagged multi-extent (a directory: the flag means nothing there) -
                everything as plain.iso
+  (review 1)
+  split.iso    plain.iso with a root folder of two sectors, BIG.BIN's records split across the sector boundary
+               by zero padding (SUB at sector 28): everything as plain.iso
+  zeromid.iso  plain.iso, BIG.BIN's middle extent of length 0: BIG.BIN 5096 bytes (4096 + 1000)
+  oddmid.iso   plain.iso, BIG.BIN's first extent 1000 bytes (not whole sectors): BIG.BIN 4048 bytes
 """
 import hashlib
 import json
@@ -112,7 +117,7 @@ def path_table(big_endian, root_sector, sub_sector, sub_ident):
 
 
 # the files: name -> list of (sector, length) sections; content of each section
-BIG = [(60, 4096), (50, 2048), (55, 1000)]
+BIGD = [(60, 4096), (50, 2048), (55, 1000)]
 PART = [(70, 2048), (71, 500)]
 
 
@@ -122,6 +127,9 @@ def build(kind):
     joliet = kind == "joliet"
     # file data
     secdata = {}
+    BIG = {"zeromid": [(60, 4096), (50, 0), (55, 1000)], "oddmid": [(60, 1000), (50, 2048), (55, 1000)]}.get(kind, BIGD)
+    split = kind == "split"
+    RS = 2 * S if split else S
     for i, (sec, ln) in enumerate(BIG):
         secdata[(sec, ln)] = pattern(1000 + i, ln)
         put(img, sec, secdata[(sec, ln)])
@@ -133,11 +141,11 @@ def build(kind):
     big = b"".join(secdata[x] for x in BIG)
     part = b"".join(secdata[x] for x in PART)
 
-    ROOT, SUBD, JROOT, JSUB = 24, 25, 26, 27
+    ROOT, SUBD, JROOT, JSUB = 24, (28 if split else 25), 26, 27
 
     def iso_dir(root):
         su_dot = SP if (rr and root) else b""
-        recs = [record(b"\x00", ROOT if root else SUBD, S, DIRF, su_dot), record(b"\x01", ROOT, S, DIRF)]
+        recs = [record(b"\x00", ROOT if root else SUBD, RS if root else S, DIRF, su_dot), record(b"\x01", ROOT, RS, DIRF)]
         if root:
             for i, (sec, ln) in enumerate(BIG):
                 last = i == len(BIG) - 1
@@ -153,12 +161,18 @@ def build(kind):
             recs.append(record(b"SUB", SUBD, S, sub_flags, nm("sub") if rr else b""))
             recs.append(record(b"ZED.TXT;1", 41, 3, 0, nm("zed.txt") if rr else b""))
         else:
-            recs[1] = record(b"\x01", ROOT, S, DIRF)
+            recs[1] = record(b"\x01", ROOT, RS, DIRF)
             for i, (sec, ln) in enumerate(PART):
                 last = i == len(PART) - 1
                 flags = 0 if (last and kind != "brkend") else MULTI
                 su = nm("part.bin") if rr and (kind == "rr" or i == 0) else b""
                 recs.append(record(b"PART.BIN;1", sec, ln, flags, su))
+        if split and root:
+            d = b"".join(recs[:3])
+            d += bytes(S - len(d))
+            d += b"".join(recs[3:])
+            assert len(d) <= RS
+            return d
         d = b"".join(recs)
         assert len(d) <= S
         return d
@@ -187,7 +201,7 @@ def build(kind):
     ptm = path_table(True, ROOT, SUBD, b"SUB")
     put(img, 20, ptl)
     put(img, 21, ptm)
-    put(img, 16, vd(1, record(b"\x00", ROOT, S, DIRF), False, len(ptl), 20, 21))
+    put(img, 16, vd(1, record(b"\x00", ROOT, RS, DIRF), False, len(ptl), 20, 21))
     nxt = 17
     if joliet:
         put(img, JROOT, jol_dir(True))
@@ -234,7 +248,7 @@ def main():
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
     expect = {}
-    for kind in ("plain", "rr", "joliet", "rrfirst", "brkname", "brkend", "dirflag"):
+    for kind in ("plain", "rr", "joliet", "rrfirst", "brkname", "brkend", "dirflag", "split", "zeromid", "oddmid"):
         img, exp = build(kind)
         with open(os.path.join(out, kind + ".iso"), "wb") as f:
             f.write(img)

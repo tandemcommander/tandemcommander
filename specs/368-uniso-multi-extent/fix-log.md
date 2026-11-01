@@ -70,3 +70,26 @@ Backlog item `iso-plug-in-an-iso-9660-file-over-4-gib-stored-in-several` (source
 | clang-format | VS 2022 clang-format on the changed lines | only pre-existing differences left |
 
 No UI string, menu or dialog changed: no `.slt` refresh needed.
+
+## Review
+
+Review 1 (independent agent, refute-first, HEAD 8f8f21c6): **no MUST, no SHOULD.**
+
+- Re-ran: saltests 30,063 / 0; probe rows U-PLAIN, U-BRKNAME, U-BRKEND, C-JOLIET PASS; G-BIG with `-BigSeed` PASS
+  (huge.bin 4,294,970,296 bytes, source SHA-256, the hard-linked image deleted, the seed intact).
+- Its own images (cdrkit `isoinfo -x` agrees on each SHA-256): U-SPLIT (records split across a directory sector
+  boundary by zero padding), U-ZEROMID (a middle extent of length 0), U-ODDMID (a first extent of 1000 bytes) - PASS.
+  **Ported into `probe/img368.py` / `probe/iso368_probe.ps1`.**
+- Negative control: `uniso.spl` rebuilt in a worktree with `chained = FALSE` (lists the summed size, reads one
+  contiguous run): U-PLAIN, U-ODDMID, C-PLAIN fail with wrong content - the probe catches a fix that only sums sizes.
+- NOTEs (recorded, no change): (1) a broken chain shows "Error reading directory structure at sector #N" although the
+  directory was read; the box does not name the file (the spec's choice - no new string); (2) the real xorriso image
+  stores its extents contiguously - only the out-of-order synthetic images prove reading in record order (keep them);
+  (3) no end-to-end row for a chain refused by `ChainReadable` (saltests only), View (F3), Unpack of a selection -
+  confirmed by code to reach the same reader; (4) a chain on a raw Mode 2 Form 1 image (CD-ROM XA .bin) and a single
+  record carrying bit 7 with no following record are now left out with the box (fail closed, documented);
+  (5) the reader still ignores a section's extended attribute record length and interleave (file unit / gap size),
+  as the single-extent path always did.
+
+After the port: `probe/result_after_review1.txt` **PASS 26, FAIL 0** (13 RUN rows incl. G-BIG), registry restored +
+identical.

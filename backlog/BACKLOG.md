@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an ISO 9660 file over 4 GiB stored in several extents extracts wrong](items/iso-plug-in-an-iso-9660-file-over-4-gib-stored-in-several/desc.md) | bug | 5 | archives | 368 |
 
 ## Next
 

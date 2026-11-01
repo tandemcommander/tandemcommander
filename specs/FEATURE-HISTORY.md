@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5655,3 +5655,28 @@ a few early ones are out of sequence).
   regressions 337 with 367's expectations 74 / 0 (folders off 8 / 0), 365 22 / 0, 334 23 / 1 (S-RAW, 335's intended
   change); saltests 29,916 (main 56a44fba, same machine) -> 29,999 / 0 (`TestIsoSectorScan_367`; eleven mutants fail 1 to 5 checks each);
   refute-first review 1 (no MUST; SHOULD the Form 1 subheader trusted alone - fixed; NOTE listing cost -> Inbox).
+- 368-uniso-multi-extent: an ISO 9660 file stored in several extents (ISO 9660 level 3: one directory record per
+  extent, the multi-extent bit 0x80 on all but the last - always so for a file of 4 GiB or more; xorriso writes
+  extents of 4 GiB - 2 KiB) was listed by the ISO plug-in as one file per record of the same name, and an unpack
+  wrote them one over the other - only the last part left (a 4 GiB + 3000 byte file extracted as 5048 bytes, F5
+  copied one part), "Confirm File Overwrite" boxes, the image kept since 338 - now the ISO 9660 walk holds the
+  consecutive records of one raw identifier (ISO 9660 or Joliet bytes) until the last and lists them as one file
+  named by the first record (its Rock Ridge name too, also when only the first record carries NM) with the summed
+  64-bit size; `CFilePos::Extents` keeps the extents and `CISO9660::UnpackFile` reads them in record order, each
+  its data length. A chain without its last record (another identifier, a folder, the directory's end), or one the
+  reader cannot read (`CISOImage::ChainReadable`: an extent outside the first extent's track, before its first disc
+  address, past 32-bit sector numbers, or a track storing Mode 2 Form 2 data - 366 / 367 / 336 / 337 untouched) is
+  left out with the existing "Error reading directory structure" box and the listing marked incomplete (a whole
+  Unpack fails, the image kept) - set directly, not through the walk's `ERR_CONTINUE`, which would stop descending
+  into later folders. Rules in `src/common/salisoextent.h`. Traps: genisoimage refuses a file of 4 GiB or more (the
+  real image needs xorriso, fetched without root into `~/tc-xorriso`); `new (std::nothrow)` does not compile in the
+  plug-in (its debug `new` macro) - malloc / free; the real xorriso image stores its extents contiguously, so only
+  the synthetic out-of-order images prove reading in record order. Limits: the broken-chain box says "directory
+  structure" and does not name the file; a chain on a raw Mode 2 image (CD-ROM XA .bin) is left out; a section's
+  extended attribute record and interleave are ignored (as for single-extent files); View (F3), Unpack of a selection
+  and a chain refused by `ChainReadable` have no GUI row (the same reader; saltests). From backlog item
+  `iso-plug-in-an-iso-9660-file-over-4-gib-stored-in-several`. Probe `iso368_probe` (images `img368.py`, the
+  4 GiB image `mkimg368.sh`) main 10 / 10 -> 20 / 0, 26 / 0 with review 1's rows (U-SPLIT, U-ZEROMID, U-ODDMID);
+  regressions 338 24 / 0, 367 40 / 0, 337 with 367's expectations 74 / 0; saltests 29,999 -> 30,063 / 0
+  (`TestIsoMultiExtent_368`; a mutated rule fails 11); refute-first review 1: no MUST / SHOULD (negative control: a
+  reader that only sums sizes fails U-PLAIN, U-ODDMID, C-PLAIN), NOTEs recorded.

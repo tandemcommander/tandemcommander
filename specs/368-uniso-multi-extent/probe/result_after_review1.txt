@@ -1,0 +1,35 @@
+iso368_probe (feature 368) after-review1
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 06:22; registry key existed True
+
+img368: img368: brkend.iso, brkname.iso, dirflag.iso, joliet.iso, oddmid.iso, plain.iso, rr.iso, rrfirst.iso, split.iso, zeromid.iso
+
+U-PLAIN    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-PLAIN    RUN    PASS        files 4: BIG.BIN=7144, SMALL.TXT=5, SUB/PART.BIN=2548, ZED.TXT=3; files ok: True; image kept: False (want False); windows as expected (none, 0 box(es)): True; timed out: False; fatal: ; windows: no window
+U-RR       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-RR       RUN    PASS        files 4: big.bin=7144, small.txt=5, sub/part.bin=2548, zed.txt=3; files ok: True; image kept: False (want False); windows as expected (none, 0 box(es)): True; timed out: False; fatal: ; windows: no window
+U-JOLIET   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-JOLIET   RUN    PASS        files 4: Big File.bin=7144, Small.txt=5, Sub/Part.bin=2548, Zed.txt=3; files ok: True; image kept: False (want False); windows as expected (none, 0 box(es)): True; timed out: False; fatal: ; windows: no window
+U-RRFIRST  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-RRFIRST  RUN    PASS        files 4: big.bin=7144, small.txt=5, sub/part.bin=2548, zed.txt=3; files ok: True; image kept: False (want False); windows as expected (none, 0 box(es)): True; timed out: False; fatal: ; windows: no window
+U-DIRFLAG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-DIRFLAG  RUN    PASS        files 4: BIG.BIN=7144, SMALL.TXT=5, SUB/PART.BIN=2548, ZED.TXT=3; files ok: True; image kept: False (want False); windows as expected (none, 0 box(es)): True; timed out: False; fatal: ; windows: no window
+U-SPLIT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-SPLIT    RUN    PASS        files 4: BIG.BIN=7144, SMALL.TXT=5, SUB/PART.BIN=2548, ZED.TXT=3; files ok: True; image kept: False (want False); windows as expected (none, 0 box(es)): True; timed out: False; fatal: ; windows: no window
+U-ZEROMID  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-ZEROMID  RUN    PASS        files 4: BIG.BIN=5096, SMALL.TXT=5, SUB/PART.BIN=2548, ZED.TXT=3; files ok: True; image kept: False (want False); windows as expected (none, 0 box(es)): True; timed out: False; fatal: ; windows: no window
+U-ODDMID   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-ODDMID   RUN    PASS        files 4: BIG.BIN=4048, SMALL.TXT=5, SUB/PART.BIN=2548, ZED.TXT=3; files ok: True; image kept: False (want False); windows as expected (none, 0 box(es)): True; timed out: False; fatal: ; windows: no window
+U-BRKNAME  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-BRKNAME  RUN    PASS        files 4: BIH.BIN=1000, SMALL.TXT=5, SUB/PART.BIN=2548, ZED.TXT=3; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure", 1 box(es)): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00000018. Incomplete content of ISO image. | [Button id=1] OK
+U-BRKEND   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+U-BRKEND   RUN    PASS        files 3: BIG.BIN=7144, SMALL.TXT=5, ZED.TXT=3; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure", 1 box(es)): True; timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00000019. Incomplete content of ISO image. | [Button id=1] OK
+C-PLAIN    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-PLAIN    RUN    PASS        files 1: BIG.BIN=7144; files ok: True; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "BIG.BIN" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+C-JOLIET   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-JOLIET   RUN    PASS        files 1: Big File.bin=7144; files ok: True; at the open: no window; F5: [#32770 'Copy'] [Static id=209] Copy file "Big File.bin" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+G-BIG      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+G-BIG      RUN    PASS        files 2: huge.bin=4294970296, small.txt=5; files ok: True; image kept: False (want False); windows as expected (none, 0 box(es)): True; timed out: False; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 26, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

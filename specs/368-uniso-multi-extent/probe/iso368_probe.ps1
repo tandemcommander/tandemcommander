@@ -13,7 +13,7 @@
     into the fixture, never written).
     Unpack rows (U-*): the left panel shows <row>\src, Home, End focuses the image, Alt+F9 (851), the target
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK; boxes answered Yes / OK.
-      U-PLAIN, U-RR, U-JOLIET, U-RRFIRST, U-DIRFLAG  every file whole (size and sha256 of expect.json), no box,
+      U-PLAIN, U-RR, U-JOLIET, U-RRFIRST, U-DIRFLAG, (review 1) U-SPLIT, U-ZEROMID, U-ODDMID  every file whole (size and sha256 of expect.json), no box,
                  the image DELETED
       U-BRKNAME, U-BRKEND  the chain without its last record: that file NOT extracted, the others whole, the
                  box "Error reading directory structure", the image KEPT
@@ -192,7 +192,7 @@ try {
     $exp = Get-Content -Raw -LiteralPath "$s\expect.json" | ConvertFrom-Json
     Out ''
 
-    foreach ($k in @('plain', 'rr', 'joliet', 'rrfirst', 'dirflag')) {
+    foreach ($k in @('plain', 'rr', 'joliet', 'rrfirst', 'dirflag', 'split', 'zeromid', 'oddmid')) {
         Unpack-Row ('U-' + $k.ToUpperInvariant()) "$s\$k.iso" (Expect-Of $exp."$k.iso") ''
     }
     Unpack-Row 'U-BRKNAME' "$s\brkname.iso" (Expect-Of $exp.'brkname.iso') $ListErr -Kept
