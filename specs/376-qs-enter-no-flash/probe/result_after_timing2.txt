@@ -1,0 +1,39 @@
+Feature 376 probe after-timing2; exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; rounds 6; files in 'big' 30000; registry backup C:\Users\pavel\AppData\Local\Temp\tc376_backup.reg (existed True)
+export SHA-256 2BA002890B71312196611D3260E2DC02984E2C5092482B9EAF821109D0D73E7B
+fixture C:\Users\pavel\AppData\Local\Temp\tc376 ready in 0,0 s
+R1         CTRL   PASS        panel 773x889; bg FFFFFF tint F0F4F8; rows end y=129; area below y=137..289; FULL->PARENT FILT->FILT settled->NEW
+R1         FLASH  PASS        samples 600; PARENT 0; runs: FILT x38 @0-288ms, NEW x562 @298-3996ms
+R1         LOC    PASS        panel at C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R1         BACK   PASS        after Backspace at C:\Users\pavel\AppData\Local\Temp\tc376\left; Enter on the cursor opened C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R2         CTRL   PASS        panel 773x889; bg FFFFFF tint F0F4F8; rows end y=129; area below y=137..289; FULL->PARENT FILT->FILT settled->NEW
+R2         FLASH  PASS        samples 601; PARENT 0; runs: FILT x38 @0-294ms, NEW x563 @304-3998ms
+R2         LOC    PASS        panel at C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R2         BACK   PASS        after Backspace at C:\Users\pavel\AppData\Local\Temp\tc376\left; Enter on the cursor opened C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R3         CTRL   PASS        panel 773x889; bg FFFFFF tint F0F4F8; rows end y=129; area below y=137..289; FULL->PARENT FILT->FILT settled->NEW
+R3         FLASH  PASS        samples 611; PARENT 0; runs: FILT x38 @0-294ms, NEW x573 @301-3996ms
+R3         LOC    PASS        panel at C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R3         BACK   PASS        after Backspace at C:\Users\pavel\AppData\Local\Temp\tc376\left; Enter on the cursor opened C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R3         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R4         CTRL   PASS        panel 773x889; bg FFFFFF tint F0F4F8; rows end y=129; area below y=137..289; FULL->PARENT FILT->FILT settled->NEW
+R4         FLASH  PASS        samples 596; PARENT 0; runs: FILT x39 @0-309ms, NEW x557 @315-3994ms
+R4         LOC    PASS        panel at C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R4         BACK   PASS        after Backspace at C:\Users\pavel\AppData\Local\Temp\tc376\left; Enter on the cursor opened C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R4         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R5         CTRL   PASS        panel 773x889; bg FFFFFF tint F0F4F8; rows end y=129; area below y=137..289; FULL->PARENT FILT->FILT settled->NEW
+R5         FLASH  PASS        samples 620; PARENT 0; runs: FILT x41 @0-304ms, NEW x579 @312-3999ms
+R5         LOC    PASS        panel at C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R5         BACK   PASS        after Backspace at C:\Users\pavel\AppData\Local\Temp\tc376\left; Enter on the cursor opened C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R5         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R6         CTRL   PASS        panel 773x889; bg FFFFFF tint F0F4F8; rows end y=129; area below y=137..289; FULL->PARENT FILT->FILT settled->NEW
+R6         FLASH  PASS        samples 613; PARENT 0; runs: FILT x39 @0-300ms, NEW x574 @306-3998ms
+R6         LOC    PASS        panel at C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R6         BACK   PASS        after Backspace at C:\Users\pavel\AppData\Local\Temp\tc376\left; Enter on the cursor opened C:\Users\pavel\AppData\Local\Temp\tc376\left\big
+R6         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+DENY       DRAWN  PASS        before Enter FILT; after PARENT; tint pixels 0; panel at C:\Users\pavel\AppData\Local\Temp\tc376\left; [#32770 'Error'] [Static id=2477] (5) P\u0159\u00EDstup byl odep\u0159en.  | [Button id=1] OK
+DENY       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+GONE       DRAWN  PASS        tint pixels before Enter 610188, after 0; ink 20828; class OTHER; panel at C:\Users\pavel\AppData\Local\Temp\tc376\left; [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc376\left\fff_gone" Error: (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor.  | [Button id=1] OK
+GONE       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 2BA002890B71312196611D3260E2DC02984E2C5092482B9EAF821109D0D73E7B / after 2BA002890B71312196611D3260E2DC02984E2C5092482B9EAF821109D0D73E7B
+ROWS 34; FAIL 0

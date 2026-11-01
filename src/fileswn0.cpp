@@ -26,7 +26,7 @@
 //
 //
 
-void CFilesWindow::EndQuickSearch()
+void CFilesWindow::EndQuickSearch(BOOL deferPaint)
 {
     CALL_STACK_MESSAGE_NONE
     BOOL qf = QFMode;
@@ -47,7 +47,7 @@ void CFilesWindow::EndQuickSearch()
         DestroyCaret();
     }
     if (qf)
-        QFEndView(TRUE);
+        QFEndView(TRUE, deferPaint);
 }
 
 //*****************************************************************************
@@ -388,9 +388,9 @@ void CFilesWindow::QFFreeKeys()
     QFKeysCount = 0;
 }
 
-void CFilesWindow::QFEndView(BOOL repaint)
+void CFilesWindow::QFEndView(BOOL repaint, BOOL deferPaint)
 {
-    CALL_STACK_MESSAGE2("CFilesWindow::QFEndView(%d)", repaint);
+    CALL_STACK_MESSAGE3("CFilesWindow::QFEndView(%d, %d)", repaint, deferPaint);
     BOOL wasFiltered = QFActive;
     QFRestoreArrays();
     if (QFTintBrush != NULL)
@@ -400,12 +400,35 @@ void CFilesWindow::QFEndView(BOOL repaint)
     }
     if (repaint)
     {
+        if (wasFiltered && deferPaint)
+        {
+            // feature 376: a directory opened from the filtered view - the full listing is laid out
+            // (its top index and cursor are remembered for the return) but not drawn: the new
+            // directory's listing replaces the filtered view directly; QFFinishDeferredPaint draws
+            // this one only when the path change did not draw anything (and updates the indication)
+            RefreshListBox(-1, -1, FocusedIndex, TRUE, FALSE, FALSE);
+            QFPaintDeferred = TRUE;
+            return;
+        }
         if (wasFiltered)
             RefreshListBox(-1, -1, FocusedIndex, TRUE, FALSE);
         else
             InvalidateRect(ListBox->HWindow, NULL, FALSE);
         QFUpdateIndication();
     }
+}
+
+void CFilesWindow::QFFinishDeferredPaint()
+{
+    CALL_STACK_MESSAGE1("CFilesWindow::QFFinishDeferredPaint()");
+    if (QFPaintDeferred && ListBox != NULL && ListBox->HWindow != NULL)
+    {
+        // nothing has drawn the panel since the search ended (the path change failed or laid out
+        // no new listing): the full listing as laid out then, drawn now (this clears the flag)
+        RefreshListBox(-1, ListBox->GetTopIndex(), FocusedIndex, TRUE, FALSE);
+    }
+    QFPaintDeferred = FALSE;
+    QFUpdateIndication();
 }
 
 BOOL CFilesWindow::QFSuspend()

@@ -25,6 +25,11 @@
       LOC   the panel is in 'big' afterwards (Change Directory field)
       BACK  Backspace from 'big' returns to the parent with the cursor on 'big' (Enter on the
             cursor opens 'big' again)
+    After the rounds, two failure cases (the panel stays in the parent folder):
+      DENY  'ddd_four' cannot be listed (a deny ACE for the user, removed in finally): after Enter
+            and the error message the panel shows the whole parent folder (class PARENT), no tint
+      GONE  'fff_gone' is deleted just before Enter: after the error the panel shows a drawn,
+            untinted listing of the parent
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 #>
@@ -153,6 +158,21 @@ public static class Smp376
         return "OTHER";
     }
 
+    // pixels of the search tint / of anything but the background in the panel (scroll bar and bottom
+    // bar excluded), with the colours of the classifier
+    public static int TintCount(int[] px, int w, int h)
+    {
+        int n = 0;
+        for (int y = 0; y < h - 30; y++) for (int x = 0; x < Math.Min(XMax, w); x++) if (px[y * w + x] == Tint) n++;
+        return n;
+    }
+    public static int InkCount(int[] px, int w, int h)
+    {
+        int n = 0;
+        for (int y = 0; y < h - 30; y++) for (int x = 40; x < Math.Min(XMax, w); x++) { int v = px[y * w + x]; if (v != Bg && v != Tint) n++; }
+        return n;
+    }
+
     // posts Enter to the list box and samples it for 'ms' milliseconds; the runs as "STATE xN @t0-t1ms"
     public static List<string> Runs = new List<string>();
     public static string Last;
@@ -273,6 +293,69 @@ try {
         catch { Row $case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
         finally { if ($id) { $fatal = Fatal-Win $id; End-Row $case $id $fatal $before } }
     }
+
+    # DENY: the folder found cannot be listed (access denied) - the panel stays in the parent and
+    # must show its whole listing, drawn and untinted (classifier PARENT: the picture of Esc)
+    if ([Smp376]::Bg -ne [Smp376]::Tint) {
+        $case = 'DENY'; $before = Reports; $id = 0
+        $denied = $Left + '\ddd_four'; Assert-In $denied
+        $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        try {
+            Make-Fixture
+            & icacls.exe $denied /deny ('*' + $sid + ':(RD)') | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'icacls /deny failed' }
+            $id = Start-Tc376
+            Post-Cmd (Get-Main $id) 2982; Settle $id
+            $list = Get-LeftList $id
+            Type-Text $id 'ddd'; Settle $id
+            $filtNow = [Smp376]::Classify([Smp376]::Grab($list), [Smp376]::W, [Smp376]::H)
+            [void][Drv098f]::PostMessageW($list, 0x0100, [IntPtr]0x0D, [IntPtr]1)
+            [void][Drv098f]::PostMessageW($list, 0x0101, [IntPtr]0x0D, [IntPtr](-1073741823))
+            Start-Sleep -Milliseconds 500
+            $sv = Serve $id 20 @(1, 6)
+            Settle $id
+            $px = [Smp376]::Grab($list); $w = [Smp376]::W; $h = [Smp376]::H
+            $cls = [Smp376]::Classify($px, $w, $h); $tint = [Smp376]::TintCount($px, $w, $h)
+            $loc = Get-Loc $id
+            Row $case 'DRAWN' (V (($filtNow -eq 'FILT') -and ($cls -eq 'PARENT') -and ($tint -eq 0) -and ($loc -ieq $Left))) ("before Enter {0}; after {1}; tint pixels {2}; panel at {3}; {4}" -f $filtNow, $cls, $tint, (Esc $loc), (Msgs $sv))
+        }
+        catch { Row $case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+        finally {
+            if ($id) { $fatal = Fatal-Win $id; End-Row $case $id $fatal $before }
+            & icacls.exe $denied /remove:d ('*' + $sid) | Out-Null
+        }
+
+        # GONE: the folder found is deleted just before Enter - the change fails, the panel stays in
+        # the parent and must show its listing, drawn and untinted
+        $case = 'GONE'; $before = Reports; $id = 0
+        $gone = $Left + '\fff_gone'; Assert-In $gone
+        try {
+            Make-Fixture
+            NewDir $gone
+            $id = Start-Tc376
+            Post-Cmd (Get-Main $id) 2982; Settle $id
+            $list = Get-LeftList $id
+            Type-Text $id 'fff'; Settle $id
+            $px0 = [Smp376]::Grab($list); $tint0 = [Smp376]::TintCount($px0, [Smp376]::W, [Smp376]::H)
+            [IO.Directory]::Delete($gone)
+            [void][Drv098f]::PostMessageW($list, 0x0100, [IntPtr]0x0D, [IntPtr]1)
+            [void][Drv098f]::PostMessageW($list, 0x0101, [IntPtr]0x0D, [IntPtr](-1073741823))
+            Start-Sleep -Milliseconds 500
+            $sv = Serve $id 20 @(1, 6)
+            Settle $id
+            $px = [Smp376]::Grab($list); $w = [Smp376]::W; $h = [Smp376]::H
+            $tint = [Smp376]::TintCount($px, $w, $h); $ink = [Smp376]::InkCount($px, $w, $h)
+            $ref = [Smp376]::Classify($px, $w, $h)
+            $loc = Get-Loc $id
+            Row $case 'DRAWN' (V (($tint0 -gt 0) -and ($tint -eq 0) -and ($ink -gt 0) -and ($loc -ieq $Left))) ("tint pixels before Enter {0}, after {1}; ink {2}; class {3}; panel at {4}; {5}" -f $tint0, $tint, $ink, $ref, (Esc $loc), (Msgs $sv))
+        }
+        catch { Row $case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+        finally {
+            if ($id) { $fatal = Fatal-Win $id; End-Row $case $id $fatal $before }
+            if (Test-Path -LiteralPath $gone) { [IO.Directory]::Delete($gone) }
+        }
+    }
+    else { Row 'DENY' 'SKIP' 'FAIL' 'no classifier (the rounds did not build one)' }
 }
 finally {
     foreach ($p in @($Started)) { if (Test-Alive $p) { Kill-Mine $p } }

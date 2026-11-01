@@ -979,6 +979,7 @@ public:
     COLORREF QFTintBk;            // background of the searching panel
     HBRUSH QFTintBrush;           // brush of QFTintBk; NULL = the panel is not tinted
     BOOL QFDirLineShown;          // the directory line holds the search text (it must be removed when it ends)
+    BOOL QFPaintDeferred;         // feature 376: the full listing is laid out but not drawn yet (QFFinishDeferredPaint)
     void* QFKeys;                 // CSalQFKey per full-listing item (salquickfilter.h), built on demand; NULL = none
     int QFKeysCount;              // items of QFKeys (dirs then files of the full listing)
 
@@ -1518,7 +1519,10 @@ public:
                         int suggestedTopIndex,        // if not -1 this value is used
                         int suggestedFocusIndex,      // if not -1 this value is used
                         BOOL ensureFocusIndexVisible, // ensure at least partial focus visibility
-                        BOOL wholeItemVisible);       // the entire item must be visible (relevant only when ensureFocusIndexVisible is TRUE)
+                        BOOL wholeItemVisible,        // the entire item must be visible (relevant only when ensureFocusIndexVisible is TRUE)
+                        BOOL paint = TRUE);           // feature 376: FALSE = lay out only (item count, top index, x offset, column
+                                                      // widths) - no scroll bars, header line or items are drawn; the caller owes
+                                                      // a drawing (QFPaintDeferred)
 
     // 'probablyUselessRefresh' is TRUE when it is likely just a redundant refresh triggered only
     // by loading icons from a file on a network drive;
@@ -1625,7 +1629,10 @@ public:
     // if disable==TRUE, the filter is turned off
     void ChangeFilter(BOOL disable = FALSE);
 
-    void EndQuickSearch(); // ends Quick Search mode
+    // ends Quick Search mode; 'deferPaint' (feature 376, a directory opened from the filtered view):
+    // the full listing is laid out but not drawn - the caller calls QFFinishDeferredPaint when the
+    // path change is over, so the parent's whole listing is never drawn on the way to the new one
+    void EndQuickSearch(BOOL deferPaint = FALSE);
 
     // feature 244 (quick search in the new mode, see QFMode)
     // (re)builds the filtered view for the typed text 'typedMask' (UTF-8); FALSE = no item
@@ -1637,8 +1644,12 @@ public:
     // maps to its full index); no repaint
     void QFRestoreArrays();
     // ends the filtered view of a search that is being ended (EndQuickSearch); 'repaint'
-    // FALSE when the panel is being destroyed
-    void QFEndView(BOOL repaint);
+    // FALSE when the panel is being destroyed; 'deferPaint' as for EndQuickSearch
+    void QFEndView(BOOL repaint, BOOL deferPaint = FALSE);
+    // feature 376: after a path change that followed EndQuickSearch(TRUE): draws the full listing
+    // when nothing has drawn the panel since (the change failed or did not lay out a new listing)
+    // and brings the tint and the search text up to date
+    void QFFinishDeferredPaint();
     // RefreshDirectory: the full listing back for the refresh (TRUE = it was filtered), and
     // the filter applied again to the refreshed listing ('focusFromName': an operation asked
     // to focus that item - when it does not match, the search ends so that it is shown)

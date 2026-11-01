@@ -291,6 +291,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Leaving a folder by other ways during quick search briefly shows the whole folder](items/leaving-a-folder-by-other-ways-during-quick-search-briefly/desc.md) | bug | 2 | panels-ui | measure:376 | 2026-11-01 |
 
 ## Parked
 

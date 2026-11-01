@@ -1622,6 +1622,7 @@ CFilesWindow::CFilesWindow(CMainWindow* parent)
     QFKeys = NULL;
     QFKeysCount = 0;
     QFDirLineShown = FALSE;
+    QFPaintDeferred = FALSE; // feature 376
     QuickSearch[0] = 0;
     QuickSearchMask[0] = 0;
     SearchIndex = INT_MAX;

@@ -62,12 +62,26 @@ void CFilesWindow::Execute(int index)
     MainWindow->CancelPanelsUI(); // cancel QuickSearch and QuickEdit
     if (index < 0 || index >= Dirs->Count + Files->Count)
         return;
+    // feature 376: a search ended below for an opened directory left the full listing laid out but
+    // not drawn; on every return the panel is drawn if the path change did not draw it
+    struct CQFDeferredPaint
+    {
+        CFilesWindow* Panel;
+        CQFDeferredPaint() { Panel = NULL; }
+        ~CQFDeferredPaint()
+        {
+            if (Panel != NULL)
+                Panel->QFFinishDeferredPaint();
+        }
+    } qfDeferredPaint;
     if (QuickSearchMode && QFMode && QFActive && index < Dirs->Count)
     {
         // feature 244: a directory opens: the full listing is back before its position (top index,
-        // the cursor for an access-denied directory) is remembered; the index follows
+        // the cursor for an access-denied directory) is remembered; the index follows; feature 376:
+        // the full listing is not drawn on the way - the new directory replaces the filtered view
         int fullIndex = QFDirMap->At(index);
-        EndQuickSearch();
+        EndQuickSearch(TRUE);
+        qfDeferredPaint.Panel = this;
         index = fullIndex;
         if (index < 0 || index >= Dirs->Count + Files->Count)
             return;
@@ -3879,7 +3893,7 @@ void GetCommonFileTypeStr(char* buf, int* resLen, const char* ext)
 
 void CFilesWindow::RefreshListBox(int suggestedXOffset,
                                   int suggestedTopIndex, int suggestedFocusIndex,
-                                  BOOL ensureFocusIndexVisible, BOOL wholeItemVisible)
+                                  BOOL ensureFocusIndexVisible, BOOL wholeItemVisible, BOOL paint)
 {
     CALL_STACK_MESSAGE6("CFilesWindow::RefreshListBox(%d, %d, %d, %d, %d)", suggestedXOffset,
                         suggestedTopIndex, suggestedFocusIndex, ensureFocusIndexVisible, wholeItemVisible);
@@ -4667,13 +4681,23 @@ void CFilesWindow::RefreshListBox(int suggestedXOffset,
         suggestedTopIndex = 0;
     }
 
-    ListBox->SetItemsCount(Files->Count + Dirs->Count, suggestedXOffset, suggestedTopIndex, FALSE);
-    ListBox->PaintHeaderLine();
-    if (ListBox->HVScrollBar != NULL)
-        UpdateWindow(ListBox->HVScrollBar);
-    if (ListBox->HHScrollBar != NULL)
-        UpdateWindow(ListBox->BottomBar.HWindow);
-    ListBox->PaintAllItems(NULL, 0);
+    if (!paint)
+    {
+        // feature 376: laid out for the listing, nothing drawn - the scroll bars and the boundary
+        // correction (it scrolls and draws) wait for the drawing the caller owes (QFPaintDeferred)
+        ListBox->SetItemsCount(Files->Count + Dirs->Count, suggestedXOffset, suggestedTopIndex, TRUE);
+    }
+    else
+    {
+        QFPaintDeferred = FALSE; // this drawing replaces an owed one
+        ListBox->SetItemsCount(Files->Count + Dirs->Count, suggestedXOffset, suggestedTopIndex, FALSE);
+        ListBox->PaintHeaderLine();
+        if (ListBox->HVScrollBar != NULL)
+            UpdateWindow(ListBox->HVScrollBar);
+        if (ListBox->HHScrollBar != NULL)
+            UpdateWindow(ListBox->BottomBar.HWindow);
+        ListBox->PaintAllItems(NULL, 0);
+    }
 
     IdleRefreshStates = TRUE;                       // force state-variable check on next idle
     PostMessage(HWindow, WM_USER_SELCHANGED, 0, 0); // sel-change notify
