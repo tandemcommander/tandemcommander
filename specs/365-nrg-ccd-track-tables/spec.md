@@ -55,6 +55,15 @@ form C-CCDREL uses), which 41f18c08 already reads correctly; a table with `INDEX
 start (the item's "real multi-session image") is what R-CCDABS reads wrongly. Following the table of
 contents reads both forms the same way.
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: Should the CloneCD layout add a stored pregap before a session's first track (libmirage's INDEX 0 / INDEX 1 difference)? → A: No - the reader does not read INDEX 0 today, CloneCD omits the pregap of a later session's first track (DiscImageCreator issue 121), and 41f18c08's geometry is kept for every case it reads; a stored pregap stays a limit (autonomous run: conservative)
+- Q: Now that every ETN2 entry becomes a track, may a damaged ETN2 chunk make thousands of tracks? → A: No - an ETN2 chunk is read only when it lies within the image and holds at most 99 whole entries (a disc's track limit); otherwise it is skipped like an unknown chunk, no track. 41f18c08 made one track per chunk; no new unbounded track count is added (features 331 / 350's practice) (autonomous run: conservative)
+- Q: Is the table-of-contents layout also used for a one-session CloneCD image? → A: Yes, whenever the table can be followed - for a consistent table it gives the same track records as 41f18c08 (FR-008), so one rule serves every image (autonomous run: recommended)
+- Q: How is a `[TRACK n]` section matched to its table-of-contents entry when the reader keeps no track number? → A: The k-th `[TRACK n]` section is the track numbered (the smallest ADR-1 track point 1..99) + k; the points must then run without a hole, else the table cannot be followed (FR-005) (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A Nero image with raw or Mode 2 tracks lists and unpacks every session (Priority: P1)
@@ -129,7 +138,11 @@ last track, the same in the INDEX-1 split).
 - An ETN2 chunk holding several entries (several tracks of one session): every entry becomes a track, in
   order, as ETNF does.
 - An ETN2 chunk whose size is not a multiple of 32: the whole entries are read, the rest ignored (as
-  ETNF with 20).
+  ETNF with 20); a chunk under 32 bytes gives no track (41f18c08 read 16 bytes past such a buffer -
+  part of Inbox item `iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard`, whose SINF half
+  stays open).
+- An ETN2 chunk that does not lie within the image, or holds more than 99 entries: skipped like an
+  unknown chunk, no track (the next chunk header is read right after it).
 - A CloneCD table in which a track has no ADR-1 entry with its number, two entries for one track
   disagree, a later track belongs to an earlier session, or a session holding tracks has no lead-out
   entry: the table of contents cannot be followed - the `INDEX 1` split of 41f18c08 is used, with 352's
@@ -153,9 +166,11 @@ last track, the same in the INDEX-1 split).
 - **FR-003**: Every whole 32-byte entry of an ETN2 chunk MUST become a track, in order: its start = the
   entry's start, its end = start + length, its mode and type from the mode byte (as ETNF, through
   `SetTrackTypeMode`; a mode outside the verified table keeps 41f18c08's Mode 1 / ISO 9660), its first
-  disc sector (extent offset) = the entry's first-sector field.
-- **FR-004**: A CloneCD track MUST belong to the session that the table-of-contents entry with ADR 1 and
-  its track number names; its extent offset MUST be that entry's PLBA; within a session a track MUST
+  disc sector (extent offset) = the entry's first-sector field. A chunk outside the image or of more
+  than 99 entries MUST give no track and the reader MUST continue right after it.
+- **FR-004**: A CloneCD track (the k-th `[TRACK n]` section = track number first + k, first = the
+  smallest ADR-1 track point 1..99) MUST belong to the session that the table-of-contents entry with
+  ADR 1 and its track number names; its extent offset MUST be that entry's PLBA; within a session a track MUST
   end where the next track of that session starts (by PLBA) and the session's last track at the
   session's lead-out (entry 0xA2, ADR 1); the sessions MUST follow each other in the `.img` without a
   gap (each starts where the previous one ended).
