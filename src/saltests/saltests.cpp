@@ -18785,6 +18785,30 @@ static void TestFtpServerEncoding288()
     CHECK(!SalFtpSameServer("host", 21, "u", "other", 21, "u"));
 }
 
+// feature 384: a listing column a rule extends ("add_string_to_column") is decoded part by part
+// (salftpsrvenc.h) - the decoded value joined with raw code-page bytes and decoded again showed a
+// z/VM name "name<c-caron>.ext<c-caron>" as "name<A-umlaut><T-caron>.ext<c-caron>"
+static void TestFtpJoinedColumn384()
+{
+    // only the listing line's own bytes are decoded as a field of the server
+    CHECK(SalFtpJoinPartHandling(SALFTPJOIN_RAW) == SALFTPJOIN_DECODE_AS_SERVER_FIELD);
+    // another column's value is UTF-8 already: never decoded a second time (the defect)
+    CHECK(SalFtpJoinPartHandling(SALFTPJOIN_COLUMN) == SALFTPJOIN_APPEND_AS_IS);
+    // the rule's literal: the text rule, but not the server's bytes
+    CHECK(SalFtpJoinPartHandling(SALFTPJOIN_LITERAL) == SALFTPJOIN_DECODE_ALONE);
+    // a kind not known is never decoded again
+    CHECK(SalFtpJoinPartHandling(-1) == SALFTPJOIN_APPEND_AS_IS);
+    CHECK(SalFtpJoinPartHandling(SALFTPJOIN_LITERAL + 1) == SALFTPJOIN_APPEND_AS_IS);
+    // the three kinds are told apart
+    CHECK(SALFTPJOIN_RAW != SALFTPJOIN_COLUMN && SALFTPJOIN_COLUMN != SALFTPJOIN_LITERAL && SALFTPJOIN_RAW != SALFTPJOIN_LITERAL);
+
+    // the joined value is a code-page name of the server when a part came from the code page
+    CHECK(!SalFtpJoinedFieldIsCodePageName(FALSE, FALSE)); // ASCII / UTF-8 parts only
+    CHECK(SalFtpJoinedFieldIsCodePageName(TRUE, FALSE));   // "name<c-caron>" (code page) + "." + "ext"
+    CHECK(SalFtpJoinedFieldIsCodePageName(FALSE, TRUE));   // "name" + "." + "ext<c-caron>" (code page)
+    CHECK(SalFtpJoinedFieldIsCodePageName(TRUE, TRUE));    // both parts: the probe's name
+}
+
 // feature 301: a subst drive's device text -> its path, whole or refused (salsubst.h)
 static void TestSubstTarget301()
 {
@@ -25155,6 +25179,7 @@ int main(int argc, char** argv)
     TestFolderShortcutCut304();
     TestShellLinkWholeTarget305();
     TestFtpServerEncoding288();
+    TestFtpJoinedColumn384();
     TestDriveText289();
     TestGrowBufferPair293();
     TestGrowBuffers295();

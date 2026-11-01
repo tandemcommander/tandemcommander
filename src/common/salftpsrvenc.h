@@ -103,6 +103,47 @@ inline BOOL SalFtpWToCodePageExact(UINT codePage, const WCHAR* w, char* buf, int
     return same;
 }
 
+// feature 384: a listing rule step "add_string_to_column" appends a part to a column whose value
+// is already decoded (UTF-8). Joining the decoded value with raw listing bytes and decoding the
+// whole again read a code-page server's first part in the code page twice ("name<c-caron>.ext
+// <c-caron>" from a z/VM CMS listing was shown and addressed as "name<A-umlaut><T-caron>.ext
+// <c-caron>"). Now the appended part alone becomes text, by its kind, and is appended:
+enum
+{
+    SALFTPJOIN_RAW,     // the listing line's bytes (next_word, next_char, rest_of_line)
+    SALFTPJOIN_COLUMN,  // another column's value - decoded already
+    SALFTPJOIN_LITERAL, // the rule's own text
+};
+enum
+{
+    SALFTPJOIN_DECODE_AS_SERVER_FIELD, // as a listing field of the server (ASCII / UTF-8 / WTF-8
+                                       // kept, else the code page; a code-page text is remembered)
+    SALFTPJOIN_APPEND_AS_IS,           // never decoded a second time
+    SALFTPJOIN_DECODE_ALONE,           // the same text rule, but not the server's bytes: nothing
+                                       // is remembered for the server
+};
+inline int SalFtpJoinPartHandling(int partKind)
+{
+    switch (partKind)
+    {
+    case SALFTPJOIN_RAW:
+        return SALFTPJOIN_DECODE_AS_SERVER_FIELD;
+    case SALFTPJOIN_LITERAL:
+        return SALFTPJOIN_DECODE_ALONE;
+    default: // SALFTPJOIN_COLUMN, and any value not known: decoding UTF-8 again is the defect
+        return SALFTPJOIN_APPEND_AS_IS;
+    }
+}
+
+// feature 384: the joined value is a code-page name of the server (FTPU8NameToServer sends it in
+// the code page also to a "mixed" server) when its raw part was read in the code page or the
+// column's value already is one - as the whole-text decode remembered it before; a literal or
+// another column's value alone never makes it one
+inline BOOL SalFtpJoinedFieldIsCodePageName(BOOL headIsCodePageName, BOOL rawPartReadInCodePage)
+{
+    return headIsCodePageName || rawPartReadInCodePage;
+}
+
 // the user of a server: NULL, "" and "anonymous" are one user (the operations store the
 // anonymous user by its name, the upload listing cache by NULL); otherwise byte for byte
 inline BOOL SalFtpSameServerUser(const char* a, const char* b)

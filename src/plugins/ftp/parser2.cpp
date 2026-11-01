@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 
+#include "../../common/salftpsrvenc.h" // feature 384: SALFTPJOIN_xxx (add_string_to_column)
+
 //
 // ****************************************************************************
 // CFTPParser
@@ -629,26 +631,14 @@ BOOL AssignNumberToColumn(int col, TIndirectArray<CSrvTypeColumn>* columns, BOOL
     }
 }
 
-// feature 288: 'evidence' FALSE = the text is not the server's bytes as listed (a column the
-// parser re-assigns from an already decoded value) - it tells nothing about the server's encoding
-BOOL AssignStringToColumn(int col, TIndirectArray<CSrvTypeColumn>* columns, const char* beg,
-                          const char* end, BOOL* lowMemErr, DWORD* emptyCol,
-                          CFileData* file, CFTPListingPluginDataInterface* dataIface,
-                          BOOL evidence = TRUE)
+// feature 384: assigns 'str' - text decoded already (UTF-8), SalamanderGeneral->Alloc'd; the
+// column takes it over (freed here when it is not taken) - to a name or text column
+BOOL AssignU8StringToColumn(int col, TIndirectArray<CSrvTypeColumn>* columns, char* str,
+                            BOOL* lowMemErr, DWORD* emptyCol,
+                            CFileData* file, CFTPListingPluginDataInterface* dataIface)
 {
     if (col >= 0 && col < columns->Count) // "always true"
     {
-        // interface 104: names/text crossing the Salamander interface are UTF-8;
-        // decode the raw listing bytes (server encoding) here (see ftputils.cpp);
-        // feature 288: a listed name tells the server's encoding
-        char* str = FTPListingFieldToU8(beg, (int)(end - beg), evidence && columns->At(col)->Type == stctName);
-        if (str == NULL)
-        {
-            TRACE_E(LOW_MEMORY);
-            *lowMemErr = TRUE;
-            return FALSE;
-        }
-
         emptyCol[col] = FALSE;
         switch (columns->At(col)->Type)
         {
@@ -681,6 +671,36 @@ BOOL AssignStringToColumn(int col, TIndirectArray<CSrvTypeColumn>* columns, cons
         }
         }
         return TRUE;
+    }
+    else
+    {
+        SalamanderGeneral->Free(str);
+        TRACE_E("AssignStringToColumn(): Invalid column index!");
+        *lowMemErr = TRUE; // fatal error - simulating "low memory"
+        return FALSE;
+    }
+}
+
+// feature 288: 'evidence' FALSE = the text is not the server's bytes as listed (a column the
+// parser re-assigns from an already decoded value) - it tells nothing about the server's encoding
+BOOL AssignStringToColumn(int col, TIndirectArray<CSrvTypeColumn>* columns, const char* beg,
+                          const char* end, BOOL* lowMemErr, DWORD* emptyCol,
+                          CFileData* file, CFTPListingPluginDataInterface* dataIface,
+                          BOOL evidence = TRUE)
+{
+    if (col >= 0 && col < columns->Count) // "always true"
+    {
+        // interface 104: names/text crossing the Salamander interface are UTF-8;
+        // decode the raw listing bytes (server encoding) here (see ftputils.cpp);
+        // feature 288: a listed name tells the server's encoding
+        char* str = FTPListingFieldToU8(beg, (int)(end - beg), evidence && columns->At(col)->Type == stctName);
+        if (str == NULL)
+        {
+            TRACE_E(LOW_MEMORY);
+            *lowMemErr = TRUE;
+            return FALSE;
+        }
+        return AssignU8StringToColumn(col, columns, str, lowMemErr, emptyCol, file, dataIface);
     }
     else
     {
@@ -1759,7 +1779,16 @@ BOOL CFTPParserFunction::UseFunction(CFileData* file, BOOL* isDir,
                     Parameters[1]->GetStringOperand(&beg, &end, file, dataIface, columns, s, listingEnd);
                     if (beg < end) // if we are not adding an empty string (that is ignored)
                     {
-                        char* str = (char*)malloc((endDst - begDst) + (end - beg));
+                        // feature 384: the column's value is decoded already (UTF-8); only the
+                        // appended part becomes text, by its kind - the joined text decoded as a
+                        // whole read a code-page server's first part in the code page twice
+                        // (z/VM "name<c-caron> ext<c-caron>" -> "name<A-umlaut><T-caron>.ext<c-caron>")
+                        int partKind = SALFTPJOIN_COLUMN; // pptColumnID: another column's value
+                        if (Parameters[1]->Type == pptStateVar)
+                            partKind = SALFTPJOIN_RAW; // next_word / next_char / rest_of_line
+                        else if (Parameters[1]->Type == pptString)
+                            partKind = SALFTPJOIN_LITERAL;
+                        char* str = FTPListingJoinFieldU8(begDst, (int)(endDst - begDst), beg, (int)(end - beg), partKind);
                         if (str == NULL)
                         {
                             TRACE_E(LOW_MEMORY);
@@ -1767,14 +1796,9 @@ BOOL CFTPParserFunction::UseFunction(CFileData* file, BOOL* isDir,
                             ret = FALSE;
                             break;
                         }
-                        memcpy(str, begDst, endDst - begDst);
-                        memcpy(str + (endDst - begDst), beg, end - beg);
-                        if (!AssignStringToColumn(i, columns, str, str + (endDst - begDst) + (end - beg),
-                                                  lowMemErr, emptyCol, file, dataIface, FALSE /* re-assigned */))
-                        {
+                        // assigned as it is: never decoded again (re-assigned - no evidence, 288)
+                        if (!AssignU8StringToColumn(i, columns, str, lowMemErr, emptyCol, file, dataIface))
                             ret = FALSE;
-                        }
-                        free(str);
                     }
                     break;
                 }

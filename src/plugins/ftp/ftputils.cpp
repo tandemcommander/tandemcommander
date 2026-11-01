@@ -3760,6 +3760,68 @@ char* FTPListingFieldToU8(const char* beg, int len, BOOL nameField)
     return FTPFieldToU8(beg, len, FTPListingServer, nameField ? FTPEVID_STATE | FTPEVID_UTF8 : 0);
 }
 
+char* FTPListingJoinFieldU8(const char* headU8, int headLen, const char* part, int partLen, int partKind)
+{
+    if (headU8 == NULL || headLen < 0) // a text column without a value yet
+        headLen = 0;
+    if (part == NULL || partLen < 0)
+        partLen = 0;
+    CFTPServerEnc* srv = FTPListingServer;
+    // feature 384: the appended part alone becomes text, by its kind (salftpsrvenc.h); the head
+    // is the column's decoded value and is never decoded again - joined with raw code-page bytes
+    // and decoded as a whole it was read in the code page a second time (z/VM "NAME TYPE")
+    char* partU8 = NULL;
+    int partU8Len = partLen;
+    BOOL rawPartReadInCodePage = FALSE;
+    switch (SalFtpJoinPartHandling(partKind))
+    {
+    case SALFTPJOIN_DECODE_AS_SERVER_FIELD:
+        // no state evidence: a re-assigned column tells nothing about the server's encoding (288);
+        // a part read in the code page is remembered as every code-page field is (224 / 288)
+        rawPartReadInCodePage = !SalFtpListingFieldIsU8(part, partLen);
+        partU8 = FTPFieldToU8(part, partLen, srv, 0);
+        break;
+    case SALFTPJOIN_DECODE_ALONE:
+        partU8 = FTPFieldToU8(part, partLen, NULL, 0); // the rule's text, not the server's bytes
+        break;
+    }
+    const char* tail = part;
+    if (partU8 != NULL)
+    {
+        tail = partU8;
+        partU8Len = (int)strlen(partU8);
+    }
+    else if (SalFtpJoinPartHandling(partKind) != SALFTPJOIN_APPEND_AS_IS)
+        return NULL; // low memory
+
+    char* str = (char*)SalamanderGeneral->Alloc(headLen + partU8Len + 1);
+    if (str != NULL)
+    {
+        if (headLen > 0)
+            memcpy(str, headU8, headLen);
+        if (partU8Len > 0)
+            memcpy(str + headLen, tail, partU8Len);
+        str[headLen + partU8Len] = 0;
+        if (srv != NULL)
+        {
+            BOOL headIsCodePageName = FALSE;
+            for (int i = 0; i < headLen; i++)
+            {
+                if ((unsigned char)headU8[i] >= 0x80) // an ASCII head is never a code-page name
+                {
+                    headIsCodePageName = FTPIsServerNameN(srv, FTPNAME_CODEPAGE, headU8, headLen);
+                    break;
+                }
+            }
+            if (SalFtpJoinedFieldIsCodePageName(headIsCodePageName, rawPartReadInCodePage))
+                FTPAddServerName(srv, FTPNAME_CODEPAGE, str, headLen + partU8Len);
+        }
+    }
+    if (partU8 != NULL)
+        SalamanderGeneral->Free(partU8);
+    return str;
+}
+
 // feature 288: remembers the non-ASCII components of 'u8' as names sent to 'srv' in UTF-8
 static void FTPAddSentUtf8Names(CFTPServerEnc* srv, const char* u8)
 {
