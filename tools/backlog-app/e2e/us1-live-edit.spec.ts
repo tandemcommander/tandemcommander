@@ -210,11 +210,19 @@ test("Q1-Q5: a change during a run lands on main, the running item is in progres
   await expect.poll(() => calls()[0]?.merges, { timeout: 120_000 }).toBeGreaterThanOrEqual(1);
   await expect.poll(() => calls()[0]?.ff_first).toBe(false);
   expect(calls()[0]?.returning).toMatch(/^ok: main is yours \(the loop holds the edit lock/);
+  // The merge commit of the run keeps the maintainer's order (the next run may close the new
+  // item at once, so main's head is not the place to look).
   await expect.poll(() => mainSection("Next").includes(ITEM), { timeout: 60_000 }).toBe(false);
-  const mainLog = git(fixture.root, ["log", "--oneline", "-8", "main"]).split(/\r?\n/).join(" / ");
-  expect(`${mainSection("Next").join(",")} | log: ${mainLog} | calls: ${JSON.stringify(calls()[0])}`).toMatch(
-    /^live-edit-during-a-run,/,
-  );
+  const mergeCommit = git(fixture.root, ["log", "--format=%H", "--grep=merge main", "main"])
+    .trim()
+    .split(/\s+/)[0];
+  expect(mergeCommit, git(fixture.root, ["log", "--oneline", "-8", "main"])).toMatch(/^[0-9a-f]{40}$/);
+  const merged = git(fixture.root, ["show", `${mergeCommit}:backlog/BACKLOG.md`]).replaceAll("\r\n", "\n");
+  const mergedNext = [
+    ...(merged.split("## Next\n")[1]?.split("\n## ")[0] ?? "").matchAll(/\]\(items\/([a-z0-9-]+)\//g),
+  ].map((m) => m[1]);
+  expect(mergedNext[0]).toBe("live-edit-during-a-run");
+  expect(mergedNext).not.toContain(ITEM);
   expect(git(fixture.root, ["show", "main:backlog/RUNS.md"])).toMatch(
     new RegExp(`\\| ${ITEM} \\| closed \\|`),
   );

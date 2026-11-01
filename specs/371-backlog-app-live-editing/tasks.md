@@ -128,20 +128,20 @@ run is never disturbed.
       sentence why, in `.claude/skills/tandem-backlog-implement/SKILL.md`; §0.2 of
       `.claude/skills/tandem-backlog/SKILL.md` says the app changes `main` during a run and what
       stays frozen
-- [ ] T021 [P] [US1] Gate banner and reasons in
+- [x] T021 [P] [US1] Gate banner and reasons in
       `tools/backlog-app/packages/web/src/features/gate/gate-banner.tsx`: `run-starting`,
       `run-on-main`, the "changes land on main and are committed at once" note for the `commit` /
       `main-ref` channels, `useWriteAccess()` exposes `channel` and `frozenSlug`
-- [ ] T022 [P] [US1] Item actions and dialogs use `frozenSlug` from the gate (not the loop's slug)
+- [x] T022 [P] [US1] Item actions and dialogs use `frozenSlug` from the gate (not the loop's slug)
       in `tools/backlog-app/packages/web/src/features/item/item-actions.tsx` and
       `features/backlog/bulk-actions.tsx` (marked rows exclude the frozen item)
-- [ ] T023 [P] [US1] Tray drawer shows committed-at-once entries with their commit and no undo, and
+- [x] T023 [P] [US1] Tray drawer shows committed-at-once entries with their commit and no undo, and
       the counter in the top bar counts pending only
       (`tools/backlog-app/packages/web/src/features/tray/tray-drawer.tsx`, `app/layout.tsx`)
-- [ ] T024 [P] [US1] Loop page and top bar: pause / resume tooltips no longer promise "to change the
+- [x] T024 [P] [US1] Loop page and top bar: pause / resume tooltips no longer promise "to change the
       backlog"; the start dialog's "commit the tray" step stays
       (`tools/backlog-app/packages/web/src/features/loop/loop-status.tsx`, `loop-page.tsx`)
-- [ ] T025 [US1] E2E `tools/backlog-app/e2e/us1-live-edit.spec.ts`: a `branch-hang` run of 40 s; add an
+- [x] T025 [US1] E2E `tools/backlog-app/e2e/us1-live-edit.spec.ts`: a `branch-hang` run of 40 s; add an
       item placed at Next #1 through the UI, reorder, block another item; assert `main` holds them
       within 10 s and the run's status is unchanged; the frozen item's page is read-only; close of
       an item naming the frozen one refused; after the run: both the close and the changes on
@@ -173,13 +173,13 @@ run is never disturbed.
       lock held the row is in *In progress* and not in *Next*, counts follow, next-up names the
       next eligible item, `show` of the slug says *In progress*; without a lock the board is `main`'s
       (depends on T027)
-- [ ] T029 [P] [US2] Item page: a banner "in progress - feature NNN, run started …, live run" for
+- [x] T029 [P] [US2] Item page: a banner "in progress - feature NNN, run started …, live run" for
       the running item, the Runs tab links the live run
       (`tools/backlog-app/packages/web/src/features/item/item-view.tsx`)
-- [ ] T030 [P] [US2] Home: "Next up" and the sections come from the overlaid board (no code change
+- [x] T030 [P] [US2] Home: "Next up" and the sections come from the overlaid board (no code change
       beyond reading `board.running` for the "Live run" line); the sidebar counts follow
       (`tools/backlog-app/packages/web/src/features/home/home-page.tsx`, `app/layout.tsx`)
-- [ ] T031 [US2] E2E assertions in `tools/backlog-app/e2e/us1-live-edit.spec.ts`: Home shows
+- [x] T031 [US2] E2E assertions in `tools/backlog-app/e2e/us1-live-edit.spec.ts`: Home shows
       *In progress* 1 with the item, Next without it, "Next up" another item; after the run
       *In progress* is empty (depends on T025, T027)
 
@@ -193,19 +193,19 @@ run is never disturbed.
 
 **Independent Test**: quickstart Q6; e2e `us3-order.spec.ts`.
 
-- [ ] T032 [US3] `PositionField` component in
+- [x] T032 [US3] `PositionField` component in
       `tools/backlog-app/packages/web/src/features/backlog/position-field.tsx`: number input (Enter
       confirms, Escape cancels, hint on invalid input, larger than the section = last), "Move to the
       top" button, computes the order from the full section and posts `/sections/:s/order` with the
       board revision; disabled with the gate reason, for the frozen item, *In progress* and unordered
       sections
-- [ ] T033 [US3] Item page header uses `PositionField` for ordered sections
+- [x] T033 [US3] Item page header uses `PositionField` for ordered sections
       (`tools/backlog-app/packages/web/src/features/item/item-view.tsx`) (depends on T032)
-- [ ] T034 [US3] Section table: the position cell opens the field on click / Enter, a row menu entry
+- [x] T034 [US3] Section table: the position cell opens the field on click / Enter, a row menu entry
       "Move to the top"; works under a filter or a column sort by using the board's own order
       (`tools/backlog-app/packages/web/src/features/backlog/section-table.tsx`,
       `sortable-section.tsx`) (depends on T032)
-- [ ] T035 [US3] E2E in `tools/backlog-app/e2e/us3-order.spec.ts`: type a position on the item page
+- [x] T035 [US3] E2E in `tools/backlog-app/e2e/us3-order.spec.ts`: type a position on the item page
       (#2 → #4 of the fixture's Next), "Move to the top", the table cell under a column sort, invalid
       input refused; the order verified through the tool (depends on T033, T034)
 
@@ -217,42 +217,42 @@ run is never disturbed.
 
 **Independent Test**: quickstart Q7; API tests with the chat fake; e2e `us4-chat.spec.ts`.
 
-- [ ] T036 [P] [US4] Chat schemas (`Conversation`, `Turn`, `ChatContext`, requests, the event
+- [x] T036 [P] [US4] Chat schemas (`Conversation`, `Turn`, `ChatContext`, requests, the event
       `chat.changed` and the stream events) in `tools/backlog-app/packages/shared/src/schemas/chat.ts`,
       `api/requests.ts`, `api/events.ts`, `index.ts`
-- [ ] T037 [US4] `ChatService` in `tools/backlog-app/packages/server/src/chat/service.ts`: conversations
+- [x] T037 [US4] `ChatService` in `tools/backlog-app/packages/server/src/chat/service.ts`: conversations
       from `chats/<slug>.json`, the kept process (`claudeCommand()` reuse, the arguments of
       contracts/chat.md, `--session-id` / `--resume`), `send` (context block on the first message),
       stream parsing (deltas, tool uses, rate limit, result), `stop`, `reset` (archive), idle end
       after 10 min, 15-min turn limit, at most 5 live processes, shutdown; publishes `chat.changed`
       (depends on T036)
-- [ ] T038 [P] [US4] Context block builder `tools/backlog-app/packages/server/src/chat/context.ts`
+- [x] T038 [P] [US4] Context block builder `tools/backlog-app/packages/server/src/chat/context.ts`
       (item `show`, journal rows of the slug, runs of the slug from `RunsService`, feature folder,
       traces, related/dependents, branch) and the preamble
       `tools/backlog-app/packages/server/src/ai/prompts/chat.md` (role, where things are, rules,
       read-only)
-- [ ] T039 [US4] Routes in `tools/backlog-app/packages/server/src/api/chat.ts` (GET chat, GET context,
+- [x] T039 [US4] Routes in `tools/backlog-app/packages/server/src/api/chat.ts` (GET chat, GET context,
       POST messages, POST stop, POST reset, GET stream with `Last-Event-ID`); mounted in `api/app.ts`;
       the gate test of 344 lists the new routes (`test/gate.test.ts`); settings `chatBudgetUsd`
       (`settings/store.ts`) (depends on T037, T038)
-- [ ] T040 [US4] Chat tests `tools/backlog-app/packages/server/test/chat.test.ts` with the fake: a turn
+- [x] T040 [US4] Chat tests `tools/backlog-app/packages/server/test/chat.test.ts` with the fake: a turn
       streams deltas and ends done with the cost; the second message reuses the process; after
       `reset` a new session id; after the idle end (short timeout in the test) the next message
       resumes with `--resume`; `busy` while a turn runs; `stop` ends the turn `stopped`; a crash
       ends it `failed` with the transcript kept; the context block is on stdin and names the item's
       data, never on the command line (depends on T004, T039)
-- [ ] T041 [P] [US4] Chat page `tools/backlog-app/packages/web/src/features/chat/chat-page.tsx`: the
+- [x] T041 [P] [US4] Chat page `tools/backlog-app/packages/web/src/features/chat/chat-page.tsx`: the
       essentials header (ChatContext), the transcript (Markdown replies, progress lines collapsed),
       the composer (Enter sends, Shift+Enter newline), Stop, New conversation, cost, "Claude only
       reads" note, error states (tool missing, failed turn); subscribes to the stream and
       `chat.changed`
-- [ ] T042 [US4] Route `/items/$slug/chat` without the frame: `app/router.tsx`, `app/layout.tsx`
+- [x] T042 [US4] Route `/items/$slug/chat` without the frame: `app/router.tsx`, `app/layout.tsx`
       (bare layout by pathname); the item page's "Chat about this item" opens it in a new window
       (`features/item/item-view.tsx`); the item page shows "a reply is being written" from
       `chat.changed` (depends on T041)
-- [ ] T043 [P] [US4] Settings page: the chat budget field
+- [x] T043 [P] [US4] Settings page: the chat budget field
       (`tools/backlog-app/packages/web/src/features/settings/settings-page.tsx`)
-- [ ] T044 [US4] E2E `tools/backlog-app/e2e/us4-chat.spec.ts` with the fake: the window has no
+- [x] T044 [US4] E2E `tools/backlog-app/e2e/us4-chat.spec.ts` with the fake: the window has no
       sidebar and shows the essentials (viewport 1920 x 1080: the header's bottom edge is within the
       viewport, SC-005); a message streams a reply; reload keeps it; New conversation empties it;
       axe check of the page (depends on T042)
@@ -281,7 +281,7 @@ run is never disturbed.
 - [ ] T047 `npm run check` and `npm run test:e2e` green; `python tools/backlog/test_backlog.py`,
       `test_loop.py`, `tools/test_bin_help.py` green; `python tools/check_encoding.py --strict`
       TOTAL: 0 (the app's files are out of its scope; the skills and tools are not)
-- [ ] T048 Independent refute-first review of the finished change (an agent; the project rule): the
+- [x] T048 Independent refute-first review of the finished change (an agent; the project rule): the
       write channels, the loop's holds, the frozen check, the chat's tool allow-list; fix the
       findings; record them in `specs/371-backlog-app-live-editing/fix-log.md`
 - [ ] T049 Closing: `specs/FEATURE-HISTORY.md` entry (traps, evidence, numbers), the closing report

@@ -59,17 +59,13 @@ const ARCHIVE_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
 /** Milliseconds between saves of a streaming turn. */
 const SAVE_MS = 2000;
 
-/** The read-only tools of a conversation (contracts/chat.md). */
-const ALLOWED_TOOLS = [
-  "Read",
-  "Grep",
-  "Glob",
-  "Bash(git log:*)",
-  "Bash(git show:*)",
-  "Bash(git diff:*)",
-  "Bash(git blame:*)",
-  "Bash(git rev-parse:*)",
-];
+/**
+ * The read-only tools of a conversation (contracts/chat.md): the file tools only. No git command
+ * is allowed, because `git log --output=<file> --format=<text>` (and `show`, `diff`) writes any
+ * file - a hook, a settings file, an item - which an imported issue text could ask for (review M2
+ * of 371).
+ */
+const ALLOWED_TOOLS = ["Read", "Grep", "Glob"];
 
 /** Options of {@link ChatService} (tests shorten the times). */
 export interface ChatOptions {
@@ -140,7 +136,7 @@ export function chatArgs(
     "--verbose",
     "--include-partial-messages",
     "--tools",
-    "Read,Grep,Glob,Bash",
+    ALLOWED_TOOLS.join(","),
     "--allowedTools",
     ALLOWED_TOOLS.join(","),
     "--permission-mode",

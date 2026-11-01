@@ -184,7 +184,9 @@ export class WriteQueue {
    * @throws ApiError `busy` when the loop still holds it after the wait, or another app holds it.
    */
   private async acquire(purpose: string): Promise<void> {
-    const loopPid = this.services.loop.view?.live ? this.services.loop.view.pid : null;
+    // A fresh view: a stale one could call the loop's hold stale and replace it (review N1).
+    const view = await this.services.loop.refresh();
+    const loopPid = view?.live ? view.pid : null;
     const until = Date.now() + LOOP_LOCK_WAIT_MS;
     for (;;) {
       try {
@@ -317,7 +319,24 @@ export class WriteQueue {
       if (channel === "commit") {
         const recorded = this.recordStaged(staged, root, "commit", null);
         const message = this.services.tray.proposedMessage();
-        const hash = await this.services.tray.commit(message, []);
+        let hash: string;
+        try {
+          hash = await this.services.tray.commit(message, []);
+        } catch (error) {
+          // Nothing half-done is left behind: the change is undone and the refusal explains it
+          // (review S2 of 371).
+          for (const change of [...recorded].reverse()) {
+            try {
+              this.services.tray.undo(change.id);
+            } catch {
+              // A file changed by something else meanwhile stays as it is.
+            }
+          }
+          throw new ApiError(
+            "refused",
+            `the change could not be committed at once and was undone: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
         this.services.tray.markChannel(
           recorded.map((c) => c.id),
           "commit",

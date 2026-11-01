@@ -1746,7 +1746,8 @@ class EditLockTests(Base):
         code, out = self.ctl("returning", "--timeout", "0.6")
         self.assertEqual(code, 0, out)
         self.assertIn("ok: main is yours (no loop runs this item", out)
-        self.assertTrue(self.repo.returning_flag.exists())
+        self.assertFalse(self.repo.returning_flag.exists())  # a manual run leaves no flag for a later loop run
+        self.repo.returning_flag.write_text("x\n", encoding="utf-8")
         self.assertTrue(json.loads(self.ctl("status", "--json")[1])["returning"])
         self.assertIn("return:  the run announced its return to main", self.ctl("status")[1])
 

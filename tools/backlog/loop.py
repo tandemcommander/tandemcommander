@@ -2061,6 +2061,7 @@ def cmd_returning(repo: Repo, args) -> int:
                 print(f"waiting: the backlog app is changing the backlog ({edit.get('purpose')})", flush=True)
                 told = True
         elif not running:
+            unlink(repo.returning_flag)  # nobody holds anything for a manual run: no flag to leave (review S1)
             print("ok: main is yours (no loop runs this item; no change of the backlog app is in progress)",
                   flush=True)
             return 0

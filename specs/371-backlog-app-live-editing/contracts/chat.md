@@ -13,8 +13,8 @@ arrive, ended after 10 minutes without a message, at `reset`, at `stop` and at t
 ```text
 claude -p --input-format stream-json --output-format stream-json --verbose
        --include-partial-messages
-       --tools Read,Grep,Glob,Bash
-       --allowedTools Read Grep Glob "Bash(git log:*)" "Bash(git show:*)" "Bash(git diff:*)" "Bash(git blame:*)" "Bash(git rev-parse:*)"
+       --tools Read,Grep,Glob
+       --allowedTools Read,Grep,Glob
        --permission-mode default
        --max-budget-usd <chatBudgetUsd>
        [--model <model>]
@@ -85,7 +85,8 @@ message starts a new process with `--resume`.
 
 ## What claude may not do
 
-The tools above and the preamble: no file is written, no state-changing command runs (the
-allow-list names read-only git commands only; everything else is denied in print mode), nothing
-is sent anywhere. The page states it. Item texts and messages are data; a message that asks
+The tools above and the preamble: no file is written, no command runs (the review of this feature
+showed that an allow-listed `git log --output=<file> --format=<text>` writes any file, so no git
+command is allowed; history comes from the item's log, `RUNS.md`, the traces and the feature
+records), nothing is sent anywhere. The page states it. Item texts and messages are data; a message that asks
 claude to change something gets the explanation that this conversation only reads.

@@ -59,7 +59,8 @@ option, and the answer is recorded here so the maintainer can overrule it in the
   repository's history, or everything with the maintainer approving each command? → A: read files
   and the repository's history (read-only history commands), nothing that changes state: the
   conversation is for understanding an item, and the backlog is changed only through the app's own
-  controls.
+  controls. Amended after the review (M2): no shell command at all, because `git log
+  --output=<file>` writes files; the history is read from the journal, traces and feature records.
 - Q: When a change during a run is refused because it would alter the running item, should the
   app queue it to apply after the run ends? → A: no; it refuses with the reason and the maintainer
   repeats it after the run (a queue would act later on a backlog the maintainer no longer sees).
@@ -329,9 +330,10 @@ end-to-end suite pass on a clean checkout, on any day.
   feature and branch when a run works on it, the item's last runs with their outcomes, related and
   dependent items, and the description sections (expandable).
 - **FR-016**: Claude MUST receive the item's description, its journal rows, the location of its run
-  traces and feature records, and the repository's rules, and MUST be able to read the repository
-  (files and git history) and nothing else: no change of any file, no network, no command that
-  changes state.
+  traces and feature records, and the repository's rules, and MUST be able to read the repository's
+  files and nothing else: no change of any file, no network, no command at all (the review found
+  that even a read-only git command writes files through its options; history is read from the
+  journal, the traces and the feature records).
 - **FR-017**: Replies MUST stream to the page as they are produced; Claude's tool use MUST be shown
   as short progress lines; a reply in progress MUST be stoppable.
 - **FR-018**: The transcript MUST be kept per item on the server (surviving reloads and app

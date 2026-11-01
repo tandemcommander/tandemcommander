@@ -152,6 +152,33 @@ describe("write channels (371)", () => {
     expect((await gitIn(root, ["rev-parse", "main~2"])).trim()).toBe(mainBefore);
   });
 
+  it("lands a change on main with a CRLF checkout (core.autocrlf true, as on the maintainer's machine)", async () => {
+    // The client's revisions are blob hashes (LF); the side worktree checks files out as CRLF.
+    await gitIn(root, ["config", "core.autocrlf", "true"]);
+    await gitIn(root, ["rm", "-rq", "--cached", "."]);
+    await gitIn(root, ["reset", "-q", "--hard"]);
+    expect(readFileSync(join(root, "backlog", "BACKLOG.md"), "utf8")).toContain("\r\n");
+    await runOnBranch(DISK);
+    const board = (await app.get("/api/board")).json as BoardView;
+    const item = firstOf(board, "Inbox");
+    const answer = await app.post(`/api/items/${item.slug}/move`, {
+      base: { board: board.revision },
+      section: "Next",
+      position: 1,
+    });
+    expect(answer.status, JSON.stringify(answer.json)).toBe(200);
+    const result = answer.json as ChangeResult;
+    expect((await mainSection(root, "Next"))[0]).toBe(item.slug);
+    // The revisions the answer gives are the ones the next read of main gives.
+    const after = (await app.get("/api/board")).json as BoardView;
+    expect(after.revision).toBe(result.board);
+    const again = await app.post(`/api/items/${item.slug}/log`, {
+      base: { board: result.board, item: result.item },
+      text: "a second change on CRLF",
+    });
+    expect(again.status, JSON.stringify(again.json)).toBe(200);
+  });
+
   it("refuses the frozen item's own change and an indirect one, changing nothing", async () => {
     await runOnBranch(DISK);
     const mainBefore = (await gitIn(root, ["rev-parse", "main"])).trim();

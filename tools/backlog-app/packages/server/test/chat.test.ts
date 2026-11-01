@@ -105,7 +105,8 @@ describe("conversation", () => {
     expect(argv.join(" ")).not.toContain(FTP);
     expect(argv.join(" ")).not.toContain("What is this about");
     expect(argv).toContain("--allowedTools");
-    expect(argv[argv.indexOf("--allowedTools") + 1]).toContain("Bash(git log:*)");
+    expect(argv[argv.indexOf("--allowedTools") + 1]).toBe("Read,Grep,Glob");
+    expect(argv[argv.indexOf("--tools") + 1]).toBe("Read,Grep,Glob");
     expect(argv).not.toContain("--no-session-persistence");
     // The second message reuses the live process (the same session, no new argv file write).
     const liveBefore = chat.liveSlugs();
@@ -254,8 +255,8 @@ describe("chat line reading and arguments", () => {
     const fresh = chatArgs("abc", false, 5, null);
     expect(fresh).toContain("--session-id");
     expect(fresh).toContain("--include-partial-messages");
-    expect(fresh[fresh.indexOf("--tools") + 1]).toBe("Read,Grep,Glob,Bash");
-    expect(fresh[fresh.indexOf("--allowedTools") + 1]).not.toContain("Edit");
+    expect(fresh[fresh.indexOf("--tools") + 1]).toBe("Read,Grep,Glob");
+    expect(fresh[fresh.indexOf("--allowedTools") + 1]).not.toContain("Bash");
     expect(fresh).not.toContain("--no-session-persistence");
     const later = chatArgs("abc", true, 5, "claude-haiku-5-5");
     expect(later).toContain("--resume");

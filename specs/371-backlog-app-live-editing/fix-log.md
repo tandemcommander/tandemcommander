@@ -69,3 +69,36 @@ done, e2e assertion fixed), T036-T044 (chat: tests to run, lint, e2e `us4-chat.s
 write), T045-T049 (revision browse, docs, full `npm run check` + `npm run test:e2e`, review,
 history entry, closing report). Next commands: `npm run check`, `npx vitest run
 packages/server/test/chat.test.ts`, `npx playwright test e2e/us1-live-edit.spec.ts`.
+
+## 2026-11-01 - review (refute-first, one agent) and the fixes
+
+- MUST M1: on the maintainer's repository (`core.autocrlf=true`, 255 backlog files `i/lf w/crlf`)
+  every change during a run would have been refused `changed-underneath`: the client's revision
+  is the blob's SHA-256 (LF, read from git objects), the side worktree's file is CRLF. The fixtures
+  force `autocrlf false`, so the suite was green. First fix (normalising the worktree's files to
+  LF before hashing) broke the e2e fixture, whose blobs are CRLF: the e2e copies the fixture's
+  CRLF working copy and commits it with `autocrlf false`. The fix that holds for both: the side
+  worktree checks files out exactly as the blobs hold them (`git config --worktree
+  core.autocrlf false` + `core.eol lf`, possible because `sparse-checkout` enabled
+  `extensions.worktreeConfig`), so a file hash equals the blob hash in every repository; a new
+  test runs the channel on a CRLF checkout (`core.autocrlf true`).
+- MUST M2: the conversation's allow-list (`Bash(git log:*)` etc.) was an arbitrary file write:
+  `git log -1 --format=<text> --output=<file>`; an imported issue's text could ask for it. Fix:
+  the file tools only (`Read,Grep,Glob`), no shell; spec FR-016, the clarification, the contract,
+  the preamble and the README amended.
+- SHOULD S1: `returning` without a loop left the flag; the next loop run would have held the edit
+  lock for its whole duration. Fix: the no-loop path removes the flag; test adjusted.
+- SHOULD S2: in the `commit` channel a change whose commit failed stayed pending with an error
+  answer. Fix: the change is undone and the refusal says so.
+- SHOULD S3 (accepted, documented): the primary-HEAD check before the swap is best effort for a
+  manual run (no loop holds the lock at step 9); under the loop `returning` closes it. No data is
+  lost in the bad case (the app's commit is on main; the run stops at step 10 with its reason).
+- NOTE N1: the loop's pid for the never-stale rule came from a possibly stale view. Fix: a fresh
+  poll before the lock is taken. N2-N5 recorded, not changed (N2: stale empty `specs/` folders in
+  the worktree only hide a `feature-missing` finding that main's check would report - the loop's
+  own check runs on main; N3: the frozen check covers `desc.md`, the only file the tool rewrites;
+  N4: a stale client naming the frozen item gets `frozen-item` rather than `changed-underneath`;
+  N5: `returning` for the item the loop runs makes the loop hold the lock until claude ends - that
+  is the intended behaviour).
+- The e2e `us1-live-edit` asserted main's head after the run; the loop's next run could already
+  close the new item. It now asserts the order in the run's `merge main` commit.

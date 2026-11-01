@@ -100,7 +100,8 @@ browser (React 19, Vite build)          server (Node 24, Hono on node:http, 127.
   at step 9); then the gate is read-only for a moment (`run-starting`,
   `run-on-main`) and opens again by itself.
 - The conversation about an item runs one `claude -p` process in bidirectional
-  stream-json mode with read-only tools (files and read-only git commands);
+  stream-json mode with the file tools only (Read, Grep, Glob - no shell: even
+  `git log --output=` writes files);
   transcripts live in the state folder (`chats/`); nothing it does changes a
   file (`specs/371-backlog-app-live-editing/contracts/chat.md`).
 - The app never touches the run lock or the loop's state; it starts the loop

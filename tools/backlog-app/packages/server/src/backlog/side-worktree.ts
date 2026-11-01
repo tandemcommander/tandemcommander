@@ -144,6 +144,12 @@ export class SideWorktree {
    */
   async sync(commit: string): Promise<void> {
     await this.ensure();
+    // Files are checked out as the blobs hold them (no line-end conversion): the revisions the
+    // client holds during a run are blob hashes, and the primary tree's `core.autocrlf` /
+    // `text=auto` would check CRLF out here (review M1 of 371). Per-worktree settings need
+    // `extensions.worktreeConfig`, which `sparse-checkout` already enabled.
+    await this.inTree(["config", "--worktree", "core.autocrlf", "false"]);
+    await this.inTree(["config", "--worktree", "core.eol", "lf"]);
     await this.inTree(["checkout", "-q", "--detach", commit]);
     await this.inTree(["sparse-checkout", "reapply"]);
     await this.inTree(["reset", "-q", "--hard", commit]);
