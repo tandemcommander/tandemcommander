@@ -115,6 +115,10 @@ the run's close and the new item at #1, and that the next run takes the new item
    the maintainer makes a change at the same moment, **Then** the two never overlap: the run waits
    for the change in progress, or the change is applied after the run's return, and the run never
    fails because of the app's change.
+8. **Given** a run has just started and is still on the main line (no branch yet), **When** the
+   maintainer opens the app, **Then** the backlog is read-only with the reason "the run is on main
+   until it has its branch", and the controls open by themselves once the run is on its branch,
+   without a reload.
 
 ---
 
@@ -245,6 +249,8 @@ end-to-end suite pass on a clean checkout, on any day.
   the maintainer merges by hand - no change of the app is lost in either case.
 - The maintainer changes an item that a run has not started yet but the loop is about to take: the
   loop's own precheck decides again after the change, so it takes the backlog as changed.
+- A run was interrupted and waits to be continued by the next start (no loop alive, its lock
+  released or never taken): its item is frozen like a running one; everything else is editable.
 - The maintainer changes the backlog from a terminal while a run is in progress: outside the
   app's scope, as today (the skill refuses it).
 - The app is restarted while a change was being recorded on the main line: at start the app
@@ -272,7 +278,11 @@ end-to-end suite pass on a clean checkout, on any day.
   while the loop is alive in any of its waiting states, without pausing or stopping the loop.
 - **FR-002**: While a run holds the run lock, a change MUST land on the main line of the
   repository (the line the loop takes its items from and the run merges at its end), never in the
-  run's working tree, and MUST be visible in the app's board within 10 seconds.
+  run's working tree, and MUST be visible in the app's board within 10 seconds. The one exception
+  is the time the run itself is on the main line: from its start until it has created its branch
+  (preconditions, selection, measurements, the specification - minutes), and its return at the
+  end (seconds). Then the backlog is read-only with that reason, and the controls open again by
+  themselves as soon as the run is on its branch.
 - **FR-003**: The item a run works on MUST NOT be changed by the app while the run holds the lock:
   its own changes are refused with a reason, and any change of another item that would alter the
   running item's description (a reference removed by a close, a related list rewritten) MUST be

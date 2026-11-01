@@ -253,8 +253,9 @@ run is never disturbed.
 - [ ] T043 [P] [US4] Settings page: the chat budget field
       (`tools/backlog-app/packages/web/src/features/settings/settings-page.tsx`)
 - [ ] T044 [US4] E2E `tools/backlog-app/e2e/us4-chat.spec.ts` with the fake: the window has no
-      sidebar and shows the essentials; a message streams a reply; reload keeps it; New
-      conversation empties it; axe check of the page (depends on T042)
+      sidebar and shows the essentials (viewport 1920 x 1080: the header's bottom edge is within the
+      viewport, SC-005); a message streams a reply; reload keeps it; New conversation empties it;
+      axe check of the page (depends on T042)
 
 ---
 
