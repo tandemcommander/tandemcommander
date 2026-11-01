@@ -714,6 +714,53 @@ inline unsigned long long SalIsoForm2FileSize(unsigned long long dataLength)
     return sectors * SAL_ISO_FORM2_PAYLOAD;
 }
 
+// Feature 367 (review 1): a sector whose subheader says Form 1 but whose EDC does not check is not known to be
+// Form 1 - its bytes after the 2048 read may be user data (a crafted or damaged subheader); SalIsoSectorScanAdd
+// does not count it as read whole.
+const int SAL_ISO_SECTOR_FORM1_UNSURE = 3;
+
+// Feature 367 (review 1): the CD-ROM EDC of 'n' bytes (ECMA-130: CRC-32, polynomial
+// (x^16 + x^15 + x^2 + 1)(x^16 + x^2 + x + 1), bits taken least significant first - 0xD8018001 reflected -,
+// starting from 0). Checked on the real vcdimager 2.0.1 discs: all 300 Form 1 sectors of each verify.
+inline unsigned int SalIsoCdEdc(const unsigned char* p, long long n)
+{
+    unsigned int e = 0;
+    if (p == nullptr)
+        return 0;
+    for (long long i = 0; i < n; i++)
+    {
+        e ^= p[i];
+        for (int k = 0; k < 8; k++)
+            e = (e >> 1) ^ ((e & 1) != 0 ? 0xD8018001u : 0u);
+    }
+    return e;
+}
+
+// Feature 367 (review 1): may a sector whose subheader says Form 1 count as read whole with its 2048 user bytes?
+// 'raw' holds the stored sector of 'sectorRawSize' bytes from its start ('len' bytes read). Yes when its EDC
+// checks (stored little-endian after the user data; it covers the subheader and the user data - in a raw sector
+// from byte 16, in a 2336-byte sector from byte 0): a true Form 1 sector, whose remaining bytes are EDC / ECC. Yes
+// also when the 276 bytes after the 2048 user bytes (the rest of what a Form 2 sector would hold) are all zero -
+// nothing is left unread. Anything else - a short read, a size that holds no subheader - no (fails closed).
+inline bool SalIsoForm1SectorWhole(const unsigned char* raw, long long len, long long sectorRawSize)
+{
+    long long pay = SalIsoForm2PayloadOffset(sectorRawSize);
+    if (raw == nullptr || pay < 0 || len < pay + SAL_ISO_FORM2_PAYLOAD)
+        return false;
+    long long edcFrom = sectorRawSize >= 2352 ? 16 : 0;
+    long long edcAt = pay + 2048;
+    unsigned int stored = (unsigned int)raw[edcAt] | ((unsigned int)raw[edcAt + 1] << 8) |
+                          ((unsigned int)raw[edcAt + 2] << 16) | ((unsigned int)raw[edcAt + 3] << 24);
+    if (SalIsoCdEdc(raw + edcFrom, edcAt - edcFrom) == stored)
+        return true;
+    for (long long i = edcAt; i < pay + SAL_ISO_FORM2_PAYLOAD; i++)
+    {
+        if (raw[i] != 0)
+            return false;
+    }
+    return true;
+}
+
 // Feature 367: a file stored in Form 2 sectors that SalIsoXaIsForm2File does not recognise - no CD-XA record
 // (a plain ISO 9660 directory pointing into a Video CD's stream), mixed attributes (Form 1 + Form 2, as
 // interleaved game streams), a Form 1 first sector followed by Form 2 sectors - was read 2048 bytes a sector
@@ -764,8 +811,10 @@ inline void SalIsoSectorScanInit(SalIsoSectorScan& s, unsigned long long dataLen
 
 // Adds the next sector's form (sectors past s.Sectors are ignored). The leading run of sectors read whole
 // (what the stream coverage of feature 337 may count) takes a Form 2 sector, and a Form 1 sector (its 2048
-// bytes are all its user data) unless the record ends inside it; it stops at the first unknown sector - its
-// form, and so whether 276 bytes of it are lost, cannot be told: the gap check reads it (fails closed).
+// bytes are all its user data; the caller passes SAL_ISO_SECTOR_FORM1 only when SalIsoForm1SectorWhole holds,
+// else SAL_ISO_SECTOR_FORM1_UNSURE - review 1) unless the record ends inside it; it stops at the first other
+// sector (unknown, Form 1 unsure) - whether 276 bytes of it are lost cannot be told: the gap check reads it
+// (fails closed). Every sector that is not Form 2 is read 2048 bytes.
 inline void SalIsoSectorScanAdd(SalIsoSectorScan& s, int form)
 {
     if (s.Seen >= s.Sectors)

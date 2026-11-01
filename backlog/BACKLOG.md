@@ -285,6 +285,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: listing a disc image reads every sector of examined Form 2 files](items/iso-plug-in-listing-a-disc-image-reads-every-sector-of/desc.md) | improvement | 3 | archives | review:367 | 2026-11-01 |
 | [ISO plug-in: NRG tracks of the subchannel modes 0x0F / 0x10 / 0x11 get a wrong type or size](items/iso-plug-in-nrg-tracks-of-the-subchannel-modes-0x0f-0x10/desc.md) | bug | 3 | archives | leftover:365 | 2026-11-01 |
 
 ## Parked

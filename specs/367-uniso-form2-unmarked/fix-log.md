@@ -96,3 +96,34 @@ item names (335's X-VCDFILE shape) - so they are now read 2324 bytes a sector; 3
 (63 x 2048 + 1 bytes over 64 Form 2 sectors) is now read whole, 64 x 2324 bytes - the stream has nothing left
 unextracted, the image is deleted (337 kept it because the 64th sector was cut). The variant probe with 2324-byte
 expectations proves the new content of all 20 rows byte for byte (74 / 0).
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST**. It rebuilt, re-ran saltests (29,984 / 0) and the probe
+(36 / 0), the negative control with main's `uniso.spl` (C-NOXA, C-F1SUB, C-LASTF1 fail on main: the defect is
+reachable), and enumerated the consumers itself (`CFilePos::Form2` read only by the two readers and
+`NoteListedFileStarts`; every unpack route opens the track of the file's first sector - the one examined; UDF /
+HFS / Xbox files keep `Scanned = FALSE`).
+- SHOULD-1: a sector whose subheader says Form 1 counted as read whole on the subheader alone - its bytes
+  2048..2323 were never looked at. Reproduced by the reviewer: C-NOXA with AVSEQ01's sector 100 given a valid
+  Form 1 subheader (its bytes 2048..2323 hold 248 non-zero bytes of video) - AVSEQ01 689,952 bytes and the image
+  deleted (main deletes it too: not a regression, a gap in the new rule; against "a safe-to-delete check fails
+  closed"). **Fixed**: `SalIsoForm1SectorWhole` - a Form 1 subheader counts as whole only when the sector's
+  CD-ROM EDC checks (`SalIsoCdEdc`, ECMA-130's CRC; the Python model verified on all 300 Form 1 sectors of each
+  real vcdimager disc) or its bytes 2048..2323 are all zero; otherwise `ExamineFileSectors` passes
+  `SAL_ISO_SECTOR_FORM1_UNSURE` (read 2048 bytes, the run of whole sectors stops - feature 337's gap check reads
+  the rest). saltests 29,984 -> 29,999 / 0 (EDC vectors, the rule, the unsure sector in a scan); mutants
+  form1-always-whole 3 failed, edc-ignored 3, empty-rest-ignored 2. Probe rows added: C-F1MID (the reviewer's
+  sector: 689,952 bytes, the image KEPT) and C-F1EDC (control: sector 100 a true Form 1 sector with a valid EDC -
+  counted whole, deleted); `probe/result_after_review1.txt` **40 / 0**; 337's rows with 367's expectations
+  `regress_337_r367_review1.txt` 74 / 0. (A first mutant run passed `-Only a,b,c` as one string under `-File` and
+  ran nothing - the script now splits it.)
+- NOTE 1: listing reads every sector of every examined file at each listing, without a cap (the clarification's
+  choice); duplicated records pointing at one large extent multiply it, and interleaved game discs (XA Form 2 bit)
+  pay a full read of those files. Not measured -> Inbox `iso-plug-in-listing-a-disc-image-reads-every-sector-of`
+  (review:367).
+- NOTE 2: in a plain Unpack a damaged-subheader sector of a Form 2 file is still read 2048 bytes without a message;
+  only "Delete archive after unpacking" is protected (FR-006's choice) - stated in the changelog entry's limits.
+- NOTE 3: the probe's expectations are computed by the same rule as the code; the independent evidence is the
+  "`v.mpg` whole" check and the negative control - accepted (as 366).
+No fresh review: no MUST; the change after it is the SHOULD's fix with its tests, mutants and probe rows.

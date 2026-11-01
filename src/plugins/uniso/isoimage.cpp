@@ -1740,10 +1740,14 @@ BOOL CISOImage::ExamineFileSectors(DWORD extent, unsigned long long dataLength, 
         DWORD i;
         for (i = 0; i < n; i++)
         {
-            // a sector past the end of the image (a short read) is unknown: its read fails at unpack
+            // a sector past the end of the image (a short read) is unknown: its read fails at unpack; review 1:
+            // a Form 1 subheader counts as read whole only with a checking EDC or nothing after its 2048 bytes
             long long avail = (long long)read - (long long)i * t->SectorSize;
-            SalIsoSectorScanAdd(scan, avail > 0 ? SalIsoSectorForm(buf + (size_t)i * t->SectorSize, avail, t->SectorSize)
-                                                : SAL_ISO_SECTOR_UNKNOWN);
+            const unsigned char* sec = buf + (size_t)i * t->SectorSize;
+            int f = avail > 0 ? SalIsoSectorForm(sec, avail, t->SectorSize) : SAL_ISO_SECTOR_UNKNOWN;
+            if (f == SAL_ISO_SECTOR_FORM1 && !SalIsoForm1SectorWhole(sec, avail, t->SectorSize))
+                f = SAL_ISO_SECTOR_FORM1_UNSURE;
+            SalIsoSectorScanAdd(scan, f);
         }
     }
     delete[] buf;

@@ -137,6 +137,8 @@ try {
     Unpack-Row 'C-F1SUB-BIN' $null
     Unpack-Row 'C-BADSUB' $true
     Unpack-Row 'C-LASTF1' $true
+    Unpack-Row 'C-F1MID' $true
+    Unpack-Row 'C-F1EDC' $false
     Unpack-Row 'C-COOKED' $null
     Unpack-Row 'C-CUT' $true -Windows -Answer @(1, 6, 173)
     Unpack-Row 'C-SHORT240' $true

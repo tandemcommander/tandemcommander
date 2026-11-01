@@ -22196,6 +22196,53 @@ static void TestIsoSectorScan_367()
     // the largest 32-bit record, all Form 2: 366's size, no overflow
     SalIsoSectorScanInit(s, 0xFFFFFFFFULL);
     CHECK(s.Sectors == 2097152ULL && s.LastLen == 2047);
+
+    // review 1: a Form 1 subheader counts as read whole only with a checking EDC or an empty rest
+    const unsigned char nine[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    CHECK(SalIsoCdEdc(nine, 9) == 0x6EC2EDC4u); // the vector a Python model gives, checked on 300 real sectors
+    std::vector<unsigned char> sec(2352, 0);
+    for (int i = 1; i < 11; i++)
+        sec[i] = 0xFF;
+    sec[15] = 2;
+    setSub(sec.data() + 16, 0, 0x08);
+    sec[16] = sec[20] = 0; // file number 0: subheader 00 00 08 00 twice
+    for (int i = 0; i < 2048; i++)
+        sec[24 + i] = (unsigned char)(i & 0xFF);
+    CHECK(SalIsoCdEdc(sec.data() + 16, 2056) == 0x59D00CE9u);
+    sec[2072] = 0xE9;
+    sec[2073] = 0x0C;
+    sec[2074] = 0xD0;
+    sec[2075] = 0x59;
+    for (int i = 2076; i < 2352; i++)
+        sec[i] = (unsigned char)(i * 7); // ECC bytes: not looked at
+    CHECK(SalIsoSectorForm(sec.data(), 2352, 2352) == SAL_ISO_SECTOR_FORM1);
+    CHECK(SalIsoForm1SectorWhole(sec.data(), 2352, 2352));  // a true Form 1 sector
+    CHECK(SalIsoForm1SectorWhole(sec.data(), 2348, 2352));  // the bytes up to the Form 2 payload's end
+    CHECK(!SalIsoForm1SectorWhole(sec.data(), 2347, 2352)); // a short read
+    CHECK(!SalIsoForm1SectorWhole(sec.data(), 2352, 2048)); // no subheader stored
+    CHECK(!SalIsoForm1SectorWhole(nullptr, 2352, 2352));
+    std::vector<unsigned char> s2336(sec.begin() + 16, sec.end()); // the same sector stored in 2336 bytes
+    CHECK(SalIsoForm1SectorWhole(s2336.data(), 2336, 2336));
+    sec[24 + 100] ^= 1; // user data changed: the EDC fails, the rest holds data (the reviewer's sector)
+    CHECK(!SalIsoForm1SectorWhole(sec.data(), 2352, 2352));
+    s2336[8 + 100] ^= 1;
+    CHECK(!SalIsoForm1SectorWhole(s2336.data(), 2336, 2336));
+    for (int i = 2072; i < 2352; i++)
+        sec[i] = 0; // EDC wrong but nothing after the 2048 bytes: nothing is left unread
+    CHECK(SalIsoForm1SectorWhole(sec.data(), 2352, 2352));
+    sec[2347] = 1; // the last byte a Form 2 sector would hold
+    CHECK(!SalIsoForm1SectorWhole(sec.data(), 2352, 2352));
+    sec[2347] = 0;
+    sec[2348] = 1; // past it (a Form 2 sector's EDC): not user data
+    CHECK(SalIsoForm1SectorWhole(sec.data(), 2352, 2352));
+
+    // an unsure Form 1 sector is read 2048 bytes and stops the run of whole sectors
+    SalIsoSectorScanInit(s, 4 * 2048);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM1_UNSURE);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM2);
+    SalIsoSectorScanAdd(s, SAL_ISO_SECTOR_FORM1);
+    CHECK(SalIsoSectorScanKind(s) == SAL_ISO_SCAN_MIXED && SalIsoSectorScanSize(s) == 2 * 2324 + 2 * 2048ULL && s.Whole == 1);
 }
 
 static void TestIsoStreamPartial_337()

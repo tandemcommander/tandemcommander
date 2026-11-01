@@ -32,6 +32,10 @@ Rows (367: were 608,256 bytes on main, the image deleted)
               2324; the image kept (the run of whole sectors stops at 100 - feature 337's gap check marks)
   C-LASTF1    C-NOXA + AVSEQ01's record 296 x 2048 + 1000 bytes and its sector 296 Form 1: 296 x 2324 + 1000
               bytes; the image kept (the part-read last sector is not whole)
+  (review 1)
+  C-F1MID     C-NOXA + AVSEQ01's sector 100 subheader Form 1 while its bytes 2048..2323 hold video (EDC not
+              valid): that sector 2048 bytes; the image kept (a Form 1 subheader alone does not count as whole)
+  C-F1EDC     (control) C-NOXA + sector 100 a true Form 1 sector (valid EDC): 2048 bytes, counted whole - deleted
 """
 import hashlib
 import json
@@ -151,6 +155,22 @@ def sector_form(img, lba):
     return 2 if sub[2] & 0x20 else 1
 
 
+EDC_LUT = []
+for _i in range(256):
+    _r = _i
+    for _k in range(8):
+        _r = (_r >> 1) ^ (0xD8018001 if _r & 1 else 0)
+    EDC_LUT.append(_r)
+
+
+def edc(data):
+    """the CD-ROM EDC (checked on the real vcdimager discs' 300 Form 1 sectors)"""
+    e = 0
+    for x in data:
+        e = (e >> 8) ^ EDC_LUT[(e ^ x) & 0xFF]
+    return e
+
+
 def examined(img, extent, xa, streams):
     """feature 367's trigger (the track stores Form 2 data - every row's image does)"""
     if any(a <= extent < b for a, b in streams):
@@ -259,6 +279,26 @@ def main(argv):
     eb = expect(m)
     assert eb["MPEGAV/AVSEQ01.DAT"][0] == 296 * 2324 + 2048, eb["MPEGAV/AVSEQ01.DAT"]
     row("C-BADSUB", "badsub.img", eb)
+    # review 1: sector 100 given a valid Form 1 subheader while its bytes 2048..2323 still hold video (EDC
+    # not valid): read 2048 bytes (its subheader), not counted as whole - the image kept
+    m = bytearray(noxa)
+    m[(e1 + 100) * RAW + 16:(e1 + 100) * RAW + 24] = bytes([1, 1, 0x08, 0, 1, 1, 0x08, 0])
+    m = bytes(m)
+    assert sector_form(m, e1 + 100) == 1 and any(m[(e1 + 100) * RAW + 24 + 2048:(e1 + 100) * RAW + 24 + 2324])
+    write_ccd(out + "/f1mid.img", m, vpts, [2, 2, 2])
+    row("C-F1MID", "f1mid.img", expect(m))
+    # review 1 control: sector 100 made a true Form 1 sector (its first 2048 user bytes, a valid EDC, zero ECC):
+    # counted as whole - every stream extracted, the image deleted
+    m = bytearray(noxa)
+    base = (e1 + 100) * RAW
+    m[base + 16:base + 24] = bytes([1, 1, 0x08, 0, 1, 1, 0x08, 0])
+    m[base + 2072:base + 2352] = bytes(280)
+    m[base + 2072:base + 2076] = edc(bytes(m[base + 16:base + 2072])).to_bytes(4, "little")
+    m = bytes(m)
+    write_ccd(out + "/f1edc.img", m, vpts, [2, 2, 2])
+    ee = expect(m)
+    assert ee["MPEGAV/AVSEQ01.DAT"][0] == 296 * 2324 + 2048, ee["MPEGAV/AVSEQ01.DAT"]
+    row("C-F1EDC", "f1edc.img", ee)
     # the record ends inside a Form 1 last sector: the record's remaining bytes of it, the image kept
     m = bytearray(patch_record(noxa, "MPEGAV/AVSEQ01.DAT", length=296 * 2048 + 1000))
     m[(e1 + 296) * RAW + 16:(e1 + 296) * RAW + 24] = bytes([1, 1, 0x08, 0, 1, 1, 0x08, 0])
