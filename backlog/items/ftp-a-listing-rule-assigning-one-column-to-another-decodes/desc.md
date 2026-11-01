@@ -1,7 +1,7 @@
 ---
 title: FTP: a listing rule assigning one column to another decodes the decoded text again
 type: bug
-status: new
+status: open
 severity: 2
 area: ftp
 source: review:384
@@ -48,3 +48,4 @@ handling. A parser self-test or a probe row with a custom server type proves it.
 ## Log
 
 - 2026-11-01 — created (source review:384)
+- 2026-11-01 — moved to Next position 137
