@@ -26,6 +26,13 @@ server): F8 sends `DELE nameÄŤ.extč` and the file stays; F5 sends `RETR name�
 downloaded. A name whose first part is ASCII (`name.extč`) and the same name from a UTF-8 server
 work.
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: Does the raw listing part a rule appends count as evidence that the server speaks UTF-8 or the code page? → A: No - feature 288's rule "a re-assigned column is no evidence" stays for the whole joined value; the server's state is decided exactly as before (autonomous run: conservative)
+- Q: Is a joined value with a part that came from the code page remembered as a code-page name of the server (so commands for it go in the code page also to a "mixed" server)? → A: Yes - when the raw part was read in the code page or the column's value is already a code-page name of the server; a literal or another column's value adds nothing (autonomous run: recommended - consistent with 224 / 288, every code-page listing field is remembered)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Work with a z/VM file whose name has letters outside ASCII on a code-page server (Priority: P1)
@@ -98,9 +105,11 @@ any name on a UTF-8 server, and ASCII names are shown and addressed exactly as b
 - **FR-003**: An appended part that is another column's value MUST be appended as it is.
 - **FR-004**: An appended literal from the rule MUST be appended as valid text: kept when it is
   ASCII / UTF-8, otherwise read in the code page (the earlier result for such a literal).
-- **FR-005**: A joined value with a part that came from the code page MUST be remembered as a
-  code-page name of the server, as every code-page listing field is (features 224 / 288), so that
-  a command for it goes in the code page also to a "mixed" server.
+- **FR-005**: A joined value MUST be remembered as a code-page name of the server when its raw
+  part was read in the code page or the column's value is already a code-page name of that
+  server, as every code-page listing field is (features 224 / 288), so that a command for it goes
+  in the code page also to a "mixed" server. A literal or another column's value alone never
+  makes it one.
 - **FR-006**: The joined value MUST NOT count as evidence of the server's encoding (feature 288's
   rule for re-assigned columns stays).
 - **FR-007**: Names and text that were shown correctly before (ASCII, UTF-8 servers, a code-page
