@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5540,3 +5540,26 @@ a few early ones are out of sequence).
   30 / 0, 361 24 / 0, 362 34 / 0; saltests 29,720 -> 29,748 / 0 (`TestIsoUdfFid_363`; negative control no bound 18
   failed, the reviewer's mutants 4 - 6 each); refute-first review 1 (no MUST; SHOULD a valid multi-sector folder row -
   taken, the same PASS on the old build; NOTE a check tightened).
+- 364-uniso-udf-folder-extents: a UDF disc image one of whose folders is stored in more than one extent (fragmented
+  rewritable or packet-written media) was read by the ISO plug-in only up to the folder's first extent - its later
+  entries were not listed, nothing was marked, and a whole Unpack with "Delete archive after unpacking" deleted the
+  image after a partial unpack (a contiguous split root: 28 of 80 files); a folder whose one extent was shorter than
+  its Information Length, or whose later descriptor was not recorded (type 1) or continued elsewhere (type 3), was
+  read short the same way - now `CUDF::MapICB(CAD, CICBTag*, CUDFFolder*)` reads up to 32 descriptors (as a file's),
+  `SalIsoUdfFolderExtents` (`src/common/salisoudfentry.h`) walks the leading recorded extents and says whether their
+  bytes cover the Information Length, `CUDF::ScanDir` fills its two-block window through the extents
+  (`CUDF::ReadFolderWindow`, `SalIsoUdfFolderSector`: one two-block read inside an extent - the old reads for a
+  one-extent folder - two one-block reads across a boundary, so an identifier crossing it is read whole), and the
+  root / every sub-folder read short marks the listing incomplete (feature 330, no window) - its readable part is
+  listed, a whole unpack keeps the image. No UI string. Traps: a Bash here-document holding a Python edit script
+  failed to parse (written with the editor); genisoimage leaves no two free sectors past the partition, so the
+  probe's moved extent uses one zero sector between the files' data. Limits: descriptors continued in an allocation
+  extent (type 3) are not followed (marked); a folder whose first descriptor is not a recorded extent now takes 362's
+  unreadable-folder path; a later recorded extent past a smaller Information Length is walked (fails closed); the
+  walk translates only each extent's first block - wrong for VAT partitions, predates the feature (Inbox
+  `iso-plug-in-a-udf-folder-of-several-blocks-in-a-vat`). From backlog item
+  `iso-plug-in-a-udf-folder-stored-in-more-than-one-extent-is`. Probe `iso364_probe` (big364.iso by `mkimg364.sh`,
+  ud.iso by 330's `mkimg330.sh`, changed by `img364.py`) 20 / 8 -> 28 / 0; regressions 330 30 / 0, 356 56 / 0,
+  358 52 / 0, 361 24 / 0, 362 34 / 0, 363 24 / 0; saltests 29,748 -> 29,791 / 0 (`TestIsoUdfFolderExtents_364`);
+  refute-first review 1 (no MUST / SHOULD; negative control with three mutations 22 / 6, each caught by its own rows;
+  NOTE wording taken, NOTE VAT mapping -> Inbox).

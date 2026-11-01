@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a UDF folder stored in more than one extent is listed cut and the image deleted](items/iso-plug-in-a-udf-folder-stored-in-more-than-one-extent-is/desc.md) | bug | 6 | archives | 364 |
 
 ## Next
 
