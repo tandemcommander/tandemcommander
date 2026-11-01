@@ -14,6 +14,7 @@ extern "C"
 }
 #include "salshlib.h"
 #include "salshelllink.h" // feature 194
+#include "salmydocs.h"    // feature 386
 
 // original location in fileswnd.h (kept here only because of MakeCopyOfName in CImpDropTarget::ProcessClipboardData)
 extern BOOL OurClipDataObject; // TRUE when "paste" is done with our IDataObject
@@ -2918,64 +2919,60 @@ static WCHAR* ProbeDocumentsPathW()
 }
 #endif // _DEBUG
 
-BOOL GetMyDocumentsOrDesktopPath(char* path, int pathLen)
+// the file-system path of a special folder as the shell reports it (at most MAX_PATH - 1 units);
+// FALSE = the folder has none (a virtual location) or cannot be found
+static BOOL GetSpecialFolderPathW(int csidl, WCHAR* pathW)
 {
-    char buff[2 * MAX_PATH];
-
+    pathW[0] = 0;
     BOOL ret = FALSE;
     ITEMIDLIST* pidl = NULL;
+    if (SHGetSpecialFolderLocation(NULL, csidl, &pidl) == NOERROR)
+    {
+        if (SHGetPathFromIDListW(pidl, pathW) && pathW[0] != 0)
+            ret = TRUE;
+        else
+            pathW[0] = 0;
+        IMalloc* alloc;
+        if (SUCCEEDED(CoGetMalloc(1, &alloc)))
+        {
+            alloc->Free(pidl);
+            alloc->Release();
+        }
+    }
+    return ret;
+}
+
+// feature 386: the whole path or FALSE - a Documents path that does not fit 'pathLen' bytes was
+// cut by lstrcpyn and the Documents drive opened the folder named like its prefix; it is refused
+// now (and not replaced by the Desktop: SalDocumentsOrDesktopToU8, salmydocs.h). The 520-byte
+// intermediate buffer is gone too: a 259-unit path can need 778 bytes.
+BOOL GetMyDocumentsOrDesktopPath(char* path, int pathLen)
+{
+    WCHAR docsW[MAX_PATH];
+    WCHAR desktopW[MAX_PATH];
+    desktopW[0] = 0;
+    BOOL haveDocs;
 #ifdef _DEBUG
     // probe seam (feature 386): the Documents folder named by the probe instead of the shell
-    BOOL probeDocs = FALSE;
+    WCHAR* probeW = ProbeDocumentsPathW();
+    if (probeW != NULL)
     {
-        WCHAR* probeW = ProbeDocumentsPathW();
-        if (probeW != NULL)
-        {
-            probeDocs = TRUE;
-            if (SalWToU8(probeW, -1, buff, 2 * MAX_PATH) != 0)
-                ret = TRUE;
-            free(probeW);
-        }
+        haveDocs = probeW[0] != 0 && wcslen(probeW) < MAX_PATH;
+        lstrcpynW(docsW, haveDocs ? probeW : L"", MAX_PATH);
+        free(probeW);
     }
-    if (!probeDocs && SHGetSpecialFolderLocation(NULL, CSIDL_PERSONAL, &pidl) == NOERROR)
+    else
+        haveDocs = GetSpecialFolderPathW(CSIDL_PERSONAL, docsW);
 #else
-    if (SHGetSpecialFolderLocation(NULL, CSIDL_PERSONAL, &pidl) == NOERROR)
+    haveDocs = GetSpecialFolderPathW(CSIDL_PERSONAL, docsW);
 #endif
-    {
-        if (SalSHGetPathFromIDListU8(pidl, buff, 2 * MAX_PATH))
-            ret = TRUE;
-        IMalloc* alloc;
-        if (SUCCEEDED(CoGetMalloc(1, &alloc)))
-        {
-            alloc->Free(pidl);
-            alloc->Release();
-        }
-    }
-    if (!ret && SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl) == NOERROR)
-    {
-        if (SalSHGetPathFromIDListU8(pidl, buff, 2 * MAX_PATH))
-            ret = TRUE;
-        IMalloc* alloc;
-        if (SUCCEEDED(CoGetMalloc(1, &alloc)))
-        {
-            alloc->Free(pidl);
-            alloc->Release();
-        }
-    }
+    if (!haveDocs)
+        GetSpecialFolderPathW(CSIDL_DESKTOP, desktopW); // only when Documents has no path
 
-    if (ret)
-    {
-        if ((int)strlen(buff) >= pathLen)
-            TRACE_E("GetMyDocumentsOrDesktopPath() Buffer too small!");
-
-        lstrcpyn(path, buff, pathLen);
-        // feature 069 (F-P1-24): 'buff' is UTF-8 now and can exceed pathLen, and
-        // lstrcpyn cuts on a byte boundary - a torn character would make every
-        // strict probe downstream reject the path
-        SalU8TrimIncompleteTail(path);
-    }
-
-    return ret;
+    int res = SalDocumentsOrDesktopToU8(haveDocs ? docsW : NULL, desktopW, path, pathLen);
+    if (res == SAL_DOCS_TOO_LONG)
+        TRACE_E("GetMyDocumentsOrDesktopPath(): the path does not fit " << pathLen << " bytes - refused");
+    return res == SAL_DOCS_OK;
 }
 
 //

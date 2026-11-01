@@ -2687,7 +2687,7 @@ BOOL CFilesWindow::ChangePathToWslDistro(HWND parent, const char* name)
 
 BOOL CFilesWindow::ChangePathToDrvType(HWND parent, int driveType, const char* displayName)
 {
-    char path[MAX_PATH];
+    char path[SAL_MAX_PATH_UTF8]; // feature 386: any Documents path whole (was cut to MAX_PATH bytes)
     const char* userFolderOneDrive = NULL;
     if (driveType == drvtOneDrive || driveType == drvtOneDriveBus)
     {
@@ -2700,7 +2700,7 @@ BOOL CFilesWindow::ChangePathToDrvType(HWND parent, int driveType, const char* d
             return FALSE;
         }
     }
-    if (driveType == drvtMyDocuments && GetMyDocumentsOrDesktopPath(path, MAX_PATH) ||
+    if (driveType == drvtMyDocuments && GetMyDocumentsOrDesktopPath(path, SAL_MAX_PATH_UTF8) ||
         driveType == drvtGoogleDrive && ShellIconOverlays.GetPathForGoogleDrive(path, MAX_PATH) ||
         driveType == drvtDropbox && strcpy_s(path, DropboxPath) == 0 ||
         driveType == drvtOneDrive && strcpy_s(path, OneDrivePath) == 0 ||

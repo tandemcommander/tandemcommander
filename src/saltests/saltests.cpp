@@ -94,6 +94,7 @@
 #include "saldrivetext.h"     // feature 289
 #include "salmaskgroup.h"     // feature 298
 #include "salsubst.h"         // feature 301
+#include "salmydocs.h"        // feature 386
 #include "salftpupname.h"     // feature 303
 #include "salftpsrvpath.h"    // feature 385
 #include "salpaxheader.h"     // feature 306
@@ -18891,6 +18892,113 @@ static void TestSubstTarget301()
     CHECK(SalSubstTargetToPathU8(L"\\??\\C:\\a\xD800", buf, sizeof(buf)) == SAL_SUBST_OK && strlen(buf) == 4 + 3);
 }
 
+// feature 386: the Documents (else the Desktop) folder, whole or refused (salmydocs.h) - the old
+// GetMyDocumentsOrDesktopPath cut it to the caller's MAX_PATH bytes and the Documents drive opened
+// the folder named like the prefix
+
+// the old copy of GetMyDocumentsOrDesktopPath (shellib.cpp before 386): 520-byte buffer, lstrcpyn
+// to the caller's size, a torn last letter dropped
+static BOOL OldDocumentsPath386(const WCHAR* docsW, const WCHAR* desktopW, char* path, int pathLen)
+{
+    char buff[2 * MAX_PATH];
+    BOOL ret = docsW != NULL && SalWToU8(docsW, -1, buff, 2 * MAX_PATH) != 0;
+    if (!ret)
+        ret = desktopW != NULL && SalWToU8(desktopW, -1, buff, 2 * MAX_PATH) != 0;
+    if (ret)
+    {
+        lstrcpynA(path, buff, pathLen);
+        SalU8TrimIncompleteTail(path);
+    }
+    return ret;
+}
+
+static void TestDocumentsPath386()
+{
+    // the measured case: <TEMP>\tc386\ + 90 CJK letters (130 units, 310 bytes)
+    std::wstring docs = L"C:\\Users\\pavel\\AppData\\Local\\Temp\\tc386\\";
+    std::string docsU8 = "C:\\Users\\pavel\\AppData\\Local\\Temp\\tc386\\";
+    for (int i = 1; i <= 90; i++)
+    {
+        WCHAR one[2] = {(WCHAR)(0x4E00 + i), 0};
+        docs += one[0];
+        char u8[8];
+        CHECK(SalWToU8(one, -1, u8, sizeof(u8)) == 4);
+        docsU8 += u8;
+    }
+    CHECK(docs.size() == 130 && docsU8.size() == 310);
+    const WCHAR* desktop = L"C:\\Users\\pavel\\Desktop";
+
+    // negative control: the old rule gives the 259-byte prefix (another folder) for MAX_PATH
+    {
+        char old[MAX_PATH];
+        CHECK(OldDocumentsPath386(docs.c_str(), desktop, old, MAX_PATH));
+        CHECK(strlen(old) == 259 && docsU8.compare(0, 259, old) == 0); // a strict prefix: the defect
+    }
+
+    // MAX_PATH bytes: refused, emptied, the Desktop not used instead
+    {
+        char buf[MAX_PATH];
+        strcpy(buf, "x");
+        CHECK(SalDocumentsOrDesktopToU8(docs.c_str(), desktop, buf, MAX_PATH) == SAL_DOCS_TOO_LONG && buf[0] == 0);
+    }
+    // a long-path buffer: whole
+    {
+        std::vector<char> big(SAL_MAX_PATH_UTF8);
+        char* buf = big.data();
+        CHECK(SalDocumentsOrDesktopToU8(docs.c_str(), desktop, buf, SAL_MAX_PATH_UTF8) == SAL_DOCS_OK && docsU8 == buf);
+        CHECK(strchr(buf, '?') == NULL);
+        // the exact fit and one byte short
+        int need = (int)docsU8.size() + 1;
+        CHECK(SalDocumentsOrDesktopToU8(docs.c_str(), desktop, buf, need) == SAL_DOCS_OK && docsU8 == buf);
+        CHECK(SalDocumentsOrDesktopToU8(docs.c_str(), desktop, buf, need - 1) == SAL_DOCS_TOO_LONG && buf[0] == 0);
+    }
+    // the 259 / 260 byte boundary of a MAX_PATH caller (ASCII: one byte a unit)
+    {
+        std::wstring w259 = L"C:\\";
+        while (w259.size() < 259)
+            w259 += L'a';
+        std::wstring w260 = w259 + L"b";
+        char buf[MAX_PATH];
+        CHECK(SalDocumentsOrDesktopToU8(w259.c_str(), NULL, buf, MAX_PATH) == SAL_DOCS_OK && strlen(buf) == 259);
+        strcpy(buf, "x");
+        CHECK(SalDocumentsOrDesktopToU8(w260.c_str(), NULL, buf, MAX_PATH) == SAL_DOCS_TOO_LONG && buf[0] == 0);
+    }
+    // the choice: Documents first, the Desktop only when Documents has no path
+    {
+        char buf[MAX_PATH];
+        CHECK(SalDocumentsOrDesktopToU8(L"D:\\Docs", desktop, buf, MAX_PATH) == SAL_DOCS_OK && strcmp(buf, "D:\\Docs") == 0);
+        CHECK(SalDocumentsOrDesktopToU8(NULL, desktop, buf, MAX_PATH) == SAL_DOCS_OK && strcmp(buf, "C:\\Users\\pavel\\Desktop") == 0);
+        CHECK(SalDocumentsOrDesktopToU8(L"", desktop, buf, MAX_PATH) == SAL_DOCS_OK && strcmp(buf, "C:\\Users\\pavel\\Desktop") == 0);
+        strcpy(buf, "x");
+        CHECK(SalDocumentsOrDesktopToU8(NULL, NULL, buf, MAX_PATH) == SAL_DOCS_NONE && buf[0] == 0);
+        strcpy(buf, "x");
+        CHECK(SalDocumentsOrDesktopToU8(L"", L"", buf, MAX_PATH) == SAL_DOCS_NONE && buf[0] == 0);
+        // no Documents and a Desktop that does not fit: refused as well
+        strcpy(buf, "x");
+        CHECK(SalDocumentsOrDesktopToU8(NULL, docs.c_str(), buf, MAX_PATH) == SAL_DOCS_TOO_LONG && buf[0] == 0);
+        // no buffer
+        CHECK(SalDocumentsOrDesktopToU8(L"D:\\Docs", NULL, NULL, MAX_PATH) == SAL_DOCS_TOO_LONG);
+        CHECK(SalDocumentsOrDesktopToU8(L"D:\\Docs", NULL, buf, 0) == SAL_DOCS_TOO_LONG);
+        CHECK(SalDocumentsOrDesktopToU8(NULL, NULL, buf, 0) == SAL_DOCS_NONE);
+    }
+    // every path the shell can report (259 units, 3 bytes each at most) fits a long-path buffer
+    {
+        std::wstring longest = L"C:\\";
+        while (longest.size() < MAX_PATH - 1)
+            longest += L'\x6863';
+        std::vector<char> big(SAL_MAX_PATH_UTF8);
+        char* buf = big.data();
+        CHECK(SalDocumentsOrDesktopToU8(longest.c_str(), NULL, buf, SAL_MAX_PATH_UTF8) == SAL_DOCS_OK);
+        CHECK((int)strlen(buf) == 3 + 3 * (MAX_PATH - 1 - 3));
+        CHECK((int)strlen(buf) > 2 * MAX_PATH); // the old 520-byte buffer could not hold it
+    }
+    // a lone surrogate (a name Windows allows) converts as WTF-8, no refusal
+    {
+        char buf[MAX_PATH];
+        CHECK(SalDocumentsOrDesktopToU8(L"C:\\a\xD800", NULL, buf, MAX_PATH) == SAL_DOCS_OK && strlen(buf) == 4 + 3);
+    }
+}
+
 // feature 385: FTP server paths of the case-insensitive path types compared name by name by the
 // file system's rule (salftpsrvpath.h) - the code-page byte fold over UTF-8 bytes made the folders
 // "C-caron" and "G-circumflex" one folder on code page 1250 (an upload stored over an existing
@@ -25495,6 +25603,7 @@ int main(int argc, char** argv)
     TestGrowBuffers295();
     TestMaskGroupSplit298();
     TestSubstTarget301();
+    TestDocumentsPath386();
     TestFtpCaseOnlyName303();
     TestPaxHeader306();
     TestListingName321();

@@ -2078,8 +2078,8 @@ BOOL CFilesWindow::OnSysKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT
         }
         if (myDocuments)
         {
-            char path[MAX_PATH];
-            if (GetMyDocumentsOrDesktopPath(path, MAX_PATH))
+            char path[SAL_MAX_PATH_UTF8]; // feature 386: any Documents path whole (was cut to MAX_PATH bytes)
+            if (GetMyDocumentsOrDesktopPath(path, SAL_MAX_PATH_UTF8))
                 ChangePathToDisk(HWindow, path);
             return TRUE;
         }

@@ -1767,10 +1767,10 @@ BOOL SafeGetSaveFileNameW(LPOPENFILENAMEW lpofn)
     BOOL ret = GetSaveFileNameW(lpofn);
     if (!ret && FNERR_INVALIDFILENAME == CommDlgExtendedError())
     {
-        char initDir[MAX_PATH];
+        char initDir[SAL_MAX_PATH_UTF8]; // feature 386: the Documents path whole (a 259-unit path fits initDirW)
         WCHAR initDirW[MAX_PATH];
         const WCHAR* oldInitDir = lpofn->lpstrInitialDir;
-        if (!GetMyDocumentsOrDesktopPath(initDir, MAX_PATH) || SalU8ToW(initDir, -1, initDirW, MAX_PATH) == 0)
+        if (!GetMyDocumentsOrDesktopPath(initDir, SAL_MAX_PATH_UTF8) || SalU8ToW(initDir, -1, initDirW, MAX_PATH) == 0)
             initDirW[0] = 0;
         lpofn->lpstrInitialDir = initDirW;
         lpofn->lpstrFile[0] = 0;
@@ -1789,10 +1789,10 @@ BOOL SafeGetOpenFileNameW(LPOPENFILENAMEW lpofn)
     BOOL ret = GetOpenFileNameW(lpofn);
     if (!ret && FNERR_INVALIDFILENAME == CommDlgExtendedError())
     {
-        char initDir[MAX_PATH];
+        char initDir[SAL_MAX_PATH_UTF8]; // feature 386: the Documents path whole (a 259-unit path fits initDirW)
         WCHAR initDirW[MAX_PATH];
         const WCHAR* oldInitDir = lpofn->lpstrInitialDir;
-        if (!GetMyDocumentsOrDesktopPath(initDir, MAX_PATH) || SalU8ToW(initDir, -1, initDirW, MAX_PATH) == 0)
+        if (!GetMyDocumentsOrDesktopPath(initDir, SAL_MAX_PATH_UTF8) || SalU8ToW(initDir, -1, initDirW, MAX_PATH) == 0)
             initDirW[0] = 0;
         lpofn->lpstrInitialDir = initDirW;
         lpofn->lpstrFile[0] = 0;
@@ -1808,6 +1808,9 @@ void GetIfPathIsInaccessibleGoTo(char* path, BOOL forceIsMyDocs)
 {
     if (forceIsMyDocs || Configuration.IfPathIsInaccessibleGoToIsMyDocs)
     {
+        // feature 386: a Documents path that does not fit MAX_PATH bytes is refused (it used to
+        // be cut = another folder); the rescue path then takes the Windows drive root. The buffer
+        // stays MAX_PATH: the settings field and SALCFG_IFPATHISINACCESSIBLEGOTO hold MAX_PATH.
         if (!GetMyDocumentsOrDesktopPath(path, MAX_PATH))
         {
             char winPath[MAX_PATH];
