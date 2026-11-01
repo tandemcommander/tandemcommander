@@ -4,7 +4,7 @@
 
 Built as feature 340's img340.py: the track data of two Mode 1 tracks (s1, s2 from feature 334's
 mkimg334.sh), an ETNF chunk (0x14 bytes a track), the SINF chunks, END!, and the footer "NER5" + the
-chunks' offset. A SINF chunk holds one big-endian DWORD - the session's track count (libmirage: 4 bytes).
+chunks' offset. A SINF chunk holds one big-endian DWORD - the session's track count (as nrg.cpp reads it; libmirage never reads SINF).
 
 Kinds (the SINF chunks, as (size, count); the image always holds two tracks, one a session):
   fit       (4, 1), (4, 1)              control: "Session 01" a.txt, "Session 02" b.txt

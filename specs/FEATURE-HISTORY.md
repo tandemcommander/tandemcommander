@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5680,3 +5680,27 @@ a few early ones are out of sequence).
   regressions 338 24 / 0, 367 40 / 0, 337 with 367's expectations 74 / 0; saltests 29,999 -> 30,063 / 0
   (`TestIsoMultiExtent_368`; a mutated rule fails 11); refute-first review 1: no MUST / SHOULD (negative control: a
   reader that only sums sizes fails U-PLAIN, U-ODDMID, C-PLAIN), NOTEs recorded.
+- 369-nrg-sinf-chunk-size: a Nero disc image (`.nrg`) whose session chunk (SINF) was not 4 bytes - 8, 2 or 0
+  bytes, damaged or written by another tool - lost a session: the ISO plug-in always read 4 bytes and took the
+  next chunk header from wherever that left the file position, so the rest of the chunk table was misread and an
+  unpack gave only `Session 01/a.txt` with an "Unknown track type." box (session 2's file not extracted; the
+  image kept by earlier marks) - now a SINF chunk gives its count only when it is exactly 4 bytes, within the
+  image and read whole (`SalNrgSinfUsable`, `src/common/salnrgcdtext.h`); any other gives no count and marks the
+  listing incomplete (a whole unpack fails, the image kept, no box, no UI string), and `ReadNRGRoot` reads every
+  next chunk header at the end its header declares, whatever the reader took (so a DAOX chunk longer than its
+  entries no longer shifts the table either - review 1's R-DAOXTRAIL). The item's ETN2 half was already done by
+  365 (whole entries, never past its buffer). Traps: the Edit tool rewrote `nrg.cpp` with LF endings (restored to
+  CRLF by a byte replace); the spec first cited libmirage for the 4-byte SINF - libmirage never reads SINF
+  (review 1, corrected); mutant C (no loop seek) passes S-SINF8 by chance (its 8 body bytes parse as an empty
+  unknown chunk). Limits: a refused SINF chunk leaves fewer sessions - three of the probe's images now give only
+  the last track's `b.txt`, silently (before `a.txt` and a box); a SINF chunk whose size runs past the image ends
+  the table and the plain-image fallback keeps the NRG tracks already read (review 1's R-SINFHUGE: only `a.txt`,
+  image kept; before both sessions by accident, image deleted - Inbox
+  `iso-plug-in-a-failed-nrg-table-read-leaves-its-tracks-for`); a DAOX chunk still applies entries read past its
+  end (Inbox `iso-plug-in-an-nrg-daox-chunk-applies-track-entries-read`); crafted images only, Release not driven.
+  From backlog item `iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard`. Probe `iso369_probe` (seeds
+  334's `mkimg334.sh`, images `img369.py`) 6 / 4 -> 10 / 0; mutants: every SINF size accepted -> saltests 5
+  failed, no mark -> S-SINF0 deletes the image (9 / 1), no loop seek -> S-SINF2 misread (9 / 1); regressions 340
+  14 / 0, 350 20 / 0, 365 22 / 0; saltests 30,063 -> 30,078 / 0 (`TestNrgSinf369`); refute-first review 1: no
+  MUST (its own pre-fix build gives 6 / 4), SHOULD (oversized SINF -> fallback) recorded with an Inbox item,
+  NOTEs recorded.

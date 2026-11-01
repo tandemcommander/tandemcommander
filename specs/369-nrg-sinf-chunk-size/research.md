@@ -3,8 +3,9 @@
 ## R1 - The SINF chunk's format
 
 - Decision: a SINF chunk is 4 bytes, a big-endian count of the session's tracks.
-- Rationale: libmirage's NRG parser (`mirage_parser_nrg_load_session` reads one 32-bit value from
-  the SINF block) and the plug-in's own reader agree; all images of features 334, 340, 365 use 4 bytes.
+- Rationale: the plug-in's own reader has always taken one 32-bit value; all images of features 334, 340,
+  365 use 4 bytes. (Corrected by review 1: libmirage's NRG parser never reads SINF at all - the earlier
+  citation was wrong; it steps through the chunk table by each header's size, as R2 now does.)
 - Alternatives: take the first 4 bytes of a longer chunk - rejected (guessing; spec Clarifications).
 
 ## R2 - Where to restore the chunk alignment

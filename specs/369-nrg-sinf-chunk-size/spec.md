@@ -64,8 +64,11 @@ unpacking" and compare the extracted files, the windows shown and whether the im
 ### Edge Cases
 
 - A SINF chunk whose declared size runs past the end of the image: refused, the listing marked
-  incomplete; the next chunk header cannot be read, so the chunk table ends there (as for any chunk of
-  that kind today).
+  incomplete; the next chunk header cannot be read, so the chunk table ends there and the image is
+  opened by the plain-image fallback (as for an unknown, CUEX, ETN2 or CDTX chunk of that kind before) -
+  review 1's R-SINFHUGE: only `a.txt`, the image kept (before: both sessions by accident, the image
+  deleted). The fallback keeps the NRG tracks already read - Inbox
+  `iso-plug-in-a-failed-nrg-table-read-leaves-its-tracks-for`.
 - A SINF chunk of 4 bytes that cannot be read whole: refused, no session count from it, the listing
   marked incomplete.
 - A known chunk reader that stops early (a short read) or reads less than its chunk (a DAOX chunk larger

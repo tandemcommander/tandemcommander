@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: NRG SINF and ETN2 chunks are read without regard to their size](items/iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard/desc.md) | bug | 5 | archives | 369 |
 
 ## Next
 
@@ -284,6 +283,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a failed NRG table read leaves its tracks for the plain-image fallback](items/iso-plug-in-a-failed-nrg-table-read-leaves-its-tracks-for/desc.md) | bug | 4 | archives | review:369 | 2026-11-01 |
 | [ISO plug-in: an NRG DAOX chunk applies track entries read past its own end](items/iso-plug-in-an-nrg-daox-chunk-applies-track-entries-read/desc.md) | bug | 4 | archives | measure:369 | 2026-11-01 |
 | [ISO plug-in: NRG tracks of the subchannel modes 0x0F / 0x10 / 0x11 get a wrong type or size](items/iso-plug-in-nrg-tracks-of-the-subchannel-modes-0x0f-0x10/desc.md) | bug | 3 | archives | leftover:365 | 2026-11-01 |
 

@@ -7,11 +7,11 @@ area: archives
 source: review:350
 who: agent
 created: 2026-10-31
-updated: 2026-10-31
+updated: 2026-11-01
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard]
+related: []
 depends-on: []
 reason: -
 ---
@@ -55,3 +55,4 @@ as the CUEX reader does since feature 350 (`SalNrgCuexSizePlausible` / `SalNrgCu
 - 2026-10-31 — created (source review:350)
 - 2026-10-31 — related item iso-plug-in-an-nrg-cuex-chunk-under-16-bytes-makes-a-huge done in feature 350
 - 2026-10-31 — moved to Next position 31
+- 2026-11-01 — related item iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard done in feature 369

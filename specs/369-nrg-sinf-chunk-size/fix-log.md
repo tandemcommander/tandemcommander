@@ -81,3 +81,33 @@ Backlog item `iso-plug-in-nrg-sinf-and-etn2-chunks-are-read-without-regard`.
 
 - `iso-plug-in-an-nrg-daox-chunk-applies-track-entries-read` - `readDAOX` reads as many 0x2A-byte entries
   as its track range claims, past its chunk (by reading, T010).
+
+## Review
+
+### Review 1 (refute-first, independent agent)
+
+- No MUST. Re-ran the measurement on its own pre-fix build (worktree at 703666e0, its own build folder,
+  copies of the Debug tree): before 6 / 4, after 10 / 0 - as recorded. saltests 30078 / 0; mutant A's 5
+  failures match the five size checks. Extra rows: R-DAOXFIT (a whole DAOX chunk) PASS before and after;
+  R-DAOXTRAIL (a DAOX chunk 6 bytes longer than its entries) before only `a.txt`, after both sessions -
+  the loop seek covers DAOX. Callers enumerated (`ReadSessionNRG` <- `ReadSessionInfo` <- `Open`);
+  CUEX / ETN2 / CDTX seek to the same position twice; `CBufferedFile::Seek` allows a seek past the end;
+  the incomplete mark is never reset. Registry restored, identical.
+- SHOULD 1: a SINF chunk whose size runs past the end of the image now ends the chunk table and the image
+  goes to the plain-image fallback, which keeps the NRG tracks already read (`LastTrack = 0` names the
+  first ETNF track) - R-SINFHUGE (SINF declaring 0xFFFFFFF0 bytes): before both sessions extracted and
+  the image deleted (the old reader ignored the size - by accident), after only `a.txt`, the image kept,
+  no box. Data-safe; the fallback defect existed for unknown / CUEX / ETN2 / CDTX chunks. **Done**:
+  recorded in the spec's Edge Cases and here; Inbox `iso-plug-in-a-failed-nrg-table-read-leaves-its-tracks-for`
+  (review:369). Not fixed here: the declared size is the only position of the next header the image
+  gives - continuing after 4 bytes would be a guess (spec Clarifications).
+- NOTE 1: the libmirage citation was wrong (libmirage never reads SINF; it counts DAOX entries as
+  `(length - 22) / 42` and steps through the table by each header's size). **Done**: `research.md` R1
+  and the `img369.py` docstring corrected; the DAOX Inbox item's Expected already asks for that count.
+- NOTE 2: S-SINF8 / S-SINF8TAIL / S-SINF2 now give `b.txt` without a box (before: `a.txt` + "Unknown track
+  type."); the image is kept (329 / 334 convention, spec Assumptions). Recorded as a limit.
+- NOTE 3: closing artifacts not yet written - expected before step 8.
+- NOTE 4: old review worktrees of other features (`%TEMP%\rev325` ... `rev341r3`) are still registered -
+  not this feature's; left as they are.
+- No source code changed after the review: no rebuild or re-run needed (the edits are documents and a
+  probe docstring).
