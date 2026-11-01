@@ -54,3 +54,4 @@ before and after.
 ## Log
 
 - 2026-11-01 — created (source leftover:365)
+- 2026-11-01 — auto-triage: left in Inbox - who agent contradicts its own text: the 2448-byte sizing in Expected waits for a real Nero track-at-once image with subchannel data (a person); consider who=both or splitting the safe type change

@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an NRG image of Nero v1 (NERO footer) is opened without its track table
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:365
@@ -55,3 +55,4 @@ when everything was listed.
 ## Log
 
 - 2026-11-01 — created (source measure:365)
+- 2026-11-01 — moved to Next position 34

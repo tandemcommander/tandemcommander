@@ -1,7 +1,7 @@
 ---
 title: Check feature 365 with real Nero TAO and CloneCD multi-session dumps
 type: person-step
-status: new
+status: open
 severity: 5
 area: archives
 source: leftover:365
@@ -60,3 +60,4 @@ that "Delete archive after unpacking" deletes the image only then.
 ## Log
 
 - 2026-11-01 — created (source leftover:365)
+- 2026-11-01 — moved to Person steps position 14
