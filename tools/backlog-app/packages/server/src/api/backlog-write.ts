@@ -559,7 +559,11 @@ export function backlogWriteRoutes(services: Services): Hono {
       const { operation } = body;
       if (slug === frozen) {
         // The item a run works on is skipped with a refusal, the rest of the bulk change goes on.
-        results.push({ slug, ok: false, refused: `${slug} is the item a run works on - never changed meanwhile` });
+        results.push({
+          slug,
+          ok: false,
+          refused: `${slug} is the item a run works on - never changed meanwhile`,
+        });
         continue;
       }
       let op: Operation;

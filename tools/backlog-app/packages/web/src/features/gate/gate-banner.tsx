@@ -34,9 +34,21 @@ export function useWriteAccess(): WriteAccess {
   const gate = useAppStore((s) => s.state?.gate ?? null);
   const connected = useAppStore((s) => s.connected);
   if (!connected)
-    return { writable: false, reason: "the connection to the app is lost", channel: null, frozenSlug: null, gate };
+    return {
+      writable: false,
+      reason: "the connection to the app is lost",
+      channel: null,
+      frozenSlug: null,
+      gate,
+    };
   if (!gate) return { writable: false, reason: "starting up", channel: null, frozenSlug: null, gate };
-  return { writable: gate.writable, reason: gate.reason, channel: gate.channel, frozenSlug: gate.frozenSlug, gate };
+  return {
+    writable: gate.writable,
+    reason: gate.reason,
+    channel: gate.channel,
+    frozenSlug: gate.frozenSlug,
+    gate,
+  };
 }
 
 /**
@@ -72,7 +84,10 @@ export function GateBanner() {
     const note = gate.channel ? CHANNEL_NOTE[gate.channel] : null;
     if (!note) return null;
     return (
-      <div role="status" className="flex flex-wrap items-center gap-2 border-b border-info/40 bg-info/8 px-4 py-1.5 text-sm">
+      <div
+        role="status"
+        className="flex flex-wrap items-center gap-2 border-b border-info/40 bg-info/8 px-4 py-1.5 text-sm"
+      >
         <span className="font-medium">Live:</span>
         <span>
           {note}

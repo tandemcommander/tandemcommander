@@ -23,6 +23,8 @@ import type { ItemRowView, SectionName } from "@backlog-app/shared";
 import { SeverityBadge, StatusBadge, TypeBadge } from "@/components/badges.tsx";
 import { highlight } from "@/components/markdown.tsx";
 import { cn } from "@/lib/utils.ts";
+import { useWriteAccess } from "@/features/gate/gate-banner.tsx";
+import { PositionField, positionReason } from "./position-field.tsx";
 
 /** Columns each section shows (as in `BACKLOG.md`, analysis A1 §2.3). */
 const SECTION_COLUMNS: Record<SectionName, string[]> = {
@@ -70,6 +72,49 @@ export interface SectionTableProps {
 }
 
 /**
+ * The position cell: the number, and on a click (or Enter) the typed-position field with "Move
+ * to the top" (feature 371). Sorted sections show the number only.
+ *
+ * @param props - The row.
+ * @returns The element.
+ */
+function PositionCell({ row }: { /** The row. */ row: ItemRowView }) {
+  const [editing, setEditing] = useState(false);
+  const access = useWriteAccess();
+  const editable = row.position !== null && positionReason(access, row.slug, row.section) === "";
+  if (editing) {
+    return (
+      <span onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+        <PositionField
+          slug={row.slug}
+          section={row.section}
+          position={row.position}
+          compact
+          autoFocus
+          onDone={() => setEditing(false)}
+        />
+      </span>
+    );
+  }
+  if (!editable) return <span className="text-muted-foreground tabular-nums">{row.position ?? ""}</span>;
+  return (
+    <button
+      type="button"
+      className="rounded px-1 text-muted-foreground tabular-nums hover:bg-accent hover:text-foreground"
+      title="Type a position or move to the top"
+      aria-label={`Position ${row.position ?? ""} of ${row.title} - change it`}
+      onClick={(e) => {
+        e.stopPropagation();
+        setEditing(true);
+      }}
+      onDoubleClick={(e) => e.stopPropagation()}
+    >
+      {row.position}
+    </button>
+  );
+}
+
+/**
  * The column definitions.
  *
  * @param snippets - Search snippets per slug.
@@ -89,9 +134,7 @@ function columnsOf(
       id: "position",
       header: "#",
       accessorFn: (row) => row.position ?? 0,
-      cell: ({ row }) => (
-        <span className="text-muted-foreground tabular-nums">{row.original.position ?? ""}</span>
-      ),
+      cell: ({ row }) => <PositionCell row={row.original} />,
     },
     {
       id: "title",

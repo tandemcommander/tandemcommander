@@ -113,15 +113,18 @@ describe("computeGate", () => {
     expect(gateOf({ loop: loop({ lock: stale }) })).toMatchObject({ state: "stale-lock", writable: false });
     // A live loop with a stale lock: the run is on its branch - writable through main.
     expect(
-      gateOf({ loop: loop({ live: true, shown: "running", lock: stale }), repo: repo({ branch: "345-an-item" }) }),
+      gateOf({
+        loop: loop({ live: true, shown: "running", lock: stale }),
+        repo: repo({ branch: "345-an-item" }),
+      }),
     ).toMatchObject({ state: "free", channel: "main-ref", frozenSlug: "an-item" });
   });
 
   it("is read-only while the loop holds the edit lock (a run starts or returns), naming the frozen item", () => {
     const starting = { pid: LOOP_PID, started: "2026-10-30T10:00:00", purpose: "loop: starting a run" };
-    expect(gateOf({ loop: loop({ live: true, pid: LOOP_PID, shown: "running", editLock: starting }) })).toMatchObject(
-      { state: "run-starting", writable: false, frozenSlug: null },
-    );
+    expect(
+      gateOf({ loop: loop({ live: true, pid: LOOP_PID, shown: "running", editLock: starting }) }),
+    ).toMatchObject({ state: "run-starting", writable: false, frozenSlug: null });
     const withLock = gateOf({
       loop: loop({ live: true, pid: LOOP_PID, shown: "running", editLock: starting, lock: LOCK }),
       repo: repo({ branch: "main" }),
@@ -148,7 +151,12 @@ describe("computeGate", () => {
 
   it("is read-only while a run holds the lock and the primary tree is on main (a run outside the loop)", () => {
     const gate = gateOf({ loop: loop({ lock: LOCK }) });
-    expect(gate).toMatchObject({ state: "run-on-main", writable: false, frozenSlug: "an-item", channel: null });
+    expect(gate).toMatchObject({
+      state: "run-on-main",
+      writable: false,
+      frozenSlug: "an-item",
+      channel: null,
+    });
     expect(gate.reason).toContain("is on main");
   });
 
@@ -196,7 +204,10 @@ describe("computeGate", () => {
   });
 
   it("uses the tray once the loop is gone", () => {
-    expect(gateOf({ loop: loop({ live: false, shown: "dead" }) })).toMatchObject({ state: "free", channel: "tray" });
+    expect(gateOf({ loop: loop({ live: false, shown: "dead" }) })).toMatchObject({
+      state: "free",
+      channel: "tray",
+    });
   });
 
   it("freezes the item of an interrupted run that waits to be continued, not one that needs a person", () => {

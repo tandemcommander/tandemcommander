@@ -76,10 +76,18 @@ function delta(text) {
   };
 }
 
-if (process.env.FAKE_CHAT_ARGV_FILE) writeFileSync(process.env.FAKE_CHAT_ARGV_FILE, JSON.stringify(argv), "utf8");
+if (process.env.FAKE_CHAT_ARGV_FILE)
+  writeFileSync(process.env.FAKE_CHAT_ARGV_FILE, JSON.stringify(argv), "utf8");
 
-emit({ type: "system", subtype: "init", session_id: session, model: "fake-model", tools: ["Read", "Grep", "Glob"] });
+emit({
+  type: "system",
+  subtype: "init",
+  session_id: session,
+  model: "fake-model",
+  tools: ["Read", "Grep", "Glob"],
+});
 
+/** Messages answered so far. */
 let turns = 0;
 /** Messages are answered one after the other; a later one waits for the earlier answer. */
 let chain = Promise.resolve();
@@ -91,7 +99,8 @@ let chain = Promise.resolve();
  */
 async function answer(text) {
   turns++;
-  if (process.env.FAKE_CHAT_STDIN_FILE) appendFileSync(process.env.FAKE_CHAT_STDIN_FILE, `${text}\n---\n`, "utf8");
+  if (process.env.FAKE_CHAT_STDIN_FILE)
+    appendFileSync(process.env.FAKE_CHAT_STDIN_FILE, `${text}\n---\n`, "utf8");
   if (mode === "hang") return;
   const pause = mode === "slow" ? 300 : 0;
   const firstLine = text.split("\n").find((line) => line.trim() !== "") ?? "";
@@ -105,12 +114,16 @@ async function answer(text) {
   await sleep(pause);
   emit({
     type: "assistant",
-    message: { content: [{ type: "tool_use", id: `toolu_${turns}`, name: "Grep", input: { pattern: "LoadStr" } }] },
+    message: {
+      content: [{ type: "tool_use", id: `toolu_${turns}`, name: "Grep", input: { pattern: "LoadStr" } }],
+    },
     session_id: session,
   });
   emit({
     type: "user",
-    message: { content: [{ type: "tool_result", tool_use_id: `toolu_${turns}`, content: "src/a.cpp:1: LoadStr" }] },
+    message: {
+      content: [{ type: "tool_result", tool_use_id: `toolu_${turns}`, content: "src/a.cpp:1: LoadStr" }],
+    },
     session_id: session,
   });
   await sleep(pause);
@@ -139,6 +152,7 @@ async function answer(text) {
   });
 }
 
+/** Reads the maintainer's messages line by line. */
 const lines = createInterface({ input: process.stdin });
 lines.on("line", (line) => {
   if (!line.trim()) return;
@@ -149,7 +163,12 @@ lines.on("line", (line) => {
     return;
   }
   const content = message?.message?.content;
-  const text = typeof content === "string" ? content : Array.isArray(content) ? content.map((c) => c.text ?? "").join("") : "";
+  const text =
+    typeof content === "string"
+      ? content
+      : Array.isArray(content)
+        ? content.map((c) => c.text ?? "").join("")
+        : "";
   chain = chain.then(() => answer(text));
 });
 lines.on("close", () => {

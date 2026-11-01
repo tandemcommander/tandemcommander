@@ -6,8 +6,8 @@
  * applied while a run holds the run lock and works on its branch in the primary working tree.
  *
  * It is a sparse (`backlog/` only; the feature folders of `specs/` are created empty, so the
- * tool's `feature-missing` rule finds them), detached (never a branch: the run's `git checkout
- * main` must never find `main` checked out elsewhere) and persistent worktree at
+ * tool's `feature-missing` rule finds them), detached (never a branch: the run's checkout of
+ * `main` must never find `main` checked out elsewhere) and persistent worktree at
  * `<git-common-dir>/tandem-backlog-app/main-worktree/`. Before every change it is brought to
  * `main`'s commit and verified clean; the backlog tool runs on it with `--root`; the change is
  * committed on the detached HEAD and `main` is moved with a compare-and-swap
@@ -83,7 +83,11 @@ export class SideWorktree {
   private async inTree(args: string[], stdin?: string): Promise<string> {
     const result = await this.git(this.path, args, stdin);
     if (result.code !== 0) {
-      throw new ApiError("tool-failed", `git ${args[0] ?? ""} in the side worktree failed`, result.stderr.trim());
+      throw new ApiError(
+        "tool-failed",
+        `git ${args[0] ?? ""} in the side worktree failed`,
+        result.stderr.trim(),
+      );
     }
     return result.stdout;
   }
@@ -148,7 +152,8 @@ export class SideWorktree {
     // `specs/NNN-*` exists. Empty folders are invisible to git status.
     const folders = (await this.inTree(["ls-tree", "--name-only", "-z", commit, "--", "specs/"])).split("\0");
     for (const folder of folders) {
-      if (/^specs\/[^/]+$/.test(folder)) mkdirSync(join(this.path, "specs", folder.slice(6)), { recursive: true });
+      if (/^specs\/[^/]+$/.test(folder))
+        mkdirSync(join(this.path, "specs", folder.slice(6)), { recursive: true });
     }
     const head = (await this.inTree(["rev-parse", "HEAD"])).trim();
     const status = (await this.inTree(["status", "--porcelain=v1", "--untracked-files=all"])).trim();
@@ -178,7 +183,9 @@ export class SideWorktree {
    */
   fileHash(relative: string): string | null {
     try {
-      return createHash("sha256").update(readFileSync(join(this.path, ...relative.split("/")))).digest("hex");
+      return createHash("sha256")
+        .update(readFileSync(join(this.path, ...relative.split("/"))))
+        .digest("hex");
     } catch {
       return null;
     }
@@ -190,7 +197,13 @@ export class SideWorktree {
    * @returns The paths.
    */
   async changedPaths(): Promise<string[]> {
-    const out = await this.inTree(["status", "--porcelain=v1", "-z", "--untracked-files=all", "--no-renames"]);
+    const out = await this.inTree([
+      "status",
+      "--porcelain=v1",
+      "-z",
+      "--untracked-files=all",
+      "--no-renames",
+    ]);
     return out
       .split("\0")
       .filter((record) => record.length > 3)
@@ -218,7 +231,10 @@ export class SideWorktree {
     );
     if (commit.code !== 0) {
       await this.revert();
-      throw new ApiError("refused", `git commit in the side worktree failed: ${(commit.stderr || commit.stdout).trim()}`);
+      throw new ApiError(
+        "refused",
+        `git commit in the side worktree failed: ${(commit.stderr || commit.stdout).trim()}`,
+      );
     }
     return (await this.inTree(["rev-parse", "HEAD"])).trim();
   }

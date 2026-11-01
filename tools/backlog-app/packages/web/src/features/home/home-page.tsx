@@ -172,6 +172,19 @@ export function HomePage() {
                 Live run of {state.run.slug ?? "the auto-triage"}: {state.run.phase}
                 {state.run.tasks ? `, tasks ${state.run.tasks.done}/${state.run.tasks.total}` : ""}
               </Link>
+            ) : board.data?.running ? (
+              <div>
+                <span className="text-muted-foreground">In progress: </span>
+                <Link
+                  to="/items/$slug"
+                  params={{ slug: board.data.running.slug }}
+                  search={{ tab: "" }}
+                  className="text-primary hover:underline"
+                >
+                  {board.data.running.slug}
+                </Link>
+                {board.data.running.feature ? ` (feature ${board.data.running.feature})` : ""}
+              </div>
             ) : null}
             <div>
               <span className="text-muted-foreground">Next up: </span>

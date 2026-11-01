@@ -99,6 +99,7 @@ export class EditLock {
    * Takes the lock (exclusive create). A dead or stale lock is replaced.
    *
    * @param purpose - One line saying what the app is changing (shown by the loop and other apps).
+   * @param neverStalePid - The live loop's pid: its lock is never replaced as stale (feature 371).
    * @throws ApiError `busy` when another live process holds it.
    */
   acquire(purpose: string, neverStalePid: number | null = null): void {

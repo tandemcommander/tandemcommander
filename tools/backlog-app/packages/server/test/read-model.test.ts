@@ -78,7 +78,12 @@ describe("running-item overlay", () => {
     expect(((await app.get("/api/next")).json as NextUp).slug).toBeNull();
     // The item detail says In progress.
     const item = (await app.get(`/api/items/${FTP}`)).json as Item;
-    expect(item).toMatchObject({ section: "In progress", position: 1, status: "in-progress", feature: "372" });
+    expect(item).toMatchObject({
+      section: "In progress",
+      position: 1,
+      status: "in-progress",
+      feature: "372",
+    });
 
     // The lock goes: main's board again, FTP open in Next.
     rmSync(join(root, ".git", "tandem-backlog-run.lock"));
@@ -135,7 +140,11 @@ describe("overlayRunning (pure)", () => {
     running: null,
     sections: [
       { name: "In progress", ordered: true, rows: [row("busy", 1)] },
-      { name: "Next", ordered: true, rows: [{ kind: "note", note: "a note" }, row("a", 1), row("b", 2), row("c", 3)] },
+      {
+        name: "Next",
+        ordered: true,
+        rows: [{ kind: "note", note: "a note" }, row("a", 1), row("b", 2), row("c", 3)],
+      },
       { name: "Inbox", ordered: false, rows: [row("d", null)] },
     ],
   };

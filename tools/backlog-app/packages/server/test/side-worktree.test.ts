@@ -70,7 +70,10 @@ describe("SideWorktree", () => {
     await worktree.ensure();
     const first = await mainCommit();
     // main moves in the primary tree (as a run's fast-forward would).
-    writeFileSync(join(root, "backlog", "RUNS.md"), readFileSync(join(root, "backlog", "RUNS.md"), "utf8") + "\n");
+    writeFileSync(
+      join(root, "backlog", "RUNS.md"),
+      readFileSync(join(root, "backlog", "RUNS.md"), "utf8") + "\n",
+    );
     await gitIn(root, ["commit", "-q", "-am", "moved"]);
     const second = await mainCommit();
     expect(second).not.toBe(first);
@@ -86,7 +89,9 @@ describe("SideWorktree", () => {
     expect(hash).not.toBe(second);
     expect(await worktree.landOnMain(hash, second)).toBe(true);
     expect(await mainCommit()).toBe(hash);
-    expect((await gitIn(root, ["log", "-1", "--format=%s", "main"])).trim()).toBe("backlog(app): a side change");
+    expect((await gitIn(root, ["log", "-1", "--format=%s", "main"])).trim()).toBe(
+      "backlog(app): a side change",
+    );
     expect(await gitIn(root, ["status", "--porcelain"])).toBe("");
     expect(readFileSync(join(root, "backlog", "BACKLOG.md"), "utf8")).not.toContain("<!-- side -->");
   });
@@ -99,7 +104,10 @@ describe("SideWorktree", () => {
     writeFileSync(overview, readFileSync(overview, "utf8") + "\n<!-- side -->\n");
     const hash = await worktree.commit(["backlog/BACKLOG.md"], "backlog(app): late\n");
     // main moved in between (the run's return).
-    writeFileSync(join(root, "backlog", "RUNS.md"), readFileSync(join(root, "backlog", "RUNS.md"), "utf8") + "\n");
+    writeFileSync(
+      join(root, "backlog", "RUNS.md"),
+      readFileSync(join(root, "backlog", "RUNS.md"), "utf8") + "\n",
+    );
     await gitIn(root, ["commit", "-q", "-am", "the run returned"]);
     const moved = await mainCommit();
     expect(await worktree.landOnMain(hash, base)).toBe(false);

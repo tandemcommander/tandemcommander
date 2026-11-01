@@ -54,7 +54,12 @@ export function overlayRunning(board: Board, running: RunningItem | null): Board
     };
   });
   if (!moved) return { ...board, sections, running };
-  const row: ItemRow = { ...(moved as ItemRow), status: "in-progress", feature: running.feature, position: 1 };
+  const row: ItemRow = {
+    ...(moved as ItemRow),
+    status: "in-progress",
+    feature: running.feature,
+    position: 1,
+  };
   return {
     ...board,
     sections: sections.map((section) => {

@@ -47,6 +47,14 @@ export function useChange(onDone?: (result: ChangeResult) => void) {
           description: result.findings.map((f) => `${f.rule}: ${f.message}`).join("\n"),
           duration: 15_000,
         });
+      } else if (result.commit) {
+        // Committed at once (a loop lives, or a run is in progress - feature 371).
+        toast.success(result.change?.summary ?? "Changed", {
+          description:
+            result.channel === "main-ref"
+              ? `Landed on main as ${result.commit.slice(0, 8)}; the run merges it at its end.`
+              : `Committed on main as ${result.commit.slice(0, 8)}.`,
+        });
       } else {
         toast.success(result.change?.summary ?? "Changed");
       }

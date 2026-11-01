@@ -157,12 +157,15 @@ describe("write channels (371)", () => {
     });
     expect((indirect.json as { error: { message: string } }).error.message).toContain(DISK);
     expect((await gitIn(root, ["rev-parse", "main"])).trim()).toBe(mainBefore);
-    expect((await mainSection(root, "Next"))).toContain(FTP);
+    expect(await mainSection(root, "Next")).toContain(FTP);
     // The side worktree is clean again.
     const worktree = app.services.queue.worktree;
     expect(await worktree.changedPaths()).toEqual([]);
     // A reorder naming the frozen item and a bulk change on it are refused too.
-    const order = await app.post("/api/sections/next/order", { base: { board: board.revision }, order: [DISK, FTP] });
+    const order = await app.post("/api/sections/next/order", {
+      base: { board: board.revision },
+      order: [DISK, FTP],
+    });
     expect(order.status).toBe(409);
     const bulk = await app.post("/api/bulk", {
       base: {},
@@ -200,7 +203,10 @@ describe("write channels (371)", () => {
     };
     const board = (await app.get("/api/board")).json as BoardView;
     const item = firstOf(board, "Inbox");
-    const answer = await app.post(`/api/items/${item.slug}/log`, { base: { board: board.revision }, text: "x" });
+    const answer = await app.post(`/api/items/${item.slug}/log`, {
+      base: { board: board.revision },
+      text: "x",
+    });
     expect(answer.status).toBe(409);
     expect((answer.json as { error: { code: string } }).error.code).toBe("changed-underneath");
     expect((await gitIn(root, ["log", "-1", "--format=%s", "main"])).trim()).not.toMatch(/^backlog\(app\)/);
@@ -242,19 +248,27 @@ describe("write channels (371)", () => {
         "--deadline",
         "120",
       ],
-      { stdio: "ignore", windowsHide: true, env: { ...process.env, FAKE_CLAUDE_PLAN: plan, PYTHONUTF8: "1" } },
+      {
+        stdio: "ignore",
+        windowsHide: true,
+        env: { ...process.env, FAKE_CLAUDE_PLAN: plan, PYTHONUTF8: "1" },
+      },
     );
     const until = Date.now() + 30_000;
     for (;;) {
       await app.refresh();
       if (app.services.loop.view?.live && app.services.loop.view.shown === "idle") break;
-      if (Date.now() > until) throw new Error(`the loop did not idle: ${JSON.stringify(app.services.loop.view)}`);
+      if (Date.now() > until)
+        throw new Error(`the loop did not idle: ${JSON.stringify(app.services.loop.view)}`);
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
     expect(app.services.gate()).toMatchObject({ state: "free", channel: "commit", frozenSlug: null });
     const board = (await app.get("/api/board")).json as BoardView;
     const item = firstOf(board, "Inbox");
-    const answer = await app.post(`/api/items/${item.slug}/log`, { base: { board: board.revision }, text: "live" });
+    const answer = await app.post(`/api/items/${item.slug}/log`, {
+      base: { board: board.revision },
+      text: "live",
+    });
     expect(answer.status, JSON.stringify(answer.json)).toBe(200);
     const result = answer.json as ChangeResult;
     expect(result.channel).toBe("commit");

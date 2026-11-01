@@ -73,6 +73,7 @@ export function isBacklogPath(path: string): boolean {
  * @param args - The command.
  * @param texts - The user's texts for stdin.
  * @param failed - How to record a partial write.
+ * @param root - The tree the tool acts on (the primary tree by default).
  * @returns The tool's result and the snapshot taken before (for {@link ChangeTray.record}).
  */
 export async function toolChangeForTray(

@@ -102,11 +102,31 @@ function TrayPanel({
       <SheetContent title={`Uncommitted changes (${pending.length})`}>
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
-            Changes made in the app stay uncommitted until you commit them here. The loop starts only on a
-            clean tree, so they are committed automatically before you start or resume it from the app.
-            Nothing is ever pushed.
+            {access.channel === "main-ref"
+              ? "A run is in progress: every change lands on main at once (one commit each) and the run merges it at its end. There is nothing to commit by hand and no undo."
+              : access.channel === "commit"
+                ? "The loop is alive: every change is committed on main at once (one commit each), so the loop never waits on the app. There is nothing to commit by hand and no undo."
+                : "Changes made in the app stay uncommitted until you commit them here. The loop starts only on a clean tree, so they are committed automatically before you start or resume it from the app. Nothing is ever pushed."}
           </p>
           {pending.length === 0 ? <p className="text-sm">Nothing to commit.</p> : null}
+          {(tray.data?.committedRecently.length ?? 0) > 0 ? (
+            <section aria-label="Committed at once" className="flex flex-col gap-1">
+              <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Committed at once (last hour)
+              </h3>
+              <ol className="flex flex-col gap-1">
+                {tray.data!.committedRecently.map((change) => (
+                  <li key={change.id} className="flex items-start gap-2 rounded-md border p-2 text-sm">
+                    <span className="flex-1">{change.summary}</span>
+                    <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                      {change.commit?.slice(0, 8)}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{relativeTime(change.at)}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
           <ol className="flex flex-col gap-1.5">
             {pending.map((change) => (
               <li key={change.id} className="rounded-md border p-2 text-sm">

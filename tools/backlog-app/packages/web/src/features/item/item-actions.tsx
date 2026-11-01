@@ -38,8 +38,7 @@ import {
   Tooltip,
 } from "@/components/ui/overlays.tsx";
 import { useBoard, useLegend } from "@/lib/queries.ts";
-import { useAppStore } from "@/app/store.ts";
-import { useWriteAccess } from "@/features/gate/gate-banner.tsx";
+import { itemReason, useWriteAccess } from "@/features/gate/gate-banner.tsx";
 import {
   DecideDialog,
   FieldsDialog,
@@ -98,14 +97,9 @@ export function ItemActions({ item }: { /** The item. */ item: Item }) {
   const board = useBoard("");
   const legend = useLegend();
   const navigate = useNavigate();
-  const loop = useAppStore((s) => s.state?.loop ?? null);
   const reply = useChange();
-  const running = loop?.lock?.slug === item.slug || loop?.slug === item.slug;
-  const reason = running
-    ? "a run works on this item - it is never changed meanwhile"
-    : access.writable
-      ? ""
-      : access.reason;
+  // The item a run works on is frozen (the gate's `frozenSlug`, feature 371).
+  const reason = itemReason(access, item.slug);
   const props = {
     item,
     boardRevision: board.data?.revision ?? null,

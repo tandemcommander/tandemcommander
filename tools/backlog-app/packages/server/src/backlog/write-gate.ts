@@ -117,12 +117,7 @@ export function computeGate(inputs: GateInputs): WriteGate {
         frozen,
       );
     }
-    return gate(
-      "free",
-      "",
-      "main-ref",
-      frozen,
-    );
+    return gate("free", "", "main-ref", frozen);
   }
   // 9: the loop's own auto-triage, or a hard stop being handled.
   if (loop.shown === "triage" || loop.shown === "kill-pending") {

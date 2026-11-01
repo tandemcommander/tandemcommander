@@ -199,6 +199,7 @@ export class BacklogTool {
    * @param globalArgs - Global options before the command (`--json`, `--input-json -`, `--ref R`).
    * @param args - The command and its arguments (validated values only).
    * @param stdin - JSON text for `--input-json -`.
+   * @param root - The tree the tool acts on (default: this adapter's root).
    * @returns Exit code and output.
    */
   private async run(globalArgs: string[], args: string[], stdin?: string, root: string = this.root) {
@@ -344,6 +345,7 @@ export class BacklogTool {
    * What the next autonomous run would take.
    *
    * @param ref - Where to read from.
+   * @param except - An item left out of the search (the one a run works on), or null.
    * @returns The next-up answer.
    */
   async next(ref: ReadRef, except: string | null = null): Promise<NextUp> {
@@ -377,6 +379,7 @@ export class BacklogTool {
    *
    * @param args - The command, the slug and validated non-text options.
    * @param texts - Text fields for `--input-json -` (omitted when empty).
+   * @param options - `root`: another tree to act on (the side worktree of feature 371).
    * @returns The change.
    * @throws ApiError `refused` (nothing written; the tool's text verbatim) or `tool-failed`.
    */

@@ -10,7 +10,7 @@
 
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CheckSquareIcon, ExternalLinkIcon, SquareIcon } from "lucide-react";
+import { CheckSquareIcon, ExternalLinkIcon, MessageSquareTextIcon, SquareIcon } from "lucide-react";
 import { useState } from "react";
 import type { Item } from "@backlog-app/shared";
 import { SeverityBadge, StatusBadge, TypeBadge } from "@/components/badges.tsx";
@@ -25,8 +25,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/overlays.tsx";
 import { apiGet, ApiFailure } from "@/lib/api.ts";
-import { useItem, useItemHistory } from "@/lib/queries.ts";
+import { useBoard, useItem, useItemHistory } from "@/lib/queries.ts";
 import { relativeTime } from "@/lib/utils.ts";
+import { Button } from "@/components/ui/button.tsx";
+import { ORDERED_SECTION_ARG, PositionField } from "@/features/backlog/position-field.tsx";
 import { ItemActions } from "./item-actions.tsx";
 import { ItemRuns } from "./item-runs.tsx";
 
@@ -251,6 +253,8 @@ export function ItemView({
   onTab?: (tab: string) => void;
 }) {
   const item = useItem(slug);
+  // The item a run works on (the board's overlay, feature 371).
+  const running = useBoard("").data?.running ?? null;
   // The item page keeps the open tab in its address (`tab` + `onTab`); the detail panes of the
   // backlog and triage pages pass neither, so the view keeps the tab itself. (A controlled value
   // without a handler froze the tabs on Description: clicks changed nothing.)
@@ -316,6 +320,22 @@ export function ItemView({
           </Link>
         ) : null}
         {data.reason ? <Alert tone={data.status === "blocked" ? "warn" : "info"}>{data.reason}</Alert> : null}
+        {running && running.slug === slug ? (
+          <Alert tone="info">
+            A run works on this item{running.feature ? ` as feature ${running.feature}` : ""} (branch{" "}
+            {running.branch}, since {relativeTime(running.started)}). Nothing of it is changed meanwhile.{" "}
+            <Link to="/live" className="font-medium text-primary underline">
+              Open the live run
+            </Link>
+            .
+          </Alert>
+        ) : null}
+        {!compact && data.section && ORDERED_SECTION_ARG[data.section] ? (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Position in {data.section}:</span>
+            <PositionField slug={slug} section={data.section} position={data.position} />
+          </div>
+        ) : null}
         <dl className="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-2">
           <Field label="Who">{data.who}</Field>
           <Field label="Effort">{data.effort}</Field>
@@ -346,7 +366,22 @@ export function ItemView({
             Check findings: {data.findings.map((f) => `${f.rule}: ${f.message}`).join("; ")}
           </Alert>
         ) : null}
-        <ItemActions item={data} />
+        <div className="flex flex-wrap items-center gap-2">
+          <ItemActions item={data} />
+          {!compact ? (
+            <Button asChild size="sm" variant="outline">
+              {/* A plain link: the conversation page opens in its own window (feature 371). */}
+              <a
+                href={`/items/${slug}/chat`}
+                target="_blank"
+                rel="noopener"
+                aria-label="Chat about this item"
+              >
+                <MessageSquareTextIcon /> Chat about this item
+              </a>
+            </Button>
+          ) : null}
+        </div>
       </header>
       <Tabs value={openTab} onValueChange={(value) => (onTab ? onTab(value) : setOwnTab(value))}>
         <TabsList>

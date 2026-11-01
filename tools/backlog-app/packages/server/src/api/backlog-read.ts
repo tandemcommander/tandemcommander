@@ -126,7 +126,13 @@ export function backlogReadRoutes(services: Services): Hono {
     // The item a run works on is in progress, whatever `main` says (feature 371, research R6).
     const running = services.running();
     if (running && running.slug === slug) {
-      return c.json({ ...item, section: "In progress", position: 1, status: "in-progress", feature: running.feature });
+      return c.json({
+        ...item,
+        section: "In progress",
+        position: 1,
+        status: "in-progress",
+        feature: running.feature,
+      });
     }
     return c.json(item);
   });
