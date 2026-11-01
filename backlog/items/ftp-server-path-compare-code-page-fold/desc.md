@@ -7,8 +7,8 @@ area: ftp
 source: review:277
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-11-01
+verified: 2026-11-01 6428f7e9
 effort: M
 feature: -
 related: []
@@ -41,3 +41,4 @@ Severity 4: a wrong "same folder" answer needs non-ASCII folder names on a case-
 
 - 2026-10-21 — created (source review:277)
 - 2026-10-21 — moved to Next position 16
+- 2026-11-01 — verified at 6428f7e9: still present at 6428f7e9: FTPIsPrefixOfServerPath folds UTF-8 bytes by CharLowerA (ACP 1250: C-caron != c-caron, C-caron == G-circumflex); callers enumerated
