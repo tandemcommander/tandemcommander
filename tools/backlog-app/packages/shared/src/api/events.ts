@@ -21,6 +21,7 @@ export const APP_EVENT_NAMES = [
   "tray.changed",
   "check.changed",
   "job.changed",
+  "chat.changed",
   "notify",
   "ping",
 ] as const;

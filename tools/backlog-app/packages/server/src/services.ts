@@ -28,6 +28,7 @@ import { Notifications } from "./events/notifications.ts";
 import { FeaturesService } from "./features/records.ts";
 import { ReleaseService } from "./features/release.ts";
 import { AiJobRunner } from "./ai/runner.ts";
+import { ChatService } from "./chat/service.ts";
 import type { SessionAuth } from "./gate/token.ts";
 
 /** All services of one server process. */
@@ -80,6 +81,9 @@ export class Services {
   /** AI jobs through the local claude CLI (one at a time). */
   readonly ai: AiJobRunner;
 
+  /** Conversations with Claude about items (feature 371). */
+  readonly chat: ChatService;
+
   /** The last published gate (to publish only changes). */
   private lastGate = "";
 
@@ -126,6 +130,7 @@ export class Services {
     this.features = new FeaturesService(this);
     this.release = new ReleaseService(this);
     this.ai = new AiJobRunner(this);
+    this.chat = new ChatService(this);
     this.runs.onEnded = (id) => this.announceRunEnd(id);
   }
 
@@ -253,6 +258,7 @@ export class Services {
   async stopAndDrain(): Promise<void> {
     this.stop();
     await this.ai.stop();
+    await this.chat.stopAll();
     await this.queue.idle();
     await Promise.all([
       this.repo.idle(),

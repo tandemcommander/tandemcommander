@@ -53,3 +53,19 @@ Running log of the work (project rule: keep it while working). Newest entries at
   running-item overlay (`Board.running`, next up without it, the item detail) - 4 tests; the
   write-channel tests (7) run a real idle loop for the `commit` channel. The AI apply step and
   the AI runner follow the new gate (`free` only).
+
+## 2026-11-01 - state at the usage limit (the session was cut here)
+
+Done and committed: Phase 1, Phase 2, US1 (server + web + skills), US2 (overlay), US3 (position
+field, Move to the top; e2e `us3-order` 8/8 green incl. the new position test), the chat server
+(`chat/service.ts`, `chat/context.ts`, `api/chat.ts`, `prompts/chat.md`), the chat page, route
+and bare layout, the chat budget setting, `fake-claude-chat.mjs`, `chat.test.ts` (written, NOT
+yet run), `us1-live-edit.spec.ts` (last run: everything up to the frozen item's page passed; the
+assertion on the Block button was wrong - an in-progress item has no Block button - fixed to
+"Edit text", NOT re-run). Typecheck green; lint/prettier not re-run after the chat files.
+
+Left (tasks.md): T021-T026 partly (banner/tray done; soak T026 not written), T029-T031 (US2 web
+done, e2e assertion fixed), T036-T044 (chat: tests to run, lint, e2e `us4-chat.spec.ts` to
+write), T045-T049 (revision browse, docs, full `npm run check` + `npm run test:e2e`, review,
+history entry, closing report). Next commands: `npm run check`, `npx vitest run
+packages/server/test/chat.test.ts`, `npx playwright test e2e/us1-live-edit.spec.ts`.

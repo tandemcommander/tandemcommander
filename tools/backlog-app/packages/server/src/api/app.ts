@@ -29,6 +29,7 @@ import { backlogWriteRoutes } from "./backlog-write.ts";
 import { runRoutes } from "./runs.ts";
 import { featureRoutes } from "./features.ts";
 import { aiRoutes } from "./ai.ts";
+import { chatRoutes } from "./chat.ts";
 import { errorAnswer, readBody } from "./common.ts";
 
 /** Milliseconds between keep-alive pings on an event stream. */
@@ -147,6 +148,7 @@ export function createApi(services: Services): Hono {
   app.route("/", runRoutes(services));
   app.route("/", featureRoutes(services, services.features, services.release));
   app.route("/", aiRoutes(services, services.ai));
+  app.route("/", chatRoutes(services));
 
   // --- the loop (research R13) ---
   app.get("/loop", async (c) => {

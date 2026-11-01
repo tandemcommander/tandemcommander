@@ -28,6 +28,11 @@ export interface ProcessOptions {
   cwd: string;
   /** Text written to stdin and then closed; absent = stdin closed immediately. */
   stdin?: string;
+  /**
+   * Keep stdin open as a pipe the caller writes to (a conversation with claude in stream-json
+   * mode, feature 371); the caller ends it. Ignored when `stdin` is given.
+   */
+  stdinPipe?: boolean;
   /** Extra environment variables (merged over the server's environment). */
   env?: Record<string, string>;
   /** Kill the process tree after this many milliseconds (default: no limit). */
@@ -151,7 +156,7 @@ export function startProcess(file: string, args: readonly string[], options: Pro
     cwd: options.cwd,
     env: childEnvironment(options.env),
     windowsHide: true,
-    stdio: [options.stdin === undefined ? "ignore" : "pipe", "pipe", "pipe"],
+    stdio: [options.stdin === undefined && !options.stdinPipe ? "ignore" : "pipe", "pipe", "pipe"],
   });
   if (child.pid !== undefined) {
     liveChildren.add(child.pid);

@@ -147,6 +147,8 @@ test("Q11/Q12: the tray undoes with Ctrl+Z and commits only backlog/ with the ap
   await expectNextOrder([before[1]!, before[0]!, ...before.slice(2)]);
   await page.locator("body").press("Control+z");
   await expectNextOrder(before);
+  // The page must show the restored order before the next key press computes from it.
+  await expect(page.locator("tbody tr").first()).toHaveAttribute("data-slug", before[0]!, { timeout: 15_000 });
   // A new change, then the commit through the tray.
   await page.locator(`tr[data-slug="${before[2]}"]`).click();
   await page.locator("body").press("Alt+ArrowUp");
@@ -162,15 +164,51 @@ test("Q11/Q12: the tray undoes with Ctrl+Z and commits only backlog/ with the ap
   expect(git(fixture.root, ["status", "--porcelain"])).toContain("unrelated.txt");
 });
 
-test("Q9: while a run holds the lock the backlog is read-only and read from main", async ({ page }) => {
+test("Q9: a run's lock with the tree on main is read-only for the moment, read from main", async ({ page }) => {
+  // The lock's time is computed: a fixed date turned stale after 24 hours (feature 371, R9).
+  const now = new Date();
+  const pad = (n: number): string => String(n).padStart(2, "0");
+  const started = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
   writeFileSync(
     join(fixture.root, ".git", "tandem-backlog-run.lock"),
-    "started: 2026-10-30T10:00:00\nslug: e2e-beta-item\nbranch: 345-e2e\nhost: test\n",
+    `started: ${started}\nslug: e2e-beta-item\nbranch: 345-e2e\nhost: test\n`,
   );
   await openApp(page, app, "/items/e2e-alpha-item");
-  await expect(page.getByRole("status").filter({ hasText: "Read-only" })).toContainText("holds the lock");
+  await expect(page.getByRole("status").filter({ hasText: "Read-only" })).toContainText("is on main");
   await expect(page.getByRole("button", { name: "Block" })).toBeDisabled();
   await expect(page.getByText("read from main")).toBeVisible();
+});
+
+test("371: a typed position and Move to the top on the item page and in the table", async ({ page }) => {
+  // Next: disk (blocked) #1, ftp #2, alpha #3, beta #4, gamma #5.
+  const before = sectionOrder(fixture.root, "next");
+  expect(before.indexOf("e2e-alpha-item")).toBe(2);
+  await openApp(page, app, "/items/e2e-alpha-item");
+  const field = page.getByLabel("Position of e2e-alpha-item");
+  await expect(field).toHaveValue("3", { timeout: 15_000 });
+  await field.fill("5");
+  await field.press("Enter");
+  await expectNextOrder([before[0]!, before[1]!, before[3]!, before[4]!, "e2e-alpha-item"]);
+  await expect(field).toHaveValue("5", { timeout: 15_000 });
+  // Larger than the section: last (unchanged here); text: refused with a hint, nothing changes.
+  await field.fill("x");
+  await field.press("Enter");
+  await expect(page.getByText("type a whole number: 1 is the top")).toBeVisible();
+  expect(sectionOrder(fixture.root, "next").at(-1)).toBe("e2e-alpha-item");
+  await page.getByRole("button", { name: "Move e2e-alpha-item to the top" }).click();
+  await expectNextOrder(["e2e-alpha-item", before[0]!, before[1]!, before[3]!, before[4]!]);
+  await expect(field).toHaveValue("1", { timeout: 15_000 });
+  // The table: the position cell of beta opens the field; 2 puts beta right after alpha.
+  await page.goto(`${app.base}/backlog/next`);
+  await shownNext(page);
+  await page.getByRole("button", { name: /Position \d of E2E e2e-beta-item/ }).click();
+  const cell = page.getByLabel("Position of e2e-beta-item");
+  await cell.fill("2");
+  await cell.press("Enter");
+  await expectNextOrder(["e2e-alpha-item", "e2e-beta-item", before[0]!, before[1]!, before[4]!]);
+  // No log line per position change (a reorder, like a drag).
+  const shown = JSON.parse(backlog(fixture.root, ["show", "e2e-alpha-item", "--json"])) as { log: unknown[] };
+  expect(shown.log.length).toBe(2);
 });
 
 test("bulk: block two marked items, one result per item", async ({ page }) => {

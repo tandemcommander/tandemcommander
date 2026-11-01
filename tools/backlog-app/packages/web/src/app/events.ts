@@ -73,6 +73,11 @@ export function connectAppEvents(queryClient: QueryClient): () => void {
         case "job.changed":
           void queryClient.invalidateQueries({ queryKey: ["jobs"] });
           break;
+        case "chat.changed":
+          // A reply started or ended (feature 371): the conversation page and the item page
+          // re-fetch the transcript.
+          void queryClient.invalidateQueries({ queryKey: ["chat", (data as { slug: string }).slug] });
+          break;
         case "notify": {
           const notification = data as NotificationEvent;
           const show =

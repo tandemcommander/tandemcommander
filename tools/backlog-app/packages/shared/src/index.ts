@@ -12,6 +12,7 @@ export * from "./schemas/loop.ts";
 export * from "./schemas/runs.ts";
 export * from "./schemas/app-state.ts";
 export * from "./schemas/ai.ts";
+export * from "./schemas/chat.ts";
 export * from "./api/errors.ts";
 export * from "./api/requests.ts";
 export * from "./api/events.ts";

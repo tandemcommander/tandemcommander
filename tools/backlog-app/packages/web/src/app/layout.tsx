@@ -263,6 +263,8 @@ export function Layout() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const bare = /^\/items\/[a-z0-9-]+\/chat\/?$/.test(pathname);
 
   const shortcuts = useMemo<Shortcut[]>(
     () => [
@@ -292,6 +294,9 @@ export function Layout() {
       </FullPageMessage>
     );
   }
+  // The conversation page (feature 371) opens in its own window and uses the whole page: no
+  // sidebar, no top bar.
+  if (bare) return <Outlet />;
 
   return (
     <div

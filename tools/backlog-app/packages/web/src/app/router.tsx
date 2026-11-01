@@ -26,6 +26,7 @@ import { NewItemPage } from "@/features/new-item/new-item-page.tsx";
 import { FeaturesPage, FeaturePage } from "@/features/features/feature-page.tsx";
 import { ReleasePage } from "@/features/release/release-page.tsx";
 import { AskPage } from "@/features/ask/ask-page.tsx";
+import { ChatPage } from "@/features/chat/chat-page.tsx";
 
 /**
  * Reads a string search parameter.
@@ -57,6 +58,13 @@ const itemRoute = createRoute({
   path: "/items/$slug",
   validateSearch: (search: Record<string, unknown>) => ({ tab: text(search["tab"]) }),
   component: ItemPage,
+});
+
+/** The conversation about one item, in its own window (feature 371; the layout renders no frame). */
+const chatRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/items/$slug/chat",
+  component: ChatPage,
 });
 
 /** The closed-items archive. */
@@ -158,6 +166,7 @@ const routeTree = rootRoute.addChildren([
   homeRoute,
   backlogRoute,
   itemRoute,
+  chatRoute,
   closedRoute,
   closedItemRoute,
   checkRoute,

@@ -235,6 +235,18 @@ export function SettingsPage() {
               onChange={(e) => set({ aiBudgetUsd: Number(e.target.value) })}
             />
           </div>
+          <div>
+            <Label htmlFor="chat-budget">Chat budget per conversation (USD)</Label>
+            <Input
+              id="chat-budget"
+              type="number"
+              min={0.5}
+              max={50}
+              step={0.5}
+              value={draft.chatBudgetUsd}
+              onChange={(e) => set({ chatBudgetUsd: Number(e.target.value) })}
+            />
+          </div>
         </div>
       </Card>
       <div className="flex justify-end">

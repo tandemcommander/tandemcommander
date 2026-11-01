@@ -132,7 +132,7 @@ export function claudeArgs(kind: AiJobKind, budgetUsd: number, model: string | n
  * @param kind - The job kind.
  * @returns The Markdown text.
  */
-export function promptPreamble(kind: AiJobKind): string {
+export function promptPreamble(kind: AiJobKind | "chat"): string {
   const text = readFileSync(fileURLToPath(new URL(`./prompts/${kind}.md`, import.meta.url)), "utf8");
   return text.replace(/^<!--[\s\S]*?-->\s*/, "").trim();
 }
