@@ -1,7 +1,7 @@
 ---
 title: FTP: upload listing cache lookup remembers a slot number instead of the listing index
 type: tech-debt
-status: new
+status: open
 severity: 1
 area: ftp
 source: review:385
@@ -37,3 +37,4 @@ Severity 1: internal tidiness - the lookup still returns the right listing; it o
 ## Log
 
 - 2026-11-02 — created (source review:385)
+- 2026-11-02 — moved to Next

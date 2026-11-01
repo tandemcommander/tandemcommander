@@ -11,7 +11,7 @@ changing command of the tool runs it). Manage the backlog with
 Formats: `specs/242-backlog-system/contracts/`. Runs: `RUNS.md`. Release
 procedure: `RELEASE.md`.
 
-Last triaged: 2026-11-01
+Last triaged: 2026-11-02
 
 ## In progress
 
@@ -169,6 +169,7 @@ Last triaged: 2026-11-01
 | 145 | [Plug-in interface does not say that column names are code-page text](items/plug-in-interface-does-not-say-that-column-names-are-code/desc.md) | tech-debt | 1 | plugin-api | agent | S | open |
 | 146 | [Loop tool tests leave a temporary git folder behind on every test](items/loop-tool-tests-leave-a-temporary-git-folder-behind-on-every/desc.md) | tech-debt | 1 | tooling | agent | S | open |
 | 147 | [The 081 Markdown Viewer probe takes a window with an empty title for the viewer](items/the-081-markdown-viewer-probe-takes-a-window-with-an-empty/desc.md) | tech-debt | 1 | tooling | agent | S | open |
+| 148 | [FTP: upload listing cache lookup remembers a slot number instead of the listing index](items/ftp-upload-listing-cache-lookup-remembers-a-slot-number/desc.md) | tech-debt | 1 | ftp | agent | S | open |
 
 ## Decisions for the maintainer
 
@@ -297,7 +298,6 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
-| [FTP: upload listing cache lookup remembers a slot number instead of the listing index](items/ftp-upload-listing-cache-lookup-remembers-a-slot-number/desc.md) | tech-debt | 1 | ftp | review:385 | 2026-11-02 |
 
 ## Parked
 
