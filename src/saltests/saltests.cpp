@@ -114,6 +114,7 @@
 #include "salisoudfentry.h"    // feature 361
 #include "salrenamekey.h"      // feature 346
 #include "salbkgndcheck.h"     // feature 372
+#include "salclipcheck.h"      // feature 375
 #include "salwsl.h"            // feature 374
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
@@ -23006,6 +23007,35 @@ static void TestBkgndPathCheck372()
     CHECK(SalBkgndCheckAbandon(SAL_BKCHK_ABANDON_MS, FALSE));
 }
 
+// feature 375: later looks at a clipboard another program kept open (src/common/salclipcheck.h)
+static void TestClipCheck375()
+{
+    int r = 7;
+    // a free clipboard ends the series, whoever asked
+    CHECK(SalClipCheckNextLook(FALSE, FALSE, &r) == 0 && r == 0);
+    r = 7;
+    CHECK(SalClipCheckNextLook(FALSE, TRUE, &r) == 0 && r == 0);
+    // a busy clipboard at a trigger (activation, menu, ...) starts a new series, also after an exhausted one
+    r = SAL_CLIPCHECK_MAX_RETRIES;
+    CHECK(SalClipCheckNextLook(TRUE, FALSE, &r) == SAL_CLIPCHECK_RETRY_MS && r == 1);
+    // the looks of a series: exactly SAL_CLIPCHECK_MAX_RETRIES, then none
+    r = 0;
+    CHECK(SalClipCheckNextLook(TRUE, FALSE, &r) == SAL_CLIPCHECK_RETRY_MS);
+    int looks = 1;
+    while (looks < 100 && SalClipCheckNextLook(TRUE, TRUE, &r) != 0)
+        looks++;
+    CHECK(looks == SAL_CLIPCHECK_MAX_RETRIES);
+    CHECK(r == SAL_CLIPCHECK_MAX_RETRIES);
+    CHECK(SalClipCheckNextLook(TRUE, TRUE, &r) == 0 && r == SAL_CLIPCHECK_MAX_RETRIES); // stays exhausted
+    // a look in the middle of a series
+    r = 3;
+    CHECK(SalClipCheckNextLook(TRUE, TRUE, &r) == SAL_CLIPCHECK_RETRY_MS && r == 4);
+    r = SAL_CLIPCHECK_MAX_RETRIES - 1;
+    CHECK(SalClipCheckNextLook(TRUE, TRUE, &r) == SAL_CLIPCHECK_RETRY_MS && r == SAL_CLIPCHECK_MAX_RETRIES);
+    // the bounds of the series (5 s at most, a look below the perceptible wait)
+    CHECK(SAL_CLIPCHECK_RETRY_MS * SAL_CLIPCHECK_MAX_RETRIES == 5000);
+}
+
 static void TestHfsFileContent339()
 {
     const unsigned reg = 0100644, noMode = 0, typeOnly = 0100000, lnk = 0120755;
@@ -24600,6 +24630,7 @@ int main(int argc, char** argv)
     TestIsoSessionDump_370();
     TestRenameInPlaceKey346();
     TestBkgndPathCheck372();
+    TestClipCheck375();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

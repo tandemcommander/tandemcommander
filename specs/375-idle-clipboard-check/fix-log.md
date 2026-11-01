@@ -67,3 +67,49 @@ user's *Restore Selection* command opening a dialog) - the latter keeps its retr
 `IdleCheckClipboard = TRUE` is set by 19 sites (activation, dialogs closing, paste operations,
 ...); no clipboard change listener exists (`grep WM_CLIPBOARDUPDATE|WM_DRAWCLIPBOARD`: none).
 `WM_USER_ENTERMENULOOP` calls `OnEnterIdle` so menus show fresh enablers.
+
+## speckit-analyze
+
+- Pass 1: 0 CRITICAL, 0 HIGH. LOW C1 (FR-004 has no dedicated task - the success path of the
+  query is unchanged; the review checks it) and LOW C2 (SC-004 is a person step) accepted.
+
+## Implementation
+
+- `src/common/salclipcheck.h` (new): `SalClipCheckNextLook(busy, wasRetry, &retries)` - the delay of
+  the next look (500 ms, at most 10 in a series; a free clipboard or a non-retry check resets).
+- `src/fileswn9.cpp` / `fileswnd.h`: `IsTextOnClipboard(BOOL noWait = FALSE, BOOL* busy = NULL)` -
+  with `noWait` a failed `OpenClipboard` ends the loop at once (FALSE, `*busy = TRUE`); without it
+  (default, `RestoreGlobalSelection`) the 10 x `Sleep(10)` retry is unchanged.
+- `src/mainwnd1.cpp` (`CMainWindow_RefreshCommandStates`): the text query in the no-wait form; then
+  the rule decides; `SetTimer(main, IDT_CLIPCHECKRETRY, 500)` or `KillTimer` of a pending one.
+  The other three queries and every result are unchanged (a busy clipboard gives FALSE for all,
+  as today after the wait).
+- `src/mainwnd3.cpp`: `WM_TIMER` `IDT_CLIPCHECKRETRY` -> kill, mark retry, request the check
+  (`IdleRefreshStates`, `IdleCheckClipboard`); `WM_USER_ENTERMENULOOP` with a look pending ->
+  request the check before its `OnEnterIdle` (the menu shows the current clipboard).
+- `src/consts.h`, `src/salamdr1.cpp`: `IDT_CLIPCHECKRETRY` (956, unused before) and the three
+  globals of the series.
+- No UI string, menu or dialog changed: no `.slt` refresh (stop-rules §2.13 does not apply).
+
+## Checks
+
+| Check | Command | Result |
+|---|---|---|
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| build | `.\build.cmd` (Debug x64) | `BUILD SUCCEEDED` (3 warnings, all in untouched lines of `salamdr2.cpp` / `zip.cpp`) |
+| unit rules | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 30237 checks, 0 failed` (`TestClipCheck375`) |
+| probe | `act375_probe.ps1 -Label after` on the hidden desktop | PASS 4, FAIL 0 (`probe/result_after.txt`) |
+
+### Probe after the change (`probe/result_after.txt`)
+
+| Row | Before (`result_before.txt`) | After |
+|---|---|---|
+| FREE | longest 0.4-2.3 ms | 0.3-2.2 ms |
+| HELD | 15+140..142 ms on 5 of 5 activations (FAIL) | 0.4-1.5 ms, no wait > 16 ms (PASS) |
+
+Registry restored, identical SHA-256. Negative control: the same probe on the build of `main`
+(`result_before.txt`) fails HELD - the row detects the defect.
+
+NOT DRIVEN: the enabled state of the paste commands (the program's own menus and toolbars cannot
+be read on the hidden desktop) - the later looks are covered by `TestClipCheck375` and owed to a
+person on a real desktop (T012 -> person-step item at closing).

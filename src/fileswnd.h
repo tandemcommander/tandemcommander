@@ -1611,7 +1611,9 @@ public:
     BOOL ClipboardPaste(BOOL onlyLinks = FALSE, BOOL onlyTest = FALSE, const char* pastePath = NULL);
     BOOL ClipboardPasteToArcOrFS(BOOL onlyTest, DWORD* pasteDefEffect); // 'pasteDefEffect' may be NULL
     BOOL ClipboardPasteLinks(BOOL onlyTest = FALSE);
-    BOOL IsTextOnClipboard();
+    // 'noWait' (feature 375, the idle check): one attempt to open the clipboard, no waiting for a
+    // program that keeps it open; then *busy = TRUE (when 'busy' is not NULL) and FALSE is returned
+    BOOL IsTextOnClipboard(BOOL noWait = FALSE, BOOL* busy = NULL);
     void ClipboardPastePath(); // for changing the current directory
 
     // postprocesses of the user provided path: trims surrounding white spaces and quotes, removes file:// and

@@ -411,6 +411,9 @@ SYSTEMTIME BETA_EXPIRATION_DATE = {2020, 2, 0, 1, 0, 0, 0, 0};
 BOOL IdleRefreshStates = TRUE;  // na uvod nechame nastavit promenne
 BOOL IdleForceRefresh = FALSE;  // vyradi cache Enabler*
 BOOL IdleCheckClipboard = TRUE; // koukneme taky na clipboard
+BOOL IdleClipCheckIsRetry = FALSE;      // feature 375
+int IdleClipCheckRetries = 0;           // feature 375
+BOOL IdleClipCheckRetryPending = FALSE; // feature 375
 
 DWORD EnablerUpDir = FALSE;
 DWORD EnablerRootDir = FALSE;

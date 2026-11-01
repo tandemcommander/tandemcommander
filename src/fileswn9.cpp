@@ -602,9 +602,9 @@ BOOL CFilesWindow::ClipboardPasteLinks(BOOL onlyTest)
     return ClipboardPaste(TRUE, onlyTest);
 }
 
-BOOL CFilesWindow::IsTextOnClipboard()
+BOOL CFilesWindow::IsTextOnClipboard(BOOL noWait, BOOL* busy)
 {
-    CALL_STACK_MESSAGE1("CFilesWindow::IsTextOnClipboard()");
+    CALL_STACK_MESSAGE2("CFilesWindow::IsTextOnClipboard(%d,)", noWait);
     BOOL text = FALSE;
 
     int attempt = 1;
@@ -627,6 +627,12 @@ BOOL CFilesWindow::IsTextOnClipboard()
         }
         else
         {
+            if (noWait) // feature 375: the idle check never waits for a clipboard another program keeps open
+            {
+                if (busy != NULL)
+                    *busy = TRUE; // the caller looks again later (src/common/salclipcheck.h)
+                break;            // FALSE, as when the retries below give up
+            }
             if (attempt++ <= 10)
                 Sleep(10); // wait to see if the clipboard gets released (max. 100 ms)
             else

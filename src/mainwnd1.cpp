@@ -21,6 +21,7 @@
 #include "gui.h"
 #include "execute.h"
 #include "jumplist.h"
+#include "salclipcheck.h" // feature 375
 
 #include "versinfo.rh2"
 
@@ -2971,10 +2972,26 @@ void CMainWindow_RefreshCommandStates(CMainWindow* obj)
         if (IdleCheckClipboard)
         {
             IdleCheckClipboard = FALSE; // clear the control variable
+            BOOL clipBusy = FALSE;      // feature 375: another program keeps the clipboard open
             pasteFiles = activePanel->ClipboardPaste(FALSE, TRUE);
-            pastePath = activePanel->IsTextOnClipboard();
+            pastePath = activePanel->IsTextOnClipboard(TRUE /* no wait */, &clipBusy);
             pasteLinks = activePanel->ClipboardPasteLinks(TRUE);
             pasteSimpleFiles = activePanel->ClipboardPasteToArcOrFS(TRUE, &pasteDefEffect);
+
+            // feature 375: a busy clipboard is looked at again later (a bounded series) instead of
+            // waiting for it here - the wait blocked every activation ~150 ms
+            UINT nextLook = SalClipCheckNextLook(clipBusy, IdleClipCheckIsRetry, &IdleClipCheckRetries);
+            IdleClipCheckIsRetry = FALSE;
+            if (nextLook != 0)
+                IdleClipCheckRetryPending = SetTimer(obj->HWindow, IDT_CLIPCHECKRETRY, nextLook, NULL) != 0;
+            else
+            {
+                if (IdleClipCheckRetryPending)
+                {
+                    KillTimer(obj->HWindow, IDT_CLIPCHECKRETRY);
+                    IdleClipCheckRetryPending = FALSE;
+                }
+            }
         }
 
         // compute the value of pasteFilesToArcOrFS

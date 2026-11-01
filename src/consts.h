@@ -1982,6 +1982,7 @@ DWORD CfgSkillLevelToMenu(BYTE cfgSkillLevel);
 #define IDT_CFGIMPORT_OFFER 953 // feature 245: retry showing the settings import offer (main window)
 #define IDT_CFGMIGRATE_FAILED 954 // feature 343: retry showing the failed configuration move message (main window)
 #define IDT_AUTOREFRESHVERIFY 955 // feature 372: a panel without automatic refresh checks its folder 400 ms after a refresh (panel)
+#define IDT_CLIPCHECKRETRY 956    // feature 375: look again at a clipboard another program kept open (main window)
 
 // POZOR: skoro vsechny funkce v teto sekci pri chybe zobrazuji hlaseni o LOAD / SAVE
 //        konfigurace, coz z nich dela nevhodne pro bezny pristup do Registry,
@@ -2097,6 +2098,10 @@ DWORD UpdateCrc32(const void* buffer, DWORD count, DWORD crcVal);
 extern BOOL IdleRefreshStates;  // pokud je nastavena, budou pri nejblizim CMainWindow::OnEnterIdle vytazeny stavove promenne pro commandy (toolbar, menu)
 extern BOOL IdleForceRefresh;   // je-li nastavena IdleRefreshStates, nastaveni promenne IdleForceRefresh vyradi cache na urovni Salamandera
 extern BOOL IdleCheckClipboard; // pokud je IdleRefreshStates==TRUE a zaroven je nastavena tato promenna, bude se kontrolovat tak clipboard (casove narocne)
+// feature 375: later looks at a clipboard that another program kept open (src/common/salclipcheck.h)
+extern BOOL IdleClipCheckIsRetry;      // the pending clipboard check was requested by IDT_CLIPCHECKRETRY
+extern int IdleClipCheckRetries;       // looks of the current series
+extern BOOL IdleClipCheckRetryPending; // IDT_CLIPCHECKRETRY is set on the main window
 
 // ".." neni pocitano mezi soubory|adresare
 extern DWORD EnablerUpDir;                // existuje parent directory?
