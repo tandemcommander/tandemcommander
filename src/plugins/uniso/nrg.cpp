@@ -384,14 +384,27 @@ readSINF(CFile& file, NRGHeader* header, CISOImage* iso)
 {
     CALL_STACK_MESSAGE3("readSINF(, %p, %p)", header, iso);
 
-    DWORD read;
-    DWORD count;
-
-    if (!file.Read(&count, sizeof(count), &read, NULL, NULL))
+    // feature 369: the chunk's size comes from the image - the reader always took 4 bytes, so a chunk of
+    // another size made the loop read the next chunk header from inside this one (or the next one) and the
+    // rest of the table was misread (a session lost, "Unknown track type."), and a short read left the
+    // count unset. Now the count is taken only from a chunk of exactly 4 bytes within the image, read
+    // whole; any other chunk gives no count and marks the listing incomplete (a whole unpack fails, the
+    // image is kept). ReadNRGRoot reads the next chunk header at this chunk's end
+    DWORD fileSizeHi;
+    DWORD fileSizeLo = file.GetFileSize(&fileSizeHi);
+    __int64 pos = file.Seek(0, FILE_CURRENT);
+    DWORD read = 0;
+    BYTE data[SAL_NRG_SINF_SIZE];
+    if (fileSizeLo == INVALID_FILE_SIZE || pos < 0 || // (as ReadSessionNRG)
+        !SalNrgSinfUsable((unsigned long long)pos, header->Size, ((unsigned long long)fileSizeHi << 32) | fileSizeLo) ||
+        !file.Read(data, sizeof(data), &read, NULL, NULL) || read != sizeof(data))
+    {
+        TRACE_I("readSINF(): a SINF chunk of " << header->Size << " bytes (read " << read << ") gives no session count");
+        iso->ListingLeftOut.SetIncomplete();
         return FALSE;
+    }
 
-    count = SWAPDWORD(count);
-    iso->AddSessionTracks(count);
+    iso->AddSessionTracks((int)getDWord(data));
 
     return TRUE;
 }
@@ -434,6 +447,13 @@ ReadNRGRoot(CFile& file, CISOImage* iso, LONGLONG* chunks)
         if (!ReadHeader(file, &header))
             return FALSE;
 
+        // feature 369: the next chunk header follows this chunk as its header declares it, whatever its
+        // reader took (readSINF always took 4 bytes, readDAOX takes what its track range claims, a reader
+        // stops at a short read) - else the rest of the table was read from the wrong place
+        __int64 chunkStart = file.Seek(0, FILE_CURRENT);
+        if (chunkStart < 0)
+            return FALSE;
+
         if (strncmp(header.ID, "CUEX", 4) == 0)
             readCUEX(file, &header, iso);
         else if (strncmp(header.ID, "DAOX", 4) == 0)
@@ -446,7 +466,8 @@ ReadNRGRoot(CFile& file, CISOImage* iso, LONGLONG* chunks)
             readETN2(file, &header, iso, &etnFirstSector);
         else if (strncmp(header.ID, "CDTX", 4) == 0)
             readCDTX(file, &header, iso);
-        else if (file.Seek(header.Size, FILE_CURRENT) == -1)
+
+        if (file.Seek(chunkStart + (__int64)header.Size, FILE_BEGIN) == -1)
             return FALSE;
 
     } while (strncmp(header.ID, "NER5", 4) != 0);

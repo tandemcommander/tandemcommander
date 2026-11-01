@@ -44,6 +44,12 @@
 //     (SalNrgCuexSizePlausible: 2 + 99 x 100 records), and only while the
 //     image's CUEX chunks together stay within what a disc can give
 //     (SalNrgCuexTotalPlausible, review 3: many chunks of the largest size).
+//   - the SINF chunk (one a session) is a 4-byte track count: it gives a count
+//     only when it is exactly 4 bytes and lies within the image
+//     (SalNrgSinfUsable, feature 369 - the reader always took 4 bytes, so a
+//     chunk of another size moved every later chunk header); the chunk loop
+//     reads the next chunk header at the end of the chunk its header declares,
+//     whatever the reader took.
 //
 //*****************************************************************************
 
@@ -284,4 +290,14 @@ inline unsigned long long SalNrgEtnEntryCount(unsigned long long size, bool v2)
 inline bool SalNrgEtn2ChunkPlausible(unsigned long long size)
 {
     return SalNrgEtnEntryCount(size, true) <= SAL_NRG_ETN_MAX_ENTRIES;
+}
+
+#define SAL_NRG_SINF_SIZE 4 // bytes of a SINF chunk: the session's track count, big-endian
+
+// feature 369: true when a SINF chunk of 'size' bytes starting at 'pos' in a file of 'fileSize' bytes gives
+// its session's track count - exactly SAL_NRG_SINF_SIZE bytes and within the image; any other chunk is
+// refused (no count, the listing marked incomplete) rather than read for some of its bytes
+inline bool SalNrgSinfUsable(unsigned long long pos, unsigned long long size, unsigned long long fileSize)
+{
+    return size == SAL_NRG_SINF_SIZE && SalNrgChunkFits(pos, size, fileSize);
 }

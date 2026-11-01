@@ -1,0 +1,24 @@
+iso369_probe (feature 369) mutant-no-seek
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 06:40; registry key existed True
+
+seeds: fit.nrg,s1.iso,s2.iso,s2.lba,sinf0.nrg,sinf2.nrg,sinf8.nrg,sinf8tail.nrg
+img369: fit: 720988 bytes, two tracks, SINF chunks of 4, 4 bytes
+img369: sinf8: 720992 bytes, two tracks, SINF chunks of 8, 4 bytes
+img369: sinf8tail: 720992 bytes, two tracks, SINF chunks of 4, 8 bytes
+img369: sinf2: 720986 bytes, two tracks, SINF chunks of 2, 4 bytes
+img369: sinf0: 720996 bytes, two tracks, SINF chunks of 0, 4, 4 bytes
+
+F-FIT      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+F-FIT      RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+S-SINF8    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-SINF8    RUN    PASS        files 1: b.txt; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: no window
+S-SINF8TAIL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-SINF8TAIL RUN    PASS        files 1: b.txt; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: no window
+S-SINF2    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-SINF2    RUN    FAIL        files 1: a.txt; missing: b.txt; files ok: False; image kept: True (want True); no window: True; fatal: ; windows: no window
+S-SINF0    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+S-SINF0    RUN    PASS        files 2: Session 01/a.txt, Session 02/b.txt; files ok: True; image kept: True (want True); no window: True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05 / after 07F63FE128C312C5C9B7407963885B28223E7238A2AFAFBA5922CB0DDC88DA05
+
+Rows: PASS 9, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

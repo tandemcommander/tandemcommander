@@ -21307,6 +21307,31 @@ static void TestNrgEtn365()
     CHECK(!SalNrgEtn2ChunkPlausible(0xFFFFFFFFull));
 }
 
+// feature 369: a SINF chunk gives its session's track count only when it is exactly 4 bytes and lies within
+// the image (the reader always took 4 bytes: a chunk of 8, 2 or 0 bytes moved every later chunk header)
+static void TestNrgSinf369()
+{
+    const unsigned long long file = 720988; // iso369_probe's fit.nrg
+    const unsigned long long pos = 720900;  // a SINF body inside its chunk table
+    CHECK(SAL_NRG_SINF_SIZE == 4);
+    CHECK(SalNrgSinfUsable(pos, 4, file));
+    // the probe's damaged chunks: 8 (sinf8, sinf8tail), 2 (sinf2), 0 (sinf0) bytes - and others near 4
+    CHECK(!SalNrgSinfUsable(pos, 8, file));
+    CHECK(!SalNrgSinfUsable(pos, 2, file));
+    CHECK(!SalNrgSinfUsable(pos, 0, file));
+    CHECK(!SalNrgSinfUsable(pos, 3, file));
+    CHECK(!SalNrgSinfUsable(pos, 5, file));
+    CHECK(!SalNrgSinfUsable(pos, 0xFFFFFFFFull, file));
+    // within the image: ending exactly at its end is whole; one byte past it is not
+    CHECK(SalNrgSinfUsable(file - 4, 4, file));
+    CHECK(!SalNrgSinfUsable(file - 3, 4, file));
+    CHECK(!SalNrgSinfUsable(file, 4, file));
+    CHECK(!SalNrgSinfUsable(file + 1, 4, file));
+    CHECK(!SalNrgSinfUsable(0xFFFFFFFFFFFFFFFFull, 4, file)); // no wrap of pos + size
+    CHECK(!SalNrgSinfUsable(0, 4, 3));
+    CHECK(SalNrgSinfUsable(0, 4, 4));
+}
+
 // feature 365: entries of a CloneCD table of contents for TestIsoCcdToc365
 static void CcdTocAdd365(SalIsoCcdTocEntry* e, int& n, int session, int point, int adr, long long plba)
 {
@@ -24281,6 +24306,7 @@ int main(int argc, char** argv)
     TestIsoUdfFid_363();
     TestIsoUdfFolderExtents_364();
     TestNrgEtn365();
+    TestNrgSinf369();
     TestIsoCcdToc365();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
