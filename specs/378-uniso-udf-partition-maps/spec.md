@@ -70,13 +70,17 @@ UDF images written by real tools (one physical map; a physical and a metadata ma
 **Why this priority**: the refusal must not touch any valid image.
 
 **Independent Test**: unpack IMAPI2FS UDF 2.01, UDF 2.50 and ISO 9660 + UDF 2.01 images whole with
-"Delete archive after unpacking"; `a.txt` is extracted, no window appears, the image is deleted - before
-and after the change; the regression probes of features 356, 358, 361 and 377 pass as recorded.
+"Delete archive after unpacking"; the same result before and after the change; the regression probes of
+features 356, 358, 361 and 377 pass as recorded.
 
 **Acceptance Scenarios**:
 
-1. **Given** each of those images, **When** unpacked whole with "Delete archive after unpacking", **Then**
-   `a.txt` ("A1") is extracted, no window appears and the image is deleted.
+1. **Given** the UDF 2.01 or UDF 2.50 image, **When** unpacked whole with "Delete archive after
+   unpacking", **Then** `a.txt` ("A1") is extracted, no window appears and the image is deleted.
+2. **Given** the ISO 9660 + UDF 2.01 image, **When** unpacked the same way, **Then** both parts' folders
+   (`ISO (...)/A.TXT`, `UDF (...)/a.txt`) are extracted, no window appears and the image is kept - as
+   before (its ISO 9660 volume ends before the file: the rest rule of features 330 / 356 marks the
+   listing; measured at HEAD, not this item).
 
 ### Edge Cases
 
@@ -120,7 +124,8 @@ and after the change; the regression probes of features 356, 358, 361 and 377 pa
 
 - **SC-001**: All 6 crafted images (5 UDF-only, 1 bridge) are refused: nothing extracted from the UDF
   volume, the image kept, no program failure - on the hidden-desktop probe.
-- **SC-002**: The 3 well-formed images unpack completely with no window and are deleted, before and after.
+- **SC-002**: The 3 well-formed images unpack completely with no window, before and after; the two UDF-only
+  images are deleted, the bridge image is kept (as before - US2 scenario 2).
 - **SC-003**: `saltests` passes with the new checks; the rule's grid shows every accepted walk ends inside
   the area.
 - **SC-004**: The regression probes of features 356, 358, 361 and 377 give the results they recorded.

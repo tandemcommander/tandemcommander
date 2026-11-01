@@ -44,3 +44,8 @@ reads past the descriptor buffer in the ISO plug-in.
   takes from its type (type 1: 6, type 2: 44), and must end inside it. Count 0 = accepted (unchanged).
 - `ReadLVD` returns BOOL and checks the rule before any map is recorded; `CUDF::Open` refuses the volume with
   `IDS_ERROR_LISTING_IMAGE` (existing text, the descriptor's sector), following `quiet`. No UI string change.
+
+## Analyze
+
+Run 1: 0 CRITICAL; HIGH F1 (US2 / SC-002 said the ISO 9660 + UDF seed is deleted - measured kept by the rest
+rule) - fixed (US2 scenario 2, SC-002); LOW F2 (T003 wording) accepted. Run 2: 0 CRITICAL, 0 HIGH.
