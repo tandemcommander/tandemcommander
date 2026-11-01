@@ -1,7 +1,7 @@
 ---
 title: A path typed into an archive that matches two case twins opens the root silently
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: leftover:382
@@ -37,3 +37,4 @@ Severity 3: nothing is lost and the panel visibly shows the root, but a followin
 ## Log
 
 - 2026-11-01 — created (source leftover:382)
+- 2026-11-01 — moved to Next position 89
