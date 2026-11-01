@@ -133,6 +133,8 @@ try {
     Unpack-Row 'C-COOKED' $null
     Unpack-Row 'C-CUT' $true -Windows -Answer @(1, 6, 173)
     Unpack-Row 'C-SHORT240' $true
+    Unpack-Row 'D-DIFF2-CCD' $false
+    Unpack-Row 'D-DIFF2-NRG' $false
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

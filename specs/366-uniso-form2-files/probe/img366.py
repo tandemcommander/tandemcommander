@@ -18,6 +18,7 @@ Rows
   C-COOKED    the VCD's 2048-byte user data as a cooked .iso: every file as before (608,256)
   C-CUT       R-VCD-CCD cut 7 sectors before AVSEQ02's end: AVSEQ02 not extracted, the image kept
   C-SHORT240  R-VCD-CCD, AVSEQ01's record 240 sectors (its stream's video runs to sector 251): image kept
+  D-DIFF2-CCD / D-DIFF2-NRG  AVSEQ02.s user data altered in every sector (review 1: the two real files are equal)
 """
 import hashlib
 import json
@@ -195,6 +196,21 @@ def main(argv):
     m = patch_record(vcd, "MPEGAV/AVSEQ01.DAT", length=240 * 2048)
     write_ccd(out + "/short240.img", m, vpts, [2, 2, 2])
     row("C-SHORT240", "short240.img", expect(m))
+    # review 1 (NOTE): the real VCD's two video files are byte-identical - a read from the wrong track or offset
+    # would pass; AVSEQ02's user data altered in every sector, also past byte 2048 (reviewer's rev366.py)
+    m = bytearray(vcd)
+    n2s = (files_of(vcd)["MPEGAV/AVSEQ02.DAT"][2] + 2047) // 2048
+    for i in range(n2s):
+        base = (e2 + i) * RAW + 24
+        for k in (0, 1000, 2047, 2048, 2200, 2323):
+            m[base + k] ^= (0x5A + i) & 0xFF
+    m = bytes(m)
+    write_ccd(out + "/diff2.img", m, vpts, [2, 2, 2])
+    ed = expect(m)
+    assert ed["MPEGAV/AVSEQ01.DAT"] != ed["MPEGAV/AVSEQ02.DAT"]
+    row("D-DIFF2-CCD", "diff2.img", ed, ["MPEGAV/AVSEQ01.DAT", "v.mpg"])
+    write_nrg(out + "/diff2.nrg", [(to2336(m[b[i] * RAW:b[i + 1] * RAW]), 0x03, b[i]) for i in range(3)], [3])
+    row("D-DIFF2-NRG", "diff2.nrg", ed, ["MPEGAV/AVSEQ01.DAT", "v.mpg"])
 
     # the sources must be whole in the rows' video files (the measurement of the item)
     for name, r in rows.items():

@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5600,3 +5600,29 @@ a few early ones are out of sequence).
   `TestIsoCcdToc365`; seven mutants fail 1 to 9 checks each); refute-first review 1 (no MUST; negative control
   main's `uniso.spl` 12 / 6; SHOULD the ETN2 extent field and the libmirage wording - fixed; NOTEs taken or
   logged).
+- 366-uniso-form2-files: a Video CD / SVCD disc image (NRG, CCD/IMG, a raw .bin) extracted its video files
+  (`MPEGAV/AVSEQnn.DAT`, `MPEG2/AVSEQnn.MPG`, stored in Mode 2 Form 2 sectors of 2324 user bytes) cut to 2048
+  bytes a sector without a message - 276 bytes of every MPEG pack lost (61,272 bytes of a vcdimager VCD's
+  AVSEQ01) - and "Delete archive after unpacking" then deleted the image with the full stream - now a file whose
+  ISO 9660 record carries a CD-XA attribute Form 2 (not Form 1, not a folder), on a track that stores the Form 2
+  user data where the plug-in reads user data (2352 / 2448 with header 24, 2336 with 8) and whose first sector is
+  a Form 2 sector (335's `SalIsoSectorIsForm2`), is listed with sectors x 2324 bytes and read 2324 bytes a sector
+  by both readers (`CISO9660::UnpackFile`, `CRawFS::UnpackFile` through `CISOImage::ReadForm2Block`); 337's
+  coverage counts its sectors by 2324 (`SalIsoFileSectorSpan`'s new bytes-a-sector argument - by 2048 it would
+  count 13 % too many and let a partly read stream delete the image). Rules `SalIsoXaAttributes`,
+  `SalIsoXaIsForm2File`, `SalIsoTrackStoresForm2`, `SalIsoForm2FileSize` in `src/common/salisotrack.h`. Measured
+  first on 335 reviewer 3's real vcdimager 2.0.1 output (kept in WSL `~/rev335c`): the extracted file was exactly
+  the 2048-byte read, the source MPEG lay whole only in the 2324-byte payloads; the SVCD file now equals its
+  source byte for byte, the VCD file holds it whole between the disc's zero margins. Traps: the real VCD's two
+  video files are byte-identical (review 1 - rows with an altered AVSEQ02 added); the probe's read-error row first
+  answered Cancel (Skip is id 173), which cancelled the rest of the unpack. Limits: a file in Form 2 sectors
+  without an XA Form 2 attribute (no XA record, mixed 0x3D55, Form 1 first sector) still extracts cut and the
+  image is deleted, as before (Inbox `iso-plug-in-a-video-file-in-form-2-sectors-without-an-xa`, the decision
+  `keep-video-cd-images-after-a-whole-unpack-until-their-video` now covers only those); a cooked `.iso` of a Video
+  CD holds only 2048 bytes a sector (unchanged); no physical-disc dump tried (person step
+  `check-feature-366-with-a-real-video-cd-dump-the-extracted`). From backlog item
+  `iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may`. Probe `iso366_probe` (images `img366.py`) with main's
+  `uniso.spl` 11 / 9 -> 20 / 0, 24 / 0 with review 1's rows; regressions 337 74 / 0 (with 336's and 335's rows),
+  365 22 / 0, 334 23 / 1 (S-RAW, 335's intended change); saltests 29,893 -> 29,942 / 0 (`TestIsoXaForm2_366`;
+  five mutants fail 2 to 4 checks each); refute-first review 1 (no MUST; SHOULD files without the attribute ->
+  Inbox; NOTE identical video files - rows added).

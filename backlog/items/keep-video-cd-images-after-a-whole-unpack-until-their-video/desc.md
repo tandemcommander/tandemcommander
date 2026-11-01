@@ -7,11 +7,11 @@ area: archives
 source: review:336
 who: person
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-11-01
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may]
+related: []
 depends-on: []
 reason: -
 ---
@@ -73,3 +73,4 @@ narrow scenario (Video CD images with "Delete archive after unpacking").
 
 - 2026-10-24 — created (source review:336)
 - 2026-10-24 — moved to Decisions for the maintainer position 2
+- 2026-11-01 — related item iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may done in feature 366

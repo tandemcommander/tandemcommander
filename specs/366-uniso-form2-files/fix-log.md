@@ -93,3 +93,29 @@ video sectors after it are not read - US3).
 | after the test-comment alignment | `.\build.cmd`, `saltests.exe` | BUILD SUCCEEDED; 29,942 / 0 |
 
 The mutant script is kept as `probe/mutants366.ps1`.
+
+## Review
+
+Review 1 (independent agent, refute-first): **no MUST**. It re-ran saltests (29,942 / 0), the encoding guard
+and the probe (20 / 0 on the feature build, its own image folder), checked the negative control's
+`uniso.spl` (main's SHA differs), built a mutant where `NoteListedFileStarts` always counts 2048 (C-SHORT240
+then deletes the image - the probe tests US3's call site), and enumerated the users of the listed size
+(`AddFileDir`, both `UnpackFile`, `NoteListedFileStarts`, the progress totals in `uniso.cpp` / `isoimage.cpp`,
+`SalIsoFileStartTrack`).
+- SHOULD-1: a file in Form 2 sectors the rule does not recognise (no XA record, mixed 0x3D55, Form 1 first
+  sector) still extracts cut and the image is deleted (rows C-NOXA / C-MIXED / C-F1SUB), as on main - the
+  item's alternative "subheaders" criterion, not implemented (spec *Assumptions*), and the interim
+  keep-or-delete question is the maintainer's open decision `keep-video-cd-images-after-a-whole-unpack-until-their-video`
+  -> Inbox `iso-plug-in-a-video-file-in-form-2-sectors-without-an-xa` (review:366), related to the decision.
+- NOTE 1: the real VCD's AVSEQ01 and AVSEQ02 are byte-identical - a wrong-track read of the second would pass.
+  Taken: rows D-DIFF2-CCD / D-DIFF2-NRG (AVSEQ02's user data altered in every sector, also past byte 2048) in
+  `img366.py` / `iso366_probe.ps1`; probe `probe/result_after_review1.txt` **24 PASS / 0 FAIL**.
+- NOTE 2: F3 / single-file extract, the 2448/24 `.mdf` layout and NRG 2352 not driven - the same code by
+  reading (recorded; the person step covers real dumps).
+- NOTE 3: a Form 2 record whose length is the real byte count (not sectors x 2048) would read ~13 % past the
+  file - CD-XA and vcdimager use sectors x 2048; accepted.
+- NOTE 4: a Form 2 file with a Form 2 first sector but later Form 1 sectors gets their ECC bytes - crafted
+  images only; accepted (the per-sector decision is the Inbox item's).
+- NOTE 5: CHANGELOG / FEATURE-HISTORY owed at closing - done in the closing commit (no `## [Unreleased]`
+  section: the entry is in `closing-report.md`).
+No fresh review: no MUST; the change after it is two probe rows.

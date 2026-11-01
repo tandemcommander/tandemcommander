@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: Video CD MPEG files in Form 2 sectors may extract cut to 2048 bytes a sector](items/iso-plug-in-video-cd-mpeg-files-in-form-2-sectors-may/desc.md) | bug | 5 | archives | 366 |
 
 ## Next
 
@@ -284,6 +283,8 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check feature 366 with a real Video CD dump: the extracted video plays whole](items/check-feature-366-with-a-real-video-cd-dump-the-extracted/desc.md) | person-step | 3 | archives | leftover:366 | 2026-11-01 |
+| [ISO plug-in: a video file in Form 2 sectors without an XA Form 2 attribute extracts cut](items/iso-plug-in-a-video-file-in-form-2-sectors-without-an-xa/desc.md) | bug | 5 | archives | review:366 | 2026-11-01 |
 | [ISO plug-in: NRG tracks of the subchannel modes 0x0F / 0x10 / 0x11 get a wrong type or size](items/iso-plug-in-nrg-tracks-of-the-subchannel-modes-0x0f-0x10/desc.md) | bug | 3 | archives | leftover:365 | 2026-11-01 |
 
 ## Parked
