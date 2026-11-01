@@ -1,7 +1,7 @@
 ---
 title: UnCAB: one UTF-8 cabinet name with an unpaired surrogate makes the whole cabinet fail
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: measure:379
@@ -43,3 +43,4 @@ Severity at the lower end of the band: only names with an unpaired surrogate, an
 - 2026-11-01 — created (source measure:379)
 - 2026-11-01 — Problem corrected and severity 4 -> 5 after review 1 of feature 379 (the refusal aborts the whole cabinet)
 - 2026-11-01 — severity and title after review 1 of feature 379
+- 2026-11-01 — moved to Next position 2

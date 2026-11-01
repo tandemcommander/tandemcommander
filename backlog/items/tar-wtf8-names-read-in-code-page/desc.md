@@ -1,7 +1,7 @@
 ---
 title: TAR: a name with an unpaired surrogate stored as WTF-8 is read as another name
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:379
@@ -42,3 +42,4 @@ Severity at the lower end of the band: the name must hold an unpaired surrogate,
 
 - 2026-11-01 — created (source measure:379)
 - 2026-11-01 — linked its sibling items (379)
+- 2026-11-01 — moved to Next position 32

@@ -1,7 +1,7 @@
 ---
 title: CheckVer: a non-ASCII module name in the filter list is shown garbled
 type: bug
-status: new
+status: parked
 severity: 1
 area: other-plugins
 source: measure:379
@@ -13,7 +13,7 @@ effort: S
 feature: -
 related: [checkver-log-script-path-garbled]
 depends-on: []
-reason: -
+reason: plug-in checkver not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-11-01
 ---
 
 # CheckVer: a non-ASCII module name in the filter list is shown garbled
@@ -41,3 +41,4 @@ The plug-in is not shipped, hence severity 1; fix before enabling it. Same plug-
 ## Log
 
 - 2026-11-01 — created (source measure:379)
+- 2026-11-01 — moved to Parked: plug-in checkver not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-11-01

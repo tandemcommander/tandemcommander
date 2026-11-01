@@ -1,7 +1,7 @@
 ---
 title: Registry facade: deleting a value and opening keys use the ANSI API with UTF-8 names
 type: bug
-status: new
+status: open
 severity: 2
 area: plugin-api
 source: review:379
@@ -41,3 +41,4 @@ Severity 2: latent for the shipped configuration as far as known (core keys are 
 ## Log
 
 - 2026-11-01 — created (source review:379)
+- 2026-11-01 — moved to Next position 133

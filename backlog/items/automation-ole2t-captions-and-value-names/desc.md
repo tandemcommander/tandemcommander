@@ -1,7 +1,7 @@
 ---
 title: Automation: non-ASCII texts and captions garbled, persistent value names may collide
 type: bug
-status: new
+status: parked
 severity: 1
 area: other-plugins
 source: review:379
@@ -13,7 +13,7 @@ effort: M
 feature: -
 related: [automation-script-folder-list-code-page, registry-wide-deletevalue-and-key-names]
 depends-on: []
-reason: -
+reason: plug-in automation not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-11-01
 ---
 
 # Automation: non-ASCII texts and captions garbled, persistent value names may collide
@@ -46,3 +46,4 @@ The plug-in is not shipped, hence severity 1; fix before enabling it. Same plug-
 - 2026-11-01 — extended after review 2 of feature 379: the _bstr_t narrowing layer
 - 2026-11-01 — approach extended after review 2 of feature 379
 - 2026-11-01 — title after review 2 of feature 379
+- 2026-11-01 — moved to Parked: plug-in automation not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-11-01

@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: a too long full key path is cut and reported as success
 type: bug
-status: new
+status: open
 severity: 5
 area: other-plugins
 source: review:379
@@ -41,3 +41,4 @@ Severity 5: a wrong result reached only with deep keys and long names (narrow), 
 ## Log
 
 - 2026-11-01 — created (source review:379)
+- 2026-11-01 — moved to Next position 1

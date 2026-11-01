@@ -1,7 +1,7 @@
 ---
 title: UnMIME: an attachment name with an unpaired surrogate is read in the code page
 type: bug
-status: new
+status: parked
 severity: 1
 area: other-plugins
 source: measure:379
@@ -13,7 +13,7 @@ effort: S
 feature: -
 related: [tar-wtf8-names-read-in-code-page, uncab-wtf8-flagged-name-refused, unmime-progress-title-name-mojibake]
 depends-on: []
-reason: -
+reason: plug-in unmime not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-11-01
 ---
 
 # UnMIME: an attachment name with an unpaired surrogate is read in the code page
@@ -41,3 +41,4 @@ The plug-in is not shipped, hence severity 1; fix before enabling it. Sibling it
 ## Log
 
 - 2026-11-01 — created (source measure:379)
+- 2026-11-01 — moved to Parked: plug-in unmime not built or shipped (plugins.cfg off); fix before enabling it; auto-triage, maintainer 2026-11-01
