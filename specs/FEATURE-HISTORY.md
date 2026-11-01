@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374 |
 
 ## Feature notes
 
@@ -5795,3 +5795,26 @@ a few early ones are out of sequence).
   W1/W3/W4 FAIL -> 14 / 14 PASS, times to the 53 box unchanged (1.3 s, 21 s); saltests 30120 ->
   30155; one refute-first review (no MUST / SHOULD; NOTE 2's older half -> Inbox
   `share-list-a-list-a-server-never-finishes-more-data-without`).
+- 374-wsl-drive-item: the Change Drive menu (Alt+F1 / Alt+F2) and the drive bar had no way to the WSL
+  Linux file systems (Explorer's *Linux* node) - the user had to type `\\wsl.localhost\<distro>` -
+  now the menu lists `Linux - <distribution>` per installed distribution (after the cloud storages,
+  before Network, the Tux icon of `System32\wsl.exe`, the current one checked when the panel is on
+  it) and the drive bar holds one WSL button (a drop-down with several distributions), both opening
+  `\\wsl.localhost\<name>` through `ChangePathToDisk`; a new option *Linux Distributions (WSL)* on
+  the Change Drive page (`Change Drive Show WSL`, default on) hides them. The distributions come
+  from `HKCU\...\CurrentVersion\Lxss` only (`State` absent or 1) - building the list never starts
+  WSL (probe NO-VM), the WSL part costs ~0.9 ms. Pure rules `src/common/salwsl.h` (usable name -
+  no `\ / : * ? " < > |`, control characters, a trailing `.` / space that Windows would strip;
+  the path refused when it does not fit; path-on-distro for `\\wsl.localhost\` and `\\wsl$\`;
+  `&` doubled; a 24-bit fingerprint folded into the cloud storages mask so that the bars are rebuilt
+  when the set changes). **Traps**: new `CDriveTypeEnum` values go at the end (289's probe relies on
+  the numbers); the configuration may already show the drive bar - `CM_TOGGLEDRIVEBAR` then hides
+  it; a one-element array returned from a PowerShell function unrolls; the drive bar can be rebuilt
+  inside its own drop-down's `Track` - the drop-down reads its own copy of the list (review 1).
+  Limits: not on the Altap / Open Salamander settings import (rule 245 FR-016; Inbox decision
+  `should-the-settings-import-carry-the-new-wsl-option-of-the`); a distribution added later reaches
+  the bar at the next Alt+F1 or drive change, as the cloud storages do. From backlog item
+  `change-drive-menu-and-drive-bar-have-no-wsl-item-for-the`. Probe `wsl374_probe.ps1` (seams
+  `TC_PROBE_DRIVES_DUMP` + new `TC_PROBE_WSL_LXSS`, negative control = `main` built in a worktree)
+  2 PASS / 11 FAIL -> 13 / 0; saltests 30155 -> 30227; one refute-first review (no MUST / SHOULD,
+  NOTEs 1-3 fixed); person step `check-by-hand-the-wsl-items-of-the-change-drive-menu-and-the`.

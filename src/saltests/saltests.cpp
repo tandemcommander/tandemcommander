@@ -10064,7 +10064,13 @@ static void TestWslDistros374()
     static const WCHAR penguin[] = {0xD83D, 0xDC27, 0}; // a surrogate pair
     CHECK(SalWslDistroUsableW(penguin));
     CHECK(SalWslDistroUsableW(L".x")); // a name that starts with a dot
-    CHECK(SalWslDistroUsableW(L"..."));
+    CHECK(SalWslDistroUsableW(L"a.b"));
+    CHECK(SalWslDistroUsableW(L" a")); // a leading space is kept by Windows
+    CHECK(!SalWslDistroUsableW(L"..."));
+    CHECK(!SalWslDistroUsableW(L"Ubuntu.")); // Windows strips it: "Ubuntu" would open (review 1)
+    CHECK(!SalWslDistroUsableW(L"Ubuntu.."));
+    CHECK(!SalWslDistroUsableW(L"Ubuntu "));
+    CHECK(!SalWslDistroUsableW(L"Ubuntu. "));
     CHECK(!SalWslDistroUsableW(NULL));
     CHECK(!SalWslDistroUsableW(L""));
     CHECK(!SalWslDistroUsableW(L"."));

@@ -2385,8 +2385,12 @@ int GetWslDistributions(TDirectArray<char*>& names)
         HANDLES(RegCloseKey(hDistro));
         if (nameRes != ERROR_SUCCESS || type != REG_SZ || size < sizeof(WCHAR) || (size % sizeof(WCHAR)) != 0)
             continue;
-        name[size / sizeof(WCHAR)] = 0;
-        if (!SalWslDistroUsableW(name))
+        int stored = (int)(size / sizeof(WCHAR)); // characters stored, maybe with the terminator
+        name[stored] = 0;
+        if (stored > 0 && name[stored - 1] == 0)
+            stored--;
+        // a name with a 0 inside would be shortened - it is left out (never changed, review 1)
+        if ((int)wcslen(name) != stored || !SalWslDistroUsableW(name))
             continue;
 
         char* nameU8 = SalWToU8Alloc(name);
@@ -3421,8 +3425,11 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
     {
         if (fromDropDown != NULL)
             *fromDropDown = TRUE;
-        GetWslDistributions(WslDistros); // the list as it is now
-        if (!Configuration.ChangeDriveShowWSL || WslDistros.Count == 0 || exclude == NULL)
+        // the list as it is now, in a copy of its own: the drive bars may be rebuilt while the menu
+        // is open (WM_USER_DRIVES_CHANGE), and a chosen position must name what the menu showed
+        TDirectArray<char*> menuNames(4, 4);
+        GetWslDistributions(menuNames);
+        if (!Configuration.ChangeDriveShowWSL || menuNames.Count == 0 || exclude == NULL)
         { // nothing to choose from any more: rebuild both drive bars, so that the button disappears or updates
             if (MainWindow != NULL && MainWindow->HWindow != NULL)
                 PostMessage(MainWindow->HWindow, WM_USER_DRIVES_CHANGE, 0, 0);
@@ -3434,9 +3441,9 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
             MENU_ITEM_INFO mii;
             mii.Mask = MENU_MASK_TYPE | MENU_MASK_STRING | MENU_MASK_ID;
             mii.Type = MENU_TYPE_STRING;
-            for (int w = 0; w < WslDistros.Count; w++)
+            for (int w = 0; w < menuNames.Count; w++)
             {
-                char* itemText = SalWslItemTextAlloc(LoadStrU8(IDS_WSLLINUX), WslDistros[w], TRUE);
+                char* itemText = SalWslItemTextAlloc(LoadStrU8(IDS_WSLLINUX), menuNames[w], TRUE);
                 if (itemText == NULL)
                 {
                     TRACE_E(LOW_MEMORY);
@@ -3448,7 +3455,7 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
                 free(itemText);
             }
             int cmd = menu.Track(MENU_TRACK_RETURNCMD, exclude->left, exclude->bottom, hwnd, exclude);
-            char* name = cmd > 0 && cmd <= WslDistros.Count ? DupStr(WslDistros[cmd - 1]) : NULL;
+            char* name = cmd > 0 && cmd <= menuNames.Count ? DupStr(menuNames[cmd - 1]) : NULL;
             if (name != NULL)
             {
                 *DriveType = drvtWSL;
@@ -3457,6 +3464,7 @@ BOOL CDrivesList::ExecuteItem(int index, HWND hwnd, const RECT* exclude, BOOL* f
             else
                 ret = FALSE;
         }
+        FreeWslDistributions(menuNames);
         break;
     }
 

@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Change Drive menu and drive bar have no WSL item for the Linux distributions](items/change-drive-menu-and-drive-bar-have-no-wsl-item-for-the/desc.md) | feature | 3 | panels-ui | 374 |
 
 ## Next
 
@@ -290,6 +289,8 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check by hand the WSL items of the Change Drive menu and the drive bar (374)](items/check-by-hand-the-wsl-items-of-the-change-drive-menu-and-the/desc.md) | person-step | 3 | panels-ui | leftover:374 | 2026-11-01 |
+| [Should the settings import carry the new WSL option of the Change Drive page (374)](items/should-the-settings-import-carry-the-new-wsl-option-of-the/desc.md) | decision | 1 | panels-ui | leftover:374 | 2026-11-01 |
 
 ## Parked
 

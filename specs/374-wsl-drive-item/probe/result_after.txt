@@ -1,16 +1,16 @@
-wsl374 (feature 374) after
+wsl374 (feature 374) after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-01 14:34; registry key existed True; running distributions before: ''
+Date    : 2026-11-01 14:47; registry key existed True; running distributions before: ''
 Real registration: docker-desktop, Ubuntu
 
 [on] menus opened 5/5; builds 7 (menu 5, bar 2)
-REAL-MENU  RUN    PASS        items 'Linux - docker-desktop | Linux - Ubuntu' (expected 'Linux - docker-desktop | Linux - Ubuntu'); after cloud / before Network True; WSL on=1 count=2 us=1038 fp=0BDF5E bar=0
+REAL-MENU  RUN    PASS        items 'Linux - docker-desktop | Linux - Ubuntu' (expected 'Linux - docker-desktop | Linux - Ubuntu'); after cloud / before Network True; WSL on=1 count=2 us=789 fp=0BDF5E bar=0
 REAL-BAR   RUN    PASS        drop-down buttons 1 ('Linux'), single buttons 0; tooltip 'Linux' True
 SAVED      RUN    PASS        value after the exit of a run without it: '1'
 [off] menus opened 5/5; builds 6 (menu 5, bar 1)
 OPT-OFF    RUN    PASS        WSL items 0; builds not 'on=0 count=0' 0; e.g. WSL on=0 count=0 us=0 fp=000000 bar=0
 REGRESS    RUN    PASS        17 other items with the option on, 17 off; identical True
-TIME       RUN    PASS        WSL part us 1038,732,921,872,959 (median 921); build us on 11314,10154,11318,12029,12689 / off 9299,10774,10391,11969,10672 (medians 11318 / 10672)
+TIME       RUN    PASS        WSL part us 789,878,977,934,941 (median 934); build us on 10350,12157,11390,11339,11222 / off 8755,10586,10111,10201,10748 (medians 11339 / 10201)
 [mix] menus opened 1/1; builds 2 (menu 1, bar 1)
 FAKE-MIX   RUN    PASS        items 'Linux - alpha | Linux - R&&D | Linux - Zeta' (expected 'Linux - alpha | Linux - R&&D | Linux - Zeta')
 [one] menus opened 1/1; builds 2 (menu 1, bar 1)

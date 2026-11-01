@@ -40,8 +40,8 @@
 
 // Can the registered distribution name 'name' (wide, as the registry holds it) form the path
 // \\wsl.localhost\<name>? Not when it is NULL or empty, longer than SAL_WSL_NAME_MAX characters,
-// "." or "..", or holds a character no path component may hold (\ / : * ? " < > |) or a control
-// character (< 0x20).
+// ends in '.' or ' ' ("." and ".." included), or holds a character no path component may hold
+// (\ / : * ? " < > |) or a control character (< 0x20).
 inline BOOL SalWslDistroUsableW(const WCHAR* name)
 {
     if (name == NULL || name[0] == 0)
@@ -58,7 +58,10 @@ inline BOOL SalWslDistroUsableW(const WCHAR* name)
             return FALSE;
         }
     }
-    if (name[0] == L'.' && (name[1] == 0 || name[1] == L'.' && name[2] == 0))
+    // "." / ".." and every name ending in '.' or ' ': Windows strips those from the last part of a
+    // path, so "Ubuntu." would open "Ubuntu" - another distribution (review 1 of feature 374)
+    WCHAR last = name[len - 1];
+    if (last == L'.' || last == L' ')
         return FALSE;
     return TRUE;
 }

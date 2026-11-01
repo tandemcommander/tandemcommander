@@ -121,3 +121,27 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\374-wsl-drive-item\p
   and the new string).
 - `python -m translate.slt --verify` -> `round-trip byte-exact for every file` (298 files).
 - `.\build.cmd full` -> BUILD SUCCEEDED.
+
+## Review
+
+Review 1 (independent, refute-first): **no MUST, no SHOULD**; re-ran the probe on the branch
+(13 / 0) and on `main` (2 / 11, the same rows as `result_before.txt`), saltests 30221 / 0,
+encoding guard 0, compiled the core in Release x64 (no new warnings); enumerated the callers
+(ChangeDrive, CDriveBar::Execute, ExecuteItem, LoadMenuFromData, FillDriveBar, GetDriveBarToolTip,
+OnContextMenu, FindPanelPathIndex, IncludeDriveInDriveBar, RebuildMenu, the bar-2 copy path).
+NOTEs and what was done:
+
+1. The drive bar's drop-down chose by position in `WslDistros`, which a drive-bar rebuild inside
+   `menu.Track` could re-read -> **fixed**: the drop-down reads its own copy (`menuNames`).
+2. A name ending in `.` is accepted, Windows strips it from the last path part (`Ubuntu.` ->
+   `Ubuntu`) -> **fixed**: `SalWslDistroUsableW` refuses names ending in `.` or ` ` (saltests +6;
+   probe FAKE-MIX has `Dotted.`).
+3. A `REG_SZ` with an embedded 0 was shortened -> **fixed**: left out (`wcslen` must equal the
+   stored length; probe FAKE-MIX has `Nul<0>Tail`).
+4. The settings-import deviation and the dropped OneDrive-style bar refresh are recorded ->
+   Inbox decision `should-the-settings-import-carry-the-new-wsl-option-of-the`.
+5. Owed to a person -> person step `check-by-hand-the-wsl-items-of-the-change-drive-menu-and-the`.
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests `30227 checks, 0 failed`; encoding
+guard `TOTAL: 0 finding(s)`; probe (`result_after.txt`, label after-review1) PASS 13, FAIL 0,
+registry restored identical, Ubuntu terminated again. No MUST finding -> no second review needed.

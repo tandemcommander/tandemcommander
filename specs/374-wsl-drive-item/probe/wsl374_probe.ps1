@@ -184,6 +184,9 @@ try {
     Fake-Distro 'Mix' '{f}' 'R&D' 1
     Fake-Distro 'Mix' '{g}' 'Typed' 1 'REG_EXPAND_SZ'  # wrong value type
     Fake-Distro 'Mix' '{h}' $null 1                # no name
+    Fake-Distro 'Mix' '{i}' 'Dotted.' 1            # ends in '.': Windows would open "Dotted" (review 1)
+    Fake-Distro 'Mix' '{j}' $null 1                # a 0 inside the name (review 1): written below
+    [void](New-ItemProperty -Path 'HKCU:\Software\TcProbe374\Mix\{j}' -Name 'DistributionName' -PropertyType String -Value ('Nul' + [char]0 + 'Tail') -Force)
     Fake-Distro 'One' '{a}' 'Solo' 1
     $runningBefore = @(Running-Distros)
 
