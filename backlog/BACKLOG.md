@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Opening a folder found by quick search briefly shows the whole parent folder](items/opening-a-folder-found-by-quick-search-briefly-shows-the/desc.md) | bug | 2 | panels-ui | 376 |
 
 ## Next
 
@@ -291,6 +290,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Check by hand that opening a folder found by quick search shows no flash (376)](items/check-by-hand-that-opening-a-folder-found-by-quick-search/desc.md) | person-step | 2 | panels-ui | leftover:376 | 2026-11-01 |
 | [Leaving a folder by other ways during quick search briefly shows the whole folder](items/leaving-a-folder-by-other-ways-during-quick-search-briefly/desc.md) | bug | 2 | panels-ui | measure:376 | 2026-11-01 |
 
 ## Parked

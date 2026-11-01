@@ -11,7 +11,7 @@ updated: 2026-11-01
 verified: -
 effort: S
 feature: -
-related: [opening-a-folder-found-by-quick-search-briefly-shows-the]
+related: []
 depends-on: []
 reason: -
 ---
@@ -33,3 +33,4 @@ Every way of leaving a folder while quick search filters it goes from the filter
 ## Log
 
 - 2026-11-01 — created (source measure:376)
+- 2026-11-01 — related item opening-a-folder-found-by-quick-search-briefly-shows-the done in feature 376

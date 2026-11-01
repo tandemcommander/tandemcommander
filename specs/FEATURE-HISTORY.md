@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376 |
 
 ## Feature notes
 
@@ -5841,3 +5841,24 @@ a few early ones are out of sequence).
   30227 -> 30237; one refute-first review (no MUST; SHOULD 1 and NOTE 4 fixed, its cdb count
   proved the later looks); person step
   `check-by-hand-the-paste-commands-after-switching-back-with-a`.
+- 376-qs-enter-no-flash: opening a folder found by quick search (Enter, double click, Ctrl+PageDown)
+  showed the whole unfiltered parent folder before the new folder - now the panel goes from the
+  tinted filtered view straight to the new listing. Not intermittent as reported: `EndQuickSearch`
+  -> `QFEndView(TRUE)` -> `RefreshListBox` ends with `PaintAllItems`, a synchronous drawing (not a
+  stray paint message), every time before `ChangePathToDisk` reads; it is seen when the read takes
+  longer than a screen refresh. `RefreshListBox(..., paint = FALSE)` lays out only (item count,
+  top index, offset; no scroll bars, no boundary correction - it draws - no header, no items);
+  `EndQuickSearch(TRUE)` uses it and sets `QFPaintDeferred`; a scope guard in `Execute` calls
+  `QFFinishDeferredPaint()` on every return (draws the parent if nothing drew since, then
+  `QFUpdateIndication`). The full listing is still back before the path change (rule 244).
+  **Traps**: clang-format on `fileswnd.h` reflows unrelated old lines - revert those hunks; the
+  failure rows (DENY access-denied, GONE deleted folder) are drawn by `Execute` /
+  `ChangePathToDisk` themselves, not by the guard, and a removed `subst` drive goes to a rescue
+  path - the guard-only routes (Esc or timeout on a slow network check, a plug-in FS that stays)
+  are not driven (review 1). Limits: the remembered top index skips the boundary correction (the
+  return applies it); other path changes during a search still draw first (Inbox
+  `leaving-a-folder-by-other-ways-during-quick-search-briefly`). From backlog item
+  `opening-a-folder-found-by-quick-search-briefly-shows-the`. Probe `qs376_probe.ps1` (pixel
+  sampling of the list box while a 30,000-file folder is read) FLASH 35-39 PARENT samples per
+  round -> 0, NEW at ~306 ms unchanged; feature 244 probe 45/0; one refute-first review (no MUST,
+  SHOULD 1 fix-log corrected); person step `check-by-hand-that-opening-a-folder-found-by-quick-search`.
