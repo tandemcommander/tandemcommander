@@ -64,11 +64,13 @@ BOOL CUDFISO::Open(BOOL quiet)
     // that is not listed, also without an anchor at sector 256 (330's sign below; a sequential medium may
     // have its anchor elsewhere)
     BOOL udfVatMissing = FALSE;
+    BOOL udfMapsRefused = FALSE; // feature 378: its partition maps did not fit - the same, see below
     if (udf->Open(quiet))
         UDF = udf;
     else
     {
-        udfVatMissing = udf->VatMissing || udf->MapsRefused; // feature 378: a refused descriptor - the same
+        udfVatMissing = udf->VatMissing;
+        udfMapsRefused = udf->MapsRefused;
         delete udf;
     }
 
@@ -99,6 +101,11 @@ BOOL CUDFISO::Open(BOOL quiet)
     // files only in that part lost). The HFS part stays quiet (no message), feature 333 marks it too
     PartMissing = (HasISO && ISO == NULL) || hfsMissing;
     if (HasUDF && UDF == NULL && udfVatMissing)
+        PartMissing = TRUE;
+    // feature 378 (review 2): a refused logical volume descriptor marks the listing also when the track type
+    // declares no UDF part (ISO 9660 + HFS / APFS - CUDFISO still opens and lists a UDF part it finds); a
+    // descriptor whose tag names its own sector was found, so failing closed costs at most a kept image
+    if (UDF == NULL && udfMapsRefused)
         PartMissing = TRUE;
     if (HasUDF && UDF == NULL && !PartMissing)
     {

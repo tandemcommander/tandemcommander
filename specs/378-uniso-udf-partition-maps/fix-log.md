@@ -137,3 +137,27 @@ After the fixes: `.\build.cmd` -> BUILD SUCCEEDED; saltests `30275 checks, 0 fai
 R-NBCOUNT FAIL (both folders, deleted).
 - Regressions after the fix: `iso356_probe.ps1` 56 / 0 (`probe/regress_356b.txt`), `iso358_probe.ps1` 52 / 0
   (`probe/regress_358b.txt` - 358 reads the same flag path); registry restored and identical.
+
+Review 2 (independent refute-first agent, with review 1's findings): **no MUST, no SHOULD**. Re-ran the probe:
+branch build 22 / 0, frozen HEAD build 15 / 7 (the five crafted UDF-only rows, R-BCOUNT and R-NBCOUNT fail);
+saltests 30275 / 0; review 1's mutation harness with three more mutants - removing the header check ends
+saltests with 0xC0000005, every other mutant fails a check except the equivalent `len < 2`; a 3,000,000-case
+fuzz clean; callers enumerated (`SalIsoUdfLvdHasVirtualMap`, `salisotrack.h`, is the only other map walk and was
+bounded already).
+- NOTE 1 (`udfiso.cpp`): the mark for a refused descriptor still needed `HasUDF`, false for `fsISO9660_HFS` /
+  `fsISO9660_APFS` tracks whose UDF part `CUDFISO` still opens and lists - such a doubly damaged hybrid would be
+  deleted by a whole unpack (reasoned, not reproduced). **Fixed**: `if (UDF == NULL && udfMapsRefused)
+  PartMissing = TRUE;` without `HasUDF` (fails closed; `MapsRefused` is set only for a descriptor whose tag
+  names its own sector). Not probed: no ISO 9660 + HFS / APFS image with a UDF part on the machine (the rows of
+  this probe cover the `HasUDF` case; the condition is a superset of it).
+- NOTE 2 (`saltests.cpp`, the renamed helper's parameter indentation): **fixed** (clang-format clean in the
+  feature's ranges; the three `udf.cpp` clang-format findings at 1139 / 1366 / 1692 are older lines).
+- NOTE 3 (older: `CPartitionMap::Type` unset for an unknown map type, copied to `PartitionMapping.Type`): ->
+  Inbox `iso-plug-in-an-unknown-udf-partition-map-type-leaves-its` (review:378).
+- NOTE 4 (probe tooling: a probe started from pwsh 7 hands its `PSModulePath` to the PowerShell 5.1 child and
+  `Restore-Reg` fails at `Get-FileHash` after the import - the reviewer verified the registry and removed the
+  leftovers): this run's probes were all started from the PowerShell tool and finished with "registry restored
+  + identical" - recorded in `quickstart.md` as a trap; the library is not this feature's.
+
+After review 2's fixes: `.\build.cmd` -> BUILD SUCCEEDED; saltests `30275 checks, 0 failed`; `iso378_probe.ps1`
+22 / 0 (`probe/result_after3.txt`), registry restored and identical; encoding guard `TOTAL: 0 finding(s)`.

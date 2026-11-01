@@ -21264,7 +21264,7 @@ static void IsoUdfLvd378(unsigned char* lvd, unsigned int mapLen, unsigned int c
 // area or takes a map shorter than that (a read past the area, or a length of 0 / 1 that does not move on). The
 // walk ends: every good step moves at least 2 bytes in a bounded area.
 static bool IsoUdfWalkInArea378(const unsigned char* lvd, unsigned long long held, unsigned long long mapLen,
-                                   unsigned long long count)
+                                unsigned long long count)
 {
     unsigned long long end = 440 + mapLen < held ? 440 + mapLen : held;
     unsigned long long pos = 440;

@@ -13,3 +13,7 @@
    R-TABLE, R-RUN, R-MANY nothing, a window, kept; R-BCOUNT only the ISO 9660 folder, a window, kept);
    registry restored and identical.
 4. Regressions: `iso356_probe.ps1`, `iso358_probe.ps1`, `iso361_probe.ps1`, `iso377_probe.ps1` as recorded.
+
+Trap (review 2): if a probe's PowerShell 5.1 child inherits pwsh 7's `PSModulePath`, `Restore-Reg` can fail at
+`Get-FileHash` after the import - the summary line is then missing; check the registry against the backup
+(`%TEMP%\tc378_backup.reg`) and start the probe again from a shell without that variable.

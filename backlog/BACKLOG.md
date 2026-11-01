@@ -293,6 +293,7 @@ Last triaged: 2026-11-01
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
 | [ISO plug-in: an ISO 9660 + UDF image written by Windows is kept after a whole unpack](items/iso-plug-in-an-iso-9660-udf-image-written-by-windows-is-kept/desc.md) | bug | 4 | archives | measure:378 | 2026-11-01 |
+| [ISO plug-in: an unknown UDF partition map type leaves its translation undefined](items/iso-plug-in-an-unknown-udf-partition-map-type-leaves-its/desc.md) | bug | 3 | archives | review:378 | 2026-11-01 |
 
 ## Parked
 
