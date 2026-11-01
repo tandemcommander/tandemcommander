@@ -68,7 +68,7 @@ BOOL CUDFISO::Open(BOOL quiet)
         UDF = udf;
     else
     {
-        udfVatMissing = udf->VatMissing;
+        udfVatMissing = udf->VatMissing || udf->MapsRefused; // feature 378: a refused descriptor - the same
         delete udf;
     }
 

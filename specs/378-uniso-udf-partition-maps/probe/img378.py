@@ -11,6 +11,10 @@ descriptor (LVD) declares partition maps that do not fit, derived from an image 
             length 255): a reader without a bound walks past the 2048-byte sector
     many    the map count set to 300 and the table length to 1608 (the whole rest of the sector), filled with
             the first map repeated (type 1, length 6) - 268 maps fit, the count does not
+    noanchor    (an ISO 9660 + UDF image; review 1 of feature 378) the UDF anchor at sector 256 zeroed and the
+            ISO 9660 volume space size set to the file's sectors: the plug-in finds the UDF descriptors by its scan
+            of blocks 0x20 - 0x200, and neither the anchor (feature 330) nor the rest rule marks the listing - the
+            LVD is left as it is
 
 The LVD is found in the main volume descriptor sequence named by the anchor at sector 256; its descriptor CRC
 and tag checksum are fixed (the plug-in checks neither; the image stays well formed otherwise). Prints one line:
@@ -63,6 +67,17 @@ def main():
     maplen, count = struct.unpack_from('<II', buf, o + 264)
     if count < 1 or buf[o + 440] != 1 or buf[o + 441] != 6:
         sys.exit('the first map is not a type 1 map of 6 bytes')
+    if mode == 'noanchor':
+        if buf[16 * S + 1:16 * S + 6] != b'CD001':
+            sys.exit('no ISO 9660 primary volume descriptor at 16')
+        buf[anchor:anchor + S] = bytes(S)
+        n = len(buf) // S
+        old, = struct.unpack_from('<I', buf, 16 * S + 80)
+        struct.pack_into('<I', buf, 16 * S + 80, n)
+        struct.pack_into('>I', buf, 16 * S + 84, n)
+        open(dst, 'wb').write(buf)
+        print('noanchor: %d bytes, anchor 256 zeroed, ISO 9660 volume space %d -> %d' % (len(buf), old, n))
+        return
     if mode == 'count':
         struct.pack_into('<I', buf, o + 268, 100000)
         what = 'map count %d -> 100000' % count

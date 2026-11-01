@@ -1,0 +1,74 @@
+iso358_probe (feature 358) regress378r1
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 18:05; registry key existed True
+
+seeds: h_vat_anchor.img=614400,h_vat_anchor_data100.img=819200,h_vat_noanchor.img=614400,h_vat_noanchor_data100.img=819200,mk_bdr.img=655360,mk_cd.img=8192000,mk_cdr.img=614400,mk_cdr150.img=614400,mk_cdr150c.img=1052672,mk_cdrclosed.img=1052672,mk_cdrnoefe.img=614400,mk_cdrw.img=8192000,mk_dvd.img=8192000,mk_dvdr.img=589824,mk_dvdrw.img=8192000,mk_hd.img=4096000,mk_hd512.img=4096000,p_iso_inner.img=1228800,v_cdr150data100.bin=819200,v_cdrnoefedata100.bin=819200,v_claim100z.bin=8396800,v_claim16.bin=8224768,v_data100.bin=819200,v_hdeq.bin=614400,v_hdlong.bin=614400,v_toclaim.bin=8192000
+vatimg: data100 400 sectors
+vatimg: toclaim 4000 sectors
+vatimg: claim16 4016 sectors
+vatimg: claim100z 4100 sectors
+vatimg: hdlong 300 sectors
+vatimg: hdeq 300 sectors
+vatimg: h_vat_anchor_data100.img 400
+vatimg: h_vat_noanchor_data100.img 400
+vatimg: h_vat_noanchor.img 300
+vatimg: h_vat_anchor.img 300
+vatimg: p_iso_inner.img 600
+vatimg: data100 400 sectors
+vatimg: data100 400 sectors
+
+R-VCDR100  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VCDR100  RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-VCLAIM16 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VCLAIM16 RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-VCLAIM100Z END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VCLAIM100Z RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+C-VCLAIM   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-VCLAIM   RUN    PASS        files 0: ; image kept: True (want True); windows ok (Error reading virtual allocation table): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading virtual allocation table at sector #00000E9F. | [Button id=1] OK
+C-MKCDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKCDR    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKCDRC   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKCDRC   RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKDVDR   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKDVDR   RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKBDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKBDR    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKHD     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKHD     RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MK150    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MK150    RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MK150C   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MK150C   RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKNOEFE  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKNOEFE  RUN    PASS        files 0: ; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-V150D100 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-V150D100 RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-VNOEFED100 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VNOEFED100 RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-VHDLONG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VHDLONG  RUN    PASS        files 0: ; image kept: True (want True); windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-VHDEQ    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-VHDEQ    RUN    PASS        files 0: ; image kept: True (want True); windows ok (#FF567539): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #FF567539. Incomplete content of ISO image. | [Button id=1] OK
+L-VCDR100  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-VCDR100  RUN    PASS        alive: True; windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+L-MKCDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-MKCDR    RUN    PASS        alive: True; windows ok (none): True; fatal: ; windows: no window
+L-VHDLONG  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-VHDLONG  RUN    PASS        alive: True; windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+L-MK150    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-MK150    RUN    PASS        alive: True; windows ok (none): True; fatal: ; windows: no window
+C-HA       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-HA       RUN    PASS        files 1: ISO (HYB358)/A.TXT; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-HN       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-HN       RUN    PASS        files 1: ISO (HYB358)/A.TXT; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-HAD100   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-HAD100   RUN    PASS        files 1: ISO (HYB358)/A.TXT; image kept: True (want True); windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+R-HND100   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-HND100   RUN    PASS        files 1: ISO (HYB358)/A.TXT; image kept: True (want True); windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+C-PINNER   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-PINNER   RUN    PASS        files 2: ISO (HYB358)/A.TXT, ISO (HYB358)/INNER.IMG; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+L-HND100   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+L-HND100   RUN    PASS        alive: True; windows ok (Missing virtual allocation table.): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Missing virtual allocation table. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 5CD3A980D43BAB9C86C80CCC02B6F6345398DEADDF28C3B2844518A348F1FDAD / after 5CD3A980D43BAB9C86C80CCC02B6F6345398DEADDF28C3B2844518A348F1FDAD
+
+Rows: PASS 52, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

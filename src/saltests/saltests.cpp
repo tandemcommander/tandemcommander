@@ -21258,11 +21258,12 @@ static void IsoUdfLvd378(unsigned char* lvd, unsigned int mapLen, unsigned int c
     }
 }
 
-// feature 378: the old reader's walk (CUDF::ReadLVD before 378) over 'lvd' - true when it stays in the area
-// [440, min(held, 440 + MT_L)) with every map at least its type's minimum (it never read past the sector there);
-// false at its first step that leaves the area or takes a map shorter than that (a read past the area, or a
-// length of 0 / 1 that does not move on). The walk ends: every good step moves at least 2 bytes in a bounded area.
-static bool IsoUdfOldWalkInArea378(const unsigned char* lvd, unsigned long long held, unsigned long long mapLen,
+// feature 378: a second, step-by-step statement of the rule (review 1: not the old reader - that one had no bound
+// at all): the reader's walk (CUDF::ReadLVD) over 'lvd' - true when every step stays in the area
+// [440, min(held, 440 + MT_L)) with every map at least its type's minimum; false at its first step that leaves the
+// area or takes a map shorter than that (a read past the area, or a length of 0 / 1 that does not move on). The
+// walk ends: every good step moves at least 2 bytes in a bounded area.
+static bool IsoUdfWalkInArea378(const unsigned char* lvd, unsigned long long held, unsigned long long mapLen,
                                    unsigned long long count)
 {
     unsigned long long end = 440 + mapLen < held ? 440 + mapLen : held;
@@ -21386,16 +21387,62 @@ static void TestIsoUdfMaps_378()
     lvd[440] = 1, lvd[441] = 6;
     CHECK(SalIsoUdfLvdMapsFit(lvd, 446, n) && n == 1);
     CHECK(!SalIsoUdfLvdMapsFit(lvd, 445, n));
+    // a count whose low 16 bits fit and whose high bytes do not (review 1, N1): 0x00010001 maps, one in the table
+    IsoUdfLvd378(lvd, 6, 0x00010001u);
+    lvd[440] = 1, lvd[441] = 6;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+    IsoUdfLvd378(lvd, 6, 0x01000001u);
+    lvd[440] = 1, lvd[441] = 6;
+    CHECK(!SalIsoUdfLvdMapsFit(lvd, 2048, n));
+
+    // the rule reads nothing past 'held' (review 1, S1): the descriptor ends exactly at a page whose next page has
+    // no access - a read of byte 'held' is an access violation (saltests ends), not a passing check. The shapes
+    // whose walk reaches the end: 268 maps filling the sector with a count of 300 (map 269's header at 2048), maps
+    // ending at 2047 with a count of 8 (map 8's length byte at 2048), and the same at a shorter 'held' (446)
+    {
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        DWORD page = si.dwPageSize;
+        unsigned char* mem = (unsigned char*)VirtualAlloc(NULL, 2 * page, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        DWORD oldProt = 0;
+        bool guarded = mem != NULL && page >= 2048 && VirtualProtect(mem + page, page, PAGE_NOACCESS, &oldProt) != 0;
+        CHECK(guarded);
+        if (guarded)
+        {
+            unsigned char* g = mem + page - 2048; // g[2048] is the first byte of the no-access page
+            IsoUdfLvd378(g, 1608, 300);
+            for (int i = 0; i < 268; i++)
+                g[440 + 6 * i] = 1, g[441 + 6 * i] = 6;
+            CHECK(!SalIsoUdfLvdMapsFit(g, 2048, n));
+            IsoUdfLvd378(g, 0xFFFFFFFFu, 8);
+            for (int i = 0; i < 6; i++)
+                g[440 + 255 * i] = 0, g[441 + 255 * i] = 255;
+            g[1970] = 0, g[1971] = 77;
+            g[2047] = 0;
+            CHECK(!SalIsoUdfLvdMapsFit(g, 2048, n));
+            unsigned char* h = mem + page - 446; // h[446] is the first byte of the no-access page
+            memset(h, 0, 446);
+            h[264] = 6, h[268] = 2;
+            h[440] = 1, h[441] = 6; // the second map's header would be at 446
+            CHECK(!SalIsoUdfLvdMapsFit(h, 446, n));
+            h[440] = 0, h[441] = 5; // a 5-byte map of type 0: header at 445 is cut by the end
+            h[264] = 0xFF, h[265] = 0xFF;
+            h[445] = 0;
+            CHECK(!SalIsoUdfLvdMapsFit(h, 446, n));
+        }
+        if (mem != NULL)
+            VirtualFree(mem, 0, MEM_RELEASE);
+    }
 
     // a grid: table lengths x counts x fill bytes x first maps. The rule accepts exactly the descriptors whose
-    // old walk stayed in the area with every map long enough, and for an accepted one the walk of 'count'
+    // step-by-step walk stays in the area with every map long enough, and for an accepted one the walk of 'count'
     // steps reads only bytes of the area (checked by the same walk) - so the reader never reads past the sector
     // and records at most (2048 - 440) / 2 maps
     const unsigned int tables[] = {0, 1, 2, 4, 5, 6, 7, 44, 64, 70, 128, 1000, 1607, 1608, 1609, 4096, 0xFFFFFFFFu};
     const unsigned int counts[] = {0, 1, 2, 3, 7, 10, 100, 267, 268, 269, 804, 805, 100000, 0xFFFFFFFFu};
     const unsigned char fills[] = {0, 1, 2, 5, 6, 43, 44, 64, 200, 255};
     const unsigned char firstTypes[] = {0, 1, 2, 3, 0xFF};
-    bool asOld = true, inArea = true, bounded = true;
+    bool asWalk = true, inArea = true, bounded = true;
     int accepted = 0, refused = 0;
     for (unsigned int t : tables)
         for (unsigned int c : counts)
@@ -21409,9 +21456,9 @@ static void TestIsoUdfMaps_378()
                     lvd[440] = ft;
                     lvd[441] = (unsigned char)SalIsoUdfPartitionMapMinLen(ft);
                     bool fit = SalIsoUdfLvdMapsFit(lvd, 2048, n);
-                    bool old = IsoUdfOldWalkInArea378(lvd, 2048, t, c);
-                    if (fit != old)
-                        asOld = false;
+                    bool walk = IsoUdfWalkInArea378(lvd, 2048, t, c);
+                    if (fit != walk)
+                        asWalk = false;
                     if (fit)
                     {
                         accepted++;
@@ -21434,7 +21481,7 @@ static void TestIsoUdfMaps_378()
                             bounded = false;
                     }
                 }
-    CHECK(asOld);
+    CHECK(asWalk);
     CHECK(inArea);
     CHECK(bounded);
     CHECK(accepted > 0 && refused > 0);

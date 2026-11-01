@@ -264,6 +264,10 @@ public:
     // missing or unreadable - the volume does not open; a UDF + ISO 9660 hybrid marks its listing incomplete
     // from this (the anchor at 256, 330's sign of a UDF part, may be missing on a sequential medium)
     BOOL VatMissing;
+    // feature 378: Open found the volume's logical volume descriptor and refused it - its partition maps do not
+    // fit the sector or the map table; read like VatMissing (review 1: without the anchor at 256 a hybrid's
+    // listing was not marked and a whole unpack deleted the image)
+    BOOL MapsRefused;
 
     CUDF(CISOImage* image, DWORD extent, int trackno);
     virtual ~CUDF();

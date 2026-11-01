@@ -197,6 +197,7 @@ CUDF::CUDF(CISOImage* image, DWORD extent, int trackno) : CUnISOFSAbstract(image
     PartitionMapping.Length = 0;
     PartitionMapping.nMetadataICBs = 0;
     VatMissing = FALSE;
+    MapsRefused = FALSE;
 }
 
 CUDF::~CUDF()
@@ -723,6 +724,7 @@ BOOL CUDF::Open(BOOL quiet)
                     // feature 378: partition maps that do not fit the descriptor - the volume does not open (a
                     // UDF-only track is not opened; an ISO 9660 + UDF image marks its listing, CUDFISO::Open)
                     Error(IDS_ERROR_LISTING_IMAGE, quiet, block);
+                    MapsRefused = TRUE;
                     return FALSE;
                 }
                 break;

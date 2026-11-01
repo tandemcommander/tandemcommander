@@ -26,6 +26,11 @@
                                Before (HEAD 514396d3): a.txt extracted, no window, deleted
       R-BCOUNT                 PASS = only "ISO (UDF356)/A.TXT" (the UDF part does not open), at least one
                                window, KEPT. Before: both folders, no window
+      C-NB201, R-NBCOUNT       (review 1) b201 / bcount.bin without the UDF anchor at 256 and with the ISO 9660
+                               volume as long as the file (img378.py noanchor): C-NB201 PASS = both folders, no
+                               window, deleted (before and after); R-NBCOUNT PASS = only "ISO (UDF356)/A.TXT", at
+                               least one window, KEPT (the refused UDF part marks the listing). Before: both
+                               folders, deleted; review 1's build: ISO folder only, DELETED
     Every row also fails on a program exit, a bug report, a fatal window, or a main window that does not
     answer within 30 s (End-Row). Without IMAPI2FS the rows are NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -162,6 +167,8 @@ try {
         foreach ($m in @('count', 'len0', 'table', 'run', 'many')) { $made += & python -I $Py $m "$s\u201.iso" "$s\$m.bin" 2>&1 }
     }
     if ([IO.File]::Exists("$s\b201.iso")) { $made += & python -I $Py count "$s\b201.iso" "$s\bcount.bin" 2>&1 }
+    if ([IO.File]::Exists("$s\b201.iso")) { $made += & python -I $Py noanchor "$s\b201.iso" "$s\nb201.bin" 2>&1 }
+    if ([IO.File]::Exists("$s\bcount.bin")) { $made += & python -I $Py noanchor "$s\bcount.bin" "$s\nbcount.bin" 2>&1 }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) + '=' + ([IO.FileInfo]$_).Length }) | Sort-Object) -join ','))
     foreach ($m in $mu) { Out ('imapiudf356: ' + "$m") }
@@ -181,6 +188,8 @@ try {
     Unpack-Row 'R-RUN' "$s\run.bin" 'run.iso' $none -Kept -Msg 'any'
     Unpack-Row 'R-MANY' "$s\many.bin" 'many.iso' $none -Kept -Msg 'any'
     Unpack-Row 'R-BCOUNT' "$s\bcount.bin" 'bcount.iso' $isoOnly -Kept -Msg 'any'
+    Unpack-Row 'C-NB201' "$s\nb201.bin" 'nb201.iso' $both
+    Unpack-Row 'R-NBCOUNT' "$s\nbcount.bin" 'nbcount.iso' $isoOnly -Kept -Msg 'any'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

@@ -101,3 +101,39 @@ Registry restored and identical every run. Sector #00000022 = 34, the descriptor
 - `.\build.cmd` -> `BUILD SUCCEEDED` (warning C4267 at `udf.cpp` `AddFileDir` `fd.NameLen = strlen(...)` is
   older code, as recorded by 377).
 - `saltests.exe` -> `saltests: 30268 checks, 0 failed` (377 recorded 30237; +31 of `TestIsoUdfMaps_378`).
+
+## Review
+
+Review 1 (independent refute-first agent): re-ran the measurement (before 11 / 7 on the frozen HEAD build, after
+18 / 0), callers as recorded, saltests 30268 / 0, a 3,000,000-case fuzz of the rule (clean, also under ASan).
+- **MUST M1** (`udf.cpp` refusal, `udfiso.cpp` `CUDFISO::Open`): an ISO 9660 + UDF image **without the UDF anchor
+  at sector 256** (the descriptor sequence is found by the scan of blocks 0x20 - 0x200) whose descriptor is
+  refused did not mark the listing: only the ISO 9660 part was extracted and "Delete archive after unpacking"
+  **deleted** the image (before 378 both parts were extracted). Reproduced by the reviewer with its
+  `noanchor.py` (anchor zeroed, ISO 9660 volume size = the file's, so the rest rule stays quiet). **Fixed**: a
+  `CUDF::MapsRefused` flag set at the refusal and read like 358's `VatMissing` in `CUDFISO::Open`
+  (`udfVatMissing = udf->VatMissing || udf->MapsRefused`). The probe got `img378.py noanchor` and rows `C-NB201`
+  (control: both folders, deleted) and `R-NBCOUNT` (refused part: ISO folder only, KEPT).
+- **SHOULD S1** (no check failed with the rule's header-byte bound removed - it then reads `lvd[held + 1]`):
+  **fixed** - saltests place the descriptor so that byte `held` is the first byte of a `PAGE_NOACCESS` page
+  (the "many" / count 300 shape, maps ending at 2047 with count 8, and two shapes at `held` 446). Negative
+  control: `if (end - pos < 2)` replaced by `if (false)` -> saltests ends with 0xC0000005; restored -> 0 failed.
+- **SHOULD S2** (the grid's "old walk" is a second statement of the new rule, not the pre-378 reader):
+  **fixed** - renamed `IsoUdfWalkInArea378` / `asWalk`, comments say what it is; the *Implementation* text above
+  ("the old walk") is corrected by this note.
+- NOTE N1 (a count whose high bytes alone exceed: mutant ignoring bytes 270-271 survived): **fixed** - checks
+  with 0x00010001 and 0x01000001.
+- NOTE N2 (mutation summary: `len < 2` equivalent to the type minimum): accepted.
+- NOTE N3 (stricter than Linux `udf_load_logicalvol` for a count larger than the maps in the table; looser for a
+  table longer than the block; compatibility measured with IMAPI2FS images only): accepted - the item asks for
+  the refusal of a count that does not fit; no real writer measured writes such a count.
+- NOTE N4 (the first bad LVD refuses the volume though a later one could be valid; the reserve sequence is never
+  tried - older behaviour): accepted, edge case.
+- N5 (the box twice for the bridge rows), N6 (standing rules not touched, `BACKLOG.md` renumbering by the tool):
+  recorded.
+
+After the fixes: `.\build.cmd` -> BUILD SUCCEEDED; saltests `30275 checks, 0 failed`; `iso378_probe.ps1` 22 / 0
+(`probe/result_after2.txt`); the frozen HEAD build on the new rows (`probe/result_before3.txt`): C-NB201 PASS,
+R-NBCOUNT FAIL (both folders, deleted).
+- Regressions after the fix: `iso356_probe.ps1` 56 / 0 (`probe/regress_356b.txt`), `iso358_probe.ps1` 52 / 0
+  (`probe/regress_358b.txt` - 358 reads the same flag path); registry restored and identical.
