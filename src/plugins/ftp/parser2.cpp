@@ -6,6 +6,120 @@
 
 #include "../../common/salftpsrvenc.h" // feature 384: SALFTPJOIN_xxx (add_string_to_column)
 
+// feature 384: the listing bytes each name / text column of the line being parsed was assigned
+// from - add_string_to_column joins these bytes with the appended part's bytes and decodes the
+// whole once, as a listing field (as the server listed it). The column's decoded value is no
+// substitute: a code-page head whose bytes happen to be valid UTF-8 (cp1250 "C3 A9") was kept as
+// UTF-8 and became another file's name (review of 384: F8 deleted the other file). Unknown
+// (NULL) after a column is re-assigned from a decoded value (cut_white_spaces, ...); then the
+// join falls back to decoding the parts one by one (FTPListingJoinFieldU8). One line is parsed
+// by one thread at a time (a parse runs under LockServerTypeList), hence thread-local.
+class CFTPLineRawColumns
+{
+protected:
+    char** Raw; // [i]: the bytes of column 'i' (SalamanderGeneral-independent malloc), NULL = unknown
+    int* Len;
+    int Count;
+
+public:
+    CFTPLineRawColumns()
+    {
+        Raw = NULL;
+        Len = NULL;
+        Count = 0;
+    }
+    ~CFTPLineRawColumns()
+    {
+        Reset();
+        free(Raw);
+        free(Len);
+    }
+
+    // a new line (or a new attempt of a rule): nothing is known
+    void Reset()
+    {
+        for (int i = 0; i < Count; i++)
+        {
+            free(Raw[i]);
+            Raw[i] = NULL;
+        }
+    }
+
+    void Forget(int col)
+    {
+        if (col >= 0 && col < Count)
+        {
+            free(Raw[col]);
+            Raw[col] = NULL;
+        }
+    }
+
+    // remembers 'len' bytes at 'b' for 'col'; low memory leaves the column unknown (the join then
+    // decodes part by part - never wrong bytes)
+    void Set(int col, const char* b, int len)
+    {
+        if (col < 0 || len < 0)
+            return;
+        if (col >= Count)
+        {
+            int newCount = col + 8;
+            char** newRaw = (char**)realloc(Raw, newCount * sizeof(char*));
+            if (newRaw == NULL)
+                return;
+            Raw = newRaw;
+            int* newLen = (int*)realloc(Len, newCount * sizeof(int));
+            if (newLen == NULL)
+                return; // 'Raw' grew, 'Count' did not: still consistent
+            Len = newLen;
+            for (int i = Count; i < newCount; i++)
+            {
+                Raw[i] = NULL;
+                Len[i] = 0;
+            }
+            Count = newCount;
+        }
+        char* copy = (char*)malloc(len + 1);
+        if (copy != NULL && len > 0)
+            memcpy(copy, b, len);
+        free(Raw[col]);
+        Raw[col] = copy;
+        Len[col] = copy != NULL ? len : 0;
+    }
+
+    BOOL Get(int col, const char** b, int* len)
+    {
+        if (col < 0 || col >= Count || Raw[col] == NULL)
+            return FALSE;
+        *b = Raw[col];
+        *len = Len[col];
+        return TRUE;
+    }
+
+    // 'dst' gets the bytes of 'src' (assign(<dst>, <src>)), or becomes unknown
+    void Copy(int dst, int src)
+    {
+        const char* b;
+        int len;
+        if (dst == src)
+            return;
+        if (Get(src, &b, &len))
+        {
+            char* tmp = (char*)malloc(len + 1); // 'b' may move when 'Set' grows the arrays
+            if (tmp != NULL)
+            {
+                if (len > 0)
+                    memcpy(tmp, b, len);
+                Set(dst, tmp, len);
+                free(tmp);
+                return;
+            }
+        }
+        Forget(dst);
+    }
+};
+
+static thread_local CFTPLineRawColumns FTPLineRaw;
+
 //
 // ****************************************************************************
 // CFTPParser
@@ -306,6 +420,7 @@ BOOL CFTPParser::GetNextItemFromListing(CFileData* file, BOOL* isDir,
         int i;
         for (i = 0; i < columns->Count; i++)
             emptyCol[i] = TRUE;
+        FTPLineRaw.Reset(); // feature 384: no column's listing bytes are known yet
 
         // perform the parsing
         const char* s = *listing;
@@ -348,6 +463,7 @@ BOOL CFTPParser::GetNextItemFromListing(CFileData* file, BOOL* isDir,
                 int x;
                 for (x = 0; x < columns->Count; x++)
                     emptyCol[x] = TRUE;
+                FTPLineRaw.Reset(); // feature 384: the next rule starts with no column's bytes
 
                 if (brk)
                     break;
@@ -700,6 +816,12 @@ BOOL AssignStringToColumn(int col, TIndirectArray<CSrvTypeColumn>* columns, cons
             *lowMemErr = TRUE;
             return FALSE;
         }
+        // feature 384: the bytes as listed are remembered for a later add_string_to_column; a
+        // value re-assigned from a decoded text has no listing bytes
+        if (evidence)
+            FTPLineRaw.Set(col, beg, (int)(end - beg));
+        else
+            FTPLineRaw.Forget(col);
         return AssignU8StringToColumn(col, columns, str, lowMemErr, emptyCol, file, dataIface);
     }
     else
@@ -1619,6 +1741,8 @@ BOOL CFTPParserFunction::UseFunction(CFileData* file, BOOL* isDir,
                     Parameters[1]->GetStringOperand(&beg, &end, file, dataIface, columns, s, listingEnd);
                     if (!AssignStringToColumn(i, columns, beg, end, lowMemErr, emptyCol, file, dataIface))
                         ret = FALSE;
+                    else if (Parameters[1]->Type == pptColumnID) // feature 384: a decoded value - the
+                        FTPLineRaw.Copy(i, Parameters[1]->ColumnIndex); // source column's listing bytes
                     break;
                 }
 
@@ -1779,26 +1903,64 @@ BOOL CFTPParserFunction::UseFunction(CFileData* file, BOOL* isDir,
                     Parameters[1]->GetStringOperand(&beg, &end, file, dataIface, columns, s, listingEnd);
                     if (beg < end) // if we are not adding an empty string (that is ignored)
                     {
-                        // feature 384: the column's value is decoded already (UTF-8); only the
-                        // appended part becomes text, by its kind - the joined text decoded as a
-                        // whole read a code-page server's first part in the code page twice
-                        // (z/VM "name<c-caron> ext<c-caron>" -> "name<A-umlaut><T-caron>.ext<c-caron>")
+                        // feature 384: the column's value is decoded already (UTF-8) - joined with
+                        // the appended raw bytes and decoded as a whole, a code-page server's first
+                        // part was read in the code page twice (z/VM "name<c-caron> ext<c-caron>" ->
+                        // "name<A-umlaut><T-caron>.ext<c-caron>"). The bytes the column was listed
+                        // as are joined with the part's bytes and decoded once instead; when they
+                        // are not known, the parts are decoded one by one (salftpsrvenc.h)
                         int partKind = SALFTPJOIN_COLUMN; // pptColumnID: another column's value
                         if (Parameters[1]->Type == pptStateVar)
                             partKind = SALFTPJOIN_RAW; // next_word / next_char / rest_of_line
                         else if (Parameters[1]->Type == pptString)
                             partKind = SALFTPJOIN_LITERAL;
-                        char* str = FTPListingJoinFieldU8(begDst, (int)(endDst - begDst), beg, (int)(end - beg), partKind);
-                        if (str == NULL)
+                        const char* headRaw = NULL;
+                        int headRawLen = 0;
+                        BOOL headRawKnown = FTPLineRaw.Get(i, &headRaw, &headRawLen);
+                        const char* partRaw = beg;
+                        int partRawLen = (int)(end - beg);
+                        BOOL partRawKnown = TRUE; // a state variable's / literal's own bytes
+                        if (partKind == SALFTPJOIN_COLUMN)
+                            partRawKnown = FTPLineRaw.Get(Parameters[1]->ColumnIndex, &partRaw, &partRawLen);
+                        if (SalFtpJoinBuild(headRawKnown, partKind, partRawKnown) == SALFTPJOIN_BUILD_RAW_THEN_DECODE)
                         {
-                            TRACE_E(LOW_MEMORY);
-                            *lowMemErr = TRUE;
-                            ret = FALSE;
-                            break;
+                            char* raw = (char*)malloc(headRawLen + partRawLen + 1);
+                            if (raw == NULL)
+                            {
+                                TRACE_E(LOW_MEMORY);
+                                *lowMemErr = TRUE;
+                                ret = FALSE;
+                                break;
+                            }
+                            if (headRawLen > 0)
+                                memcpy(raw, headRaw, headRawLen);
+                            memcpy(raw + headRawLen, partRaw, partRawLen);
+                            // decoded once, as listed; re-assigned - no state evidence (288); a
+                            // code-page result is remembered for the server as any field is (224)
+                            if (!AssignStringToColumn(i, columns, raw, raw + headRawLen + partRawLen,
+                                                      lowMemErr, emptyCol, file, dataIface, FALSE /* re-assigned */))
+                            {
+                                ret = FALSE;
+                            }
+                            else
+                                FTPLineRaw.Set(i, raw, headRawLen + partRawLen); // for the next append
+                            free(raw);
                         }
-                        // assigned as it is: never decoded again (re-assigned - no evidence, 288)
-                        if (!AssignU8StringToColumn(i, columns, str, lowMemErr, emptyCol, file, dataIface))
-                            ret = FALSE;
+                        else
+                        {
+                            char* str = FTPListingJoinFieldU8(begDst, (int)(endDst - begDst), beg, (int)(end - beg), partKind);
+                            if (str == NULL)
+                            {
+                                TRACE_E(LOW_MEMORY);
+                                *lowMemErr = TRUE;
+                                ret = FALSE;
+                                break;
+                            }
+                            FTPLineRaw.Forget(i);
+                            // assigned as it is: never decoded again (re-assigned - no evidence, 288)
+                            if (!AssignU8StringToColumn(i, columns, str, lowMemErr, emptyCol, file, dataIface))
+                                ret = FALSE;
+                        }
                     }
                     break;
                 }

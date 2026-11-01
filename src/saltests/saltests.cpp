@@ -18785,9 +18785,10 @@ static void TestFtpServerEncoding288()
     CHECK(!SalFtpSameServer("host", 21, "u", "other", 21, "u"));
 }
 
-// feature 384: a listing column a rule extends ("add_string_to_column") is decoded part by part
-// (salftpsrvenc.h) - the decoded value joined with raw code-page bytes and decoded again showed a
-// z/VM name "name<c-caron>.ext<c-caron>" as "name<A-umlaut><T-caron>.ext<c-caron>"
+// feature 384: a listing column a rule extends ("add_string_to_column") is built from the listing
+// bytes, decoded once (salftpsrvenc.h) - the decoded value joined with raw code-page bytes and
+// decoded again showed a z/VM name "name<c-caron>.ext<c-caron>" as
+// "name<A-umlaut><T-caron>.ext<c-caron>"
 static void TestFtpJoinedColumn384()
 {
     // only the listing line's own bytes are decoded as a field of the server
@@ -18801,6 +18802,19 @@ static void TestFtpJoinedColumn384()
     CHECK(SalFtpJoinPartHandling(SALFTPJOIN_LITERAL + 1) == SALFTPJOIN_APPEND_AS_IS);
     // the three kinds are told apart
     CHECK(SALFTPJOIN_RAW != SALFTPJOIN_COLUMN && SALFTPJOIN_COLUMN != SALFTPJOIN_LITERAL && SALFTPJOIN_RAW != SALFTPJOIN_LITERAL);
+
+    // how the joined value is built: the listing bytes joined and decoded once whenever they are
+    // known - the decoded head joined with the part made a code-page head whose bytes happen to be
+    // UTF-8 (cp1250 C3 A9) the name of another file (review of 384)
+    CHECK(SalFtpJoinBuild(TRUE, SALFTPJOIN_RAW, FALSE) == SALFTPJOIN_BUILD_RAW_THEN_DECODE); // z/VM: <name> + next_word
+    CHECK(SalFtpJoinBuild(TRUE, SALFTPJOIN_RAW, TRUE) == SALFTPJOIN_BUILD_RAW_THEN_DECODE);
+    CHECK(SalFtpJoinBuild(TRUE, SALFTPJOIN_LITERAL, FALSE) == SALFTPJOIN_BUILD_RAW_THEN_DECODE); // z/VM: <name> + "."
+    CHECK(SalFtpJoinBuild(TRUE, SALFTPJOIN_COLUMN, TRUE) == SALFTPJOIN_BUILD_RAW_THEN_DECODE);   // MVS: <unit> + <name>
+    CHECK(SalFtpJoinBuild(TRUE, SALFTPJOIN_COLUMN, FALSE) == SALFTPJOIN_BUILD_DECODED_PARTS);    // the other column was cut
+    CHECK(SalFtpJoinBuild(FALSE, SALFTPJOIN_RAW, TRUE) == SALFTPJOIN_BUILD_DECODED_PARTS);       // the column was cut
+    CHECK(SalFtpJoinBuild(FALSE, SALFTPJOIN_LITERAL, TRUE) == SALFTPJOIN_BUILD_DECODED_PARTS);
+    CHECK(SalFtpJoinBuild(FALSE, SALFTPJOIN_COLUMN, TRUE) == SALFTPJOIN_BUILD_DECODED_PARTS);
+    CHECK(SALFTPJOIN_BUILD_RAW_THEN_DECODE != SALFTPJOIN_BUILD_DECODED_PARTS);
 
     // the joined value is a code-page name of the server when a part came from the code page
     CHECK(!SalFtpJoinedFieldIsCodePageName(FALSE, FALSE)); // ASCII / UTF-8 parts only

@@ -77,6 +77,44 @@ the review; C2 (LOW) - the probe drives delete and download, not view / rename (
 
 No UI strings, dialogs or menus changed: no `.slt` refresh needed; `build.cmd full` not required.
 
+## Review
+
+### Review 1 (refute-first agent, 2026-11-01) - rejected: 1 MUST, 2 SHOULD, 3 NOTE
+
+- **MUST 1** (fixed): the first version never decoded the column's value again and decoded only
+  the appended part. A code-page head whose bytes happen to be valid UTF-8 (cp1250 `zĂ©` = 7A C3 A9
+  = UTF-8 `zé`) stayed UTF-8, so `zĂ©.extč` was shown as `zé.extč`, the name of another file
+  (7A E9 ...). F8 deleted that other file; main had deleted the right one (`probe/review1_dup_*.txt`).
+  The reviewer's suggested fix (rebuild the head's bytes from the server's code-page name set) fails
+  on that very case: the other file registers `zé` as a code-page name, so both heads would be
+  rebuilt as 7A E9. **Fix**: true provenance. `parser2.cpp` keeps, thread-locally for the line being
+  parsed, the listing bytes each name / text column was assigned from (`CFTPLineRawColumns`).
+  `AssignStringToColumn` records them for listing bytes (evidence) and forgets them for re-assigned
+  values. `assign(<col>, <other column>)` copies the source's bytes. They are reset with `emptyCol`
+  at each line and rule attempt. `add_string_to_column` joins the head's bytes with the part's
+  bytes and decodes once (`AssignStringToColumn(.., FALSE)`, then records the joined bytes for the
+  next append). That is exactly main's decode, except that the head is the listed bytes instead of
+  its UTF-8 - so it is right in every case main was right, plus the defect case. Only when the
+  bytes are not known (the column was cut first; no built-in rule does that) the part-by-part
+  `FTPListingJoinFieldU8` is the fallback. Pure decision `SalFtpJoinBuild` + 9 saltests checks.
+- **SHOULD 1** (partly): the unit checks test only the switch. Now the build decision
+  (`SalFtpJoinBuild`) is pure and tested. The decode itself stays in the plug-in (`FTPFieldToU8`,
+  CP_ACP) and is proved by the probe rows, including the M1 row. Moving the decode into a header
+  would duplicate 224's decoder; not done.
+- **SHOULD 2** (done): the reviewer showed that a "mixed" server can be built with ftpmini (a cp1250
+  name whose bytes are valid UTF-8). Rows MIX-HEADCP, MIX-BOTH and MIX-TAILCP are now in the probe;
+  main failed MIX-HEADCP (`probe/review1_mix_neg.txt`). The analyze note C1 is superseded.
+- **NOTE 1** (done): the fallback decodes the appended part without a server (`NULL`), so a
+  fragment such as `extč` is not remembered as a name of the server; the joined value is.
+- **NOTE 2** (accepted): a head that was cut before the join is not recognised (288's limit); with
+  the new design the cut column's bytes are unknown and the fallback applies.
+- **NOTE 3**: checked and fine (operand kinds, literal decode, ownership, name limit, built-in users).
+
+After the fix: build OK; saltests 30,496 / 0; probe `probe/result_after_review1.txt` 16 / 0.
+REG-COINC needed Home + 2 Down instead of End: with the names right, `zĂ©` (A-breve) sorts before
+`zé`, and End had focused the other file. The negative controls of the new rows are the reviewer's
+runs on main and on the first version (`probe/review1_*_neg.txt` / `review1_dup_after.txt`).
+
 ## Decisions
 
 - Raw part (`pptStateVar`): decoded by the listing-field rule of the server (`FTPFieldToU8` with

@@ -3777,9 +3777,10 @@ char* FTPListingJoinFieldU8(const char* headU8, int headLen, const char* part, i
     {
     case SALFTPJOIN_DECODE_AS_SERVER_FIELD:
         // no state evidence: a re-assigned column tells nothing about the server's encoding (288);
-        // a part read in the code page is remembered as every code-page field is (224 / 288)
+        // the part alone is no name of the server (review of 384) - the joined value is
+        // remembered below when the part was read in the code page
         rawPartReadInCodePage = !SalFtpListingFieldIsU8(part, partLen);
-        partU8 = FTPFieldToU8(part, partLen, srv, 0);
+        partU8 = FTPFieldToU8(part, partLen, NULL, 0);
         break;
     case SALFTPJOIN_DECODE_ALONE:
         partU8 = FTPFieldToU8(part, partLen, NULL, 0); // the rule's text, not the server's bytes

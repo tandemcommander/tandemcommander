@@ -18,6 +18,16 @@
                     the old whole-text decode was right); F8: PASS = deleted (before and after)
       ZVM-UTF-DEL   control: UTF-8 server, "name<c-caron>.ext<c-caron>"; F8: PASS = deleted (before
                     and after)
+      MIX-HEADCP, MIX-BOTH, MIX-TAILCP  (review of 384) a "mixed" legacy server: the folder also holds
+                    "a<A-breve><copyright>.txt", whose cp1250 bytes C3 A9 are valid UTF-8 (the client
+                    takes it for a UTF-8 name: UTF-8 and code-page evidence); F8 on "zz<c-caron>.EXT" /
+                    "zz<c-caron>.ext<c-caron>" / "zz.ext<c-caron>": PASS = deleted (the joined name goes
+                    in the code page; main failed MIX-HEADCP: DELE in UTF-8)
+      REG-COINC     (review of 384, MUST 1) legacy server holding "z<A-breve><copyright>.ext<c-caron>"
+                    (head bytes 7A C3 A9 - valid UTF-8) and "z<e-acute>.ext<c-caron>" (7A E9); F8 on the
+                    first: PASS = it is gone and the other file is still there (the first version
+                    of 384 decoded only the appended part: both showed as "z<e-acute>.ext<c-caron>" and
+                    F8 deleted the other file)
     The product's registry key is exported, restored and compared. Exit code = FAIL rows.
 
 .NOTES
@@ -134,9 +144,10 @@ function Entries([string]$Dir) { return @([IO.Directory]::GetFileSystemEntries($
 function Show($names) { return (($names | ForEach-Object { Esc $_ }) -join ',') }
 
 # one row: the server folder <srv root>\$Case and the local folder <start>\$Case prepared by $Setup;
-# the server panel is the left one (the local folder on the right); Home + End focus the last item;
+# the server panel is the left one (the local folder on the right); Home + End focus the last item
+# (Home + $Down x Down when $Down >= 0);
 # the command $Cmd; $Judge { param($texts, $cmds, $srv, $local, $conn) }
-function Row-Ftp([string]$Case, $S, [int]$Cmd, [scriptblock]$Setup, [scriptblock]$Judge) {
+function Row-Ftp([string]$Case, $S, [int]$Cmd, [scriptblock]$Setup, [scriptblock]$Judge, [int]$Down = -1) {
     if (-not (Want $Case)) { return }
     $before = Reports; $id = 0
     $local = $StartDir + '\' + $Case; $srv = $S.Root + '\' + $Case
@@ -148,7 +159,8 @@ function Row-Ftp([string]$Case, $S, [int]$Cmd, [scriptblock]$Setup, [scriptblock
         Key $id 0x09; [void](Do-ChangeDir $id $local); Sync $id; Key $id 0x09
         $conn = Connect $id $S $Case
         Start-Sleep -Milliseconds 1500; Sync $id
-        Key $id 0x24; Key $id 0x23
+        Key $id 0x24
+        if ($Down -lt 0) { Key $id 0x23 } else { for ($k = 0; $k -lt $Down; $k++) { Key $id 0x28 } }
         Start-Sleep -Milliseconds 700; Sync $id
         $sw = [Diagnostics.Stopwatch]::StartNew()
         Post-Cmd (Get-Main $id) $Cmd; Start-Sleep -Milliseconds 700
@@ -203,6 +215,29 @@ try {
         param($t, $c, $s, $l, $conn)
         $e = @(Entries $s)
         @{ Ok = ($e.Count -eq 1 -and $e[0] -ceq 'a-keep.txt'); Facts = ("on the server: {0}" -f (Show $e)) } }
+
+    # review of 384: a "mixed" server - a name whose cp1250 bytes (C3 A9) are valid UTF-8 gives the
+    # client UTF-8 evidence besides the code-page names; the joined name must still go in the code page
+    $AbC = [string][char]0x0102 + [string][char]0x00A9   # cp1250 C3 A9 = UTF-8 e-acute
+    $Mark = 'a' + $AbC + '.txt'
+    foreach ($case in @(@('MIX-HEADCP', ('zz' + $Cc + '.EXT')), @('MIX-BOTH', ('zz' + $Cc + '.ext' + $Cc)), @('MIX-TAILCP', ('zz.ext' + $Cc)))) {
+        $script:Target = $case[1]
+        Row-Ftp $case[0] $SrvL 729 { param($s, $l) [IO.File]::WriteAllText($LP + $s + '\' + $script:Target, 'ZVM'); [IO.File]::WriteAllText($LP + $s + '\a-keep.txt', 'KEEP'); [IO.File]::WriteAllText($LP + $s + '\' + $Mark, 'MARK') } {
+            param($t, $c, $s, $l, $conn)
+            $e = @(Entries $s)
+            @{ Ok = (-not ($e -ccontains $script:Target) -and ($e -ccontains 'a-keep.txt') -and ($e -ccontains $Mark)); Facts = ("target '{0}'; on the server: {1}" -f (Esc $script:Target), (Show $e)) } }
+    }
+
+    # review of 384 (MUST 1): a code-page head whose bytes happen to be valid UTF-8 - another file of
+    # the server has the name the first version of 384 made of it
+    $Coinc = 'z' + $AbC + '.ext' + $Cc
+    $Other = 'z' + [string][char]0x00E9 + '.ext' + $Cc
+    Row-Ftp 'REG-COINC' $SrvL 729 { param($s, $l) [IO.File]::WriteAllText($LP + $s + '\' + $Coinc, 'ZVM'); [IO.File]::WriteAllText($LP + $s + '\' + $Other, 'OTHER'); [IO.File]::WriteAllText($LP + $s + '\a-keep.txt', 'KEEP') } {
+        param($t, $c, $s, $l, $conn)
+        $e = @(Entries $s)
+        @{ Ok = (-not ($e -ccontains $Coinc) -and ($e -ccontains $Other) -and ($e -ccontains 'a-keep.txt')); Facts = ("target '{0}', other '{1}'; on the server: {2}" -f (Esc $Coinc), (Esc $Other), (Show $e)) } } -Down 2
+    # (Home + 2 x Down: "..", a-keep.txt, then the target - A-breve sorts with "a", before e-acute;
+    # End focused the other file once the names were right)
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

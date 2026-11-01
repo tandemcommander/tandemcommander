@@ -101,7 +101,11 @@ any name on a UTF-8 server, and ASCII names are shown and addressed exactly as b
 - **FR-001**: When a listing rule appends a part to a text or name column, the column's existing
   (already decoded) value MUST NOT be decoded again.
 - **FR-002**: An appended part taken from the listing line (raw server bytes) MUST be decoded by the
-  same rule as a listing field before it is appended.
+  same rule as a listing field. When the bytes the column was listed as are known, they are joined
+  with the part's bytes and the whole is decoded once, exactly as the server listed it (review 1 of
+  384: a code-page first part whose bytes happen to be valid UTF-8 must not be taken for UTF-8).
+  Only when they are not known (the column was re-assigned from a decoded value) the part is decoded
+  alone and appended.
 - **FR-003**: An appended part that is another column's value MUST be appended as it is.
 - **FR-004**: An appended literal from the rule MUST be appended as valid text: kept when it is
   ASCII / UTF-8, otherwise read in the code page (the earlier result for such a literal).

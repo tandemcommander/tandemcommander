@@ -107,20 +107,45 @@ inline BOOL SalFtpWToCodePageExact(UINT codePage, const WCHAR* w, char* buf, int
 // is already decoded (UTF-8). Joining the decoded value with raw listing bytes and decoding the
 // whole again read a code-page server's first part in the code page twice ("name<c-caron>.ext
 // <c-caron>" from a z/VM CMS listing was shown and addressed as "name<A-umlaut><T-caron>.ext
-// <c-caron>"). Now the appended part alone becomes text, by its kind, and is appended:
+// <c-caron>"). Now the bytes the column was listed as are joined with the part's bytes and the
+// whole is decoded once - exactly what the server listed. The decoded head is no substitute for
+// its bytes: a code-page head whose bytes happen to be valid UTF-8 (cp1250 "A-breve copyright" =
+// C3 A9 = UTF-8 e-acute) was kept as UTF-8, and decoding only the appended part gave the name of
+// another file of the server (review of 384: F8 deleted the other file).
+// the kinds of the appended part
 enum
 {
     SALFTPJOIN_RAW,     // the listing line's bytes (next_word, next_char, rest_of_line)
     SALFTPJOIN_COLUMN,  // another column's value - decoded already
     SALFTPJOIN_LITERAL, // the rule's own text
 };
+
+// how the joined value is built
 enum
 {
-    SALFTPJOIN_DECODE_AS_SERVER_FIELD, // as a listing field of the server (ASCII / UTF-8 / WTF-8
-                                       // kept, else the code page; a code-page text is remembered)
+    SALFTPJOIN_BUILD_RAW_THEN_DECODE, // the head's and the part's listing bytes, decoded once
+    SALFTPJOIN_BUILD_DECODED_PARTS,   // a byte form is not known: the parts become text one by
+                                      // one (SalFtpJoinPartHandling) and are joined
+};
+// 'headRawKnown': the column's listing bytes are known (it was assigned from the listing, not
+// re-assigned from a decoded value by a cut); 'partRawKnown': for SALFTPJOIN_COLUMN, the other
+// column's listing bytes are known (a state variable's and a literal's bytes always are)
+inline int SalFtpJoinBuild(BOOL headRawKnown, int partKind, BOOL partRawKnown)
+{
+    if (!headRawKnown)
+        return SALFTPJOIN_BUILD_DECODED_PARTS;
+    if (partKind == SALFTPJOIN_COLUMN && !partRawKnown)
+        return SALFTPJOIN_BUILD_DECODED_PARTS;
+    return SALFTPJOIN_BUILD_RAW_THEN_DECODE;
+}
+
+// SALFTPJOIN_BUILD_DECODED_PARTS: how the appended part alone becomes text
+enum
+{
+    SALFTPJOIN_DECODE_AS_SERVER_FIELD, // as a listing field (ASCII / UTF-8 / WTF-8 kept, else the
+                                       // code page)
     SALFTPJOIN_APPEND_AS_IS,           // never decoded a second time
-    SALFTPJOIN_DECODE_ALONE,           // the same text rule, but not the server's bytes: nothing
-                                       // is remembered for the server
+    SALFTPJOIN_DECODE_ALONE,           // the same text rule; the rule's text, not the server's
 };
 inline int SalFtpJoinPartHandling(int partKind)
 {

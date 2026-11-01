@@ -1,0 +1,12 @@
+ftp384_probe (feature 384)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 22:38; desktop 'tc_probe_22492'; ACP 1250; registry key existed True; export SHA-256 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+Servers : ftpmini.py (z/VM listing) cp1250 on 127.0.0.1:2141 - up; utf-8 on 127.0.0.1:2142 - up
+
+REG-COINC  ROW    FAIL        on the server: a-keep.txt,z\u0102\u00A9.ext\u010D; 7,5 s; connected: True at 'ftp://u@127.0.0.1:2141/REG-COINC'; server got: CWD /REG-COINC / LIST / DELE z\u00E9.ext\u010D / CWD /REG-COINC / LIST; dialogs: [#32770 'Confirm Delete'] [Button id=1] &Yes | [Button id=2] &No | [Static id=786] Are you sure you want to delete file "z\u00E9.ext\u010D" from FTP server? | [Button id=787] &Only add to Queue (do not process in active connection)
+REG-COINC  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+REG-COINC-ASCII ROW    FAIL        on the server: a-keep.txt,z\u0102\u00A9.EXT; 7,5 s; connected: True at 'ftp://u@127.0.0.1:2141/REG-COINC-ASCII'; server got: CWD /REG-COINC-ASCII / LIST / DELE z\u00E9.ext\u010D / CWD /REG-COINC-ASCII / LIST; dialogs: [#32770 'Confirm Delete'] [Button id=1] &Yes | [Button id=2] &No | [Static id=786] Are you sure you want to delete file "z\u00E9.ext\u010D" from FTP server? | [Button id=787] &Only add to Queue (do not process in active connection)
+REG-COINC-ASCII END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 2, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

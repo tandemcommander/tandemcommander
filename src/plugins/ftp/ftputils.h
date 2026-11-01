@@ -498,14 +498,15 @@ public:
 // ('nameField') changes the server's state (every field's code-page text is remembered, 224).
 char* FTPListingFieldToU8(const char* beg, int len, BOOL nameField);
 
-// Feature 384: the value of a column a listing rule extends (add_string_to_column) - 'headU8'
-// ('headLen' bytes) is the column's decoded UTF-8 value, 'part' ('partLen' bytes) the appended
-// part of kind 'partKind' (SALFTPJOIN_xxx, salftpsrvenc.h): raw listing bytes are decoded as a
-// listing field of the server of CFTPListingServerScope (no state evidence), the rule's literal
-// alone, another column's value is appended as it is - the head is never decoded again. The
-// joined value is remembered as a code-page name of the server when a part came from the code
-// page (SalFtpJoinedFieldIsCodePageName). Returns a SalamanderGeneral->Alloc'd, NUL-terminated
-// string, NULL on low memory.
+// Feature 384: the value of a column a listing rule extends (add_string_to_column) when the
+// column's listing bytes are not known (SALFTPJOIN_BUILD_DECODED_PARTS - the parser joins the
+// bytes and decodes them once when it has them) - 'headU8' ('headLen' bytes) is the column's
+// decoded UTF-8 value, 'part' ('partLen' bytes) the appended part of kind 'partKind'
+// (SALFTPJOIN_xxx, salftpsrvenc.h): raw listing bytes and the rule's literal are decoded alone as
+// a listing field (no state evidence), another column's value is appended as it is - the head is
+// never decoded again. The joined value is remembered as a code-page name of the server of
+// CFTPListingServerScope when a part came from the code page (SalFtpJoinedFieldIsCodePageName).
+// Returns a SalamanderGeneral->Alloc'd, NUL-terminated string, NULL on low memory.
 char* FTPListingJoinFieldU8(const char* headU8, int headLen, const char* part, int partLen, int partKind);
 
 // Encode a UTF-8 name/path into the bytes the FTP server 'srv' expects (inverse of

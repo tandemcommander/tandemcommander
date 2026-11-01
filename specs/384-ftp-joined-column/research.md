@@ -12,6 +12,17 @@
   a head that came as UTF-8 / WTF-8 from a mixed or UTF-8 server would be mangled; the code page
   cannot hold every UTF-8 name).
 
+## R1a - Review 1: the head's bytes, not its decoded value (supersedes R2 for the usual case)
+
+- Decision: the parser records, thread-locally for the line, the listing bytes each name / text
+  column was assigned from; `add_string_to_column` joins them with the part's bytes and decodes the
+  whole once. R2 / R4 / R5 remain the fallback for a column whose bytes are unknown (re-assigned from
+  a decoded value).
+- Rationale: a decoded head cannot tell its origin - `zé` may come from cp1250 `7A E9` or from bytes
+  `7A C3 A9` that are cp1250 `zĂ©` and valid UTF-8; the server's code-page name set cannot tell either
+  (another file registers `zé`). Joining the listed bytes reproduces what decoding the original line
+  would give (review 1, MUST 1; probe row REG-COINC).
+
 ## R2 - How each kind of part is decoded
 
 - Decision: raw part -> `FTPFieldToU8(part, len, FTPListingServer, 0)` (the listing-field rule:
