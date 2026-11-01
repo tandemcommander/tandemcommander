@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item ftp-server-path-compare-code-page-fold - implement exactly what it describes (FTP: server folder names compared by the code-page case rule on UTF-8 bytes)." From backlog item ftp-server-path-compare-code-page-fold.
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: Should the explore's cycle check ("the server put us into a parent folder") count a match by the old code-page fold as well as by the new rule, to stay conservative? → A: No - the new rule alone. Every cycle the old rule detected for real (byte-identical or case-equal folder names) the new rule detects too, and it also detects case-equal names the old fold missed; the old fold's extra matches (`Č` / `Ĝ`) are different folders, not cycles. The byte-exact list of explored paths stays the backstop against a loop. (autonomous run: conservative)
+- Q: How is a folder name that is not valid UTF-8 / WTF-8 compared? → A: by the 092 rule as `SalNameOrderEqualCI` applies it: equal only to another invalid name that folds equal byte by byte (the legacy fold the old code used), never to a valid name. (autonomous run: rule)
+- Q: Does the prefix test compare whole names or byte counts? → A: whole names: a prefix must end at a separator or the end of the path and every name of it must equal the path's name at the same place; byte counts are never compared across the two paths (case pairs differ in UTF-8 length). (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - An upload into one folder never trusts another folder's listing (Priority: P1)
