@@ -103,7 +103,8 @@ CCD/IMG, ...) keeps its counts, which always cover the track table.
   number of tracks it gets from the track table by feature 340's rule (the declared count read as an
   unsigned 32-bit number, at most the tracks left) and with exactly those tracks under it.
 - **FR-003**: Tracks that no session covers MUST be shown after the last session, under one line saying
-  that no session covers them; the line appears only when such tracks exist.
+  that no session covers them ("Tracks not in any session", after an empty line, like a session
+  heading); the line appears only when such tracks exist, and the tracks keep their numbers.
 - **FR-004**: The output for an image whose counts cover its tracks exactly MUST stay as it was.
 - **FR-005**: The new line is a UI text of the ISO plug-in: it MUST be translated into every enabled
   language (two-stage `.slt` refresh).
@@ -132,6 +133,9 @@ CCD/IMG, ...) keeps its counts, which always cover the track table.
 - Q: What does "Number of tracks" of a session show when the declared count does not fit? → A: the tracks
   the session gets from the track table by feature 340's rule (`SalIsoSessionTracks`), consistent with the
   tracks listed under it and with the listing (autonomous run: item).
+- Q: What form does the line for tracks no session covers take? → A: the form of the session heading -
+  an empty line, then "Tracks not in any session" at the left margin; the tracks below it keep their usual
+  form and numbering (autonomous run: conservative).
 
 ## Assumptions
 
