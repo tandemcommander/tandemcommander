@@ -34,6 +34,7 @@ the 140 ms.
 
 - Q: While the clipboard is kept open by another program, what do the paste commands show? → A: What they show today after the waiting check gives up (the clipboard cannot be read, so the paste of files, shortcuts and a path are not offered); the program looks again shortly afterwards, so they become available on their own once the clipboard is free (autonomous run: conservative - same result as today, without the wait).
 - Q: How long does the program keep looking again while the clipboard stays busy? → A: Every 0.5 s for at most 5 s after a check that found it busy; after that the next usual trigger (the next activation, opening a menu, closing a dialog, a paste) looks again (autonomous run: conservative - bounded work, never a permanent poll).
+- Q: Does a pending series of later looks continue when the user switches away from the program before it ends? → A: Yes, unchanged - a look only reads the clipboard (below 1.1 ms), and the next activation starts a new series anyway (autonomous run: conservative - the smallest change, no extra state tied to activation).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -92,6 +93,8 @@ probe cannot read (a person-step confirms it on a real desktop).
   the clipboard) keep their current behaviour, including their short wait for a busy clipboard -
   they are a deliberate user action, not an activation.
 - The window is closed while a later look is pending: nothing happens.
+- The user switches away while later looks are pending: they continue until the series ends
+  (each only reads the clipboard).
 
 ## Requirements *(mandatory)*
 
