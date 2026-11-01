@@ -298,6 +298,7 @@ Last triaged: 2026-11-01
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [FTP: upload listing cache lookup remembers a slot number instead of the listing index](items/ftp-upload-listing-cache-lookup-remembers-a-slot-number/desc.md) | tech-debt | 1 | ftp | review:385 | 2026-11-02 |
 
 ## Parked
 

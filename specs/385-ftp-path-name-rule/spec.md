@@ -137,6 +137,13 @@ pass as before.
   "case-insensitive server types".
 - Assumption (autonomous run): the server's own case rule is taken to be the Windows one (092),
   as the plug-in already does for names (277, 303); a server whose rule differs is not detected.
+  Review 1 (SHOULD): for VMS (and AS/400 outside its root file system) nobody knows whether the
+  server treats `Č` and `č` as one folder; the old fold kept them apart on code page 1250, the new
+  rule joins them. A server that folds only ASCII would then let the upload listing cache answer
+  for the other folder - CROSS's failure in the other direction. Accepted: the item asks for the
+  092 rule on every case-insensitive type, MVS / z/VM / Tandem names are ASCII-only in practice,
+  and a Windows-type server on case-sensitive storage carried the same risk for ASCII names
+  before. No such server was available to measure.
 - Assumption (autonomous run): the opened-file lock, the listing caches and the other callers
   keep their logic; only the comparison under them changes.
 - The upload listing cache's *name* lookup (sorted by the code-page fold, with 303's case-only

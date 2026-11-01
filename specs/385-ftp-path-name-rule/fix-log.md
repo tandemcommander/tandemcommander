@@ -67,6 +67,11 @@ Backlog item `ftp-server-path-compare-code-page-fold` (source review:277). HEAD0
 - Regressions (`probe/regress_*.txt`): 215 PASS 12 / 0; 224 PASS 16 / 0; 233 PASS 3 / FAIL 3 -
   DLT / DLC / UPT, the rows 233 recorded as its probe defect and 277 recorded the same way
   (`specs/277-ftp-pwd-path-cut/probe/regress_233.txt` 3 / 3); 277 PASS 10 / 0.
+  These four probes use a server answering `215 UNIX Type: L8` (215's `ftpmini.py`), which takes
+  the unchanged byte rule: they show that the Unix path type and the rest of the plug-in did not
+  move, nothing about the changed kinds (review 1, SHOULD 1). The changed code is proven in the GUI
+  by this feature's probe only (upload listing cache, Windows type) and at function level by
+  saltests for every kind and every caller's comparison.
 - Not driven: the opened-file lock (two concurrent operations on one file) - it goes through the
   same function (`CFTPOpenedFile::IsSameFile` -> `FTPIsTheSameServerPath`), covered by saltests;
   VMS / MVS / z/VM / Tandem / AS/400 servers by saltests only (no such server here).

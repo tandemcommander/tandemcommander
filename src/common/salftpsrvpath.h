@@ -51,61 +51,61 @@ inline BOOL SalFtpVmsEscaped(const char* beginning, const char* c)
 
 namespace SalFtpSrvPathDetail
 {
-// is s[i] a separator of the path kind? ('s' = the whole path, for the VMS escapes)
-inline BOOL IsSep(ESalFtpSrvPathKind kind, const char* s, int i)
-{
-    char c = s[i];
-    switch (kind)
+    // is s[i] a separator of the path kind? ('s' = the whole path, for the VMS escapes)
+    inline BOOL IsSep(ESalFtpSrvPathKind kind, const char* s, int i)
     {
-    case sfspkVms:
-        return (c == '.' || c == '[' || c == ']') && !SalFtpVmsEscaped(s, s + i);
-    case sfspkMvs:
-        return c == '.' || c == '\'';
-    case sfspkSlashes:
-        return c == '/' || c == '\\';
-    case sfspkDotted:
-        return c == '.';
-    default: // sfspkAs400, sfspkCaseSensitive
-        return c == '/';
-    }
-}
-
-// Walks 'a' (la bytes) and 'b' (lb bytes) together: a separator of 'a' must meet the same separator
-// of 'b' (sfspkSlashes: either of the two), a name of 'a' (the bytes up to the next separator or
-// the end) the same name of 'b' by SalNameOrderEqualCI. Stops at the end of 'a' or at the first
-// difference - at a separator or at the start of the names that differ; *ia / *ib = where.
-inline void Walk(ESalFtpSrvPathKind kind, const char* a, int la, const char* b, int lb, int* ia, int* ib)
-{
-    int i = 0;
-    int j = 0;
-    while (i < la)
-    {
-        if (IsSep(kind, a, i))
+        char c = s[i];
+        switch (kind)
         {
-            if (j < lb && IsSep(kind, b, j) && (kind == sfspkSlashes || a[i] == b[j]))
-            {
-                i++;
-                j++;
-                continue;
-            }
-            break;
+        case sfspkVms:
+            return (c == '.' || c == '[' || c == ']') && !SalFtpVmsEscaped(s, s + i);
+        case sfspkMvs:
+            return c == '.' || c == '\'';
+        case sfspkSlashes:
+            return c == '/' || c == '\\';
+        case sfspkDotted:
+            return c == '.';
+        default: // sfspkAs400, sfspkCaseSensitive
+            return c == '/';
         }
-        if (j >= lb || IsSep(kind, b, j))
-            break;
-        int ea = i;
-        while (ea < la && !IsSep(kind, a, ea))
-            ea++;
-        int eb = j;
-        while (eb < lb && !IsSep(kind, b, eb))
-            eb++;
-        if (!SalNameOrderEqualCI(a + i, ea - i, b + j, eb - j))
-            break;
-        i = ea;
-        j = eb;
     }
-    *ia = i;
-    *ib = j;
-}
+
+    // Walks 'a' (la bytes) and 'b' (lb bytes) together: a separator of 'a' must meet the same separator
+    // of 'b' (sfspkSlashes: either of the two), a name of 'a' (the bytes up to the next separator or
+    // the end) the same name of 'b' by SalNameOrderEqualCI. Stops at the end of 'a' or at the first
+    // difference - at a separator or at the start of the names that differ; *ia / *ib = where.
+    inline void Walk(ESalFtpSrvPathKind kind, const char* a, int la, const char* b, int lb, int* ia, int* ib)
+    {
+        int i = 0;
+        int j = 0;
+        while (i < la)
+        {
+            if (IsSep(kind, a, i))
+            {
+                if (j < lb && IsSep(kind, b, j) && (kind == sfspkSlashes || a[i] == b[j]))
+                {
+                    i++;
+                    j++;
+                    continue;
+                }
+                break;
+            }
+            if (j >= lb || IsSep(kind, b, j))
+                break;
+            int ea = i;
+            while (ea < la && !IsSep(kind, a, ea))
+                ea++;
+            int eb = j;
+            while (eb < lb && !IsSep(kind, b, eb))
+                eb++;
+            if (!SalNameOrderEqualCI(a + i, ea - i, b + j, eb - j))
+                break;
+            i = ea;
+            j = eb;
+        }
+        *ia = i;
+        *ib = j;
+    }
 } // namespace SalFtpSrvPathDetail
 
 // Is 'prefix' the same server path as 'path' (mustBeSame TRUE), or the same path or one of its
