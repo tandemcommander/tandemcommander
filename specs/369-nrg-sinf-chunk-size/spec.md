@@ -28,6 +28,13 @@ The ETN2 half of the item already holds at HEAD: feature 365 rewrote the ETN2 re
 32-byte entry read into a fixed buffer, every read checked, a chunk outside the image or implausible
 skipped, the position set to the chunk's end).
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: Should a SINF chunk longer than 4 bytes still give its first 4 bytes as the session's count? → A: No - any SINF chunk not exactly 4 bytes is refused whole (no count) and the listing marked incomplete (autonomous run: conservative - refuse rather than guess; the item allows "refused or skipped")
+- Q: Should the DAOX reader also be made to stop at its own chunk's end when its track range claims more entries than the chunk holds? → A: No - only the file position after it is set to the chunk's end (the loop-level seek); what it reads past its chunk is another defect, recorded as an Inbox item if confirmed (autonomous run: item - its scope names SINF and ETN2; conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A damaged NRG session table does not lose the rest of the image (Priority: P1)
