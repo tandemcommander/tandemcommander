@@ -17462,14 +17462,14 @@ static void TestArcPathApplyResolved383()
     docs.AddFile("f.txt");
     docs.AddDir("Sub", &sub);
     root.AddDir("Docs", &docs);
-    CHECK(PackRoot383(&root, "DOCS\\", false) == "Docs\\");                  // TYPED
-    CHECK(PackRoot383(&root, "Docs\\", false) == "Docs\\");                  // EXACT
-    CHECK(PackRoot383(&root, "dOCS\\sUB\\", false) == "Docs\\Sub\\");        // DEEP
-    CHECK(PackRoot383(&root, "DOCS\\New\\", false) == "Docs\\New\\");        // NEWTAIL: the new tail as typed
+    CHECK(PackRoot383(&root, "DOCS\\", false) == "Docs\\");                     // TYPED
+    CHECK(PackRoot383(&root, "Docs\\", false) == "Docs\\");                     // EXACT
+    CHECK(PackRoot383(&root, "dOCS\\sUB\\", false) == "Docs\\Sub\\");           // DEEP
+    CHECK(PackRoot383(&root, "DOCS\\New\\", false) == "Docs\\New\\");           // NEWTAIL: the new tail as typed
     CHECK(PackRoot383(&root, "DOCS\\New\\SUB\\", false) == "Docs\\New\\SUB\\"); // below a new folder nothing resolves
     CHECK(PackRoot383(&root, "New\\DOCS\\", false) == "New\\DOCS\\");
-    CHECK(PackRoot383(&root, "DOCS\\F.TXT\\", false) == "Docs\\F.TXT\\");    // a file is no folder to pack into
-    FakeDir252 x, tws;                                                        // TWINS: twins in another folder
+    CHECK(PackRoot383(&root, "DOCS\\F.TXT\\", false) == "Docs\\F.TXT\\"); // a file is no folder to pack into
+    FakeDir252 x, tws;                                                    // TWINS: twins in another folder
     x.AddFile("a.txt");
     x.AddFile("A.txt");
     tws.AddDir("Docs", &docs);
