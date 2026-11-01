@@ -1,7 +1,7 @@
 ---
 title: Check by hand that opening a folder found by quick search shows no flash (376)
 type: person-step
-status: new
+status: open
 severity: 2
 area: panels-ui
 source: leftover:376
@@ -45,3 +45,4 @@ Pressing Enter (or double-clicking) on a folder found by quick search shows no f
 ## Log
 
 - 2026-11-01 — created (source leftover:376)
+- 2026-11-01 — moved to Person steps
