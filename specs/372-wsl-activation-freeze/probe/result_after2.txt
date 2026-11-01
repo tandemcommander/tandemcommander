@@ -1,0 +1,47 @@
+act372_probe (feature 372) after-review1
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-01 12:58; registry key existed True; WSL path \\wsl.localhost\Ubuntu\ reachable True; limit 50 ms; 5 activations a timing row
+
+  waits (start ms after activation + length ms): LOCAL #0: 15+142
+  waits (start ms after activation + length ms): LOCAL #1: 15+141
+  waits (start ms after activation + length ms): LOCAL #2: 15+140
+  waits (start ms after activation + length ms): LOCAL #3: 15+140
+  waits (start ms after activation + length ms): LOCAL #4: 15+142
+LOCAL      ACTIVATE PASS        longest 141,9 ms <= 140 + 20; left 'C:\Users\pavel\AppData\Local\Temp\tc372act\local'; at rest max 4,7 ms; per activation max [ms]: 141,9, 141,2, 140,3, 140,3, 141,6; late (after +100 ms) max [ms]: 0,2, 0,6, 0,2, 2,1, 0,2; title 'T372 - local - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+LOCAL      CURSOR NOT DRIVEN  the busy cursor of another process is not readable on the hidden desktop
+LOCAL      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+  waits (start ms after activation + length ms): WSLROOT #0: 15+141
+  waits (start ms after activation + length ms): WSLROOT #1: 15+142
+  waits (start ms after activation + length ms): WSLROOT #2: 15+141
+  waits (start ms after activation + length ms): WSLROOT #3: 15+141
+  waits (start ms after activation + length ms): WSLROOT #4: 16+142
+WSLROOT    ACTIVATE PASS        late waits < 50 ms: 4,6; longest 142,3 <= LOCAL 141,9 + 20; left '\\wsl.localhost\Ubuntu\'; at rest max 0,2 ms; per activation max [ms]: 141,2, 142,1, 141,3, 140,7, 142,3; late (after +100 ms) max [ms]: 4,3, 4,3, 0,2, 4,6, 4,4; title '...2 - \\wsl.localhost\Ubuntu - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+WSLROOT    CURSOR NOT DRIVEN  the busy cursor of another process is not readable on the hidden desktop
+WSLROOT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+  waits (start ms after activation + length ms): WSLBIG #0: 30+126
+  waits (start ms after activation + length ms): WSLBIG #1: 15+141
+  waits (start ms after activation + length ms): WSLBIG #2: 15+142
+  waits (start ms after activation + length ms): WSLBIG #3: 15+142
+  waits (start ms after activation + length ms): WSLBIG #4: 15+143
+WSLBIG     ACTIVATE PASS        late waits < 50 ms: 5,1; longest 142,6 <= LOCAL 141,9 + 20; left '\\wsl.localhost\Ubuntu\usr\bin'; at rest max 0,3 ms; per activation max [ms]: 126,4, 141, 141,8, 142,1, 142,6; late (after +100 ms) max [ms]: 4,8, 4,6, 4,7, 5,1, 4,6; title 'T372 - bin - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+WSLBIG     CURSOR NOT DRIVEN  the busy cursor of another process is not readable on the hidden desktop
+WSLBIG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+WSLNEW     RUN    PASS        panel after Home, Down, Enter: '\\wsl.localhost\Ubuntu\tmp\tc372act\new\aaa' (expected '\\wsl.localhost\Ubuntu\tmp\tc372act\new\aaa'); late max 4,7 ms; waits 16+141; windows: no window
+WSLNEW     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+WSLDEL     RUN    PASS        panel after the activation: '\\wsl.localhost\Ubuntu\tmp\tc372act\del' (expected '\\wsl.localhost\Ubuntu\tmp\tc372act\del'); late max 0,2 ms (the panel's change of folder included); waits 16+141; windows: no window
+WSLDEL     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+VEARLY     RUN    PASS        deleted at +313..317 ms; panel: '\\wsl.localhost\Ubuntu\tmp\tc372act\vearly'; left the folder True (expected True); windows: no window
+VEARLY     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+VLATE      RUN    PASS        deleted at +1ÿ506..1ÿ510 ms; panel: '\\wsl.localhost\Ubuntu\tmp\tc372act\vlate\sub'; left the folder False (expected False); windows: no window
+VLATE      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+  waits (start ms after activation + length ms): SHARE #0: 15+142
+  waits (start ms after activation + length ms): SHARE #1: 15+140
+  waits (start ms after activation + length ms): SHARE #2: 15+141
+  waits (start ms after activation + length ms): SHARE #3: 15+141
+  waits (start ms after activation + length ms): SHARE #4: 16+141
+SHARE      ACTIVATE PASS        late waits < 50 ms: 3,8; longest 142,5 <= LOCAL 141,9 + 20; left '\\localhost\C$\Users\pavel\AppData\Local\Temp\tc372act\local'; at rest max 0,2 ms; per activation max [ms]: 142,5, 139,5, 140,9, 141, 140,5; late (after +100 ms) max [ms]: 0,2, 3,7, 0,8, 1,6, 3,8; title 'T372 - local - Tandem Commander 0.2.0 (x64) ST'; windows: no window
+SHARE      CURSOR NOT DRIVEN  the busy cursor of another process is not readable on the hidden desktop
+SHARE      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 555016158FE814604FA68BC40D77D7F3AC96301287B45AE535925CCFE57060F0 / after 555016158FE814604FA68BC40D77D7F3AC96301287B45AE535925CCFE57060F0
+
+Rows: PASS 16, FAIL 0, NOT DRIVEN 4. Left running: 0; fixture removed: True; WSL fixture removed: True; registry restored+identical: True

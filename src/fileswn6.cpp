@@ -362,13 +362,33 @@ ACTIVATE_ICONS:
 BOOL CFilesWindow::RequestBkgndPathCheck(int purpose)
 {
     CALL_STACK_MESSAGE2("CFilesWindow::RequestBkgndPathCheck(%d)", purpose);
-    if (BkgndCheckRunning) // at most one worker per panel; its result serves this request too
+    if (BkgndCheckRunning)
     {
-        BkgndCheckWanted |= purpose;
-        return TRUE;
+        // at most one worker per panel: its result serves this request too - unless it checks
+        // another folder or hangs (a dead network redirector): then it is abandoned (its late
+        // result is dropped by the generation number) and a new worker checks the current folder
+        BOOL samePath = BkgndCheckPath != NULL && SalPathEqualOrdinalCI(BkgndCheckPath, GetPath());
+        if (!SalBkgndCheckAbandon(GetTickCount() - BkgndCheckStartTime, samePath))
+        {
+            BkgndCheckWanted |= purpose;
+            return TRUE;
+        }
+        TRACE_I("RequestBkgndPathCheck: the running check is abandoned (another folder or no answer)");
     }
-    if (!StartBkgndPathCheck(HWindow, GetPath(), (int)GetPanelType()))
+    char* path = _strdup(GetPath()); // the whole path (long paths), never cut
+    if (path == NULL)
         return FALSE;
+    if (!StartBkgndPathCheck(HWindow, GetPath(), (int)GetPanelType(), BkgndCheckGen + 1))
+    {
+        free(path);
+        return FALSE;
+    }
+    BkgndCheckGen++;
+    free(BkgndCheckPath);
+    BkgndCheckPath = path;
+    BkgndCheckStartTime = GetTickCount();
+    if (!BkgndCheckRunning) // an abandoned worker's requests carry over to the new one
+        BkgndCheckWanted = 0;
     BkgndCheckRunning = TRUE;
     BkgndCheckWanted |= purpose;
     return TRUE;
@@ -377,7 +397,14 @@ BOOL CFilesWindow::RequestBkgndPathCheck(int purpose)
 void CFilesWindow::OnBkgndPathCheckDone(CBkgndPathCheckData* data)
 {
     CALL_STACK_MESSAGE1("CFilesWindow::OnBkgndPathCheckDone()");
+    if (!BkgndCheckRunning || data->Gen != BkgndCheckGen)
+    { // the result of an abandoned worker: a newer one checks the panel's current folder
+        delete data;
+        return;
+    }
     BkgndCheckRunning = FALSE;
+    free(BkgndCheckPath);
+    BkgndCheckPath = NULL;
     int wanted = BkgndCheckWanted;
     BkgndCheckWanted = 0;
     // the result describes the folder it was taken for: only while the panel still shows it

@@ -24,6 +24,18 @@
 #define SAL_BKCHK_ACTIVATE 0x01 // the program was activated (the old synchronous CheckPath of Activate)
 #define SAL_BKCHK_VERIFY 0x02   // 400 ms after a refresh of a folder without automatic refresh
 
+// a running check older than this is taken as hung (a dead network redirector): a new request
+// abandons it and starts a new worker (the old code blocked the window but recovered; a hung
+// worker must not swallow every later activation of the panel)
+#define SAL_BKCHK_ABANDON_MS 10000
+
+// TRUE when a new request must not wait for the running check of the panel: it checks another
+// folder than the panel shows now, or it has run for SAL_BKCHK_ABANDON_MS or longer
+inline BOOL SalBkgndCheckAbandon(DWORD runningForMs, BOOL samePath)
+{
+    return !samePath || runningForMs >= SAL_BKCHK_ABANDON_MS;
+}
+
 // what the panel does with a finished check
 enum CSalBkgndCheckAction
 {

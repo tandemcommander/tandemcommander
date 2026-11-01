@@ -932,8 +932,11 @@ public:
     DWORD LastInactiveRefreshEnd;   // info about the last snooper-initiated refresh in an inactive window: when did it finish + equality with LastInactiveRefreshStart means that no such refresh has occurred since the last deactivation
 
     // feature 372: the background path check of this panel (salbkgndcheck.h)
-    BOOL BkgndCheckRunning;         // a worker checks this panel's folder (at most one)
+    BOOL BkgndCheckRunning;         // a worker checks this panel's folder (at most one is awaited)
     int BkgndCheckWanted;           // SAL_BKCHK_* bits asked for since the worker started
+    int BkgndCheckGen;              // generation of the awaited worker (results of abandoned ones are dropped)
+    char* BkgndCheckPath;           // heap copy of the folder the awaited worker checks (NULL = none)
+    DWORD BkgndCheckStartTime;      // GetTickCount() when the awaited worker started
     BOOL AutoRefreshVerifyTimerSet; // TRUE when the timer IDT_AUTOREFRESHVERIFY is running
 
     BOOL NeedRefreshAfterIconsReading; // is a refresh needed after icon reading finishes?

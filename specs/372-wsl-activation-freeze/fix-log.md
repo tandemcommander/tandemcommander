@@ -153,3 +153,40 @@ waits now <= 5 ms); the clipboard block is the Inbox item
 
 - `every-activation-of-the-program-blocks-it-150-ms-in-the-idle` - the idle clipboard check blocks
   every activation ~150 ms (Inbox, measure:372).
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+Re-ran the probe on a pre-fix build (`f2825e09`, the source of `main`) and on `167ecb96`:
+WSLROOT late waits 393-407 ms -> 4.0-4.5 ms, WSLBIG 397-413 -> 2.4-4.8, WSLDEL blocked 399 ms ->
+0.3 ms, LOCAL 143 -> 142 ms; saltests and the encoding guard green. Added rows VEARLY (folder
+deleted at +312 ms, after the activation's refresh: left - on both builds) and VLATE (deleted at
++1505 ms, after the verification: stays - the control showing that the deferred verification is
+what leaves the folder).
+
+- SHOULD: the gain at activation itself is not measured - a warm WSL check costs ~1 ms; the
+  background route pays only for a stopped distribution or a slow share, which is reasoned, not
+  measured (stopping the user's distribution is not the run's). -> person-step item at closing
+  (`wsl --shutdown`, then Alt+Tab back).
+- NOTE: a worker hung in `GetFileAttributes` (dead redirector) kept `BkgndCheckRunning` TRUE and
+  swallowed every later activation of the panel, also after a move to another network folder. ->
+  **fixed** (in scope, it is this feature's code): `SalBkgndCheckAbandon` - a request abandons a
+  running check of another folder or one running >= 10 s (`SAL_BKCHK_ABANDON_MS`); a generation
+  number drops the abandoned worker's late result; its wanted bits carry over. saltests + 5
+  checks.
+- NOTE: the restart / merge branches are driven only by the pure table - accepted (the table is
+  the decision; `OnBkgndPathCheckDone` only applies it).
+- NOTE: the verification asks "is the folder still accessible", the old code listed it again: a
+  folder that exists but can no longer be listed is not left by the verification, and content
+  that changed within 400 ms after a refresh shows at the next refresh - accepted, recorded
+  (clarification Q1).
+- NOTE: A -> B -> A during a check counts as the same folder - one extra refresh at most; FR-005
+  reworded to say so.
+- NOTE: data of a result posted to a panel destroyed before it is handled leaks at exit only;
+  `EndStopRefresh(TRUE)` of the synchronous check is not called for network panels - harmless
+  (checked by the reviewer). Accepted.
+
+After the fix: `build.cmd` BUILD SUCCEEDED, `saltests: 30120 checks, 0 failed`, probe
+`probe/result_after2.txt` (with VEARLY / VLATE): PASS 16, FAIL 0, NOT DRIVEN 4, registry
+restored identical.

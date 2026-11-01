@@ -1576,6 +1576,9 @@ CFilesWindow::CFilesWindow(CMainWindow* parent)
     LastInactiveRefreshStart = LastInactiveRefreshEnd = 0;
     BkgndCheckRunning = FALSE; // feature 372
     BkgndCheckWanted = 0;
+    BkgndCheckGen = 0;
+    BkgndCheckPath = NULL;
+    BkgndCheckStartTime = 0;
     AutoRefreshVerifyTimerSet = FALSE;
 
     NeedRefreshAfterIconsReading = FALSE;
@@ -1666,6 +1669,8 @@ CFilesWindow::CFilesWindow(CMainWindow* parent)
 CFilesWindow::~CFilesWindow()
 {
     CALL_STACK_MESSAGE1("CFilesWindow::~CFilesWindow()");
+    free(BkgndCheckPath); // feature 372
+    BkgndCheckPath = NULL;
 
     if (QFActive) // feature 244: WM_DESTROY ended the view; this only keeps the full listing for the ancestor to free
     {

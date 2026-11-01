@@ -418,16 +418,18 @@ struct CBkgndPathCheckData
 {
     HWND Panel;    // the panel window the result goes to
     int PanelType; // CPanelType of the panel when the check started
+    int Gen;       // the panel's generation number of this worker
     char* Path;    // heap copy of the checked path (UTF-8, whole)
     BOOL Valid;    // result: the folder is accessible
     DWORD Error;   // result: the error when it is not
 
-    CBkgndPathCheckData() : Panel(NULL), PanelType(0), Path(NULL), Valid(FALSE), Error(ERROR_SUCCESS) {}
+    CBkgndPathCheckData() : Panel(NULL), PanelType(0), Gen(0), Path(NULL), Valid(FALSE), Error(ERROR_SUCCESS) {}
     ~CBkgndPathCheckData() { free(Path); }
 };
-// feature 372: starts the background check of 'path' for the panel window 'panel'; the result is
-// posted to it as WM_USER_BKGNDCHECK_DONE; FALSE when the worker could not be started
-BOOL StartBkgndPathCheck(HWND panel, const char* path, int panelType);
+// feature 372: starts the background check of 'path' for the panel window 'panel' (generation
+// 'gen'); the result is posted to it as WM_USER_BKGNDCHECK_DONE; FALSE when the worker could not
+// be started
+BOOL StartBkgndPathCheck(HWND panel, const char* path, int panelType, int gen);
 
 // zkusi jestli je cesta 'path' pristupna, prip. obnovi sitova spojeni pomoci funkci
 // CheckAndRestoreNetworkConnection a CheckAndConnectUNCNetworkPath; vraci TRUE pokud

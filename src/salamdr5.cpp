@@ -213,14 +213,15 @@ DWORD WINAPI BkgndPathCheckThread(void* param)
     return BkgndPathCheckEH(param);
 }
 
-BOOL StartBkgndPathCheck(HWND panel, const char* path, int panelType)
+BOOL StartBkgndPathCheck(HWND panel, const char* path, int panelType, int gen)
 {
-    CALL_STACK_MESSAGE2("StartBkgndPathCheck(, %s, )", path);
+    CALL_STACK_MESSAGE3("StartBkgndPathCheck(, %s, , %d)", path, gen);
     CBkgndPathCheckData* data = new CBkgndPathCheckData;
     if (data == NULL)
         return FALSE;
     data->Panel = panel;
     data->PanelType = panelType;
+    data->Gen = gen;
     data->Path = _strdup(path); // the whole path (long paths, feature 004), never cut
     if (data->Path == NULL)
     {

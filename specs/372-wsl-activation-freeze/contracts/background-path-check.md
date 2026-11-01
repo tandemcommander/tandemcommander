@@ -24,8 +24,11 @@ Internal to the core; no plug-in or configuration interface.
 - C2: a result is applied only to the folder it was taken for (same panel type and
   `SalPathEqualOrdinalCI` path); otherwise it is dropped and a still wanted check restarts on the
   current path.
-- C3: at most one worker per panel; the worker owns its data until `PostMessage` succeeds; a
-  failed post frees it.
+- C3: at most one awaited worker per panel; the worker owns its data until `PostMessage`
+  succeeds; a failed post frees it. `SalBkgndCheckAbandon(runningForMs, samePath)`: a request
+  while a worker runs for another folder, or for `SAL_BKCHK_ABANDON_MS` (10 s) or longer, starts a
+  new worker (generation number + 1); the abandoned worker's result is dropped (generation
+  mismatch) and its wanted bits carry over to the new one.
 - C4: an accessible folder after a verification is never re-listed (no refresh loop); an
   inaccessible one gets the program's normal refresh, which shows the existing messages and
   leaves the folder as before.

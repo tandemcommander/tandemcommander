@@ -187,6 +187,40 @@ function Run-Del {
     finally { if ($id) { End-Row 'WSLDEL' $id $null $before } }
 }
 
+# VEARLY / VLATE (from the first review): the deferred verification that replaced Sleep(400) + the
+# second listing. The folder is deleted <AtMs> after the activation: at +300 ms it is after the
+# activation's refresh (~+220 ms) and before the verification (refresh + 400 ms) - the panel must
+# leave it; at +1500 ms it is after the verification - the panel stays (no change notification on
+# 9P), which shows that the verification and nothing else made VEARLY leave.
+function Run-DelAt([string]$Case, [int]$AtMs, [bool]$ExpectLeave) {
+    if (-not (Want $Case)) { return }
+    $id = 0; $before = Reports
+    $dir = $WslFix + '\' + $Case.ToLower()
+    try {
+        [void][IO.Directory]::CreateDirectory($dir + '\sub')
+        [IO.File]::WriteAllText($dir + '\sub\f.txt', 'x')
+        $id = Start-Row ($dir + '\sub')
+        $main = Get-Main $id
+        Deactivate $main
+        Start-Sleep -Milliseconds 400
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        Activate $main
+        while ($sw.Elapsed.TotalMilliseconds -lt $AtMs) { Start-Sleep -Milliseconds 5 }
+        $delAt = $sw.Elapsed.TotalMilliseconds
+        [IO.Directory]::Delete($dir + '\sub', $true)
+        $delEnd = $sw.Elapsed.TotalMilliseconds
+        Start-Sleep -Milliseconds 2500
+        $r = Serve $id 2
+        $loc = Get-Loc $id
+        $left = ($loc -ieq $dir) -or ($loc -ieq ($dir + '\'))
+        $ok = ($left -eq $ExpectLeave)
+        Row $Case 'RUN' (V $ok) ("deleted at +{0:N0}..{1:N0} ms; panel: '{2}'; left the folder {3} (expected {4}); windows: {5}" -f $delAt, $delEnd, $loc, $left, $ExpectLeave, (Msgs $r))
+        End-Row $Case $id $null $before; $id = 0
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row $Case $id $null $before } }
+}
+
 $backup = Join-Path $env:TEMP 'tc372_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
@@ -208,6 +242,8 @@ try {
         Run-Timing 'WSLBIG' ($Wsl + 'usr\bin')
         Run-New
         Run-Del
+        Run-DelAt 'VEARLY' 300 $true
+        Run-DelAt 'VLATE' 1500 $false
     }
     else { Row 'WSL' 'ACTIVATE' 'NOT DRIVEN' ("{0} not reachable on this machine" -f $Wsl) }
     # SHARE (US2): the local fixture through the administrative share of its drive

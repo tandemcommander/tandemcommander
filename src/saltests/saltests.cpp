@@ -22825,6 +22825,12 @@ static void TestBkgndPathCheck372()
     CHECK(SalBkgndCheckAction(V, FALSE, FALSE) == sbcaRestart);
     CHECK(SalBkgndCheckAction(A | V, FALSE, TRUE) == sbcaRestart);
     CHECK(SalBkgndCheckAction(0x04, TRUE, FALSE) == sbcaNone); // an unknown bit asks for nothing
+    // a running check serves a new request only for the same folder and while it is not hung
+    CHECK(!SalBkgndCheckAbandon(0, TRUE));
+    CHECK(!SalBkgndCheckAbandon(SAL_BKCHK_ABANDON_MS - 1, TRUE));
+    CHECK(SalBkgndCheckAbandon(SAL_BKCHK_ABANDON_MS, TRUE));
+    CHECK(SalBkgndCheckAbandon(0, FALSE)); // the panel moved on: check its current folder now
+    CHECK(SalBkgndCheckAbandon(SAL_BKCHK_ABANDON_MS, FALSE));
 }
 
 static void TestHfsFileContent339()

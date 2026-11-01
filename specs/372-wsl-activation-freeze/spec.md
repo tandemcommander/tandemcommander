@@ -129,11 +129,14 @@ A local folder in both panels: activation behaves as before or better.
   activation, as today (new, changed and removed entries become visible without user action).
 - **FR-005**: When the background check finds the folder inaccessible, the program MUST react as
   it does today for that case (the same messages and the same rescue path), on the UI thread,
-  and only when the panel still shows the folder that was checked and no newer path change
-  happened.
-- **FR-006**: At most one background check of a panel runs at a time; a request while one runs
-  is served by its result. A result MUST be dropped when the panel's path or panel type changed
-  since the check started; a check still wanted then starts again on the panel's current folder.
+  and only when the panel shows the folder that was checked (a panel that left the folder and came
+  back to it meanwhile counts as showing it - at most one extra refresh).
+- **FR-006**: At most one background check of a panel is awaited at a time; a request while one
+  runs is served by its result. A result MUST be dropped when the panel's path or panel type
+  changed since the check started; a check still wanted then starts again on the panel's current
+  folder. A running check that checks another folder than the panel now shows, or that has not
+  answered for 10 s (a hung network call), MUST NOT swallow a new request: it is abandoned (its
+  late result is dropped) and a new check of the current folder starts.
 - **FR-007**: Local folders, archives on local disks, and plug-in file systems MUST keep their
   activation behaviour (no change in what is checked or refreshed).
 - **FR-008**: `DrvSpecRemoteDoNotRefreshOnAct` MUST keep its meaning (no check, no refresh on
