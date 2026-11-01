@@ -23,6 +23,14 @@ block 0) **before** the partition descriptor (sector 35: start 288, length 160).
 metadata partition's file entry while it reads the logical volume descriptor, i.e. before the partition's
 start is known, and so reads the wrong place.
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: When the deferred metadata file entry read fails, should its error box now follow the reader's quiet mode (today it is always shown)? → A: No - unchanged: the same box, shown as today; only the moment of the read moves (autonomous run: conservative)
+- Q: Should a damaged main metadata file fall back to the metadata mirror file? → A: No - not named by the item; the mirror stays unused (autonomous run: conservative)
+- Q: Should the partition descriptor's fields be given a defined value before the sequence is read (today they are uninitialised until a partition descriptor is met)? → A: No - a volume without a partition descriptor is outside the item (356 marks it); unchanged (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Open and unpack a UDF 2.50 image written by Windows (Priority: P1)
