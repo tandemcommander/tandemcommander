@@ -1,7 +1,7 @@
 ---
 title: UnCAB: a cabinet whose entry name is refused fails without any message
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:381
@@ -41,3 +41,4 @@ Out of scope of feature 381 (its item asked only that such a name "is still refu
 ## Log
 
 - 2026-11-01 — created (source measure:381)
+- 2026-11-01 — moved to Next position 32
