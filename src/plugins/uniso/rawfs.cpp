@@ -63,8 +63,13 @@ int CRawFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char*
     {
         CISOImage::CFilePos* fp = (CISOImage::CFilePos*)fileData->PluginData;
 
+        // feature 366: a Form 2 file (a Video CD's video) is read 2324 bytes a sector - its listed size counts
+        // them; it was read 2048 bytes a sector (276 bytes of each lost)
+        BOOL form2 = fp != NULL && fp->Form2 != FALSE;
+        DWORD sectorBytes = form2 ? (DWORD)SAL_ISO_FORM2_PAYLOAD : SECTOR_SIZE;
+
         // unpack file
-        sector = new BYTE[SECTOR_SIZE];
+        sector = new BYTE[sectorBytes];
         if (!sector)
         {
             Error(IDS_INSUFFICIENT_MEMORY);
@@ -122,13 +127,13 @@ int CRawFS::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char*
         DWORD block = fp->Extent - ExtentOffset;
         CQuadWord remain = fileData->Size;
 
-        DWORD nbytes = SECTOR_SIZE;
+        DWORD nbytes = sectorBytes;
         while (remain.Value > 0)
         {
             if (remain.Value < nbytes)
                 nbytes = remain.LoDWord; // !!! the buffer size must not exceed DWORD
 
-            if (!ReadBlockPhys(block, 1, sector))
+            if (form2 ? !Image->ReadForm2Block(block, sector) : !ReadBlockPhys(block, 1, sector))
             {
                 if (silent == 0)
                 {

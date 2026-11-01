@@ -1664,6 +1664,41 @@ CISOImage::ReadBlock(DWORD block, DWORD size, void* data)
     return size;
 }
 
+DWORD
+CISOImage::ReadForm2Block(DWORD block, void* data)
+{
+    SLOW_CALL_STACK_MESSAGE3("CISOImage::ReadForm2Block(%u, 0x%p)", block, data);
+
+    // feature 366: the Form 2 user data starts where the open track's user data is read (after the
+    // subheader) - a track that does not store it there is never read as Form 2 (the caller's read error)
+    if (!SalIsoTrackStoresForm2(SectorRawSize, SectorHeaderSize))
+        return 0;
+    if (ReadDataByPos(GetSectorOffset(block), SAL_ISO_FORM2_PAYLOAD, data) != (DWORD)SAL_ISO_FORM2_PAYLOAD)
+        return 0;
+    return SAL_ISO_FORM2_PAYLOAD;
+}
+
+BOOL CISOImage::FileIsForm2(DWORD extent)
+{
+    CALL_STACK_MESSAGE2("CISOImage::FileIsForm2(%u)", extent);
+
+    // feature 366: the file is read from the track its first sector lies in (CISOImage::UnpackFile opens it,
+    // ReadForm2Block reads with its layout) - the same track decides here
+    if (Tracks.Count <= 0)
+        return FALSE;
+    int track = GetTrackFromExtent(extent);
+    if (track < 0 || track >= Tracks.Count || Tracks[track] == NULL)
+        return FALSE;
+    const Track* t = Tracks[track];
+    if (!SalIsoTrackStoresForm2(t->SectorSize, t->SectorHeaderSize) || extent < t->ExtentOffset)
+        return FALSE;
+    // the stored sector from its start: a raw sector's sync and header, a 2336-byte one's subheader
+    LONGLONG at = t->Start + (LONGLONG)(extent - t->ExtentOffset) * t->SectorSize;
+    unsigned char raw[24];
+    DWORD got = ReadDataByPos(at, sizeof(raw), raw);
+    return SalIsoSectorIsForm2(raw, got, t->SectorSize) ? TRUE : FALSE;
+}
+
 BYTE CISOImage::GetTrackFromExtent(DWORD extent)
 {
     CALL_STACK_MESSAGE2("CISOImage::GetTrackFromExtent(%u)", extent);
@@ -1735,12 +1770,14 @@ void CISOImage::NoteListedFileStarts(const CSalamanderDirectoryAbstract* dir, bo
             if (t < 0)
                 continue;
             covered[t] = true;
-            // feature 337: the sectors the unpack reads of the stream (salisotrack.h)
+            // feature 337: the sectors the unpack reads of the stream (salisotrack.h); feature 366: a Form 2
+            // file reads 2324 bytes of each
             SalIsoStreamSpan span;
             span.Track = t;
             if (Tracks[t]->Form2Stream &&
                 SalIsoFileSectorSpan(fp->Extent, file->Size.Value, Tracks[t]->ExtentOffset, trackSectors[t],
-                                     &span.First, &span.End))
+                                     &span.First, &span.End,
+                                     fp->Form2 ? SAL_ISO_FORM2_PAYLOAD : SAL_ISO_FILE_SECTOR_SIZE))
                 spans.Add(span);
         }
         count = d->GetDirsCount();

@@ -333,8 +333,11 @@ protected:
         ADD_LISTED = 1,
         ADD_LEFT_OUT = 2
     };
+    // feature 366: 'xaForm2' = the record's CD-XA attributes say Form 2 (SalIsoXaIsForm2File) - a file then
+    // confirmed by CISOImage::FileIsForm2 is listed with sectors x 2324 bytes and read 2324 bytes a sector
     int AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
-                   CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
+                   CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData,
+                   BOOL xaForm2 = FALSE);
     // feature 328: the name a folder record is listed under ('rrName' NULL = it has no Rock Ridge name);
     // 'below' = whether its subtree is listed in decision mode
     char* PickDirName(char* path, CDirectoryRecord& dr, char* rrName, char* isoName, BOOL& below);

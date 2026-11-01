@@ -21969,6 +21969,110 @@ static void TestIsoStreamCovered_336()
 
 // feature 337: a stream a listed file starts in counts as covered only when the sectors no file reads
 // are at most 300 empty Form 2 sectors (src/common/salisotrack.h)
+// Feature 366: an ISO 9660 directory record of 'idLen' identifier bytes, with an optional CD-XA record of
+// attributes 'attrs' (signature 'sig') after it and 'extra' more system-use bytes
+static std::vector<unsigned char> IsoRecord366(int idLen, bool xa, unsigned attrs, const char* sig = "XA",
+                                               int extra = 0)
+{
+    int su = 33 + idLen + (idLen % 2 == 0 ? 1 : 0);
+    int len = su + (xa ? 14 : 0) + extra;
+    std::vector<unsigned char> r((size_t)len, 0);
+    r[0] = (unsigned char)len;
+    r[32] = (unsigned char)idLen;
+    for (int i = 0; i < idLen; i++)
+        r[33 + i] = 'A';
+    if (xa)
+    {
+        r[su + 4] = (unsigned char)(attrs >> 8);
+        r[su + 5] = (unsigned char)attrs;
+        r[su + 6] = (unsigned char)sig[0];
+        r[su + 7] = (unsigned char)sig[1];
+        r[su + 8] = 1;
+    }
+    return r;
+}
+
+static void TestIsoXaForm2_366()
+{
+    // the XA record of the real vcdimager 2.0.1 discs: AVSEQ01.DAT;1 (12 bytes, even: one pad byte)
+    unsigned a = 0;
+    std::vector<unsigned char> r = IsoRecord366(14, true, 0x1555);
+    CHECK(SalIsoXaAttributes(r.data(), (long long)r.size(), a) && a == 0x1555);
+    r = IsoRecord366(13, true, 0x0D55); // odd identifier length: no pad byte
+    a = 0;
+    CHECK(SalIsoXaAttributes(r.data(), (long long)r.size(), a) && a == 0x0D55);
+    r = IsoRecord366(1, true, 0x8D55); // a folder's own entry ("\0")
+    a = 0;
+    CHECK(SalIsoXaAttributes(r.data(), (long long)r.size(), a) && a == 0x8D55);
+    r = IsoRecord366(14, true, 0x1555, "XA", 10); // Rock Ridge entries after it
+    a = 0;
+    CHECK(SalIsoXaAttributes(r.data(), (long long)r.size(), a) && a == 0x1555);
+    // none: no system-use area, a wrong signature, a record too short for it, bytes given cut
+    a = 7;
+    r = IsoRecord366(14, false, 0);
+    CHECK(!SalIsoXaAttributes(r.data(), (long long)r.size(), a) && a == 7);
+    r = IsoRecord366(14, true, 0x1555, "XB");
+    CHECK(!SalIsoXaAttributes(r.data(), (long long)r.size(), a) && a == 7);
+    r = IsoRecord366(14, true, 0x1555);
+    r[0] = (unsigned char)(r.size() - 1); // the record says one byte less: the XA record is not whole
+    CHECK(!SalIsoXaAttributes(r.data(), (long long)r.size(), a) && a == 7);
+    r = IsoRecord366(14, true, 0x1555);
+    CHECK(!SalIsoXaAttributes(r.data(), (long long)r.size() - 1, a) && a == 7); // fewer bytes than the record says
+    r = IsoRecord366(14, true, 0x1555, "xa");
+    CHECK(!SalIsoXaAttributes(r.data(), (long long)r.size(), a) && a == 7);
+    CHECK(!SalIsoXaAttributes(nullptr, 100, a) && a == 7);
+    CHECK(!SalIsoXaAttributes(r.data(), 33, a) && a == 7);
+    r = IsoRecord366(207, true, 0x1555); // a long identifier: a 254-byte record
+    a = 0;
+    CHECK(r.size() <= 255 && SalIsoXaAttributes(r.data(), (long long)r.size(), a) && a == 0x1555);
+
+    // Form 2 files: the Form 2 bit without the Form 1 and the directory bits
+    CHECK(SalIsoXaIsForm2File(0x1555));  // VCD / SVCD video
+    CHECK(SalIsoXaIsForm2File(0x3555));  // Form 2, interleaved
+    CHECK(SalIsoXaIsForm2File(0x1000));  // no permissions
+    CHECK(!SalIsoXaIsForm2File(0x0D55)); // INFO.VCD, ENTRIES.VCD
+    CHECK(!SalIsoXaIsForm2File(0x3D55)); // mixed Form 1 / Form 2 (interleaved game streams)
+    CHECK(!SalIsoXaIsForm2File(0x1D55)); // both forms
+    CHECK(!SalIsoXaIsForm2File(0x9555)); // a folder
+    CHECK(!SalIsoXaIsForm2File(0x4555)); // CD-DA
+    CHECK(!SalIsoXaIsForm2File(0x0555));
+    CHECK(!SalIsoXaIsForm2File(0));
+
+    // tracks that store the Form 2 user data where the user data is read
+    CHECK(SalIsoTrackStoresForm2(2352, 24));  // raw Mode 2 (CCD, NRG 0x06, a raw .bin)
+    CHECK(SalIsoTrackStoresForm2(2336, 8));   // NRG 0x03
+    CHECK(SalIsoTrackStoresForm2(2448, 24));  // raw + subchannel (.mdf)
+    CHECK(!SalIsoTrackStoresForm2(2448, 16)); // Mode 2 / 2448 of a track table: read from offset 16
+    CHECK(!SalIsoTrackStoresForm2(2352, 16)); // Mode 1
+    CHECK(!SalIsoTrackStoresForm2(2352, 0));  // audio
+    CHECK(!SalIsoTrackStoresForm2(2336, 0));
+    CHECK(!SalIsoTrackStoresForm2(2048, 0)); // cooked
+    CHECK(!SalIsoTrackStoresForm2(2056, 8)); // Mode 1 / 2056
+    CHECK(!SalIsoTrackStoresForm2(0x91C, 8)); // CIF
+    CHECK(!SalIsoTrackStoresForm2(0, 0));
+    CHECK(!SalIsoTrackStoresForm2(-2352, 24));
+
+    // the size: whole 2048-byte blocks, rounded up, x 2324
+    CHECK(SalIsoForm2FileSize(0) == 0);
+    CHECK(SalIsoForm2FileSize(1) == 2324);
+    CHECK(SalIsoForm2FileSize(2048) == 2324);
+    CHECK(SalIsoForm2FileSize(2049) == 2 * 2324);
+    CHECK(SalIsoForm2FileSize(608256) == 690228ULL); // real VCD AVSEQ01.DAT: 297 sectors
+    CHECK(SalIsoForm2FileSize(292864) == 332332ULL); // real SVCD AVSEQ01.MPG = s.mpg
+    CHECK(SalIsoForm2FileSize(0xFFFFFFFFULL) == 2097152ULL * 2324); // the largest 32-bit DataLength
+
+    // feature 337's span counts a Form 2 file's sectors by 2324
+    long long f = -1, e = -1;
+    CHECK(SalIsoFileSectorSpan(450, 690228, 450, 447, &f, &e, SAL_ISO_FORM2_PAYLOAD) && f == 0 && e == 297);
+    CHECK(SalIsoFileSectorSpan(450, 690228, 450, 447, &f, &e) && f == 0 && e == 337); // by 2048: 40 sectors too many
+    CHECK(SalIsoFileSectorSpan(450, 608256, 450, 447, &f, &e) && f == 0 && e == 297); // a 2048 file as before
+    CHECK(SalIsoFileSectorSpan(450, 2324 * 10 - 1, 450, 447, &f, &e, 2324) && e == 9); // a part sector is not whole
+    CHECK(SalIsoFileSectorSpan(450, 2324 * 500, 450, 447, &f, &e, 2324) && e == 447);   // clipped to the track
+    CHECK(!SalIsoFileSectorSpan(450, 2323, 450, 447, &f, &e, 2324));
+    CHECK(!SalIsoFileSectorSpan(450, 690228, 450, 447, &f, &e, 0));
+    CHECK(!SalIsoFileSectorSpan(450, 690228, 450, 447, &f, &e, -2324));
+}
+
 static void TestIsoStreamPartial_337()
 {
     // the start track keeps 336's guards
@@ -23848,6 +23952,7 @@ int main(int argc, char** argv)
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();
+    TestIsoXaForm2_366();
     TestIsoWholeUnpack_338();
     TestHfsFileContent339();
     TestIsoSessionTracks_340();

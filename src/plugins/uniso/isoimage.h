@@ -105,11 +105,15 @@ public:
         DWORD Extent;
         WORD Partition;
         BYTE Type; // used in UDF/ISO bridge
+        // feature 366: an ISO 9660 file stored in Mode 2 Form 2 sectors (a Video CD's video) - listed and read
+        // 2324 bytes a sector (CISOImage::FileIsForm2, ReadForm2Block)
+        BYTE Form2;
 
         CFilePos()
         {
             Extent = 0;
             Type = FS_TYPE_NONE;
+            Form2 = FALSE;
         }
     };
 
@@ -164,6 +168,14 @@ protected:
 
 public:
     DWORD ReadBlock(DWORD block, DWORD size, void* data);
+    // feature 366: reads the 2324 bytes of Form 2 user data of sector 'block' of the open track into 'data';
+    // returns 2324, or 0 when the open track does not store Form 2 data where its user data is read
+    // (SalIsoTrackStoresForm2) or the sector cannot be read whole
+    DWORD ReadForm2Block(DWORD block, void* data);
+    // feature 366: is a file whose record's CD-XA attributes say Form 2 (SalIsoXaIsForm2File) and whose first
+    // sector is at disc address 'extent' read 2324 bytes a sector - the track of the extent stores Form 2
+    // data where its user data is read, and the first sector is a Mode 2 Form 2 sector (SalIsoSectorIsForm2)?
+    BOOL FileIsForm2(DWORD extent);
 
     // Opens the ISO image named 'fileName'. The 'quiet' parameter determines whether
     // message boxes with errors will pop up

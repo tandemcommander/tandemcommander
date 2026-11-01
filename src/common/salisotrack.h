@@ -524,13 +524,17 @@ inline long long SalIsoStreamTrackSectors(long long start, long long end, long l
 // last one - the rest of that sector is not extracted, so it is left to the gap check. False (nothing
 // covered): a file of less than one sector, no sectors, an extent before the track's first sector (the
 // unpack's block number would wrap) or at or after its end.
+// Feature 366: 'bytesPerSector' is what the unpack reads of each of the file's sectors - 2048, or 2324 for a
+// Form 2 file (SalIsoXaIsForm2File; its listed size is sectors x 2324 - counted by 2048 it would cover 13 %
+// more sectors than it reads). A value of 0 or below covers nothing.
 inline bool SalIsoFileSectorSpan(unsigned long extent, unsigned long long size, unsigned long trackFirst,
-                                 long long trackSectors, long long* first, long long* end)
+                                 long long trackSectors, long long* first, long long* end,
+                                 long long bytesPerSector = SAL_ISO_FILE_SECTOR_SIZE)
 {
-    if (first == nullptr || end == nullptr || trackSectors <= 0 || extent < trackFirst)
+    if (first == nullptr || end == nullptr || trackSectors <= 0 || extent < trackFirst || bytesPerSector <= 0)
         return false;
     long long f = (long long)(extent - trackFirst);
-    unsigned long long sectors = size / SAL_ISO_FILE_SECTOR_SIZE;
+    unsigned long long sectors = size / (unsigned long long)bytesPerSector;
     if (f >= trackSectors || sectors == 0)
         return false;
     unsigned long long room = (unsigned long long)(trackSectors - f);
@@ -632,6 +636,69 @@ inline long long SalIsoForm2PayloadOffset(long long sectorRawSize)
     if (sectorRawSize == 2336)
         return 8;
     return -1;
+}
+
+// Feature 366: a Video CD / SVCD keeps its video files (MPEGAV/AVSEQnn.DAT, MPEG2/AVSEQnn.MPG) in Mode 2 Form 2
+// sectors of 2324 user bytes; the ISO 9660 record gives them sectors x 2048 bytes and marks them in its CD-XA
+// system-use record. The plug-in read every file 2048 bytes a sector - the video extracted cut (276 bytes of
+// every 2324 lost, measured on vcdimager 2.0.1 discs). A Form 2 file is now read 2324 bytes a sector.
+
+// CD-XA attribute bits (the record's attributes, big-endian; the low bits are permissions)
+const unsigned SAL_ISO_XA_FORM1 = 0x0800;
+const unsigned SAL_ISO_XA_FORM2 = 0x1000;
+const unsigned SAL_ISO_XA_INTERLEAVED = 0x2000;
+const unsigned SAL_ISO_XA_CDDA = 0x4000;
+const unsigned SAL_ISO_XA_DIRECTORY = 0x8000;
+// the CD-XA system-use record: owner group id (2), owner user id (2), attributes (2), "XA", file number (1),
+// reserved (5)
+const int SAL_ISO_XA_RECORD = 14;
+
+// Feature 366: the CD-XA attributes of an ISO 9660 directory record - 'rec' holds the record's 'recLen' bytes
+// (its length byte first). The system-use area starts after the 33-byte fixed part and the identifier (its
+// length at byte 32), padded to an even offset; the XA record must lie whole in it with its signature "XA" at
+// its bytes 6..7. False (attrs untouched) when the record has none.
+inline bool SalIsoXaAttributes(const unsigned char* rec, long long recLen, unsigned& attrs)
+{
+    if (rec == nullptr || recLen < 34)
+        return false;
+    long long len = rec[0];
+    if (len > recLen)
+        len = recLen; // never past the bytes given
+    long long idLen = rec[32];
+    long long su = 33 + idLen + (idLen % 2 == 0 ? 1 : 0);
+    if (su + SAL_ISO_XA_RECORD > len)
+        return false;
+    if (rec[su + 6] != 'X' || rec[su + 7] != 'A')
+        return false;
+    attrs = ((unsigned)rec[su + 4] << 8) | rec[su + 5];
+    return true;
+}
+
+// Feature 366: do a file's CD-XA attributes say it is stored in Form 2 sectors only - the Form 2 bit set, the
+// Form 1 bit (a mixed, interleaved file of both forms - its sectors would need a size each) and the
+// directory bit clear? The interleaved bit does not matter (all its sectors are Form 2 then).
+inline bool SalIsoXaIsForm2File(unsigned attrs)
+{
+    return (attrs & SAL_ISO_XA_FORM2) != 0 && (attrs & SAL_ISO_XA_FORM1) == 0 && (attrs & SAL_ISO_XA_DIRECTORY) == 0;
+}
+
+// Feature 366: does a track of 'sectorRawSize'-byte stored sectors, whose user data the plug-in reads after
+// 'sectorHeaderSize' bytes, hold a Form 2 sector's 2324 user bytes there - the stored sector carries the
+// subheader (2352 bytes and more: sync, header, subheader; 2336: subheader) and the header size is where the
+// Form 2 user data starts? A cooked track (2048), a Mode 1 track (header 16) or a layout read from another
+// place (Mode 2 / 2448 with a header of 16) does not - its files are read as before.
+inline bool SalIsoTrackStoresForm2(long long sectorRawSize, long long sectorHeaderSize)
+{
+    long long at = SalIsoForm2PayloadOffset(sectorRawSize);
+    return at >= 0 && at == sectorHeaderSize && at + SAL_ISO_FORM2_PAYLOAD <= sectorRawSize;
+}
+
+// Feature 366: the size a Form 2 file is listed and extracted with - the sectors its record's 'dataLength'
+// spans (2048-byte logical blocks, rounded up) x 2324. 0 stays 0.
+inline unsigned long long SalIsoForm2FileSize(unsigned long long dataLength)
+{
+    unsigned long long sectors = dataLength / SAL_ISO_FILE_SECTOR_SIZE + (dataLength % SAL_ISO_FILE_SECTOR_SIZE != 0 ? 1 : 0);
+    return sectors * SAL_ISO_FORM2_PAYLOAD;
 }
 
 // Feature 337: is a sector's Form 2 user data ('len' bytes read) empty - read whole and all zero? A short

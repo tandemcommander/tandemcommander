@@ -418,7 +418,8 @@ void CISO9660::ConvJolietName(char* dest, const char* src, int nLen)
 }
 
 int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
-                         CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
+                         CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData,
+                         BOOL xaForm2)
 {
     // feature 326 (review): the panel listing's own rule (sallistingname.h, CSalamanderDirectory::
     // AddFile / AddDir) - the fit check pass adds nothing, it only asks whether the entry would be
@@ -523,6 +524,13 @@ int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
     else
     {
         fd.Size = CQuadWord(dr.DataLength, 0);
+        // feature 366: a Form 2 file (a Video CD's video) - 2324 bytes of every sector its record spans; it
+        // was listed and read 2048 bytes a sector (276 bytes of each lost)
+        if (xaForm2 && dr.DataLength > 0 && Image->FileIsForm2((DWORD)dr.LocationOfExtent))
+        {
+            fd.Size.Value = SalIsoForm2FileSize(dr.DataLength);
+            filePos->Form2 = TRUE;
+        }
 
         // file
         fd.IsLink = SalamanderGeneral->IsFileLink(fd.Ext);
@@ -940,7 +948,12 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
                 else if (SalIsoPickFileName(path, strlen(path), fileName, isoName) == SAL_ISO_NAME_ISO9660)
                     listedName = isoName;
             }
-            if (AddFileDir(path, listedName, dirRecord, dir, pluginData) == ADD_FAILED)
+            // feature 366: the record's CD-XA attributes (a Video CD's video files say Form 2)
+            unsigned xaAttrs = 0;
+            BOOL xaForm2 = SalIsoXaAttributes((const unsigned char*)(data + offset), dirRecord.LengthOfDirectoryRecord,
+                                              xaAttrs) &&
+                           SalIsoXaIsForm2File(xaAttrs);
+            if (AddFileDir(path, listedName, dirRecord, dir, pluginData, xaForm2) == ADD_FAILED)
                 ret = ERR_TERMINATE;
         } // if
 
@@ -1001,7 +1014,9 @@ int CISO9660::UnpackFile(CSalamanderForOperationsAbstract* salamander, const cha
     CISOImage::CFilePos* fp = (CISOImage::CFilePos*)fileData->PluginData;
     DWORD block = fp->Extent - ExtentOffset;
     CQuadWord remain = fileData->Size;
-    DWORD sectorUserSize = 0x800;
+    // feature 366: a Form 2 file is read 2324 bytes a sector (its listed size counts them)
+    BOOL form2 = fp->Form2 != FALSE;
+    DWORD sectorUserSize = form2 ? (DWORD)SAL_ISO_FORM2_PAYLOAD : 0x800;
     DWORD nbytes = sectorUserSize;
     BYTE* buffer = new BYTE[sectorUserSize];
     if (!buffer)
@@ -1019,7 +1034,7 @@ int CISO9660::UnpackFile(CSalamanderForOperationsAbstract* salamander, const cha
         if (remain.Value < nbytes)
             nbytes = remain.LoDWord; // !!! the buffer size must not exceed DWORD
 
-        if (!Image->ReadBlock(block, sectorUserSize, buffer))
+        if (form2 ? !Image->ReadForm2Block(block, buffer) : !Image->ReadBlock(block, sectorUserSize, buffer))
         {
             if (silent == 0)
             {
