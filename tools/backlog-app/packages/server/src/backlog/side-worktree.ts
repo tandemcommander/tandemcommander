@@ -5,9 +5,9 @@
  * @file The app's side worktree of `main` (feature 371, research R1, R2): where a change is
  * applied while a run holds the run lock and works on its branch in the primary working tree.
  *
- * It is a sparse (`backlog/` and `specs/* /spec.md`, so every feature folder exists for the
- * tool's `feature-missing` rule), detached (never a branch: the run's `git checkout main` must
- * never find `main` checked out elsewhere) and persistent worktree at
+ * It is a sparse (`backlog/` only; the feature folders of `specs/` are created empty, so the
+ * tool's `feature-missing` rule finds them), detached (never a branch: the run's `git checkout
+ * main` must never find `main` checked out elsewhere) and persistent worktree at
  * `<git-common-dir>/tandem-backlog-app/main-worktree/`. Before every change it is brought to
  * `main`'s commit and verified clean; the backlog tool runs on it with `--root`; the change is
  * committed on the detached HEAD and `main` is moved with a compare-and-swap
@@ -20,7 +20,7 @@
  * repository's config once (git 2.20+ reads it); the app's own config is otherwise untouched.
  */
 
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { ApiError } from "@backlog-app/shared";
@@ -31,8 +31,12 @@ import { GIT_TIMEOUT_MS } from "../repo/git.ts";
 /** The folder name inside the app's state folder. */
 export const SIDE_WORKTREE_FOLDER = "main-worktree";
 
-/** The sparse patterns: the backlog and one small file per feature folder. */
-const SPARSE_PATTERNS = ["backlog", "specs/*/spec.md"];
+/**
+ * The sparse patterns: the backlog only. The feature folders the tool's `feature-missing` rule
+ * looks for are created empty by {@link SideWorktree.sync} from the commit's tree (a pattern
+ * for one file per folder misses folders without that file; every folder is 67 MB).
+ */
+const SPARSE_PATTERNS = ["backlog"];
 
 /** The side worktree of one repository. */
 export class SideWorktree {
@@ -140,6 +144,12 @@ export class SideWorktree {
     await this.inTree(["sparse-checkout", "reapply"]);
     await this.inTree(["reset", "-q", "--hard", commit]);
     await this.inTree(["clean", "-fdq", "--", "backlog"]);
+    // The feature folders, empty: the tool's `feature-missing` rule only asks whether
+    // `specs/NNN-*` exists. Empty folders are invisible to git status.
+    const folders = (await this.inTree(["ls-tree", "--name-only", "-z", commit, "--", "specs/"])).split("\0");
+    for (const folder of folders) {
+      if (/^specs\/[^/]+$/.test(folder)) mkdirSync(join(this.path, "specs", folder.slice(6)), { recursive: true });
+    }
     const head = (await this.inTree(["rev-parse", "HEAD"])).trim();
     const status = (await this.inTree(["status", "--porcelain=v1", "--untracked-files=all"])).trim();
     if (head !== commit || status !== "") {

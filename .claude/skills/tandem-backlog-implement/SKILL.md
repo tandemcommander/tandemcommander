@@ -451,13 +451,22 @@ with file:line and a reproduction.
 ## 9. Fast-forward `main`
 
 ```text
+bin/backlog-loop.sh returning
 git checkout main
 git merge --ff-only <BRANCH>
 ```
 
+`returning` (feature 371) announces the return to `main`: it waits while the
+backlog app is landing a change on `main` (seconds) and, under the loop,
+until the loop holds the app's edit lock for this run - from then on the app
+does not move `main` until this claude ends. A `refused:` answer after its
+timeout is not a stop: go on with `git checkout main` (the app checks the
+tree itself).
+
 - Success → `BL lock release --slug <SLUG>` → end `closed`.
-- Failure (someone committed to `main` during the run) → merge `main`
-  into the branch yourself.
+- Failure (someone committed to `main` during the run - the maintainer, or
+  the backlog app landing their changes on `main` while this run ran,
+  feature 371) → merge `main` into the branch yourself.
 
   **First, the guard on the item**: the start happened on the branch, so
   on `main` the item stayed `open` and the maintainer could change it

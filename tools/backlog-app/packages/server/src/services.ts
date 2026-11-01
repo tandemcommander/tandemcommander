@@ -11,7 +11,7 @@
  * the write gate are re-evaluated and changes are published to every tab.
  */
 
-import type { ReadRef, WriteGate } from "@backlog-app/shared";
+import type { ReadRef, RunningItem, WriteGate } from "@backlog-app/shared";
 import type { ServerContext } from "./context.ts";
 import { BacklogTool } from "./backlog/tool.ts";
 import { ReadModel } from "./backlog/read-model.ts";
@@ -89,6 +89,9 @@ export class Services {
   /** The commit of `main` the read model last saw (to reload when `main` moves). */
   private lastMain: string | null = null;
 
+  /** The running item the read model last overlaid (`slug@branch`), to reload when it changes. */
+  private lastRunning = "";
+
   /** Pending run-end announcements (cleared at stop, so no git runs after shutdown). */
   private readonly announcements = new Set<NodeJS.Timeout>();
 
@@ -108,7 +111,12 @@ export class Services {
     this.repo = new RepoMonitor(ctx);
     this.loop = new LoopMonitor(ctx);
     this.loopControl = new LoopControl(ctx, this.loop);
-    this.read = new ReadModel(ctx, this.tool, () => this.source());
+    this.read = new ReadModel(
+      ctx,
+      this.tool,
+      () => this.source(),
+      () => this.running(),
+    );
     this.settings = new SettingsStore(ctx.state);
     this.history = new HistoryService(ctx);
     this.queue = new WriteQueue(this);
@@ -182,6 +190,19 @@ export class Services {
   }
 
   /**
+   * The item a run works on now (feature 371): the run lock's item, with the feature number of
+   * its branch. Null while the lock is free.
+   *
+   * @returns The running item or null.
+   */
+  running(): RunningItem | null {
+    const lock = this.loop.view?.lock;
+    if (!lock) return null;
+    const feature = /^(\d{3})-/.exec(lock.branch)?.[1] ?? null;
+    return { slug: lock.slug, branch: lock.branch, feature, started: lock.started };
+  }
+
+  /**
    * The write gate now.
    *
    * @returns The gate.
@@ -210,6 +231,8 @@ export class Services {
     this.loop.start();
     this.read.start();
     this.runs.start();
+    // A side worktree whose folder is gone is forgotten by git (feature 371).
+    void this.queue.worktree.prune().catch(() => undefined);
   }
 
   /** Stops every poller and watcher. */
@@ -247,9 +270,16 @@ export class Services {
   reconcile(): void {
     const source = this.source();
     const main = this.repo.state?.mainCommit ?? null;
-    if (source !== this.lastSource || (source === "main" && main !== this.lastMain)) {
+    const running = this.running();
+    const runningKey = running ? `${running.slug}@${running.branch}` : "";
+    if (
+      source !== this.lastSource ||
+      (source === "main" && main !== this.lastMain) ||
+      runningKey !== this.lastRunning
+    ) {
       this.lastSource = source;
       this.lastMain = main;
+      this.lastRunning = runningKey;
       this.read.syncWatcher();
       this.read.invalidate();
     }

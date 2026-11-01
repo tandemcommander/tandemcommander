@@ -81,7 +81,14 @@ BL = bin/backlog.sh
   (`list`, `show`, `check`) are fine. Agent mode inside a run is
   unaffected. **The loop's own triage** (`bin/backlog-loop.sh start --auto-triage`,
   §2.5a *From the loop*) is the exception: it runs while the loop waits
-  for it, and the loop starts no run meanwhile.
+  for it, and the loop starts no run meanwhile. **The backlog app**
+  (`bin/start-backlog-app.sh`, features 344 and 371) is the other
+  exception: during a run it lands changes on `main` through its own side
+  worktree (committed at once; the running item stays frozen; the run
+  merges `main` at its end by the recipe of `/tandem-backlog-implement`
+  step 9), and while the loop lives it commits every change at once - so
+  the maintainer who wants to change the backlog during a run uses the
+  app, and this skill from a terminal still changes nothing then.
 - Commands of this skill: `check`, `sync`, `list`, `new`, `import-github`,
   `set`, `log`, `verify`, `move`, `block`, `unblock`, `remove --reason`, and
   since feature 344 `board`, `show`, `legend`, `reorder`, `body`, `step`,

@@ -81,12 +81,15 @@ export async function toolChangeForTray(
   args: string[],
   texts: Record<string, unknown>,
   failed: Pick<Change, "operation" | "slugs" | "summary" | "reason">,
+  root: string = tray.root,
 ): Promise<{ result: ToolChange; before: Snapshot }> {
-  const before = tray.snapshot();
+  const before = tray.snapshot(root);
   try {
-    return { result: await tool.change(args, texts), before };
+    return { result: await tool.change(args, texts, { root }), before };
   } catch (error) {
-    const written = tray.changedSince(before);
+    // Outside the primary tree (the side worktree, feature 371) the write queue reverts the
+    // whole tree instead; nothing is recorded.
+    const written = root === tray.root ? tray.changedSince(before, root) : [];
     if (written.length > 0) {
       tray.record({
         ...failed,
@@ -177,12 +180,21 @@ export class ChangeTray {
   }
 
   /**
+   * The primary working tree's root (the tree the tray's pending changes live in).
+   *
+   * @returns The absolute path.
+   */
+  get root(): string {
+    return this.ctx.repo.root;
+  }
+
+  /**
    * Reads every file under `backlog/` (the state before an operation).
    *
+   * @param root - The tree to read (the primary tree, or the side worktree of feature 371).
    * @returns The snapshot.
    */
-  snapshot(): Snapshot {
-    const root = this.ctx.repo.root;
+  snapshot(root: string = this.ctx.repo.root): Snapshot {
     const files: Snapshot = new Map();
     /**
      * Adds the files of one folder, recursively.
@@ -206,10 +218,11 @@ export class ChangeTray {
    * report of written files is missing, so the folder itself is compared.
    *
    * @param before - The snapshot taken before the call.
+   * @param root - The tree the snapshot was taken from.
    * @returns Repository-relative paths.
    */
-  changedSince(before: Snapshot): string[] {
-    const now = this.snapshot();
+  changedSince(before: Snapshot, root: string = this.ctx.repo.root): string[] {
+    const now = this.snapshot(root);
     const changed: string[] = [];
     for (const [path, bytes] of now) {
       const old = before.get(path);
@@ -239,8 +252,15 @@ export class ChangeTray {
     before: Snapshot;
     /** Files the tool wrote or deleted (repository-relative). */
     written: string[];
+    /** The tree the operation ran in (the primary tree, or the side worktree of feature 371). */
+    root?: string;
+    /** How it was applied (feature 371); `tray` when absent. */
+    channel?: Change["channel"];
+    /** The commit it became, when it was committed at once (then no undo file is kept). */
+    commit?: string | null;
   }): Change {
-    const root = this.ctx.repo.root;
+    const root = input.root ?? this.ctx.repo.root;
+    const committed = typeof input.commit === "string";
     // Time first, so ids sort by creation; the random part keeps two changes of one millisecond
     // apart. The id also names the undo file, so it holds only [0-9a-z-].
     const id = `${Date.now().toString(36)}-${randomBytes(3).toString("hex")}`;
@@ -260,7 +280,7 @@ export class ChangeTray {
       undo.push({ path, before: old ? old.toString("base64") : null });
       files.push({ path, before: old ? sha256(old) : null, after: now ? sha256(now) : null });
     }
-    this.ctx.state.writeJson(`undo/${id}.json`, undo);
+    if (!committed) this.ctx.state.writeJson(`undo/${id}.json`, undo);
     const change: Change = {
       id,
       at: new Date().toISOString(),
@@ -269,11 +289,25 @@ export class ChangeTray {
       summary: input.summary,
       reason: input.reason,
       files,
-      state: "pending",
-      commit: null,
+      state: committed ? "committed" : "pending",
+      commit: input.commit ?? null,
+      channel: input.channel ?? "tray",
     };
     this.save([...this.entries(), change]);
     return change;
+  }
+
+  /**
+   * Marks pending changes as committed at once (the `commit` channel of feature 371) once the
+   * tray's commit recorded them; the entries keep the channel they were recorded with.
+   *
+   * @param ids - The changes.
+   * @param channel - The channel they were applied through.
+   */
+  markChannel(ids: string[], channel: Change["channel"]): void {
+    const entries = this.entries();
+    for (const change of entries) if (ids.includes(change.id)) change.channel = channel;
+    this.save(entries);
   }
 
   /**
@@ -369,30 +403,52 @@ export class ChangeTray {
    * @returns The message.
    */
   proposedMessage(): string {
-    const pending = this.pending();
-    if (pending.length === 0) return "";
+    return ChangeTray.messageFor(this.pending());
+  }
+
+  /**
+   * The commit message of a set of changes (the form of {@link ChangeTray.proposedMessage}).
+   *
+   * @param changes - The changes, oldest first.
+   * @returns The message, empty for no changes.
+   */
+  static messageFor(changes: Pick<Change, "operation" | "summary" | "reason">[]): string {
+    if (changes.length === 0) return "";
     const counts = new Map<string, number>();
-    for (const change of pending) counts.set(change.operation, (counts.get(change.operation) ?? 0) + 1);
+    for (const change of changes) counts.set(change.operation, (counts.get(change.operation) ?? 0) + 1);
     const parts = [...counts].map(([op, n]) =>
-      n > 1 ? `${n} x ${op}` : pending.find((c) => c.operation === op)!.summary,
+      n > 1 ? `${n} x ${op}` : changes.find((c) => c.operation === op)!.summary,
     );
     let subject = `backlog(app): ${parts.join("; ")}`;
     if (subject.length > 72)
-      subject = `backlog(app): ${pending.length} changes (${[...counts.keys()].join(", ")})`;
-    const body = pending.map((c) => `- ${c.summary}${c.reason ? ` - ${c.reason}` : ""}`);
+      subject = `backlog(app): ${changes.length} changes (${[...counts.keys()].join(", ")})`;
+    const body = changes.map((c) => `- ${c.summary}${c.reason ? ` - ${c.reason}` : ""}`);
     return `${subject}\n\n${body.join("\n")}\n`;
+  }
+
+  /**
+   * Changes committed at once (feature 371) within the last hour, newest first.
+   *
+   * @returns The changes.
+   */
+  committedRecently(): Change[] {
+    const cutoff = Date.now() - 3600_000;
+    return this.entries()
+      .filter((c) => c.state === "committed" && c.channel !== "tray" && Date.parse(c.at) > cutoff)
+      .reverse();
   }
 
   /**
    * The tray as the client sees it.
    *
-   * @returns Pending changes, outside changes and the proposed message.
+   * @returns Pending changes, outside changes, the proposed message, recent commits.
    */
   async view(): Promise<Tray> {
     return {
       pending: this.pending(),
       outside: await this.outside(),
       proposedMessage: this.proposedMessage(),
+      committedRecently: this.committedRecently(),
     };
   }
 

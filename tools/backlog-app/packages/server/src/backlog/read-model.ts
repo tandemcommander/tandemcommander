@@ -19,9 +19,55 @@
 
 import { watch, type FSWatcher } from "node:fs";
 import { join } from "node:path";
-import type { Board, CheckResult, Legend, NextUp, ReadRef } from "@backlog-app/shared";
+import type { Board, CheckResult, ItemRow, Legend, NextUp, ReadRef, RunningItem } from "@backlog-app/shared";
 import type { ServerContext } from "../context.ts";
 import type { BacklogTool } from "./tool.ts";
+
+/**
+ * Overlays the board read from `main` with the item a run works on (feature 371, research R6):
+ * on `main` it is still an open row of its section, so its row moves to *In progress* with the
+ * run's feature number, and the positions of the section it left are renumbered. Pure.
+ *
+ * @param board - The board as read.
+ * @param running - The running item, or null (then the board is returned as it is).
+ * @returns The board with the overlay.
+ */
+export function overlayRunning(board: Board, running: RunningItem | null): Board {
+  if (!running) return { ...board, running: null };
+  let moved: ItemRow | null = null;
+  const sections = board.sections.map((section) => {
+    const rows = section.rows.filter((row) => {
+      if (row.kind === "item" && row.slug === running.slug) {
+        moved = row;
+        return false;
+      }
+      return true;
+    });
+    if (rows.length === section.rows.length) return section;
+    // The section lost a row: renumber the positions of an ordered section.
+    let position = 0;
+    return {
+      ...section,
+      rows: rows.map((row) =>
+        row.kind === "item" && section.ordered ? { ...row, position: ++position } : row,
+      ),
+    };
+  });
+  if (!moved) return { ...board, sections, running };
+  const row: ItemRow = { ...(moved as ItemRow), status: "in-progress", feature: running.feature, position: 1 };
+  return {
+    ...board,
+    sections: sections.map((section) => {
+      if (section.name !== "In progress") return section;
+      let position = 1;
+      return {
+        ...section,
+        rows: [row, ...section.rows.map((r) => (r.kind === "item" ? { ...r, position: ++position } : r))],
+      };
+    }),
+    running,
+  };
+}
 
 /** Everything the views read, from one source at one moment. */
 export interface Snapshot {
@@ -56,6 +102,9 @@ export class ReadModel {
   /** Decides the source (working tree or `main`) from the gate's inputs. */
   private readonly sourceOf: () => ReadRef;
 
+  /** The item a run works on (from the run lock), for the overlay (feature 371). */
+  private readonly runningOf: () => RunningItem | null;
+
   /** The current snapshot. */
   private current: Snapshot | null = null;
 
@@ -86,11 +135,27 @@ export class ReadModel {
    * @param ctx - The server context.
    * @param tool - The backlog tool.
    * @param sourceOf - Returns where to read from now.
+   * @param runningOf - Returns the item a run works on now, or null.
    */
-  constructor(ctx: ServerContext, tool: BacklogTool, sourceOf: () => ReadRef) {
+  constructor(
+    ctx: ServerContext,
+    tool: BacklogTool,
+    sourceOf: () => ReadRef,
+    runningOf: () => RunningItem | null = () => null,
+  ) {
     this.ctx = ctx;
     this.tool = tool;
     this.sourceOf = sourceOf;
+    this.runningOf = runningOf;
+  }
+
+  /**
+   * The item a run works on now (the overlay's input).
+   *
+   * @returns The running item or null.
+   */
+  running(): RunningItem | null {
+    return this.runningOf();
   }
 
   /** Starts the safety reloads and the watcher. */
@@ -229,21 +294,30 @@ export class ReadModel {
    */
   private async load(): Promise<Snapshot> {
     const source = this.sourceOf();
+    const running = this.runningOf();
     try {
-      const [board, legend, next, check] = await Promise.all([
+      const [read, legend, next, check] = await Promise.all([
         this.tool.board(source, true),
         this.tool.legend(source),
-        this.tool.next(source),
+        // "Next up" leaves the running item out: on `main` it is still an open row (371).
+        this.tool.next(source, running?.slug ?? null),
         // The check reads the working tree only; from `main` the last result stands.
         source === "worktree"
           ? this.tool.check()
           : Promise.resolve(this.current?.check ?? { total: 0, findings: [] }),
       ]);
+      const board = overlayRunning(read, running);
       const previous = this.current;
       const snapshot: Snapshot = { source, board, legend, next, check, at: Date.now() };
       this.current = snapshot;
       this.failure = null;
-      if (!previous || previous.board.revision !== board.revision || previous.source !== source) {
+      if (
+        !previous ||
+        previous.board.revision !== board.revision ||
+        previous.source !== source ||
+        previous.board.running?.slug !== board.running?.slug ||
+        previous.board.running?.branch !== board.running?.branch
+      ) {
         this.ctx.hub.publish("board.changed", { board: board.revision, ref: source });
       }
       if (!previous || previous.check.total !== check.total) {

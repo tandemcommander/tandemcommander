@@ -105,6 +105,7 @@ export function backlogReadRoutes(services: Services): Hono {
       snippets,
       matches,
       next: snapshot.next,
+      running: snapshot.board.running,
     };
     return c.json(answer);
   });
@@ -121,7 +122,13 @@ export function backlogReadRoutes(services: Services): Hono {
 
   app.get("/items/:slug", async (c) => {
     const slug = param(c.req.param("slug"), SLUG_PATTERN, "item");
-    return c.json(await services.tool.show(slug, services.source()));
+    const item = await services.tool.show(slug, services.source());
+    // The item a run works on is in progress, whatever `main` says (feature 371, research R6).
+    const running = services.running();
+    if (running && running.slug === slug) {
+      return c.json({ ...item, section: "In progress", position: 1, status: "in-progress", feature: running.feature });
+    }
+    return c.json(item);
   });
 
   app.get("/items/:slug/history", async (c) => {

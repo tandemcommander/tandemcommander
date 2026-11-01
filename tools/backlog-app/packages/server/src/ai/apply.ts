@@ -28,7 +28,7 @@ import {
   type SectionName,
 } from "@backlog-app/shared";
 import type { Services } from "../services.ts";
-import { fileHash, type Base } from "../backlog/write-queue.ts";
+import { fileHash, type Base, type StagedChange } from "../backlog/write-queue.ts";
 import { toolChangeForTray } from "../backlog/tray.ts";
 import { resolveRef } from "../repo/git.ts";
 import { SECTION_ARG } from "../api/backlog-write.ts";
@@ -342,8 +342,8 @@ async function runOperations(
   operations: ApplyOperation[],
 ): Promise<ApplyAnswer> {
   const { queue, tray, tool } = services;
-  return queue.run(purpose, base, slug, async () => {
-    const changes: Change[] = [];
+  const answer = await queue.run(purpose, base, slug, async (ctx) => {
+    const staged: StagedChange[] = [];
     const findings: ChangeResult["findings"] = [];
     const notices: string[] = [];
     let created = slug ?? "";
@@ -355,39 +355,55 @@ async function runOperations(
        * @returns The one-line summary.
        */
       const summaryNow = (): string => (typeof op.summary === "function" ? op.summary(created) : op.summary);
-      const { result, before } = await toolChangeForTray(tray, tool, args, op.texts ?? {}, {
-        operation: op.operation,
-        slugs: created ? [created] : [],
-        summary: summaryNow(),
-        reason: op.reason ?? null,
-      });
+      const { result, before } = await toolChangeForTray(
+        tray,
+        tool,
+        args,
+        op.texts ?? {},
+        {
+          operation: op.operation,
+          slugs: created ? [created] : [],
+          summary: summaryNow(),
+          reason: op.reason ?? null,
+        },
+        ctx.root,
+      );
       if (op.operation === "new") created = result.slugs[0] ?? created;
       findings.push(...result.findings);
       notices.push(...result.notices);
-      changes.push(
-        tray.record({
+      staged.push(
+        ctx.stage({
           operation: op.operation,
           slugs: result.slugs.length ? result.slugs : created ? [created] : [],
           summary: summaryNow(),
           reason: op.reason ?? null,
           before,
           written: result.written,
+          findings: result.findings,
         }),
       );
       // A written change with check findings stops the chain: never build on a broken state.
       if (result.findings.length > 0) break;
     }
-    const root = services.ctx.repo.root;
     return {
-      ok: changes.length > 0,
+      staged,
       findings,
       notices,
-      changes,
-      results: [],
-      board: fileHash(join(root, "backlog", "BACKLOG.md")) ?? "",
-      item: created ? fileHash(join(root, "backlog", "items", created, "desc.md")) : null,
+      board: ctx.hashOf("backlog/BACKLOG.md") ?? "",
+      item: created ? ctx.hashOf(`backlog/items/${created}/desc.md`) : null,
     };
   });
+  // The queue filled in the tray entries (state, commit, channel) before it answered.
+  const changes: Change[] = answer.staged.map((s) => s.change).filter((c): c is Change => c !== null);
+  return {
+    ok: changes.length > 0,
+    findings: answer.findings,
+    notices: answer.notices,
+    changes,
+    results: [],
+    board: answer.board,
+    item: answer.item,
+  };
 }
 
 /**

@@ -27,20 +27,20 @@ Repository root `E:\Projects\tandemcommander`; the app is `tools/backlog-app/` (
 
 **Purpose**: fixtures and tools every story builds on.
 
-- [ ] T001 Fix the time-dependent lock fixtures: a helper `lockNow(ageHours = 0)` in
+- [x] T001 Fix the time-dependent lock fixtures: a helper `lockNow(ageHours = 0)` in
       `tools/backlog-app/packages/server/test/helpers/fixture-repo.ts`; use it in
       `packages/server/test/write-path.test.ts` and `packages/server/test/ai-jobs.test.ts`; keep one
       negative control with a 25-hour-old lock expecting `stale-lock` (research R9; FR-021)
-- [ ] T002 [P] Add `next --except <slug>` to `tools/backlog/backlog.py` (`cmd_next`, `build_parser`,
+- [x] T002 [P] Add `next --except <slug>` to `tools/backlog/backlog.py` (`cmd_next`, `build_parser`,
       refusal with `--slug`) and its three tests in `tools/backlog/test_backlog.py`
       (contracts/backlog-cli-additions.md)
-- [ ] T003 [P] Add the fake run step `branch-hang` to `tools/backlog/fixtures/fake_claude.py`: lock,
+- [x] T003 [P] Add the fake run step `branch-hang` to `tools/backlog/fixtures/fake_claude.py`: lock,
       `BL start`, `git checkout -b`, `lock update --branch`, start commit, wait `seconds`, close,
       `returning` (through `loop.py`), `git checkout main`, `git merge --ff-only`, on failure the
       backlog recipe and `[NNN] merge main`, then the fast-forward; record in the plan's `calls`
       whether the first fast-forward succeeded and `git status --porcelain` at the start
       (research R10)
-- [ ] T004 [P] Create the chat fake `tools/backlog-app/packages/server/test/fixtures/fake-claude-chat.mjs`:
+- [x] T004 [P] Create the chat fake `tools/backlog-app/packages/server/test/fixtures/fake-claude-chat.mjs`:
       reads stream-json lines from stdin, prints `system/init` with the session id from
       `--session-id` / `--resume`, answers each user message with three `stream_event` text deltas,
       one `assistant` tool-use line and a `result` (success, cost 0.01); modes through
@@ -53,58 +53,58 @@ Repository root `E:\Projects\tandemcommander`; the app is `tools/backlog-app/` (
 **Purpose**: the loop's edit-lock holds and the app's write channels; without them neither US1 nor
 US2 can be tested safely.
 
-- [ ] T005 Loop: take the edit lock before `precheck()` in `Loop.cycle()`, release it on a non-ready
+- [x] T005 Loop: take the edit lock before `precheck()` in `Loop.cycle()`, release it on a non-ready
       precheck, keep it through `execute()` until `watch()` sees the run lock's `branch != '-'` or
       claude ends; `pending()` holds it only while the branch is `-`; release on every exit path
       (`tools/backlog/loop.py`; contracts/loop-cli-additions.md)
-- [ ] T006 Loop: the `returning` flag and command - `cmd_returning` (writes the flag, waits for a
+- [x] T006 Loop: the `returning` flag and command - `cmd_returning` (writes the flag, waits for a
       foreign edit lock to clear, then for the loop's hold, prints `ok`/`refused`, `--timeout`),
       `watch()` takes the lock on the flag and removes the flag when claude ends, `start` removes a
       leftover; `status --json` adds `edit_lock.holder` and `returning` (`tools/backlog/loop.py`)
-- [ ] T007 Loop tests in `tools/backlog/test_loop.py`: the hold from precheck to the branch (fake
+- [x] T007 Loop tests in `tools/backlog/test_loop.py`: the hold from precheck to the branch (fake
       `branch-hang`), the wait on an app lock with no run started meanwhile, `returning` (ok,
       timeout, no loop), the flag removed at claude's end and at the next start (depends on T003,
       T005, T006)
-- [ ] T008 [P] `bin/backlog-loop.sh`: list `returning` in `--help` and pass it through; run
+- [x] T008 [P] `bin/backlog-loop.sh`: list `returning` in `--help` and pass it through; run
       `python tools/test_bin_help.py`
-- [ ] T009 [P] Shared schemas: `WriteGate` (`state` set, `channel`, `frozenSlug`), `Change.channel`,
+- [x] T009 [P] Shared schemas: `WriteGate` (`state` set, `channel`, `frozenSlug`), `Change.channel`,
       `ChangeResult.channel/commit`, `Tray.committedRecently`, `Board.running`, `Settings.chatBudgetUsd`
       in `tools/backlog-app/packages/shared/src/schemas/app-state.ts`, `backlog.ts`, `api/responses.ts`
       (data-model.md)
-- [ ] T010 Gate decision table in `tools/backlog-app/packages/server/src/backlog/write-gate.ts` (pure):
+- [x] T010 Gate decision table in `tools/backlog-app/packages/server/src/backlog/write-gate.ts` (pure):
       inputs + `loopPid`; the 13 rows of data-model.md; reasons in words for every state (depends
       on T009)
-- [ ] T011 Gate tests: one case per row of the table plus the frozen slug and the channel in
+- [x] T011 Gate tests: one case per row of the table plus the frozen slug and the channel in
       `tools/backlog-app/packages/server/test/write-gate.test.ts` (depends on T010)
-- [ ] T012 Side worktree `tools/backlog-app/packages/server/src/backlog/side-worktree.ts`: create lazily
+- [x] T012 Side worktree `tools/backlog-app/packages/server/src/backlog/side-worktree.ts`: create lazily
       (`worktree add --detach --no-checkout`, sparse `backlog` + `specs/*/spec.md`, checkout),
       `sync(mainCommit)` (detach to main, reset --hard, clean backlog, sparse reapply, clean check),
       `commit(paths, message)`, `landOnMain(expectedOld)` (CAS `update-ref`), `revert()`, `prune()` at
       app start; git calls through a small allow-list of its own (write commands are allowed here
       only) (research R1, R2)
-- [ ] T013 Side worktree tests `tools/backlog-app/packages/server/test/side-worktree.test.ts`: creation,
+- [x] T013 Side worktree tests `tools/backlog-app/packages/server/test/side-worktree.test.ts`: creation,
       sync after main moved, commit + CAS, CAS failure when main moved (reverted), a dirty worktree
       repaired, the folder deleted and recreated (depends on T012)
-- [ ] T014 Backlog tool adapter: `change(args, texts, { root })` and `next(ref, except)` in
+- [x] T014 Backlog tool adapter: `change(args, texts, { root })` and `next(ref, except)` in
       `tools/backlog-app/packages/server/src/backlog/tool.ts` (depends on T002)
-- [ ] T015 Write queue channels in `tools/backlog-app/packages/server/src/backlog/write-queue.ts`:
+- [x] T015 Write queue channels in `tools/backlog-app/packages/server/src/backlog/write-queue.ts`:
       wait up to 30 s for a loop-held edit lock (`busy` with the purpose after), gate from fresh
       state, `tray` (as today), `commit` (tool in the primary tree + the one-change commit),
       `main-ref` (sync the worktree, revision check against its files, the tool with `--root`,
       findings → revert + `check-findings`, frozen check → revert + `frozen-item`, commit, primary
       HEAD check + edit lock still ours, CAS, failure → revert + `changed-underneath`), tray entry
       with channel and commit, `read.fresh()` (depends on T010, T012, T014)
-- [ ] T016 Tray: `record()` takes `channel` and `commit`; `commitOne(change, message)` for the commit
+- [x] T016 Tray: `record()` takes `channel` and `commit`; `commitOne(change, message)` for the commit
       channel; `view()` adds `committedRecently`; the proposed message for one change
       (`tools/backlog-app/packages/server/src/backlog/tray.ts`) (depends on T009)
-- [ ] T017 Services wiring: `gate()` passes the loop pid; `reconcile()` invalidates the read model when
+- [x] T017 Services wiring: `gate()` passes the loop pid; `reconcile()` invalidates the read model when
       the lock's slug or branch changes; `stopAndDrain()` ends chats (placeholder for T037); worktree
       prune at start (`tools/backlog-app/packages/server/src/services.ts`, `main.ts`) (depends on
       T012, T015)
-- [ ] T018 Changing routes return `channel` / `commit`, refuse the frozen slug before the queue for
+- [x] T018 Changing routes return `channel` / `commit`, refuse the frozen slug before the queue for
       `/items/:slug/*`, `/bulk` skips it with a refusal, `/sections/:s/order` refuses an order that
       names it (`tools/backlog-app/packages/server/src/api/backlog-write.ts`) (depends on T015)
-- [ ] T019 Write-path tests in `tools/backlog-app/packages/server/test/write-path.test.ts`: the
+- [x] T019 Write-path tests in `tools/backlog-app/packages/server/test/write-path.test.ts`: the
       `commit` channel commits at once with the app's message; the `main-ref` channel (a fixture
       with the run lock held and HEAD on a branch): the change is on `main`, the primary tree
       untouched, the tray entry committed; `run-on-main` refusal when HEAD is `main`; the frozen
@@ -124,7 +124,7 @@ run is never disturbed.
 **Independent Test**: quickstart Q1, Q2, Q4, Q5, Q8; e2e `us1-live-edit.spec.ts`; soak
 `write-race.test.ts`.
 
-- [ ] T020 [US1] Skill step 9: `bin/backlog-loop.sh returning` before `git checkout main` with one
+- [x] T020 [US1] Skill step 9: `bin/backlog-loop.sh returning` before `git checkout main` with one
       sentence why, in `.claude/skills/tandem-backlog-implement/SKILL.md`; §0.2 of
       `.claude/skills/tandem-backlog/SKILL.md` says the app changes `main` during a run and what
       stays frozen
@@ -164,12 +164,12 @@ run is never disturbed.
 **Independent Test**: quickstart Q1, Q3; API tests of the overlay; e2e assertions in
 `us1-live-edit.spec.ts`.
 
-- [ ] T027 [US2] Running-item overlay in
+- [x] T027 [US2] Running-item overlay in
       `tools/backlog-app/packages/server/src/backlog/read-model.ts`: `runningOf(loopView)`; the row
       moved to *In progress* with status / feature / position; `next --except`; `Board.running`;
       the item detail of that slug (`api/backlog-read.ts`) gets section, position, status, feature
       (depends on T014, T017)
-- [ ] T028 [US2] Overlay tests in `tools/backlog-app/packages/server/test/read-model.test.ts`: with a
+- [x] T028 [US2] Overlay tests in `tools/backlog-app/packages/server/test/read-model.test.ts`: with a
       lock held the row is in *In progress* and not in *Next*, counts follow, next-up names the
       next eligible item, `show` of the slug says *In progress*; without a lock the board is `main`'s
       (depends on T027)

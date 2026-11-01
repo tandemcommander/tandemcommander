@@ -101,7 +101,7 @@ export class EditLock {
    * @param purpose - One line saying what the app is changing (shown by the loop and other apps).
    * @throws ApiError `busy` when another live process holds it.
    */
-  acquire(purpose: string): void {
+  acquire(purpose: string, neverStalePid: number | null = null): void {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const fd = openSync(this.path, "wx");
@@ -112,19 +112,25 @@ export class EditLock {
         } finally {
           closeSync(fd);
         }
+        this.text = text;
         return;
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
         const holder = readLock(this.path);
+        // The loop holds the lock while a run starts or returns to main (feature 371): that can
+        // take longer than the stale age, and it is never replaced while the loop lives.
+        const loops = holder !== null && neverStalePid !== null && holder.pid === neverStalePid;
         const stale =
           holder === null ||
           holder.pid === process.pid ||
           !processExists(holder.pid) ||
-          Date.now() - holder.startedEpoch * 1000 > STALE_AFTER_MS;
+          (!loops && Date.now() - holder.startedEpoch * 1000 > STALE_AFTER_MS);
         if (!stale) {
           throw new ApiError(
             "busy",
-            `another backlog app (pid ${holder.pid}) is changing the backlog: ${holder.purpose}`,
+            loops
+              ? `the loop is ${holder.purpose.replace(/^loop: /, "")} - try again in a moment`
+              : `another backlog app (pid ${holder.pid}) is changing the backlog: ${holder.purpose}`,
           );
         }
         // Our own leftover (a crash inside a change) or a dead holder: replace it.
@@ -134,9 +140,36 @@ export class EditLock {
     throw new ApiError("busy", "the edit lock could not be taken");
   }
 
+  /** What this process last wrote into the lock (to tell our hold from a replaced one). */
+  private text: string | null = null;
+
+  /**
+   * The current holder of the lock, if any.
+   *
+   * @returns The holder's fields, or null.
+   */
+  holder(): { pid: number; startedEpoch: number; purpose: string } | null {
+    return readLock(this.path);
+  }
+
+  /**
+   * Whether the lock on disk is exactly the one this process wrote last.
+   *
+   * @returns True while our hold stands.
+   */
+  holds(): boolean {
+    if (!this.text) return false;
+    try {
+      return readFileSync(this.path, "utf8") === this.text;
+    } catch {
+      return false;
+    }
+  }
+
   /** Releases the lock if this process holds it. */
   release(): void {
     const holder = readLock(this.path);
     if (holder && holder.pid === process.pid) rmSync(this.path, { force: true });
+    this.text = null;
   }
 }

@@ -27,3 +27,29 @@ Running log of the work (project rule: keep it while working). Newest entries at
   lock; `main` moves by compare-and-swap from a sparse detached side worktree; the loop holds the
   edit lock while a run starts (until the run is on its branch) and while it returns (`returning`
   called by the skill at step 9).
+
+## 2026-11-01 - implementation, phases 1-2 and the overlay
+
+- Python: `next --except` (3 tests), the loop holds the edit lock from its precheck until the
+  run lock names a branch and again from the `returning` flag until claude ends; `returning`
+  command; `status --json` `edit_lock.holder` + `returning`; `branch-hang` fake step with
+  `before_branch`. test_loop 113 / 113, test_backlog 112 / 112, test_bin_help OK.
+- Trap: the loop tests play the app from the test process, so "our own pid" cannot mean "our
+  own lock": the loop recognises its hold by the lock's exact text (`edit_lock_mine`).
+- Trap: a sparse pattern `specs/*/spec.md` misses feature folders without a `spec.md` (the
+  fixture's `243-*`): the tool reported `feature-missing` and the change was refused. The side
+  worktree now checks out `backlog` only and creates every `specs/<folder>` empty from the
+  commit's tree (git ignores empty folders).
+- Trap (measured by the first side-worktree test): moving `main` while the primary tree has
+  `main` checked out leaves the primary tree with a staged modification of `BACKLOG.md` - the
+  exact hazard of research R2; the test now puts the primary tree on a branch first, and the
+  queue refuses (`run-on-main`) and re-checks the primary HEAD before the swap.
+- Trap: the fixture's `BACKLOG.md` is CRLF in a Windows checkout (text=auto); a test parsing
+  `git show main:backlog/BACKLOG.md` must normalise line ends.
+- `git sparse-checkout` in a linked worktree set `extensions.worktreeConfig = true` in the
+  repository's config (seen after the first measurement) - harmless, documented in the module.
+- App: gate decision table (13 rows, 15 tests), side worktree (6 tests), write queue with the
+  three channels, tray entries with channel / commit, frozen refusals in the routes, the
+  running-item overlay (`Board.running`, next up without it, the item detail) - 4 tests; the
+  write-channel tests (7) run a real idle loop for the `commit` channel. The AI apply step and
+  the AI runner follow the new gate (`free` only).

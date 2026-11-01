@@ -14,7 +14,7 @@
  *   the backlog tool (a tray change); a placement check is applied as a move.
  */
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -244,7 +244,8 @@ describe("AI jobs", () => {
   it("refuses proposing kinds while a run holds the run lock, but answers questions", async () => {
     writeRunLock(root);
     await app.refresh();
-    expect(app.services.gate().state).toBe("run-holds-lock");
+    // The lock is held while the primary tree is on main: read-only for the moment (371).
+    expect(app.services.gate().state).toBe("run-on-main");
     const refused = await call("POST", "/api/ai/jobs", { kind: "draft-item", input: { text: "a sentence" } });
     expect(refused.status).toBe(409);
     expect((refused.json as { error: { code: string } }).error.code).toBe("gate-closed");

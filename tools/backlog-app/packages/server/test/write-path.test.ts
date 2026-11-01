@@ -149,7 +149,9 @@ describe("write path", () => {
   it("closes the gate while a run holds the run lock, and refuses changes", async () => {
     writeRunLock(root);
     await app.refresh();
-    expect(app.services.gate().state).toBe("run-holds-lock");
+    // The lock is held while the primary tree is on main: read-only for the moment (371; on the
+    // run's branch the change would land on main through the side worktree instead).
+    expect(app.services.gate().state).toBe("run-on-main");
     expect(app.services.source()).toBe("main");
     const board = (await app.get("/api/board")).json as BoardView;
     expect(board.ref).toBe("main");

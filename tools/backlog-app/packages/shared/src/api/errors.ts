@@ -21,6 +21,8 @@ export const ERROR_STATUS = {
   "changed-underneath": 409,
   "gate-closed": 409,
   busy: 409,
+  "frozen-item": 409,
+  "check-findings": 409,
   "too-large": 413,
   "unsupported-media-type": 415,
   misdirected: 421,

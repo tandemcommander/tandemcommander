@@ -37,10 +37,9 @@ import {
   type SectionName,
 } from "@backlog-app/shared";
 import type { Services } from "../services.ts";
-import { fileHash, type Base } from "../backlog/write-queue.ts";
+import { type Base, type StagedChange } from "../backlog/write-queue.ts";
 import { toolChangeForTray } from "../backlog/tray.ts";
 import { resolveRef } from "../repo/git.ts";
-import { join } from "node:path";
 import { param, readBody, SLUG_PATTERN } from "./common.ts";
 
 /** The tool's short name of each section (`--section`). */
@@ -111,55 +110,96 @@ export function backlogWriteRoutes(services: Services): Hono {
    * @param operations - The operations, in order (a later one runs only if the earlier ones did).
    * @returns The answer of the route.
    */
-  const apply = (
+  const apply = async (
     purpose: string,
     base: Base,
     slug: string | null,
     operations: Operation[],
-  ): Promise<ChangeResult> =>
-    queue.run(purpose, base, slug, async () => {
-      let last: Change | null = null;
+  ): Promise<ChangeResult> => {
+    const answer = await queue.run(purpose, base, slug, async (ctx) => {
+      let last: StagedChange | null = null;
       const findings: ChangeResult["findings"] = [];
       const notices: string[] = [];
       for (const op of operations) {
-        const { result, before } = await toolChangeForTray(tray, tool, op.args, op.texts ?? {}, {
-          operation: op.operation,
-          slugs: slug ? [slug] : [],
-          summary: op.summary,
-          reason: op.reason ?? null,
-        });
+        const { result, before } = await toolChangeForTray(
+          tray,
+          tool,
+          op.args,
+          op.texts ?? {},
+          {
+            operation: op.operation,
+            slugs: slug ? [slug] : [],
+            summary: op.summary,
+            reason: op.reason ?? null,
+          },
+          ctx.root,
+        );
         findings.push(...result.findings);
         notices.push(...result.notices);
-        last = tray.record({
+        last = ctx.stage({
           operation: op.operation,
           slugs: result.slugs.length ? result.slugs : slug ? [slug] : [],
           summary: op.summary,
           reason: op.reason ?? null,
           before,
           written: result.written,
+          findings: result.findings,
         });
         // A written change with check findings stops the chain: never build on a broken state.
         if (result.findings.length > 0) break;
       }
-      const root = services.ctx.repo.root;
       const itemSlug = last?.slugs[0] ?? slug;
       return {
-        ok: true,
+        last,
         findings,
         notices,
-        change: last,
-        board: fileHash(join(root, "backlog", "BACKLOG.md")) ?? "",
-        item: itemSlug ? fileHash(join(root, "backlog", "items", itemSlug, "desc.md")) : null,
+        channel: ctx.channel,
+        board: ctx.hashOf("backlog/BACKLOG.md") ?? "",
+        item: itemSlug ? ctx.hashOf(`backlog/items/${itemSlug}/desc.md`) : null,
       };
     });
+    // The queue filled in the tray entry (state, commit) before it answered.
+    const change: Change | null = answer.last?.change ?? null;
+    return {
+      ok: true,
+      findings: answer.findings,
+      notices: answer.notices,
+      change,
+      board: answer.board,
+      item: answer.item,
+      channel: answer.channel,
+      commit: change?.commit ?? null,
+    };
+  };
 
   /**
-   * The slug of the route.
+   * Refuses a change of the item a run works on before anything runs (the queue would also
+   * catch it by the file's hash, with a less telling message).
+   *
+   * @param slug - The item.
+   * @throws ApiError `frozen-item`.
+   */
+  const assertNotFrozen = (slug: string): void => {
+    const frozen = services.gate().frozenSlug;
+    if (frozen === slug) {
+      throw new ApiError(
+        "frozen-item",
+        `${slug} is the item a run works on - it is never changed by the app meanwhile`,
+      );
+    }
+  };
+
+  /**
+   * The slug of a changing route (never the frozen item).
    *
    * @param c - The request context.
    * @returns The validated slug.
    */
-  const slugOf = (c: Context): string => param(c.req.param("slug"), SLUG_PATTERN, "item");
+  const slugOf = (c: Context): string => {
+    const slug = param(c.req.param("slug"), SLUG_PATTERN, "item");
+    assertNotFrozen(slug);
+    return slug;
+  };
 
   // --- items (user story 3) ---
   app.post("/items/:slug/fields", async (c) => {
@@ -216,6 +256,8 @@ export function backlogWriteRoutes(services: Services): Hono {
       SectionName | undefined;
     if (!name) throw new ApiError("not-found", "no such section");
     const body = await readBody(c, OrderRequestSchema);
+    const frozen = services.gate().frozenSlug;
+    if (frozen && body.order.includes(frozen)) assertNotFrozen(frozen);
     return c.json(
       await apply(`reorder ${name}`, body.base, null, [
         {
@@ -418,51 +460,66 @@ export function backlogWriteRoutes(services: Services): Hono {
       if (body[key]) texts[key] = body[key];
     }
     // The new item is placed in a second operation, once its slug is known.
-    const result = await queue.run(`new item ${body.title.slice(0, 40)}`, body.base, null, async () => {
-      const before = tray.snapshot();
-      const created = await tool.change(args, texts);
+    const answer = await queue.run(`new item ${body.title.slice(0, 40)}`, body.base, null, async (ctx) => {
+      const before = tray.snapshot(ctx.root);
+      const created = await tool.change(args, texts, { root: ctx.root });
       const slug = created.slugs[0] ?? "";
-      const change = tray.record({
+      let last = ctx.stage({
         operation: "new",
         slugs: created.slugs,
         summary: `${slug}: created in Inbox`,
         reason: null,
         before,
         written: created.written,
+        findings: created.findings,
       });
-      let last = change;
       const findings = [...created.findings];
       const notices = [...created.notices];
       if (body.place && body.place.section !== "Inbox" && created.findings.length === 0) {
-        const beforeMove = tray.snapshot();
-        const moved = await tool.change([
-          "move",
-          slug,
-          "--section",
-          SECTION_ARG[body.place.section],
-          ...(body.place.position ? ["--position", String(body.place.position)] : []),
-        ]);
+        const beforeMove = tray.snapshot(ctx.root);
+        const moved = await tool.change(
+          [
+            "move",
+            slug,
+            "--section",
+            SECTION_ARG[body.place.section],
+            ...(body.place.position ? ["--position", String(body.place.position)] : []),
+          ],
+          {},
+          { root: ctx.root },
+        );
         findings.push(...moved.findings);
         notices.push(...moved.notices);
-        last = tray.record({
+        last = ctx.stage({
           operation: "move",
           slugs: [slug],
           summary: `${slug}: -> ${body.place.section}${body.place.position ? ` #${body.place.position}` : ""}`,
           reason: null,
           before: beforeMove,
           written: moved.written,
+          findings: moved.findings,
         });
       }
-      const root = services.ctx.repo.root;
       return {
-        ok: true,
+        last,
         findings,
         notices,
-        change: last,
-        board: fileHash(join(root, "backlog", "BACKLOG.md")) ?? "",
-        item: fileHash(join(root, "backlog", "items", slug, "desc.md")),
-      } satisfies ChangeResult;
+        channel: ctx.channel,
+        board: ctx.hashOf("backlog/BACKLOG.md") ?? "",
+        item: ctx.hashOf(`backlog/items/${slug}/desc.md`),
+      };
     });
+    const change = answer.last.change;
+    const result: ChangeResult = {
+      ok: true,
+      findings: answer.findings,
+      notices: answer.notices,
+      change,
+      board: answer.board,
+      item: answer.item,
+      channel: answer.channel,
+      commit: change?.commit ?? null,
+    };
     return c.json(result);
   });
 
@@ -497,8 +554,14 @@ export function backlogWriteRoutes(services: Services): Hono {
     // revision is checked with the first item (the later ones follow the app's own changes): a
     // bulk change on a stale view is refused before anything is written, like every other change.
     let first = true;
+    const frozen = services.gate().frozenSlug;
     for (const slug of body.slugs) {
       const { operation } = body;
+      if (slug === frozen) {
+        // The item a run works on is skipped with a refusal, the rest of the bulk change goes on.
+        results.push({ slug, ok: false, refused: `${slug} is the item a run works on - never changed meanwhile` });
+        continue;
+      }
       let op: Operation;
       switch (operation.kind) {
         case "block":
@@ -601,16 +664,23 @@ export function backlogWriteRoutes(services: Services): Hono {
   // --- the change tray ---
   app.get("/tray", async (c) => c.json(await tray.view()));
 
+  // Undo and commit act on the primary working tree: never while a run holds it (feature 371).
   app.post("/tray/undo", async (c) => {
     const { changeId } = await readBody(c, UndoRequestSchema);
-    const change = await queue.run("undo a change", null, null, () => Promise.resolve(tray.undo(changeId)));
+    const change = await queue.run("undo a change", null, null, () => Promise.resolve(tray.undo(changeId)), {
+      channels: ["tray", "commit"],
+    });
     return c.json({ change });
   });
 
   app.post("/tray/commit", async (c) => {
     const body = await readBody(c, CommitRequestSchema);
-    const hash = await queue.run("commit the change tray", null, null, () =>
-      tray.commit(body.message, body.includeOutside),
+    const hash = await queue.run(
+      "commit the change tray",
+      null,
+      null,
+      () => tray.commit(body.message, body.includeOutside),
+      { channels: ["tray", "commit"] },
     );
     return c.json({ commit: hash });
   });

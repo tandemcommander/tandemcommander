@@ -69,8 +69,11 @@ const PUBLISH_MS = 500;
 /** Milliseconds between job-file writes while progress streams in. */
 const SAVE_MS = 2000;
 
-/** Gate states in which a proposing job may start. */
-const PROPOSING_GATES = new Set(["free", "loop-between-runs"]);
+/**
+ * Gate states in which a proposing job may start: the writable state only (since feature 371 a
+ * live loop and a run in progress are writable; the two moments a run is on `main` are not).
+ */
+const PROPOSING_GATES = new Set(["free"]);
 
 /** How claude is started: the executable and the arguments before claude's own. */
 export interface ClaudeCommand {
