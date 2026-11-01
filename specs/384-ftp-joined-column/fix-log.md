@@ -43,6 +43,40 @@ C1 (MEDIUM) - no probe row for a "mixed" server (ftpmini lists one encoding per 
 with both would need surrogate-escaped names on disk): FR-005 is covered by the saltests rule and
 the review; C2 (LOW) - the probe drives delete and download, not view / rename (same listed name).
 
+## Implementation
+
+- `src/common/salftpsrvenc.h`: `SALFTPJOIN_RAW / COLUMN / LITERAL`, `SalFtpJoinPartHandling`
+  (raw -> decode as the server's listing field, literal -> decode alone, column / unknown -> as is),
+  `SalFtpJoinedFieldIsCodePageName`.
+- `src/plugins/ftp/ftputils.cpp/.h`: `FTPListingJoinFieldU8` - decodes the part by its kind
+  (`FTPFieldToU8(.., FTPListingServer, 0)` / `(.., NULL, 0)` / copy), joins, and registers the
+  joined value as a code-page name of the server when the raw part was not
+  `SalFtpListingFieldIsU8` or the non-ASCII head is a code-page name (`FTPIsServerNameN`).
+- `src/plugins/ftp/parser2.cpp`: `AssignU8StringToColumn` split out of `AssignStringToColumn`
+  (name limit of 215, invalid type / index handling kept; frees the string when not taken);
+  `fpfAdd_string_to_column` takes the kind from `Parameters[1]->Type` and assigns the joined UTF-8
+  without a further decode.
+- `src/saltests/saltests.cpp`: `TestFtpJoinedColumn384` (10 checks).
+- Trap: clang-format on the whole `saltests.cpp` / `ftputils.cpp` / `ftputils.h` reformats hundreds
+  of unrelated lines (the files are not format-clean at HEAD); a `-U0` hunk filter applied to the
+  reformatted file put the saltests hunks at the reformatted file's line numbers (wrong place) -
+  the saltests block was re-added by hand; only the feature's own lines are formatted.
+
+## Checks after
+
+| Check | Result |
+|---|---|
+| `.\build.cmd` | BUILD SUCCEEDED (only older C4267 warnings) |
+| saltests | `saltests: 30487 checks, 0 failed` |
+| `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| probe 384 (`probe/result_after.txt`) | PASS 8, FAIL 0 (before 6 / 2): `DELE nameč.extč` deletes it, `RETR nameč.extč` downloads it; controls PASS; registry identical |
+| negative control | the same probe on main's build (7ba0dcb8): ZVM-CP-DEL, ZVM-CP-DL FAIL (`result_before.txt`) |
+| probe 288 (`probe/regress_288.txt`) | 20 / 0 |
+| probe 269 (`probe/regress_269.txt`) | 14 / 0 |
+| probe 224 (`probe/regress_224.txt`) | 16 / 0 |
+
+No UI strings, dialogs or menus changed: no `.slt` refresh needed; `build.cmd full` not required.
+
 ## Decisions
 
 - Raw part (`pptStateVar`): decoded by the listing-field rule of the server (`FTPFieldToU8` with
