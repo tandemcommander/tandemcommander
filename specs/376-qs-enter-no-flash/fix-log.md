@@ -93,9 +93,12 @@ LOC (panel in `big`), BACK (Backspace -> parent, cursor on `big`) and END pass.
   no slowdown.
 - FR-004: the settled class is NEW in every round (CTRL row: >= 70 % normal background, < 5 %
   tint) - the search ended, the panel is untinted.
-- DENY (listing denied by an ACE; access-denied path re-lists and draws) and GONE (folder deleted
-  before Enter; `ChangePathToDisk` fails, the guard draws the parent): PASS before and after - the
-  failure paths end with the whole parent folder drawn, untinted, panel in the parent.
+- DENY (listing denied by an ACE; `Execute`'s access-denied branch re-lists and draws with
+  `RefreshListBox(0, topIndex, caretIndex, ...)`) and GONE (folder deleted before Enter;
+  `ChangePathToDisk` shortens the path to the parent, re-reads and draws it before its error box):
+  PASS before and after - the failure paths end with the whole parent folder drawn, untinted,
+  panel in the parent. Neither row reaches the drawing of `QFFinishDeferredPaint` itself (review
+  1, SHOULD 1 - corrected here; an earlier version of this line said the guard drew GONE).
 - Feature 244 probe (`result_qs244.txt`, `-Expect new -FilterOption 1`): 45 rows, FAIL 0.
 - saltests: 30,237 checks, 0 failed. Encoding guard: TOTAL 0.
 
@@ -110,3 +113,34 @@ LOC (panel in `big`), BACK (Backspace -> parent, cursor on `big`) and END pass.
 - `leaving-a-folder-by-other-ways-during-quick-search-briefly` (measure:376): the other path
   changes during a search (`QFEndAtPathChange`: drive menu, history, Change Directory, hot path,
   directory line) still draw the whole folder first - code reading, not measured.
+
+## Review
+
+### Review 1 (refute-first agent, 2026-11-01) - no MUST
+
+- Re-ran the measurement: negative control (HEAD~1 in its own worktree and build folder) FLASH
+  fails 2/2 (39 / 37 PARENT samples, ~7-320 ms); feature build 19 rows FAIL 0 (no PARENT sample,
+  NEW at ~308 ms); feature 244 probe 45 rows FAIL 0; registry restored identical every run.
+- Callers enumerated: `EndQuickSearch` 15 sites, only `Execute` passes TRUE; `QFEndView(FALSE)`
+  in `WM_DESTROY` unchanged; `RefreshListBox` default `paint = TRUE`, no address taken; nothing
+  draws inside `RefreshListBox` with `paint == FALSE`; `OldVertSI.cbSize = 0` makes the next
+  drawing set the scroll bars. No data path touched.
+- **SHOULD 1** - the fix-log claimed GONE exercises the guard's drawing; it does not (GONE is drawn
+  by `ChangePathToDisk`'s shortening, DENY by `Execute`'s access-denied branch); a negative control
+  with the guard's `RefreshListBox` made a no-op still passed. **Done**: the claim corrected
+  (Measurements after). Attempt to drive a guard-only route (the reviewer's suggestion): the panel
+  on a `subst` drive removed just before Enter, automatic refresh of fixed drives off
+  (`probe/result_review_subst_attempt.txt`): the program went to a rescue path
+  (`C:\Users\pavel\Documents`, error "The path or file name "Q:\" is invalid") and drew there - not
+  the guard either; the row was dropped. The routes that depend on the guard alone are an Esc /
+  timeout during a slow network path check, `PrepareCloseCurrentPath` refusing, and a plug-in
+  FS whose `ExecuteOnFS` does not change the path - not drivable on the hidden desktop without a
+  network share or plug-in server. The guard draws with the same `RefreshListBox` the old code
+  ran unconditionally (code reading, confirmed by the reviewer); accepted with this limit.
+- NOTE 2 - while an error box of the failed change is open, the panel model is the full listing
+  but the screen still shows the filtered picture until the guard draws; an outside repaint in
+  that window draws full-listing rows only where uncovered. Cosmetic, dialog / slow paths only;
+  accepted (the guard draws the whole panel when `Execute` returns).
+- NOTE 3 - the remembered top index (research R2) is not exercised by BACK (6 rows, top index 0);
+  the return's `CheckAndCorrectBoundaries` applies the same correction. Accepted.
+- NOTE 4 - FEATURE-HISTORY entry: written at closing.
