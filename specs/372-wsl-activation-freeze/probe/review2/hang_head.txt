@@ -1,0 +1,9 @@
+hang_probe (review 2 of 372) head+hook; program C:\Users\pavel\AppData\Local\Temp\rev372b\build\tandemcommander\Debug_x64\tandemcommander.exe
+H1         RUN    PASS        hung check started True; after Backspace '\\wsl.localhost\Ubuntu\tmp\tc372hang\h1'; after the activation Home, Down, Enter: '\\wsl.localhost\Ubuntu\tmp\tc372hang\h1\aaa' (expected '\\wsl.localhost\Ubuntu\tmp\tc372hang\h1\aaa'); windows: no window
+H1         STALE  PASS        alive after the hung worker's late result: True; windows: no window
+H1         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+H2         RUN    PASS        hung check started True; after the activation (+1ÿ836 ms, the hung worker answers at ~+3500 ms) Home, Down, Enter: '\\wsl.localhost\Ubuntu\tmp\tc372hang\h2\adir\aaa' (expected '\\wsl.localhost\Ubuntu\tmp\tc372hang\h2\adir\aaa'); windows: no window
+H3         STALE  PASS        alive after the abandoned worker's late result: True; windows: no window
+H2         END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 555016158FE814604FA68BC40D77D7F3AC96301287B45AE535925CCFE57060F0 / after 555016158FE814604FA68BC40D77D7F3AC96301287B45AE535925CCFE57060F0
+Rows: PASS 6, FAIL 0; registry restored+identical: True

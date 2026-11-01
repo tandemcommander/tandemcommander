@@ -190,3 +190,28 @@ what leaves the folder).
 After the fix: `build.cmd` BUILD SUCCEEDED, `saltests: 30120 checks, 0 failed`, probe
 `probe/result_after2.txt` (with VEARLY / VLATE): PASS 16, FAIL 0, NOT DRIVEN 4, registry
 restored identical.
+
+### Review 2 (independent agent, refute-first, focus on 43cb21eb) - no MUST
+
+Re-ran build, saltests (30120 / 0), encoding guard (0) and the probe (PASS 16, FAIL 0, NOT
+DRIVEN 4, registry identical). Negative control of the abandonment fix: a copy built with a
+temporary one-shot hook (the background worker sleeps 15 s when a marker file `hang.on` exists -
+a stand-in for a hung network redirector; the hook is not in the tree), driven by
+`probe/review2/hang_probe.ps1`:
+
+| Row | HEAD + hook (`review2/hang_head.txt`) | 167ecb96 + hook (`review2/hang_neg.txt`) |
+|---|---|---|
+| H1 check of A hangs; Backspace to the parent P; `P\aaa` created while inactive; activate | PASS (`P\aaa` entered) | FAIL (old listing) |
+| H2 check of A hangs; after 11 s `A\aaa` created while inactive; activate | PASS | FAIL |
+| H1/H3 STALE the abandoned worker's late result | alive, no report | alive, no report |
+
+- SHOULD: the hung-worker claim had no record in the repository -> this table and the probe +
+  logs under `probe/review2/` (the hook build is needed to repeat it; the pure rule
+  `SalBkgndCheckAbandon` is in saltests).
+- NOTEs accepted: workers can pile up on a dead redirector (one per activation >= 10 s apart or per
+  other folder, bounded by the redirector's timeout); the refresh time stamp is taken when the
+  result arrives (at most one extra refresh); a failed restart (no thread / no memory) drops the
+  request silently; the ESC "switch to a fixed drive" escape of the synchronous check is gone by
+  design (D2); no refresh loop and no data-loss path found. Trap for future negative controls: a
+  copy built under `%TEMP%` (MSB8029) did not recompile files depending on a changed header -
+  use `build.cmd rebuild` for such a copy.
