@@ -20,7 +20,7 @@
 
 #include <windows.h>
 
-#define SAL_CLIPCHECK_RETRY_MS 500  // a busy clipboard is looked at again after this delay
+#define SAL_CLIPCHECK_RETRY_MS 500   // a busy clipboard is looked at again after this delay
 #define SAL_CLIPCHECK_MAX_RETRIES 10 // at most this many looks after one trigger (5 s)
 
 // After an idle clipboard check: the delay [ms] of the next look, 0 = none.
