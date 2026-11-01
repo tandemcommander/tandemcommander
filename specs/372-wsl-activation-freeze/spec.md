@@ -26,6 +26,14 @@ take about 1 ms while the distribution runs; a stopped distribution needs about 
 first answer. The second block does not grow with the number of entries (71 vs 827), so it is
 a fixed cost of the refresh, not the listing.
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: The refresh of a folder without automatic refresh waits 400 ms and lists the folder a second time, to notice a folder that is being deleted; should the deferred replacement list the folder again or only check that it still exists? → A: Only check, in the background, after 400 ms; when the folder is no longer accessible, the normal refresh runs (it leaves the folder as before); when it is accessible, nothing more happens (autonomous run: recommended - the second listing found only a folder being deleted, a background check finds the same without making the window wait, and a refresh loop is impossible).
+- Q: Does the background route apply only to WSL folders or to every network folder? → A: Every network folder (UNC path or remote drive); WSL folders are network folders for Windows (autonomous run: item - "and any slow network share").
+- Q: May the refresh itself still show the busy cursor while it lists the folder? → A: Yes, only for the time it actually lists (a few milliseconds on a warm WSL folder), as every refresh in the program does; the activation and the check never show it (autonomous run: conservative - the listing stays on the UI thread, Assumptions).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Switching back stays responsive with a WSL folder in a panel (Priority: P1)
@@ -109,12 +117,13 @@ A local folder in both panels: activation behaves as before or better.
 - **FR-001**: Activating the program MUST NOT run the accessibility check of a network panel
   folder (UNC path or remote drive, which includes `\\wsl.localhost\...` and `\\wsl$\...`) on
   the UI thread in a way that blocks the message loop; the check runs in the background.
-- **FR-002**: Activating the program MUST NOT show the busy cursor for the check or the refresh of
-  a network panel folder.
+- **FR-002**: Activating the program MUST NOT show the busy cursor while the accessibility check
+  of a network panel folder runs; the refresh shows it only while it actually lists the folder.
 - **FR-003**: The refresh that activation triggers for a network folder MUST NOT block the
-  message loop for longer than 50 ms on a warm WSL folder (SC-001); a fixed cost found in the
-  refresh path that does not depend on the folder's content MUST be removed or moved off the UI
-  thread.
+  message loop for longer than 50 ms on a warm WSL folder (SC-001). The fixed 400 ms wait of a
+  refresh of a folder without automatic refresh MUST NOT happen on the UI thread: it becomes a
+  background check of the folder 400 ms after the refresh; only when the folder is no longer
+  accessible does the panel refresh again (which leaves the folder as before).
 - **FR-004**: The panel content of a network folder MUST still be brought up to date after
   activation, as today (new, changed and removed entries become visible without user action).
 - **FR-005**: When the background check finds the folder inaccessible, the program MUST react as
