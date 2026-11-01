@@ -38,3 +38,50 @@ R-TWOABS   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0
 R-TWOABS   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
 C-REST16   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 C-REST16   RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-REST17   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-REST17   RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-ZERO100  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ZERO100  RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-ZERO300  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ZERO300  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-DATA100  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-DATA100  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-JOINISO  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-JOINISO  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-MKDVD256 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-MKDVD256 RUN    PASS        files 0: ; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-MKHD256  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-MKHD256  RUN    PASS        files 0: ; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-ANCHORREST END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ANCHORREST RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-ZERO512  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ZERO512  RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-ZERO513  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ZERO513  RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-ZEROLATE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-ZEROLATE RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-SHORT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-SHORT    RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+R-NOANCHOR END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-NOANCHOR RUN    PASS        files 1: a.txt; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+C-ANCHOR600 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-ANCHOR600 RUN    PASS        files 1: a.txt; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKHD     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKHD     RUN    PASS        files 0: ; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKDVD    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKDVD    RUN    PASS        files 0: ; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKCDRW   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKCDRW   RUN    PASS        files 0: ; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKCDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKCDR    RUN    PASS        files 0: ; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKCDRC   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKCDRC   RUN    PASS        files 0: ; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKDVDR   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKDVDR   RUN    PASS        files 0: ; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+C-MKBDR    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+C-MKBDR    RUN    PASS        files 0: ; files ok: True; image kept: False (want False); windows ok (none): True; fatal: ; windows: no window
+R-MKHD512  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+R-MKHD512  RUN    PASS        files 0: ; files ok: True; image kept: True (want True); windows ok (none): True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 5CD3A980D43BAB9C86C80CCC02B6F6345398DEADDF28C3B2844518A348F1FDAD / after 5CD3A980D43BAB9C86C80CCC02B6F6345398DEADDF28C3B2844518A348F1FDAD
+
+Rows: PASS 56, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

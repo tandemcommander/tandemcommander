@@ -88,3 +88,16 @@ rule) - fixed (US2 scenario 2, SC-002); LOW F2 (T003 wording) accepted. Run 2: 0
 Totals (RUN + END rows): before 11 / 7 (`probe/result_before.txt`; bridge rows re-run with the corrected
 expectation: `probe/result_before2.txt`, C-B201 PASS, R-BCOUNT FAIL), after 18 / 0 (`probe/result_after.txt`).
 Registry restored and identical every run. Sector #00000022 = 34, the descriptor's sector.
+
+## Regressions (new build)
+
+- `iso356_probe.ps1` -> 56 / 0 (`probe/regress_356.txt`), `iso358_probe.ps1` -> 52 / 0 (`probe/regress_358.txt`),
+  `iso361_probe.ps1` -> 24 / 0 (`probe/regress_361.txt`), `iso377_probe.ps1` -> 12 / 0 (`probe/regress_377.txt`) -
+  as each feature recorded; registry restored and identical every run.
+
+## Checks
+
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- `.\build.cmd` -> `BUILD SUCCEEDED` (warning C4267 at `udf.cpp` `AddFileDir` `fd.NameLen = strlen(...)` is
+  older code, as recorded by 377).
+- `saltests.exe` -> `saltests: 30268 checks, 0 failed` (377 recorded 30237; +31 of `TestIsoUdfMaps_378`).

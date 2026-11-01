@@ -25,7 +25,7 @@
 
 **Goal**: valid images unchanged. **Independent Test**: rows C-U201, C-U250, C-B201; regression probes.
 
-- [ ] T007 [US2] Run the regression probes specs/356-uniso-udf-rest/probe/iso356_probe.ps1, specs/358-*/probe/iso358_probe.ps1, specs/361-*/probe/iso361_probe.ps1, specs/377-uniso-udf-metadata-order/probe/iso377_probe.ps1 on the new build into specs/378-uniso-udf-partition-maps/probe/regress_*.txt; compare with their recorded totals in fix-log.md
+- [X] T007 [US2] Run the regression probes specs/356-uniso-udf-rest/probe/iso356_probe.ps1, specs/358-*/probe/iso358_probe.ps1, specs/361-*/probe/iso361_probe.ps1, specs/377-uniso-udf-metadata-order/probe/iso377_probe.ps1 on the new build into specs/378-uniso-udf-partition-maps/probe/regress_*.txt; compare with their recorded totals in fix-log.md
 
 ## Phase 5: Polish
 
