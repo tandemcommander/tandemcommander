@@ -1,7 +1,7 @@
 ---
 title: Change Drive menu and drive bar have no WSL item for the Linux distributions
 type: feature
-status: open
+status: in-progress
 severity: 3
 area: panels-ui
 source: manual
@@ -10,7 +10,7 @@ created: 2026-11-01
 updated: 2026-11-01
 verified: 2026-11-01 30268b7c
 effort: M
-feature: -
+feature: 374
 related: []
 depends-on: []
 reason: -
@@ -41,3 +41,4 @@ On a computer with at least one WSL distribution, the Alt+F1 / Alt+F2 menu and t
 - 2026-11-01 — moved to Next position 89
 - 2026-11-01 — moved to Next position 3
 - 2026-11-01 — verified at 30268b7c: still present at 30268b7c: BuildData adds no WSL entry, src has no Lxss/wsl.localhost reference outside 372/373; machine has Ubuntu and docker-desktop in HKCU Lxss
+- 2026-11-01 — run started, feature 374

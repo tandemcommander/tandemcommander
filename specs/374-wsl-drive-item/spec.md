@@ -3,7 +3,7 @@
 **Feature Branch**: `374-wsl-drive-item`
 **Created**: 2026-11-01
 **Status**: Draft
-**Input**: User description: "Backlog item change-drive-menu-and-drive-bar-have-no-wsl-item-for-the (backlog/items/change-drive-menu-and-drive-bar-have-no-wsl-item-for-the/desc.md) - implement exactly what it describes."
+**Input**: User description: "Backlog item change-drive-menu-and-drive-bar-have-no-wsl-item-for-the (backlog/items/change-drive-menu-and-drive-bar-have-no-wsl-item-for-the/desc.md) - implement exactly what it describes." From backlog item change-drive-menu-and-drive-bar-have-no-wsl-item-for-the.
 
 ## Background
 
