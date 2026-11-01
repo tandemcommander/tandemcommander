@@ -6813,6 +6813,32 @@ BOOL CSalamanderDirectory::GetPathSpelling(const char* path, char* out, int outS
     return SalArcPathRespell(this, path, out, outSize, acc) == SAL_ARCRESPELL_OK;
 }
 
+// feature 382: the accessor of SalArcPathResolveCase - 273's plus the folder's case rule, the
+// legacy byte fold (what a listing without SALDIRFLAG_CASESENSITIVE uses to find folders) and
+// the two rules that make case twins (salcasetwins.h: the legacy fold or SalNameCompareOrdinalCI)
+struct CSalDirResolveCaseAccess : CSalDirRespellAccess
+{
+    bool CaseSensitive(CSalamanderDirectory* d) const { return (d->GetFlags() & SALDIRFLAG_CASESENSITIVE) != 0; }
+    bool FoldEqual(const char* name, int nameLen, const char* comp, int compLen) const
+    {
+        return StrICmpEx(name, nameLen, comp, compLen) == 0;
+    }
+    bool AnyCaseEqual(const char* name, int nameLen, const char* comp, int compLen) const
+    {
+        return StrICmpEx(name, nameLen, comp, compLen) == 0 ||
+               SalNameCompareOrdinalCI(name, nameLen, comp, compLen) == 0;
+    }
+};
+
+BOOL CSalamanderDirectory::ResolvePathCase(const char* path, char* out, int outSize)
+{
+    CALL_STACK_MESSAGE2("CSalamanderDirectory::ResolvePathCase(%s, , )", path);
+    if (path == NULL)
+        return FALSE;
+    CSalDirResolveCaseAccess acc;
+    return SalArcPathResolveCase(this, path, out, outSize, acc) == SAL_ARCRESPELL_OK;
+}
+
 // ****************************************************************************
 
 BOOL TestFreeSpace(HWND parent, const char* path, const CQuadWord& totalSize, const char* messageTitle)

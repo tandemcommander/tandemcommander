@@ -220,6 +220,13 @@ public:
     // for it; written to 'out' (size 'outSize', without a leading / trailing backslash); FALSE =
     // a component names no folder or the result does not fit ('out' is then not usable)
     BOOL GetPathSpelling(const char* path, char* out, int outSize);
+    // feature 382: a typed 'path' (relative to this Salamander directory) resolved for a
+    // case-sensitive listing - each leading component replaced by the folder the lookup finds
+    // exactly, else (case-sensitive folders) by the ONLY folder equal ignoring case; the rest from
+    // the first component that does not resolve is kept as typed (SalArcPathResolveCase); written
+    // to 'out' (size 'outSize', without a leading / trailing backslash, the typed length);
+    // FALSE = the result does not fit ('out' is then not usable)
+    BOOL ResolvePathCase(const char* path, char* out, int outSize);
     // is there a directory at this index?
     BOOL IsDirectory(int i) { return i >= 0 && i < Dirs.Count; }
     // is there a file at this index?

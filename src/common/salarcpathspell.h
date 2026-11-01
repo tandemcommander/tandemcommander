@@ -99,3 +99,126 @@ int SalArcPathRespell(TDirPtr root, const char* path, char* out, int outSize, co
     }
     return SAL_ARCRESPELL_OK;
 }
+
+//*****************************************************************************
+//
+// Feature 382: a typed path resolved in a case-sensitive listing.
+//
+// The 7-Zip and TAR plug-ins keep SALDIRFLAG_CASESENSITIVE for the whole listing
+// when any folder holds case twins (feature 252); the listing's lookup then
+// compares every component exactly and "t.tar\DOCS" for the folder "Docs" named
+// nothing - the panel shortened the path to the archive's root, silently, and a
+// following Select All + Copy took the whole root. SalArcPathResolveCase resolves
+// the typed path before the panel looks it up:
+//   1. a sub-folder equal by the listing's comparison (acc.Equal) - the first one,
+//      as GetFiles; an exact name always wins, also beside its twin;
+//   2. else, only in a case-sensitive folder (acc.CaseSensitive): the ONE
+//      sub-folder equal ignoring case - accepted by acc.FoldEqual (the legacy byte
+//      fold a listing without twins uses, so the folder is the one the same
+//      archive without twins opens, feature 273), counted by acc.AnyCaseEqual
+//      (either rule that makes twins, salcasetwins.h); two or more such folders
+//      = ambiguous, never guessed;
+//   3. else the component does not resolve: it and the rest of the path are kept
+//      as typed (the caller's shortening and file focusing handle them as before).
+// Fold-equal names have the typed component's byte length, so the result has the
+// typed path's length; the output size is still checked and a result that does
+// not fit is refused (TOOLONG, the caller keeps the typed path) - never cut.
+//
+// The accessor adds to the one of SalArcPathRespell:
+//   bool acc.CaseSensitive(TDirPtr d)                    - the folder compares exactly
+//   bool acc.FoldEqual(const char* name, int nameLen,
+//                      const char* comp, int compLen)    - equal by the legacy fold
+//   bool acc.AnyCaseEqual(const char* name, int nameLen,
+//                         const char* comp, int compLen) - equal by any case rule
+//
+// 'path' as for SalArcPathRespell; 'out' receives it without a leading or
+// trailing '\\'. Returns SAL_ARCRESPELL_OK or SAL_ARCRESPELL_TOOLONG.
+//
+//*****************************************************************************
+
+template <class TDirPtr, class TAccess>
+int SalArcPathResolveCase(TDirPtr root, const char* path, char* out, int outSize, const TAccess& acc)
+{
+    if (out == NULL || outSize <= 0)
+        return SAL_ARCRESPELL_TOOLONG;
+    out[0] = 0;
+    if (*path == '\\')
+        path++;
+    int pathLen = 0;
+    while (path[pathLen] != 0)
+        pathLen++;
+    if (pathLen > 0 && path[pathLen - 1] == '\\')
+        pathLen--;
+    if (pathLen + 1 > outSize)
+        return SAL_ARCRESPELL_TOOLONG;
+    TDirPtr dir = root;
+    bool resolving = true;
+    int pos = 0;
+    int outLen = 0;
+    while (pos < pathLen)
+    {
+        int end = pos;
+        while (end < pathLen && path[end] != '\\')
+            end++;
+        int compLen = end - pos;
+        const char* name = NULL;
+        int nameLen = 0;
+        int found = -1;
+        if (resolving && compLen > 0 && dir != NULL)
+        {
+            int count = acc.Count(dir);
+            for (int i = 0; i < count; i++) // 1. the listing's own comparison, the first match
+            {
+                const char* n = acc.Name(dir, i, &nameLen);
+                if (acc.Equal(dir, n, nameLen, path + pos, compLen))
+                {
+                    found = i;
+                    name = n;
+                    break;
+                }
+            }
+            if (found < 0 && acc.CaseSensitive(dir)) // 2. the only folder equal ignoring case
+            {
+                int equalCount = 0;
+                int foldIndex = -1;
+                for (int i = 0; i < count; i++)
+                {
+                    int l = 0;
+                    const char* n = acc.Name(dir, i, &l);
+                    if (acc.AnyCaseEqual(n, l, path + pos, compLen))
+                    {
+                        equalCount++;
+                        if (acc.FoldEqual(n, l, path + pos, compLen))
+                            foldIndex = i;
+                    }
+                }
+                if (equalCount == 1 && foldIndex >= 0)
+                {
+                    found = foldIndex;
+                    name = acc.Name(dir, found, &nameLen);
+                }
+            }
+        }
+        if (found < 0 || nameLen != compLen) // 3. kept as typed from here on
+        {
+            resolving = false;
+            name = path + pos;
+            nameLen = compLen;
+        }
+        int need = outLen + (outLen > 0 || pos > 0 ? 1 : 0) + nameLen + 1; // separator, name, NUL
+        if (need > outSize)
+        {
+            out[0] = 0;
+            return SAL_ARCRESPELL_TOOLONG;
+        }
+        if (outLen > 0 || pos > 0)
+            out[outLen++] = '\\';
+        for (int k = 0; k < nameLen; k++)
+            out[outLen++] = name[k];
+        out[outLen] = 0;
+        if (resolving)
+            dir = acc.Sub(dir, found);
+        pos = end + 1; // past the '\\' (or past the end)
+    }
+    return SAL_ARCRESPELL_OK;
+}

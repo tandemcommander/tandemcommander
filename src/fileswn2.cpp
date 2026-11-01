@@ -2684,6 +2684,23 @@ BOOL CFilesWindow::ChangePathToArchive(const char* archive, const char* archiveP
     if (end > path && *(end - 1) == '\\')
         *--end = 0;
 
+    // feature 382: a listing with case twins anywhere is case-sensitive as a whole (252) and its
+    // lookup compares exactly - "DOCS" for the folder "Docs" named nothing, the loop below
+    // shortened the path to the archive's root silently and a following Select All + Copy took
+    // the whole root; each leading component is resolved exactly first, else by the ONLY folder
+    // equal ignoring case (twins are never guessed), the rest stays as typed for the loop; the
+    // result has the typed length (not resolved = the typed path is kept); before the "same path"
+    // check so that "DOCS" while the panel is in "Docs" is that path
+    if (path[0] != 0 && (GetArchiveDir()->GetFlags() & SALDIRFLAG_CASESENSITIVE) != 0)
+    {
+        char resolved[MAX_PATH]; // as 'path'
+        if (GetArchiveDir()->ResolvePathCase(path, resolved, _countof(resolved)) &&
+            strlen(resolved) == strlen(path) && strcmp(resolved, path) != 0)
+        {
+            strcpy(path, resolved);
+        }
+    }
+
     if (sameArch && GetArchiveDir()->SalDirStrCmp(path, GetZIPPath()) == 0) // the new path matches the current one
     {
         // call CommonRefresh so 'suggestedTopIndex' and 'suggestedFocusName' aren't ignored

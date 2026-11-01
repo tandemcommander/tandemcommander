@@ -17284,6 +17284,116 @@ static void TestArcPathRespell273()
     }
 }
 
+// feature 382: a typed path resolved in a case-sensitive listing (salarcpathspell.h) - the exact
+// folder first, else the only folder equal ignoring case; accepted by the legacy fold, counted by
+// the legacy fold or SalNameOrderCompareCI (the two rules of salcasetwins.h)
+struct Access382 : Access273
+{
+    bool CaseSensitive(const FakeDir252*) const { return Access273::CaseSensitive; }
+    bool FoldEqual(const char* name, int nameLen, const char* comp, int compLen) const
+    {
+        return SalNameOrderDetail::LegacyCompareCI(name, nameLen, comp, compLen) == 0;
+    }
+    bool AnyCaseEqual(const char* name, int nameLen, const char* comp, int compLen) const
+    {
+        return FoldEqual(name, nameLen, comp, compLen) || SalNameOrderCompareCI(name, nameLen, comp, compLen) == 0;
+    }
+};
+
+static std::string Resolve382(const FakeDir252* root, const char* path, bool cs, int* res, int outSize = 1000)
+{
+    std::vector<char> out(outSize > 0 ? outSize : 1, 'x');
+    Access382 acc;
+    acc.Access273::CaseSensitive = cs;
+    *res = SalArcPathResolveCase(root, path, out.data(), outSize, acc);
+    return *res == SAL_ARCRESPELL_OK ? std::string(out.data()) : std::string("<") + std::to_string(*res) + ">";
+}
+
+static void TestArcPathResolveCase382()
+{
+    int r;
+    // the item's archive: Docs\f.txt, Docs\Sub\g.txt, X\a.txt, X\A.txt - case-sensitive (twins in X)
+    FakeDir252 sub, docs, x, root;
+    sub.AddFile("g.txt");
+    docs.AddFile("f.txt");
+    docs.AddDir("Sub", &sub);
+    x.AddFile("a.txt");
+    x.AddFile("A.txt");
+    root.AddDir("Docs", &docs);
+    root.AddDir("X", &x);
+    CHECK(Resolve382(&root, "DOCS", true, &r) == "Docs" && r == SAL_ARCRESPELL_OK);
+    CHECK(Resolve382(&root, "dOCS\\SUB", true, &r) == "Docs\\Sub");
+    CHECK(Resolve382(&root, "\\DOCS\\", true, &r) == "Docs"); // a leading and a trailing backslash
+    CHECK(Resolve382(&root, "Docs\\Sub", true, &r) == "Docs\\Sub");
+    CHECK(Resolve382(&root, "x", true, &r) == "X");
+    CHECK(Resolve382(&root, "", true, &r) == "" && r == SAL_ARCRESPELL_OK);
+    // the rest from the first component that does not resolve is kept as typed
+    CHECK(Resolve382(&root, "DOCS\\nothing", true, &r) == "Docs\\nothing");
+    CHECK(Resolve382(&root, "DOCS\\nothing\\SUB", true, &r) == "Docs\\nothing\\SUB");
+    CHECK(Resolve382(&root, "DOCS\\F.TXT", true, &r) == "Docs\\F.TXT"); // a file: the caller focuses it
+    CHECK(Resolve382(&root, "nothing\\DOCS", true, &r) == "nothing\\DOCS");
+    CHECK(Resolve382(&root, "DOCS\\\\SUB", true, &r) == "Docs\\\\SUB"); // an empty component
+    CHECK(Resolve382(&root, "Doc", true, &r) == "Doc");                 // a prefix is not the folder
+    CHECK(Resolve382(&root, "DOCSX", true, &r) == "DOCSX");             // nor a longer name
+    // twins in the folder itself: the exact one wins, another case is ambiguous and not guessed
+    FakeDir252 a, b, tw;
+    a.AddFile("f.txt");
+    b.AddFile("g.txt");
+    tw.AddDir("Docs", &a);
+    tw.AddDir("DOCS", &b);
+    tw.AddDir("X", NULL);
+    CHECK(Resolve382(&tw, "DOCS", true, &r) == "DOCS");
+    CHECK(Resolve382(&tw, "Docs", true, &r) == "Docs");
+    CHECK(Resolve382(&tw, "docs", true, &r) == "docs" && r == SAL_ARCRESPELL_OK);
+    CHECK(Resolve382(&tw, "dOCS\\x", true, &r) == "dOCS\\x");
+    CHECK(Resolve382(&tw, "x", true, &r) == "X");
+    // an empty folder (no contents object): nothing below it resolves
+    CHECK(Resolve382(&tw, "x\\a", true, &r) == "X\\a");
+    // a case-insensitive listing: the listing's own lookup (first equal), nothing more
+    CHECK(Resolve382(&tw, "docs", false, &r) == "Docs");
+    CHECK(Resolve382(&root, "dOCS\\SUB", false, &r) == "Docs\\Sub");
+    // the ordinal rule counts towards ambiguity but never accepts on its own: "Ä" (C3 84) and
+    // "ä" (C3 A4) are equal by SalNameOrderCompareCI only
+    FakeDir252 u;
+    u.AddDir("\xC3\xA4"
+             "bc",
+             NULL);
+    CHECK(Resolve382(&u, "\xC3\x84"
+                         "BC",
+                     true, &r) == "\xC3\x84"
+                                  "BC");
+    FakeDir252 u2; // "äbc" and "abc": typed "ABC" equals only "abc" by either rule - resolved
+    u2.AddDir("\xC3\xA4"
+              "bc",
+              NULL);
+    u2.AddDir("abc", NULL);
+    CHECK(Resolve382(&u2, "ABC", true, &r) == "abc");
+    FakeDir252 u3; // "ÄBC" and "äbc" (C3 84 / C3 A4 under cp1250 fold differently) - typed "äBC" is
+                   // fold-equal to "äbc" and ordinal-equal to both -> ambiguous, not guessed
+    u3.AddDir("\xC3\x84"
+              "BC",
+              NULL);
+    u3.AddDir("\xC3\xA4"
+              "bc",
+              NULL);
+    CHECK(Resolve382(&u3, "\xC3\xA4"
+                          "BC",
+                     true, &r) == "\xC3\xA4"
+                                  "BC");
+    // the output size: exact fits, one byte less is refused (nothing cut)
+    CHECK(Resolve382(&root, "dOCS\\SUB", true, &r, 9) == "Docs\\Sub" && r == SAL_ARCRESPELL_OK);
+    CHECK(Resolve382(&root, "dOCS\\SUB", true, &r, 8) == "<2>" && r == SAL_ARCRESPELL_TOOLONG);
+    CHECK(Resolve382(&root, "DOCS\\nothing", true, &r, 12) == "<2>");
+    CHECK(Resolve382(&root, "", true, &r, 1) == "" && r == SAL_ARCRESPELL_OK);
+    {
+        char tiny[4] = {'x', 'x', 'x', 'x'};
+        Access382 acc;
+        acc.Access273::CaseSensitive = true;
+        CHECK(SalArcPathResolveCase((const FakeDir252*)&root, "DOCS", tiny, 0, acc) == SAL_ARCRESPELL_TOOLONG && tiny[0] == 'x');
+        CHECK(SalArcPathResolveCase((const FakeDir252*)&root, "DOCS", tiny, 4, acc) == SAL_ARCRESPELL_TOOLONG && tiny[0] == 0);
+    }
+}
+
 // feature 283: which masks of a mask group take the byte shortcut (salmaskopt.h)
 
 // the classification of CMaskGroup::PrepareMasks at cb0d80f5, copied as the reference
@@ -24906,6 +25016,7 @@ int main(int argc, char** argv)
     TestUserMenuBalance268();
     TestFtpListingField269();
     TestArcPathRespell273();
+    TestArcPathResolveCase382();
     TestInfoLineBuf276();
     TestFtpPwdReply277();
     TestUserMenuValue280();

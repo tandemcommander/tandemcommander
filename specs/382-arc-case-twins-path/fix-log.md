@@ -46,3 +46,36 @@ speckit-analyze (two passes): no CRITICAL, no HIGH. LOW F1 (FR order) fixed. MED
 FR-007 (the panel already inside the same archive) is served by the same single call placed
 before the "same path" check for both routes; the probe drives the fresh open (command line)
 only - a typed path change inside an open archive needs a keyboard on the hidden desktop.
+
+## Implementation
+
+- `src/common/salarcpathspell.h`: `SalArcPathResolveCase` (contract `contracts/arcpath-resolve.md`).
+- `src/zip.h` / `src/zip.cpp`: `CSalamanderDirectory::ResolvePathCase`, accessor
+  `CSalDirResolveCaseAccess` (folder flag; `StrICmpEx`; `StrICmpEx` or `SalNameCompareOrdinalCI`).
+- `src/fileswn2.cpp` `ChangePathToArchive`: called only for a listing with
+  `SALDIRFLAG_CASESENSITIVE`, right after the typed path is stripped and before the "same path"
+  check; taken only when it differs and has the same length (into `char[MAX_PATH]` as `path`).
+- `src/saltests/saltests.cpp`: `TestArcPathResolveCase382` (fake listing of 252/273).
+- Trap: a clang-format of the changed lines only (`--lines`), never whole files (273's trap).
+
+## Measurement after
+
+- `.\build.cmd` -> BUILD SUCCEEDED (the C4244 warning at `zip.cpp(5991)` is pre-existing, not
+  this feature's lines).
+- `saltests.exe` -> `saltests: 30434 checks, 0 failed`.
+- Probe `arctwins382_probe.ps1` -> **20 PASS / 0 FAIL** (`probe/result_after.txt`): MIXED,
+  MIXDEEP, MIXMISS now open `\Docs` / `\Docs\Sub` / `\Docs` and copy only `f.txt` / `g.txt`
+  ("Copy file ... from archive"), TAR and 7z; EXACT and AMBIG unchanged. Registry identical.
+- Regression probes: `specs/273-tar-case-root/probe/arccase273_probe.ps1` 12 / 0;
+  `specs/252-archive-case-sensitivity/probe/arc252_probe.ps1` 16 / 0.
+- Encoding guard `python tools/check_encoding.py --strict` -> TOTAL: 0 finding(s).
+
+## Negative control
+
+Step 2 of `SalArcPathResolveCase` disabled (`if (false && found < 0 && ...)`), rebuilt:
+saltests 12 failed (the unique-fold rows), probe 14 PASS / 6 FAIL (exactly the before state:
+MIXED, MIXDEEP, MIXMISS, TAR and 7z). Restored, rebuilt, results above re-measured.
+
+## Translations
+
+No UI string, menu or dialog changed - no `.slt` refresh needed.
