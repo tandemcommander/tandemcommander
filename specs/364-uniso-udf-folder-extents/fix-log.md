@@ -53,3 +53,31 @@ Registry restored, identical (SHA-256 07F63FE1...).
 `speckit-analyze` (one run): 0 CRITICAL, 0 HIGH; LOW C1 (listing rows only for the non-contiguous images - the
 unpack rows list the contiguous ones first) and LOW U1 (embedded folders not named in T005 - data-model covers
 them) accepted.
+
+## Implementation
+
+- `src/common/salisoudfentry.h`: `SAL_ISO_UDF_FOLDER_MAX_EXTENTS` (32), `SalIsoUdfFolderExtents` (walked extents,
+  bytes, whole = bytes >= Information Length), `SalIsoUdfFolderSector` (which extent holds folder block k).
+- `src/plugins/uniso/udf.h` / `udf.cpp`: `CUDFFolder`; `MapICB(CAD, CICBTag*, CUDFFolder*)` reads up to 32
+  descriptors, takes the Information Length (offset 56 of both entry kinds), keeps 362's walkable check on the first
+  WALKED extent; `ReadFolderWindow` fills the walk's two-block window through the extents (one two-block read inside
+  an extent or past the last - the old reads for a one-extent folder; two one-block reads across a boundary);
+  `ScanDir(const CUDFFolder&, ...)` walks with a 64-bit end; the root (`ListDirectory`) and every sub-folder mark
+  `ListingLeftOut` incomplete when not `Whole`, then walk what was read.
+- Changed for a case the item does not name (spec edge case): a folder whose FIRST descriptor is not a recorded
+  extent (type 1 / 2 / 3) now takes 362's unreadable-folder path; before it was walked over bytes that are not
+  recorded.
+- `saltests`: `TestIsoUdfFolderExtents_364` (+43 checks).
+
+## Measurement after
+
+- `.\build.cmd` -> BUILD SUCCEEDED (the one warning, `udf.cpp` `fd.NameLen = strlen(...)` C4267, predates the feature).
+- `saltests.exe` -> `saltests: 29791 checks, 0 failed` (was 29,748 at 363).
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- clang-format (VS 2022) on the feature's hunks only (`--lines`): no change.
+- Probe `iso364_probe` after -> **28 PASS / 0 FAIL** (`probe/result_after.txt`; before 20 / 8): R-ROOTSPLIT,
+  R-ROOTFRAG, R-SUBSPLIT, R-SUBFRAG 80 of 80 files, deleted; R-ROOTCONT, R-ROOTUNREC 28 files, KEPT; R-ALEN38 /
+  R-ALEN40 5 files, KEPT; controls unchanged. Registry restored, identical.
+- Regressions (same build): 330 30 / 0, 361 24 / 0, 362 34 / 0, 363 24 / 0, 356 56 / 0, 358 52 / 0
+  (`probe/regress_*.txt`) - the recorded counts.
+- No UI string, dialog or menu changed - no `.slt` refresh.

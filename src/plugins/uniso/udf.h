@@ -102,6 +102,19 @@ protected:
         Uint16 Offset; // Offset within sector; Non-zero only for data inlined in tag data
     };
 
+    // feature 364: a folder as the walk reads it - its descriptors (up to 32, SAL_ISO_UDF_FOLDER_MAX_EXTENTS of
+    // salisoudfentry.h, as a file's), the leading recorded extents walked and their bytes, the embedded data's
+    // offset in the entry's sector (0 for extents), and whether the walked bytes cover the folder's Information
+    // Length (false marks the listing incomplete, feature 330)
+    struct CUDFFolder
+    {
+        CAD Ext[32];
+        int Count;
+        Uint64 Length;
+        Uint16 Offset;
+        BOOL Whole;
+    };
+
     ///
     struct CPartition
     {
@@ -274,8 +287,9 @@ protected:
 
     int FindPartition(int partnum, CUDF::CPartition* part);
 
-    int ScanDir(CUDF::CAD dirICB, char* path,
+    int ScanDir(const CUDFFolder& folder, char* path,
                 CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
+    BOOL ReadFolderWindow(const CUDFFolder& folder, Uint32 block, Uint8* window, Uint32& lbNum);
 
     void ReadExtentAd(BYTE sector[], CExtentAd* extent);
     void ReadEntityID(BYTE sector[], CEntityID* entityID);
@@ -289,7 +303,7 @@ protected:
     int ExtAD(Uint8* data, CUDF::CAD* ad);
 
     void ReadICBTag(BYTE data[], CICBTag* icb);
-    int MapICB(CUDF::CAD icb, CICBTag* icbTag, CUDF::CAD* file);
+    int MapICB(CUDF::CAD icb, CICBTag* icbTag, CUDFFolder* folder);
     int MapICB(CUDF::CAD icb, CFileEntry* fe);
     // the descriptors of a file entry: their count, -1 for embedded data, UDF_FE_REFUSED for an entry refused by
     // salisoudfentry.h (feature 361: a reserved descriptor type hung the walk, a large L_EA / L_AD read past the

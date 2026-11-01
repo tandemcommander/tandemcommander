@@ -576,8 +576,15 @@ int CUDF::ReadFileIdentifier(Uint8* sector, unsigned int held, Uint8* fileChar, 
     return (int)len; // <= held
 }
 
-int CUDF::MapICB(CUDF::CAD icb, CICBTag* icbTag, CUDF::CAD* file)
+// feature 364: the folder's entry gives up to 32 descriptors (it gave one - a folder in several extents was read up
+// to its first extent); the leading recorded extents are walked, and a folder whose walked bytes do not cover its
+// Information Length (a later extent not recorded, descriptors continued in an allocation extent, more than 32
+// extents, an extent shorter than the folder) comes back with Whole FALSE - the caller marks the listing
+// incomplete (feature 330) and walks what was read (salisoudfentry.h)
+int CUDF::MapICB(CUDF::CAD icb, CICBTag* icbTag, CUDFFolder* folder)
 {
+    static_assert(sizeof(folder->Ext) / sizeof(folder->Ext[0]) == SAL_ISO_UDF_FOLDER_MAX_EXTENTS,
+                  "CUDFFolder holds SAL_ISO_UDF_FOLDER_MAX_EXTENTS descriptors");
     BYTE sector[SECTOR_SIZE];
     Uint32 lbNum = LogSector(icb.Location, icb.Partition);
     CDescriptorTag tag;
@@ -591,19 +598,40 @@ int CUDF::MapICB(CUDF::CAD icb, CICBTag* icbTag, CUDF::CAD* file)
 
         if ((UDF_TAGID_FENTRY == tag.ID) || (UDF_TAGID_EXTFENTRY == tag.ID))
         {
-            int n = ReadFileEntry(sector, (UDF_TAGID_EXTFENTRY == tag.ID), icb.Partition, icbTag, file, 1);
+            int n = ReadFileEntry(sector, (UDF_TAGID_EXTFENTRY == tag.ID), icb.Partition, icbTag, folder->Ext,
+                                  SAL_ISO_UDF_FOLDER_MAX_EXTENTS);
             // feature 361: a refused entry cannot be read - as an unreadable one ("Bad root ICB" for the root, a
             // sub-folder listed empty and the listing incomplete, feature 330); the walk hung on a reserved type.
             // Feature 362: so is a folder entry whose first extent cannot hold its parent's identifier (L_AD 0, also
             // embedded; a first extent or embedded data under 38 bytes) - it was walked over that length (with no
             // descriptor from the terminator's unset Offset), listed empty without a mark, and a whole unpack
-            // deleted the image (salisoudfentry.h). A refused entry stored nothing in 'file' - not read.
-            if (n == UDF_FE_REFUSED || !SalIsoUdfFolderEntryWalkable(n, file->Length))
+            // deleted the image (salisoudfentry.h). A refused entry stored nothing in 'folder' - not read.
+            if (n == UDF_FE_REFUSED)
+                return 0;
+            int stored = n == -1 ? 1 : n; // embedded data: one piece (Flags UDF_EXT_ALLOCATED, its Offset)
+            unsigned int types[SAL_ISO_UDF_FOLDER_MAX_EXTENTS];
+            unsigned long long lens[SAL_ISO_UDF_FOLDER_MAX_EXTENTS];
+            for (int i = 0; i < stored; i++)
+            {
+                types[i] = folder->Ext[i].Flags;
+                lens[i] = folder->Ext[i].Length;
+            }
+            int walk;
+            unsigned long long walkLen;
+            // the Information Length lies at 56 in a File Entry and in an Extended File Entry
+            bool whole = SalIsoUdfFolderExtents(types, lens, stored, SECTOR_SIZE, GET_QWORD(sector, 56), walk, walkLen);
+            // feature 364: 362's rule on the first WALKED extent - a first descriptor that is not a recorded extent
+            // leaves nothing to walk (it was walked over bytes that are not recorded)
+            if (!SalIsoUdfFolderEntryWalkable(n, walk > 0 ? lens[0] : 0))
                 return 0;
             if (-1 == n)
             {
-                file->Location = lbNum;
+                folder->Ext[0].Location = lbNum;
             }
+            folder->Count = walk;
+            folder->Length = walkLen;
+            folder->Offset = folder->Ext[0].Offset;
+            folder->Whole = whole ? TRUE : FALSE;
             return 1;
         }
 
@@ -960,16 +988,20 @@ BOOL CUDF::ListDirectory(char* path, int session, CSalamanderDirectoryAbstract* 
     }
 
     // Find root dir
-    CAD fileICB;
+    CUDFFolder root;
     CICBTag icbTag;
 
-    if (!MapICB(rootICB, &icbTag, &fileICB) || icbTag.FileType != 4) // Root dir should be dir
+    if (!MapICB(rootICB, &icbTag, &root) || icbTag.FileType != 4) // Root dir should be dir
     {
         Image->ListingLeftOut.SetIncomplete();
         return Error(IDS_UDF_BAD_ROOT_ICB);
     }
+    // feature 364: a root read short of its Information Length - its readable part is listed, the listing is
+    // incomplete (it was listed cut without a mark and a whole unpack deleted the image)
+    if (!root.Whole)
+        Image->ListingLeftOut.SetIncomplete();
 
-    int walked = ScanDir(fileICB, path, dir, pluginData);
+    int walked = ScanDir(root, path, dir, pluginData);
     // feature 330: a folder that could not be read (a read error, an invalid tag, a file entry that
     // cannot be read) ends its walk and every later descent, and its result reaches the top as
     // ERR_CONTINUE / ERR_TERMINATE - the listing is incomplete, so a whole unpack fails and "Delete
@@ -979,7 +1011,34 @@ BOOL CUDF::ListDirectory(char* path, int session, CSalamanderDirectoryAbstract* 
     return walked != ERR_TERMINATE;
 }
 
-int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
+// feature 364: the walk's two-block window - the folder's blocks 'block' and 'block' + 1 (counted from the first
+// extent's first block; embedded data: the entry's block) read through the folder's extents into 'window'
+// (2 * SECTOR_SIZE bytes). Both in one extent, or past the last one: one two-block read as before feature 364 (a
+// folder in one extent makes the same reads); the second block in the next extent: two one-block reads - an
+// identifier crossing the extents' boundary is read from both. 'lbNum' = the first block's physical number (for
+// the error message).
+BOOL CUDF::ReadFolderWindow(const CUDFFolder& folder, Uint32 block, Uint8* window, Uint32& lbNum)
+{
+    unsigned long long lens[SAL_ISO_UDF_FOLDER_MAX_EXTENTS];
+    for (int i = 0; i < folder.Count; i++)
+        lens[i] = folder.Ext[i].Length;
+    int e0, e1;
+    unsigned long long b0, b1;
+    if (!SalIsoUdfFolderSector(lens, folder.Count, SECTOR_SIZE, block, e0, b0) ||
+        !SalIsoUdfFolderSector(lens, folder.Count, SECTOR_SIZE, (unsigned long long)block + 1, e1, b1))
+    {
+        lbNum = 0;
+        return FALSE;
+    }
+    lbNum = LogSector(folder.Ext[e0].Location, folder.Ext[e0].Partition) + (Uint32)b0;
+    if (e0 == e1)
+        return ReadBlockPhys(lbNum, 2, window);
+    return ReadBlockPhys(lbNum, 1, window) &&
+           ReadBlockPhys(LogSector(folder.Ext[e1].Location, folder.Ext[e1].Partition) + (Uint32)b1, 1,
+                         window + SECTOR_SIZE);
+}
+
+int CUDF::ScanDir(const CUDFFolder& folder, char* path,
                   CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
     char fileName[MAX_UDF_FILE_NAME_LEN + 1];
@@ -989,8 +1048,9 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
     unsigned int p;
 
     // Scan dir for ICB of file
-    lbNum = LogSector(dirICB.Location, dirICB.Partition);
-    if (!ReadBlockPhys(lbNum, 2, directory))
+    // feature 364: through every walked extent (the first extent's blocks only before)
+    Uint32 block = 0; // the window's first block in the folder
+    if (!ReadFolderWindow(folder, block, directory, lbNum))
     {
         Error(IDS_ERROR_LISTING_IMAGE, FALSE, lbNum);
         // if we are reading from the root (lbNum == 2), return ERR_CONTINUE so we can descend into an empty image
@@ -1001,16 +1061,16 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
 
     int ret = ERR_OK;
     CDescriptorTag tag;
-    p = dirICB.Offset;
-    dirICB.Length += p;
-    while (p < dirICB.Length && ret != ERR_TERMINATE)
+    p = folder.Offset;
+    unsigned long long end = folder.Offset + folder.Length; // the walk's end in window positions
+    while (p < end && ret != ERR_TERMINATE)
     {
         if (p > SECTOR_SIZE)
         {
-            ++lbNum;
+            ++block;
             p -= SECTOR_SIZE;
-            dirICB.Length -= SECTOR_SIZE;
-            if (!ReadBlockPhys(lbNum, 2, directory))
+            end -= SECTOR_SIZE;
+            if (!ReadFolderWindow(folder, block, directory, lbNum))
             {
                 Error(IDS_ERROR_LISTING_IMAGE, FALSE, lbNum);
                 return ERR_TERMINATE;
@@ -1047,14 +1107,17 @@ int CUDF::ScanDir(CUDF::CAD dirICB, char* path,
                     strcat(newPath, "\\");
                     strcat(newPath, fileName);
 
-                    CAD fileICB;
+                    CUDFFolder sub;
                     CICBTag icbTag;
                     // descend when everything is OK
-                    if (MapICB(icb, &icbTag, &fileICB))
+                    if (MapICB(icb, &icbTag, &sub))
                     {
+                        // feature 364: a sub-folder read short of its Information Length - as the root above
+                        if (!sub.Whole)
+                            Image->ListingLeftOut.SetIncomplete();
                         if (ret == ERR_OK)
                         {
-                            ret = ScanDir(fileICB, newPath, dir, pluginData);
+                            ret = ScanDir(sub, newPath, dir, pluginData);
                             // if we surface with a termination error, keep processing as much as possible
                             if (ret == ERR_TERMINATE)
                                 ret = ERR_CONTINUE;

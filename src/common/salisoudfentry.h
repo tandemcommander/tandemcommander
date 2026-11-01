@@ -118,3 +118,70 @@ inline bool SalIsoUdfFidLength(unsigned long long held, unsigned long long pos, 
     len = n + pad;
     return true;
 }
+
+// The extents of a UDF FOLDER as the ISO plug-in walks them (uniso: CUDF::MapICB(CAD, CICBTag*, CUDFFolder*) and
+// CUDF::ScanDir) - feature 364. The reader took one descriptor of a folder's entry and the walk read that extent
+// only: a folder stored in several extents (fragmented rewritable or packet-written media) was listed up to its
+// first extent, a folder whose extent was shorter than its Information Length was read short, nothing was marked,
+// and a whole unpack with "Delete archive after unpacking" deleted the image.
+//
+// At most SAL_ISO_UDF_FOLDER_MAX_EXTENTS descriptors are read (the plug-in reads a file's in the same 32).
+const int SAL_ISO_UDF_FOLDER_MAX_EXTENTS = 32;
+
+// Which of a folder's 'count' descriptors - their extent types 'types' (the two top bits: 0 recorded, 1 allocated
+// and not recorded, 2 not allocated, 3 the descriptors continue in an allocation extent) and byte lengths 'lens'
+// (30 bits) - are walked, and is the folder read whole? 'walk' = the leading descriptors of type 0 with a length
+// above 0 (ECMA-167 4/12: a length of 0 ends the sequence; the other types hold no folder bytes the plug-in reads -
+// a continuation is not followed, as for files); the walk also stops after an extent whose length is not a whole
+// number of 'blockLen' blocks (ECMA-167 4/12.1: only the last extent may end inside a block - past it the folder's
+// blocks would not map to whole blocks of the next extent). 'walkLen' = the walked extents' byte sum (64 bits:
+// 32 x 2^30 cannot wrap). True when the walked bytes cover 'infoLen', the entry's Information Length (the folder's
+// size, ECMA-167 4/14.9.10) - whatever stopped the walk, nothing of the folder is missing then; false marks the
+// listing incomplete (feature 330: a whole unpack fails and keeps the image). An Information Length smaller than
+// the extents does not shorten the walk (the walk over the extents is the plug-in's behaviour since its start;
+// cutting it would hide entries without a mark). With 'walk' 0 the folder cannot be walked at all - the caller's
+// SalIsoUdfFolderEntryWalkable (feature 362) refuses it.
+inline bool SalIsoUdfFolderExtents(const unsigned int types[], const unsigned long long lens[], int count,
+                                   unsigned long long blockLen, unsigned long long infoLen, int& walk,
+                                   unsigned long long& walkLen)
+{
+    walk = 0;
+    walkLen = 0;
+    for (int i = 0; i < count; i++)
+    {
+        if (types[i] != 0 || lens[i] == 0)
+            break;
+        walk++;
+        walkLen += lens[i];
+        if (blockLen == 0 || lens[i] % blockLen != 0)
+            break;
+    }
+    return walkLen >= infoLen;
+}
+
+// Which of the 'walk' walked extents (byte lengths 'lens', every one but the last a whole number of 'blockLen'
+// blocks - SalIsoUdfFolderExtents) holds the folder's block 'sector' (the walk reads the folder block by block into
+// a two-block window)? True with 'extent' its index and 'block' the block within that extent; a block past the last
+// extent is counted on in the last one (the walk read the physically following block there before feature 364 and
+// still does). False when there is no extent (walk <= 0) or no block length.
+inline bool SalIsoUdfFolderSector(const unsigned long long lens[], int walk, unsigned long long blockLen,
+                                  unsigned long long sector, int& extent, unsigned long long& block)
+{
+    extent = 0;
+    block = 0;
+    if (walk <= 0 || blockLen == 0)
+        return false;
+    unsigned long long start = 0; // the first folder block of extent i
+    for (int i = 0; i < walk; i++)
+    {
+        unsigned long long blocks = lens[i] / blockLen + (lens[i] % blockLen != 0 ? 1 : 0);
+        if (i == walk - 1 || sector < start + blocks)
+        {
+            extent = i;
+            block = sector - start; // sector >= start: the earlier extents ended before it
+            return true;
+        }
+        start += blocks;
+    }
+    return false; // not reached
+}

@@ -21069,6 +21069,164 @@ static void TestIsoUdfFid_363()
     CHECK(taken > 0 && notTaken > 0);
 }
 
+// feature 364: a UDF folder in several extents is walked over every recorded extent, and a folder read short of its
+// Information Length is reported so the listing is marked (src/common/salisoudfentry.h)
+static void TestIsoUdfFolderExtents_364()
+{
+    const unsigned long long B = 2048;
+    CHECK(SAL_ISO_UDF_FOLDER_MAX_EXTENTS == 32);
+    int walk = -1;
+    unsigned long long len = 1;
+    // genisoimage (big364.iso, ud.iso): one recorded extent equal to the Information Length - walked whole as before
+    {
+        unsigned int t[] = {0, 0};
+        unsigned long long l[] = {2964, 0}; // the terminator the reader writes after the last descriptor
+        CHECK(SalIsoUdfFolderExtents(t, l, 1, B, 2964, walk, len) && walk == 1 && len == 2964);
+        CHECK(SalIsoUdfFolderExtents(t, l, 2, B, 2964, walk, len) && walk == 1 && len == 2964);
+        l[0] = 88;
+        CHECK(SalIsoUdfFolderExtents(t, l, 2, B, 88, walk, len) && walk == 1 && len == 88);
+        l[0] = 40; // a real empty folder: its parent's identifier
+        CHECK(SalIsoUdfFolderExtents(t, l, 2, B, 40, walk, len) && walk == 1 && len == 40);
+    }
+    // the probe's rows (img364.py)
+    {
+        unsigned int t[] = {0, 0, 0};
+        unsigned long long l[] = {2048, 916, 0}; // rootsplit / rootfrag
+        CHECK(SalIsoUdfFolderExtents(t, l, 3, B, 2964, walk, len) && walk == 2 && len == 2964);
+        unsigned long long s[] = {2048, 872, 0}; // subsplit / subfrag
+        CHECK(SalIsoUdfFolderExtents(t, s, 3, B, 2920, walk, len) && walk == 2 && len == 2920);
+        unsigned int c[] = {0, 3, 0}; // rootcont: the descriptors continue in an allocation extent - not followed
+        unsigned long long cl[] = {2048, 2048, 0};
+        CHECK(!SalIsoUdfFolderExtents(c, cl, 3, B, 2964, walk, len) && walk == 1 && len == 2048);
+        unsigned int u[] = {0, 1, 0}; // rootunrec: allocated, not recorded
+        CHECK(!SalIsoUdfFolderExtents(u, l, 3, B, 2964, walk, len) && walk == 1 && len == 2048);
+        unsigned int n[] = {0, 2, 0}; // not allocated
+        CHECK(!SalIsoUdfFolderExtents(n, l, 3, B, 2964, walk, len) && walk == 1 && len == 2048);
+        unsigned long long a38[] = {38, 0}, a40[] = {40, 0}; // alen38 / alen40: Information Length 88
+        CHECK(!SalIsoUdfFolderExtents(t, a38, 2, B, 88, walk, len) && walk == 1 && len == 38);
+        CHECK(!SalIsoUdfFolderExtents(t, a40, 2, B, 88, walk, len) && walk == 1 && len == 40);
+    }
+    // a continuation or an unrecorded extent after the folder's bytes are all read - nothing missing
+    {
+        unsigned int t[] = {0, 3};
+        unsigned long long l[] = {2964, 2048};
+        CHECK(SalIsoUdfFolderExtents(t, l, 2, B, 2964, walk, len) && walk == 1 && len == 2964);
+    }
+    // an Information Length smaller than the extents: the walk is not shortened, not marked
+    {
+        unsigned int t[] = {0, 0};
+        unsigned long long l[] = {2048, 916};
+        CHECK(SalIsoUdfFolderExtents(t, l, 2, B, 100, walk, len) && walk == 2 && len == 2964);
+        CHECK(SalIsoUdfFolderExtents(t, l, 2, B, 0, walk, len) && walk == 2 && len == 2964);
+    }
+    // a length of 0 ends the sequence; descriptors after it are not walked
+    {
+        unsigned int t[] = {0, 0, 0};
+        unsigned long long l[] = {2048, 0, 916};
+        CHECK(!SalIsoUdfFolderExtents(t, l, 3, B, 2964, walk, len) && walk == 1 && len == 2048);
+    }
+    // only the last extent may end inside a block: the walk stops after one that does not end on a block
+    {
+        unsigned int t[] = {0, 0, 0};
+        unsigned long long l[] = {2000, 964, 0};
+        CHECK(!SalIsoUdfFolderExtents(t, l, 3, B, 2964, walk, len) && walk == 1 && len == 2000);
+        unsigned long long m[] = {4096, 2048, 100, 0};
+        CHECK(SalIsoUdfFolderExtents(t, m, 3, B, 6244, walk, len) && walk == 3 && len == 6244);
+    }
+    // nothing walkable: no descriptor, a first one of another type or of length 0 (362's refusal follows)
+    {
+        unsigned int t[] = {1, 0};
+        unsigned long long l[] = {2964, 0};
+        CHECK(!SalIsoUdfFolderExtents(t, l, 2, B, 2964, walk, len) && walk == 0 && len == 0);
+        CHECK(!SalIsoUdfFolderEntryWalkable(walk > 0 ? 1 : 0, 0));
+        t[0] = 3;
+        CHECK(!SalIsoUdfFolderExtents(t, l, 2, B, 2964, walk, len) && walk == 0 && len == 0);
+        t[0] = 0;
+        l[0] = 0;
+        CHECK(!SalIsoUdfFolderExtents(t, l, 2, B, 2964, walk, len) && walk == 0 && len == 0);
+        CHECK(!SalIsoUdfFolderExtents(t, l, 0, B, 2964, walk, len) && walk == 0 && len == 0);
+        CHECK(SalIsoUdfFolderExtents(t, l, 0, B, 0, walk, len) && walk == 0 && len == 0);
+        CHECK(!SalIsoUdfFolderExtents(t, l, 1, 0, 1, walk, len) && walk == 0); // no block length: not walked on
+    }
+    // the reader's limit: 32 full-block extents of a larger folder - all walked, the folder marked
+    {
+        unsigned int t[SAL_ISO_UDF_FOLDER_MAX_EXTENTS] = {};
+        unsigned long long l[SAL_ISO_UDF_FOLDER_MAX_EXTENTS];
+        for (int i = 0; i < SAL_ISO_UDF_FOLDER_MAX_EXTENTS; i++)
+            l[i] = B;
+        CHECK(!SalIsoUdfFolderExtents(t, l, SAL_ISO_UDF_FOLDER_MAX_EXTENTS, B, 33 * B, walk, len) &&
+              walk == 32 && len == 32 * B);
+        CHECK(SalIsoUdfFolderExtents(t, l, SAL_ISO_UDF_FOLDER_MAX_EXTENTS, B, 32 * B, walk, len) && walk == 32);
+        // 32 extents of the largest length: the sum (32 x (2^30 - 2048)) does not wrap
+        for (int i = 0; i < SAL_ISO_UDF_FOLDER_MAX_EXTENTS; i++)
+            l[i] = 0x3FFFF800ull;
+        CHECK(SalIsoUdfFolderExtents(t, l, SAL_ISO_UDF_FOLDER_MAX_EXTENTS, B, 32 * 0x3FFFF800ull, walk, len) &&
+              walk == 32 && len == 32 * 0x3FFFF800ull);
+        CHECK(!SalIsoUdfFolderExtents(t, l, SAL_ISO_UDF_FOLDER_MAX_EXTENTS, B, ~0ull, walk, len));
+    }
+
+    // the window's blocks: which extent holds folder block k
+    int e = -1;
+    unsigned long long b = 7;
+    {
+        unsigned long long one[] = {2964};
+        CHECK(SalIsoUdfFolderSector(one, 1, B, 0, e, b) && e == 0 && b == 0);
+        CHECK(SalIsoUdfFolderSector(one, 1, B, 1, e, b) && e == 0 && b == 1);
+        CHECK(SalIsoUdfFolderSector(one, 1, B, 2, e, b) && e == 0 && b == 2); // past the end: counted on, as before
+        unsigned long long two[] = {2048, 916};
+        CHECK(SalIsoUdfFolderSector(two, 2, B, 0, e, b) && e == 0 && b == 0);
+        CHECK(SalIsoUdfFolderSector(two, 2, B, 1, e, b) && e == 1 && b == 0); // the window [0, 1] crosses extents
+        CHECK(SalIsoUdfFolderSector(two, 2, B, 2, e, b) && e == 1 && b == 1); // past the last: counted on in it
+        unsigned long long three[] = {4096, 2048, 100};
+        CHECK(SalIsoUdfFolderSector(three, 3, B, 1, e, b) && e == 0 && b == 1);
+        CHECK(SalIsoUdfFolderSector(three, 3, B, 2, e, b) && e == 1 && b == 0);
+        CHECK(SalIsoUdfFolderSector(three, 3, B, 3, e, b) && e == 2 && b == 0);
+        CHECK(SalIsoUdfFolderSector(three, 3, B, 4, e, b) && e == 2 && b == 1);
+        CHECK(!SalIsoUdfFolderSector(three, 0, B, 0, e, b) && e == 0 && b == 0);
+        CHECK(!SalIsoUdfFolderSector(three, 3, 0, 0, e, b));
+    }
+    // a grid: every byte of a folder of several extents maps through (extent, block) to the extent's own bytes - the
+    // byte at folder offset o lies in extent e at (o - start(e)), and block k of the window is block (k - start)
+    bool mapped = true;
+    int grids = 0;
+    for (int n = 1; n <= 5; n++)
+        for (unsigned long long last = 1; last <= 3 * B; last += (last < 40 ? 13 : 509))
+        {
+            unsigned int t[6] = {};
+            unsigned long long l[6];
+            for (int i = 0; i < n - 1; i++)
+                l[i] = B * (unsigned long long)(1 + (i * 7) % 3);
+            l[n - 1] = last;
+            l[n] = 0;
+            int w;
+            unsigned long long wl;
+            unsigned long long total = 0;
+            for (int i = 0; i < n; i++)
+                total += l[i];
+            if (!SalIsoUdfFolderExtents(t, l, n + 1, B, total, w, wl) || w != n || wl != total)
+                mapped = false;
+            for (unsigned long long o = 0; o < total; o += 97)
+            {
+                int ex;
+                unsigned long long bl;
+                if (!SalIsoUdfFolderSector(l, w, B, o / B, ex, bl))
+                {
+                    mapped = false;
+                    continue;
+                }
+                unsigned long long start = 0;
+                for (int i = 0; i < ex; i++)
+                    start += l[i];
+                // the byte lies in the extent found, at block bl of it
+                if (o < start || o - start >= l[ex] || (o - start) / B != bl)
+                    mapped = false;
+                grids++;
+            }
+        }
+    CHECK(mapped);
+    CHECK(grids > 1000);
+}
+
 // feature 356: a cooked UDF-only image - the UDF descriptors that give its volume's end, and whether the
 // rest past the volume is kept, marked or read (src/common/salisotrack.h)
 static void TestIsoUdfRest_356()
@@ -23440,6 +23598,7 @@ int main(int argc, char** argv)
     TestIsoUdfEntry_361();
     TestIsoUdfFolderEntry_362();
     TestIsoUdfFid_363();
+    TestIsoUdfFolderExtents_364();
     TestIsoSectorForm2_335();
     TestIsoStreamCovered_336();
     TestIsoStreamPartial_337();
