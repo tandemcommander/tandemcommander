@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378 |
@@ -5913,3 +5913,25 @@ a few early ones are out of sequence).
   the table bound and of the header bound fail - the latter by an access violation at the guard page);
   refute-first reviews: review 1 (MUST no-anchor hybrid deleted, fixed; SHOULD guard-page test and helper name,
   fixed), review 2 (no MUST / SHOULD; NOTE HFS / APFS hybrids fixed, NOTE unset map type -> Inbox).
+- 379-plugin-encoding-verdicts: the 78 findings of `check_encoding.py --plugins` (feature 239) had
+  never been read - real encoding defects in the plug-ins hid among false positives. Now every site
+  has a verdict (`specs/379-plugin-encoding-verdicts/verdicts.md`, 82 rows: 239's 78 + 4 new Code Viewer
+  table-name probes from 262): 64 false positives carry `// encoding-check: allow <rule> - <reason>`
+  (comment lines only), 17 real defects stay reported, each with an Inbox item, 1 fixed (the FTP
+  listing probe, by 269). Continued the stopped 255 (carry-over `git apply -3`, 1086 commits behind,
+  one conflict at the fixed FTP site); its open points re-judged as latent real defects: CheckVer's
+  filter list (UTF-8 module names in an ANSI list box) and the TAR / UnCAB / UnMIME archive-name probes
+  (the vendored 7-Zip converter writes an unpaired surrogate as 3-byte WTF-8 on Windows; UnCAB then
+  fails the whole cabinet). Traps: a wrapper or macro hides the sink - review 1 found `OLE2T` =
+  `OLE2A` (Automation without `_UNICODE`) feeding `CreateWindowExA` captions and registry value names
+  behind a "shown only" marker, review 2 the `_bstr_t` narrowing next to it; the scan reads `.cpp`
+  only. Found on the way: the core registry facade deletes values and opens keys with the A API
+  (`registry-wide-deletevalue-and-key-names`), the Registry Editor returns a cut full key path as
+  success (`regedt-full-path-cut-reported-as-success`). Limits: the archive-name and CheckVer defects
+  are shown by reading only; `plugin-encoding-scan-strict-in-build` still lacks the new TAR / UnCAB
+  items in `depends-on` (logged on it; an agent may not change it). From backlog item
+  `check-encoding-plugin-findings`. Scan 81 -> 17 (= the real rows); markers stripped in a copy -> 81
+  = baseline; a planted `SetWindowText(h, fileName)` reported; refute-first reviews: review 1 (MUST
+  Automation `OLE2A` rows, fixed; SHOULD core registry facade -> Inbox, UnCAB item understated,
+  fixed), review 2 (no MUST; SHOULD `_bstr_t` layer added to the item, Registry Editor cut path ->
+  Inbox).
