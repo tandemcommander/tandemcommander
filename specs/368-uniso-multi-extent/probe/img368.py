@@ -147,8 +147,6 @@ def build(kind):
                 su = b""
                 if rr and (kind == "rr" or i == 0):
                     su = nm("big.bin")
-                if rr and kind == "rr" and False:
-                    pass
                 recs.append(record(ident, sec, ln, 0 if last else MULTI, su))
             recs.append(record(b"SMALL.TXT;1", 40, 5, 0, nm("small.txt") if rr else b""))
             sub_flags = DIRF | (MULTI if kind == "dirflag" else 0)

@@ -1699,6 +1699,31 @@ BOOL CISOImage::FileIsForm2(DWORD extent)
     return SalIsoSectorIsForm2(raw, got, t->SectorSize) ? TRUE : FALSE;
 }
 
+BOOL CISOImage::ChainReadable(const SalIsoExtent* e, size_t n)
+{
+    CALL_STACK_MESSAGE1("CISOImage::ChainReadable(, )");
+
+    // feature 368: CISOImage::UnpackFile opens the track of the first extent (GetTrackFromExtent - a byte, so a
+    // track above 255 is not taken) and the reader reads every sector from it, 2048 bytes a sector
+    if (e == NULL || n == 0 || Tracks.Count <= 0)
+        return FALSE;
+    auto offsetOf = [this](int t) -> unsigned long
+    { return Tracks[t]->ExtentOffset; };
+    auto trackOf = [this, offsetOf](unsigned long extent) -> int
+    {
+        int t = SalIsoTrackOfExtent(Tracks.Count, extent, offsetOf);
+        return t >= 0 && t < Tracks.Count && t <= 255 && Tracks[t] != NULL ? t : -1;
+    };
+    int first = trackOf(e[0].Location);
+    if (first < 0)
+        return FALSE;
+    const Track* t = Tracks[first];
+    bool form2 = SalIsoTrackStoresForm2(t->SectorSize, t->SectorHeaderSize);
+    auto startOf = [this](int k) -> unsigned long long
+    { return Tracks[k]->ExtentOffset; };
+    return SalIsoChainReadable(e, n, Tracks.Count, trackOf, startOf, form2) ? TRUE : FALSE;
+}
+
 BOOL CISOImage::ExamineFileSectors(DWORD extent, unsigned long long dataLength, BOOL xaKnown, unsigned xaAttrs,
                                    int* form, unsigned long long* size, DWORD* wholeSectors)
 {

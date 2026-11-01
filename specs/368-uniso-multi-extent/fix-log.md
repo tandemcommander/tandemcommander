@@ -34,3 +34,39 @@ Backlog item `iso-plug-in-an-iso-9660-file-over-4-gib-stored-in-several` (source
   `ret`: an `ERR_CONTINUE` stops the descent into later folders). No new UI string.
 - Extents in another track than the first, or a first track that stores Form 2 data (raw / 2336 Mode 2): handled as
   a broken chain (fails closed; 366/367's per-sector Form 2 handling and 336/337's coverage stay untouched).
+
+## Implementation
+
+- `src/common/salisoextent.h` (new, header-only): `SalIsoRecordContinues`, `SalIsoExtentSectors`,
+  `SalIsoExtentSectorBytes`, `SalIsoExtentsSize`, `SalIsoExtentChain` + `SalIsoChainRecord` / `SalIsoChainClose` /
+  `SalIsoChainEnd`, `SalIsoChainReadable` (contract `contracts/salisoextent.md`).
+- `isoimage.h`: `CFilePos::Extents` / `ExtentCount` (malloc-ed, freed by the new destructor; copy deleted - every
+  CFilePos is `new`-ed and released by `delete (CFilePos*)` in `uniso.cpp` or AddFileDir's failure paths);
+  `CISOImage::ChainReadable` (`isoimage.cpp`): the first extent's track (`SalIsoTrackOfExtent`, at most 255 as
+  `GetTrackFromExtent`'s byte), every extent in it and at or after its `ExtentOffset`, not a Form 2 layout.
+- `iso9660.cpp`: the file branch of `ListDirectoryRe` moved unchanged into `AddFileRecord` (name, Rock Ridge / ISO
+  choice, XA attributes, AddFileDir); the loop keeps a `SalIsoExtentChain` - HELD records are skipped, DONE lists the
+  first record (re-read from the directory data, already checked) with the extents, a broken or unreadable chain goes
+  to `ChainNotListed` (box quiet in fit checks; `SetIncomplete` only outside them), the directory's end checks for an
+  open chain. `AddFileDir` lists a chain with the summed size and a copy of the extents (no Form 2, no examine).
+  `UnpackFile` reads a chain extent by extent (`SalIsoExtentSectorBytes`), the single-extent path unchanged.
+- Trap: `new (std::nothrow)` does not compile in the plug-in (its debug `new` macro) - malloc / free.
+- Routes: Unpack of a selection (`UnpackArchive`) and View / F3 and Copy / F5 (`UnpackOneFile`) reach
+  `CISOImage::UnpackFile` -> `CISO9660::UnpackFile` like the whole Unpack (`ExtractAllItems`); the UDF/ISO bridge
+  dispatches ISO 9660 entries to the same reader. F5 is driven by the probe (C-PLAIN, C-JOLIET).
+
+## Checks
+
+| Check | Command | Result |
+|---|---|---|
+| build | `.\build.cmd` | BUILD SUCCEEDED (the C4267 warning at `fd.NameLen = strlen` is pre-existing) |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | 29,999 -> **30,063 checks, 0 failed** (`TestIsoMultiExtent_368`, 64 checks) |
+| negative control (unit) | header mutated: a chain never broken (`same = true`) and every sector 2048 bytes | **11 failed**; header restored, 0 failed |
+| probe after | `probe/iso368_probe.ps1 -BigSeed %TEMP%\tc368work\bigseed` | `probe/result_after.txt` **PASS 20, FAIL 0** (before: 10 / 10); G-BIG huge.bin 4,294,970,296 bytes with the source's SHA-256, image deleted |
+| regression 338 | `specs/338-.../probe/iso338_probe.ps1` | `probe/regress_338.txt` 24 / 0 (as recorded) |
+| regression 367 | `specs/367-.../probe/iso367_probe.ps1 -ImgDir %TEMP%\tc367img` | `probe/regress_367.txt` 40 / 0 (as recorded) |
+| regression 337 | 337's own probe / 367's port `iso337_r367_probe.ps1` | `regress_337.txt` 54 / 20 - the same 20 rows 367 recorded as its intended change (337's synthetic expectations of 2048-byte content); `regress_337_r367.txt` **74 / 0** |
+| encoding | `python tools/check_encoding.py --strict` | TOTAL: 0 finding(s) |
+| clang-format | VS 2022 clang-format on the changed lines | only pre-existing differences left |
+
+No UI string, menu or dialog changed: no `.slt` refresh needed.

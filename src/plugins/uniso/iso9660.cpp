@@ -419,7 +419,8 @@ void CISO9660::ConvJolietName(char* dest, const char* src, int nLen)
 
 int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
                          CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData,
-                         BOOL xaForm2, BOOL examine, BOOL xaKnown, unsigned xaAttrs)
+                         BOOL xaForm2, BOOL examine, BOOL xaKnown, unsigned xaAttrs, const SalIsoExtent* extents,
+                         size_t extentCount)
 {
     // feature 326 (review): the panel listing's own rule (sallistingname.h, CSalamanderDirectory::
     // AddFile / AddDir) - the fit check pass adds nothing, it only asks whether the entry would be
@@ -524,9 +525,27 @@ int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
     else
     {
         fd.Size = CQuadWord(dr.DataLength, 0);
+        if (extents != NULL && extentCount > 1)
+        {
+            // feature 368: a file stored in several extents - one file of the sum of their lengths (also 4 GiB and
+            // more), read extent by extent in record order (UnpackFile); each record was listed as a file of its
+            // own and an unpack wrote them one over the other
+            filePos->Extents = (SalIsoExtent*)malloc(extentCount * sizeof(SalIsoExtent));
+            if (filePos->Extents == NULL)
+            {
+                free(fd.Name);
+                delete filePos;
+                Image->ListingLeftOut.SetIncomplete();
+                Error(IDS_INSUFFICIENT_MEMORY);
+                return ADD_FAILED;
+            }
+            memcpy(filePos->Extents, extents, extentCount * sizeof(SalIsoExtent));
+            filePos->ExtentCount = (DWORD)extentCount;
+            fd.Size.Value = SalIsoExtentsSize(extents, extentCount);
+        }
         // feature 366: a Form 2 file (a Video CD's video) - 2324 bytes of every sector its record spans; it
         // was listed and read 2048 bytes a sector (276 bytes of each lost)
-        if (xaForm2 && dr.DataLength > 0 && Image->FileIsForm2((DWORD)dr.LocationOfExtent))
+        else if (xaForm2 && dr.DataLength > 0 && Image->FileIsForm2((DWORD)dr.LocationOfExtent))
         {
             fd.Size.Value = SalIsoForm2FileSize(dr.DataLength);
             filePos->Form2 = TRUE;
@@ -844,6 +863,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
 
     int ret = ERR_OK;
     int offset = 0;
+    SalIsoExtentChain chain; // feature 368: the records of a file stored in several extents met so far
     while (offset < size - 0x21 && ret != ERR_TERMINATE)
     {
         while (!data[offset] && offset < size - 0x21)
@@ -872,6 +892,52 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
             delete[] data;
             Error(IDS_ERROR_LISTING_IMAGE, FitCheck, block);
             return ERR_TERMINATE;
+        }
+
+        // feature 368: a file stored in several extents - its records (one identifier, the multi-extent bit on all
+        // but the last) are held until the last one and then listed as one file named by the first record; a
+        // chain that ends otherwise is left out and reported (the record that broke it is then listed as usual)
+        int chainAction = SAL_ISO_CHAIN_LIST;
+        bool chainBroke = false;
+        try
+        {
+            chainAction = SalIsoChainRecord(chain, (size_t)offset, (const unsigned char*)(data + offset + 33),
+                                            dirRecord.LengthOfFileIdentifier, dirRecord.FileFlags,
+                                            (unsigned long)dirRecord.LocationOfExtent,
+                                            (unsigned long)dirRecord.DataLength, &chainBroke);
+        }
+        catch (...)
+        {
+            SalIsoChainClose(chain);
+            if (!FitCheck)
+                Image->ListingLeftOut.SetIncomplete();
+            Error(IDS_INSUFFICIENT_MEMORY, FitCheck);
+            ret = ERR_TERMINATE;
+            break;
+        }
+        if (chainBroke)
+            ChainNotListed(block);
+        if (chainAction == SAL_ISO_CHAIN_HELD)
+        {
+            offset += dirRecord.LengthOfDirectoryRecord;
+            continue;
+        }
+        if (chainAction == SAL_ISO_CHAIN_DONE)
+        {
+            // the first record (checked when it was met) names the file and gives its date and attributes
+            CDirectoryRecord firstRecord;
+            FillDirectoryRecord(firstRecord, (BYTE*)(data + chain.FirstOffset));
+            if (Image->ChainReadable(chain.Extents.data(), chain.Extents.size()))
+            {
+                if (AddFileRecord(path, names, data + chain.FirstOffset, firstRecord, dir, pluginData,
+                                  chain.Extents.data(), chain.Extents.size()) == ADD_FAILED)
+                    ret = ERR_TERMINATE;
+            }
+            else
+                ChainNotListed(block);
+            SalIsoChainClose(chain);
+            offset += dirRecord.LengthOfDirectoryRecord;
+            continue;
         }
 
         if (dirRecord.FileFlags & FATTR_DIRECTORY)
@@ -938,52 +1004,80 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
         }
         else
         {
-            char* fileName = names;
-            ZeroMemory(fileName, NAME_BUF);
-
-            char* src = (data + offset + 33);
-            if (Ext == extJoliet)
-            {
-                ConvJolietName(fileName, src, dirRecord.LengthOfFileIdentifier);
-                src = fileName;
-            }
-
-            BOOL rockRidge = ExtractFileName(fileName, src, dirRecord);
-            // format boundary (interface 104): plain ISO9660 (and Rock Ridge) identifiers
-            // are raw bytes with no encoding tag -> make them UTF-8. A no-op for Joliet,
-            // which ConvJolietName() already turned into UTF-8 above. Feature 326: a Rock
-            // Ridge name then made safe (never Joliet: 'src' is the raw identifier then);
-            // feature 327: every other name too
-            MakeListedName(fileName, NAME_BUF, rockRidge, src, dirRecord, TRUE);
-
-            // feature 328: a Rock Ridge file the listing refuses goes under its ISO 9660 name when the
-            // listing takes that (a count walk lists fixed names); refused under both: left out alone
-            char* listedName = fileName;
-            if (rockRidge)
-            {
-                char* isoName = names + NAME_BUF;
-                MakeIsoName(isoName, NAME_BUF, src, dirRecord, TRUE);
-                if (FitCheck)
-                    listedName = FitIsoNames ? isoName : fileName;
-                else if (SalIsoPickFileName(path, strlen(path), fileName, isoName) == SAL_ISO_NAME_ISO9660)
-                    listedName = isoName;
-            }
-            // feature 366: the record's CD-XA attributes (a Video CD's video files say Form 2)
-            unsigned xaAttrs = 0;
-            BOOL xaKnown = SalIsoXaAttributes((const unsigned char*)(data + offset), dirRecord.LengthOfDirectoryRecord,
-                                              xaAttrs);
-            BOOL xaForm2 = xaKnown && SalIsoXaIsForm2File(xaAttrs);
-            // feature 367: a file without that attribute may still be stored in Form 2 sectors - examined
-            if (AddFileDir(path, listedName, dirRecord, dir, pluginData, xaForm2, TRUE, xaKnown, xaAttrs) == ADD_FAILED)
+            if (AddFileRecord(path, names, data + offset, dirRecord, dir, pluginData) == ADD_FAILED)
                 ret = ERR_TERMINATE;
         } // if
 
         offset += dirRecord.LengthOfDirectoryRecord;
     } // while
 
+    // feature 368: the directory ended inside a chain (its last record is missing)
+    if (SalIsoChainEnd(chain) && ret != ERR_TERMINATE)
+        ChainNotListed(block);
+
     delete[] data;
 
     return ret;
+}
+
+int CISO9660::AddFileRecord(char* path, char* names, const char* record, CDirectoryRecord& dr,
+                            CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData,
+                            const SalIsoExtent* extents, size_t extentCount)
+{
+    char* fileName = names;
+    ZeroMemory(fileName, NAME_BUF);
+
+    const char* src = (record + 33);
+    if (Ext == extJoliet)
+    {
+        ConvJolietName(fileName, src, dr.LengthOfFileIdentifier);
+        src = fileName;
+    }
+
+    BOOL rockRidge = ExtractFileName(fileName, src, dr);
+    // format boundary (interface 104): plain ISO9660 (and Rock Ridge) identifiers
+    // are raw bytes with no encoding tag -> make them UTF-8. A no-op for Joliet,
+    // which ConvJolietName() already turned into UTF-8 above. Feature 326: a Rock
+    // Ridge name then made safe (never Joliet: 'src' is the raw identifier then);
+    // feature 327: every other name too
+    MakeListedName(fileName, NAME_BUF, rockRidge, src, dr, TRUE);
+
+    // feature 328: a Rock Ridge file the listing refuses goes under its ISO 9660 name when the
+    // listing takes that (a count walk lists fixed names); refused under both: left out alone
+    char* listedName = fileName;
+    if (rockRidge)
+    {
+        char* isoName = names + NAME_BUF;
+        MakeIsoName(isoName, NAME_BUF, src, dr, TRUE);
+        if (FitCheck)
+            listedName = FitIsoNames ? isoName : fileName;
+        else if (SalIsoPickFileName(path, strlen(path), fileName, isoName) == SAL_ISO_NAME_ISO9660)
+            listedName = isoName;
+    }
+    if (extents != NULL && extentCount > 1)
+    {
+        // feature 368: a file stored in several extents - never read as Form 2 (ChainReadable refused a track that
+        // stores Form 2 data), never examined
+        return AddFileDir(path, listedName, dr, dir, pluginData, FALSE, FALSE, FALSE, 0, extents, extentCount);
+    }
+    // feature 366: the record's CD-XA attributes (a Video CD's video files say Form 2)
+    unsigned xaAttrs = 0;
+    BOOL xaKnown = SalIsoXaAttributes((const unsigned char*)record, dr.LengthOfDirectoryRecord, xaAttrs);
+    BOOL xaForm2 = xaKnown && SalIsoXaIsForm2File(xaAttrs);
+    // feature 367: a file without that attribute may still be stored in Form 2 sectors - examined
+    return AddFileDir(path, listedName, dr, dir, pluginData, xaForm2, TRUE, xaKnown, xaAttrs);
+}
+
+void CISO9660::ChainNotListed(DWORD block)
+{
+    // feature 368: a file stored in several extents whose chain of records is incomplete (or that the reader
+    // cannot read) is left out - never a part of it extracted as if it were the file. The existing box of a
+    // directory that cannot be read whole (no new text); the listing is incomplete, so a whole unpack fails and
+    // "Delete archive after unpacking" keeps the image. Fit check walks only count: quiet, nothing marked.
+    TRACE_I("CISO9660::ChainNotListed(): a file stored in several extents left out, directory at sector " << block);
+    Error(IDS_ERROR_LISTING_IMAGE, FitCheck, block);
+    if (!FitCheck)
+        Image->ListingLeftOut.SetIncomplete();
 }
 
 int CISO9660::UnpackFile(CSalamanderForOperationsAbstract* salamander, const char* srcPath, const char* path, const char* nameInArc,
@@ -1047,6 +1141,11 @@ int CISO9660::UnpackFile(CSalamanderForOperationsAbstract* salamander, const cha
         Error(IDS_INSUFFICIENT_MEMORY);
         return UNPACK_CANCEL;
     }
+    // feature 368: a file stored in several extents is read extent by extent in record order, each extent's
+    // length (the listing made it 2048-byte sectors of one track - CISOImage::ChainReadable); 'remain' is their sum
+    BOOL chained = fp->Extents != NULL && fp->ExtentCount > 1 && !form2 && !mixed;
+    DWORD chainIndex = 0;               // the extent being read
+    unsigned long long chainSector = 0; // the sector within it
     /*
   char u[1024];
   sprintf(u, "CISO9660::UnpackFile(): opening Extent: %x, Size: %d", block, remain);
@@ -1054,6 +1153,24 @@ int CISO9660::UnpackFile(CSalamanderForOperationsAbstract* salamander, const cha
 */
     while (remain.Value > 0)
     {
+        if (chained)
+        {
+            // the next sector that holds file bytes (an extent of length 0 holds none)
+            while (chainIndex < fp->ExtentCount && chainSector >= SalIsoExtentSectors(fp->Extents[chainIndex].Length))
+            {
+                chainIndex++;
+                chainSector = 0;
+            }
+            if (chainIndex >= fp->ExtentCount)
+            {
+                // the extents hold less than the listed size (cannot happen: the size is their sum) - not whole
+                ret = UNPACK_ERROR;
+                bFileComplete = FALSE;
+                break;
+            }
+            block = fp->Extents[chainIndex].Location - ExtentOffset + (DWORD)chainSector;
+            nbytes = SalIsoExtentSectorBytes(fp->Extents[chainIndex].Length, chainSector);
+        }
         DWORD got = 0;
         if (mixed)
         {
@@ -1093,6 +1210,7 @@ int CISO9660::UnpackFile(CSalamanderForOperationsAbstract* salamander, const cha
         }
 
         block++;
+        chainSector++; // feature 368: a chained file's next sector is computed at the loop's start
 
         if (!salamander->ProgressAddSize(nbytes, TRUE)) // delayedPaint==TRUE, so we do not slow things down
         {

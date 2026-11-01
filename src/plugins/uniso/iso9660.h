@@ -6,6 +6,7 @@
 #include "fs.h"
 #include "../../common/salsusp.h"        // feature 326: Rock Ridge recognised by the root's SP entry too
 #include "../../common/sallistingname.h" // feature 326: the listing's rule for the fit check
+#include "../../common/salisoextent.h"   // feature 368: files stored in several extents
 
 #include <set> // feature 328: the directories a walk met
 #include <vector>
@@ -338,9 +339,22 @@ protected:
     // feature 367: 'examine' = a file record of the directory (not a folder, not the boot record's virtual
     // record) - when it is not such a Form 2 file, CISOImage::ExamineFileSectors decides by its sectors
     // ('xaKnown', 'xaAttrs': the record's CD-XA attributes)
+    // feature 368: 'extents' / 'extentCount' (more than one) = a file stored in several extents - listed with the sum
+    // of their lengths, read extent by extent (never as Form 2, never examined)
     int AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
                    CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData,
-                   BOOL xaForm2 = FALSE, BOOL examine = FALSE, BOOL xaKnown = FALSE, unsigned xaAttrs = 0);
+                   BOOL xaForm2 = FALSE, BOOL examine = FALSE, BOOL xaKnown = FALSE, unsigned xaAttrs = 0,
+                   const SalIsoExtent* extents = NULL, size_t extentCount = 0);
+    // feature 368: lists the file record at 'record' (its directory record 'dr', read from it) under 'path' - its
+    // name (Rock Ridge / Joliet / ISO 9660, the listing's fit rules), its XA attributes, AddFileDir; 'names' = the
+    // walk's two name buffers; 'extents' as AddFileDir. Returns AddFileDir's result.
+    int AddFileRecord(char* path, char* names, const char* record, CDirectoryRecord& dr,
+                      CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData,
+                      const SalIsoExtent* extents = NULL, size_t extentCount = 0);
+    // feature 368: a file stored in several extents that cannot be listed (its chain broken, or not readable):
+    // left out - the listing-error box (quiet in a fit check walk) and, outside fit checks, the listing marked
+    // incomplete (a whole unpack fails, the image is kept); the walk goes on
+    void ChainNotListed(DWORD block);
     // feature 328: the name a folder record is listed under ('rrName' NULL = it has no Rock Ridge name);
     // 'below' = whether its subtree is listed in decision mode
     char* PickDirName(char* path, CDirectoryRecord& dr, char* rrName, char* isoName, BOOL& below);

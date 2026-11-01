@@ -9,6 +9,7 @@
 #include "../../common/salisonamefit.h" // feature 328: entries the panel listing left out
 #include "../../common/salisotrack.h"   // feature 334: tracks that leave the listing incomplete
 #include "../../common/salisounpack.h"  // feature 338: when a whole unpack counts as done
+#include "../../common/salisoextent.h"  // feature 368: files stored in several extents
 
 class CUnISOFSAbstract;
 
@@ -119,6 +120,11 @@ public:
         // counts its first WholeSectors sectors (what the readers read whole, SalIsoSectorScanAdd)
         BYTE Scanned;
         DWORD WholeSectors;
+        // feature 368: an ISO 9660 file stored in several extents (multi-extent records, salisoextent.h) - its
+        // ExtentCount extents in record order (owned; Extent = the first one's location); NULL / 0 for a file of
+        // one extent
+        SalIsoExtent* Extents;
+        DWORD ExtentCount;
 
         CFilePos()
         {
@@ -127,7 +133,12 @@ public:
             Form2 = FALSE;
             Scanned = FALSE;
             WholeSectors = 0;
+            Extents = NULL;
+            ExtentCount = 0;
         }
+        ~CFilePos() { free(Extents); } // feature 368: malloc-ed (AddFileDir)
+        CFilePos(const CFilePos&) = delete;
+        CFilePos& operator=(const CFilePos&) = delete;
     };
 
     // GUI
@@ -199,6 +210,9 @@ public:
     // feature 367: reads sector 'block' of the open track as its subheader says - 2324 bytes of a Form 2
     // sector (ReadForm2Block), 2048 of any other (ReadBlock); returns the bytes read, 0 on a read error
     DWORD ReadMixedBlock(DWORD block, void* data);
+    // feature 368: can the ISO 9660 reader read a file stored in the 'n' extents 'e' - all in the track of the
+    // first one, at or after its first disc address, a track that does not store Form 2 data (SalIsoChainReadable)?
+    BOOL ChainReadable(const SalIsoExtent* e, size_t n);
 
     // Opens the ISO image named 'fileName'. The 'quiet' parameter determines whether
     // message boxes with errors will pop up

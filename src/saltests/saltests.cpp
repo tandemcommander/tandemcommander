@@ -109,6 +109,7 @@
 #include "salnrgcdtext.h"      // feature 331
 #include "salisotrack.h"       // features 334, 335, 351, 352, 353
 #include "salisounpack.h"      // feature 338
+#include "salisoextent.h"      // feature 368
 #include "salisoudfvat.h"      // feature 358
 #include "salisoudfentry.h"    // feature 361
 #include "salrenamekey.h"      // feature 346
@@ -22424,6 +22425,166 @@ static CSalFileIdentity Id338(BOOL has128, ULONGLONG vsn64, BYTE id0, BOOL has64
     return id;
 }
 
+// Feature 368: an ISO 9660 file stored in several extents (multi-extent records) is one file of the summed size,
+// read extent by extent; a chain without its last record is broken (left out, reported)
+static int Chain368(SalIsoExtentChain& c, size_t off, const char* id, unsigned flags, unsigned long loc,
+                    unsigned long len, bool* broke)
+{
+    return SalIsoChainRecord(c, off, (const unsigned char*)id, strlen(id), flags, loc, len, broke);
+}
+
+static void TestIsoMultiExtent_368()
+{
+    // the bit means "continued" only on a file record
+    CHECK(SalIsoRecordContinues(0x80));
+    CHECK(SalIsoRecordContinues(0x81)); // hidden + multi-extent
+    CHECK(!SalIsoRecordContinues(0x00));
+    CHECK(!SalIsoRecordContinues(0x82)); // a folder with the bit (row U-DIRFLAG)
+    CHECK(!SalIsoRecordContinues(0x01));
+
+    // the read plan of an extent writes exactly its length
+    CHECK(SalIsoExtentSectors(0) == 0);
+    CHECK(SalIsoExtentSectors(1) == 1);
+    CHECK(SalIsoExtentSectors(2048) == 1);
+    CHECK(SalIsoExtentSectors(2049) == 2);
+    CHECK(SalIsoExtentSectors(4294965248ULL) == 2097151); // xorriso's extent: 4 GiB - 2 KiB
+    CHECK(SalIsoExtentSectors(0xFFFFFFFFULL) == 2097152);
+    CHECK(SalIsoExtentSectorBytes(1000, 0) == 1000);
+    CHECK(SalIsoExtentSectorBytes(1000, 1) == 0);
+    CHECK(SalIsoExtentSectorBytes(4096, 1) == 2048);
+    CHECK(SalIsoExtentSectorBytes(4096, 2) == 0);
+    CHECK(SalIsoExtentSectorBytes(5048, 2) == 952);
+    CHECK(SalIsoExtentSectorBytes(0, 0) == 0);
+    {
+        unsigned long long sum = 0;
+        for (unsigned long long s = 0; s < SalIsoExtentSectors(2548); s++)
+            sum += SalIsoExtentSectorBytes(2548, s);
+        CHECK(sum == 2548);
+    }
+    {
+        SalIsoExtent big[2] = {{100, 4294965248UL}, {2097251, 5048}}; // row G-BIG: 4 GiB + 3000 bytes
+        CHECK(SalIsoExtentsSize(big, 2) == 4294970296ULL);
+        SalIsoExtent three[3] = {{60, 4096}, {50, 2048}, {55, 1000}};
+        CHECK(SalIsoExtentsSize(three, 3) == 7144);
+        CHECK(SalIsoExtentsSize(NULL, 2) == 0);
+    }
+
+    // a complete chain: held, held, done - in record order
+    {
+        SalIsoExtentChain c;
+        bool broke = true;
+        CHECK(Chain368(c, 0, ".", 0x02, 24, 2048, &broke) == SAL_ISO_CHAIN_LIST && !broke);
+        CHECK(Chain368(c, 100, "BIG.BIN;1", 0x80, 60, 4096, &broke) == SAL_ISO_CHAIN_HELD && !broke);
+        CHECK(c.Open && c.FirstOffset == 100);
+        CHECK(Chain368(c, 142, "BIG.BIN;1", 0x80, 50, 2048, &broke) == SAL_ISO_CHAIN_HELD && !broke);
+        CHECK(Chain368(c, 184, "BIG.BIN;1", 0x00, 55, 1000, &broke) == SAL_ISO_CHAIN_DONE && !broke);
+        CHECK(c.Extents.size() == 3 && c.Extents[0].Location == 60 && c.Extents[1].Location == 50 &&
+              c.Extents[2].Location == 55 && c.Extents[2].Length == 1000);
+        CHECK(c.FirstOffset == 100);
+        SalIsoChainClose(c);
+        CHECK(!c.Open && c.Extents.empty());
+        CHECK(Chain368(c, 226, "SMALL.TXT;1", 0x00, 40, 5, &broke) == SAL_ISO_CHAIN_LIST && !broke);
+        CHECK(!SalIsoChainEnd(c));
+    }
+    // two records of one name without the bit are two files (feature 338's twins), never joined
+    {
+        SalIsoExtentChain c;
+        bool broke = false;
+        CHECK(Chain368(c, 0, "TOP.TXT;1", 0x00, 30, 3, &broke) == SAL_ISO_CHAIN_LIST);
+        CHECK(Chain368(c, 40, "TOP.TXT;1", 0x00, 31, 3, &broke) == SAL_ISO_CHAIN_LIST && !broke);
+    }
+    // broken by another identifier (row U-BRKNAME): the record that broke it is a file of its own
+    {
+        SalIsoExtentChain c;
+        bool broke = false;
+        CHECK(Chain368(c, 0, "BIG.BIN;1", 0x80, 60, 4096, &broke) == SAL_ISO_CHAIN_HELD);
+        CHECK(Chain368(c, 42, "BIG.BIN;1", 0x80, 50, 2048, &broke) == SAL_ISO_CHAIN_HELD);
+        CHECK(Chain368(c, 84, "BIH.BIN;1", 0x00, 55, 1000, &broke) == SAL_ISO_CHAIN_LIST && broke);
+        CHECK(!c.Open && c.Extents.empty());
+        CHECK(!SalIsoChainEnd(c));
+    }
+    // broken by another identifier that starts a chain of its own
+    {
+        SalIsoExtentChain c;
+        bool broke = false;
+        CHECK(Chain368(c, 0, "A.BIN;1", 0x80, 60, 2048, &broke) == SAL_ISO_CHAIN_HELD);
+        CHECK(Chain368(c, 40, "B.BIN;1", 0x80, 61, 2048, &broke) == SAL_ISO_CHAIN_HELD && broke);
+        CHECK(c.Open && c.FirstOffset == 40 && c.Extents.size() == 1 && c.Extents[0].Location == 61);
+        CHECK(Chain368(c, 80, "B.BIN;1", 0x00, 62, 10, &broke) == SAL_ISO_CHAIN_DONE && !broke);
+    }
+    // an identifier that only begins like the chain's is another file
+    {
+        SalIsoExtentChain c;
+        bool broke = false;
+        CHECK(Chain368(c, 0, "A.BIN", 0x80, 60, 2048, &broke) == SAL_ISO_CHAIN_HELD);
+        CHECK(Chain368(c, 40, "A.BIN;1", 0x00, 61, 10, &broke) == SAL_ISO_CHAIN_LIST && broke);
+    }
+    // broken by a folder of the same identifier
+    {
+        SalIsoExtentChain c;
+        bool broke = false;
+        CHECK(Chain368(c, 0, "X", 0x80, 60, 2048, &broke) == SAL_ISO_CHAIN_HELD);
+        CHECK(Chain368(c, 40, "X", 0x02, 70, 2048, &broke) == SAL_ISO_CHAIN_LIST && broke);
+    }
+    // broken by the end of the directory (row U-BRKEND)
+    {
+        SalIsoExtentChain c;
+        bool broke = false;
+        CHECK(Chain368(c, 0, "PART.BIN;1", 0x80, 70, 2048, &broke) == SAL_ISO_CHAIN_HELD);
+        CHECK(Chain368(c, 40, "PART.BIN;1", 0x80, 71, 500, &broke) == SAL_ISO_CHAIN_HELD && !broke);
+        CHECK(SalIsoChainEnd(c));
+        CHECK(!c.Open && !SalIsoChainEnd(c));
+    }
+    // Joliet identifiers (UCS-2 bytes with zeros) compared whole
+    {
+        SalIsoExtentChain c;
+        bool broke = false;
+        const unsigned char j1[4] = {0, 'B', 0, 'i'};
+        const unsigned char j2[4] = {0, 'B', 0, 'j'};
+        CHECK(SalIsoChainRecord(c, 0, j1, 4, 0x80, 60, 2048, &broke) == SAL_ISO_CHAIN_HELD);
+        CHECK(SalIsoChainRecord(c, 40, j1, 4, 0x80, 61, 2048, &broke) == SAL_ISO_CHAIN_HELD && !broke);
+        CHECK(SalIsoChainRecord(c, 80, j2, 4, 0x00, 62, 10, &broke) == SAL_ISO_CHAIN_LIST && broke);
+    }
+
+    // the reader can read a chain only within the first extent's track, outside Form 2 layouts
+    {
+        auto oneTrack = [](unsigned long) -> int
+        { return 0; };
+        auto offset0 = [](int) -> unsigned long long
+        { return 0; };
+        SalIsoExtent ok[2] = {{100, 4294965248UL}, {2097251, 5048}};
+        CHECK(SalIsoChainReadable(ok, 2, 1, oneTrack, offset0, false));
+        CHECK(!SalIsoChainReadable(ok, 2, 1, oneTrack, offset0, true));  // a Mode 2 Form 2 track
+        CHECK(!SalIsoChainReadable(ok, 2, 0, oneTrack, offset0, false)); // no track
+        CHECK(!SalIsoChainReadable(ok, 0, 1, oneTrack, offset0, false));
+        // the second extent in another track (session 2 starts at 300000)
+        auto twoTracks = [](unsigned long loc) -> int
+        { return loc >= 300000 ? 1 : 0; };
+        auto offsets = [](int t) -> unsigned long long
+        { return t == 1 ? 300000 : 0; };
+        SalIsoExtent cross[2] = {{100, 2048}, {300010, 10}};
+        CHECK(!SalIsoChainReadable(cross, 2, 2, twoTracks, offsets, false));
+        SalIsoExtent second[2] = {{300001, 2048}, {300010, 10}};
+        CHECK(SalIsoChainReadable(second, 2, 2, twoTracks, offsets, false));
+        // an extent before its track's first disc address (the reader's block would wrap)
+        auto start50 = [](int) -> unsigned long long
+        { return 50; };
+        SalIsoExtent below[2] = {{60, 2048}, {40, 10}};
+        CHECK(!SalIsoChainReadable(below, 2, 1, oneTrack, start50, false));
+        // sectors past the 32-bit sector numbers
+        SalIsoExtent wrap[2] = {{100, 2048}, {0xFFFFFFFFUL, 4096}};
+        CHECK(!SalIsoChainReadable(wrap, 2, 1, oneTrack, offset0, false));
+        SalIsoExtent last[2] = {{100, 2048}, {0xFFFFFFFFUL, 2048}};
+        CHECK(SalIsoChainReadable(last, 2, 1, oneTrack, offset0, false));
+        SalIsoExtent zero[2] = {{100, 2048}, {0xFFFFFFFFUL, 0}}; // an empty extent reads nothing
+        CHECK(SalIsoChainReadable(zero, 2, 1, oneTrack, offset0, false));
+        // a track the first extent maps to that does not exist
+        auto none = [](unsigned long) -> int
+        { return -1; };
+        CHECK(!SalIsoChainReadable(ok, 2, 1, none, offset0, false));
+    }
+}
+
 static void TestIsoWholeUnpack_338()
 {
     // the readers' end: a file not written whole is not extracted, also when no box set the result
@@ -24127,6 +24288,7 @@ int main(int argc, char** argv)
     TestIsoXaForm2_366();
     TestIsoSectorScan_367();
     TestIsoWholeUnpack_338();
+    TestIsoMultiExtent_368();
     TestHfsFileContent339();
     TestIsoSessionTracks_340();
     TestRenameInPlaceKey346();
