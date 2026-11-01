@@ -71,7 +71,7 @@ governs (the item's Note), so it is not implemented. Details: `research.md` R1-R
 | Check | Command | Result |
 |---|---|---|
 | build | `.\build.cmd` | BUILD SUCCEEDED |
-| saltests | `saltests.exe` | 29,984 checks, 0 failed (`TestIsoSectorScan_367`) |
+| saltests | `saltests.exe` | main 56a44fba 29,916 -> 29,984 checks, 0 failed (`TestIsoSectorScan_367`); 29,999 after review 1 |
 | mutants | `probe/mutants367.ps1` (each rule changed in the header, built, saltests, restored) | form1-as-unknown 3 failed; stream-trigger-dropped 1; xa-trigger-dropped 2; unknown-counts-whole 2; run-never-stops 2; partial-last-whole 3; size-last-full 3; mixed-as-form2 5 - every mutant fails; header restored (diff unchanged), rebuilt, 29,984 / 0 |
 | encoding guard | `python tools/check_encoding.py --strict` | TOTAL: 0 finding(s) |
 | clang-format | VS clang-format `--lines` of the changed lines (session script) | two `if` lines in iso9660.cpp / rawfs.cpp re-wrapped as clang-format wants; the rest unchanged |

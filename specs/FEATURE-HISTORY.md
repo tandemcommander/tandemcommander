@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -5626,3 +5626,32 @@ a few early ones are out of sequence).
   365 22 / 0, 334 23 / 1 (S-RAW, 335's intended change); saltests 29,893 -> 29,942 / 0 (`TestIsoXaForm2_366`;
   five mutants fail 2 to 4 checks each); refute-first review 1 (no MUST; SHOULD files without the attribute ->
   Inbox; NOTE identical video files - rows added).
+- 367-uniso-form2-unmarked: a Video CD-like disc image whose video file is stored in Form 2 sectors but lacks
+  feature 366's mark - no CD-XA record (a plain directory pointing into the stream), mixed attributes 0x3D55
+  (Form 1 + Form 2, as interleaved game streams) or a Form 1 first sector - still extracted the file cut to 2048
+  of each sector's 2324 bytes without a message, and "Delete archive after unpacking" deleted the image with the
+  full stream - now such a file (on a track that stores Form 2 data; starting in a Form 2 stream track, or with
+  the XA Form 2 bit, or with a Form 2 first sector) is examined at listing: the subheader of each of its sectors
+  decides (`SalIsoSectorForm`: Form 2 / Form 1 / unknown, 335's validity checks; `SalIsoSectorIsForm2` keeps its
+  meaning) - all Form 2: listed and read as a 366 Form 2 file; mixed: listed with the per-sector sum (2324 a Form 2
+  sector, 2048 any other, a last non-Form-2 sector's remaining record bytes) and read sector by sector by both
+  readers (`CISOImage::ReadMixedBlock`); none: as before. Feature 337's coverage counts only the leading run of
+  sectors read whole (`CFilePos::WholeSectors`) - it stops at an unknown sector and at a Form 1 sector whose EDC
+  does not check unless its last 276 bytes are empty (review 1: a sector relabelled Form 1 with video in those
+  bytes let the image go; `SalIsoCdEdc`, the ECMA-130 CRC, checked on all 300 Form 1 sectors of each real
+  vcdimager disc). Rules `SalIsoFileNeedsSectorScan`, `SalIsoSectorScan*`, `SalIsoForm1SectorWhole` in
+  `src/common/salisotrack.h`. The read-whole variant of the item was taken (every case is decidable at listing),
+  so the decision `keep-video-cd-images-after-a-whole-unpack-until-their-video` is answered by its option C.
+  Traps: 337's synthetic stream files (no XA record) are exactly such files - its probe now sees 2324-byte
+  content in 20 rows and S-VCDBYTE's file is read whole (its image deleted, nothing left) - a variant
+  `iso337_r367_probe.ps1` with 2324-byte expectations proves them; `-Only a,b,c` under `powershell -File` is one
+  string (a mutant run ran nothing); `OPENSAL_BUILD_DIR` needs a trailing backslash; a Python byte move left a
+  doubled blank line (clang-format). Limits: a file outside a stream track with a Form 1 first sector and no Form 2
+  bit is not examined; in a plain Unpack a damaged-subheader sector is still read 2048 bytes without a message
+  (only the image's deletion is guarded); every examined file is read whole at each listing (Inbox
+  `iso-plug-in-listing-a-disc-image-reads-every-sector-of`). From backlog item
+  `iso-plug-in-a-video-file-in-form-2-sectors-without-an-xa`. Probe `iso367_probe` (images `img367.py` from the real
+  vcdimager output; 366's rows kept) with main's `uniso.spl` 27 / 9 -> 36 / 0, 40 / 0 with review 1's rows;
+  regressions 337 with 367's expectations 74 / 0 (folders off 8 / 0), 365 22 / 0, 334 23 / 1 (S-RAW, 335's intended
+  change); saltests 29,916 (main 56a44fba, same machine) -> 29,999 / 0 (`TestIsoSectorScan_367`; eleven mutants fail 1 to 5 checks each);
+  refute-first review 1 (no MUST; SHOULD the Form 1 subheader trusted alone - fixed; NOTE listing cost -> Inbox).

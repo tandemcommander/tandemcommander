@@ -17,7 +17,6 @@ Last triaged: 2026-11-01
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: a video file in Form 2 sectors without an XA Form 2 attribute extracts cut](items/iso-plug-in-a-video-file-in-form-2-sectors-without-an-xa/desc.md) | bug | 7 | archives | 367 |
 
 ## Next
 
