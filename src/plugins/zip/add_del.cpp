@@ -50,6 +50,7 @@ CZipPack::CZipPack(const char* zipName, const char* zipRoot,
     SeccondPass = FALSE;
     TempNameOurs = false;
     CreatedVolumes = NULL;                 // feature 119
+    ReplaceTarget = NULL;                  // feature 399
     TempName = (char*)malloc(U8_MAX_PATH); // full path (UTF-8, long paths) -> heap
     if (TempName == NULL)
         ErrorID = IDS_LOWMEM;
@@ -81,6 +82,8 @@ CZipPack::~CZipPack()
         DestroyIcons(Options.Icons, Options.IconsCount);
     if (TempName)
         free(TempName);
+    if (ReplaceTarget)
+        free(ReplaceTarget);
 }
 
 int CZipPack::PackToArchive(BOOL move, const char* sourcePath,

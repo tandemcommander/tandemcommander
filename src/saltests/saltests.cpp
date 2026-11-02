@@ -5480,6 +5480,168 @@ static void TestSafeReplace320()
     CHECK(RemoveDirectoryW(dir.c_str())); // nothing left behind
 }
 
+// feature 399: a replace of a name that is a file symbolic link goes to the file it leads to
+// (SalReplaceFollowsName / SalFinalPathPlainW / SalReplaceTargetOfLinkW, src/common/salsafereplace.h)
+static void TestSafeReplace399()
+{
+    // --- pure: which names are followed ---
+    const DWORD rp = FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_ARCHIVE;
+    CHECK(SalReplaceFollowsName(rp, IO_REPARSE_TAG_SYMLINK));                             // a file symbolic link
+    CHECK(SalReplaceFollowsName(rp, IO_REPARSE_TAG_MOUNT_POINT));                         // a name surrogate too
+    CHECK(!SalReplaceFollowsName(FILE_ATTRIBUTE_ARCHIVE, IO_REPARSE_TAG_SYMLINK));        // no reparse point: a stale tag
+    CHECK(!SalReplaceFollowsName(FILE_ATTRIBUTE_ARCHIVE, 0));                             // a plain file
+    CHECK(!SalReplaceFollowsName(rp | FILE_ATTRIBUTE_DIRECTORY, IO_REPARSE_TAG_SYMLINK)); // a folder link
+    CHECK(!SalReplaceFollowsName(rp, 0x9000001A /* IO_REPARSE_TAG_CLOUD_1 */));           // a cloud placeholder is the file
+    CHECK(!SalReplaceFollowsName(rp, 0x80000013 /* IO_REPARSE_TAG_DEDUP */));             // a deduplicated file
+    CHECK(!SalReplaceFollowsName(rp, 0x80000017 /* IO_REPARSE_TAG_WOF */));               // a WOF-compressed file
+    CHECK(!SalReplaceFollowsName(INVALID_FILE_ATTRIBUTES, IO_REPARSE_TAG_SYMLINK));       // unreadable
+
+    // --- pure: the plain form of a final path ---
+    auto plain = [](const WCHAR* in) -> std::wstring
+    {
+        WCHAR* p = SalFinalPathPlainW(in);
+        std::wstring r = p != NULL ? p : L"<null>";
+        free(p);
+        return r;
+    };
+    CHECK(plain(L"\\\\?\\C:\\real\\a.zip") == L"C:\\real\\a.zip");
+    CHECK(plain(L"\\\\?\\d:\\x") == L"d:\\x");
+    CHECK(plain(L"\\\\?\\UNC\\srv\\share\\a.zip") == L"\\\\srv\\share\\a.zip");
+    CHECK(plain(L"\\\\?\\unc\\srv\\share\\a.zip") == L"\\\\srv\\share\\a.zip");
+    CHECK(plain(L"\\\\?\\Volume{01234567-89ab-cdef-0123-456789abcdef}\\a.zip") == L"<null>"); // no drive letter
+    CHECK(plain(L"\\\\?\\UNC\\") == L"<null>");
+    CHECK(plain(L"\\\\?\\C:") == L"<null>");
+    CHECK(plain(L"C:\\real\\a.zip") == L"<null>"); // not a final-path form
+    CHECK(plain(NULL) == L"<null>");
+    CHECK(plain(L"\\\\?\\C:\\\x010D\xD800.zip") == L"C:\\\x010D\xD800.zip"); // any name, an unpaired surrogate too
+
+    // --- real files (NTFS %TEMP%) ---
+    WCHAR tmp[MAX_PATH];
+    DWORD n = GetTempPathW(MAX_PATH, tmp);
+    if (n == 0 || n >= MAX_PATH)
+    {
+        printf("skipping TestSafeReplace399 files (no temp path)\n");
+        return;
+    }
+    std::wstring dir = std::wstring(L"\\\\?\\") + tmp + L"saltests-399-" + std::to_wstring(GetCurrentProcessId());
+    std::wstring realDir = dir + L"\\real", srcDir = dir + L"\\src";
+    CHECK(CreateDirectoryW(dir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    CHECK(CreateDirectoryW(realDir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    CHECK(CreateDirectoryW(srcDir.c_str(), NULL) || GetLastError() == ERROR_ALREADY_EXISTS);
+    auto put = [](const std::wstring& p, const char* text) -> BOOL
+    {
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD w = 0;
+        BOOL ok = h != INVALID_HANDLE_VALUE && WriteFile(h, text, (DWORD)strlen(text), &w, NULL);
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        return ok;
+    };
+    auto get = [](const std::wstring& p) -> std::string
+    {
+        HANDLE h = CreateFileW(p.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                               OPEN_EXISTING, 0, NULL);
+        if (h == INVALID_HANDLE_VALUE)
+            return "<missing>";
+        char b[64] = {0};
+        DWORD r = 0;
+        if (!ReadFile(h, b, sizeof(b) - 1, &r, NULL))
+            strcpy_s(b, "<unreadable>");
+        CloseHandle(h);
+        return b;
+    };
+    auto open = [](const std::wstring& p) -> HANDLE
+    { return CreateFileW(p.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL); };
+    // the replace target of 'name' opened as the ZIP plug-in opens an archive (closed again)
+    auto targetOf = [&](const std::wstring& name) -> std::wstring
+    {
+        HANDLE h = open(name);
+        if (h == INVALID_HANDLE_VALUE)
+            return L"<cannot open>";
+        WCHAR* t = SalReplaceTargetOfLinkW(name.c_str(), h);
+        CloseHandle(h);
+        std::wstring r = t != NULL ? t : L"<null>";
+        free(t);
+        return r;
+    };
+    auto isLink = [](const std::wstring& p) -> BOOL
+    {
+        DWORD a = GetFileAttributesW(p.c_str());
+        return a != INVALID_FILE_ATTRIBUTES && (a & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+    };
+    std::wstring realArc = realDir + L"\\a\x010D.zip", plainArc = srcDir + L"\\plain.zip";
+    std::wstring absLink = srcDir + L"\\abs.zip", relLink = srcDir + L"\\rel.zip";
+    CHECK(put(realArc, "OLDARC") && put(plainArc, "PLAIN"));
+
+    // the real archive's plain final path, as the file system names it (long names, normalized)
+    std::wstring expected = L"<unknown>";
+    {
+        HANDLE h = open(realArc);
+        WCHAR buf[1024];
+        DWORD got = h != INVALID_HANDLE_VALUE ? GetFinalPathNameByHandleW(h, buf, 1024, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS) : 0;
+        if (h != INVALID_HANDLE_VALUE)
+            CloseHandle(h);
+        WCHAR* p = got > 0 && got < 1024 ? SalFinalPathPlainW(buf) : NULL;
+        if (p != NULL)
+            expected = p;
+        free(p);
+    }
+    CHECK(expected != L"<unknown>");
+
+    // a plain file and a folder are not followed; no handle -> NULL
+    CHECK(targetOf(plainArc) == L"<null>");
+    CHECK(SalReplaceTargetOfLinkW(plainArc.c_str(), INVALID_HANDLE_VALUE) == NULL);
+
+    // file symbolic links (unprivileged with Developer Mode; otherwise reported and skipped)
+    BOOL madeAbs = CreateSymbolicLinkW(absLink.c_str(), realArc.substr(4).c_str(), SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE);
+    BOOL madeRel = madeAbs && CreateSymbolicLinkW(relLink.c_str(), L"..\\real\\a\x010D.zip", SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE);
+    if (!madeAbs || !madeRel)
+        printf("saltests 399: file symbolic links cannot be made here (error %lu) - the link rows are skipped\n", GetLastError());
+    else
+    {
+        CHECK(targetOf(absLink) == expected); // absolute target
+        CHECK(targetOf(relLink) == expected); // relative target
+
+        // before 399: the temporary file next to the link, the replace onto the link -> 1464, kept
+        DWORD err = 0;
+        std::wstring nextToLink = srcDir + L"\\Sal399.tmp";
+        CHECK(put(nextToLink, "NEWARC"));
+        CHECK(SalReplaceWithTempW(absLink.c_str(), nextToLink.c_str(), TRUE, TRUE, &err) == srrFailedKept &&
+              err == ERROR_SYMLINK_NOT_SUPPORTED);
+        CHECK(isLink(absLink) && get(realArc) == "OLDARC");
+        DeleteFileW(nextToLink.c_str());
+
+        // 399: the temporary file next to the target, the replace onto the target -> the real
+        // archive updated, both links still links leading to it
+        std::wstring target = std::wstring(L"\\\\?\\") + targetOf(relLink);
+        WCHAR* tempPath = NULL;
+        HANDLE th = INVALID_HANDLE_VALUE;
+        CHECK(SalCreateTempNextToW(target.c_str(), L"Sal", &tempPath, &th, &err));
+        if (th != INVALID_HANDLE_VALUE)
+        {
+            DWORD w = 0;
+            CHECK(WriteFile(th, "NEWARC", 6, &w, NULL) && w == 6);
+            CloseHandle(th);
+        }
+        CHECK(tempPath != NULL && wcsncmp(tempPath, (realDir + L"\\Sal").c_str(), realDir.size() + 4) == 0);
+        err = 0;
+        CHECK(tempPath != NULL && SalReplaceWithTempW(target.c_str(), tempPath, TRUE, TRUE, &err) == srrDone);
+        CHECK(get(realArc) == "NEWARC" && get(absLink) == "NEWARC" && get(relLink) == "NEWARC");
+        CHECK(isLink(absLink) && isLink(relLink) && !isLink(realArc));
+        CHECK(tempPath != NULL && GetFileAttributesW(tempPath) == INVALID_FILE_ATTRIBUTES);
+        free(tempPath);
+    }
+
+    // cleanup (explicit names only; the links themselves, never what they lead to)
+    DeleteFileW(absLink.c_str());
+    DeleteFileW(relLink.c_str());
+    DeleteFileW(plainArc.c_str());
+    DeleteFileW(realArc.c_str());
+    CHECK(RemoveDirectoryW(srcDir.c_str()));
+    CHECK(RemoveDirectoryW(realDir.c_str()));
+    CHECK(RemoveDirectoryW(dir.c_str())); // nothing left behind
+}
+
 // feature 106: a pack operation's output is never written over one of the files it packs
 // (SalPackOutputIsSource / SalPackTargetInSelection, src/common/salsamefile.h)
 static void TestPackSelf106()
@@ -26421,6 +26583,7 @@ int main(int argc, char** argv)
     TestPluginFileDlg104();
     TestSafeReplace105();
     TestSafeReplace320();
+    TestSafeReplace399();
     TestPackSelf106();
     TestFolderAlias107();
     TestArchiveEdit108();

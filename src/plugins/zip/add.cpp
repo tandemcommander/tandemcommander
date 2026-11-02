@@ -1092,7 +1092,9 @@ int CZipPack::ExportName(char* name, CFileInfo* fileInfo, BOOL* isUTF8)
 int CZipPack::ReplaceArchiveWithTemp()
 {
     CALL_STACK_MESSAGE1("CZipPack::ReplaceArchiveWithTemp()");
-    WCHAR* wZip = SplU8ToWExtAlloc(ZipName);
+    // feature 399: the real archive when ZipName is a file symbolic link (messages keep ZipName)
+    const char* target = ReplaceTarget != NULL ? ReplaceTarget : ZipName;
+    WCHAR* wZip = SplU8ToWExtAlloc(target);
     WCHAR* wTemp = SplU8ToWExtAlloc(TempName);
     int errorID = 0;
     if (wZip == NULL || wTemp == NULL)
@@ -1106,7 +1108,7 @@ int CZipPack::ReplaceArchiveWithTemp()
         switch (SalReplaceWithTempW(wZip, wTemp, TRUE, TRUE, &err))
         {
         case srrDone:
-            SetFileAttributesU8(ZipName, ZipAttr | FILE_ATTRIBUTE_ARCHIVE);
+            SetFileAttributesU8(target, ZipAttr | FILE_ATTRIBUTE_ARCHIVE);
             // ReplaceFileW copies the archive's named streams (Zone.Identifier) into the new file,
             // which moves its last-write time: "set zip file time to the newest file time" again
             if (Config.TimeToNewestFile && NewestFileTime.dwLowDateTime != 0 && NewestFileTime.dwHighDateTime != 0)
@@ -1156,7 +1158,37 @@ int CZipPack::CreateTempFile()
     int ret;
     int errorID;
 
-    SplitPath(&path, &name, ZipName);
+    // feature 399: when the archive's name is a file symbolic link, the temporary file goes next to
+    // the real archive (its folder, its volume) and replaces it there - a replace onto the link's
+    // name fails (1464). A link that cannot be resolved keeps the name: the replace fails safe.
+    if (ReplaceTarget != NULL)
+    {
+        free(ReplaceTarget);
+        ReplaceTarget = NULL;
+    }
+    if (ZipFile != NULL && ZipFile->File != INVALID_HANDLE_VALUE)
+    {
+        WCHAR* wZip = SplU8ToWExtAlloc(ZipName);
+        WCHAR* wTarget = wZip != NULL ? SalReplaceTargetOfLinkW(wZip, ZipFile->File) : NULL;
+        if (wTarget != NULL)
+        {
+            char* target = SplWToU8Alloc(wTarget);
+            if (target != NULL && strlen(target) < U8_MAX_PATH) // never cut (rule 097): a longer one is not used
+            {
+                ReplaceTarget = target;
+                DWORD attr = GetFileAttributesW(wTarget); // the real archive's attributes, not the link's own
+                if (attr != INVALID_FILE_ATTRIBUTES)
+                    ZipAttr = attr;
+            }
+            else if (target != NULL)
+                free(target);
+            free(wTarget);
+        }
+        if (wZip != NULL)
+            free(wZip);
+    }
+
+    SplitPath(&path, &name, ReplaceTarget != NULL ? ReplaceTarget : ZipName);
     TempName[0] = 0;
     while (1)
     {

@@ -129,7 +129,8 @@ public:
     char* NewCentrDir;
     DWORD ZipAttr;
     CFile* TempFile;
-    char* TempName; //UTF-8, U8_MAX_PATH bytes (heap - long paths)
+    char* TempName;      //UTF-8, U8_MAX_PATH bytes (heap - long paths)
+    char* ReplaceTarget; // feature 399: the real archive when ZipName is a file symbolic link (UTF-8, heap); NULL = ZipName
     //bool                Backup;
     CQuadWord AddTotalSize;
     int SizeToAdd;

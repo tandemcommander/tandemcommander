@@ -139,6 +139,82 @@ inline BOOL SalPathIsGoneW(const WCHAR* path)
     return e == ERROR_FILE_NOT_FOUND || e == ERROR_PATH_NOT_FOUND;
 }
 
+// Feature 399: a file reached through a symbolic link. ReplaceFileW onto a link's name fails (1464,
+// ERROR_SYMLINK_NOT_SUPPORTED) and a replacing rename would turn the link into a plain file; the
+// file to replace is the one the link leads to, and the temporary file belongs in ITS folder (same
+// volume). Only a name that itself redirects to another name is followed (a name-surrogate reparse
+// point that is not a folder: a file symbolic link) - a plain file, a hard link, a cloud placeholder
+// or a file whose folder is reached through a junction keep their own name.
+
+// pure: does a replace of the name with these attributes and this reparse tag (FindFirstFileW's
+// dwReserved0) go to the file the name leads to?
+inline BOOL SalReplaceFollowsName(DWORD attrs, DWORD reparseTag)
+{
+    return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_REPARSE_POINT) != 0 &&
+           (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0 && IsReparseTagNameSurrogate(reparseTag);
+}
+
+// pure: the plain form of a path GetFinalPathNameByHandleW gave with VOLUME_NAME_DOS:
+// "\\?\C:\a" -> "C:\a", "\\?\UNC\srv\sh\a" -> "\\srv\sh\a"; anything else (a volume GUID path
+// "\\?\Volume{...}\a", a path without the "\\?\" prefix, NULL) -> NULL. malloc'ed.
+inline WCHAR* SalFinalPathPlainW(const WCHAR* finalPath)
+{
+    if (finalPath == NULL || wcsncmp(finalPath, L"\\\\?\\", 4) != 0)
+        return NULL;
+    const WCHAR* rest = finalPath + 4;
+    BOOL unc = _wcsnicmp(rest, L"UNC\\", 4) == 0;
+    if (unc)
+    {
+        rest += 4;
+        if (rest[0] == 0 || rest[0] == L'\\')
+            return NULL;
+    }
+    else if (!(((rest[0] >= L'A' && rest[0] <= L'Z') || (rest[0] >= L'a' && rest[0] <= L'z')) && rest[1] == L':' &&
+               rest[2] == L'\\'))
+        return NULL;
+    size_t len = wcslen(rest);
+    WCHAR* p = (WCHAR*)malloc((len + 3) * sizeof(WCHAR));
+    if (p == NULL)
+        return NULL;
+    size_t pos = 0;
+    if (unc)
+    {
+        p[pos++] = L'\\';
+        p[pos++] = L'\\';
+    }
+    memcpy(p + pos, rest, (len + 1) * sizeof(WCHAR));
+    return p;
+}
+
+// The file a replace of 'name' (wide, may carry \\?\) must target when 'name' is a file symbolic
+// link (SalReplaceFollowsName): the plain final path of 'h', the file opened through 'name'
+// (malloc'ed). NULL when the name is not followed, or when the final path cannot be read or has no
+// drive / UNC form - the caller then keeps 'name' (a replace onto a link fails safe, 1464).
+inline WCHAR* SalReplaceTargetOfLinkW(const WCHAR* name, HANDLE h)
+{
+    if (name == NULL || h == NULL || h == INVALID_HANDLE_VALUE)
+        return NULL;
+    WIN32_FIND_DATAW fd;
+    HANDLE f = FindFirstFileW(name, &fd);
+    if (f == INVALID_HANDLE_VALUE)
+        return NULL;
+    FindClose(f);
+    if (!SalReplaceFollowsName(fd.dwFileAttributes, fd.dwReserved0))
+        return NULL;
+    DWORD need = GetFinalPathNameByHandleW(h, NULL, 0, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+    if (need == 0 || need >= 0x10000)
+        return NULL;
+    WCHAR* buf = (WCHAR*)malloc((need + 1) * sizeof(WCHAR));
+    if (buf == NULL)
+        return NULL;
+    WCHAR* ret = NULL;
+    DWORD got = GetFinalPathNameByHandleW(h, buf, need + 1, FILE_NAME_NORMALIZED | VOLUME_NAME_DOS);
+    if (got > 0 && got <= need)
+        ret = SalFinalPathPlainW(buf);
+    free(buf);
+    return ret;
+}
+
 // Puts the complete, closed file 'tempPath' in the place of 'targetPath' (both wide, the same
 // folder). 'targetExisted': the caller saw the target (and the user agreed to replace it);
 // 'clearReadOnly': the user agreed to replace a read-only target. '*err' gets the error of a
