@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item registry-editor-copy-or-find-through-a-link-to-an-ancestor - Registry Editor: Copy or Find through a link to an ancestor walks in a loop." From backlog item registry-editor-copy-or-find-through-a-link-to-an-ancestor.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: What should Copy do with a key that leads back into the copied tree - follow it, copy it as a link, or refuse it? → A: Refuse only that key, with the existing "Can't copy a key to itself." box naming it (OK skips, Cancel stops); links elsewhere stay followed (autonomous run: item - its Notes name refusing only the looping case as the conservative option)
+- Q: Should Find tell the user when it does not follow such a key? → A: No - it skips the key silently; nothing is hidden because the key's contents belong to a key already being searched (autonomous run: conservative - no new string, Find's results stay complete)
+- Q: When the identity of a walked key cannot be read, should the walk go on without the check? → A: No - the existing open-error box (Retry / Skip / Skip All / Cancel), fails closed; for the walk's starting key the check is best effort (autonomous run: rule - CLAUDE.md "a safe check fails closed")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Copy of a key that holds a link back to itself (Priority: P1)
