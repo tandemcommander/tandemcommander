@@ -1,7 +1,7 @@
 ---
 title: A cpio or rpm archive with a member name the panel cannot hold fails as a whole
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: archives
 source: review:307
@@ -10,7 +10,7 @@ created: 2026-10-22
 updated: 2026-11-02
 verified: 2026-11-02 af18dc21
 effort: S
-feature: -
+feature: 393
 related: []
 depends-on: []
 reason: -
@@ -40,3 +40,4 @@ Severity from the band "a function does not work, rare": such names do not occur
 - 2026-10-22 — moved to Next position 26
 - 2026-10-23 — related item opening-a-tar-whose-member-name-has-a-300-letter-component done in feature 321
 - 2026-11-02 — verified at af18dc21: reproduced at af18dc21: tar321_probe row CPIO-TOOLONG - Internal error file data structure corrupted, archive does not open
+- 2026-11-02 — run started, feature 393
