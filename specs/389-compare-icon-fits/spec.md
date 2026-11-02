@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: Backlog item `user-menu-compare-names-and-the-change-icon-file-are-cut-to` - "User Menu compare names and the Change Icon file are cut to 259 bytes". From backlog item user-menu-compare-names-and-the-change-icon-file-are-cut-to.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: In the names-to-compare dialog, does the length check run before the existing "empty name" check? → A: Yes - both fields are measured first, name 1 then name 2, then the empty checks (autonomous run: item - "refuses ... before anything else")
+- Q: When the Change Icon dialog refuses to reload icons for a too long name, what does the icon list show? → A: It keeps the icons it showed; no other file is read and OK stays refused until the name fits (autonomous run: conservative)
+- Q: Does the refusal use a new message? → A: No - the existing "The path specified is too long." (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Names to compare are used whole or refused (Priority: P1)
@@ -104,8 +112,6 @@ reloaded and on OK, keeps the typed text whole in the field and stores nothing.
 
 ## Assumptions
 
-- Assumption (autonomous run): when a Change Icon reload is refused, the icon list keeps what it
-  showed (the conservative choice - changes least); OK is refused anyway until the name fits.
 - Assumption (autonomous run): the limit stays 260 bytes (MAX_PATH) - the buffers of the callers
   (`CompareName1/2`, the User Menu icon value read with `MAX_PATH`) are not enlarged; refusing is the
   standing rule ("a path or name is never cut").
