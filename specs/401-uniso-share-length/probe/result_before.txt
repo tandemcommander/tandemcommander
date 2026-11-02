@@ -1,0 +1,24 @@
+iso401_probe before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 15:24; registry key existed True
+
+seeds: isohlink.iso,isoloop.iso,isomany.iso,isoshare.iso,isoshare2.iso
+img401: isoshare: A (block 21, 2048 bytes), B (block 21, 4096 bytes), TOP.TXT
+img401: isoshare2: A (block 21, 4096 bytes), B (block 21, 2048 bytes), TOP.TXT
+img401: isoloop: A (block 21, 2048 bytes) holds L (block 21, 4096 bytes), TOP.TXT, ZLAST/Z.TXT
+img401: isohlink: A and B (block 21, 2048 bytes), TOP.TXT
+img401: isomany: A (block 21, 2048 bytes) and F00..F39 (block 21, 4096..83968 bytes), TOP.TXT
+
+IS-SHARE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-SHARE   RUN    FAIL        files 2: A/A1.TXT, TOP.TXT; missing: b/a1.txt, b/a2.txt; files ok: False; image kept: False (want False); no window: True; fatal: ; windows: no window
+IS-SHARE2  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-SHARE2  RUN    FAIL        files 3: A/A1.TXT, A/A2.TXT, TOP.TXT; missing: b/a1.txt; files ok: False; image kept: False (want False); no window: True; fatal: ; windows: no window
+IS-LOOP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-LOOP    RUN    FAIL        files 3: A/A1.TXT, TOP.TXT, ZLAST/Z.TXT; missing: a/l/a1.txt, a/l/a2.txt; files ok: False; image kept: False (want False); no window: True; fatal: ; windows: no window
+IS-HLINK   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-HLINK   RUN    PASS        files 2: A/X.TXT, TOP.TXT; files ok: True; image kept: False (want False); no window: True; fatal: ; windows: no window
+IS-MANY    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-MANY    RUN    FAIL        files 2: A/A1.TXT, TOP.TXT; missing: f00/a1.txt, f01/a1.txt, f02/a1.txt, f03/a1.txt, f04/a1.txt, f05/a1.txt, f06/a1.txt, f07/a1.txt, f08/a1.txt, f09/a1.txt, f10/a1.txt, f11/a1.txt, f12/a1.txt, f13/a1.txt, f14/a1.txt, f15/a1.txt, f16/a1.txt, f17/a1.txt, f18/a1.txt, f19/a1.txt, f20/a1.txt, f21/a1.txt, f22/a1.txt, f23/a1.txt, f24/a1.txt, f25/a1.txt, f26/a1.txt, f27/a1.txt, f28/a1.txt, f29/a1.txt, f30/a1.txt, f31/a1.txt, f32/a1.txt, f33/a1.txt, f34/a1.txt, f35/a1.txt, f36/a1.txt, f37/a1.txt, f38/a1.txt, f39/a1.txt; files ok: False; image kept: False (want False); no window: True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 6, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

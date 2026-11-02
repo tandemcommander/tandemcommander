@@ -31,6 +31,21 @@ written from scratch by `img401.py`: plain ISO 9660, nothing damaged; Unpack of 
 | IS-MANY | A (S, 2048) and 40 folders at S with lengths 4096..83968 | only A/A1.TXT, TOP.TXT, the image deleted |
 | IS-HLINK | A and B at one block with one length (control) | a/x.txt, top.txt, B empty, the image deleted (328's rule - unchanged) |
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: Is a folder met again with another length walked for its own length, or listed empty with the
+  listing marked incomplete? → A: walked for its own length (the visit key is block and length) - every
+  file its record covers is listed and extracted, a loop still ends because each pair is walked once
+  (autonomous run: item - *Approach*, as 400's Xbox walk)
+- Q: Does a folder met again with the same block and the same length now mark the listing incomplete,
+  as the UDF and Xbox walks do since 400? → A: no, 328's behaviour stays (listed empty, not marked); the
+  difference is recorded as an Inbox item (autonomous run: conservative - the item does not name it)
+- Q: What happens when the longer length runs past the end of the image? → A: as for any folder that
+  cannot be read (330 / 400): one error box per walk, the listing marked incomplete, later folders still
+  walked (autonomous run: conservative - existing behaviour)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Every folder of the image is listed with the files its own record covers (Priority: P1)
@@ -98,6 +113,8 @@ Two folder records naming one directory with the same start block and the same l
 - The fit-check walk (328) uses its own set by the same key.
 - Joliet volumes walk the same function: the same key.
 - Out of memory while recording a folder: as today (the walk stops, the listing is marked).
+- A longer length that runs past the end of the image: a folder that cannot be read (330 / 400's
+  handling: one box per walk, the listing marked, later folders walked).
 
 ## Requirements *(mandatory)*
 
