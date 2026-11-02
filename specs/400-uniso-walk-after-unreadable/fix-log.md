@@ -84,3 +84,35 @@ rule).
   0; the same rows `probe/result_after_restore.txt` 12 / 0.
 - The item's measurement repeated: zlast/z.txt of the damaged file system is now extracted in all 6
   rows that lost it at aaf95b94 (RD-EXT, RD-REC, RD-ZERO, UD-EXT, UD-TAG, XD-EXT).
+
+## Review
+
+### Review 1 (refute-first agent, on e48568c6)
+
+- Re-measured with its own builds of main (aaf95b94) and HEAD (worktrees and build folders under
+  `%TEMP%\rv400`): HEAD 40 / 0 as `result_after.txt`; main's plug-in fails all 11 new rows; its own
+  `xd_many.iso` (300 damaged Xbox folders, then top.txt, zlast/z.txt): HEAD both files, one box, image
+  kept - main top.txt only.
+- **MUST 1 (fixed)**: the Xbox visited set keyed a folder by its start sector alone, but every entry
+  gives its own size - `xd_share.iso` (root: `b` at sector S with 2048 bytes, `a` at S with 4096
+  bytes, top.txt; S holds a1.txt, S + 1 a2.txt): main extracted a/a1.txt, a/a2.txt, b/a1.txt, top.txt;
+  400's build extracted b/a1.txt and top.txt only, no window, and the image was deleted (a2.txt lost) -
+  a regression against main. Fix: `CXDVDFS::VisitFolder(sector, size)`, key `size << 32 | sector` (the
+  root too). UDF is keyed by the file entry, which gives the size itself - not affected. Probe rows
+  added from the reviewer's generator (byte-identical images, `img400.py xboxshare` / `xboxmany`):
+  XD-SHARE (control: all four files, no window, image deleted) and XD-MANY (one box, both files, kept).
+- **SHOULD 1 (Inbox)**: the ISO 9660 walk keys by block alone too (328, not 400) - Inbox item
+  `iso-plug-in-an-iso-9660-folder-met-again-with-a-larger` (review:400).
+- NOTE 1 (a UDF file entry that cannot be read ends its folder silently) - spec decision, covered by
+  Inbox `iso-plug-in-udf-and-hfs-entries-skipped-as-damaged-let`; NOTE 2 (an ISO 9660 damaged folder
+  pointing at a later folder's block lists it empty) - marked incomplete, nothing lost, 328's rule;
+  NOTE 3 callers / 368's chain box now once per walk (368's probe checks "at least one"); NOTE 4
+  saltests total 282,283 in its build vs 282,309 here (not traced by the reviewer; this tree's build
+  prints 282,309 at every run - the volume-dependent tests 304 / 305 print host facts), comment
+  wrapping in udf.cpp / xdvdfs.cpp and spacing in xdvdfs.h fixed; NOTE 5 no standing-rule violation.
+- The tree was clean after the review (`git status --short` empty).
+- After the fix: `.\build.cmd` BUILD SUCCEEDED; saltests 282,309 / 0; encoding guard TOTAL: 0;
+  `iso400_probe.ps1 -Label after-review1` -> `probe/result_after_review1.txt` 44 / 0 (22 RUN rows,
+  XD-SHARE all four files, XD-MANY one box); 329 again (Xbox rows) `probe/regress_329_review1.txt`
+  14 / 0. The reviewer's logs kept: `probe/review1_rv_head_e48568c6.txt` (RV-SHARE FAIL on 400's
+  first build) and `probe/review1_rv_main_aaf95b94.txt` (RV-SHARE PASS on main, RV-MANY FAIL).

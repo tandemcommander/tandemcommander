@@ -204,15 +204,15 @@ BOOL CXDVDFS::ListDirectory(char* path, int session, CSalamanderDirectoryAbstrac
 
     // feature 400: a fresh walk; each folder walked once (the root marked first)
     Walk = SalIsoWalk();
-    std::set<DWORD> visited;
+    std::set<unsigned long long> visited;
     Visited = &visited;
-    VisitFolder(VD.RootSector);
+    VisitFolder(VD.RootSector, VD.RootDirectorySize);
     int walked = ScanDir(VD.RootSector, VD.RootDirectorySize, path, dir, pluginData);
     Visited = NULL;
     // feature 330: a folder that could not be read (or out of memory) ends its walk (feature 400: later
-    // folders are still descended), and its result reaches the top as ERR_CONTINUE / ERR_TERMINATE - the listing is
-    // incomplete, so a whole unpack fails and "Delete archive after unpacking" keeps the image (it was
-    // deleted)
+    // folders are still descended), and its result reaches the top as ERR_CONTINUE / ERR_TERMINATE - the
+    // listing is incomplete, so a whole unpack fails and "Delete archive after unpacking" keeps the image
+    // (it was deleted)
     if (walked != ERR_OK)
         Image->ListingLeftOut.SetIncomplete();
     return walked != ERR_TERMINATE;
@@ -226,15 +226,18 @@ void CXDVDFS::WalkOutOfMemory()
     Error(IDS_INSUFFICIENT_MEMORY, SalIsoWalkBoxQuiet(Walk, false));
 }
 
-// feature 400: the walk meets the folder starting at 'sector' - 1 the first time, 0 met again in this walk
-// (not descended: listed empty, not marked - CISO9660's rule, 328), -1 out of memory
-int CXDVDFS::VisitFolder(DWORD sector)
+// feature 400: the walk meets the folder of 'size' bytes starting at 'sector' - 1 the first time, 0 met again
+// in this walk (not descended: listed empty, not marked - CISO9660's rule, 328), -1 out of memory. Review 1:
+// by the start sector and the size together - each entry gives its own size, and a folder met again by its
+// sector alone with a larger size was listed empty without a mark (its later files lost, the image deleted
+// by a whole unpack); a loop still meets its pairs once (they come from the image's entries)
+int CXDVDFS::VisitFolder(DWORD sector, DWORD size)
 {
     if (Visited == NULL)
         return 1;
     try
     {
-        return Visited->insert(sector).second ? 1 : 0;
+        return Visited->insert(((unsigned long long)size << 32) | sector).second ? 1 : 0;
     }
     catch (...)
     {
@@ -313,7 +316,7 @@ int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryA
             // everything is OK" listed every later folder empty) - only out of memory stops the walk; a
             // failure below keeps this directory incomplete; a folder met again in this walk is listed
             // empty (a crafted image: a folder inside itself - it doubled the walk per level)
-            int visit = SalIsoWalkDescends(Walk) ? VisitFolder(de.StartSector) : 0;
+            int visit = SalIsoWalkDescends(Walk) ? VisitFolder(de.StartSector, de.FileSize) : 0;
             if (visit < 0)
                 ret = SalIsoWalkAfterChild(ret, ERR_TERMINATE);
             else if (visit > 0)

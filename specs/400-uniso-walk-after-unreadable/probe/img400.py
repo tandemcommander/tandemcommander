@@ -13,6 +13,12 @@ Every command of specs/330-iso-unreadable-folder/probe/img330.py (loaded from th
                                                a holds 'bad' (a folder past the end) and then 'l1' and
                                                'l2' - two folders pointing back to a
   python -I img400.py xboxloop2 <out>          the same without 'bad' (no folder that cannot be read)
+  python -I img400.py xboxshare <out>          (review 1) an XDVDFS image whose root holds 'b' (a folder at
+                                               sector S, 2048 bytes), 'a' (the same sector S, 4096 bytes)
+                                               and top.txt; S holds a1.txt, S + 1 holds a2.txt - nothing
+                                               is damaged, a/a2.txt is reached only through 'a'
+  python -I img400.py xboxmany <out>           (review 1) an XDVDFS image whose root holds 300 folders
+                                               past the end, then top.txt and zlast/z.txt
   python -I img400.py udfloop <ud.iso> <out>   UDF part of a genisoimage -udf hybrid: side.txt's
                                                identifier in folder a becomes a folder whose ICB is
                                                folder a's own file entry (a folder inside itself)
@@ -120,6 +126,68 @@ def cmd_xboxloop(dst, damaged):
     return write_xbox(dst, tree, label + " (a holds %sl1, l2 -> a)" % ("bad -> %#x, " % FAR if damaged else ""))
 
 
+# review 1 of feature 400 (the reviewer's gen.py): images written entry by entry
+
+
+def xent(name, start, size, attr):
+    raw = name.encode("ascii")
+    e = struct.pack("<HHIIBB", 0, 0, start, size, attr, len(raw)) + raw
+    return e + b"\xff" * ((4 - len(e) % 4) % 4)
+
+
+def xpad(b):
+    return bytes(b) + b"\xff" * (SECTOR - len(b))
+
+
+def write_sectors(dst, nsect, root, rootsize, sectors):
+    img = bytearray(SECTOR * nsect)
+    vd = 32 * SECTOR
+    img[vd : vd + 20] = b"MICROSOFT*XBOX*MEDIA"
+    img[vd + 20 : vd + 28] = struct.pack("<II", root, rootsize)
+    img[vd + 0x7EC : vd + 0x7EC + 20] = b"MICROSOFT*XBOX*MEDIA"
+    for s, c in sectors.items():
+        img[s * SECTOR : s * SECTOR + len(c)] = c
+    open(dst, "wb").write(bytes(img))
+
+
+def cmd_xboxshare(dst):
+    root, S, a1, a2, top = 33, 34, 36, 37, 38
+    sectors = {
+        root: xpad(xent("b", S, SECTOR, 0x10) + xent("a", S, 2 * SECTOR, 0x10) + xent("top.txt", top, 3, 0x80)),
+        S: xpad(xent("a1.txt", a1, 2, 0x80)),
+        S + 1: xpad(xent("a2.txt", a2, 2, 0x80)),
+        a1: b"A1",
+        a2: b"A2",
+        top: b"TOP",
+    }
+    write_sectors(dst, 40, root, SECTOR, sectors)
+    print("xboxshare: b (sector %d, %d bytes), a (sector %d, %d bytes), top.txt" % (S, SECTOR, S, 2 * SECTOR))
+    return 0
+
+
+def cmd_xboxmany(dst):
+    zl, z, top = 40, 41, 42
+    secs = []
+    cur = bytearray()
+    ents = [xent("d%03d" % i, FAR + i, SECTOR, 0x10) for i in range(300)]
+    ents += [xent("top.txt", top, 3, 0x80), xent("zlast", zl, SECTOR, 0x10)]
+    for e in ents:
+        if len(cur) + len(e) > SECTOR:  # an entry never crosses a sector
+            secs.append(xpad(cur))
+            cur = bytearray()
+        cur += e
+    secs.append(xpad(cur))
+    if 33 + len(secs) > zl:
+        refuse("root of %d sectors" % len(secs))
+    sectors = {33 + k: c for k, c in enumerate(secs)}
+    sectors[zl] = xpad(xent("z.txt", z, 1, 0x80))
+    sectors[z] = b"Z"
+    sectors[top] = b"TOP"
+    write_sectors(dst, 44, 33, SECTOR * len(secs), sectors)
+    print("xboxmany: 300 folders at %#x.., root of %d sectors" % (FAR, len(secs)))
+    return 0
+
+
 def cmd_udfloop(src, dst):
     b = bytearray(open(src, "rb").read())
     ps, fsd = img330.udf_layout(b)
@@ -151,6 +219,10 @@ def main(argv):
         return cmd_xboxtwo(argv[1])
     if len(argv) == 2 and argv[0] in ("xboxloop", "xboxloop2"):
         return cmd_xboxloop(argv[1], argv[0] == "xboxloop")
+    if len(argv) == 2 and argv[0] == "xboxshare":
+        return cmd_xboxshare(argv[1])
+    if len(argv) == 2 and argv[0] == "xboxmany":
+        return cmd_xboxmany(argv[1])
     if len(argv) == 3 and argv[0] == "udfloop":
         return cmd_udfloop(argv[1], argv[2])
     return img330.main(argv)

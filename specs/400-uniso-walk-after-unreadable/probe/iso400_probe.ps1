@@ -31,6 +31,12 @@
       UD-LOOP    PASS = no window, the ISO 9660 part's three files and UDF top.txt and zlast/z.txt, the
                  image deleted - before 400: a/side.txt/side.txt/... down to the path limit, the
                  "(206)" report and the image kept
+      XD-SHARE   (review 1) root: b (sector S, 2048 bytes), a (sector S, 4096 bytes), top.txt; S holds
+                 a1.txt, S + 1 a2.txt - PASS = a/a1.txt, a/a2.txt, b/a1.txt, top.txt, no window, the
+                 image deleted (as main); 400's first build (visited by sector alone): a/a2.txt missing,
+                 no window, the image deleted
+      XD-MANY    (review 1) 300 folders past the end, then top.txt, zlast/z.txt - PASS = one box, both
+                 files, the image kept
       330's rows UD-ICB, RD-ROOT, UDH-ROOT, UDH-AVDP (damaged, unchanged expectations) and RD-OK, UD-OK,
                  UDH-OK, NEST-OK, XD-OK (controls: every file, no window, the image deleted)
     Names are compared without case (genisoimage's ISO 9660 part is upper case). Every row also fails
@@ -179,6 +185,8 @@ try {
     $made += & python -I $py xboxtwo "$s\xd_two.iso" 2>&1
     $made += & python -I $py xboxloop "$s\xd_loop.iso" 2>&1
     $made += & python -I $py xboxloop2 "$s\xd_loop2.iso" 2>&1
+    $made += & python -I $py xboxshare "$s\xd_share.iso" 2>&1
+    $made += & python -I $py xboxmany "$s\xd_many.iso" 2>&1
     $made += & python -I $py xbox "$s\xd.iso" 2>&1
     $made += & python -I $py xboxext "$s\xd_ext.iso" 2>&1
     $ErrorActionPreference = $old
@@ -213,6 +221,9 @@ try {
     Unpack-Row 'XD-LOOP' "$s\xd_loop.iso" $topZ -Damaged -Once
     Unpack-Row 'XD-LOOP2' "$s\xd_loop2.iso" $topZ
     Unpack-Row 'UD-LOOP' "$s\ud_loop.iso" $udTopZ
+    # review 1: one start sector, two sizes - both walked (not "met again"); 300 damaged folders - one box
+    Unpack-Row 'XD-SHARE' "$s\xd_share.iso" ([ordered]@{ 'a/a1.txt' = 'A1'; 'a/a2.txt' = 'A2'; 'b/a1.txt' = 'A1'; 'top.txt' = 'TOP' })
+    Unpack-Row 'XD-MANY' "$s\xd_many.iso" $topZ -Damaged -Once
     # 330's other rows, unchanged
     Unpack-Row 'RD-OK' "$s\rd.iso" $all
     Unpack-Row 'RD-ROOT' "$s\rd_root.iso" ([ordered]@{}) -Damaged

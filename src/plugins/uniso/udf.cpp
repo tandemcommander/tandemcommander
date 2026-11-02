@@ -1016,9 +1016,8 @@ BOOL CUDF::ListDirectory(char* path, int session, CSalamanderDirectoryAbstract* 
     Visited = NULL;
     // feature 330: a folder that could not be read (a read error, an invalid tag, a file entry that
     // cannot be read) ends its walk (feature 400: later folders are still descended), and its result
-    // reaches the top as
-    // ERR_CONTINUE / ERR_TERMINATE - the listing is incomplete, so a whole unpack fails and "Delete
-    // archive after unpacking" keeps the image (it was deleted)
+    // reaches the top as ERR_CONTINUE / ERR_TERMINATE - the listing is incomplete, so a whole unpack
+    // fails and "Delete archive after unpacking" keeps the image (it was deleted)
     if (walked != ERR_OK)
         Image->ListingLeftOut.SetIncomplete();
     return walked != ERR_TERMINATE;

@@ -44,10 +44,11 @@ protected:
 
     DWORD ExtentOffset;
     // feature 400: the listing walk - later folders are descended after a folder that cannot be read
-    // (only out of memory stops it), its error box is shown once, and each folder (its start sector)
-    // is walked once - a crafted image can point a folder back to itself or an ancestor (CISO9660, 328)
+    // (only out of memory stops it), its error box is shown once, and each folder (its start sector and
+    // size: an entry gives both, review 1) is walked once - a crafted image can point a folder back to
+    // itself or an ancestor (CISO9660, 328)
     SalIsoWalk Walk;
-    std::set<DWORD>* Visited;
+    std::set<unsigned long long>* Visited;
 
 public:
     CXDVDFS(CISOImage* image, DWORD extent);
@@ -76,6 +77,6 @@ protected:
                    CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
 
     int ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
-    void WalkOutOfMemory();         // feature 400
-    int VisitFolder(DWORD sector);  // feature 400: 1 first time, 0 met again, -1 out of memory
+    void WalkOutOfMemory();                    // feature 400
+    int VisitFolder(DWORD sector, DWORD size); // feature 400: 1 first time, 0 met again, -1 out of memory
 };
