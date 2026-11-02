@@ -5,6 +5,13 @@
 **Status**: Draft
 **Input**: User description: "Backlog item viewer-find-pre-fills-a-non-ascii-selection-as-code-page - implement exactly what it describes." From backlog item viewer-find-pre-fills-a-non-ascii-selection-as-code-page.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: Should line breaks and tabs inside the selection be removed or changed in the pre-fill? → A: No - they are passed on as before; only the decoding and the whole-character shortening change (autonomous run: conservative)
+- Q: Should an invalid UTF-8 byte in the selection stop the pre-fill or show as a replacement character? → A: It shows as U+FFFD, as the viewer draws it; only an incomplete character at the end of the bytes read is left out (autonomous run: conservative - the field shows what the viewer shows)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A selected non-ASCII word is pre-filled and found (Priority: P1)
@@ -102,6 +109,7 @@ selection's bytes as hex digits (as before).
   exactly as before.
 - **FR-006**: When there is no selection, or the selection cannot be read, the field MUST keep the
   text it had (as before).
+- **FR-008**: Characters other than NUL (line breaks, tabs) MUST be passed on as before.
 - **FR-007**: The decision (decode + shorten) MUST be a pure rule with unit checks.
 
 ### Key Entities
