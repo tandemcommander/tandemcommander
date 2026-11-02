@@ -1,7 +1,7 @@
 ---
 title: Confirm Ctrl+; opens a long Documents folder whole on a real keyboard
 type: person-step
-status: new
+status: open
 severity: 3
 area: long-paths
 source: leftover:386
@@ -54,3 +54,4 @@ Ctrl+; opens the whole long Documents folder.
 ## Log
 
 - 2026-11-02 — created (source leftover:386)
+- 2026-11-02 — moved to Person steps position 57

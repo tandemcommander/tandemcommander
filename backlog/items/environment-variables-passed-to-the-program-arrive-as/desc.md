@@ -1,7 +1,7 @@
 ---
 title: Environment variables passed to the program arrive as question marks outside the code page
 type: bug
-status: new
+status: open
 severity: 4
 area: encoding
 source: measure:386
@@ -58,3 +58,4 @@ file named by an ASCII variable).
 ## Log
 
 - 2026-11-02 — created (source measure:386)
+- 2026-11-02 — moved to Next position 29

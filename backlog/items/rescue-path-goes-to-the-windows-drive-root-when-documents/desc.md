@@ -1,7 +1,7 @@
 ---
 title: Rescue path goes to the Windows drive root when Documents needs more than 259 bytes
 type: improvement
-status: new
+status: open
 severity: 2
 area: long-paths
 source: leftover:386
@@ -63,3 +63,4 @@ folder, and the fallback is a safe folder, not another one.
 ## Log
 
 - 2026-11-02 — created (source leftover:386)
+- 2026-11-02 — moved to Next position 137

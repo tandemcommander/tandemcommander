@@ -1,7 +1,7 @@
 ---
 title: A Documents folder of 260 or more characters opens the Desktop instead
 type: bug
-status: new
+status: open
 severity: 1
 area: long-paths
 source: review:386
@@ -52,3 +52,4 @@ reachable. Severity 1: only reachable with an unusual redirection.
 ## Log
 
 - 2026-11-02 — created (source review:386)
+- 2026-11-02 — moved to Next
