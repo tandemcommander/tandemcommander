@@ -48,6 +48,10 @@ extraction reads files sector by sector and never allocates by a file's length.
 - Q: Is any new message shown? → A: no - the existing "Error reading directory structure at sector #N.
   Incomplete content of ISO image." box, once per walk (features 330 / 400); no new UI string
   (autonomous run: item)
+- Q: When the volume's root folder itself has a length the rule refuses, does the image still open?
+  → A: yes, as for a root whose read fails today - the read-error box, an empty listing marked
+  incomplete (a whole Unpack keeps the image) (autonomous run: conservative - existing behaviour of an
+  unreadable root)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -117,7 +121,9 @@ the image's last sector - is listed and extracted whole, with no window.
   visited rule applies as before (listed empty).
 - The quiet walks (fit check, count walks) refuse the folder silently; the listing walk shows the box
   once (400).
-- The root folder's own length: the same rule (the root is read through the same walk).
+- The root folder's own length: the same rule (the root is read through the same walk); a refused root
+  behaves as an unreadable root today - the box, the image opens with an empty listing marked
+  incomplete.
 - A last-sector check of a folder whose sectors would run past sector 0xFFFFFFFF: refused.
 
 ## Requirements *(mandatory)*
