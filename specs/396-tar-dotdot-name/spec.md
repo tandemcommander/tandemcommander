@@ -27,6 +27,14 @@ answered Yes, replaced `s/a.txt` with the data of `sub/../a.txt`; the archive wa
 ("Delete archive after unpacking"). The GNU long name and the PAX path take the same rule; Copy
 out of the opened archive gives the same wrong files.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: Should a member name with a `..` component be resolved (the previous component removed) or refused and reported? → A: resolved - `..` removes the whole previous component, never above the archive root (autonomous run: item - the first outcome of its *Expected*; refusing would change `x/y/../b.txt`, which extracts right today)
+- Q: Should a hard-link name with a `..` component now be normalized and matched to a member? → A: no - feature 309's rule stays (such a link is reported and fails the operation) (autonomous run: conservative - the item says "may")
+- Q: Should a member whose name resolves to nothing (`a/..`) get a message of its own? → A: no - it takes the existing path of names that normalize to nothing (feature 395) (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Unpack puts a `..` member where its name points (Priority: P1)
