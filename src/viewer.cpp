@@ -14,6 +14,7 @@
 #include "gui.h"
 #include "salurlpwd.h" // feature 085
 #include "dialogs.h"   // feature 311: DlgItemTextFitsU8
+#include "salhexfield.h" // feature 397: SalHexFieldTidyW
 
 const char* CVIEWERWINDOW_CLASSNAME = "Salamander's Viewer Window";
 
@@ -174,107 +175,35 @@ void HistoryComboBox(HWND hWindow, CTransferInfo& ti, int ctrlID, char* Text,
 void DoHexValidation(HWND edit, const int textLen)
 {
     CALL_STACK_MESSAGE2("DoHexValidation(, %d)", textLen);
+    // feature 397: the field is read and written as UTF-16 (the code page turned quoted letters
+    // outside it into '?'); the caret of CB_GETEDITSEL / CB_SETEDITSEL is in the same units. The
+    // whole text is read - never cut; the rule inserts spaces only up to the field's limit
+    // (textLen - 1 units, its CB_LIMITTEXT, as before); the UTF-8 length is refused at OK (311)
     int start, end;
-    SendMessage(edit, CB_GETEDITSEL, (WPARAM)&start, (LPARAM)&end);
-    char* text = new char[textLen];
+    SendMessageW(edit, CB_GETEDITSEL, (WPARAM)&start, (LPARAM)&end);
+    int len = GetWindowTextLengthW(edit);
+    if (len < 0)
+        len = 0;
+    size_t maxLen = textLen > 1 ? (size_t)(textLen - 1) : 0;
+    // + NUL, + one unit: a text longer than the length just read would show as got > len
+    size_t capacity = ((size_t)len > maxLen ? (size_t)len : maxLen) + 2;
+    wchar_t* text = new wchar_t[capacity];
     if (text == NULL)
     {
         TRACE_E(LOW_MEMORY);
         return;
     }
-    SendMessage(edit, WM_GETTEXT, textLen, (LPARAM)text);
-    char* s = text;
-    while (*s != 0 && *s == ' ')
-        s++;
-    if (s != text)
-    {
-        start -= (int)(s - text);
-        end -= (int)(s - text);
-        if (start < 0)
-            start = 0;
-        if (end < 0)
-            end = 0;
-        memmove(text, s, strlen(s) + 1);
+    int got = GetWindowTextW(edit, text, (int)capacity);
+    if (got < 0 || got > len)
+    { // not the text measured above (never tidy a text that may be cut) - leave it as it is
+        delete[] text;
+        return;
     }
-    s = text;
-    BOOL openedQuotes = FALSE;
-    char *st = s, *strEnd = text + strlen(text);
-    while (*s != 0)
-    {
-        if (*s == '"')
-        {
-            if (!openedQuotes && s > text && *(s - 1) != ' ' && strEnd - text < textLen - 1)
-            {
-                if (start > s - text)
-                    start++;
-                if (end > s - text)
-                    end++;
-                memmove(s + 1, s, (strEnd - s) + 1);
-                *s++ = ' ';
-                strEnd++;
-            }
-            else
-            {
-                if (openedQuotes && s + 1 < strEnd && *(s + 1) != ' ' &&
-                    strEnd - text < textLen - 1)
-                {
-                    if (start >= (s - text) + 1)
-                        start++;
-                    if (end >= (s - text) + 1)
-                        end++;
-                    memmove(s + 2, s + 1, strEnd - s);
-                    *(s + 1) = ' ';
-                    strEnd++;
-                }
-                if (openedQuotes && s + 1 < strEnd)
-                    s++;
-                st = s + 1;
-            }
-            openedQuotes = !openedQuotes;
-        }
-        else
-        {
-            if (!openedQuotes)
-            {
-                if (*s == ' ')
-                {
-                    if (st == s) // '  ' -> ' '
-                    {
-                        s--;
-                        if (start >= st - text)
-                            start--;
-                        if (end >= st - text)
-                            end--;
-                        memmove(s, st, (strEnd - st) + 1);
-                        strEnd--;
-                    }
-                    else
-                        st = s + 1;
-                }
-                else
-                {
-                    if ((s - st) == 2) // 'ABC' -> 'AB C'
-                    {
-                        if (strEnd - text < textLen - 1)
-                        {
-                            if (start >= s - text)
-                                start++;
-                            if (end >= s - text)
-                                end++;
-                            memmove(s + 1, s, (strEnd - s) + 1);
-                            *s = ' ';
-                            st = s + 1;
-                            strEnd++;
-                        }
-                    }
-                }
-            }
-        }
-        s++;
-    }
-    SendMessage(edit, WM_SETTEXT, 0, (LPARAM)text);
-    SendMessage(edit, CB_SETEDITSEL, 0, MAKELPARAM(start, end));
-    delete[] (text);
+    text[got] = 0;
+    SalHexFieldTidyW(text, capacity, &start, &end, maxLen);
+    SetWindowTextW(edit, text);
+    SendMessageW(edit, CB_SETEDITSEL, 0, MAKELPARAM(start, end));
+    delete[] text;
 }
 
 //

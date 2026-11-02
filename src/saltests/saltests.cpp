@@ -119,6 +119,7 @@
 #include "salbkgndcheck.h"     // feature 372
 #include "salclipcheck.h"      // feature 375
 #include "salwsl.h"            // feature 374
+#include "salhexfield.h"       // feature 397
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -24394,6 +24395,271 @@ static void TestCabName381()
     }
 }
 
+// feature 397: the tidying of a hex-mode search field (salhexfield.h)
+
+// the loop of DoHexValidation before feature 397, verbatim on char (text = the field read into a
+// buffer of textLen bytes) - the reference the UTF-16 rule must match for code-page characters
+static void HexTidyOld397(char* text, int textLen, int& start, int& end)
+{
+    char* s = text;
+    while (*s != 0 && *s == ' ')
+        s++;
+    if (s != text)
+    {
+        start -= (int)(s - text);
+        end -= (int)(s - text);
+        if (start < 0)
+            start = 0;
+        if (end < 0)
+            end = 0;
+        memmove(text, s, strlen(s) + 1);
+    }
+    s = text;
+    BOOL openedQuotes = FALSE;
+    char *st = s, *strEnd = text + strlen(text);
+    while (*s != 0)
+    {
+        if (*s == '"')
+        {
+            if (!openedQuotes && s > text && *(s - 1) != ' ' && strEnd - text < textLen - 1)
+            {
+                if (start > s - text)
+                    start++;
+                if (end > s - text)
+                    end++;
+                memmove(s + 1, s, (strEnd - s) + 1);
+                *s++ = ' ';
+                strEnd++;
+            }
+            else
+            {
+                if (openedQuotes && s + 1 < strEnd && *(s + 1) != ' ' &&
+                    strEnd - text < textLen - 1)
+                {
+                    if (start >= (s - text) + 1)
+                        start++;
+                    if (end >= (s - text) + 1)
+                        end++;
+                    memmove(s + 2, s + 1, strEnd - s);
+                    *(s + 1) = ' ';
+                    strEnd++;
+                }
+                if (openedQuotes && s + 1 < strEnd)
+                    s++;
+                st = s + 1;
+            }
+            openedQuotes = !openedQuotes;
+        }
+        else
+        {
+            if (!openedQuotes)
+            {
+                if (*s == ' ')
+                {
+                    if (st == s) // '  ' -> ' '
+                    {
+                        s--;
+                        if (start >= st - text)
+                            start--;
+                        if (end >= st - text)
+                            end--;
+                        memmove(s, st, (strEnd - st) + 1);
+                        strEnd--;
+                    }
+                    else
+                        st = s + 1;
+                }
+                else
+                {
+                    if ((s - st) == 2) // 'ABC' -> 'AB C'
+                    {
+                        if (strEnd - text < textLen - 1)
+                        {
+                            if (start >= s - text)
+                                start++;
+                            if (end >= s - text)
+                                end++;
+                            memmove(s + 1, s, (strEnd - s) + 1);
+                            *s = ' ';
+                            st = s + 1;
+                            strEnd++;
+                        }
+                    }
+                }
+            }
+        }
+        s++;
+    }
+}
+
+// runs the rule on `in` in a buffer sized as DoHexValidation sizes it; returns the text
+static std::wstring HexTidy397(const wchar_t* in, int& start, int& end, size_t maxLen)
+{
+    size_t len = wcslen(in);
+    size_t cap = (len > maxLen ? len : maxLen) + 1;
+    std::vector<wchar_t> buf(cap, L'#');
+    wmemcpy(buf.data(), in, len + 1);
+    bool ok = SalHexFieldTidyW(buf.data(), cap, &start, &end, maxLen);
+    CHECK(ok);
+    CHECK(buf[cap - 1] == 0 || wcslen(buf.data()) < cap); // terminated inside the buffer
+    return std::wstring(buf.data());
+}
+
+static void TestHexFieldTidy397()
+{
+    // (1) fixed cases of the old behaviour (ASCII)
+    struct Case
+    {
+        const wchar_t* in;
+        int start;
+        const wchar_t* out;
+        int outStart;
+    };
+    static const Case cases[] = {
+        {L"", 0, L"", 0},
+        {L"41424", 5, L"41 42 4", 7},     // the probe's grep-group: typed 41424
+        {L"414", 3, L"41 4", 4},          // the third digit gets a space before it
+        {L"  41", 4, L"41", 2},           // leading spaces dropped, the caret follows
+        {L"  41", 1, L"41", 0},           // ... not below 0
+        {L"41  42", 4, L"41 42", 3},      // a second space dropped
+        {L"41\"a\"", 5, L"41 \"a\"", 6},  // a space before an opening quote glued to 41
+        {L"\"a\"41", 4, L"\"a\" 41", 5},  // a space after a closing quote glued to 41
+        {L"\"a b\"", 5, L"\"a b\"", 5},   // inside quotes nothing changes
+        {L"\"abcdef\"", 3, L"\"abcdef\"", 3},
+    };
+    for (int i = 0; i < _countof(cases); i++)
+    {
+        int st = cases[i].start, en = cases[i].start;
+        std::wstring out = HexTidy397(cases[i].in, st, en, 200);
+        CHECK(out == cases[i].out);
+        CHECK(st == cases[i].outStart && en == cases[i].outStart);
+    }
+
+    // (2) quoted letters outside any code page stay as typed; the caret in UTF-16 units
+    {
+        int st = 8, en = 8; // "U+4E01..U+4E05" then 4 typed after the closing quote: caret after 4
+        std::wstring out = HexTidy397(L"\"\x4E01\x4E02\x4E03\x4E04\x4E05\"4", st, en, 200);
+        CHECK(out == L"\"\x4E01\x4E02\x4E03\x4E04\x4E05\" 4");
+        CHECK(st == 9 && en == 9);
+        int st2 = 10, en2 = 10; // then 1: unchanged, caret at the end
+        out = HexTidy397(L"\"\x4E01\x4E02\x4E03\x4E04\x4E05\" 41", st2, en2, 200);
+        CHECK(out == L"\"\x4E01\x4E02\x4E03\x4E04\x4E05\" 41");
+        CHECK(st2 == 10 && en2 == 10);
+        int st3 = 5, en3 = 5; // the probe's grep-mid: a typed inside the quotes
+        out = HexTidy397(L"\"\x4E01\x4E02\x4E03" L"a\x4E04\x4E05\" 41", st3, en3, 200);
+        CHECK(out == L"\"\x4E01\x4E02\x4E03" L"a\x4E04\x4E05\" 41");
+        CHECK(st3 == 5 && en3 == 5);
+        int st4 = 3, en4 = 3; // a pair (U+1F600) inside quotes is kept whole
+        out = HexTidy397(L"\"\xD83D\xDE00\"41", st4, en4, 200);
+        CHECK(out == L"\"\xD83D\xDE00\" 41");
+        CHECK(st4 == 3 && en4 == 3);
+        int st5 = 0, en5 = 8; // a selection moves at both ends
+        out = HexTidy397(L"  \"\x00E9\x4E01\"41", st5, en5, 200);
+        CHECK(out == L"\"\x00E9\x4E01\" 41");
+        CHECK(st5 == 0 && en5 == 7);
+    }
+
+    // (3) a surrogate pair outside quotes is never split by the grouping (invalid hex, refused at
+    // OK); the old rule (by units) would put a space between its halves
+    {
+        int st = 4, en = 4;
+        std::wstring out = HexTidy397(L"4\xD83D\xDE00" L"1", st, en, 200);
+        CHECK(out == L"4\xD83D\xDE00" L"1");
+        CHECK(st == 4 && en == 4);
+        int st2 = 3, en2 = 3; // the pair as the first two units: the third unit is ASCII, grouped
+        out = HexTidy397(L"\xD83D\xDE00" L"4", st2, en2, 200);
+        CHECK(out == L"\xD83D\xDE00 4");
+        CHECK(st2 == 4 && en2 == 4);
+    }
+
+    // (4) the limit: no insertion at the field's limit, nothing cut; a text longer than the limit
+    // (set by the program, not typed) is kept whole
+    {
+        int st = 3, en = 3;
+        std::wstring out = HexTidy397(L"414", st, en, 3);
+        CHECK(out == L"414" && st == 3);
+        int st2 = 3, en2 = 3;
+        out = HexTidy397(L"414", st2, en2, 4);
+        CHECK(out == L"41 4" && st2 == 4);
+        std::wstring longText(250, L'4');
+        int st3 = 250, en3 = 250;
+        out = HexTidy397(longText.c_str(), st3, en3, 200);
+        CHECK(out == longText && st3 == 250); // no room: no insertion, not cut
+        std::wstring longQuoted = L"\"" + std::wstring(240, (wchar_t)0x4E01) + L"\"  41";
+        int st4 = 0, en4 = 0;
+        out = HexTidy397(longQuoted.c_str(), st4, en4, 200);
+        CHECK(out == L"\"" + std::wstring(240, (wchar_t)0x4E01) + L"\" 41"); // only the folded space
+        // a buffer smaller than maxLen + 1 still never overflows (the buffer bounds the insertions)
+        wchar_t tight[5] = L"4142";
+        int st5 = 4, en5 = 4;
+        CHECK(SalHexFieldTidyW(tight, _countof(tight), &st5, &en5, 200));
+        CHECK(wcscmp(tight, L"4142") == 0 && st5 == 4);
+    }
+
+    // (5) refusals
+    {
+        int st = 0, en = 0;
+        wchar_t one[1] = L"";
+        CHECK(!SalHexFieldTidyW(NULL, 10, &st, &en, 200));
+        CHECK(!SalHexFieldTidyW(one, 0, &st, &en, 200));
+        CHECK(!SalHexFieldTidyW(one, 1, NULL, &en, 200));
+        CHECK(SalHexFieldTidyW(one, 1, &st, &en, 200) && one[0] == 0);
+    }
+
+    // (6) brute force: every text of length 0..6 over {' ', '"', '4', 'a'}, every caret and the
+    // whole-text selection, limits 200 and len / len + 1: the same text and caret as the old loop
+    {
+        static const char alphabet[] = {' ', '"', '4', 'a'};
+        int compared = 0, differ = 0;
+        for (int len = 0; len <= 6; len++)
+        {
+            int total = 1;
+            for (int k = 0; k < len; k++)
+                total *= 4;
+            for (int code = 0; code < total; code++)
+            {
+                char txt[8];
+                int c = code;
+                for (int k = 0; k < len; k++)
+                {
+                    txt[k] = alphabet[c % 4];
+                    c /= 4;
+                }
+                txt[len] = 0;
+                static const int limits[] = {200, -1, -2};
+                for (int li = 0; li < _countof(limits); li++)
+                {
+                    int maxLen = limits[li] > 0 ? limits[li] : len + (limits[li] == -1 ? 0 : 1);
+                    if (maxLen < len)
+                        continue;
+                    for (int sel = -1; sel <= len; sel++)
+                    {
+                        int s0 = sel < 0 ? 0 : sel, e0 = sel < 0 ? len : sel;
+                        char old[256];
+                        memset(old, 0, sizeof(old));
+                        strcpy(old, txt);
+                        int os = s0, oe = e0;
+                        HexTidyOld397(old, maxLen + 1, os, oe);
+                        wchar_t w[8];
+                        for (int k = 0; k <= len; k++)
+                            w[k] = (wchar_t)(unsigned char)txt[k];
+                        int ns = s0, ne = e0;
+                        std::wstring out = HexTidy397(w, ns, ne, (size_t)maxLen);
+                        std::wstring oldW;
+                        for (const char* p = old; *p != 0; p++)
+                            oldW += (wchar_t)(unsigned char)*p;
+                        compared++;
+                        if (out != oldW || ns != os || ne != oe)
+                            differ++;
+                    }
+                }
+            }
+        }
+        CHECK(compared > 50000);
+        CHECK(differ == 0);
+    }
+}
+
 // feature 346: Shift+F6 opens the in-place rename; the other F6 keys keep their commands
 // (src/common/salrenamekey.h)
 static void TestRenameInPlaceKey346()
@@ -26097,6 +26363,7 @@ int main(int argc, char** argv)
     TestBkgndPathCheck372();
     TestClipCheck375();
     TestCabName381();
+    TestHexFieldTidy397();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

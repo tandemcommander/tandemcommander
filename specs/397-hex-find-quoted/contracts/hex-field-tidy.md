@@ -2,10 +2,10 @@
 
 ```cpp
 // text: NUL-terminated, buffer of `capacity` units; start/end: the caret in UTF-16 units;
-// maxLen: a space is inserted only while the text is shorter than maxLen.
-// Returns false (nothing changed) when text is NULL, capacity is 0 or capacity <= maxLen while
-// the text is shorter than maxLen (no room to insert): the caller sizes the buffer
-// max(len, maxLen) + 1.
+// maxLen: a space is inserted only while the text is shorter than maxLen and the buffer has room
+// for it (length + 1 < capacity); the caller sizes the buffer max(len, maxLen) + 1, so maxLen
+// is the effective limit. Returns false (nothing done) when text is NULL or capacity is 0, else
+// true.
 bool SalHexFieldTidyW(wchar_t* text, size_t capacity, int* start, int* end, size_t maxLen);
 ```
 

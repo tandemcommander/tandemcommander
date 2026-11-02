@@ -303,6 +303,7 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Hex-mode "not hex" check selects the wrong characters after non-ASCII text](items/hex-mode-not-hex-check-selects-the-wrong-characters-after/desc.md) | bug | 2 | encoding | measure:397 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 
 ## Parked
