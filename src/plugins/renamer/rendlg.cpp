@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "precomp.h"
+#include "../../common/salreparse.h" // feature 388: "Include subdirectories" never walks a directory link
 
 int DialogWidth;
 int DialogHeight;
@@ -1170,6 +1171,24 @@ void CRenamerDialog::LoadSelection()
     }
 }
 
+// feature 388: is a selected (or focused) folder item a junction / directory link? The panel's data
+// has its attributes but not its reparse tag: a folder listed with the reparse bit is looked up once
+// (FindFirstFileW on its own name lists its own entry, tag in dwReserved0); a failed look-up is a
+// link (fail closed, SalListedDirIsLink). A folder without the bit is plain - no system call.
+static BOOL SelectedDirIsLink(const CSourceFile* item)
+{
+    if ((item->Attr & FILE_ATTRIBUTE_REPARSE_POINT) == 0)
+        return FALSE;
+    WIN32_FIND_DATAW fd;
+    WCHAR* wName = SplU8ToWExtAlloc(item->FullName);
+    HANDLE h = wName != NULL ? FindFirstFileW(wName, &fd) : INVALID_HANDLE_VALUE;
+    free(wName);
+    if (h == INVALID_HANDLE_VALUE)
+        return SalListedDirIsLink(item->Attr, FALSE, 0);
+    FindClose(h);
+    return SalListedDirIsLink(fd.dwFileAttributes, TRUE, fd.dwReserved0);
+}
+
 void CRenamerDialog::ReloadSourceFiles()
 {
     CALL_STACK_MESSAGE1("CRenamerDialog::ReloadSourceFiles()");
@@ -1234,7 +1253,10 @@ void CRenamerDialog::ReloadSourceFiles()
 
         CSourceFile* item =
             ProcessRenamed && i < RenamedFiles.Count ? RenamedFiles[i++] : NotRenamedFiles[j++];
-        if (subdirs && item->IsDir)
+        // feature 388: a selected folder that is a junction / directory link is listed as an item
+        // (the else branch), never walked - its target lies outside the selection (as the core's
+        // Change Case with subdirectories, 213)
+        if (subdirs && item->IsDir && !SelectedDirIsLink(item))
         {
             // feature 209: the folder where the item IS (its FullName), not Root + its name - a renamed
             // folder may lie elsewhere (a full-path run empties Root: "name\*.*" was read relative to
@@ -1292,6 +1314,14 @@ void CRenamerDialog::ReloadSourceFiles()
     if (success)
     {
         SourceFilesValid = TRUE;
+
+        // feature 388: LoadSubdir lists directory links as folder items too - count them all
+        dirs = 0;
+        for (int k = 0; k < SourceFiles.Count; k++)
+        {
+            if (SourceFiles[k]->IsDir)
+                dirs++;
+        }
 
         // tell the list view the new item count
         Preview->SetItemCount(SourceFiles.Count, LVSICF_NOSCROLL, 1);
@@ -1434,7 +1464,33 @@ BOOL CRenamerDialog::LoadSubdir(char* path, const char* subdir)
 
         if (fileName[0] != 0 && strcmp(fileName, ".") && strcmp(fileName, ".."))
         {
-            if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+                SalListedDirIsLink(fd.dwFileAttributes, TRUE, fd.dwReserved0))
+            {
+                // feature 388: a junction / directory symbolic link / mount point (the listed tag,
+                // fail closed) is never walked - its target's files lie outside the selection and a
+                // link back up listed the same files once per level; the link itself is an item,
+                // its name matched as a folder's (no extension)
+                if (SalMaskGroup->AgreeMasks(fileName, NULL))
+                {
+                    CSourceFile* item = new CSourceFile(fd, fileName, path, pathLen, TRUE);
+                    if (item->NameLen < MAX_PATH)
+                        SourceFiles.Add(item);
+                    else
+                    {
+                        BOOL skip;
+                        FileError(HWindow, item->FullName, IDS_TOOLONGPATH, FALSE,
+                                  &skip, &SkipAllLongNames, IDS_ERROR);
+                        delete item;
+                        if (!skip)
+                        {
+                            ret = FALSE;
+                            break;
+                        }
+                    }
+                }
+            }
+            else if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
                 if (!LoadSubdir(path, fileName))
                 {

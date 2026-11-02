@@ -245,6 +245,8 @@ function Run-Link([string]$Case, [scriptblock]$Setup) {
         $shown = $(if ($rows.Count -le 12) { ($rows | ForEach-Object { Tail $_ 60 }) -join ', ' } else { (($rows | Select-Object -First 6 | ForEach-Object { Tail $_ 60 }) -join ', ') + ', ...' })
         $facts = ("rows {0} (expected {1}); below the link target {2}; subdirectories ticked {3}; boxes: {4}; rows: {5}" -f $pv.Count, $exp.Count, $leak.Count, $checked, (Tail $texts 160), $shown)
         if ($c.NewName -and $ok) {
+            # back to file-name mode (CMD_FILENAMES 607): in full-path mode a plain new name is "Not valid full path"
+            [void][Drv098f]::PostMessageW($dlg, 0x0111, [IntPtr]607, [IntPtr]::Zero); Start-Sleep -Milliseconds 1000
             $nn = Kid $dlg 106 'ComboBox'
             [void][Drv098f]::SetText($nn, $c.NewName, 5000)
             Start-Sleep -Milliseconds 1500

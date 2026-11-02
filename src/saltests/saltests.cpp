@@ -12599,6 +12599,30 @@ static void TestAttrsLink253()
     CHECK(!SalAttrsLinkRefusesEncryption(FALSE, TRUE, dir, dir | enc));                            // not a link: encrypted as before
 }
 
+// feature 388: the Renamer's "Include subdirectories" never walks a directory link - decided from the
+// listed attributes and the listed tag (WIN32_FIND_DATA.dwReserved0), fail closed
+static void TestListedDirIsLink388()
+{
+    const DWORD d = FILE_ATTRIBUTE_DIRECTORY;
+    const DWORD rp = FILE_ATTRIBUTE_REPARSE_POINT;
+    CHECK(!SalListedDirIsLink(d, TRUE, 0));                              // a plain folder: walked
+    CHECK(!SalListedDirIsLink(d, FALSE, 0));                             // a plain folder whose look-up failed: as before
+    CHECK(!SalListedDirIsLink(d, TRUE, IO_REPARSE_TAG_MOUNT_POINT));     // a stale tag without the bit: the bit decides
+    CHECK(SalListedDirIsLink(d | rp, TRUE, IO_REPARSE_TAG_MOUNT_POINT)); // a junction / volume mount point
+    CHECK(SalListedDirIsLink(d | rp, TRUE, IO_REPARSE_TAG_SYMLINK));     // a directory symbolic link
+    CHECK(SalListedDirIsLink(d | rp, TRUE, 0xA000001D));                 // IO_REPARSE_TAG_LX_SYMLINK (WSL)
+    CHECK(SalListedDirIsLink(d | rp, TRUE, 0x20000123));                 // an unknown name surrogate
+    CHECK(SalListedDirIsLink(d | rp, TRUE, 0));                          // the bit without a tag: fail closed
+    CHECK(SalListedDirIsLink(d | rp, FALSE, 0));                         // the tag could not be had: fail closed
+    CHECK(SalListedDirIsLink(d | rp, FALSE, 0x9000001A));                // unread wins over a stale value
+    CHECK(!SalListedDirIsLink(d | rp, TRUE, 0x9000001A));                // IO_REPARSE_TAG_CLOUD: a plain folder (062 C3)
+    CHECK(!SalListedDirIsLink(d | rp, TRUE, 0x9000101A));                // IO_REPARSE_TAG_CLOUD_1
+    CHECK(!SalListedDirIsLink(d | rp, TRUE, 0x80000021));                // IO_REPARSE_TAG_ONEDRIVE
+    CHECK(!SalListedDirIsLink(d | rp, TRUE, 0x80000013));                // IO_REPARSE_TAG_DEDUP
+    CHECK(!SalListedDirIsLink(d | rp, TRUE, 0x80000017));                // IO_REPARSE_TAG_WOF
+    CHECK(!SalListedDirIsLink(d | rp, TRUE, 0x00000123));                // a third-party non-surrogate tag
+}
+
 // feature 272: a file symbolic link's own entry - its compression and times, never its target file's;
 // its encryption change refused; a reparse file that is not a link keeps the old way
 static void TestAttrsFileLink272()
@@ -25658,6 +25682,7 @@ int main(int argc, char** argv)
     TestRegKeyIdBelow294();
     TestDeleteAsDirLink197();
     TestAttrsLink253();
+    TestListedDirIsLink388();
     TestAttrsFileLink272();
     TestReparseNameAsPath219();
     TestNamePrefixBytes222();

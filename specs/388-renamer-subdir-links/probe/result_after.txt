@@ -1,0 +1,21 @@
+ren_link_probe (feature 388)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 01:51; ACP 1250; registry key existed True
+
+out        RUN    PASS        rows 3 (expected 3); below the link target 0; subdirectories ticked 1; boxes: no box; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\out\sel\a.txt, C:\Users\pavel\AppData\Local\Temp\tc388_ren\out\sel\out, ...:\Users\pavel\AppData\Local\Temp\tc388_ren\out\sel\sub\b.txt
+out        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+loop       RUN    PASS        rows 2 (expected 2); below the link target 0; subdirectories ticked 1; boxes: no box; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\loop\sel\a.txt, C:\Users\pavel\AppData\Local\Temp\tc388_ren\loop\sel\loop
+loop       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+selected   RUN    PASS        rows 1 (expected 1); below the link target 0; subdirectories ticked 1; boxes: no box; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\selected\jsel
+selected   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+symlink    RUN    PASS        rows 2 (expected 2); below the link target 0; subdirectories ticked 1; boxes: no box; rows: ...:\Users\pavel\AppData\Local\Temp\tc388_ren\symlink\sel\a.txt, C:\Users\pavel\AppData\Local\Temp\tc388_ren\symlink\sel\sl
+symlink    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+mask       RUN    PASS        rows 2 (expected 2); below the link target 0; subdirectories ticked 1; boxes: no box; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\mask\sel\a.txt, ...\Users\pavel\AppData\Local\Temp\tc388_ren\mask\sel\sub\b.txt
+mask       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+plain      RUN    PASS        rows 2 (expected 2); below the link target 0; subdirectories ticked 1; boxes: no box; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\plain\sel\a.txt, ...Users\pavel\AppData\Local\Temp\tc388_ren\plain\sel\x\y\z.txt
+plain      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+rename     RUN    PASS        rows 3 (expected 3); below the link target 0; subdirectories ticked 1; boxes: no box; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\rename\sel\a.txt, C:\Users\pavel\AppData\Local\Temp\tc388_ren\rename\sel\out, ...sers\pavel\AppData\Local\Temp\tc388_ren\rename\sel\sub\b.txt; rename boxes: no box; on disk: n_a.txt + sub\n_b.txt True; n_out a junction True; target holds o1.txt,o2.txt,o3.txt (expected o1.txt,o2.txt,o3.txt)
+rename     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 14, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

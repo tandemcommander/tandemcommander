@@ -23,7 +23,8 @@ struct CSourceFile
     CSourceFile(CSourceFile* orig);
     CSourceFile(CSourceFile* orig, const char* newName);
     // 'fd' comes from the W enumeration, 'fileName' is fd.cFileName converted to UTF-8
-    CSourceFile(WIN32_FIND_DATAW& fd, const char* fileName, const char* path, int pathLen);
+    // feature 388: 'isDir' for a directory link listed as an item (no extension, a folder row)
+    CSourceFile(WIN32_FIND_DATAW& fd, const char* fileName, const char* path, int pathLen, BOOL isDir = FALSE);
     ~CSourceFile();
     CSourceFile* SetName(const char* name);
 };

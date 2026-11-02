@@ -34,6 +34,21 @@ inline BOOL SalDeleteAsDirLinkDecision(BOOL destinationRead, BOOL tagRead, DWORD
     return tag != 0 && (tag & 0x20000000) != 0; // IsReparseTagNameSurrogate
 }
 
+// feature 388: a walk that must stay inside the selection (the Renamer's "Include subdirectories")
+// decides from the LISTING - a directory listed with FILE_ATTRIBUTE_REPARSE_POINT carries its tag
+// in WIN32_FIND_DATA.dwReserved0. A link: the tag could not be had ('tagRead' FALSE), the bit
+// without a tag (0), or a name surrogate - the Delete rule above without the destination read (a
+// read destination only ever makes an entry a link). A readable tag that is not a name surrogate
+// (a cloud placeholder, a deduplicated folder) is a plain directory; no reparse bit - plain.
+inline BOOL SalListedDirIsLink(DWORD listedAttr, BOOL tagRead, DWORD tag)
+{
+    if ((listedAttr & FILE_ATTRIBUTE_REPARSE_POINT) == 0)
+        return FALSE;
+    if (!tagRead || tag == 0)
+        return TRUE; // cannot tell: never walked through what may be a link
+    return SalDeleteAsDirLinkDecision(FALSE, TRUE, tag);
+}
+
 // feature 253: Change Attributes on a directory link's own entry (213 stopped the walk into it)
 // opened the link without FILE_FLAG_OPEN_REPARSE_POINT - the TARGET folder was compressed,
 // uncompressed and re-timed. Feature 272: a file symbolic link did the same to its target FILE.

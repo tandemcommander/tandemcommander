@@ -76,7 +76,7 @@ CSourceFile::CSourceFile(CSourceFile* orig, const char* newName)
     State = 0;
 }
 
-CSourceFile::CSourceFile(WIN32_FIND_DATAW& fd, const char* fileName, const char* path, int pathLen)
+CSourceFile::CSourceFile(WIN32_FIND_DATAW& fd, const char* fileName, const char* path, int pathLen, BOOL isDir)
 {
     CALL_STACK_MESSAGE_NONE
     // 'fileName' is fd.cFileName in UTF-8 (plugin interface 104), 'path' is UTF-8 as well
@@ -87,16 +87,19 @@ CSourceFile::CSourceFile(WIN32_FIND_DATAW& fd, const char* fileName, const char*
     strcpy(FullName + pathLen, fileName);
     Name = FullName + pathLen;
     Ext = FullName + NameLen;
-    while (--Ext >= Name && *Ext != '.')
-        ;
-    if (Ext < Name)
-        Ext = FullName + NameLen; // ".cvspass" is an extension in Windows
-    else
-        Ext++;
+    if (!isDir) // directories do not have an extension (as the CFileData constructor)
+    {
+        while (--Ext >= Name && *Ext != '.')
+            ;
+        if (Ext < Name)
+            Ext = FullName + NameLen; // ".cvspass" is an extension in Windows
+        else
+            Ext++;
+    }
     Size = CQuadWord(fd.nFileSizeLow, fd.nFileSizeHigh);
     Attr = fd.dwFileAttributes;
     FileTimeToLocalFileTime(&fd.ftLastWriteTime, &LastWrite);
-    IsDir = FALSE;
+    IsDir = isDir ? 1 : 0;
     State = 0;
 }
 
