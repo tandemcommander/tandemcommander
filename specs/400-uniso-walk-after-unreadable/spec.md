@@ -42,11 +42,12 @@ those walks.
   located safely); the walk goes on with the parent's next records and later folders (autonomous run:
   conservative - the item's *Expected* "every readable file is listed" is reached for every folder
   that can be read; a damaged directory's tail is not trusted)
-- Q: Do out of memory and a refusal by the core (the listing could not take an entry) also let later
-  folders be descended? → A: no - those failures still end every later descent of the walk, as today
-  (the files of the directories already open are still listed, as today) (autonomous run:
-  conservative - they are not "a folder that cannot be read", and going on would repeat the failure
-  and its box in every later folder)
+- Q: Does out of memory (the reader could not hold a directory, a name or an entry) also let later
+  folders be descended? → A: no - it still ends every later descent of the walk, as today (the files
+  of the directories already open are still listed, as today); an entry the core refuses after the
+  listing's rule took it keeps feature 328 / 329's handling (left out, the listing marked, the walk
+  goes on, its box unchanged) (autonomous run: conservative - out of memory is not "a folder that
+  cannot be read", and going on would repeat the failure in every later folder)
 - Q: How is a crafted image kept from looping once later folders are descended? → A: each walk of the
   UDF and Xbox readers meets every directory once, as feature 328's ISO 9660 walk does; a directory
   met again is listed as an empty folder, without a box and without marking the listing (feature
@@ -131,7 +132,7 @@ limit, the program answers, one box at most; feature 328's LOOP rows still pass.
 
 - The root directory cannot be read: nothing of that file system is listed, as before (one box).
 - A damaged folder is the last record: nothing changes for the walk (there is nothing later).
-- Out of memory, or the core refusing an entry: later descents stop as before; one box at most.
+- Out of memory: later descents stop as before; one box at most.
 - A directory met again in the same walk: listed as an empty folder, no box, the listing not marked
   (feature 328's rule, now also for UDF and Xbox).
 - Feature 328's fit check and count walks of the ISO 9660 reader (quiet walks that decide Rock Ridge
@@ -151,8 +152,9 @@ limit, the program answers, one box at most; feature 328's LOOP rows still pass.
   read (feature 330): a whole unpack fails and "Delete archive after unpacking" keeps the image.
 - **FR-003**: A walk MUST show at most one error box for failures met inside its folder walk; later
   failures of the same walk are silent but mark the listing incomplete.
-- **FR-004**: Out of memory and a refusal by the core MUST still end every later descent of the walk
-  (unchanged); the box rule of FR-003 applies to them too.
+- **FR-004**: Out of memory MUST still end every later descent of the walk (unchanged); the box rule
+  of FR-003 applies to its box too. An entry the core refuses after the listing's rule took it keeps
+  its feature 328 / 329 handling and box.
 - **FR-005**: The UDF and Xbox walks MUST walk each directory at most once per walk; a directory met
   again is listed as an empty folder without a box and without marking the listing (feature 328's
   rule for ISO 9660).
@@ -163,8 +165,8 @@ limit, the program answers, one box at most; feature 328's LOOP rows still pass.
 
 ### Key Entities
 
-- **Walk state**: per walk of one file system - whether the walk was stopped by out of memory / a
-  core refusal (no later descent), whether its error box was already shown, and the directories met.
+- **Walk state**: per walk of one file system - whether the walk was stopped by out of memory (no
+  later descent), whether its error box was already shown, and the directories met.
 
 ## Success Criteria *(mandatory)*
 
