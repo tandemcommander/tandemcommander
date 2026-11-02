@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an ISO 9660 folder met again with a larger length is listed empty](items/iso-plug-in-an-iso-9660-folder-met-again-with-a-larger/desc.md) | bug | 7 | archives | 401 |
 
 ## Next
 
@@ -307,6 +306,8 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: a crafted image of folders naming one directory with many lengths lists slowly](items/iso-plug-in-a-crafted-image-of-folders-naming-one-directory/desc.md) | bug | 4 | archives | review:401 | 2026-11-02 |
+| [ISO plug-in: an ISO 9660 folder length of 2 GiB or more shows a stuck memory box](items/iso-plug-in-an-iso-9660-folder-length-of-2-gib-or-more-shows/desc.md) | bug | 5 | archives | review:401 | 2026-11-02 |
 | [ISO plug-in: an ISO 9660 folder met again is listed empty and the image deleted](items/iso-plug-in-an-iso-9660-folder-met-again-is-listed-empty-and/desc.md) | bug | 5 | archives | measure:401 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 

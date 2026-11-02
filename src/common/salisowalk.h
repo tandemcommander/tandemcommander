@@ -84,7 +84,10 @@ inline bool SalIsoWalkBoxQuiet(SalIsoWalk& walk, bool quiet)
 // alone listed the second folder empty without a mark (its later files lost, the
 // image deleted by a whole unpack - 400's Xbox walk, 328's ISO 9660 walk). A
 // walk stays bounded: each pair is walked once, and the pairs come from the
-// image's records.
+// image's records - at most one walk per folder record, so a crafted image of N
+// records naming one directory with N lengths lists N copies of it (work and
+// memory grow with N squared; 401 review 1: N = 2,000 took 19 s, 525 MB - its
+// real content, a listing budget is an Inbox item).
 inline unsigned long long SalIsoFolderVisitKey(unsigned long start, unsigned long length)
 {
     return ((unsigned long long)length << 32) | (unsigned long long)start;

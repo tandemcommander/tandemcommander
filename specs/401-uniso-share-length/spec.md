@@ -125,7 +125,10 @@ Two folder records naming one directory with the same start block and the same l
 - **FR-002**: A folder met again with the same block and the same length MUST keep feature 328's
   behaviour (listed empty, nothing marked).
 - **FR-003**: Every walk MUST stay bounded: each distinct (block, length) pair is walked at most once
-  per walk; the pairs come from the image's records.
+  per walk; the pairs come from the image's records. The bound is the number of folder records (not of
+  directory sectors, as before): a crafted image of N records naming one directory with N lengths lists
+  N copies of it - work and memory grow with N squared (review 1: N = 2,000 took 19.4 s and 525 MB to
+  open; the Xbox walk has the same bound since 400). A listing budget is outside this item (Inbox).
 - **FR-004**: The count walks of 328's decision mode MUST take out exactly the folders they added,
   by the same key.
 - **FR-005**: No other reader (UDF, Xbox, HFS+) changes its behaviour (the Xbox walk may take the

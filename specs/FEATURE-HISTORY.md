@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381, 397, 398 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395, 396, 400 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395, 396, 400, 401 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320, 399 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -6409,3 +6409,24 @@ a few early ones are out of sequence).
   328 20 / 0, 329 14 / 0, 327 77 / 0; saltests 282,271 -> 282,309 / 0 (`TestIsoWalk400`; mutants of the
   three rules fail 6 / 5 / 3); refute-first reviews: 1 (one MUST, fixed; SHOULD -> Inbox), 2 (no MUST;
   SHOULD fixed; NOTE -> Inbox).
+- 401-uniso-share-length: a disc image in which two ISO 9660 folder records point to one directory with
+  different lengths (crafted or damaged) listed the second folder empty - no box, the listing not marked,
+  and a whole Unpack with "Delete archive after unpacking" deleted the image although the files of the
+  longer part were never extracted - now a folder is recognised as met before by its start block and
+  its data length together (`SalIsoFolderVisitKey`, `src/common/salisowalk.h`; the listing walk, 328's
+  fit walk and count walks; the Xbox walk of 400 takes the same function, same value), so each folder is
+  walked for its own length and a loop still ends (one walk per distinct pair). Traps: the item's
+  premise was only reasoned - measured first on plain ISO 9660 images written from scratch
+  (`img401.py`, no WSL); the mutant of the key rule (start alone) fails 11 saltests, but saltests model
+  the walk - the plug-in's use of the key is proven by the probe only. Limits: the bound is the number
+  of folder records, so a crafted image of N records naming one directory with N lengths lists N copies
+  (review 1: N = 2,000, 19.4 s / 525 MB; Inbox `iso-plug-in-a-crafted-image-of-folders-naming-one-directory`);
+  a folder length of 2 GiB or more shows the core's memory box (pre-existing, now also through a block
+  met before; Inbox `iso-plug-in-an-iso-9660-folder-length-of-2-gib-or-more-shows`); one block with one
+  length met again keeps 328's rule - listed empty, not marked (UDF / Xbox mark it since 400; Inbox
+  `iso-plug-in-an-iso-9660-folder-met-again-is-listed-empty-and`); a longer length past the end of the
+  image now fails closed (one box, image kept). From backlog item
+  `iso-plug-in-an-iso-9660-folder-met-again-with-a-larger`. Probe `iso401_probe` (IS-SHARE, IS-SHARE2,
+  IS-LOOP, IS-HLINK, IS-MANY) 6 / 4 -> 10 / 0; 328 20 / 0, 400 48 / 0; saltests 282,309 -> 282,328 / 0
+  (`TestIsoWalk401`); refute-first review 1: no MUST (its negative control: main's uniso.spl fails the
+  four rows), SHOULD x2 -> bound documented + Inbox, NOTE x4 recorded.

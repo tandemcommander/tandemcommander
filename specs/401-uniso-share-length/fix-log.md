@@ -60,3 +60,40 @@ met again with a larger length is listed empty.
 - The item's *Approach*: key by block and data length (walk again), as 400's `CXDVDFS::VisitFolder`.
 - Same block and same length met again: 328's behaviour kept (listed empty, not marked) - not named by
   the item (stop-rules §1 step 4); UDF / Xbox mark it since 400 - inconsistency -> Inbox item.
+
+## Inbox
+
+- `iso-plug-in-an-iso-9660-folder-met-again-is-listed-empty-and` (measure:401) - same block and same
+  length met again: listed empty, not marked, the image deleted (UDF / Xbox mark it since 400).
+
+## Review
+
+### Review 1 (refute-first, general-purpose agent) - no MUST
+
+Built `uniso.spl` of main (53eb98ab) and HEAD (d8f5358f) in its own worktrees and build folders, swapped
+into copies of the Debug tree. `iso401_probe.ps1`: main fails IS-SHARE, IS-SHARE2, IS-LOOP, IS-MANY
+(as result_before), HEAD passes all five. saltests of HEAD 282,302 / 0 (the 26 fewer than here are 305's
+volume-dependent checks). Callers enumerated (fit walk, listing walk, `CountUnder`, recursion,
+`CUDFISO::ListDirectory` for hybrids) - all take the 64-bit key; `CountUnder` removes only its keys; the
+Xbox key value unchanged; extraction reads the listing's extents (B/A2.TXT right). Registry restored
+identical; its worktrees removed.
+
+- S1 (SHOULD) - the bound is quadratic in folder records: N = 2,000 folders at one block with 2,000
+  lengths, 2,000 file records - open 19.4 s / 525 MB private (main 0.3 s / 50 MB, which dropped the
+  folders silently). Done: the bound stated in FR-003 and in the `SalIsoFolderVisitKey` comment;
+  Inbox item `iso-plug-in-a-crafted-image-of-folders-naming-one-directory` (review:401) for a listing
+  budget. Keying by start alone again would bring back the data loss - not done.
+- S2 (SHOULD) - a folder length of 2 GiB or more (`int size` negative -> `new char[size]`) shows the
+  core's "Insufficient memory" Abort / Retry / Ignore box; reachable before 401 through a fresh block
+  (control `isonegfresh`), 401 widens it to a block met before; no data loss (image kept). Done: Inbox
+  item `iso-plug-in-an-iso-9660-folder-length-of-2-gib-or-more-shows` (review:401), outside the item.
+- N1 - saltests check the shared key and a model walk, not `ListDirectoryRe`'s use of it; the GUI probe
+  is the proof for the plug-in (its negative control: main's build 6 / 4). Accepted.
+- N2 - a longer length past the end of the image now fails closed (one "Error reading directory
+  structure" box, image kept; main: listed empty, image deleted) - the spec's edge case, measured.
+- N3 - Rock Ridge decision mode with two lengths at one block not probed; code read, no defect.
+- N4 - FEATURE-HISTORY / CHANGELOG entries come at closing (step 8).
+
+After review 1: comment and spec changes only (no code); rebuilt, checks below repeated.
+- Checks after review 1: `.\build.cmd` BUILD SUCCEEDED; saltests 282,328 / 0; encoding guard 0;
+  `probe/result_after_review1.txt` PASS 10 / FAIL 0, registry restored identical.
