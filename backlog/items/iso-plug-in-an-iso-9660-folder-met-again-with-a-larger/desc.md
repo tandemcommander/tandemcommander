@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an ISO 9660 folder met again with a larger length is listed empty
 type: bug
-status: open
+status: in-progress
 severity: 7
 area: archives
 source: review:400
@@ -10,7 +10,7 @@ created: 2026-11-02
 updated: 2026-11-02
 verified: 2026-11-02 53eb98ab
 effort: S
-feature: -
+feature: 401
 related: []
 depends-on: []
 reason: -
@@ -62,3 +62,4 @@ key); count walks (`CountUnder`, `VisitedLog`) take their keys out the same way.
 - 2026-11-02 — related item iso-plug-in-after-a-folder-that-cannot-be-read-no-later done in feature 400
 - 2026-11-02 — moved to Next position 1
 - 2026-11-02 — verified at 53eb98ab: reproduced at 53eb98ab: crafted plain ISO 9660 images (img401.py), Unpack with delete - second folder at one block with another length listed empty, image deleted (probe iso401 before 6/4)
+- 2026-11-02 — run started, feature 401
