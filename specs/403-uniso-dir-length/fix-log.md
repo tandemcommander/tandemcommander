@@ -83,3 +83,40 @@ SalIsoWalkBoxQuiet path); U1 the 1-byte last-sector read relies on ReadBlock cop
   `saltests: 282415 checks, 0 failed`. A probe run of the length mutant alone would still pass IS-NEG
   (the last-sector read refuses those lengths too - past the 25-sector image), so the probe's negative
   control is main.
+
+## Review
+
+### Review 1 (refute-first, independent agent)
+
+- MUST: none. Re-ran saltests (282,415 / 0) and `iso403_probe` (12 / 0, registry identical); callers
+  enumerated (fit walk, listing walk, count walk, itself); the last-sector arithmetic matches ReadBlock;
+  the plug-in ABI untouched.
+- SHOULD 1 - nested readable folders: a folder's buffer is held while the walk descends its subfolders,
+  so a chain of folders of 256 MiB each (all readable) took 256 MiB more per level - measured by the
+  reviewer (`deep403.py`): peak private bytes depth 0 305 MiB, depth 1 547 MiB, depth 6 1,829 MiB; ~125
+  levels fit the listing's path -> the memory box again on a machine with less memory. Not a regression
+  (before, 2 GiB a level). **Fixed** (inside the item: "no way to end the program from a damaged image"):
+  `SalIsoDirTake` / `SalIsoDirGive` (salisowalk.h) - the bytes of the buffers the walk holds at once,
+  `CISO9660::DirBytesHeld` (a member, not in `Walk`: a count walk swaps `Walk` while the listing walk
+  still holds its buffers), taken after the last-sector read and before the allocation, given back by an
+  RAII guard on every way out; past 256 MiB together = a folder that cannot be read. saltests
+  282,415 -> 282,430 / 0 (15 checks, the chain of 125 levels and a real deep tree of 100 x 64 KiB).
+- NOTE 1 - the probe proved only the 2 GiB part (IS-HUGE / IS-PAST pass on main). **Done**: rows
+  IS-OVER (a readable folder of 256 MiB + 2048 inside a 256 MiB image - refused only by the limit) and
+  IS-DEEP (D of 128 MiB holding A0..A2 of 128 MiB each, nested). The past-the-end check before the
+  allocation is still proven by saltests only (telling it apart needs a peak-memory measurement) -
+  accepted.
+- NOTE 2 - NRG: `GetSectorOffset(int)` makes a block >= 0x80000000 negative; with NRG's DataOffset a last
+  block in 0xFFFFFF6A..0xFFFFFFFF can land on a valid offset, so up to 256 MiB is allocated before the real
+  read fails with the same box - bounded by the limit; accepted (pre-existing int parameter).
+- NOTE 3 - Joliet / UDF-hybrid not probed: the same function; accepted.
+- NOTE 4 - xdvdfs.cpp / nrg.cpp unchecked allocations: already Inbox items
+  (`iso-plug-in-an-xbox-folder-entry-claiming-a-huge-size`, `iso-plug-in-an-nrg-etnf-chunk-claiming-a-huge-size`).
+
+After the fix: `.\build.cmd` BUILD SUCCEEDED; saltests 282,430 / 0; encoding guard TOTAL: 0; probe
+`result_after_review1.txt` **16 PASS / 0 FAIL** (IS-DEEP: one box at sector #00000017 - A0, D read;
+IS-OVER: one box at #00000016). Negative control (budget off: `SalIsoDirTake` without the held check):
+saltests 6 failed; probe `-Only IS-DEEP,IS-OVER` (`result_negctl_budget.txt`) IS-DEEP FAIL (no box, the
+image deleted - every level read), IS-OVER PASS (the length rule); restored, rebuilt, 0 failed.
+Regression probes after the review fix (`probe/regress_<NNN>_review1.txt`): 328 20 / 0, 400 48 / 0,
+401 10 / 0, 402 10 / 0; registry identical each.

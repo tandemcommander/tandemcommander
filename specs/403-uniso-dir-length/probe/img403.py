@@ -16,6 +16,13 @@ specs/401-uniso-share-length/probe/img401.py.
   python -I img403.py isoedge <out>     root: A (dir of 3 sectors, its last one the image's last sector;
                                         A1.TXT in its first sector, A3.TXT in its last), TOP.TXT,
                                         ZLAST (Z.TXT) - nothing damaged (control)
+  python -I img403.py isodeep <out>     review 1: root: TOP.TXT, D (dir at 22, 128 MiB); sector 22 + j holds
+                                        one folder record Aj -> dir at 23 + j, 128 MiB (j = 0..2) - nested
+                                        readable folders whose buffers the walk holds at once (sparse file,
+                                        ~128 MiB)
+  python -I img403.py isoover <out>     review 1: root: TOP.TXT, D (dir at 22, 256 MiB + 2048 - readable,
+                                        within the image) - refused only by the length limit (sparse file,
+                                        ~256 MiB)
 
 Prints what it wrote.
 """
@@ -164,6 +171,53 @@ def cmd_edge(dst):
     return 0
 
 
+def write_sparse(dst, nsect, sectors, root_lba=20):
+    # the same volume as write_iso, written by seeking (the image is mostly zeros)
+    head = SECTOR * 24
+    small = {s: c for s, c in sectors.items() if s < 24}
+    write_iso(dst, 24, small, root_lba)
+    with open(dst, "r+b") as f:
+        f.seek(16 * SECTOR + 80)
+        f.write(both32(nsect))
+        f.truncate(nsect * SECTOR)
+        for s, c in sectors.items():
+            if s >= 24:
+                f.seek(s * SECTOR)
+                f.write(c)
+    assert head <= nsect * SECTOR
+
+
+def cmd_deep(dst):
+    # review 1 of 403 (its deep403.py, depth 3, 128 MiB folders): D_j's buffer covers the later sectors
+    root, top, b, depth, length = 20, 21, 22, 3, 128 * 1024 * 1024
+    sectors = {
+        root: sect(dot(root, SECTOR), dotdot(root, SECTOR), dirrec(b"D", b, length, True),
+                   dirrec(b"TOP.TXT;1", top, 3, False)),
+        top: b"TOP",
+    }
+    for j in range(depth):
+        sectors[b + j] = sect(dirrec(b"A%d" % j, b + j + 1, length, True))
+    nsect = b + depth + length // SECTOR + 2
+    write_sparse(dst, nsect, sectors)
+    print("isodeep: TOP.TXT, D (block %d, %d bytes) holding A0..A%d, each a folder of %d bytes one block on; %d sectors"
+          % (b, length, depth - 1, length, nsect))
+    return 0
+
+
+def cmd_over(dst):
+    root, top, b, length = 20, 21, 22, 256 * 1024 * 1024 + SECTOR
+    sectors = {
+        root: sect(dot(root, SECTOR), dotdot(root, SECTOR), dirrec(b"D", b, length, True),
+                   dirrec(b"TOP.TXT;1", top, 3, False)),
+        top: b"TOP",
+        b: sect(dot(b, length), dotdot(root, SECTOR)),
+    }
+    nsect = b + length // SECTOR + 2
+    write_sparse(dst, nsect, sectors)
+    print("isoover: TOP.TXT, D (block %d, %d bytes, readable); %d sectors" % (b, length, nsect))
+    return 0
+
+
 def main(argv):
     if len(argv) == 2 and argv[0] == "isoneg":
         return cmd_one(argv[1], "isoneg", 0xFFFFF800)
@@ -177,6 +231,10 @@ def main(argv):
         return cmd_past(argv[1])
     if len(argv) == 2 and argv[0] == "isoedge":
         return cmd_edge(argv[1])
+    if len(argv) == 2 and argv[0] == "isodeep":
+        return cmd_deep(argv[1])
+    if len(argv) == 2 and argv[0] == "isoover":
+        return cmd_over(argv[1])
     print(__doc__)
     return 2
 

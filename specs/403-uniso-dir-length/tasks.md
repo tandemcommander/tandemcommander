@@ -37,6 +37,11 @@
 
 - [X] T010 Encoding guard `python tools/check_encoding.py --strict` -> TOTAL: 0; update specs/403-uniso-dir-length/fix-log.md with after-results
 
+## Phase 7: Review 1
+
+- [X] T011 [US2] Budget of the buffers held at once: `SalIsoDirTake` / `SalIsoDirGive` in src/common/salisowalk.h, `CISO9660::DirBytesHeld` in src/plugins/uniso/iso9660.h, taken and given back (RAII) in `ListDirectoryRe` (src/plugins/uniso/iso9660.cpp); checks in `TestIsoDirLength403` (src/saltests/saltests.cpp)
+- [X] T012 [US2] Probe rows IS-DEEP and IS-OVER (specs/403-uniso-dir-length/probe/img403.py, iso403_probe.ps1); negative control with the budget off; regression probes again (regress_<NNN>_review1.txt)
+
 ## Dependencies
 
 T001 -> T002 -> T003 -> T004 -> T005 -> T006 -> T007 -> T008 / T009 -> T010. US2 builds on US1's site;

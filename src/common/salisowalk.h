@@ -127,3 +127,25 @@ inline bool SalIsoDirLastBlock(unsigned long long block, unsigned long long leng
         *last = block + more;
     return true;
 }
+
+// Feature 403 (review 1): the walk holds a folder's buffer while it walks the folders
+// below, so a chain of nested folders, each readable and within the limit, held one
+// buffer per level at once (measured: 256 MiB more per level; ~125 levels fit the
+// listing's path) - the core's memory box again. 'held' is the bytes of the buffers the
+// walk holds now (count walks inside it included). Takes 'length' and returns true when
+// the folder may be read: its length is readable (SalIsoDirLengthReadable) and all held
+// buffers together stay within SAL_ISO_DIR_MAX_LENGTH; false - a folder that cannot be
+// read, 'held' unchanged.
+inline bool SalIsoDirTake(unsigned long long& held, unsigned long long length)
+{
+    if (!SalIsoDirLengthReadable(length) || held > SAL_ISO_DIR_MAX_LENGTH || length > SAL_ISO_DIR_MAX_LENGTH - held)
+        return false;
+    held += length;
+    return true;
+}
+
+// Feature 403 (review 1): gives back what SalIsoDirTake took (the folder's buffer freed).
+inline void SalIsoDirGive(unsigned long long& held, unsigned long long length)
+{
+    held = length <= held ? held - length : 0;
+}

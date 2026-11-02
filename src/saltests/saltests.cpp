@@ -26862,6 +26862,45 @@ static void TestIsoDirLength403()
     CHECK(!SalIsoDirLastBlock(2, 0xFFFFFFFFFFFFFFFFULL, 1, &last) && last == 7); // block + more would wrap to 0
     CHECK(SalIsoDirLastBlock(1, 0xFFFFFFFFULL, 1, &last) && last == 0xFFFFFFFFULL); // exactly the last sector
     CHECK(SalIsoDirLastBlock(5, 2048, 2048, nullptr));
+
+    // review 1: the buffers the walk holds at once (a folder's while the folders below it are walked)
+    unsigned long long held = 0;
+    CHECK(SalIsoDirTake(held, 2048) && held == 2048);
+    CHECK(SalIsoDirTake(held, 4096) && held == 6144);
+    SalIsoDirGive(held, 4096);
+    CHECK(held == 2048);
+    SalIsoDirGive(held, 2048);
+    CHECK(held == 0);
+    CHECK(!SalIsoDirTake(held, 0) && held == 0);                          // the caller's own case
+    CHECK(!SalIsoDirTake(held, 0xFFFFF800ULL) && held == 0);              // the length rule first
+    CHECK(SalIsoDirTake(held, SAL_ISO_DIR_MAX_LENGTH) && held == SAL_ISO_DIR_MAX_LENGTH);
+    CHECK(!SalIsoDirTake(held, 1) && held == SAL_ISO_DIR_MAX_LENGTH);     // nothing left
+    SalIsoDirGive(held, SAL_ISO_DIR_MAX_LENGTH);
+    CHECK(held == 0);
+    SalIsoDirGive(held, 5); // more than held: never wraps
+    CHECK(held == 0);
+    held = SAL_ISO_DIR_MAX_LENGTH + 10; // never reached by Take - still refuses, no wrap
+    CHECK(!SalIsoDirTake(held, 1) && held == SAL_ISO_DIR_MAX_LENGTH + 10);
+    // the review's chain: nested folders of 256 MiB each - the first is read, every deeper one refused
+    // while it is held; a sibling after it is read again
+    held = 0;
+    int readLevels = 0;
+    for (int level = 0; level < 125; level++)
+        if (SalIsoDirTake(held, SAL_ISO_DIR_MAX_LENGTH))
+            readLevels++;
+    CHECK(readLevels == 1 && held == SAL_ISO_DIR_MAX_LENGTH);
+    SalIsoDirGive(held, SAL_ISO_DIR_MAX_LENGTH);
+    CHECK(SalIsoDirTake(held, SAL_ISO_DIR_MAX_LENGTH));
+    SalIsoDirGive(held, SAL_ISO_DIR_MAX_LENGTH);
+    // a real deep tree: 100 levels of 64 KiB folders are all read (6.25 MiB held at the deepest)
+    readLevels = 0;
+    for (int level = 0; level < 100; level++)
+        if (SalIsoDirTake(held, 65536))
+            readLevels++;
+    CHECK(readLevels == 100 && held == 100ULL * 65536);
+    for (int level = 0; level < 100; level++)
+        SalIsoDirGive(held, 65536);
+    CHECK(held == 0);
 }
 
 // Feature 402: the bounds of an Xbox (XDVDFS) directory entry (src/common/salisoxboxentry.h) - the

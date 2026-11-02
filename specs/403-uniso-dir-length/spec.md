@@ -45,6 +45,10 @@ extraction reads files sector by sector and never allocates by a file's length.
   more than one sector, its last sector is read first; when that read fails the folder is a folder that
   cannot be read, nothing is allocated (autonomous run: conservative - uses the same read path as the
   listing, works for every image container; a one-sector folder is read as before)
+- Q: Review 1 found nested readable folders of 256 MiB each still adding 256 MiB per level - is the limit
+  per folder or for all buffers held at once? → A: for all buffers the walk holds at once (count walks
+  included) - the item's *Expected* says no way to end the program from a damaged image (autonomous run:
+  item)
 - Q: Is any new message shown? → A: no - the existing "Error reading directory structure at sector #N.
   Incomplete content of ISO image." box, once per walk (features 330 / 400); no new UI string
   (autonomous run: item)
@@ -115,6 +119,8 @@ the image's last sector - is listed and extracted whole, with no window.
 
 ### Edge Cases
 
+- Nested folders each within the limit whose buffers together would pass it (review 1, IS-DEEP): the
+  deeper folder is a folder that cannot be read; a sibling after it is read again.
 - Length 0: unchanged (330: a silent folder that cannot be read; the listing marked).
 - Length exactly the limit (256 MiB): allowed by the rule; one byte more: refused.
 - A folder refused for its length that is met again with the same length in the same walk: 328 / 401's
@@ -136,6 +142,10 @@ the image's last sector - is listed and extracted whole, with no window.
   same way.
 - **FR-003**: A folder of more than one sector whose last sector cannot be read MUST be treated the same
   way before its buffer is allocated.
+- **FR-003a**: The directory buffers the walk holds at once (a folder's while the folders below it are
+  walked, count walks included) MUST stay within the limit (256 MiB) together; a folder whose buffer
+  would pass it MUST be treated the same way (review 1: nested readable folders of 256 MiB each took
+  256 MiB more per level).
 - **FR-004**: "Treated as a folder that cannot be read" MUST mean features 330 / 400's behaviour: the
   existing read-error box at most once per walk (none in a quiet walk), the listing marked incomplete,
   later folders still walked, a whole Unpack with "Delete archive after unpacking" keeps the image.
@@ -155,8 +165,8 @@ the image's last sector - is listed and extracted whole, with no window.
 
 ### Measurable Outcomes
 
-- **SC-001**: Probe `iso403_probe` passes 12 / 12 rows (before: 6 / 6 FAIL rows IS-NEG, IS-NEG2, IS-MIN
-  with the memory box and a program end).
+- **SC-001**: Probe `iso403_probe` passes 16 / 16 rows (before: 6 / 6 FAIL rows IS-NEG, IS-NEG2, IS-MIN
+  with the memory box and a program end; review 1 added IS-DEEP and IS-OVER).
 - **SC-002**: Regression probes of 328, 400, 401, 402 pass as at their closing.
 - **SC-003**: `saltests` passes with new checks of the length rule; a mutant of the rule fails them.
 - **SC-004**: No image of the probe can end the program or show the memory box.

@@ -58,6 +58,7 @@ CISO9660::CISO9660(CISOImage* image, DWORD extent) : CUnISOFSAbstract(image)
     Decide = FALSE;
     Visited = NULL;
     VisitedLog = NULL;
+    DirBytesHeld = 0;
     ExtentOffset = extent;
 
     BootRecordInfo = NULL;
@@ -857,7 +858,8 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
     // feature 403: a length that cannot be a directory of this image - above SAL_ISO_DIR_MAX_LENGTH
     // (also every length of 2 GiB or more), or a directory of more than one sector whose last sector
     // cannot be read (past the end of the image) - is a folder that cannot be read, decided before its
-    // buffer is allocated: the same box (once per walk) and result as a failed read below
+    // buffer is allocated: the same box (once per walk) and result as a failed read below. Review 1: also
+    // a folder whose buffer would take the buffers the walk holds (its ancestors') past the limit together
     bool readable = SalIsoDirLengthReadable(length);
     if (readable && length > Image->GetSectorUserSize())
     {
@@ -866,11 +868,20 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
         readable = SalIsoDirLastBlock(block, length, Image->GetSectorUserSize(), &last) &&
                    Image->ReadBlock((DWORD)last, 1, &probe) == 1;
     }
+    if (readable)
+        readable = SalIsoDirTake(DirBytesHeld, length);
     if (!readable)
     {
         Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, FitCheck != FALSE), block); // feature 400: once
         return (block == (DWORD)Root.LocationOfExtent - ExtentOffset) ? ERR_CONTINUE : ERR_TERMINATE;
     }
+    // given back on every way out of this walk of the folder (its buffer freed with it)
+    struct CDirBytesHold
+    {
+        unsigned long long& Held;
+        unsigned long long Length;
+        ~CDirBytesHold() { SalIsoDirGive(Held, Length); }
+    } dirBytesHold{DirBytesHeld, length};
     int size = (int)length; // 1 .. SAL_ISO_DIR_MAX_LENGTH: an int from here on (the record loop's offsets)
 
     char* data = new char[size];

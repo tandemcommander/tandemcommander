@@ -17,6 +17,11 @@
                 the read fails as before)
       IS-EDGE   A (3 sectors, the image's last 3), TOP.TXT, ZLAST/Z.TXT - nothing damaged (control): PASS =
                 a/a1.txt, a/a3.txt, top.txt, zlast/z.txt, no window, the image deleted
+      IS-DEEP   review 1: TOP.TXT, D (128 MiB) holding folders A0..A2 of 128 MiB each, nested (every folder
+                readable) - PASS = top.txt, one read-error box (the buffers held at once would pass 256 MiB),
+                the image kept - without the budget: every level read, no box, the image deleted
+      IS-OVER   review 1: TOP.TXT, D (256 MiB + 2048, readable, within the image) - PASS = top.txt, one
+                read-error box, the image kept - before: read whole, no box, the image deleted
     Unpack rows: the left panel shows <row>\src, Home, End focuses the image, Alt+F9 (851), the target
     field (210) set to <row>\tgt, "Delete archive after unpacking" (6210) checked, OK. A memory box is
     answered Ignore (5: the allocation returns NULL, never Abort - it ends the program). Names compared
@@ -140,7 +145,7 @@ try {
     $py = Join-Path $Here 'img403.py'
     $old = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     $made = @()
-    foreach ($k in @('isoneg', 'isoneg2', 'isomin', 'isohuge', 'isopast', 'isoedge')) { $made += & python -I $py $k ("$s\" + $k + '.iso') 2>&1 }
+    foreach ($k in @('isoneg', 'isoneg2', 'isomin', 'isohuge', 'isopast', 'isoedge', 'isodeep', 'isoover')) { $made += & python -I $py $k ("$s\" + $k + '.iso') 2>&1 }
     $ErrorActionPreference = $old
     Out ("seeds: {0}" -f ((@([IO.Directory]::GetFiles($s, '*.*') | ForEach-Object { [IO.Path]::GetFileName($_) }) | Sort-Object) -join ','))
     foreach ($m in $made) { Out ('img403: ' + "$m") }
@@ -153,6 +158,8 @@ try {
     Unpack-Row 'IS-HUGE' "$s\isohuge.iso" $tz -Damaged
     Unpack-Row 'IS-PAST' "$s\isopast.iso" $tz -Damaged
     Unpack-Row 'IS-EDGE' "$s\isoedge.iso" ([ordered]@{ 'a/a1.txt' = 'A1'; 'a/a3.txt' = 'A3'; 'top.txt' = 'TOP'; 'zlast/z.txt' = 'Z' })
+    Unpack-Row 'IS-DEEP' "$s\isodeep.iso" ([ordered]@{ 'top.txt' = 'TOP' }) -Damaged
+    Unpack-Row 'IS-OVER' "$s\isoover.iso" ([ordered]@{ 'top.txt' = 'TOP' }) -Damaged
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

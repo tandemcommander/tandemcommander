@@ -292,6 +292,10 @@ protected:
     // feature 400: the current walk - later folders are descended after a folder that cannot be read
     // (only out of memory stops it), its error box is shown once; a count walk keeps its own
     SalIsoWalk Walk;
+    // feature 403 (review 1): the bytes of the directory buffers the walk holds at once (a folder's buffer
+    // is held while its subfolders are walked, count walks included) - at most SAL_ISO_DIR_MAX_LENGTH
+    // together (SalIsoDirTake / SalIsoDirGive)
+    unsigned long long DirBytesHeld;
     CDirectoryRecord Root;
     WORD LogicalBlockSize;
     DWORD ExtentOffset;
