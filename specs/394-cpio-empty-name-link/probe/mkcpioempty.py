@@ -82,7 +82,8 @@ def main():
         # data normalizes to nothing
         reg(a, 'a.txt', b'', ino=5, nlink=2)
         reg(a, carrier, b'AAA', ino=5, nlink=2)
-        reg(a, 'ok.txt', b'K')
+        if not row.startswith('VIEW-'):  # F3 views the last listed item: a.txt alone
+            reg(a, 'ok.txt', b'K')
     else:
         raise SystemExit('unknown row ' + row)
     data = a.finish()

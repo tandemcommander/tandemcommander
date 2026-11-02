@@ -44,7 +44,7 @@ unpacking", without the archive - data loss.
 
 **Independent Test**: whole Unpack with "Delete archive after unpacking" of the fixture rows
 `UNP-EMPTY-DOT-DEL`, `-DOTSLASH-`, `-NUL-`, `UNP-CRC-EMPTY-DOT-DEL`, `UNP-RPM-EMPTY-DOT-DEL`; Copy
-row `COPY-EMPTY-DOT`.
+row `COPY-EMPTY-DOT`; F3 row `VIEW-EMPTY-DOT` (the viewer gets `a.txt` = `AAA`).
 
 **Acceptance Scenarios**:
 
@@ -132,7 +132,7 @@ Archives without such a carrier extract as before.
 
 ### Measurable Outcomes
 
-- **SC-001**: The probe goes from PASS 11 / FAIL 9 to all rows PASS (10 RUN rows).
+- **SC-001**: The probe goes from PASS 11 / FAIL 9 to all rows PASS (11 RUN rows).
 - **SC-002**: In no probe row is a file written empty or an archive deleted while data was not
   extracted.
 - **SC-003**: The regression probes of features 306, 308, 309, 310, 321 and 393 keep their results.

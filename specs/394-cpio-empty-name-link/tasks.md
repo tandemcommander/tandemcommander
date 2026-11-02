@@ -15,7 +15,7 @@
 
 ## Phase 3: User Story 1 - the other names get the data (P1)
 
-**Independent test**: probe rows `UNP-EMPTY-*-DEL` (not FIRST / BADSUM), `UNP-CRC-EMPTY-DOT-DEL`, `UNP-RPM-EMPTY-DOT-DEL`, `COPY-EMPTY-DOT`.
+**Independent test**: probe rows `UNP-EMPTY-*-DEL` (not FIRST / BADSUM), `UNP-CRC-EMPTY-DOT-DEL`, `UNP-RPM-EMPTY-DOT-DEL`, `COPY-EMPTY-DOT`, `VIEW-EMPTY-DOT` (F3).
 
 - [ ] T005 [US1] In `ReadArchiveHeader` (`src/plugins/tar/untar.cpp`, branch "skip invalid names") set `NameEmpty` for cpio formats and convert time and attributes as the normal path does
 - [ ] T006 [US1] `IsCpioGroupMember` in `src/plugins/tar/untar.cpp` uses `SalCpioKeepsGroupMember(..., NameRefused || NameEmpty)`

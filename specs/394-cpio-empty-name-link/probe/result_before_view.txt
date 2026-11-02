@@ -1,0 +1,9 @@
+cpioempty_probe (backlog item a-cpio-hard-link-whose-data-name-normalizes-to-empty-is) before-view
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 09:00; registry key existed True; ACP 1250; python Python 3.14.6
+
+VIEW-EMPTY-DOT RUN    FAIL        F3: C:\Users\pavel\AppData\Local\Temp\SAL98B.tmp\a.txt [Plain Text] - Code Viewer; cached copies: 1; content: "" (want AAA)
+VIEW-EMPTY-DOT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

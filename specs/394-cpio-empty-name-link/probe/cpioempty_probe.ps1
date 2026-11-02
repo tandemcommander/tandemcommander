@@ -29,6 +29,8 @@
     (727), boxes OK.
       COPY-EMPTY-DOT               -> no window at open, tgt a.txt = AAA, ok.txt
       COPY-EMPTY-DOT-FIRST         -> no window at open, a "(2)" box naming a.txt, tgt ok.txt
+    View row: the left panel opens t.cpio; Home, End, F3 (742); the copy the disk cache made is read.
+      VIEW-EMPTY-DOT               a.txt (size 0) and "." ('AAA'), nothing else -> the viewer, cached a.txt = AAA
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -174,6 +176,31 @@ function Copy-Row([string]$Case, $Want, [string]$NeedCopyMsg) {
     finally { if ($id) { End-Row $Case $id $null $before } }
 }
 
+# F3 on the focused last item of the opened archive (feature 310's View-Row); the copy the disk cache made
+# (SAL*.tmp folders created during the row) must hold $Want
+function View-Row([string]$Case, [string]$Member, [string]$Want) {
+    if (-not (Want $Case)) { return }
+    $d = $Root + '\' + $Case
+    $arc = $d + '\t.cpio'
+    try { NewDir $d; Make-Fixture $Case $arc }
+    catch { Row $Case 'RUN' 'NOT DRIVEN' ('fixture: ' + $_.Exception.Message); return }
+    $id = 0; $before = Reports; $t0 = (Get-Date).AddSeconds(-2)
+    try {
+        $id = Start-Tc $arc
+        Key $id 0x24; Key $id 0x23; Start-Sleep -Milliseconds 500
+        $t = Which-Viewer $id
+        $r = Serve $id 8 @(1)
+        $copies = @([IO.Directory]::GetDirectories($LP + $TempRoot, 'SAL*.tmp') | Where-Object { [IO.Directory]::GetCreationTime($_) -ge $t0 } | ForEach-Object { $_ + '\' + $Member } | Where-Object { [IO.File]::Exists($_) })
+        $content = $(if ($copies.Count) { [IO.File]::ReadAllText($copies[0]) } else { '<no cached copy>' })
+        $ok = ($t -notlike '<*') -and ($copies.Count -eq 1) -and ($content -ceq $Want)
+        Row $Case 'RUN' (V $ok) ('F3: {0}; cached copies: {1}; content: "{2}" (want {3}){4}' -f (Tail $t 200), $copies.Count, (Esc $content), $Want, $(if ((Msgs $r) -ne 'no window') { '; after: ' + (Tail (Msgs $r) 200) } else { '' }))
+        [void](Do-ChangeDir $id $StartDir); [void](Serve $id 8 @(1, 7, 2))
+        End-Row $Case $id $null $before; $id = 0
+    }
+    catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row $Case $id $null $before } }
+}
+
 $backup = Join-Path $env:TEMP 'tc394_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
@@ -197,6 +224,7 @@ try {
     Unpack-Row 'UNP-DOTDIR-DEL' $ok1 -ArcGone
     Copy-Row 'COPY-EMPTY-DOT' $both
     Copy-Row 'COPY-EMPTY-DOT-FIRST' $ok1 -NeedCopyMsg '\(2\)[^|]*a\.txt'
+    View-Row 'VIEW-EMPTY-DOT' 'a.txt' 'AAA'
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
