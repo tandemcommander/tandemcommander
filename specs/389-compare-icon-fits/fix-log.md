@@ -106,3 +106,24 @@ with both names too long - name 1 is measured first by construction), C3 LOW (FR
   long text; left in place (changes least; the encoding guard reports nothing).
 - NOTE N4 - no row exactly one byte over (260); the boundary is `SalWTextFitsU8`'s (saltests).
 - NOTE N5 - CHANGELOG / FEATURE-HISTORY are closing steps.
+
+### Review 2 (refute-first agent, 2026-11-02)
+
+No MUST. Re-measured: `fit389_probe.ps1` 14 / 0; own rows: index 10 with the 257-byte name (260
+bytes) refused, index 9 / 0 accepted and stored as `name,9` / `name,0`; a seeded 261-byte value
+blocks the start (review 1's premise confirmed). Callers enumerated again: as in the fix-log.
+- **SHOULD S1** - the spec still described the 259-byte limit for Change Icon (FR-002, FR-004,
+  SC-001). **Fixed**: FR-002 / FR-004 / SC-001 / SC-002 and a fourth Change Icon scenario state the
+  limit as `name` + `,<index>` <= 259 bytes.
+- NOTE N1 - the index boundary was pinned only by the reviewer's rows: **taken over** as probe rows
+  chi-idx10 (refused) and chi-idx9 (stored `name,9`). `probe/result_after_review2.txt` **18 / 0**,
+  the registry restored, identical.
+- NOTE N2 - a 257-byte name is refused for icon 10 and accepted for icon 9: correct, the same
+  message (no new string, FR-005).
+- NOTE N3 - in the reviewer's own row, OK of Configuration left the main window disabled on the
+  hidden desktop even without any change (not checked on `main` or a real desktop). 251's probe
+  presses the same OK (id 5) in its `-Fits` rows and they pass (`regress_251.txt` um-ctl, hp-ctl,
+  drv-ctl), so it is not taken as a product defect; not recorded as an item (unverified, the
+  reviewer's row only).
+- NOTE N4 - no row drives Configuration OK -> save -> restart end to end; chi-ctl (the value in the
+  session) and chi-reload (the value at the start) cover the two halves.

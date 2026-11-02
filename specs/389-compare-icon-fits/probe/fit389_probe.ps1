@@ -28,6 +28,8 @@
                  asked; Change Icon opened again shows the name whole
       chi-reload the program started with that stored value (257 + ',0'): nothing shown at the
                  start, Change Icon shows the file whole
+      chi-idx10  that stored file opened, icon 10 picked (",10" makes 260 bytes): OK refused
+      chi-idx9   icon 9 picked (259 bytes): accepted, Change Icon opened again shows name + ,9
     Typing is not driven: the field's text is set by WM_SETTEXT, buttons get BM_CLICK. Driver of
     291's probe (098's library). MUST run through tools\run_on_hidden_desktop.ps1. Registry exported,
     restored and verified.
@@ -303,6 +305,45 @@ function Reload-Row([string]$Case, [string]$File) {
     }
 }
 
+# the index counts too (review 2): the stored 257-byte name opened, icon $Sel picked, OK - index
+# 10 (",10", 260 bytes) is refused; index 9 (259 bytes) is accepted and opened again as name + ,9
+function Idx-Row([string]$Case, [int]$Sel, [switch]$Fits) {
+    Run-Row $Case {
+        Seed-UserMenu
+        Reg-Set 'User Menu\1' 'Icon' ($FitIcon + ',0') String
+        $id = Start-Tc $StartDir; $script:RowId = $id
+        [void](Serve389 $id @() 'ok' 8)
+        $cfg = Open-Config $id 2 0
+        if ($cfg -eq [IntPtr]::Zero) { throw 'Configuration (User Menu) opened no window' }
+        Select-First $cfg 351
+        $dlg = Open-ChangeIcon $id $cfg
+        $n = Icon-Count $dlg
+        if ($n -le $Sel) { throw "the file lists $n icons, $Sel cannot be picked" }
+        $lb = @([Drv098f]::Kids($dlg) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 662 }) | Select-Object -First 1
+        [void][Drv098f]::Send($lb, 0x0186, $Sel, 0, 5000)   # LB_SETCURSEL
+        $o = Ok-Serve $id $dlg @($cfg)
+        $stored = '-'
+        if ($o.Stayed) { Close-Win $dlg; Start-Sleep -Milliseconds 500; [void](Serve389 $id @($cfg) 'cancel' 10) }
+        else {
+            $dlg2 = Open-ChangeIcon $id $cfg
+            $f2 = Get-Field $dlg2 661
+            $lb2 = @([Drv098f]::Kids($dlg2) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 662 }) | Select-Object -First 1
+            $res = [IntPtr]::Zero
+            [void][Drv098f]::SendMessageTimeoutW($lb2, 0x0188, [IntPtr]::Zero, [IntPtr]::Zero, 0, 5000, [ref]$res)   # LB_GETCURSEL
+            $stored = $f2 + ',' + $res.ToInt64()
+            Close-Win $dlg2; Start-Sleep -Milliseconds 500; [void](Serve389 $id @($cfg) 'cancel' 10)
+        }
+        Close-Win $cfg; Start-Sleep -Milliseconds 500; [void](Serve389 $id @() 'cancel' 10)
+        $script:RowFatal = $o.Fatal; if (-not $script:RowFatal) { $script:RowFatal = Fatal-Win $id }
+        $want = $FitIcon + ',' + $Sel
+        if ($Fits) { $verdictOk = (-not $o.Stayed) -and ($o.Shown -eq 'nothing') -and ($stored -ceq $want) }
+        else { $verdictOk = $o.Stayed -and ($o.Shown -match $TooLong) }
+        $ok = (-not $script:RowFatal) -and (-not $o.TimedOut) -and $verdictOk
+        $sd = $(if ($stored -eq '-') { '-' } else { "{0} bytes, tail '{1}', = name,{2}: {3}" -f (U8 $stored), (Tail $stored 6), $Sel, ($stored -ceq $want) })
+        Row $Case 'RUN' (V $ok) ("icons {0}; picked {1} (value {2} bytes); OK: stayed {3}, asked: {4}; opened again: {5}" -f $n, $Sel, (U8 $want), $o.Stayed, $o.Shown, $sd)
+    }
+}
+
 $LongIcon = $IconDir + '\' + (Cjk 86) + '.exe'
 $room = 259 - (U8 ($IconDir + '\')) - 4
 $Icon259 = $IconDir + '\' + (Cjk ([Math]::Floor($room / 3))) + ('f' * ($room % 3)) + '.exe'
@@ -316,6 +357,8 @@ $Cases['chi-file'] = { Chi-Row 'chi-file' $LongIcon }
 $Cases['chi-store259'] = { Chi-Row 'chi-store259' $Icon259 }
 $Cases['chi-ctl'] = { Chi-Row 'chi-ctl' $FitIcon -Fits }
 $Cases['chi-reload'] = { Reload-Row 'chi-reload' $FitIcon }
+$Cases['chi-idx10'] = { Idx-Row 'chi-idx10' 10 }
+$Cases['chi-idx9'] = { Idx-Row 'chi-idx9' 9 -Fits }
 
 # ---- main --------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tc389_backup.reg'

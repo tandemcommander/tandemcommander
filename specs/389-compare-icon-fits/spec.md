@@ -62,8 +62,13 @@ reloaded and on OK, keeps the typed text whole in the field and stores nothing.
    the field is whole.
 2. **Given** the same state after the refusal, **When** OK again, **Then** "too long" again, the
    dialog stays, the field is whole, nothing is stored.
-3. **Given** a file whose full name is exactly 259 bytes, **When** OK, **Then** nothing is asked, its
-   icons load, the dialog closes and Change Icon opened again shows the name whole.
+3. **Given** a file whose full name with the stored `,<index>` is at most 259 bytes (257 bytes and
+   icon 0..9), **When** OK, **Then** nothing is asked, its icons load, the dialog closes and Change
+   Icon opened again shows the name whole; the program started with that stored value shows nothing
+   and keeps the icon.
+4. **Given** a name of 259 bytes (or 257 bytes with icon 10 picked), whose stored `name,index`
+   would be longer than the 259 bytes the configuration loader reads, **When** OK, **Then** "too
+   long", the dialog stays (review 1: such a value was lost at the next start).
 
 ### Edge Cases
 
@@ -84,12 +89,16 @@ reloaded and on OK, keeps the typed text whole in the field and stores nothing.
   else and refuse a name whose UTF-8 form does not fit 260 bytes (with the NUL) with "The path
   specified is too long.", the dialog open and that field focused with its text selected.
 - **FR-002**: The Change Icon dialog MUST, on OK, measure the file name field whole and refuse a name
-  that does not fit with the same message and focus.
+  whose UTF-8 form plus the stored `,<index>` (the selected icon, else 0) does not fit 260 bytes with
+  the NUL - the value the User Menu page stores and the configuration loader reads back - with the
+  same message and focus.
 - **FR-003**: The Change Icon dialog MUST NOT read icons for a cut or code-page form of the name: a
   reload (on leaving the changed field, on OK of a changed field) of a name that does not fit is
   refused with the same message, the field keeps the typed text and no other file is read.
-- **FR-004**: Text that fits (up to 259 bytes) MUST behave exactly as before (no new question,
-  stored / used whole).
+- **FR-004**: Text that fits MUST behave exactly as before (no new question, stored / used whole):
+  compare names up to 259 bytes; an icon file name whose stored `name,index` is up to 259 bytes (a
+  258 / 259-byte icon file name was accepted before but its stored value was lost at the next
+  start - it is refused now, review 1).
 - **FR-005**: No new UI string; the existing `IDS_TOOLONGPATH` text is used.
 
 ### Key Entities
@@ -104,9 +113,10 @@ reloaded and on OK, keeps the typed text whole in the field and stores nothing.
 ### Measurable Outcomes
 
 - **SC-001**: Probe `fit389_probe.ps1`: the rows that failed before the fix (umc-name1, umc-name2,
-  chi-file) pass after it; the control rows (umc-ctl, chi-ctl) pass before and after.
-- **SC-002**: 0 cases in which a name over 259 bytes typed into either dialog is used or stored in
-  another (shorter or code-page) form.
+  chi-file, and since review 1 chi-store259) pass after it; the control rows (umc-ctl, chi-ctl,
+  chi-reload, chi-idx9) pass and the boundary row chi-idx10 is refused.
+- **SC-002**: 0 cases in which a name over the limit typed into either dialog is used or stored in
+  another (shorter or code-page) form, or stored in a form the next start cannot read.
 - **SC-003**: The encoding guard, the build and saltests stay green; earlier probes of the area
   (291's, 251's) still pass.
 
