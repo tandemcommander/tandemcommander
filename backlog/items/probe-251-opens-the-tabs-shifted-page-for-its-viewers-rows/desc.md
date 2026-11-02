@@ -1,7 +1,7 @@
 ---
 title: Probe 251 opens the Tabs-shifted page for its Viewers rows (page index 19)
 type: tech-debt
-status: new
+status: open
 severity: 2
 area: tooling
 source: measure:389
@@ -53,3 +53,4 @@ Not verified: which other probes seed a page index beyond the Tabs page.
 ## Log
 
 - 2026-11-02 — created (source measure:389)
+- 2026-11-02 — moved to Next position 136

@@ -157,19 +157,20 @@ Last triaged: 2026-11-02
 | 133 | [Registry facade: deleting a value and opening keys use the ANSI API with UTF-8 names](items/registry-wide-deletevalue-and-key-names/desc.md) | bug | 2 | plugin-api | agent | M | open |
 | 134 | [FTP: a listing rule assigning one column to another decodes the decoded text again](items/ftp-a-listing-rule-assigning-one-column-to-another-decodes/desc.md) | bug | 2 | ftp | agent | S | open |
 | 135 | [Rescue path goes to the Windows drive root when Documents needs more than 259 bytes](items/rescue-path-goes-to-the-windows-drive-root-when-documents/desc.md) | improvement | 2 | long-paths | agent | M | open |
-| 136 | [106's packself probe row A-zip-noask-refused is stale since 119](items/packself-probe-stale-row/desc.md) | tech-debt | 1 | tooling | agent | S | open |
-| 137 | [Plug-in threads ended by CThreadQueue leave their CCallStack registered](items/plugin-thread-kills-leave-callstack/desc.md) | tech-debt | 1 | plugin-api | agent | M | open |
-| 138 | [Code Viewer: its known limitations are not stated anywhere a user can read](items/codeview-limitations-not-stated-for-users/desc.md) | improvement | 1 | help-docs | agent | S | open |
-| 139 | [File Comparator stores an uninitialised byte in its saved configuration](items/filecomp-stores-uninitialised-configuration-byte/desc.md) | bug | 1 | other-plugins | agent | S | open |
-| 140 | [CLAUDE.md names a branch ai-main that does not exist](items/claude-md-names-missing-ai-main-branch/desc.md) | tech-debt | 1 | help-docs | both | S | open |
-| 141 | [Unshipped resources still carry 2023 Open Salamander-only copyright notices](items/unshipped-resources-still-carry-2023-open-salamander-only/desc.md) | tech-debt | 1 | build-release | agent | S | open |
-| 142 | [winget README names a publish.ps1 check that does not exist](items/winget-readme-names-a-publish-ps1-check-that-does-not-exist/desc.md) | tech-debt | 1 | build-release | agent | S | open |
-| 143 | [The stored main window icon index is checked against the count, not the last index](items/the-stored-main-window-icon-index-is-checked-against-the/desc.md) | bug | 1 | panels-ui | agent | S | open |
-| 144 | [Plug-in interface does not say that column names are code-page text](items/plug-in-interface-does-not-say-that-column-names-are-code/desc.md) | tech-debt | 1 | plugin-api | agent | S | open |
-| 145 | [Loop tool tests leave a temporary git folder behind on every test](items/loop-tool-tests-leave-a-temporary-git-folder-behind-on-every/desc.md) | tech-debt | 1 | tooling | agent | S | open |
-| 146 | [The 081 Markdown Viewer probe takes a window with an empty title for the viewer](items/the-081-markdown-viewer-probe-takes-a-window-with-an-empty/desc.md) | tech-debt | 1 | tooling | agent | S | open |
-| 147 | [FTP: upload listing cache lookup remembers a slot number instead of the listing index](items/ftp-upload-listing-cache-lookup-remembers-a-slot-number/desc.md) | tech-debt | 1 | ftp | agent | S | open |
-| 148 | [A Documents folder of 260 or more characters opens the Desktop instead](items/a-documents-folder-of-260-or-more-characters-opens-the/desc.md) | bug | 1 | long-paths | agent | S | open |
+| 136 | [Probe 251 opens the Tabs-shifted page for its Viewers rows (page index 19)](items/probe-251-opens-the-tabs-shifted-page-for-its-viewers-rows/desc.md) | tech-debt | 2 | tooling | agent | S | open |
+| 137 | [106's packself probe row A-zip-noask-refused is stale since 119](items/packself-probe-stale-row/desc.md) | tech-debt | 1 | tooling | agent | S | open |
+| 138 | [Plug-in threads ended by CThreadQueue leave their CCallStack registered](items/plugin-thread-kills-leave-callstack/desc.md) | tech-debt | 1 | plugin-api | agent | M | open |
+| 139 | [Code Viewer: its known limitations are not stated anywhere a user can read](items/codeview-limitations-not-stated-for-users/desc.md) | improvement | 1 | help-docs | agent | S | open |
+| 140 | [File Comparator stores an uninitialised byte in its saved configuration](items/filecomp-stores-uninitialised-configuration-byte/desc.md) | bug | 1 | other-plugins | agent | S | open |
+| 141 | [CLAUDE.md names a branch ai-main that does not exist](items/claude-md-names-missing-ai-main-branch/desc.md) | tech-debt | 1 | help-docs | both | S | open |
+| 142 | [Unshipped resources still carry 2023 Open Salamander-only copyright notices](items/unshipped-resources-still-carry-2023-open-salamander-only/desc.md) | tech-debt | 1 | build-release | agent | S | open |
+| 143 | [winget README names a publish.ps1 check that does not exist](items/winget-readme-names-a-publish-ps1-check-that-does-not-exist/desc.md) | tech-debt | 1 | build-release | agent | S | open |
+| 144 | [The stored main window icon index is checked against the count, not the last index](items/the-stored-main-window-icon-index-is-checked-against-the/desc.md) | bug | 1 | panels-ui | agent | S | open |
+| 145 | [Plug-in interface does not say that column names are code-page text](items/plug-in-interface-does-not-say-that-column-names-are-code/desc.md) | tech-debt | 1 | plugin-api | agent | S | open |
+| 146 | [Loop tool tests leave a temporary git folder behind on every test](items/loop-tool-tests-leave-a-temporary-git-folder-behind-on-every/desc.md) | tech-debt | 1 | tooling | agent | S | open |
+| 147 | [The 081 Markdown Viewer probe takes a window with an empty title for the viewer](items/the-081-markdown-viewer-probe-takes-a-window-with-an-empty/desc.md) | tech-debt | 1 | tooling | agent | S | open |
+| 148 | [FTP: upload listing cache lookup remembers a slot number instead of the listing index](items/ftp-upload-listing-cache-lookup-remembers-a-slot-number/desc.md) | tech-debt | 1 | ftp | agent | S | open |
+| 149 | [A Documents folder of 260 or more characters opens the Desktop instead](items/a-documents-folder-of-260-or-more-characters-opens-the/desc.md) | bug | 1 | long-paths | agent | S | open |
 
 ## Decisions for the maintainer
 
@@ -301,7 +302,6 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
-| [Probe 251 opens the Tabs-shifted page for its Viewers rows (page index 19)](items/probe-251-opens-the-tabs-shifted-page-for-its-viewers-rows/desc.md) | tech-debt | 2 | tooling | measure:389 | 2026-11-02 |
 
 ## Parked
 
