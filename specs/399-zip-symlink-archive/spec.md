@@ -35,6 +35,7 @@ became a plain file and the real archive stayed old.
 - Q: Update the real archive through the link, or refuse up front with a new message? → A: Update the real archive (the item's *Expected* names it first, its *Approach* first option; refusing would need a new string and leaves the operation impossible) (autonomous run: item)
 - Q: Which names count as "a link" to be followed? → A: A name that is itself a reparse point of the name-surrogate kind (a file symbolic link; the same class as a mount point) - every other name (a plain file, a hard link, a file whose folder is reached through a junction or a directory link, a cloud placeholder) keeps exactly the behaviour of today (autonomous run: conservative)
 - Q: What if the link cannot be resolved (its final path cannot be read)? → A: Behave as today: the replace is attempted on the link's name, fails safe and shows the existing true message - nothing changed, no stray file (autonomous run: conservative)
+- Q: Should the up-front "archive is read-only" check look at the real archive instead of the link? → A: No - it stays as it is; a read-only real archive is already refused when the plug-in opens it for writing (an error, nothing changed); only the attributes kept after the replace come from the real archive (FR-005) (autonomous run: conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -98,6 +99,8 @@ The user opens `a.zip` (the link) in the panel and deletes a member.
   by this feature.
 - The real archive's attributes (hidden, system, compressed) are the ones kept and restored after the
   replace - not the link's own attributes.
+- The real archive is read-only: refused when it is opened for writing, as today (the up-front
+  read-only check still reads the link's own attributes - unchanged).
 
 ## Requirements *(mandatory)*
 
