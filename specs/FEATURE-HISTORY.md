@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381, 397 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381, 397, 398 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395, 396 |
@@ -6336,3 +6336,24 @@ a few early ones are out of sequence).
   282,166 / 0 (brute force against the old loop on every ASCII text up to 6 characters; negative
   controls 2 and 1 failed); one refute-first review (no MUST, no SHOULD; NOTEs 1-2 fixed, NOTE 4 ->
   person step; its control on the installed 0.2.0 5 / 3).
+- 398-viewer-find-seed: with text selected in the internal viewer, Find pre-filled its field with the
+  selection's raw bytes through an ANSI `WM_SETTEXT` - a UTF-8 `café` showed as `cafĂ©` (code page
+  1250) and was "not found", and since 311 a long UTF-8 selection (199 `a` + `é…`, 70 CJK letters,
+  an emoji near the end) was refused at OK with "The path specified is too long." although nothing
+  was typed - now the selection is decoded by the viewer's content encoding (UTF-8; UTF-16 by its
+  byte order; otherwise the ANSI code page the viewer draws it in, after its conversion table; a
+  code page that is UTF-8, ACP 65001, as UTF-8) and set as wide text, shortened at a whole character
+  to the field's 200 UTF-16 units and the 200 UTF-8 bytes OK accepts (the pure
+  `SalFindSeedDecodeW`, `src/common/salfindseed.h`; `GetFindText` takes a buffer size and reads 402
+  bytes); an incomplete character is left out at the read limit and shown as U+FFFD at the end of the
+  selection, as the viewer draws it; hex mode unchanged. Traps: `ViewerIsValidUTF8` accepts a
+  sequence cut by the end of a sample that is the whole file, so `caf` + byte E9 is shown as UTF-8
+  (Inbox `viewer-shows-a-short-code-page-file-ending-in-a-non-ascii`; the probe's first code-page
+  fixture was such a file); a Bash here-document collapsed a test patch's backslashes (123 - written
+  as a file). Limits: the viewer's search compares the field's UTF-8 bytes with the file's bytes, so a
+  non-ASCII word in content shown in a code page is still not found (Inbox
+  `viewer-find-does-not-find-non-ascii-text-in-a-file-shown-in`); UTF-16 content is decoded by the
+  rule but not reachable (the viewer does not detect UTF-16 into a wide mode). From backlog item
+  `viewer-find-pre-fills-a-non-ascii-selection-as-code-page`. Probe `seed398_probe.ps1` 8 / 4 ->
+  14 / 0 (7 rows); 397's 8 / 0, 311's 26 / 0; saltests 282,230 / 0 (negative controls 28 and 2
+  failed); one refute-first review (no MUST; SHOULD 1 code page 65001 fixed, SHOULD 2 -> Inbox).

@@ -30,7 +30,7 @@
 - [X] T008 `.\build.cmd` -> BUILD SUCCEEDED; saltests 0 failed; `python tools/check_encoding.py --strict` TOTAL 0
 - [X] T009 Probe after (`probe/result_after.txt`) all PASS; negative control: saltests against the old rule (byte-wise ANSI) fails the checks - recorded in fix-log
 - [X] T010 Inbox item (leftover:398): the viewer's Find does not find non-ASCII text in code-page content (search compares UTF-8 bytes with code-page bytes)
-- [ ] T011 fix-log, FEATURE-HISTORY, CHANGELOG, closing report
+- [X] T011 fix-log, FEATURE-HISTORY, CHANGELOG, closing report
 
 ## Dependencies
 

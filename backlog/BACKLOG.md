@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Viewer Find pre-fills a non-ASCII selection as code-page text](items/viewer-find-pre-fills-a-non-ascii-selection-as-code-page/desc.md) | bug | 4 | encoding | 398 |
 
 ## Next
 
