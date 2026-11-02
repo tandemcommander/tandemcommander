@@ -1,8 +1,8 @@
 ---
 title: Viewer Find does not find non-ASCII text in a file shown in a code page
 type: bug
-status: new
-severity: 3
+status: open
+severity: 4
 area: encoding
 source: leftover:398
 who: agent
@@ -57,3 +57,5 @@ UTF-16 content is not detected into a wide mode yet (`ContentEncoding` is only `
 ## Log
 
 - 2026-11-02 — created (source leftover:398)
+- 2026-11-02 — auto-triage: severity 3 -> 4: a function does not work (Find answers cannot find for a word the viewer shows), hex mode is the workaround
+- 2026-11-02 — moved to Next position 22

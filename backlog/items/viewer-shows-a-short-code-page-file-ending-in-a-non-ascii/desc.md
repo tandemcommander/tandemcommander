@@ -1,7 +1,7 @@
 ---
 title: Viewer shows a short code-page file ending in a non-ASCII letter as UTF-8
 type: bug
-status: new
+status: open
 severity: 3
 area: encoding
 source: measure:398
@@ -51,3 +51,4 @@ bytes read with `Prepare`, so the caller knows whether the sample reached the fi
 ## Log
 
 - 2026-11-02 — created (source measure:398)
+- 2026-11-02 — moved to Next position 85
