@@ -20348,7 +20348,7 @@ static void TestCpioKeepsGroupMember394()
     CHECK(TarNorm309(".a") == ".a"); // a dot name is a name
 }
 
-// feature 315:the Unpack dialog's defaults whole or not at all (salunpackdefault.h)
+// feature 315: the Unpack dialog's defaults whole or not at all (salunpackdefault.h)
 static void TestUnpackDefault315()
 {
     char buf[MAX_PATH];

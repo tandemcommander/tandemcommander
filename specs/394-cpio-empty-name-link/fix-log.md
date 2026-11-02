@@ -74,3 +74,30 @@ waiting names empty. `WriteOutData` checks the crc sum only for non-`Ignored` me
 - No UI string, dialog or resource changed: no `.slt` refresh needed (stop-rules §2.13 not triggered).
 
 ## Review
+
+### Review 1 (independent agent, refute-first, HEAD 0bea9e93) - no MUST
+
+Re-ran build, saltests 30813 / 0, encoding guard 0, the probe 22 / 0, a main-build copy showing the
+defect (`UNP-EMPTY-DOT-DEL` a.txt 0 bytes, archive deleted), 393's probe 28 / 0. Its own negative
+control removed only T007 (`found = FALSE` for `NameEmpty`): 7 rows fail ("This name has already
+been used for a directory" - the `*.*` mask matches the raw `.`, the plug-in tries to write the
+target folder as a file; nothing extracted, archive kept) - T007 is needed and the probe catches
+its removal. Extra rows: two waiting names + `.` carrier (newc, crc) both get AAA; a `..` carrier
+passes. Callers enumerated independently (as in this log).
+
+- SHOULD S1 - a file whose only usable data is under an empty name (nlink 1, or an orphan group)
+  is dropped silently and the archive deleted - also on main, kept by FR-005 on purpose (scope) ->
+  Inbox item `unpack-silently-drops-a-cpio-file-whose-only-name-normalizes` (review:394).
+- NOTE N1 - `d/..` normalizes to `d`, not empty (existing item
+  `tar-member-name-with-dotdot-extracted-into-wrong-folder`, which also covers cpio names) - no change.
+- NOTE N2 - the data-first report names the raw member (`a.txt -> .`, `a.txt -> ` for an empty
+  name) - cosmetic, kept.
+- NOTE N3 - a lost space in the comment before `TestUnpackDefault315` (`saltests.cpp`) - fixed.
+- NOTE N4 - the time / attribute conversion is repeated in the empty-name branch (no `MTimeFrac`,
+  0 for cpio) - kept: the normal path's order (conversion before the cpio `IsDir` from the mode) is
+  untouched this way; recorded.
+- NOTE N5 - a crc mismatch deletes the written target, also one the user agreed to overwrite - true
+  for every crc member already; before this fix bad data overwrote it instead - not new.
+- NOTE N6 - housekeeping; the reviewer's worktree removed, tree clean (`git status --short` empty).
+
+After N3: `.\build.cmd` -> BUILD SUCCEEDED, saltests 30813 / 0 (below).

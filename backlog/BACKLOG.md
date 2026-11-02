@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A cpio hard link whose data name normalizes to empty is written as an empty file](items/a-cpio-hard-link-whose-data-name-normalizes-to-empty-is/desc.md) | bug | 7 | archives | 394 |
 
 ## Next
 
@@ -304,6 +303,7 @@ Last triaged: 2026-11-02
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
+| [Unpack silently drops a cpio file whose only name normalizes to empty](items/unpack-silently-drops-a-cpio-file-whose-only-name-normalizes/desc.md) | bug | 7 | archives | review:394 | 2026-11-02 |
 
 ## Parked
 

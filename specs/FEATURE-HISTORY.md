@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -6248,3 +6248,24 @@ a few early ones are out of sequence).
   28 / 0 (14 RUN rows, newc / odc / rpm; negative control mode + group off 19 / 3); 306 30 / 0, 308
   12 / 0, 309 16 / 0, 310 52 / 0, 321 20 / 0 and 12 / 0; saltests 30,798 / 0; one refute-first
   review (no MUST; SHOULD fixed - spec narrowed, data-first and symlink rows -, two Inbox items).
+- 394-cpio-empty-name-link: in a newc / crc cpio (or an rpm) whose hard-linked file stores its data
+  with a name that normalizes to nothing (`.`, `./`, an empty name), an extraction (Alt+F9, Copy,
+  F3) wrote the file's other names EMPTY and reported success, so "Delete archive after unpacking"
+  deleted the archive with the only copy - now such a member (`NameEmpty`, set in
+  `ReadArchiveHeader`'s "skip invalid names" branch with the time and attributes the normal path
+  converts) stays in its group as not asked (`SalCpioKeepsGroupMember`, `salcpiolink.h`, saltests -
+  393's rule for a refused name, now one pure rule), is never asked (`found = FALSE`: the `*.*`
+  mask matches the raw `.` - without it the plug-in tries to write the target folder as a file,
+  review's negative control), and its data goes to the waiting names; the data-first layout is
+  reported ("(2)", `a.txt -> .`) and fails (310's rule); `WriteOutData` checks the crc sum also
+  when an `Ignored` carrier's data is written (393's refused carrier had the same gap). Traps: the
+  early return skipped the time conversion - the written file got the current time (negative
+  control); a Bash here-document collapsed the probe's backslashes (123 - fixed with the editor).
+  Limits: a file whose only name normalizes to nothing (nlink 1, or an orphan group) is still
+  dropped silently (pre-existing; Inbox `unpack-silently-drops-a-cpio-file-whose-only-name-normalizes`);
+  the report names the raw member (`a.txt -> .`). From backlog item
+  `a-cpio-hard-link-whose-data-name-normalizes-to-empty-is`. Probe `cpioempty_probe.ps1` 11 / 9 ->
+  22 / 0 (11 RUN rows: newc `.` / `./` / empty, crc, crc bad sum, rpm, data-first, folder `.`
+  control, Copy x2, F3; negative control time + crc off 15 / 7); 306 30 / 0, 308 12 / 0, 309
+  16 / 0, 310 52 / 0, 321 20 / 0 and 12 / 0, 393 28 / 0; saltests 30,813 / 0; one refute-first
+  review (no MUST; SHOULD S1 -> Inbox, N3 fixed).
