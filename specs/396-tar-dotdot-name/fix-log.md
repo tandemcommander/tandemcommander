@@ -97,3 +97,27 @@ Regression probes (same build, label regress-396, `probe/regress_*.txt`): 306 30
 
 Encoding guard: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
 No UI string, dialog or resource changed - no `.slt` refresh.
+
+## Review
+
+Review 1 (independent refute-first agent, 2026-11-02): **no MUST, no SHOULD.** It re-ran
+`dotdot_probe.ps1` (12 / 0) and 309's probe (16 / 0), compiled the new header together with the
+legacy loop and its own reference and compared 33,235,296 names (up to 5 components from
+`sub a .. . "" ... ..a a.. <CJK> C: " .." ".. "`, both separators, leading / trailing separators):
+every result equal to its reference, no name without `..` changed, no result with a leading or
+doubled `\`, a `.` / `..` component or longer than its source - never above the target. saltests
+30,858 / 0; callers enumerated (`untar.cpp` member name and link name, both in
+`ReadArchiveHeader`). NOTEs:
+
+1. New name collisions: `a.txt` (S) + `sub/../a.txt` (A) now asks "Overwrite file" (before: two
+   files, `a.txt` and `s/a.txt`); with Yes `a.txt` becomes A. The consequence of resolving `..`
+   (the spec's choice), the same as the existing `./a.txt` + `a.txt` case, always asked. Recorded as
+   a limit in the CHANGELOG / FEATURE-HISTORY entries.
+2. A regular file named `z/..` resolves to nothing - 395's "(123)" report, archive kept (before:
+   written as a file `z`). The intended safe side (FR-007); now also checked in the program by the
+   reviewer.
+3. Pre-existing: a regular file named `x/y/..` (old and new rule: `x\`, a folder mark) fails with a
+   misleading WriteFile message; archive kept -> Inbox
+   `unpack-of-a-tar-file-member-whose-name-ends-in-a-folder-mark` (review:396).
+4. 309's link rule kept (as specified).
+5. CHANGELOG / FEATURE-HISTORY entries owed - written at closing.

@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A tar member whose name contains .. is extracted into a wrong folder](items/tar-member-name-with-dotdot-extracted-into-wrong-folder/desc.md) | bug | 4 | archives | 396 |
 
 ## Next
 
@@ -304,6 +303,7 @@ Last triaged: 2026-11-02
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
+| [Unpack of a tar file member whose name ends in a folder mark shows a WriteFile error](items/unpack-of-a-tar-file-member-whose-name-ends-in-a-folder-mark/desc.md) | bug | 3 | archives | review:396 | 2026-11-02 |
 
 ## Parked
 

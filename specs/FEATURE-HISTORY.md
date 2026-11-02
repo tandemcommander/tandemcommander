@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395, 396 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -6297,3 +6297,23 @@ a few early ones are out of sequence).
   waiting name, mask `*.txt`, Copy, odc / binary links; negative control both report sites off
   23 / 9 on the first 16 rows); 306 30 / 0, 308 12 / 0, 309 16 / 0, 310 52 / 0, 321 20 / 0 and 12 / 0, 393 28 / 0,
   394 22 / 0; saltests 30,839 / 0; two refute-first reviews (no MUST; S1 fixed, NOTEs recorded).
+- 396-tar-dotdot-name: a TAR (also GNU long name, PAX path, cpio, rpm, deb) member whose name drops
+  its FIRST folder with `..` was listed and extracted into an invented folder named after that
+  folder's first letter - `sub/../a.txt` became `s\a.txt`, `q/../../f.txt` `q\f.txt` - and a whole
+  Unpack asked to overwrite (and with Yes replaced) an unrelated member `s/a.txt` - now `..` removes
+  the whole previous component and never climbs above the archive root (`SalTarNormalizeNameU8`,
+  `saltarlink.h`: step back over the trailing `\`, walk back to the previous one; nothing on an
+  empty output - `../../empty` stays `empty`). Every name without `..` keeps its result (saltests
+  brute force over 19,531 names against the legacy loop and a reference resolver; the reviewer
+  compared 33 million). Traps: the first reference forgot that `a/.` keeps the trailing separator
+  (the caller's folder mark); a probe variable `$root` hid the library's `$Root` (PowerShell names
+  are case-insensitive). Limits: a resolved name can now meet another member's name (`a.txt` +
+  `sub/../a.txt`) - the existing Overwrite question, as with `./a.txt` + `a.txt`; a regular file
+  named `z/..` resolves to nothing and takes 395's "(123)" report (before: a file `z`); 309's link
+  rule kept (a link name with `..` is reported, never matched); a regular file named `x/y/..` still
+  fails with a misleading WriteFile message (pre-existing, Inbox
+  `unpack-of-a-tar-file-member-whose-name-ends-in-a-folder-mark`). From backlog item
+  `tar-member-name-with-dotdot-extracted-into-wrong-folder`. Probe `dotdot_probe.ps1` 7 / 5 ->
+  12 / 0 (6 RUN rows: ustar mix, collision with `s/a.txt`, GNU, PAX, 309's link, Copy of the
+  listing); 306 30 / 0, 308 12 / 0, 309 16 / 0, 395 46 / 0; saltests 30,858 / 0 (negative control on
+  the legacy rule: 12 failed); one refute-first review (no MUST, no SHOULD; NOTE 3 -> Inbox).
