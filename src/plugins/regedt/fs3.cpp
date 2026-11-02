@@ -332,7 +332,7 @@ BOOL ExportValueData(int root, LPCWSTR key, LPCWSTR value, const char* tmpFileNa
         ErrorL(ret, IDS_QUERYVAL);
 
     DWORD type;
-    LPBYTE data, translated;
+    LPBYTE data;
     DWORD size;
 
     // determine the data size
@@ -344,7 +344,7 @@ BOOL ExportValueData(int root, LPCWSTR key, LPCWSTR value, const char* tmpFileNa
     }
 
     // allocate a buffer for the data
-    translated = data = (LPBYTE)malloc(size);
+    data = (LPBYTE)malloc(size);
     if (!data)
     {
         RegCloseKey(hKey);
@@ -364,23 +364,16 @@ BOOL ExportValueData(int root, LPCWSTR key, LPCWSTR value, const char* tmpFileNa
     // UTF-16 unit - with a multi-byte code page (UTF-8, DBCS) the conversion failed and the file
     // got partial and stale bytes. Now the copy has the converted size and is written whole;
     // a text that cannot be converted is written as stored (UTF-16).
+    // The decision is the rule SalRegViewExportBytes (salregfind.h, checked by saltests).
     char* converted = NULL;
-    if (ExportStringsForViewerInASCII &&
-        (type == REG_SZ || type == REG_EXPAND_SZ || type == REG_MULTI_SZ))
+    const void* writeBytes = NULL;
+    DWORD writeLen = 0;
+    if (SalRegViewExportBytes(type, ExportStringsForViewerInASCII, data, size, CP_ACP,
+                              &writeBytes, &writeLen, &converted) == SALREGVIEW_LOWMEM)
     {
-        int convertedLen = 0;
-        int conv = SalRegViewTextToCodePageAlloc(data, size, CP_ACP, &converted, &convertedLen);
-        if (conv == SALREGVIEW_LOWMEM)
-        {
-            RegCloseKey(hKey);
-            free(data);
-            return Error(IDS_LOWMEM);
-        }
-        if (conv == SALREGVIEW_CONVERTED)
-        {
-            translated = (LPBYTE)converted;
-            size = (DWORD)convertedLen;
-        }
+        RegCloseKey(hKey);
+        free(data);
+        return Error(IDS_LOWMEM);
     }
 
     // create or open the temporary file (local disk: W file API, plugin interface 104)
@@ -398,7 +391,7 @@ BOOL ExportValueData(int root, LPCWSTR key, LPCWSTR value, const char* tmpFileNa
 
     // feature 387: a short write is an error (it was "WriteFile(...) || written != size")
     DWORD written = 0;
-    BOOL b = WriteFile(file, translated, size, &written, NULL) && written == size;
+    BOOL b = WriteFile(file, writeBytes, writeLen, &written, NULL) && written == writeLen;
 
     DWORD err;
     SG->SalGetFileSize(file, *newFileSize, err); // ignore errors

@@ -13958,29 +13958,64 @@ static void TestRegViewTextToCodePage387()
     {
         char* out = (char*)1;
         int len = -1;
-        CHECK(SalRegViewTextToCodePageAlloc(L"", 0, 65001, &out, &len) == SALREGVIEW_UTF16 && out == NULL && len == 0);
+        CHECK(SalRegViewTextToCodePageAlloc(L"", 0, 65001, &out, &len) == SALREGVIEW_ASSTORED && out == NULL && len == 0);
         out = (char*)1;
         len = -1;
-        CHECK(SalRegViewTextToCodePageAlloc(L"a", 1, 65001, &out, &len) == SALREGVIEW_UTF16 && out == NULL && len == 0);
+        CHECK(SalRegViewTextToCodePageAlloc(L"a", 1, 65001, &out, &len) == SALREGVIEW_ASSTORED && out == NULL && len == 0);
         out = (char*)1;
         len = -1;
-        CHECK(SalRegViewTextToCodePageAlloc(L"x", 4, 12345, &out, &len) == SALREGVIEW_UTF16 && out == NULL && len == 0);
-        CHECK(SalRegViewTextToCodePageAlloc(NULL, 4, 65001, &out, &len) == SALREGVIEW_UTF16 && out == NULL);
-        CHECK(SalRegViewTextToCodePageAlloc(L"x", 4, 65001, NULL, &len) == SALREGVIEW_UTF16);
+        CHECK(SalRegViewTextToCodePageAlloc(L"x", 4, 12345, &out, &len) == SALREGVIEW_ASSTORED && out == NULL && len == 0);
+        CHECK(SalRegViewTextToCodePageAlloc(NULL, 4, 65001, &out, &len) == SALREGVIEW_ASSTORED && out == NULL);
+        CHECK(SalRegViewTextToCodePageAlloc(L"x", 4, 65001, NULL, &len) == SALREGVIEW_ASSTORED);
     }
     // a lone surrogate: replaced, the count is the conversion's
     {
         const WCHAR lone[] = {0xD800, L'a', 0};
         CHECK(ViewExport387(lone, 3, 65001, "\xEF\xBF\xBD\x61\0", 5));
     }
-    // the negative control: the old space (one byte a unit) fails on UTF-8 and on 932 and leaves
-    // the stale byte behind (the WStrToStr of regedt/utils.h then wrote a NUL into the last byte)
+    // the premise of the defect (not a control of this rule - that is the mutation run in
+    // specs/387-*/fix-log.md): the old space of one byte a unit is too small on UTF-8 and 932
     {
         char old[3];
-        memset(old, 0x5A, sizeof(old));
-        CHECK(WideCharToMultiByte(65001, 0, L"a\x20AC", 3, old, 3, NULL, NULL) == 0 && old[1] != '\xE2');
+        CHECK(WideCharToMultiByte(65001, 0, L"a\x20AC", 3, old, 3, NULL, NULL) == 0);
         CHECK(WideCharToMultiByte(932, 0, L"\x3042\x3044", 3, old, 3, NULL, NULL) == 0);
     }
+
+    // SalRegViewExportBytes - what ExportValueData writes
+    const WCHAR aEuro[] = {L'a', 0x20AC, 0};
+    const void* w = NULL;
+    DWORD wl = 0;
+    char* alloc = (char*)1;
+    // a text type with the switch on: the converted copy, its count, the copy to free
+    CHECK(SalRegViewExportBytes(REG_SZ, TRUE, aEuro, 6, 65001, &w, &wl, &alloc) == SALREGVIEW_CONVERTED);
+    CHECK(alloc != NULL && w == alloc && wl == 5 && memcmp(w, "a\xE2\x82\xAC\0", 5) == 0);
+    free(alloc);
+    CHECK(SalRegViewExportBytes(REG_EXPAND_SZ, TRUE, aEuro, 6, 65001, &w, &wl, &alloc) == SALREGVIEW_CONVERTED && wl == 5);
+    free(alloc);
+    CHECK(SalRegViewExportBytes(REG_MULTI_SZ, TRUE, multi, sizeof(multi), 65001, &w, &wl, &alloc) == SALREGVIEW_CONVERTED &&
+          wl == 7 && memcmp(w, "a\0\xE2\x82\xAC\0\0", 7) == 0);
+    free(alloc);
+    // the switch off, another type, or a text that cannot be converted: the data as stored
+    alloc = (char*)1;
+    CHECK(SalRegViewExportBytes(REG_SZ, FALSE, aEuro, 6, 65001, &w, &wl, &alloc) == SALREGVIEW_ASSTORED &&
+          w == aEuro && wl == 6 && alloc == NULL);
+    alloc = (char*)1;
+    CHECK(SalRegViewExportBytes(REG_BINARY, TRUE, aEuro, 6, 65001, &w, &wl, &alloc) == SALREGVIEW_ASSTORED &&
+          w == aEuro && wl == 6 && alloc == NULL);
+    alloc = (char*)1;
+    CHECK(SalRegViewExportBytes(REG_DWORD, TRUE, aEuro, 4, 65001, &w, &wl, &alloc) == SALREGVIEW_ASSTORED &&
+          w == aEuro && wl == 4 && alloc == NULL);
+    alloc = (char*)1;
+    CHECK(SalRegViewExportBytes(REG_SZ, TRUE, aEuro, 6, 12345, &w, &wl, &alloc) == SALREGVIEW_ASSTORED &&
+          w == aEuro && wl == 6 && alloc == NULL);
+    alloc = (char*)1;
+    CHECK(SalRegViewExportBytes(REG_SZ, TRUE, aEuro, 0, 65001, &w, &wl, &alloc) == SALREGVIEW_ASSTORED &&
+          w == aEuro && wl == 0 && alloc == NULL);
+    // a single-byte code page: the old bytes and count
+    CHECK(SalRegViewExportBytes(REG_SZ, TRUE, L"\x010D\x010D\x010D\x010D bar", 18, 1250, &w, &wl, &alloc) ==
+              SALREGVIEW_CONVERTED &&
+          wl == 9 && memcmp(w, "\xE8\xE8\xE8\xE8 bar\0", 9) == 0);
+    free(alloc);
 }
 
 // feature 292: the Registry Editor decides "onto / into itself" by the key's identity (the

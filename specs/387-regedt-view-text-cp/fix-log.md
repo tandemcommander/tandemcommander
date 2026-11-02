@@ -74,3 +74,37 @@ Backlog item `registry-editor-view-of-a-text-value-cut-text-and-a-stray` (source
   `RegOpenKeyExW` failure branch of `ExportValueData` does not return.
 
 ## Review
+
+### Review 1 (independent, refute-first) - no MUST
+
+Re-ran the ctypes table (same result), saltests 30714 / 0, the encoding guard; built the new
+call-site code into a harness with an `activeCodePage=UTF-8` manifest (`GetACP()` = 65001): the
+file held `61 E2 82 AC 00`, all 13 bytes of `čččč bar` + NUL, the whole REG_MULTI_SZ; 1250 =
+old bytes. Own mutations of the rule: old sizing 5 failed, dropping the last unit 7 failed.
+Callers: only `CPluginFSInterface::ViewFile`; a FALSE export drops the cache copy, no viewer.
+No data-loss path (only a temporary copy is written). Confirmed the Inbox finding.
+
+- SHOULD 1 - the call site had no automated proof (dropping `size = convertedLen` or writing
+  `data` would stay green). **Done**: the whole decision (type, switch, which bytes and how many)
+  is now the rule `SalRegViewExportBytes` (`salregfind.h`); `ExportValueData` only writes the
+  returned pointer / length and frees the returned copy. 11 new checks (REG_SZ / EXPAND_SZ /
+  MULTI_SZ converted; switch off, REG_BINARY, REG_DWORD, invalid code page, empty -> as stored,
+  pointer identity; 1250 old bytes). Mutation `*writeLen = outLen` removed -> `30724 checks,
+  4 failed`; restored -> `0 failed`. The reviewer's note that a UTF-8 manifest makes the GUI
+  case drivable on a copy of the exe is recorded in the person-step item (not tried here; the
+  product under a changed manifest is unproven).
+- SHOULD 2 - the "negative control" rows in saltests only checked Windows, and
+  `old[1] != '\xE2'` relied on undocumented buffer filling. **Done**: the block is labelled
+  as the defect's premise (the control is the mutation run), the `old[1]` check removed.
+- NOTE 1 - the `size / 2 > INT_MAX` guard can never be true. **Done**: removed (and `<limits.h>`).
+  The constant `SALREGVIEW_UTF16` renamed `SALREGVIEW_ASSTORED` (it now also covers non-text
+  types).
+- NOTE 2 - the UTF-16 fallback has no BOM: accepted (near-unreachable with flags 0; spec
+  Clarifications).
+- NOTE 3 - on a single-byte code page characters outside it still become `?`: as before, out of
+  scope.
+- NOTE 4 - Review section / CHANGELOG pending at that point: done at closing.
+
+After the fixes: encoding guard `TOTAL: 0 finding(s)`; `.\build.cmd` `BUILD SUCCEEDED`;
+`saltests: 30724 checks, 0 failed`. (Trap met twice: the first saltests run after a header-only
+change can use a not yet relinked exe - check its time stamp; a second `build.cmd` relinked it.)
