@@ -21,12 +21,14 @@ The user opens Change Filter, types a mask with a syntax error, presses OK, read
 exactly the filter it had before the dialog opened - whole, and ready to filter the listing.
 
 **Why this priority**: today the panel silently keeps only the first 259 bytes of its filter
-(measured at fc9b8691), so it shows other files than the user's filter selects. This is the whole
-item.
+(measured at fc9b8691), so it shows other files than the user's filter selects. Review 1 found
+more: after the refused edit the panel - at any filter length - lists by the refused text's masks
+(`*.txt` from `*.txt|`) until its filter is prepared again. This is the whole item.
 
 **Independent Test**: hidden-desktop probe `flt392_probe.ps1` row `long-refused`: two left tabs
 from the registry, tab 1 with a valid 300-byte filter; switch to it, Change Filter, field
-`*.txt|`, OK, error box answered, Cancel, Change Filter again - the field shows the 300 bytes.
+`*.txt|`, OK, error box answered, Cancel; the refreshed panel lists the same first file as before
+the dialog, and Change Filter opened again shows the 300 bytes.
 
 **Acceptance Scenarios**:
 
@@ -34,7 +36,8 @@ from the registry, tab 1 with a valid 300-byte filter; switch to it, Change Filt
    error, confirms, dismisses the error and cancels, **Then** the next Change Filter shows the
    whole 300-byte filter and the panel filters by it.
 2. **Given** a panel whose filter is short, **When** the same refused edit is done, **Then** the
-   filter stays as it was (as today).
+   filter text stays as it was (as before) and the panel filters by it (before: it listed by the
+   refused text's masks - review 1).
 3. **Given** a panel whose filter is 300 bytes long, **When** the user enters a valid short mask
    and confirms, **Then** the new mask is stored and used (as today).
 
@@ -70,8 +73,9 @@ from the registry, tab 1 with a valid 300-byte filter; switch to it, Change Filt
 
 - **SC-001**: In the probe, a 300-byte panel filter is shown whole (300 of 300 bytes) by Change
   Filter after a refused edit and Cancel (before: 259 bytes).
-- **SC-002**: The two control rows (short filter refused, long filter replaced by a valid mask)
-  pass before and after the change.
+- **SC-002**: The row with a short filter refused lists the same files before and after the
+  dialog (before the change: the refused text's files); the rows with an accepted mask pass
+  before and after the change.
 - **SC-003**: Build, encoding guard and saltests stay green.
 
 ## Assumptions

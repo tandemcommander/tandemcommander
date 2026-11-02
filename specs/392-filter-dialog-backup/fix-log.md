@@ -14,6 +14,12 @@ Filter->GetWritableMasksString(), MAX_PATH)` writes the typed text into the pane
 CM_LCHANGEFILTER / CM_RCHANGEFILTER; Cancel after the error does nothing more, so the cut filter
 stays in the panel.
 
+Corrected by review 1: the failed `PrepareMasks` of the typed text leaves the masks it prepared
+before the error (`*.txt` of `*.txt|`) in the panel's group, and `SetMasksString(buf)` changes
+only the text and `NeedPrepare` - so after Cancel the panel **lists by the refused text** (at
+any filter length, also a short one) until its filter is prepared again (the next Change Filter
+does that in `Transfer`). Measured by the probe's listing check (below, review 1).
+
 Reachability: `Filter` > 259 bytes comes from a tab's `Filter` registry value (read with
 `SAL_TAB_FILTER_MAX` = 1001 in `mainwnd2.cpp`, set into `Filter` in
 `CFilesWindow::SwitchToTab` (`paneltabs.cpp`) when the tab is activated). The panel's own
@@ -82,3 +88,40 @@ Regression: feature 270's filter rows (`specs/270-mask-filter-label-fits/probe/m
 - `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`
 - `saltests.exe` -> `saltests: 30798 checks, 0 failed`, exit 0
 - No UI string, dialog or resource changed - no `.slt` refresh (stop-rules 2.13 does not apply).
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+Re-measured: the probe on the branch build PASS 8 / FAIL 0; the merge-base fc9b8691 rebuilt in
+the reviewer's own worktree and build folder (`%TEMP%\rv392\oldtree`): PASS 7 / FAIL 1
+(`long-refused` 259 bytes) - the negative control holds. Code: same verdict and `errorPos` (same
+class, the panel's mode), no caller regresses, nothing cut (`DlgItemTextFitsU8` first, UTF-8
+read), no data loss.
+
+- SHOULD 1 - the probe did not prove "prepared / the panel filters by it"; the old code listed by
+  the refused text's masks at any length, so `short-refused` was no control. **Fixed**: every row
+  now reads what the panel lists (CM_LEFTREFRESH, Home, Down, F3 - the viewer's title; fixture
+  `a.last`, `b.txt`) before the dialog and right after the cancel (before Change Filter opens
+  again: opening it prepares the filter anew in `Transfer` - a first version read it after the
+  reopen and saw no stale filtering; the title of a text file is `... [Plain Text] - Code
+  Viewer`, the pattern takes both).
+  - old code (`%TEMP%\rv392\oldtree\tandemcommander.exe`, `probe/result_before_review1.txt`):
+    PASS 6, FAIL 2 - `long-refused` cut to 259 bytes and lists `b.txt` (expected `a.last`),
+    `short-refused` lists `b.txt` (expected none).
+  - branch build (`probe/result_after_review1.txt`): PASS 8, FAIL 0, every listing as expected;
+    registry restored, identical hash.
+- SHOULD 2 - the records understated the impact ("as today" for a short filter; "no prepared
+  masks"). **Fixed**: spec (story 1, scenario 2, SC-002) and *Measurement before* corrected; the
+  history and changelog entries describe the listing by the refused text.
+- NOTE - a panel filter over 259 bytes cannot be switched off ("Don't use filter" + OK) without
+  changing the field: feature 270 refuses the text as too long. Outside this item -> Inbox.
+- NOTE - "Don't use filter" with an invalid text: `Transfer` stores the text and its failed
+  preparation unchecked. Accepted: the filter is then off; turning it on goes through
+  `Validate`; at the next start an unpreparable filter becomes `*.*` (`mainwnd2.cpp`). Not
+  recorded as an item.
+- NOTE - `EM_SETSEL errorPos` uses a UTF-8 byte index as a character index: a non-ASCII mask
+  highlights the wrong place. Pre-existing, unchanged -> Inbox.
+
+`git status --short` empty after the review (the reviewer edited nothing in the repository).
+The source did not change after review 1 (only the probe and records), so no second review.

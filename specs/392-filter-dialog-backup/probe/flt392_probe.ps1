@@ -17,6 +17,9 @@
       long-refused-then-valid  tab filter F, '*.txt|' refused (error box), the same dialog corrected
                      to '*.cpp', OK: accepted without a second question, the next Change Filter
                      shows '*.cpp'
+    Every row also checks what the panel lists (refresh, Home, Down, F3 - the viewer's title; the
+    fixture holds a.last and b.txt) before the dialog and after it: a refused edit must leave the
+    listing as it was (the old code went on filtering by the refused text's masks, any length).
     Driver of 098's library. MUST run through tools\run_on_hidden_desktop.ps1. Registry exported,
     restored and verified.
 #>
@@ -40,7 +43,7 @@ if ($others.Count) { Write-Output ('NOT RUN: another tandemcommander.exe is runn
 $Root = $TempRoot + '\tcflt_filter'
 $StartDir = $Root + '\start'
 $Key01 = 'HKCU:\Software\Tandem Commander\Settings'
-$CM_CHANGEFILTER = 779; $CM_LEFT_NEXTTAB = 2867
+$CM_CHANGEFILTER = 779; $CM_LEFT_NEXTTAB = 2867; $CM_LEFTREFRESH = 724
 $IDE_FILTER = 409; $IDC_USEFILTER = 407
 $Syntax = 'syntactically incorrect'
 
@@ -121,15 +124,30 @@ function Run-Row([string]$Case, [scriptblock]$Body) {
     catch { Row $Case 'ERROR' 'FAIL' $_.Exception.Message }
     finally { if ($script:RowId) { End-Row $Case $script:RowId $script:RowFatal $before } }
 }
+# the first file the left panel lists after a refresh (Home, Down, F3 - the viewer's title), as a
+# file name; '' when it lists none (review 1 of feature 392)
+function Listed([int]$id) {
+    Post-Cmd (Get-Main $id) $CM_LEFTREFRESH
+    Start-Sleep -Milliseconds 1500
+    [void][Drv098f]::Send((Get-Main $id), 0, 0, 0, 20000)
+    Key $id 0x24; Key $id 0x28
+    Start-Sleep -Milliseconds 300
+    $t = Which-Viewer $id
+    # "<path> - Viewer", or "<path> [Plain Text] - Code Viewer" for a text file
+    if ($t -match '\\([^\\]+?)( \[[^\]]*\])? - [^\\]*Viewer$') { return $Matches[1] }
+    if ($t -eq '<no viewer window>') { return '' }
+    return $t
+}
 # $TabFilter into tab 1, switch to it, Change Filter, field := $Text, OK (+ serve), Cancel if it
 # stayed, Change Filter again: returns the facts; $Expect = the text the second dialog must show
-function Flt-Row([string]$Case, [string]$TabFilter, [string]$Text, [string]$Expect, [switch]$Accepted, [string]$Then) {
+function Flt-Row([string]$Case, [string]$TabFilter, [string]$Text, [string]$Expect, [string]$ListBefore, [string]$ListAfter, [switch]$Accepted, [string]$Then) {
     Run-Row $Case {
         Seed-Tabs $TabFilter
         $id = Start-Tc $StartDir; $script:RowId = $id
         Post-Cmd (Get-Main $id) $CM_LEFT_NEXTTAB
         Start-Sleep -Milliseconds 1500
         [void][Drv098f]::Send((Get-Main $id), 0, 0, 0, 20000)
+        $listedBefore = Listed $id
         $dlg = Open-ByCmd $id $CM_CHANGEFILTER 15
         if ($dlg -eq [IntPtr]::Zero) { throw 'Change Filter opened no window' }
         $first = Get-Field $dlg $IDE_FILTER
@@ -158,6 +176,10 @@ function Flt-Row([string]$Case, [string]$TabFilter, [string]$Text, [string]$Expe
         }
         if ($stayed -and -not $r.Fatal) { Close-Win $dlg; Start-Sleep -Milliseconds 500; $r2 = Serve-Flt $id @() 15; foreach ($m in $r2.Messages) { [void]$r.Messages.Add('after cancel: ' + $m) }; if ($r2.Fatal) { $script:RowFatal = $r2.Fatal } }
         if (-not $script:RowFatal) { $script:RowFatal = Fatal-Win $id }
+        # the listing is read before Change Filter opens again: opening it prepares the panel's
+        # filter anew (Transfer), which would hide what the panel filtered by after the cancel
+        $listedAfter = '<not read>'
+        if (-not $script:RowFatal) { $listedAfter = Listed $id }
         $now = '<not read>'
         if (-not $script:RowFatal) {
             $dlg2 = Open-ByCmd $id $CM_CHANGEFILTER 15
@@ -166,21 +188,23 @@ function Flt-Row([string]$Case, [string]$TabFilter, [string]$Text, [string]$Expe
             Close-Win $dlg2; Start-Sleep -Milliseconds 400
             [void](Serve-Flt $id @() 10)
         }
+        $listOk = ($listedBefore -ceq $ListBefore) -and ($listedAfter -ceq $ListAfter)
+        $thenFacts += ("; the panel lists first: before the dialog '{0}' (expected '{1}'), after it '{2}' (expected '{3}')" -f $listedBefore, $ListBefore, $listedAfter, $ListAfter)
         $kept = ($now -ceq $Expect)
         $shown = Shown $r
         if ($Then) { $verdictOk = (-not $stayed) -and ($shown -match $Syntax) -and ($shown -notmatch 'after the correction') -and $kept }
         elseif ($Accepted) { $verdictOk = (-not $stayed) -and ($shown -eq 'nothing') -and $kept }
         else { $verdictOk = $stayed -and ($shown -match $Syntax) -and $kept }
-        $ok = (-not $script:RowFatal) -and (-not $r.TimedOut) -and $firstWhole -and $verdictOk
+        $ok = (-not $script:RowFatal) -and (-not $r.TimedOut) -and $firstWhole -and $verdictOk -and $listOk
         Row $Case 'RUN' (V $ok) ("tab filter {0} bytes; the first dialog showed {1} bytes (whole: {2}); typed '{3}'; dialog stayed: {4}; asked: {5}; the next dialog shows {6} bytes, as expected ({7} bytes): {8}, tail '{9}'{10}" -f (U8 $TabFilter), (U8 $first), $firstWhole, $Text, $stayed, $shown, (U8 $now), (U8 $Expect), $kept, (Tail $now 12), ($thenFacts + $(if ($r.TimedOut) { '; TIMED OUT' } else { '' })))
     }
 }
 
 $Cases = [ordered]@{}
-$Cases['long-refused'] = { Flt-Row 'long-refused' $F '*.txt|' $F }
-$Cases['short-refused'] = { Flt-Row 'short-refused' '*.abc;*.def' '*.txt|' '*.abc;*.def' }
-$Cases['long-valid'] = { Flt-Row 'long-valid' $F '*.txt' '*.txt' -Accepted }
-$Cases['long-refused-then-valid'] = { Flt-Row 'long-refused-then-valid' $F '*.txt|' '*.cpp' -Then '*.cpp' }
+$Cases['long-refused'] = { Flt-Row 'long-refused' $F '*.txt|' $F 'a.last' 'a.last' }
+$Cases['short-refused'] = { Flt-Row 'short-refused' '*.abc;*.def' '*.txt|' '*.abc;*.def' '' '' }
+$Cases['long-valid'] = { Flt-Row 'long-valid' $F '*.txt' '*.txt' 'a.last' 'b.txt' -Accepted }
+$Cases['long-refused-then-valid'] = { Flt-Row 'long-refused-then-valid' $F '*.txt|' '*.cpp' 'a.last' '' -Then '*.cpp' }
 
 # ---- main --------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tcflt_backup.reg'
