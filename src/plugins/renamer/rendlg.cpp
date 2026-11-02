@@ -1470,7 +1470,8 @@ BOOL CRenamerDialog::LoadSubdir(char* path, const char* subdir)
                 // feature 388: a junction / directory symbolic link / mount point (the listed tag,
                 // fail closed) is never walked - its target's files lie outside the selection and a
                 // link back up listed the same files once per level; the link itself is an item,
-                // its name matched as a folder's (no extension)
+                // its name matched against the mask as a selected folder's (AgreeMasks with no
+                // extension given takes it from the name: "j.txt" matches "*.txt")
                 if (SalMaskGroup->AgreeMasks(fileName, NULL))
                 {
                     CSourceFile* item = new CSourceFile(fd, fileName, path, pathLen, TRUE);

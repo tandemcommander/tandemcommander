@@ -302,6 +302,7 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Renamer subdirectories: list nested folder links as items or skip them](items/renamer-subdirectories-list-nested-folder-links-as-items-or/desc.md) | decision | 3 | data-safety | review:388 | 2026-11-02 |
 
 ## Parked
 

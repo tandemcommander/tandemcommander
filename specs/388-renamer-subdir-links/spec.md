@@ -105,15 +105,18 @@ placeholder such as a OneDrive folder, a deduplicated folder), are walked as bef
   directory that is a link - a junction, a directory symbolic link, a volume mount point, any
   reparse directory whose tag is a name surrogate, or whose tag cannot be read.
 - **FR-002**: Such a link found below a selected folder MUST be offered as an item of its own
-  when its name matches the mask (masks are matched as for a selected folder: no extension).
+  when its name matches the mask (matched exactly as a selected folder's name is: the mask code
+  takes the extension from the name, so a link `j.txt` matches `*.txt` - review 1, SHOULD 2).
 - **FR-003**: A selected panel item that is such a link MUST be treated the same way: listed
   when its name matches the mask, not walked.
 - **FR-004**: A directory with a reparse point whose tag is readable and not a name surrogate
   (cloud placeholder, deduplication) MUST still be walked; a directory without a reparse point
   MUST be walked as before.
 - **FR-005**: The listing's count line MUST count listed link items as folders.
-- **FR-006**: The link decision MUST be a pure rule in a header under `src/common/` shared with
-  the core's rule (feature 197 `SalDeleteAsDirLinkDecision`), checked by `saltests`.
+- **FR-006**: The link decision MUST be a pure rule in a header under `src/common/` built on
+  the core's rule (feature 197 `SalDeleteAsDirLinkDecision`), checked by `saltests`. It is
+  stricter in one case: a directory listed with the reparse bit but tag 0 is a link (fail closed
+  for a walk), where 197's rule calls tag 0 "no reparse point any more" (review 1, NOTE 1).
 - **FR-007**: Nothing else in the Renamer's listing changes: files, plain folders, masks, the
   "too long path name" and "cannot read the folder" errors behave as before.
 

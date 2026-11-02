@@ -102,3 +102,24 @@ After the change, row by row: `out` 3 rows (`a.txt`, `out`, `sub\b.txt`); `loop`
 `loop`), no box; `selected` 1 row (`jsel`); `symlink` 2 rows (`a.txt`, `sl`); `mask` 2 rows;
 `plain` 2 rows (control unchanged); `rename` → `n_a.txt`, `sub\n_b.txt`, junction `n_out`, the
 target still `o1.txt,o2.txt,o3.txt`.
+
+## Review
+
+Review 1 (independent agent, refute-first, on `2c4386db`): **no MUST**. It built the branch in its
+own worktree (`build.cmd full` succeeded, saltests 0 failed, encoding guard 0), re-ran the probe
+(14 / 14 PASS) plus two rows of its own, and a negative control with the pre-fix `renamer.spl`
+(7 FAIL - the fix-log's *before* reproduced); registry identical, fixture removed. Its own row
+"rename + reload": after the rename the reload lists `n_a.txt`, `n_out`, `sub\n_b.txt`, nothing
+below the link (confirms the reload claim by driving it).
+
+| Finding | What was done |
+|---|---|
+| SHOULD 1 - nested links are now listed (and renamed by the rule) while nested plain folders never are; hidden / system compatibility junctions of a profile would be listed by `*.*` | the item's *Expected* asked for exactly this (and the core's 213 does it) - kept; the choice is the maintainer's: decision item `renamer-subdirectories-list-nested-folder-links-as-items-or` (Inbox, recommendation B: skip nested links silently, keep a selected link as an item) |
+| SHOULD 2 - FR-002 and the code comment say the link's name is matched "with no extension", but `AgreeMasks(name, NULL)` takes the extension from the name (a junction `j.txt` matches `*.txt`; the reviewer's `dotmask` row: 2 rows) | wording fixed in `spec.md` FR-002 and the comment in `LoadSubdir` (`rendlg.cpp`); the behaviour is the one a selected folder already had (`AgreeMasks(item->Name, NULL)` in `ReloadSourceFiles`) |
+| NOTE 1 - tag 0 with the reparse bit is a link here, plain in 197's rule | intended (fail closed for a walk: the listing can only shrink); FR-006 reworded ("built on", the one stricter case named) |
+| NOTE 2 - a selected reparse folder whose own look-up fails is listed, not walked | accepted: fail closed, the conservative direction (the listing shrinks, nothing outside the selection is renamed) |
+| NOTE 3 - the count line (FR-005) not probed | accepted: by reading (the folders are counted from the listed items); the count text is not read by the probe |
+| NOTE 4 - no probe row for cloud / dedup / network share folders | accepted (see *Analyze*): saltests rows only |
+
+After the fixes (comment and spec text only): `.\build.cmd` → BUILD SUCCEEDED; `git status
+--short` empty after the review (the reviewer edited nothing).
