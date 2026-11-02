@@ -94,3 +94,57 @@ LOW U1 (negative-control method open) - accepted; recorded below. Run 2: nothing
   (the operation never ran; the flake 294 recorded), full re-run `link296_probe_on391_rerun.txt` 47 / 0;
   297 `link297_probe` 40 / 0; 390 `hkcr390_probe` 10 / 0. The product's registry restored identical
   after every probe.
+
+## Review
+
+### Review 1 (refute-first, independent agent)
+
+Confirmed: the loops are fixed (old plug-in built in a worktree: FINDSELF 28 results + error 87); a
+read-only walker applying the same rule over HKCR, HKCU, HKLM, HKU, HKCC (~1.12 million keys) refused
+nothing; no data-loss path; no other walker or `CRegCopyTop` creator.
+
+- MUST: `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009`, `\CurrentLanguage`, `\005`
+  (and their `WOW6432Node` copies) open as performance pseudo-handles (`0xFFFFFFFF80000050` / `...60`);
+  `NtQueryKey` fails with STATUS_INVALID_HANDLE, so `RegWalkEnter` turned them into "Unable to open a
+  registry key. (6)" - 6 new boxes in a Find over HKLM, the values left out with Skip All, the same box
+  in a Copy of Perflib. The spec's "practically only too long" was wrong.
+  Fixed: `SalRegIsPseudoKeyHandle` (`salregkeyid.h`, saltests) - such a handle is neither checked nor
+  added (no key object: no identity, no subkey, no link). Spec edge cases corrected. Probe row FINDPERF
+  (and FINDPERFNT, see below).
+- SHOULD: a link in the copied tree to the target's parent (`Tgt\<K>\L -> Cil`, copy into `Cil\`)
+  still looped: 29 keys 28 deep, error 87 - the walk reached the copy it writes. Inside the item's
+  *Expected* ("never walk through a link back into the tree they walk"), so fixed here: the identity
+  of the operation's target key (read once after it is created) is avoided by every source key below
+  the top (`RegWalkEnter`'s `avoid`; refused with the same box). FR-001 extended. Probe row COPYTGT.
+- NOTE probe coverage (HKCR both halves, a selected key that is itself a link, drag and drop,
+  Move / Quick Rename through the check): not added - drag and drop and Quick Rename go through the same
+  `CopyOrMoveKey`, Move reaches the check only after 297's link refusal, and the 292 / 294 / 296 / 297 /
+  390 probes (HKCR, links, Move, Quick Rename) are re-run on this build.
+- NOTE mojibake in the old open-error box's name read-back: the probe reads that box's name field
+  through the code page (287's trap; the 296 box is read through id 2477) - a probe artefact, before 391.
+- NOTE stack: `RegWalkEnter` / `GetOpenedRegKeyId` keep ~2.5 KB each on the stack, called from the
+  recursion but not inlined into its frame across the recursion's depth (3 MB stack, 512-unit paths) -
+  accepted.
+
+The reviewer's own FINDPERFNT row failed on the OLD plug-in too (`rev391\perf_old.txt`): an
+access-denied (5) box from a protected key under `CurrentVersion`, answered Cancel, ends the search
+before Perflib - a pre-391 open error. The row now answers Skip All and allows only (5) boxes.
+
+After the fixes: saltests 30,777 -> 30,789 / 0; probe `loop391_after_review1_english.txt` /
+`_czech.txt` 24 / 0. Negative control of the two fixes (pseudo-handle test and target check forced off,
+rebuilt, reverted, rebuilt): `loop391_negctl_review1.txt` COPYTGT BOX + STATE FAIL (29 keys, 28 deep,
+error 87) and FINDPERF FAIL (the "(6)" box) - 3 FAIL, the other rows PASS.
+
+Regression found by the re-run of 294's probe after the SHOULD fix (`above294_probe_on391_r1.txt`
+22 PASS / 2 FAIL): FLATTEN and FLATCOPY - 294's allowed merge of `Plochy\K\K` into `Plochy\` (the
+target `Plochy\K` HOLDS the source) - got "Can't move/copy a key to itself." for `...\K\K\Q`: every
+source key lies inside such a target, so "within the target" alone refused them. Fix: a source key is
+"in the copy" only when it lies within the target and NOT within the copied key's own identities
+(`SalRegKeyIdIntoTarget`, `salregkeyid.h`, saltests incl. the flatten and HKCR-halves cases;
+`CRegWalkChain::MarkTop` / `IntoTarget`). A link from such a source into the rest of the target is
+still caught (a key of the target outside the source). Trap: a rebuild while the background regression
+probes still ran failed with LNK1168 (the plug-in was loaded) - the 297 / 390 results of that batch are
+from the review-1 build; everything is re-run on the final build below. saltests 30,803 / 0.
+- Final build (after review 1 and the flatten fix): `loop391_after_r2_english.txt` / `_czech.txt`
+  24 / 0; 294 `above294_probe_on391_r2.txt` 24 / 0; 292 33 / 0; 296 47 / 0; 297 40 / 0; 390 10 / 0;
+  saltests 30,803 / 0; encoding guard TOTAL: 0; BUILD SUCCEEDED.

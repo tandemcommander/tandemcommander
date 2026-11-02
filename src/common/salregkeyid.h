@@ -38,6 +38,11 @@
 // SalRegKeyIdLeadsBack - feature 391: does a key a walk (Copy, Find) just opened by
 //                     name lead it back into the keys it is inside (a registry link
 //                     to the walked key, a key above it, or a cycle of links)?
+// SalRegKeyIdIntoTarget - feature 391: does a source key a copy just opened lie in
+//                     the key the copy writes, outside the copied key (reached
+//                     through a link into the target)?
+// SalRegIsPseudoKeyHandle - feature 391: is an opened key handle a predefined
+//                     pseudo-handle (the Perflib language keys) with no identity?
 // SalRegHkcrDeleteHalf - feature 390: where a Move deletes a source key of
 //                     HKEY_CLASSES_ROOT. The copy may create the user's half of
 //                     the very path it copies (a machine-only key moved into
@@ -153,6 +158,32 @@ inline BOOL SalRegKeyIdLeadsBack(const WCHAR* const* chain, int count, const WCH
         if (SalRegKeyIdWithin(chain[i], id))
             return TRUE;
     return FALSE;
+}
+
+// feature 391 (review): a link in the copied tree may lead into the key the copy writes ('target', a
+// link to the target's parent): the walk would copy its own output again and again. A source key
+// ('id') is such a key when it lies within the target but not within the copied key itself ('top',
+// its identities) - a target that holds the source (294's merge into the key above the parent) has
+// every source key inside it, and those are no loop. Empty / NULL 'id' or 'target' never match.
+inline BOOL SalRegKeyIdIntoTarget(const WCHAR* id, const WCHAR* target, const WCHAR* const* top, int topCount)
+{
+    if (!SalRegKeyIdWithin(id, target))
+        return FALSE;
+    for (int i = 0; top != NULL && i < topCount; i++)
+        if (SalRegKeyIdWithin(id, top[i]))
+            return FALSE;
+    return TRUE;
+}
+
+// feature 391 (review): RegOpenKeyEx gives a few keys (HKLM\SOFTWARE\Microsoft\Windows NT\
+// CurrentVersion\Perflib\009, \CurrentLanguage and the other installed languages) as a predefined
+// pseudo-handle (HKEY_PERFORMANCE_TEXT 0x80000050, HKEY_PERFORMANCE_NLSTEXT 0x80000060): no registry
+// key object - no identity, no subkeys, no link - while their values read normally. Such a handle
+// value (the predefined range 0x80000000-0x800000FF, sign-extended on x64) is told apart here.
+inline BOOL SalRegIsPseudoKeyHandle(const void* h)
+{
+    LONG_PTR v = (LONG_PTR)h;
+    return v >= (LONG_PTR)(LONG)0x80000000 && v <= (LONG_PTR)(LONG)0x800000FF;
 }
 
 enum CSalHkcrDeleteHalf

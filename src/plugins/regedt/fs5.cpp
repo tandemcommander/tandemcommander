@@ -348,7 +348,11 @@ struct CRegCopyTop
     CSalRegKeyIds Ids;
     CRegWalkChain* Walk; // feature 391: the source keys the copy is inside
     BOOL WalkStarted;    // the operation's own key entered into Walk
+    LPWSTR TargetId;     // review of 391: the identity of the key the copy writes (malloc'd; NULL = unknown)
+    BOOL TargetIdRead;   // TargetId was asked for (once, after the top target key was created)
 };
+
+static int GetOpenedRegKeyId(HKEY hKey, WCHAR* name);
 
 // "Can't copy (move) a key to itself." naming the full source key 'root'\'key' (feature 296's box, OK
 // skips the key, Cancel stops); always FALSE, 'skip' tells the answers apart
@@ -459,7 +463,7 @@ static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWS
         while (1)
         {
             BOOL leadsBack;
-            int err = RegWalkEnter(*operation.Walk, sourceHKey, leadsBack);
+            int err = RegWalkEnter(*operation.Walk, sourceHKey, operation.TargetId, leadsBack);
             if (err == ERROR_SUCCESS)
             {
                 if (!leadsBack)
@@ -510,6 +514,18 @@ static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWS
     {
         RegCloseKey(sourceHKey);
         return FALSE;
+    }
+
+    // review of 391: a link in the source may lead into the key the copy writes (a link to the
+    // target's parent): the walk would copy its own output again and again. The identity of the
+    // operation's target key, once created, is avoided by every source key below the top (best
+    // effort: unknown = not checked, the behaviour before)
+    if (!operation.TargetIdRead)
+    {
+        operation.TargetIdRead = TRUE;
+        WCHAR id[SAL_REGKEYID_MAX];
+        if (GetOpenedRegKeyId(targetHKey, id) == ERROR_SUCCESS)
+            operation.TargetId = _wcsdup(id); // NULL on low memory: not checked
     }
 
     // verify that the new key has the same class name
@@ -1213,17 +1229,22 @@ BOOL RegWalkEnterTop(CRegWalkChain& chain, HKEY hKey, int root, LPCWSTR key)
         if (GetOpenedRegKeyId(hKey, name) == ERROR_SUCCESS)
             ret = chain.Push(name);
     }
+    chain.MarkTop();
     return ret;
 }
 
-int RegWalkEnter(CRegWalkChain& chain, HKEY hKey, BOOL& leadsBack)
+int RegWalkEnter(CRegWalkChain& chain, HKEY hKey, LPCWSTR avoid, BOOL& leadsBack)
 {
     leadsBack = FALSE;
+    // review of 391: a few keys (the Perflib languages) open as a predefined pseudo-handle - no key
+    // object, so no identity, and no subkey or link to lead anywhere: not checked, not added
+    if (SalRegIsPseudoKeyHandle(hKey))
+        return ERROR_SUCCESS;
     WCHAR name[SAL_REGKEYID_MAX];
     int err = GetOpenedRegKeyId(hKey, name);
     if (err != ERROR_SUCCESS)
         return err;
-    if (chain.LeadsBack(name))
+    if (chain.LeadsBack(name) || avoid != NULL && chain.IntoTarget(name, avoid))
     {
         leadsBack = TRUE;
         return ERROR_SUCCESS;
@@ -1389,9 +1410,13 @@ BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
     CRegWalkChain walk; // feature 391
     top->Walk = &walk;
     top->WalkStarted = FALSE;
+    top->TargetId = NULL;
+    top->TargetIdRead = FALSE;
     BOOL ret = CopyOrMoveKeyRec(sourceRoot, source, targetRoot, target, move, skip, skipAllErrors,
                                 skipAllLongNames, skipAllOverwrites, overwriteAll, skipAllClassNames,
                                 nameBuffer, stack, *top);
+    if (top->TargetId != NULL)
+        free(top->TargetId);
     free(key);
     free(top);
     return ret;

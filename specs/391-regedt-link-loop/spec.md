@@ -69,14 +69,16 @@ its own name matches.
 - A cycle through several links whose target names never repeat a walked path: decided by what each opened key is (its identity), not by the path text.
 - `HKEY_CLASSES_ROOT` (a merged view): the walk's starting key counts with every half that holds it.
 - Move (F6) and Quick Rename: feature 297 already refuses a link source before it is read, so the new check (which runs in the shared recursion for Move too, with the Move wording of the same box) is never reached through a link; Move behaves as before.
-- The identity of a key below the start cannot be read (practically only an internal name longer than the identity limit): the existing open-error box (Retry / Skip / Skip All / Cancel) - fails closed, nothing of that key copied or searched.
+- A few keys open as a predefined pseudo-handle, not a key object (`HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\009`, `\CurrentLanguage`, the other installed languages, their `WOW6432Node` copies): they have no identity, no subkeys and no link, so they are neither checked nor added to the chain; Find and Copy read them exactly as before (review of 391: the first version turned them into an error box "(6) The handle is invalid").
+- Any other key below the start whose identity cannot be read (an internal name longer than the identity limit): the existing open-error box (Retry / Skip / Skip All / Cancel) - fails closed, nothing of that key copied or searched.
+- A link in the copied tree that leads into the key the copy writes (a link to the target's parent, review of 391): the walk would copy its own output again and again (a chain 28 deep); the source key that turns out to be the copy is refused like a loop (FR-001).
 - The walk's starting key or root has no readable identity: the check works one level later (every key below the start is checked against the keys walked), never refuses a key wrongly.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: Copy MUST NOT follow a registry link (or any key reached by name) that is one of the keys the copy is inside of, from the copied key down to the current key, or that holds one of them.
+- **FR-001**: Copy MUST NOT follow a registry link (or any key reached by name) that is one of the keys the copy is inside of, from the copied key down to the current key, or that holds one of them; nor a source key that is the key the copy writes or lies inside it (reached through a link into the target).
 - **FR-002**: Such a key MUST be refused before anything of it is written, with the existing "Can't copy a key to itself." message naming the full source path of the refused key; OK skips it (the copy goes on, the operation ends as partly skipped), Cancel stops the copy.
 - **FR-003**: Find MUST NOT search such a key or below it; no message; the key's own name is still tested in its parent's listing as before.
 - **FR-004**: A link pointing anywhere else MUST be followed exactly as before by Copy and Find.
@@ -91,7 +93,8 @@ its own name matches.
 
 ### Measurable Outcomes
 
-- **SC-001**: In the probe, the three looping Copy rows write 0 keys below a refused link (before: 38-55 keys, 27-28 levels deep), with exactly one box each.
+- **SC-001**: In the probe, the four looping Copy rows (COPYSELF, COPYANC, COPYCYCLE, COPYTGT) write 0 keys below a refused key (before: 29-55 keys, 27-28 levels deep), with exactly one box each.
+- **SC-001a**: Find in `Perflib` and `CurrentVersion` (keys opened as pseudo-handles) lists the found key once with no box, as before the change.
 - **SC-002**: The three looping Find rows list exactly 1 result each with no box (before: 28 / 10 / 15 and an error box).
 - **SC-003**: The control rows (link elsewhere) give the same result as before the change.
 - **SC-004**: Probes of 292, 294, 296, 297 and 390 still pass.

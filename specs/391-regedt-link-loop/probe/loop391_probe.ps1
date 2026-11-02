@@ -30,6 +30,14 @@
       FINDCYCLE   Find "Mark" in Cyc: exactly one result
       FINDELSE    (control, unchanged) Find "Sub" in Mov: one result, below Mov\<K>\L (the link
                   elsewhere is still followed)
+    Rows of the review of 391:
+      COPYTGT     Tgt\<K> (a = 1) holding the LINK L -> Cil (the target's parent), F5 into Cil\, Cancel:
+                  one box naming Tgt\<K>\L\<K> (the walk reached the copy it writes); Cil\<K> a = 1,
+                  nothing below Cil\<K>\L\<K> (before: 29 keys, 28 deep, error 87)
+      FINDPERF    Find "009" in HKLM\...\CurrentVersion\Perflib (read only): one result, no box - its
+                  language keys open as predefined pseudo-handles (the first version: "(6)" box)
+      FINDPERFNT  Find "CurrentLanguage" in HKLM\...\CurrentVersion, access-denied (5) boxes answered
+                  Skip All (they come before 391 too): one result, no other box
       END         each instance ends with exit code 0, no stray window, no report
 
     Links are created and removed with REG_OPTION_CREATE_LINK / REG_OPTION_OPEN_LINK + NtDeleteKey,
@@ -224,6 +232,7 @@ $Links['Anc\' + $K + '\D\L'] = 'Anc'
 $Links['Cyc\' + $K + '\L1'] = 'Cyc2'
 $Links['Cyc2\L2'] = 'Cyc\' + $K
 $Links['Mov\' + $K + '\L'] = 'Jinde'
+$Links['Tgt\' + $K + '\L'] = 'Cil'                     # review of 391: into the copy target's parent
 
 function Sync([int]$Id) { [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000) }
 function Kid([IntPtr]$Dlg, [int]$CtlId) { return @([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq $CtlId }) | Select-Object -First 1 }
@@ -312,6 +321,7 @@ function Make-Fixture {
     New-Key ('Mov\' + $K); Set-Val ('Mov\' + $K) 'a' '1'
     New-Key 'Jinde\Sub'; Set-Val 'Jinde' 'j' '5'; Set-Val 'Jinde\Sub' 's' '6'
     New-Key 'Cil'
+    New-Key ('Tgt\' + $K); Set-Val ('Tgt\' + $K) 'a' '1'
     foreach ($l in $Links.Keys) {
         $e = [RegLinkLoop]::Make($RegSub + '\' + $l, $RegInt + '\' + $Links[$l])
         if ($e -ne 0) { throw ('cannot create the link ' + $l + ': ' + $e) }
@@ -434,7 +444,10 @@ $Finds = @(
     @{ Row = 'FINDSELF'; In = 'Self'; Pattern = 'Mark'; Want = @('Mark|' + $RegFull + '\Self\' + $K) },
     @{ Row = 'FINDANC'; In = 'Anc'; Pattern = 'Mark'; Want = @('Mark|' + $RegFull + '\Anc\' + $K + '\D') },
     @{ Row = 'FINDCYCLE'; In = 'Cyc'; Pattern = 'Mark'; Want = @('Mark|' + $RegFull + '\Cyc\' + $K) },
-    @{ Row = 'FINDELSE'; In = 'Mov'; Pattern = 'Sub'; Want = @('Sub|' + $RegFull + '\Mov\' + $K + '\L') }
+    @{ Row = 'FINDELSE'; In = 'Mov'; Pattern = 'Sub'; Want = @('Sub|' + $RegFull + '\Mov\' + $K + '\L') },
+    # review of 391: Perflib\009, \CurrentLanguage open as performance pseudo-handles (no identity)
+    @{ Row = 'FINDPERF'; Look = 'reg:\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib'; Pattern = '009'; Want = @('009|HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib') },
+    @{ Row = 'FINDPERFNT'; Look = 'reg:\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion'; Pattern = 'CurrentLanguage'; Answer = 174; Allow = '(5)'; Want = @('CurrentLanguage|HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib') }
 )
 function Search-Once([int]$Id, [IntPtr]$Fw, $S) {
     $pat = Kid $Fw 136; $lv = Kid $Fw 149; $look = Kid $Fw 137
@@ -443,7 +456,7 @@ function Search-Once([int]$Id, [IntPtr]$Fw, $S) {
         if ($h) { [void][Drv098f]::Send($h, 0x00F1, $cb[1], 0, 5000) }   # BM_SETCHECK
     }
     [void][Drv098f]::SetText($pat, $S.Pattern, 5000)
-    [void][Drv098f]::SetText($look, ($RegFs + '\' + $S.In), 5000)
+    if ($S.Look) { [void][Drv098f]::SetText($look, $S.Look, 5000); $S.In = $S.Look } else { [void][Drv098f]::SetText($look, ($RegFs + '\' + $S.In), 5000) }
     $known = @(Get-Tops $Id)
     Click (Kid $Fw 1)
     Start-Sleep -Milliseconds 1500
@@ -451,7 +464,7 @@ function Search-Once([int]$Id, [IntPtr]$Fw, $S) {
     while ($sw.Elapsed.TotalSeconds -lt 60) {
         Start-Sleep -Milliseconds 500
         foreach ($b in @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and $_ -ne $Fw -and $known -notcontains $_ })) {
-            $boxes += (WinDesc $b); Press $b @(2); $known += $b
+            $boxes += (WinDesc $b); Press $b $(if ($S.Answer) { @($S.Answer, 2) } else { @(2) }); $known += $b
         }
         $m = [RegLinkLoop]::SendR($lv, 0x1004, 0, 0)
         if ($m -eq $n -and $sw.Elapsed.TotalSeconds -gt 4) { break }
@@ -459,7 +472,7 @@ function Search-Once([int]$Id, [IntPtr]$Fw, $S) {
     }
     $found = @(for ($i = 0; $i -lt $n; $i++) { $p = ''; foreach ($sc in 1..3) { $t = [RegLinkLoop]::LvText($lv, $i, $sc); if ($t -and $t.Contains('\')) { $p = $t; break } }; ([RegLinkLoop]::LvText($lv, $i, 0)) + '|' + $p })
     $foundU = @($found | ForEach-Object { $_ })
-    $ok = ($n -eq $S.Want.Count) -and ((($foundU | Sort-Object) -join ',') -ceq (($S.Want | Sort-Object) -join ',')) -and $boxes.Count -eq 0
+    $ok = ($n -eq $S.Want.Count) -and ((($foundU | Sort-Object) -join ',') -ceq (($S.Want | Sort-Object) -join ',')) -and @($boxes | Where-Object { -not ($S.Allow -and $_.Contains($S.Allow)) }).Count -eq 0
     $deep = 0; foreach ($f in $foundU) { $c = ([regex]::Matches($f, '\\L')).Count; if ($c -gt $deep) { $deep = $c } }
     Row $S.Row 'FOUND' (V $ok) ("'{0}' in {1}: {2} result(s), deepest path with {3} link step(s); first: [{4}]; expected [{5}]{6}" -f $S.Pattern, $S.In, $n, $deep, ((@($foundU | Select-Object -First 3) | ForEach-Object { Esc $_ }) -join ' ; '), (($S.Want | ForEach-Object { Esc $_ }) -join ' ; '), $(if ($boxes.Count) { '; boxes: ' + (Tail ($boxes -join ' || ') 300) } else { '' }))
 }
@@ -536,6 +549,14 @@ try {
         $s = $r.Snap1
         $ok = (Has-Line $s ('Cil\' + $K + '|a=1')) -and (Has-Line $s ('Cil\' + $K + '\L|j=5')) -and (Has-Line $s ('Cil\' + $K + '\L\Sub|s=6')) -and $r.SrcKept -and $r.Boxes.Count -eq 0
         Row 'COPYELSE' 'STATE' (V $ok) ("copied as before (the link's target as a plain key), no box: {0}; {1}; {2}" -f $ok, (Box-Facts $r), $r.State)
+    }
+    # review of 391: the link leads into the target's parent, so the walk reaches the copy it writes
+    Row-Copy 'COPYTGT' 'Tgt' @(2) {
+        param($r)
+        $s = $r.Snap1
+        Row 'COPYTGT' 'BOX' (V (One-Itself $r ('Tgt\' + $K + '\L\' + $K))) ("exactly one box naming Tgt\<K>\L\<K> (the copy reached through the link); {0}" -f (Box-Facts $r))
+        $ok = (Has-Line $s ('Cil\' + $K + '|a=1')) -and -not (Has-Key $s ('Cil\' + $K + '\L\' + $K)) -and $r.SrcKept -and $r.Depth -le 2
+        Row 'COPYTGT' 'STATE' (V $ok) ("Cil\<K> with a = 1, nothing below Cil\<K>\L\<K>, depth {0}, source unchanged ({1}): {2}; {3}" -f $r.Depth, $r.SrcKept, $ok, $r.State)
     }
     Run-Find
 }

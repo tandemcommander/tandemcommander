@@ -1311,7 +1311,7 @@ BOOL CFindThread::ScanKeyAux(int root, LPWSTR key, BOOL& skip, BOOL& skipAllErro
         while (1)
         {
             BOOL leadsBack;
-            int err = RegWalkEnter(walk, hKey, leadsBack);
+            int err = RegWalkEnter(walk, hKey, NULL, leadsBack);
             if (err == ERROR_SUCCESS)
             {
                 if (!leadsBack)

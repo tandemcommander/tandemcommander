@@ -14244,6 +14244,51 @@ static void TestRegKeyIdLeadsBack391()
     const WCHAR* holes[] = {L"", NULL, k};
     CHECK(!SalRegKeyIdLeadsBack(holes, 2, L"\\REGISTRY"));
     CHECK(SalRegKeyIdLeadsBack(holes, 3, L"\\REGISTRY"));
+
+    // review of 391: a source key in the key the copy writes. Tgt\K holding L -> Cil copied into Cil\
+    // (target Cil\K): the walk reaches Cil\K and Cil\K\L through the link - the copy itself
+    const WCHAR* tgtTop[] = {L"\\REGISTRY\\USER\\S-1\\Tgt\\K"};
+    const WCHAR* cilK = L"\\REGISTRY\\USER\\S-1\\Cil\\K";
+    CHECK(SalRegKeyIdIntoTarget(cilK, cilK, tgtTop, 1));
+    CHECK(SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\cil\\k\\L", cilK, tgtTop, 1));
+    // Cil itself (the link's target, above the copy) and a sibling of the copy: no
+    CHECK(!SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\Cil", cilK, tgtTop, 1));
+    CHECK(!SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\Cil\\K2", cilK, tgtTop, 1));
+    // 294's merge into the key above the parent: Plochy\K\K copied into Plochy\ (target Plochy\K holds
+    // the source) - the source's own keys lie in the target and are no loop
+    const WCHAR* flatTop[] = {L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\K"};
+    const WCHAR* flatTgt = L"\\REGISTRY\\USER\\S-1\\Plochy\\K";
+    CHECK(!SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\K", flatTgt, flatTop, 1));
+    CHECK(!SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\K\\Q", flatTgt, flatTop, 1));
+    // ... but a key of the target outside the source (reached through a link) still is
+    CHECK(SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\Jine", flatTgt, flatTop, 1));
+    // HKCR: the copied key in both halves - within either is its own key
+    const WCHAR* hkcrTop[] = {L"\\REGISTRY\\MACHINE\\SOFTWARE\\Classes\\X", L"\\REGISTRY\\USER\\S-1_Classes\\X"};
+    CHECK(!SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1_Classes\\X\\Y", L"\\REGISTRY\\USER\\S-1_Classes", hkcrTop, 2));
+    CHECK(SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1_Classes\\Z", L"\\REGISTRY\\USER\\S-1_Classes", hkcrTop, 2));
+    // no top identities known: within the target is enough; empty / NULL never
+    CHECK(SalRegKeyIdIntoTarget(cilK, cilK, NULL, 0));
+    CHECK(!SalRegKeyIdIntoTarget(L"", cilK, tgtTop, 1));
+    CHECK(!SalRegKeyIdIntoTarget(cilK, L"", tgtTop, 1));
+    CHECK(!SalRegKeyIdIntoTarget(NULL, cilK, tgtTop, 1));
+    CHECK(!SalRegKeyIdIntoTarget(cilK, NULL, tgtTop, 1));
+
+    // review of 391: the Perflib language keys open as predefined pseudo-handles (no identity)
+    CHECK(SalRegIsPseudoKeyHandle(HKEY_PERFORMANCE_TEXT));
+    CHECK(SalRegIsPseudoKeyHandle(HKEY_PERFORMANCE_NLSTEXT));
+    CHECK(SalRegIsPseudoKeyHandle(HKEY_PERFORMANCE_DATA));
+    CHECK(SalRegIsPseudoKeyHandle(HKEY_CLASSES_ROOT));
+    CHECK(SalRegIsPseudoKeyHandle(HKEY_CURRENT_USER_LOCAL_SETTINGS));
+    CHECK(SalRegIsPseudoKeyHandle((HKEY)(ULONG_PTR)(LONG_PTR)(LONG)0x800000FF));
+    // ordinary handles (small kernel handle values), NULL, just outside the range
+    CHECK(!SalRegIsPseudoKeyHandle(NULL));
+    CHECK(!SalRegIsPseudoKeyHandle((HKEY)(ULONG_PTR)0x1A4));
+    CHECK(!SalRegIsPseudoKeyHandle((HKEY)(ULONG_PTR)0x7FFFFFFC));
+    CHECK(!SalRegIsPseudoKeyHandle((HKEY)(ULONG_PTR)(LONG_PTR)(LONG)0x80000100));
+    CHECK(!SalRegIsPseudoKeyHandle((HKEY)(ULONG_PTR)(LONG_PTR)(LONG)0x7FFFFFFF));
+#ifdef _WIN64
+    CHECK(!SalRegIsPseudoKeyHandle((HKEY)(ULONG_PTR)0x80000050ULL)); // not sign-extended: no predefined key
+#endif
 }
 
 // feature 180: system texts with inserts (193 "%1 is not a valid Win32 application.", 216, 34) are
