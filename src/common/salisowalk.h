@@ -92,3 +92,38 @@ inline unsigned long long SalIsoFolderVisitKey(unsigned long start, unsigned lon
 {
     return ((unsigned long long)length << 32) | (unsigned long long)start;
 }
+
+// Feature 403: the largest length the ISO 9660 walk takes as a directory's length. A
+// 2048-byte sector holds about 6 (long Rock Ridge names) to 40 (short ISO names)
+// records, so 256 MiB is far more than any real folder holds; a larger length (and
+// every length of 2 GiB or more - the walk held it as a signed int, and the core's
+// allocator offered only to end the program) comes from a damaged or crafted record.
+const unsigned long long SAL_ISO_DIR_MAX_LENGTH = 256ULL * 1024 * 1024;
+
+// Feature 403: may the ISO 9660 walk allocate and read a directory of 'length' bytes
+// (a folder record's data length)? Only 1 .. SAL_ISO_DIR_MAX_LENGTH; any other length
+// is a folder that cannot be read (features 330 / 400: the walk's box once, the listing
+// incomplete, later folders walked). A length of 0 is decided by the caller as before.
+inline bool SalIsoDirLengthReadable(unsigned long long length)
+{
+    return length > 0 && length <= SAL_ISO_DIR_MAX_LENGTH;
+}
+
+// Feature 403: the last sector of a directory of 'length' bytes that starts at sector
+// 'block', with 'sectorSize' bytes a sector, in 64-bit (no wrap). False - the directory
+// cannot be read - when the length or the sector size is 0, or the last sector lies past
+// sector 0xFFFFFFFF (the image is read by 32-bit sector numbers). The walk reads that
+// sector before it allocates the directory's buffer: a directory past the end of the
+// image is a folder that cannot be read without first taking its memory.
+inline bool SalIsoDirLastBlock(unsigned long long block, unsigned long long length, unsigned long long sectorSize,
+                               unsigned long long* last)
+{
+    if (length == 0 || sectorSize == 0 || block > 0xFFFFFFFFULL)
+        return false;
+    unsigned long long more = (length - 1) / sectorSize; // the sectors after the first
+    if (more > 0xFFFFFFFFULL - block)                    // compared with the room left: no wrap
+        return false;
+    if (last != nullptr)
+        *last = block + more;
+    return true;
+}

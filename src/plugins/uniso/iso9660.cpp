@@ -818,9 +818,12 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
         return ERR_TERMINATE;
 
     DWORD block = (DWORD)root->LocationOfExtent - ExtentOffset + root->ExtendedAttributeRecordLength;
-    int size = root->DataLength;
+    // feature 403: the record's length as it is (a DWORD) - held in an int, a length of 2 GiB or more was
+    // negative and the allocation below asked for ~2^64 bytes (the core's memory box: Abort ended the
+    // program, Ignore threw an exception nothing caught); it is checked before anything is allocated
+    DWORD length = root->DataLength;
 
-    if (block == 0 || size == 0)
+    if (block == 0 || length == 0)
         return ERR_TERMINATE;
 
     // feature 328 (review): a directory is walked once per walk - in a crafted image whose folders
@@ -832,7 +835,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
     // longer part never listed, the image deleted by a whole unpack); a loop still ends (each pair once)
     if (Visited != NULL)
     {
-        unsigned long long key = SalIsoFolderVisitKey(block, (unsigned long)(DWORD)size);
+        unsigned long long key = SalIsoFolderVisitKey(block, (unsigned long)length);
         bool added = false;
         try
         {
@@ -850,6 +853,25 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
             return ERR_TERMINATE;
         }
     }
+
+    // feature 403: a length that cannot be a directory of this image - above SAL_ISO_DIR_MAX_LENGTH
+    // (also every length of 2 GiB or more), or a directory of more than one sector whose last sector
+    // cannot be read (past the end of the image) - is a folder that cannot be read, decided before its
+    // buffer is allocated: the same box (once per walk) and result as a failed read below
+    bool readable = SalIsoDirLengthReadable(length);
+    if (readable && length > Image->GetSectorUserSize())
+    {
+        unsigned long long last = 0;
+        char probe;
+        readable = SalIsoDirLastBlock(block, length, Image->GetSectorUserSize(), &last) &&
+                   Image->ReadBlock((DWORD)last, 1, &probe) == 1;
+    }
+    if (!readable)
+    {
+        Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, FitCheck != FALSE), block); // feature 400: once
+        return (block == (DWORD)Root.LocationOfExtent - ExtentOffset) ? ERR_CONTINUE : ERR_TERMINATE;
+    }
+    int size = (int)length; // 1 .. SAL_ISO_DIR_MAX_LENGTH: an int from here on (the record loop's offsets)
 
     char* data = new char[size];
     if (data == NULL)

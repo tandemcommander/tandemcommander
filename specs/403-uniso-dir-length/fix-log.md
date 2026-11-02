@@ -37,3 +37,49 @@ folder length of 2 GiB or more shows a stuck memory box.
   (`SalIsoDirLastBlock`), a block past 0xFFFFFFFF refused.
 - The error path is the existing one of a failed `ReadBlock`: the box once per walk (quiet in the fit /
   count walks), ERR_TERMINATE (ERR_CONTINUE for the root), the listing marked by `ListDirectory`.
+
+## speckit-analyze
+
+No CRITICAL / HIGH. LOW, accepted: C1 FR-007 has no own task (no .rc / spl_*.h touched - checked by the
+review); C2 the quiet fit / count walks are not driven by the probe (they take the unchanged
+SalIsoWalkBoxQuiet path); U1 the 1-byte last-sector read relies on ReadBlock copying `remain` bytes
+(confirmed in CISOImage::ReadBlock).
+
+## Implementation
+
+- `src/common/salisowalk.h`: `SAL_ISO_DIR_MAX_LENGTH` (256 MiB), `SalIsoDirLengthReadable(length)`,
+  `SalIsoDirLastBlock(block, length, sectorSize, &last)` - 64-bit; first draft computed
+  `block + (length - 1) / sectorSize` and compared the sum, which wraps for a small block and a huge
+  length (2, 2^64-1, 1 -> 0): changed to compare the sectors after the first with the room left
+  (`more > 0xFFFFFFFF - block`), with a check for it.
+- `src/plugins/uniso/isoimage.h`: `CISOImage::GetSectorUserSize()` (the bytes ReadBlock takes a sector).
+- `src/plugins/uniso/iso9660.cpp` `CISO9660::ListDirectoryRe`: the record's length is a `DWORD length`
+  (the 0 check and the visit key use it - same key value as 401); after the visited check and before
+  the allocation: `SalIsoDirLengthReadable`, and for a folder longer than one sector its last sector
+  read (1 byte, `ReadBlock`); either fails -> the failed-read path (box once per walk, ERR_TERMINATE /
+  ERR_CONTINUE for the root). Only then `int size = (int)length` for the rest - keeping `size` a
+  `DWORD` throughout was rejected: the record loop's `offset < size - 0x21` would underflow for a
+  folder shorter than 0x21 bytes and read past the buffer (as `int` the loop is not entered).
+- `src/saltests/saltests.cpp`: `TestIsoDirLength403` (32 checks).
+
+## Checks after
+
+- `.\build.cmd` -> BUILD SUCCEEDED, exit 0.
+- saltests: 282,383 (402) -> `saltests: 282415 checks, 0 failed`.
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- clang-format: no difference on the changed lines of iso9660.cpp, isoimage.h, salisowalk.h; in
+  saltests.cpp only trailing-comment alignment, as the rest of the file.
+- Probe `iso403_probe` after (`probe/result_after.txt`): **12 PASS / 0 FAIL** (before 6 / 6). IS-NEG,
+  IS-NEG2, IS-MIN, IS-HUGE, IS-PAST: one box "Error reading directory structure at sector #00000015
+  (#00000018 for IS-PAST). Incomplete content of ISO image.", the other files extracted, image kept,
+  no memory box, no report; IS-EDGE: everything, no window, image deleted. Registry identical.
+- Regression probes (hidden desktop, `probe/regress_<NNN>.txt`, registry identical each): 328 **20 / 0**,
+  400 **48 / 0**, 401 **10 / 0**, 402 **10 / 0** - as at their closing.
+- Negative controls: (1) the probe before (main 618dae27, `probe/result_before.txt`) 6 / 6 - IS-NEG,
+  IS-NEG2, IS-MIN fail with the memory box and a program end; (2) mutants of the rules
+  (`SalIsoDirLengthReadable` without the limit, `SalIsoDirLastBlock` without the room check): build
+  succeeded, `saltests: 282415 checks, 15 failed` (8 length checks, 4 wrap / past-0xFFFFFFFF checks,
+  3 more cascade through the shared `last`); header restored (no `MUTANT` left), rebuilt,
+  `saltests: 282415 checks, 0 failed`. A probe run of the length mutant alone would still pass IS-NEG
+  (the last-sector read refuses those lengths too - past the 25-sector image), so the probe's negative
+  control is main.

@@ -192,6 +192,8 @@ protected:
 
 public:
     DWORD ReadBlock(DWORD block, DWORD size, void* data);
+    // feature 403: the bytes ReadBlock takes from each sector of the open track
+    DWORD GetSectorUserSize() { return SectorUserSize; }
     // feature 366: reads the 2324 bytes of Form 2 user data of sector 'block' of the open track into 'data';
     // returns 2324, or 0 when the open track does not store Form 2 data where its user data is read
     // (SalIsoTrackStoresForm2) or the sector cannot be read whole

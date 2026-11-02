@@ -1,0 +1,77 @@
+iso400_probe (feature 400) regress-403
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 16:50; registry key existed True
+
+seeds: nest.iso,rd.iso,rd_ext.iso,rd_rec.iso,rd_root.iso,rd_zero.iso,rd2.iso,rd2_two.iso,ud.iso,ud_ext.iso,ud_hlink.iso,ud_icb.iso,ud_loop.iso,ud_tag.iso,udh.iso,udh_avdp.iso,udh_root.iso,xd.iso,xd_ext.iso,xd_hlink.iso,xd_loop.iso,xd_loop2.iso,xd_many.iso,xd_share.iso,xd_two.iso
+img400: isoext: folder A's record at 47342 -> extent 0x100000 (image 180 sectors)
+img400: isorec: SIDE.TXT's record at 49356 in folder A (extent 24) -> LE 29, BE 28
+img400: isozero: folder A's record at 47342 -> data length 0
+img400: isoroot: the primary volume's root directory 23 -> 0x100000
+img400: udfext: partition at 257, folder a's file entry at logical block 4, its directory 5 -> 0x100000 (AD type 0)
+img400: udficb: folder a's identifier: ICB 4 -> 0x100000
+img400: udftag: folder a's directory at sector 262: first identifier's tag -> 0x0999
+img400: udfroot: the file set descriptor's root ICB 2 -> 0x100000
+img400: udfavdp: the anchor's main volume descriptor sequence 32 -> 0x100000
+img400: isotwo: folders A at 47342 -> 0x100000, B at 47450 -> 0x100001
+img400: udfloop: side.txt's identifier in folder a: ICB 9 -> 4 (folder a), made a folder
+img400: xboxtwo (folders a at 0x100000, b at 0x100001): 37 sectors, root at 33
+img400: xboxloop (a holds bad -> 0x100000, l1, l2 -> a): 38 sectors, root at 33
+img400: xboxloop2 (a holds l1, l2 -> a): 38 sectors, root at 33
+img400: xboxshare: b (sector 34, 2048 bytes), a (sector 34, 4096 bytes), top.txt
+img400: xboxmany: 300 folders at 0x100000.., root of 3 sectors
+img400: xboxhlink: a and b at sector 34, 2048 bytes
+img400: udfhlink: zlast's ICB 6 -> 4 (folder a)
+img400: xbox: 39 sectors, root at 33
+img400: xbox: 39 sectors, root at 33; folder a's start sector 34 -> 0x100000
+
+RD-EXT     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RD-EXT     RUN    PASS        files 2: top.txt, zlast/z.txt; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure", once - seen 1): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00100000. Incomplete content of ISO image. | [Button id=1] OK
+RD-REC     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RD-REC     RUN    PASS        files 2: top.txt, zlast/z.txt; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure", once - seen 1): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00000018. Incomplete content of ISO image. | [Button id=1] OK
+RD-ZERO    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RD-ZERO    RUN    PASS        files 2: top.txt, zlast/z.txt; files ok: True; image kept: True (want True); windows as expected (none): True; fatal: ; windows: no window
+UD-EXT     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UD-EXT     RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure", once - seen 1): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00100000. Incomplete content of ISO image. | [Button id=1] OK
+UD-TAG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UD-TAG     RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: True (want True); windows as expected ("Invalid UDF Tag ID", once - seen 1): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Invalid UDF Tag ID. | [Button id=1] OK
+XD-EXT     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-EXT     RUN    PASS        files 2: top.txt, zlast/z.txt; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure", once - seen 1): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00100000. Incomplete content of ISO image. | [Button id=1] OK
+RD-TWO     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RD-TWO     RUN    PASS        files 2: top.txt, zlast/z.txt; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure", once - seen 1): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00100000. Incomplete content of ISO image. | [Button id=1] OK
+XD-TWO     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-TWO     RUN    PASS        files 2: top.txt, zlast/z.txt; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure", once - seen 1): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00100000. Incomplete content of ISO image. | [Button id=1] OK
+XD-LOOP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-LOOP    RUN    PASS        files 2: top.txt, zlast/z.txt; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure", once - seen 1): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00100000. Incomplete content of ISO image. | [Button id=1] OK
+XD-LOOP2   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-LOOP2   RUN    PASS        files 2: top.txt, zlast/z.txt; files ok: True; image kept: True (want True); windows as expected (none): True; fatal: ; windows: no window
+UD-LOOP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UD-LOOP    RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: True (want True); windows as expected (none): True; fatal: ; windows: no window
+XD-HLINK   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-HLINK   RUN    PASS        files 2: a/x.txt, top.txt; files ok: True; image kept: True (want True); windows as expected (none): True; fatal: ; windows: no window
+UD-HLINK   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UD-HLINK   RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/a/side.txt, UDF (TC330)/top.txt; files ok: True; image kept: True (want True); windows as expected (none): True; fatal: ; windows: no window
+XD-SHARE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-SHARE   RUN    PASS        files 4: a/a1.txt, a/a2.txt, b/a1.txt, top.txt; files ok: True; image kept: False (want False); windows as expected (none): True; fatal: ; windows: no window
+XD-MANY    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-MANY    RUN    PASS        files 2: top.txt, zlast/z.txt; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure", once - seen 1): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00100000. Incomplete content of ISO image. | [Button id=1] OK
+RD-OK      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RD-OK      RUN    PASS        files 3: a/side.txt, top.txt, zlast/z.txt; files ok: True; image kept: False (want False); windows as expected (none): True; fatal: ; windows: no window
+RD-ROOT    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+RD-ROOT    RUN    PASS        files 0: ; files ok: True; image kept: True (want True); windows as expected ("Error reading directory structure"): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00100000. Incomplete content of ISO image. | [Button id=1] OK
+UD-OK      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UD-OK      RUN    PASS        files 6: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/a/side.txt, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: False (want False); windows as expected (none): True; fatal: ; windows: no window
+UD-ICB     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UD-ICB     RUN    PASS        files 5: ISO (TC330)/A/SIDE.TXT, ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: True (want True); windows as expected (none): True; fatal: ; windows: no window
+UDH-OK     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UDH-OK     RUN    PASS        files 5: ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT, UDF (TC330)/a/side.txt, UDF (TC330)/top.txt, UDF (TC330)/zlast/z.txt; files ok: True; image kept: False (want False); windows as expected (none): True; fatal: ; windows: no window
+UDH-ROOT   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UDH-ROOT   RUN    PASS        files 2: ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows as expected ("Bad root ICB"): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Bad root ICB. Cannot read directory structure. | [Button id=1] OK
+UDH-AVDP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UDH-AVDP   RUN    PASS        files 2: ISO (TC330)/TOP.TXT, ISO (TC330)/ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows as expected ("Cannot read sector"): True; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Cannot read sector #00100000. | [Button id=1] OK || [#32770 'UnISO'] [Static id=2477] Cannot read sector #00100000. | [Button id=1] OK
+NEST-OK    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+NEST-OK    RUN    PASS        files 2: ISO (TCNEST)/a.img, ISO (TCNEST)/top.txt; files ok: True; image kept: False (want False); windows as expected (none): True; fatal: ; windows: no window
+XD-OK      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-OK      RUN    PASS        files 3: a/side.txt, top.txt, zlast/z.txt; files ok: True; image kept: False (want False); windows as expected (none): True; fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 48, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -26818,6 +26818,52 @@ static void TestIsoWalk401()
     CHECK(walked == 1 + 31); // root and one walk per length (2048 .. 63488)
 }
 
+// Feature 403: the length of an ISO 9660 directory the walk allocates and reads
+// (src/common/salisowalk.h) - 1 .. 256 MiB; a length of 2 GiB or more (a negative int in
+// CISO9660::ListDirectoryRe: the core's memory box, the program ended) and anything above the
+// limit is a folder that cannot be read; the last sector read first is computed without wrap.
+static void TestIsoDirLength403()
+{
+    CHECK(SAL_ISO_DIR_MAX_LENGTH == 268435456ULL);
+    // the length
+    CHECK(!SalIsoDirLengthReadable(0)); // the caller's own case (330), never allocated
+    CHECK(SalIsoDirLengthReadable(1));
+    CHECK(SalIsoDirLengthReadable(2048));
+    CHECK(SalIsoDirLengthReadable(3 * 2048));
+    CHECK(SalIsoDirLengthReadable(SAL_ISO_DIR_MAX_LENGTH));
+    CHECK(!SalIsoDirLengthReadable(SAL_ISO_DIR_MAX_LENGTH + 1));
+    CHECK(!SalIsoDirLengthReadable(0x7FFFF800ULL));  // IS-HUGE: positive as int, 2 GiB allocated before
+    CHECK(!SalIsoDirLengthReadable(0x7FFFFFFFULL));  // the largest positive int
+    CHECK(!SalIsoDirLengthReadable(0x80000000ULL));  // IS-MIN: the smallest negative int
+    CHECK(!SalIsoDirLengthReadable(0xFFFFF800ULL));  // IS-NEG / IS-NEG2 (401 review's isoneg)
+    CHECK(!SalIsoDirLengthReadable(0xFFFFFFFFULL));  // the largest 32-bit length
+    CHECK(!SalIsoDirLengthReadable(0x100000000ULL)); // never from a record, still refused
+    // a record's DWORD length, as the walk passes it (no sign extension through int)
+    DWORD neg = 0xFFFFF800;
+    CHECK(!SalIsoDirLengthReadable(neg));
+    // the last sector
+    unsigned long long last = 12345;
+    CHECK(SalIsoDirLastBlock(21, 1, 2048, &last) && last == 21);
+    CHECK(SalIsoDirLastBlock(21, 2048, 2048, &last) && last == 21); // one sector: the folder's own block
+    CHECK(SalIsoDirLastBlock(21, 2049, 2048, &last) && last == 22);
+    CHECK(SalIsoDirLastBlock(26, 3 * 2048, 2048, &last) && last == 28); // IS-EDGE: the image's last sector
+    CHECK(SalIsoDirLastBlock(24, 3 * 2048, 2048, &last) && last == 26); // IS-PAST: past the image (read fails)
+    CHECK(SalIsoDirLastBlock(0, SAL_ISO_DIR_MAX_LENGTH, 2048, &last) && last == 131071);
+    CHECK(SalIsoDirLastBlock(10, 2324 * 2, 2324, &last) && last == 11); // a 2324-byte user sector
+    CHECK(SalIsoDirLastBlock(10, 2324 * 2 + 1, 2324, &last) && last == 12);
+    CHECK(SalIsoDirLastBlock(0xFFFFFFFFULL, 2048, 2048, &last) && last == 0xFFFFFFFFULL);
+    last = 7;
+    CHECK(!SalIsoDirLastBlock(0xFFFFFFFFULL, 2049, 2048, &last) && last == 7); // past sector 0xFFFFFFFF
+    CHECK(!SalIsoDirLastBlock(0xFFFFFFF0ULL, SAL_ISO_DIR_MAX_LENGTH, 2048, &last) && last == 7);
+    CHECK(!SalIsoDirLastBlock(0x100000000ULL, 1, 2048, &last) && last == 7);
+    CHECK(!SalIsoDirLastBlock(21, 0, 2048, &last) && last == 7); // no sectors
+    CHECK(!SalIsoDirLastBlock(21, 2048, 0, &last) && last == 7); // no sector size
+    CHECK(!SalIsoDirLastBlock(0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL, 1, &last) && last == 7); // no wrap
+    CHECK(!SalIsoDirLastBlock(2, 0xFFFFFFFFFFFFFFFFULL, 1, &last) && last == 7); // block + more would wrap to 0
+    CHECK(SalIsoDirLastBlock(1, 0xFFFFFFFFULL, 1, &last) && last == 0xFFFFFFFFULL); // exactly the last sector
+    CHECK(SalIsoDirLastBlock(5, 2048, 2048, nullptr));
+}
+
 // Feature 402: the bounds of an Xbox (XDVDFS) directory entry (src/common/salisoxboxentry.h) - the
 // entry's head and its whole name lie in the directory's bytes, computed without wrap; a model walk
 // of CXDVDFS::ScanDir over crafted directories reads only inside them.
@@ -27191,6 +27237,7 @@ int main(int argc, char** argv)
     TestIsoWalk400();
     TestIsoWalk401();
     TestIsoXboxEntry402();
+    TestIsoDirLength403();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
