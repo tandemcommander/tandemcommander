@@ -658,8 +658,8 @@ void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BO
     // the directories the walk it is part of met already stay empty here too; the count walk marks its
     // own in the same set and takes them out afterwards (review 2: a copy of the set per count walk was
     // quadratic - 20,000 Rock Ridge folders at a root)
-    std::vector<DWORD> countLog;
-    std::vector<DWORD>* saveLog = VisitedLog;
+    std::vector<unsigned long long> countLog; // feature 401: the walk's keys (block and length)
+    std::vector<unsigned long long>* saveLog = VisitedLog;
     VisitedLog = &countLog;
     // the folder part and the name are accepted (at most MAX_PATH - 5 bytes each): the walk's
     // 4 * MAX_PATH + 2 byte buffer holds both
@@ -780,7 +780,7 @@ BOOL CISO9660::ListDirectory(char* path, int session,
             FitIsoNames = FALSE;
             FitCount = 0;
             Walk = SalIsoWalk(); // feature 400
-            std::set<DWORD> fitVisited;
+            std::set<unsigned long long> fitVisited; // feature 401: by block and length
             Visited = &fitVisited;
             CPluginDataInterfaceAbstract* noData = NULL;
             ListDirectoryRe(fitPath, &Root, NULL, noData);
@@ -794,7 +794,7 @@ BOOL CISO9660::ListDirectory(char* path, int session,
             }
         }
     }
-    std::set<DWORD> visited; // feature 328 (review): each directory walked once
+    std::set<unsigned long long> visited; // feature 328 (review): each directory walked once (401: per length)
     Walk = SalIsoWalk();     // feature 400: the listing walk's own state (the fit walk was quiet)
     Visited = &visited;
     int walked = ListDirectoryRe(path, &Root, dir, pluginData);
@@ -826,22 +826,26 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
     // feature 328 (review): a directory is walked once per walk - in a crafted image whose folders
     // point back to an ancestor (or to one directory twice) the walk never ended: the old "Error" at
     // the first refused entry stopped every later descent, a left-out entry no longer does. A
-    // directory met again is listed as an empty folder
+    // directory met again is listed as an empty folder. Feature 401: a directory is the block and the
+    // record's data length together (SalIsoFolderVisitKey) - every folder record gives its own length, and a
+    // folder at a block met before with a longer length was listed empty without a mark (the files of its
+    // longer part never listed, the image deleted by a whole unpack); a loop still ends (each pair once)
     if (Visited != NULL)
     {
+        unsigned long long key = SalIsoFolderVisitKey(block, (unsigned long)(DWORD)size);
         bool added = false;
         try
         {
-            if (!Visited->insert(block).second)
+            if (!Visited->insert(key).second)
                 return ERR_OK;
             added = true;
             if (VisitedLog != NULL) // a count walk: CountUnder takes its directories out again
-                VisitedLog->push_back(block);
+                VisitedLog->push_back(key);
         }
         catch (...)
         {
             if (added)
-                Visited->erase(block);
+                Visited->erase(key);
             WalkOutOfMemory(); // feature 400
             return ERR_TERMINATE;
         }

@@ -26704,6 +26704,119 @@ static void TestIsoWalk400()
     }
 }
 
+// Feature 401: the key by which a walk recognises a folder it met before (SalIsoFolderVisitKey,
+// src/common/salisowalk.h) - start and length together. A model image: directories by start, each
+// record lying in one 2048-byte sector of its directory; a folder walk reads the records its own length
+// covers, as CISO9660::ListDirectoryRe reads 'size' bytes at 'block'
+struct IsoRec401
+{
+    const char* Name;
+    bool Dir;
+    unsigned long Start, Length; // a folder's directory
+    unsigned long Sector;        // the sector of its own directory the record lies in
+};
+
+typedef std::map<unsigned long, std::vector<IsoRec401>> IsoImage401;
+
+static void IsoWalk401(const IsoImage401& img, unsigned long start, unsigned long length, const std::string& path,
+                       std::set<unsigned long long>& visited, bool byLength, std::vector<std::string>& listed,
+                       int& walked)
+{
+    unsigned long long key = byLength ? SalIsoFolderVisitKey(start, length) : (unsigned long long)start;
+    if (!visited.insert(key).second)
+        return; // met again: listed empty (328)
+    walked++;
+    auto it = img.find(start);
+    if (it == img.end())
+        return;
+    for (const IsoRec401& r : it->second)
+    {
+        if ((unsigned long long)r.Sector * 2048 >= length)
+            continue; // not covered by this folder's length
+        std::string p = path.empty() ? std::string(r.Name) : path + "/" + r.Name;
+        if (r.Dir)
+            IsoWalk401(img, r.Start, r.Length, p, visited, byLength, listed, walked);
+        else
+            listed.push_back(p);
+    }
+}
+
+static std::vector<std::string> IsoList401(const IsoImage401& img, bool byLength, int* walked = NULL)
+{
+    std::set<unsigned long long> visited;
+    std::vector<std::string> listed;
+    int n = 0;
+    IsoWalk401(img, 20, 2048, "", visited, byLength, listed, n);
+    if (walked != NULL)
+        *walked = n;
+    std::sort(listed.begin(), listed.end());
+    return listed;
+}
+
+static void TestIsoWalk401()
+{
+    // the key
+    CHECK(SalIsoFolderVisitKey(21, 2048) == SalIsoFolderVisitKey(21, 2048));
+    CHECK(SalIsoFolderVisitKey(21, 2048) != SalIsoFolderVisitKey(21, 4096)); // one start, two lengths
+    CHECK(SalIsoFolderVisitKey(21, 2048) != SalIsoFolderVisitKey(22, 2048));
+    CHECK(SalIsoFolderVisitKey(1, 2) != SalIsoFolderVisitKey(2, 1)); // start and length never alias
+    CHECK(SalIsoFolderVisitKey(0xFFFFFFFFUL, 0) != SalIsoFolderVisitKey(0, 1));
+    CHECK(SalIsoFolderVisitKey(0xFFFFFFFFUL, 0xFFFFFFFFUL) == 0xFFFFFFFFFFFFFFFFULL);
+    CHECK(SalIsoFolderVisitKey(0x12345678UL, 0x9ABCDEF0UL) == 0x9ABCDEF012345678ULL);
+    // the Xbox walk's key of 400 (its inline formula) - the same value
+    CHECK(SalIsoFolderVisitKey(34, 4096) == (((unsigned long long)4096 << 32) | 34));
+
+    // IS-SHARE: A (21, 2048), B (21, 4096), TOP; 21 holds A1 in its first sector, A2 in its second
+    IsoImage401 share;
+    share[20] = {{"A", true, 21, 2048, 0}, {"B", true, 21, 4096, 0}, {"TOP", false, 0, 0, 0}};
+    share[21] = {{"A1", false, 0, 0, 0}, {"A2", false, 0, 0, 1}};
+    CHECK(IsoList401(share, true) == std::vector<std::string>({"A/A1", "B/A1", "B/A2", "TOP"}));
+    CHECK(IsoList401(share, false) == std::vector<std::string>({"A/A1", "TOP"})); // 328's key: B empty
+    // IS-SHARE2: the longer record first
+    IsoImage401 share2 = share;
+    share2[20] = {{"A", true, 21, 4096, 0}, {"B", true, 21, 2048, 0}, {"TOP", false, 0, 0, 0}};
+    CHECK(IsoList401(share2, true) == std::vector<std::string>({"A/A1", "A/A2", "B/A1", "TOP"}));
+    CHECK(IsoList401(share2, false) == std::vector<std::string>({"A/A1", "A/A2", "TOP"}));
+    // IS-LOOP: A (21, 2048) holds A1 and L (21 itself, 4096); A2 in 21's second sector; ZLAST (26) holds Z
+    IsoImage401 loop;
+    loop[20] = {{"A", true, 21, 2048, 0}, {"TOP", false, 0, 0, 0}, {"ZLAST", true, 26, 2048, 0}};
+    loop[21] = {{"A1", false, 0, 0, 0}, {"L", true, 21, 4096, 0}, {"A2", false, 0, 0, 1}};
+    loop[26] = {{"Z", false, 0, 0, 0}};
+    int walked = 0;
+    CHECK(IsoList401(loop, true, &walked) ==
+          std::vector<std::string>({"A/A1", "A/L/A1", "A/L/A2", "TOP", "ZLAST/Z"}));
+    CHECK(walked == 4); // root, A, A/L, ZLAST - A/L/L met again: the loop ends
+    // IS-HLINK: one start, one length - the second folder stays met again (328's rule)
+    IsoImage401 hlink;
+    hlink[20] = {{"A", true, 21, 2048, 0}, {"B", true, 21, 2048, 0}, {"TOP", false, 0, 0, 0}};
+    hlink[21] = {{"X", false, 0, 0, 0}};
+    CHECK(IsoList401(hlink, true) == std::vector<std::string>({"A/X", "TOP"}));
+    // IS-MANY: A and 40 folders at 21 with lengths 4096 .. 83968: each walked once
+    IsoImage401 many;
+    std::vector<std::string> names;
+    for (int k = 0; k < 40; k++)
+    {
+        char n[8];
+        sprintf(n, "F%02d", k);
+        names.push_back(n);
+    }
+    many[20] = {{"A", true, 21, 2048, 0}};
+    for (int k = 0; k < 40; k++)
+        many[20].push_back({names[k].c_str(), true, 21, (unsigned long)(k + 2) * 2048, 0});
+    many[21] = {{"A1", false, 0, 0, 0}};
+    CHECK(IsoList401(many, true, &walked).size() == 41);
+    CHECK(walked == 42);
+    CHECK(IsoList401(many, false, &walked).size() == 1 && walked == 2);
+    // a deep chain of folders naming their own directory with ever longer lengths ends after one walk per
+    // distinct pair: 21 holds N with lengths 2048 * (2 .. 31), one in each of its first 30 sectors
+    IsoImage401 chain;
+    chain[20] = {{"N", true, 21, 2048, 0}};
+    for (unsigned long k = 0; k < 30; k++)
+        chain[21].push_back({"N", true, 21, (k + 2) * 2048, k});
+    IsoList401(chain, true, &walked);
+    CHECK(walked == 1 + 31); // root and one walk per length (2048 .. 63488)
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -26924,6 +27037,7 @@ int main(int argc, char** argv)
     TestHexFieldTidy397();
     TestFindSeed398();
     TestIsoWalk400();
+    TestIsoWalk401();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

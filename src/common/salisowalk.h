@@ -76,3 +76,16 @@ inline bool SalIsoWalkBoxQuiet(SalIsoWalk& walk, bool quiet)
     walk.BoxShown = true;
     return false;
 }
+
+// Feature 401: the key by which a walk recognises a folder it met before - the
+// start of the folder's directory (block or sector) and its length together.
+// Every folder record of an image gives its own length: two records naming one
+// start with different lengths read different bytes, and a key by the start
+// alone listed the second folder empty without a mark (its later files lost, the
+// image deleted by a whole unpack - 400's Xbox walk, 328's ISO 9660 walk). A
+// walk stays bounded: each pair is walked once, and the pairs come from the
+// image's records.
+inline unsigned long long SalIsoFolderVisitKey(unsigned long start, unsigned long length)
+{
+    return ((unsigned long long)length << 32) | (unsigned long long)start;
+}

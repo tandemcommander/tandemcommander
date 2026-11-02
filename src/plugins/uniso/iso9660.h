@@ -283,10 +283,12 @@ protected:
     size_t FitCount;
     BOOL Decide;
     // feature 328 (review): the directories the current walk met (each is walked once - a crafted image
-    // can point a folder back to its ancestor); NULL outside ListDirectory
-    std::set<DWORD>* Visited;
+    // can point a folder back to its ancestor); NULL outside ListDirectory. Feature 401: keyed by the block
+    // and the record's data length together (SalIsoFolderVisitKey) - a folder at a block met before with
+    // another length is walked for its own length (it was listed empty, the image deleted by a whole unpack)
+    std::set<unsigned long long>* Visited;
     // feature 328 (review 2): a count walk notes the directories it adds to Visited (CountUnder takes them out)
-    std::vector<DWORD>* VisitedLog;
+    std::vector<unsigned long long>* VisitedLog;
     // feature 400: the current walk - later folders are descended after a folder that cannot be read
     // (only out of memory stops it), its error box is shown once; a count walk keeps its own
     SalIsoWalk Walk;

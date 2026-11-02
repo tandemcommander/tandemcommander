@@ -238,7 +238,7 @@ int CXDVDFS::VisitFolder(DWORD sector, DWORD size)
         return 1;
     try
     {
-        if (Visited->insert(((unsigned long long)size << 32) | sector).second)
+        if (Visited->insert(SalIsoFolderVisitKey(sector, size)).second) // feature 401: the shared key
             return 1;
         Image->ListingLeftOut.SetIncomplete(); // review 2: the second path is listed empty - fail closed
         return 0;

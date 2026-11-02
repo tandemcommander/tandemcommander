@@ -128,7 +128,9 @@ Two folder records naming one directory with the same start block and the same l
   per walk; the pairs come from the image's records.
 - **FR-004**: The count walks of 328's decision mode MUST take out exactly the folders they added,
   by the same key.
-- **FR-005**: No other reader (UDF, Xbox, HFS+) and no other behaviour of the ISO 9660 walk changes.
+- **FR-005**: No other reader (UDF, Xbox, HFS+) changes its behaviour (the Xbox walk may take the
+  shared key function, which gives the same key it computes today), and no other behaviour of the
+  ISO 9660 walk changes.
 
 ### Key Entities
 
@@ -142,7 +144,8 @@ Two folder records naming one directory with the same start block and the same l
 - **SC-001**: Probe `iso401_probe` goes from PASS 6 / FAIL 4 to PASS 10 / FAIL 0 (IS-SHARE,
   IS-SHARE2, IS-LOOP, IS-MANY fixed; IS-HLINK unchanged).
 - **SC-002**: Probes of 328 (`iso328_probe`, LOOP rows included) and 400 (`iso400_probe`) keep their
-  results (20 / 0 and 48 / 0 as recorded).
+  results (20 / 0 and 48 / 0 as recorded; rows whose seed images need WSL Ubuntu are NOT DRIVEN
+  when it is missing, and are compared as such).
 - **SC-003**: The build and `saltests` pass (0 failed); the encoding guard reports 0 findings.
 
 ## Assumptions

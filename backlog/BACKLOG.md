@@ -307,6 +307,7 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: an ISO 9660 folder met again is listed empty and the image deleted](items/iso-plug-in-an-iso-9660-folder-met-again-is-listed-empty-and/desc.md) | bug | 5 | archives | measure:401 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 
 ## Parked
