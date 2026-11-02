@@ -5,6 +5,12 @@
 **Status**: Draft
 **Input**: User description: "Backlog item filter-dialog-cuts-a-long-panel-filter-to-259-bytes-after-a - implement exactly what it describes." From backlog item filter-dialog-cuts-a-long-panel-filter-to-259-bytes-after-a.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: When the typed text is checked apart from the panel's filter, which filter mode (with or without the `#` digit wildcard) does the check use? → A: the panel filter's own mode, as the check used before; a refused edit changes neither the text nor the mode (autonomous run: item - "exactly as it was")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A refused filter edit leaves the panel's filter as it was (Priority: P1)
@@ -49,7 +55,7 @@ from the registry, tab 1 with a valid 300-byte filter; switch to it, Change Filt
   unchanged: the same text byte for byte (any length the panel can hold), the same mode, and
   still ready to filter.
 - **FR-002**: The syntax check of the typed text MUST give the same verdict and the same error
-  position as today for every text.
+  position as today for every text, checked in the panel filter's own mode.
 - **FR-003**: An accepted edit MUST be stored and used as today; the dialog's other behaviour
   (history, "Don't use filter", the too-long refusal of feature 270) MUST stay as it is.
 
