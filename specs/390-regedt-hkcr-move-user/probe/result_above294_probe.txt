@@ -1,6 +1,6 @@
 above294_probe (feature 294), expect: fixed, language: english
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-02 03:44; desktop 'tc_probe_13940'; ACP 1250; registry key existed True; export SHA-256 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+Date    : 2026-11-02 04:12; desktop 'tc_probe_46796'; ACP 1250; registry key existed True; export SHA-256 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
 Alias   : \HKEY_USERS\S-1-5-21-2934764448-1324481543-3308592849-1001\Software\TcProbe294 = \HKEY_CURRENT_USER\Software\TcProbe294
 Fixture : C\u00EDl \u0159x| , Hloub\Kl\u00ED\u010D\Mez\u00ED\Kl\u00ED\u010D\Mez\u00ED\Kl\u00ED\u010D|x=3 , Hloub\Kl\u00ED\u010D\Mez\u00ED\Kl\u00ED\u010D\Mez\u00ED| , Hloub\Kl\u00ED\u010D\Mez\u00ED\Kl\u00ED\u010D|b=2 , Hloub\Kl\u00ED\u010D\Mez\u00ED| , Hloub\Kl\u00ED\u010D| , Hloub| , Plochy\Kl\u00ED\u010D\Kl\u00ED\u010D\Q|q=4 , Plochy\Kl\u00ED\u010D\Kl\u00ED\u010D|b=2 , Plochy\Kl\u00ED\u010D|a=1 , Plochy| , Zdroj\Kl\u00ED\u010D\Kl\u00ED\u010D\Kl\u00ED\u010D|x=3 , Zdroj\Kl\u00ED\u010D\Kl\u00ED\u010D|b=2 , Zdroj\Kl\u00ED\u010D|a=1 , Zdroj|
 

@@ -278,8 +278,11 @@ BOOL SafeDeleteKey(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipA
 }
 
 // feature 390: which halves of HKEY_CLASSES_ROOT (HKLM / HKCU Software\Classes\<key>) hold 'key'.
-// Opened with the right a delete or copy of the key needs anyway. Returns a Win32 error code; a half
-// without the key is no error; a path that does not fit is refused (never cut)
+// Only the key's existence is asked: access denied means the key is there (a missing key answers
+// "not found"; the registry has no traverse check), so a half whose key denies listing still holds
+// it (review of 390; opening with no access right at all is refused by Windows - measured). Returns
+// a Win32 error code; a half without the key is no error; a path that does not fit is refused
+// (never cut)
 static int GetHkcrHalves(LPCWSTR key, BOOL& machineHeld, BOOL& userHeld)
 {
     machineHeld = FALSE;
@@ -294,9 +297,10 @@ static int GetHkcrHalves(LPCWSTR key, BOOL& machineHeld, BOOL& userHeld)
         int err = RegOpenKeyExW(halves[i], path, 0, KEY_ENUMERATE_SUB_KEYS, &hKey);
         if (err == ERROR_FILE_NOT_FOUND)
             continue;
-        if (err != ERROR_SUCCESS)
+        if (err == ERROR_SUCCESS)
+            RegCloseKey(hKey);
+        else if (err != ERROR_ACCESS_DENIED)
             return err;
-        RegCloseKey(hKey);
         (i == 0 ? machineHeld : userHeld) = TRUE;
     }
     return ERROR_SUCCESS;

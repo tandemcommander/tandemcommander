@@ -49,8 +49,8 @@ deleted by its real path is exactly what the delete through HKCR reached.
   refused when it does not fit, never cut).
 - `src/plugins/regedt/fs5.cpp` `CopyOrMoveKeyRec`: for a Move whose source root is HKCR, after 297's
   link check and before anything of the key is opened or written, `GetHkcrHalves` opens
-  `HKLM` / `HKCU` `Software\Classes\<path>` (`KEY_ENUMERATE_SUB_KEYS`; not found = not held; any
-  other error = the existing open-error box, nothing of the key copied - fails closed); at the end
+  `HKLM` / `HKCU` `Software\Classes\<path>` (`KEY_ENUMERATE_SUB_KEYS`; not found = not held; access
+  denied = held (since the review); any other error = the existing open-error box, nothing of the key copied - fails closed); at the end
   `SafeDeleteHkcrHalf` deletes the one half by its real path with the existing `IDS_REMOVESOURCE`
   box (Retry / Skip / Skip All / Cancel) naming `HKEY_LOCAL_MACHINE\Software\Classes\...` (the HKCR
   name when the real one would not fit `MAX_KEYNAME`). Two halves: the old `SafeDeleteKey` through HKCR.
@@ -61,7 +61,7 @@ deleted by its real path is exactly what the delete through HKCR reached.
 | Check | Result |
 |---|---|
 | `.\build.cmd` | BUILD SUCCEEDED (warnings only the old C4267 of `fs2.cpp`) |
-| `saltests.exe` | `saltests: 30755 checks, 0 failed` (14 new checks in `TestRegHkcrHalf390`) |
+| `saltests.exe` | `saltests: 30755 checks, 0 failed` (30,740 before; 15 new checks in `TestRegHkcrHalf390`) |
 | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
 | probe `hkcr390_probe.ps1` English (`hkcr390_after.txt`) | **10 PASS / 0 FAIL / 0 NOT DRIVEN**: MACHUSER / MACHUSERU - first box "Unable to remove the original registry key. (5) Access denied" naming `HKEY_LOCAL_MACHINE\Software\Classes\.386\PersistentHandler`; the user's copy equals the machine key; the machine key unchanged. USERMOVE / USERCLS moved whole |
 | the same, Czech (`hkcr390_after_czech.txt`) | 10 / 0 |
@@ -83,3 +83,28 @@ deleted again. (USERCLS was added after the before run; it was not run on the ol
 - The fail-closed open-error path of `GetHkcrHalves` - cannot be provoked without failing the copy's
   own open; by reading.
 - Keys held by both halves keep the old delete - `saltests` rule only.
+
+## Review
+
+### First review (independent agent, refute-first, on commit 16497f50)
+
+No MUST. Re-measured: probe 10 / 0 on the branch build; negative control (`regedt.spl` built from
+`main`'s `fs5.cpp` in its own worktree and build folder) 6 PASS / 4 FAIL - MACHUSER / MACHUSERU
+"boxes: none", the user's half missing; saltests 30755 / 0. Callers enumerated (CopyOrMoveFromFS,
+Quick Rename in `fs3.cpp`); order of the halves' reading per level, self-move cases (refused by 292),
+Skip / Retry and the never-cut join confirmed.
+
+| Finding | Done |
+|---|---|
+| SHOULD 1 the elevated Move is owed to a person but no person-step item exists | person-step item created at closing (step 8.3) |
+| NOTE 1 `GetHkcrHalves` opened with `KEY_ENUMERATE_SUB_KEYS`: a half whose key denies listing stopped the key with the open-error box (a key of both halves used to move) | fixed. Attempt 1 (the reviewer's remedy, access 0): Windows refuses `RegOpenKeyExW` with no access right - probe 4 PASS / 6 FAIL, "Unable to open a registry key. (5)" on every row incl. the controls (the run's output was overwritten by the next run). Attempt 2: `ERROR_ACCESS_DENIED` counts as "held" (a missing key answers not found; no traverse check) - probe 10 / 0 |
+| NOTE 2 a key held by both halves keeps the delete through HKCR, which removes only the user's half (elevated: the machine half survives a "successful" Move) | out of scope (spec FR-002, not named by the item) -> Inbox item, `leftover:390` |
+| NOTE 3 USERCLS does not discriminate the user-half branch (old and new delete the same key) | agreed - it is a regression guard only; the fix-log never claimed more |
+| NOTE 4 for a real path of `MAX_KEYNAME` or more the delete box names the HKCR key | declared in the spec (edge case); unchanged |
+| NOTE 5 each probe run is stored twice (`result_*` = the hidden-desktop log, `*_on390` / `hkcr390_*` = the probe's own output) | kept - the project's convention (292, 297 keep both) |
+| NOTE 6 old review worktrees under `%TEMP%` | not this feature; left |
+
+Checks after the NOTE 1 fix (final binary): build SUCCEEDED; saltests `30755 checks, 0 failed`;
+probe English 10 / 0 (`hkcr390_after_review.txt`), Czech 10 / 0; 292's 33 / 0, 294's 24 / 0, 296's
+47 / 0, 297's 40 / 0; registry restored identical every time. No MUST, so no second review is
+required; the NOTE 1 change is covered by the probe (its first attempt was caught by it).
