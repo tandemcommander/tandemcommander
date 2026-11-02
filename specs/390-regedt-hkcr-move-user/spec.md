@@ -21,6 +21,14 @@ through HKCR then removes that new copy instead of the machine's key. Measured a
 box, the user's copy is gone again, the machine's key unchanged - the Move reported success and did
 nothing. The same through `\HKEY_USERS\<SID>_Classes\`. Nothing is lost.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: Should such a Move delete the machine's half it copied, or be refused before anything is copied? → A: Delete the half that held the key before the copy, by its real path; without elevation the existing "Unable to remove the original registry key." box appears after the copy (autonomous run: recommended - the item allows both; this one makes the elevated Move work and adds no string)
+- Q: Should a key held by both halves when it is copied also be deleted by real path? → A: No - such a key keeps today's delete through HKCR (autonomous run: conservative - the item does not name it)
+- Q: What happens when it cannot be told which halves hold the key (an open error other than "not found")? → A: The existing open-error box (Retry / Skip / Skip All / Cancel), nothing of that key is copied or deleted (autonomous run: rule - fails closed, CLAUDE.md *Never lose the user's data*)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A Move out of the merged view moves, or says why it cannot (Priority: P1)
@@ -86,7 +94,8 @@ deleting the source; keys held by both halves keep today's behaviour.
 - **FR-003**: A failure of that delete MUST be shown with the existing "Unable to remove the original
   registry key." box (Retry / Skip / Skip All / Cancel) naming the real key; no new UI text.
 - **FR-004**: When the halves cannot be determined (an open error other than "not found"), the Move
-  MUST not delete anything of that key: the existing open-error box is shown (fails closed).
+  MUST not copy or delete anything of that key: the existing open-error box is shown (fails closed;
+  Skip keeps the key and its parents in the source).
 - **FR-005**: Moves whose source is not under HKCR, and every Copy, MUST be unchanged.
 - **FR-006**: A key path MUST never be cut: a joined path that does not fit is refused, not shortened.
 
