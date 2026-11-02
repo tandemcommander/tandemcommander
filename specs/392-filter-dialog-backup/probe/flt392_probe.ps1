@@ -14,6 +14,9 @@
       short-refused  the same with a short tab filter '*.abc;*.def' (control: passes before and after)
       long-valid     tab filter F, the field set to '*.txt' (valid), OK: accepted, nothing asked,
                      the next Change Filter shows '*.txt' (control: an accepted edit is stored)
+      long-refused-then-valid  tab filter F, '*.txt|' refused (error box), the same dialog corrected
+                     to '*.cpp', OK: accepted without a second question, the next Change Filter
+                     shows '*.cpp'
     Driver of 098's library. MUST run through tools\run_on_hidden_desktop.ps1. Registry exported,
     restored and verified.
 #>
@@ -120,7 +123,7 @@ function Run-Row([string]$Case, [scriptblock]$Body) {
 }
 # $TabFilter into tab 1, switch to it, Change Filter, field := $Text, OK (+ serve), Cancel if it
 # stayed, Change Filter again: returns the facts; $Expect = the text the second dialog must show
-function Flt-Row([string]$Case, [string]$TabFilter, [string]$Text, [string]$Expect, [switch]$Accepted) {
+function Flt-Row([string]$Case, [string]$TabFilter, [string]$Text, [string]$Expect, [switch]$Accepted, [string]$Then) {
     Run-Row $Case {
         Seed-Tabs $TabFilter
         $id = Start-Tc $StartDir; $script:RowId = $id
@@ -139,6 +142,20 @@ function Flt-Row([string]$Case, [string]$TabFilter, [string]$Text, [string]$Expe
         $r = Serve-Flt $id @($dlg)
         $script:RowFatal = $r.Fatal
         $stayed = [Drv098f]::IsWindow($dlg) -and [Drv098f]::IsWindowVisible($dlg)
+        $thenFacts = ''
+        if ($Then -and $stayed -and -not $r.Fatal) {
+            # the refused dialog is corrected with a valid text and confirmed
+            Set-Field $dlg $IDE_FILTER $Then
+            Click-Ok $dlg
+            Start-Sleep -Milliseconds 700
+            $r3 = Serve-Flt $id @($dlg)
+            foreach ($m in $r3.Messages) { [void]$r.Messages.Add('after the correction: ' + $m) }
+            if ($r3.Fatal) { $r.Fatal = $r3.Fatal; $script:RowFatal = $r3.Fatal }
+            $stayedAgain = [Drv098f]::IsWindow($dlg) -and [Drv098f]::IsWindowVisible($dlg)
+            $thenFacts = ("; corrected to '{0}', OK, dialog stayed again: {1}" -f $Then, $stayedAgain)
+            $stayed = $stayedAgain
+            $Accepted = $true
+        }
         if ($stayed -and -not $r.Fatal) { Close-Win $dlg; Start-Sleep -Milliseconds 500; $r2 = Serve-Flt $id @() 15; foreach ($m in $r2.Messages) { [void]$r.Messages.Add('after cancel: ' + $m) }; if ($r2.Fatal) { $script:RowFatal = $r2.Fatal } }
         if (-not $script:RowFatal) { $script:RowFatal = Fatal-Win $id }
         $now = '<not read>'
@@ -151,10 +168,11 @@ function Flt-Row([string]$Case, [string]$TabFilter, [string]$Text, [string]$Expe
         }
         $kept = ($now -ceq $Expect)
         $shown = Shown $r
-        if ($Accepted) { $verdictOk = (-not $stayed) -and ($shown -eq 'nothing') -and $kept }
+        if ($Then) { $verdictOk = (-not $stayed) -and ($shown -match $Syntax) -and ($shown -notmatch 'after the correction') -and $kept }
+        elseif ($Accepted) { $verdictOk = (-not $stayed) -and ($shown -eq 'nothing') -and $kept }
         else { $verdictOk = $stayed -and ($shown -match $Syntax) -and $kept }
         $ok = (-not $script:RowFatal) -and (-not $r.TimedOut) -and $firstWhole -and $verdictOk
-        Row $Case 'RUN' (V $ok) ("tab filter {0} bytes; the first dialog showed {1} bytes (whole: {2}); typed '{3}'; dialog stayed: {4}; asked: {5}; the next dialog shows {6} bytes, as expected ({7} bytes): {8}, tail '{9}'{10}" -f (U8 $TabFilter), (U8 $first), $firstWhole, $Text, $stayed, $shown, (U8 $now), (U8 $Expect), $kept, (Tail $now 12), $(if ($r.TimedOut) { '; TIMED OUT' } else { '' }))
+        Row $Case 'RUN' (V $ok) ("tab filter {0} bytes; the first dialog showed {1} bytes (whole: {2}); typed '{3}'; dialog stayed: {4}; asked: {5}; the next dialog shows {6} bytes, as expected ({7} bytes): {8}, tail '{9}'{10}" -f (U8 $TabFilter), (U8 $first), $firstWhole, $Text, $stayed, $shown, (U8 $now), (U8 $Expect), $kept, (Tail $now 12), ($thenFacts + $(if ($r.TimedOut) { '; TIMED OUT' } else { '' })))
     }
 }
 
@@ -162,6 +180,7 @@ $Cases = [ordered]@{}
 $Cases['long-refused'] = { Flt-Row 'long-refused' $F '*.txt|' $F }
 $Cases['short-refused'] = { Flt-Row 'short-refused' '*.abc;*.def' '*.txt|' '*.abc;*.def' }
 $Cases['long-valid'] = { Flt-Row 'long-valid' $F '*.txt' '*.txt' -Accepted }
+$Cases['long-refused-then-valid'] = { Flt-Row 'long-refused-then-valid' $F '*.txt|' '*.cpp' -Then '*.cpp' }
 
 # ---- main --------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tcflt_backup.reg'

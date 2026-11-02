@@ -18,7 +18,7 @@
 **Independent test**: probe row `long-refused` PASS (300 of 300 bytes), `short-refused` and `long-valid` PASS.
 
 - [ ] T003 [US1] In `src/dialogs3.cpp` `CFilterDialog::Validate`, replace the `char buf[MAX_PATH]` backup / `Filter->GetWritableMasksString()` / `Filter->SetMasksString(buf)` sequence by a local `CMaskGroup` (`SetMasksString("", Filter->GetExtendedMode())`, `ti.EditLine(IDE_FILTER, check.GetWritableMasksString(), MAX_PATH)`, `check.PrepareMasks(errorPos)`), keeping the error box, focus, selection and `ti.ErrorOn` unchanged; English comment naming feature 392
-- [ ] T004 [US1] Build Debug x64 (`.\build.cmd`) and run the probe on the hidden desktop into `specs/392-filter-dialog-backup/probe/result_after.txt` (quickstart.md)
+- [ ] T004 [US1] Build Debug x64 (`.\build.cmd`) and run the probe on the hidden desktop into `specs/392-filter-dialog-backup/probe/result_after.txt` (quickstart.md); rows long-refused, short-refused, long-valid, long-refused-then-valid
 - [ ] T005 [US1] Negative control: confirm `result_before.txt` (old code) fails `long-refused` and the after run passes; record both in `specs/392-filter-dialog-backup/fix-log.md`
 
 ## Phase 4: Polish

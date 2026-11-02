@@ -33,3 +33,12 @@ identical hash. Defect confirmed; `BL verify` recorded.
 Notes answered: the dialog shows the whole long filter (WM_SETTEXT is not bound by
 `CB_LIMITTEXT`); OK with the long text unchanged is refused by `DlgItemTextFitsU8` (feature 270)
 before anything is touched - the cut needs a shorter invalid text, as the probe does.
+
+## Analyze
+
+`speckit-analyze` (one round): CRITICAL 0, HIGH 0. C1 MEDIUM (the edge case "refused, then
+corrected in the same dialog" had no probe row) - fixed: row `long-refused-then-valid` added to
+the probe. C2 LOW (the error position is not probed) and C3 LOW (history / "Don't use filter" not
+probed) - accepted: the check runs in the same class with the panel's mode, so the verdict and
+`errorPos` are the same by construction; `Transfer` is unchanged and feature 270's probe covers
+history and "Don't use filter".
