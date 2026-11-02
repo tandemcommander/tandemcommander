@@ -80,10 +80,12 @@ inline int SalCpioLinkDecide(bool asked, bool hasData, int state, bool anyWaitin
 // the operation's names - only a whole Unpack's mask can: it is never listed) and the data reaches no
 // name the operation writes, the member is reported and the operation fails, so the archive is kept
 // ("Delete archive after unpacking"). Also for tar (no grouping) and odc / binary cpio.
-#define SAL_EMPTY_NAME_SILENT 0  // nothing to say: no data, not asked, or the data reached a name
-#define SAL_EMPTY_NAME_REPORT 1  // report now and fail the operation
-#define SAL_EMPTY_NAME_PENDING 2 // a group's data passed unwritten: report at the end unless a later
-                                 // member of the group writes the data or reports its loss
+// SILENT: nothing to say (no data, not asked, or the data reached a name); REPORT: report now and fail
+// the operation; PENDING: a group's data passed unwritten - report at the end unless a later member of
+// the group writes the data or reports its loss
+#define SAL_EMPTY_NAME_SILENT 0
+#define SAL_EMPTY_NAME_REPORT 1
+#define SAL_EMPTY_NAME_PENDING 2
 
 // the decision for such a member: 'regularFile' / 'hasData' (size above 0) / 'asked' (raw name
 // matched); 'groupMember' - it stays in a newc / crc hard-link group (SalCpioKeepsGroupMember);
@@ -99,6 +101,15 @@ inline int SalEmptyNameDataDecide(bool regularFile, bool hasData, bool asked, bo
     if (cpioAction == SAL_CPIO_LINK_WRITE_FOR_WAITING || groupState == SAL_CPIO_GROUP_WRITTEN)
         return SAL_EMPTY_NAME_SILENT; // a waiting name gets the data / the data was written already
     return SAL_EMPTY_NAME_PENDING;
+}
+
+// does an odc / binary cpio member name a file whose data is repeated with its other names? (the
+// formats store the data with every name, so the file's data reaches another name when one of them is
+// extracted - feature 395: an empty-named member of such a file stays silent then.) 'odcOrBinary': the
+// archive is odc (070707) or binary; 'mode': c_mode; 'nlink': c_nlink
+inline bool SalCpioRepeatsLinkedData(bool odcOrBinary, unsigned long mode, unsigned long nlink)
+{
+    return odcOrBinary && (mode & 0170000) == 0100000 && nlink > 1;
 }
 
 // does a later member of a group with a pending empty-name loss settle it? 'cpioAction' - the

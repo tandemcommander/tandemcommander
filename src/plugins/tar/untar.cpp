@@ -742,6 +742,7 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
     BOOL refused = FALSE;
     CWrittenNames writtenNames; // feature 309
     CCpioGroups cpioGroups;     // feature 310
+    CCpioGroups cpioRepeats;    // feature 395: odc / binary hard-linked files (SalCpioRepeatsLinkedData)
     // feature 325: what each name holds (the data member a hard link stands for), and the asked links
     // whose data member passed unwritten (written by further passes, ExtractDeferredLinks)
     CSalTarLinkResolver resolver;
@@ -904,13 +905,55 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
                                           emptyAsked);
         else
         {
-            // feature 395: no other name can get its data (one name, odc / binary, tar)
-            if (SalEmptyNameDataDecide(header.NameEmptyRegular != FALSE, header.FileInfo.Size > CQuadWord(0, 0),
-                                       emptyAsked != FALSE, false, SAL_CPIO_LINK_SKIP,
-                                       SAL_CPIO_GROUP_NONE) == SAL_EMPTY_NAME_REPORT)
+            // feature 395: an empty-named file's data - no other name can get it (one name, tar), or, in odc /
+            // binary, another name of the file gets it when that name is extracted (the data repeated)
+            BOOL hasData = header.FileInfo.Size > CQuadWord(0, 0);
+            SCpioGroup* repeat = NULL;
+            if (SalCpioRepeatsLinkedData(header.Format == e_OldASCII || header.Format == e_Binary,
+                                         header.Mode.LoDWord, header.CpioNLink) &&
+                !header.IsDir)
             {
+                try
+                {
+                    repeat = &cpioRepeats[CpioGroupKey(header)];
+                }
+                catch (...)
+                {
+                    SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                      MSGBOX_ERROR);
+                    SalamanderIf->CloseProgressDialog();
+                    return FALSE;
+                }
+            }
+            switch (SalEmptyNameDataDecide(header.NameEmptyRegular != FALSE, hasData != FALSE, emptyAsked != FALSE,
+                                           repeat != NULL, SAL_CPIO_LINK_SKIP,
+                                           repeat != NULL ? repeat->State : SAL_CPIO_GROUP_NONE))
+            {
+            case SAL_EMPTY_NAME_REPORT:
                 ReportEmptyName(header.Name);
                 refused = TRUE;
+                break;
+            case SAL_EMPTY_NAME_PENDING: // reported at the end unless another name of the file is extracted
+                try
+                {
+                    repeat->EmptyLostName = header.Name;
+                    repeat->EmptyLost = true;
+                }
+                catch (...)
+                {
+                    SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE),
+                                                      MSGBOX_ERROR);
+                    SalamanderIf->CloseProgressDialog();
+                    return FALSE;
+                }
+                break;
+            }
+            // another name of the file asked for, with the data: the file's data reaches a name (an overwrite
+            // the user declines is the user's choice, as for a newc group's waiting name)
+            if (repeat != NULL && found && !header.Ignored && hasData)
+            {
+                repeat->State = SAL_CPIO_GROUP_WRITTEN;
+                repeat->EmptyLost = false;
             }
             ret = WriteOutData(header, targetPath, ptr, (header.Ignored || !found), !linkHandled, &written);
         }
@@ -920,7 +963,10 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         if (ret == TAR_EOF && WriteOutCpioEmptyNames(cpioGroups, targetPath) != TAR_OK)
             ret = TAR_ERROR;
         if (ret == TAR_EOF) // feature 395: empty-named data no name got
+        {
             ReportCpioEmptyLost(cpioGroups, refused);
+            ReportCpioEmptyLost(cpioRepeats, refused);
+        }
         // feature 325: the deferred hard links from further passes
         if (ret == TAR_EOF && !deferred.empty() && ExtractDeferredLinks(targetPath, deferred, refused) != TAR_OK)
             ret = TAR_ERROR;
@@ -954,7 +1000,10 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
             // feature 310: the names of files that never carried data are empty
             BOOL emptyOk = WriteOutCpioEmptyNames(cpioGroups, targetPath) == TAR_OK;
             if (emptyOk) // feature 395: empty-named data no name got
+            {
                 ReportCpioEmptyLost(cpioGroups, refused);
+                ReportCpioEmptyLost(cpioRepeats, refused);
+            }
             // feature 325: the deferred hard links from further passes
             if (emptyOk && !deferred.empty() && ExtractDeferredLinks(targetPath, deferred, refused) != TAR_OK)
                 emptyOk = FALSE;
@@ -2183,6 +2232,12 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     // if the tar archive has ended, stop processing
     if (header.Finished)
         return TAR_OK;
+    // feature 395: a binary cpio's c_dev and c_ino lie in the 6 bytes read here (ReadBinaryHeader reads on)
+    if (header.Format == e_Binary)
+    {
+        header.CpioDevMinor = *(const unsigned short*)(buffer + 2);
+        header.CpioIno = *(const unsigned short*)(buffer + 4);
+    }
     // for non-tar formats we must return the rest of the header
     if (header.Format != e_TarPosix &&
         header.Format != e_TarOldGnu &&
@@ -2628,6 +2683,16 @@ int CArchive::ReadOldASCIIHeader(SCommonHeader& header)
         return TAR_ERROR;
     }
     header.Checksum.Set(0, 0);
+    // feature 395: what makes members names of one file (c_dev, c_ino, c_nlink) - the data is repeated
+    // with every name; read silently as 310 reads newc (a field that is not octal: no link count)
+    CQuadWord dev, ino, nlink;
+    if (FromOctalQ(buffer + 6 * 0, 6, dev) && FromOctalQ(buffer + 6 * 1, 6, ino) &&
+        FromOctalQ(buffer + 6 * 5, 6, nlink))
+    {
+        header.CpioDevMinor = dev.LoDWord;
+        header.CpioIno = ino.LoDWord;
+        header.CpioNLink = nlink.LoDWord;
+    }
 
     // read the name
     return ReadCpioName(namesize, header);
@@ -2655,6 +2720,7 @@ int CArchive::ReadBinaryHeader(SCommonHeader& header)
         header.Mode.Set(*(unsigned short*)(buffer + 2 * 0), 0);
         header.MTime.Set((*(unsigned short*)(buffer + 2 * 5) << 16) + *(unsigned short*)(buffer + 2 * 6), 0);
         header.FileInfo.Size.Set((*(unsigned short*)(buffer + 2 * 8) << 16) + *(unsigned short*)(buffer + 2 * 9), 0);
+        header.CpioNLink = *(unsigned short*)(buffer + 2 * 3); // feature 395 (dev / ino: ReadArchiveHeader)
     }
     else
     {

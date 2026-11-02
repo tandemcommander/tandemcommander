@@ -64,6 +64,30 @@ class Odc:
         return bytes(self.out)
 
 
+class Binary:
+    # the old binary cpio (magic 070707 as a little-endian short; 2-byte alignment)
+    def __init__(self):
+        self.out = bytearray()
+        self.ino = 100
+
+    def member(self, name, mode, data=b'', ino=None, nlink=1, dev=(8, 1)):
+        if ino is None:
+            self.ino += 1
+            ino = self.ino
+        nb = name.encode('utf-8') + b'\0'
+        hdr = struct.pack('<13H', 0o70707, (dev[0] * 256 + dev[1]) & 0xFFFF, ino, mode & 0xFFFF, 0, 0, nlink, 0,
+                          MTIME >> 16, MTIME & 0xFFFF, len(nb), len(data) >> 16, len(data) & 0xFFFF)
+        assert len(hdr) == 26
+        self.out += hdr + nb + b'\0' * pad(len(nb), 2) + data + b'\0' * pad(len(data), 2)
+
+    def finish(self):
+        self.member('TRAILER!!!', 0, ino=0, nlink=1, dev=(0, 0))
+        # 10240 bytes (cpio -B blocks): the plug-in recognises a binary header only with 512 bytes left
+        # to read after it (a member within the last 512 bytes is "not recognised" - not this feature's)
+        self.out += b'\0' * pad(len(self.out), 10240)
+        return bytes(self.out)
+
+
 class Ustar:
     def __init__(self):
         self.out = bytearray()
@@ -112,6 +136,8 @@ def main():
         a = Ustar()
     elif '-ODC-' in row:
         a = Odc()
+    elif '-BIN-' in row:
+        a = Binary()
     else:
         a = Newc(crc='-CRC-' in row)
     carrier = None
@@ -131,6 +157,22 @@ def main():
         raise SystemExit('unknown row ' + row)
     elif '-ORPHAN' in row:
         # a hard-linked file (nlink 2) whose only stored name is the empty one
+        reg(a, carrier, data, ino=5, nlink=2)
+        reg(a, 'ok.txt', b'K')
+    elif '-DFIRST' in row:
+        # newc data-first (feature 394's layout): the empty-named carrier, then a.txt with size 0
+        reg(a, carrier, data, ino=5, nlink=2)
+        reg(a, 'a.txt', b'', ino=5, nlink=2)
+        reg(a, 'ok.txt', b'K')
+    elif '-LINKFIRST' in row:
+        # odc / binary (review 1 of 395): one file with two names, the data repeated with both; the empty
+        # name first
+        reg(a, carrier, data, ino=5, nlink=2)
+        reg(a, 'a.txt', data, ino=5, nlink=2)
+        reg(a, 'ok.txt', b'K')
+    elif '-LINK' in row:
+        # the same, a.txt first
+        reg(a, 'a.txt', data, ino=5, nlink=2)
         reg(a, carrier, data, ino=5, nlink=2)
         reg(a, 'ok.txt', b'K')
     elif '-WAIT' in row:

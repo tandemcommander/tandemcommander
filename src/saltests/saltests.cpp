@@ -20379,6 +20379,15 @@ static void TestEmptyNameData395()
     CHECK(SalEmptyNamePendingCleared(SalCpioLinkDecide(true, false, L, false)));
     // data-first, the later name not asked: SKIP -> the pending loss stays and is reported at the end
     CHECK(!SalEmptyNamePendingCleared(SalCpioLinkDecide(false, false, L, false)));
+    // odc / binary repeat a hard-linked file's data with every name (review 1 of 395)
+    CHECK(SalCpioRepeatsLinkedData(true, 0100644, 2));
+    CHECK(!SalCpioRepeatsLinkedData(true, 0100644, 1));  // one name: nothing else gets the data
+    CHECK(!SalCpioRepeatsLinkedData(false, 0100644, 2)); // newc / crc: the group rule of 310
+    CHECK(!SalCpioRepeatsLinkedData(true, 0040755, 2));  // a folder
+    CHECK(!SalCpioRepeatsLinkedData(true, 0120777, 2));  // a symbolic link
+    // such a file: another name written already -> silent; not yet -> pending until one is
+    CHECK(SalEmptyNameDataDecide(true, true, true, true, SAL_CPIO_LINK_SKIP, W) == SAL_EMPTY_NAME_SILENT);
+    CHECK(SalEmptyNameDataDecide(true, true, true, true, SAL_CPIO_LINK_SKIP, N) == SAL_EMPTY_NAME_PENDING);
 }
 
 // feature 315: the Unpack dialog's defaults whole or not at all (salunpackdefault.h)

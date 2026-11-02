@@ -1,6 +1,6 @@
-cpioempty_probe (backlog item a-cpio-hard-link-whose-data-name-normalizes-to-empty-is) regress-395
+cpioempty_probe (backlog item a-cpio-hard-link-whose-data-name-normalizes-to-empty-is) regress-395-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-02 10:25; registry key existed True; ACP 1250; python Python 3.14.6
+Date    : 2026-11-02 10:56; registry key existed True; ACP 1250; python Python 3.14.6
 
 UNP-EMPTY-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 UNP-EMPTY-DOT-DEL RUN    PASS        tgt: 2 of 2 files; files: a.txt(3), ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: False (want False); windows: no window
@@ -22,7 +22,7 @@ COPY-EMPTY-DOT END    PASS        exit 0x00000000; alive True; WM_NULL True; str
 COPY-EMPTY-DOT RUN    PASS        tgt: 2 of 2 files; files: a.txt(3), ok.txt(1); times 2001-09-09 01:46:40Z; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
 COPY-EMPTY-DOT-FIRST END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 COPY-EMPTY-DOT-FIRST RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; message during the copy matches \(2\)[^|]*a\.txt: True; at open: no window; windows: ...ton id=1] OK | [Button id=2] Cancel | [Button id=9] Help || [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. a.txt -> . | [Button id=1] OK
-VIEW-EMPTY-DOT RUN    PASS        F3: C:\Users\pavel\AppData\Local\Temp\SAL6C.tmp\a.txt [Plain Text] - Code Viewer; cached copies: 1; content: "AAA" (want AAA)
+VIEW-EMPTY-DOT RUN    PASS        F3: C:\Users\pavel\AppData\Local\Temp\SALDEA.tmp\a.txt [Plain Text] - Code Viewer; cached copies: 1; content: "AAA" (want AAA)
 VIEW-EMPTY-DOT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0; Debug note: monitored handles
 Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
 

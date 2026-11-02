@@ -269,17 +269,19 @@ struct SCommonHeader
     BOOL NameRefused; // feature 308: Name cannot be used in this pass (also Ignored); an extraction asked for it fails
     BOOL NameEmpty;   // feature 394: a cpio name that normalizes to nothing ("." ...; also Ignored, Name stays raw):
                       // never asked, but it may carry a hard-linked file's data (it stays in its group)
-    BOOL NameEmptyRegular; // feature 395: the name normalizes to nothing (also Ignored) and the member is a
-                           // regular file (cpio by its mode, tar by its type; any format) - its data, if
-                           // any, reaches no name of its own: an extraction asked for it reports it
     char LinkType;    // feature 309: LNKTYPE / SYMTYPE for a link member (also Ignored), else 0
     char* LinkName;   // feature 309: malloc'd UTF-8 name the link refers to, normalized like Name; NULL = none
-    // feature 310: newc / crc cpio only (0 otherwise) - c_ino, c_nlink, c_devmajor, c_devminor; the
-    // names of one file share the inode and the device, the data is stored with one of them
+    // feature 310: newc / crc cpio - c_ino, c_nlink, c_devmajor, c_devminor; the names of one file share
+    // the inode and the device, the data is stored with one of them. Feature 395: also odc and binary
+    // (the device in CpioDevMinor; the data repeated with every name); 0 otherwise
     DWORD CpioIno;
     DWORD CpioNLink;
     DWORD CpioDevMajor;
     DWORD CpioDevMinor;
+    // feature 395: the name normalizes to nothing (also Ignored) and the member is a regular file (cpio by
+    // its mode, tar by its type; any format) - its data, if any, reaches no name of its own: an
+    // extraction asked for it reports it
+    BOOL NameEmptyRegular;
 };
 
 class CArchiveAbstract
@@ -317,9 +319,10 @@ private:
     BOOL Listing; // feature 308: this pass builds the panel listing (its bounds apply only then)
     BOOL RefusedNameShown;
     BOOL LinkReportShown; // feature 309: a link member left out is reported once per operation
-    BOOL EmptyNameShown;  // feature 395: a file stored under a name that normalizes to nothing, once per operation
     BOOL RepeatPass;      // feature 325: a further pass (ReopenStream) - "Unknown block signature" not again
     DWORD ListingPrefixLen; // feature 306: bytes the listing puts before every path (.deb: "data" + a separator)
+    // feature 395: a file stored under a name that normalizes to nothing is reported once per operation
+    BOOL EmptyNameShown;
 
     BOOL ListStream(CSalamanderDirectoryAbstract* dir);
     BOOL UnpackStream(const char* targetPath, BOOL doProgress,
@@ -404,7 +407,8 @@ private:
     int WriteOutCpioGroupMember(SCommonHeader& header, const char* targetPath, const char* targetName,
                                 BOOL found, CCpioGroups& groups, BOOL& refused, BOOL emptyAsked = FALSE);
     // feature 395: at the end of the archive, a group whose empty-named data passed unwritten and was
-    // never settled is reported ('refused' set)
+    // never settled is reported ('refused' set) - also the odc / binary files of DoUnpackArchive
+    // (SalCpioRepeatsLinkedData; State SAL_CPIO_GROUP_WRITTEN once another name of the file was extracted)
     void ReportCpioEmptyLost(const CCpioGroups& groups, BOOL& refused);
     // the names waiting for 'group' after its data was handled: copies of WrittenTarget, or reported
     int FinishCpioWaiting(SCpioGroup& group, const char* targetPath, BOOL& refused);

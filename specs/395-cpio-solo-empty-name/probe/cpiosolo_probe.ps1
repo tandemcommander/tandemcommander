@@ -24,6 +24,14 @@
                                    -> ok.txt, nothing asked, archive deleted (controls)
       UNP-WAIT-DOT-DEL             -> a.txt = AAA, ok.txt, nothing asked, archive deleted (394)
       UNP-SOLO-DOT-MASK            mask "*.txt" -> ok.txt, nothing asked, archive deleted (not asked)
+    Rows added after review 1 (odc / binary repeat a hard-linked file's data with every name; BIN = the
+    binary cpio; LINK: a.txt and <E> one file, both 'AAA', a.txt first; LINKFIRST: <E> first; DFIRST:
+    newc, <E> 'AAA' then a.txt size 0):
+      UNP-ODC-LINK-DOT-DEL, UNP-ODC-LINKFIRST-DOT-DEL, UNP-BIN-LINK-DOT-DEL
+                                   -> a.txt = AAA, ok.txt, nothing asked, archive deleted
+      UNP-ODC-ORPHAN-DOT-DEL, UNP-BIN-ORPHAN-DOT-DEL, UNP-BIN-SOLO-DOT-DEL
+                                   -> ok.txt, a "(123)" box, archive KEPT
+      UNP-DFIRST-DOT-MASKQ         mask "?" (matches "." only) -> nothing extracted, "(123)", archive KEPT
     Copy row: the left panel opens <row>\t.cpio, the right shows <row>\tgt; Select All (842), Copy
     (727), boxes OK.
       COPY-SOLO-DOT                -> only the Copy dialog, tgt ok.txt (the member is not listed - not asked)
@@ -214,6 +222,15 @@ try {
     Unpack-Row 'UNP-TAR-DOTDIR-DEL' $ok1 -ArcGone
     Unpack-Row 'UNP-WAIT-DOT-DEL' $both -ArcGone
     Unpack-Row 'UNP-SOLO-DOT-MASK' $ok1 -ArcGone -Mask '*.txt'
+    # review 1: odc / binary repeat a hard-linked file's data with every name
+    Unpack-Row 'UNP-ODC-LINK-DOT-DEL' $both -ArcGone
+    Unpack-Row 'UNP-ODC-LINKFIRST-DOT-DEL' $both -ArcGone
+    Unpack-Row 'UNP-ODC-ORPHAN-DOT-DEL' $ok1 -NeedMsg $rep
+    Unpack-Row 'UNP-BIN-SOLO-DOT-DEL' $ok1 -NeedMsg $rep
+    Unpack-Row 'UNP-BIN-LINK-DOT-DEL' $both -ArcGone
+    Unpack-Row 'UNP-BIN-ORPHAN-DOT-DEL' $ok1 -NeedMsg $rep
+    # review 1: newc data-first, the mask "?" matches "." but not a.txt - reported at the end of the archive
+    Unpack-Row 'UNP-DFIRST-DOT-MASKQ' ([ordered]@{}) -NeedMsg $rep -Mask '?'
     Copy-Row 'COPY-SOLO-DOT' $ok1
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

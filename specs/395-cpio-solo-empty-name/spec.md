@@ -99,7 +99,10 @@ extracting silently with success - the archive is deleted when the user asked fo
 - **FR-004**: For a newc / crc member of a hard-link group, "reaches no extracted name" MUST be
   decided by the group: data given to a waiting name or already written - silent; data passed with
   a later asked name of the group reported by feature 394's rule - no second report; otherwise
-  reported at the end of the archive.
+  reported at the end of the archive. For an odc / binary member with a link count above 1 (these
+  formats repeat the data with every name of the file, same device and inode) the data reaches a
+  name when another name of the file, with data, is extracted by the operation - before or after
+  the empty-named member - and then nothing is reported; otherwise it is reported at the end.
 - **FR-005**: A folder member, a member of size 0, a non-regular member and a member the
   operation's names do not match MUST stay silent with the behaviour they have today.
 - **FR-006**: The same rule MUST apply to a tar member (measured the same: silent drop, archive
@@ -134,4 +137,9 @@ extracting silently with success - the archive is deleted when the user asked fo
   the item proposes; "(206)" says "too long", which is wrong for an empty name.
 - Assumption (autonomous run): the raw name is shown in quotes (`"."`, `"./"`, `""`) so that an
   empty name is visible in the box.
+- Assumption (autonomous run, review 1): another name of an odc / binary file that the operation
+  is asked for and that carries data counts as "the data reached a name" even when the user then
+  declines its overwrite question - the same as a newc group's waiting name (feature 394).
+- Assumption (autonomous run, review 1): the byte-swapped binary cpio keeps reporting such a
+  member whenever it is asked (its reader parses no device / inode) - the safe direction.
 - Crafted archives only; no common writer stores a file's data under an empty name.

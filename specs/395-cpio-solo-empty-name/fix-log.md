@@ -98,3 +98,58 @@ is read past, nothing sets `refused`, the operation returns TRUE and the core de
   308 12 / 0, 309 16 / 0, 310 52 / 0, 321 tar 20 / 0, 321 unpack 12 / 0, 393 28 / 0, 394 22 / 0 -
   each as recorded by feature 394 (394's data-first rows still show only their "(2)" box: the
   pending loss is cleared by the REPORT at `a.txt`).
+
+## Review
+
+### Review 1 (independent agent, refute-first, HEAD e3a27bda) - no MUST
+
+Re-ran build, saltests 30832 / 0, encoding guard 0, the probe 32 / 0; seven extra rows of its own
+(data-first with the mask `.` / `?` - the "(123)" box at the end of the archive, archive kept, so
+analyze's C1 is now driven in the program; data-first with `*.*` - only 394's "(2)" box; two
+empty-named members + an orphan - one box; a GNU dumpdir `./` with data in tar - silent, deleted).
+Negative control: main's `tar.spl` (bb8aa693, built in its own worktree) - the solo, odc, orphan,
+tar and data-first rows fail (no window, archive deleted). Callers enumerated independently
+(`DoUnpackArchive` also from `CDEBArchive`, `deb.cpp`).
+
+- SHOULD S1 - odc / binary repeat a hard-linked file's data with every name, so `.` + `a.txt`
+  (both `AAA`, inode 5, nlink 2) was reported although `a.txt` got the data (FR-001). In scope -
+  fixed:
+  - `SalCpioRepeatsLinkedData` (`salcpiolink.h`, 7 saltests checks -> 30839);
+  - the odc reader fills `CpioDevMinor` / `CpioIno` / `CpioNLink` (c_dev, c_ino, c_nlink, read
+    silently as 310 reads newc); the binary reader takes c_nlink, `ReadArchiveHeader` c_dev and
+    c_ino from the 6 bytes it pre-reads (before the rewind). Consumers of these fields
+    (`IsCpioGroupMember`, `CpioGroupKey`, the group map) are gated by newc / crc - unchanged;
+  - `DoUnpackArchive`: a per-operation map `cpioRepeats` (device + inode); an asked empty-named
+    member of such a file is SILENT when another name of the file with data was asked before, else
+    PENDING; a later asked name with data sets the file WRITTEN and clears the pending loss;
+    `ReportCpioEmptyLost(cpioRepeats)` at both end paths.
+  - Byte-swapped binary: its reader parses its fields as hex text (legacy) - no device / inode;
+    such a member keeps being reported when asked (the safe direction; spec *Assumptions*).
+  - Reproduced at e3a27bda first (`probe/result_review1_before.txt`, `-Only` the new rows):
+    `UNP-ODC-LINK-DOT-DEL` and `UNP-ODC-LINKFIRST-DOT-DEL` FAIL (a.txt = AAA but a "(123)" box and
+    the archive kept); the binary rows of that run failed on the fixture (see the next point).
+  - Binary fixture: the plug-in recognises a binary header only with 512 bytes left to read after
+    it - a member or the trailer within the last 512 bytes is "Archive format not recognised"
+    (`ReadArchiveHeader` falls back to a 6-byte pre-read, `GetArchiveType` wants 26). Pre-existing,
+    measured by that run (`UNP-BIN-LINK-DOT-DEL`: a.txt written, then the box, ok.txt missing) ->
+    Inbox item (measure:395); the fixture now pads binary archives to 10240 bytes (cpio -B).
+  - After: `probe/result_after.txt` PASS 46 / FAIL 0 (23 RUN rows): odc / binary LINK and LINKFIRST
+    silent with a.txt = AAA and the archive deleted; odc / binary orphan and binary solo reported,
+    kept; the reviewer's data-first row with the mask `?` reported at the end, kept.
+- NOTE `x/..` normalizes to `x` (not empty) - the existing Next item
+  `tar-member-name-with-dotdot-extracted-into-wrong-folder`; no change.
+- NOTE clang-format realigned the trailing-comment blocks around the new members of `tar.h` and
+  continued the `SAL_EMPTY_NAME_PENDING` comment - fixed: the new members sit at the end of their
+  blocks with the comment above them, the defines carry one comment above; clang-format now gives
+  for `salcpiolink.h`, `tar.h` and `untar.cpp` exactly the differences it gives for `main`
+  (pre-existing lines only).
+- NOTE a .deb unpacks its control and data parts with two `CArchive` objects - the "(123)" box
+  can show once per part. Kept (each part is its own archive; the operation fails either way).
+- NOTE the closing files (CHANGELOG, FEATURE-HISTORY) - written at the closing (step 8).
+- NOTE the fix-log's own negative control was coarse - the reviewer's (main's code) plus its
+  data-first row show each report site is needed.
+
+After the S1 fix and the formatting: `.\build.cmd` -> BUILD SUCCEEDED; saltests 30839 / 0;
+encoding guard TOTAL 0; regression probes re-run on this build (cpio paths changed): 310 52 / 0,
+393 28 / 0, 394 22 / 0, 306 30 / 0 (`probe/regress_*.txt` overwritten; 308 / 309 / 321 are tar-only
+and unchanged by S1 - their files are the run before S1).
