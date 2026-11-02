@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
@@ -6133,3 +6133,21 @@ a few early ones are out of sequence).
   -> 14 / 0 (209's 8 / 0); saltests 30,724 -> 30,740 / 0 (`TestListedDirIsLink388`, negative
   control 7 of 16 failed); one refute-first review (no MUST; SHOULD 2 mask wording fixed, SHOULD 1
   to the decision item).
+- 389-compare-icon-fits: the User Menu's "names to compare" dialog and the Change Icon dialog read
+  a typed path into 260 bytes cut at a whole character - a compare name of 87+ CJK letters started
+  the command with another name (the probe's tail letter lost); Change Icon reloaded its icons from
+  a code-page form of a longer name ("Cannot find the file ...???.exe"), put SHELL32.DLL into the
+  field and stored it - now `CCompareArgsDlg::Validate` measures both names first and
+  `CChangeIconDialog` refuses in a new `Validate` and at the top of `LoadIcons`
+  (`DlgItemTextFitsU8`, "The path specified is too long.", no new string; the list keeps its icons,
+  the field its text). Traps: the OK click moves the focus first, so EN_KILLFOCUS reloads (and used
+  the code-page name) before `Validate` runs - `Validate` alone left the defect (negative control);
+  the User Menu page stores `<name>,<index>` and the configuration loader reads that value into
+  MAX_PATH, so a 258 / 259-byte name was accepted and lost at the next start (review 1, MUST) - the
+  icon name's limit is `MAX_PATH - strlen(",<index>")`. Limits: a click on Cancel / Browse after a
+  refused reload is lost (Esc works, as with the old box); the dead code-page fallback in
+  `LoadIcons` stays. From backlog item `user-menu-compare-names-and-the-change-icon-file-are-cut-to`.
+  Probe `fit389_probe.ps1` 4 FAIL / 6 -> 18 / 0 (negative controls: `Validate` only - chi-file
+  FAIL; before the review-1 fix - chi-store259 FAIL); 291's 34 / 0, 251's 38 / 4 (its Viewers rows
+  open the page index shifted by 312's Tabs page - 4 / 0 with page 20; Inbox); saltests 30,740 / 0;
+  two refute-first reviews (one MUST fixed; the second without MUST, the spec's limit restated).

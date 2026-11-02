@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [User Menu compare names and the Change Icon file are cut to 259 bytes](items/user-menu-compare-names-and-the-change-icon-file-are-cut-to/desc.md) | bug | 4 | long-paths | 389 |
 
 ## Next
 
