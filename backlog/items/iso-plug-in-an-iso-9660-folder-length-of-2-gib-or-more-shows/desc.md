@@ -8,7 +8,7 @@ source: review:401
 who: agent
 created: 2026-11-02
 updated: 2026-11-02
-verified: -
+verified: 2026-11-02 618dae27
 effort: S
 feature: -
 related: [iso-plug-in-a-fuzzing-pass-over-the-hfs-iso-9660-joliet-and]
@@ -53,3 +53,4 @@ walked - no memory box, no way to end the program from a damaged image.
 
 - 2026-11-02 — created (source review:401)
 - 2026-11-02 — moved to Next position 2
+- 2026-11-02 — verified at 618dae27: still present at 618dae27: probe iso403 IS-NEG, IS-NEG2, IS-MIN show the memory box; Ignore ends the program (bad_alloc, bug report)
