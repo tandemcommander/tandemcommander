@@ -8,7 +8,7 @@ Code reading (the GUI needs a seam, see below):
 
 - `src/shellib.cpp` `GetMyDocumentsOrDesktopPath`: `SalSHGetPathFromIDListU8(pidl, buff, 2 * MAX_PATH)`
   then `lstrcpyn(path, buff, pathLen)` + `SalU8TrimIncompleteTail(path)` - the cut. `buff` is 520
-  bytes: a Documents path of 174-259 units in 3-byte letters (more than 519 bytes) falls to the
+  bytes: a Documents path of more than 519 bytes (e.g. 200 CJK letters) falls to the
   Desktop even for the callers with `SAL_MAX_PATH_UTF8`.
 - Reachable from: the drive bar Documents button (`CDriveBar::Execute` -> `ChangePathToDrvType`,
   `fileswn3.cpp`, `path[MAX_PATH]`), the Alt+F1/F2 menu item Documents (`ChangeDrive` ->

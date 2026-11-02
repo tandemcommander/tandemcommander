@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [My Documents drive opens a cut path when Documents needs more than 259 bytes](items/my-documents-drive-opens-a-cut-path-when-documents-needs/desc.md) | bug | 4 | long-paths | 386 |
 
 ## Next
 

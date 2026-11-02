@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
@@ -6071,3 +6071,26 @@ a few early ones are out of sequence).
   (exhaustive ASCII equivalence with a copy of the old rule, 0 differences over 1.2 M - 4.9 M pairs
   per kind; 38 non-ASCII rows, the old rule fails the 22 marked ones); saltests 30,586 / 0; one
   refute-first review (no MUST; SHOULDs recorded, NOTEs: one Inbox item, header formatted).
+- 386-mydocs-path-whole: the Documents drive (drive bar button, Alt+F1/F2 *Documents*, Ctrl+;)
+  opened another folder when the Documents path needs more than 259 bytes of UTF-8:
+  `GetMyDocumentsOrDesktopPath` (`shellib.cpp`) copied it into the caller's `MAX_PATH` buffer with
+  `lstrcpyn` - the folder named like its 259-byte prefix (90 CJK letters, measured) - and its own
+  520-byte buffer made a path of more than 519 bytes fall to the **Desktop** even for long-path callers
+  (measured by review 1: 200 letters). Now the header-only `salmydocs.h`
+  (`SalDocumentsOrDesktopToU8`) decides: the whole path or refused (a Documents path that does not
+  fit is not replaced by the Desktop); the helper reads both folders wide; the drive, Ctrl+; and the
+  wide File Open / Save fallbacks hold `SAL_MAX_PATH_UTF8`; the rescue path keeps `MAX_PATH` and
+  takes its drive-root fallback (settings page / plug-in value `MAX_PATH`, Inbox
+  `rescue-path-goes-to-the-windows-drive-root-when-documents`). Traps: the program copies its
+  environment through the code page at start (`CEnvVariables`, `salamdr7.cpp`) - a CJK value of a
+  variable passed by the launcher arrives as `?` (Inbox
+  `environment-variables-passed-to-the-program-arrive-as`), so the Debug seam
+  `TC_PROBE_MYDOCS_FILE` names a UTF-8 file; the drive bar's Documents index is in the dump's `ALL`
+  lines, not its `ITEM` lines; a drive letter that does not exist never reaches the rescue path - a
+  subst drive whose folder denies listing does. Limits: a Documents path of 260+ units still gives
+  the Desktop (Inbox `a-documents-folder-of-260-or-more-characters-opens-the`); Ctrl+; not driven
+  (person step `confirm-ctrl-opens-a-long-documents-folder-whole-on-a-real`). From backlog item
+  `my-documents-drive-opens-a-cut-path-when-documents-needs`. Probe `mydocs386_probe` 2 / 3 -> 5 / 0
+  (LONG prefix -> whole, LONG200 Desktop -> whole, RESCUE-LONG prefix -> drive root); saltests
+  30,699 / 0 (`TestDocumentsPath386`, the old copy rule as negative control); one refute-first
+  review (no MUST; SHOULD 1, 2 = the RESCUE and LONG200 rows, added; NOTE 1 -> Inbox).
