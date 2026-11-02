@@ -11,7 +11,7 @@ updated: 2026-11-02
 verified: -
 effort: S
 feature: -
-related: [iso-plug-in-after-a-folder-that-cannot-be-read-no-later]
+related: []
 depends-on: []
 reason: -
 ---
@@ -59,3 +59,4 @@ key); count walks (`CountUnder`, `VisitedLog`) take their keys out the same way.
 ## Log
 
 - 2026-11-02 — created (source review:400)
+- 2026-11-02 — related item iso-plug-in-after-a-folder-that-cannot-be-read-no-later done in feature 400

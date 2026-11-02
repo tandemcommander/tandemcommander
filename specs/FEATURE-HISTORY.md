@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381, 397, 398 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395, 396 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395, 396, 400 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320, 399 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -6381,3 +6381,31 @@ a few early ones are out of sequence).
   the replace onto the link's name as its negative control: 1464, kept); one refute-first review
   (no MUST, no SHOULD; NOTE 1 long-path attribute read fixed, NOTE 2 -> Inbox; hidden attribute,
   link chains, another volume, SUBST and UNC targets checked).
+- 400-uniso-walk-after-unreadable: after one folder of a disc image that the ISO plug-in could not
+  read (its directory past the end of the image, a record failing the safety checks, an invalid UDF
+  tag, an ISO 9660 folder of length 0), the ISO 9660, UDF and Xbox walks descended no later folder -
+  every later folder was listed empty and its readable files could not be viewed or extracted (330
+  only marked the listing) - now a walk descends every listed folder unless out of memory stopped it
+  (`SalIsoWalkDescends`), a failure below is kept on the way up (`SalIsoWalkAfterChild` - the old
+  code assigned the child's result) so the listing stays marked incomplete and a whole unpack keeps the
+  image, and a walk shows its error box once (`SalIsoWalkBoxQuiet`; quiet fit / count walks never use
+  it up), all in `src/common/salisowalk.h`. The UDF and Xbox walks got 328's visited set (UDF by the
+  folder's file entry, Xbox by start sector and size): a folder met again is listed empty and marks the
+  listing incomplete. Traps: my two-damaged-folder images first pointed both folders at one far sector
+  (a "met again", not a second failure); a probe switch `$Kept` was the script's `$kept` (PowerShell
+  names ignore case, as 328 / 330); a Bash here-document turned `\xff` into a literal byte in
+  img400.py (123); review 1's MUST - the Xbox key by sector alone listed a larger folder at the same
+  sector empty and Unpack deleted the image (`xd_share.iso`, a regression against main) - key by sector
+  and size; review 2's SHOULD - two folders naming one directory lost the second path and the image was
+  deleted (main listed both) - a folder met again now marks the listing (fail closed), so crafted loops
+  and hard-linked folders keep the image. Limits: a damaged directory's own later records are still not
+  walked; out of memory still stops later descents; the ISO 9660 walk keeps 328's key by block alone
+  (Inbox `iso-plug-in-an-iso-9660-folder-met-again-with-a-larger`); a pre-existing Xbox name over-read
+  (Inbox `iso-plug-in-an-xbox-entry-name-can-be-read-past-the-end-of`); saltests' total depends on the
+  volume the exe runs from (304 / 305). From backlog item
+  `iso-plug-in-after-a-folder-that-cannot-be-read-no-later`. Probe `iso400_probe` (330's rows + RD-TWO,
+  XD-TWO, XD-LOOP, XD-LOOP2, UD-LOOP, XD-SHARE, XD-MANY, XD-HLINK, UD-HLINK) before 28 / 12 (XD-LOOP2:
+  no answer) -> 48 / 0; negative control (no visited sets, every box shown) 5 / 7 (67 boxes, a hang);
+  328 20 / 0, 329 14 / 0, 327 77 / 0; saltests 282,271 -> 282,309 / 0 (`TestIsoWalk400`; mutants of the
+  three rules fail 6 / 5 / 3); refute-first reviews: 1 (one MUST, fixed; SHOULD -> Inbox), 2 (no MUST;
+  SHOULD fixed; NOTE -> Inbox).

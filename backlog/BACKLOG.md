@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: after a folder that cannot be read, no later folder of the image is listed](items/iso-plug-in-after-a-folder-that-cannot-be-read-no-later/desc.md) | improvement | 4 | archives | 400 |
 
 ## Next
 
