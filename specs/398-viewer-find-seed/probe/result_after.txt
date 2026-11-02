@@ -1,0 +1,21 @@
+seed_probe (viewer Find pre-fill) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 12:50; ACP 1250; registry key existed True
+
+u8-word    RUN    PASS        pre-filled 'caf\u00E9' [U+0063 U+0061 U+0066 U+00E9] (expected [U+0063 U+0061 U+0066 U+00E9]); asked after OK: nothing; Find again pre-filled 'caf\u00E9' [U+0063 U+0061 U+0066 U+00E9]
+u8-word    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+u8-long    RUN    PASS        pre-filled 'aaaaaaaa...aaaaaaaa' [199 units, 199 UTF-8 bytes, ends U+0061 U+0061 U+0061 U+0061] (expected [199 units, 199 UTF-8 bytes, ends U+0061 U+0061 U+0061 U+0061]); asked after OK: nothing; Find again pre-filled 'aaaaaaaa...aaaaaaaa' [199 units, 199 UTF-8 bytes, ends U+0061 U+0061 U+0061 U+0061]
+u8-long    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+u8-cjk     RUN    PASS        pre-filled '\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08...\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42' [66 units, 198 UTF-8 bytes, ends U+4E3F U+4E40 U+4E41 U+4E42] (expected [66 units, 198 UTF-8 bytes, ends U+4E3F U+4E40 U+4E41 U+4E42]); asked after OK: nothing; Find again pre-filled '\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08...\u4E3B\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42' [66 units, 198 UTF-8 bytes, ends U+4E3F U+4E40 U+4E41 U+4E42]
+u8-cjk     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+u8-astral  RUN    PASS        pre-filled 'aaaaaaaa...aaaaaaaa' [198 units, 198 UTF-8 bytes, ends U+0061 U+0061 U+0061 U+0061] (expected [198 units, 198 UTF-8 bytes, ends U+0061 U+0061 U+0061 U+0061]); asked after OK: nothing; Find again pre-filled 'aaaaaaaa...aaaaaaaa' [198 units, 198 UTF-8 bytes, ends U+0061 U+0061 U+0061 U+0061]
+u8-astral  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+legacy     RUN    PASS        pre-filled 'caf\u00E9 au lait' [U+0063 U+0061 U+0066 U+00E9 U+0020 U+0061 U+0075 U+0020 U+006C U+0061 U+0069 U+0074] (expected [U+0063 U+0061 U+0066 U+00E9 U+0020 U+0061 U+0075 U+0020 U+006C U+0061 U+0069 U+0074]); asked after OK: [#32770 'Find'] Cannot find the string 'caf\u00E9 au lait'. |; Find again pre-filled 'caf\u00E9 au lait' [U+0063 U+0061 U+0066 U+00E9 U+0020 U+0061 U+0075 U+0020 U+006C U+0061 U+0069 U+0074] (search answer recorded only)
+legacy     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+u8-tail    RUN    PASS        pre-filled 'caf\uFFFD' [U+0063 U+0061 U+0066 U+FFFD] (expected [U+0063 U+0061 U+0066 U+FFFD]); asked after OK: [#32770 'Find'] Cannot find the string 'caf\uFFFD'. |; Find again pre-filled 'caf\uFFFD' [U+0063 U+0061 U+0066 U+FFFD] (search answer recorded only)
+u8-tail    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hex        RUN    PASS        asked after searching 63: nothing; Select All + Find pre-filled '63 61 66 C3 A9' (expected '63 61 66 C3 A9')
+hex        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 14, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

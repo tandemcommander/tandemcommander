@@ -1,0 +1,16 @@
+hex397_probe (feature 397) regress398
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 12:54; ACP 1250; registry key existed True
+C5 = U+4E01 U+4E02 U+4E03 U+4E04 U+4E05; hit.txt = x C5 A; miss1.txt, miss2.txt = ?????A
+
+grep-type  RUN    PASS        typed '41' into 7 units: the field '"\u4E01\u4E02\u4E03\u4E04\u4E05" 41' [U+0022 U+4E01 U+4E02 U+4E03 U+4E04 U+4E05 U+0022 U+0020 U+0034 U+0031], caret 10-10 (expected '"\u4E01\u4E02\u4E03\u4E04\u4E05" 41', caret 10-10); Find asked: nothing; found: 1 (expected 1)
+grep-type  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-group RUN    PASS        typed '41424' into 0 units: the field '41 42 4' [U+0034 U+0031 U+0020 U+0034 U+0032 U+0020 U+0034], caret 7-7 (expected '41 42 4', caret 7-7)
+grep-group END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+grep-mid   RUN    PASS        typed 'a' into 10 units: the field '"\u4E01\u4E02\u4E03a\u4E04\u4E05" 41' [U+0022 U+4E01 U+4E02 U+4E03 U+0061 U+4E04 U+4E05 U+0022 U+0020 U+0034 U+0031], caret 5-5 (expected '"\u4E01\u4E02\u4E03a\u4E04\u4E05" 41', caret 5-5)
+grep-mid   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+view-type  RUN    PASS        the field after typing '41': '"\u4E01\u4E02\u4E03\u4E04\u4E05" 41' [U+0022 U+4E01 U+4E02 U+4E03 U+4E04 U+4E05 U+0022 U+0020 U+0034 U+0031], caret 10-10; asked after OK: nothing; Find again pre-filled 'E4 B8 81 E4 B8 82 E4 B8 83 E4 B8 84 E4 B8 85 41' (found text = 'E4 B8 81 E4 B8 82 E4 B8 83 E4 B8 84 E4 B8 85 41')
+view-type  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 8, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

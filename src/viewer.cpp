@@ -15,6 +15,7 @@
 #include "salurlpwd.h"   // feature 085
 #include "dialogs.h"     // feature 311: DlgItemTextFitsU8
 #include "salhexfield.h" // feature 397: SalHexFieldTidyW
+#include "salfindseed.h" // feature 398: SalFindSeedDecodeW
 
 const char* CVIEWERWINDOW_CLASSNAME = "Salamander's Viewer Window";
 
@@ -286,11 +287,14 @@ void CFindSetDialog::Transfer(CTransferInfo& ti)
         if (win != NULL && win->Is(otViewerWindow)) // just to be sure, check that it is a viewer window
         {
             CViewerWindow* view = (CViewerWindow*)win;
-            char buf[FIND_TEXT_LEN];
+            // feature 398: enough bytes for the field's FIND_TEXT_LEN - 1 UTF-16 units in any of the
+            // viewer's encodings (UTF-16: two bytes a unit, plus a pair across the end)
+            char buf[2 * (FIND_TEXT_LEN - 1) + 3];
             char hexBuf[FIND_TEXT_LEN];
             int len;
-            if (view->GetFindText(buf, len))
+            if (view->GetFindText(buf, (int)sizeof(buf), len))
             {
+                HWND combo = GetDlgItem(HWindow, IDC_FINDTEXT);
                 if (HexMode)
                 {
                     if (len * 3 > FIND_TEXT_LEN)
@@ -300,9 +304,25 @@ void CFindSetDialog::Transfer(CTransferInfo& ti)
                     {
                         sprintf(hexBuf + i * 3, i == len - 1 ? "%02X" : "%02X ", (unsigned)buf[i]);
                     }
-                    strcpy(buf, hexBuf);
+                    if (len == 0)
+                        hexBuf[0] = 0;
+                    SendMessage(combo, WM_SETTEXT, 0, (LPARAM)hexBuf); // ASCII hex digits
                 }
-                SendMessage(GetDlgItem(HWindow, IDC_FINDTEXT), WM_SETTEXT, 0, (LPARAM)buf);
+                else
+                {
+                    // feature 398: the selection decoded as the viewer shows it (UTF-8 / UTF-16 / the
+                    // code page it draws legacy content in), shortened at a whole character to what the
+                    // field (FIND_TEXT_LEN - 1 units) and OK (FIND_TEXT_LEN - 1 UTF-8 bytes, 311's
+                    // Validate) take - a seed, not the user's text; it was the raw bytes through an ANSI
+                    // WM_SETTEXT (UTF-8 became mojibake, was not found and a long one was refused)
+                    wchar_t seed[FIND_TEXT_LEN];
+                    if (SalFindSeedDecodeW((const unsigned char*)buf, len, len < (int)sizeof(buf) - 1 /* the whole selection read */,
+                                           view->GetContentEncoding(), CP_ACP,
+                                           seed, FIND_TEXT_LEN, FIND_TEXT_LEN - 1, FIND_TEXT_LEN - 1) >= 0)
+                    {
+                        SetWindowTextW(combo, seed);
+                    }
+                }
             }
         }
     }

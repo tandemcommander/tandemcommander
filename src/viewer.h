@@ -178,10 +178,14 @@ public:
 
     void ConfigHasChanged(); // called after OK in the configuration dialog
 
-    // returns text for Find - the (null-terminated) selected block; 'buf' is at least
-    // FIND_TEXT_LEN bytes; returns TRUE if the buffer is filled (a block exists, etc.); returns the number
-    // of written characters without the null terminator into 'len'
-    BOOL GetFindText(char* buf, int& len);
+    // returns text for Find - the (null-terminated) beginning of the selected block, at most
+    // 'bufSize' - 1 bytes (feature 398: the caller decodes them by GetContentEncoding(), so it reads
+    // enough for the field's 200 UTF-16 units); returns TRUE if the buffer is filled (a block exists,
+    // etc.); returns the number of written bytes without the null terminator into 'len'
+    BOOL GetFindText(char* buf, int bufSize, int& len);
+
+    // feature 398: the content encoding the viewer shows the file in (VCE_*)
+    int GetContentEncoding() const { return ContentEncoding; }
 
 protected:
     void FatalFileErrorOccured(DWORD repeatCmd = -1); // called when a file error occurs (viewer refresh/clear is required)

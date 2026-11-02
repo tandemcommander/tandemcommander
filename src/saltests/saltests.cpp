@@ -120,6 +120,7 @@
 #include "salclipcheck.h"      // feature 375
 #include "salwsl.h"            // feature 374
 #include "salhexfield.h"       // feature 397
+#include "salfindseed.h"       // feature 398
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -26155,6 +26156,205 @@ static void TestNrgCdText331()
     free(n303);
 }
 
+// feature 398: the viewer's Find seed (salfindseed.h)
+
+static std::wstring Seed398(const std::string& bytes, int enc, UINT cp = 1250, int outCap = 201,
+                            int maxUnits = 200, int maxU8 = 200, int* ret = NULL, bool atEnd = false)
+{
+    std::vector<wchar_t> out((size_t)(outCap > 0 ? outCap : 1) + 8, (wchar_t)0x7777);
+    int r = SalFindSeedDecodeW((const unsigned char*)bytes.data(), (int)bytes.size(), atEnd, enc, cp, out.data(),
+                               outCap, maxUnits, maxU8);
+    if (ret != NULL)
+        *ret = r;
+    if (r < 0)
+        return L"<err>";
+    if (out[(size_t)r] != 0)
+        return L"<no terminator>";
+    return std::wstring(out.data(), (size_t)r);
+}
+
+static std::string U8Of398(const std::wstring& w)
+{
+    if (w.empty())
+        return std::string();
+    int n = WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), NULL, 0, NULL, NULL);
+    std::string s((size_t)n, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), &s[0], n, NULL, NULL);
+    return s;
+}
+
+static void TestFindSeed398()
+{
+    const wchar_t eAcute = (wchar_t)0x00E9, rep = (wchar_t)0xFFFD;
+    std::wstring cafe = std::wstring(L"caf") + eAcute;
+
+    // (1) UTF-8: a non-ASCII word is decoded, its UTF-8 is the selected bytes again
+    CHECK(Seed398("caf\xC3\xA9", 1) == cafe);
+    CHECK(U8Of398(Seed398("caf\xC3\xA9", 1)) == "caf\xC3\xA9");
+
+    // (2) 311's review row: 199 x a + U+00E9 U+2026 - the letter that would make 201 bytes is left out
+    CHECK(Seed398(std::string(199, 'a') + "\xC3\xA9\xE2\x80\xA6", 1) == std::wstring(199, L'a'));
+    CHECK(Seed398(std::string(198, 'a') + "\xC3\xA9\xE2\x80\xA6", 1) == std::wstring(198, L'a') + eAcute); // 200 bytes fit
+
+    // (3) 70 CJK letters (210 bytes): the first 66 (198 bytes; 67 would be 201)
+    {
+        std::wstring cjk;
+        for (int k = 1; k <= 70; k++)
+            cjk += (wchar_t)(0x4E00 + k);
+        std::wstring got = Seed398(U8Of398(cjk), 1);
+        CHECK(got == cjk.substr(0, 66));
+        CHECK(U8Of398(got).size() == 198);
+    }
+
+    // (4) a character beyond the BMP: the pair is kept whole or left out whole
+    {
+        std::string smile = "\xF0\x9F\x98\x80"; // U+1F600
+        std::wstring pair;
+        pair += (wchar_t)0xD83D;
+        pair += (wchar_t)0xDE00;
+        CHECK(Seed398(std::string(198, 'a') + smile + "b", 1) == std::wstring(198, L'a'));          // 202 bytes
+        CHECK(Seed398(std::string(196, 'a') + smile + "b", 1) == std::wstring(196, L'a') + pair);   // 200 bytes, 198 units
+        CHECK(Seed398(std::string(199, 'a') + smile, 1, 1250, 201, 200, 1000) == std::wstring(199, L'a')); // 201 units
+        CHECK(Seed398(std::string(198, 'a') + smile, 1, 1250, 201, 200, 1000) == std::wstring(198, L'a') + pair); // 200 units
+        CHECK(Seed398(std::string(198, 'a') + smile, 1, 1250, 200, 1000, 1000) == std::wstring(198, L'a')); // outCap 200: 199 units + NUL max
+    }
+
+    // (5) an incomplete character at the end is left out (never U+FFFD)
+    CHECK(Seed398("ab\xC3", 1) == L"ab");
+    CHECK(Seed398("ab\xE4\xB8", 1) == L"ab");
+    CHECK(Seed398("ab\xF0\x9F\x98", 1) == L"ab");
+    CHECK(Seed398("\xE4", 1) == L"");
+    // ... but at the end of the selection it is U+FFFD for its first byte, as the viewer draws it
+    CHECK(Seed398("caf\xE9", 1, 1250, 201, 200, 200, NULL, true) == std::wstring(L"caf") + rep);
+    CHECK(Seed398("ab\xE4\xB8", 1, 1250, 201, 200, 200, NULL, true) == std::wstring(L"ab") + rep + rep);
+    CHECK(Seed398("caf\xC3\xA9", 1, 1250, 201, 200, 200, NULL, true) == cafe); // complete: unchanged
+    CHECK(Seed398(std::string("c\0a", 3), 2, 1250, 201, 200, 200, NULL, true) == std::wstring(L"c") + rep);
+    CHECK(Seed398(std::string("a\0\x3D\xD8", 4), 2, 1250, 201, 200, 200, NULL, true) == std::wstring(L"a") + rep);
+    CHECK(Seed398("a\x82", 0, 932, 201, 200, 200, NULL, true) == std::wstring(L"a") + rep);
+    CHECK(Seed398("caf\xE9", 0, 1250, 201, 200, 200, NULL, true) == cafe);
+
+    // (6) invalid bytes inside are U+FFFD for one byte each, counted as three UTF-8 bytes
+    CHECK(Seed398("a\xFF" "b", 1) == std::wstring(L"a") + rep + L"b");
+    CHECK(Seed398("a\x80" "b", 1) == std::wstring(L"a") + rep + L"b");
+    CHECK(Seed398("\xC3(", 1) == std::wstring(1, rep) + L"(");
+    CHECK(Seed398("\xC0\xAF", 1) == std::wstring(2, rep));           // overlong
+    CHECK(Seed398("\xE0\x80\x80", 1) == std::wstring(3, rep));       // overlong
+    CHECK(Seed398("\xED\xA0\x80", 1) == std::wstring(3, rep));       // a surrogate
+    CHECK(Seed398("\xF4\x90\x80\x80", 1) == std::wstring(4, rep));   // above U+10FFFF
+    CHECK(Seed398("\xF5" "a", 1) == std::wstring(1, rep) + L"a");
+    CHECK(Seed398(std::string(198, 'a') + "\xFF", 1) == std::wstring(198, L'a')); // U+FFFD needs 3 bytes: 201
+
+    // (7) a NUL ends the seed; tabs and line breaks pass (FR-008)
+    CHECK(Seed398(std::string("ab\0cd", 5), 1) == L"ab");
+    CHECK(Seed398(std::string("\0ab", 3), 1) == L"");
+    CHECK(Seed398("a\tb\r\nc", 1) == L"a\tb\r\nc");
+    CHECK(Seed398("a\tb\r\nc", 0) == L"a\tb\r\nc");
+
+    // (8) UTF-16 LE / BE
+    CHECK(Seed398(std::string("c\0a\0f\0\xE9\0", 8), 2) == cafe);
+    CHECK(Seed398(std::string("\0c\0a\0f\0\xE9", 8), 3) == cafe);
+    CHECK(Seed398(std::string("c\0a", 3), 2) == L"c");                         // an odd trailing byte
+    CHECK(Seed398(std::string("a\0\x3D\xD8", 4), 2) == L"a");                  // a high surrogate at the end
+    {
+        std::wstring pair;
+        pair += (wchar_t)0xD83D;
+        pair += (wchar_t)0xDE00;
+        CHECK(Seed398(std::string("\x3D\xD8\x00\xDE", 4), 2) == pair);
+        CHECK(Seed398(std::string("\xD8\x3D\xDE\x00", 4), 3) == pair);
+        CHECK(Seed398(std::string("\x00\xDE" "a\0", 4), 2) == std::wstring(1, rep) + L"a"); // a lone low surrogate
+        CHECK(Seed398(std::string("\x3D\xD8" "a\0", 4), 2) == std::wstring(1, rep) + L"a"); // a high one without its pair
+    }
+    CHECK(Seed398(std::string("\0\0a\0", 4), 2) == L"");
+    {
+        std::string a201;
+        for (int k = 0; k < 201; k++)
+            a201 += std::string("a\0", 2);
+        CHECK(Seed398(a201, 2) == std::wstring(200, L'a')); // the field's 200 units
+    }
+
+    // (9) code page: as the viewer draws the bytes (unchanged from the ANSI WM_SETTEXT)
+    CHECK(Seed398("caf\xE9", 0, 1250) == cafe);
+    CHECK(Seed398("\x8A", 0, 1250) == std::wstring(1, (wchar_t)0x0160));
+    CHECK(Seed398("\x80", 0, 1252) == std::wstring(1, (wchar_t)0x20AC));
+    CHECK(Seed398(std::string(200, '\xE9'), 0, 1250) == std::wstring(100, eAcute)); // 2 UTF-8 bytes each
+    CHECK(Seed398("a\x82", 0, 932) == L"a");                                       // a lead byte at the end
+    CHECK(Seed398("\x82\xA0" "b", 0, 932) == std::wstring(1, (wchar_t)0x3042) + L"b");
+
+    // (10) arguments
+    {
+        int r = 7;
+        CHECK(Seed398("abcdef", 1, 1250, 4, 200, 200, &r) == L"abc" && r == 3);
+        CHECK(Seed398("abcdef", 1, 1250, 1, 200, 200, &r) == L"" && r == 0);
+        CHECK(Seed398("abcdef", 1, 1250, 201, 0, 200, &r) == L"" && r == 0);
+        wchar_t one[2] = {L'x', L'y'};
+        CHECK(SalFindSeedDecodeW(NULL, 5, false, 1, 1250, one, 2, 200, 200) == 0 && one[0] == 0);
+        one[0] = L'x';
+        CHECK(SalFindSeedDecodeW((const unsigned char*)"ab", 0, false, 1, 1250, one, 2, 200, 200) == 0 && one[0] == 0);
+        CHECK(SalFindSeedDecodeW((const unsigned char*)"ab", 2, false, 1, 1250, NULL, 2, 200, 200) == -1);
+        CHECK(SalFindSeedDecodeW((const unsigned char*)"ab", 2, false, 1, 1250, one, 0, 200, 200) == -1);
+    }
+
+    // (11) every one- and two-byte UTF-8 input after "x": no lone surrogate; a valid complete input
+    // decodes as the system does; the seed's UTF-8 never exceeds the limit
+    {
+        bool allOk = true;
+        for (int b0 = 0; b0 < 256 && allOk; b0++)
+            for (int b1 = -1; b1 < 256 && allOk; b1++)
+            {
+                std::string in = "x";
+                in += (char)b0;
+                if (b1 >= 0)
+                    in += (char)b1;
+                std::wstring got = Seed398(in, 1);
+                for (size_t k = 0; k < got.size(); k++)
+                {
+                    wchar_t c = got[k];
+                    if (c >= 0xD800 && c <= 0xDBFF && !(k + 1 < got.size() && got[k + 1] >= 0xDC00 && got[k + 1] <= 0xDFFF))
+                        allOk = false;
+                    if (c >= 0xDC00 && c <= 0xDFFF && !(k > 0 && got[k - 1] >= 0xD800 && got[k - 1] <= 0xDBFF))
+                        allOk = false;
+                }
+                wchar_t sys[8];
+                int sn = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, in.data(), (int)in.size(), sys, 8);
+                if (sn > 0 && memchr(in.data(), 0, in.size()) == NULL && got != std::wstring(sys, (size_t)sn))
+                    allOk = false;
+                if (U8Of398(got).size() > 200)
+                    allOk = false;
+            }
+        CHECK(allOk);
+    }
+
+    // (12) the longest whole-character beginning for every byte limit: the seed's UTF-8 is a prefix
+    // of a valid input, within the limit, and the next character would not fit
+    {
+        std::wstring mixed = L"a";
+        mixed += eAcute;
+        mixed += (wchar_t)0x4E01;
+        mixed += (wchar_t)0xD83D;
+        mixed += (wchar_t)0xDE00;
+        mixed += L"z";
+        mixed += (wchar_t)0x0159;
+        mixed += mixed;
+        std::string in = U8Of398(mixed);
+        bool allOk = true;
+        for (int lim = 0; lim <= (int)in.size() + 2; lim++)
+        {
+            std::wstring got = Seed398(in, 1, 1250, 201, 200, lim);
+            std::string g8 = U8Of398(got);
+            if (g8.size() > (size_t)lim || in.compare(0, g8.size(), g8) != 0)
+                allOk = false;
+            if (g8.size() < in.size())
+            {
+                unsigned int cp;
+                int next = SalFindSeedUtf8Char((const unsigned char*)in.data() + g8.size(), (int)(in.size() - g8.size()), &cp);
+                if (next <= 0 || g8.size() + (size_t)next <= (size_t)lim)
+                    allOk = false;
+            }
+        }
+        CHECK(allOk);
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -26372,6 +26572,7 @@ int main(int argc, char** argv)
     TestClipCheck375();
     TestCabName381();
     TestHexFieldTidy397();
+    TestFindSeed398();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -1910,11 +1910,11 @@ void CViewerWindow::SetScrollBar()
     }
 }
 
-BOOL CViewerWindow::GetFindText(char* buf, int& len)
+BOOL CViewerWindow::GetFindText(char* buf, int bufSize, int& len)
 {
     CALL_STACK_MESSAGE1("CViewerWindow::GetFindText()");
     len = 0;
-    if (StartSelection == EndSelection)
+    if (StartSelection == EndSelection || bufSize < 1)
         return FALSE;
 
     __int64 startSel = min(StartSelection, EndSelection);
@@ -1923,8 +1923,8 @@ BOOL CViewerWindow::GetFindText(char* buf, int& len)
     // if (endSel == -1) endSel = 0; // cannot occur (both can be -1 only together, and we never reach this)
     BOOL fatalErr = FALSE;
 
-    if (endSel - startSel > FIND_TEXT_LEN - 1)
-        endSel = startSel + FIND_TEXT_LEN - 1;
+    if (endSel - startSel > bufSize - 1)
+        endSel = startSel + bufSize - 1;
 
     char* s = buf;
     __int64 off = startSel;

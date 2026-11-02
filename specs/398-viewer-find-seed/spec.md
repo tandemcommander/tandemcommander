@@ -78,8 +78,11 @@ selection's bytes as hex digits (as before).
 
 ### Edge Cases
 
-- A selection ending in the middle of a multi-byte character (the read limit falls inside it): the
+- A selection longer than what is read, with the read limit inside a multi-byte character: the
   partial character is left out, never shown as a replacement character.
+- A selection whose own last character is incomplete (e.g. a file ending in a lone byte E9 that the
+  viewer's detection still takes for UTF-8): the character is U+FFFD, as the viewer draws it
+  (measured in run 1 of the probe: dropping it pre-filled `caf`, row `u8-tail`).
 - A UTF-8 file with a byte that is not valid UTF-8 inside the selection: shown as U+FFFD, as the
   viewer draws it (the search then does not find it - such a byte cannot be typed either).
 - A character beyond the BMP (a surrogate pair) at the limit: both units are kept or both left out.
@@ -104,7 +107,8 @@ selection's bytes as hex digits (as before).
   UTF-8 form at most 200 bytes (what OK accepts, feature 311); a longer selection MUST be shortened
   to the longest beginning that fits, ending at a whole character (never half a surrogate pair,
   never part of a multi-byte sequence).
-- **FR-004**: An incomplete character at the end of the bytes read MUST be left out.
+- **FR-004**: An incomplete character at the end of the bytes read MUST be left out when more of the
+  selection follows, and MUST be U+FFFD when the selection ends there.
 - **FR-005**: Hex mode MUST keep building the field from the selection's first bytes as hex digits
   exactly as before.
 - **FR-006**: When there is no selection, or the selection cannot be read, the field MUST keep the

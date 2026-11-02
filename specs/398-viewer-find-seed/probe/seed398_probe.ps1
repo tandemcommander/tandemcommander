@@ -10,16 +10,21 @@
     viewer, then Find (CM_FINDSET 6063). The field is read, OK is clicked, the message boxes that
     appear are answered and recorded; Find is opened again - it pre-fills the found text (the
     selection the search left), which proves what was found. Rows:
-      u8-word    "caf" + U+00E9 (UTF-8, no BOM). PASS = field "café", nothing asked, found the same
+      u8-word    "caf" + U+00E9 (UTF-8, no BOM). PASS = field "caf" + U+00E9, nothing asked, found the same
       u8-long    199 x "a" + U+00E9 U+2026 (UTF-8; 311's review row). PASS = field 199 x "a" (the
                  whole letter that does not fit the 200 bytes left out), nothing asked, found the same
       u8-cjk     70 CJK letters U+4E01.. (UTF-8, 210 bytes). PASS = the first 66 letters (198 bytes;
                  67 would be 201), nothing asked, found the same
       u8-astral  198 x "a" + U+1F600 + "b" (UTF-8). PASS = 198 x "a" + U+1F600 (200 units, 202
                  bytes would not fit - so 198 x "a"), nothing asked, found the same
-      legacy     "caf" + U+00E9 in the ANSI code page (one byte E9 in 1250/1252). PASS = field
-                 "café" (as before); the search's answer is recorded only (known limit: the
-                 search compares the field's UTF-8 bytes with the file's code-page bytes)
+      legacy     "caf" + U+00E9 + " au lait" in the ANSI code page (byte E9 then a space: not UTF-8,
+                 so the viewer shows it in the code page). PASS = field "caf" + U+00E9 + " au lait"
+                 (as before 398); the search's answer is recorded only (known limit: the search
+                 compares the field's UTF-8 bytes with the file's code-page bytes)
+      u8-tail    "caf" + byte E9 at the end of the file: the viewer's detection accepts a sequence
+                 cut by the end of its sample, so it shows the file as UTF-8 with U+FFFD for E9.
+                 PASS = field "caf" + U+FFFD (the selection's last, incomplete character as the
+                 viewer draws it); the search's answer is recorded only
       hex        control: "caf" + U+00E9 (UTF-8) with Hex on: Find, Hex ticked, "63" searched, then
                  Select All and Find again. PASS = field "63 61 66 C3 A9"
     Driver of 397's probe (098's library). MUST run through tools\run_on_hidden_desktop.ps1.
@@ -210,7 +215,8 @@ $Cases = [ordered]@{
     'u8-long'   = @{ Text = ('a' * 199) + $EAcute + $Ellip; Enc = 'utf8'; Expect = ('a' * 199) }
     'u8-cjk'    = @{ Text = $Cjk70; Enc = 'utf8'; Expect = $Cjk70.Substring(0, 66) }
     'u8-astral' = @{ Text = ('a' * 198) + $Astral + 'b'; Enc = 'utf8'; Expect = ('a' * 198) }
-    'legacy'    = @{ Text = $Word; Enc = 'acp'; Expect = $Word; FieldOnly = $true }
+    'legacy'    = @{ Text = $Word + ' au lait'; Enc = 'acp'; Expect = $Word + ' au lait'; FieldOnly = $true }
+    'u8-tail'   = @{ Text = $Word; Enc = 'acp'; Expect = 'caf' + [string][char]0xFFFD; FieldOnly = $true }
     'hex'       = @{ Text = $Word; Enc = 'utf8'; Expect = '63 61 66 C3 A9'; Hex = $true }
 }
 
