@@ -1,7 +1,7 @@
 ---
 title: A binary cpio member in the last 512 bytes of the archive is not recognised
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: measure:395
@@ -66,3 +66,4 @@ separate item.
 ## Log
 
 - 2026-11-02 — created (source measure:395)
+- 2026-11-02 — moved to Next position 24

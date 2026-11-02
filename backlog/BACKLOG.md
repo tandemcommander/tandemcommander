@@ -45,131 +45,132 @@ Last triaged: 2026-11-02
 | 21 | [A path typed into an archive opens another letter equal only by the byte fold](items/archive-path-typed-opens-another-letter-equal-by-byte-fold/desc.md) | bug | 4 | archives | agent | M | open |
 | 22 | [Environment variables passed to the program arrive as question marks outside the code page](items/environment-variables-passed-to-the-program-arrive-as/desc.md) | bug | 4 | encoding | agent | M | open |
 | 23 | [Filter dialog cannot switch off a panel filter longer than 259 bytes](items/filter-dialog-cannot-switch-off-a-panel-filter-longer-than/desc.md) | bug | 4 | long-paths | agent | S | open |
-| 24 | [Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260](items/renamer-long-new-name-limits/desc.md) | bug | 3 | long-paths | agent | M | open |
-| 25 | [winget: offer a per-user install (--scope user), proven in Windows Sandbox first](items/winget-per-user-scope-entry/desc.md) | improvement | 3 | build-release | both | M | open |
-| 26 | [winget manifest fixes (072 audit): DisplayName, ProductCode; PrivacyUrl check](items/winget-manifest-fixes-from-072-audit/desc.md) | bug | 3 | build-release | agent | S | open |
-| 27 | [PictView Update Thumbnail: file time, hard links, per-file box, orientation](items/pictview-update-thumbnail-142-leftovers/desc.md) | improvement | 3 | pictview | agent | M | open |
-| 28 | [Quick search: first keystroke over 100,000 non-ASCII names takes about 335 ms](items/quick-search-first-keystroke-over-100-000-non-ascii-names/desc.md) | improvement | 3 | panels-ui | agent | M | open |
-| 29 | [translate.merge keeps a stale machine translation when the English text changes](items/translate-merge-keeps-a-stale-machine-translation-when-the/desc.md) | bug | 3 | translations | agent | S | open |
-| 30 | [Desktop view (Folders plug-in) repeats its shell columns after a view-mode switch](items/desktop-view-folders-plug-in-repeats-its-shell-columns-after/desc.md) | bug | 3 | other-plugins | agent | S | open |
-| 31 | [A refused configuration file does not say which key is outside the program root](items/a-refused-configuration-file-does-not-say-which-key-is/desc.md) | improvement | 3 | panels-ui | agent | S | open |
-| 32 | [Code Viewer: no Auto-Select of the code page and no explicit Set as default](items/code-viewer-no-auto-select-of-the-code-page-and-no-explicit/desc.md) | improvement | 3 | other-plugins | both | M | open |
-| 33 | [Compare Directories misses a case-only pair beside a soft-hyphen or NFD name](items/compare-directories-misses-a-case-only-pair-beside-a-soft/desc.md) | bug | 3 | panels-ui | agent | M | open |
-| 34 | [Find window: the viewer next / previous file takes the first case-insensitive twin](items/find-window-the-viewer-next-previous-file-takes-the-first/desc.md) | bug | 3 | panels-ui | agent | S | open |
-| 35 | [FTP: download and upload refuse local paths and names over 259 bytes](items/ftp-local-long-paths/desc.md) | improvement | 3 | ftp | agent | L | open |
-| 36 | [Logging in to an inaccessible UNC path with a non-ASCII share name uses code-page APIs](items/logging-in-to-an-inaccessible-unc-path-with-a-non-ascii/desc.md) | bug | 3 | encoding | agent | M | open |
-| 37 | [Menu bar hot keys typed after F10 arrive as code-page bytes](items/menubar-loop-wide-mnemonics/desc.md) | bug | 3 | panels-ui | agent | S | open |
-| 38 | [Paste and drop of our own files keep a code-page fallback for a name on low memory](items/paste-and-drop-of-our-own-files-keep-a-code-page-fallback/desc.md) | bug | 3 | encoding | agent | S | open |
-| 39 | [Settings import ends the highlighting list at a damaged entry](items/settings-import-ends-the-highlighting-list-at-a-damaged/desc.md) | bug | 3 | panels-ui | agent | S | open |
-| 40 | [SFTP: a Copy posted right after a failed upload and its reconnect may open nothing](items/sftp-a-copy-posted-right-after-a-failed-upload-and-its/desc.md) | bug | 3 | sftp | agent | ? | open |
-| 41 | [ISO plug-in: a Joliet file name with an unpaired surrogate is garbled, other letters too](items/uniso-joliet-file-names-wtf8-garbled/desc.md) | bug | 3 | archives | agent | S | open |
-| 42 | [User Menu errors name the command, not the file or folder at fault](items/user-menu-errors-name-the-file-or-folder/desc.md) | bug | 3 | panels-ui | agent | M | open |
-| 43 | [A hidden User Menu batch that stops at its chcp or cd line tells nobody](items/user-menu-hidden-batch-silent-early-end/desc.md) | bug | 3 | panels-ui | agent | M | open |
-| 44 | [User Menu: a shortcut command may start in the item folder, not its own Start in](items/user-menu-shortcut-start-in-folder/desc.md) | bug | 3 | panels-ui | agent | S | open |
-| 45 | [Settings import ends the viewers, editors and User Menu lists at a damaged entry](items/settings-import-ends-the-viewers-editors-and-user-menu-lists/desc.md) | bug | 3 | panels-ui | agent | S | open |
-| 46 | [Archive Update: an archive rewritten with its old size and time is not checked again](items/archive-update-archive-same-stamp/desc.md) | bug | 3 | archives | agent | S | open |
-| 47 | [Archive Update: Copy Selected To refuses an edited member whose target path is over 259 units](items/archive-update-copy-selected-to-refuses-long-targets/desc.md) | improvement | 3 | long-paths | agent | S | open |
-| 48 | [The left-aside message names only the salNNN entry, not the entry it was](items/left-aside-message-names-the-entry/desc.md) | improvement | 3 | file-ops | agent | S | open |
-| 49 | [A rename via a temporary name can leave the source there silently after a cancel](items/rename-via-temp-left-silently/desc.md) | bug | 3 | file-ops | agent | S | open |
-| 50 | [Screen readers get garbled names from the core path labels (CStaticText)](items/screen-readers-get-garbled-names-from-the-core-path-labels/desc.md) | bug | 3 | encoding | both | M | open |
-| 51 | [SFTP: run about 1,500 connections to show the key-exchange failure gone](items/sftp-key-exchange-soak-1500-connections/desc.md) | tech-debt | 3 | sftp | agent | S | open |
-| 52 | [SFTP: files open when a connection is lost stay allocated until exit](items/sftp-open-handles-of-lost-connection-leak/desc.md) | bug | 3 | sftp | agent | M | open |
-| 53 | [SFTP: a stalled upload or a server disconnect leaks the whole session](items/sftp-session-leak-after-partial-send-or-disconnect/desc.md) | bug | 3 | sftp | agent | M | open |
-| 54 | [SFTP: a server reply shorter than the protocol allows waits for the timeout](items/sftp-short-reply-waits-for-timeout/desc.md) | bug | 3 | sftp | agent | M | open |
-| 55 | [Clipped labels in the Czech translation (74)](items/translations-clipped-labels-cs/desc.md) | bug | 3 | translations | both | M | open |
-| 56 | [Clipped labels in the German translation (98)](items/translations-clipped-labels-de/desc.md) | bug | 3 | translations | both | M | open |
-| 57 | [Clipped labels in the Spanish translation (89)](items/translations-clipped-labels-es/desc.md) | bug | 3 | translations | both | M | open |
-| 58 | [Clipped labels in the French translation (159)](items/translations-clipped-labels-fr/desc.md) | bug | 3 | translations | both | L | open |
-| 59 | [Clipped labels in the Hungarian translation (45)](items/translations-clipped-labels-hu/desc.md) | bug | 3 | translations | both | M | open |
-| 60 | [Clipped labels in the Dutch translation (78)](items/translations-clipped-labels-nl/desc.md) | bug | 3 | translations | both | M | open |
-| 61 | [Clipped labels in the Romanian translation (74)](items/translations-clipped-labels-ro/desc.md) | bug | 3 | translations | both | M | open |
-| 62 | [Clipped labels in the Slovak translation (85)](items/translations-clipped-labels-sk/desc.md) | bug | 3 | translations | both | M | open |
-| 63 | [Markdown Viewer: a scheme, width or View Source change shows the document from the top](items/markdown-viewer-a-scheme-width-or-view-source-change-shows/desc.md) | improvement | 3 | other-plugins | both | M | open |
-| 64 | [ZIP does not say the temporary file is the only copy when the archive vanished](items/zip-does-not-say-the-temporary-file-is-the-only-copy/desc.md) | bug | 3 | archives | agent | S | open |
-| 65 | [ISO plug-in: a valid xorriso ISO + HFS+ hybrid opens with Cannot read sector 00000020](items/iso-plug-in-a-valid-xorriso-iso-hfs-hybrid-opens-with-cannot/desc.md) | bug | 3 | other-plugins | agent | S | open |
-| 66 | [The core reads volume names with the code-page API on UTF-8 paths](items/the-core-reads-volume-names-with-the-code-page-api-on-utf-8/desc.md) | bug | 3 | encoding | agent | S | open |
-| 67 | [Tar unpack skips FIFO and device members without a word](items/tar-unpack-skips-fifo-and-device-members-without-a-word/desc.md) | bug | 3 | archives | agent | S | open |
-| 68 | [ISO plug-in: an HFS+ name with U+0000 inside is listed cut at it](items/iso-plug-in-an-hfs-name-with-u-0000-inside-is-listed-cut-at/desc.md) | bug | 3 | archives | agent | S | open |
-| 69 | [ISO plug-in: an Ubuntu-style install image with an Apple partition map shows Cannot read sector #00000200](items/iso-plug-in-an-ubuntu-style-install-image-with-an-apple/desc.md) | bug | 3 | other-plugins | agent | S | open |
-| 70 | [ISO plug-in: a whole unpack of an image with audio or left-out tracks fails without saying why](items/iso-plug-in-a-whole-unpack-of-an-image-with-audio-or-left/desc.md) | improvement | 3 | archives | agent | S | open |
-| 71 | [ISO plug-in: a UDF file whose track does not open is left partly written in the target](items/iso-plug-in-a-udf-file-whose-track-does-not-open-is-left/desc.md) | bug | 3 | archives | agent | S | open |
-| 72 | [ISO plug-in: Cancel in the Error Creating Directory box does not stop a whole unpack](items/iso-plug-in-cancel-in-the-error-creating-directory-box-does/desc.md) | bug | 3 | archives | agent | S | open |
-| 73 | [FTP: an upload that ends between another upload's existence check and its lock](items/ftp-an-upload-that-ends-between-another-upload-s-existence/desc.md) | bug | 3 | ftp | agent | M | open |
-| 74 | [ISO plug-in: a UDF VAT whose descriptors cover less than its length is read with heap content](items/iso-plug-in-a-udf-vat-whose-descriptors-cover-less-than-its/desc.md) | bug | 3 | archives | agent | S | open |
-| 75 | [ISO plug-in: a UDF folder of several blocks in a VAT partition is read past its mapping](items/iso-plug-in-a-udf-folder-of-several-blocks-in-a-vat/desc.md) | bug | 3 | archives | agent | S | open |
-| 76 | [ISO plug-in: listing a disc image reads every sector of examined Form 2 files](items/iso-plug-in-listing-a-disc-image-reads-every-sector-of/desc.md) | improvement | 3 | archives | agent | M | open |
-| 77 | [ISO plug-in: NRG tracks of the subchannel modes 0x0F / 0x10 / 0x11 get a wrong type or size](items/iso-plug-in-nrg-tracks-of-the-subchannel-modes-0x0f-0x10/desc.md) | bug | 3 | archives | agent | S | open |
-| 78 | [ISO plug-in: an unknown UDF partition map type leaves its translation undefined](items/iso-plug-in-an-unknown-udf-partition-map-type-leaves-its/desc.md) | bug | 3 | archives | agent | S | open |
-| 79 | [Changing to a plug-in path cuts the name to focus at 259 bytes and may focus another item](items/changing-to-a-plug-in-path-cuts-the-name-to-focus-at-259/desc.md) | bug | 3 | long-paths | agent | S | open |
-| 80 | [Relative path under a deep plug-in file-system path is refused: the core buffer for GetFullFSPath is MAX_PATH](items/relative-path-under-a-deep-plug-in-file-system-path-is/desc.md) | improvement | 3 | long-paths | agent | M | open |
-| 81 | [A path typed into an archive that matches two case twins opens the root silently](items/a-path-typed-into-an-archive-that-matches-two-case-twins/desc.md) | bug | 3 | archives | agent | S | open |
-| 82 | [A typed archive target in another case of a non-ASCII letter still makes a twin](items/typed-archive-target-non-ascii-case-makes-a-twin/desc.md) | bug | 3 | archives | agent | M | open |
-| 83 | [Registry Editor View: a key that cannot be opened is still read with an unset handle](items/registry-editor-view-a-key-that-cannot-be-opened-is-still/desc.md) | bug | 3 | other-plugins | agent | S | open |
-| 84 | [A cpio name stored after its data on a refused name is reported, not extracted](items/a-cpio-name-stored-after-its-data-on-a-refused-name-is/desc.md) | improvement | 3 | archives | agent | M | open |
-| 85 | [SDK: state that GetErrorText returns UTF-8 (B-3 contract half)](items/geterrortext-utf8-contract/desc.md) | tech-debt | 2 | plugin-api | agent | S | open |
-| 86 | [GetSHObjectName converts through CP_ACP and cuts at MAX_PATH (server links)](items/getshobjectname-code-page-cut-server-links/desc.md) | bug | 2 | encoding | agent | S | open |
-| 87 | [Unpack short-name walk: process-wide root; external archiver's unpack not driven](items/unpack-root-process-wide-latent/desc.md) | tech-debt | 2 | archives | agent | M | open |
-| 88 | [The 092 name comparator reads both names to their ends (2x-16x slower sorts)](items/name-comparator-reads-whole-names/desc.md) | tech-debt | 2 | encoding | agent | M | open |
-| 89 | [Translation merge keys by bundle ordinal; removing a bundle needs a re-key](items/translate-merge-bundle-rekey/desc.md) | tech-debt | 2 | translations | agent | M | open |
-| 90 | [Bug report's module line from an install folder outside the code page](items/bug-report-module-line-install-path/desc.md) | bug | 2 | encoding | agent | S | open |
-| 91 | [Mixed-template guard: no reverse rule, sinks found by variable names](items/mixed-template-guard-reverse-rule/desc.md) | tech-debt | 2 | tooling | agent | S | open |
-| 92 | [PE Viewer: version-resource names printed with a narrow %ls (suspected)](items/peviewer-version-names-narrow-ls/desc.md) | bug | 2 | other-plugins | agent | S | open |
-| 93 | [FTP: server reply cut inside a character; Logs window caret counts bytes](items/ftp-reply-cut-and-logs-caret-bytes/desc.md) | bug | 2 | ftp | agent | S | open |
-| 94 | [SFTP: questions and reasons are untranslated English literals](items/sftp-english-literal-messages/desc.md) | tech-debt | 2 | sftp | agent | M | open |
-| 95 | [User Menu through a shell: a UNC panel folder runs the command in C:\\Windows](items/user-menu-unc-folder-pushd/desc.md) | bug | 2 | panels-ui | agent | S | open |
-| 96 | [Renamer: two error messages still append a stale system reason](items/renamer-stale-error-reasons/desc.md) | bug | 2 | other-plugins | agent | S | open |
-| 97 | [Plug-ins show a literal "%1" in Windows error texts that have inserts](items/plugins-error-text-literal-inserts/desc.md) | bug | 2 | other-plugins | agent | S | open |
-| 98 | [Message box shows a plug-in's code-page URL text as UTF-8](items/msgbox-plugin-url-text-code-page/desc.md) | bug | 2 | encoding | agent | S | open |
-| 99 | [7-Zip: two-form password passes in Test, F3 view, Delete and Cancel not driven](items/7zip-two-form-password-passes-not-driven/desc.md) | tech-debt | 2 | archives | agent | M | open |
-| 100 | [CI: ilammy/msvc-dev-cmd@v1 is a Node 20 action with no Node 24 release](items/ci-msvc-dev-cmd-action-has-no-node-24-release/desc.md) | tech-debt | 2 | build-release | both | S | open |
-| 101 | [Stale winget claims in project records and publish.ps1 order (072 audit)](items/winget-records-stale-claims-from-072-audit/desc.md) | tech-debt | 2 | build-release | agent | S | open |
-| 102 | [Archive operations through a re-pointed name: four gaps recorded by 145 / 146](items/archive-ops-repointed-name-recorded-gaps/desc.md) | bug | 2 | archives | agent | M | open |
-| 103 | [A history entry with invalid text hides the entries saved after it](items/a-history-entry-with-invalid-text-hides-the-entries-saved/desc.md) | bug | 2 | encoding | agent | S | open |
-| 104 | [Quick search keys skip canonical reordering of combining marks](items/quick-search-keys-skip-canonical-reordering-of-combining/desc.md) | bug | 2 | encoding | agent | S | open |
-| 105 | [Remove the dormant start-up import of older Open Salamander configurations](items/remove-the-dormant-start-up-import-of-older-open-salamander/desc.md) | tech-debt | 2 | data-safety | agent | M | open |
-| 106 | [Unpack refused at a link names a temporary folder, not the archive folder](items/unpack-refused-at-a-link-names-a-temporary-folder-not-the/desc.md) | improvement | 2 | archives | agent | S | open |
-| 107 | [The encoding guard does not read header files; plug-in headers convert names leniently](items/check-encoding-skips-header-files/desc.md) | tech-debt | 2 | tooling | agent | M | open |
-| 108 | [Command line: a COMSPEC path outside ASCII is read through the code page](items/command-line-comspec-read-wide/desc.md) | bug | 2 | encoding | agent | S | open |
-| 109 | [Ctrl+X ghosts a name in the other panel that shows a case twin folder](items/ctrl-x-ghosts-a-name-in-the-other-panel-that-shows-a-case/desc.md) | bug | 2 | panels-ui | agent | S | open |
-| 110 | [DB Viewer: a field length of 1000 or more shows a broken thousands separator](items/dbviewer-field-length-separator/desc.md) | bug | 2 | other-plugins | agent | S | open |
-| 111 | [File Comparator hex recompare: error box from the released sibling view](items/file-comparator-hex-recompare-error-box-from-the-released/desc.md) | bug | 2 | other-plugins | agent | S | open |
-| 112 | [FTP: a mask ? takes two code-page bytes of a legacy server as one letter](items/ftp-mask-letters-by-server-encoding/desc.md) | bug | 2 | ftp | agent | S | open |
-| 113 | [Shell extensions in the panel background menu and the Find window never answer typed hot keys](items/menuchar-owner-routing/desc.md) | bug | 2 | panels-ui | agent | S | open |
-| 114 | [PictView: no Exif command and no automatic turn for TIFF and camera raw files](items/pictview-no-exif-command-and-no-automatic-turn-for-tiff-and/desc.md) | improvement | 2 | pictview | agent | M | open |
-| 115 | [The build runs the plug-in encoding scan strictly for the shipped plug-ins](items/plugin-encoding-scan-strict-in-build/desc.md) | tech-debt | 2 | tooling | agent | S | open |
-| 116 | [Registry Editor Find: Whole words ignores punctuation that the help names](items/regedit-find-whole-words-punctuation/desc.md) | bug | 2 | other-plugins | agent | S | open |
-| 117 | [Renamer: the preview shows a name with an unpaired surrogate as mojibake](items/renamer-wtf8-names-shown-as-mojibake/desc.md) | bug | 2 | other-plugins | agent | S | open |
-| 118 | [Turkish / Azeri locale: index.html and INDEX.HTML never compare as one name](items/turkish-azeri-locale-index-html-and-index-html-never-compare/desc.md) | bug | 2 | panels-ui | agent | ? | open |
-| 119 | [ISO plug-in: HFS+ names with an unpaired surrogate are changed to U+FFFD](items/uniso-hfs-names-lossy-surrogates/desc.md) | bug | 2 | archives | agent | S | open |
-| 120 | [The User Menu page names a new submenu end in the code page, not UTF-8](items/the-user-menu-page-names-a-new-submenu-end-in-the-code-page/desc.md) | bug | 2 | encoding | agent | S | open |
-| 121 | [Refreshing a changed archive with edited files lists it twice](items/archive-refresh-lists-changed-archive-twice/desc.md) | improvement | 2 | archives | agent | M | open |
-| 122 | [Archive Update: a time-zone or daylight-saving change marks an unchanged member](items/archive-update-time-zone-change-mark/desc.md) | bug | 2 | archives | both | S | open |
-| 123 | [Renamer: the New name field holds only 519 bytes of a typed pattern](items/renamer-the-new-name-field-holds-only-519-bytes-of-a-typed/desc.md) | improvement | 2 | long-paths | agent | S | open |
-| 124 | [SFTP: a folder uploaded again whose files are all there ends with a misleading folder box](items/sftp-a-folder-uploaded-again-whose-files-are-all-there-ends/desc.md) | improvement | 2 | sftp | agent | S | open |
-| 125 | [The question whether to create a missing folder cuts a long path inside a letter](items/the-question-whether-to-create-a-missing-folder-cuts-a-long/desc.md) | bug | 2 | long-paths | agent | S | open |
-| 126 | [User Menu list commands refused when the first selected item does not fit 259 bytes](items/user-menu-list-commands-refused-when-the-first-selected-item/desc.md) | improvement | 2 | long-paths | agent | M | open |
-| 127 | [The manual has no page for the Markdown Viewer](items/the-manual-has-no-page-for-the-markdown-viewer/desc.md) | improvement | 2 | help-docs | agent | S | open |
-| 128 | [ISO plug-in: an HFS+ file skipped or cancelled at extraction leaks its read buffer](items/iso-plug-in-an-hfs-file-skipped-or-cancelled-at-extraction/desc.md) | bug | 2 | other-plugins | agent | S | open |
-| 129 | [Share list: a list a server never finishes (more data without an end) is shown as if it were whole](items/share-list-a-list-a-server-never-finishes-more-data-without/desc.md) | bug | 2 | panels-ui | agent | S | open |
-| 130 | [Leaving a folder by other ways during quick search briefly shows the whole folder](items/leaving-a-folder-by-other-ways-during-quick-search-briefly/desc.md) | bug | 2 | panels-ui | agent | S | open |
-| 131 | [Registry facade: deleting a value and opening keys use the ANSI API with UTF-8 names](items/registry-wide-deletevalue-and-key-names/desc.md) | bug | 2 | plugin-api | agent | M | open |
-| 132 | [FTP: a listing rule assigning one column to another decodes the decoded text again](items/ftp-a-listing-rule-assigning-one-column-to-another-decodes/desc.md) | bug | 2 | ftp | agent | S | open |
-| 133 | [Rescue path goes to the Windows drive root when Documents needs more than 259 bytes](items/rescue-path-goes-to-the-windows-drive-root-when-documents/desc.md) | improvement | 2 | long-paths | agent | M | open |
-| 134 | [Probe 251 opens the Tabs-shifted page for its Viewers rows (page index 19)](items/probe-251-opens-the-tabs-shifted-page-for-its-viewers-rows/desc.md) | tech-debt | 2 | tooling | agent | S | open |
-| 135 | [Mask syntax error selects the wrong characters in a non-ASCII mask](items/mask-syntax-error-selects-the-wrong-characters-in-a-non/desc.md) | bug | 2 | encoding | agent | S | open |
-| 136 | [106's packself probe row A-zip-noask-refused is stale since 119](items/packself-probe-stale-row/desc.md) | tech-debt | 1 | tooling | agent | S | open |
-| 137 | [Plug-in threads ended by CThreadQueue leave their CCallStack registered](items/plugin-thread-kills-leave-callstack/desc.md) | tech-debt | 1 | plugin-api | agent | M | open |
-| 138 | [Code Viewer: its known limitations are not stated anywhere a user can read](items/codeview-limitations-not-stated-for-users/desc.md) | improvement | 1 | help-docs | agent | S | open |
-| 139 | [File Comparator stores an uninitialised byte in its saved configuration](items/filecomp-stores-uninitialised-configuration-byte/desc.md) | bug | 1 | other-plugins | agent | S | open |
-| 140 | [CLAUDE.md names a branch ai-main that does not exist](items/claude-md-names-missing-ai-main-branch/desc.md) | tech-debt | 1 | help-docs | both | S | open |
-| 141 | [Unshipped resources still carry 2023 Open Salamander-only copyright notices](items/unshipped-resources-still-carry-2023-open-salamander-only/desc.md) | tech-debt | 1 | build-release | agent | S | open |
-| 142 | [winget README names a publish.ps1 check that does not exist](items/winget-readme-names-a-publish-ps1-check-that-does-not-exist/desc.md) | tech-debt | 1 | build-release | agent | S | open |
-| 143 | [The stored main window icon index is checked against the count, not the last index](items/the-stored-main-window-icon-index-is-checked-against-the/desc.md) | bug | 1 | panels-ui | agent | S | open |
-| 144 | [Plug-in interface does not say that column names are code-page text](items/plug-in-interface-does-not-say-that-column-names-are-code/desc.md) | tech-debt | 1 | plugin-api | agent | S | open |
-| 145 | [Loop tool tests leave a temporary git folder behind on every test](items/loop-tool-tests-leave-a-temporary-git-folder-behind-on-every/desc.md) | tech-debt | 1 | tooling | agent | S | open |
-| 146 | [The 081 Markdown Viewer probe takes a window with an empty title for the viewer](items/the-081-markdown-viewer-probe-takes-a-window-with-an-empty/desc.md) | tech-debt | 1 | tooling | agent | S | open |
-| 147 | [FTP: upload listing cache lookup remembers a slot number instead of the listing index](items/ftp-upload-listing-cache-lookup-remembers-a-slot-number/desc.md) | tech-debt | 1 | ftp | agent | S | open |
-| 148 | [A Documents folder of 260 or more characters opens the Desktop instead](items/a-documents-folder-of-260-or-more-characters-opens-the/desc.md) | bug | 1 | long-paths | agent | S | open |
+| 24 | [A binary cpio member in the last 512 bytes of the archive is not recognised](items/a-binary-cpio-member-in-the-last-512-bytes-of-the-archive-is/desc.md) | bug | 4 | archives | agent | S | open |
+| 25 | [Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260](items/renamer-long-new-name-limits/desc.md) | bug | 3 | long-paths | agent | M | open |
+| 26 | [winget: offer a per-user install (--scope user), proven in Windows Sandbox first](items/winget-per-user-scope-entry/desc.md) | improvement | 3 | build-release | both | M | open |
+| 27 | [winget manifest fixes (072 audit): DisplayName, ProductCode; PrivacyUrl check](items/winget-manifest-fixes-from-072-audit/desc.md) | bug | 3 | build-release | agent | S | open |
+| 28 | [PictView Update Thumbnail: file time, hard links, per-file box, orientation](items/pictview-update-thumbnail-142-leftovers/desc.md) | improvement | 3 | pictview | agent | M | open |
+| 29 | [Quick search: first keystroke over 100,000 non-ASCII names takes about 335 ms](items/quick-search-first-keystroke-over-100-000-non-ascii-names/desc.md) | improvement | 3 | panels-ui | agent | M | open |
+| 30 | [translate.merge keeps a stale machine translation when the English text changes](items/translate-merge-keeps-a-stale-machine-translation-when-the/desc.md) | bug | 3 | translations | agent | S | open |
+| 31 | [Desktop view (Folders plug-in) repeats its shell columns after a view-mode switch](items/desktop-view-folders-plug-in-repeats-its-shell-columns-after/desc.md) | bug | 3 | other-plugins | agent | S | open |
+| 32 | [A refused configuration file does not say which key is outside the program root](items/a-refused-configuration-file-does-not-say-which-key-is/desc.md) | improvement | 3 | panels-ui | agent | S | open |
+| 33 | [Code Viewer: no Auto-Select of the code page and no explicit Set as default](items/code-viewer-no-auto-select-of-the-code-page-and-no-explicit/desc.md) | improvement | 3 | other-plugins | both | M | open |
+| 34 | [Compare Directories misses a case-only pair beside a soft-hyphen or NFD name](items/compare-directories-misses-a-case-only-pair-beside-a-soft/desc.md) | bug | 3 | panels-ui | agent | M | open |
+| 35 | [Find window: the viewer next / previous file takes the first case-insensitive twin](items/find-window-the-viewer-next-previous-file-takes-the-first/desc.md) | bug | 3 | panels-ui | agent | S | open |
+| 36 | [FTP: download and upload refuse local paths and names over 259 bytes](items/ftp-local-long-paths/desc.md) | improvement | 3 | ftp | agent | L | open |
+| 37 | [Logging in to an inaccessible UNC path with a non-ASCII share name uses code-page APIs](items/logging-in-to-an-inaccessible-unc-path-with-a-non-ascii/desc.md) | bug | 3 | encoding | agent | M | open |
+| 38 | [Menu bar hot keys typed after F10 arrive as code-page bytes](items/menubar-loop-wide-mnemonics/desc.md) | bug | 3 | panels-ui | agent | S | open |
+| 39 | [Paste and drop of our own files keep a code-page fallback for a name on low memory](items/paste-and-drop-of-our-own-files-keep-a-code-page-fallback/desc.md) | bug | 3 | encoding | agent | S | open |
+| 40 | [Settings import ends the highlighting list at a damaged entry](items/settings-import-ends-the-highlighting-list-at-a-damaged/desc.md) | bug | 3 | panels-ui | agent | S | open |
+| 41 | [SFTP: a Copy posted right after a failed upload and its reconnect may open nothing](items/sftp-a-copy-posted-right-after-a-failed-upload-and-its/desc.md) | bug | 3 | sftp | agent | ? | open |
+| 42 | [ISO plug-in: a Joliet file name with an unpaired surrogate is garbled, other letters too](items/uniso-joliet-file-names-wtf8-garbled/desc.md) | bug | 3 | archives | agent | S | open |
+| 43 | [User Menu errors name the command, not the file or folder at fault](items/user-menu-errors-name-the-file-or-folder/desc.md) | bug | 3 | panels-ui | agent | M | open |
+| 44 | [A hidden User Menu batch that stops at its chcp or cd line tells nobody](items/user-menu-hidden-batch-silent-early-end/desc.md) | bug | 3 | panels-ui | agent | M | open |
+| 45 | [User Menu: a shortcut command may start in the item folder, not its own Start in](items/user-menu-shortcut-start-in-folder/desc.md) | bug | 3 | panels-ui | agent | S | open |
+| 46 | [Settings import ends the viewers, editors and User Menu lists at a damaged entry](items/settings-import-ends-the-viewers-editors-and-user-menu-lists/desc.md) | bug | 3 | panels-ui | agent | S | open |
+| 47 | [Archive Update: an archive rewritten with its old size and time is not checked again](items/archive-update-archive-same-stamp/desc.md) | bug | 3 | archives | agent | S | open |
+| 48 | [Archive Update: Copy Selected To refuses an edited member whose target path is over 259 units](items/archive-update-copy-selected-to-refuses-long-targets/desc.md) | improvement | 3 | long-paths | agent | S | open |
+| 49 | [The left-aside message names only the salNNN entry, not the entry it was](items/left-aside-message-names-the-entry/desc.md) | improvement | 3 | file-ops | agent | S | open |
+| 50 | [A rename via a temporary name can leave the source there silently after a cancel](items/rename-via-temp-left-silently/desc.md) | bug | 3 | file-ops | agent | S | open |
+| 51 | [Screen readers get garbled names from the core path labels (CStaticText)](items/screen-readers-get-garbled-names-from-the-core-path-labels/desc.md) | bug | 3 | encoding | both | M | open |
+| 52 | [SFTP: run about 1,500 connections to show the key-exchange failure gone](items/sftp-key-exchange-soak-1500-connections/desc.md) | tech-debt | 3 | sftp | agent | S | open |
+| 53 | [SFTP: files open when a connection is lost stay allocated until exit](items/sftp-open-handles-of-lost-connection-leak/desc.md) | bug | 3 | sftp | agent | M | open |
+| 54 | [SFTP: a stalled upload or a server disconnect leaks the whole session](items/sftp-session-leak-after-partial-send-or-disconnect/desc.md) | bug | 3 | sftp | agent | M | open |
+| 55 | [SFTP: a server reply shorter than the protocol allows waits for the timeout](items/sftp-short-reply-waits-for-timeout/desc.md) | bug | 3 | sftp | agent | M | open |
+| 56 | [Clipped labels in the Czech translation (74)](items/translations-clipped-labels-cs/desc.md) | bug | 3 | translations | both | M | open |
+| 57 | [Clipped labels in the German translation (98)](items/translations-clipped-labels-de/desc.md) | bug | 3 | translations | both | M | open |
+| 58 | [Clipped labels in the Spanish translation (89)](items/translations-clipped-labels-es/desc.md) | bug | 3 | translations | both | M | open |
+| 59 | [Clipped labels in the French translation (159)](items/translations-clipped-labels-fr/desc.md) | bug | 3 | translations | both | L | open |
+| 60 | [Clipped labels in the Hungarian translation (45)](items/translations-clipped-labels-hu/desc.md) | bug | 3 | translations | both | M | open |
+| 61 | [Clipped labels in the Dutch translation (78)](items/translations-clipped-labels-nl/desc.md) | bug | 3 | translations | both | M | open |
+| 62 | [Clipped labels in the Romanian translation (74)](items/translations-clipped-labels-ro/desc.md) | bug | 3 | translations | both | M | open |
+| 63 | [Clipped labels in the Slovak translation (85)](items/translations-clipped-labels-sk/desc.md) | bug | 3 | translations | both | M | open |
+| 64 | [Markdown Viewer: a scheme, width or View Source change shows the document from the top](items/markdown-viewer-a-scheme-width-or-view-source-change-shows/desc.md) | improvement | 3 | other-plugins | both | M | open |
+| 65 | [ZIP does not say the temporary file is the only copy when the archive vanished](items/zip-does-not-say-the-temporary-file-is-the-only-copy/desc.md) | bug | 3 | archives | agent | S | open |
+| 66 | [ISO plug-in: a valid xorriso ISO + HFS+ hybrid opens with Cannot read sector 00000020](items/iso-plug-in-a-valid-xorriso-iso-hfs-hybrid-opens-with-cannot/desc.md) | bug | 3 | other-plugins | agent | S | open |
+| 67 | [The core reads volume names with the code-page API on UTF-8 paths](items/the-core-reads-volume-names-with-the-code-page-api-on-utf-8/desc.md) | bug | 3 | encoding | agent | S | open |
+| 68 | [Tar unpack skips FIFO and device members without a word](items/tar-unpack-skips-fifo-and-device-members-without-a-word/desc.md) | bug | 3 | archives | agent | S | open |
+| 69 | [ISO plug-in: an HFS+ name with U+0000 inside is listed cut at it](items/iso-plug-in-an-hfs-name-with-u-0000-inside-is-listed-cut-at/desc.md) | bug | 3 | archives | agent | S | open |
+| 70 | [ISO plug-in: an Ubuntu-style install image with an Apple partition map shows Cannot read sector #00000200](items/iso-plug-in-an-ubuntu-style-install-image-with-an-apple/desc.md) | bug | 3 | other-plugins | agent | S | open |
+| 71 | [ISO plug-in: a whole unpack of an image with audio or left-out tracks fails without saying why](items/iso-plug-in-a-whole-unpack-of-an-image-with-audio-or-left/desc.md) | improvement | 3 | archives | agent | S | open |
+| 72 | [ISO plug-in: a UDF file whose track does not open is left partly written in the target](items/iso-plug-in-a-udf-file-whose-track-does-not-open-is-left/desc.md) | bug | 3 | archives | agent | S | open |
+| 73 | [ISO plug-in: Cancel in the Error Creating Directory box does not stop a whole unpack](items/iso-plug-in-cancel-in-the-error-creating-directory-box-does/desc.md) | bug | 3 | archives | agent | S | open |
+| 74 | [FTP: an upload that ends between another upload's existence check and its lock](items/ftp-an-upload-that-ends-between-another-upload-s-existence/desc.md) | bug | 3 | ftp | agent | M | open |
+| 75 | [ISO plug-in: a UDF VAT whose descriptors cover less than its length is read with heap content](items/iso-plug-in-a-udf-vat-whose-descriptors-cover-less-than-its/desc.md) | bug | 3 | archives | agent | S | open |
+| 76 | [ISO plug-in: a UDF folder of several blocks in a VAT partition is read past its mapping](items/iso-plug-in-a-udf-folder-of-several-blocks-in-a-vat/desc.md) | bug | 3 | archives | agent | S | open |
+| 77 | [ISO plug-in: listing a disc image reads every sector of examined Form 2 files](items/iso-plug-in-listing-a-disc-image-reads-every-sector-of/desc.md) | improvement | 3 | archives | agent | M | open |
+| 78 | [ISO plug-in: NRG tracks of the subchannel modes 0x0F / 0x10 / 0x11 get a wrong type or size](items/iso-plug-in-nrg-tracks-of-the-subchannel-modes-0x0f-0x10/desc.md) | bug | 3 | archives | agent | S | open |
+| 79 | [ISO plug-in: an unknown UDF partition map type leaves its translation undefined](items/iso-plug-in-an-unknown-udf-partition-map-type-leaves-its/desc.md) | bug | 3 | archives | agent | S | open |
+| 80 | [Changing to a plug-in path cuts the name to focus at 259 bytes and may focus another item](items/changing-to-a-plug-in-path-cuts-the-name-to-focus-at-259/desc.md) | bug | 3 | long-paths | agent | S | open |
+| 81 | [Relative path under a deep plug-in file-system path is refused: the core buffer for GetFullFSPath is MAX_PATH](items/relative-path-under-a-deep-plug-in-file-system-path-is/desc.md) | improvement | 3 | long-paths | agent | M | open |
+| 82 | [A path typed into an archive that matches two case twins opens the root silently](items/a-path-typed-into-an-archive-that-matches-two-case-twins/desc.md) | bug | 3 | archives | agent | S | open |
+| 83 | [A typed archive target in another case of a non-ASCII letter still makes a twin](items/typed-archive-target-non-ascii-case-makes-a-twin/desc.md) | bug | 3 | archives | agent | M | open |
+| 84 | [Registry Editor View: a key that cannot be opened is still read with an unset handle](items/registry-editor-view-a-key-that-cannot-be-opened-is-still/desc.md) | bug | 3 | other-plugins | agent | S | open |
+| 85 | [A cpio name stored after its data on a refused name is reported, not extracted](items/a-cpio-name-stored-after-its-data-on-a-refused-name-is/desc.md) | improvement | 3 | archives | agent | M | open |
+| 86 | [SDK: state that GetErrorText returns UTF-8 (B-3 contract half)](items/geterrortext-utf8-contract/desc.md) | tech-debt | 2 | plugin-api | agent | S | open |
+| 87 | [GetSHObjectName converts through CP_ACP and cuts at MAX_PATH (server links)](items/getshobjectname-code-page-cut-server-links/desc.md) | bug | 2 | encoding | agent | S | open |
+| 88 | [Unpack short-name walk: process-wide root; external archiver's unpack not driven](items/unpack-root-process-wide-latent/desc.md) | tech-debt | 2 | archives | agent | M | open |
+| 89 | [The 092 name comparator reads both names to their ends (2x-16x slower sorts)](items/name-comparator-reads-whole-names/desc.md) | tech-debt | 2 | encoding | agent | M | open |
+| 90 | [Translation merge keys by bundle ordinal; removing a bundle needs a re-key](items/translate-merge-bundle-rekey/desc.md) | tech-debt | 2 | translations | agent | M | open |
+| 91 | [Bug report's module line from an install folder outside the code page](items/bug-report-module-line-install-path/desc.md) | bug | 2 | encoding | agent | S | open |
+| 92 | [Mixed-template guard: no reverse rule, sinks found by variable names](items/mixed-template-guard-reverse-rule/desc.md) | tech-debt | 2 | tooling | agent | S | open |
+| 93 | [PE Viewer: version-resource names printed with a narrow %ls (suspected)](items/peviewer-version-names-narrow-ls/desc.md) | bug | 2 | other-plugins | agent | S | open |
+| 94 | [FTP: server reply cut inside a character; Logs window caret counts bytes](items/ftp-reply-cut-and-logs-caret-bytes/desc.md) | bug | 2 | ftp | agent | S | open |
+| 95 | [SFTP: questions and reasons are untranslated English literals](items/sftp-english-literal-messages/desc.md) | tech-debt | 2 | sftp | agent | M | open |
+| 96 | [User Menu through a shell: a UNC panel folder runs the command in C:\\Windows](items/user-menu-unc-folder-pushd/desc.md) | bug | 2 | panels-ui | agent | S | open |
+| 97 | [Renamer: two error messages still append a stale system reason](items/renamer-stale-error-reasons/desc.md) | bug | 2 | other-plugins | agent | S | open |
+| 98 | [Plug-ins show a literal "%1" in Windows error texts that have inserts](items/plugins-error-text-literal-inserts/desc.md) | bug | 2 | other-plugins | agent | S | open |
+| 99 | [Message box shows a plug-in's code-page URL text as UTF-8](items/msgbox-plugin-url-text-code-page/desc.md) | bug | 2 | encoding | agent | S | open |
+| 100 | [7-Zip: two-form password passes in Test, F3 view, Delete and Cancel not driven](items/7zip-two-form-password-passes-not-driven/desc.md) | tech-debt | 2 | archives | agent | M | open |
+| 101 | [CI: ilammy/msvc-dev-cmd@v1 is a Node 20 action with no Node 24 release](items/ci-msvc-dev-cmd-action-has-no-node-24-release/desc.md) | tech-debt | 2 | build-release | both | S | open |
+| 102 | [Stale winget claims in project records and publish.ps1 order (072 audit)](items/winget-records-stale-claims-from-072-audit/desc.md) | tech-debt | 2 | build-release | agent | S | open |
+| 103 | [Archive operations through a re-pointed name: four gaps recorded by 145 / 146](items/archive-ops-repointed-name-recorded-gaps/desc.md) | bug | 2 | archives | agent | M | open |
+| 104 | [A history entry with invalid text hides the entries saved after it](items/a-history-entry-with-invalid-text-hides-the-entries-saved/desc.md) | bug | 2 | encoding | agent | S | open |
+| 105 | [Quick search keys skip canonical reordering of combining marks](items/quick-search-keys-skip-canonical-reordering-of-combining/desc.md) | bug | 2 | encoding | agent | S | open |
+| 106 | [Remove the dormant start-up import of older Open Salamander configurations](items/remove-the-dormant-start-up-import-of-older-open-salamander/desc.md) | tech-debt | 2 | data-safety | agent | M | open |
+| 107 | [Unpack refused at a link names a temporary folder, not the archive folder](items/unpack-refused-at-a-link-names-a-temporary-folder-not-the/desc.md) | improvement | 2 | archives | agent | S | open |
+| 108 | [The encoding guard does not read header files; plug-in headers convert names leniently](items/check-encoding-skips-header-files/desc.md) | tech-debt | 2 | tooling | agent | M | open |
+| 109 | [Command line: a COMSPEC path outside ASCII is read through the code page](items/command-line-comspec-read-wide/desc.md) | bug | 2 | encoding | agent | S | open |
+| 110 | [Ctrl+X ghosts a name in the other panel that shows a case twin folder](items/ctrl-x-ghosts-a-name-in-the-other-panel-that-shows-a-case/desc.md) | bug | 2 | panels-ui | agent | S | open |
+| 111 | [DB Viewer: a field length of 1000 or more shows a broken thousands separator](items/dbviewer-field-length-separator/desc.md) | bug | 2 | other-plugins | agent | S | open |
+| 112 | [File Comparator hex recompare: error box from the released sibling view](items/file-comparator-hex-recompare-error-box-from-the-released/desc.md) | bug | 2 | other-plugins | agent | S | open |
+| 113 | [FTP: a mask ? takes two code-page bytes of a legacy server as one letter](items/ftp-mask-letters-by-server-encoding/desc.md) | bug | 2 | ftp | agent | S | open |
+| 114 | [Shell extensions in the panel background menu and the Find window never answer typed hot keys](items/menuchar-owner-routing/desc.md) | bug | 2 | panels-ui | agent | S | open |
+| 115 | [PictView: no Exif command and no automatic turn for TIFF and camera raw files](items/pictview-no-exif-command-and-no-automatic-turn-for-tiff-and/desc.md) | improvement | 2 | pictview | agent | M | open |
+| 116 | [The build runs the plug-in encoding scan strictly for the shipped plug-ins](items/plugin-encoding-scan-strict-in-build/desc.md) | tech-debt | 2 | tooling | agent | S | open |
+| 117 | [Registry Editor Find: Whole words ignores punctuation that the help names](items/regedit-find-whole-words-punctuation/desc.md) | bug | 2 | other-plugins | agent | S | open |
+| 118 | [Renamer: the preview shows a name with an unpaired surrogate as mojibake](items/renamer-wtf8-names-shown-as-mojibake/desc.md) | bug | 2 | other-plugins | agent | S | open |
+| 119 | [Turkish / Azeri locale: index.html and INDEX.HTML never compare as one name](items/turkish-azeri-locale-index-html-and-index-html-never-compare/desc.md) | bug | 2 | panels-ui | agent | ? | open |
+| 120 | [ISO plug-in: HFS+ names with an unpaired surrogate are changed to U+FFFD](items/uniso-hfs-names-lossy-surrogates/desc.md) | bug | 2 | archives | agent | S | open |
+| 121 | [The User Menu page names a new submenu end in the code page, not UTF-8](items/the-user-menu-page-names-a-new-submenu-end-in-the-code-page/desc.md) | bug | 2 | encoding | agent | S | open |
+| 122 | [Refreshing a changed archive with edited files lists it twice](items/archive-refresh-lists-changed-archive-twice/desc.md) | improvement | 2 | archives | agent | M | open |
+| 123 | [Archive Update: a time-zone or daylight-saving change marks an unchanged member](items/archive-update-time-zone-change-mark/desc.md) | bug | 2 | archives | both | S | open |
+| 124 | [Renamer: the New name field holds only 519 bytes of a typed pattern](items/renamer-the-new-name-field-holds-only-519-bytes-of-a-typed/desc.md) | improvement | 2 | long-paths | agent | S | open |
+| 125 | [SFTP: a folder uploaded again whose files are all there ends with a misleading folder box](items/sftp-a-folder-uploaded-again-whose-files-are-all-there-ends/desc.md) | improvement | 2 | sftp | agent | S | open |
+| 126 | [The question whether to create a missing folder cuts a long path inside a letter](items/the-question-whether-to-create-a-missing-folder-cuts-a-long/desc.md) | bug | 2 | long-paths | agent | S | open |
+| 127 | [User Menu list commands refused when the first selected item does not fit 259 bytes](items/user-menu-list-commands-refused-when-the-first-selected-item/desc.md) | improvement | 2 | long-paths | agent | M | open |
+| 128 | [The manual has no page for the Markdown Viewer](items/the-manual-has-no-page-for-the-markdown-viewer/desc.md) | improvement | 2 | help-docs | agent | S | open |
+| 129 | [ISO plug-in: an HFS+ file skipped or cancelled at extraction leaks its read buffer](items/iso-plug-in-an-hfs-file-skipped-or-cancelled-at-extraction/desc.md) | bug | 2 | other-plugins | agent | S | open |
+| 130 | [Share list: a list a server never finishes (more data without an end) is shown as if it were whole](items/share-list-a-list-a-server-never-finishes-more-data-without/desc.md) | bug | 2 | panels-ui | agent | S | open |
+| 131 | [Leaving a folder by other ways during quick search briefly shows the whole folder](items/leaving-a-folder-by-other-ways-during-quick-search-briefly/desc.md) | bug | 2 | panels-ui | agent | S | open |
+| 132 | [Registry facade: deleting a value and opening keys use the ANSI API with UTF-8 names](items/registry-wide-deletevalue-and-key-names/desc.md) | bug | 2 | plugin-api | agent | M | open |
+| 133 | [FTP: a listing rule assigning one column to another decodes the decoded text again](items/ftp-a-listing-rule-assigning-one-column-to-another-decodes/desc.md) | bug | 2 | ftp | agent | S | open |
+| 134 | [Rescue path goes to the Windows drive root when Documents needs more than 259 bytes](items/rescue-path-goes-to-the-windows-drive-root-when-documents/desc.md) | improvement | 2 | long-paths | agent | M | open |
+| 135 | [Probe 251 opens the Tabs-shifted page for its Viewers rows (page index 19)](items/probe-251-opens-the-tabs-shifted-page-for-its-viewers-rows/desc.md) | tech-debt | 2 | tooling | agent | S | open |
+| 136 | [Mask syntax error selects the wrong characters in a non-ASCII mask](items/mask-syntax-error-selects-the-wrong-characters-in-a-non/desc.md) | bug | 2 | encoding | agent | S | open |
+| 137 | [106's packself probe row A-zip-noask-refused is stale since 119](items/packself-probe-stale-row/desc.md) | tech-debt | 1 | tooling | agent | S | open |
+| 138 | [Plug-in threads ended by CThreadQueue leave their CCallStack registered](items/plugin-thread-kills-leave-callstack/desc.md) | tech-debt | 1 | plugin-api | agent | M | open |
+| 139 | [Code Viewer: its known limitations are not stated anywhere a user can read](items/codeview-limitations-not-stated-for-users/desc.md) | improvement | 1 | help-docs | agent | S | open |
+| 140 | [File Comparator stores an uninitialised byte in its saved configuration](items/filecomp-stores-uninitialised-configuration-byte/desc.md) | bug | 1 | other-plugins | agent | S | open |
+| 141 | [CLAUDE.md names a branch ai-main that does not exist](items/claude-md-names-missing-ai-main-branch/desc.md) | tech-debt | 1 | help-docs | both | S | open |
+| 142 | [Unshipped resources still carry 2023 Open Salamander-only copyright notices](items/unshipped-resources-still-carry-2023-open-salamander-only/desc.md) | tech-debt | 1 | build-release | agent | S | open |
+| 143 | [winget README names a publish.ps1 check that does not exist](items/winget-readme-names-a-publish-ps1-check-that-does-not-exist/desc.md) | tech-debt | 1 | build-release | agent | S | open |
+| 144 | [The stored main window icon index is checked against the count, not the last index](items/the-stored-main-window-icon-index-is-checked-against-the/desc.md) | bug | 1 | panels-ui | agent | S | open |
+| 145 | [Plug-in interface does not say that column names are code-page text](items/plug-in-interface-does-not-say-that-column-names-are-code/desc.md) | tech-debt | 1 | plugin-api | agent | S | open |
+| 146 | [Loop tool tests leave a temporary git folder behind on every test](items/loop-tool-tests-leave-a-temporary-git-folder-behind-on-every/desc.md) | tech-debt | 1 | tooling | agent | S | open |
+| 147 | [The 081 Markdown Viewer probe takes a window with an empty title for the viewer](items/the-081-markdown-viewer-probe-takes-a-window-with-an-empty/desc.md) | tech-debt | 1 | tooling | agent | S | open |
+| 148 | [FTP: upload listing cache lookup remembers a slot number instead of the listing index](items/ftp-upload-listing-cache-lookup-remembers-a-slot-number/desc.md) | tech-debt | 1 | ftp | agent | S | open |
+| 149 | [A Documents folder of 260 or more characters opens the Desktop instead](items/a-documents-folder-of-260-or-more-characters-opens-the/desc.md) | bug | 1 | long-paths | agent | S | open |
 
 ## Decisions for the maintainer
 
@@ -302,7 +303,6 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
-| [A binary cpio member in the last 512 bytes of the archive is not recognised](items/a-binary-cpio-member-in-the-last-512-bytes-of-the-archive-is/desc.md) | bug | 4 | archives | measure:395 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 
 ## Parked
