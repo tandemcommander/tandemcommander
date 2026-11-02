@@ -346,7 +346,34 @@ struct CRegCopyTop
     LPWSTR Key; // malloc'd
     BOOL HaveIds;
     CSalRegKeyIds Ids;
+    CRegWalkChain* Walk; // feature 391: the source keys the copy is inside
+    BOOL WalkStarted;    // the operation's own key entered into Walk
 };
+
+// "Can't copy (move) a key to itself." naming the full source key 'root'\'key' (feature 296's box, OK
+// skips the key, Cancel stops); always FALSE, 'skip' tells the answers apart
+static BOOL RefuseCopyIntoItself(int root, LPCWSTR key, BOOL move, int errorTitle, BOOL& skip)
+{
+    // the full name of the source key, whole (feature 129)
+    char* message = NULL;
+    size_t rootLen = wcslen(PredefinedHKeys[root].KeyName), keyLen = wcslen(key);
+    LPWSTR fullName = (LPWSTR)malloc((rootLen + 1 + keyLen + 1) * sizeof(WCHAR));
+    if (fullName != NULL)
+    {
+        memcpy(fullName, PredefinedHKeys[root].KeyName, rootLen * sizeof(WCHAR));
+        fullName[rootLen] = L'\\';
+        memcpy(fullName + rootLen + 1, key, (keyLen + 1) * sizeof(WCHAR));
+        message = FormatWideU8(move ? IDS_CANTMOVETOITSELF2 : IDS_CANTCOPYTOITSELF2, fullName);
+        free(fullName);
+    }
+    skip = message != NULL &&
+           SG->SalMessageBox(GetParent(), message, LoadStr(errorTitle), MB_OKCANCEL) == IDOK; // OK skips the key
+    if (message != NULL)
+        free(message);
+    else
+        Error(IDS_LOWMEM);
+    return FALSE;
+}
 
 static BOOL SafeCheckTargetLink(int targetRoot, LPWSTR target, int sourceRoot, LPWSTR source,
                                 CRegCopyTop& top, BOOL& refuse, int errorTitle, BOOL& skip, BOOL& skipAll);
@@ -412,6 +439,42 @@ static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWS
                      errorTitle, &skip, &skipAllErrors))
         return FALSE;
 
+    // feature 391: the source key was opened by name, which follows a registry link - a link to the
+    // copied key, to a key above it, or a cycle of links would copy the same tree again and again
+    // (a chain ~28 keys deep until Windows stops following links); such a key is refused before
+    // anything of it is written. The level is left on every return below
+    CRegWalkLevel walkLevel(*operation.Walk);
+    if (!operation.WalkStarted)
+    {
+        operation.WalkStarted = TRUE;
+        if (!RegWalkEnterTop(*operation.Walk, sourceHKey, sourceRoot, source))
+        {
+            RegCloseKey(sourceHKey);
+            skip = FALSE;
+            return Error(IDS_LOWMEM);
+        }
+    }
+    else
+    {
+        while (1)
+        {
+            BOOL leadsBack;
+            int err = RegWalkEnter(*operation.Walk, sourceHKey, leadsBack);
+            if (err == ERROR_SUCCESS)
+            {
+                if (!leadsBack)
+                    break;
+                RegCloseKey(sourceHKey);
+                return RefuseCopyIntoItself(sourceRoot, source, move, errorTitle, skip);
+            }
+            if (!RegOperationError(err, IDS_OPEN, errorTitle, sourceRoot, source, &skip, &skipAllErrors))
+            {
+                RegCloseKey(sourceHKey);
+                return FALSE; // nothing of this key copied (fails closed); Retry reads the identity again
+            }
+        }
+    }
+
     // load the class name and maximum data size
     DWORD maxData;
     WCHAR sourceClassName[MAX_PATH];
@@ -438,25 +501,7 @@ static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWS
     if (refuse)
     {
         RegCloseKey(sourceHKey);
-        // the full name of the source key, whole (feature 129)
-        char* message = NULL;
-        size_t rootLen = wcslen(PredefinedHKeys[sourceRoot].KeyName), keyLen = wcslen(source);
-        LPWSTR fullName = (LPWSTR)malloc((rootLen + 1 + keyLen + 1) * sizeof(WCHAR));
-        if (fullName != NULL)
-        {
-            memcpy(fullName, PredefinedHKeys[sourceRoot].KeyName, rootLen * sizeof(WCHAR));
-            fullName[rootLen] = L'\\';
-            memcpy(fullName + rootLen + 1, source, (keyLen + 1) * sizeof(WCHAR));
-            message = FormatWideU8(move ? IDS_CANTMOVETOITSELF2 : IDS_CANTCOPYTOITSELF2, fullName);
-            free(fullName);
-        }
-        skip = message != NULL &&
-               SG->SalMessageBox(GetParent(), message, LoadStr(errorTitle), MB_OKCANCEL) == IDOK; // OK skips the key
-        if (message != NULL)
-            free(message);
-        else
-            Error(IDS_LOWMEM);
-        return FALSE;
+        return RefuseCopyIntoItself(sourceRoot, source, move, errorTitle, skip);
     }
 
     // create the target key
@@ -873,7 +918,9 @@ int ExpandPluralFilesDirs(LPWSTR buffer, int bufferSize, int files, int dirs,
 // feature 292: the identity of a registry key - the full internal name the registry reports for the
 // opened key (\REGISTRY\USER\<SID>\...), the same for every root name and link of one key; see
 // src/common/salregkeyid.h. Returns a Win32 error code.
-static int AddOpenedRegKeyId(HKEY hKey, CSalRegKeyIds& ids)
+// feature 391: the identity of the opened key 'hKey' into 'name' (SAL_REGKEYID_MAX units); see
+// AddOpenedRegKeyId
+static int GetOpenedRegKeyId(HKEY hKey, WCHAR* name)
 {
     typedef LONG(NTAPI * FNtQueryKey)(HANDLE, int, PVOID, ULONG, PULONG);
     typedef ULONG(NTAPI * FRtlNtStatusToDosError)(LONG);
@@ -898,9 +945,17 @@ static int AddOpenedRegKeyId(HKEY hKey, CSalRegKeyIds& ids)
         return ERROR_INVALID_DATA;
     if (units >= SAL_REGKEYID_MAX)
         return ERROR_FILENAME_EXCED_RANGE;
-    WCHAR name[SAL_REGKEYID_MAX];
     memcpy(name, buf + 1, units * sizeof(WCHAR));
     name[units] = 0;
+    return ERROR_SUCCESS;
+}
+
+static int AddOpenedRegKeyId(HKEY hKey, CSalRegKeyIds& ids)
+{
+    WCHAR name[SAL_REGKEYID_MAX];
+    int err = GetOpenedRegKeyId(hKey, name);
+    if (err != ERROR_SUCCESS)
+        return err;
     return SalRegKeyIdsAdd(ids, name, NULL) ? ERROR_SUCCESS : ERROR_FILENAME_EXCED_RANGE;
 }
 
@@ -1112,6 +1167,70 @@ static BOOL SafeGetRegKeyIds(int root, LPWSTR key, CSalRegKeyIds& ids, BOOL mayN
     }
 }
 
+BOOL CRegWalkChain::Push(const WCHAR* id)
+{
+    if (Count == Capacity)
+    {
+        int capacity = Capacity == 0 ? 16 : 2 * Capacity;
+        WCHAR** ids = (WCHAR**)realloc(Ids, capacity * sizeof(WCHAR*));
+        if (ids == NULL)
+            return FALSE;
+        Ids = ids;
+        Capacity = capacity;
+    }
+    size_t len = wcslen(id);
+    WCHAR* copy = (WCHAR*)malloc((len + 1) * sizeof(WCHAR));
+    if (copy == NULL)
+        return FALSE;
+    memcpy(copy, id, (len + 1) * sizeof(WCHAR));
+    Ids[Count++] = copy;
+    return TRUE;
+}
+
+void CRegWalkChain::PopTo(int count)
+{
+    if (count < 0)
+        count = 0;
+    while (Count > count)
+        free(Ids[--Count]);
+}
+
+BOOL RegWalkEnterTop(CRegWalkChain& chain, HKEY hKey, int root, LPCWSTR key)
+{
+    CSalRegKeyIds* ids = (CSalRegKeyIds*)malloc(sizeof(CSalRegKeyIds));
+    if (ids == NULL)
+        return FALSE;
+    BOOL ret = TRUE;
+    if (GetRegKeyIds(root, key, *ids, FALSE) == ERROR_SUCCESS) // a root's, both HKCR halves
+    {
+        for (int i = 0; ret && i < ids->Count; i++)
+            ret = chain.Push(ids->Id[i]);
+    }
+    free(ids);
+    if (ret && *key != 0) // a predefined root handle cannot be asked (292)
+    {
+        WCHAR name[SAL_REGKEYID_MAX];
+        if (GetOpenedRegKeyId(hKey, name) == ERROR_SUCCESS)
+            ret = chain.Push(name);
+    }
+    return ret;
+}
+
+int RegWalkEnter(CRegWalkChain& chain, HKEY hKey, BOOL& leadsBack)
+{
+    leadsBack = FALSE;
+    WCHAR name[SAL_REGKEYID_MAX];
+    int err = GetOpenedRegKeyId(hKey, name);
+    if (err != ERROR_SUCCESS)
+        return err;
+    if (chain.LeadsBack(name))
+    {
+        leadsBack = TRUE;
+        return ERROR_SUCCESS;
+    }
+    return chain.Push(name) ? ERROR_SUCCESS : ERROR_NOT_ENOUGH_MEMORY;
+}
+
 // feature 294: does 'root'\'key' hold the subkey path 'below' (opened by name, as the copy opens the
 // source's subkeys)? The path is joined at its full length (never cut). FALSE = do not go on with
 // this key: Cancel or Skip in the existing open-error box ('skip' tells them apart), or low memory
@@ -1267,6 +1386,9 @@ BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
     top->Key = key;
     top->HaveIds = FALSE;
     top->Ids.Count = 0;
+    CRegWalkChain walk; // feature 391
+    top->Walk = &walk;
+    top->WalkStarted = FALSE;
     BOOL ret = CopyOrMoveKeyRec(sourceRoot, source, targetRoot, target, move, skip, skipAllErrors,
                                 skipAllLongNames, skipAllOverwrites, overwriteAll, skipAllClassNames,
                                 nameBuffer, stack, *top);

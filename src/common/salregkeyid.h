@@ -35,6 +35,9 @@
 //                     writes target\P for each subkey path P of the source -
 //                     into the source itself when P begins with this path).
 //
+// SalRegKeyIdLeadsBack - feature 391: does a key a walk (Copy, Find) just opened by
+//                     name lead it back into the keys it is inside (a registry link
+//                     to the walked key, a key above it, or a cycle of links)?
 // SalRegHkcrDeleteHalf - feature 390: where a Move deletes a source key of
 //                     HKEY_CLASSES_ROOT. The copy may create the user's half of
 //                     the very path it copies (a machine-only key moved into
@@ -133,6 +136,22 @@ inline BOOL SalRegKeyIdsAnyWithin(const CSalRegKeyIds& inner, const CSalRegKeyId
         for (int j = 0; j < outer.Count; j++)
             if (SalRegKeyIdWithin(inner.Id[i], outer.Id[j]))
                 return TRUE;
+    return FALSE;
+}
+
+// feature 391: a walk (the Registry Editor's Copy, Find) opens every subkey by name, which follows a
+// registry link; a link to the walked key, to a key above it, or a cycle of links makes the walk go
+// round the same tree until Windows refuses (error 87 after ~28 links). 'chain' holds the identities
+// of the keys the walk is inside (its start down to the parent); the key just opened ('id') leads the
+// walk back when it is one of them or a key above one of them. A plain subkey never does: its
+// identity is its parent's plus a name. Empty / NULL entries and an empty 'id' never match.
+inline BOOL SalRegKeyIdLeadsBack(const WCHAR* const* chain, int count, const WCHAR* id)
+{
+    if (chain == NULL || SalRegKeyIdLen(id) == 0)
+        return FALSE;
+    for (int i = 0; i < count; i++)
+        if (SalRegKeyIdWithin(chain[i], id))
+            return TRUE;
     return FALSE;
 }
 

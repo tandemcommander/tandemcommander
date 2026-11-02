@@ -457,7 +457,7 @@ function Search-Once([int]$Id, [IntPtr]$Fw, $S) {
         if ($m -eq $n -and $sw.Elapsed.TotalSeconds -gt 4) { break }
         $n = $m
     }
-    $found = @(for ($i = 0; $i -lt $n; $i++) { $p = ''; foreach ($sc in 1..3) { $t = [RegLinkLoop]::LvText($lv, $i, $sc); if ($t -and $t.Contains('')) { $p = $t; break } }; ([RegLinkLoop]::LvText($lv, $i, 0)) + '|' + $p })
+    $found = @(for ($i = 0; $i -lt $n; $i++) { $p = ''; foreach ($sc in 1..3) { $t = [RegLinkLoop]::LvText($lv, $i, $sc); if ($t -and $t.Contains('\')) { $p = $t; break } }; ([RegLinkLoop]::LvText($lv, $i, 0)) + '|' + $p })
     $foundU = @($found | ForEach-Object { $_ })
     $ok = ($n -eq $S.Want.Count) -and ((($foundU | Sort-Object) -join ',') -ceq (($S.Want | Sort-Object) -join ',')) -and $boxes.Count -eq 0
     $deep = 0; foreach ($f in $foundU) { $c = ([regex]::Matches($f, '\\L')).Count; if ($c -gt $deep) { $deep = $c } }

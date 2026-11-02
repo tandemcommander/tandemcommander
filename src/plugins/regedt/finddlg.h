@@ -289,6 +289,7 @@ class CFindThread : public CThread
     CSalamanderREGEXPSearchData* SalRegExp;
 
     DWORD NextStatusUpdate;
+    BOOL WalkStarted; // feature 391: ScanKeyAux entered the searched starting key
 
 public:
     CFindThread(TIndirectArray<WCHAR>& lookIn,
@@ -322,6 +323,7 @@ public:
         FindDialog = findDlg;
         CancelEvent = cancelEvent;
         BMForPatternA = NULL;
+        WalkStarted = FALSE;
         BMForPatternW = NULL;
         SalRegExp = NULL;
     }
@@ -338,8 +340,10 @@ public:
 
     BOOL TestTime(FILETIME& ft);
     BOOL Test(char* text, int len, BOOL name, DWORD type);
+    // feature 391: 'walk' - the identities of the keys the search is inside (a key that leads back
+    // into them through a registry link is not searched)
     BOOL ScanKeyAux(int root, LPWSTR key, BOOL& skip, BOOL& skipAllErrors,
-                    LPWSTR nameBuffer, TIndirectArray<WCHAR>& stack);
+                    LPWSTR nameBuffer, TIndirectArray<WCHAR>& stack, CRegWalkChain& walk);
     BOOL ScanKey(int root, LPWSTR key, BOOL& skip, BOOL& skipAllErrors,
                  LPWSTR nameBuffer, TIndirectArray<WCHAR>& stack);
     BOOL ScanRegistry(BOOL& skipAllErrors);

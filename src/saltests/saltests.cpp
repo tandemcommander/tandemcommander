@@ -14207,6 +14207,45 @@ static void TestRegKeyIdBelow294()
     CHECK(SalRegKeyIdBelow(L"\\REGISTRY\\USER\\S-1\\Zdroj\\K\\K\\K", L"\\REGISTRY\\USER\\S-1\\Zdroj\\K\\K\\K\\K") == NULL);
 }
 
+// feature 391: a walk (Copy, Find) inside Self\K (chain: Self, Self\K) opens Self\K\L - a registry
+// link; it leads back when what it opened is one of the walked keys or a key above one of them
+static void TestRegKeyIdLeadsBack391()
+{
+    const WCHAR* top = L"\\REGISTRY\\USER\\S-1\\Software\\TcProbeLoop\\Self";
+    const WCHAR* k = L"\\REGISTRY\\USER\\S-1\\Software\\TcProbeLoop\\Self\\Kl\x00ED\x010D";
+    const WCHAR* chain[] = {top, k};
+    // the link points at the walked key itself, at its parent, at a key above the walk's start, a root
+    CHECK(SalRegKeyIdLeadsBack(chain, 2, k));
+    CHECK(SalRegKeyIdLeadsBack(chain, 2, top));
+    CHECK(SalRegKeyIdLeadsBack(chain, 2, L"\\REGISTRY\\USER\\S-1\\Software"));
+    CHECK(SalRegKeyIdLeadsBack(chain, 2, L"\\REGISTRY\\USER"));
+    // case ignored (also outside ASCII)
+    CHECK(SalRegKeyIdLeadsBack(chain, 2, L"\\registry\\user\\s-1\\SOFTWARE\\tcprobeloop\\SELF\\KL\x00CD\x010C"));
+    // a plain subkey (one element longer), a sibling, a longer name at the last element, another hive
+    CHECK(!SalRegKeyIdLeadsBack(chain, 2, L"\\REGISTRY\\USER\\S-1\\Software\\TcProbeLoop\\Self\\Kl\x00ED\x010D\\L"));
+    CHECK(!SalRegKeyIdLeadsBack(chain, 2, L"\\REGISTRY\\USER\\S-1\\Software\\TcProbeLoop\\Jinde"));
+    CHECK(!SalRegKeyIdLeadsBack(chain, 2, L"\\REGISTRY\\USER\\S-1\\Software\\TcProbeLoop\\Sel"));
+    CHECK(!SalRegKeyIdLeadsBack(chain, 2, L"\\REGISTRY\\USER\\S-1\\Software\\TcProbeLoop\\Self2"));
+    CHECK(!SalRegKeyIdLeadsBack(chain, 2, L"\\REGISTRY\\USER\\S-1_Classes"));
+    CHECK(!SalRegKeyIdLeadsBack(chain, 2, L"\\REGISTRY\\MACHINE\\Software"));
+    // a cycle through another key: chain Cyc\K, Cyc2 (reached through Cyc\K\L1); Cyc2\L2 -> Cyc\K
+    const WCHAR* cyc[] = {L"\\REGISTRY\\USER\\S-1\\Cyc\\K", L"\\REGISTRY\\USER\\S-1\\Cyc2"};
+    CHECK(SalRegKeyIdLeadsBack(cyc, 2, L"\\REGISTRY\\USER\\S-1\\Cyc\\K"));
+    CHECK(SalRegKeyIdLeadsBack(cyc, 2, L"\\REGISTRY\\USER\\S-1\\Cyc"));
+    CHECK(!SalRegKeyIdLeadsBack(cyc, 2, L"\\REGISTRY\\USER\\S-1\\Cyc\\K2"));
+    // only the first 'count' entries count
+    CHECK(!SalRegKeyIdLeadsBack(cyc, 1, L"\\REGISTRY\\USER\\S-1\\Cyc2"));
+    CHECK(SalRegKeyIdLeadsBack(cyc, 2, L"\\REGISTRY\\USER\\S-1\\Cyc2"));
+    // empty: no chain, an empty or missing identity, empty or missing entries
+    CHECK(!SalRegKeyIdLeadsBack(chain, 0, k));
+    CHECK(!SalRegKeyIdLeadsBack(NULL, 2, k));
+    CHECK(!SalRegKeyIdLeadsBack(chain, 2, L""));
+    CHECK(!SalRegKeyIdLeadsBack(chain, 2, NULL));
+    const WCHAR* holes[] = {L"", NULL, k};
+    CHECK(!SalRegKeyIdLeadsBack(holes, 2, L"\\REGISTRY"));
+    CHECK(SalRegKeyIdLeadsBack(holes, 3, L"\\REGISTRY"));
+}
+
 // feature 180: system texts with inserts (193 "%1 is not a valid Win32 application.", 216, 34) are
 // formatted - before, FormatMessage without arguments failed (87) and the program showed "System
 // error N, text description is not available."; the inserts become "..." and no '%' is left
@@ -25709,6 +25748,7 @@ int main(int argc, char** argv)
     TestRegKeyId292();
     TestRegHkcrHalf390();
     TestRegKeyIdBelow294();
+    TestRegKeyIdLeadsBack391();
     TestDeleteAsDirLink197();
     TestAttrsLink253();
     TestListedDirIsLink388();

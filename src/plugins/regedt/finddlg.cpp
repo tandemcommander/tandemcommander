@@ -1269,7 +1269,7 @@ BOOL CFindThread::Test(char* text, int len, BOOL name, DWORD type)
 }
 
 BOOL CFindThread::ScanKeyAux(int root, LPWSTR key, BOOL& skip, BOOL& skipAllErrors,
-                             LPWSTR nameBuffer, TIndirectArray<WCHAR>& stack)
+                             LPWSTR nameBuffer, TIndirectArray<WCHAR>& stack, CRegWalkChain& walk)
 {
     CALL_STACK_MESSAGE_NONE
     //  CALL_STACK_MESSAGE4("CFindThread::ScanKeyAux(%d, , %d, %d, , )", root, skip,
@@ -1290,6 +1290,42 @@ BOOL CFindThread::ScanKeyAux(int root, LPWSTR key, BOOL& skip, BOOL& skipAllErro
     // open the key being searched
     if (!SafeOpenKey(root, key, KEY_READ, hKey, IDS_SEARCHERROR, &skip, &skipAllErrors))
         return FALSE;
+
+    // feature 391: the key was opened by name, which follows a registry link - a link to a searched
+    // key, to a key above it, or a cycle of links would search the same tree again and again (the
+    // results repeated ~28 times until Windows stopped following links); such a key is not searched
+    // (silently: what it holds is already being searched). The level is left on every return below
+    CRegWalkLevel walkLevel(walk);
+    if (!WalkStarted)
+    {
+        WalkStarted = TRUE;
+        if (!RegWalkEnterTop(walk, hKey, root, key))
+        {
+            skip = FALSE;
+            RegCloseKey(hKey);
+            return Error(IDS_LOWMEM);
+        }
+    }
+    else
+    {
+        while (1)
+        {
+            BOOL leadsBack;
+            int err = RegWalkEnter(walk, hKey, leadsBack);
+            if (err == ERROR_SUCCESS)
+            {
+                if (!leadsBack)
+                    break;
+                RegCloseKey(hKey);
+                return TRUE; // not searched, no message
+            }
+            if (!RegOperationError(err, IDS_OPEN, IDS_SEARCHERROR, root, key, &skip, &skipAllErrors))
+            {
+                RegCloseKey(hKey);
+                return FALSE; // not searched (fails closed); Retry reads the identity again
+            }
+        }
+    }
 
     // test the values
     FILETIME time, localFileTime;
@@ -1485,7 +1521,7 @@ BOOL CFindThread::ScanKeyAux(int root, LPWSTR key, BOOL& skip, BOOL& skipAllErro
     {
         wcscpy(subkey, stack[i]);
 
-        if (!ScanKeyAux(root, key, skip, skipAllErrors, nameBuffer, stack))
+        if (!ScanKeyAux(root, key, skip, skipAllErrors, nameBuffer, stack, walk))
         {
             if (!skip)
             {
@@ -1513,7 +1549,9 @@ BOOL CFindThread::ScanKey(int root, LPWSTR key, BOOL& skip, BOOL& skipAllErrors,
     WCHAR base[50 + MAX_PREDEF_KEYNAME];
     SalPrintfW(base, 50, LoadStrW(IDS_SEARCHING), PredefinedHKeys[root].KeyName);
     FindDialog->StatusBar->SetBase(base);
-    return ScanKeyAux(root, key, skip, skipAllErrors, nameBuffer, stack);
+    CRegWalkChain walk; // feature 391: one per searched starting key
+    WalkStarted = FALSE;
+    return ScanKeyAux(root, key, skip, skipAllErrors, nameBuffer, stack, walk);
 }
 
 BOOL CFindThread::ScanRegistry(BOOL& skipAllErrors)

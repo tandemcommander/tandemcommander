@@ -295,6 +295,56 @@ BOOL SafeEnumKey(HKEY hKey, int root, LPWSTR key, DWORD& index,
 BOOL SafeRegKeyIsLink(int root, LPWSTR key, BOOL& isLink, int errorTitle, BOOL& skip, BOOL& skipAll);
 BOOL SafeDeleteRegLink(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipAll);
 
+// feature 391: the identities of the keys a walk (Copy, Find) is inside, from its start down to the
+// current key. Every subkey is opened by name, which follows a registry link; a key that is one of
+// these or a key above one of them would lead the walk round the same tree again
+// (SalRegKeyIdLeadsBack, src/common/salregkeyid.h)
+class CRegWalkChain
+{
+public:
+    CRegWalkChain() : Ids(NULL), Count(0), Capacity(0) {}
+    ~CRegWalkChain()
+    {
+        PopTo(0);
+        free(Ids);
+    }
+    int GetCount() const { return Count; }
+    BOOL Push(const WCHAR* id); // a heap copy; FALSE = low memory
+    void PopTo(int count);
+    BOOL LeadsBack(const WCHAR* id) const { return SalRegKeyIdLeadsBack(Ids, Count, id); }
+
+private:
+    WCHAR** Ids;
+    int Count;
+    int Capacity;
+    CRegWalkChain(const CRegWalkChain&) = delete;
+    CRegWalkChain& operator=(const CRegWalkChain&) = delete;
+};
+
+// a walk's level: the chain gets back the length it had when the walk entered the key, on every
+// return path of the walk's function
+class CRegWalkLevel
+{
+public:
+    explicit CRegWalkLevel(CRegWalkChain& chain) : Chain(chain), Mark(chain.GetCount()) {}
+    ~CRegWalkLevel() { Chain.PopTo(Mark); }
+
+private:
+    CRegWalkChain& Chain;
+    int Mark;
+    CRegWalkLevel(const CRegWalkLevel&) = delete;
+    CRegWalkLevel& operator=(const CRegWalkLevel&) = delete;
+};
+
+// the walk's starting key 'root'\'key', opened as 'hKey': all its identities (a root's, both halves of
+// HKEY_CLASSES_ROOT, the opened key's own) - best effort, errors are ignored (without them a loop is
+// caught one level later); FALSE only on low memory
+BOOL RegWalkEnterTop(CRegWalkChain& chain, HKEY hKey, int root, LPCWSTR key);
+// a key below the start, opened by name as 'hKey': 'leadsBack' = it is a walked key or above one (not
+// added); otherwise its identity is added. Returns a Win32 error code (the identity cannot be read,
+// low memory) - the caller does not go on with the key
+int RegWalkEnter(CRegWalkChain& chain, HKEY hKey, BOOL& leadsBack);
+
 BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
                    BOOL move, BOOL& skip,
                    BOOL& skipAllErrors, BOOL& skipAllLongNames,
