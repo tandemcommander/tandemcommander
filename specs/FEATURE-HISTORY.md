@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -6176,3 +6176,37 @@ a few early ones are out of sequence).
   person step recorded; NOTE 1 fixed - a half whose key denies listing counts as holding it, the
   reviewer's "open with no access right" is refused by Windows, caught by the probe; NOTE 2 to the
   Inbox `registry-editor-hkcr-move-both-halves-leaves-machine-half`).
+- 391-regedt-link-loop: the Registry Editor's Copy (F5, drag and drop) of a key whose tree holds a
+  registry link (`REG_OPTION_CREATE_LINK`, makeable unelevated under HKCU) to the copied key, to a key
+  above it, or a cycle of links, walked the same tree again and again - measured: a chain 27-28 keys
+  deep (38-55 keys) written into the target, ended not by the name limit but by Windows refusing to
+  follow more links (error 87); Find listed the same key 10-28 times and ended with that error box
+  (upstream; found by 297) - now each walk (`CopyOrMoveKeyRec` in `fs5.cpp`, `CFindThread::ScanKeyAux`
+  in `finddlg.cpp`) keeps the identities (292's internal key names, `NtQueryKey` on the already opened
+  handle) of the keys it is inside (`CRegWalkChain`, `CRegWalkLevel` pops on every return; the starting
+  key with all its identities - roots, both HKCR halves - best effort); a subkey whose opened identity
+  is one of them or a key above one (`SalRegKeyIdLeadsBack`, `src/common/salregkeyid.h`) is not
+  followed: Copy refuses it before writing anything with 296's existing "Can't copy a key to itself."
+  box naming it (OK skips, Cancel stops), Find skips it silently (its contents are already being
+  searched). Copy also keeps the target keys it is writing now (one per level) and refuses a source key
+  that is one of them or holds one - a link to the target's parent copied the copy 28 deep (review 1
+  SHOULD). Links elsewhere, also to other keys of the target, are followed as before; no new string.
+  Traps: some keys (`HKLM\...\CurrentVersion\Perflib\009`, `\CurrentLanguage`, the other languages)
+  open as predefined pseudo-handles (`HKEY_PERFORMANCE_TEXT` / `_NLSTEXT`) with no identity - the first
+  version turned them into a "(6) The handle is invalid" box in every Find over HKLM (review 1 MUST;
+  `SalRegIsPseudoKeyHandle`, neither checked nor added); "the source key lies in the target" refused
+  294's allowed merge into the key above the parent (caught by 294's probe) and, narrowed, still links
+  into the target that never looped (review 2 SHOULD) - only "holds a key being written" is a loop; an
+  identity buffer in the recursion's frame added 2.6 KB a level (now `noinline` helpers); 257's way to
+  open Find (plug-in hot key Ctrl+Shift+G) is the program's *Go to Shortcut* when the opt-in
+  browser-like tab shortcuts (312) are on - the probe uses Ctrl+Shift+J; a Bash here-document collapsed
+  doubled backslashes in saltests strings and a probe `'\'` again; a rebuild while probes ran failed
+  with LNK1168. Limits: the box has no Skip All (296's); Move reaches the check only after 297's link
+  refusal; a walk whose start has no readable identity catches a loop one level later; a key reached
+  through a link whose real name is 1280 units or longer gets the open-error box (fails closed); an
+  HKCR target whose new subkeys land in the other half is not caught (Windows stops it with error 87 as
+  before). From backlog item `registry-editor-copy-or-find-through-a-link-to-an-ancestor`. Probe
+  `loop391_probe.ps1` 8 PASS / 11 FAIL -> 28 / 0 (English and Czech; negative controls: the leads-back
+  test off 11 FAIL, the pseudo-handle and target checks off 3 FAIL); 292's 33 / 0, 294's 24 / 0, 296's
+  47 / 0, 297's 40 / 0, 390's 10 / 0; saltests 30,755 -> 30,798 / 0; two refute-first reviews (review
+  1: one MUST, one SHOULD fixed; review 2: no MUST, one SHOULD fixed, stack NOTE fixed).

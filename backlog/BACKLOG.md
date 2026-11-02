@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor: Copy or Find through a link to an ancestor walks in a loop](items/registry-editor-copy-or-find-through-a-link-to-an-ancestor/desc.md) | bug | 4 | other-plugins | 391 |
 
 ## Next
 
