@@ -8,7 +8,7 @@ source: review:400
 who: agent
 created: 2026-11-02
 updated: 2026-11-02
-verified: -
+verified: 2026-11-02 53eb98ab
 effort: S
 feature: -
 related: []
@@ -61,3 +61,4 @@ key); count walks (`CountUnder`, `VisitedLog`) take their keys out the same way.
 - 2026-11-02 — created (source review:400)
 - 2026-11-02 — related item iso-plug-in-after-a-folder-that-cannot-be-read-no-later done in feature 400
 - 2026-11-02 — moved to Next position 1
+- 2026-11-02 — verified at 53eb98ab: reproduced at 53eb98ab: crafted plain ISO 9660 images (img401.py), Unpack with delete - second folder at one block with another length listed empty, image deleted (probe iso401 before 6/4)
