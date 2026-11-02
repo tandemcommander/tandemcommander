@@ -68,7 +68,7 @@ its own name matches.
 - A link to the copied key's parent or any key above it, also above the place where the walk started (a link to the root's key): not followed.
 - A cycle through several links whose target names never repeat a walked path: decided by what each opened key is (its identity), not by the path text.
 - `HKEY_CLASSES_ROOT` (a merged view): the walk's starting key counts with every half that holds it.
-- Move (F6) and Quick Rename: feature 297 already refuses a link source before it is read; unchanged.
+- Move (F6) and Quick Rename: feature 297 already refuses a link source before it is read, so the new check (which runs in the shared recursion for Move too, with the Move wording of the same box) is never reached through a link; Move behaves as before.
 - The identity of a key below the start cannot be read (practically only an internal name longer than the identity limit): the existing open-error box (Retry / Skip / Skip All / Cancel) - fails closed, nothing of that key copied or searched.
 - The walk's starting key or root has no readable identity: the check works one level later (every key below the start is checked against the keys walked), never refuses a key wrongly.
 
