@@ -1176,9 +1176,13 @@ int CZipPack::CreateTempFile()
             if (target != NULL && strlen(target) < U8_MAX_PATH) // never cut (rule 097): a longer one is not used
             {
                 ReplaceTarget = target;
-                DWORD attr = GetFileAttributesW(wTarget); // the real archive's attributes, not the link's own
+                // the real archive's attributes, not the link's own (the \\?\ form: a long path too)
+                WCHAR* wTargetExt = SplU8ToWExtAlloc(target);
+                DWORD attr = wTargetExt != NULL ? GetFileAttributesW(wTargetExt) : INVALID_FILE_ATTRIBUTES;
                 if (attr != INVALID_FILE_ATTRIBUTES)
                     ZipAttr = attr;
+                if (wTargetExt != NULL)
+                    free(wTargetExt);
             }
             else if (target != NULL)
                 free(target);

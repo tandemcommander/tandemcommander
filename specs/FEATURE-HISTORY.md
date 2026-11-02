@@ -33,7 +33,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395, 396 |
-| ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
+| ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320, 399 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
@@ -6357,3 +6357,27 @@ a few early ones are out of sequence).
   `viewer-find-pre-fills-a-non-ascii-selection-as-code-page`. Probe `seed398_probe.ps1` 8 / 4 ->
   14 / 0 (7 rows); 397's 8 / 0, 311's 26 / 0; saltests 282,230 / 0 (negative controls 28 and 2
   failed); one refute-first review (no MUST; SHOULD 1 code page 65001 fixed, SHOULD 2 -> Inbox).
+- 399-zip-symlink-archive: since 320 the ZIP plug-in (default "create temporary backup of zip")
+  could not add files to or delete members from an archive whose name is a file symbolic link
+  (`a.zip` -> `real\a.zip`, absolute or relative target): the temporary file was made next to the
+  link and ReplaceFileW onto the link fails (1464), so the user got "Cannot replace original archive
+  with temporary working file. Archive was not changed." (true; before 320 the link became a plain
+  file and the real archive stayed old) - now `CZipPack::CreateTempFile` resolves the name once with
+  the archive open: a name that is itself a name-surrogate reparse point and not a folder (the pure
+  `SalReplaceFollowsName`) is replaced at the opened file's final path (`SalReplaceTargetOfLinkW`,
+  `\\?\` removed by `SalFinalPathPlainW`, `src/common/salsafereplace.h`), the `Sal*.tmp` is made in
+  the real archive's folder (its volume), the real archive's attributes are kept (read through the
+  `\\?\` form), messages still name the link; the link stays the same link. A plain file, a hard
+  link, a cloud placeholder and a folder reached through a junction keep their own name (the
+  junction case already worked - measured); an unresolvable link or a target longer than the
+  plug-in's buffers fails safe as before. Traps: a Bash here-document collapsed the backslashes of
+  a backlog item and the fix-log (123 - repaired with the editor); clang-format re-flows unrelated
+  old parts of `saltests.cpp` - format only the new code. Limits: Pack's Overwrite into a link name
+  and a cancelled pack into an empty archive through a link still act on the link (Inbox
+  `pack-overwrite-into-an-archive-reached-through-a-symbolic`). From backlog item
+  `zip-cannot-update-an-archive-reached-through-a-symbolic-link`. Probe `zipsymlink_probe.ps1`
+  14 / 4 -> 18 / 0 (9 rows: add / delete through an absolute and a relative link, a junction, a
+  plain archive, a held real archive); 320's 12 / 0; saltests 282,271 / 0 (`TestSafeReplace399`,
+  the replace onto the link's name as its negative control: 1464, kept); one refute-first review
+  (no MUST, no SHOULD; NOTE 1 long-path attribute read fixed, NOTE 2 -> Inbox; hidden attribute,
+  link chains, another volume, SUBST and UNC targets checked).

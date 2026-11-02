@@ -1,6 +1,6 @@
-zipsymlink_probe after
+zipsymlink_probe after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-02 13:31; ACP 1250; registry key existed True; OS Microsoft Windows NT 10.0.26300.0
+Date    : 2026-11-02 13:42; ACP 1250; registry key existed True; OS Microsoft Windows NT 10.0.26300.0
 Fixture C:\Users\pavel\AppData\Local\Temp\tc_zipsymlink
 
 add-plain  RUN    PASS        held: 0; shown: [#32770 'Question'] The file "a.zip" already exists. Do you want to add 1 directory into existing archive or overwrite existing one? | || [#32770 'Add Files to Archive'] Archive: | C:\Users\pavel\AppData\Local\Temp\tc_zipsymlink\add-plain\src\a.zip |  &Volume Size: |   [Button id=10 ...(152)... od  |; new: none; changed: 'src\a.zip'; real archive entries: 'keep.txt', 'plain/', 'plain/f.txt', 'seed.txt'

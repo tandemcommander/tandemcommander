@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ZIP cannot update an archive reached through a symbolic link](items/zip-cannot-update-an-archive-reached-through-a-symbolic-link/desc.md) | bug | 4 | archives | 399 |
 
 ## Next
 
@@ -305,6 +304,8 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Delete the review scratch folder rev399scratch_eB on drive E](items/delete-the-review-scratch-folder-rev399scratch-eb-on-drive-e/desc.md) | person-step | 1 | tooling | leftover:399 | 2026-11-02 |
+| [Pack Overwrite into an archive reached through a symbolic link replaces the link](items/pack-overwrite-into-an-archive-reached-through-a-symbolic/desc.md) | bug | 3 | archives | review:399 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 
 ## Parked

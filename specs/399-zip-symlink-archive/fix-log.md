@@ -56,7 +56,7 @@ Round 2 (after the fix): CRITICAL 0, HIGH 0; C1-C3 as accepted.
 ## Implementation
 
 - `src/common/salsafereplace.h`: `SalReplaceFollowsName` (pure: reparse point, not a folder,
-  name-surrogate tag), `SalFinalPathPlainW` (pure: `\?\C:\` / `\?\UNC\` -> plain, anything else
+  name-surrogate tag), `SalFinalPathPlainW` (pure: `\\?\C:\` / `\\?\UNC\` -> plain, anything else
   NULL), `SalReplaceTargetOfLinkW` (FindFirstFileW tag of the name + GetFinalPathNameByHandleW of the
   open handle). Existing functions unchanged.
 - `src/plugins/zip/add_del.h/.cpp`: `CZipPack::ReplaceTarget` (UTF-8, heap, NULL = ZipName).
@@ -84,3 +84,29 @@ Round 2 (after the fix): CRITICAL 0, HIGH 0; C1-C3 as accepted.
 - `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
 - clang-format applied to the new code only (it would also re-flow unrelated old parts of
   `saltests.cpp` and an include block of `add.cpp` - those were left as they were).
+
+## Review
+
+Review 1 (general-purpose agent, refute-first): **no MUST, no SHOULD**, 2 NOTE. It re-ran the probe
+on the branch build (18 / 0, registry identical), saltests (282271 / 0) and the encoding guard (0);
+enumerated the callers (`PackNormal`, `DeleteFromArchive` only; the archive is open share-read
+while it is resolved, so the replaced file is the file read); checked the panel refresh (the core's
+`GetFileTime` follows the link); ran a copy of the probe with a hidden real archive (attributes
+0x22 kept through add and delete - FR-005 proven, the analysis' C1 closed); and resolved, with a
+test program on the header, a chain of two links, a link through a junction, a link to another
+volume (C: -> E:, the temporary file on E:, srrDone, link kept), a link to a SUBST drive, a link to
+`\\localhost\E$\...` (UNC form), an upper-case name, and a link to a hard link.
+
+- NOTE 1 (`add.cpp` `CreateTempFile`: the real archive's attributes read through the plain path - with
+  `LongPathsEnabled=0` and a target of 260+ characters the read fails, `ZipAttr` keeps the link's
+  0x420 and a hidden / system attribute of the real archive is dropped after the replace; content
+  safe) -> fixed: the attributes are read through `SplU8ToWExtAlloc(target)` (the `\\?\` form).
+  Rebuilt: BUILD SUCCEEDED; probe 18 / 0 (registry identical); saltests 282271 / 0.
+- NOTE 2 (Pack's Overwrite into a link name moves the link aside and writes a plain file there; a
+  cancelled pack into a zero-length archive deletes `ZipName`, the link) -> outside this item (add
+  and delete only): Inbox item `pack-overwrite-into-an-archive-reached-through-a-symbolic`
+  (review:399).
+- Clean-up: the reviewer left `E:\rev399scratch_eB` (one 4-byte `y.zip`); the run's sandbox refused
+  to delete it -> person step `delete-the-review-scratch-folder-rev399scratch-eb-on-drive-e`.
+
+No second review was needed (no MUST).
