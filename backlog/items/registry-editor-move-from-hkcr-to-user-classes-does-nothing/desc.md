@@ -1,7 +1,7 @@
 ---
 title: Registry Editor: Move from HKCR into the user's Classes key does nothing
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: other-plugins
 source: review:292
@@ -10,7 +10,7 @@ created: 2026-10-21
 updated: 2026-11-02
 verified: 2026-11-02 129136b4
 effort: S
-feature: -
+feature: 390
 related: []
 depends-on: []
 reason: -
@@ -54,3 +54,4 @@ function that silently does not work, nothing lost.
 - 2026-10-22 — related item registry-editor-move-of-a-key-onto-itself-through-hkey-users done in feature 292
 - 2026-10-22 — moved to Next position 25
 - 2026-11-02 — verified at 129136b4: probe hkcr390 MACHUSER at 129136b4: F6 of machine-only HKCR\.386 into HKCU Classes - no box, user copy deleted again, machine key unchanged
+- 2026-11-02 — run started, feature 390
