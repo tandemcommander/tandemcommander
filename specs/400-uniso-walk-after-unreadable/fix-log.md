@@ -21,3 +21,9 @@ Backlog item `iso-plug-in-after-a-folder-that-cannot-be-read-no-later` (leftover
 See spec *Clarifications*: one box per file system walk; a damaged folder's own tail is not walked;
 out of memory / core refusal still stop later descents; UDF and Xbox walks get a visited set (328's
 rule).
+
+## speckit-analyze
+
+- Run 1: 0 CRITICAL, 0 HIGH; MEDIUM I1 (FR-003 vs the unchanged core-refusal boxes) fixed in spec.md;
+  LOW C1 (FR-007 covered by the build), C2 (no row for a hybrid with both parts damaged - follows from
+  one walk per file system) accepted.

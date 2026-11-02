@@ -150,8 +150,9 @@ limit, the program answers, one box at most; feature 328's LOOP rows still pass.
   with the parent directory's next records and descend every later listed folder.
 - **FR-002**: The listing MUST stay marked incomplete whenever any folder of the walk could not be
   read (feature 330): a whole unpack fails and "Delete archive after unpacking" keeps the image.
-- **FR-003**: A walk MUST show at most one error box for failures met inside its folder walk; later
-  failures of the same walk are silent but mark the listing incomplete.
+- **FR-003**: A walk MUST show at most one error box for the read failures and out of memory met
+  inside its folder walk; later ones of the same walk are silent but mark the listing incomplete (the
+  box of an entry the core refuses is FR-004's, unchanged).
 - **FR-004**: Out of memory MUST still end every later descent of the walk (unchanged); the box rule
   of FR-003 applies to its box too. An entry the core refuses after the listing's rule took it keeps
   its feature 328 / 329 handling and box.
