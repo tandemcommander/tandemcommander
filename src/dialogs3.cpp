@@ -2418,6 +2418,12 @@ void CChangeIconDialog::GetShell32(char* fileName)
         SetDlgItemText(HWindow, IDE_CHI_FILENAME, fileName);
 }
 
+void CChangeIconDialog::Validate(CTransferInfo& ti)
+{
+    // feature 389: Transfer reads the name into 260 bytes - a longer one was stored cut
+    DlgItemTextFitsU8(HWindow, IDE_CHI_FILENAME, &ti, MAX_PATH);
+}
+
 void CChangeIconDialog::Transfer(CTransferInfo& ti)
 {
     ti.EditLine(IDE_CHI_FILENAME, IconFile, MAX_PATH);
@@ -2446,6 +2452,11 @@ void CChangeIconDialog::Transfer(CTransferInfo& ti)
 
 BOOL CChangeIconDialog::LoadIcons()
 {
+    // feature 389: a name whose UTF-8 does not fit is refused before it is read - the code-page
+    // fallback below read another name, said it cannot be found and put SHELL32.DLL into the field;
+    // the list keeps its icons, the field its text, and OK is refused by Validate
+    if (!DlgItemTextFitsU8(HWindow, IDE_CHI_FILENAME, NULL, MAX_PATH))
+        return FALSE;
     char fileName[MAX_PATH];
     WCHAR fileNameW[MAX_PATH]; // the name is UTF-8 (feature 004): read as wide text
     fileNameW[0] = 0;

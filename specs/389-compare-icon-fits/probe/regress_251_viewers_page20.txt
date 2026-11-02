@@ -1,0 +1,11 @@
+dlg251_probe (feature 251) regress-389-viewers-page20
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 02:46; ACP 1250; registry key existed True
+
+vw-cmd     RUN    PASS        typed 97 units / 277 bytes (field was 0 units); dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; field after OK: (refused) the field at the refusal: 97 units / 277 bytes, same as typed: True
+vw-cmd     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+vw-ctl     RUN    PASS        typed 91 units / 259 bytes (field was 0 units); dialog stayed: False; asked: nothing; field after OK: 91 units / 259 bytes, same as typed: True, tail '...\u4E4D\u4E4E\u4E4F\u4E50\u4E51\u4E52\u4E53\u4E54.exe'
+vw-ctl     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

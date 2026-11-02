@@ -302,6 +302,7 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Probe 251 opens the Tabs-shifted page for its Viewers rows (page index 19)](items/probe-251-opens-the-tabs-shifted-page-for-its-viewers-rows/desc.md) | tech-debt | 2 | tooling | measure:389 | 2026-11-02 |
 
 ## Parked
 

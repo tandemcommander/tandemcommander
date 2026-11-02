@@ -961,6 +961,7 @@ public:
     CChangeIconDialog(HWND hParent, char* iconFile, int* iconIndex);
     ~CChangeIconDialog();
 
+    virtual void Validate(CTransferInfo& ti); // feature 389: the file name whole or refused
     virtual void Transfer(CTransferInfo& ti);
 
 protected:

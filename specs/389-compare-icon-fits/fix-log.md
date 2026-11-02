@@ -56,3 +56,24 @@ Command:
 the OK click's focus change - the same EN_KILLFOCUS handler as Tab to the list), C2 LOW (no row
 with both names too long - name 1 is measured first by construction), C3 LOW (FR-005 no new string
 - checked in the diff), U1 LOW (CHANGELOG entry - closing step).
+
+## Implementation
+
+- `src/dialogs2.cpp` `CCompareArgsDlg::Validate`: `DlgItemTextFitsU8(IDE_UMC_NAME1)` then
+  `(IDE_UMC_NAME2)`, `&ti`, `MAX_PATH`, before the empty checks.
+- `src/dialogs.h` + `src/dialogs3.cpp`: new `CChangeIconDialog::Validate`
+  (`DlgItemTextFitsU8(IDE_CHI_FILENAME, &ti, MAX_PATH)`); `CChangeIconDialog::LoadIcons` refuses
+  first (`DlgItemTextFitsU8(..., NULL, MAX_PATH)`, return FALSE - the list and the field untouched).
+- No UI string, menu or dialog resource changed (no `.slt` refresh needed, §2.13 does not apply).
+
+## Checks (after)
+
+| Check | Command | Result |
+|---|---|---|
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| build | `.\build.cmd` | `BUILD SUCCEEDED` |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 30740 checks, 0 failed` |
+| negative control | probe on a build with T002-T004 only (no `LoadIcons` check) | `result_negative_control.txt` 9 / 1 FAIL: umc rows PASS, **chi-file FAIL** ("Cannot find ...???.exe", SHELL32.DLL stored) - `Validate` alone does not fix Change Icon, as measured before |
+| probe after | `fit389_probe.ps1 -Label after` | `result_after.txt` **10 / 0**: umc-name1 / umc-name2 refused ("The path specified is too long.", stayed, the field whole, the command wrote nothing); umc-ctl whole; chi-file refused at the reload (OK 1) and at OK 2, the field whole (140 units / 312 bytes), the list kept cmd.exe's 1 icon; chi-ctl stored whole. Registry restored, identical |
+| regression 291 | `mask291_probe.ps1 -Label regress-389` | `probe/regress_291.txt` **34 / 0** |
+| regression 251 | `dlg251_probe.ps1 -Label regress-389` | `probe/regress_251.txt` 38 / **4 FAIL**: `vw-cmd`, `vw-ctl` ERROR `list 584 not found` - the probe seeds `Last Focused Page` 19, which since feature 312 (the Tabs page) is the "Viewers and Editors" parent page; this feature touches no configuration page. A scratchpad copy with page 20, only those rows: `probe/regress_251_viewers_page20.txt` **4 / 0**. The probe drift is Inbox item `probe-251-opens-the-tabs-shifted-page-for-its-viewers-rows` (measure:389) |

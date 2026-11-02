@@ -1226,6 +1226,11 @@ CCompareArgsDlg::CCompareArgsDlg(HWND parent, BOOL comparingFiles, char* compare
 
 void CCompareArgsDlg::Validate(CTransferInfo& ti)
 {
+    // feature 389: both names whole before anything else - Transfer read them cut at 259 bytes and
+    // the command was started with other names
+    if (!DlgItemTextFitsU8(HWindow, IDE_UMC_NAME1, &ti, MAX_PATH) ||
+        !DlgItemTextFitsU8(HWindow, IDE_UMC_NAME2, &ti, MAX_PATH))
+        return;
     char buf[MAX_PATH];
     ti.EditLine(IDE_UMC_NAME1, buf, MAX_PATH);
     if (buf[0] == 0)
