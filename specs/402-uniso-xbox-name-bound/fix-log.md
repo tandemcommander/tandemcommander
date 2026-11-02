@@ -32,3 +32,42 @@ Backlog item `iso-plug-in-an-xbox-entry-name-can-be-read-past-the-end-of` (sourc
   same to its parent (`SalIsoWalkAfterChild`).
 - Box: `IDS_ERROR_LISTING_IMAGE` with the directory's sector, `SalIsoWalkBoxQuiet(Walk, false)` (once per
   walk) - no new string, no translation work.
+
+## Analyze
+
+- speckit-analyze: 0 CRITICAL, 0 HIGH; LOW C1 accepted - no probe row with two damaged Xbox directories
+  (the one box per walk is 400's shared `SalIsoWalkBoxQuiet`, proven by 400's XD-TWO / XD-MANY rows).
+
+## Implementation
+
+- `src/common/salisoxboxentry.h` (new, header-only): `SalIsoXboxEntryHeadFits(size, offset)` and
+  `SalIsoXboxEntryFits(size, offset, nameLen, next)` - 64-bit, no wrap; `next` = the name's end rounded up
+  to 4.
+- `src/plugins/uniso/xdvdfs.cpp` `CXDVDFS::ScanDir`: the loop and the padding check by
+  `SalIsoXboxEntryHeadFits` (the same values, no wrap); before the name is copied `SalIsoXboxEntryFits` -
+  false: `Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, false), sector)`,
+  `ret = SalIsoWalkAfterChild(ret, ERR_TERMINATE)` (= ERR_CONTINUE), `break`; the next offset from the rule
+  (past the data ends the walk; the old 32-bit `((offset + 3) / 4) * 4` could wrap to 0 for a directory
+  near 4 GiB).
+- First build: `C1083 salisoxboxentry.h` - uniso includes common headers by `../../common/` (as
+  `salisowalk.h`); fixed. Warning C4267 at xdvdfs.cpp line 119 is upstream's (`fd.NameLen = strlen`), untouched.
+- `src/saltests/saltests.cpp` `TestIsoXboxEntry402`: the bounds (exact fit, one over, 255, empty name,
+  offset past size, near 2^32) and a model walk of ScanDir over the probe's directories, a two-sector
+  directory and a cut second sector - `outside == 0` for the walk with the rule; the walk without it reads
+  `len - 2` bytes outside (the defect, asserted).
+
+## Measurement after
+
+- `.\build.cmd` -> BUILD SUCCEEDED; saltests `282,383 checks, 0 failed` (main: 282,328 + 55 new).
+- `iso402_probe` after: PASS 10 / FAIL 0 (`probe/result_after.txt`): XD-NAME, XD-OVER1, XD-MAX
+  `files 2: top.txt, zlast/z.txt`, one box "Error reading directory structure at sector #00000021",
+  image kept; XD-SUB `a/side.txt, top.txt, zlast/z.txt`, one box (sector #00000022), kept; XD-EDGE
+  unchanged (zz listed, no window, image deleted). Registry restored, identical hash.
+- Negative control (the name bound of `SalIsoXboxEntryFits` replaced by `if (false)` in the tree,
+  rebuilt, then restored from a saved copy and rebuilt): saltests 17 failed; `iso402_probe` 6 / 4
+  (`probe/result_negctl.txt`, the before picture: `zzý...`, no box, image deleted) - the probe
+  proves the plug-in's use of the rule.
+- Regressions on the final build: `iso401_probe` 10 / 0 (`probe/regress_401.txt`), `iso400_probe`
+  48 / 0 (`probe/regress_400.txt`, WSL seeds made, no NOT DRIVEN).
+- Encoding guard `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- No UI string, menu or dialog changed: no `.slt` refresh (stop-rules §2.13 not triggered).

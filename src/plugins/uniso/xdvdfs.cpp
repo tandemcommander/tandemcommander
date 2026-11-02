@@ -7,6 +7,7 @@
 #include "uniso.h"
 #include "isoimage.h"
 #include "xdvdfs.h"
+#include "../../common/salisoxboxentry.h" // feature 402: the bounds of a directory entry
 
 // feature 400: the walk results of salisowalk.h are the plug-in's
 static_assert(ERR_OK == SAL_ISO_WALK_OK && ERR_CONTINUE == SAL_ISO_WALK_CONTINUE &&
@@ -270,7 +271,7 @@ int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryA
 
     DWORD offset = 0;
     int ret = ERR_OK;
-    while ((offset + 0x0E) <= size && (ret != ERR_TERMINATE))
+    while (SalIsoXboxEntryHeadFits(size, offset) && (ret != ERR_TERMINATE)) // feature 402: no wrap
     {
         if (*(Uint32*)(data + offset) == 0xFFFFFFFF)
         {
@@ -280,7 +281,7 @@ int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryA
             {
                 offset++;
             }
-            if ((offset + 0x0E > size) || (0 != (offset & (SECTOR_SIZE - 1))))
+            if (!SalIsoXboxEntryHeadFits(size, offset) || (0 != (offset & (SECTOR_SIZE - 1))))
             {
                 // Unexpected: either the rest of the data was padded or the padding didn't reach the end of the sector
                 // -> bail out to prevent unpredictable behavior
@@ -296,6 +297,17 @@ int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryA
 
         // get filename
         BYTE len = GET_BYTE(data, offset + 0x000D);
+        // feature 402: the name lies whole in the directory's data - else a damaged record (the name was
+        // copied from past the buffer: bytes of the heap in a listed name, the listing not marked, the image
+        // deleted by a whole unpack); the walk of this directory ends there - its entries so far stay listed,
+        // the walk's one box, the listing marked incomplete (ERR_CONTINUE: in the root too, the image opens)
+        unsigned long long next;
+        if (!SalIsoXboxEntryFits(size, offset, len, next))
+        {
+            Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, false), sector);
+            ret = SalIsoWalkAfterChild(ret, ERR_TERMINATE);
+            break;
+        }
         char fileName[2 * MAX_PATH + 1];
         strncpy_s(fileName, (char*)data + offset + 0x000E, len);
         // format boundary (interface 104): XDVDFS stores the name as plain bytes
@@ -328,9 +340,10 @@ int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryA
             path[pathLen] = '\0';
         }
 
-        offset += 0x000E + len;
-        // align the offset to a DWORD
-        offset = ((offset + 3) / 4) * 4;
+        // the next entry, aligned to a DWORD (feature 402: from the rule - past the data ends the walk)
+        if (next > size)
+            break;
+        offset = (DWORD)next;
     }
 
     delete[] data;

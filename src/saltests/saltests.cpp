@@ -122,6 +122,7 @@
 #include "salhexfield.h"       // feature 397
 #include "salfindseed.h"       // feature 398
 #include "salisowalk.h"        // feature 400
+#include "salisoxboxentry.h"   // feature 402
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -26817,6 +26818,157 @@ static void TestIsoWalk401()
     CHECK(walked == 1 + 31); // root and one walk per length (2048 .. 63488)
 }
 
+// Feature 402: the bounds of an Xbox (XDVDFS) directory entry (src/common/salisoxboxentry.h) - the
+// entry's head and its whole name lie in the directory's bytes, computed without wrap; a model walk
+// of CXDVDFS::ScanDir over crafted directories reads only inside them.
+static std::vector<unsigned char> XboxEntry402(const char* name, int lenOverride = -1, bool pad = true)
+{
+    size_t n = strlen(name);
+    std::vector<unsigned char> e(SAL_ISO_XBOX_ENTRY_HEAD, 0);
+    e[12] = 0x80;
+    e[13] = (unsigned char)(lenOverride >= 0 ? lenOverride : (int)n);
+    e.insert(e.end(), name, name + n);
+    while (pad && e.size() % 4 != 0)
+        e.push_back(0xFF);
+    return e;
+}
+
+// the walk of ScanDir on 'dir' (sector size 'sector'): the names listed, 'damaged' when a record ended it,
+// 'outside' = bytes it read past the directory; 'bound' false = the walk before 402 (the head checked only)
+static std::vector<std::string> XboxWalk402(const std::vector<unsigned char>& dir, bool bound, bool& damaged,
+                                            int& outside, unsigned long sector = 2048)
+{
+    std::vector<std::string> names;
+    damaged = false;
+    outside = 0;
+    unsigned long long size = dir.size();
+    unsigned long long offset = 0;
+    int guard = 0;
+    while (SalIsoXboxEntryHeadFits(size, offset) && guard++ < 10000)
+    {
+        if (dir[(size_t)offset] == 0xFF && dir[(size_t)offset + 1] == 0xFF && dir[(size_t)offset + 2] == 0xFF &&
+            dir[(size_t)offset + 3] == 0xFF)
+        {
+            while (offset < size && dir[(size_t)offset] == 0xFF && (offset & (sector - 1)) != 0)
+                offset++;
+            if (!SalIsoXboxEntryHeadFits(size, offset) || (offset & (sector - 1)) != 0)
+                break;
+        }
+        unsigned int len = dir[(size_t)offset + 13];
+        unsigned long long next = 0;
+        if (bound)
+        {
+            if (!SalIsoXboxEntryFits(size, offset, len, next))
+            {
+                damaged = true;
+                break;
+            }
+        }
+        else
+            next = (offset + SAL_ISO_XBOX_ENTRY_HEAD + len + 3) / 4 * 4;
+        std::string name;
+        for (unsigned int k = 0; k < len; k++)
+        {
+            unsigned long long at = offset + SAL_ISO_XBOX_ENTRY_HEAD + k;
+            if (at >= size)
+            {
+                outside++;
+                name += '?';
+            }
+            else
+                name += (char)dir[(size_t)at];
+        }
+        names.push_back(name);
+        if (next > size)
+            break;
+        offset = next;
+    }
+    return names;
+}
+
+static void TestIsoXboxEntry402()
+{
+    unsigned long long next = 1;
+    // the head
+    CHECK(SalIsoXboxEntryHeadFits(14, 0));
+    CHECK(!SalIsoXboxEntryHeadFits(13, 0));
+    CHECK(SalIsoXboxEntryHeadFits(60, 44));
+    CHECK(!SalIsoXboxEntryHeadFits(60, 47));
+    CHECK(!SalIsoXboxEntryHeadFits(60, 61)); // an offset past the size
+    CHECK(!SalIsoXboxEntryHeadFits(0, 0));
+    CHECK(!SalIsoXboxEntryHeadFits(0xFFFFFFFFULL, 0xFFFFFFF2ULL)); // 32-bit offset + 14 would wrap to 0
+    CHECK(SalIsoXboxEntryHeadFits(0xFFFFFFFFULL, 0xFFFFFFF1ULL));
+    // the name: exactly to the end, one byte over
+    CHECK(SalIsoXboxEntryFits(60, 44, 2, next) && next == 60);
+    CHECK(!SalIsoXboxEntryFits(60, 44, 3, next) && next == 0);
+    CHECK(!SalIsoXboxEntryFits(60, 44, 200, next));
+    CHECK(!SalIsoXboxEntryFits(60, 44, 255, next));
+    CHECK(SalIsoXboxEntryFits(14 + 255, 0, 255, next) && next == 272); // the largest name, rounded up to 4
+    CHECK(!SalIsoXboxEntryFits(14 + 254, 0, 255, next));
+    CHECK(SalIsoXboxEntryFits(14, 0, 0, next) && next == 16); // an empty name (past the size by 2: the walk ends)
+    CHECK(SalIsoXboxEntryFits(24, 0, 7, next) && next == 24);  // top.txt: 21 bytes -> 24
+    CHECK(SalIsoXboxEntryFits(2048, 2028, 6, next) && next == 2048);
+    CHECK(!SalIsoXboxEntryFits(2048, 2040, 0, next)); // the head itself does not fit
+    CHECK(!SalIsoXboxEntryFits(60, 61, 0, next));
+    // near 4 GiB: no wrap (next is past 0xFFFFFFFF, the 32-bit rounding gave 0)
+    CHECK(SalIsoXboxEntryFits(0xFFFFFFFFULL, 0xFFFFFFF0ULL, 1, next) && next == 0x100000000ULL);
+    CHECK(!SalIsoXboxEntryFits(0xFFFFFFFFULL, 0xFFFFFFF0ULL, 2, next));
+    CHECK(!SalIsoXboxEntryFits(0xFFFFFFFFULL, 0xFFFFFFF0ULL, 255, next));
+
+    // model directories as the probe's images (img402.py)
+    std::vector<unsigned char> head, d;
+    for (const char* n : {"top.txt", "zlast"})
+    {
+        std::vector<unsigned char> e = XboxEntry402(n);
+        head.insert(head.end(), e.begin(), e.end());
+    }
+    CHECK(head.size() == 44);
+    bool damaged = false;
+    int outside = 0;
+    struct Row
+    {
+        int len;
+        bool damaged;
+    } rows[] = {{2, false}, {3, true}, {200, true}, {255, true}, {0, false}};
+    for (const Row& r : rows)
+    {
+        d = head;
+        std::vector<unsigned char> e = XboxEntry402(r.len == 0 ? "" : "zz", r.len, false); // head + "zz", no pad
+        d.insert(d.end(), e.begin(), e.end());
+        std::vector<std::string> names = XboxWalk402(d, true, damaged, outside);
+        CHECK(outside == 0);
+        CHECK(damaged == r.damaged);
+        if (r.damaged)
+            CHECK(names == std::vector<std::string>({"top.txt", "zlast"})); // the entries before it stay
+        else
+            CHECK(names == std::vector<std::string>({"top.txt", "zlast", r.len ? "zz" : ""}));
+        // the walk before 402 reads the name past the directory (the defect)
+        std::vector<std::string> old = XboxWalk402(d, false, damaged, outside);
+        CHECK(!damaged);
+        CHECK(outside == (r.damaged ? r.len - 2 : 0));
+    }
+    // a directory of two sectors: the first padded with 0xFF to its end, an entry in the second
+    d.assign(4096, 0xFF);
+    std::vector<unsigned char> a = XboxEntry402("a.txt"), b = XboxEntry402("b.txt");
+    std::copy(a.begin(), a.end(), d.begin());
+    std::copy(b.begin(), b.end(), d.begin() + 2048);
+    CHECK(XboxWalk402(d, true, damaged, outside) == std::vector<std::string>({"a.txt", "b.txt"}));
+    CHECK(!damaged && outside == 0);
+    // ... and a second-sector entry whose name runs past the directory's end (size cut inside the name)
+    d.resize(2048 + 16);
+    std::vector<unsigned char> c = XboxEntry402("cc", 100, false);
+    std::copy(c.begin(), c.end(), d.begin() + 2048);
+    CHECK(XboxWalk402(d, true, damaged, outside) == std::vector<std::string>({"a.txt"}));
+    CHECK(damaged && outside == 0);
+    // a directory that is only a head: an empty name listed, then the walk ends
+    d = XboxEntry402("", 0, false);
+    CHECK(XboxWalk402(d, true, damaged, outside) == std::vector<std::string>({""}));
+    CHECK(!damaged && outside == 0);
+    // shorter than a head: nothing
+    d.assign(13, 0);
+    CHECK(XboxWalk402(d, true, damaged, outside).empty() && !damaged);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -27038,6 +27190,7 @@ int main(int argc, char** argv)
     TestFindSeed398();
     TestIsoWalk400();
     TestIsoWalk401();
+    TestIsoXboxEntry402();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;
