@@ -8,7 +8,7 @@ source: review:394
 who: agent
 created: 2026-11-02
 updated: 2026-11-02
-verified: -
+verified: 2026-11-02 bb8aa693
 effort: S
 feature: -
 related: []
@@ -60,3 +60,4 @@ measured the same).
 - 2026-11-02 — created (source review:394)
 - 2026-11-02 — related item a-cpio-hard-link-whose-data-name-normalizes-to-empty-is done in feature 394
 - 2026-11-02 — moved to Next position 1
+- 2026-11-02 — verified at bb8aa693: reproduced at bb8aa693: probe cpiosolo 9 rows (newc/crc/odc/rpm solo, orphan, tar solo) drop the data silently and delete the archive
