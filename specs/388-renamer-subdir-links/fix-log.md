@@ -91,6 +91,7 @@ Registry restored, identical (SHA-256 equal); fixture removed; no process left.
 | negative control (saltests) | the 16 new checks compiled in a scratch copy (`%TEMP%\…\scratchpad\neg388`) against a `SalListedDirIsLink` that returns FALSE (the walk before the change) | `16 checks, 7 failed` - every link row fails, the plain / cloud rows pass |
 | negative control (probe) | the probe on the build of c6fa9cd9 (`result_before.txt`) | 6 FAIL |
 | probe after | `ren_link_probe.ps1` (`result_after.txt`) | **PASS 14, FAIL 0, NOT DRIVEN 0**; registry restored identical; fixture removed |
+| regression 209 | `specs/209-renamer-subdir-reload/probe/ren_subdir_probe.ps1` → `probe/regress_209.txt` | PASS 8, FAIL 0 (the reload after a rename of a plain folder; registry identical) |
 
 Probe note: the first after-run had `rename` FAIL "Not valid full path." - the probe's own error
 (it left the preview in full-path mode, `CMD_FULLPATH`, where a plain new name is no full path).
@@ -101,4 +102,3 @@ After the change, row by row: `out` 3 rows (`a.txt`, `out`, `sub\b.txt`); `loop`
 `loop`), no box; `selected` 1 row (`jsel`); `symlink` 2 rows (`a.txt`, `sl`); `mask` 2 rows;
 `plain` 2 rows (control unchanged); `rename` → `n_a.txt`, `sub\n_b.txt`, junction `n_out`, the
 target still `o1.txt,o2.txt,o3.txt`.
-| regression 209 | `specs/209-renamer-subdir-reload/probe/ren_subdir_probe.ps1` → `probe/regress_209.txt` | PASS 8, FAIL 0 (the reload after a rename of a plain folder; registry identical) |
