@@ -3,7 +3,7 @@
 **Feature Branch**: `395-cpio-solo-empty-name`
 **Created**: 2026-11-02
 **Status**: Draft
-**Input**: User description: "Backlog item unpack-silently-drops-a-cpio-file-whose-only-name-normalizes - Unpack silently drops a cpio file whose only name normalizes to empty"
+**Input**: User description: "Backlog item unpack-silently-drops-a-cpio-file-whose-only-name-normalizes - Unpack silently drops a cpio file whose only name normalizes to empty". From backlog item unpack-silently-drops-a-cpio-file-whose-only-name-normalizes.
 
 ## User Scenarios & Testing *(mandatory)*
 
