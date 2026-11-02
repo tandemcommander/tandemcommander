@@ -1,16 +1,16 @@
 ---
 title: Hex mode in Find turns quoted letters outside the code page into question marks
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: encoding
 source: review:311
 who: agent
 created: 2026-10-22
-updated: 2026-10-22
-verified: -
+updated: 2026-11-02
+verified: 2026-11-02 223d5a8e
 effort: S
-feature: -
+feature: 397
 related: []
 depends-on: []
 reason: -
@@ -53,3 +53,5 @@ handling (`textLen` bytes) refuses rather than cuts once it reads UTF-8.
 
 - 2026-10-22 — created (source review:311)
 - 2026-10-22 — moved to Next position 27
+- 2026-11-02 — verified at 223d5a8e: probe hex397 at 223d5a8e: typing in hex mode turns quoted CJK into ?????, Find finds the ????? decoys, viewer cannot find
+- 2026-11-02 — run started, feature 397
