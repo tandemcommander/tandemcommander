@@ -1,7 +1,7 @@
 ---
 title: Unpack silently drops a cpio file whose only name normalizes to empty
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:394
@@ -59,3 +59,4 @@ measured the same).
 
 - 2026-11-02 — created (source review:394)
 - 2026-11-02 — related item a-cpio-hard-link-whose-data-name-normalizes-to-empty-is done in feature 394
+- 2026-11-02 — moved to Next position 1
