@@ -29,6 +29,8 @@ as a whole.
 - Q: Which cpio formats? → A: every cpio format the plug-in reads (newc, crc, odc, binary, byte-swapped binary) and therefore the rpm payload - they share one name reader (autonomous run: conservative - the item names "cpio / rpm" without a format; one rule for all names the reader produces)
 - Q: Is a top-level folder name bounded by bytes while listing? → A: no - as for PAX / GNU names since feature 321 (0.1.10 behaviour); its contents' folder part is bounded (autonomous run: rule - feature 321)
 - Q: Is the extraction behaviour changed for members the listing refuses only by depth? → A: no - an extraction takes every member a file system takes (feature 308); a deep cpio member is extracted by a whole-archive unpack (autonomous run: item - *Notes*, "keep the refusal out of extraction passes")
+- Q: Which cpio formats must the probe drive? → A: newc (the common one, also the rpm payload), odc and an rpm; crc and binary share the same name reader and the same check, covered by code inspection and the regression rows of feature 310 (autonomous run: conservative - covers each distinct header reader that a fixture tool here can write simply, plus the rpm path the item names)
+- Q: Does the rpm package viewer (F3 on an .rpm file, the header dump) change? → A: no - it does not list member names into the panel; only the panel listing and extractions of the cpio payload are in scope (autonomous run: conservative - scope)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -135,4 +137,5 @@ boundary row.
   already encodes the rule; no new pure rule is needed - the feature applies it to cpio names.
 - Assumption (autonomous run): no UI string changes - the "(206)" text is the system's error text
   already used by features 306 / 308 / 321.
-- Out of scope: cpio links (feature 310), the listing's size for hard-linked names, tar formats.
+- Out of scope: cpio links (feature 310), the listing's size for hard-linked names, tar formats,
+  the rpm package viewer (header dump).
