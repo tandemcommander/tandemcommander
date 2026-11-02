@@ -1,7 +1,7 @@
 ---
 title: Registry Editor View: a key that cannot be opened is still read with an unset handle
 type: bug
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: measure:387
@@ -49,3 +49,4 @@ its values in the stale listing (hidden-desktop probe). Not verified.
 
 - 2026-11-02 — created (source measure:387)
 - 2026-11-02 — related item registry-editor-view-of-a-text-value-cut-text-and-a-stray done in feature 387
+- 2026-11-02 — moved to Next position 88

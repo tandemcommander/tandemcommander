@@ -1,7 +1,7 @@
 ---
 title: Registry Editor View: confirm F3 shows a whole non-ASCII text value on UTF-8
 type: person-step
-status: new
+status: open
 severity: 3
 area: other-plugins
 source: leftover:387
@@ -64,3 +64,4 @@ changing the system - whether the product runs correctly under that manifest is 
 ## Log
 
 - 2026-11-02 — created (source leftover:387)
+- 2026-11-02 — moved to Person steps position 58
