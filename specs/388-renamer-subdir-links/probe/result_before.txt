@@ -1,0 +1,21 @@
+ren_link_probe (feature 388)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 01:38; ACP 1250; registry key existed True
+
+out        RUN    FAIL        rows 5 (expected 3); below the link target 3; subdirectories ticked 1; boxes: no box; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\out\sel\a.txt, ...\Users\pavel\AppData\Local\Temp\tc388_ren\out\sel\out\o1.txt, ...\Users\pavel\AppData\Local\Temp\tc388_ren\out\sel\out\o2.txt, ...\Users\pavel\AppData\Local\Temp\tc388_ren\out\sel\out\o3.txt, ...:\Users\pavel\AppData\Local\Temp\tc388_ren\out\sel\sub\b.txt
+out        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+loop       RUN    FAIL        rows 1 (expected 2); below the link target 0; subdirectories ticked 0; boxes: ...1151] Error: | [Static id=172] Unable to read directory because of too long path name | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\loop\sel
+loop       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+selected   RUN    FAIL        rows 2 (expected 1); below the link target 2; subdirectories ticked 1; boxes: no box; rows: ...sers\pavel\AppData\Local\Temp\tc388_ren\selected\jsel\o1.txt, ...sers\pavel\AppData\Local\Temp\tc388_ren\selected\jsel\o2.txt
+selected   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+symlink    RUN    FAIL        rows 2 (expected 2); below the link target 1; subdirectories ticked 1; boxes: no box; rows: ...:\Users\pavel\AppData\Local\Temp\tc388_ren\symlink\sel\a.txt, ...ers\pavel\AppData\Local\Temp\tc388_ren\symlink\sel\sl\o1.txt
+symlink    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+mask       RUN    FAIL        rows 4 (expected 2); below the link target 2; subdirectories ticked 1; boxes: no box; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\mask\sel\a.txt, ...Users\pavel\AppData\Local\Temp\tc388_ren\mask\sel\out\o1.txt, ...Users\pavel\AppData\Local\Temp\tc388_ren\mask\sel\out\o2.txt, ...\Users\pavel\AppData\Local\Temp\tc388_ren\mask\sel\sub\b.txt
+mask       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+plain      RUN    PASS        rows 2 (expected 2); below the link target 0; subdirectories ticked 1; boxes: no box; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\plain\sel\a.txt, ...Users\pavel\AppData\Local\Temp\tc388_ren\plain\sel\x\y\z.txt
+plain      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+rename     RUN    FAIL        rows 5 (expected 3); below the link target 3; subdirectories ticked 1; boxes: no box; rows: C:\Users\pavel\AppData\Local\Temp\tc388_ren\rename\sel\a.txt, ...ers\pavel\AppData\Local\Temp\tc388_ren\rename\sel\out\o1.txt, ...ers\pavel\AppData\Local\Temp\tc388_ren\rename\sel\out\o2.txt, ...ers\pavel\AppData\Local\Temp\tc388_ren\rename\sel\out\o3.txt, ...sers\pavel\AppData\Local\Temp\tc388_ren\rename\sel\sub\b.txt; (not renamed: the listing was wrong)
+rename     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 8, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
