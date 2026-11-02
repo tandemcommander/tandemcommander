@@ -20,12 +20,11 @@ rule (the shared decision `SalPaxNameUsableU8` is already tested).
 
 - [ ] T005 [US1] In `CArchive::ReadArchiveHeader` (`src/plugins/tar/untar.cpp`) apply the 306 / 308 / 321 refusal (`SalPaxNameUsableU8`) also to names read by a cpio reader (newc, crc, odc, binary, byte-swapped binary)
 - [ ] T006 [US1] Give the check `isDir` from the cpio mode (`CP_IFDIR`) as well as from a trailing slash, in `src/plugins/tar/untar.cpp` (research R2; row COPY-NESTDIR)
+- [ ] T007 [US1] Keep a refused name in its cpio hard-link group as not asked: `IsCpioGroupMember` accepts `NameRefused`, `DoUnpackArchive` passes `found && !header.NameRefused` to `WriteOutCpioGroupMember`, in `src/plugins/tar/untar.cpp` (research R3, FR-006; rows COPY-HARD-REFUSED, UNP-HARD-REFUSED-DEL)
 
 ## Phase 4: User Story 2 - deep members list without failing and unpack whole (P1)
 
-**Independent test**: rows COPY-DEEP, UNP-DEEP-DEL (the depth bound only while listing - nothing to add beyond T005, which passes `Listing`).
-
-- [ ] T007 [US2] Keep a refused name in its cpio hard-link group as not asked: `IsCpioGroupMember` accepts `NameRefused`, `DoUnpackArchive` passes `found && !header.NameRefused` to `WriteOutCpioGroupMember`, in `src/plugins/tar/untar.cpp` (research R3; rows COPY-HARD-REFUSED, UNP-HARD-REFUSED-DEL)
+**Independent test**: rows COPY-DEEP, UNP-DEEP-DEL (the depth bound only while listing - nothing to add beyond T005, which passes `Listing`); verified by T009.
 
 ## Phase 5: User Story 3 - names that fit keep working (P2)
 
@@ -46,5 +45,5 @@ file (`untar.cpp`), so they are sequential; T002 can run beside T001.
 
 ## Implementation strategy
 
-MVP = US1 (T005, T006): the archive opens. US2 needs no own code beyond the group change T007; US3
+MVP = US1 (T005-T007): the archive opens and linked names keep their data. US2 needs no own code; US3
 is regression only.

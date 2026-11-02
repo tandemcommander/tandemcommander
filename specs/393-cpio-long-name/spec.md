@@ -96,8 +96,10 @@ boundary row.
 - Several refused members: only the first is named (once per listing / operation), as for tar.
 - The refused member is a folder: its entry is not listed; members inside it are listed only when
   their own names fit (as for tar).
-- A refused member that is a hard link group's data carrier in a newc cpio: extraction behaves as
-  for any member the operation was asked for but cannot write (feature 310's report and failure).
+- A refused member that carries the data of a hard-linked file in a newc / crc cpio (the other names
+  stored with size 0): the refused name itself is never written (asked for -> "(206)" and the
+  operation fails, FR-003), but the other names of the file still get its data - never an empty
+  file in their place (FR-006).
 - The cpio trailer `TRAILER!!!` is never refused.
 
 ## Requirements *(mandatory)*
@@ -115,6 +117,9 @@ boundary row.
 - **FR-004**: The rule MUST be the same as for PAX paths and GNU long names (one shared decision),
   never a cut or a replaced name.
 - **FR-005**: Tar members (ustar, PAX, GNU) and cpio names that fit MUST behave as before.
+- **FR-006**: When a refused cpio name carries the data of a hard-linked file, every other name of
+  that file the operation extracts MUST receive the data (feature 310's rule for a data member that
+  was not asked for), never be written empty.
 
 ### Key Entities
 
@@ -130,6 +135,10 @@ boundary row.
   extracts all members and deletes the archive when asked (before: the archive did not open).
 - **SC-003**: A whole Unpack of a cpio with CJK(300).txt keeps the archive and names the member.
 - **SC-004**: The probes of features 306, 308, 309, 310 and 321 keep their results.
+- **SC-005**: A newc cpio whose hard-linked file's data lies with a refused name: Copy of the listed
+  members and a whole Unpack give the other name the data (a whole Unpack also names the refused
+  member and keeps the archive); a nested folder of 100 CJK letters is refused at opening and the
+  archive opens.
 
 ## Assumptions
 
