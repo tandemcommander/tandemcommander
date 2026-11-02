@@ -1,16 +1,16 @@
 ---
 title: Registry Editor: Copy or Find through a link to an ancestor walks in a loop
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: other-plugins
 source: measure:297
 who: agent
 created: 2026-10-22
-updated: 2026-10-22
-verified: -
+updated: 2026-11-02
+verified: 2026-11-02 fbccd821
 effort: M
-feature: -
+feature: 391
 related: []
 depends-on: []
 reason: -
@@ -54,3 +54,5 @@ link points into the walked tree".
 
 - 2026-10-22 — created (source measure:297)
 - 2026-10-22 — moved to Next position 25
+- 2026-11-02 — verified at fbccd821: probe at fbccd821: Copy wrote a chain 27-28 keys deep (stopped by error 87), Find listed Mark 28/10/15 times + error box
+- 2026-11-02 — run started, feature 391
