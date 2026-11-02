@@ -39,7 +39,7 @@ Tests: the feature's probe and `saltests` checks are required by the project rul
 
 ## Phase 6: Polish & verification
 
-- [ ] T011 Run `python tools/check_encoding.py --strict` (TOTAL: 0) and `.\build.cmd` (BUILD SUCCEEDED)
+- [ ] T011 Run `python tools/check_encoding.py --strict` (TOTAL: 0) and `.\build.cmd` (BUILD SUCCEEDED); check that `git diff main -- src/plugins/regedt/lang src/plugins/regedt/regedt.rh2` is empty (FR-006: no new UI text)
 - [ ] T012 Run saltests (0 failed) and record the count in specs/391-regedt-link-loop/fix-log.md
 - [ ] T013 Run the probe specs/391-regedt-link-loop/probe/loop391_probe.ps1 after the fix, English and Czech (results loop391_after*.txt), every row PASS
 - [ ] T014 Negative control: the leads-back test forced off in a copy of the sources (or the probe on the old build) fails the looping rows; record in specs/391-regedt-link-loop/fix-log.md
