@@ -887,7 +887,9 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         // This new condition unlike the old one also extracts empty files.
         BOOL written = FALSE;
         if (IsCpioGroupMember(header)) // feature 310: a name of a hard-linked file in a newc / crc cpio
-            ret = WriteOutCpioGroupMember(header, targetPath, ptr, found, cpioGroups, refused);
+            // feature 393: a refused name (reported above when asked) is never written under its name -
+            // for the group it is not asked, so a name waiting for its data gets it
+            ret = WriteOutCpioGroupMember(header, targetPath, ptr, found && !header.NameRefused, cpioGroups, refused);
         else
             ret = WriteOutData(header, targetPath, ptr, (header.Ignored || !found), !linkHandled, &written);
         if (written && !header.IsDir)
@@ -1717,7 +1719,9 @@ BOOL CArchive::MakeCpioWaitingHeader(SCommonHeader& h, const SCpioWaiting& w, co
 
 BOOL CArchive::IsCpioGroupMember(const SCommonHeader& header)
 {
-    return !header.IsDir && !header.Ignored &&
+    // feature 393: a refused name (Ignored) stays in its group - it may carry the file's data, which
+    // the group's other names then get (an extraction treats it as not asked; never written itself)
+    return !header.IsDir && (!header.Ignored || header.NameRefused) &&
            SalCpioIsLinkGroupMember(header.Format == e_NewASCII || header.Format == e_CRCASCII,
                                     header.Mode.LoDWord, header.CpioNLink);
 }
@@ -2260,8 +2264,16 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     // applies that depth bound - an extraction takes every member a file system takes, and an
     // extraction asked for a refused member reports it and fails (DoUnpackArchive, UnpackOneFile).
     // Feature 321: the same for a GNU long name (300 CJK letters at the root crashed the panel; a deep
-    // folder part failed the whole listing) - in every pass exactly the rule of a PAX path
-    if ((header.NameFromPax || header.NameFromGnu) && !SalPaxNameUsableU8(header.Name, header.IsDir != FALSE, ListingPrefixLen, Listing != FALSE))
+    // folder part failed the whole listing) - in every pass exactly the rule of a PAX path.
+    // Feature 393: the same for every cpio name (newc, crc, odc, binary - and the payload of an rpm):
+    // up to 10000 bytes, a root name of 780+ bytes or a deep folder part failed the whole listing. A
+    // cpio folder is known by its mode (written without a trailing slash; IsDir is set from the mode
+    // only below) - its own name inside a folder is bounded while listing, as a tar folder's
+    BOOL cpioName = header.Format == e_NewASCII || header.Format == e_CRCASCII || header.Format == e_OldASCII ||
+                    header.Format == e_Binary || header.Format == e_SwapBinary;
+    BOOL nameIsDir = header.IsDir || (cpioName && (header.Mode.LoDWord & CP_IFMT) == CP_IFDIR);
+    if ((header.NameFromPax || header.NameFromGnu || cpioName) &&
+        !SalPaxNameUsableU8(header.Name, nameIsDir != FALSE, ListingPrefixLen, Listing != FALSE))
     {
         header.Ignored = TRUE;
         header.NameRefused = TRUE;
