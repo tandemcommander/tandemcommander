@@ -35,6 +35,19 @@
 //                     writes target\P for each subkey path P of the source -
 //                     into the source itself when P begins with this path).
 //
+// SalRegHkcrDeleteHalf - feature 390: where a Move deletes a source key of
+//                     HKEY_CLASSES_ROOT. The copy may create the user's half of
+//                     the very path it copies (a machine-only key moved into
+//                     HKCU\Software\Classes\), and a delete through the merged
+//                     view reaches the user's half first - the copy, not the
+//                     source (the Move did nothing and reported success). So the
+//                     halves holding the key are noted before that key is
+//                     copied: exactly one = delete that half by its real path;
+//                     both or none = through HKEY_CLASSES_ROOT as before.
+// SalRegJoinClassesPath - "Software\Classes\" + key into 'out' (the path of an
+//                     HKCR key in either half); FALSE (out = "") when 'key' is
+//                     empty or the result does not fit 'outUnits' - never cut.
+//
 // Header-only (the plug-ins cannot compile a .cpp from src\common); needs
 // <windows.h>; checked by saltests.
 //
@@ -121,4 +134,36 @@ inline BOOL SalRegKeyIdsAnyWithin(const CSalRegKeyIds& inner, const CSalRegKeyId
             if (SalRegKeyIdWithin(inner.Id[i], outer.Id[j]))
                 return TRUE;
     return FALSE;
+}
+
+enum CSalHkcrDeleteHalf
+{
+    SAL_HKCR_DELETE_VIEW,    // through HKEY_CLASSES_ROOT (as before)
+    SAL_HKCR_DELETE_MACHINE, // HKEY_LOCAL_MACHINE\Software\Classes\<key>
+    SAL_HKCR_DELETE_USER,    // HKEY_CURRENT_USER\Software\Classes\<key>
+};
+
+inline CSalHkcrDeleteHalf SalRegHkcrDeleteHalf(BOOL machineHeld, BOOL userHeld)
+{
+    if (machineHeld && !userHeld)
+        return SAL_HKCR_DELETE_MACHINE;
+    if (userHeld && !machineHeld)
+        return SAL_HKCR_DELETE_USER;
+    return SAL_HKCR_DELETE_VIEW;
+}
+
+inline BOOL SalRegJoinClassesPath(WCHAR* out, int outUnits, const WCHAR* key)
+{
+    static const WCHAR prefix[] = L"Software\\Classes\\";
+    const int lp = (int)(sizeof(prefix) / sizeof(WCHAR)) - 1;
+    if (out == NULL || outUnits <= 0)
+        return FALSE;
+    out[0] = 0;
+    int lk = SalRegKeyIdLen(key);
+    if (lk == 0 || lp + lk >= outUnits)
+        return FALSE;
+    memcpy(out, prefix, lp * sizeof(WCHAR));
+    memcpy(out + lp, key, lk * sizeof(WCHAR));
+    out[lp + lk] = 0;
+    return TRUE;
 }

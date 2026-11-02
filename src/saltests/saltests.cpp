@@ -14142,6 +14142,34 @@ static void TestRegKeyId292()
     CHECK(!SalRegKeyIdsAnySame(a, b) && !SalRegKeyIdsAnyWithin(a, b) && !SalRegKeyIdsAnyWithin(b, a));
 }
 
+// feature 390: a Move of an HKCR key deletes the one half that held it before the copy, by its
+// real path (a delete through HKCR reached the user's copy just made); both or none = as before
+static void TestRegHkcrHalf390()
+{
+    CHECK(SalRegHkcrDeleteHalf(TRUE, FALSE) == SAL_HKCR_DELETE_MACHINE);
+    CHECK(SalRegHkcrDeleteHalf(FALSE, TRUE) == SAL_HKCR_DELETE_USER);
+    CHECK(SalRegHkcrDeleteHalf(TRUE, TRUE) == SAL_HKCR_DELETE_VIEW);
+    CHECK(SalRegHkcrDeleteHalf(FALSE, FALSE) == SAL_HKCR_DELETE_VIEW);
+    CHECK(SalRegHkcrDeleteHalf(2, 0) == SAL_HKCR_DELETE_MACHINE); // any non-zero BOOL is "held"
+
+    WCHAR out[32];
+    CHECK(SalRegJoinClassesPath(out, 32, L".386\\PersistentHandler") == FALSE); // 17 + 22 = 39 units: refused
+    CHECK(out[0] == 0);
+    CHECK(SalRegJoinClassesPath(out, 32, L".386") && wcscmp(out, L"Software\\Classes\\.386") == 0);
+    // exactly fits: 17 + 14 units + the terminator = 32
+    CHECK(SalRegJoinClassesPath(out, 32, L"ABCDEFGHIJKLMN") && wcscmp(out, L"Software\\Classes\\ABCDEFGHIJKLMN") == 0);
+    // one unit too long: refused, never cut
+    out[0] = L'x';
+    CHECK(!SalRegJoinClassesPath(out, 32, L"ABCDEFGHIJKLMNO") && out[0] == 0);
+    // empty / NULL key, no room
+    CHECK(!SalRegJoinClassesPath(out, 32, L"") && out[0] == 0);
+    CHECK(!SalRegJoinClassesPath(out, 32, NULL) && out[0] == 0);
+    CHECK(!SalRegJoinClassesPath(out, 0, L"a"));
+    CHECK(!SalRegJoinClassesPath(NULL, 32, L"a"));
+    // a name outside ASCII and the elements below it are copied as they are
+    CHECK(SalRegJoinClassesPath(out, 32, L"Kl\x00ED\x010D\\p") && wcscmp(out, L"Software\\Classes\\Kl\x00ED\x010D\\p") == 0);
+}
+
 // feature 294: the path of a source key below a target key that holds it - a Copy / Move of
 // Zdroj\K\K into Zdroj\ (target Zdroj\K) writes target\P for each subkey path P of the source, so
 // into the source itself when the source holds K (the remainder) below itself; Move then deleted it
@@ -25679,6 +25707,7 @@ int main(int argc, char** argv)
     TestRegFindTextToCodePage278();
     TestRegViewTextToCodePage387();
     TestRegKeyId292();
+    TestRegHkcrHalf390();
     TestRegKeyIdBelow294();
     TestDeleteAsDirLink197();
     TestAttrsLink253();

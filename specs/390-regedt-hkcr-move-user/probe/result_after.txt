@@ -1,0 +1,19 @@
+hkcr390_probe (feature 390), language: english
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 03:39; desktop 'tc_probe_27480'; ACP 1250; elevated False; registry key existed True; export SHA-256 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+Machine : .386 = .|=String:vxdfile;PerceivedType=String:system\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}
+Fixture : C:.|\u000ACil|\u000AZdroj\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD\podkl\u00ED\u010D|w=String:BETA\u000AZdroj\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD|v=String:ALPHA\u000AZdroj|\u000AP:.|\u000ACil|
+
+MACHUSER   TEXT   PASS        key '.386' (machine's half only); expected the first box 'Unable to remove the original registry key. ' naming 'HKEY_LOCAL_MACHINE\Software\Classes\.386\PersistentHandler'; boxes: [#32770 'Error Moving Registry Key'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to remove the original registry key. (5) P\u0159\u00EDstup byl odep\u0159en.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel; text 'Name:\u000AHKEY_LOCAL_MACHINE\Software\Classes\.386\PersistentHandler\u000AError:\u000AUnable to remove the original registry key. (5) P\u0159\u00EDstup byl odep\u0159en.\u000A'
+MACHUSER   STATE  PASS        machine's half unchanged: True; the user's copy equals it: True (user's half: '.|=String:vxdfile;PerceivedType=String:system\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}'); fixture unchanged: True
+MACHUSER   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+MACHUSERU  TEXT   PASS        key '.386' (machine's half only); expected the first box 'Unable to remove the original registry key. ' naming 'HKEY_LOCAL_MACHINE\Software\Classes\.386\PersistentHandler'; boxes: [#32770 'Error Moving Registry Key'] [Static id=1150] Name: | [Static id=1151] Error: | [Static id=172] Unable to remove the original registry key. (5) P\u0159\u00EDstup byl odep\u0159en.  | [Button id=4] &Retry | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel; text 'Name:\u000AHKEY_LOCAL_MACHINE\Software\Classes\.386\PersistentHandler\u000AError:\u000AUnable to remove the original registry key. (5) P\u0159\u00EDstup byl odep\u0159en.\u000A'
+MACHUSERU  STATE  PASS        machine's half unchanged: True; the user's copy equals it: True (user's half: '.|=String:vxdfile;PerceivedType=String:system\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}'); fixture unchanged: True
+MACHUSERU  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+USERMOVE   STATE  PASS        moved whole, source gone: True; boxes: none; keys: C:.|\u000ACil|\u000AZdroj|\u000AP:.|\u000ACil\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD\podkl\u00ED\u010D|w=String:BETA\u000ACil\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD|v=String:ALPHA\u000ACil|
+USERMOVE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+USERCLS    STATE  PASS        moved whole, source gone: True; boxes: none; keys: C:.|\u000ACil\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD\podkl\u00ED\u010D|w=String:BETA\u000ACil\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD|v=String:ALPHA\u000ACil|\u000AZdroj|\u000AP:.|\u000ACil|
+USERCLS    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 10, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture keys removed: True; user copy of the machine key left: False; registry restored+identical: True

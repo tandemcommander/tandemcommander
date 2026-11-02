@@ -27,8 +27,10 @@
       MACHUSERU  the same into \HKEY_USERS\<SID>_Classes\ (the same key under another root)
       USERMOVE   (control) F6 of HKCR\TcProbe390\Zdroj\<K> (only in the user's half) into
                  \HKEY_CURRENT_USER\Software\TcProbe390\Cil\: no box; moved whole; the source gone
-      USERHKCR   (control) F6 of the same into \HKEY_CLASSES_ROOT\TcProbe390\Cil\: no box; moved
-                 whole into the user's TcProbe390\Cil; the source gone
+      USERCLS    (control) F6 of the same into \HKEY_CURRENT_USER\Software\Classes\TcProbe390\Cil\:
+                 no box; moved whole; the source gone (its single half deleted by its real path)
+    (A new subkey created through \HKEY_CLASSES_ROOT\ goes to the machine's half - access denied
+    without elevation, Windows behaviour - so no control types an HKCR target.)
       END        each instance ends with exit code 0, no stray window, no report
 
     MUST run through tools\run_on_hidden_desktop.ps1; refuses while tandemcommander.exe runs;
@@ -285,10 +287,10 @@ try {
         $m = Moved-Into ($PlainPs + '\Cil')
         Row 'USERMOVE' 'STATE' (V ($m -and $r.Boxes.Count -eq 0)) ("moved whole, source gone: {0}; {1}; keys: {2}" -f $m, (Box-Facts $r), (Esc $r.Snap))
     }
-    Row-Op 'USERHKCR' 728 ('reg:\HKEY_CLASSES_ROOT\' + $RegName + '\Zdroj') $FocusK ('\HKEY_CLASSES_ROOT\' + $RegName + '\Cil\') $null {
+    Row-Op 'USERCLS' 728 ('reg:\HKEY_CLASSES_ROOT\' + $RegName + '\Zdroj') $FocusK ('\HKEY_CURRENT_USER\Software\Classes\' + $RegName + '\Cil\') $null {
         param($r)
         $m = Moved-Into ($ClsPs + '\Cil')
-        Row 'USERHKCR' 'STATE' (V ($m -and $r.Boxes.Count -eq 0)) ("moved whole into the user's half, source gone: {0}; {1}; keys: {2}" -f $m, (Box-Facts $r), (Esc $r.Snap))
+        Row 'USERCLS' 'STATE' (V ($m -and $r.Boxes.Count -eq 0)) ("moved whole, source gone: {0}; {1}; keys: {2}" -f $m, (Box-Facts $r), (Esc $r.Snap))
     }
     $script:MachName = $mn
 }

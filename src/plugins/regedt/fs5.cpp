@@ -277,6 +277,62 @@ BOOL SafeDeleteKey(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipA
     return TRUE;
 }
 
+// feature 390: which halves of HKEY_CLASSES_ROOT (HKLM / HKCU Software\Classes\<key>) hold 'key'.
+// Opened with the right a delete or copy of the key needs anyway. Returns a Win32 error code; a half
+// without the key is no error; a path that does not fit is refused (never cut)
+static int GetHkcrHalves(LPCWSTR key, BOOL& machineHeld, BOOL& userHeld)
+{
+    machineHeld = FALSE;
+    userHeld = FALSE;
+    WCHAR path[MAX_KEYNAME + 32];
+    if (!SalRegJoinClassesPath(path, _countof(path), key))
+        return ERROR_FILENAME_EXCED_RANGE;
+    HKEY halves[2] = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER};
+    for (int i = 0; i < 2; i++)
+    {
+        HKEY hKey;
+        int err = RegOpenKeyExW(halves[i], path, 0, KEY_ENUMERATE_SUB_KEYS, &hKey);
+        if (err == ERROR_FILE_NOT_FOUND)
+            continue;
+        if (err != ERROR_SUCCESS)
+            return err;
+        RegCloseKey(hKey);
+        (i == 0 ? machineHeld : userHeld) = TRUE;
+    }
+    return ERROR_SUCCESS;
+}
+
+static int PredefinedRootIndex(HKEY root)
+{
+    for (int i = 0; PredefinedHKeys[i].HKey != NULL; i++)
+        if (PredefinedHKeys[i].HKey == root)
+            return i;
+    return -1;
+}
+
+// feature 390: deletes the source key 'key' of HKEY_CLASSES_ROOT in the one half that held it before
+// the copy, by its real path - never through the merged view, which reaches the user's half first
+// (the copy just made when the target was the user's Classes key). Errors in the existing
+// IDS_REMOVESOURCE box naming the real key (the HKCR name when the real one would not fit the box)
+static BOOL SafeDeleteHkcrHalf(int hkcrRoot, LPWSTR key, CSalHkcrDeleteHalf half, int errorTitle,
+                               BOOL& skip, BOOL& skipAll)
+{
+    HKEY root = half == SAL_HKCR_DELETE_MACHINE ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
+    int rootIndex = PredefinedRootIndex(root);
+    WCHAR path[MAX_KEYNAME + 32];
+    BOOL joined = SalRegJoinClassesPath(path, _countof(path), key);
+    BOOL named = joined && rootIndex >= 0 && wcslen(path) < MAX_KEYNAME;
+    while (1)
+    {
+        int res = joined && rootIndex >= 0 ? RegDeleteKeyW(root, path) : ERROR_FILENAME_EXCED_RANGE;
+        if (res == ERROR_SUCCESS)
+            return TRUE;
+        if (!RegOperationError(res, IDS_REMOVESOURCE, errorTitle, named ? rootIndex : hkcrRoot,
+                               named ? path : key, &skip, &skipAll))
+            return FALSE;
+    }
+}
+
 // feature 296: the key the user copies or moves (read, and deleted at the end of a Move) - the
 // recursion appends to its own path buffer, so the path is a copy; its identities are read the
 // first time a registry link stands in the target tree
@@ -324,6 +380,26 @@ static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWS
                 break;
             if (!RegOperationError(ERROR_NOT_SUPPORTED, IDS_REMOVESOURCE, errorTitle, sourceRoot, source, &skip, &skipAllErrors))
                 return FALSE; // Retry checks again
+        }
+    }
+
+    // feature 390: a Move of an HKCR key - which halves hold it, read before this key is copied: the
+    // copy may create the user's half of this very path (target HKCU\Software\Classes\), and the
+    // delete through HKCR would then reach that copy instead of the source (a silent no-op)
+    CSalHkcrDeleteHalf deleteHalf = SAL_HKCR_DELETE_VIEW;
+    if (move && PredefinedHKeys[sourceRoot].HKey == HKEY_CLASSES_ROOT && *source != 0)
+    {
+        while (1)
+        {
+            BOOL machineHeld, userHeld;
+            int err = GetHkcrHalves(source, machineHeld, userHeld);
+            if (err == ERROR_SUCCESS)
+            {
+                deleteHalf = SalRegHkcrDeleteHalf(machineHeld, userHeld);
+                break;
+            }
+            if (!RegOperationError(err, IDS_OPEN, errorTitle, sourceRoot, source, &skip, &skipAllErrors))
+                return FALSE; // nothing of this key copied or deleted (fails closed); Retry reads again
         }
     }
 
@@ -597,7 +673,11 @@ static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWS
     }
 
     if (move)
+    {
+        if (deleteHalf != SAL_HKCR_DELETE_VIEW) // feature 390: the half that was copied, by its real path
+            return SafeDeleteHkcrHalf(sourceRoot, source, deleteHalf, errorTitle, skip, skipAllErrors);
         return SafeDeleteKey(sourceRoot, source, errorTitle, skip, skipAllErrors);
+    }
 
     return TRUE;
 }
