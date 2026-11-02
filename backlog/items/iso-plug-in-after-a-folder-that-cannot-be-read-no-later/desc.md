@@ -7,8 +7,8 @@ area: archives
 source: leftover:330
 who: agent
 created: 2026-10-24
-updated: 2026-10-24
-verified: -
+updated: 2026-11-02
+verified: 2026-11-02 aaf95b94
 effort: S
 feature: -
 related: []
@@ -55,3 +55,4 @@ box is shown once per damaged folder as today (or once per listing - to be decid
 
 - 2026-10-24 — created (source leftover:330)
 - 2026-10-24 — moved to Next position 23
+- 2026-11-02 — verified at aaf95b94: still present at aaf95b94: iso330_probe RD-EXT, RD-REC, UD-EXT, UD-TAG, XD-EXT extract top.txt only, zlast/z.txt never descended
