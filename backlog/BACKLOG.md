@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an Xbox entry name can be read past the end of its directory](items/iso-plug-in-an-xbox-entry-name-can-be-read-past-the-end-of/desc.md) | bug | 5 | archives | 402 |
 
 ## Next
 
@@ -309,6 +308,8 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [ISO plug-in: an Xbox entry name with a NUL byte inside is listed cut at the NUL](items/iso-plug-in-an-xbox-entry-name-with-a-nul-byte-inside-is/desc.md) | bug | 3 | archives | review:402 | 2026-11-02 |
+| [ISO plug-in: an Xbox folder entry claiming a huge size allocates it before reading](items/iso-plug-in-an-xbox-folder-entry-claiming-a-huge-size/desc.md) | bug | 3 | archives | review:402 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 
 ## Parked

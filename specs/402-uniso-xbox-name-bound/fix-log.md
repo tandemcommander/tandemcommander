@@ -71,3 +71,25 @@ Backlog item `iso-plug-in-an-xbox-entry-name-can-be-read-past-the-end-of` (sourc
   48 / 0 (`probe/regress_400.txt`, WSL seeds made, no NOT DRIVEN).
 - Encoding guard `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
 - No UI string, menu or dialog changed: no `.slt` refresh (stop-rules §2.13 not triggered).
+
+## Review
+
+- Refute-first review 1 (independent agent, 2026-11-02): **no MUST, no SHOULD.** It re-ran saltests
+  (282,383 / 0) and `iso402_probe` on the run's build (10 / 0, registry identical); its own negative
+  control in a detached worktree with its own build folder - only `ret = SalIsoWalkAfterChild(ret,
+  ERR_TERMINATE);` removed (the box still shown, the listing not marked) - 6 / 4, the four damaged rows
+  fail on "image kept: False" (the probe catches the data-loss path, not only the box). Callers
+  enumerated: `ScanDir` <- `CXDVDFS::ListDirectory` <- `CISOImage::ListDirectory` / `ListImage`.
+  - NOTE 1: `XboxWalk402` in saltests is a model of `ScanDir` (proves the rule; the probe proves the
+    plug-in's use); no probe row for a damaged entry in a second sector after 0xFF padding (the model
+    covers it). Recorded, accepted.
+  - NOTE 2 (upstream): a name with a NUL inside is listed cut at the NUL (`strncpy_s`) -> Inbox
+    `iso-plug-in-an-xbox-entry-name-with-a-nul-byte-inside-is` (review:402).
+  - NOTE 3 (upstream): `new BYTE[size]` with a claimed size up to 4 GiB before the read fails; plain `new`
+    throws, so the NULL check may never fire -> Inbox `iso-plug-in-an-xbox-folder-entry-claiming-a-huge-size`
+    (review:402).
+  - NOTE 4: closing records owed (done at closing). NOTE 5: old review worktrees of earlier features
+    registered in `git worktree list` - not this feature's, left alone.
+- `git status --short` after the review: only this run's two new backlog items - the tree as the run left it.
+- Trap: a Bash here-document collapsed `\0` in a Python string into `\0` - the item text got three NUL
+  bytes; repaired with a script written by the editor (CLAUDE.md rule 123).
