@@ -11,7 +11,7 @@ updated: 2026-11-02
 verified: -
 effort: S
 feature: -
-related: [renamer-include-subdirectories-descends-into-junctions-and]
+related: []
 depends-on: []
 reason: -
 ---
@@ -70,3 +70,4 @@ link stays an item (as 388 does).
 ## Log
 
 - 2026-11-02 — created (source review:388)
+- 2026-11-02 — related item renamer-include-subdirectories-descends-into-junctions-and done in feature 388

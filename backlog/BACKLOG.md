@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Renamer: Include subdirectories descends into junctions and folder links](items/renamer-include-subdirectories-descends-into-junctions-and/desc.md) | bug | 4 | data-safety | 388 |
 
 ## Next
 

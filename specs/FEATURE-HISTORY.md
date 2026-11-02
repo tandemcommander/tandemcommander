@@ -41,7 +41,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
-| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387 |
+| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
 | User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376 |
@@ -6113,3 +6113,23 @@ a few early ones are out of sequence).
   (`TestRegViewTextToCodePage387`; mutations: old sizing 5 failed, converted length dropped 4
   failed); one refute-first review (no MUST; SHOULD 1 = the decision moved into the tested rule,
   SHOULD 2 = the premise rows relabelled; NOTE 1 dead guard removed).
+- 388-renamer-subdir-links: the Batch Renamer's "Include subdirectories" walked into every
+  junction and directory symbolic link - the files of the link's TARGET (outside the selection)
+  were offered and renamed, a link back up listed the same files once per level until the "too
+  long path name" box dropped the listing, and a selected junction listed its target's files. Now
+  a directory link is never walked: it is listed as an item of its own (its name matched against
+  the mask as a selected folder's, renamed as a link), below the selection and when selected, as
+  the core's 213 does. The decision is `SalListedDirIsLink` (`salreparse.h`, built on 197's rule):
+  the tag the listing already returns (`dwReserved0`), fail closed (no tag / unreadable / a name
+  surrogate = a link), a cloud / OneDrive / dedup / WOF folder still walked; a selected folder is
+  looked up once only when the panel shows the reparse bit. Traps: feature 282 (its 1024-level
+  depth guard) was never merged - on `main` a loop ended at 260 bytes; `AgreeMasks(name, NULL)`
+  takes the extension from the name (a junction `j.txt` matches `*.txt`); a probe in full-path
+  mode must switch back (`CMD_FILENAMES` 607) before a plain new name. Limits: whether NESTED links
+  should rather be skipped silently (plain subfolders are never listed; a profile's hidden
+  compatibility junctions are listed by `*.*`) is the maintainer's decision
+  (`renamer-subdirectories-list-nested-folder-links-as-items-or`). From backlog item
+  `renamer-include-subdirectories-descends-into-junctions-and`. Probe `ren_link_probe.ps1` 8 / 6
+  -> 14 / 0 (209's 8 / 0); saltests 30,724 -> 30,740 / 0 (`TestListedDirIsLink388`, negative
+  control 7 of 16 failed); one refute-first review (no MUST; SHOULD 2 mask wording fixed, SHOULD 1
+  to the decision item).
