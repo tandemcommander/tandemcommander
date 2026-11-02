@@ -122,7 +122,10 @@ the image's last sector - is listed and extracted whole, with no window.
 - Nested folders each within the limit whose buffers together would pass it (review 1, IS-DEEP): the
   deeper folder is a folder that cannot be read; a sibling after it is read again.
 - Length 0: unchanged (330: a silent folder that cannot be read; the listing marked).
-- Length exactly the limit (256 MiB): allowed by the rule; one byte more: refused.
+- Length exactly the limit (256 MiB): allowed by the length rule; one byte more: refused. The limit
+  also bounds all held buffers together (FR-003a), so a folder below the root gets at most the limit less
+  its ancestors' buffers (review 2: a readable subfolder of exactly 256 MiB under a 2048-byte root is
+  refused - no real image comes near it).
 - A folder refused for its length that is met again with the same length in the same walk: 328 / 401's
   visited rule applies as before (listed empty).
 - The quiet walks (fit check, count walks) refuse the folder silently; the listing walk shows the box
@@ -151,8 +154,8 @@ the image's last sector - is listed and extracted whole, with no window.
   later folders still walked, a whole Unpack with "Delete archive after unpacking" keeps the image.
 - **FR-005**: The length rule MUST be a pure, unit-tested rule in a header under `src/common/` (64-bit
   arithmetic, no wrap).
-- **FR-006**: Every folder with a length from 1 byte to the limit whose sectors are readable MUST be
-  read as before.
+- **FR-006**: Every folder whose sectors are readable and whose length, added to the buffers of the
+  folders above it, stays within the limit MUST be read as before.
 - **FR-007**: No new UI string, no change to the plug-in interface.
 
 ### Key Entities

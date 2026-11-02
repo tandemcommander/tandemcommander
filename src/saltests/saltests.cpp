@@ -26881,6 +26881,13 @@ static void TestIsoDirLength403()
     CHECK(held == 0);
     held = SAL_ISO_DIR_MAX_LENGTH + 10; // never reached by Take - still refuses, no wrap
     CHECK(!SalIsoDirTake(held, 1) && held == SAL_ISO_DIR_MAX_LENGTH + 10);
+    // review 2: below a root of 2048 bytes a folder gets the limit less the root's buffer, never the whole
+    held = 2048;
+    CHECK(!SalIsoDirTake(held, SAL_ISO_DIR_MAX_LENGTH) && held == 2048);
+    CHECK(SalIsoDirTake(held, SAL_ISO_DIR_MAX_LENGTH - 2048) && held == SAL_ISO_DIR_MAX_LENGTH);
+    SalIsoDirGive(held, SAL_ISO_DIR_MAX_LENGTH - 2048);
+    SalIsoDirGive(held, 2048);
+    CHECK(held == 0);
     // the review's chain: nested folders of 256 MiB each - the first is read, every deeper one refused
     // while it is held; a sibling after it is read again
     held = 0;

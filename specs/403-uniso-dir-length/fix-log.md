@@ -120,3 +120,30 @@ saltests 6 failed; probe `-Only IS-DEEP,IS-OVER` (`result_negctl_budget.txt`) IS
 image deleted - every level read), IS-OVER PASS (the length rule); restored, rebuilt, 0 failed.
 Regression probes after the review fix (`probe/regress_<NNN>_review1.txt`): 328 20 / 0, 400 48 / 0,
 401 10 / 0, 402 10 / 0; registry identical each.
+
+### Review 2 (refute-first, independent agent; the review-1 fix)
+
+- MUST: none. Rebuilt (17:19 - the header's newer time stamp came from `unix2dos` before the commit
+  restoring CRLF, the content was the one built and probed), saltests 282,430 / 0, `iso403_probe` 16 / 0 +
+  its own row; callers enumerated again (fit, listing, CountUnder, recursion, CUDFISO's own CISO9660 -
+  DirBytesHeld starts at 0); the count walk keeps DirBytesHeld (right: the listing walk holds its
+  ancestors' buffers); the RAII guard gives back on every exit; fail closed throughout.
+- SHOULD 1 - a readable subfolder of exactly 256 MiB under a 2048-byte root is refused (its IS-EXACT row:
+  d/d1.txt missing, one box, image kept), against the spec's edge case and FR-006 ("1 byte to the
+  limit"). **Done** (conservative - the budget is the review-1 fix and keeps the bound): FR-006 and the
+  edge case reworded (a folder below the root gets the limit less its ancestors' buffers); saltests
+  checks for it (held 2048: the whole limit refused, the limit - 2048 taken). No real image comes near.
+- NOTE 1 - the recorded probes ran before that rebuild: 403 re-run on the final binaries
+  (`probe/result_final.txt`, uniso.spl 17:19): **16 PASS / 0 FAIL**, registry identical; the uniso code
+  of the regression runs is the same content.
+- NOTE 2 - a folder refused deep in a chain and met again higher up is listed empty without a box (the
+  visited key is added before the refusal) - the listing is already marked, the image kept; crafted only;
+  accepted (328's "met again" rule).
+- NOTE 3 - time is not bounded: many sibling folders under 256 MiB with distinct lengths are each read
+  (fit walk and listing walk) - pre-existing (worse at 2 GiB), no memory box; the listing budget is Inbox
+  `iso-plug-in-a-crafted-image-of-folders-naming-one-directory`; accepted.
+- NOTE 4 - the last-sector read costs two seeks per multi-sector folder per walk; negligible on a file,
+  noticeable on an optical drive; accepted (only folders longer than one sector).
+- NOTE 5 / 6 - confirm the accepted past-the-end limit and the budget negative control.
+
+After: `.\build.cmd` BUILD SUCCEEDED; saltests **282,433 / 0**; encoding guard TOTAL: 0.

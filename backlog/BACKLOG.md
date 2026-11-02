@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [ISO plug-in: an ISO 9660 folder length of 2 GiB or more shows a stuck memory box](items/iso-plug-in-an-iso-9660-folder-length-of-2-gib-or-more-shows/desc.md) | bug | 5 | archives | 403 |
 
 ## Next
 

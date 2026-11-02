@@ -1,0 +1,33 @@
+iso403_probe final
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 17:24; registry key existed True
+
+seeds: isodeep.iso,isoedge.iso,isohuge.iso,isomin.iso,isoneg.iso,isoneg2.iso,isoover.iso,isopast.iso
+img403: isoneg: A (block 21, 0xFFFFF800 bytes), TOP.TXT, ZLAST/Z.TXT; 25 sectors
+img403: isoneg2: A (block 21, 2048 bytes), B (block 21, 0xFFFFF800 bytes), TOP.TXT, ZLAST/Z.TXT
+img403: isomin: A (block 21, 0x80000000 bytes), TOP.TXT, ZLAST/Z.TXT; 25 sectors
+img403: isohuge: A (block 21, 0x7FFFF800 bytes), TOP.TXT, ZLAST/Z.TXT; 25 sectors
+img403: isopast: A (block 24, 3 sectors; the image ends after block 24), TOP.TXT, ZLAST/Z.TXT
+img403: isoedge: A (blocks 26..28, the image's last 3 sectors; A1.TXT, A3.TXT), TOP.TXT, ZLAST/Z.TXT; 29 sectors
+img403: isodeep: TOP.TXT, D (block 22, 134217728 bytes) holding A0..A2, each a folder of 134217728 bytes one block on; 65563 sectors
+img403: isoover: TOP.TXT, D (block 22, 268437504 bytes, readable); 131097 sectors
+
+IS-NEG     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-NEG     RUN    PASS        files 2: TOP.TXT, ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows 1 (read-error 1, memory box False; want one read-error box); timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00000015. Incomplete content of ISO image. | [Button id=1] OK
+IS-NEG2    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-NEG2    RUN    PASS        files 3: A/A1.TXT, TOP.TXT, ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows 1 (read-error 1, memory box False; want one read-error box); timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00000015. Incomplete content of ISO image. | [Button id=1] OK
+IS-MIN     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-MIN     RUN    PASS        files 2: TOP.TXT, ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows 1 (read-error 1, memory box False; want one read-error box); timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00000015. Incomplete content of ISO image. | [Button id=1] OK
+IS-HUGE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-HUGE    RUN    PASS        files 2: TOP.TXT, ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows 1 (read-error 1, memory box False; want one read-error box); timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00000015. Incomplete content of ISO image. | [Button id=1] OK
+IS-PAST    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-PAST    RUN    PASS        files 2: TOP.TXT, ZLAST/Z.TXT; files ok: True; image kept: True (want True); windows 1 (read-error 1, memory box False; want one read-error box); timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00000018. Incomplete content of ISO image. | [Button id=1] OK
+IS-EDGE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-EDGE    RUN    PASS        files 4: A/A1.TXT, A/A3.TXT, TOP.TXT, ZLAST/Z.TXT; files ok: True; image kept: False (want False); windows 0 (read-error 0, memory box False; want none); timed out: False; fatal: ; windows: no window
+IS-DEEP    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-DEEP    RUN    PASS        files 1: TOP.TXT; files ok: True; image kept: True (want True); windows 1 (read-error 1, memory box False; want one read-error box); timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00000017. Incomplete content of ISO image. | [Button id=1] OK
+IS-OVER    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+IS-OVER    RUN    PASS        files 1: TOP.TXT; files ok: True; image kept: True (want True); windows 1 (read-error 1, memory box False; want one read-error box); timed out: False; fatal: ; windows: [#32770 'UnISO'] [Static id=2477] Error reading directory structure at sector #00000016. Incomplete content of ISO image. | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
