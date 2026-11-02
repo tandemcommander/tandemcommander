@@ -4,6 +4,9 @@
 #pragma once
 
 #include "fs.h"
+#include "../../common/salisowalk.h" // feature 400: the walk after a folder that cannot be read
+
+#include <set>
 
 // ****************************************************************************
 //
@@ -268,6 +271,11 @@ public:
     // fit the sector or the map table; read like VatMissing (review 1: without the anchor at 256 a hybrid's
     // listing was not marked and a whole unpack deleted the image)
     BOOL MapsRefused;
+    // feature 400: the listing walk - later folders are descended after a folder that cannot be read
+    // (only out of memory stops it), its error box is shown once, and each folder (its ICB) is walked
+    // once - a crafted image can point a folder back to itself or an ancestor (as CISO9660, 328)
+    SalIsoWalk Walk;
+    std::set<unsigned long long>* Visited;
 
     CUDF(CISOImage* image, DWORD extent, int trackno);
     virtual ~CUDF();
@@ -300,6 +308,8 @@ protected:
     int ScanDir(const CUDFFolder& folder, char* path,
                 CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
     BOOL ReadFolderWindow(const CUDFFolder& folder, Uint32 block, Uint8* window, Uint32& lbNum);
+    void WalkOutOfMemory();          // feature 400
+    int VisitFolder(const CAD& icb); // feature 400: 1 first time, 0 met again, -1 out of memory
 
     void ReadExtentAd(BYTE sector[], CExtentAd* extent);
     void ReadEntityID(BYTE sector[], CEntityID* entityID);

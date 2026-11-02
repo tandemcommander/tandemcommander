@@ -121,6 +121,7 @@
 #include "salwsl.h"            // feature 374
 #include "salhexfield.h"       // feature 397
 #include "salfindseed.h"       // feature 398
+#include "salisowalk.h"        // feature 400
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -26525,6 +26526,184 @@ static void TestFindSeed398()
     }
 }
 
+// Feature 400: the folder walk of the ISO plug-in's readers after a folder that cannot be read
+// (src/common/salisowalk.h), on model trees walked as CISO9660::ListDirectoryRe / CUDF::ScanDir /
+// CXDVDFS::ScanDir walk them - with the rule and with main's ("descend only when everything is OK",
+// the child's result assigned)
+struct IsoWalkNode400
+{
+    const char* Name;
+    int Kind; // 0 file, 1 folder, 2 folder that cannot be read, 3 folder whose walk runs out of memory
+    std::vector<IsoWalkNode400> Kids;
+};
+
+static IsoWalkNode400 IwFile400(const char* name)
+{
+    return IsoWalkNode400{name, 0, {}};
+}
+
+static IsoWalkNode400 IwDir400(const char* name, std::vector<IsoWalkNode400> kids, int kind = 1)
+{
+    return IsoWalkNode400{name, kind, kids};
+}
+
+struct IsoWalkOut400
+{
+    std::vector<std::string> Listed;
+    int Boxes = 0;
+    int Walked = 0; // folders whose walk started
+};
+
+static int IsoWalkModel400(const IsoWalkNode400& dir, const std::string& path, SalIsoWalk& walk, bool rule,
+                           IsoWalkOut400& out)
+{
+    out.Walked++;
+    if (dir.Kind == 2 || dir.Kind == 3)
+    {
+        if (dir.Kind == 3)
+            walk.Stopped = true;
+        if (!rule || !SalIsoWalkBoxQuiet(walk, false))
+            out.Boxes++;
+        return SAL_ISO_WALK_TERMINATE;
+    }
+    int ret = SAL_ISO_WALK_OK;
+    for (const IsoWalkNode400& kid : dir.Kids)
+    {
+        std::string p = path.empty() ? std::string(kid.Name) : path + "/" + kid.Name;
+        if (kid.Kind == 0)
+            out.Listed.push_back(p);
+        else if (rule)
+        {
+            if (SalIsoWalkDescends(walk))
+                ret = SalIsoWalkAfterChild(ret, IsoWalkModel400(kid, p, walk, rule, out));
+        }
+        else if (ret == SAL_ISO_WALK_OK) // main's walk
+        {
+            ret = IsoWalkModel400(kid, p, walk, rule, out);
+            if (ret == SAL_ISO_WALK_TERMINATE)
+                ret = SAL_ISO_WALK_CONTINUE;
+        }
+    }
+    return ret;
+}
+
+static bool IwHas400(const IsoWalkOut400& out, const char* p)
+{
+    for (const std::string& s : out.Listed)
+        if (s == p)
+            return true;
+    return false;
+}
+
+static void TestIsoWalk400()
+{
+    // the rule's parts
+    {
+        SalIsoWalk w;
+        CHECK(SalIsoWalkDescends(w));
+        CHECK(!w.Stopped && !w.BoxShown);
+        // a quiet walk (fit check, count walk) stays quiet and does not use up the box
+        CHECK(SalIsoWalkBoxQuiet(w, true));
+        CHECK(!w.BoxShown);
+        CHECK(!SalIsoWalkBoxQuiet(w, false)); // the first box is shown
+        CHECK(w.BoxShown);
+        CHECK(SalIsoWalkBoxQuiet(w, false)); // every later one is quiet
+        CHECK(SalIsoWalkBoxQuiet(w, true));
+        CHECK(SalIsoWalkDescends(w)); // a box does not stop the walk
+        w.Stopped = true;
+        CHECK(!SalIsoWalkDescends(w));
+
+        CHECK(SalIsoWalkAfterChild(SAL_ISO_WALK_OK, SAL_ISO_WALK_OK) == SAL_ISO_WALK_OK);
+        CHECK(SalIsoWalkAfterChild(SAL_ISO_WALK_OK, SAL_ISO_WALK_CONTINUE) == SAL_ISO_WALK_CONTINUE);
+        CHECK(SalIsoWalkAfterChild(SAL_ISO_WALK_OK, SAL_ISO_WALK_TERMINATE) == SAL_ISO_WALK_CONTINUE);
+        CHECK(SalIsoWalkAfterChild(SAL_ISO_WALK_CONTINUE, SAL_ISO_WALK_OK) == SAL_ISO_WALK_CONTINUE);
+        CHECK(SalIsoWalkAfterChild(SAL_ISO_WALK_CONTINUE, SAL_ISO_WALK_TERMINATE) == SAL_ISO_WALK_CONTINUE);
+        CHECK(SalIsoWalkAfterChild(SAL_ISO_WALK_TERMINATE, SAL_ISO_WALK_OK) == SAL_ISO_WALK_TERMINATE);
+        CHECK(SalIsoWalkAfterChild(SAL_ISO_WALK_TERMINATE, SAL_ISO_WALK_CONTINUE) == SAL_ISO_WALK_TERMINATE);
+    }
+
+    // 330's tree: a (cannot be read) / side.txt, top.txt, zlast / z.txt
+    IsoWalkNode400 t330 = IwDir400("", {IwDir400("a", {IwFile400("side.txt")}, 2), IwFile400("top.txt"),
+                                        IwDir400("zlast", {IwFile400("z.txt")})});
+    {
+        SalIsoWalk w;
+        IsoWalkOut400 o;
+        int r = IsoWalkModel400(t330, "", w, true, o);
+        CHECK(r == SAL_ISO_WALK_CONTINUE); // the listing is marked incomplete (feature 330)
+        CHECK(IwHas400(o, "top.txt") && IwHas400(o, "zlast/z.txt") && o.Listed.size() == 2);
+        CHECK(o.Boxes == 1);
+        // main's walk: zlast/z.txt was never listed (the defect)
+        SalIsoWalk w0;
+        IsoWalkOut400 o0;
+        CHECK(IsoWalkModel400(t330, "", w0, false, o0) == SAL_ISO_WALK_CONTINUE);
+        CHECK(!IwHas400(o0, "zlast/z.txt") && o0.Listed.size() == 1);
+    }
+
+    // several damaged folders before and between readable ones: one box, every readable file
+    IsoWalkNode400 two = IwDir400("", {IwDir400("a", {}, 2), IwDir400("b", {IwFile400("b.txt")}, 2), IwFile400("top.txt"),
+                                       IwDir400("m", {IwDir400("bad", {}, 2), IwFile400("m.txt")}),
+                                       IwDir400("zlast", {IwFile400("z.txt")})});
+    {
+        SalIsoWalk w;
+        IsoWalkOut400 o;
+        CHECK(IsoWalkModel400(two, "", w, true, o) == SAL_ISO_WALK_CONTINUE);
+        CHECK(o.Boxes == 1);
+        CHECK(o.Listed.size() == 3 && IwHas400(o, "top.txt") && IwHas400(o, "m/m.txt") && IwHas400(o, "zlast/z.txt"));
+    }
+
+    // a failure deep below, then a folder that walks whole: the directory stays incomplete
+    IsoWalkNode400 deep = IwDir400("", {IwDir400("x", {IwDir400("y", {}, 2), IwDir400("w", {IwFile400("f")})}),
+                                        IwDir400("zlast", {IwFile400("z.txt")})});
+    {
+        SalIsoWalk w;
+        IsoWalkOut400 o;
+        CHECK(IsoWalkModel400(deep, "", w, true, o) == SAL_ISO_WALK_CONTINUE);
+        CHECK(IwHas400(o, "x/w/f") && IwHas400(o, "zlast/z.txt"));
+    }
+
+    // out of memory: no later folder descended (as before), the files of open directories still listed
+    IsoWalkNode400 oom = IwDir400("", {IwDir400("a", {}, 3), IwFile400("top.txt"), IwDir400("zlast", {IwFile400("z.txt")})});
+    {
+        SalIsoWalk w;
+        IsoWalkOut400 o;
+        CHECK(IsoWalkModel400(oom, "", w, true, o) == SAL_ISO_WALK_CONTINUE);
+        CHECK(w.Stopped);
+        CHECK(IwHas400(o, "top.txt") && !IwHas400(o, "zlast/z.txt"));
+        CHECK(o.Boxes == 1 && o.Walked == 2);
+    }
+
+    // an image without a damaged folder: the same listing as main's walk, OK, no box
+    IsoWalkNode400 good = IwDir400("", {IwDir400("a", {IwFile400("side.txt"), IwDir400("in", {IwFile400("i")})}),
+                                        IwFile400("top.txt"), IwDir400("zlast", {IwFile400("z.txt")})});
+    {
+        SalIsoWalk w, w0;
+        IsoWalkOut400 o, o0;
+        CHECK(IsoWalkModel400(good, "", w, true, o) == SAL_ISO_WALK_OK);
+        CHECK(IsoWalkModel400(good, "", w0, false, o0) == SAL_ISO_WALK_OK);
+        CHECK(o.Listed == o0.Listed && o.Listed.size() == 4);
+        CHECK(o.Boxes == 0 && !w.BoxShown);
+    }
+
+    // a crafted image with 1,000 damaged folders between readable ones: one box, all 1,000 files
+    {
+        std::vector<IsoWalkNode400> kids;
+        std::vector<std::string> names;
+        for (int i = 0; i < 1000; i++)
+            names.push_back("d" + std::to_string(i));
+        for (int i = 0; i < 1000; i++)
+        {
+            kids.push_back(IwDir400("bad", {}, 2));
+            kids.push_back(IsoWalkNode400{names[i].c_str(), 1, {IwFile400("f")}});
+        }
+        IsoWalkNode400 many{"", 1, kids};
+        SalIsoWalk w;
+        IsoWalkOut400 o;
+        CHECK(IsoWalkModel400(many, "", w, true, o) == SAL_ISO_WALK_CONTINUE);
+        CHECK(o.Boxes == 1 && o.Listed.size() == 1000);
+        CHECK(IwHas400(o, "d999/f"));
+    }
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -26744,6 +26923,7 @@ int main(int argc, char** argv)
     TestCabName381();
     TestHexFieldTidy397();
     TestFindSeed398();
+    TestIsoWalk400();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -1,0 +1,4 @@
+iso328_probe (feature 328) regress-400
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 14:16; registry key existed True
+

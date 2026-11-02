@@ -11,6 +11,11 @@
 #include "../../common/salisoudfentry.h" // feature 361: the file entry's descriptor area
 #include "../../common/salisoudfmaps.h"  // feature 378: the partition map table
 
+// feature 400: the walk results of salisowalk.h are the plug-in's
+static_assert(ERR_OK == SAL_ISO_WALK_OK && ERR_CONTINUE == SAL_ISO_WALK_CONTINUE &&
+                  ERR_TERMINATE == SAL_ISO_WALK_TERMINATE,
+              "salisowalk.h results");
+
 #include "uniso.rh"
 #include "uniso.rh2"
 #include "lang\lang.rh"
@@ -199,6 +204,7 @@ CUDF::CUDF(CISOImage* image, DWORD extent, int trackno) : CUnISOFSAbstract(image
     PartitionMapping.nMetadataICBs = 0;
     VatMissing = FALSE;
     MapsRefused = FALSE;
+    Visited = NULL;
 }
 
 CUDF::~CUDF()
@@ -846,7 +852,7 @@ int CUDF::AddFileDir(const char* path, char* fileName, BYTE fileChar, CAD* icb,
         if (fd.Name == NULL)
         {
             Image->ListingLeftOut.SetIncomplete(); // feature 329: a whole unpack then fails
-            Error(IDS_INSUFFICIENT_MEMORY);
+            WalkOutOfMemory(); // feature 400: no later folder descended, the walk's one box
             throw (int)ADD_FAILED;
         } // if
 
@@ -861,7 +867,7 @@ int CUDF::AddFileDir(const char* path, char* fileName, BYTE fileChar, CAD* icb,
         if (filePos == NULL)
         {
             Image->ListingLeftOut.SetIncomplete();
-            Error(IDS_INSUFFICIENT_MEMORY);
+            WalkOutOfMemory(); // feature 400: no later folder descended, the walk's one box
             throw (int)ADD_FAILED;
         }
 
@@ -1001,9 +1007,16 @@ BOOL CUDF::ListDirectory(char* path, int session, CSalamanderDirectoryAbstract* 
     if (!root.Whole)
         Image->ListingLeftOut.SetIncomplete();
 
+    // feature 400: a fresh walk; each folder walked once (the root marked first)
+    Walk = SalIsoWalk();
+    std::set<unsigned long long> visited;
+    Visited = &visited;
+    VisitFolder(rootICB);
     int walked = ScanDir(root, path, dir, pluginData);
+    Visited = NULL;
     // feature 330: a folder that could not be read (a read error, an invalid tag, a file entry that
-    // cannot be read) ends its walk and every later descent, and its result reaches the top as
+    // cannot be read) ends its walk (feature 400: later folders are still descended), and its result
+    // reaches the top as
     // ERR_CONTINUE / ERR_TERMINATE - the listing is incomplete, so a whole unpack fails and "Delete
     // archive after unpacking" keeps the image (it was deleted)
     if (walked != ERR_OK)
@@ -1038,6 +1051,31 @@ BOOL CUDF::ReadFolderWindow(const CUDFFolder& folder, Uint32 block, Uint8* windo
                          window + SECTOR_SIZE);
 }
 
+// feature 400: out of memory in the walk - no later folder is descended (as every failure did before), the
+// walk's one box
+void CUDF::WalkOutOfMemory()
+{
+    Walk.Stopped = true;
+    Error(IDS_INSUFFICIENT_MEMORY, SalIsoWalkBoxQuiet(Walk, false));
+}
+
+// feature 400: the walk meets the folder whose file entry 'icb' names - 1 the first time, 0 met again in this
+// walk (not descended: listed empty, not marked - CISO9660's rule, 328), -1 out of memory
+int CUDF::VisitFolder(const CAD& icb)
+{
+    if (Visited == NULL)
+        return 1;
+    try
+    {
+        return Visited->insert(((unsigned long long)icb.Partition << 32) | icb.Location).second ? 1 : 0;
+    }
+    catch (...)
+    {
+        WalkOutOfMemory();
+        return -1;
+    }
+}
+
 int CUDF::ScanDir(const CUDFFolder& folder, char* path,
                   CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
@@ -1052,7 +1090,7 @@ int CUDF::ScanDir(const CUDFFolder& folder, char* path,
     Uint32 block = 0; // the window's first block in the folder
     if (!ReadFolderWindow(folder, block, directory, lbNum))
     {
-        Error(IDS_ERROR_LISTING_IMAGE, FALSE, lbNum);
+        Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, false), lbNum); // feature 400: once
         // if we are reading from the root (lbNum == 2), return ERR_CONTINUE so we can descend into an empty image
         // we try to behave consistently from the user's point of view
         // TODO: better detection of whether the sector being read is the root
@@ -1072,7 +1110,7 @@ int CUDF::ScanDir(const CUDFFolder& folder, char* path,
             end -= SECTOR_SIZE;
             if (!ReadFolderWindow(folder, block, directory, lbNum))
             {
-                Error(IDS_ERROR_LISTING_IMAGE, FALSE, lbNum);
+                Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, false), lbNum); // feature 400: once
                 return ERR_TERMINATE;
             }
         } // if
@@ -1086,7 +1124,7 @@ int CUDF::ScanDir(const CUDFFolder& folder, char* path,
             int fidLen = ReadFileIdentifier(directory + p, (unsigned int)(sizeof(directory) - p), &fileChar, fileName, &icb);
             if (fidLen == 0)
             {
-                Error(IDS_UDF_INVALID_TAG_ID);
+                Error(IDS_UDF_INVALID_TAG_ID, SalIsoWalkBoxQuiet(Walk, false)); // feature 400: once
                 return ERR_CONTINUE;
             }
             p += fidLen;
@@ -1107,34 +1145,37 @@ int CUDF::ScanDir(const CUDFFolder& folder, char* path,
                     strcat(newPath, "\\");
                     strcat(newPath, fileName);
 
-                    CUDFFolder sub;
-                    CICBTag icbTag;
-                    // descend when everything is OK
-                    if (MapICB(icb, &icbTag, &sub))
+                    // feature 400: descended also after a folder that could not be read ("descend when
+                    // everything is OK" listed every later folder empty) - only out of memory stops the walk;
+                    // a failure below keeps this directory incomplete; a folder met again in this walk is
+                    // listed empty (a crafted image: a folder inside itself)
+                    int visit = SalIsoWalkDescends(Walk) ? VisitFolder(icb) : 0;
+                    if (visit < 0)
+                        ret = SalIsoWalkAfterChild(ret, ERR_TERMINATE);
+                    else if (visit > 0)
                     {
-                        // feature 364: a sub-folder read short of its Information Length - as the root above
-                        if (!sub.Whole)
-                            Image->ListingLeftOut.SetIncomplete();
-                        if (ret == ERR_OK)
+                        CUDFFolder sub;
+                        CICBTag icbTag;
+                        if (MapICB(icb, &icbTag, &sub))
                         {
-                            ret = ScanDir(sub, newPath, dir, pluginData);
-                            // if we surface with a termination error, keep processing as much as possible
-                            if (ret == ERR_TERMINATE)
-                                ret = ERR_CONTINUE;
+                            // feature 364: a sub-folder read short of its Information Length - as the root
+                            if (!sub.Whole)
+                                Image->ListingLeftOut.SetIncomplete();
+                            ret = SalIsoWalkAfterChild(ret, ScanDir(sub, newPath, dir, pluginData));
                         }
-                    }
-                    else
-                    {
-                        // feature 330: the folder's file entry cannot be read - it was listed empty without
-                        // a word; its contents are missing, so a whole unpack fails
-                        Image->ListingLeftOut.SetIncomplete();
+                        else
+                        {
+                            // feature 330: the folder's file entry cannot be read - it was listed empty without
+                            // a word; its contents are missing, so a whole unpack fails
+                            Image->ListingLeftOut.SetIncomplete();
+                        }
                     }
                 }
             }
         }
         else
         {
-            Error(IDS_UDF_INVALID_TAG_ID);
+            Error(IDS_UDF_INVALID_TAG_ID, SalIsoWalkBoxQuiet(Walk, false)); // feature 400: once
             return ERR_CONTINUE;
         } // if
     } // while

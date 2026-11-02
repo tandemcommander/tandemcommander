@@ -14,6 +14,11 @@
 
 #include <memory> // feature 328
 
+// feature 400: the walk results of salisowalk.h are the plug-in's
+static_assert(ERR_OK == SAL_ISO_WALK_OK && ERR_CONTINUE == SAL_ISO_WALK_CONTINUE &&
+                  ERR_TERMINATE == SAL_ISO_WALK_TERMINATE,
+              "salisowalk.h results");
+
 #define SECTOR_SIZE 0x800
 
 // feature 328: one name buffer of ListDirectoryRe (the size its names always had)
@@ -454,7 +459,7 @@ int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
     if (fd.Name == NULL)
     {
         Image->ListingLeftOut.SetIncomplete(); // feature 328 (review 4): a whole unpack then fails
-        Error(IDS_INSUFFICIENT_MEMORY);
+        WalkOutOfMemory(); // feature 400: no later folder descended, the walk's one box
         return ADD_FAILED;
     } // if
 
@@ -470,7 +475,7 @@ int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
     {
         free(fd.Name);
         Image->ListingLeftOut.SetIncomplete();
-        Error(IDS_INSUFFICIENT_MEMORY);
+        WalkOutOfMemory(); // feature 400: no later folder descended, the walk's one box
         return ADD_FAILED;
     }
 
@@ -537,7 +542,7 @@ int CISO9660::AddFileDir(const char* path, char* fileName, CDirectoryRecord& dr,
                 free(fd.Name);
                 delete filePos;
                 Image->ListingLeftOut.SetIncomplete();
-                Error(IDS_INSUFFICIENT_MEMORY);
+                WalkOutOfMemory(); // feature 400
                 return ADD_FAILED;
             }
             memcpy(filePos->Extents, extents, extentCount * sizeof(SalIsoExtent));
@@ -643,6 +648,8 @@ void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BO
     // a count walk of the subtree (nothing added, errors quiet); the modes of the walk it is part of kept
     BOOL saveFitCheck = FitCheck, saveFitRefused = FitRefused, saveFitIsoNames = FitIsoNames, saveDecide = Decide;
     size_t saveFitCount = FitCount;
+    SalIsoWalk saveWalk = Walk; // feature 400: a count walk (quiet) has its own walk state
+    Walk = SalIsoWalk();
     FitCheck = TRUE;
     FitRefused = FALSE;
     FitIsoNames = isoNames;
@@ -673,6 +680,7 @@ void CISO9660::CountUnder(char* path, CDirectoryRecord& dr, const char* name, BO
     FitIsoNames = saveFitIsoNames;
     FitCount = saveFitCount;
     Decide = saveDecide;
+    Walk = saveWalk;
 }
 
 char* CISO9660::GetBootRecordTypeStr(EBootRecordType type)
@@ -747,6 +755,7 @@ BOOL CISO9660::ListDirectory(char* path, int session,
 {
     CALL_STACK_MESSAGE3("CISO9660::ListDirectory(%s, %d, , )", path, session);
 
+    Walk = SalIsoWalk(); // feature 400
     AddBootRecord(path, session, dir, pluginData);
 
     // feature 326 (review): a volume walks its tree with the listing's rule (FitCheck) first - Rock
@@ -770,6 +779,7 @@ BOOL CISO9660::ListDirectory(char* path, int session,
             FitRefused = FALSE;
             FitIsoNames = FALSE;
             FitCount = 0;
+            Walk = SalIsoWalk(); // feature 400
             std::set<DWORD> fitVisited;
             Visited = &fitVisited;
             CPluginDataInterfaceAbstract* noData = NULL;
@@ -785,15 +795,16 @@ BOOL CISO9660::ListDirectory(char* path, int session,
         }
     }
     std::set<DWORD> visited; // feature 328 (review): each directory walked once
+    Walk = SalIsoWalk();     // feature 400: the listing walk's own state (the fit walk was quiet)
     Visited = &visited;
     int walked = ListDirectoryRe(path, &Root, dir, pluginData);
     Visited = NULL;
     Decide = FALSE;
     // feature 330: a directory that could not be read (read error, a record failing the checks, out of
-    // memory) ends its walk and every later descent ("descend only when everything is OK"), and its
-    // result reaches the top as ERR_CONTINUE / ERR_TERMINATE - the listing is incomplete, so a whole
-    // unpack fails and "Delete archive after unpacking" keeps the image (it was deleted). A directory
-    // met again (Visited) returns ERR_OK
+    // memory) ends its walk, and its result reaches the top as ERR_CONTINUE / ERR_TERMINATE - the
+    // listing is incomplete, so a whole unpack fails and "Delete archive after unpacking" keeps the
+    // image (it was deleted). A directory met again (Visited) returns ERR_OK. Feature 400: later folders
+    // are still descended (only out of memory stops the walk) and the failure is kept on the way up
     if (walked != ERR_OK)
         Image->ListingLeftOut.SetIncomplete();
     return walked != ERR_TERMINATE;
@@ -831,7 +842,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
         {
             if (added)
                 Visited->erase(block);
-            Error(IDS_INSUFFICIENT_MEMORY, FitCheck);
+            WalkOutOfMemory(); // feature 400
             return ERR_TERMINATE;
         }
     }
@@ -839,14 +850,14 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
     char* data = new char[size];
     if (data == NULL)
     {
-        Error(IDS_INSUFFICIENT_MEMORY, FitCheck);
+        WalkOutOfMemory(); // feature 400
         return ERR_TERMINATE;
     }
 
     if (Image->ReadBlock(block, size, data) != (DWORD)size)
     {
         delete[] data;
-        Error(IDS_ERROR_LISTING_IMAGE, FitCheck, block);
+        Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, FitCheck != FALSE), block); // feature 400: once
         // if reading the sector with the root fails
         return (block == (DWORD)Root.LocationOfExtent - ExtentOffset) ? ERR_CONTINUE : ERR_TERMINATE;
     }
@@ -857,7 +868,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
     if (!nameBuf)
     {
         delete[] data;
-        Error(IDS_INSUFFICIENT_MEMORY, FitCheck);
+        WalkOutOfMemory(); // feature 400
         return ERR_TERMINATE;
     }
     char* names = nameBuf.get();
@@ -882,7 +893,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
         if ((dirRecord.LocationOfExtent != SWAPDWORD(dirRecord.LocationOfExtentA)) || (dirRecord.DataLength != SWAPDWORD(dirRecord.DataLengthA)))
         {
             delete[] data; // feature 223: it was left allocated
-            Error(IDS_ERROR_LISTING_IMAGE, FitCheck, block);
+            Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, FitCheck != FALSE), block); // feature 400: once
             return ERR_TERMINATE;
         }
         // feature 223: the record and its name lie inside the data read (its lengths come from the
@@ -891,7 +902,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
             33 + dirRecord.LengthOfFileIdentifier > dirRecord.LengthOfDirectoryRecord)
         {
             delete[] data;
-            Error(IDS_ERROR_LISTING_IMAGE, FitCheck, block);
+            Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, FitCheck != FALSE), block); // feature 400: once
             return ERR_TERMINATE;
         }
 
@@ -912,7 +923,7 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
             SalIsoChainClose(chain);
             if (!FitCheck)
                 Image->ListingLeftOut.SetIncomplete();
-            Error(IDS_INSUFFICIENT_MEMORY, FitCheck);
+            WalkOutOfMemory(); // feature 400
             ret = ERR_TERMINATE;
             break;
         }
@@ -986,16 +997,16 @@ int CISO9660::ListDirectoryRe(char* path, CDirectoryRecord* root,
                     int pathLen = (int)strlen(path);
                     strcat(path, "\\");
                     strcat(path, listedName);
-                    // descend only when everything is OK
-                    if (ret == ERR_OK)
+                    // feature 400: descended also after a folder that could not be read ("descend only
+                    // when everything is OK" listed every later folder of the image empty) - only out of
+                    // memory stops the walk; a failure below keeps this directory incomplete
+                    if (SalIsoWalkDescends(Walk))
                     {
                         BOOL decide = Decide;
                         Decide = below;
-                        ret = ListDirectoryRe(path, &dirRecord, dir, pluginData);
+                        int sub = ListDirectoryRe(path, &dirRecord, dir, pluginData);
                         Decide = decide;
-                        // if we surface with a termination error, keep processing as much as possible
-                        if (ret == ERR_TERMINATE)
-                            ret = ERR_CONTINUE;
+                        ret = SalIsoWalkAfterChild(ret, sub);
                     }
                     path[pathLen] = '\0';
                 }
@@ -1069,6 +1080,14 @@ int CISO9660::AddFileRecord(char* path, char* names, const char* record, CDirect
     return AddFileDir(path, listedName, dr, dir, pluginData, xaForm2, TRUE, xaKnown, xaAttrs);
 }
 
+// feature 400: out of memory in the walk - no later folder is descended (as every failure did before), the
+// walk's one box
+void CISO9660::WalkOutOfMemory()
+{
+    Walk.Stopped = true;
+    Error(IDS_INSUFFICIENT_MEMORY, SalIsoWalkBoxQuiet(Walk, FitCheck != FALSE));
+}
+
 void CISO9660::ChainNotListed(DWORD block)
 {
     // feature 368: a file stored in several extents whose chain of records is incomplete (or that the reader
@@ -1076,7 +1095,7 @@ void CISO9660::ChainNotListed(DWORD block)
     // directory that cannot be read whole (no new text); the listing is incomplete, so a whole unpack fails and
     // "Delete archive after unpacking" keeps the image. Fit check walks only count: quiet, nothing marked.
     TRACE_I("CISO9660::ChainNotListed(): a file stored in several extents left out, directory at sector " << block);
-    Error(IDS_ERROR_LISTING_IMAGE, FitCheck, block);
+    Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, FitCheck != FALSE), block); // feature 400: once
     if (!FitCheck)
         Image->ListingLeftOut.SetIncomplete();
 }

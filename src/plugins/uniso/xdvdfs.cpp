@@ -8,6 +8,11 @@
 #include "isoimage.h"
 #include "xdvdfs.h"
 
+// feature 400: the walk results of salisowalk.h are the plug-in's
+static_assert(ERR_OK == SAL_ISO_WALK_OK && ERR_CONTINUE == SAL_ISO_WALK_CONTINUE &&
+                  ERR_TERMINATE == SAL_ISO_WALK_TERMINATE,
+              "salisowalk.h results");
+
 #include "uniso.rh"
 #include "uniso.rh2"
 #include "lang/lang.rh"
@@ -37,6 +42,7 @@
 CXDVDFS::CXDVDFS(CISOImage* image, DWORD extent) : CUnISOFSAbstract(image)
 {
     ExtentOffset = extent;
+    Visited = NULL;
 }
 
 CXDVDFS::~CXDVDFS()
@@ -105,7 +111,7 @@ int CXDVDFS::AddFileDir(const char* path, char* fileName, CDirectoryEntry* de,
         if (fd.Name == NULL)
         {
             Image->ListingLeftOut.SetIncomplete(); // feature 329: a whole unpack then fails
-            Error(IDS_INSUFFICIENT_MEMORY);
+            WalkOutOfMemory(); // feature 400: no later folder descended, the walk's one box
             throw (int)ADD_FAILED;
         } // if
 
@@ -120,7 +126,7 @@ int CXDVDFS::AddFileDir(const char* path, char* fileName, CDirectoryEntry* de,
         if (filePos == NULL)
         {
             Image->ListingLeftOut.SetIncomplete();
-            Error(IDS_INSUFFICIENT_MEMORY);
+            WalkOutOfMemory(); // feature 400: no later folder descended, the walk's one box
             throw (int)ADD_FAILED;
         }
 
@@ -196,9 +202,15 @@ BOOL CXDVDFS::ListDirectory(char* path, int session, CSalamanderDirectoryAbstrac
 {
     CALL_STACK_MESSAGE3("CXDVDFS::ListDirectory(%s, %d, , )", path, session);
 
+    // feature 400: a fresh walk; each folder walked once (the root marked first)
+    Walk = SalIsoWalk();
+    std::set<DWORD> visited;
+    Visited = &visited;
+    VisitFolder(VD.RootSector);
     int walked = ScanDir(VD.RootSector, VD.RootDirectorySize, path, dir, pluginData);
-    // feature 330: a folder that could not be read (or out of memory) ends its walk and every later
-    // descent, and its result reaches the top as ERR_CONTINUE / ERR_TERMINATE - the listing is
+    Visited = NULL;
+    // feature 330: a folder that could not be read (or out of memory) ends its walk (feature 400: later
+    // folders are still descended), and its result reaches the top as ERR_CONTINUE / ERR_TERMINATE - the listing is
     // incomplete, so a whole unpack fails and "Delete archive after unpacking" keeps the image (it was
     // deleted)
     if (walked != ERR_OK)
@@ -206,12 +218,37 @@ BOOL CXDVDFS::ListDirectory(char* path, int session, CSalamanderDirectoryAbstrac
     return walked != ERR_TERMINATE;
 }
 
+// feature 400: out of memory in the walk - no later folder is descended (as every failure did before), the
+// walk's one box
+void CXDVDFS::WalkOutOfMemory()
+{
+    Walk.Stopped = true;
+    Error(IDS_INSUFFICIENT_MEMORY, SalIsoWalkBoxQuiet(Walk, false));
+}
+
+// feature 400: the walk meets the folder starting at 'sector' - 1 the first time, 0 met again in this walk
+// (not descended: listed empty, not marked - CISO9660's rule, 328), -1 out of memory
+int CXDVDFS::VisitFolder(DWORD sector)
+{
+    if (Visited == NULL)
+        return 1;
+    try
+    {
+        return Visited->insert(sector).second ? 1 : 0;
+    }
+    catch (...)
+    {
+        WalkOutOfMemory();
+        return -1;
+    }
+}
+
 int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData)
 {
     BYTE* data = new BYTE[size];
     if (data == NULL)
     {
-        Error(IDS_INSUFFICIENT_MEMORY);
+        WalkOutOfMemory(); // feature 400
         return ERR_TERMINATE;
     }
 
@@ -219,7 +256,7 @@ int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryA
     if (Image->ReadBlock(sector, size, data) != size)
     {
         delete[] data;
-        Error(IDS_ERROR_LISTING_IMAGE, FALSE, sector);
+        Error(IDS_ERROR_LISTING_IMAGE, SalIsoWalkBoxQuiet(Walk, false), sector); // feature 400: once
         // if reading the sector with the root fails
         return (sector == VD.RootSector) ? ERR_CONTINUE : ERR_TERMINATE;
     }
@@ -272,14 +309,15 @@ int CXDVDFS::ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryA
             strcat(path, "\\");
             strcat(path, fileName);
 
-            // descend only when everything is OK
-            if (ret == ERR_OK)
-            {
-                ret = ScanDir(de.StartSector, de.FileSize, path, dir, pluginData);
-                // if we surface with a termination error, keep processing as much as possible
-                if (ret == ERR_TERMINATE)
-                    ret = ERR_CONTINUE;
-            }
+            // feature 400: descended also after a folder that could not be read ("descend only when
+            // everything is OK" listed every later folder empty) - only out of memory stops the walk; a
+            // failure below keeps this directory incomplete; a folder met again in this walk is listed
+            // empty (a crafted image: a folder inside itself - it doubled the walk per level)
+            int visit = SalIsoWalkDescends(Walk) ? VisitFolder(de.StartSector) : 0;
+            if (visit < 0)
+                ret = SalIsoWalkAfterChild(ret, ERR_TERMINATE);
+            else if (visit > 0)
+                ret = SalIsoWalkAfterChild(ret, ScanDir(de.StartSector, de.FileSize, path, dir, pluginData));
             path[pathLen] = '\0';
         }
 

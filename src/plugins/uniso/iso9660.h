@@ -7,6 +7,7 @@
 #include "../../common/salsusp.h"        // feature 326: Rock Ridge recognised by the root's SP entry too
 #include "../../common/sallistingname.h" // feature 326: the listing's rule for the fit check
 #include "../../common/salisoextent.h"   // feature 368: files stored in several extents
+#include "../../common/salisowalk.h"     // feature 400: the walk after a folder that cannot be read
 
 #include <set> // feature 328: the directories a walk met
 #include <vector>
@@ -286,6 +287,9 @@ protected:
     std::set<DWORD>* Visited;
     // feature 328 (review 2): a count walk notes the directories it adds to Visited (CountUnder takes them out)
     std::vector<DWORD>* VisitedLog;
+    // feature 400: the current walk - later folders are descended after a folder that cannot be read
+    // (only out of memory stops it), its error box is shown once; a count walk keeps its own
+    SalIsoWalk Walk;
     CDirectoryRecord Root;
     WORD LogicalBlockSize;
     DWORD ExtentOffset;
@@ -355,6 +359,7 @@ protected:
     // left out - the listing-error box (quiet in a fit check walk) and, outside fit checks, the listing marked
     // incomplete (a whole unpack fails, the image is kept); the walk goes on
     void ChainNotListed(DWORD block);
+    void WalkOutOfMemory(); // feature 400
     // feature 328: the name a folder record is listed under ('rrName' NULL = it has no Rock Ridge name);
     // 'below' = whether its subtree is listed in decision mode
     char* PickDirName(char* path, CDirectoryRecord& dr, char* rrName, char* isoName, BOOL& below);

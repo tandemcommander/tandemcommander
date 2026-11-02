@@ -4,6 +4,9 @@
 #pragma once
 
 #include "fs.h"
+#include "../../common/salisowalk.h" // feature 400: the walk after a folder that cannot be read
+
+#include <set>
 
 // Some elementera info on Xbox DVD format can be found here: http://home.comcast.net/~admiral_powerslave/dvddrives.html
 
@@ -40,6 +43,11 @@ protected:
     CVolumeDescriptor VD;
 
     DWORD ExtentOffset;
+    // feature 400: the listing walk - later folders are descended after a folder that cannot be read
+    // (only out of memory stops it), its error box is shown once, and each folder (its start sector)
+    // is walked once - a crafted image can point a folder back to itself or an ancestor (CISO9660, 328)
+    SalIsoWalk Walk;
+    std::set<DWORD>* Visited;
 
 public:
     CXDVDFS(CISOImage* image, DWORD extent);
@@ -68,4 +76,6 @@ protected:
                    CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
 
     int ScanDir(DWORD sector, DWORD size, char* path, CSalamanderDirectoryAbstract* dir, CPluginDataInterfaceAbstract*& pluginData);
+    void WalkOutOfMemory();         // feature 400
+    int VisitFolder(DWORD sector);  // feature 400: 1 first time, 0 met again, -1 out of memory
 };
