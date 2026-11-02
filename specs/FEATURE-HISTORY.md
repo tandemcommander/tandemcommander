@@ -30,7 +30,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
-| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389 |
+| Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
@@ -6210,3 +6210,21 @@ a few early ones are out of sequence).
   test off 11 FAIL, the pseudo-handle and target checks off 3 FAIL); 292's 33 / 0, 294's 24 / 0, 296's
   47 / 0, 297's 40 / 0, 390's 10 / 0; saltests 30,755 -> 30,798 / 0; two refute-first reviews (review
   1: one MUST, one SHOULD fixed; review 2: no MUST, one SHOULD fixed, stack NOTE fixed).
+- 392-filter-dialog-backup: a Change Filter edit refused for a syntax error ("File mask is
+  syntactically incorrect.", then Cancel) changed the panel's filter - a tab's filter over 259 bytes
+  came back cut to its first 259 bytes (`CFilterDialog::Validate` restored it from a `char[MAX_PATH]`
+  backup), and at any length the panel then listed by the *refused* text's masks (the failed
+  `PrepareMasks` of the typed text left its partly prepared masks in the panel's group; the restore
+  changed only the text) until the filter was prepared again - now the typed text is checked in a
+  local `CMaskGroup` with the panel filter's mode and the panel's group is never written by
+  `Validate` (an accepted text is stored by `Transfer` as before). Traps: opening Change Filter
+  prepares the panel's filter anew (`Transfer` on data-to-window), so a probe that reads the listing
+  after reopening the dialog sees no stale filtering - read it right after the cancel; the title of a
+  text file in the viewer is `... [Plain Text] - Code Viewer`. Limits: a panel filter over 259 bytes
+  still cannot be switched off or kept unchanged by OK (270's too-long refusal; Inbox
+  `filter-dialog-cannot-switch-off-a-panel-filter-longer-than`); the error selection is a byte index
+  (Inbox `mask-syntax-error-selects-the-wrong-characters-in-a-non`). From backlog item
+  `filter-dialog-cuts-a-long-panel-filter-to-259-bytes-after-a`. Probe `flt392_probe.ps1` 6 PASS /
+  2 FAIL -> 8 / 0 (old code rebuilt at fc9b8691 as the negative control); 270's filter rows 6 / 0;
+  saltests 30,798 / 0; one refute-first review (no MUST, two SHOULDs fixed: the listing check, the
+  records).

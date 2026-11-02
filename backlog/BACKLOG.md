@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Filter dialog cuts a long panel filter to 259 bytes after a refused edit](items/filter-dialog-cuts-a-long-panel-filter-to-259-bytes-after-a/desc.md) | bug | 4 | long-paths | 392 |
 
 ## Next
 
@@ -301,6 +300,8 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Filter dialog cannot switch off a panel filter longer than 259 bytes](items/filter-dialog-cannot-switch-off-a-panel-filter-longer-than/desc.md) | bug | 4 | long-paths | review:392 | 2026-11-02 |
+| [Mask syntax error selects the wrong characters in a non-ASCII mask](items/mask-syntax-error-selects-the-wrong-characters-in-a-non/desc.md) | bug | 2 | encoding | review:392 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 
 ## Parked
