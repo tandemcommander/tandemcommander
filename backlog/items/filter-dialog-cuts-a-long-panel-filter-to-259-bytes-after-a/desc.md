@@ -1,7 +1,7 @@
 ---
 title: Filter dialog cuts a long panel filter to 259 bytes after a refused edit
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: long-paths
 source: review:298
@@ -10,7 +10,7 @@ created: 2026-10-22
 updated: 2026-11-02
 verified: 2026-11-02 fc9b8691
 effort: S
-feature: -
+feature: 392
 related: []
 depends-on: []
 reason: -
@@ -56,3 +56,4 @@ text. Measure first: a tab filter of 300 bytes in the registry, activate the tab
 - 2026-10-22 — related item mask-group-prepare-unbounded-mask-copy done in feature 298
 - 2026-10-22 — moved to Next position 25
 - 2026-11-02 — verified at fc9b8691: reproduced at fc9b8691 by a hidden-desktop probe: tab filter 300 bytes, refused edit, Cancel - next dialog shows 259 bytes
+- 2026-11-02 — run started, feature 392
