@@ -13,7 +13,7 @@ hidden-desktop probe `probe/ren_link_probe.ps1` (SC-001).
 ## Phase 2: Foundational (the rule, blocks every story)
 
 - [ ] T002 Add `SalListedDirIsLink(DWORD listedAttr, BOOL tagRead, DWORD tag)` to src/common/salreparse.h per data-model.md (no reparse bit → FALSE; tag unread or 0 → TRUE; else `SalDeleteAsDirLinkDecision(FALSE, TRUE, tag)`)
-- [ ] T003 Add `TestListedDirIsLink388` to src/saltests/saltests.cpp (plain dir, junction / mount point, symlink, LX symlink, unknown surrogate, cloud, OneDrive, dedup, WOF, tag 0 with the bit, tag unread, a file attribute set without the directory bit is not the rule's business) and call it from the test list
+- [ ] T003 Add `TestListedDirIsLink388` to src/saltests/saltests.cpp (plain dir, junction / mount point, symlink, LX symlink, unknown surrogate, cloud, OneDrive, dedup, WOF, tag 0 with the bit, tag unread; the rule looks only at the reparse bit and the tag - callers ask it only for directories) and call it from the test list
 - [ ] T004 Give `CSourceFile(WIN32_FIND_DATAW&, const char*, const char*, int)` an `isDir` argument (default FALSE) in src/plugins/renamer/crenamer.h and src/plugins/renamer/crenamer.cpp: a folder has `Ext` at the end of its name and `IsDir = 1`
 
 ## Phase 3: User Story 1 - a link below the selected folder is listed, never walked (P1)

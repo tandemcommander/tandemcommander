@@ -47,3 +47,10 @@ Registry restored, identical (SHA-256 equal); fixture removed; no process left.
 - The rule `SalListedDirIsLink` in `src/common/salreparse.h`: the listed tag (`dwReserved0`);
   fail closed (no tag / unreadable / surrogate = link), a readable non-surrogate tag = plain.
 - A selected item is looked up only when its panel attributes carry the reparse bit.
+
+## Analyze
+
+- speckit-analyze: 0 CRITICAL, 0 HIGH. LOW A1 (T003 wording) fixed. MEDIUM U1 accepted: cloud /
+  dedup / WOF reparse folders are covered by saltests rows only - the probe cannot create a cloud
+  placeholder; the rule is pure and the listing hands it the tag unchanged. LOW C1 (file symbolic
+  link, no change intended) no task.
