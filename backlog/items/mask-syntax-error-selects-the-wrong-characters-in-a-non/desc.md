@@ -1,7 +1,7 @@
 ---
 title: Mask syntax error selects the wrong characters in a non-ASCII mask
 type: bug
-status: new
+status: open
 severity: 2
 area: encoding
 source: review:392
@@ -53,3 +53,4 @@ ten accented letters followed by `|`, OK, read the selection (`EM_GETSEL`).
 ## Log
 
 - 2026-11-02 — created (source review:392)
+- 2026-11-02 — moved to Next position 135

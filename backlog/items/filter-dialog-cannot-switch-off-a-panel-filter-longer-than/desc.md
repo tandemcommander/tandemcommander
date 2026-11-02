@@ -1,7 +1,7 @@
 ---
 title: Filter dialog cannot switch off a panel filter longer than 259 bytes
 type: bug
-status: new
+status: open
 severity: 4
 area: long-paths
 source: review:392
@@ -55,3 +55,4 @@ longer text whole - both need checking before the 260-byte check is widened. Mea
 ## Log
 
 - 2026-11-02 — created (source review:392)
+- 2026-11-02 — moved to Next position 24
