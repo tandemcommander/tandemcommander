@@ -29,3 +29,46 @@ a member name the panel listing cannot hold fails as a whole.
 ## Decisions
 
 See research.md R1-R4.
+
+## Probe (T002-T004)
+
+`probe/cpio393_probe.ps1` + `probe/mkcpio393.py` (11 RUN rows, each with an END row = 22 rows).
+Command (PowerShell, repository root):
+`powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\393-cpio-long-name\probe\result_<label>.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\393-cpio-long-name\probe\cpio393_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Label <label>"`
+
+- before (af18dc21 code, `result_before.txt`): PASS 14 / FAIL 8. COPY-TOOLONG, COPY-ODC-TOOLONG,
+  COPY-RPM-TOOLONG, COPY-DEEP, COPY-NESTDIR, COPY-HARD-REFUSED: "Internal error: file data structure
+  corrupted.", the archive does not open. UNP-TOOLONG-DEL / UNP-HARD-REFUSED-DEL: nothing extracted,
+  a "(123) invalid name" Retry / Skip box (the archive kept). COPY-255, COPY-DIR100, UNP-DEEP-DEL pass
+  (names that fit; the deep whole unpack never lists).
+
+## Implementation (T005-T007), `src/plugins/tar/untar.cpp`
+
+- `ReadArchiveHeader`: the 306 / 321 refusal also for `cpioName` (format newc, crc, odc, binary,
+  byte-swapped binary), `isDir` = trailing slash OR cpio mode `CP_IFDIR` (`nameIsDir`).
+- `IsCpioGroupMember`: `!Ignored || NameRefused` - a refused name stays in its hard-link group.
+- `DoUnpackArchive`: `WriteOutCpioGroupMember(..., found && !header.NameRefused, ...)`.
+- Build: `BUILD SUCCEEDED` (the three C4267 warnings are existing `NameLen = strlen(...)` lines whose
+  numbers moved).
+
+## After (`result_after.txt`)
+
+PASS 22 / FAIL 0: every TOOLONG row (newc, odc, rpm) shows "(206)" with the path at opening and
+copies ok.txt; COPY-DEEP opens with "(206)" and copies the 33 listed-subtree files; COPY-NESTDIR
+"(206)" at opening, n/top.txt + ok.txt; COPY-HARD-REFUSED a.txt = AAA; UNP-TOOLONG-DEL ok.txt, "(206)"
+box, archive kept; UNP-HARD-REFUSED-DEL a.txt = AAA, ok.txt, "(206)", kept; UNP-DEEP-DEL all 34,
+deleted. Registry restored, identical.
+
+## Negative control (T010, `result_negctl.txt`)
+
+Temporary edit (reverted with `git checkout HEAD -- src/plugins/tar/untar.cpp`, rebuilt): `nameIsDir =
+header.IsDir`, `IsCpioGroupMember` back to `!Ignored`, `found` passed unchanged to the group. Result
+PASS 19 / FAIL 3, exactly the predicted rows: COPY-NESTDIR (the archive does not open again - the
+mode-only folder's 300-byte name reaches `AddDir`), COPY-HARD-REFUSED and UNP-HARD-REFUSED-DEL
+(`a.txt` written EMPTY). The cpio refusal itself has its negative control in `result_before.txt`.
+
+## Checks
+
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- `saltests.exe` -> `saltests: 30798 checks, 0 failed` (no new rule).
+- No UI strings, dialogs or resources changed -> no `.slt` refresh (stop-rules 2.13 not triggered).

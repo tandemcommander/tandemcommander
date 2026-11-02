@@ -1,0 +1,29 @@
+cpio393_probe (feature 393) negctl-isdir-and-group-off
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 08:15; registry key existed True; ACP 1250; python Python 3.14.6
+
+COPY-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-TOOLONG RUN    PASS        tgt: 1 of 1 files; files: ok.txt; "(206)" at open: True; at open: ...u4F15\u4F16\u4F17\u4F18\u4F19\u4F1A\u4F1B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-ODC-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-ODC-TOOLONG RUN    PASS        tgt: 1 of 1 files; files: ok.txt; "(206)" at open: True; at open: ...u4F15\u4F16\u4F17\u4F18\u4F19\u4F1A\u4F1B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-RPM-TOOLONG END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-RPM-TOOLONG RUN    PASS        tgt: 1 of 1 files; files: ok.txt; "(206)" at open: True; at open: ...u4F15\u4F16\u4F17\u4F18\u4F19\u4F1A\u4F1B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-DEEP  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-DEEP  RUN    PASS        tgt: 33 of 33 files; "(206)" at open: True; at open: ...fffffffffff\ ggggggggggggggggggggggggggggg\hhhhhhhhhhhhhhhhhhhhhhhhhhhhh\iiiiiiiiiiiiiiiiiiiiiiiiiiiii\jjjjjjjjjjjjjjjjjjjjjjjjjjjjj\ f01.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy 1 file and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-255   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-255   RUN    PASS        tgt: 1 of 1 files; files: \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[255 chars]..\u4EF7\u4EF8\u4EF9\u4EFA.txt; "(206)" at open: False; at open: no window; windows: ...770 'Copy'] [Static id=209] Copy file "\u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07\u4E08\u4E09\u4E0A\u4E0B\u4E0C..." from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-DIR100 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-DIR100 RUN    PASS        tgt: 1 of 1 files; files: ok.txt; folder \u4E00\u4E01\u4E02\u4E03\u4E04\u4E05\u4E06\u4E07..[100 chars]..\u4E5C\u4E5D\u4E5E\u4E5F\u4E60\u4E61\u4E62\u4E63 extracted: True; "(206)" at open: False; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy 1 file and 1 directory from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-NESTDIR END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-NESTDIR RUN    FAIL        the archive did not open; panel at: C:\Users\pavel\AppData\Local\Temp\tc393\COPY-DIR100; at open: [#32770 'TAR Plugin Error'] [Static id=2477] Internal error: file data structure corrupted. | [Button id=1] OK
+COPY-HARD-REFUSED END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-HARD-REFUSED RUN    FAIL        tgt: 2 of 2 files; wrong content: a.txt=; files: a.txt, ok.txt; "(206)" at open: True; at open: ...u4F15\u4F16\u4F17\u4F18\u4F19\u4F1A\u4F1B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+UNP-DEEP-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DEEP-DEL RUN    PASS        tgt: 34 of 34 files; archive kept: False (want False); "(206)" shown: False; windows: no window
+UNP-TOOLONG-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-TOOLONG-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt; archive kept: True (want True); "(206)" shown: True; windows: ...F04\u4F05\u4F06\u4F07\u4F08\u4F09\u4F0A\u4F0B\u4F0C\u4F0D\u4F0E\u4F0F\u4F10\u4F11\u4F12\u4F13\u4F14\u4F15\u4F16\u4F17\u4F18\u4F19\u4F1A\u4F1B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK
+UNP-HARD-REFUSED-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-HARD-REFUSED-DEL RUN    FAIL        tgt: 2 of 2 files; wrong content: a.txt=; files: a.txt, ok.txt; archive kept: True (want True); "(206)" shown: True; windows: ...F04\u4F05\u4F06\u4F07\u4F08\u4F09\u4F0A\u4F0B\u4F0C\u4F0D\u4F0E\u4F0F\u4F10\u4F11\u4F12\u4F13\u4F14\u4F15\u4F16\u4F17\u4F18\u4F19\u4F1A\u4F1B\u4F1C\u4F1D\u4F1E\u4F1F\u4F20\u4F21\u4F22\u4F23\u4F24\u4F25\u4F26\u4F27\u4F28\u4F29\u4F2A\u4F2B.txt | [Button id=1] OK
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 19, FAIL 3, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
