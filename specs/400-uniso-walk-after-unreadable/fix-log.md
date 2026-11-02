@@ -66,3 +66,21 @@ rule).
   AfterChild assigns the child's result -> 5 failed; BoxQuiet never quiet after the first -> 3 failed.
 - `python tools/check_encoding.py --strict` -> TOTAL: 0 finding(s); `.\build.cmd` -> BUILD SUCCEEDED
   (three C4267 warnings on unchanged `fd.NameLen = strlen(...)` lines).
+
+## Verification (T014-T016)
+
+- After: `iso400_probe.ps1 -Label after` -> `probe/result_after.txt` PASS 40 / FAIL 0 (20 RUN rows):
+  RD-EXT, RD-REC, XD-EXT, RD-TWO, XD-TWO, XD-LOOP `files 2: top.txt, zlast/z.txt`, the box once (seen 1),
+  image kept; RD-ZERO the same without a box; UD-EXT / UD-TAG `UDF (TC330)/zlast/z.txt` listed, one
+  box; XD-LOOP2 and UD-LOOP answer, no window, image deleted (nothing damaged); 330's rows unchanged.
+  Registry restored, identical.
+- Regressions on the same build: 328 20 / 0 (LOOP-RR, LOOP-J answer, CPU 0.7 / 0.6 s), 329 14 / 0,
+  327 77 / 0 (`probe/regress_*.txt`).
+- Negative control (build with the UDF / Xbox visited sets off and `SalIsoWalkBoxQuiet` showing every
+  box; `probe/result_negctl.txt`, rows RD-EXT, RD-TWO, XD-TWO, XD-LOOP, XD-LOOP2, UD-LOOP): 5 / 7 -
+  RD-TWO / XD-TWO two boxes; XD-LOOP 67 boxes seen (138 stray at the end), files 0, not closing in
+  30 s; XD-LOOP2 no answer; UD-LOOP the "(206)" report, image kept. RD-EXT (one damaged folder) passes
+  - expected, it needs neither part. Reverted (`git checkout HEAD -- ...`), rebuilt: saltests 282,309 /
+  0; the same rows `probe/result_after_restore.txt` 12 / 0.
+- The item's measurement repeated: zlast/z.txt of the damaged file system is now extracted in all 6
+  rows that lost it at aaf95b94 (RD-EXT, RD-REC, RD-ZERO, UD-EXT, UD-TAG, XD-EXT).

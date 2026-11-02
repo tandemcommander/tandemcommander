@@ -33,9 +33,9 @@
 ## Phase 6: Polish & verification
 
 - [X] T013 `python tools/check_encoding.py --strict` -> TOTAL: 0; `.\build.cmd` -> BUILD SUCCEEDED; saltests 0 failed
-- [ ] T014 Run `iso400_probe.ps1` after -> `probe/result_after.txt`, all PASS; record in `fix-log.md`
-- [ ] T015 Regressions: 328's probe (LOOP rows), 329's and 327's probes -> `probe/regress_*.txt`, all PASS
-- [ ] T016 `fix-log.md` complete (before / after, commands, results)
+- [X] T014 Run `iso400_probe.ps1` after -> `probe/result_after.txt`, all PASS; record in `fix-log.md`
+- [X] T015 Regressions: 328's probe (LOOP rows), 329's and 327's probes -> `probe/regress_*.txt`, all PASS
+- [X] T016 `fix-log.md` complete (before / after, commands, results)
 
 ## Dependencies
 
