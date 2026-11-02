@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: after a folder that cannot be read, no later folder of the image is listed
 type: improvement
-status: open
+status: in-progress
 severity: 4
 area: archives
 source: leftover:330
@@ -10,7 +10,7 @@ created: 2026-10-24
 updated: 2026-11-02
 verified: 2026-11-02 aaf95b94
 effort: S
-feature: -
+feature: 400
 related: []
 depends-on: []
 reason: -
@@ -56,3 +56,4 @@ box is shown once per damaged folder as today (or once per listing - to be decid
 - 2026-10-24 — created (source leftover:330)
 - 2026-10-24 — moved to Next position 23
 - 2026-11-02 — verified at aaf95b94: still present at aaf95b94: iso330_probe RD-EXT, RD-REC, UD-EXT, UD-TAG, XD-EXT extract top.txt only, zlast/z.txt never descended
+- 2026-11-02 — run started, feature 400
