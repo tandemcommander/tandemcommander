@@ -1,7 +1,7 @@
 ---
 title: Hex-mode "not hex" check selects the wrong characters after non-ASCII text
 type: bug
-status: new
+status: open
 severity: 2
 area: encoding
 source: measure:397
@@ -47,3 +47,4 @@ The selection marks the offending character: the byte offset is converted to UTF
 ## Log
 
 - 2026-11-02 — created (source measure:397)
+- 2026-11-02 — moved to Next position 136

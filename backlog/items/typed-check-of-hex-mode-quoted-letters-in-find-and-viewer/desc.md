@@ -1,7 +1,7 @@
 ---
 title: Typed check of hex-mode quoted letters in Find and viewer Find (feature 397)
 type: person-step
-status: new
+status: open
 severity: 3
 area: encoding
 source: leftover:397
@@ -49,3 +49,4 @@ types, the search finds the letters' UTF-8 bytes.
 ## Log
 
 - 2026-11-02 — created (source leftover:397)
+- 2026-11-02 — moved to Person steps position 60
