@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an ISO 9660 folder length of 2 GiB or more shows a stuck memory box
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:401
@@ -52,3 +52,4 @@ walked - no memory box, no way to end the program from a damaged image.
 ## Log
 
 - 2026-11-02 — created (source review:401)
+- 2026-11-02 — moved to Next position 2

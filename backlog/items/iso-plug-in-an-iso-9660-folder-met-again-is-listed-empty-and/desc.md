@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an ISO 9660 folder met again is listed empty and the image deleted
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: measure:401
@@ -59,3 +59,4 @@ image (one record per directory) are unchanged.
 ## Log
 
 - 2026-11-02 — created (source measure:401)
+- 2026-11-02 — moved to Next position 3

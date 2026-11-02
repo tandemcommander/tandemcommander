@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: a crafted image of folders naming one directory with many lengths lists slowly
 type: bug
-status: new
+status: open
 severity: 4
 area: archives
 source: review:401
@@ -56,3 +56,4 @@ marked incomplete (a whole unpack fails and keeps the image) and one box tells t
 ## Log
 
 - 2026-11-02 — created (source review:401)
+- 2026-11-02 — moved to Next position 22
