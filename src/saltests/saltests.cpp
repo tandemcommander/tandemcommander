@@ -24517,14 +24517,14 @@ static void TestHexFieldTidy397()
     };
     static const Case cases[] = {
         {L"", 0, L"", 0},
-        {L"41424", 5, L"41 42 4", 7},     // the probe's grep-group: typed 41424
-        {L"414", 3, L"41 4", 4},          // the third digit gets a space before it
-        {L"  41", 4, L"41", 2},           // leading spaces dropped, the caret follows
-        {L"  41", 1, L"41", 0},           // ... not below 0
-        {L"41  42", 4, L"41 42", 3},      // a second space dropped
-        {L"41\"a\"", 5, L"41 \"a\"", 6},  // a space before an opening quote glued to 41
-        {L"\"a\"41", 4, L"\"a\" 41", 5},  // a space after a closing quote glued to 41
-        {L"\"a b\"", 5, L"\"a b\"", 5},   // inside quotes nothing changes
+        {L"41424", 5, L"41 42 4", 7},    // the probe's grep-group: typed 41424
+        {L"414", 3, L"41 4", 4},         // the third digit gets a space before it
+        {L"  41", 4, L"41", 2},          // leading spaces dropped, the caret follows
+        {L"  41", 1, L"41", 0},          // ... not below 0
+        {L"41  42", 4, L"41 42", 3},     // a second space dropped
+        {L"41\"a\"", 5, L"41 \"a\"", 6}, // a space before an opening quote glued to 41
+        {L"\"a\"41", 4, L"\"a\" 41", 5}, // a space after a closing quote glued to 41
+        {L"\"a b\"", 5, L"\"a b\"", 5},  // inside quotes nothing changes
         {L"\"abcdef\"", 3, L"\"abcdef\"", 3},
     };
     for (int i = 0; i < _countof(cases); i++)
@@ -24546,8 +24546,11 @@ static void TestHexFieldTidy397()
         CHECK(out == L"\"\x4E01\x4E02\x4E03\x4E04\x4E05\" 41");
         CHECK(st2 == 10 && en2 == 10);
         int st3 = 5, en3 = 5; // the probe's grep-mid: a typed inside the quotes
-        out = HexTidy397(L"\"\x4E01\x4E02\x4E03" L"a\x4E04\x4E05\" 41", st3, en3, 200);
-        CHECK(out == L"\"\x4E01\x4E02\x4E03" L"a\x4E04\x4E05\" 41");
+        out = HexTidy397(L"\"\x4E01\x4E02\x4E03"
+                         L"a\x4E04\x4E05\" 41",
+                         st3, en3, 200);
+        CHECK(out == L"\"\x4E01\x4E02\x4E03"
+                     L"a\x4E04\x4E05\" 41");
         CHECK(st3 == 5 && en3 == 5);
         int st4 = 3, en4 = 3; // a pair (U+1F600) inside quotes is kept whole
         out = HexTidy397(L"\"\xD83D\xDE00\"41", st4, en4, 200);
@@ -24563,11 +24566,16 @@ static void TestHexFieldTidy397()
     // OK); the old rule (by units) would put a space between its halves
     {
         int st = 4, en = 4;
-        std::wstring out = HexTidy397(L"4\xD83D\xDE00" L"1", st, en, 200);
-        CHECK(out == L"4\xD83D\xDE00" L"1");
+        std::wstring out = HexTidy397(L"4\xD83D\xDE00"
+                                      L"1",
+                                      st, en, 200);
+        CHECK(out == L"4\xD83D\xDE00"
+                     L"1");
         CHECK(st == 4 && en == 4);
         int st2 = 3, en2 = 3; // the pair as the first two units: the third unit is ASCII, grouped
-        out = HexTidy397(L"\xD83D\xDE00" L"4", st2, en2, 200);
+        out = HexTidy397(L"\xD83D\xDE00"
+                         L"4",
+                         st2, en2, 200);
         CHECK(out == L"\xD83D\xDE00 4");
         CHECK(st2 == 4 && en2 == 4);
     }

@@ -74,3 +74,29 @@ unchanged, nothing to change; `ConvertHexToString` (`finddlg1.cpp` StartSearch, 
 
 - `hex-mode-not-hex-check-selects-the-wrong-characters-after` (measure:397): `HistoryComboBox`'s
   "not hex" selection uses a UTF-8 byte offset as a field position (research R6).
+
+## Review
+
+Review 1 (independent agent, refute-first, at 70b48f4f): no MUST, no SHOULD.
+- Re-ran: saltests 282,166 / 0; encoding guard 0; probe 8 PASS / 0 FAIL. Negative control: the
+  same probe against the installed 0.2.0 (same `DoHexValidation` as `main`) -> 5 PASS / 3 FAIL,
+  matching `result_before.txt`.
+- NOTE 1 (`viewer.cpp` includes not clang-format aligned after the new include) -> fixed
+  (clang-format on `viewer.cpp`, and on the new saltests function only; the saltests include block
+  is unformatted on `main` too, the new line follows its neighbours).
+- NOTE 2 (an empty read with a measured length > 0 would clear the field) -> the read check is
+  now `got < 0 || got != len` (the field is left alone).
+- NOTE 3 (grep-type checks the count, not the name) - accepted: the before state finds 2 decoys,
+  so count 1 distinguishes.
+- NOTE 4 (real keyboard / IME typing not driven) -> person-step item
+  `typed-check-of-hex-mode-quoted-letters-in-find-and-viewer`.
+- NOTE 5 (67+ quoted CJK letters now exceed 200 bytes and are refused at OK - before they became
+  one-byte `?`) - the intended refusal of 311, not a cut.
+- NOTE 6 - the Inbox item for the selection offset confirmed.
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 282,166 / 0; encoding guard 0; probe
+`result_after.txt` (label after-review) 8 PASS / 0 FAIL, registry restored + identical.
+
+## Owed to a person
+
+- `typed-check-of-hex-mode-quoted-letters-in-find-and-viewer` - typing with a real keyboard and IME.

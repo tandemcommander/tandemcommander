@@ -29,7 +29,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
-| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
+| Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381, 397 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395, 396 |
@@ -6317,3 +6317,22 @@ a few early ones are out of sequence).
   12 / 0 (6 RUN rows: ustar mix, collision with `s/a.txt`, GNU, PAX, 309's link, Copy of the
   listing); 306 30 / 0, 308 12 / 0, 309 16 / 0, 395 46 / 0; saltests 30,858 / 0 (negative control on
   the legacy rule: 12 failed); one refute-first review (no MUST, no SHOULD; NOTE 3 -> Inbox).
+- 397-hex-find-quoted: with Hex ticked, Find's Containing field and the viewer's Find field turned
+  quoted letters outside the code page into `?` at the first typed key (`"中文" 41` became
+  `"??" 41`) and searched for `?` bytes - Find found files holding `?????A`, the viewer said "Cannot
+  find" - because `DoHexValidation` read and wrote the field through code-page `WM_GETTEXT` /
+  `WM_SETTEXT` - now the tidying (leading / double spaces, a space between every two hex digits and
+  around quotes, the caret) is the pure `SalHexFieldTidyW` (`src/common/salhexfield.h`) on the
+  field's UTF-16 text and caret (`SendMessageW` `CB_GETEDITSEL` / `CB_SETEDITSEL`); the whole text is
+  read into a heap buffer, spaces are inserted only up to the field's 200-unit limit as before, a
+  read that does not match the measured length leaves the field alone, the hex grouping never splits
+  a surrogate pair; the UTF-8 length is refused at OK by 311's check (about 67 quoted CJK letters).
+  Traps: `small` is a macro of `rpcndr.h` (a saltests variable); `WM_SETTEXT` does not run the
+  validation - the probe types by `WM_CHAR` to the combo box's edit. Limits: a real keyboard / IME
+  not driven (person step); the "not hex" refusal still selects by a UTF-8 byte offset (Inbox
+  `hex-mode-not-hex-check-selects-the-wrong-characters-after`). From backlog item
+  `hex-mode-in-find-turns-quoted-letters-outside-the-code-page`. Probe `hex397_probe.ps1` 5 / 3 ->
+  8 / 0 (4 RUN rows: Find typed, grouping kept, typed inside quotes, viewer); 311's 26 / 0; saltests
+  282,166 / 0 (brute force against the old loop on every ASCII text up to 6 characters; negative
+  controls 2 and 1 failed); one refute-first review (no MUST, no SHOULD; NOTEs 1-2 fixed, NOTE 4 ->
+  person step; its control on the installed 0.2.0 5 / 3).

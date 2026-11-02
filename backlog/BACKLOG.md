@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Hex mode in Find turns quoted letters outside the code page into question marks](items/hex-mode-in-find-turns-quoted-letters-outside-the-code-page/desc.md) | bug | 4 | encoding | 397 |
 
 ## Next
 
@@ -305,6 +304,7 @@ Last triaged: 2026-11-02
 |---|---|---|---|---|---|
 | [Hex-mode "not hex" check selects the wrong characters after non-ASCII text](items/hex-mode-not-hex-check-selects-the-wrong-characters-after/desc.md) | bug | 2 | encoding | measure:397 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
+| [Typed check of hex-mode quoted letters in Find and viewer Find (feature 397)](items/typed-check-of-hex-mode-quoted-letters-in-find-and-viewer/desc.md) | person-step | 3 | encoding | leftover:397 | 2026-11-02 |
 
 ## Parked
 

@@ -12,8 +12,8 @@
 #include "usermenu.h"
 #include "execute.h"
 #include "gui.h"
-#include "salurlpwd.h" // feature 085
-#include "dialogs.h"   // feature 311: DlgItemTextFitsU8
+#include "salurlpwd.h"   // feature 085
+#include "dialogs.h"     // feature 311: DlgItemTextFitsU8
 #include "salhexfield.h" // feature 397: SalHexFieldTidyW
 
 const char* CVIEWERWINDOW_CLASSNAME = "Salamander's Viewer Window";
@@ -194,7 +194,7 @@ void DoHexValidation(HWND edit, const int textLen)
         return;
     }
     int got = GetWindowTextW(edit, text, (int)capacity);
-    if (got < 0 || got > len)
+    if (got < 0 || got != len)
     { // not the text measured above (never tidy a text that may be cut) - leave it as it is
         delete[] text;
         return;
