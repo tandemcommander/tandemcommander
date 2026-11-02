@@ -1,0 +1,14 @@
+fit389_probe (feature 389) review1-negative-control-before-M1-fix
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 02:56; ACP 1250; registry key existed True
+Icon files: long 312 bytes, chi-store259 259 bytes, fitting 257 bytes (stored with ',0': 259)
+
+chi-store259 RUN    FAIL        file 123 units / 259 bytes; OK 1: stayed False, asked: nothing, icons -1, field <closed>; OK 2: stayed -, asked: -, field <closed>; opened again: 123 units / 259 bytes, whole: True, tail '...\u4E3C\u4E3D\u4E3E\u4E3F\u4E40\u4E41\u4E42\u4E43\u4E44f.exe'
+chi-store259 END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+chi-ctl    RUN    PASS        file 123 units / 257 bytes; OK 1: stayed False, asked: nothing, icons -1, field <closed>; OK 2: stayed -, asked: -, field <closed>; opened again: 123 units / 257 bytes, whole: True, tail '...\u503C\u503D\u503E\u503F\u5040\u5041\u5042\u5043gg.exe'
+chi-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+chi-reload RUN    PASS        stored value 259 bytes; at the start: nothing; Change Icon shows 123 units / 257 bytes, the stored file: True
+chi-reload END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 5, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

@@ -77,3 +77,32 @@ with both names too long - name 1 is measured first by construction), C3 LOW (FR
 | probe after | `fit389_probe.ps1 -Label after` | `result_after.txt` **10 / 0**: umc-name1 / umc-name2 refused ("The path specified is too long.", stayed, the field whole, the command wrote nothing); umc-ctl whole; chi-file refused at the reload (OK 1) and at OK 2, the field whole (140 units / 312 bytes), the list kept cmd.exe's 1 icon; chi-ctl stored whole. Registry restored, identical |
 | regression 291 | `mask291_probe.ps1 -Label regress-389` | `probe/regress_291.txt` **34 / 0** |
 | regression 251 | `dlg251_probe.ps1 -Label regress-389` | `probe/regress_251.txt` 38 / **4 FAIL**: `vw-cmd`, `vw-ctl` ERROR `list 584 not found` - the probe seeds `Last Focused Page` 19, which since feature 312 (the Tabs page) is the "Viewers and Editors" parent page; this feature touches no configuration page. A scratchpad copy with page 20, only those rows: `probe/regress_251_viewers_page20.txt` **4 / 0**. The probe drift is Inbox item `probe-251-opens-the-tabs-shifted-page-for-its-viewers-rows` (measure:389) |
+
+## Review
+
+### Review 1 (refute-first agent, 2026-11-02)
+
+- **MUST M1** - the Change Icon limit allowed a stored value the program cannot read back: the page
+  stores `<name>,<index>` (`src/dialogs4.cpp` IDB_UM_CHANGEICON, `sprintf(",%d")`) and the
+  configuration loader reads `Icon` with `GetValue(..., MAX_PATH)` (`src/mainwnd2.cpp`
+  USERMENU_ICON_REG); a 258 / 259-byte name was accepted and stored as 260 / 261 bytes - at the
+  next start "Error Loading Configuration (234) More data is available." and the item's icon fell
+  back to the command's. (Pre-existing for ASCII names of 258-259 characters; this feature set the
+  boundary and its chi-ctl row passed on the defect.) **Fixed**: `CChangeIconDialog::Validate`
+  measures with `MAX_PATH - strlen(",<index>")`, the index as `Transfer` returns it (the list's
+  selection, else 0). `LoadIcons` keeps `MAX_PATH` (it reads into 260 bytes; loading the icons of a
+  258-byte name is harmless, OK then refuses it). Probe: chi-ctl now 257 bytes (+ `,0` = 259), new
+  rows chi-store259 (259 bytes: refused) and chi-reload (the program started with the stored
+  257 + `,0` value: nothing at the start, Change Icon shows the file whole).
+  Negative control on the build before the M1 fix: `probe/result_review1_negative.txt` -
+  chi-store259 **FAIL** (accepted, stored 259 + `,0`), chi-ctl / chi-reload PASS.
+  After: `probe/result_after_review1.txt` **14 / 0** (chi-store259 refused at both OKs with 22 icons
+  listed; the registry restored, identical). Encoding guard 0; build succeeded; saltests 30740 / 0.
+- NOTE N1 - with a changed too-long name, a click on Cancel / Browse first takes the focus, the
+  reload refuses and the click is lost (Esc works) - the same as the old "Cannot find" box; not
+  changed.
+- NOTE N2 - "nothing stored" after chi-file holds by reading (the page stores only on IDOK).
+- NOTE N3 - the code-page `GetDlgItemText` fallback in `LoadIcons` is now unreachable for a too
+  long text; left in place (changes least; the encoding guard reports nothing).
+- NOTE N4 - no row exactly one byte over (260); the boundary is `SalWTextFitsU8`'s (saltests).
+- NOTE N5 - CHANGELOG / FEATURE-HISTORY are closing steps.

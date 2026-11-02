@@ -21,9 +21,13 @@
                  Before: the icons were read for a code-page form of the name ("cannot find"), the
                  field replaced with SHELL32.DLL and stored. PASS = both OKs refused ("too long"),
                  the dialog stayed, the field whole
-      chi-ctl    a copy whose full name fits exactly (259 bytes): the first OK loads its icons (the
-                 list holds some), nothing asked; the second OK ends the dialog; Change Icon opened
-                 again shows the name whole
+      chi-store259 a copy whose full name is 259 bytes: it fits the dialog's buffer, but the page
+                 stores "<name>,<index>" and the start reads that value into 260 bytes (review 1:
+                 261 bytes were lost at the next start). PASS = both OKs refused ("too long")
+      chi-ctl    a copy whose full name is 257 bytes (stored with ',0' = 259): accepted, nothing
+                 asked; Change Icon opened again shows the name whole
+      chi-reload the program started with that stored value (257 + ',0'): nothing shown at the
+                 start, Change Icon shows the file whole
     Typing is not driven: the field's text is set by WM_SETTEXT, buttons get BM_CLICK. Driver of
     291's probe (098's library). MUST run through tools\run_on_hidden_desktop.ps1. Registry exported,
     restored and verified.
@@ -277,15 +281,41 @@ function Chi-Row([string]$Case, [string]$File, [switch]$Fits) {
     }
 }
 
+# the stored value "<file>,<index>" is read back at the start into MAX_PATH bytes (review 1): the
+# start of a program that stored $File + ',0' shows nothing and Change Icon shows the file whole
+function Reload-Row([string]$Case, [string]$File) {
+    Run-Row $Case {
+        Seed-UserMenu
+        Reg-Set 'User Menu\1' 'Icon' ($File + ',0') String
+        $id = Start-Tc $StartDir; $script:RowId = $id
+        $atStart = Serve389 $id @() 'ok' 10
+        $cfg = Open-Config $id 2 0
+        if ($cfg -eq [IntPtr]::Zero) { throw 'Configuration (User Menu) opened no window' }
+        Select-First $cfg 351
+        $dlg = Open-ChangeIcon $id $cfg
+        $f = Get-Field $dlg 661
+        Close-Win $dlg; Start-Sleep -Milliseconds 500; [void](Serve389 $id @($cfg) 'cancel' 10)
+        Close-Win $cfg; Start-Sleep -Milliseconds 500; [void](Serve389 $id @() 'cancel' 10)
+        $script:RowFatal = $atStart.Fatal; if (-not $script:RowFatal) { $script:RowFatal = Fatal-Win $id }
+        $shown = Shown $atStart
+        $ok = (-not $script:RowFatal) -and ($shown -eq 'nothing') -and ($f -ceq $File)
+        Row $Case 'RUN' (V $ok) ("stored value {0} bytes; at the start: {1}; Change Icon shows {2} units / {3} bytes, the stored file: {4}" -f (U8 ($File + ',0')), $shown, $f.Length, (U8 $f), ($f -ceq $File))
+    }
+}
+
 $LongIcon = $IconDir + '\' + (Cjk 86) + '.exe'
 $room = 259 - (U8 ($IconDir + '\')) - 4
-$FitIcon = $IconDir + '\' + (Cjk ([Math]::Floor($room / 3))) + ('f' * ($room % 3)) + '.exe'
+$Icon259 = $IconDir + '\' + (Cjk ([Math]::Floor($room / 3))) + ('f' * ($room % 3)) + '.exe'
+$room = 257 - (U8 ($IconDir + '\')) - 4
+$FitIcon = $IconDir + '\' + (Cjk ([Math]::Floor($room / 3)) 0x5000) + ('g' * ($room % 3)) + '.exe'
 $Cases = [ordered]@{}
 $Cases['umc-name1'] = { Umc-Row 'umc-name1' ('C:\' + (Cjk 86) + 'a') 'C:\b' 1 }
 $Cases['umc-name2'] = { Umc-Row 'umc-name2' 'C:\a' ('C:\' + (Cjk 86) + 'b') 2 }
 $Cases['umc-ctl'] = { Umc-Row 'umc-ctl' ('C:\' + (Cjk 85) + 'a') ('C:\' + (Cjk 85) + 'b') 1 -Fits }
 $Cases['chi-file'] = { Chi-Row 'chi-file' $LongIcon }
+$Cases['chi-store259'] = { Chi-Row 'chi-store259' $Icon259 }
 $Cases['chi-ctl'] = { Chi-Row 'chi-ctl' $FitIcon -Fits }
+$Cases['chi-reload'] = { Reload-Row 'chi-reload' $FitIcon }
 
 # ---- main --------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tc389_backup.reg'
@@ -296,12 +326,13 @@ try {
     NewDir $StartDir; NewDir $OutDir; NewDir $IconDir
     WriteFile "$StartDir\a.txt" 'A'
     [IO.File]::Copy($Exe, $LP + $LongIcon)
+    [IO.File]::Copy($Exe, $LP + $Icon259)
     [IO.File]::Copy($Exe, $LP + $FitIcon)
     Set-Config
     Out ("fit389_probe (feature 389) {0}" -f $Label)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; ACP {1}; registry key existed {2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [Drv098f]::GetACP(), $existed)
-    Out ("Icon files: long {0} bytes, fitting {1} bytes" -f (U8 $LongIcon), (U8 $FitIcon))
+    Out ("Icon files: long {0} bytes, chi-store259 {1} bytes, fitting {2} bytes (stored with ',0': {3})" -f (U8 $LongIcon), (U8 $Icon259), (U8 $FitIcon), ((U8 $FitIcon) + 2))
     Out ''
     foreach ($k in @($Cases.Keys)) {
         if (Want $k) {

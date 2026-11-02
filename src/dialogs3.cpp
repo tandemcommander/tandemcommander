@@ -2420,8 +2420,14 @@ void CChangeIconDialog::GetShell32(char* fileName)
 
 void CChangeIconDialog::Validate(CTransferInfo& ti)
 {
-    // feature 389: Transfer reads the name into 260 bytes - a longer one was stored cut
-    DlgItemTextFitsU8(HWindow, IDE_CHI_FILENAME, &ti, MAX_PATH);
+    // feature 389: Transfer reads the name into 260 bytes - a longer one was stored cut; the User
+    // Menu page stores "<name>,<index>" and the configuration loader reads that value back into
+    // MAX_PATH bytes, so the name leaves room for the index Transfer will return (review 1)
+    int curSel = (int)SendDlgItemMessage(HWindow, IDL_CHI_LIST, LB_GETCURSEL, 0, 0);
+    int index = (curSel == LB_ERR || curSel >= (int)IconsCount) ? 0 : curSel;
+    char suffix[20];
+    sprintf(suffix, ",%d", index);
+    DlgItemTextFitsU8(HWindow, IDE_CHI_FILENAME, &ti, MAX_PATH - (int)strlen(suffix));
 }
 
 void CChangeIconDialog::Transfer(CTransferInfo& ti)
