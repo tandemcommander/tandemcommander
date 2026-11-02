@@ -1,7 +1,7 @@
 ---
 title: Renamer: Include subdirectories descends into junctions and folder links
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: data-safety
 source: review:282
@@ -10,7 +10,7 @@ created: 2026-10-21
 updated: 2026-11-02
 verified: 2026-11-02 c6fa9cd9
 effort: M
-feature: -
+feature: 388
 related: []
 depends-on: []
 reason: -
@@ -57,3 +57,4 @@ operations treat links per 197 / 212); the conservative one is "never descend in
 - 2026-10-21 — moved to Inbox
 - 2026-10-21 — moved to Next position 22
 - 2026-11-02 — verified at c6fa9cd9: reproduced at c6fa9cd9: probe ren_link_probe 6 FAIL (target files listed, loop box); 282 not merged, depth bound is MAX_PATH
+- 2026-11-02 — run started, feature 388
