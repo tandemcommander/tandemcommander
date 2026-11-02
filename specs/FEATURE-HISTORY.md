@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -6228,3 +6228,23 @@ a few early ones are out of sequence).
   2 FAIL -> 8 / 0 (old code rebuilt at fc9b8691 as the negative control); 270's filter rows 6 / 0;
   saltests 30,798 / 0; one refute-first review (no MUST, two SHOULDs fixed: the listing check, the
   records).
+- 393-cpio-long-name: a cpio archive or an rpm package with a member name the panel listing cannot
+  hold (a 300-letter name at the root, a folder part deeper than 255 bytes, a 300-byte folder name
+  inside a folder) refused to open as a whole ("Internal error: file data structure corrupted.") -
+  now cpio names (newc, crc, odc, binary - and the rpm payload) get exactly the rule of PAX / GNU
+  names (306 / 308 / 321, `SalPaxNameUsableU8` in `ReadArchiveHeader`): while listing, the member is
+  left out with the "(206)" text and its path once; an extraction takes every name a file system
+  takes and fails (archive kept) when asked for one it does not. Traps: a cpio folder carries no
+  trailing slash - `IsDir` comes from the mode only after the refusal, so the check takes the mode
+  (negative control: the nested-folder row failed the whole listing again); a refused name that
+  carries a hard-linked file's data (newc) was `Ignored` and dropped from its group - the other name
+  was written EMPTY - so it stays in the group as not asked (`IsCpioGroupMember`, `DoUnpackArchive`).
+  Limits: with the data on a refused FIRST name the other names are reported, not extracted (310's
+  rule; Inbox `a-cpio-name-stored-after-its-data-on-a-refused-name-is`); a 778-letter name (321's
+  CPIO-778) and a cpio symlink with such a name are now named by "(206)" at opening; a data carrier
+  whose name normalizes to empty is still dropped (pre-existing; Inbox
+  `a-cpio-hard-link-whose-data-name-normalizes-to-empty-is`). From backlog item
+  `a-cpio-or-rpm-archive-with-a-member-name-the-panel-cannot`. Probe `cpio393_probe.ps1` 14 / 8 ->
+  28 / 0 (14 RUN rows, newc / odc / rpm; negative control mode + group off 19 / 3); 306 30 / 0, 308
+  12 / 0, 309 16 / 0, 310 52 / 0, 321 20 / 0 and 12 / 0; saltests 30,798 / 0; one refute-first
+  review (no MUST; SHOULD fixed - spec narrowed, data-first and symlink rows -, two Inbox items).

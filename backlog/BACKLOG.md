@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [A cpio or rpm archive with a member name the panel cannot hold fails as a whole](items/a-cpio-or-rpm-archive-with-a-member-name-the-panel-cannot/desc.md) | bug | 4 | archives | 393 |
 
 ## Next
 
