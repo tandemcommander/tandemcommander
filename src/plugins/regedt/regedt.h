@@ -302,7 +302,7 @@ BOOL SafeDeleteRegLink(int root, LPWSTR key, int errorTitle, BOOL& skip, BOOL& s
 class CRegWalkChain
 {
 public:
-    CRegWalkChain() : Ids(NULL), Count(0), Capacity(0), TopCount(0) {}
+    CRegWalkChain() : Ids(NULL), Count(0), Capacity(0) {}
     ~CRegWalkChain()
     {
         PopTo(0);
@@ -312,18 +312,11 @@ public:
     BOOL Push(const WCHAR* id); // a heap copy; FALSE = low memory
     void PopTo(int count);
     BOOL LeadsBack(const WCHAR* id) const { return SalRegKeyIdLeadsBack(Ids, Count, id); }
-    // the first entries are the identities of the walk's starting key (RegWalkEnterTop)
-    void MarkTop() { TopCount = Count; }
-    BOOL IntoTarget(const WCHAR* id, const WCHAR* target) const
-    {
-        return SalRegKeyIdIntoTarget(id, target, Ids, TopCount < Count ? TopCount : Count);
-    }
 
 private:
     WCHAR** Ids;
     int Count;
     int Capacity;
-    int TopCount;
     CRegWalkChain(const CRegWalkChain&) = delete;
     CRegWalkChain& operator=(const CRegWalkChain&) = delete;
 };
@@ -348,11 +341,12 @@ private:
 // caught one level later); FALSE only on low memory
 BOOL RegWalkEnterTop(CRegWalkChain& chain, HKEY hKey, int root, LPCWSTR key);
 // a key below the start, opened by name as 'hKey': 'leadsBack' = it is a walked key or above one, or
-// it lies within the identity 'avoid' but not within the walk's starting key (NULL = none; Copy: the
-// key the copy writes, reached through a link - SalRegKeyIdIntoTarget) - not added; otherwise its identity is added. A predefined pseudo-handle (the Perflib language
-// keys: no identity, no subkeys) is neither checked nor added. Returns a Win32 error code (the identity
-// cannot be read, low memory) - the caller does not go on with the key
-int RegWalkEnter(CRegWalkChain& chain, HKEY hKey, LPCWSTR avoid, BOOL& leadsBack);
+// (Copy, 'writing' not NULL) one of the target keys the copy is writing now or above one - reached
+// through a link into the target, the walk would copy its own output again; such a key is not added.
+// Otherwise its identity is added. A predefined pseudo-handle (the Perflib language keys: no
+// identity, no subkeys) is neither checked nor added. Returns a Win32 error code (the identity cannot
+// be read, low memory) - the caller does not go on with the key
+int RegWalkEnter(CRegWalkChain& chain, HKEY hKey, const CRegWalkChain* writing, BOOL& leadsBack);
 
 BOOL CopyOrMoveKey(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
                    BOOL move, BOOL& skip,

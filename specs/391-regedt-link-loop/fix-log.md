@@ -148,3 +148,39 @@ from the review-1 build; everything is re-run on the final build below. saltests
 - Final build (after review 1 and the flatten fix): `loop391_after_r2_english.txt` / `_czech.txt`
   24 / 0; 294 `above294_probe_on391_r2.txt` 24 / 0; 292 33 / 0; 296 47 / 0; 297 40 / 0; 390 10 / 0;
   saltests 30,803 / 0; encoding guard TOTAL: 0; BUILD SUCCEEDED.
+
+### Review 2 (refute-first, independent agent; previous findings listed)
+
+No MUST. Confirmed: the measurement (COPYSELF one box, FINDSELF 1 result), both review-1 fixes, every
+caller (Copy / Move from the panel, Quick Rename fs3.cpp, Find from the look-in list and
+`ScanRegistry`), no data loss (a refusal sets `skip`, Move never reaches the check through a link,
+HKCR / 390 traced), 294's exception safe, nothing cut.
+
+- SHOULD: `SalRegKeyIdIntoTarget` refused links into the target that never loop - COPYPRE (`Pre\<K>\L ->
+  Cil\<K>\E`, a key that was in the target) and COPYSIB (`Sib\<K>\L -> Cil\<K>\Z`, the sibling the copy
+  just wrote) got "Can't copy a key to itself."; the pre-391 plug-in copied them once without a box
+  (reviewer's `rev391b\new.txt` / `old.txt`) - against FR-004. Fixed as the reviewer suggested: a second
+  chain (`CRegCopyTop::Writing`) holds the identities of the target keys being written now, one per
+  level (pushed after each target key is created, popped on return); a source key below the top that
+  is one of them or holds one (`SalRegKeyIdLeadsBack` on that chain) is refused. COPYTGT is now refused
+  one level earlier (at `Tgt\<K>\L`, whose target Cil holds the key being written); COPYPRE / COPYSIB copy
+  as before; 294's merge (the target holds the source) holds nothing being written. The rule
+  `SalRegKeyIdIntoTarget` and its tests are gone; saltests now check the writing-chain decisions
+  (COPYTGT, COPYPRE, COPYSIB, 294's merge, a link to above the target). Probe rows COPYPRE, COPYSIB added
+  (the fixture holds `Cil\<K>\E` for every row).
+- NOTE 1 (stack): `CopyOrMoveKeyRec` had held a 2.5 KB identity buffer in its own frame (Debug frame
+  0x1888 -> 0x22F8). Fixed: the target identity is read in `AddWritingRegKeyId`, and it and
+  `RegWalkEnter` are `__declspec(noinline)`, so their buffers never join the recursion's frame.
+- NOTE 2 (an identity of 1280 units or more, reached through a deliberately deep link target, now gets
+  the open-error box): fails closed; recorded as a limit.
+- NOTE 3 (an HKCR target whose new subkeys land in the other half than the top target key): a missed
+  catch, not a regression - Windows still stops such a walk with error 87 as before 391; recorded as a
+  limit.
+
+After review 2 (final build): encoding guard TOTAL: 0; BUILD SUCCEEDED; saltests 30,798 / 0 (the 14
+obsolete `SalRegKeyIdIntoTarget` checks replaced by 9 writing-chain checks); probe
+`loop391_after_r3_english.txt` / `_czech.txt` 28 / 0 (COPYTGT refused at `Tgt\<K>\L`, COPYPRE and
+COPYSIB copied once with no box); 294 24 / 0, 292 33 / 0, 296 47 / 0, 297 40 / 0, 390 10 / 0 (`*_on391_r3.txt`).
+The negative control of the target check (`loop391_negctl_review1.txt`: no target check -> COPYTGT 29
+keys, 28 deep, error 87) stands for the writing chain too (without it the same walk runs). Review 2 had
+no MUST, so no further review round (SKILL.md step 7).

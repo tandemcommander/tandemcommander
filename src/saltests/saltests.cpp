@@ -14245,33 +14245,27 @@ static void TestRegKeyIdLeadsBack391()
     CHECK(!SalRegKeyIdLeadsBack(holes, 2, L"\\REGISTRY"));
     CHECK(SalRegKeyIdLeadsBack(holes, 3, L"\\REGISTRY"));
 
-    // review of 391: a source key in the key the copy writes. Tgt\K holding L -> Cil copied into Cil\
-    // (target Cil\K): the walk reaches Cil\K and Cil\K\L through the link - the copy itself
-    const WCHAR* tgtTop[] = {L"\\REGISTRY\\USER\\S-1\\Tgt\\K"};
+    // review of 391: Copy also asks the rule of the target keys it is writing now (one per level).
+    // Tgt\K holding L -> Cil copied into Cil\: writing [Cil\K]; L opens Cil, which holds the key being
+    // written - the walk would copy its own output: refused
     const WCHAR* cilK = L"\\REGISTRY\\USER\\S-1\\Cil\\K";
-    CHECK(SalRegKeyIdIntoTarget(cilK, cilK, tgtTop, 1));
-    CHECK(SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\cil\\k\\L", cilK, tgtTop, 1));
-    // Cil itself (the link's target, above the copy) and a sibling of the copy: no
-    CHECK(!SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\Cil", cilK, tgtTop, 1));
-    CHECK(!SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\Cil\\K2", cilK, tgtTop, 1));
+    const WCHAR* writing[] = {cilK};
+    CHECK(SalRegKeyIdLeadsBack(writing, 1, L"\\REGISTRY\\USER\\S-1\\Cil"));
+    CHECK(SalRegKeyIdLeadsBack(writing, 1, L"\\REGISTRY\\USER\\S-1\\cil\\k"));
+    // review 2: a link to a key of the target that holds nothing being written - a key that was there
+    // (Pre\K\L -> Cil\K\E) or a sibling already written (Sib\K\L -> Cil\K\Z): copied once, as before
+    CHECK(!SalRegKeyIdLeadsBack(writing, 1, L"\\REGISTRY\\USER\\S-1\\Cil\\K\\E"));
+    CHECK(!SalRegKeyIdLeadsBack(writing, 1, L"\\REGISTRY\\USER\\S-1\\Cil\\K\\Z"));
+    CHECK(!SalRegKeyIdLeadsBack(writing, 1, L"\\REGISTRY\\USER\\S-1\\Cil\\K2"));
     // 294's merge into the key above the parent: Plochy\K\K copied into Plochy\ (target Plochy\K holds
-    // the source) - the source's own keys lie in the target and are no loop
-    const WCHAR* flatTop[] = {L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\K"};
-    const WCHAR* flatTgt = L"\\REGISTRY\\USER\\S-1\\Plochy\\K";
-    CHECK(!SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\K", flatTgt, flatTop, 1));
-    CHECK(!SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\K\\Q", flatTgt, flatTop, 1));
-    // ... but a key of the target outside the source (reached through a link) still is
-    CHECK(SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\Jine", flatTgt, flatTop, 1));
-    // HKCR: the copied key in both halves - within either is its own key
-    const WCHAR* hkcrTop[] = {L"\\REGISTRY\\MACHINE\\SOFTWARE\\Classes\\X", L"\\REGISTRY\\USER\\S-1_Classes\\X"};
-    CHECK(!SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1_Classes\\X\\Y", L"\\REGISTRY\\USER\\S-1_Classes", hkcrTop, 2));
-    CHECK(SalRegKeyIdIntoTarget(L"\\REGISTRY\\USER\\S-1_Classes\\Z", L"\\REGISTRY\\USER\\S-1_Classes", hkcrTop, 2));
-    // no top identities known: within the target is enough; empty / NULL never
-    CHECK(SalRegKeyIdIntoTarget(cilK, cilK, NULL, 0));
-    CHECK(!SalRegKeyIdIntoTarget(L"", cilK, tgtTop, 1));
-    CHECK(!SalRegKeyIdIntoTarget(cilK, L"", tgtTop, 1));
-    CHECK(!SalRegKeyIdIntoTarget(NULL, cilK, tgtTop, 1));
-    CHECK(!SalRegKeyIdIntoTarget(cilK, NULL, tgtTop, 1));
+    // the source); writing [Plochy\K, Plochy\K\Q] while the source's Plochy\K\K\Q\R is opened - the
+    // source's own keys lie in the target but hold nothing being written: no refusal
+    const WCHAR* flat[] = {L"\\REGISTRY\\USER\\S-1\\Plochy\\K", L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\Q"};
+    CHECK(!SalRegKeyIdLeadsBack(flat, 2, L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\K"));
+    CHECK(!SalRegKeyIdLeadsBack(flat, 2, L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\K\\Q"));
+    CHECK(!SalRegKeyIdLeadsBack(flat, 2, L"\\REGISTRY\\USER\\S-1\\Plochy\\K\\K\\Q\\R"));
+    // ... while a link from it to Plochy (above the target) still is refused
+    CHECK(SalRegKeyIdLeadsBack(flat, 2, L"\\REGISTRY\\USER\\S-1\\Plochy"));
 
     // review of 391: the Perflib language keys open as predefined pseudo-handles (no identity)
     CHECK(SalRegIsPseudoKeyHandle(HKEY_PERFORMANCE_TEXT));

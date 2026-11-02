@@ -32,8 +32,13 @@
                   elsewhere is still followed)
     Rows of the review of 391:
       COPYTGT     Tgt\<K> (a = 1) holding the LINK L -> Cil (the target's parent), F5 into Cil\, Cancel:
-                  one box naming Tgt\<K>\L\<K> (the walk reached the copy it writes); Cil\<K> a = 1,
-                  nothing below Cil\<K>\L\<K> (before: 29 keys, 28 deep, error 87)
+                  one box naming Tgt\<K>\L (Cil holds the key being written); Cil\<K> a = 1, no
+                  Cil\<K>\L (before: 29 keys, 28 deep, error 87)
+      COPYPRE     (review 2, control) Pre\<K> holding the LINK L -> Cil\<K>\E (a key that is in the target
+                  already, e = 7): copied once, Cil\<K>\L e = 7, no box (as before 391)
+      COPYSIB     (review 2, control) Sib\<K> holding Z (z = 3) and the LINK L -> Cil\<K>\Z (the sibling the
+                  copy wrote just before): Cil\<K>\Z and Cil\<K>\L both z = 3, no box (as before 391)
+    The fixture holds Cil\<K>\E (e = 7) for every row, so every copy merges into an existing Cil\<K>.
       FINDPERF    Find "009" in HKLM\...\CurrentVersion\Perflib (read only): one result, no box - its
                   language keys open as predefined pseudo-handles (the first version: "(6)" box)
       FINDPERFNT  Find "CurrentLanguage" in HKLM\...\CurrentVersion, access-denied (5) boxes answered
@@ -233,6 +238,8 @@ $Links['Cyc\' + $K + '\L1'] = 'Cyc2'
 $Links['Cyc2\L2'] = 'Cyc\' + $K
 $Links['Mov\' + $K + '\L'] = 'Jinde'
 $Links['Tgt\' + $K + '\L'] = 'Cil'                     # review of 391: into the copy target's parent
+$Links['Pre\' + $K + '\L'] = 'Cil\' + $K + '\E'        # review 2: a key that was in the target (no loop)
+$Links['Sib\' + $K + '\L'] = 'Cil\' + $K + '\Z'        # review 2: a sibling the copy already wrote (no loop)
 
 function Sync([int]$Id) { [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000) }
 function Kid([IntPtr]$Dlg, [int]$CtlId) { return @([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq $CtlId }) | Select-Object -First 1 }
@@ -322,6 +329,9 @@ function Make-Fixture {
     New-Key 'Jinde\Sub'; Set-Val 'Jinde' 'j' '5'; Set-Val 'Jinde\Sub' 's' '6'
     New-Key 'Cil'
     New-Key ('Tgt\' + $K); Set-Val ('Tgt\' + $K) 'a' '1'
+    New-Key ('Pre\' + $K); Set-Val ('Pre\' + $K) 'a' '1'
+    New-Key ('Cil\' + $K + '\E'); Set-Val ('Cil\' + $K + '\E') 'e' '7'
+    New-Key ('Sib\' + $K + '\Z'); Set-Val ('Sib\' + $K) 'a' '1'; Set-Val ('Sib\' + $K + '\Z') 'z' '3'
     foreach ($l in $Links.Keys) {
         $e = [RegLinkLoop]::Make($RegSub + '\' + $l, $RegInt + '\' + $Links[$l])
         if ($e -ne 0) { throw ('cannot create the link ' + $l + ': ' + $e) }
@@ -554,9 +564,22 @@ try {
     Row-Copy 'COPYTGT' 'Tgt' @(2) {
         param($r)
         $s = $r.Snap1
-        Row 'COPYTGT' 'BOX' (V (One-Itself $r ('Tgt\' + $K + '\L\' + $K))) ("exactly one box naming Tgt\<K>\L\<K> (the copy reached through the link); {0}" -f (Box-Facts $r))
-        $ok = (Has-Line $s ('Cil\' + $K + '|a=1')) -and -not (Has-Key $s ('Cil\' + $K + '\L\' + $K)) -and $r.SrcKept -and $r.Depth -le 2
-        Row 'COPYTGT' 'STATE' (V $ok) ("Cil\<K> with a = 1, nothing below Cil\<K>\L\<K>, depth {0}, source unchanged ({1}): {2}; {3}" -f $r.Depth, $r.SrcKept, $ok, $r.State)
+        Row 'COPYTGT' 'BOX' (V (One-Itself $r ('Tgt\' + $K + '\L'))) ("exactly one box naming Tgt\<K>\L (it leads to Cil, which holds the key being written); {0}" -f (Box-Facts $r))
+        $ok = (Has-Line $s ('Cil\' + $K + '|a=1')) -and -not (Has-Key $s ('Cil\' + $K + '\L')) -and $r.SrcKept -and $r.Depth -le 1
+        Row 'COPYTGT' 'STATE' (V $ok) ("Cil\<K> with a = 1, no Cil\<K>\L, depth {0}, source unchanged ({1}): {2}; {3}" -f $r.Depth, $r.SrcKept, $ok, $r.State)
+    }
+    # review 2: links into the target that do NOT loop - copied once with no box, as before 391
+    Row-Copy 'COPYPRE' 'Pre' $OkAns {
+        param($r)
+        $s = $r.Snap1
+        $ok = (Has-Line $s ('Cil\' + $K + '\L|e=7')) -and (Has-Line $s ('Cil\' + $K + '\E|e=7')) -and $r.SrcKept -and $r.Boxes.Count -eq 0
+        Row 'COPYPRE' 'STATE' (V $ok) ("Cil\<K>\L a plain copy of Cil\<K>\E (e = 7), no box: {0}; {1}; {2}" -f $ok, (Box-Facts $r), $r.State)
+    }
+    Row-Copy 'COPYSIB' 'Sib' $OkAns {
+        param($r)
+        $s = $r.Snap1
+        $ok = (Has-Line $s ('Cil\' + $K + '\Z|z=3')) -and (Has-Line $s ('Cil\' + $K + '\L|z=3')) -and $r.SrcKept -and $r.Boxes.Count -eq 0
+        Row 'COPYSIB' 'STATE' (V $ok) ("Cil\<K>\Z and Cil\<K>\L both z = 3, no box: {0}; {1}; {2}" -f $ok, (Box-Facts $r), $r.State)
     }
     Run-Find
 }
