@@ -25,12 +25,17 @@
       XD-LOOP    PASS = the program answers, exactly one box, top.txt and zlast/z.txt, the image kept
                  (l1 / l2 are folders met again: listed empty) - before 400: top.txt only; without the
                  visited set of 400: an exponential walk (the program does not answer)
-      XD-LOOP2   PASS = the program answers, no window, top.txt and zlast/z.txt, the image deleted (a
-                 folder met again is not a damaged one, 328's rule) - before 400: the walk doubles per
-                 level up to the path limit (expected: no answer)
+      XD-LOOP2   PASS = the program answers, no window, top.txt and zlast/z.txt, the image KEPT (a folder
+                 met again is listed empty and marks the listing - review 2; the first after run deleted
+                 it, 328's rule) - before 400: the walk doubles per level up to the path limit (no answer)
       UD-LOOP    PASS = no window, the ISO 9660 part's three files and UDF top.txt and zlast/z.txt, the
-                 image deleted - before 400: a/side.txt/side.txt/... down to the path limit, the
+                 image KEPT (review 2) - before 400: a/side.txt/side.txt/... down to the path limit, the
                  "(206)" report and the image kept
+      XD-HLINK, UD-HLINK  (review 2) two folders name one directory (Xbox: a and b at one sector and size;
+                 UDF: zlast's identifier names folder a's file entry), nothing damaged - PASS = the first
+                 path extracted, the second listed empty, no window, the image KEPT; main: both paths
+                 extracted, the image deleted; 400 before review 2: the second path missing and the
+                 image deleted
       XD-SHARE   (review 1) root: b (sector S, 2048 bytes), a (sector S, 4096 bytes), top.txt; S holds
                  a1.txt, S + 1 a2.txt - PASS = a/a1.txt, a/a2.txt, b/a1.txt, top.txt, no window, the
                  image deleted (as main); 400's first build (visited by sector alone): a/a2.txt missing,
@@ -187,6 +192,8 @@ try {
     $made += & python -I $py xboxloop2 "$s\xd_loop2.iso" 2>&1
     $made += & python -I $py xboxshare "$s\xd_share.iso" 2>&1
     $made += & python -I $py xboxmany "$s\xd_many.iso" 2>&1
+    $made += & python -I $py xboxhlink "$s\xd_hlink.iso" 2>&1
+    if ([IO.File]::Exists("$s\ud.iso")) { $made += & python -I $py udfhlink "$s\ud.iso" "$s\ud_hlink.iso" 2>&1 }
     $made += & python -I $py xbox "$s\xd.iso" 2>&1
     $made += & python -I $py xboxext "$s\xd_ext.iso" 2>&1
     $ErrorActionPreference = $old
@@ -219,8 +226,12 @@ try {
     Unpack-Row 'RD-TWO' "$s\rd2_two.iso" $topZ -Damaged -Once
     Unpack-Row 'XD-TWO' "$s\xd_two.iso" $topZ -Damaged -Once
     Unpack-Row 'XD-LOOP' "$s\xd_loop.iso" $topZ -Damaged -Once
-    Unpack-Row 'XD-LOOP2' "$s\xd_loop2.iso" $topZ
-    Unpack-Row 'UD-LOOP' "$s\ud_loop.iso" $udTopZ
+    Unpack-Row 'XD-LOOP2' "$s\xd_loop2.iso" $topZ -KeepImage
+    Unpack-Row 'UD-LOOP' "$s\ud_loop.iso" $udTopZ -KeepImage
+    # review 2: two folders name one directory - the second listed empty, the listing marked (image kept)
+    Unpack-Row 'XD-HLINK' "$s\xd_hlink.iso" ([ordered]@{ 'a/x.txt' = 'X'; 'top.txt' = 'TOP' }) -KeepImage
+    Unpack-Row 'UD-HLINK' "$s\ud_hlink.iso" ([ordered]@{ 'ISO (TC330)/a/side.txt' = 'SIDE'; 'ISO (TC330)/top.txt' = 'TOP'; 'ISO (TC330)/zlast/z.txt' = 'Z'
+            'UDF (TC330)/a/side.txt' = 'SIDE'; 'UDF (TC330)/top.txt' = 'TOP' }) -KeepImage
     # review 1: one start sector, two sizes - both walked (not "met again"); 300 damaged folders - one box
     Unpack-Row 'XD-SHARE' "$s\xd_share.iso" ([ordered]@{ 'a/a1.txt' = 'A1'; 'a/a2.txt' = 'A2'; 'b/a1.txt' = 'A1'; 'top.txt' = 'TOP' })
     Unpack-Row 'XD-MANY' "$s\xd_many.iso" $topZ -Damaged -Once

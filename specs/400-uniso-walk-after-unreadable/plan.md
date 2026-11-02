@@ -81,10 +81,10 @@ plug-ins are header-only).
 3. UDF: members `SalIsoWalk Walk; std::set<unsigned long long>* Visited` (key `partition << 32 |
    location` of the folder's ICB). `ListDirectory` resets the state, inserts the root ICB, walks.
    `ScanDir`: boxes gated; before `MapICB` of a folder: met again -> not descended (empty folder,
-   not marked); out of memory on insert -> `Stopped`, gated box, `ret = CONTINUE`. `AddFileDir`'s
+   the listing marked incomplete - review 2); out of memory on insert -> `Stopped`, gated box, `ret = CONTINUE`. `AddFileDir`'s
    out-of-memory sites set `Stopped` and gate their box; a file whose entry cannot be read keeps
    ending its directory silently (330: marked through the walk result).
-4. Xbox: as UDF, key = the folder's start sector; `new` failure and `AddFileDir` out of memory set
+4. Xbox: as UDF, key = the folder's start sector and size (review 1); `new` failure and `AddFileDir` out of memory set
    `Stopped`.
 5. Unchanged: the damaged directory's own tail (a bad record ends it), the core's `IDS_ERROR` boxes
    of a refused entry (328 / 329), root failures, HFS+ and audio readers.

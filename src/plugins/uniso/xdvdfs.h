@@ -46,7 +46,8 @@ protected:
     // feature 400: the listing walk - later folders are descended after a folder that cannot be read
     // (only out of memory stops it), its error box is shown once, and each folder (its start sector and
     // size: an entry gives both, review 1) is walked once - a crafted image can point a folder back to
-    // itself or an ancestor (CISO9660, 328)
+    // itself or an ancestor (CISO9660, 328); a folder met again is listed empty and marks the listing
+    // incomplete (review 2)
     SalIsoWalk Walk;
     std::set<unsigned long long>* Visited;
 

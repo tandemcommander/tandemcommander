@@ -307,6 +307,7 @@ Last triaged: 2026-11-02
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
 | [ISO plug-in: an ISO 9660 folder met again with a larger length is listed empty](items/iso-plug-in-an-iso-9660-folder-met-again-with-a-larger/desc.md) | bug | 7 | archives | review:400 | 2026-11-02 |
+| [ISO plug-in: an Xbox entry name can be read past the end of its directory](items/iso-plug-in-an-xbox-entry-name-can-be-read-past-the-end-of/desc.md) | bug | 5 | archives | review:400 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 
 ## Parked

@@ -18,5 +18,6 @@ A parent turns a child's `TERMINATE` into its own `CONTINUE`.
 
 ## Visited directories (UDF, Xbox - new; ISO 9660 - 328)
 
-Set per listing walk. UDF key: `(partition << 32) | block` of the folder's ICB; Xbox key: start
-sector. Met again: the folder is listed, not descended, not marked.
+Set per listing walk. UDF key: `(partition << 32) | block` of the folder's ICB; Xbox key: `(size
+<< 32) | start sector` (review 1). Met again: the folder is listed, not descended, the listing marked
+incomplete (review 2).

@@ -116,3 +116,32 @@ rule).
   XD-SHARE all four files, XD-MANY one box); 329 again (Xbox rows) `probe/regress_329_review1.txt`
   14 / 0. The reviewer's logs kept: `probe/review1_rv_head_e48568c6.txt` (RV-SHARE FAIL on 400's
   first build) and `probe/review1_rv_main_aaf95b94.txt` (RV-SHARE PASS on main, RV-MANY FAIL).
+
+### Review 2 (refute-first agent, on a27641df)
+
+- Own builds of HEAD and main under `%TEMP%\rv400b`: 400's probe 44 / 0 on HEAD; main's plug-in fails
+  RD-EXT and XD-LOOP; 328's probe 20 / 0 (LOOP rows ~0.7 s CPU); saltests 0 failed (38 new checks);
+  registry restored and identical. **No MUST.**
+- **SHOULD 1 (fixed, in scope)**: a UDF / Xbox folder met again was listed empty without marking the
+  listing - an image whose two folders name one directory (`ud_hlink.iso`: zlast's identifier names
+  folder a's file entry; `xd_hlink.iso`: a and b at one sector and size) lost the second path and the
+  image was deleted by Unpack with "Delete archive after unpacking" (main extracted both paths; FR-006
+  broken; fail-closed rule 098). Fix: `CUDF::VisitFolder` / `CXDVDFS::VisitFolder` mark the listing
+  incomplete for a folder met again. Consequence: crafted loops (XD-LOOP2, UD-LOOP) and hard-linked
+  folders now keep the image (no window). Spec FR-005 / FR-006 / Clarifications / Edge Cases, plan,
+  research and data model updated. Probe rows XD-HLINK, UD-HLINK added (images from the reviewer's
+  `rvgen.py`, ported to `img400.py udfhlink / xboxhlink`); XD-LOOP2, UD-LOOP now expect the image kept.
+  Reviewer's logs kept: `probe/review2_rv_head_a27641df.txt`, `probe/review2_rv_main_aaf95b94.txt`.
+- NOTE 1: the saltests total depends on the volume the exe runs from (tests 304 / 305 count volumes
+  without 8.3 names): 282,309 from E:, 282,283 from %TEMP% on C: - explains review 1's NOTE 4.
+- NOTE 2: the Xbox key (sector, size) bounds a walk by the distinct pairs of the image's entries:
+  `xboxsizes` (600 entries at the root's own sector, sizes rootsize - 4k) finishes on HEAD (83 s, the
+  "(2195)" left-out report, image kept), main does not answer - an improvement, not a regression.
+- NOTE 3 (Inbox): a pre-existing Xbox name over-read (`strncpy_s` of `len` bytes guarded only by
+  `offset + 0x0E <= size`) - Inbox item `iso-plug-in-an-xbox-entry-name-can-be-read-past-the-end-of`.
+- NOTE 4: callers checked (fresh walk per ListDirectory; CountUnder saves / restores; no cut path).
+- The tree was clean after the review.
+- After review 2's fix: BUILD SUCCEEDED; saltests 282,309 / 0; encoding guard TOTAL: 0;
+  `probe/result_after_review2.txt` 48 / 0 (24 RUN rows: XD-HLINK / UD-HLINK the first path, no window,
+  image kept; XD-LOOP2 / UD-LOOP image kept); 329 `probe/regress_329_review2.txt` 14 / 0. No third
+  review: review 2 had no MUST (SKILL step 7).

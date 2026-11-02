@@ -1059,14 +1059,20 @@ void CUDF::WalkOutOfMemory()
 }
 
 // feature 400: the walk meets the folder whose file entry 'icb' names - 1 the first time, 0 met again in this
-// walk (not descended: listed empty, not marked - CISO9660's rule, 328), -1 out of memory
+// walk (not descended: listed empty), -1 out of memory. Review 2: a folder met again marks the listing incomplete
+// - two folders of an image can name one directory (a hard link, a crafted loop), the second path is listed
+// empty, and a whole unpack then fails (fail closed: "Delete archive after unpacking" deleted the image
+// although that path was never extracted)
 int CUDF::VisitFolder(const CAD& icb)
 {
     if (Visited == NULL)
         return 1;
     try
     {
-        return Visited->insert(((unsigned long long)icb.Partition << 32) | icb.Location).second ? 1 : 0;
+        if (Visited->insert(((unsigned long long)icb.Partition << 32) | icb.Location).second)
+            return 1;
+        Image->ListingLeftOut.SetIncomplete();
+        return 0;
     }
     catch (...)
     {

@@ -28,7 +28,9 @@
 ## R4 - Loops
 
 - Decision: the UDF and Xbox walks meet each directory once per walk (as 328's ISO 9660 walk);
-  met again = listed as an empty folder, no box, not marked.
+  met again = listed as an empty folder, no box, the listing marked incomplete (review 2: two
+  folders can name one directory - fail closed). Xbox key = start sector and size (review 1: each
+  entry gives its own size).
 - Rationale: their only bound was the listing's path-length rule; a folder listing itself twice
   doubles the walk per level (2^depth). Some crafted images ended early only because a failure
   stopped all descents; after this feature they would not. Keys: UDF ICB (partition, block); Xbox

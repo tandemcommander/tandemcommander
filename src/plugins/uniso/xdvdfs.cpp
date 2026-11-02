@@ -227,7 +227,8 @@ void CXDVDFS::WalkOutOfMemory()
 }
 
 // feature 400: the walk meets the folder of 'size' bytes starting at 'sector' - 1 the first time, 0 met again
-// in this walk (not descended: listed empty, not marked - CISO9660's rule, 328), -1 out of memory. Review 1:
+// in this walk (not descended: listed empty; review 2: the listing marked incomplete, as CUDF::VisitFolder),
+// -1 out of memory. Review 1:
 // by the start sector and the size together - each entry gives its own size, and a folder met again by its
 // sector alone with a larger size was listed empty without a mark (its later files lost, the image deleted
 // by a whole unpack); a loop still meets its pairs once (they come from the image's entries)
@@ -237,7 +238,10 @@ int CXDVDFS::VisitFolder(DWORD sector, DWORD size)
         return 1;
     try
     {
-        return Visited->insert(((unsigned long long)size << 32) | sector).second ? 1 : 0;
+        if (Visited->insert(((unsigned long long)size << 32) | sector).second)
+            return 1;
+        Image->ListingLeftOut.SetIncomplete(); // review 2: the second path is listed empty - fail closed
+        return 0;
     }
     catch (...)
     {

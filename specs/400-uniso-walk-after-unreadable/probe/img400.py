@@ -19,6 +19,11 @@ Every command of specs/330-iso-unreadable-folder/probe/img330.py (loaded from th
                                                is damaged, a/a2.txt is reached only through 'a'
   python -I img400.py xboxmany <out>           (review 1) an XDVDFS image whose root holds 300 folders
                                                past the end, then top.txt and zlast/z.txt
+  python -I img400.py udfhlink <ud.iso> <out>  (review 2) UDF part of ud.iso: zlast's identifier in the
+                                               root points to folder a's file entry (two folders name one
+                                               directory; nothing damaged)
+  python -I img400.py xboxhlink <out>          (review 2) an XDVDFS root of a (sector S, 2048 bytes), b (the
+                                               same), top.txt; S holds x.txt (nothing damaged)
   python -I img400.py udfloop <ud.iso> <out>   UDF part of a genisoimage -udf hybrid: side.txt's
                                                identifier in folder a becomes a folder whose ICB is
                                                folder a's own file entry (a folder inside itself)
@@ -188,6 +193,41 @@ def cmd_xboxmany(dst):
     return 0
 
 
+def cmd_udfhlink(src, dst):
+    b = bytearray(open(src, "rb").read())
+    ps, fsd = img330.udf_layout(b)
+    a_lb = le32(b, img330.udf_fid_a(b, ps, fsd) + 20 + 4)
+    rad = img330.udf_first_ad(b, ps, le32(b, fsd + 400 + 4))
+    rlen, rpos = le32(b, rad) & 0x3FFFFFFF, le32(b, rad + 4)
+    p = (ps + rpos) * SECTOR
+    end = p + rlen
+    while p < end:
+        if le16(b, p) != 257:
+            refuse("no file identifier descriptor at %d" % p)
+        lfi, liu = b[p + 19], le16(b, p + 36)
+        if (b[p + 18] & 2) and bytes(b[p + 38 + liu : p + 38 + liu + lfi]) == b"\x08zlast":
+            old = le32(b, p + 20 + 4)
+            struct.pack_into("<I", b, p + 20 + 4, a_lb)
+            open(dst, "wb").write(b)
+            print("udfhlink: zlast's ICB %d -> %d (folder a)" % (old, a_lb))
+            return 0
+        p += (38 + liu + lfi + 3) & ~3
+    refuse("no zlast in the UDF root")
+
+
+def cmd_xboxhlink(dst):
+    root, S, x, top = 33, 34, 36, 37
+    sectors = {
+        root: xpad(xent("a", S, SECTOR, 0x10) + xent("b", S, SECTOR, 0x10) + xent("top.txt", top, 3, 0x80)),
+        S: xpad(xent("x.txt", x, 1, 0x80)),
+        x: b"X",
+        top: b"TOP",
+    }
+    write_sectors(dst, 40, root, SECTOR, sectors)
+    print("xboxhlink: a and b at sector %d, %d bytes" % (S, SECTOR))
+    return 0
+
+
 def cmd_udfloop(src, dst):
     b = bytearray(open(src, "rb").read())
     ps, fsd = img330.udf_layout(b)
@@ -223,6 +263,10 @@ def main(argv):
         return cmd_xboxshare(argv[1])
     if len(argv) == 2 and argv[0] == "xboxmany":
         return cmd_xboxmany(argv[1])
+    if len(argv) == 3 and argv[0] == "udfhlink":
+        return cmd_udfhlink(argv[1], argv[2])
+    if len(argv) == 2 and argv[0] == "xboxhlink":
+        return cmd_xboxhlink(argv[1])
     if len(argv) == 3 and argv[0] == "udfloop":
         return cmd_udfloop(argv[1], argv[2])
     return img330.main(argv)

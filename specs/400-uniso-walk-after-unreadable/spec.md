@@ -49,10 +49,12 @@ those walks.
   goes on, its box unchanged) (autonomous run: conservative - out of memory is not "a folder that
   cannot be read", and going on would repeat the failure in every later folder)
 - Q: How is a crafted image kept from looping once later folders are descended? → A: each walk of the
-  UDF and Xbox readers meets every directory once, as feature 328's ISO 9660 walk does; a directory
-  met again is listed as an empty folder, without a box and without marking the listing (feature
-  328's rule) (autonomous run: item - *Notes* "A fix must keep a crafted image from looping"; 328's
-  rule reused)
+  UDF and Xbox readers meets every directory once, as feature 328's ISO 9660 walk does (UDF: by the
+  folder's file entry; Xbox: by its start sector and size - review 1); a directory met again is
+  listed as an empty folder without a box and marks the listing incomplete (review 2: two folders can
+  name one directory, the second path would not be extracted - fail closed, rule 098; 328's ISO 9660
+  walk does not mark it: Inbox `iso-plug-in-an-iso-9660-folder-met-again-with-a-larger`) (autonomous
+  run: item - *Notes* "A fix must keep a crafted image from looping"; conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -133,8 +135,9 @@ limit, the program answers, one box at most; feature 328's LOOP rows still pass.
 - The root directory cannot be read: nothing of that file system is listed, as before (one box).
 - A damaged folder is the last record: nothing changes for the walk (there is nothing later).
 - Out of memory: later descents stop as before; one box at most.
-- A directory met again in the same walk: listed as an empty folder, no box, the listing not marked
-  (feature 328's rule, now also for UDF and Xbox).
+- A directory met again in the same walk (UDF, Xbox): listed as an empty folder, no box, the listing
+  marked incomplete (a whole unpack fails, the image is kept) - also for an image that names one
+  directory from two folders (it was listed twice before; review 2).
 - Feature 328's fit check and count walks of the ISO 9660 reader (quiet walks that decide Rock Ridge
   names): they follow the same descent rule and stay quiet; their failures do not count as the
   listing walk's box.
@@ -156,10 +159,12 @@ limit, the program answers, one box at most; feature 328's LOOP rows still pass.
 - **FR-004**: Out of memory MUST still end every later descent of the walk (unchanged); the box rule
   of FR-003 applies to its box too. An entry the core refuses after the listing's rule took it keeps
   its feature 328 / 329 handling and box.
-- **FR-005**: The UDF and Xbox walks MUST walk each directory at most once per walk; a directory met
-  again is listed as an empty folder without a box and without marking the listing (feature 328's
-  rule for ISO 9660).
-- **FR-006**: Images without a damaged folder MUST list exactly as before (same entries, no box).
+- **FR-005**: The UDF and Xbox walks MUST walk each directory at most once per walk (UDF: its file
+  entry; Xbox: its start sector and size); a directory met again is listed as an empty folder without
+  a box and marks the listing incomplete.
+- **FR-006**: Images without a damaged folder MUST list exactly as before (same entries, no box) -
+  except a UDF / Xbox image whose folders name one directory twice (FR-005: the second path empty,
+  the listing marked so the image is never deleted by a whole unpack).
 - **FR-007**: No new UI string; the existing messages are unchanged.
 - **FR-008**: The descent and box rules MUST be pure decisions in a header under `src/common/` with
   `saltests` checks that fail for the old rule (descend only while nothing failed).
