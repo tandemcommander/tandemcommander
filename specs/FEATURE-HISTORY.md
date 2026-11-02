@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -6151,3 +6151,28 @@ a few early ones are out of sequence).
   FAIL; before the review-1 fix - chi-store259 FAIL); 291's 34 / 0, 251's 38 / 4 (its Viewers rows
   open the page index shifted by 312's Tabs page - 4 / 0 with page 20; Inbox); saltests 30,740 / 0;
   two refute-first reviews (one MUST fixed; the second without MUST, the spec's limit restated).
+- 390-regedt-hkcr-move-user: the Registry Editor's Move (F6, drag and drop) of a key that
+  `HKEY_CLASSES_ROOT` shows only from the machine's half into `\HKEY_CURRENT_USER\Software\Classes\`
+  (or `\HKEY_USERS\<SID>_Classes\`) copied it into the user's half and then deleted "the source"
+  through HKCR - which by then reached that new copy: no box, the copy gone again, the machine key
+  unchanged, success reported (upstream; review of 292) - now `CopyOrMoveKeyRec` (`fs5.cpp`) notes,
+  for a Move whose source root is HKCR and before anything of the key is opened or written, which
+  halves hold it (`GetHkcrHalves`: `HKLM` / `HKCU` `Software\Classes\<path>`, not found = not held,
+  any other error = the existing open-error box, fails closed), and at the end deletes the one half
+  that held it by its real path (`SafeDeleteHkcrHalf`, the existing "Unable to remove the original
+  registry key." box naming `HKEY_LOCAL_MACHINE\Software\Classes\...`); a key held by both halves
+  keeps the delete through HKCR. Pure rule `SalRegHkcrDeleteHalf` / `SalRegJoinClassesPath`
+  (`src/common/salregkeyid.h`; the joined path refused when too long, never cut). Without elevation
+  the Move now ends with that box after the copy (an honest copy, the machine key unchanged);
+  elevated it is a real Move (owed to a person). Traps: a new subkey created through
+  `\HKEY_CLASSES_ROOT\` goes to the machine's half (access denied without elevation, Windows
+  behaviour) - the first control row typed such a target and failed on main too; the probe only
+  reads a real machine-only extension key (`.386`) and removes its user copy after each row, and
+  never runs elevated. Limits: a key held by both halves when moved is deleted through HKCR as
+  before (its machine half stays); the open-error path of reading the halves is not driven. From
+  backlog item `registry-editor-move-from-hkcr-to-user-classes-does-nothing`. Probe
+  `hkcr390_probe.ps1` 5 FAIL / 10 -> 10 / 0 (English and Czech); 292's 33 / 0, 294's 24 / 0, 296's
+  47 / 0, 297's 40 / 0; saltests 30,740 -> 30,755 / 0; one refute-first review (no MUST; SHOULD
+  person step recorded; NOTE 1 fixed - a half whose key denies listing counts as holding it, the
+  reviewer's "open with no access right" is refused by Windows, caught by the probe; NOTE 2 to the
+  Inbox `registry-editor-hkcr-move-both-halves-leaves-machine-half`).

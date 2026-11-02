@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor: Move from HKCR into the user's Classes key does nothing](items/registry-editor-move-from-hkcr-to-user-classes-does-nothing/desc.md) | bug | 4 | other-plugins | 390 |
 
 ## Next
 
@@ -302,6 +301,8 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Registry Editor 390: elevated check of Move from HKCR into the user Classes key](items/registry-editor-390-elevated-hkcr-move-check/desc.md) | person-step | 6 | data-safety | leftover:390 | 2026-11-02 |
+| [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 
 ## Parked
 
