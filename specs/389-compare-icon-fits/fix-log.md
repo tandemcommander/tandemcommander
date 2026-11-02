@@ -49,3 +49,10 @@ Command:
 - `CChangeIconDialog`: a new `Validate` with `DlgItemTextFitsU8(IDE_CHI_FILENAME, &ti, MAX_PATH)`;
   `LoadIcons` measures first (`DlgItemTextFitsU8(..., NULL, MAX_PATH)`) and returns FALSE without
   touching the list (conservative: no other file is read, the field keeps its text).
+
+## speckit-analyze
+
+0 CRITICAL, 0 HIGH. Accepted: C1 MEDIUM (the probe reaches the Change Icon reload only through
+the OK click's focus change - the same EN_KILLFOCUS handler as Tab to the list), C2 LOW (no row
+with both names too long - name 1 is measured first by construction), C3 LOW (FR-005 no new string
+- checked in the diff), U1 LOW (CHANGELOG entry - closing step).
