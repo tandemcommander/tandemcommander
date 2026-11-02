@@ -11,7 +11,7 @@ updated: 2026-11-02
 verified: -
 effort: S
 feature: -
-related: [registry-editor-view-of-a-text-value-cut-text-and-a-stray]
+related: []
 depends-on: []
 reason: -
 ---
@@ -48,3 +48,4 @@ its values in the stale listing (hidden-desktop probe). Not verified.
 ## Log
 
 - 2026-11-02 — created (source measure:387)
+- 2026-11-02 — related item registry-editor-view-of-a-text-value-cut-text-and-a-stray done in feature 387

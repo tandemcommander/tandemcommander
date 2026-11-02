@@ -41,7 +41,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
-| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287 |
+| File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
 | User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376 |
@@ -6094,3 +6094,22 @@ a few early ones are out of sequence).
   (LONG prefix -> whole, LONG200 Desktop -> whole, RESCUE-LONG prefix -> drive root); saltests
   30,699 / 0 (`TestDocumentsPath386`, the old copy rule as negative control); one refute-first
   review (no MUST; SHOULD 1, 2 = the RESCUE and LONG200 rows, added; NOTE 1 -> Inbox).
+- 387-regedt-view-text-cp: Registry Editor View (F3) of a text value (REG_SZ / REG_EXPAND_SZ /
+  REG_MULTI_SZ), on a multi-byte ANSI code page (UTF-8 65001, 932 / 936 / 949 / 950), converted the
+  text into a space of one byte per UTF-16 unit and wrote that many bytes: a non-ASCII text did not
+  fit, the conversion failed and the viewer showed the partial bytes, a stale heap byte and a NUL
+  (`a€` -> `a`, garbage; `čččč bar` without ` bar`) - now `SalRegViewExportBytes`
+  (`src/common/salregfind.h`, on 278's `SalRegFindTextToCodePage`) decides what `ExportValueData`
+  writes: the whole converted copy and its count, or the data as stored (another type, the switch
+  off, a text that cannot be converted - never a partial result); a short write of the temporary
+  file is now an error (it was `WriteFile(...) || written != size`). Traps: on code page 1250 old
+  and new write the same bytes, so the GUI case is a person step
+  (`registry-editor-view-confirm-f3-shows-a-whole-non-ascii-text`; review 1 notes an
+  `activeCodePage=UTF-8` manifest on a copy of the exe could drive it, not tried); the first
+  saltests run after a header-only change can use an exe not yet relinked - check its time stamp.
+  Limits: the `RegOpenKeyExW` failure of `ExportValueData` still goes on with an unset handle
+  (Inbox `registry-editor-view-a-key-that-cannot-be-opened-is-still`). From backlog item
+  `registry-editor-view-of-a-text-value-cut-text-and-a-stray`. saltests 30,699 -> 30,724 / 0
+  (`TestRegViewTextToCodePage387`; mutations: old sizing 5 failed, converted length dropped 4
+  failed); one refute-first review (no MUST; SHOULD 1 = the decision moved into the tested rule,
+  SHOULD 2 = the premise rows relabelled; NOTE 1 dead guard removed).

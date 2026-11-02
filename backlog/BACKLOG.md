@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor View of a text value: cut text and a stray byte on a UTF-8 code page](items/registry-editor-view-of-a-text-value-cut-text-and-a-stray/desc.md) | bug | 4 | other-plugins | 387 |
 
 ## Next
 
@@ -302,6 +301,7 @@ Last triaged: 2026-11-02
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
 | [Registry Editor View: a key that cannot be opened is still read with an unset handle](items/registry-editor-view-a-key-that-cannot-be-opened-is-still/desc.md) | bug | 3 | other-plugins | measure:387 | 2026-11-02 |
+| [Registry Editor View: confirm F3 shows a whole non-ASCII text value on UTF-8](items/registry-editor-view-confirm-f3-shows-a-whole-non-ascii-text/desc.md) | person-step | 3 | other-plugins | leftover:387 | 2026-11-02 |
 
 ## Parked
 

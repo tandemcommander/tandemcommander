@@ -108,3 +108,8 @@ No data-loss path (only a temporary copy is written). Confirmed the Inbox findin
 After the fixes: encoding guard `TOTAL: 0 finding(s)`; `.\build.cmd` `BUILD SUCCEEDED`;
 `saltests: 30724 checks, 0 failed`. (Trap met twice: the first saltests run after a header-only
 change can use a not yet relinked exe - check its time stamp; a second `build.cmd` relinked it.)
+
+## Closing
+
+- Owed to a person: `registry-editor-view-confirm-f3-shows-a-whole-non-ascii-text`; the CHANGELOG entry in `closing-report.md` (no `## [Unreleased]` section).
+- Inbox: `registry-editor-view-a-key-that-cannot-be-opened-is-still`.
