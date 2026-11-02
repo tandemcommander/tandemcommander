@@ -269,6 +269,9 @@ struct SCommonHeader
     BOOL NameRefused; // feature 308: Name cannot be used in this pass (also Ignored); an extraction asked for it fails
     BOOL NameEmpty;   // feature 394: a cpio name that normalizes to nothing ("." ...; also Ignored, Name stays raw):
                       // never asked, but it may carry a hard-linked file's data (it stays in its group)
+    BOOL NameEmptyRegular; // feature 395: the name normalizes to nothing (also Ignored) and the member is a
+                           // regular file (cpio by its mode, tar by its type; any format) - its data, if
+                           // any, reaches no name of its own: an extraction asked for it reports it
     char LinkType;    // feature 309: LNKTYPE / SYMTYPE for a link member (also Ignored), else 0
     char* LinkName;   // feature 309: malloc'd UTF-8 name the link refers to, normalized like Name; NULL = none
     // feature 310: newc / crc cpio only (0 otherwise) - c_ino, c_nlink, c_devmajor, c_devminor; the
@@ -314,6 +317,7 @@ private:
     BOOL Listing; // feature 308: this pass builds the panel listing (its bounds apply only then)
     BOOL RefusedNameShown;
     BOOL LinkReportShown; // feature 309: a link member left out is reported once per operation
+    BOOL EmptyNameShown;  // feature 395: a file stored under a name that normalizes to nothing, once per operation
     BOOL RepeatPass;      // feature 325: a further pass (ReopenStream) - "Unknown block signature" not again
     DWORD ListingPrefixLen; // feature 306: bytes the listing puts before every path (.deb: "data" + a separator)
 
@@ -324,6 +328,9 @@ private:
 
     int ReadArchiveHeader(SCommonHeader& header, BOOL probe);
     void ReportRefusedName(const char* name); // the system's "(206)" text with the whole name, once
+    // feature 395: a file whose data is stored under a name that normalizes to nothing - the system's
+    // "(123)" text with the raw name in quotes, once per operation
+    void ReportEmptyName(const char* rawName);
     // feature 309: a link member left out - the system's text for 'err' with "name -> link name", once
     void ReportLinkMember(const SCommonHeader& header, DWORD err);
     // 'written' (optional): set to TRUE when a file was created and completed (not skipped, not simulated);
@@ -377,6 +384,10 @@ private:
         std::string WrittenTarget; // SAL_CPIO_GROUP_WRITTEN: the file the copies are made from
         std::string DataName;      // the archive name of the member that carried the data (reports)
         std::vector<SCpioWaiting> Waiting;
+        // feature 395: an asked member whose name normalizes to nothing carried the data and it passed
+        // unwritten (SAL_EMPTY_NAME_PENDING); cleared when a later member writes or reports it
+        bool EmptyLost = false;
+        std::string EmptyLostName; // that member's raw name (the report)
     };
     typedef std::map<std::pair<unsigned __int64, DWORD>, SCpioGroup> CCpioGroups;
     static BOOL IsCpioGroupMember(const SCommonHeader& header);
@@ -387,9 +398,14 @@ private:
     // a header standing for a waiting name (no data, no padding); FALSE = out of memory (shown)
     static BOOL MakeCpioWaitingHeader(SCommonHeader& h, const SCpioWaiting& w, const char* linkName);
     // extracts a member of a group as SalCpioLinkDecide says; the result of WriteOutData (TAR_OK /
-    // TAR_EOF) or TAR_ERROR (stop: an error shown, Cancel); 'refused' set when a name was left out
+    // TAR_EOF) or TAR_ERROR (stop: an error shown, Cancel); 'refused' set when a name was left out.
+    // 'emptyAsked' (feature 395): a regular member whose name normalizes to nothing, matched by the
+    // operation's names under its raw name - its data passing unwritten makes the group's loss pending
     int WriteOutCpioGroupMember(SCommonHeader& header, const char* targetPath, const char* targetName,
-                                BOOL found, CCpioGroups& groups, BOOL& refused);
+                                BOOL found, CCpioGroups& groups, BOOL& refused, BOOL emptyAsked = FALSE);
+    // feature 395: at the end of the archive, a group whose empty-named data passed unwritten and was
+    // never settled is reported ('refused' set)
+    void ReportCpioEmptyLost(const CCpioGroups& groups, BOOL& refused);
     // the names waiting for 'group' after its data was handled: copies of WrittenTarget, or reported
     int FinishCpioWaiting(SCpioGroup& group, const char* targetPath, BOOL& refused);
     // at the end of the archive: the waiting names of groups that never carried data, as empty files

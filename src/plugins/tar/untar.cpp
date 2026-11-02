@@ -228,6 +228,7 @@ void SCommonHeader::Initialize()
     NameFromGnu = FALSE;
     NameRefused = FALSE;
     NameEmpty = FALSE;
+    NameEmptyRegular = FALSE;
     Format = e_Unknown;
     IsExtendedTar = FALSE;
     CpioIno = 0;
@@ -257,6 +258,7 @@ CArchive::CArchive(const char* fileName, CSalamanderForOperationsAbstract* salam
     Listing = FALSE;
     RefusedNameShown = FALSE;
     LinkReportShown = FALSE;
+    EmptyNameShown = FALSE;
     RepeatPass = FALSE;
     ListingPrefixLen = 0;
     SalamanderIf = salamander;
@@ -776,6 +778,10 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
     {
         // determine whether this is "our" file
         BOOL found = names.IsNamePresent(header.Name);
+        // feature 395: a regular file stored under a name that normalizes to nothing, matched under its raw
+        // name (only a whole Unpack's mask can: it is never listed) - its data must reach an extracted
+        // name, else it is reported and the operation fails (the archive is kept)
+        BOOL emptyAsked = found && header.NameEmptyRegular;
         if (header.NameEmpty)
             found = FALSE; // feature 394: never listed - nothing can ask for it (a mask may match the raw ".")
         if (found && header.NameRefused)
@@ -894,14 +900,27 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         if (IsCpioGroupMember(header)) // feature 310: a name of a hard-linked file in a newc / crc cpio
             // feature 393: a refused name (reported above when asked) is never written under its name -
             // for the group it is not asked, so a name waiting for its data gets it
-            ret = WriteOutCpioGroupMember(header, targetPath, ptr, found && !header.NameRefused, cpioGroups, refused);
+            ret = WriteOutCpioGroupMember(header, targetPath, ptr, found && !header.NameRefused, cpioGroups, refused,
+                                          emptyAsked);
         else
+        {
+            // feature 395: no other name can get its data (one name, odc / binary, tar)
+            if (SalEmptyNameDataDecide(header.NameEmptyRegular != FALSE, header.FileInfo.Size > CQuadWord(0, 0),
+                                       emptyAsked != FALSE, false, SAL_CPIO_LINK_SKIP,
+                                       SAL_CPIO_GROUP_NONE) == SAL_EMPTY_NAME_REPORT)
+            {
+                ReportEmptyName(header.Name);
+                refused = TRUE;
+            }
             ret = WriteOutData(header, targetPath, ptr, (header.Ignored || !found), !linkHandled, &written);
+        }
         if (written && !header.IsDir)
             RecordNameWritten(writtenNames, header.Name);
         // feature 310: at the end of the data, the names of files that never carried data are empty
         if (ret == TAR_EOF && WriteOutCpioEmptyNames(cpioGroups, targetPath) != TAR_OK)
             ret = TAR_ERROR;
+        if (ret == TAR_EOF) // feature 395: empty-named data no name got
+            ReportCpioEmptyLost(cpioGroups, refused);
         // feature 325: the deferred hard links from further passes
         if (ret == TAR_EOF && !deferred.empty() && ExtractDeferredLinks(targetPath, deferred, refused) != TAR_OK)
             ret = TAR_ERROR;
@@ -934,6 +953,8 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
         {
             // feature 310: the names of files that never carried data are empty
             BOOL emptyOk = WriteOutCpioEmptyNames(cpioGroups, targetPath) == TAR_OK;
+            if (emptyOk) // feature 395: empty-named data no name got
+                ReportCpioEmptyLost(cpioGroups, refused);
             // feature 325: the deferred hard links from further passes
             if (emptyOk && !deferred.empty() && ExtractDeferredLinks(targetPath, deferred, refused) != TAR_OK)
                 emptyOk = FALSE;
@@ -1305,6 +1326,32 @@ void CArchive::ReportRefusedName(const char* name)
         strcpy(msg, err); // sized for the whole text: the path is shown whole
         strcat(msg, "\n\n");
         strcat(msg, name);
+        SalamanderGeneral->ShowMessageBox(msg, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+        free(msg);
+    }
+    else
+        SalamanderGeneral->ShowMessageBox(err, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+}
+
+// feature 395: a regular file whose data is stored under a name that normalizes to nothing ("." ...) and
+// reaches no extracted name - the system's "(123)" text (the name syntax is incorrect) with the raw name
+// in quotes (an empty name stays visible), once per operation; the operation then fails
+void CArchive::ReportEmptyName(const char* rawName)
+{
+    CALL_STACK_MESSAGE1("CArchive::ReportEmptyName()");
+    if (EmptyNameShown)
+        return;
+    EmptyNameShown = TRUE;
+    const char* err = SalamanderGeneral->GetErrorText(ERROR_INVALID_NAME);
+    const char* name = rawName != NULL ? rawName : "";
+    size_t msgSize = strlen(err) + 3 + strlen(name) + 2;
+    char* msg = (char*)malloc(msgSize);
+    if (msg != NULL)
+    {
+        strcpy(msg, err); // sized for the whole text: the name is shown whole
+        strcat(msg, "\n\n\"");
+        strcat(msg, name);
+        strcat(msg, "\"");
         SalamanderGeneral->ShowMessageBox(msg, LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
         free(msg);
     }
@@ -1809,8 +1856,21 @@ int CArchive::FinishCpioWaiting(SCpioGroup& group, const char* targetPath, BOOL&
     return TAR_OK;
 }
 
+void CArchive::ReportCpioEmptyLost(const CCpioGroups& groups, BOOL& refused)
+{
+    CALL_STACK_MESSAGE1("CArchive::ReportCpioEmptyLost( , )");
+    for (CCpioGroups::const_iterator it = groups.begin(); it != groups.end(); ++it)
+    {
+        if (it->second.EmptyLost)
+        {
+            ReportEmptyName(it->second.EmptyLostName.c_str());
+            refused = TRUE;
+        }
+    }
+}
+
 int CArchive::WriteOutCpioGroupMember(SCommonHeader& header, const char* targetPath, const char* targetName,
-                                      BOOL found, CCpioGroups& groups, BOOL& refused)
+                                      BOOL found, CCpioGroups& groups, BOOL& refused, BOOL emptyAsked)
 {
     SLOW_CALL_STACK_MESSAGE3("CArchive::WriteOutCpioGroupMember( , %s, %s, , , )", targetPath, targetName);
     SCpioGroup* group;
@@ -1827,7 +1887,26 @@ int CArchive::WriteOutCpioGroupMember(SCommonHeader& header, const char* targetP
     BOOL hasData = header.FileInfo.Size > CQuadWord(0, 0);
     int ret;
     BOOL written = FALSE;
-    switch (SalCpioLinkDecide(found != FALSE, hasData != FALSE, group->State, !group->Waiting.empty()))
+    int action = SalCpioLinkDecide(found != FALSE, hasData != FALSE, group->State, !group->Waiting.empty());
+    // feature 395: the data of an asked member whose name normalizes to nothing must reach a name of the
+    // group; a later member settles a pending loss by writing the data or reporting the loss ("(2)")
+    if (group->EmptyLost && SalEmptyNamePendingCleared(action))
+        group->EmptyLost = false;
+    if (emptyAsked && SalEmptyNameDataDecide(header.NameEmptyRegular != FALSE, hasData != FALSE, true, true, action,
+                                             group->State) == SAL_EMPTY_NAME_PENDING)
+    {
+        try
+        {
+            group->EmptyLostName = header.Name;
+            group->EmptyLost = true;
+        }
+        catch (...)
+        {
+            SalamanderGeneral->ShowMessageBox(LoadStrU8(IDS_TARERR_MEMORY), LoadStrU8(IDS_TARERR_TITLE), MSGBOX_ERROR);
+            return TAR_ERROR;
+        }
+    }
+    switch (action)
     {
     case SAL_CPIO_LINK_WAIT:
     {
@@ -2214,13 +2293,20 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     if (tmpName[0] == '\0')
     {
         free(tmpName);
+        BOOL emptyCpio = header.Format == e_NewASCII || header.Format == e_CRCASCII ||
+                         header.Format == e_OldASCII || header.Format == e_Binary || header.Format == e_SwapBinary;
+        // feature 395: a regular file stored under such a name - its data reaches no name of its own, so
+        // an extraction asked for it reports it (DoUnpackArchive); a folder, link or device stays silent.
+        // cpio knows the type by its mode, tar by the type ReadTarHeader read (a regular file: not
+        // Ignored, not a folder, no link)
+        header.NameEmptyRegular = emptyCpio ? (header.Mode.LoDWord & CP_IFMT) == CP_IFREG
+                                            : !header.Ignored && !header.IsDir && header.LinkType == 0;
         header.Ignored = TRUE;
         header.LinkType = 0; // feature 309: such a member stays without effect, as before
         // feature 394: a cpio member named "." (or "./", "") may still carry the data of a hard-linked
         // file whose other names wait for it (newc / crc): it stays in its group as not asked, and its
         // data is written under such a name - with the time and attributes any member gets below
-        if (header.Format == e_NewASCII || header.Format == e_CRCASCII || header.Format == e_OldASCII ||
-            header.Format == e_Binary || header.Format == e_SwapBinary)
+        if (emptyCpio)
         {
             header.NameEmpty = TRUE;
             CQuadWord mtime = header.MTime;

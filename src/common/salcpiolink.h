@@ -74,3 +74,38 @@ inline int SalCpioLinkDecide(bool asked, bool hasData, int state, bool anyWaitin
         return SAL_CPIO_LINK_REPORT;
     return SAL_CPIO_LINK_WAIT;
 }
+
+// Feature 395: a regular file whose data is stored under a name that normalizes to nothing (".", "./",
+// "") is never extracted under that name. When an extraction was asked for it (its raw name matches
+// the operation's names - only a whole Unpack's mask can: it is never listed) and the data reaches no
+// name the operation writes, the member is reported and the operation fails, so the archive is kept
+// ("Delete archive after unpacking"). Also for tar (no grouping) and odc / binary cpio.
+#define SAL_EMPTY_NAME_SILENT 0  // nothing to say: no data, not asked, or the data reached a name
+#define SAL_EMPTY_NAME_REPORT 1  // report now and fail the operation
+#define SAL_EMPTY_NAME_PENDING 2 // a group's data passed unwritten: report at the end unless a later
+                                 // member of the group writes the data or reports its loss
+
+// the decision for such a member: 'regularFile' / 'hasData' (size above 0) / 'asked' (raw name
+// matched); 'groupMember' - it stays in a newc / crc hard-link group (SalCpioKeepsGroupMember);
+// 'cpioAction' - SalCpioLinkDecide for it (as not asked), 'groupState' - the group's SAL_CPIO_GROUP_*
+// before it (both ignored outside a group)
+inline int SalEmptyNameDataDecide(bool regularFile, bool hasData, bool asked, bool groupMember, int cpioAction,
+                                  int groupState)
+{
+    if (!regularFile || !hasData || !asked)
+        return SAL_EMPTY_NAME_SILENT;
+    if (!groupMember)
+        return SAL_EMPTY_NAME_REPORT;
+    if (cpioAction == SAL_CPIO_LINK_WRITE_FOR_WAITING || groupState == SAL_CPIO_GROUP_WRITTEN)
+        return SAL_EMPTY_NAME_SILENT; // a waiting name gets the data / the data was written already
+    return SAL_EMPTY_NAME_PENDING;
+}
+
+// does a later member of a group with a pending empty-name loss settle it? 'cpioAction' - the
+// member's SalCpioLinkDecide: the file's data written under it (WRITE), copied to it (COPY), or the
+// loss reported at it (REPORT - feature 394's "(2)" box; no second box)
+inline bool SalEmptyNamePendingCleared(int cpioAction)
+{
+    return cpioAction == SAL_CPIO_LINK_WRITE || cpioAction == SAL_CPIO_LINK_COPY ||
+           cpioAction == SAL_CPIO_LINK_REPORT;
+}

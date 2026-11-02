@@ -20348,6 +20348,39 @@ static void TestCpioKeepsGroupMember394()
     CHECK(TarNorm309(".a") == ".a"); // a dot name is a name
 }
 
+// feature 395: a regular file whose data is stored only under a name that normalizes to nothing is
+// reported when asked for and its data reaches no extracted name
+static void TestEmptyNameData395()
+{
+    const int N = SAL_CPIO_GROUP_NONE, W = SAL_CPIO_GROUP_WRITTEN, L = SAL_CPIO_GROUP_LOST;
+    // single name (nlink 1, odc / binary, tar): asked + regular + data -> report now
+    CHECK(SalEmptyNameDataDecide(true, true, true, false, SAL_CPIO_LINK_SKIP, N) == SAL_EMPTY_NAME_REPORT);
+    CHECK(SalEmptyNameDataDecide(true, false, true, false, SAL_CPIO_LINK_SKIP, N) == SAL_EMPTY_NAME_SILENT); // size 0
+    CHECK(SalEmptyNameDataDecide(false, true, true, false, SAL_CPIO_LINK_SKIP, N) == SAL_EMPTY_NAME_SILENT); // folder, link, device
+    CHECK(SalEmptyNameDataDecide(true, true, false, false, SAL_CPIO_LINK_SKIP, N) == SAL_EMPTY_NAME_SILENT); // mask did not match
+    // a group carrier: the data goes to a waiting name, or was written already -> silent
+    CHECK(SalEmptyNameDataDecide(true, true, true, true, SAL_CPIO_LINK_WRITE_FOR_WAITING, N) == SAL_EMPTY_NAME_SILENT);
+    CHECK(SalEmptyNameDataDecide(true, true, true, true, SAL_CPIO_LINK_SKIP, W) == SAL_EMPTY_NAME_SILENT);
+    // orphan / data-first: the data passes unwritten -> pending (a later name may report it)
+    CHECK(SalEmptyNameDataDecide(true, true, true, true, SAL_CPIO_LINK_SKIP, N) == SAL_EMPTY_NAME_PENDING);
+    CHECK(SalEmptyNameDataDecide(true, true, true, true, SAL_CPIO_LINK_SKIP, L) == SAL_EMPTY_NAME_PENDING);
+    CHECK(SalEmptyNameDataDecide(true, false, true, true, SAL_CPIO_LINK_SKIP, N) == SAL_EMPTY_NAME_SILENT);
+    CHECK(SalEmptyNameDataDecide(true, true, false, true, SAL_CPIO_LINK_SKIP, N) == SAL_EMPTY_NAME_SILENT);
+    // the decide rule of 310 for the carrier (not asked) gives exactly these two actions
+    CHECK(SalCpioLinkDecide(false, true, N, false) == SAL_CPIO_LINK_SKIP);
+    CHECK(SalCpioLinkDecide(false, true, N, true) == SAL_CPIO_LINK_WRITE_FOR_WAITING);
+    // a pending loss is settled by a later member that writes the data or reports the loss
+    CHECK(SalEmptyNamePendingCleared(SAL_CPIO_LINK_WRITE));
+    CHECK(SalEmptyNamePendingCleared(SAL_CPIO_LINK_COPY));
+    CHECK(SalEmptyNamePendingCleared(SAL_CPIO_LINK_REPORT)); // 394's "(2)" at the asked name
+    CHECK(!SalEmptyNamePendingCleared(SAL_CPIO_LINK_SKIP));
+    CHECK(!SalEmptyNamePendingCleared(SAL_CPIO_LINK_WAIT));
+    // data-first, the later name asked: LOST -> that name is REPORTed (394), which clears the pending loss
+    CHECK(SalEmptyNamePendingCleared(SalCpioLinkDecide(true, false, L, false)));
+    // data-first, the later name not asked: SKIP -> the pending loss stays and is reported at the end
+    CHECK(!SalEmptyNamePendingCleared(SalCpioLinkDecide(false, false, L, false)));
+}
+
 // feature 315: the Unpack dialog's defaults whole or not at all (salunpackdefault.h)
 static void TestUnpackDefault315()
 {
@@ -25870,6 +25903,7 @@ int main(int argc, char** argv)
     TestTarLink325();
     TestCpioLink310();
     TestCpioKeepsGroupMember394();
+    TestEmptyNameData395();
     TestUnpackDefault315();
     TestPackName318();
     TestPackName319();

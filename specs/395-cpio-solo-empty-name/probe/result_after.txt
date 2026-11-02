@@ -1,0 +1,39 @@
+cpiosolo_probe (backlog item unpack-silently-drops-a-cpio-file-whose-only-name-normalizes) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 10:05; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-SOLO-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-SOLO-DOT-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: True (want True); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1. "." | [Button id=1] OK
+UNP-SOLO-DOTSLASH-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-SOLO-DOTSLASH-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: True (want True); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1. "./" | [Button id=1] OK
+UNP-SOLO-NUL-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-SOLO-NUL-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: True (want True); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1. "" | [Button id=1] OK
+UNP-CRC-SOLO-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-CRC-SOLO-DOT-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: True (want True); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1. "." | [Button id=1] OK
+UNP-ODC-SOLO-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-ODC-SOLO-DOT-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: True (want True); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1. "." | [Button id=1] OK
+UNP-RPM-SOLO-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-RPM-SOLO-DOT-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: True (want True); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1. "." | [Button id=1] OK
+UNP-ORPHAN-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-ORPHAN-DOT-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: True (want True); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1. "." | [Button id=1] OK
+UNP-CRC-ORPHAN-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-CRC-ORPHAN-DOT-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: True (want True); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1. "." | [Button id=1] OK
+UNP-TAR-SOLO-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-TAR-SOLO-DOT-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: True (want True); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (123) N\u00E1zev souboru \u010Di adres\u00E1\u0159e nebo jmenovka svazku je nespr\u00E1vn\u00E1. "." | [Button id=1] OK
+UNP-SOLO-DOT-ZERO-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-SOLO-DOT-ZERO-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: False (want False); windows: no window
+UNP-ORPHAN-DOT-ZERO-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-ORPHAN-DOT-ZERO-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: False (want False); windows: no window
+UNP-DOTDIR-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DOTDIR-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: False (want False); windows: no window
+UNP-TAR-DOTDIR-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-TAR-DOTDIR-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: False (want False); windows: no window
+UNP-WAIT-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-WAIT-DOT-DEL RUN    PASS        tgt: 2 of 2 files; files: a.txt(3), ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: False (want False); windows: no window
+UNP-SOLO-DOT-MASK END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-SOLO-DOT-MASK RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; archive kept: False (want False); windows: no window
+COPY-SOLO-DOT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-SOLO-DOT RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); times 2001-09-09 01:46:40Z; only the Copy dialog: True; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy file "ok.txt" from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 32, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
