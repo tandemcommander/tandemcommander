@@ -91,3 +91,34 @@ message instead of listing the name - no file system takes such a component (an 
 with "(123)" before), and PAX / GNU names of that kind are refused the same way since 306 / 321. The
 row's purpose (no overflow of the simple-icons buffers) is unchanged: a listed name's extension is now
 at most 255 UTF-16 units (<= 765 bytes + 4 < 780).
+
+## Review
+
+### Review 1 (independent, refute-first) - no MUST
+
+- Re-ran the probe on HEAD 3f3481b0: 22 / 0. Own negative control (only the `found && !NameRefused`
+  guard reverted, tar plug-in built in a worktree): UNP-HARD-REFUSED-DEL fails (0 of 2 files, a "(123)"
+  Retry / Skip box) - the guard matters alone and the probe catches it.
+- SHOULD-1: FR-006 / SC-005 promised the data for the other names without qualification; with the data
+  on the refused FIRST name (data-first layout) the other name is reported ("(2)") and the operation
+  fails (feature 310's rule for a data member not asked for) - no loss, archive kept. Done: FR-006,
+  SC-005 and the edge case narrowed to what the code does; probe rows COPY-HARD-FIRST and
+  UNP-HARD-FIRST-DEL added (expect: a.txt reported during the copy / unpack, ok.txt, archive kept);
+  giving the data in that layout too -> Inbox `a-cpio-name-stored-after-its-data-on-a-refused-name-is`
+  (review:393).
+- NOTE-1: a cpio symbolic link with a refused name (never listed) is now named by "(206)" at opening;
+  a whole Unpack fails for it as a refused name instead of feature 310's link report (both fail, both
+  keep the archive) - the same as PAX / GNU symlinks. Recorded in the spec's edge cases; probe row
+  COPY-SYMLINK-LONG added.
+- NOTE-2: 321's `tar321_probe.ps1` header described CPIO-778 / CPIO-TOOLONG with the old behaviour -
+  updated (comment only).
+- NOTE-3: binary / byte-swapped cpio and F3 of a refused carrier not probed (shared code; read only).
+  Accepted.
+- NOTE-4 (pre-existing): a carrier whose name normalizes to empty is dropped from its group and the
+  other names are written empty with success -> Inbox `a-cpio-hard-link-whose-data-name-normalizes-to-empty-is`
+  (review:393, severity 7, not verified by a probe).
+- NOTE-5: old worktrees of earlier reviews are still registered (`%TEMP%\rev325` ...) - not this
+  feature's; left alone.
+
+Probe after review 1 (`result_after.txt`, label `after-review1`): PASS 28 / FAIL 0 (14 RUN rows),
+registry restored, identical.

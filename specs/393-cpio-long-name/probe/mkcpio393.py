@@ -120,6 +120,15 @@ def main():
         reg(a, 'a.txt', b'', ino=5, nlink=2)
         reg(a, TOOLONG, b'AAA', ino=5, nlink=2)
         reg(a, 'ok.txt', b'K')
+    elif row.startswith('COPY-HARD-FIRST') or row.startswith('UNP-HARD-FIRST'):
+        # review 1: the data-first layout - the refused name carries the data and comes first
+        reg(a, TOOLONG, b'AAA', ino=5, nlink=2)
+        reg(a, 'a.txt', b'', ino=5, nlink=2)
+        reg(a, 'ok.txt', b'K')
+    elif row == 'COPY-SYMLINK-LONG':
+        # review 1: a symbolic link with a refused name (never listed; now named at opening)
+        a.member(TOOLONG, 0o120000 | 0o777, b'ok.txt')
+        reg(a, 'ok.txt', b'K')
     else:
         raise SystemExit('unknown row ' + row)
     data = a.finish()

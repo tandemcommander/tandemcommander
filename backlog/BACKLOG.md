@@ -302,6 +302,8 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [A cpio hard link whose data name normalizes to empty is written as an empty file](items/a-cpio-hard-link-whose-data-name-normalizes-to-empty-is/desc.md) | bug | 7 | archives | review:393 | 2026-11-02 |
+| [A cpio name stored after its data on a refused name is reported, not extracted](items/a-cpio-name-stored-after-its-data-on-a-refused-name-is/desc.md) | improvement | 3 | archives | review:393 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 
 ## Parked

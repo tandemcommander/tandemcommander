@@ -26,8 +26,9 @@
     Open-only rows, with "Simple Icons In Archives" = 1 (first run review 1 MUST: the icon code copies the
     extension + 4 zero bytes into a 780-byte buffer); the archive is opened, nothing is copied:
       CPIO-778     newc cpio: "." + 777 letters (778 bytes, under the listing's 780) and ok.txt
-                                                       -> no crash, the archive opens
-      CPIO-TOOLONG newc cpio: CJK(300).txt and ok.txt -> no crash (the listing refuses the entry)
+                                                       -> no crash, the archive opens (since feature 393 the
+                   name - one 778-unit component - is refused with "(206)" like a PAX / GNU name)
+      CPIO-TOOLONG newc cpio: CJK(300).txt and ok.txt -> no crash (since 393: "(206)", the archive opens)
     A crash is the END row's FAIL (a bug report / a stray error window). For the ZIP / 7Z rows the RUN
     row passes when the archive opened or a message was shown at open (never silent); what was
     extracted is recorded. Every row first reads the panel's path: Copy runs only inside the archive.

@@ -27,12 +27,18 @@
                          folder, mode-only folder), ok.txt     -> (206) at open, tgt n/top.txt, ok.txt
       COPY-HARD-REFUSED  a.txt (size 0) and TOOLONG ('AAA') are one file (newc inode 5, nlink 2; the
                          data with the last name), ok.txt       -> (206) at open, tgt a.txt = AAA, ok.txt
+      COPY-HARD-FIRST    review 1: the same, the data with the refused FIRST name (data-first layout)
+                         -> (206) at open; feature 310's rule for a data member not asked for: a.txt is
+                         not written but reported ("(2)" box during the copy), tgt ok.txt
+      COPY-SYMLINK-LONG  review 1: a symbolic link named TOOLONG (target ok.txt), ok.txt
+                                                                -> (206) at open, tgt ok.txt
     Unpack rows: the left panel shows <row>\src, Home, End focuses the archive, Alt+F9 (851), the path
     field (210) set to <row>\tgt, mask "*.*", "Delete archive after unpacking" (6210) checked, OK, every
     box answered OK / Yes.
       UNP-DEEP-DEL          the deep tree -> all 34 files, nothing asked, t.cpio deleted
       UNP-TOOLONG-DEL       TOOLONG, ok.txt -> ok.txt, a "(206)" box, t.cpio KEPT
       UNP-HARD-REFUSED-DEL  the COPY-HARD-REFUSED archive -> a.txt = AAA, ok.txt, a "(206)" box, KEPT
+      UNP-HARD-FIRST-DEL    the COPY-HARD-FIRST archive -> ok.txt, a "(206)" box, t.cpio KEPT
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 
@@ -111,7 +117,7 @@ function Make-Fixture([string]$Row, [string]$Arc) {
 
 # Unpack (Alt+F9) of the whole archive into tgt; $Want = expected files; $Need206 = a "(206)" box
 # required (else nothing may be asked); $ArcGone = the archive must be deleted afterwards (else kept)
-function Unpack-Row([string]$Case, $Want, [switch]$Need206, [switch]$ArcGone) {
+function Unpack-Row([string]$Case, $Want, [switch]$Need206, [switch]$ArcGone, [string]$NeedMsg) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     $arc = $d + '\src\t.' + (Arc-Ext $Case); $tgt = $d + '\tgt'
@@ -143,6 +149,7 @@ function Unpack-Row([string]$Case, $Want, [switch]$Need206, [switch]$ArcGone) {
         $asked = ($msgs -ne 'no window')
         $ok = $c[0] -and (-not $fatal) -and ($kept -ne [bool]$ArcGone)
         if ($Need206) { $ok = $ok -and $has206 } else { $ok = $ok -and (-not $asked) }
+        if ($NeedMsg) { $ok = $ok -and ($msgs -match $NeedMsg) }
         Row $Case 'RUN' (V $ok) ('{0}; archive kept: {1} (want {2}); "(206)" shown: {3}; windows: {4}' -f $c[1], $kept, (-not $ArcGone), $has206, (Tail $msgs 260))
     }
     catch { Row $Case 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -151,7 +158,8 @@ function Unpack-Row([string]$Case, $Want, [switch]$Need206, [switch]$ArcGone) {
 
 # Copy of everything listed; $Need206Open = the "(206)" text at opening required (else no window at
 # opening); $WantDir = a folder that must exist under tgt afterwards
-function Copy-Row([string]$Case, $Want, [switch]$Need206Open, [string]$WantDir) {
+# $NeedCopyMsg = a regular expression the windows during the copy must match
+function Copy-Row([string]$Case, $Want, [switch]$Need206Open, [string]$WantDir, [string]$NeedCopyMsg) {
     if (-not (Want $Case)) { return }
     $d = $Root + '\' + $Case
     $arc = $d + '\t.' + (Arc-Ext $Case); $tgt = $d + '\tgt'
@@ -183,6 +191,11 @@ function Copy-Row([string]$Case, $Want, [switch]$Need206Open, [string]$WantDir) 
         $open206 = $openMsgs -match '\(206\)'
         if ($Need206Open) { $ok = $ok -and $open206 } else { $ok = $ok -and ($openMsgs -eq 'no window') }
         $facts = $c[1]
+        if ($NeedCopyMsg) {
+            $mOk = $msgs -match $NeedCopyMsg
+            if (-not $mOk) { $ok = $false }
+            $facts += ('; message during the copy matches ' + $NeedCopyMsg + ': ' + $mOk)
+        }
         if ($WantDir) {
             $dOk = [IO.Directory]::Exists($LP + $tgt + '\' + $WantDir.Replace('/', '\'))
             if (-not $dOk) { $ok = $false }
@@ -214,9 +227,12 @@ try {
     Copy-Row 'COPY-DIR100' $ok1 -WantDir (Cjk 100)
     Copy-Row 'COPY-NESTDIR' ([ordered]@{ 'n/top.txt' = 'T'; 'ok.txt' = 'K' }) -Need206Open
     Copy-Row 'COPY-HARD-REFUSED' ([ordered]@{ 'a.txt' = 'AAA'; 'ok.txt' = 'K' }) -Need206Open
+    Copy-Row 'COPY-HARD-FIRST' $ok1 -Need206Open -NeedCopyMsg '\(2\)[^|]*a\.txt'
+    Copy-Row 'COPY-SYMLINK-LONG' $ok1 -Need206Open
     Unpack-Row 'UNP-DEEP-DEL' (Deep-Tree) -ArcGone
     Unpack-Row 'UNP-TOOLONG-DEL' $ok1 -Need206
     Unpack-Row 'UNP-HARD-REFUSED-DEL' ([ordered]@{ 'a.txt' = 'AAA'; 'ok.txt' = 'K' }) -Need206
+    Unpack-Row 'UNP-HARD-FIRST-DEL' $ok1 -Need206
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {
