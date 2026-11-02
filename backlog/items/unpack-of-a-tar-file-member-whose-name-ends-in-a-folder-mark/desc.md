@@ -1,7 +1,7 @@
 ---
 title: Unpack of a tar file member whose name ends in a folder mark shows a WriteFile error
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:396
@@ -39,3 +39,4 @@ Not measured outside the reviewer's scratch probe row; the exact path from `IsDi
 ## Log
 
 - 2026-11-02 — created (source review:396)
+- 2026-11-02 — moved to Next position 85
