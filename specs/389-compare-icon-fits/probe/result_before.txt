@@ -1,0 +1,18 @@
+fit389_probe (feature 389) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 02:25; ACP 1250; registry key existed True
+Icon files: long 312 bytes, fitting 259 bytes
+
+umc-name1  RUN    FAIL        names 262 / 4 bytes; dialog stayed: False; asked: nothing; the command wrote 93 chars, tail '...???#C:\b'
+umc-name1  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+umc-name2  RUN    FAIL        names 4 / 262 bytes; dialog stayed: False; asked: nothing; the command wrote 93 chars, tail '...????????'
+umc-name2  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+umc-ctl    RUN    PASS        names 259 / 259 bytes; dialog stayed: False; asked: nothing; the command wrote 179 chars, tail '...???????b'; whole: True
+umc-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+chi-file   RUN    FAIL        file 140 units / 312 bytes; OK 1: stayed True, asked: [#32770 'Error'] Cannot find the file "C:\Users\pavel\AppData\Local\Temp\tc389_fit\icons\ ??????????????????????????????????????????????????????????????????????????????????????.exe". |, icons 335, field 31 units / 31 bytes, whole: False, tail '...32\SHELL32.DLL'; OK 2: stayed False, asked: nothing, field <closed>; opened again: 31 units / 31 bytes, whole: False, tail '...32\SHELL32.DLL'
+chi-file   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+chi-ctl    RUN    FAIL        file 123 units / 259 bytes; OK 1: stayed False, asked: nothing, icons -1, field <closed>; OK 2: stayed -, asked: -, field <closed>; opened again: 12 units / 12 bytes, whole: False, tail '(not opened)'
+chi-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 6, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

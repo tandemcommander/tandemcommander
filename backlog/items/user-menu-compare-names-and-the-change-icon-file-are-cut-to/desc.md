@@ -7,8 +7,8 @@ area: long-paths
 source: review:291
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-11-02
+verified: 2026-11-02 df4d92be
 effort: S
 feature: -
 related: []
@@ -57,3 +57,4 @@ configuration - check which callers exist before writing the probe.
 
 - 2026-10-21 — created (source review:291)
 - 2026-10-21 — moved to Next position 25
+- 2026-11-02 — verified at df4d92be: still present at df4d92be: probe fit389 - compare command got both names cut, Change Icon read a code-page name and stored SHELL32.DLL
