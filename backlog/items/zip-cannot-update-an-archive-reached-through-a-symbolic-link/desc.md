@@ -7,8 +7,8 @@ area: archives
 source: review:320
 who: agent
 created: 2026-10-23
-updated: 2026-10-23
-verified: -
+updated: 2026-11-02
+verified: 2026-11-02 2a5b7d40
 effort: M
 feature: -
 related: []
@@ -64,3 +64,4 @@ archive-edit route name such an archive.
 - 2026-10-23 — created (source review:320)
 - 2026-10-23 — related item zip-says-the-archive-was-not-changed-after-a-failed-replace done in feature 320
 - 2026-10-23 — moved to Next position 23
+- 2026-11-02 — verified at 2a5b7d40: reproduced at 2a5b7d40: hidden-desktop probe, add/del through a file symlink (absolute and relative) show the replace message, real archive unchanged; junction in the path works
