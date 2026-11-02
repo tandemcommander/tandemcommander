@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an ISO 9660 folder length of 2 GiB or more shows a stuck memory box
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:401
@@ -10,7 +10,7 @@ created: 2026-11-02
 updated: 2026-11-02
 verified: 2026-11-02 618dae27
 effort: S
-feature: -
+feature: 403
 related: [iso-plug-in-a-fuzzing-pass-over-the-hfs-iso-9660-joliet-and]
 depends-on: []
 reason: -
@@ -54,3 +54,4 @@ walked - no memory box, no way to end the program from a damaged image.
 - 2026-11-02 — created (source review:401)
 - 2026-11-02 — moved to Next position 2
 - 2026-11-02 — verified at 618dae27: still present at 618dae27: probe iso403 IS-NEG, IS-NEG2, IS-MIN show the memory box; Ignore ends the program (bad_alloc, bug report)
+- 2026-11-02 — run started, feature 403
