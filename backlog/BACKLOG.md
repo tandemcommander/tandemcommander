@@ -17,7 +17,6 @@ Last triaged: 2026-11-02
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Unpack silently drops a cpio file whose only name normalizes to empty](items/unpack-silently-drops-a-cpio-file-whose-only-name-normalizes/desc.md) | bug | 7 | archives | 395 |
 
 ## Next
 
@@ -303,6 +302,7 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [A binary cpio member in the last 512 bytes of the archive is not recognised](items/a-binary-cpio-member-in-the-last-512-bytes-of-the-archive-is/desc.md) | bug | 4 | archives | measure:395 | 2026-11-02 |
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 
 ## Parked

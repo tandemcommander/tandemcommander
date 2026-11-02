@@ -123,8 +123,9 @@ tar and data-first rows fail (no window, archive deleted). Callers enumerated in
     member of such a file is SILENT when another name of the file with data was asked before, else
     PENDING; a later asked name with data sets the file WRITTEN and clears the pending loss;
     `ReportCpioEmptyLost(cpioRepeats)` at both end paths.
-  - Byte-swapped binary: its reader parses its fields as hex text (legacy) - no device / inode;
-    such a member keeps being reported when asked (the safe direction; spec *Assumptions*).
+  - Byte-swapped binary: its reader parses its fields as hex text (legacy) - no device / inode.
+    (Review 2: the format is never detected at all - see below; the archive stays "not
+    recognised" and kept.)
   - Reproduced at e3a27bda first (`probe/result_review1_before.txt`, `-Only` the new rows):
     `UNP-ODC-LINK-DOT-DEL` and `UNP-ODC-LINKFIRST-DOT-DEL` FAIL (a.txt = AAA but a "(123)" box and
     the archive kept); the binary rows of that run failed on the fixture (see the next point).
@@ -153,3 +154,29 @@ After the S1 fix and the formatting: `.\build.cmd` -> BUILD SUCCEEDED; saltests 
 encoding guard TOTAL 0; regression probes re-run on this build (cpio paths changed): 310 52 / 0,
 393 28 / 0, 394 22 / 0, 306 30 / 0 (`probe/regress_*.txt` overwritten; 308 / 309 / 321 are tar-only
 and unchanged by S1 - their files are the run before S1).
+
+### Review 2 (independent agent, refute-first, HEAD 4e17495e) - no MUST, no SHOULD
+
+Re-ran build, saltests 30839 / 0, the probe with 12 rows of its own (21 PASS / 3 FAIL, the 3 FAILs
+the expected NOTE rows): ordinary odc / binary hard links without an empty name - all written,
+silent, deleted (the new reader fields regress nothing); odc / binary `.` + `a.txt` with the mask
+`?` - "(123)" at the end, kept (the pending path of `cpioRepeats` driven in the program); binary
+`.` first - silent, a.txt = AAA; odc `.` with AAA + `a.txt` size 0 - reported, kept; same inode on
+another device - reported, kept. Consumers of `CpioIno` / `CpioNLink` / `CpioDevMinor` checked: all
+gated by `SalCpioKeepsGroupMember(newcOrCrc ...)`; the odc / binary offsets match the formats; the
+binary pre-read is read before the rewind.
+
+- NOTE 1 - two different odc / binary files sharing a truncated (device, inode) count as one (16-bit
+  inode in binary, 18-bit in odc): `.` AAA + `b.txt` BBB, inode 5, nlink 2 -> silent, AAA not
+  extracted, archive deleted. Accepted: it follows the formats' own definition of one file and
+  needs a crafted `.` member AND an inode collision; recorded as a limit (FEATURE-HISTORY).
+- NOTE 2 - the byte-swapped binary format is never detected (`GetArchiveType`,
+  `*(unsigned short*)buffer == 0707070` - 0707070 octal = 233016 does not fit 16 bits): such an
+  archive is "not recognised" and kept. Pre-existing, no data lost; the spec / fix-log lines about
+  it corrected; added to the Inbox item `a-binary-cpio-member-in-the-last-512-bytes-of-the-archive-is`
+  (the same reader).
+- NOTE 3 - a declined overwrite: the pending loss is cleared at the WRITE decision before the
+  overwrite question (newc `.` first then `a.txt` with data Skipped -> silent; `a.txt` first
+  Skipped -> group LOST, `.` reported). Accepted as the documented user's choice (spec
+  *Assumptions*): the user was asked about that same data.
+- NOTE 4 - the new Inbox item was not committed yet - committed with the closing.

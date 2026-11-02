@@ -32,7 +32,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
 | Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
-| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394 |
+| Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
@@ -6269,3 +6269,31 @@ a few early ones are out of sequence).
   control, Copy x2, F3; negative control time + crc off 15 / 7); 306 30 / 0, 308 12 / 0, 309
   16 / 0, 310 52 / 0, 321 20 / 0 and 12 / 0, 393 28 / 0; saltests 30,813 / 0; one refute-first
   review (no MUST; SHOULD S1 -> Inbox, N3 fixed).
+- 395-cpio-solo-empty-name: a whole Unpack (Alt+F9) of a cpio (newc, crc, odc, binary - also an
+  rpm) or a tar archive holding a regular file whose data is stored only under a name that
+  normalizes to nothing (`.`, `./`, an empty name - a single name, or a newc / crc hard-link group
+  whose other names are absent) skipped it without a word and reported success, so "Delete archive
+  after unpacking" deleted the archive with the only copy - now such a member, matched by the mask
+  under its raw name, is reported with the system's "(123)" text and the name in quotes (once per
+  operation) and the operation fails after the rest is extracted (archive kept): at once for a
+  single name (`NameEmptyRegular`, set in `ReadArchiveHeader`'s "skip invalid names" branch: cpio
+  by its mode, tar by its type), at the end of the archive for a group whose data passed unwritten
+  (`SalEmptyNameDataDecide` / `SalEmptyNamePendingCleared`, `salcpiolink.h`, saltests; a later
+  member that writes the data or reports its loss - 394's "(2)" - settles it, no second box). The
+  `.` folder, size-0 members, links, a mask that does not match, and Copy / F3 (the member is never
+  listed) stay as before. Traps: odc / binary repeat a hard-linked file's data with every name - the
+  first version reported `.` + `a.txt` although `a.txt` got the data (review 1); now their readers
+  fill device / inode / link count (`SalCpioRepeatsLinkedData`, the binary c_dev / c_ino from the
+  pre-read block before the rewind) and another asked name with data settles it; tar has no
+  grouping - measured the same silent loss, so it got the rule (the item's Notes). Limits: two odc /
+  binary files colliding on a truncated (device, inode) count as one (review 2 NOTE 1); a declined
+  overwrite of the data's other name counts as the user's choice; the byte-swapped binary format is
+  never detected at all (pre-existing) and a binary member in the last 512 bytes is "not
+  recognised" (pre-existing; Inbox `a-binary-cpio-member-in-the-last-512-bytes-of-the-archive-is`);
+  a .deb may show the box once per part. From backlog item
+  `unpack-silently-drops-a-cpio-file-whose-only-name-normalizes`. Probe `cpiosolo_probe.ps1` 22 / 10
+  -> 46 / 0 (23 RUN rows - 13 reported: newc `.` / `./` / empty, crc, odc, binary, rpm, tar, the
+  newc / crc / odc / binary orphans, data-first with the mask `?`; 10 silent: size 0, folders, 394's
+  waiting name, mask `*.txt`, Copy, odc / binary links; negative control both report sites off
+  23 / 9 on the first 16 rows); 306 30 / 0, 308 12 / 0, 309 16 / 0, 310 52 / 0, 321 20 / 0 and 12 / 0, 393 28 / 0,
+  394 22 / 0; saltests 30,839 / 0; two refute-first reviews (no MUST; S1 fixed, NOTEs recorded).

@@ -140,6 +140,8 @@ extracting silently with success - the archive is deleted when the user asked fo
 - Assumption (autonomous run, review 1): another name of an odc / binary file that the operation
   is asked for and that carries data counts as "the data reached a name" even when the user then
   declines its overwrite question - the same as a newc group's waiting name (feature 394).
-- Assumption (autonomous run, review 1): the byte-swapped binary cpio keeps reporting such a
-  member whenever it is asked (its reader parses no device / inode) - the safe direction.
+- Assumption (autonomous run, reviews 1 and 2): the byte-swapped binary cpio is out of scope - it is
+  never even detected (`GetArchiveType` compares a 16-bit value with the 18-bit `0707070`; review 2),
+  so such an archive is "not recognised" and kept; its reader would parse no device / inode. Inbox
+  item `a-binary-cpio-member-in-the-last-512-bytes-of-the-archive-is` records it.
 - Crafted archives only; no common writer stores a file's data under an empty name.
