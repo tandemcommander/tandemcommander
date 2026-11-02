@@ -5,6 +5,14 @@
 **Status**: Draft  
 **Input**: User description: "Backlog item registry-editor-view-of-a-text-value-cut-text-and-a-stray - implement exactly what it describes." From backlog item registry-editor-view-of-a-text-value-cut-text-and-a-stray.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: When the conversion to the code page fails, should the export show an error or give the viewer the UTF-16 data? → A: the UTF-16 data as stored (no new UI string; the viewer stays usable) (autonomous run: conservative - the item allows either)
+- Q: Should the terminating NUL(s) of the text stay in the viewer's copy? → A: yes, converted with the text as before, so a single-byte code page gives the old bytes exactly (autonomous run: conservative)
+- Q: When memory for the converted copy is low, error or UTF-16 fallback? → A: the existing low-memory error, as for the value's own buffer (autonomous run: conservative - existing behaviour)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - View a non-ASCII text value whole (Priority: P1)
@@ -109,9 +117,6 @@ UTF-16 fallback and produces no bytes.
 
 ## Assumptions
 
-- Assumption (autonomous run): a failed conversion falls back to the UTF-16 data rather than
-  showing an error - the item allows either; the fallback keeps the viewer usable and adds no
-  new UI string (conservative).
 - Assumption (autonomous run): the short-write check (`WriteFile(...) || written != size`
   accepted a short write) is fixed with the written length, because FR-002 asks the written
   length to be the converted count; it is the same statement.
