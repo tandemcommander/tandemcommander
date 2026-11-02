@@ -6,3 +6,10 @@ full-sub   RUN    PASS        preview rows 1; boxes as expected: True; on disk: 
 full-sub   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 rel-sub    RUN    PASS        preview rows 1; boxes as expected: True; on disk: renamed: True; preview rows after ticking subdirectories 2 (expected 2: f.txt, g.txt); boxes: no box || subdirs: no box; preview rows 2; checkbox 0->1
 rel-sub    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+sel-sub    RUN    PASS        preview rows 1; boxes as expected: True; on disk: not renamed: True; preview rows after ticking subdirectories 2 (expected 2: f.txt, g.txt); boxes: no box || subdirs: no box; preview rows 2; checkbox 0->1
+sel-sub    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+name-sub   RUN    PASS        preview rows 1; boxes as expected: True; on disk: renamed: True; preview rows after ticking subdirectories 2 (expected 2: f.txt, g.txt); boxes: no box || subdirs: no box; preview rows 2; checkbox 0->1
+name-sub   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 8, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

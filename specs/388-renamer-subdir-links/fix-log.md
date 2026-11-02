@@ -101,3 +101,4 @@ After the change, row by row: `out` 3 rows (`a.txt`, `out`, `sub\b.txt`); `loop`
 `loop`), no box; `selected` 1 row (`jsel`); `symlink` 2 rows (`a.txt`, `sl`); `mask` 2 rows;
 `plain` 2 rows (control unchanged); `rename` → `n_a.txt`, `sub\n_b.txt`, junction `n_out`, the
 target still `o1.txt,o2.txt,o3.txt`.
+| regression 209 | `specs/209-renamer-subdir-reload/probe/ren_subdir_probe.ps1` → `probe/regress_209.txt` | PASS 8, FAIL 0 (the reload after a rename of a plain folder; registry identical) |

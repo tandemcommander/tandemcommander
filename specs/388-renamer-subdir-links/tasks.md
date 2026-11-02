@@ -46,7 +46,7 @@ hidden-desktop probe `probe/ren_link_probe.ps1` (SC-001).
 - [X] T012 `saltests.exe` → `0 failed` (the new checks included)
 - [X] T013 Negative control: the new saltests checks fail against a rule that ignores the tag (temporary local edit in a scratch copy, never committed) - record the result in fix-log.md
 - [X] T014 Probe after the change → specs/388-renamer-subdir-links/probe/result_after.txt, every row PASS (or `symlink` NOT DRIVEN with the reason)
-- [ ] T015 Regression probes of the area: specs/209-renamer-subdir-reload/probe/ren_subdir_probe.ps1 → specs/388-renamer-subdir-links/probe/regress_209.txt
+- [X] T015 Regression probes of the area: specs/209-renamer-subdir-reload/probe/ren_subdir_probe.ps1 → specs/388-renamer-subdir-links/probe/regress_209.txt
 - [X] T016 Update specs/388-renamer-subdir-links/fix-log.md with after-measurements, commands and results
 
 ## Dependencies
