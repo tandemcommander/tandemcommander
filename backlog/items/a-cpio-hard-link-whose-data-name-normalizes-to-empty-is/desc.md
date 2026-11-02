@@ -1,7 +1,7 @@
 ---
 title: A cpio hard link whose data name normalizes to empty is written as an empty file
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:393
@@ -51,3 +51,4 @@ common writer stores a file's data under an empty name.
 
 - 2026-11-02 — created (source review:393)
 - 2026-11-02 — severity 7: a silent empty file plus Delete archive after unpacking loses data in a narrow case
+- 2026-11-02 — moved to Next position 1

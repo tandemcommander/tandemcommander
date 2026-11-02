@@ -1,7 +1,7 @@
 ---
 title: A cpio name stored after its data on a refused name is reported, not extracted
 type: improvement
-status: new
+status: open
 severity: 3
 area: archives
 source: review:393
@@ -57,3 +57,4 @@ an EARLIER name and only a later name asked is reported, not shown").
 
 - 2026-11-02 — created (source review:393)
 - 2026-11-02 — related link removed: set by mistake
+- 2026-11-02 — moved to Next position 85
