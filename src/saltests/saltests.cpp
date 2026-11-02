@@ -20326,7 +20326,29 @@ static void TestCpioLink310()
     CHECK(SalCpioLinkDecide(false, false, SAL_CPIO_GROUP_LOST, false) == SAL_CPIO_LINK_SKIP);
 }
 
-// feature 315: the Unpack dialog's defaults whole or not at all (salunpackdefault.h)
+// feature 394: a member ignored only for its unusable name (refused - 393 - or empty after the
+// normalization) stays in its hard-link group - it may carry the data the other names need
+static void TestCpioKeepsGroupMember394()
+{
+    CHECK(SalCpioKeepsGroupMember(true, 0100644, 2, false, false, false)); // an ordinary name
+    CHECK(SalCpioKeepsGroupMember(true, 0100644, 2, false, true, true));   // "." / a refused name
+    CHECK(!SalCpioKeepsGroupMember(true, 0100644, 2, false, true, false)); // ignored for another reason
+    CHECK(!SalCpioKeepsGroupMember(true, 0100644, 2, true, false, false)); // read as a folder
+    CHECK(!SalCpioKeepsGroupMember(true, 0040755, 3, false, true, true));  // GNU cpio's folder "."
+    CHECK(!SalCpioKeepsGroupMember(true, 0100644, 1, false, true, true));  // "." with one name: nothing to give
+    CHECK(!SalCpioKeepsGroupMember(false, 0100644, 2, false, true, true)); // odc / binary: never grouped
+    CHECK(!SalCpioKeepsGroupMember(true, 0120777, 2, false, true, true));  // a symbolic link
+    // the names that normalize to nothing (the reader's "skip invalid names" branch)
+    CHECK(TarNorm309(".") == "");
+    CHECK(TarNorm309("./") == "");
+    CHECK(TarNorm309("/") == "");
+    CHECK(TarNorm309("..") == "");
+    CHECK(TarNorm309("./.") == "");
+    CHECK(TarNorm309("") == "");
+    CHECK(TarNorm309(".a") == ".a"); // a dot name is a name
+}
+
+// feature 315:the Unpack dialog's defaults whole or not at all (salunpackdefault.h)
 static void TestUnpackDefault315()
 {
     char buf[MAX_PATH];
@@ -25847,6 +25869,7 @@ int main(int argc, char** argv)
     TestTarLink309();
     TestTarLink325();
     TestCpioLink310();
+    TestCpioKeepsGroupMember394();
     TestUnpackDefault315();
     TestPackName318();
     TestPackName319();

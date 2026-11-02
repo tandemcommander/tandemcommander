@@ -267,6 +267,8 @@ struct SCommonHeader
     BOOL NameFromPax; // feature 306: Name is a PAX 'path' (a component no file system takes is refused)
     BOOL NameFromGnu; // feature 321: Name is a GNU long name ('L') - the same refusal as a PAX path
     BOOL NameRefused; // feature 308: Name cannot be used in this pass (also Ignored); an extraction asked for it fails
+    BOOL NameEmpty;   // feature 394: a cpio name that normalizes to nothing ("." ...; also Ignored, Name stays raw):
+                      // never asked, but it may carry a hard-linked file's data (it stays in its group)
     char LinkType;    // feature 309: LNKTYPE / SYMTYPE for a link member (also Ignored), else 0
     char* LinkName;   // feature 309: malloc'd UTF-8 name the link refers to, normalized like Name; NULL = none
     // feature 310: newc / crc cpio only (0 otherwise) - c_ino, c_nlink, c_devmajor, c_devminor; the

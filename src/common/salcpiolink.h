@@ -42,6 +42,17 @@ inline bool SalCpioIsLinkGroupMember(bool newcOrCrc, unsigned long mode, unsigne
     return newcOrCrc && (mode & 0170000) == 0100000 && nlink > 1;
 }
 
+// does an extraction keep the member in its group? ('isDir': read as a folder; 'ignored': not
+// extracted under its own name; 'unusableName': ignored only because its name cannot be used - a name
+// no file system takes (feature 393) or one that normalizes to nothing, e.g. "." (feature 394). Such a
+// member may carry the file's data: it stays in the group as not asked, so the group's other names
+// get the data; any other ignored member stays out
+inline bool SalCpioKeepsGroupMember(bool newcOrCrc, unsigned long mode, unsigned long nlink, bool isDir,
+                                    bool ignored, bool unusableName)
+{
+    return !isDir && (!ignored || unusableName) && SalCpioIsLinkGroupMember(newcOrCrc, mode, nlink);
+}
+
 // the action for a member of a group: 'asked' - the operation was asked to extract it (mask /
 // selection); 'hasData' - it carries data (size above 0); 'state' - SAL_CPIO_GROUP_*; 'anyWaiting' -
 // asked names of the group wait for its data

@@ -227,6 +227,7 @@ void SCommonHeader::Initialize()
     NameFromPax = FALSE;
     NameFromGnu = FALSE;
     NameRefused = FALSE;
+    NameEmpty = FALSE;
     Format = e_Unknown;
     IsExtendedTar = FALSE;
     CpioIno = 0;
@@ -530,6 +531,8 @@ int CArchive::UnpackOneFilePass(const char* nameInArchive, const char* targetPat
             found = IsTarDataMember(header) && !strcmp(header.Name, nameInArchive) && ++dataSeen == dataOrdinal;
         else
             found = !strcmp(header.Name, nameInArchive);
+        if (header.NameEmpty)
+            found = FALSE; // feature 394: never listed - nothing can ask for it (its raw name is ".")
         CSalTarLinkTarget memberTarget;
         if (linkTarget != NULL)
             memberTarget = FeedLinkResolver(resolver, header);
@@ -773,6 +776,8 @@ BOOL CArchive::DoUnpackArchive(const char* targetPath, const char* archiveRoot, 
     {
         // determine whether this is "our" file
         BOOL found = names.IsNamePresent(header.Name);
+        if (header.NameEmpty)
+            found = FALSE; // feature 394: never listed - nothing can ask for it (a mask may match the raw ".")
         if (found && header.NameRefused)
         {
             ReportRefusedName(header.Name);
@@ -1212,8 +1217,9 @@ int CArchive::WriteOutData(const SCommonHeader& header, const char* targetPath,
         size += CQuadWord(toRead, 0);
         Offset += CQuadWord(toRead, 0);
     }
-    // if possible, verify the checksums
-    if (header.Format == e_CRCASCII && !header.Ignored &&
+    // if possible, verify the checksums; feature 394: also when the data of a member that is itself
+    // not extracted (a refused or an empty name carrying a hard-linked file's data) is written
+    if (header.Format == e_CRCASCII && (!header.Ignored || !simulate) &&
         CQuadWord(checksum, 0) != header.Checksum)
     {
         SalamanderGeneral->ShowMessageBox(LoadStr(IDS_TARERR_CHECKSUM), LoadStr(IDS_TARERR_TITLE), MSGBOX_ERROR);
@@ -1720,10 +1726,11 @@ BOOL CArchive::MakeCpioWaitingHeader(SCommonHeader& h, const SCpioWaiting& w, co
 BOOL CArchive::IsCpioGroupMember(const SCommonHeader& header)
 {
     // feature 393: a refused name (Ignored) stays in its group - it may carry the file's data, which
-    // the group's other names then get (an extraction treats it as not asked; never written itself)
-    return !header.IsDir && (!header.Ignored || header.NameRefused) &&
-           SalCpioIsLinkGroupMember(header.Format == e_NewASCII || header.Format == e_CRCASCII,
-                                    header.Mode.LoDWord, header.CpioNLink);
+    // the group's other names then get (an extraction treats it as not asked; never written itself).
+    // Feature 394: the same for a name that normalizes to nothing (".")
+    return SalCpioKeepsGroupMember(header.Format == e_NewASCII || header.Format == e_CRCASCII,
+                                   header.Mode.LoDWord, header.CpioNLink, header.IsDir != FALSE,
+                                   header.Ignored != FALSE, header.NameRefused || header.NameEmpty);
 }
 
 std::pair<unsigned __int64, DWORD> CArchive::CpioGroupKey(const SCommonHeader& header)
@@ -2209,6 +2216,22 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
         free(tmpName);
         header.Ignored = TRUE;
         header.LinkType = 0; // feature 309: such a member stays without effect, as before
+        // feature 394: a cpio member named "." (or "./", "") may still carry the data of a hard-linked
+        // file whose other names wait for it (newc / crc): it stays in its group as not asked, and its
+        // data is written under such a name - with the time and attributes any member gets below
+        if (header.Format == e_NewASCII || header.Format == e_CRCASCII || header.Format == e_OldASCII ||
+            header.Format == e_Binary || header.Format == e_SwapBinary)
+        {
+            header.NameEmpty = TRUE;
+            CQuadWord mtime = header.MTime;
+            mtime.Value += 11644473600;      // zero corresponds to 1 Jan 1601
+            mtime.Value *= 1000 * 1000 * 10; // and convert to 100-nanosecond units
+            header.FileInfo.LastWrite.dwLowDateTime = mtime.LoDWord;
+            header.FileInfo.LastWrite.dwHighDateTime = mtime.HiDWord;
+            header.FileInfo.Attr = FILE_ATTRIBUTE_ARCHIVE;
+            if ((header.Mode.LoDWord & 0200) == 0)
+                header.FileInfo.Attr |= FILE_ATTRIBUTE_READONLY;
+        }
         return TAR_OK;
     }
     // skip the trailing slash but remember it was there

@@ -77,6 +77,11 @@ function Check-Tgt([string]$Tgt, $Want) {
     if ($missing.Count) { $f += ('; missing: ' + ((@($missing | ForEach-Object { Esc $_ })) -join ', ')) }
     if ($bad.Count) { $f += ('; wrong content: ' + ((@($bad | ForEach-Object { '{0}="{1}"' -f (Esc $_), (Esc (Content $Tgt $_)) })) -join ', ')) }
     $f += ('; files: ' + ((@($files | ForEach-Object { '{0}({1})' -f (Esc $_), (Content $Tgt $_).Length })) -join ', '))
+    # every member of the fixtures has mtime 1000000000 (2001-09-09 01:46:40 UTC)
+    $wantTime = [DateTime]::new(2001, 9, 9, 1, 46, 40, [DateTimeKind]::Utc)
+    $badTime = @($files | Where-Object { [IO.File]::GetLastWriteTimeUtc($LP + $Tgt + '\' + $_.Replace('/', '\')) -ne $wantTime })
+    if ($badTime.Count) { $ok = $false; $f += ('; wrong time: ' + ((@($badTime | ForEach-Object { '{0}={1:u}' -f (Esc $_), [IO.File]::GetLastWriteTimeUtc($LP + $Tgt + '\' + $_.Replace('/', '\')) })) -join ', ')) }
+    elseif ($files.Count) { $f += '; times 2001-09-09 01:46:40Z' }
     return @($ok, $f)
 }
 function Find-Btn([IntPtr]$Dlg, [int]$CtlId) {
