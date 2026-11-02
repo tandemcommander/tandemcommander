@@ -7,8 +7,8 @@ area: archives
 source: review:309
 who: agent
 created: 2026-10-22
-updated: 2026-10-22
-verified: -
+updated: 2026-11-02
+verified: 2026-11-02 6db68ab0
 effort: S
 feature: -
 related: []
@@ -40,3 +40,4 @@ Not reproduced in the GUI with a member name (only through the shared rule and s
 
 - 2026-10-22 — created (source review:309)
 - 2026-10-22 — moved to Next position 28
+- 2026-11-02 — verified at 6db68ab0: reproduced at 6db68ab0: GUI probe - Alt+F9 of a tar with sub/../a.txt writes s/a.txt (overwrites an unrelated s/a.txt after Yes), Copy too; saltests pins s\a.txt
