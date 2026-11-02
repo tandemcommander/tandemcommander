@@ -1,0 +1,24 @@
+iso402_probe (feature 402) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 16:06; registry key existed True
+
+seeds: xd_edge.iso,xd_max.iso,xd_name.iso,xd_over1.iso,xd_sub.iso
+img402: name: root at 33, 60 bytes; its last entry's name 200 bytes long, 2 of them in the root
+img402: over1: root at 33, 60 bytes; its last entry's name 3 bytes long, 2 of them in the root
+img402: max: root at 33, 60 bytes; its last entry's name 255 bytes long, 2 of them in the root
+img402: sub: folder a at 34, 40 bytes; its last entry's name 255 bytes long, 2 of them in a
+img402: edge: root at 33, 60 bytes; its last entry's name 2 bytes long, 2 of them in the root
+
+XD-NAME    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-NAME    RUN    FAIL        files 3: top.txt, zlast/z.txt, zz\u00FD\u00FD\u00FD\u00FD; files ok: False; image kept: False (want True); windows as expected (one box "Error reading directory structure"): False (boxes seen 0); fatal: ; windows: no window
+XD-OVER1   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-OVER1   RUN    FAIL        files 3: top.txt, zlast/z.txt, zz\u00FD; files ok: False; image kept: False (want True); windows as expected (one box "Error reading directory structure"): False (boxes seen 0); fatal: ; windows: no window
+XD-MAX     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-MAX     RUN    FAIL        files 3: top.txt, zlast/z.txt, zz\u00FD\u00FD\u00FD\u00FD\u00DD\u00DD; files ok: False; image kept: False (want True); windows as expected (one box "Error reading directory structure"): False (boxes seen 0); fatal: ; windows: no window
+XD-SUB     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-SUB     RUN    FAIL        files 4: a/side.txt, a/zz\u00FD\u00FD\u00FD\u00FD, top.txt, zlast/z.txt; files ok: False; image kept: False (want True); windows as expected (one box "Error reading directory structure"): False (boxes seen 0); fatal: ; windows: no window
+XD-EDGE    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+XD-EDGE    RUN    PASS        files 3: top.txt, zlast/z.txt, zz; files ok: True; image kept: False (want False); windows as expected (none): True (boxes seen 0); fatal: ; windows: no window
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 6, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

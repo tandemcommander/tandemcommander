@@ -1,16 +1,16 @@
 ---
 title: ISO plug-in: an Xbox entry name can be read past the end of its directory
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: archives
 source: review:400
 who: agent
 created: 2026-11-02
 updated: 2026-11-02
-verified: -
+verified: 2026-11-02 76e8f098
 effort: S
-feature: -
+feature: 402
 related: []
 depends-on: []
 reason: -
@@ -51,3 +51,5 @@ is a pure rule, a `saltests` check prove it.
 
 - 2026-11-02 — created (source review:400)
 - 2026-11-02 — moved to Next position 2
+- 2026-11-02 — verified at 76e8f098: probe iso402 at 76e8f098: 4 crafted Xbox images list names with heap guard bytes (zz+FD..), no box, image deleted by unpack
+- 2026-11-02 — run started, feature 402
