@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an Xbox entry name can be read past the end of its directory
 type: bug
-status: new
+status: open
 severity: 5
 area: archives
 source: review:400
@@ -50,3 +50,4 @@ is a pure rule, a `saltests` check prove it.
 ## Log
 
 - 2026-11-02 — created (source review:400)
+- 2026-11-02 — moved to Next position 2

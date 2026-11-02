@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an ISO 9660 folder met again with a larger length is listed empty
 type: bug
-status: new
+status: open
 severity: 7
 area: archives
 source: review:400
@@ -60,3 +60,4 @@ key); count walks (`CountUnder`, `VisitedLog`) take their keys out the same way.
 
 - 2026-11-02 — created (source review:400)
 - 2026-11-02 — related item iso-plug-in-after-a-folder-that-cannot-be-read-no-later done in feature 400
+- 2026-11-02 — moved to Next position 1
