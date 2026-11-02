@@ -1,7 +1,7 @@
 ---
 title: Pack Overwrite into an archive reached through a symbolic link replaces the link
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:399
@@ -63,3 +63,4 @@ did not create.
 
 - 2026-11-02 — created (source review:399)
 - 2026-11-02 — related item zip-cannot-update-an-archive-reached-through-a-symbolic-link done in feature 399
+- 2026-11-02 — moved to Next position 85

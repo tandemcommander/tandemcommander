@@ -1,7 +1,7 @@
 ---
 title: Delete the review scratch folder rev399scratch_eB on drive E
 type: person-step
-status: new
+status: open
 severity: 1
 area: tooling
 source: leftover:399
@@ -42,3 +42,4 @@ The folder is gone; nothing else changes.
 ## Log
 
 - 2026-11-02 — created (source leftover:399)
+- 2026-11-02 — moved to Person steps
