@@ -35,7 +35,9 @@
 //                        bytes), a lone surrogate is U+FFFD. Code page: a lead
 //                        byte (IsDBCSLeadByteEx) takes the next byte, each
 //                        character through MultiByteToWideChar (a failure is
-//                        U+FFFD). Returns the units written (out[ret] == 0), or
+//                        U+FFFD); a code page that is UTF-8 (CP_UTF8, or CP_ACP
+//                        on a system whose ANSI code page is 65001) is decoded
+//                        as UTF-8. Returns the units written (out[ret] == 0), or
 //                        -1 for out == NULL / outCap <= 0.
 //
 // Header-only and pure apart from the two code-page calls: saltests
@@ -127,6 +129,11 @@ inline int SalFindSeedDecodeW(const unsigned char* bytes, int n, bool atEnd, int
     out[0] = 0;
     if (bytes == NULL || n <= 0)
         return 0;
+    // review 1: a code page that is UTF-8 (the system's ANSI code page set to 65001, "Use Unicode
+    // UTF-8 for worldwide language support") is decoded as UTF-8 - byte by byte through
+    // MultiByteToWideChar every non-ASCII letter would be U+FFFD, and the viewer draws it as UTF-8
+    if (enc == 0 && (codePage == CP_UTF8 || (codePage == CP_ACP && GetACP() == CP_UTF8)))
+        enc = 1;
     int units = 0, u8 = 0, i = 0;
     while (i < n)
     {

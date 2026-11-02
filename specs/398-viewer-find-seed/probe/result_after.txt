@@ -1,6 +1,6 @@
-seed_probe (viewer Find pre-fill) after
+seed_probe (viewer Find pre-fill) after-review1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-02 12:50; ACP 1250; registry key existed True
+Date    : 2026-11-02 13:11; ACP 1250; registry key existed True
 
 u8-word    RUN    PASS        pre-filled 'caf\u00E9' [U+0063 U+0061 U+0066 U+00E9] (expected [U+0063 U+0061 U+0066 U+00E9]); asked after OK: nothing; Find again pre-filled 'caf\u00E9' [U+0063 U+0061 U+0066 U+00E9]
 u8-word    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

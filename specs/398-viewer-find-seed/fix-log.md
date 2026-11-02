@@ -68,7 +68,9 @@ trailing high surrogate, a trailing DBCS lead byte). The probe got a true code-p
 - `python tools/check_encoding.py --strict` -> TOTAL: 0 finding(s).
 - Probe `seed398_probe.ps1` after (`probe/result_after.txt`): PASS 14 / FAIL 0 (7 rows RUN + END):
   u8-word `café` found; u8-long 199 `a`; u8-cjk 66 letters / 198 bytes; u8-astral 198 `a` - all OK with
-  nothing asked and found; legacy `café au lait` (search "Cannot find": known limit, Inbox);
+  nothing asked after OK (the "Find again" pre-fill is the same text whether the search moved the
+  selection or left Select All in place - the evidence of "found" is that no "Cannot find" appeared,
+  review 1 NOTE 3); legacy `café au lait` (search "Cannot find": known limit, Inbox);
   u8-tail `caf` + U+FFFD; hex `63 61 66 C3 A9`. Registry restored, identical hash.
   Before (main 58dcca07, `probe/result_before.txt`, the first 6 rows; its `legacy` row is the cut file
   that is now `u8-tail` - field `café` by the ANSI decoding, an accident of the code page): PASS 8 / FAIL 4.
@@ -85,3 +87,29 @@ is decoded by the rule (saltests) but not reachable: the viewer does not detect 
 ## Translations
 
 No UI string, menu or dialog changed - no `.slt` refresh.
+
+## Review
+
+Review 1 (independent agent, refute-first, about 8 min): no MUST. Re-ran build, saltests (282,226 / 0),
+encoding guard, the probe (14 / 0, registry identical); five negative controls of the header compiled
+separately (old decoding 28 failed, byte limit off 9, atEnd off 5, outCap off 3, unit limit off 1).
+- SHOULD 1 (fixed): code-page content on a system whose ANSI code page is UTF-8 (65001) became U+FFFD -
+  the code-page branch decoded byte by byte. Now a code page that is UTF-8 (`CP_UTF8`, or `CP_ACP` with
+  `GetACP() == 65001`) goes through the UTF-8 rule, as the viewer draws it there. saltests +4 checks
+  (282,230 / 0); negative control (the redirect off): 2 failed. Limit: this machine's ACP is 1250, so the
+  `CP_ACP` + 65001 path itself is checked only by the explicit `CP_UTF8` checks (the `GetACP()` branch of
+  the test picks the 65001 check on such a system).
+- SHOULD 2 (Inbox): `ViewerIsValidUTF8` accepts a cut sequence also when the sample is the whole file -
+  `viewer-shows-a-short-code-page-file-ending-in-a-non-ascii` (measure:398).
+- NOTE 3 (fixed wording): "Find again" cannot tell a found text from the untouched Select All; the
+  evidence of "found" is that no "Cannot find" appeared.
+- NOTE 4 (no change): `caf` + U+FFFD cannot be found - by the clarification (the field shows what the
+  viewer shows); the old `café` was not found either.
+- NOTE 5 (fixed): the contract's code-page bullet now matches `atEnd`.
+- NOTE 6 (no change): two U+FFFD for a cut `E4 B8` at the end where the system decoder gives one -
+  the rule follows the viewer's own `ViewerDecodeChar` (one byte each).
+- NOTE 7 (no change): a selection of exactly 402 bytes counts as not read whole - every character from
+  byte 401 on is beyond the 200-unit / 200-byte limits in every encoding anyway.
+- NOTE 8: the closing entries follow at closing.
+After the fixes: BUILD SUCCEEDED, saltests 282,230 / 0, encoding guard 0, probe 14 / 0
+(`probe/result_after.txt`, label after-review1). No MUST, so no second review round.

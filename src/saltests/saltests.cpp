@@ -26279,6 +26279,14 @@ static void TestFindSeed398()
     CHECK(Seed398(std::string(200, '\xE9'), 0, 1250) == std::wstring(100, eAcute)); // 2 UTF-8 bytes each
     CHECK(Seed398("a\x82", 0, 932) == L"a");                                       // a lead byte at the end
     CHECK(Seed398("\x82\xA0" "b", 0, 932) == std::wstring(1, (wchar_t)0x3042) + L"b");
+    // review 1: a code page that is UTF-8 (an ANSI code page of 65001) decodes as UTF-8, not byte by byte
+    CHECK(Seed398("caf\xC3\xA9", 0, CP_UTF8) == cafe);
+    CHECK(Seed398(std::string(199, 'a') + "\xC3\xA9", 0, CP_UTF8) == std::wstring(199, L'a'));
+    CHECK(Seed398("ab\xC3", 0, CP_UTF8) == L"ab");
+    if (GetACP() == CP_UTF8)
+        CHECK(Seed398("caf\xC3\xA9", 0, CP_ACP) == cafe);
+    else
+        CHECK(Seed398("caf\xE9", 0, CP_ACP) == std::wstring(L"caf") + Seed398("\xE9", 0, GetACP()));
 
     // (10) arguments
     {

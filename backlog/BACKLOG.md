@@ -306,6 +306,7 @@ Last triaged: 2026-11-02
 |---|---|---|---|---|---|
 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | leftover:390 | 2026-11-02 |
 | [Viewer Find does not find non-ASCII text in a file shown in a code page](items/viewer-find-does-not-find-non-ascii-text-in-a-file-shown-in/desc.md) | bug | 3 | encoding | leftover:398 | 2026-11-02 |
+| [Viewer shows a short code-page file ending in a non-ASCII letter as UTF-8](items/viewer-shows-a-short-code-page-file-ending-in-a-non-ascii/desc.md) | bug | 3 | encoding | measure:398 | 2026-11-02 |
 
 ## Parked
 

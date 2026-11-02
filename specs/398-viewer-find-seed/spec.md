@@ -94,6 +94,8 @@ selection's bytes as hex digits (as before).
   detect UTF-16 into a wide mode at HEAD; the rule is there for when it does).
 - A code page with double-byte characters (the ANSI code page of an East Asian system): a lead byte
   at the end of the read is left out.
+- The system's ANSI code page set to UTF-8 (65001): code-page content is decoded as UTF-8, as the
+  viewer draws it (review 1 of 398).
 
 ## Requirements *(mandatory)*
 
