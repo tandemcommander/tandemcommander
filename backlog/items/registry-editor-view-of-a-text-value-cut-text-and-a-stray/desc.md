@@ -7,8 +7,8 @@ area: other-plugins
 source: review:278
 who: both
 created: 2026-10-21
-updated: 2026-10-21
-verified: -
+updated: 2026-11-02
+verified: 2026-11-02 477f01b1
 effort: S
 feature: -
 related: []
@@ -60,3 +60,4 @@ The GUI case needs a machine with a UTF-8 (or DBCS) ANSI code page - a person's 
 - 2026-10-21 — created (source review:278)
 - 2026-10-21 — related item regedit-key-name-buffer-size-and-move-rows done in feature 287
 - 2026-10-21 — moved to Next position 21
+- 2026-11-02 — verified at 477f01b1: present at 477f01b1: fs3.cpp ExportValueData unit-sized space; ctypes WideCharToMultiByte 65001 a-euro gives ret 0, a + stale byte + NUL
