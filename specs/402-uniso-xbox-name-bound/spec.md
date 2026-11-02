@@ -21,6 +21,14 @@ the program's memory (`zzýýýý`), showed no error, did not mark the listing i
 was deleted after unpacking. The control image whose last name ends exactly at the end of the
 directory listed `zz` correctly.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: When a damaged record is met, does the walk skip it and read the directory's later entries, or end that directory's walk? → A: End that directory's walk there (the record's length cannot be trusted to find the next one) (autonomous run: item)
+- Q: When the damaged record is in the root, does the image fail to open or open with the entries before the record, marked incomplete? → A: Open with the entries before it, the listing marked incomplete (autonomous run: conservative)
+- Q: Is a new error text needed? → A: No - the existing "Error reading directory structure" box, once per walk (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A damaged Xbox image is reported, not listed with invented names (Priority: P1)
