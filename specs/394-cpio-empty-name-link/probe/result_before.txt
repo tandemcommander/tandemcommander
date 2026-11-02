@@ -1,0 +1,27 @@
+cpioempty_probe (backlog item a-cpio-hard-link-whose-data-name-normalizes-to-empty-is) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 08:53; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-EMPTY-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-EMPTY-DOT-DEL RUN    FAIL        tgt: 2 of 2 files; wrong content: a.txt=""; files: a.txt(0), ok.txt(1); archive kept: False (want False); windows: no window
+UNP-EMPTY-DOTSLASH-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-EMPTY-DOTSLASH-DEL RUN    FAIL        tgt: 2 of 2 files; wrong content: a.txt=""; files: a.txt(0), ok.txt(1); archive kept: False (want False); windows: no window
+UNP-EMPTY-NUL-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-EMPTY-NUL-DEL RUN    FAIL        tgt: 2 of 2 files; wrong content: a.txt=""; files: a.txt(0), ok.txt(1); archive kept: False (want False); windows: no window
+UNP-CRC-EMPTY-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-CRC-EMPTY-DOT-DEL RUN    FAIL        tgt: 2 of 2 files; wrong content: a.txt=""; files: a.txt(0), ok.txt(1); archive kept: False (want False); windows: no window
+UNP-CRC-EMPTY-DOT-BADSUM-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-CRC-EMPTY-DOT-BADSUM-DEL RUN    FAIL        tgt: 2 of 0 files; files: a.txt(0), ok.txt(1); archive kept: False (want True); windows: no window
+UNP-RPM-EMPTY-DOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-RPM-EMPTY-DOT-DEL RUN    FAIL        tgt: 2 of 2 files; wrong content: a.txt=""; files: a.txt(0), ok.txt(1); archive kept: False (want False); windows: no window
+UNP-EMPTY-DOT-FIRST-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-EMPTY-DOT-FIRST-DEL RUN    FAIL        tgt: 2 of 1 files; files: a.txt(0), ok.txt(1); archive kept: False (want True); windows: no window
+UNP-DOTDIR-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-DOTDIR-DEL RUN    PASS        tgt: 1 of 1 files; files: ok.txt(1); archive kept: False (want False); windows: no window
+COPY-EMPTY-DOT END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-EMPTY-DOT RUN    FAIL        tgt: 2 of 2 files; wrong content: a.txt=""; files: a.txt(0), ok.txt(1); at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+COPY-EMPTY-DOT-FIRST END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-EMPTY-DOT-FIRST RUN    FAIL        tgt: 2 of 1 files; files: a.txt(0), ok.txt(1); message during the copy matches \(2\)[^|]*a\.txt: False; at open: no window; windows: [#32770 'Copy'] [Static id=209] Copy 2 files from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 11, FAIL 9, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

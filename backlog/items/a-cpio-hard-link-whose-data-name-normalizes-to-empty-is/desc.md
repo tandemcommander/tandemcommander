@@ -8,7 +8,7 @@ source: review:393
 who: agent
 created: 2026-11-02
 updated: 2026-11-02
-verified: -
+verified: 2026-11-02 32c55a19
 effort: S
 feature: -
 related: []
@@ -52,3 +52,4 @@ common writer stores a file's data under an empty name.
 - 2026-11-02 — created (source review:393)
 - 2026-11-02 — severity 7: a silent empty file plus Delete archive after unpacking loses data in a narrow case
 - 2026-11-02 — moved to Next position 1
+- 2026-11-02 — verified at 32c55a19: reproduced at 32c55a19: probe cpioempty 9 FAIL - a.txt written empty, archive deleted with success (newc, crc, rpm, data-first)
