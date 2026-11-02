@@ -5,6 +5,13 @@
 **Status**: Draft
 **Input**: User description: "Backlog item unpack-silently-drops-a-cpio-file-whose-only-name-normalizes - Unpack silently drops a cpio file whose only name normalizes to empty". From backlog item unpack-silently-drops-a-cpio-file-whose-only-name-normalizes.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: Does the new report share the once-per-operation limit of the "(206)" refused-name box, or is it shown once on its own? → A: on its own - once per operation, independent of the "(206)" and "(2)" boxes, so each kind of problem the user must know about is shown (autonomous run: conservative)
+- Q: Does the operation stop at such a member? → A: no - the rest of the archive is extracted and the operation fails at its end, as for a refused name (feature 308 / 393) (autonomous run: rule)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A whole Unpack never deletes an archive whose file data stayed inside (Priority: P1)
@@ -85,7 +92,8 @@ extracting silently with success - the archive is deleted when the user asked fo
   matched by the operation's names (the mask) under its raw name, and whose data reaches no name
   the operation extracts.
 - **FR-002**: The report MUST use an existing system text - "(123)" (the file name syntax is
-  incorrect) - followed by the member's raw name in quotes, once per operation; no new UI string.
+  incorrect) - followed by the member's raw name in quotes, once per operation (independent of the
+  "(206)" and "(2)" boxes); no new UI string.
 - **FR-003**: Such a report MUST make the operation fail after the rest of the archive is
   extracted, so the core neither reports success nor deletes the archive.
 - **FR-004**: For a newc / crc member of a hard-link group, "reaches no extracted name" MUST be
