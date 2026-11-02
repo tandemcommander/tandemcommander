@@ -1,7 +1,7 @@
 ---
 title: Renamer subdirectories: list nested folder links as items or skip them
 type: decision
-status: new
+status: open
 severity: 3
 area: data-safety
 source: review:388
@@ -71,3 +71,4 @@ link stays an item (as 388 does).
 
 - 2026-11-02 — created (source review:388)
 - 2026-11-02 — related item renamer-include-subdirectories-descends-into-junctions-and done in feature 388
+- 2026-11-02 — moved to Decisions for the maintainer position 9
