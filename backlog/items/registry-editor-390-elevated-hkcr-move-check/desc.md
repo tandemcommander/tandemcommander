@@ -1,7 +1,7 @@
 ---
 title: Registry Editor 390: elevated check of Move from HKCR into the user Classes key
 type: person-step
-status: new
+status: open
 severity: 6
 area: data-safety
 source: leftover:390
@@ -54,3 +54,4 @@ Every step below gives the stated result; a different result is a new Inbox item
 ## Log
 
 - 2026-11-02 — created (source leftover:390)
+- 2026-11-02 — moved to Person steps position 10

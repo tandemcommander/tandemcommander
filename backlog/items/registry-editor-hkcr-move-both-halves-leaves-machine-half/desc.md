@@ -47,3 +47,4 @@ machine key whose ACL lets the user delete it).
 ## Log
 
 - 2026-11-02 — created (source leftover:390)
+- 2026-11-02 — auto-triage: left in Inbox - who agent contradicts its own text: measuring the defect needs elevation or a machine key created by an admin (a person); who both may fit
