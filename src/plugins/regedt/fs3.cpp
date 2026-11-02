@@ -344,11 +344,7 @@ BOOL ExportValueData(int root, LPCWSTR key, LPCWSTR value, const char* tmpFileNa
     }
 
     // allocate a buffer for the data
-    int extra = 0;
-    if (ExportStringsForViewerInASCII &&
-        (type == REG_SZ || type == REG_EXPAND_SZ || type == REG_MULTI_SZ))
-        extra = size / 2;
-    translated = data = (LPBYTE)malloc(size + extra);
+    translated = data = (LPBYTE)malloc(size);
     if (!data)
     {
         RegCloseKey(hKey);
@@ -364,12 +360,27 @@ BOOL ExportValueData(int root, LPCWSTR key, LPCWSTR value, const char* tmpFileNa
         return ErrorL(ret, IDS_QUERYVAL);
     }
 
-    // if needed, convert the data to ASCII
-    if (extra)
+    // if needed, convert a text to the ANSI code page. Feature 387: the space was one byte per
+    // UTF-16 unit - with a multi-byte code page (UTF-8, DBCS) the conversion failed and the file
+    // got partial and stale bytes. Now the copy has the converted size and is written whole;
+    // a text that cannot be converted is written as stored (UTF-16).
+    char* converted = NULL;
+    if (ExportStringsForViewerInASCII &&
+        (type == REG_SZ || type == REG_EXPAND_SZ || type == REG_MULTI_SZ))
     {
-        WStrToStr((char*)data + size, size / 2, (LPWSTR)data, size / 2);
-        translated = data + size;
-        size /= 2;
+        int convertedLen = 0;
+        int conv = SalRegViewTextToCodePageAlloc(data, size, CP_ACP, &converted, &convertedLen);
+        if (conv == SALREGVIEW_LOWMEM)
+        {
+            RegCloseKey(hKey);
+            free(data);
+            return Error(IDS_LOWMEM);
+        }
+        if (conv == SALREGVIEW_CONVERTED)
+        {
+            translated = (LPBYTE)converted;
+            size = (DWORD)convertedLen;
+        }
     }
 
     // create or open the temporary file (local disk: W file API, plugin interface 104)
@@ -380,17 +391,20 @@ BOOL ExportValueData(int root, LPCWSTR key, LPCWSTR value, const char* tmpFileNa
     if (file == INVALID_HANDLE_VALUE)
     {
         RegCloseKey(hKey);
+        free(converted);
         free(data);
         return Error(IDS_CREATETEMP);
     }
 
-    DWORD written;
-    BOOL b = WriteFile(file, translated, size, &written, NULL) || written != size;
+    // feature 387: a short write is an error (it was "WriteFile(...) || written != size")
+    DWORD written = 0;
+    BOOL b = WriteFile(file, translated, size, &written, NULL) && written == size;
 
     DWORD err;
     SG->SalGetFileSize(file, *newFileSize, err); // ignore errors
     CloseHandle(file);
     RegCloseKey(hKey);
+    free(converted);
     free(data);
 
     return b || Error(IDS_WRITETEMP);

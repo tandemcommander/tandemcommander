@@ -13916,6 +13916,73 @@ static void TestRegFindTextToCodePage278()
     CHECK(SalRegFindTextToCodePage(L"x", 1, 12345, out, sizeof(out)) == -1);
 }
 
+// feature 387: View (F3) of a text value writes the whole code-page form - the space and the
+// written length were the UTF-16 unit count (UTF-8 / DBCS: partial, stale bytes and a NUL)
+static bool ViewExport387(const WCHAR* text, int unitsWithNul, UINT cp, const char* expect, int expectLen)
+{
+    char* out = (char*)1;
+    int len = -1;
+    int r = SalRegViewTextToCodePageAlloc(text, (DWORD)(unitsWithNul * sizeof(WCHAR)), cp, &out, &len);
+    bool ok = r == SALREGVIEW_CONVERTED && out != NULL && len == expectLen && memcmp(out, expect, expectLen) == 0;
+    free(out);
+    return ok;
+}
+
+static void TestRegViewTextToCodePage387()
+{
+    // UTF-8: REG_SZ "a€" with its NUL = 3 units, 5 bytes
+    CHECK(ViewExport387(L"a\x20AC", 3, 65001, "a\xE2\x82\xAC\0", 5));
+    // UTF-8: "čččč bar" with its NUL = 9 units, 13 bytes - the end and the NUL are there
+    CHECK(ViewExport387(L"\x010D\x010D\x010D\x010D bar", 9, 65001, "\xC4\x8D\xC4\x8D\xC4\x8D\xC4\x8D bar\0", 13));
+    // a DBCS code page: two hiragana + NUL = 3 units, 5 bytes
+    CHECK(ViewExport387(L"\x3042\x3044", 3, 932, "\x82\xA0\x82\xA2\0", 5));
+    // a single-byte code page: exactly the old export (one byte a unit)
+    CHECK(ViewExport387(L"\x010D\x010D\x010D\x010D bar", 9, 1250, "\xE8\xE8\xE8\xE8 bar\0", 9));
+    {
+        const WCHAR* t = L"\x010D\x010D\x010D\x010D bar";
+        char old[9];
+        CHECK(WideCharToMultiByte(1250, 0, t, 9, old, 9, NULL, NULL) == 9 && memcmp(old, "\xE8\xE8\xE8\xE8 bar\0", 9) == 0);
+    }
+    // REG_MULTI_SZ "a" "€" + the final NUL: the embedded NULs stay, one byte each
+    const WCHAR multi[] = {L'a', 0, 0x20AC, 0, 0};
+    CHECK(ViewExport387(multi, 5, 65001, "a\0\xE2\x82\xAC\0\0", 7));
+    // an odd size: the last odd byte is not part of a unit
+    {
+        char* out = NULL;
+        int len = 0;
+        CHECK(SalRegViewTextToCodePageAlloc(L"ab", 5, 65001, &out, &len) == SALREGVIEW_CONVERTED && len == 2 &&
+              memcmp(out, "ab", 2) == 0);
+        free(out);
+    }
+    // nothing to convert (0 or 1 byte), a code page that does not exist, no buffer: the data as stored
+    {
+        char* out = (char*)1;
+        int len = -1;
+        CHECK(SalRegViewTextToCodePageAlloc(L"", 0, 65001, &out, &len) == SALREGVIEW_UTF16 && out == NULL && len == 0);
+        out = (char*)1;
+        len = -1;
+        CHECK(SalRegViewTextToCodePageAlloc(L"a", 1, 65001, &out, &len) == SALREGVIEW_UTF16 && out == NULL && len == 0);
+        out = (char*)1;
+        len = -1;
+        CHECK(SalRegViewTextToCodePageAlloc(L"x", 4, 12345, &out, &len) == SALREGVIEW_UTF16 && out == NULL && len == 0);
+        CHECK(SalRegViewTextToCodePageAlloc(NULL, 4, 65001, &out, &len) == SALREGVIEW_UTF16 && out == NULL);
+        CHECK(SalRegViewTextToCodePageAlloc(L"x", 4, 65001, NULL, &len) == SALREGVIEW_UTF16);
+    }
+    // a lone surrogate: replaced, the count is the conversion's
+    {
+        const WCHAR lone[] = {0xD800, L'a', 0};
+        CHECK(ViewExport387(lone, 3, 65001, "\xEF\xBF\xBD\x61\0", 5));
+    }
+    // the negative control: the old space (one byte a unit) fails on UTF-8 and on 932 and leaves
+    // the stale byte behind (the WStrToStr of regedt/utils.h then wrote a NUL into the last byte)
+    {
+        char old[3];
+        memset(old, 0x5A, sizeof(old));
+        CHECK(WideCharToMultiByte(65001, 0, L"a\x20AC", 3, old, 3, NULL, NULL) == 0 && old[1] != '\xE2');
+        CHECK(WideCharToMultiByte(932, 0, L"\x3042\x3044", 3, old, 3, NULL, NULL) == 0);
+    }
+}
+
 // feature 292: the Registry Editor decides "onto / into itself" by the key's identity (the
 // internal name the registry reports), not by the root name and the path text
 static void TestRegKeyId292()
@@ -25551,6 +25618,7 @@ int main(int argc, char** argv)
     TestRegFindWholeWord257();
     TestHexPattern257();
     TestRegFindTextToCodePage278();
+    TestRegViewTextToCodePage387();
     TestRegKeyId292();
     TestRegKeyIdBelow294();
     TestDeleteAsDirLink197();

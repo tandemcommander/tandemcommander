@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <limits.h> // INT_MAX (feature 387)
+#include <stdlib.h> // malloc / free (feature 387)
+
 //*****************************************************************************
 //
 // The Registry Editor's Find: pure rules (feature 257)
@@ -39,6 +42,18 @@
 // added); with a space it converts and returns that count. -1 when the text
 // cannot be converted or does not fit 'outSize' (never a partial result; the
 // content of 'out' is then not to be searched). An empty text is 0.
+//
+// SalRegViewTextToCodePageAlloc (feature 387) - View (F3) of a text value
+// (REG_SZ / REG_EXPAND_SZ / REG_MULTI_SZ) writes its code-page form to the
+// viewer's file. The space was one byte per UTF-16 unit and that many bytes were
+// written: with a multi-byte code page the conversion failed and the file got the
+// partial bytes, uninitialised heap bytes and a NUL. 'data' / 'size' are the bytes
+// the registry returned (UTF-16LE with the NUL(s)); all size / 2 units are
+// converted (an odd last byte is not part of a unit). SALREGVIEW_CONVERTED: *out
+// is a malloc'd buffer of exactly *outLen bytes (the caller frees it);
+// SALREGVIEW_UTF16: nothing to convert or the conversion is impossible - write
+// 'data' / 'size' unchanged; SALREGVIEW_LOWMEM: no memory for the copy. Never a
+// partial result.
 //
 // Header-only (the plug-ins cannot compile a .cpp from src\common); needs
 // <windows.h> and <ctype.h>; checked by saltests.
@@ -169,4 +184,35 @@ inline int SalRegFindTextToCodePage(const WCHAR* text, int units, UINT codePage,
     if (WideCharToMultiByte(codePage, 0, text, units, out, bytes, NULL, NULL) != bytes)
         return -1;
     return bytes;
+}
+
+#define SALREGVIEW_CONVERTED 0
+#define SALREGVIEW_UTF16 1
+#define SALREGVIEW_LOWMEM 2
+
+inline int SalRegViewTextToCodePageAlloc(const void* data, DWORD size, UINT codePage, char** out, int* outLen)
+{
+    if (out != NULL)
+        *out = NULL;
+    if (outLen != NULL)
+        *outLen = 0;
+    if (data == NULL || out == NULL || outLen == NULL || size / 2 > (DWORD)INT_MAX)
+        return SALREGVIEW_UTF16;
+    int units = (int)(size / 2);
+    if (units <= 0)
+        return SALREGVIEW_UTF16; // nothing to convert
+    int bytes = SalRegFindTextToCodePage((const WCHAR*)data, units, codePage, NULL, 0);
+    if (bytes <= 0)
+        return SALREGVIEW_UTF16; // cannot be converted
+    char* buf = (char*)malloc(bytes);
+    if (buf == NULL)
+        return SALREGVIEW_LOWMEM;
+    if (SalRegFindTextToCodePage((const WCHAR*)data, units, codePage, buf, bytes) != bytes)
+    {
+        free(buf);
+        return SALREGVIEW_UTF16;
+    }
+    *out = buf;
+    *outLen = bytes;
+    return SALREGVIEW_CONVERTED;
 }
