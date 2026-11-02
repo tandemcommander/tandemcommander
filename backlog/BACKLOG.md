@@ -301,6 +301,7 @@ Last triaged: 2026-11-02
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Registry Editor View: a key that cannot be opened is still read with an unset handle](items/registry-editor-view-a-key-that-cannot-be-opened-is-still/desc.md) | bug | 3 | other-plugins | measure:387 | 2026-11-02 |
 
 ## Parked
 
