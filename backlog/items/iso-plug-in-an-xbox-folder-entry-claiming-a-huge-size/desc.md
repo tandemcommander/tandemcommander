@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an Xbox folder entry claiming a huge size allocates it before reading
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:402
@@ -51,3 +51,4 @@ program's memory stays small and the image is kept by a whole unpack.
 ## Log
 
 - 2026-11-02 — created (source review:402)
+- 2026-11-02 — moved to Next position 89

@@ -1,7 +1,7 @@
 ---
 title: ISO plug-in: an Xbox entry name with a NUL byte inside is listed cut at the NUL
 type: bug
-status: new
+status: open
 severity: 3
 area: archives
 source: review:402
@@ -50,3 +50,4 @@ style) proves it.
 ## Log
 
 - 2026-11-02 — created (source review:402)
+- 2026-11-02 — moved to Next position 88
