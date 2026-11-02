@@ -1,7 +1,7 @@
 ---
 title: User Menu compare names and the Change Icon file are cut to 259 bytes
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: long-paths
 source: review:291
@@ -10,7 +10,7 @@ created: 2026-10-21
 updated: 2026-11-02
 verified: 2026-11-02 df4d92be
 effort: S
-feature: -
+feature: 389
 related: []
 depends-on: []
 reason: -
@@ -58,3 +58,4 @@ configuration - check which callers exist before writing the probe.
 - 2026-10-21 — created (source review:291)
 - 2026-10-21 — moved to Next position 25
 - 2026-11-02 — verified at df4d92be: still present at df4d92be: probe fit389 - compare command got both names cut, Change Icon read a code-page name and stored SHELL32.DLL
+- 2026-11-02 — run started, feature 389
