@@ -72,3 +72,22 @@ mode-only folder's 300-byte name reaches `AddDir`), COPY-HARD-REFUSED and UNP-HA
 - `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
 - `saltests.exe` -> `saltests: 30798 checks, 0 failed` (no new rule).
 - No UI strings, dialogs or resources changed -> no `.slt` refresh (stop-rules 2.13 not triggered).
+
+## Regression (T008) - on the restored build (commit 4533e82e code)
+
+| Probe | Result | Recorded before |
+|---|---|---|
+| `cpio393_probe` re-run (`result_after.txt`) | 22 / 0 | - |
+| 310 `cpio310_probe` (`regress_310.txt`) | 52 / 0 | 52 / 0 |
+| 321 `tar321_probe` (`regress_321_tar.txt`) | 20 / 0 | 20 / 0 |
+| 321 `unp321_probe` (`regress_321_unp.txt`) | 12 / 0 | 12 / 0 |
+| 306 `pax306_probe` (`regress_306.txt`) | 30 / 0 | 30 / 0 |
+| 308 `unp308_probe` (`regress_308.txt`) | 12 / 0 | 12 / 0 |
+| 309 `link309_probe` (`regress_309.txt`) | 16 / 0 | 16 / 0 |
+
+Behaviour change seen in 321's rows (intended, recorded): CPIO-TOOLONG now opens (was: did not open,
+an observing row); CPIO-778 (`.` + 777 letters, one 778-unit component) now opens with the "(206)"
+message instead of listing the name - no file system takes such a component (an extraction failed
+with "(123)" before), and PAX / GNU names of that kind are refused the same way since 306 / 321. The
+row's purpose (no overflow of the simple-icons buffers) is unchanged: a listed name's extension is now
+at most 255 UTF-16 units (<= 765 bytes + 4 < 780).
