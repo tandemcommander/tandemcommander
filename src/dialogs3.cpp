@@ -283,12 +283,15 @@ void CFilterDialog::Validate(CTransferInfo& ti)
     ti.RadioButton(IDC_USEFILTER, TRUE, useFilter);
     if (useFilter)
     {
-        char buf[MAX_PATH];
-        lstrcpyn(buf, Filter->GetMasksString(), MAX_PATH); // backup
-        // provide a buffer for MasksString, there is a size check, nothing serious
-        ti.EditLine(IDE_FILTER, Filter->GetWritableMasksString(), MAX_PATH);
+        // feature 392: the typed text is checked in a group of its own (with the panel filter's
+        // mode) - the panel's filter is never written here, so a refused edit leaves it exactly as
+        // it was (a tab's filter can be longer than the MAX_PATH backup that used to restore it)
+        CMaskGroup check;
+        check.SetMasksString("", Filter->GetExtendedMode());
+        // the field fits MAX_PATH (DlgItemTextFitsU8 above); the group's buffer is MAX_GROUPMASK
+        ti.EditLine(IDE_FILTER, check.GetWritableMasksString(), MAX_PATH);
         int errorPos;
-        if (!Filter->PrepareMasks(errorPos))
+        if (!check.PrepareMasks(errorPos))
         {
             SalMessageBox(HWindow, LoadStr(IDS_INCORRECTSYNTAX), LoadStr(IDS_ERRORTITLE),
                           MB_OK | MB_ICONEXCLAMATION);
@@ -296,7 +299,6 @@ void CFilterDialog::Validate(CTransferInfo& ti)
             SendMessage(GetDlgItem(HWindow, IDE_FILTER), EM_SETSEL, errorPos, errorPos + 1);
             ti.ErrorOn(IDE_FILTER);
         }
-        Filter->SetMasksString(buf); // restoration
     }
 }
 

@@ -1,0 +1,14 @@
+mask270_probe (feature 270) regress392
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 07:29; ACP 1250; registry key existed True
+M = 86 CJK letters (258 bytes)
+
+flt        RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True
+flt        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+flt-unused RUN    PASS        typed 88 units / 260 bytes; dialog stayed: True; asked: [#32770 'Error'] The path specified is too long. |; (refused) the field at the refusal: 88 units, same as typed: True
+flt-unused END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+flt-ctl    RUN    PASS        typed 87 units / 259 bytes; dialog stayed: False; asked: nothing; the next dialog's field: 87 units / 259 bytes, same as typed: True, tail '...\u4E52\u4E53\u4E54\u4E55\u4E56*'
+flt-ctl    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 6, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
