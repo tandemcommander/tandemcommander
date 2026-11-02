@@ -7,8 +7,8 @@ area: long-paths
 source: review:298
 who: agent
 created: 2026-10-22
-updated: 2026-10-22
-verified: -
+updated: 2026-11-02
+verified: 2026-11-02 fc9b8691
 effort: S
 feature: -
 related: []
@@ -55,3 +55,4 @@ text. Measure first: a tab filter of 300 bytes in the registry, activate the tab
 - 2026-10-22 — created (source review:298)
 - 2026-10-22 — related item mask-group-prepare-unbounded-mask-copy done in feature 298
 - 2026-10-22 — moved to Next position 25
+- 2026-11-02 — verified at fc9b8691: reproduced at fc9b8691 by a hidden-desktop probe: tab filter 300 bytes, refused edit, Cancel - next dialog shows 259 bytes

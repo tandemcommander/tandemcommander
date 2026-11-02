@@ -1,0 +1,14 @@
+filter probe before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 07:18; ACP 1250; registry key existed True
+F = 300 bytes, tail '....x042;*.last'
+
+long-refused RUN    FAIL        tab filter 300 bytes; the first dialog showed 300 bytes (whole: True); typed '*.txt|'; dialog stayed: True; asked: [#32770 'Error'] File mask is syntactically incorrect. |; the next dialog shows 259 bytes, as expected (300 bytes): False, tail '...x036;*.x037;'
+long-refused END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+short-refused RUN    PASS        tab filter 11 bytes; the first dialog showed 11 bytes (whole: True); typed '*.txt|'; dialog stayed: True; asked: [#32770 'Error'] File mask is syntactically incorrect. |; the next dialog shows 11 bytes, as expected (11 bytes): True, tail '*.abc;*.def'
+short-refused END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+long-valid RUN    PASS        tab filter 300 bytes; the first dialog showed 300 bytes (whole: True); typed '*.txt'; dialog stayed: False; asked: nothing; the next dialog shows 5 bytes, as expected (5 bytes): True, tail '*.txt'
+long-valid END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 5, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
