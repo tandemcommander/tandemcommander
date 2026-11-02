@@ -50,3 +50,47 @@ Find (menu *Search in Windows Registry*) -> `CFindThread::Body` -> `ScanKey` -> 
   with 296's "Can't copy a key to itself." box naming the source key (OK skips, Cancel stops).
 - Find: the key is not searched (no box).
 - An identity that cannot be read below the start: the existing open-error box (fails closed).
+
+## Analyze
+
+Run 1: no CRITICAL / HIGH. MEDIUM I1 (FR-006 "Move unchanged" vs the check running in the shared
+recursion for Move too) - fixed in the spec's edge cases (297 refuses a link source first, so Move
+never reaches the new check through a link). LOW C1 (no task checks "no new UI text") - added to T011.
+LOW U1 (negative-control method open) - accepted; recorded below. Run 2: nothing left above LOW.
+
+## Implementation
+
+- `src/common/salregkeyid.h`: `SalRegKeyIdLeadsBack(chain, count, id)`.
+- `src/saltests/saltests.cpp`: `TestRegKeyIdLeadsBack391` (self, parent, above the start, root, case
+  outside ASCII, plain subkey, sibling, prefix of a name, longer name, other hive, a cycle, count limit,
+  NULL / empty entries and identity).
+- `src/plugins/regedt/regedt.h`: `CRegWalkChain` (malloc'd identities - not `TIndirectArray`, which
+  frees with scalar `delete`), `CRegWalkLevel` (RAII: the chain back to its length on every return),
+  `RegWalkEnterTop`, `RegWalkEnter`.
+- `src/plugins/regedt/fs5.cpp`: `GetOpenedRegKeyId` split out of `AddOpenedRegKeyId` (no 15 KB set per
+  key); the chain functions; `CRegCopyTop` carries the chain; `CopyOrMoveKeyRec` enters each opened
+  source key before 296's target check; 296's refusal box moved into `RefuseCopyIntoItself` (same text,
+  same buttons).
+- `src/plugins/regedt/finddlg.h/.cpp`: `ScanKey` makes a chain per starting key, `ScanKeyAux` skips a
+  key that leads back (returns TRUE, nothing searched, no box).
+- Trap met again: a Bash here-document collapsed the doubled backslashes of the new saltests strings
+  (C4129 warnings) and a `'\'` of the probe (`Contains('')` matched everything) - both repaired with the
+  editor / a script written to a file.
+- No UI string, dialog or resource changed: `git diff main -- src/plugins/regedt/lang src/plugins/regedt/regedt.rh2` is empty - no translation refresh.
+
+## Checks
+
+- `python tools/check_encoding.py --strict`: TOTAL: 0 finding(s).
+- `.\build.cmd`: BUILD SUCCEEDED.
+- saltests: 30,755 -> 30,777 checks, 0 failed.
+- Probe after (`probe/loop391_after.txt`): PASS 19, FAIL 0, NOT DRIVEN 0 (English); `loop391_after_czech.txt`:
+  19 / 0. Copy rows: one "Can't copy a key to itself." box naming the link key, 2-3 keys written
+  instead of 38-55; Find rows: 1 result each, no box.
+- Negative control (U1): `RegWalkEnter`'s leads-back test forced off in the working tree (`FALSE &&`),
+  rebuilt, probe run, reverted and rebuilt: `probe/loop391_negctl.txt` PASS 8, FAIL 11 - every looping
+  row (BOX + STATE of four Copy rows, three Find rows) fails, the controls and END rows pass.
+- Regression probes on this build (`probe/*_on391.txt`): 292 `alias292_probe` 33 / 0; 294 `above294_probe`
+  24 / 0; 296 `link296_probe` first run 44 PASS / 1 FAIL - LINKDANGLE ERROR "Copy / Move opened no dialog"
+  (the operation never ran; the flake 294 recorded), full re-run `link296_probe_on391_rerun.txt` 47 / 0;
+  297 `link297_probe` 40 / 0; 390 `hkcr390_probe` 10 / 0. The product's registry restored identical
+  after every probe.
