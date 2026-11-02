@@ -5,6 +5,14 @@
 **Status**: Draft  
 **Input**: User description: "Backlog item renamer-include-subdirectories-descends-into-junctions-and - implement exactly what it describes." From backlog item renamer-include-subdirectories-descends-into-junctions-and.
 
+## Clarifications
+
+### Session 2026-11-02
+
+- Q: Should a link below the selected folder be skipped silently, listed as an item, or walked when its target lies inside the selection? → A: listed as an item (mask applied as for a folder), never walked (autonomous run: item - its *Expected* first option and *Notes* "never descend into a link", with the core's precedent 213)
+- Q: Is a selected panel item that is itself a junction walked (the user chose it) or listed? → A: listed, not walked - as the core's Change Case with subdirectories (213, "also a selected junction") (autonomous run: rule)
+- Q: Should every selected folder be looked up again to learn whether it is a link, or only one whose panel attributes carry the reparse bit? → A: only one with the reparse bit; a plain folder keeps today's path (its read errors unchanged) (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A link below the selected folder is listed, never walked (Priority: P1)
