@@ -7,8 +7,8 @@ area: other-plugins
 source: review:292
 who: agent
 created: 2026-10-21
-updated: 2026-10-22
-verified: -
+updated: 2026-11-02
+verified: 2026-11-02 129136b4
 effort: S
 feature: -
 related: []
@@ -53,3 +53,4 @@ function that silently does not work, nothing lost.
 - 2026-10-21 — severity: a function that silently does not work (band 4-6)
 - 2026-10-22 — related item registry-editor-move-of-a-key-onto-itself-through-hkey-users done in feature 292
 - 2026-10-22 — moved to Next position 25
+- 2026-11-02 — verified at 129136b4: probe hkcr390 MACHUSER at 129136b4: F6 of machine-only HKCR\.386 into HKCU Classes - no box, user copy deleted again, machine key unchanged
