@@ -1,0 +1,19 @@
+dotdot_probe (tar member names with '..') after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 11:27; registry key existed True; ACP 1250; python Python 3.14.6
+
+UNP-ROOT-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-ROOT-DEL RUN    PASS        tgt: 5 of 5 files; archive kept: False (want False); box naming the member: False (boxes: 0); windows: no window
+UNP-OVER-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-OVER-DEL RUN    PASS        tgt: 2 of 2 files; archive kept: False (want False); box naming the member: False (boxes: 0); windows: no window
+UNP-GNU-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-GNU-DEL RUN    PASS        tgt: 1 of 1 files; archive kept: False (want False); box naming the member: False (boxes: 0); windows: no window
+UNP-PAX-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-PAX-DEL RUN    PASS        tgt: 1 of 1 files; archive kept: False (want False); box naming the member: False (boxes: 0); windows: no window
+UNP-LINK-DEL END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+UNP-LINK-DEL RUN    PASS        tgt: 2 of 2 files; archive kept: True (want True); box naming the member: True (boxes: 1); windows: [#32770 'TAR Plugin Error'] [Static id=2477] (2) Syst\u00E9m nem\u016F\u017Ee nal\u00E9zt uveden\u00FD soubor. b.txt -> sub/../a.txt | [Button id=1] OK
+COPY-ROOT  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+COPY-ROOT  RUN    PASS        tgt: 5 of 5 files; at open: no window; during the copy: [#32770 'Copy'] [Static id=209] Copy 3 files and 2 directories from archive to | [Button id=1] OK | [Button id=2] Cancel | [Button id=9] Help
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 12, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

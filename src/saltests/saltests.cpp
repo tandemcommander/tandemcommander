@@ -20183,9 +20183,9 @@ static void TestTarLink309()
         CHECK(v.V.LinkPathState == SAL_PAX_SET && strcmp(v.V.LinkPath, "m") == 0);
     }
 
-    // review 1: the legacy rule resolves ".." wrongly (member names too - Inbox), so a link name with a
-    // ".." component is never matched (it is reported); the rule that finds one
-    CHECK(TarNorm309("sub/../a.txt") == "s\\a.txt"); // legacy - not "a.txt"; why the link rule exists
+    // review 1: a link name with a ".." component is never matched (it is reported); the rule that
+    // finds one. The legacy normalization made "sub/../a.txt" "s\a.txt" - fixed by feature 396
+    CHECK(TarNorm309("sub/../a.txt") == "a.txt");
     CHECK(SalTarPathHasDotDotU8("sub/../a.txt"));
     CHECK(SalTarPathHasDotDotU8("..\\a.txt"));
     CHECK(SalTarPathHasDotDotU8("a/.."));
@@ -20388,6 +20388,141 @@ static void TestEmptyNameData395()
     // such a file: another name written already -> silent; not yet -> pending until one is
     CHECK(SalEmptyNameDataDecide(true, true, true, true, SAL_CPIO_LINK_SKIP, W) == SAL_EMPTY_NAME_SILENT);
     CHECK(SalEmptyNameDataDecide(true, true, true, true, SAL_CPIO_LINK_SKIP, N) == SAL_EMPTY_NAME_PENDING);
+}
+
+// feature 396: the loop of SalTarNormalizeNameU8 before the fix (Open Salamander's rule) - the reference
+// for every name without a ".." component, which must keep its result
+static void TarNormLegacy396(const char* src, char* dst)
+{
+    char* const start = dst;
+    while (*src != '\0')
+    {
+        switch (*src)
+        {
+        case '\\':
+        case '/':
+            if (dst > start && *(dst - 1) != '\\')
+                *dst++ = '\\';
+            src++;
+            break;
+        case '.':
+            if (*(src + 1) == '.' && (*(src + 2) == '\\' || *(src + 2) == '/' || *(src + 2) == '\0'))
+            {
+                char* dstOld = dst;
+                if (dst > start)
+                    dst -= 2;
+                while ((dst > start) && (*dst != '\\'))
+                    dst--;
+                if (dst < dstOld)
+                    dst++;
+                src += 2;
+                break;
+            }
+            else if (*(src + 1) == '\\' || *(src + 1) == '/' || *(src + 1) == '\0')
+            {
+                src++;
+                break;
+            }
+            // fall through
+        default:
+            while (*src != '\0' && *src != '\\' && *src != '/')
+                *dst++ = *src++;
+            break;
+        }
+    }
+    *dst = '\0';
+}
+
+// feature 396: what the rule must give - components split on '/' and '\', "." and empty ones dropped,
+// ".." pops the last one (nothing on an empty stack), joined by '\'; a trailing '\' (the caller's
+// "folder" mark) when a separator followed the last kept component ("a/", "a/.", "x/y/..")
+static std::string TarNormRef396(const std::string& src)
+{
+    std::vector<std::string> stack;
+    bool trail = false;
+    size_t i = 0;
+    while (i <= src.size())
+    {
+        size_t j = i;
+        while (j < src.size() && src[j] != '/' && src[j] != '\\')
+            j++;
+        std::string c = src.substr(i, j - i);
+        if (c == "..")
+        {
+            if (!stack.empty())
+                stack.pop_back();
+            trail = true; // what is left was followed by a separator
+        }
+        else if (!c.empty() && c != ".")
+        {
+            stack.push_back(c);
+            trail = false;
+        }
+        if (j < src.size())
+            trail = true; // a separator after it
+        i = j + 1;
+    }
+    std::string out;
+    for (size_t k = 0; k < stack.size(); k++)
+        out += (k ? "\\" : "") + stack[k];
+    if (!out.empty() && trail)
+        out += "\\";
+    return out;
+}
+
+// feature 396: a ".." component of a tar / cpio member name removes the whole previous component (the
+// legacy rule kept its first letter when it was the first component: "sub/../a.txt" -> "s\a.txt")
+static void TestTarDotDot396()
+{
+    CHECK(TarNorm309("sub/../a.txt") == "a.txt");
+    CHECK(TarNorm309("x/../a.txt") == "a.txt");
+    CHECK(TarNorm309("x/y/../b.txt") == "x\\b.txt");
+    CHECK(TarNorm309("a/b/../../c") == "c");
+    CHECK(TarNorm309("../../empty") == "empty"); // the AIX archive: never above the root
+    CHECK(TarNorm309("q/../../f.txt") == "f.txt");
+    CHECK(TarNorm309("a/..") == "");
+    CHECK(TarNorm309("a/../") == "");
+    CHECK(TarNorm309("x/y/../") == "x\\");
+    CHECK(TarNorm309("..\\sub\\..\\a.txt") == "a.txt");
+    CHECK(TarNorm309("./sub/./../a.txt") == "a.txt");
+    CHECK(TarNorm309("sub//..//a.txt") == "a.txt");
+    CHECK(TarNorm309("..a/b..") == "..a\\b.."); // dots inside a name are a name
+    CHECK(TarNorm309(".../a") == "...\\a");
+    CHECK(TarNorm309("\xE4\xB8\x80/../\xE4\xB8\x81.txt") == "\xE4\xB8\x81.txt"); // UTF-8 component dropped whole
+
+    // every name of up to 6 characters over { a b . / \ }: the reference result; without a ".."
+    // component also the legacy result; never longer than the source; terminated
+    const char alphabet[] = {'a', 'b', '.', '/', '\\'};
+    int wrong = 0, changed = 0, longer = 0, total = 0;
+    for (int len = 0; len <= 6; len++)
+    {
+        int count = 1;
+        for (int k = 0; k < len; k++)
+            count *= 5;
+        for (int n = 0; n < count; n++)
+        {
+            std::string s;
+            for (int k = 0, v = n; k < len; k++, v /= 5)
+                s += alphabet[v % 5];
+            std::string got = TarNorm309(s.c_str());
+            total++;
+            if (got != TarNormRef396(s))
+                wrong++;
+            if (got.size() > s.size())
+                longer++;
+            if (!SalTarPathHasDotDotU8(s.c_str()))
+            {
+                std::string legacy(s.size() + 1, '\x7F');
+                TarNormLegacy396(s.c_str(), &legacy[0]);
+                if (got != std::string(legacy.c_str()))
+                    changed++;
+            }
+        }
+    }
+    CHECK(total == 19531);
+    CHECK(wrong == 0);
+    CHECK(changed == 0);
+    CHECK(longer == 0);
 }
 
 // feature 315: the Unpack dialog's defaults whole or not at all (salunpackdefault.h)
@@ -25913,6 +26048,7 @@ int main(int argc, char** argv)
     TestCpioLink310();
     TestCpioKeepsGroupMember394();
     TestEmptyNameData395();
+    TestTarDotDot396();
     TestUnpackDefault315();
     TestPackName318();
     TestPackName319();

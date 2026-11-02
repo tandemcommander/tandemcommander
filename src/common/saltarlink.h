@@ -23,10 +23,11 @@
 //
 // The name a link refers to is compared with member names after the same
 // normalization - SalTarNormalizeNameU8, the rule ReadArchiveHeader always used
-// for member names ("./a.txt" and "a.txt" are one name). That rule resolves ".."
-// wrongly ("x/../a.txt" becomes "x\a.txt" - legacy, member names too), so a link
-// name with a ".." component is never normalized or matched: such a link is
-// reported (SalTarPathHasDotDotU8), never copied from a guessed file.
+// for member names ("./a.txt" and "a.txt" are one name). A link name with a ".."
+// component is never normalized or matched: such a link is reported
+// (SalTarPathHasDotDotU8), never copied from a guessed file. (The legacy rule
+// resolved ".." wrongly - "x/../a.txt" became "x\a.txt"; feature 396 fixed it for
+// member names and kept this link rule, the conservative side.)
 //
 //*****************************************************************************
 
@@ -42,7 +43,7 @@
 // normalizes a path read from an archive: '/' and '\' become one '\', "." is dropped, ".." removes the
 // previous component (never above the root), a leading separator is dropped; a trailing separator is
 // kept (the caller reads it as "a folder"). 'dst' must hold strlen(src) + 1 bytes (the result is never
-// longer). Moved unchanged from CArchive::ReadArchiveHeader (feature 309).
+// longer). Moved from CArchive::ReadArchiveHeader (feature 309); ".." fixed by feature 396.
 inline void SalTarNormalizeNameU8(const char* src, char* dst)
 {
     char* const start = dst;
@@ -60,17 +61,16 @@ inline void SalTarNormalizeNameU8(const char* src, char* dst)
         case '.':
             if (*(src + 1) == '.' && (*(src + 2) == '\\' || *(src + 2) == '/' || *(src + 2) == '\0'))
             {
-                char* dstOld = dst;
-
-                // two dots - drop one directory level when possible
+                // two dots - drop the last component of the output, the whole of it (feature 396: the
+                // legacy walk kept its first byte when it was the first one - "sub/../a.txt" became
+                // "s\a.txt"); with nothing to drop the dots are ignored - never above the root
+                // (testAIX.tar from martin.pobitzer@gmx.at created on AIX starts with "../../empty")
                 if (dst > start)
-                    dst -= 2;
-                while ((dst > start) && (*dst != '\\'))
-                    dst--;
-                // testAIX.tar from martin.pobitzer@gmx.at created on AIX starts with path "../../empty"
-                if (dst < dstOld)
                 {
-                    dst++;
+                    if (*(dst - 1) == '\\')
+                        dst--; // the separator after the last component
+                    while (dst > start && *(dst - 1) != '\\')
+                        dst--;
                 }
                 src += 2;
                 break;

@@ -2396,8 +2396,9 @@ int CArchive::ReadArchiveHeader(SCommonHeader& header, BOOL probe)
     strcpy(header.Name, tmpName);
     free(tmpName);
     // feature 309: the name a link member refers to - decoded and normalized like the member's name,
-    // so "./a.txt" names the member "a.txt"; a name with a ".." component stays as written (the
-    // normalization resolves ".." wrongly): it matches no written member, so the link is reported
+    // so "./a.txt" names the member "a.txt"; a name with a ".." component stays as written (309: the
+    // normalization then resolved ".." wrongly; feature 396 fixed it and kept this rule - the safe
+    // side): it matches no written member, so the link is reported
     if (header.LinkType != 0 && header.LinkName != NULL)
     {
         if (!ConvertNameToU8(header.LinkName))

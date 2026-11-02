@@ -54,3 +54,46 @@ saltests pins the legacy result: `TarNorm309("sub/../a.txt") == "s\\a.txt"`.
   the root. Not refusing: `x/y/../b.txt` extracts right today and `../../empty` must stay `empty`.
 - 309's link rule unchanged (a link name with `..` stays reported) - the item says "may"; the
   conservative answer keeps it.
+
+## speckit-analyze
+
+0 CRITICAL, 0 HIGH, 0 MEDIUM. LOW accepted: C1 - a name resolving to nothing (`a/..`) is checked
+by saltests only (the caller path is 395's, its probe runs as regression); C2 - cpio / rpm / deb
+names are not driven by the new probe (one shared function and caller; 395's cpio probe runs).
+
+## Implementation
+
+- T002 (tests first, `src/saltests/saltests.cpp`): 309's pin `TarNorm309("sub/../a.txt")` now
+  `"a.txt"`; new `TestTarDotDot396` - 15 table checks (contract `contracts/name-rule.md`) and a brute
+  force over all 19,531 names of up to 6 characters from `a b . / \`: every result equals a reference
+  component-stack resolver (`TarNormRef396`), every name without a `..` component equals the legacy
+  loop copied into the test (`TarNormLegacy396`), no result is longer than its source. The first
+  reference forgot that `a/.` keeps the trailing separator (the caller's folder mark) - fixed before
+  the first run (it tracks "a separator followed the last kept component").
+- T003 negative control (`.\build.cmd` -> BUILD SUCCEEDED; saltests on the legacy rule):
+  `saltests: 30858 checks, 12 failed` - the 10 `..` table rows, `wrong == 0` and 309's pin.
+- T004 `src/common/saltarlink.h`: the `..` branch now steps back over the trailing `\` and walks back
+  while `dst[-1] != '\'` - the whole last component goes; with an empty output nothing happens
+  (never above the root). Comments of the file header and the function updated.
+- T005 `src/plugins/tar/untar.cpp`: comment only - 309's link rule kept.
+- T006 `.\build.cmd` -> BUILD SUCCEEDED (tar.spl rebuilt 11:27); `saltests: 30858 checks, 0 failed`.
+- clang-format (VS 2022 LLVM): `saltarlink.h` clean; the new saltests code clean (the remaining
+  diffs of `saltests.cpp` / `untar.cpp` are older code).
+
+## Measurement after
+
+```text
+powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\396-tar-dotdot-name\probe\run_after.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\396-tar-dotdot-name\probe\dotdot_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Label after -OutFile specs\396-tar-dotdot-name\probe\result_after.txt"
+```
+
+`probe/result_after.txt`: PASS 12, FAIL 0 (before 7 / 5) - UNP-ROOT-DEL 5 of 5 files, nothing
+asked, archive deleted; UNP-OVER-DEL `a.txt` = A and `s/a.txt` = S, no Overwrite question;
+UNP-GNU-DEL / UNP-PAX-DEL the long name at the root; UNP-LINK-DEL unchanged (one box naming
+`b.txt`, archive kept); COPY-ROOT 5 of 5 files (the Copy dialog now says "3 files and 2
+directories" - before "1 file and 4 directories"). Registry restored and identical.
+
+Regression probes (same build, label regress-396, `probe/regress_*.txt`): 306 30 / 0, 308 12 / 0,
+309 16 / 0, 395 46 / 0 - the numbers their fix-logs record.
+
+Encoding guard: `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+No UI string, dialog or resource changed - no `.slt` refresh.
