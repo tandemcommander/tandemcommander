@@ -7,8 +7,8 @@ area: encoding
 source: review:311
 who: agent
 created: 2026-10-22
-updated: 2026-10-22
-verified: -
+updated: 2026-11-02
+verified: 2026-11-02 58dcca07
 effort: S
 feature: -
 related: []
@@ -56,3 +56,4 @@ the field from bytes (ASCII digits) and is not affected. Probe driver: 311's
 
 - 2026-10-22 — created (source review:311)
 - 2026-10-22 — moved to Next position 29
+- 2026-11-02 — verified at 58dcca07: reproduced at 58dcca07: hidden-desktop probe, cafe-acute UTF-8 pre-filled as mojibake and not found, long UTF-8 selections refused as too long (4 FAIL)

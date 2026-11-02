@@ -1,0 +1,19 @@
+seed_probe (viewer Find pre-fill) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-02 12:31; ACP 1250; registry key existed True
+
+u8-word    RUN    FAIL        pre-filled 'caf\u0102\u00A9' [U+0063 U+0061 U+0066 U+0102 U+00A9] (expected [U+0063 U+0061 U+0066 U+00E9]); asked after OK: [#32770 'Find'] Cannot find the string 'caf\u0102\u00A9'. |; Find again pre-filled 'caf\u0102\u00A9' [U+0063 U+0061 U+0066 U+0102 U+00A9]
+u8-word    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+u8-long    RUN    FAIL        pre-filled 'aaaaaaaa...aaaaaaa\u0102' [200 units, 201 UTF-8 bytes, ends U+0061 U+0061 U+0061 U+0102] (expected [199 units, 199 UTF-8 bytes, ends U+0061 U+0061 U+0061 U+0061]); asked after OK: [#32770 'Error'] The path specified is too long. |; Find again pre-filled 'aaaaaaaa...aaaaaaa\u0102' [200 units, 201 UTF-8 bytes, ends U+0061 U+0061 U+0061 U+0102]
+u8-long    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+u8-cjk     RUN    FAIL        pre-filled '\u00E4\u00B8\u0081\u00E4\u00B8\u201A\u00E4\u00B8...\u00E4\u0105\u0081\u00E4\u0105\u201A\u00E4\u0105' [200 units, 418 UTF-8 bytes, ends U+0105 U+201A U+00E4 U+0105] (expected [66 units, 198 UTF-8 bytes, ends U+4E3F U+4E40 U+4E41 U+4E42]); asked after OK: [#32770 'Error'] The path specified is too long. |; Find again pre-filled '\u00E4\u00B8\u0081\u00E4\u00B8\u201A\u00E4\u00B8...\u00E4\u0105\u0081\u00E4\u0105\u201A\u00E4\u0105' [200 units, 418 UTF-8 bytes, ends U+0105 U+201A U+00E4 U+0105]
+u8-cjk     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+u8-astral  RUN    FAIL        pre-filled 'aaaaaaaa...aaaaaa\u0111\u017A' [200 units, 202 UTF-8 bytes, ends U+0061 U+0061 U+0111 U+017A] (expected [198 units, 198 UTF-8 bytes, ends U+0061 U+0061 U+0061 U+0061]); asked after OK: [#32770 'Error'] The path specified is too long. |; Find again pre-filled 'aaaaaaaa...aaaaaa\u0111\u017A' [200 units, 202 UTF-8 bytes, ends U+0061 U+0061 U+0111 U+017A]
+u8-astral  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+legacy     RUN    PASS        pre-filled 'caf\u00E9' [U+0063 U+0061 U+0066 U+00E9] (expected [U+0063 U+0061 U+0066 U+00E9]); asked after OK: [#32770 'Find'] Cannot find the string 'caf\u00E9'. |; Find again pre-filled 'caf\u00E9' [U+0063 U+0061 U+0066 U+00E9] (search answer recorded only)
+legacy     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+hex        RUN    PASS        asked after searching 63: nothing; Select All + Find pre-filled '63 61 66 C3 A9' (expected '63 61 66 C3 A9')
+hex        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4 / after 001410973F3242ABE7DB526FF3477A0A62CB4AE35860F79808C9A149996220B4
+
+Rows: PASS 8, FAIL 4, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
