@@ -1,1 +1,0 @@
-NOT RUN: tandemcommander.exe already runs: 39100 C:\Program Files\Tandem Commander\tandemcommander.exe

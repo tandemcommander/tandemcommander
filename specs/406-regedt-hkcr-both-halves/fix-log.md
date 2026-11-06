@@ -88,4 +88,31 @@ drop) and Quick Rename (`fs3.cpp`).
 Interruption: after the English run the maintainer started the installed Tandem Commander and this
 build's Debug exe on the real desktop (0:13); the probes refuse while any instance runs (they share
 the registry key) and the Debug exe locks `regedt.spl` (LNK1168 during the negative control's build).
-The run waits for them to close; never stopped by the run.
+The run waited for them to close (they closed at ~0:15; never stopped by the run), then rebuilt
+(`.uild.cmd` BUILD SUCCEEDED; `fs5.obj` / `regedt.spl` 0:15:34-35, after the header was restored
+at 0:14:27 - the negative control's objects are gone) and ran the final series on that binary.
+
+## Final probe series (runner `%TEMP%	cmeasureun_all.ps1`, hidden desktop, not elevated)
+
+| Probe | Result |
+|---|---|
+| `hkcr406_probe.ps1` English (`hkcr406_after.txt`, log `result_hkcr406_en.txt`) | 16 PASS / 0 FAIL / 0 NOT DRIVEN |
+| `hkcr406_probe.ps1` Czech (`hkcr406_after_czech.txt`, `result_hkcr406_cs.txt`) | 16 / 0 / 0 (Skip found by id) |
+| 390 `hkcr390_probe.ps1` (`hkcr390_probe_on406.txt`) | 10 / 0 / 0 |
+| 292 `alias292_probe.ps1` | 33 / 0 / 0 |
+| 294 `above294_probe.ps1` | 24 / 0 / 0 |
+| 296 `link296_probe.ps1` | 47 / 0 / 0 |
+| 297 `link297_probe.ps1` | 40 / 0 / 0 |
+
+Registry restored identical after every run (B90B4B77...6EC44; the hash differs from the earlier
+runs because the maintainer's instances saved their settings when they closed). The superseded logs
+`result_after.txt` (13-row run) and `result_after_czech.txt` (NOT RUN, the maintainer's instance
+was open) were removed.
+
+## NOT DRIVEN / owed to a person
+
+- The elevated Move (both halves really removed; the (50) refusal of a hidden machine value at the
+  top key) - the probe never runs elevated (it would delete a real machine key): a line of the
+  release checklist `manual-checks-owed-before-the-next-release` (feature 406).
+- A class name that differs between the halves - by reading (PowerShell cannot set a key's class).
+- Quick Rename of a both-halves HKCR key - by reading (research R4).
