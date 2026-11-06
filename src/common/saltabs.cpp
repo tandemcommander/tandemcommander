@@ -550,6 +550,11 @@ BOOL SalTabMenuCanNewAsOther(BOOL otherHasLocation)
     return otherHasLocation ? TRUE : FALSE;
 }
 
+BOOL SalTabArmDragAfterSwitch(BOOL downAtPress, BOOL downAfterSwitch)
+{
+    return (downAtPress && !downAfterSwitch) ? FALSE : TRUE;
+}
+
 static BOOL SalTabIsFsNameChar(char c)
 {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||

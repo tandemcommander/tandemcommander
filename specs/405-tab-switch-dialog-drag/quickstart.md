@@ -12,7 +12,7 @@ Prerequisites: no Tandem Commander instance running (the probes share the regist
 
    Expected: START, SEAM, RELEASED, NOBUTTON, HELD PASS; REAL-FTP NOT DRIVEN; registry restored and identical.
    Before the fix (`result_before.txt`): RELEASED, NOBUTTON FAIL (capture held after the box; the tab moved).
-4. Regression: the same runner with `specs\404-panel-tabs-rounded-look\probe\tabs404_probe.ps1 ... -Only MOUSE,MENU,FALLBACK` -> every row PASS (REFUSED NOT DRIVEN).
+4. Regression: the same runner with `specs\404-panel-tabs-rounded-look\probe\tabs404_probe.ps1 ... -Label after405` (all rows) -> 29 PASS / 0 FAIL / 1 NOT DRIVEN (REFUSED).
 5. Person (release checklist): with a real mouse and an FTP connection in a tab, click another tab of the
    same panel, answer the FTP question with the mouse (keep the connection), move the mouse over the strip
    -> no insert mark, the next click goes where it is clicked, no tab moves.

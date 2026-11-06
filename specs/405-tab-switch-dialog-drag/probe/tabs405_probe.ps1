@@ -300,8 +300,8 @@ function Run-Switch {
         Start-Sleep -Milliseconds 700
         $s = Snap $id
         $L = Leaves $s.L
-        $moved = ($L.Count -eq 5 -and $ix -gt 0 -and $L[0] -ne 'A' -and $L[1] -eq 'A')
-        Row 'SWITCH' 'HELD' (V ($p.Box -and $p.Captured -and $moved)) ($p.Text + '; then held onto A and released: ' + (Desc $s))
+        $moved = ($L.Count -eq 5 -and $ix -gt 1 -and $s.L.Active -lt $ix)   # the dragged tab (active) left of its old place (the strip clamps at its left end: slot 0 or 1)
+        Row 'SWITCH' 'HELD' (V ($p.Box -and $p.Captured -and $moved)) ($p.Text + ("; then held from index {0} onto A and released: " -f $ix) + (Desc $s))
         Row 'SWITCH' 'REAL-FTP' 'NOT DRIVEN' 'the real FTP leave question with a real mouse needs an input desktop and a server (release checklist)'
     }
     catch { Row 'SWITCH' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }

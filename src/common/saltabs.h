@@ -203,6 +203,13 @@ BOOL SalTabMenuCanMoveToOther(BOOL onTab, int count, BOOL otherShowsTabs);
 // New Tab as Other Panel: the other panel has a location to give
 BOOL SalTabMenuCanNewAsOther(BOOL otherHasLocation);
 
+// feature 405: after a press on a tab switched the panel, may the strip arm a drag (and take the
+// capture)? 'downAtPress' / 'downAfterSwitch' = the left button's synchronous state (GetKeyState)
+// when the press was handled / when the switch returned. FALSE only when the button was held at the
+// press and is no longer held: a window of the switch (the FTP leave question, an error box) took the
+// button-up. A press without a recorded button state (a posted message) arms as before
+BOOL SalTabArmDragAfterSwitch(BOOL downAtPress, BOOL downAfterSwitch);
+
 // the kind of a tab's location for its icon
 #define SAL_TAB_KIND_UNKNOWN -1 // not derived yet
 #define SAL_TAB_KIND_FOLDER 0

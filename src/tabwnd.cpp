@@ -1135,6 +1135,14 @@ void CTabWindow::Paint(HDC hdc)
 
 void CTabWindow::OnLButtonDown(int x, int y)
 {
+    // feature 405: the button state when this press is handled (GetKeyState follows the messages this
+    // thread has read; a posted press leaves it "up")
+    BOOL downAtPress = (GetKeyState(VK_LBUTTON) & 0x8000) != 0;
+    // a gesture still pending at a new press lost its button-up (e.g. to a dialog): give it up first,
+    // so its capture never swallows this press (feature 405)
+    if (WaitForDrag || Dragging || PressedClose >= 0)
+        CancelGesture();
+
     int part;
     int index = HitTest(x, y, &part);
     if (part == tspNone)
@@ -1180,7 +1188,11 @@ void CTabWindow::OnLButtonDown(int x, int y)
     {
         if (index != FilesWindow->Tabs.ActiveIndex)
             FilesWindow->SwitchToTab(index);
-        if (FilesWindow->Tabs.Count() > 1 && HWindow != NULL && index < FilesWindow->Tabs.Count())
+        // feature 405 (GitHub issue #22): a window of the switch (the FTP leave question, an error box)
+        // took the button-up - no drag without the button, and no capture left behind
+        BOOL downAfterSwitch = (GetKeyState(VK_LBUTTON) & 0x8000) != 0;
+        if (SalTabArmDragAfterSwitch(downAtPress, downAfterSwitch) &&
+            FilesWindow->Tabs.Count() > 1 && HWindow != NULL && index < FilesWindow->Tabs.Count())
         {
             Layout();
             RECT r;

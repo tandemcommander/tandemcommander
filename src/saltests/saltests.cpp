@@ -2436,6 +2436,17 @@ static void TestTabStrip404()
     CHECK(!SalTabLocationsSame(NULL, "C:\\"));
 }
 
+// feature 405: a tab switch whose window took the button-up never arms a drag (GitHub issue #22)
+static void TestTabStrip405()
+{
+    CHECK(SalTabArmDragAfterSwitch(TRUE, TRUE));        // held through the switch: a real drag
+    CHECK(!SalTabArmDragAfterSwitch(TRUE, FALSE));      // the button went up during the switch (a dialog took it)
+    CHECK(SalTabArmDragAfterSwitch(FALSE, FALSE));      // no recorded state (a posted press): as before
+    CHECK(SalTabArmDragAfterSwitch(FALSE, TRUE));
+    CHECK(SalTabArmDragAfterSwitch(2, 0x8000) == TRUE); // any non-zero is "down"
+    CHECK(SalTabArmDragAfterSwitch(0x8000, 0) == FALSE);
+}
+
 // feature 079: crash report file name (src/common/salbugreport.cpp), contracts/crash-report.md C2
 static void TestBugReport079()
 {
@@ -27235,6 +27246,7 @@ int main(int argc, char** argv)
     TestPanelTabs078();
     TestTabKeys312();
     TestTabStrip404();
+    TestTabStrip405();
     TestBugReport079();
     TestCloseApp080();
     TestSevenZipList084();

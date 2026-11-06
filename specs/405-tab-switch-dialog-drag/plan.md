@@ -24,7 +24,7 @@ pending before it handles a new press.
 **Language/Version**: C++20 (MSVC v143), pure WinAPI
 **Primary Dependencies**: none new
 **Storage**: none (no registry change)
-**Testing**: `saltests` (new checks in `TestTabStrip405`), GUI probe `specs/405-tab-switch-dialog-drag/probe/tabs405_probe.ps1`, regression probe `specs/404-panel-tabs-rounded-look/probe/tabs404_probe.ps1 -Only MOUSE,MENU,FALLBACK`
+**Testing**: `saltests` (new checks in `TestTabStrip405`), GUI probe `specs/405-tab-switch-dialog-drag/probe/tabs405_probe.ps1`, regression probe `specs/404-panel-tabs-rounded-look/probe/tabs404_probe.ps1` (all rows)
 **Target Platform**: Windows 11 x64
 **Project Type**: desktop application (core `salamand`)
 **Performance Goals**: n/a (two `GetKeyState` calls per click)

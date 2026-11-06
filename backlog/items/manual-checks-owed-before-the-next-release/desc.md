@@ -43,6 +43,7 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Close on release with a real mouse: pressing a tab's X shows it pressed and does not switch the tab; releasing over the X closes it, releasing elsewhere closes nothing (feature 404)
 - [ ] Panel tab strip at 125 % and 150 % display scaling and under Windows High Contrast: metrics scale, icons sharp, texts readable (feature 404)
 - [ ] Tab context menu: *Move to Other Panel* moves a folder tab and an SFTP tab (a second connection opens in the other panel, the first closes); *New Tab as Other Panel* opens the other panel's location; both greyed where the contract says (single tab, empty strip) (feature 404)
+- [ ] Tab switch that asks a question, with a real mouse (GitHub issue #22): with an FTP connection in one tab of a panel, click another tab of the same panel, answer the FTP question with the mouse (*keep the connection*), then move the mouse over the strip and click a file in the panel -> no insert mark follows the mouse, the click goes to the panel, no tab moves; a tab dragged with the button held still moves (feature 405)
 
 ## Log
 
@@ -50,3 +51,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-06 — body written: the release checklist runs append to (maintainer rule 2026-11-06)
 - 2026-11-06 — moved to Person steps position 1
 - 2026-11-06 — feature 404: 5 checks of the variant F tab strip
+- 2026-11-06 — feature 405: 1 check of a tab switch that shows a question
