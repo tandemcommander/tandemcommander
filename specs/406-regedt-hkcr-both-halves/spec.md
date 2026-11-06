@@ -22,6 +22,14 @@ on the build of 8bb3c295: no message at all, the copy is complete, the user's ha
 deleted, the machine's half is left - a partial Move reported as success, **even without
 elevation** (6 PASS / 7 FAIL). Feature 390 fixed the case of a key held by one half only.
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: When the machine's half cannot be deleted, should the user's half still be deleted? → A: No - the machine's half is deleted first; when it fails or is refused, nothing of that key is deleted (the merged view of the source stays as it was), the box tells which key and why (autonomous run: conservative)
+- Q: Does the hidden-value check (FR-003) also apply to a key held only by the machine's half (feature 390)? → A: No - 390's case had no user's half before the copy, so the copy holds all of it; 390's behaviour stays unchanged (autonomous run: rule - FR-006, keep the existing behaviour for every case the item does not name)
+- Q: Are two values "the same" when their text differs only in letter case or a trailing NUL? → A: No - same type, same size, same bytes; anything else counts as hidden (refuses more, never deletes data not copied) (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A Move of a key held by both halves is complete or says why not (Priority: P1)
