@@ -28,27 +28,27 @@ Last triaged: 2026-11-06
 | 4 | [Find: clicking a result column again does not reverse the sort order](items/nefunkcni-prepinani-razeni-vysledku-hledani/desc.md) | bug | 4 | panels-ui | agent | S | open |
 | 5 | [Markdown Viewer: a button to copy a code block to the clipboard](items/drobna-uprava-markdown-preview/desc.md) | feature | 3 | other-plugins | both | M | open |
 | 6 | [The mask hints link is clipped in translated dialogs (Compare Directories and 10 more)](items/porovnani-adresaru/desc.md) | bug | 3 | translations | both | S | open |
-| 7 | [ISO plug-in: an ISO 9660 folder met again is listed empty and the image deleted](items/iso-plug-in-an-iso-9660-folder-met-again-is-listed-empty-and/desc.md) | bug | 5 | archives | agent | S | open |
-| 8 | [ISO plug-in: NRG audio track names are listed without cleaning or UTF-8 conversion](items/iso-plug-in-nrg-audio-track-names-are-listed-without/desc.md) | bug | 4 | archives | agent | S | open |
-| 9 | [ISO plug-in: HFS+ hard links extract as empty files, their data under iNode names](items/iso-plug-in-hfs-hard-links-extract-as-empty-files-their-data/desc.md) | bug | 4 | archives | agent | M | open |
-| 10 | [FTP: a panel is not refreshed after a change made under another name of its server](items/ftp-panel-refresh-misses-change-under-another-name/desc.md) | bug | 4 | ftp | agent | S | open |
-| 11 | [Run lock update and release fail when a reader holds the lock open](items/run-lock-update-release-no-retry/desc.md) | bug | 4 | tooling | agent | S | open |
-| 12 | [Plug-in hot keys on F-keys never run; F-keys run commands bound to letters](items/plug-in-hot-keys-on-f-keys-never-run-f-keys-run-commands/desc.md) | bug | 4 | panels-ui | agent | S | open |
-| 13 | [ISO plug-in: an NRG ETNF chunk claiming a huge size allocates it whole](items/iso-plug-in-an-nrg-etnf-chunk-claiming-a-huge-size/desc.md) | bug | 4 | archives | agent | S | open |
-| 14 | [ISO plug-in: NRG CUEX index records are paired into wrong tracks](items/iso-plug-in-nrg-cuex-index-records-are-paired-into-wrong/desc.md) | bug | 4 | archives | agent | M | open |
-| 15 | [ISO plug-in: a UDF image with data past its VAT does not open although the VAT is in the file](items/iso-plug-in-a-udf-image-with-data-past-its-vat-does-not-open/desc.md) | improvement | 4 | archives | agent | M | open |
-| 16 | [ISO plug-in: a raw 2352-byte-sector dump of a UDF VAT disc does not open](items/iso-plug-in-a-raw-2352-byte-sector-dump-of-a-udf-vat-disc/desc.md) | bug | 4 | archives | agent | S | open |
-| 17 | [ISO plug-in: an NRG image of Nero v1 (NERO footer) is opened without its track table](items/iso-plug-in-an-nrg-image-of-nero-v1-nero-footer-is-opened/desc.md) | bug | 4 | archives | agent | M | open |
-| 18 | [ISO plug-in: a failed NRG table read leaves its tracks for the plain-image fallback](items/iso-plug-in-a-failed-nrg-table-read-leaves-its-tracks-for/desc.md) | bug | 4 | archives | agent | S | open |
-| 19 | [ISO plug-in: an NRG DAOX chunk applies track entries read past its own end](items/iso-plug-in-an-nrg-daox-chunk-applies-track-entries-read/desc.md) | bug | 4 | archives | agent | S | open |
-| 20 | [ISO plug-in: an ISO 9660 + UDF image written by Windows is kept after a whole unpack](items/iso-plug-in-an-iso-9660-udf-image-written-by-windows-is-kept/desc.md) | bug | 4 | archives | agent | S | open |
-| 21 | [TAR: a name with an unpaired surrogate stored as WTF-8 is read as another name](items/tar-wtf8-names-read-in-code-page/desc.md) | bug | 4 | archives | agent | M | open |
-| 22 | [UnCAB: a cabinet whose entry name is refused fails without any message](items/uncab-a-cabinet-whose-entry-name-is-refused-fails-without/desc.md) | bug | 4 | archives | agent | S | open |
-| 23 | [A path typed into an archive opens another letter equal only by the byte fold](items/archive-path-typed-opens-another-letter-equal-by-byte-fold/desc.md) | bug | 4 | archives | agent | M | open |
-| 24 | [Environment variables passed to the program arrive as question marks outside the code page](items/environment-variables-passed-to-the-program-arrive-as/desc.md) | bug | 4 | encoding | agent | M | open |
-| 25 | [Filter dialog cannot switch off a panel filter longer than 259 bytes](items/filter-dialog-cannot-switch-off-a-panel-filter-longer-than/desc.md) | bug | 4 | long-paths | agent | S | open |
-| 26 | [A binary cpio member in the last 512 bytes of the archive is not recognised](items/a-binary-cpio-member-in-the-last-512-bytes-of-the-archive-is/desc.md) | bug | 4 | archives | agent | S | open |
-| 27 | [Viewer Find does not find non-ASCII text in a file shown in a code page](items/viewer-find-does-not-find-non-ascii-text-in-a-file-shown-in/desc.md) | bug | 4 | encoding | agent | M | open |
+| 7 | [FTP: a panel is not refreshed after a change made under another name of its server](items/ftp-panel-refresh-misses-change-under-another-name/desc.md) | bug | 4 | ftp | agent | S | open |
+| 8 | [Run lock update and release fail when a reader holds the lock open](items/run-lock-update-release-no-retry/desc.md) | bug | 4 | tooling | agent | S | open |
+| 9 | [Plug-in hot keys on F-keys never run; F-keys run commands bound to letters](items/plug-in-hot-keys-on-f-keys-never-run-f-keys-run-commands/desc.md) | bug | 4 | panels-ui | agent | S | open |
+| 10 | [Environment variables passed to the program arrive as question marks outside the code page](items/environment-variables-passed-to-the-program-arrive-as/desc.md) | bug | 4 | encoding | agent | M | open |
+| 11 | [Viewer Find does not find non-ASCII text in a file shown in a code page](items/viewer-find-does-not-find-non-ascii-text-in-a-file-shown-in/desc.md) | bug | 4 | encoding | agent | M | open |
+| 12 | [Filter dialog cannot switch off a panel filter longer than 259 bytes](items/filter-dialog-cannot-switch-off-a-panel-filter-longer-than/desc.md) | bug | 4 | long-paths | agent | S | open |
+| 13 | [ISO plug-in: an ISO 9660 folder met again is listed empty and the image deleted](items/iso-plug-in-an-iso-9660-folder-met-again-is-listed-empty-and/desc.md) | bug | 5 | archives | agent | S | open |
+| 14 | [ISO plug-in: NRG audio track names are listed without cleaning or UTF-8 conversion](items/iso-plug-in-nrg-audio-track-names-are-listed-without/desc.md) | bug | 4 | archives | agent | S | open |
+| 15 | [ISO plug-in: HFS+ hard links extract as empty files, their data under iNode names](items/iso-plug-in-hfs-hard-links-extract-as-empty-files-their-data/desc.md) | bug | 4 | archives | agent | M | open |
+| 16 | [ISO plug-in: an NRG ETNF chunk claiming a huge size allocates it whole](items/iso-plug-in-an-nrg-etnf-chunk-claiming-a-huge-size/desc.md) | bug | 4 | archives | agent | S | open |
+| 17 | [ISO plug-in: NRG CUEX index records are paired into wrong tracks](items/iso-plug-in-nrg-cuex-index-records-are-paired-into-wrong/desc.md) | bug | 4 | archives | agent | M | open |
+| 18 | [ISO plug-in: a UDF image with data past its VAT does not open although the VAT is in the file](items/iso-plug-in-a-udf-image-with-data-past-its-vat-does-not-open/desc.md) | improvement | 4 | archives | agent | M | open |
+| 19 | [ISO plug-in: a raw 2352-byte-sector dump of a UDF VAT disc does not open](items/iso-plug-in-a-raw-2352-byte-sector-dump-of-a-udf-vat-disc/desc.md) | bug | 4 | archives | agent | S | open |
+| 20 | [ISO plug-in: an NRG image of Nero v1 (NERO footer) is opened without its track table](items/iso-plug-in-an-nrg-image-of-nero-v1-nero-footer-is-opened/desc.md) | bug | 4 | archives | agent | M | open |
+| 21 | [ISO plug-in: a failed NRG table read leaves its tracks for the plain-image fallback](items/iso-plug-in-a-failed-nrg-table-read-leaves-its-tracks-for/desc.md) | bug | 4 | archives | agent | S | open |
+| 22 | [ISO plug-in: an NRG DAOX chunk applies track entries read past its own end](items/iso-plug-in-an-nrg-daox-chunk-applies-track-entries-read/desc.md) | bug | 4 | archives | agent | S | open |
+| 23 | [ISO plug-in: an ISO 9660 + UDF image written by Windows is kept after a whole unpack](items/iso-plug-in-an-iso-9660-udf-image-written-by-windows-is-kept/desc.md) | bug | 4 | archives | agent | S | open |
+| 24 | [TAR: a name with an unpaired surrogate stored as WTF-8 is read as another name](items/tar-wtf8-names-read-in-code-page/desc.md) | bug | 4 | archives | agent | M | open |
+| 25 | [UnCAB: a cabinet whose entry name is refused fails without any message](items/uncab-a-cabinet-whose-entry-name-is-refused-fails-without/desc.md) | bug | 4 | archives | agent | S | open |
+| 26 | [A path typed into an archive opens another letter equal only by the byte fold](items/archive-path-typed-opens-another-letter-equal-by-byte-fold/desc.md) | bug | 4 | archives | agent | M | open |
+| 27 | [A binary cpio member in the last 512 bytes of the archive is not recognised](items/a-binary-cpio-member-in-the-last-512-bytes-of-the-archive-is/desc.md) | bug | 4 | archives | agent | S | open |
 | 28 | [ISO plug-in: a crafted image of folders naming one directory with many lengths lists slowly](items/iso-plug-in-a-crafted-image-of-folders-naming-one-directory/desc.md) | bug | 4 | archives | agent | M | open |
 | 29 | [Renamer: a new name is capped at 259 bytes; a subfolder item refused at 260](items/renamer-long-new-name-limits/desc.md) | bug | 3 | long-paths | agent | M | open |
 | 30 | [winget: offer a per-user install (--scope user), proven in Windows Sandbox first](items/winget-per-user-scope-entry/desc.md) | improvement | 3 | build-release | both | M | open |
