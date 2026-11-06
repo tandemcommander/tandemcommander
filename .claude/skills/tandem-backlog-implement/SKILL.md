@@ -178,7 +178,7 @@ Then establish **at HEAD** whether the defect or gap still exists:
 | not present, **fixed**: you can name the feature or commit that fixed it (`git log -S`, FEATURE-HISTORY) **and** confirm it — the fix's diff touches the *Evidence* site, or the defect reproduces at the parent of that commit — or the code it describes is gone. Then a refute-first check: one Agent (`general-purpose`) given the item's *Problem* / *Evidence* and your finding, asked to show the defect still reachable at HEAD; it shows it → row "still present" | **close it**: `BL verify <SLUG> --note 'not reproduced: <short>'` → a `github#N` item: first a `person-step` item (§0.9, `--who person`, `--source leftover:<NNN of the feature that fixed it>`, else `manual`; *Evidence* cites the issue) titled `Answer GitHub issue #N: <short>`, its *Steps* the answer to post and the issue to close, with the draft in its body (the item's `reply.md` when it holds more than the import placeholder, else written now), and `PERSON` = that slug → `BL remove <SLUG> --reason 'not reproduced at <HEAD0>: <fixed by NNN / commit <hash> / code gone: …>, confirmed by <how>; agent YYYY-MM-DD'` → `BL run-log --outcome not-reproduced --slug <SLUG> --inbox <INBOX> --person '<PERSON>' --note '<one line>'` → `BL check` (TOTAL: 0) → `git add backlog` → commit `backlog: <SLUG> closed - not reproduced at <HEAD0>` → `BL lock release --slug <SLUG>` → end `not-reproduced` |
 | not present, but no fix can be named, or only unreachable in the shipped configuration (an `off` plug-in or language, a guard that hides it — switching it on is the maintainer's, stop-rules §1 *Shipping*) | `BL verify <SLUG> --note 'not reproduced: <short>'` → `BL block <SLUG> --reason 'not reproduced at <HEAD0>: <cause unknown / unreachable because …>'` → `BL run-log --outcome not-reproduced --slug <SLUG> --note '<one line>'` → `BL check` (TOTAL: 0) → `git add backlog` → commit `backlog: <SLUG> not reproduced at <HEAD0>` → `BL lock release --slug <SLUG>` → end `not-reproduced` (no person-step item) |
 | needs a person to tell | stop (step 10, no branch): a `person-step` item with the exact check; reason `needs a person to confirm: <what>` |
-| larger than one feature | stop (step 10, no branch) with outcome `split`: one new item per part |
+| larger than one feature | **almost never a stop.** A large item is implemented as **one** feature: more commits and a longer run, never a reason to split. Split (stop, step 10, no branch, outcome `split`) **only in the extreme case** of `stop-rules.md` row 5 — every condition there holds, and the reason names the concrete one. In doubt: implement it whole |
 | a maintainer-owned question (stop-rules §1) | stop (step 10, no branch): a `decision` item |
 
 ## 4. Specify — the branch, the number, the spec folder
@@ -586,8 +586,9 @@ Whenever stop-rules §3 or a step above says "step 10".
    - a maintainer-owned question → `--type decision`, *Question* /
      *Options* (with consequences) / *Recommendation*, `--related <SLUG>`;
    - needs a person → `--type person-step --who person`, *Steps*;
-   - too large → one item per part, each one feature's worth,
-     `--related <SLUG>`.
+   - a split (only by `stop-rules.md` row 5) → **two or three** items,
+     each one feature's worth, `--related <SLUG>`; each part's *Notes*
+     says `Part of a split of <SLUG>; never split again.`
    Source `measure:<NNN>`, or `manual` when no number exists yet.
 4. `BL block <SLUG> --reason '<reason> (feature <NNN>, branch <BRANCH>)'`
    (without a branch: just the reason). **A split closes the item
