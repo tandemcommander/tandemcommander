@@ -1,19 +1,19 @@
 ---
 title: Ctrl+X ghosts a name in the other panel that shows a case twin folder
 type: bug
-status: open
+status: parked
 severity: 2
 area: panels-ui
 source: review:261
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Ctrl+X ghosts a name in the other panel that shows a case twin folder
@@ -43,3 +43,4 @@ or a seam.
 
 - 2026-10-20 — created (source review:261)
 - 2026-10-20 — moved to Next position 61
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

@@ -1,19 +1,19 @@
 ---
 title: SFTP: a folder uploaded again whose files are all there ends with a misleading folder box
 type: improvement
-status: open
+status: parked
 severity: 2
 area: sftp
 source: review:279
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # SFTP: a folder uploaded again whose files are all there ends with a misleading folder box
@@ -42,3 +42,4 @@ Severity 2: the wording of a box and one box too many; no data at risk.
 
 - 2026-10-21 — created (source review:279)
 - 2026-10-21 — moved to Next position 95
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

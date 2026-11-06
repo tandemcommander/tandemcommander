@@ -1,19 +1,19 @@
 ---
 title: Mask syntax error selects the wrong characters in a non-ASCII mask
 type: bug
-status: open
+status: parked
 severity: 2
 area: encoding
 source: review:392
 who: agent
 created: 2026-11-02
-updated: 2026-11-02
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Mask syntax error selects the wrong characters in a non-ASCII mask
@@ -54,3 +54,4 @@ ten accented letters followed by `|`, OK, read the selection (`EM_GETSEL`).
 
 - 2026-11-02 — created (source review:392)
 - 2026-11-02 — moved to Next position 135
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

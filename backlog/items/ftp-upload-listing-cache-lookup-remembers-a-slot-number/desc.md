@@ -1,19 +1,19 @@
 ---
 title: FTP: upload listing cache lookup remembers a slot number instead of the listing index
 type: tech-debt
-status: open
+status: parked
 severity: 1
 area: ftp
 source: review:385
 who: agent
 created: 2026-11-02
-updated: 2026-11-02
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # FTP: upload listing cache lookup remembers a slot number instead of the listing index
@@ -38,3 +38,4 @@ Severity 1: internal tidiness - the lookup still returns the right listing; it o
 
 - 2026-11-02 — created (source review:385)
 - 2026-11-02 — moved to Next
+- 2026-11-06 — moved to Parked: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

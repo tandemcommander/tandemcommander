@@ -1,19 +1,19 @@
 ---
 title: CLAUDE.md names a branch ai-main that does not exist
 type: tech-debt
-status: open
+status: parked
 severity: 1
 area: help-docs
 source: measure:242
 who: both
 created: 2026-10-17
-updated: 2026-10-17
+updated: 2026-11-06
 verified: 2026-10-17 7993914c
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # CLAUDE.md names a branch ai-main that does not exist
@@ -37,3 +37,4 @@ Ask the maintainer (or check `git ls-remote origin`), then correct the line.
 ## Log
 
 - 2026-10-17 — migrated from the consolidation of the migration parts (feature 242)
+- 2026-11-06 — moved to Parked: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

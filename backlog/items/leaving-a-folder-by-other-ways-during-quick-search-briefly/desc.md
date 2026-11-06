@@ -1,19 +1,19 @@
 ---
 title: Leaving a folder by other ways during quick search briefly shows the whole folder
 type: bug
-status: open
+status: parked
 severity: 2
 area: panels-ui
 source: measure:376
 who: agent
 created: 2026-11-01
-updated: 2026-11-01
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Leaving a folder by other ways during quick search briefly shows the whole folder
@@ -35,3 +35,4 @@ Every way of leaving a folder while quick search filters it goes from the filter
 - 2026-11-01 — created (source measure:376)
 - 2026-11-01 — related item opening-a-folder-found-by-quick-search-briefly-shows-the done in feature 376
 - 2026-11-01 — moved to Next position 131
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

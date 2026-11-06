@@ -1,19 +1,19 @@
 ---
 title: The question whether to create a missing folder cuts a long path inside a letter
 type: bug
-status: open
+status: parked
 severity: 2
 area: long-paths
 source: review:274
 who: agent
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # The question whether to create a missing folder cuts a long path inside a letter
@@ -34,3 +34,4 @@ The question shows the whole path, or a shortened one that ends at a whole lette
 
 - 2026-10-21 — created (source review:274)
 - 2026-10-21 — moved to Next position 102
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

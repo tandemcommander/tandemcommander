@@ -1,19 +1,19 @@
 ---
 title: Loop tool tests leave a temporary git folder behind on every test
 type: tech-debt
-status: open
+status: parked
 severity: 1
 area: tooling
 source: measure:265
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Loop tool tests leave a temporary git folder behind on every test
@@ -58,3 +58,4 @@ can be deleted by hand (not done by the run that found them).
 
 - 2026-10-20 — created (source measure:265)
 - 2026-10-20 — moved to Next
+- 2026-11-06 — moved to Parked: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

@@ -1,19 +1,19 @@
 ---
 title: Plug-in interface does not say that column names are code-page text
 type: tech-debt
-status: open
+status: parked
 severity: 1
 area: plugin-api
 source: review:248
 who: agent
 created: 2026-10-19
-updated: 2026-10-20
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: [desktop-view-folders-plug-in-repeats-its-shell-columns-after]
 depends-on: []
-reason: -
+reason: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Plug-in interface does not say that column names are code-page text
@@ -56,3 +56,4 @@ maintainer may do it or allow it.
 
 - 2026-10-19 — created (source review:248)
 - 2026-10-20 — moved to Next
+- 2026-11-06 — moved to Parked: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

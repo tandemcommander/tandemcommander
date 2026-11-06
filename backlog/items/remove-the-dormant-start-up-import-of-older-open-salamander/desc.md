@@ -1,19 +1,19 @@
 ---
 title: Remove the dormant start-up import of older Open Salamander configurations
 type: tech-debt
-status: open
+status: parked
 severity: 2
 area: data-safety
 source: measure:245
 who: agent
 created: 2026-10-18
-updated: 2026-10-19
+updated: 2026-11-06
 verified: -
 effort: M
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Remove the dormant start-up import of older Open Salamander configurations
@@ -34,3 +34,4 @@ The dead start-up import path is removed (or reduced to what the single root nee
 
 - 2026-10-18 — created (source measure:245)
 - 2026-10-19 — moved to Next position 64
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

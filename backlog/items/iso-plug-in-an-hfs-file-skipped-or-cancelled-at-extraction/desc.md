@@ -1,19 +1,19 @@
 ---
 title: ISO plug-in: an HFS+ file skipped or cancelled at extraction leaks its read buffer
 type: bug
-status: open
+status: parked
 severity: 2
 area: other-plugins
 source: measure:327
 who: agent
 created: 2026-10-23
-updated: 2026-10-23
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # ISO plug-in: an HFS+ file skipped or cancelled at extraction leaks its read buffer
@@ -51,3 +51,4 @@ paths (`iso9660.cpp` allocates its buffer after `SafeFileCreate`, so it does not
 
 - 2026-10-23 — created (source measure:327)
 - 2026-10-23 — moved to Next position 108
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

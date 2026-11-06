@@ -1,19 +1,19 @@
 ---
 title: File Comparator stores an uninitialised byte in its saved configuration
 type: bug
-status: open
+status: parked
 severity: 1
 area: other-plugins
 source: measure:080
 who: agent
 created: 2026-09-20
-updated: 2026-10-17
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # File Comparator stores an uninitialised byte in its saved configuration
@@ -37,3 +37,4 @@ Possibly done - verify: no later feature records a fix, but the blob was not com
 ## Log
 
 - 2026-10-17 — migrated from specs/*/REMAINING-WORK.md (feature 242)
+- 2026-11-06 — moved to Parked: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

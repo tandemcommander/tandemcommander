@@ -1,19 +1,19 @@
 ---
 title: winget README names a publish.ps1 check that does not exist
 type: tech-debt
-status: open
+status: parked
 severity: 1
 area: build-release
 source: review:243
 who: agent
 created: 2026-10-17
-updated: 2026-10-17
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: [winget-records-stale-claims-from-072-audit]
 depends-on: []
-reason: -
+reason: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # winget README names a publish.ps1 check that does not exist
@@ -34,3 +34,4 @@ Either `publish.ps1` checks the directive and fails with that message (`CLAUDE.m
 
 - 2026-10-17 — created (source review:243)
 - 2026-10-17 — moved to Next position 64
+- 2026-11-06 — moved to Parked: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

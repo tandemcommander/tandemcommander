@@ -1,19 +1,19 @@
 ---
 title: FTP: a listing rule assigning one column to another decodes the decoded text again
 type: bug
-status: open
+status: parked
 severity: 2
 area: ftp
 source: review:384
 who: agent
 created: 2026-11-01
-updated: 2026-11-01
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # FTP: a listing rule assigning one column to another decodes the decoded text again
@@ -49,3 +49,4 @@ handling. A parser self-test or a probe row with a custom server type proves it.
 
 - 2026-11-01 — created (source review:384)
 - 2026-11-01 — moved to Next position 137
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

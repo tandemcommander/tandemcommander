@@ -1,19 +1,19 @@
 ---
 title: Registry Editor Find: Whole words ignores punctuation that the help names
 type: bug
-status: open
+status: parked
 severity: 2
 area: other-plugins
 source: measure:257
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Registry Editor Find: Whole words ignores punctuation that the help names
@@ -49,3 +49,4 @@ strings, but the help's own translations, if any, would follow.
 
 - 2026-10-20 — created (source measure:257)
 - 2026-10-20 — moved to Next position 79
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

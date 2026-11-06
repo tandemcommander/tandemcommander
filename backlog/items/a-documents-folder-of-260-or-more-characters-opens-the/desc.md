@@ -1,19 +1,19 @@
 ---
 title: A Documents folder of 260 or more characters opens the Desktop instead
 type: bug
-status: open
+status: parked
 severity: 1
 area: long-paths
 source: review:386
 who: agent
 created: 2026-11-02
-updated: 2026-11-02
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: [rescue-path-goes-to-the-windows-drive-root-when-documents]
 depends-on: []
-reason: -
+reason: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # A Documents folder of 260 or more characters opens the Desktop instead
@@ -53,3 +53,4 @@ reachable. Severity 1: only reachable with an unusual redirection.
 
 - 2026-11-02 — created (source review:386)
 - 2026-11-02 — moved to Next
+- 2026-11-06 — moved to Parked: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

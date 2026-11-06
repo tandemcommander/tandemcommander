@@ -1,19 +1,19 @@
 ---
 title: Unshipped resources still carry 2023 Open Salamander-only copyright notices
 type: tech-debt
-status: open
+status: parked
 severity: 1
 area: build-release
 source: review:243
 who: agent
 created: 2026-10-17
-updated: 2026-10-17
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Unshipped resources still carry 2023 Open Salamander-only copyright notices
@@ -38,3 +38,4 @@ Whether these projects are still built at all was not checked; if not, removing 
 
 - 2026-10-17 — created (source review:243)
 - 2026-10-17 — moved to Next position 62
+- 2026-11-06 — moved to Parked: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

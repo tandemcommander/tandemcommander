@@ -1,19 +1,19 @@
 ---
 title: The User Menu page names a new submenu end in the code page, not UTF-8
 type: bug
-status: open
+status: parked
 severity: 2
 area: encoding
 source: review:268
 who: agent
 created: 2026-10-20
-updated: 2026-10-21
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # The User Menu page names a new submenu end in the code page, not UTF-8
@@ -38,3 +38,4 @@ Severity 2: no visible defect today (the fallbacks hide it), and an end's name i
 
 - 2026-10-20 — created (source review:268)
 - 2026-10-21 — moved to Next position 73
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

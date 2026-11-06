@@ -1,19 +1,19 @@
 ---
 title: Shell extensions in the panel background menu and the Find window never answer typed hot keys
 type: bug
-status: open
+status: parked
 severity: 2
 area: panels-ui
 source: review:256
 who: agent
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Shell extensions in the panel background menu and the Find window never answer typed hot keys
@@ -41,3 +41,4 @@ excluded - review 2 of 256, N2).
 - 2026-10-20 — created (source review:256)
 - 2026-10-20 — related item menu-popup-loop-wide-mnemonics done in feature 256
 - 2026-10-20 — moved to Next position 73
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

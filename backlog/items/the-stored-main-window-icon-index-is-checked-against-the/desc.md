@@ -1,19 +1,19 @@
 ---
 title: The stored main window icon index is checked against the count, not the last index
 type: bug
-status: open
+status: parked
 severity: 1
 area: panels-ui
 source: measure:245
 who: agent
 created: 2026-10-18
-updated: 2026-10-19
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # The stored main window icon index is checked against the count, not the last index
@@ -34,3 +34,4 @@ The load check uses >= so an out-of-range index falls back to 0 at load.
 
 - 2026-10-18 — created (source measure:245)
 - 2026-10-19 — moved to Next
+- 2026-11-06 — moved to Parked: minor finding (severity 1) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

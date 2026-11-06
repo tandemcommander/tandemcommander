@@ -1,19 +1,19 @@
 ---
 title: SDK: state that GetErrorText returns UTF-8 (B-3 contract half)
 type: tech-debt
-status: open
+status: parked
 severity: 2
 area: plugin-api
 source: review:068
 who: agent
 created: 2026-08-24
-updated: 2026-10-17
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: [plugin-ansi-services-interface-decision]
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # SDK: state that GetErrorText returns UTF-8 (B-3 contract half)
@@ -44,3 +44,4 @@ The interface question for the other code-page services (B-5) is `plugin-ansi-se
 - 2026-10-17 — migration review S3: the plug-in compositions were fixed by 130 and 134; the SDK statement is left
 - 2026-10-17 — moved to Next position 39
 - 2026-10-17 — migration review S3: Problem narrowed to the SDK statement; Evidence names 130 / 134; Expected / Approach rewritten
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

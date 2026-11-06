@@ -1,19 +1,19 @@
 ---
 title: Hex-mode "not hex" check selects the wrong characters after non-ASCII text
 type: bug
-status: open
+status: parked
 severity: 2
 area: encoding
 source: measure:397
 who: agent
 created: 2026-11-02
-updated: 2026-11-02
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Hex-mode "not hex" check selects the wrong characters after non-ASCII text
@@ -48,3 +48,4 @@ The selection marks the offending character: the byte offset is converted to UTF
 
 - 2026-11-02 — created (source measure:397)
 - 2026-11-02 — moved to Next position 136
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

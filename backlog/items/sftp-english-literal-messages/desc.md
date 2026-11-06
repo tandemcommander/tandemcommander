@@ -1,19 +1,19 @@
 ---
 title: SFTP: questions and reasons are untranslated English literals
 type: tech-debt
-status: open
+status: parked
 severity: 2
 area: sftp
 source: review:139
 who: agent
 created: 2026-10-14
-updated: 2026-10-17
+updated: 2026-11-06
 verified: -
 effort: M
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # SFTP: questions and reasons are untranslated English literals
@@ -41,3 +41,4 @@ L668-669 says "untranslated English literals stay" after 139 - possibly an accep
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §D (GitHub issues after 0.1.9) (feature 242)
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

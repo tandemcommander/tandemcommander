@@ -1,19 +1,19 @@
 ---
 title: Share list: a list a server never finishes (more data without an end) is shown as if it were whole
 type: bug
-status: open
+status: parked
 severity: 2
 area: panels-ui
 source: review:373
 who: agent
 created: 2026-11-01
-updated: 2026-11-01
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Share list: a list a server never finishes (more data without an end) is shown as if it were whole
@@ -38,3 +38,4 @@ A share list that was not read to its end is not offered as if it were complete:
 - 2026-11-01 — created (source review:373)
 - 2026-11-01 — related item wsl-localhost-offers-no-share-list done in feature 373
 - 2026-11-01 — moved to Next position 133
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

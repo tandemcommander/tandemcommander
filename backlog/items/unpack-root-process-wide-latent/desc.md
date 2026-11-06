@@ -1,19 +1,19 @@
 ---
 title: Unpack short-name walk: process-wide root; external archiver's unpack not driven
 type: tech-debt
-status: open
+status: parked
 severity: 2
 area: archives
 source: review:204
 who: agent
 created: 2026-10-15
-updated: 2026-10-17
+updated: 2026-11-06
 verified: -
 effort: M
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # Unpack short-name walk: process-wide root; external archiver's unpack not driven
@@ -41,3 +41,4 @@ Latent - no reachable loss known after the mitigation.
 ## Log
 
 - 2026-10-17 — migrated from specs/NEXT-WORK.md §A (code work) (feature 242)
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06

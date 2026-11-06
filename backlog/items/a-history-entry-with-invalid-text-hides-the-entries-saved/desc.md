@@ -1,19 +1,19 @@
 ---
 title: A history entry with invalid text hides the entries saved after it
 type: bug
-status: open
+status: parked
 severity: 2
 area: encoding
 source: measure:245
 who: agent
 created: 2026-10-18
-updated: 2026-10-19
+updated: 2026-11-06
 verified: -
 effort: S
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
 ---
 
 # A history entry with invalid text hides the entries saved after it
@@ -34,3 +34,4 @@ Valid entries after an invalid one are moved up (no gap), so they stay offered.
 
 - 2026-10-18 — created (source measure:245)
 - 2026-10-19 — moved to Next position 59
+- 2026-11-06 — moved to Parked: minor finding (severity 2) parked in the one-time cleanup of Next; reopen when it bothers a user or the area is worked on; maintainer 2026-11-06
