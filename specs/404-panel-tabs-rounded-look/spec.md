@@ -5,6 +5,15 @@
 **Status**: Draft
 **Input**: User description: "Backlog item panel-tabs-rounded-windows-11-look-with-icons-and-roomier - implement exactly what it describes (variant F of the 2026-11-06 mockups, live drag reorder, close on release, Move to Other Panel, New Tab as Other Panel)." From backlog item panel-tabs-rounded-windows-11-look-with-icons-and-roomier.
 
+## Clarifications
+
+### Session 2026-11-06
+
+- Q: What exactly does "anti-aliased edges may differ by a shade" allow in the comparison with the evidence images? → A: a captured pixel may differ from the evidence pixel only where the evidence's 3x3 neighbourhood of that pixel is not one uniform colour (an edge), and then by at most 64 in any colour channel; every pixel whose neighbourhood is uniform (solid areas) must be equal. The probe reports exact / edge-tolerated / failing counts (autonomous run: recommended)
+- Q: How does the strip see Esc while dragging, given it never has the keyboard focus? → A: the drag animation timer, which runs while a drag is active, checks `GetAsyncKeyState(VK_ESCAPE)` and cancels the drag (autonomous run: recommended - the item offers this option first and it needs no change to the panel's key handling)
+- Q: When the left button goes down on the close glyph and the capture is then lost (a menu, another window), what happens? → A: the press is forgotten and nothing closes, as with a release off the glyph (autonomous run: conservative)
+- Q: Where does a tab moved to the other panel go, and which panel is active afterwards? → A: at the end of the other panel's tabs, active there; which panel is active follows the existing `SwitchToTab` rules (autonomous run: item)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The tab strip looks like a current Windows 11 program (Priority: P1)
@@ -141,7 +150,8 @@ tab lists of both panels; a refused leave keeps both panels unchanged.
   button and its menu keep working.
 - A single tab: no close glyph, no drag, Move to Other Panel greyed.
 - Tabs off (*Show tabs in panels* off): no strip, nothing of this feature runs.
-- A press on the X followed by losing the capture (a menu, another window): nothing closes.
+- A press on the X followed by losing the capture (a menu, another window): the press is forgotten
+  and nothing closes.
 - A right-button press during a drag cancels it (as today).
 - 125 % / 150 % DPI: every metric scales; the icon size is the program's DPI icon size.
 - High Contrast: colours come from the system colours; texts stay readable.
@@ -231,8 +241,8 @@ tab lists of both panels; a refused leave keeps both panels unchanged.
 ### Measurable Outcomes
 
 - **SC-001**: For each of the 10 evidence images (5 states x 2 themes), the captured strip differs
-  from the image only in anti-aliased edge pixels: no differing pixel inside text or a solid area,
-  and no edge pixel off by more than a shade (the probe's threshold, recorded in the fix-log).
+  from the image only in edge pixels (the evidence's 3x3 neighbourhood is not uniform) and by at
+  most 64 per colour channel there; every pixel of a uniform neighbourhood is equal.
 - **SC-002**: The `tabs312_probe` stays at 33 PASS / 0 FAIL.
 - **SC-003**: Every driven mouse/menu row of the probe passes; before the change the close-on-press
   and the menu rows fail (negative control).
