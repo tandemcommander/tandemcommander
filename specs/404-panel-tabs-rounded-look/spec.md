@@ -3,7 +3,7 @@
 **Feature Branch**: `404-panel-tabs-rounded-look`
 **Created**: 2026-11-06
 **Status**: Draft
-**Input**: User description: "Backlog item panel-tabs-rounded-windows-11-look-with-icons-and-roomier - implement exactly what it describes (variant F of the 2026-11-06 mockups, live drag reorder, close on release, Move to Other Panel, New Tab as Other Panel)."
+**Input**: User description: "Backlog item panel-tabs-rounded-windows-11-look-with-icons-and-roomier - implement exactly what it describes (variant F of the 2026-11-06 mockups, live drag reorder, close on release, Move to Other Panel, New Tab as Other Panel)." From backlog item panel-tabs-rounded-windows-11-look-with-icons-and-roomier.
 
 ## User Scenarios & Testing *(mandatory)*
 

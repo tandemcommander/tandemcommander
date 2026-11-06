@@ -1,7 +1,7 @@
 ---
 title: Panel tabs: taller rounded look with icons and Chrome-like mouse handling
 type: improvement
-status: open
+status: in-progress
 severity: 3
 area: panels-ui
 source: manual
@@ -10,7 +10,7 @@ created: 2026-11-06
 updated: 2026-11-06
 verified: 2026-11-06 f2d2ca59
 effort: L
-feature: -
+feature: 404
 related: [panel-tabs-078-release-pass-and-leak-watch]
 depends-on: []
 reason: -
@@ -164,3 +164,4 @@ The tab strip is drawn as variant F. At 96 DPI the values below are in pixels, a
 - 2026-11-06 — maintainer decision 2026-11-06: add Chrome-like live reordering, close on release, Move to Other Panel and New Tab as Other Panel
 - 2026-11-06 — maintainer decision 2026-11-06: the whole item is one feature; a run never splits it into several items
 - 2026-11-06 — verified at f2d2ca59: still present at f2d2ca59: tabwnd.cpp unchanged since 7ee0f43d - DrawEdge 3D tabs, 21 px strip, aliased glyphs, no icons, close on WM_LBUTTONDOWN, insert-mark drag, no other-panel commands
+- 2026-11-06 — run started, feature 404
