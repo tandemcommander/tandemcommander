@@ -1,0 +1,24 @@
+hkcrboth_probe, language: english
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 00:02; desktop 'tc_probe_26560'; ACP 1250; elevated False; registry key existed True; export SHA-256 1C3349EA761A6AF0E6173F6BD8E1A73C703F07822F38F26C03B4CD9244E7B0A4
+Machine : .386 = .|=String:vxdfile;PerceivedType=String:system\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}
+
+BOTHMOVE fixture: user's half '.|TcProbeU=String:USER\u000APersistentHandler|'; merged view '.|=String:vxdfile;PerceivedType=String:system;TcProbeU=String:USER\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}'
+BOTHMOVE   TEXT   FAIL        expected the first box 'Unable to remove the original registry key.' naming 'HKEY_LOCAL_MACHINE\Software\Classes\.386\PersistentHandler' with (5); boxes: none
+BOTHMOVE   STATE  FAIL        machine's half unchanged: True; user's half unchanged: False (now '(missing)'); the copy equals the merged view: True (copy '.|=String:vxdfile;PerceivedType=String:system;TcProbeU=String:USER\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}')
+BOTHMOVE   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BOTHSKIP fixture: user's half '.|TcProbeU=String:USER\u000APersistentHandler|'; merged view '.|=String:vxdfile;PerceivedType=String:system;TcProbeU=String:USER\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}'
+BOTHSKIP   TEXT   FAIL        expected the first box 'Unable to remove the original registry key.' naming 'HKEY_LOCAL_MACHINE\Software\Classes\.386\PersistentHandler' with (5); boxes: none
+BOTHSKIP   ONEBOX FAIL        expected exactly one box (the parent kept after Skip), Skip pressed: True; 0 box(es)
+BOTHSKIP   STATE  FAIL        machine's half unchanged: True; user's half unchanged: False (now '(missing)'); the copy equals the merged view: True (copy '.|=String:vxdfile;PerceivedType=String:system;TcProbeU=String:USER\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}')
+BOTHSKIP   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BOTHSHADOW fixture: user's half '.|TcProbeU=String:USER\u000APersistentHandler|=String:TCPROBE-SHADOW'; merged view '.|=String:vxdfile;PerceivedType=String:system;TcProbeU=String:USER\u000APersistentHandler|=String:TCPROBE-SHADOW'
+BOTHSHADOW TEXT   FAIL        expected the first box 'Unable to remove the original registry key.' naming 'HKEY_LOCAL_MACHINE\Software\Classes\.386\PersistentHandler' with (50); boxes: none
+BOTHSHADOW STATE  FAIL        machine's half unchanged: True; user's half unchanged: False (now '(missing)'); the copy equals the merged view: True (copy '.|=String:vxdfile;PerceivedType=String:system;TcProbeU=String:USER\u000APersistentHandler|=String:TCPROBE-SHADOW')
+BOTHSHADOW END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+BOTHSELF   TEXT   PASS        expected the first box 'Can't move a key to itself.' (292); boxes: [#32770 'Error Moving Registry Key'] [Static id=2477] Name: .386 Error: Can't move a key to itself. | [Button id=1] OK | [Button id=2] Cancel; text 'Name:\u0009.386\u000A\u000AError:\u0009Can't move a key to itself.'
+BOTHSELF   STATE  PASS        machine's half unchanged: True; user's half unchanged: True (now '.|TcProbeU=String:USER\u000APersistentHandler|')
+BOTHSELF   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before 1C3349EA761A6AF0E6173F6BD8E1A73C703F07822F38F26C03B4CD9244E7B0A4 / after 1C3349EA761A6AF0E6173F6BD8E1A73C703F07822F38F26C03B4CD9244E7B0A4
+
+Rows: PASS 6, FAIL 7, NOT DRIVEN 0. Left running: 0; fixture keys removed: True; user's half of the machine key left: False; registry restored+identical: True

@@ -1,16 +1,16 @@
 ---
 title: Registry Editor: Move of an HKCR key held by both halves leaves its machine half
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: other-plugins
 source: leftover:390
 who: agent
 created: 2026-11-02
-updated: 2026-11-06
-verified: -
+updated: 2026-11-07
+verified: 2026-11-07 8bb3c295
 effort: S
-feature: -
+feature: 406
 related: []
 depends-on: []
 reason: -
@@ -49,3 +49,5 @@ machine key whose ACL lets the user delete it).
 - 2026-11-02 — created (source leftover:390)
 - 2026-11-02 — auto-triage: left in Inbox - who agent contradicts its own text: measuring the defect needs elevation or a machine key created by an admin (a person); who both may fit
 - 2026-11-06 — moved to Next position 2
+- 2026-11-07 — verified at 8bb3c295: reproduced unelevated at 8bb3c295: probe, F6 of HKCR .386 with a user half - no box, user half deleted, machine half left
+- 2026-11-07 — run started, feature 406
