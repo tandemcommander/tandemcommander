@@ -5,6 +5,13 @@
 **Status**: Draft
 **Input**: User description: "Backlog item problem-s-prepinanim-zalozek - implement exactly what it describes (GitHub issue #22: switching away from an FTP tab leaves the tab strip in drag mode)." From backlog item problem-s-prepinanim-zalozek.
 
+## Clarifications
+
+### Session 2026-11-06
+
+- Q: When the switch showed a dialog but the left button is still held when it returns (the dialog was answered with the keyboard), should the strip still arm a drag? → A: Yes - only the button state decides; a button held from the press to the release is a real drag (Expected, second bullet; the first bullet allows "or the left button is no longer down"). (autonomous run: item)
+- Q: When a new left press reaches the strip while an older gesture is still pending, is the new press handled after cancelling the old one, or swallowed? → A: The old gesture is cancelled (glide back, capture released) and the new press is then handled as usual; a press outside every tab part only cancels. (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Switching away from a tab that asks a question (Priority: P1)
@@ -49,7 +56,7 @@ A user presses on a tab and drags it to another place, holding the button from t
 
 - **FR-001**: After a click on a tab switches the panel, the strip MUST arm a drag and take the mouse capture only when the left button is still held; when the button was held at the press and is no longer held after the switch, no drag is armed and the capture is not taken.
 - **FR-002**: A tab MUST move only through a drag whose left button is held from the press to the release (keeps the feature-404 rule that a mouse move without the button cancels a pending drag).
-- **FR-003**: A new left press on the strip while an earlier gesture is still pending MUST cancel that gesture (glide back, capture released) before handling the press.
+- **FR-003**: A new left press on the strip while an earlier gesture is still pending MUST cancel that gesture (glide back, capture released) before handling the press; a press outside every part of the strip (no tab, X, plus or list) only cancels.
 - **FR-004**: Every existing behaviour of the strip that does not involve a window or a lost button-up during the switch MUST stay as it is (drag reorder, cancel by Esc / capture loss / cancel mode, close on release, middle click, context menu).
 - **FR-005**: The decision "arm a drag after the switch" MUST be a pure rule with unit checks.
 - **FR-006**: A probe MUST reproduce the defect before the fix and pass after it; the real FTP question with a real mouse is a person's check on the release checklist.
