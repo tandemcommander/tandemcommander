@@ -45,9 +45,9 @@ system call while painting
 
 ## Design
 
-1. **Metrics and colours** (`saltabs.h`, pure): `SalTabStripMetrics(scalePercent, fontHeight,
-   avgCharWidth, ...)` gives height, tabs-left, paddings, glyph box, icon size/gap, min/max width;
-   `SalTabMixColor(a, b, percent)` is the mockup's rounding mix; `SalTabStripPalette(...)` derives
+1. **Metrics and colours** (`saltabs.h`, pure): `SalTabStripHeight(fontHeight, scalePercent)` and `SalTabStripWidths(avgChar,
+   scalePercent, &min, &max)` give the height and the width limits (the other metrics are constants x scale);
+   `SalTabMix(a, b, percent)` is the mockup's rounding mix; `SalTabStripColors(...)` derives
    strip background, dim text, hover background, separator colour from the system colours and the
    theme flags (Dark, High Contrast).
 2. **Anti-aliased drawing** (`tabwnd.cpp`): `CTabStripPainter` owns one nanosvg rasterizer and a DIB

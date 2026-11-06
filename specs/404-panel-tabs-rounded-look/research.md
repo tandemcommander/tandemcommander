@@ -30,7 +30,7 @@
 - Icons: folder = `SimpleIconLists[ICONSIZE_16]->GetIcon(symbolsDirectory)` (the panel's own folder
   icon); archive = `LoadArchiveIcon` (the directory line's); drive = `GetDriveIcon(root, type,
   TRUE)` (the directory line's / drive bar's) with the drive type from `GetDriveType` of the letter
-  root only (a local lookup, no I/O on the share); removable -> the generic removable id (no shell
+  root only, once per tab when its kind is derived, never per paint (a local lookup, no I/O on the share); removable -> the generic removable id (no shell
   call on the medium); UNC root -> the network drive icon; plug-in FS -> the plug-in's Change Drive
   menu icon (`PluginIcons`, `ChDrvMenuFSItemIconIndex`, kept by the core, no plug-in call), else
   `IDI_PLUGINFS`.

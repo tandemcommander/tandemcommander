@@ -30,7 +30,7 @@ Order of work inside the feature (item Notes): look first, then icons, then mous
 **Goal**: each tab shows its location icon. **Independent test**: LOOK rows (folder and drive icons) + an archive / plug-in kind check in saltests.
 
 - [ ] T010 [US2] `src/paneltabs.h` / `src/paneltabs.cpp`: `IconKind`, `IconDriveType`, `IconPluginIndex` session fields, set in `CaptureActiveTab` and after a successful `SwitchToTab`; `CFilesWindow::GetTabIconKind(CPanelTab*)` derives once for restored tabs
-- [ ] T011 [US2] `src/tabwnd.cpp`: HICON cache (folder, archive, drive per type, plug-in FS per plug-in, generic plug-in FS), drawn at x + 10; dropped on colour / font change and destroyed with the strip
+- [ ] T011 [US2] `src/tabwnd.cpp`: icon kind read from the tab (derived outside painting: at capture, or once per restored tab - the only call is `GetDriveType` of a letter root, no I/O on the location; SC-005); HICON cache (folder, archive, drive per type, plug-in FS per plug-in, generic plug-in FS), drawn at x + 10; dropped on colour / font change and destroyed with the strip
 
 ## Phase 5: User Story 3 - live drag (P2)
 
