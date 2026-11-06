@@ -153,7 +153,7 @@ The tab strip is drawn as variant F. At 96 DPI the values below are in pixels, a
   - which panel is active afterwards is left to the existing `SwitchToTab` rules;
   - *New Tab as Other Panel* copies only the location, and also shows in a tab's menu because the menu is shared.
 - Not verified: opening the same plug-in file-system location in both panels (for example SFTP) works as *Duplicate Tab* does within one panel, with a second connection.
-- The item is large: look, icons, mouse, two commands and translations. A run may split it into separate features, look first.
+- **One feature, never split** (maintainer decision 2026-11-06). Everything in this item is implemented in **one** feature on one branch: the look, the icons, the mouse handling, both commands and the translations. A run must not end with the outcome `split` or create part items, even though the item is large (`/tandem-backlog-implement` step 3, row *larger than one feature*, does not apply). Order of work inside the feature: look first, then icons, then the mouse handling and the commands.
 
 ## Log
 
@@ -162,3 +162,4 @@ The tab strip is drawn as variant F. At 96 DPI the values below are in pixels, a
 - 2026-11-06 — moved to Next position 1
 - 2026-11-06 — maintainer decision 2026-11-06: implement variant F (variant E with a 29 px strip) instead of E; evidence images and renderer replaced
 - 2026-11-06 — maintainer decision 2026-11-06: add Chrome-like live reordering, close on release, Move to Other Panel and New Tab as Other Panel
+- 2026-11-06 — maintainer decision 2026-11-06: the whole item is one feature; a run never splits it into several items
