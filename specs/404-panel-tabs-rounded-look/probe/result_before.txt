@@ -1,0 +1,30 @@
+tabs404_probe (feature 404) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-06 21:49; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc404; font height 15, avg char 6; DPI scale 2560
+
+LOOK-LIGHT NORMAL FAIL        vs variantF_light_normal.png: size 786x21, evidence 786x29
+LOOK-LIGHT CONTROL FAIL        vs current_light_normal.png: exact 16488, edge-tolerated 0 (max 0), failing 18 (max 240, first at 774,6)
+LOOK-LIGHT INACTIVE FAIL        vs variantF_light_inactive.png: size 786x21, evidence 786x29
+LOOK-LIGHT HOVERTAB FAIL        vs variantF_light_hovertab.png: size 786x21, evidence 786x29
+LOOK-LIGHT HOVERCLOSE FAIL        vs variantF_light_hoverclose.png: size 786x21, evidence 786x29
+LOOK-LIGHT HOVERPLUS FAIL        vs variantF_light_hoverplus.png: size 786x21, evidence 786x29
+LOOK-LIGHT TABS   PASS        left [Downloads fonts tandemcommander src 2021_silon_bubble_sort_visualisation E:] active 2; right [start] active 0
+LOOK-DARK  NORMAL FAIL        vs variantF_dark_normal.png: size 786x21, evidence 786x29
+LOOK-DARK  CONTROL FAIL        vs current_dark_normal.png: exact 16488, edge-tolerated 0 (max 0), failing 18 (max 195, first at 774,6)
+LOOK-DARK  INACTIVE FAIL        vs variantF_dark_inactive.png: size 786x21, evidence 786x29
+LOOK-DARK  HOVERTAB FAIL        vs variantF_dark_hovertab.png: size 786x21, evidence 786x29
+LOOK-DARK  HOVERCLOSE FAIL        vs variantF_dark_hoverclose.png: size 786x21, evidence 786x29
+LOOK-DARK  HOVERPLUS FAIL        vs variantF_dark_hoverplus.png: size 786x21, evidence 786x29
+LOOK-DARK  TABS   PASS        left [Downloads fonts tandemcommander src 2021_silon_bubble_sort_visualisation E:] active 2; right [start] active 0
+MOUSE      START  PASS        left [A B C D] active 0; right [start] active 0; strip 786x21, tab width 136
+MOUSE      ERROR  FAIL        Cannot process argument transformation on parameter 'S'. Cannot convert the "@{R=; L=}" value of type "System.Management.Automation.PSCustomObject" to type "System.IntPtr". @ at Run-Mouse, E:\Projects\tandemcommander\specs\404-panel-tabs-rounded-look\probe\tabs404_probe.ps1: line 370
+at <ScriptBlock>, E:\Projects\tandemcommander\specs\404-panel-tabs-rounded-look\probe\tabs404_probe.ps1: line 477
+MENU       START  PASS        left [A B] active 1; right [R] active 0
+MENU       MOVE   FAIL        Move to Other Panel on B: left [A B] active 1; right [R] active 0
+MENU       NOREOPEN FAIL        Reopen Closed Tab after the move: left [A B] active 1; right [R] active 0
+MENU       MOVE-SINGLE FAIL        Move to Other Panel with a single tab: left [A B] active 1; right [R] active 0
+MENU       NEWASOTHER FAIL        New Tab as Other Panel (right shows B): left [A B] active 1; right [R] active 0
+MENU       REFUSED NOT DRIVEN  a refused leave needs a plug-in that refuses (CHPPFR_CANNOTCLOSEPATH); no shipped plug-in does (feature 078 deviation) - verified by reading MoveTabToOtherPanel
+Registry: restored; identical=True; SHA-256 before 1D52D8424042C19448C617A390D99BEAD62B4A7260A2A4AF993BC1FCE59D1ED7 / after 1D52D8424042C19448C617A390D99BEAD62B4A7260A2A4AF993BC1FCE59D1ED7
+
+Rows: PASS 4, FAIL 17, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

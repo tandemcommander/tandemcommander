@@ -1,0 +1,15 @@
+tabs404_probe (feature 404) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-06 21:51; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc404; font height 15, avg char 6; DPI scale 2560
+
+MOUSE      START  PASS        left [A B C D] active 0; right [start] active 0; strip 830x21, tab width 136
+MOUSE      DRAG   PASS        A dragged past the centre of C, released: left [B C A D] active 2; right [start] active 0
+MOUSE      CANCELMODE PASS        B dragged onto D, WM_CANCELMODE, released: left [B C A D] active 0; right [start] active 0
+MOUSE      CAPLOST PASS        B dragged onto D, WM_CAPTURECHANGED, released: left [B C A D] active 0; right [start] active 0
+MOUSE      NOTEAR PASS        B dragged past the centre of C, 72 px below the strip: left [C B A D] active 1; right [start] active 0
+MOUSE      XPRESS FAIL        left button down on the X of B, not released: left [C A D] active 1; right [start] active 0
+MOUSE      XRELEASE PASS        released over the same X: left [C A D] active 1; right [start] active 0
+MOUSE      XOFF   FAIL        pressed on the X of D, moved off, released: left [C A] active 1; right [start] active 0
+Registry: restored; identical=True; SHA-256 before 1D52D8424042C19448C617A390D99BEAD62B4A7260A2A4AF993BC1FCE59D1ED7 / after 1D52D8424042C19448C617A390D99BEAD62B4A7260A2A4AF993BC1FCE59D1ED7
+
+Rows: PASS 6, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
