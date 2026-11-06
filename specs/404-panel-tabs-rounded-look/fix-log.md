@@ -200,3 +200,9 @@ the tab is never in neither panel.
 
 After: `build.cmd` BUILD SUCCEEDED; saltests **282518 checks, 0 failed**; encoding guard TOTAL 0;
 `tabs404_probe` **PASS 29, FAIL 0, NOT DRIVEN 1**; `tabs312_probe` **PASS 33, FAIL 0**.
+
+### Review 2, delta of commit 84804791 (the same reviewer) - no MUST, SHOULD or NOTE
+
+`SalTabLocationsSame` = `SalPathEqualOrdinalCI` loses nothing (it already ignores one leading / trailing
+backslash; NULL -> undo); the icon-kind reset runs only on a successful switch before `SwitchInProgress`
+clears; the `WaitForDrag` guard closes the wrong-tab case. Build and saltests 282518 / 0 re-run.

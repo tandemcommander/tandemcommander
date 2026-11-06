@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404 |
 
 ## Feature notes
 
@@ -6479,3 +6479,32 @@ a few early ones are out of sequence).
   282,383 -> 282,433 / 0 (`TestIsoDirLength403`); refute-first reviews: 1 (no MUST; SHOULD nested folders -
   the budget; NOTE probe rows added), 2 (no MUST; SHOULD a full-limit subfolder - the spec reworded, checks
   added; NOTEs accepted).
+- 404-panel-tabs-rounded-look: the panel tab strip looked like Windows 95 (raised 3D boxes, 1-px aliased
+  glyphs, cramped text, no icons), a press on a tab's X closed it at once, a drag showed only an insert mark
+  and a tab could not go to the other panel - now the strip is variant F of the maintainer's 2026-11-06
+  mockups (29 px at 96 DPI; a rounded active tab with outward feet in the caption colours, plain inactive
+  titles, a hover pill, separators, anti-aliased X and + with hover circles; nanosvg rasterizes each shape
+  into a DIB, the coverage becomes premultiplied BGRA for `AlphaBlend`; text stays GDI), every tab shows the
+  icon of its location kind (drive / UNC root, folder, archive, plug-in FS - from the panel while the tab is
+  shown, else from the text, never a call on the location), a drag moves the tab live (neighbours slide with
+  a 150-ms ease-out, glide on release or cancel; Esc read in the drag timer; no glide with animation effects
+  off), the X closes on release over it, and the context menu has *Move to Other Panel* (opened there first,
+  then removed here, not kept for Reopen; refused or fallen back -> undone) and *New Tab as Other Panel*
+  (`CM_LEFT/RIGHT_MOVETABTOOTHER` 2885/2886, `..._NEWTABASOTHER` 2887/2888, strings 14192/14193). Pure
+  rules in `saltabs.*` (`SalTabMix` rounds half to even like the mockup's C#, strip colours, metrics, drag
+  slot / position, ease, menu enabling, `SalTabLocationKind`, `SalTabLocationsSame`). Traps: nanosvg writes
+  R,G,B,A and leaves the alpha premultiplied (a white fill makes the order irrelevant); its round cap of
+  radius 0.6 is a near-triangle and GDI+ samples tips asymmetrically - the + uses butt caps 0.25 px past the
+  ends; on the hidden desktop `GetCursorPos` fails and `TrackMouseEvent` posts `WM_MOUSELEAVE` at once (the
+  strip keeps the hover when there is no cursor to judge by - a probe seam); PowerShell `$S` and `$s` are one
+  variable; `SwitchToTab` returns TRUE on a fallback and rewrites the location (a moved tab would vanish -
+  review 1); a drag must never run without `MK_LBUTTON` (a dialog of the switch takes the button-up). Limits:
+  an archive tab never shown since start shows the folder icon; a refused leave is not drivable (no shipped
+  plug-in refuses); Esc also reaches the focused window; the classic look is not kept. From backlog item
+  `panel-tabs-rounded-windows-11-look-with-icons-and-roomier`. Probe `tabs404_probe` (captures compared with
+  the 10 evidence images: a pixel may differ only on an edge, by at most 64) before 4 PASS / 17 FAIL -> 29 /
+  0 / 1 NOT DRIVEN (look 10/10, 0 failing pixels; MIDDRAG, DRAG, cancel, close on release, Move / New as
+  Other Panel through posted commands and the real context menu, FALLBACK); `tabs312_probe` 33 / 0; saltests
+  282,433 -> 282,518 / 0 (`TestTabStrip404`); translations 2 x 8 languages, 328 DeepL characters, 16 pins
+  (fr / hu / es "switch to" for "move", de 'Registerkarte'); refute-first reviews: 1 (no MUST; 3 SHOULD
+  fixed: the fallback loss, a drag without the button, probe rows), 2 (no MUST, no SHOULD; NOTEs fixed).

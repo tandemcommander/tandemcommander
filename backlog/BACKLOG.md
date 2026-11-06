@@ -17,7 +17,6 @@ Last triaged: 2026-11-06
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Panel tabs: taller rounded look with icons and Chrome-like mouse handling](items/panel-tabs-rounded-windows-11-look-with-icons-and-roomier/desc.md) | improvement | 3 | panels-ui | 404 |
 
 ## Next
 

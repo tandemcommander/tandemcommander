@@ -11,7 +11,7 @@ updated: 2026-11-06
 verified: -
 effort: S
 feature: -
-related: [panel-tabs-rounded-windows-11-look-with-icons-and-roomier]
+related: []
 depends-on: []
 reason: -
 ---
@@ -52,3 +52,4 @@ Related to `panel-tabs-rounded-windows-11-look-with-icons-and-roomier` (first in
 - 2026-11-06 — created (source github#22)
 - 2026-11-06 — fields set from the issue text and labels
 - 2026-11-06 — moved to Next position 2
+- 2026-11-06 — related item panel-tabs-rounded-windows-11-look-with-icons-and-roomier done in feature 404
