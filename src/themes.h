@@ -22,6 +22,9 @@
 // every theme-aware code path keys off this single predicate
 BOOL IsDarkThemeActive();
 
+// feature 404: TRUE while Windows High Contrast is on (cached like IsDarkThemeActive)
+BOOL IsThemeHighContrast();
+
 // re-reads the Windows High Contrast state (call on WM_SYSCOLORCHANGE /
 // WM_SETTINGCHANGE; cheap, cached otherwise)
 void RefreshThemeHighContrastState();

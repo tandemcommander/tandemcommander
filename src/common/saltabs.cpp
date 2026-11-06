@@ -5,6 +5,7 @@
 
 #include <windows.h>
 #include <string.h>
+#include <math.h>
 
 #include "salunicode.h"
 #include "salpath.h"
@@ -419,4 +420,183 @@ int SalTabsReopenIndex(int count, int closedIndex)
 int SalCfgPageIndexFrom311(int index)
 {
     return index >= 7 ? index + 1 : index;
+}
+
+//
+// feature 404: the variant F tab strip
+//
+
+static int SalTabMixChannel(int a, int b, double t)
+{
+    double v = rint(a + (b - a) * t); // round half to even, as Math.Round in the mockup
+    if (v < 0)
+        v = 0;
+    if (v > 255)
+        v = 255;
+    return (int)v;
+}
+
+DWORD SalTabMix(DWORD a, DWORD b, double t)
+{
+    int r = SalTabMixChannel((int)(a & 0xFF), (int)(b & 0xFF), t);
+    int g = SalTabMixChannel((int)((a >> 8) & 0xFF), (int)((b >> 8) & 0xFF), t);
+    int bl = SalTabMixChannel((int)((a >> 16) & 0xFF), (int)((b >> 16) & 0xFF), t);
+    return (DWORD)r | ((DWORD)g << 8) | ((DWORD)bl << 16);
+}
+
+void SalTabStripColorsGet(DWORD face, DWORD shadow, DWORD highlight, DWORD text, BOOL dark,
+                          BOOL highContrast, DWORD hcHighlight, DWORD hcHighlightText,
+                          CSalTabStripColors* out)
+{
+    if (out == NULL)
+        return;
+    if (highContrast)
+    {
+        out->StripBk = face;
+        out->DimText = text;
+        out->HoverBk = hcHighlight;
+        out->HoverText = hcHighlightText;
+        out->Separator = text;
+        return;
+    }
+    out->StripBk = SalTabMix(face, shadow, dark ? 0.5 : 0.22);
+    out->DimText = SalTabMix(text, out->StripBk, dark ? 0.30 : 0.38);
+    out->HoverBk = SalTabMix(out->StripBk, text, dark ? 0.10 : 0.07);
+    out->HoverText = text;
+    out->Separator = dark ? highlight : SalTabMix(shadow, out->StripBk, 0.30);
+}
+
+void SalTabCloseColors(DWORD bk, DWORD fg, BOOL dark, BOOL highContrast, DWORD* cross, DWORD* circle)
+{
+    if (cross != NULL)
+        *cross = highContrast ? fg : SalTabMix(fg, bk, 0.25);
+    if (circle != NULL)
+        *circle = SalTabMix(bk, fg, (dark && !highContrast) ? 0.20 : 0.14);
+}
+
+int SalTabScaled(int px, int scalePercent)
+{
+    return MulDiv(px, scalePercent, 100);
+}
+
+int SalTabStripHeight(int fontHeight, int scalePercent)
+{
+    return 2 + fontHeight + 2 + SalTabScaled(2 + 8, scalePercent);
+}
+
+void SalTabStripWidths(int avgCharWidth, int scalePercent, int iconSize, int* minWidth, int* maxWidth)
+{
+    int fixed = SalTabScaled(2 * 10 + 8 + 6, scalePercent) + iconSize;
+    if (minWidth != NULL)
+        *minWidth = 6 * avgCharWidth + fixed;
+    if (maxWidth != NULL)
+        *maxWidth = 20 * avgCharWidth + fixed;
+}
+
+int SalTabDragSlot(int count, int tabWidth, int draggedLeft, int from)
+{
+    if (count <= 0)
+        return 0;
+    if (from < 0)
+        from = 0;
+    if (from > count - 1)
+        from = count - 1;
+    if (tabWidth <= 0)
+        return from;
+    // floor division, also for a left below the run's left
+    int cell = draggedLeft >= 0 ? draggedLeft / tabWidth : -((-draggedLeft + tabWidth - 1) / tabWidth);
+    int slot;
+    if (draggedLeft >= from * tabWidth)
+        slot = cell; // moving right: tab j gives way once the left passes j * width (centre over centre)
+    else
+        slot = cell + 1; // moving left: tab j gives way once the left is below j * width
+    if (slot < 0)
+        slot = 0;
+    if (slot > count - 1)
+        slot = count - 1;
+    return slot;
+}
+
+int SalTabDragPosition(int from, int slot, int index)
+{
+    if (index == from)
+        return slot;
+    if (from < slot && index > from && index <= slot)
+        return index - 1;
+    if (slot < from && index >= slot && index < from)
+        return index + 1;
+    return index;
+}
+
+int SalTabEaseOut(int elapsedMs, int durationMs)
+{
+    if (durationMs <= 0 || elapsedMs >= durationMs)
+        return 1000;
+    if (elapsedMs <= 0)
+        return 0;
+    double t = (double)elapsedMs / durationMs;
+    double u = 1.0 - t;
+    int p = (int)((1.0 - u * u * u) * 1000.0 + 0.5);
+    return p > 1000 ? 1000 : p;
+}
+
+BOOL SalTabMenuCanMoveToOther(BOOL onTab, int count, BOOL otherShowsTabs)
+{
+    return (onTab && count > 1 && otherShowsTabs) ? TRUE : FALSE;
+}
+
+BOOL SalTabMenuCanNewAsOther(BOOL otherHasLocation)
+{
+    return otherHasLocation ? TRUE : FALSE;
+}
+
+static BOOL SalTabIsFsNameChar(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+           c == '_' || c == '-' || c == '.';
+}
+
+int SalTabLocationKind(const char* location, int* fsNameLen)
+{
+    if (fsNameLen != NULL)
+        *fsNameLen = 0;
+    if (location == NULL || location[0] == 0)
+        return SAL_TAB_KIND_FOLDER;
+    const char* s = location;
+    BOOL letter = (s[0] >= 'a' && s[0] <= 'z') || (s[0] >= 'A' && s[0] <= 'Z');
+    if (letter && s[1] == ':')
+    {
+        if (s[2] == 0 || (s[2] == '\\' && s[3] == 0))
+            return SAL_TAB_KIND_DRIVE;
+        return SAL_TAB_KIND_FOLDER; // "X:\dir" (an archive is known only from the panel)
+    }
+    if (s[0] == '\\' && s[1] == '\\')
+    {
+        // "\\server\share" or "\\server\share\": exactly two non-empty components
+        const char* p = s + 2;
+        const char* server = p;
+        while (*p != 0 && *p != '\\')
+            p++;
+        if (p == server || *p != '\\')
+            return SAL_TAB_KIND_FOLDER;
+        p++;
+        const char* share = p;
+        while (*p != 0 && *p != '\\')
+            p++;
+        if (p == share)
+            return SAL_TAB_KIND_FOLDER;
+        if (*p == 0 || (*p == '\\' && p[1] == 0))
+            return SAL_TAB_KIND_UNC;
+        return SAL_TAB_KIND_FOLDER;
+    }
+    int n = 0;
+    while (SalTabIsFsNameChar(s[n]))
+        n++;
+    if (n >= 2 && s[n] == ':')
+    {
+        if (fsNameLen != NULL)
+            *fsNameLen = n;
+        return SAL_TAB_KIND_PLUGINFS;
+    }
+    return SAL_TAB_KIND_FOLDER;
 }

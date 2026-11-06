@@ -1,0 +1,19 @@
+tabs404_probe (feature 404) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-06 22:06; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc404; font height 15, avg char 6; DPI scale 2560
+
+LOOK-LIGHT NORMAL FAIL        vs variantF_light_normal.png: exact 22543, edge-tolerated 250 (max 45), failing 1 (max 65, first at 768,20)
+LOOK-LIGHT INACTIVE FAIL        vs variantF_light_inactive.png: exact 22543, edge-tolerated 250 (max 46), failing 1 (max 65, first at 768,20)
+LOOK-LIGHT HOVERTAB FAIL        vs variantF_light_hovertab.png: exact 20128, edge-tolerated 1158 (max 63), failing 1508 (max 222, first at 513,5)
+LOOK-LIGHT HOVERCLOSE FAIL        vs variantF_light_hoverclose.png: exact 22364, edge-tolerated 400 (max 55), failing 30 (max 77, first at 365,10)
+LOOK-LIGHT HOVERPLUS FAIL        vs variantF_light_hoverplus.png: exact 22302, edge-tolerated 402 (max 61), failing 90 (max 141, first at 766,9)
+LOOK-LIGHT TABS   PASS        left [Downloads fonts tandemcommander src 2021_silon_bubble_sort_visualisation E:] active 2; right [start] active 0
+LOOK-DARK  NORMAL FAIL        vs variantF_dark_normal.png: exact 22543, edge-tolerated 250 (max 46), failing 1 (max 68, first at 768,20)
+LOOK-DARK  INACTIVE FAIL        vs variantF_dark_inactive.png: exact 22560, edge-tolerated 233 (max 27), failing 1 (max 68, first at 768,20)
+LOOK-DARK  HOVERTAB FAIL        vs variantF_dark_hovertab.png: exact 20128, edge-tolerated 1272 (max 61), failing 1394 (max 204, first at 513,5)
+LOOK-DARK  HOVERCLOSE FAIL        vs variantF_dark_hoverclose.png: exact 22366, edge-tolerated 398 (max 63), failing 30 (max 83, first at 365,10)
+LOOK-DARK  HOVERPLUS FAIL        vs variantF_dark_hoverplus.png: exact 22302, edge-tolerated 410 (max 61), failing 82 (max 123, first at 766,9)
+LOOK-DARK  TABS   PASS        left [Downloads fonts tandemcommander src 2021_silon_bubble_sort_visualisation E:] active 2; right [start] active 0
+Registry: restored; identical=True; SHA-256 before 1D52D8424042C19448C617A390D99BEAD62B4A7260A2A4AF993BC1FCE59D1ED7 / after 1D52D8424042C19448C617A390D99BEAD62B4A7260A2A4AF993BC1FCE59D1ED7
+
+Rows: PASS 2, FAIL 10, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

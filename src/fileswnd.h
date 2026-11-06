@@ -1893,6 +1893,11 @@ public:
     void CloseTabsToRight(int index);
     void ReopenClosedTab();        // feature 312: the newest closed tab back at its old position, shown
     void MoveTab(int from, int to);
+    BOOL MoveTabToOtherPanel(int index); // feature 404: opened in the other panel first, then closed here (not kept for Reopen)
+    void NewTabAsOtherPanel();           // feature 404: a new tab here at the location the other panel shows
+    // feature 404: derives the icon kind of 'tab' once (until its location changes): from the panel when
+    // the panel shows it ('panelShowsIt', or the active tab outside a switch), else from the location text
+    void ResolveTabIconKind(CPanelTab* tab, BOOL panelShowsIt = FALSE);
     void OpenIndexInNewTab(int itemIndex); // a folder of the listing into a new background tab
     void SetTabsEnabled(BOOL on);  // the option changed (or start-up): strip on/off, extra tabs dropped when off
 };

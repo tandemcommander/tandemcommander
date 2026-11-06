@@ -55,6 +55,13 @@ void RefreshThemeHighContrastState()
     InitThemeDarkSysColors(); // eager init: the viewer thread reads the LUT
 }
 
+BOOL IsThemeHighContrast()
+{
+    if (!ThemeHighContrastValid)
+        RefreshThemeHighContrastState();
+    return ThemeHighContrast;
+}
+
 BOOL IsDarkThemeActive()
 {
     if (Configuration.ThemeMode != THEME_MODE_DARK)

@@ -1908,6 +1908,8 @@ STRINGTABLE
  IDS_TABKEY_PARENT, "Go to the parent folder"
  IDS_TABKEY_CMDLINE, "Move between the panel and the command line"
  IDS_TABKEY_NONE, "(none)"
+ IDS_MENU_TAB_MOVETOOTHER, "&Move to Other Panel"
+ IDS_MENU_TAB_NEWASOTHER, "New Tab as Other &Panel"
  IDS_CFGIMP_GRP_HOTPATHS, "Hot paths"
  IDS_CFGIMP_GRP_USERMENU, "User menu"
  IDS_CFGIMP_GRP_FTP, "FTP connections (bookmarks, proxy servers, server types)"

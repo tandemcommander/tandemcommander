@@ -142,3 +142,76 @@ int SalTabsReopenIndex(int count, int closedIndex);
 // Configuration > Tabs is page 7 (after Appearance); a remembered page index
 // written before feature 312 is moved past it
 int SalCfgPageIndexFrom311(int index);
+
+//*****************************************************************************
+//
+// feature 404: the variant F tab strip - colours, metrics, live drag, the
+// other-panel menu items and the location kind of a tab's icon
+//
+
+// a + (b - a) * t per channel, rounded half to even as the mockup (TabMock.cs,
+// Math.Round) - colours are COLORREF (0x00BBGGRR)
+DWORD SalTabMix(DWORD a, DWORD b, double t);
+
+struct CSalTabStripColors
+{
+    DWORD StripBk;   // the strip background
+    DWORD DimText;   // the title of an inactive tab and the plus glyph
+    DWORD HoverBk;   // the hover pill of an inactive tab and the plus circle
+    DWORD HoverText; // the title of a hovered inactive tab and the hovered plus glyph
+    DWORD Separator; // the line between two plain tabs
+};
+
+// the strip colours from the system colours of the theme (face, shadow, highlight
+// = COLOR_BTNHIGHLIGHT, text = COLOR_BTNTEXT); 'hcHighlight' / 'hcHighlightText'
+// (COLOR_HIGHLIGHT / COLOR_HIGHLIGHTTEXT) are used only under High Contrast, where
+// nothing is mixed
+void SalTabStripColorsGet(DWORD face, DWORD shadow, DWORD highlight, DWORD text, BOOL dark,
+                          BOOL highContrast, DWORD hcHighlight, DWORD hcHighlightText,
+                          CSalTabStripColors* out);
+
+// the close glyph over background 'bk' with foreground 'fg': the cross when not
+// hovered (fg 25 % toward bk) and the hover circle (bk 14 % / Dark 20 % toward fg);
+// under High Contrast the cross is fg
+void SalTabCloseColors(DWORD bk, DWORD fg, BOOL dark, BOOL highContrast, DWORD* cross, DWORD* circle);
+
+// MulDiv(px, scalePercent, 100) for the strip metrics
+int SalTabScaled(int px, int scalePercent);
+
+// the strip height: 2 + font height + 2 + 10 (scaled) - 29 px at 96 DPI with Segoe UI 9 pt
+int SalTabStripHeight(int fontHeight, int scalePercent);
+
+// the width limits of a tab: 6 / 20 average characters + 2 x 10 + 8 + 6 (scaled) + the icon
+void SalTabStripWidths(int avgCharWidth, int scalePercent, int iconSize, int* minWidth, int* maxWidth);
+
+// the slot a dragged tab takes (live reorder): 'draggedLeft' is its drawn left
+// relative to the left of the run, 'from' its index in the run of 'count' equal
+// tabs of 'tabWidth'; a neighbour gives way once the dragged tab's centre passes
+// the neighbour's centre. Result in [0, count - 1]
+int SalTabDragSlot(int count, int tabWidth, int draggedLeft, int from);
+
+// where tab 'index' is shown while tab 'from' is dragged to slot 'slot' (the
+// order after the release is SalTabsMove(from, slot)); a cancel is slot == from
+int SalTabDragPosition(int from, int slot, int index);
+
+// ease-out progress (1 - (1 - t)^3) in 0..1000 after 'elapsedMs' of 'durationMs'
+int SalTabEaseOut(int elapsedMs, int durationMs);
+
+// Move to Other Panel: on a tab, this panel has more than one tab, the other panel shows tabs
+BOOL SalTabMenuCanMoveToOther(BOOL onTab, int count, BOOL otherShowsTabs);
+
+// New Tab as Other Panel: the other panel has a location to give
+BOOL SalTabMenuCanNewAsOther(BOOL otherHasLocation);
+
+// the kind of a tab's location for its icon
+#define SAL_TAB_KIND_UNKNOWN -1 // not derived yet
+#define SAL_TAB_KIND_FOLDER 0
+#define SAL_TAB_KIND_DRIVE 1    // "X:\" (or "X:")
+#define SAL_TAB_KIND_UNC 2      // "\\server\share" (or with a trailing backslash)
+#define SAL_TAB_KIND_ARCHIVE 3  // known only from the panel (never from the text)
+#define SAL_TAB_KIND_PLUGINFS 4 // "fsname:..." - the caller confirms the file system name
+
+// the kind from the location text alone (no file system access); a "name:"
+// prefix of two or more letters, digits, '_', '-' or '.' gives SAL_TAB_KIND_PLUGINFS
+// and its length in '*fsNameLen' (0 otherwise)
+int SalTabLocationKind(const char* location, int* fsNameLen);

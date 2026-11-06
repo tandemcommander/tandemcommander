@@ -39,6 +39,9 @@ public:
     CPathHistory* PathHistory;        // this tab's Back/Forward history (owned)
     BOOL Visited;                     // FALSE for a record restored from the registry until first activated
     int ClosedIndex;                  // feature 312: its index in the strip when it was closed (Reopen Closed Tab); -1 = open
+    int IconKind;                     // feature 404: SAL_TAB_KIND_* of the icon; SAL_TAB_KIND_UNKNOWN = not derived yet
+    UINT IconDriveType;               // feature 404: GetDriveType of a drive root (0 = none)
+    int IconPluginIndex;              // feature 404: the plug-in owning the file system of SAL_TAB_KIND_PLUGINFS (-1 = none)
 
     CPanelTab();
     explicit CPanelTab(const CSalTabRecord& rec);

@@ -4134,6 +4134,10 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         case CM_ACTIVE_REOPENTAB: // feature 312
         case CM_LEFT_REOPENTAB:
         case CM_RIGHT_REOPENTAB:
+        case CM_LEFT_MOVETABTOOTHER: // feature 404
+        case CM_RIGHT_MOVETABTOOTHER:
+        case CM_LEFT_NEWTABASOTHER:
+        case CM_RIGHT_NEWTABASOTHER:
         {
             HandleTabCommand(LOWORD(wParam));
             return 0;

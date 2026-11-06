@@ -2671,6 +2671,9 @@
 #define IDS_TABKEY_PARENT               14179
 #define IDS_TABKEY_CMDLINE              14190
 #define IDS_TABKEY_NONE                 14191
+// feature 404: the strip's other-panel commands - free slots of the bundle of 14195 (14192-14207)
+#define IDS_MENU_TAB_MOVETOOTHER        14192
+#define IDS_MENU_TAB_NEWASOTHER         14193
 
 // feature 245: settings import from Altap Salamander / Open Salamander (free slots of existing bundles)
 #define IDS_CFGIMP_GRP_HOTPATHS          10200

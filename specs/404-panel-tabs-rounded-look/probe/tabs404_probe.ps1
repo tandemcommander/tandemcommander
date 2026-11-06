@@ -85,6 +85,19 @@ public static class Tc404
     [DllImport("user32.dll")] public static extern bool PostMessageW(IntPtr h, uint msg, IntPtr w, IntPtr l);
     [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeoutW(IntPtr h, uint msg, IntPtr w, IntPtr l, uint flags, uint timeout, out IntPtr result);
     [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);
+    [StructLayout(LayoutKind.Sequential)] public struct POINT { public int x, y; }
+    [DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT p);
+    [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
+    // moves 'main' so that client point (x, y) of 'strip' lies under this desktop's cursor: TrackMouseEvent
+    // then sees the cursor in the strip and posts no WM_MOUSELEAVE (no real mouse on the hidden desktop)
+    public static string PlaceUnderCursor(IntPtr main, IntPtr strip, int x, int y)
+    {
+        POINT c; if (!GetCursorPos(out c)) return "GetCursorPos failed";
+        POINT p; p.x = x; p.y = y; ClientToScreen(strip, ref p);
+        RECT w; GetWindowRect(main, out w);
+        SetWindowPos(main, IntPtr.Zero, w.left + c.x - p.x, w.top + c.y - p.y, 0, 0, 0x0015); // NOSIZE|NOZORDER|NOACTIVATE
+        return string.Format("cursor {0},{1}", c.x, c.y);
+    }
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool SystemParametersInfoW(uint a, uint b, ref LOGFONTW lf, uint c);
     [DllImport("user32.dll")] static extern IntPtr GetDC(IntPtr h);
     [DllImport("user32.dll")] static extern int ReleaseDC(IntPtr h, IntPtr dc);
@@ -295,6 +308,13 @@ function TabCx($g, [int]$i) { return [int]($g.Left + $i * $g.TabW + $g.TabW / 2)
 function CloseCx($g, [int]$i) { return [int]($g.Left + ($i + 1) * $g.TabW - 1 - $g.ClosePad - 4) }
 function PlusCx($g, [int]$n) { return [int]($g.Left + $n * $g.TabW + 2 + $g.H / 2) }
 
+function Hover([int]$Id, [IntPtr]$Hs, [int]$X, [int]$Y) {
+    $c = [Tc404]::PlaceUnderCursor((Get-Main $Id), $Hs, $X, $Y)
+    Start-Sleep -Milliseconds 300
+    [void](Serve $Id 2)
+    [Tc404]::Send($Hs, $WM_MOUSEMOVE, 0, $X, $Y)
+    $script:HoverNote = $c
+}
 function Cap-Compare([string]$Run, [string]$State, [IntPtr]$Hs, [string]$EvName) {
     Start-Sleep -Milliseconds 300
     $bmp = [Tc404]::Capture($Hs)
@@ -305,7 +325,8 @@ function Cap-Compare([string]$Run, [string]$State, [IntPtr]$Hs, [string]$EvName)
     $r = [Tc404]::Compare($bmp, $evFile, ($capFile -replace '_capture\.png$', '_diff.png'))
     $bmp.Dispose()
     $parts = $r.Split('|', 2)
-    Row $Run $State $parts[0] ("vs {0}: {1}" -f $EvName, $parts[1])
+    Row $Run $State $parts[0] ("vs {0}: {1}{2}" -f $EvName, $parts[1], $(if ($script:HoverNote) { "; " + $script:HoverNote } else { "" }))
+    $script:HoverNote = $null
 }
 
 # ---------------------------------------------------------------------------
@@ -329,11 +350,11 @@ function Run-Look([string]$Theme) {
         [Tc404]::SendRaw($main, $WM_NCACTIVATE, [IntPtr]0, [IntPtr]::Zero)
         Cap-Compare $name 'INACTIVE' $Hs "variantF_${Theme}_inactive.png"
         [Tc404]::SendRaw($main, $WM_NCACTIVATE, [IntPtr]1, [IntPtr]::Zero)
-        [Tc404]::Send($Hs, $WM_MOUSEMOVE, 0, (TabCx $g 4), $g.MidY)
+        Hover $id $Hs (TabCx $g 4) $g.MidY
         Cap-Compare $name 'HOVERTAB' $Hs "variantF_${Theme}_hovertab.png"
-        [Tc404]::Send($Hs, $WM_MOUSEMOVE, 0, (CloseCx $g 2), $g.CloseY)
+        Hover $id $Hs (CloseCx $g 2) $g.CloseY
         Cap-Compare $name 'HOVERCLOSE' $Hs "variantF_${Theme}_hoverclose.png"
-        [Tc404]::Send($Hs, $WM_MOUSEMOVE, 0, (PlusCx $g 6), $g.MidY)
+        Hover $id $Hs (PlusCx $g 6) $g.MidY
         Cap-Compare $name 'HOVERPLUS' $Hs "variantF_${Theme}_hoverplus.png"
         $s = Snap $id
         Row $name 'TABS' (V ((Order $s.L) -eq 'Downloads fonts tandemcommander src 2021_silon_bubble_sort_visualisation E:' -and $s.L.Active -eq 2)) (Desc $s)

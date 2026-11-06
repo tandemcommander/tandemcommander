@@ -24,6 +24,9 @@ CPanelTab::CPanelTab()
     ResetSession();
     Visited = TRUE;
     ClosedIndex = -1;
+    IconKind = SAL_TAB_KIND_UNKNOWN;
+    IconDriveType = 0;
+    IconPluginIndex = -1;
 }
 
 CPanelTab::CPanelTab(const CSalTabRecord& rec)
@@ -33,6 +36,9 @@ CPanelTab::CPanelTab(const CSalTabRecord& rec)
     ResetSession();
     Visited = TRUE;
     ClosedIndex = -1;
+    IconKind = SAL_TAB_KIND_UNKNOWN;
+    IconDriveType = 0;
+    IconPluginIndex = -1;
 }
 
 CPanelTab::~CPanelTab()
@@ -287,6 +293,7 @@ void CFilesWindow::CaptureActiveTab()
     }
     tab->TopIndexMem = TopIndexMem;
     tab->UserWorkedOnThisPath = UserWorkedOnThisPath;
+    ResolveTabIconKind(tab, TRUE); // feature 404: the panel still shows it - an archive or plug-in FS keeps its icon
     if (tab->PathHistory != PathHistory)
         TRACE_E("CFilesWindow::CaptureActiveTab(): the panel history is not the active tab's");
     tab->Visited = TRUE;
@@ -535,6 +542,172 @@ void CFilesWindow::MoveTab(int from, int to)
     UpdateTabStrip();
 }
 
+// the index of 'tab' in the strip, -1 when it is gone (the leave prompts pump messages)
+static int FindPanelTab(CPanelTabs* tabs, CPanelTab* tab)
+{
+    int i;
+    for (i = 0; i < tabs->Count(); i++)
+        if (tabs->At(i) == tab)
+            return i;
+    return -1;
+}
+
+BOOL CFilesWindow::MoveTabToOtherPanel(int index)
+{
+    CALL_STACK_MESSAGE2("CFilesWindow::MoveTabToOtherPanel(%d)", index);
+    // feature 404: the tab never disappears from both panels - the other panel opens it first and
+    // only then is it closed here; a refused close here takes it back from the other panel
+    if (!Configuration.PanelTabs || MainWindow == NULL || Tabs.Count() <= 1 || Tabs.At(index) == NULL)
+        return FALSE;
+    CFilesWindow* other = MainWindow->GetOtherPanel(this);
+    if (other == NULL || other == this || other->GetTabStripHWND() == NULL)
+        return FALSE;
+    if (Tabs.SwitchInProgress || other->Tabs.SwitchInProgress || FilesActionInProgress ||
+        other->FilesActionInProgress || MainWindow->HasLockedUI())
+        return FALSE;
+    if (index == Tabs.ActiveIndex)
+        CaptureActiveTab();
+    CPanelTab* moved = Tabs.At(index);
+    if (moved == NULL || moved->Location[0] == 0)
+        return FALSE;
+    CSalTabRecord rec = *(const CSalTabRecord*)moved; // location, view, sort, filter - as Duplicate Tab copies
+
+    // 1. open it in the other panel, at the end, as its active tab
+    int otherPrev = other->Tabs.ActiveIndex;
+    int otherNew = other->Tabs.Count();
+    CPanelTab* added = other->Tabs.Add(rec, -1);
+    if (added == NULL)
+        return FALSE;
+    if (!other->SwitchToTab(otherNew))
+    {
+        int at = FindPanelTab(&other->Tabs, added);
+        if (at >= 0 && at != other->Tabs.ActiveIndex)
+            other->Tabs.Remove(at);
+        other->UpdateTabStrip();
+        return FALSE; // the other panel did not open it: nothing changed here
+    }
+
+    // 2. close it here, not kept for Reopen Closed Tab (it lives on in the other panel)
+    index = FindPanelTab(&Tabs, moved);
+    if (index < 0) // closed here meanwhile (from a prompt of the other panel's switch)
+    {
+        UpdateTabStrip();
+        return TRUE;
+    }
+    if (index == Tabs.ActiveIndex)
+    {
+        if (Tabs.Count() <= 1)
+            return TRUE; // cannot happen (checked above); the tab is then in both panels, nothing lost
+        int neighbour = (index < Tabs.Count() - 1) ? index + 1 : index - 1;
+        if (!SwitchToTab(neighbour))
+        {
+            // leaving was refused (archive or plug-in leave rules): both panels as they were - the
+            // other panel goes back to its previous tab and forgets the new one
+            int at = FindPanelTab(&other->Tabs, added);
+            if (at >= 0)
+            {
+                if (at == other->Tabs.ActiveIndex && otherPrev >= 0 && otherPrev < other->Tabs.Count() && otherPrev != at)
+                    other->SwitchToTab(otherPrev);
+                at = FindPanelTab(&other->Tabs, added);
+                if (at >= 0 && at != other->Tabs.ActiveIndex)
+                    other->Tabs.Remove(at); // else the other panel could not leave it: it stays in both panels
+            }
+            other->UpdateTabStrip();
+            UpdateTabStrip();
+            return FALSE;
+        }
+        index = FindPanelTab(&Tabs, moved);
+        if (index < 0)
+        {
+            UpdateTabStrip();
+            return TRUE;
+        }
+    }
+    Tabs.Remove(index);
+    UpdateTabStrip();
+    other->UpdateTabStrip();
+    return TRUE;
+}
+
+void CFilesWindow::NewTabAsOtherPanel()
+{
+    CALL_STACK_MESSAGE1("CFilesWindow::NewTabAsOtherPanel()");
+    // feature 404: a new tab here at the location the other panel shows now; the view, sort and
+    // filter are those New Tab gives (this panel's current tab)
+    if (!Configuration.PanelTabs || MainWindow == NULL)
+        return;
+    CFilesWindow* other = MainWindow->GetOtherPanel(this);
+    if (other == NULL || other == this || other->Tabs.SwitchInProgress)
+        return;
+    other->CaptureActiveTab();
+    CPanelTab* src = other->Tabs.Active();
+    if (src == NULL || src->Location[0] == 0)
+        return;
+    CaptureActiveTab();
+    CPanelTab* cur = Tabs.Active();
+    CSalTabRecord rec;
+    SalTabRecordInit(&rec);
+    if (cur != NULL)
+        rec = *(const CSalTabRecord*)cur;
+    lstrcpyn(rec.Location, src->Location, SAL_TAB_LOCATION_MAX);
+    int newIndex = Tabs.Count();
+    if (Tabs.Add(rec, -1) == NULL)
+        return;
+    if (!SwitchToTab(newIndex))
+        Tabs.Remove(newIndex);
+    UpdateTabStrip();
+}
+
+void CFilesWindow::ResolveTabIconKind(CPanelTab* tab, BOOL panelShowsIt)
+{
+    if (tab == NULL || tab->IconKind != SAL_TAB_KIND_UNKNOWN)
+        return;
+    tab->IconDriveType = 0;
+    tab->IconPluginIndex = -1;
+    BOOL fromPanel = panelShowsIt || (tab == Tabs.Active() && !Tabs.SwitchInProgress);
+    if (fromPanel && Is(ptZIPArchive))
+    {
+        tab->IconKind = SAL_TAB_KIND_ARCHIVE;
+        return;
+    }
+    if (fromPanel && Is(ptPluginFS) && GetPluginFS()->NotEmpty())
+    {
+        int pluginIndex, fsNameIndex;
+        if (Plugins.IsPluginFS(GetPluginFS()->GetPluginFSName(), pluginIndex, fsNameIndex))
+            tab->IconPluginIndex = pluginIndex;
+        tab->IconKind = SAL_TAB_KIND_PLUGINFS;
+        return;
+    }
+    // from the text alone: no file system access (a remembered tab may be on an unreachable path)
+    int fsNameLen = 0;
+    int kind = SalTabLocationKind(tab->Location, &fsNameLen);
+    if (kind == SAL_TAB_KIND_PLUGINFS)
+    {
+        char fsName[MAX_PATH];
+        int pluginIndex, fsNameIndex;
+        if (fsNameLen < MAX_PATH)
+        {
+            memcpy(fsName, tab->Location, fsNameLen);
+            fsName[fsNameLen] = 0;
+            if (Plugins.IsPluginFS(fsName, pluginIndex, fsNameIndex))
+                tab->IconPluginIndex = pluginIndex;
+            else
+                kind = SAL_TAB_KIND_FOLDER;
+        }
+        else
+            kind = SAL_TAB_KIND_FOLDER;
+    }
+    if (kind == SAL_TAB_KIND_DRIVE)
+    {
+        // the drive type of a letter root is a lookup of the local drive table, no I/O on the drive
+        WCHAR root[4] = {(WCHAR)(BYTE)tab->Location[0], L':', L'\\', 0};
+        tab->IconDriveType = GetDriveTypeW(root);
+    }
+    if (kind == SAL_TAB_KIND_UNC)
+        tab->IconDriveType = DRIVE_REMOTE;
+    tab->IconKind = kind;
+}
+
 void CFilesWindow::SetTabsEnabled(BOOL on)
 {
     CALL_STACK_MESSAGE2("CFilesWindow::SetTabsEnabled(%d)", on);
@@ -652,7 +825,24 @@ BOOL CFilesWindow::OnMButtonUp(WPARAM wParam, LPARAM lParam, LRESULT* lResult)
 void CMainWindow::HandleTabCommand(int cmd)
 {
     CALL_STACK_MESSAGE2("CMainWindow::HandleTabCommand(%d)", cmd);
-    if (!Configuration.PanelTabs || cmd < CM_ACTIVE_NEWTAB || cmd > CM_RIGHT_REOPENTAB)
+    if (!Configuration.PanelTabs)
+        return;
+    if (cmd >= CM_LEFT_MOVETABTOOTHER && cmd <= CM_RIGHT_NEWTABASOTHER)
+    {
+        // feature 404: the strip's Move to Other Panel / New Tab as Other Panel (left / right)
+        BOOL leftCmd = (cmd == CM_LEFT_MOVETABTOOTHER || cmd == CM_LEFT_NEWTABASOTHER);
+        CFilesWindow* p = leftCmd ? LeftPanel : RightPanel;
+        if (p == NULL)
+            return;
+        int c = p->Tabs.ContextTabIndex;
+        p->Tabs.ContextTabIndex = -1;
+        if (cmd == CM_LEFT_MOVETABTOOTHER || cmd == CM_RIGHT_MOVETABTOOTHER)
+            p->MoveTabToOtherPanel((c >= 0 && c < p->Tabs.Count()) ? c : p->Tabs.ActiveIndex);
+        else
+            p->NewTabAsOtherPanel();
+        return;
+    }
+    if (cmd < CM_ACTIVE_NEWTAB || cmd > CM_RIGHT_REOPENTAB)
         return;
     int which = (cmd - CM_ACTIVE_NEWTAB) % 3; // 0 = active, 1 = left, 2 = right (the CM_*_CHANGEDIR order)
     int op = (cmd - CM_ACTIVE_NEWTAB) / 3;    // 0 new, 1 close, 2 next, 3 previous, 4 duplicate, 5 close others, 6 close right, 7 reopen (312)

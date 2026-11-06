@@ -2299,6 +2299,129 @@ static void TestTabKeys312()
     CHECK(SalCfgPageIndexFrom311(27) == 28);
 }
 
+// feature 404: the variant F tab strip (src/common/saltabs.cpp, contracts/tab-strip-f.md); the
+// expected colours are the pixels of the evidence images (Windows 11 default colours, Dark palette)
+static void TestTabStrip404()
+{
+    // mixes round half to even, as the mockup's Math.Round
+    CHECK(SalTabMix(RGB(240, 240, 240), RGB(160, 160, 160), 0.22) == RGB(222, 222, 222));
+    CHECK(SalTabMix(RGB(45, 45, 45), RGB(26, 26, 26), 0.5) == RGB(36, 36, 36));   // 35.5 -> 36
+    CHECK(SalTabMix(RGB(45, 45, 45), RGB(28, 28, 28), 0.5) == RGB(36, 36, 36));   // 36.5 -> 36
+    CHECK(SalTabMix(RGB(0, 100, 255), RGB(255, 100, 0), 0.0) == RGB(0, 100, 255));
+    CHECK(SalTabMix(RGB(0, 100, 255), RGB(255, 100, 0), 1.0) == RGB(255, 100, 0));
+    CHECK(SalTabMix(RGB(10, 20, 30), RGB(110, 220, 130), 0.5) == RGB(60, 120, 80)); // channels kept apart
+
+    CSalTabStripColors c;
+    SalTabStripColorsGet(RGB(240, 240, 240), RGB(160, 160, 160), RGB(255, 255, 255), RGB(0, 0, 0), FALSE, FALSE,
+                         RGB(0, 120, 215), RGB(255, 255, 255), &c);
+    CHECK(c.StripBk == RGB(222, 222, 222));   // variantF_light_normal (0, 0)
+    CHECK(c.Separator == RGB(179, 179, 179)); // (131, 15)
+    CHECK(c.HoverBk == RGB(206, 206, 206));   // variantF_light_hovertab (540, 6)
+    CHECK(c.DimText == RGB(84, 84, 84));
+    CHECK(c.HoverText == RGB(0, 0, 0));
+    SalTabStripColorsGet(RGB(45, 45, 45), RGB(26, 26, 26), RGB(70, 70, 70), RGB(240, 240, 240), TRUE, FALSE,
+                         RGB(0, 120, 215), RGB(255, 255, 255), &c);
+    CHECK(c.StripBk == RGB(36, 36, 36));    // variantF_dark_normal (0, 0)
+    CHECK(c.Separator == RGB(70, 70, 70));  // the button highlight colour
+    CHECK(c.HoverBk == RGB(56, 56, 56));    // variantF_dark_hovertab (540, 6)
+    CHECK(c.DimText == RGB(179, 179, 179)); // 240 + (36 - 240) * 0.3 = 178.8
+    // High Contrast: nothing mixed
+    SalTabStripColorsGet(RGB(0, 0, 0), RGB(128, 128, 128), RGB(255, 255, 255), RGB(255, 255, 0), TRUE, TRUE,
+                         RGB(0, 255, 255), RGB(0, 0, 0), &c);
+    CHECK(c.StripBk == RGB(0, 0, 0) && c.DimText == RGB(255, 255, 0) && c.HoverBk == RGB(0, 255, 255) &&
+          c.HoverText == RGB(0, 0, 0) && c.Separator == RGB(255, 255, 0));
+
+    DWORD cross = 0, circle = 0;
+    SalTabCloseColors(RGB(153, 180, 209), RGB(0, 0, 0), FALSE, FALSE, &cross, &circle);
+    CHECK(cross == RGB(38, 45, 52));      // 0 + 153 * 0.25 = 38.25 ...
+    CHECK(circle == RGB(132, 155, 180));  // 153 - 153 * 0.14 = 131.58 ...
+    SalTabCloseColors(RGB(38, 79, 120), RGB(255, 255, 255), TRUE, FALSE, &cross, &circle);
+    CHECK(circle == RGB(81, 114, 147));   // 20 % in the Dark theme
+    SalTabCloseColors(RGB(0, 0, 0), RGB(255, 255, 0), TRUE, TRUE, &cross, &circle);
+    CHECK(cross == RGB(255, 255, 0));
+
+    // metrics
+    CHECK(SalTabStripHeight(15, 100) == 29);
+    CHECK(SalTabStripHeight(19, 125) == 2 + 19 + 2 + 13); // 12.5 -> MulDiv rounds to 13
+    CHECK(SalTabStripHeight(23, 150) == 2 + 23 + 2 + 15);
+    CHECK(SalTabScaled(8, 150) == 12 && SalTabScaled(6, 125) == 8 && SalTabScaled(10, 100) == 10);
+    int mn = 0, mx = 0;
+    SalTabStripWidths(6, 100, 16, &mn, &mx);
+    CHECK(mn == 36 + 50 && mx == 120 + 50); // 6 / 20 chars + 2 x 10 + 8 + 16 + 6
+    SalTabStripWidths(8, 150, 24, &mn, &mx);
+    CHECK(mn == 48 + 51 + 24 && mx == 160 + 51 + 24);
+
+    // live drag: centre over centre
+    CHECK(SalTabDragSlot(4, 100, 0, 0) == 0);
+    CHECK(SalTabDragSlot(4, 100, 99, 0) == 0);   // the centre is not past tab 1's centre yet
+    CHECK(SalTabDragSlot(4, 100, 100, 0) == 1);  // now it is
+    CHECK(SalTabDragSlot(4, 100, 206, 0) == 2);  // the probe's drag of A past C
+    CHECK(SalTabDragSlot(4, 100, 900, 0) == 3);  // clamped
+    CHECK(SalTabDragSlot(4, 100, 201, 2) == 2);
+    CHECK(SalTabDragSlot(4, 100, 199, 2) == 2);  // moving left: tab 1 gives way below 100
+    CHECK(SalTabDragSlot(4, 100, 101, 2) == 2);
+    CHECK(SalTabDragSlot(4, 100, 99, 2) == 1);
+    CHECK(SalTabDragSlot(4, 100, -1, 2) == 0);
+    CHECK(SalTabDragSlot(4, 100, -500, 3) == 0);
+    CHECK(SalTabDragSlot(4, 0, 50, 2) == 2);     // no width: stays
+    CHECK(SalTabDragSlot(0, 100, 50, 0) == 0);
+    CHECK(SalTabDragSlot(3, 100, 50, 7) == 1);   // 'from' clamped into the run
+    // positions while dragging and the order after the release
+    {
+        const char* names = "ABCD";
+        char shown[5] = {0};
+        int i;
+        for (i = 0; i < 4; i++)
+            shown[SalTabDragPosition(0, 2, i)] = names[i];
+        CHECK(strcmp(shown, "BCAD") == 0);
+        for (i = 0; i < 4; i++)
+            shown[SalTabDragPosition(3, 1, i)] = names[i];
+        CHECK(strcmp(shown, "ADBC") == 0);
+        for (i = 0; i < 4; i++)
+            shown[SalTabDragPosition(2, 2, i)] = names[i]; // a cancel: unchanged
+        CHECK(strcmp(shown, "ABCD") == 0);
+        // the release applies SalTabsMove(from, slot): the same order as shown
+        int active = 0;
+        SalTabsMove(4, 0, 2, &active);
+        CHECK(active == 2);
+    }
+    // ease-out
+    CHECK(SalTabEaseOut(0, 150) == 0);
+    CHECK(SalTabEaseOut(-5, 150) == 0);
+    CHECK(SalTabEaseOut(150, 150) == 1000);
+    CHECK(SalTabEaseOut(500, 150) == 1000);
+    CHECK(SalTabEaseOut(75, 150) == 875); // 1 - 0.5^3
+    CHECK(SalTabEaseOut(10, 0) == 1000);  // animation effects off: at the target at once
+    CHECK(SalTabEaseOut(30, 150) > SalTabEaseOut(15, 150));
+
+    // menu enabling
+    CHECK(SalTabMenuCanMoveToOther(TRUE, 2, TRUE));
+    CHECK(!SalTabMenuCanMoveToOther(TRUE, 1, TRUE));  // a single tab, like Close Tab
+    CHECK(!SalTabMenuCanMoveToOther(FALSE, 3, TRUE)); // the empty strip
+    CHECK(!SalTabMenuCanMoveToOther(TRUE, 3, FALSE)); // the other panel shows no tabs
+    CHECK(SalTabMenuCanNewAsOther(TRUE));
+    CHECK(!SalTabMenuCanNewAsOther(FALSE));
+
+    // location kinds (no file system access)
+    int fsLen = -1;
+    CHECK(SalTabLocationKind("E:\\", &fsLen) == SAL_TAB_KIND_DRIVE && fsLen == 0);
+    CHECK(SalTabLocationKind("e:", NULL) == SAL_TAB_KIND_DRIVE);
+    CHECK(SalTabLocationKind("E:\\Work", NULL) == SAL_TAB_KIND_FOLDER);
+    CHECK(SalTabLocationKind("C:\\x\\a.zip\\sub", NULL) == SAL_TAB_KIND_FOLDER); // archive: from the panel only
+    CHECK(SalTabLocationKind("\\\\server\\share", NULL) == SAL_TAB_KIND_UNC);
+    CHECK(SalTabLocationKind("\\\\server\\share\\", NULL) == SAL_TAB_KIND_UNC);
+    CHECK(SalTabLocationKind("\\\\server\\share\\dir", NULL) == SAL_TAB_KIND_FOLDER);
+    CHECK(SalTabLocationKind("\\\\server", NULL) == SAL_TAB_KIND_FOLDER);
+    CHECK(SalTabLocationKind("\\\\\\share", NULL) == SAL_TAB_KIND_FOLDER);
+    CHECK(SalTabLocationKind("sftp:host/path", &fsLen) == SAL_TAB_KIND_PLUGINFS && fsLen == 4);
+    CHECK(SalTabLocationKind("ftp:ftp://user@server", &fsLen) == SAL_TAB_KIND_PLUGINFS && fsLen == 3);
+    CHECK(SalTabLocationKind("x:", NULL) == SAL_TAB_KIND_DRIVE); // one letter is a drive, never a file system
+    CHECK(SalTabLocationKind("my fs:x", &fsLen) == SAL_TAB_KIND_FOLDER && fsLen == 0);
+    CHECK(SalTabLocationKind("", NULL) == SAL_TAB_KIND_FOLDER);
+    CHECK(SalTabLocationKind(NULL, NULL) == SAL_TAB_KIND_FOLDER);
+    CHECK(SalTabLocationKind("G:\\M\xC5\xAFj disk", NULL) == SAL_TAB_KIND_FOLDER);
+}
+
 // feature 079: crash report file name (src/common/salbugreport.cpp), contracts/crash-report.md C2
 static void TestBugReport079()
 {
@@ -27097,6 +27220,7 @@ int main(int argc, char** argv)
     TestCommandShell071();
     TestPanelTabs078();
     TestTabKeys312();
+    TestTabStrip404();
     TestBugReport079();
     TestCloseApp080();
     TestSevenZipList084();

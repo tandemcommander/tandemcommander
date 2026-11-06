@@ -1990,6 +1990,7 @@ void CFilesWindow::DirectoryLineSetText()
     if (tab != NULL)
     {
         GetGeneralPath(tab->Location, SAL_TAB_LOCATION_MAX, TRUE);
+        tab->IconKind = SAL_TAB_KIND_UNKNOWN; // feature 404: the icon follows the location
         UpdateTabStrip();
     }
 }
