@@ -904,9 +904,9 @@ void CTabWindow::PaintTabBack(HDC dc, int index, BOOL hot)
         _snprintf_s(el, _TRUNCATE,
                     "<path d=\"M%.3f %.3fA%.3f %.3f 0 0 0 %.3f %.3fL%.3f %.3fA%.3f %.3f 0 0 1 %.3f %.3f"
                     "L%.3f %.3fA%.3f %.3f 0 0 1 %.3f %.3fL%.3f %.3fA%.3f %.3f 0 0 0 %.3f %.3fZ\" fill=\"#ffffff\"/>",
-                    L - rad, B, rad, rad, L, B - rad, // left foot
-                    L, T + rad, rad, rad, L + rad, T, // top-left corner
-                    R - rad, T, rad, rad, R, T + rad, // top-right corner
+                    L - rad, B, rad, rad, L, B - rad,  // left foot
+                    L, T + rad, rad, rad, L + rad, T,  // top-left corner
+                    R - rad, T, rad, rad, R, T + rad,  // top-right corner
                     R, B - rad, rad, rad, R + rad, B); // right foot
         AAShape(dc, el, TabPaint.CapBk, L - rad, T, R + rad, B);
     }

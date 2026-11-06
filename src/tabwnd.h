@@ -70,10 +70,10 @@ protected:
     BOOL WaitForDrag;
     BOOL Dragging;
     POINT DragAnchor;
-    int DragIndex;  // the pressed tab (index into the panel's tabs)
-    int GrabOffset; // cursor x - the pressed tab's left at the press
-    int DragX;      // drawn left of the dragged tab
-    int DragSlot;   // the index the dragged tab takes now
+    int DragIndex;       // the pressed tab (index into the panel's tabs)
+    int GrabOffset;      // cursor x - the pressed tab's left at the press
+    int DragX;           // drawn left of the dragged tab
+    int DragSlot;        // the index the dragged tab takes now
     CTabStripAnim* Anim; // per tab (AnimCount entries), NULL while nothing moves
     int AnimCount;
     BOOL TimerOn;
@@ -96,8 +96,8 @@ protected:
     // feature 404: icon cache (HANDLES-tracked, destroyed in ClearIcons)
     HICON IconFolder;
     HICON IconArchive;
-    HICON IconPluginFS;     // the generic plug-in file system icon
-    HICON IconDrive[8][2];  // [drive type][system drive]
+    HICON IconPluginFS;    // the generic plug-in file system icon
+    HICON IconDrive[8][2]; // [drive type][system drive]
     int PluginIconPlugin[TABSTRIP_PLUGIN_ICONS];
     HICON PluginIcon[TABSTRIP_PLUGIN_ICONS];
 
@@ -131,13 +131,13 @@ protected:
     // live drag (feature 404)
     void StartDrag();
     void UpdateDrag(int x);
-    void EndDrag(BOOL apply);        // release (apply) or cancel: the tabs glide to their slots
+    void EndDrag(BOOL apply); // release (apply) or cancel: the tabs glide to their slots
     void SetAnimTarget(int index, int to);
-    BOOL AnimStep();                 // advances the offsets; FALSE when nothing moves any more
+    BOOL AnimStep(); // advances the offsets; FALSE when nothing moves any more
     void EnsureTimer();
     void StopAnim();
     BOOL AnimationsOn();
-    void CancelPress();              // forgets a pressed close glyph
+    void CancelPress(); // forgets a pressed close glyph
 
     void Paint(HDC hdc);
     void PaintTabBack(HDC dc, int index, BOOL hot);
