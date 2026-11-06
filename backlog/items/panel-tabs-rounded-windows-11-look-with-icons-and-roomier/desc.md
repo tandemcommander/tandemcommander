@@ -8,7 +8,7 @@ source: manual
 who: both
 created: 2026-11-06
 updated: 2026-11-06
-verified: -
+verified: 2026-11-06 f2d2ca59
 effort: L
 feature: -
 related: [panel-tabs-078-release-pass-and-leak-watch]
@@ -163,3 +163,4 @@ The tab strip is drawn as variant F. At 96 DPI the values below are in pixels, a
 - 2026-11-06 — maintainer decision 2026-11-06: implement variant F (variant E with a 29 px strip) instead of E; evidence images and renderer replaced
 - 2026-11-06 — maintainer decision 2026-11-06: add Chrome-like live reordering, close on release, Move to Other Panel and New Tab as Other Panel
 - 2026-11-06 — maintainer decision 2026-11-06: the whole item is one feature; a run never splits it into several items
+- 2026-11-06 — verified at f2d2ca59: still present at f2d2ca59: tabwnd.cpp unchanged since 7ee0f43d - DrawEdge 3D tabs, 21 px strip, aliased glyphs, no icons, close on WM_LBUTTONDOWN, insert-mark drag, no other-panel commands
