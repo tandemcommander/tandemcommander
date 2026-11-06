@@ -1,0 +1,13 @@
+tabs405_probe (feature 405) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-06 23:23; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc405
+
+SWITCH     START  PASS        left [A X1 X2 X3 B] active 0; right [R]; strip 830x29, tab width 158
+SWITCH     SEAM   PASS        AttachThreadInput to the program's GUI thread: True
+SWITCH     RELEASED FAIL        box [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc405\switch\X1" Error: The path specified was not found. | [Button id=1] OK; key at press down, in the box up; after the box: the strip holds the capture; windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc405\switch\X1" Error: The path specified was not found. | [Button id=1] OK; then a move with the button to B and a release: left [A X2 X3 B A] active 4; right [R]
+SWITCH     NOBUTTON FAIL        box [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc405\switch\X3" Error: The path specified was not found. | [Button id=1] OK; key at press down, in the box up; after the box: the strip holds the capture; windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc405\switch\X3" Error: The path specified was not found. | [Button id=1] OK; after a move without a button: no capture; then a click on B: left [A X2 A B A] active 4; right [R]
+SWITCH     HELD   FAIL        box NO BOX; key at press down, in the box kept down; after the box: the strip holds the capture; windows: no window; then held onto A and released: left [A B X2 A A] active 1; right [R]
+SWITCH     REAL-FTP NOT DRIVEN  the real FTP leave question with a real mouse needs an input desktop and a server (release checklist)
+Registry: restored; identical=True; SHA-256 before 1C3349EA761A6AF0E6173F6BD8E1A73C703F07822F38F26C03B4CD9244E7B0A4 / after 1C3349EA761A6AF0E6173F6BD8E1A73C703F07822F38F26C03B4CD9244E7B0A4
+
+Rows: PASS 2, FAIL 3, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

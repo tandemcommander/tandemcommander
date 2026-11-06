@@ -8,7 +8,7 @@ source: github#22
 who: both
 created: 2026-11-06
 updated: 2026-11-06
-verified: -
+verified: 2026-11-06 09eaa097
 effort: S
 feature: -
 related: []
@@ -53,3 +53,4 @@ Related to `panel-tabs-rounded-windows-11-look-with-icons-and-roomier` (first in
 - 2026-11-06 — fields set from the issue text and labels
 - 2026-11-06 — moved to Next position 2
 - 2026-11-06 — related item panel-tabs-rounded-windows-11-look-with-icons-and-roomier done in feature 404
+- 2026-11-06 — verified at 09eaa097: reproduced at 09eaa097 by probe tabs405: after an error box during the tab switch the strip keeps the capture and a later move+release moves the tab
