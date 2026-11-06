@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405 |
 
 ## Feature notes
 
@@ -6508,3 +6508,20 @@ a few early ones are out of sequence).
   282,433 -> 282,518 / 0 (`TestTabStrip404`); translations 2 x 8 languages, 328 DeepL characters, 16 pins
   (fr / hu / es "switch to" for "move", de 'Registerkarte'); refute-first reviews: 1 (no MUST; 3 SHOULD
   fixed: the fallback loss, a drag without the button, probe rows), 2 (no MUST, no SHOULD; NOTEs fixed).
+- 405-tab-switch-dialog-drag: a click on another panel tab whose switch showed a question (the FTP plug-in
+  asking what to do with the connection - GitHub issue #22 - or any error box of the switch) left the strip
+  waiting for a tab drag with the mouse captured: the button-up had gone to the box, so a later press and
+  move dragged the switched tab and the next click was swallowed - now the strip arms a drag after the
+  switch only when the left button is still held (`SalTabArmDragAfterSwitch` in `saltabs.*`: FALSE only for
+  "down at the press, up after the switch", read with `GetKeyState`), and a gesture still pending at a new
+  press is cancelled first. Traps: `GetKeyState` alone breaks posted-message probes (404 review 2) - a press
+  that never recorded a button-down arms as before; the probe drives the button state by
+  `AttachThreadInput` + `SetKeyboardState` and the switch's box by a tab whose folder was deleted; a dragged
+  tab clamped at the strip's left end lands in slot 1, not 0; PowerShell `git show | Set-Content` mangles a
+  source and `Copy-Item` keeps an old timestamp (the incremental build skips it). Limits: a button held
+  through a box answered by keyboard still drags (it is held from press to release); the press that
+  arrives through a stale capture is consumed; the real FTP question with a real mouse is a release-checklist
+  line. From backlog item `problem-s-prepinanim-zalozek`. Probe `tabs405_probe` before 3 PASS / 2 FAIL ->
+  7 / 0 / 1 NOT DRIVEN (RELEASED, NOBUTTON, HELD, STALE); `tabs404_probe` 29 / 0 / 1 unchanged; saltests
+  282,518 -> 282,524 / 0 (`TestTabStrip405`); refute-first review 1: no MUST, 2 SHOULD fixed (a probe row
+  for the pending-gesture cancel, results regenerated on the final build), NOTEs fixed (comment, manual).

@@ -33,7 +33,7 @@
 - [X] T008 Encoding guard `python tools/check_encoding.py --strict` -> TOTAL 0; clang-format the changed sources (`src/tabwnd.cpp`, `src/common/saltabs.*`, `src/saltests/saltests.cpp`)
 - [X] T009 Check the manual under `help/` for a description of tab dragging that would need a sentence (expected: none)
 - [X] T010 Add the person check (real FTP question, real mouse) to the release checklist item; record before / after in `specs/405-tab-switch-dialog-drag/fix-log.md`
-- [ ] T011 Add the CHANGELOG `## [Unreleased]` entry in `CHANGELOG.md` and the entry in `specs/FEATURE-HISTORY.md` (run step 8)
+- [X] T011 Add the CHANGELOG `## [Unreleased]` entry in `CHANGELOG.md` and the entry in `specs/FEATURE-HISTORY.md` (run step 8)
 
 ## Dependencies
 

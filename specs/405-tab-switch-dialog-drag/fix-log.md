@@ -72,7 +72,7 @@ first (`CancelGesture`). Research: `research.md`.
 |---|---|---|
 | `result_before.txt` (first, at 09eaa097) | HEAD | PASS 2, FAIL 3, NOT DRIVEN 1 (HELD failed on a probe index, fixed) |
 | `result_before.txt` (kept) | the old handler (`tabwnd.cpp` of HEAD, the rule present) | PASS 3, FAIL 2 (RELEASED, NOBUTTON), NOT DRIVEN 1 |
-| `result_after.txt` | the fix | **PASS 5, FAIL 0, NOT DRIVEN 1** (REAL-FTP) |
+| `result_after.txt` | the fix (after review 1, with row STALE) | **PASS 7, FAIL 0, NOT DRIVEN 1** (REAL-FTP) |
 | `result_tabs404.txt` | the fix | `tabs404_probe` **PASS 29, FAIL 0, NOT DRIVEN 1** (unchanged from 404) |
 
 Traps met while measuring (recorded so the next run does not repeat them):
@@ -101,5 +101,43 @@ Traps met while measuring (recorded so the next run does not repeat them):
 ## Findings fixed on the way
 
 - The stale capture of 404 review 2's NOTE ("a stale capture after a switch that showed a dialog can eat
-  the next click"): a new press now cancels a pending gesture first, and after the fix no capture is
-  left (probe NOBUTTON: "after the box: no capture").
+  the next click"): after a switch whose box took the button-up the rule leaves no capture (probe
+  NOBUTTON: "after the box: no capture"); and a gesture still pending at a new press - from any other
+  cause - is now cancelled first (FR-003, probe row STALE NEWPRESS: fixed build PASS, the old handler
+  FAIL - measured by review 1, `A X1 X2 B` -> `A X1 B X2`). The press that arrives through such a
+  capture is still consumed (it hits nothing); only the input after it goes where the user clicks.
+
+## Review
+
+### Review 1 (refute-first agent, HEAD 667606df) - no MUST
+
+Re-ran `tabs405_probe` (5 / 0 / 1), a negative control (the branch built with `src/tabwnd.cpp` of `main`
+in its own worktree and build folder: 3 / 2 / 1 - RELEASED `A X2 X3 B A`, NOBUTTON capture held; HELD
+passes in both, a valid control), `tabs404_probe` (29 / 0 / 1), saltests (282524 / 0), encoding guard 0.
+Traced the FTP path: `SwitchToTab` -> `ChangeDir` (`paneltabs.cpp`) -> `TryCloseOrDetach`
+(`plugins/ftp/fs3.cpp`) shows a message box synchronously on the GUI thread - the premise holds; with
+"always keep the connection" set FTP asks nothing and the drag arms (correct).
+
+- **S1 the cancel of a pending gesture (FR-003) had no probe row**, and this log credited it with the
+  rule's evidence. Fixed: row STALE NEWPRESS added to `tabs405_probe.ps1` (the reviewer's scratch row,
+  own fixture `stale`); the wording above corrected.
+- **S2 the committed results predated the last relink.** Fixed: rebuilt, `result_after.txt` (PASS 7,
+  FAIL 0, NOT DRIVEN 1) and `result_tabs404.txt` (29 / 0 / 1) regenerated on the exe linked 23:51.
+- NOTE fixed: the comment at the cancel said the stale capture "never swallows this press" - reworded
+  (this press is handled from idle; the input after it goes where the user clicks).
+- NOTE fixed: the manual sentence said answering the question "ends the press" - true only when the
+  button is let go; reworded ("and you let the button go to answer it").
+- NOTE recorded: the button state is set through a seam (`SetKeyboardState`); the reported case (the box
+  answered with the mouse) always takes the button-up. A button released over the disabled main window
+  with the box answered by keyboard relies on Windows updating the key state for the swallowed click;
+  if not, the 404 guard still cancels at the first move without the button. Covered by the release
+  checklist line.
+- NOTE recorded: the issue's literal symptom (the mark following a mouse with no button) was already
+  ended at the first move by 404's guard; 405 adds the case of a press going straight to the strip and
+  the capture left behind.
+- NOTE left: a second press dispatched while a switch runs could arm a drag from inside the first press
+  (old behaviour, not made worse).
+
+After the fixes: `build.cmd` BUILD SUCCEEDED; saltests **282524 checks, 0 failed**; `tabs405_probe`
+**PASS 7, FAIL 0, NOT DRIVEN 1**; `tabs404_probe` **PASS 29, FAIL 0, NOT DRIVEN 1**. SHOULD and NOTE
+fixes only (no MUST): no second review round required (SKILL.md step 7).

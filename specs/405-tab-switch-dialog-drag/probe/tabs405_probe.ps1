@@ -24,6 +24,11 @@
                 no tab moved (B becomes active - a normal click).
       HELD      control: pressed on X3 and held through the box, then moved onto A's place and
                 released. A drag held from the press to the release still moves the tab (X3 first).
+      STALE     second program start, tabs A X1 X2 B: a posted press on X2 (no button state: arms a drag
+                and takes the capture, its button-up never comes), then a press below the strip (what
+                the captured strip gets for a press elsewhere), a move with MK_LBUTTON past B and a
+                release. Must: the capture released at the second press, no tab moved (FR-003; added
+                after review 1).
     NOT DRIVEN: the real FTP prompt with a real mouse (no input desktop here).
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
@@ -311,6 +316,38 @@ function Run-Switch {
     }
 }
 
+# STALE (FR-003, review 1 S1): a gesture still pending at a new press is cancelled - its capture never
+# carries a later press-and-move into a tab drag
+function Run-Stale {
+    $S = $Root + '\stale'
+    if (-not (Prep-Registry @("$S\A", "$S\X1", "$S\X2", "$S\B") 0 @("$S\R") 0)) { Row 'STALE' 'SETUP' 'NOT DRIVEN' 'no stored configuration'; return }
+    $id = 0
+    try {
+        $id = Start-Run "$S\A" "$S\R"
+        $Hs = Strip $id
+        $g = Geo $Hs 4
+        $s = Snap $id
+        Row 'STALE' 'START' (V (((Leaves $s.L) -join ' ') -eq 'A X1 X2 B' -and $s.L.Active -eq 0)) (Desc $s)
+        # a posted press on X2 (key state up): arms a drag + capture in both builds, its button-up is "lost"
+        [Tc405]::Post($Hs, $WM_LBUTTONDOWN, $MK_LBUTTON, (TabCx $g 2), $g.MidY); Start-Sleep -Milliseconds 500
+        [void](Serve $id 5)
+        $c1 = CapDesc $id $Hs
+        # a new press outside every part (below the strip: what the captured strip gets for a press elsewhere)
+        [Tc405]::Post($Hs, $WM_LBUTTONDOWN, $MK_LBUTTON, (TabCx $g 0), $g.H + 60); Start-Sleep -Milliseconds 300
+        [void](Serve $id 5)
+        $c2 = CapDesc $id $Hs
+        for ($i = 1; $i -le 8; $i++) { [Tc405]::Post($Hs, $WM_MOUSEMOVE, $MK_LBUTTON, [int]((TabCx $g 2) + ((TabCx $g 3) + 20 - (TabCx $g 2)) * $i / 8), $g.MidY); Start-Sleep -Milliseconds 30 }
+        [Tc405]::Post($Hs, $WM_LBUTTONUP, 0, (TabCx $g 3) + 20, $g.MidY)
+        Start-Sleep -Milliseconds 700
+        $s = Snap $id
+        Row 'STALE' 'NEWPRESS' (V ($c1.Strip -and -not $c2.Strip -and ((Leaves $s.L) -join ' ') -eq 'A X1 X2 B')) ("after the first press: {0}; after a press outside: {1}; then a move with the button + release: {2}" -f $c1.Text, $c2.Text, (Desc $s))
+    }
+    catch { Row 'STALE' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally {
+        if ($id -and (Test-Alive $id)) { $f = Fatal-Win $id; if ($f) { Row 'RUN' 'FATAL' 'FAIL' $f }; Kill-Mine $id }
+    }
+}
+
 # ---------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tc405_backup.reg'
 $existed = Backup-Reg $backup
@@ -319,11 +356,13 @@ try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir
     foreach ($n in @('A', 'X1', 'X2', 'X3', 'B', 'R')) { NewDir ($Root + '\switch\' + $n) }
+    foreach ($n in @('A', 'X1', 'X2', 'B', 'R')) { NewDir ($Root + '\stale\' + $n) }
     Out ("tabs405_probe (feature 405) {0}" -f $Label)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; fixture {2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, (Esc $Root))
     Out ''
     Run-Switch
+    Run-Stale
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

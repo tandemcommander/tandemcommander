@@ -1,6 +1,6 @@
 tabs404_probe (feature 404) after405
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-06 23:37; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc404; font height 15, avg char 6; DPI scale 2560
+Date    : 2026-11-06 23:52; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc404; font height 15, avg char 6; DPI scale 2560
 
 LOOK-LIGHT NORMAL PASS        vs variantF_light_normal.png: exact 22543, edge-tolerated 251 (max 45), failing 0 (max 0)
 LOOK-LIGHT INACTIVE PASS        vs variantF_light_inactive.png: exact 22543, edge-tolerated 251 (max 46), failing 0 (max 0)

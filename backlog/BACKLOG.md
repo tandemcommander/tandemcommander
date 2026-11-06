@@ -17,7 +17,6 @@ Last triaged: 2026-11-06
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Switching away from an FTP tab leaves the tab strip in drag mode](items/problem-s-prepinanim-zalozek/desc.md) | bug | 5 | panels-ui | 405 |
 
 ## Next
 

@@ -1138,8 +1138,9 @@ void CTabWindow::OnLButtonDown(int x, int y)
     // feature 405: the button state when this press is handled (GetKeyState follows the messages this
     // thread has read; a posted press leaves it "up")
     BOOL downAtPress = (GetKeyState(VK_LBUTTON) & 0x8000) != 0;
-    // a gesture still pending at a new press lost its button-up (e.g. to a dialog): give it up first,
-    // so its capture never swallows this press (feature 405)
+    // a gesture still pending at a new press lost its button-up (e.g. to a dialog): give it up first
+    // and release its capture - this press is handled from idle (outside every part it only cancels),
+    // and the input after it goes where the user clicks (feature 405)
     if (WaitForDrag || Dragging || PressedClose >= 0)
         CancelGesture();
 
