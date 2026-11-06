@@ -113,13 +113,48 @@ miss.
    probe, restore the registry from its backup (`%TEMP%\tcNNN_backup.reg`)
    before anything else.
 9. **No real keyboard, mouse, clipboard or printer** on the hidden desktop:
-   such rows are recorded as NOT DRIVEN in `fix-log.md` and become a
-   `person-step` item at closing.
+   such rows are recorded as NOT DRIVEN in `fix-log.md`. At closing they
+   become **lines of the release checklist**, not items of their own
+   (maintainer rule 2026-11-06). The release checklist is the one open
+   `person-step` item whose title starts `Manual checks owed before the
+   next release`:
+   - append one `- [ ] <the check, its expected result> (feature <NNN>)`
+     line per check to its *Steps*: read the section with
+     `BL show <slug> --json`, add the lines, write the whole section back
+     with `BL --input-json - body <slug> --section Steps < file.json`;
+   - when no such item is open, create it first (§0.9 of SKILL.md:
+     `--type person-step --who person --severity 5 --area build-release
+     --source leftover:<NNN>`).
+
+   A person step that **blocks** the item (SKILL.md step 3 *needs a person
+   to tell*, stop #4) stays an item of its own.
 10. **Data safety** (`CLAUDE.md` *Never lose the user's data*): a
     "safe to delete?" check fails closed; same-file decisions by identity;
     replacing a user's file through a temporary file + `SalReplaceWithTempW`.
-11. **Scope**: only what the item describes. Other defects found on the way
-    become *Inbox* items (`measure:<NNN>`), never part of this feature.
+11. **Scope and findings** (maintainer rule 2026-11-06: recording every
+    finding made the backlog grow faster than the loop closed items). The
+    feature does what the item describes **plus** the findings met on the
+    way (a defect seen while measuring, a review SHOULD / NOTE outside the
+    item, a part left over). Judge each finding's severity by
+    `.claude/skills/tandem-backlog/reference.md` §3:
+    - **severity 5 or less → fix it in this feature.** Give it a test,
+      `saltests` check or probe row. Record it in `fix-log.md`, section
+      *Findings fixed on the way*, with the measurement before and after.
+      The review covers it, and the FEATURE-HISTORY entry and the closing
+      report name it. It gets no backlog item.
+    - **severity 6 or more → an *Inbox* item** (`measure:<NNN>` /
+      `review:<NNN>` / `leftover:<NNN>`), never fixed here: it deserves its
+      own feature.
+    - **Still an item, whatever the severity:**
+      - a maintainer-owned question → a `decision` item (§1);
+      - work needing a person → a line of the release checklist (rule 9);
+      - a fix that would bend a safety rule (rule 10, the plug-in ABI) →
+        an *Inbox* item;
+      - a part of *Expected* the run cannot reach → rule 14;
+      - a finding of 5 or less still failing after **three** honest fix
+        attempts → an *Inbox* item naming the attempts. It is never a stop.
+    - A finding only in code that is not built or shipped (an `off`
+      plug-in or language) is noted in `fix-log.md` only.
 12. **Nothing leaves the machine** (except the English UI texts the
     translation merge sends to DeepL, §2.13): no push, no tag, no release, no winget,
     no GitHub post. (The git extension's branch hook runs `git fetch --all
@@ -280,7 +315,7 @@ Stop (SKILL.md step 10) — never silently, never by just ending — when:
 | 1 | a maintainer-owned question (§1) | a `decision` item: *Question*, *Options* with consequences, *Recommendation* | `blocked` |
 | 2 | the build, `saltests`, the encoding check or a probe still fail after **three** honest fix attempts (each attempt recorded in `fix-log.md`), or a tool a required step depends on is unavailable after three attempts (DeepL down, quota exhausted). A step a repository tool can do — the `.slt` refresh, the manual, the changelog, a merge — is never this reason: do it (§2.13) | in the item's block reason and `fix-log.md` | `blocked` |
 | 3 | the independent review rejects the fix (MUST findings) **three times**, or twice with a MUST finding the second review repeats unchanged from the first (no progress) | the review findings in `fix-log.md`; the reason names them | `blocked` |
-| 4 | the change cannot be trusted without a person (real keyboard / clipboard / printer / server / other machine / admin) — when the change is sound and only a confirmation is owed, do **not** stop: finish and record a `person-step` item | a `person-step` item with exact *Steps* | `blocked` |
+| 4 | the change cannot be trusted without a person (real keyboard / clipboard / printer / server / other machine / admin) — when the change is sound and only a confirmation is owed, do **not** stop: finish and add the check to the release checklist (rule 9) | a `person-step` item with exact *Steps* | `blocked` |
 | 5 | **extreme case only** (maintainer rule 2026-11-06: splitting made the loop create items faster than it closed them): the item bundles work that **cannot** be one feature — **all** of (a) the parts touch unrelated code with no shared design or test, each closable alone; (b) doing them together is impossible in one run for a named concrete reason (not size, not effort, not "many defects"); (c) the item does **not** say it is one feature or must not be split; (d) the item is **not itself a part** of an earlier split (its *Log* or *Notes* holds no `split into` / `Part of a split`). Size or a long run is never a reason; in doubt, implement it whole | **two or three** new items, each one feature's worth, `related` to the item, each with `Part of a split of <SLUG>; never split again.` in *Notes*; the reason names which concrete condition (b) is | `split` |
 | 6 | `main` cannot take the branch: the item changed on `main` during the run (SKILL.md step 9's guard), SKILL.md step 9 found a conflict outside its table, or the checks after merging `main` into the branch still fail after three attempts. (A `main` that only moved on is not this reason — step 9 merges it.) | the reason text of SKILL.md step 9, word for word (it carries the merge recipe) | `blocked` |
 | 7 | the work would need to push, publish, or touch another item's work in progress | reason | `blocked` |

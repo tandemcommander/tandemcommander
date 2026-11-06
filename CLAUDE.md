@@ -198,10 +198,18 @@ Each is one line of a longer story; the number is the feature whose entry in
 - Have an independent agent review a finished fix (refute-first); reviews
   rejected fixes that built and tested green in 075, 085, 087, 093, 098, 109,
   111, 117.
-- Serious defects found on the way are added to the backlog's *Inbox*
-  (`/tandem-backlog add`, source `review:NNN` / `measure:NNN` /
-  `leftover:NNN`) and fixed one by one, not inside the current feature.
-  Agents only add to *Inbox*; the maintainer triages and orders (242).
+- Findings on the way (rule of 2026-11-06, `/tandem-backlog-implement`
+  stop-rules rule 11):
+  - severity **≤ 5**: fixed inside the current feature, with a test, in
+    `fix-log.md`;
+  - severity **≥ 6**: added to the backlog's *Inbox* (`/tandem-backlog
+    add`, source `review:NNN` / `measure:NNN` / `leftover:NNN`) and fixed
+    one by one;
+  - person checks: lines of the one *Manual checks owed before the next
+    release* item, not items of their own.
+
+  An item is split only in the extreme case (stop-rules row 5). Agents
+  only add to *Inbox*; the maintainer triages and orders (242).
 - Do not push or publish from an implementation session; build, tag, GitHub
   release and winget submission are the maintainer's steps. Version, build,
   release dates and the dated changelog heading are set only by

@@ -131,7 +131,15 @@ BL = bin/backlog.sh
   yourself created in this session**. **Forbidden: `triage`,
   `auto-triage`, `move`, `decide`, `park`, `reject`, `reopen`, `block`, `unblock`, `close`, and
   any change of the fields or the body of an item you did not create in
-  this session** (FR-014). A finding that belongs to an existing item
+  this session** (FR-014).
+
+  One exception (maintainer rule 2026-11-06): a run of
+  `/tandem-backlog-implement` may **append** `- [ ]` lines to the *Steps*
+  of the open release checklist item (title `Manual checks owed before
+  the next release`, its `stop-rules.md` rule 9). It never changes or
+  removes the lines that are there.
+
+  A finding that belongs to an existing item
   becomes a new item with `--related <slug>`. If a forbidden operation
   seems needed, say so in your report; do not do it.
 

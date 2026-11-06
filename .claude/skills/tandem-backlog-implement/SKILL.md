@@ -298,9 +298,11 @@ the events enabled in `.specify/extensions/git/git-config.yml` (after
 specify, clarify, plan, tasks, implement) with `git add .` — safe, the tree
 was clean at the start.
 
-**Findings outside the item's scope**: never fix them here. Record each as
-a new item (§0.9) with `--source measure:<NNN>` (or `review:<NNN>` from the
-review).
+**Findings met on the way** follow `stop-rules.md` rule 11:
+- severity 5 or less: fix them in this feature (test, `fix-log.md`
+  *Findings fixed on the way*);
+- severity 6 or more: a new item (§0.9) with `--source measure:<NNN>`
+  (or `review:<NNN>` from the review).
 
 ## 6. Verify the feature
 
@@ -379,8 +381,11 @@ with file:line and a reproduction.
   fresh review with the same prompt plus `Previous findings: <list>`.
 - A third review with MUST findings, or a second one that repeats a MUST
   finding of the first unchanged → step 10 (stop-rules §3 #3).
-- SHOULD findings: fix those inside the item's scope; others → new items
-  (§0.9, `review:<NNN>`).
+- SHOULD and NOTE findings: fix those inside the item's scope. For the
+  others, `stop-rules.md` rule 11 decides:
+  - severity 5 or less: fix them here, then repeat the affected checks and
+    have the next review cover them;
+  - severity 6 or more: new items (§0.9, `review:<NNN>`).
 - Record every review in `fix-log.md`, section *Review*.
 
 ## 8. Close the item (on the feature branch)
@@ -391,9 +396,12 @@ with file:line and a reproduction.
    include `answer and close GitHub issue #N (draft in specs/<BRANCH>/reply.md)`.
 2. `BL remove <SLUG> --feature <NNN>` (deletes the item and its row;
    removes it from other items' `related` / `depends-on`, logging there).
-3. Leftovers and person steps → new items (§0.9), source `leftover:<NNN>`
-   (person checks: `--type person-step --who person`, *Steps* filled);
-   extend `PERSON` with one line naming them.
+3. Leftovers follow `stop-rules.md` rule 11 (5 or less were fixed in the
+   feature; 6 or more, or unreachable by rule 14 → new items (§0.9),
+   source `leftover:<NNN>`). Person checks become lines of the release
+   checklist item (`stop-rules.md` rule 9), never items of their own.
+   Extend `PERSON` with one line naming them (`<n> checks added to
+   <checklist slug>`).
 4. Append to the end of `specs/FEATURE-HISTORY.md` an entry in the style of
    the last entries:
 
@@ -423,7 +431,8 @@ with file:line and a reproduction.
    ## Measurements (before / after, commands)
    ## Checks (encoding guard, build, saltests, probes - with numbers)
    ## Reviews (findings and what was done)
-   ## Owed to a person (with the new person-step items)
+   ## Owed to a person (the lines added to the release checklist)
+   ## Findings fixed on the way (severity 5 or less, stop-rules rule 11)
    ## New Inbox items (slug - title)
    ```
 
