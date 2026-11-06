@@ -1,6 +1,6 @@
 tabs404_probe (feature 404) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-06 22:44; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc404; font height 15, avg char 6; DPI scale 2560
+Date    : 2026-11-06 23:05; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc404; font height 15, avg char 6; DPI scale 2560
 
 LOOK-LIGHT NORMAL PASS        vs variantF_light_normal.png: exact 22543, edge-tolerated 251 (max 45), failing 0 (max 0)
 LOOK-LIGHT INACTIVE PASS        vs variantF_light_inactive.png: exact 22543, edge-tolerated 251 (max 46), failing 0 (max 0)
@@ -32,6 +32,6 @@ MENU       CTXMOVE PASS        menu window True; right-click on the inactive tab
 MENU       CTXNEWAS PASS        menu window True; right-click on the empty strip at x 237, P: left [B A] active 1; right [R B A] active 2
 MENU       REFUSED NOT DRIVEN  a refused leave needs a plug-in that refuses (CHPPFR_CANNOTCLOSEPATH); no shipped plug-in does (feature 078 deviation) - verified by reading MoveTabToOtherPanel
 FALLBACK   MOVE-GONE PASS        menu window True; X deleted, Move to Other Panel on X - undone, X stays here: left [A X] active 0; right [R] active 0; windows: [#32770 'Error Changing Directory'] [Static id=2477] Path: "C:\Users\pavel\AppData\Local\Temp\tc404\fallback\X" Error: The path specified was not found. | [Button id=1] OK
-Registry: restored; identical=True; SHA-256 before 1D52D8424042C19448C617A390D99BEAD62B4A7260A2A4AF993BC1FCE59D1ED7 / after 1D52D8424042C19448C617A390D99BEAD62B4A7260A2A4AF993BC1FCE59D1ED7
+Registry: restored; identical=True; SHA-256 before 99AB45702EE61E82E222A05CD1B8B1D93A7BAB0AB32423B0516048D2835C33F2 / after 99AB45702EE61E82E222A05CD1B8B1D93A7BAB0AB32423B0516048D2835C33F2
 
 Rows: PASS 29, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

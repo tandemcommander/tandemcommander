@@ -215,3 +215,8 @@ BOOL SalTabMenuCanNewAsOther(BOOL otherHasLocation);
 // prefix of two or more letters, digits, '_', '-' or '.' gives SAL_TAB_KIND_PLUGINFS
 // and its length in '*fsNameLen' (0 otherwise)
 int SalTabLocationKind(const char* location, int* fsNameLen);
+
+// Move to Other Panel: did the other panel open the moved location (TRUE), or fall back to
+// another place (FALSE - the move is undone)? The same place by SalPathEqualOrdinalCI (ordinal
+// case-insensitive, a leading / trailing backslash does not matter); NULL -> FALSE
+BOOL SalTabLocationsSame(const char* a, const char* b);

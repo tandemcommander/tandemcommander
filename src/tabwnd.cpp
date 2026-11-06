@@ -1628,8 +1628,8 @@ CTabWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         int index = HitTest((short)LOWORD(lParam), (short)HIWORD(lParam), &part);
         int down = MButtonDownIndex;
         MButtonDownIndex = -1;
-        if (Dragging || PressedClose >= 0)
-            return 0; // never close a tab under a left-button gesture
+        if (Dragging || WaitForDrag || PressedClose >= 0)
+            return 0; // never close a tab under a left-button gesture (its indexes would move)
         if ((part == tspTab || part == tspClose) && index >= 0 && index == down)
             FilesWindow->CloseTab(index); // never the only tab (CloseTab refuses)
         return 0;

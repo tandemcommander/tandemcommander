@@ -1,6 +1,6 @@
-tabs312_probe (feature 312) after-404-review1
+tabs312_probe (feature 312) after-404-review2
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-06 22:47; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc312\R
+Date    : 2026-11-06 23:08; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc312\R
 
 CLASSIC    START  PASS        tabs=1 active=0 [R] panel=R
 CLASSIC    C-T-W-G PASS        Ctrl+T, Ctrl+W, Ctrl+Shift+G in the panel open/close no tab: tabs=1 active=0 [R] panel=R
@@ -35,6 +35,6 @@ PAGE       CLASSIC PASS        page 'Tabs'; rows: Ctrl+T=Go to Shortcut or Link 
 PAGE       BROWSER PASS        after clicking the option: Ctrl+T=New Tab | Ctrl+W=Close Tab | Ctrl+Page Down=Next Tab | Ctrl+Page Up=Previous Tab | Ctrl+Shift+T=Reopen Closed Tab | Ctrl+Shift+W=Restore Selection | Ctrl+Shift+G=Go to Shortcut or Link Target | Ctrl+Shift+Page Down=Next Tab | Ctrl+Shift+Page Up=Previous Tab | Ctrl+Tab=Move between the panel and the command line
 PAGE       DISABLE PASS        tabs unchecked: option enabled=False, list enabled=False
 PAGE       CANCEL PASS        after Cancel: Panel Tabs=1, Browser Tab Shortcuts=0
-Registry: restored; identical=True; SHA-256 before 1D52D8424042C19448C617A390D99BEAD62B4A7260A2A4AF993BC1FCE59D1ED7 / after 1D52D8424042C19448C617A390D99BEAD62B4A7260A2A4AF993BC1FCE59D1ED7
+Registry: restored; identical=True; SHA-256 before 99AB45702EE61E82E222A05CD1B8B1D93A7BAB0AB32423B0516048D2835C33F2 / after 99AB45702EE61E82E222A05CD1B8B1D93A7BAB0AB32423B0516048D2835C33F2
 
 Rows: PASS 33, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

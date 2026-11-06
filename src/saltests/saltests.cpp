@@ -2420,6 +2420,20 @@ static void TestTabStrip404()
     CHECK(SalTabLocationKind("", NULL) == SAL_TAB_KIND_FOLDER);
     CHECK(SalTabLocationKind(NULL, NULL) == SAL_TAB_KIND_FOLDER);
     CHECK(SalTabLocationKind("G:\\M\xC5\xAFj disk", NULL) == SAL_TAB_KIND_FOLDER);
+
+    // Move to Other Panel: the other panel opened the moved location, or fell back elsewhere (review 1, S1)
+    CHECK(SalTabLocationsSame("C:\\Work\\Reports", "C:\\Work\\Reports"));
+    CHECK(SalTabLocationsSame("C:\\Work\\Reports", "c:\\work\\REPORTS"));      // the file system's rule
+    CHECK(SalTabLocationsSame("C:\\Work\\Reports\\", "C:\\Work\\Reports"));   // a trailing backslash
+    CHECK(SalTabLocationsSame("C:\\Work\\Reports", "C:\\Work\\Reports\\"));
+    CHECK(SalTabLocationsSame("E:\\", "e:\\"));
+    CHECK(!SalTabLocationsSame("C:\\Work\\Reports", "C:\\Work"));             // fell back to the parent
+    CHECK(!SalTabLocationsSame("C:\\Work\\X", "C:\\Work\\R"));
+    CHECK(SalTabLocationsSame("C:\\", "C:"));                                  // the same root
+    CHECK(SalTabLocationsSame("G:\\M\xC5\xAFj", "g:\\m\xC5\xAEJ"));             // U+016F / U+016E: case-insensitive beyond ASCII
+    CHECK(!SalTabLocationsSame("G:\\M\xC5\xAFj", "G:\\Muj"));
+    CHECK(SalTabLocationsSame("sftp:host/path", "sftp:host/path"));
+    CHECK(!SalTabLocationsSame(NULL, "C:\\"));
 }
 
 // feature 079: crash report file name (src/common/salbugreport.cpp), contracts/crash-report.md C2

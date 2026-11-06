@@ -408,6 +408,7 @@ BOOL CFilesWindow::SwitchToTab(int target)
     if (!ok) // fell back to a shorter path / the rescue path: remember where we really are
         GetGeneralPath(tab->Location, SAL_TAB_LOCATION_MAX, TRUE);
     IdleRefreshStates = TRUE; // Back/Forward enablers now read the target tab's history
+    tab->IconKind = SAL_TAB_KIND_UNKNOWN; // feature 404: a paint during the switch read the text only - now the panel shows it
     Tabs.SwitchInProgress = FALSE;
     UpdateTabStrip();
     return TRUE;
@@ -542,38 +543,6 @@ void CFilesWindow::MoveTab(int from, int to)
     UpdateTabStrip();
 }
 
-// feature 404: the same location for Move to Other Panel - ordinal case-insensitive, a trailing
-// backslash ignored (the panel writes the location in its general form after the switch)
-static BOOL TabLocationsSame(const char* a, const char* b)
-{
-    if (SalPathEqualOrdinalCI(a, b))
-        return TRUE;
-    size_t la = strlen(a);
-    size_t lb = strlen(b);
-    if (la > 3 && a[la - 1] == '\\')
-        la--;
-    if (lb > 3 && b[lb - 1] == '\\')
-        lb--;
-    if (la == strlen(a) && lb == strlen(b))
-        return FALSE; // no backslash to drop: the comparison above decided
-    char* ca = (char*)malloc(la + 1);
-    char* cb = (char*)malloc(lb + 1);
-    BOOL same = FALSE;
-    if (ca != NULL && cb != NULL)
-    {
-        memcpy(ca, a, la);
-        ca[la] = 0;
-        memcpy(cb, b, lb);
-        cb[lb] = 0;
-        same = SalPathEqualOrdinalCI(ca, cb);
-    }
-    if (ca != NULL)
-        free(ca);
-    if (cb != NULL)
-        free(cb);
-    return same; // out of memory: "not the same" keeps the tab reopenable (never lost)
-}
-
 // the index of 'tab' in the strip, -1 when it is gone (the leave prompts pump messages)
 static int FindPanelTab(CPanelTabs* tabs, CPanelTab* tab)
 {
@@ -639,7 +608,7 @@ BOOL CFilesWindow::MoveTabToOtherPanel(int index)
     // login failed - the error was shown): then the location lives on only here - the move is undone
     // like a refused leave, the tab stays here
     int atNew = FindPanelTab(&other->Tabs, added);
-    if (atNew < 0 || !TabLocationsSame(added->Location, rec.Location))
+    if (atNew < 0 || !SalTabLocationsSame(added->Location, rec.Location))
     {
         TakeTabBackFromOther(other, added, otherPrev);
         UpdateTabStrip();

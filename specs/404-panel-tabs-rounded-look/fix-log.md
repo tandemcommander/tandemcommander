@@ -175,3 +175,28 @@ pixels; the inactive capture against the normal evidence: 2173) - the look rows 
 
 After the fixes: `build.cmd` BUILD SUCCEEDED; saltests 282506 / 0; encoding guard TOTAL 0;
 `tabs404_probe` **PASS 29, FAIL 0, NOT DRIVEN 1** (`result_after.txt`); `tabs312_probe` 33 / 0.
+
+### Review 2 (refute-first agent, HEAD a0093a77) - no MUST, no SHOULD
+
+Re-ran build, saltests (282506 / 0), `tabs404_probe` (29 / 0 / 1); negative control: the core built in a
+scratch worktree with the location check of S1 removed -> FALLBACK MOVE-GONE **fails** (left [A],
+right [R R]: X gone from both panels), the real build passes. Read every exit of Move to Other Panel:
+the tab is never in neither panel.
+
+- NOTE fixed: a middle-click during a pending press (`WaitForDrag`) closed a tab under the press and
+  moved its indexes - the middle button now waits for any left-button gesture.
+- NOTE fixed: an archive tab could keep the folder icon when the strip painted during its switch (the
+  kind was read from the text while `SwitchInProgress`) - `SwitchToTab` resets the kind of the shown
+  tab at its end, so the next paint reads it from the panel.
+- NOTE fixed: the rule that decides whether a move is undone moved to `src/common/saltabs.*`
+  (`SalTabLocationsSame` = `SalPathEqualOrdinalCI`, which already ignores a leading / trailing
+  backslash - the extra stripping was redundant) with 13 `saltests` checks (case beyond ASCII, a
+  fallback to the parent, a root with and without its backslash).
+- NOTE left: Esc during a drag also reaches the focused window (the command line clears its text) -
+  as before this feature (the manual said Esc cancels a drag); a stale capture after a switch that
+  showed a dialog can eat the next click (the `MK_LBUTTON` check of review 1 ends the gesture at the
+  first move; a `GetKeyState` check would break posted-message probes); quick repeated clicks on X
+  close every other tab (`CS_DBLCLKS`, no double-click handler - unchanged since 078).
+
+After: `build.cmd` BUILD SUCCEEDED; saltests **282518 checks, 0 failed**; encoding guard TOTAL 0;
+`tabs404_probe` **PASS 29, FAIL 0, NOT DRIVEN 1**; `tabs312_probe` **PASS 33, FAIL 0**.

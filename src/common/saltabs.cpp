@@ -556,6 +556,13 @@ static BOOL SalTabIsFsNameChar(char c)
            c == '_' || c == '-' || c == '.';
 }
 
+BOOL SalTabLocationsSame(const char* a, const char* b)
+{
+    if (a == NULL || b == NULL)
+        return FALSE;
+    return SalPathEqualOrdinalCI(a, b); // IsTheSamePath's rules: a leading / trailing backslash does not matter
+}
+
 int SalTabLocationKind(const char* location, int* fsNameLen)
 {
     if (fsNameLen != NULL)
