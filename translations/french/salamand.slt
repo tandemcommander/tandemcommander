@@ -3570,6 +3570,8 @@ SLGINCOMPLETE,""
 14191,1,"(aucun)"
 
 [STRINGTABLE 157]
+14192,1,"Dé&placer vers l'autre panneau"
+14193,1,"Nouvel onglet comme l'autre pann&eau"
 14195,1,"Fermeture de la fenêtre Rechercher, veuillez patienter..."
 14196,1,"Ce dossier contient des entrées dont les noms semblent identiques mais qui utilisent des orthographes Unicode différentes (par exemple, accents précomposés vs accents décomposés) : \n \n %s \n \n Windows les considère comme des fichiers différents. Tandem Commander conserve les deux noms exactement tels qu’ils sont stockés."
 14197,1,"Le plugin ne peut pas traiter ce nom (il a été conçu pour une ancienne interface ne prenant pas en charge l'Unicode ni les chemins d'accès longs) : \n \n %s \n \n L'élément a été ignoré, les éléments restants seront traités."

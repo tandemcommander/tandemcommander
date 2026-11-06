@@ -38,9 +38,15 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 ## Steps
 
 - [ ] Before the release: work through every unticked line below; each names the feature it comes from and the expected result
+- [ ] Panel tab strip on a real screen at 100 %, Default and Dark theme: the rounded active tab with feet, location icons (folder, drive, archive, an SFTP tab), the hover pill and the hover circles of the X and + follow the real mouse and disappear when it leaves the strip (feature 404)
+- [ ] Live tab drag with a real mouse: the tab follows the cursor, neighbours slide aside smoothly (about 150 ms), the tab glides into place on release; Esc during a drag puts every tab back; with Windows *Animation effects* off the tabs jump instead of gliding (feature 404)
+- [ ] Close on release with a real mouse: pressing a tab's X shows it pressed and does not switch the tab; releasing over the X closes it, releasing elsewhere closes nothing (feature 404)
+- [ ] Panel tab strip at 125 % and 150 % display scaling and under Windows High Contrast: metrics scale, icons sharp, texts readable (feature 404)
+- [ ] Tab context menu: *Move to Other Panel* moves a folder tab and an SFTP tab (a second connection opens in the other panel, the first closes); *New Tab as Other Panel* opens the other panel's location; both greyed where the contract says (single tab, empty strip) (feature 404)
 
 ## Log
 
 - 2026-11-06 — created (source manual)
 - 2026-11-06 — body written: the release checklist runs append to (maintainer rule 2026-11-06)
 - 2026-11-06 — moved to Person steps position 1
+- 2026-11-06 — feature 404: 5 checks of the variant F tab strip

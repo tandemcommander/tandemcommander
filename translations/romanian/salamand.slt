@@ -3570,6 +3570,8 @@ SLGINCOMPLETE,""
 14191,1,"(niciuna)"
 
 [STRINGTABLE 157]
+14192,1,"&Mutare în celălalt panou"
+14193,1,"Filă nouă ca celălalt &panou"
 14195,1,"Inchid ferestrele Find windows, te rog asteapta..."
 14196,1,"Acest folder conține intrări ale căror nume par identice, dar utilizează ortografii Unicode diferite (de exemplu, accente precompuse vs. descompuse): \n \n %s \n \n Windows le tratează ca fișiere diferite. Tandem Commander păstrează ambele nume exact așa cum sunt stocate."
 14197,1,"Pluginul nu poate procesa acest nume (a fost creat pentru o interfață mai veche, fără suport pentru Unicode și căi lungi): \n \n %s \n \n Elementul a fost omis, elementele rămase vor fi procesate."

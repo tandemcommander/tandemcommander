@@ -3570,6 +3570,8 @@ SLGINCOMPLETE,""
 14191,1,"(žiadny)"
 
 [STRINGTABLE 157]
+14192,1,"&Presunúť do druhého panelu"
+14193,1,"Nová karta ako druhý pane&l"
 14195,1,"Zatváram okná vyhľadávania, prosím čakajte..."
 14196,1,"Táto zložka obsahuje položky, ktorých názvy vyzerajú identicky, ale používajú odlišné Unicode zápisy (napr. zložené vs. rozložené diakritické znaky): \n \n %s \n \n Systém Windows ich považuje za odlišné súbory. Tandem Commander zachováva oba názvy presne tak, ako sú uložené."
 14197,1,"Plugin nemôže spracovať tento názov (bol vytvorený pre staršie rozhranie bez podpory Unicode a dlhých ciest): \n \n %s \n \n Položka bola preskočená, zostávajúce položky budú spracované."

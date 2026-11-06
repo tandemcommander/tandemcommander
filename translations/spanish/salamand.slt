@@ -3570,6 +3570,8 @@ SLGINCOMPLETE,""
 14191,1,"(ninguno)"
 
 [STRINGTABLE 157]
+14192,1,"&Mover al otro panel"
+14193,1,"Nueva pestaña como el otro &panel"
 14195,1,"Cerrando ventanas de Búsqueda; por favor, espere..."
 14196,1,"Esta carpeta contiene entradas cuyos nombres parecen idénticos pero utilizan grafías Unicode diferentes (por ejemplo, acentos precompuestos frente a acentos descompuestos): \n \n %s \n \n Windows los trata como archivos diferentes. Tandem Commander conserva ambos nombres tal y como están almacenados."
 14197,1,"El complemento no puede procesar este nombre (se creó para una interfaz más antigua sin soporte para Unicode ni rutas largas): \n \n %s \n \n Se ha omitido este elemento; se procesarán los restantes."

@@ -33,6 +33,12 @@ below are the default.</p>
 the archive name for the root of an archive, or the drive letter for a drive root
 (<code>D:\</code>). The active tab of the active panel uses the colours of the panel
 caption; the active tab of the inactive panel uses the inactive caption colours.
+Each tab shows an icon of its location before the title: a drive icon for a drive
+root, a folder icon for a directory, the archive icon inside an archive and the
+plugin's icon for a plugin file system. A tab restored at start-up that has not
+been shown yet takes its icon from its location text alone (the program never
+reads a remembered location only to draw its icon), so an archive tab shows the
+folder icon until it is shown for the first time.
 Click a tab to show it. Clicking a tab of the inactive panel activates that panel
 and shows the tab in one step; the keyboard focus stays in the panel list, never
 on the strip.</p>
@@ -48,8 +54,11 @@ as the current one and makes it active (Ctrl+Shift+T does the same; Ctrl+T with 
 browser-like tab shortcuts).</p>
 
 <h5>Close Button</h5>
-<p>The active tab shows a close button (<b>&#215;</b>) when the panel has more than
-one tab. Closing the active tab shows the tab to its right, or the tab to its left
+<p>The active tab, and the tab under the mouse, show a close button (<b>&#215;</b>)
+when the panel has more than one tab. The button works like a push button: the tab
+closes when the left mouse button is released over the button. Pressing the button
+never switches to the tab; moving the mouse off the button before releasing it closes
+nothing. Closing the active tab shows the tab to its right, or the tab to its left
 when it was the last one. The last remaining tab cannot be closed.</p>
 
 <h5>Tab List Button</h5>
@@ -62,14 +71,27 @@ The active tab is always kept visible.</p>
 <p>Middle-click a directory in the panel to open it in a new tab in the background
 (the current tab stays active); this works in archives and on plugin file systems
 too, and does nothing on a file. Middle-click a tab to close it. Drag a tab left or
-right to change the order; press Escape while dragging to cancel. Hovering a tab
+right to change the order: the tab follows the mouse and the other tabs slide aside;
+when you release the button the tab settles into its new place. Press Escape while
+dragging to cancel; the tabs return to their places. Moving the mouse above or below
+the strip keeps the tab in the strip. With Windows animation effects turned off the
+tabs move without sliding. Hovering a tab
 shows its full location in a tooltip.</p>
 
 <h5>Context Menu</h5>
-<p>Right-click a tab for <i>New Tab</i>, <i>Duplicate Tab</i>, <i>Close Tab</i>,
+<p>Right-click a tab for <i>New Tab</i>, <i>New Tab as Other Panel</i>,
+<i>Duplicate Tab</i>, <i>Move to Other Panel</i>, <i>Close Tab</i>,
 <i>Reopen Closed Tab</i>, <i>Close Other Tabs</i> and <i>Close Tabs to the Right</i>;
 the commands act on the clicked tab. Right-click the empty part of the strip for
-<i>New Tab</i>. The same commands, working on the active tab, are in the <i>Tabs</i>
+<i>New Tab</i> and <i>New Tab as Other Panel</i>.
+<i>New Tab as Other Panel</i> opens a new tab in this panel at the location the
+other panel shows, with the view, sort order and filter that <i>New Tab</i> gives.
+<i>Move to Other Panel</i> opens the tab (its location, view, sort order and
+filter) as the last and active tab of the other panel and then closes it in this
+panel; it is not offered by <i>Reopen Closed Tab</i>. If this panel does not let the
+tab go (an archive or plugin file system question was cancelled), the other panel
+gives up the new tab and both panels stay as they were. The command is not available
+when the panel has a single tab. The commands other than the two <i>Other Panel</i> ones, working on the active tab, are also in the <i>Tabs</i>
 submenu of the <a href="windows_menubar.htm">Left and Right menus</a>, together with
 <i>Next Tab</i> (Ctrl+Shift+Page Down) and <i>Previous Tab</i> (Ctrl+Shift+Page Up).
 The menus show the keys of the shortcut mode chosen in

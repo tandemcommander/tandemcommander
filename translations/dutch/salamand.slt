@@ -3570,6 +3570,8 @@ SLGINCOMPLETE,""
 14191,1,"(geen)"
 
 [STRINGTABLE 157]
+14192,1,"Naar ander paneel &verplaatsen"
+14193,1,"Nieuw tabblad als ander &paneel"
 14195,1,"Zoeken vensters sluiten, moment geduld a.u.b..."
 14196,1,"Deze map bevat items waarvan de namen er identiek uitzien, maar die verschillende Unicode-spellingen gebruiken (bijv. samengestelde versus opgesplitste accenten): \n \n %s \n \n Windows beschouwt ze als verschillende bestanden. Tandem Commander behoudt beide namen precies zoals ze zijn opgeslagen."
 14197,1,"De plug-in kan deze naam niet verwerken (hij is gemaakt voor een oudere interface zonder ondersteuning voor Unicode en lange paden): \n \n %s \n \n Het item is overgeslagen, de overige items worden verwerkt."

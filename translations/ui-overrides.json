@@ -245,6 +245,10 @@
     }
   },
   "salamand": {
+    "_feature_404": [
+      "Move to Other Panel / New Tab as Other Panel (the strip's context menu): 'other panel' as the corpus says it (cs/sk 'druhý panel', de 'anderes Fenster', fr 'l'autre panneau', hu 'másik panel', ro 'celălalt panou', es 'el otro panel'), tabs as 078/312 (de 'Registerkarte', not 'Reiter').",
+      "DeepL gave 'switch to' instead of 'move' (fr 'Passer à', hu 'Átváltás', es 'Desplazarse'), ro 'Fila Nou' (the New tab); accelerators unique among the menu's eight items (sk/cs 'd' of Duplicate, hu 'm' of Lap másolása)."
+    ],
     "_feature_312": [
       "Panel tabs are not the Tab key: de 'Tabulator-Tasten', fr 'Touches de tabulation', hu 'Tabulátorok', sk 'Klávesy Tab' were wrong (Options > Show > Tabs, the Tabs page label).",
       "Established terms: cs 'karty' (078, not 'záložky'), hu 'lap' (078, not 'fül'); cs/sk 'adresář/adresár' as the rest of the corpus.",
@@ -257,6 +261,8 @@
       "product name 'Windows Terminal' stays as Microsoft names it."
     ],
     "czech": {
+      "IDS_MENU_TAB_MOVETOOTHER": "&Přesunout do druhého panelu",
+      "IDS_MENU_TAB_NEWASOTHER": "Nová karta jako &druhý panel",
       "#Tabs": "Karty",
       "IDC_TABS_BROWSERKEYS": "Klávesové zk&ratky pro karty jako v prohlížeči (Ctrl+T, Ctrl+W, Ctrl+Page Up/Down)",
       "IDT_TABS_KEYLIST": "Kláve&sové zkratky pro karty:",
@@ -302,6 +308,8 @@
       "IDS_CANNOTMOVEDIRINTOITSELF": "Nelze přesunout adresář do sebe sama ani do jednoho z jeho podadresářů."
     },
     "slovak": {
+      "IDS_MENU_TAB_MOVETOOTHER": "&Presunúť do druhého panelu",
+      "IDS_MENU_TAB_NEWASOTHER": "Nová karta ako druhý pane&l",
       "IDS_MENU_FILES_RENAMEINPLACE": "Premenovať na mieste\\tShift+F6",
       "IDS_MENU_OPT_VSB_TABS": "Ka&rty",
       "IDS_MENU_TAB_REOPEN": "Zno&vu otvoriť zatvorenú kartu",
@@ -336,6 +344,8 @@
       "IDS_CFGMIGRATE_FAILED": "Program Tandem Commander nemohol presunúť vaše nastavenia na nové miesto v registri (HKEY_CURRENT_USER\\\\%s).\\n\\nTentoraz ich používa tam, kde sa nachádzajú (HKEY_CURRENT_USER\\\\%s), a pri ďalšom spustení to skúsi znova. Nič nebolo odstránené."
     },
     "german": {
+      "IDS_MENU_TAB_MOVETOOTHER": "In das andere &Fenster verschieben",
+      "IDS_MENU_TAB_NEWASOTHER": "Neue Registerkarte wie im anderen Fens&ter",
       "IDS_MENU_FILES_RENAMEINPLACE": "An Ort und Stelle umbenennen\\tUmschalt+F6",
       "IDS_MENU_OPT_VSB_TABS": "&Registerkarten",
       "IDT_TABS_KEYLIST": "Ta&stenkombinationen für Registerkarten:",
@@ -384,6 +394,8 @@
       "IDC_QUICKSEARCH_FILTER": "Schnellsuche: Text überall im Namen &finden, nur Treffer anzeigen"
     },
     "french": {
+      "IDS_MENU_TAB_MOVETOOTHER": "Dé&placer vers l'autre panneau",
+      "IDS_MENU_TAB_NEWASOTHER": "Nouvel onglet comme l'autre pann&eau",
       "IDS_MENU_FILES_RENAMEINPLACE": "Renommer sur place\\tMaj+F6",
       "IDS_MENU_OPT_VSB_TABS": "O&nglets",
       "IDS_TABKEY_ENTER": "Entrer dans le dossier ou l'archive sous le curseur",
@@ -421,6 +433,8 @@
       "IDC_QUICKSEARCH_FILTER": "Recherche rapide : texte &partout dans le nom, seuls les résultats affichés"
     },
     "dutch": {
+      "IDS_MENU_TAB_MOVETOOTHER": "Naar ander paneel &verplaatsen",
+      "IDS_MENU_TAB_NEWASOTHER": "Nieuw tabblad als ander &paneel",
       "IDS_MENU_FILES_RENAMEINPLACE": "Naam ter plaatse veranderen\\tShift+F6",
       "#Command Shell": "Opdracht Shell",
       "IDT_CMDSHELL_INTRO": "De opdracht Opdracht Shell (Num /, Ctrl+/, de knop op de werkbalk) opent dit programma in de map van het actieve paneel:",
@@ -452,6 +466,8 @@
       "IDS_CANNOTMOVEDIRINTOITSELF": "Een map kan niet naar zichzelf of naar een van de submappen worden verplaatst."
     },
     "hungarian": {
+      "IDS_MENU_TAB_MOVETOOTHER": "Át&helyezés a másik panelre",
+      "IDS_MENU_TAB_NEWASOTHER": "Új lap másik &panelként",
       "#Tabs": "Lapok",
       "IDS_MENU_OPT_VSB_TABS": "Lap&sáv",
       "IDS_MENU_TAB_REOPEN": "Be&zárt lap újbóli megnyitása",
@@ -478,6 +494,8 @@
       "IDS_QUICKSEARCH_STATUS": "Keresés: %s (%d / %d)"
     },
     "romanian": {
+      "IDS_MENU_TAB_MOVETOOTHER": "&Mutare în celălalt panou",
+      "IDS_MENU_TAB_NEWASOTHER": "Filă nouă ca celălalt &panou",
       "IDS_MENU_OPT_VSB_TABS": "&File",
       "IDS_TABKEY_ENTER": "Intrare în folderul sau arhiva de sub cursor",
       "IDS_TABKEY_PARENT": "Salt la folderul părinte",
@@ -498,6 +516,8 @@
       "IDC_QUICKSEARCH_FILTER": "Căutare rapidă: text oriunde în n&ume, afișează doar potrivirile"
     },
     "spanish": {
+      "IDS_MENU_TAB_MOVETOOTHER": "&Mover al otro panel",
+      "IDS_MENU_TAB_NEWASOTHER": "Nueva pestaña como el otro &panel",
       "IDS_MENU_FILES_RENAMEINPLACE": "Cambiar nombre en el mismo lugar\\tMays+F6",
       "IDS_VIEWERCOPYKEPTTEMP": "El archivo «%s» se ha eliminado, pero no se ha podido colocar el nuevo contenido en su lugar.\\nError: %s\\n\\nEl nuevo contenido está en el archivo «%s». Cambie el nombre de ese archivo para restaurarlo.",
       "IDS_CMDSHELL_PRESET_WT": "Windows Terminal",

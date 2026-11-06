@@ -3570,6 +3570,8 @@ SLGINCOMPLETE,""
 14191,1,"(keine)"
 
 [STRINGTABLE 157]
+14192,1,"In das andere &Fenster verschieben"
+14193,1,"Neue Registerkarte wie im anderen Fens&ter"
 14195,1,"Schließe Suchfenster, bitte warten..."
 14196,1,"Dieser Ordner enthält Einträge, deren Namen identisch aussehen, aber unterschiedliche Unicode-Schreibweisen verwenden (z. B. zusammengesetzte vs. zerlegte Akzente): \n \n %s \n \n Windows behandelt sie als unterschiedliche Dateien. Tandem Commander behält beide Namen genau so bei, wie sie gespeichert sind."
 14197,1,"Das Plugin kann diesen Namen nicht verarbeiten (es wurde für eine ältere Benutzeroberfläche ohne Unicode- und Unterstützung für lange Pfade entwickelt): \n \n %s \n \n Das Element wurde übersprungen, die restlichen Elemente werden verarbeitet."

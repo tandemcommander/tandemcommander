@@ -3570,6 +3570,8 @@ SLGINCOMPLETE,""
 14191,1,"(nincs)"
 
 [STRINGTABLE 157]
+14192,1,"Át&helyezés a másik panelre"
+14193,1,"Új lap másik &panelként"
 14195,1,"Keres ablak bezárása, kérem várjon..."
 14196,1,"Ez a mappa olyan bejegyzéseket tartalmaz, amelyek nevei azonosnak tűnnek, de eltérő Unicode-írásmódot használnak (pl. összetett és szétbontott ékezetek): \n \n %s \n \n A Windows ezeket különböző fájlként kezeli. A Tandem Commander mindkét nevet pontosan úgy őrzi meg, ahogyan tárolva vannak."
 14197,1,"A bővítmény nem tudja feldolgozni ezt a nevet (egy régebbi felületre készült, amely nem támogatja az Unicode-ot és a hosszú elérési utakat): \n \n %s \n \n Az elemet kihagytuk, a többi elemet feldolgozzuk."
