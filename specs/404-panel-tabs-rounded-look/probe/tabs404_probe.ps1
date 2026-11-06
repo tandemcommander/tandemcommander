@@ -22,7 +22,13 @@
       MENU     left A B (B active), right R: the commands the context menu posts:
                Move to Other Panel (CM_LEFT_MOVETABTOOTHER 2885) -> left A, right R B (B active),
                Reopen Closed Tab brings nothing back; New Tab as Other Panel (CM_LEFT_NEWTABASOTHER
-               2887) -> left A B; Move with a single tab -> nothing.
+               2887) -> left A B; Move with a single tab -> nothing; the real context menu (right-click,
+               posted WM_CHAR of the accelerator) on an inactive tab (Move) and on the empty strip
+               (New Tab as Other Panel).
+      MOUSE also captures mid-drag (MIDDRAG): the held tab is drawn at the cursor, the neighbour in its
+               place, and a WM_CANCELMODE glides it back.
+      FALLBACK Move to Other Panel of an inactive tab whose folder was deleted: the other panel cannot
+               open it (error box) and falls back elsewhere - the move is undone, both panels unchanged.
     State is read from the program itself: Options > Save Configuration (posted) writes both
     panels' tab lists (HKCU\Software\Tandem Commander\Settings\{Left,Right} Panel\Tabs).
     NOT DRIVEN here: Esc during a drag and the feel of the animation (real keyboard / mouse), a
@@ -134,6 +140,7 @@ public static class Tc404
     public static void Send(IntPtr h, uint msg, int wp, int x, int y) { IntPtr r; SendMessageTimeoutW(h, msg, (IntPtr)wp, LP(x, y), 0, 10000, out r); }
     public static void SendRaw(IntPtr h, uint msg, IntPtr wp, IntPtr lp) { IntPtr r; SendMessageTimeoutW(h, msg, wp, lp, 0, 10000, out r); }
 
+    public static int Pixel(Bitmap b, int x, int y) { return b.GetPixel(x, y).ToArgb() & 0xFFFFFF; }
     public static Bitmap Capture(IntPtr h)
     {
         int[] s = ClientSize(h);
@@ -386,6 +393,20 @@ function Run-Mouse {
         $g = Geo $Hs 4
         $s = Snap $id
         Row 'MOUSE' 'START' (V ((Order $s.L) -eq 'A B C D' -and $s.L.Active -eq 0)) ("{0}; strip {1}x{2}, tab width {3}" -f (Desc $s), $g.W, $g.H, $g.TabW)
+        # mid-drag: the pressed tab follows the cursor, the neighbour slides into its place; a cancel glides back
+        $b0 = [Tc404]::Capture($Hs); $cA = [Tc404]::Pixel($b0, (TabCx $g 0), 6); $cBg = [Tc404]::Pixel($b0, (TabCx $g 1), 6); $b0.Dispose()
+        $toX = [int]((TabCx $g 0) + 1.2 * $g.TabW)
+        $st = Steps (TabCx $g 0) $toX $g.MidY
+        Drag $Hs (TabCx $g 0) $g.MidY $st.X $st.Y
+        Start-Sleep -Milliseconds 450
+        $b1 = [Tc404]::Capture($Hs); $atCursor = [Tc404]::Pixel($b1, $toX, 6); $atOld = [Tc404]::Pixel($b1, (TabCx $g 0), 6); $b1.Dispose()
+        [Tc404]::Post($Hs, $WM_CANCELMODE, 0, 0, 0)
+        Start-Sleep -Milliseconds 450
+        $b2 = [Tc404]::Capture($Hs); $back = [Tc404]::Pixel($b2, (TabCx $g 0), 6); $b2.Dispose()
+        [Tc404]::Post($Hs, $WM_LBUTTONUP, 0, $toX, $g.MidY)
+        Start-Sleep -Milliseconds 300
+        $s = Snap $id
+        Row 'MOUSE' 'MIDDRAG' (V ($cA -ne $cBg -and $atCursor -eq $cA -and $atOld -eq $cBg -and $back -eq $cA -and (Order $s.L) -eq 'A B C D')) (("active-tab colour {0:X6}, strip {1:X6}; while A is held 1.2 tab widths to the right: at the cursor {2:X6}, at A's old place {3:X6}; after WM_CANCELMODE at A's place {4:X6}; " -f $cA, $cBg, $atCursor, $atOld, $back) + (Desc $s))
         # A past C's centre
         $st = Steps (TabCx $g 0) ((TabCx $g 2) + 6) $g.MidY
         Drag $Hs (TabCx $g 0) $g.MidY $st.X $st.Y
@@ -472,9 +493,62 @@ function Run-Menu {
         [void](Serve $id 10)
         $s = Snap $id
         Row 'MENU' 'NEWASOTHER' (V ((Order $s.L) -eq 'A B' -and $s.L.Active -eq 1 -and (Order $s.R) -eq 'R B')) ('New Tab as Other Panel (right shows B): ' + (Desc $s))
+        # the real context menu: right-click the inactive tab A, its accelerator M (Move to Other Panel)
+        $Hs = Strip $id
+        $g = Geo $Hs 2
+        $known = Get-Tops $id
+        [Tc404]::Post($Hs, 0x0204, 2, (TabCx $g 0), $g.MidY)   # WM_RBUTTONDOWN
+        [Tc404]::Post($Hs, 0x0205, 0, (TabCx $g 0), $g.MidY)   # WM_RBUTTONUP -> the strip's menu
+        $menu = Wait-NewWin $id $known 6
+        [void][Drv098f]::PostMessageW((Get-Main $id), 0x0102, [IntPtr]0x6D, [IntPtr]1)   # WM_CHAR 'm'
+        Start-Sleep -Milliseconds 600
+        if (@(Get-Tops $id | Where-Object { $known -notcontains $_ }).Count) { [void][Drv098f]::PostMessageW((Get-Main $id), 0x0100, [IntPtr]0x1B, [IntPtr]1) }   # Esc: a menu still open
+        [void](Serve $id 10)
+        $s = Snap $id
+        Row 'MENU' 'CTXMOVE' (V ($menu -ne [IntPtr]::Zero -and (Order $s.L) -eq 'B' -and (Order $s.R) -eq 'R B A' -and $s.R.Active -eq 2)) (("menu window {0}; right-click on the inactive tab A, M: " -f ($menu -ne [IntPtr]::Zero)) + (Desc $s))
+        # the empty strip: New Tab as Other Panel (P); the right panel shows A
+        $g = Geo $Hs 1
+        $ex = [int]($g.Left + $g.TabW + $g.H + 30)
+        $known = Get-Tops $id
+        [Tc404]::Post($Hs, 0x0204, 2, $ex, $g.MidY)
+        [Tc404]::Post($Hs, 0x0205, 0, $ex, $g.MidY)
+        $menu = Wait-NewWin $id $known 6
+        [void][Drv098f]::PostMessageW((Get-Main $id), 0x0102, [IntPtr]0x70, [IntPtr]1)   # WM_CHAR 'p'
+        Start-Sleep -Milliseconds 600
+        if (@(Get-Tops $id | Where-Object { $known -notcontains $_ }).Count) { [void][Drv098f]::PostMessageW((Get-Main $id), 0x0100, [IntPtr]0x1B, [IntPtr]1) }
+        [void](Serve $id 10)
+        $s = Snap $id
+        Row 'MENU' 'CTXNEWAS' (V ($menu -ne [IntPtr]::Zero -and (Order $s.L) -eq 'B A' -and $s.L.Active -eq 1)) (("menu window {0}; right-click on the empty strip at x {1}, P: " -f ($menu -ne [IntPtr]::Zero), $ex) + (Desc $s))
         Row 'MENU' 'REFUSED' 'NOT DRIVEN' 'a refused leave needs a plug-in that refuses (CHPPFR_CANNOTCLOSEPATH); no shipped plug-in does (feature 078 deviation) - verified by reading MoveTabToOtherPanel'
     }
     catch { Row 'MENU' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { End-Run $id }
+}
+
+# Move to Other Panel of a tab whose folder is gone: the other panel falls back to another place, so the
+# location lives on only in the source - the move is undone (review 1, S1)
+function Run-Fallback {
+    if (-not (Want 'FALLBACK')) { return }
+    $F = $Root + '\fallback'
+    if (-not (Prep-Registry 0 @("$F\A", "$F\X") 0 @("$F\R") 0)) { Row 'FALLBACK' 'SETUP' 'NOT DRIVEN' 'no stored configuration'; return }
+    $id = 0
+    try {
+        $id = Start-Run "$F\A" "$F\R"
+        [IO.Directory]::Delete($LP + "$F\X", $true)   # inside the fixture
+        $Hs = Strip $id
+        $g = Geo $Hs 2
+        $known = Get-Tops $id
+        [Tc404]::Post($Hs, 0x0204, 2, (TabCx $g 1), $g.MidY)
+        [Tc404]::Post($Hs, 0x0205, 0, (TabCx $g 1), $g.MidY)
+        $menu = Wait-NewWin $id $known 6
+        [void][Drv098f]::PostMessageW((Get-Main $id), 0x0102, [IntPtr]0x6D, [IntPtr]1)   # 'm': Move to Other Panel
+        Start-Sleep -Milliseconds 600
+        if ($menu -ne [IntPtr]::Zero -and [Drv098f]::IsWindow($menu) -and [Drv098f]::IsWindowVisible($menu)) { [void][Drv098f]::PostMessageW((Get-Main $id), 0x0100, [IntPtr]0x1B, [IntPtr]1) }
+        $r = Serve $id 15
+        $s = Snap $id
+        Row 'FALLBACK' 'MOVE-GONE' (V ($menu -ne [IntPtr]::Zero -and (Order $s.L) -eq 'A X' -and (Order $s.R) -eq 'R' -and $s.R.Active -eq 0)) (("menu window {0}; X deleted, Move to Other Panel on X - undone, X stays here: {1}; windows: {2}" -f ($menu -ne [IntPtr]::Zero), (Desc $s), (Msgs $r)))
+    }
+    catch { Row 'FALLBACK' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { End-Run $id }
 }
 
@@ -488,6 +562,7 @@ try {
     foreach ($n in @('Downloads', 'fonts', 'tandemcommander', 'src', '2021_silon_bubble_sort_visualisation')) { NewDir ($Root + '\look\' + $n) }
     foreach ($n in @('A', 'B', 'C', 'D')) { NewDir ($Root + '\mouse\' + $n) }
     foreach ($n in @('A', 'B', 'R')) { NewDir ($Root + '\menu\' + $n) }
+    foreach ($n in @('A', 'X', 'R')) { NewDir ($Root + '\fallback\' + $n) }
     Out ("tabs404_probe (feature 404) {0}" -f $Label)
     Out ("Program : {0}" -f $Exe)
     $fm = [Tc404]::FontMetrics()
@@ -497,6 +572,7 @@ try {
     Run-Look 'dark'
     Run-Mouse
     Run-Menu
+    Run-Fallback
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

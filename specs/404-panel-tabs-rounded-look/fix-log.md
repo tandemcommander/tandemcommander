@@ -134,3 +134,44 @@ The 078 driver was never committed (nothing to run).
 
 5 lines added to `manual-checks-owed-before-the-next-release` (real-screen look, real-mouse drag and
 Esc, close on release, 125 / 150 % and High Contrast, Move to Other Panel with an SFTP tab).
+
+## Review
+
+### Review 1 (refute-first agent, HEAD fb83b19b) - no MUST
+
+Re-ran saltests (282506 / 0), `tabs404_probe` (25 / 0 / 1 NOT DRIVEN), `tabs312_probe` (33 / 0); a
+negative control of the image comparison (evidence shifted 1 px right / down: 1420 / 1250 failing
+pixels; the inactive capture against the normal evidence: 2173) - the look rows discriminate.
+
+- **S1 Move to Other Panel lost a tab when the other panel fell back** (`SwitchToTab` returns TRUE
+  when `ChangeDir` falls back to another place and rewrites the new tab's location; the source was
+  then deleted). Fixed: after the other panel's switch the new tab's location is compared with the
+  moved one (`TabLocationsSame`: ordinal case-insensitive, a trailing backslash ignored); when they
+  differ the move is undone like a refused leave (`TakeTabBackFromOther`) and the tab stays here.
+  New probe row FALLBACK MOVE-GONE (an inactive tab whose folder was deleted, through the real context
+  menu): error box shown, left [A X], right [R] - PASS (before the fix the source X would have been
+  removed: left [A], right [R R]).
+- **S2 a drag armed after a switch that showed a dialog** (the button-up went to the dialog, the tab
+  then followed a mouse with no button). Fixed: a `WM_MOUSEMOVE` without `MK_LBUTTON` while a drag is
+  pending / running or the X is pressed cancels the gesture (`CancelGesture`: glide back, capture
+  released). Not drivable on the hidden desktop (needs a dialog between down and up); the release
+  checklist's drag line covers the real mouse.
+- **S3 the probes did not prove the live drag or the context-menu path.** Added: MOUSE MIDDRAG (capture
+  while A is held 1.2 tab widths to the right: the active-tab colour at the cursor, the strip colour at
+  A's old place, after `WM_CANCELMODE` A back at its place) and MENU CTXMOVE / CTXNEWAS (right-click
+  on the inactive tab A / on the empty strip, the menu's accelerator posted as `WM_CHAR` - the real
+  `ContextTabIndex` path). REFUSED stays NOT DRIVEN (the feature-097 `refusedTooLong` path refuses the
+  *target*, it does not make the source refuse its leave).
+- NOTE fixed: SVG numbers formatted by the C runtime - a decimal comma (a locale set by someone else in
+  the process) is turned into a dot before parsing (`AAShape`).
+- NOTE fixed: a held drag with nothing moving repainted 60 times a second - `AnimStep` reports
+  whether an offset moved; the timer paints only then.
+- NOTE fixed: the pressed X is bound to its tab object (`PressedCloseTab`); a key that changes the tab
+  set while the button is held closes nothing.
+- NOTE recorded: `WM_MOUSELEAVE` ignored when `GetCursorPos` fails is a probe seam (no effect with an
+  input desktop) - see Deviations. NOTE left: the plug-in icon cache is keyed by plug-in index
+  (cosmetic, until the next colour change); a refused-leave undo re-lists the other panel's previous
+  tab (a closed FTP connection reconnects); Esc during a drag also reaches the focused panel.
+
+After the fixes: `build.cmd` BUILD SUCCEEDED; saltests 282506 / 0; encoding guard TOTAL 0;
+`tabs404_probe` **PASS 29, FAIL 0, NOT DRIVEN 1** (`result_after.txt`); `tabs312_probe` 33 / 0.

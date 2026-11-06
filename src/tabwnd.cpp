@@ -91,6 +91,7 @@ CTabWindow::CTabWindow(CFilesWindow* filesWindow) : CWindow(ooStatic)
     TimerOn = FALSE;
     PressedClose = -1;
     PressedCloseInside = FALSE;
+    PressedCloseTab = NULL;
     MButtonDownIndex = -1;
     Rast = NULL;
     AADC = NULL;
@@ -398,8 +399,23 @@ void CTabWindow::CancelPress()
     {
         PressedClose = -1;
         PressedCloseInside = FALSE;
+        PressedCloseTab = NULL;
         Repaint();
     }
+}
+
+void CTabWindow::CancelGesture()
+{
+    if (Dragging)
+        EndDrag(FALSE); // glides back, order unchanged
+    else if (WaitForDrag)
+        ResetDrag();
+    PressedClose = -1;
+    PressedCloseInside = FALSE;
+    PressedCloseTab = NULL;
+    if (HWindow != NULL && GetCapture() == HWindow)
+        ReleaseCapture(); // its WM_CAPTURECHANGED finds nothing left to cancel
+    Repaint();
 }
 
 //
@@ -450,8 +466,10 @@ void CTabWindow::SetAnimTarget(int index, int to)
     EnsureTimer();
 }
 
-BOOL CTabWindow::AnimStep()
+BOOL CTabWindow::AnimStep(BOOL* changed)
 {
+    if (changed != NULL)
+        *changed = FALSE;
     if (Anim == NULL)
         return FALSE;
     DWORD now = GetTickCount();
@@ -463,9 +481,12 @@ BOOL CTabWindow::AnimStep()
         if (a->Cur == a->To)
             continue;
         int p = SalTabEaseOut((int)(now - a->Start), TABSTRIP_ANIM_MS);
-        a->Cur = a->From + (int)(((__int64)(a->To - a->From) * p) / 1000);
+        int cur = a->From + (int)(((__int64)(a->To - a->From) * p) / 1000);
         if (p >= 1000)
-            a->Cur = a->To;
+            cur = a->To;
+        if (cur != a->Cur && changed != NULL)
+            *changed = TRUE;
+        a->Cur = cur;
         if (a->Cur != a->To)
             moving = TRUE;
     }
@@ -685,6 +706,12 @@ void CTabWindow::AAShape(HDC dc, const char* svgElement, COLORREF clr, float fx0
     if (_snprintf_s(svg, _TRUNCATE, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\">%s</svg>",
                     Width, Height, svgElement) < 0)
         return;
+    // the numbers are formatted by the C runtime: a decimal comma of a locale set by someone else
+    // in the process (a shell extension) would break them - SVG takes only the dot and never a comma
+    char* c;
+    for (c = svg; *c != 0; c++)
+        if (*c == ',')
+            *c = '.';
     NSVGimage* image = nsvgParse(svg, "px", 96.0f);
     if (image == NULL)
         return;
@@ -1139,6 +1166,7 @@ void CTabWindow::OnLButtonDown(int x, int y)
         {
             PressedClose = index;
             PressedCloseInside = TRUE;
+            PressedCloseTab = FilesWindow->Tabs.At(index);
             HotIndex = index;
             HotPart = tspClose;
             SetCurrentToolTip(NULL, 0);
@@ -1214,14 +1242,16 @@ void CTabWindow::OnLButtonUp(int x, int y)
     if (PressedClose >= 0)
     {
         int pressed = PressedClose;
+        CPanelTab* pressedTab = PressedCloseTab;
         int part;
         int index = HitTest(x, y, &part);
         BOOL inside = (index == pressed && part == tspClose);
         PressedClose = -1; // before ReleaseCapture: its WM_CAPTURECHANGED finds nothing to cancel
         PressedCloseInside = FALSE;
+        PressedCloseTab = NULL;
         if (GetCapture() == HWindow)
             ReleaseCapture();
-        if (inside)
+        if (inside && FilesWindow->Tabs.At(pressed) == pressedTab) // still the pressed tab
             FilesWindow->CloseTab(pressed); // never the only tab (CloseTab refuses)
         Repaint();
         UpdateHot(x, y);
@@ -1423,6 +1453,7 @@ CTabWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         SetCurrentToolTip(NULL, 0);
         PressedClose = -1;
         PressedCloseInside = FALSE;
+        PressedCloseTab = NULL;
         ResetDrag();
         if (GetCapture() == HWindow)
             ReleaseCapture();
@@ -1475,8 +1506,10 @@ CTabWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (GetCapture() == HWindow)
                 ReleaseCapture();
         }
-        BOOL moving = AnimStep();
-        Repaint();
+        BOOL changed;
+        BOOL moving = AnimStep(&changed);
+        if (changed)
+            Repaint(); // a held drag with nothing moving paints nothing
         if (!Dragging && !moving)
         {
             StopAnim();
@@ -1516,6 +1549,8 @@ CTabWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         if (MainWindow->HasLockedUI())
             break;
+        if ((wParam & MK_LBUTTON) == 0 && (WaitForDrag || Dragging || PressedClose >= 0))
+            CancelGesture(); // the button went up elsewhere (a dialog of the tab switch took it): never a drag without the button
         OnMouseMove((short)LOWORD(lParam), (short)HIWORD(lParam));
         return 0;
     }
@@ -1530,14 +1565,8 @@ CTabWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (uMsg == WM_CANCELMODE)
         {
             // feature 404: a cancelled drag glides back, a pressed X is forgotten
-            if (Dragging)
-                EndDrag(FALSE);
-            else if (WaitForDrag)
-                ResetDrag();
-            PressedClose = -1;
-            PressedCloseInside = FALSE;
-            if (GetCapture() == HWindow)
-                ReleaseCapture();
+            if (Dragging || WaitForDrag || PressedClose >= 0)
+                CancelGesture();
         }
         if (Dragging || PressedClose >= 0)
             break; // the capture keeps the gesture; the hot state belongs to it
@@ -1557,15 +1586,8 @@ CTabWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if ((HWND)lParam != HWindow && (Dragging || WaitForDrag || PressedClose >= 0))
         {
             // feature 404: losing the capture cancels: the drag glides back, a pressed X closes nothing
-            if (Dragging)
-                EndDrag(FALSE);
-            else
-                ResetDrag();
-            PressedClose = -1;
-            PressedCloseInside = FALSE;
-            if (GetCapture() == HWindow)
-                ReleaseCapture(); // a posted notice while the capture is still ours
-            Repaint();
+            // (CancelGesture also releases a capture that is still ours - a posted notice)
+            CancelGesture();
         }
         break;
     }
@@ -1616,17 +1638,7 @@ CTabWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_RBUTTONDOWN:
     {
         if (Dragging || WaitForDrag || PressedClose >= 0)
-        {
-            if (Dragging)
-                EndDrag(FALSE);
-            else
-                ResetDrag();
-            PressedClose = -1;
-            PressedCloseInside = FALSE;
-            if (GetCapture() == HWindow)
-                ReleaseCapture();
-            Repaint();
-        }
+            CancelGesture();
         return 0;
     }
 

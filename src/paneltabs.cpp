@@ -542,6 +542,38 @@ void CFilesWindow::MoveTab(int from, int to)
     UpdateTabStrip();
 }
 
+// feature 404: the same location for Move to Other Panel - ordinal case-insensitive, a trailing
+// backslash ignored (the panel writes the location in its general form after the switch)
+static BOOL TabLocationsSame(const char* a, const char* b)
+{
+    if (SalPathEqualOrdinalCI(a, b))
+        return TRUE;
+    size_t la = strlen(a);
+    size_t lb = strlen(b);
+    if (la > 3 && a[la - 1] == '\\')
+        la--;
+    if (lb > 3 && b[lb - 1] == '\\')
+        lb--;
+    if (la == strlen(a) && lb == strlen(b))
+        return FALSE; // no backslash to drop: the comparison above decided
+    char* ca = (char*)malloc(la + 1);
+    char* cb = (char*)malloc(lb + 1);
+    BOOL same = FALSE;
+    if (ca != NULL && cb != NULL)
+    {
+        memcpy(ca, a, la);
+        ca[la] = 0;
+        memcpy(cb, b, lb);
+        cb[lb] = 0;
+        same = SalPathEqualOrdinalCI(ca, cb);
+    }
+    if (ca != NULL)
+        free(ca);
+    if (cb != NULL)
+        free(cb);
+    return same; // out of memory: "not the same" keeps the tab reopenable (never lost)
+}
+
 // the index of 'tab' in the strip, -1 when it is gone (the leave prompts pump messages)
 static int FindPanelTab(CPanelTabs* tabs, CPanelTab* tab)
 {
@@ -550,6 +582,22 @@ static int FindPanelTab(CPanelTabs* tabs, CPanelTab* tab)
         if (tabs->At(i) == tab)
             return i;
     return -1;
+}
+
+// feature 404: undoes the first step of Move to Other Panel - the other panel goes back to its previous
+// tab and forgets the new one; when it cannot leave it either, the tab stays in both panels (never in neither)
+static void TakeTabBackFromOther(CFilesWindow* other, CPanelTab* added, int otherPrev)
+{
+    int at = FindPanelTab(&other->Tabs, added);
+    if (at >= 0)
+    {
+        if (at == other->Tabs.ActiveIndex && otherPrev >= 0 && otherPrev < other->Tabs.Count() && otherPrev != at)
+            other->SwitchToTab(otherPrev);
+        at = FindPanelTab(&other->Tabs, added);
+        if (at >= 0 && at != other->Tabs.ActiveIndex)
+            other->Tabs.Remove(at);
+    }
+    other->UpdateTabStrip();
 }
 
 BOOL CFilesWindow::MoveTabToOtherPanel(int index)
@@ -587,6 +635,17 @@ BOOL CFilesWindow::MoveTabToOtherPanel(int index)
         return FALSE; // the other panel did not open it: nothing changed here
     }
 
+    // the other panel may have fallen back to another place (the folder is gone, a share or a
+    // login failed - the error was shown): then the location lives on only here - the move is undone
+    // like a refused leave, the tab stays here
+    int atNew = FindPanelTab(&other->Tabs, added);
+    if (atNew < 0 || !TabLocationsSame(added->Location, rec.Location))
+    {
+        TakeTabBackFromOther(other, added, otherPrev);
+        UpdateTabStrip();
+        return FALSE;
+    }
+
     // 2. close it here, not kept for Reopen Closed Tab (it lives on in the other panel)
     index = FindPanelTab(&Tabs, moved);
     if (index < 0) // closed here meanwhile (from a prompt of the other panel's switch)
@@ -601,18 +660,8 @@ BOOL CFilesWindow::MoveTabToOtherPanel(int index)
         int neighbour = (index < Tabs.Count() - 1) ? index + 1 : index - 1;
         if (!SwitchToTab(neighbour))
         {
-            // leaving was refused (archive or plug-in leave rules): both panels as they were - the
-            // other panel goes back to its previous tab and forgets the new one
-            int at = FindPanelTab(&other->Tabs, added);
-            if (at >= 0)
-            {
-                if (at == other->Tabs.ActiveIndex && otherPrev >= 0 && otherPrev < other->Tabs.Count() && otherPrev != at)
-                    other->SwitchToTab(otherPrev);
-                at = FindPanelTab(&other->Tabs, added);
-                if (at >= 0 && at != other->Tabs.ActiveIndex)
-                    other->Tabs.Remove(at); // else the other panel could not leave it: it stays in both panels
-            }
-            other->UpdateTabStrip();
+            // leaving was refused (archive or plug-in leave rules): both panels as they were
+            TakeTabBackFromOther(other, added, otherPrev);
             UpdateTabStrip();
             return FALSE;
         }

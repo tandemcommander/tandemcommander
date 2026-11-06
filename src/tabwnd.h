@@ -81,6 +81,7 @@ protected:
     // feature 404: close on release
     int PressedClose;        // tab whose close glyph got the left button (-1 = none)
     BOOL PressedCloseInside; // the cursor is still over that glyph
+    CPanelTab* PressedCloseTab; // the tab of PressedClose (a key may change the tab set while the button is held)
 
     int MButtonDownIndex; // tab under the middle button when it went down (-1 = none)
 
@@ -133,11 +134,12 @@ protected:
     void UpdateDrag(int x);
     void EndDrag(BOOL apply); // release (apply) or cancel: the tabs glide to their slots
     void SetAnimTarget(int index, int to);
-    BOOL AnimStep(); // advances the offsets; FALSE when nothing moves any more
+    BOOL AnimStep(BOOL* changed); // advances the offsets; FALSE when nothing moves any more ('changed': an offset moved now)
     void EnsureTimer();
     void StopAnim();
     BOOL AnimationsOn();
-    void CancelPress(); // forgets a pressed close glyph
+    void CancelPress();   // forgets a pressed close glyph
+    void CancelGesture(); // a drag (glides back) or a pressed close glyph is given up; the capture is released
 
     void Paint(HDC hdc);
     void PaintTabBack(HDC dc, int index, BOOL hot);
