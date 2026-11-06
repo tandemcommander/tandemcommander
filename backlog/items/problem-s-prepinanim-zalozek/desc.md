@@ -1,7 +1,7 @@
 ---
 title: Switching away from an FTP tab leaves the tab strip in drag mode
 type: bug
-status: open
+status: in-progress
 severity: 5
 area: panels-ui
 source: github#22
@@ -10,7 +10,7 @@ created: 2026-11-06
 updated: 2026-11-06
 verified: 2026-11-06 09eaa097
 effort: S
-feature: -
+feature: 405
 related: []
 depends-on: []
 reason: -
@@ -54,3 +54,4 @@ Related to `panel-tabs-rounded-windows-11-look-with-icons-and-roomier` (first in
 - 2026-11-06 — moved to Next position 2
 - 2026-11-06 — related item panel-tabs-rounded-windows-11-look-with-icons-and-roomier done in feature 404
 - 2026-11-06 — verified at 09eaa097: reproduced at 09eaa097 by probe tabs405: after an error box during the tab switch the strip keeps the capture and a later move+release moves the tab
+- 2026-11-06 — run started, feature 405
