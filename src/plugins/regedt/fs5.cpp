@@ -325,8 +325,10 @@ static int QueryKeyClass(HKEY hKey, LPWSTR className)
 // feature 406: does the copy of an HKCR key held by both halves hold all of the machine's half
 // 'path' (Software\Classes\<key>)? The merged view the copy read shows, for a value name both halves
 // hold, only the user's value, and the user's class name: 'copied' is FALSE when a machine value has a
-// user's value of the same name with another type or other bytes (SalRegValueSame), or the class names
-// differ. Returns a Win32 error code; every error (also a value changed while it is read) fails closed
+// user's value of the same name with another type or other bytes (SalRegValueSame), or the machine's
+// class name is not empty and not exactly the user's. The halves are compared as they are now (a change
+// of the user's half by another program since the copy is not seen). Returns a Win32 error code; every
+// error fails closed (the box names the machine's key, also when the user's half could not be read)
 static int HkcrMachineHalfCopied(LPCWSTR path, BOOL& copied)
 {
     copied = FALSE;
@@ -347,30 +349,61 @@ static int HkcrMachineHalfCopied(LPCWSTR path, BOOL& copied)
         err = QueryKeyClass(machine, machineClass);
     if (err == ERROR_SUCCESS)
         err = QueryKeyClass(user, userClass);
+    // review of 406: the reported maximum may be half the real size (the copy doubles it - "Microsoft
+    // sometimes returns half the size"), so the buffers start doubled and grow on ERROR_MORE_DATA (the
+    // same value read again; a key that keeps growing ends with that error after a few rounds)
+    DWORD nameCap = 2 * maxName + 2, dataCap = 2 * maxData + 2;
     LPWSTR name = NULL;
     BYTE *machineData = NULL, *userData = NULL;
     if (err == ERROR_SUCCESS)
     {
-        name = (LPWSTR)malloc((maxName + 1) * sizeof(WCHAR));
-        machineData = (BYTE*)malloc(maxData + 1);
-        userData = (BYTE*)malloc(maxData + 1);
+        name = (LPWSTR)malloc(nameCap * sizeof(WCHAR));
+        machineData = (BYTE*)malloc(dataCap);
+        userData = (BYTE*)malloc(dataCap);
         if (name == NULL || machineData == NULL || userData == NULL)
             err = ERROR_NOT_ENOUGH_MEMORY;
     }
-    BOOL same = err == ERROR_SUCCESS &&
-                CompareStringW(LOCALE_USER_DEFAULT, NORM_IGNORECASE, machineClass, -1, userClass, -1) == CSTR_EQUAL;
-    for (DWORD index = 0; err == ERROR_SUCCESS && same; index++)
+    // review of 406: the class names compared exactly - one differing only in letter case is not the
+    // class the copy took; an empty machine class holds nothing to lose
+    BOOL same = err == ERROR_SUCCESS && (machineClass[0] == 0 || wcscmp(machineClass, userClass) == 0);
+    int grown = 0;
+    for (DWORD index = 0; err == ERROR_SUCCESS && same;)
     {
-        DWORD nameSize = maxName + 1, machineSize = maxData, machineType;
+        DWORD nameSize = nameCap, machineSize = dataCap, machineType;
         err = RegEnumValueW(machine, index, name, &nameSize, NULL, &machineType, machineData, &machineSize);
         if (err == ERROR_NO_MORE_ITEMS)
         {
             err = ERROR_SUCCESS;
             break;
         }
+        if (err == ERROR_MORE_DATA && grown < 8 && dataCap < 0x10000000 && nameCap < 0x100000)
+        {
+            grown++;
+            DWORD newNameCap = 2 * nameCap;
+            DWORD newDataCap = max(2 * dataCap, machineSize + 2);
+            LPWSTR newName = (LPWSTR)realloc(name, newNameCap * sizeof(WCHAR));
+            if (newName != NULL)
+                name = newName;
+            BYTE* newMachine = (BYTE*)realloc(machineData, newDataCap);
+            if (newMachine != NULL)
+                machineData = newMachine;
+            BYTE* newUser = (BYTE*)realloc(userData, newDataCap);
+            if (newUser != NULL)
+                userData = newUser;
+            if (newName == NULL || newMachine == NULL || newUser == NULL)
+                err = ERROR_NOT_ENOUGH_MEMORY;
+            else
+            {
+                nameCap = newNameCap;
+                dataCap = newDataCap;
+                err = ERROR_SUCCESS;
+            }
+            continue; // the same value again
+        }
         if (err != ERROR_SUCCESS)
-            break; // ERROR_MORE_DATA too: the key changed while it was read
-        DWORD userSize = maxData, userType;
+            break;
+        index++;
+        DWORD userSize = dataCap, userType;
         int uerr = RegQueryValueExW(user, name, NULL, &userType, userData, &userSize);
         if (uerr == ERROR_FILE_NOT_FOUND)
             continue; // the merged view showed the machine's value: copied

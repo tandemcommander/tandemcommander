@@ -18,6 +18,6 @@ only with size 0). Letter case, a trailing NUL, REG_SZ vs REG_EXPAND_SZ all coun
 
 ## The "machine half copied" check (fs5.cpp, impure)
 
-copied = class names equal (case ignored) AND for every value V of the machine's half: the user's
+copied = (the machine's class name is empty OR exactly equal to the user's - review of 406) AND for every value V of the machine's half: the user's
 half has no value named V, or `SalRegValueSame(machine V, user V)`.
 Result: `ERROR_SUCCESS` + copied flag, or a Win32 error (shown in the box).

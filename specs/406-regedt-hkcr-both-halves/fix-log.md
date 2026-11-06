@@ -89,10 +89,10 @@ Interruption: after the English run the maintainer started the installed Tandem 
 build's Debug exe on the real desktop (0:13); the probes refuse while any instance runs (they share
 the registry key) and the Debug exe locks `regedt.spl` (LNK1168 during the negative control's build).
 The run waited for them to close (they closed at ~0:15; never stopped by the run), then rebuilt
-(`.uild.cmd` BUILD SUCCEEDED; `fs5.obj` / `regedt.spl` 0:15:34-35, after the header was restored
+(`.\build.cmd` BUILD SUCCEEDED; `fs5.obj` / `regedt.spl` 0:15:34-35, after the header was restored
 at 0:14:27 - the negative control's objects are gone) and ran the final series on that binary.
 
-## Final probe series (runner `%TEMP%	cmeasureun_all.ps1`, hidden desktop, not elevated)
+## Final probe series (runner `%TEMP%\tcmeasure\run_all.ps1`, hidden desktop, not elevated)
 
 | Probe | Result |
 |---|---|
@@ -114,5 +114,38 @@ was open) were removed.
 - The elevated Move (both halves really removed; the (50) refusal of a hidden machine value at the
   top key) - the probe never runs elevated (it would delete a real machine key): a line of the
   release checklist `manual-checks-owed-before-the-next-release` (feature 406).
-- A class name that differs between the halves - by reading (PowerShell cannot set a key's class).
+- A non-empty machine class name that differs from the user's - by reading (setting a machine
+  class needs elevation; the user's class is set by the probe's `RegCreateKeyExW`, row BOTHCLASS).
 - Quick Rename of a both-halves HKCR key - by reading (research R4).
+
+## Review
+
+### First review (independent agent, refute-first, on commit 475a0d00)
+
+No MUST. Re-measured: the probe on `main`'s `fs5.cpp` / `salregkeyid.h` (built in its own copy)
+7 PASS / 9 FAIL (BOTHMOVE / BOTHSKIP / BOTHSHADOW / BOTHEQUAL: no box, the user's half missing, the
+machine's left); on HEAD 16 / 0; negative control `HkcrMachineHalfCopied` forced to "copied" -
+BOTHSHADOW TEXT FAIL ((5) instead of (50)), BOTHEQUAL PASS; saltests 282544 / 0; clang-format clean.
+Callers enumerated (`CopyOrMoveFromFS`, Quick Rename `fs3.cpp`); a Move into the key's own machine
+half is refused by 292 (identity set of an HKCR path holds both halves); a skipped value keeps the
+key; `RegDeleteKeyW` refuses a machine half that still has subkeys; the user's half is deleted only
+after the machine's.
+
+| Finding | Done |
+|---|---|
+| SHOULD 1 `fix-log.md` lines 92 / 95 held control characters (a backspace, a tab and a CR: `\b`, `\t`, `\r` of a Bash here-document fed to Python - feature 123's trap) | fixed with a script file written by the editor; `grep -P` over every changed file finds none |
+| SHOULD 2 the check read values with the reported `maxData` while the copy doubles it ("Microsoft sometimes returns half the size"): a value larger than the maximum gave `ERROR_MORE_DATA`, a (234) box that Retry never clears - a wrong refusal | fixed: the buffers start at twice the maximum and grow on `ERROR_MORE_DATA` (the same value read again, at most 8 rounds, then the error - fails closed); the comment "the key changed while it was read" corrected. Not reproducible here (no key with the quirk) - by reading |
+| NOTE the probe never reached the top key's own check (the subkey's box comes first) nor the class branch | fixed: rows BOTHTOP (a machine-only key without subkeys, a hidden value at the top: (50) naming the top key) and BOTHCLASS (the user's half created with a class through `RegCreateKeyExW`) |
+| NOTE class names compared linguistically ignoring case: a machine class differing only in case counted as copied | fixed: exact comparison; refined - an empty machine class holds nothing and is no reason to refuse (otherwise every user's class name would refuse the Move) |
+| NOTE a change of the user's half by another program between the copy and the delete is not seen (the check compares the halves, not the copy) | recorded in the function's comment; negligible race, not changed |
+| NOTE when the user's half cannot be read the box names the machine's key | recorded in the comment; the key named is the one not deleted - accepted |
+| NOTE the refusal (50) says no reason | feature 297's precedent, no new string - accepted |
+| NOTE a non-elevated Move of a both-halves key now ends with an access-denied box | the intended change (it silently removed the user's half before) |
+
+Checks after the review fixes (final binary): `.\build.cmd` BUILD SUCCEEDED; saltests `282544 checks,
+0 failed`; probe English 23 PASS / 0 FAIL (BOTHTOP: the first box names
+`HKEY_LOCAL_MACHINE\Software\Classes\.3ds` with (50); BOTHCLASS: (5), the user's class
+`TcProbeClass` read back), Czech 23 / 0; 390's probe 10 / 0; registry restored identical. The probes of
+292 / 294 / 296 / 297 ran on the binary before these fixes (all PASS above); the fixes change only
+`HkcrMachineHalfCopied`, reached only for a key held by both halves at the delete of a Move.
+

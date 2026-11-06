@@ -29,6 +29,11 @@
                  both halves unchanged
       BOTHEQUAL  (control of BOTHSHADOW) the user's <S> holds a (default) equal to the machine's: not
                  hidden, so the machine's delete is tried - the first box has (5), not (50)
+      BOTHTOP    (review of 406) a machine-only key <Y> without subkeys gets a user's half whose
+                 value of the name of <Y>'s first value hides it: the first box names
+                 HKEY_LOCAL_MACHINE\Software\Classes\<Y> with (50) - the top key's own check
+      BOTHCLASS  (review of 406) the user's half of <Y> is created with the class TcProbeClass (the
+                 machine's class empty): not a reason to refuse - (5)
       BOTHSELF   (guard, feature 292) F6 of HKCR\<X> into \HKEY_CURRENT_USER\Software\Classes\ (its
                  own user's half): refused "Can't move a key to itself."; both halves unchanged
       END        each instance ends with exit code 0, no stray window, no report
@@ -141,6 +146,52 @@ function Pick-MachineOnly {
     }
     return $null
 }
+# review of 406: a machine-only extension key with values and no subkeys (only read)
+function Pick-MachineFlat {
+    foreach ($k in @(Get-ChildItem -LiteralPath 'HKLM:\Software\Classes' -ErrorAction SilentlyContinue | Sort-Object PSChildName)) {
+        $n = $k.PSChildName
+        if ($n -cnotmatch '^\.[a-z0-9]{2,5}$' -or $n -ieq $script:MachName) { continue }
+        if ($k.ValueCount -lt 1 -or $k.SubKeyCount -ne 0) { continue }
+        if (Test-Path -LiteralPath ('HKCU:\Software\Classes\' + $n)) { continue }
+        if ([Reg406]::ClassOf('Software\Classes\' + $n, $true) -ne '') { continue }  # the machine's class empty
+        return $n
+    }
+    return $null
+}
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public static class Reg406 {
+    [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
+    static extern int RegCreateKeyExW(UIntPtr hKey, string subKey, int reserved, string cls, int options, int sam, IntPtr sa, out UIntPtr result, out int disposition);
+    [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
+    static extern int RegOpenKeyExW(UIntPtr hKey, string subKey, int options, int sam, out UIntPtr result);
+    [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
+    static extern int RegQueryInfoKeyW(UIntPtr hKey, StringBuilder cls, ref int clsLen, IntPtr r, IntPtr a, IntPtr b, IntPtr c, IntPtr d, IntPtr e, IntPtr f, IntPtr g, IntPtr h);
+    [DllImport("advapi32.dll")]
+    static extern int RegCloseKey(UIntPtr hKey);
+    static readonly UIntPtr HKCU = new UIntPtr(0x80000001u), HKLM = new UIntPtr(0x80000002u);
+    // a new key of the user's half with a class name (refuses an existing key: its class cannot change)
+    public static void CreateWithClass(string path, string cls) {
+        UIntPtr h; int disp;
+        int err = RegCreateKeyExW(HKCU, path, 0, cls, 0, 0x20006, IntPtr.Zero, out h, out disp);
+        if (err != 0) throw new Exception("RegCreateKeyExW " + err);
+        RegCloseKey(h);
+        if (disp != 1) throw new Exception("the key existed already: " + path);
+    }
+    public static string ClassOf(string path) { return ClassOf(path, false); }
+    public static string ClassOf(string path, bool machine) {
+        UIntPtr h;
+        if (RegOpenKeyExW(machine ? HKLM : HKCU, path, 0, 0x20019, out h) != 0) return "(open failed)";
+        StringBuilder sb = new StringBuilder(260); int len = 260;
+        int err = RegQueryInfoKeyW(h, sb, ref len, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+        RegCloseKey(h);
+        return err == 0 ? sb.ToString() : "(query failed)";
+    }
+}
+'@
+
 # every key of a tree: relative path, values (sorted); '(missing)' when absent
 function Snap-Tree([string]$PsTop) {
     if (-not (Test-Path -LiteralPath $PsTop)) { return '(missing)' }
@@ -165,6 +216,17 @@ function Make-Fixture([string]$Shadow) {
     NewDir $StartDir
     Remove-Fixture
     New-Key ($PlainPs + '\Cil')
+    if ($Shadow -like 'flat*') {
+        # review of 406: a machine-only key without subkeys - the top key's own check is the first box
+        if ($Shadow -eq 'flat-class') { [Reg406]::CreateWithClass('Software\Classes\' + $script:MachName, 'TcProbeClass') }
+        else { New-Key (UserPs) }
+        [void](New-ItemProperty -LiteralPath (UserPs) -Name 'TcProbeU' -Value 'USER' -PropertyType String -Force)
+        if ($Shadow -eq 'flat-diff') {
+            if ($script:FlatValue -eq '') { Set-Item -LiteralPath (UserPs) -Value 'TCPROBE-SHADOW' }
+            else { [void](New-ItemProperty -LiteralPath (UserPs) -Name $script:FlatValue -Value 'TCPROBE-SHADOW' -PropertyType String -Force) }
+        }
+        return
+    }
     New-Key ((UserPs) + '\' + $script:SubName)
     [void](New-ItemProperty -LiteralPath (UserPs) -Name 'TcProbeU' -Value 'USER' -PropertyType String -Force)
     if ($Shadow -eq 'diff') { Set-Item -LiteralPath ((UserPs) + '\' + $script:SubName) -Value 'TCPROBE-SHADOW' }
@@ -250,6 +312,8 @@ try {
     Set-Lang ($Lang + '.slg')
     $script:MachName = Pick-MachineOnly
     if ($script:MachName) { $script:SubName = @(Get-ChildItem -LiteralPath (MachPs))[0].PSChildName }
+    $script:FlatName = Pick-MachineFlat
+    if ($script:FlatName) { $script:FlatValue = @((Get-Item -LiteralPath ('HKLM:\Software\Classes\' + $script:FlatName)).GetValueNames())[0] }
     Out ("hkcr406_probe (feature 406), language: {0}" -f $Lang)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; desktop '{1}'; ACP {2}; elevated {3}; registry key existed {4}; export SHA-256 {5}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [DeskLib098]::Name(), [Drv098f]::GetACP(), $IsAdmin, $existed, $regHash)
@@ -278,6 +342,35 @@ try {
                 Row $cn 'STATE' (V ($h.Ok -and $copy)) ("{0}; the copy equals the merged view: {1} (copy '{2}')" -f $h.Text, $copy, (Esc $r.Copy))
             }
         }
+        # review of 406: the top key's own check (a machine-only key without subkeys) - a hidden value
+        # refuses with (50); a class name only in the user's half (the machine's class empty) is not
+        # a reason to refuse - the machine's delete is tried, (5)
+        $mainName = $script:MachName
+        $script:MachName = $script:FlatName
+        if ($script:FlatName) {
+            Out ("Flat    : {0} = {1}; hidden value '{2}'" -f $script:FlatName, (Esc (Snap-Tree (MachPs))), $script:FlatValue)
+            foreach ($case in @(@{ N = 'BOTHTOP'; S = 'flat-diff'; C = '(50)' }, @{ N = 'BOTHCLASS'; S = 'flat-class'; C = '(5)' })) {
+                if (-not (Want $case.N)) { continue }
+                Make-Fixture $case.S
+                $script:Mach0 = Snap-Tree (MachPs); $script:User0 = Snap-Tree (UserPs); $script:View0 = Snap-Tree (ViewPs)
+                $cls = [Reg406]::ClassOf('Software\Classes\' + $script:FlatName)
+                Out ("{0} fixture: user's half '{1}' (class '{2}'); merged view '{3}'" -f $case.N, (Esc $script:User0), $cls, (Esc $script:View0))
+                $cn = $case.N; $code = $case.C
+                $wantTop = 'HKEY_LOCAL_MACHINE\Software\Classes\' + $script:FlatName
+                Row-Both $cn $case.S $plainTarget 'cancel' {
+                    param($r)
+                    $first = $(if ($r.Boxes.Count -ge 1) { $r.Boxes[0].Text } else { '' })
+                    $named = ($null -ne $first) -and $first.Contains($Removesrc) -and $first.Contains($wantTop + "`n") -and $first.Contains($code)
+                    Row $cn 'TEXT' (V $named) ("expected the first box '{0}' naming '{1}' with {2}; {3}" -f (Esc $Removesrc), $wantTop, $code, (Box-Facts $r))
+                    $h = Halves-Facts $r
+                    $copy = $r.Copy -ceq $script:View0
+                    Row $cn 'STATE' (V ($h.Ok -and $copy)) ("{0}; the copy equals the merged view: {1} (copy '{2}')" -f $h.Text, $copy, (Esc $r.Copy))
+                }
+                if ($case.S -eq 'flat-class') { $cn2 = $case.N; Row $cn2 'CLASS' (V ($cls -ceq 'TcProbeClass')) ("the user's half had the class 'TcProbeClass': '{0}'" -f $cls) }
+            }
+        }
+        else { Row 'BOTHTOP' 'RUN' 'NOT DRIVEN' 'no machine-only extension key with values and no subkeys on this machine' }
+        $script:MachName = $mainName
         if (Want 'BOTHSELF') {
             Make-Fixture ''
             $script:Mach0 = Snap-Tree (MachPs); $script:User0 = Snap-Tree (UserPs); $script:View0 = Snap-Tree (ViewPs)
@@ -302,6 +395,11 @@ finally {
     Remove-Fixture
     $userLeft = $false
     if ($script:MachName) { $userLeft = Test-Path -LiteralPath (UserPs) }
+    if ($script:FlatName) {
+        $fp = 'HKCU:\Software\Classes\' + $script:FlatName
+        Remove-Item -LiteralPath $fp -Recurse -Force -ErrorAction SilentlyContinue
+        $userLeft = $userLeft -or (Test-Path -LiteralPath $fp)
+    }
     $restored = Restore-Reg $backup $existed
     if ($restored -and (Test-Path -LiteralPath $backup)) { Remove-Item -LiteralPath $backup -Force }
     try { if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) } } catch { }

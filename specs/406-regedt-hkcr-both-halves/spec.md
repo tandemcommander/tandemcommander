@@ -119,8 +119,9 @@ Quick Rename and the refusals of features 292 / 294 / 296 / 297 / 391 behave as 
   today; Retry repeats only the half that failed; Skip keeps the key and its parents.
 - **FR-003**: Before deleting the machine's half, the Move MUST check that the copy holds all of it:
   every value of the machine's half either has no value of the same name in the user's half, or one
-  of the same type and the same bytes; and the class names of both halves are equal (ignoring case,
-  as the copy's own class-name test). Otherwise the machine's half is refused with the same box and
+  of the same type and the same bytes; and the machine's class name is empty or exactly the user's
+  (review of 406: exact, not ignoring case; an empty class holds nothing). Values larger than the
+  reported maximum are read too (the buffers grow; the copy doubles the same maximum). Otherwise the machine's half is refused with the same box and
   the error "The request is not supported." (as feature 297 refuses a link); an error while reading
   for the check is shown in the box (fails closed).
 - **FR-004**: The pure decision (which halves, in which order; whether two values are the same) MUST
