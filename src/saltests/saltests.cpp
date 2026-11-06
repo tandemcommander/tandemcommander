@@ -14462,7 +14462,7 @@ static void TestRegHkcrHalf390()
 {
     CHECK(SalRegHkcrDeleteHalf(TRUE, FALSE) == SAL_HKCR_DELETE_MACHINE);
     CHECK(SalRegHkcrDeleteHalf(FALSE, TRUE) == SAL_HKCR_DELETE_USER);
-    CHECK(SalRegHkcrDeleteHalf(TRUE, TRUE) == SAL_HKCR_DELETE_VIEW);
+    CHECK(SalRegHkcrDeleteHalf(TRUE, TRUE) == SAL_HKCR_DELETE_BOTH); // feature 406 (was VIEW)
     CHECK(SalRegHkcrDeleteHalf(FALSE, FALSE) == SAL_HKCR_DELETE_VIEW);
     CHECK(SalRegHkcrDeleteHalf(2, 0) == SAL_HKCR_DELETE_MACHINE); // any non-zero BOOL is "held"
 
@@ -14482,6 +14482,51 @@ static void TestRegHkcrHalf390()
     CHECK(!SalRegJoinClassesPath(NULL, 32, L"a"));
     // a name outside ASCII and the elements below it are copied as they are
     CHECK(SalRegJoinClassesPath(out, 32, L"Kl\x00ED\x010D\\p") && wcscmp(out, L"Software\\Classes\\Kl\x00ED\x010D\\p") == 0);
+}
+
+// feature 406: a Move of an HKCR key held by both halves deletes both, each by its real path (a
+// delete through HKCR removed only the user's half); the machine's half only when the copy holds
+// all of it - a machine value hidden by a different user's value of the same name is not copied
+static void TestRegHkcrBoth406()
+{
+    CHECK(SalRegHkcrDeleteHalf(TRUE, TRUE) == SAL_HKCR_DELETE_BOTH);
+    CHECK(SalRegHkcrDeleteHalf(5, 1) == SAL_HKCR_DELETE_BOTH); // any non-zero BOOL is "held"
+    CHECK(SalRegHkcrDeleteHalf(TRUE, FALSE) == SAL_HKCR_DELETE_MACHINE);
+    CHECK(SalRegHkcrDeleteHalf(FALSE, TRUE) == SAL_HKCR_DELETE_USER);
+    CHECK(SalRegHkcrDeleteHalf(FALSE, FALSE) == SAL_HKCR_DELETE_VIEW);
+    // the existing values keep their numbers (BOTH appended)
+    CHECK(SAL_HKCR_DELETE_VIEW == 0 && SAL_HKCR_DELETE_MACHINE == 1 && SAL_HKCR_DELETE_USER == 2 && SAL_HKCR_DELETE_BOTH == 3);
+
+    const WCHAR sys[] = L"system";
+    const WCHAR sys2[] = L"system";
+    const WCHAR usr[] = L"tcprobe";
+    const WCHAR sysUpper[] = L"SYSTEM";
+    // the same type and bytes: copied
+    CHECK(SalRegValueSame(REG_SZ, sys, sizeof(sys), REG_SZ, sys2, sizeof(sys2)));
+    // another text (the measured case: PerceivedType system / the user's text): hidden
+    CHECK(!SalRegValueSame(REG_SZ, sys, sizeof(sys), REG_SZ, usr, sizeof(usr)));
+    // letter case differs: not the same
+    CHECK(!SalRegValueSame(REG_SZ, sys, sizeof(sys), REG_SZ, sysUpper, sizeof(sysUpper)));
+    // the same bytes, another type
+    CHECK(!SalRegValueSame(REG_SZ, sys, sizeof(sys), REG_EXPAND_SZ, sys2, sizeof(sys2)));
+    // without the terminating NUL: another size
+    CHECK(!SalRegValueSame(REG_SZ, sys, sizeof(sys), REG_SZ, sys2, sizeof(sys2) - sizeof(WCHAR)));
+    // one byte differs in the middle of binary data
+    BYTE a[5] = {1, 2, 3, 4, 5}, b[5] = {1, 2, 9, 4, 5};
+    CHECK(!SalRegValueSame(REG_BINARY, a, 5, REG_BINARY, b, 5));
+    b[2] = 3;
+    CHECK(SalRegValueSame(REG_BINARY, a, 5, REG_BINARY, b, 5));
+    // empty values: the same without looking at the pointers; empty vs one byte: not
+    CHECK(SalRegValueSame(REG_BINARY, NULL, 0, REG_BINARY, NULL, 0));
+    CHECK(SalRegValueSame(REG_NONE, a, 0, REG_NONE, NULL, 0));
+    CHECK(!SalRegValueSame(REG_BINARY, NULL, 0, REG_BINARY, a, 1));
+    // a size without data is never "the same" (fails closed)
+    CHECK(!SalRegValueSame(REG_BINARY, NULL, 5, REG_BINARY, NULL, 5));
+    CHECK(!SalRegValueSame(REG_BINARY, a, 5, REG_BINARY, NULL, 5));
+    // DWORDs
+    DWORD d1 = 1, d2 = 1, d3 = 2;
+    CHECK(SalRegValueSame(REG_DWORD, &d1, 4, REG_DWORD, &d2, 4));
+    CHECK(!SalRegValueSame(REG_DWORD, &d1, 4, REG_DWORD, &d3, 4));
 }
 
 // feature 294: the path of a source key below a target key that holds it - a Copy / Move of
@@ -27316,6 +27361,7 @@ int main(int argc, char** argv)
     TestRegViewTextToCodePage387();
     TestRegKeyId292();
     TestRegHkcrHalf390();
+    TestRegHkcrBoth406();
     TestRegKeyIdBelow294();
     TestRegKeyIdLeadsBack391();
     TestDeleteAsDirLink197();

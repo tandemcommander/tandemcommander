@@ -314,12 +314,94 @@ static int PredefinedRootIndex(HKEY root)
     return -1;
 }
 
+// feature 406: the class name of an opened key (MAX_PATH units, as the copy reads it)
+static int QueryKeyClass(HKEY hKey, LPWSTR className)
+{
+    DWORD size = MAX_PATH;
+    className[0] = 0;
+    return RegQueryInfoKeyW(hKey, className, &size, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+// feature 406: does the copy of an HKCR key held by both halves hold all of the machine's half
+// 'path' (Software\Classes\<key>)? The merged view the copy read shows, for a value name both halves
+// hold, only the user's value, and the user's class name: 'copied' is FALSE when a machine value has a
+// user's value of the same name with another type or other bytes (SalRegValueSame), or the class names
+// differ. Returns a Win32 error code; every error (also a value changed while it is read) fails closed
+static int HkcrMachineHalfCopied(LPCWSTR path, BOOL& copied)
+{
+    copied = FALSE;
+    HKEY machine, user;
+    int err = RegOpenKeyExW(HKEY_LOCAL_MACHINE, path, 0, KEY_QUERY_VALUE, &machine);
+    if (err != ERROR_SUCCESS)
+        return err;
+    err = RegOpenKeyExW(HKEY_CURRENT_USER, path, 0, KEY_QUERY_VALUE, &user);
+    if (err != ERROR_SUCCESS)
+    {
+        RegCloseKey(machine);
+        return err;
+    }
+    WCHAR machineClass[MAX_PATH], userClass[MAX_PATH];
+    DWORD maxName = 0, maxData = 0;
+    err = RegQueryInfoKeyW(machine, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &maxName, &maxData, NULL, NULL);
+    if (err == ERROR_SUCCESS)
+        err = QueryKeyClass(machine, machineClass);
+    if (err == ERROR_SUCCESS)
+        err = QueryKeyClass(user, userClass);
+    LPWSTR name = NULL;
+    BYTE *machineData = NULL, *userData = NULL;
+    if (err == ERROR_SUCCESS)
+    {
+        name = (LPWSTR)malloc((maxName + 1) * sizeof(WCHAR));
+        machineData = (BYTE*)malloc(maxData + 1);
+        userData = (BYTE*)malloc(maxData + 1);
+        if (name == NULL || machineData == NULL || userData == NULL)
+            err = ERROR_NOT_ENOUGH_MEMORY;
+    }
+    BOOL same = err == ERROR_SUCCESS &&
+                CompareStringW(LOCALE_USER_DEFAULT, NORM_IGNORECASE, machineClass, -1, userClass, -1) == CSTR_EQUAL;
+    for (DWORD index = 0; err == ERROR_SUCCESS && same; index++)
+    {
+        DWORD nameSize = maxName + 1, machineSize = maxData, machineType;
+        err = RegEnumValueW(machine, index, name, &nameSize, NULL, &machineType, machineData, &machineSize);
+        if (err == ERROR_NO_MORE_ITEMS)
+        {
+            err = ERROR_SUCCESS;
+            break;
+        }
+        if (err != ERROR_SUCCESS)
+            break; // ERROR_MORE_DATA too: the key changed while it was read
+        DWORD userSize = maxData, userType;
+        int uerr = RegQueryValueExW(user, name, NULL, &userType, userData, &userSize);
+        if (uerr == ERROR_FILE_NOT_FOUND)
+            continue; // the merged view showed the machine's value: copied
+        if (uerr == ERROR_MORE_DATA)
+            same = FALSE; // the user's value is larger: another value
+        else if (uerr != ERROR_SUCCESS)
+            err = uerr;
+        else
+            same = SalRegValueSame(machineType, machineData, machineSize, userType, userData, userSize);
+    }
+    if (name != NULL)
+        free(name);
+    if (machineData != NULL)
+        free(machineData);
+    if (userData != NULL)
+        free(userData);
+    RegCloseKey(user);
+    RegCloseKey(machine);
+    copied = err == ERROR_SUCCESS && same;
+    return err;
+}
+
 // feature 390: deletes the source key 'key' of HKEY_CLASSES_ROOT in the one half that held it before
 // the copy, by its real path - never through the merged view, which reaches the user's half first
 // (the copy just made when the target was the user's Classes key). Errors in the existing
-// IDS_REMOVESOURCE box naming the real key (the HKCR name when the real one would not fit the box)
+// IDS_REMOVESOURCE box naming the real key (the HKCR name when the real one would not fit the box).
+// Feature 406: 'checkCopied' (the machine's half of a key held by both halves) refuses the delete
+// with ERROR_NOT_SUPPORTED while the machine's half holds what the copy did not take (Retry checks
+// again; a read error is shown the same way - fails closed)
 static BOOL SafeDeleteHkcrHalf(int hkcrRoot, LPWSTR key, CSalHkcrDeleteHalf half, int errorTitle,
-                               BOOL& skip, BOOL& skipAll)
+                               BOOL& skip, BOOL& skipAll, BOOL checkCopied = FALSE)
 {
     HKEY root = half == SAL_HKCR_DELETE_MACHINE ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
     int rootIndex = PredefinedRootIndex(root);
@@ -328,7 +410,16 @@ static BOOL SafeDeleteHkcrHalf(int hkcrRoot, LPWSTR key, CSalHkcrDeleteHalf half
     BOOL named = joined && rootIndex >= 0 && wcslen(path) < MAX_KEYNAME;
     while (1)
     {
-        int res = joined && rootIndex >= 0 ? RegDeleteKeyW(root, path) : ERROR_FILENAME_EXCED_RANGE;
+        int res = joined && rootIndex >= 0 ? ERROR_SUCCESS : ERROR_FILENAME_EXCED_RANGE;
+        if (res == ERROR_SUCCESS && checkCopied)
+        {
+            BOOL copied;
+            res = HkcrMachineHalfCopied(path, copied);
+            if (res == ERROR_SUCCESS && !copied)
+                res = ERROR_NOT_SUPPORTED;
+        }
+        if (res == ERROR_SUCCESS)
+            res = RegDeleteKeyW(root, path);
         if (res == ERROR_SUCCESS)
             return TRUE;
         if (!RegOperationError(res, IDS_REMOVESOURCE, errorTitle, named ? rootIndex : hkcrRoot,
@@ -742,6 +833,15 @@ static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWS
 
     if (move)
     {
+        // feature 406: held by both halves - a delete through HKCR removes only the user's half (the
+        // machine's stayed after a "successful" Move): the machine's half first, only when the copy
+        // holds all of it, then the user's; when the machine's fails nothing of the key is deleted
+        if (deleteHalf == SAL_HKCR_DELETE_BOTH)
+        {
+            if (!SafeDeleteHkcrHalf(sourceRoot, source, SAL_HKCR_DELETE_MACHINE, errorTitle, skip, skipAllErrors, TRUE))
+                return FALSE;
+            return SafeDeleteHkcrHalf(sourceRoot, source, SAL_HKCR_DELETE_USER, errorTitle, skip, skipAllErrors);
+        }
         if (deleteHalf != SAL_HKCR_DELETE_VIEW) // feature 390: the half that was copied, by its real path
             return SafeDeleteHkcrHalf(sourceRoot, source, deleteHalf, errorTitle, skip, skipAllErrors);
         return SafeDeleteKey(sourceRoot, source, errorTitle, skip, skipAllErrors);

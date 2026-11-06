@@ -27,6 +27,8 @@
                  HKEY_LOCAL_MACHINE\Software\Classes\<X>\<S> with "the request is not supported" (50)
                  - the machine's half is never deleted while it holds a value the copy did not take;
                  both halves unchanged
+      BOTHEQUAL  (control of BOTHSHADOW) the user's <S> holds a (default) equal to the machine's: not
+                 hidden, so the machine's delete is tried - the first box has (5), not (50)
       BOTHSELF   (guard, feature 292) F6 of HKCR\<X> into \HKEY_CURRENT_USER\Software\Classes\ (its
                  own user's half): refused "Can't move a key to itself."; both halves unchanged
       END        each instance ends with exit code 0, no stray window, no report
@@ -118,7 +120,7 @@ function Go([int]$Id, [string]$Path) { [void](Do-ChangeDir $Id $Path); Sync $Id;
 # text is the translated "Skip"; ids differ between the box kinds, so it is found by its text
 function Press-Skip([IntPtr]$H) {
     if ($H -eq [IntPtr]::Zero -or -not [Drv098f]::IsWindow($H)) { return $false }
-    $b = Buttons $H | Where-Object { ([Drv098f]::GetText($_, 2000) -replace '&', '') -ceq $script:SkipText } | Select-Object -First 1
+    $b = Buttons $H | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 173 } | Select-Object -First 1   # Skip (measured: Retry 4, Skip 173, Skip All 174, Cancel 2)
     if (-not $b) { return $false }
     Click $b; Start-Sleep -Milliseconds 600
     return $true
@@ -159,13 +161,14 @@ function ViewPs { return 'Registry::HKEY_CLASSES_ROOT\' + $script:MachName }
 function New-Key([string]$PsPath) { [void](New-Item -Path $PsPath -Force) }
 function Remove-UserHalf { if ($script:MachName) { Remove-Item -LiteralPath (UserPs) -Recurse -Force -ErrorAction SilentlyContinue } }
 function Remove-Fixture { Remove-Item -LiteralPath $PlainPs -Recurse -Force -ErrorAction SilentlyContinue; Remove-UserHalf }
-function Make-Fixture([bool]$Shadow) {
+function Make-Fixture([string]$Shadow) {
     NewDir $StartDir
     Remove-Fixture
     New-Key ($PlainPs + '\Cil')
     New-Key ((UserPs) + '\' + $script:SubName)
     [void](New-ItemProperty -LiteralPath (UserPs) -Name 'TcProbeU' -Value 'USER' -PropertyType String -Force)
-    if ($Shadow) { Set-Item -LiteralPath ((UserPs) + '\' + $script:SubName) -Value 'TCPROBE-SHADOW' }
+    if ($Shadow -eq 'diff') { Set-Item -LiteralPath ((UserPs) + '\' + $script:SubName) -Value 'TCPROBE-SHADOW' }
+    if ($Shadow -eq 'same') { Set-Item -LiteralPath ((UserPs) + '\' + $script:SubName) -Value ((Get-Item -LiteralPath ((MachPs) + '\' + $script:SubName)).GetValue('', $null, 'DoNotExpandEnvironmentNames')) }
 }
 
 # one Move (728) of HKCR\<X> (focused at the HKCR root by Backspace from it) to the typed target
@@ -202,7 +205,7 @@ function Run-Op([string]$Target, [string]$Answer) {
     return $res
 }
 
-function Row-Both([string]$Case, [bool]$Shadow, [string]$Target, [string]$Answer, [scriptblock]$Judge) {
+function Row-Both([string]$Case, [string]$Shadow, [string]$Target, [string]$Answer, [scriptblock]$Judge) {
     if (-not (Want $Case)) { return }
     if ($IsAdmin) { Row $Case 'RUN' 'NOT DRIVEN' 'the probe runs elevated: a fixed build would really delete the machine key'; return }
     if (-not $script:MachName) { Row $Case 'RUN' 'NOT DRIVEN' 'no machine-only extension key with values and one subkey with a (default) value on this machine'; return }
@@ -247,8 +250,7 @@ try {
     Set-Lang ($Lang + '.slg')
     $script:MachName = Pick-MachineOnly
     if ($script:MachName) { $script:SubName = @(Get-ChildItem -LiteralPath (MachPs))[0].PSChildName }
-    $script:SkipText = 'Skip'
-    Out ("hkcrboth_probe, language: {0}" -f $Lang)
+    Out ("hkcr406_probe (feature 406), language: {0}" -f $Lang)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; desktop '{1}'; ACP {2}; elevated {3}; registry key existed {4}; export SHA-256 {5}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), [DeskLib098]::Name(), [Drv098f]::GetACP(), $IsAdmin, $existed, $regHash)
     Out ("Machine : {0} = {1}" -f $script:MachName, $(if ($script:MachName) { Esc (Snap-Tree (MachPs)) } else { '-' }))
@@ -258,7 +260,7 @@ try {
         $wantSub = 'HKEY_LOCAL_MACHINE\Software\Classes\' + $script:MachName + '\' + $script:SubName
         # the merged view the copy must equal (built from both halves as Windows shows them)
         $plainTarget = '\HKEY_CURRENT_USER\Software\' + $RegName + '\Cil\'
-        foreach ($case in @(@{ N = 'BOTHMOVE'; S = $false; A = 'cancel' }, @{ N = 'BOTHSKIP'; S = $false; A = 'skip' }, @{ N = 'BOTHSHADOW'; S = $true; A = 'cancel' })) {
+        foreach ($case in @(@{ N = 'BOTHMOVE'; S = ''; A = 'cancel' }, @{ N = 'BOTHSKIP'; S = ''; A = 'skip' }, @{ N = 'BOTHSHADOW'; S = 'diff'; A = 'cancel' }, @{ N = 'BOTHEQUAL'; S = 'same'; A = 'cancel' })) {
             if (-not (Want $case.N)) { continue }
             Make-Fixture $case.S
             $script:Mach0 = Snap-Tree (MachPs); $script:User0 = Snap-Tree (UserPs); $script:View0 = Snap-Tree (ViewPs)
@@ -267,7 +269,7 @@ try {
             Row-Both $cn $shadow $plainTarget $case.A {
                 param($r)
                 $first = $(if ($r.Boxes.Count -ge 1) { $r.Boxes[0].Text } else { '' })
-                $code = $(if ($shadow) { '(50)' } else { '(5)' })
+                $code = $(if ($shadow -eq 'diff') { '(50)' } else { '(5)' })
                 $named = ($null -ne $first) -and $first.Contains($Removesrc) -and $first.Contains($wantSub) -and $first.Contains($code)
                 Row $cn 'TEXT' (V $named) ("expected the first box '{0}' naming '{1}' with {2}; {3}" -f (Esc $Removesrc), $wantSub, $code, (Box-Facts $r))
                 if ($cn -eq 'BOTHSKIP') { Row $cn 'ONEBOX' (V ($r.Boxes.Count -eq 1 -and -not $r.NoSkip)) ("expected exactly one box (the parent kept after Skip), Skip pressed: {0}; {1} box(es)" -f (-not $r.NoSkip), $r.Boxes.Count) }
@@ -277,10 +279,10 @@ try {
             }
         }
         if (Want 'BOTHSELF') {
-            Make-Fixture $false
+            Make-Fixture ''
             $script:Mach0 = Snap-Tree (MachPs); $script:User0 = Snap-Tree (UserPs); $script:View0 = Snap-Tree (ViewPs)
             $self = (Template 1066 "Can't move a key to itself.").Trim()
-            Row-Both 'BOTHSELF' $false '\HKEY_CURRENT_USER\Software\Classes\' 'cancel' {
+            Row-Both 'BOTHSELF' '' '\HKEY_CURRENT_USER\Software\Classes\' 'cancel' {
                 param($r)
                 $first = $(if ($r.Boxes.Count -ge 1) { $r.Boxes[0].Text } else { '' })
                 $self2 = ((Template 1067 "Name:`t%ls`n`nError:`tCan't move a key to itself.") -split "`t")[-1].Trim()

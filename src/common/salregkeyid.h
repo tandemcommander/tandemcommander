@@ -50,7 +50,15 @@
 //                     source (the Move did nothing and reported success). So the
 //                     halves holding the key are noted before that key is
 //                     copied: exactly one = delete that half by its real path;
-//                     both or none = through HKEY_CLASSES_ROOT as before.
+//                     none = through HKEY_CLASSES_ROOT as before. Feature 406:
+//                     both = each half by its real path, the machine's first - a
+//                     delete through the view removes only the user's half
+//                     (measured), the machine's stayed after a "successful" Move.
+// SalRegValueSame   - feature 406: are two registry values the same (type, size,
+//                     bytes)? The merged view shows a user's value instead of the
+//                     machine's value of the same name, so the copy holds the
+//                     machine's value only when the two are the same - otherwise
+//                     the machine's half must not be deleted.
 // SalRegJoinClassesPath - "Software\Classes\" + key into 'out' (the path of an
 //                     HKCR key in either half); FALSE (out = "") when 'key' is
 //                     empty or the result does not fit 'outUnits' - never cut.
@@ -175,15 +183,29 @@ enum CSalHkcrDeleteHalf
     SAL_HKCR_DELETE_VIEW,    // through HKEY_CLASSES_ROOT (as before)
     SAL_HKCR_DELETE_MACHINE, // HKEY_LOCAL_MACHINE\Software\Classes\<key>
     SAL_HKCR_DELETE_USER,    // HKEY_CURRENT_USER\Software\Classes\<key>
+    SAL_HKCR_DELETE_BOTH,    // feature 406: the machine's half (when the copy holds all of it), then the user's
 };
 
 inline CSalHkcrDeleteHalf SalRegHkcrDeleteHalf(BOOL machineHeld, BOOL userHeld)
 {
-    if (machineHeld && !userHeld)
+    if (machineHeld && userHeld)
+        return SAL_HKCR_DELETE_BOTH;
+    if (machineHeld)
         return SAL_HKCR_DELETE_MACHINE;
-    if (userHeld && !machineHeld)
+    if (userHeld)
         return SAL_HKCR_DELETE_USER;
     return SAL_HKCR_DELETE_VIEW;
+}
+
+inline BOOL SalRegValueSame(DWORD type1, const void* data1, DWORD size1, DWORD type2, const void* data2, DWORD size2)
+{
+    if (type1 != type2 || size1 != size2)
+        return FALSE;
+    if (size1 == 0)
+        return TRUE;
+    if (data1 == NULL || data2 == NULL)
+        return FALSE; // a size without data: unknown - never "the same"
+    return memcmp(data1, data2, size1) == 0;
 }
 
 inline BOOL SalRegJoinClassesPath(WCHAR* out, int outUnits, const WCHAR* key)
