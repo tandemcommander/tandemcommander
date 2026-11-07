@@ -9,8 +9,9 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  checkSubject,
+  checkSubjects,
   classifyCommand,
+  programsOf,
   componentOf,
   firstSentence,
   judgeResult,
@@ -268,8 +269,118 @@ describe("RunStory", () => {
       ...probe("c", "probe_a", "Rows: PASS 3, FAIL 0", false),
     ]);
     expect(s.critical()[0]?.resolved).toBe(true);
-    expect(checkSubject("TEST", "npx playwright test e2e/us3-order.spec.ts")).toBe("tests:us3-order.spec.ts");
-    expect(checkSubject("TEST", "npm run check")).toBe("tests:check");
+    expect(checkSubjects("npx playwright test e2e/us3-order.spec.ts")).toEqual(["tests:us3-order.spec.ts"]);
+    expect(checkSubjects("npm run check")).toEqual(["tests:npm check"]);
+    expect(checkSubjects('.\\build.cmd; & "build\\saltests.exe"')).toEqual(["build", "saltests"]);
+  });
+
+  it("starts implement at the first source change of a run without the implement skill (review S-B)", () => {
+    const s = story([
+      call("k1", "Skill", { skill: "speckit-tasks" }),
+      call("e0", "Edit", { file_path: "E:\\r\\specs\\415-x\\tasks.md" }),
+      result("e0", "ok"),
+      call("e1", "Edit", { file_path: "E:\\r\\src\\plugins\\ftp\\ftp.cpp" }),
+      result("e1", "ok"),
+      call("t1", "Bash", { command: "build.cmd", description: "Build Debug x64" }),
+      result("t1", "BUILD FAILED", true),
+    ]);
+    expect(s.state.timeline.map((t) => t.phase)).toContain("implement");
+    expect(s.state.phase).toBe("verify");
+    expect(s.critical()[0]?.critical).toBe("The build failed");
+  });
+
+  it("resolves a review's MUST finding when a later review has none or reports it fixed", () => {
+    for (const later of [
+      "Review 2 found no MUST.",
+      "Review 2's MUST is fixed.",
+      "Review 3: 0 MUST, 1 SHOULD.",
+    ]) {
+      const s = story([
+        ...IMPLEMENTING,
+        say("Review 1 found one MUST: the price is wrong.", { message: "m1" }),
+        say(later, { message: "m2" }),
+      ]);
+      expect(s.critical()[0]?.resolved, later).toBe(true);
+    }
+    const open = story([
+      ...IMPLEMENTING,
+      say("Review 1 found one MUST: x.", { message: "m1" }),
+      say("Fixing it now.", { message: "m2" }),
+    ]);
+    expect(open.critical()[0]?.resolved).toBe(false);
+  });
+
+  it("knows more words of failures on purpose (review S-C)", () => {
+    for (const description of [
+      "Build and run saltests with the mutation",
+      "Run the probe with the guard removed",
+      "Build old handler, rerun before-probe",
+      "Run the tests with the redirect disabled",
+    ]) {
+      const s = story([
+        ...IMPLEMENTING,
+        call("t1", "Bash", { command: "npx vitest run x", description }),
+        result("t1", "Tests  1 failed", true),
+      ]);
+      expect(s.critical(), description).toHaveLength(0);
+    }
+  });
+
+  it("knows what runs, not what the text mentions (review S-A of 415)", () => {
+    const heredoc = [
+      "cat >> specs/x/fix-log.md <<'END'",
+      ".\\build.cmd",
+      "BUILD FAILED",
+      "END",
+      "tail -3 specs/x/fix-log.md",
+    ].join("\n");
+    expect(programsOf("tasklist | grep -i msbuild")).toEqual(["tasklist", "grep"]);
+    expect(programsOf(heredoc)).toEqual(["cat", "tail"]);
+    expect(programsOf("cd tools/backlog-app && npx vitest run --project shared")).toEqual([
+      "cd",
+      "npx",
+      "npx vitest",
+    ]);
+    expect(programsOf("PYTHONIOENCODING=utf-8 python -X utf8 tools/check_encoding.py --strict")).toContain(
+      "check_encoding.py",
+    );
+    expect(programsOf("python -m translate.merge --module x")).toContain("-m translate.merge");
+    expect(programsOf("git -C E:/r commit -m 'x'")).toContain("git commit");
+    expect(programsOf("bash bin/backlog.sh new --title 'x'")).toContain("backlog.sh");
+    for (const command of [
+      "tasklist | grep -i msbuild",
+      "grep -n CP_ACP tools/check_encoding.py",
+      "sed -n 1,40p packages/shared/test/run-story.test.ts | grep vitest",
+      heredoc,
+    ])
+      expect(classifyCommand(command).label, command).toBe("SHELL");
+    // A failed build is not resolved by a command that only mentions the build; a saltests
+    // failure of a combined command is not resolved by a plain build, only by saltests passing.
+    const combined = 'build.cmd; & "build\\saltests.exe"';
+    let s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: "build.cmd" }),
+      result("t1", "BUILD FAILED", true),
+      call("t2", "Bash", { command: "tasklist | grep -i msbuild" }),
+      result("t2", "MSBuild.exe 1234"),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(false);
+    s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: combined }),
+      result("t1", "BUILD SUCCEEDED\nsaltests: 10 checks, 1 failed", true),
+      call("t2", "Bash", { command: "build.cmd" }),
+      result("t2", "BUILD SUCCEEDED"),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(false);
+    s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: combined }),
+      result("t1", "BUILD SUCCEEDED\nsaltests: 10 checks, 1 failed", true),
+      call("t2", "Bash", { command: '& "build\\saltests.exe"' }),
+      result("t2", "saltests: 10 checks, 0 failed"),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(true);
   });
 
   it("collapses consecutive reads and edits into one line each", () => {

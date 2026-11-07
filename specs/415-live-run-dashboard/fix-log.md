@@ -174,3 +174,48 @@ open-read-close, chat snapshot cap and labelling, StrictMode-safe fold cache). F
 
 After the fixes: `npm run check` 445 passed, 2 skipped; Playwright `us7`, `us4-chat`, `a11y`
 (both themes), `us5-us6`, `us2-loop`: 13 passed.
+
+### Review 2 (refute-first agent, at 2289abf0)
+
+No MUST; security and the read-only promise re-verified; review 1 fixes confirmed (M1 for the
+tested cases, S1 live, S2, S3 server side, S5 without saved times, the NOTEs). Five SHOULDs, all
+fixed:
+
+- **S-A** Commands were classified by text anywhere in them (heredocs, `grep msbuild`, `sed ...
+  run-story.test.ts`), so a mention could "resolve" a real failure; a saltests failure of a
+  combined command was resolved by a plain build. Fixed: `programsOf` - the programs a command
+  runs (first word of each part, heredoc bodies left out, the script of `powershell -File`,
+  `python`, `node`, `bash`, the subcommands of `npm`, `npx`, `git`); classification uses only
+  them, from the full command with its lines (`info.command`; the summary joins lines);
+  `checkSubjects` lists every check a command runs and the failing one is remembered, so a pass
+  resolves only failures of a check it ran too. Tests (the four commands of the review are
+  SHELL; build failure not resolved by `grep msbuild`; combined saltests failure resolved by
+  saltests only).
+- **S-B** Runs that never call `speckit-implement` stayed in *analyze* and hid every failure as a
+  measurement. Fixed: the first change of a source file (not `specs/`, `backlog/`, traces,
+  temporary files) in *tasks* / *analyze* starts *implement* (`RunState`); a failure is a
+  measurement only before implement **and** before any source changed. Test; negative control by
+  reasoning (without the marker the phase stays *tasks*: the test's timeline check fails).
+- **S-C** More words of failures on purpose: mutation, on purpose, before-probe, old handler /
+  binary, "with the ... removed / disabled / reverted / altered / broken / undone", altered,
+  reverted. Test with the review's phrases.
+- **S-D** An ended run the app had followed for a while kept only its saved anchors, so every
+  line after them got one time. Fixed: the separators and `meta.json`'s ends are added always.
+  Test (saved anchors for the first fifth); negative control with the old condition: fails.
+- **S-E** The viewer kept the open image by its place. Fixed: by key; thumbnails keyed by key.
+- NOTEs fixed: stale "by number" comments; a document without a line end in its first 1 MB is
+  cut at a character boundary; truncation reset now tested; attempt texts are parsed safely
+  (`safeParse` in `RunState`, `RunMetrics`, `RunStory`); consecutive turn ends are one line. Found
+  on the way (severity 2): a review's MUST entry stays open after a later review reports none or
+  the MUST fixed -> resolved by such a message (test).
+- NOTE accepted: thumbnails fetch the full image (at most 200, 25 MB each; the gallery of a real
+  run holds a few probe captures).
+
+Over the 40 latest real traces the open critical entries after these fixes: review MUSTs not
+reported fixed in the trace (6), a usage limit, a stop, two probe failures of implementation,
+new backlog items and person steps - each a fact the reader should know. Feature 414's trace:
+5 critical entries, all resolved later (three test failures passed again, two review MUSTs
+fixed).
+
+After the fixes: `npm run check` 451 passed, 2 skipped; Playwright `us7`, `us4-chat`, `a11y`,
+`us5-us6`: 9 passed.

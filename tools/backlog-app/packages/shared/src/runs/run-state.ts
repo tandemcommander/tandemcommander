@@ -69,6 +69,36 @@ const VERIFY_MARKER = /\b(build\.cmd|rebuild\.cmd|saltests(\.exe)?)\b/;
 /** A GUI probe on the hidden desktop. */
 const PROBE_MARKER = /run_on_hidden_desktop\.ps1/;
 
+/**
+ * Parses JSON, or gives an empty object for text that is not (an event text cut short).
+ *
+ * @param text - The text.
+ * @returns The value, or `{}`.
+ */
+export function safeParse(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Whether a path is a source of the product or its tools: not the feature's records
+ * (`specs/`), the backlog, the traces or a temporary file.
+ *
+ * @param path - A file path, or null.
+ * @returns True for a source file.
+ */
+export function isSourcePath(path: string | null): boolean {
+  if (!path) return false;
+  const p = path.replace(/\\/g, "/");
+  return (
+    !/(^|\/)(specs|backlog|\.agent-traces|\.specify|\.claude)\//i.test(p) &&
+    !/\/AppData\/Local\/Temp\//i.test(p)
+  );
+}
+
 /** The figures of one attempt's last `result`. */
 interface AttemptCost {
   /** Total cost in US dollars. */
@@ -154,7 +184,7 @@ export class RunState {
     switch (event.kind) {
       case "attempt": {
         const info = event.text
-          ? (JSON.parse(event.text) as { attempt?: number; kind?: string; reason?: string })
+          ? (safeParse(event.text) as { attempt?: number; kind?: string; reason?: string })
           : {};
         // An attempt still open when the next separator comes was cut off (killed, crashed, usage
         // limit): it ends where the next one starts.
@@ -229,6 +259,16 @@ export class RunState {
       const skill = summary.trim().split(/\s+/)[0] ?? "";
       const phase = SKILL_PHASE[skill];
       if (phase) this.advance(phase, event.at);
+      return;
+    }
+    // A run that implements without calling the implement skill (feature 415, review S-B):
+    // its first change of a source file after the tasks are written starts implement.
+    if (
+      (name === "Edit" || name === "Write" || name === "MultiEdit" || name === "NotebookEdit") &&
+      (this.phase === "tasks" || this.phase === "analyze") &&
+      isSourcePath(event.info?.filePath ?? null)
+    ) {
+      this.advance("implement", event.at);
       return;
     }
     if (name === "Agent" || name === "Task") {

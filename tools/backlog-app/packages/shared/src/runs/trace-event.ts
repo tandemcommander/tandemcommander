@@ -245,6 +245,8 @@ function toolInfo(name: string, input: unknown): TraceInfo {
     }
   }
   if (typeof data["subagent_type"] === "string") info.subagentType = data["subagent_type"];
+  // The command with its lines (the summary has them joined): what runs is read from it.
+  if (typeof data["command"] === "string") info.command = clip(data["command"], 2000);
   return info;
 }
 

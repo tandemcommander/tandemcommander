@@ -203,7 +203,7 @@ function Viewer({
         aria-label="Swipe left or right, or use the arrow keys"
       >
         <RunPicture
-          key={image.n}
+          key={image.key}
           runId={runId}
           image={image}
           fit={actual ? "none" : "contain"}
@@ -268,7 +268,10 @@ export function Gallery({
   /** The run. */ runId: string;
   /** The images. */ images: RunImage[];
 }) {
-  const [open, setOpen] = useState<number | null>(null);
+  // The open image by its key: the list is fetched again while the run lives, and an image found
+  // meanwhile may come before the open one (review S-E of 415).
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const open = openKey === null ? null : images.findIndex((i) => i.key === openKey);
   if (images.length === 0) {
     return (
       <p className="flex items-center gap-2 rounded-lg border p-4 text-sm text-muted-foreground">
@@ -284,10 +287,10 @@ export function Gallery({
         aria-label="Screenshots"
       >
         {images.map((image, i) => (
-          <li key={image.n}>
+          <li key={image.key}>
             <button
               type="button"
-              onClick={() => setOpen(i)}
+              onClick={() => setOpenKey(images[i]!.key)}
               className="group flex w-full flex-col overflow-hidden rounded-lg border bg-card text-left hover:border-primary"
               aria-label={`Open ${image.name}`}
             >
@@ -304,8 +307,14 @@ export function Gallery({
           </li>
         ))}
       </ul>
-      {open !== null && images[open] ? (
-        <Viewer runId={runId} images={images} index={open} onIndex={setOpen} onClose={() => setOpen(null)} />
+      {open !== null && open >= 0 && images[open] ? (
+        <Viewer
+          runId={runId}
+          images={images}
+          index={open}
+          onIndex={(i) => setOpenKey(images[i]?.key ?? null)}
+          onClose={() => setOpenKey(null)}
+        />
       ) : null}
     </>
   );

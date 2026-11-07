@@ -236,6 +236,8 @@ export const TraceInfoSchema = z.object({
   limits: LimitInfoSchema.optional(),
   /** A subagent task's status or progress line. */
   taskStatus: z.string().optional(),
+  /** A shell command with its line breaks (cut to 2 000 characters). */
+  command: z.string().optional(),
   /** The working directory of a session (`system/init`): the repository root. */
   cwd: z.string().optional(),
   /** The last characters of a tool result longer than the kept text (its verdict). */

@@ -498,7 +498,9 @@ export class RunsService {
     // A run without saved times: its start and end anchor the first and the last byte. Its
     // `meta.json` is read only once the run is indexed (ended; analysis A2 section 5.1).
     if (this.index().some((l) => l.dir === id)) {
-      if (times.size < 3) {
+      {
+        // Also with saved anchors: a run the app followed only for a while ends after them
+        // (review S-D of 415).
         // Each attempt's separator gives its start; meta.json gives each attempt's end, which
         // lies just before the next separator (a run that waited out a usage limit is not spread
         // evenly over the wait).

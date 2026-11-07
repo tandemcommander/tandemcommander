@@ -10,8 +10,8 @@
  * Every file is read open-read-close and only on request (the page asks while a tab is shown). A
  * gallery image is served only from the list this module builds - images the run's own trace
  * opened or wrote, and images of its feature folder - and only when its real path lies inside the
- * repository or the system temporary folder: the page names an image by its number, never by a
- * path.
+ * repository or the system temporary folder: the page names an image by its key (a hash of its
+ * real path), never by a path.
  */
 
 import { createHash } from "node:crypto";
@@ -329,8 +329,13 @@ export class RunInsightService {
     if (bytes.length > MAX_DOCUMENT_BYTES) {
       // Cut by bytes at the last line end before the limit (a whole line, never half a character).
       const head = bytes.subarray(0, MAX_DOCUMENT_BYTES);
-      const end = head.lastIndexOf(0x0a);
-      text = `${head.subarray(0, end > 0 ? end : MAX_DOCUMENT_BYTES).toString("utf8")}\n\n*(The rest of the document is not shown: it is larger than 1 MB.)*\n`;
+      let end = head.lastIndexOf(0x0a);
+      if (end <= 0) {
+        // No line end: back to the start of a character (never half of one).
+        end = MAX_DOCUMENT_BYTES;
+        while (end > 0 && ((bytes[end] ?? 0) & 0xc0) === 0x80) end--;
+      }
+      text = `${head.subarray(0, end).toString("utf8")}\n\n*(The rest of the document is not shown: it is larger than 1 MB.)*\n`;
     } else {
       text = bytes.toString("utf8");
     }

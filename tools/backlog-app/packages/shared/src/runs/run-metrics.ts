@@ -18,6 +18,7 @@
 
 import type { LimitInfo, TokenUsage, TraceEvent } from "../schemas/runs.ts";
 import { priceOf } from "./pricing.ts";
+import { safeParse } from "./run-state.ts";
 
 /** Characters per output token of the streamed text and tool input. */
 const CHARS_PER_TOKEN = 3.6;
@@ -138,7 +139,7 @@ export class RunMetrics {
     const info = event.info;
     switch (event.kind) {
       case "attempt": {
-        const parsed = event.text ? (JSON.parse(event.text) as { attempt?: unknown }) : {};
+        const parsed = event.text ? (safeParse(event.text) as { attempt?: unknown }) : {};
         this.attempt = typeof parsed.attempt === "number" ? parsed.attempt : this.attempt + 1;
         return;
       }

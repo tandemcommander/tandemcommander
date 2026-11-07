@@ -4,7 +4,7 @@
 /**
  * @file Tests of a run's insight (feature 415, contracts/http-api.md): the documents, decisions,
  * assumptions and diagrams of its feature folder, the gallery (only listed images, only inside
- * the repository or the temporary folder, by number), the estimate basis, the time stamps of a
+ * the repository or the temporary folder, by key), the estimate basis, the time stamps of a
  * replayed trace, and the live snapshot of the chat.
  */
 
@@ -242,6 +242,82 @@ describe("times of a run's events (research R4)", () => {
     expect(third).toBeLessThan(Date.now() - 1800_000);
     expect(third).toBeGreaterThan(start + 600_000);
     expect(Date.now() - times[11_999]!).toBeLessThan(60_000);
+  });
+
+  it("ends an ended run's times at its end even when anchors were saved for its start only (review S-D)", async () => {
+    const dir = "20261107-080000-claude-half";
+    const folder = join(root, ".agent-traces", dir);
+    mkdirSync(folder, { recursive: true });
+    const line = (i: number): string =>
+      JSON.stringify({
+        type: "assistant",
+        message: { content: [{ type: "text", text: `line ${i}` }] },
+        parent_tool_use_id: null,
+      });
+    const text = `${Array.from({ length: 100 }, (_, i) => line(i)).join("\n")}\n`;
+    writeFileSync(join(folder, "trace.jsonl"), text);
+    // The app followed the first fifth of the run, then was closed.
+    const fifth = Buffer.byteLength(Array.from({ length: 20 }, (_, i) => `${line(i)}\n`).join(""));
+    const start = Date.parse("2026-11-07T08:00:00+01:00");
+    app.services.ctx.state.writeJson(`cache/times/${dir}.json`, [
+      { offset: 0, ms: start },
+      { offset: Math.round(fifth / 2), ms: start + 300_000 },
+      { offset: fifth, ms: start + 600_000 },
+    ]);
+    writeFileSync(
+      join(folder, "meta.json"),
+      JSON.stringify({
+        kind: "item",
+        slug: "half",
+        started: "2026-11-07T08:00:00+01:00",
+        ended: "2026-11-07T09:10:00+01:00",
+      }),
+    );
+    writeFileSync(
+      join(root, ".agent-traces", "index.jsonl"),
+      `${JSON.stringify({ dir, kind: "item", slug: "half", outcome: "closed" })}\n`,
+    );
+    const page = (await app.get(`/api/runs/${dir}/events?from=0`)).json as { events: { at: string }[] };
+    const later = new Set(page.events.slice(20).map((e) => e.at));
+    // Before the fix lines 20 - 99 all got one time (the last saved anchor).
+    expect(later.size).toBeGreaterThan(50);
+    expect(Date.parse(page.events.at(-1)!.at)).toBeGreaterThan(Date.parse("2026-11-07T09:05:00+01:00"));
+  });
+
+  it("forgets the anchors of a trace that was truncated and written anew", () => {
+    const dir = "20261107-110000-claude-again";
+    const folder = join(root, ".agent-traces", dir);
+    mkdirSync(folder, { recursive: true });
+    const line = (t: string): string =>
+      JSON.stringify({
+        type: "assistant",
+        message: { content: [{ type: "text", text: t }] },
+        parent_tool_use_id: null,
+      });
+    writeFileSync(
+      join(folder, "trace.jsonl"),
+      `${Array.from({ length: 50 }, (_, i) => line(`old ${i} ${"x".repeat(200)}`)).join("\n")}\n`,
+    );
+    const start = Date.now() - 3600_000;
+    (app.services.loop as unknown as { currentRaw: unknown }).currentRaw = {
+      live: true,
+      run: { trace: folder, slug: "again", started_epoch: start / 1000 },
+      loop: null,
+    };
+    app.services.runs.follow();
+    writeFileSync(join(folder, "trace.jsonl"), `${line("new 1")}\n${line("new 2")}\n`);
+    const seen: { summary: string; at: string | null }[] = [];
+    app.services.runs.subscribe((_, events) => seen.push(...events));
+    app.services.runs.follow();
+    expect(seen.map((e) => e.summary)).toEqual(["new 1", "new 2"]);
+    // The new file's lines lie between the run's start and now, not on the old file's anchors.
+    for (const e of seen) expect(Date.parse(e.at ?? "")).toBeGreaterThanOrEqual(start);
+    expect(
+      app.services.runs
+        .liveInsight()
+        ?.story.view()
+        .filter((e) => e.kind === "message"),
+    ).toHaveLength(2);
   });
 
   it("anchors an ended run's attempts, so a wait for a usage limit is not spread over its lines", async () => {
