@@ -126,8 +126,7 @@ Backlog item `dark-theme-panel-tabs-look-lower-than-in-the-default-theme`. HEAD0
     zeroed and tested); logging removed (checked: no trace left). The same run: the DRAG row's criterion (rebar
     height) was wrong - the drag moved the top toolbar under the drive bar (same height); now the band order
     (`RB_IDTOINDEX`). A probe variable `$lines` had overwritten the library's `$Lines` (case-insensitive) - renamed.
-  - Trap met on the way: a Git Bash `sed -i` stripped the CRs of `themes.cpp` and a here-document turned a `
-`
+  - Trap met on the way: a Git Bash `sed -i` stripped the CRs of `themes.cpp` and a here-document turned a backslash-n
     into a line break - repaired byte-wise (Python), the debug code then added with the editor.
   - A probe flake: CLASSIC / SWITCH failed once on 80 px - the free-space figure of the directory lines ("91,2 GB"
     / "91 GB", another program wrote to C: between two starts); the comparisons now leave out the right 160 px of
