@@ -1479,7 +1479,8 @@ void SetThemeMode(DWORD mode)
     if (MainWindow != NULL && MainWindow->HWindow != NULL)
     {
         // rebar band grippers are classic-drawn (light-only): re-insert the
-        // bands so the gripper style matches the new theme
+        // bands so the gripper style matches the new theme (Dark keeps the
+        // grip's room without the grip - ThemeDarkGripRoom, feature 418)
         if (MainWindow->HTopRebar != NULL)
             MainWindow->RebuildRebarBands();
         // DWM title bar + per-child theming (scrollbars, combos, ...)

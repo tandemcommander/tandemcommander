@@ -37,6 +37,8 @@ public static class P418
     }
 
     static bool Etched(int c) { return c == 0xA0A0A0 || c == 0xFFFFFF; }
+    // a light pixel of the classic chrome: the etched pair or the system face (a grip's middle)
+    static bool LightChrome(int c) { return Etched(c) || c == 0xF0F0F0; }
     static int DarkOf(int c) { return c == 0xA0A0A0 ? 0x1A1A1A : 0x464646; }
 
     // the pixels of the default theme's rebar (rows 0..h-1) that belong to the rebar's own etched lines must be the
@@ -99,6 +101,50 @@ public static class P418
         return string.Format("{0} line pixels, {1} not the Dark pair{2}; matched rows {3}; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: {4}", n, bad, sb.ToString(), rs.ToString().Trim(), inner);
     }
 
+    // the grips of the default theme's rebar (a raised bar: a FFFFFF column, its A0A0A0 column two pixels right, the
+    // same rows, >= minV): the Dark theme shows none (comctl32 fills a grip's middle with the light system face) -
+    // its band face (2D2D2D) at the grip's place; the room stays (checked by the content columns)
+    public static string CheckGrips(Bitmap light, Bitmap dark, int h, int minV)
+    {
+        if (light.Width != dark.Width) return "FAIL width";
+        int w = light.Width; h = Math.Min(h, Math.Min(light.Height, dark.Height));
+        int[] pl = Pixels(light), pd = Pixels(dark);
+        int grips = 0, bad = 0; var sb = new StringBuilder();
+        for (int x = 0; x + 2 < w; x++)
+            for (int y = 0; y < h; )
+            {
+                int c = pl[y * w + x]; int e = y;
+                while (e < h && pl[e * w + x] == c) e++;
+                if (c == 0xFFFFFF && e - y >= minV)
+                {
+                    bool grip = true;
+                    for (int i = y; grip && i < e; i++) if (pl[i * w + x + 2] != 0xA0A0A0 || (i > y && Etched(pl[i * w + x + 1]))) grip = false; // the top row is the bar's FFFFFF edge
+                    if (grip)
+                    {
+                        grips++;
+                        int miss = 0;
+                        for (int i = y; i < e; i++) if (pd[i * w + x] != 0x2D2D2D || pd[i * w + x + 1] != 0x2D2D2D || pd[i * w + x + 2] != 0x2D2D2D) miss++;
+                        if (miss > 0) { bad++; if (bad <= 4) sb.AppendFormat(" x {0} y {1}-{2}: {3} rows not the face (Dark {4:X6} {5:X6} {6:X6})", x, y, e - 1, miss, pd[(y + 1) * w + x], pd[(y + 1) * w + x + 1], pd[(y + 1) * w + x + 2]); }
+                        else sb.AppendFormat(" x {0} y {1}-{2}", x, y, e - 1);
+                    }
+                }
+                y = e;
+            }
+        return string.Format("{0} grips, {1} not the plain face in Dark;{2}", grips, bad, sb.ToString());
+    }
+
+    // the first column >= x0 of row y that differs from the background (the pixel at x0 of that row)
+    public static int FirstContentCol(Bitmap b, int y, int x0, int x1)
+    {
+        Color bg = b.GetPixel(x0, y);
+        for (int x = x0; x <= x1 && x < b.Width; x++)
+        {
+            Color c = b.GetPixel(x, y);
+            if (Math.Abs(c.R - bg.R) > 40 || Math.Abs(c.G - bg.G) > 40 || Math.Abs(c.B - bg.B) > 40) return x;
+        }
+        return -1;
+    }
+
     // horizontal or vertical runs >= minRun of the light etched colours in rows 0..h-1 (a light line on the dark chrome)
     public static string LightRuns(Bitmap b, int h, int minRun)
     {
@@ -109,7 +155,7 @@ public static class P418
             {
                 int c = p[y * w + x]; int e = x;
                 while (e < w && p[y * w + e] == c) e++;
-                if (Etched(c) && e - x >= minRun) { n++; if (n <= 4) sb.AppendFormat(" row {0} x {1}-{2} {3:X6}", y, x, e - 1, c); }
+                if (LightChrome(c) && e - x >= minRun) { n++; if (n <= 4) sb.AppendFormat(" row {0} x {1}-{2} {3:X6}", y, x, e - 1, c); }
                 x = e;
             }
         for (int x = 0; x < w; x++)
@@ -117,7 +163,7 @@ public static class P418
             {
                 int c = p[y * w + x]; int e = y;
                 while (e < h && p[e * w + x] == c) e++;
-                if (Etched(c) && e - y >= minRun) { n++; if (n <= 4) sb.AppendFormat(" col {0} y {1}-{2} {3:X6}", x, y, e - 1, c); }
+                if (LightChrome(c) && e - y >= minRun) { n++; if (n <= 4) sb.AppendFormat(" col {0} y {1}-{2} {3:X6}", x, y, e - 1, c); }
                 y = e;
             }
         return n + (n > 0 ? ":" + sb.ToString() : "");
@@ -227,7 +273,14 @@ function Compare-Themes([string]$case, $L, $D) {
     # the detector's own control: on the Default rebar it must find the light lines
     $control = [P418]::LightRuns($L.Bmp, $L.Rebar[3], 12)
     $cn = [int]($control -replace ':.*$', '')
-    Row $case 'NOLIGHT' (V (($light -eq '0') -and $cn -gt 0)) ('light etched runs >= 12 px in the Dark rebar: {0} (the same detector on the Default rebar: {1})' -f $light, $cn)
+    Row $case 'NOLIGHT' (V (($light -eq '0') -and $cn -gt 0)) ('light runs (A0A0A0, FFFFFF, F0F0F0) >= 12 px in the Dark rebar: {0} (the same detector on the Default rebar: {1})' -f $light, $cn)
+    $grips = [P418]::CheckGrips($L.Bmp, $D.Bmp, $L.Rebar[3], 12)
+    $gOk = $grips -match '^(\d+) grips, 0 not' -and [int]$Matches[1] -gt 0
+    # the menu bar's first item (its text) starts at the same column: the grip takes the same room in both themes
+    # the bands' contents start at the same column: the menu (row 12) and the top toolbar (row 37), searched from x 8
+    $mx = [P418]::FirstContentCol($L.Bmp, 12, 8, 300); $dx = [P418]::FirstContentCol($D.Bmp, 12, 8, 300)
+    $tx = [P418]::FirstContentCol($L.Bmp, 37, 8, 300); $ux = [P418]::FirstContentCol($D.Bmp, 37, 8, 300)
+    Row $case 'GRIPS' (V ($gOk -and $mx -gt 0 -and $mx -eq $dx -and $tx -gt 0 -and $tx -eq $ux)) ('{0} menu from x {1} / {2}, top toolbar from x {3} / {4} (Default / Dark)' -f $grips, $mx, $dx, $tx, $ux)
     $tOk = ($L.Text -ge 0) -and ($L.Text -eq $D.Text)
     Row $case 'TITLE' (V $tOk) ('first title row {0} / {1}; from the frame line above the strip (rebar bottom - 2): {2} / {3} px' -f $L.Text, $D.Text, ($L.Text - ($L.Rebar[3] - 2)), ($D.Text - ($D.Rebar[3] - 2)))
 }

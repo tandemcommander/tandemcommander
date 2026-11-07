@@ -4,7 +4,8 @@ rebar418_probe on C:\Users\pavel\AppData\Local\Temp\rev418\maintree\tandemcomman
 DARK       ROWS   FAIL        rebar bottom 77 / 69; strip 77-106 / 69-98; dirline 106-129 / 98-121 (Default / Dark)
 DARK       STYLE  FAIL        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00000000
 DARK       LINES  FAIL        13838 line pixels, 13800 not the Dark pair (0,0) A0A0A0->2D2D2D (1,0) A0A0A0->2D2D2D (2,0) A0A0A0->2D2D2D (3,0) A0A0A0->2D2D2D; matched rows 25-26 49-49 51-53 55-55 57-57 59-59 61-61 63-63 65-65 67-67; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 22
-DARK       NOLIGHT PASS        light etched runs >= 12 px in the Dark rebar: 0 (the same detector on the Default rebar: 35)
+DARK       NOLIGHT PASS        light runs (A0A0A0, FFFFFF, F0F0F0) >= 12 px in the Dark rebar: 0 (the same detector on the Default rebar: 4747)
+DARK       GRIPS  FAIL        3 grips, 2 not the plain face in Dark; x 4 y 4-21 x 4 y 29-47: 13 rows not the face (Dark 2D2D2D 2D2D2D E9C368) x 4 y 55-71: 17 rows not the face (Dark 464646 2D2D2D 464646) menu from x 19 / 10, top toolbar from x 15 / 11 (Default / Dark)
 DARK       TITLE  FAIL        first title row 86 / 78; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
   switch_to_dark: rebar 0,0,1714,69; strip 1,69,831,98; dirline 1,98,831,121; style 0x56002249 (WS_BORDER 0, RBS_BANDBORDERS 0); bands 3; first title row 78
 SWITCH     TODARK PASS        Default -> Dark at run time vs a fresh Dark start, rows 0-128: 0 pixels differ
@@ -16,7 +17,8 @@ EXTRA      BARS   PASS        bands 3 -> 5 (Default) / 5 (Dark) after toggling t
 EXTRA      ROWS   FAIL        rebar bottom 101 / 91; strip 101-130 / 91-120; dirline 130-153 / 120-143 (Default / Dark)
 EXTRA      STYLE  FAIL        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00000000
 EXTRA      LINES  FAIL        17306 line pixels, 17264 not the Dark pair (0,0) A0A0A0->2D2D2D (1,0) A0A0A0->2D2D2D (2,0) A0A0A0->2D2D2D (3,0) A0A0A0->2D2D2D; matched rows 49-50 71-71 73-73 75-77 79-79 81-81 83-83 85-85 87-87 89-89; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 31
-EXTRA      NOLIGHT PASS        light etched runs >= 12 px in the Dark rebar: 0 (the same detector on the Default rebar: 48)
+EXTRA      NOLIGHT PASS        light runs (A0A0A0, FFFFFF, F0F0F0) >= 12 px in the Dark rebar: 0 (the same detector on the Default rebar: 6223)
+EXTRA      GRIPS  FAIL        3 grips, 2 not the plain face in Dark; x 4 y 4-21 x 4 y 29-45: 3 rows not the face (Dark 2D2D2D 2D2D2D BD9DF8) x 4 y 53-71: 13 rows not the face (Dark 2D2D2D 2D2D2D FFD97A) menu from x 19 / 10, top toolbar from x 16 / 12 (Default / Dark)
 EXTRA      TITLE  FAIL        first title row 110 / 100; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
 Registry: restored; identical=True; SHA-256 before 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E / after 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E
-Rows: PASS 5, FAIL 8, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 5, FAIL 10, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

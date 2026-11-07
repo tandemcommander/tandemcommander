@@ -70,3 +70,36 @@ Backlog item `dark-theme-panel-tabs-look-lower-than-in-the-default-theme`. HEAD0
     (main draws no Dark lines at all and switches consistently - they guard against regressions of this fix).
 - Not covered by the probe: display scales 125-200 % (the hidden desktop runs at 96 DPI; the rebar's border sizes
   are the system's in both themes) - a release-checklist line.
+
+## Review
+
+- Review 1 (refute-first, general-purpose agent): **MUST 0**, SHOULD 1, NIT 4.
+  - SHOULD: High Contrast switched on / off at run time with Dark selected is not driven (the code path was traced:
+    `WM_SYSCOLORCHANGE` / `SPI_SETHIGHCONTRAST` -> `ColorsChanged` -> `OnColorsChanged` -> `ThemeUpdateRebarStyle`
+    -> `CLR_DEFAULT` while High Contrast is on) - a line of the release checklist.
+  - NIT: the grips - "classic grips are light-only" (028) is doubtful with the colour scheme, and with grips shown
+    (the default) Dark band contents start at other columns than in Default. **Measured and fixed** (below).
+  - NIT: entry 413 in FEATURE-HISTORY says the dark rebar is unchanged - amended at closing. NIT: the name
+    `ThemeUpdateRebarStyle` - kept (its comment is accurate). NIT: the saltests check guards the palette only -
+    accepted (the choice of `CLR_DEFAULT` / the palette is Win32 code, covered by CLASSIC / SWITCH / LINES).
+
+## Grips (review 1 follow-up, severity 4, fixed here - stop-rules rule 11)
+
+- Measured with grips shown (the default, `GripsVisible = TRUE`): Default menu text from x 19, Dark (grips hidden,
+  `cxHeader = 2`) from x 10 - every band's contents ~9 px further left in Dark.
+- Experiment 1 - grips shown in Dark too (the `!IsDarkThemeActive()` of the six band insertions removed): the
+  grip's edges are drawn in the scheme (464646 / 1A1A1A) but its middle column is **F0F0F0** - comctl32 fills it
+  with the system face brush, not the scheme: a light stripe in every band (`caps6`). That is why 028 hid them;
+  rejected.
+- Fix: `ThemeDarkGripRoom` (`src/mainwnd1.cpp`) - in Dark a band is inserted with its grip (the rebar computes the
+  grip's header width, at any DPI), then turned `RBBS_NOGRIPPER` with that `cxHeader` before it paints. Called
+  after each of the six `RB_INSERTBAND`s with a grip (menu, top toolbar, plug-ins bar, user menu bar, hot path
+  bar, the single drive bar; the two drive bars side by side have no grips in either theme). A theme switch
+  re-inserts the bands (`RebuildRebarBands`), comment in `SetThemeMode` extended.
+- Probe: row GRIPS (each Default grip - FFFFFF column, A0A0A0 two pixels right - is the plain band face in Dark;
+  the menu and top toolbar contents start at the same column) and NOLIGHT also counts F0F0F0 runs. Offline on
+  the captures: this build 3 grips, 0 rows not face; experiment 1: all 3 grips flagged (17-19 rows each).
+- **Final (`result_after.txt`): PASS 23, FAIL 0, NOT DRIVEN 0**: GRIPS menu from x 19 / 19, top toolbar 15 / 15
+  (16 / 16 with the extra bars and narrow); everything else as before. Negative control on main
+  (`result_negative_main.txt`): **10 FAIL** (ROWS, STYLE, LINES, GRIPS, TITLE for DARK and EXTRA). saltests
+  286948 / 0, build succeeded.

@@ -11,7 +11,7 @@
 
 - Q: Does Dark get only the line that frames the tab strip, or the whole structure of the toolbar area (its frame and the lines between band rows)? → A: the whole structure, so that every row of the Dark window is where the default theme has it; a frame line only below the toolbar area would still leave the Dark toolbar area 4 px shorter and the window different (autonomous run: item - "the same in both themes", Approach)
 - Q: Which colours draw the Dark lines? → A: the Dark palette's counterparts of the light etched pair - COLOR_BTNSHADOW (1A1A1A) where the light theme has A0A0A0 and COLOR_BTNHIGHLIGHT (464646) where it has FFFFFF (autonomous run: rule - the Dark palette, `themes_palette.h`)
-- Q: Do the band grips appear in Dark too? → A: no - grips stay light-only as feature 028 decided; only the borders return (autonomous run: conservative)
+- Q: Do the band grips appear in Dark too? → A: no - grips stay hidden in Dark as feature 028 decided; only the borders return (autonomous run: conservative). Amended after review 1 (measured): Dark keeps the grip's room (the header width the rebar computes for a grip), so the bands' contents start at the same column as in the default theme; a grip drawn in Dark was measured to carry a light stripe (comctl32 fills its middle with the system face colour F0F0F0), so it stays hidden
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -67,7 +67,8 @@ between the bands is the Dark palette's, at the rows the default theme uses.
 - The window resized narrower: the bands of one row shrink (a rebar moves a band to a new row only by its break
   flag or a drag, measured), and the lines follow the resized bands.
 - A theme switch at run time: the rebar's style and its painting change without a restart.
-- Grips (Configuration "Show grips") stay light-only, as feature 028 decided.
+- Grips (shown by default; "Lock toolbars" hides them): Dark shows none - comctl32 fills a grip's middle with the
+  light system face - but keeps their room, so band contents start at the same column in both themes.
 
 ## Requirements *(mandatory)*
 
@@ -82,6 +83,8 @@ between the bands is the Dark palette's, at the rows the default theme uses.
   sizes in both themes (they are equal already).
 - **FR-004**: The default theme MUST stay pixel-identical to the build of `main`.
 - **FR-005**: A theme switch at run time MUST give the same result as a fresh start in the target theme.
+- **FR-007**: With grips shown, the bands' contents in the Dark theme MUST start at the same columns as in the
+  default theme, and no light grip pixel may appear in Dark.
 - **FR-006**: The Dark lines MUST be repainted correctly when the toolbar area changes (bars shown / hidden /
   moved, the window resized).
 
