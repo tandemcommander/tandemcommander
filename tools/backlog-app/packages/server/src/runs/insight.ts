@@ -14,7 +14,8 @@
  * path.
  */
 
-import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { extname, join, relative, resolve, sep } from "node:path";
 import {
@@ -45,6 +46,9 @@ const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
 
 /** Most images listed from the feature folder. */
 const MAX_FOLDER_IMAGES = 200;
+
+/** Most folders walked in a feature folder. */
+const MAX_FOLDERS = 300;
 
 /** Largest document text served. */
 const MAX_DOCUMENT_BYTES = 1024 * 1024;
@@ -315,11 +319,20 @@ export class RunInsightService {
     const doc = insight.documents.find((d) => d.name === name);
     if (!insight.featureFolder || !doc) throw new ApiError("not-found", "the run has no such document");
     const path = join(this.root, insight.featureFolder, doc.file);
-    let text = this.readText(path);
-    if (text === null) throw new ApiError("not-found", "the document is gone");
-    if (Buffer.byteLength(text) > MAX_DOCUMENT_BYTES) {
-      const cut = text.slice(0, MAX_DOCUMENT_BYTES);
-      text = `${cut.slice(0, cut.lastIndexOf("\n"))}\n\n*(The rest of the document is not shown: it is larger than 1 MB.)*\n`;
+    let bytes: Buffer;
+    try {
+      bytes = readFileSync(path);
+    } catch {
+      throw new ApiError("not-found", "the document is gone");
+    }
+    let text: string;
+    if (bytes.length > MAX_DOCUMENT_BYTES) {
+      // Cut by bytes at the last line end before the limit (a whole line, never half a character).
+      const head = bytes.subarray(0, MAX_DOCUMENT_BYTES);
+      const end = head.lastIndexOf(0x0a);
+      text = `${head.subarray(0, end > 0 ? end : MAX_DOCUMENT_BYTES).toString("utf8")}\n\n*(The rest of the document is not shown: it is larger than 1 MB.)*\n`;
+    } else {
+      text = bytes.toString("utf8");
     }
     let modified = doc.modified;
     try {
@@ -334,13 +347,13 @@ export class RunInsightService {
    * One image of a run's gallery.
    *
    * @param id - The run id.
-   * @param n - Its number in the run's list.
+   * @param key - Its key in the run's list.
    * @returns Its bytes and content type.
-   * @throws ApiError `not-found` for an index outside the list, a vanished or refused file.
+   * @throws ApiError `not-found` for a key outside the list, a vanished or refused file.
    */
-  async image(id: string, n: number): Promise<{ bytes: Buffer; type: string }> {
+  async image(id: string, key: string): Promise<{ bytes: Buffer; type: string }> {
     const { images } = await this.build(id);
-    const image = images[n];
+    const image = images.find((i) => i.key === key);
     if (!image || !image.real) throw new ApiError("not-found", "no such image");
     // Checked again at the moment of reading: the file may have been replaced by a link since.
     const now = real(image.real);
@@ -414,6 +427,7 @@ export class RunInsightService {
       const slash = rel.lastIndexOf("/");
       list.push({
         n: list.length,
+        key: createHash("sha256").update(key).digest("hex").slice(0, 16),
         name: slash >= 0 ? rel.slice(slash + 1) : rel,
         where: slash >= 0 ? rel.slice(0, slash) : ".",
         source,
@@ -426,6 +440,7 @@ export class RunInsightService {
     if (folder) {
       const pending: { dir: string; depth: number }[] = [{ dir: folder, depth: 0 }];
       let found = 0;
+      let visited = 0;
       while (pending.length > 0 && found < MAX_FOLDER_IMAGES) {
         const { dir, depth } = pending.shift()!;
         let names: string[];
@@ -441,9 +456,15 @@ export class RunInsightService {
             add(path, "feature");
             if (list.length > before) found++;
             if (found >= MAX_FOLDER_IMAGES) break;
-          } else if (depth < 4) {
+          } else if (depth < 4 && visited < MAX_FOLDERS) {
             try {
-              if (statSync(path).isDirectory()) pending.push({ dir: path, depth: depth + 1 });
+              // Links and junctions are not followed: a junction to a drive's root would be
+              // walked on every rebuild (its images would be refused anyway).
+              const entry = lstatSync(path);
+              if (entry.isDirectory() && !entry.isSymbolicLink()) {
+                pending.push({ dir: path, depth: depth + 1 });
+                visited++;
+              }
             } catch {
               // Unreadable entry.
             }

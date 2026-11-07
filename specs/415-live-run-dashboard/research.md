@@ -34,7 +34,7 @@
   totals and cost of the last `result`; after it, messages counted once by id; output estimated
   as the larger of the streamed count and characters / 3.6, multiplied by a calibration factor
   (reported output growth / estimated output growth between the last two results, clamped 1-8,
-  default 2.5 - thinking tokens are not visible in the stream); priced by the model's list
+  default 2.7, measured on 414 - thinking tokens are not visible in the stream); priced by the model's list
   prices; the run's price = sum over attempts. Shown as "reported" when nothing came after the
   last result, else "estimate". Unknown model: tokens shown, price "unknown".
 - **Price table** (USD per million; `claude-api` skill, cached 2026-10-06; cache write 5 min =

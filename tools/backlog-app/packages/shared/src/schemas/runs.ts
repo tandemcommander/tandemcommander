@@ -309,8 +309,13 @@ export type Decision = z.infer<typeof DecisionSchema>;
 
 /** One image of a run's gallery (feature 415). */
 export const RunImageSchema = z.object({
-  /** Its number in the run's list (the only way the page names it). */
+  /** Its place in the run's list (for the order). */
   n: z.number().int().min(0),
+  /**
+   * Its stable key (16 hex digits of a hash of its real path): the only way the page names it -
+   * a place may shift when a new image is found, a key does not.
+   */
+  key: z.string().regex(/^[0-9a-f]{16}$/),
   /** The file name. */
   name: z.string(),
   /** Where it lies, for display (relative to the repository, or `%TEMP%\...`). */

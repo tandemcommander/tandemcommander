@@ -263,7 +263,7 @@ describe("security gate", () => {
 
   it("keeps the run insight, documents and gallery images behind the token (feature 415)", async () => {
     const run = "/api/runs/20261107-140521-claude-some-item";
-    for (const path of [`${run}/insight`, `${run}/documents/spec`, `${run}/images/0`]) {
+    for (const path of [`${run}/insight`, `${run}/documents/spec`, `${run}/images/0123456789abcdef`]) {
       expect((await send(port, "GET", path, { host: `127.0.0.1:${port}` })).status, path).toBe(401);
       const wrong = await send(port, "GET", path, { ...good(), authorization: "Bearer wrong" });
       expect(wrong.status, path).toBe(401);

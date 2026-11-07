@@ -77,7 +77,7 @@ See `spec.md` *Clarifications* and `research.md`.
   | 412 state files (3.6 MB) | 1340 | 264 | 2 | 0 / 209 | 0 | 16.914 / 16.914 | 16.589 (-1.9 %) | 10 ms |
 
   SC-001 (every main-thread call told; none by a raw command where it had a description) and
-  SC-002 (price = reported total after the last result; within 3.3 % before any) hold; SC-004
+  SC-002 (price = reported total after the last result) holds; before any result the estimate was within 3.3 % on these three and within 5.1 % on six traces of review 1; SC-004
   (< 2 s) by two orders of magnitude.
 - `npm run check`: typecheck, lint, format clean; vitest 23 files passed, 1 skipped; 440 tests
   passed, 2 skipped (baseline 366).
@@ -124,3 +124,53 @@ See `spec.md` *Clarifications* and `research.md`.
   transcript's first line on the run page, which is now the dashboard with the transcript under
   *Raw trace* (an intended change). The test opens that tab (and checks the dashboard's head
   first); rerun `npx playwright test e2e/us5-us6.spec.ts -g Q16`: passed.
+
+## Review
+
+### Review 1 (refute-first agent, at a4cf83f0)
+
+No security hole, the read-only promise holds (routes, CSP, `meta.json` only of indexed runs,
+open-read-close, chat snapshot cap and labelling, StrictMode-safe fold cache). Findings:
+
+- **M1** (MUST) The Critical tab said "The build failed" / "Tests failed" when false: a combined
+  command (build + saltests, build + probe) blamed the build for any non-zero exit; `saltests` in
+  any path (a `grep` of `saltests.cpp`) was a test run. Fixed: a build fails only by `BUILD FAILED`
+  or an error code; a `saltests:` summary or a probe's `FAIL n` in a build command blames the
+  tests / the probe; a non-zero exit without them is a warning; saltests only when `saltests.exe`
+  runs. Tests `blames only what failed in a combined command`.
+- **S1** Times collapsed when the app started during a large run (each 4 MB chunk anchored "now";
+  a truncated trace kept the old anchors). Fixed: one anchor at the file's size before reading,
+  anchors reset on truncation. Test `spreads a large trace ...` (12 MB) - negative control with the
+  old anchoring: fails (a line at a third of the trace stamped "now"); with the fix: passes.
+- **S2** The output calibration had no test; research said 2.5, the code 2.7. Fixed: test
+  `calibrates the output estimate ...`; research R3 says 2.7 (measured on 414).
+- **S3** A gallery image was addressed by its place in a list that can grow in the middle.
+  Fixed: a stable key (16 hex of SHA-256 of the real path) in the list and the route
+  `/images/:key`; tests use the listed key and refuse a number, an unknown key, a path.
+- **S4** Planned failures (mutants, probes before the fix) filled the Critical tab; one probe's pass
+  resolved another probe's failure. Fixed: a failure before *implement* is a measurement, and
+  mutant / before or without the fix / pre-fix / old build / at HEAD / baseline / reproduce mark a
+  failure as intended (warn, not critical); a pass resolves only failures of the same subject
+  (`checkSubject`: the probe scripts, the test files, the build, saltests). Tests. Over the 40
+  latest real traces the open critical entries are now new backlog items, review MUSTs, a usage
+  limit, a stop and a few probe and test failures of implementation.
+- **S5** Attempt separators and the attempts' ends in `meta.json` were not anchors. Fixed: live
+  separators anchor at once; an ended run without saved times anchors every separator's start
+  and each attempt's end (before the next separator). Test `anchors an ended run's attempts ...`
+  - negative control without the anchors: fails; with them: passes.
+- NOTEs fixed: an object URL made after the image was no longer shown (now never made); the
+  viewer keeps the focus inside (Tab cycles); the feature folder walk follows no links or
+  junctions and stops at 300 folders; a document is cut by bytes at a line end; an unpriced run
+  shows no price instead of "$0.00".
+- NOTEs accepted (recorded): a tiny race between the real-path check and the read of an image (a
+  local process swapping a link in the window - the app serves only to the same user on
+  127.0.0.1); the per-attempt price sum is unverified on a real continued run (none of 265
+  traces has a second attempt; if `claude --resume` restored its cost, a continued run's price
+  would double - the next continued run shows it, and a reported total is labelled as such);
+  past 50 000 events the stream's list is trimmed every batch and refolded (about 300 ms a
+  frame; no real run has come near); `cache/times/*.json` (a few KB each) are not pruned; each
+  live snapshot stays in a resumed chat's context (the cost of a long conversation grows; the
+  snapshot is capped at 8 000 characters).
+
+After the fixes: `npm run check` 445 passed, 2 skipped; Playwright `us7`, `us4-chat`, `a11y`
+(both themes), `us5-us6`, `us2-loop`: 13 passed.

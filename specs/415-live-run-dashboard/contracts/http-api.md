@@ -16,7 +16,7 @@ Answer (`RunInsightSchema`):
   "decisions": [{ "question": "…", "answer": "…", "how": "recommended" }],
   "assumptions": ["…"],
   "diagrams": [{ "title": "Data flow", "text": "trace.jsonl ──▶ …" }],
-  "images": [{ "n": 0, "name": "shot.png", "where": "specs/415-…/probe", "source": "trace", "size": 48213, "modified": "…" }],
+  "images": [{ "n": 0, "key": "3f9a0c1e2b4d5a67", "name": "shot.png", "where": "specs/415-…/probe", "source": "trace", "size": 48213, "modified": "…" }],
   "estimate": { "medianSeconds": 9600, "count": 12, "basis": "median of 12 closed runs" }
 }
 ```
@@ -26,16 +26,19 @@ Answer (`RunInsightSchema`):
   hold only trace images.
 - Unknown run: `404 not-found`.
 
-## `GET /api/runs/:id/images/:n`
+## `GET /api/runs/:id/images/:key`
 
-- `:n` is a decimal index into the run's `images` list of the insight (computed again on the
-  server for every request, never taken from the page).
+- `:key` is the image's `key` in the run's `images` list of the insight: 16 hex digits of a
+  SHA-256 of its real path (stable while the list grows; review S3 of 415). The list is computed
+  again on the server for every request; the page never sends a path.
 - Served when the listed file's real path lies inside the repository root or the system temporary
   folder (both real paths, compared case-insensitively on Windows with a separator boundary), it is
   a regular file, its extension is `.png .jpg .jpeg .gif .bmp .webp`, its size at most 25 MB.
 - Answer: the bytes with `Content-Type` of the extension, the app's security headers,
   `Cache-Control: no-store`.
-- Otherwise `404 not-found` (an index outside the list, a vanished file, a refused path).
+- Otherwise `404 not-found` (a key of no listed image, a vanished file, a refused path).
+- The feature folder is walked to depth 4, at most 300 folders, without following links or
+  junctions; at most 200 images.
 
 ## `GET /api/runs/:id/documents/:name`
 

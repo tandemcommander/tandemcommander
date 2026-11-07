@@ -9,6 +9,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  checkSubject,
   classifyCommand,
   componentOf,
   firstSentence,
@@ -42,6 +43,9 @@ function story(lines: object[], kind: "item" | "triage" = "item"): RunStory {
 function actions(s: RunStory): StoryEntry[] {
   return s.view().filter((e) => e.kind !== "phase");
 }
+
+/** Lines that bring a run into its implement phase (failures before it are measurements). */
+const IMPLEMENTING = [call("k0", "Skill", { skill: "speckit-implement" })];
 
 describe("commands", () => {
   it("classifies the commands of a run", () => {
@@ -163,10 +167,15 @@ describe("RunStory", () => {
   });
 
   it("makes a failed build critical and resolves it when a later build succeeds", () => {
-    let s = story([call("t1", "Bash", { command: "build.cmd" }), result("t1", "BUILD FAILED", true)]);
+    let s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: "build.cmd" }),
+      result("t1", "BUILD FAILED", true),
+    ]);
     expect(s.critical()).toHaveLength(1);
     expect(s.critical()[0]?.critical).toContain("The build failed");
     s = story([
+      ...IMPLEMENTING,
       call("t1", "Bash", { command: "build.cmd" }),
       result("t1", "BUILD FAILED", true),
       call("t2", "Bash", { command: "build.cmd" }),
@@ -175,13 +184,92 @@ describe("RunStory", () => {
     expect(s.critical()[0]?.resolved).toBe(true);
   });
 
-  it("does not make a negative control's failure critical", () => {
-    const s = story([
-      call("t1", "Bash", { command: "npx vitest run x", description: "Run the negative control" }),
-      result("t1", "Tests  1 failed", true),
+  it("does not make a negative control's, a mutant's or a measurement's failure critical", () => {
+    for (const description of [
+      "Run the negative control",
+      "Build and run saltests with the mutant",
+      "Run the probe before the fix",
+      "Run pixel rows on the pre-fix build",
+    ]) {
+      const s = story([
+        ...IMPLEMENTING,
+        call("t1", "Bash", { command: "npx vitest run x", description }),
+        result("t1", "Tests  1 failed", true),
+      ]);
+      expect(s.critical(), description).toHaveLength(0);
+      expect(actions(s).find((e) => e.tool === "Bash")?.outcome).toBe("warn");
+    }
+    // Before implementing, every failing check measures the problem.
+    const measuring = story([
+      call("k1", "Bash", { command: "bin/backlog.sh verify x --note y" }),
+      call("t1", "Bash", {
+        command: "powershell -File tools\\run_on_hidden_desktop.ps1 -CommandLine x.ps1",
+        description: "Run the probe",
+      }),
+      result("t1", "Rows: PASS 1, FAIL 3", true),
+    ]);
+    expect(measuring.critical()).toHaveLength(0);
+    expect(actions(measuring).find((e) => e.label === "PROBE")?.title).toContain(
+      "failed while measuring the problem",
+    );
+  });
+
+  it("blames only what failed in a combined command (review M1 of 415)", () => {
+    // A build that succeeded, then saltests that failed: the tests failed, not the build.
+    let s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", {
+        command: 'build.cmd; & "build\\saltests.exe"',
+        description: "Build and run saltests",
+      }),
+      result("t1", "BUILD SUCCEEDED\nsaltests: 10 checks, 2 failed", true),
+    ]);
+    expect(s.critical()[0]?.critical).toBe("Tests failed: 2 of 10 checks failed");
+    // A build, then a probe with failing rows: the probe failed.
+    s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", {
+        command: "build.cmd && run_on_hidden_desktop.ps1 p.ps1",
+        description: "Build and probe",
+      }),
+      result("t1", "build exit 0\nRows: PASS 3, FAIL 6", true),
+    ]);
+    expect(s.critical()[0]?.critical).toBe("A GUI probe failed: 6 FAIL");
+    // A non-zero exit of a build command without the build's own words is not a failed build.
+    s = story([...IMPLEMENTING, call("t1", "Bash", { command: "build.cmd && ls" }), result("t1", "x", true)]);
+    expect(s.critical()).toHaveLength(0);
+    expect(actions(s).find((e) => e.tool === "Bash")?.outcome).toBe("warn");
+    // A search in saltests' sources is a search, not a test run.
+    s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: "grep -n Foo src/saltests/saltests.cpp" }),
+      result("t1", "", true),
     ]);
     expect(s.critical()).toHaveLength(0);
-    expect(actions(s)[0]?.outcome).toBe("warn");
+    expect(actions(s).find((e) => e.tool === "Bash")?.label).toBe("SHELL");
+  });
+
+  it("resolves a failure only by a later pass of the same check", () => {
+    const probe = (id: string, script: string, out: string, err: boolean) => [
+      call(id, "Bash", {
+        command: `powershell -File tools\\run_on_hidden_desktop.ps1 -CommandLine "${script}.ps1"`,
+      }),
+      result(id, out, err),
+    ];
+    let s = story([
+      ...IMPLEMENTING,
+      ...probe("a", "probe_a", "Rows: PASS 1, FAIL 2", true),
+      ...probe("b", "probe_b", "Rows: PASS 5, FAIL 0", false),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(false);
+    s = story([
+      ...IMPLEMENTING,
+      ...probe("a", "probe_a", "Rows: PASS 1, FAIL 2", true),
+      ...probe("c", "probe_a", "Rows: PASS 3, FAIL 0", false),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(true);
+    expect(checkSubject("TEST", "npx playwright test e2e/us3-order.spec.ts")).toBe("tests:us3-order.spec.ts");
+    expect(checkSubject("TEST", "npm run check")).toBe("tests:check");
   });
 
   it("collapses consecutive reads and edits into one line each", () => {

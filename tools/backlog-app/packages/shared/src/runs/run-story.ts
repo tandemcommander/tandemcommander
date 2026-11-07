@@ -205,7 +205,44 @@ export function mustFinding(text: string): boolean {
 const RESOLVABLE = new Set<StoryLabel>(["BUILD", "TEST", "PROBE", "CHECK"]);
 
 /** A call meant to fail: a negative control (its failure proves a test). */
-const EXPECTED_FAILURE = /negative control|expected to fail|should fail|must fail|fails? as expected/i;
+const EXPECTED_FAILURE =
+  /negative control|mutant|expected to fail|should fail|must fail|fails? as expected|before the fix|without the fix|\bpre-(?:fix|restore|change)\b|old code|old build|at HEAD|unchanged build|baseline|reproduc/i;
+
+/** Phases in which a failure is a measurement of the problem, not a problem of the run. */
+const MEASURING = new Set<Phase>([
+  "starting",
+  "selection",
+  "measure",
+  "specify",
+  "clarify",
+  "plan",
+  "tasks",
+  "analyze",
+]);
+
+/**
+ * What a check checks, for resolving: a later pass resolves only failures of the same subject
+ * (the same probe script, the same test files, the build).
+ *
+ * @param label - The entry's label.
+ * @param command - The command line.
+ * @returns The subject.
+ */
+export function checkSubject(label: StoryLabel, command: string): string {
+  if (label === "BUILD") return "build";
+  if (label === "CHECK") return "encoding";
+  if (label === "PROBE") {
+    const scripts = [...command.matchAll(/([\w.-]+)\.ps1\b/gi)]
+      .map((m) => m[1]!.toLowerCase())
+      .filter((n) => n !== "run_on_hidden_desktop");
+    return `probe:${[...new Set(scripts)].sort().join(",") || command.slice(0, 60)}`;
+  }
+  if (/saltests\.exe/i.test(command)) return "saltests";
+  const files = [...command.matchAll(/([\w.-]+\.(?:spec|test)\.[jt]sx?)/g)].map((m) => m[1]!);
+  if (files.length) return `tests:${[...new Set(files)].sort().join(",")}`;
+  const run = /\bnpm\s+(?:run\s+)?([\w:-]+)/.exec(command);
+  return `tests:${run ? run[1] : command.replace(/\s+/g, " ").slice(0, 60)}`;
+}
 
 /** Top-level folders of the repository, to cut absolute paths to relative ones. */
 const ROOT_FOLDERS = [
@@ -434,7 +471,8 @@ export function classifyCommand(command: string): CommandKind {
     return kind("BACKLOG", "Talks to the backlog loop", "plain");
   if (/\b(re)?build\.cmd\b|\bbuild_langs\.cmd\b|\bmsbuild\b/i.test(c))
     return kind("BUILD", "Builds the program", "build", { importance: "high" });
-  if (/\bsaltests(\.exe)?\b/i.test(c)) return kind("TEST", "Runs the unit rules (saltests)", "saltests");
+  // saltests counts only when its program runs (a path to saltests.cpp in a grep is a search).
+  if (/saltests\.exe\b/i.test(c)) return kind("TEST", "Runs the unit rules (saltests)", "saltests");
   if (/run_on_hidden_desktop\.ps1/i.test(c))
     return kind("PROBE", "Runs a GUI probe on the hidden desktop", "probe");
   if (/check_encoding\.py/.test(c)) return kind("CHECK", "Runs the encoding guard", "encoding");
@@ -466,23 +504,41 @@ export function judgeResult(
   verdict: CommandKind["verdict"],
   text: string,
   isError: boolean,
-): { outcome: StoryOutcome; note: string | null } {
+): { outcome: StoryOutcome; note: string | null; failed?: "build" | "tests" | "probe" } {
+  /**
+   * The verdict of a `saltests` summary line, if the text has one.
+   *
+   * @returns The verdict, or null.
+   */
+  const saltests = (): { outcome: StoryOutcome; note: string; failed?: "tests" } | null => {
+    const m = /saltests:\s*([\d,]+)\s*checks,\s*(\d+)\s*failed/.exec(text);
+    if (!m) return null;
+    const failed = Number(m[2]);
+    return failed === 0
+      ? { outcome: "ok", note: `${m[1]} checks, 0 failed` }
+      : { outcome: "fail", note: `${failed} of ${m[1]} checks failed`, failed: "tests" };
+  };
   switch (verdict) {
     case "build": {
-      if (/BUILD FAILED|\berror (C|LNK|MSB|RC)\d+/i.test(text) || (isError && !/BUILD SUCCEEDED/.test(text)))
-        return { outcome: "fail", note: "build failed" };
-      if (/BUILD SUCCEEDED/.test(text)) return { outcome: "ok", note: "build succeeded" };
-      return { outcome: "ok", note: null };
+      // Only the build's own words fail a build (contracts/story-rules.md): a command that builds
+      // and then runs saltests or a probe ends non-zero when those fail - their summary says so.
+      if (/BUILD FAILED|\berror (C|LNK|MSB|RC)\d+/i.test(text))
+        return { outcome: "fail", note: "build failed", failed: "build" };
+      const salt = saltests();
+      if (salt && salt.outcome === "fail") return salt;
+      const probeFails = /\bFAIL[:=]?\s+([1-9]\d*)\b/.exec(text);
+      if (probeFails) return { outcome: "fail", note: `${probeFails[1]} FAIL`, failed: "probe" };
+      if (/BUILD SUCCEEDED/.test(text))
+        return { outcome: "ok", note: salt ? `build succeeded, ${salt.note}` : "build succeeded" };
+      if (isError) return { outcome: "warn", note: "ended with an error" };
+      return { outcome: "ok", note: salt?.note ?? null };
     }
     case "saltests": {
-      const m = /saltests:\s*([\d,]+)\s*checks,\s*(\d+)\s*failed/.exec(text);
-      if (m) {
-        const failed = Number(m[2]);
-        return failed === 0
-          ? { outcome: "ok", note: `${m[1]} checks, 0 failed` }
-          : { outcome: "fail", note: `${failed} of ${m[1]} checks failed` };
-      }
-      return isError ? { outcome: "fail", note: "the unit rules failed" } : { outcome: "ok", note: null };
+      const salt = saltests();
+      if (salt) return salt;
+      return isError
+        ? { outcome: "fail", note: "the unit rules failed", failed: "tests" }
+        : { outcome: "ok", note: null };
     }
     case "tests": {
       // vitest prints "Test Files  20 passed" before "Tests  366 passed": its Tests line counts
@@ -581,6 +637,9 @@ export class RunStory {
 
   /** How each tool call's result is judged. */
   private readonly verdicts = new Map<string, CommandKind>();
+
+  /** What each check entry checks (for resolving), by entry id. */
+  private readonly subjects = new Map<string, string>();
 
   /** The group being filled. */
   private group: OpenGroup | null = null;
@@ -991,6 +1050,7 @@ export class RunStory {
       if (toolUseId) {
         this.byTool.set(toolUseId, id);
         this.verdicts.set(toolUseId, kind);
+        if (RESOLVABLE.has(kind.label)) this.subjects.set(id, checkSubject(kind.label, event.summary));
       }
       return;
     }
@@ -1136,20 +1196,34 @@ export class RunStory {
     const kind = this.verdicts.get(toolUseId);
     if (kind) {
       let verdict = judgeResult(kind.verdict, text, event.isError);
-      // A negative control fails on purpose: its failure is the expected result, not a problem.
-      if (verdict.outcome === "fail" && EXPECTED_FAILURE.test(entry.title)) {
-        verdict = {
-          outcome: "warn",
-          note: `failed, as a negative control should${verdict.note ? ` (${verdict.note})` : ""}`,
-        };
+      // A failure on purpose is the expected result, not a problem: a negative control, a mutant,
+      // a check of the code before the fix - and every check before implementing, which measures
+      // the problem (stop-rules 2.1).
+      if (verdict.outcome === "fail" && (EXPECTED_FAILURE.test(entry.title) || MEASURING.has(entry.phase))) {
+        const why =
+          MEASURING.has(entry.phase) && !EXPECTED_FAILURE.test(entry.title)
+            ? "failed while measuring the problem"
+            : "failed, as intended";
+        verdict = { outcome: "warn", note: `${why}${verdict.note ? ` (${verdict.note})` : ""}` };
       }
       const failed = verdict.outcome === "fail";
-      const reason =
-        kind.label === "BUILD"
-          ? "The build failed"
+      // What failed is the verdict's (a command that builds and then runs saltests fails by its
+      // tests), else the label's.
+      const what =
+        verdict.failed ??
+        (kind.label === "BUILD"
+          ? "build"
           : kind.label === "PROBE"
-            ? "A GUI probe failed"
+            ? "probe"
             : kind.label === "CHECK"
+              ? "check"
+              : "tests");
+      const reason =
+        what === "build"
+          ? "The build failed"
+          : what === "probe"
+            ? "A GUI probe failed"
+            : what === "check"
               ? "The encoding guard found problems"
               : "Tests failed";
       // The verdict's note adds the figures ("2 failed, 364 passed"), not the same words again.
@@ -1161,10 +1235,12 @@ export class RunStory {
           : verdict.outcome === "ok"
             ? kind.criticalOnOk
             : null;
-      // A pass of the same kind of check resolves the failures before it.
-      if (verdict.outcome === "ok" && RESOLVABLE.has(kind.label)) {
+      // A pass of the same check (the same probe, the same tests, the build) resolves the
+      // failures of that check before it - not those of another probe.
+      const subject = this.subjects.get(id);
+      if (verdict.outcome === "ok" && RESOLVABLE.has(kind.label) && subject) {
         for (const e of this.entries) {
-          if (e.label === kind.label && e.critical && !e.resolved && e.id !== id)
+          if (e.critical && !e.resolved && e.id !== id && this.subjects.get(e.id) === subject)
             this.update(e.id, { resolved: true });
         }
       }

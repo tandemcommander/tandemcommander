@@ -163,37 +163,40 @@ export function useRunDocument(id: string | null, name: string | null, live: boo
  * image is no longer shown.
  *
  * @param id - The run id.
- * @param n - The image's number, or null.
+ * @param key - The image's key, or null.
  * @param version - Changes when the file changed (its modification time).
  * @returns The URL, `"gone"` when the server has no such image, or null while loading.
  */
-export function useImageUrl(id: string, n: number | null, version: string | null): string | null {
+export function useImageUrl(id: string, key: string | null, version: string | null): string | null {
   const [url, setUrl] = useState<{ key: string; value: string } | null>(null);
-  const key = `${id}/${n}/${version ?? ""}`;
+  const want = `${id}/${key}/${version ?? ""}`;
   useEffect(() => {
-    if (n === null) return;
+    if (key === null) return;
     const controller = new AbortController();
     let made: string | null = null;
     const token = currentToken();
-    void fetch(`/api/runs/${id}/images/${n}`, {
+    void fetch(`/api/runs/${id}/images/${key}`, {
       signal: controller.signal,
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then(async (answer) => {
         if (!answer.ok) {
-          setUrl({ key, value: "gone" });
+          if (!controller.signal.aborted) setUrl({ key: want, value: "gone" });
           return;
         }
-        made = URL.createObjectURL(await answer.blob());
-        setUrl({ key, value: made });
+        const blob = await answer.blob();
+        // The image may no longer be shown: an object URL made now would never be revoked.
+        if (controller.signal.aborted) return;
+        made = URL.createObjectURL(blob);
+        setUrl({ key: want, value: made });
       })
       .catch(() => {
-        if (!controller.signal.aborted) setUrl({ key, value: "gone" });
+        if (!controller.signal.aborted) setUrl({ key: want, value: "gone" });
       });
     return () => {
       controller.abort();
       if (made) URL.revokeObjectURL(made);
     };
-  }, [id, n, key]);
-  return url && url.key === key ? url.value : null;
+  }, [id, key, want]);
+  return url && url.key === want ? url.value : null;
 }

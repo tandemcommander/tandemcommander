@@ -67,10 +67,10 @@ export function runRoutes(services: Services): Hono {
     ),
   );
 
-  app.get("/runs/:id/images/:n", async (c) => {
+  app.get("/runs/:id/images/:key", async (c) => {
     const id = param(c.req.param("id"), RUN_ID_PATTERN, "run");
-    const n = Number(param(c.req.param("n"), /^\d{1,4}$/, "image"));
-    const image = await services.insight.image(id, n);
+    const key = param(c.req.param("key"), /^[0-9a-f]{16}$/, "image");
+    const image = await services.insight.image(id, key);
     return c.body(new Uint8Array(image.bytes), 200, { "Content-Type": image.type });
   });
 

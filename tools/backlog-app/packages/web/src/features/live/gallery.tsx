@@ -41,7 +41,7 @@ function RunPicture({
   /** Classes of the picture. */ className?: string;
   /** How it fills its box. */ fit?: "cover" | "contain" | "none";
 }) {
-  const url = useImageUrl(runId, image.size === null ? null : image.n, image.modified);
+  const url = useImageUrl(runId, image.size === null ? null : image.key, image.modified);
   if (image.size === null || url === "gone") {
     return (
       <div
@@ -123,7 +123,22 @@ function Viewer({
       tabIndex={-1}
       className="fixed inset-0 z-50 flex flex-col bg-black/92 text-white outline-none"
       onKeyDown={(e) => {
-        if (e.key === "Escape") {
+        if (e.key === "Tab") {
+          // Focus stays in the viewer while it is open (a modal dialog).
+          const items = [...(dialog.current?.querySelectorAll<HTMLElement>("button") ?? [])];
+          const first = items[0];
+          const last = items[items.length - 1];
+          if (first && last && e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (first && last && !e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          } else if (first && document.activeElement === dialog.current) {
+            e.preventDefault();
+            first.focus();
+          }
+        } else if (e.key === "Escape") {
           e.preventDefault();
           onClose();
         } else if (e.key === "ArrowRight") {

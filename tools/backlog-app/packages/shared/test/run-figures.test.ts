@@ -200,6 +200,27 @@ describe("RunMetrics", () => {
     expect(s.reportedUsd).toBe(2.5);
   });
 
+  it("calibrates the output estimate on what a result reports, and uses it afterwards", () => {
+    const metrics = new RunMetrics();
+    const words = (id: string, n: number) =>
+      say("y".repeat(n), {
+        message: id,
+        usage: { input_tokens: 0, output_tokens: 0, cache_read_input_tokens: 0 },
+      });
+    // 36 000 characters = 10 000 estimated tokens before calibration (3.6 characters each).
+    for (const e of eventsOf([words("m1", 36_000)])) metrics.apply(e);
+    expect(metrics.snapshot().calibration).toBe(2.7);
+    expect(metrics.snapshot().tokens.output).toBe(27_000);
+    // The result says 40 000 were produced: the factor becomes 4.
+    for (const e of eventsOf([turnEnd(1, { input: 0, output: 40_000, read: 0, w5: 0, w1: 0 })]))
+      metrics.apply(e);
+    expect(metrics.snapshot().calibration).toBe(4);
+    expect(metrics.snapshot().tokens.output).toBe(40_000);
+    // The next 3 600 characters count 4 000 output tokens beyond the reported ones.
+    for (const e of eventsOf([words("m2", 3600)])) metrics.apply(e);
+    expect(metrics.snapshot().tokens.output).toBe(44_000);
+  });
+
   it("adds the attempts of a continued run (each process reports its own totals)", () => {
     const metrics = new RunMetrics();
     for (const e of eventsOf([

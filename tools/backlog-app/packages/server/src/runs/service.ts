@@ -179,7 +179,8 @@ export type TraceListener = (id: string, events: TraceEvent[]) => void;
  */
 function liveCost(metrics: RunMetrics): Run["cost"] {
   const s = metrics.snapshot();
-  if (s.costUsd === null && s.messages === 0) return null;
+  // No price known (an unpriced model): no figure, rather than "$0.00".
+  if (s.costUsd === null) return null;
   return {
     usd: Math.round((s.costUsd ?? 0) * 100) / 100,
     inputTokens: s.tokens.input,
@@ -231,6 +232,8 @@ interface LiveRun {
   published: string;
   /** The time index of the trace (feature 415, research R4). */
   times: TimeIndex;
+  /** The run's start (epoch ms), if known. */
+  startMs: number | null;
   /** When the time index was last saved (epoch ms). */
   timesSavedAt: number;
   /** The human story of the run (feature 415; the chat snapshot reads it). */
@@ -378,14 +381,25 @@ export class RunsService {
         progressAt: 0,
         published: "",
         times,
+        startMs,
         timesSavedAt: Date.now(),
         story: new RunStory(kind),
         metrics: new RunMetrics(),
       };
     }
     const live = this.live;
-    // Read everything new (a large trace in several chunks on the first follow).
+    // Read everything new (a large trace in several chunks on the first follow). The bytes in the
+    // file now were written by now: one anchor at its size before reading, and every line gets
+    // the time interpolated between the anchors around it (research R4 of 415) - the first read
+    // after the app started spreads hours of trace between the run's start and now, chunk after
+    // chunk, instead of stamping them all "now".
     const events: TraceEvent[] = [];
+    try {
+      const size = statSync(live.path).size;
+      if (size > live.offset) live.times.add(size, Date.now());
+    } catch {
+      // No trace yet.
+    }
     for (let i = 0; i < 50; i++) {
       const read = readTraceLines(live.path, live.offset);
       // The file is shorter than what was already read: it was truncated or replaced. Fold again
@@ -394,14 +408,15 @@ export class RunsService {
         live.state = new RunState(live.state.kind);
         live.story = new RunStory(live.state.kind);
         live.metrics = new RunMetrics();
+        // The anchors of the old file mean nothing for the new one.
+        live.times = new TimeIndex(live.startMs !== null ? [{ offset: 0, ms: live.startMs }] : []);
+        live.times.add(read.offset, Date.now());
       }
-      // The bytes read now were written by now: an anchor, then every line gets the time
-      // interpolated between the previous anchor and this one (research R4 of 415). The first
-      // read after the app started catches up hours of trace without putting them on one time.
-      if (read.offset > live.offset) live.times.add(read.offset, Date.now());
       for (const line of read.lines) {
         const at = live.times.isoAt(line.offset) ?? new Date().toISOString();
         for (const event of normalizeTraceLine(line.text, line.offset, line.end, at)) {
+          // An attempt's separator carries its own start: an exact anchor.
+          if (event.kind === "attempt" && event.at) live.times.add(event.offset, Date.parse(event.at));
           live.state.apply(event);
           live.story.apply(event);
           live.metrics.apply(event);
@@ -484,16 +499,42 @@ export class RunsService {
     // `meta.json` is read only once the run is indexed (ended; analysis A2 section 5.1).
     if (this.index().some((l) => l.dir === id)) {
       if (times.size < 3) {
+        // Each attempt's separator gives its start; meta.json gives each attempt's end, which
+        // lies just before the next separator (a run that waited out a usage limit is not spread
+        // evenly over the wait).
+        const path = join(this.tracesRoot, id, "trace.jsonl");
+        const separators: number[] = [];
+        let offset = 0;
+        for (let i = 0; i < 100_000; i++) {
+          const read = readTraceLines(path, offset);
+          for (const line of read.lines) {
+            if (!line.text.includes('"backlog_loop.attempt"')) continue;
+            try {
+              const raw = JSON.parse(line.text) as { started?: unknown };
+              separators.push(line.offset);
+              if (typeof raw.started === "string") times.add(line.offset, Date.parse(raw.started));
+            } catch {
+              // Not a separator after all.
+            }
+          }
+          if (read.offset === offset) break;
+          offset = read.offset;
+        }
         try {
           const meta = JSON.parse(readFileSync(join(this.tracesRoot, id, "meta.json"), "utf8")) as {
             started?: unknown;
             ended?: unknown;
+            attempts?: { ended?: unknown }[];
           };
-          const size = statSync(join(this.tracesRoot, id, "trace.jsonl")).size;
+          const size = statSync(path).size;
           if (typeof meta.started === "string") times.add(0, Date.parse(meta.started));
+          (meta.attempts ?? []).forEach((attempt, i) => {
+            const end = separators[i + 1] !== undefined ? separators[i + 1]! - 1 : size;
+            if (typeof attempt?.ended === "string") times.add(Math.max(0, end), Date.parse(attempt.ended));
+          });
           if (typeof meta.ended === "string") times.add(size, Date.parse(meta.ended));
         } catch {
-          // No meta: only the start.
+          // No meta: the start and the separators.
         }
       }
       if (start !== null) times.add(0, start);

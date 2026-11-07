@@ -161,15 +161,24 @@ describe("run insight routes", () => {
     expect(JSON.stringify(insight)).not.toContain("secret.png");
   });
 
-  it("serves a listed image by its number only", async () => {
-    const image = await app.api.request(`/api/runs/${dir}/images/0`);
+  it("serves a listed image by its key only", async () => {
+    const listed = ((await app.get(`/api/runs/${dir}/insight`)).json as RunInsight).images;
+    expect(listed[0]?.key).toMatch(/^[0-9a-f]{16}$/);
+    expect(new Set(listed.map((i) => i.key)).size).toBe(listed.length);
+    const image = await app.api.request(`/api/runs/${dir}/images/${listed[0]!.key}`);
     expect(image.status).toBe(200);
     expect(image.headers.get("content-type")).toBe("image/png");
     expect(Buffer.from(await image.arrayBuffer()).equals(PNG)).toBe(true);
-    for (const bad of ["images/7", "images/-1", "images/..%2Fspec", "images/1x"]) {
+    // A number, a key of no listed image, a path: refused.
+    for (const bad of [
+      "images/0",
+      "images/0123456789abcdef",
+      "images/..%2Fspec",
+      `images/${listed[0]!.key}x`,
+    ]) {
       expect((await app.api.request(`/api/runs/${dir}/${bad}`)).status, bad).toBe(404);
     }
-    expect((await app.api.request(`/api/runs/..%2F..%2Fbacklog/images/0`)).status).toBe(404);
+    expect((await app.api.request(`/api/runs/..%2F..%2Fbacklog/images/${listed[0]!.key}`)).status).toBe(404);
   });
 
   it("serves a document of the fixed list and refuses anything else", async () => {
@@ -188,6 +197,104 @@ describe("run insight routes", () => {
     expect(times.every((t) => Number.isFinite(t))).toBe(true);
     expect(Math.min(...times)).toBeGreaterThanOrEqual(Date.parse("2026-11-07T12:00:00+01:00"));
     expect(Math.max(...times)).toBeLessThanOrEqual(Date.parse("2026-11-07T13:00:00+01:00"));
+  });
+});
+
+describe("times of a run's events (research R4)", () => {
+  let app: TestApp;
+  let root = "";
+  let cleanup = (): void => undefined;
+
+  beforeEach(async () => {
+    ({ root, cleanup } = await fixtureRepo());
+    app = await testApp(root);
+  });
+  afterEach(async () => {
+    await app.services.stopAndDrain();
+    cleanup();
+  });
+
+  it("spreads a large trace the app starts following late between the run's start and now", () => {
+    const dir = "20261107-100000-claude-late";
+    const folder = join(root, ".agent-traces", dir);
+    mkdirSync(folder, { recursive: true });
+    // About 12 MB: several chunks of the tailer (4 MB each).
+    const line = JSON.stringify({
+      type: "assistant",
+      message: { content: [{ type: "text", text: "x".repeat(1000) }] },
+      parent_tool_use_id: null,
+    });
+    writeFileSync(join(folder, "trace.jsonl"), `${Array.from({ length: 12_000 }, () => line).join("\n")}\n`);
+    const start = Date.now() - 3600_000;
+    (app.services.loop as unknown as { currentRaw: unknown }).currentRaw = {
+      live: true,
+      run: { trace: folder, slug: "late", started_epoch: start / 1000 },
+      loop: null,
+    };
+    const seen: (string | null)[] = [];
+    app.services.runs.subscribe((_, events) => seen.push(...events.map((e) => e.at)));
+    app.services.runs.follow();
+    expect(seen.length).toBe(12_000);
+    const times = seen.map((t) => Date.parse(t ?? ""));
+    const third = times[4000]!;
+    // Before the fix every line after the first chunk was stamped "now".
+    expect(times[0]! - start).toBeLessThan(60_000);
+    expect(third).toBeLessThan(Date.now() - 1800_000);
+    expect(third).toBeGreaterThan(start + 600_000);
+    expect(Date.now() - times[11_999]!).toBeLessThan(60_000);
+  });
+
+  it("anchors an ended run's attempts, so a wait for a usage limit is not spread over its lines", async () => {
+    const dir = "20261107-090000-claude-waited";
+    const folder = join(root, ".agent-traces", dir);
+    mkdirSync(folder, { recursive: true });
+    const text = (t: string): string =>
+      JSON.stringify({
+        type: "assistant",
+        message: { content: [{ type: "text", text: t }] },
+        parent_tool_use_id: null,
+      });
+    const lines = [
+      JSON.stringify({
+        type: "backlog_loop.attempt",
+        attempt: 1,
+        kind: "start",
+        reason: "-",
+        started: "2026-11-07T09:00:00+01:00",
+      }),
+      text("one"),
+      text("two"),
+      JSON.stringify({
+        type: "backlog_loop.attempt",
+        attempt: 2,
+        kind: "continue",
+        reason: "usage-limit",
+        started: "2026-11-07T14:00:00+01:00",
+      }),
+      text("three"),
+    ];
+    writeFileSync(join(folder, "trace.jsonl"), `${lines.join("\n")}\n`);
+    writeFileSync(
+      join(folder, "meta.json"),
+      JSON.stringify({
+        kind: "item",
+        slug: "waited",
+        started: "2026-11-07T09:00:00+01:00",
+        ended: "2026-11-07T14:10:00+01:00",
+        attempts: [{ ended: "2026-11-07T09:30:00+01:00" }, { ended: "2026-11-07T14:10:00+01:00" }],
+      }),
+    );
+    writeFileSync(
+      join(root, ".agent-traces", "index.jsonl"),
+      `${JSON.stringify({ dir, kind: "item", slug: "waited", outcome: "blocked" })}\n`,
+    );
+    const page = (await app.get(`/api/runs/${dir}/events?from=0`)).json as {
+      events: { at: string; summary: string }[];
+    };
+    const at = (summary: string): number => Date.parse(page.events.find((e) => e.summary === summary)!.at);
+    // "two" lies in the first attempt (09:00 - 09:30), not halfway through the five-hour wait.
+    expect(at("two")).toBeLessThanOrEqual(Date.parse("2026-11-07T09:30:00+01:00"));
+    expect(at("three")).toBeGreaterThanOrEqual(Date.parse("2026-11-07T14:00:00+01:00"));
   });
 });
 
