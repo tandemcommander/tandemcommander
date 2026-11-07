@@ -174,6 +174,75 @@ export const TRACE_EVENT_KINDS = [
   "unparsable",
 ] as const;
 
+/** Token counts of one message or of a reported total (feature 415). */
+export const TokenUsageSchema = z.object({
+  /** Uncached input tokens. */
+  input: z.number(),
+  /** Output tokens (for a streamed message: the count at its start, research R3 of 415). */
+  output: z.number(),
+  /** Tokens read from the prompt cache. */
+  cacheRead: z.number(),
+  /** Tokens written to the 5-minute prompt cache. */
+  cacheWrite5m: z.number(),
+  /** Tokens written to the 1-hour prompt cache. */
+  cacheWrite1h: z.number(),
+});
+
+/** Token counts. */
+export type TokenUsage = z.infer<typeof TokenUsageSchema>;
+
+/** Usage-limit utilisation of a `rate_limit_event` (feature 415). */
+export const LimitInfoSchema = z.object({
+  /** `allowed`, `allowed_warning`, `rejected`, ... */
+  status: z.string(),
+  /** Utilisation of the 5-hour window (0-1), when given. */
+  fiveHour: z.number().nullable(),
+  /** Utilisation of the 7-day window (0-1), when given. */
+  sevenDay: z.number().nullable(),
+  /** When the limiting window resets (epoch seconds), when given. */
+  resetsAt: z.number().nullable(),
+});
+
+/** Usage-limit information. */
+export type LimitInfo = z.infer<typeof LimitInfoSchema>;
+
+/**
+ * Facts of an event taken from its line beyond the summary (feature 415, data-model
+ * *TraceEvent.info*): what the human story, the metrics and the gallery need. Every field is
+ * optional; older events have none.
+ */
+export const TraceInfoSchema = z.object({
+  /** The tool input's own `description` (Bash, PowerShell, Agent), or the skill and its args. */
+  description: z.string().optional(),
+  /** The tool input's file (`file_path`, `notebook_path`, `path`). */
+  filePath: z.string().optional(),
+  /** The `subagent_type` of an Agent call. */
+  subagentType: z.string().optional(),
+  /** The id of the assistant message (one message spans several lines). */
+  messageId: z.string().optional(),
+  /** The model of the assistant message. */
+  model: z.string().optional(),
+  /** The message's usage, on the first event made from its line. */
+  usage: TokenUsageSchema.optional(),
+  /** Characters of text and tool input of the line (an estimate of its output). */
+  outputChars: z.number().optional(),
+  /** A result's cumulative cost of its claude process (`total_cost_usd`). */
+  costUsd: z.number().optional(),
+  /** A result's cumulative tokens of its process (the sum of `modelUsage`). */
+  totals: TokenUsageSchema.optional(),
+  /** The models of a result's totals. */
+  totalsModels: z.array(z.string()).optional(),
+  /** A rate-limit event's utilisation. */
+  limits: LimitInfoSchema.optional(),
+  /** A subagent task's status or progress line. */
+  taskStatus: z.string().optional(),
+  /** The last characters of a tool result longer than the kept text (its verdict). */
+  tail: z.string().optional(),
+});
+
+/** Extra facts of an event. */
+export type TraceInfo = z.infer<typeof TraceInfoSchema>;
+
 /** One normalised line of `trace.jsonl`. */
 export const TraceEventSchema = z.object({
   /** Byte offset of the line's start in `trace.jsonl` (the event id of the stream). */
@@ -196,6 +265,8 @@ export const TraceEventSchema = z.object({
   text: z.string().nullable(),
   /** True when the event marks an error (tool error, failed result). */
   isError: z.boolean(),
+  /** Extra facts of the line (feature 415); absent on events of older servers. */
+  info: TraceInfoSchema.optional(),
 });
 
 /** A normalised trace event. */
@@ -220,3 +291,93 @@ export const RunStatsSchema = z.object({
 
 /** Run statistics. */
 export type RunStats = z.infer<typeof RunStatsSchema>;
+
+/** A recorded answer of the feature's specification (feature 415). */
+export const DecisionSchema = z.object({
+  /** The question. */
+  question: z.string(),
+  /** The answer. */
+  answer: z.string(),
+  /** How it was decided (`recommended`, `conservative`, `item`, `rule`, ...), or empty. */
+  how: z.string(),
+});
+
+/** One recorded decision. */
+export type Decision = z.infer<typeof DecisionSchema>;
+
+/** One image of a run's gallery (feature 415). */
+export const RunImageSchema = z.object({
+  /** Its number in the run's list (the only way the page names it). */
+  n: z.number().int().min(0),
+  /** The file name. */
+  name: z.string(),
+  /** Where it lies, for display (relative to the repository, or `%TEMP%\...`). */
+  where: z.string(),
+  /** `trace` (the run opened or wrote it) or `feature` (found in the feature folder). */
+  source: z.enum(["trace", "feature"]),
+  /** Size in bytes, null when the file is gone. */
+  size: z.number().nullable(),
+  /** Modification time (ISO), null when the file is gone. */
+  modified: z.string().nullable(),
+});
+
+/** One gallery image. */
+export type RunImage = z.infer<typeof RunImageSchema>;
+
+/** What the server knows about a run beyond its trace (feature 415, contracts/http-api.md). */
+export const RunInsightSchema = z.object({
+  /** The run's branch, when it has a feature branch. */
+  branch: z.string().nullable(),
+  /** The feature folder (`specs/NNN-name`), when it exists. */
+  featureFolder: z.string().nullable(),
+  /** The documents of the feature folder. */
+  documents: z.array(
+    z.object({
+      /** The document's name (`spec`, `plan`, ...). */
+      name: z.string(),
+      /** The file name. */
+      file: z.string(),
+      /** Size in bytes. */
+      size: z.number(),
+      /** Modification time (ISO). */
+      modified: z.string(),
+    }),
+  ),
+  /** The clarifications of `spec.md`. */
+  decisions: z.array(DecisionSchema),
+  /** The autonomous-run assumptions of `spec.md`. */
+  assumptions: z.array(z.string()),
+  /** Fenced diagrams of `plan.md`. */
+  diagrams: z.array(
+    z.object({
+      /** The heading above the diagram. */
+      title: z.string(),
+      /** The diagram text. */
+      text: z.string(),
+    }),
+  ),
+  /** The gallery. */
+  images: z.array(RunImageSchema),
+  /** The basis of the expected duration. */
+  estimate: z.object({
+    /** Median wall-clock seconds of earlier closed runs, null with too few. */
+    medianSeconds: z.number().nullable(),
+    /** How many closed runs it rests on. */
+    count: z.number().int(),
+  }),
+});
+
+/** A run's insight. */
+export type RunInsight = z.infer<typeof RunInsightSchema>;
+
+/** The names of the documents a run's feature folder may show (contracts/http-api.md). */
+export const RUN_DOCUMENTS = [
+  "spec",
+  "plan",
+  "tasks",
+  "fix-log",
+  "research",
+  "data-model",
+  "quickstart",
+  "closing-report",
+] as const;
