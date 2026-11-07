@@ -355,7 +355,10 @@ function Run-Look([string]$Theme) {
         Cap-Compare $name 'NORMAL' $Hs "variantF_${Theme}_normal.png"
         if ($Label -eq 'before') { Cap-Compare $name 'CONTROL' $Hs "current_${Theme}_normal.png" }
         [Tc404]::SendRaw($main, $WM_NCACTIVATE, [IntPtr]0, [IntPtr]::Zero)
-        Cap-Compare $name 'INACTIVE' $Hs "variantF_${Theme}_inactive.png"
+        # feature 413: the Dark theme's inactive panel lifts the active tab's fill (2D2D2D -> 454545);
+        # its baseline is the mockup with the active tab's box (x 250..385, y 3..28) from the 413 capture
+        $inactiveEv = if ($Theme -eq 'dark') { "variantF_${Theme}_inactive_413.png" } else { "variantF_${Theme}_inactive.png" }
+        Cap-Compare $name 'INACTIVE' $Hs $inactiveEv
         [Tc404]::SendRaw($main, $WM_NCACTIVATE, [IntPtr]1, [IntPtr]::Zero)
         Hover $id $Hs (TabCx $g 4) $g.MidY
         Cap-Compare $name 'HOVERTAB' $Hs "variantF_${Theme}_hovertab.png"

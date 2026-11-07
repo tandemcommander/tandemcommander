@@ -49,7 +49,7 @@ struct CTabPaintColors
 {
     CSalTabStripColors Strip;
     COLORREF Text;  // COLOR_BTNTEXT
-    COLORREF CapBk; // the caption background of the panel (active / inactive)
+    COLORREF CapBk; // the active tab's fill: the panel's caption background (active / inactive), see SalTabActiveFill
     COLORREF CapFg;
     BOOL Dark;
     BOOL HighContrast;
@@ -1073,8 +1073,12 @@ void CTabWindow::Paint(HDC hdc)
     SalTabStripColorsGet(ThemeSysColor(COLOR_BTNFACE), ThemeSysColor(COLOR_BTNSHADOW), ThemeSysColor(COLOR_BTNHIGHLIGHT),
                          TabPaint.Text, TabPaint.Dark, TabPaint.HighContrast, GetSysColor(COLOR_HIGHLIGHT),
                          GetSysColor(COLOR_HIGHLIGHTTEXT), &TabPaint.Strip);
-    TabPaint.CapBk = GetCOLORREF(CurrentColors[activePanel ? ACTIVE_CAPTION_BK : INACTIVE_CAPTION_BK]);
     TabPaint.CapFg = GetCOLORREF(CurrentColors[activePanel ? ACTIVE_CAPTION_FG : INACTIVE_CAPTION_FG]);
+    // the caption colour, lifted when it would not stand out from the strip or from the
+    // directory line's band under the tab (the Dark theme's inactive panel, feature 413)
+    TabPaint.CapBk = SalTabActiveFill(GetCOLORREF(CurrentColors[activePanel ? ACTIVE_CAPTION_BK : INACTIVE_CAPTION_BK]),
+                                      TabPaint.CapFg, TabPaint.Strip.StripBk, ThemeSysColor(COLOR_BTNFACE),
+                                      TabPaint.HighContrast);
 
     RECT all = {0, 0, Width, Height};
     TabFillSolid(dc, &all, TabPaint.Strip.StripBk);

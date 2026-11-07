@@ -507,14 +507,48 @@ int SalTabDragSlot(int count, int tabWidth, int draggedLeft, int from)
     int cell = draggedLeft >= 0 ? draggedLeft / tabWidth : -((-draggedLeft + tabWidth - 1) / tabWidth);
     int slot;
     if (draggedLeft >= from * tabWidth)
-        slot = cell; // moving right: tab j gives way once the left passes j * width (centre over centre)
+        slot = cell; // moving right: tab j gives way once the left is at or above j * width (centre over centre)
     else
-        slot = cell + 1; // moving left: tab j gives way once the left is below j * width
+    {
+        // moving left: tab j gives way once the left is at or below j * width, so the
+        // left end of the run (the caller clamps the left to 0) is slot 0 (feature 413)
+        slot = (cell * tabWidth == draggedLeft) ? cell : cell + 1;
+    }
     if (slot < 0)
         slot = 0;
     if (slot > count - 1)
         slot = count - 1;
     return slot;
+}
+
+int SalTabColorDistance(DWORD a, DWORD b)
+{
+    int d = 0;
+    int shift;
+    for (shift = 0; shift <= 16; shift += 8)
+    {
+        int x = (int)((a >> shift) & 0xFF) - (int)((b >> shift) & 0xFF);
+        if (x < 0)
+            x = -x;
+        if (x > d)
+            d = x;
+    }
+    return d;
+}
+
+DWORD SalTabActiveFill(DWORD capBk, DWORD capFg, DWORD stripBk, DWORD face, BOOL highContrast)
+{
+    if (highContrast)
+        return capBk;
+    int k;
+    for (k = 0; k <= 50; k++)
+    {
+        DWORD fill = k == 0 ? capBk : SalTabMix(capBk, capFg, k / 100.0);
+        if (SalTabColorDistance(fill, stripBk) >= SALTAB_ACTIVE_MIN_CONTRAST &&
+            SalTabColorDistance(fill, face) >= SALTAB_ACTIVE_MIN_CONTRAST)
+            return fill;
+    }
+    return SalTabMix(capBk, capFg, 0.5);
 }
 
 int SalTabDragPosition(int from, int slot, int index)

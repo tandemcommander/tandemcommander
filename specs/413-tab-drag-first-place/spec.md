@@ -135,8 +135,9 @@ active and the inactive panel.
 
 ### Measurable Outcomes
 
-- **SC-001**: In the probe, a tab dragged to the left end lands first in 3 of 3 cases (left panel,
-  right panel, scrolled strip), against 0 of 3 before; the controls (middle, right end) unchanged.
+- **SC-001**: In the probe, a tab dragged to the left end lands first in 4 of 4 cases (left panel,
+  right panel, a second drag in the left panel, scrolled strip), against 0 of 4 before; the
+  controls (middle, right end) unchanged.
 - **SC-002**: The probe's look rows pass for both themes and both panels (4 of 4, against 3 of 4
   before); the height rows pass (unchanged).
 - **SC-003**: `tabs404_probe` and `tabs405_probe` keep passing, except the dark inactive capture of

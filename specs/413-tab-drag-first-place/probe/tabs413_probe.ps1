@@ -12,7 +12,8 @@
                           the centre-over-centre rule still holds in the middle)
                 RIGHT     S dragged far past the left end of the right strip -> S P Q R
                 RIGHTEND  P (now index 1) dragged far past the right end     -> S Q R P (control)
-                INACTIVE  B (index 3, not active) dragged to the left end    -> B D A C
+                AGAIN     B (index 3) dragged to the left end                -> B D A C
+                (the press activates the pressed tab, so the dragged tab is the active one)
       SCROLLED  left T00..T29 with T29 active (the strip shows a run of the last tabs,
                 FirstVisible > 0): T29 dragged to the left end -> it takes the run's first place
                 (index 30 - visible count), the other tabs keep their order.
@@ -289,19 +290,19 @@ function Run-First {
         Row 'FIRST' 'START' (V ((Order $s.L) -eq 'A B C D' -and (Order $s.R) -eq 'P Q R S')) ("{0}; left strip {1}x{2} tab width {3}; right strip {4}x{5} tab width {6}" -f (Desc $s), $gl.W, $gl.H, $gl.TabW, $gr.W, $gr.H, $gr.TabW)
         Drag $L $gl (TabCx $gl 3) ((TabCx $gl 0) - 2 * $gl.TabW)
         $s = Snap $id
-        Row 'FIRST' 'LEFT' (V ((Order $s.L) -eq 'D A B C' -and $s.L.Active -eq 1)) ('left: D dragged far past the left end: ' + (Desc $s))
+        Row 'FIRST' 'LEFT' (V ((Order $s.L) -eq 'D A B C' -and $s.L.Active -eq 0)) ('left: D dragged far past the left end: ' + (Desc $s))
         Drag $L $gl (TabCx $gl 3) ([int]((TabCx $gl 3) - 1.4 * $gl.TabW))
         $s = Snap $id
         Row 'FIRST' 'NEAR' (V ((Order $s.L) -eq 'D A C B')) ('left: C (index 3) dragged 1.4 tab widths left (control): ' + (Desc $s))
         Drag $R $gr (TabCx $gr 3) ((TabCx $gr 0) - 2 * $gr.TabW)
         $s = Snap $id
-        Row 'FIRST' 'RIGHT' (V ((Order $s.R) -eq 'S P Q R' -and $s.R.Active -eq 1)) ('right: S dragged far past the left end: ' + (Desc $s))
+        Row 'FIRST' 'RIGHT' (V ((Order $s.R) -eq 'S P Q R' -and $s.R.Active -eq 0)) ('right: S dragged far past the left end: ' + (Desc $s))
         Drag $R $gr (TabCx $gr 1) ((TabCx $gr 3) + 2 * $gr.TabW)
         $s = Snap $id
         Row 'FIRST' 'RIGHTEND' (V ((Order $s.R) -eq 'S Q R P')) ('right: P (index 1) dragged far past the right end (control): ' + (Desc $s))
         Drag $L $gl (TabCx $gl 3) ((TabCx $gl 0) - 2 * $gl.TabW)
         $s = Snap $id
-        Row 'FIRST' 'INACTIVE' (V ((Order $s.L) -eq 'B D A C' -and (Leaf $s.L.Tabs[$s.L.Active]) -eq 'A')) ('left: B (index 3, not active) dragged to the left end: ' + (Desc $s))
+        Row 'FIRST' 'AGAIN' (V ((Order $s.L) -eq 'B D A C' -and $s.L.Active -eq 0)) ('left: B (index 3) dragged to the left end: ' + (Desc $s))
     }
     catch { Row 'FIRST' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { End-Run $id }

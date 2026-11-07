@@ -186,9 +186,27 @@ void SalTabStripWidths(int avgCharWidth, int scalePercent, int iconSize, int* mi
 
 // the slot a dragged tab takes (live reorder): 'draggedLeft' is its drawn left
 // relative to the left of the run, 'from' its index in the run of 'count' equal
-// tabs of 'tabWidth'; a neighbour gives way once the dragged tab's centre passes
-// the neighbour's centre. Result in [0, count - 1]
+// tabs of 'tabWidth'; a neighbour gives way once the dragged tab's centre reaches
+// the neighbour's centre: moving right tab j gives way once 'draggedLeft' is at or
+// above j * tabWidth, moving left once it is at or below j * tabWidth - so both ends
+// of the run are reachable with the left clamped to 0 .. (count - 1) * tabWidth
+// (feature 413: "below" made the first place unreachable). Result in [0, count - 1]
 int SalTabDragSlot(int count, int tabWidth, int draggedLeft, int from);
+
+// the minimum separation (largest channel difference) of the active tab's fill from
+// the strip background and from the face colour (the directory line's band under the
+// tab); the default theme's weakest pair is 31 (feature 413)
+#define SALTAB_ACTIVE_MIN_CONTRAST 24
+
+// the largest of the three channel differences of two colours
+int SalTabColorDistance(DWORD a, DWORD b);
+
+// the active tab's fill: the caption background 'capBk', or - when it is closer than
+// SALTAB_ACTIVE_MIN_CONTRAST to 'stripBk' or to 'face' (the Dark theme's inactive
+// panel: 45,45,45 on 36,36,36 over 45,45,45) - 'capBk' mixed toward the caption text
+// colour 'capFg' by the smallest k / 100 (k <= 50) that separates it from both, else
+// by 1/2; never mixed under High Contrast (feature 413)
+DWORD SalTabActiveFill(DWORD capBk, DWORD capFg, DWORD stripBk, DWORD face, BOOL highContrast);
 
 // where tab 'index' is shown while tab 'from' is dragged to slot 'slot' (the
 // order after the release is SalTabsMove(from, slot)); a cancel is slot == from

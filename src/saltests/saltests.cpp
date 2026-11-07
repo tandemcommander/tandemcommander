@@ -2450,6 +2450,59 @@ static void TestTabStrip405()
     CHECK(SalTabArmDragAfterSwitch(0x8000, 0) == FALSE);
 }
 
+// feature 413: the drag reaches the first place; the active tab's fill stands out
+static void TestTabStrip413()
+{
+    // the caller (CTabWindow::UpdateDrag) clamps the left to 0 .. (count - 1) * width: both ends
+    int from;
+    for (from = 0; from < 4; from++)
+    {
+        CHECK(SalTabDragSlot(4, 100, 0, from) == 0);   // the left end is the first place, for every tab
+        CHECK(SalTabDragSlot(4, 100, 300, from) == 3); // the right end the last
+    }
+    // moving left, tab j gives way once the left is at or below j * width
+    CHECK(SalTabDragSlot(4, 100, 100, 3) == 1);
+    CHECK(SalTabDragSlot(4, 100, 200, 3) == 2);
+    CHECK(SalTabDragSlot(4, 100, 201, 3) == 3);
+    CHECK(SalTabDragSlot(4, 100, 100, 2) == 1); // was 2 before 413
+    CHECK(SalTabDragSlot(4, 100, 101, 2) == 2);
+    CHECK(SalTabDragSlot(4, 100, 1, 1) == 1);
+    CHECK(SalTabDragSlot(4, 100, 0, 1) == 0);
+    // the probe's drags: D (3) 1.4 widths left of its place -> slot 2; past the left end -> 0
+    CHECK(SalTabDragSlot(4, 170, 3 * 170 - 238, 3) == 2);
+    CHECK(SalTabDragSlot(4, 170, 0, 3) == 0);
+    // a scrolled strip: the run of 8 visible tabs of 86 px, the last one dragged to the run's left end
+    CHECK(SalTabDragSlot(8, 86, 0, 7) == 0);
+    CHECK(SalTabDragSlot(8, 86, 85, 7) == 1);
+    CHECK(SalTabDragSlot(8, 86, 86, 7) == 1);
+    CHECK(SalTabDragSlot(8, 86, 87, 7) == 2);
+    CHECK(SalTabDragSlot(8, 86, 6 * 86, 7) == 6);
+    CHECK(SalTabDragSlot(8, 86, 7 * 86, 7) == 7); // not moved
+    CHECK(SalTabDragSlot(1, 86, 0, 0) == 0);      // a single tab
+
+    CHECK(SalTabColorDistance(RGB(10, 200, 30), RGB(20, 100, 35)) == 100);
+    CHECK(SalTabColorDistance(RGB(45, 45, 45), RGB(45, 45, 45)) == 0);
+    // unchanged: the default theme (active / inactive caption on the strip DEDEDE over the face F0F0F0)
+    CHECK(SalTabActiveFill(RGB(153, 180, 209), RGB(0, 0, 0), RGB(222, 222, 222), RGB(240, 240, 240), FALSE) ==
+          RGB(153, 180, 209));
+    CHECK(SalTabActiveFill(RGB(191, 205, 219), RGB(0, 0, 0), RGB(222, 222, 222), RGB(240, 240, 240), FALSE) ==
+          RGB(191, 205, 219)); // 31 / 49
+    // unchanged: the Dark theme's active panel (264F78 on 242424 over 2D2D2D)
+    CHECK(SalTabActiveFill(RGB(38, 79, 120), RGB(255, 255, 255), RGB(36, 36, 36), RGB(45, 45, 45), FALSE) ==
+          RGB(38, 79, 120));
+    // lifted: the Dark theme's inactive panel (2D2D2D on 242424 over 2D2D2D, text AAAAAA): k = 19
+    CHECK(SalTabActiveFill(RGB(45, 45, 45), RGB(170, 170, 170), RGB(36, 36, 36), RGB(45, 45, 45), FALSE) ==
+          RGB(69, 69, 69)); // 45 + 125 * 0.19 = 68.75; k = 18 gives 67.5 -> 68 (23)
+    // close only to the face: lifted toward a dark text (200 -> 186, 24 from 210)
+    CHECK(SalTabActiveFill(RGB(200, 200, 200), RGB(0, 0, 0), RGB(100, 100, 100), RGB(210, 210, 210), FALSE) ==
+          RGB(186, 186, 186));
+    // unreachable: halfway (42.5 -> 42, half to even)
+    CHECK(SalTabActiveFill(RGB(40, 40, 40), RGB(45, 45, 45), RGB(36, 36, 36), RGB(45, 45, 45), FALSE) ==
+          RGB(42, 42, 42));
+    // High Contrast: never mixed
+    CHECK(SalTabActiveFill(RGB(0, 0, 0), RGB(255, 255, 0), RGB(0, 0, 0), RGB(0, 0, 0), TRUE) == RGB(0, 0, 0));
+}
+
 // feature 079: crash report file name (src/common/salbugreport.cpp), contracts/crash-report.md C2
 static void TestBugReport079()
 {
@@ -27540,6 +27593,7 @@ int main(int argc, char** argv)
     TestTabKeys312();
     TestTabStrip404();
     TestTabStrip405();
+    TestTabStrip413();
     TestBugReport079();
     TestCloseApp080();
     TestSevenZipList084();
