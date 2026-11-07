@@ -26,8 +26,10 @@
                           dark variants are drawn, not the adapted standard files (review 1)
       PAGE / FIT         the Appearance page with the new label; "Icon style" fits its group box in English and
                           the 8 enabled languages
-    NOT DRIVEN: menus opened by a real keyboard / mouse (Plugins menu, View With, Alt+F1, Disconnect), hot states,
-    125-200 % (saltests TestPluginIcons417 rasterizes every file at 16 / 20 / 24 / 32 px).
+      CHDRV-<theme>       Alt+F1 (posted CM_LCHANGEDRIVE) and the Disconnect dialog (CM_DISCONNECTNET) with the RegEdit
+                          FS open: their icon columns differ from Classic; Classic equals the build of main (review 2)
+    NOT DRIVEN: the Plugins menu and View With (a real keyboard / mouse), hot states, 125-200 % (saltests
+    TestPluginIcons417 rasterizes every file at 16 / 20 / 24 / 32 px).
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 #>
@@ -438,6 +440,83 @@ function Row-Fit {
     } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 }
 
+# ---- review 2: the Change Drive menu (Alt+F1) and the Disconnect dialog, opened by posted commands (as the
+# probes of 374 / 289 do) - the left panel on the RegEdit FS, so both list an open plug-in file system ----------
+function Wait-Menu([int]$Id, [double]$Seconds = 15) {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $Seconds -and (Test-Alive $Id)) {
+        $m = @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq 'PopupMenuClass' }) | Select-Object -First 1
+        if ($m) { Start-Sleep -Milliseconds 800; return $m }
+        Start-Sleep -Milliseconds 100
+    }
+    return [IntPtr]::Zero
+}
+function MenuKey([IntPtr]$M, [int]$Vk) {
+    [void][Drv098f]::PostMessageW($M, 0x0100, [IntPtr]$Vk, [IntPtr]1)
+    [void][Drv098f]::PostMessageW($M, 0x0101, [IntPtr]$Vk, [IntPtr]0xC0000001)
+    Start-Sleep -Milliseconds 150
+}
+function Grab-ChDrv([string]$ExePath, [int]$Theme, [int]$Set, [string]$Tag) {
+    Set-Look $Theme $Set
+    $id = Start-At $ExePath $RegFS
+    try {
+        [void](Serve $id 8)
+        Post-Cmd (Get-Main $id) 707 # CM_LCHANGEDRIVE (Alt+F1)
+        $m = Wait-Menu $id
+        if ($m -eq [IntPtr]::Zero) { throw 'the Change Drive menu did not open' }
+        $b = [Cap416]::Capture($m, $false)
+        # the icon column only: the free-space figures of the drives change between runs (review 2: 51 px)
+        $b = $b.Clone((New-Object Drawing.Rectangle(0, 0, [Math]::Min(32, $b.Width), $b.Height)), $b.PixelFormat)
+        Save-Png $b (Join-Path $CapDir ($Tag + '_chdrv.png'))
+        MenuKey $m 0x1B
+        Start-Sleep -Milliseconds 500
+        $known = Get-Tops $id
+        Post-Cmd (Get-Main $id) 736 # CM_DISCONNECTNET (F12)
+        $dlg = Wait-NewWin $id $known 15
+        $lb = $null
+        if ($null -ne $dlg -and $dlg -ne [IntPtr]::Zero) {
+            Start-Sleep -Milliseconds 800
+            $list = @([Cap416]::Kids($dlg) | Where-Object { [Cap416]::Cls($_) -eq 'SysListView32' })[0]
+            if ($null -ne $list) {
+                $full = [Cap416]::Capture($dlg, $false)
+                $lb = [Cap416]::Crop($full, $dlg, $list)
+                $lb = $lb.Clone((New-Object Drawing.Rectangle(0, 0, [Math]::Min(40, $lb.Width), $lb.Height)), $lb.PixelFormat)
+                Save-Png $lb (Join-Path $CapDir ($Tag + '_disconnect.png'))
+                $full.Dispose()
+            }
+            Post-Cmd $dlg 2
+            [void](Serve $id 6)
+        }
+        return [pscustomobject]@{ Menu = $b; Disc = $lb }
+    }
+    finally { Stop-Tc $id }
+}
+function Row-Menus([int]$Theme) {
+    $n = 'CHDRV-' + @('LIGHT', 'DARK')[$Theme]
+    if (-not (Want $n)) { return }
+    try {
+        $c = Grab-ChDrv $Exe $Theme 1 ('chdrv_classic_t' + $Theme)
+        $f = Grab-ChDrv $Exe $Theme 0 ('chdrv_fluent_t' + $Theme)
+        $d = [Cap416]::Diff($f.Menu, $c.Menu)
+        Row $n 'MENU-FLUENT' (V ($d -gt 200)) ("Change Drive menu icon column {0}x{1}: {2} px differ from Classic" -f $f.Menu.Width, $f.Menu.Height, $d)
+        if ($f.Disc -and $c.Disc) {
+            $dd = [Cap416]::Diff($f.Disc, $c.Disc)
+            Row $n 'DISCONNECT-FLUENT' (V ($dd -gt 20)) ("Disconnect dialog icon column: {0} px differ from Classic" -f $dd)
+        } else { Row $n 'DISCONNECT-FLUENT' 'FAIL' 'the Disconnect dialog / its list was not captured' }
+        if ($Before) {
+            # Fluent 2 of this build vs Fluent 2 of main: the drive icons (416) are the same, only the plug-in
+            # file systems' icons differ (MENU-FLUENT alone passes on main too: 1171 px of 416's drive icons)
+            $bf = Grab-ChDrv $Before $Theme 0 ('chdrv_before_fluent_t' + $Theme)
+            $dp = [Cap416]::Diff($f.Menu, $bf.Menu)
+            Row $n 'MENU-PLUGIN-ICONS' (V ($dp -gt 200)) ("Change Drive menu icon column, Fluent 2 of this build vs of main: {0} px differ" -f $dp)
+            $b = Grab-ChDrv $Before $Theme 1 ('chdrv_before_classic_t' + $Theme)
+            $db = [Cap416]::Diff($b.Menu, $c.Menu)
+            $ddb = if ($b.Disc -and $c.Disc) { [Cap416]::Diff($b.Disc, $c.Disc) } else { -1 }
+            Row $n 'CLASSIC-EQ' (V ($db -eq 0 -and $ddb -eq 0)) ("Classic, the build of main vs this build: Change Drive menu {0} px, Disconnect list {1} px" -f $db, $ddb)
+        }
+    } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+}
+
 $backup = Join-Path $env:TEMP 'tc417_backup.reg'
 $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
@@ -462,9 +541,11 @@ try {
     Row-Switch 'SWITCHBACK' 1 1 6292 'fluent_t1'
     Row-Ovr
     Row-DarkVerbatim
+    Row-Menus 0
+    Row-Menus 1
     Row-Page
     Row-Fit
-    Row 'MENUS' 'OPEN' 'NOT DRIVEN' 'the Plugins menu, View With, Alt+F1 and Disconnect need a real keyboard or mouse (they draw from CreateIconsList / AddItemsToChangeDrvMenu, captured here through the Plugins bar, the drive bar and the Plugins manager)'
+    Row 'MENUS' 'OPEN' 'NOT DRIVEN' 'the Plugins menu and View With need a real keyboard or mouse (a posted Alt+P does not open the menu bar; they draw from CreateIconsList, captured here through the Plugins bar and the Plugins manager); Alt+F1 and Disconnect: rows CHDRV-*'
     Row 'STATES' 'HOT' 'NOT DRIVEN' 'hot / pressed buttons need a real mouse; the highlight background is measured offline (saltests TestPluginIcons417)'
     Row 'DPI' '125-200' 'NOT DRIVEN' 'the hidden desktop runs at the session system DPI; saltests rasterizes every file at 20 / 24 / 32 px'
 }

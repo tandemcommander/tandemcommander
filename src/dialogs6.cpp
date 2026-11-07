@@ -1183,7 +1183,7 @@ void CDisconnectDialog::EnumConnections()
                             *userPart = 0;
 
                         BOOL destroyIcon = FALSE;
-                        // feature 417: a shipped plug-in's Fluent 2 icon (not for Folders: its icon is its current folder's)
+                        // feature 417: a shipped plug-in's Fluent 2 icon (not for Folders / DemoPlug: their icon is their current folder's / root's)
                         HICON icon = CreatePluginSetIcon(fs->GetDLLName(), IconSizes[ICONSIZE_16], FALSE, TRUE);
                         if (icon != NULL)
                             destroyIcon = TRUE;

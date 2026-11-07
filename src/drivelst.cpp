@@ -3147,7 +3147,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                     if (panel->Is(ptPluginFS))
                     {
                         BOOL destroyIcon;
-                        // feature 417: a shipped plug-in's Fluent 2 icon (not for Folders: its icon is its current folder's)
+                        // feature 417: a shipped plug-in's Fluent 2 icon (not for Folders / DemoPlug: their icon is their current folder's / root's)
                         HICON setIcon = CreatePluginSetIcon(panel->GetPluginFS()->GetDLLName(), iconSize, FALSE, TRUE);
                         HICON icon = setIcon != NULL ? NULL : panel->GetPluginFS()->GetFSIcon(destroyIcon);
                         if (setIcon != NULL)

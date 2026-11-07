@@ -195,3 +195,30 @@ Checks after the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests **286943 checks,
 probe `result_after.txt` **PASS 30, FAIL 0, NOT DRIVEN 3** (new rows TAB-REGEDIT x 2, DARK-VERBATIM), registry
 identical; on the build of main (`result_before.txt`) FLUENT-LIGHT PLUGINS-BAR / DRIVE-BAR-FS / DIRLINE-REGEDIT
 / TAB-REGEDIT / MANAGER FAIL (0 px each), FOLDERS PASS.
+
+### Review 2 (independent agent, refute-first) - MUST 0, SHOULD 1, NOTE 5
+
+Re-measured: saltests 286943 / 0, check_iconset 0, the generator byte-identical, no two light / dark files
+alike (md5), its own copy of the probe PASS 30 / FAIL 0 / NOT DRIVEN 3 (registry identical); every review-1 fix
+verified; call sites, indexes, handles, the second drive bar, Classic, the standing rules re-checked.
+- SHOULD 1 Alt+F1 and the Disconnect dialog can be driven by posted commands (as 374 / 289 do) - the probe called
+  them NOT DRIVEN. **Fixed**: rows CHDRV-LIGHT / -DARK (CM_LCHANGEDRIVE 707, CM_DISCONNECTNET 736, the RegEdit FS
+  open): Change Drive menu icon column 2273 / 2270 px vs Classic; Disconnect icon column 336 / 365 px; Classic
+  vs the build of main 0 / 0 px (the menu is cropped to its icon column - the reviewer's 51 px in Light were the
+  free-space figure of C:). On the build of main MENU-FLUENT passed too (1171 px: 416's drive icons), so a row
+  MENU-PLUGIN-ICONS compares this build's Fluent 2 menu with main's: 1102 / 1103 px. Only the Plugins menu and
+  View With stay NOT DRIVEN (a posted Alt+P does not open the menu bar - reviewer's `pmenu` probe).
+- NOTE 1 three comments named only Folders - **fixed** (Folders / DemoPlug). A Git Bash `sed -i` dropped the CRs
+  of those three files (memory: env quirks) - restored to CRLF byte-wise; `git diff` shows only the comments.
+- NOTE 2 the FOLDERS row passes on main too (it cannot fail without a build lacking the exclusion) - accepted:
+  the exclusion is covered by `saltests` (`SalIconSetPluginFSIconIsIdentity`), the row guards the result.
+- NOTE 3 `OnColorsChanged` rebuilt the Plugins bar directly, without the `!SalamanderBusy` guard of the idle path
+  (e.g. a system colour change while a bar drop-down is open). **Fixed**: it sets `PluginsStatesChanged`, and
+  `OnEnterIdle` rebuilds the bar (and the drive bars) when not busy; SWITCH / SWITCHBACK still 0 px.
+- NOTE 4 in Fluent 2 every shipped plug-in's Plugins-menu submenu gets an icon (FR-004, intended) - recorded.
+- NOTE 5 `check_iconset.py` evals slices of the generator to read its palette (as for `gen_fluent.py`) - a
+  repository dev tool, recorded.
+
+Checks after the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 286943 / 0; probe `result_after.txt` **PASS 38,
+FAIL 0, NOT DRIVEN 3**; on main (`result_before.txt`, `-Only FLUENT-LIGHT,FOLDERS,CHDRV-LIGHT`) FLUENT-LIGHT x 5 and
+CHDRV-LIGHT DISCONNECT-FLUENT FAIL, MENU-FLUENT PASS (416's drives - hence MENU-PLUGIN-ICONS).

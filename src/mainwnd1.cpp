@@ -3310,9 +3310,10 @@ void CMainWindow::OnColorsChanged(BOOL reloadUMIcons)
     {
         PluginsBar->OnColorsChanged();
         // feature 417: its image lists come from CPlugins::CreateIconsList, which draws the active set's
-        // plug-in icons (and the hand-made dark variants) - rebuild them for the new set or theme
-        if (PluginsBar->HWindow != NULL)
-            PluginsBar->CreatePluginButtons();
+        // plug-in icons (and the hand-made dark variants) - rebuilt for the new set or theme on the next idle
+        // through the guarded path of OnEnterIdle (not while Salamander is busy, e.g. with a drop-down open;
+        // review 2)
+        PluginsStatesChanged = TRUE;
     }
 
     // user menu toolbar

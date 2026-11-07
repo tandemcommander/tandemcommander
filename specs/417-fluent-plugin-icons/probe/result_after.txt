@@ -1,7 +1,7 @@
 plugin417_probe (feature 417) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
 Before  : C:\Users\pavel\AppData\Local\Temp\claude\0b35d925824a4523\00d12fca-7152-435b-af18-1d72abc78273\scratchpad\before417\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 21:21; registry key existed True; captures in E:\Projects\tandemcommander\specs\417-fluent-plugin-icons\probe\captures_after
+Date    : 2026-11-07 21:42; registry key existed True; captures in E:\Projects\tandemcommander\specs\417-fluent-plugin-icons\probe\captures_after
 
 CLASSIC-EQ-LIGHT COMPARE PASS        Plugins bar 0, drive bar 0, directory line 0, tab 0 px differ; Plugins-manager icons 0 px; Plugins bar 1701x22 colours 332 top 94,4%; windows: no window
 CLASSIC-EQ-DARK COMPARE PASS        Plugins bar 0, drive bar 0, directory line 0, tab 0 px differ; Plugins-manager icons 0 px; Plugins bar 1712x22 colours 330 top 94,4%; windows: no window
@@ -23,6 +23,14 @@ SWITCHBACK APPLIED-NO-RESTART PASS        Plugins bar 0, drive bar 0, directory 
 SWITCHBACK STORED PASS        stored: 0x0
 OVR        MISSING-EMPTY=TODAY PASS        cells equal to Classic: 3,6 (expected FTP 3 and RegEdit 6); cells equal to Fluent 2: 9 of 11
 DARK-VERBATIM DARK-FILES-USED PASS        without plugins\dark\ vs this build, Dark: Plugins bar 1704, drive bar 950, directory line 195, tab 195 px differ
+CHDRV-LIGHT MENU-FLUENT PASS        Change Drive menu icon column 32x411: 2273 px differ from Classic
+CHDRV-LIGHT DISCONNECT-FLUENT PASS        Disconnect dialog icon column: 336 px differ from Classic
+CHDRV-LIGHT MENU-PLUGIN-ICONS PASS        Change Drive menu icon column, Fluent 2 of this build vs of main: 1102 px differ
+CHDRV-LIGHT CLASSIC-EQ PASS        Classic, the build of main vs this build: Change Drive menu 0 px, Disconnect list 0 px
+CHDRV-DARK MENU-FLUENT PASS        Change Drive menu icon column 32x411: 2270 px differ from Classic
+CHDRV-DARK DISCONNECT-FLUENT PASS        Disconnect dialog icon column: 365 px differ from Classic
+CHDRV-DARK MENU-PLUGIN-ICONS PASS        Change Drive menu icon column, Fluent 2 of this build vs of main: 1103 px differ
+CHDRV-DARK CLASSIC-EQ PASS        Classic, the build of main vs this build: Change Drive menu 0 px, Disconnect list 0 px
 PAGE       LABEL  PASS        group text ' &Icon style ', 443 px wide
 FIT        english PASS        'Icon style' 47/427 px
 FIT        czech  PASS        'Styl ikon' 40/427 px
@@ -33,9 +41,9 @@ FIT        dutch  PASS        'Pictogramstijl' 63/427 px
 FIT        hungarian PASS        'Ikonst¡lus' 45/427 px
 FIT        romanian PASS        'Stilul pictogramelor' 90/427 px
 FIT        spanish PASS        'Estilo de iconos' 73/427 px
-MENUS      OPEN   NOT DRIVEN  the Plugins menu, View With, Alt+F1 and Disconnect need a real keyboard or mouse (they draw from CreateIconsList / AddItemsToChangeDrvMenu, captured here through the Plugins bar, the drive bar and the Plugins manager)
+MENUS      OPEN   NOT DRIVEN  the Plugins menu and View With need a real keyboard or mouse (a posted Alt+P does not open the menu bar; they draw from CreateIconsList, captured here through the Plugins bar and the Plugins manager); Alt+F1 and Disconnect: rows CHDRV-*
 STATES     HOT    NOT DRIVEN  hot / pressed buttons need a real mouse; the highlight background is measured offline (saltests TestPluginIcons417)
 DPI        125-200 NOT DRIVEN  the hidden desktop runs at the session system DPI; saltests rasterizes every file at 20 / 24 / 32 px
 Registry: restored; identical=True; SHA-256 before 9F362554D7676F0B4FDD60C8EA469B0AE37D097FCAC726F0C8C7F4F02505EB0F / after 9F362554D7676F0B4FDD60C8EA469B0AE37D097FCAC726F0C8C7F4F02505EB0F
 
-Rows: PASS 30, FAIL 0, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 38, FAIL 0, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True
