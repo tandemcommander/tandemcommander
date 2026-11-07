@@ -299,6 +299,10 @@ describe.skipIf(process.platform !== "win32")("StateDir.restrictToOwner on Windo
     const files = fill();
     const stuck = join(state.path, "main-worktree", "stuck.json");
     writeFileSync(stuck, "x\n");
+    // A locked file that sorts after the stuck one: only the repeat with /C reaches it.
+    const later = join(state.path, "main-worktree", "zz.json");
+    writeFileSync(later, "text\n");
+    files.push(later);
     for (const file of files) lockEntry(file);
     denyAclChange(stuck);
     expect(state.restrictToOwner()).toEqual({ private: true, contents: "failed" });
@@ -310,6 +314,10 @@ describe.skipIf(process.platform !== "win32")("StateDir.restrictToOwner on Windo
     const files = fill();
     const stuck = join(state.path, "main-worktree", "stuck.json");
     writeFileSync(stuck, "x\n");
+    // A locked file that sorts after the stuck one: only the repeat with /C reaches it.
+    const later = join(state.path, "main-worktree", "zz.json");
+    writeFileSync(later, "text\n");
+    files.push(later);
     for (const file of files) lockEntry(file);
     denyAclChange(stuck);
     // An unlistable folder sends the reset folder by folder.
@@ -319,7 +327,15 @@ describe.skipIf(process.platform !== "win32")("StateDir.restrictToOwner on Windo
     expectUsable(files);
   });
 
-  it("lets the event log keep its ids when the start repairs it before the services read it (main.ts order)", () => {
+  it("starts the app with the permissions step before the services (they read the state folder)", () => {
+    const main = readFileSync(join(import.meta.dirname, "..", "src", "main.ts"), "utf8");
+    const step = main.indexOf("state.restrictToOwner()");
+    expect(step).toBeGreaterThan(0);
+    expect(main.indexOf("state.restrictToOwner()", step + 1)).toBe(-1);
+    expect(step).toBeLessThan(main.indexOf("new Services("));
+  });
+
+  it("lets the event log keep its ids when the folder is repaired before the log is read", () => {
     const ctx = { state, hub: new EventHub() } as unknown as ServerContext;
     const event = { kind: "run-ended", severity: "info", title: "t", text: "x", link: null } as const;
     const before = new Notifications(ctx);

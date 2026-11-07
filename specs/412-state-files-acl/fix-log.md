@@ -165,3 +165,42 @@ exit 0 with `/L` and `/T`.
 - NOTE 3: older reviewers' worktrees (`rev325` ... `rev341r3`) registered - not this feature's.
 
 After the fixes: `npm run check` exit 0, 341 passed / 2 skipped; encoding guard `TOTAL: 0`.
+
+### Review 3 (refute-first agent, 2026-11-07, at 19bd1bf6) - MUST 0, SHOULD 0, NOTE 3
+
+Re-checked: the measurement (same), 17 / 17 feature tests, `npm run check` 341 / 2 skipped; no
+`/C` first never reported a success as a failure - an empty folder, a folder of empty folders,
+hidden / read-only / system files and a hidden read-only folder, non-ASCII names
+(`ř voilà 中文\ž kůň 😀.json`), names with `[x] %PATH% & ^` and `a;b,c=d.txt`, empty folders
+beside a junction (folder by folder; the junction reset as a link, its target untouched). What
+now runs after the permissions step instead of before it: `SessionAuth`, `EventHub`, `new
+Services` (`Notifications` reads `events.jsonl` - the purpose; `AiJobRunner.load()` reads the job
+files, skips an unreadable one; `ChatService.prune()` by mtime only), `createApi`, the static
+manifest (outside the state folder), the server, Vite - none depends on the old permissions.
+
+- NOTE 1 (severity about 2): the permissions step now also runs on a start that then ends early
+  (`EADDRINUSE`, web client not built), so two starts at once can reset the folder while the
+  first instance writes: in the reviewer's race 4 of 3387 atomic writes failed with EPERM on the
+  rename (old file kept, no corruption) and `restrictToOwner` reported `failed` in 4 of 8 calls;
+  `main`'s code under the same race: 8521 of 8573 writes failed (the original defect). Recorded
+  only.
+- NOTE 2: the folder-by-folder failure test did not prove the repeat with `/C` (the stuck file
+  sorted after every locked sibling). Fixed: both failure tests add a locked `zz.json` after
+  `stuck.json`. Negative control: the repeat removed -> both failure tests fail (2 failed / 9
+  passed).
+- NOTE 3: no test caught the order in `main.ts`. Fixed: a test reads `main.ts` and checks that
+  the one `state.restrictToOwner()` comes before `new Services(`; the event-log test renamed (it
+  does not cover `main.ts`). Negative control: the call moved back after the services -> that
+  test fails.
+
+## Findings fixed on the way (continued)
+
+- **Flaky `write-channels.test.ts` cleanup** (severity 3, from feature 371; seen by review 1 and
+  in this run's `npm run check` after review 3: `EPERM` from `rmSync` of the fixture in
+  `afterEach`, 1 failed / 341 passed; the file alone 6 / 6 green - only under the full suite's
+  load). Cause: `loop.kill()` ends only the loop's Python process; a git it started can still
+  hold the fixture when the cleanup (10 retries x 200 ms) removes it. Attempt 1: the afterEach
+  ends the whole tree with `killTree()` (`taskkill /T /F`, the server's own helper) on Windows.
+  After: `npm run check` 3 runs in a row exit 0, 342 passed / 2 skipped each (before: 1 of 2 full
+  runs after review 3 failed, and 1 of the reviewer's runs). Not provable as a single test (the
+  race needs the full suite's load); the three green runs are the evidence.

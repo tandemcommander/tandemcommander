@@ -49,6 +49,7 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Markdown Viewer, real mouse and clipboard, Default and a dark scheme (F9): open a .md file with several code blocks (one with Czech and an emoji, one in a list, a Makefile block with tab-indented lines); hover a block - *Copy* appears in its top-right corner; click - a native notice at the viewer's bottom right shows *Copied* and the first lines, gone after about 2.5 s; paste into Notepad - exactly the block's code, the Makefile's tabs kept, Windows line breaks, no extra last line; Tab to a control + Enter copies too and the focus stays there; the page never scrolls (feature 408)
 - [ ] Markdown Viewer select-all: Ctrl+A, Ctrl+C on a page with code blocks, paste - the *Copy* labels are not in the pasted text (feature 408)
 - [ ] Markdown Viewer copy control on a touch screen or pen, if available: one tap on a block's top-right corner copies and shows the notice (feature 408)
+- [ ] Backlog app state folder repaired on the maintainer's tree: start the app once (`bin/start-backlog-app.sh`), then `Get-Acl` over `.git/tandem-backlog-app` shows no entry with an empty protected DACL (`D:PAI` alone; 375 before), `main-worktree/.git` and `events.jsonl` readable, and a change made in the app during a run lands on `main` (feature 412)
 
 ## Log
 
@@ -62,3 +63,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-07 — edited Steps
 - 2026-11-07 — edited Steps
 - 2026-11-07 — feature 408: 3 checks added
+- 2026-11-07 — feature 412: one check added

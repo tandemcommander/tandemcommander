@@ -23,7 +23,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { BoardView, ChangeResult, ItemRowView, Tray } from "@backlog-app/shared";
 import { EditLock } from "../src/backlog/edit-lock.ts";
 import { LOOP_PY, TOOLS_DIR } from "../src/context.ts";
-import { pythonExecutable } from "../src/proc/spawn.ts";
+import { killTree, pythonExecutable } from "../src/proc/spawn.ts";
 import { fixtureRepo, gitIn, writeRunLock } from "./helpers/fixture-repo.ts";
 import { testApp, type TestApp } from "./helpers/services.ts";
 
@@ -88,8 +88,12 @@ describe("write channels (371)", () => {
 
   afterEach(async () => {
     if (loop && loop.exitCode === null) {
-      loop.kill();
-      await new Promise((resolve) => loop!.once("exit", resolve));
+      // The whole tree: `kill()` ends only the loop, and a git it started could still hold the
+      // fixture when the cleanup removes it (EPERM under the full suite's load; 412).
+      const exited = new Promise((resolve) => loop!.once("exit", resolve));
+      if (process.platform === "win32" && loop.pid !== undefined) await killTree(loop.pid);
+      else loop.kill();
+      await exited;
     }
     loop = null;
     await app.services.stopAndDrain();
