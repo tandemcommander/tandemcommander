@@ -17,7 +17,6 @@ Last triaged: 2026-11-07
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [The mask hints link is clipped in translated dialogs (Compare Directories and 10 more)](items/porovnani-adresaru/desc.md) | bug | 3 | translations | 409 |
 
 ## Next
 

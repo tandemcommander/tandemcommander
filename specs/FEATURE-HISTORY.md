@@ -27,7 +27,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
 | Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
-| Translations (pipeline, policy, pins) | 038, 039, 055; string additions in 084, 101, 106, 123 |
+| Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381, 397, 398 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
@@ -6616,3 +6616,24 @@ a few early ones are out of sequence).
   `copy408_probe.ps1` 19 PASS / 0 FAIL / 1 NOT DRIVEN (hover), feasibility `feas408_probe.ps1` 4 / 0
   on the HEAD build; four refute-first reviews (review 1: 2 MUST, review 2: 1 MUST - all fixed;
   review 3 no MUST, its SHOULDs fixed or a decision item; review 4: no MUST, its SHOULD - a half emoji in the notice - fixed).
+- 409-mask-hints-clipped: the "mask hints" link under a mask field (Compare Directories - GitHub
+  #11 - and ten more core dialogs, plus FTP Configuration > Defaults) was narrower than its
+  translated text in most languages; being right-aligned, it lost letters (Czech showed
+  "nápověda k mas") - now the 12 links are 84 du wide (Archive associations "extended mask hints"
+  120) to the left with their right edge kept, and de / fr / es got shorter, ro corrected wordings
+  (pinned, keyed by the English text - id 102 is shared in salamand). Traps: a `.slt`-only width
+  does not survive - every merge re-derives geometry from the English template and `layout.widen()`
+  grows a too-narrow control to the **right** from an estimate (4.05 du a character), which moved
+  the right-aligned link past its field; the English width is therefore at least that estimate for
+  every enabled language's text. A wider link takes the room `widen()` gives a label on the lines
+  they share: Configuration > Recycle Bin "Hold SHIFT…" got new clips in fr/ro/es until it and the
+  line below moved 2 du down (English: 3 px lower). `layout_check.py` (166) counted controls ~11%
+  wider than on screen (float base unit 6.71 instead of Windows' integer 6, truncation instead of
+  MulDiv) - fixed; its per-language counts at HEAD roughly doubled (the `translations-clipped-labels-*`
+  items were told). A PrintWindow right after a dialog opened sometimes caught children unpainted:
+  force `RedrawWindow` and check the picture's pixels. Limits: ru / uk (off) not refreshed. From
+  backlog item `porovnani-adresaru`. Checker (corrected) hint rows in enabled languages 60 -> 0
+  (+5 FTP rows -> 0), no new CLIP / CROSS row; room check 11 FAIL -> 0; probe
+  `comparedirs_shot.ps1` FIT / INK FAIL on HEAD's Czech module -> PASS in cs / fr / en (reviews:
+  ro / de / es); two refute-first reviews (review 1: no MUST, SHOULDs - the FTP link, the reply - fixed; review 2:
+  no MUST, its SHOULD - item counts after the FTP fix - fixed).
