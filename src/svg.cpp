@@ -99,102 +99,223 @@ static DWORD ThemeDarkAdaptSVGColor(DWORD abgr)
     return (abgr & 0xFF000000) | ((DWORD)b << 16) | ((DWORD)g << 8) | (DWORD)r;
 }
 
+// feature 416: the set in use - an explicit set, or the configured one (-1)
+static int ResolveIconSet(int iconSet)
+{
+    return SalIconSetNormalize(iconSet < 0 ? GetActiveIconSet() : iconSet);
+}
+
+// feature 416: 'svg' (freed here) parsed into an image with at least one shape, else NULL -
+// an override that does not parse or draws nothing must not blank the button (029 contract, rule 3)
+static NSVGimage* ParseUsableSVG(char* svg, float dpi)
+{
+    if (svg == NULL)
+        return NULL;
+    NSVGimage* image = nsvgParse(svg, "px", dpi);
+    free(svg);
+    if (image != NULL && image->shapes == NULL)
+    {
+        TRACE_I("ParseUsableSVG(): the file draws no shape, not used");
+        nsvgDelete(image);
+        image = NULL;
+    }
+    return image;
+}
+
+// feature 416: the image of icon 'svgName' of icon set 'iconSet' (SAL_ICONSET_*): in the Dark theme
+// the set's hand-tuned variant when it is usable (*darkOverride = TRUE, drawn verbatim), else the
+// set's standard file; NULL when neither is usable. Paths are UTF-8, read wide (feature 171); a
+// path that does not fit is refused (SalIconSetBuildPath), never cut.
+static NSVGimage* LoadSetSVGImage(const char* svgName, int iconSet, float dpi, BOOL* darkOverride)
+{
+    *darkOverride = FALSE;
+    char dir[SAL_MODULE_PATH_U8];
+    if (!SalGetModuleDirU8(NULL, dir, 3 * MAX_PATH))
+        return NULL;
+    char svgFile[SAL_MODULE_PATH_U8];
+    BOOL dark = IsDarkThemeActive();
+    NSVGimage* darkImage = NULL;
+    // feature 029: while the Dark theme is active a hand-tuned variant in <set>\dark\ takes
+    // precedence over the automatic adaptation (contract: specs/416-fluent-icon-set/contracts/icon-set-files.md)
+    if (dark && SalIconSetBuildPath(svgFile, _countof(svgFile), dir, iconSet, true, svgName))
+        darkImage = ParseUsableSVG(ReadSVGFile(svgFile), dpi);
+    NSVGimage* standardImage = NULL;
+    if (darkImage == NULL && SalIconSetBuildPath(svgFile, _countof(svgFile), dir, iconSet, false, svgName))
+        standardImage = ParseUsableSVG(ReadSVGFile(svgFile), dpi);
+    switch (SalIconSetChooseSource(dark != FALSE, darkImage != NULL, standardImage != NULL))
+    {
+    case SAL_ICONSRC_DARK:
+        *darkOverride = TRUE;
+        return darkImage;
+    case SAL_ICONSRC_STANDARD:
+        return standardImage;
+    }
+    return NULL;
+}
+
+// feature 029: the standard glyphs are drawn for light surfaces - lighten their dark/neutral
+// strokes and fills so they stay legible on the dark toolbar; colored accents keep their hue
+static void ThemeDarkAdaptSVGImage(NSVGimage* image)
+{
+    NSVGshape* shape = image->shapes;
+    while (shape != NULL)
+    {
+        if (shape->fill.type == NSVG_PAINT_COLOR)
+            shape->fill.color = ThemeDarkAdaptSVGColor(shape->fill.color);
+        if (shape->stroke.type == NSVG_PAINT_COLOR)
+            shape->stroke.color = ThemeDarkAdaptSVGColor(shape->stroke.color);
+        shape = shape->next;
+    }
+}
+
 // Renders icons for which we have an SVG representation
-void RenderSVGImage(NSVGrasterizer* rast, HDC hDC, int x, int y, const char* svgName, int iconSize, COLORREF bkColor, BOOL enabled)
+BOOL RenderSVGImage(NSVGrasterizer* rast, HDC hDC, int x, int y, const char* svgName, int iconSize, COLORREF bkColor,
+                    BOOL enabled, int iconSet)
 {
     // feature 171: the program's folder as UTF-8 and the file read wide - under an install folder
     // outside the code page GetModuleFileName A gave '?' and every icon fell back to the old bitmaps
-    char svgFile[SAL_MODULE_PATH_U8];
-    char* s = SalGetModuleDirU8(NULL, svgFile, 3 * MAX_PATH) ? svgFile + strlen(svgFile) - 1 : NULL;
-    char* svg = NULL;
+    float sysDPIScale = (float)GetScaleForSystemDPI();
     BOOL darkOverride = FALSE; // hand-tuned dark variant loaded (used verbatim)
-    if (s != NULL)
+    // feature 416: parsed before the cell is touched - without a usable image the cell keeps what
+    // lies below it (the Classic raster glyph, or the caller's fallback)
+    NSVGimage* image = LoadSetSVGImage(svgName, ResolveIconSet(iconSet), sysDPIScale, &darkOverride);
+    if (image == NULL)
+        return FALSE;
+
+    HDC hMemDC = HANDLES(CreateCompatibleDC(NULL));
+    BITMAPINFOHEADER bmhdr;
+    memset(&bmhdr, 0, sizeof(bmhdr));
+    bmhdr.biSize = sizeof(bmhdr);
+    bmhdr.biWidth = iconSize;
+    bmhdr.biHeight = -iconSize;
+    if (bmhdr.biHeight == 0)
+        bmhdr.biHeight = -1;
+    bmhdr.biPlanes = 1;
+    bmhdr.biBitCount = 32;
+    bmhdr.biCompression = BI_RGB;
+    void* lpMemBits = NULL;
+    HBITMAP hMemBmp = HANDLES(CreateDIBSection(hMemDC, (CONST BITMAPINFO*)&bmhdr, DIB_RGB_COLORS, &lpMemBits, NULL, 0));
+    SelectObject(hMemDC, hMemBmp);
+
+    RECT r;
+    r.left = x;
+    r.top = y;
+    r.right = x + iconSize;
+    r.bottom = y + iconSize;
+    SetBkColor(hDC, bkColor);
+    ExtTextOut(hDC, 0, 0, ETO_OPAQUE, &r, "", 0, NULL);
+
+    if (!enabled)
     {
-        int room = (int)(_countof(svgFile) - (s + 1 - svgFile));
-        // feature 029: while the Dark theme is active a hand-tuned variant in
-        // toolbars\dark\ takes precedence over the automatic adaptation
-        // (contract: specs/029-dark-toolbar-icons/contracts/dark-icon-override.md)
-        if (IsDarkThemeActive() && _snprintf_s(s + 1, room, _TRUNCATE, "toolbars\\dark\\%s.svg", svgName) >= 0)
+        DWORD disabledColor = GetSVGSysColor(COLOR_BTNSHADOW); // JRYFIXME - initial draft: where will we take the disabled color from?
+        NSVGshape* shape = image->shapes;
+        while (shape != NULL)
         {
-            svg = ReadSVGFile(svgFile);
-            darkOverride = (svg != NULL);
+            if ((shape->fill.color & 0x00FFFFFF) != 0x00FFFFFF)
+                shape->fill.color = disabledColor;
+            shape = shape->next;
         }
-        if (svg == NULL && _snprintf_s(s + 1, room, _TRUNCATE, "toolbars\\%s.svg", svgName) >= 0)
-            svg = ReadSVGFile(svgFile);
     }
-    if (svg != NULL)
+
+    // feature 029: hand-tuned dark variants are rasterized verbatim
+    if (enabled && !darkOverride && IsDarkThemeActive())
+        ThemeDarkAdaptSVGImage(image);
+
+    float scale = sysDPIScale / 100;
+    nsvgRasterize(rast, image, 0, 0, scale, (BYTE*)lpMemBits, iconSize, iconSize, iconSize * 4);
+    nsvgDelete(image);
+
+    BLENDFUNCTION bf;
+    bf.BlendOp = AC_SRC_OVER;
+    bf.BlendFlags = 0;
+    bf.SourceConstantAlpha = 0xff; // want to use per-pixel alpha values
+    bf.AlphaFormat = AC_SRC_ALPHA;
+    AlphaBlend(hDC, x, y, iconSize, iconSize, hMemDC, 0, 0, iconSize, iconSize, bf);
+
+    HANDLES(DeleteObject(hMemBmp));
+    HANDLES(DeleteDC(hMemDC));
+    return TRUE;
+}
+
+HICON CreateSetSVGIcon(const char* svgName, int iconSet, int size)
+{
+    if (svgName == NULL || size <= 0 || size > 256)
+        return NULL;
+    BOOL darkOverride = FALSE;
+    NSVGimage* image = LoadSetSVGImage(svgName, ResolveIconSet(iconSet), (float)GetScaleForSystemDPI(), &darkOverride);
+    if (image == NULL)
+        return NULL;
+    if (image->width <= 0)
     {
-        HDC hMemDC = HANDLES(CreateCompatibleDC(NULL));
-        BITMAPINFOHEADER bmhdr;
-        memset(&bmhdr, 0, sizeof(bmhdr));
-        bmhdr.biSize = sizeof(bmhdr);
-        bmhdr.biWidth = iconSize;
-        bmhdr.biHeight = -iconSize;
-        if (bmhdr.biHeight == 0)
-            bmhdr.biHeight = -1;
-        bmhdr.biPlanes = 1;
-        bmhdr.biBitCount = 32;
-        bmhdr.biCompression = BI_RGB;
-        void* lpMemBits = NULL;
-        HBITMAP hMemBmp = HANDLES(CreateDIBSection(hMemDC, (CONST BITMAPINFO*)&bmhdr, DIB_RGB_COLORS, &lpMemBits, NULL, 0));
-        SelectObject(hMemDC, hMemBmp);
-
-        RECT r;
-        r.left = x;
-        r.top = y;
-        r.right = x + iconSize;
-        r.bottom = y + iconSize;
-        SetBkColor(hDC, bkColor);
-        ExtTextOut(hDC, 0, 0, ETO_OPAQUE, &r, "", 0, NULL);
-
-        float sysDPIScale = (float)GetScaleForSystemDPI();
-        NSVGimage* image = nsvgParse(svg, "px", sysDPIScale);
-
-        if (!enabled)
-        {
-            DWORD disabledColor = GetSVGSysColor(COLOR_BTNSHADOW); // JRYFIXME - initial draft: where will we take the disabled color from?
-            NSVGshape* shape = image->shapes;
-            while (shape != NULL)
-            {
-                if ((shape->fill.color & 0x00FFFFFF) != 0x00FFFFFF)
-                    shape->fill.color = disabledColor;
-                shape = shape->next;
-            }
-        }
-
-        // feature 029: the standard glyphs are drawn for light surfaces -
-        // lighten their dark/neutral strokes and fills so they stay legible
-        // on the dark toolbar; colored accents keep their hue; hand-tuned
-        // dark variants are rasterized verbatim
-        if (enabled && !darkOverride && IsDarkThemeActive())
-        {
-            NSVGshape* shape = image->shapes;
-            while (shape != NULL)
-            {
-                if (shape->fill.type == NSVG_PAINT_COLOR)
-                    shape->fill.color = ThemeDarkAdaptSVGColor(shape->fill.color);
-                if (shape->stroke.type == NSVG_PAINT_COLOR)
-                    shape->stroke.color = ThemeDarkAdaptSVGColor(shape->stroke.color);
-                shape = shape->next;
-            }
-        }
-
-        float scale = sysDPIScale / 100;
-        nsvgRasterize(rast, image, 0, 0, scale, (BYTE*)lpMemBits, iconSize, iconSize, iconSize * 4);
         nsvgDelete(image);
-
-        BLENDFUNCTION bf;
-        bf.BlendOp = AC_SRC_OVER;
-        bf.BlendFlags = 0;
-        bf.SourceConstantAlpha = 0xff; // want to use per-pixel alpha values
-        bf.AlphaFormat = AC_SRC_ALPHA;
-        AlphaBlend(hDC, x, y, iconSize, iconSize, hMemDC, 0, 0, iconSize, iconSize, bf);
-
-        HANDLES(DeleteObject(hMemBmp));
-        HANDLES(DeleteDC(hMemDC));
-
-        free(svg);
+        return NULL;
     }
+    if (!darkOverride && IsDarkThemeActive())
+        ThemeDarkAdaptSVGImage(image);
+
+    BITMAPINFOHEADER bmhdr;
+    memset(&bmhdr, 0, sizeof(bmhdr));
+    bmhdr.biSize = sizeof(bmhdr);
+    bmhdr.biWidth = size;
+    bmhdr.biHeight = -size; // top-down
+    bmhdr.biPlanes = 1;
+    bmhdr.biBitCount = 32;
+    bmhdr.biCompression = BI_RGB;
+    void* bits = NULL;
+    HBITMAP hColor = HANDLES(CreateDIBSection(NULL, (CONST BITMAPINFO*)&bmhdr, DIB_RGB_COLORS, &bits, NULL, 0));
+    if (hColor == NULL || bits == NULL)
+    {
+        if (hColor != NULL)
+            HANDLES(DeleteObject(hColor));
+        nsvgDelete(image);
+        return NULL;
+    }
+    memset(bits, 0, (size_t)size * size * 4);
+    NSVGrasterizer* rast = nsvgCreateRasterizer();
+    if (rast != NULL)
+    {
+        // the set's icons are drawn on a 16 x 16 canvas: scale to the requested size
+        nsvgRasterize(rast, image, 0, 0, (float)size / image->width, (BYTE*)bits, size, size, size * 4);
+        nsvgDeleteRasterizer(rast);
+    }
+    nsvgDelete(image);
+
+    // the rasterizer gives premultiplied alpha (what AlphaBlend wants); an icon wants straight
+    // alpha, and a 1-bit mask (1 = transparent) for image lists and DCs that ignore the alpha
+    int maskStride = ((size + 15) / 16) * 2;
+    BYTE* maskBits = (BYTE*)calloc((size_t)maskStride * size, 1);
+    BYTE* p = (BYTE*)bits;
+    for (int yy = 0; yy < size; yy++)
+    {
+        for (int xx = 0; xx < size; xx++, p += 4)
+        {
+            int a = p[3];
+            if (a > 0 && a < 255)
+            {
+                for (int c = 0; c < 3; c++)
+                    p[c] = (BYTE)min(255, (p[c] * 255 + a / 2) / a);
+            }
+            if (a < 128 && maskBits != NULL)
+                maskBits[yy * maskStride + xx / 8] |= (BYTE)(0x80 >> (xx % 8));
+        }
+    }
+    HBITMAP hMask = maskBits != NULL ? HANDLES(CreateBitmap(size, size, 1, 1, maskBits)) : NULL;
+    if (maskBits != NULL)
+        free(maskBits);
+    HICON hIcon = NULL;
+    if (hMask != NULL)
+    {
+        ICONINFO ii;
+        ii.fIcon = TRUE;
+        ii.xHotspot = 0;
+        ii.yHotspot = 0;
+        ii.hbmMask = hMask;
+        ii.hbmColor = hColor;
+        hIcon = HANDLES(CreateIconIndirect(&ii));
+        HANDLES(DeleteObject(hMask));
+    }
+    HANDLES(DeleteObject(hColor));
+    return hIcon;
 }
 
 //*****************************************************************************
@@ -368,7 +489,7 @@ void CSVGSprite::CreateDIB(int width, int height, HBITMAP* hMemBmp, void** lpMem
     HANDLES(DeleteDC(hMemDC));
 }
 
-void CSVGSprite::ColorizeSVG(NSVGimage* image, DWORD state)
+void CSVGSprite::ColorizeSVG(NSVGimage* image, DWORD state, int disabledSysIndex)
 {
     if (state == SVGSTATE_ORIGINAL)
         return;
@@ -381,7 +502,7 @@ void CSVGSprite::ColorizeSVG(NSVGimage* image, DWORD state)
         break;
 
     case SVGSTATE_DISABLED:
-        sysIndex = COLOR_BTNSHADOW;
+        sysIndex = disabledSysIndex; // COLOR_BTNSHADOW, feature 416: COLOR_GRAYTEXT for the Fluent 2 chevron
         break;
 
     default:
@@ -393,11 +514,14 @@ void CSVGSprite::ColorizeSVG(NSVGimage* image, DWORD state)
     while (shape != NULL)
     {
         shape->fill.color = color;
+        // feature 416: the Fluent 2 chevron is a stroke (the Classic sprites have no stroke)
+        if (shape->stroke.type == NSVG_PAINT_COLOR)
+            shape->stroke.color = color;
         shape = shape->next;
     }
 }
 
-BOOL CSVGSprite::Load(int resID, int width, int height, DWORD states)
+BOOL CSVGSprite::Load(int resID, int width, int height, DWORD states, int disabledSysIndex)
 {
     if (states == 0 || states >= (1 << SVGSTATE_COUNT))
     {
@@ -427,7 +551,7 @@ BOOL CSVGSprite::Load(int resID, int width, int height, DWORD states)
             {
                 void* lpMemBits;
                 CreateDIB(Width, Height, &HBitmaps[i], &lpMemBits);
-                ColorizeSVG(image, state);
+                ColorizeSVG(image, state, disabledSysIndex);
                 nsvgRasterize(rast, image, 0, 0, scale, (BYTE*)lpMemBits, Width, Height, Width * 4);
             }
         }

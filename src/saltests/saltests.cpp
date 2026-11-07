@@ -126,6 +126,11 @@
 #include "salisoxboxentry.h"   // feature 402
 #include "salfindsort.h"       // feature 407
 #include "salsortarrow.h"      // feature 407
+#include "saliconset.h"        // feature 416
+#define NANOSVG_IMPLEMENTATION    // feature 416: the program's rasterizer, offline
+#include "dep/nanosvg/nanosvg.h"
+#define NANOSVGRAST_IMPLEMENTATION
+#include "dep/nanosvg/nanosvgrast.h"
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -27588,6 +27593,390 @@ static void TestIsoXboxEntry402()
     CHECK(XboxWalk402(d, true, damaged, outside).empty() && !damaged);
 }
 
+//
+// ****************************************************************************
+// feature 416: the toolbar icon sets - the pure rules of saliconset.h, and every file of the
+// Fluent 2 set rasterized offline with the program's own (vendored, modified) nanosvg at the icon
+// sizes of 100 / 125 / 150 / 200 % DPI: it parses into shapes, covers enough pixels and stays
+// visible on the toolbar background, the checked / hot background, the menu highlight, the panel
+// background and in the disabled (grey) image list - in its own theme (light files on the light
+// colours, dark files on the dark palette).
+//
+
+static std::string IconSet416Folder()
+{
+    // __FILE__ is ...\src\saltests\saltests.cpp (MSBuild passes the full path)
+    std::string f = __FILE__;
+    size_t p = f.find_last_of("\\/");
+    if (p == std::string::npos)
+        return std::string();
+    f = f.substr(0, p);
+    p = f.find_last_of("\\/");
+    if (p == std::string::npos)
+        return std::string();
+    return f.substr(0, p + 1) + "res\\iconsets\\fluent\\";
+}
+
+static NSVGimage* IconSet416ParseText(const std::string& text)
+{
+    std::vector<char> buf(text.begin(), text.end());
+    buf.push_back(0);
+    return nsvgParse(buf.data(), "px", 96.0f);
+}
+
+static bool IconSet416ReadFile(const std::string& path, std::string& text)
+{
+    FILE* f = NULL;
+    if (fopen_s(&f, path.c_str(), "rb") != 0 || f == NULL)
+        return false;
+    char chunk[4096];
+    size_t n;
+    text.clear();
+    while ((n = fread(chunk, 1, sizeof(chunk), f)) > 0)
+        text.append(chunk, n);
+    fclose(f);
+    return true;
+}
+
+struct CIconSet416Stats
+{
+    int Covered;            // pixels with alpha >= 128
+    double Silhouette[8];   // the contrast to background i that the strongest 5 % of the cell reach
+    double Disabled;        // the same for the grey image list over the toolbar background
+};
+
+// the contrast reached by the 'rank'-th strongest pixel (1 = the strongest)
+static double IconSet416Rank(std::vector<double>& c, int rank)
+{
+    if ((int)c.size() < rank)
+        return 1.0;
+    std::nth_element(c.begin(), c.begin() + (rank - 1), c.end(), std::greater<double>());
+    return c[rank - 1];
+}
+
+// rasterizes 'image' at size x size (16 px canvas) and measures per background; 'redFirst' = the
+// rasterizer writes the SVG's red into byte 0 (calibrated with a red square)
+static void IconSet416Measure(NSVGrasterizer* rast, NSVGimage* image, int size, bool redFirst,
+                              const COLORREF* bks, int bkCount, COLORREF toolbarBk, CIconSet416Stats& st)
+{
+    std::vector<unsigned char> px((size_t)size * size * 4, 0);
+    nsvgRasterize(rast, image, 0, 0, (float)size / image->width, px.data(), size, size, size * 4);
+    memset(&st, 0, sizeof(st));
+    std::vector<double> contrast[8], disabled;
+    for (int i = 0; i < size * size; i++)
+    {
+        const unsigned char* p = &px[(size_t)i * 4];
+        int a = p[3];
+        if (a == 0)
+            continue;
+        int r = redFirst ? p[0] : p[2], g = p[1], b = redFirst ? p[2] : p[0]; // premultiplied
+        if (a >= 128)
+            st.Covered++;
+        for (int k = 0; k < bkCount; k++)
+        {
+            int cr = min(255, r + GetRValue(bks[k]) * (255 - a) / 255);
+            int cg = min(255, g + GetGValue(bks[k]) * (255 - a) / 255);
+            int cb = min(255, b + GetBValue(bks[k]) * (255 - a) / 255);
+            contrast[k].push_back(ContrastRatio(RGB(cr, cg, cb), bks[k]));
+        }
+        // the grey image list (CreateGrayscaleAndMaskBitmaps_tmp): the cell is filled with the toolbar
+        // background, a pixel equal to it is masked, the others are bk.R / 2 + brightness / 2
+        int tr = min(255, r + GetRValue(toolbarBk) * (255 - a) / 255);
+        int tg = min(255, g + GetGValue(toolbarBk) * (255 - a) / 255);
+        int tb = min(255, b + GetBValue(toolbarBk) * (255 - a) / 255);
+        if (RGB(tr, tg, tb) != toolbarBk)
+        {
+            int brightness = min(255, (55 * tr + 183 * tg + 19 * tb) / 255);
+            int gray = (int)(GetRValue(toolbarBk) * 0.5f + brightness * 0.5f);
+            disabled.push_back(ContrastRatio(RGB(gray, gray, gray), toolbarBk));
+        }
+    }
+    int rank = max(1, size * size * 5 / 100);
+    for (int k = 0; k < bkCount; k++)
+        st.Silhouette[k] = IconSet416Rank(contrast[k], rank);
+    st.Disabled = IconSet416Rank(disabled, rank);
+}
+
+static void TestIconSet416()
+{
+    // --- the set from the stored value: missing, wrong type or unknown = Fluent 2
+    CHECK(SalIconSetFromStored(false, 1) == SAL_ICONSET_FLUENT);
+    CHECK(SalIconSetFromStored(true, 0) == SAL_ICONSET_FLUENT);
+    CHECK(SalIconSetFromStored(true, 1) == SAL_ICONSET_CLASSIC);
+    CHECK(SalIconSetFromStored(true, 2) == SAL_ICONSET_FLUENT);
+    CHECK(SalIconSetFromStored(true, 0xFFFFFFFF) == SAL_ICONSET_FLUENT);
+    CHECK(SalIconSetNormalize(-1) == SAL_ICONSET_FLUENT);
+    CHECK(SalIconSetNormalize(1) == SAL_ICONSET_CLASSIC);
+    CHECK(SalIconSetNormalize(7) == SAL_ICONSET_FLUENT);
+
+    // --- folders: Classic keeps the paths of feature 029
+    CHECK(strcmp(SalIconSetFolder(SAL_ICONSET_CLASSIC, false), "toolbars\\") == 0);
+    CHECK(strcmp(SalIconSetFolder(SAL_ICONSET_CLASSIC, true), "toolbars\\dark\\") == 0);
+    CHECK(strcmp(SalIconSetFolder(SAL_ICONSET_FLUENT, false), "iconsets\\fluent\\") == 0);
+    CHECK(strcmp(SalIconSetFolder(SAL_ICONSET_FLUENT, true), "iconsets\\fluent\\dark\\") == 0);
+    CHECK(strcmp(SalIconSetFolder(5, false), "iconsets\\fluent\\") == 0);
+
+    // --- paths: built whole or refused, never cut
+    char buf[64];
+    CHECK(SalIconSetBuildPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, "Copy"));
+    CHECK(strcmp(buf, "C:\\TC\\iconsets\\fluent\\Copy.svg") == 0);
+    CHECK(SalIconSetBuildPath(buf, sizeof(buf), "C:\\TC", SAL_ICONSET_CLASSIC, true, "Back"));
+    CHECK(strcmp(buf, "C:\\TC\\toolbars\\dark\\Back.svg") == 0);
+    CHECK(SalIconSetBuildPath(buf, sizeof(buf), "C:\\Tand\xC3\xA9m\\", SAL_ICONSET_FLUENT, true, "UpDir")); // UTF-8 kept as bytes
+    CHECK(strcmp(buf, "C:\\Tand\xC3\xA9m\\iconsets\\fluent\\dark\\UpDir.svg") == 0);
+    const char* exact = "C:\\TC\\toolbars\\Back.svg"; // 23 bytes + terminator
+    CHECK(SalIconSetBuildPath(buf, strlen(exact) + 1, "C:\\TC\\", SAL_ICONSET_CLASSIC, false, "Back"));
+    CHECK(strcmp(buf, exact) == 0);
+    strcpy_s(buf, "x");
+    CHECK(!SalIconSetBuildPath(buf, strlen(exact), "C:\\TC\\", SAL_ICONSET_CLASSIC, false, "Back")); // one byte short
+    CHECK(buf[0] == 0);
+    CHECK(!SalIconSetBuildPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, ""));
+    CHECK(!SalIconSetBuildPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, NULL));
+    CHECK(!SalIconSetBuildPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, "..\\Copy"));
+    CHECK(!SalIconSetBuildPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, "a/b"));
+    CHECK(!SalIconSetBuildPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, "c:x"));
+    CHECK(!SalIconSetBuildPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, ".."));
+    CHECK(!SalIconSetBuildPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, "*"));
+    CHECK(!SalIconSetBuildPath(buf, sizeof(buf), "", SAL_ICONSET_FLUENT, false, "Copy"));
+    CHECK(!SalIconSetBuildPath(NULL, 10, "C:\\", SAL_ICONSET_FLUENT, false, "Copy"));
+
+    // --- the Fluent 2 names of the toolbar buttons
+    CHECK(strcmp(SalIconSetFluentButtonName(74, NULL), "SharedDirectories") == 0); // TBBE_SHARES: the 0.2.0 row mix-up fixed
+    CHECK(SalIconSetFluentButtonName(73, "SharedDirectories") == NULL);           // TBBE_ZOOM_PANEL: no image
+    CHECK(strcmp(SalIconSetFluentButtonName(36, NULL), "ChangeDrive") == 0);
+    CHECK(strcmp(SalIconSetFluentButtonName(51, NULL), "ChangeDrive") == 0);
+    CHECK(strcmp(SalIconSetFluentButtonName(97, NULL), "OpenDocuments") == 0);
+    CHECK(strcmp(SalIconSetFluentButtonName(48, NULL), "OpenNetwork") == 0);
+    CHECK(strcmp(SalIconSetFluentButtonName(21, "Copy"), "Copy") == 0);
+    CHECK(SalIconSetFluentButtonName(57, NULL) == NULL);
+    const char* sysFolders[9] = {"OpenActiveFolder", "OpenDesktop", "OpenComputer", "OpenControlPanel", "OpenPrinters",
+                                 "OpenNetwork", "OpenRecycleBin", "OpenFonts", "OpenDocuments"};
+    int sysTbbe[9] = {43, 44, 45, 46, 47, 48, 49, 50, 97};
+    for (int i = 0; i < 9; i++)
+        CHECK(strcmp(SalIconSetFluentButtonName(sysTbbe[i], NULL), sysFolders[i]) == 0);
+
+    // --- drives
+    CHECK(strcmp(SalIconSetFluentDriveName(2, true, false), "DriveRemovable") == 0);
+    CHECK(strcmp(SalIconSetFluentDriveName(3, true, false), "DriveFixed") == 0);
+    CHECK(strcmp(SalIconSetFluentDriveName(3, true, true), "DriveSystem") == 0);
+    CHECK(strcmp(SalIconSetFluentDriveName(4, true, false), "DriveNetwork") == 0);
+    CHECK(strcmp(SalIconSetFluentDriveName(4, false, false), "DriveNetworkDisconnected") == 0);
+    CHECK(strcmp(SalIconSetFluentDriveName(5, true, false), "DriveCD") == 0);
+    CHECK(strcmp(SalIconSetFluentDriveName(6, true, false), "DriveRam") == 0);
+    CHECK(strcmp(SalIconSetFluentDriveName(0, true, false), "DriveFixed") == 0);
+    CHECK(strcmp(SalIconSetFluentDriveName(1, true, true), "DriveFixed") == 0);
+    CHECK(strcmp(SalIconSetFluentDriveName(7, false, false), "DriveFixed") == 0);
+
+    // --- which file draws (the 029 contract made true)
+    CHECK(SalIconSetChooseSource(true, true, true) == SAL_ICONSRC_DARK);
+    CHECK(SalIconSetChooseSource(true, true, false) == SAL_ICONSRC_DARK);
+    CHECK(SalIconSetChooseSource(true, false, true) == SAL_ICONSRC_STANDARD); // an unusable override falls back
+    CHECK(SalIconSetChooseSource(true, false, false) == SAL_ICONSRC_NONE);    // nothing usable: the cell is kept
+    CHECK(SalIconSetChooseSource(false, true, true) == SAL_ICONSRC_STANDARD); // Default theme never uses dark
+    CHECK(SalIconSetChooseSource(false, true, false) == SAL_ICONSRC_NONE);
+    CHECK(SalIconSetChooseSource(false, false, true) == SAL_ICONSRC_STANDARD);
+    CHECK(SalIconSetChooseSource(false, false, false) == SAL_ICONSRC_NONE);
+    // an empty override and a non-SVG text parse into no shape: "usable" is false for them
+    NSVGimage* empty = IconSet416ParseText("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"></svg>");
+    CHECK(empty == NULL || empty->shapes == NULL);
+    if (empty != NULL)
+        nsvgDelete(empty);
+    NSVGimage* garbage = IconSet416ParseText("this is not an svg file");
+    CHECK(garbage == NULL || garbage->shapes == NULL);
+    if (garbage != NULL)
+        nsvgDelete(garbage);
+
+    // --- the preview strips
+    int preview[SAL_ICONSET_PREVIEW_COUNT] = {14, 11, 2, 3, 4, 16, 21, 23, 37, 41};
+    for (int i = 0; i < SAL_ICONSET_PREVIEW_COUNT; i++)
+        CHECK(SalIconSetPreviewButton(i) == preview[i]);
+    CHECK(SalIconSetPreviewButton(-1) == -1);
+    CHECK(SalIconSetPreviewButton(SAL_ICONSET_PREVIEW_COUNT) == -1);
+
+    // --- every file of the set, rasterized as the program does
+    std::string folder = IconSet416Folder();
+    NSVGrasterizer* rast = nsvgCreateRasterizer();
+    CHECK(rast != NULL);
+    if (rast == NULL)
+        return;
+    bool redFirst = true;
+    {
+        NSVGimage* red = IconSet416ParseText("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><rect width=\"16\" height=\"16\" fill=\"#FF0000\"/></svg>");
+        CHECK(red != NULL && red->shapes != NULL);
+        if (red != NULL)
+        {
+            unsigned char px[16 * 16 * 4] = {0};
+            nsvgRasterize(rast, red, 0, 0, 1.0f, px, 16, 16, 64);
+            redFirst = px[0] == 255;
+            CHECK((px[0] == 255 && px[2] == 0) || (px[0] == 0 && px[2] == 255));
+            nsvgDelete(red);
+        }
+    }
+    // the arc fix of nanosvg.h (feature 416): a circle written as two half arcs (as Fluent writes it)
+    // covers pi r^2 - before the fix it cancelled out and drew nothing (DriveCD, Properties, Help);
+    // a rounded rectangle of quarter arcs (the tab strip's shape) covers what <rect rx> covers
+    {
+        auto coverage = [&](const char* svgText) -> int {
+            NSVGimage* im = IconSet416ParseText(svgText);
+            if (im == NULL)
+                return -1;
+            std::vector<unsigned char> px(32 * 32 * 4, 0);
+            nsvgRasterize(rast, im, 0, 0, 2.0f, px.data(), 32, 32, 32 * 4);
+            nsvgDelete(im);
+            int sum = 0;
+            for (int i = 0; i < 32 * 32; i++)
+                sum += px[(size_t)i * 4 + 3];
+            return sum / 255; // covered pixels at 2x (32 x 32)
+        };
+        int halves = coverage("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><path d=\"M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1\"/></svg>");
+        int circle = coverage("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><circle cx=\"8\" cy=\"8\" r=\"7\"/></svg>");
+        CHECK(circle > 580 && circle < 650); // pi * 14^2 = 616
+        CHECK(halves > 0 && abs(halves - circle) <= circle / 50);
+        int halvesCcw = coverage("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><path d=\"M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1\"/></svg>");
+        CHECK(abs(halvesCcw - circle) <= circle / 50);
+        int quarters = coverage("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><path d=\"M5 2L11 2A3 3 0 0 1 14 5L14 11A3 3 0 0 1 11 14L5 14A3 3 0 0 1 2 11L2 5A3 3 0 0 1 5 2Z\"/></svg>");
+        int rounded = coverage("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><rect x=\"2\" y=\"2\" width=\"12\" height=\"12\" rx=\"3\"/></svg>");
+        CHECK(rounded > 500 && abs(quarters - rounded) <= rounded / 50);
+        int feet = coverage("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><path d=\"M0 14A2 2 0 0 0 2 12L2 4A2 2 0 0 1 4 2L12 2A2 2 0 0 1 14 4L14 12A2 2 0 0 0 16 14Z\"/></svg>");
+        CHECK(feet > 0);
+        printf("TestIconSet416: arcs - circle %d, two halves %d / %d, rounded rect %d, of quarter arcs %d, tab with feet %d\n",
+               circle, halves, halvesCcw, rounded, quarters, feet);
+    }
+
+    // backgrounds: toolbar face, checked / hot face, menu highlight, panel; the light ones as Windows 11
+    // gives them, the dark ones from the Dark palette (themes_palette.h)
+    const COLORREF light[4] = {RGB(240, 240, 240), RGB(255, 255, 255), RGB(0, 120, 215), RGB(255, 255, 255)};
+    const COLORREF dark[4] = {RGB(45, 45, 45), RGB(70, 70, 70), RGB(38, 79, 120), RGB(56, 56, 56)};
+    const int sizes[4] = {16, 20, 24, 32};
+    const char* bkNames[4] = {"toolbar", "checked", "highlight", "panel"};
+    // TC416_DUMP=<file>: every measurement as CSV (set\name,size,coverage %,silhouette x 4 backgrounds,disabled)
+    FILE* dump = NULL;
+    char dumpPath[MAX_PATH];
+    if (GetEnvironmentVariableA("TC416_DUMP", dumpPath, MAX_PATH) > 0)
+        fopen_s(&dump, dumpPath, "w");
+    // the worst silhouette per theme x background, for Fluent 2 and - as the reference of what is
+    // legible today - for Classic (its standard files with the automatic dark adaptation of feature 029)
+    double worst[2][2][5];
+    std::string worstName[2][2][5];
+    int worstCoverage = 100, files = 0;
+    for (int s = 0; s < 2; s++)
+        for (int th = 0; th < 2; th++)
+            for (int k = 0; k < 5; k++)
+                worst[s][th][k] = 100.0;
+    std::string classicFolder = folder.substr(0, folder.size() - strlen("iconsets\\fluent\\")) + "toolbars\\";
+    for (int set = 0; set < 2; set++) // 0 = Fluent 2, 1 = Classic
+    {
+        for (int theme = 0; theme < 2; theme++)
+        {
+            std::string dir = set == 0 ? folder + (theme == 0 ? "" : "dark\\") : classicFolder;
+            WIN32_FIND_DATAA fd;
+            HANDLE h = FindFirstFileA((dir + "*.svg").c_str(), &fd);
+            CHECK(h != INVALID_HANDLE_VALUE);
+            if (h == INVALID_HANDLE_VALUE)
+                continue;
+            int themeFiles = 0;
+            do
+            {
+                std::string name = fd.cFileName;
+                std::string text;
+                CHECK(IconSet416ReadFile(dir + name, text));
+                NSVGimage* image = IconSet416ParseText(text);
+                if (set == 0)
+                {
+                    // the image lists treat these colours as transparent
+                    std::string upper = text;
+                    for (auto& c : upper)
+                        c = (char)toupper((unsigned char)c);
+                    CHECK(upper.find("#FF00FF") == std::string::npos);
+                    CHECK(upper.find("#F0F0F0") == std::string::npos);
+                    CHECK(upper.find("#2D2D2D") == std::string::npos);
+                    if (theme == 0) // a hand-made dark variant for every icon
+                        CHECK(GetFileAttributesA((folder + "dark\\" + name).c_str()) != INVALID_FILE_ATTRIBUTES);
+                    CHECK(image != NULL && image->shapes != NULL && image->width == 16 && image->height == 16);
+                }
+                if (image == NULL || image->shapes == NULL || image->width <= 0)
+                {
+                    if (set == 0)
+                        printf("TestIconSet416: %s%s does not parse\n", theme ? "dark\\" : "", name.c_str());
+                    if (image != NULL)
+                        nsvgDelete(image);
+                    continue;
+                }
+                if (set == 1 && theme == 1) // Classic in Dark: the automatic adaptation (svg.cpp)
+                {
+                    for (NSVGshape* sh = image->shapes; sh != NULL; sh = sh->next)
+                    {
+                        NSVGpaint* paints[2] = {&sh->fill, &sh->stroke};
+                        for (NSVGpaint* pt : paints)
+                        {
+                            if (pt->type != NSVG_PAINT_COLOR)
+                                continue;
+                            int cr = (int)(pt->color & 0xFF), cg = (int)((pt->color >> 8) & 0xFF), cb = (int)((pt->color >> 16) & 0xFF);
+                            ThemeDarkAdaptColor(&cr, &cg, &cb);
+                            pt->color = (pt->color & 0xFF000000) | ((DWORD)cb << 16) | ((DWORD)cg << 8) | (DWORD)cr;
+                        }
+                    }
+                }
+                std::string label = std::string(set == 0 ? "fluent" : "classic") + (theme ? "-dark\\" : "\\") + name;
+                for (int s = 0; s < 4; s++)
+                {
+                    int size = sizes[s];
+                    CIconSet416Stats st;
+                    const COLORREF* bks = theme == 0 ? light : dark;
+                    IconSet416Measure(rast, image, size, redFirst, bks, 4, bks[0], st);
+                    int coveragePct = st.Covered * 100 / (size * size);
+                    if (dump != NULL)
+                        fprintf(dump, "%s,%d,%d,%.2f,%.2f,%.2f,%.2f,%.2f\n", label.c_str(), size, coveragePct,
+                                st.Silhouette[0], st.Silhouette[1], st.Silhouette[2], st.Silhouette[3], st.Disabled);
+                    for (int k = 0; k < 5; k++)
+                    {
+                        double v = k < 4 ? st.Silhouette[k] : st.Disabled;
+                        if (v < worst[set][theme][k])
+                        {
+                            worst[set][theme][k] = v;
+                            worstName[set][theme][k] = label + " @" + std::to_string(size);
+                        }
+                    }
+                    if (set == 0)
+                    {
+                        worstCoverage = min(worstCoverage, coveragePct);
+                        CHECK(coveragePct >= 8); // nothing draws as an empty button (feature 416 / 029)
+                        // no icon disappears: the strongest 5 % of the cell stand out from the toolbar
+                        // face (2:1 - above the 1.8:1 the item names for today's blue accent on the dark
+                        // bar), the checked / panel background, the menu highlight and in the grey list
+                        bool ok = st.Silhouette[0] >= 2.0 && st.Silhouette[1] >= 1.8 && st.Silhouette[3] >= 1.8 &&
+                                  st.Silhouette[2] >= 1.5 && st.Disabled >= 1.4;
+                        CHECK(ok);
+                        if (!ok)
+                            printf("TestIconSet416: %s at %d px: silhouette %.2f / %.2f / %.2f / %.2f, disabled %.2f\n",
+                                   label.c_str(), size, st.Silhouette[0], st.Silhouette[1], st.Silhouette[2],
+                                   st.Silhouette[3], st.Disabled);
+                    }
+                }
+                nsvgDelete(image);
+                themeFiles++;
+                if (set == 0)
+                    files++;
+            } while (FindNextFileA(h, &fd));
+            FindClose(h);
+            if (set == 0)
+                CHECK(themeFiles == 95); // 95 icons, light and dark
+        }
+    }
+    nsvgDeleteRasterizer(rast);
+    if (dump != NULL)
+        fclose(dump);
+    for (int th = 0; th < 2; th++)
+        for (int k = 0; k < 5; k++)
+            CHECK(worst[0][th][k] >= worst[1][th][k] - 0.05); // Fluent 2's worst icon is not worse than Classic's
+    for (int th = 0; th < 2; th++)
+        for (int k = 0; k < 5; k++)
+            printf("TestIconSet416: %s %-9s worst silhouette Fluent %.2f (%s), Classic %.2f (%s)\n", th ? "dark " : "light",
+                   k < 4 ? bkNames[k] : "disabled", worst[0][th][k], worstName[0][th][k].c_str(), worst[1][th][k],
+                   worstName[1][th][k].c_str());
+    printf("TestIconSet416: %d files x 4 sizes; worst coverage %d %%\n", files, worstCoverage);
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -27817,6 +28206,7 @@ int main(int argc, char** argv)
     TestIsoXboxEntry402();
     TestIsoDirLength403();
     TestFtpRootMatch410();
+    TestIconSet416();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

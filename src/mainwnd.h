@@ -138,6 +138,7 @@ struct CCfgRefreshState
     BOOL PanelCaption;
     BOOL PanelZoom;
     BOOL PanelTabs;
+    int ToolbarIconSet; // feature 416
     BOOL UseCustomPanelFont;
     LOGFONT LogFont;
 

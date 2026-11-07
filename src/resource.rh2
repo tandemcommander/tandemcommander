@@ -381,6 +381,7 @@
 
 #define IDV_ARROW_RIGHT    1020
 #define IDV_ARROW_DOWN     1021
+#define IDV_ARROW_DOWN_FLUENT 1026 // feature 416: the Fluent 2 chevron (1022-1025 are dialogs of lang.rh)
 #define IDV_ARROW_MORE     1030
 #define IDV_ARROW_LESS     1031
 

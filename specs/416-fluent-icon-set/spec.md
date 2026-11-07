@@ -107,7 +107,7 @@ An icon author (or a damaged installation) leaves a dark override that cannot be
 - **SC-002**: With Classic chosen, the toolbar image list is pixel-identical to the one of the build before this feature (probe compares the captured strips: 0 differing pixels).
 - **SC-003**: Switching the set on the Appearance page and pressing OK changes the toolbar within the same session (probe: the strip changes without restart), and the choice is read back after a restart.
 - **SC-004**: An empty dark override yields a non-empty button (probe row), before: an empty button.
-- **SC-005**: Every Fluent 2 icon's outline (stroke-role) colour reaches at least 3:1 contrast against the toolbar background of its theme (light / dark), and every outline-only icon keeps an underlay or halo of at least 3:1 against the menu highlight (offline check over the files).
+- **SC-005**: Every outline (stroke-role) colour of the Fluent 2 palette reaches at least 3:1 against the toolbar background of its theme, and on the menu highlight of its theme either the outline colour or the underlay / halo colour does (palette check). Rendered at 16 / 20 / 24 / 32 px, the strongest 5 % of every icon's cell reach at least 2:1 against the toolbar face, 1.8:1 against the checked and panel backgrounds, 1.5:1 against the menu highlight and 1.4:1 in the grey (disabled) image list, and the worst Fluent 2 icon is not worse than the worst Classic icon on any theme x background (offline check with the program's rasterizer).
 - **SC-006**: The Appearance page labels fit their controls in all 8 shipped languages (probe measures text extent against control width: 0 clipped).
 
 ## Assumptions

@@ -826,7 +826,7 @@ HICON CTabWindow::GetTabIcon(CPanelTab* tab)
         if (IconDrive[type][sys] == NULL)
         {
             if (type == DRIVE_REMOVABLE)
-                IconDrive[type][sys] = SalLoadIcon(ImageResDLL, 28, iconSize); // the generic removable drive: no shell call on the medium
+                IconDrive[type][sys] = LoadSetIconOr(SalIconSetFluentDriveName(DRIVE_REMOVABLE, true, false), ImageResDLL, 28, iconSize); // the generic removable drive: no shell call on the medium (feature 416: Fluent 2's when active)
             else
                 IconDrive[type][sys] = GetDriveIcon(root, type, TRUE);
         }

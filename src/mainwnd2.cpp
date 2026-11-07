@@ -326,6 +326,21 @@ const char* CONFIG_LASTPLUGINVER_OP = "Plugins.ver Version (x64)";
 const char* CONFIG_LANGUAGE_REG = "Language";
 const char* CONFIG_SHOWSPLASHSCREEN_REG = "Show Splash Screen";
 const char* CONFIG_THEMEMODE_REG = "Theme Mode"; // feature 028
+const char* CONFIG_TOOLBARICONSET_REG = "Toolbar Icon Set"; // feature 416
+
+// feature 416: the icon set from the opened configuration key, read quietly (a value of a
+// wrong type is no reason for an error box); missing, wrong type or unknown = Fluent 2
+void ReadToolbarIconSet(HKEY actKey)
+{
+    DWORD value = 0;
+    BOOL read = GetValueAux(NULL, actKey, CONFIG_TOOLBARICONSET_REG, REG_DWORD, &value, sizeof(value), TRUE);
+    Configuration.ToolbarIconSet = SalIconSetFromStored(read != FALSE, value);
+}
+
+int GetActiveIconSet()
+{
+    return SalIconSetNormalize(Configuration.ToolbarIconSet);
+}
 const char* CONFIG_CONVERSIONTABLE_REG = "Conversion Table";
 const char* CONFIG_TITLEBARSHOWPATH_REG = "Title bar show path";
 const char* CONFIG_TITLEBARMODE_REG = "Title bar mode";
@@ -2070,6 +2085,8 @@ void CMainWindow::SaveConfig(HWND parent)
                          &Configuration.UseRecycleBin, sizeof(DWORD));
                 SetValue(actKey, CONFIG_THEMEMODE_REG, REG_DWORD,
                          &Configuration.ThemeMode, sizeof(DWORD)); // feature 028
+                SetValue(actKey, CONFIG_TOOLBARICONSET_REG, REG_DWORD,
+                         &Configuration.ToolbarIconSet, sizeof(DWORD)); // feature 416
                 SetValue(actKey, CONFIG_RECYCLEMASKS_REG, REG_SZ,
                          Configuration.RecycleMasks.GetMasksString(), -1);
                 SetValue(actKey, CONFIG_SAVEONEXIT_REG, REG_DWORD,
@@ -3712,6 +3729,7 @@ BOOL CMainWindow::LoadConfig(BOOL importingOldConfig, const CCommandLineParams* 
                      &Configuration.ThemeMode, sizeof(DWORD)); // feature 028
             if (Configuration.ThemeMode != THEME_MODE_DARK)
                 Configuration.ThemeMode = THEME_MODE_DEFAULT; // forward compatibility
+            ReadToolbarIconSet(actKey); // feature 416
             // a bit ugly: we provide MasksString, but the range is checked so it's fine
             GetValue(actKey, CONFIG_RECYCLEMASKS_REG, REG_SZ,
                      Configuration.RecycleMasks.GetWritableMasksString(), MAX_PATH);

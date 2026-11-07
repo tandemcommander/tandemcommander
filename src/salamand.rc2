@@ -71,5 +71,6 @@ IDC_COLORTABLE RCDATA "plugins\\shared\\clrtable.dat"
 
 IDV_ARROW_RIGHT RCDATA "res\\right.svg"
 IDV_ARROW_DOWN RCDATA "res\\down.svg"
+IDV_ARROW_DOWN_FLUENT RCDATA "res\\down_fluent.svg"
 IDV_ARROW_MORE RCDATA "res\\more.svg"
 IDV_ARROW_LESS RCDATA "res\\less.svg"

@@ -2882,12 +2882,50 @@ CCfgPageAppearance::CCfgPageAppearance()
     LocalUseCustomPanelFont = UseCustomPanelFont;
     memcpy(&LocalPanelLogFont, &LogFont, sizeof(LocalPanelLogFont));
     NotificationEnabled = TRUE;
+    for (int i = 0; i < SAL_ICONSET_COUNT; i++)
+        IconSetPreview[i] = NULL;
 }
 
 CCfgPageAppearance::~CCfgPageAppearance()
 {
     if (HPanelFont != NULL)
         HANDLES(DeleteObject(HPanelFont));
+    ReleaseIconSetPreviews();
+}
+
+void CCfgPageAppearance::ReleaseIconSetPreviews()
+{
+    for (int i = 0; i < SAL_ICONSET_COUNT; i++)
+    {
+        if (IconSetPreview[i] != NULL)
+            ImageList_Destroy(IconSetPreview[i]);
+        IconSetPreview[i] = NULL;
+    }
+}
+
+// feature 416: the 10 preview icons of a set on the toolbar background, as the toolbar draws them
+void CCfgPageAppearance::DrawIconSetPreview(const DRAWITEMSTRUCT* dis)
+{
+    int set = dis->CtlID == IDC_ICONSET_PREVIEW_CLASSIC ? SAL_ICONSET_CLASSIC : SAL_ICONSET_FLUENT;
+    HDC hDC = dis->hDC;
+    RECT r = dis->rcItem;
+    HBRUSH hFace = HANDLES(CreateSolidBrush(ThemeSysColor(COLOR_BTNFACE)));
+    FillRect(hDC, &r, hFace);
+    HANDLES(DeleteObject(hFace));
+    HIMAGELIST list = IconSetPreview[set];
+    if (list == NULL)
+        return;
+    int iconSize = GetIconSizeForSystemDPI(ICONSIZE_16);
+    int gap = max(2, iconSize / 4);
+    int y = r.top + (r.bottom - r.top - iconSize) / 2;
+    int x = r.left + 2;
+    for (int i = 0; i < SAL_ICONSET_PREVIEW_COUNT && x + iconSize <= r.right; i++)
+    {
+        int index = GetToolBarButtonImageIndex(SalIconSetPreviewButton(i));
+        if (index >= 0)
+            ImageList_Draw(list, index, hDC, x, y, ILD_NORMAL);
+        x += iconSize + gap;
+    }
 }
 
 void CCfgPageAppearance::LoadControls()
@@ -2938,6 +2976,12 @@ void CCfgPageAppearance::Transfer(CTransferInfo& ti)
     ti.CheckBox(IDC_SINGLECLICK, Configuration.SingleClick);
 
     ti.EditLine(IDC_INFOLINECONTENT, Configuration.InfoLineContent, 200);
+    // feature 416: the toolbar icon set (applied by RefreshAfterConfiguration after OK)
+    int iconSet = SalIconSetNormalize(Configuration.ToolbarIconSet);
+    ti.RadioButton(IDC_ICONSET_FLUENT, SAL_ICONSET_FLUENT, iconSet);
+    ti.RadioButton(IDC_ICONSET_CLASSIC, SAL_ICONSET_CLASSIC, iconSet);
+    if (ti.Type == ttDataFromWindow)
+        Configuration.ToolbarIconSet = iconSet;
     ti.EditLine(IDC_THUMBNAILSIZE, Configuration.ThumbnailSize);
     if (ti.Type == ttDataFromWindow)
         Configuration.ThumbnailSize = min(THUMBNAIL_SIZE_MAX, max(THUMBNAIL_SIZE_MIN, Configuration.ThumbnailSize));
@@ -3003,6 +3047,27 @@ CCfgPageAppearance::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             SetWindowPos(hWnd, hEdit, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
         }
 
+        // feature 416: the previews of both icon sets in the active theme, built by the toolbars' code
+        ReleaseIconSetPreviews();
+        for (i = 0; i < SAL_ICONSET_COUNT; i++)
+            IconSetPreview[i] = CreateIconSetImageList(i);
+        break;
+    }
+
+    case WM_DRAWITEM:
+    {
+        const DRAWITEMSTRUCT* dis = (const DRAWITEMSTRUCT*)lParam;
+        if (dis != NULL && (dis->CtlID == IDC_ICONSET_PREVIEW_FLUENT || dis->CtlID == IDC_ICONSET_PREVIEW_CLASSIC))
+        {
+            DrawIconSetPreview(dis);
+            return TRUE;
+        }
+        break;
+    }
+
+    case WM_DESTROY:
+    {
+        ReleaseIconSetPreviews(); // feature 416
         break;
     }
 

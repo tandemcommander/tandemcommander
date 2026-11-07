@@ -278,6 +278,7 @@ CConfiguration::CConfiguration()
     MinBeepWhenDone = TRUE;
     UseRecycleBin = 1;
     ThemeMode = THEME_MODE_DEFAULT; // feature 028
+    ToolbarIconSet = SAL_ICONSET_FLUENT; // feature 416: the default, also for an upgraded configuration
     FileNameFormat = 4;             // as on the disk
     SizeFormat = SIZE_FORMAT_BYTES;
     RecycleMasks.SetMasksString("*.txt;*.doc");

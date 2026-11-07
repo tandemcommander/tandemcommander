@@ -1009,6 +1009,8 @@ void GetFileOverwriteInfo(char* buff, int buffLen, HANDLE file, const char* file
 void ColorsChanged(BOOL refresh, BOOL colorsOnly, BOOL reloadUMIcons);                // volat po zmene barev
 HICON GetDriveIcon(const char* root, UINT type, BOOL accessible, BOOL large = FALSE); // ikona drivu
 HICON SalLoadIcon(HINSTANCE hDLL, int id, int iconSize);
+// feature 416: the Fluent 2 icon 'fluentName' while that set is active and has the file, else SalLoadIcon(hDLL, id, iconSize)
+HICON LoadSetIconOr(const char* fluentName, HINSTANCE hDLL, int id, int iconSize);
 
 // SetCurrentDirectory(systemovy adresar) - odpojeni od adresare v panelu
 void SetCurrentDirectoryToSystem();
@@ -1726,6 +1728,9 @@ extern const char* CONFIG_USEALTLANGFORPLUGINS_REG;
 extern const char* CONFIG_STATUSAREA_REG;
 extern const char* CONFIG_SHOWSPLASHSCREEN_REG;
 extern const char* CONFIG_THEMEMODE_REG; // feature 028: visual theme (0=Default, 1=Dark)
+extern const char* CONFIG_TOOLBARICONSET_REG; // feature 416: toolbar icon set (0=Fluent 2, 1=Classic)
+void ReadToolbarIconSet(HKEY actKey);         // feature 416: Configuration.ToolbarIconSet from the configuration key
+int GetActiveIconSet();                       // feature 416: the configured icon set (SAL_ICONSET_*)
 extern const char* CONFIG_ENABLECUSTICOVRLS_REG;
 extern const char* CONFIG_DISABLEDCUSTICOVRLS_REG;
 extern const char* VIEWERS_MASKS_REG;
@@ -2052,7 +2057,15 @@ struct CSVGIcon
 
 BOOL CreateToolbarBitmaps(HINSTANCE hInstance, int resID, COLORREF transparent, COLORREF bkColorForAlpha,
                           HBITMAP& hMaskBitmap, HBITMAP& hGrayBitmap, HBITMAP& hColorBitmap, BOOL appendIcons,
-                          const CSVGIcon* svgIcons, int svgIconsCount);
+                          const CSVGIcon* svgIcons, int svgIconsCount,
+                          int iconSet = -1); // feature 416: SAL_ICONSET_*, -1 = the configured set
+
+// feature 416: the whole toolbar image list of 'iconSet' in the active theme, built by the
+// toolbars' own code (the preview of the Appearance page equals the toolbar); NULL on failure.
+// The caller destroys it (ImageList_Destroy).
+HIMAGELIST CreateIconSetImageList(int iconSet);
+// feature 416: the image-list index of toolbar button 'tbbe' (TBBE_*), -1 = none
+int GetToolBarButtonImageIndex(int tbbe);
 
 //****************************************************************************
 //

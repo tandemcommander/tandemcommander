@@ -330,6 +330,9 @@ struct CConfiguration
     // feature 028: visual theme of the whole application
     int ThemeMode; // THEME_MODE_DEFAULT (current look) or THEME_MODE_DARK
 
+    // feature 416: the toolbar icon set, SAL_ICONSET_FLUENT (default) or SAL_ICONSET_CLASSIC (saliconset.h)
+    int ToolbarIconSet;
+
     // the history arrays are destroyed in the ClearHistory() method
     char* SelectHistory[SELECT_HISTORY_SIZE];
     char* CopyHistory[COPY_HISTORY_SIZE];
@@ -1107,6 +1110,7 @@ protected:
     BOOL LocalUseCustomPanelFont;
     LOGFONT LocalPanelLogFont;
     BOOL NotificationEnabled;
+    HIMAGELIST IconSetPreview[SAL_ICONSET_COUNT]; // feature 416: the toolbar image list of each set
 
 public:
     CCfgPageAppearance();
@@ -1119,6 +1123,10 @@ public:
     void EnableControls();
 
 protected:
+    // feature 416: the preview strip of an icon set (owner-drawn static)
+    void DrawIconSetPreview(const DRAWITEMSTRUCT* dis);
+    void ReleaseIconSetPreviews();
+
     virtual INT_PTR DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
 

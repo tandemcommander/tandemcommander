@@ -2918,7 +2918,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
     if (Configuration.ChangeDriveShowMyDoc)
     {
         AddToDrives(drv, IDS_MYDOCUMENTS, ';', drvtMyDocuments, getGrayIcons,
-                    SalLoadIcon(ImageResDLL, 112, iconSize));
+                    LoadSetIconOr(SAL_ICONSET_NAME_DOCUMENTS, ImageResDLL, 112, iconSize)); // feature 416
     }
 
     // Add cloud storages (Google Drive, etc.) if any are found
@@ -3050,7 +3050,7 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
         !existsNethoodPlugin)
     {
         AddToDrives(drv, IDS_NETWORKDRIVE, ',', drvtNeighborhood, getGrayIcons,
-                    SalLoadIcon(ImageResDLL, 152, iconSize));
+                    LoadSetIconOr(SAL_ICONSET_NAME_NETWORK, ImageResDLL, 152, iconSize)); // feature 416
         neighborhoodIndex = Drives->Count - 1;
     }
 

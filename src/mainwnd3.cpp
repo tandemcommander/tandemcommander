@@ -7797,6 +7797,7 @@ void CCfgRefreshState::Capture()
     PanelCaption = Configuration.ShowPanelCaption;
     PanelZoom = Configuration.ShowPanelZoom;
     PanelTabs = Configuration.PanelTabs; // feature 078
+    ToolbarIconSet = Configuration.ToolbarIconSet; // feature 416
     UseCustomPanelFont = ::UseCustomPanelFont;
     LogFont = ::LogFont;
 }
@@ -7864,6 +7865,13 @@ void CMainWindow::RefreshAfterConfiguration(const CCfgRefreshState& old, BOOL vi
             LeftPanel->DirectoryLine->Repaint();
         if (RightPanel->DirectoryLine != NULL && RightPanel->DirectoryLine->HWindow != NULL)
             RightPanel->DirectoryLine->Repaint();
+    }
+
+    if (SalIconSetNormalize(old.ToolbarIconSet) != SalIconSetNormalize(Configuration.ToolbarIconSet))
+    {
+        // feature 416: another icon set - the theme switch's pipeline rebuilds every icon site
+        // (toolbar image lists, menus, the ".." symbol, drive bars, drive icons, tabs) at once
+        ColorsChanged(TRUE, FALSE, TRUE);
     }
 
     if (old.PanelTabs != Configuration.PanelTabs) // feature 078: strips on/off, no restart

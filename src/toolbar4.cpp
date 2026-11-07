@@ -402,16 +402,56 @@ DWORD RightToolBarButtons[] =
         TBBE_TERMINATOR // terminator - musi zde byt !
 };
 
-void GetSVGIconsMainToolbar(CSVGIcon** svgIcons, int* svgIconsCount)
+void GetSVGIconsMainToolbar(CSVGIcon** svgIcons, int* svgIconsCount, int iconSet)
 {
     static CSVGIcon SVGIcons[TBBE_TERMINATOR];
+    iconSet = SalIconSetNormalize(iconSet < 0 ? GetActiveIconSet() : iconSet);
     for (auto i = 0; i < TBBE_TERMINATOR; i++)
     {
         SVGIcons[i].ImageIndex = ToolBarButtons[i].ImageIndex;
         SVGIcons[i].SVGName = ToolBarButtons[i].SVGName;
+        if (iconSet == SAL_ICONSET_FLUENT)
+        {
+            // feature 416: the Fluent 2 names; a button Classic draws with a Windows shell icon
+            // gets its SVG in CreateToolbarBitmaps (the shell icon stays its fallback)
+            BYTE shellResID = (BYTE)ToolBarButtons[i].Shell32ResID;
+            SVGIcons[i].SVGName = (shellResID != 0 && shellResID != 255) ? NULL : SalIconSetFluentButtonName(i, ToolBarButtons[i].SVGName);
+        }
     }
     *svgIcons = SVGIcons;
     *svgIconsCount = TBBE_TERMINATOR;
+}
+
+HIMAGELIST CreateIconSetImageList(int iconSet)
+{
+    CSVGIcon* svgIcons;
+    int svgIconsCount;
+    GetSVGIconsMainToolbar(&svgIcons, &svgIconsCount, iconSet);
+    HBITMAP hMask, hGray, hColor;
+    if (!CreateToolbarBitmaps(HInstance, Use256ColorsBitmap() ? IDB_TOOLBAR_256 : IDB_TOOLBAR_16,
+                              RGB(255, 0, 255), ThemeSysColor(COLOR_BTNFACE), hMask, hGray, hColor,
+                              TRUE, svgIcons, svgIconsCount, iconSet))
+    {
+        return NULL;
+    }
+    int iconSize = GetIconSizeForSystemDPI(ICONSIZE_16);
+    HIMAGELIST list = ImageList_Create(iconSize, iconSize, ILC_MASK | ILC_COLORDDB, IDX_TB_COUNT, 1);
+    if (list != NULL)
+    {
+        ImageList_Add(list, hColor, hMask);
+        ImageList_SetBkColor(list, ThemeSysColor(COLOR_BTNFACE)); // as the toolbars (InitializeGraphics)
+    }
+    HANDLES(DeleteObject(hMask));
+    HANDLES(DeleteObject(hGray));
+    HANDLES(DeleteObject(hColor));
+    return list;
+}
+
+int GetToolBarButtonImageIndex(int tbbe)
+{
+    if (tbbe < 0 || tbbe >= TBBE_TERMINATOR || ToolBarButtons[tbbe].ImageIndex == 0xFFFF)
+        return -1;
+    return ToolBarButtons[tbbe].ImageIndex;
 }
 
 //****************************************************************************
@@ -706,13 +746,13 @@ exitus:
     return ret;
 }
 
-void RenderSVGImages(HDC hDC, int iconSize, COLORREF bkColor, const CSVGIcon* svgIcons, int svgIconsCount)
+void RenderSVGImages(HDC hDC, int iconSize, COLORREF bkColor, const CSVGIcon* svgIcons, int svgIconsCount, int iconSet)
 {
     NSVGrasterizer* rast = nsvgCreateRasterizer();
     // JRYFIXME: docasne cteme ze souboru, prejit na spolecne uloziste s toolbars
     for (int i = 0; i < svgIconsCount; i++)
         if (svgIcons[i].SVGName != NULL)
-            RenderSVGImage(rast, hDC, svgIcons[i].ImageIndex * iconSize, 0, svgIcons[i].SVGName, iconSize, bkColor, TRUE);
+            RenderSVGImage(rast, hDC, svgIcons[i].ImageIndex * iconSize, 0, svgIcons[i].SVGName, iconSize, bkColor, TRUE, iconSet);
 
     nsvgDeleteRasterizer(rast);
 }
@@ -729,10 +769,12 @@ void RenderSVGImages(HDC hDC, int iconSize, COLORREF bkColor, const CSVGIcon* sv
 
 BOOL CreateToolbarBitmaps(HINSTANCE hInstance, int resID, COLORREF transparent, COLORREF bkColorForAlpha,
                           HBITMAP& hMaskBitmap, HBITMAP& hGrayBitmap, HBITMAP& hColorBitmap, BOOL appendIcons,
-                          const CSVGIcon* svgIcons, int svgIconsCount)
+                          const CSVGIcon* svgIcons, int svgIconsCount, int iconSet)
 {
     CALL_STACK_MESSAGE5("CreateToolbarBitmaps(%p, %d, %x, %x, , , )", hInstance, resID, transparent, bkColorForAlpha);
     BOOL ret = FALSE;
+    iconSet = SalIconSetNormalize(iconSet < 0 ? GetActiveIconSet() : iconSet); // feature 416
+    NSVGrasterizer* shellRast = NULL; // feature 416: Fluent 2 SVGs in place of the shell icons
     HDC hDC = NULL;
     HBITMAP hOldSrcBitmap = NULL;
     HBITMAP hOldTgtBitmap = NULL;
@@ -831,7 +873,7 @@ BOOL CreateToolbarBitmaps(HINSTANCE hInstance, int resID, COLORREF transparent, 
     // pokud mame SVG verzi, pouzijeme ji
     if (svgIcons != NULL)
     {
-        RenderSVGImages(hTgtMemDC, iconSize, bkColorForAlpha, svgIcons, svgIconsCount);
+        RenderSVGImages(hTgtMemDC, iconSize, bkColorForAlpha, svgIcons, svgIconsCount, iconSet);
     }
 
     // pouzijeme pri BitBlt hTmpMemDC->hTgtMemDC
@@ -847,6 +889,21 @@ BOOL CreateToolbarBitmaps(HINSTANCE hInstance, int resID, COLORREF transparent, 
             BYTE resID2 = ToolBarButtons[i].Shell32ResID;
             if (resID2 == 0 || resID2 == 255)
                 continue;
+
+            // feature 416: Fluent 2 draws the system folders with its own SVGs; a set file that is
+            // missing or unusable leaves the Windows shell icon as the fallback
+            if (iconSet == SAL_ICONSET_FLUENT)
+            {
+                const char* fluentName = SalIconSetFluentButtonName(i, ToolBarButtons[i].SVGName);
+                if (shellRast == NULL)
+                    shellRast = nsvgCreateRasterizer();
+                if (fluentName != NULL && shellRast != NULL &&
+                    RenderSVGImage(shellRast, hTgtMemDC, iconSize * ToolBarButtons[i].ImageIndex, 0, fluentName,
+                                   iconSize, bkColorForAlpha, TRUE, iconSet))
+                {
+                    continue;
+                }
+            }
 
             if ((resID2 == 21 && (resID2 = 112) != 0 || // Documents
                  resID2 == 33 && (resID2 = 54) != 0 ||  // Recycle Bin
@@ -912,6 +969,8 @@ BOOL CreateToolbarBitmaps(HINSTANCE hInstance, int resID, COLORREF transparent, 
 
     ret = TRUE;
 exitus:
+    if (shellRast != NULL)
+        nsvgDeleteRasterizer(shellRast);
     if (hOldSrcBitmap != NULL)
         SelectObject(hSrcMemDC, hOldSrcBitmap);
     if (hOldTgtBitmap != NULL)

@@ -6,7 +6,16 @@
 
 struct NSVGrasterizer;
 struct NSVGimage;
-void RenderSVGImage(NSVGrasterizer* rast, HDC hDC, int x, int y, const char* svgName, int iconSize, COLORREF bkColor, BOOL enabled);
+// Renders icon 'svgName' of icon set 'iconSet' (SAL_ICONSET_*, -1 = the configured set) into the
+// iconSize x iconSize cell at x, y of hDC over bkColor. Feature 416: returns FALSE and leaves the cell
+// untouched when the set has no usable file for the name (missing, unreadable, unparseable, no shapes).
+BOOL RenderSVGImage(NSVGrasterizer* rast, HDC hDC, int x, int y, const char* svgName, int iconSize, COLORREF bkColor,
+                    BOOL enabled, int iconSet = -1);
+
+// feature 416: icon 'svgName' of icon set 'iconSet' (-1 = configured) as a size x size icon with an
+// alpha channel and a matching mask (for image lists without alpha); NULL when the set has no usable
+// file for the name - the caller then uses its Classic icon. Registered in HANDLES (DestroyIcon via HANDLES).
+HICON CreateSetSVGIcon(const char* svgName, int iconSet, int size);
 
 // returns SysColor in the format for the SVG library (BGR instead of Win32 RGB)
 DWORD GetSVGSysColor(int index);
@@ -35,7 +44,9 @@ public:
     void Clean();
 
     // 'states' is a combination of bits from the SVGSTATE_* family
-    BOOL Load(int resID, int width, int height, DWORD states);
+    // 'disabledSysIndex' is the system colour of SVGSTATE_DISABLED (feature 416: the Fluent 2 chevron uses
+    // COLOR_GRAYTEXT - COLOR_BTNSHADOW was invisible on the dark toolbar)
+    BOOL Load(int resID, int width, int height, DWORD states, int disabledSysIndex = COLOR_BTNSHADOW);
 
     void GetSize(SIZE* s);
     int GetWidth();
@@ -61,7 +72,7 @@ protected:
     void CreateDIB(int width, int height, HBITMAP* hMemBmp, void** lpMemBits);
 
     // tints the SVG 'image' with the color determined by 'state' state
-    void ColorizeSVG(NSVGimage* image, DWORD state);
+    void ColorizeSVG(NSVGimage* image, DWORD state, int disabledSysIndex);
 
 protected:
     int Width; // dimension of a single image in points

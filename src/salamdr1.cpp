@@ -1042,6 +1042,22 @@ HICON GetFileOrPathIconAux(const char* path, BOOL large, BOOL isDir)
 HICON GetDriveIcon(const char* root, UINT type, BOOL accessible, BOOL large)
 {
     CALL_STACK_MESSAGE5("GetDriveIcon(%s, %u, %d, %d)", root, type, accessible, large);
+    if (GetActiveIconSet() == SAL_ICONSET_FLUENT)
+    {
+        // feature 416: Fluent 2 draws the drive types with its own SVGs (a removable drive without a
+        // shell call on the medium); a missing set file falls back to the Classic icon below
+        BOOL systemDrive = FALSE;
+        if (type == DRIVE_FIXED && root != NULL && root[0] != 0 && root[1] == ':')
+        {
+            char win[MAX_PATH];
+            if (GetWindowsDirectory(win, MAX_PATH) && win[1] == ':' && win[0] == root[0])
+                systemDrive = TRUE;
+        }
+        HICON fluent = CreateSetSVGIcon(SalIconSetFluentDriveName(type, accessible != FALSE, systemDrive != FALSE),
+                                        SAL_ICONSET_FLUENT, IconSizes[large ? ICONSIZE_32 : ICONSIZE_16]);
+        if (fluent != NULL)
+            return fluent;
+    }
     int id;
     switch (type)
     {
@@ -1087,6 +1103,18 @@ HICON GetDriveIcon(const char* root, UINT type, BOOL accessible, BOOL large)
                                   large ? ICON32_CX : ICON16_CX,
                                   IconLRFlags));
   */
+}
+
+HICON LoadSetIconOr(const char* fluentName, HINSTANCE hDLL, int id, int iconSize)
+{
+    // feature 416: Fluent 2's icon when the set is active and has the file, else the Classic one
+    if (fluentName != NULL && GetActiveIconSet() == SAL_ICONSET_FLUENT)
+    {
+        HICON fluent = CreateSetSVGIcon(fluentName, SAL_ICONSET_FLUENT, iconSize);
+        if (fluent != NULL)
+            return fluent;
+    }
+    return SalLoadIcon(hDLL, id, iconSize);
 }
 
 HICON SalLoadIcon(HINSTANCE hDLL, int id, int iconSize)
@@ -2584,9 +2612,15 @@ BOOL InitializeGraphics(BOOL colorsOnly)
             }
 
             // ikonka ".."
-            hIcon = (HICON)HANDLES(LoadImage(HInstance, MAKEINTRESOURCE(IDI_UPPERDIR),
-                                             IMAGE_ICON, IconSizes[sizeIndex], IconSizes[sizeIndex],
-                                             IconLRFlags));
+            // feature 416: Fluent 2's UpDir (today's shape, in the navigation blue); Classic or a
+            // missing set file: updir.ico
+            hIcon = NULL;
+            if (GetActiveIconSet() == SAL_ICONSET_FLUENT)
+                hIcon = CreateSetSVGIcon(SAL_ICONSET_NAME_UPDIR, SAL_ICONSET_FLUENT, IconSizes[sizeIndex]);
+            if (hIcon == NULL)
+                hIcon = (HICON)HANDLES(LoadImage(HInstance, MAKEINTRESOURCE(IDI_UPPERDIR),
+                                                 IMAGE_ICON, IconSizes[sizeIndex], IconSizes[sizeIndex],
+                                                 IconLRFlags));
             SimpleIconLists[sizeIndex]->ReplaceIcon(symbolsUpDir, hIcon);
             HANDLES(DestroyIcon(hIcon));
 
@@ -2619,7 +2653,12 @@ BOOL InitializeGraphics(BOOL colorsOnly)
         SVGArrowRightSmall.Load(IDV_ARROW_RIGHT, -1, (int)((double)iconSize / 2.5), SVGSTATE_ENABLED | SVGSTATE_DISABLED);
         SVGArrowMore.Load(IDV_ARROW_MORE, -1, -1, SVGSTATE_ENABLED | SVGSTATE_DISABLED);
         SVGArrowLess.Load(IDV_ARROW_LESS, -1, -1, SVGSTATE_ENABLED | SVGSTATE_DISABLED);
-        SVGArrowDropDown.Load(IDV_ARROW_DOWN, -1, -1, SVGSTATE_ENABLED | SVGSTATE_DISABLED);
+        // feature 416: Fluent 2's chevron, its disabled state in COLOR_GRAYTEXT (COLOR_BTNSHADOW was
+        // invisible on the dark toolbar); Classic keeps today's triangle and colours
+        if (GetActiveIconSet() == SAL_ICONSET_FLUENT)
+            SVGArrowDropDown.Load(IDV_ARROW_DOWN_FLUENT, -1, -1, SVGSTATE_ENABLED | SVGSTATE_DISABLED, COLOR_GRAYTEXT);
+        else
+            SVGArrowDropDown.Load(IDV_ARROW_DOWN, -1, -1, SVGSTATE_ENABLED | SVGSTATE_DISABLED);
     }
 
     ImageList_SetBkColor(HHotToolBarImageList, ThemeSysColor(COLOR_BTNFACE));
@@ -4314,6 +4353,8 @@ FIND_NEW_SLG_FILE:
                      &Configuration.ThemeMode, sizeof(DWORD));
             if (Configuration.ThemeMode != THEME_MODE_DARK)
                 Configuration.ThemeMode = THEME_MODE_DEFAULT;
+            // feature 416: the icon set too - the first image lists are built before LoadConfig
+            ReadToolbarIconSet(actKey);
             UpdateCurrentColorsForTheme();
             CloseKey(actKey);
         }

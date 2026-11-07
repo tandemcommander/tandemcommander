@@ -463,6 +463,12 @@ if errorlevel 8 (
     echo ERROR: Failed to copy toolbar icons.
     exit /b 1
 )
+:: Fluent 2 icon set, the default (feature 416): iconsets\fluent\ with dark\ and LICENSE-fluent.txt
+robocopy "%~dp0src\res\iconsets\fluent" "%OUT_DIR%\iconsets\fluent" /E >nul
+if errorlevel 8 (
+    echo ERROR: Failed to copy the Fluent 2 icon set.
+    exit /b 1
+)
 
 :: Automation plugin: sample scripts (only when the plugin is built - see plugins.cfg)
 if exist "%OUT_DIR%\plugins\automation\" (

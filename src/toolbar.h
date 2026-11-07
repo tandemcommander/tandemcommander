@@ -506,4 +506,5 @@ public:
 
 extern void PrepareToolTipText(char* buff, BOOL stripHotKey);
 
-extern void GetSVGIconsMainToolbar(CSVGIcon** svgIcons, int* svgIconsCount);
+// feature 416: the names of 'iconSet' (SAL_ICONSET_*, -1 = configured); a static array, valid until the next call
+extern void GetSVGIconsMainToolbar(CSVGIcon** svgIcons, int* svgIconsCount, int iconSet = -1);
