@@ -866,6 +866,31 @@ static void TestFindDarkModeSurfaces()
 }
 
 // ---------------------------------------------------------------------------
+// Feature 418: in the Dark theme the rebar keeps its WS_BORDER edge and
+// RBS_BANDBORDERS separators (the default theme's layout) and draws them with
+// COLOR_BTNSHADOW / COLOR_BTNHIGHLIGHT of the Dark palette (RB_SETCOLORSCHEME):
+// the etched pair must read like the light one (shadow below the face,
+// highlight above it) and stay dark - no light line on the dark chrome
+
+static void TestDarkRebarEtchedPair418()
+{
+    COLORREF chrome[64];
+    for (int i = 0; i < 64; i++)
+        chrome[i] = 0;
+#define TC_FILL(idx, r, g, b) chrome[idx] = RGB(r, g, b);
+    THEME_DARK_SYSCOLORS(TC_FILL)
+#undef TC_FILL
+
+    CHECK(Luminance(chrome[COLOR_BTNSHADOW]) < Luminance(chrome[COLOR_BTNFACE]));
+    CHECK(Luminance(chrome[COLOR_BTNHIGHLIGHT]) > Luminance(chrome[COLOR_BTNFACE]));
+    // both halves far darker than the light theme's etched lines (160 / 255)
+    CHECK(Luminance(chrome[COLOR_BTNSHADOW]) < Luminance(RGB(160, 160, 160)) / 4);
+    CHECK(Luminance(chrome[COLOR_BTNHIGHLIGHT]) < Luminance(RGB(160, 160, 160)) / 4);
+    // the line stays visible against the face it is drawn on
+    CHECK(ContrastRatio(chrome[COLOR_BTNHIGHLIGHT], chrome[COLOR_BTNSHADOW]) >= 1.5);
+}
+
+// ---------------------------------------------------------------------------
 // Feature 029: dark adaptation of toolbar glyph colors
 // (ThemeDarkAdaptColor in src/common/themes_palette.h; SC-002: adapted
 // neutral strokes must reach >= 3:1 contrast on the dark COLOR_BTNFACE)
@@ -28221,6 +28246,7 @@ int main(int argc, char** argv)
     TestLongComponentNames();
     TestDarkThemePalette();
     TestFindDarkModeSurfaces();
+    TestDarkRebarEtchedPair418();
     TestDarkIconColorAdaptation();
     TestComposedMessageEncoding();
     TestUiTextEncoding();

@@ -1,0 +1,32 @@
+rebar418_probe on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; main build C:\Users\pavel\AppData\Local\Temp\rev418\maintree\tandemcommander.exe; groups DARK,CLASSIC,SWITCH,EXTRA,NARROW
+  default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+  dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+DARK       ROWS   PASS        rebar bottom 77 / 77; strip 77-106 / 77-106; dirline 106-129 / 106-129 (Default / Dark)
+DARK       STYLE  PASS        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00800400
+DARK       LINES  PASS        13838 line pixels, 0 not the Dark pair; matched rows 0-76; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 22
+DARK       NOLIGHT PASS        light etched runs >= 12 px in the Dark rebar: 0 (the same detector on the Default rebar: 35)
+DARK       TITLE  PASS        first title row 86 / 86; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
+  main_default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+CLASSIC    EQ     PASS        Default theme, the whole client area 1714x1101 vs the build of main: 0 pixels differ
+  switch_to_dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+SWITCH     TODARK PASS        Default -> Dark at run time vs a fresh Dark start, rows 0-128: 0 pixels differ
+  switch_back: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+SWITCH     TOLIGHT PASS        Dark -> Default at run time vs a fresh Default start, rows 0-128: 0 pixels differ
+  extra_default: rebar 0,0,1714,101; strip 1,101,831,130; dirline 1,130,831,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
+  extra_dark: rebar 0,0,1714,101; strip 1,101,831,130; dirline 1,130,831,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
+EXTRA      BARS   PASS        bands 3 -> 5 (Default) / 5 (Dark) after toggling the Plugins bar and the second drive bar
+EXTRA      ROWS   PASS        rebar bottom 101 / 101; strip 101-130 / 101-130; dirline 130-153 / 130-153 (Default / Dark)
+EXTRA      STYLE  PASS        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00800400
+EXTRA      LINES  PASS        17306 line pixels, 0 not the Dark pair; matched rows 0-100; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 31
+EXTRA      NOLIGHT PASS        light etched runs >= 12 px in the Dark rebar: 0 (the same detector on the Default rebar: 48)
+EXTRA      TITLE  PASS        first title row 110 / 110; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
+  narrow_default: rebar 0,0,504,101; strip 1,101,243,130; dirline 1,130,243,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
+  narrow_dark: rebar 0,0,504,101; strip 1,101,243,130; dirline 1,130,243,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
+NARROW     RESIZE PASS        with the extra bars (5 bands): rebar 1714x101 at full width, 504x101 narrow (Default)
+NARROW     ROWS   PASS        rebar bottom 101 / 101; strip 101-130 / 101-130; dirline 130-153 / 130-153 (Default / Dark)
+NARROW     STYLE  PASS        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00800400
+NARROW     LINES  PASS        5206 line pixels, 0 not the Dark pair; matched rows 0-100; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 29
+NARROW     NOLIGHT PASS        light etched runs >= 12 px in the Dark rebar: 0 (the same detector on the Default rebar: 46)
+NARROW     TITLE  PASS        first title row 110 / 110; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
+Registry: restored; identical=True; SHA-256 before 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E / after 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E
+Rows: PASS 20, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

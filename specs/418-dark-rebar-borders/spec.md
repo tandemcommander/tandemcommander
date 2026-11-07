@@ -57,14 +57,15 @@ between the bands is the Dark palette's, at the rows the default theme uses.
 
 1. **Given** the Dark theme with the Plugins bar and the second drive bar shown, **When** the window is drawn,
    **Then** the band rows and the lines between them are at the same rows as in the default theme with the same
-   bars, and no pixel of the toolbar area has the light etched colours.
+   bars, and no line of the toolbar area has the light etched colours.
 
 ### Edge Cases
 
 - High contrast mode: the program uses the system theme then (`IsDarkThemeActive` is false) - unchanged.
 - Bands on one row side by side (e.g. top toolbar and plugins bar): the vertical band borders are drawn in the
   Dark colours too.
-- The window resized narrower so that bands wrap to new rows: the lines follow the new rows.
+- The window resized narrower: the bands of one row shrink (a rebar moves a band to a new row only by its break
+  flag or a drag, measured), and the lines follow the resized bands.
 - A theme switch at run time: the rebar's style and its painting change without a restart.
 - Grips (Configuration "Show grips") stay light-only, as feature 028 decided.
 
@@ -82,7 +83,7 @@ between the bands is the Dark palette's, at the rows the default theme uses.
 - **FR-004**: The default theme MUST stay pixel-identical to the build of `main`.
 - **FR-005**: A theme switch at run time MUST give the same result as a fresh start in the target theme.
 - **FR-006**: The Dark lines MUST be repainted correctly when the toolbar area changes (bars shown / hidden /
-  moved, the window resized, bands wrapping).
+  moved, the window resized).
 
 ### Key Entities
 
@@ -95,8 +96,10 @@ between the bands is the Dark palette's, at the rows the default theme uses.
 
 - **SC-001**: At 96 DPI the Dark window's rows from the toolbar area's top to the directory line are at the same
   positions as the default theme's (today: Dark rebar 69 px vs 77 px, the strip 8 px higher) - 0 px difference.
-- **SC-002**: The space from the line framing the tab strip to a tab's title is 13 px in both themes (Dark today: 11).
-- **SC-003**: No pixel of the Dark toolbar area has the light etched colours (A0A0A0, FFFFFF).
+- **SC-002**: The space from the line framing the tab strip to a tab's title is the same in both themes (13 px to
+  the title text at 96 DPI; Dark today: 11, no line); the probe compares the absolute row of a tab's first content.
+- **SC-003**: No frame or separator line of the Dark toolbar area has the light etched colours (A0A0A0, FFFFFF);
+  only the content of toolbar icons may contain such pixels.
 - **SC-004**: The default theme's window is 0 px different from the build of `main`.
 - **SC-005**: A run-time theme switch equals a fresh start in the target theme (0 px in the toolbar area and the
   tab strip).

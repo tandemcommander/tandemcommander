@@ -1,0 +1,32 @@
+rebar418_probe on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; main build C:\Users\pavel\AppData\Local\Temp\rev418\maintree\tandemcommander.exe; groups DARK,CLASSIC,SWITCH,EXTRA,NARROW
+  default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+  dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+DARK       ROWS   PASS        rebar bottom 77 / 77; strip 77-106 / 77-106; dirline 106-129 / 106-129 (Default / Dark)
+DARK       STYLE  PASS        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00800400
+DARK       LINES  FAIL        14010 line pixels, 22 not the Dark pair (45,53) FFFFFF->2D2D2D (45,54) FFFFFF->2D2D2D (45,55) FFFFFF->2D2D2D (45,56) FFFFFF->2D2D2D; matched rows 0-76; vertical runs inside bands (grips, toolbar separators) not counted: 19
+DARK       NOLIGHT PASS        light etched runs >= 12 px in the Dark rebar: 0
+DARK       TITLE  PASS        first title row 86 / 86; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
+  main_default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+CLASSIC    EQ     PASS        Default theme, the whole client area 1714x1101 vs the build of main: 0 pixels differ
+  switch_to_dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+SWITCH     TODARK PASS        Default -> Dark at run time vs a fresh Dark start, rows 0-128: 0 pixels differ
+  switch_back: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+SWITCH     TOLIGHT PASS        Dark -> Default at run time vs a fresh Default start, rows 0-128: 0 pixels differ
+  extra_default: rebar 0,0,1714,101; strip 1,101,831,130; dirline 1,130,831,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
+  extra_dark: rebar 0,0,1714,53; strip 1,53,831,82; dirline 1,82,831,105; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 2; first title row 62
+EXTRA      BARS   FAIL        bands 3 -> 5 (Default) / 2 (Dark) after toggling the Plugins bar and the second drive bar
+EXTRA      ROWS   FAIL        rebar bottom 101 / 53; strip 101-130 / 53-82; dirline 130-153 / 82-105 (Default / Dark)
+EXTRA      STYLE  PASS        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00800400
+EXTRA      LINES  FAIL        17592 line pixels, 10538 not the Dark pair (2,49) A0A0A0->2D2D2D (3,49) A0A0A0->2D2D2D (4,49) A0A0A0->2D2D2D (5,49) A0A0A0->2D2D2D; matched rows 0-52; vertical runs inside bands (grips, toolbar separators) not counted: 25
+EXTRA      NOLIGHT PASS        light etched runs >= 12 px in the Dark rebar: 0
+EXTRA      TITLE  FAIL        first title row 110 / 62; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
+  narrow_default: rebar 0,0,504,53; strip 1,53,243,82; dirline 1,82,243,105; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 2; first title row 62
+  narrow_dark: rebar 0,0,504,53; strip 1,53,243,82; dirline 1,82,243,105; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 2; first title row 62
+NARROW     WRAP   FAIL        rebar 77 px at full width, 53 px narrow (Default): the bands wrapped
+NARROW     ROWS   PASS        rebar bottom 53 / 53; strip 53-82 / 53-82; dirline 82-105 / 82-105 (Default / Dark)
+NARROW     STYLE  PASS        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00800400
+NARROW     LINES  PASS        3212 line pixels, 0 not the Dark pair; matched rows 0-52; vertical runs inside bands (grips, toolbar separators) not counted: 12
+NARROW     NOLIGHT PASS        light etched runs >= 12 px in the Dark rebar: 0
+NARROW     TITLE  PASS        first title row 62 / 62; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
+Registry: restored; identical=True; SHA-256 before 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E / after 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E
+Rows: PASS 14, FAIL 6, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

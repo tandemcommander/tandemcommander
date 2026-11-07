@@ -23,3 +23,50 @@ Backlog item `dark-theme-panel-tabs-look-lower-than-in-the-default-theme`. HEAD0
   (the tabs must look the same in both themes) is what this feature answers.
 - The probes were held twice because the maintainer's installed program ran (it shares the registry key); they
   ran after it was closed.
+
+## Design (research.md)
+
+- Experiment on the live build: keep `WS_BORDER | RBS_BANDBORDERS` in Dark and set the rebar's `COLORSCHEME`
+  (`RB_SETCOLORSCHEME`) to the Dark palette's `COLOR_BTNHIGHLIGHT` (464646) / `COLOR_BTNSHADOW` (1A1A1A): the rebar
+  draws its etched frame and band borders with them - Dark rebar 77 px, lines exactly where Default has
+  A0A0A0 / FFFFFF. Default passes `CLR_DEFAULT` (the system colours: the rebar as on main).
+- `ThemeUpdateRebarStyle` (`src/themes.cpp`): the styles in both themes; the scheme by theme, set only when it
+  differs from `RB_GETCOLORSCHEME`; a style change keeps `SWP_FRAMECHANGED` + invalidate, a scheme change alone
+  `RedrawWindow(RDW_INVALIDATE | RDW_ERASE | RDW_FRAME)` (the frame is non-client). Callers unchanged (start-up
+  after the rebar is created, `OnColorsChanged` on every theme / colour change). Comments in `themes.h`,
+  `mainwnd1.cpp`, `mainwnd3.cpp`.
+- Grips stay light-only (028; clarification 3) - they are still hidden in Dark.
+
+## Analyze (inline)
+
+- Coverage: FR-001 (DARK/EXTRA/NARROW ROWS, STYLE), FR-002 (LINES, NOLIGHT, saltests), FR-003 (ROWS: strip and
+  directory line), FR-004 (CLASSIC EQ), FR-005 (SWITCH), FR-006 (EXTRA, NARROW). No CRITICAL / HIGH.
+- Fixed in the artifacts: SC-003 / US2 said "no pixel" of the light colours - toolbar icons legitimately contain
+  them; now "no line". The edge case "bands wrap when the window narrows" was a wrong premise (measured: a rebar
+  moves a band to a new row only by its break flag or a drag; bands of one row shrink) - spec and NARROW row
+  corrected. SC-002 states the measured quantity (equal absolute row of a tab's first content).
+
+## Verification
+
+- `build.cmd`: BUILD SUCCEEDED. `saltests`: 286948 checks, 0 failed (+5: `TestDarkRebarEtchedPair418` - Dark
+  shadow < face < highlight, both far darker than the light lines, contrast >= 1.5).
+- `check_encoding.py --strict`: TOTAL: 0.
+- Build of main for the comparison: worktree of `f574e83e`, `salamand.vcxproj` + `lang.vcxproj` with their own
+  `OPENSAL_BUILD_DIR`, put into a copy of this build's tree (only the core and the English module differ).
+- Probe `probe/rebar418_probe.ps1` (hidden desktop; every start from the same exported configuration):
+  - run 1: PROBE ERROR - `$d` overwrote `$D` (PowerShell names are case-insensitive); LINES counted the light
+    theme's grips and toolbar separators. Run 2: LINES 22 px at x 45 (the light drive bar's pressed button edge,
+    spans the band, alone - not an etched pair); EXTRA / NARROW compared different bar sets (the program saves
+    its configuration on exit). Run 3: the vertical lines now count only as etched pairs reaching a line at both
+    ends, every start resets the configuration; NARROW did not wrap (premise corrected, above).
+  - **Final (`result_after.txt`): PASS 20, FAIL 0, NOT DRIVEN 0**, registry restored and identical:
+    DARK rebar 77 / 77, strip 77-106 both, directory line 106-129 both, title row 86 both; 13838 line pixels all
+    the Dark pair; no light run in the Dark rebar (the detector finds 35 on the Default one). CLASSIC: the whole
+    Default client area 1714 x 1101 = main, 0 px. SWITCH: Default -> Dark and back at run time = a fresh start,
+    0 px in rows 0-128. EXTRA (Plugins bar + second drive bar, 5 bands, two side by side): rows 101 / 101,
+    17306 line pixels all Dark. NARROW (504 px wide, same bars): rows equal, 5206 line pixels all Dark.
+  - **Negative control on the build of main (`result_negative_main.txt`)**: DARK / EXTRA ROWS, STYLE, LINES,
+    TITLE **FAIL** (rebar 77 / 69 and 101 / 91, title row 86 / 78) - the defect; NOLIGHT and SWITCH pass there
+    (main draws no Dark lines at all and switches consistently - they guard against regressions of this fix).
+- Not covered by the probe: display scales 125-200 % (the hidden desktop runs at 96 DPI; the rebar's border sizes
+  are the system's in both themes) - a release-checklist line.

@@ -25,7 +25,7 @@
 **Goal**: the default theme is pixel-identical to the build of main; switching the theme at run time gives the same picture as a fresh start.
 
 - [ ] T006 [US2] Build main (HEAD0 f574e83e) into its own build folder for the Classic comparison (worktree in the scratchpad)
-- [ ] T007 [US2] Probe rows CLASSIC-EQ (whole window, Default, this build vs main), SWITCH-TO-DARK and SWITCH-TO-LIGHT (run-time switch = fresh start), EXTRA-BARS (Plugins bar and a second drive bar shown, Dark rows framed like Default) in specs/418-dark-rebar-borders/probe/rebar418_probe.ps1
+- [ ] T007 [US2] Probe rows CLASSIC-EQ (whole window, Default, this build vs main), SWITCH-TO-DARK and SWITCH-TO-LIGHT (run-time switch = fresh start), EXTRA-BARS (Plugins bar and a second drive bar shown, Dark rows framed like Default), NARROW (the window narrowed with two bands side by side: Dark rows = Default rows, lines follow) in specs/418-dark-rebar-borders/probe/rebar418_probe.ps1
 
 ## Phase 5: Polish
 
