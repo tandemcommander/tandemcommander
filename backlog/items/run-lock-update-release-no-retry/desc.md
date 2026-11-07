@@ -7,8 +7,8 @@ area: tooling
 source: review:344
 who: agent
 created: 2026-10-30
-updated: 2026-10-30
-verified: -
+updated: 2026-11-07
+verified: 2026-11-07 b5bb8329
 effort: S
 feature: -
 related: []
@@ -34,3 +34,4 @@ At a34796f5: `tools/backlog/backlog.py` `cmd_lock` (line 1883): `update` calls `
 
 - 2026-10-30 — created (source review:344)
 - 2026-10-30 — moved to Next position 33
+- 2026-11-07 — verified at b5bb8329: reproduced at b5bb8329: a second process holding the lock open makes lock update fail with WinError 5 and lock release with WinError 32 (traceback, lock kept)
