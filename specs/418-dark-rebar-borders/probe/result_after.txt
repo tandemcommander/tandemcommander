@@ -13,6 +13,8 @@ CLASSIC    EQ     PASS        Default theme, the whole client area 1714x1101 vs 
 SWITCH     TODARK PASS        Default -> Dark at run time vs a fresh Dark start, rows 0-128: 0 pixels differ
   switch_back: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
 SWITCH     TOLIGHT PASS        Dark -> Default at run time vs a fresh Default start, rows 0-128: 0 pixels differ
+  drag_hidden_dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 86
+DRAG       HIDDEN PASS        2 bands on the second row, lefts 11,1698; grip pressed at main x 1692, dragged to y 90; rebar 77 px during the drag; light runs >= 12 px in the Dark rebar: 0
   extra_default: rebar 0,0,1714,101; strip 1,101,831,130; dirline 1,130,831,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
   drag_default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
   drag_dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
@@ -35,4 +37,4 @@ NARROW     NOLIGHT PASS        light runs (A0A0A0, FFFFFF, F0F0F0) >= 12 px in t
 NARROW     GRIPS  PASS        3 grips, 0 not drawn alike in Dark; x 4 y 4-21 x 4 y 29-45 x 4 y 53-71 menu from x 19 / 19, top toolbar from x 16 / 16 (Default / Dark)
 NARROW     TITLE  PASS        first title row 110 / 110; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
 Registry: restored; identical=True; SHA-256 before 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E / after 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E
-Rows: PASS 24, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 25, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

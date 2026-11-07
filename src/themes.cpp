@@ -307,24 +307,19 @@ LRESULT ThemeRebarCustomDraw(HWND hRebar, LPNMCUSTOMDRAW cd)
     if (cd->dwDrawStage != CDDS_ITEMPOSTPAINT || cd->hdc == NULL)
         return CDRF_DODEFAULT;
 
-    // the band drawn: the one whose rectangle this is
-    int count = (int)SendMessage(hRebar, RB_GETBANDCOUNT, 0, 0);
-    int index = -1;
-    for (int i = 0; i < count && index < 0; i++)
-    {
-        RECT r;
-        if (SendMessage(hRebar, RB_GETRECT, (WPARAM)i, (LPARAM)&r) &&
-            r.left == cd->rc.left && r.top == cd->rc.top)
-            index = i;
-    }
-    if (index < 0)
+    // the band drawn: dwItemSpec is its id (rc its header); never matched by the rectangle alone - a
+    // hidden band (the drive bars while a band is dragged) keeps its old rectangle (review 3)
+    int index = (int)SendMessage(hRebar, RB_IDTOINDEX, (WPARAM)cd->dwItemSpec, 0);
+    RECT bandRect;
+    if (index < 0 || !SendMessage(hRebar, RB_GETRECT, (WPARAM)index, (LPARAM)&bandRect) ||
+        bandRect.left != cd->rc.left || bandRect.top != cd->rc.top)
         return CDRF_DODEFAULT;
     REBARBANDINFO rbbi;
     ZeroMemory(&rbbi, sizeof(rbbi));
     rbbi.cbSize = sizeof(REBARBANDINFO);
     rbbi.fMask = RBBIM_STYLE;
     if (!SendMessage(hRebar, RB_GETBANDINFO, (WPARAM)index, (LPARAM)&rbbi) ||
-        (rbbi.fStyle & RBBS_GRIPPERALWAYS) == 0)
+        (rbbi.fStyle & RBBS_GRIPPERALWAYS) == 0 || (rbbi.fStyle & RBBS_HIDDEN) != 0)
         return CDRF_DODEFAULT;
     RECT borders; // left: the header (grip) plus the gap before the child
     ZeroMemory(&borders, sizeof(borders));
@@ -1571,8 +1566,9 @@ void SetThemeMode(DWORD mode)
 
     if (MainWindow != NULL && MainWindow->HWindow != NULL)
     {
-        // rebar band grippers are classic-drawn (light-only): re-insert the
-        // bands so the gripper style matches the new theme
+        // re-insert the rebar bands (since feature 418 their grips are the same
+        // in both themes - Dark repaints their light middle, ThemeRebarCustomDraw -
+        // but a fresh insertion keeps the layout equal to a start in this theme)
         if (MainWindow->HTopRebar != NULL)
             MainWindow->RebuildRebarBands();
         // DWM title bar + per-child theming (scrollbars, combos, ...)

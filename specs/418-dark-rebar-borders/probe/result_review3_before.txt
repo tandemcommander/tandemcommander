@@ -1,0 +1,10 @@
+rebar418_probe on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; groups DRAG
+  default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+  dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+  drag_hidden_dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 86
+DRAG       HIDDEN FAIL        2 bands on the second row, lefts 11,1698; grip pressed at main x 1692, dragged to y 90; rebar 77 px during the drag; light runs >= 12 px in the Dark rebar: 1: col 5 y 56-71 F0F0F0
+  drag_default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+  drag_dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+DRAG       MOVE   PASS        top toolbar band index 1 before, 2 / 2 after the drag; rebar bottom 77 / 77 (Default / Dark); lines: 13838 line pixels, 0 not the Dark pair; matched rows 0-76; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 22
+Registry: restored; identical=True; SHA-256 before 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E / after 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

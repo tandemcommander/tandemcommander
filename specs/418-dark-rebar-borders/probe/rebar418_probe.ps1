@@ -45,7 +45,7 @@ public static class P418
     // Dark pair at the same place in the Dark capture. The rebar's lines: A0A0A0 / FFFFFF in a horizontal run
     // >= minH (the frame, the borders between band rows), and a vertical run >= minV that reaches such a line or
     // the rebar's edge at both ends (the frame's sides, the borders between bands of one row). Vertical runs inside
-    // a band - the grips (light-only, feature 028) and toolbar separators (the toolbar's own drawing) - do not
+    // a band - the grips (checked by CheckGrips) and toolbar separators (the toolbar's own drawing) - do not
     // reach them and are only counted.
     public static string CheckLines(Bitmap light, Bitmap dark, int h, int minH, int minV)
     {
@@ -270,9 +270,10 @@ function Set-Theme([int]$t) { & reg.exe add $CfgKey /v 'Theme Mode' /t REG_DWORD
 # configuration exported once after Set-Config, so that the starts of a comparison see the same bars
 $BaseReg = Join-Path $env:TEMP 'tc418_base.reg'
 function Reset-Base { & cmd.exe /c "reg delete `"$RegKey\Settings`" /f >nul 2>&1"; & cmd.exe /c "reg import `"$BaseReg`" >nul 2>&1" }
-function Fresh([string]$exePath, [int]$theme, [string]$name, [scriptblock]$prep) {
+function Fresh([string]$exePath, [int]$theme, [string]$name, [scriptblock]$prep, [hashtable]$regs) {
     Reset-Base
     Set-Theme $theme
+    if ($regs) { foreach ($k in $regs.Keys) { & reg.exe add $CfgKey /v $k /t REG_DWORD /d $regs[$k] /f | Out-Null } }
     $id = Start-At $exePath
     if ($prep) { & $prep $id }
     $s = Snap $id $name
@@ -352,6 +353,45 @@ try {
         Row 'SWITCH' 'TOLIGHT' (V ($d2 -match '^0( |$)')) ('Dark -> Default at run time vs a fresh Default start, rows 0-{0}: {1} pixels differ' -f ($h - 1), $d2)
         Stop-Tc $id
         $S.Bmp.Dispose(); $S2.Bmp.Dispose()
+    }
+
+    if (Want 'DRAG') {
+        # review 3: the Plugins bar beside the top toolbar and the second drive bar shown; the Plugins bar's grip
+        # dragged onto a new last row and captured with the button still down - the drive bars' bands are hidden
+        # while a band is dragged (RBN_BEGINDRAG) and keep their old rectangles; the dragged band's grip must be
+        # repainted all the same (no light middle)
+        $prepHid = {
+            param($id)
+            $m = Get-Main $id; Post-Cmd $m 756; Start-Sleep -Milliseconds 1500; Settle $m
+            $rb = @(Get-Desc $m 'ReBarWindow32')[0]
+            $kids = @([Cap416]::Kids($rb) | Where-Object { [Cap416]::IsWindowVisible($_) -and [Cap416]::GetParent($_) -eq $rb } | ForEach-Object { ,@($_, (Rel $m $_)) })
+            $row2 = @($kids | Where-Object { $_[1][1] -ge 25 -and $_[1][1] -lt 50 } | Sort-Object { $_[1][0] })
+            $script:HidInfo = ('{0} bands on the second row, lefts {1}' -f $row2.Count, (($row2 | ForEach-Object { $_[1][0] }) -join ','))
+            if ($row2.Count -lt 2) { return }
+            $plg = $row2[$row2.Count - 1][1]
+            $o = New-Object Cap416+POINT; [void][Cap416]::ClientToScreen($rb, [ref]$o)
+            $mo = New-Object Cap416+POINT; [void][Cap416]::ClientToScreen($m, [ref]$mo)
+            $dx = $mo.x - $o.x; $dy = $mo.y - $o.y   # main-client -> rebar-client
+            # the grip: the Dark pair (464646 ... 1A1A1A two pixels right) in the 16 px left of the band's child
+            $cap = [Cap416]::Capture($m, $false); $gx = -1; $gy = $plg[1] + 10
+            for ($x = $plg[0] - 16; $x -lt $plg[0] - 2 -and $gx -lt 0; $x++) {
+                if (($cap.GetPixel($x, $gy).ToArgb() -band 0xFFFFFF) -eq 0x464646 -and ($cap.GetPixel($x + 2, $gy).ToArgb() -band 0xFFFFFF) -eq 0x1A1A1A) { $gx = $x + 1 }
+            }
+            $cap.Dispose()
+            if ($gx -lt 0) { $script:HidInfo += '; no grip found left of the Plugins bar'; return }
+            $plg = @(($gx + 10), $plg[1])
+            $x = $plg[0] - 10 + $dx; $y0 = $plg[1] + 10 + $dy; $y1 = 90 + $dy
+            [void][Cap416]::PostMessageW($rb, 0x0201, [IntPtr]1, [IntPtr](($y0 -shl 16) -bor $x)); Start-Sleep -Milliseconds 300
+            foreach ($yy in ($y0 + 6), ($y0 + 14), ($y0 + 22), $y1) { [void][Cap416]::PostMessageW($rb, 0x0200, [IntPtr]1, [IntPtr](($yy -shl 16) -bor ($x + 10))); Start-Sleep -Milliseconds 250 }
+            Start-Sleep -Milliseconds 1200
+            $script:HidInfo += ('; grip pressed at main x {0}, dragged to y 90' -f ($plg[0] - 10))
+        }
+        $script:HidInfo = ''
+        $HD = Fresh $Exe 1 'drag_hidden_dark' $prepHid @{ 'Show Plugins Bar' = 1; 'PluginsBar Index' = 2; 'PluginsBar Break' = 0; 'ToolBar Width' = 400 }
+        $hidLight = [P418]::LightRuns($HD.Bmp, $HD.Rebar[3], 12)
+        $dragged = $script:HidInfo -match 'grip pressed'
+        Row 'DRAG' 'HIDDEN' (V ($dragged -and $hidLight -eq '0')) ('{0}; rebar {1} px during the drag; light runs >= 12 px in the Dark rebar: {2}' -f $script:HidInfo, $HD.Rebar[3], $hidLight)
+        $HD.Bmp.Dispose()
     }
 
     # the Plugins bar and the second drive bar toggled the same way in both themes (from the same configuration)

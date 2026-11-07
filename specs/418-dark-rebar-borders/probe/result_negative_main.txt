@@ -11,6 +11,8 @@ DARK       TITLE  FAIL        first title row 86 / 78; from the frame line above
 SWITCH     TODARK PASS        Default -> Dark at run time vs a fresh Dark start, rows 0-128: 0 pixels differ
   switch_back: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
 SWITCH     TOLIGHT PASS        Dark -> Default at run time vs a fresh Default start, rows 0-128: 0 pixels differ
+  drag_hidden_dark: rebar 0,0,1714,69; strip 1,69,831,98; dirline 1,98,831,121; style 0x56002249 (WS_BORDER 0, RBS_BANDBORDERS 0); bands 5; first title row 78
+DRAG       HIDDEN FAIL        2 bands on the second row, lefts 0,830; no grip found left of the Plugins bar; rebar 69 px during the drag; light runs >= 12 px in the Dark rebar: 0
   extra_default: rebar 0,0,1714,101; strip 1,101,831,130; dirline 1,130,831,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
   drag_default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
   drag_dark: rebar 0,0,1714,69; strip 1,69,831,98; dirline 1,98,831,121; style 0x56002249 (WS_BORDER 0, RBS_BANDBORDERS 0); bands 3; first title row 78
@@ -24,4 +26,4 @@ EXTRA      NOLIGHT PASS        light runs (A0A0A0, FFFFFF, F0F0F0) >= 12 px in t
 EXTRA      GRIPS  FAIL        3 grips, 3 not drawn alike in Dark; x 4 y 4-21: 18 rows not the Dark grip (Dark 2D2D2D 2D2D2D 2D2D2D) x 4 y 29-45: 17 rows not the Dark grip (Dark 2D2D2D 2D2D2D BD9DF8) x 4 y 53-71: 19 rows not the Dark grip (Dark 2D2D2D 2D2D2D FFD97A) menu from x 19 / 10, top toolbar from x 16 / 12 (Default / Dark)
 EXTRA      TITLE  FAIL        first title row 110 / 100; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
 Registry: restored; identical=True; SHA-256 before 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E / after 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E
-Rows: PASS 5, FAIL 11, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 5, FAIL 12, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

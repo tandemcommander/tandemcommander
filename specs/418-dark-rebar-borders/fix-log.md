@@ -136,3 +136,23 @@ Backlog item `dark-theme-panel-tabs-look-lower-than-in-the-default-theme`. HEAD0
   row moves it from index 1 to 2 in both themes, the same rows and dark lines after; the rest as before.
   **Negative control on main (`result_negative_main.txt`): 11 FAIL** (DARK / EXTRA ROWS, STYLE, LINES, GRIPS,
   TITLE; DRAG - Dark index stays 1). saltests 286948 / 0, build succeeded.
+
+## Review 3 (the second grip form)
+
+- Refute-first agent, with its own hidden-desktop runs: **MUST 0, SHOULD 1, NOTE 4**.
+  - SHOULD (severity 3, fixed here): `ThemeRebarCustomDraw` found the band by its rectangle; a hidden band keeps its
+    old one - while a band is dragged with two drive bars shown, the drive bands are hidden (`RBN_BEGINDRAG`) and a
+    band dragged onto a new last row matched the hidden drive bar first (no grip -> no repaint): the dragged band's
+    grip kept its F0F0F0 middle during the drag. Reproduced by the new probe row DRAG HIDDEN (the Plugins bar
+    beside the top toolbar, the second drive bar, the Plugins bar's grip - found from the pixels - dragged to y 90
+    and captured with the button down): on the unfixed build **FAIL** - `col 5 y 56-71 F0F0F0`
+    (`result_review3_before.txt`). Fix: the band by its id (`RB_IDTOINDEX(dwItemSpec)`), its rectangle checked,
+    hidden bands skipped. After: PASS.
+  - NOTE: the `SetThemeMode` comment and a probe comment still called the grips light-only - corrected. NOTE: a
+    grip beside another band in a row is drawn right (checked by the reviewer). NOTE: the custom-draw protocol,
+    the Default path, the placement before the UI-lock test and the GDI handling hold. NOTE (not driven): a custom
+    system face colour equal to 464646 / 1A1A1A, a display format where the face colour does not round-trip, a band
+    taller than 400 px - cosmetic edge cases, accepted.
+- **Final (`result_after.txt`): PASS 25, FAIL 0, NOT DRIVEN 0.** Negative control on main
+  (`result_negative_main.txt`): **12 FAIL** (DARK / EXTRA ROWS, STYLE, LINES, GRIPS, TITLE; DRAG MOVE and HIDDEN).
+  saltests 286948 / 0, build succeeded, `check_encoding --strict` TOTAL 0.
