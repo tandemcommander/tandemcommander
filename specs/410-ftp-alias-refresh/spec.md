@@ -83,7 +83,8 @@ typed to `localhost` stores `sub/n.txt`, Enter on `sub`: the panel's connection 
 
 - **FR-001**: A change-on-path notification for an FTP / FTPS path MUST refresh every FTP panel
   whose connection has the same user and port and whose path the notification covers (the same
-  path rule as today), also when the host name differs from the notified one.
+  path rule as today), also when the host name differs from the notified one - except a panel of
+  another host whose connection is closed (FR-003).
 - **FR-002**: The refresh for a panel under another host name MUST use the same timing as today's
   refresh under the same name (soft refresh: now when the main window is active, else on its
   activation; otherwise the delayed refresh).
@@ -119,7 +120,8 @@ typed to `localhost` stores `sub/n.txt`, Enter on `sub`: the panel's connection 
   after an upload through another name.
 - **SC-002**: Probe row CACHE-ALIAS passes (FAIL at 2ce004b9).
 - **SC-003**: Control rows REFRESH-SAME, CACHE-SAME and the path rule row REFRESH-ELSE stay PASS;
-  feature 341's probe (`ftp341_probe.ps1`) stays 12 / 0.
+  feature 341's probe (`ftp341_probe.ps1`) stays 12 / 0; row REFRESH-CLOSED (review 1) passes: no
+  reconnect question and no new login for a panel of another host whose connection is closed.
 - **SC-005**: Probe row VIEW-ALIAS passes: a file viewed under one name is downloaded again
   after a change under another name (VIEW-SAME control stays PASS).
 - **SC-004**: the shared decision has `saltests` checks (same / other host, other user, anonymous,

@@ -98,6 +98,18 @@ again: PASS 14, FAIL 0 (the file was overwritten by the run after review 1, PASS
 - The listing cache compares the port as a number, the panel / viewer rule as text (`021` vs `21`);
   older than this feature, harmless (review 1, NOTE 4).
 
+- A panel of another host whose connection is closed shows nothing that its listing is outdated;
+  only its caches are dropped, the next refresh or entering the folder lists again (review 2,
+  NOTE 4 - the item's *Expected* "so that the next use lists it again").
+- The closed-connection decision is made when the notification arrives: a soft refresh waiting for
+  the main window's activation, or the `FSE_TIMER` wait, can still meet a connection closed in
+  between (the reconnect question then, as before 410); a connection lent to the panel's own
+  operation counts as closed, so a change under another name in that window leaves the panel
+  stale until Ctrl+R (pre-410 behaviour; review 2, NOTE 3).
+- No row proves the caches are dropped for a closed-connection panel; by reading the viewed-file
+  drop runs before the `onlyOutdated` test and the listing-cache drop (`ftp.cpp`) does not depend on
+  the connection (review 2, NOTE 2).
+
 ## Review
 
 ### Review 1 (refute-first agent) - MUST 0, SHOULD 1, NOTE 6
@@ -117,3 +129,23 @@ cache marks files in use outdated).
 | NOTE 5 | T011 ticked early | done at the close (records) |
 | NOTE 6 | rename / delete not probed | documented (*Limits*, by reading) |
 | NOTE 7 | different server encodings defeat the match | documented (*Limits*) |
+
+### Review 2 (refute-first agent) - MUST 0, SHOULD 0, NOTE 4
+
+Its own measurements: `ftp410_probe.ps1` 16 / 0 on the branch build (checked built from HEAD); the
+FTP plug-in of HEAD~1 built in its own worktree fails REFRESH-CLOSED (the reconnect question, a new
+session logs in and lists) and passes REFRESH-ALIAS - confirms `result_closed_before.txt`; 341's
+`ftp341_probe.ps1` 12 / 0; saltests 282637 / 0; encoding guard 0. By reading: in the closed case an
+upload into the stale panel still asks (341/345's `ChangedUnderOtherName`, SEED-ALIAS PASS);
+`IsConnected()` takes a lock, used from the main thread elsewhere; same-name path and `IsOurPath`
+unchanged; no buffer, cut or code-page call added.
+
+| # | Finding | Done |
+|---|---|---|
+| NOTE 1 | plan.md, tasks.md T005, FR-001 and the success criteria still described the first design / missed REFRESH-CLOSED | corrected |
+| NOTE 2 | no row proves the caches are dropped for a closed panel | documented (*Limits*); the order is stated in the `fs3.cpp` comment ("the viewed files above") |
+| NOTE 3 | decision at notification time; a lent connection counts as closed | documented (*Limits*) |
+| NOTE 4 | nothing on screen shows "outdated" | documented (*Limits*) |
+
+No code changed after review 2 (documents only), so the build and probe results of the review-1
+commit stand.

@@ -14,8 +14,9 @@ same root / same user and port under another host / other - used by
 
 1. `FTPRootPathMatch` (`ftputils.cpp`, new; `FTPHasTheSameRootPath` becomes "== same root") and
    `fs3.cpp`: an "other host" match with the path rule refreshes the panel with the same timing,
-   but with `NextRefreshWontClearCache = FALSE` (the refresh distrusts the path: re-lists, drops
-   cached listings and viewer files of the panel path and below); and, for every "other host"
+   while its connection is open (a closed one is not reconnected for a change perhaps made on
+   another server - review 1); `NextRefreshWontClearCache` stays TRUE (the notification drops the
+   path's caches for every host itself - first design cleared it, revised after review 1); and, for every "other host"
    FS whatever its path, drops viewer files of the notified path under that FS's own name (FR-007);
 2. `CListingCache::AcceptChangeOnPathNotification` (`ctrlcon4.cpp`): the host is no longer
    compared - same user (anonymous = no user) and port drop the matching listings (FR-004).

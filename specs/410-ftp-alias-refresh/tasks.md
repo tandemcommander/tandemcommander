@@ -16,7 +16,7 @@
 
 **Independent test**: probe rows REFRESH-ALIAS (FAIL -> PASS), REFRESH-SAME, REFRESH-ELSE (PASS stays).
 
-- [X] T005 [US1] In CPluginFSInterface::AcceptChangeOnPathNotification (src/plugins/ftp/fs3.cpp) refresh on SAL_FTP_ROOT_OTHER_HOST too (same path rule and timing); NextRefreshWontClearCache = TRUE only for the same root, FALSE for another host (FR-003)
+- [X] T005 [US1] In CPluginFSInterface::AcceptChangeOnPathNotification (src/plugins/ftp/fs3.cpp) refresh on SAL_FTP_ROOT_OTHER_HOST too (same path rule and timing); NextRefreshWontClearCache stays TRUE (revised after review 1: first done as FALSE for another host, redundant); review 1: no refresh of an other-host panel whose connection is closed (FR-003, row REFRESH-CLOSED)
 - [X] T006 [US1] In the same method, for SAL_FTP_ROOT_OTHER_HOST drop the viewer files of the notified server path under this FS's own root, for ftp: and ftps: (FR-007), refusing (skipping) a name that does not fit
 
 ## Phase 4: User Story 2 - a folder entered later is listed again (P2)
