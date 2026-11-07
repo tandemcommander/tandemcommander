@@ -401,7 +401,9 @@
       "IDS_UPDATE_ERR_BROWSER": "Die Adresse konnte in Ihrem Webbrowser nicht geöffnet werden:\\n\\n%s\\n\\nMöchten Sie die Adresse in die Zwischenablage kopieren?",
       "IDS_UPDATE_ERR_START": "Es konnte nicht nach einer neuen Version gesucht werden: Die Suche konnte nicht gestartet werden. Versuchen Sie es erneut.",
       "IDS_PACKINTOITSELF": "Ein Archiv kann nicht in sich selbst gepackt werden. Lassen Sie das Archiv (oder das Verzeichnis, in dem es sich befindet) bei der Auswahl weg.",
-      "IDC_QUICKSEARCH_FILTER": "Schnellsuche: Text überall im Namen &finden, nur Treffer anzeigen"
+      "IDC_QUICKSEARCH_FILTER": "Schnellsuche: Text überall im Namen &finden, nur Treffer anzeigen",
+      "#mask hints": "Maskenhinweise",
+      "#extended mask hints": "erweiterte Maskenhinweise"
     },
     "french": {
       "IDS_MENU_TAB_MOVETOOTHER": "Dé&placer vers l'autre panneau",
@@ -440,7 +442,9 @@
       "IDS_UPDATE_ERR_BROWSER": "L'adresse n'a pas pu être ouverte dans votre navigateur web :\\n\\n%s\\n\\nVoulez-vous copier l'adresse dans le presse-papiers ?",
       "IDS_UPDATE_ERR_START": "Impossible de rechercher une nouvelle version : la recherche n'a pas pu être lancée. Réessayez.",
       "IDS_PACKINTOITSELF": "Impossible de compresser une archive dans elle-même. N'incluez pas l'archive (ou le répertoire qui la contient) dans la sélection.",
-      "IDC_QUICKSEARCH_FILTER": "Recherche rapide : texte &partout dans le nom, seuls les résultats affichés"
+      "IDC_QUICKSEARCH_FILTER": "Recherche rapide : texte &partout dans le nom, seuls les résultats affichés",
+      "#mask hints": "aide sur les masques",
+      "#extended mask hints": "aide sur les masques étendus"
     },
     "dutch": {
       "IDS_MENU_TAB_MOVETOOTHER": "Naar ander paneel &verplaatsen",
@@ -523,7 +527,9 @@
       "IDC_UPDN_SKIP": "&Omiteți această versiune",
       "IDS_MENU_HELP_CHECKVERSION": "Verificați dacă există o versiu&ne nouă",
       "#Check for New Version": "Verificare versiune nouă",
-      "IDC_QUICKSEARCH_FILTER": "Căutare rapidă: text oriunde în n&ume, afișează doar potrivirile"
+      "IDC_QUICKSEARCH_FILTER": "Căutare rapidă: text oriunde în n&ume, afișează doar potrivirile",
+      "#mask hints": "indicii pentru măști",
+      "#extended mask hints": "indicii pentru măști extinse"
     },
     "spanish": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mover al otro panel",
@@ -557,7 +563,9 @@
       "IDS_PACKINTOITSELF": "No se puede comprimir un archivo en sí mismo. Deje el archivo (o el directorio que lo contiene) fuera de la selección.",
       "IDS_CANNOTMOVEDIRINTOITSELF": "No se puede trasladar un directorio a sí mismo ni a uno de sus subdirectorios.",
       "IDC_QUICKSEARCH_FILTER": "Búsqueda rápida: texto en cualquier &parte del nombre, solo coincidencias",
-      "IDS_CFGMIGRATE_FAILED": "Tandem Commander no ha podido trasladar su configuración a su nueva ubicación en el Registro (HKEY_CURRENT_USER\\\\%s).\\n\\nEn esta ocasión, la utilizará en su ubicación actual (HKEY_CURRENT_USER\\\\%s) y volverá a intentarlo la próxima vez que se inicie. No se ha eliminado nada."
+      "IDS_CFGMIGRATE_FAILED": "Tandem Commander no ha podido trasladar su configuración a su nueva ubicación en el Registro (HKEY_CURRENT_USER\\\\%s).\\n\\nEn esta ocasión, la utilizará en su ubicación actual (HKEY_CURRENT_USER\\\\%s) y volverá a intentarlo la próxima vez que se inicie. No se ha eliminado nada.",
+      "#mask hints": "ayuda de plantillas",
+      "#extended mask hints": "ayuda de plantillas ampliadas"
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -615,6 +623,10 @@
     ],
     "_feature_346": [
       "IDS_MENU_FILES_RENAMEINPLACE (Files > Rename in Place, Shift+F6): the key names as the module writes them (de 'Umschalt+', fr 'Maj+', es 'Mays+'); sk DeepL said 'Pomenovať' (to name) - the module renames with 'premenovať'; nl and es take the module's established rename term ('Naam ... veranderen', 'Cambiar nombre') instead of DeepL's 'hernoemen' / 'Renombrar'."
+    ],
+    "_feature_409": [
+      "The mask-hints link (IDC_FILEMASK_HINT, 11 dialogs, GitHub #11) was clipped: shorter natural wordings for de/fr/es (de 'Maskenhinweise' - one compound word, was 'Masken Hinweise'; D2350 'erweiterte' = extended, was 'Zusätzliche' = additional; fr 'aide sur les masques', was 'indications sur les masques'; es 'ayuda de plantillas' with the corpus's 'plantilla' for a mask).",
+      "ro 'indicii pentru măști' = hints for masks; was 'mascheaza indiciile' (masks the hints) in Compare Directories and 'masca indicii' in five dialogs. Keys are the English text: id 102 is shared by other controls of salamand. The width comes from src/lang/lang.rc (84 / 120 du), at least the merge's estimate of every pinned text so layout.widen() does not grow the right-aligned link to the right."
     ]
   },
   "zip": {

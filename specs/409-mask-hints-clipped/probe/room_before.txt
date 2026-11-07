@@ -1,0 +1,35 @@
+EDGE D100   PASS x 154->154 cx 42->42 right 196->196
+ROOM D100   PASS x 154..196 free in y 32..40
+EST  D100   FAIL czech 'nápověda k masce' est 66 > 42; german 'Masken Hinweise' est 62 > 42; french 'indications sur les masques' est 111 > 42; dutch 'masker hints' est 50 > 42; romanian 'indicii masca' est 54 > 42; slovak 'nápoveda k maske' est 66 > 42; spanish 'sugerencias de plantilla' est 99 > 42
+EDGE D104   PASS x 158->158 cx 38->38 right 196->196
+ROOM D104   PASS x 158..196 free in y 32..40
+EST  D104   FAIL czech 'nápověda k masce' est 66 > 38; german 'Masken Hinweise' est 62 > 38; french 'indications sur les masques' est 111 > 38; dutch 'masker hints' est 50 > 38; hungarian 'maszk tipp' est 42 > 38; romanian 'indicii masca' est 54 > 38; slovak 'nápoveda k maske' est 66 > 38; spanish 'sugerencias de plantilla' est 99 > 38
+EDGE D191   PASS x 200->200 cx 42->42 right 242->242
+ROOM D191   PASS x 200..242 free in y 247..255
+EST  D191   FAIL czech 'nápověda k masce' est 66 > 42; german 'Masken-Hinweise' est 62 > 42; french 'indications sur masques' est 95 > 42; dutch 'Masker hints' est 50 > 42; romanian 'mascheaza indiciile' est 78 > 42; slovak 'nápoveda k maske' est 66 > 42; spanish 'sugerencias de plantilla' est 99 > 42
+EDGE D205   PASS x 203->203 cx 41->41 right 244->244
+ROOM D205   PASS x 203..244 free in y 153..161
+EST  D205   FAIL czech 'nápověda k masce' est 66 > 41; german 'Masken Hinweise' est 62 > 41; french 'indications sur les masques' est 111 > 41; dutch 'masker hints' est 50 > 41; hungarian 'maszk tipp' est 42 > 41; romanian 'masca indicii' est 54 > 41; slovak 'nápoveda k maske' est 66 > 41; spanish 'sugerencias de plantilla' est 99 > 41
+EDGE D405   PASS x 185->185 cx 39->39 right 224->224
+ROOM D405   PASS x 185..224 free in y 46..54
+EST  D405   FAIL czech 'nápověda k masce' est 66 > 39; german 'Masken Hinweise' est 62 > 39; french 'indication sur les masques' est 107 > 39; dutch 'masker hints' est 50 > 39; hungarian 'maszk tipp' est 42 > 39; romanian 'indicii masca' est 54 > 39; slovak 'nápoveda k maske' est 66 > 39; spanish 'sugerencias de plantilla' est 99 > 39
+EDGE D520   PASS x 175->175 cx 41->41 right 216->216
+ROOM D520   PASS x 175..216 free in y 114..122
+EST  D520   FAIL czech 'nápověda k masce' est 66 > 41; german 'Masken Hinweise' est 62 > 41; french 'indications sur les masques' est 111 > 41; dutch 'masker hints' est 50 > 41; hungarian 'maszk tipp' est 42 > 41; romanian 'indicii masca' est 54 > 41; slovak 'nápoveda k maske' est 66 > 41; spanish 'sugerencias de plantilla' est 99 > 41
+EDGE D535   PASS x 250->250 cx 38->38 right 288->288
+ROOM D535   PASS x 250..288 free in y 169..177
+EST  D535   FAIL czech 'nápověda k masce' est 66 > 38; german 'Masken Hinweise' est 62 > 38; french 'indications sur les masques' est 111 > 38; dutch 'masker hints' est 50 > 38; hungarian 'maszk tipp' est 42 > 38; romanian 'masca indicii' est 54 > 38; slovak 'nápoveda k maske' est 66 > 38; spanish 'sugerencias de plantilla' est 99 > 38
+EDGE D630   PASS x 247->247 cx 46->46 right 293->293
+ROOM D630   PASS x 247..293 free in y 159..167
+EST  D630   FAIL czech 'nápověda k masce' est 66 > 46; german 'Masken Hinweise' est 62 > 46; french 'indications sur les masques' est 111 > 46; dutch 'masker hints' est 50 > 46; romanian 'masca indicii' est 54 > 46; slovak 'nápoveda k maske' est 66 > 46; spanish 'sugerencias de plantilla' est 99 > 46
+EDGE D2320  PASS x 257->257 cx 38->38 right 295->295
+ROOM D2320  PASS x 257..295 free in y 150..158
+EST  D2320  FAIL czech 'nápověda k masce' est 66 > 38; german 'Masken Hinweise' est 62 > 38; french 'Indications sur les masques' est 111 > 38; dutch 'masker hint' est 46 > 38; hungarian 'maszk tipp' est 42 > 38; romanian 'indicii masca' est 54 > 38; slovak 'nápoveda k maske' est 66 > 38; spanish 'sugerencias de plantilla' est 99 > 38
+EDGE D2350  PASS x 223->223 cx 72->72 right 295->295
+ROOM D2350  PASS x 223..295 free in y 165..173
+EST  D2350  FAIL czech 'nápověda k rozšířeným maskám' est 115 > 72; german 'Zusätzliche Masken Hinweise' est 111 > 72; french 'indications étendues sur les masques' est 147 > 72; hungarian 'kiterjesztési maszk tipp' est 99 > 72; romanian 'indicii masca extinse' est 87 > 72; slovak 'nápoveda k rozšíreným maskám' est 115 > 72; spanish 'sugerencias de plantilla ampliadas' est 139 > 72
+EDGE D2490  PASS x 152->152 cx 41->41 right 193->193
+ROOM D2490  PASS x 152..193 free in y 28..36
+EST  D2490  FAIL czech 'nápověda k masce' est 66 > 41; german 'Masken Hinweise' est 62 > 41; french 'indications sur les masques' est 111 > 41; dutch 'masker hints' est 50 > 41; hungarian 'maszk tipp' est 42 > 41; romanian 'masca indicii' est 54 > 41; slovak 'nápoveda k maske' est 66 > 41; spanish 'sugerencias de plantilla' est 99 > 41
+dialogs: 11 (base f38220a2)
+TOTAL: 11 failed

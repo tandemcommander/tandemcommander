@@ -1,0 +1,6 @@
+CMP        FIT    PASS        english 'Compare Directories': link 'mask hints' needs 50 px, has 126 px (dpi 96)
+CMP        SHOT   PASS        english: captured True -> specs\409-mask-hints-clipped\probe\comparedirs_english_after.png
+CMP        INK    PASS        english: dark pixels in the first 12 px of the text 37, in the last 12 px 36 (link at 245,432 126x13 in the picture)
+CMP        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+Registry restored+identical: True

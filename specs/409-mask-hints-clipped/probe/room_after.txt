@@ -1,0 +1,35 @@
+EDGE D100   PASS x 154->112 cx 42->84 right 196->196
+ROOM D100   PASS x 112..196 free in y 32..40
+EST  D100   PASS every enabled language estimate <= 84
+EDGE D104   PASS x 158->112 cx 38->84 right 196->196
+ROOM D104   PASS x 112..196 free in y 32..40
+EST  D104   PASS every enabled language estimate <= 84
+EDGE D191   PASS x 200->158 cx 42->84 right 242->242
+ROOM D191   PASS x 158..242 free in y 247..255
+EST  D191   PASS every enabled language estimate <= 84
+EDGE D205   PASS x 203->160 cx 41->84 right 244->244
+ROOM D205   PASS x 160..244 free in y 153..161
+EST  D205   PASS every enabled language estimate <= 84
+EDGE D405   PASS x 185->140 cx 39->84 right 224->224
+ROOM D405   PASS x 140..224 free in y 46..54
+EST  D405   PASS every enabled language estimate <= 84
+EDGE D520   PASS x 175->132 cx 41->84 right 216->216
+ROOM D520   PASS x 132..216 free in y 114..122
+EST  D520   PASS every enabled language estimate <= 84
+EDGE D535   PASS x 250->204 cx 38->84 right 288->288
+ROOM D535   PASS x 204..288 free in y 169..177
+EST  D535   PASS every enabled language estimate <= 84
+EDGE D630   PASS x 247->209 cx 46->84 right 293->293
+ROOM D630   PASS x 209..293 free in y 159..167
+EST  D630   PASS every enabled language estimate <= 84
+EDGE D2320  PASS x 257->211 cx 38->84 right 295->295
+ROOM D2320  PASS x 211..295 free in y 150..158
+EST  D2320  PASS every enabled language estimate <= 84
+EDGE D2350  PASS x 223->175 cx 72->120 right 295->295
+ROOM D2350  PASS x 175..295 free in y 165..173
+EST  D2350  PASS every enabled language estimate <= 120
+EDGE D2490  PASS x 152->109 cx 41->84 right 193->193
+ROOM D2490  PASS x 109..193 free in y 28..36
+EST  D2490  PASS every enabled language estimate <= 84
+dialogs: 11 (base f38220a2)
+TOTAL: 0 failed

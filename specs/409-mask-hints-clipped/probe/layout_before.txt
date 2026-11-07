@@ -1,0 +1,1817 @@
+CROSS chinesesimplified/7zip D1200 #9 213>174 帮助
+CROSS chinesesimplified/7zip D1200 #9 213>174 帮助
+CROSS chinesesimplified/7zip D1201 #2 225>191 取消
+CROSS chinesesimplified/7zip D1201 #2 225>191 取消
+CLIP chinesesimplified/dbviewer D12300 #13001 36>28 查找(F)
+CLIP chinesesimplified/filecomp D130 #139 132>62 CR/LF简体中文（大陆）
+CLIP chinesesimplified/filecomp D130 #140 132>62 CR/LF简体中文（大陆）
+CLIP chinesesimplified/filecomp D150 #139 132>65 CR/LF简体中文（大陆）
+CLIP chinesesimplified/filecomp D150 #140 132>65 CR/LF简体中文（大陆）
+CLIP chinesesimplified/ftp D520 #3002 76>75 代理服务器(P):
+CLIP chinesesimplified/ftp D520 #3006 41>38 发送(N):
+CLIP chinesesimplified/ftp D520 #3009 124>112 在此时间后停止发送(T):
+CROSS chinesesimplified/ftp D580 #3007 319>172 命令用分号分隔 (CWD []; HELP)
+CLIP chinesesimplified/ftp D580 #3009 39>36 发送(n):
+CLIP chinesesimplified/ftp D580 #3012 135>112 在此时间以后停止发送(g):
+CROSS chinesesimplified/ftp D750 #777 393>346 低磁盘空间
+CLIP chinesesimplified/ftp D850 #3002 41>40 名称(N):
+CLIP chinesesimplified/ftp D880 #3002 41>40 名称(N):
+CROSS chinesesimplified/pictview D2040 #3007 264>262 一些图像可能包含不正确的缩略图，这些缩略图没有正确旋转或没有反应最新的变更。
+CROSS chinesesimplified/pictview D2130 #2 113>101 取消
+CROSS chinesesimplified/pictview D2140 #2 114>112 取消
+CLIP chinesesimplified/pictview D2150 #2153 65>60 计时器(T)
+CROSS chinesesimplified/pictview D2300 #2310 274>224 GIF
+CROSS chinesesimplified/pictview D2300 #2312 263>224 创建 GIF89a
+CROSS chinesesimplified/pictview D2300 #2316 248>224 %
+CROSS chinesesimplified/pictview D2500 #9 412>379 帮助
+CROSS chinesesimplified/regedt D135 #139 318>263 显示选项(O)
+CROSS chinesesimplified/regedt D135 #139 318>263 显示选项(O)
+CROSS chinesesimplified/regedt D135 #146 272>263 数据(D)
+CROSS chinesesimplified/regedt D135 #146 272>263 数据(D)
+CROSS chinesesimplified/regedt D135 #157 306>263 时:分:秒 日.月.年
+CROSS chinesesimplified/regedt D135 #157 306>263 时:分:秒 日.月.年
+CROSS chinesesimplified/regedt D135 #158 306>263 时:分:秒 日.月.年
+CROSS chinesesimplified/regedt D135 #158 306>263 时:分:秒 日.月.年
+CROSS chinesesimplified/renamer D100 #123 347>346 排除扩展名(D)
+CROSS chinesesimplified/renamer D100 #123 347>346 排除扩展名(D)
+CROSS chinesesimplified/renamer D100 #123 347>346 排除扩展名(D)
+CROSS chinesesimplified/renamer D140 #302 164>159 相对于
+CROSS chinesesimplified/renamer D140 #304 164>159 相对于
+CROSS chinesesimplified/renamer D140 #2 173>159 取消
+CLIP chinesesimplified/salamand D191 #197 51>50 大小(z)
+CROSS chinesesimplified/salamand D260 #9 181>157 帮助
+CLIP chinesesimplified/salamand D370 #1150 40>31 路径(P):
+CLIP chinesesimplified/salamand D400 #542 91>88 混合大小写(M)
+CLIP chinesesimplified/salamand D405 #407 93>77 使用过滤器(U):
+CLIP chinesesimplified/salamand D630 #633 132>85 CR/LF简体中文（大陆）
+CLIP chinesesimplified/salamand D630 #1156 76>57 制表符大小(T):
+CROSS chinesesimplified/salamand D1065 #1151 295>294 主密码通过强大的 AES 加密算法来保护敏感信息，像 FTP 或 WinSCP 密码。如果你创建一个主密码，当 Tandem Commander 检索受保护的信息时，每次会话你将被要求输入一次主密码。
+CLIP chinesesimplified/salamand D2380 #2390 55>45 文件(F):
+CROSS chinesesimplified/salamand D2380 #2383 291>282 ...
+CROSS chinesesimplified/salamand D2490 #2492 197>195 无
+CROSS chinesesimplified/salamand D2500 #2522 237>225 搜索压缩包
+CROSS chinesesimplified/salamand D2500 #2522 237>225 搜索压缩包
+CROSS chinesesimplified/salamand D2500 #2513 226>225 正则表达式(g)
+CROSS chinesesimplified/salamand D2500 #2513 226>225 正则表达式(g)
+CROSS chinesesimplified/salamand D2560 #9 220>216 帮助
+CLIP chinesesimplified/salamand D2750 #2752 53>48 大小(S)
+CROSS chinesesimplified/salamand D2830 #9 201>157 帮助
+CLIP chinesesimplified/salamand D6110 #1151 36>28 查找(F)
+CLIP chinesesimplified/undelete D1200 #1205 72>70 正在取消删除
+CROSS chinesesimplified/zip D100 #105 299>267 高级(A)...
+CROSS chinesesimplified/zip D146 #3003 301>299 注: 你可以输入一个相对路径，当自解压程序运行时它将与当前目录合并，或者一个完整路径。保持此栏为空白则解压到当前目录。
+CROSS czech/7zip D1200 #9 213>174 Nápověda
+CROSS czech/7zip D1200 #9 213>174 Nápověda
+CROSS czech/7zip D1201 #2 225>191 Storno
+CROSS czech/7zip D1201 #2 225>191 Storno
+CLIP czech/codeview D310 #3003 105>102 Velikost (0 = výchozí):
+CLIP czech/codeview D310 #3008 250>236 Soubory s delšími řádky se zobrazují jako prostý text.
+CLIP czech/codeview D310 #3010 250>236 Větší soubory se otevírají ve vestavěném prohlížeči.
+CROSS czech/dbviewer D12220 #12224 278>276 Nastavit pozici na hlavní okno Tandem Commanderu
+CROSS czech/dbviewer D12250 #12255 198>196 Dvojité uvozovky (")
+CLIP czech/dbviewer D12300 #13003 50>46 Nastavení
+CROSS czech/dbviewer D12300 #12305 206>198 Rozlišovat velikost písmen
+CLIP czech/filecomp D130 #306 62>58 Konec řádku
+CLIP czech/filecomp D140 #302 141>97 Nastavení zobrazení souboru
+CLIP czech/filecomp D140 #307 135>77 Písmo zobrazeného souboru
+CLIP czech/filecomp D150 #306 62>58 Konce řádků
+CLIP czech/ftp D500 #503 219>196 Celková povolená rychlost pro FTP klienta:
+CLIP czech/ftp D520 #3007 43>38 každých:
+CLIP czech/ftp D520 #3012 149>147 Výchozí režim přenosu souboru
+CROSS czech/ftp D580 #3007 319>172 příkazy jsou odděleny středníkem (CWD []; HELP)
+CLIP czech/ftp D580 #3010 43>40 každých:
+CLIP czech/ftp D725 #3003 84>75 Prázdná hodnota:
+CLIP czech/ftp D750 #777 94>85 málo místa na disku
+CROSS czech/ftp D750 #777 393>346 málo místa na disku
+CLIP czech/ftp D795 #3007 50>48 Nastavení
+CLIP czech/ftp D815 #3013 129>120 Odstranění na FTP serveru
+CLIP czech/pictview D2000 #3006 92>85 Domovská stránka:
+CROSS czech/pictview D2040 #3007 264>262 Některé soubory s obrázky mohou obsahovat neaktuální miniaturu, která je špatně otočená nebo neodráží poslední úpravy obrázku.
+CROSS czech/pictview D2130 #2 113>101 Storno
+CROSS czech/pictview D2140 #2 114>112 Storno
+CROSS czech/pictview D2150 #2159 175>173 Virtuální obrazovku (při více monitorech)
+CLIP czech/pictview D2150 #2155 85>67 Horká klávesa
+CLIP czech/pictview D2150 #2153 58>55 Časovač
+CLIP czech/pictview D2180 #3000 106>87 Má se přepsat soubor:
+CROSS czech/pictview D2300 #2310 274>224 GIF
+CROSS czech/pictview D2300 #2312 265>224 Vytvořit GIF89a
+CROSS czech/pictview D2300 #2316 248>224 %
+CLIP czech/pictview D2300 #2320 95>83 Dělit do pásů (strips)
+CLIP czech/pictview D2300 #2321 66>63 Velikost pásu:
+CLIP czech/pictview D2500 #2513 161>129 Tisknout jen označenou oblast
+CROSS czech/pictview D2500 #9 412>379 Nápověda
+CROSS czech/regedt D135 #139 328>263 Zobrazit možnosti
+CROSS czech/regedt D135 #139 328>263 Zobrazit možnosti
+CROSS czech/regedt D135 #146 272>263 Data
+CROSS czech/regedt D135 #146 272>263 Data
+CROSS czech/regedt D135 #157 306>263 hh:mm:ss dd.mm.rrrr
+CROSS czech/regedt D135 #157 306>263 hh:mm:ss dd.mm.rrrr
+CROSS czech/regedt D135 #158 306>263 hh:mm:ss dd.mm.rrrr
+CROSS czech/regedt D135 #158 306>263 hh:mm:ss dd.mm.rrrr
+CROSS czech/renamer D100 #123 352>346 Nezahrnovat příponu
+CROSS czech/renamer D100 #123 352>346 Nezahrnovat příponu
+CROSS czech/renamer D100 #123 352>346 Nezahrnovat příponu
+CLIP czech/renamer D100 #130 112>78 Změna velikosti písmen
+CROSS czech/renamer D140 #302 164>159 vztaženo
+CROSS czech/renamer D140 #304 164>159 vztaženo
+CROSS czech/renamer D140 #2 173>159 Storno
+CLIP czech/salamand D100 #102 91>70 nápověda k masce
+CLIP czech/salamand D104 #102 91>63 nápověda k masce
+CLIP czech/salamand D191 #1152 204>194 Porovnat soubory se stejným názvem podle
+CLIP czech/salamand D191 #102 91>85 nápověda k masce
+CLIP czech/salamand D200 #1150 95>70 Přesouvaný soubor:
+CLIP czech/salamand D205 #225 103>88 Omezení rychlosti:
+CLIP czech/salamand D205 #217 125>93 Soubory pojmenované:
+CLIP czech/salamand D205 #102 91>80 nápověda k masce
+CROSS czech/salamand D260 #9 181>157 Nápověda
+CLIP czech/salamand D370 #1154 30>28 Ikona:
+CLIP czech/salamand D405 #102 91>65 nápověda k masce
+CLIP czech/salamand D450 #1153 89>68 Uživatelské jméno:
+CLIP czech/salamand D455 #457 86>60 nápověda k cestě
+CLIP czech/salamand D476 #1159 91>77 Disketové jednotky
+CLIP czech/salamand D476 #1153 242>191 Jednotky pevných disků (např. místní pevné disky)
+CLIP czech/salamand D476 #1155 167>164 CD-ROM nebo DVD-ROM jednotky
+CLIP czech/salamand D476 #1158 223>214 Pokud je cesta v panelu nedostupná, přejít na:
+CLIP czech/salamand D520 #102 91>68 nápověda k masce
+CLIP czech/salamand D535 #102 91>72 nápověda k masce
+CLIP czech/salamand D550 #1164 128>127 Příznaky systému souborů:
+CLIP czech/salamand D595 #1154 40>31 Velikost:
+CLIP czech/salamand D630 #1150 62>58 Konce řádků
+CLIP czech/salamand D630 #1156 90>57 Velikost tabulátoru:
+CLIP czech/salamand D630 #1163 304>261 Doplňující pravidla pro automatický výběr zobrazovacího režimu
+CLIP czech/salamand D630 #1161 161>147 Vynutit Textový režim pro soubory:
+CLIP czech/salamand D630 #1162 188>145 Vynutit Šestnáctkový režim pro soubory:
+CLIP czech/salamand D630 #102 91>80 nápověda k masce
+CLIP czech/salamand D630 #1159 110>100 Barva normálního textu
+CLIP czech/salamand D1030 #1156 90>88 Adresář nápovědy:
+CLIP czech/salamand D1040 #1150 137>112 Systémová znaková stránka:
+CLIP czech/salamand D1085 #1088 92>52 Adresářové zkratky
+CLIP czech/salamand D1085 #1089 133>55 Pluginový souborový systém
+CLIP czech/salamand D1105 #1150 88>80 Zobrazovat názvy:
+CLIP czech/salamand D1105 #1154 98>78 Zobrazovat velikosti:
+CLIP czech/salamand D2300 #1150 103>83 Komprimovat pomocí:
+CLIP czech/salamand D2320 #1150 93>83 Extrahovat pomocí:
+CLIP czech/salamand D2320 #1151 88>68 Souborové masky:
+CLIP czech/salamand D2320 #102 91>63 nápověda k masce
+CLIP czech/salamand D2340 #1151 107>104 Odstranit a archivovat:
+CLIP czech/salamand D2350 #102 154>120 nápověda k rozšířeným maskám
+CLIP czech/salamand D2380 #2387 88>68 nápověda k řádku
+CROSS czech/salamand D2380 #2383 290>282 ...
+CLIP czech/salamand D2490 #102 91>68 nápověda k masce
+CROSS czech/salamand D2490 #2492 197>195 Nepřevádět
+CROSS czech/salamand D2500 #2522 237>225 Hledat v archivech
+CROSS czech/salamand D2500 #2522 237>225 Hledat v archivech
+CLIP czech/salamand D2500 #2515 172>119 Rozlišovat malá a velká písmena
+CROSS czech/salamand D2500 #2513 226>225 Regulární výraz
+CROSS czech/salamand D2500 #2513 226>225 Regulární výraz
+CLIP czech/salamand D2560 #1152 78>48 Velikost souboru
+CROSS czech/salamand D2560 #9 220>216 Nápověda
+CLIP czech/salamand D2600 #1155 75>73 Autorská práva:
+CLIP czech/salamand D2830 #2832 143>109 Nastavit omezení rychlosti:
+CROSS czech/salamand D2830 #9 201>157 Nápověda
+CLIP czech/salamand D6110 #6123 172>156 Rozlišovat malá a velká písmena
+CLIP czech/salamand D6208 #1153 59>52 Podrobnosti:
+CLIP czech/undelete D1000 #3000 38>36 Celkem:
+CROSS czech/zip D100 #105 299>267 Pokročilé...
+CLIP czech/zip D112 #3002 58>46 Komprimace
+CLIP czech/zip D123 #3001 37>30 Soubor:
+CROSS czech/zip D146 #3003 301>299 Poznámka: Můžete zadat relativní cestu, která bude v kombinaci s aktuálním adresářem, ve kterém je spuštěn SFX archiv nebo úplnou cestu. Zanechte pole prázdné pro extrahování do aktuálního adresáře.
+CROSS czech/zip D190 #3001 256>253 Tato zpráva je zobrazována před hlavním dialogovým oknem a před začátkem extrahování.
+CROSS czech/zip D190 #3002 256>253 Zanechte pole 'Titulek' a 'Zpráva' prázdné, pokud nechcete zprávu zobrazovat.
+CLIP dutch/7zip D1200 #1300 85>82 Paneelinstellingen
+CROSS dutch/7zip D1200 #9 213>174 Help
+CROSS dutch/7zip D1200 #9 213>174 Help
+CROSS dutch/7zip D1201 #2 225>191 Annuleren
+CROSS dutch/7zip D1201 #2 225>191 Annuleren
+CLIP dutch/7zip D1202 #1300 464>343 Dit bestand is versleuteld. Geeft u a.u.b. het wachtwoord in voor het ontsleutelen van het bestand.
+CLIP dutch/7zip D1202 #1302 64>63 Wachtwoord:
+CLIP dutch/checksum D2000 #1007 78>58 Controleren van:
+CLIP dutch/codeview D310 #3003 112>102 Grootte (0 = standaard):
+CLIP dutch/codeview D310 #3006 268>236 Grotere bestanden worden als platte tekst weergegeven.
+CLIP dutch/codeview D310 #3008 320>236 Bestanden met langere regels worden als platte tekst weergegeven.
+CLIP dutch/codeview D310 #3010 295>236 Grotere bestanden worden geopend in de ingebouwde viewer.
+CROSS dutch/dbviewer D12220 #12224 278>276 Zelfde positie als Tandem Commander's hoofdvenster
+CROSS dutch/dbviewer D12250 #12264 104>96 Automatisch selecteren
+CROSS dutch/dbviewer D12250 #12263 299>296 Automatisch selecteren
+CROSS dutch/dbviewer D12300 #12305 206>198 Hoofd-/klein letter gevoelig
+CLIP dutch/filecomp D130 #302 64>60 Bestandstype
+CLIP dutch/filecomp D130 #304 74>72 Eerste bestand:
+CLIP dutch/filecomp D130 #305 83>75 Tweede bestand:
+CLIP dutch/filecomp D140 #307 140>77 Lettertype bestandsweergave
+CLIP dutch/filecomp D140 #309 37>35 Overige
+CLIP dutch/filecomp D150 #302 64>60 Bestandstype
+CLIP dutch/filecomp D150 #305 83>77 Tweede bestand:
+CLIP dutch/ftp D520 #3001 240>236 Standaard geavanceerde opties voor verbindingen
+CLIP dutch/ftp D520 #3005 281>258 Standaard instellingen voor actief houden van verbindingen
+CLIP dutch/ftp D520 #3006 42>38 Verzend:
+CLIP dutch/ftp D520 #3012 182>147 Standaard bestandsoverdrachtsmodus
+CLIP dutch/ftp D545 #3010 62>45 bytes groot is
+CLIP dutch/ftp D560 #569 117>107 Wachtwoord opslaan
+CLIP dutch/ftp D580 #3004 129>125 Bestandsoverdrachtmodus:
+CLIP dutch/ftp D580 #3005 141>125 Opdracht voor lijstweergaven:
+CLIP dutch/ftp D580 #3007 331>320 opdrachten worden gescheiden door een puntkomma (CWD []; HELP)
+CROSS dutch/ftp D580 #3007 319>172 opdrachten worden gescheiden door een puntkomma (CWD []; HELP)
+CLIP dutch/ftp D580 #3009 54>36 Verzenden:
+CLIP dutch/ftp D630 #3000 80>67 Gebruikersnaam:
+CLIP dutch/ftp D650 #651 309>280 Logboekregistratie van communicatie met servers inschakelen
+CLIP dutch/ftp D750 #777 117>85 onvoldoende schijfruimte
+CROSS dutch/ftp D750 #777 393>346 onvoldoende schijfruimte
+CLIP dutch/ftp D779 #782 339>330 Alleen aan wachtrij toevoegen (niet verwerken in actieve verbinding)
+CLIP dutch/ftp D785 #787 339>330 Alleen aan wachtrij toevoegen (niet verwerken in actieve verbinding)
+CLIP dutch/ftp D795 #810 386>338 Alleen aan de wachtlijst aanhangen (niet verwerken tijdens aktieve verbinding)
+CLIP dutch/ftp D915 #3001 190>169 kopiëren en verplaatsen van FTP server
+CLIP dutch/ftp D920 #927 121>109 Wachtwoord bewaren
+CROSS dutch/pictview D2040 #3007 264>262 Sommige afbeeldingen kunnen een onjuiste miniatuurweergave hebben, die niet juist gedraaid is of niet de laatste wijzigingen weergeeft.
+CROSS dutch/pictview D2040 #2050 263>262 Negeer oorspronkelijke miniaturen in afbeeldingen (langzamer)
+CROSS dutch/pictview D2130 #2 113>101 Annuleren
+CROSS dutch/pictview D2140 #2 114>112 Annuleren
+CROSS dutch/pictview D2150 #2159 175>173 Virtueelscherm (voor meerdere schermen)
+CLIP dutch/pictview D2180 #3000 108>87 Bestand overschrijven:
+CLIP dutch/pictview D2300 #3003 96>82 Omslaan/Spiegelen:
+CROSS dutch/pictview D2300 #2310 274>224 GIF
+CROSS dutch/pictview D2300 #2312 263>224 Maak GIF89a
+CROSS dutch/pictview D2300 #2316 248>224 %
+CLIP dutch/pictview D2300 #2321 70>63 Strook grootte:
+CROSS dutch/pictview D2500 #2515 415>411 Instellingen...
+CLIP dutch/pictview D2500 #3002 34>33 Boven:
+CLIP dutch/pictview D2500 #2516 114>100 Afbeelding centreren
+CLIP dutch/pictview D2500 #2512 148>134 Begrenzingsvak weergeven
+CLIP dutch/pictview D2500 #2513 165>129 Geselecteerd gebied afdrukken
+CROSS dutch/pictview D2500 #9 412>379 Help
+CROSS dutch/regedt D135 #139 324>263 Opties weergeven
+CROSS dutch/regedt D135 #139 324>263 Opties weergeven
+CROSS dutch/regedt D135 #146 272>263 Gegevens
+CROSS dutch/regedt D135 #146 272>263 Gegevens
+CROSS dutch/regedt D135 #157 306>263 hh:mm:ss dd.mm.yyyy
+CROSS dutch/regedt D135 #157 306>263 hh:mm:ss dd.mm.yyyy
+CROSS dutch/regedt D135 #158 306>263 hh:mm:ss dd.mm.yyyy
+CROSS dutch/regedt D135 #158 306>263 hh:mm:ss dd.mm.yyyy
+CLIP dutch/renamer D100 #105 104>100 Handmatigemodus
+CROSS dutch/renamer D100 #123 352>346 Extensie uitsluiten
+CROSS dutch/renamer D100 #123 352>346 Extensie uitsluiten
+CROSS dutch/renamer D100 #123 352>346 Extensie uitsluiten
+CLIP dutch/renamer D100 #130 87>78 Hoofdlettergebruik
+CROSS dutch/renamer D140 #302 168>159 relatief aan
+CROSS dutch/renamer D140 #304 168>159 relatief aan
+CROSS dutch/renamer D140 #2 173>159 Annuleren
+CLIP dutch/salamand D150 #1150 42>41 Bestand:
+CLIP dutch/salamand D180 #1150 110>87 Bestand Overschrijven:
+CLIP dutch/salamand D200 #1150 100>70 Verplaatsen bestand:
+CLIP dutch/salamand D205 #217 119>93 Bestanden met naam:
+CLIP dutch/salamand D260 #1152 51>45 Resultaten
+CLIP dutch/salamand D260 #1156 150>132 Totale gecomprimeerde grootte:
+CROSS dutch/salamand D260 #9 181>157 Help
+CLIP dutch/salamand D370 #1154 50>28 Pictogram:
+CLIP dutch/salamand D400 #1151 115>92 Notatie veranderen naar
+CLIP dutch/salamand D400 #1153 55>46 Veranderen
+CLIP dutch/salamand D404 #1150 108>87 Bestand overschrijven:
+CLIP dutch/salamand D450 #1150 136>125 Kan geen verbinding maken:
+CLIP dutch/salamand D476 #1153 196>191 Vaste stations (b.v. lokale harde schijven)
+CLIP dutch/salamand D497 #1150 42>41 Bestand:
+CLIP dutch/salamand D595 #1154 38>31 Grootte:
+CLIP dutch/salamand D630 #1156 58>57 Tab grootte:
+CLIP dutch/salamand D630 #1160 121>107 Geselecteerde tekst kleur
+CLIP dutch/salamand D1073 #1152 143>125 Verificatie Nieuw wachtwoord:
+CLIP dutch/salamand D1105 #1151 60>57 Toetsenbord
+CLIP dutch/salamand D2320 #1151 81>68 Bestandsmasker:
+CROSS dutch/salamand D2380 #2383 290>282 ...
+CROSS dutch/salamand D2490 #2492 197>195 Geen
+CROSS dutch/salamand D2500 #2522 237>225 Inclusief archieven
+CROSS dutch/salamand D2500 #2522 237>225 Inclusief archieven
+CROSS dutch/salamand D2500 #2513 226>225 Reguliere uitdrukking
+CROSS dutch/salamand D2500 #2513 226>225 Reguliere uitdrukking
+CLIP dutch/salamand D2560 #1152 77>48 Bestandsgrootte
+CROSS dutch/salamand D2560 #9 220>216 Help
+CLIP dutch/salamand D2730 #1150 90>70 Archiveer Bestand:
+CLIP dutch/salamand D2750 #1150 141>137 Zoek bestanden met dezelfde
+CROSS dutch/salamand D2830 #9 201>157 Help
+CLIP dutch/salamand D2830 #1150 97>70 Snelheids Beperking
+CLIP dutch/salamand D6110 #1151 61>28 Zoeken naar
+CLIP dutch/undelete D1400 #1405 515>412 Geef geen waarschuwing voordat het herstel plaatsvindt van de versleutelde bestanden op FAT of exFAT
+CLIP dutch/uniso D1200 #1201 395>349 Verwijder het alleen lezen attribuut wanneer er gekopieerd wordt van een archief
+CROSS dutch/zip D100 #105 302>267 Geavanceerd...
+CLIP dutch/zip D112 #114 532>493 Gebruik bij wijzigingen aan het archiefbestand een tijdelijk kopie-achiefbestand (aanbevolen, crash-bestendig)
+CLIP dutch/zip D112 #3004 491>473 uitpakkende archiefbestanden, welke altijd gebruik maken van de Tandem Commander naamconventie)
+CLIP dutch/zip D112 #3010 88>82 Paneel instellingen
+CLIP dutch/zip D123 #3000 421>352 Dit bestand is gecodeerd. Voert u alstublieft het juiste wachtwoord in voor het decoderen.
+CLIP dutch/zip D123 #3001 42>30 Bestand:
+CLIP dutch/zip D123 #3002 64>63 Wachtwoord:
+CLIP dutch/zip D137 #3000 108>88 Bestand overschrijven:
+CROSS dutch/zip D146 #3003 301>299 Opmerking: U kunt een relatief pad, die zal worden gecombineerd met de huidige directory als de zelfuitpakker wordt uitgevoerd, of het volledige pad opgeven. Laat het veld leeg voor het uitpakken naar de huidige directory.
+CLIP dutch/zip D146 #3007 50>35 Pictogram:
+CROSS dutch/zip D146 #160 301>299 Verander pictogram...
+CLIP dutch/zip D146 #161 255>231 Automatisch aanmaken van bestemmings-directory
+CROSS dutch/zip D146 #154 301>299 Automatisch overschrijven van bestanden
+CLIP dutch/zip D152 #3000 108>88 Bestand overschrijven:
+CROSS dutch/zip D190 #3001 256>253 Dit berichten dialoogvenster wordt getoond voor het hoofd-dialoogvenster en voordat het uitpakken begint.
+CROSS dutch/zip D190 #3002 256>253 Laat de velden 'Titel' en 'Bericht' leeg als u niet wilt dat er berichten worden weergeven.
+CLIP french/7zip D1200 #1300 122>82 Configuration du panneau
+CLIP french/7zip D1200 #1201 378>345 Afficher la boîte de dialogue avec les options étendues avant l'empaquetage
+CROSS french/7zip D1200 #9 213>174 Aide
+CROSS french/7zip D1200 #9 213>174 Aide
+CLIP french/7zip D1201 #1216 124>109 Confirmer le mot de passe:
+CLIP french/7zip D1201 #1214 560>453 Ne plus afficher cette boîte de dialogue (vous pourrez changer plus tard dans la boîte de dialogue de configuration)
+CROSS french/7zip D1201 #2 225>191 Annuler
+CROSS french/7zip D1201 #2 225>191 Annuler
+CLIP french/7zip D1202 #1302 67>63 Mot de passe:
+CLIP french/checksum D1000 #1007 76>72 Calcul en cours:
+CLIP french/checksum D1000 #1005 98>80 astuce presse-papier
+CLIP french/codeview D310 #3003 106>102 Taille (0 = par défaut) :
+CLIP french/codeview D310 #3004 106>102 Largeur de tabulation :
+CLIP french/codeview D310 #3006 248>236 Les fichiers plus volumineux s’affichent en texte brut.
+CLIP french/codeview D310 #3008 332>236 Les fichiers contenant des lignes trop longues s’affichent en texte brut.
+CLIP french/codeview D310 #3010 318>236 Les fichiers plus volumineux s’ouvrent dans la visionneuse intégrée.
+CLIP french/dbviewer D12220 #12224 331>286 Définir à la position de la fenêtre principale de Tandem Commander
+CROSS french/dbviewer D12220 #12224 278>276 Définir à la position de la fenêtre principale de Tandem Commander
+CROSS french/dbviewer D12250 #12255 198>196 Guillemet double (")
+CROSS french/dbviewer D12250 #12254 198>196 Guillemet simple (')
+CLIP french/dbviewer D12250 #12265 151>140 Comme les noms de colonne
+CROSS french/dbviewer D12250 #12265 299>296 Comme les noms de colonne
+CLIP french/dbviewer D12300 #13001 56>28 Rechercher
+CLIP french/dbviewer D12400 #13000 73>50 Enregistrement:
+CLIP french/filecomp D130 #302 80>60 Types de fichiers
+CLIP french/filecomp D130 #306 59>58 Fins de ligne
+CLIP french/filecomp D140 #300 95>82 Sélection de fichiers
+CLIP french/filecomp D140 #302 162>97 Options de visualisation de fichiers
+CLIP french/filecomp D140 #307 150>77 Police de visualisation de fichier
+CLIP french/filecomp D140 #144 278>271 Charger le module au démarrage d'Tandem Commander
+CLIP french/filecomp D150 #302 75>60 Type de fichiers
+CLIP french/filecomp D150 #306 59>58 Fins de ligne
+CLIP french/ftp D500 #502 422>359 Donner la priorité aux connexions utilisées dans les panneaux (navigatyion plus rapide)
+CLIP french/ftp D500 #503 212>196 Limite de vitesse totale pour le client FTP:
+CLIP french/ftp D500 #506 572>553 Accepter les séquences d'échappement hexa dans les chemins (connues dans les navigateurs webs, ex. "%20" à " ")
+CLIP french/ftp D500 #507 572>558 Fermer automatiquement la boîte de dialogue d'opération lorsqu'elle est réussie dans la boîte de dialogue non touchée
+CLIP french/ftp D500 #508 559>553 Ouvrir les boîtes de dialogue de résolution d'erreur pour les erreurs si la boîte de dialogue d'opération est inoccupée
+CLIP french/ftp D520 #590 199>191 Limite de vitesse totale pour le serveur:
+CLIP french/ftp D520 #593 549>538 Utiliser le cache pour les fichiers vus et les listes de fichiers et de répertoires sur le serveur (navigation plus rapide)
+CLIP french/ftp D520 #3012 180>147 Mode de transfert de fichier par défaut
+CLIP french/ftp D520 #530 85>73 aide des masques
+CLIP french/ftp D545 #3007 230>216 Annuler la connexion si elle est inactive pendant:
+CLIP french/ftp D560 #576 72>68 Nom utilisateur:
+CLIP french/ftp D560 #569 143>107 Enregistrer le mot de passe
+CLIP french/ftp D580 #3004 132>125 Mode de transfert de fichier:
+CROSS french/ftp D580 #3007 319>172 les commandes sont séparées par un point virgule (CWD []; AIDE)
+CLIP french/ftp D580 #3009 42>36 Envoyer:
+CLIP french/ftp D580 #593 534>531 Utiliser le cache pour les fichiers vus et les listes de fichiers et répertoires sur le serveur (navigation plus rapide)
+CLIP french/ftp D630 #3000 82>67 Nom d'Utilisateur:
+CLIP french/ftp D630 #3001 67>65 Mot de passe:
+CLIP french/ftp D650 #651 311>280 Permettre la journalisation de communication avec les serveurs
+CLIP french/ftp D650 #654 374>355 Nombre maximal de journaux conservés pour les connexions déconnectées:
+CLIP french/ftp D670 #673 533>456 La commande peut modifier le chemin de travail sur le serveur (change le chemin également dans le panneau)
+CLIP french/ftp D680 #682 38>33 Chemin:
+CLIP french/ftp D750 #777 97>85 espace disque faible
+CROSS french/ftp D750 #777 393>346 espace disque faible
+CLIP french/ftp D815 #3001 192>184 Copier et déplacer depuis le serveur FTP
+CLIP french/ftp D815 #3013 123>120 Supprimer du serveur FTP
+CLIP french/ftp D915 #3001 181>169 Copier et déplacer vers le serveur FTP
+CLIP french/ftp D920 #3004 80>68 Nom d'utilisateur:
+CLIP french/ftp D920 #927 143>109 Enregistrer le mot de passe
+CLIP french/ftp D930 #3003 108>102 Nom d'utilisateur proxy:
+CLIP french/ftp D930 #3004 110>98 Mot de passe de proxy:
+CROSS french/pictview D2040 #3007 264>262 Certaines images peuvent présenter une miniature erronée, mal positionnée ou qui ne présente pas les derniers changements.
+CROSS french/pictview D2040 #2050 264>262 Ignorer les miniatures originelles enregistrées dans les fichiers image (plus lent)
+CLIP french/pictview D2040 #2054 432>431 Se souvenir du chemin à la sauvegarde de copie écran, scan, collage du presse-papiers
+CROSS french/pictview D2130 #2 113>101 Annuler
+CROSS french/pictview D2140 #2 114>112 Annuler
+CROSS french/pictview D2150 #2156 175>173 Zone client de la fenêtre d'avant-plan 
+CROSS french/pictview D2150 #2159 175>173 Ecran virtuel (pour moniteurs multiples)
+CLIP french/pictview D2150 #2155 65>63 Raccourci
+CLIP french/pictview D2300 #3001 108>82 Profondeur de couleur:
+CLIP french/pictview D2300 #2307 187>186 Inversion de couleurs (rendu en négatif)
+CROSS french/pictview D2300 #2310 274>224 GIF
+CROSS french/pictview D2300 #2312 265>224 Créer un GIF89a
+CROSS french/pictview D2300 #2316 248>224 %
+CLIP french/pictview D2300 #2317 105>80 Sous-échantillonnage:
+CLIP french/pictview D2300 #2321 76>63 Taille de bande:
+CLIP french/pictview D2500 #3001 41>31 Gauche:
+CROSS french/pictview D2500 #2507 415>411 Conserver le rapport d'aspect
+CLIP french/pictview D2500 #2513 155>129 Imprimer la zone sélectionnée
+CROSS french/pictview D2500 #9 412>379 Aide
+CROSS french/regedt D135 #139 324>263 Voir les Options
+CROSS french/regedt D135 #139 324>263 Voir les Options
+CROSS french/regedt D135 #146 272>263 Données
+CROSS french/regedt D135 #146 272>263 Données
+CROSS french/regedt D135 #157 306>263 hh:mm:ss jj.mm.aaaa
+CROSS french/regedt D135 #157 306>263 hh:mm:ss jj.mm.aaaa
+CROSS french/regedt D135 #158 306>263 hh:mm:ss jj.mm.aaaa
+CROSS french/regedt D135 #158 306>263 hh:mm:ss jj.mm.aaaa
+CROSS french/renamer D100 #123 352>346 Inclure l'extension
+CROSS french/renamer D100 #123 352>346 Inclure l'extension
+CROSS french/renamer D100 #123 352>346 Inclure l'extension
+CLIP french/renamer D100 #130 82>78 Changer la casse
+CLIP french/renamer D140 #301 110>100 Commencer en position
+CROSS french/renamer D140 #302 168>159 par rapport à
+CROSS french/renamer D140 #304 168>159 par rapport à
+CROSS french/renamer D140 #2 173>159 Annuler
+CLIP french/renamer D185 #301 99>93 Ligne de commande:
+CLIP french/salamand D100 #102 128>70 indications sur les masques
+CLIP french/salamand D104 #102 128>63 indications sur les masques
+CLIP french/salamand D191 #1152 211>194 Comparer des fichiers avec le même nom par
+CLIP french/salamand D191 #1155 273>268 Des fichiers de contenus différents vont être sélectionnés.
+CLIP french/salamand D191 #1156 133>127 Options des sous-répertoires
+CLIP french/salamand D191 #1158 377>372 Les répertoires existant dans un seul des deux panneaux vont être sélectionnés.
+CLIP french/salamand D191 #102 112>85 indications sur masques
+CLIP french/salamand D200 #1150 88>70 Déplacer le fichier:
+CLIP french/salamand D205 #225 99>88 Vitesse maximale:
+CLIP french/salamand D205 #217 97>93 Fichiers nommés:
+CLIP french/salamand D205 #102 128>80 indications sur les masques
+CLIP french/salamand D260 #1155 139>132 Utilisation de l'espace disque:
+CLIP french/salamand D260 #1160 148>135 Pour une taille des secteurs de:
+CROSS french/salamand D260 #9 181>157 Aide
+CLIP french/salamand D300 #312 382>305 Comparer répertoires : ignorer des différences de date et d'heure allant jusqu'à
+CLIP french/salamand D320 #325 270>213 Largeur constante des colonnes du panneau gauche:
+CLIP french/salamand D320 #329 279>209 pixels (glisser/déposer la largeur dans le bandeau d'en-tête)
+CLIP french/salamand D320 #326 254>214 Largeur constante des colonnes du panneau droit:
+CLIP french/salamand D320 #333 279>209 pixels (glisser/déposer la largeur dans le bandeau d'en-tête)
+CLIP french/salamand D320 #336 560>474 le panneau gauche (seulement si la colonne de nom est de largeur variable; utiliser Ctrl+N dans la panneau gauche)
+CLIP french/salamand D320 #337 528>478 le panneau droit (seulement si la colonne de nom est de largeur variable; utiliser Ctrl+N dans la panneau droit)
+CLIP french/salamand D370 #1154 33>28 Icône :
+CLIP french/salamand D370 #1150 78>62 Chemin d'accès:
+CLIP french/salamand D370 #1151 517>493 Une fois contrôlés, les chemins d'accès aux répertoires favoris sont affichés dans le menu Changer de lecteur.
+CLIP french/salamand D400 #1151 94>92 Modifier la casse en
+CLIP french/salamand D405 #102 123>65 indication sur les masques
+CLIP french/salamand D410 #1154 426>369 Règles supplémentaires pour mettre en valeur les fichiers ou répertoires dans les panneaux
+CLIP french/salamand D455 #457 125>60 indications sur les chemins
+CLIP french/salamand D476 #1159 107>77 Lecteurs de disquettes
+CLIP french/salamand D476 #1153 233>191 Lecteurs fixes (par exemple disques durs internes)
+CLIP french/salamand D476 #487 567>473 Pas de rafraîchissement à l'activation de Tandem Commander (le rafraîchissement manuel peut être alors nécessaire)
+CLIP french/salamand D520 #102 128>68 indications sur les masques
+CLIP french/salamand D535 #102 128>72 indications sur les masques
+CLIP french/salamand D550 #1159 145>127 Secteurs par unité d'allocation:
+CLIP french/salamand D550 #1168 134>127 Octets par unité d'allocation:
+CLIP french/salamand D550 #1164 130>127 Fanions du syst. de fichiers:
+CLIP french/salamand D630 #1150 131>58 Caractères(s) de fin de ligne
+CLIP french/salamand D630 #1154 99>95 Position de la fenêtre
+CLIP french/salamand D630 #1156 103>57 Largeur de tabulation:
+CLIP french/salamand D630 #1163 319>261 Règles supplémentaires pour la sélection automatique du mode Vue
+CLIP french/salamand D630 #1161 179>147 Forcer le mode Texte pour les fichiers:
+CLIP french/salamand D630 #1162 214>145 Forcer le mode héxadécimal  pour les fichiers:
+CLIP french/salamand D630 #102 128>80 indications sur les masques
+CLIP french/salamand D630 #1159 111>100 Couleur du texte normal
+CLIP french/salamand D630 #1160 134>107 Couleur du texte sélectionné
+CLIP french/salamand D1010 #1018 223>213 Ajouter/Retirer les dépaqueteurs personnels
+CLIP french/salamand D1030 #1156 94>88 Répertoire de l'aide:
+CLIP french/salamand D1070 #1150 109>100 Assembler le répertoire:
+CLIP french/salamand D1073 #1151 163>125 Indiquer le nouveau mot de passe:
+CLIP french/salamand D1073 #1152 174>125 Indiquez à nouveau le mot de passe:
+CLIP french/salamand D1085 #1088 78>52 Répertoire favori
+CLIP french/salamand D1105 #1150 83>80 Afficher les noms:
+CLIP french/salamand D1105 #1154 84>78 Afficher les tailles:
+CLIP french/salamand D1105 #305 534>478 Rediriger le clavier du panneau vers la ligne de commande (Maintenir la touche Alt pour une recherche rapide)
+CLIP french/salamand D1130 #1150 86>83 Nom de la source:
+CLIP french/salamand D1130 #1151 105>83 Nom de la destination:
+CLIP french/salamand D2320 #1150 98>83 Décompresser avec:
+CLIP french/salamand D2320 #1151 97>68 Masques de fichiers:
+CLIP french/salamand D2320 #102 129>63 Indications sur les masques
+CLIP french/salamand D2340 #1150 109>104 Lister et décompresser:
+CLIP french/salamand D2340 #1151 119>104 Supprimer et compresser:
+CLIP french/salamand D2350 #102 175>120 indications étendues sur les masques
+CLIP french/salamand D2350 #1153 121>117 Supprimer et empaqueter:
+CLIP french/salamand D2380 #2387 103>68 indications sur la ligne
+CROSS french/salamand D2380 #2383 290>282 ...
+CLIP french/salamand D2490 #102 128>68 indications sur les masques
+CROSS french/salamand D2490 #2492 197>195 Néant
+CLIP french/salamand D2500 #2503 152>145 Examiner les sous-répertoires
+CROSS french/salamand D2500 #2522 237>225 Examiner les archives
+CROSS french/salamand D2500 #2522 237>225 Examiner les archives
+CLIP french/salamand D2500 #2508 180>125 Recherche de contenu d'un fichier
+CROSS french/salamand D2500 #2513 226>225 Expression rationnelle
+CROSS french/salamand D2500 #2513 226>225 Expression rationnelle
+CLIP french/salamand D2530 #1150 590>511 Pour indiquer le chemin d'accès dans le répertoire racine (UNC ou local) insérer une barre oblique inverse au commencement.
+CLIP french/salamand D2540 #1151 72>68 Chercher dans:
+CLIP french/salamand D2540 #1152 79>68 Sous-répertoires:
+CLIP french/salamand D2560 #1152 71>48 Taille de fichier
+CROSS french/salamand D2560 #9 220>216 Aide
+CLIP french/salamand D2680 #2683 336>271 Afficher le répertoire actuel dans le titre de la fenêtre principale ainsi:
+CLIP french/salamand D2680 #2685 294>270 Personnaliser le préfixe dans le titre de la fenêtre principale:
+CLIP french/salamand D2730 #1150 80>70 Fichier d'archive:
+CLIP french/salamand D2750 #1150 199>137 Recherche de fichiers avec la ou le même
+CLIP french/salamand D2800 #2808 155>82 Comment revenir sur cette option
+CLIP french/salamand D2830 #2832 167>109 Réglage de la vitesse maximale:
+CROSS french/salamand D2830 #9 201>157 Aide
+CLIP french/salamand D2830 #1150 80>70 Vitesse maximale
+CLIP french/salamand D6110 #1151 53>28 Recherche
+CLIP french/salamand D6110 #6122 121>117 Mot entier uniquement
+CLIP french/salamand D6223 #6227 93>70 Trouvé à l'adresse :
+CLIP french/uncab D100 #300 82>67 Libellé du disque:
+CLIP french/uncab D106 #107 356>342 Ignorer automatiquement les fichiers issus d'un volume précédent lors de
+CLIP french/uncab D106 #116 367>342 Ne pas afficher d'avertissement lorsque l'ensemble du contenu de l'archive
+CLIP french/uniso D1200 #1201 397>349 Supprimer l'attribut Lecture seule lorsqu'une copie est réalisée à partir de l'archive
+CLIP french/uniso D1200 #1202 395>349 Afficher une session en tant que dossier (permet d'accéder à toutes les sessions)
+CLIP french/zip D100 #3002 80>78 Taille du volume:
+CROSS french/zip D100 #105 299>267 Avancé...
+CLIP french/zip D100 #3006 124>109 Confirmer le mot de passe:
+CLIP french/zip D112 #3000 73>63 Décompression
+CLIP french/zip D112 #3002 60>46 Compression
+CLIP french/zip D112 #3010 105>82 Réglages du panneau
+CLIP french/zip D123 #3001 34>30 Fichier:
+CLIP french/zip D123 #3002 67>63 Mot de passe:
+CROSS french/zip D146 #3003 301>299 Note: vous pouvez indiquer un chemin relatif, qui sera combiné au répertoire dans lequel s'exécute l'auto-extracteur, ou un chemin complet. Laissez le champ vide pour une extraction dans le répertoire en cours.
+CLIP french/zip D146 #155 196>186 Démarrer automatiquement l'extraction
+CLIP french/zip D146 #157 288>224 Cacher la boîte de dialogue principale de l'auto-extracteur
+CLIP french/zip D146 #158 256>236 Montrer la boîte de dialogue de résumé d'opération
+CROSS french/zip D146 #158 301>299 Montrer la boîte de dialogue de résumé d'opération
+CROSS french/zip D146 #154 301>299 Ecraser automatiquement les fichiers
+CROSS french/zip D146 #256 301>299 Nécessite des privilèges administrateur 
+CROSS french/zip D190 #3001 256>253 Cette boîte de message s'affiche avant la boîte de dialogue principale et avant que commence la décompression.
+CROSS french/zip D190 #3002 256>253 Laissez vide les champs 'Titre' et 'Message' si vous ne voulez afficher aucun message.
+CLIP german/7zip D1200 #1300 97>82 Fenstereinstellungen
+CROSS german/7zip D1200 #9 213>174 Hilfe
+CROSS german/7zip D1200 #9 213>174 Hilfe
+CROSS german/7zip D1201 #2 225>191 Abbrechen
+CROSS german/7zip D1201 #2 225>191 Abbrechen
+CLIP german/checksum D1000 #1005 118>80 Hinweis Zwischenablage
+CLIP german/codeview D310 #3008 273>236 Dateien mit längeren Zeilen werden als Klartext angezeigt.
+CLIP german/codeview D310 #3010 264>236 Größere Dateien werden im integrierten Viewer geöffnet.
+CROSS german/dbviewer D12220 #12224 278>276 Wie Position des Tandem Commander Hauptfensters
+CROSS german/dbviewer D12250 #12255 202>196 Anführungszeichen (")
+CLIP german/dbviewer D12300 #13001 37>28 Suchen
+CROSS german/dbviewer D12300 #12305 200>198 Groß-/Kleinschreibung
+CLIP german/filecomp D130 #300 47>46 Ignorieren
+CLIP german/filecomp D140 #302 103>97 Dateifenster Optionen
+CLIP german/filecomp D140 #307 102>77 Dateifenster Schriftart
+CLIP german/filecomp D140 #309 46>35 Sonstiges
+CLIP german/filecomp D150 #300 47>46 Ignorieren
+CLIP german/ftp D500 #503 301>196 Geschwindigkeitsbeschränkung (gesamt) für den FTP-Client:
+CLIP german/ftp D520 #590 262>191 Geschwindigkeitsbeschränkung (gesamt) für Server:
+CLIP german/ftp D520 #3005 283>258 Standardeinstellungen zum Aufrechterhalten der Verbindung
+CLIP german/ftp D520 #530 84>73 Masken Hinweise
+CLIP german/ftp D545 #3000 223>213 Größenbeschränkung des Caches im Speicher:
+CLIP german/ftp D545 #3004 268>213 Verzögerung zwischen den Verbindungswiederholungen:
+CLIP german/ftp D545 #3010 63>45 Bytes groß ist
+CLIP german/ftp D560 #569 108>107 Passwort speichern
+CLIP german/ftp D580 #3007 359>320 Kommandos durch Semikolon trennen (CWD [pathname]; HELP [command])
+CROSS german/ftp D580 #3007 319>172 Kommandos durch Semikolon trennen (CWD [pathname]; HELP [command])
+CLIP german/ftp D580 #588 311>270 Maximale Anzahl von gleichzeitigen Verbindungen zum Server:
+CLIP german/ftp D580 #590 253>208 Geschwindigkeitsbeschränkung für diesen Server:
+CLIP german/ftp D750 #3001 89>83 Verstrichende Zeit:
+CLIP german/ftp D750 #777 95>85 wenig Speicherplatz
+CROSS german/ftp D750 #777 393>346 wenig Speicherplatz
+CLIP german/ftp D779 #782 392>330 Nur zur Warteschlange hinzufügen (nicht in der aktiven Verbindung verarbeiten)
+CLIP german/ftp D785 #787 392>330 Nur zur Warteschlange hinzufügen (nicht in der aktiven Verbindung verarbeiten)
+CLIP german/ftp D795 #810 392>338 Nur zur Warteschlange hinzufügen (nicht in der aktiven Verbindung verarbeiten)
+CLIP german/ftp D815 #3001 205>184 Kopieren und Verschieben vom FTP-Server
+CLIP german/ftp D815 #3013 139>120 Löschen auf dem FTP-Server
+CLIP german/ftp D915 #3001 204>169 Kopieren und Verschieben zum FTP-Server
+CROSS german/pictview D2020 #2024 263>262 Automatische Anpassung an Fenstergöße (keine Bildlaufleisten)
+CROSS german/pictview D2020 #2025 264>262 Automatische Anpassung an Fensterbreite (keine horizontalen Bildlaufleisten)
+CROSS german/pictview D2040 #3007 264>262 Einige Grafikdateien können eine fehlerhafte Miniaturansicht enthalten, welche nicht richtig gedreht wurden oder nicht die letzten Änderungen wiederspiegeln.
+CROSS german/pictview D2040 #2050 264>262 Interne Miniaturansichten in Grafikdateien ignorieren (langsamer)
+CLIP german/pictview D2120 #2125 197>172 Hervorgehobenen Einträge gruppieren
+CROSS german/pictview D2130 #2 113>101 Abbrechen
+CROSS german/pictview D2140 #2 114>112 Abbrechen
+CROSS german/pictview D2150 #2156 175>173 Arbeitsbereich des Vordergrundfensters 
+CROSS german/pictview D2150 #2159 175>173 Virtueller Bildschirm (bei Mehrschirmbetrieb)
+CLIP german/pictview D2150 #2155 77>67 Tastenkürzel
+CLIP german/pictview D2150 #2153 101>67 Automatisch nach
+CROSS german/pictview D2300 #2310 274>224 GIF
+CROSS german/pictview D2300 #2312 269>224 GIF89a erstellen
+CROSS german/pictview D2300 #2316 248>224 %
+CROSS german/pictview D2500 #2515 415>411 Seite einrichten...
+CLIP german/pictview D2500 #3005 53>45 Skalierung:
+CROSS german/pictview D2500 #2506 415>411 Auf Mediengröße skalieren
+CROSS german/pictview D2500 #2507 412>411 Proportionen beibehalten
+CLIP german/pictview D2500 #2512 168>134 Begrenzungsrahmen einblenden
+CLIP german/pictview D2500 #2513 133>129 Auswahlbereich drucken
+CROSS german/pictview D2500 #9 412>379 Hilfe
+CROSS german/regedt D135 #139 328>263 Optionen anzeigen
+CROSS german/regedt D135 #139 328>263 Optionen anzeigen
+CROSS german/regedt D135 #146 272>263 Daten
+CROSS german/regedt D135 #146 272>263 Daten
+CROSS german/regedt D135 #157 306>263 hh:mm:ss dd.mm.yyyy
+CROSS german/regedt D135 #157 306>263 hh:mm:ss dd.mm.yyyy
+CROSS german/regedt D135 #158 306>263 hh:mm:ss dd.mm.yyyy
+CROSS german/regedt D135 #158 306>263 hh:mm:ss dd.mm.yyyy
+CLIP german/regedt D166 #700 545>446 Konfiguration des externen Editors der für die freie Bearbeitung von Registrierungs-Einträgen verwendet werden soll.
+CLIP german/renamer D100 #105 104>100 Manuelle Methode
+CROSS german/renamer D100 #123 347>346 Ohne Erweiterung
+CROSS german/renamer D100 #123 347>346 Ohne Erweiterung
+CROSS german/renamer D100 #123 347>346 Ohne Erweiterung
+CLIP german/renamer D100 #130 142>78 Groß-/Kleinschreibung ändern
+CLIP german/renamer D140 #300 102>100 Teilzeichenkette von:
+CROSS german/renamer D140 #302 168>159 relativ zu
+CROSS german/renamer D140 #304 168>159 relativ zu
+CROSS german/renamer D140 #2 173>159 Abbrechen
+CLIP german/renamer D170 #301 370>296 Hinweis: Benutzen Sie 0 um den kompletten passenden Ausdruck anzugeben.
+CLIP german/salamand D100 #102 84>70 Masken Hinweise
+CLIP german/salamand D104 #102 84>63 Masken Hinweise
+CLIP german/salamand D180 #1150 94>87 Überschreibe Datei:
+CLIP german/salamand D191 #1152 229>194 Dateien mit demselben Namen vergleichen nach
+CLIP german/salamand D191 #232 83>77 Weitere Optionen
+CLIP german/salamand D200 #1150 84>70 Verschiebe Datei:
+CLIP german/salamand D205 #225 163>88 Übertragungsratenbegrenzung:
+CLIP german/salamand D205 #102 84>80 Masken Hinweise
+CLIP german/salamand D240 #1150 118>104 Verzeichnis verschieben:
+CLIP german/salamand D241 #244 98>95 Schreibgeschützt
+CLIP german/salamand D241 #1155 68>65 Letzter Zugriff:
+CLIP german/salamand D260 #1152 52>45 Ergebnisse
+CLIP german/salamand D260 #1158 166>134 Geschätzter erforderlicher Speicher
+CROSS german/salamand D260 #9 181>157 Hilfe
+CLIP german/salamand D370 #1154 37>28 Symbol:
+CLIP german/salamand D400 #1151 107>92 Buchstaben ändern zu
+CLIP german/salamand D404 #1150 94>87 Überschreibe Datei:
+CLIP german/salamand D405 #102 84>65 Masken Hinweise
+CLIP german/salamand D405 #1150 78>70 Filteranwendung
+CLIP german/salamand D410 #1154 398>369 Zusätzliche Regeln für das Hervorheben von Dateien und Verzeichnissen im Fenster
+CLIP german/salamand D450 #1150 132>125 Verbindung fehlgeschlagen:
+CLIP german/salamand D455 #457 63>60 Pfadhinweise
+CLIP german/salamand D476 #1159 91>77 Diskettenlaufwerke
+CLIP german/salamand D476 #1155 174>164 CD-ROM oder DVD-ROM Laufwerke
+CLIP german/salamand D476 #1157 91>87 Netzwerklaufwerke
+CLIP german/salamand D520 #102 84>68 Masken Hinweise
+CLIP german/salamand D535 #102 84>72 Masken Hinweise
+CLIP german/salamand D580 #1150 112>110 Zugehöriger Betrachter:
+CLIP german/salamand D595 #1154 32>31 Größe:
+CLIP german/salamand D630 #637 134>124 Beim Beenden speichern
+CLIP german/salamand D630 #1155 97>93 Allgemeine Optionen
+CLIP german/salamand D630 #1156 75>57 Tabulatorgröße:
+CLIP german/salamand D630 #1163 320>261 Zusätzliche Regeln für die automatische Wahl des Betrachtermodus
+CLIP german/salamand D630 #102 84>80 Masken Hinweise
+CLIP german/salamand D1085 #1089 89>55 Plugin-Dateisystem
+CLIP german/salamand D1105 #1155 48>43 Sortierung
+CLIP german/salamand D2320 #102 84>63 Masken Hinweise
+CLIP german/salamand D2340 #1150 109>104 Auflisten u. entpacken:
+CLIP german/salamand D2350 #102 141>120 Zusätzliche Masken Hinweise
+CLIP german/salamand D2380 #2387 70>68 Zeilenhinweise
+CROSS german/salamand D2380 #2383 290>282 ...
+CLIP german/salamand D2490 #102 84>68 Masken Hinweise
+CROSS german/salamand D2490 #2492 197>195 Keine
+CLIP german/salamand D2500 #2503 171>145 Unterverzeichnisse durchsuchen
+CROSS german/salamand D2500 #2522 237>225 Archive durchsuchen
+CROSS german/salamand D2500 #2522 237>225 Archive durchsuchen
+CLIP german/salamand D2500 #2515 122>119 Groß-/Kleinschreibung
+CROSS german/salamand D2500 #2513 226>225 Reguläre Ausdrücke
+CROSS german/salamand D2500 #2513 226>225 Reguläre Ausdrücke
+CLIP german/salamand D2560 #1152 52>48 Dateigröße
+CROSS german/salamand D2560 #9 220>216 Hilfe
+CLIP german/salamand D2750 #1150 189>137 Suche nach Dateien mit diesen Kriterien
+CLIP german/salamand D2830 #2832 147>109 Übertragungsrate festlegen:
+CROSS german/salamand D2830 #9 201>157 Hilfe
+CLIP german/salamand D2830 #1150 144>70 Übertragungsratenbegrenzung
+CLIP german/salamand D6110 #1151 64>28 Suchen nach
+CLIP german/salamand D6223 #6227 77>70 Gefunden unter:
+CLIP german/undelete D1000 #3000 39>36 Gesamt:
+CLIP german/undelete D1200 #1205 79>70 Wiederherstellen
+CLIP german/undelete D1400 #1405 426>412 Keine Warnung beim Wiederherstellen von verschlüsselten Dateien in FAT oder exFAT
+CROSS german/zip D100 #105 299>267 Erweitert...
+CLIP german/zip D112 #3006 241>182 Standardsprache des selbstentpackenden Archivs:
+CLIP german/zip D112 #3010 148>82 Einstellungen des Dateifensters
+CLIP german/zip D126 #134 508>491 Achtung: Der freie Speicherplatz auf dem Datenträger ist kleiner als die Teilgröße die Sie angegeben haben.
+CLIP german/zip D137 #3000 98>88 Datei überschreiben:
+CROSS german/zip D146 #3003 301>299 Hinweis: Sie können einen relativen Pfad der mit dem aktuellen Verzeichnis kombiniert wird, oder einen kompletten Pfad angeben. Wenn Sie das Feld frei lassen wird das aktuelle Verzeichnis verwendet.
+CLIP german/zip D146 #3007 37>35 Symbol:
+CLIP german/zip D152 #3000 98>88 Datei überschreiben:
+CROSS german/zip D190 #3001 256>253 Dieses Hinweisfenster wird vor dem Hauptdialogfenster und vor Beginn des Entpackens angezeigt.
+CROSS german/zip D190 #3002 256>253 Wenn kein Hinweisfenster angezeigt werden soll, lassen Sie die Felder 'Titel' und 'Hinweis' leer.
+CLIP german/zip D190 #3003 68>52 Schaltflächen:
+CROSS hungarian/7zip D1200 #9 213>174 Súgó
+CROSS hungarian/7zip D1200 #9 213>174 Súgó
+CROSS hungarian/7zip D1201 #2 225>191 Mégse
+CROSS hungarian/7zip D1201 #2 225>191 Mégse
+CLIP hungarian/codeview D310 #3003 128>102 Méret (0 = alapértelmezett):
+CLIP hungarian/codeview D310 #3006 251>236 A nagyobb fájlok egyszerű szövegként jelennek meg.
+CLIP hungarian/codeview D310 #3008 344>236 A hosszabb sorokat tartalmazó fájlok egyszerű szövegként jelennek meg.
+CLIP hungarian/codeview D310 #3010 242>236 A nagyobb fájlok a beépített nézőben nyílnak meg.
+CLIP hungarian/dbviewer D12300 #13003 53>46 Beállítások
+CLIP hungarian/filecomp D130 #300 55>46 Kihagyások
+CLIP hungarian/filecomp D140 #302 118>97 Megjelenítési beállítások
+CLIP hungarian/filecomp D140 #307 97>77 Megjelenő betűtípus
+CLIP hungarian/filecomp D140 #144 272>271 A plugin betöltése az Tandem Commander indulásakor
+CLIP hungarian/filecomp D150 #300 55>46 Kihagyások
+CLIP hungarian/ftp D500 #502 374>359 Elsőbbség adása a paneleken használt kapcsolatnak (gyorsabb böngészés)
+CLIP hungarian/ftp D560 #576 77>68 Felhasználónév:
+CROSS hungarian/ftp D580 #3007 319>172 a parancsokat pontosvessző választja el (CWD []; HELP)
+CLIP hungarian/ftp D580 #590 209>208 Sebességkorlátozás ehhez a szerverhez:
+CLIP hungarian/ftp D630 #3000 77>67 Felhasználónév:
+CLIP hungarian/ftp D680 #682 46>33 Elérési út:
+CROSS hungarian/ftp D750 #777 393>346 kevés hely
+CLIP hungarian/ftp D795 #3007 53>48 Beállítások
+CLIP hungarian/ftp D815 #3010 203>186 Attribútumok módosítása az FTP szerveren
+CLIP hungarian/ftp D850 #3001 46>40 Elérési út:
+CLIP hungarian/ftp D880 #3001 46>40 Elérési út:
+CLIP hungarian/ftp D898 #3001 46>40 Elérési út:
+CLIP hungarian/ftp D915 #3001 175>169 Másolás és áthelyezés FTP szerverre
+CROSS hungarian/pictview D2040 #3007 264>262 Néhány kép hibás bélyegképet tartalmaz, melyek nem forgathatók helyesen vagy nem állíthatók vissza az utolsó módosítások.
+CROSS hungarian/pictview D2040 #3010 264>262 megapixelnél.
+CROSS hungarian/pictview D2130 #2 113>101 Mégse
+CROSS hungarian/pictview D2140 #2 114>112 Mégse
+CROSS hungarian/pictview D2300 #2310 274>224 GIF
+CROSS hungarian/pictview D2300 #2312 265>224 GIF89a készítés
+CROSS hungarian/pictview D2300 #2316 248>224 %
+CLIP hungarian/pictview D2500 #2513 135>129 Kijelölt terület nyomtatása
+CROSS hungarian/pictview D2500 #9 412>379 Súgó
+CROSS hungarian/regedt D135 #139 318>263 Beállítások
+CROSS hungarian/regedt D135 #139 318>263 Beállítások
+CROSS hungarian/regedt D135 #146 272>263 Adat
+CROSS hungarian/regedt D135 #146 272>263 Adat
+CROSS hungarian/regedt D135 #157 306>263 óó:pp:mp nn.hh.éééé
+CROSS hungarian/regedt D135 #157 306>263 óó:pp:mp nn.hh.éééé
+CROSS hungarian/regedt D135 #158 306>263 óó:pp:mp nn.hh.éééé
+CROSS hungarian/regedt D135 #158 306>263 óó:pp:mp nn.hh.éééé
+CROSS hungarian/renamer D100 #123 361>346 Kiterjesztés kizárása
+CROSS hungarian/renamer D100 #123 361>346 Kiterjesztés kizárása
+CROSS hungarian/renamer D100 #123 361>346 Kiterjesztés kizárása
+CLIP hungarian/renamer D100 #130 80>78 Betű módosítása
+CROSS hungarian/renamer D140 #302 168>159 viszonyítva
+CROSS hungarian/renamer D140 #304 168>159 viszonyítva
+CROSS hungarian/renamer D140 #2 173>159 Mégse
+CLIP hungarian/salamand D191 #232 94>77 További beállítások
+CLIP hungarian/salamand D205 #225 90>88 Sebességhatár:
+CLIP hungarian/salamand D241 #1158 53>46 Beállítások
+CLIP hungarian/salamand D260 #1152 47>45 Eredmény
+CROSS hungarian/salamand D260 #9 181>157 Súgó
+CLIP hungarian/salamand D300 #312 333>305 Mappák összehasonlítása: figyelmen kívül hagyandó időkülönbség
+CLIP hungarian/salamand D400 #1153 50>46 Módosítás
+CLIP hungarian/salamand D400 #1155 53>46 Beállítások
+CLIP hungarian/salamand D405 #1150 75>70 Szűrő használat
+CLIP hungarian/salamand D476 #1153 211>191 Rögzített meghajtók (pl. helyi merevlemezek)
+CLIP hungarian/salamand D476 #1155 175>164 CD-ROM vagy DVD-ROM meghajtók
+CLIP hungarian/salamand D476 #1157 90>87 Hálózati meghajtók
+CLIP hungarian/salamand D630 #1155 98>93 Általános beállítások
+CLIP hungarian/salamand D630 #1163 288>261 Kiegészítő szabályok a Nézeti mód automatikus kijelöléséhez
+CLIP hungarian/salamand D1085 #1088 72>52 Gyors elérési út
+CLIP hungarian/salamand D1105 #1155 48>43 Rendezés
+CROSS hungarian/salamand D2380 #2383 290>282 ...
+CLIP hungarian/salamand D2490 #1150 96>90 Kódolás módosítása
+CROSS hungarian/salamand D2490 #2492 197>195 Nincs
+CLIP hungarian/salamand D2490 #1154 53>46 Beállítások
+CROSS hungarian/salamand D2500 #2522 237>225 Archívumokban keres
+CROSS hungarian/salamand D2500 #2522 237>225 Archívumokban keres
+CROSS hungarian/salamand D2500 #2513 226>225 Szabályos kifejezés
+CROSS hungarian/salamand D2500 #2513 226>225 Szabályos kifejezés
+CLIP hungarian/salamand D2560 #1152 51>48 Fájl mérete
+CROSS hungarian/salamand D2560 #9 220>216 Súgó
+CROSS hungarian/salamand D2830 #9 201>157 Súgó
+CLIP hungarian/salamand D2830 #1150 71>70 Sebességhatár
+CLIP hungarian/salamand D6110 #1153 53>46 Beállítások
+CLIP hungarian/salamand D6223 #6232 74>60 Argumentumok:
+CROSS hungarian/zip D100 #105 299>267 Haladó...
+CLIP hungarian/zip D112 #3002 48>46 Tömörítés
+CROSS hungarian/zip D146 #3003 301>299 Megj.: Megadhat relatív elérési utat, mely az aktuális mappával kombinálódik, mikor az önkitömörítés fut, vagy egy teljes elérési utat. Üresen hagyott mezőnél az aktuális mappába tömörítődik ki.
+CROSS hungarian/zip D190 #3001 256>253 Ez az üzenet ablak a főablak és a kibontás megkezdése előtt fog megjelenni.
+CROSS hungarian/zip D190 #3002 256>253 Hagyja a 'Cím' és az 'Üzenet' mezőt üresen, ha nem akar üzenetet megjeleníteni.
+CROSS romanian/7zip D1200 #9 213>174 Ajutor
+CROSS romanian/7zip D1200 #9 213>174 Ajutor
+CROSS romanian/7zip D1201 #2 225>191 Anuleaza
+CROSS romanian/7zip D1201 #2 225>191 Anuleaza
+CLIP romanian/codeview D310 #3003 122>102 Dimensiune (0 = implicită):
+CLIP romanian/codeview D310 #3008 241>236 Fișierele cu linii mai lungi sunt afișate ca text simplu.
+CLIP romanian/codeview D310 #3010 264>236 Fișierele mai mari se deschid în vizualizatorul încorporat.
+CLIP romanian/dbviewer D12220 #12224 297>286 Seteaza la pozitia ferestrei principale a Tandem Commander
+CROSS romanian/dbviewer D12220 #12224 278>276 Seteaza la pozitia ferestrei principale a Tandem Commander
+CROSS romanian/dbviewer D12250 #12260 98>96 Punct si Virgula (;)
+CROSS romanian/dbviewer D12250 #12254 198>196 Ghilimele Simple (')
+CLIP romanian/dbviewer D12300 #13001 39>28 Gaseste
+CLIP romanian/dbviewer D12300 #12305 167>156 Cauta exact (litere mari sau mici)
+CROSS romanian/dbviewer D12300 #12305 206>198 Cauta exact (litere mari sau mici)
+CLIP romanian/dbviewer D12400 #13000 55>50 Inregistrare:
+CLIP romanian/filecomp D130 #302 71>60 Tipuri de fisiere
+CLIP romanian/filecomp D130 #306 73>58 Linia se termina
+CLIP romanian/filecomp D140 #300 92>82 Selectarea fisierelor
+CLIP romanian/filecomp D140 #302 149>97 Optiuni de vizualizare a fisierului
+CLIP romanian/filecomp D140 #307 133>77 Vizualizarea fontului fisierului
+CLIP romanian/filecomp D150 #302 71>60 Tipuri de fisiere
+CLIP romanian/filecomp D150 #306 73>58 Linia se termina
+CLIP romanian/ftp D500 #502 377>359 Da prioritate conexiunilor folosite in panouri (navigare mai usoara prin meniuri)
+CLIP romanian/ftp D500 #503 215>196 Limita totala dei viteza pentru clientul FTP:
+CLIP romanian/ftp D520 #3007 46>38 la fiecare:
+CLIP romanian/ftp D520 #3012 160>147 Mod de transfer al fisierului default
+CLIP romanian/ftp D520 #530 93>73 indicii pentru masca
+CLIP romanian/ftp D545 #3007 224>216 Anuleaza conexiunea datelor daca este idle de:
+CLIP romanian/ftp D560 #576 72>68 Nume utilizator:
+CLIP romanian/ftp D580 #3004 136>125 Modul de transfer al fisierului:
+CROSS romanian/ftp D580 #3007 319>172 comenzile sunt despartite de punct si virgula (CWD []; HELP)
+CLIP romanian/ftp D580 #3010 46>40 la fiecare:
+CLIP romanian/ftp D630 #3000 72>67 Nume utilizator:
+CROSS romanian/ftp D750 #777 393>346 spatiu mic disk
+CLIP romanian/ftp D815 #3006 395>390 Daca transferul se opreste, cum sa reincerci in cazul in care fisierul tinta a fost creat:
+CLIP romanian/ftp D815 #3007 474>390 Daca transferul se opreste, cum sa reincerci in cazul in care fisierul a fost continuat de unde s-a oprit:
+CLIP romanian/ftp D815 #3013 127>120 Sterge de pe server-ul FTP
+CLIP romanian/ftp D915 #3006 395>390 Daca transferul se opreste, cum sa reincerci in cazul in care fisierul tinta a fost creat:
+CLIP romanian/ftp D915 #3007 415>390 Daca transferul se opreste, cum sa reincerci in cazul in care fisierul tinta a fost continuat:
+CLIP romanian/ftp D920 #3004 74>68 Nume Utilizator:
+CROSS romanian/pictview D2040 #3007 264>262 Unele imagini pot contine o miniatura incorecta, care nu este rotita corect sau care nu reflecta ultimele schimbari.
+CROSS romanian/pictview D2040 #2050 264>262 Ignora miniatura originala stocata in fisierul imagine (mai lent)
+CLIP romanian/pictview D2100 #3003 96>93 Marimea in memorie:
+CROSS romanian/pictview D2130 #2 113>101 Anuleaza
+CROSS romanian/pictview D2140 #2 114>112 Anuleaza
+CROSS romanian/pictview D2150 #2156 175>173 Aria selectata a fereastrei din prim plan 
+CROSS romanian/pictview D2150 #2159 175>173 Ecranul Virtual (pentru mai multe monitoare)
+CLIP romanian/pictview D2150 #2153 70>67 Timp ramas
+CLIP romanian/pictview D2300 #3001 88>82 Adancime culoare:
+CROSS romanian/pictview D2300 #2310 274>224 GIF
+CROSS romanian/pictview D2300 #2312 263>224 Creaza GIF89a
+CROSS romanian/pictview D2300 #2316 248>224 %
+CLIP romanian/pictview D2300 #2321 73>63 Marime bucata:
+CLIP romanian/pictview D2500 #3001 37>31 Stanga:
+CLIP romanian/pictview D2500 #2516 109>100 Centreaza imaginea
+CLIP romanian/pictview D2500 #2506 186>171 Mareste sa se potriveasca pe media
+CROSS romanian/pictview D2500 #2506 415>411 Mareste sa se potriveasca pe media
+CROSS romanian/pictview D2500 #9 412>379 Ajutor
+CROSS romanian/regedt D135 #139 320>263 Arata Optiunile
+CROSS romanian/regedt D135 #139 320>263 Arata Optiunile
+CROSS romanian/regedt D135 #146 272>263 Date
+CROSS romanian/regedt D135 #146 272>263 Date
+CROSS romanian/regedt D135 #143 278>263 Sensibil la litere (mari sau mici)
+CROSS romanian/regedt D135 #143 278>263 Sensibil la litere (mari sau mici)
+CROSS romanian/regedt D135 #157 306>263 hh:mm:ss dd.mm.yyyy
+CROSS romanian/regedt D135 #157 306>263 hh:mm:ss dd.mm.yyyy
+CROSS romanian/regedt D135 #158 306>263 hh:mm:ss dd.mm.yyyy
+CROSS romanian/regedt D135 #158 306>263 hh:mm:ss dd.mm.yyyy
+CROSS romanian/renamer D100 #123 347>346 Exclude extensia
+CROSS romanian/renamer D100 #123 347>346 Exclude extensia
+CROSS romanian/renamer D100 #123 347>346 Exclude extensia
+CROSS romanian/renamer D140 #302 168>159 relativ la
+CROSS romanian/renamer D140 #304 168>159 relativ la
+CROSS romanian/renamer D140 #2 173>159 Anuleaza
+CLIP romanian/salamand D191 #232 79>77 Mai multe optiuni
+CLIP romanian/salamand D191 #102 91>85 mascheaza indiciile
+CLIP romanian/salamand D205 #225 92>88 Limita de viteza:
+CLIP romanian/salamand D241 #1151 86>80 Seteaza Atributele
+CROSS romanian/salamand D260 #9 181>157 Ajutor
+CLIP romanian/salamand D320 #325 234>213 Largime fixata a coloanei in panoul din stanga:
+CLIP romanian/salamand D320 #326 238>214 Largime fixata a coloanei in panoul din dreapta:
+CLIP romanian/salamand D370 #1154 56>28 Pictogramă:
+CLIP romanian/salamand D400 #1151 122>92 Schimba Marimea Literii in
+CLIP romanian/salamand D405 #407 86>77 Foloseste filtru:
+CLIP romanian/salamand D405 #1150 129>70 Procent de folosire a filtrului
+CLIP romanian/salamand D450 #1153 72>68 Nume utilizator:
+CLIP romanian/salamand D460 #1151 500>494 Nota 1: este ignorat cand Recycle Bin este folosit pentru toate obiectele (vezi pagina despre Recycle Bin).
+CLIP romanian/salamand D476 #1158 232>214 Daca calea in panou nu este accesibila, mergi la:
+CLIP romanian/salamand D550 #1164 150>127 Indicatori ai sistemului de fișiere:
+CLIP romanian/salamand D595 #1154 37>31 Marime:
+CLIP romanian/salamand D630 #1150 83>58 Linia se Sfarseste
+CLIP romanian/salamand D630 #1151 155>151 CR = Întoarcere la capăt de rând
+CLIP romanian/salamand D630 #1156 65>57 Marimea Tab:
+CLIP romanian/salamand D1010 #1018 259>213 Adauga/Elimina arhivatoare/dezarhivatoare custom
+CLIP romanian/salamand D1085 #1088 58>52 Cale Rapida
+CLIP romanian/salamand D1105 #615 507>478 Foloseste Shift+numar pentru a merge la Cale Rapida (da conflict cu tip tastatura regionala - romania, uk)
+CLIP romanian/salamand D1105 #315 508>478 Click dreapta pentru a deschide meniul de scurtaturi (tine tasta CTRL apasat pentru a selecta/deselecta)
+CLIP romanian/salamand D2340 #1150 120>104 Listeaza si Dezarhiveaza:
+CLIP romanian/salamand D2350 #1151 120>117 Listeaza si Dezarhiveaza:
+CROSS romanian/salamand D2380 #2383 290>282 ...
+CROSS romanian/salamand D2490 #2492 197>195 Nimic
+CROSS romanian/salamand D2500 #2522 237>225 Cauta arhivele
+CROSS romanian/salamand D2500 #2522 237>225 Cauta arhivele
+CLIP romanian/salamand D2500 #2508 133>125 Cauta continutul fisierului
+CROSS romanian/salamand D2500 #2513 226>225 Expresie regulara
+CROSS romanian/salamand D2500 #2513 226>225 Expresie regulara
+CLIP romanian/salamand D2540 #1152 69>68 Subdirectoare:
+CLIP romanian/salamand D2560 #1152 80>48 Marimea fisierului
+CROSS romanian/salamand D2560 #9 220>216 Ajutor
+CLIP romanian/salamand D2600 #1155 82>73 Drepturi de autor:
+CLIP romanian/salamand D2790 #1150 169>137 Apasa tasta pentru noua scurtatura:
+CLIP romanian/salamand D2830 #2832 130>109 Seteaza limita de viteza:
+CROSS romanian/salamand D2830 #9 201>157 Ajutor
+CLIP romanian/salamand D2830 #1150 74>70 Limita de Viteza
+CLIP romanian/salamand D6110 #1151 39>28 Gaseste
+CLIP romanian/salamand D6110 #6123 162>156 Litera sensibila (mare sau mica)
+CROSS romanian/zip D100 #105 299>267 Advansat...
+CLIP romanian/zip D100 #122 104>88 AES pe 128 de biți
+CLIP romanian/zip D100 #123 104>92 AES pe 256 de biți
+CLIP romanian/zip D126 #3002 91>83 Marimea Volumului:
+CROSS romanian/zip D146 #3003 301>299 Nota: Puteti introduce o cale relativa, care va fi combinata cu directorul curent cand se executa self-extractor-ul, sau calea intreaga. Lasati campul gol pentru extragere in directorul curent.
+CLIP romanian/zip D146 #3007 36>35 Icoana:
+CROSS romanian/zip D146 #158 301>299 Arata dialog cu sumarul operatiunii
+CROSS romanian/zip D190 #3001 256>253 Aceasta caseta de mesaje e aratata inainte de dialogul principal si inainte de a incepe dezahivarea.
+CROSS romanian/zip D190 #3002 256>253 Lasati campurile 'Titlu' si 'Mesaj' goale daca nu doriti sa arate vreun mesaj.
+CLIP russian/7zip D1200 #1300 94>82 Настройки панели
+CLIP russian/7zip D1200 #1201 357>345 Перед упаковкой показывать окно с расширенными параметрами
+CLIP russian/7zip D1200 #1202 352>345 Показывать дополнительную информацию при просмотре архива
+CLIP russian/7zip D1200 #1204 88>83 Метод сжатия
+CLIP russian/7zip D1200 #1209 163>130 Создать непрерывный архив
+CROSS russian/7zip D1200 #9 213>174 Справка
+CROSS russian/7zip D1200 #9 213>174 Справка
+CLIP russian/7zip D1201 #1211 123>117 Зашифровать файлы
+CLIP russian/7zip D1201 #1209 163>145 Создать непрерывный архив
+CROSS russian/7zip D1201 #2 225>191 Отмена
+CROSS russian/7zip D1201 #2 225>191 Отмена
+CLIP russian/checksum D1000 #1005 159>80 использование буфера обмена
+CLIP russian/checksum D2000 #1007 59>58 Проверено:
+CLIP russian/dbviewer D12300 #13001 32>28 Поиск
+CLIP russian/dbviewer D12300 #13003 59>46 Параметры
+CROSS russian/filecomp D100 #103 213>205 Дополнительно...
+CROSS russian/filecomp D100 #103 213>205 Дополнительно...
+CLIP russian/filecomp D130 #300 72>46 Игнорировать
+CLIP russian/filecomp D130 #306 65>58 Концы строк
+CLIP russian/filecomp D130 #310 102>95 Параметры Unicode
+CLIP russian/filecomp D140 #307 133>77 Шрифт просмотра файлов
+CLIP russian/filecomp D140 #309 37>35 Прочее
+CLIP russian/filecomp D140 #144 274>271 Загрузить модуль при запуске Tandem Commander
+CLIP russian/filecomp D150 #300 72>46 Игнорировать
+CLIP russian/filecomp D150 #306 71>58 Концы строки
+CLIP russian/filecomp D150 #310 102>95 Параметры Unicode
+CLIP russian/ftp D500 #502 403>359 Приоритет соединениям, используемым на панелях (ускорение просмотра)
+CLIP russian/ftp D500 #503 226>196 Общий лимит скорости для FTP-клиента:
+CLIP russian/ftp D500 #506 620>553 Поддержка шестнадцатеричных кодов в путях  (аналогично URL-адресам, например: "%20" означает символ пробела)
+CLIP russian/ftp D500 #508 557>553 Автоматически открывать диалог "Устранение ошибки" при ошибках, если диалог операции простаивает
+CLIP russian/ftp D520 #3001 366>236 Дополнительные параметры соединений, используемые по умолчанию
+CLIP russian/ftp D520 #3002 80>75 Прокси-сервер:
+CLIP russian/ftp D520 #521 543>466 Пассивный режим передачи (рекомендуется при использовании сетевого экрана или прокси-сервера)
+CLIP russian/ftp D520 #588 364>322 Максимальное количество одновременных подключений к серверу:
+CLIP russian/ftp D520 #590 268>191 Общее ограничение скорости для этого сервера:
+CLIP russian/ftp D520 #3006 100>38 Посылать команду:
+CLIP russian/ftp D520 #3007 43>38 каждые:
+CLIP russian/ftp D520 #3009 149>112 Прекратить отправку спустя:
+CLIP russian/ftp D520 #3012 200>147 Режим передачи файлов по умолчанию
+CLIP russian/ftp D520 #523 265>258 Бинарный режим (нет изменений при передачах)
+CLIP russian/ftp D520 #524 521>347 Режим ASCII (концы строк файлов преобразовываются к используемым в системе по умолчанию)
+CLIP russian/ftp D520 #525 197>181 Автоматический - ASCII режим для:
+CLIP russian/ftp D520 #530 113>73 использование масок
+CLIP russian/ftp D545 #3004 242>213 Интервал между попытками переподключения:
+CLIP russian/ftp D545 #3007 271>216 Разорвать соединение, если оно простаивает более:
+CLIP russian/ftp D545 #3011 468>442 Количество проверяемых байт (в конце файла) при возобновлении копирования с сервера:
+CLIP russian/ftp D560 #564 85>68 Начальный путь:
+CLIP russian/ftp D560 #576 99>68 Имя пользователя:
+CROSS russian/ftp D560 #579 411>408 Разблокировать...
+CROSS russian/ftp D560 #579 411>408 Разблокировать...
+CLIP russian/ftp D560 #569 108>107 Сохранить пароль
+CLIP russian/ftp D580 #3004 129>125 Режим передачи файлов:
+CLIP russian/ftp D580 #3006 132>129 Начальные команды FTP:
+CROSS russian/ftp D580 #3007 324>322 разделяйте команды точкой с запятой (CWD []; HELP)
+CROSS russian/ftp D580 #3007 324>172 разделяйте команды точкой с запятой (CWD []; HELP)
+CLIP russian/ftp D580 #3009 100>36 Посылать команду:
+CLIP russian/ftp D580 #3010 43>40 каждые:
+CLIP russian/ftp D580 #3012 149>112 Прекратить отправку спустя:
+CLIP russian/ftp D580 #587 543>466 Пассивный режим передачи (рекомендуется при использовании сетевого экрана или прокси-сервера)
+CLIP russian/ftp D580 #588 364>270 Максимальное количество одновременных подключений к серверу:
+CLIP russian/ftp D580 #590 268>208 Общее ограничение скорости для этого сервера:
+CLIP russian/ftp D630 #3000 99>67 Имя пользователя:
+CLIP russian/ftp D630 #3002 84>65 Учетная запись:
+CLIP russian/ftp D650 #654 395>355 Максимальное количество хранимых журналов разорванных соединений:
+CLIP russian/ftp D680 #688 57>43 Состояние:
+CLIP russian/ftp D725 #3000 83>75 Идентификатор:
+CLIP russian/ftp D725 #3003 111>75 Фиктивное значение:
+CLIP russian/ftp D725 #3005 78>75 Выравнивание:
+CLIP russian/ftp D750 #777 153>87 Недостаточно места на диске
+CROSS russian/ftp D750 #777 394>346 Недостаточно места на диске
+CLIP russian/ftp D779 #782 359>330 Только добавить в очередь (не выполнять в активном соединении)
+CLIP russian/ftp D785 #787 359>330 Только добавить в очередь (не выполнять в активном соединении)
+CROSS russian/ftp D795 #799 94>91 Исполнение (Доступ)
+CROSS russian/ftp D795 #802 184>181 Исполнение (Доступ)
+CROSS russian/ftp D795 #805 274>271 Исполнение (Доступ)
+CLIP russian/ftp D795 #3004 103>88 Числовое значение:
+CLIP russian/ftp D795 #3007 59>48 Параметры
+CLIP russian/ftp D795 #810 359>338 Только добавить в очередь (не выполнять в активном соединении)
+CLIP russian/ftp D815 #3001 227>184 Копирование и перемещение с FTP-сервера
+CLIP russian/ftp D815 #3010 195>186 Изменение атрибутов на FTP-сервере
+CLIP russian/ftp D815 #3013 127>120 Удаление с FTP-сервера
+CLIP russian/ftp D830 #3005 89>83 Путь назначения:
+CLIP russian/ftp D840 #3005 89>83 Путь назначения:
+CLIP russian/ftp D841 #3005 89>83 Путь назначения:
+CLIP russian/ftp D843 #3004 89>83 Путь назначения:
+CLIP russian/ftp D844 #3004 89>83 Путь назначения:
+CLIP russian/ftp D845 #3004 89>83 Путь назначения:
+CLIP russian/ftp D847 #3004 89>83 Путь назначения:
+CROSS russian/ftp D865 #799 94>91 Исполнение (Доступ)
+CROSS russian/ftp D865 #802 184>181 Исполнение (Доступ)
+CROSS russian/ftp D865 #805 274>271 Исполнение (Доступ)
+CLIP russian/ftp D865 #3003 103>88 Числовое значение:
+CLIP russian/ftp D890 #3003 89>85 Путь назначения:
+CLIP russian/ftp D896 #3003 89>85 Путь назначения:
+CLIP russian/ftp D900 #3004 89>83 Путь назначения:
+CLIP russian/ftp D910 #3000 525>496 Загрузка файла с бинарным содержимым в ASCII-режиме передачи. Файл может быть  поврежден по
+CLIP russian/ftp D910 #3001 499>496 причине нежелательного преобразования концов строк к принятым по умолчанию в системе. Вы
+CLIP russian/ftp D910 #3002 536>496 можете повторно загрузить файл в бинарном режиме (без преобразования). Если вы уверены, что файл
+CLIP russian/ftp D910 #3003 515>496 является обычным текстовым файлом, нажмите "Игнорировать" для закрытия данного сообщения.
+CLIP russian/ftp D915 #3001 227>169 Копирование и перемещение на FTP-сервер
+CLIP russian/ftp D920 #3004 99>68 Имя пользователя:
+CROSS russian/ftp D920 #935 227>224 Разблокировать...
+CLIP russian/ftp D920 #927 108>104 Сохранить пароль
+CLIP russian/ftp D920 #3006 84>73 Сценарий входа:
+CLIP russian/ftp D930 #3000 99>98 Имя пользователя:
+CLIP russian/ftp D930 #3003 138>102 Имя пользователя прокси:
+CROSS russian/pictview D2040 #3007 264>262 Изображения могут содержать некорректные эскизы, которые могут быть неправильно повернуты или не соответствовать последней редакции изображения.
+CROSS russian/pictview D2040 #2050 264>262 Не использовать встроенные эскизы файлов изображений (медленно)
+CROSS russian/pictview D2040 #3010 264>262 мегапикселей.
+CROSS russian/pictview D2130 #2 113>101 Отмена
+CLIP russian/pictview D2140 #3000 51>46 Страница:
+CROSS russian/pictview D2140 #2 114>112 Отмена
+CROSS russian/pictview D2150 #2159 175>173 Виртуальный экран (несколько мониторов)
+CLIP russian/pictview D2150 #2155 110>67 Сочетание клавиш
+CROSS russian/pictview D2300 #2310 274>224 GIF
+CROSS russian/pictview D2300 #2312 263>224 GIF89a
+CROSS russian/pictview D2300 #2316 248>224 %
+CLIP russian/pictview D2300 #2317 98>80 Субдискретизация:
+CLIP russian/pictview D2300 #2321 83>63 Размер полосы:
+CLIP russian/pictview D2500 #3001 62>31 Левое поле:
+CLIP russian/pictview D2500 #3002 72>33 Верхнее поле:
+CLIP russian/pictview D2500 #3005 49>45 Масштаб:
+CLIP russian/pictview D2500 #2513 161>129 Печать выделенной области
+CROSS russian/pictview D2500 #9 412>379 Справка
+CROSS russian/regedt D135 #139 318>263 Дополнительно
+CROSS russian/regedt D135 #139 318>263 Дополнительно
+CLIP russian/regedt D135 #142 106>104 Именах разделов
+CLIP russian/regedt D135 #145 119>117 Именах параметров
+CROSS russian/regedt D135 #146 272>263 Данных
+CROSS russian/regedt D135 #146 272>263 Данных
+CLIP russian/regedt D135 #147 157>127 Шестнадцатеричный режим
+CROSS russian/regedt D135 #157 306>263 чч:мм:сс дд.мм.гггг
+CROSS russian/regedt D135 #157 306>263 чч:мм:сс дд.мм.гггг
+CROSS russian/regedt D135 #158 306>263 чч:мм:сс дд.мм.гггг
+CROSS russian/regedt D135 #158 306>263 чч:мм:сс дд.мм.гггг
+CLIP russian/regedt D166 #700 538>446 Настройка внешнего редактора. Внешний редактор используется для редактирования двоичных данных.
+CLIP russian/renamer D100 #123 170>151 Не обрабатывать расширение
+CROSS russian/renamer D100 #123 364>361 Не обрабатывать расширение
+CROSS russian/renamer D100 #123 364>346 Не обрабатывать расширение
+CROSS russian/renamer D100 #123 364>346 Не обрабатывать расширение
+CROSS russian/renamer D100 #123 364>346 Не обрабатывать расширение
+CLIP russian/renamer D100 #130 82>78 Смена регистра
+CROSS russian/renamer D140 #302 168>159 относительно
+CLIP russian/renamer D140 #303 107>100 Закончить в позиции
+CROSS russian/renamer D140 #304 168>159 относительно
+CROSS russian/renamer D140 #2 173>159 Отмена
+CLIP russian/renamer D150 #104 175>127 Выравнивание по левому краю
+CLIP russian/renamer D185 #301 98>93 Командная строка:
+CLIP russian/salamand D100 #102 113>78 использование масок
+CROSS russian/salamand D100 #102 201>197 использование масок
+CLIP russian/salamand D104 #102 113>72 использование масок
+CROSS russian/salamand D104 #102 201>197 использование масок
+CLIP russian/salamand D191 #1152 243>194 Сравнивать файлы с одинаковыми именами по
+CLIP russian/salamand D191 #197 60>50 Размеру
+CLIP russian/salamand D191 #193 81>73 Содержанию
+CLIP russian/salamand D191 #1156 209>127 Параметры сравнения вложенных папок
+CLIP russian/salamand D191 #232 80>77 Дополнительно
+CLIP russian/salamand D191 #234 128>125 Игнорировать файлы:
+CLIP russian/salamand D191 #102 113>85 использование масок
+CLIP russian/salamand D200 #1150 76>70 Перемещение:
+CLIP russian/salamand D205 #225 135>88 Ограничение скорости:
+CLIP russian/salamand D205 #223 383>337 Сохранять атрибуты файлов ("архивный", "сжатый", "зашифрованный")
+CLIP russian/salamand D205 #214 405>382 Сохранять владельцев и права доступа (не наследованные) на NTFS-дисках
+CLIP russian/salamand D205 #217 94>93 Имена файлов:
+CLIP russian/salamand D205 #102 113>80 использование масок
+CLIP russian/salamand D241 #1151 109>80 Установка атрибутов
+CLIP russian/salamand D241 #245 74>67 Системный
+CLIP russian/salamand D241 #256 101>92 Зашифрованный
+CLIP russian/salamand D241 #1156 142>134 Изменение даты и времени
+CLIP russian/salamand D241 #1158 59>46 Параметры
+CLIP russian/salamand D260 #1152 60>45 Результаты
+CLIP russian/salamand D260 #1154 141>132 Занимаемое пространство:
+CLIP russian/salamand D260 #1155 156>132 Использование пространства:
+CLIP russian/salamand D260 #1158 186>134 Оценка необходимого пространства
+CLIP russian/salamand D260 #1163 139>132 Использование кластеров:
+CROSS russian/salamand D260 #9 181>157 Справка
+CLIP russian/salamand D270 #1154 494>478 Лицензировано в соответствии с Общей публичной лицензией GNU версии 2 или более поздней
+CLIP russian/salamand D300 #312 326>305 При сравнении папок игнорировать различие во времени до
+CLIP russian/salamand D300 #624 497>493 Использовать быстрый асинхронный метод копирования файлов в сети (Windows 7 и старше)
+CLIP russian/salamand D320 #325 224>213 Фиксированная ширина в левой панели:
+CLIP russian/salamand D320 #326 230>214 Фиксированная ширина в правой панели:
+CLIP russian/salamand D350 #364 82>78 Разделитель
+CLIP russian/salamand D350 #363 311>285 Отображать на панели инструментов меню пользователя
+CLIP russian/salamand D400 #1151 103>92 Установить регистр
+CLIP russian/salamand D400 #1153 51>46 Изменить
+CLIP russian/salamand D400 #403 118>117 Только расширение
+CLIP russian/salamand D400 #1155 59>46 Параметры
+CLIP russian/salamand D405 #407 132>77 Использовать фильтр:
+CLIP russian/salamand D405 #102 113>75 использование масок
+CROSS russian/salamand D405 #102 230>226 использование масок
+CLIP russian/salamand D405 #1150 126>70 Использование фильтра
+CLIP russian/salamand D410 #427 66>65 Архивный
+CLIP russian/salamand D410 #430 74>63 Системный
+CLIP russian/salamand D410 #435 101>92 Зашифрованный
+CLIP russian/salamand D410 #1155 323>280 Примечание: неопределенный выбор = атрибут не учитывается
+CLIP russian/salamand D450 #1153 76>68 Пользователь:
+CROSS russian/salamand D455 #457 248>223 справка о путях
+CLIP russian/salamand D460 #1151 541>494 Примечание 1: не применяется, если Корзина используется для всех объектов (см. страницу "Корзина").
+CLIP russian/salamand D476 #1158 224>214 Если путь на панели недоступен, перейти в:
+CLIP russian/salamand D520 #102 113>80 использование масок
+CROSS russian/salamand D520 #102 223>218 использование масок
+CLIP russian/salamand D535 #1155 516>479 Операция удаления выполняется средствами Windows, поэтому дополнительные действия при этом
+CLIP russian/salamand D535 #102 113>75 использование масок
+CLIP russian/salamand D550 #1164 152>127 Свойства файловой системы:
+CLIP russian/salamand D595 #613 547>493 Показывать оттенок значка объекта на панели ("системный"/"скрытый"/"выделенный"/"выбранный")
+CLIP russian/salamand D595 #1154 42>31 Размер:
+CLIP russian/salamand D630 #1150 69>58 Конец строки
+CLIP russian/salamand D630 #637 142>124 Сохранять при закрытии
+CLIP russian/salamand D630 #1155 95>93 Общие параметры
+CLIP russian/salamand D630 #631 521>478 Использовать в средстве просмотра образец поиска, который использовался при поиске файлов
+CLIP russian/salamand D630 #1156 84>57 Ширина отступа:
+CLIP russian/salamand D630 #1161 158>147 Текстовый режим для файлов:
+CLIP russian/salamand D630 #1162 206>145 Шестнадцатеричный режим для файлов:
+CLIP russian/salamand D630 #102 113>80 использование масок
+CLIP russian/salamand D1040 #1152 634>484 Выберите таблицу преобразования кодовых страниц для использования в средствах просмотра и преобразования файлов.
+CLIP russian/salamand D1040 #1150 154>112 Системная кодовая страница:
+CROSS russian/salamand D1065 #1151 295>294 Мастер-пароль используется для защиты конфиденциальной информации (такой как пароли) стойким шифром AES. Если вы установите мастер-пароль, будет необходимо вводить его каждый раз при извлечении защищаемой информации.
+CLIP russian/salamand D1085 #602 96>92 Мои документы
+CLIP russian/salamand D1085 #1088 86>52 избранных путей
+CLIP russian/salamand D1085 #1089 159>55 виртуальных файловых систем
+CLIP russian/salamand D1105 #1150 100>80 Отображать имена:
+CLIP russian/salamand D1105 #1154 106>78 Отображать размер:
+CLIP russian/salamand D1105 #1151 59>57 Клавиатура
+CLIP russian/salamand D1105 #305 467>429 Переводить курсор при наборе из панели в командную строку (Alt для быстрого поиска)
+CLIP russian/salamand D1105 #615 537>473 Использовать Shift+номер для перехода по избранному пути (не работает в национальной раскладке)
+CLIP russian/salamand D1105 #310 300>285 Прерывать операции перетаскивания, которые короче:
+CLIP russian/salamand D1105 #1155 60>43 Сортировка
+CLIP russian/salamand D1110 #1150 501>491 Изменение клавиатурных сочетаний Tandem Commander недоступно в данной версии программы.
+CLIP russian/salamand D1110 #1151 408>328 Для ознакомления с полным перечнем клавиатурных сочетаний посетите нашу
+CLIP russian/salamand D1120 #1151 111>109 Требуемые атрибуты:
+CLIP russian/salamand D1140 #1150 594>464 Срок действия этой бета-версии программы истек. Пожалуйста, загрузите и установите обновленную бета-версию:
+CLIP russian/salamand D2300 #2310 190>172 Поддержка длинных имен файлов
+CLIP russian/salamand D2320 #102 113>63 использование масок
+CLIP russian/salamand D2320 #2325 190>172 Поддержка длинных имен файлов
+CLIP russian/salamand D2340 #1150 125>104 Открытие и распаковка:
+CLIP russian/salamand D2340 #1151 112>104 Удаление и упаковка:
+CLIP russian/salamand D2340 #1153 532>493 Используйте меню "Параметры - Автонастройка архиваторов" для поиска установленных архиваторов.
+CLIP russian/salamand D2350 #1151 125>117 Открытие и распаковка:
+CLIP russian/salamand D2380 #1151 45>35 Формат:
+CROSS russian/salamand D2380 #2387 300>282 справка по фомату
+CLIP russian/salamand D2380 #2389 184>125 Встроенное средство просмотра
+CLIP russian/salamand D2380 #2390 48>45 Файл:
+CROSS russian/salamand D2380 #2383 291>282 ...
+CLIP russian/salamand D2490 #102 113>78 использование масок
+CROSS russian/salamand D2490 #102 199>195 использование масок
+CLIP russian/salamand D2490 #1150 100>90 Сменить кодировку
+CROSS russian/salamand D2490 #2492 197>195 Отсутствует
+CLIP russian/salamand D2490 #1154 59>46 Параметры
+CLIP russian/salamand D2500 #2503 166>145 Искать во вложенных папках
+CROSS russian/salamand D2500 #2522 237>225 Искать в архивах
+CROSS russian/salamand D2500 #2522 237>225 Искать в архивах
+CLIP russian/salamand D2500 #2508 172>125 Искать в содержимом файлов
+CLIP russian/salamand D2500 #2516 157>145 Шестнадцатеричный режим
+CROSS russian/salamand D2500 #2513 233>225 Регулярное выражение
+CROSS russian/salamand D2500 #2513 233>225 Регулярное выражение
+CLIP russian/salamand D2500 #2512 121>114 Найдено объектов: (%d)
+CLIP russian/salamand D2530 #1150 539>511 Для указания пути в корневой папке (UNC или локальной) вставьте в начало одну обратную косую черту.
+CLIP russian/salamand D2540 #1151 85>68 Область поиска:
+CLIP russian/salamand D2540 #1152 95>68 Вложенные папки:
+CLIP russian/salamand D2540 #1154 83>68 Дополнительно:
+CLIP russian/salamand D2560 #2561 66>65 Архивный
+CLIP russian/salamand D2560 #2564 74>63 Системный
+CLIP russian/salamand D2560 #2586 101>92 Зашифрованный
+CLIP russian/salamand D2560 #1152 74>48 Размер файла
+CLIP russian/salamand D2560 #2571 73>70 Максимум:
+CLIP russian/salamand D2560 #1154 129>87 Дата и время изменения
+CLIP russian/salamand D2560 #2575 85>83 Не учитывать
+CROSS russian/salamand D2560 #9 220>216 Справка
+CLIP russian/salamand D2730 #1150 82>70 Архивный файл:
+CLIP russian/salamand D2750 #2752 60>50 Размеру
+CLIP russian/salamand D2750 #2753 88>77 Содержимому
+CLIP russian/salamand D2790 #1150 179>137 Нажмите новое сочетание клавиш:
+CLIP russian/salamand D2830 #2832 146>109 Установить ограничение:
+CROSS russian/salamand D2830 #9 201>157 Справка
+CLIP russian/salamand D2830 #1150 116>70 Ограничение скорости
+CLIP russian/salamand D6110 #1151 32>28 Поиск
+CLIP russian/salamand D6110 #1153 59>46 Параметры
+CLIP russian/salamand D6208 #1151 545>521 Нажмите кнопку "Пропустить", чтобы пропустить копирование файлов по ссылке и создать пустую папку.
+CLIP russian/uncab D100 #301 87>67 Имя архива CAB:
+CLIP russian/undelete D1200 #1205 101>70 Восстанавливается
+CLIP russian/undelete D1400 #1404 428>412 Не показывать предупреждение при восстановлении на тот же логический диск
+CLIP russian/undelete D1400 #1405 556>412 Не показывать предупреждение при восстановлении зашифрованных файлов на разделы FAT или exFAT
+CLIP russian/uniso D1200 #1202 364>349 Отображать сессию как папку (разрешить доступ ко всем сессиям)
+CROSS russian/zip D100 #105 304>267 Дополнительно...
+CLIP russian/zip D100 #106 122>117 Шифрование файлов
+CLIP russian/zip D112 #3002 50>46 Упаковка
+CLIP russian/zip D112 #3006 307>182 Язык по умолчанию для самораспаковывающихся архивов:
+CLIP russian/zip D112 #3007 81>80 Подтверждения
+CLIP russian/zip D123 #3001 32>30 Файл:
+CLIP russian/zip D126 #134 496>491 Внимание! Объем свободного пространства на диске меньше требуемого размера тома архива.
+CLIP russian/zip D142 #143 333>323 Не запрашивать подтверждение при записи остальных томов
+CROSS russian/zip D146 #3003 301>299 Примечание: Вы можете указать относительный путь (относительно текущей папки, в которой будет открыт архив) либо указать абсолютный путь. Для распаковки в текущую папку оставьте это поле пустым.
+CLIP russian/zip D146 #3007 39>35 Значок:
+CLIP russian/zip D146 #155 193>186 Автоматически начать распаковку
+CLIP russian/zip D146 #161 253>231 Автоматически создать папку для извлечения
+CLIP russian/zip D146 #154 251>236 Заменять файлы без запроса подтверждения
+CROSS russian/zip D146 #154 301>299 Заменять файлы без запроса подтверждения
+CLIP russian/zip D146 #256 237>236 Требуются административные привилегии 
+CROSS russian/zip D146 #256 301>299 Требуются административные привилегии 
+CROSS russian/zip D190 #3001 256>253 Окно сообщений отображается перед отображением главного окна и началом распаковки.
+CROSS russian/zip D190 #3002 256>253 Не заполняйте поля "Заголовок" и "Сообщение", чтобы не отображать окно сообщений.
+CLIP russian/zip D190 #3006 61>57 Сообщение:
+CROSS slovak/7zip D1200 #9 213>174 Nápoveda
+CROSS slovak/7zip D1200 #9 213>174 Nápoveda
+CROSS slovak/7zip D1201 #2 225>191 Zrušiť
+CROSS slovak/7zip D1201 #2 225>191 Zrušiť
+CLIP slovak/codeview D310 #3003 121>102 Veľkosť (0 = predvolené):
+CLIP slovak/codeview D310 #3008 270>236 Súbory s dlhšími riadkami sa zobrazujú ako obyčajný text.
+CLIP slovak/codeview D310 #3010 248>236 Väčšie súbory sa otvárajú vo vstavanom prehliadači.
+CROSS slovak/dbviewer D12220 #12224 278>276 Nastaviť pozíciu na hlavné okno Tandem Commandera
+CROSS slovak/dbviewer D12250 #12255 202>196 Dvojité úvodzovky (")
+CLIP slovak/dbviewer D12300 #13003 54>46 Nastavenie
+CROSS slovak/dbviewer D12300 #12305 206>198 Rozlišovať veľkosť písmen
+CLIP slovak/filecomp D130 #306 65>58 Koniec riadku
+CLIP slovak/filecomp D140 #302 143>97 Nastavenie zobrazenia súboru
+CLIP slovak/filecomp D140 #307 129>77 Písmo zobrazeného súboru
+CLIP slovak/filecomp D140 #309 37>35 Ostatné
+CLIP slovak/filecomp D150 #306 69>58 Konce riadkov
+CLIP slovak/ftp D500 #502 363>359 Dať prednosť pripojeniu používanému v paneloch (rýchlejšie prehliadanie)
+CLIP slovak/ftp D500 #503 220>196 Celková povolená rýchlosť pre FTP klienta:
+CLIP slovak/ftp D520 #3007 43>38 každých:
+CLIP slovak/ftp D520 #3012 156>147 Predvolený režim prenosu súboru
+CLIP slovak/ftp D560 #566 122>120  Anonymné prihlásenie
+CROSS slovak/ftp D580 #3007 319>172 príkazy sú oddelené bodkočiarkou (CWD []; HELP)
+CLIP slovak/ftp D580 #3010 43>40 každých:
+CLIP slovak/ftp D725 #3003 84>75 Prázdna hodnota:
+CLIP slovak/ftp D750 #777 98>85 málo miesta na disku
+CROSS slovak/ftp D750 #777 393>346 málo miesta na disku
+CLIP slovak/ftp D795 #3007 54>48 Nastavenie
+CLIP slovak/ftp D815 #3013 129>120 Odstránenie na FTP serveri
+CLIP slovak/ftp D915 #3001 172>169 Kopírovanie a presun na FTP server
+CLIP slovak/pictview D2000 #3006 92>85 Domovská stránka:
+CROSS slovak/pictview D2040 #3007 264>262 Niektoré súbory s obrázkami môžu obsahovať neaktuálnu miniatúru, ktorá je zle otočená alebo nereflektuje posledné úpravy obrázka.
+CROSS slovak/pictview D2130 #2 113>101 Zrušiť
+CROSS slovak/pictview D2140 #2 114>112 Zrušiť
+CROSS slovak/pictview D2150 #2159 175>173 Virtuálnu obrazovku (pri viac monitoroch)
+CLIP slovak/pictview D2150 #2155 81>67 Horúci kláves
+CLIP slovak/pictview D2150 #2153 58>55 Časovač
+CLIP slovak/pictview D2180 #3000 104>87 Má sa prepísať súbor:
+CROSS slovak/pictview D2300 #2310 274>224 GIF
+CROSS slovak/pictview D2300 #2312 265>224 Vytvoriť GIF89a
+CROSS slovak/pictview D2300 #2316 248>224 %
+CLIP slovak/pictview D2300 #2320 102>83 Deliť do pásov (strips)
+CLIP slovak/pictview D2300 #2321 67>63 Veľkosť pásu:
+CLIP slovak/pictview D2500 #3001 32>31 Vľavo:
+CLIP slovak/pictview D2500 #2513 142>129 Tlačiť len označenú oblasť
+CROSS slovak/pictview D2500 #9 412>379 Nápoveda
+CROSS slovak/regedt D135 #139 328>263 Zobraziť možnosti
+CROSS slovak/regedt D135 #139 328>263 Zobraziť možnosti
+CROSS slovak/regedt D135 #146 272>263 Dáta
+CROSS slovak/regedt D135 #146 272>263 Dáta
+CROSS slovak/regedt D135 #157 306>263 hh:mm:ss dd.mm.rrrr
+CROSS slovak/regedt D135 #157 306>263 hh:mm:ss dd.mm.rrrr
+CROSS slovak/regedt D135 #158 306>263 hh:mm:ss dd.mm.rrrr
+CROSS slovak/regedt D135 #158 306>263 hh:mm:ss dd.mm.rrrr
+CLIP slovak/regedt D166 #703 94>92 Počiatočný adresár:
+CROSS slovak/renamer D100 #123 347>346 Nezahŕňať príponu
+CROSS slovak/renamer D100 #123 347>346 Nezahŕňať príponu
+CROSS slovak/renamer D100 #123 347>346 Nezahŕňať príponu
+CLIP slovak/renamer D100 #130 112>78 Zmena veľkosti písmen
+CROSS slovak/renamer D140 #302 168>159 vzhľadom na
+CROSS slovak/renamer D140 #304 168>159 vzhľadom na
+CROSS slovak/renamer D140 #2 173>159 Zrušiť
+CLIP slovak/renamer D190 #303 94>93 Počiatočný adresár:
+CLIP slovak/salamand D100 #102 91>70 nápoveda k maske
+CLIP slovak/salamand D104 #102 91>63 nápoveda k maske
+CLIP slovak/salamand D191 #1152 206>194 Porovnať súbory s rovnakým názvom podľa
+CLIP slovak/salamand D191 #102 91>85 nápoveda k maske
+CLIP slovak/salamand D200 #1150 82>70 Presúvaný súbor:
+CLIP slovak/salamand D205 #225 119>88 Obmedzenie rýchlosti:
+CLIP slovak/salamand D205 #217 117>93 Súbory pomenované:
+CLIP slovak/salamand D205 #102 91>80 nápoveda k maske
+CROSS slovak/salamand D260 #9 181>157 Nápoveda
+CLIP slovak/salamand D370 #1154 30>28 Ikona:
+CLIP slovak/salamand D405 #102 91>65 nápoveda k maske
+CLIP slovak/salamand D450 #1153 91>68 Užívateľské meno:
+CLIP slovak/salamand D455 #457 86>60 nápoveda k ceste
+CLIP slovak/salamand D476 #1159 91>77 Disketové jednotky
+CLIP slovak/salamand D476 #1153 253>191 Jednotky pevných diskov (napr. miestne pevné disky)
+CLIP slovak/salamand D476 #1155 169>164 CD-ROM alebo DVD-ROM jednotky
+CLIP slovak/salamand D520 #102 91>68 nápoveda k maske
+CLIP slovak/salamand D535 #102 91>72 nápoveda k maske
+CLIP slovak/salamand D595 #1154 41>31 Veľkosť:
+CLIP slovak/salamand D630 #1150 69>58 Konce riadkov
+CLIP slovak/salamand D630 #1155 98>93 Všeobecné možnosti
+CLIP slovak/salamand D630 #1156 91>57 Veľkosť tabulátora:
+CLIP slovak/salamand D630 #1163 312>261 Doplňujúce pravidlá pre automatický výber zobrazovacieho režimu
+CLIP slovak/salamand D630 #1161 156>147 Vynútiť Textový režim pre súbory:
+CLIP slovak/salamand D630 #1162 182>145 Vynútiť Šestnástkový režim pre súbory:
+CLIP slovak/salamand D630 #102 91>80 nápoveda k maske
+CLIP slovak/salamand D630 #1159 111>100 Farba normálneho textu
+CLIP slovak/salamand D1030 #1156 89>88 Adresár nápovedy:
+CLIP slovak/salamand D1040 #1150 137>112 Systémová znaková stránka:
+CLIP slovak/salamand D1085 #1088 91>52 Adresárové skratky
+CLIP slovak/salamand D1085 #1089 127>55 Pluginový súborový systém
+CLIP slovak/salamand D1105 #1150 89>80 Zobrazovať názvy:
+CLIP slovak/salamand D1105 #1154 99>78 Zobrazovať veľkosti:
+CLIP slovak/salamand D1105 #310 286>285 Zrušiť akciu pretiahnutie pomocou myši, ak je kratšie než:
+CLIP slovak/salamand D1105 #1155 44>43 Triedenie
+CLIP slovak/salamand D2300 #1150 112>83 Komprimovať pomocou:
+CLIP slovak/salamand D2320 #1150 102>83 Extrahovať pomocou:
+CLIP slovak/salamand D2320 #1151 82>68 Súborové masky:
+CLIP slovak/salamand D2320 #102 91>63 nápoveda k maske
+CLIP slovak/salamand D2340 #1151 109>104 Odstrániť a archivovať:
+CLIP slovak/salamand D2350 #102 153>120 nápoveda k rozšíreným maskám
+CLIP slovak/salamand D2350 #1153 119>117 Odstrániť a komprimovať:
+CLIP slovak/salamand D2380 #1151 37>35 Riadok:
+CLIP slovak/salamand D2380 #2387 89>68 nápoveda k riadku
+CROSS slovak/salamand D2380 #2383 290>282 ...
+CLIP slovak/salamand D2490 #102 91>68 nápoveda k maske
+CROSS slovak/salamand D2490 #2492 197>195 Neprevádzať
+CROSS slovak/salamand D2500 #2522 237>225 Hľadať v archívoch
+CROSS slovak/salamand D2500 #2522 237>225 Hľadať v archívoch
+CLIP slovak/salamand D2500 #2515 175>119 Rozlišovať malé a veľké písmená
+CROSS slovak/salamand D2500 #2513 226>225 Regulárny výraz
+CROSS slovak/salamand D2500 #2513 226>225 Regulárny výraz
+CLIP slovak/salamand D2560 #1152 73>48 Veľkosť súboru
+CROSS slovak/salamand D2560 #9 220>216 Nápoveda
+CLIP slovak/salamand D2600 #1155 75>73 Autorské práva:
+CLIP slovak/salamand D2830 #2832 160>109 Nastaviť obmedzenie rýchlosti:
+CROSS slovak/salamand D2830 #9 201>157 Nápoveda
+CLIP slovak/salamand D6110 #6123 175>156 Rozlišovať malé a veľké písmená
+CLIP slovak/salamand D6208 #1153 59>52 Podrobnosti:
+CLIP slovak/undelete D1000 #3000 38>36 Celkom:
+CROSS slovak/zip D100 #105 299>267 Pokročilé...
+CLIP slovak/zip D100 #122 89>88 128-bitový AES
+CLIP slovak/zip D112 #3002 60>46 Komprimácia
+CLIP slovak/zip D123 #3001 31>30 Súbor:
+CROSS slovak/zip D146 #3003 301>299 Poznámka: Môžete zadať relatívnu cestu, ktorá bude v kombinácii s aktuálnym adresárom, v ktorom je spustený SFX archív alebo úplnú cestu. Nechajte pole prázdne na extrahovanie do aktuálneho adresára.
+CROSS slovak/zip D190 #3001 256>253 Táto správa je zobrazovaná pred hlavným dialógovým oknom a pred začiatkom extrahovania.
+CROSS slovak/zip D190 #3002 256>253 Zanechajte pole 'Titulok' a 'Správa' prázdne, ak nechcete správu zobrazovať.
+CROSS spanish/7zip D1200 #9 213>174 Ayuda
+CROSS spanish/7zip D1200 #9 213>174 Ayuda
+CROSS spanish/7zip D1201 #2 225>191 Cancelar
+CROSS spanish/7zip D1201 #2 225>191 Cancelar
+CLIP spanish/codeview D310 #3003 142>102 Tamaño (0 = predeterminado):
+CLIP spanish/codeview D310 #3006 295>236 Los archivos más grandes se muestran como texto sin formato.
+CLIP spanish/codeview D310 #3008 338>236 Los archivos con líneas más largas se muestran como texto sin formato.
+CLIP spanish/codeview D310 #3010 268>236 Los archivos más grandes se abren en el visor integrado.
+CROSS spanish/dbviewer D12220 #12224 278>276 Como la ventana principal de Tandem Commander
+CLIP spanish/dbviewer D12300 #13001 33>28 Buscar
+CROSS spanish/dbviewer D12300 #12305 206>198 Distinguir M/minúsculas
+CLIP spanish/filecomp D130 #302 76>60 Tipo de ficheros
+CLIP spanish/filecomp D130 #306 75>58 Finales de línea
+CLIP spanish/filecomp D140 #300 102>82 Selección de ficheros
+CLIP spanish/filecomp D140 #302 178>97 Opciones de visualización de ficheros
+CLIP spanish/filecomp D140 #307 128>77 Fuente de vista de ficheros
+CLIP spanish/filecomp D150 #302 76>60 Tipos de fichero
+CLIP spanish/filecomp D150 #306 75>58 Finales de línea
+CLIP spanish/ftp D500 #502 385>359 Dar prioridad a las conexiones usadas en los paneles (navegación más rápida)
+CLIP spanish/ftp D500 #503 227>196 Límite total de velocidad para el cliente FTP:
+CLIP spanish/ftp D520 #3001 237>236 Opciones avanzadas por omisión para conexiones
+CLIP spanish/ftp D520 #590 193>191 Límite de velocidad total por servidor:
+CLIP spanish/ftp D520 #3005 283>258 Opciones por defecto para mantener activas las conexiones
+CLIP spanish/ftp D520 #3012 163>147 Modo de transferencia por defecto
+CLIP spanish/ftp D520 #530 115>73 sugerencias de plantillas
+CLIP spanish/ftp D560 #569 110>107 Guardar contraseña
+CROSS spanish/ftp D580 #3007 319>172 los comandos deben separarse por punto y coma (CWD []; HELP)
+CLIP spanish/ftp D580 #590 222>208 Límite de velocidad total para este servidor:
+CLIP spanish/ftp D680 #684 124>114 Tiempo restante estimado:
+CLIP spanish/ftp D750 #3001 96>83 Tiempo transcurrido:
+CLIP spanish/ftp D750 #777 93>85 espacio insuficiente
+CROSS spanish/ftp D750 #777 393>346 espacio insuficiente
+CLIP spanish/ftp D815 #3001 187>184 Copiar y trasladar desde el servidor FTP
+CLIP spanish/ftp D920 #927 110>109 Guardar contraseña
+CLIP spanish/ftp D930 #3004 100>98 Contraseña de proxy:
+CLIP spanish/pictview D2000 #3005 89>85 Correo electrónico:
+CROSS spanish/pictview D2040 #3007 264>262 Algunas imágenes pueden contener miniatura imprecisa, no rotada adecuadamente o no reflejar los últimos cambios.
+CROSS spanish/pictview D2040 #2050 264>262 Ignorar miniaturas originales incluidas en ficheros imagen (lento)
+CROSS spanish/pictview D2130 #2 113>101 Cancelar
+CROSS spanish/pictview D2140 #2 114>112 Cancelar
+CROSS spanish/pictview D2150 #2156 175>173 Area cliente de ventana en primer plano 
+CROSS spanish/pictview D2150 #2159 175>173 Pantalla virtual (para varios monitores)
+CLIP spanish/pictview D2150 #2155 75>67 Tecla rápida
+CLIP spanish/pictview D2150 #2153 80>67 Temporizador
+CROSS spanish/pictview D2300 #2310 274>224 GIF
+CROSS spanish/pictview D2300 #2312 263>224 Crear GIF89a
+CROSS spanish/pictview D2300 #2316 248>224 %
+CLIP spanish/pictview D2300 #2321 80>63 Tamaño bandas:
+CROSS spanish/pictview D2500 #2506 415>411 Escalar: ajustar al soporte
+CROSS spanish/pictview D2500 #2507 415>411 Mantener relación aspecto
+CROSS spanish/pictview D2500 #9 412>379 Ayuda
+CROSS spanish/regedt D135 #139 318>263 Ver opciones
+CROSS spanish/regedt D135 #139 318>263 Ver opciones
+CROSS spanish/regedt D135 #146 272>263 Datos
+CROSS spanish/regedt D135 #146 272>263 Datos
+CROSS spanish/regedt D135 #157 306>263 hh:mm:ss dd.mm.aaaa
+CROSS spanish/regedt D135 #157 306>263 hh:mm:ss dd.mm.aaaa
+CROSS spanish/regedt D135 #158 306>263 hh:mm:ss dd.mm.aaaa
+CROSS spanish/regedt D135 #158 306>263 hh:mm:ss dd.mm.aaaa
+CROSS spanish/renamer D100 #123 347>346 Excluir extensión
+CROSS spanish/renamer D100 #123 347>346 Excluir extensión
+CROSS spanish/renamer D100 #123 347>346 Excluir extensión
+CLIP spanish/renamer D100 #130 107>78 Cambiar M/minúsculas
+CROSS spanish/renamer D140 #302 168>159 relativa a
+CROSS spanish/renamer D140 #304 168>159 relativa a
+CROSS spanish/renamer D140 #2 173>159 Cancelar
+CLIP spanish/salamand D100 #102 110>70 sugerencias de plantilla
+CLIP spanish/salamand D104 #102 110>63 sugerencias de plantilla
+CLIP spanish/salamand D191 #1152 219>194 Comparar ficheros con el mismo nombre según
+CLIP spanish/salamand D191 #1156 128>127 Opciones de subdirectorios
+CLIP spanish/salamand D191 #102 110>85 sugerencias de plantilla
+CLIP spanish/salamand D205 #225 112>88 Límite de velocidad:
+CLIP spanish/salamand D205 #217 118>93 Ficheros con nombre:
+CLIP spanish/salamand D205 #102 110>80 sugerencias de plantilla
+CLIP spanish/salamand D241 #1151 85>80 Disponer atributos
+CLIP spanish/salamand D260 #1152 53>45 Resultados
+CROSS spanish/salamand D260 #9 181>157 Ayuda
+CLIP spanish/salamand D370 #1154 30>28 Icono:
+CLIP spanish/salamand D405 #102 110>65 sugerencias de plantilla
+CLIP spanish/salamand D455 #457 93>60 sugerencias de ruta
+CLIP spanish/salamand D476 #1159 100>77 Unidades de diskette
+CLIP spanish/salamand D476 #1153 193>191 Unidades fijas (p.ej. discos duros locales)
+CLIP spanish/salamand D520 #102 110>68 sugerencias de plantilla
+CLIP spanish/salamand D535 #102 110>72 sugerencias de plantilla
+CLIP spanish/salamand D550 #1164 151>127 Señales del sistema de ficheros:
+CLIP spanish/salamand D595 #1154 42>31 Tamaño:
+CLIP spanish/salamand D630 #1150 75>58 Finales de línea
+CLIP spanish/salamand D630 #1154 108>95 Posición de la ventana
+CLIP spanish/salamand D630 #1155 94>93 Opciones generales
+CLIP spanish/salamand D630 #1156 104>57 Tamaño de tabulador:
+CLIP spanish/salamand D630 #1163 268>261 Reglas adicionales para autoselección del modo de vista
+CLIP spanish/salamand D630 #102 110>80 sugerencias de plantilla
+CLIP spanish/salamand D630 #1160 131>107 Color de texto seleccionado
+CLIP spanish/salamand D1030 #1156 95>88 Directorio de ayuda:
+CLIP spanish/salamand D1040 #1150 146>112 Página de códigos del sistema:
+CLIP spanish/salamand D1073 #1151 127>125 Escriba nueva contraseña:
+CLIP spanish/salamand D1085 #1088 55>52 Ruta rápida
+CLIP spanish/salamand D1105 #1155 55>43 Ordenación
+CLIP spanish/salamand D2320 #1150 87>83 Descomprimir con:
+CLIP spanish/salamand D2320 #102 110>63 sugerencias de plantilla
+CLIP spanish/salamand D2350 #102 160>120 sugerencias de plantilla ampliadas
+CLIP spanish/salamand D2380 #2387 99>68 sugerencias de línea
+CROSS spanish/salamand D2380 #2383 290>282 ...
+CLIP spanish/salamand D2490 #102 110>68 sugerencias de plantilla
+CLIP spanish/salamand D2490 #1150 98>90 Cambiar codificación
+CROSS spanish/salamand D2490 #2492 197>195 Ninguno
+CROSS spanish/salamand D2500 #2522 237>225 Buscar archivos
+CROSS spanish/salamand D2500 #2522 237>225 Buscar archivos
+CLIP spanish/salamand D2500 #2515 174>119 Distinguir mayúsculas/minúsculas
+CROSS spanish/salamand D2500 #2513 226>225 Expresiones regulares
+CROSS spanish/salamand D2500 #2513 226>225 Expresiones regulares
+CLIP spanish/salamand D2560 #1152 89>48 Tamaño de fichero
+CROSS spanish/salamand D2560 #9 220>216 Ayuda
+CLIP spanish/salamand D2600 #1155 91>73 Derechos de autor:
+CLIP spanish/salamand D2730 #1150 91>70 Fichero de archivo:
+CLIP spanish/salamand D2790 #1150 141>137 Pulse nuevo atajo de teclado:
+CLIP spanish/salamand D2830 #2832 112>109 Límite de velocidad:
+CROSS spanish/salamand D2830 #9 201>157 Ayuda
+CLIP spanish/salamand D2830 #1150 93>70 Límite de velocidad
+CLIP spanish/salamand D6110 #1151 33>28 Buscar
+CLIP spanish/salamand D6223 #6227 73>70 Encontrado en:
+CLIP spanish/uncab D100 #300 85>67 Nombre del disco:
+CLIP spanish/uncab D100 #301 81>67 Nombre del CAB:
+CLIP spanish/zip D100 #3002 102>78 Tamaño del volumen:
+CROSS spanish/zip D100 #105 299>267 Avanzado...
+CLIP spanish/zip D100 #122 92>88 AES de 128 bits
+CLIP spanish/zip D112 #3000 73>63 Descompresión
+CLIP spanish/zip D112 #3002 66>46 Comprimiendo
+CLIP spanish/zip D123 #3000 355>352 Este fichero está encriptado. Escriba la contraseña para su descompresión.
+CLIP spanish/zip D123 #3001 38>30 Fichero:
+CLIP spanish/zip D126 #3002 85>83 Tamaño volumen:
+CLIP spanish/zip D137 #3000 99>88 Sobreescribir fichero:
+CROSS spanish/zip D146 #3003 301>299 Nota: Puede escribir una ruta relativa, que será combinada con el directorio actual cuando se ejecute el autoextractor, o una ruta completa. Deje el campo en blanco para extraer en el directorio actual.
+CROSS spanish/zip D146 #154 301>299 Sobreescribir ficheros sin preguntar
+CROSS spanish/zip D146 #256 301>299 Requiere privilegios administrativos 
+CLIP spanish/zip D152 #3000 99>88 Sobreescribir fichero:
+CROSS spanish/zip D190 #3001 256>253 Este cuadro de mensaje aparece antes del cuadro de diálogo principal y antes de que comience la compresión.
+CROSS spanish/zip D190 #3002 256>253 Deje vacíos lod campos 'Título' y 'Mensaje' si no desea que aparezca ningún mensaje.
+CLIP ukrainian/7zip D1200 #1300 109>82 Налаштування панелі
+CLIP ukrainian/7zip D1200 #1201 405>345 Перед упаковкою відобразити діалогове вікно з розширеними параметрами
+CLIP ukrainian/7zip D1200 #1302 211>186 Параметри стиснення за замовчуванням
+CLIP ukrainian/7zip D1200 #1209 178>130 Створити архів у форматі SOLID
+CROSS ukrainian/7zip D1200 #9 213>174 Допомога
+CROSS ukrainian/7zip D1200 #9 213>174 Допомога
+CLIP ukrainian/7zip D1201 #1211 120>117 Зашифрувати файли
+CLIP ukrainian/7zip D1201 #1209 178>145 Створити архів у форматі SOLID
+CLIP ukrainian/7zip D1201 #1214 530>436 Не показувати це діалогове вікно більше (це можна змінити пізніше у діалоговому вікні налаштувань)
+CROSS ukrainian/7zip D1201 #2 225>191 Скасувати
+CROSS ukrainian/7zip D1201 #2 225>191 Скасувати
+CLIP ukrainian/checksum D1000 #1005 150>80 підказка щодо буфера обміну
+CLIP ukrainian/dbviewer D12220 #12224 391>286 Встановити у положення головного вікна програми «Tandem Commander»
+CROSS ukrainian/dbviewer D12220 #12224 278>276 Встановити у положення головного вікна програми «Tandem Commander»
+CLIP ukrainian/dbviewer D12300 #13001 36>28 Знайти
+CLIP ukrainian/dbviewer D12300 #13003 57>46 Параметри
+CROSS ukrainian/dbviewer D12300 #12305 204>198 З урахуванням регістру
+CLIP ukrainian/filecomp D130 #302 62>60 Типи файлів
+CLIP ukrainian/filecomp D130 #310 100>95 Параметри Unicode
+CLIP ukrainian/filecomp D130 #147 341>338 Об'єднати діакритичні знаки в попередньо сформовані символи
+CLIP ukrainian/filecomp D140 #302 149>97 Параметри перегляду файлів
+CLIP ukrainian/filecomp D140 #304 454>359 Кількість рядків контексту, які слід відображати, якщо переглядаються лише відмінності:
+CLIP ukrainian/filecomp D140 #307 159>77 Шрифт у вікні перегляду файлів
+CLIP ukrainian/filecomp D140 #144 298>271 Завантажити плагін під час запуску Tandem Commander
+CLIP ukrainian/filecomp D150 #302 62>60 Типи файлів
+CLIP ukrainian/filecomp D150 #310 100>95 Параметри Unicode
+CLIP ukrainian/ftp D500 #502 449>359 Надайте пріоритет з’єднанням, що використовуються в панелях (швидший перегляд)
+CLIP ukrainian/ftp D500 #503 266>196 Загальне обмеження швидкості для FTP-клієнта:
+CLIP ukrainian/ftp D500 #506 590>553 Допускати шестнадцяткові екрануючі послідовності в шляхах (як у веб-браузерах, наприклад, «%20» замість « »)
+CLIP ukrainian/ftp D500 #507 617>558 Автоматично закривати діалогове вікно операції після її успішного завершення, якщо діалогове вікно не було змінено
+CLIP ukrainian/ftp D500 #508 807>553 Автоматично відкривати діалогові вікна «Виправлення помилок» у разі виникнення помилок, якщо діалогове вікно операції перебуває в неактивному стані
+CLIP ukrainian/ftp D500 #3001 312>295 Пароль для анонімних підключень (ваша електронна адреса):
+CLIP ukrainian/ftp D520 #3002 76>75 Проксі-сервер:
+CLIP ukrainian/ftp D520 #521 686>466 Використовуйте режим пасивного передавання (це може допомогти, якщо ви перебуваєте за брандмауером або проксі-сервером)
+CLIP ukrainian/ftp D520 #590 248>191 Загальне обмеження швидкості для сервера:
+CLIP ukrainian/ftp D520 #593 590>500 Використовувати кеш для переглянутих файлів та списків файлів і каталогів на сервері (прискорення перегляду)
+CLIP ukrainian/ftp D520 #3005 306>258 Налаштування за замовчуванням для підтримання з'єднань
+CLIP ukrainian/ftp D520 #3006 54>38 Надіслати:
+CLIP ukrainian/ftp D520 #3009 139>112 Припиніть надсилати після:
+CLIP ukrainian/ftp D520 #3012 216>147 Режим передачі файлів за замовчуванням
+CLIP ukrainian/ftp D520 #523 265>258 Бінарний режим (без змін під час передачі даних)
+CLIP ukrainian/ftp D520 #524 516>347 Режим ASCII (перетворення файлів для використання стандартних символів кінця рядка системи)
+CLIP ukrainian/ftp D520 #525 188>181 Автоматичний — режим ASCII для:
+CLIP ukrainian/ftp D520 #530 109>73 підказки щодо масок
+CLIP ukrainian/ftp D535 #539 697>553 Показати повідомлення «Ім'я об'єкта вже використовується. Чи хочете ви його перезаписати?» у функції «Швидке перейменування»
+CLIP ukrainian/ftp D535 #541 658>553 Показати повідомлення «Якщо ви хочете, щоб на цьому FTP-сервері завжди відображалися приховані файли та каталоги, ...»
+CLIP ukrainian/ftp D545 #3007 413>216 Відключити передачу даних, якщо вона перебуває в режимі очікування протягом:
+CLIP ukrainian/ftp D545 #3009 601>439 Спробуйте відновити копіювання лише в тому випадку, якщо вже скопійована частина файлу становить щонайменше:
+CLIP ukrainian/ftp D545 #3011 497>442 Кількість байтів, які потрібно перевірити (у кінці файлу) під час відновлення копіювання з сервера:
+CLIP ukrainian/ftp D560 #564 91>68 Початковий шлях:
+CLIP ukrainian/ftp D560 #576 88>68 Ім'я користувача:
+CROSS ukrainian/ftp D560 #579 411>408 Розблокувати...
+CROSS ukrainian/ftp D560 #579 411>408 Розблокувати...
+CLIP ukrainian/ftp D580 #3005 164>125 Команда для виведення списку:
+CROSS ukrainian/ftp D580 #3007 324>322 команди розділяються крапкою з комою (CWD []; HELP)
+CROSS ukrainian/ftp D580 #3007 324>172 команди розділяються крапкою з комою (CWD []; HELP)
+CLIP ukrainian/ftp D580 #3009 54>36 Надіслати:
+CLIP ukrainian/ftp D580 #3012 139>112 Припиніть надсилати після:
+CLIP ukrainian/ftp D580 #587 686>466 Використовуйте режим пасивного передавання (це може допомогти, якщо ви перебуваєте за брандмауером або проксі-сервером)
+CLIP ukrainian/ftp D580 #590 280>208 Загальне обмеження швидкості для цього сервера:
+CLIP ukrainian/ftp D580 #593 590>500 Використовувати кеш для переглянутих файлів та списків файлів і каталогів на сервері (прискорення перегляду)
+CLIP ukrainian/ftp D580 #597 596>531 Шифрувати з'єднання для передачі даних (передачу файлів та перегляд списків каталогів) за допомогою TLS/SSL
+CLIP ukrainian/ftp D580 #3014 717>531 Примітка: третій стан = використовувати значення за замовчуванням (див. сторінку «Значення за замовчуванням» у розділі «Конфігурація»)
+CLIP ukrainian/ftp D630 #3000 88>67 Ім'я користувача:
+CLIP ukrainian/ftp D630 #3002 88>65 Обліковий запис:
+CLIP ukrainian/ftp D650 #654 375>355 Максимальна кількість збережених записів для роз'єднаних з'єднань:
+CLIP ukrainian/ftp D670 #672 491>456 Прихована команда (приховати введення, не запам'ятовувати її та не відображати в журналі)
+CLIP ukrainian/ftp D680 #684 166>114 Орієнтовний час, що залишився:
+CLIP ukrainian/ftp D725 #3003 99>75 Порожнє значення:
+CLIP ukrainian/ftp D740 #742 368>333 Діяти так, ніби список необроблених даних є неповним (припиненим)
+CLIP ukrainian/ftp D750 #3000 91>83 Залишилося часу:
+CLIP ukrainian/ftp D750 #777 142>87 недостатньо місця на диску
+CROSS ukrainian/ftp D750 #777 394>346 недостатньо місця на диску
+CLIP ukrainian/ftp D795 #3004 97>88 Числове значення:
+CLIP ukrainian/ftp D795 #3007 57>48 Параметри
+CLIP ukrainian/ftp D815 #3001 220>184 Копіювання та переміщення з FTP-сервера
+CLIP ukrainian/ftp D815 #3006 435>390 Якщо передача не вдалася, як повторити спробу, якщо цільовий файл вже створено:
+CLIP ukrainian/ftp D815 #3007 521>390 Якщо передача не вдалася, як повторити спробу, якщо відтворення цільового файлу було відновлено:
+CLIP ukrainian/ftp D815 #3013 127>120 Видалити на FTP-сервері
+CLIP ukrainian/ftp D830 #3003 91>83 Шлях до джерела:
+CLIP ukrainian/ftp D840 #3003 91>83 Шлях до джерела:
+CLIP ukrainian/ftp D841 #3003 91>83 Шлях до джерела:
+CLIP ukrainian/ftp D843 #3002 91>83 Шлях до джерела:
+CLIP ukrainian/ftp D844 #3002 91>83 Шлях до джерела:
+CLIP ukrainian/ftp D845 #3002 91>83 Шлях до джерела:
+CLIP ukrainian/ftp D847 #3002 91>83 Шлях до джерела:
+CLIP ukrainian/ftp D865 #3003 97>88 Числове значення:
+CLIP ukrainian/ftp D890 #3001 91>85 Шлях до джерела:
+CLIP ukrainian/ftp D896 #3001 91>85 Шлях до джерела:
+CLIP ukrainian/ftp D900 #3002 91>83 Шлях до джерела:
+CLIP ukrainian/ftp D910 #3000 568>496 Завантаження файлу з двійковим вмістом у режимі передачі ASCII. Це може призвести до пошкодження файлу
+CLIP ukrainian/ftp D910 #3001 563>496 файл через небажане перетворення кінців рядків у стандартні для системи. Ви можете завантажити цей файл
+CLIP ukrainian/ftp D915 #3001 208>169 Копіювати та перемістити на FTP-сервер
+CLIP ukrainian/ftp D915 #3006 435>390 Якщо передача не вдалася, як повторити спробу, якщо цільовий файл вже створено:
+CLIP ukrainian/ftp D915 #3007 521>390 Якщо передача не вдалася, як повторити спробу, якщо відтворення цільового файлу було відновлено:
+CLIP ukrainian/ftp D920 #3004 88>68 Ім'я користувача:
+CROSS ukrainian/ftp D920 #935 227>224 Розблокувати...
+CLIP ukrainian/ftp D920 #3006 124>73 Скрипт входу в систему:
+CLIP ukrainian/ftp D930 #3003 168>102 Ім'я користувача проксі-сервера:
+CLIP ukrainian/ftp D930 #3004 142>98 Пароль для проксі-сервера:
+CLIP ukrainian/pictview D2000 #3005 97>85 Електронна пошта:
+CLIP ukrainian/pictview D2000 #3006 91>85 Головна сторінка:
+CROSS ukrainian/pictview D2040 #3007 264>262 Деякі зображення можуть містити неточну мініатюру, яка неправильно орієнтована або не відображає останні зміни.
+CLIP ukrainian/pictview D2040 #2050 485>419 Ігнорувати оригінальні мініатюри, що зберігаються у файлах зображень (працює повільніше)
+CROSS ukrainian/pictview D2040 #2050 264>262 Ігнорувати оригінальні мініатюри, що зберігаються у файлах зображень (працює повільніше)
+CLIP ukrainian/pictview D2040 #3009 307>295 Не створюйте мініатюри зображень, розмір яких перевищує
+CROSS ukrainian/pictview D2040 #3010 264>262 мегапікселів.
+CLIP ukrainian/pictview D2040 #2052 519>431 Автоматичне обертання зображень у форматі JPEG з EXIF-даними (фотографії з цифрової камери)
+CLIP ukrainian/pictview D2040 #2054 537>431 Запам'ятовувати шлях під час збереження скріншотів, сканованих зображень та вмісту буфера обміну
+CROSS ukrainian/pictview D2060 #2062 264>262 Використовується для переходу до попереднього/наступного зображення
+CROSS ukrainian/pictview D2130 #2 113>101 Скасувати
+CLIP ukrainian/pictview D2140 #3000 47>46 Сторінка:
+CROSS ukrainian/pictview D2140 #2 114>112 Скасувати
+CROSS ukrainian/pictview D2150 #2156 175>173 Область клієнта у вікні на передньому плані 
+CROSS ukrainian/pictview D2150 #2159 175>173 Віртуальний екран (для декількох моніторів)
+CLIP ukrainian/pictview D2150 #2155 94>67 Гаряча клавіша
+CLIP ukrainian/pictview D2180 #3000 105>87 Перезаписати файл:
+CLIP ukrainian/pictview D2300 #3001 89>82 Глибина кольору:
+CLIP ukrainian/pictview D2300 #3003 148>82 Перевернути/Віддзеркалити:
+CLIP ukrainian/pictview D2300 #2307 236>186 Інвертувати кольори (перетворити на негатив)
+CROSS ukrainian/pictview D2300 #2310 274>224 GIF
+CLIP ukrainian/pictview D2300 #2311 117>110 З чередуванням рядків
+CROSS ukrainian/pictview D2300 #2312 265>224 Створити GIF89a
+CROSS ukrainian/pictview D2300 #2316 248>224 %
+CLIP ukrainian/pictview D2300 #2320 101>83 Нарізати смужками
+CLIP ukrainian/pictview D2300 #2321 80>63 Розмір смужки:
+CROSS ukrainian/pictview D2500 #2515 415>411 Налаштування...
+CLIP ukrainian/pictview D2500 #3001 41>31 Ліворуч:
+CLIP ukrainian/pictview D2500 #3002 38>33 Зверху:
+CLIP ukrainian/pictview D2500 #2516 122>100 Зображення в центрі
+CLIP ukrainian/pictview D2500 #3005 49>45 Масштаб:
+CROSS ukrainian/pictview D2500 #2506 415>411 Підгонка під розмір носія
+CLIP ukrainian/pictview D2500 #2512 218>134 Показати обмежувальний прямокутник
+CLIP ukrainian/pictview D2500 #2513 176>129 Роздрукувати виділену область
+CROSS ukrainian/pictview D2500 #9 412>379 Допомога
+CLIP ukrainian/regedt D135 #139 123>119 Показати параметри
+CROSS ukrainian/regedt D135 #139 329>263 Показати параметри
+CROSS ukrainian/regedt D135 #139 329>263 Показати параметри
+CROSS ukrainian/regedt D135 #146 272>263 Дані
+CROSS ukrainian/regedt D135 #146 272>263 Дані
+CROSS ukrainian/regedt D135 #157 306>263 гг:хх:сс дд.мм.рррр
+CROSS ukrainian/regedt D135 #157 306>263 гг:хх:сс дд.мм.рррр
+CROSS ukrainian/regedt D135 #158 306>263 гг:хх:сс дд.мм.рррр
+CROSS ukrainian/regedt D135 #158 306>263 гг:хх:сс дд.мм.рррр
+CLIP ukrainian/regedt D166 #700 680>446 Налаштування зовнішнього редактора. Зовнішній редактор використовується для редагування значень реєстру у вихідному форматі.
+CLIP ukrainian/regedt D166 #703 106>92 Початковий каталог:
+CLIP ukrainian/renamer D100 #114 175>171 Лише один раз у кожному імені
+CROSS ukrainian/renamer D100 #123 357>346 Виключити розширення
+CROSS ukrainian/renamer D100 #123 357>346 Виключити розширення
+CROSS ukrainian/renamer D100 #123 357>346 Виключити розширення
+CLIP ukrainian/renamer D100 #130 79>78 Змінити регістр
+CLIP ukrainian/renamer D100 #103 111>104 Попередній перегляд:
+CROSS ukrainian/renamer D140 #302 164>159 відносно
+CLIP ukrainian/renamer D140 #303 109>100 Завершити на позиції
+CROSS ukrainian/renamer D140 #304 164>159 відносно
+CROSS ukrainian/renamer D140 #2 173>159 Скасувати
+CLIP ukrainian/renamer D150 #303 101>85 Мінімальна ширина:
+CLIP ukrainian/renamer D150 #104 167>127 Вирівнювання по лівому краю
+CLIP ukrainian/renamer D170 #301 305>296 Підказка: Введіть 0, щоб вказати повне збігове вираження.
+CLIP ukrainian/renamer D190 #303 106>93 Початковий каталог:
+CLIP ukrainian/salamand D100 #102 109>78 підказки щодо масок
+CROSS ukrainian/salamand D100 #102 201>197 підказки щодо масок
+CLIP ukrainian/salamand D104 #102 109>72 підказки щодо масок
+CROSS ukrainian/salamand D104 #102 201>197 підказки щодо масок
+CLIP ukrainian/salamand D170 #1151 49>43 Помилка:
+CLIP ukrainian/salamand D180 #1150 105>87 Перезаписати файл:
+CLIP ukrainian/salamand D191 #1152 224>194 Порівнювати файли з однаковою назвою за
+CLIP ukrainian/salamand D191 #197 51>50 Розмір
+CLIP ukrainian/salamand D191 #232 110>77 Додаткові параметри
+CLIP ukrainian/salamand D191 #102 109>85 підказки щодо масок
+CLIP ukrainian/salamand D200 #1150 106>70 Переміщення файлу:
+CLIP ukrainian/salamand D205 #225 133>88 Обмеження швидкості:
+CLIP ukrainian/salamand D205 #214 424>382 Збереження власників та прав доступу (що не успадковуються) на дисках NTFS
+CLIP ukrainian/salamand D205 #217 150>93 Файли з такими назвами:
+CLIP ukrainian/salamand D205 #102 109>80 підказки щодо масок
+CLIP ukrainian/salamand D230 #1151 49>43 Помилка:
+CLIP ukrainian/salamand D240 #1150 120>104 Переміщення каталогу:
+CLIP ukrainian/salamand D241 #1151 107>80 Встановити атрибути
+CLIP ukrainian/salamand D241 #243 71>67 Приховано
+CLIP ukrainian/salamand D241 #244 113>95 Тільки для читання
+CLIP ukrainian/salamand D241 #1154 85>65 Дата створення:
+CLIP ukrainian/salamand D241 #1155 84>65 Дата перегляду:
+CLIP ukrainian/salamand D241 #1158 57>46 Параметри
+CLIP ukrainian/salamand D260 #1152 58>45 Результати
+CLIP ukrainian/salamand D260 #1154 138>132 Зайнятий простір на диску:
+CLIP ukrainian/salamand D260 #1155 180>132 Використання дискового простору:
+CLIP ukrainian/salamand D260 #1156 205>132 Загальний розмір у стисненому вигляді:
+CROSS ukrainian/salamand D260 #9 181>157 Допомога
+CLIP ukrainian/salamand D270 #1152 48>33 Веб-сайт:
+CLIP ukrainian/salamand D270 #272 135>134 www.tandemcommander.org
+CLIP ukrainian/salamand D300 #303 551>493 Використовувати звуковий сигнал динаміка для сповіщення про завершення роботи в неактивному вікні
+CLIP ukrainian/salamand D300 #597 511>493 Відкривайте файли за допомогою salopen.exe (це дозволяє обійти помилки розширень оболонки)
+CLIP ukrainian/salamand D300 #603 507>493 У командах «Швидке перейменування» та «Упакувати» також виберіть розширення імені файлу
+CLIP ukrainian/salamand D300 #624 561>493 Копіювання файлів: використання швидшого асинхронного алгоритму в мережі (Windows 7 та новіші версії)
+CLIP ukrainian/salamand D320 #330 545>493 У детальному режимі перегляду можуть відображатися всі стовпці, зазначені у списку «Доступні стовпці».
+CLIP ukrainian/salamand D320 #325 227>213 Фіксована ширина стовпця у лівій панелі:
+CLIP ukrainian/salamand D320 #329 309>214 пікселів (ширина, яку можна перетягнути в рядку заголовка)
+CLIP ukrainian/salamand D320 #326 239>214 Фіксована ширина стовпців у правій панелі:
+CLIP ukrainian/salamand D320 #333 309>214 пікселів (ширина, яку можна перетягнути в рядку заголовка)
+CLIP ukrainian/salamand D320 #334 524>479 Примітка: якщо опція не відмічена — ширина стовпця підлаштовується під найдовше значення у стовпці
+CLIP ukrainian/salamand D320 #336 499>479 Ліва панель (лише для стовпця «Ім’я» з нефіксованою шириною; у лівій панелі натисніть Ctrl+N)
+CLIP ukrainian/salamand D320 #337 519>479 Права панель (лише для стовпця «Ім’я» з нефіксованою шириною; у правій панелі натисніть Ctrl+N)
+CLIP ukrainian/salamand D350 #1152 106>92 Початковий каталог:
+CLIP ukrainian/salamand D370 #1152 516>493 Ви можете використовувати комбінацію клавіш Ctrl+Shift+цифра, щоб призначити «Hot Path» з панелі.
+CLIP ukrainian/salamand D400 #1151 94>92 Змінити регістр на
+CLIP ukrainian/salamand D400 #548 356>354 Частково змішаний регістр (ім'я — змішаний, розширення — нижній)
+CLIP ukrainian/salamand D400 #1155 57>46 Параметри
+CLIP ukrainian/salamand D404 #1150 105>87 Перезаписати файл:
+CLIP ukrainian/salamand D405 #407 143>77 Використовувати фільтр:
+CLIP ukrainian/salamand D405 #102 109>75 підказки щодо масок
+CROSS ukrainian/salamand D405 #102 230>226 підказки щодо масок
+CLIP ukrainian/salamand D405 #1150 116>70 Використання фільтрів
+CLIP ukrainian/salamand D410 #428 113>107 Тільки для читання
+CLIP ukrainian/salamand D410 #429 71>65 Приховано
+CLIP ukrainian/salamand D450 #1150 185>125 Не вдалося встановити з'єднання з:
+CLIP ukrainian/salamand D450 #1153 88>68 Ім'я користувача:
+CROSS ukrainian/salamand D455 #457 257>223 підказки щодо шляху
+CLIP ukrainian/salamand D460 #1151 536>494 Примітка 1: це ігнорується, якщо для всіх елементів використовується «Кошик» (див. сторінку «Кошик»).
+CLIP ukrainian/salamand D460 #1152 566>494 Примітка 2: це ігнорується в архівах, а також ігнорується, коли для всіх елементів використовується «Кошик».
+CLIP ukrainian/salamand D476 #1159 116>77 Дисководи для дискет
+CLIP ukrainian/salamand D476 #1153 314>191 Стаціонарні накопичувачі (наприклад, локальні жорсткі диски)
+CLIP ukrainian/salamand D476 #1155 165>164 Приводи CD-ROM або DVD-ROM
+CLIP ukrainian/salamand D476 #487 507>473 Не оновлюйте сторінку під час запуску Tandem Commander (може знадобитися ручне оновлення)
+CLIP ukrainian/salamand D476 #1158 294>214 Якщо шлях на панелі недоступний, перейдіть за адресою:
+CLIP ukrainian/salamand D520 #102 109>80 підказки щодо масок
+CROSS ukrainian/salamand D520 #102 223>218 підказки щодо масок
+CLIP ukrainian/salamand D535 #1156 490>479 такі функції, як детальний індикатор виконання, пропуск та повторна спроба, не підтримуються.
+CLIP ukrainian/salamand D535 #102 109>75 підказки щодо масок
+CLIP ukrainian/salamand D550 #1158 131>127 Кількість байтів у секторі:
+CLIP ukrainian/salamand D550 #1159 197>127 Кількість секторів у кожному кластері:
+CLIP ukrainian/salamand D550 #1168 137>127 Кількість байтів у кластері:
+CLIP ukrainian/salamand D550 #1162 131>127 Назва файлової системи:
+CLIP ukrainian/salamand D550 #1164 145>127 Прапорці файлової системи:
+CLIP ukrainian/salamand D580 #1150 123>110 Пов’язаний переглядач:
+CLIP ukrainian/salamand D580 #1154 106>97 Початковий каталог:
+CLIP ukrainian/salamand D590 #1152 106>93 Початковий каталог:
+CLIP ukrainian/salamand D595 #1154 38>31 Розмір:
+CLIP ukrainian/salamand D630 #637 129>124 Знижка на розпродаж
+CLIP ukrainian/salamand D630 #1155 119>93 Загальні налаштування
+CLIP ukrainian/salamand D630 #631 802>478 Установіть у внутрішньому переглядачі параметр «Знайти», щоб шукати текст, відфільтрований за допомогою команди grep, у діалоговому вікні «Знайти»
+CLIP ukrainian/salamand D630 #1156 86>57 Розмір табуляції:
+CLIP ukrainian/salamand D630 #1163 311>261 Додаткові правила автоматичного вибору режиму перегляду
+CLIP ukrainian/salamand D630 #1161 281>147 Примусове ввімкнення текстового режиму для файлів:
+CLIP ukrainian/salamand D630 #1162 202>145 Увімкнути режим Force Hex для файлів:
+CLIP ukrainian/salamand D630 #102 109>80 підказки щодо масок
+CLIP ukrainian/salamand D630 #1158 87>70 Зовнішній вигляд
+CLIP ukrainian/salamand D630 #1159 119>100 Звичайний колір тексту
+CLIP ukrainian/salamand D630 #1160 121>107 Колір виділеного тексту
+CLIP ukrainian/salamand D680 #1151 49>43 Помилка:
+CLIP ukrainian/salamand D681 #1151 49>43 Помилка:
+CLIP ukrainian/salamand D1010 #1018 363>213 Додати/видалити власні програми для розпакування та упакування
+CLIP ukrainian/salamand D1027 #1039 419>370 Використовуйте цю мову як альтернативну також в інших плагінах (за потреби)
+CLIP ukrainian/salamand D1030 #1156 102>88 Довідник допомоги:
+CLIP ukrainian/salamand D1040 #1152 627>484 Виберіть одну з встановлених таблиць перетворення для використання в програмах перегляду та команді «Перетворити».
+CLIP ukrainian/salamand D1040 #1150 132>112 Кодова сторінка системи:
+CLIP ukrainian/salamand D1050 #1151 481>406 Це може призвести до нестабільної роботи Tandem Commander або спричинити інші проблеми.
+CROSS ukrainian/salamand D1065 #1151 295>294 Головний пароль використовується для захисту конфіденційної інформації, такої як паролі FTP, за допомогою надійного шифру AES. Якщо ви створите головний пароль, вам буде запропоновано вводити його один раз за сеанс, коли Tandem Commander отримує захищену інформацію.
+CLIP ukrainian/salamand D1080 #1151 49>43 Помилка:
+CLIP ukrainian/salamand D1085 #1088 81>52 «Гарячий шлях»
+CLIP ukrainian/salamand D1105 #1150 85>80 Показати назви:
+CLIP ukrainian/salamand D1105 #1154 95>78 Показати розміри:
+CLIP ukrainian/salamand D1105 #305 529>429 Перенаправити введення з панелі в командний рядок (утримуйте клавішу ALT для швидкого пошуку)
+CLIP ukrainian/salamand D1105 #615 639>473 Для переходу до «Hot Path» використовуйте комбінацію Shift+цифра (це суперечить національним розкладкам клавіатури)
+CLIP ukrainian/salamand D1105 #315 631>478 Клацніть правою кнопкою миші, щоб відкрити контекстне меню (утримуйте клавішу CTRL, щоб вибрати/скасувати вибір)
+CLIP ukrainian/salamand D1105 #310 354>285 Скасувати операції перетягування, тривалість яких не перевищує:
+CLIP ukrainian/salamand D1105 #1155 59>43 Сортування
+CLIP ukrainian/salamand D1105 #392 604>478 Розглядати каталоги так, ніби вони мають розширення (а також відображати розширення у стовпці «Розширення»)
+CLIP ukrainian/salamand D1110 #1151 338>328 Ви можете ознайомитися з повним переліком комбінацій клавіш у
+CLIP ukrainian/salamand D1140 #1150 501>464 Термін дії цієї бета-версії закінчився. Будь ласка, завантажте та встановіть оновлену бета-версію:
+CLIP ukrainian/salamand D2300 #1151 164>107 Розширення за замовчуванням:
+CLIP ukrainian/salamand D2320 #1150 143>83 Розпакувати за допомогою:
+CLIP ukrainian/salamand D2320 #1151 73>68 Маски файлів:
+CLIP ukrainian/salamand D2320 #102 109>63 підказки щодо масок
+CLIP ukrainian/salamand D2340 #1150 128>104 Список та розпакування:
+CLIP ukrainian/salamand D2340 #1151 119>104 Видалити та упакувати:
+CLIP ukrainian/salamand D2340 #1153 614>493 Скористайтеся пунктом «Параметри/Автоматична настройка архіваторів», щоб знайти встановлені зовнішні архіватори.
+CLIP ukrainian/salamand D2350 #102 164>120 розширені підказки щодо масок
+CLIP ukrainian/salamand D2350 #1151 128>117 Список та розпакування:
+CLIP ukrainian/salamand D2350 #1153 119>117 Видалити та упакувати:
+CLIP ukrainian/salamand D2380 #2387 109>98 підказки щодо рядків
+CROSS ukrainian/salamand D2380 #2387 300>282 підказки щодо рядків
+CLIP ukrainian/salamand D2380 #2389 137>125 Вбудований переглядач
+CLIP ukrainian/salamand D2380 #2390 48>45 Файл:
+CROSS ukrainian/salamand D2380 #2383 291>282 ...
+CLIP ukrainian/salamand D2490 #102 109>78 підказки щодо масок
+CROSS ukrainian/salamand D2490 #102 199>195 підказки щодо масок
+CLIP ukrainian/salamand D2490 #1150 96>90 Змінити кодування
+CROSS ukrainian/salamand D2490 #2492 197>195 Немає
+CLIP ukrainian/salamand D2490 #1154 57>46 Параметри
+CROSS ukrainian/salamand D2500 #2522 237>225 Пошук в архівах
+CROSS ukrainian/salamand D2500 #2522 237>225 Пошук в архівах
+CLIP ukrainian/salamand D2500 #2508 142>125 Пошук за змістом файлу
+CROSS ukrainian/salamand D2500 #2515 241>225 З урахуванням регістру
+CROSS ukrainian/salamand D2500 #2515 241>225 З урахуванням регістру
+CROSS ukrainian/salamand D2500 #2513 226>225 Регулярний вираз
+CROSS ukrainian/salamand D2500 #2513 226>225 Регулярний вираз
+CLIP ukrainian/salamand D2500 #2512 123>114 Знайдені предмети: (%d)
+CLIP ukrainian/salamand D2530 #1150 541>511 Щоб вказати шлях у кореневому каталозі (UNC або локальний), додайте на початку один зворотний слеш.
+CLIP ukrainian/salamand D2540 #1154 155>68 Для досвідчених користувачів:
+CLIP ukrainian/salamand D2560 #2563 71>65 Приховано
+CLIP ukrainian/salamand D2560 #2562 113>109 Тільки для читання
+CLIP ukrainian/salamand D2560 #1152 69>48 Розмір файлу
+CLIP ukrainian/salamand D2560 #1158 422>298 Примітка: значення дати та часу, для яких не встановлено прапорець, ігноруються
+CROSS ukrainian/salamand D2560 #9 220>216 Допомога
+CLIP ukrainian/salamand D2600 #1155 86>73 Авторські права:
+CLIP ukrainian/salamand D2680 #2683 355>271 Відображати поточний шлях у заголовку головного вікна у вигляді:
+CLIP ukrainian/salamand D2680 #2685 321>270 Налаштований префікс тексту в заголовку головного вікна:
+CLIP ukrainian/salamand D2730 #1150 76>70 Архівний файл:
+CLIP ukrainian/salamand D2750 #1150 139>137 Знайти файли з однаковим
+CLIP ukrainian/salamand D2750 #2752 51>46 Розмір
+CLIP ukrainian/salamand D2760 #1151 186>179 Кількість операцій, що виконуються:
+CLIP ukrainian/salamand D2775 #1151 49>43 Помилка:
+CLIP ukrainian/salamand D2790 #1150 175>137 Натисніть нову комбінацію клавіш:
+CLIP ukrainian/salamand D2800 #2807 413>377 Не відображати це діалогове вікно, якщо у вас є обидва імена для порівняння
+CLIP ukrainian/salamand D2800 #2808 98>82 як скасувати зміни
+CLIP ukrainian/salamand D2830 #2832 193>109 Встановити обмеження швидкості:
+CROSS ukrainian/salamand D2830 #9 201>157 Допомога
+CLIP ukrainian/salamand D2830 #1150 114>70 Обмеження швидкості
+CLIP ukrainian/salamand D6110 #1151 36>28 Знайти
+CLIP ukrainian/salamand D6110 #1153 57>46 Параметри
+CLIP ukrainian/salamand D6208 #1152 59>53 Посилання:
+CLIP ukrainian/salamand D6208 #1151 530>521 Натисніть кнопку «Пропустити», щоб проігнорувати ціль посилання та створити лише порожній каталог.
+CLIP ukrainian/uncab D100 #300 68>67 Назва диска:
+CLIP ukrainian/uncab D103 #301 49>46 Помилка:
+CLIP ukrainian/uncab D106 #107 351>342 Автоматично пропускати файли, що продовжують попередній том
+CROSS ukrainian/undelete D1100 #1402 437>436 Переглянути...
+CLIP ukrainian/undelete D1200 #1205 156>70 Відновлення видалених файлів
+CLIP ukrainian/undelete D1400 #1403 553>412 У файловій системі FAT завжди слід повторно використовувати дані попереднього сканування кластерів
+CLIP ukrainian/undelete D1400 #1404 449>412 Не показувати попередження під час відновлення файлів на той самий логічний диск
+CLIP ukrainian/undelete D1400 #1405 508>412 Не виводьте попередження перед відновленням зашифрованих файлів у форматі FAT або exFAT
+CROSS ukrainian/zip D100 #105 299>267 Докладніше...
+CLIP ukrainian/zip D100 #106 120>117 Зашифрувати файли
+CLIP ukrainian/zip D100 #122 92>88 128-бітний AES
+CLIP ukrainian/zip D100 #110 530>481 Не показувати це діалогове вікно більше (це можна змінити пізніше у діалоговому вікні налаштувань)
+CLIP ukrainian/zip D112 #3000 72>63 Розпакування
+CLIP ukrainian/zip D112 #3002 50>46 Упаковка
+CLIP ukrainian/zip D112 #114 504>493 Використовуйте тимчасову копію архіву для внесення змін (рекомендується, захищає від збою)
+CLIP ukrainian/zip D112 #174 573>493 Під час редагування архіву встановити час створення архіву відповідно до часу створення найновішого файлу
+CLIP ukrainian/zip D112 #118 575>493 Для багатотомних архівів використовуйте імена файлів, сумісні з WinZip (за винятком саморозпаковуваних —
+CLIP ukrainian/zip D112 #3006 291>182 Мова саморозпаковувального файлу за замовчуванням:
+CLIP ukrainian/zip D112 #251 317>286 Перед тим, як змінювати текст, завжди запитуйте дозволу
+CLIP ukrainian/zip D112 #252 363>355 Автоматично замінювати тексти на їхні значення за замовчуванням
+CLIP ukrainian/zip D112 #3010 109>82 Налаштування панелі
+CLIP ukrainian/zip D123 #3001 32>30 Файл:
+CLIP ukrainian/zip D137 #3000 105>88 Перезаписати файл:
+CROSS ukrainian/zip D146 #3003 301>299 Примітка: Ви можете вказати відносний шлях, який під час запуску саморозпаковувача буде доповнено поточним каталогом, або повний шлях. Щоб розпакувати файли в поточний каталог, залиште це поле порожнім.
+CLIP ukrainian/zip D146 #3007 61>35 Піктограма:
+CROSS ukrainian/zip D146 #160 301>299 Змінити піктограму...
+CLIP ukrainian/zip D146 #157 311>224 Приховати діалогове вікно головного саморозпаковувача
+CLIP ukrainian/zip D146 #158 256>236 Відкрити діалогове вікно з підсумками операції
+CROSS ukrainian/zip D146 #158 301>299 Відкрити діалогове вікно з підсумками операції
+CLIP ukrainian/zip D152 #3000 105>88 Перезаписати файл:
+CROSS ukrainian/zip D190 #3001 256>253 Це вікно повідомлення з’являється перед головним діалоговим вікном і до початку розпакування.
+CROSS ukrainian/zip D190 #3002 256>253 Залиште поля «Заголовок» та «Повідомлення» порожніми, якщо не хочете відображати жодного повідомлення.
+CLIP ukrainian/zip D190 #3006 75>57 Повідомлення:
+CLIP ukrainian/zip D250 #252 399>390 Надалі автоматично замінювати тексти на їхні значення за замовчуванням
+7zip         clipped   23   crossing   44
+checksum     clipped    7   crossing    0
+codeview     clipped   28   crossing    0
+dbviewer     clipped   19   crossing   25
+filecomp     clipped   70   crossing    2
+ftp          clipped  270   crossing   36
+pictview     clipped   78   crossing  114
+regedt       clipped    9   crossing   90
+renamer      clipped   27   crossing   67
+salamand     clipped  614   crossing  118
+uncab        clipped    9   crossing    0
+undelete     clipped   14   crossing    1
+uniso        clipped    4   crossing    0
+zip          clipped   79   crossing   54
+TOTAL clipped 1251 crossing 551
