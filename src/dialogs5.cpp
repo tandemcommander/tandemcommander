@@ -2977,11 +2977,11 @@ void CCfgPageAppearance::Transfer(CTransferInfo& ti)
 
     ti.EditLine(IDC_INFOLINECONTENT, Configuration.InfoLineContent, 200);
     // feature 416: the toolbar icon set (applied by RefreshAfterConfiguration after OK)
-    int iconSet = SalIconSetNormalize(Configuration.ToolbarIconSet);
+    int iconSet = GetActiveIconSet();
     ti.RadioButton(IDC_ICONSET_FLUENT, SAL_ICONSET_FLUENT, iconSet);
     ti.RadioButton(IDC_ICONSET_CLASSIC, SAL_ICONSET_CLASSIC, iconSet);
-    if (ti.Type == ttDataFromWindow)
-        Configuration.ToolbarIconSet = iconSet;
+    if (ti.Type == ttDataFromWindow && iconSet != GetActiveIconSet())
+        Configuration.ToolbarIconSet = iconSet; // only a change: a stored set of a later version stays as it is
     ti.EditLine(IDC_THUMBNAILSIZE, Configuration.ThumbnailSize);
     if (ti.Type == ttDataFromWindow)
         Configuration.ThumbnailSize = min(THUMBNAIL_SIZE_MAX, max(THUMBNAIL_SIZE_MIN, Configuration.ThumbnailSize));

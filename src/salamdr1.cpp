@@ -1105,6 +1105,8 @@ HICON GetDriveIcon(const char* root, UINT type, BOOL accessible, BOOL large)
   */
 }
 
+int GraphicsIconSet = SAL_ICONSET_FLUENT; // feature 416: the set the current image lists were built with
+
 HICON LoadSetIconOr(const char* fluentName, HINSTANCE hDLL, int id, int iconSize)
 {
     // feature 416: Fluent 2's icon when the set is active and has the file, else the Classic one
@@ -2531,6 +2533,7 @@ BOOL InitializeGraphics(BOOL colorsOnly)
 
         CSVGIcon* svgIcons;
         int svgIconsCount;
+        GraphicsIconSet = GetActiveIconSet(); // feature 416: the set these image lists are built with
         GetSVGIconsMainToolbar(&svgIcons, &svgIconsCount);
         if (!CreateToolbarBitmaps(HInstance,
                                   Use256ColorsBitmap() ? IDB_TOOLBAR_256 : IDB_TOOLBAR_16,
@@ -4681,6 +4684,12 @@ FIND_NEW_SLG_FILE:
                     MainWindow->RefreshDirs();
                     MainWindow->FocusLeftPanel();
                 }
+
+                // feature 416 (review 1): a configuration imported at start-up (-C, config.reg) or read from
+                // another root can hold another icon set than the one the first image lists were built with
+                // (read early, before the import) - rebuild them as a theme switch does
+                if (GraphicsIconSet != GetActiveIconSet())
+                    ColorsChanged(TRUE, FALSE, TRUE);
 
                 if (Configuration.ReloadEnvVariables)
                     InitEnvironmentVariablesDifferences();

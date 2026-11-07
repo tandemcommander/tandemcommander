@@ -2061,10 +2061,13 @@ static void nsvg__pathArcTo(NSVGparser* p, float* cpx, float* cpy, float* args, 
 //	if (vecrat(ux,uy,vx,vy) >= 1.0f) da = 0;
 
 	// Tandem Commander feature 416: the sweep flag decides the direction, as in upstream nanosvg
-	// (the old canvg port flipped by the large-arc flag only, which draws an exact semicircle -
-	// da = +/-PI, where the angle's sign carries no direction - on the wrong side: a circle written
+	// (the old canvg port flipped by the large-arc flag only, which draws a degenerate arc on the
+	// wrong side - an exact semicircle, da = +/-PI, where the angle's sign carries no direction, and
+	// an arc whose radii had to be scaled up to reach its end point (d > 1 above): a circle written
 	// as two half arcs, as Fluent UI System Icons write them, cancelled out and drew nothing).
-	// For every other arc da's sign already matches the sweep, so they draw as before.
+	// For every non-degenerate arc da's sign already matches the sweep, so they draw as before
+	// (review 1 of 416: 20,000 random arcs against the SVG F.6 reference - identical except the
+	// degenerate ones, where the new code matches the reference).
 	(void)fa;
 	if (fs == 0 && da > 0)
 		da -= 2 * NSVG_PI;

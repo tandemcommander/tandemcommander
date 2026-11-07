@@ -1,0 +1,47 @@
+iconset416_probe (feature 416) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Before  : C:\Users\pavel\AppData\Local\Temp\tc416\before_build\tandemcommander.exe
+Date    : 2026-11-07 19:35; registry key existed True; captures in E:\Projects\tandemcommander\specs\416-fluent-icon-set\probe\captures_after
+
+CLASSIC-EQ-LIGHT COMPARE PASS        rebar 0, files 0, dirline 0 px differ; rebar 1714x77 colours 1463 top 83,7%; windows: no window
+CLASSIC-EQ-DARK COMPARE PASS        rebar 0, files 0, dirline 0 px differ; rebar 1714x69 colours 1465 top 93,8%; windows: no window
+DEFAULT-LIGHT NO-VALUE=FLUENT PASS        rebar 0, files 0, dirline 0 px differ
+DEFAULT-LIGHT VALUE-2=FLUENT FAIL        rebar 0, files 458, dirline 0 px differ; stored after closing: 0x2
+DEFAULT-LIGHT REG_SZ=FLUENT PASS        rebar 0, files 0, dirline 0 px differ; windows: no window
+DEFAULT-LIGHT FLUENT<>CLASSIC PASS        rebar 4783, files 110, dirline 158 px differ
+DEFAULT-LIGHT UPDIR-BLUE PASS        pixels of #0F6CBD in the file list: Fluent 2 45, Classic 0
+DEFAULT-DARK NO-VALUE=FLUENT PASS        rebar 0, files 0, dirline 0 px differ
+DEFAULT-DARK VALUE-2=FLUENT PASS        rebar 0, files 0, dirline 0 px differ; stored after closing: 0x2
+DEFAULT-DARK REG_SZ=FLUENT PASS        rebar 0, files 0, dirline 0 px differ; windows: no window
+DEFAULT-DARK FLUENT<>CLASSIC PASS        rebar 4909, files 121, dirline 158 px differ
+DEFAULT-DARK UPDIR-BLUE PASS        pixels of #62ABF5 in the file list: Fluent 2 45, Classic 0
+SWITCH     PAGE-FOUND PASS        29 tree items walked
+SWITCH     FLUENT-CHECKED PASS        Fluent 1, Classic 0
+SWITCH     PREVIEWS PASS        Fluent 225x20 colours 312 top 70,7%; Classic 225x20 colours 173 top 71,6%; differ 1688 px
+SWITCH     CLASSIC-CLICKED PASS        Fluent 0, Classic 1
+SWITCH     APPLIED-NO-RESTART PASS        rebar 0, files 0, dirline 0 px differ (vs Classic); windows: no window
+SWITCH     STORED PASS        Toolbar Icon Set after closing: 0x1
+SWITCH     RESTART-CLASSIC PASS        rebar 0, files 0, dirline 0 px differ
+PAGE-LIGHT PREVIEWS PASS        Fluent 225x20 colours 312 top 70,7%; Classic 225x20 colours 173 top 71,6%; differ 1688 px
+PAGE-DARK  PREVIEWS PASS        Fluent 225x20 colours 315 top 70,6%; Classic 225x20 colours 168 top 71,6%; differ 1715 px
+FIT        DLU    PASS        live page: 70 DLU = 105 px, 295 DLU = 443 px -> base unit x 6,00 / 6,01 (TextRenderer estimate 6,44)
+FIT        english PASS        6291 'Toolbar icons' 63/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classic' 32/88 px
+FIT        czech  PASS        6291 'Ikony na panelu n stroj…' 120/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klasick ' 37/88 px
+FIT        slovak PASS        6291 'Ikony na paneli n strojov' 122/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klasick ' 37/88 px
+FIT        german PASS        6291 'Symbolleisten-Symbole' 109/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classic' 32/88 px
+FIT        french PASS        6291 'Ic“nes de la barre d'outils' 123/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classique' 45/88 px
+FIT        dutch  PASS        6291 'Pictogrammen op de werkbalk' 142/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klassiek' 37/88 px
+FIT        hungarian PASS        6291 'Eszk”zt r ikonok' 79/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Klasszikus' 47/88 px
+FIT        romanian PASS        6291 'Pictograme din bara de instrumente' 170/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Classic' 32/88 px
+FIT        spanish PASS        6291 'Iconos de la barra de herramientas' 168/427 px; 6292 'Fluent 2' 39/88 px; 6293 'Cl sico' 33/88 px
+IMPORT     CLASSIC-FROM-FILE PASS        rebar 0, files 0, dirline 0 px differ (vs Classic); stored now 0x1; windows: no window
+OVR-FLUENT EMPTY=STANDARD PASS        95 overrides empty (Copy.svg not an SVG) vs no dark folder: rebar 0, files 0, dirline 0 px differ; rebar 1714x69 colours 902 top 93,7%
+OVR-FLUENT VERBATIM<>ADAPTED PASS        the hand-made dark files vs the adapted standard files: rebar 3766, files 576, dirline 100 px differ
+OVR-CLASSIC-AFTER EMPTY=NONE PASS        63 empty overrides in toolbars\dark: rebar 0, files 0, dirline 0 px differ
+OVR-CLASSIC-BEFORE DEFECT PASS        the build of main with 63 empty overrides (negative control, the defect): rebar 2137, files 0, dirline 0 px differ
+MENU       OPEN   NOT DRIVEN  a menu opened by a real keyboard or mouse (the menus draw from the same image lists as the toolbar)
+STATES     HOT-PRESSED NOT DRIVEN  hot / pressed buttons need a real mouse; checked / disabled / highlight are measured offline (saltests TestIconSet416)
+DPI        125-200 NOT DRIVEN  the hidden desktop runs at the session system DPI; saltests rasterizes every file at 20 / 24 / 32 px
+Registry: restored; identical=True; SHA-256 before CA400E14F377BCE1883A1C360908FC6386D678E879A3167B6CFD9BF50493B1B2 / after CA400E14F377BCE1883A1C360908FC6386D678E879A3167B6CFD9BF50493B1B2
+
+Rows: PASS 35, FAIL 1, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True

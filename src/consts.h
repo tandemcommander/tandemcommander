@@ -1731,6 +1731,7 @@ extern const char* CONFIG_THEMEMODE_REG; // feature 028: visual theme (0=Default
 extern const char* CONFIG_TOOLBARICONSET_REG; // feature 416: toolbar icon set (0=Fluent 2, 1=Classic)
 void ReadToolbarIconSet(HKEY actKey);         // feature 416: Configuration.ToolbarIconSet from the configuration key
 int GetActiveIconSet();                       // feature 416: the configured icon set (SAL_ICONSET_*)
+extern int GraphicsIconSet;                   // feature 416: the set the current toolbar image lists were built with
 extern const char* CONFIG_ENABLECUSTICOVRLS_REG;
 extern const char* CONFIG_DISABLEDCUSTICOVRLS_REG;
 extern const char* VIEWERS_MASKS_REG;

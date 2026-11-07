@@ -169,3 +169,51 @@ Not affected (confirmed): no network communication; the new value "Toolbar Icon 
 settings" stored in `HKEY_CURRENT_USER\Software\Tandem Commander` that the statement already describes; the
 installer copies more program files (`iconsets\fluent\`), which "It copies the program files" covers, and
 uninstalling removes them as program files; nothing about credentials or crash reports changes.
+
+## Review
+
+### Review 1 (independent agent, refute-first) - MUST 0, SHOULD 2, NOTE 7
+
+- **S1 (fixed)** a configuration imported at start-up (`-C file.reg`, `config.reg` beside the program) is
+  imported after the early read of the set and before `InitializeGraphics`; `LoadConfig` read the new set
+  but nothing rebuilt the image lists - the session showed the other set, the page showed the stored one
+  and OK changed nothing. Reproduced first with the new probe row IMPORT on the unfixed build
+  (`result_import_before_fix.txt`: Classic in the file, stored 0x1, the window Fluent - rebar 3748 px
+  differ). Fix: `GraphicsIconSet` (the set the image lists were built with, set in `InitializeGraphics`);
+  after `LoadConfig` returns, a different `GetActiveIconSet()` runs `ColorsChanged(TRUE, FALSE, TRUE)`.
+  Theme Mode (028) has the same pattern; not changed here (outside the item; the theme of an imported
+  configuration is applied at the next start - recorded as a NOTE).
+- **S2 (fixed)** Dutch: the merge gave "K&lassiek" the L of the existing Font button and moved that one to
+  "L&ettertype" (the fix-log's "only the new rows changed" was wrong for Dutch). Pin "Kla&ssiek" (s is free
+  on the page), row 611 restored to "&Lettertype"; re-merge: 0 gaps, duplicate accelerators 147 (baseline),
+  `slt --verify` byte-exact; `git diff main` of every language's salamand.slt now holds 0 removed rows.
+- NOTE arc fix scope (fixed in the comment): the degenerate arcs include an arc whose radii are scaled up to
+  reach its end point, not only exact semicircles; the reviewer compared old vs new against the SVG F.6
+  reference on 20,000 random arcs - identical except the 4,256 degenerate ones, where the new code matches
+  the reference; none of the 77 non-Fluent SVGs of the tree has a path arc.
+- NOTE negative control of the arc test (by the reviewer): with the old nanosvg the two-halves circle covers
+  0 px (fails `halves > 0`); the quarter-arc and feet checks are regression guards only.
+- NOTE forward compatibility (fixed): an unknown stored number (a later version's set) was read as Fluent and
+  saved back as 0. Now `Configuration.ToolbarIconSet` keeps the number as read, `GetActiveIconSet()` maps it,
+  the page writes only a real change; probe row DEFAULT VALUE-2 checks the value stays 0x2 after closing.
+- NOTE `RenderSVGImage` wrote through a NULL DIB when `CreateDIBSection` failed (0.2.0 code; fixed: the cell is
+  kept, the handles freed).
+- NOTE accepted: the tests do not run `LoadSetSVGImage` / `RenderSVGImage` / `CreateSetSVGIcon` (the probe
+  does - OVR rows, captures); the silhouette metric composites over the background without the 1-bit mask
+  of the image lists (a model; the light highlight floor 1.5 is close to Classic's 1.61 - release-checklist
+  line for a real menu); the licence ships in `iconsets\fluent\` and is named in `doc/third_party.txt`
+  (decision recorded); the Classic Zoom Panel row renders off the bitmap (0.2.0, kept for pixel identity).
+
+### Checks after the review-1 fixes
+
+- `.\build.cmd full` BUILD SUCCEEDED (189 language modules); `saltests` 285482 checks, 0 failed;
+  `check_iconset.py` 0 problems; `check_encoding.py --strict` TOTAL: 0.
+- Probe runs (each kept as `result_after_runN.txt`): run 3 - IMPORT 155 px in the file list: the probe
+  wrote the .reg into the fixture root, which changed the time of the ".." row (now a folder made at the
+  start); runs 4 and 5 - 458 px in one comparison each: the `.txt` files' shell association icons arrive
+  from the background reader at the first starts or not, by timing (a stable-grab loop did not help: the
+  generic icon can stay for the whole run); the fixture now uses an unregistered extension (`.tc416`) whose
+  symbol the panel draws itself. Run 6 (`result_after.txt`): **PASS 36, FAIL 0, NOT DRIVEN 3** - including
+  IMPORT (Classic from `-C file.reg` with the registry saying nothing: rebar / files / dirline 0 px vs Classic,
+  stored 0x1), VALUE-2 stored 0x2 after closing (light and dark), CLASSIC-EQ 0 px, OVR-CLASSIC-BEFORE 2137 px
+  (the defect on the build of main); registry restored, SHA-256 identical.

@@ -107,7 +107,16 @@ function Run-Look([string]$ExePath, [int]$Theme, $Set, [string]$Tag) {
     $r = Serve $id 8
     Key $id 0x28 # Down: the caret leaves "..", whose icon is then drawn without the focus tincture
     Start-Sleep -Milliseconds 400
+    # the file icons of the panel come from a background reader (cold shell cache at the first start):
+    # grab until two captures a second apart are identical (at most 10 s)
     $g = Grab $id $Tag
+    for ($k = 0; $k -lt 10; $k++) {
+        Start-Sleep -Milliseconds 1000
+        $g2 = Grab $id $Tag
+        $same = Zero (Same $g $g2)
+        $g = $g2
+        if ($same) { break }
+    }
     $g | Add-Member -NotePropertyName Messages -NotePropertyValue (Msgs $r)
     Stop-Tc $id
     $script:Caps[$Tag] = $g
@@ -180,12 +189,13 @@ function Row-Default([int]$Theme) {
         $none = Run-Look $Exe $Theme $null ('default_t' + $Theme)
         $zero = Run-Look $Exe $Theme 0 ('fluent_t' + $Theme)
         $two = Run-Look $Exe $Theme 2 ('unknown_t' + $Theme)
+        $kept = Read-Set # review 1: a later version's number is written back unchanged
         $sz = Run-Look $Exe $Theme '1' ('wrongtype_t' + $Theme)
         if (-not $script:Caps.ContainsKey('classic_t' + $Theme)) { [void](Run-Look $Exe $Theme 1 ('classic_t' + $Theme)) }
         $cl = $script:Caps['classic_t' + $Theme]
         $d0 = Same $none $zero; $d2 = Same $two $zero; $ds = Same $sz $zero; $dc = Same $zero $cl
         Row $n 'NO-VALUE=FLUENT' (V (Zero $d0)) (DiffText $d0)
-        Row $n 'VALUE-2=FLUENT' (V (Zero $d2)) (DiffText $d2)
+        Row $n 'VALUE-2=FLUENT' (V ((Zero $d2) -and $kept -eq '0x2')) ((DiffText $d2) + '; stored after closing: ' + $kept)
         Row $n 'REG_SZ=FLUENT' (V ((Zero $ds) -and $sz.Messages -eq 'no window')) ((DiffText $ds) + '; windows: ' + $sz.Messages)
         Row $n 'FLUENT<>CLASSIC' (V ($dc.Rebar -gt 500 -and $dc.Items -gt 0 -and $dc.Dir -gt 0)) (DiffText $dc)
         $blue = @(0x0F6CBD, 0x62ABF5)[$Theme]
@@ -302,6 +312,35 @@ function Row-Fit {
         $g.Dispose(); $bmp.Dispose()
     } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 }
+# review 1 (S1): a configuration imported at start-up (-C file.reg) holds another set than the registry
+function Row-Import {
+    $n = 'IMPORT'
+    if (-not (Want $n)) { return }
+    $id = 0
+    try {
+        if (-not $script:Caps.ContainsKey('classic_t0')) { [void](Run-Look $Exe 0 1 'classic_t0') }
+        Set-Look 0 1
+        $reg = $Root + '\imp\import416.reg' # in a folder made at the start: the fixture root's time (the ".." row) stays
+        & cmd.exe /c "reg export `"$RegKey\Settings`" `"$reg`" /y >nul 2>&1"
+        if ($LASTEXITCODE -ne 0) { throw 'reg export of the configuration failed' }
+        Set-Look 0 $null # the registry says nothing (= Fluent 2) when the program starts; the file says Classic
+        $a = @('-t', 'T416', '-l', ('"{0}"' -f $StartDir), '-r', ('"{0}"' -f $StartDir), '-p', '1', '-C', ('"{0}"' -f $reg))
+        $p = Start-Process -FilePath $Exe -ArgumentList $a -PassThru
+        [void]$Started.Add($p.Id); [void]$p.Handle; $script:Procs[$p.Id] = $p; $id = $p.Id
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 60 -and (Test-Alive $id) -and (Get-Main $id) -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 100 }
+        try { [void]$p.WaitForInputIdle(30000) } catch { }
+        Start-Sleep -Milliseconds 2500
+        $r = Serve $id 10
+        Key $id 0x28
+        Start-Sleep -Milliseconds 400
+        $g = Grab $id 'import_classic'
+        Stop-Tc $id; $id = 0
+        $d = Same $g $script:Caps['classic_t0']
+        Row $n 'CLASSIC-FROM-FILE' (V (Zero $d)) ((DiffText $d) + ' (vs Classic); stored now ' + (Read-Set) + '; windows: ' + (Msgs $r))
+    } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { Stop-Tc $id } }
+}
 # a throw-away copy of a build tree (no .pdb, no Intermediate, no saltests)
 function Copy-Tree([string]$From, [string]$To) {
     & robocopy.exe (Split-Path $From) $To /E /XF *.pdb *.ilk /XD Intermediate saltests /NFL /NDL /NJH /NJS /NP | Out-Null
@@ -352,7 +391,10 @@ try {
     Add-Type -AssemblyName System.Windows.Forms
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
     NewDir $StartDir
-    foreach ($f in 'a.txt', 'b.txt') { $p = $StartDir + '\' + $f; [IO.File]::WriteAllText($p, 'x'); [IO.File]::SetLastWriteTime($p, [datetime]'2026-01-02 03:04:05') }
+    NewDir ($Root + '\imp')
+    # an unregistered extension: the panel draws its own symbol, no association icon read in the background
+    # (with .txt the first starts showed the shell icon or not, by timing)
+    foreach ($f in 'a.tc416', 'b.tc416') { $p = $StartDir + '\' + $f; [IO.File]::WriteAllText($p, 'x'); [IO.File]::SetLastWriteTime($p, [datetime]'2026-01-02 03:04:05') }
     [void][IO.Directory]::CreateDirectory($CapDir)
     Set-Config
     Out ("iconset416_probe (feature 416) {0}" -f $Label)
@@ -368,6 +410,7 @@ try {
     Row-Page 0
     Row-Page 1
     Row-Fit
+    Row-Import
     Row-OvrFluent
     Row-OvrClassic 'AFTER' $Exe
     if ($Before) { Row-OvrClassic 'BEFORE' $Before }

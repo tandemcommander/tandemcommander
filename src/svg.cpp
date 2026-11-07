@@ -195,6 +195,16 @@ BOOL RenderSVGImage(NSVGrasterizer* rast, HDC hDC, int x, int y, const char* svg
     bmhdr.biCompression = BI_RGB;
     void* lpMemBits = NULL;
     HBITMAP hMemBmp = HANDLES(CreateDIBSection(hMemDC, (CONST BITMAPINFO*)&bmhdr, DIB_RGB_COLORS, &lpMemBits, NULL, 0));
+    if (hMemBmp == NULL || lpMemBits == NULL)
+    {
+        // feature 416 (review 1): out of GDI resources - the cell is kept as it is (the rasterizer
+        // wrote to NULL here before)
+        if (hMemBmp != NULL)
+            HANDLES(DeleteObject(hMemBmp));
+        HANDLES(DeleteDC(hMemDC));
+        nsvgDelete(image);
+        return FALSE;
+    }
     SelectObject(hMemDC, hMemBmp);
 
     RECT r;

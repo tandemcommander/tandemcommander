@@ -7867,7 +7867,7 @@ void CMainWindow::RefreshAfterConfiguration(const CCfgRefreshState& old, BOOL vi
             RightPanel->DirectoryLine->Repaint();
     }
 
-    if (SalIconSetNormalize(old.ToolbarIconSet) != SalIconSetNormalize(Configuration.ToolbarIconSet))
+    if (SalIconSetFromStored(true, (unsigned int)old.ToolbarIconSet) != GetActiveIconSet())
     {
         // feature 416: another icon set - the theme switch's pipeline rebuilds every icon site
         // (toolbar image lists, menus, the ".." symbol, drive bars, drive icons, tabs) at once

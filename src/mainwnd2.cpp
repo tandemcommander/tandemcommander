@@ -329,17 +329,19 @@ const char* CONFIG_THEMEMODE_REG = "Theme Mode"; // feature 028
 const char* CONFIG_TOOLBARICONSET_REG = "Toolbar Icon Set"; // feature 416
 
 // feature 416: the icon set from the opened configuration key, read quietly (a value of a
-// wrong type is no reason for an error box); missing, wrong type or unknown = Fluent 2
+// wrong type is no reason for an error box); missing, wrong type or unknown = Fluent 2. The stored
+// number is kept as read (review 1: a set of a later version is written back unchanged) and mapped
+// onto a set where it is used (GetActiveIconSet).
 void ReadToolbarIconSet(HKEY actKey)
 {
     DWORD value = 0;
     BOOL read = GetValueAux(NULL, actKey, CONFIG_TOOLBARICONSET_REG, REG_DWORD, &value, sizeof(value), TRUE);
-    Configuration.ToolbarIconSet = SalIconSetFromStored(read != FALSE, value);
+    Configuration.ToolbarIconSet = read ? (int)value : SAL_ICONSET_FLUENT;
 }
 
 int GetActiveIconSet()
 {
-    return SalIconSetNormalize(Configuration.ToolbarIconSet);
+    return SalIconSetFromStored(true, (unsigned long)(unsigned int)Configuration.ToolbarIconSet);
 }
 const char* CONFIG_CONVERSIONTABLE_REG = "Conversion Table";
 const char* CONFIG_TITLEBARSHOWPATH_REG = "Title bar show path";

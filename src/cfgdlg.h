@@ -330,7 +330,8 @@ struct CConfiguration
     // feature 028: visual theme of the whole application
     int ThemeMode; // THEME_MODE_DEFAULT (current look) or THEME_MODE_DARK
 
-    // feature 416: the toolbar icon set, SAL_ICONSET_FLUENT (default) or SAL_ICONSET_CLASSIC (saliconset.h)
+    // feature 416: the toolbar icon set as stored (SAL_ICONSET_FLUENT = default, SAL_ICONSET_CLASSIC;
+    // another number - a later version's set - is kept and drawn as Fluent 2): use GetActiveIconSet()
     int ToolbarIconSet;
 
     // the history arrays are destroyed in the ClearHistory() method

@@ -484,7 +484,8 @@
       "IDS_PACKINTOITSELF": "Een archief kan niet in zichzelf worden ingepakt. Laat het archief (of de map waarin het staat) buiten de selectie.",
       "IDS_CANNOTCOPYDIRTOITSELF": "Een map kan niet naar zichzelf worden gekopieerd.",
       "IDS_CANNOTMOVEDIRINTOITSELF": "Een map kan niet naar zichzelf of naar een van de submappen worden verplaatst.",
-      "IDC_ICONSET_FLUENT": "Fl&uent 2"
+      "IDC_ICONSET_FLUENT": "Fl&uent 2",
+      "IDC_ICONSET_CLASSIC": "Kla&ssiek"
     },
     "hungarian": {
       "IDS_MENU_TAB_MOVETOOTHER": "Át&helyezés a másik panelre",
@@ -640,7 +641,8 @@
     ],
     "_feature_416": [
       "Configuration > Appearance > Toolbar icons: 'Fluent 2' is the name of the icon set (built on Microsoft Fluent UI System Icons) - a name, kept as written in every language; accelerator u as in English, e in Spanish (u is 'Un solo click' there).",
-      "Czech / Slovak: DeepL kept the English 'Classic'; the set is 'Klasická' (sada), accelerator k (c is taken on the page)."
+      "Czech / Slovak: DeepL kept the English 'Classic'; the set is 'Klasicka' (sada), accelerator k (c is taken on the page).",
+      "Dutch (review 1): the merge gave 'K&lassiek' the L of the Font button and moved that one to 'L&ettertype'; 'Kla&ssiek' takes the free s and '&Lettertype' keeps its L."
     ]
   },
   "zip": {

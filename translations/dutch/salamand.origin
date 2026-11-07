@@ -1236,7 +1236,7 @@
 "DIALOG:595:620": "skip",
 "DIALOG:595:6291": "machine",
 "DIALOG:595:6292": "human",
-"DIALOG:595:6293": "machine",
+"DIALOG:595:6293": "human",
 "DIALOG:595:6294": "skip",
 "DIALOG:595:6295": "skip",
 "DIALOG:6110:#caption": "human",

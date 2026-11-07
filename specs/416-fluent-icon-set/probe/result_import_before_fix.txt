@@ -1,0 +1,12 @@
+iconset416_probe (feature 416) importbefore
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Before  : 
+Date    : 2026-11-07 19:25; registry key existed True; captures in E:\Projects\tandemcommander\specs\416-fluent-icon-set\probe\captures_importbefore
+
+IMPORT     CLASSIC-FROM-FILE FAIL        rebar 3748, files 159, dirline 22 px differ (vs Classic); stored now 0x1; windows: no window
+MENU       OPEN   NOT DRIVEN  a menu opened by a real keyboard or mouse (the menus draw from the same image lists as the toolbar)
+STATES     HOT-PRESSED NOT DRIVEN  hot / pressed buttons need a real mouse; checked / disabled / highlight are measured offline (saltests TestIconSet416)
+DPI        125-200 NOT DRIVEN  the hidden desktop runs at the session system DPI; saltests rasterizes every file at 20 / 24 / 32 px
+Registry: restored; identical=True; SHA-256 before CA400E14F377BCE1883A1C360908FC6386D678E879A3167B6CFD9BF50493B1B2 / after CA400E14F377BCE1883A1C360908FC6386D678E879A3167B6CFD9BF50493B1B2
+
+Rows: PASS 0, FAIL 1, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True
