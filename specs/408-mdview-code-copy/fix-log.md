@@ -128,3 +128,50 @@ every code block of the Markdown Viewer.
   `configuration_gener.htm` and the upstream `introduction_news.htm`, untouched since 007) -
   nothing to update.
 - T017 person check -> the release checklist at closing.
+
+## Review
+
+### Review 1 (refute-first agent) - 2 MUST, 2 SHOULD, NOTEs
+
+- **M1** a document restyles the genuine control (raw `<style>`, `unsafe-inline`):
+  stretched over the page, invisible, the block hidden -> a click on "a link" copied
+  `HIDDEN PAYLOAD` silently (its row HIJACK). In-page defences cannot win (ancestors'
+  opacity/transform cannot be overridden from the control). **Fixed**: the in-page notice
+  (`#tc-copied-k`, `:target`) is gone; the viewer shows a **native** notice - a tracking
+  tooltip of its own window at the bottom right, *Copied* + the first non-blank copied
+  line (at most 60 characters, cut at a whole character, `MdCopyNoticeText`) for 2.5 s. A
+  copy is never silent and names what it copied. Recorded as an assumption in the spec
+  (the restyled click still copies the document's own block; a confirmation step or
+  scripts would be the maintainer's).
+- **M2** `[n](tc-copy-notes.md)` resolved into the consumed family `https://mdview.invalid/tc-copy-`
+  and did nothing (before 408: opens the file). **Fixed**: the family is a host of its own,
+  `https://mdcopy.invalid/`, which no document-relative link can reach. Harness rows
+  (`tc-copy-notes.md`, an in-host address with the token -> NONE), probe row LINK-TCCOPY.
+- **S1** the fragment jump took the keyboard focus off the control (second Enter copied
+  nothing; Tab restarted). **Fixed** by M1's change (no navigation any more); probe row
+  KEY-AGAIN (second Enter copies again, the control still shown).
+- **S2** md4c repeats a NUL in its next text run; the copy gave two U+FFFD while the page
+  shows nothing. **Fixed**: NULs are dropped; harness row through a real md4c render.
+- NOTE invisible but clickable: first tried `pointer-events:none` until hover/focus -
+  measured: probe COPY-0 then FAILED (a first click / tap hit-tests before any hover and
+  fell through to the block). Reverted: the transparent control takes a click; with the
+  native notice such a click is never silent. Harness row checks there is no
+  `pointer-events` rule.
+- NOTE probe header KEY text - fixed (block 1, and why).
+- NOTE select-all + copy of the page leaving out the label (`user-select:none`) - a
+  person's check (release checklist).
+
+Fix work: the first native-notice run found the tooltip at 1154,862-1227,897, partly
+outside the 0,0-1200,900 viewer (TTM_GETBUBBLESIZE stale before the first display);
+now the tip is shown, its real size read, then placed. `TOOLINFOW` size = 
+`TTTOOLINFOW_V2_SIZE` (valid for every common-controls version). The CR LF of
+`viewer.cpp` was lost once by a `sed -i` of Git Bash and restored (1219 CRLF, 0 LF).
+
+After the fixes: harness **105 passed, 0 failed**; `.\build.cmd` BUILD SUCCEEDED; probe
+`result_after.txt` **18 PASS, 0 FAIL, 1 NOT DRIVEN** (SHOWN, hover - environment, with its
+control). New rows: NOTICE (tooltip 1095,833-1168,868 inside the viewer's bottom-right
+quarter, text `Copied\nalpha line 1`), GONE (hidden 4 s later), AGAIN, LINK-TCCOPY (a viewer
+for tc-copy-notes.md opens), KEY-AGAIN, FAILCOPY (no tooltip), HIJACK (copies the hidden
+block, tooltip visible, text `Copied\nHIDDEN PAYLOAD`). Negative controls for these rows
+are the reviewer's measurements on the previous build (SEQ-2 copied nothing, LINK-TCCOPY
+no window, HIJACK no visible sign).

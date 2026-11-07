@@ -206,10 +206,9 @@ int main()
     {
         const MdTheme* t = MdThemeById("paper");
         MdCopyUi ui;
-        ui.base = "https://mdview.invalid/tc-copy-0123456789abcdef0123456789abcdef-7/";
+        ui.base = "https://mdcopy.invalid/0123456789abcdef0123456789abcdef-7/";
         ui.label = "Copy <&>";
         ui.tooltip = "Copy \"the\" code";
-        ui.copied = "Zkop\xC3\xADrov\xC3\xA1no";
         auto render = [&](const std::string& md, const MdCopyUi* u, MdHtmlResult& r)
         {
             MdRenderHtml(md, *t, L"C:\\docs", r, L"", false, MDPW_NORMAL, u);
@@ -233,10 +232,10 @@ int main()
         std::string h = render(md, &ui, r);
         Check("408 one control per code block", count(h, "<a class=\"tc-copy\"") == 6 && r.codeBlocks.size() == 6);
         Check("408 no control for inline code", count(h, "<div class=\"tc-code\">") == 6);
-        Check("408 control links base + n", Has(h, "href=\"https://mdview.invalid/tc-copy-0123456789abcdef0123456789abcdef-7/0\"") &&
-                                                 Has(h, "href=\"https://mdview.invalid/tc-copy-0123456789abcdef0123456789abcdef-7/5\""));
+        Check("408 control links base + n", Has(h, "href=\"https://mdcopy.invalid/0123456789abcdef0123456789abcdef-7/0\"") &&
+                                                 Has(h, "href=\"https://mdcopy.invalid/0123456789abcdef0123456789abcdef-7/5\""));
         Check("408 wrapper holds the control and the block",
-              Has(h, "<div class=\"tc-code\"><a class=\"tc-copy\" href=\"https://mdview.invalid/tc-copy-0123456789abcdef0123456789abcdef-7/0\" title=\"Copy &quot;the&quot; code\">Copy &lt;&amp;&gt;</a><pre><code class=\"language-c\">"));
+              Has(h, "<div class=\"tc-code\"><a class=\"tc-copy\" href=\"https://mdcopy.invalid/0123456789abcdef0123456789abcdef-7/0\" title=\"Copy &quot;the&quot; code\">Copy &lt;&amp;&gt;</a><pre><code class=\"language-c\">"));
         Check("408 block closes the wrapper", count(h, "</code></pre></div>\n") == 6);
         Check("408 source table: fenced", r.codeBlocks.size() == 6 && r.codeBlocks[0] == "int a;\nint b;\n");
         Check("408 source table: non-ASCII", r.codeBlocks.size() == 6 && r.codeBlocks[1] == "plain \xC4\x8D\xF0\x9F\x98\x80\n");
@@ -244,11 +243,13 @@ int main()
         Check("408 source table: list and quote without their markers",
               r.codeBlocks.size() == 6 && r.codeBlocks[3] == "in list\n" && r.codeBlocks[4] == "in quote\n");
         Check("408 source table: empty block", r.codeBlocks.size() == 6 && r.codeBlocks[5].empty());
-        Check("408 CSS added once", count(h, ".tc-toast:target{") == 1 && count(h, ".tc-code:hover .tc-copy") == 1);
-        Check("408 two notices, escaped UTF-8 text",
-              Has(h, "<div id=\"tc-copied-0\" class=\"tc-toast\">Zkop\xC3\xADrov\xC3\xA1no</div><div id=\"tc-copied-1\" class=\"tc-toast\">Zkop\xC3\xADrov\xC3\xA1no</div>\n</article>"));
+        Check("408 CSS added once", count(h, ".tc-code:hover .tc-copy") == 1 && count(h, ".tc-code{position:relative;}") == 1);
+        Check("408 transparent control still takes a first click or tap (review 1, measured)",
+              Has(h, "border-radius:4px;opacity:0;user-select:none;") && Has(h, ".tc-code:hover .tc-copy,.tc-copy:focus{opacity:1;}") &&
+                  !Has(h, "pointer-events"));
+        Check("408 no in-page notice (the notice is native, review 1)", !Has(h, "tc-copied") && !Has(h, "tc-toast") && Has(h, "only</p>\n\n</article></body></html>"));
         Check("408 CSS uses theme variables only (no fixed colour)",
-              h.find("#", h.find(".tc-code{")) > h.find("}}", h.find("@keyframes tc-toast")));
+              h.find("#", h.find(".tc-code{")) > h.find("</style>"));
 
         // documents of before 408 are unchanged byte for byte
         const std::string plain = "# Title\n\nSome *text* and `code`.\n\n| a | b |\n|---|---|\n| 1 | 2 |\n";
@@ -277,19 +278,32 @@ int main()
         Check("408 clip: existing CR LF kept", MdCodeClipboardText("a\r\nb\n") == L"a\r\nb");
         Check("408 clip: empty", MdCodeClipboardText("").empty() && MdCodeClipboardText("\n").empty());
         Check("408 clip: non-ASCII", MdCodeClipboardText("plain \xC4\x8D\xF0\x9F\x98\x80\n") == L"plain \x010D\xD83D\xDE00");
-        Check("408 clip: NUL shown as U+FFFD", MdCodeClipboardText(std::string("a\0b\n", 4)) == L"a\xFFFD" L"b");
+        Check("408 clip: NUL dropped (the page shows none)", MdCodeClipboardText(std::string("a\0b\n", 4)) == L"ab");
+        {
+            // review 1 S2: end to end through md4c, which repeats a NUL in its next text run
+            MdHtmlResult z;
+            MdRenderHtml(std::string("```\na\0b\n```\n", 12), *t, L"C:\\docs", z, L"", false, MDPW_NORMAL, &ui);
+            Check("408 clip: NUL of a real block dropped", z.codeBlocks.size() == 1 && MdCodeClipboardText(z.codeBlocks[0]) == L"ab");
+        }
+
+        // the native notice's text
+        Check("408 notice: label + first line", MdCopyNoticeText(L"Copied", L"int a;\r\nint b;", 60) == L"Copied\nint a;");
+        Check("408 notice: blank lines and indentation skipped", MdCopyNoticeText(L"Copied", L"\r\n   \r\n\t  rm -rf x  \r\nnext", 60) == L"Copied\nrm -rf x");
+        Check("408 notice: empty block", MdCopyNoticeText(L"Copied", L"", 60) == L"Copied" && MdCopyNoticeText(L"Copied", L" \r\n\t", 60) == L"Copied");
+        Check("408 notice: long line cut with an ellipsis", MdCopyNoticeText(L"C", L"abcdefghij", 4) == L"C\nabcd\x2026" && MdCopyNoticeText(L"C", L"abcd", 4) == L"C\nabcd");
+        Check("408 notice: never half a surrogate pair", MdCopyNoticeText(L"C", L"abc\xD83D\xDE00z", 4) == L"C\nabc\x2026");
         Check("408 clip: leading line break", MdCodeClipboardText("\nx\n") == L"\r\nx");
 
         // the address
-        const std::wstring base = L"https://mdview.invalid/tc-copy-0123456789abcdef0123456789abcdef-7/";
+        const std::wstring base = L"https://mdcopy.invalid/0123456789abcdef0123456789abcdef-7/";
         size_t idx = 99;
         Check("408 link: exact", MdParseCopyLink(base + L"0", base, 6, &idx) == MDCOPY_OK && idx == 0);
         Check("408 link: last index", MdParseCopyLink(base + L"5", base, 6, &idx) == MDCOPY_OK && idx == 5);
         Check("408 link: out of range", MdParseCopyLink(base + L"6", base, 6, &idx) == MDCOPY_REFUSED);
-        Check("408 link: wrong token", MdParseCopyLink(L"https://mdview.invalid/tc-copy-0123456789abcdef0123456789abcdee-7/0", base, 6, &idx) == MDCOPY_REFUSED);
-        Check("408 link: stale serial", MdParseCopyLink(L"https://mdview.invalid/tc-copy-0123456789abcdef0123456789abcdef-6/0", base, 6, &idx) == MDCOPY_REFUSED);
-        Check("408 link: serial prefix", MdParseCopyLink(L"https://mdview.invalid/tc-copy-0123456789abcdef0123456789abcdef-77/0", base, 6, &idx) == MDCOPY_REFUSED);
-        Check("408 link: no token", MdParseCopyLink(L"https://mdview.invalid/tc-copy-/0", base, 6, &idx) == MDCOPY_REFUSED);
+        Check("408 link: wrong token", MdParseCopyLink(L"https://mdcopy.invalid/0123456789abcdef0123456789abcdee-7/0", base, 6, &idx) == MDCOPY_REFUSED);
+        Check("408 link: stale serial", MdParseCopyLink(L"https://mdcopy.invalid/0123456789abcdef0123456789abcdef-6/0", base, 6, &idx) == MDCOPY_REFUSED);
+        Check("408 link: serial prefix", MdParseCopyLink(L"https://mdcopy.invalid/0123456789abcdef0123456789abcdef-77/0", base, 6, &idx) == MDCOPY_REFUSED);
+        Check("408 link: no token", MdParseCopyLink(L"https://mdcopy.invalid//0", base, 6, &idx) == MDCOPY_REFUSED);
         Check("408 link: leading zero", MdParseCopyLink(base + L"01", base, 6, &idx) == MDCOPY_REFUSED);
         Check("408 link: sign", MdParseCopyLink(base + L"+1", base, 6, &idx) == MDCOPY_REFUSED && MdParseCopyLink(base + L"-1", base, 6, &idx) == MDCOPY_REFUSED);
         Check("408 link: empty number", MdParseCopyLink(base, base, 6, &idx) == MDCOPY_REFUSED);
@@ -303,12 +317,14 @@ int main()
         Check("408 link: other in-host link is not ours",
               MdParseCopyLink(L"https://mdview.invalid/copy/0", base, 6, &idx) == MDCOPY_NONE &&
                   MdParseCopyLink(L"https://mdview.invalid/notes.md", base, 6, &idx) == MDCOPY_NONE &&
-                  MdParseCopyLink(L"https://mdview.invalid/tc-cop", base, 6, &idx) == MDCOPY_NONE);
+                  MdParseCopyLink(L"https://mdview.invalid/tc-cop", base, 6, &idx) == MDCOPY_NONE &&
+                  MdParseCopyLink(L"https://mdview.invalid/tc-copy-notes.md", base, 6, &idx) == MDCOPY_NONE &&
+                  MdParseCopyLink(L"https://mdview.invalid/0123456789abcdef0123456789abcdef-7/0", base, 6, &idx) == MDCOPY_NONE);
         Check("408 link: other schemes are not ours",
               MdParseCopyLink(L"https://example.com/tc-copy-x/0", base, 6, &idx) == MDCOPY_NONE &&
                   MdParseCopyLink(L"mailto:a@b", base, 6, &idx) == MDCOPY_NONE && MdParseCopyLink(L"", base, 6, &idx) == MDCOPY_NONE);
         Check("408 link: case matters (the family is lower case)",
-              MdParseCopyLink(L"https://mdview.invalid/TC-COPY-0123456789abcdef0123456789abcdef-7/0", base, 6, &idx) == MDCOPY_NONE);
+              MdParseCopyLink(L"https://MDCOPY.invalid/0123456789abcdef0123456789abcdef-7/0", base, 6, &idx) == MDCOPY_NONE);
     }
 
     printf("\n=== htmlgen test: %d passed, %d failed ===\n", g_pass, g_fail);

@@ -15,9 +15,11 @@
 
 ## R2. Forged copy addresses
 
-- Decision: `https://mdview.invalid/tc-copy-<token>-<serial>/<n>`; `<token>` = 32 hex
+- Decision (revised by review 1 M2: the first family `https://mdview.invalid/tc-copy-`
+  swallowed a relative link to a sibling file `tc-copy-notes.md`):
+  `https://mdcopy.invalid/<token>-<serial>/<n>`; `<token>` = 32 hex
   digits of `SalGenRandom` per window; `<serial>` counts the window's renders. Every
-  address in the family `https://mdview.invalid/tc-copy-` is consumed by the copy branch:
+  address in the family `https://mdcopy.invalid/` is consumed by the copy branch:
   an exact match copies, anything else does nothing (no fall-through to the message box
   of local targets). Generator failure: no token, no controls.
 - Rationale: the document cannot read the token (no script), so its own links cannot
@@ -28,7 +30,11 @@
 
 ## R3. Feedback without script
 
-- Decision: two fixed-position notices `#tc-copied-0` / `#tc-copied-1` emitted once per
+- Revised decision (review 1 M1 / S1): a native tracking tooltip of the viewer window,
+  bottom right, *Copied* + the first copied line. The page's CSS can hide anything in
+  the page (a restyled genuine control copied a hidden block with no visible sign), and
+  the fragment jump below took the keyboard focus off the control.
+- First decision (replaced): two fixed-position notices `#tc-copied-0` / `#tc-copied-1` emitted once per
   document with code blocks; CSS `:target` runs a fade-out animation; after a copy the
   viewer calls `CTcWebHost::Navigate(DocVersion, L"tc-copied-<k>")`, alternating `k` so
   the target changes on every copy.
@@ -48,8 +54,9 @@
 
 ## R5. The copied text
 
-- Decision: md4c's code text (`Gen::codeBuf`) as stored; one final LF removed; NUL ->
-  U+FFFD; LF not preceded by CR -> CR LF; explicit length to `CopyTextToClipboardW`.
+- Decision (NUL revised by review 1 S2: md4c repeats a NUL, the page shows none - NULs
+  are dropped): md4c's code text (`Gen::codeBuf`) as stored; one final LF removed; NUL
+  removed; LF not preceded by CR -> CR LF; explicit length to `CopyTextToClipboardW`.
 - Rationale: md4c delivers each code line followed by LF and strips container prefixes
   and the four-space indentation (the code as Markdown defines it); the page shows no
   empty last line; the Code Viewer's copy uses CR LF and an explicit length.

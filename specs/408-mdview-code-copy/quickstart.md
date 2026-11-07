@@ -13,6 +13,6 @@
 ## Owed to a person (release checklist)
 
 - Open a Markdown file with several code blocks (one Czech / emoji line, one in a
-  list), hover a block: *Copy* appears top right; click: *Copied* shows bottom right and
-  fades; paste into Notepad: exactly the block's code, Windows line breaks, no extra
+  list), hover a block: *Copy* appears top right; click: a *Copied* notice with the first line shows bottom right and
+  goes away after about 2.5 s; paste into Notepad: exactly the block's code, Windows line breaks, no extra
   last line. Repeat in a dark scheme (F9) and with Tab + Enter.

@@ -6,14 +6,15 @@
 ## Summary
 
 Every Markdown code block gets a script-free *Copy* link in its top-right corner. The
-link points to `https://mdview.invalid/tc-copy-<token>-<serial>/<n>`; the shared
+link points to `https://mdcopy.invalid/<token>-<serial>/<n>`; the shared
 WebView2 host already cancels every navigation outside `doc.html` and hands a
 user-initiated one to the viewer (`Callbacks::OnActivateLink`, feature 085). The
 viewer recognises the copy address first, checks token, serial and number, and puts
 block *n*'s source (kept by the generator in a table, like `img/<n>`) on the clipboard
-as CR LF Unicode text. A successful copy is confirmed by a same-document fragment
-navigation to a fixed-position *Copied* notice shown by CSS `:target` (two notices used
-alternately). No script, no web message, no change to `src/common/webhost/`.
+as CR LF Unicode text. A successful copy is confirmed by a native notice (a tracking
+tooltip of the viewer window) naming the first copied line - outside the page, so the
+document's CSS cannot hide it (review 1). No script, no web message, no change to
+`src/common/webhost/`.
 
 ## Technical Context
 
@@ -63,7 +64,7 @@ specs/408-mdview-code-copy/
 
 ```text
 src/plugins/mdview/
-├── htmlgen.h / htmlgen.cpp   # copy UI input, code block table, the copy CSS and notices,
+├── htmlgen.h / htmlgen.cpp   # copy UI input, code block table, the copy CSS, MdCopyNoticeText,
 │                             # pure rules MdCodeClipboardText / MdParseCopyLink
 ├── viewer.h / viewer.cpp     # token + serial, ActivateLink copy branch, notice, seam
 ├── mdview.rh2                # IDS_CODE_COPY / _TIP / IDS_CODE_COPIED (free slots 2197-2199)

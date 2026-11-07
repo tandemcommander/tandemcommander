@@ -618,10 +618,45 @@ std::wstring MdCodeClipboardText(const std::string& srcUtf8)
     {
         wchar_t c = w[i];
         if (c == L'\0')
-            c = 0xFFFD; // what the page shows for a NUL of the source
+            continue; // the page shows nothing for a NUL (and md4c delivers it twice)
         if (c == L'\n' && (i == 0 || w[i - 1] != L'\r'))
             out += L'\r';
         out += c;
+    }
+    return out;
+}
+
+std::wstring MdCopyNoticeText(const std::wstring& copied, const std::wstring& clip, size_t maxChars)
+{
+    std::wstring out = copied;
+    size_t i = 0;
+    while (i < clip.size())
+    {
+        size_t e = clip.find(L'\n', i);
+        if (e == std::wstring::npos)
+            e = clip.size();
+        size_t s = i;
+        while (s < e && (clip[s] == L' ' || clip[s] == L'\t' || clip[s] == L'\r'))
+            s++;
+        size_t t = e;
+        while (t > s && (clip[t - 1] == L' ' || clip[t - 1] == L'\t' || clip[t - 1] == L'\r'))
+            t--;
+        if (t > s)
+        {
+            std::wstring line = clip.substr(s, t - s);
+            if (maxChars > 0 && line.size() > maxChars)
+            {
+                size_t cut = maxChars;
+                // a whole character: never between the two halves of a surrogate pair
+                if (cut > 0 && line[cut - 1] >= 0xD800 && line[cut - 1] <= 0xDBFF)
+                    cut--;
+                line = line.substr(0, cut) + L"\x2026";
+            }
+            out += L"\n";
+            out += line;
+            break;
+        }
+        i = e + 1;
     }
     return out;
 }
@@ -670,31 +705,26 @@ static const char* ArticleOpenTag(int pageWidth)
     }
 }
 
-// Feature 408: the rules of the copy control and of the "Copied" notice, added to
-// the stylesheet only for a document that has at least one control (a document
-// without code blocks stays the document of before 408, byte for byte). Theme
-// variables only, so every colour scheme - light and dark - applies. The notice is
-// position:fixed and shown by :target: the viewer navigates to "#tc-copied-<k>"
-// (same document, no reload) and a fixed target is not scrolled to (measured,
-// specs/408-mdview-code-copy/fix-log.md); the viewer alternates k so that every
-// copy changes the target and restarts the fade.
+// Feature 408: the rules of the copy control, added to the stylesheet only for a
+// document that has at least one control (a document without code blocks stays the
+// document of before 408, byte for byte). Theme variables only, so every colour
+// scheme - light and dark - applies. The control is shown on hover of its block or
+// on focus (Tab); while transparent it still takes a click, on purpose: a touch tap
+// or a first click hit-tests before any hover, and a control that ignored clicks
+// until hovered would swallow them (measured, fix-log review 1). The page's own CSS
+// can restyle the control anyway (raw <style> passes through), so the viewer
+// confirms every copy natively, outside the page, naming what was copied (review 1,
+// M1).
 static const char* CopyCss()
 {
     return "\n.tc-code{position:relative;}"
            ".tc-copy{position:absolute;top:6px;right:6px;z-index:1;padding:1px 9px;"
            "font:12px/1.6 'Segoe UI',system-ui,sans-serif;color:var(--fg);background:var(--bg);"
-           "border:1px solid var(--tb);border-radius:4px;opacity:0;user-select:none;"
-           "-webkit-user-select:none;transition:opacity .12s;}"
+           "border:1px solid var(--tb);border-radius:4px;opacity:0;"
+           "user-select:none;-webkit-user-select:none;transition:opacity .12s;}"
            ".tc-code:hover .tc-copy,.tc-copy:focus{opacity:1;}"
            "a.tc-copy:hover{text-decoration:none;color:var(--lka);border-color:var(--lka);}"
-           ".tc-copy:focus-visible{outline:2px solid var(--lk);outline-offset:1px;}"
-           ".tc-toast{position:fixed;right:16px;bottom:16px;z-index:2;padding:6px 14px;"
-           "font:13px/1.5 'Segoe UI',system-ui,sans-serif;color:var(--bg);background:var(--fg);"
-           "border-radius:6px;visibility:hidden;opacity:0;pointer-events:none;"
-           "user-select:none;-webkit-user-select:none;}"
-           ".tc-toast:target{animation:tc-toast 2s ease-out forwards;}"
-           "@keyframes tc-toast{0%,65%{visibility:visible;opacity:1;}"
-           "100%{visibility:hidden;opacity:0;}}";
+           ".tc-copy:focus-visible{outline:2px solid var(--lk);outline-offset:1px;}";
 }
 
 std::string MdBuildThemeCss(const MdTheme& t)
@@ -828,18 +858,6 @@ bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
     out.html += ArticleOpenTag(pageWidth);
     out.html += "\n";
     out.html += g.body;
-    if (copies)
-    {
-        // the two notices of the viewer's "Copied" feedback (CopyCss)
-        for (int k = 0; k < 2; k++)
-        {
-            out.html += "<div id=\"tc-copied-";
-            out.html += (char)('0' + k);
-            out.html += "\" class=\"tc-toast\">";
-            Esc(out.html, copyUi->copied, false);
-            out.html += "</div>";
-        }
-    }
     out.html += "\n</article></body></html>";
     out.bytesOut = out.html.size();
     return true;

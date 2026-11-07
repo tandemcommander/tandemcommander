@@ -405,7 +405,7 @@ CViewerWindow::CViewerWindow(int enumFilesSourceUID, int enumFilesCurrentIndex) 
     // (it runs no script and never sees this token), so a link the document writes
     // itself cannot fill the clipboard. No random bytes -> no controls (fail closed).
     CopySerial = 0;
-    CopyNotice = 0;
+    CopyTip = NULL;
     {
         BYTE rnd[16];
         if (SalGenRandom(rnd, sizeof(rnd)))
@@ -593,7 +593,6 @@ void CViewerWindow::RebuildHtml()
             // LoadStrW, never LoadStr: the texts go into a UTF-8 page (LoadStr is code page)
             copy.label = WToUtf8Str(SalamanderGeneral->LoadStrW(HLanguage, IDS_CODE_COPY));
             copy.tooltip = WToUtf8Str(SalamanderGeneral->LoadStrW(HLanguage, IDS_CODE_COPY_TIP));
-            copy.copied = WToUtf8Str(SalamanderGeneral->LoadStrW(HLanguage, IDS_CODE_COPIED));
         }
         MdRenderHtml(srcUtf8, *Theme, DocDir, Html, findTerm, RemoteAllowed, PageWidth, &copy);
     }
@@ -790,9 +789,72 @@ void CViewerWindow::EngineFailed()
 }
 
 // Handles a cancelled navigation (link click) routed from the WebView2 host.
+// Feature 408: the "Copied" notice - a native tracking tooltip at the bottom right of
+// the viewer, showing what was copied. Native on purpose (review 1, M1): the page's
+// own CSS can restyle or hide anything in the page, including the copy control, so a
+// confirmation inside the page could be suppressed and a click on what looks like
+// an ordinary link could fill the clipboard silently. No navigation either, so the
+// keyboard focus stays on the control (review 1, S1).
+#define MD_COPYTIP_TIMER 4080
+#define MD_COPYTIP_MS 2500
+
+void CViewerWindow::ShowCopyNotice(const std::wstring& text)
+{
+    if (CopyTip == NULL)
+    {
+        CopyTip = CreateWindowExW(WS_EX_TOPMOST, TOOLTIPS_CLASSW, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, HWindow, NULL,
+                                  DLLInstance, NULL);
+        if (CopyTip == NULL)
+            return;
+        TOOLINFOW ti = {};
+        ti.cbSize = TTTOOLINFOW_V2_SIZE; // valid for every common-controls version
+        ti.uFlags = TTF_TRACK | TTF_ABSOLUTE;
+        ti.hwnd = HWindow;
+        ti.uId = 1;
+        ti.lpszText = (LPWSTR)L"";
+        SendMessageW(CopyTip, TTM_ADDTOOLW, 0, (LPARAM)&ti);
+        SendMessageW(CopyTip, TTM_SETMAXTIPWIDTH, 0, 480); // multi-line: "Copied" + the line
+    }
+    TOOLINFOW ti = {};
+    ti.cbSize = TTTOOLINFOW_V2_SIZE; // valid for every common-controls version
+    ti.hwnd = HWindow;
+    ti.uId = 1;
+    ti.lpszText = (LPWSTR)text.c_str();
+    SendMessageW(CopyTip, TTM_UPDATETIPTEXTW, 0, (LPARAM)&ti);
+    // bottom right of the client area, inside it
+    RECT rc;
+    GetClientRect(HWindow, &rc);
+    POINT br = {rc.right, rc.bottom};
+    ClientToScreen(HWindow, &br);
+    int margin = MulDiv(24, GetDpiForWindow(HWindow), 96);
+    // the bubble's size is only known once it is shown (TTM_GETBUBBLESIZE gave a stale
+    // size on the first copy - measured): show it, read its real size, then place it
+    SendMessageW(CopyTip, TTM_TRACKPOSITION, 0, MAKELPARAM(br.x - margin, br.y - margin));
+    SendMessageW(CopyTip, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
+    RECT tr;
+    if (GetWindowRect(CopyTip, &tr))
+        SendMessageW(CopyTip, TTM_TRACKPOSITION, 0,
+                     MAKELPARAM(br.x - (tr.right - tr.left) - margin, br.y - (tr.bottom - tr.top) - margin));
+    SetTimer(HWindow, MD_COPYTIP_TIMER, MD_COPYTIP_MS, NULL);
+}
+
+void CViewerWindow::HideCopyNotice()
+{
+    KillTimer(HWindow, MD_COPYTIP_TIMER);
+    if (CopyTip != NULL)
+    {
+        TOOLINFOW ti = {};
+        ti.cbSize = TTTOOLINFOW_V2_SIZE; // valid for every common-controls version
+        ti.hwnd = HWindow;
+        ti.uId = 1;
+        SendMessageW(CopyTip, TTM_TRACKACTIVATE, FALSE, (LPARAM)&ti);
+    }
+}
+
 // Feature 408: copies code block 'index' of the page shown (the control the user
-// activated) and, when that worked, shows the "Copied" notice by a same-document
-// jump to it (no reload, no scroll - the notice is fixed-position).
+// activated) and, when that worked, shows the native "Copied" notice with the first
+// line of what was copied.
 void CViewerWindow::CopyCodeBlock(size_t index)
 {
     if (index >= Html.codeBlocks.size())
@@ -821,12 +883,25 @@ void CViewerWindow::CopyCodeBlock(size_t index)
 #endif
         // explicit length: a block may hold characters a NUL-terminated copy would cut
         ok = SalamanderGeneral->CopyTextToClipboardW(text.c_str(), (int)text.size(), FALSE, HWindow);
-    if (ok && Web != NULL && Web->IsReady())
+    if (!ok)
+        return; // no notice for a copy that did not happen (FR-005)
+    std::wstring notice = MdCopyNoticeText(SalamanderGeneral->LoadStrW(HLanguage, IDS_CODE_COPIED), text, 60);
+#ifdef _DEBUG
+    if (sl > 0 && sl < _countof(seam))
     {
-        // the other notice each time, so the target changes and the fade restarts
-        Web->Navigate(DocVersion, L"tc-copied-" + std::to_wstring(CopyNotice));
-        CopyNotice ^= 1;
+        // the seam's second file: the notice text (the probe cannot read a tooltip's text)
+        std::wstring nf = std::wstring(seam) + L".notice";
+        std::string u8 = WToUtf8Str(notice);
+        HANDLE h = CreateFileW(nf.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (h != INVALID_HANDLE_VALUE)
+        {
+            DWORD wr = 0;
+            WriteFile(h, u8.data(), (DWORD)u8.size(), &wr, NULL);
+            CloseHandle(h);
+        }
     }
+#endif
+    ShowCopyNotice(notice);
 }
 
 void CViewerWindow::ActivateLink(const std::wstring& uri)
@@ -1114,8 +1189,22 @@ LRESULT CViewerWindow::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         Regenerate();
         return 0;
 
+    case WM_TIMER:
+        if (wParam == MD_COPYTIP_TIMER) // feature 408: the "Copied" notice ends
+        {
+            HideCopyNotice();
+            return 0;
+        }
+        break;
+
     case WM_DESTROY:
     {
+        HideCopyNotice(); // feature 408
+        if (CopyTip != NULL)
+        {
+            DestroyWindow(CopyTip);
+            CopyTip = NULL;
+        }
         if (g_savePos)
         {
             g_wndPlacement.length = sizeof(WINDOWPLACEMENT);

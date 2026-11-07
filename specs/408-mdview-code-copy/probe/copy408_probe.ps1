@@ -2,21 +2,26 @@
 .SYNOPSIS
     Feature 408 probe: the Markdown Viewer's code block copy control - hover shows it, a click
     copies the block's source (read through the Debug seam TC_MDVIEW_PROBE_COPY_LOG, never the
-    real clipboard: the hidden desktop shares it), a fixed "Copied" notice appears and fades,
-    the page does not scroll, forged copy links do nothing, other links keep working.
+    real clipboard: the hidden desktop shares it), a native "Copied" notice (a tooltip window
+    of the viewer, outside the page) appears with the copied first line and goes away, the page
+    does not scroll, forged copy links do nothing, other links keep working.
 
 .DESCRIPTION
     Fixture %TEMP%\tc408\files\a_doc.md: a fenced block (block 0, Czech + emoji), a magenta box
     holding a Markdown link to a forged copy address, a blue raw-HTML block link to a forged
-    copy address, a green block link to foo.txt, an indented block (1), a list with a fenced
-    block (2), 80 short filler lines. Code blocks are found in a PrintWindow capture as the tall
-    runs of non-background pixels in the article's centre column.
-    Rows (first start, seam = %TEMP%\tc408\seam\copy.txt):
+    copy address, a green block link to foo.txt, a yellow block link to tc-copy-notes.md (an
+    existing sibling file), an indented block (1), a list with a fenced block (2), 80 short
+    filler lines. Code blocks are found in a PrintWindow capture as the tall runs of
+    non-background pixels in the article's centre column.
+    Rows (first start, seam = %TEMP%\tc408\seam\copy.txt, notice text in copy.txt.notice):
       OPEN      the viewer opens and three code blocks are found
-      SHOWN     WM_MOUSEMOVE over block 0: pixels change in its top-right corner (the control)
-      COPY-0    click on block 0's control: the seam file holds exactly its CR LF text
-      NOTICE    the bottom-right notice area gains pixels within 1.2 s
-      GONE      ... and is empty again after 4 s (the fade)
+      SHOWN     WM_MOUSEMOVE over block 0: pixels change in its top-right corner (the control);
+                NOT DRIVEN when an ordinary link does not hover either (posted moves give no hover)
+      COPY-0    click on block 0's control: the seam file holds exactly its CR LF text, the page
+                did not move
+      NOTICE    a visible tooltip window of the process at the viewer's bottom right; the notice
+                text is "Copied" + the first copied line
+      GONE      ... and it is hidden again 4 s later
       AGAIN     click on block 2's control: the seam file holds block 2; the notice shows again
       NOSCROLL  after a wheel scroll (when the engine takes it), a copy of block 1 leaves every
                 block top where it was (NOT DRIVEN for the scrolled case when the wheel did not
@@ -24,11 +29,19 @@
       FORGED-MD click on the Markdown link to a forged copy address: no seam file, no window
       FORGED-HTML the same for the raw-HTML link
       LINK      click on foo.txt: the viewer's local-target box opens (links unchanged)
-      KEY       Tab then Enter: the seam file holds block 0 (NOT DRIVEN when posted keys reach
-                nothing)
+      LINK-TCCOPY click on tc-copy-notes.md: a viewer window opens (review 1, M2)
+      KEY       after the foo.txt click, Tab moves to the next control in document order -
+                block 1's - and shows it; Enter: the seam file holds block 1 (NOT DRIVEN when
+                posted keys reach nothing)
+      KEY-AGAIN Enter once more: the focus stayed on the control, block 1 is copied again
+                (review 1, S1)
       SOURCE    View Source (101), click where block 0's control was: no seam file
     Second start (seam = the seam FOLDER, so the write fails):
       FAILCOPY  click on block 0's control: no notice appears (FR-005)
+    Third start, the review 1 M1 fixture (the document's CSS stretches the genuine control over
+    the page, makes it invisible, hides the block):
+      HIJACK    a click on the page copies the hidden block - but never silently: the native
+                notice is visible and its text names the hidden first line
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 #>
@@ -127,7 +140,8 @@ public static class Cp408
             for (int x = 0; x < b.Width; x += 2)
             {
                 Color c = b.GetPixel(x, y);
-                bool m = kind == 0 ? (c.R > 200 && c.G < 110 && c.B > 200) : kind == 1 ? (c.B > 220 && c.R < 70 && c.G < 70) : (c.G > 200 && c.R < 170 && c.B < 110);
+                bool m = kind == 0 ? (c.R > 200 && c.G < 110 && c.B > 200) : kind == 1 ? (c.B > 220 && c.R < 70 && c.G < 70) :
+                         kind == 2 ? (c.G > 200 && c.R < 170 && c.B < 110) : (c.R > 220 && c.G > 200 && c.B < 90);
                 if (m) return x + "," + y;
             }
         return "";
@@ -146,9 +160,10 @@ public static class Cp408
 
 $Root = $TempRoot + '\tc408'
 $Files = $Root + '\files'
+$Files2 = $Root + '\files2'
 $SeamDir = $Root + '\seam'
 $Seam = $SeamDir + '\copy.txt'
-$Forged = 'https://mdview.invalid/tc-copy-00000000000000000000000000000000-1/0'
+$Forged = 'https://mdcopy.invalid/00000000000000000000000000000000-1/0'
 
 function Put-Text([string]$Path, [string]$Text) {
     if (-not $Path.StartsWith($Root + '\')) { throw "outside the fixture: $Path" }
@@ -180,7 +195,29 @@ function Ctl-Point($Bmp, $Blk, [double]$Scale) {
     $r = [Cp408]::RightEdge($Bmp, $Blk[0] + [int](4 * $Scale), 20)
     return @(($r - [int](30 * $Scale)), ($Blk[0] + [int](17 * $Scale)), $r)
 }
-function Notice-Ink($Bmp, [double]$Scale) { return [Cp408]::Ink($Bmp, $Bmp.Width - [int](240 * $Scale), $Bmp.Height - [int](70 * $Scale), $Bmp.Width - 20, $Bmp.Height - 2) }
+# the native notice: a visible tooltip window of the process inside the viewer's bottom-right
+# quarter; returns its rectangle as text, or '' when none is visible
+function Notice([int]$Id, [IntPtr]$W) {
+    $vr = New-Object Cp408+RECT; [void][Cp408]::GetWindowRect($W, [ref]$vr)
+    foreach ($h in [Drv098f]::Top([uint32]$Id)) {
+        if ([Drv098f]::Cls($h) -ne 'tooltips_class32' -or -not [Drv098f]::IsWindowVisible($h)) { continue }
+        $r = New-Object Cp408+RECT; [void][Cp408]::GetWindowRect($h, [ref]$r)
+        if ($r.Left -ge ($vr.Left + $vr.Right) / 2 -and $r.Top -ge ($vr.Top + $vr.Bottom) / 2 -and $r.Right -le $vr.Right -and $r.Bottom -le $vr.Bottom) { return ('{0},{1}-{2},{3}' -f $r.Left, $r.Top, $r.Right, $r.Bottom) }
+    }
+    return ''
+}
+# every tooltip window of the process (diagnostics)
+function Tips([int]$Id) {
+    $o = @()
+    foreach ($h in [Drv098f]::Top([uint32]$Id)) {
+        if ([Drv098f]::Cls($h) -ne 'tooltips_class32') { continue }
+        $r = New-Object Cp408+RECT; [void][Cp408]::GetWindowRect($h, [ref]$r)
+        $o += ('{0}:{1}:{2},{3}-{4},{5}' -f $h, $(if ([Drv098f]::IsWindowVisible($h)) { 'vis' } else { 'hid' }), $r.Left, $r.Top, $r.Right, $r.Bottom)
+    }
+    return ($o -join ' ')
+}
+function Notice-Text { $f = $Seam + '.notice'; if ([IO.File]::Exists($f)) { return [IO.File]::ReadAllText($f, $Utf8) } else { return $null } }
+function Notice-Clear { $f = $Seam + '.notice'; if ([IO.File]::Exists($f)) { [IO.File]::Delete($f) } }
 
 $cz = 'beta ' + [char]0x010D + 'e' + [char]0x0161 + 'tina ' + [char]0xD83D + [char]0xDE00
 $Expect0 = "alpha line 1`r`n" + $cz
@@ -191,6 +228,7 @@ $doc = "``````text`nalpha line 1`n" + $cz + "`n```````n`nShort.`n`n" +
 "<div style=`"background:#ff00ff;width:300px;padding:20px`">`n`n[FORGED MARKDOWN LINK XXXXXXXXX](" + $Forged + ")`n`n</div>`n`n" +
 "<a href=`"" + $Forged + "`" style=`"display:block;width:300px;height:60px;background:#0000ff`"></a>`n`n" +
 "<a href=`"foo.txt`" style=`"display:block;width:300px;height:60px;background:#00ff00`"></a>`n`n" +
+"<a href=`"tc-copy-notes.md`" style=`"display:block;width:300px;height:60px;background:#ffff00`"></a>`n`n" +
 "Short.`n`n    indented one`n      indented two`n`nShort.`n`n- item`n`n  ```````n  in list`n  ```````n`n" + $filler + "`n"
 
 $backup = Join-Path $env:TEMP 'tc408_backup.reg'
@@ -198,9 +236,10 @@ $existed = Backup-Reg $backup
 $restored = $false; $nf = 0
 try {
     if ([IO.Directory]::Exists($LP + $Root)) { [IO.Directory]::Delete($LP + $Root, $true) }
-    NewDir $Files; NewDir $SeamDir
+    NewDir $Files; NewDir $Files2; NewDir $SeamDir
     Set-Config
     Put-Text "$Files\a_doc.md" $doc
+    Put-Text "$Files\tc-copy-notes.md" "# Notes`n`nA sibling file.`n"
     Out ("copy408_probe (feature 408) {0}" -f $Label)
     Out ("Program : {0}" -f $Exe)
     Out ("Date    : {0}; registry key existed {1}; desktop {2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm'), $existed, [DeskLib098]::Name())
@@ -254,34 +293,35 @@ try {
                 }
 
                 # COPY-0 + NOTICE + GONE
-                Seam-Clear
-                $ink0 = Notice-Ink $b1 $scale
+                Seam-Clear; Notice-Clear
+                $n0 = Notice $id $w
                 Post-Click $rk $p0[0] $p0[1]
-                Start-Sleep -Milliseconds 1200
+                Start-Sleep -Milliseconds 1000
+                $n1 = Notice $id $w
                 $b2 = Shot $w 'copied0'
                 $got = Seam-Read
                 $blocksAfter = Parse-Blocks ([Cp408]::Blocks($b2, $cx))
                 $same = ($blocksAfter.Count -eq $blocks.Count) -and ($blocksAfter[0][0] -eq $blocks[0][0])
                 Row 'COPY-0' 'RUN' (V (($got -ceq $Expect0) -and $same)) ("seam '{0}' (want '{1}'); block 0 top {2} -> {3}" -f (Show $got), (Show $Expect0), $blocks[0][0], $(if ($blocksAfter.Count) { $blocksAfter[0][0] } else { '-' }))
-                $ink1 = Notice-Ink $b2 $scale
-                Row 'NOTICE' 'RUN' (V (($ink1 -gt 300) -and ($ink0 -lt 50))) ("notice area ink before {0}, 1.2 s after the copy {1}" -f $ink0, $ink1)
-                Start-Sleep -Milliseconds 4000
-                $b3 = Shot $w 'faded'
-                $ink2 = Notice-Ink $b3 $scale
-                Row 'GONE' 'RUN' (V ($ink2 -lt 50)) ("notice area ink 5.2 s after the copy {0}" -f $ink2)
+                $nt = Notice-Text
+                $vr = New-Object Cp408+RECT; [void][Cp408]::GetWindowRect($w, [ref]$vr)
+                Row 'NOTICE' 'RUN' (V (($n0 -eq '') -and ($n1 -ne '') -and ($nt -ceq "Copied`nalpha line 1"))) ("tooltip before '{0}', 1 s after the copy '{1}' (viewer {3},{4}-{5},{6}, bottom-right quarter); text '{2}'; all tooltips: {7}" -f $n0, $n1, (Show $nt), $vr.Left, $vr.Top, $vr.Right, $vr.Bottom, (Tips $id))
+                Start-Sleep -Milliseconds 3000
+                $n2 = Notice $id $w
+                Row 'GONE' 'RUN' (V ($n2 -eq '')) ("tooltip 4 s after the copy: '{0}'" -f $n2)
 
                 # AGAIN: block 2
-                Seam-Clear
-                $p2 = Ctl-Point $b3 $blocks[2] $scale
+                Seam-Clear; Notice-Clear
+                $p2 = Ctl-Point $b2 $blocks[2] $scale
                 [Cp408]::Move($rk, $cx, $blocks[2][0] + 20)
                 Start-Sleep -Milliseconds 300
                 Post-Click $rk $p2[0] $p2[1]
-                Start-Sleep -Milliseconds 1200
-                $b4 = Shot $w 'copied2'
+                Start-Sleep -Milliseconds 1000
+                $n3 = Notice $id $w
                 $got = Seam-Read
-                $ink3 = Notice-Ink $b4 $scale
-                Row 'AGAIN' 'RUN' (V (($got -ceq $Expect2) -and ($ink3 -gt 300))) ("seam '{0}' (want '{1}'); notice ink {2}" -f (Show $got), (Show $Expect2), $ink3)
-                Start-Sleep -Milliseconds 4000
+                $nt = Notice-Text
+                Row 'AGAIN' 'RUN' (V (($got -ceq $Expect2) -and ($n3 -ne '') -and ($nt -ceq "Copied`nin list"))) ("seam '{0}' (want '{1}'); tooltip '{2}'; text '{3}'" -f (Show $got), (Show $Expect2), $n3, (Show $nt))
+                Start-Sleep -Milliseconds 3000
 
                 # NOSCROLL: scroll by the wheel, then copy block 1
                 $o = New-Object Cp408+POINT; [void][Cp408]::ClientToScreen($rk, [ref]$o)
@@ -336,6 +376,21 @@ try {
                     if ($nw -ne [IntPtr]::Zero) { Row 'LINK' 'RUN' (V ((FullText $nw) -like '*foo.txt*')) ('box: ' + (WinDesc $nw)); Click-Ok $nw }
                     else { Row 'LINK' 'RUN' 'FAIL' 'no window after the click on foo.txt' }
                 }
+                # LINK-TCCOPY (review 1, M2): a sibling file whose name starts "tc-copy-" opens
+                $py = [Cp408]::ColorBox($b7, 3)
+                if (-not $py) { Row 'LINK-TCCOPY' 'RUN' 'NOT DRIVEN' 'the yellow box was not found' }
+                else {
+                    $known = Get-Tops $id
+                    Post-Click $rk ([int]$py.Split(',')[0] + [int](40 * $scale)) ([int]$py.Split(',')[1] + [int](30 * $scale))
+                    $nw = Wait-NewWin $id $known 12
+                    if ($nw -ne [IntPtr]::Zero) {
+                        Start-Sleep -Milliseconds 1500
+                        Row 'LINK-TCCOPY' 'RUN' (V ([Drv098f]::Txt($nw) -like '*tc-copy-notes.md*')) ('new window: ' + (WinDesc $nw))
+                        [void][Drv098f]::PostMessageW($nw, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+                        Start-Sleep -Milliseconds 1500
+                    }
+                    else { Row 'LINK-TCCOPY' 'RUN' 'FAIL' 'no window after the click on tc-copy-notes.md' }
+                }
                 # KEY: the last click was the foo.txt link, so Tab moves to the next focusable
                 # element in document order - block 1's control; Enter copies block 1
                 Seam-Clear
@@ -352,6 +407,14 @@ try {
                 $got = Seam-Read
                 if ($null -eq $got -and $focusCh -lt 20) { Row 'KEY' 'RUN' 'NOT DRIVEN' ("posted Tab/Enter changed nothing (corner pixels {0}, no seam file)" -f $focusCh) }
                 else { Row 'KEY' 'RUN' (V (($got -ceq $Expect1) -and ($focusCh -gt 40))) ("focus shows block 1's control: {0} px changed; seam '{1}' (want '{2}')" -f $focusCh, (Show $got), (Show $Expect1)) }
+                # KEY-AGAIN (review 1, S1): the focus stays on the control after a copy
+                Seam-Clear
+                [Cp408]::KeyPress($rk, 0x0D, 13)
+                Start-Sleep -Milliseconds 1200
+                $got = Seam-Read
+                $bk2 = Shot $w 'keyagain'
+                $still = [Cp408]::Changed($bk0, $bk2, $pk[2] - [int](70 * $scale), $blocks[1][0], $pk[2] + 2, $blocks[1][0] + [int](34 * $scale))
+                Row 'KEY-AGAIN' 'RUN' (V (($got -ceq $Expect1) -and ($still -gt 40))) ("second Enter: seam '{0}'; control still shown {1} px" -f (Show $got), $still)
                 Start-Sleep -Milliseconds 3000
                 # SOURCE: View Source, click where block 0's control was
                 Post-Cmd $w 101
@@ -393,10 +456,9 @@ try {
                 [Cp408]::Move($rk, $cx, $blocks[0][0] + 30)
                 Start-Sleep -Milliseconds 500
                 Post-Click $rk $p0[0] $p0[1]
-                Start-Sleep -Milliseconds 1200
-                $b1 = Shot $w 'fail1'
-                $ink = Notice-Ink $b1 $scale
-                Row 'FAILCOPY' 'RUN' (V ($ink -lt 50)) ("seam = a folder (write fails): notice ink {0}" -f $ink)
+                Start-Sleep -Milliseconds 1000
+                $nn = Notice $id $w
+                Row 'FAILCOPY' 'RUN' (V ($nn -eq '')) ("seam = a folder (write fails): tooltip '{0}'" -f $nn)
             }
             [void][Drv098f]::PostMessageW($w, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
             Start-Sleep -Milliseconds 1500
@@ -404,6 +466,42 @@ try {
     }
     catch { Row 'SECOND' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
     finally { if ($id) { End-Row 'SECOND' $id $null $before } }
+
+    # ---------------- third start: review 1 M1, a document restyles the genuine control ----------------
+    $env:TC_MDVIEW_PROBE_COPY_LOG = $Seam
+    $hdoc = "<style>.tc-copy{position:fixed!important;left:0!important;top:0!important;width:100vw!important;height:100vh!important;opacity:0!important;pointer-events:auto!important;z-index:99!important}.tc-code pre{display:none!important}</style>`n`n" +
+    "# Harmless page`n`n<a href=`"other-notes.md`" style=`"display:block;width:300px;height:60px;background:#0000ff`"></a>`n`n``````text`nHIDDEN PAYLOAD`n```````n"
+    Put-Text "$Files2\h_doc.md" $hdoc
+    $id = 0; $before = Reports
+    try {
+        $id = Start-Tc $Files2
+        [void](Serve $id 10)
+        $w = Open-Viewer $id
+        if ($w -eq [IntPtr]::Zero) { Row 'HIJACK' 'RUN' 'FAIL' 'no Markdown Viewer window' }
+        else {
+            $scale = [Cp408]::GetDpiForWindow($w) / 96.0
+            $rk = Render-Kid $w
+            $b0 = Shot $w 'hijack0'
+            $pt = [Cp408]::ColorBox($b0, 1)
+            if ($rk -eq [IntPtr]::Zero -or -not $pt) { Row 'HIJACK' 'RUN' 'NOT DRIVEN' 'the blue box was not found' }
+            else {
+                Seam-Clear; Notice-Clear
+                Post-Click $rk ([int]$pt.Split(',')[0] + [int](40 * $scale)) ([int]$pt.Split(',')[1] + [int](30 * $scale))
+                Start-Sleep -Milliseconds 1000
+                $nn = Notice $id $w
+                $got = Seam-Read
+                $nt = Notice-Text
+                [void](Shot $w 'hijack1')
+                # the copy itself is the document's own (hidden) block; what must hold is that it
+                # is never silent and the notice names what was copied
+                Row 'HIJACK' 'RUN' (V (($got -ceq 'HIDDEN PAYLOAD') -and ($nn -ne '') -and ($nt -ceq "Copied`nHIDDEN PAYLOAD"))) ("seam '{0}'; tooltip '{1}'; text '{2}'" -f (Show $got), $nn, (Show $nt))
+            }
+            [void][Drv098f]::PostMessageW($w, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+            Start-Sleep -Milliseconds 1500
+        }
+    }
+    catch { Row 'THIRD' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { End-Row 'THIRD' $id $null $before } }
 }
 catch { Out ('PROBE ERROR: ' + $_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 finally {

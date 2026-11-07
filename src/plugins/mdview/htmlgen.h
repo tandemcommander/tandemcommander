@@ -27,15 +27,16 @@ struct MdImageRef
 // byte). The texts are UTF-8 and are escaped by the generator.
 struct MdCopyUi
 {
-    std::string base;    // "https://mdview.invalid/tc-copy-<token>-<serial>/" or ""
+    std::string base;    // "https://mdcopy.invalid/<token>-<serial>/" or ""
     std::string label;   // the control's text ("Copy")
     std::string tooltip; // its title attribute
-    std::string copied;  // the notice shown after a copy ("Copied")
 };
 
 // Every copy address starts with this; the viewer consumes the whole family, so a
-// forged or stale one does nothing instead of reaching the other link rules.
-#define MD_COPY_FAMILY L"https://mdview.invalid/tc-copy-"
+// forged or stale one does nothing instead of reaching the other link rules. A host
+// of its own (review 1, M2): no document-relative link can resolve to it - a link
+// to a sibling file "tc-copy-notes.md" inside mdview.invalid stays a link.
+#define MD_COPY_FAMILY L"https://mdcopy.invalid/"
 
 struct MdHtmlResult
 {
@@ -80,10 +81,18 @@ bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
 
 // Feature 408: the text a code block's control puts on the clipboard - the block's
 // source (an entry of MdHtmlResult::codeBlocks) as UTF-16, without the line break
-// that ends its last line, U+0000 shown as U+FFFD (what the page shows), and every
-// LF not preceded by CR as CR LF (the Windows clipboard convention, as the Code
-// Viewer copies).
+// that ends its last line, without U+0000 (the page shows none - md4c even repeats a
+// NUL in its next text run, review 1 S2), and every LF not preceded by CR as CR LF
+// (the Windows clipboard convention, as the Code Viewer copies).
 std::wstring MdCodeClipboardText(const std::string& srcUtf8);
+
+// Feature 408 (review 1, M1): the text of the viewer's native notice after a copy -
+// 'copied' ("Copied"), then, on a second line, the first non-blank line of 'clip'
+// (an MdCodeClipboardText result) without its leading white space, cut at a whole
+// character to at most 'maxChars' characters plus an ellipsis. The page cannot
+// hide or restyle a native notice, so a copy is never silent and always says what
+// it copied. A blank 'clip' gives 'copied' alone.
+std::wstring MdCopyNoticeText(const std::wstring& copied, const std::wstring& clip, size_t maxChars);
 
 // Feature 408: classifies an activated address. MDCOPY_NONE: not in the
 // MD_COPY_FAMILY (the other link rules apply). MDCOPY_REFUSED: in the family but

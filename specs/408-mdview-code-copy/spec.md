@@ -9,7 +9,7 @@
 
 ### Session 2026-11-07
 
-- Q: What form does the *Copied* confirmation take, given that the page runs no script? → A: a small *Copied* notice in the bottom-right corner of the viewer, shown at once and fading out by itself; the control's own label does not change (measured: a fixed-position notice is shown by a same-document jump without scrolling, `fix-log.md` feasibility probe) (autonomous run: conservative)
+- Q: What form does the *Copied* confirmation take, given that the page runs no script? → A: a native notice of the viewer window (outside the page) at its bottom-right corner, reading *Copied* and the first line of what was copied, hidden after about 2.5 s; the control's own label does not change (autonomous run: conservative). Revised after review 1: the first answer, an in-page notice shown by CSS `:target`, could be hidden by the document's own CSS (a click on what looks like an ordinary link copied a hidden block silently, M1) and its fragment jump took the keyboard focus off the control (S1).
 - Q: Which line breaks does the copied text use? → A: the Windows line break (CR LF) for every line break, no line break after the last line (autonomous run: conservative — the Code Viewer's copy rule)
 - Q: Does a copy change anything stored or sent? → A: no — nothing is stored, nothing leaves the machine; `PRIVACY.md` needs no change (autonomous run: rule — CLAUDE.md *Public claims*)
 
@@ -99,8 +99,8 @@ own link to a copy address does not copy anything when clicked.
 - A code block whose last line ends the block: the copied text does not end with an
   extra line break that the block does not show.
 - Non-ASCII code (Czech, CJK, emoji): copied as Unicode, exactly.
-- A NUL character in the Markdown source: copied as the replacement character the page
-  shows.
+- A NUL character in the Markdown source: not copied (the page shows nothing for it;
+  review 1 S2).
 - The clipboard is busy (another program holds it): no *Copied* confirmation; nothing
   else happens.
 - View Source mode (Ctrl+U) shows the whole file as text: no copy controls there.
@@ -124,9 +124,13 @@ own link to a copy address does not copy anything when clicked.
   as Unicode text: the code content as the Markdown defines it, without highlighting,
   with each line break kept (as the Windows line break), without the line break that
   closes the block's last line, and nothing else.
-- **FR-004**: After a successful copy the viewer MUST show a brief *Copied* notice in
-  the bottom-right corner of the page that fades out by itself (about two seconds) and
-  MUST NOT scroll or reload the page; a second copy shows it again.
+- **FR-004**: After a successful copy the viewer MUST show a brief native *Copied*
+  notice (outside the page, so the document cannot hide or restyle it) in the
+  bottom-right corner of the viewer, naming the first line of what was copied, that
+  goes away by itself (about 2.5 s); the copy MUST NOT scroll or reload the page or move
+  the keyboard focus; a second copy shows it again.
+- **FR-004a**: A document-relative link MUST never be taken for a copy address (a
+  sibling file named `tc-copy-…` stays a link; review 1 M2).
 - **FR-005**: A failed copy (clipboard unavailable) MUST NOT show the confirmation.
 - **FR-006**: The viewer MUST stay script-free and send no web messages; the shared
   WebView2 host MUST NOT be copied, forked or relaxed.
@@ -176,6 +180,12 @@ own link to a copy address does not copy anything when clicked.
   the file's own line-break form, and the Windows clipboard convention is CR LF.
 - Assumption (autonomous run): the line break that ends a block's last line is not
   copied (the block shows no empty last line; documentation sites copy the same way).
+- Assumption (autonomous run, review 1 M1): the document's own CSS can restyle the
+  genuine control (raw HTML and inline styles are allowed since 021), so a click on what
+  looks like something else can copy one of the document's code blocks; this is
+  accepted because the copy is never silent - the native notice names what was copied -
+  and the copied text is the document's own visible-in-source code. Enabling scripts or
+  a confirmation step would be the maintainer's call (item Notes).
 - Assumption (autonomous run): if the operating system's random generator fails when
   the window opens, the window shows no copy controls (fail closed) rather than a
   guessable address.

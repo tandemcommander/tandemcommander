@@ -4,10 +4,9 @@
 
 | Field | Meaning |
 |---|---|
-| `base` (UTF-8) | `https://mdview.invalid/tc-copy-<token>-<serial>/`; empty = no controls |
+| `base` (UTF-8) | `https://mdcopy.invalid/<token>-<serial>/`; empty = no controls |
 | `label` (UTF-8) | the control's text (*Copy*) |
 | `tooltip` (UTF-8) | the control's `title` |
-| `copied` (UTF-8) | the notice's text (*Copied*) |
 
 All texts are HTML-escaped by the generator.
 
@@ -24,12 +23,12 @@ cleared by every render and by `MdBuildSourceHtml`.
 | `CopyToken` | 32 lowercase hex digits, made once at window creation; empty when the random generator failed (no controls) |
 | `CopySerial` | incremented by every rendered (non-source) rebuild |
 | `CopyBase` | the base of the current `Html` (wide), empty when no controls |
-| `CopyNotice` | 0/1, the notice used by the next copy |
+| `CopyTip` | the native notice (tracking tooltip), made on the first copy, destroyed with the window |
 
 ## Copy address states (`MdParseCopyLink`)
 
 | Result | When | Viewer does |
 |---|---|---|
-| `MDCOPY_NONE` | not in the `https://mdview.invalid/tc-copy-` family | the old link handling |
+| `MDCOPY_NONE` | not in the `https://mdcopy.invalid/` family | the old link handling |
 | `MDCOPY_REFUSED` | in the family, but not `base` + canonical decimal `< count` | nothing |
 | `MDCOPY_OK` | exact | copy entry *n*, show the notice on success |

@@ -53,7 +53,9 @@ public:
     unsigned CopySerial;    // counts the rendered (non-source) rebuilds; part of the
                             // address so a click on a replaced page copies nothing
     std::wstring CopyBase;  // the address prefix of the controls in Html ("" = none)
-    int CopyNotice;         // 0/1: the "Copied" notice the next copy shows
+    HWND CopyTip;           // the native "Copied" notice (a tracking tooltip), made on
+                            // the first copy; outside the page, so the page's CSS can
+                            // neither hide nor fake it (review 1, M1)
 
     int EnumFilesSourceUID;
     int EnumFilesCurrentIndex;
@@ -82,6 +84,8 @@ protected:
     void DoFind(BOOL forward, BOOL prompt);
     void ActivateLink(const std::wstring& uri);
     void CopyCodeBlock(size_t index); // feature 408
+    void ShowCopyNotice(const std::wstring& text);
+    void HideCopyNotice();
     void UpdateTitle();
     void EngineFailed();
 };
