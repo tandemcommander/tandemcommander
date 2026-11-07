@@ -4,7 +4,7 @@
 # MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
 #   -Exe      the build under test
 #   -MainExe  the build of main (CLASSIC-EQ); without it CLASSIC-EQ is NOT DRIVEN
-#   -Only     comma-separated row groups (DARK, CLASSIC, SWITCH, EXTRA, NARROW)
+#   -Only     comma-separated row groups (DARK, CLASSIC, SWITCH, DRAG, EXTRA, NARROW)
 [CmdletBinding()]
 param([Parameter(Mandatory = $true)][string]$Exe, [Parameter(Mandatory = $true)][string]$Repo, [string]$MainExe,
       [string]$OutFile, [string]$CapDir, [string]$Only)
@@ -102,8 +102,8 @@ public static class P418
     }
 
     // the grips of the default theme's rebar (a raised bar: a FFFFFF column, its A0A0A0 column two pixels right, the
-    // same rows, >= minV): the Dark theme shows none (comctl32 fills a grip's middle with the light system face) -
-    // its band face (2D2D2D) at the grip's place; the room stays (checked by the content columns)
+    // same rows, >= minV) must be drawn alike in the Dark capture: 464646 / the band face 2D2D2D / 1A1A1A (comctl32
+    // fills the middle with the light system face; ThemeRebarCustomDraw repaints it)
     public static string CheckGrips(Bitmap light, Bitmap dark, int h, int minV)
     {
         if (light.Width != dark.Width) return "FAIL width";
@@ -123,14 +123,14 @@ public static class P418
                     {
                         grips++;
                         int miss = 0;
-                        for (int i = y; i < e; i++) if (pd[i * w + x] != 0x2D2D2D || pd[i * w + x + 1] != 0x2D2D2D || pd[i * w + x + 2] != 0x2D2D2D) miss++;
-                        if (miss > 0) { bad++; if (bad <= 4) sb.AppendFormat(" x {0} y {1}-{2}: {3} rows not the face (Dark {4:X6} {5:X6} {6:X6})", x, y, e - 1, miss, pd[(y + 1) * w + x], pd[(y + 1) * w + x + 1], pd[(y + 1) * w + x + 2]); }
+                        for (int i = y; i < e; i++) if (pd[i * w + x] != 0x464646 || (i > y && pd[i * w + x + 1] != 0x2D2D2D) || pd[i * w + x + 2] != 0x1A1A1A) miss++;
+                        if (miss > 0) { bad++; if (bad <= 4) sb.AppendFormat(" x {0} y {1}-{2}: {3} rows not the Dark grip (Dark {4:X6} {5:X6} {6:X6})", x, y, e - 1, miss, pd[(y + 1) * w + x], pd[(y + 1) * w + x + 1], pd[(y + 1) * w + x + 2]); }
                         else sb.AppendFormat(" x {0} y {1}-{2}", x, y, e - 1);
                     }
                 }
                 y = e;
             }
-        return string.Format("{0} grips, {1} not the plain face in Dark;{2}", grips, bad, sb.ToString());
+        return string.Format("{0} grips, {1} not drawn alike in Dark;{2}", grips, bad, sb.ToString());
     }
 
     // the first column >= x0 of row y that differs from the background (the pixel at x0 of that row)
@@ -185,6 +185,25 @@ public static class P418
     }
 
     // differing pixels in rows 0..h-1, with the bounding box
+    // as DiffTop, with rectangles (x0, y0, x1, y1 exclusive, in fours) left out: the free-space figure of the
+    // directory lines changes whenever another program writes to the disk between two starts
+    public static string DiffMasked(Bitmap a, Bitmap b, int h, int[] mask)
+    {
+        if (a.Width != b.Width || a.Height < h || b.Height < h) return "size " + a.Width + "x" + a.Height + " vs " + b.Width + "x" + b.Height;
+        int w = a.Width; int[] pa = Pixels(a), pb = Pixels(b);
+        int n = 0, masked = 0, l = int.MaxValue, t = int.MaxValue, r = -1, bo = -1;
+        for (int i = 0; i < w * h; i++)
+        {
+            if (pa[i] == pb[i]) continue;
+            int x = i % w, y = i / w; bool m = false;
+            for (int k = 0; k + 3 < mask.Length; k += 4) if (x >= mask[k] && y >= mask[k + 1] && x < mask[k + 2] && y < mask[k + 3]) m = true;
+            if (m) { masked++; continue; }
+            n++; l = Math.Min(l, x); t = Math.Min(t, y); r = Math.Max(r, x); bo = Math.Max(bo, y);
+        }
+        string tail = masked > 0 ? string.Format(" ({0} in the free-space figures left out)", masked) : "";
+        return (n == 0 ? "0" : string.Format("{0} in ({1},{2})-({3},{4})", n, l, t, r, bo)) + tail;
+    }
+
     public static string DiffTop(Bitmap a, Bitmap b, int h)
     {
         if (a.Width != b.Width || a.Height < h || b.Height < h) return "size " + a.Width + "x" + a.Height + " vs " + b.Width + "x" + b.Height;
@@ -202,7 +221,7 @@ $StartDir = $Root + '\start'
 $CfgKey = "$RegKey\Settings\Configuration"
 if (-not $CapDir) { $CapDir = Join-Path $env:TEMP 'tc418_caps' }
 [void][IO.Directory]::CreateDirectory($CapDir)
-$Groups = if ($Only) { $Only.Split(',') } else { @('DARK', 'CLASSIC', 'SWITCH', 'EXTRA', 'NARROW') }
+$Groups = if ($Only) { $Only.Split(',') } else { @('DARK', 'CLASSIC', 'SWITCH', 'DRAG', 'EXTRA', 'NARROW') }
 function Want([string]$g) { return $Groups -contains $g }
 
 function Start-At([string]$ExePath) {
@@ -232,9 +251,10 @@ function Snap([int]$id, [string]$name) {
     $tabs = @([Cap416]::Kids($main) | Where-Object { [Cap416]::IsWindowVisible($_) -and [Cap416]::GetDlgCtrlID($_) -eq 958 } | Sort-Object { (Rel $main $_)[0] })
     $dirs = @([Cap416]::Kids($main) | Where-Object { [Cap416]::IsWindowVisible($_) -and [Cap416]::GetDlgCtrlID($_) -eq 952 } | Sort-Object { (Rel $main $_)[0] })
     $s = [pscustomobject]@{
-        Bmp = $full; Rebar = (Rel $main $rebar); Strip = (Rel $main $tabs[0]); Dir = (Rel $main $dirs[0])
+        Bmp = $full; Rebar = (Rel $main $rebar); Strip = (Rel $main $tabs[0]); Dir = (Rel $main $dirs[0]); Dirs = @($dirs | ForEach-Object { ,(Rel $main $_) })
         Style = ([int64][P418]::GetWindowLongPtr($rebar, -16)) -band 0xFFFFFFFF
         Bands = [int64][Cap416]::Send($rebar, 0x040C, [IntPtr]::Zero, [IntPtr]::Zero)
+        TopIndex = [int64][Cap416]::Send($rebar, 0x0410, [IntPtr]2, [IntPtr]::Zero)   # RB_IDTOINDEX(BANDID_TOPTOOLBAR)
         Text = 0
     }
     $st = $s.Strip
@@ -260,6 +280,8 @@ function Fresh([string]$exePath, [int]$theme, [string]$name, [scriptblock]$prep)
     Out ("  {0}: {1}" -f $name, (Desc $s))
     return $s
 }
+# the right 160 px of every directory line (the free-space figure)
+function FreeMask($s) { $m = @(); foreach ($r in $s.Dirs) { $m += @(($r[2] - 160), $r[1], $r[2], $r[3]) }; return [int[]]$m }
 # Dark vs Default with the same bars: rows, lines, no light lines, title row
 function Compare-Themes([string]$case, $L, $D) {
     $rowsEq = ($L.Rebar[3] -eq $D.Rebar[3]) -and ($L.Strip[1] -eq $D.Strip[1]) -and ($L.Strip[3] -eq $D.Strip[3]) -and ($L.Dir[1] -eq $D.Dir[1]) -and ($L.Dir[3] -eq $D.Dir[3])
@@ -304,8 +326,8 @@ try {
             $M = Fresh $MainExe 0 'main_default' $null
             $h = $L.Bmp.Height
             # (PowerShell names are case-insensitive: never $d / $l / $m here - they are $D / $L / $M)
-            $dClassic = [P418]::DiffTop($L.Bmp, $M.Bmp, [Math]::Min($h, $M.Bmp.Height))
-            Row 'CLASSIC' 'EQ' (V ($dClassic -eq '0')) ('Default theme, the whole client area {0}x{1} vs the build of main: {2} pixels differ' -f $L.Bmp.Width, $h, $dClassic)
+            $dClassic = [P418]::DiffMasked($L.Bmp, $M.Bmp, [Math]::Min($h, $M.Bmp.Height), (FreeMask $L))
+            Row 'CLASSIC' 'EQ' (V ($dClassic -match '^0( |$)')) ('Default theme, the whole client area {0}x{1} vs the build of main: {2} pixels differ' -f $L.Bmp.Width, $h, $dClassic)
             $M.Bmp.Dispose()
         }
         else { Row 'CLASSIC' 'EQ' 'NOT DRIVEN' 'no -MainExe' }
@@ -320,14 +342,14 @@ try {
         Start-Sleep -Milliseconds 2500
         $S = Snap $id 'switch_to_dark'
         Out ("  switch_to_dark: {0}" -f (Desc $S))
-        $d1 = [P418]::DiffTop($S.Bmp, $D.Bmp, $h)
-        Row 'SWITCH' 'TODARK' (V ($d1 -eq '0')) ('Default -> Dark at run time vs a fresh Dark start, rows 0-{0}: {1} pixels differ' -f ($h - 1), $d1)
+        $d1 = [P418]::DiffMasked($S.Bmp, $D.Bmp, $h, (FreeMask $D))
+        Row 'SWITCH' 'TODARK' (V ($d1 -match '^0( |$)')) ('Default -> Dark at run time vs a fresh Dark start, rows 0-{0}: {1} pixels differ' -f ($h - 1), $d1)
         Post-Cmd (Get-Main $id) 2943   # CM_THEME_DEFAULT
         Start-Sleep -Milliseconds 2500
         $S2 = Snap $id 'switch_back'
         Out ("  switch_back: {0}" -f (Desc $S2))
-        $d2 = [P418]::DiffTop($S2.Bmp, $L.Bmp, $h)
-        Row 'SWITCH' 'TOLIGHT' (V ($d2 -eq '0')) ('Dark -> Default at run time vs a fresh Default start, rows 0-{0}: {1} pixels differ' -f ($h - 1), $d2)
+        $d2 = [P418]::DiffMasked($S2.Bmp, $L.Bmp, $h, (FreeMask $L))
+        Row 'SWITCH' 'TOLIGHT' (V ($d2 -match '^0( |$)')) ('Dark -> Default at run time vs a fresh Default start, rows 0-{0}: {1} pixels differ' -f ($h - 1), $d2)
         Stop-Tc $id
         $S.Bmp.Dispose(); $S2.Bmp.Dispose()
     }
@@ -336,6 +358,31 @@ try {
     $prepExtra = { param($id) $m = Get-Main $id; Post-Cmd $m 2950; Start-Sleep -Milliseconds 1200; Post-Cmd $m 756; Start-Sleep -Milliseconds 1500 }
     $LE = $null
     if ((Want 'EXTRA') -or (Want 'NARROW')) { $LE = Fresh $Exe 0 'extra_default' $prepExtra }
+    if (Want 'DRAG') {
+        # the top toolbar's grip dragged onto the drive bar's row with posted mouse messages: the bands move in the
+        # default theme, and the Dark theme does the same (a grip that is drawn is a grip that works)
+        $prepDrag = {
+            param($id)
+            $m = Get-Main $id; Settle $m
+            $rb = @(Get-Desc $m 'ReBarWindow32')[0]
+            $o = New-Object Cap416+POINT; [void][Cap416]::ClientToScreen($rb, [ref]$o)
+            $mo = New-Object Cap416+POINT; [void][Cap416]::ClientToScreen($m, [ref]$mo)
+            $dx = $mo.x - $o.x; $dy = $mo.y - $o.y   # main-client -> rebar-client
+            $x = 5 + $dx; $y0 = 37 + $dy; $y1 = 64 + $dy
+            [void][Cap416]::PostMessageW($rb, 0x0201, [IntPtr]1, [IntPtr](($y0 -shl 16) -bor $x)); Start-Sleep -Milliseconds 300
+            foreach ($yy in ($y0 + 6), ($y0 + 14), ($y0 + 22), $y1) { [void][Cap416]::PostMessageW($rb, 0x0200, [IntPtr]1, [IntPtr](($yy -shl 16) -bor ($x + 40))); Start-Sleep -Milliseconds 200 }
+            [void][Cap416]::PostMessageW($rb, 0x0202, [IntPtr]0, [IntPtr](($y1 -shl 16) -bor ($x + 40))); Start-Sleep -Milliseconds 1200
+        }
+        $LG = Fresh $Exe 0 'drag_default' $prepDrag
+        $DG = Fresh $Exe 1 'drag_dark' $prepDrag
+        $moved = ($LG.TopIndex -ne $L.TopIndex)
+        $same = ($LG.TopIndex -eq $DG.TopIndex) -and ($LG.Rebar[3] -eq $DG.Rebar[3]) -and ($LG.Strip[1] -eq $DG.Strip[1])
+        $dragLines = [P418]::CheckLines($LG.Bmp, $DG.Bmp, $LG.Rebar[3], 40, 12)
+        $lOk = $dragLines -match '^(\d+) line pixels, 0 not' -and [int]$Matches[1] -gt 0
+        Row 'DRAG' 'MOVE' (V ($moved -and $same -and $lOk)) ('top toolbar band index {0} before, {1} / {2} after the drag; rebar bottom {3} / {4} (Default / Dark); lines: {5}' -f $L.TopIndex, $LG.TopIndex, $DG.TopIndex, $LG.Rebar[3], $DG.Rebar[3], $dragLines)
+        $LG.Bmp.Dispose(); $DG.Bmp.Dispose()
+    }
+
     if (Want 'EXTRA') {
         $DE = Fresh $Exe 1 'extra_dark' $prepExtra
         $changed = ($LE.Bands -ne $L.Bands) -and ($LE.Bands -eq $DE.Bands)

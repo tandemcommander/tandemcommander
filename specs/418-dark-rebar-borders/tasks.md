@@ -31,7 +31,7 @@
 
 - [X] T008 Build, saltests, check_encoding; run the probe; negative control on the main build (the Dark rows must FAIL there)
 - [X] T009 Independent refute-first review; fix MUST findings
-- [X] T011 [US1] Review 1 follow-up: Dark keeps the grip's room without the grip (ThemeDarkGripRoom in src/mainwnd1.cpp, the six band insertions), probe row GRIPS, NOLIGHT also for F0F0F0
+- [X] T011 [US1] Reviews 1-2 follow-up: grips in both themes (src/mainwnd1.cpp, the six band insertions), the Dark repaint of their light middle (ThemeRebarCustomDraw in src/themes.cpp, NM_CUSTOMDRAW in src/mainwnd3.cpp), probe rows GRIPS and DRAG, NOLIGHT also for F0F0F0
 - [ ] T010 Record after-measurement, review and results in specs/418-dark-rebar-borders/fix-log.md; FEATURE-HISTORY entry; closing-report.md
 
 ## Dependencies

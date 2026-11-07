@@ -956,29 +956,6 @@ void CMainWindow::StoreBandsPos()
     }
 }
 
-// feature 418: in the Dark theme a band keeps the room of its grip but shows none - comctl32 fills the
-// middle of a classic grip with the system face colour (a light stripe on the dark rebar, why feature 028
-// hid the grips). The band is inserted with its grip, so the rebar computes the grip's header width (at any
-// DPI); here it becomes grip-less with that width, and its contents start where they do in the default theme.
-// Call right after RB_INSERTBAND (before the rebar paints); a no-op in the default theme.
-static void ThemeDarkGripRoom(HWND hRebar, UINT bandID)
-{
-    if (!IsDarkThemeActive())
-        return;
-    int index = (int)SendMessage(hRebar, RB_IDTOINDEX, bandID, 0);
-    if (index < 0)
-        return;
-    REBARBANDINFO rbbi;
-    ZeroMemory(&rbbi, sizeof(rbbi));
-    rbbi.cbSize = sizeof(REBARBANDINFO);
-    rbbi.fMask = RBBIM_STYLE | RBBIM_HEADERSIZE;
-    if (!SendMessage(hRebar, RB_GETBANDINFO, (WPARAM)index, (LPARAM)&rbbi) || (rbbi.fStyle & RBBS_GRIPPERALWAYS) == 0)
-        return;
-    rbbi.fStyle = (rbbi.fStyle & ~RBBS_GRIPPERALWAYS) | RBBS_NOGRIPPER;
-    rbbi.fMask = RBBIM_STYLE | RBBIM_HEADERSIZE; // cxHeader: the grip's header width read above
-    SendMessage(hRebar, RB_SETBANDINFO, (WPARAM)index, (LPARAM)&rbbi);
-}
-
 BOOL CMainWindow::InsertMenuBand()
 {
     CALL_STACK_MESSAGE1("CMainWindow::InsertMenuBand()");
@@ -994,7 +971,7 @@ BOOL CMainWindow::InsertMenuBand()
     rbbi.cx = Configuration.MenuWidth;
     if (Configuration.MenuBreak)
         rbbi.fStyle |= RBBS_BREAK;
-    if (Configuration.GripsVisible) // Dark: the grip's room without the grip, ThemeDarkGripRoom (feature 418)
+    if (Configuration.GripsVisible) // both themes: Dark repaints the grip's light middle, ThemeRebarCustomDraw (feature 418)
         rbbi.fStyle |= RBBS_GRIPPERALWAYS;
     else
     {
@@ -1014,7 +991,6 @@ BOOL CMainWindow::InsertMenuBand()
 
     SendMessage(HTopRebar, RB_INSERTBAND,
                 (WPARAM)Configuration.MenuIndex, (LPARAM)&rbbi);
-    ThemeDarkGripRoom(HTopRebar, BANDID_MENU);
 
     return TRUE;
 }
@@ -1065,7 +1041,7 @@ BOOL CMainWindow::InsertTopToolbarBand()
     rbbi.cx = Configuration.TopToolbarWidth;
     if (Configuration.TopToolbarBreak)
         rbbi.fStyle |= RBBS_BREAK;
-    if (Configuration.GripsVisible) // Dark: the grip's room without the grip, ThemeDarkGripRoom (feature 418)
+    if (Configuration.GripsVisible) // both themes: Dark repaints the grip's light middle, ThemeRebarCustomDraw (feature 418)
         rbbi.fStyle |= RBBS_GRIPPERALWAYS;
     else
     {
@@ -1084,7 +1060,6 @@ BOOL CMainWindow::InsertTopToolbarBand()
         Configuration.TopToolbarIndex = count;
     SendMessage(HTopRebar, RB_INSERTBAND,
                 (WPARAM)Configuration.TopToolbarIndex, (LPARAM)&rbbi);
-    ThemeDarkGripRoom(HTopRebar, BANDID_TOPTOOLBAR);
     return TRUE;
 }
 
@@ -1102,7 +1077,7 @@ BOOL CMainWindow::InsertPluginsBarBand()
     rbbi.cx = Configuration.PluginsBarWidth;
     if (Configuration.PluginsBarBreak)
         rbbi.fStyle |= RBBS_BREAK;
-    if (Configuration.GripsVisible) // Dark: the grip's room without the grip, ThemeDarkGripRoom (feature 418)
+    if (Configuration.GripsVisible) // both themes: Dark repaints the grip's light middle, ThemeRebarCustomDraw (feature 418)
         rbbi.fStyle |= RBBS_GRIPPERALWAYS;
     else
     {
@@ -1121,7 +1096,6 @@ BOOL CMainWindow::InsertPluginsBarBand()
         Configuration.PluginsBarIndex = count;
     SendMessage(HTopRebar, RB_INSERTBAND,
                 (WPARAM)Configuration.PluginsBarIndex, (LPARAM)&rbbi);
-    ThemeDarkGripRoom(HTopRebar, BANDID_PLUGINSBAR);
     return TRUE;
 }
 
@@ -1139,7 +1113,7 @@ BOOL CMainWindow::InsertUMToolbarBand()
     rbbi.cx = Configuration.UserMenuToolbarWidth;
     if (Configuration.UserMenuToolbarBreak)
         rbbi.fStyle |= RBBS_BREAK;
-    if (Configuration.GripsVisible) // Dark: the grip's room without the grip, ThemeDarkGripRoom (feature 418)
+    if (Configuration.GripsVisible) // both themes: Dark repaints the grip's light middle, ThemeRebarCustomDraw (feature 418)
         rbbi.fStyle |= RBBS_GRIPPERALWAYS;
     else
     {
@@ -1159,7 +1133,6 @@ BOOL CMainWindow::InsertUMToolbarBand()
 
     SendMessage(HTopRebar, RB_INSERTBAND,
                 (WPARAM)Configuration.UserMenuToolbarIndex, (LPARAM)&rbbi);
-    ThemeDarkGripRoom(HTopRebar, BANDID_UMTOOLBAR);
     return TRUE;
 }
 
@@ -1177,7 +1150,7 @@ BOOL CMainWindow::InsertHPToolbarBand()
     rbbi.cx = Configuration.HotPathsBarWidth;
     if (Configuration.HotPathsBarBreak)
         rbbi.fStyle |= RBBS_BREAK;
-    if (Configuration.GripsVisible) // Dark: the grip's room without the grip, ThemeDarkGripRoom (feature 418)
+    if (Configuration.GripsVisible) // both themes: Dark repaints the grip's light middle, ThemeRebarCustomDraw (feature 418)
         rbbi.fStyle |= RBBS_GRIPPERALWAYS;
     else
     {
@@ -1197,7 +1170,6 @@ BOOL CMainWindow::InsertHPToolbarBand()
 
     SendMessage(HTopRebar, RB_INSERTBAND,
                 (WPARAM)Configuration.HotPathsBarIndex, (LPARAM)&rbbi);
-    ThemeDarkGripRoom(HTopRebar, BANDID_HPTOOLBAR);
     return TRUE;
 }
 
@@ -1223,7 +1195,7 @@ BOOL CMainWindow::InsertDriveBarBand(BOOL twoDriveBars)
     {
         if (Configuration.DriveBarBreak)
             rbbi.fStyle |= RBBS_BREAK;
-        if (Configuration.GripsVisible) // Dark: the grip's room without the grip, ThemeDarkGripRoom (feature 418)
+        if (Configuration.GripsVisible) // both themes: Dark repaints the grip's light middle, ThemeRebarCustomDraw (feature 418)
             rbbi.fStyle |= RBBS_GRIPPERALWAYS;
         else
             rbbi.fStyle |= RBBS_NOGRIPPER;
@@ -1248,7 +1220,6 @@ BOOL CMainWindow::InsertDriveBarBand(BOOL twoDriveBars)
             Configuration.DriveBarIndex = count;
         SendMessage(HTopRebar, RB_INSERTBAND,
                     (WPARAM)Configuration.DriveBarIndex, (LPARAM)&rbbi);
-        ThemeDarkGripRoom(HTopRebar, BANDID_DRIVEBAR);
     }
     return TRUE;
 }

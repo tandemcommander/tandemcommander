@@ -1,0 +1,28 @@
+rebar418_probe on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; main build C:\Users\pavel\AppData\Local\Temp\rev418\maintree\tandemcommander.exe; groups DARK,CLASSIC,SWITCH,DRAG,EXTRA,NARROW
+  default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+  dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+DARK       ROWS   PASS        rebar bottom 77 / 77; strip 77-106 / 77-106; dirline 106-129 / 106-129 (Default / Dark)
+DARK       STYLE  PASS        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00800400
+DARK       LINES  PASS        13838 line pixels, 0 not the Dark pair; matched rows 0-76; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 22
+DARK       NOLIGHT FAIL        light runs (A0A0A0, FFFFFF, F0F0F0) >= 12 px in the Dark rebar: 3: col 5 y 5-21 F0F0F0 col 5 y 30-47 F0F0F0 col 5 y 56-71 F0F0F0 (the same detector on the Default rebar: 4747)
+DARK       GRIPS  FAIL        3 grips, 3 not drawn alike in Dark; x 4 y 4-21: 17 rows not the Dark grip (Dark 464646 F0F0F0 1A1A1A) x 4 y 29-47: 18 rows not the Dark grip (Dark 464646 F0F0F0 1A1A1A) x 4 y 55-71: 16 rows not the Dark grip (Dark 464646 F0F0F0 1A1A1A) menu from x 19 / 19, top toolbar from x 15 / 15 (Default / Dark)
+DARK       TITLE  PASS        first title row 86 / 86; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
+  main_default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+CLASSIC    EQ     PASS        Default theme, the whole client area 1714x1101 vs the build of main: 0 pixels differ
+  switch_to_dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+SWITCH     TODARK PASS        Default -> Dark at run time vs a fresh Dark start, rows 0-128: 0 pixels differ
+  switch_back: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+SWITCH     TOLIGHT PASS        Dark -> Default at run time vs a fresh Default start, rows 0-128: 0 pixels differ
+  extra_default: rebar 0,0,1714,101; strip 1,101,831,130; dirline 1,130,831,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
+  drag_default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+  drag_dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+DRAG       MOVE   FAIL        rebar bottom 77 before, 77 / 77 after the drag (Default / Dark); lines: 13838 line pixels, 0 not the Dark pair; matched rows 0-76; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 22
+PROBE ERROR: Method invocation failed because [System.String] does not contain a method named 'Add'. @ at Out, E:\Projects\tandemcommander\specs\098-long-path-overruns\probe\fix_probe_lib.ps1: line 138
+at Row, E:\Projects\tandemcommander\specs\098-long-path-overruns\probe\fix_probe_lib.ps1: line 148
+at <ScriptBlock>, E:\Projects\tandemcommander\specs\418-dark-rebar-borders\probe\rebar418_probe.ps1: line 381
+Registry: restored; identical=True; SHA-256 before 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E / after 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E
+E:\Projects\tandemcommander\specs\418-dark-rebar-borders\probe\rebar418_probe.ps1 : Method invocation failed because [S
+ystem.String] does not contain a method named 'Add'.
+    + CategoryInfo          : InvalidOperation: (:) [rebar418_probe.ps1], RuntimeException
+    + FullyQualifiedErrorId : MethodNotFound,rebar418_probe.ps1
+ 

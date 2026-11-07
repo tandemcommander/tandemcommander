@@ -93,6 +93,11 @@ void ThemeUpdateWindowClassBackground(HWND hWindow, int lightSysColor);
 // shadow / highlight, in Default with the system colours (CLR_DEFAULT)
 void ThemeUpdateRebarStyle(HWND hRebar);
 
+// the rebar's NM_CUSTOMDRAW (answered by its parent): in the Dark theme the light middle comctl32 fills
+// a band grip with (the system face) becomes the band's background after the band is drawn; the grips
+// are shown in both themes, so the layout and dragging match (feature 418). CDRF_DODEFAULT in Default
+LRESULT ThemeRebarCustomDraw(HWND hRebar, LPNMCUSTOMDRAW cd);
+
 // central WM_CTLCOLOR* handling for dialog procs; returns TRUE when handled
 // (Dark theme) and stores the brush into 'result'; FALSE in the Default theme
 BOOL ThemeHandleCtlColor(UINT uMsg, WPARAM wParam, LPARAM lParam, INT_PTR* result);

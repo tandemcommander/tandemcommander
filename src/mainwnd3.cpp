@@ -5752,6 +5752,10 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
     {
         if (!Created)
             break;
+        // feature 418: the Dark repaint of the rebar grips' light middle (before the UI-lock
+        // test: a paint must not show the light stripe while the UI is locked)
+        if (HTopRebar != NULL && ((LPNMHDR)lParam)->hwndFrom == HTopRebar && ((LPNMHDR)lParam)->code == NM_CUSTOMDRAW)
+            return ThemeRebarCustomDraw(HTopRebar, (LPNMCUSTOMDRAW)lParam);
         if (HasLockedUI())
             break;
         LPNMHDR lphdr = (LPNMHDR)lParam;

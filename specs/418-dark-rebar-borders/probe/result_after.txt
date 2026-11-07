@@ -1,11 +1,11 @@
-rebar418_probe on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; main build C:\Users\pavel\AppData\Local\Temp\rev418\maintree\tandemcommander.exe; groups DARK,CLASSIC,SWITCH,EXTRA,NARROW
+rebar418_probe on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe; main build C:\Users\pavel\AppData\Local\Temp\rev418\maintree\tandemcommander.exe; groups DARK,CLASSIC,SWITCH,DRAG,EXTRA,NARROW
   default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
   dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
 DARK       ROWS   PASS        rebar bottom 77 / 77; strip 77-106 / 77-106; dirline 106-129 / 106-129 (Default / Dark)
 DARK       STYLE  PASS        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00800400
 DARK       LINES  PASS        13838 line pixels, 0 not the Dark pair; matched rows 0-76; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 22
 DARK       NOLIGHT PASS        light runs (A0A0A0, FFFFFF, F0F0F0) >= 12 px in the Dark rebar: 0 (the same detector on the Default rebar: 4747)
-DARK       GRIPS  PASS        3 grips, 0 not the plain face in Dark; x 4 y 4-21 x 4 y 29-47 x 4 y 55-71 menu from x 19 / 19, top toolbar from x 15 / 15 (Default / Dark)
+DARK       GRIPS  PASS        3 grips, 0 not drawn alike in Dark; x 4 y 4-21 x 4 y 29-47 x 4 y 55-71 menu from x 19 / 19, top toolbar from x 15 / 15 (Default / Dark)
 DARK       TITLE  PASS        first title row 86 / 86; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
   main_default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
 CLASSIC    EQ     PASS        Default theme, the whole client area 1714x1101 vs the build of main: 0 pixels differ
@@ -14,13 +14,16 @@ SWITCH     TODARK PASS        Default -> Dark at run time vs a fresh Dark start,
   switch_back: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
 SWITCH     TOLIGHT PASS        Dark -> Default at run time vs a fresh Default start, rows 0-128: 0 pixels differ
   extra_default: rebar 0,0,1714,101; strip 1,101,831,130; dirline 1,130,831,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
+  drag_default: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+  drag_dark: rebar 0,0,1714,77; strip 1,77,831,106; dirline 1,106,831,129; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 3; first title row 86
+DRAG       MOVE   PASS        top toolbar band index 1 before, 2 / 2 after the drag; rebar bottom 77 / 77 (Default / Dark); lines: 13838 line pixels, 0 not the Dark pair; matched rows 0-76; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 22
   extra_dark: rebar 0,0,1714,101; strip 1,101,831,130; dirline 1,130,831,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
 EXTRA      BARS   PASS        bands 3 -> 5 (Default) / 5 (Dark) after toggling the Plugins bar and the second drive bar
 EXTRA      ROWS   PASS        rebar bottom 101 / 101; strip 101-130 / 101-130; dirline 130-153 / 130-153 (Default / Dark)
 EXTRA      STYLE  PASS        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00800400
 EXTRA      LINES  PASS        17306 line pixels, 0 not the Dark pair; matched rows 0-100; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 31
 EXTRA      NOLIGHT PASS        light runs (A0A0A0, FFFFFF, F0F0F0) >= 12 px in the Dark rebar: 0 (the same detector on the Default rebar: 6223)
-EXTRA      GRIPS  PASS        3 grips, 0 not the plain face in Dark; x 4 y 4-21 x 4 y 29-45 x 4 y 53-71 menu from x 19 / 19, top toolbar from x 16 / 16 (Default / Dark)
+EXTRA      GRIPS  PASS        3 grips, 0 not drawn alike in Dark; x 4 y 4-21 x 4 y 29-45 x 4 y 53-71 menu from x 19 / 19, top toolbar from x 16 / 16 (Default / Dark)
 EXTRA      TITLE  PASS        first title row 110 / 110; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
   narrow_default: rebar 0,0,504,101; strip 1,101,243,130; dirline 1,130,243,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
   narrow_dark: rebar 0,0,504,101; strip 1,101,243,130; dirline 1,130,243,153; style 0x56802649 (WS_BORDER 1, RBS_BANDBORDERS 1); bands 5; first title row 110
@@ -29,7 +32,7 @@ NARROW     ROWS   PASS        rebar bottom 101 / 101; strip 101-130 / 101-130; d
 NARROW     STYLE  PASS        WS_BORDER|RBS_BANDBORDERS Default 0x00800400 Dark 0x00800400
 NARROW     LINES  PASS        5206 line pixels, 0 not the Dark pair; matched rows 0-100; vertical runs inside bands (grips, toolbar separators, pressed buttons) not counted: 29
 NARROW     NOLIGHT PASS        light runs (A0A0A0, FFFFFF, F0F0F0) >= 12 px in the Dark rebar: 0 (the same detector on the Default rebar: 1490)
-NARROW     GRIPS  PASS        3 grips, 0 not the plain face in Dark; x 4 y 4-21 x 4 y 29-45 x 4 y 53-71 menu from x 19 / 19, top toolbar from x 16 / 16 (Default / Dark)
+NARROW     GRIPS  PASS        3 grips, 0 not drawn alike in Dark; x 4 y 4-21 x 4 y 29-45 x 4 y 53-71 menu from x 19 / 19, top toolbar from x 16 / 16 (Default / Dark)
 NARROW     TITLE  PASS        first title row 110 / 110; from the frame line above the strip (rebar bottom - 2): 11 / 11 px
 Registry: restored; identical=True; SHA-256 before 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E / after 6A15A036D159C4E61620B00C72AB49C2DE9E7DEF07048258EE797A234AAFB40E
-Rows: PASS 23, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 24, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

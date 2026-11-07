@@ -290,6 +290,99 @@ void ThemeUpdateRebarStyle(HWND hRebar)
         RedrawWindow(hRebar, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_FRAME);
 }
 
+LRESULT ThemeRebarCustomDraw(HWND hRebar, LPNMCUSTOMDRAW cd)
+{
+    // feature 418: the classic rebar draws a band's grip with the colour scheme's highlight /
+    // shadow (dark in Dark, ThemeUpdateRebarStyle) but fills its middle with the system face
+    // brush - a light stripe on the dark rebar (why feature 028 hid the grips in Dark, which
+    // also moved the bands' contents and made them impossible to drag). After a band is drawn,
+    // the light face pixels of its header (the grip's area, left of the band's child) become the
+    // band's background. The default theme is left alone.
+    if (!IsDarkThemeActive() || cd == NULL)
+        return CDRF_DODEFAULT;
+    if (cd->dwDrawStage == CDDS_PREPAINT)
+        return CDRF_NOTIFYITEMDRAW;
+    if (cd->dwDrawStage == CDDS_ITEMPREPAINT)
+        return CDRF_NOTIFYPOSTPAINT;
+    if (cd->dwDrawStage != CDDS_ITEMPOSTPAINT || cd->hdc == NULL)
+        return CDRF_DODEFAULT;
+
+    // the band drawn: the one whose rectangle this is
+    int count = (int)SendMessage(hRebar, RB_GETBANDCOUNT, 0, 0);
+    int index = -1;
+    for (int i = 0; i < count && index < 0; i++)
+    {
+        RECT r;
+        if (SendMessage(hRebar, RB_GETRECT, (WPARAM)i, (LPARAM)&r) &&
+            r.left == cd->rc.left && r.top == cd->rc.top)
+            index = i;
+    }
+    if (index < 0)
+        return CDRF_DODEFAULT;
+    REBARBANDINFO rbbi;
+    ZeroMemory(&rbbi, sizeof(rbbi));
+    rbbi.cbSize = sizeof(REBARBANDINFO);
+    rbbi.fMask = RBBIM_STYLE;
+    if (!SendMessage(hRebar, RB_GETBANDINFO, (WPARAM)index, (LPARAM)&rbbi) ||
+        (rbbi.fStyle & RBBS_GRIPPERALWAYS) == 0)
+        return CDRF_DODEFAULT;
+    RECT borders; // left: the header (grip) plus the gap before the child
+    ZeroMemory(&borders, sizeof(borders));
+    SendMessage(hRebar, RB_GETBANDBORDERS, (WPARAM)index, (LPARAM)&borders); // returns no value
+    if (borders.left <= 0)
+        return CDRF_DODEFAULT;
+    int w = (int)borders.left;
+    if (w > cd->rc.right - cd->rc.left)
+        w = cd->rc.right - cd->rc.left;
+    int h = cd->rc.bottom - cd->rc.top;
+    if (w <= 0 || h <= 0 || w > 200 || h > 400)
+        return CDRF_DODEFAULT;
+
+    BITMAPINFO bi;
+    ZeroMemory(&bi, sizeof(bi));
+    bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bi.bmiHeader.biWidth = w;
+    bi.bmiHeader.biHeight = -h; // top-down
+    bi.bmiHeader.biPlanes = 1;
+    bi.bmiHeader.biBitCount = 32;
+    bi.bmiHeader.biCompression = BI_RGB;
+    void* bits = NULL;
+    HDC mem = CreateCompatibleDC(cd->hdc);
+    HBITMAP dib = mem != NULL ? CreateDIBSection(mem, &bi, DIB_RGB_COLORS, &bits, NULL, 0) : NULL;
+    if (dib != NULL && bits != NULL)
+    {
+        HGDIOBJ oldBmp = SelectObject(mem, dib);
+        if (BitBlt(mem, 0, 0, w, h, cd->hdc, cd->rc.left, cd->rc.top, SRCCOPY))
+        {
+            GdiFlush();
+            COLORREF light = GetSysColor(COLOR_BTNFACE);
+            COLORREF face = (COLORREF)SendMessage(hRebar, RB_GETBKCOLOR, 0, 0);
+            if (face == CLR_DEFAULT || face == CLR_NONE)
+                face = ThemeSysColor(COLOR_BTNFACE);
+            DWORD lightPx = ((DWORD)GetRValue(light) << 16) | ((DWORD)GetGValue(light) << 8) | GetBValue(light);
+            DWORD facePx = ((DWORD)GetRValue(face) << 16) | ((DWORD)GetGValue(face) << 8) | GetBValue(face);
+            DWORD* px = (DWORD*)bits;
+            int changed = 0;
+            for (int i = 0; i < w * h; i++)
+            {
+                if ((px[i] & 0x00FFFFFF) == lightPx)
+                {
+                    px[i] = facePx;
+                    changed++;
+                }
+            }
+            if (changed > 0 && lightPx != facePx)
+                BitBlt(cd->hdc, cd->rc.left, cd->rc.top, w, h, mem, 0, 0, SRCCOPY);
+        }
+        SelectObject(mem, oldBmp);
+    }
+    if (dib != NULL)
+        DeleteObject(dib);
+    if (mem != NULL)
+        DeleteDC(mem);
+    return CDRF_DODEFAULT;
+}
+
 //
 // ****************************************************************************
 // Dialog theming
@@ -1479,8 +1572,7 @@ void SetThemeMode(DWORD mode)
     if (MainWindow != NULL && MainWindow->HWindow != NULL)
     {
         // rebar band grippers are classic-drawn (light-only): re-insert the
-        // bands so the gripper style matches the new theme (Dark keeps the
-        // grip's room without the grip - ThemeDarkGripRoom, feature 418)
+        // bands so the gripper style matches the new theme
         if (MainWindow->HTopRebar != NULL)
             MainWindow->RebuildRebarBands();
         // DWM title bar + per-child theming (scrollbars, combos, ...)

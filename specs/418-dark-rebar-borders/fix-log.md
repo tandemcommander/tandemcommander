@@ -103,3 +103,37 @@ Backlog item `dark-theme-panel-tabs-look-lower-than-in-the-default-theme`. HEAD0
   (16 / 16 with the extra bars and narrow); everything else as before. Negative control on main
   (`result_negative_main.txt`): **10 FAIL** (ROWS, STYLE, LINES, GRIPS, TITLE for DARK and EXTRA). saltests
   286948 / 0, build succeeded.
+
+## Review 2 and the grips, second form
+
+- Review 2 (refute-first, on `ThemeDarkGripRoom`): **MUST 0, SHOULD 0**, NOTE 4. It measured comctl32 v6 in a
+  standalone rebar: the header width is right at insert time and the saved band layout (`StoreBandsPos`: break and
+  cx) is unchanged. NOTE 1: **in Dark the bands cannot be dragged** (a grip-less band hit-tests `RBHT_CAPTION`, no
+  `RBN_BEGINDRAG`) - true before 418 too (`cxHeader 2`); severity 4 (a function without effect, workaround: switch
+  to Default) -> fixed here (rule 11). NOTE 2: a High Contrast switch at run time does not re-insert the bands -
+  moot after the change below (the insertion no longer depends on the theme). NOTE 3: content columns checked for
+  two bands only - the six bands share one path; the DRAG row adds a third. NOTE 4: no flash expected - moot.
+- Second form: the grips are inserted in both themes again (the condition of the six insertions is only
+  `GripsVisible`; `ThemeDarkGripRoom` removed); the rebar draws them with the dark scheme, and
+  `ThemeRebarCustomDraw` (`src/themes.cpp`, from the main window's `WM_NOTIFY` before the UI-lock test) repaints
+  the light middle: in Dark it asks for item notifications, and at `CDDS_ITEMPOSTPAINT` (`rc` = the band's header,
+  `dwItemSpec` = the band id - measured) copies the header area of a band with a grip, turns the pixels of exactly
+  `GetSysColor(COLOR_BTNFACE)` into the band background (`RB_GETBKCOLOR`) and copies it back. Default:
+  `CDRF_DODEFAULT` at the first stage (no item notifications; CLASSIC 0 px).
+  - Attempt 1 (`result_grips_attempt1.txt`): NOLIGHT / GRIPS FAIL - F0F0F0 still in the middle of all 3 grips
+    (the control that the rows catch the stripe); temporary logging showed the item stages arrive and the code
+    returned early: `RB_GETBANDBORDERS` returns no value, the success test always failed. Fixed (the rectangle is
+    zeroed and tested); logging removed (checked: no trace left). The same run: the DRAG row's criterion (rebar
+    height) was wrong - the drag moved the top toolbar under the drive bar (same height); now the band order
+    (`RB_IDTOINDEX`). A probe variable `$lines` had overwritten the library's `$Lines` (case-insensitive) - renamed.
+  - Trap met on the way: a Git Bash `sed -i` stripped the CRs of `themes.cpp` and a here-document turned a `
+`
+    into a line break - repaired byte-wise (Python), the debug code then added with the editor.
+  - A probe flake: CLASSIC / SWITCH failed once on 80 px - the free-space figure of the directory lines ("91,2 GB"
+    / "91 GB", another program wrote to C: between two starts); the comparisons now leave out the right 160 px of
+    each directory line and report how many pixels they left out.
+- **Final (`result_after.txt`): PASS 24, FAIL 0, NOT DRIVEN 0** - GRIPS: 3 grips drawn alike (464646 / 2D2D2D /
+  1A1A1A), menu from x 19 / 19, top toolbar 15 / 15; DRAG: the top toolbar's grip dragged onto the drive bar's
+  row moves it from index 1 to 2 in both themes, the same rows and dark lines after; the rest as before.
+  **Negative control on main (`result_negative_main.txt`): 11 FAIL** (DARK / EXTRA ROWS, STYLE, LINES, GRIPS,
+  TITLE; DRAG - Dark index stays 1). saltests 286948 / 0, build succeeded.
