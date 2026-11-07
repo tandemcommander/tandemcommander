@@ -1,16 +1,16 @@
 ---
 title: Live run view: a human-readable dashboard with story, metrics, gallery and chat
 type: feature
-status: open
+status: in-progress
 severity: 4
 area: tooling
 source: manual
 who: agent
 created: 2026-11-07
 updated: 2026-11-07
-verified: -
+verified: 2026-11-07 90667c3f
 effort: L
-feature: -
+feature: 415
 related: []
 depends-on: []
 reason: -
@@ -136,3 +136,5 @@ item conversation as a panel.
 
 - 2026-11-07 — created (source manual)
 - 2026-11-07 — moved to Next position 1: maintainer asked to implement it now; maintainer 2026-11-07
+- 2026-11-07 — verified at 90667c3f: still present at 90667c3f: live page renders only RunSummary + TraceView; tokens 0, cost only at result lines
+- 2026-11-07 — run started, feature 415
