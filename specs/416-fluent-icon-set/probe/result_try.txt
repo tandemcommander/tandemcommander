@@ -1,0 +1,31 @@
+331174 cls 'ReBarWindow32' id 0 parent 724398 rect 409,175-2123,252
+17434854 cls 'WinLib Universal Window2' id 0 parent 331174 rect 420,228-2121,250
+1707372 cls 'WinLib Universal Window2' id 0 parent 331174 rect 420,202-2121,226
+47515876 cls 'WinLib Universal Window2' id 0 parent 331174 rect 420,177-2121,200
+8064180 cls 'WinLib Universal Window2' id 0 parent 724398 rect 410,252-1240,1230
+462236 cls 'WinLib Universal Window2' id 951 parent 8064180 rect 410,1210-1240,1230
+32509046 cls 'WinLib Universal Window2' id 952 parent 8064180 rect 410,281-1240,304
+8325164 cls 'WinLib Universal Window2' id 0 parent 32509046 rect 410,281-443,304
+462214 cls 'SalamanderItemsBox' id 950 parent 8064180 rect 410,304-1240,1210
+5966326 cls 'WinLib Universal Window2' id 0 parent 462214 rect 411,1192-1239,1209
+43321128 cls 'ScrollBar' id 0 parent 5966326 rect 411,1192-1222,1209
+1445144 cls 'ScrollBar' id 0 parent 462214 rect 1222,305-1239,1192
+2427934 cls 'WinLib Universal Window2' id 0 parent 462214 rect 411,305-1222,324
+2100808 cls 'WinLib Universal Window2' id 958 parent 8064180 rect 410,252-1240,281
+787310 cls 'WinLib Universal Window2' id 0 parent 724398 rect 1243,252-2122,1230
+27066646 cls 'WinLib Universal Window2' id 951 parent 787310 rect 1243,1210-2122,1230
+265666 cls 'WinLib Universal Window2' id 952 parent 787310 rect 1243,281-2122,304
+265664 cls 'WinLib Universal Window2' id 0 parent 265666 rect 1243,281-1276,304
+90440132 cls 'SalamanderItemsBox' id 950 parent 787310 rect 1243,304-2122,1210
+7864904 cls 'WinLib Universal Window2' id 0 parent 90440132 rect 1244,1192-2121,1209
+331206 cls 'ScrollBar' id 0 parent 7864904 rect 1244,1192-2104,1209
+789872 cls 'ScrollBar' id 0 parent 90440132 rect 2104,305-2121,1192
+42667228 cls 'WinLib Universal Window2' id 0 parent 90440132 rect 1244,305-2104,324
+3802062 cls 'WinLib Universal Window2' id 958 parent 787310 rect 1243,252-2122,281
+331290 cls 'WinLib Universal Window2' id 0 parent 724398 rect 410,1255-2122,1276
+134676 cls 'ComboBox' id 955 parent 724398 rect 409,1232-2123,1255
+331254 cls 'Edit' id 1001 parent 134676 rect 695,1236-2103,1251
+134656 cls 'Static' id 957 parent 134676 rect 413,1236-695,1251
+client-only: 1714x1101 colours 1455 top 79,3%
+full-content: 1714x1101 colours 1455 top 79,3%
+Registry: restored; identical=True; SHA-256 before B14C5B8A12267DF6301F8F63B8526238362DAEE6A4B0B452EAF127AC034C41CC / after B14C5B8A12267DF6301F8F63B8526238362DAEE6A4B0B452EAF127AC034C41CC

@@ -103,3 +103,69 @@ to Classic in Appearance. Branch `416-fluent-icon-set`, from `main` at e72ddd38.
   palette rule (outline >= 3:1 on the face; outline or underlay / halo >= 3:1 on the highlight), 0 problems.
 - `python -I tools/brand/fluent-icons/gen_fluent.py <pinned package>` regenerates the 190 files byte-identical.
 - `.\build.cmd`: BUILD SUCCEEDED.
+
+## Translations (stop-rules 2.13, module salamand)
+
+- Entries (step 0): dialog IDD_CFGPAGE_APPEARANCE (DIALOG 595) new controls 6291 group " Toolbar &icons ",
+  6292 "Fl&uent 2", 6293 "C&lassic", 6294 / 6295 owner-drawn statics (""); no changed English text, no
+  string-table change (step 2 not needed).
+- `.\build.cmd` -> BUILD SUCCEEDED; `build_langs.cmd --export-templates --module salamand` -> 1/1.
+- Dry run: 3 unique gaps, ~33 chars per language (8 languages) = the 3 new texts.
+- Pins before the merge (`translations/ui-overrides.json`, salamand, `_feature_416`): IDC_ICONSET_FLUENT
+  "Fl&uent 2" in all 8 languages (a name).
+- Merge `--budget 2528`: 240 DeepL characters, validation failures 0, duplicate accelerators 147 -> 148.
+- Read-back: cs / sk kept the English "&Classic" -> pinned "&Klasická" (accelerator k; c is taken on the
+  page); es "Fl&uent 2" clashed with "&Un solo click" -> pinned "Flu&ent 2". Others: de " S&ymbolleisten-Symbole "
+  / "C&lassic", fr " &Icônes de la barre d'outils " / "Cla&ssique", nl " &Pictogrammen op de werkbalk " /
+  "K&lassiek", hu " Eszköztár &ikonok " / "Kl&asszikus", ro " P&ictograme din bara de instrumente " /
+  "C&lassic", es " Iconos &de la barra de herramientas " / "C&lásico"; no informal register (no pronouns).
+- Second merge: duplicate accelerators back to 147 (baseline), validation failures 0; `translate.slt --verify`:
+  298 files, round-trip byte-exact. Layout drift: none (the diff holds only the 5 new rows per language and
+  their `.origin` keys). `.\build.cmd full` -> exit 0, 189 language modules.
+
+## Probe (iconset416_probe.ps1, hidden desktop)
+
+Command: `powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\416-fluent-icon-set\probe\result_after.txt
+-CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File specs\416-fluent-icon-set\probe\iconset416_probe.ps1
+-Exe build\tandemcommander\Debug_x64\tandemcommander.exe -Before %TEMP%\tc416\before_build\tandemcommander.exe -Label after"`.
+The "before" side is the build of `main` inside the same run (rows CLASSIC-EQ, OVR-CLASSIC-BEFORE).
+
+- Capture method measured first (`try416_capture.ps1`, `result_try.txt`): PrintWindow client-only shows the
+  rebar, toolbars and panels on the hidden desktop.
+- Run 1 (`result_after_run1.txt`): PASS 31, FAIL 4 - all probe defects: the directory line's free-space
+  text changes between runs (now only its drive icon is compared); the computed dialog base unit 6.44 vs
+  the live 6.00 (now taken from the live English page); the English template path (one Split-Path too
+  many). Earlier dev run: the tree dialog's OK is id 5 (`_TPD_IDC_OK`) - posting IDOK ended the dialog
+  without the pages' Transfer; the focused `..` row is drawn with the icon tincture (the probe now moves the
+  caret down).
+- Run 2 (`result_after.txt`): **PASS 35, FAIL 0, NOT DRIVEN 3**; registry restored, SHA-256 identical.
+  - CLASSIC-EQ light / dark: build of main vs Classic: rebar, files, dirline 0 px differ.
+  - DEFAULT light / dark: no value = value 0 = value 2 = REG_SZ (no error box): 0 px; Fluent vs Classic
+    rebar ~4900 / ~5000 px differ; `..` navigation blue #0F6CBD / #62ABF5: Fluent 45 px, Classic 0.
+  - SWITCH: 29 tree items walked to the page; Fluent checked; previews 312 / 173 colours, 1688 px differ;
+    Classic clicked + OK -> rebar = Classic capture (0 px) without restart; stored 0x1; restart = Classic.
+  - PAGE light / dark: previews drawn and different.
+  - FIT: live base unit 6.00 / 6.01; all 3 labels fit in English and the 8 languages (widest "Pictograme din
+    bara de instrumente" 170 / 427 px, radios <= 47 / 88 px).
+  - OVR-FLUENT: 95 empty dark overrides (Copy.svg not an SVG) = no dark folder (0 px); hand-made dark files
+    differ from the adapted standard files (verbatim use measured).
+  - OVR-CLASSIC-AFTER: 63 empty overrides in toolbars\dark = no overrides (0 px).
+  - OVR-CLASSIC-BEFORE (negative control on the build of main): 5143 px differ - the defect (blank cells).
+  - NOT DRIVEN: a menu opened by a real keyboard / mouse; hot / pressed states; 125-200 % DPI -> release
+    checklist lines (manual-checks-owed-before-the-next-release, 5 lines, feature 416).
+
+## Deviations (stop-rules rule 14)
+
+- The item asked the probe to capture at 100 % and 150 %; the hidden desktop's system DPI is fixed for the
+  session. 125 / 150 / 200 % are covered by saltests (every file rasterized at 20 / 24 / 32 px with the
+  program's rasterizer) and a release-checklist line for a real scaled screen - a person check (rule 9),
+  so no Inbox item.
+- A menu capture is not driven (no real keyboard / mouse on the hidden desktop); the menus draw from the
+  same image lists the probe captured on the toolbar; release-checklist line.
+
+## PRIVACY.md
+
+Not affected (confirmed): no network communication; the new value "Toolbar Icon Set" is one of "the
+settings" stored in `HKEY_CURRENT_USER\Software\Tandem Commander` that the statement already describes; the
+installer copies more program files (`iconsets\fluent\`), which "It copies the program files" covers, and
+uninstalling removes them as program files; nothing about credentials or crash reports changes.

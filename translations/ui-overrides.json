@@ -315,7 +315,9 @@
       "IDC_UPDN_SKIP": "Př&eskočit tuto verzi",
       "IDC_UPDC_TEXT": "Kontroluje se nová verze...",
       "IDC_CHECKNEWVERSION": "Kontrolovat &novou verzi programu Tandem Commander při spuštění",
-      "IDS_CANNOTMOVEDIRINTOITSELF": "Nelze přesunout adresář do sebe sama ani do jednoho z jeho podadresářů."
+      "IDS_CANNOTMOVEDIRINTOITSELF": "Nelze přesunout adresář do sebe sama ani do jednoho z jeho podadresářů.",
+      "IDC_ICONSET_FLUENT": "Fl&uent 2",
+      "IDC_ICONSET_CLASSIC": "&Klasická"
     },
     "slovak": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Presunúť do druhého panelu",
@@ -351,7 +353,9 @@
       "IDS_UPDATE_CHECKNOWLINK": "Skontrolovať teraz",
       "IDS_UPDATE_ERR_START": "Novú verziu sa nepodarilo skontrolovať: kontrolu sa nepodarilo spustiť. Skúste to znova.",
       "IDC_QUICKSEARCH_FILTER": "Rýchle hľadanie: &text kdekoľvek v názve, zobraziť len zhody",
-      "IDS_CFGMIGRATE_FAILED": "Program Tandem Commander nemohol presunúť vaše nastavenia na nové miesto v registri (HKEY_CURRENT_USER\\\\%s).\\n\\nTentoraz ich používa tam, kde sa nachádzajú (HKEY_CURRENT_USER\\\\%s), a pri ďalšom spustení to skúsi znova. Nič nebolo odstránené."
+      "IDS_CFGMIGRATE_FAILED": "Program Tandem Commander nemohol presunúť vaše nastavenia na nové miesto v registri (HKEY_CURRENT_USER\\\\%s).\\n\\nTentoraz ich používa tam, kde sa nachádzajú (HKEY_CURRENT_USER\\\\%s), a pri ďalšom spustení to skúsi znova. Nič nebolo odstránené.",
+      "IDC_ICONSET_FLUENT": "Fl&uent 2",
+      "IDC_ICONSET_CLASSIC": "&Klasická"
     },
     "german": {
       "IDS_MENU_TAB_MOVETOOTHER": "In das andere &Fenster verschieben",
@@ -403,7 +407,8 @@
       "IDS_PACKINTOITSELF": "Ein Archiv kann nicht in sich selbst gepackt werden. Lassen Sie das Archiv (oder das Verzeichnis, in dem es sich befindet) bei der Auswahl weg.",
       "IDC_QUICKSEARCH_FILTER": "Schnellsuche: Text überall im Namen &finden, nur Treffer anzeigen",
       "#mask hints": "Maskenhinweise",
-      "#extended mask hints": "erweiterte Maskenhinweise"
+      "#extended mask hints": "erweiterte Maskenhinweise",
+      "IDC_ICONSET_FLUENT": "Fl&uent 2"
     },
     "french": {
       "IDS_MENU_TAB_MOVETOOTHER": "Dé&placer vers l'autre panneau",
@@ -444,7 +449,8 @@
       "IDS_PACKINTOITSELF": "Impossible de compresser une archive dans elle-même. N'incluez pas l'archive (ou le répertoire qui la contient) dans la sélection.",
       "IDC_QUICKSEARCH_FILTER": "Recherche rapide : texte &partout dans le nom, seuls les résultats affichés",
       "#mask hints": "aide sur les masques",
-      "#extended mask hints": "aide sur les masques étendus"
+      "#extended mask hints": "aide sur les masques étendus",
+      "IDC_ICONSET_FLUENT": "Fl&uent 2"
     },
     "dutch": {
       "IDS_MENU_TAB_MOVETOOTHER": "Naar ander paneel &verplaatsen",
@@ -477,7 +483,8 @@
       "IDC_UPDN_ATSTARTUP": "Bij het opstarten &controleren op een nieuwe versie",
       "IDS_PACKINTOITSELF": "Een archief kan niet in zichzelf worden ingepakt. Laat het archief (of de map waarin het staat) buiten de selectie.",
       "IDS_CANNOTCOPYDIRTOITSELF": "Een map kan niet naar zichzelf worden gekopieerd.",
-      "IDS_CANNOTMOVEDIRINTOITSELF": "Een map kan niet naar zichzelf of naar een van de submappen worden verplaatst."
+      "IDS_CANNOTMOVEDIRINTOITSELF": "Een map kan niet naar zichzelf of naar een van de submappen worden verplaatst.",
+      "IDC_ICONSET_FLUENT": "Fl&uent 2"
     },
     "hungarian": {
       "IDS_MENU_TAB_MOVETOOTHER": "Át&helyezés a másik panelre",
@@ -505,7 +512,8 @@
       "IDS_CANNOTMOVEDIRINTOITSELF": "Egy mappát nem lehet önmagába vagy valamelyik almappájába áthelyezni.",
       "IDS_PACKINTOITSELF": "Egy archívumot nem lehet önmagába csomagolni. Hagyja ki az archívumot (vagy az azt tartalmazó mappát) a kiválasztásból.",
       "IDC_QUICKSEARCH_FILTER": "Gyorskeresés: szöveg a név &bármely részén, csak az egyezések látszanak",
-      "IDS_QUICKSEARCH_STATUS": "Keresés: %s (%d / %d)"
+      "IDS_QUICKSEARCH_STATUS": "Keresés: %s (%d / %d)",
+      "IDC_ICONSET_FLUENT": "Fl&uent 2"
     },
     "romanian": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mutare în celălalt panou",
@@ -529,7 +537,8 @@
       "#Check for New Version": "Verificare versiune nouă",
       "IDC_QUICKSEARCH_FILTER": "Căutare rapidă: text oriunde în n&ume, afișează doar potrivirile",
       "#mask hints": "indicii pentru măști",
-      "#extended mask hints": "indicii pentru măști extinse"
+      "#extended mask hints": "indicii pentru măști extinse",
+      "IDC_ICONSET_FLUENT": "Fl&uent 2"
     },
     "spanish": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mover al otro panel",
@@ -565,7 +574,8 @@
       "IDC_QUICKSEARCH_FILTER": "Búsqueda rápida: texto en cualquier &parte del nombre, solo coincidencias",
       "IDS_CFGMIGRATE_FAILED": "Tandem Commander no ha podido trasladar su configuración a su nueva ubicación en el Registro (HKEY_CURRENT_USER\\\\%s).\\n\\nEn esta ocasión, la utilizará en su ubicación actual (HKEY_CURRENT_USER\\\\%s) y volverá a intentarlo la próxima vez que se inicie. No se ha eliminado nada.",
       "#mask hints": "ayuda de plantillas",
-      "#extended mask hints": "ayuda de plantillas ampliadas"
+      "#extended mask hints": "ayuda de plantillas ampliadas",
+      "IDC_ICONSET_FLUENT": "Flu&ent 2"
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -627,6 +637,10 @@
     "_feature_409": [
       "The mask-hints link (IDC_FILEMASK_HINT, 11 dialogs, GitHub #11) was clipped: shorter natural wordings for de/fr/es (de 'Maskenhinweise' - one compound word, was 'Masken Hinweise'; D2350 'erweiterte' = extended, was 'Zusätzliche' = additional; fr 'aide sur les masques', was 'indications sur les masques'; es 'ayuda de plantillas' with the corpus's 'plantilla' for a mask).",
       "ro 'indicii pentru măști' = hints for masks; was 'mascheaza indiciile' (masks the hints) in Compare Directories and 'masca indicii' in four dialogs. Keys are the English text: id 102 is shared by other controls of salamand. The width comes from src/lang/lang.rc (84 / 120 du), at least the merge's estimate of every pinned text so layout.widen() does not grow the right-aligned link to the right."
+    ],
+    "_feature_416": [
+      "Configuration > Appearance > Toolbar icons: 'Fluent 2' is the name of the icon set (built on Microsoft Fluent UI System Icons) - a name, kept as written in every language; accelerator u as in English, e in Spanish (u is 'Un solo click' there).",
+      "Czech / Slovak: DeepL kept the English 'Classic'; the set is 'Klasická' (sada), accelerator k (c is taken on the page)."
     ]
   },
   "zip": {

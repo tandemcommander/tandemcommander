@@ -52,6 +52,11 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Backlog app state folder repaired on the maintainer's tree: start the app once (`bin/start-backlog-app.sh`), then `Get-Acl` over `.git/tandem-backlog-app` shows no entry with an empty protected DACL (`D:PAI` alone; 375 before), `main-worktree/.git` and `events.jsonl` readable, and a change made in the app during a run lands on `main` (feature 412)
 - [ ] Panel tab drag to the first place with a real mouse: in the left and in the right panel drag a tab that is not the first one to the left end of the strip and release - it becomes the first tab; with more tabs than fit, it becomes the first of the tabs shown (feature 413)
 - [ ] Panel tab strip, Default and Dark theme side by side (also at a scaling other than 100 %): the strip looks equally high in both; in the Dark theme the inactive panel's active tab is a visible rounded tab (a lighter grey than its directory line, its title readable), likewise with a user colour scheme whose caption colour is close to the strip; tell whether the Dark theme still looks lower anywhere (feature 413)
+- [ ] Toolbar icons on a real screen, Default and Dark theme, at your usual display scaling: with no choice made the program shows the Fluent 2 set - top and panel toolbars, drive bar and Change Drive menu, the `..` symbol of the file list, the toolbars of the configuration lists - legible and consistent; Configuration > Appearance > Toolbar icons shows both previews, Classic + OK switches at once (no restart) to exactly the 0.2.0 look, Fluent 2 + OK switches back (feature 416)
+- [ ] Menus with icons (Files, Commands, the panel context menus) in the Fluent 2 set, both themes, with a real mouse or keyboard: every icon stays recognisable on the highlighted row and greyed items stay readable (feature 416)
+- [ ] Toolbar buttons hot and pressed with a real mouse, both icon sets and both themes: no icon disappears; disabled buttons stay discernible (feature 416)
+- [ ] Fluent 2 icons at 125 %, 150 % and 200 % display scaling: sharp, centred in their buttons, not clipped (toolbar, drive bar, `..`, the Appearance previews) (feature 416)
+- [ ] Configuration > Appearance in Czech and German: the Toolbar icons group, its two choices and previews fit and read well (feature 416)
 
 ## Log
 
@@ -67,3 +72,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-07 — feature 408: 3 checks added
 - 2026-11-07 — feature 412: one check added
 - 2026-11-07 — edited Steps
+- 2026-11-07 — feature 416: 5 checks added

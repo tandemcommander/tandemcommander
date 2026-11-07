@@ -117,6 +117,16 @@ MD4C is distributed under the MIT license (see doc\license\license_mit.txt and
 src\common\dep\md4c\LICENSE.md).
 Copyright (c) 2016-2026 Martin Mitas
 
+=== Microsoft Fluent UI System Icons ===
+The default toolbar, menu, drive and file-list icons ("Fluent 2" icon set) are
+built from Microsoft Fluent UI System Icons
+(https://github.com/microsoft/fluentui-system-icons, npm @fluentui/svg-icons
+1.1.344), recoloured and combined for Tandem Commander (generator in
+tools\brand\fluent-icons\). They are distributed under the MIT license (see
+doc\license\license_mit.txt; the licence text is installed with the icons as
+iconsets\fluent\LICENSE-fluent.txt).
+Copyright (c) 2020 Microsoft Corporation
+
 === Microsoft Edge WebView2 ===
 The Markdown Viewer (mdview) and Code Viewer (codeview) plugins render through
 the Microsoft Edge WebView2 control. The WebView2 SDK (version 1.0.4078.44; headers +

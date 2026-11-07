@@ -21,3 +21,10 @@ the standard toolbar glyphs while the Dark theme is active:
   no external references). Same canvas/viewBox as the standard glyph.
 
 Full contract: specs\029-dark-toolbar-icons\contracts\dark-icon-override.md
+
+Feature 416: this folder belongs to the "Classic" icon set. The default set,
+"Fluent 2", has its own standard and dark files in iconsets\fluent\ and
+iconsets\fluent\dark\ (source: src\res\iconsets\fluent\, generator
+tools\brand\fluent-icons\). An override that cannot be parsed or draws no
+shape now really falls back to the standard file. Contract of both sets:
+specs\416-fluent-icon-set\contracts\icon-set-files.md
