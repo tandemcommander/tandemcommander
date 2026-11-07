@@ -176,3 +176,25 @@ After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 282,613 / 0; encoding g
 `find_sort_probe.ps1` 22 / 0 (`result_after.txt`); `regedt_sort_probe.ps1` 12 / 0 light
 (`regedt_result_after.txt`) and 12 / 0 dark (`regedt_result_after_dark.txt`); regression: 311's
 probe in full 26 / 0 (`regress_311.txt`), 257's 9 / 0 (`regress_257.txt`).
+
+### Review 3 (refute-first agent, no MUST, no SHOULD)
+
+Re-ran build, saltests (282,613 / 0), encoding guard, `find_sort_probe.ps1` 22 / 0 (the pix-dark
+hashes equal the recorded ones), `regedt_sort_probe.ps1 -Dark` 12 / 0; looked at the pictures;
+checked the shared painter (the old code of both copies moved unchanged, only the chevron added; no
+other code sets the sort bits, so every other dark header paints as before), the ownership of
+`RestoreDataFromRefine` on every path (moved back / detached / destroyed once), and the reset in
+`UpdateListViewItems` (only when the list grows; deleting and Hide duplicate names only shrink it).
+
+- NOTE 1 - when the search thread fails to start, a refused refine got its results back but the
+  arrow had already been reset (`ResetSort` before `CreateThread`), against this log's "keeps its
+  order and its arrow". **Fixed**: the reset moved after the thread started.
+- NOTE 2 - a refused refine loses the selection (`ListView_SetItemCount(0)` at the start of
+  `StartSearch`, upstream). Accepted: the items, order and arrow are kept, which was the loss.
+- NOTE 3 - sorting during a running search: by reading only (as recorded above).
+- NOTE 4 - the `refused` row did not print the box it answered. **Fixed**: each step prints it
+  ("The string '(' is not a valid regular expression. Error: Unmatched ().").
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 282,613 / 0; encoding guard TOTAL 0;
+`find_sort_probe.ps1` 22 / 0; `regedt_sort_probe.ps1` 12 / 0; 311's probe 26 / 0. The two changes
+are a moved line and probe output; no further review round (no MUST in review 3).

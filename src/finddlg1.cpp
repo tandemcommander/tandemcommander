@@ -2196,7 +2196,6 @@ void CFindDialog::StartSearch(WORD command)
             GrepData.Grep = GrepData.SearchData.IsGood();
         }
     }
-    FoundFilesListView->ResetSort(); // feature 407: the new items come in search order
     SetFocus(FoundFilesListView->HWindow);
 
     BuildSerchForData();
@@ -2227,6 +2226,7 @@ void CFindDialog::StartSearch(WORD command)
         }
         return;
     }
+    FoundFilesListView->ResetSort(); // feature 407: the search runs - the new items come in search order
 
     if (OKButton != NULL) // hide the drop-down arrow
     {

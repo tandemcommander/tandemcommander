@@ -232,7 +232,9 @@ function Seq-Row([string]$Case, $Steps, [string]$Mode = 'normal') {
             $okO = ($null -eq $s.Order) -or (@($s.Order) -contains $o)
             $okA = ($null -eq $s.Arrows) -or ($a -ceq $s.Arrows)
             $ok = $ok -and $okO -and $okA
-            $facts += ("{0} {1}: {2} [{3}]{4}" -f $n, $s.What, $o, $a, $(if ($okO -and $okA) { '' } else { ' <- expected ' + (@($s.Order) -join ' | ') + ' [' + $s.Arrows + ']' }))
+            $box = ''
+            if ($script:BoxText) { $box = ' (box: ' + (Tail ($script:BoxText -replace '\[Button id=\d+\] [^|]*(\||$)', '') 120) + ')'; $script:BoxText = $null }   # review 3: the box answered
+            $facts += ("{0} {1}{2}: {3} [{4}]{5}" -f $n, $s.What, $box, $o, $a, $(if ($okO -and $okA) { '' } else { ' <- expected ' + (@($s.Order) -join ' | ') + ' [' + $s.Arrows + ']' }))
         }
         $script:RowFatal = Fatal-Win $id
         Row $Case 'RUN' (V ($ok -and -not $script:RowFatal)) ($facts -join '; ')

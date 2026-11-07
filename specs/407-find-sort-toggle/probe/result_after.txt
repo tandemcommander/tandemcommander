@@ -1,6 +1,6 @@
-find_sort_probe (backlog item nefunkcni-prepinani-razeni-vysledku-hledani) after-review-2
+find_sort_probe (backlog item nefunkcni-prepinani-razeni-vysledku-hledani) after-review-3
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 02:45; ACP 1250; registry key existed True
+Date    : 2026-11-07 03:01; ACP 1250; registry key existed True
 Fixture: dB 2008, dA 2014 (folders), fC.txt 4 B 2006, fA.txt 1 B 2010, fD.txt 3 B 2012, fB.txt 2 B 2016; arrows per column Name,Path,Size,Date,Time,Attr: ^ up, v down, - none
 
 menu-time  RUN    PASS        found: dA,dB,fA.txt,fB.txt,fC.txt,fD.txt [------]; 1 View>Date: dB,dA,fC.txt,fA.txt,fD.txt,fB.txt [---^--]; 2 View>Date: dA,dB,fB.txt,fD.txt,fA.txt,fC.txt [---v--]; 3 View>Date: dB,dA,fC.txt,fA.txt,fD.txt,fB.txt [---^--]
@@ -19,7 +19,7 @@ click-path RUN    PASS        found: dA,dB,fA.txt,fB.txt,fC.txt,fD.txt [------];
 click-path END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 dup        RUN    PASS        found: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [------]; 1 click Name: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [^-----]; 2 click Name: z@s3,z@s2,y@s3,y@s1,x@s2,x@s1 [v-----]; 3 click Path: z@s3,z@s2,y@s3,y@s1,x@s2,x@s1 [v-----]; 4 View>Date: z@s3,z@s2,y@s3,y@s1,x@s2,x@s1 [v-----]; 5 click Size: y@s1,y@s3,x@s1,x@s2,z@s2,z@s3 [--^---]; 6 click Size: z@s3,z@s2,x@s2,x@s1,y@s3,y@s1 [--v---]; 7 click Size: y@s1,y@s3,x@s1,x@s2,z@s2,z@s3 [--^---]; 8 dup again: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [------]
 dup        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
-refused    RUN    PASS        found: dA,dB,fA.txt,fB.txt,fC.txt,fD.txt [------]; 1 View>Date: dB,dA,fC.txt,fA.txt,fD.txt,fB.txt [---^--]; 2 View>Date: dA,dB,fB.txt,fD.txt,fA.txt,fC.txt [---v--]; 3 Intersect refused: dA,dB,fB.txt,fD.txt,fA.txt,fC.txt [---v--]; 4 Subtract refused: dA,dB,fB.txt,fD.txt,fA.txt,fC.txt [---v--]; 5 Append refused: dA,dB,fB.txt,fD.txt,fA.txt,fC.txt [---v--]; 6 View>Date: dB,dA,fC.txt,fA.txt,fD.txt,fB.txt [---^--]
+refused    RUN    PASS        found: dA,dB,fA.txt,fB.txt,fC.txt,fD.txt [------]; 1 View>Date: dB,dA,fC.txt,fA.txt,fD.txt,fB.txt [---^--]; 2 View>Date: dA,dB,fB.txt,fD.txt,fA.txt,fC.txt [---v--]; 3 Intersect refused (box: [#32770 'Error Finding File'] [Static id=2477] The string '(' is not a valid regular expression. Error: Unmatched (). | ): dA,dB,fB.txt,fD.txt,fA.txt,fC.txt [---v--]; 4 Subtract refused (box: [#32770 'Error Finding File'] [Static id=2477] The string '(' is not a valid regular expression. Error: Unmatched (). | ): dA,dB,fB.txt,fD.txt,fA.txt,fC.txt [---v--]; 5 Append refused (box: [#32770 'Error Finding File'] [Static id=2477] The string '(' is not a valid regular expression. Error: Unmatched (). | ): dA,dB,fB.txt,fD.txt,fA.txt,fC.txt [---v--]; 6 View>Date: dB,dA,fC.txt,fA.txt,fD.txt,fB.txt [---^--]
 refused    END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 pix-light  RUN    PASS        light: none D765ADC748435075 [------]; up 07C7B09492239644 [---^--]; down 0A17566A97167CC3 [---v--]
 pix-light  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0

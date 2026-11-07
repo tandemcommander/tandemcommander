@@ -1,6 +1,6 @@
-regedt_sort_probe (feature 407) after-review-2
+regedt_sort_probe (feature 407) after-review-3
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 02:47; registry key existed True; hot keys: regedt.spl id 1: 1
+Date    : 2026-11-07 03:04; registry key existed True; hot keys: regedt.spl id 1: 1
 Rows: names without the probe407 prefix; arrows per column Name,Type,Data,Path,Size,Date,Time: ^ up, v down, - none
 
 SEARCH     RUN    PASS        vA,vB,vC,kA,kB [-------]

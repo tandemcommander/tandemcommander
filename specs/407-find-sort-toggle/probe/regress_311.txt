@@ -1,6 +1,6 @@
-grep311_probe (feature 311) regress-407
+grep311_probe (feature 311) regress-407-final
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 02:48; ACP 1250; registry key existed True
+Date    : 2026-11-07 03:04; ACP 1250; registry key existed True
 C66 = 66 CJK letters (198 bytes), C67 = 67 (201 bytes); cut.txt = C66 + ZZ, full.txt = C67
 
 grep       RUN    PASS        text: typed 67 units / 201 bytes; asked: [#32770 'Error'] The path specified is too long. |; found: 0; the field after: 67 units / 201 bytes, whole: True
