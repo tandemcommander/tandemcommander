@@ -1,4 +1,5 @@
 """Reproduce: lock update / release while another process holds the lock file open."""
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -45,3 +46,4 @@ t = time.time()
 print("release while held (0.5 s)", tool("release", "--slug", "x"), round(time.time() - t, 2))
 p.wait()
 print("exists after", lock.exists())
+shutil.rmtree(d, ignore_errors=True)

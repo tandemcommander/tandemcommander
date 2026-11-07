@@ -1355,19 +1355,22 @@ def lock_retry(path: Path, what: str, action):
             return action()
         except PermissionError as e:
             if attempt + 1 >= LOCK_RETRY_ATTEMPTS:
-                raise Refused(f"the run lock {path} could not be {what}: another process holds it open "
-                              f"({e.strerror or e}); nothing changed - try again") from None
+                raise Refused(f"the run lock {path} could not be {what}: another process holds it open, "
+                              f"or it is not writable ({e.strerror or e}); nothing changed - try again") from None
             time.sleep(LOCK_RETRY_DELAY)
+
+
+def lock_now(path: Path) -> dict | None:
+    """One read of the lock's fields, None when there is none (PermissionError is the caller's)."""
+    try:
+        return read_lock(path)
+    except FileNotFoundError:
+        return None
 
 
 def lock_fields(path: Path) -> dict | None:
     """The lock's fields, or None when there is no lock (also when it went away just now)."""
-    def read():
-        try:
-            return read_lock(path)
-        except FileNotFoundError:
-            return None
-    return lock_retry(path, "read", read)
+    return lock_retry(path, "read", lambda: lock_now(path))
 
 
 def describe_lock(fields: dict) -> str:
@@ -1953,23 +1956,45 @@ def cmd_lock(bl: Backlog, args) -> int:
         if fields.get("slug", "-") != args.slug:
             print(f"refused: the lock belongs to item {fields.get('slug', '-')}, not {args.slug}")
             return 1
+        before = dict(fields)
         fields["branch"] = one_line(args.branch, "--branch")
         text = lock_text(fields)
-        lock_retry(path, "updated", lambda: write_text(path, text))
+        seen = {}
+
+        def replace():
+            # 411 review 1: a retry waits up to about 2 s - the lock must still be the one checked
+            seen["now"] = lock_now(path)
+            if seen["now"] == before:
+                write_text(path, text)
+        lock_retry(path, "updated", replace)
+        if seen["now"] is None:
+            print("no lock to update")
+            return 1
+        if seen["now"] != before:
+            print(f"refused: the lock changed while waiting (now {describe_lock(seen['now'])}); nothing changed")
+            return 1
         print(f"lock updated: branch {args.branch}")
         return 0
     # release
     if not args.force and fields.get("slug", "-") != (args.slug or "-"):
         print(f"refused: the lock belongs to item {fields.get('slug', '-')}, not {args.slug or '-'} (--force for the maintainer)")
         return 1
+    seen = {}
 
     def remove():
-        try:
-            path.unlink()
-        except FileNotFoundError:
-            pass  # gone during a retry: released all the same
+        # 411 review 1: never delete a lock another run took while this one waited (--force too:
+        # it releases the lock it was shown, not a newer one)
+        seen["now"] = lock_now(path)
+        if seen["now"] == fields:
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                pass
     lock_retry(path, "released", remove)
-    print("lock released")
+    if seen["now"] is not None and seen["now"] != fields:
+        print(f"refused: the lock changed while waiting (now {describe_lock(seen['now'])}); nothing changed")
+        return 1
+    print("lock released")  # also when it went away meanwhile: released all the same
     return 0
 
 

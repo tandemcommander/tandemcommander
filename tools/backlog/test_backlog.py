@@ -1549,9 +1549,58 @@ class LockHeldOpenTests(Base):
         self.assertTrue(self.lock.exists())
 
     def test_no_reader_no_wait(self):
-        code, out, took = self.timed("lock", "update", "--slug", FTP, "--branch", "411-x")
-        self.assertEqual(code, 0)
-        self.assertLess(took, backlog.LOCK_RETRY_DELAY * 4)
+        real, slept = time.sleep, []
+        time.sleep = lambda s: slept.append(s)
+        try:
+            outs = [self.run_tool("lock", "status"),
+                    self.run_tool("lock", "update", "--slug", FTP, "--branch", "411-x"),
+                    self.run_tool("lock", "release", "--slug", FTP),
+                    self.run_tool("lock", "acquire", "--slug", FTP)]
+        finally:
+            time.sleep = real
+        self.assertEqual([c for c, _ in outs], [0, 0, 0, 0], outs)
+        self.assertEqual(slept, [])  # no retry, no delay without a reader
+
+    # review 1 S1: a retry must not act on a lock another run took meanwhile
+
+    def taken_meanwhile(self, name: str):
+        """Make the first os.NAME on the lock fail as a reader would, after another run took the
+        lock over (released and acquired by item 'new')."""
+        real, state = getattr(os, name), {"done": False}
+
+        def stub(*a, **kw):
+            if not state["done"] and Path(a[-1] if name == "replace" else a[0]) == self.lock:
+                state["done"] = True
+                self.lock.write_text(backlog.lock_text({"started": "2026-10-17T10:00:00", "slug": "new",
+                                                        "branch": "-", "host": "h"}),
+                                     encoding="utf-8", newline="\n")
+                raise PermissionError(13, "held open", str(self.lock))
+            return real(*a, **kw)
+        setattr(os, name, stub)
+        self.addCleanup(setattr, os, name, real)
+        return state
+
+    def test_update_does_not_overwrite_a_lock_taken_meanwhile(self):
+        state = self.taken_meanwhile("replace")
+        code, out = self.run_tool("lock", "update", "--slug", FTP, "--branch", "411-x")
+        self.assertTrue(state["done"])
+        self.assertEqual(code, 1)
+        self.assertTrue(out.startswith("refused: the lock changed while waiting"), out)
+        self.assertEqual(backlog.read_lock(self.lock)["slug"], "new")
+        self.assertEqual(self.leftovers(), [])
+
+    def test_release_does_not_delete_a_lock_taken_meanwhile(self):
+        for args in (("--slug", FTP), ("--force",)):
+            with self.subTest(args=args):
+                if backlog.read_lock(self.lock)["slug"] != FTP:
+                    self.lock.unlink()
+                    self.assertEqual(self.run_tool("lock", "acquire", "--slug", FTP)[0], 0)
+                state = self.taken_meanwhile("unlink")
+                code, out = self.run_tool("lock", "release", *args)
+                self.assertTrue(state["done"])
+                self.assertEqual(code, 1, out)
+                self.assertTrue(out.startswith("refused: the lock changed while waiting"), out)
+                self.assertEqual(backlog.read_lock(self.lock)["slug"], "new")
 
     # US2: a long hold is a clear refusal, nothing changed
 

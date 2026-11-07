@@ -97,3 +97,39 @@ PermissionError, FileExistsError); only `test_no_reader_no_wait` passes.
   of PermissionError and an `exists()`-then-read race (FileNotFoundError traceback). Before: tests
   `test_status_waits_for_a_briefly_unreadable_lock` (PermissionError) and
   `test_lock_gone_between_check_and_read_is_no_lock` (FileNotFoundError ×3) fail at HEAD; after: pass.
+
+## Review
+
+### Review 1 (refute-first agent) - MUST 0, SHOULD 2, NOTE 4
+
+Re-ran the measurement (0.5 s hold → both 0 in 0.53 s; 5 s → one `refused:` line each), the full
+suite (255 OK), a negative control (the branch's tests against `main`'s `cmd_lock`: all 11 fail
+with the defect's errors - the fix-log's "10 of 11" came from a variant where only the helpers
+were added), and a 40 s stress run (3 readers opening the lock every 20 ms, 3 workers acquire →
+update ×2 → status → release): branch 83 acquisitions, never two holders, no `*.tmp~`; `main`'s
+`cmd_lock` under the same load: an `update` failed with the WinError 5 traceback - the defect is
+reachable with microsecond readers too.
+
+- S1 (fixed): the retry widened check-then-act in `update` / `release` to about 2 s: a lock
+  force-released and taken by another run during the wait would be overwritten (update) or
+  deleted (release). Now every attempt reads the lock again (`lock_now`) and acts only when it
+  still holds the fields first checked (for `--force` too: it releases the lock it was shown);
+  otherwise `refused: the lock changed while waiting (now <holder>); nothing changed`, exit 1.
+  Tests `test_update_does_not_overwrite_a_lock_taken_meanwhile`,
+  `test_release_does_not_delete_a_lock_taken_meanwhile` (`--slug` and `--force`; the stub makes
+  the first replace / unlink fail after another holder took the lock). Negative control: against
+  the pre-review `backlog.py` (HEAD ca423122, temp copy) both fail (2 failures, 1 error).
+- S2 (fixed): the skill mapped every exit 1 of `lock acquire` to "another run in progress" and had
+  no step for a refused release. `SKILL.md` §0.8 now says: a `refused: the run lock … could not
+  be …` answer is repeated once; still refused → `acquire` ends `refused (precondition: …)`,
+  `release` is named under *Lock* in §11.
+- N1 (fixed): the message now says "another process holds it open, or it is not writable".
+- N2 (fixed): `test_no_reader_no_wait` no longer times the whole command; it stubs `time.sleep`
+  and asserts no sleep at all for status / update / release / acquire without a reader.
+- N3 (fixed): `probe/repro_lock.py` removes its temporary folder.
+- N4 (documented, no change): `acquire` against a lock that keeps appearing and disappearing is
+  bounded at 40 rounds (each read up to 2 s) - pathological, harmless.
+
+After the fixes: `LockHeldOpenTests` 13 OK; all three suites `Ran 257 tests in 222.385s OK`;
+`test_bin_help.py` OK; encoding guard `TOTAL: 0 finding(s)`; repro unchanged (0.53 / 0.56 s
+success, 5 s refused with the new wording).

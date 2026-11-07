@@ -57,6 +57,13 @@ is English.
    `check after the change found problems:` → **the change was written**;
    never repeat the command; fix the listed findings
    (`.claude/skills/tandem-backlog/reference.md` §6).
+   `BL lock …` answering `refused: the run lock <path> could not be <read |
+   created | updated | released>: another process holds it open …` (feature
+   411: a reader held the file for more than its 2 s of retries) is not
+   another run: repeat the command once; still refused → for `acquire` end
+   `refused (precondition: <the line>)`, for `release` name the line under
+   *Lock* in §11 (`not released: <the line>`), otherwise go on as the step
+   says for a failure.
 9. **Every `BL new` of a run** (findings, leftovers, person steps,
    decisions, split parts) follows `/tandem-backlog` `SKILL.md` §0.2
    (quoting, no backslash on the command line) and §2.1 steps 2–7 (look for
