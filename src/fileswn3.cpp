@@ -2927,8 +2927,15 @@ void CFilesWindow::UpdateDriveIcon(BOOL check)
                 if (DirectoryLine->HWindow != NULL)
                 {
                     BOOL destroyIcon;
-                    HICON icon = GetPluginFS()->GetFSIcon(destroyIcon);
-                    if (icon != NULL) // defined by the plugin
+                    // feature 417: a shipped plug-in's Fluent 2 icon (not for Folders: its icon is its current folder's)
+                    HICON setIcon = CreatePluginSetIcon(GetPluginFS()->GetDLLName(), IconSizes[ICONSIZE_16], FALSE, TRUE);
+                    HICON icon = setIcon != NULL ? NULL : GetPluginFS()->GetFSIcon(destroyIcon);
+                    if (setIcon != NULL)
+                    {
+                        DirectoryLine->SetDriveIcon(setIcon);
+                        HANDLES(DestroyIcon(setIcon));
+                    }
+                    else if (icon != NULL) // defined by the plugin
                     {
                         DirectoryLine->SetDriveIcon(icon);
                         if (destroyIcon)
@@ -2936,7 +2943,9 @@ void CFilesWindow::UpdateDriveIcon(BOOL check)
                     }
                     else // default
                     {
-                        icon = SalLoadIcon(HInstance, IDI_PLUGINFS, IconSizes[ICONSIZE_16]);
+                        icon = CreatePluginSetDefaultIcon(TRUE, IconSizes[ICONSIZE_16]); // feature 417: Fluent 2's default
+                        if (icon == NULL)
+                            icon = SalLoadIcon(HInstance, IDI_PLUGINFS, IconSizes[ICONSIZE_16]);
                         DirectoryLine->SetDriveIcon(icon);
                         HANDLES(DestroyIcon(icon));
                     }

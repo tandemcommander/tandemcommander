@@ -654,7 +654,8 @@ void CPlugins::InitMenuItems(HWND parent, CMenuPopup* root)
                 DuplicateAmpersands(pluginName, 299); // plugin name can contain '&'
 
                 mi.String = pluginName;
-                mi.ImageIndex = (p->PluginSubmenuIconIndex != -1) ? orderIndex : -1;
+                // feature 417: with Fluent 2 a shipped plug-in's set icon counts as an icon
+                mi.ImageIndex = (p->PluginSubmenuIconIndex != -1 || PluginHasSetIcon(p->DLLName)) ? orderIndex : -1;
                 mi.SubMenu = new CMenuPopup();
                 p->SubMenu = (CMenuPopup*)mi.SubMenu; // assign this submenu to this plugin
                 mi.ID = CML_PLUGINS_SUBMENU;
@@ -989,12 +990,22 @@ CPlugins::CreateIconsList(BOOL gray)
     HIMAGELIST hIL = ImageList_Create(iconSize, iconSize, GetImageListColorFlags() | ILC_MASK, 0, 1);
     if (hIL != NULL)
     {
-        HICON hDefIcon = SalLoadIcon(HInstance, IDI_PLUGIN, iconSize);
+        // feature 417: Fluent 2's default plug-in icon, else the program's
+        HICON hDefIcon = CreatePluginSetDefaultIcon(FALSE, iconSize);
+        if (hDefIcon == NULL)
+            hDefIcon = SalLoadIcon(HInstance, IDI_PLUGIN, iconSize);
         int i;
         for (i = 0; i < Data.Count; i++)
         {
             CPluginData* p = Data[i];
-            if (p->PluginIcons != NULL && p->PluginIconIndex != -1)
+            // feature 417: a shipped plug-in's Fluent 2 icon at the list's size (its own icon stays untouched)
+            HICON hSetIcon = CreatePluginSetIcon(p->DLLName, iconSize, gray, FALSE);
+            if (hSetIcon != NULL)
+            {
+                ImageList_AddIcon(hIL, hSetIcon);
+                HANDLES(DestroyIcon(hSetIcon));
+            }
+            else if (p->PluginIcons != NULL && p->PluginIconIndex != -1)
             {
                 CIconList* iconList = gray ? p->PluginIconsGray : p->PluginIcons;
                 if (p->PluginIconsGray == NULL)
@@ -1117,7 +1128,7 @@ BOOL CPlugins::AddNamesToMenu(CMenuPopup* menu, DWORD firstID, int maxCount, BOO
             DuplicateAmpersands(pluginName, 299); // plugin name may contain '&' character
 
             mii.String = (LPTSTR)pluginName;
-            mii.ImageIndex = (data->PluginIconIndex != -1) ? orderIndex : -1;
+            mii.ImageIndex = (data->PluginIconIndex != -1 || PluginHasSetIcon(data->DLLName)) ? orderIndex : -1; // feature 417
             menu->InsertItem(0xFFFFFFFF, TRUE, &mii);
         }
     }
@@ -1155,7 +1166,15 @@ BOOL CPlugins::AddItemsToChangeDrvMenu(CDrivesList* drvList, int& currentFSIndex
             drv.DriveText = DupStr(p->ChDrvMenuFSItemName);
             if (drv.DriveText == NULL)
                 return FALSE;
-            if (p->PluginIcons != NULL && p->ChDrvMenuFSItemIconIndex != -1)
+            // feature 417: a shipped plug-in's Fluent 2 icon (Folders included: this is its identity)
+            HICON hSetIcon = CreatePluginSetIcon(p->DLLName, IconSizes[ICONSIZE_16], FALSE, FALSE);
+            if (hSetIcon != NULL)
+            {
+                drv.HIcon = hSetIcon;
+                drv.HGrayIcon = getGrayIcons ? CreatePluginSetIcon(p->DLLName, IconSizes[ICONSIZE_16], TRUE, FALSE) : NULL;
+                drv.DestroyIcon = TRUE;
+            }
+            else if (p->PluginIcons != NULL && p->ChDrvMenuFSItemIconIndex != -1)
             {
                 drv.HIcon = p->PluginIcons->GetIcon(p->ChDrvMenuFSItemIconIndex, TRUE);
                 if (getGrayIcons && p->PluginIconsGray != NULL)
@@ -1166,7 +1185,9 @@ BOOL CPlugins::AddItemsToChangeDrvMenu(CDrivesList* drvList, int& currentFSIndex
             }
             else
             {
-                drv.HIcon = SalLoadIcon(HInstance, IDI_PLUGINFS, IconSizes[ICONSIZE_16]);
+                drv.HIcon = CreatePluginSetDefaultIcon(TRUE, IconSizes[ICONSIZE_16]); // feature 417: Fluent 2's default
+                if (drv.HIcon == NULL)
+                    drv.HIcon = SalLoadIcon(HInstance, IDI_PLUGINFS, IconSizes[ICONSIZE_16]);
                 drv.HGrayIcon = NULL;
                 drv.DestroyIcon = TRUE;
             }

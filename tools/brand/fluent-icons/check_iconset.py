@@ -140,7 +140,7 @@ def program_names():
         names.add(name)
     for n in re.findall(r'"(Drive\w+)"', func_body("inline const char* SalIconSetFluentDriveName(")):
         names.add(n)
-    for n in re.findall(r'#define SAL_ICONSET_NAME_\w+ "(\w+)"', hdr):
+    for n in re.findall(r'#define SAL_ICONSET_NAME_(?!PLUGIN)\w+ "(\w+)"', hdr):  # the plug-in defaults live in plugins\
         names.add(n)
     gui = open(os.path.join(ROOT, "src", "gui.cpp"), encoding="utf-8-sig").read()
     block = gui[gui.index("CSVGIcon svgIcons[TLBHDR_COUNT]"):]
@@ -206,10 +206,64 @@ def main():
             best = max([contrast(P[outline], highlight[theme])] + [contrast(u, highlight[theme]) for u in under])
             if best < 3.0:
                 problems.append("%s %s: neither outline nor underlay / halo reaches 3:1 on the menu highlight (%.2f)" % (theme, role, best))
+    nplug = plugin_problems(problems, face, highlight)
     for p in problems:
         print("PROBLEM:", p)
-    print("check_iconset: %d light + %d dark files, %d names used by the program, %d problem(s)" % (len(light), len(dark), len(used), len(problems)))
+    print("check_iconset: %d light + %d dark files, %d names used by the program, %d plug-in icons, %d problem(s)" %
+          (len(light), len(dark), len(used), nplug, len(problems)))
     return len(problems)
+
+
+def plugin_problems(problems, face, highlight):
+    """Feature 417: iconsets\\fluent\\plugins\\ and \\dark\\ hold exactly the ids of SalIconSetPluginIdAt and the two
+    defaults, with the file rules above, and the plug-in generator's palette passes the same contrast rule."""
+    hdr = open(os.path.join(ROOT, "src", "common", "saliconset.h"), encoding="utf-8-sig").read()
+    s = hdr.index("inline const char* SalIconSetPluginIdAt(")
+    table = hdr[s:hdr.index("};", s)]
+    ids = re.findall(r'"(\w+)"', table)
+    count = int(re.search(r"#define SAL_ICONSET_PLUGIN_ID_COUNT (\d+)", hdr).group(1))
+    if len(ids) != count:
+        problems.append("SalIconSetPluginIdAt lists %d ids, SAL_ICONSET_PLUGIN_ID_COUNT is %d" % (len(ids), count))
+    expected = set(i + ".svg" for i in ids)
+    expected.update(n + ".svg" for n in re.findall(r'#define SAL_ICONSET_NAME_PLUGIN\w* "(\w+)"', hdr))
+    if len(expected) != count + 2:
+        problems.append("expected %d plug-in names, found %d" % (count + 2, len(expected)))
+    folder = os.path.join(SET, "plugins")
+    for sub in ("", "dark"):
+        have = {os.path.basename(f) for f in glob.glob(os.path.join(folder, sub, "*.svg"))}
+        rel = "plugins\\" + (sub + "\\" if sub else "")
+        for f in sorted(expected - have):
+            problems.append("%s%s is missing" % (rel, f))
+        for f in sorted(have - expected):
+            problems.append("%s%s is not a plug-in id of saliconset.h" % (rel, f))
+        others = [os.path.basename(f) for f in glob.glob(os.path.join(folder, sub, "*")) if not f.endswith(".svg") and os.path.isfile(f)]
+        for f in others:
+            problems.append("%s%s: not an icon" % (rel, f))
+        for f in sorted(have):
+            t = open(os.path.join(folder, sub, f), encoding="utf-8").read()
+            for bad in ("#FF00FF", "#F0F0F0", "#2D2D2D"):
+                if bad in t.upper():
+                    problems.append("%s%s uses %s (transparent in the image lists)" % (rel, f, bad))
+            if re.search(r"<(linearGradient|radialGradient|mask|clipPath|filter|use|image|text|script)\b", t):
+                problems.append("%s%s uses an element nanosvg does not draw" % (rel, f))
+            for d in re.findall(r'\sd="([^"]*)"', t):
+                for p in path_problems(d):
+                    problems.append("%s%s: %s" % (rel, f, p))
+    src = open(os.path.join(os.path.dirname(__file__), "gen_fluent_plugins.py"), encoding="utf-8").read()
+    pal = eval(src[src.index("PAL = {") + 6:src.index("ROLES = ")], {})
+    roles = eval(src[src.index("ROLES = {") + 8:src.index("NO_PAPER = ")], {})
+    halo = eval(src[src.index("HALO = ") + 7:src.index("\n", src.index("HALO = "))], {})
+    for theme in ("light", "dark"):
+        P = pal[theme]
+        for role, (tint, outline) in roles.items():
+            c = contrast(P[outline], face[theme])
+            if c < 3.0:
+                problems.append("plug-ins: %s %s outline %s: %.2f:1 on the toolbar" % (theme, role, P[outline], c))
+            under = [P[tint]] if tint else [P["paper"], halo[theme]]
+            best = max([contrast(P[outline], highlight[theme])] + [contrast(u, highlight[theme]) for u in under])
+            if best < 3.0:
+                problems.append("plug-ins: %s %s: neither outline nor underlay / halo reaches 3:1 on the menu highlight (%.2f)" % (theme, role, best))
+    return len(expected)
 
 
 if __name__ == "__main__":

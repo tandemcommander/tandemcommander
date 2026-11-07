@@ -22,7 +22,7 @@
 // with the automatic dark adaptation (feature 029); otherwise nothing is drawn
 // and the cell keeps what lies below it - never an empty button (029's promise).
 //
-// Pure rules here (saltests TestIconSet416); the drawing is in svg.cpp,
+// Pure rules here (saltests TestIconSet416, TestPluginIcons417); the drawing is in svg.cpp,
 // toolbar4.cpp and salamdr1.cpp.
 //
 
@@ -61,15 +61,14 @@ inline bool SalIconSetNameValid(const char* name)
     return !(name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0)));
 }
 
-// <dir><folder of the set><name>.svg into buf (size bytes). 'dir' is the program's folder
-// (UTF-8, a trailing backslash is added when missing). Returns false and leaves buf empty
-// when the name is not valid or the path does not fit - a path is never cut (CLAUDE.md).
-inline bool SalIconSetBuildPath(char* buf, size_t size, const char* dir, int set, bool dark, const char* name)
+// <dir><folder><name>.svg into buf (size bytes); the builder of SalIconSetBuildPath and
+// SalIconSetBuildPluginPath. A NULL folder (no such folder in the set) is refused.
+inline bool SalIconSetBuildPathIn(char* buf, size_t size, const char* dir, const char* folder, const char* name)
 {
     if (buf == 0 || size == 0)
         return false;
     buf[0] = 0;
-    if (dir == 0 || *dir == 0 || !SalIconSetNameValid(name))
+    if (dir == 0 || *dir == 0 || folder == 0 || !SalIconSetNameValid(name))
         return false;
     const char* parts[5];
     int n = 0;
@@ -79,7 +78,7 @@ inline bool SalIconSetBuildPath(char* buf, size_t size, const char* dir, int set
         dirLen++;
     if (dir[dirLen - 1] != '\\' && dir[dirLen - 1] != '/')
         parts[n++] = "\\";
-    parts[n++] = SalIconSetFolder(set, dark);
+    parts[n++] = folder;
     parts[n++] = name;
     parts[n++] = ".svg";
     size_t len = 0;
@@ -95,6 +94,124 @@ inline bool SalIconSetBuildPath(char* buf, size_t size, const char* dir, int set
         }
     buf[len] = 0;
     return true;
+}
+
+// <dir><folder of the set><name>.svg into buf (size bytes). 'dir' is the program's folder
+// (UTF-8, a trailing backslash is added when missing). Returns false and leaves buf empty
+// when the name is not valid or the path does not fit - a path is never cut (CLAUDE.md).
+inline bool SalIconSetBuildPath(char* buf, size_t size, const char* dir, int set, bool dark, const char* name)
+{
+    return SalIconSetBuildPathIn(buf, size, dir, SalIconSetFolder(set, dark), name);
+}
+
+//*****************************************************************************
+//
+// Plug-in icons of a set (feature 417)
+//
+// Fluent 2 has an icon for every plug-in of the tree (iconsets\fluent\plugins\<id>.svg and
+// plugins\dark\<id>.svg) and two defaults; Classic has none (every plug-in keeps its own icon).
+// While Fluent 2 is active the core draws a shipped plug-in's set icon instead of the plug-in's
+// own identity icon (contract: specs/417-fluent-plugin-icons/contracts/plugin-icon-files.md).
+//
+
+#define SAL_ICONSET_NAME_PLUGIN "_plugin"     // a plug-in without an icon of its own
+#define SAL_ICONSET_NAME_PLUGINFS "_pluginfs" // a plug-in file system without an icon
+
+// The ids of the plug-ins of the tree (their folder and file name), also those that are 'off'
+// in plugins.cfg. A new plug-in: add its id here, its row to gen_fluent_plugins.py and a test.
+#define SAL_ICONSET_PLUGIN_ID_COUNT 31
+inline const char* SalIconSetPluginIdAt(int i)
+{
+    static const char* const ids[SAL_ICONSET_PLUGIN_ID_COUNT] = {
+        "7zip", "automation", "checksum", "checkver", "codeview", "dbviewer", "demomenu", "demoplug",
+        "demoview", "diskmap", "filecomp", "folders", "ftp", "mdview", "mmviewer", "nethood",
+        "peviewer", "pictview", "portables", "regedt", "renamer", "sftp", "tar", "uncab",
+        "unchm", "undelete", "uniso", "unmime", "unole", "unrar", "zip"};
+    return (i >= 0 && i < SAL_ICONSET_PLUGIN_ID_COUNT) ? ids[i] : 0;
+}
+
+// ASCII lower case of c (other bytes unchanged: a non-ASCII byte never equals an id's letter)
+inline char SalIconSetLowerAscii(char c)
+{
+    return (c >= 'A' && c <= 'Z') ? (char)(c - 'A' + 'a') : c;
+}
+
+// The id of a plug-in shipped with the program from its DLL name as CPluginData keeps it (relative
+// to the plug-ins folder): exactly "<a>\<b>.spl", a equal to b ignoring ASCII case, a one of the
+// known ids -> that id (lower case, static); anything else (an absolute or UNC path, a drive, '/',
+// another folder or file name, another extension, an unknown id) -> NULL: no set icon.
+inline const char* SalIconSetPluginId(const char* dllName)
+{
+    if (dllName == 0)
+        return 0;
+    const char* sep = 0;
+    for (const char* s = dllName; *s != 0; s++)
+    {
+        if (*s == '/' || *s == ':')
+            return 0;
+        if (*s == '\\')
+        {
+            if (sep != 0)
+                return 0; // more than one separator
+            sep = s;
+        }
+    }
+    if (sep == 0 || sep == dllName)
+        return 0;
+    size_t folderLen = (size_t)(sep - dllName);
+    const char* file = sep + 1;
+    for (int i = 0; i < SAL_ICONSET_PLUGIN_ID_COUNT; i++)
+    {
+        const char* id = SalIconSetPluginIdAt(i);
+        size_t idLen = 0;
+        while (id[idLen] != 0)
+            idLen++;
+        if (idLen != folderLen)
+            continue;
+        bool same = true;
+        for (size_t k = 0; k < idLen && same; k++)
+            same = SalIconSetLowerAscii(dllName[k]) == id[k] && SalIconSetLowerAscii(file[k]) == id[k];
+        if (!same)
+            continue;
+        const char* ext = file + idLen;
+        if (ext[0] == '.' && SalIconSetLowerAscii(ext[1]) == 's' && SalIconSetLowerAscii(ext[2]) == 'p' &&
+            SalIconSetLowerAscii(ext[3]) == 'l' && ext[4] == 0)
+            return id;
+    }
+    return 0;
+}
+
+// Whether the icon a plug-in's file system returns for the directory line (GetFSIcon) is just its
+// identity icon, which the set icon replaces. Folders returns the shell icon of its current folder
+// (src/plugins/folders/fs2.cpp) - information, kept.
+inline bool SalIconSetPluginFSIconIsIdentity(const char* id)
+{
+    if (id == 0)
+        return false;
+    const char* folders = "folders";
+    for (int k = 0;; k++)
+    {
+        if (id[k] != folders[k])
+            return true;
+        if (id[k] == 0)
+            return false;
+    }
+}
+
+// The set's plug-in folder relative to the program's folder (trailing backslash); NULL = the set
+// has no plug-in icons (Classic).
+inline const char* SalIconSetPluginFolder(int set, bool dark)
+{
+    if (SalIconSetNormalize(set) == SAL_ICONSET_CLASSIC)
+        return 0;
+    return dark ? "iconsets\\fluent\\plugins\\dark\\" : "iconsets\\fluent\\plugins\\";
+}
+
+// <dir><plug-in folder of the set><name>.svg into buf; false (buf empty) for Classic, a bad name or a
+// path that does not fit - never cut.
+inline bool SalIconSetBuildPluginPath(char* buf, size_t size, const char* dir, int set, bool dark, const char* name)
+{
+    return SalIconSetBuildPathIn(buf, size, dir, SalIconSetPluginFolder(set, dark), name);
 }
 
 // The Fluent 2 name of toolbar button 'tbbe' (the TBBE_* index of ToolBarButtons[] in

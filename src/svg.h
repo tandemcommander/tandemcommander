@@ -17,6 +17,11 @@ BOOL RenderSVGImage(NSVGrasterizer* rast, HDC hDC, int x, int y, const char* svg
 // file for the name - the caller then uses its Classic icon. Registered in HANDLES (DestroyIcon via HANDLES).
 HICON CreateSetSVGIcon(const char* svgName, int iconSet, int size);
 
+// feature 417: the active set's icon 'name' (a plug-in id or SAL_ICONSET_NAME_PLUGIN / _PLUGINFS) from its
+// plug-in folder (iconsets\fluent\plugins\) as a size x size icon, the 416 dark rules applied; NULL in
+// Classic (no plug-in icons) or when the set has no usable file. Registered in HANDLES.
+HICON CreateSetPluginSVGIcon(const char* name, int size);
+
 // returns SysColor in the format for the SVG library (BGR instead of Win32 RGB)
 DWORD GetSVGSysColor(int index);
 

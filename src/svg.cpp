@@ -125,8 +125,15 @@ static NSVGimage* ParseUsableSVG(char* svg, float dpi)
 // feature 416: the image of icon 'svgName' of icon set 'iconSet' (SAL_ICONSET_*): in the Dark theme
 // the set's hand-tuned variant when it is usable (*darkOverride = TRUE, drawn verbatim), else the
 // set's standard file; NULL when neither is usable. Paths are UTF-8, read wide (feature 171); a
-// path that does not fit is refused (SalIconSetBuildPath), never cut.
-static NSVGimage* LoadSetSVGImage(const char* svgName, int iconSet, float dpi, BOOL* darkOverride)
+// path that does not fit is refused (SalIconSetBuildPath), never cut. Feature 417: 'plugin' reads the
+// set's plug-in folder (iconsets\fluent\plugins\, none in Classic) instead of the toolbar folder.
+static BOOL BuildSetPath(char* buf, size_t size, const char* dir, int iconSet, BOOL plugin, bool dark, const char* svgName)
+{
+    return plugin ? SalIconSetBuildPluginPath(buf, size, dir, iconSet, dark, svgName)
+                  : SalIconSetBuildPath(buf, size, dir, iconSet, dark, svgName);
+}
+
+static NSVGimage* LoadSetSVGImage(const char* svgName, int iconSet, float dpi, BOOL* darkOverride, BOOL plugin = FALSE)
 {
     *darkOverride = FALSE;
     char dir[SAL_MODULE_PATH_U8];
@@ -137,10 +144,10 @@ static NSVGimage* LoadSetSVGImage(const char* svgName, int iconSet, float dpi, B
     NSVGimage* darkImage = NULL;
     // feature 029: while the Dark theme is active a hand-tuned variant in <set>\dark\ takes
     // precedence over the automatic adaptation (contract: specs/416-fluent-icon-set/contracts/icon-set-files.md)
-    if (dark && SalIconSetBuildPath(svgFile, _countof(svgFile), dir, iconSet, true, svgName))
+    if (dark && BuildSetPath(svgFile, _countof(svgFile), dir, iconSet, plugin, true, svgName))
         darkImage = ParseUsableSVG(ReadSVGFile(svgFile), dpi);
     NSVGimage* standardImage = NULL;
-    if (darkImage == NULL && SalIconSetBuildPath(svgFile, _countof(svgFile), dir, iconSet, false, svgName))
+    if (darkImage == NULL && BuildSetPath(svgFile, _countof(svgFile), dir, iconSet, plugin, false, svgName))
         standardImage = ParseUsableSVG(ReadSVGFile(svgFile), dpi);
     switch (SalIconSetChooseSource(dark != FALSE, darkImage != NULL, standardImage != NULL))
     {
@@ -247,12 +254,13 @@ BOOL RenderSVGImage(NSVGrasterizer* rast, HDC hDC, int x, int y, const char* svg
     return TRUE;
 }
 
-HICON CreateSetSVGIcon(const char* svgName, int iconSet, int size)
+// feature 416 / 417: the icon of 'svgName' from the set's toolbar folder or (plugin) its plug-in folder
+static HICON CreateSetIconFromFolder(const char* svgName, int iconSet, int size, BOOL plugin)
 {
     if (svgName == NULL || size <= 0 || size > 256)
         return NULL;
     BOOL darkOverride = FALSE;
-    NSVGimage* image = LoadSetSVGImage(svgName, ResolveIconSet(iconSet), (float)GetScaleForSystemDPI(), &darkOverride);
+    NSVGimage* image = LoadSetSVGImage(svgName, ResolveIconSet(iconSet), (float)GetScaleForSystemDPI(), &darkOverride, plugin);
     if (image == NULL)
         return NULL;
     if (image->width <= 0)
@@ -326,6 +334,16 @@ HICON CreateSetSVGIcon(const char* svgName, int iconSet, int size)
     }
     HANDLES(DeleteObject(hColor));
     return hIcon;
+}
+
+HICON CreateSetSVGIcon(const char* svgName, int iconSet, int size)
+{
+    return CreateSetIconFromFolder(svgName, iconSet, size, FALSE);
+}
+
+HICON CreateSetPluginSVGIcon(const char* name, int size)
+{
+    return CreateSetIconFromFolder(name, -1, size, TRUE); // -1: the active set; Classic has no plug-in folder
 }
 
 //*****************************************************************************

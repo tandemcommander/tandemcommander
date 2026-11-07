@@ -2860,6 +2860,15 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                 BOOL destroyIcon = FALSE;
                 if (fs->GetChangeDriveOrDisconnectItem(fs->GetPluginFSName(), txt, icon, destroyIcon))
                 {
+                    // feature 417: a shipped plug-in's Fluent 2 icon instead of the one it hands over
+                    HICON setIcon = CreatePluginSetIcon(fs->GetDLLName(), IconSizes[ICONSIZE_16], FALSE, TRUE);
+                    if (setIcon != NULL)
+                    {
+                        if (destroyIcon && icon != NULL)
+                            HANDLES(DestroyIcon(icon));
+                        icon = setIcon;
+                        destroyIcon = TRUE;
+                    }
                     drv.DriveText = txt;
                     drv.HIcon = icon;
                     drv.HGrayIcon = NULL;
@@ -3138,8 +3147,16 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                     if (panel->Is(ptPluginFS))
                     {
                         BOOL destroyIcon;
-                        HICON icon = panel->GetPluginFS()->GetFSIcon(destroyIcon);
-                        if (icon != NULL) // defined by the plugin
+                        // feature 417: a shipped plug-in's Fluent 2 icon (not for Folders: its icon is its current folder's)
+                        HICON setIcon = CreatePluginSetIcon(panel->GetPluginFS()->GetDLLName(), iconSize, FALSE, TRUE);
+                        HICON icon = setIcon != NULL ? NULL : panel->GetPluginFS()->GetFSIcon(destroyIcon);
+                        if (setIcon != NULL)
+                        {
+                            drv.HIcon = setIcon;
+                            drv.HGrayIcon = NULL;
+                            drv.DestroyIcon = TRUE; // this icon is allocated
+                        }
+                        else if (icon != NULL) // defined by the plugin
                         {
                             drv.HIcon = icon;
                             drv.HGrayIcon = NULL;
@@ -3147,7 +3164,9 @@ BOOL CDrivesList::BuildData(BOOL noTimeout, TDirectArray<CDriveData>* copyDrives
                         }
                         else // default
                         {
-                            drv.HIcon = SalLoadIcon(HInstance, IDI_PLUGINFS, iconSize);
+                            drv.HIcon = CreatePluginSetDefaultIcon(TRUE, iconSize); // feature 417: Fluent 2's default
+                            if (drv.HIcon == NULL)
+                                drv.HIcon = SalLoadIcon(HInstance, IDI_PLUGINFS, iconSize);
                             drv.HGrayIcon = NULL;
                             drv.DestroyIcon = TRUE; // this icon is allocated
                         }

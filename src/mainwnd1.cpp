@@ -3309,6 +3309,10 @@ void CMainWindow::OnColorsChanged(BOOL reloadUMIcons)
     if (PluginsBar != NULL)
     {
         PluginsBar->OnColorsChanged();
+        // feature 417: its image lists come from CPlugins::CreateIconsList, which draws the active set's
+        // plug-in icons (and the hand-made dark variants) - rebuild them for the new set or theme
+        if (PluginsBar->HWindow != NULL)
+            PluginsBar->CreatePluginButtons();
     }
 
     // user menu toolbar

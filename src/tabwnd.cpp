@@ -844,7 +844,9 @@ HICON CTabWindow::GetTabIcon(CPanelTab* tab)
                     return PluginIcon[i] != NULL ? PluginIcon[i] : IconPluginFS;
             CPluginData* p = Plugins.Get(plugin);
             HICON icon = NULL;
-            if (p != NULL && p->PluginIcons != NULL && p->ChDrvMenuFSItemIconIndex != -1)
+            if (p != NULL)
+                icon = CreatePluginSetIcon(p->DLLName, iconSize, FALSE, FALSE); // feature 417: its Fluent 2 icon
+            if (icon == NULL && p != NULL && p->PluginIcons != NULL && p->ChDrvMenuFSItemIconIndex != -1)
                 icon = p->PluginIcons->GetIcon(p->ChDrvMenuFSItemIconIndex, TRUE); // the Change Drive menu's icon
             for (i = 0; i < TABSTRIP_PLUGIN_ICONS; i++)
             {
@@ -862,6 +864,8 @@ HICON CTabWindow::GetTabIcon(CPanelTab* tab)
                 if (PluginIconPlugin[i] == plugin && PluginIcon[i] != NULL)
                     return PluginIcon[i];
         }
+        if (IconPluginFS == NULL)
+            IconPluginFS = CreatePluginSetDefaultIcon(TRUE, iconSize); // feature 417: Fluent 2's default
         if (IconPluginFS == NULL)
             IconPluginFS = SalLoadIcon(HInstance, IDI_PLUGINFS, iconSize);
         return IconPluginFS;

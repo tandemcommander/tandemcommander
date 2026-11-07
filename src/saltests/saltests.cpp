@@ -27977,6 +27977,221 @@ static void TestIconSet416()
     printf("TestIconSet416: %d files x 4 sizes; worst coverage %d %%\n", files, worstCoverage);
 }
 
+//*****************************************************************************
+//
+// TestPluginIcons417 - the plug-in icons of the Fluent 2 set (feature 417): which plug-in is a
+// shipped one (its DLL name), which file systems' directory-line icon is replaced, the plug-in
+// folder and path, and every file of iconsets\fluent\plugins\ (and \dark\) rasterized as the
+// program does at 16 / 20 / 24 / 32 px with the legibility rules of 416.
+//
+
+static void TestPluginIcons417()
+{
+    // --- the id from the DLL name: exactly "<id>\<id>.spl", a known id, ASCII case ignored
+    for (int i = 0; i < SAL_ICONSET_PLUGIN_ID_COUNT; i++)
+    {
+        const char* id = SalIconSetPluginIdAt(i);
+        CHECK(id != NULL);
+        if (id == NULL)
+            continue;
+        std::string dll = std::string(id) + "\\" + id + ".spl";
+        CHECK(SalIconSetPluginId(dll.c_str()) == id); // the table's own string
+        std::string upper = dll;
+        for (auto& c : upper)
+            c = (char)toupper((unsigned char)c);
+        CHECK(SalIconSetPluginId(upper.c_str()) == id);
+    }
+    CHECK(SalIconSetPluginIdAt(-1) == NULL);
+    CHECK(SalIconSetPluginIdAt(SAL_ICONSET_PLUGIN_ID_COUNT) == NULL);
+    CHECK(strcmp(SalIconSetPluginId("Ftp\\FTP.Spl"), "ftp") == 0);
+    CHECK(strcmp(SalIconSetPluginId("7zip\\7zip.spl"), "7zip") == 0);
+    CHECK(SalIconSetPluginId("ftp\\sftp.spl") == NULL);           // another file name
+    CHECK(SalIconSetPluginId("sftp\\ftp.spl") == NULL);
+    CHECK(SalIconSetPluginId("ftp\\ftp.dll") == NULL);            // another extension
+    CHECK(SalIconSetPluginId("ftp\\ftp.splx") == NULL);
+    CHECK(SalIconSetPluginId("ftp\\ftp.sp") == NULL);
+    CHECK(SalIconSetPluginId("ftp\\ftp") == NULL);
+    CHECK(SalIconSetPluginId("ftp.spl") == NULL);                 // no folder
+    CHECK(SalIconSetPluginId("\\ftp.spl") == NULL);
+    CHECK(SalIconSetPluginId("ftp\\") == NULL);
+    CHECK(SalIconSetPluginId("ftp/ftp.spl") == NULL);             // another separator
+    CHECK(SalIconSetPluginId("x\\ftp\\ftp.spl") == NULL);         // more than one level
+    CHECK(SalIconSetPluginId("C:\\TC\\plugins\\ftp\\ftp.spl") == NULL); // an absolute path (outside the plug-ins folder)
+    CHECK(SalIconSetPluginId("C:ftp\\ftp.spl") == NULL);          // a drive
+    CHECK(SalIconSetPluginId("\\\\server\\share\\ftp\\ftp.spl") == NULL);
+    CHECK(SalIconSetPluginId("myftp\\myftp.spl") == NULL);        // a third-party plug-in
+    CHECK(SalIconSetPluginId("fsearch\\fsearch.spl") == NULL);    // an old plug-in id that is not in the tree
+    CHECK(SalIconSetPluginId("ft\\ft.spl") == NULL);              // a prefix of an id
+    CHECK(SalIconSetPluginId("ftpp\\ftpp.spl") == NULL);
+    CHECK(SalIconSetPluginId("ft\xC3\xBC\\ft\xC3\xBC.spl") == NULL); // non-ASCII
+    CHECK(SalIconSetPluginId("") == NULL);
+    CHECK(SalIconSetPluginId(NULL) == NULL);
+
+    // --- the directory-line icon: replaced for the identity icons, kept for Folders
+    CHECK(!SalIconSetPluginFSIconIsIdentity("folders"));
+    CHECK(!SalIconSetPluginFSIconIsIdentity(NULL));
+    const char* identity[7] = {"ftp", "sftp", "regedt", "undelete", "portables", "nethood", "demoplug"};
+    for (const char* id : identity)
+        CHECK(SalIconSetPluginFSIconIsIdentity(id));
+    CHECK(SalIconSetPluginFSIconIsIdentity("folder")); // only the exact id is excepted
+    CHECK(SalIconSetPluginFSIconIsIdentity("folderss"));
+
+    // --- the folder and path: none in Classic, whole or refused
+    CHECK(SalIconSetPluginFolder(SAL_ICONSET_CLASSIC, false) == NULL);
+    CHECK(SalIconSetPluginFolder(SAL_ICONSET_CLASSIC, true) == NULL);
+    CHECK(strcmp(SalIconSetPluginFolder(SAL_ICONSET_FLUENT, false), "iconsets\\fluent\\plugins\\") == 0);
+    CHECK(strcmp(SalIconSetPluginFolder(SAL_ICONSET_FLUENT, true), "iconsets\\fluent\\plugins\\dark\\") == 0);
+    CHECK(strcmp(SalIconSetPluginFolder(9, false), "iconsets\\fluent\\plugins\\") == 0);
+    char buf[64];
+    CHECK(SalIconSetBuildPluginPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, "ftp"));
+    CHECK(strcmp(buf, "C:\\TC\\iconsets\\fluent\\plugins\\ftp.svg") == 0);
+    CHECK(SalIconSetBuildPluginPath(buf, sizeof(buf), "C:\\Tand\xC3\xA9m", SAL_ICONSET_FLUENT, true, SAL_ICONSET_NAME_PLUGINFS));
+    CHECK(strcmp(buf, "C:\\Tand\xC3\xA9m\\iconsets\\fluent\\plugins\\dark\\_pluginfs.svg") == 0);
+    strcpy_s(buf, "x");
+    CHECK(!SalIconSetBuildPluginPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_CLASSIC, false, "ftp"));
+    CHECK(buf[0] == 0);
+    const char* exact = "C:\\TC\\iconsets\\fluent\\plugins\\zip.svg";
+    CHECK(SalIconSetBuildPluginPath(buf, strlen(exact) + 1, "C:\\TC\\", SAL_ICONSET_FLUENT, false, "zip"));
+    CHECK(strcmp(buf, exact) == 0);
+    CHECK(!SalIconSetBuildPluginPath(buf, strlen(exact), "C:\\TC\\", SAL_ICONSET_FLUENT, false, "zip")); // one byte short
+    CHECK(buf[0] == 0);
+    CHECK(!SalIconSetBuildPluginPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, "..\\zip"));
+    CHECK(!SalIconSetBuildPluginPath(buf, sizeof(buf), "C:\\TC\\", SAL_ICONSET_FLUENT, false, ""));
+    // the toolbar path builder is unchanged by the shared builder
+    CHECK(SalIconSetBuildPath(buf, sizeof(buf), "C:\\TC", SAL_ICONSET_CLASSIC, true, "Back"));
+    CHECK(strcmp(buf, "C:\\TC\\toolbars\\dark\\Back.svg") == 0);
+
+    // --- the files: every id and both defaults, light and dark, nothing else
+    std::string folder = IconSet416Folder() + "plugins\\";
+    std::vector<std::string> names;
+    for (int i = 0; i < SAL_ICONSET_PLUGIN_ID_COUNT; i++)
+        names.push_back(SalIconSetPluginIdAt(i));
+    names.push_back(SAL_ICONSET_NAME_PLUGIN);
+    names.push_back(SAL_ICONSET_NAME_PLUGINFS);
+    for (int theme = 0; theme < 2; theme++)
+    {
+        std::string dir = folder + (theme ? "dark\\" : "");
+        int count = 0;
+        WIN32_FIND_DATAA fd;
+        HANDLE h = FindFirstFileA((dir + "*.svg").c_str(), &fd);
+        CHECK(h != INVALID_HANDLE_VALUE);
+        if (h != INVALID_HANDLE_VALUE)
+        {
+            do
+            {
+                count++;
+                std::string n = fd.cFileName;
+                n = n.substr(0, n.size() - 4);
+                bool known = std::find(names.begin(), names.end(), n) != names.end();
+                CHECK(known);
+                if (!known)
+                    printf("TestPluginIcons417: unexpected file %s%s\n", theme ? "dark\\" : "", fd.cFileName);
+            } while (FindNextFileA(h, &fd));
+            FindClose(h);
+        }
+        CHECK(count == SAL_ICONSET_PLUGIN_ID_COUNT + 2);
+    }
+
+    NSVGrasterizer* rast = nsvgCreateRasterizer();
+    CHECK(rast != NULL);
+    if (rast == NULL)
+        return;
+    bool redFirst = true;
+    {
+        NSVGimage* red = IconSet416ParseText("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><rect width=\"16\" height=\"16\" fill=\"#FF0000\"/></svg>");
+        if (red != NULL)
+        {
+            unsigned char px[16 * 16 * 4] = {0};
+            nsvgRasterize(rast, red, 0, 0, 1.0f, px, 16, 16, 64);
+            redFirst = px[0] == 255;
+            nsvgDelete(red);
+        }
+    }
+    // the backgrounds of 416: toolbar face, checked / hot face, the menu (and Change Drive) highlight, the
+    // panel / menu background
+    const COLORREF light[4] = {RGB(240, 240, 240), RGB(255, 255, 255), RGB(0, 120, 215), RGB(255, 255, 255)};
+    const COLORREF dark[4] = {RGB(45, 45, 45), RGB(70, 70, 70), RGB(38, 79, 120), RGB(56, 56, 56)};
+    const int sizes[4] = {16, 20, 24, 32};
+    double worst[2][4] = {{100, 100, 100, 100}, {100, 100, 100, 100}};
+    std::string worstName[2][4];
+    int worstCoverage = 100, files = 0;
+    std::string texts[2][SAL_ICONSET_PLUGIN_ID_COUNT + 2];
+    for (int theme = 0; theme < 2; theme++)
+    {
+        for (size_t ni = 0; ni < names.size(); ni++)
+        {
+            std::string path = folder + (theme ? "dark\\" : "") + names[ni] + ".svg";
+            std::string text;
+            bool read = IconSet416ReadFile(path, text);
+            CHECK(read);
+            if (!read)
+            {
+                printf("TestPluginIcons417: missing %s\n", path.c_str());
+                continue;
+            }
+            texts[theme][ni] = text;
+            std::string upper = text;
+            for (auto& c : upper)
+                c = (char)toupper((unsigned char)c);
+            CHECK(upper.find("#FF00FF") == std::string::npos); // the image lists' transparent keys
+            CHECK(upper.find("#F0F0F0") == std::string::npos);
+            CHECK(upper.find("#2D2D2D") == std::string::npos);
+            NSVGimage* image = IconSet416ParseText(text);
+            CHECK(image != NULL && image->shapes != NULL && image->width == 16 && image->height == 16);
+            if (image == NULL || image->shapes == NULL || image->width <= 0)
+            {
+                printf("TestPluginIcons417: %s does not parse\n", path.c_str());
+                if (image != NULL)
+                    nsvgDelete(image);
+                continue;
+            }
+            files++;
+            for (int s = 0; s < 4; s++)
+            {
+                CIconSet416Stats st;
+                const COLORREF* bks = theme == 0 ? light : dark;
+                IconSet416Measure(rast, image, sizes[s], redFirst, bks, 4, bks[0], st);
+                int coveragePct = st.Covered * 100 / (sizes[s] * sizes[s]);
+                worstCoverage = min(worstCoverage, coveragePct);
+                CHECK(coveragePct >= 8); // nothing draws as an empty slot
+                for (int k = 0; k < 4; k++)
+                    if (st.Silhouette[k] < worst[theme][k])
+                    {
+                        worst[theme][k] = st.Silhouette[k];
+                        worstName[theme][k] = names[ni] + " @" + std::to_string(sizes[s]);
+                    }
+                // 416's legibility rule (the grey list is the plug-ins' own rule, not the toolbar's: not measured here)
+                bool ok = st.Silhouette[0] >= 2.0 && st.Silhouette[1] >= 1.8 && st.Silhouette[3] >= 1.8 && st.Silhouette[2] >= 1.5;
+                CHECK(ok);
+                if (!ok)
+                    printf("TestPluginIcons417: %s%s at %d px: silhouette %.2f / %.2f / %.2f / %.2f\n", theme ? "dark\\" : "",
+                           names[ni].c_str(), sizes[s], st.Silhouette[0], st.Silhouette[1], st.Silhouette[2], st.Silhouette[3]);
+            }
+            nsvgDelete(image);
+        }
+    }
+    nsvgDeleteRasterizer(rast);
+    // the 20 plug-ins enabled in plugins.cfg each look different (SC-003)
+    const char* enabled[20] = {"7zip", "checksum", "codeview", "dbviewer", "diskmap", "filecomp", "folders", "ftp", "mdview",
+                               "peviewer", "pictview", "portables", "regedt", "renamer", "sftp", "tar", "uncab", "undelete",
+                               "uniso", "zip"};
+    for (int theme = 0; theme < 2; theme++)
+        for (int a = 0; a < 20; a++)
+            for (int b = a + 1; b < 20; b++)
+            {
+                size_t ia = std::find(names.begin(), names.end(), enabled[a]) - names.begin();
+                size_t ib = std::find(names.begin(), names.end(), enabled[b]) - names.begin();
+                CHECK(ia < names.size() && ib < names.size() && texts[theme][ia] != texts[theme][ib]);
+            }
+    const char* bkNames[4] = {"toolbar", "checked", "highlight", "panel"};
+    for (int th = 0; th < 2; th++)
+        for (int k = 0; k < 4; k++)
+            printf("TestPluginIcons417: %s %-9s worst silhouette %.2f (%s)\n", th ? "dark " : "light", bkNames[k], worst[th][k],
+                   worstName[th][k].c_str());
+    printf("TestPluginIcons417: %d files x 4 sizes; worst coverage %d %%\n", files, worstCoverage);
+    CHECK(files == 2 * (SAL_ICONSET_PLUGIN_ID_COUNT + 2));
+}
+
 int main(int argc, char** argv)
 {
     // feature 126: "saltests --package-path <family>" prints what the program's real package
@@ -28207,6 +28422,7 @@ int main(int argc, char** argv)
     TestIsoDirLength403();
     TestFtpRootMatch410();
     TestIconSet416();
+    TestPluginIcons417();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

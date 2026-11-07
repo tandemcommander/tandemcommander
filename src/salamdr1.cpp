@@ -1119,6 +1119,58 @@ HICON LoadSetIconOr(const char* fluentName, HINSTANCE hDLL, int id, int iconSize
     return SalLoadIcon(hDLL, id, iconSize);
 }
 
+// feature 417: the gray copy of 'icon' (destroyed here) by the rule of the plug-ins' gray icon lists
+// (CIconList::CreateAsCopy(.., TRUE): each pixel's brightness, alpha kept); NULL on a failure
+static HICON PluginSetIconToGray(HICON icon, int size)
+{
+    HICON gray = NULL;
+    CIconList src;
+    CIconList dst;
+    if (src.Create(size, size, 1) && src.ReplaceIcon(0, icon) && dst.CreateAsCopy(&src, TRUE))
+        gray = dst.GetIcon(0, TRUE);
+    HANDLES(DestroyIcon(icon));
+    return gray;
+}
+
+HICON CreatePluginSetIcon(const char* dllName, int size, BOOL gray, BOOL fsIcon)
+{
+    // feature 417: only Fluent 2 has plug-in icons, only for a plug-in shipped with the program
+    if (GetActiveIconSet() != SAL_ICONSET_FLUENT)
+        return NULL;
+    const char* id = SalIconSetPluginId(dllName);
+    if (id == NULL || (fsIcon && !SalIconSetPluginFSIconIsIdentity(id)))
+        return NULL;
+    HICON icon = CreateSetPluginSVGIcon(id, size);
+    if (icon != NULL && gray)
+        icon = PluginSetIconToGray(icon, size);
+    return icon;
+}
+
+HICON CreatePluginSetDefaultIcon(BOOL fs, int size, BOOL gray)
+{
+    if (GetActiveIconSet() != SAL_ICONSET_FLUENT)
+        return NULL;
+    HICON icon = CreateSetPluginSVGIcon(fs ? SAL_ICONSET_NAME_PLUGINFS : SAL_ICONSET_NAME_PLUGIN, size);
+    if (icon != NULL && gray)
+        icon = PluginSetIconToGray(icon, size);
+    return icon;
+}
+
+BOOL PluginHasSetIcon(const char* dllName)
+{
+    if (GetActiveIconSet() != SAL_ICONSET_FLUENT)
+        return FALSE;
+    const char* id = SalIconSetPluginId(dllName);
+    if (id == NULL)
+        return FALSE;
+    char dir[SAL_MODULE_PATH_U8];
+    char path[SAL_MODULE_PATH_U8];
+    if (!SalGetModuleDirU8(NULL, dir, 3 * MAX_PATH) ||
+        !SalIconSetBuildPluginPath(path, _countof(path), dir, SAL_ICONSET_FLUENT, false, id))
+        return FALSE;
+    return SalGetFileAttributes(path) != INVALID_FILE_ATTRIBUTES; // UTF-8 path, read wide (salfileio.h)
+}
+
 HICON SalLoadIcon(HINSTANCE hDLL, int id, int iconSize)
 {
     //return (HICON)HANDLES(LoadImage(hDLL, MAKEINTRESOURCE(id), IMAGE_ICON, iconSize, iconSize, IconLRFlags));

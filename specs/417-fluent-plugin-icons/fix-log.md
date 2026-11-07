@@ -47,3 +47,60 @@ not tested; U1 the second FS-row site of the Disconnect dialog; E4 the gray rule
 tasks.md: T022 clang-format check; T021 rows CACHE, SWITCH with the directory line, CLASSIC-EQ parts; T007
 pairwise-different files; T015 both sites. E4 accepted: the set icon's gray copy goes through
 `CIconList::CreateAsCopy(.., TRUE)`, the very code of today's `PluginIconsGray`.
+Round 2: CRITICAL 0, HIGH 0, MEDIUM 0; E4 (LOW) accepted as above.
+
+## Implementation
+
+### Data (T002-T005)
+
+- `tools/brand/fluent-icons/gen_fluent_plugins.py`: port of the study's generator (package argument like
+  `gen_fluent.py`, `--help`, English, no study-only data). The package of the study
+  (`%LOCALAPPDATA%\TandemIconStudy\vendor\fluent-1.1.344\pkg.tgz`) hashes to the README's sha512
+  (`rasjaq4h...lJYoQ==`); `gen_fluent.py` regenerates 416's 95 + 95 files byte-identical from it (only the line
+  ends of `LICENSE-fluent.txt` differ), so it is the pinned package.
+- `python -I tools\brand\fluent-icons\gen_fluent_plugins.py <package>` -> 33 + 33 files in
+  `src/res/iconsets/fluent/plugins[\dark]`, `diff -r` against the approved study files: **identical**.
+- README section "Plug-in icons (feature 417)"; `!populate_build_dir.cmd` copies the two folders (robocopy is not
+  recursive there); `build.cmd`'s `robocopy /E` and the installer's recursive `[Files]` entry already take them.
+- Trap (CLAUDE.md, 123): a Bash here-document turned `\b` / `\f` of a README command line and of two code comments
+  into control bytes; fixed with a byte-level script, `fix_ctl.py`-style check finds none left. Scripts are written
+  with the editor from here on.
+
+### Code (T006-T018)
+
+- `saliconset.h`: one path builder `SalIconSetBuildPathIn` (folder NULL = refused) behind `SalIconSetBuildPath`
+  (unchanged results, tested) and the new `SalIconSetBuildPluginPath`; `SalIconSetPluginIdAt` (31 ids),
+  `SalIconSetPluginId`, `SalIconSetPluginFSIconIsIdentity`, `SalIconSetPluginFolder` (NULL in Classic),
+  `SAL_ICONSET_NAME_PLUGIN` / `_PLUGINFS`.
+- `svg.cpp`: `LoadSetSVGImage(..., plugin)` reads the set's plug-in folder; `CreateSetIconFromFolder` shared by
+  `CreateSetSVGIcon` (unchanged) and the new `CreateSetPluginSVGIcon` (active set; Classic has no folder -> NULL).
+- `salamdr1.cpp`: `CreatePluginSetIcon` (Fluent 2 only, known id, Folders excluded for FS icons, gray copy through
+  `CIconList::CreateAsCopy(.., TRUE)`), `CreatePluginSetDefaultIcon`, `PluginHasSetIcon` (UTF-8 path,
+  `SalGetFileAttributes`).
+- Sites: `CPlugins::CreateIconsList` (set icon, else today's icon, else the Fluent default or `IDI_PLUGIN`), the
+  two "has an icon" tests of `plugins2.cpp` and View With (`fileswn5.cpp`), `AddItemsToChangeDrvMenu` (+ gray,
+  default FS icon), the plug-in FS tab (`tabwnd.cpp`, the cache is cleared on every colour change, line 198),
+  `UpdateDriveIcon` (`fileswn3.cpp`), the open-FS drive-list row and the Disconnect dialog's GetFSIcon rows, its
+  default `CONNECTION_ICON_PLUGIN`.
+- **Site found while implementing** (not in the enumeration of step 3): the open / detached FS items of the Change
+  Drive menu and of the Disconnect dialog come from `GetChangeDriveOrDisconnectItem` (`drivelst.cpp`,
+  `dialogs6.cpp`), whose icon FTP sets to its `FTPIcon` and SFTP to NULL - the set icon replaces it there too
+  (identity rule: Folders returns no item).
+- `mainwnd1.cpp`: `OnColorsChanged` rebuilds the Plugins bar (`CreatePluginButtons`).
+- Classic review (T017): every helper returns NULL unless Fluent 2 is active, so each site runs its previous code
+  unchanged; the only Classic-visible change is the extra `CreatePluginButtons` on a colour change, which rebuilds
+  the same lists. `PluginIcons` / `SaveIconList` are not touched.
+- `lang.rc`: `" &Icon style "` (the access key stays `I`; the page's other keys: F, H, c, S, p, m, o, T, u, l).
+
+### Checks so far
+
+- `.\build.cmd` (Debug x64): BUILD SUCCEEDED; the 6 warnings of the log are in `salamdr2.cpp` / `zip.cpp`
+  (not touched).
+- `saltests`: **286940 checks, 0 failed** (416: 285482). `TestPluginIcons417` worst silhouettes: light toolbar
+  2.56 (DiskMap @16), highlight 2.12 (RegEdit @16); dark toolbar 3.23, highlight 2.14 (DiskMap @16); worst
+  coverage 22 %; 66 files.
+- Negative controls: `plugins\ftp.svg` removed and `plugins\dark\zip.svg` emptied -> `saltests` 4 failed
+  ("missing", "does not parse"); `plugins\dark\sftp.svg` removed and an `extra.svg` added -> `check_iconset.py`
+  2 problems. Restored; 0 / 0.
+- `check_iconset.py`: 95 + 95 toolbar files, 33 plug-in icons, 0 problems (it now excludes the plug-in defaults
+  from the toolbar names).

@@ -1675,7 +1675,7 @@ void CFilesWindow::FillViewWithMenu(CMenuPopup* popup)
             int pluginIndex = -item->ViewerType - 1;
             CPluginData* plugin = Plugins.Get(pluginIndex);
             lstrcpy(buff, plugin->Name);
-            if (plugin->PluginIconIndex != -1) // the plugin has an icon
+            if (plugin->PluginIconIndex != -1 || PluginHasSetIcon(plugin->DLLName)) // the plugin has an icon (feature 417: or a Fluent 2 one)
                 imgIndex = pluginIndex;
         }
         if (item->ViewerType == VIEWER_EXTERNAL)

@@ -54,3 +54,31 @@ The build does not run the generator and needs no network; the source package is
 
 The mapping, palettes and drawings come from the maintainer's design study of 2026-11-07 (blind recognition and
 paired comparisons of 80 commands: meaning better 52 / worse 14 / equal 14, dark-bar legibility 65 / 2 / 13).
+
+## Plug-in icons (feature 417)
+
+`src/res/iconsets/fluent/plugins/<id>.svg` and `plugins/dark/<id>.svg` (33 + 33): one icon per plug-in id of
+`SalIconSetPluginId` (`src/common/saliconset.h`; the 31 plug-ins of the tree, also those `off` in `plugins.cfg`)
+and the defaults `_plugin` (a plug-in without an icon) and `_pluginfs` (a file system without an icon). While
+Fluent 2 is active the core draws them instead of a shipped plug-in's own icon (contract
+`specs/417-fluent-plugin-icons/contracts/plugin-icon-files.md`); Classic has no plug-in icons.
+
+Regenerate from the same package as above:
+
+```text
+python -I tools\brand\fluent-icons\gen_fluent_plugins.py %TEMP%\fluent-1.1.344
+```
+
+With the pinned package the output is byte-identical to the committed files (and to the maintainer's approved
+study). `check_iconset.py` and `saltests` (`TestPluginIcons417`) check them.
+
+- `PLUGINS`: id -> Fluent glyph, size, role, badge. Families by colour: archivers in the archive purple (as Pack /
+  Unpack), F3 viewers as documents, file systems by the place (folders amber, devices grey like the drives, the
+  registry blue), tools neutral, green = verified / recovered.
+- Badges as Fluent composes them, on a cut-out plate in the bottom-right corner: a 12 px glyph (SFTP's lock, the
+  demo plug-ins' server / eye), a filled disc with a glyph cut in (Checksum's check mark, Undelete's "back"), or a
+  letter tile (7-Zip's "7").
+- Own drawing: **RegEdit** - after the Windows Registry Editor icon, facing the viewer: a 2 x 2 x 2 block of cubes
+  (4 px cubes, 2 px depth) whose front top-right cube is missing and two tilted cubes flying in; front faces and
+  grooves on whole pixels; Fluent 2 brand-ramp blues.
+- Palette: that of `gen_fluent.py` plus `greenFill` and `onAccent`; the same transparent-key rule.

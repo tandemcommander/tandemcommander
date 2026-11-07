@@ -888,7 +888,9 @@ CDisconnectDialog::CreateImageList()
         TRACE_E("Icon was not found!");
 
     // CONNECTION_ICON_PLUGIN
-    hIcon = SalLoadIcon(HInstance, IDI_PLUGINFS, IconSizes[ICONSIZE_16]);
+    hIcon = CreatePluginSetDefaultIcon(TRUE, IconSizes[ICONSIZE_16]); // feature 417: Fluent 2's default
+    if (hIcon == NULL)
+        hIcon = SalLoadIcon(HInstance, IDI_PLUGINFS, IconSizes[ICONSIZE_16]);
     ImageList_ReplaceIcon(himl, -1, hIcon);
     HANDLES(DestroyIcon(hIcon));
 
@@ -1094,6 +1096,15 @@ void CDisconnectDialog::EnumConnections()
                 BOOL destroyIcon = FALSE;
                 if (fs->GetChangeDriveOrDisconnectItem(fs->GetPluginFSName(), txt, icon, destroyIcon))
                 {
+                    // feature 417: a shipped plug-in's Fluent 2 icon instead of the one it hands over
+                    HICON setIcon = CreatePluginSetIcon(fs->GetDLLName(), IconSizes[ICONSIZE_16], FALSE, TRUE);
+                    if (setIcon != NULL)
+                    {
+                        if (destroyIcon && icon != NULL)
+                            HANDLES(DestroyIcon(icon));
+                        icon = setIcon;
+                        destroyIcon = TRUE;
+                    }
                     int iconIndex = -1;
                     if (icon != NULL)
                         iconIndex = ImageList_ReplaceIcon(HImageList, -1, icon);
@@ -1172,7 +1183,12 @@ void CDisconnectDialog::EnumConnections()
                             *userPart = 0;
 
                         BOOL destroyIcon = FALSE;
-                        HICON icon = fs->GetFSIcon(destroyIcon);
+                        // feature 417: a shipped plug-in's Fluent 2 icon (not for Folders: its icon is its current folder's)
+                        HICON icon = CreatePluginSetIcon(fs->GetDLLName(), IconSizes[ICONSIZE_16], FALSE, TRUE);
+                        if (icon != NULL)
+                            destroyIcon = TRUE;
+                        else
+                            icon = fs->GetFSIcon(destroyIcon);
                         int iconIndex = -1;
                         if (icon != NULL)
                             iconIndex = ImageList_ReplaceIcon(HImageList, -1, icon);
