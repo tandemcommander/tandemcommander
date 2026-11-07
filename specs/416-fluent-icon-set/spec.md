@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item fluent-icon-set-with-switch-in-appearance (backlog/items/fluent-icon-set-with-switch-in-appearance/desc.md) - implement exactly what it describes." From backlog item fluent-icon-set-with-switch-in-appearance.
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: Which 10 icons does each preview strip show? → A: Back, Parent Directory, Create Directory, Find, Views, Refresh, Copy, Delete, Select, Pack - one or two per group of the default top toolbar, including a Selection button (raster in Classic) so the difference between the sets is visible (autonomous run: recommended)
+- Q: When does a changed set apply - OK only, or also a separate Apply? → A: when the Configuration dialog commits its pages (OK) and after a settings import, through the same refresh; no separate Apply path is added (autonomous run: conservative)
+- Q: What does a missing Fluent 2 file do? → A: the site keeps what Classic draws there (raster glyph, Windows icon, old `..` icon, old arrow), never an empty cell or a crash (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A consistent, legible icon set out of the box (Priority: P1)
@@ -78,7 +86,7 @@ An icon author (or a damaged installation) leaves a dark override that cannot be
 - **FR-006**: Fluent 2 MUST replace the `..` symbol of the file list at 16, 32 and 48 px with its own `UpDir` icon of today's shape.
 - **FR-007**: Fluent 2 MUST give icons to the configuration-list toolbar (Modify, New/Insert, Delete, Sort, Move Up, Move Down) and its drop-down arrow a Fluent chevron whose disabled colour is the theme's grey-text colour.
 - **FR-008**: In the Dark theme, a set's hand-made dark variant MUST be used verbatim; a dark variant that cannot be parsed or has no shapes MUST fall back to the set's standard icon with the automatic dark adaptation; an icon that cannot be parsed at all MUST NOT crash the program or blank its cell.
-- **FR-009**: Configuration > Appearance MUST show a group "Toolbar icons" with one choice per set; each choice MUST show a preview strip of 10 icons of the default top toolbar, drawn in the active theme by the same image-list building code the toolbars use.
+- **FR-009**: Configuration > Appearance MUST show a group "Toolbar icons" with one choice per set; each choice MUST show a preview strip of 10 icons of the default top toolbar (Back, Parent Directory, Create Directory, Find, Views, Refresh, Copy, Delete, Select, Pack), drawn in the active theme by the same image-list building code the toolbars use.
 - **FR-010**: OK in the Configuration dialog (and a settings import) MUST apply a changed set at once, without a restart, rebuilding every icon site as a theme switch does.
 - **FR-011**: No Fluent 2 icon may disappear on the toolbar (light / dark; normal / hot / pressed / checked / disabled) or on the menu highlight, at 100 / 125 / 150 / 200 % DPI.
 - **FR-012**: The Fluent 2 icons, their dark variants and the Microsoft Fluent UI System Icons licence (MIT) MUST be deployed with the program (build tree and installer); `doc/third_party.txt` MUST name the Fluent glyphs and their licence.
