@@ -278,3 +278,45 @@ reads as null.
 
 After the fixes: `npm run check` 364 passed / 2 skipped.
 - e2e after the review-5 fixes: `us3-order` + `a11y` + `us1-live-edit` 16 / 16 passed (3.2 min); encoding guard `TOTAL: 0 finding(s)`.
+
+### Review 6 (refute-first agent, 2026-11-07) - 0 MUST, 2 SHOULD, 5 NOTE
+
+Own copy with its own `npm ci`, no links; this repository clean and `node_modules` intact
+afterwards (362 entries). It re-ran `npm run check` (364 / 2), the build, `us3-order` 12 / 12; the
+negative control of the refusal works; refusals write nothing on the tested paths; verdicts without
+a position (decision, park) still apply during a run.
+
+- **SHOULD 1 - a run that starts while claude reads was not detected** (`countedWithout` is taken
+  at the job's start; the loop does not wait for the app's AI jobs). Reproduced by the reviewer
+  with a gated fake claude: applied as counted on main, one place off. Fixed: `countedDuringRun`
+  also counts a job as "during a run" when a run in progress now began before the job ended (the
+  lock's `started`, whole seconds: a start in the job's last second counts as during it -
+  conservative). Test *refuses a position of a job during which a run started, and keeps the
+  stale-view check of a plan (414 review 6)* (run lock dated 36 s back -> `422`, main unchanged);
+  the review-4 test that applies a no-run job during a later run now waits for the next second
+  before the lock. Negative control (the start check off) -> the new test fails.
+- **SHOULD 2 - a refused first plan row switched the stale-view check off** for the rest of the
+  plan (`first = false` also after a row refused before the queue; review 5 made such refusals
+  common). Reproduced: a stale `base.board`, first row refused, the second row parked the item.
+  Fixed: the board revision goes with the first row that reaches the write queue (`reached`). Same
+  test: second row refused as changed underneath, no change, tray unchanged, the item still in the
+  Inbox. Negative control (the old `first = false`) -> the test fails.
+- NOTE 3 (a draft for the Inbox with a position was refused during a run although the position is
+  ignored) - fixed: only a draft placed outside the Inbox is checked; test *applies a draft for the
+  Inbox during a run (its position means nothing) (414 review 6)*.
+- NOTE 4 (the draft test did not show that nothing was written) - the test now asserts no new item
+  and an empty tray (`pending` and `committedRecently`).
+- NOTE 1 (a run that starts *and ends* between the job and Apply, or any other board change in
+  between, is not detected - older than 414, both routes) - accepted and recorded: the AI's
+  numbers are advice the maintainer sees before applying; covering it would mean storing the
+  section rows at the job's start and comparing (a change of the AI design of 344).
+- NOTE 2 (the page button is stricter than Apply; a seconds-long window between render and click)
+  - accepted.
+- NOTE 5 (job records saved before review 4 default `countedWithout` to null) - accepted: such
+  records exist only from this feature's own branch builds; with the start check of SHOULD 1 a
+  record from before a run still in progress is refused anyway.
+
+After the fixes: `npm run check` 366 passed / 2 skipped. Review 6 had no MUST; its SHOULD fixes are
+narrow and each has a test with a negative control - no further review round (SKILL.md step 7:
+a fresh review follows MUST findings).
+- e2e after the review-6 fixes: `us3-order` + `a11y` + `us1-live-edit` 16 / 16 passed (3.3 min).

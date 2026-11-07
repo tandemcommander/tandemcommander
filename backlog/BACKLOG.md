@@ -17,7 +17,6 @@ Last triaged: 2026-11-07
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Backlog app triage: choose the position when moving an item out of the Inbox](items/backlog-app-triage-position-on-move-from-inbox/desc.md) | improvement | 3 | tooling | 414 |
 
 ## Next
 

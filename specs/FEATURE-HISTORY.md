@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412 |
+| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412, 414 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -6736,3 +6736,30 @@ a few early ones are out of sequence).
   14 / 4 / 5); refute-first reviews: 1 (no MUST; SHOULD the title contrast - fixed), 2 (no MUST;
   SHOULD the halfway fallback, NOTEs one pole / stale comment / no title probe row - fixed), 3 (no
   MUST; SHOULD stale design documents - fixed).
+- 414-triage-position: the backlog app's triage could move an Inbox item into *Next* only at the
+  suggested place and into *Decisions* / *Person steps* only at the end - a chosen position took a
+  second move - now a *Place at* chooser (key `m` focuses its position field) moves the item into
+  the ordered section its type / who admit at a typed position in one `backlog.sh move
+  --position`, its default the place `auto-triage` picks (`triagePosition`: the first row of lower
+  severity, the end when none, after a row it depends on - the suggestion uses the same rule now;
+  the app's old "below the last row of at least the severity" differed on the unsorted real
+  *Next*); past the end is sent as the last place; refused text sends nothing; the sections the
+  tool would refuse are disabled, and so are *Decisions* / *Person* for such an item (they were
+  refused after the click). Traps: during a run the board hides the running item while `main`'s
+  `BACKLOG.md` keeps its row, so every position the page sent (also Accept, the new-item form, the
+  Move dialog, `set --position`, `decide @N` - since 371) landed one place too high: the server
+  translates (`packages/server/src/backlog/positions.ts`) - the hidden row is `services.running()`,
+  not the gate's frozen slug (an interrupted run's item stays visible), and the moved item is not
+  counted (the tool's `place_row` removes it first); an AI proposal counted during a run (or during
+  which a run started) is refused, not translated - the run's tree lacks every change landed on
+  `main` since; a refused first auto-triage plan row must not switch the stale-view check off; a
+  reviewer's `git worktree remove --force` followed `node_modules` junctions into this repository
+  and deleted files (tracked ones restored, `npm ci` + build redone; later reviewers work in plain
+  copies). Limits: an AI number is still advice - a board change between the check and Apply other
+  than a run is not detected (older than 414); the default ignores a dependency on the running
+  item. From backlog item `backlog-app-triage-position-on-move-from-inbox`. Tests: vitest 342 ->
+  366 (shared: `triagePosition`, `readTriagePosition`, `aiPlacementBlock`; server:
+  `positions.test.ts`, 4 route tests in `write-channels.test.ts`, 5 in `ai-jobs.test.ts`), Playwright
+  `us3-order` 8 -> 12 (+ Q9 extended), `a11y` 3, `us1-live-edit` 1 - each new test with a negative
+  control; six refute-first reviews (MUST 0 / 1 / 1 / 0 / 0 / 0 - fixed; SHOULD 2 / 0 / 1 / 2 / 2
+  / 2 - fixed).

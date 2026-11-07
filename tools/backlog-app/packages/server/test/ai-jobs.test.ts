@@ -348,6 +348,8 @@ describe("AI jobs", () => {
     const before = await runJob("triage-check", { slug });
     expect(before.state, before.error ?? "").toBe("done");
     expect(before.countedWithout).toBeNull();
+    // The run starts after the job ended (the lock's stamp has whole seconds: wait for the next one).
+    await new Promise((resolve) => setTimeout(resolve, 1100));
     await gitIn(root, ["checkout", "-q", "-b", `345-${disk}`]);
     writeRunLock(root, 0, disk, `345-${disk}`);
     await app.refresh();
@@ -406,6 +408,15 @@ describe("AI jobs", () => {
     });
     expect(refusedDraft.status, JSON.stringify(refusedDraft.json)).toBe(422);
     expect((refusedDraft.json as { error: { message: string } }).error.message).toBe(AI_RUN_POSITION);
+    // Nothing was written: no new item, the tray unchanged.
+    const afterDraft = (await app.get("/api/board")).json as BoardView;
+    expect(
+      afterDraft.sections.some((sec) =>
+        sec.rows.some((r) => r.kind === "item" && r.slug.startsWith("viewer-crashes")),
+      ),
+    ).toBe(false);
+    const trayAfterDraft = (await app.get("/api/tray")).json as Tray;
+    expect([...trayAfterDraft.pending, ...trayAfterDraft.committedRecently]).toEqual([]);
     fake("ok", { items: [{ slug, ...PLACE_2 }] });
     const plan = await runJob("auto-triage-plan", {});
     expect(plan.state, plan.error ?? "").toBe("done");
@@ -416,5 +427,68 @@ describe("AI jobs", () => {
     expect(planned.status, JSON.stringify(planned.json)).toBe(200);
     expect((planned.json as ApplyAnswer).results).toEqual([{ slug, ok: false, refused: AI_RUN_POSITION }]);
     expect(await mainNext()).toEqual([disk, ftp]);
+  });
+  it("refuses a position of a job during which a run started, and keeps the stale-view check of a plan (414 review 6)", async () => {
+    const slug = "typed-path-with-a-pipe-brackets";
+    const disk = "disk-map-context-menu-crash";
+    const ftp = "ftp-per-server-encoding-flag";
+    // A job with no run at its start; a run whose lock says it started 36 s ago (before the job
+    // ended) - claude may have read the run's tree.
+    fake("ok", PLACE_2);
+    const job = await runJob("triage-check", { slug });
+    expect(job.state, job.error ?? "").toBe("done");
+    expect(job.countedWithout).toBeNull();
+    await gitIn(root, ["checkout", "-q", "-b", `345-${disk}`]);
+    writeRunLock(root, 0.01, disk, `345-${disk}`);
+    await app.refresh();
+    const refused = await call("POST", `/api/ai/jobs/${job.id}/apply`, { proposal: job.proposal, base: {} });
+    expect(refused.status, JSON.stringify(refused.json)).toBe(422);
+    expect((refused.json as { error: { message: string } }).error.message).toBe(AI_RUN_POSITION);
+    expect(await mainNext()).toEqual([disk, ftp]);
+    // A plan whose first row is refused before the write queue: the second row still carries the
+    // view's (stale) board revision and is refused as changed underneath; nothing is written.
+    fake("ok", {
+      items: [
+        { slug, ...PLACE_2 },
+        { slug, ...PLACE_2, verdict: "park", section: "Parked", position: null, reason: "not now" },
+      ],
+    });
+    const plan = await runJob("auto-triage-plan", {});
+    expect(plan.state, plan.error ?? "").toBe("done");
+    const trayOf = async (): Promise<number> => {
+      const tray = (await app.get("/api/tray")).json as Tray;
+      return tray.pending.length + tray.committedRecently.length;
+    };
+    const traysBefore = await trayOf();
+    const planned = await call("POST", `/api/ai/jobs/${plan.id}/apply`, {
+      proposal: plan.proposal,
+      base: { board: "0".repeat(64) },
+    });
+    expect(planned.status, JSON.stringify(planned.json)).toBe(200);
+    const results = (planned.json as ApplyAnswer).results;
+    expect(results[0]).toEqual({ slug, ok: false, refused: AI_RUN_POSITION });
+    expect(results[1]?.ok).toBe(false);
+    expect((planned.json as ApplyAnswer).changes).toEqual([]);
+    expect(await trayOf()).toBe(traysBefore);
+    expect(await mainNext()).toEqual([disk, ftp]);
+    const board = (await app.get("/api/board")).json as BoardView;
+    expect(
+      board.sections.find((s) => s.name === "Inbox")?.rows.some((r) => r.kind === "item" && r.slug === slug),
+    ).toBe(true);
+  });
+
+  it("applies a draft for the Inbox during a run (its position means nothing) (414 review 6)", async () => {
+    const disk = "disk-map-context-menu-crash";
+    await gitIn(root, ["checkout", "-q", "-b", `345-${disk}`]);
+    writeRunLock(root, 0, disk, `345-${disk}`);
+    await app.refresh();
+    fake("ok", { ...DRAFT, place: { section: "Inbox", position: 1 } });
+    const draft = await runJob("draft-item", { text: "a sentence" });
+    expect(draft.state, draft.error ?? "").toBe("done");
+    const applied = await call("POST", `/api/ai/jobs/${draft.id}/apply`, {
+      proposal: draft.proposal,
+      base: {},
+    });
+    expect(applied.status, JSON.stringify(applied.json)).toBe(200);
   });
 });

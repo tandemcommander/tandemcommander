@@ -60,6 +60,8 @@ All paths below are relative to `tools/backlog-app/` unless they start with `spe
 
 - [X] T019 Review 5: AI positions counted during a run refused (`packages/server/src/ai/apply.ts` `assertCountable`), the page's AI button through `aiPlacementBlock` (`packages/shared/src/query/triage.ts`), label shows the sent number; tests in `packages/server/test/ai-jobs.test.ts` and `packages/shared/test/triage.test.ts`
 
+- [X] T020 Review 6: a run started before the job ended counts as "during a run" (`countedDuringRun`), the plan's stale-view check kept after a refused row, a draft for the Inbox not checked (`packages/server/src/ai/apply.ts`); tests in `packages/server/test/ai-jobs.test.ts`
+
 ## Dependencies & Execution Order
 
 - T001 -> T002 -> T003 -> T004 -> T005 -> T006 -> T007 -> T008 -> T009 - T013.

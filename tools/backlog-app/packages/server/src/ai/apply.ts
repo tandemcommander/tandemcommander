@@ -20,6 +20,7 @@ import {
   type AiAutoTriagePlanResult,
   type AiDraftItemResult,
   type AiJobApplyRequest,
+  type AiJobRecord,
   type AiTriageCheckResult,
   type AiVerifyResult,
   type Change,
@@ -30,6 +31,7 @@ import {
 import type { Services } from "../services.ts";
 import { fileHash, type Base, type StagedChange } from "../backlog/write-queue.ts";
 import { toolChangeForTray } from "../backlog/tray.ts";
+import { parseStamp } from "../loop/view.ts";
 import { resolveRef } from "../repo/git.ts";
 import { SECTION_ARG } from "../api/backlog-write.ts";
 import { SLUG_PATTERN } from "../api/common.ts";
@@ -413,17 +415,36 @@ export const AI_RUN_POSITION =
   "page's Place at, or apply the proposal without a position";
 
 /**
- * Refuses an AI position that cannot be translated to the tool's count (feature 414, reviews 3-5):
- * a job started during a run read the run's tree (its `BACKLOG.md` lacks the running item and
- * every change the app landed on `main` since), so its number means no definite place on `main`.
- * A job started with no run read `main`'s own tree: its number is the tool's count.
+ * Whether a job may have read a run's tree (feature 414, reviews 5 and 6): it started during a run
+ * (`countedWithout`), or a run in progress now began before the job ended (a run can start while
+ * claude reads; the lock's stamp has whole seconds, so a start in the job's last second counts as
+ * during it).
+ *
+ * @param services - The server's services.
+ * @param job - The job.
+ * @returns True when its positions may count the run's tree.
+ */
+function countedDuringRun(services: Services, job: AiJobRecord): boolean {
+  if (job.countedWithout !== null) return true;
+  const run = services.running();
+  if (!run) return false;
+  const started = parseStamp(run.started);
+  const ended = job.endedAt ? Date.parse(job.endedAt) : Number.NaN;
+  return started === null || Number.isNaN(ended) || started <= ended;
+}
+
+/**
+ * Refuses an AI position that cannot be translated to the tool's count (feature 414, reviews 3-6):
+ * a job that may have read a run's tree (its `BACKLOG.md` lacks the running item and every change
+ * the app landed on `main` since) gives a number with no definite place on `main`. A job that
+ * read no run's tree counted `main`'s own rows.
  *
  * @param position - The proposed position, or null.
- * @param countedWithout - The running item at the job's start, or null.
- * @throws ApiError `refused` for a position of a job started during a run.
+ * @param duringRun - Whether the job may have read a run's tree (`countedDuringRun`).
+ * @throws ApiError `refused` for such a position.
  */
-function assertCountable(position: number | null | undefined, countedWithout: string | null): void {
-  if (position && countedWithout !== null) throw new ApiError("refused", AI_RUN_POSITION);
+function assertCountable(position: number | null | undefined, duringRun: boolean): void {
+  if (position && duringRun) throw new ApiError("refused", AI_RUN_POSITION);
 }
 
 /**
@@ -479,7 +500,10 @@ export async function applyProposal(
   switch (job.kind) {
     case "draft-item": {
       const draft = parsed.data as AiDraftItemResult;
-      assertCountable(draft.place?.position, job.countedWithout);
+      // A draft for the Inbox has no position (`draftOperations` ignores it).
+      if (draft.place && draft.place.section !== "Inbox") {
+        assertCountable(draft.place.position, countedDuringRun(services, job));
+      }
       answer = await runOperations(
         services,
         `new item ${draft.title.slice(0, 40)}`,
@@ -492,7 +516,7 @@ export async function applyProposal(
     case "triage-check": {
       const row = await rowOf(services, jobSlug ?? "");
       const verdict = parsed.data as AiTriageCheckResult;
-      if (verdict.verdict === "place") assertCountable(verdict.position, job.countedWithout);
+      if (verdict.verdict === "place") assertCountable(verdict.position, countedDuringRun(services, job));
       answer = await runOperations(
         services,
         `triage ${row.slug}`,
@@ -530,11 +554,17 @@ export async function applyProposal(
       // One queued application per accepted row; a refused row does not stop the others.
       const plan = parsed.data as AiAutoTriagePlanResult;
       answer = { ok: false, findings: [], notices: [], changes: [], results: [], board: "", item: null };
+      // The view's board revision goes with the first row that reaches the write queue - a row
+      // refused before it (a position counted during a run, an unknown item) must not switch the
+      // stale-view check off for the rest of the plan (review 6).
       let first = true;
+      const duringRun = countedDuringRun(services, job);
       for (const entry of plan.items) {
+        let reached = false;
         try {
           const row = await rowOf(services, entry.slug);
-          if (entry.verdict === "place") assertCountable(entry.position, job.countedWithout);
+          if (entry.verdict === "place") assertCountable(entry.position, duringRun);
+          reached = true;
           const rowAnswer = await runOperations(
             services,
             `triage ${row.slug}`,
@@ -561,7 +591,7 @@ export async function applyProposal(
             break;
           }
         }
-        first = false;
+        if (reached) first = false;
       }
       answer.ok = answer.changes.length > 0;
       if (!answer.board) answer.board = fileHash(join(services.ctx.repo.root, "backlog", "BACKLOG.md")) ?? "";
