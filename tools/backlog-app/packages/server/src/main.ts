@@ -159,7 +159,10 @@ async function main(): Promise<void> {
     }
   }
 
-  // 2. Services and the server.
+  // 2. Services and the server. The state folder's permissions come first: the services read
+  // their files (the event log's last id, the jobs) when they are constructed, and a file an
+  // earlier start locked would read as missing (review 2 of 412).
+  const access = state.restrictToOwner();
   const auth = new SessionAuth();
   const hub = new EventHub();
   const ctx: ServerContext = { repo, state, hub, dev, loopTestArgs: loopTestArgsFromEnv() };
@@ -222,8 +225,8 @@ async function main(): Promise<void> {
     vite = viteServer.middlewares;
   }
   // The launcher secret hands out sessions: it is stored only once the state folder is readable
-  // by this user alone (review M2); otherwise it is turned off and not written.
-  const access = state.restrictToOwner();
+  // by this user alone (review M2; the permissions were set before the services, step 2);
+  // otherwise it is turned off and not written.
   const privateState = access.private;
   if (access.private && access.contents === "failed") {
     say("note: some files of the app's state folder could not be reset to the folder's permissions");

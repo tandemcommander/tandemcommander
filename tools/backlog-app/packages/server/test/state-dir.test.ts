@@ -24,6 +24,9 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { ServerContext } from "../src/context.ts";
+import { EventHub } from "../src/events/hub.ts";
+import { Notifications } from "../src/events/notifications.ts";
 import { StateDir } from "../src/settings/state-dir.ts";
 
 /** System32 of this machine. */
@@ -274,5 +277,69 @@ describe.skipIf(process.platform !== "win32")("StateDir.restrictToOwner on Windo
     expect(daclsOf([outsideFile])[0]).toBe(before);
     for (const dacl of daclsOf(files)) expectInheritsOwnerOnly(dacl, sid);
     expectUsable(files);
+  });
+
+  /**
+   * Takes the permission to change an entry's ACL away from its owner (OWNER RIGHTS denied
+   * WRITE_DAC): the user can still read, write and delete it, but no reset can reach it.
+   *
+   * @param path - The entry.
+   */
+  function denyAclChange(path: string): void {
+    run("icacls.exe", [path, "/deny", "*S-1-3-4:(WDAC)", "/Q"]);
+  }
+
+  it("reports a folder it cannot make private (review 2 of 412: /C hid the failure)", () => {
+    fill();
+    denyAclChange(state.path);
+    expect(state.restrictToOwner()).toEqual({ private: false, contents: "failed" });
+  });
+
+  it("reports a file it cannot reset and still repairs the others - one call for the tree", () => {
+    const files = fill();
+    const stuck = join(state.path, "main-worktree", "stuck.json");
+    writeFileSync(stuck, "x\n");
+    for (const file of files) lockEntry(file);
+    denyAclChange(stuck);
+    expect(state.restrictToOwner()).toEqual({ private: true, contents: "failed" });
+    for (const dacl of daclsOf(files)) expectInheritsOwnerOnly(dacl, sid);
+    expectUsable(files);
+  });
+
+  it("reports a file it cannot reset and still repairs the others - folder by folder", () => {
+    const files = fill();
+    const stuck = join(state.path, "main-worktree", "stuck.json");
+    writeFileSync(stuck, "x\n");
+    for (const file of files) lockEntry(file);
+    denyAclChange(stuck);
+    // An unlistable folder sends the reset folder by folder.
+    lockEntry(join(state.path, "main-worktree", "backlog"));
+    expect(state.restrictToOwner()).toEqual({ private: true, contents: "failed" });
+    for (const dacl of daclsOf(files)) expectInheritsOwnerOnly(dacl, sid);
+    expectUsable(files);
+  });
+
+  it("lets the event log keep its ids when the start repairs it before the services read it (main.ts order)", () => {
+    const ctx = { state, hub: new EventHub() } as unknown as ServerContext;
+    const event = { kind: "run-ended", severity: "info", title: "t", text: "x", link: null } as const;
+    const before = new Notifications(ctx);
+    for (let i = 0; i < 3; i++) before.announce(event);
+    // Feature 344's start locked the log.
+    run("icacls.exe", [
+      state.path,
+      "/inheritance:r",
+      "/grant:r",
+      `*${sid}:(OI)(CI)F`,
+      "*S-1-5-18:(OI)(CI)F",
+      "/T",
+      "/C",
+      "/Q",
+    ]);
+    expect(() => readFileSync(state.file("events.jsonl"))).toThrow();
+    // The start: the permissions first, then the services.
+    expect(state.restrictToOwner()).toEqual({ private: true, contents: "reset" });
+    const after = new Notifications(ctx);
+    expect(after.announce(event).id).toBe(4);
+    expect(after.after(3).map((e) => e.id)).toEqual([4]);
   });
 });

@@ -129,3 +129,39 @@ fails).
   hard link changes the shared file. Recorded only.
 
 After the fixes: `npm run check` exit 0, 337 passed / 2 skipped; encoding guard `TOTAL: 0`.
+
+### Review 2 (refute-first agent, 2026-11-07) - MUST 0, SHOULD 2, NOTE 3
+
+Re-checked: the measurement (same), the real folder (1074 entries, no link, 375 locked, owned by
+the user - the next start takes the one-call path), the review-1 fixes (13 / 13 from pwsh 7.6.6
+and Bash; `/L` and the link walk removed -> the junction and file-symlink tests fail), non-ASCII
+names (`ř voilà`, `ž kůň.json`) and a 336-character path repaired on both paths, empty folders
+exit 0 with `/L` and `/T`.
+
+- SHOULD 1: the event log was read before the start repaired it - `new Services()` (main.ts)
+  builds `Notifications`, whose constructor reads `events.jsonl` for the last id; the repair ran
+  only later, so the first fixed start would number new events from 1 again (reviewer's probe:
+  ids `1,2,3,1`, `after(3)` empty) and `AiJobs.load()` skipped the locked job files for one
+  session. Fixed: `restrictToOwner()` runs at the start of step 2, before `new Services()` (after
+  the reuse check of a running instance, as before); the secret decision stays where it was.
+  Test: "lets the event log keep its ids ..." - three events, 344's call locks the log, the
+  repair, then a new `Notifications`: the next id is 4 and `after(3)` is `[4]`. (The order in
+  `main.ts` itself is not unit-tested; the reviewer's probe is the negative control: built
+  before the repair, the ids restart at 1.)
+- SHOULD 2: with `/C` `icacls` exits 0 also when an entry failed (measured by the reviewer:
+  OWNER RIGHTS denied WRITE_DAC -> "Failed processing 1 files", exit 0; without `/C` exit 5), so
+  `private` could be true for a folder that kept other users' access (the launcher secret would
+  be written there) and `contents: "failed"` could never be reported. Fixed: the folder call runs
+  without `/C`; every reset runs without `/C` first and, when it fails, once more with `/C` so the
+  other entries are still repaired, the result staying `failed`. Tests: a folder whose ACL the
+  owner cannot change -> `{ private: false, contents: "failed" }`; a file that cannot be reset ->
+  `contents: "failed"` and the other locked files repaired, on the one-call path and on the
+  folder-by-folder path. Negative control: `/C` put back into both calls -> these 3 tests fail
+  (3 failed / 7 passed).
+- NOTE 1: a `.git` the start cannot repair leaves `ensure()` refusing with "restart the backlog
+  app" although a restart does not help - the start now prints its note in exactly that case
+  (`contents: "failed"`); the folder is kept. Left.
+- NOTE 2: POSIX: a failed `chmod` returned `contents: "reset"` - now `"failed"`.
+- NOTE 3: older reviewers' worktrees (`rev325` ... `rev341r3`) registered - not this feature's.
+
+After the fixes: `npm run check` exit 0, 341 passed / 2 skipped; encoding guard `TOTAL: 0`.

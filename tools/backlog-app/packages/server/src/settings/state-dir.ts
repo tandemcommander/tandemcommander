@@ -65,7 +65,7 @@ export class StateDir {
         chmodSync(this.path, 0o700);
         return { private: true, contents: "reset" };
       } catch {
-        return { private: false, contents: "reset" };
+        return { private: false, contents: "failed" };
       }
     }
     // Full System32 paths: Git for Windows puts its own tools before them on PATH.
@@ -77,24 +77,29 @@ export class StateDir {
     const sid = /"(S-1-[\d-]+)"/.exec(who.stdout ?? "")?.[1];
     if (who.status !== 0 || !sid) return { private: false, contents: "failed" };
     /**
-     * Runs `icacls`.
+     * Runs `icacls`. Never with `/C` alone: with it `icacls` exits 0 also when an entry failed
+     * (review 2 of 412, measured).
      *
      * @param args - Its arguments.
      * @returns True on exit code 0.
      */
     const icacls = (args: string[]): boolean =>
       spawnSync(join(system32, "icacls.exe"), args, { encoding: "utf8", windowsHide: true }).status === 0;
+    /**
+     * Resets entries; when an entry fails (`icacls` stops there), once more with `/C` so the
+     * other entries are still repaired - the result stays a failure.
+     *
+     * @param args - The `icacls` arguments without `/C`.
+     * @returns True when the call without `/C` succeeded.
+     */
+    const reset = (args: string[]): boolean => {
+      if (icacls(args)) return true;
+      icacls([...args, "/C"]);
+      return false;
+    };
     // The folder alone (no /T): drop the inherited entries, grant only the owner and SYSTEM.
     if (
-      !icacls([
-        this.path,
-        "/inheritance:r",
-        "/grant:r",
-        `*${sid}:(OI)(CI)F`,
-        "*S-1-5-18:(OI)(CI)F",
-        "/C",
-        "/Q",
-      ])
+      !icacls([this.path, "/inheritance:r", "/grant:r", `*${sid}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F", "/Q"])
     ) {
       return { private: false, contents: "failed" };
     }
@@ -102,10 +107,10 @@ export class StateDir {
     if (treeWithoutLinks(this.path)) {
       return {
         private: true,
-        contents: icacls([join(this.path, "*"), "/reset", "/T", "/C", "/Q"]) ? "reset" : "failed",
+        contents: reset([join(this.path, "*"), "/reset", "/T", "/Q"]) ? "reset" : "failed",
       };
     }
-    return { private: true, contents: resetFolderByFolder(this.path, icacls) ? "reset" : "failed" };
+    return { private: true, contents: resetFolderByFolder(this.path, reset) ? "reset" : "failed" };
   }
 
   /**
@@ -218,14 +223,14 @@ function treeWithoutLinks(root: string): boolean {
  * as links (`/L`) and never descended into.
  *
  * @param root - The folder whose contents are reset (the folder itself is not).
- * @param icacls - Runs `icacls` with arguments; true on success.
+ * @param reset - Runs an `icacls` reset (without `/C`); true on success.
  * @returns True when every reset succeeded and every folder could be listed.
  */
-function resetFolderByFolder(root: string, icacls: (args: string[]) => boolean): boolean {
+function resetFolderByFolder(root: string, reset: (args: string[]) => boolean): boolean {
   let ok = true;
   const pending = [root];
   for (let folder = pending.pop(); folder !== undefined; folder = pending.pop()) {
-    if (!icacls([join(folder, "*"), "/reset", "/C", "/L", "/Q"])) ok = false;
+    if (!reset([join(folder, "*"), "/reset", "/L", "/Q"])) ok = false;
     let entries: Dirent[];
     try {
       entries = readdirSync(folder, { withFileTypes: true });
