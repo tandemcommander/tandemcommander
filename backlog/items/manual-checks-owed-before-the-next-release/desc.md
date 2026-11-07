@@ -45,6 +45,7 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Tab context menu: *Move to Other Panel* moves a folder tab and an SFTP tab (a second connection opens in the other panel, the first closes); *New Tab as Other Panel* opens the other panel's location; both greyed where the contract says (single tab, empty strip) (feature 404)
 - [ ] Tab switch that asks a question, with a real mouse (GitHub issue #22): with an FTP connection in one tab of a panel, click another tab of the same panel, answer the FTP question with the mouse (*keep the connection*), then move the mouse over the strip and click a file in the panel -> no insert mark follows the mouse, the click goes to the panel, no tab moves; a tab dragged with the button held still moves (feature 405)
 - [ ] Registry Editor, **elevated** (Run as administrator), Move of an HKEY_CLASSES_ROOT key held by both halves: as admin create a scratch key `HKLM\Software\Classes\.tc406` with a value `m` = `1` and a subkey `S`, and as the user `HKCU\Software\Classes\.tc406` with a value `u` = `2` and a subkey `S`; F6 `\HKEY_CLASSES_ROOT\.tc406` into `\HKEY_CURRENT_USER\Software\` -> no box, the copy holds `m`, `u` and `S`, both halves of `.tc406` are gone and HKCR no longer shows it. Repeat with the user's value named `m` = `9` -> the box "Unable to remove the original registry key. (50) The request is not supported." names `HKEY_LOCAL_MACHINE\Software\Classes\.tc406`, the machine's half is kept; delete the scratch keys afterwards (feature 406)
+- [ ] Find (Ctrl+F) with a real mouse and keyboard, Default and Dark theme: search a folder with sub-folders, click the Date header twice and press Ctrl+F5 twice in the result list - the order reverses each time (folders stay first) and the Date header shows the arrow up, then down; Find again - no arrow. The Registry Editor's Find window: a second click on a column header reverses the order, the arrow shows (feature 407)
 
 ## Log
 
@@ -53,6 +54,7 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-06 — moved to Person steps position 1
 - 2026-11-06 — feature 404: 5 checks of the variant F tab strip
 - 2026-11-06 — feature 405: 1 check of a tab switch that shows a question
+- 2026-11-07 — edited Steps
 - 2026-11-07 — edited Steps
 - 2026-11-07 — edited Steps
 - 2026-11-07 — edited Steps

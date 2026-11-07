@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407 |
 
 ## Feature notes
 
@@ -6559,3 +6559,29 @@ a few early ones are out of sequence).
   297's 40 / 0; saltests 282,524 -> 282,544 / 0 (`TestRegHkcrBoth406`; negative control 5 failed);
   three refute-first reviews (no MUST; 4 SHOULD fixed - fix-log control characters, growing value
   buffers, the machine half's link test, its unelevated probe row).
+- 407-find-sort-toggle: Find's result list (Ctrl+F) sorted every request ascending and remembered
+  nothing - a second click on the same column header (or View > Date, Ctrl+F5) "did nothing"; no
+  header showed the sorted column; folders always came first, so a date sort began with the folders
+  and the oldest file followed the last folder (GitHub #23: "starts at 2015") - now the list
+  remembers the column and the direction (`src/common/salfindsort.h`): the same column again
+  reverses, another column starts ascending, every route alike (header, View menu, Ctrl+F3..F6;
+  Hide duplicate names sorts by path ascending, never toggles); folders stay first in both
+  directions with each group reversed (the panel's rule, the tie-break columns reversed too);
+  duplicate mode keeps its allowed columns and reverses its whole key (groups stay together); the
+  header shows HDF_SORTUP / HDF_SORTDOWN; a new search, or new results arriving after a sort, drop
+  the arrow. The Registry Editor's Find window had the same defect - fixed the same way, keys kept
+  before values where its own order grouped them (all columns but Path). Traps: the dark theme's
+  header items are painted by the program (044 / 049) with CDRF_SKIPDEFAULT, so the arrow bits
+  painted nothing there - one painter `ThemePaintDarkHeaderItem` (`themes.cpp`) now draws Windows'
+  light-theme chevron in the label colour (`salsortarrow.h`); probes that read only the format
+  bits cannot see that - `find_sort_probe.ps1` hashes the painted header (PrintWindow) in both
+  themes; a refused Intersect / Subtract (an invalid regular expression) emptied the result list
+  (upstream) - now `RestoreDataFromRefine` gives the results back; the Registry Editor's Data
+  column takes the rest of the width (probe narrows it); 257's probe hot key Ctrl+Shift+G no longer
+  reached the plug-in (moved to J, as 391's). Limits: no panel options (*newer on top*, *folders by
+  name*) in Find; sorting during a running search by reading only; a refused refine loses the
+  selection. From backlog item `nefunkcni-prepinani-razeni-vysledku-hledani`. Probe
+  `find_sort_probe.ps1` 6 FAIL -> 22 / 0 (pix-dark, refused, dup rows with recorded before / negative
+  controls), `regedt_sort_probe.ps1` 6 FAIL -> 12 / 0 light and dark; 311's 26 / 0, 257's 0 -> 9
+  driven; saltests 282,544 -> 282,613 / 0 (`TestFindSort407`; negative control 7 failed); three
+  refute-first reviews (review 2: 1 MUST - the dark-theme arrow - fixed; 2 SHOULD and NOTEs fixed).

@@ -17,7 +17,6 @@ Last triaged: 2026-11-06
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Find: clicking a result column again does not reverse the sort order](items/nefunkcni-prepinani-razeni-vysledku-hledani/desc.md) | bug | 4 | panels-ui | 407 |
 
 ## Next
 

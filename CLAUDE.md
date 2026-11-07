@@ -195,6 +195,9 @@ Each is one line of a longer story; the number is the feature whose entry in
   key — back it up and restore it; never write the real wallpaper (dry-run
   seam, 111). No real keyboard or clipboard there: record such rows as NOT
   DRIVEN and as a step owed to a person.
+- Dark list headers are painted by the program (`ThemePaintDarkHeaderItem`, 044 / 049): a header
+  format flag (sort arrow, …) is drawn there too, and a probe checks the painted pixels, not only
+  the bits (407).
 - Have an independent agent review a finished fix (refute-first); reviews
   rejected fixes that built and tested green in 075, 085, 087, 093, 098, 109,
   111, 117.
