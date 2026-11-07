@@ -94,3 +94,37 @@ every code block of the Markdown Viewer.
   NOSCROLL (wheel scrolled: tops 360,523 -> 360,523 after a copy of block 1), FORGED-MD,
   FORGED-HTML (no seam file, no window), LINK (foo.txt box unchanged), KEY, SOURCE (no
   copy), FAILCOPY (seam = a folder: notice ink 0).
+
+## Translations (stop-rules §2.13, module `mdview`)
+
+- Step 0: new ids `IDS_CODE_COPY` 2197, `IDS_CODE_COPY_TIP` 2198, `IDS_CODE_COPIED` 2199;
+  no changed id. Leftover `english_fallback` rows before: 0 in every language.
+- Export `src\vcxproj\build_langs.cmd --export-templates --module mdview` -> 1/1.
+- Dry run (`--formality prefer_more`): 3 unique gaps, ~40 chars in each of the 8 enabled
+  languages (cs, de, fr, nl, hu, ro, sk, es) = the 3 new texts.
+- Merge `--budget 2640`: 3/3 translated per language, **320 DeepL characters**, 0 validation
+  failures, 0 duplicate accelerators, "controls widened to fit: 21" (the pipeline's refit; the
+  committed `.slt` diff is 5 lines per language - the three rows and the section's count -
+  so no dialog drift was written).
+- Read-back: cs Kopírovat / Zkopírujte kód do schránky / Zkopírováno; de Kopieren / Kopieren
+  Sie den Code in die Zwischenablage / Kopiert; fr Copier / Copier le code dans le
+  presse-papiers / Copié; nl Kopiëren / Kopieer de code naar het klembord / Gekopieerd; hu
+  Másolás / Másolja a kódot a vágólapra / Másolva; ro Copiere / Copiați codul în clipboard /
+  Copiat; sk Kopírovať / Skopírujte kód do schránky / Skopírované; es Copiar / Copie el código
+  al portapapeles / Copiado. The labels are the module's own Copy verb (`2011` Edit > Copy:
+  &Kopírovat, &Kopieren, &Copier, &Kopiëren, &Másolás, C&opiere, K&opírovať, &Copiar); formal
+  register (Sie, usted; fr/nl infinitive / neutral imperative, no tu/je). **No pin needed.**
+- `python -m translate.slt --verify` -> 298 files, 91535 entries, all byte-exact.
+- `.\build.cmd full` -> BUILD SUCCEEDED (language modules import).
+
+## Checks
+
+- `python tools/check_encoding.py --strict` -> `TOTAL: 0 finding(s)`.
+- `.\build.cmd full` -> BUILD SUCCEEDED.
+- `saltests.exe` -> `saltests: 282613 checks, 0 failed` (no core / src/common file changed;
+  run as a sanity check).
+- Harness -> 98 passed, 0 failed.
+- T016 manual: `help/` has no Markdown Viewer page (only a one-line mention in
+  `configuration_gener.htm` and the upstream `introduction_news.htm`, untouched since 007) -
+  nothing to update.
+- T017 person check -> the release checklist at closing.

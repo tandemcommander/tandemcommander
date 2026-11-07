@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\mdview\mdview.atp"
 TEXTVERSION,"1.0 (x64)"
-VERSION,"1,0,0,194"
+VERSION,"1,0,0,195"
 
 [TRANSLATION]
 LANGID,1038
@@ -75,6 +75,9 @@ COMMENT,"Magyar változat"
 2109,1,"Erős kontrasztú fekete"
 
 [STRINGTABLE 5]
+2197,1,"Másolás"
+2198,1,"Másolja a kódot a vágólapra"
+2199,1,"Másolva"
 2200,1,"Ez a fájl nem érvényes UTF-8 kódolású; a rendszer kódlapja alapján jelenik meg. A teljes vezérléshez válassza a Fájl > Megnyitás szövegként menüpontot."
 2201,1,"A fájl nem nyitható meg."
 2202,1,"Ez a dokumentum túl nagy a megjelenítéshez. Szeretné egyszerű szövegként megnyitni?"

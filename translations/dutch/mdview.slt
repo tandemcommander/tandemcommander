@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\mdview\mdview.atp"
 TEXTVERSION,"1.0 (x64)"
-VERSION,"1,0,0,194"
+VERSION,"1,0,0,195"
 
 [TRANSLATION]
 LANGID,1043
@@ -75,6 +75,9 @@ COMMENT,"Nederlandse versie"
 2109,1,"High Contrast Black"
 
 [STRINGTABLE 5]
+2197,1,"Kopiëren"
+2198,1,"Kopieer de code naar het klembord"
+2199,1,"Gekopieerd"
 2200,1,"Dit bestand is geen geldige UTF-8; weergegeven met de codepagina van het systeem. Gebruik Bestand > Openen als tekst voor volledige controle."
 2201,1,"Het bestand kon niet worden geopend."
 2202,1,"Dit document is te groot om weer te geven. Wil je het als platte tekst openen?"

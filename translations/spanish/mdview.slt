@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\mdview\mdview.atp"
 TEXTVERSION,"1.0 (x64)"
-VERSION,"1,0,0,194"
+VERSION,"1,0,0,195"
 
 [TRANSLATION]
 LANGID,3082
@@ -75,6 +75,9 @@ COMMENT,"Versión en español"
 2109,1,"Negro de alto contraste"
 
 [STRINGTABLE 5]
+2197,1,"Copiar"
+2198,1,"Copie el código al portapapeles"
+2199,1,"Copiado"
 2200,1,"Este archivo no está en UTF-8 válido; se muestra utilizando la página de códigos del sistema. Usa Archivo > Abrir como texto para tener control total."
 2201,1,"No se ha podido abrir el archivo."
 2202,1,"Este documento es demasiado grande para mostrarse. ¿Lo abres como texto sin formato?"
