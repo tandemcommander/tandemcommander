@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item porovnani-adresaru - The mask hints link is clipped in translated dialogs (Compare Directories and 10 more)." From backlog item porovnani-adresaru.
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: Should the merge's widening pass (`tools/translate/layout.py`) learn to grow right-aligned controls to the left instead of setting the width in the English layout? → A: No - the 11 controls get their width in the English layout; the widening pass is not changed, because changing it would re-lay out every right-aligned control of every module on its next merge, outside this item (autonomous run: conservative).
+- Q: Which language besides Czech is pictured on the hidden desktop? → A: French, the longest text of the enabled languages (autonomous run: conservative).
+- Q: Are the Czech, Slovak, Dutch and Hungarian texts pinned although they do not change? → A: No - only the texts this feature changes are pinned (German, French, Spanish, Romanian); the others keep their committed wording, which a merge with no new English text leaves alone (autonomous run: conservative).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The mask hints link is readable in Compare Directories (Priority: P1)
