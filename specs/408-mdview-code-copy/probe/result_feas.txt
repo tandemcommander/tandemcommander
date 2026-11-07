@@ -1,0 +1,13 @@
+feas408_probe (feature 408) feas
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 03:21; registry key existed True; desktop tc_probe_43144
+
+KIDS       RUN    INFO        Chrome_WidgetWin_0, Chrome_WidgetWin_1, Chrome_RenderWidgetHostHWND, Intermediate D3D Window; scale 1
+start: red;blueTop;greenTop = 0;34;163;client=1184x841
+CLICK-T    RUN    PASS        click at 250,74 (widget offset 0,0); after 4800;34;163;client=1184x841
+NOSCROLL   RUN    PASS        blue top before 34, after 34
+CLICK-L    RUN    PASS        message box: [#32770 'Markdown Viewer'] [Static id=2477] C:\Users\pavel\AppData\Local\Temp\tc408f\files\foo.txt  | [Button id=1] OK
+RUN        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+
+Rows: PASS 4, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

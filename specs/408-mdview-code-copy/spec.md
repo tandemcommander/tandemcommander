@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item drobna-uprava-markdown-preview — Markdown Viewer: a button to copy a code block to the clipboard (GitHub issue #20)." From backlog item drobna-uprava-markdown-preview.
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: What form does the *Copied* confirmation take, given that the page runs no script? → A: a small *Copied* notice in the bottom-right corner of the viewer, shown at once and fading out by itself; the control's own label does not change (measured: a fixed-position notice is shown by a same-document jump without scrolling, `fix-log.md` feasibility probe) (autonomous run: conservative)
+- Q: Which line breaks does the copied text use? → A: the Windows line break (CR LF) for every line break, no line break after the last line (autonomous run: conservative — the Code Viewer's copy rule)
+- Q: Does a copy change anything stored or sent? → A: no — nothing is stored, nothing leaves the machine; `PRIVACY.md` needs no change (autonomous run: rule — CLAUDE.md *Public claims*)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Copy a code block with one click (Priority: P1)
@@ -116,8 +124,9 @@ own link to a copy address does not copy anything when clicked.
   as Unicode text: the code content as the Markdown defines it, without highlighting,
   with each line break kept (as the Windows line break), without the line break that
   closes the block's last line, and nothing else.
-- **FR-004**: After a successful copy the viewer MUST show a brief *Copied*
-  confirmation that disappears by itself and MUST NOT scroll or reload the page.
+- **FR-004**: After a successful copy the viewer MUST show a brief *Copied* notice in
+  the bottom-right corner of the page that fades out by itself (about two seconds) and
+  MUST NOT scroll or reload the page; a second copy shows it again.
 - **FR-005**: A failed copy (clipboard unavailable) MUST NOT show the confirmation.
 - **FR-006**: The viewer MUST stay script-free and send no web messages; the shared
   WebView2 host MUST NOT be copied, forked or relaxed.
@@ -167,9 +176,6 @@ own link to a copy address does not copy anything when clicked.
   the file's own line-break form, and the Windows clipboard convention is CR LF.
 - Assumption (autonomous run): the line break that ends a block's last line is not
   copied (the block shows no empty last line; documentation sites copy the same way).
-- Assumption (autonomous run): the confirmation is a small notice in a corner of the
-  viewer rather than the control's own text changing, if the control's own text cannot
-  change without scrolling or reloading the page under the script-free lockdown.
 - Assumption (autonomous run): if the operating system's random generator fails when
   the window opens, the window shows no copy controls (fail closed) rather than a
   guessable address.
