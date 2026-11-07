@@ -103,11 +103,11 @@ An icon author (or a damaged installation) leaves a dark override that cannot be
 
 ### Measurable Outcomes
 
-- **SC-001**: With no stored set, 85 of 85 toolbar buttons with an image show a Fluent 2 icon (probe: non-background pixels in every cell, 0 empty cells) in light and dark at 100 % and 150 %.
+- **SC-001**: With no stored set, 85 of 85 toolbar buttons with an image show a Fluent 2 icon (probe: non-background pixels in every cell, 0 empty cells) in light and dark at the hidden desktop's system DPI; at 16 / 20 / 24 / 32 px (100 / 125 / 150 / 200 %) every Fluent 2 file rasterized by the program's rasterizer has visible coverage (offline check), and the look at a real 150 % screen is a release-checklist line.
 - **SC-002**: With Classic chosen, the toolbar image list is pixel-identical to the one of the build before this feature (probe compares the captured strips: 0 differing pixels).
 - **SC-003**: Switching the set on the Appearance page and pressing OK changes the toolbar within the same session (probe: the strip changes without restart), and the choice is read back after a restart.
 - **SC-004**: An empty dark override yields a non-empty button (probe row), before: an empty button.
-- **SC-005**: Every Fluent 2 icon's dominant colour reaches at least 3:1 contrast against the toolbar background in both themes (checked by the generator's palette and the probe's pixel samples).
+- **SC-005**: Every Fluent 2 icon's outline (stroke-role) colour reaches at least 3:1 contrast against the toolbar background of its theme (light / dark), and every outline-only icon keeps an underlay or halo of at least 3:1 against the menu highlight (offline check over the files).
 - **SC-006**: The Appearance page labels fit their controls in all 8 shipped languages (probe measures text extent against control width: 0 clipped).
 
 ## Assumptions
@@ -119,5 +119,6 @@ An icon author (or a damaged installation) leaves a dark override that cannot be
 - Assumption (autonomous run): the drop-down arrow's GRAYTEXT disabled colour applies to Fluent 2 only; Classic keeps BTNSHADOW (pixel-identical).
 - Assumption (autonomous run): the Fluent licence ships as `iconsets\fluent\LICENSE-fluent.txt` inside the deployed set folder (the installer takes the build tree recursively; no installer script change) and is named in `doc/third_party.txt`, which refers to `doc/license/license_mit.txt`.
 - `PRIVACY.md` is not affected: no network communication, the new registry value is a display setting among "the settings" the statement already describes, nothing about credentials or the installer's writes changes (confirmed in the record).
+- Assumption (autonomous run): the hidden-desktop probe cannot change the system DPI (fixed for the session); 125 / 150 / 200 % are measured by rasterizing the files with the program's rasterizer at 20 / 24 / 32 px, and the look on a real scaled screen is a release-checklist line (deviation from the item's "probe at 100 % and 150 %", stop-rules rule 14).
 - Plug-in icons, button-state drawing (bevels), menu highlight, F-key bar and disabled menu-icon style are out of scope (item *Notes*).
 - The visual check of both sets on the maintainer's screen (both themes, the maintainer's DPI) is a line of the release checklist (item *Notes*, `who: both`).
