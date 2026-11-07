@@ -1,16 +1,16 @@
 ---
 title: Backlog app start leaves its existing state files with no access rights
 type: bug
-status: open
+status: in-progress
 severity: 6
 area: tooling
 source: manual
 who: agent
 created: 2026-11-07
 updated: 2026-11-07
-verified: -
+verified: 2026-11-07 23a9f24a
 effort: S
-feature: -
+feature: 412
 related: []
 depends-on: []
 reason: -
@@ -62,3 +62,5 @@ The defect came with feature 344 (review M2, commit `449e4638`, 2026-10-30). Sev
 
 - 2026-11-07 — created (source manual)
 - 2026-11-07 — moved to Next position 1
+- 2026-11-07 — verified at 23a9f24a: reproduced at 23a9f24a: the icacls call of restrictToOwner leaves pre-existing files D:PAI (temp folder; real state folder 375 of 383 files)
+- 2026-11-07 — run started, feature 412
