@@ -1,7 +1,7 @@
 ---
 title: Live run view: a human-readable dashboard with story, metrics, gallery and chat
 type: feature
-status: open
+status: blocked
 severity: 4
 area: tooling
 source: manual
@@ -13,7 +13,7 @@ effort: L
 feature: -
 related: []
 depends-on: []
-reason: -
+reason: the fifth independent review found a MUST (the fourth review with one, stop-rules 3 #3): the phase markers missed the $BL form of the backlog tool; fixed on the branch after it, not reviewed. The feature is complete there: review the review-5 fixes, then merge (feature 415, branch 415-live-run-dashboard)
 ---
 
 # Live run view: a human-readable dashboard with story, metrics, gallery and chat
@@ -136,3 +136,4 @@ item conversation as a panel.
 
 - 2026-11-07 — created (source manual)
 - 2026-11-07 — moved to Next position 1: maintainer asked to implement it now; maintainer 2026-11-07
+- 2026-11-07 — blocked: the fifth independent review found a MUST (the fourth review with one, stop-rules 3 #3): the phase markers missed the $BL form of the backlog tool; fixed on the branch after it, not reviewed. The feature is complete there: review the review-5 fixes, then merge (feature 415, branch 415-live-run-dashboard)

@@ -22,7 +22,7 @@ Last triaged: 2026-11-07
 
 | # | Item | Type | Sev | Area | Who | Effort | Status |
 |---|---|---|---|---|---|---|---|
-| 1 | [Live run view: a human-readable dashboard with story, metrics, gallery and chat](items/backlog-app-live-run-human-dashboard/desc.md) | feature | 4 | tooling | agent | L | open |
+| 1 | [Live run view: a human-readable dashboard with story, metrics, gallery and chat](items/backlog-app-live-run-human-dashboard/desc.md) | feature | 4 | tooling | agent | L | blocked |
 | 2 | [Fluent toolbar icon set by default, switchable to Classic in Appearance](items/fluent-icon-set-with-switch-in-appearance/desc.md) | feature | 5 | panels-ui | both | L | open |
 | 3 | [Plug-in hot keys on F-keys never run; F-keys run commands bound to letters](items/plug-in-hot-keys-on-f-keys-never-run-f-keys-run-commands/desc.md) | bug | 4 | panels-ui | agent | S | open |
 | 4 | [Environment variables passed to the program arrive as question marks outside the code page](items/environment-variables-passed-to-the-program-arrive-as/desc.md) | bug | 4 | encoding | agent | M | open |
