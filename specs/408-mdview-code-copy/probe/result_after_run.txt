@@ -1,0 +1,22 @@
+copy408_probe (feature 408) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 03:36; registry key existed True; desktop tc_probe_44012
+
+OPEN       RUN    PASS        render widget 27789584; blocks at column 592: 37-113 460-536 623-674; scale 1
+SHOWN      RUN    NOT DRIVEN  posted moves hover nothing here: block corner 0 px, an ordinary link 0 px changed (the look on hover is a person's check)
+COPY-0     RUN    PASS        seam 'alpha line 1\r\nbeta \u010De\u0161tina \uD83D\uDE00' (want 'alpha line 1\r\nbeta \u010De\u0161tina \uD83D\uDE00'); block 0 top 37 -> 37
+NOTICE     RUN    PASS        notice area ink before 0, 1.2 s after the copy 2083
+GONE       RUN    PASS        notice area ink 5.2 s after the copy 0
+AGAIN      RUN    PASS        seam 'in list' (want 'in list'); notice ink 2083
+NOSCROLL   RUN    PASS        scrolled block tops 360,523 -> after the copy 360,523; seam 'indented one\r\n  indented two' (want 'indented one\r\n  indented two')
+FORGED-MD  RUN    PASS        click at 152,202: seam ; new window none
+FORGED-HTML RUN    PASS        click at 142,312: seam ; new window none
+LINK       RUN    PASS        box: [#32770 'Markdown Viewer'] [Static id=2477] C:\Users\pavel\AppData\Local\Temp\tc408\files\foo.txt  | [Button id=1] OK
+KEY        RUN    PASS        focus shows block 1's control: 586 px changed; seam 'indented one\r\n  indented two' (want 'indented one\r\n  indented two')
+SOURCE     RUN    PASS        title 'C:\Users\pavel\AppData\Local\Temp\tc408\files\a_doc.md - Markdown Viewer [Source] (100%)'; seam 
+FIRST      END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+FAILCOPY   RUN    PASS        seam = a folder (write fails): notice ink 0
+SECOND     END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+
+Rows: PASS 14, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

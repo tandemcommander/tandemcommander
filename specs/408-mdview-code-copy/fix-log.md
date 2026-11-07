@@ -47,3 +47,50 @@ every code block of the Markdown Viewer.
   host's `OnActivateLink` route can be driven by a probe. Decision D4: the confirmation
   is a fixed-position notice shown by `:target` through a same-document fragment
   navigation (two notices used alternately, so every copy changes the target).
+- speckit-analyze run 1: 0 CRITICAL, 0 HIGH; C1 MEDIUM (FR-005 untested) fixed by the
+  FAILCOPY probe row in T013; C2 LOW (Find after a copy) accepted: the notice uses the
+  same same-document fragment navigation as Find, a later Find navigates to its own
+  fragment; C3 LOW (a self-started navigation) accepted: filtered by the shared host
+  (085 F3) before the viewer sees it. Run 2: no CRITICAL / HIGH / MEDIUM left.
+
+## Implementation
+
+- T001 strings 2197-2199 (bundle 137 free slots, rule 084) in `mdview.rh2` / `lang/lang.rc2`.
+- T002-T004 `htmlgen.{h,cpp}`: `MdCopyUi`, `MdHtmlResult::codeBlocks`, the wrapper
+  `div.tc-code` + `a.tc-copy` per block, `CopyCss()` and the two `tc-copied-<k>` notices only
+  when the page has a control, `MdCodeClipboardText`, `MdParseCopyLink`.
+- T005-T006 harness `tests\mdview_htmlgen_test\build_and_run.cmd`: 53 -> **98 passed, 0
+  failed** (45 new rows). Negative control: three temporary mutations of the generator
+  (keep the last LF; accept a leading zero; add the CSS also to a page without blocks) ->
+  89 passed, **9 failed** (exactly the rows for those rules); the file restored from a copy
+  (CRLF checked: 907 CRLF, 0 LF).
+- T007-T010 `viewer.{h,cpp}`: token (16 bytes of `SalGenRandom`, hex) per window; serial per
+  rendered rebuild; `ActivateLink` asks `MdParseCopyLink` first (OK -> `CopyCodeBlock`,
+  REFUSED -> nothing); `CopyCodeBlock` copies with `CopyTextToClipboardW` (explicit length,
+  > INT_MAX refused) and on success navigates to `#tc-copied-<k>` (k alternates); the Debug
+  seam `TC_MDVIEW_PROBE_COPY_LOG` (contracts/probe-seam.md).
+- T011: `git diff main -- src/common/webhost src/plugins/mdview/webglue.cpp` is empty;
+  `MdConfigureHost` still sets `ScriptsEnabled = false`, `WebMessagesEnabled = false`.
+- `.\build.cmd` -> BUILD SUCCEEDED, no mdview warning.
+
+## Probe `copy408_probe.ps1` (hidden desktop)
+
+- Before: no build of HEAD kept (the run rebuilt it); the state before is the HEAD
+  measurement above (no control in the generated page) and the feasibility probe (a click on
+  an in-host address reaches the viewer's "other local target" box - what a forged copy link
+  would have done before the copy branch).
+- Run 1: OPEN FAIL - my fixture's list block was empty (six backticks before `n in
+  PowerShell = three backticks + a literal n: the fence took "n  in list" as its info string).
+- Run 2: 13 PASS / 2 FAIL: SHOWN (one posted move, no hover) and KEY (the probe expected
+  block 0, but Tab continues from the last clicked link, foo.txt, so it focused block 1's
+  control and Enter copied block 1 - correct browser behaviour; the screenshot shows the
+  control with its focus outline).
+- Run 3: KEY PASS (586 px changed in block 1's corner, seam = block 1); SHOWN still 0 px.
+- Run 4 (final, `result_after.txt`): **14 PASS, 0 FAIL, 1 NOT DRIVEN** - SHOWN NOT DRIVEN
+  with a control: an ordinary document link, whose `a:hover` rule exists since 021, changes 0
+  px under the same posted moves, so posted moves produce no hover on the hidden desktop. The
+  look on hover is a person's check. COPY-0 (Czech + emoji, CR LF, no last line break, block
+  top 37 -> 37), NOTICE (ink 0 -> 2083), GONE (0 after 5.2 s), AGAIN (block 2, notice again),
+  NOSCROLL (wheel scrolled: tops 360,523 -> 360,523 after a copy of block 1), FORGED-MD,
+  FORGED-HTML (no seam file, no window), LINK (foo.txt box unchanged), KEY, SOURCE (no
+  copy), FAILCOPY (seam = a folder: notice ink 0).

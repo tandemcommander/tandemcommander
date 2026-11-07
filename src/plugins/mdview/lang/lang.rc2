@@ -70,6 +70,9 @@ STRINGTABLE
  IDS_LINK_BLOCKED,        "This link was blocked for security reasons."
  IDS_WINDOW_TITLE,        "Markdown Viewer"
  IDS_ENGINE_UNAVAILABLE,  "The WebView2 runtime is not available. Opening the file as plain text instead."
+ IDS_CODE_COPY,           "Copy"
+ IDS_CODE_COPY_TIP,       "Copy the code to the clipboard"
+ IDS_CODE_COPIED,         "Copied"
 }
 
 IDD_FIND DIALOGEX 0, 0, 220, 60

@@ -11,6 +11,7 @@
 #include "webglue.h" // feature 081: mdview's side of the shared host (COM-free)
 #include "viewer.h"
 #include "darkmenu.h"
+#include "../../common/salrandom.h" // feature 408: the token of the copy addresses
 
 CWindowQueue ViewerWindowQueue("MDView Viewers");
 CThreadQueue ThreadQueue("MDView Viewers");
@@ -400,6 +401,24 @@ CViewerWindow::CViewerWindow(int enumFilesSourceUID, int enumFilesCurrentIndex) 
     SourceMode = false;
     DarkMenus = false;
     PageWidth = MdPageWidthFromStored((unsigned)g_pageWidth);
+    // Feature 408: the copy controls link to an address the document cannot guess
+    // (it runs no script and never sees this token), so a link the document writes
+    // itself cannot fill the clipboard. No random bytes -> no controls (fail closed).
+    CopySerial = 0;
+    CopyNotice = 0;
+    {
+        BYTE rnd[16];
+        if (SalGenRandom(rnd, sizeof(rnd)))
+        {
+            static const wchar_t hex[] = L"0123456789abcdef";
+            for (BYTE b : rnd)
+            {
+                CopyToken += hex[b >> 4];
+                CopyToken += hex[b & 15];
+            }
+        }
+        SecureZeroMemory(rnd, sizeof(rnd));
+    }
     EnumFilesSourceUID = enumFilesSourceUID;
     EnumFilesCurrentIndex = enumFilesCurrentIndex;
 }
@@ -559,10 +578,25 @@ void CViewerWindow::RebuildHtml()
         Web->SetBackgroundColor(Theme->docBg);
     std::string srcUtf8 = WToUtf8Str(DecodedText);
     std::wstring findTerm = FindText[0] ? std::wstring(FindText) : std::wstring();
+    CopyBase.clear();
     if (SourceMode)
         MdBuildSourceHtml(srcUtf8, *Theme, Html, findTerm, PageWidth);
     else
-        MdRenderHtml(srcUtf8, *Theme, DocDir, Html, findTerm, RemoteAllowed, PageWidth);
+    {
+        // feature 408: every rendered page gets a new serial, so a control of the
+        // page being replaced (another file opened in this window) copies nothing
+        MdCopyUi copy;
+        if (!CopyToken.empty())
+        {
+            CopyBase = MD_COPY_FAMILY + CopyToken + L"-" + std::to_wstring(++CopySerial) + L"/";
+            copy.base = WToUtf8Str(CopyBase);
+            // LoadStrW, never LoadStr: the texts go into a UTF-8 page (LoadStr is code page)
+            copy.label = WToUtf8Str(SalamanderGeneral->LoadStrW(HLanguage, IDS_CODE_COPY));
+            copy.tooltip = WToUtf8Str(SalamanderGeneral->LoadStrW(HLanguage, IDS_CODE_COPY_TIP));
+            copy.copied = WToUtf8Str(SalamanderGeneral->LoadStrW(HLanguage, IDS_CODE_COPIED));
+        }
+        MdRenderHtml(srcUtf8, *Theme, DocDir, Html, findTerm, RemoteAllowed, PageWidth, &copy);
+    }
     UpdateTitle();
 }
 
@@ -756,8 +790,62 @@ void CViewerWindow::EngineFailed()
 }
 
 // Handles a cancelled navigation (link click) routed from the WebView2 host.
+// Feature 408: copies code block 'index' of the page shown (the control the user
+// activated) and, when that worked, shows the "Copied" notice by a same-document
+// jump to it (no reload, no scroll - the notice is fixed-position).
+void CViewerWindow::CopyCodeBlock(size_t index)
+{
+    if (index >= Html.codeBlocks.size())
+        return;
+    std::wstring text = MdCodeClipboardText(Html.codeBlocks[index]);
+    if (text.size() > (size_t)INT_MAX)
+        return; // cannot be passed with an explicit length; never copy a part of it
+    BOOL ok = FALSE;
+#ifdef _DEBUG
+    // Probe seam (specs/408-mdview-code-copy/contracts/probe-seam.md): the hidden
+    // desktop shares the user's clipboard, so a probe gets the text in a file instead.
+    wchar_t seam[MAX_PATH];
+    DWORD sl = GetEnvironmentVariableW(L"TC_MDVIEW_PROBE_COPY_LOG", seam, _countof(seam));
+    if (sl > 0 && sl < _countof(seam))
+    {
+        std::string u8 = WToUtf8Str(text);
+        HANDLE h = CreateFileW(seam, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (h != INVALID_HANDLE_VALUE)
+        {
+            DWORD wr = 0;
+            ok = (u8.empty() || WriteFile(h, u8.data(), (DWORD)u8.size(), &wr, NULL)) && wr == (DWORD)u8.size();
+            CloseHandle(h);
+        }
+    }
+    else
+#endif
+        // explicit length: a block may hold characters a NUL-terminated copy would cut
+        ok = SalamanderGeneral->CopyTextToClipboardW(text.c_str(), (int)text.size(), FALSE, HWindow);
+    if (ok && Web != NULL && Web->IsReady())
+    {
+        // the other notice each time, so the target changes and the fade restarts
+        Web->Navigate(DocVersion, L"tc-copied-" + std::to_wstring(CopyNotice));
+        CopyNotice ^= 1;
+    }
+}
+
 void CViewerWindow::ActivateLink(const std::wstring& uri)
 {
+    // Feature 408 first: a copy address is never handled as a link. Only an exact
+    // address of the page shown copies; any other address of the family (a link the
+    // document wrote itself, a page being replaced) does nothing at all.
+    size_t copyIndex = 0;
+    switch (MdParseCopyLink(uri, CopyBase, Html.codeBlocks.size(), &copyIndex))
+    {
+    case MDCOPY_OK:
+        CopyCodeBlock(copyIndex);
+        return;
+    case MDCOPY_REFUSED:
+        return;
+    default:
+        break; // not a copy address: the link rules below
+    }
+
     const std::wstring host = L"https://mdview.invalid/";
     if (uri.compare(0, host.size(), host) == 0)
     {

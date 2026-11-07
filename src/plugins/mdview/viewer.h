@@ -46,6 +46,15 @@ public:
                         // g_pageWidth at creation; a choice sets both, and only this
                         // window is rebuilt (a rebuild opens the page at the top)
 
+    // Feature 408: the code block copy controls
+    // (specs/408-mdview-code-copy/contracts/copy-address.md).
+    std::wstring CopyToken; // 32 hex digits of SalGenRandom, made once per window;
+                            // empty when the generator failed -> no controls
+    unsigned CopySerial;    // counts the rendered (non-source) rebuilds; part of the
+                            // address so a click on a replaced page copies nothing
+    std::wstring CopyBase;  // the address prefix of the controls in Html ("" = none)
+    int CopyNotice;         // 0/1: the "Copied" notice the next copy shows
+
     int EnumFilesSourceUID;
     int EnumFilesCurrentIndex;
 
@@ -72,6 +81,7 @@ protected:
     void SelectPageWidth(int level);
     void DoFind(BOOL forward, BOOL prompt);
     void ActivateLink(const std::wstring& uri);
+    void CopyCodeBlock(size_t index); // feature 408
     void UpdateTitle();
     void EngineFailed();
 };

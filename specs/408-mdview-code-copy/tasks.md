@@ -32,7 +32,7 @@
 
 ## Phase 6: Polish & verification
 
-- [ ] T013 Probe `specs/408-mdview-code-copy/probe/copy408_probe.ps1`: rows OPEN, SHOWN (hover shows the control), COPY-1/COPY-3 (seam file = expected text), NOTICE (notice pixels appear, then fade), NOSCROLL, AGAIN (second copy shows the notice again), FORGED-MD / FORGED-HTML (a document link with a wrong token copies nothing, opens no box), LINK (a `foo.txt` link still opens the box), SOURCE (Ctrl+U page has no control), KEY (Tab + Enter copies; NOT DRIVEN if keys cannot be posted); run before (HEAD build) and after
+- [ ] T013 Probe `specs/408-mdview-code-copy/probe/copy408_probe.ps1`: rows OPEN, SHOWN (hover shows the control), COPY-1/COPY-3 (seam file = expected text), NOTICE (notice pixels appear, then fade), NOSCROLL, AGAIN (second copy shows the notice again), FORGED-MD / FORGED-HTML (a document link with a wrong token copies nothing, opens no box), LINK (a `foo.txt` link still opens the box), SOURCE (Ctrl+U page has no control), KEY (Tab + Enter copies; NOT DRIVEN if keys cannot be posted), FAILCOPY (a second start with the seam pointed at a folder: the write fails, no notice appears; FR-005); run before (HEAD build) and after
 - [ ] T014 Two-stage `.slt` refresh of the module `mdview` (stop-rules §2.13), `translations/*/mdview.slt`, pins in `translations/ui-overrides.json` if needed
 - [ ] T015 Encoding guard `python tools/check_encoding.py --strict`, `.\build.cmd full`, harness, probe after; record in `fix-log.md`
 - [ ] T016 Manual: mention the copy control where the manual describes the Markdown Viewer (`help/`), if it has such a page; record if not

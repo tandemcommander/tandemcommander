@@ -168,6 +168,8 @@ struct Gen
     // code block buffering
     int codeDepth;
     std::string codeBuf, codeLang;
+    // feature 408: the copy control (NULL or an empty base = none)
+    const MdCopyUi* copy;
     // raw HTML block
     int rawHtml;
     // heading buffering
@@ -225,6 +227,25 @@ void EmitCell(Gen& g, const char* tag, const MD_BLOCK_TD_DETAIL* d)
 void EmitCodeBlock(Gen& g)
 {
     std::string& o = *g.target;
+    // Feature 408: the block's copy control. A plain link into the viewer's own
+    // origin - the page runs no script; the shared host cancels the navigation and
+    // hands a user-started one to the viewer (OnActivateLink), which copies entry n
+    // of codeBlocks. The wrapper only positions the control (a child of the
+    // scrolling <pre> would scroll away with the code).
+    const bool copyCtl = g.copy != NULL && !g.copy->base.empty();
+    if (copyCtl)
+    {
+        size_t n = g.res->codeBlocks.size();
+        g.res->codeBlocks.push_back(g.codeBuf);
+        o += "<div class=\"tc-code\"><a class=\"tc-copy\" href=\"";
+        Esc(o, g.copy->base, true);
+        o += std::to_string(n);
+        o += "\" title=\"";
+        Esc(o, g.copy->tooltip, true);
+        o += "\">";
+        Esc(o, g.copy->label, false);
+        o += "</a>";
+    }
     o += "<pre><code";
     if (!g.codeLang.empty())
     {
@@ -264,7 +285,10 @@ void EmitCodeBlock(Gen& g)
             i = j;
         }
     }
-    o += "</code></pre>\n";
+    o += "</code></pre>";
+    if (copyCtl)
+        o += "</div>";
+    o += "\n";
 }
 
 void EmitImage(Gen& g)
@@ -581,6 +605,57 @@ int MdPageWidthFromStored(unsigned v)
     return v < (unsigned)MDPW_COUNT ? (int)v : MDPW_NORMAL;
 }
 
+std::wstring MdCodeClipboardText(const std::string& srcUtf8)
+{
+    std::wstring w = Utf8ToW(srcUtf8);
+    // md4c ends every line of a code block - the last one too - with LF; the page
+    // shows no empty last line, so the copy has none either
+    if (!w.empty() && w.back() == L'\n')
+        w.pop_back();
+    std::wstring out;
+    out.reserve(w.size() + w.size() / 16);
+    for (size_t i = 0; i < w.size(); i++)
+    {
+        wchar_t c = w[i];
+        if (c == L'\0')
+            c = 0xFFFD; // what the page shows for a NUL of the source
+        if (c == L'\n' && (i == 0 || w[i - 1] != L'\r'))
+            out += L'\r';
+        out += c;
+    }
+    return out;
+}
+
+MdCopyLink MdParseCopyLink(const std::wstring& uri, const std::wstring& base, size_t count, size_t* index)
+{
+    static const wchar_t kFamily[] = MD_COPY_FAMILY;
+    const size_t fl = _countof(kFamily) - 1;
+    if (uri.compare(0, fl, kFamily) != 0)
+        return MDCOPY_NONE;
+    // from here on the address is ours: anything but an exact match does nothing
+    if (base.size() <= fl || base.compare(0, fl, kFamily) != 0 || uri.size() <= base.size() ||
+        uri.compare(0, base.size(), base) != 0)
+        return MDCOPY_REFUSED;
+    const size_t nl = uri.size() - base.size();
+    if (nl > 9)
+        return MDCOPY_REFUSED;
+    size_t n = 0;
+    for (size_t i = base.size(); i < uri.size(); i++)
+    {
+        wchar_t c = uri[i];
+        if (c < L'0' || c > L'9')
+            return MDCOPY_REFUSED;
+        n = n * 10 + (size_t)(c - L'0');
+    }
+    if (nl > 1 && uri[base.size()] == L'0')
+        return MDCOPY_REFUSED; // not canonical
+    if (n >= count)
+        return MDCOPY_REFUSED;
+    if (index != NULL)
+        *index = n;
+    return MDCOPY_OK;
+}
+
 // The article's opening tag for a page width (feature 314). NORMAL is the tag of
 // before 314, byte for byte; the other levels add the class whose rule
 // MdBuildThemeCss carries.
@@ -593,6 +668,33 @@ static const char* ArticleOpenTag(int pageWidth)
     case MDPW_FULL: return "<article class=\"markdown-body full\">";
     default: return "<article class=\"markdown-body\">";
     }
+}
+
+// Feature 408: the rules of the copy control and of the "Copied" notice, added to
+// the stylesheet only for a document that has at least one control (a document
+// without code blocks stays the document of before 408, byte for byte). Theme
+// variables only, so every colour scheme - light and dark - applies. The notice is
+// position:fixed and shown by :target: the viewer navigates to "#tc-copied-<k>"
+// (same document, no reload) and a fixed target is not scrolled to (measured,
+// specs/408-mdview-code-copy/fix-log.md); the viewer alternates k so that every
+// copy changes the target and restarts the fade.
+static const char* CopyCss()
+{
+    return "\n.tc-code{position:relative;}"
+           ".tc-copy{position:absolute;top:6px;right:6px;z-index:1;padding:1px 9px;"
+           "font:12px/1.6 'Segoe UI',system-ui,sans-serif;color:var(--fg);background:var(--bg);"
+           "border:1px solid var(--tb);border-radius:4px;opacity:0;user-select:none;"
+           "-webkit-user-select:none;transition:opacity .12s;}"
+           ".tc-code:hover .tc-copy,.tc-copy:focus{opacity:1;}"
+           "a.tc-copy:hover{text-decoration:none;color:var(--lka);border-color:var(--lka);}"
+           ".tc-copy:focus-visible{outline:2px solid var(--lk);outline-offset:1px;}"
+           ".tc-toast{position:fixed;right:16px;bottom:16px;z-index:2;padding:6px 14px;"
+           "font:13px/1.5 'Segoe UI',system-ui,sans-serif;color:var(--bg);background:var(--fg);"
+           "border-radius:6px;visibility:hidden;opacity:0;pointer-events:none;"
+           "user-select:none;-webkit-user-select:none;}"
+           ".tc-toast:target{animation:tc-toast 2s ease-out forwards;}"
+           "@keyframes tc-toast{0%,65%{visibility:visible;opacity:1;}"
+           "100%{visibility:hidden;opacity:0;}}";
 }
 
 std::string MdBuildThemeCss(const MdTheme& t)
@@ -666,10 +768,11 @@ std::string MdBuildThemeCss(const MdTheme& t)
 bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
                   const std::wstring& docDir, MdHtmlResult& out,
                   const std::wstring& findTerm, bool allowRemote,
-                  int pageWidth, const MdRenderLimits& lim)
+                  int pageWidth, const MdCopyUi* copyUi, const MdRenderLimits& lim)
 {
     out.html.clear();
     out.images.clear();
+    out.codeBlocks.clear();
     out.anchors.clear();
     out.matchCount = 0;
     out.bytesOut = 0;
@@ -682,6 +785,7 @@ bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
     g.allowRemote = allowRemote;
     g.imgDepth = 0;
     g.codeDepth = 0;
+    g.copy = copyUi;
     g.rawHtml = 0;
     g.headingLevel = 0;
     g.depth = 0;
@@ -717,10 +821,25 @@ bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
     out.html += dark ? "dark" : "light";
     out.html += "\"><style>\n";
     out.html += MdBuildThemeCss(theme);
+    const bool copies = copyUi != NULL && !copyUi->base.empty() && !out.codeBlocks.empty();
+    if (copies)
+        out.html += CopyCss();
     out.html += "\n</style></head><body>";
     out.html += ArticleOpenTag(pageWidth);
     out.html += "\n";
     out.html += g.body;
+    if (copies)
+    {
+        // the two notices of the viewer's "Copied" feedback (CopyCss)
+        for (int k = 0; k < 2; k++)
+        {
+            out.html += "<div id=\"tc-copied-";
+            out.html += (char)('0' + k);
+            out.html += "\" class=\"tc-toast\">";
+            Esc(out.html, copyUi->copied, false);
+            out.html += "</div>";
+        }
+    }
     out.html += "\n</article></body></html>";
     out.bytesOut = out.html.size();
     return true;
@@ -731,6 +850,7 @@ bool MdBuildSourceHtml(const std::string& srcUtf8, const MdTheme& theme,
 {
     out.html.clear();
     out.images.clear();
+    out.codeBlocks.clear(); // feature 408: the source view has no copy controls
     out.anchors.clear();
     out.matchCount = 0;
     out.bytesOut = 0;

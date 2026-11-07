@@ -21,10 +21,27 @@ struct MdImageRef
     std::wstring pathOrUrl; // Local: absolute \\?\-ready path; Remote: full URL
 };
 
+// Feature 408: the copy control of a code block (contracts/copy-address.md of
+// specs/408-mdview-code-copy). 'base' is the address prefix the control of block n
+// links to (base + n); empty = no controls (the document of before 408, byte for
+// byte). The texts are UTF-8 and are escaped by the generator.
+struct MdCopyUi
+{
+    std::string base;    // "https://mdview.invalid/tc-copy-<token>-<serial>/" or ""
+    std::string label;   // the control's text ("Copy")
+    std::string tooltip; // its title attribute
+    std::string copied;  // the notice shown after a copy ("Copied")
+};
+
+// Every copy address starts with this; the viewer consumes the whole family, so a
+// forged or stale one does nothing instead of reaching the other link rules.
+#define MD_COPY_FAMILY L"https://mdview.invalid/tc-copy-"
+
 struct MdHtmlResult
 {
     std::string html;                  // full UTF-8 HTML document
     std::vector<MdImageRef> images;    // index n == https://mdview.invalid/img/<n>
+    std::vector<std::string> codeBlocks; // feature 408: index n == the source of the control base + n (UTF-8, as md4c gives it)
     std::vector<std::wstring> anchors; // heading slugs (unique)
     int matchCount = 0;                // number of <mark id="mdfind-N"> emitted
     size_t bytesOut = 0;
@@ -52,12 +69,35 @@ int MdPageWidthFromStored(unsigned v);
 // wrapped in <mark id="mdfind-N"> (script-free find). When 'allowRemote' is
 // true, remote images become servable <img> (consent granted); otherwise they
 // render as inert placeholders. 'pageWidth' is an MdPageWidth (out of range ->
-// NORMAL). Never throws; bounded by 'lim'.
+// NORMAL). 'copyUi' (feature 408), when given with a non-empty base, puts a copy
+// control on every code block and fills out.codeBlocks. Never throws; bounded by
+// 'lim'.
 bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
                   const std::wstring& docDir, MdHtmlResult& out,
                   const std::wstring& findTerm = L"", bool allowRemote = false,
-                  int pageWidth = MDPW_NORMAL,
+                  int pageWidth = MDPW_NORMAL, const MdCopyUi* copyUi = nullptr,
                   const MdRenderLimits& lim = MdRenderLimits());
+
+// Feature 408: the text a code block's control puts on the clipboard - the block's
+// source (an entry of MdHtmlResult::codeBlocks) as UTF-16, without the line break
+// that ends its last line, U+0000 shown as U+FFFD (what the page shows), and every
+// LF not preceded by CR as CR LF (the Windows clipboard convention, as the Code
+// Viewer copies).
+std::wstring MdCodeClipboardText(const std::string& srcUtf8);
+
+// Feature 408: classifies an activated address. MDCOPY_NONE: not in the
+// MD_COPY_FAMILY (the other link rules apply). MDCOPY_REFUSED: in the family but
+// not exactly 'base' followed by a canonical decimal (no sign, no leading zero
+// unless "0", at most 9 digits) below 'count' - a forged, stale or damaged address;
+// nothing must happen. MDCOPY_OK: *index is set. An empty 'base' refuses every
+// address of the family.
+enum MdCopyLink
+{
+    MDCOPY_NONE = 0,
+    MDCOPY_REFUSED = 1,
+    MDCOPY_OK = 2
+};
+MdCopyLink MdParseCopyLink(const std::wstring& uri, const std::wstring& base, size_t count, size_t* index);
 
 // Generates the inline stylesheet (CSS variables from the theme + base rules:
 // body inset, reading measure, tables, code, blockquote, images, marks).
