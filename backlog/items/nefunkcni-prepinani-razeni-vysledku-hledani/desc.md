@@ -1,16 +1,16 @@
 ---
 title: Find: clicking a result column again does not reverse the sort order
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: panels-ui
 source: github#23
 who: agent
 created: 2026-11-06
-updated: 2026-11-06
-verified: -
+updated: 2026-11-07
+verified: 2026-11-07 1549e06a
 effort: S
-feature: -
+feature: 407
 related: []
 depends-on: []
 reason: -
@@ -55,3 +55,5 @@ Whether folders-first is intended for the Find list is not documented in the cod
 - 2026-11-06 — created (source github#23)
 - 2026-11-06 — fields set from the issue text and labels
 - 2026-11-06 — moved to Next position 2
+- 2026-11-07 — verified at 1549e06a: still present at 1549e06a: hidden-desktop probe, second View>Date or Date header click keeps the order, no header arrow, folders before older files
+- 2026-11-07 — run started, feature 407
