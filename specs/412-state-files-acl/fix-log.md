@@ -48,3 +48,11 @@ files already in its state folder with an empty, protected access list (`D:PAI`)
   could list every folder; otherwise folder by folder (`<dir>\* /reset /C /L /Q`, top-down,
   never into a link). Cost measured: 9 ms per icacls call; the real state folder has 691 folders
   (about 6 s folder by folder - hence the fast path).
+
+## Analyze
+
+- Run 1: CRITICAL 0, HIGH 0. C1 (MEDIUM) the unlistable-folder path had no test -> added to T006.
+  C2 (LOW) the note of a failed contents reset is not tested: forcing an `icacls` failure needs
+  an entry the owner cannot change, accepted. C3 (LOW) POSIX path unchanged, not testable here,
+  accepted.
+- Run 2 (after the T006 change): CRITICAL 0, HIGH 0, MEDIUM 0; C2, C3 as accepted.

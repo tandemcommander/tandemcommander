@@ -19,7 +19,7 @@
 - [ ] T003 [US1] Write `tools/backlog-app/packages/server/test/state-dir.test.ts` (Windows-only cases `skipIf`): files, a hidden `.git` and nested folders read / written / deleted after `restrictToOwner()`; every DACL names only the user's SID and SYSTEM; the folder protected, the entries not; a pre-locked folder (the old icacls call) repaired; an empty folder succeeds
 - [ ] T004 [US1] Run T003 against the old body - the file cases must fail (negative control, record in fix-log)
 - [ ] T005 [US1] Implement in `tools/backlog-app/packages/server/src/settings/state-dir.ts`: folder step without `/T`; walk with `readdirSync(withFileTypes)` (link or unlistable folder -> slow path); fast path `icacls <folder>\* /reset /T /C /Q`; slow path per folder `icacls <dir>\* /reset /C /L /Q`, top-down, only into real folders
-- [ ] T006 [US1] Add the junction case to `tools/backlog-app/packages/server/test/state-dir.test.ts`: a junction to an outside folder whose file has an explicit ACE - after the step the outside ACE is still there, the inside files are repaired (slow path)
+- [ ] T006 [US1] Add the junction case to `tools/backlog-app/packages/server/test/state-dir.test.ts`: a junction to an outside folder whose file has an explicit ACE - after the step the outside ACE is still there, the inside files are repaired (slow path); and a nested folder made unlistable (protected empty DACL) - the slow path makes it listable and repairs its files
 
 ## Phase 4: User Story 3 - unreadable side worktree reported (P2)
 
