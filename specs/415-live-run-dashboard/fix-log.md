@@ -264,3 +264,41 @@ After the fixes: `npm run check` 451 passed, 2 skipped; Playwright `us7`, `us4-c
 
 After the fixes: `npm run check` 499 passed, 2 skipped (125 in `shared`); Playwright `us7`,
 `a11y`, `us5-us6`, `us4-chat`: 9 passed.
+
+### Review 4 (refute-first agent, at 709c0f08)
+
+Three MUSTs - the third review with a MUST finding (reviews 1, 3, 4). Stop-rules §3 #3 makes
+that a stop; its preamble asks first to remove the cause with a different approach. The three
+findings are narrow and concrete (two of them are older defects of the phase machine of 344 that
+the new Critical tab made visible), so they were fixed with tests and negative controls, and a
+fifth review decides: a MUST in it blocks the item (work kept on the branch).
+
+- **M1** A probe whose output says "RESULT: 2 row(s), 0 FAIL" or "TOTAL: 42 PASS / 0 FAIL"
+  counted the word FAIL as one failed row ("A GUI probe failed" on runs that closed green).
+  Fixed: per line, a summary count before or after the word ("FAIL 0", "0 FAIL") is the count;
+  only a line without a count is a row. Test; on all 264 real traces the review's script finds 0
+  such entries (it found 7).
+- **M2** `BLOCK_MARKER` matched the whole command text, so a note saying "block" put a closing
+  run on the stop path for the rest of the run (3 real traces). **M3** `git merge-base` and
+  quoted mentions of `git merge` jumped the phase to *merge* (3 real traces). Fixed: the phase
+  markers of `RunState` are read from the programs a command runs (`programsOf`, which now names
+  the backlog tool's subcommand: `backlog block`, `backlog lock acquire`, `backlog verify`, ...),
+  never from its text. Tests; the review's timeline script finds none on the real traces.
+- **S1** Bash's `'\''` escape, **S2** a PowerShell string ending in a backslash
+  (`"$env:TEMP\x\"`), **S3** `#` comments, **S4** a quoted text assigned to a variable: read
+  right now (tests; the build and probe commands of the review's real traces are recognised).
+- **S5** More planned-failure words: main's build / Release / plug-in, on main's, as a control,
+  pre-review. **S6** A commit chained with backlog steps is told as the commit (a new item or a
+  block stays that); the chat snapshot counts the branch's commits from git (a run commits with
+  `-q`, so the trace shows none). **S7** MUST counts read the upper-case MUST only and never
+  "review 1 MUST"; "fixed at once" needs "MUST ... which is fixed". Tests.
+- NOTEs fixed: the encoding guard's total is its own `TOTAL: n finding(s)` line; a document is
+  read only when its real path lies inside the repository. NOTEs accepted: tests with a non-zero
+  exit and a passing count end as a warning (the counts are believed); `Start-Process ...
+  -ArgumentList` with a probe, `pwsh -f`, `Invoke-Expression`, `xargs` are not read (none in the
+  real traces).
+- Negative control: the six new tests (`review4.test.ts`) all fail with the code before these
+  fixes and pass with it.
+
+After the fixes: `npm run check` 506 passed, 2 skipped; Playwright `us7`, `a11y`, `us5-us6`,
+`us4-chat`, `us2-loop`: 13 passed.

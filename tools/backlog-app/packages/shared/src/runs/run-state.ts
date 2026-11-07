@@ -20,6 +20,7 @@
  */
 
 import type { Attempt, CurrentToolSchema, Phase, TraceEvent } from "../schemas/runs.ts";
+import { programsOf } from "./command-parse.ts";
 import type { z } from "zod";
 
 /** The implementation phases in order (the stop path and triage are outside the order). */
@@ -50,21 +51,22 @@ const SKILL_PHASE: Record<string, Phase> = {
   "speckit-implement": "implement",
 };
 
-/** Shell command markers and the phase each starts (checked in this order). */
-const COMMAND_MARKERS: { pattern: RegExp; phase: Phase }[] = [
-  { pattern: /backlog(\.sh|\.py)?\b.*\block\s+release\b/, phase: "done" },
-  { pattern: /backlog(\.sh|\.py)?\b.*\block\s+acquire\b/, phase: "selection" },
-  { pattern: /backlog(\.sh|\.py)?\b.*\brun-log\b/, phase: "close" },
-  { pattern: /backlog(\.sh|\.py)?\b.*\bverify\b/, phase: "measure" },
-  { pattern: /backlog(\.sh|\.py)?\b.*\bstart\b.*--feature/, phase: "specify" },
-  { pattern: /\bgit\s+merge\b/, phase: "merge" },
+/**
+ * Programs and backlog subcommands that start a phase (checked in this order; feature 415 review
+ * 4: by what a command runs, never by its text - a note saying "block" or a `git merge-base`
+ * moves no phase).
+ */
+const COMMAND_MARKERS: { program: string; phase: Phase }[] = [
+  { program: "backlog lock release", phase: "done" },
+  { program: "backlog lock acquire", phase: "selection" },
+  { program: "backlog run-log", phase: "close" },
+  { program: "backlog verify", phase: "measure" },
+  { program: "backlog start", phase: "specify" },
+  { program: "git merge", phase: "merge" },
 ];
 
-/** A blocked item ends the run on the stop path. */
-const BLOCK_MARKER = /backlog(\.sh|\.py)?\b.*\bblock\s+[a-z0-9-]+/;
-
-/** Build and test commands of the verification step. */
-const VERIFY_MARKER = /\b(build\.cmd|rebuild\.cmd|saltests(\.exe)?)\b/;
+/** Programs of the verification step (builds and saltests). */
+const VERIFY_PROGRAMS = ["build.cmd", "rebuild.cmd", "saltests.exe"];
 
 /** A GUI probe on the hidden desktop. */
 const PROBE_MARKER = /run_on_hidden_desktop\.ps1/;
@@ -311,19 +313,21 @@ export class RunState {
       return;
     }
     if (name === "Bash" || name === "PowerShell") {
+      const programs = programsOf(event.info?.command ?? summary);
       // `block` ends the run on the stop path; `unblock` (of a dependent item) does not.
-      if (BLOCK_MARKER.test(summary) && !/\bunblock\b/.test(summary)) {
+      if (programs.includes("backlog block")) {
         this.advance("stopped", event.at);
         return;
       }
       for (const marker of COMMAND_MARKERS) {
-        if (marker.pattern.test(summary)) {
+        if (programs.includes(marker.program)) {
           this.advance(marker.phase, event.at);
           return;
         }
       }
       if (
-        (VERIFY_MARKER.test(summary) || PROBE_MARKER.test(summary)) &&
+        (programs.some((p) => VERIFY_PROGRAMS.includes(p)) ||
+          programs.includes("run_on_hidden_desktop.ps1")) &&
         PHASE_ORDER.indexOf(this.phase) >= PHASE_ORDER.indexOf("implement")
       ) {
         this.advance("verify", event.at);

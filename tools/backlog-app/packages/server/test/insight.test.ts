@@ -426,6 +426,7 @@ describe("live snapshot", () => {
         metrics,
         tasks: { done: 3, total: 9 },
         startedMs: Date.parse("2026-11-07T11:00:00Z"),
+        commits: 2,
       },
       { branch: "415-x", featureFolder: "specs/415-x", estimate: { medianSeconds: 7200, count: 5 } },
       Date.parse("2026-11-07T12:00:00Z"),
@@ -437,6 +438,8 @@ describe("live snapshot", () => {
     expect(text).toContain("estimate at list prices");
     expect(text).toContain("- Feature folder: specs/415-x");
     expect(text).toContain("The build failed");
+    // The commits come from git (a run commits with -q: the trace shows none).
+    expect(text).toContain("2 commits");
     expect(text.split("\n").every((l) => l.length <= 300)).toBe(true);
   });
 });

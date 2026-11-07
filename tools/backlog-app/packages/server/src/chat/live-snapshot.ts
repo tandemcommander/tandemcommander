@@ -103,7 +103,7 @@ export function buildLiveSnapshot(
     cut(
       `- Cost: ${m.costUsd === null ? "unknown" : `$${m.costUsd.toFixed(2)}`} (${m.costBasis === "estimate" ? "estimate at list prices" : m.costBasis === "reported" ? "reported by claude" : "nothing yet"}); tokens in ${tokens(m.tokens.input)}, out ${tokens(m.tokens.output)}, cache read ${tokens(m.tokens.cacheRead)}, cache write ${tokens(m.tokens.cacheWrite)}${m.contextTokens ? `; context ${tokens(m.contextTokens)}` : ""}`,
     ),
-    `- Counts: ${m.toolCalls} tool calls, ${m.toolErrors} failed, ${m.subagents} subagents, ${m.filesChanged} files changed, ${live.story.commits().length} commits`,
+    `- Counts: ${m.toolCalls} tool calls, ${m.toolErrors} failed, ${m.subagents} subagents, ${m.filesChanged} files changed, ${Math.max(live.commits, live.story.commits().length)} commits`,
     `- Trace: .agent-traces/${live.id}/trace.jsonl (read it with Grep/Read for more)`,
     facts.featureFolder
       ? `- Feature folder: ${facts.featureFolder} (spec.md, plan.md, tasks.md, fix-log.md)`

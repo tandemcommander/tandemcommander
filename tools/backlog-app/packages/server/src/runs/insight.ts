@@ -319,9 +319,13 @@ export class RunInsightService {
     const doc = insight.documents.find((d) => d.name === name);
     if (!insight.featureFolder || !doc) throw new ApiError("not-found", "the run has no such document");
     const path = join(this.root, insight.featureFolder, doc.file);
+    const realPath = real(path);
+    const repo = real(this.root);
+    if (!realPath || !repo || !isInside(realPath, repo))
+      throw new ApiError("not-found", "the document is gone");
     let bytes: Buffer;
     try {
-      bytes = readFileSync(path);
+      bytes = readFileSync(realPath);
     } catch {
       throw new ApiError("not-found", "the document is gone");
     }

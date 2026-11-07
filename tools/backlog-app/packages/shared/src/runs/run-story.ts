@@ -189,7 +189,7 @@ const DECISION_WORDS =
 const AFTER_IMPLEMENT = new Set<Phase>(["implement", "verify", "review", "close"]);
 
 /** A count of MUST findings in words or digits ("1 MUST", "one MUST", "2 MUST findings"). */
-const MUST_COUNT = /\b([1-9]\d*|one|two|three|four|five)\s+MUST\b/i;
+const MUST_COUNT = /(?<![Rr]eview\s)\b([1-9]\d*|[Oo]ne|[Tt]wo|[Tt]hree|[Ff]our|[Ff]ive)\s+MUST\b/;
 
 /**
  * Whether a message reports open MUST findings of a review: a count above zero ("Review 3 has 1
@@ -211,8 +211,7 @@ const MUST_STILL_OPEN =
   /still open|stays open|remains? open|brings? it back|reopen|next:? the MUST|not (?:yet )?fixed|\bbut\b[^.\n]{0,40}\bMUST\b/i;
 
 /** A MUST reported and fixed in the same breath ("found one MUST, which is fixed"). */
-const MUST_FIXED_AT_ONCE =
-  /\b(?:which|that) (?:is|was|are|were) (?:now )?fixed\b|\bnow fixed\b|\bfixed it\b/i;
+const MUST_FIXED_AT_ONCE = /\bMUST\b[^.;\n]{0,40}\b(?:which|that) (?:is|was|are|were) (?:now )?fixed\b/i;
 
 /** Labels whose failure a later pass of the same kind resolves. */
 const RESOLVABLE = new Set<StoryLabel>(["BUILD", "TEST", "PROBE", "CHECK"]);
@@ -236,6 +235,10 @@ const EXPECTED_FAILURE = new RegExp(
     "with control [A-Z]\\b",
     "with the [\\w -]{0,30}\\bbug\\b",
     "on the installed",
+    "\\bmain's (?:build|release|debug|\\w+\\.spl|plug-in|uniso)",
+    "\\bon main's\\b",
+    "as a control",
+    "\\bpre-review\\b",
     "without the fix",
     "\\bpre-(?:fix|restore|change)\\b",
     "old (?:code|build|handler|binary)",
@@ -454,9 +457,16 @@ export function classifyCommand(command: string): CommandKind {
     verdict: CommandKind["verdict"],
     more: Partial<CommandKind> = {},
   ): CommandKind => ({ label, title, verdict, importance: "normal", criticalOnOk: null, ...more });
+  const backlogVerb = progs.find((p) => /^backlog [a-z-]+$/.test(p))?.slice("backlog ".length) ?? null;
+  // A commit chained with other backlog steps (`git commit … && backlog.sh lock release`) is the
+  // commit; a new item or a block stays what it is.
+  if (runs("git commit") && backlogVerb !== "new" && backlogVerb !== "block") {
+    const message = optionValue(c, "-m");
+    return kind("COMMIT", message ? `Commits: ${message}` : "Commits the changes", "commit");
+  }
   if (runs("backlog.sh", "backlog.py")) {
-    const sub = /\b(?:backlog\.sh|backlog\.py)\s+(?:--input-json\s+-\s+)?([a-z-]+)(?:\s+([a-z-]+))?/.exec(c);
-    const verb = sub?.[1] ?? "";
+    const verb = backlogVerb ?? "";
+    const sub = /\block\s+([a-z-]+)/.exec(progs.find((p) => p.startsWith("backlog lock ")) ?? "");
     if (verb === "new") {
       const title = optionValue(c, "--title");
       const person = /--type\s+['"]?person-step/.test(c);
@@ -478,7 +488,7 @@ export function classifyCommand(command: string): CommandKind {
         criticalOnOk: "The run stopped and blocked the item",
       });
     if (verb === "lock") {
-      const what = sub?.[2] ?? "";
+      const what = sub?.[1] ?? "";
       const titles: Record<string, string> = {
         acquire: "Takes the run lock",
         release: "Releases the run lock",
@@ -618,16 +628,27 @@ export function judgeResult(
     }
     case "probe": {
       /**
-       * How many rows a probe reports with a word: a summary line counts its rows ("Rows: PASS
-       * 29, FAIL 0"); otherwise each occurrence of the word counts once.
+       * How many rows a probe reports with a word. A summary line gives the count ("Rows: PASS 29,
+       * FAIL 0", "RESULT: 2 row(s), 0 FAIL", "TOTAL: 42 PASS / 0 FAIL"); without one, each line
+       * carrying the word is one row (review 4 M1: "0 FAIL" is no failure).
        *
        * @param word - `PASS` or `FAIL`.
        * @returns The count.
        */
       const counted = (word: string): number => {
-        const sums = [...text.matchAll(new RegExp(`\\b${word}[:=]?\\s+(\\d+)\\b`, "g"))];
-        if (sums.length > 0) return sums.reduce((n, m) => n + Number(m[1]), 0);
-        return (text.match(new RegExp(`\\b${word}\\b`, "g")) ?? []).length;
+        let summary: number | null = null;
+        let rows = 0;
+        for (const line of text.split(/\r?\n/)) {
+          const after = new RegExp(`\\b${word}[:=]?\\s+(\\d+)\\b`).exec(line);
+          const before = new RegExp(`(?:^|[\\s,:/(])(\\d+)\\s+${word}\\b`).exec(line);
+          const isSummary =
+            after ||
+            (before && /PASS|FAIL|TOTAL|RESULT|rows?\\b|row\\(s\\)/i.test(line.replace(before[0], "")));
+          if (after) summary = (summary ?? 0) + Number(after[1]);
+          else if (isSummary && before) summary = (summary ?? 0) + Number(before[1]);
+          else if (new RegExp(`\\b${word}\\b`).test(line)) rows++;
+        }
+        return summary ?? rows;
       };
       const fails = counted("FAIL");
       const passes = counted("PASS");
@@ -691,7 +712,7 @@ export function judgeChecks(
     if (verdict.note) notes.push(verdict.note);
   }
   if (checks.includes("encoding")) {
-    const m = /TOTAL:\s*(\d+)/.exec(text);
+    const m = /TOTAL:\s*(\d+)\s+finding/.exec(text);
     if (m && Number(m[1]) > 0) return { outcome: "fail", note: `${m[1]} findings`, failed: "encoding" };
     if (m) notes.push("no findings");
   }

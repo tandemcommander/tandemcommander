@@ -105,7 +105,11 @@ function parts(text: string): Word[][] {
     const ch = text[i]!;
     const next = text[i + 1] ?? "";
     if (quote) {
-      if (ch === "\\" && quote === '"' && next === '"') {
+      // `\"` escapes a quote in Bash; in PowerShell a backslash is a path's ("$env:TEMP\x\"):
+      // after a backslash path in the string, or before a separator, it ends the string.
+      const after = text[i + 2] ?? "";
+      const pathEnd = /\\|\$env:/i.test(word) || after === "" || /[\s;|)]/.test(after);
+      if (ch === "\\" && quote === '"' && next === '"' && !pathEnd) {
         word += '"';
         i++;
       } else if (ch === quote) {
@@ -118,6 +122,18 @@ function parts(text: string): Word[][] {
     if (ch === '"' || ch === "'") {
       quote = ch;
       quoted = true;
+      continue;
+    }
+    // Bash's `'\''` (a quote inside a single-quoted text): an escaped quote outside quotes.
+    if (ch === "\\" && (next === "'" || next === '"')) {
+      word += next;
+      quoted = true;
+      i++;
+      continue;
+    }
+    // A comment runs to the line end (`#` at the start of a word).
+    if (ch === "#" && word === "") {
+      while (i + 1 < text.length && text[i + 1] !== "\n") i++;
       continue;
     }
     if (ch === " " || ch === "\t" || ch === "\r") {
@@ -176,20 +192,30 @@ export function programsOf(command: string, depth = 0): string[] {
   for (const words of parts(text)) {
     let i = 0;
     // Assignments, prefixes and launchers before the program.
+    let assigned = false;
+    let called = false;
     for (;;) {
       const w = words[i];
       if (!w) break;
       const t = w.text;
       const lower = t.toLowerCase();
       if (!w.quoted && /^[A-Za-z_]\w*=/.test(t)) i++;
-      else if (!w.quoted && /^\$[\w:]+$/.test(t) && /^[+\-*/]?=$/.test(words[i + 1]?.text ?? "")) i += 2;
-      else if (!w.quoted && /^\$[\w:]+[+\-*/]?=$/.test(t)) i++;
-      else if (!w.quoted && PREFIXES.has(lower)) i++;
-      else if (lower === "timeout" && /^\d+[smh]?$/.test(words[i + 1]?.text ?? "")) i += 2;
+      else if (!w.quoted && /^\$[\w:]+$/.test(t) && /^[+\-*/]?=$/.test(words[i + 1]?.text ?? "")) {
+        i += 2;
+        assigned = true;
+      } else if (!w.quoted && /^\$[\w:]+[+\-*/]?=$/.test(t)) {
+        i++;
+        assigned = true;
+      } else if (!w.quoted && PREFIXES.has(lower)) {
+        if (lower === "&" || lower === ".") called = true;
+        i++;
+      } else if (lower === "timeout" && /^\d+[smh]?$/.test(words[i + 1]?.text ?? "")) i += 2;
       else break;
     }
     const first = words[i];
     if (!first) continue;
+    // `$m = "a; .\\build.cmd"` assigns a text; only `& "…"` runs a quoted path after `=`.
+    if (assigned && first.quoted && !called) continue;
     const prog = programName(first.text);
     if (KEYWORDS.has(prog)) continue;
     const rest = words.slice(i + 1);
@@ -218,6 +244,22 @@ export function programsOf(command: string, depth = 0): string[] {
       continue;
     }
     found.push(prog);
+    // The backlog tool's subcommand (`backlog block`, `backlog lock acquire`): phases and labels.
+    const tool = [prog, ...words.slice(i + 1, i + 3).map((w) => programName(w.text))].findIndex((n) =>
+      /^backlog\.(sh|py)$/.test(n),
+    );
+    if (tool >= 0) {
+      const after = words.slice(i + 1 + tool);
+      let j = 0;
+      while (j < after.length && after[j]!.text.startsWith("-"))
+        j += /^(--root|--input-json)$/.test(after[j]!.text) ? 2 : 1;
+      const sub = after[j]?.text.toLowerCase();
+      if (sub && /^[a-z-]+$/.test(sub)) {
+        found.push(`backlog ${sub}`);
+        const second = after[j + 1]?.text.toLowerCase();
+        if (sub === "lock" && second) found.push(`backlog lock ${second}`);
+      }
+    }
     if (/^(powershell|pwsh)(\.exe)?$/.test(prog)) {
       const file = rest.findIndex((w) => /^-file$/i.test(w.text));
       if (file >= 0 && rest[file + 1]) found.push(programName(rest[file + 1]!.text));

@@ -204,6 +204,8 @@ export interface LiveInsight {
   tasks: { done: number; total: number } | null;
   /** The run's start (epoch ms), if known. */
   startedMs: number | null;
+  /** Commits of the run's branch (from git). */
+  commits: number;
 }
 
 /** The live run being followed. */
@@ -477,6 +479,7 @@ export class RunsService {
       metrics: live.metrics,
       tasks: live.tasks,
       startedMs: live.times.timeAt(0),
+      commits: live.commits.length,
     };
   }
 
