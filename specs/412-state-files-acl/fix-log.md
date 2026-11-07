@@ -34,3 +34,17 @@ files already in its state folder with an empty, protected access list (`D:PAI`)
   reason to delete the folder.
 
 ## Work
+
+## Findings fixed on the way
+
+- **icacls `/T` follows a junction out of the state folder** (severity 3: unreachable in normal
+  use - the app and git create no links there - but the old `/T` call has the same property).
+  Measured in `%TEMP%\tcbl_measure` with a junction `junc` -> `%TEMP%\tcbl_outside` whose `out.txt`
+  had an explicit `(A;;FR;;;BU)`: `icacls <d>\* /reset /T /C /Q` -> "Successfully processed 7
+  files" and the BU ACE of `out.txt` was gone; the same with `/L` added. Without `/T`
+  (`icacls <d>\* /reset /C /L /Q`) the outside file kept its ACE. Node's
+  `readdirSync(..., { withFileTypes: true })` reports the junction as `isSymbolicLink() == true`.
+  Decision (clarification Q1, Q2): one `/T` call only when a walk of the folder found no link and
+  could list every folder; otherwise folder by folder (`<dir>\* /reset /C /L /Q`, top-down,
+  never into a link). Cost measured: 9 ms per icacls call; the real state folder has 691 folders
+  (about 6 s folder by folder - hence the fast path).

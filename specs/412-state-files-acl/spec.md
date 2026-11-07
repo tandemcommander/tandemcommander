@@ -5,6 +5,13 @@
 **Status**: Draft
 **Input**: User description: "Backlog item backlog-app-start-locks-existing-state-files - implement exactly what it describes: Backlog app start leaves its existing state files with no access rights." From backlog item backlog-app-start-locks-existing-state-files.
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: When the state folder holds a link (a junction or symbolic link) to a place outside it, may the start's permission step change the access of what the link points to? → A: No - links are never followed; the link entry itself is reset, its target is left untouched (autonomous run: conservative; measured: `icacls <folder>\* /reset /T` follows a junction and removed an explicit ACE of a file outside the folder, also with `/L`).
+- Q: Must the start stay fast with the real state folder (691 folders, ~1000 entries)? → A: Yes - one `icacls` call for the whole contents when the folder holds no link and every folder of it could be listed; a folder-by-folder reset (one call per folder, about 9 ms each) only when a link or an unlistable folder is found (autonomous run: conservative; the start took about 1 s, feature 344).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Changes during a run land again (Priority: P1)
@@ -79,6 +86,9 @@ fails with a message about the permissions and the folder is still there.
 - The folder itself is made private but some entries of its contents cannot be reset: the start
   goes on (the folder is private, new files inherit) and prints a note naming the failure.
 - Non-Windows systems: unchanged (`chmod 700` on the folder).
+- A junction inside the state folder pointing outside it: its target keeps its access (FR-007).
+- A folder inside the state folder that cannot be listed: the folder-by-folder reset makes it
+  listable before it is read.
 
 ## Requirements *(mandatory)*
 
@@ -98,6 +108,10 @@ fails with a message about the permissions and the folder is still there.
 - **FR-005**: The side worktree MUST tell an unreadable `.git` (an error reported to the caller,
   folder kept) from a missing one (folder recreated, as today).
 - **FR-006**: The behaviour on non-Windows systems MUST stay unchanged.
+- **FR-007**: The permission step MUST NOT follow a link (junction, symbolic link) inside the state
+  folder: the access of a link's target outside the folder stays unchanged.
+- **FR-008**: When the folder holds no link and every folder in it can be listed, the contents
+  MUST be reset in one call; otherwise folder by folder, top-down, skipping the links' targets.
 
 ### Key Entities
 
