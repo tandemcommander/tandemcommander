@@ -38,7 +38,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314, 408 |
 | Privacy and security | 083, 085, 086, 090, 123 |
-| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385 |
+| FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385, 410 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
@@ -6637,3 +6637,30 @@ a few early ones are out of sequence).
   `comparedirs_shot.ps1` FIT / INK FAIL on HEAD's Czech module -> PASS in cs / fr / en (reviews:
   ro / de / es); two refute-first reviews (review 1: no MUST, SHOULDs - the FTP link, the reply - fixed; review 2:
   no MUST, its SHOULD - item counts after the FTP fix - fixed).
+- 410-ftp-alias-refresh: after an upload, rename or delete through one name of an FTP server
+  (`localhost`), a panel showing the same folder through another name of it (`127.0.0.1`, same user
+  and port) kept the old listing until Ctrl+R; a folder visited earlier under the panel's name was
+  shown from the plug-in's listing cache, and a file viewed (F3) under it showed the old copy - all
+  three keyed by the host as typed (measured: rows REFRESH-ALIAS, CACHE-ALIAS, VIEW-ALIAS FAIL). Now
+  one rule `SalFtpRootMatchOf` (`src/common/salftproot.h`: same root / same user and port under
+  another host / other) through `FTPRootPathMatch` (`ftputils.cpp`; `FTPHasTheSameRootPath` = the
+  same root): `CPluginFSInterface::AcceptChangeOnPathNotification` (`fs3.cpp`) refreshes a panel of
+  another host with the same path rule and timing - only while its connection is open (review 1: a
+  closed one would ask "reconnect?" or log in again, maybe to another server; its listing is then
+  only outdated) - and drops the notified path's viewed files under every other-host FS's own name
+  (`ftp:` / `ftps:`, a name that does not fit is skipped); `CListingCache::AcceptChangeOnPathNotification`
+  (`ctrlcon4.cpp`) no longer compares the host. Traps: an upload under the panel's own name takes
+  the panel's connection over - the probe server `ftpmini_sess.py` numbers control connections (and
+  closes one on a kick file); clearing `NextRefreshWontClearCache` for another host (first design)
+  was redundant once the notification drops the caches itself (review 1's mutant passed); Git Bash
+  `sed -i` on a mutant dropped the file's CRs. Limits: another user or port of a server is not
+  refreshed (the item names the host; 345's wider rule covers only the upload cache); a panel at a
+  parent folder is not refreshed; two unrelated servers with the same user, port and folder refresh
+  each other's open panel (341's rule); a connection lent to the panel's own operation counts as
+  closed; different server encodings of the two names defeat the match. From backlog item
+  `ftp-panel-refresh-misses-change-under-another-name`. Probe `ftp410_probe.ps1` 11 / 3 on `main`
+  (+ REFRESH-CLOSED FAIL on the review-1 build) -> 16 / 0 (mutants: the `fs3.cpp` half fails
+  REFRESH-ALIAS and VIEW-ALIAS, the `ctrlcon4.cpp` half CACHE-ALIAS; reviewers' HEAD~1 plug-in fails
+  REFRESH-ALIAS, CACHE-ALIAS, VIEW-ALIAS, REFRESH-CLOSED); 341's `ftp341_probe.ps1` 12 / 0;
+  saltests +24; two refute-first reviews (review 1: MUST 0, SHOULD 1 fixed, NOTE 6; review 2: MUST 0,
+  NOTE 4 - documented).

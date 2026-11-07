@@ -17,7 +17,6 @@ Last triaged: 2026-11-07
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [FTP: a panel is not refreshed after a change made under another name of its server](items/ftp-panel-refresh-misses-change-under-another-name/desc.md) | bug | 4 | ftp | 410 |
 
 ## Next
 
