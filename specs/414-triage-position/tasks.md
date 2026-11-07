@@ -54,6 +54,8 @@ All paths below are relative to `tools/backlog-app/` unless they start with `spe
 - [X] T015 Review 1: the auto-triage rule with depends-on (`packages/shared/src/query/triage.ts`), past the end sent as the last place (`packages/web/src/features/triage/place-chooser.tsx`), Place / Accept disabled until the item loads, spec corrections; e2e *a position past the end is placed and logged as the last place*
 - [X] T016 Review 2: `packages/server/src/backlog/positions.ts` `filePosition` used by move / new / set / decide in `packages/server/src/api/backlog-write.ts`; `packages/server/test/positions.test.ts` and a route test in `packages/server/test/write-channels.test.ts`; the chooser keyed by slug and admitting section; stale design documents
 
+- [X] T017 Review 3: the hidden row from `services.running()`, the moved item left out of the count (`packages/server/src/backlog/positions.ts`), the AI apply path corrected (`packages/server/src/ai/apply.ts`); route tests in `packages/server/test/write-channels.test.ts` and `packages/server/test/ai-jobs.test.ts`
+
 ## Dependencies & Execution Order
 
 - T001 -> T002 -> T003 -> T004 -> T005 -> T006 -> T007 -> T008 -> T009 - T013.

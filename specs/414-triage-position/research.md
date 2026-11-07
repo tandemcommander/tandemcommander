@@ -51,8 +51,11 @@
 ## R6 - Positions while a run works on an item (review 2)
 
 - **Decision**: the server translates a page-counted position to the tool's count
-  (`packages/server/src/backlog/positions.ts` `filePosition`): +1 below the hidden running row, for
-  every route that passes `--position` (move, new item, set, decide).
+  (`packages/server/src/backlog/positions.ts` `filePosition` / `toolPosition`): +1 below the hidden
+  running row, for every route that passes `--position` (move, new item, set, decide) and the AI
+  apply path. The hidden row is `services.running()` (what the board overlays), not the gate's
+  frozen slug (an interrupted run's item stays visible); the moved item is left out of the count,
+  as the tool's `place_row` does (review 3).
 - **Rationale**: during a run the board hides the running item (371 overlay) while `BACKLOG.md` on
   `main` keeps its row; the order endpoint already re-inserts it, the position routes did not
   (measured by review 2 with the real loop: typed 3 landed at 2).

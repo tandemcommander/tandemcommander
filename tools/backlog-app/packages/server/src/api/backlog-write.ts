@@ -40,7 +40,7 @@ import {
 } from "@backlog-app/shared";
 import type { Services } from "../services.ts";
 import { type Base, type StagedChange } from "../backlog/write-queue.ts";
-import { filePosition } from "../backlog/positions.ts";
+import { toolPosition } from "../backlog/positions.ts";
 import { toolChangeForTray } from "../backlog/tray.ts";
 import { resolveRef } from "../repo/git.ts";
 import { param, readBody, SLUG_PATTERN } from "./common.ts";
@@ -205,24 +205,18 @@ export function backlogWriteRoutes(services: Services): Hono {
   };
 
   /**
-   * The tool's position for a position the page counted in a section: while a run works on an
-   * item, the page does not show its row, the tool counts it (feature 414, review 2).
+   * The tool's position for a position the page counted (feature 414, review 2 / 3).
    *
    * @param section - The target section.
    * @param position - The page's 1-based position, or undefined (the end).
+   * @param moved - The item being placed, if it exists already.
    * @returns The position for `--position`.
    */
-  const toolPosition = async (
+  const toolPositionIn = (
     section: SectionName,
     position: number | undefined,
-  ): Promise<number | undefined> => {
-    const hidden = services.gate().frozenSlug;
-    if (position === undefined || !hidden) return position;
-    const rows =
-      (await services.read.snapshot()).rawBoard.sections.find((s) => s.name === section)?.rows ?? [];
-    const slugs = rows.filter((r): r is ItemRow => r.kind === "item").map((r) => r.slug);
-    return filePosition(slugs, hidden, position);
-  };
+    moved?: string,
+  ): Promise<number | undefined> => toolPosition(services, section, position, moved);
 
   /**
    * The section an item belongs in after its type / who change (where a position given with the
@@ -258,7 +252,7 @@ export function backlogWriteRoutes(services: Services): Hono {
   ): Promise<number | undefined> => {
     if (position === undefined) return position;
     const section = await sectionAfter(slug, type, who);
-    return section ? toolPosition(section, position) : position;
+    return section ? toolPositionIn(section, position, slug) : position;
   };
 
   // --- items (user story 3) ---
@@ -300,7 +294,7 @@ export function backlogWriteRoutes(services: Services): Hono {
     const body = await readBody(c, MoveRequestSchema);
     const operation: Change["operation"] =
       body.section === "Parked" ? "park" : body.section === "Rejected" ? "reject" : "move";
-    const position = await toolPosition(body.section, body.position);
+    const position = await toolPositionIn(body.section, body.position, slug);
     return c.json(
       await apply(`move ${slug} to ${body.section}`, body.base, slug, [
         {
@@ -443,7 +437,7 @@ export function backlogWriteRoutes(services: Services): Hono {
       case "move":
         if (!then.section) throw new ApiError("invalid-request", "a move needs a section");
         {
-          const position = await toolPosition(then.section, then.position);
+          const position = await toolPositionIn(then.section, then.position, slug);
           action = `move:${SECTION_ARG[then.section]}${position ? `@${position}` : ""}`;
         }
         break;
@@ -545,7 +539,7 @@ export function backlogWriteRoutes(services: Services): Hono {
     }
     // The new item is placed in a second operation, once its slug is known.
     const placePosition = body.place
-      ? await toolPosition(body.place.section, body.place.position)
+      ? await toolPositionIn(body.place.section, body.place.position)
       : undefined;
     const answer = await queue.run(`new item ${body.title.slice(0, 40)}`, body.base, null, async (ctx) => {
       const before = tray.snapshot(ctx.root);

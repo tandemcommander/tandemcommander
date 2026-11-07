@@ -17,8 +17,9 @@ UI contract of the triage page (`/triage`) of the backlog app; no API change.
 `{ "base": { "board": <board revision>, "item": <item revision> }, "section": <target>, "position": <n> }`
 - one change, as Accept sends; `n` is at most the section's visible item count + 1 (past the end is
 sent as the last place). While a run works on an item of the section, the server adds 1 to a
-position below that hidden row before calling the tool (`filePosition`, review 2) - for every
-route that passes a position (move, new item, set, decide).
+position below that hidden row before calling the tool (`toolPosition`, reviews 2 and 3: the
+hidden row is the run lock's item the board overlays; the moved item itself is not counted) - for
+every route that passes a position (move, new item, set, decide) and for an applied AI proposal.
 
 ## Unchanged
 

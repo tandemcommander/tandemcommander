@@ -17,7 +17,7 @@
  */
 
 import { spawn, type ChildProcess } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { BoardView, ChangeResult, ItemRowView, Tray } from "@backlog-app/shared";
@@ -273,6 +273,54 @@ describe("write channels (371)", () => {
     after = (await app.get("/api/board")).json as BoardView;
     expect(rowsOf(after, "Next")).toEqual([FTP, slug, inbox.slug]);
     expect(await mainSection(root, "Next")).toEqual([DISK, FTP, slug, inbox.slug]);
+  });
+
+  it("moves an item within its section across the hidden running item as the page counts (414 review 3)", async () => {
+    await runOnBranch(FTP);
+    let board = (await app.get("/api/board")).json as BoardView;
+    const inbox = firstOf(board, "Inbox");
+    const appended = await app.post(`/api/items/${inbox.slug}/move`, {
+      base: { board: board.revision },
+      section: "Next",
+    });
+    expect(appended.status, JSON.stringify(appended.json)).toBe(200);
+    expect(await mainSection(root, "Next")).toEqual([DISK, FTP, inbox.slug]);
+    board = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(board, "Next")).toEqual([DISK, inbox.slug]);
+    // The item page's Move dialog: DISK (above the hidden FTP) to visible position 2, the last.
+    const moved = await app.post(`/api/items/${DISK}/move`, {
+      base: { board: board.revision },
+      section: "Next",
+      position: 2,
+    });
+    expect(moved.status, JSON.stringify(moved.json)).toBe(200);
+    board = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(board, "Next")).toEqual([inbox.slug, DISK]);
+  });
+
+  it("does not shift a position for an interrupted run whose item the board still shows (414 review 3)", async () => {
+    // No run lock, HEAD on main, the loop's run state names DISK: the gate freezes DISK, but the
+    // board does not overlay it - it stays in Next, so the page counts it.
+    const dir = join(root, ".git", "tandem-backlog-loop");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "run.json"),
+      JSON.stringify({ slug: DISK, phase: "running", why: null, wait_until: null }),
+    );
+    await app.refresh();
+    expect(app.services.gate().frozenSlug).toBe(DISK);
+    expect(app.services.running()).toBeNull();
+    const board = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(board, "Next")).toEqual([DISK, FTP]);
+    const inbox = firstOf(board, "Inbox");
+    const moved = await app.post(`/api/items/${inbox.slug}/move`, {
+      base: { board: board.revision },
+      section: "Next",
+      position: 2,
+    });
+    expect(moved.status, JSON.stringify(moved.json)).toBe(200);
+    const after = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(after, "Next")).toEqual([DISK, inbox.slug, FTP]);
   });
 
   it("is read-only while a run holds the lock with the primary tree on main", async () => {

@@ -157,3 +157,45 @@ literal reading of `reference.md` §4 on 200,000 random sections with dependenci
 
 After the fixes: `npm run check` 355 passed / 2 skipped (20 files).
 - e2e after the fixes: `us3-order` + `a11y` + `us1-live-edit` 16 / 16 passed (3.3 min); encoding guard `TOTAL: 0 finding(s)`.
+
+### Review 3 (refute-first agent, 2026-11-07) - 1 MUST, 1 SHOULD, 3 NOTE
+
+It re-ran `npm run check` (355 / 2), the build and `us3-order` 12 / 12; checked that nothing in the
+web package adjusts positions itself (no double correction), that `sectionAfter` gives the tool's
+`expected_section`, and that the triage clamp still lands last during a run.
+
+Counting for stop-rules §3 #3: review 1 had no MUST; review 2's MUST (positions during a run) was
+fixed; review 3's MUST is a new one, introduced by that fix - the second rejection, not the third,
+and no MUST repeated unchanged. The run fixes and has a fourth review.
+
+- **MUST 1 - the review-2 correction used the gate's frozen slug**, which also names the item of an
+  interrupted run (no lock, HEAD on `main`, gate case 11) whose row the board still shows: every
+  position below it went one place too low. Reproduced by the reviewer (`run.json` naming DISK, no
+  lock: move at 2 gave `[DISK, FTP, X]`, expected `[DISK, X, FTP]`). Fixed: the hidden row is
+  `services.running()` - exactly what `overlayRunning` hides. Test *does not shift a position for
+  an interrupted run whose item the board still shows (414 review 3)*; negative control (the gate's
+  frozen slug again) -> that test fails.
+- **SHOULD 1 - a move within the section across the hidden row stayed off by one** (the item page's
+  Move dialog; older, since 371): the tool's `place_row` takes the moved item's own row out before
+  it counts, `toolPosition` counted it. Fixed: the moved item is left out of the count (and nothing
+  shifts when the moved item is the hidden one). Test *moves an item within its section across the
+  hidden running item as the page counts (414 review 3)*; negative control (the moved item counted)
+  -> that test fails.
+- NOTE 1 - **the AI apply path** (`ai/apply.ts`: a triage check's *Apply*, an auto-triage plan's
+  rows, a draft's place) passed the AI's position unchanged; during a run the AI reads the run's
+  tree, where the running item is in *In progress*, so it counts like the page (severity 3, fixed
+  here by rule 11): `forTool` / the draft's place go through the same `toolPosition`. Test *applies
+  a proposed position as counted without the hidden running item (414 review 3)* in
+  `ai-jobs.test.ts`; negative control (`forTool` returning the verdict unchanged) -> that test
+  fails.
+- NOTE 2 - the chooser's default ignores a dependency on the hidden running item (it is not among
+  the visible rows) - accepted: the running item is being finished; recorded.
+- NOTE 3 - the run case is covered by server / API tests, not by an e2e of the triage page during a
+  run - accepted: the correction is entirely server-side and each case has a route test with a
+  negative control.
+
+The helper moved to `packages/server/src/backlog/positions.ts` `toolPosition(services, section,
+position, moved?)`, used by the write routes and the AI apply path.
+
+After the fixes: `npm run check` 358 passed / 2 skipped (20 files).
+- e2e after the review-3 fixes: `us3-order` + `a11y` + `us1-live-edit` 16 / 16 passed (3.2 min); encoding guard `TOTAL: 0 finding(s)`.

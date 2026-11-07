@@ -28,6 +28,7 @@ import {
   type SectionName,
 } from "@backlog-app/shared";
 import type { Services } from "../services.ts";
+import { toolPosition } from "../backlog/positions.ts";
 import { fileHash, type Base, type StagedChange } from "../backlog/write-queue.ts";
 import { toolChangeForTray } from "../backlog/tray.ts";
 import { resolveRef } from "../repo/git.ts";
@@ -407,6 +408,26 @@ async function runOperations(
 }
 
 /**
+ * A placement verdict with its position counted as the tool counts (feature 414, review 3): the
+ * AI reads the run's tree during a run, where the running item is no longer in its section - it
+ * counts like the page, the tool counts the row `main` still has.
+ *
+ * @param services - The server's services.
+ * @param row - The item.
+ * @param verdict - The (edited) verdict.
+ * @returns The verdict for the tool.
+ */
+async function forTool<T extends { verdict: string; section: SectionName; position: number | null }>(
+  services: Services,
+  row: ItemRow,
+  verdict: T,
+): Promise<T> {
+  if (verdict.verdict !== "place" || verdict.position === null) return verdict;
+  const position = await toolPosition(services, verdict.section, verdict.position, row.slug);
+  return { ...verdict, position: position ?? null };
+}
+
+/**
  * The board row of an item.
  *
  * @param services - The server's services.
@@ -464,7 +485,17 @@ export async function applyProposal(
         `new item ${draft.title.slice(0, 40)}`,
         base,
         null,
-        draftOperations(draft),
+        draftOperations(
+          draft.place && draft.place.position !== null
+            ? {
+                ...draft,
+                place: {
+                  ...draft.place,
+                  position: (await toolPosition(services, draft.place.section, draft.place.position)) ?? null,
+                },
+              }
+            : draft,
+        ),
       );
       break;
     }
@@ -475,7 +506,7 @@ export async function applyProposal(
         `triage ${row.slug}`,
         base,
         row.slug,
-        placementOperations(row, parsed.data as AiTriageCheckResult),
+        placementOperations(row, await forTool(services, row, parsed.data as AiTriageCheckResult)),
       );
       break;
     }
@@ -516,7 +547,7 @@ export async function applyProposal(
             `triage ${row.slug}`,
             first ? { board: base.board } : {},
             row.slug,
-            placementOperations(row, entry),
+            placementOperations(row, await forTool(services, row, entry)),
           );
           answer.changes.push(...rowAnswer.changes);
           answer.findings.push(...rowAnswer.findings);

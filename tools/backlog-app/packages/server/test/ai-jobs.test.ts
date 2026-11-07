@@ -25,7 +25,7 @@ import { aiRoutes } from "../src/api/ai.ts";
 import { errorAnswer } from "../src/api/common.ts";
 import { AiJobRunner } from "../src/ai/runner.ts";
 import type { ApplyAnswer } from "../src/ai/apply.ts";
-import { fixtureRepo, writeRunLock } from "./helpers/fixture-repo.ts";
+import { fixtureRepo, gitIn, writeRunLock } from "./helpers/fixture-repo.ts";
 import { testApp, type TestApp } from "./helpers/services.ts";
 
 /** The fake claude script. */
@@ -312,5 +312,35 @@ describe("AI jobs", () => {
     const board = (await app.get("/api/board")).json as BoardView;
     const parked = board.sections.find((s) => s.name === "Parked")!;
     expect(parked.rows.some((r) => r.kind === "item" && r.slug === slug)).toBe(true);
+  });
+
+  it("applies a proposed position as counted without the hidden running item (414 review 3)", async () => {
+    const slug = "typed-path-with-a-pipe-brackets";
+    const disk = "disk-map-context-menu-crash";
+    fake("ok", {
+      verdict: "place",
+      section: "Next",
+      position: 2,
+      severity: 2,
+      area: "panels-ui",
+      who: "agent",
+      effort: "S",
+      reason: "after the open item",
+      evidence: ["src/a.cpp:1"],
+    });
+    const job = await runJob("triage-check", { slug });
+    expect(job.state, job.error ?? "").toBe("done");
+    // Then a run takes DISK on its branch: main's Next stays [DISK, FTP], the board shows [FTP] - as
+    // the AI, reading the run's tree, counts it.
+    await gitIn(root, ["checkout", "-q", "-b", `345-${disk}`]);
+    writeRunLock(root, 0, disk, `345-${disk}`);
+    await app.refresh();
+    expect(app.services.running()?.slug).toBe(disk);
+    const applied = await call("POST", `/api/ai/jobs/${job.id}/apply`, { proposal: job.proposal, base: {} });
+    expect(applied.status, JSON.stringify(applied.json)).toBe(200);
+    const text = (await gitIn(root, ["show", "main:backlog/BACKLOG.md"])).replaceAll("\r\n", "\n");
+    const part = text.split("## Next\n")[1]?.split("\n## ")[0] ?? "";
+    const next = [...part.matchAll(/\]\(items\/([a-z0-9-]+)\//g)].map((m) => m[1]);
+    expect(next).toEqual([disk, "ftp-per-server-encoding-flag", slug]);
   });
 });
