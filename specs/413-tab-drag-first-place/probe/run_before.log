@@ -1,0 +1,6 @@
+tabs413_probe (feature 413) before
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 09:33; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc413; font height 15, avg char 6
+
+FIRST      START  PASS        left [A B C D] active 0; right [P Q R S] active 0; left strip 830x29 tab width 170; right strip 879x29 tab width 170
+FIRST      LEFT   FAIL        left: D dragged far past the left end: left [A D B C] active 1; right [P Q R S] active 0

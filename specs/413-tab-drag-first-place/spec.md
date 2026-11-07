@@ -31,6 +31,15 @@ identical):
   shape and reads as a gap in the strip, so the strip looks lower. The dark rebar is 8 px lower than
   the default one (69 vs 77 px) because its bands draw no borders; it is not part of the tab strip.
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: In a strip that shows only a run of its tabs, is the "first place" index 0 or the run's first visible place? → A: the run's first visible place; the strip does not scroll during a drag (autonomous run: item - its *Evidence* names "the first visible tab of a scrolled strip")
+- Q: What makes the dark strip "look lower", and what is changed? → A: not a size (measured equal); the inactive panel's active tab has no contrast to the strip and the directory line band - only that fill is lifted, by a colour rule, nothing else of the look changes (autonomous run: item *Approach* "if it is the dark active tab's contrast ... make the dark look match the default one"; conservative - changes least)
+- Q: Should the dark rebar's 8 px (no band borders) be changed too? → A: no; it is outside the tab strip, recorded in the fix-log (autonomous run: conservative)
+- Q: What does the 404 probe compare its dark inactive capture with after the change? → A: a 413 baseline image whose difference from the mockup is shown to lie only inside the active tab (autonomous run: conservative - the mockup stays as the maintainer made it)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Drag a tab to the first place (Priority: P1)
