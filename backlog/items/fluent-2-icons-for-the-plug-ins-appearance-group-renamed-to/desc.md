@@ -1,7 +1,7 @@
 ---
 title: Fluent 2 icons for the plug-ins; Appearance group renamed to Icon style
 type: feature
-status: open
+status: in-progress
 severity: 5
 area: panels-ui
 source: manual
@@ -10,7 +10,7 @@ created: 2026-11-07
 updated: 2026-11-07
 verified: 2026-11-07 e5d4552e
 effort: L
-feature: -
+feature: 417
 related: []
 depends-on: []
 reason: -
@@ -132,3 +132,4 @@ At 9fd7cfb4, by reading:
 - 2026-11-07 — created (source manual)
 - 2026-11-07 — moved to Next position 1
 - 2026-11-07 — verified at e5d4552e: still present at e5d4552e: hidden-desktop capture, Plugins bar Fluent 2 vs Classic differ only in the 416 chevrons (242 px), plug-in FS icons on the drive bar identical
+- 2026-11-07 — run started, feature 417

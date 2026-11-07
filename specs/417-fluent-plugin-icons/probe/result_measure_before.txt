@@ -1,0 +1,15 @@
+measure_plugins on E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+t0_set0: 4 bars: 1701x23 colours 36 top 96,2% | 1701x22 colours 336 top 94,3% | 1701x22 colours 540 top 92,8% | 1701x24 colours 342 top 92,2%
+t0_set1: 4 bars: 1701x23 colours 36 top 96,2% | 1701x22 colours 332 top 94,4% | 1701x22 colours 792 top 92,6% | 1701x24 colours 644 top 92,5%
+theme 0 bar 0: Fluent 2 vs Classic differ 0 px
+theme 0 bar 1: Fluent 2 vs Classic differ 242 px
+theme 0 bar 2: Fluent 2 vs Classic differ 1057 px
+theme 0 bar 3: Fluent 2 vs Classic differ 3723 px
+t1_set0: 4 bars: 1712x23 colours 36 top 96,2% | 1712x22 colours 332 top 94,3% | 1714x22 colours 536 top 92,8% | 1712x24 colours 329 top 92,2%
+t1_set1: 4 bars: 1712x23 colours 36 top 96,2% | 1712x22 colours 330 top 94,4% | 1714x22 colours 796 top 92,6% | 1712x24 colours 629 top 92,5%
+theme 1 bar 0: Fluent 2 vs Classic differ 0 px
+theme 1 bar 1: Fluent 2 vs Classic differ 242 px
+theme 1 bar 2: Fluent 2 vs Classic differ 1057 px
+theme 1 bar 3: Fluent 2 vs Classic differ 3836 px
+Registry: restored; identical=True; SHA-256 before 9F362554D7676F0B4FDD60C8EA469B0AE37D097FCAC726F0C8C7F4F02505EB0F / after 9F362554D7676F0B4FDD60C8EA469B0AE37D097FCAC726F0C8C7F4F02505EB0F
+registry restored+identical: True
