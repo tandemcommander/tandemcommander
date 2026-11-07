@@ -62,6 +62,7 @@ The Romanian link reads "mascheaza indiciile" ("masks the hints") in Compare Dir
 
 - A translation whose text already fits (Dutch, Hungarian) keeps its wording.
 - A dialog where the link has a neighbour to its left on the same line (Configuration > System: the "Hold SHIFT…" text; Configuration > Unpackers: the *Unpack with* box) - the link grows only into free space and overlaps nothing new.
+- Configuration > Recycle Bin (D535): the wider link would take the room the merge gives the "Hold SHIFT to delete…" label on the lines they share; the label and the one below it move 2 du down inside their group box, so the two no longer share a line (measured in fix-log.md; English: the two lines are 3 px lower).
 - A later merge: the merge re-derives every control's geometry from the English layout and grows a too-narrow control to the right; the English width must be large enough that the merge leaves these rows alone, so the right edge stays.
 - Disabled languages (russian, ukrainian, chinesesimplified) are not built or shipped; their rows are not a goal, but they also must not get worse.
 

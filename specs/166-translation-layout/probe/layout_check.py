@@ -53,11 +53,15 @@ def width(s):
     return sz.cx
 
 
-BASE_X = (width('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz') / 26.0 + 1) / 2.0
+# Feature 409: integer arithmetic, as Windows computes it (GdiGetCharDimensions: (cx / 26 + 1) / 2
+# in integers; MapDialogRect: MulDiv(dlu, base, 4), rounded). The float form (6.71 instead of 6 for
+# MS Shell Dlg 8 pt) made every control ~11% wider than on screen: a 51 du control counted 85 px
+# where the program has 77 px (specs/409-mask-hints-clipped/probe, GetClientRect).
+BASE_X = (width('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz') // 26 + 1) // 2
 
 
 def px(dlu):
-    return int(dlu * BASE_X / 4)
+    return (dlu * BASE_X + 2) // 4
 
 
 def label(text):

@@ -7,7 +7,7 @@ area: translations
 source: manual
 who: both
 created: 2026-10-21
-updated: 2026-10-23
+updated: 2026-11-07
 verified: -
 effort: L
 feature: -
@@ -43,3 +43,5 @@ Split from `translations-clipped-labels` (one item per enabled language). who bo
 - 2026-10-21 — created (source manual)
 - 2026-10-21 — moved to Next position 65
 - 2026-10-23 — related item translations-clipped-labels closed: split into: translations-clipped-labels-cs, -de, -fr, -nl, -hu, -ro, -sk, -es and translate-merge-bundle-rekey - the parts replace it; maintainer 2026-10-23
+- 2026-11-07 — its #102 rows (IDC_FILEMASK_HINT, the mask hints link, 11 salamand dialogs) are done by feature 409 (porovnani-adresaru): wider link in the English layout, pinned wordings; D535 IDC_STATIC_8/9 moved 2 du down
+- 2026-11-07 — feature 409 corrected specs/166-translation-layout/probe/layout_check.py (integer dialog base units and MulDiv rounding, as Windows; it counted controls about 11 percent wider than on screen): at f38220a2 this language has 279 clipped labels, not 159; after 409 267. The counts in Problem are a lower bound

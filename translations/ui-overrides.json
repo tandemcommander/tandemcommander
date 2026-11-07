@@ -626,7 +626,7 @@
     ],
     "_feature_409": [
       "The mask-hints link (IDC_FILEMASK_HINT, 11 dialogs, GitHub #11) was clipped: shorter natural wordings for de/fr/es (de 'Maskenhinweise' - one compound word, was 'Masken Hinweise'; D2350 'erweiterte' = extended, was 'Zusätzliche' = additional; fr 'aide sur les masques', was 'indications sur les masques'; es 'ayuda de plantillas' with the corpus's 'plantilla' for a mask).",
-      "ro 'indicii pentru măști' = hints for masks; was 'mascheaza indiciile' (masks the hints) in Compare Directories and 'masca indicii' in five dialogs. Keys are the English text: id 102 is shared by other controls of salamand. The width comes from src/lang/lang.rc (84 / 120 du), at least the merge's estimate of every pinned text so layout.widen() does not grow the right-aligned link to the right."
+      "ro 'indicii pentru măști' = hints for masks; was 'mascheaza indiciile' (masks the hints) in Compare Directories and 'masca indicii' in four dialogs. Keys are the English text: id 102 is shared by other controls of salamand. The width comes from src/lang/lang.rc (84 / 120 du), at least the merge's estimate of every pinned text so layout.widen() does not grow the right-aligned link to the right."
     ]
   },
   "zip": {
