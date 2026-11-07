@@ -11,13 +11,17 @@
 
 ## R2 - The default position
 
-- **Decision**: `positionBySeverity(severity, rows)` - below the last row of at least the item's
-  severity, 1 when there is none; `suggestPlacement` uses it for its own section, the chooser for
-  whichever section is chosen.
-- **Rationale**: the item asks for "the place auto-triage would pick by severity"; the app's suggestion
-  (FR-027 of 344) already follows this rule, and one rule for both keeps them equal.
-- **Alternatives**: the end of the section (what `d` / `p` do today - not "sensible" for *Next*);
-  the top (jumps ahead of more severe items).
+- **Decision**: `triagePosition(item, rows)` - the rule `auto-triage` uses
+  (`.claude/skills/tandem-backlog/reference.md` §4 *Position*): the place of the first row of lower
+  severity (the end when none; equal severity after the existing rows), then after a row the item
+  depends on at or below that place. `suggestPlacement` uses it for its own section, the chooser for
+  the chosen one.
+- **Rationale**: the item asks for "the place auto-triage would pick by severity". The first design
+  reused the app's suggestion rule ("below the last row of at least the severity"), assuming it was
+  the same; review 1 showed it differs on an unsorted section (the real *Next*), so both now use the
+  auto-triage rule.
+- **Alternatives**: the end of the section (what `d` / `p` do - not "sensible" for *Next*); the
+  app's old rule (disagrees with auto-triage on unsorted sections).
 
 ## R3 - Reading the typed position
 
@@ -43,3 +47,14 @@
   with its own suggested section and default; the default also follows the board (a changed section
   recomputes it) until the maintainer edits the field.
 - **Rationale**: edge case "the item changes while the chooser is open".
+
+## R6 - Positions while a run works on an item (review 2)
+
+- **Decision**: the server translates a page-counted position to the tool's count
+  (`packages/server/src/backlog/positions.ts` `filePosition`): +1 below the hidden running row, for
+  every route that passes `--position` (move, new item, set, decide).
+- **Rationale**: during a run the board hides the running item (371 overlay) while `BACKLOG.md` on
+  `main` keeps its row; the order endpoint already re-inserts it, the position routes did not
+  (measured by review 2 with the real loop: typed 3 landed at 2).
+- **Alternatives**: correct on the page (every caller would need the raw board); refuse positions
+  during a run (loses the feature of 371).

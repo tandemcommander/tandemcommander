@@ -13,8 +13,8 @@ All paths below are relative to `tools/backlog-app/` unless they start with `spe
 
 ## Phase 2: Foundational (the pure rules)
 
-- [X] T002 Add `TRIAGE_TARGETS`, `positionBySeverity(severity, rows)` and `readTriagePosition(text, count)` to `packages/shared/src/query/triage.ts`; make `suggestPlacement` use `positionBySeverity` (same results)
-- [X] T003 Add unit checks to `packages/shared/test/triage.test.ts`: `positionBySeverity` (mixed severities, empty, all less severe, all more severe, equal to the suggestion's position), `readTriagePosition` (text, 0, negative, decimal, spaces, 1, count + 1 = not last-hint, count + 2 = `last: true`)
+- [X] T002 Add `TRIAGE_TARGETS`, `triagePosition(item, rows)` (the auto-triage rule, review 1) and `readTriagePosition(text, count)` to `packages/shared/src/query/triage.ts`; make `suggestPlacement` use `triagePosition` (same results on a sorted section)
+- [X] T003 Add unit checks to `packages/shared/test/triage.test.ts`: `triagePosition` (mixed severities, empty, all less severe, all more severe, equal to the suggestion's position), `readTriagePosition` (text, 0, negative, decimal, spaces, 1, count + 1 = not last-hint, count + 2 = `last: true`)
 
 **Checkpoint**: `npx vitest run --project shared` passes.
 
@@ -48,6 +48,11 @@ All paths below are relative to `tools/backlog-app/` unless they start with `spe
 - [X] T011 Negative control: with the chooser's position not sent, the new e2e test fails; record it in `specs/414-triage-position/fix-log.md`, then restore
 - [X] T012 Document the chooser and key `m` where the app documents the triage keys (`README.md` of the app and the file comment of `triage-page.tsx`)
 - [X] T013 `python tools/check_encoding.py --strict` from the repository root -> `TOTAL: 0 finding(s)`
+
+## Phase 6: Review findings
+
+- [X] T015 Review 1: the auto-triage rule with depends-on (`packages/shared/src/query/triage.ts`), past the end sent as the last place (`packages/web/src/features/triage/place-chooser.tsx`), Place / Accept disabled until the item loads, spec corrections; e2e *a position past the end is placed and logged as the last place*
+- [X] T016 Review 2: `packages/server/src/backlog/positions.ts` `filePosition` used by move / new / set / decide in `packages/server/src/api/backlog-write.ts`; `packages/server/test/positions.test.ts` and a route test in `packages/server/test/write-channels.test.ts`; the chooser keyed by slug and admitting section; stale design documents
 
 ## Dependencies & Execution Order
 

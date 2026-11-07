@@ -214,7 +214,7 @@ export function TriagePage() {
           </Card>
         ) : null}
         <PlaceChooser
-          key={current.slug}
+          key={`${current.slug}:${admitting ?? ""}`}
           severity={current.severity}
           dependsOn={current.dependsOn}
           admitting={admitting ?? "Next"}

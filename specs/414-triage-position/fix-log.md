@@ -125,3 +125,35 @@ removed -> test 3 fails). Findings and what was done:
 
 After the fixes: `npm run check` 349 passed / 2 skipped; build; `us3-order` + `a11y` 15 / 15;
 encoding guard `TOTAL: 0 finding(s)`.
+
+### Review 2 (refute-first agent, 2026-11-07) - 1 MUST, 0 SHOULD, 2 NOTE
+
+It re-ran `npm run check` (349 / 2), the build and `us3-order` 12 / 12; `triagePosition` against a
+literal reading of `reference.md` §4 on 200,000 random sections with dependencies - equal, also
+`suggestPlacement(...).position`. Findings and what was done:
+
+- **MUST 1 - during a run every position landed one place too high** (pre-existing for Accept /
+  `n`, the new-item form and the Move dialog since 371; severity 4 by the reviewer - fixed here).
+  Cause: the board hides the running item (`overlayRunning`), `BACKLOG.md` on `main` keeps its
+  row, the move route passed the page's position to `--position` unchanged (the order route
+  already re-inserts the hidden row). The review-1 clamp made past-the-end land second to last.
+  Reproduced by the reviewer with the real loop (`branch-hang`): main Next `disk-map, ftp
+  (running), alpha, beta, gamma`; typed 3 -> visible 2; default 5 -> 4.
+  Fixed: `packages/server/src/backlog/positions.ts` `filePosition(fileSlugs, hidden, position)`
+  (+1 below the hidden row), used through `toolPosition` / `toolPositionAfter` by `POST
+  /items/:slug/move`, `POST /items` (the new item's place), `POST /items/:slug/fields` (`set
+  --position`, section after the type / who change) and `POST /items/:slug/decide` (`move:@N`,
+  `set-type:@N`). Tests: `packages/server/test/positions.test.ts` (every visible place gives the
+  same visible place; the shift only below the hidden row) and *counts a moved or new item's
+  position as the page does, without the hidden running item (414)* in `write-channels.test.ts`
+  (real tool, side worktree of `main`, run on a branch: main Next `[DISK, FTP]`, page `[FTP]`; move
+  at 2 -> `[DISK, FTP, X]`; new item at 2 -> page `[FTP, new, X]`). Negative control: `filePosition`
+  returning the position unchanged -> 3 tests fail (both unit tests and the route test); restored.
+- NOTE 1 (stale design documents and an old unit-test title naming the replaced rule) - corrected
+  (`contracts/triage-place-chooser.md`, `data-model.md`, `plan.md`, `research.md` R2 + new R6,
+  `quickstart.md`, `tasks.md`, `triage.test.ts`).
+- NOTE 2 (the chooser kept its section when type / who changed while it stayed current) - fixed:
+  the chooser is keyed by slug and admitting section.
+
+After the fixes: `npm run check` 355 passed / 2 skipped (20 files).
+- e2e after the fixes: `us3-order` + `a11y` + `us1-live-edit` 16 / 16 passed (3.3 min); encoding guard `TOTAL: 0 finding(s)`.

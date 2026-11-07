@@ -4,7 +4,7 @@ No stored data changes. Values in the page:
 
 - **Triage target**: one of `Next`, `Decisions for the maintainer`, `Person steps` (`TRIAGE_TARGETS`,
   in that order). Preselected: `admittingSection(item)`.
-- **Default position** (per target): `positionBySeverity(item.severity, rowsOf(target))` - 1-based.
+- **Default position** (per target): `triagePosition(item, rowsOf(target))` - 1-based.
 - **Typed position**: the field's text; read by `readTriagePosition(text, rowsOf(target).length)` into
   `{ position, last }` or `{ hint }`.
 - **Edited flag**: whether the maintainer typed into the field; while false, the field follows the

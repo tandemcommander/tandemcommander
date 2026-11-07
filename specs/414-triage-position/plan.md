@@ -7,12 +7,14 @@
 
 The triage page of the backlog app (`tools/backlog-app/`, feature 344) gets a *Place at* chooser
 for the current Inbox item: a section choice among the three ordered sections (preselected with the
-suggestion's section) and a position field filled with that section's default by the severity rule.
+suggestion's section; the sections its type / who do not admit disabled) and a position field
+filled with the place auto-triage would pick there.
 Confirming sends the existing move request **with** the position - one `backlog.sh move ... --position`
-- exactly like the existing Accept button does for the suggested place. The severity rule is
-factored out of `suggestPlacement` into a pure, unit-tested `positionBySeverity`; the reading of a
+- exactly like the existing Accept button does for the suggested place. The auto-triage position rule is a pure, unit-tested `triagePosition` that
+`suggestPlacement` uses too; the reading of a
 typed position (whole number >= 1, past the end = last) is a pure, unit-tested
-`readTriagePosition`. No server, schema or tool change.
+`readTriagePosition`. No schema or tool change; the server translates a page-counted position
+while a run hides its item (`packages/server/src/backlog/positions.ts`, review 2).
 
 ## Technical Context
 
@@ -64,12 +66,15 @@ specs/414-triage-position/
 
 ```text
 tools/backlog-app/
-├── packages/shared/src/query/triage.ts          # + positionBySeverity, readTriagePosition, TRIAGE_TARGETS
+├── packages/shared/src/query/triage.ts          # + triagePosition, readTriagePosition, TRIAGE_TARGETS
 ├── packages/shared/test/triage.test.ts          # + their unit checks
 ├── packages/web/src/features/triage/
 │   ├── triage-page.tsx                          # uses the chooser; key m focuses it
 │   └── place-chooser.tsx                        # new: section choice + position field + Place
-└── e2e/us3-order.spec.ts                        # + typed position into a non-suggested section
+├── packages/server/src/backlog/positions.ts     # new (review 2): page position -> tool position during a run
+├── packages/server/src/api/backlog-write.ts     # move / new / set / decide use it
+├── packages/server/test/positions.test.ts       # new; write-channels.test.ts + a route test
+└── e2e/us3-order.spec.ts                        # + the chooser's tests
 ```
 
 **Structure Decision**: the app's existing three-package layout; the pure rules go to `shared`

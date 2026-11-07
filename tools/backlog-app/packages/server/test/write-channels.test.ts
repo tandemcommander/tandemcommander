@@ -240,6 +240,41 @@ describe("write channels (371)", () => {
     expect(await mainSection(root, "Next")).toEqual([FTP, DISK, inbox.slug]);
   });
 
+  it("counts a moved or new item's position as the page does, without the hidden running item (414)", async () => {
+    await runOnBranch(DISK);
+    // main's Next is [DISK, FTP]; the page shows [FTP] (DISK is in In progress).
+    const board = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(board, "Next")).toEqual([FTP]);
+    const inbox = firstOf(board, "Inbox");
+    // Visible position 2 = after FTP. Counted on the files it would be between DISK and FTP.
+    const moved = await app.post(`/api/items/${inbox.slug}/move`, {
+      base: { board: board.revision },
+      section: "Next",
+      position: 2,
+    });
+    expect(moved.status, JSON.stringify(moved.json)).toBe(200);
+    expect(await mainSection(root, "Next")).toEqual([DISK, FTP, inbox.slug]);
+    let after = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(after, "Next")).toEqual([FTP, inbox.slug]);
+    // A new item at visible position 2: between FTP and the moved item.
+    const created = await app.post("/api/items", {
+      base: { board: after.revision },
+      title: "Placed during a run",
+      type: "bug",
+      severity: 2,
+      area: "tooling",
+      problem: "p",
+      evidence: "e",
+      expected: "x",
+      place: { section: "Next", position: 2 },
+    });
+    expect(created.status, JSON.stringify(created.json)).toBe(200);
+    const slug = (created.json as ChangeResult).change!.slugs[0]!;
+    after = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(after, "Next")).toEqual([FTP, slug, inbox.slug]);
+    expect(await mainSection(root, "Next")).toEqual([DISK, FTP, slug, inbox.slug]);
+  });
+
   it("is read-only while a run holds the lock with the primary tree on main", async () => {
     writeRunLock(root, 0, DISK, "-");
     await app.refresh();

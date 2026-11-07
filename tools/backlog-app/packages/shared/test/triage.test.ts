@@ -26,7 +26,7 @@ describe("suggestPlacement", () => {
     expect(admittingSection({ type: "bug", who: "both" })).toBe("Next");
   });
 
-  it("places below the last item of at least the same severity", () => {
+  it("takes the first place of a less severe item in a sorted section", () => {
     expect(suggestPlacement({ type: "bug", who: "agent", severity: 5 }, rows).position).toBe(4);
     expect(suggestPlacement({ type: "bug", who: "agent", severity: 6 }, rows).position).toBe(2);
     expect(suggestPlacement({ type: "bug", who: "agent", severity: 9 }, rows).position).toBe(1);

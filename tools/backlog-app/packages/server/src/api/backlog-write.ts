@@ -13,6 +13,7 @@
 
 import { Hono, type Context } from "hono";
 import {
+  admittingSection,
   ApiError,
   BlockRequestSchema,
   BodyRequestSchema,
@@ -39,6 +40,7 @@ import {
 } from "@backlog-app/shared";
 import type { Services } from "../services.ts";
 import { type Base, type StagedChange } from "../backlog/write-queue.ts";
+import { filePosition } from "../backlog/positions.ts";
 import { toolChangeForTray } from "../backlog/tray.ts";
 import { resolveRef } from "../repo/git.ts";
 import { param, readBody, SLUG_PATTERN } from "./common.ts";
@@ -202,6 +204,63 @@ export function backlogWriteRoutes(services: Services): Hono {
     return slug;
   };
 
+  /**
+   * The tool's position for a position the page counted in a section: while a run works on an
+   * item, the page does not show its row, the tool counts it (feature 414, review 2).
+   *
+   * @param section - The target section.
+   * @param position - The page's 1-based position, or undefined (the end).
+   * @returns The position for `--position`.
+   */
+  const toolPosition = async (
+    section: SectionName,
+    position: number | undefined,
+  ): Promise<number | undefined> => {
+    const hidden = services.gate().frozenSlug;
+    if (position === undefined || !hidden) return position;
+    const rows =
+      (await services.read.snapshot()).rawBoard.sections.find((s) => s.name === section)?.rows ?? [];
+    const slugs = rows.filter((r): r is ItemRow => r.kind === "item").map((r) => r.slug);
+    return filePosition(slugs, hidden, position);
+  };
+
+  /**
+   * The section an item belongs in after its type / who change (where a position given with the
+   * change counts).
+   *
+   * @param slug - The item.
+   * @param type - The new type, if it changes.
+   * @param who - The new who, if it changes.
+   * @returns The section, or null when the item is not on the board.
+   */
+  const sectionAfter = async (slug: string, type?: string, who?: string): Promise<SectionName | null> => {
+    for (const section of (await services.read.snapshot()).rawBoard.sections) {
+      const row = section.rows.find((r): r is ItemRow => r.kind === "item" && r.slug === slug);
+      if (row) return admittingSection({ type: type ?? row.type, who: who ?? row.who });
+    }
+    return null;
+  };
+
+  /**
+   * The tool's position for a position given with a type / who change.
+   *
+   * @param slug - The item.
+   * @param position - The page's position, or undefined.
+   * @param type - The new type, if it changes.
+   * @param who - The new who, if it changes.
+   * @returns The position for the tool.
+   */
+  const toolPositionAfter = async (
+    slug: string,
+    position: number | undefined,
+    type?: string,
+    who?: string,
+  ): Promise<number | undefined> => {
+    if (position === undefined) return position;
+    const section = await sectionAfter(slug, type, who);
+    return section ? toolPosition(section, position) : position;
+  };
+
   // --- items (user story 3) ---
   app.post("/items/:slug/fields", async (c) => {
     const slug = slugOf(c);
@@ -213,11 +272,19 @@ export function backlogWriteRoutes(services: Services): Hono {
     if (typeof body.set["title"] === "string") texts["title"] = body.set["title"];
     if (body.reason) texts["log"] = body.reason;
     const changed = Object.keys(body.set).join(", ");
+    const setType = body.set["type"];
+    const setWho = body.set["who"];
+    const position = await toolPositionAfter(
+      slug,
+      body.position,
+      typeof setType === "string" ? setType : undefined,
+      typeof setWho === "string" ? setWho : undefined,
+    );
     return c.json(
       await apply(`set ${changed} of ${slug}`, body.base, slug, [
         {
           operation: "set",
-          args: ["set", slug, ...pairs, ...(body.position ? ["--position", String(body.position)] : [])],
+          args: ["set", slug, ...pairs, ...(position ? ["--position", String(position)] : [])],
           texts,
           summary: `${slug}: set ${Object.entries(body.set)
             .map(([k, v]) => `${k}=${setValue(v)}`)
@@ -233,6 +300,7 @@ export function backlogWriteRoutes(services: Services): Hono {
     const body = await readBody(c, MoveRequestSchema);
     const operation: Change["operation"] =
       body.section === "Parked" ? "park" : body.section === "Rejected" ? "reject" : "move";
+    const position = await toolPosition(body.section, body.position);
     return c.json(
       await apply(`move ${slug} to ${body.section}`, body.base, slug, [
         {
@@ -242,7 +310,7 @@ export function backlogWriteRoutes(services: Services): Hono {
             slug,
             "--section",
             SECTION_ARG[body.section],
-            ...(body.position ? ["--position", String(body.position)] : []),
+            ...(position ? ["--position", String(position)] : []),
           ],
           texts: body.reason ? { reason: body.reason } : {},
           summary: `${slug}: -> ${body.section}${body.position ? ` #${body.position}` : ""}`,
@@ -374,11 +442,17 @@ export function backlogWriteRoutes(services: Services): Hono {
     switch (then.action) {
       case "move":
         if (!then.section) throw new ApiError("invalid-request", "a move needs a section");
-        action = `move:${SECTION_ARG[then.section]}${then.position ? `@${then.position}` : ""}`;
+        {
+          const position = await toolPosition(then.section, then.position);
+          action = `move:${SECTION_ARG[then.section]}${position ? `@${position}` : ""}`;
+        }
         break;
       case "set-type":
         if (!then.type) throw new ApiError("invalid-request", "set-type needs a type");
-        action = `set-type:${then.type}${then.who ? `,who:${then.who}` : ""}${then.position ? `@${then.position}` : ""}`;
+        {
+          const position = await toolPositionAfter(slug, then.position, then.type, then.who);
+          action = `set-type:${then.type}${then.who ? `,who:${then.who}` : ""}${position ? `@${position}` : ""}`;
+        }
         break;
       default:
         action = then.action;
@@ -470,6 +544,9 @@ export function backlogWriteRoutes(services: Services): Hono {
       if (body[key]) texts[key] = body[key];
     }
     // The new item is placed in a second operation, once its slug is known.
+    const placePosition = body.place
+      ? await toolPosition(body.place.section, body.place.position)
+      : undefined;
     const answer = await queue.run(`new item ${body.title.slice(0, 40)}`, body.base, null, async (ctx) => {
       const before = tray.snapshot(ctx.root);
       const created = await tool.change(args, texts, { root: ctx.root });
@@ -493,7 +570,7 @@ export function backlogWriteRoutes(services: Services): Hono {
             slug,
             "--section",
             SECTION_ARG[body.place.section],
-            ...(body.place.position ? ["--position", String(body.place.position)] : []),
+            ...(placePosition ? ["--position", String(placePosition)] : []),
           ],
           {},
           { root: ctx.root },

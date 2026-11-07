@@ -3,7 +3,7 @@
 From `tools/backlog-app/` (Node 24):
 
 1. `npm run check` - typecheck, lint (doc comments), format, unit tests; the new `shared` checks of
-   `positionBySeverity` and `readTriagePosition` pass, `suggestPlacement`'s old checks unchanged.
+   `triagePosition` and `readTriagePosition` pass, `suggestPlacement`'s old checks unchanged.
 2. `npm run build` then `npx playwright test e2e/us3-order.spec.ts` - the old *Q8/triage: n places the
    Inbox item at the suggested position* and the new *Q8/triage: the chooser places at a typed
    position* pass: the fixture's Inbox item placed into *Person steps* / *Next* at a typed position
