@@ -1,16 +1,16 @@
 ---
 title: Markdown Viewer: a button to copy a code block to the clipboard
 type: feature
-status: open
+status: in-progress
 severity: 3
 area: other-plugins
 source: github#20
 who: both
 created: 2026-11-06
-updated: 2026-11-06
-verified: -
+updated: 2026-11-07
+verified: 2026-11-07 924e7c82
 effort: M
-feature: -
+feature: 408
 related: []
 depends-on: []
 reason: -
@@ -58,3 +58,5 @@ Enabling scripts in the Markdown Viewer would be a security trade-off of the fea
 - 2026-11-06 — created (source github#20)
 - 2026-11-06 — fields set from the issue text and labels
 - 2026-11-06 — moved to Next position 2
+- 2026-11-07 — verified at 924e7c82: still present at 924e7c82: EmitCodeBlock writes a bare pre/code, no copy control (htmlgen dump); the host OnActivateLink hook exists
+- 2026-11-07 — run started, feature 408
