@@ -3,7 +3,7 @@
 **Feature Branch**: `416-fluent-icon-set`
 **Created**: 2026-11-07
 **Status**: Draft
-**Input**: User description: "Backlog item fluent-icon-set-with-switch-in-appearance (backlog/items/fluent-icon-set-with-switch-in-appearance/desc.md) - implement exactly what it describes."
+**Input**: User description: "Backlog item fluent-icon-set-with-switch-in-appearance (backlog/items/fluent-icon-set-with-switch-in-appearance/desc.md) - implement exactly what it describes." From backlog item fluent-icon-set-with-switch-in-appearance.
 
 ## User Scenarios & Testing *(mandatory)*
 
