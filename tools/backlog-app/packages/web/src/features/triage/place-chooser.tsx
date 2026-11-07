@@ -3,7 +3,7 @@
 
 /**
  * @file The triage's *Place at* chooser (feature 414): a target section among the ordered sections
- * and a position in it, filled with the place the severity rule gives there, applied as one move
+ * and a position in it, filled with the place `auto-triage` picks there (`triagePosition`), applied as one move
  * with the position. Only the section the item's type and who admit can be chosen - the backlog
  * tool refuses the others ("change type / who with 'set' first") - the others are shown disabled
  * with that reason. Enter in the field places, Escape leaves the field; a position that is not a
@@ -13,9 +13,9 @@
 
 import { useState } from "react";
 import {
-  positionBySeverity,
   readTriagePosition,
   TRIAGE_TARGETS,
+  triagePosition,
   type ItemRowView,
   type SectionName,
 } from "@backlog-app/shared";
@@ -45,6 +45,7 @@ export function focusTriagePosition(): void {
  */
 export function PlaceChooser({
   severity,
+  dependsOn,
   admitting,
   rowsOf,
   disabledReason,
@@ -53,13 +54,15 @@ export function PlaceChooser({
 }: {
   /** The Inbox item's severity (the default follows it). */
   severity: number;
+  /** The slugs the item depends on (the default goes after them). */
+  dependsOn: readonly string[];
   /** The section the item's type and who admit (`admittingSection`): preselected, the only one allowed. */
   admitting: SectionName;
   /** The item rows of a section in the board's order. */
   rowsOf: (section: SectionName) => ItemRowView[];
   /** Why nothing can be placed now (the write gate), or empty. */
   disabledReason: string;
-  /** A change is being sent. */
+  /** A change is being sent, or the item is still loading (its revision is the change's base). */
   pending: boolean;
   /** Places the item: one move with the position. */
   onPlace: (section: SectionName, position: number) => void;
@@ -71,7 +74,7 @@ export function PlaceChooser({
   // moves with the board and the item's severity).
   const [typed, setTyped] = useState<string | null>(null);
   const rows = rowsOf(section);
-  const fallback = String(positionBySeverity(severity, rows));
+  const fallback = String(triagePosition({ severity, dependsOn }, rows));
   const text = typed ?? fallback;
   const read = readTriagePosition(text, rows.length);
   const hint = "hint" in read ? read.hint : read.last ? "past the end: the item goes last" : "";
@@ -81,7 +84,10 @@ export function PlaceChooser({
   /** Places at the typed position, unless it is refused. */
   const confirm = (): void => {
     if (disabled || "hint" in read) return;
-    onPlace(section, read.position);
+    // Past the end is sent as the last place itself: the tool would append the row but log the
+    // number asked for ("moved to Next position 40"), and a huge number fails the request's
+    // schema (review of 414).
+    onPlace(section, Math.min(read.position, rows.length + 1));
   };
 
   const body = (
@@ -143,7 +149,7 @@ export function PlaceChooser({
         </div>
       ) : (
         <div className="text-xs text-muted-foreground">
-          {rows.length} item(s) in {section} now; the default follows the severity.
+          {rows.length} item(s) in {section} now; the default is where auto-triage would put it.
         </div>
       )}
       <Button disabled={disabled || refused} onClick={confirm}>

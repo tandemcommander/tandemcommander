@@ -86,3 +86,42 @@ Read `tools/backlog-app/packages/web/src/features/triage/triage-page.tsx`:
 The triage page offers *Place at* with the admitting section and the severity default; a typed
 position is applied by one move (e2e above). The item's defect - "cannot be given its position in
 the same step" - is gone.
+
+## Review
+
+### Review 1 (refute-first agent, 2026-11-07) - 0 MUST, 2 SHOULD, 5 NOTE
+
+It re-ran `npm run check` (348 / 2), the build and `us3-order` 11 / 11 + `a11y` 3 / 3 in its own
+worktree; negative controls (all options enabled -> the three 414 tests fail; the `hint` guard
+removed -> test 3 fails). Findings and what was done:
+
+- **SHOULD 1 - the default was not auto-triage's place.** The app's rule ("below the last row of
+  at least the severity") differs from `auto-triage`'s (`reference.md` §4 *Position*: the first
+  row of lower severity, the end when none; after a dependency at or below that place) on an
+  unsorted section - the real *Next* (4,4,4,4,5,4,...): a severity-5 item got 6, auto-triage 1.
+  Fixed: `positionBySeverity` replaced by `triagePosition(item, rows)` implementing the
+  auto-triage rule with `depends-on`; `suggestPlacement` uses it too (Accept and the chooser
+  agree; on a sorted section the results are the same - the old `suggestPlacement` checks pass
+  unchanged); the chooser passes the item's `dependsOn`. Unit checks: unsorted section, equal
+  severity, dependencies above / at / below the place, one outside the section, the suggestion's
+  `why` for a dependency. Spec Clarification 2, FR-004, US2, SC-002 corrected.
+- **SHOULD 2 - a position past the end was logged as asked** (`moved to Next position 40` for an
+  item at 3; `99999999999999999999` failed the request schema with 400). Fixed: the chooser sends
+  `Math.min(position, rows.length + 1)`. New e2e *414/triage: a position past the end is placed
+  and logged as the last place* (`99999999999999999999` -> last, log `moved to Next position 6`);
+  negative control without the clamp -> that test fails; restored.
+- NOTE 3 (SC-001 / SC-003 and the file comment claimed "any ordered section") - corrected in
+  `spec.md` and `triage-page.tsx`.
+- NOTE 4 (*Place* and Accept enabled before the item loaded; Enter did nothing; pre-existing for
+  Accept, severity 1) - fixed: both disabled until the item is loaded (`pending || !item.data`).
+- NOTE 5 (the spec's "a changed board is refused" overstated: the page sends the revision of the
+  board it shows at the click, as every move since 371) - the edge case in `spec.md` corrected; no
+  code change.
+- NOTE 6 (`d` / `p` now do nothing for a non-admitting item, the buttons disabled with a title) -
+  accepted, as the reviewer says.
+- NOTE 7 (`readTriagePosition` repeats the hints of `parsePosition` of 371) - kept: the shared
+  package cannot import the web one and the two differ (past-end note); the texts are identical
+  on purpose (recorded).
+
+After the fixes: `npm run check` 349 passed / 2 skipped; build; `us3-order` + `a11y` 15 / 15;
+encoding guard `TOTAL: 0 finding(s)`.

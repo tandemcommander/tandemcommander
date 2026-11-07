@@ -9,10 +9,10 @@
 import { describe, expect, it } from "vitest";
 import {
   admittingSection,
-  positionBySeverity,
   readTriagePosition,
   suggestPlacement,
   TRIAGE_TARGETS,
+  triagePosition,
 } from "../src/query/triage.ts";
 
 /** Severities of a section in its order. */
@@ -35,23 +35,53 @@ describe("suggestPlacement", () => {
   });
 });
 
-describe("positionBySeverity (feature 414)", () => {
-  it("places below the last row of at least the severity, the top when none is that severe", () => {
-    expect(positionBySeverity(5, rows)).toBe(4);
-    expect(positionBySeverity(6, rows)).toBe(2);
-    expect(positionBySeverity(10, rows)).toBe(1);
-    expect(positionBySeverity(0, rows)).toBe(5);
-    expect(positionBySeverity(3, [])).toBe(1);
-    // A less severe row above a more severe one: below the last row that is severe enough.
-    expect(positionBySeverity(4, [{ severity: 2 }, { severity: 6 }, { severity: 1 }])).toBe(3);
+describe("triagePosition (feature 414: the auto-triage rule)", () => {
+  /** A section with severities 4, 4, 5, 4, 2 (not sorted, like the real Next). */
+  const mixed = [
+    { slug: "a", severity: 4 },
+    { slug: "b", severity: 4 },
+    { slug: "c", severity: 5 },
+    { slug: "d", severity: 4 },
+    { slug: "e", severity: 2 },
+  ];
+
+  it("takes the place of the first less severe row, the end when there is none", () => {
+    expect(triagePosition({ severity: 5 }, rows)).toBe(4);
+    expect(triagePosition({ severity: 6 }, rows)).toBe(2);
+    expect(triagePosition({ severity: 10 }, rows)).toBe(1);
+    expect(triagePosition({ severity: 0 }, rows)).toBe(5);
+    expect(triagePosition({ severity: 3 }, [])).toBe(1);
+    // Not sorted by severity: the first less severe row decides, not the last more severe one.
+    expect(triagePosition({ severity: 5 }, mixed)).toBe(1);
+    expect(triagePosition({ severity: 4 }, mixed)).toBe(5);
+    expect(triagePosition({ severity: 4 }, [{ severity: 2 }, { severity: 6 }, { severity: 1 }])).toBe(1);
+    // Equal severity goes after the existing rows of that severity.
+    expect(triagePosition({ severity: 2 }, mixed)).toBe(6);
+  });
+
+  it("goes after a row of the section the item depends on", () => {
+    expect(triagePosition({ severity: 5, dependsOn: ["d"] }, mixed)).toBe(5);
+    expect(triagePosition({ severity: 5, dependsOn: ["b", "d"] }, mixed)).toBe(5);
+    // A dependency above the place changes nothing; one not in the section neither.
+    expect(triagePosition({ severity: 3, dependsOn: ["a"] }, mixed)).toBe(5);
+    expect(triagePosition({ severity: 5, dependsOn: ["elsewhere"] }, mixed)).toBe(1);
+    // A dependency at the place itself: directly after it.
+    expect(triagePosition({ severity: 3, dependsOn: ["e"] }, mixed)).toBe(6);
   });
 
   it("gives the suggestion's position for every severity", () => {
     for (let severity = 0; severity <= 10; severity++) {
-      expect(positionBySeverity(severity, rows)).toBe(
-        suggestPlacement({ type: "bug", who: "agent", severity }, rows).position,
-      );
+      for (const section of [rows, mixed]) {
+        expect(triagePosition({ severity }, section)).toBe(
+          suggestPlacement({ type: "bug", who: "agent", severity }, section).position,
+        );
+      }
     }
+    expect(suggestPlacement({ type: "bug", who: "agent", severity: 5, dependsOn: ["d"] }, mixed)).toEqual({
+      section: "Next",
+      position: 5,
+      why: "after the item of Next it depends on",
+    });
   });
 
   it("offers the three ordered sections, Next first", () => {

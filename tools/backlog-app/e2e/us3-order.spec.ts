@@ -187,6 +187,23 @@ test("414/triage: a person step goes into Person steps at a typed position", asy
   expect(Number(backlog(fixture.root, ["check"]).match(/TOTAL: (\d+)/)?.[1])).toBe(0);
 });
 
+test("414/triage: a position past the end is placed and logged as the last place", async ({ page }) => {
+  await openApp(page, app, "/triage");
+  await expect(page.getByRole("heading", { name: /pipe/ })).toBeVisible();
+  const position = page.getByRole("textbox", { name: "Position in the target section" });
+  await position.fill("99999999999999999999");
+  await expect(page.getByText("past the end: the item goes last")).toBeVisible();
+  await position.press("Enter");
+  await expect.poll(() => sectionOrder(fixture.root, "inbox")).toEqual([]);
+  expect(sectionOrder(fixture.root, "next").at(-1)).toBe(INBOX_ITEM);
+  const shown = JSON.parse(backlog(fixture.root, ["show", INBOX_ITEM, "--json"])) as {
+    log: { text: string }[];
+  };
+  expect(shown.log.filter((l) => l.text.startsWith("moved to")).map((l) => l.text)).toEqual([
+    "moved to Next position 6",
+  ]);
+});
+
 test("414/triage: m focuses the position; typing there runs no shortcut; a refusal sends nothing", async ({
   page,
 }) => {

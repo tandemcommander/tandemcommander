@@ -30,7 +30,7 @@ backlog app, feature 344):
 ### Session 2026-11-07
 
 - Q: Which sections can the triage place an item into at a chosen position? → A: the three ordered sections *Next*, *Decisions for the maintainer* and *Person steps* (autonomous run: item *Expected*)
-- Q: What is the default position offered for a section? → A: the place the severity rule of the existing suggestion gives in that section - directly below the last item of at least the item's severity, the top when every item there is less severe (autonomous run: item *Expected* "the place `auto-triage` would pick by severity"; the app's suggestion already follows that rule)
+- Q: What is the default position offered for a section? → A: the place `auto-triage` picks (`.claude/skills/tandem-backlog/reference.md` §4 *Position*): before the first row of the section whose severity is lower than the item's, the end when there is none, and after any row of the section the item depends on. The app's suggestion used another rule ("below the last item of at least its severity") that differs on a section not sorted by severity - the real *Next* is such a section (review of 414: a severity-5 item got 6 instead of 1); the suggestion now uses the same rule, so Accept and the chooser agree (autonomous run: item *Expected*; a finding fixed on the way, severity 2)
 - Q: Do the existing one-key actions change (`n`, `d`, `p`)? → A: no; `n` still places at the suggested place, `d` and `p` still place at the end; the new chooser is added beside them (autonomous run: conservative - keeps the existing behaviour for every case the item does not name)
 - Q: (found while implementing) May the chooser send an item to a section its type and who do not admit? → A: no; the backlog tool refuses such a move ("belongs in 'Next', not 'Person steps'; change type / who with 'set' first", measured), so the chooser shows the other sections disabled with that reason, and `d` / `p` are disabled for such an item instead of being refused after the click (a finding fixed on the way, severity 2); changing type / who stays on the item page (autonomous run: rule - the tool's admission rule; conservative - refuse in the page rather than send a move that is refused)
 
@@ -65,9 +65,9 @@ is empty, and the change tray holds one change.
 
 ### User Story 2 - A sensible default position (Priority: P2)
 
-The position offered for the chosen section is the place the severity rule gives: directly below
-the last item of at least the item's severity, so the item never jumps ahead of a more severe one
-unless the maintainer types so.
+The position offered for the chosen section is the place `auto-triage` would pick: before the
+first item less severe than this one (after the items of equal severity), and after an item of the
+section it depends on.
 
 **Why this priority**: the default makes the common case one confirmation.
 
@@ -77,7 +77,8 @@ empty section and a section where every row is less severe.
 **Acceptance Scenarios**:
 
 1. **Given** *Next* holds rows of severity 7, 5, 3 and the item has severity 5, **Then** the
-   default position in *Next* is 3.
+   default position in *Next* is 3; **given** rows of severity 4, 4, 5 and an item of severity 5,
+   **then** it is 1.
 2. **Given** an empty section, **Then** the default position is 1.
 
 ---
@@ -90,9 +91,10 @@ empty section and a section where every row is less severe.
   hint says so before confirming.
 - The page is read-only (the write gate is closed): the chooser is disabled with the gate's reason,
   like the other triage buttons.
-- The board changed underneath (another tab or the loop moved an item) after the page showed the
-  default: the move carries the board's revision and the server refuses it as changed; the page
-  shows the problem and the new board, nothing is written.
+- The board changed underneath (another tab or the loop moved an item) while the page is open: the
+  page follows the live board, so the default is recomputed and the move carries the revision of
+  the board shown at the click; the server refuses a move computed on an older board (as for every
+  move of the app since 371, the position is applied to the board the page showed last).
 - The item changes while the chooser is open (another Inbox item becomes current after a skip or a
   placement): the chooser resets to the new item's suggested section and its default position.
 - Typing into the position field must not trigger the triage's single-key shortcuts (digits set the
@@ -112,14 +114,15 @@ empty section and a section where every row is less severe.
   from the Inbox to the chosen section at the chosen position in **one** change of the backlog (one
   move of the backlog tool with the position), and then show the next Inbox item as the other
   placements do.
-- **FR-004**: The default position for a section MUST be the place directly below the last item of
-  that section whose severity is at least the item's severity, and 1 when no item there is that
-  severe - the same rule the existing suggestion uses for its own section.
+- **FR-004**: The default position for a section MUST be the place `auto-triage` picks: the place of
+  the first row of the section whose severity is lower than the item's (the end when there is
+  none), moved to directly after any row of the section at or below that place that the item
+  depends on. The suggestion (Accept / `n`) MUST use the same rule.
 - **FR-005**: The position field MUST follow the default of the chosen section (as the board
   changes) until the maintainer types into it.
 - **FR-006**: A position that is not a whole number of at least 1 MUST be refused in the page with a
-  hint, and nothing is sent; a position past the end MUST be accepted and placed last, the field's
-  hint saying so.
+  hint, and nothing is sent; a position past the end MUST be accepted, the field's hint saying so,
+  and sent as the last place itself (so the item's log names the place it got).
 - **FR-007**: The existing actions MUST keep their behaviour: Accept / `n` (the suggested place),
   Decisions / `d` and Person / `p` (the end of that section - disabled for an item that section
   does not admit, which the tool refused before), park, reject, skip, the severity keys and the AI
@@ -139,14 +142,16 @@ empty section and a section where every row is less severe.
 
 ### Measurable Outcomes
 
-- **SC-001**: An Inbox item reaches any position of *Next*, *Decisions for the maintainer* or
-  *Person steps* from the triage page with one confirmation and one backlog change (before: two
-  changes - a move and a reorder).
-- **SC-002**: The default position equals the severity rule for 100 % of the unit cases (mixed
-  severities, empty section, every row less severe, every row more severe).
+- **SC-001**: An Inbox item reaches any position of the ordered section its type and who admit
+  (*Next*, *Decisions for the maintainer* or *Person steps*) from the triage page with one
+  confirmation and one backlog change (before: two changes - a move and a reorder; *Decisions* and
+  *Person steps* only at the end).
+- **SC-002**: The default position equals the auto-triage rule for 100 % of the unit cases (sorted
+  and unsorted sections, empty section, every row less severe, every row more severe, equal
+  severity, dependencies above, at and below the place).
 - **SC-003**: The existing triage test (key `n` places at the suggested position) still passes, and
-  a new end-to-end test places an item at a typed position in a section other than the suggested
-  one.
+  new end-to-end tests place an item at a typed position other than the suggested one, in *Next*
+  and in *Person steps*.
 
 ## Assumptions
 

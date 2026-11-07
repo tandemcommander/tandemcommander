@@ -7,8 +7,9 @@
  * position, `d` Decisions, `p` Person steps (both at the end; each only for an item whose type and
  * who that section admits - the tool refuses the others), `k` park, `x` reject, `s` skip, digits
  * set the severity. *Place at* (feature 414; key `m` focuses its position field) moves the
- * item into any ordered section at a chosen position in one change, its default the place the
- * severity rule gives there. The suggestion follows the admission rules and the severity order;
+ * item into the ordered section its type and who admit at a chosen position in one change, its
+ * default the place `auto-triage` picks there. The suggestion follows the admission rules and the
+ * same position rule (`triagePosition`);
  * *Check with AI* asks the local Claude for a second opinion (a proposal, applied only on
  * confirmation).
  */
@@ -205,7 +206,7 @@ export function TriagePage() {
             </div>
             <div className="text-xs text-muted-foreground">{suggestion.why}</div>
             <Button
-              disabled={!access.writable || mutation.isPending}
+              disabled={!access.writable || mutation.isPending || !item.data}
               onClick={() => place(suggestion.section, suggestion.position)}
             >
               Accept <Kbd>n</Kbd>
@@ -215,10 +216,11 @@ export function TriagePage() {
         <PlaceChooser
           key={current.slug}
           severity={current.severity}
+          dependsOn={current.dependsOn}
           admitting={admitting ?? "Next"}
           rowsOf={rowsOf}
           disabledReason={access.writable ? "" : access.reason || "the backlog is read-only now"}
-          pending={mutation.isPending}
+          pending={mutation.isPending || !item.data}
           onPlace={(section, position) => place(section, position)}
         />
         <div className="grid grid-cols-2 gap-2">

@@ -6,9 +6,10 @@
  *
  * It follows the backlog's admission rules (analysis A1 §2.3): a decision goes to *Decisions for
  * the maintainer*, a person step or an item only a person can do to *Person steps*, everything else
- * to *Next*. The position follows the priority the maintainer gave the section: the new item goes
- * directly below the last item of at least its severity, so it never jumps ahead of something
- * judged more severe. It is advice: the maintainer accepts, adjusts or skips it.
+ * to *Next*. The position is the one `auto-triage` picks (`.claude/skills/tandem-backlog/reference.md`
+ * §4 *Position*; feature 414 aligned it): before the first row of the section whose severity is
+ * lower than the item's, the end when there is none, and after any row of the section the item
+ * depends on. It is advice: the maintainer accepts, adjusts or skips it.
  */
 
 import type { ItemRow, SectionName } from "../schemas/backlog.ts";
@@ -42,19 +43,29 @@ export const TRIAGE_TARGETS: readonly SectionName[] = [
   "Person steps",
 ];
 
+/** What the position rule reads of a section's row. */
+export type PositionRow = Pick<ItemRow, "severity"> & { slug?: string };
+
 /**
- * The position the severity rule gives in a section: directly below the last row of at least the
- * item's severity, so the item never jumps ahead of something judged more severe; 1 (the top) when
- * every row is less severe or the section is empty.
+ * The position `auto-triage` picks in a section (`.claude/skills/tandem-backlog/reference.md` §4
+ * *Position*): the place of the first row whose severity is lower than the item's - equal severity
+ * goes after the existing rows, blocked rows count too - or the end when there is none; then, if
+ * the item depends on a row of the section at that place or below, directly after that row.
  *
- * @param severity - The item's severity.
+ * @param item - The item's severity and the slugs it depends on.
  * @param sectionRows - The item rows of the section in their order (without the item itself).
  * @returns The 1-based position.
  */
-export function positionBySeverity(severity: number, sectionRows: Pick<ItemRow, "severity">[]): number {
-  let position = 1;
+export function triagePosition(
+  item: Pick<ItemRow, "severity"> & { dependsOn?: readonly string[] },
+  sectionRows: readonly PositionRow[],
+): number {
+  const lower = sectionRows.findIndex((row) => row.severity < item.severity);
+  let position = lower < 0 ? sectionRows.length + 1 : lower + 1;
   sectionRows.forEach((row, index) => {
-    if (row.severity >= severity) position = index + 2;
+    if (row.slug !== undefined && item.dependsOn?.includes(row.slug) && index + 1 >= position) {
+      position = index + 2;
+    }
   });
   return position;
 }
@@ -87,14 +98,17 @@ export function readTriagePosition(
  * @returns The suggested place.
  */
 export function suggestPlacement(
-  item: Pick<ItemRow, "type" | "who" | "severity">,
-  sectionRows: Pick<ItemRow, "severity">[],
+  item: Pick<ItemRow, "type" | "who" | "severity"> & { dependsOn?: readonly string[] },
+  sectionRows: readonly PositionRow[],
 ): Placement {
   const section = admittingSection(item);
-  const position = positionBySeverity(item.severity, sectionRows);
+  const position = triagePosition(item, sectionRows);
+  const bySeverity = triagePosition({ severity: item.severity }, sectionRows);
   const why =
-    position === 1
-      ? `severity ${item.severity} is higher than every item in ${section}`
-      : `below the last item of severity ${item.severity} or more in ${section}`;
+    position !== bySeverity
+      ? `after the item of ${section} it depends on`
+      : position > sectionRows.length
+        ? `at the end of ${section}: no item there is less severe than ${item.severity}`
+        : `before the first item of ${section} less severe than ${item.severity}`;
   return { section, position, why };
 }
