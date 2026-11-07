@@ -83,6 +83,20 @@ describe("commands", () => {
       note: "366 passed",
     });
     expect(judgeResult("tests", "Tests  1 failed | 365 passed", true).note).toBe("1 failed, 365 passed");
+    // vitest: the Tests line counts the tests, not the "Test Files" line before it.
+    expect(
+      judgeResult("tests", "Test Files  20 passed (20)\n      Tests  366 passed | 2 skipped (368)", false)
+        .note,
+    ).toBe("366 passed");
+    expect(
+      judgeResult("tests", "Test Files  1 failed | 19 passed (20)\n      Tests  2 failed | 364 passed", true)
+        .note,
+    ).toBe("2 failed, 364 passed");
+    // playwright and pytest: the summary at the end.
+    expect(judgeResult("tests", "  ✓ a\n  12 passed (1.2m)", false).note).toBe("12 passed");
+    expect(judgeResult("tests", "==== 3 failed, 40 passed in 2s ====", true).note).toBe(
+      "3 failed, 40 passed",
+    );
     expect(judgeResult("probe", "Rows: PASS 29, FAIL 0, NOT DRIVEN 1", false)).toEqual({
       outcome: "ok",
       note: "29 PASS",
@@ -101,6 +115,17 @@ describe("paths and sentences", () => {
       "tools/backlog-app/packages/web/src/a.tsx",
     );
     expect(relativePath("C:\\Users\\p\\AppData\\Local\\Temp\\rv407\\x.png")).toBe("%TEMP%/rv407/x.png");
+    // The session's root is exact; a repository in the temporary folder keeps its own paths.
+    expect(
+      relativePath(
+        "C:\\Users\\p\\AppData\\Local\\Temp\\repo-1\\src\\a.cpp",
+        "C:\\Users\\p\\AppData\\Local\\Temp\\repo-1",
+      ),
+    ).toBe("src/a.cpp");
+    expect(relativePath("C:\\Users\\p\\AppData\\Local\\Temp\\repo-1\\src\\plugins\\ftp\\a.cpp")).toBe(
+      "src/plugins/ftp/a.cpp",
+    );
+    expect(relativePath("E:\\R\\README.md", "e:\\r")).toBe("README.md");
     expect(componentOf("tools/backlog-app/packages/web/src/a.tsx")).toBe("backlog-app/web");
     expect(componentOf("src/plugins/ftp/ftp.cpp")).toBe("plugins/ftp");
     expect(componentOf("src/common/salnameorder.h")).toBe("src/common");

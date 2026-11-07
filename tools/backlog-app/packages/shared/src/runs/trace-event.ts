@@ -308,6 +308,9 @@ export function normalizeTraceLine(
           event(base, "init", {
             name: str(raw["model"], ""),
             summary: `session ${str(raw["session_id"], "?")} · ${str(raw["model"], "")}`,
+            // The session's working directory is the repository root (feature 415: paths of
+            // the story are shown relative to it).
+            info: typeof raw["cwd"] === "string" ? { cwd: raw["cwd"] } : {},
           }),
         ];
       }

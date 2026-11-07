@@ -225,22 +225,31 @@ const ROOT_FOLDERS = [
 ];
 
 /**
- * A path relative to the repository, best effort: cut before the first known top-level folder;
- * the temporary folder as `%TEMP%`.
+ * A path relative to the repository: below the session's root when it is known, else cut before
+ * the first known top-level folder; a temporary file as `%TEMP%`.
  *
  * @param path - A path as the trace names it.
+ * @param root - The repository root (the session's working directory), when known.
  * @returns The shorter path, with forward slashes.
  */
-export function relativePath(path: string): string {
+export function relativePath(path: string, root: string | null = null): string {
   const p = path.replace(/\\/g, "/");
+  // The repository root the session runs in (system/init's cwd), when known: exact.
+  if (root) {
+    const r = root.replace(/\\/g, "/").replace(/\/+$/, "");
+    if (p.toLowerCase().startsWith(`${r.toLowerCase()}/`)) return p.slice(r.length + 1);
+  }
   const temp = p.search(/\/AppData\/Local\/Temp\//i);
-  if (temp >= 0) return `%TEMP%/${p.slice(temp + "/AppData/Local/Temp/".length)}`;
+  // Otherwise the first known top-level folder (after the temporary folder, for a repository
+  // that lives there); a temporary file without one is shown under %TEMP%.
   let best = -1;
+  const from = temp >= 0 ? temp + "/AppData/Local/Temp/".length : 0;
   for (const folder of ROOT_FOLDERS) {
-    const at = p.indexOf(`/${folder}/`);
+    const at = p.indexOf(`/${folder}/`, from);
     if (at >= 0 && (best < 0 || at < best)) best = at;
   }
   if (best >= 0) return p.slice(best + 1);
+  if (temp >= 0) return `%TEMP%/${p.slice(temp + "/AppData/Local/Temp/".length)}`;
   if (/^(\.?[\w-]+\/)/.test(p) && !/^[A-Za-z]:/.test(p)) return p;
   const parts = p.split("/").filter(Boolean);
   return parts.slice(-3).join("/");
@@ -412,7 +421,9 @@ export function classifyCommand(command: string): CommandKind {
         update: "Updates the run lock",
         status: "Checks the run lock",
       };
-      return kind("BACKLOG", titles[what] ?? "Uses the run lock", "backlog", { importance: "low" });
+      return kind("BACKLOG", titles[what] ?? "Uses the run lock", "backlog", {
+        importance: what === "acquire" || what === "release" ? "normal" : "low",
+      });
     }
     const title = BACKLOG_TITLES[verb] ?? "Uses the backlog tool";
     return kind("BACKLOG", title, "backlog", {
@@ -474,13 +485,28 @@ export function judgeResult(
       return isError ? { outcome: "fail", note: "the unit rules failed" } : { outcome: "ok", note: null };
     }
     case "tests": {
-      const failed = /(\d+)\s+failed/.exec(text);
-      const passed = /(\d+)\s+passed/.exec(text);
-      const failedCount = failed ? Number(failed[1]) : 0;
+      // vitest prints "Test Files  20 passed" before "Tests  366 passed": its Tests line counts
+      // the tests; other runners' summaries come last, so the last count is taken otherwise.
+      const tests = /\bTests\s+(?:(\d+)\s+failed\s*\|\s*)?(?:(\d+)\s+passed)?/.exec(text);
+      /**
+       * The last count before a word ("40 passed").
+       *
+       * @param word - `passed` or `failed`.
+       * @returns The count, or null when the text has none.
+       */
+      const last = (word: string): number | null => {
+        const all = [...text.matchAll(new RegExp(`(\\d+)\\s+${word}`, "g"))];
+        return all.length ? Number(all[all.length - 1]![1]) : null;
+      };
+      const failedCount = tests?.[1] ? Number(tests[1]) : tests?.[2] ? 0 : (last("failed") ?? 0);
+      const passedCount = tests?.[2] ? Number(tests[2]) : last("passed");
       if (failedCount > 0)
-        return { outcome: "fail", note: `${failedCount} failed${passed ? `, ${passed[1]} passed` : ""}` };
+        return {
+          outcome: "fail",
+          note: `${failedCount} failed${passedCount !== null ? `, ${passedCount} passed` : ""}`,
+        };
       if (isError) return { outcome: "fail", note: "the tests failed" };
-      return { outcome: "ok", note: passed ? `${passed[1]} passed` : null };
+      return { outcome: "ok", note: passedCount !== null ? `${passedCount} passed` : null };
     }
     case "probe": {
       /**
@@ -576,6 +602,9 @@ export class RunStory {
 
   /** The attempt the events belong to. */
   private attempt = 1;
+
+  /** The repository root the session runs in (from `system/init`), when known. */
+  private root: string | null = null;
 
   /** Counts changes (a view re-renders when it moves). */
   version = 0;
@@ -692,6 +721,16 @@ export class RunStory {
       .filter((e) => e.importance !== "low")
       .slice(-count)
       .map((e) => storyLine(e));
+  }
+
+  /**
+   * A path relative to the repository.
+   *
+   * @param path - A path as the trace names it.
+   * @returns The relative path.
+   */
+  private rel(path: string): string {
+    return relativePath(path, this.root);
   }
 
   /**
@@ -814,6 +853,7 @@ export class RunStory {
         this.attemptLine(event);
         return;
       case "init":
+        if (event.info?.cwd) this.root = event.info.cwd;
         if (!this.sessions.has(this.attempt)) {
           this.sessions.add(this.attempt);
           this.push(event, {
@@ -1006,7 +1046,7 @@ export class RunStory {
   private groupCall(event: TraceEvent, name: string, file: string | null): void {
     const label: "READ" | "EDIT" = EDIT_TOOLS.has(name) ? "EDIT" : "READ";
     if (label === "EDIT" && file) {
-      const rel = relativePath(file);
+      const rel = this.rel(file);
       const known = this.fileMap.get(file);
       this.fileMap.set(file, {
         path: file,
@@ -1035,10 +1075,10 @@ export class RunStory {
     }
     const childTitle =
       label === "EDIT"
-        ? `${name === "Write" ? "Writes" : "Edits"} ${file ? relativePath(file) : event.summary}`
+        ? `${name === "Write" ? "Writes" : "Edits"} ${file ? this.rel(file) : event.summary}`
         : isSearch
           ? `Searches for \`${short(event.summary, 80)}\``
-          : `Reads ${file ? relativePath(file) : short(event.summary, 80)}`;
+          : `Reads ${file ? this.rel(file) : short(event.summary, 80)}`;
     this.addChild(group.id, {
       at: event.at,
       label: isSearch ? "SEARCH" : label,
@@ -1046,7 +1086,11 @@ export class RunStory {
       outcome: "running",
       toolUseId: event.toolUseId,
     });
-    this.update(group.id, { title: groupTitle(group), outcome: "running", endedAt: null });
+    this.update(group.id, {
+      title: groupTitle(group, (f) => this.rel(f)),
+      outcome: "running",
+      endedAt: null,
+    });
     if (event.toolUseId) this.byTool.set(event.toolUseId, group.id);
   }
 
@@ -1100,9 +1144,20 @@ export class RunStory {
         };
       }
       const failed = verdict.outcome === "fail";
+      const reason =
+        kind.label === "BUILD"
+          ? "The build failed"
+          : kind.label === "PROBE"
+            ? "A GUI probe failed"
+            : kind.label === "CHECK"
+              ? "The encoding guard found problems"
+              : "Tests failed";
+      // The verdict's note adds the figures ("2 failed, 364 passed"), not the same words again.
+      const note =
+        verdict.note && !reason.toLowerCase().includes(verdict.note.toLowerCase()) ? `: ${verdict.note}` : "";
       const critical =
         failed && kind.verdict !== "plain" && kind.verdict !== "backlog" && kind.verdict !== "commit"
-          ? `${kind.label === "BUILD" ? "The build failed" : kind.label === "PROBE" ? "A GUI probe failed" : kind.label === "CHECK" ? "The encoding guard found problems" : "Tests failed"}${verdict.note ? `: ${verdict.note}` : ""}`
+          ? `${reason}${note}`
           : verdict.outcome === "ok"
             ? kind.criticalOnOk
             : null;
@@ -1205,7 +1260,7 @@ export class RunStory {
         info.description && (name === "Bash" || name === "PowerShell")
           ? short(info.description)
           : file
-            ? `${name === "Read" ? "Reads" : EDIT_TOOLS.has(name) ? "Edits" : name} ${relativePath(file)}`
+            ? `${name === "Read" ? "Reads" : EDIT_TOOLS.has(name) ? "Edits" : name} ${this.rel(file)}`
             : `${name}: ${short(event.summary, 100)}`;
       this.addChild(id, { at: event.at, label, title, outcome: "running", toolUseId: event.toolUseId });
       this.update(id, { status: short(title, 160) });
@@ -1260,10 +1315,11 @@ export class RunStory {
  * The title of a group from its calls.
  *
  * @param group - The group.
+ * @param rel - Makes a path relative to the repository.
  * @returns The sentence.
  */
-function groupTitle(group: OpenGroup): string {
-  const names = group.files.map((f) => relativePath(f));
+function groupTitle(group: OpenGroup, rel: (path: string) => string): string {
+  const names = group.files.map((f) => rel(f));
   const list = names.slice(0, 3).map((n) => baseName(n));
   const more = names.length > 3 ? ` and ${names.length - 3} more` : "";
   if (group.label === "EDIT") {

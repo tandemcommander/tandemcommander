@@ -236,6 +236,8 @@ export const TraceInfoSchema = z.object({
   limits: LimitInfoSchema.optional(),
   /** A subagent task's status or progress line. */
   taskStatus: z.string().optional(),
+  /** The working directory of a session (`system/init`): the repository root. */
+  cwd: z.string().optional(),
   /** The last characters of a tool result longer than the kept text (its verdict). */
   tail: z.string().optional(),
 });

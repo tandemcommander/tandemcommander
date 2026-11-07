@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 /**
- * @file One run with its full transcript (FR-019; analysis A4 §3.9): outcome, phases, duration,
- * attempts, cost, commits, and the trace replayed from the server's stream. A journal row without a
- * trace shows what the journal records.
+ * @file One run with its full transcript (FR-019; analysis A4 §3.9; feature 415): the run dashboard
+ * of the live view - progress, figures, the story in words, critical entries, decisions,
+ * screenshots, diagrams, documents and the trace replayed from the server's stream. A journal row
+ * without a trace shows what the journal records.
  */
 
 import { getRouteApi } from "@tanstack/react-router";
@@ -12,8 +13,9 @@ import { useQuery } from "@tanstack/react-query";
 import type { Run } from "@backlog-app/shared";
 import { Alert, Skeleton } from "@/components/ui/primitives.tsx";
 import { apiGet } from "@/lib/api.ts";
+import { RunDashboard } from "@/features/live/run-dashboard.tsx";
 import { RunSummary } from "./run-summary.tsx";
-import { TraceView, useTraceStream } from "./trace-view.tsx";
+import { useTraceStream } from "./trace-view.tsx";
 
 /** The route. */
 const route = getRouteApi("/runs/$id");
@@ -35,10 +37,17 @@ export function RunPage() {
   return (
     <div className="flex min-h-0 w-full flex-col gap-3 p-4">
       <h1 className="text-lg font-semibold">Run {id}</h1>
-      <RunSummary run={run.data} />
       {run.data.hasTrace ? (
-        <TraceView events={trace.events} follow={run.data.outcome === "running"} />
+        <RunDashboard
+          run={run.data}
+          events={trace.events}
+          connected={trace.connected}
+          live={run.data.outcome === "running"}
+        />
       ) : (
+        <RunSummary run={run.data} />
+      )}
+      {run.data.hasTrace ? null : (
         <p className="text-sm text-muted-foreground">
           This run has no trace (it ran before feature 342 or outside the loop); the journal row is all there
           is.
