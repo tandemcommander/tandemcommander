@@ -44,8 +44,9 @@ All END rows PASS; registry restored, hash identical.
   `FTPRootPathMatch` (`ftputils.cpp`) splits the two roots and applies it; `FTPHasTheSameRootPath`
   is now `== SAL_FTP_ROOT_SAME` (its other caller `IsOurPath`, `fs2.cpp`, unchanged in effect).
 - `fs3.cpp`: refresh also on `SAL_FTP_ROOT_OTHER_HOST` with the same path rule and timing;
-  `NextRefreshWontClearCache` is TRUE only for the same root (under another name the forced refresh
-  distrusts the path like Ctrl+R).
+  `NextRefreshWontClearCache` stays TRUE (the notification itself drops the path's caches for every
+  host - revised after review 1, see *Review*); under another host name a panel whose connection is
+  closed is not refreshed (review 1).
 - `ctrlcon4.cpp`: the listing cache drops entries of the same user and port whatever the host.
 
 ## Findings fixed on the way
@@ -67,6 +68,7 @@ All END rows PASS; registry restored, hash identical.
 | encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
 | probe | `ftp410_probe.ps1` -> `probe/result_after.txt` | PASS 14, FAIL 0; registry restored, identical |
 | regression | 341's `ftp341_probe.ps1` -> `probe/regress_341.txt` | PASS 12, FAIL 0; registry identical |
+| probe after review 1 | `ftp410_probe.ps1` -> `probe/result_after.txt` (overwritten) | PASS 16, FAIL 0 (row REFRESH-CLOSED added) |
 
 ## Negative controls (in place, restored and rebuilt after)
 
@@ -77,7 +79,7 @@ All END rows PASS; registry restored, hash identical.
 
 After restoring both files (CRLF checked; Git Bash `sed -i` had dropped the CRs of a mutated copy -
 the restore was from a CRLF copy, line counts compared) the build was rebuilt and the whole probe run
-again: `probe/result_after.txt` PASS 14, FAIL 0.
+again: PASS 14, FAIL 0 (the file was overwritten by the run after review 1, PASS 16).
 
 ## Limits
 
@@ -89,3 +91,29 @@ again: `probe/result_after.txt` PASS 14, FAIL 0.
 - Viewed files cached under a name of a connection that is no longer open are not dropped (no FS
   holds that name any more); `ClearHostFromListingCacheIfFirstCon` drops them when that name is
   connected again first.
+- Rename and delete are not driven by the probe; by reading they post the same notification
+  (`operats2.cpp` `PostChangeOnPathNotifications`, `fs5.cpp` Quick Rename / delete) - review 1, NOTE 6.
+- Two names of one server set to different server encodings (feature 288) give different bytes of
+  the notified path: neither the refresh nor the viewed-file drop matches (review 1, NOTE 7; edge).
+- The listing cache compares the port as a number, the panel / viewer rule as text (`021` vs `21`);
+  older than this feature, harmless (review 1, NOTE 4).
+
+## Review
+
+### Review 1 (refute-first agent) - MUST 0, SHOULD 1, NOTE 6
+
+Its own measurements: `ftp410_probe.ps1` 14 / 0 on the branch build; the FTP plug-in of HEAD~1 built
+in its own folder fails REFRESH-ALIAS, CACHE-ALIAS, VIEW-ALIAS (REFRESH-SAME PASS); saltests 282637 /
+0; encoding guard 0; callers: `IsOurPath` (`fs2.cpp`) unchanged in effect, the listing cache's user
+test equivalent (items store anonymous as NULL); no data can be lost (only caches dropped, the disk
+cache marks files in use outdated).
+
+| # | Finding | Done |
+|---|---|---|
+| SHOULD 1 | another host may be another server: a panel whose connection is closed (keep-alive ended) would ask "reconnect?" or log in again for a change made elsewhere | fixed: `fs3.cpp` refreshes an other-host panel only while its connection is open (`onlyOutdated`); its caches are dropped anyway. New row REFRESH-CLOSED (`ftpmini_sess.py` kick file closes the panel's connection): on the review-1 build FAIL - the reconnect question, Yes, session #4 logged in and listed (`probe/result_closed_before.txt`); after PASS |
+| NOTE 2 | clearing `NextRefreshWontClearCache` for another host is redundant (mutant C kept TRUE: 14 / 0); comment stale | reverted to TRUE with a corrected comment; spec FR-003 / Clarifications, research R3 corrected |
+| NOTE 3 | SC-004 claimed a "password ignored" check | SC-004 corrected (the password is split off in `FTPRootPathMatch`, not linkable) |
+| NOTE 4 | port compared as number vs text | documented (*Limits*) |
+| NOTE 5 | T011 ticked early | done at the close (records) |
+| NOTE 6 | rename / delete not probed | documented (*Limits*, by reading) |
+| NOTE 7 | different server encodings defeat the match | documented (*Limits*) |

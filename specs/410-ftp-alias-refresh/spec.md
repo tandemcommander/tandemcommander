@@ -11,7 +11,8 @@
 
 - Q: Which other connections count as "another name of its server" - another host only, or also another user / port (feature 345's rule for the upload cache)? → A: another host with the same user and port (autonomous run: item - its *Expected* names "the same user and port")
 - Q: Refresh the panel, or only mark its listing outdated? → A: refresh a panel showing the changed folder (same timing as under its own name); drop cached listings of folders not shown, so their next use lists them again (autonomous run: item - both options it allows, the refresh where the stale listing is on screen)
-- Q: May the refresh under another name reuse the panel's cached data of that path? → A: no - it behaves as a manual refresh (re-list, drop cached listings and viewer files of the path and its subpaths) (autonomous run: conservative - nothing cached under the panel's name was dropped by the notification)
+- Q: May the refresh under another name reuse the panel's cached data of that path? → A: yes - the notification now drops that path's cached listings (any host) and viewed files (every other-host connection) itself, so the refresh is the same as under the panel's own name (autonomous run: review 1, NOTE 2 - a first answer "no, as Ctrl+R" was redundant, no probe row told them apart)
+- Q: Refresh a panel of another host whose connection is closed? → A: no - only its caches are dropped; a refresh would ask to reconnect, or log in again, for a change perhaps made on another server (autonomous run: review 1, SHOULD 1; conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -73,9 +74,8 @@ typed to `localhost` stores `sub/n.txt`, Enter on `sub`: the panel's connection 
   cannot tell names of one server from two servers - feature 341's rule).
 - A panel at a parent folder of the changed one is not refreshed (as for its own name); only the
   changed folder and, when the change includes subfolders, the folders below it.
-- The refresh after a change under another name must not trust the panel's own cached data for
-  that path: the panel's path and its subpaths are re-listed and files downloaded for viewing from
-  them are dropped, as on a manual refresh.
+- Under another host name a panel whose connection is closed is not refreshed (no reconnect
+  question); its caches are dropped, so its next use lists the folder again.
 
 ## Requirements *(mandatory)*
 
@@ -87,10 +87,10 @@ typed to `localhost` stores `sub/n.txt`, Enter on `sub`: the panel's connection 
 - **FR-002**: The refresh for a panel under another host name MUST use the same timing as today's
   refresh under the same name (soft refresh: now when the main window is active, else on its
   activation; otherwise the delayed refresh).
-- **FR-003**: The refresh under another host name MUST re-list the panel's path from the server
-  and drop the plug-in's cached listings and viewer-cached files of that path and its subpaths (as
-  a manual refresh does), because those were cached under the panel's name and were not dropped by
-  the notification.
+- **FR-003**: Under another host name a panel whose connection is closed (e.g. keep-alive ended)
+  MUST NOT be refreshed - no reconnect question and no new login for a change that may have been
+  made on another server; its caches of the path are dropped (FR-004, FR-007), so its next refresh
+  or entering the path lists it again (the "outdated" mark of the item; review 1).
 - **FR-004**: A change-on-path notification MUST drop the plug-in's cached listings of the notified
   path (and subpaths when the notification includes subfolders) also for every other host with the
   same user and port.
@@ -123,7 +123,8 @@ typed to `localhost` stores `sub/n.txt`, Enter on `sub`: the panel's connection 
 - **SC-005**: Probe row VIEW-ALIAS passes: a file viewed under one name is downloaded again
   after a change under another name (VIEW-SAME control stays PASS).
 - **SC-004**: the shared decision has `saltests` checks (same / other host, other user, anonymous,
-  other port, default port 21, password ignored).
+  other port, default port 21); the password is split off in `FTPRootPathMatch`, which saltests
+  cannot link (the probe's uploads carry `u:p@`).
 
 ## Assumptions
 

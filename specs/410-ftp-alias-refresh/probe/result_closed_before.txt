@@ -1,0 +1,11 @@
+ftp410_probe (feature 410)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 06:42; desktop 'tc_probe_40776'; ACP 1250; registry key existed True; export SHA-256 B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+Server  : ftpmini_sess.py utf-8 on 127.0.0.1:2143 - up
+
+REFRESH-CLOSED ROW    FAIL        panel connection #2; panel connection closed by the server: True; box answered before the upload: ...er in right panel has been lost. Error: (none) | [Button id=1] OK | [Button id=2478] &Do not show this message next time; upload stored n.txt: True; a reconnect question: True; sessions that logged in without storing (a reconnect): 4; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/REFRESH-CLOSED/*.*' -> 'ftp://u:p@localhost:2143/REFRESH-CLOSED/*.*' ; [#32770 'FTP Client'] [Static id=2477] Connection to FTP server is closed. Do you want to reconnect to FTP server? | [Button id=6] &Yes | [Button id=7] &No | [Button id=2478] &Reconnect without asking next time; open afterwards: ; commands: #3 USER u / #3 PASS p / #3 SYST / #3 PWD / #3 CWD /REFRESH-CLOSED / #3 PORT 127,0,0,1,201,114 / #3 TYPE A / #3 LIST / #3 CWD /REFRESH-CLOSED / #3 PORT 127,0,0,1,201,116 / #3 STOR n.txt / #3 QUIT / #4 USER u / #4 PASS p / #4 SYST / #4 CWD /REFRESH-CLOSED / #4 PWD / #4 PORT 127,0,0,1,201,119 / #4 TYPE A / #4 LIST
+           (closed 0 operation window(s); left: 0)
+REFRESH-CLOSED END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

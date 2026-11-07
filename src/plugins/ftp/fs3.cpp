@@ -723,12 +723,20 @@ void CPluginFSInterface::AcceptChangeOnPathNotification(const char* fsName, cons
                 }
             }
             CFTPServerPathType type = GetFTPServerPathType(Path);
-            if (FTPIsPrefixOfServerPath(type, p1, p2, !(includingSubdirs & 0x01))) // prefix matches or it is an exact match
+            // feature 410 (review 1): another host name may also be another server - with this panel's
+            // connection closed (e.g. keep-alive ended) a refresh would ask to reconnect (or silently log in
+            // again) for a change made elsewhere; the plug-in's caches of this path are dropped (CListingCache
+            // for any host, the viewed files above), so the panel's listing is only outdated: the next refresh
+            // or entering the path lists it again
+            BOOL onlyOutdated = rootMatch == SAL_FTP_ROOT_OTHER_HOST &&
+                                (ControlConnection == NULL || !ControlConnection->IsConnected());
+            if (!onlyOutdated &&
+                FTPIsPrefixOfServerPath(type, p1, p2, !(includingSubdirs & 0x01))) // prefix matches or it is an exact match
             {
-                // under its own name the notification already dropped this path from the plug-in's caches; under
-                // another name it did not (they are keyed by the name as typed): the refresh then distrusts the
-                // path as Ctrl+R does - lists it again, drops its cached listings and viewed files (feature 410)
-                NextRefreshWontClearCache = rootMatch == SAL_FTP_ROOT_SAME;
+                // the notification has already dropped this path from the plug-in's caches: under this panel's
+                // own name in CPluginInterface::AcceptChangeOnPathNotification, under another host name also
+                // (CListingCache matches any host since feature 410, the viewed files are dropped above)
+                NextRefreshWontClearCache = TRUE;
                 if (includingSubdirs & 0x02 /* soft refresh */) // perform the refresh once the panel activates
                 {
                     if (GetForegroundWindow() != SalamanderGeneral->GetMainWindowHWND()) // Salamander main window is inactive

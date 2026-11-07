@@ -20,6 +20,11 @@
                       and after the fix; proves the probe sees a refresh).
       REFRESH-ELSE    the path rule still holds: the upload typed to localhost:/OTHER-ELSE (another
                       folder). PASS = the panel's connection sends no listing command.
+      REFRESH-CLOSED  review 1: the server closes the panel's control connection (kick file of
+                      ftpmini_sess.py), then the upload typed to localhost into the panel's folder.
+                      PASS = stored, no reconnect question, no session that logs in without storing
+                      (another host name may be another server: the panel's listing is only
+                      outdated - its caches are dropped - and is listed at its next use).
       CACHE-ALIAS     the listing cache (CListingCache) under the other name: the panel lists
                       /CACHE-ALIAS/sub, goes up (Backspace) to /CACHE-ALIAS; upload of n.txt typed
                       to localhost:/CACHE-ALIAS/sub/; the panel enters sub (Enter). PASS = the
@@ -296,6 +301,39 @@ try {
             @{ Ok = ($stored -and ($listed -eq $script:rcWant))
                Facts = ("upload sent STOR n.txt: {0}; the panel's connection listed again: {1} (wanted {2}); panel connection commands: {3}; all commands: {4}; dialogs: {5}; op windows: {6}" -f $stored, $listed, $script:rcWant, ($panel -join ' / '), ($all -join ' / '), ($t -join ' ; '), (OpDesc $id)) }
         }
+    }
+
+    # review 1 of 410: under another host name a panel whose connection is closed (an idle server
+    # ended it) is not refreshed - no reconnect question, no new login for a change made elsewhere
+    Row-Case 'REFRESH-CLOSED' 'REFRESH-CLOSED' {
+        param($s, $l)
+        WriteFile ($s + '\x.txt') 'SRV-X'
+        WriteFile ($l + '\n.txt') 'UP'
+    } {
+        param($id, $s, $l, $sid)
+        [IO.File]::WriteAllText($LP + $FtpSrv.Log + '.kick', [string]$sid)   # the server closes the panel's connection
+        $sw = [Diagnostics.Stopwatch]::StartNew(); $closed = $false
+        while ($sw.Elapsed.TotalSeconds -lt 15 -and -not $closed) { Start-Sleep -Milliseconds 300; $closed = [bool](@(Srv-Lines $FtpSrv 0 | Where-Object { $_.event -eq 'closed' -and $_.sid -eq $sid }).Count) }
+        # the program reports the lost connection in a box: answered OK before the upload
+        $lost = @(); $sw = [Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 8) {
+            foreach ($h in @(MainDialogs $id)) { $d = WinDesc $h; if ($d -match 'has been lost') { $lost += (Tail $d 120); $b = BtnById $h @(1); if ($b) { Click $b } else { Close-Win $h } } }
+            if ($lost.Count) { Start-Sleep -Milliseconds 1000; break }
+            Start-Sleep -Milliseconds 300
+        }
+        Sync $id
+        Focus $id 0 1                                              # local: .., n.txt -> n.txt
+        $from = Srv-Count $FtpSrv
+        $t = @(Drive $id 727 $toAlias 5 90)                        # the upload of n.txt typed to localhost
+        Start-Sleep -Milliseconds 3000; Wait-Quiet $id 4 30
+        $later = @(MainDialogs $id | ForEach-Object { Tail (WinDesc $_) 200 })
+        $lines = @(Srv-Lines $FtpSrv $from | Where-Object { $_.cmd -ne $null })
+        $sids = @($lines | ForEach-Object { $_.sid } | Sort-Object -Unique)
+        $relogin = @($sids | Where-Object { $x = $_; $c = @($lines | Where-Object { $_.sid -eq $x } | ForEach-Object { [string]$_.cmd }); ($c -match '^USER ').Count -and -not ($c -match '^STOR ').Count })
+        $stored = (ReadSrv ($s + '\n.txt')) -ceq 'UP'
+        $asked = [bool](@(($t + $later) | Where-Object { $_ -match 'econnect' }).Count)
+        @{ Ok = ($closed -and $stored -and -not $asked -and $relogin.Count -eq 0)
+           Facts = ("panel connection closed by the server: {0}; box answered before the upload: {1}; upload stored n.txt: {2}; a reconnect question: {3}; sessions that logged in without storing (a reconnect): {4}; dialogs: {5}; open afterwards: {6}; commands: {7}" -f $closed, ($lost -join ' ; '), $stored, $asked, ($relogin -join ','), ($t -join ' ; '), ($later -join ' ; '), (@($lines | ForEach-Object { '#' + $_.sid + ' ' + (Esc ([string]$_.cmd)) }) -join ' / ')) }
     }
 
     # the listing cache under the other name: sub listed and cached at 127.0.0.1, the panel goes up,

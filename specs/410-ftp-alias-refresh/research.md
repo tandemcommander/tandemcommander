@@ -18,13 +18,15 @@
   two panels; detached FSs are not shown (the refresh request of a detached FS does nothing until it
   is attached, as today).
 
-## R3 - What the refresh may trust
+## R3 - What the refresh may trust (revised after review 1)
 
-- Under its own name the refresh sets `NextRefreshWontClearCache` (the notification already dropped
-  the plug-in's cache of that name). Under another name nothing of the panel's name was dropped, so
-  the flag is cleared: the forced refresh (`ChangePath` mode 1) drops the viewer files of the panel
-  path (and below) and, once the new listing arrives, `ListingCache.RefreshOnPath` of the path and
-  below - the behaviour of Ctrl+R.
+- The notification itself drops the path's cached listings for any host (R4) and the viewed files
+  under every other-host connection's name (R5), so the refresh keeps `NextRefreshWontClearCache`
+  as under its own name. (First design: cleared the flag for another host - redundant, mutant C of
+  review 1 passed all rows.)
+- A panel of another host whose connection is closed is not refreshed: the refresh would go through
+  `ReconnectIfNeeded` (the "reconnect?" question, or a silent login with *always reconnect*) for a
+  change perhaps made on another server (review 1, measured: row REFRESH-CLOSED).
 
 ## R4 - Listing cache (`CListingCache`)
 
