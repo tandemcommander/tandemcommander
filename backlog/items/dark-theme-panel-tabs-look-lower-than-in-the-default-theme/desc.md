@@ -8,7 +8,7 @@ source: manual
 who: agent
 created: 2026-11-07
 updated: 2026-11-07
-verified: -
+verified: 2026-11-07 f574e83e
 effort: M
 feature: -
 related: [manual-checks-owed-before-the-next-release]
@@ -78,3 +78,4 @@ lines are not what the eye compares. Do not change the tab strip's own size (it 
 
 - 2026-11-07 — created (source manual)
 - 2026-11-07 — moved to Next position 1
+- 2026-11-07 — verified at f574e83e: still present at f574e83e: live build on the hidden desktop - strip 29 px and tab rows equal; Default frames the strip with the rebar etched border (77 px rebar), Dark has none (69 px)
