@@ -1,11 +1,11 @@
 copy408_probe (feature 408) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 04:41; registry key existed True; desktop tc_probe_37468
+Date    : 2026-11-07 04:51; registry key existed True; desktop tc_probe_17956
 
-OPEN       RUN    PASS        render widget 19597574; blocks at column 592: 37-113 599-675 762-813; scale 1
+OPEN       RUN    PASS        render widget 30279572; blocks at column 592: 37-113 599-675 762-813; scale 1
 SHOWN      RUN    NOT DRIVEN  posted moves hover nothing here: block corner 0 px, an ordinary link 0 px changed (the look on hover is a person's check)
 COPY-0     RUN    PASS        seam 'alpha line 1\r\nbeta \u010De\u0161tina \uD83D\uDE00' (want 'alpha line 1\r\nbeta \u010De\u0161tina \uD83D\uDE00'); block 0 top 37 -> 37
-NOTICE     RUN    PASS        tooltip before '', 1 s after the copy '1077,818-1168,868' (viewer 0,0-1200,900, bottom-right quarter); text 'Copied\nalpha line 1\nbeta \u010De\u0161tina \uD83D\uDE00'; all tooltips: 16385890:vis:1077,818-1168,868
+NOTICE     RUN    PASS        tooltip before '', 1 s after the copy '1077,818-1168,868' (viewer 0,0-1200,900, bottom-right quarter); text 'Copied\nalpha line 1\nbeta \u010De\u0161tina \uD83D\uDE00'; all tooltips: 25560934:vis:1077,818-1168,868
 GONE       RUN    PASS        tooltip 4 s after the copy: ''
 AGAIN      RUN    PASS        seam 'in list' (want 'in list'); tooltip '1117,833-1168,868'; text 'Copied\nin list'
 NOSCROLL   RUN    PASS        scrolled block tops 499,662 -> after the copy 499,662; seam 'indented one\r\n  indented two' (want 'indented one\r\n  indented two')

@@ -46,6 +46,9 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Tab switch that asks a question, with a real mouse (GitHub issue #22): with an FTP connection in one tab of a panel, click another tab of the same panel, answer the FTP question with the mouse (*keep the connection*), then move the mouse over the strip and click a file in the panel -> no insert mark follows the mouse, the click goes to the panel, no tab moves; a tab dragged with the button held still moves (feature 405)
 - [ ] Registry Editor, **elevated** (Run as administrator), Move of an HKEY_CLASSES_ROOT key held by both halves: as admin create a scratch key `HKLM\Software\Classes\.tc406` with a value `m` = `1` and a subkey `S`, and as the user `HKCU\Software\Classes\.tc406` with a value `u` = `2` and a subkey `S`; F6 `\HKEY_CLASSES_ROOT\.tc406` into `\HKEY_CURRENT_USER\Software\` -> no box, the copy holds `m`, `u` and `S`, both halves of `.tc406` are gone and HKCR no longer shows it. Repeat with the user's value named `m` = `9` -> the box "Unable to remove the original registry key. (50) The request is not supported." names `HKEY_LOCAL_MACHINE\Software\Classes\.tc406`, the machine's half is kept; delete the scratch keys afterwards (feature 406)
 - [ ] Find (Ctrl+F) with a real mouse and keyboard, Default and Dark theme: search a folder with sub-folders, click the Date header twice and press Ctrl+F5 twice in the result list - the order reverses each time (folders stay first) and the Date header shows the arrow up, then down; Find again - no arrow. The Registry Editor's Find window: a second click on a column header reverses the order, the arrow shows (feature 407)
+- [ ] Markdown Viewer, real mouse and clipboard, Default and a dark scheme (F9): open a .md file with several code blocks (one with Czech and an emoji, one in a list, a Makefile block with tab-indented lines); hover a block - *Copy* appears in its top-right corner; click - a native notice at the viewer's bottom right shows *Copied* and the first lines, gone after about 2.5 s; paste into Notepad - exactly the block's code, the Makefile's tabs kept, Windows line breaks, no extra last line; Tab to a control + Enter copies too and the focus stays there; the page never scrolls (feature 408)
+- [ ] Markdown Viewer select-all: Ctrl+A, Ctrl+C on a page with code blocks, paste - the *Copy* labels are not in the pasted text (feature 408)
+- [ ] Markdown Viewer copy control on a touch screen or pen, if available: one tap on a block's top-right corner copies and shows the notice (feature 408)
 
 ## Log
 
@@ -58,3 +61,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-07 — edited Steps
 - 2026-11-07 — edited Steps
 - 2026-11-07 — edited Steps
+- 2026-11-07 — feature 408: 3 checks added

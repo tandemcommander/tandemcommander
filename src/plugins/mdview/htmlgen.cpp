@@ -718,6 +718,10 @@ static void AppendRawHtml(std::string& o, const MD_CHAR* text, MD_SIZE size)
 int Text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* ud)
 {
     Gen& g = *(Gen*)ud;
+    // feature 408 (review 4, N4): past the output cap EnterBlock skipped the blocks, but
+    // their text still reached the page as plain text (before 408 too)
+    if (g.capped)
+        return 0;
     if (g.imgDepth > 0)
     {
         // image alt: plain, attribute-escaped
@@ -777,15 +781,20 @@ std::wstring MdCodeClipboardText(const std::string& srcUtf8)
     return out;
 }
 
+// a character that belongs to the one before it: a combining mark of any script (the
+// system's character types - review 4, N2: Devanagari, Hebrew, Arabic, Thai ...), a
+// joiner or a variation selector
+static bool IsCombiningMark(wchar_t c)
+{
+    if (c == 0x200D || (c >= 0xFE00 && c <= 0xFE0F) || (c >= 0x0300 && c <= 0x036F))
+        return true;
+    WORD t = 0;
+    return GetStringTypeW(CT_CTYPE3, &c, 1, &t) && (t & (C3_NONSPACING | C3_DIACRITIC | C3_VOWELMARK)) != 0;
+}
+
 // a character the notice must not show as is: C0/C1 controls (a tab included) and the
 // bidirectional embeddings, overrides and isolates (they could make a line read
 // otherwise than it is - review 2, S1)
-static bool IsCombiningMark(wchar_t c)
-{
-    return (c >= 0x0300 && c <= 0x036F) || (c >= 0x1AB0 && c <= 0x1AFF) || (c >= 0x1DC0 && c <= 0x1DFF) ||
-           (c >= 0x20D0 && c <= 0x20FF) || (c >= 0xFE20 && c <= 0xFE2F) || c == 0x200D || (c >= 0xFE00 && c <= 0xFE0F);
-}
-
 static bool NoticeHidden(wchar_t c)
 {
     return c < 0x20 || (c >= 0x7F && c <= 0x9F) || (c >= 0x202A && c <= 0x202E) || (c >= 0x2066 && c <= 0x2069) ||
@@ -824,10 +833,12 @@ std::wstring MdCopyNoticeText(const std::wstring& copied, const std::wstring& cl
             {
                 size_t cut = maxChars;
                 // a whole character: never between the two halves of a surrogate pair, and
-                // never between a letter and its combining marks (review 3, N3)
-                if (cut > 0 && line[cut - 1] >= 0xD800 && line[cut - 1] <= 0xDBFF)
-                    cut--;
+                // never between a letter and its combining marks (review 3, N3) - the marks
+                // first, then the pair: stepping back over a mark can land between the two
+                // halves of an emoji (review 4, S1)
                 while (cut > 0 && IsCombiningMark(line[cut]))
+                    cut--;
+                if (cut > 0 && line[cut - 1] >= 0xD800 && line[cut - 1] <= 0xDBFF)
                     cut--;
                 line = line.substr(0, cut) + L"\x2026";
             }

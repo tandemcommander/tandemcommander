@@ -266,3 +266,37 @@ the control byte-identical to `main`.
 
 After the fixes: harness **120 passed, 0 failed**; `.\build.cmd full` BUILD SUCCEEDED;
 probe **19 PASS, 0 FAIL, 1 NOT DRIVEN**.
+
+### Review 4 (refute-first agent, focused on the changes after review 2) - no MUST, 1 SHOULD, 4 NOTEs
+
+The reviewer compared `AppendIndent` with the review-2 `RecoverIndent` on 600,000 random
+documents (about 424,000 blocks with tabs): copy buffers and page bodies identical; its
+own mutation (`col >= target` -> `col > target`) made 32,575 of 150,000 differ. The cap
+guard and the `.shell` seam held.
+
+- **S1** the review-3 change cut the notice line inside an emoji: the surrogate check ran
+  before stepping back over combining marks, joiners and variation selectors (e.g. 🗑️ =
+  U+1F5D1 U+FE0F at column 59-60). **Fixed**: marks first, then the pair. Harness row
+  (astral letter + mark, ZWJ sequence, emoji + U+FE0F, 58 letters + an emoji at the real
+  60); negative control: the old order -> that row fails (122/1).
+- **N1** a comment above the wrong function - fixed.
+- **N2** combining marks of other scripts: `IsCombiningMark` now asks the system's
+  character types (`GetStringTypeW` CT_CTYPE3: nonspacing, diacritic, vowel mark) plus
+  ZWJ and variation selectors; harness row with Devanagari and Hebrew marks.
+- **N3** a guard in `AppendIndent` unreachable from md4c (a mutant survived) - harmless,
+  kept as a fail-safe.
+- **N4** past the output cap the text of skipped blocks still reached the page as plain
+  text (before 408): **fixed** (`Text` returns once the cap is reached); harness row.
+
+After the fixes: harness **123 passed, 0 failed**; `.\build.cmd full` BUILD SUCCEEDED;
+probe **19 PASS, 0 FAIL, 1 NOT DRIVEN**; saltests 282613 / 0. No further review: review 4
+had no MUST and its fixes each have a failing negative control.
+
+## Closing
+
+- Release checklist (`manual-checks-owed-before-the-next-release`): 3 lines added (real
+  clipboard and look in light/dark with Tab+Enter and a Makefile; select-all copy without
+  the labels; touch / pen tap).
+- Decision item: `markdown-viewer-copy-control-may-a-document-make-a-click` (review 3 S2).
+- No `## [Unreleased]` section in `CHANGELOG.md`: the entry text is in `closing-report.md`.
+- GitHub #20: draft answer in `specs/408-mdview-code-copy/reply.md`.

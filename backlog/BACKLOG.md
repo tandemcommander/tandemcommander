@@ -17,7 +17,6 @@ Last triaged: 2026-11-06
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Markdown Viewer: a button to copy a code block to the clipboard](items/drobna-uprava-markdown-preview/desc.md) | feature | 3 | other-plugins | 408 |
 
 ## Next
 

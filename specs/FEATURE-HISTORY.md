@@ -36,7 +36,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320, 399 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
-| WebView2 viewers (Markdown, Code) | 081, 085, 262, 314 |
+| WebView2 viewers (Markdown, Code) | 081, 085, 262, 314, 408 |
 | Privacy and security | 083, 085, 086, 090, 123 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385 |
 | PictView | 105, 111, 120, 267 |
@@ -6585,3 +6585,34 @@ a few early ones are out of sequence).
   controls), `regedt_sort_probe.ps1` 6 FAIL -> 12 / 0 light and dark; 311's 26 / 0, 257's 0 -> 9
   driven; saltests 282,544 -> 282,613 / 0 (`TestFindSort407`; negative control 7 failed); three
   refute-first reviews (review 2: 1 MUST - the dark-theme arrow - fixed; 2 SHOULD and NOTEs fixed).
+- 408-mdview-code-copy: the Markdown Viewer had no way to copy a code block but selecting it by
+  mouse (GitHub #20) - now every fenced or indented block has a *Copy* control in its top-right
+  corner (shown on hover of the block or on Tab focus, theme variables only), and a click or Enter
+  puts the block's source on the clipboard as Unicode: the code as the Markdown wrote it, tabs
+  kept also in a line's indentation (md4c writes indentation as spaces from a string of its own;
+  the generator takes it back from the document, a straddling tab gives its share as spaces), CR
+  LF line breaks, no last line break, no NUL (md4c repeats a NUL; the page shows none). Script-free
+  under the 021 lockdown: the control is a link to `https://mdcopy.invalid/<token>-<serial>/<n>`,
+  which the shared host cancels and hands to the viewer as a user-initiated link (085's
+  `OnActivateLink`, no host change); the token (16 bytes of `SalGenRandom` per window) and the
+  per-render serial make a document's own or a replaced page's copy address do nothing; a host of
+  its own so that no relative link (`tc-copy-notes.md`) is taken for one. A native tooltip of the
+  viewer window at its bottom right confirms every copy for 2.5 s with *Copied* and up to three
+  non-blank copied lines plus a line `…` (controls, bidi and blank-looking characters shown as
+  spaces), kept on the monitor's work area. Traps: a document's raw CSS can restyle the genuine
+  control (stretched invisibly over the page, its block hidden) so that any click copies - an
+  in-page notice could be hidden too and a fragment jump to it took the keyboard focus (review 1);
+  the native notice makes every copy visible, the trade-off itself is the maintainer's (decision
+  item `markdown-viewer-copy-control-may-a-document-make-a-click`); a control that ignores clicks
+  until hovered swallows a first click or tap (measured, reverted); posted mouse moves produce no
+  hover on the hidden desktop at all (an ordinary link does not hover either - the probe's control);
+  a probe's clicks into a viewer are lost after a second viewer window or a message box took the
+  activation; past the 40 MB output cap a skipped code block was emitted again with the previous
+  block's text (before 408 too) - fixed. Limits: a document's own CSS selectors such as `li > pre`
+  no longer match (blocks are wrapped in `div.tc-code`); the notice is not dark-themed. Debug seam
+  `TC_MDVIEW_PROBE_COPY_LOG` (the copied text, the notice text, links handed to the shell; absent
+  from Release). From backlog item `drobna-uprava-markdown-preview`. Harness
+  `tests/mdview_htmlgen_test` 53 -> 123 / 0 (negative controls: 9, 4, 1 and 1 rows fail); probe
+  `copy408_probe.ps1` 19 PASS / 0 FAIL / 1 NOT DRIVEN (hover), feasibility `feas408_probe.ps1` 4 / 0
+  on the HEAD build; four refute-first reviews (review 1: 2 MUST, review 2: 1 MUST - all fixed;
+  review 3 no MUST, its SHOULDs fixed or a decision item; review 4: no MUST, its SHOULD - a half emoji in the notice - fixed).

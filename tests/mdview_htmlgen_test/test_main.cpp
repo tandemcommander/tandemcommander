@@ -311,6 +311,31 @@ int main()
               MdCopyNoticeText(L"C", L"abce\x0301z", 4, 3) == L"C\nabc\x2026" && MdCopyNoticeText(L"C", L"abcde\x0301", 4, 3) == L"C\nabcd\x2026");
         Check("408 CSS: the control cannot be dragged", Has(h, "-webkit-user-drag:none;"));
         {
+            // review 4 S1: stepping back over a mark must not land inside an emoji
+            auto lone = [](const std::wstring& w)
+            {
+                for (size_t i = 0; i < w.size(); i++)
+                {
+                    bool hi = w[i] >= 0xD800 && w[i] <= 0xDBFF, lo = w[i] >= 0xDC00 && w[i] <= 0xDFFF;
+                    if (hi && (i + 1 >= w.size() || !(w[i + 1] >= 0xDC00 && w[i + 1] <= 0xDFFF)))
+                        return true;
+                    if (lo && (i == 0 || !(w[i - 1] >= 0xD800 && w[i - 1] <= 0xDBFF)))
+                        return true;
+                }
+                return false;
+            };
+            std::wstring a1 = MdCopyNoticeText(L"C", L"x\xD835\xDC9C\x0301yz", 3, 3);
+            std::wstring a2 = MdCopyNoticeText(L"C", L"\xD83D\xDC68\x200D\xD83D\xDC69", 2, 3);
+            std::wstring a3 = MdCopyNoticeText(L"C", L"\xD83D\xDE00\xFE0F", 2, 3);
+            std::wstring a4 = MdCopyNoticeText(L"C", std::wstring(58, L'a') + L"\xD83D\xDDD1\xFE0F" + L"tail", 60, 3);
+            Check("408 notice: no half emoji before a mark, a joiner or a variation selector",
+                  !lone(a1) && !lone(a2) && !lone(a3) && !lone(a4) && a1 == L"C\nx\x2026" && a3 == L"C\n\x2026" &&
+                      a4 == L"C\n" + std::wstring(58, L'a') + L"\x2026");
+            Check("408 notice: marks of other scripts stay with their letter (Devanagari, Hebrew)",
+                  MdCopyNoticeText(L"C", L"ab\x0915\x094Dz", 3, 3) == L"C\nab\x2026" &&
+                      MdCopyNoticeText(L"C", L"ab\x05D1\x05BCz", 3, 3) == L"C\nab\x2026");
+        }
+        {
             // review 3 N5: past the output cap a skipped block was emitted again with the
             // previous block's text (before 408 too)
             MdRenderLimits lim;
@@ -320,6 +345,7 @@ int main()
             MdRenderHtml(big, *t, L"C:\\docs", c, L"", false, MDPW_NORMAL, &ui, lim);
             Check("408 cap: a block past the cap is not emitted again", c.codeBlocks.size() == 1 && c.codeBlocks[0] == "first\n" &&
                                                                          count(c.html, "<code>first") == 1);
+            Check("408 cap: text of skipped blocks does not reach the page (review 4 N4)", !Has(c.html, "second"));
         }
 
         // the copied text

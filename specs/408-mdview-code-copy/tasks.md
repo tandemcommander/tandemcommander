@@ -36,7 +36,7 @@
 - [X] T014 Two-stage `.slt` refresh of the module `mdview` (stop-rules §2.13), `translations/*/mdview.slt`, pins in `translations/ui-overrides.json` if needed
 - [X] T015 Encoding guard `python tools/check_encoding.py --strict`, `.\build.cmd full`, harness, probe after; record in `fix-log.md`
 - [X] T016 Manual: mention the copy control where the manual describes the Markdown Viewer (`help/`), if it has such a page; record if not
-- [ ] T017 Person check line for the release checklist (real clipboard, look in light/dark schemes)
+- [X] T017 Person check line for the release checklist (real clipboard, look in light/dark schemes)
 
 ## Dependencies
 
