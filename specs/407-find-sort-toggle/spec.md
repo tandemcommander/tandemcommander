@@ -34,6 +34,7 @@ reversed when the order is descending (`ChangeSortType`, `SortFilesAndDirectorie
 - Q: What does "Hide duplicate names", which sorts by path internally, do to the remembered sort? → A: It sorts by path ascending as before (never toggles) and the header then shows Path ascending (autonomous run: conservative - its result is unchanged)
 - Q: When is the remembered sort forgotten? → A: When a new search starts (Find, Find duplicates, Intersect, Subtract, Append): the list is then in search order again and no column shows an arrow (autonomous run: conservative - an arrow must not claim an order the list no longer has)
 - Q: In duplicate-search mode, do the columns that can sort (Name and Size, when the search was by name and size) toggle too? → A: Yes; the whole duplicates order is reversed, so the members of each duplicate group stay together. The columns duplicate mode cannot sort by still do nothing and leave the arrow as it was (autonomous run: item - "keeps its restrictions")
+- Q: Does a sort request on an empty result list change the remembered sort or the arrow? → A: No - nothing is sorted, so neither the remembered sort nor any arrow changes (the View menu items are disabled then anyway) (autonomous run: conservative)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -96,7 +97,8 @@ it can sort by toggle and keep each duplicate group together.
 ### Edge Cases
 
 - A click on the Attributes header: sorting by attributes is not supported; nothing changes.
-- An empty result list: nothing to sort, the request changes nothing visible.
+- An empty result list: nothing to sort; the request changes neither the remembered sort nor any
+  arrow (FR-006).
 - A sort requested while the search still runs: the items found so far are sorted; items found
   later are appended (as before); the next request on the same column reverses all of them.
 - Items with equal sort keys: ordered by the other columns (name, path, size, date), all reversed in
@@ -117,8 +119,8 @@ it can sort by toggle and keep each duplicate group together.
   arrow (descending); every other header item MUST show none.
 - **FR-005**: A new search of any kind MUST forget the remembered sort and clear every arrow.
 - **FR-006**: Columns that cannot sort (Attributes always; Path, Date and Time in duplicate mode;
-  Name and Size in duplicate mode unless the search was by both name and size) MUST change neither
-  the order, nor the remembered sort, nor the arrows.
+  Name and Size in duplicate mode unless the search was by both name and size), and any request on
+  an empty result list, MUST change neither the order, nor the remembered sort, nor the arrows.
 - **FR-007**: In duplicate mode, a descending order MUST keep the members of each duplicate group
   together and the alternating group shading by group.
 - **FR-008**: "Hide duplicate names" MUST keep removing exactly the same items as before (it sorts
