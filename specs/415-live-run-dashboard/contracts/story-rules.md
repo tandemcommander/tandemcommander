@@ -75,4 +75,5 @@ of the path relative to the repository (`packages/web`, `src/plugins/ftp`, `spec
 ## Importance and the Critical tab
 
 `critical` entries are listed on the Critical tab newest first with their reason; `high` entries are
-bold in the story; `low` entries are hidden behind "Show routine steps" (on by default: off).
+bold in the story; `low` entries are hidden until "Show routine steps" is switched on (off by
+default).

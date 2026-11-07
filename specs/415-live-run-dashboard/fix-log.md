@@ -34,4 +34,13 @@ Backlog item `backlog-app-live-run-human-dashboard`. Autonomous run started 2026
 
 See `spec.md` *Clarifications* and `research.md`.
 
+## Analyze (speckit-analyze, 2026-11-07)
+
+- A1 HIGH: FR-005 "tool errors a step depended on" untestable -> FR-005 names the critical
+  sources (builds, tests, probes, encoding guard, error turns, stop, limits, review MUST, new
+  items, person steps); other tool errors are story warnings. Fixed.
+- C1 MEDIUM: SC-003 (3 s) had no check -> T035 measures it in the e2e test. Fixed.
+- F1, F2 LOW: wording in story-rules; edge case of replay times covered by research R4. Fixed.
+- Second pass: no CRITICAL / HIGH left; coverage 18/18 FR, 7/7 SC.
+
 ## Work log

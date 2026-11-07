@@ -210,9 +210,11 @@ fenced diagram shows it.
 - **FR-004**: A *Story* tab MUST tell the run in sentences grouped by phase, each entry with an
   icon, a coloured label, an outcome (success / failure / running) in colour, routine reads and
   searches collapsed, subagent calls folded under their agent, the agent's messages as Markdown.
-- **FR-005**: A *Critical* tab MUST list failed builds and tests, tool errors of the main thread
-  that a step depended on, a stop or block, usage limits, review findings, items added to the
-  backlog and person steps; the tab shows their count.
+- **FR-005**: A *Critical* tab MUST list failed builds, tests, GUI probes and encoding checks, a
+  turn that ended with an error, a stop or block, usage limits, review findings (an agent message
+  in the review phase naming a MUST finding), items added to the backlog and person steps; the tab
+  shows their count. Other failed tool calls are shown in the story as warnings and counted in the
+  metrics, not listed as critical.
 - **FR-006**: A *Decisions* tab MUST list the *Clarifications* and *Assumptions* of the feature's
   `spec.md` and the agent's messages that state a decision.
 - **FR-007**: A *Gallery* tab MUST show the images the run's trace opened or wrote and the images

@@ -72,7 +72,7 @@ Paths are relative to `tools/backlog-app/packages/` unless they start with `tool
 ## Phase 9: Polish & cross-cutting
 
 - [ ] T034 `tools/backlog/fixtures/fake_claude.py`: step `replay` (plays a trace fixture with a pace, holding the item, then `then`); fixture trace `tools/backlog-app/e2e/fixtures/live-run-trace.jsonl` + a screenshot PNG written into the fixture repository's feature folder
-- [ ] T035 `tools/backlog-app/e2e/us7-live-dashboard.spec.ts` (quickstart Q3) and `/live` in the axe test with a run
+- [ ] T035 `tools/backlog-app/e2e/us7-live-dashboard.spec.ts` (quickstart Q3; a line the replay writes late must appear in the story within 3 s of being written - SC-003) and the axe check of the dashboard in both themes
 - [ ] T036 Run `npm run check` and the e2e tests; fold the real 414 trace (quickstart Q2); record numbers in `fix-log.md`
 - [ ] T037 `tools/backlog-app/README.md`: the live dashboard paragraph; `specs/344-backlog-web-app` is not changed
 - [ ] T038 Independent review (SKILL step 7), fixes, records (closing report, FEATURE-HISTORY, CHANGELOG)
