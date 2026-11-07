@@ -83,20 +83,50 @@ export function safeParse(text: string): unknown {
   }
 }
 
+/** First folders of the repository that hold no source: records, the backlog, build output. */
+const NOT_SOURCE = new Set([
+  "specs",
+  "backlog",
+  "build",
+  "out",
+  "dist",
+  "node_modules",
+  "test-results",
+  ".agent-traces",
+  ".specify",
+  ".claude",
+  ".git",
+]);
+
 /**
- * Whether a path is a source of the product or its tools: not the feature's records
- * (`specs/`), the backlog, the traces or a temporary file.
+ * Whether a path is a source of the product or its tools (review 3 of 415): inside the session's
+ * repository (when its root is known), not under the feature's records, the backlog, the build
+ * output or the traces, and not a temporary file. A scratch probe script written into `build\`
+ * or next to the repository is no source change.
  *
  * @param path - A file path, or null.
+ * @param root - The repository root (the session's working directory), when known.
  * @returns True for a source file.
  */
-export function isSourcePath(path: string | null): boolean {
+export function isSourcePath(path: string | null, root: string | null = null): boolean {
   if (!path) return false;
   const p = path.replace(/\\/g, "/");
-  return (
-    !/(^|\/)(specs|backlog|\.agent-traces|\.specify|\.claude)\//i.test(p) &&
-    !/\/AppData\/Local\/Temp\//i.test(p)
-  );
+  let rel: string;
+  if (root) {
+    // Inside the repository its own folders decide (also for a repository in %TEMP%, as the
+    // tests' fixtures are); outside it nothing is a source.
+    const r = root.replace(/\\/g, "/").replace(/\/+$/, "");
+    if (!p.toLowerCase().startsWith(`${r.toLowerCase()}/`))
+      return /^[^/:]+\//.test(p) && !/^\.\.\//.test(p) ? isSourcePath(`${r}/${p}`, root) : false;
+    rel = p.slice(r.length + 1);
+  } else {
+    if (/\/AppData\/Local\/Temp\//i.test(p)) return false;
+    rel = p;
+  }
+  const parts = rel.split("/").filter(Boolean);
+  if (parts.some((part) => part.toLowerCase() === "node_modules")) return false;
+  if (root) return parts.length > 0 && !NOT_SOURCE.has(parts[0]!.toLowerCase());
+  return !parts.some((part) => NOT_SOURCE.has(part.toLowerCase()));
 }
 
 /** The figures of one attempt's last `result`. */
@@ -136,6 +166,9 @@ export class RunState {
 
   /** Number of failed tool calls. */
   toolErrors = 0;
+
+  /** The repository root of the session (`system/init`), when known. */
+  private root: string | null = null;
 
   /** The offset after the last folded line. */
   offset = 0;
@@ -181,6 +214,7 @@ export class RunState {
    */
   apply(event: TraceEvent): void {
     this.offset = Math.max(this.offset, event.end);
+    if (event.kind === "init" && event.info?.cwd) this.root = event.info.cwd;
     switch (event.kind) {
       case "attempt": {
         const info = event.text
@@ -266,7 +300,7 @@ export class RunState {
     if (
       (name === "Edit" || name === "Write" || name === "MultiEdit" || name === "NotebookEdit") &&
       (this.phase === "tasks" || this.phase === "analyze") &&
-      isSourcePath(event.info?.filePath ?? null)
+      isSourcePath(event.info?.filePath ?? null, this.root)
     ) {
       this.advance("implement", event.at);
       return;

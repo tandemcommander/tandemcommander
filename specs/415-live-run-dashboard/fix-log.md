@@ -219,3 +219,48 @@ fixed).
 
 After the fixes: `npm run check` 451 passed, 2 skipped; Playwright `us7`, `us4-chat`, `a11y`,
 `us5-us6`: 9 passed.
+
+### Review 3 (refute-first agent, at 52570947)
+
+- **M1** (MUST) The `programsOf` of review 2 read only the first word of each part, so the
+  PowerShell and `cmd` forms the runs use (`$o = .\build.cmd`, `cmd /c build.cmd`, probes inside
+  `foreach { }`, `& "...saltests.exe"` after an assignment, `Start-Process`, `powershell -Command
+  "..."`) were no builds, tests or probes: four real build failures and three probe failures of
+  real traces became warnings, a stale pass after a failed build resolved a real probe failure,
+  and a saltests failure found no check to blame. Fixed: a new module `command-parse.ts` reads
+  commands with quotes, line continuations, heredocs (also cut short), parts split at `; | || &&`,
+  a background `&`, line ends, braces and parentheses outside quotes, assignments, call operators,
+  `cmd /c`, `Start-Process [-FilePath]`, `powershell -File / -Command`, `bash -c`, `timeout N`,
+  npm options (`--prefix`, `-w`). A command's checks are judged together (`judgeChecks`): the
+  build by `BUILD FAILED` / an error code even when the command also runs saltests or a probe,
+  saltests by its summary, a probe by its FAIL rows, tests by their counts; the first failing
+  check is blamed. Tests: the review's 42 adversarial commands (`command-parse.test.ts`, all
+  pass; the review-2 code missed 25), plus checks of combined and launched commands.
+- **S1** Splitting ignored quotes (a `grep -E "powershell|msbuild"` or a commit message with
+  `; ./build.cmd` became a build). Fixed by the same reading (tests).
+- **S2** `isSourcePath` counted scratch probe scripts under `build\` or outside the repository as
+  source changes, so planned before-probes became critical. Fixed: inside the session's root
+  only, not under `specs`, `backlog`, `build`, `out`, `dist`, `node_modules`, `test-results`,
+  traces, `.specify`, `.claude`, `.git` (a repository in `%TEMP%` judged by its own folders).
+  `RunState` takes the root from `system/init` too. Tests.
+- **S3** More phrasings of planned failures (mutated, with control A-E, with the ... bug, before
+  (the) review fix, before probe, on the installed, the HEAD build); a pass on purpose resolves
+  nothing. Tests.
+- **S4** `MUST_CLEARED` cleared open MUSTs on loose wording. Fixed: only "found / has / with no
+  MUST", "0 MUST", "the MUST (of review N) is fixed", "review N's MUST is fixed", and not with
+  "still open", "stays open", "brings it back", "next: the MUST", "not fixed", "but ... MUST"; a
+  MUST "which is fixed" in the same message opens none. Tests with the review's phrases.
+- NOTEs fixed: npm with `--prefix` / `-w` reads its subcommand; the test-runner rule lists only
+  test subcommands; a heredoc cut short is left out to the end; an ended run's times are rebuilt
+  when its trace grows; the gallery closes the viewer for good when its image leaves the list;
+  `trim()` never drops a critical entry. NOTE accepted: a document whose only early line end
+  leaves just its first line within the 1 MB cut.
+- Re-measured with the review's scripts over all 264 traces (against the review-1 code): open
+  critical entries lost 51 / gained 15. The lost ones are now resolved by a later pass of the same
+  check or marked as planned ("with the broken rule", "without the M1 fix", "pre-review build",
+  "negative-control build"); the gained ones are real probe and build failures now recognised in
+  PowerShell forms (regression probes, probes inside loops). Real build failures by their
+  output: 20 build and 27 saltests failures critical as before.
+
+After the fixes: `npm run check` 499 passed, 2 skipped (125 in `shared`); Playwright `us7`,
+`a11y`, `us5-us6`, `us4-chat`: 9 passed.

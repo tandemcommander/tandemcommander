@@ -9,9 +9,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  checkSubjects,
   classifyCommand,
-  programsOf,
   componentOf,
   firstSentence,
   judgeResult,
@@ -20,6 +18,8 @@ import {
   RunStory,
   type StoryEntry,
 } from "../src/runs/run-story.ts";
+import { checkSubjects, programsOf } from "../src/runs/command-parse.ts";
+import { isSourcePath } from "../src/runs/run-state.ts";
 import { attempt, call, eventsOf, result, say, turnEnd } from "./helpers/trace.ts";
 
 /**
@@ -235,7 +235,7 @@ describe("RunStory", () => {
       }),
       result("t1", "build exit 0\nRows: PASS 3, FAIL 6", true),
     ]);
-    expect(s.critical()[0]?.critical).toBe("A GUI probe failed: 6 FAIL");
+    expect(s.critical()[0]?.critical).toBe("A GUI probe failed: 6 FAIL, 3 PASS");
     // A non-zero exit of a build command without the build's own words is not a failed build.
     s = story([...IMPLEMENTING, call("t1", "Bash", { command: "build.cmd && ls" }), result("t1", "x", true)]);
     expect(s.critical()).toHaveLength(0);
@@ -310,12 +310,64 @@ describe("RunStory", () => {
     expect(open.critical()[0]?.resolved).toBe(false);
   });
 
+  it("counts only sources of the repository as a change of the code (review 3 S2)", () => {
+    const root = "E:\\r";
+    expect(isSourcePath("E:\\r\\src\\a.cpp", root)).toBe(true);
+    expect(isSourcePath("E:\\r\\build\\p268\\probe.ps1", root)).toBe(false);
+    expect(isSourcePath("E:\\Projects\\tc_scratch\\p328\\x.ps1", root)).toBe(false);
+    expect(isSourcePath("E:\\r\\specs\\415-x\\probe\\p.ps1", root)).toBe(false);
+    expect(
+      isSourcePath(
+        "C:\\Users\\p\\AppData\\Local\\Temp\\repo\\src\\a.cpp",
+        "C:\\Users\\p\\AppData\\Local\\Temp\\repo",
+      ),
+    ).toBe(true);
+    // A scratch probe written outside the sources before measuring keeps the run measuring.
+    const s = story([
+      { type: "system", subtype: "init", cwd: root, model: "m" },
+      call("w1", "Write", { file_path: "E:\\r\\build\\p268\\dmg268_probe.ps1", content: "x" }),
+      result("w1", "ok"),
+      call("t1", "Bash", {
+        command: "powershell -File tools\\run_on_hidden_desktop.ps1 -CommandLine x.ps1",
+        description: "Run the before probe",
+      }),
+      result("t1", "Rows: PASS 0, FAIL 18", true),
+    ]);
+    expect(s.critical()).toHaveLength(0);
+  });
+
+  it("keeps a review's MUST open on loose wording, and does not open one reported fixed at once (review 3 S4)", () => {
+    for (const later of [
+      "The two SHOULD findings are fixed; the MUST is still open.",
+      "NOTE findings are fixed. Next: the MUST.",
+      "The MUST of review 1 was fixed, but review 2 brings it back.",
+    ]) {
+      const s = story([
+        ...IMPLEMENTING,
+        say("Review 2 has 1 MUST.", { message: "m1" }),
+        say(later, { message: "m2" }),
+      ]);
+      expect(s.critical()[0]?.resolved, later).toBe(false);
+    }
+    const atOnce = story([
+      ...IMPLEMENTING,
+      say("Review 1 found one MUST, which is fixed now.", { message: "m1" }),
+    ]);
+    expect(atOnce.critical()).toHaveLength(0);
+  });
+
   it("knows more words of failures on purpose (review S-C)", () => {
     for (const description of [
       "Build and run saltests with the mutation",
       "Run the probe with the guard removed",
       "Build old handler, rerun before-probe",
       "Run the tests with the redirect disabled",
+      "Run saltests with the mutated rule",
+      "Run the probe with control B",
+      "Build with the old sort bug and run the probe",
+      "Run the before probe on the installed 0.1.10",
+      "Rebuild with the file seam and run the before probe",
+      "Run the 081 regression on the HEAD plug-in build",
     ]) {
       const s = story([
         ...IMPLEMENTING,

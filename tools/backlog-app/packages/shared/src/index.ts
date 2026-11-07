@@ -26,3 +26,4 @@ export * from "./runs/pricing.ts";
 export * from "./runs/run-metrics.ts";
 export * from "./runs/run-progress.ts";
 export * from "./runs/run-story.ts";
+export * from "./runs/command-parse.ts";

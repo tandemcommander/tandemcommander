@@ -272,6 +272,8 @@ export function Gallery({
   // meanwhile may come before the open one (review S-E of 415).
   const [openKey, setOpenKey] = useState<string | null>(null);
   const open = openKey === null ? null : images.findIndex((i) => i.key === openKey);
+  // The open image left the list (the file was renamed): the viewer closes for good.
+  if (open === -1 && images.length > 0) setOpenKey(null);
   if (images.length === 0) {
     return (
       <p className="flex items-center gap-2 rounded-lg border p-4 text-sm text-muted-foreground">

@@ -276,7 +276,7 @@ export class RunsService {
   private timer: NodeJS.Timeout | null = null;
 
   /** Time indexes of ended runs, by id (built once). */
-  private readonly endedTimes = new Map<string, TimeIndex>();
+  private readonly endedTimes = new Map<string, { size: number; times: TimeIndex }>();
 
   /** Ids of runs whose end was announced (for notifications). */
   private readonly ended = new Set<string>();
@@ -489,8 +489,15 @@ export class RunsService {
    */
   timeIndex(id: string): TimeIndex {
     if (this.live?.id === id) return this.live.times;
+    // Built once per trace size: a run continued after it ended gets its times again.
+    let traceSize = -1;
+    try {
+      traceSize = statSync(join(this.tracesRoot, id, "trace.jsonl")).size;
+    } catch {
+      // No trace.
+    }
     const known = this.endedTimes.get(id);
-    if (known) return known;
+    if (known && known.size === traceSize) return known.times;
     const times = new TimeIndex(
       this.services.ctx.state.readJson(`cache/times/${id}.json`, AnchorsSchema, []),
     );
@@ -540,7 +547,7 @@ export class RunsService {
         }
       }
       if (start !== null) times.add(0, start);
-      this.endedTimes.set(id, times);
+      this.endedTimes.set(id, { size: traceSize, times });
     } else if (start !== null) {
       times.add(0, start);
     }

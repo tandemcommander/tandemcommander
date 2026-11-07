@@ -15,6 +15,7 @@
  */
 
 import type { Phase, TraceEvent } from "../schemas/runs.ts";
+import { checkSubjects, programsOf } from "./command-parse.ts";
 import { isSourcePath, RunState, safeParse } from "./run-state.ts";
 
 /** Labels of story entries (rendered as coloured pills). */
@@ -203,7 +204,15 @@ export function mustFinding(text: string): boolean {
 
 /** A review without a MUST finding, or a MUST reported fixed. */
 const MUST_CLEARED =
-  /\b(?:no|0|zero)\s+MUST\b|\bMUST\b[^.\n]{0,60}\b(?:is|are|was|were)\s+fixed\b|findings are fixed/i;
+  /\b(?:found|has|had|have|reports?|with|shows?|brings?|gave|gives)\s+(?:no|0|zero)\s+MUST\b|^\W*(?:review \d+\W+)?(?:no|0)\s+MUST\b|\bthe MUST(?: finding)?(?: of review \d+)? (?:is|was) (?:now )?fixed\b|\breview \d+'s MUST (?:is|was) (?:now )?fixed\b/im;
+
+/** Words that keep a MUST open although a message mentions it fixed or none. */
+const MUST_STILL_OPEN =
+  /still open|stays open|remains? open|brings? it back|reopen|next:? the MUST|not (?:yet )?fixed|\bbut\b[^.\n]{0,40}\bMUST\b/i;
+
+/** A MUST reported and fixed in the same breath ("found one MUST, which is fixed"). */
+const MUST_FIXED_AT_ONCE =
+  /\b(?:which|that) (?:is|was|are|were) (?:now )?fixed\b|\bnow fixed\b|\bfixed it\b/i;
 
 /** Labels whose failure a later pass of the same kind resolves. */
 const RESOLVABLE = new Set<StoryLabel>(["BUILD", "TEST", "PROBE", "CHECK"]);
@@ -220,7 +229,13 @@ const EXPECTED_FAILURE = new RegExp(
     "must fail",
     "fails? as expected",
     "before[- ]the[- ]fix",
-    "before-probe",
+    "before[- ]?probe",
+    "\\bthe HEAD\\b",
+    "before (?:the )?review fix",
+    "mutated",
+    "with control [A-Z]\\b",
+    "with the [\\w -]{0,30}\\bbug\\b",
+    "on the installed",
     "without the fix",
     "\\bpre-(?:fix|restore|change)\\b",
     "old (?:code|build|handler|binary)",
@@ -245,39 +260,6 @@ const MEASURING = new Set<Phase>([
   "tasks",
   "analyze",
 ]);
-
-/**
- * The checks a command runs, for resolving: a later pass resolves only failures of a check it
- * ran too (the same probe script, the same test files, the build, saltests) - a combined command
- * runs several.
- *
- * @param command - The command line.
- * @returns The checks, e.g. `build`, `saltests`, `probe:find_sort_probe`, `tests:check`.
- */
-export function checkSubjects(command: string): string[] {
-  const progs = programsOf(command);
-  const checks: string[] = [];
-  if (
-    progs.some((p) => ["build.cmd", "rebuild.cmd", "build_langs.cmd", "msbuild", "msbuild.exe"].includes(p))
-  )
-    checks.push("build");
-  if (progs.includes("saltests.exe")) checks.push("saltests");
-  if (progs.includes("check_encoding.py")) checks.push("encoding");
-  if (progs.includes("run_on_hidden_desktop.ps1")) {
-    const scripts = [...command.matchAll(/([\w.-]+)\.ps1\b/gi)]
-      .map((m) => m[1]!.toLowerCase())
-      .filter((n) => n !== "run_on_hidden_desktop");
-    checks.push(`probe:${[...new Set(scripts)].sort().join(",") || "?"}`);
-  }
-  const tests = progs.filter((p) =>
-    /^(npm|npx) |^vitest$|^playwright$|^pytest$|^-m (unittest|pytest)$|^test_/.test(p),
-  );
-  if (tests.length) {
-    const files = [...command.matchAll(/([\w.-]+\.(?:spec|test)\.[jt]sx?)/g)].map((m) => m[1]!);
-    checks.push(`tests:${files.length ? [...new Set(files)].sort().join(",") : tests.join(",")}`);
-  }
-  return checks;
-}
 
 /** Top-level folders of the repository, to cut absolute paths to relative ones. */
 const ROOT_FOLDERS = [
@@ -438,73 +420,6 @@ const BACKLOG_TITLES: Readonly<Record<string, string>> = {
   unblock: "Unblocks an item",
   decide: "Records a decision",
 };
-
-/**
- * The file name of a path token, lower case.
- *
- * @param token - A token of a command.
- * @returns Its last part.
- */
-function programName(token: string): string {
-  const parts = token.replace(/\\/g, "/").split("/");
-  return (parts[parts.length - 1] ?? token).toLowerCase();
-}
-
-/**
- * The programs a shell command runs: the first word of every part of it (split at `&&`, `||`,
- * `;`, `|` and lines; heredoc bodies left out), with what they run - the script of
- * `powershell -File`, `python <script>` or `python -m <module>`, `node <script>`,
- * `bash <script>`, the subcommand of `npm`, `npx` and `git`. Arguments are never programs, so a
- * search for `msbuild` or a fix-log that mentions `build.cmd` runs neither.
- *
- * @param command - The command line.
- * @returns Program names in lower case (`build.cmd`, `saltests.exe`, `npm check`, `git commit`,
- *   `-m translate.merge`, `run_on_hidden_desktop.ps1`, ...).
- */
-export function programsOf(command: string): string[] {
-  const text = command.replace(/<<-?\s*(['"]?)([A-Za-z_]\w*)\1[^\n]*\n[\s\S]*?\n\s*\2[ \t]*(?=\n|$)/g, "\n");
-  const found: string[] = [];
-  for (const part of text.split(/&&|\|\||;|\||\n/)) {
-    const tokens = (part.match(/"[^"]*"|'[^']*'|\S+/g) ?? []).map((t) => t.replace(/^["']|["']$/g, ""));
-    let i = 0;
-    while (
-      i < tokens.length &&
-      (/^[A-Za-z_]\w*=/.test(tokens[i]!) || /^[&({]$|^time$|^exec$|^timeout$|^\d+$/.test(tokens[i]!))
-    )
-      i++;
-    const first = tokens[i];
-    if (!first) continue;
-    const prog = programName(first);
-    found.push(prog);
-    const rest = tokens.slice(i + 1);
-    if (/^(powershell|pwsh)(\.exe)?$/.test(prog)) {
-      const file = rest.findIndex((t) => /^-file$/i.test(t));
-      if (file >= 0 && rest[file + 1]) found.push(programName(rest[file + 1]!));
-      // A probe passes its script inside -CommandLine; the runner is what counts.
-      for (const t of rest)
-        if (/run_on_hidden_desktop\.ps1$/i.test(t)) found.push("run_on_hidden_desktop.ps1");
-    } else if (/^python[\d.]*(\.exe)?$|^py$/.test(prog)) {
-      const m = rest.indexOf("-m");
-      if (m >= 0 && rest[m + 1]) found.push(`-m ${rest[m + 1]!.toLowerCase()}`);
-      else {
-        const script = rest.find((t) => /\.py$/i.test(t));
-        if (script) found.push(programName(script));
-      }
-    } else if (/^(node|bash|sh)(\.exe)?$/.test(prog)) {
-      const script = rest.find((t) => !t.startsWith("-"));
-      if (script) found.push(programName(script));
-    } else if (prog === "npm" || prog === "npx") {
-      const words = rest.filter((t) => !t.startsWith("-"));
-      const sub = prog === "npm" && words[0] === "run" ? words[1] : words[0];
-      if (sub) found.push(`${prog} ${sub.toLowerCase()}`);
-    } else if (prog === "git" || prog === "git.exe") {
-      let j = 0;
-      while (j < rest.length && rest[j]!.startsWith("-")) j += rest[j] === "-C" || rest[j] === "-c" ? 2 : 1;
-      if (rest[j]) found.push(`git ${rest[j]!.toLowerCase()}`);
-    }
-  }
-  return found;
-}
 
 /**
  * Classifies a shell command (contracts/story-rules.md, *Main-thread tool calls*).
@@ -739,6 +654,75 @@ export function judgeResult(
     default:
       return isError ? { outcome: "warn", note: "ended with an error" } : { outcome: "ok", note: null };
   }
+}
+
+/**
+ * The verdict of a command that runs checks (feature 415, review 3): each check by its own words
+ * in the result - the build by `BUILD FAILED` or an error code, saltests by its summary, a probe
+ * by its FAIL rows, tests by their counts, the encoding guard by its total. The first failing
+ * check is blamed. A non-zero exit without such words fails a command of one check that only
+ * speaks through its exit code (saltests, a probe, tests); a combined command, or a build, ends
+ * with a warning instead.
+ *
+ * @param checks - The command's checks ({@link checkSubjects}).
+ * @param text - The result's text (its beginning and its end).
+ * @param isError - A non-zero exit.
+ * @returns The outcome, a note and the failing check.
+ */
+export function judgeChecks(
+  checks: readonly string[],
+  text: string,
+  isError: boolean,
+): { outcome: StoryOutcome; note: string | null; failed?: string } {
+  const notes: string[] = [];
+  const build = checks.includes("build");
+  if (build && /BUILD FAILED|\berror (C|LNK|MSB|RC)\d+/i.test(text))
+    return { outcome: "fail", note: "build failed", failed: "build" };
+  if (checks.includes("saltests")) {
+    const m = /saltests:\s*([\d,]+)\s*checks,\s*(\d+)\s*failed/.exec(text);
+    if (m && Number(m[2]) > 0)
+      return { outcome: "fail", note: `${m[2]} of ${m[1]} checks failed`, failed: "saltests" };
+    if (m) notes.push(`${m[1]} checks, 0 failed`);
+  }
+  const probe = checks.find((c) => c.startsWith("probe:"));
+  if (probe) {
+    const verdict = judgeResult("probe", text, false);
+    if (verdict.outcome === "fail") return { ...verdict, failed: probe };
+    if (verdict.note) notes.push(verdict.note);
+  }
+  if (checks.includes("encoding")) {
+    const m = /TOTAL:\s*(\d+)/.exec(text);
+    if (m && Number(m[1]) > 0) return { outcome: "fail", note: `${m[1]} findings`, failed: "encoding" };
+    if (m) notes.push("no findings");
+  }
+  const tests = checks.find((c) => c.startsWith("tests:"));
+  if (tests) {
+    const verdict = judgeResult("tests", text, false);
+    if (verdict.outcome === "fail") return { ...verdict, failed: tests };
+    if (verdict.note) notes.push(verdict.note);
+  }
+  if (build && /BUILD SUCCEEDED/.test(text)) notes.unshift("build succeeded");
+  if (isError && notes.length === 0) {
+    const only = checks.length === 1 ? checks[0]! : null;
+    if (only && only !== "build")
+      return {
+        outcome: "fail",
+        note:
+          only === "saltests"
+            ? "the unit rules failed"
+            : only.startsWith("probe:")
+              ? "the probe failed"
+              : only === "encoding"
+                ? null
+                : "the tests failed",
+        failed: only,
+      };
+    return { outcome: "warn", note: "ended with an error" };
+  }
+  return {
+    outcome: isError ? "warn" : "ok",
+    note: notes.length ? notes.join(", ") : isError ? "ended with an error" : null,
+  };
 }
 
 /** The state of a group being filled. */
@@ -1010,9 +994,9 @@ export class RunStory {
     const drop = new Set<string>();
     for (const e of this.entries) {
       if (drop.size >= 1000) break;
-      if (e.importance === "low" || e.kind === "group") drop.add(e.id);
+      if ((e.importance === "low" || e.kind === "group") && !e.critical) drop.add(e.id);
     }
-    if (drop.size === 0) for (const e of this.entries.slice(0, 1000)) drop.add(e.id);
+    if (drop.size === 0) for (const e of this.entries.slice(0, 1000)) if (!e.critical) drop.add(e.id);
     this.entries = this.entries.filter((e) => !drop.has(e.id) || e.outcome === "running");
     this.index = new Map(this.entries.map((e, i) => [e.id, i]));
   }
@@ -1265,7 +1249,7 @@ export class RunStory {
    */
   private groupCall(event: TraceEvent, name: string, file: string | null): void {
     const label: "READ" | "EDIT" = EDIT_TOOLS.has(name) ? "EDIT" : "READ";
-    if (label === "EDIT" && file && isSourcePath(file)) this.sourceChanged = true;
+    if (label === "EDIT" && file && isSourcePath(file, this.root)) this.sourceChanged = true;
     if (label === "EDIT" && file) {
       const rel = this.rel(file);
       const known = this.fileMap.get(file);
@@ -1356,38 +1340,37 @@ export class RunStory {
     }
     const kind = this.verdicts.get(toolUseId);
     if (kind) {
-      let verdict = judgeResult(kind.verdict, text, event.isError);
+      // A command's checks (build, saltests, probes, tests, the encoding guard) are judged
+      // together: each by its own words, the failing one blamed (reviews 1 - 3 of 415).
+      const checks = this.subjects.get(id) ?? [];
+      let verdict: { outcome: StoryOutcome; note: string | null; failed?: string } = checks.length
+        ? judgeChecks(checks, text, event.isError)
+        : judgeResult(kind.verdict, text, event.isError);
       // A failure on purpose is the expected result, not a problem: a negative control, a mutant,
       // a check of the code before the fix - and every check before implementing, which measures
       // the problem (stop-rules 2.1).
       const measuring = this.measuring.has(id);
-      if (verdict.outcome === "fail" && (EXPECTED_FAILURE.test(entry.title) || measuring)) {
-        const why =
-          measuring && !EXPECTED_FAILURE.test(entry.title)
-            ? "failed while measuring the problem"
-            : "failed, as intended";
+      const onPurpose = EXPECTED_FAILURE.test(entry.title);
+      if (verdict.outcome === "fail" && (onPurpose || measuring)) {
+        const why = measuring && !onPurpose ? "failed while measuring the problem" : "failed, as intended";
         verdict = { outcome: "warn", note: `${why}${verdict.note ? ` (${verdict.note})` : ""}` };
       }
       const failed = verdict.outcome === "fail";
-      // What failed is the verdict's (a command that builds and then runs saltests fails by its
-      // tests), else the label's.
-      const what =
-        verdict.failed ??
-        (kind.label === "BUILD"
-          ? "build"
-          : kind.label === "PROBE"
-            ? "probe"
-            : kind.label === "CHECK"
-              ? "check"
-              : "tests");
+      const blamed = failed ? (verdict.failed ?? checks[0] ?? null) : null;
       const reason =
-        what === "build"
+        blamed === "build"
           ? "The build failed"
-          : what === "probe"
+          : blamed?.startsWith("probe:")
             ? "A GUI probe failed"
-            : what === "check"
+            : blamed === "encoding"
               ? "The encoding guard found problems"
-              : "Tests failed";
+              : kind.label === "BUILD" && !blamed
+                ? "The build failed"
+                : kind.label === "PROBE" && !blamed
+                  ? "A GUI probe failed"
+                  : kind.label === "CHECK" && !blamed
+                    ? "The encoding guard found problems"
+                    : "Tests failed";
       // The verdict's note adds the figures ("2 failed, 364 passed"), not the same words again.
       const note =
         verdict.note && !reason.toLowerCase().includes(verdict.note.toLowerCase()) ? `: ${verdict.note}` : "";
@@ -1397,22 +1380,11 @@ export class RunStory {
           : verdict.outcome === "ok"
             ? kind.criticalOnOk
             : null;
-      // The check that failed: of a combined command, the part its verdict blames.
-      const checks = this.subjects.get(id) ?? [];
-      if (failed) {
-        const blamed =
-          what === "build"
-            ? checks.find((c) => c === "build")
-            : what === "probe"
-              ? checks.find((c) => c.startsWith("probe:"))
-              : what === "check"
-                ? checks.find((c) => c === "encoding")
-                : checks.find((c) => c === "saltests" || c.startsWith("tests:"));
-        if (blamed) this.failedCheck.set(id, blamed);
-      }
+      if (blamed) this.failedCheck.set(id, blamed);
       // A pass resolves the failures of a check it ran too (the same probe, the same tests, the
-      // build) - not those of another probe, nor a saltests failure by a plain build.
-      if (verdict.outcome === "ok" && RESOLVABLE.has(kind.label) && checks.length) {
+      // build) - not those of another probe, nor a saltests failure by a plain build; a pass on
+      // purpose (a probe of the old build) resolves nothing.
+      if (verdict.outcome === "ok" && checks.length && !onPurpose) {
         for (const e of this.entries) {
           const check = this.failedCheck.get(e.id);
           if (e.critical && !e.resolved && e.id !== id && check && checks.includes(check))
@@ -1453,9 +1425,15 @@ export class RunStory {
     this.group = null;
     const text = event.text ?? event.summary;
     const decision = DECISION_WORDS.test(text);
-    const finding = AFTER_IMPLEMENT.has(this.state.phase) && mustFinding(text);
+    const finding =
+      AFTER_IMPLEMENT.has(this.state.phase) && mustFinding(text) && !MUST_FIXED_AT_ONCE.test(text);
     // A later review without a MUST, or a MUST reported fixed, resolves the findings before it.
-    if (!finding && AFTER_IMPLEMENT.has(this.state.phase) && MUST_CLEARED.test(text)) {
+    if (
+      !finding &&
+      AFTER_IMPLEMENT.has(this.state.phase) &&
+      MUST_CLEARED.test(text) &&
+      !MUST_STILL_OPEN.test(text)
+    ) {
       for (const e of this.entries)
         if (e.kind === "message" && e.critical && !e.resolved) this.update(e.id, { resolved: true });
     }
