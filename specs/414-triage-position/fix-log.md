@@ -199,3 +199,48 @@ position, moved?)`, used by the write routes and the AI apply path.
 
 After the fixes: `npm run check` 358 passed / 2 skipped (20 files).
 - e2e after the review-3 fixes: `us3-order` + `a11y` + `us1-live-edit` 16 / 16 passed (3.2 min); encoding guard `TOTAL: 0 finding(s)`.
+
+### Review 4 (refute-first agent, 2026-11-07) - 0 MUST, 2 SHOULD, 3 NOTE, and an incident
+
+**Incident (the reviewer's cleanup, not the feature):** the reviewer linked its worktree's
+`node_modules` to this repository's with junctions; `git worktree remove --force` followed them
+(this repository's `node_modules/@backlog-app/*` are junctions to `packages/*`) and deleted 160
+tracked files under `tools/backlog-app/packages/` plus the ignored `tools/backlog-app/node_modules`,
+`packages/web/node_modules` and `packages/web/dist`. The reviewer restored the tracked files at once
+(`git checkout HEAD -- tools/backlog-app/packages`; `git status` clean at `f6a1a4d3`). The run
+restored the rest: `npm ci --prefer-offline --no-audit --no-fund` from the unchanged
+`package-lock.json` (569 packages, 12 s, from the npm cache), the launcher's install stamp
+`node_modules/.backlog-app-lock.sha256` rewritten with the lock file's hash, `npm run build` (dist
+rebuilt; its source stamp is left absent, so the launcher rebuilds `dist` from `main`'s sources at
+its next start). No backlog-app server was running (only the editor's TypeScript servers). The
+next reviewer's prompt forbids junctions and forced worktree removal.
+
+Findings and what was done:
+
+- **SHOULD 1 - an AI proposal's basis is the job's start, not the time of applying.** A job
+  started with no run read `main`'s tree (the later running item still in *Next*); applying it
+  during a run shifted it wrongly - the review-3 test even asserted that case. Fixed: the job
+  record keeps `countedWithout` (the running item at the job's start, `AiJobRecordSchema`, default
+  null for older records); `apply.ts` translates from that basis (`toolPosition(..., countedWithout)`)
+  for triage checks, auto-triage plan rows and a draft's place. On the triage page the AI's *Place
+  at* button (which goes through the move route, on the page's basis) is disabled with the reason
+  "a run started or ended since the check ..." when `countedWithout` differs from the item the
+  board hides now, is disabled for a section the item's type / who do not admit, and sends past the
+  end as the last place (also review 4's last NOTE). Tests in `ai-jobs.test.ts`: *applies a proposed
+  position on the basis of the job's start, not of the time of applying (414)* (job with no run,
+  applied during a run -> `[DISK, X, FTP]`) and *... of a job started during a run as counted
+  without the running item (414)* (-> `[DISK, FTP, X]`); negative controls: apply on the current
+  basis -> the first fails; no correction -> the second fails.
+- **SHOULD 2 - the set --position and decide corrections had no test.** Added *counts set
+  --position and decide move:@N as the page does during a run (414 review 4)* in
+  `write-channels.test.ts` (a person step made agent work moved to Next at 2 -> page `[FTP,
+  PERSON]`, main `[DISK, FTP, PERSON]`; a decision decided "move to Next at 3" -> `[FTP, PERSON,
+  DECISION]`); negative control (both corrections removed) -> fails.
+- NOTE (the hidden row equals the board's overlay in every gate state; auto-triage plan rows are
+  corrected against a snapshot reloaded after each row; no double correction; `toolPosition` runs
+  before the queue's edit lock - the remaining window falls into a closed gate or `base.board`) -
+  confirmations, nothing to change.
+- NOTE (the AI button without the clamp and the admission check) - fixed with SHOULD 1.
+
+After the fixes: `npm run check` 360 passed / 2 skipped (20 files).
+- e2e after the review-4 fixes: `us3-order` + `a11y` + `us1-live-edit` 16 / 16 passed (3.2 min); encoding guard `TOTAL: 0 finding(s)`.

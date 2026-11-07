@@ -281,6 +281,12 @@ export const AiJobRecordSchema = AiJobSchema.extend({
   raw: z.string().nullable().default(null),
   /** The model asked for, or null for claude's default. */
   model: z.string().nullable().default(null),
+  /**
+   * The item a run worked on when the job started (feature 414, review 4), or null: the job's tree
+   * was the run's, where that item is in *In progress*, so the proposal's positions count without
+   * its row - applying them translates from that count, whatever runs at the time of applying.
+   */
+  countedWithout: z.string().nullable().default(null),
   /** The tray changes made when the maintainer applied the proposal, or null. */
   applied: z
     .object({ changeIds: z.array(z.string()), at: z.string() })

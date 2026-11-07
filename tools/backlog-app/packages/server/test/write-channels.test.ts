@@ -298,6 +298,44 @@ describe("write channels (371)", () => {
     expect(rowsOf(board, "Next")).toEqual([inbox.slug, DISK]);
   });
 
+  it("counts set --position and decide move:@N as the page does during a run (414 review 4)", async () => {
+    const PERSON = "release-0-1-10-person-checks";
+    const DECISION = "ship-network-plugin";
+    // The decision needs its question, options and recommendation before it can be decided.
+    for (const [section, markdown] of [
+      ["Question", "Ship it?"],
+      ["Options", "- **A** - ship it\n- **B** - not now"],
+      ["Recommendation", "A"],
+    ] as const) {
+      const written = await app.post(`/api/items/${DECISION}/body/${section}`, { base: {}, markdown });
+      expect(written.status, JSON.stringify(written.json)).toBe(200);
+    }
+    await runOnBranch(DISK);
+    let board = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(board, "Next")).toEqual([FTP]);
+    // A person step made agent work moves to Next at the page's position 2 (after FTP).
+    const set = await app.post(`/api/items/${PERSON}/fields`, {
+      base: { board: board.revision },
+      set: { type: "improvement", who: "agent" },
+      position: 2,
+    });
+    expect(set.status, JSON.stringify(set.json)).toBe(200);
+    board = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(board, "Next")).toEqual([FTP, PERSON]);
+    expect(await mainSection(root, "Next")).toEqual([DISK, FTP, PERSON]);
+    // A decision answered "then move to Next at 3" (the end of the page's list), as an improvement.
+    const decided = await app.post(`/api/items/${DECISION}/decide`, {
+      base: { board: board.revision },
+      option: "A",
+      decision: "ship it",
+      then: { action: "move", section: "Next", position: 3, type: "improvement" },
+    });
+    expect(decided.status, JSON.stringify(decided.json)).toBe(200);
+    board = (await app.get("/api/board")).json as BoardView;
+    expect(rowsOf(board, "Next")).toEqual([FTP, PERSON, DECISION]);
+    expect(await mainSection(root, "Next")).toEqual([DISK, FTP, PERSON, DECISION]);
+  });
+
   it("does not shift a position for an interrupted run whose item the board still shows (414 review 3)", async () => {
     // No run lock, HEAD on main, the loop's run state names DISK: the gate freezes DISK, but the
     // board does not overlay it - it stays in Next, so the page counts it.

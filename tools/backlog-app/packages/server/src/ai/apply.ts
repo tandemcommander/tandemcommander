@@ -408,22 +408,25 @@ async function runOperations(
 }
 
 /**
- * A placement verdict with its position counted as the tool counts (feature 414, review 3): the
- * AI reads the run's tree during a run, where the running item is no longer in its section - it
- * counts like the page, the tool counts the row `main` still has.
+ * A placement verdict with its position counted as the tool counts (feature 414, reviews 3 and 4):
+ * a job started during a run read the run's tree, where the running item is no longer in its
+ * section, so its positions count without that row (`AiJobRecord.countedWithout`); the tool
+ * counts every row of `main`. The basis is the job's start, not the time of applying.
  *
  * @param services - The server's services.
  * @param row - The item.
  * @param verdict - The (edited) verdict.
+ * @param countedWithout - The running item at the job's start, or null.
  * @returns The verdict for the tool.
  */
 async function forTool<T extends { verdict: string; section: SectionName; position: number | null }>(
   services: Services,
   row: ItemRow,
   verdict: T,
+  countedWithout: string | null,
 ): Promise<T> {
   if (verdict.verdict !== "place" || verdict.position === null) return verdict;
-  const position = await toolPosition(services, verdict.section, verdict.position, row.slug);
+  const position = await toolPosition(services, verdict.section, verdict.position, row.slug, countedWithout);
   return { ...verdict, position: position ?? null };
 }
 
@@ -491,7 +494,14 @@ export async function applyProposal(
                 ...draft,
                 place: {
                   ...draft.place,
-                  position: (await toolPosition(services, draft.place.section, draft.place.position)) ?? null,
+                  position:
+                    (await toolPosition(
+                      services,
+                      draft.place.section,
+                      draft.place.position,
+                      undefined,
+                      job.countedWithout,
+                    )) ?? null,
                 },
               }
             : draft,
@@ -506,7 +516,10 @@ export async function applyProposal(
         `triage ${row.slug}`,
         base,
         row.slug,
-        placementOperations(row, await forTool(services, row, parsed.data as AiTriageCheckResult)),
+        placementOperations(
+          row,
+          await forTool(services, row, parsed.data as AiTriageCheckResult, job.countedWithout),
+        ),
       );
       break;
     }
@@ -547,7 +560,7 @@ export async function applyProposal(
             `triage ${row.slug}`,
             first ? { board: base.board } : {},
             row.slug,
-            placementOperations(row, await forTool(services, row, entry)),
+            placementOperations(row, await forTool(services, row, entry, job.countedWithout)),
           );
           answer.changes.push(...rowAnswer.changes);
           answer.findings.push(...rowAnswer.findings);

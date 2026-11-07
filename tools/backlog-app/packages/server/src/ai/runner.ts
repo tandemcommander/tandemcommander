@@ -623,6 +623,7 @@ export class AiJobRunner {
         branch,
         raw: null,
         model: request.model ?? null,
+        countedWithout: this.services.running()?.slug ?? null,
         applied: null,
       };
       this.jobs.set(job.id, job);

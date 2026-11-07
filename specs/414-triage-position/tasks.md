@@ -56,6 +56,8 @@ All paths below are relative to `tools/backlog-app/` unless they start with `spe
 
 - [X] T017 Review 3: the hidden row from `services.running()`, the moved item left out of the count (`packages/server/src/backlog/positions.ts`), the AI apply path corrected (`packages/server/src/ai/apply.ts`); route tests in `packages/server/test/write-channels.test.ts` and `packages/server/test/ai-jobs.test.ts`
 
+- [X] T018 Review 4: the AI job's counting basis `countedWithout` (`packages/shared/src/schemas/ai.ts`, `packages/server/src/ai/runner.ts`, `packages/server/src/ai/apply.ts`), the triage page's AI button guarded and clamped (`packages/web/src/features/triage/triage-page.tsx`); tests in `packages/server/test/ai-jobs.test.ts` and `packages/server/test/write-channels.test.ts`
+
 ## Dependencies & Execution Order
 
 - T001 -> T002 -> T003 -> T004 -> T005 -> T006 -> T007 -> T008 -> T009 - T013.

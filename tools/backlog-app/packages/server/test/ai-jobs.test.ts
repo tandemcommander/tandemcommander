@@ -314,33 +314,70 @@ describe("AI jobs", () => {
     expect(parked.rows.some((r) => r.kind === "item" && r.slug === slug)).toBe(true);
   });
 
-  it("applies a proposed position as counted without the hidden running item (414 review 3)", async () => {
+  /**
+   * The item slugs of main's Next.
+   *
+   * @returns The slugs in order.
+   */
+  async function mainNext(): Promise<string[]> {
+    const text = (await gitIn(root, ["show", "main:backlog/BACKLOG.md"])).replaceAll("\r\n", "\n");
+    const part = text.split("## Next\n")[1]?.split("\n## ")[0] ?? "";
+    return [...part.matchAll(/\]\(items\/([a-z0-9-]+)\//g)].map((m) => m[1]!);
+  }
+
+  /** A placement verdict at Next #2. */
+  const PLACE_2 = {
+    verdict: "place",
+    section: "Next",
+    position: 2,
+    severity: 2,
+    area: "panels-ui",
+    who: "agent",
+    effort: "S",
+    reason: "after the open item",
+    evidence: ["src/a.cpp:1"],
+  };
+
+  it("applies a proposed position on the basis of the job's start, not of the time of applying (414)", async () => {
     const slug = "typed-path-with-a-pipe-brackets";
     const disk = "disk-map-context-menu-crash";
-    fake("ok", {
-      verdict: "place",
-      section: "Next",
-      position: 2,
-      severity: 2,
-      area: "panels-ui",
-      who: "agent",
-      effort: "S",
-      reason: "after the open item",
-      evidence: ["src/a.cpp:1"],
-    });
-    const job = await runJob("triage-check", { slug });
-    expect(job.state, job.error ?? "").toBe("done");
-    // Then a run takes DISK on its branch: main's Next stays [DISK, FTP], the board shows [FTP] - as
-    // the AI, reading the run's tree, counts it.
+    const ftp = "ftp-per-server-encoding-flag";
+    // A job started with no run read main's tree, Next = [DISK, FTP]: its "2" is before FTP. A run
+    // that starts before the proposal is applied changes nothing about that (review 4).
+    fake("ok", PLACE_2);
+    const before = await runJob("triage-check", { slug });
+    expect(before.state, before.error ?? "").toBe("done");
+    expect(before.countedWithout).toBeNull();
     await gitIn(root, ["checkout", "-q", "-b", `345-${disk}`]);
     writeRunLock(root, 0, disk, `345-${disk}`);
     await app.refresh();
     expect(app.services.running()?.slug).toBe(disk);
-    const applied = await call("POST", `/api/ai/jobs/${job.id}/apply`, { proposal: job.proposal, base: {} });
+    const applied = await call("POST", `/api/ai/jobs/${before.id}/apply`, {
+      proposal: before.proposal,
+      base: {},
+    });
     expect(applied.status, JSON.stringify(applied.json)).toBe(200);
-    const text = (await gitIn(root, ["show", "main:backlog/BACKLOG.md"])).replaceAll("\r\n", "\n");
-    const part = text.split("## Next\n")[1]?.split("\n## ")[0] ?? "";
-    const next = [...part.matchAll(/\]\(items\/([a-z0-9-]+)\//g)].map((m) => m[1]);
-    expect(next).toEqual([disk, "ftp-per-server-encoding-flag", slug]);
+    expect(await mainNext()).toEqual([disk, slug, ftp]);
+  });
+
+  it("applies a proposed position of a job started during a run as counted without the running item (414)", async () => {
+    const slug = "typed-path-with-a-pipe-brackets";
+    const disk = "disk-map-context-menu-crash";
+    const ftp = "ftp-per-server-encoding-flag";
+    // A run on its branch: the job reads the run's tree, where DISK is in In progress - Next = [FTP],
+    // its "2" is after FTP. main's Next is still [DISK, FTP].
+    await gitIn(root, ["checkout", "-q", "-b", `345-${disk}`]);
+    writeRunLock(root, 0, disk, `345-${disk}`);
+    await app.refresh();
+    fake("ok", PLACE_2);
+    const during = await runJob("triage-check", { slug });
+    expect(during.state, during.error ?? "").toBe("done");
+    expect(during.countedWithout).toBe(disk);
+    const applied = await call("POST", `/api/ai/jobs/${during.id}/apply`, {
+      proposal: during.proposal,
+      base: {},
+    });
+    expect(applied.status, JSON.stringify(applied.json)).toBe(200);
+    expect(await mainNext()).toEqual([disk, ftp, slug]);
   });
 });

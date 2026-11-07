@@ -50,6 +50,8 @@ export function filePosition(
  * @param section - The target section.
  * @param position - The page's 1-based position, or undefined (the end).
  * @param moved - The item being placed (left out of the count, as the tool does), if any.
+ * @param countedWithout - The row the position was counted without; default the row the board
+ * hides now (the running item). An AI proposal passes the running item of its job's start.
  * @returns The position for `--position`.
  */
 export async function toolPosition(
@@ -57,8 +59,9 @@ export async function toolPosition(
   section: SectionName,
   position: number | undefined,
   moved?: string,
+  countedWithout: string | null = services.running()?.slug ?? null,
 ): Promise<number | undefined> {
-  const hidden = services.running()?.slug ?? null;
+  const hidden = countedWithout;
   if (position === undefined || hidden === null || hidden === moved) return position;
   const rows = (await services.read.snapshot()).rawBoard.sections.find((s) => s.name === section)?.rows ?? [];
   const slugs = rows.filter((r): r is ItemRow => r.kind === "item" && r.slug !== moved).map((r) => r.slug);

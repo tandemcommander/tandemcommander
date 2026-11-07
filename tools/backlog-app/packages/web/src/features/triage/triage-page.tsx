@@ -16,7 +16,13 @@
 
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { admittingSection, suggestPlacement, type ItemRowView, type SectionName } from "@backlog-app/shared";
+import {
+  admittingSection,
+  suggestPlacement,
+  TRIAGE_TARGETS,
+  type ItemRowView,
+  type SectionName,
+} from "@backlog-app/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Alert, Card, Kbd } from "@/components/ui/primitives.tsx";
 import { ChangeProblemBox } from "@/components/change-problem.tsx";
@@ -184,6 +190,24 @@ export function TriagePage() {
           reason?: string;
         } | null)
       : null;
+  // The AI counted positions on the tree of its job's start (feature 414, review 4): when the
+  // running item the page hides now is not the one the job's tree lacked, its number means another
+  // place - the button refuses rather than guess; Place at takes over.
+  const proposalBasis = (ai.job as { countedWithout?: string | null } | null)?.countedWithout ?? null;
+  const pageBasis = board.data.running?.slug ?? null;
+  const proposalSection = proposal?.section ?? null;
+  const proposalBlocked = !proposalSection
+    ? ""
+    : proposal?.position && proposalBasis !== pageBasis
+      ? "a run started or ended since the check: its position counts another list - use Place at"
+      : TRIAGE_TARGETS.includes(proposalSection)
+        ? notAdmitted(proposalSection)
+        : "";
+  // Past the end goes as the last place, as the chooser sends it.
+  const proposalPosition =
+    proposalSection && proposal?.position && TRIAGE_TARGETS.includes(proposalSection)
+      ? Math.min(proposal.position, rowsOf(proposalSection).length + 1)
+      : proposal?.position;
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-4 p-4 lg:grid-cols-[1fr_20rem]">
       <div className="flex min-w-0 flex-col gap-2">
@@ -272,8 +296,9 @@ export function TriagePage() {
             {proposal.section ? (
               <Button
                 size="sm"
-                disabled={!access.writable}
-                onClick={() => place(proposal.section!, proposal.position)}
+                disabled={!access.writable || proposalBlocked !== "" || mutation.isPending || !item.data}
+                title={proposalBlocked || undefined}
+                onClick={() => place(proposal.section!, proposalPosition)}
               >
                 Place at {proposal.section}
                 {proposal.position ? ` #${proposal.position}` : ""}
