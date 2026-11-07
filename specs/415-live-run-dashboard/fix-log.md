@@ -117,3 +117,10 @@ See `spec.md` *Clarifications* and `research.md`.
   marked "estimate at list prices" until claude reports its total.
 - The phase weights of the progress estimate are fixed (research R5), not learned from history;
   only the total duration uses history (median of the last 40 closed item runs).
+
+## Full end-to-end suite
+
+- `npm run test:e2e` (build + all specs): 38 passed, 1 failed - `us5-us6` Q16 looked for the
+  transcript's first line on the run page, which is now the dashboard with the transcript under
+  *Raw trace* (an intended change). The test opens that tab (and checks the dashboard's head
+  first); rerun `npx playwright test e2e/us5-us6.spec.ts -g Q16`: passed.

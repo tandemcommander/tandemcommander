@@ -141,6 +141,9 @@ test("Q16: one chosen item is run by the loop; the order of Next is unchanged; i
     await expect(row.getByText("closed")).toBeVisible({ timeout: 20_000 });
     await row.getByRole("link").first().click();
     await expect(page.getByRole("heading", { name: /^Run \d{8}-\d{6}-claude-/ })).toBeVisible();
+    // The run's page is the dashboard of feature 415; the transcript is its Raw trace tab.
+    await expect(page.getByRole("region", { name: "Run progress" })).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("tab", { name: "Raw trace" }).click();
     await expect(page.getByText(/^attempt 1 \(start/)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/^turn ended \(success\)/).first()).toBeVisible();
     await page.goto(`${app.base}/release`);
