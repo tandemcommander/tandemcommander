@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371 |
+| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -6664,3 +6664,25 @@ a few early ones are out of sequence).
   REFRESH-ALIAS, CACHE-ALIAS, VIEW-ALIAS, REFRESH-CLOSED); 341's `ftp341_probe.ps1` 12 / 0;
   saltests +24; two refute-first reviews (review 1: MUST 0, SHOULD 1 fixed, NOTE 6; review 2: MUST 0,
   NOTE 4 - documented).
+- 411-lock-retry-permission: `bin/backlog.sh lock update` and `lock release` failed with a Python
+  traceback (WinError 5 on the replace, WinError 32 on the delete) whenever another process had the
+  run lock open - the loop's status, the backlog app every 2 s, `lock status` - so a run could stop
+  at its lock update or end with the lock still held (the app's write gate closed, the loop
+  waiting for a person) - now every file operation of `cmd_lock` (create, read, replace, delete)
+  retries a PermissionError 40 x 50 ms (`lock_retry`, the window of `write_json_atomic`, 342), and a
+  persistent one is one `refused: the run lock <path> could not be <read|created|updated|released>:
+  another process holds it open, or it is not writable (...); nothing changed` line, exit 1. Each
+  retried update / release reads the lock again and acts only on the lock it checked (`refused: the
+  lock changed while waiting`), also with `--force`; a lock gone between check and read is "no lock".
+  The `/tandem-backlog-implement` skill (§0.8, steps 2, §11) knows the new refusals. Traps: the
+  retry first widened check-then-act from microseconds to 2 s (review 1); on Windows 11 NTFS a
+  deleted file vanishes at once even with a share-delete reader (POSIX semantics, measured), so
+  acquire's retry is tested with a stubbed `os.open`; `Base.tearDown` removed the test folder before
+  the cleanups ended the holder process (review 2). Limits: a force-release plus an acquire with the
+  same fields in the same second looks unchanged; readers in `loop.py` already retried and are
+  unchanged. From backlog item `run-lock-update-release-no-retry`. Probe `probe/repro_lock.py`:
+  update / release with a 0.5 s holder exit 1 (traceback) -> exit 0 in 0.53 s; `LockHeldOpenTests`
+  14 (12 of 13 fail on `main`'s `cmd_lock`; the S1 tests fail on the pre-review code); stress runs
+  by both reviewers (83 and 24 acquisitions under constant readers, never two holders); suites 258
+  OK; two refute-first reviews (MUST 0 each; review 1 SHOULD 2 / NOTE 4, review 2 SHOULD 2 / NOTE 4 -
+  fixed or documented).

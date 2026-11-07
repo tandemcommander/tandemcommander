@@ -17,7 +17,6 @@ Last triaged: 2026-11-07
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Run lock update and release fail when a reader holds the lock open](items/run-lock-update-release-no-retry/desc.md) | bug | 4 | tooling | 411 |
 
 ## Next
 
