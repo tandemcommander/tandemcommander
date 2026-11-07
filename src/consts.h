@@ -1014,7 +1014,7 @@ HICON LoadSetIconOr(const char* fluentName, HINSTANCE hDLL, int id, int iconSize
 // feature 417: plug-in icons of the active set (contract specs/417-fluent-plugin-icons/contracts/plugin-icon-files.md).
 // The set icon of the plug-in with DLL name 'dllName' (CPluginData::DLLName) at size x size - NULL unless Fluent 2 is
 // active, the plug-in is a shipped one (SalIconSetPluginId) and its file renders; 'fsIcon' = for the directory line of
-// its file system (NULL for Folders, whose icon is its current folder's); 'gray' = the gray copy (today's rule).
+// its file system (NULL for Folders and DemoPlug, whose icon is their current folder's / root's); 'gray' = the gray copy (today's rule).
 // Every returned icon is registered in HANDLES (destroy with HANDLES(DestroyIcon)); NULL = use today's icon.
 HICON CreatePluginSetIcon(const char* dllName, int size, BOOL gray, BOOL fsIcon);
 // the set's default plug-in icon ('fs' = default file-system icon) - NULL unless Fluent 2 has it

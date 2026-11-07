@@ -7,13 +7,13 @@
     Each run starts the program with the Plugins bar shown ("Show Plugins Bar" = 1), a prepared "Toolbar Icon
     Set" (0 Fluent 2 / 1 Classic) and "Theme Mode" (0 / 1), the left panel on a plug-in file system (Windows
     Registry, "reg:\") and the right one in a fixture folder, and captures (PrintWindow, client only) the
-    Plugins bar and the drive bar (rows of the top rebar), the left directory line's icon and the list of the
-    Plugins manager (Plugins > Plugins Manager, CM_PLUGINS). Rows:
+    Plugins bar and the drive bar (rows of the top rebar), the left directory line's icon, the left tab's icon
+    (review 1) and the list of the Plugins manager (Plugins > Plugins Manager, CM_PLUGINS). Rows:
       CLASSIC-EQ-<theme>  -Before (the build of main) vs this build, Classic: Plugins bar, drive bar, the RegEdit
-                          directory line and the Plugins-manager list - 0 px each
+                          directory line and tab and the Plugins-manager list - 0 px each
       FLUENT-<theme>      every Plugins-bar icon cell differs from Classic and is drawn (>= 8 colours); the drive
-                          bar's six plug-in file-system buttons differ; the RegEdit directory line and the
-                          Plugins-manager list differ
+                          bar's six plug-in file-system buttons differ; the RegEdit directory line, its tab and
+                          the Plugins-manager list differ
       FOLDERS             the left panel on the Folders file system ("fld:"): its directory-line icon (the shell
                           icon of its current folder) is the same in Fluent 2 and Classic
       SWITCH / SWITCHBACK Configuration > Appearance, the other set + OK (Light Fluent -> Classic; Dark Classic ->
@@ -22,7 +22,9 @@
                           those after a Classic session - no set icon is ever stored
       OVR                 a copy of this build with plugins\regedt.svg emptied and plugins\ftp.svg removed: their
                           Plugins-bar cells equal Classic (today's icon), the other cells stay Fluent 2
-      PAGE / FIT          the Appearance page with the new label; "Icon style" fits its group box in English and
+      DARK-VERBATIM       a copy without plugins\dark\: in Dark its captures differ from this build's - the hand-made
+                          dark variants are drawn, not the adapted standard files (review 1)
+      PAGE / FIT         the Appearance page with the new label; "Icon style" fits its group box in English and
                           the 8 enabled languages
     NOT DRIVEN: menus opened by a real keyboard / mouse (Plugins menu, View With, Alt+F1, Disconnect), hot states,
     125-200 % (saltests TestPluginIcons417 rasterizes every file at 16 / 20 / 24 / 32 px).
@@ -156,17 +158,25 @@ function Grab([int]$Id, [string]$Tag) {
     if ($bars.Count -lt 3) { throw ("the rebar holds {0} bars, expected the menu, the Plugins bar and the drive bar" -f $bars.Count) }
     $dirs = @([Cap416]::Kids($main) | Where-Object { [Cap416]::IsWindowVisible($_) -and [Cap416]::GetDlgCtrlID($_) -eq 952 })
     $dirs = @($dirs | Sort-Object { $r = New-Object Cap416+RECT; [void][Cap416]::GetWindowRect($_, [ref]$r); $r.left })
+    # review 1: the left panel's tab strip (id 958; panel tabs are on by default), its first tab's icon
+    $tabs = @([Cap416]::Kids($main) | Where-Object { [Cap416]::IsWindowVisible($_) -and [Cap416]::GetDlgCtrlID($_) -eq 958 })
+    $tabs = @($tabs | Sort-Object { $r = New-Object Cap416+RECT; [void][Cap416]::GetWindowRect($_, [ref]$r); $r.left })
+    if ($tabs.Count -lt 1) { throw 'no tab strip (id 958)' }
     $o = [pscustomobject]@{
         Plugins = [Cap416]::Crop($full, $main, $bars[1])
         Drives  = [Cap416]::Crop($full, $main, $bars[2])
         Dir     = [Cap416]::Crop($full, $main, $dirs[0])
+        Tab     = [Cap416]::Crop($full, $main, $tabs[0])
     }
     # the directory line's icon only (16 px from x = 2): the path right of it changes between runs
     # (run 1: 24 px took in the first letters of the Folders path and differed by 9 px)
     $o.Dir = $o.Dir.Clone((New-Object Drawing.Rectangle(0, 0, [Math]::Min(20, $o.Dir.Width), $o.Dir.Height)), $o.Dir.PixelFormat)
+    # the whole strip: the tab's icon is not at its start (run 4: x 358-373; a 32 px crop saw 0 px); the strip is
+    # stable between runs (review 1: main vs this build's Classic 0 px)
     Save-Png $o.Plugins (Join-Path $CapDir ($Tag + '_pluginsbar.png'))
     Save-Png $o.Drives (Join-Path $CapDir ($Tag + '_drivebar.png'))
     Save-Png $o.Dir (Join-Path $CapDir ($Tag + '_dirline.png'))
+    Save-Png $o.Tab (Join-Path $CapDir ($Tag + '_tab.png'))
     $full.Dispose()
     return $o
 }
@@ -208,9 +218,9 @@ function Run-Look([string]$ExePath, [int]$Theme, [int]$Set, [string]$Tag, [strin
     $script:Caps[$Tag] = $g
     return $g
 }
-function Same($a, $b) { return [pscustomobject]@{ Plugins = [Cap416]::Diff($a.Plugins, $b.Plugins); Drives = [Cap416]::Diff($a.Drives, $b.Drives); Dir = [Cap416]::Diff($a.Dir, $b.Dir) } }
-function DiffText($d) { return ("Plugins bar {0}, drive bar {1}, directory line {2} px differ" -f $d.Plugins, $d.Drives, $d.Dir) }
-function Zero($d) { return ($d.Plugins -eq 0) -and ($d.Drives -eq 0) -and ($d.Dir -eq 0) }
+function Same($a, $b) { return [pscustomobject]@{ Plugins = [Cap416]::Diff($a.Plugins, $b.Plugins); Drives = [Cap416]::Diff($a.Drives, $b.Drives); Dir = [Cap416]::Diff($a.Dir, $b.Dir); Tab = [Cap416]::Diff($a.Tab, $b.Tab) } }
+function DiffText($d) { return ("Plugins bar {0}, drive bar {1}, directory line {2}, tab {3} px differ" -f $d.Plugins, $d.Drives, $d.Dir, $d.Tab) }
+function Zero($d) { return ($d.Plugins -eq 0) -and ($d.Drives -eq 0) -and ($d.Dir -eq 0) -and ($d.Tab -eq 0) }
 # per icon cell of the Classic capture 'c': [differing px, colours of 'f'] in 'f'
 function CellReport([Drawing.Bitmap]$f, [Drawing.Bitmap]$c, [int]$MinWidth = 12) {
     $cells = [Cells417]::Find($c, $MinWidth)
@@ -296,6 +306,8 @@ function Row-Fluent([int]$Theme) {
         Row $n 'DRIVE-BAR-FS' (V ($dc.Count -ge 6 -and $fsBad.Count -eq 0)) ("{0} cells; the last 6 (plug-in file systems): {1}" -f $dc.Count, (($fs | ForEach-Object { "{0}/{1}" -f $_.Diff, $_.Colours }) -join ' '))
         $dd = [Cap416]::Diff($f.Dir, $c.Dir)
         Row $n 'DIRLINE-REGEDIT' (V ($dd -gt 20 -and (Colours $f.Dir) -ge 8)) ("RegEdit FS directory-line icon: {0} px differ from Classic; {1}" -f $dd, [Cap416]::Stats($f.Dir))
+        $dt = [Cap416]::Diff($f.Tab, $c.Tab)
+        Row $n 'TAB-REGEDIT' (V ($dt -gt 20)) ("the RegEdit FS tab's icon: {0} px differ from Classic; {1}" -f $dt, [Cap416]::Stats($f.Tab))
         $dm = [Cap416]::Diff($f.Manager, $c.Manager)
         Row $n 'MANAGER' (V ($dm -gt 100)) ("Plugins-manager icon column: {0} px differ from Classic" -f $dm)
     } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
@@ -361,6 +373,21 @@ function Row-Ovr {
         }
         # the Plugins bar is sorted by name: 7-Zip, Checksum, DiskMap, FTP (3), File Comparator, PictView, RegEdit (6), ...
         Row $n 'MISSING-EMPTY=TODAY' (V (($classicLike -join ',') -eq '3,6' -and $fluentLike -eq $cells.Count - 2)) ("cells equal to Classic: {0} (expected FTP 3 and RegEdit 6); cells equal to Fluent 2: {1} of {2}" -f ($classicLike -join ','), $fluentLike, $cells.Count)
+    } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+}
+# review 1: the Dark rows above only compare with Classic; this one shows the hand-made dark variants are drawn
+# (a copy without plugins\dark\ draws the standard files with the automatic adaptation, which must look different)
+function Row-DarkVerbatim {
+    $n = 'DARK-VERBATIM'
+    if (-not (Want $n)) { return }
+    try {
+        if (-not $script:Caps.ContainsKey('fluent_t1')) { [void](Run-Look $Exe 1 0 'fluent_t1' -Manager) }
+        $tree = $Root + '\tree_nodark'
+        $exe2 = Copy-Tree $Exe $tree
+        [IO.Directory]::Delete(($tree + '\iconsets\fluent\plugins\dark'), $true)
+        $x = Run-Look $exe2 1 0 'nodark_fluent_t1'
+        $d = Same $x $script:Caps['fluent_t1']
+        Row $n 'DARK-FILES-USED' (V ($d.Plugins -gt 200 -and $d.Drives -gt 100 -and $d.Dir -gt 20 -and $d.Tab -gt 20)) ("without plugins\dark\ vs this build, Dark: " + (DiffText $d))
     } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 }
 function Row-Page {
@@ -434,6 +461,7 @@ try {
     Row-Switch 'SWITCH' 0 0 6293 'classic_t0'
     Row-Switch 'SWITCHBACK' 1 1 6292 'fluent_t1'
     Row-Ovr
+    Row-DarkVerbatim
     Row-Page
     Row-Fit
     Row 'MENUS' 'OPEN' 'NOT DRIVEN' 'the Plugins menu, View With, Alt+F1 and Disconnect need a real keyboard or mouse (they draw from CreateIconsList / AddItemsToChangeDrvMenu, captured here through the Plugins bar, the drive bar and the Plugins manager)'

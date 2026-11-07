@@ -28027,14 +28027,19 @@ static void TestPluginIcons417()
     CHECK(SalIconSetPluginId("") == NULL);
     CHECK(SalIconSetPluginId(NULL) == NULL);
 
-    // --- the directory-line icon: replaced for the identity icons, kept for Folders
+    // --- the directory-line icon: replaced for the identity icons, kept for Folders and DemoPlug
+    // (their GetFSIcon is the shell icon of the current folder / of the current root; review 1)
     CHECK(!SalIconSetPluginFSIconIsIdentity("folders"));
+    CHECK(!SalIconSetPluginFSIconIsIdentity("demoplug"));
     CHECK(!SalIconSetPluginFSIconIsIdentity(NULL));
-    const char* identity[7] = {"ftp", "sftp", "regedt", "undelete", "portables", "nethood", "demoplug"};
+    const char* identity[6] = {"ftp", "sftp", "regedt", "undelete", "portables", "nethood"};
     for (const char* id : identity)
         CHECK(SalIconSetPluginFSIconIsIdentity(id));
-    CHECK(SalIconSetPluginFSIconIsIdentity("folder")); // only the exact id is excepted
+    CHECK(SalIconSetPluginFSIconIsIdentity("folder")); // only the exact ids are excepted
     CHECK(SalIconSetPluginFSIconIsIdentity("folderss"));
+    CHECK(SalIconSetPluginFSIconIsIdentity("demoplu"));
+    CHECK(SalIconSetPluginFSIconIsIdentity("demoplugs"));
+    CHECK(SalIconSetPluginFSIconIsIdentity(""));
 
     // --- the folder and path: none in Classic, whole or refused
     CHECK(SalIconSetPluginFolder(SAL_ICONSET_CLASSIC, false) == NULL);

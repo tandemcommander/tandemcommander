@@ -24,9 +24,10 @@
 
 ## R3 The directory-line icon of a file system
 
-- **Decision**: replaced for FTP, SFTP, RegEdit, Undelete, Portables, Nethood and DemoPlug; kept for Folders.
+- **Decision**: replaced for FTP, SFTP, RegEdit, Undelete, Portables and Nethood; kept for Folders and DemoPlug
+  (review 1: DemoPlug returns the shell icon of the root of its current path, `src/plugins/demoplug/fs2.cpp`).
 - **Rationale**: their `GetFSIcon` return a fixed identity icon (`FTPIcon`, `SFTPIcon`, `IDI_REGEDT`, `IDI_FS`,
-  the Portables plug-in icon, Nethood's main icon, DemoPlug's `IDI_FS`); Folders returns
+  the Portables plug-in icon, Nethood's main icon); Folders returns
   `GetFileIcon(CurrentPIDL)`, the icon of the folder the panel shows (`src/plugins/folders/fs2.cpp`).
 
 ## R4 Gray copies

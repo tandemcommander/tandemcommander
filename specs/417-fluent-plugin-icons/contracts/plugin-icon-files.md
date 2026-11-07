@@ -21,7 +21,7 @@ in them.
    about, View With), the Plugins manager, the Change Drive menu and the drive bars, the tab of a plug-in file
    system, the drive-list row and the Disconnect-dialog row of an open file system, and the directory line of a
    plug-in file system - **except** the directory line / drive-list row / Disconnect-dialog row of the Folders
-   file system, which keep the icon Folders returns (its current folder's).
+   and DemoPlug file systems, which keep the icon they return (the current folder's / the current root's).
 3. A matched plug-in with a set file counts as a plug-in with an icon in every list (menus show it even when the
    plug-in hands over no icon).
 4. Where the program draws its default plug-in icon or default file-system icon, Fluent 2 draws `_plugin` /

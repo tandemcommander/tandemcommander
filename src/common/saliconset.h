@@ -183,19 +183,22 @@ inline const char* SalIconSetPluginId(const char* dllName)
 
 // Whether the icon a plug-in's file system returns for the directory line (GetFSIcon) is just its
 // identity icon, which the set icon replaces. Folders returns the shell icon of its current folder
-// (src/plugins/folders/fs2.cpp) - information, kept.
+// (src/plugins/folders/fs2.cpp) and DemoPlug that of the root of its current path
+// (src/plugins/demoplug/fs2.cpp) - information, kept (review 1 of 417 found DemoPlug).
 inline bool SalIconSetPluginFSIconIsIdentity(const char* id)
 {
     if (id == 0)
         return false;
-    const char* folders = "folders";
-    for (int k = 0;; k++)
+    const char* kept[2] = {"folders", "demoplug"};
+    for (const char* k : kept)
     {
-        if (id[k] != folders[k])
-            return true;
-        if (id[k] == 0)
+        int i = 0;
+        while (id[i] != 0 && id[i] == k[i])
+            i++;
+        if (id[i] == 0 && k[i] == 0)
             return false;
     }
+    return true;
 }
 
 // The set's plug-in folder relative to the program's folder (trailing backslash); NULL = the set

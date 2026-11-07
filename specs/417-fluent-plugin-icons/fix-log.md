@@ -161,3 +161,37 @@ Round 2: CRITICAL 0, HIGH 0, MEDIUM 0; E4 (LOW) accepted as above.
   `TestPluginIcons417` only).
 - `PRIVACY.md`: not affected - no network, nothing new stored (CACHE row), the installer ships the new folder
   through its existing recursive entry like 416's `iconsets\fluent\`.
+
+## Review
+
+### Review 1 (independent agent, refute-first) - MUST 0, SHOULD 3, NOTE 5
+
+Re-measured: saltests 286940 / 0, check_iconset 0, check_encoding 0, clang-format equal to main, the generator
+byte-identical, the 8 `.slt` rows and the pin, every call site enumerated by itself, the icon handles, the id
+parser (no overread), the path builder (refuses, never cuts).
+- SHOULD 1 the FLUENT-DARK rows did not prove the hand-made dark variants are drawn (a copy without
+  `plugins\dark\` passed them). **Fixed**: row DARK-VERBATIM - the copy without the dark folder differs in Dark
+  by Plugins bar 1704, drive bar 950, directory line 195, tab 195 px.
+- SHOULD 2 the tab icon was not captured. **Fixed**: the left tab strip (id 958) is part of every capture
+  (CLASSIC-EQ, SWITCH / SWITCHBACK 0 px) and of row TAB-REGEDIT (205 px vs Classic, light and dark). A first
+  try cropped the strip to 32 px and missed the icon (x 358-373, `result_after_run4_tabcrop.txt`: TAB rows 0 px)
+  - the whole strip is compared (stable: 0 px main vs this Classic).
+- SHOULD 3 the closing records (T023) - done at the closing (step 8).
+- NOTE DemoPlug's `GetFSIcon` is the shell icon of its current root, like Folders (`src/plugins/demoplug/fs2.cpp`;
+  `off` in `plugins.cfg`, severity 1). **Fixed**: `SalIconSetPluginFSIconIsIdentity` keeps `folders` and
+  `demoplug`; tests (exact ids, near names), FR-003, research, data model, contract, `consts.h`.
+- NOTE `PluginHasSetIcon` looked only at the light file (a Dark install with only the dark file: icon on the bar,
+  none in menus). **Fixed**: in Dark the dark file counts too (the files `SalIconSetChooseSource` reads). An
+  empty file still counts (the menu then shows the default icon - never an empty slot, FR-007; accepted).
+- NOTE the Plugins-manager capture differs between sessions by a focus rectangle (31 px in the reviewer's run):
+  CLASSIC-EQ compares before and after in one probe run, where it is 0 px; recorded.
+- NOTE no cache of the rasterized set icons (a menu opening rasterizes 2 x N small SVGs) - accepted (416's
+  toolbar lists do the same at every rebuild).
+- NOTE the menu image indexes (`orderIndex` into the `Data`-indexed list) - consistent; no change.
+- Manual: `help/src/hh/salamand/configuration_appea.htm` had no entry for the group (also none from 416): added
+  "Icon style".
+
+Checks after the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests **286943 checks, 0 failed**; check_encoding 0;
+probe `result_after.txt` **PASS 30, FAIL 0, NOT DRIVEN 3** (new rows TAB-REGEDIT x 2, DARK-VERBATIM), registry
+identical; on the build of main (`result_before.txt`) FLUENT-LIGHT PLUGINS-BAR / DRIVE-BAR-FS / DIRLINE-REGEDIT
+/ TAB-REGEDIT / MANAGER FAIL (0 px each), FOLDERS PASS.

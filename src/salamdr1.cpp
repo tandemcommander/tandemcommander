@@ -1165,10 +1165,15 @@ BOOL PluginHasSetIcon(const char* dllName)
         return FALSE;
     char dir[SAL_MODULE_PATH_U8];
     char path[SAL_MODULE_PATH_U8];
-    if (!SalGetModuleDirU8(NULL, dir, 3 * MAX_PATH) ||
-        !SalIconSetBuildPluginPath(path, _countof(path), dir, SAL_ICONSET_FLUENT, false, id))
+    if (!SalGetModuleDirU8(NULL, dir, 3 * MAX_PATH))
         return FALSE;
-    return SalGetFileAttributes(path) != INVALID_FILE_ATTRIBUTES; // UTF-8 path, read wide (salfileio.h)
+    // the files the drawing reads (SalIconSetChooseSource): the dark variant in the Dark theme, else the
+    // standard file (review 1: a Dark install with only the dark file showed the icon on the bar, none in menus)
+    if (IsDarkThemeActive() && SalIconSetBuildPluginPath(path, _countof(path), dir, SAL_ICONSET_FLUENT, true, id) &&
+        SalGetFileAttributes(path) != INVALID_FILE_ATTRIBUTES)
+        return TRUE;
+    return SalIconSetBuildPluginPath(path, _countof(path), dir, SAL_ICONSET_FLUENT, false, id) &&
+           SalGetFileAttributes(path) != INVALID_FILE_ATTRIBUTES; // UTF-8 path, read wide (salfileio.h)
 }
 
 HICON SalLoadIcon(HINSTANCE hDLL, int id, int iconSize)

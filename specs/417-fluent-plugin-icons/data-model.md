@@ -23,11 +23,11 @@
 ```text
 Fluent 2 active?  no  -> today's code
 known id?         no  -> today's code (a default icon: Fluent 2 default if usable, else today's default)
-fsIcon and id == folders -> today's code (GetFSIcon)
+fsIcon and id is folders or demoplug -> today's code (GetFSIcon)
 set file renders? no  -> today's code
                   yes -> the set icon at the site's size (gray copy by today's rule when the site wants gray)
 ```
 
 ## Identity-icon file systems
 
-`ftp sftp regedt undelete portables nethood demoplug` - yes; `folders` - no (its icon is the current folder's).
+`ftp sftp regedt undelete portables nethood` - yes; `folders` and `demoplug` - no (the shell icon of the current folder / of the current root; DemoPlug found by review 1).
