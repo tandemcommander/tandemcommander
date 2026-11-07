@@ -50,6 +50,8 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Markdown Viewer select-all: Ctrl+A, Ctrl+C on a page with code blocks, paste - the *Copy* labels are not in the pasted text (feature 408)
 - [ ] Markdown Viewer copy control on a touch screen or pen, if available: one tap on a block's top-right corner copies and shows the notice (feature 408)
 - [ ] Backlog app state folder repaired on the maintainer's tree: start the app once (`bin/start-backlog-app.sh`), then `Get-Acl` over `.git/tandem-backlog-app` shows no entry with an empty protected DACL (`D:PAI` alone; 375 before), `main-worktree/.git` and `events.jsonl` readable, and a change made in the app during a run lands on `main` (feature 412)
+- [ ] Panel tab drag to the first place with a real mouse: in the left and in the right panel drag a tab that is not the first one to the left end of the strip and release - it becomes the first tab; with more tabs than fit, it becomes the first of the tabs shown (feature 413)
+- [ ] Panel tab strip, Default and Dark theme side by side (also at a scaling other than 100 %): the strip looks equally high in both; in the Dark theme the inactive panel's active tab is a visible rounded tab (a lighter grey than its directory line, its title readable), likewise with a user colour scheme whose caption colour is close to the strip; tell whether the Dark theme still looks lower anywhere (feature 413)
 
 ## Log
 
@@ -64,3 +66,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-07 — edited Steps
 - 2026-11-07 — feature 408: 3 checks added
 - 2026-11-07 — feature 412: one check added
+- 2026-11-07 — edited Steps

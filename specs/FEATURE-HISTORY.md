@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413 |
 
 ## Feature notes
 
@@ -6710,3 +6710,29 @@ a few early ones are out of sequence).
   11 + one side-worktree case, each with a negative control; app tests 329 -> 342; four
   refute-first reviews (MUST 0 each; SHOULD 2 / 2 / 0 / 1 - fixed, the last one's flaky-cleanup
   attempt reverted and recorded as an Inbox item).
+- 413-tab-drag-first-place: a panel tab could not be dragged to the first place - it stopped at the left
+  end of the strip and landed second (left and right panel, also the first visible place of a strip
+  with more tabs than fit), and in the Dark theme the tab strip looked lower than in the default one -
+  now a tab dragged to the left end becomes the first (moving left, tab j gives way once the dragged
+  left is at or below j widths - `SalTabDragSlot`, symmetric to moving right; only lefts equal to a
+  multiple of the width change), and the inactive panel's active tab of the Dark theme is visible:
+  `SalTabActiveFill` keeps the caption colour unless it is within 24 (largest channel) of the strip
+  or the face, then lifts it toward the caption text by the smallest hundredth (2D2D2D -> 454545;
+  none reaching 24 -> the best-separating step, the caption colour on a tie), and
+  `SalTabActiveText` keeps the title's contrast on a lifted fill (AAAAAA -> B2B2B2, 4.52:1). Traps:
+  "lower" was not a size - strip 29 px, directory line 23 px and the tab's rows 3-28 are equal in
+  both themes at the maintainer's 96 DPI; the measured cause was the inactive panel's tab at 9 / 0
+  from the strip / band (the default theme's weakest pair is 31); 405 recorded the left-end slot as
+  "not a defect" - it was this one; a press activates the pressed tab (probe expectations); a C#
+  ratio formatted with the session's decimal comma parsed as 452 in PowerShell (a false PASS);
+  Bash here-documents again turned backslashes into tabs. Limits: the dark active panel and the
+  dark rebar (69 vs 77 px, bands without borders) are unchanged; the lifted tab no longer shares
+  its directory line's colour; the `tabs404_probe` dark inactive baseline is the mockup with the
+  active tab's box from this feature's capture (stability, not correctness); the look side by side
+  and a real mouse drag are release-checklist lines. From backlog item
+  `panel-tabs-drag-to-first-place-and-dark-strip-height`. Probe `tabs413_probe` before 11 PASS /
+  7 FAIL -> 22 / 0 / 1 NOT DRIVEN; `tabs404_probe` 29 / 0 / 1 and `tabs405_probe` 7 / 0 / 1 (its HELD
+  drag now lands in place 0); saltests 282,686 / 0 (`TestTabStrip413`, negative controls
+  14 / 4 / 5); refute-first reviews: 1 (no MUST; SHOULD the title contrast - fixed), 2 (no MUST;
+  SHOULD the halfway fallback, NOTEs one pole / stale comment / no title probe row - fixed), 3 (no
+  MUST; SHOULD stale design documents - fixed).

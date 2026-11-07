@@ -17,7 +17,6 @@ Last triaged: 2026-11-07
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Panel tabs: a drag cannot put a tab in the first place; dark strip looks lower](items/panel-tabs-drag-to-first-place-and-dark-strip-height/desc.md) | bug | 5 | panels-ui | 413 |
 
 ## Next
 
