@@ -28005,23 +28005,23 @@ static void TestPluginIcons417()
     CHECK(SalIconSetPluginIdAt(SAL_ICONSET_PLUGIN_ID_COUNT) == NULL);
     CHECK(strcmp(SalIconSetPluginId("Ftp\\FTP.Spl"), "ftp") == 0);
     CHECK(strcmp(SalIconSetPluginId("7zip\\7zip.spl"), "7zip") == 0);
-    CHECK(SalIconSetPluginId("ftp\\sftp.spl") == NULL);           // another file name
+    CHECK(SalIconSetPluginId("ftp\\sftp.spl") == NULL); // another file name
     CHECK(SalIconSetPluginId("sftp\\ftp.spl") == NULL);
-    CHECK(SalIconSetPluginId("ftp\\ftp.dll") == NULL);            // another extension
+    CHECK(SalIconSetPluginId("ftp\\ftp.dll") == NULL); // another extension
     CHECK(SalIconSetPluginId("ftp\\ftp.splx") == NULL);
     CHECK(SalIconSetPluginId("ftp\\ftp.sp") == NULL);
     CHECK(SalIconSetPluginId("ftp\\ftp") == NULL);
-    CHECK(SalIconSetPluginId("ftp.spl") == NULL);                 // no folder
+    CHECK(SalIconSetPluginId("ftp.spl") == NULL); // no folder
     CHECK(SalIconSetPluginId("\\ftp.spl") == NULL);
     CHECK(SalIconSetPluginId("ftp\\") == NULL);
-    CHECK(SalIconSetPluginId("ftp/ftp.spl") == NULL);             // another separator
-    CHECK(SalIconSetPluginId("x\\ftp\\ftp.spl") == NULL);         // more than one level
+    CHECK(SalIconSetPluginId("ftp/ftp.spl") == NULL);                   // another separator
+    CHECK(SalIconSetPluginId("x\\ftp\\ftp.spl") == NULL);               // more than one level
     CHECK(SalIconSetPluginId("C:\\TC\\plugins\\ftp\\ftp.spl") == NULL); // an absolute path (outside the plug-ins folder)
-    CHECK(SalIconSetPluginId("C:ftp\\ftp.spl") == NULL);          // a drive
+    CHECK(SalIconSetPluginId("C:ftp\\ftp.spl") == NULL);                // a drive
     CHECK(SalIconSetPluginId("\\\\server\\share\\ftp\\ftp.spl") == NULL);
-    CHECK(SalIconSetPluginId("myftp\\myftp.spl") == NULL);        // a third-party plug-in
-    CHECK(SalIconSetPluginId("fsearch\\fsearch.spl") == NULL);    // an old plug-in id that is not in the tree
-    CHECK(SalIconSetPluginId("ft\\ft.spl") == NULL);              // a prefix of an id
+    CHECK(SalIconSetPluginId("myftp\\myftp.spl") == NULL);     // a third-party plug-in
+    CHECK(SalIconSetPluginId("fsearch\\fsearch.spl") == NULL); // an old plug-in id that is not in the tree
+    CHECK(SalIconSetPluginId("ft\\ft.spl") == NULL);           // a prefix of an id
     CHECK(SalIconSetPluginId("ftpp\\ftpp.spl") == NULL);
     CHECK(SalIconSetPluginId("ft\xC3\xBC\\ft\xC3\xBC.spl") == NULL); // non-ASCII
     CHECK(SalIconSetPluginId("") == NULL);

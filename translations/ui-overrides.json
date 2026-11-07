@@ -576,7 +576,8 @@
       "IDS_CFGMIGRATE_FAILED": "Tandem Commander no ha podido trasladar su configuración a su nueva ubicación en el Registro (HKEY_CURRENT_USER\\\\%s).\\n\\nEn esta ocasión, la utilizará en su ubicación actual (HKEY_CURRENT_USER\\\\%s) y volverá a intentarlo la próxima vez que se inicie. No se ha eliminado nada.",
       "#mask hints": "ayuda de plantillas",
       "#extended mask hints": "ayuda de plantillas ampliadas",
-      "IDC_ICONSET_FLUENT": "Flu&ent 2"
+      "IDC_ICONSET_FLUENT": "Flu&ent 2",
+      "IDC_ICONSET_GROUP": " Estilo &de iconos "
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -643,6 +644,9 @@
       "Configuration > Appearance > Toolbar icons: 'Fluent 2' is the name of the icon set (built on Microsoft Fluent UI System Icons) - a name, kept as written in every language; accelerator u as in English, e in Spanish (u is 'Un solo click' there).",
       "Czech / Slovak: DeepL kept the English 'Classic'; the set is 'Klasicka' (sada), accelerator k (c is taken on the page).",
       "Dutch (review 1): the merge gave 'K&lassiek' the L of the Font button and moved that one to 'L&ettertype'; 'Kla&ssiek' takes the free s and '&Lettertype' keeps its L."
+    ],
+    "_feature_417": [
+      "Configuration > Appearance: the group 'Toolbar icons' became 'Icon style' (it now governs the plug-in icons too). Spanish: DeepL gave the singular 'Estilo de icono'; the style of the icons is 'Estilo de iconos', accelerator d as before."
     ]
   },
   "zip": {

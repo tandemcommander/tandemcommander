@@ -1,0 +1,16 @@
+plugin417_probe (feature 417) before
+Program : C:\Users\pavel\AppData\Local\Temp\claude\0b35d925824a4523\00d12fca-7152-435b-af18-1d72abc78273\scratchpad\before417\Debug_x64\tandemcommander.exe
+Before  : 
+Date    : 2026-11-07 21:00; registry key existed True; captures in E:\Projects\tandemcommander\specs\417-fluent-plugin-icons\probe\captures_before
+
+FLUENT-LIGHT PLUGINS-BAR FAIL        11 icon cells, 11 not replaced or not drawn; diff/colours per cell: 0/5 0/7 0/138 0/16 0/9 0/54 0/6 0/10 0/6 0/112 0/17
+FLUENT-LIGHT DRIVE-BAR-FS FAIL        20 cells; the last 6 (plug-in file systems): 0/16 0/31 0/53 0/6 0/6 0/112
+FLUENT-LIGHT DIRLINE-REGEDIT FAIL        RegEdit FS directory-line icon: 0 px differ from Classic; 20x23 colours 6 top 64,1%
+FLUENT-LIGHT MANAGER FAIL        Plugins-manager icon column: 0 px differ from Classic
+FOLDERS    DIRLINE-KEPT PASS        Folders FS directory-line icon Fluent 2 vs Classic: 0 px differ; 20x23 colours 146 top 58,3%
+MENUS      OPEN   NOT DRIVEN  the Plugins menu, View With, Alt+F1 and Disconnect need a real keyboard or mouse (they draw from CreateIconsList / AddItemsToChangeDrvMenu, captured here through the Plugins bar, the drive bar and the Plugins manager)
+STATES     HOT    NOT DRIVEN  hot / pressed buttons need a real mouse; the highlight background is measured offline (saltests TestPluginIcons417)
+DPI        125-200 NOT DRIVEN  the hidden desktop runs at the session system DPI; saltests rasterizes every file at 20 / 24 / 32 px
+Registry: restored; identical=True; SHA-256 before 9F362554D7676F0B4FDD60C8EA469B0AE37D097FCAC726F0C8C7F4F02505EB0F / after 9F362554D7676F0B4FDD60C8EA469B0AE37D097FCAC726F0C8C7F4F02505EB0F
+
+Rows: PASS 1, FAIL 4, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True

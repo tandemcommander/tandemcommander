@@ -104,3 +104,60 @@ Round 2: CRITICAL 0, HIGH 0, MEDIUM 0; E4 (LOW) accepted as above.
   2 problems. Restored; 0 / 0.
 - `check_iconset.py`: 95 + 95 toolbar files, 33 plug-in icons, 0 problems (it now excludes the plug-in defaults
   from the toolbar names).
+- Deployment found on the way: the incremental `build.cmd` does not copy runtime data (only `full` does), so the
+  first live check ran without `iconsets\fluent\plugins\`: every plug-in kept today's icon (the fall-back
+  works). After `build.cmd full` the folder is there (33 + 33).
+
+### Translations (T019, stop-rules 2.13)
+
+- Step 0: one changed entry, `IDC_ICONSET_GROUP` of `IDD_CFGPAGE_APPEARANCE` (`" Toolbar &icons "` ->
+  `" &Icon style "`); no new id.
+- Step 1: `build.cmd` (BUILD SUCCEEDED), `build_langs.cmd --export-templates --module salamand` (1/1); the
+  template row `6291,1,189,295,40,0," &Icon style "` in `[DIALOG 595]`.
+- Step 2: key `DIALOG:595:6291` (was `machine` in all 8) -> `english_fallback` in the 8 enabled languages
+  (no `english_fallback` rows before).
+- Step 3 dry run: 1 unique gap per language, ~13 chars each (= the changed entry). Step 4: `--budget 2208`,
+  **DeepL characters sent: 96**, validation failures 0.
+- Step 5 read-back: cs `Styl &ikon`, sk `Štýl &ikon`, de `S&ymbolstil`, fr `Style d'&icônes`, nl
+  `&Pictogramstijl`, hu `&Ikonstílus`, ro `St&ilul pictogramelor`, es `Estilo &de icono` - every access key the
+  same letter as before. **Pin** es `IDC_ICONSET_GROUP` = `" Estilo &de iconos "` (DeepL's singular; the style
+  of the icons), note `_feature_417` in `translations/ui-overrides.json`; merge again: 0 gaps, es row `human`.
+- Step 6 `slt --verify`: 298 files, round-trip byte-exact. Step 7 `build.cmd full`: BUILD SUCCEEDED, 189
+  language modules. Changed: the 8 `salamand.slt` rows 6291 and es `.origin` (`human`); no layout drift.
+
+### Probe (T021, `probe/plugin417_probe.ps1`)
+
+- `-Before`: the build of `main` (`e5d4552e`, a worktree built with its own `OPENSAL_BUILD_DIR`: core +
+  English module) put into a copy of this build's tree without `iconsets\fluent\plugins\` (the plug-ins are
+  the same code).
+- Run 1 (`result_after_run1.txt`): PASS 26, FAIL 1 - FOLDERS 9 px: the 24 px crop of the directory line took in
+  the first letters of the path (x 21-23), which differ between runs; the icon itself was equal. Crop -> 20 px.
+- Negative control on the build of main (`result_before.txt`, `-Only FLUENT-LIGHT,FOLDERS`): FLUENT-LIGHT
+  PLUGINS-BAR / DRIVE-BAR-FS / DIRLINE-REGEDIT / MANAGER **FAIL** (0 px differ - the gap), FOLDERS PASS. It
+  also showed a weak row: the narrow Portables phone (< 12 px) was dropped from the drive-bar cells, so the
+  "last 6" took Network (a 416 icon, 238 px on main); the drive bar now uses 5 px cells, on main the six
+  plug-in cells are 0 px each.
+- **Final run (`result_after.txt`): PASS 27, FAIL 0, NOT DRIVEN 3** (menus, hot states, 125-200 %), registry
+  restored, SHA-256 identical:
+  - CLASSIC-EQ-LIGHT / -DARK: Plugins bar, drive bar, RegEdit directory line, Plugins-manager icons **0 px** vs
+    the build of main;
+  - FLUENT-LIGHT / -DARK: 11 of 11 Plugins-bar cells replaced and drawn (148-232 px, 21-85 colours each), the
+    six plug-in FS buttons of the drive bar replaced, RegEdit directory line 205 px, manager 1632 / 1755 px;
+  - CACHE: 15 stored `PluginIconList` values, equal after a Fluent 2 and a Classic session (FR-010);
+  - FOLDERS: the Folders directory line 0 px between the sets (its shell icon kept, FR-003);
+  - SWITCH (Light, Fluent 2 -> Classic + OK) and SWITCHBACK (Dark, Classic -> Fluent 2 + OK): Plugins bar, drive
+    bar and directory line 0 px vs a fresh start in the target set, stored 0x1 / 0x0;
+  - OVR: `regedt.svg` emptied, `ftp.svg` removed in a copy -> exactly cells 3 (FTP) and 6 (RegEdit) equal
+    Classic, the other 9 equal Fluent 2;
+  - PAGE: the live group text `" &Icon style "`; FIT: the label fits in English and the 8 languages (40-90 of
+    427 px).
+
+### Checks (T022)
+
+- `.\build.cmd full`: BUILD SUCCEEDED (189 language modules); `.\build.cmd` after the format fix: BUILD SUCCEEDED.
+- `saltests`: 286940 checks, 0 failed. `check_iconset.py`: 0 problems. `check_encoding.py --strict`: TOTAL 0.
+- clang-format (`--style=file`, VS 2022 LLVM): the changed C++ files have exactly as many deviations as on
+  `main` (pre-existing), except 9 comment-alignment lines of the new test - formatted (`--lines` of
+  `TestPluginIcons417` only).
+- `PRIVACY.md`: not affected - no network, nothing new stored (CACHE row), the installer ships the new folder
+  through its existing recursive entry like 416's `iconsets\fluent\`.

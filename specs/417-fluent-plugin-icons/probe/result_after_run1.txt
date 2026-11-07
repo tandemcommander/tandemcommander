@@ -1,0 +1,38 @@
+plugin417_probe (feature 417) after
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Before  : C:\Users\pavel\AppData\Local\Temp\claude\0b35d925824a4523\00d12fca-7152-435b-af18-1d72abc78273\scratchpad\before417\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 20:54; registry key existed True; captures in E:\Projects\tandemcommander\specs\417-fluent-plugin-icons\probe\captures_after
+
+CLASSIC-EQ-LIGHT COMPARE PASS        Plugins bar 0, drive bar 0, directory line 0 px differ; Plugins-manager icons 0 px; Plugins bar 1701x22 colours 332 top 94,4%; windows: no window
+CLASSIC-EQ-DARK COMPARE PASS        Plugins bar 0, drive bar 0, directory line 0 px differ; Plugins-manager icons 0 px; Plugins bar 1712x22 colours 330 top 94,4%; windows: no window
+FLUENT-LIGHT PLUGINS-BAR PASS        11 icon cells, 0 not replaced or not drawn; diff/colours per cell: 213/48 175/47 167/21 215/75 148/24 232/31 205/85 211/49 180/79 180/77 217/40
+FLUENT-LIGHT DRIVE-BAR-FS PASS        14 cells; the last 6 (plug-in file systems): 238/45 215/75 201/52 205/85 180/79 180/77
+FLUENT-LIGHT DIRLINE-REGEDIT PASS        RegEdit FS directory-line icon: 214 px differ from Classic; 24x23 colours 86 top 62,5%
+FLUENT-LIGHT MANAGER PASS        Plugins-manager icon column: 1646 px differ from Classic
+CACHE      COMPARE PASS        15 stored PluginIconList values; after a Fluent 2 session equal to after a Classic session: True
+FLUENT-DARK PLUGINS-BAR PASS        11 icon cells, 0 not replaced or not drawn; diff/colours per cell: 215/48 202/49 163/22 215/76 159/24 232/29 205/84 215/51 181/82 180/78 217/40
+FLUENT-DARK DRIVE-BAR-FS PASS        14 cells; the last 6 (plug-in file systems): 238/46 215/76 201/51 205/84 181/82 180/78
+FLUENT-DARK DIRLINE-REGEDIT PASS        RegEdit FS directory-line icon: 214 px differ from Classic; 24x23 colours 93 top 62,3%
+FLUENT-DARK MANAGER PASS        Plugins-manager icon column: 1755 px differ from Classic
+FOLDERS    DIRLINE-KEPT FAIL        Folders FS directory-line icon Fluent 2 vs Classic: 9 px differ; 24x23 colours 152 top 63,8%
+SWITCH     APPLIED-NO-RESTART PASS        Plugins bar 0, drive bar 0, directory line 0 px differ (vs a fresh start classic_t0); windows: no window
+SWITCH     STORED PASS        stored: 0x1
+SWITCHBACK APPLIED-NO-RESTART PASS        Plugins bar 0, drive bar 0, directory line 0 px differ (vs a fresh start fluent_t1); windows: no window
+SWITCHBACK STORED PASS        stored: 0x0
+OVR        MISSING-EMPTY=TODAY PASS        cells equal to Classic: 3,6 (expected FTP 3 and RegEdit 6); cells equal to Fluent 2: 9 of 11
+PAGE       LABEL  PASS        group text ' &Icon style ', 443 px wide
+FIT        english PASS        'Icon style' 47/427 px
+FIT        czech  PASS        'Styl ikon' 40/427 px
+FIT        slovak PASS        'ætìl ikon' 40/427 px
+FIT        german PASS        'Symbolstil' 47/427 px
+FIT        french PASS        'Style d'ic“nes' 65/427 px
+FIT        dutch  PASS        'Pictogramstijl' 63/427 px
+FIT        hungarian PASS        'Ikonst¡lus' 45/427 px
+FIT        romanian PASS        'Stilul pictogramelor' 90/427 px
+FIT        spanish PASS        'Estilo de iconos' 73/427 px
+MENUS      OPEN   NOT DRIVEN  the Plugins menu, View With, Alt+F1 and Disconnect need a real keyboard or mouse (they draw from CreateIconsList / AddItemsToChangeDrvMenu, captured here through the Plugins bar, the drive bar and the Plugins manager)
+STATES     HOT    NOT DRIVEN  hot / pressed buttons need a real mouse; the highlight background is measured offline (saltests TestPluginIcons417)
+DPI        125-200 NOT DRIVEN  the hidden desktop runs at the session system DPI; saltests rasterizes every file at 20 / 24 / 32 px
+Registry: restored; identical=True; SHA-256 before 9F362554D7676F0B4FDD60C8EA469B0AE37D097FCAC726F0C8C7F4F02505EB0F / after 9F362554D7676F0B4FDD60C8EA469B0AE37D097FCAC726F0C8C7F4F02505EB0F
+
+Rows: PASS 26, FAIL 1, NOT DRIVEN 3. Left running: 0; fixture removed: True; registry restored+identical: True
