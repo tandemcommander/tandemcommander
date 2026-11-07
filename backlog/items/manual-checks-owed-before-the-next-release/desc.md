@@ -57,6 +57,10 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Toolbar buttons hot and pressed with a real mouse, both icon sets and both themes: no icon disappears; disabled buttons stay discernible (feature 416)
 - [ ] Fluent 2 icons at 125 %, 150 % and 200 % display scaling: sharp, centred in their buttons, not clipped (toolbar, drive bar, `..`, the Appearance previews) (feature 416)
 - [ ] Configuration > Appearance in Czech and German: the Toolbar icons group, its two choices and previews fit and read well (feature 416)
+- [ ] Plug-in icons with a real mouse or keyboard in the Fluent 2 set, Default and Dark theme: the Plugins menu and each plug-in submenu, View With (F3 menu) and Help > About Plugin - every plug-in shipped with the program shows its Fluent 2 icon (DBViewer, PEViewer, TAR, UnCAB too), legible on the highlighted row, disabled items readable; with Classic exactly the old icons (feature 417)
+- [ ] Plugins bar (Options > Toolbars > Plugins Bar) hot and pressed with a real mouse, Fluent 2, both themes: no plug-in icon disappears; its drop-down menus open as before (feature 417)
+- [ ] Plug-in icons at 125 %, 150 % and 200 % display scaling, Fluent 2: sharp in the Plugins bar, the Plugins Manager, Alt+F1, the drive bar and the tab / Directory line of an FTP or Windows Registry file system (feature 417)
+- [ ] Configuration > Appearance in Czech and Spanish: the group now reads "Styl ikon" / "Estilo de iconos" (English "Icon style"), fits and reads well; Alt+I (Czech) reaches it (feature 417)
 
 ## Log
 
@@ -73,3 +77,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-07 — feature 412: one check added
 - 2026-11-07 — edited Steps
 - 2026-11-07 — feature 416: 5 checks added
+- 2026-11-07 — feature 417: 4 checks added

@@ -17,7 +17,6 @@ Last triaged: 2026-11-07
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Fluent 2 icons for the plug-ins; Appearance group renamed to Icon style](items/fluent-2-icons-for-the-plug-ins-appearance-group-renamed-to/desc.md) | feature | 5 | panels-ui | 417 |
 
 ## Next
 

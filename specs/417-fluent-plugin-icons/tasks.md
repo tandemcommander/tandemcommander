@@ -54,7 +54,7 @@
 
 - [X] T021 Probe `specs/417-fluent-plugin-icons/probe/plugin417_probe.ps1` (helpers of 098 and 416): CLASSIC-EQ-LIGHT/DARK vs `-Before` (Plugins bar, drive bar, the RegEdit FS directory line, the Plugins-manager list: 0 px each), FLUENT-LIGHT/DARK (per Plugins-bar icon cell differs from Classic and has >= 8 colours; drive-bar plug-in buttons differ), DIRLINE (RegEdit FS set icon; Folders FS equals Classic), MANAGER (the Plugins manager list differs in Fluent, equals in Classic), SWITCH / SWITCHBACK (Plugins bar, drive bar and the RegEdit FS directory line equal a fresh start in the target set), CACHE (the plug-ins' stored icon lists after a Fluent 2 session equal those after a Classic session - FR-010), OVR, FIT; registry backed up and restored; NOT DRIVEN rows for menus / hot states / DPI
 - [X] T022 Build `.\build.cmd full`, `saltests`, `check_iconset.py`, `check_encoding.py --strict`, `clang-format --dry-run --Werror` on every changed C++ file (constitution: formatting verified); run the probe (before on the build of `main`, after on this build); record numbers in `fix-log.md`
-- [ ] T023 [P] `CHANGELOG.md` entry under `## [Unreleased]` (and the 416 entry's group name), `specs/FEATURE-HISTORY.md` entry, release-checklist lines (menus, hot states, 150 %), `closing-report.md`
+- [X] T023 [P] `CHANGELOG.md` entry under `## [Unreleased]` (and the 416 entry's group name), `specs/FEATURE-HISTORY.md` entry, release-checklist lines (menus, hot states, 150 %), `closing-report.md`
 
 ## Dependencies & order
 

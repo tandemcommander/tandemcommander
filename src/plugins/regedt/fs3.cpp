@@ -46,7 +46,10 @@ void CPluginFSInterface::Event(int event, DWORD param)
 HICON
 CPluginFSInterface::GetFSIcon(BOOL& destroyIcon)
 {
-    CALL_STACK_MESSAGE2("CPluginFSInterface::GetFSIcon(%d)", destroyIcon);
+    CALL_STACK_MESSAGE1("CPluginFSInterface::GetFSIcon()");
+    // feature 417 (review 3): LoadImage makes a new icon on every call - the caller destroys it; before,
+    // 'destroyIcon' was never set and the callers (which leave it uninitialized) read garbage
+    destroyIcon = TRUE;
     return (HICON)LoadImage(DLLInstance, MAKEINTRESOURCE(IDI_REGEDT), IMAGE_ICON,
                             16, 16, SG->GetIconLRFlags());
 }

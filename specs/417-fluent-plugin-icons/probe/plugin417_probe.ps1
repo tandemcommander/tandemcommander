@@ -28,6 +28,7 @@
                           the 8 enabled languages
       CHDRV-<theme>       Alt+F1 (posted CM_LCHANGEDRIVE) and the Disconnect dialog (CM_DISCONNECTNET) with the RegEdit
                           FS open: their icon columns differ from Classic; Classic equals the build of main (review 2)
+      THEMESW             Fluent 2 Light, posted CM_THEME_DARK: equal to a fresh Dark start (review 3)
     NOT DRIVEN: the Plugins menu and View With (a real keyboard / mouse), hot states, 125-200 % (saltests
     TestPluginIcons417 rasterizes every file at 16 / 20 / 24 / 32 px).
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -194,8 +195,9 @@ function Grab-Manager([int]$Id, [string]$Tag) {
     [void][Drv098f]::Send($list, 0, 0, 0, 10000)
     $full = [Cap416]::Capture($dlg, $false)
     $b = [Cap416]::Crop($full, $dlg, $list)
-    # the icon column only (the first 28 px): the texts (versions, paths) are not under test
-    $b = $b.Clone((New-Object Drawing.Rectangle(0, 0, [Math]::Min(28, $b.Width), $b.Height)), $b.PixelFormat)
+    # the icons only (the first 22 px): the texts are not under test, and the dotted focus rectangle of the
+    # list starts at x 22 (it differed between sessions by 14-31 px with a 28 px crop - reviews 1 and 3)
+    $b = $b.Clone((New-Object Drawing.Rectangle(0, 0, [Math]::Min(22, $b.Width), $b.Height)), $b.PixelFormat)
     Save-Png $b (Join-Path $CapDir ($Tag + '_manager.png'))
     $full.Dispose()
     Post-Cmd $dlg 2 # IDCANCEL
@@ -440,6 +442,30 @@ function Row-Fit {
     } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
 }
 
+# review 3: a theme switch at run time (posted CM_THEME_DARK 2944) in Fluent 2, Light -> Dark: the Plugins bar,
+# drive bar, directory line and tab equal a fresh Dark start (the Plugins bar is rebuilt on the next idle)
+function Row-ThemeSw {
+    $n = 'THEMESW'
+    if (-not (Want $n)) { return }
+    $id = 0
+    try {
+        if (-not $script:Caps.ContainsKey('fluent_t1')) { [void](Run-Look $Exe 1 0 'fluent_t1') }
+        if (-not $script:Caps.ContainsKey('fluent_t0')) { [void](Run-Look $Exe 0 0 'fluent_t0') }
+        Set-Look 0 0
+        $id = Start-At $Exe $RegFS
+        [void](Serve $id 8)
+        Post-Cmd (Get-Main $id) 2944 # CM_THEME_DARK
+        $r = Serve $id 10
+        Start-Sleep -Milliseconds 2500
+        $g = Grab $id 'themesw_after'
+        $d = Same $g $script:Caps['fluent_t1']
+        $d0 = Same $g $script:Caps['fluent_t0']
+        # vs Light: any difference (-1 = another size: the Dark bars are not as tall as the Light ones)
+        Row $n 'LIGHT-TO-DARK' (V ((Zero $d) -and $d0.Plugins -ne 0)) ((DiffText $d) + ' vs a fresh Dark start; vs a fresh Light start: ' + (DiffText $d0) + '; windows: ' + (Msgs $r))
+    } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { Stop-Tc $id } }
+}
+
 # ---- review 2: the Change Drive menu (Alt+F1) and the Disconnect dialog, opened by posted commands (as the
 # probes of 374 / 289 do) - the left panel on the RegEdit FS, so both list an open plug-in file system ----------
 function Wait-Menu([int]$Id, [double]$Seconds = 15) {
@@ -498,7 +524,7 @@ function Row-Menus([int]$Theme) {
         $c = Grab-ChDrv $Exe $Theme 1 ('chdrv_classic_t' + $Theme)
         $f = Grab-ChDrv $Exe $Theme 0 ('chdrv_fluent_t' + $Theme)
         $d = [Cap416]::Diff($f.Menu, $c.Menu)
-        Row $n 'MENU-FLUENT' (V ($d -gt 200)) ("Change Drive menu icon column {0}x{1}: {2} px differ from Classic" -f $f.Menu.Width, $f.Menu.Height, $d)
+        Row $n 'MENU-FLUENT' (V ($d -gt 200)) ("Change Drive menu icon column {0}x{1}: {2} px differ from Classic (the drives of 416 included - the proof for the plug-ins is MENU-PLUGIN-ICONS)" -f $f.Menu.Width, $f.Menu.Height, $d)
         if ($f.Disc -and $c.Disc) {
             $dd = [Cap416]::Diff($f.Disc, $c.Disc)
             Row $n 'DISCONNECT-FLUENT' (V ($dd -gt 20)) ("Disconnect dialog icon column: {0} px differ from Classic" -f $dd)
@@ -543,6 +569,7 @@ try {
     Row-DarkVerbatim
     Row-Menus 0
     Row-Menus 1
+    Row-ThemeSw
     Row-Page
     Row-Fit
     Row 'MENUS' 'OPEN' 'NOT DRIVEN' 'the Plugins menu and View With need a real keyboard or mouse (a posted Alt+P does not open the menu bar; they draw from CreateIconsList, captured here through the Plugins bar and the Plugins manager); Alt+F1 and Disconnect: rows CHDRV-*'

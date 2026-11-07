@@ -222,3 +222,39 @@ verified; call sites, indexes, handles, the second drive bar, Classic, the stand
 Checks after the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 286943 / 0; probe `result_after.txt` **PASS 38,
 FAIL 0, NOT DRIVEN 3**; on main (`result_before.txt`, `-Only FLUENT-LIGHT,FOLDERS,CHDRV-LIGHT`) FLUENT-LIGHT x 5 and
 CHDRV-LIGHT DISCONNECT-FLUENT FAIL, MENU-FLUENT PASS (416's drives - hence MENU-PLUGIN-ICONS).
+
+### Review 3 (independent agent, refute-first, focused on the changes since review 2) - MUST 0, SHOULD 1, NOTE 4
+
+- (a) the deferred Plugins-bar rebuild: every `ColorsChanged` path reaches `OnColorsChanged` (theme switch,
+  icon-set OK, start-up import, `WM_SYSCOLORCHANGE`, high contrast, the colour page, config import / load); the
+  flag is cleared only by the guarded idle rebuild; a hidden bar is rebuilt by `TogglePluginsBar`; the old image
+  lists stay valid until `CreatePluginButtons` swaps them. **Negative control** (HEAD with the line commented
+  out, own build folder): SWITCH 2175 px / SWITCHBACK 2215 px FAIL; HEAD 0 / 0 PASS.
+- (b) the new rows discriminate (DISCONNECT 0 px on main; MENU-PLUGIN-ICONS this vs main; CHDRV CLASSIC-EQ 0 px;
+  TAB 0 px on main); (c) the DemoPlug exclusion at every `fsIcon` site, `PluginHasSetIcon` reads the files the
+  drawing reads, the parser and the path builder - right. saltests 286943 / 0, check_iconset 0, encoding 0.
+- SHOULD 1 no row switched only the theme at run time (`CM_THEME_DARK`, a path apart from the Configuration
+  dialog). **Fixed**: row THEMESW (Fluent 2 Light, posted 2944 -> equals a fresh Dark start; the reviewer's run:
+  0 px on HEAD, Plugins bar 1701 px FAIL without the rebuild).
+- NOTE 1 in Classic a colour change also rebuilds the bars on the next idle (same result) - recorded.
+- NOTE 2 MENU-FLUENT passes on main too - its text now points to MENU-PLUGIN-ICONS.
+- NOTE 3 (found on the way, before 417, severity 2) RegEdit's `GetFSIcon` (`src/plugins/regedt/fs3.cpp`) never
+  set `destroyIcon` - the callers read an uninitialized value (Debug: 0xCC.. -> destroyed; Release: either a
+  leaked icon per directory-line update or a destroyed one). **Fixed**: `destroyIcon = TRUE` (LoadImage makes a
+  new icon on every call, as Undelete does); the call-stack line no longer prints the uninitialized value. Not
+  driven by a test of its own (a leak of one icon handle); the probe's RegEdit rows run through it in Classic.
+- NOTE 4 a plug-in's own menu-item icons (`CPluginData::CreateImageList`, e.g. in a Plugins-bar drop-down) keep
+  their bitmaps - out of scope (spec, Assumptions).
+- The reviewer met two running instances (the Debug build and the installed program the maintainer started) and
+  waited for them; nothing of theirs was touched.
+
+Checks after the review-3 fixes: `.\build.cmd` BUILD SUCCEEDED (core + `regedt.spl`); saltests **286943 checks,
+0 failed**; check_encoding 0. Probe runs:
+- once refused (exit 99): the maintainer's installed program ran (registry shared) - waited until it was closed;
+- `result_after_run_themesw_cond.txt`: THEMESW FAIL by the row's own condition - equal to a fresh Dark start (all
+  0 px) but "differs from Light" was tested as `> 0` and the bars of the two themes differ in size (Diff -1);
+  fixed to `-ne 0`;
+- `result_after_run_focusrect.txt`: CLASSIC-EQ-LIGHT 14 px in the Plugins-manager column = the list's dotted
+  focus rectangle at x 22-27 (review 1's NOTE); the crop is now the icons only (22 px);
+- **final `result_after.txt`: PASS 39, FAIL 0, NOT DRIVEN 3**, registry restored and identical (its hash changed
+  from the earlier runs because the maintainer's own session had written the configuration meanwhile).
