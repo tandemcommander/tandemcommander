@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -1474,6 +1475,177 @@ class BinTests(Base):
             self.assertEqual(code, 2, args)
             self.assertIn("usage: bin/backlog.sh", err)
         self.assertEqual(self.snapshot(), before)
+
+
+@unittest.skipUnless(os.name == "nt", "an open file blocks a replace or a delete only on Windows")
+class LockHeldOpenTests(Base):
+    """Feature 411: lock commands while another process has the run lock open."""
+
+    def setUp(self):
+        super().setUp()
+        self.lock = self.lock_dir / backlog.LOCK_NAME
+        saved = (backlog.LOCK_RETRY_ATTEMPTS, backlog.LOCK_RETRY_DELAY)
+        self.addCleanup(lambda: setattr(backlog, "LOCK_RETRY_ATTEMPTS", saved[0]))
+        self.addCleanup(lambda: setattr(backlog, "LOCK_RETRY_DELAY", saved[1]))
+        self.assertEqual(self.run_tool("lock", "acquire", "--slug", FTP)[0], 0)
+
+    def run_tool(self, *args, stdin=None):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
+            code = backlog.main(["--root", str(self.root), "--lock-dir", str(self.lock_dir), *args])
+        return code, buf.getvalue()
+
+    def hold_open(self, seconds: float) -> None:
+        """Another process opens the lock as Python's open does (no delete sharing) and keeps it
+        open for SECONDS; returns once the handle is open."""
+        code = ("import sys, time\n"
+                "f = open(sys.argv[1], 'rb')\n"
+                "print('open', flush=True)\n"
+                "time.sleep(float(sys.argv[2]))\n")
+        p = subprocess.Popen([sys.executable, "-c", code, str(self.lock), str(seconds)],
+                             stdout=subprocess.PIPE, text=True)
+        self.addCleanup(p.wait)
+        self.addCleanup(p.kill)
+        self.assertEqual(p.stdout.readline().strip(), "open")
+        p.stdout.close()
+
+    def timed(self, *args):
+        t = time.monotonic()
+        code, out = self.run_tool(*args)
+        return code, out, time.monotonic() - t
+
+    def leftovers(self):
+        return sorted(p.name for p in self.lock_dir.iterdir() if p.name != backlog.LOCK_NAME)
+
+    # US1: a short hold is waited out
+
+    def test_update_waits_for_the_reader(self):
+        self.hold_open(0.5)
+        code, out, took = self.timed("lock", "update", "--slug", FTP, "--branch", "411-x")
+        self.assertEqual((code, out.strip()), (0, "lock updated: branch 411-x"))
+        self.assertGreater(took, 0.3)  # the holder really blocked it
+        self.assertEqual(backlog.read_lock(self.lock)["branch"], "411-x")
+        self.assertEqual(self.leftovers(), [])
+
+    def test_release_waits_for_the_reader(self):
+        self.hold_open(0.5)
+        code, out, took = self.timed("lock", "release", "--slug", FTP)
+        self.assertEqual((code, out.strip()), (0, "lock released"))
+        self.assertGreater(took, 0.3)
+        self.assertFalse(self.lock.exists())
+
+    def test_release_force_waits_for_the_reader(self):
+        self.hold_open(0.5)
+        self.assertEqual(self.run_tool("lock", "release", "--force")[:2], (0, "lock released\n"))
+        self.assertFalse(self.lock.exists())
+
+    def test_negative_control_without_retries_the_reader_wins(self):
+        backlog.LOCK_RETRY_ATTEMPTS = 1
+        self.hold_open(2)
+        code, out = self.run_tool("lock", "update", "--slug", FTP, "--branch", "411-x")
+        self.assertEqual(code, 1)
+        self.assertTrue(out.startswith("refused: the run lock "), out)
+        self.assertEqual(self.run_tool("lock", "release", "--slug", FTP)[0], 1)
+        self.assertTrue(self.lock.exists())
+
+    def test_no_reader_no_wait(self):
+        code, out, took = self.timed("lock", "update", "--slug", FTP, "--branch", "411-x")
+        self.assertEqual(code, 0)
+        self.assertLess(took, backlog.LOCK_RETRY_DELAY * 4)
+
+    # US2: a long hold is a clear refusal, nothing changed
+
+    def test_update_refused_when_held_long_nothing_changed(self):
+        backlog.LOCK_RETRY_ATTEMPTS = 3
+        before = self.lock.read_bytes()
+        self.hold_open(3)
+        code, out = self.run_tool("lock", "update", "--slug", FTP, "--branch", "411-x")
+        self.assertEqual(code, 1)
+        self.assertEqual(len(out.strip().splitlines()), 1, out)
+        self.assertTrue(out.startswith(f"refused: the run lock {self.lock} could not be updated: "
+                                       "another process holds it open"), out)
+        self.assertIn("nothing changed", out)
+        self.assertEqual(self.lock.read_bytes(), before)
+        self.assertEqual(self.leftovers(), [])
+
+    def test_release_refused_when_held_long_lock_kept(self):
+        backlog.LOCK_RETRY_ATTEMPTS = 3
+        self.hold_open(3)
+        code, out = self.run_tool("lock", "release", "--slug", FTP)
+        self.assertEqual(code, 1)
+        self.assertTrue(out.startswith(f"refused: the run lock {self.lock} could not be released: "), out)
+        self.assertTrue(self.lock.exists())
+
+    # US3: the reads
+
+    def test_status_waits_for_a_briefly_unreadable_lock(self):
+        import msvcrt
+        import threading
+        size = self.lock.stat().st_size
+        f = open(self.lock, "r+b")
+        self.addCleanup(f.close)
+        msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, size)
+
+        def unlock():
+            f.seek(0)
+            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, size)
+        timer = threading.Timer(0.3, unlock)
+        timer.start()
+        self.addCleanup(timer.join)
+        code, out = self.run_tool("lock", "status")
+        self.assertEqual(code, 0)
+        self.assertIn(FTP, out)
+
+    def test_lock_gone_between_check_and_read_is_no_lock(self):
+        real = backlog.read_lock
+
+        def vanishing(path):
+            Path(path).unlink(missing_ok=True)  # a release lands between the check and the read
+            return real(path)
+        for args, want in ((("lock", "status"), (0, "free\n")),
+                           (("lock", "update", "--slug", FTP, "--branch", "b"), (1, "no lock to update\n")),
+                           (("lock", "release", "--slug", FTP), (1, "no lock to release\n"))):
+            with self.subTest(args=args):
+                if not self.lock.exists():
+                    self.assertEqual(self.run_tool("lock", "acquire", "--slug", FTP)[0], 0)
+                backlog.read_lock = vanishing
+                try:
+                    self.assertEqual(self.run_tool(*args), want)
+                finally:
+                    backlog.read_lock = real
+
+    def test_acquire_retries_a_briefly_refused_create(self):
+        self.assertEqual(self.run_tool("lock", "release", "--slug", FTP)[0], 0)
+        real, calls = os.open, []
+
+        def refusing(path, *a, **kw):
+            if Path(path) == self.lock and len(calls) < 3:
+                calls.append(path)
+                raise PermissionError(13, "delete pending", str(path))
+            return real(path, *a, **kw)
+        os.open = refusing
+        try:
+            code, out = self.run_tool("lock", "acquire", "--slug", "other")
+        finally:
+            os.open = real
+        self.assertEqual((code, len(calls)), (0, 3), out)
+        self.assertEqual(backlog.read_lock(self.lock)["slug"], "other")
+
+    def test_acquire_against_a_vanishing_holder_creates_the_lock(self):
+        real, gone = backlog.read_lock, []
+
+        def vanishing(path):
+            if not gone:
+                gone.append(path)
+                Path(path).unlink()
+            return real(path)
+        backlog.read_lock = vanishing
+        try:
+            code, out = self.run_tool("lock", "acquire", "--slug", "other")
+        finally:
+            backlog.read_lock = real
+        self.assertEqual(code, 0, out)
+        self.assertEqual(backlog.read_lock(self.lock)["slug"], "other")
 
 
 if __name__ == "__main__":

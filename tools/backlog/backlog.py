@@ -44,6 +44,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import time
 import unicodedata
 import urllib.error
 import urllib.parse
@@ -1336,6 +1337,39 @@ def read_lock(path: Path) -> dict:
     return fields
 
 
+# Feature 411: on Windows a reader of the lock (the loop's status, the backlog app every 2 s,
+# `lock status`) that has the file open without delete sharing - Python's open - makes a replace
+# (WinError 5) or a delete (WinError 32) of it fail, and a lock released while a share-delete
+# reader held it stays "delete pending" (creating or opening it fails the same way) until that
+# reader closes it.  Readers hold it for microseconds, so every file operation on the lock is
+# retried for a short window - the one of traces.write_json_atomic (342).
+LOCK_RETRY_ATTEMPTS = 40
+LOCK_RETRY_DELAY = 0.05  # seconds
+
+
+def lock_retry(path: Path, what: str, action):
+    """ACTION() with PermissionError retried; a persistent one refuses (nothing changed: the
+    replace is atomic and write_text removes its temporary file, a delete did not happen)."""
+    for attempt in range(LOCK_RETRY_ATTEMPTS):
+        try:
+            return action()
+        except PermissionError as e:
+            if attempt + 1 >= LOCK_RETRY_ATTEMPTS:
+                raise Refused(f"the run lock {path} could not be {what}: another process holds it open "
+                              f"({e.strerror or e}); nothing changed - try again") from None
+            time.sleep(LOCK_RETRY_DELAY)
+
+
+def lock_fields(path: Path) -> dict | None:
+    """The lock's fields, or None when there is no lock (also when it went away just now)."""
+    def read():
+        try:
+            return read_lock(path)
+        except FileNotFoundError:
+            return None
+    return lock_retry(path, "read", read)
+
+
 def describe_lock(fields: dict) -> str:
     started = fields.get("started", "?")
     age_txt, stale = "?", False
@@ -1887,28 +1921,32 @@ def lock_text(fields: dict) -> str:
 
 def cmd_lock(bl: Backlog, args) -> int:
     path = lock_path(bl.root, args.lock_dir)
+    # every file operation below goes through lock_retry / lock_fields (feature 411)
     if args.action == "status":
-        if not path.exists():
-            print("free")
-        else:
-            print(describe_lock(read_lock(path)))
+        fields = lock_fields(path)
+        print("free" if fields is None else describe_lock(fields))
         return 0
     if args.action == "acquire":
         content = lock_text({"started": now().replace(microsecond=0).isoformat(), "slug": args.slug or "-",
                              "branch": args.branch or "-", "host": socket.gethostname()})
-        try:
-            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError:
-            print("another run in progress: " + describe_lock(read_lock(path)))
-            return 1
-        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
-            f.write(content)
-        print(f"lock acquired: {path}")
-        return 0
-    if not path.exists():
+        for _ in range(LOCK_RETRY_ATTEMPTS):
+            try:
+                fd = lock_retry(path, "created", lambda: os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+            except FileExistsError:
+                fields = lock_fields(path)
+                if fields is None:  # released just now: try to create it again
+                    continue
+                print("another run in progress: " + describe_lock(fields))
+                return 1
+            with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+                f.write(content)
+            print(f"lock acquired: {path}")
+            return 0
+        raise Refused(f"the run lock {path} could not be created: it kept appearing and disappearing; nothing changed - try again")
+    fields = lock_fields(path)
+    if fields is None:
         print("no lock" + (" to release" if args.action == "release" else " to update"))
         return 1
-    fields = read_lock(path)
     if args.action == "update":
         if not args.slug or not args.branch:
             raise Refused("lock update needs --slug and --branch")
@@ -1916,14 +1954,21 @@ def cmd_lock(bl: Backlog, args) -> int:
             print(f"refused: the lock belongs to item {fields.get('slug', '-')}, not {args.slug}")
             return 1
         fields["branch"] = one_line(args.branch, "--branch")
-        write_text(path, lock_text(fields))
+        text = lock_text(fields)
+        lock_retry(path, "updated", lambda: write_text(path, text))
         print(f"lock updated: branch {args.branch}")
         return 0
     # release
     if not args.force and fields.get("slug", "-") != (args.slug or "-"):
         print(f"refused: the lock belongs to item {fields.get('slug', '-')}, not {args.slug or '-'} (--force for the maintainer)")
         return 1
-    path.unlink()
+
+    def remove():
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass  # gone during a retry: released all the same
+    lock_retry(path, "released", remove)
     print("lock released")
     return 0
 

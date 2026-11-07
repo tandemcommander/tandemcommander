@@ -115,7 +115,8 @@ removed after the existence check prints `free`.
 - **FR-004**: The reads of the lock by `lock status`, `acquire` (in its "another run in progress"
   message), `update` and `release` MUST retry a PermissionError within the same window; a lock
   that disappears between the existence check and the read MUST be treated as no lock (`free`
-  for status, `no lock to release` / `no lock to update` otherwise).
+  for status, `no lock to release` / `no lock to update` otherwise); a read still blocked after
+  the window is a `refused:` line, exit 1.
 - **FR-005**: `acquire` MUST retry a PermissionError from creating the lock file within the same
   window; a persistent one is a `refused:` line, exit 1, nothing created.
 - **FR-006**: Without a concurrent reader, every lock command's output, exit code and lock file
