@@ -26,6 +26,11 @@
                       panel's connection lists sub again (before the fix: the stale cached listing
                       is shown - no listing command).
       CACHE-SAME      control: the same with the upload typed to 127.0.0.1.
+      VIEW-ALIAS      the viewer's cache under the other name (a finding of 410): x.txt viewed (F3)
+                      in the panel at 127.0.0.1, the panel goes up to "/", an upload of n.txt typed
+                      to localhost:/VIEW-ALIAS/, the panel goes back and views x.txt again. PASS =
+                      x.txt downloaded again (RETR; before the fix: the old copy from the cache).
+      VIEW-SAME       control: the same with the upload typed to 127.0.0.1.
     The product's registry key is exported, restored and compared. Exit code = FAIL rows.
 
 .NOTES
@@ -326,6 +331,51 @@ try {
             $inSub = $loc -like '*/sub*'
             @{ Ok = ($stored -and $inSub -and $listed)
                Facts = ("after Backspace '{0}'; upload stored sub/n.txt: {1}; after Enter '{2}'; the panel's connection listed sub again: {3}; its commands after Enter: {4}; upload commands: {5}; dialogs: {6}; op windows: {7}" -f (Tail $up1 60), $stored, (Tail $loc 60), $listed, ($panel -join ' / '), ($all -join ' / '), ($t -join ' ; '), (OpDesc $id)) }
+        }
+    }
+
+    # the viewer's cache under the other name (FR-007): x.txt viewed (F3) in the panel at 127.0.0.1,
+    # the panel goes up to "/", an upload into the row's folder typed to localhost / 127.0.0.1, the
+    # panel goes back and views x.txt again: PASS = x.txt downloaded again (RETR)
+    $Viewers = { param($id) @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -ne $MainClass -and [Drv098f]::Cls($_) -ne '#32770' -and [Drv098f]::IsWindowVisible($_) }) }
+    function View-X([int]$Id) {
+        $from = Srv-Count $FtpSrv
+        Post-Cmd (Get-Main $Id) 742                                # F3
+        $sw = [Diagnostics.Stopwatch]::StartNew(); $seen = 0
+        while ($sw.Elapsed.TotalSeconds -lt 20 -and -not $seen) { Start-Sleep -Milliseconds 300; $seen = @(& $Viewers $Id).Count }
+        Start-Sleep -Milliseconds 800
+        foreach ($v in @(& $Viewers $Id)) { Close-Win $v }
+        Start-Sleep -Milliseconds 800; Sync $Id
+        $cmds = @(Srv-Cmds $FtpSrv $from)
+        return [pscustomobject]@{ Seen = $seen; Retr = (Has-Cmd $cmds '^RETR (.*/)?x\.txt$'); Cmds = ($cmds -join ' / ') }
+    }
+    foreach ($rc in @(@('VIEW-ALIAS', 'u:p@localhost'), @('VIEW-SAME', 'u@127.0.0.1'))) {
+        $script:rcTarget = 'ftp://' + $rc[1] + ':' + $FtpSrv.Port + '/' + $rc[0] + '/'
+        $script:rcCase = $rc[0]
+        Row-Case $rc[0] $rc[0] {
+            param($s, $l)
+            WriteFile ($s + '\x.txt') 'SRV-X1'
+            WriteFile ($l + '\n.txt') 'UP'
+        } {
+            param($id, $s, $l, $sid)
+            KeyIn $id 0 0x09                                       # right (server) active
+            Focus $id 1 1                                          # .., x.txt -> x.txt
+            $v1 = View-X $id
+            KeyIn $id 1 0x08                                       # Backspace: up to "/"
+            Wait-Quiet $id 3 20
+            $up1 = Get-Loc $id
+            KeyIn $id 1 0x09                                       # left active
+            Focus $id 0 1                                          # local: .., n.txt -> n.txt
+            $t = @(Drive $id 727 { param($x) $script:rcTarget } 5 90)
+            Start-Sleep -Milliseconds 2000; Wait-Quiet $id 4 30
+            $stored = (ReadSrv ($s + '\n.txt')) -ceq 'UP'
+            KeyIn $id 0 0x09                                       # right active
+            [void](Do-ChangeDir $id ('ftp://u@127.0.0.1:' + $FtpSrv.Port + '/' + $script:rcCase)); Wait-Quiet $id 3 20
+            $back = Get-Loc $id
+            Focus $id 1 2                                          # .., n.txt, x.txt -> x.txt (names sorted)
+            $v2 = View-X $id
+            @{ Ok = ($v1.Seen -gt 0 -and $v1.Retr -and $stored -and $v2.Seen -gt 0 -and $v2.Retr)
+               Facts = ("view 1: viewer {0}, RETR x.txt {1}; after Backspace '{2}'; upload stored n.txt: {3}; back '{4}'; view 2: viewer {5}, x.txt downloaded again {6}; view 2 commands: {7}; dialogs: {8}" -f $v1.Seen, $v1.Retr, (Tail $up1 50), $stored, (Tail $back 50), $v2.Seen, $v2.Retr, $v2.Cmds, ($t -join ' ; ')) }
         }
     }
 }

@@ -105,6 +105,7 @@
 #include "sallistingname.h"   // feature 321
 #include "salhfscatalog.h"    // feature 322
 #include "salftpmkdirreport.h" // feature 323
+#include "salftproot.h"         // feature 410
 #include "salsamevolume.h"     // feature 324
 #include "salsusp.h"           // feature 326
 #include "salisonamefit.h"     // feature 328
@@ -4827,6 +4828,45 @@ static void TestFcRemote102()
     }
 }
 
+
+//*****************************************************************************
+//
+// feature 410: another host name of an FTP connection root (src/common/salftproot.h)
+//
+
+static void TestFtpRootMatch410()
+{
+    // the same root: same user, same port text, the caller's hosts equal
+    CHECK(SalFtpRootMatchOf("u", "2141", "u", "2141", true) == SAL_FTP_ROOT_SAME);
+    // another host name, the same user and port: maybe the same server (feature 341)
+    CHECK(SalFtpRootMatchOf("u", "2141", "u", "2141", false) == SAL_FTP_ROOT_OTHER_HOST);
+    CHECK(SalFtpRootMatchOf(NULL, NULL, NULL, NULL, false) == SAL_FTP_ROOT_OTHER_HOST);
+    // another user or another port: not matched, whatever the host
+    CHECK(SalFtpRootMatchOf("u", "2141", "v", "2141", true) == SAL_FTP_ROOT_OTHER);
+    CHECK(SalFtpRootMatchOf("u", "2141", "v", "2141", false) == SAL_FTP_ROOT_OTHER);
+    CHECK(SalFtpRootMatchOf("u", "2141", "u", "2142", true) == SAL_FTP_ROOT_OTHER);
+    CHECK(SalFtpRootMatchOf("u", "2141", "u", "2142", false) == SAL_FTP_ROOT_OTHER);
+    // the user is case-sensitive (UNIX accounts)
+    CHECK(SalFtpRootMatchOf("u", NULL, "U", NULL, false) == SAL_FTP_ROOT_OTHER);
+    CHECK(!SalFtpSameUser("petr", "Petr"));
+    // no user = anonymous; "anonymous" itself is case-sensitive like any user
+    CHECK(SalFtpSameUser(NULL, "anonymous"));
+    CHECK(SalFtpSameUser("anonymous", NULL));
+    CHECK(SalFtpSameUser("anonymous", "anonymous"));
+    CHECK(SalFtpSameUser(NULL, NULL));
+    CHECK(!SalFtpSameUser(NULL, "u"));
+    CHECK(!SalFtpSameUser("u", NULL));
+    CHECK(!SalFtpSameUser(NULL, "Anonymous"));
+    CHECK(!SalFtpSameUser("", NULL)); // an empty name is a name
+    CHECK(SalFtpRootMatchOf(NULL, NULL, "anonymous", "21", false) == SAL_FTP_ROOT_OTHER_HOST);
+    // no port = 21; otherwise the texts compare exactly (as FTPHasTheSameRootPath did)
+    CHECK(SalFtpSamePortText(NULL, "21"));
+    CHECK(SalFtpSamePortText("21", NULL));
+    CHECK(SalFtpSamePortText(NULL, NULL));
+    CHECK(!SalFtpSamePortText(NULL, "2121"));
+    CHECK(!SalFtpSamePortText("021", "21"));
+    CHECK(SalFtpSamePortText("2141", "2141"));
+}
 //*****************************************************************************
 //
 // feature 103: an existing target that is the source itself
@@ -27689,6 +27729,7 @@ int main(int argc, char** argv)
     TestIsoWalk401();
     TestIsoXboxEntry402();
     TestIsoDirLength403();
+    TestFtpRootMatch410();
 
     printf("saltests: %d checks, %d failed\n", g_checks, g_failures);
     return g_failures;

@@ -9,6 +9,7 @@
 #include "../../common/salftppwd.h"     // feature 277: the path of a "257" reply, never cut
 #include "../../common/salftpsrvenc.h"  // feature 288: names go to each server in its own encoding
 #include "../../common/salftpsrvpath.h" // feature 385: server paths compared name by name (092 rule)
+#include "../../common/salftproot.h"    // feature 410: another host name of a connection root
 
 #include "../../common/salurlpwd.h" // feature 085
 #include "../../common/salfmtinserts.h" // feature 180
@@ -825,7 +826,7 @@ BOOL FTPIsTheSamePath(CFTPServerPathType type, const char* p1, const char* p2,
     return FALSE;
 }
 
-BOOL FTPHasTheSameRootPath(const char* p1, const char* p2, int userLength)
+int FTPRootPathMatch(const char* p1, const char* p2, int userLength)
 {
     // root path format: "//user:password@host:port"
     if (*p1 == '/' && *(p1 + 1) == '/' && *p2 == '/' && *(p2 + 1) == '/') // this must be the user part of the path
@@ -848,29 +849,28 @@ BOOL FTPHasTheSameRootPath(const char* p1, const char* p2, int userLength)
                 memset(passwd1, 0, strlen(passwd1)); // zero out the memory with the password
             if (passwd2 != NULL)
                 memset(passwd2, 0, strlen(passwd2)); // zero out the memory with the password
-            if (user1 == NULL && user2 == NULL ||
-                user1 != NULL && user2 != NULL && strcmp(user1, user2) == 0 ||
-                user1 == NULL && user2 != NULL && strcmp(user2, FTP_ANONYMOUS) == 0 ||
-                user2 == NULL && user1 != NULL && strcmp(user1, FTP_ANONYMOUS) == 0)
-            { // match user names (case-sensitive - UNIX accounts)
-                if (host1 != NULL && host2 != NULL &&
-                    SalamanderGeneral->StrICmp(host1, host2) == 0)
-                {                                // match host names (case-insensitive - Internet conventions - perhaps better to test IP addresses later)
-                    const char* ftp_port = "21"; // standard FTP port
-                    if (port1 == NULL && port2 == NULL ||
-                        port1 != NULL && port2 != NULL && strcmp(port1, port2) == 0 ||
-                        port1 == NULL && port2 != NULL && strcmp(port2, ftp_port) == 0 ||
-                        port2 == NULL && port1 != NULL && strcmp(port1, ftp_port) == 0)
-                    {                // matching port (case-sensitive; it should be just a number, so it hardly matters)
-                        return TRUE; // roots match
-                    }
-                }
+            int match = SAL_FTP_ROOT_OTHER;
+            if (host1 != NULL && host2 != NULL)
+            {
+                // user: case-sensitive (UNIX accounts), no user = anonymous; port: text, no port = 21;
+                // host: case-insensitive (Internet conventions); another host with the same user and
+                // port is maybe the same server (feature 341) - SAL_FTP_ROOT_OTHER_HOST (feature 410)
+                match = SalFtpRootMatchOf(user1, port1, user2, port2,
+                                          SalamanderGeneral->StrICmp(host1, host2) == 0);
             }
+            memset(buf1, 0, sizeof(buf1)); // the copies held the passwords too
+            memset(buf2, 0, sizeof(buf2));
+            return match;
         }
         else
-            TRACE_E("Too large paths in FTPHasTheSameRootPath!");
+            TRACE_E("Too large paths in FTPRootPathMatch!");
     }
-    return FALSE;
+    return SAL_FTP_ROOT_OTHER;
+}
+
+BOOL FTPHasTheSameRootPath(const char* p1, const char* p2, int userLength)
+{
+    return FTPRootPathMatch(p1, p2, userLength) == SAL_FTP_ROOT_SAME;
 }
 
 char* FTPGetErrorText(int err, char* buf, int bufSize)

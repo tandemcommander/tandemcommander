@@ -127,6 +127,12 @@ BOOL FTPIsTheSamePath(CFTPServerPathType type, const char* p1, const char* p2,
 // characters, otherwise it is the expected length of the user name
 BOOL FTPHasTheSameRootPath(const char* p1, const char* p2, int userLength);
 
+// feature 410: how the roots of two user-part FTP paths relate - SAL_FTP_ROOT_SAME (what
+// FTPHasTheSameRootPath calls the same), SAL_FTP_ROOT_OTHER_HOST (same user and port, another
+// host name: maybe the same server, feature 341) or SAL_FTP_ROOT_OTHER (src/common/salftproot.h);
+// 'userLength' as for FTPHasTheSameRootPath
+int FTPRootPathMatch(const char* p1, const char* p2, int userLength);
+
 // returns an error description
 char* FTPGetErrorText(int err, char* buf, int bufSize);
 

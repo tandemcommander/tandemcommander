@@ -1,0 +1,17 @@
+ftp410_probe (feature 410)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 06:19; desktop 'tc_probe_34324'; ACP 1250; registry key existed True; export SHA-256 B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+Server  : ftpmini_sess.py utf-8 on 127.0.0.1:2143 - up
+
+REFRESH-ALIAS ROW    PASS        panel connection #2; upload sent STOR n.txt: True; the panel's connection listed again: True (wanted True); panel connection commands: CWD /REFRESH-ALIAS / PWD / PORT 127,0,0,1,250,213 / TYPE A / LIST; all commands: USER u / PASS p / SYST / PWD / CWD /REFRESH-ALIAS / PORT 127,0,0,1,250,209 / TYPE A / LIST / CWD /REFRESH-ALIAS / PORT 127,0,0,1,250,211 / STOR n.txt / QUIT / CWD /REFRESH-ALIAS / PWD / PORT 127,0,0,1,250,213 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/REFRESH-ALIAS/*.*' -> 'ftp://u:p@localhost:2143/REFRESH-ALIAS/*.*'; op windows: none
+           (closed 0 operation window(s); left: 0)
+REFRESH-ALIAS END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+CACHE-ALIAS ROW    FAIL        panel connection #4; after Backspace 'ftp://u@127.0.0.1:2143/CACHE-ALIAS'; upload stored sub/n.txt: True; after Enter 'ftp://u@127.0.0.1:2143/CACHE-ALIAS/sub'; the panel's connection listed sub again: False; its commands after Enter: ; upload commands: USER u / PASS p / SYST / PWD / CWD /CACHE-ALIAS/sub/ / PORT 127,0,0,1,250,226 / TYPE A / LIST / CWD /CACHE-ALIAS/sub/ / PORT 127,0,0,1,250,228 / STOR n.txt / QUIT; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/CACHE-ALIAS/*.*' -> 'ftp://u:p@localhost:2143/CACHE-ALIAS/sub/'; op windows: none
+           (closed 0 operation window(s); left: 0)
+CACHE-ALIAS END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+CACHE-SAME ROW    PASS        panel connection #6; after Backspace 'ftp://u@127.0.0.1:2143/CACHE-SAME'; upload stored sub/n.txt: True; after Enter 'ftp://u@127.0.0.1:2143/CACHE-SAME/sub'; the panel's connection listed sub again: True; its commands after Enter: CWD /CACHE-SAME/sub / PWD / PORT 127,0,0,1,250,252 / LIST; upload commands: CWD /CACHE-SAME/sub/ / PORT 127,0,0,1,250,245 / LIST / CWD /CACHE-SAME/sub/ / PORT 127,0,0,1,250,247 / STOR n.txt / NOOP; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/CACHE-SAME/*.*' -> 'ftp://u@127.0.0.1:2143/CACHE-SAME/sub/'; op windows: none
+           (closed 0 operation window(s); left: 0)
+CACHE-SAME END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+
+Rows: PASS 5, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

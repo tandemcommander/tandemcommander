@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 
+#include "../../common/salftproot.h" // feature 410: another host name of a connection root
+
 //
 // ****************************************************************************
 // CPluginFSInterface
@@ -685,14 +687,48 @@ void CPluginFSInterface::AcceptChangeOnPathNotification(const char* fsName, cons
         lstrcpyn(path1, path + (isFTP ? AssignedFSNameLen : AssignedFSNameLenFTPS) + 1, FTP_USERPART_SIZE);
         MakeUserPart(path2, FTP_USERPART_SIZE);
         int userLength = FTPGetUserLength(User);
-        if (FTPHasTheSameRootPath(path1, path2, userLength)) // same root (connection)
+        // feature 410: the same root (connection), or another host name with the same user and port -
+        // maybe the same server (feature 341), whose changes this panel must show too
+        int rootMatch = FTPRootPathMatch(path1, path2, userLength);
+        if (rootMatch != SAL_FTP_ROOT_OTHER)
         {
             char* p1 = (char*)FTPFindPath(path1, userLength);
             char* p2 = (char*)FTPFindPath(path2, userLength);
+            if (rootMatch == SAL_FTP_ROOT_OTHER_HOST && p1 != NULL)
+            { // the files viewed through this connection are cached under its own name, which the plug-in's
+                // notification handler did not drop: drop the changed path's ones under this name (FTP and FTPS
+                // variants, as CPluginInterface::AcceptChangeOnPathNotification does for the notified name);
+                // a name that does not fit is skipped (the cache stays, nothing is cut)
+                char viewed[FTP_USERPART_SIZE + 50]; // +50 is reserved for the FS name
+                int i;
+                for (i = 0; i < 2; i++)
+                {
+                    const char* fsNameAux = i == 0 ? AssignedFSName : AssignedFSNameFTPS;
+                    int len = (int)strlen(fsNameAux);
+                    if (len + 1 < (int)sizeof(viewed))
+                    {
+                        memcpy(viewed, fsNameAux, len);
+                        viewed[len++] = ':';
+                        if (MakeUserPart(viewed + len, (int)sizeof(viewed) - len, NULL, TRUE))
+                        {
+                            len += (int)strlen(viewed + len);
+                            int pathLen = (int)strlen(p1);
+                            if (len + pathLen < (int)sizeof(viewed))
+                            {
+                                memcpy(viewed + len, p1, pathLen + 1);
+                                SalamanderGeneral->RemoveFilesFromCache(viewed);
+                            }
+                        }
+                    }
+                }
+            }
             CFTPServerPathType type = GetFTPServerPathType(Path);
             if (FTPIsPrefixOfServerPath(type, p1, p2, !(includingSubdirs & 0x01))) // prefix matches or it is an exact match
             {
-                NextRefreshWontClearCache = TRUE;
+                // under its own name the notification already dropped this path from the plug-in's caches; under
+                // another name it did not (they are keyed by the name as typed): the refresh then distrusts the
+                // path as Ctrl+R does - lists it again, drops its cached listings and viewed files (feature 410)
+                NextRefreshWontClearCache = rootMatch == SAL_FTP_ROOT_SAME;
                 if (includingSubdirs & 0x02 /* soft refresh */) // perform the refresh once the panel activates
                 {
                     if (GetForegroundWindow() != SalamanderGeneral->GetMainWindowHWND()) // Salamander main window is inactive

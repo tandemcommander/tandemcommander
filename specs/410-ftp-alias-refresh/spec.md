@@ -96,14 +96,14 @@ typed to `localhost` stores `sub/n.txt`, Enter on `sub`: the panel's connection 
   same user and port.
 - **FR-005**: Panels and cached listings with another user or another port, and panels whose path
   the notification does not cover, MUST keep today's behaviour.
+- **FR-006**: The rule "same user, same port, any host" MUST be one decision, testable without the GUI: its
+  user / port part is used by every site (panel refresh, viewer cache, listing cache), its host
+  verdict where the host matters (panel refresh and viewer cache: same name vs another name).
 - **FR-007**: A change-on-path notification MUST also drop the files downloaded for viewing under
   the notified path for every open FTP connection (panel or detached) with the same user and port
   and another host, so that viewing a changed file again downloads it (found while reading:
   the viewer cache is keyed by the name as typed, like the listing cache; severity 4, fixed here
   by stop-rules rule 11).
-- **FR-006**: The rule "same user, same port, any host" MUST be one decision used by both sites
-  (panel refresh and listing cache), testable without the GUI.
-
 ### Key Entities
 
 - **Connection root**: user, host, port of an FTP path (`//user@host:port`); the password is never
@@ -120,6 +120,8 @@ typed to `localhost` stores `sub/n.txt`, Enter on `sub`: the panel's connection 
 - **SC-002**: Probe row CACHE-ALIAS passes (FAIL at 2ce004b9).
 - **SC-003**: Control rows REFRESH-SAME, CACHE-SAME and the path rule row REFRESH-ELSE stay PASS;
   feature 341's probe (`ftp341_probe.ps1`) stays 12 / 0.
+- **SC-005**: Probe row VIEW-ALIAS passes: a file viewed under one name is downloaded again
+  after a change under another name (VIEW-SAME control stays PASS).
 - **SC-004**: the shared decision has `saltests` checks (same / other host, other user, anonymous,
   other port, default port 21, password ignored).
 

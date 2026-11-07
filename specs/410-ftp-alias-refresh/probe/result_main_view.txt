@@ -1,0 +1,14 @@
+ftp410_probe (feature 410)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 06:04; desktop 'tc_probe_33592'; ACP 1250; registry key existed True; export SHA-256 B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+Server  : ftpmini_sess.py utf-8 on 127.0.0.1:2143 - up
+
+VIEW-ALIAS ROW    FAIL        panel connection #2; view 1: viewer 1, RETR x.txt True; after Backspace 'ftp://u@127.0.0.1:2143/'; upload stored n.txt: True; back 'ftp://u@127.0.0.1:2143/VIEW-ALIAS'; view 2: viewer 1, x.txt downloaded again False; view 2 commands: ; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/*.*' -> 'ftp://u:p@localhost:2143/VIEW-ALIAS/'
+           (closed 0 operation window(s); left: 0)
+VIEW-ALIAS END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+VIEW-SAME  ROW    PASS        panel connection #4; view 1: viewer 1, RETR x.txt True; after Backspace 'ftp://u@127.0.0.1:2143/'; upload stored n.txt: True; back 'ftp://u@127.0.0.1:2143/VIEW-SAME'; view 2: viewer 1, x.txt downloaded again True; view 2 commands: PORT 127,0,0,1,229,171 / RETR x.txt; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/*.*' -> 'ftp://u@127.0.0.1:2143/VIEW-SAME/'
+           (closed 0 operation window(s); left: 0)
+VIEW-SAME  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+
+Rows: PASS 3, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

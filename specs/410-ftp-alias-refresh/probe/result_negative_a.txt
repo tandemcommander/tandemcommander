@@ -1,0 +1,26 @@
+ftp410_probe (feature 410)
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 06:15; desktop 'tc_probe_28332'; ACP 1250; registry key existed True; export SHA-256 B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+Server  : ftpmini_sess.py utf-8 on 127.0.0.1:2143 - up
+
+REFRESH-ALIAS ROW    FAIL        panel connection #2; upload sent STOR n.txt: True; the panel's connection listed again: False (wanted True); panel connection commands: ; all commands: USER u / PASS p / SYST / PWD / CWD /REFRESH-ALIAS / PORT 127,0,0,1,253,235 / TYPE A / LIST / CWD /REFRESH-ALIAS / PORT 127,0,0,1,253,237 / STOR n.txt / QUIT; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/REFRESH-ALIAS/*.*' -> 'ftp://u:p@localhost:2143/REFRESH-ALIAS/*.*'; op windows: none
+           (closed 0 operation window(s); left: 0)
+REFRESH-ALIAS END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+REFRESH-SAME ROW    PASS        panel connection #4; upload sent STOR n.txt: True; the panel's connection listed again: True (wanted True); panel connection commands: PORT 127,0,0,1,253,246 / STOR n.txt / NOOP / CWD /REFRESH-SAME / PWD / PORT 127,0,0,1,253,248 / TYPE A / LIST; all commands: PORT 127,0,0,1,253,246 / STOR n.txt / NOOP / CWD /REFRESH-SAME / PWD / PORT 127,0,0,1,253,248 / TYPE A / LIST; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/REFRESH-SAME/*.*' -> 'ftp://u@127.0.0.1:2143/REFRESH-SAME/*.*'; op windows: none
+           (closed 0 operation window(s); left: 0)
+REFRESH-SAME END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+REFRESH-ELSE ROW    PASS        panel connection #5; upload sent STOR n.txt: True; the panel's connection listed again: False (wanted False); panel connection commands: ; all commands: USER u / PASS p / SYST / PWD / CWD /OTHER-ELSE / PORT 127,0,0,1,254,21 / TYPE A / LIST / CWD /OTHER-ELSE / PORT 127,0,0,1,254,23 / STOR n.txt / QUIT; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/REFRESH-ELSE/*.*' -> 'ftp://u:p@localhost:2143/OTHER-ELSE/*.*'; op windows: none
+           (closed 0 operation window(s); left: 0)
+REFRESH-ELSE END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+CACHE-ALIAS ROW    PASS        panel connection #7; after Backspace 'ftp://u@127.0.0.1:2143/CACHE-ALIAS'; upload stored sub/n.txt: True; after Enter 'ftp://u@127.0.0.1:2143/CACHE-ALIAS/sub'; the panel's connection listed sub again: True; its commands after Enter: CWD /CACHE-ALIAS/sub / PWD / PORT 127,0,0,1,250,95 / LIST; upload commands: USER u / PASS p / SYST / PWD / CWD /CACHE-ALIAS/sub/ / PORT 127,0,0,1,250,87 / TYPE A / LIST / CWD /CACHE-ALIAS/sub/ / PORT 127,0,0,1,250,89 / STOR n.txt / QUIT; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/CACHE-ALIAS/*.*' -> 'ftp://u:p@localhost:2143/CACHE-ALIAS/sub/'; op windows: none
+           (closed 0 operation window(s); left: 0)
+CACHE-ALIAS END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+VIEW-ALIAS ROW    FAIL        panel connection #9; view 1: viewer 1, RETR x.txt True; after Backspace 'ftp://u@127.0.0.1:2143/'; upload stored n.txt: True; back 'ftp://u@127.0.0.1:2143/VIEW-ALIAS'; view 2: viewer 1, x.txt downloaded again False; view 2 commands: ; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/*.*' -> 'ftp://u:p@localhost:2143/VIEW-ALIAS/'
+           (closed 0 operation window(s); left: 0)
+VIEW-ALIAS END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+VIEW-SAME  ROW    PASS        panel connection #11; view 1: viewer 1, RETR x.txt True; after Backspace 'ftp://u@127.0.0.1:2143/'; upload stored n.txt: True; back 'ftp://u@127.0.0.1:2143/VIEW-SAME'; view 2: viewer 1, x.txt downloaded again True; view 2 commands: PORT 127,0,0,1,250,192 / RETR x.txt; dialogs: [Copy] 'ftp://u@127.0.0.1:2143/*.*' -> 'ftp://u@127.0.0.1:2143/VIEW-SAME/'
+           (closed 0 operation window(s); left: 0)
+VIEW-SAME  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; exit question (unfinished operations) 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+
+Rows: PASS 10, FAIL 2, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

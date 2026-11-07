@@ -4,6 +4,8 @@
 
 #include "precomp.h"
 
+#include "../../common/salftproot.h" // feature 410: SalFtpSameUser
+
 //
 // ****************************************************************************
 // CControlConnectionSocket
@@ -1666,9 +1668,9 @@ void CListingCache::AcceptChangeOnPathNotification(const char* userPart, BOOL in
                 }
             }
         }
-        if (SalamanderGeneral->StrICmp(host, item->Host) == 0 &&
-            (user == NULL && item->User == NULL ||
-             item->User != NULL && user != NULL && strcmp(user, item->User) == 0) &&
+        // feature 410: the host is not compared - a listing cached under another host name with the same
+        // user and port is maybe of the same server (feature 341), its next use must list it again
+        if (SalFtpSameUser(user, item->User) &&
             port == item->Port &&
             FTPIsPrefixOfServerPath(item->PathType, FTPGetLocalPath(pathPart, item->PathType),
                                     item->Path, !includingSubdirs))

@@ -1,0 +1,91 @@
+# Fix log - 410-ftp-alias-refresh
+
+Backlog item `ftp-panel-refresh-misses-change-under-another-name` (source review:341, severity 4).
+
+## Measurement at 2ce004b9 (before)
+
+Sites (by reading): a change-on-path notification reaches the FTP plug-in in
+`CPluginInterface::AcceptChangeOnPathNotification` (`ftp.cpp`: `ListingCache.AcceptChangeOnPathNotification`
++ `RemoveFilesFromCache` of the notified name) and, once per FS in a panel or detached (core
+`mainwnd3.cpp`), in `CPluginFSInterface::AcceptChangeOnPathNotification` (`fs3.cpp`: refresh when
+`FTPHasTheSameRootPath` - user, host `StrICmp`, port as typed). `CListingCache::AcceptChangeOnPathNotification`
+(`ctrlcon4.cpp`) compares the host too. The listing cache is on by default (`Config.UseListingsCache = TRUE`,
+`ftp3.cpp`).
+
+New probe `probe/ftp410_probe.ps1` (hidden desktop) with `probe/ftpmini_sess.py` (323's
+`ftpmini_hide.py`, every log line carries the number of its control connection, so the panel's
+connection is told from the upload's workers). Panel `ftp://u@127.0.0.1:2143/...`, uploads typed to
+`ftp://u:p@localhost:2143/...`.
+
+```text
+powershell -File tools\run_on_hidden_desktop.ps1 -Log ...\result_main.txt -CommandLine "powershell -NoProfile -ExecutionPolicy Bypass -File ...\ftp410_probe.ps1 -Exe build\tandemcommander\Debug_x64\tandemcommander.exe"
+```
+
+`probe/result_main.txt` (PASS 8, FAIL 2), `probe/result_main_view.txt` (VIEW rows added later, run on
+the same old build: PASS 3, FAIL 1):
+
+| Row | at 2ce004b9 | what was seen |
+|---|---|---|
+| REFRESH-ALIAS | FAIL | upload STOR n.txt via localhost; the panel's connection sent nothing - the panel keeps the old listing |
+| REFRESH-SAME | PASS | control: the panel's connection lists again |
+| REFRESH-ELSE | PASS | upload to another folder: no listing (path rule) |
+| CACHE-ALIAS | FAIL | Enter on `sub` after a change via localhost: no LIST - the stale cached listing shown |
+| CACHE-SAME | PASS | control |
+| VIEW-ALIAS | FAIL | F3 on x.txt again after a change via localhost: no RETR - the stale viewed copy shown (finding, see below) |
+| VIEW-SAME | PASS | control: RETR x.txt again |
+
+All END rows PASS; registry restored, hash identical.
+
+## Decisions
+
+- Rule (spec Clarifications): another host with the same user and port is "another name of the
+  server" (the item's *Expected*, 341's maybe-the-same-server). Another user / port: unchanged.
+- Pure rule `src/common/salftproot.h` (`SalFtpSameUser`, `SalFtpSamePortText`, `SalFtpRootMatchOf`);
+  `FTPRootPathMatch` (`ftputils.cpp`) splits the two roots and applies it; `FTPHasTheSameRootPath`
+  is now `== SAL_FTP_ROOT_SAME` (its other caller `IsOurPath`, `fs2.cpp`, unchanged in effect).
+- `fs3.cpp`: refresh also on `SAL_FTP_ROOT_OTHER_HOST` with the same path rule and timing;
+  `NextRefreshWontClearCache` is TRUE only for the same root (under another name the forced refresh
+  distrusts the path like Ctrl+R).
+- `ctrlcon4.cpp`: the listing cache drops entries of the same user and port whatever the host.
+
+## Findings fixed on the way
+
+- **Viewer cache under another name** (severity 4, stop-rules rule 11): files viewed (F3) through a
+  connection are cached under its own name; a change via another name dropped only the notified
+  name's files, so viewing again showed the old copy (row VIEW-ALIAS FAIL at 2ce004b9). Now
+  `CPluginFSInterface::AcceptChangeOnPathNotification` drops, for every FS of another host with the
+  same user and port (panel or detached), the viewed files of the notified path under its own root
+  (`ftp:` and `ftps:`, as `ftp.cpp` does for the notified name; a name that does not fit is skipped -
+  nothing is cut). Row VIEW-ALIAS PASS after.
+
+## Checks (after)
+
+| Check | Command | Result |
+|---|---|---|
+| build | `.\build.cmd` | BUILD SUCCEEDED |
+| saltests | `build\tandemcommander\Debug_x64\saltests\saltests.exe` | `saltests: 282637 checks, 0 failed` (`TestFtpRootMatch410`: 24 checks) |
+| encoding guard | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
+| probe | `ftp410_probe.ps1` -> `probe/result_after.txt` | PASS 14, FAIL 0; registry restored, identical |
+| regression | 341's `ftp341_probe.ps1` -> `probe/regress_341.txt` | PASS 12, FAIL 0; registry identical |
+
+## Negative controls (in place, restored and rebuilt after)
+
+| Mutant | Change | Rows run | Result |
+|---|---|---|---|
+| A | `fs3.cpp`: refresh / viewer drop only for `SAL_FTP_ROOT_SAME` (the old rule) | REFRESH*, VIEW*, CACHE-ALIAS -> `probe/result_negative_a.txt` | REFRESH-ALIAS FAIL, VIEW-ALIAS FAIL; the others PASS |
+| B | `ctrlcon4.cpp`: the host compared again | CACHE*, REFRESH-ALIAS -> `probe/result_negative_b.txt` | CACHE-ALIAS FAIL; the others PASS |
+
+After restoring both files (CRLF checked; Git Bash `sed -i` had dropped the CRs of a mutated copy -
+the restore was from a CRLF copy, line counts compared) the build was rebuilt and the whole probe run
+again: `probe/result_after.txt` PASS 14, FAIL 0.
+
+## Limits
+
+- Another user or another port of a server (feature 345's wider rule for the upload cache) is not
+  refreshed and its cached listings are kept - the item names the host only (spec Clarifications).
+- A panel at a parent folder of the changed one is not refreshed (as under its own name).
+- Two unrelated servers with the same user, port and folder: a change on one refreshes a panel at
+  that folder on the other (one extra listing) - 341's rule, the client cannot tell them apart.
+- Viewed files cached under a name of a connection that is no longer open are not dropped (no FS
+  holds that name any more); `ClearHostFromListingCacheIfFirstCon` drops them when that name is
+  connected again first.
