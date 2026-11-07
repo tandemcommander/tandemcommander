@@ -123,6 +123,9 @@ active and the inactive panel.
   that fill.
 - **FR-006**: The default theme and the dark theme's active panel MUST stay pixel-identical to the
   look of feature 404.
+- **FR-007** (review 1): When the fill was lifted, the active tab's title MUST keep the contrast it
+  has on the caption colour (at most 4.5:1 asked): the caption text colour, else mixed toward white
+  (or black) by the smallest hundredth that gives it.
 
 ### Key Entities
 

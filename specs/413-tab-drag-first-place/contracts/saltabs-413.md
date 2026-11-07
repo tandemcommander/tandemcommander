@@ -13,6 +13,11 @@ int SalTabDragSlot(int count, int tabWidth, int draggedLeft, int from);
 // channel) of 'stripBk' or 'face' - 'capBk' mixed toward 'capFg' by the smallest k / 100
 // (k <= 50) that separates it from both; never mixed under High Contrast (feature 413)
 DWORD SalTabActiveFill(DWORD capBk, DWORD capFg, DWORD stripBk, DWORD face, BOOL highContrast);
+
+// review 1: the active tab's title on 'fill' - 'capFg' unless the fill was lifted and the title
+// lost the contrast it has on 'capBk' (at most 4.5:1 asked); then mixed toward white / black
+double SalTabContrastRatio(DWORD a, DWORD b);
+DWORD SalTabActiveText(DWORD capFg, DWORD capBk, DWORD fill);
 ```
 
 Callers: `CTabWindow::UpdateDrag` (slot), `CTabWindow::Paint` (fill; the shape and the close
