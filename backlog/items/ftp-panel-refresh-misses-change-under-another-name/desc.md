@@ -1,16 +1,16 @@
 ---
 title: FTP: a panel is not refreshed after a change made under another name of its server
 type: bug
-status: open
+status: in-progress
 severity: 4
 area: ftp
 source: review:341
 who: agent
 created: 2026-10-24
-updated: 2026-10-30
-verified: -
+updated: 2026-11-07
+verified: 2026-11-07 2ce004b9
 effort: S
-feature: -
+feature: 410
 related: []
 depends-on: []
 reason: -
@@ -50,3 +50,5 @@ may be enough.
 
 - 2026-10-24 — created (source review:341)
 - 2026-10-30 — moved to Next position 31
+- 2026-11-07 — verified at 2ce004b9: reproduced at 2ce004b9: probe ftp410 REFRESH-ALIAS and CACHE-ALIAS FAIL (panel connection sends no LIST after an upload typed to localhost), same-name controls PASS
+- 2026-11-07 — run started, feature 410
