@@ -54,7 +54,7 @@ files already in its state folder with an empty, protected access list (`D:PAI`)
   state-dir tests fail (`D:P...` DACLs; the junction case: the outside file became
   `D:PAI(A;;FR;;;BU)` - the old `/T` followed the junction and locked the owner out of a file
   outside the folder); the old `ensure()` -> the side-worktree case fails with exactly the item's
-  `EPERM, Permission denied: \?\...\main-worktree`.
+  `EPERM, Permission denied: \\?\...\main-worktree`.
 - `npm run check`: exit 0, 336 passed / 2 skipped (19 files + 1 skipped).
 - Encoding guard `TOTAL: 0 finding(s)`; `build.cmd` `BUILD SUCCEEDED` (no product source changed;
   saltests not needed). No UI string of the product changed (no `.slt` refresh).
@@ -63,7 +63,7 @@ files already in its state folder with an empty, protected access list (`D:PAI`)
 ## Measurement after
 
 - `node ../../specs/412-state-files-acl/probe/measure_after.ts` (from tools/backlog-app): after
-  344's call `events.jsonl`, `main-worktree\.git`, `main-worktreeacklog\BACKLOG.md` = `D:PAI`
+  344's call `events.jsonl`, `main-worktree\.git`, `main-worktree\backlog\BACKLOG.md` = `D:PAI`
   (EPERM); `restrictToOwner` -> `{"private":true,"contents":"reset"}`; after: all three
   `D:AI(A;ID;FA;;;SY)(A;ID;FA;;;<SID>)` (readable).
 - Time on a tree like the real one (690 folders, 400 files): 1175 / 1149 ms; feature 344's call on
@@ -91,3 +91,41 @@ files already in its state folder with an empty, protected access list (`D:PAI`)
   an entry the owner cannot change, accepted. C3 (LOW) POSIX path unchanged, not testable here,
   accepted.
 - Run 2 (after the T006 change): CRITICAL 0, HIGH 0, MEDIUM 0; C2, C3 as accepted.
+
+## Review
+
+### Review 1 (refute-first agent, 2026-11-07) - MUST 0, SHOULD 2, NOTE 5
+
+It re-ran `measure_after.ts` (same result), read the real state folder (691 folders, 383 files,
+no link, all listable - the next start takes the one-call path; 356-character paths repaired),
+checked the callers (`main.ts` only; `restrictToOwner()` runs before `services.start()`;
+`ensure()` only from `sync()`; `revert()` unchanged), and ran negative controls (344's call: 5
+tests fail; old `ensure()`: the item's EPERM; link walk forced clean: only the junction test
+fails).
+
+- SHOULD 1: the ACL tests failed from PowerShell 7 (the inherited `PSModulePath` keeps Windows
+  PowerShell 5.1 from loading `Get-Acl`; 4 failed / 8 passed). Fixed: `daclsOf()` runs it
+  without `PSModulePath` and throws when it returns fewer DACLs than paths; `measure_after.ts`
+  likewise and fails instead of printing an empty DACL. After: 13 / 13 from pwsh 7.6.6.
+- SHOULD 2: nothing tested the `/L` of the folder-by-folder reset (the reviewer measured that
+  without `/L` a file symbolic link's outside target loses an explicit ACE). Fixed: a test with a
+  file symbolic link to an outside file with an explicit Users read ACE (skipped when the
+  machine cannot create file symlinks; it ran here). Negative control: `/L` removed -> that test
+  fails (1 failed / 5 passed).
+- NOTE 1: the unlistable-folder test also passes on the fast path (`/T` repairs such a folder
+  itself) - it still runs the folder-by-folder path at the actual code; left.
+- NOTE 2: `ensure()` still deleted a `main-worktree` folder that itself could not be listed
+  (severity 2). Fixed: `readdirSync(path)` is tried before `.git`; EACCES / EPERM -> the same
+  `tool-failed` refusal. Test: the side-worktree case locks the folder after the `.git` part,
+  `sync()` refuses, the folder stays, the start's repair makes it work. Negative control: the
+  `readdirSync` line removed -> the test fails with the item's EPERM.
+- NOTE 3: one flaky failure of `write-channels.test.ts:96` (an `rmSync` in its cleanup) in one
+  of the reviewer's runs, not reproduced (9 / 9 alone, the full suite green twice); unrelated
+  (the ACL tests touch only their own temp folders). Recorded only.
+- NOTE 4: a backspace (0x08) in this fix-log where a here-document ate a backslash - fixed (rule
+  123); the same trap hit the review fixes once and was corrected with the editor.
+- NOTE 5: unchanged from 344 and unreachable in normal use (the app creates the folder): an
+  explicit ACE for another user already on the folder itself survives `/grant:r`; `/reset` on a
+  hard link changes the shared file. Recorded only.
+
+After the fixes: `npm run check` exit 0, 337 passed / 2 skipped; encoding guard `TOTAL: 0`.

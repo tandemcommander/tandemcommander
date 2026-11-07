@@ -68,10 +68,24 @@ function daclsOf(paths: string[]): string[] {
   const result = spawnSync(
     join(SYSTEM32, "WindowsPowerShell", "v1.0", "powershell.exe"),
     ["-NoProfile", "-NonInteractive", "-Command", script],
-    { encoding: "utf8", windowsHide: true },
+    // Without PowerShell 7's module path, which keeps Windows PowerShell from loading Get-Acl
+    // when the tests start from pwsh (review 1 of 412).
+    { encoding: "utf8", windowsHide: true, env: withoutModulePath() },
   );
-  if (result.status !== 0) throw new Error(`Get-Acl: ${result.stderr}`);
-  return result.stdout.split(/\r?\n/).filter((line) => line.startsWith("D:"));
+  const dacls = result.stdout.split(/\r?\n/).filter((line) => line.startsWith("D:"));
+  if (result.status !== 0 || dacls.length !== paths.length) throw new Error(`Get-Acl: ${result.stderr}`);
+  return dacls;
+}
+
+/**
+ * The environment without `PSModulePath` (any case).
+ *
+ * @returns A copy of the environment.
+ */
+function withoutModulePath(): NodeJS.ProcessEnv {
+  return Object.fromEntries(
+    Object.entries(process.env).filter(([key]) => key.toUpperCase() !== "PSMODULEPATH"),
+  );
 }
 
 /**
@@ -125,7 +139,7 @@ describe.skipIf(process.platform !== "win32")("StateDir.restrictToOwner on Windo
   let base = "";
   let state: StateDir;
   let sid = "";
-  let link = "";
+  let links: string[] = [];
 
   beforeEach(() => {
     base = mkdtempSync(join(tmpdir(), "tc412-"));
@@ -134,9 +148,9 @@ describe.skipIf(process.platform !== "win32")("StateDir.restrictToOwner on Windo
   });
 
   afterEach(() => {
-    // The junction goes first: the cleanup's /T would follow it.
-    if (link) unlinkSync(link);
-    link = "";
+    // The links go first: the cleanup's /T would follow them.
+    for (const link of links) unlinkSync(link);
+    links = [];
     unlockTree(base);
     rmSync(base, { recursive: true, force: true });
   });
@@ -229,8 +243,33 @@ describe.skipIf(process.platform !== "win32")("StateDir.restrictToOwner on Windo
     run("icacls.exe", [outsideFile, "/grant", "*S-1-5-32-545:(R)", "/Q"]);
     const before = daclsOf([outsideFile])[0] ?? "";
     expect(before).toContain(";;FR;;;BU)");
-    link = join(state.path, "link");
+    const link = join(state.path, "link");
     symlinkSync(outside, link, "junction");
+    links.push(link);
+    expect(state.restrictToOwner()).toEqual({ private: true, contents: "reset" });
+    expect(daclsOf([outsideFile])[0]).toBe(before);
+    for (const dacl of daclsOf(files)) expectInheritsOwnerOnly(dacl, sid);
+    expectUsable(files);
+  });
+
+  it("never follows a file symbolic link to a file outside (the folder-by-folder reset's /L)", (ctx) => {
+    const files = fill();
+    const outside = join(base, "outside");
+    mkdirSync(outside);
+    const outsideFile = join(outside, "keep.txt");
+    writeFileSync(outsideFile, "outside\n");
+    run("icacls.exe", [outsideFile, "/grant", "*S-1-5-32-545:(R)", "/Q"]);
+    const before = daclsOf([outsideFile])[0] ?? "";
+    expect(before).toContain(";;FR;;;BU)");
+    const link = join(state.path, "file-link");
+    try {
+      symlinkSync(outsideFile, link, "file");
+    } catch {
+      // Creating a file symbolic link needs Developer Mode or the privilege.
+      ctx.skip();
+      return;
+    }
+    links.push(link);
     expect(state.restrictToOwner()).toEqual({ private: true, contents: "reset" });
     expect(daclsOf([outsideFile])[0]).toBe(before);
     for (const dacl of daclsOf(files)) expectInheritsOwnerOnly(dacl, sid);

@@ -105,8 +105,8 @@ fails with a message about the permissions and the folder is still there.
 - **FR-004**: The launcher secret MUST stay enabled exactly when the folder itself was made
   private (as today); a failure to reset the contents MUST be reported on the console without
   turning the secret off.
-- **FR-005**: The side worktree MUST tell an unreadable `.git` (an error reported to the caller,
-  folder kept) from a missing one (folder recreated, as today).
+- **FR-005**: The side worktree MUST tell an unreadable `.git` or worktree folder (an error
+  reported to the caller, folder kept) from a missing one (folder recreated, as today).
 - **FR-006**: The behaviour on non-Windows systems MUST stay unchanged.
 - **FR-007**: The permission step MUST NOT follow a link (junction, symbolic link) inside the state
   folder: the access of a link's target outside the folder stays unchanged.

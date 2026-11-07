@@ -164,8 +164,22 @@ describe("SideWorktree", () => {
         expect(await worktree.exists()).toBe(true);
         await worktree.sync(base);
         expect((await gitIn(worktree.path, ["rev-parse", "HEAD"])).trim()).toBe(base);
+        // A worktree folder that cannot be listed is refused the same way, never deleted.
+        expect(spawnSync(icacls, [worktree.path, "/inheritance:r", "/Q"], { windowsHide: true }).status).toBe(
+          0,
+        );
+        expect(await worktree.exists()).toBe(false);
+        await expect(worktree.sync(base)).rejects.toThrow(/cannot be read/);
+        expect(existsSync(worktree.path)).toBe(true);
+        expect(new StateDir(join(root, ".git")).restrictToOwner()).toEqual({
+          private: true,
+          contents: "reset",
+        });
+        expect(existsSync(join(worktree.path, "backlog", "BACKLOG.md"))).toBe(true);
+        await worktree.sync(base);
+        expect((await gitIn(worktree.path, ["rev-parse", "HEAD"])).trim()).toBe(base);
       } finally {
-        spawnSync(icacls, [dotGit, "/reset", "/Q"], { windowsHide: true });
+        spawnSync(icacls, [worktree.path, "/reset", "/T", "/C", "/Q"], { windowsHide: true });
       }
     },
   );

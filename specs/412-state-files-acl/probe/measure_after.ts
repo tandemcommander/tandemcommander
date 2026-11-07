@@ -42,8 +42,15 @@ function show(label: string): void {
     const dacl = spawnSync(
       join(system32, "WindowsPowerShell", "v1.0", "powershell.exe"),
       ["-NoProfile", "-Command", `(Get-Acl -LiteralPath '${f}').Sddl -replace '^.*?D:','D:'`],
-      { encoding: "utf8" },
+      // Without PowerShell 7's module path (Windows PowerShell could not load Get-Acl).
+      {
+        encoding: "utf8",
+        env: Object.fromEntries(
+          Object.entries(process.env).filter(([key]) => key.toUpperCase() !== "PSMODULEPATH"),
+        ),
+      },
     ).stdout.trim();
+    if (!dacl.startsWith("D:")) throw new Error(`Get-Acl failed for ${f}`);
     let readable = "readable";
     try {
       readFileSync(f);

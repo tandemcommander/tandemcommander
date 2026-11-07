@@ -20,7 +20,7 @@
  * repository's config once (git 2.20+ reads it); the app's own config is otherwise untouched.
  */
 
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { ApiError } from "@backlog-app/shared";
@@ -117,18 +117,20 @@ export class SideWorktree {
    */
   async ensure(): Promise<void> {
     if (await this.exists()) return;
-    // A `.git` that is there but cannot be read is a permission problem (feature 412: a start of
-    // feature 344 left the state folder's files with an empty ACL), never a reason to delete.
-    const dotGit = join(this.path, ".git");
-    if (existsSync(dotGit)) {
+    // A folder or `.git` that is there but cannot be read is a permission problem (feature 412: a
+    // start of feature 344 left the state folder's files with an empty ACL), never a reason to
+    // delete.
+    if (existsSync(this.path)) {
+      const dotGit = join(this.path, ".git");
       try {
-        readFileSync(dotGit);
+        readdirSync(this.path);
+        if (existsSync(dotGit)) readFileSync(dotGit);
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code;
         if (code === "EACCES" || code === "EPERM") {
           throw new ApiError(
             "tool-failed",
-            "the side worktree of main cannot be read (its .git file is not accessible) - restart the backlog app to repair the state folder's permissions",
+            "the side worktree of main cannot be read (its folder or .git file is not accessible) - restart the backlog app to repair the state folder's permissions",
             String(error),
           );
         }
