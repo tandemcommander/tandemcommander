@@ -143,3 +143,38 @@ T005: no comment in `src/tabwnd.cpp` / `saltabs.*` referred to the old slot 1 (G
 
 After review 1: build SUCCEEDED, saltests **282,681 / 0**, encoding guard 0, `tabs413_probe`
 **18 / 0 / 1**, `tabs404_probe` **29 / 0 / 1**, `tabs405_probe` **7 / 0 / 1**.
+
+### Review 2 (refute-first agent, 2026-11-07)
+
+No MUST. Re-ran saltests (282,681 / 0), `tabs413_probe` (18 / 0 / 1), checked B2B2B2 (4.52:1) in
+the capture, the callers, the edge cases of review 1's rule against a Python copy; its
+`tabs404_probe` run was ended by the harness after MOUSE CANCELMODE (every row reached passed); the
+reviewer restored the registry from `%TEMP%	c404_backup.reg`, verified it identical (0F9AD87C...)
+and removed the fixture - checked afterwards here: no backup, no `%TEMP%	c404`, no process left.
+
+- **SHOULD 1 (fixed)**: when no step reached 24, `SalTabActiveFill` returned the halfway mix, which
+  could be closer to the strip and the face than the caption colour (D0D0D0 with a white title in
+  the default theme -> E8E8E8: 14 / 32 became 10 / 8; dark 444444 with a black title -> 222222).
+  Now it returns the step (k = 0 included) with the largest smaller separation, the smallest k on a
+  tie. saltests: the reviewer's two repros, the old halfway case (now 40,40,40) and a case whose
+  best step lies in the middle (60 toward 0, strip 30 / face 70 -> 50,50,50).
+- **NOTE 1 (fixed)**: `SalTabActiveText` tried only the pole away from the fill; when that pole
+  could not give the contrast (25 of 200,000 random colour sets) the other one is now tried (a
+  pole always reaches 4.5 or less: a mid grey has 4.58:1 to the better pole); saltests: title 20 on
+  fill 90 (black gives 3.04, white 6.9) -> a light title with >= 4.5.
+- NOTE 2 (recorded): the close glyph on the lifted fill is 979797 (3.28:1, was 4.04:1) - above 3:1
+  for graphics.
+- **NOTE 3 (fixed)**: the stale comment of a 404 check (`saltests.cpp`, "gives way below 100").
+- **NOTE 4 (fixed)**: `tabs413_probe` rows TITLE-<theme>-<panel>: the title's most contrasting pixel
+  against the fill, at least 4.5:1. Trap: the C# side formatted the ratio with the session's
+  decimal comma and PowerShell parsed "4,52" as 452 - the first run passed for that wrong reason;
+  now formatted and parsed invariant (9.80 / 12.97 / 8.50 / 4.52).
+- NOTE 5 (recorded, as review 1 NOTE 2): the dark active panel and the dark rebar are unchanged;
+  the person check decides.
+- NOTE 6 (recorded): the interrupted 404 run, see above.
+
+Negative control of these fixes: the review-1 version of `saltabs.cpp` (`git show HEAD:...`) fails
+**5** of the new checks; restored -> 0 failed.
+
+After review 2: build SUCCEEDED, saltests **282,686 / 0**, encoding guard 0, `tabs413_probe`
+**22 / 0 / 1**, `tabs404_probe` **29 / 0 / 1**, `tabs405_probe` **7 / 0 / 1**.

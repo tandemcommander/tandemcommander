@@ -1,6 +1,6 @@
 tabs413_probe (feature 413) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 09:56; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc413; font height 15, avg char 6
+Date    : 2026-11-07 10:25; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc413; font height 15, avg char 6
 
 FIRST      START  PASS        left [A B C D] active 0; right [P Q R S] active 0; left strip 830x29 tab width 170; right strip 879x29 tab width 170
 FIRST      LEFT   PASS        left: D dragged far past the left end: left [D A B C] active 0; right [P Q R S] active 0
@@ -19,10 +19,14 @@ THEME      DARK-INACTIVE PASS        strip at y 69 height 29; directory line at 
 THEME      HEIGHT-ACTIVE PASS        active panel: strip 29 / 29 px, directory line 23 / 23 px, active-tab rows 3-28 / 3-28 (default / dark)
 THEME      HEIGHT-INACTIVE PASS        inactive panel: strip 29 / 29 px, directory line 23 / 23 px, active-tab rows 3-28 / 3-28 (default / dark)
 THEME      LOOK-DEFAULT-ACTIVE PASS        active tab 99B4D1 vs strip DEDEDE: 69; vs the directory line's top row F0F0F0: 87 (both at least 24)
+THEME      TITLE-DEFAULT-ACTIVE PASS        the title's most contrasting pixel 000000 on the active tab 99B4D1: 9.80:1 (at least 4.5)
 THEME      LOOK-DEFAULT-INACTIVE PASS        active tab BFCDDB vs strip DEDEDE: 31; vs the directory line's top row F0F0F0: 49 (both at least 24)
+THEME      TITLE-DEFAULT-INACTIVE PASS        the title's most contrasting pixel 000000 on the active tab BFCDDB: 12.97:1 (at least 4.5)
 THEME      LOOK-DARK-ACTIVE PASS        active tab 264F78 vs strip 242424: 84; vs the directory line's top row 2D2D2D: 75 (both at least 24)
+THEME      TITLE-DARK-ACTIVE PASS        the title's most contrasting pixel FFFFFF on the active tab 264F78: 8.50:1 (at least 4.5)
 THEME      LOOK-DARK-INACTIVE PASS        active tab 454545 vs strip 242424: 33; vs the directory line's top row 2D2D2D: 24 (both at least 24)
+THEME      TITLE-DARK-INACTIVE PASS        the title's most contrasting pixel B2B2B2 on the active tab 454545: 4.52:1 (at least 4.5)
 MOUSE      REAL   NOT DRIVEN  the feel of a real mouse drag to the first place needs an input desktop (release checklist)
 Registry: restored; identical=True; SHA-256 before 0F9AD87C7832939E1222CE721A9A4BEE80F73D608F531360AFB36E591580631B / after 0F9AD87C7832939E1222CE721A9A4BEE80F73D608F531360AFB36E591580631B
 
-Rows: PASS 18, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 22, FAIL 0, NOT DRIVEN 1. Left running: 0; fixture removed: True; registry restored+identical: True

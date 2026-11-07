@@ -540,15 +540,27 @@ DWORD SalTabActiveFill(DWORD capBk, DWORD capFg, DWORD stripBk, DWORD face, BOOL
 {
     if (highContrast)
         return capBk;
+    // the first step that separates the fill from both; when none does, the step that
+    // separates it best (the caption colour itself on a tie - review 2: the halfway mix
+    // could be closer to the strip than the caption colour)
+    DWORD best = capBk;
+    int bestSep = -1;
     int k;
     for (k = 0; k <= 50; k++)
     {
         DWORD fill = k == 0 ? capBk : SalTabMix(capBk, capFg, k / 100.0);
-        if (SalTabColorDistance(fill, stripBk) >= SALTAB_ACTIVE_MIN_CONTRAST &&
-            SalTabColorDistance(fill, face) >= SALTAB_ACTIVE_MIN_CONTRAST)
+        int a = SalTabColorDistance(fill, stripBk);
+        int b = SalTabColorDistance(fill, face);
+        int sep = a < b ? a : b;
+        if (sep >= SALTAB_ACTIVE_MIN_CONTRAST)
             return fill;
+        if (sep > bestSep)
+        {
+            bestSep = sep;
+            best = fill;
+        }
     }
-    return SalTabMix(capBk, capFg, 0.5);
+    return best;
 }
 
 static double SalTabLinear(int c)
@@ -579,15 +591,24 @@ DWORD SalTabActiveText(DWORD capFg, DWORD capBk, DWORD fill)
         want = 4.5;
     if (SalTabContrastRatio(capFg, fill) >= want)
         return capFg;
-    DWORD toward = SalTabLuminance(capFg) >= SalTabLuminance(fill) ? RGB(255, 255, 255) : RGB(0, 0, 0);
-    int k;
-    for (k = 1; k <= 100; k++)
+    // first away from the fill (white for a title lighter than the fill, else black); when that
+    // pole cannot give the contrast, the other one (review 2); neither -> the better pole
+    DWORD away = SalTabLuminance(capFg) >= SalTabLuminance(fill) ? RGB(255, 255, 255) : RGB(0, 0, 0);
+    DWORD poles[2] = {away, away == RGB(0, 0, 0) ? RGB(255, 255, 255) : RGB(0, 0, 0)};
+    int p;
+    for (p = 0; p < 2; p++)
     {
-        DWORD text = SalTabMix(capFg, toward, k / 100.0);
-        if (SalTabContrastRatio(text, fill) >= want)
-            return text;
+        if (SalTabContrastRatio(poles[p], fill) < want)
+            continue; // even the pole itself is not enough
+        int k;
+        for (k = 1; k <= 100; k++)
+        {
+            DWORD text = SalTabMix(capFg, poles[p], k / 100.0);
+            if (SalTabContrastRatio(text, fill) >= want)
+                return text;
+        }
     }
-    return toward;
+    return SalTabContrastRatio(poles[0], fill) >= SalTabContrastRatio(poles[1], fill) ? poles[0] : poles[1];
 }
 
 int SalTabDragPosition(int from, int slot, int index)

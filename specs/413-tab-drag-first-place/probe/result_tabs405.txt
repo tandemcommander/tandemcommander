@@ -1,6 +1,6 @@
 tabs405_probe (feature 405) after
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 10:01; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc405
+Date    : 2026-11-07 10:28; registry key existed True; fixture C:\Users\pavel\AppData\Local\Temp\tc405
 
 SWITCH     START  PASS        left [A X1 X2 X3 B] active 0; right [R]; strip 830x29, tab width 158
 SWITCH     SEAM   PASS        AttachThreadInput to the program's GUI thread: True

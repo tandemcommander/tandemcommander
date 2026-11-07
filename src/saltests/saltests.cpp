@@ -2361,7 +2361,7 @@ static void TestTabStrip404()
     CHECK(SalTabDragSlot(4, 100, 206, 0) == 2);  // the probe's drag of A past C
     CHECK(SalTabDragSlot(4, 100, 900, 0) == 3);  // clamped
     CHECK(SalTabDragSlot(4, 100, 201, 2) == 2);
-    CHECK(SalTabDragSlot(4, 100, 199, 2) == 2);  // moving left: tab 1 gives way below 100
+    CHECK(SalTabDragSlot(4, 100, 199, 2) == 2);  // moving left: tab 1 gives way at or below 100 (413)
     CHECK(SalTabDragSlot(4, 100, 101, 2) == 2);
     CHECK(SalTabDragSlot(4, 100, 99, 2) == 1);
     CHECK(SalTabDragSlot(4, 100, -1, 2) == 0);
@@ -2496,9 +2496,19 @@ static void TestTabStrip413()
     // close only to the face: lifted toward a dark text (200 -> 186, 24 from 210)
     CHECK(SalTabActiveFill(RGB(200, 200, 200), RGB(0, 0, 0), RGB(100, 100, 100), RGB(210, 210, 210), FALSE) ==
           RGB(186, 186, 186));
-    // unreachable: halfway (42.5 -> 42, half to even)
+    // unreachable: the best-separating step, the caption colour on a tie (review 2: halfway made it worse)
     CHECK(SalTabActiveFill(RGB(40, 40, 40), RGB(45, 45, 45), RGB(36, 36, 36), RGB(45, 45, 45), FALSE) ==
-          RGB(42, 42, 42));
+          RGB(40, 40, 40)); // k = 0: 4 / 5; halfway 42: 6 / 3
+    CHECK(SalTabActiveFill(RGB(208, 208, 208), RGB(255, 255, 255), RGB(222, 222, 222), RGB(240, 240, 240), FALSE) ==
+          RGB(208, 208, 208)); // review 2's repro: halfway E8E8E8 was 10 / 8 instead of 14 / 32
+    CHECK(SalTabActiveFill(RGB(68, 68, 68), RGB(0, 0, 0), RGB(36, 36, 36), RGB(45, 45, 45), FALSE) ==
+          RGB(68, 68, 68)); // 32 / 23; toward black only closer (halfway 222222: 2)
+    // the best step is neither the first nor the last: 60 toward 0 with strip 30 / face 70 - k = 0
+    // gives 30 / 10, the separations meet at 50 (20 / 20)
+    {
+        DWORD f = SalTabActiveFill(RGB(60, 60, 60), RGB(0, 0, 0), RGB(30, 30, 30), RGB(70, 70, 70), FALSE);
+        CHECK(f == RGB(50, 50, 50)); // 20 / 20 - no step reaches 24, k = 16 (50.4 -> 50) separates best
+    }
     // High Contrast: never mixed
     CHECK(SalTabActiveFill(RGB(0, 0, 0), RGB(255, 255, 0), RGB(0, 0, 0), RGB(0, 0, 0), TRUE) == RGB(0, 0, 0));
 
@@ -2518,6 +2528,10 @@ static void TestTabStrip413()
     text = SalTabActiveText(RGB(90, 90, 90), RGB(200, 200, 200), RGB(186, 186, 186));
     CHECK(SalTabContrastRatio(text, RGB(186, 186, 186)) >= SalTabContrastRatio(RGB(90, 90, 90), RGB(200, 200, 200)));
     CHECK((text & 0xFF) < 90);
+    // the pole away from the fill cannot give the contrast, the other one can (review 2)
+    text = SalTabActiveText(RGB(20, 20, 20), RGB(200, 200, 200), RGB(90, 90, 90));
+    CHECK(SalTabContrastRatio(RGB(0, 0, 0), RGB(90, 90, 90)) < 4.5);
+    CHECK(SalTabContrastRatio(text, RGB(90, 90, 90)) >= 4.5 && (text & 0xFF) > 90);
     // a lifted fill on which the title keeps its contrast: unchanged
     CHECK(SalTabActiveText(RGB(0, 0, 0), RGB(200, 200, 200), RGB(186, 186, 186)) == RGB(0, 0, 0));
 }

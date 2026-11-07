@@ -205,7 +205,8 @@ int SalTabColorDistance(DWORD a, DWORD b);
 // SALTAB_ACTIVE_MIN_CONTRAST to 'stripBk' or to 'face' (the Dark theme's inactive
 // panel: 45,45,45 on 36,36,36 over 45,45,45) - 'capBk' mixed toward the caption text
 // colour 'capFg' by the smallest k / 100 (k <= 50) that separates it from both, else
-// by 1/2; never mixed under High Contrast (feature 413)
+// the step (k = 0 included) that separates it best, the smallest on a tie; never mixed
+// under High Contrast (feature 413)
 DWORD SalTabActiveFill(DWORD capBk, DWORD capFg, DWORD stripBk, DWORD face, BOOL highContrast);
 
 // the WCAG 2 contrast ratio of two colours (1..21)
@@ -214,7 +215,8 @@ double SalTabContrastRatio(DWORD a, DWORD b);
 // the active tab's title colour on 'fill' (from SalTabActiveFill): 'capFg' when the fill is
 // the caption colour 'capBk' or when 'capFg' keeps on the fill the contrast it has on 'capBk'
 // (at most 4.5:1 is asked); else 'capFg' mixed toward white (a fill darker than the title) or
-// black by the smallest k / 100 that gives that contrast (feature 413: AAAAAA on the lifted
+// black by the smallest k / 100 that gives that contrast - toward the other pole when that one
+// cannot, the better pole itself when neither can (feature 413: AAAAAA on the lifted
 // 454545 was 4.13:1)
 DWORD SalTabActiveText(DWORD capFg, DWORD capBk, DWORD fill);
 

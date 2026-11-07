@@ -26,6 +26,8 @@
                 height and the same active-tab rows. LOOK-<theme>-<panel> passes when the active
                 tab's fill differs from the strip and from the directory line's top row by at
                 least 24 in the largest channel (the default theme's weakest pair is 31).
+                TITLE-<theme>-<panel> passes when the title's most contrasting pixel has at least
+                4.5:1 against the active tab's fill (review 2 of 413).
     State is read from the program itself: Options > Save Configuration (posted) writes both
     panels' tab lists. Drags are posted WM_LBUTTONDOWN / WM_MOUSEMOVE (MK_LBUTTON) / WM_LBUTTONUP.
     NOT DRIVEN: the feel of a real mouse drag (a release-checklist line).
@@ -155,6 +157,17 @@ public static class Tc413
         return bmp;
     }
     public static int Pixel(Bitmap b, int x, int y) { return b.GetPixel(x, y).ToArgb() & 0xFFFFFF; }
+    static double Lin(int c) { double v = c / 255.0; return v <= 0.04045 ? v / 12.92 : Math.Pow((v + 0.055) / 1.055, 2.4); }
+    static double Lum(int rgb) { return 0.2126 * Lin((rgb >> 16) & 255) + 0.7152 * Lin((rgb >> 8) & 255) + 0.0722 * Lin(rgb & 255); }
+    // WCAG 2 contrast ratio of two RRGGBB values
+    public static double Contrast(int a, int b) { double x = Lum(a) + 0.05, y = Lum(b) + 0.05; return x > y ? x / y : y / x; }
+    // the pixel of the rectangle that contrasts most with 'fill' (the title's own colour), "RRGGBB|ratio"
+    public static string MostContrasting(Bitmap b, int x0, int y0, int x1, int y1, int fill)
+    {
+        int best = fill; double r = 1.0;
+        for (int y = y0; y < y1; y++) for (int x = x0; x < x1; x++) { int p = Pixel(b, x, y); double c = Contrast(p, fill); if (c > r) { r = c; best = p; } }
+        return best.ToString("X6") + "|" + r.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+    }
     // the colours of column x from row 0 down, as "RRGGBBxN" runs
     public static string Column(Bitmap b, int x)
     {
@@ -345,7 +358,12 @@ function Measure-Strip($full, [IntPtr]$main, [IntPtr]$Hs, [IntPtr]$Line, [int]$C
     $col = @(); $prev = -1; $n = 0
     for ($y = $off[1] - 4; $y -lt $dlOff[1] + 4; $y++) { $p = [Tc413]::Pixel($full, $ax, $y); if ($p -eq $prev) { $n++ } else { if ($prev -ge 0) { $col += ('{0:X6}x{1}' -f $prev, $n) }; $prev = $p; $n = 1 } }
     $col += ('{0:X6}x{1}' -f $prev, $n)
+    # the title: the text area of the active tab (past the icon, before the close glyph), its most
+    # contrasting pixel (review 2: the title on a lifted fill must keep 4.5:1)
+    $tl = $off[0] + $g.Left + $Active * $g.TabW
+    $tt = [Tc413]::MostContrasting($full, $tl + 34, $off[1] + 6, $tl + $g.TabW - 34, $off[1] + $g.H - 4, $fill).Split('|')
     return [pscustomobject]@{
+        Title = [Convert]::ToInt32($tt[0], 16); TitleRatio = [double]::Parse($tt[1], [Globalization.CultureInfo]::InvariantCulture)
         StripH = $g.H; StripTop = $off[1]; DirLineH = $dlSize[1]; DirLineTop = $dlOff[1]; Rows = $rows; Fill = $fill
         Bk = [Tc413]::Pixel($full, $off[0] + 3, $off[1] + 2); Above = [Tc413]::Pixel($full, $off[0] + 3, $off[1] - 1)
         DirTop = [Tc413]::Pixel($full, $ax, $dlOff[1]); Column = ($col -join ' ')
@@ -412,6 +430,7 @@ function Run-Theme {
             $t = $script:Theme[$n][$p]
             $vsBk = ColorDist $t.Fill $t.Bk; $vsLine = ColorDist $t.Fill $t.DirTop
             Row 'THEME' ('LOOK-{0}-{1}' -f $n.ToUpper(), $p.ToUpper()) (V ($vsBk -ge 24 -and $vsLine -ge 24)) ("active tab {0:X6} vs strip {1:X6}: {2}; vs the directory line's top row {3:X6}: {4} (both at least 24)" -f $t.Fill, $t.Bk, $vsBk, $t.DirTop, $vsLine)
+            Row 'THEME' ('TITLE-{0}-{1}' -f $n.ToUpper(), $p.ToUpper()) (V ($t.TitleRatio -ge 4.5)) ("the title's most contrasting pixel {0:X6} on the active tab {1:X6}: {2}:1 (at least 4.5)" -f $t.Title, $t.Fill, $t.TitleRatio.ToString('F2', [Globalization.CultureInfo]::InvariantCulture))
         }
     }
 }
