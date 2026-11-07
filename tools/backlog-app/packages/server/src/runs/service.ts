@@ -25,7 +25,10 @@ import { z } from "zod";
 import {
   ApiError,
   normalizeTraceLine,
+  RunMetrics,
   RunState,
+  RunStory,
+  TimeIndex,
   type Outcome,
   type Run,
   type RunStats,
@@ -167,6 +170,41 @@ export function parseJournal(text: string): JournalRow[] {
 /** A listener of live trace events. */
 export type TraceListener = (id: string, events: TraceEvent[]) => void;
 
+/**
+ * The cost figures of the live run from its metrics (feature 415: the price between claude's
+ * reported totals is estimated from the tokens).
+ *
+ * @param metrics - The live metrics.
+ * @returns The figures, or null when nothing is known.
+ */
+function liveCost(metrics: RunMetrics): Run["cost"] {
+  const s = metrics.snapshot();
+  if (s.costUsd === null && s.messages === 0) return null;
+  return {
+    usd: Math.round((s.costUsd ?? 0) * 100) / 100,
+    inputTokens: s.tokens.input,
+    outputTokens: s.tokens.output,
+    cacheRead: s.tokens.cacheRead,
+    cacheWrite: s.tokens.cacheWrite,
+  };
+}
+
+/** The live run's story, figures and progress for the chat snapshot (feature 415). */
+export interface LiveInsight {
+  /** The run id. */
+  id: string;
+  /** The item. */
+  slug: string | null;
+  /** The story. */
+  story: RunStory;
+  /** The figures. */
+  metrics: RunMetrics;
+  /** Task progress. */
+  tasks: { done: number; total: number } | null;
+  /** The run's start (epoch ms), if known. */
+  startedMs: number | null;
+}
+
 /** The live run being followed. */
 interface LiveRun {
   /** The trace folder name (the run id). */
@@ -191,6 +229,33 @@ interface LiveRun {
   progressAt: number;
   /** The last published summary (to publish only changes). */
   published: string;
+  /** The time index of the trace (feature 415, research R4). */
+  times: TimeIndex;
+  /** When the time index was last saved (epoch ms). */
+  timesSavedAt: number;
+  /** The human story of the run (feature 415; the chat snapshot reads it). */
+  story: RunStory;
+  /** The live figures (feature 415). */
+  metrics: RunMetrics;
+}
+
+/** A saved time index: anchors of byte offsets and times. */
+const AnchorsSchema = z.array(z.object({ offset: z.number(), ms: z.number() }));
+
+/** Milliseconds between saves of the live run's time index. */
+const TIMES_SAVE_MS = 30_000;
+
+/**
+ * The start time of a run from its trace folder's name (`YYYYMMDD-HHMMSS-claude-...`, local time).
+ *
+ * @param id - The run id.
+ * @returns Epoch ms, or null.
+ */
+export function startFromId(id: string): number | null {
+  const m = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})-/.exec(id);
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6]));
+  return Number.isNaN(d.getTime()) ? null : d.getTime();
 }
 
 /** The runs service. */
@@ -206,6 +271,9 @@ export class RunsService {
 
   /** The follow timer. */
   private timer: NodeJS.Timeout | null = null;
+
+  /** Time indexes of ended runs, by id (built once). */
+  private readonly endedTimes = new Map<string, TimeIndex>();
 
   /** Ids of runs whose end was announced (for notifications). */
   private readonly ended = new Set<string>();
@@ -288,12 +356,19 @@ export class RunsService {
       // A new run (the next item, or a triage before it): announce the end of the previous one
       // and fold the new trace from its first byte.
       if (this.live) this.endLive();
+      const kind = id.endsWith("-claude-triage") || /-claude-triage-\d+$/.test(id) ? "triage" : "item";
+      // The time index: what an earlier start of the app saved, and the run's start at offset 0
+      // (the loop's run record, else the folder's name).
+      const times = new TimeIndex(
+        this.services.ctx.state.readJson(`cache/times/${id}.json`, AnchorsSchema, []),
+      );
+      const startedEpoch = runRecord?.started_epoch;
+      const startMs = typeof startedEpoch === "number" ? startedEpoch * 1000 : startFromId(id);
+      if (startMs !== null) times.add(0, startMs);
       this.live = {
         id,
         path: join(this.tracesRoot, id, "trace.jsonl"),
-        state: new RunState(
-          id.endsWith("-claude-triage") || /-claude-triage-\d+$/.test(id) ? "triage" : "item",
-        ),
+        state: new RunState(kind),
         offset: 0,
         slug: runRecord?.slug ?? raw?.loop?.slug ?? null,
         started: runRecord?.started ?? null,
@@ -302,6 +377,10 @@ export class RunsService {
         commits: [],
         progressAt: 0,
         published: "",
+        times,
+        timesSavedAt: Date.now(),
+        story: new RunStory(kind),
+        metrics: new RunMetrics(),
       };
     }
     const live = this.live;
@@ -311,10 +390,21 @@ export class RunsService {
       const read = readTraceLines(live.path, live.offset);
       // The file is shorter than what was already read: it was truncated or replaced. Fold again
       // from the start rather than show a state mixed from two files.
-      if (read.restarted) live.state = new RunState(live.state.kind);
+      if (read.restarted) {
+        live.state = new RunState(live.state.kind);
+        live.story = new RunStory(live.state.kind);
+        live.metrics = new RunMetrics();
+      }
+      // The bytes read now were written by now: an anchor, then every line gets the time
+      // interpolated between the previous anchor and this one (research R4 of 415). The first
+      // read after the app started catches up hours of trace without putting them on one time.
+      if (read.offset > live.offset) live.times.add(read.offset, Date.now());
       for (const line of read.lines) {
-        for (const event of normalizeTraceLine(line.text, line.offset, line.end, new Date().toISOString())) {
+        const at = live.times.isoAt(line.offset) ?? new Date().toISOString();
+        for (const event of normalizeTraceLine(line.text, line.offset, line.end, at)) {
           live.state.apply(event);
+          live.story.apply(event);
+          live.metrics.apply(event);
           events.push(event);
         }
       }
@@ -322,6 +412,7 @@ export class RunsService {
       live.offset = read.offset;
     }
     if (events.length > 0) for (const listener of this.listeners) listener(live.id, events);
+    if (Date.now() - live.timesSavedAt >= TIMES_SAVE_MS) this.saveTimes(live);
     // Every 3 s: with the 1 s follow tick a ticked task shows within about 4 s (SC-004: 5 s).
     if (Date.now() - live.progressAt >= PROGRESS_MS) {
       live.progressAt = Date.now();
@@ -342,8 +433,80 @@ export class RunsService {
     );
   }
 
+  /**
+   * Saves the live run's time index in the state folder (a restart of the app keeps the times).
+   *
+   * @param live - The live run.
+   */
+  private saveTimes(live: LiveRun): void {
+    live.timesSavedAt = Date.now();
+    try {
+      this.services.ctx.state.writeJson(`cache/times/${live.id}.json`, live.times.toJSON());
+    } catch {
+      // A full disk or a locked file costs only the times of a later restart.
+    }
+  }
+
+  /**
+   * The live run's story, figures and progress (feature 415: the chat snapshot).
+   *
+   * @returns Them, or null when no run is live.
+   */
+  liveInsight(): LiveInsight | null {
+    const live = this.live;
+    if (!live) return null;
+    return {
+      id: live.id,
+      slug: live.slug,
+      story: live.story,
+      metrics: live.metrics,
+      tasks: live.tasks,
+      startedMs: live.times.timeAt(0),
+    };
+  }
+
+  /**
+   * The time index of a run: the live run's, a saved one, or one from the ended run's
+   * `meta.json` (its start and end) and the folder's name.
+   *
+   * @param id - The run id (a trace folder).
+   * @returns The index (possibly empty).
+   */
+  timeIndex(id: string): TimeIndex {
+    if (this.live?.id === id) return this.live.times;
+    const known = this.endedTimes.get(id);
+    if (known) return known;
+    const times = new TimeIndex(
+      this.services.ctx.state.readJson(`cache/times/${id}.json`, AnchorsSchema, []),
+    );
+    const start = startFromId(id);
+    // A run without saved times: its start and end anchor the first and the last byte. Its
+    // `meta.json` is read only once the run is indexed (ended; analysis A2 section 5.1).
+    if (this.index().some((l) => l.dir === id)) {
+      if (times.size < 3) {
+        try {
+          const meta = JSON.parse(readFileSync(join(this.tracesRoot, id, "meta.json"), "utf8")) as {
+            started?: unknown;
+            ended?: unknown;
+          };
+          const size = statSync(join(this.tracesRoot, id, "trace.jsonl")).size;
+          if (typeof meta.started === "string") times.add(0, Date.parse(meta.started));
+          if (typeof meta.ended === "string") times.add(size, Date.parse(meta.ended));
+        } catch {
+          // No meta: only the start.
+        }
+      }
+      if (start !== null) times.add(0, start);
+      this.endedTimes.set(id, times);
+    } else if (start !== null) {
+      times.add(0, start);
+    }
+    return times;
+  }
+
   /** Marks the live run as ended. */
   private endLive(): void {
+    if (this.live) this.saveTimes(this.live);
     const id = this.live?.id;
     this.live = null;
     this.services.ctx.hub.publish("run.changed", { id: null, slug: null, phase: null, tasks: null });
@@ -573,10 +736,7 @@ export class RunsService {
       currentTool: state.currentTool(),
       recentMessages: [...state.recentMessages],
       guiProbeRunning: state.guiProbeRunning(),
-      cost:
-        state.costUsd() === null
-          ? null
-          : { usd: state.costUsd()!, inputTokens: 0, outputTokens: 0, cacheRead: 0, cacheWrite: 0 },
+      cost: liveCost(live.metrics),
       note: null,
       hasTrace: true,
     };
@@ -608,11 +768,17 @@ export class RunsService {
     const base = line ? this.fromIndex(line, row) : this.fromIndex({ dir: id }, null);
     // Fold the whole trace (the run ended: it never changes again).
     const state = new RunState(base.kind);
+    const times = this.timeIndex(id);
     let offset = 0;
     for (let i = 0; i < 100_000; i++) {
       const read = readTraceLines(join(folder, "trace.jsonl"), offset);
       for (const traceLine of read.lines)
-        for (const event of normalizeTraceLine(traceLine.text, traceLine.offset, traceLine.end))
+        for (const event of normalizeTraceLine(
+          traceLine.text,
+          traceLine.offset,
+          traceLine.end,
+          times.isoAt(traceLine.offset),
+        ))
           state.apply(event);
       if (read.offset === offset) break;
       offset = read.offset;
@@ -677,7 +843,11 @@ export class RunsService {
     const path = join(this.tracesRoot, id, "trace.jsonl");
     if (!existsSync(path)) throw new ApiError("not-found", "the run has no trace");
     const read = readTraceLines(path, from, maxBytes);
-    const events = read.lines.flatMap((line) => normalizeTraceLine(line.text, line.offset, line.end));
+    // claude's lines carry no time: the run's time index gives each one (feature 415).
+    const times = this.timeIndex(id);
+    const events = read.lines.flatMap((line) =>
+      normalizeTraceLine(line.text, line.offset, line.end, times.isoAt(line.offset)),
+    );
     let size: number;
     try {
       size = statSync(path).size;

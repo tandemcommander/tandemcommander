@@ -260,4 +260,16 @@ describe("security gate", () => {
   it("does not serve the API's data without the token, even for static-looking paths", async () => {
     expect((await send(port, "GET", "/api/ping.js", { host: `127.0.0.1:${port}` })).status).toBe(401);
   });
+
+  it("keeps the run insight, documents and gallery images behind the token (feature 415)", async () => {
+    const run = "/api/runs/20261107-140521-claude-some-item";
+    for (const path of [`${run}/insight`, `${run}/documents/spec`, `${run}/images/0`]) {
+      expect((await send(port, "GET", path, { host: `127.0.0.1:${port}` })).status, path).toBe(401);
+      const wrong = await send(port, "GET", path, { ...good(), authorization: "Bearer wrong" });
+      expect(wrong.status, path).toBe(401);
+    }
+    // The gallery shows images it fetched with the token as object URLs; nothing else is allowed.
+    const answer = await send(port, "GET", "/api/ping", good());
+    expect(answer.headers["content-security-policy"]).toContain("img-src 'self' data: blob:;");
+  });
 });
