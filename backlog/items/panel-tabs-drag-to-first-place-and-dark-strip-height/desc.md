@@ -8,7 +8,7 @@ source: manual
 who: agent
 created: 2026-11-07
 updated: 2026-11-07
-verified: -
+verified: 2026-11-07 75a45ea7
 effort: M
 feature: -
 related: []
@@ -63,3 +63,4 @@ Severity 5: a visible defect of a new feature in normal use (tab reordering cann
 
 - 2026-11-07 — created (source manual)
 - 2026-11-07 — moved to Next position 2
+- 2026-11-07 — verified at 75a45ea7: drag: probe at 75a45ea7, D dragged past the left end lands at index 1 (left, right, scrolled strip). dark: heights equal (29 px, tab rows 3-28); inactive panel active tab 2D2D2D vs strip 242424 (9) and dir line 2D2D2D (0)
