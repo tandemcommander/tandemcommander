@@ -17,7 +17,6 @@ Last triaged: 2026-11-07
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Backlog app start leaves its existing state files with no access rights](items/backlog-app-start-locks-existing-state-files/desc.md) | bug | 6 | tooling | 412 |
 
 ## Next
 
@@ -276,6 +275,7 @@ Last triaged: 2026-11-07
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Backlog app tests fail now and then removing their fixture folder with EPERM](items/backlog-app-tests-fail-now-and-then-removing-their-fixture/desc.md) | tech-debt | 3 | tooling | review:412 | 2026-11-07 |
 
 ## Parked
 

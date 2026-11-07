@@ -193,14 +193,32 @@ manifest (outside the state folder), the server, Vite - none depends on the old 
   does not cover `main.ts`). Negative control: the call moved back after the services -> that
   test fails.
 
-## Findings fixed on the way (continued)
+## Finding not fixed - Inbox
 
 - **Flaky `write-channels.test.ts` cleanup** (severity 3, from feature 371; seen by review 1 and
   in this run's `npm run check` after review 3: `EPERM` from `rmSync` of the fixture in
-  `afterEach`, 1 failed / 341 passed; the file alone 6 / 6 green - only under the full suite's
-  load). Cause: `loop.kill()` ends only the loop's Python process; a git it started can still
-  hold the fixture when the cleanup (10 retries x 200 ms) removes it. Attempt 1: the afterEach
-  ends the whole tree with `killTree()` (`taskkill /T /F`, the server's own helper) on Windows.
-  After: `npm run check` 3 runs in a row exit 0, 342 passed / 2 skipped each (before: 1 of 2 full
-  runs after review 3 failed, and 1 of the reviewer's runs). Not provable as a single test (the
-  race needs the full suite's load); the three green runs are the evidence.
+  `afterEach`, 1 failed / 341 passed). Hypothesis: `loop.kill()` ends only the loop's Python
+  process and a git it started still holds the fixture. Attempt 1: the afterEach ended the whole
+  tree with `killTree()` (`taskkill /T /F`); `npm run check` then 3 runs green (342 / 2 each).
+  Review 4 refuted it: the file alone failed 2 of 14 runs with the attempt, 0 of 8 without; after
+  both failures no python, git or taskkill process was left - the holder is probably not in the
+  loop's tree (a watcher, the indexer, Defender). The attempt also could hang the hook when
+  `taskkill` cannot run. **Reverted** (`write-channels.test.ts` back to 19bd1bf6). Not tried
+  further here: telling one attempt from another needs the base rate over dozens of 30-second
+  runs per attempt. Recorded as Inbox item
+  `backlog-app-tests-fail-now-and-then-removing-their-fixture` (`review:412`, severity 3).
+
+### Review 4 (refute-first agent, 2026-11-07, the last commit 64eae1d4) - MUST 0, SHOULD 1, NOTE 3
+
+- The two new tests prove their claims: the `/C` repeat removed -> both failure tests fail (with
+  the old test file only the one-call test failed - review 3's NOTE 2 was real); the order in
+  `main.ts` swapped -> only the order test fails.
+- SHOULD 1: the `killTree` change does not fix the flake (above) - reverted, Inbox item.
+- NOTE 1: `killTree` could stall the hook when `taskkill` cannot run - gone with the revert.
+- NOTE 2: pid reuse, an already exited loop, non-Windows - safe; moot after the revert.
+- NOTE 3: the order test is a text search (a comment naming the two calls earlier in `main.ts`
+  would fool it) - accepted; the commit-channel test leaves `<fixture>-plan.json` in `%TEMP%` -
+  noted in the Inbox item.
+
+No source of the product or of the app changed after review 3 except the reverted test; the
+app's `src/` is the code reviews 3 and 4 read.

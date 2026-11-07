@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411 |
+| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -6686,3 +6686,27 @@ a few early ones are out of sequence).
   by both reviewers (83 and 24 acquisitions under constant readers, never two holders); suites 258
   OK; two refute-first reviews (MUST 0 each; review 1 SHOULD 2 / NOTE 4, review 2 SHOULD 2 / NOTE 4 -
   fixed or documented).
+- 412-state-files-acl: every start of the backlog app (344) made its state folder
+  `.git/tandem-backlog-app/` private with `icacls /inheritance:r /grant:r <SID>:(OI)(CI)F ... /T`,
+  which left every file already in it with an empty protected ACL (`D:PAI`: nobody, the owner
+  included, could read it) - so during a run every change the app made failed with
+  `EPERM ... main-worktree` (the side worktree's `.git` unreadable, taken for missing, then a
+  recursive delete refused) and the event log was no longer written - now the folder alone gets
+  the owner + SYSTEM ACL and every entry inside is reset to inherit only from it (one
+  `icacls <folder>\* /reset /T /Q`; folder by folder with `/L` when the folder holds a link or a
+  folder cannot be listed), which also repairs the files earlier starts locked; the step runs
+  before the services read the folder; `ensure()` refuses an unreadable worktree instead of
+  deleting it. Traps: `(OI)(CI)` on a file grants nothing; `icacls /reset /T` follows a junction
+  out of the folder, also with `/L` (the old call locked the owner out of a file outside it);
+  `/L` matters for file symbolic links only; with `/C` icacls exits 0 although an entry failed
+  (no `/C` on the deciding calls, a failed reset repeated with `/C` and reported); the
+  `Notifications` constructor reads the event log's last id - a repair after `new Services()`
+  restarts the ids at 1; Windows PowerShell started from pwsh 7 cannot load `Get-Acl` (drop
+  `PSModulePath`). Limits: two starts at once can race the reset with the first instance's
+  atomic writes (an EPERM rename, no corruption); the maintainer's tree is repaired at its next
+  start (release checklist line). From backlog item `backlog-app-start-locks-existing-state-files`.
+  Probe `probe/measure_after.ts`: three files locked by 344's call `D:PAI` (EPERM) -> inherited
+  owner + SYSTEM, readable; 1.15 s on a 690-folder tree (344's call 1.07 s); `state-dir.test.ts`
+  11 + one side-worktree case, each with a negative control; app tests 329 -> 342; four
+  refute-first reviews (MUST 0 each; SHOULD 2 / 2 / 0 / 1 - fixed, the last one's flaky-cleanup
+  attempt reverted and recorded as an Inbox item).
