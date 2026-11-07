@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\ftp\ftp.atp"
 TEXTVERSION,"1.35 (x64)"
-VERSION,"1,3,5,194"
+VERSION,"1,3,5,195"
 
 [TRANSLATION]
 LANGID,1036
@@ -54,7 +54,7 @@ COMMENT,"Version française"
 524,14,164,321,12,1,"Mode AS&CII (convertit les fichiers pour utiliser les fins de ligne par défaut du système)"
 525,14,177,108,12,1,"Mode A&utomatique - ASCII pour:"
 526,122,177,209,12,1,""
-530,291,191,44,8,1,"aide des masques"
+530,246,191,84,8,1,"aide sur les masques"
 
 [DIALOG 535]
 339,218,1,"Confirmations"

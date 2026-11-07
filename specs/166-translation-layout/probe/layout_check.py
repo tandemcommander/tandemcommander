@@ -3,8 +3,8 @@
     python layout_check.py <translations dir> [--list]
 
 For every language folder and module .slt: each single-line control (height <= 12 DLU) with text
-is measured in the dialog font (MS Shell Dlg 2, 8 pt, 96 DPI; dialog units from the font's base
-units as Windows computes them). CLIPPED: the text is wider than the control (minus 16 px for a
+is measured in the dialog font (MS Shell Dlg, 8 pt, 96 DPI - `--face=<name>` for another; dialog
+units from the font's base units as Windows computes them, in integers - feature 409). CLIPPED: the text is wider than the control (minus 16 px for a
 check box / radio button - the module's lang.rc says which, as tools/translate/layout.py reads
 it). CROSSING: a control reaches past the right edge of a row that frames it (holds its left edge
 and its whole height - a group box). Prints the totals per module and in all.

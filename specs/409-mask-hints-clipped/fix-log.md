@@ -144,3 +144,43 @@ All 11 `#102` rows of `translations/romanian/salamand.slt` read "indicii pentru 
   HEAD's `salamand.slt`); French and English are covered by the corrected checker at HEAD
   (`probe/layout_head_corrected_checker.txt`: french D191 #102 clipped) and need no second
   negative run.
+
+## Review
+
+### Review 1 (independent agent, refute-first) - no MUST
+
+Re-measured: checker on the branch identical to `probe/layout_after.txt`; at HEAD 60 hint rows
+(the fix-log's numbers); no new CLIP / CROSS row by (language, module, dialog, control); room check
+0 failed, negative control with HEAD's Czech `.slt` fails 15 rows; its own overlap scan of the 8
+enabled languages' `salamand.slt`: no new overlapping pair (detector fires on a synthetic D2320
+link); an in-memory `translate.merge --all --module salamand --dry-run` writes byte-identical
+`.slt` / `.origin`; `slt --verify` byte-exact; encoding 0; all 11 `CHyperLink` callers and
+`DisplayMore` only show / hide / move the link, hit test and focus use the text rectangle;
+`comparedirs_shot.ps1` in Romanian and German: FIT / INK / END PASS (86/126, 79/126 px),
+registry identical.
+
+Findings and what was done:
+
+- SHOULD 1 - the FTP plug-in has the same link, clipped (`IDT_ASCIIMASKHINTS`, ftp D520 #530,
+  Configuration > Defaults; cs 67>66, fr 85>66, de 84>66, ro 93>66, es 115>66) and now
+  different wordings from the core. Severity 3 -> **fixed here** (rule 11):
+  `src/plugins/ftp/lang/lang.rc` 291,191,39 -> 246,191,84 (right edge 330 kept; the field above
+  ends at y 189, nothing else on y 191..199); pins in a new `ftp` section of
+  `translations/ui-overrides.json` (de/fr/es/ro the core's wordings; cs/sk "příklad masky" /
+  "príklad masky", nl, hu unchanged), note `_feature_409`. §2.13 for module `ftp`: build, export
+  (`530,246,191,84,8,0,"mask hints"`), dry run 0 gaps in 8 languages, real merge 0 gaps, 0 DeepL
+  characters, 0 validation failures; exactly one row changed per language (row 530); `slt --verify`
+  byte-exact; `build.cmd full` BUILD SUCCEEDED. Checker: `TOTAL clipped 2168 -> 2163`; the five
+  `ftp D520 #530` rows gone, no new row (ru / uk, off, still clipped). No picture of the FTP page:
+  the checker's numbers are the program's (finding 1 of *Findings fixed on the way*).
+- SHOULD 2 - `reply.md` said Romanian got a shorter wording; it got a corrected (longer) one.
+  Fixed; the reply also names the FTP page.
+- NOTE pins vs `.origin`: with the rows already `human` in `.origin`, a merge keeps them even
+  without the pins; the pins matter for `--retranslate` and for a re-key. Accepted - the pins
+  are the documented place for a human choice (feature 245) and keep it under `--retranslate`.
+- NOTE Romanian diacritics: the pin uses ș/ă like the recent pins (404); the rest of D191 has
+  none. Accepted (correct Romanian; the corpus has 106 ș).
+- NOTE ru / uk not refreshed: off languages, allowed by the spec; their texts fit 84 du.
+- NOTE checker docstring named "MS Shell Dlg 2" but measures "MS Shell Dlg" (older than 409):
+  fixed in the docstring.
+- NOTE English D535 two lines 3 px lower: in the spec's edge cases.

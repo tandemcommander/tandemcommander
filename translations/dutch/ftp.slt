@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\ftp\ftp.atp"
 TEXTVERSION,"1.35 (x64)"
-VERSION,"1,3,5,194"
+VERSION,"1,3,5,195"
 
 [TRANSLATION]
 LANGID,1043
@@ -54,7 +54,7 @@ COMMENT,"Nederlandse versie"
 524,14,164,297,12,1,"AS&CII modus (converteert bestanden naar standaard systeem regel-einde)"
 525,14,177,108,12,1,"A&utomatisch - ASCII modus voor:"
 526,122,177,209,12,1,""
-530,291,191,44,8,1,"masker hints"
+530,246,191,84,8,1,"masker hints"
 
 [DIALOG 535]
 339,218,1,"Bevestigingen"

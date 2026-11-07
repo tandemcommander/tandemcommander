@@ -1,7 +1,7 @@
 ﻿[EXPORTINFO]
 PROJECTNAME,"translator\projects\_template\ftp\ftp.atp"
 TEXTVERSION,"1.35 (x64)"
-VERSION,"1,3,5,194"
+VERSION,"1,3,5,195"
 
 [TRANSLATION]
 LANGID,1029
@@ -54,7 +54,7 @@ COMMENT,"Česká verze"
 524,14,164,285,12,1,"ASC&II režim (změna souboru pro použití systémové výchozí line ends)"
 525,14,177,108,12,1,"&Automaticky - ASCII režim pro:"
 526,122,177,209,12,1,""
-530,291,191,44,8,1,"příklad masky"
+530,246,191,84,8,1,"příklad masky"
 
 [DIALOG 535]
 339,218,1,"Potvrzení"

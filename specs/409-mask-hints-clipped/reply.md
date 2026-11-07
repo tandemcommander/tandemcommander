@@ -9,11 +9,12 @@ Kopírovat/Přesunout – další volby, Změnit filtr, konfigurace Koše, prohl
 archivů) a skoro ve všech překladech.
 
 Opraveno ve funkci 409 (vyjde v příští verzi): odkaz je ve všech jedenácti dialozích širší směrem doleva,
-jeho pravý okraj zůstal na místě; v němčině, francouzštině, španělštině a rumunštině má kratší
-(v rumunštině i opravené) znění. Ostatní oříznuté popisky v překladech se řeší zvlášť.
+jeho pravý okraj zůstal na místě; v němčině, francouzštině a španělštině má kratší znění,
+v rumunštině opravené (dříve znamenalo „maskuje nápovědy“). Totéž platí pro stejný odkaz
+v konfiguraci FTP (stránka Výchozí). Ostatní oříznuté popisky v překladech se řeší zvlášť.
 
 Thanks for the report. The "mask hints" link in Compare Directories was narrower than its Czech text and,
 being right-aligned, lost part of it. The same link was clipped in ten more dialogs and in almost every
 translation. Fixed in feature 409 (next release): the link is wider to the left in all eleven dialogs,
-its right edge unchanged; German, French, Spanish and Romanian got shorter (Romanian also corrected)
-wordings. Other clipped labels in the translations are tracked separately.
+its right edge unchanged; German, French and Spanish got shorter wordings, Romanian a corrected one; the same link in the
+FTP configuration (Defaults) too. Other clipped labels in the translations are tracked separately.

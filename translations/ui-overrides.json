@@ -787,5 +787,22 @@
     "romanian": {
       "IDS_INFO_NO_SESSION": "\\nTrack-uri care nu fac parte din nicio sesiune\\n"
     }
+  },
+  "ftp": {
+    "_feature_409": [
+      "The mask-hints link of Configuration > Defaults (IDT_ASCIIMASKHINTS) takes the wordings feature 409 pinned for the core's IDC_FILEMASK_HINT (salamand): de/fr/es were clipped and named it otherwise than the core; ro said 'masca' (the mask) instead of 'măști' (masks). Width from src/plugins/ftp/lang/lang.rc (84 du, right edge kept)."
+    ],
+    "german": {
+      "#mask hints": "Maskenhinweise"
+    },
+    "french": {
+      "#mask hints": "aide sur les masques"
+    },
+    "spanish": {
+      "#mask hints": "ayuda de plantillas"
+    },
+    "romanian": {
+      "#mask hints": "indicii pentru măști"
+    }
   }
 }
