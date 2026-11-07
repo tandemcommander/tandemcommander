@@ -3,7 +3,7 @@
 **Feature Branch**: `414-triage-position`
 **Created**: 2026-11-07
 **Status**: Draft
-**Input**: Backlog item `backlog-app-triage-position-on-move-from-inbox` (Backlog app triage: choose the position when moving an item out of the Inbox) - implement exactly what it describes.
+**Input**: Backlog item `backlog-app-triage-position-on-move-from-inbox` (Backlog app triage: choose the position when moving an item out of the Inbox) - implement exactly what it describes. From backlog item backlog-app-triage-position-on-move-from-inbox.
 
 ## Measured at db8da649 (before the change)
 

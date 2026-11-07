@@ -1,7 +1,7 @@
 ---
 title: Backlog app triage: choose the position when moving an item out of the Inbox
 type: improvement
-status: open
+status: in-progress
 severity: 3
 area: tooling
 source: manual
@@ -10,7 +10,7 @@ created: 2026-11-07
 updated: 2026-11-07
 verified: 2026-11-07 db8da649
 effort: S
-feature: -
+feature: 414
 related: []
 depends-on: []
 reason: -
@@ -39,3 +39,4 @@ Not verified which triage controls of `tools/backlog-app/` exist today; the impl
 - 2026-11-07 — created (source manual)
 - 2026-11-07 — moved to Next position 3
 - 2026-11-07 — verified at db8da649: triage-page.tsx at db8da649: n takes only the suggested place, d/p and the AI proposal place at the end; no position control
+- 2026-11-07 — run started, feature 414
