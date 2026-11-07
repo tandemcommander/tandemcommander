@@ -149,3 +149,28 @@ Checks after the review fixes (final binary): `.\build.cmd` BUILD SUCCEEDED; sal
 292 / 294 / 296 / 297 ran on the binary before these fixes (all PASS above); the fixes change only
 `HkcrMachineHalfCopied`, reached only for a key held by both halves at the delete of a Move.
 
+### Second review (independent agent, refute-first, on commit 0b48bc50)
+
+No MUST. Re-measured: probe 23 / 0 on HEAD (BOTHSHADOW / BOTHTOP (50), the others (5), BOTHSELF
+refused), saltests 282544 / 0, clang-format clean, no control characters. The growth loop and the
+class rule were copied verbatim into a harness with scratch HKCU keys, a faked reported maximum
+(divided by 16, 8, 2^20), failing `realloc` calls and allocation counting: 18 / 18 cases right
+(a 200 KB value equal / differing / absent / larger in the user's half; each `realloc` failing ->
+`ERROR_NOT_ENOUGH_MEMORY`, no leak, no double free; a 2999-character name; classes `Abc`/`abc`
+refused, `''`/`X` copied, `X`/`X` copied, `X`/`''` refused; 12 doubling values with a maximum of ~0
+-> (234) after the round limit). Negative control: `continue` of the growth turned into
+`index++; continue` - 3 harness cases fail.
+
+| Finding | Done |
+|---|---|
+| SHOULD 1 297's link test of a Move source opens the key through HKCR - for a key held by both halves that is the user's half only (measured by the reviewer: a link at `HKCU\Software\Classes\.386` is seen through HKCR); a machine half that is a link would be followed by the copy and by 406's `RegDeleteKeyW(HKLM, path)`, deleting the key it points at - a route new with 406 (before, only the user's half was deleted); needs elevation | fixed: `SafeHkcrMachineHalfNoLink` (noinline, out of the recursion's frame) tests `HKLM\Software\Classes\<key>` with 297's `RegKeyIsLink` right after the halves are read, before anything of the key is copied: a link -> the existing `IDS_REMOVESOURCE` box + `ERROR_NOT_SUPPORTED` naming it (as 297; Retry tests again, Skip keeps the key), another error -> the open-error box (fails closed), gone meanwhile -> no link. Not drivable without elevation: a second release-checklist line (feature 406) |
+| NOTE a machine class name of `MAX_PATH` or more gives a (234) box Retry never clears | fails closed; the copy could not have taken that class either (it reads `MAX_PATH`) - accepted |
+| NOTE the machine half removed by another program between the copy and the delete: a (2) box naming it, Skip keeps the user's half | fails closed - accepted |
+| NOTE the 8 rounds count per key, the name cap can stop data growth after ~5 rounds | harmless (the buffers already start at twice the reported maximum) - accepted |
+| NOTE T011 open | done at closing (step 8) |
+
+Checks after review 2's fix (final binary): `.\build.cmd` BUILD SUCCEEDED; saltests `282544 checks,
+0 failed`; probe English 23 / 0, Czech 23 / 0 (every both-halves row passes the new link test of the
+machine's half - no false refusal); 390's 10 / 0; 297's link probe 40 / 0; registry restored
+identical after each (runner `%TEMP%\tcmeasure\run_review2.ps1`).
+

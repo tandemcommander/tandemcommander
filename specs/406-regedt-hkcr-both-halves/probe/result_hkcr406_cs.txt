@@ -1,6 +1,6 @@
 hkcr406_probe (feature 406), language: czech
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 00:49; desktop 'tc_probe_5400'; ACP 1250; elevated False; registry key existed True; export SHA-256 B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+Date    : 2026-11-07 01:06; desktop 'tc_probe_43748'; ACP 1250; elevated False; registry key existed True; export SHA-256 B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
 Machine : .386 = .|=String:vxdfile;PerceivedType=String:system\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}
 
 BOTHMOVE fixture: user's half '.|TcProbeU=String:USER\u000APersistentHandler|'; merged view '.|=String:vxdfile;PerceivedType=String:system;TcProbeU=String:USER\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}'

@@ -507,6 +507,38 @@ static BOOL RefuseCopyIntoItself(int root, LPCWSTR key, BOOL move, int errorTitl
 
 static BOOL SafeCheckTargetLink(int targetRoot, LPWSTR target, int sourceRoot, LPWSTR source,
                                 CRegCopyTop& top, BOOL& refuse, int errorTitle, BOOL& skip, BOOL& skipAll);
+static int RegKeyIsLink(int root, LPCWSTR key, BOOL& isLink);
+
+// review 2 of 406: feature 297's link test of a Move source opens the key through HKEY_CLASSES_ROOT,
+// which for a key held by both halves reaches the user's half only; the machine's half, deleted later
+// by its real path, would be followed if it is a link and the key it points at deleted - a key the user
+// never selected. So the machine's half is tested too, before anything of the key is copied: a link is
+// refused like 297's (the existing IDS_REMOVESOURCE box + ERROR_NOT_SUPPORTED naming it; Retry tests
+// again, Skip keeps the key), another error is the open-error box (fails closed), a machine half gone
+// meanwhile is no link (the delete reports it). FALSE = do not go on with this key. Kept out of the
+// recursion's frame (the joined path)
+static __declspec(noinline) BOOL SafeHkcrMachineHalfNoLink(int hkcrRoot, LPWSTR key, int errorTitle, BOOL& skip, BOOL& skipAll)
+{
+    int machineRoot = PredefinedRootIndex(HKEY_LOCAL_MACHINE);
+    WCHAR path[MAX_KEYNAME + 32];
+    BOOL joined = machineRoot >= 0 && SalRegJoinClassesPath(path, _countof(path), key);
+    BOOL named = joined && wcslen(path) < MAX_KEYNAME;
+    while (1)
+    {
+        BOOL isLink = FALSE;
+        int err = joined ? RegKeyIsLink(machineRoot, path, isLink) : ERROR_FILENAME_EXCED_RANGE;
+        if (err == ERROR_FILE_NOT_FOUND || (err == ERROR_SUCCESS && !isLink))
+            return TRUE;
+        int what = IDS_OPEN;
+        if (err == ERROR_SUCCESS)
+        {
+            err = ERROR_NOT_SUPPORTED;
+            what = IDS_REMOVESOURCE;
+        }
+        if (!RegOperationError(err, what, errorTitle, named ? machineRoot : hkcrRoot, named ? path : key, &skip, &skipAll))
+            return FALSE; // Retry tests again
+    }
+}
 
 static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWSTR target,
                              BOOL move, BOOL& skip,
@@ -562,6 +594,8 @@ static BOOL CopyOrMoveKeyRec(int sourceRoot, LPWSTR source, int targetRoot, LPWS
             if (!RegOperationError(err, IDS_OPEN, errorTitle, sourceRoot, source, &skip, &skipAllErrors))
                 return FALSE; // nothing of this key copied or deleted (fails closed); Retry reads again
         }
+        if (deleteHalf == SAL_HKCR_DELETE_BOTH && !SafeHkcrMachineHalfNoLink(sourceRoot, source, errorTitle, skip, skipAllErrors))
+            return FALSE; // review 2 of 406: the machine's half is a link - nothing of this key copied
     }
 
     // open the source key

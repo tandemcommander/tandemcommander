@@ -1,6 +1,6 @@
 hkcr390_probe (feature 390), language: english
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 00:51; desktop 'tc_probe_4124'; ACP 1250; elevated False; registry key existed True; export SHA-256 B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+Date    : 2026-11-07 01:08; desktop 'tc_probe_20488'; ACP 1250; elevated False; registry key existed True; export SHA-256 B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
 Machine : .386 = .|=String:vxdfile;PerceivedType=String:system\u000APersistentHandler|=String:{098f2470-bae0-11cd-b579-08002b30bfeb}
 Fixture : C:.|\u000ACil|\u000AZdroj\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD\podkl\u00ED\u010D|w=String:BETA\u000AZdroj\Kl\u00ED\u010D \u017Elu\u0165ou\u010Dk\u00FD|v=String:ALPHA\u000AZdroj|\u000AP:.|\u000ACil|
 
