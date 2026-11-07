@@ -102,6 +102,35 @@ describe("review 4 of 415", () => {
     expect(fixed.critical()).toHaveLength(0);
   });
 
+  it("review 5: the backlog tool through a variable moves the phases; a real block stops", () => {
+    const s = story([
+      call("a", "Bash", { command: 'BL="python tools/backlog/backlog.py"; $BL lock acquire --slug x' }),
+      call("b", "Bash", { command: "BL='bin/backlog.sh'\n$BL verify x --note 'still there'" }),
+      call("c", "Bash", { command: '$BL = "python tools/backlog/backlog.py"; & $BL block x --reason waits' }),
+    ]);
+    expect(s.state.timeline.map((t) => t.phase)).toEqual(["starting", "selection", "measure", "stopped"]);
+    expect(s.critical().map((e) => e.critical)).toContain("The run took the stop path");
+    expect(s.view().find((e) => e.tool === "Bash" && e.label === "STOP")).toBeDefined();
+    const closed = story([
+      call("a", "Bash", {
+        command: 'BL="python tools/backlog/backlog.py"; $BL run-log --outcome closed --slug x',
+      }),
+      call("b", "Bash", { command: 'BL="python tools/backlog/backlog.py"; $BL lock release --slug x' }),
+    ]);
+    expect(closed.state.phase).toBe("done");
+    expect(programsOf('OPENSAL_BUILD_DIR="D:/b" ./build.cmd')).toEqual(["build.cmd"]);
+    expect(programsOf("n=${#files[@]}; ./build.cmd")).toEqual(["build.cmd"]);
+  });
+
+  it("review 5: a new item among other backlog steps is the new item; rows summaries count", () => {
+    const kind = classifyCommand(
+      "bin/backlog.sh check | tail -1 && bin/backlog.sh new --title 'A bug' --type bug",
+    );
+    expect(kind.title).toBe("Adds an item to the backlog: A bug");
+    expect(judgeChecks(["probe:x"], "32 rows, 0 FAIL", false).outcome).toBe("ok");
+    expect(judgeChecks(["probe:x"], "2 rows / 0 FAIL", false).outcome).toBe("ok");
+  });
+
   it("S5: more planned-failure words", () => {
     for (const description of [
       "Run the probe with main's Release uniso as a control",

@@ -1,7 +1,7 @@
 # Closing report - 415-live-run-dashboard
 
 Backlog item: backlog-app-live-run-human-dashboard - Live run view: a human-readable dashboard with story, metrics, gallery and chat
-Outcome: closed
+Outcome: blocked - the fourth review with a MUST finding stopped the run (stop-rules §3 #3); the feature is complete on branch `415-live-run-dashboard`, the review-5 fixes are not yet reviewed, nothing is merged into `main`
 
 ## What changed
 
@@ -69,7 +69,9 @@ images (fetched with the bearer token).
 - Review 2: 0 MUST, 5 SHOULD (classification by mention, runs without the implement skill,
   planned-failure words, half-followed ended runs, viewer by index), NOTEs - all fixed with
   tests.
-- Review 3: see `fix-log.md`.
+- Review 3: 1 MUST (PowerShell / cmd forms not read), 4 SHOULD - fixed.
+- Review 4: 3 MUST (probe "0 FAIL", a note saying "block", `git merge-base`), 7 SHOULD - fixed.
+- Review 5: 1 MUST (the `$BL` form of the backlog tool not read by the phase markers) - fixed on the branch, not reviewed; the run stops here.
 
 ## Owed to a person (the lines added to the release checklist)
 

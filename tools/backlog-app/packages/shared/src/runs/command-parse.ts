@@ -22,6 +22,8 @@ interface Word {
   text: string;
   /** True when (part of) it was quoted. */
   quoted: boolean;
+  /** The text before its first quote (`BL=` of `BL="python …"`), the whole text when unquoted. */
+  lead: string;
 }
 
 /** Words that open a block or a loop: the part has no program of its own (its body is a part). */
@@ -88,12 +90,15 @@ function parts(text: string): Word[][] {
   let words: Word[] = [];
   let word = "";
   let quoted = false;
+  let lead: string | null = null;
   let quote: '"' | "'" | null = null;
+  let varBraces = 0;
   /** Ends the current word. */
   const endWord = (): void => {
-    if (word !== "" || quoted) words.push({ text: word, quoted });
+    if (word !== "" || quoted) words.push({ text: word, quoted, lead: lead ?? word });
     word = "";
     quoted = false;
+    lead = null;
   };
   /** Ends the current part. */
   const endPart = (): void => {
@@ -120,12 +125,25 @@ function parts(text: string): Word[][] {
       continue;
     }
     if (ch === '"' || ch === "'") {
+      if (lead === null) lead = word;
       quote = ch;
       quoted = true;
       continue;
     }
+    // `${name}`, `${#arr[@]}`: a variable, part of the word (not a block).
+    if (ch === "{" && text[i - 1] === "$") {
+      varBraces++;
+      word += ch;
+      continue;
+    }
+    if (ch === "}" && varBraces > 0) {
+      varBraces--;
+      word += ch;
+      continue;
+    }
     // Bash's `'\''` (a quote inside a single-quoted text): an escaped quote outside quotes.
     if (ch === "\\" && (next === "'" || next === '"')) {
+      if (lead === null) lead = word;
       word += next;
       quoted = true;
       i++;
@@ -162,7 +180,7 @@ function parts(text: string): Word[][] {
       }
       // At the start of a part the call operator; after words a background `&`.
       if (words.length === 0 && word === "") {
-        words.push({ text: "&", quoted: false });
+        words.push({ text: "&", quoted: false, lead: "&" });
         continue;
       }
       endPart();
@@ -189,8 +207,12 @@ export function programsOf(command: string, depth = 0): string[] {
   if (depth > 3) return [];
   const text = withoutHeredocs(command.replace(/\\\r?\n/g, " ").replace(/`\r?\n/g, " "));
   const found: string[] = [];
+  // Variables the command sets (`BL="python tools/backlog/backlog.py"`, `$BL = '…'`): a `$BL`
+  // in a program's place runs its value (review 5 of 415: the runs' usual backlog form).
+  const vars = new Map<string, string>();
   for (const words of parts(text)) {
     let i = 0;
+    let assignedTo: string | null = null;
     // Assignments, prefixes and launchers before the program.
     let assigned = false;
     let called = false;
@@ -199,11 +221,19 @@ export function programsOf(command: string, depth = 0): string[] {
       if (!w) break;
       const t = w.text;
       const lower = t.toLowerCase();
-      if (!w.quoted && /^[A-Za-z_]\w*=/.test(t)) i++;
-      else if (!w.quoted && /^\$[\w:]+$/.test(t) && /^[+\-*/]?=$/.test(words[i + 1]?.text ?? "")) {
+      const name = /^([A-Za-z_]\w*)=/.exec(w.lead);
+      if (name) {
+        vars.set(name[1]!.toLowerCase(), t.slice(name[0].length));
+        i++;
+      } else if (!w.quoted && /^\$[\w:]+$/.test(t) && /^[+\-*/]?=$/.test(words[i + 1]?.text ?? "")) {
+        assignedTo = t.slice(1).toLowerCase();
         i += 2;
         assigned = true;
       } else if (!w.quoted && /^\$[\w:]+[+\-*/]?=$/.test(t)) {
+        assignedTo = t
+          .slice(1)
+          .replace(/[+\-*/]?=$/, "")
+          .toLowerCase();
         i++;
         assigned = true;
       } else if (!w.quoted && PREFIXES.has(lower)) {
@@ -215,7 +245,17 @@ export function programsOf(command: string, depth = 0): string[] {
     const first = words[i];
     if (!first) continue;
     // `$m = "a; .\\build.cmd"` assigns a text; only `& "…"` runs a quoted path after `=`.
-    if (assigned && first.quoted && !called) continue;
+    if (assigned && first.quoted && !called) {
+      if (assignedTo && words.length === i + 1) vars.set(assignedTo, first.text);
+      continue;
+    }
+    const variable = /^\$\{?([A-Za-z_]\w*)\}?$/.exec(first.text);
+    const value = variable ? vars.get(variable[1]!.toLowerCase()) : undefined;
+    if (value !== undefined) {
+      const rest = words.slice(i + 1).map((w) => (w.quoted ? `"${w.text}"` : w.text));
+      found.push(...programsOf([value, ...rest].join(" "), depth + 1));
+      continue;
+    }
     const prog = programName(first.text);
     if (KEYWORDS.has(prog)) continue;
     const rest = words.slice(i + 1);

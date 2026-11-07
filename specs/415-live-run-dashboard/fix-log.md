@@ -302,3 +302,34 @@ fifth review decides: a MUST in it blocks the item (work kept on the branch).
 
 After the fixes: `npm run check` 506 passed, 2 skipped; Playwright `us7`, `a11y`, `us5-us6`,
 `us4-chat`, `us2-loop`: 13 passed.
+
+### Review 5 (refute-first agent, at 27d9c7f4) - the run stops
+
+- **M1** (MUST) The review-4 phase markers read only what `programsOf` understood, and it did not
+  understand the runs' usual backlog form `BL="python tools/backlog/backlog.py"; $BL block ...`
+  (107 of 264 traces): 7 runs that blocked their item ended in *done*, their "stop path" critical
+  entry was gone, and 20 runs lost *close*. SHOULDs: several backlog steps in one command told by
+  the first (65 new-item commands hid their critical entry), a regex of probe summaries matching
+  backslashes, a quoted prefix assignment taken as the program; NOTEs: `${#arr[@]}`, the `\"`
+  guess, markers in one command.
+- This is the fourth review with a MUST finding (1, 3, 4, 5). Stop-rules §3 #3 and the rule
+  recorded under review 4: **the run stops, the item is blocked, the work stays on the branch.**
+- Fixed on the branch after review 5, **not reviewed**: `programsOf` reads an assignment whose
+  value is quoted (`BL="..."`, `NAME='...' cmd`), keeps the variables a command sets and runs a
+  `$BL` / `& $BL` in a program's place as its value; `${...}` stays one word; of several backlog
+  steps the new item (then a block) is told; the summary regex is fixed. Tests (`review4.test.ts`,
+  review-5 cases; the variable test fails with the review-4 parser and passes now).
+- Measured with the review's script over all 264 traces against `meta.json` / `index.jsonl`
+  outcomes: blocked / split / not-reproduced runs not ending *stopped*: 0 (main 4, review-4 state
+  10); closed runs not ending *done*: 1 (main 57); closed runs shown *stopped*: 0 (main 3).
+- Checks after these fixes: `npm run check` 508 passed, 2 skipped; Playwright `us7`, `a11y`,
+  `us5-us6`, `us4-chat`, `us2-loop`: 13 passed.
+
+## For the maintainer
+
+The branch `415-live-run-dashboard` holds the whole feature, every review fix and the records.
+What is left is one more independent review of the review-5 fixes (`command-parse.ts`
+variables, `run-story.ts` backlog verbs); then `git merge --ff-only 415-live-run-dashboard`
+from `main` (or `git merge` when `main` moved, by the recipe of `/tandem-backlog-implement` step
+9), followed by the closing records of step 8 (`BL remove`, FEATURE-HISTORY entry - a draft is in
+`closing-report.md`).

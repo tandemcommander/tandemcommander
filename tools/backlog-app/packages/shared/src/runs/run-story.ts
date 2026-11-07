@@ -457,7 +457,10 @@ export function classifyCommand(command: string): CommandKind {
     verdict: CommandKind["verdict"],
     more: Partial<CommandKind> = {},
   ): CommandKind => ({ label, title, verdict, importance: "normal", criticalOnOk: null, ...more });
-  const backlogVerb = progs.find((p) => /^backlog [a-z-]+$/.test(p))?.slice("backlog ".length) ?? null;
+  // Of several backlog steps in one command, a new item or a block is what the reader must hear
+  // (`check | tail -1 && new …` adds an item; review 5 of 415).
+  const verbs = progs.filter((p) => /^backlog [a-z-]+$/.test(p)).map((p) => p.slice("backlog ".length));
+  const backlogVerb = verbs.find((v) => v === "new") ?? verbs.find((v) => v === "block") ?? verbs[0] ?? null;
   // A commit chained with other backlog steps (`git commit … && backlog.sh lock release`) is the
   // commit; a new item or a block stays what it is.
   if (runs("git commit") && backlogVerb !== "new" && backlogVerb !== "block") {
@@ -642,8 +645,7 @@ export function judgeResult(
           const after = new RegExp(`\\b${word}[:=]?\\s+(\\d+)\\b`).exec(line);
           const before = new RegExp(`(?:^|[\\s,:/(])(\\d+)\\s+${word}\\b`).exec(line);
           const isSummary =
-            after ||
-            (before && /PASS|FAIL|TOTAL|RESULT|rows?\\b|row\\(s\\)/i.test(line.replace(before[0], "")));
+            after || (before && /PASS|FAIL|TOTAL|RESULT|rows?\b|row\(s\)/i.test(line.replace(before[0], "")));
           if (after) summary = (summary ?? 0) + Number(after[1]);
           else if (isSummary && before) summary = (summary ?? 0) + Number(before[1]);
           else if (new RegExp(`\\b${word}\\b`).test(line)) rows++;
