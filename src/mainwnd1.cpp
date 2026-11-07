@@ -3391,7 +3391,7 @@ void CMainWindow::OnColorsChanged(BOOL reloadUMIcons)
     // since startup
     if (LeftPanel != NULL && LeftPanel->HWindow != NULL)
         ThemeUpdateWindowClassBackground(LeftPanel->HWindow, COLOR_WINDOW);
-    // classic rebar border + band separators are light-only 3D chrome
+    // classic rebar border + band separators: the same in both themes, coloured by the theme (feature 418)
     ThemeUpdateRebarStyle(HTopRebar);
     if (HWindow != NULL)
         ThemeApplyToDialog(HWindow);

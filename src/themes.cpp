@@ -260,12 +260,25 @@ void ThemeUpdateRebarStyle(HWND hRebar)
 {
     if (hRebar == NULL)
         return;
+    // feature 418: the etched border and the band borders stay in both themes, so the toolbar area -
+    // and the panel tab strip below it - has the same rows in Dark as in the default theme (without
+    // them the Dark rebar was 8 px shorter and the strip lost its frame: "the tabs look lower").
+    // Feature 028 removed them in Dark only because the rebar drew them in the light system colours;
+    // its colour scheme makes it draw them in the Dark palette's shadow / highlight instead (the
+    // default theme keeps CLR_DEFAULT, i.e. the system colours - pixel-identical to before).
     DWORD style = (DWORD)GetWindowLongPtr(hRebar, GWL_STYLE);
-    DWORD newStyle;
-    if (IsDarkThemeActive())
-        newStyle = style & ~(WS_BORDER | RBS_BANDBORDERS);
-    else
-        newStyle = style | WS_BORDER | RBS_BANDBORDERS;
+    DWORD newStyle = style | WS_BORDER | RBS_BANDBORDERS;
+    BOOL dark = IsDarkThemeActive();
+    COLORSCHEME cs;
+    cs.dwSize = sizeof(cs);
+    cs.clrBtnHighlight = dark ? ThemeSysColor(COLOR_BTNHIGHLIGHT) : CLR_DEFAULT;
+    cs.clrBtnShadow = dark ? ThemeSysColor(COLOR_BTNSHADOW) : CLR_DEFAULT;
+    COLORSCHEME old;
+    old.dwSize = sizeof(old);
+    BOOL schemeChanged = !SendMessage(hRebar, RB_GETCOLORSCHEME, 0, (LPARAM)&old) ||
+                         old.clrBtnHighlight != cs.clrBtnHighlight || old.clrBtnShadow != cs.clrBtnShadow;
+    if (schemeChanged)
+        SendMessage(hRebar, RB_SETCOLORSCHEME, 0, (LPARAM)&cs);
     if (newStyle != style)
     {
         SetWindowLongPtr(hRebar, GWL_STYLE, newStyle);
@@ -273,6 +286,8 @@ void ThemeUpdateRebarStyle(HWND hRebar)
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         InvalidateRect(hRebar, NULL, TRUE);
     }
+    else if (schemeChanged) // a theme switch: the same layout, other colours - repaint the frame and the bands
+        RedrawWindow(hRebar, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_FRAME);
 }
 
 //

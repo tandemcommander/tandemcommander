@@ -1442,7 +1442,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         style |= WS_BORDER;
         SetWindowLongPtr(HTopRebar, GWL_STYLE, style);
 
-        // feature 028: the classic rebar border/band separators are light-only
+        // feature 028 / 418: the classic rebar border / band separators in the theme's colours
         ThemeUpdateRebarStyle(HTopRebar);
 
         MenuBar = new CMenuBar(&MainMenu, HWindow);

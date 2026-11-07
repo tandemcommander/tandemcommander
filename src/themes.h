@@ -87,9 +87,10 @@ void ThemeApplyToTooltip(HWND hTooltip);
 // is the COLOR_* index the class was registered with (e.g. COLOR_WINDOW)
 void ThemeUpdateWindowClassBackground(HWND hWindow, int lightSysColor);
 
-// the classic (unthemed) rebar draws its WS_BORDER edges and RBS_BANDBORDERS
-// separators with light system 3D colors that cannot be recolored - strip
-// both styles while the Dark theme is active and restore them for Default
+// the classic (unthemed) rebar keeps its WS_BORDER edge and RBS_BANDBORDERS
+// separators in both themes (the same layout - feature 418); in the Dark theme
+// its colour scheme (RB_SETCOLORSCHEME) draws them in the Dark palette's
+// shadow / highlight, in Default with the system colours (CLR_DEFAULT)
 void ThemeUpdateRebarStyle(HWND hRebar);
 
 // central WM_CTLCOLOR* handling for dialog procs; returns TRUE when handled
