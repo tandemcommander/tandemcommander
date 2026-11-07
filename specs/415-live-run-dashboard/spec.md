@@ -36,6 +36,9 @@
 - Q: What does the expected time to finish rest on? → A: the median wall-clock duration of earlier closed runs (all, or of the same effort when at least three exist), the phase reached, and the task progress inside *implement*; with no history a fixed default. It is shown as an estimate with its basis (autonomous run: item *Approach*)
 - Q: Does the chat beside the dashboard start a new kind of conversation? → A: no; it is the item conversation of feature 371 (the same transcript, the same read-only tools, the same limits) shown as a panel; while the item runs, every message carries a fresh snapshot of the run as data (autonomous run: item *Approach*; rule - feature 371 contract)
 - Q: Does the page for an ended run (`/runs/<id>`) change too? → A: yes, it uses the same dashboard (story, critical, decisions, gallery, architecture, files, raw trace) without the live parts; durations it cannot know (a replayed trace has no times) are left out (autonomous run: conservative - one view, nothing guessed)
+- Q: Where does the chat panel sit, and what happens on a narrow window? → A: on a wide window (at least 1280 px) it is a column on the right that can be hidden (the choice is remembered in the browser); on a narrower one it is hidden by default and opens over the dashboard from a "Chat" button (autonomous run: recommended)
+- Q: How often are the documents, the decisions and the gallery list read again during a run? → A: only while their tab is shown, at most every 10 seconds, and once when the tab opens; never in the background (autonomous run: recommended - the run's files are written while it works, reading them seldom keeps the open-read-close promise cheap)
+- Q: How large may the live snapshot given to the chat with every message be? → A: at most about 8 000 characters: the run's figures, the current activity, the last 25 story lines, every critical entry (the newest 15), the paths of the trace and the feature folder for Claude to read more (autonomous run: recommended - bounded cost per message)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -228,6 +231,11 @@ fenced diagram shows it.
   data (phase, progress, activity, recent story, critical entries, metrics, trace and feature
   folder paths).
 - **FR-013**: The ended run's page MUST use the same dashboard without the live parts.
+- **FR-012a**: The chat panel MUST be a hideable right column on windows at least 1280 px wide
+  and an overlay opened by a button on narrower ones; the live snapshot MUST stay within about
+  8 000 characters.
+- **FR-014a**: Documents, decisions and the gallery list MUST be read only while their tab is
+  shown, at most every 10 seconds.
 - **FR-014**: Nothing the page does MUST change the backlog, the loop, the run or any file; run
   files are read open-read-close; documents and images are read only on request.
 - **FR-015**: The page MUST stay responsive with 50 000 events (story folded incrementally, lists
