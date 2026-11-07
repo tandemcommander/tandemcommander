@@ -1489,6 +1489,10 @@ class LockHeldOpenTests(Base):
         self.addCleanup(lambda: setattr(backlog, "LOCK_RETRY_DELAY", saved[1]))
         self.assertEqual(self.run_tool("lock", "acquire", "--slug", FTP)[0], 0)
 
+    def tearDown(self):
+        self.doCleanups()  # review 2: end the holders and close handles before the folder goes
+        super().tearDown()
+
     def run_tool(self, *args, stdin=None):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(io.StringIO()):
@@ -1579,6 +1583,21 @@ class LockHeldOpenTests(Base):
         setattr(os, name, stub)
         self.addCleanup(setattr, os, name, real)
         return state
+
+    def test_release_of_a_lock_gone_during_the_retries_is_released(self):
+        real, state = os.unlink, {"done": False}
+
+        def stub(p, *a, **kw):
+            if not state["done"] and Path(p) == self.lock:
+                state["done"] = True
+                real(p)  # another hand removed it while this call waited
+                raise PermissionError(13, "held open", str(p))
+            return real(p, *a, **kw)
+        os.unlink = stub
+        self.addCleanup(setattr, os, "unlink", real)
+        self.assertEqual(self.run_tool("lock", "release", "--slug", FTP), (0, "lock released\n"))
+        self.assertTrue(state["done"])
+        self.assertFalse(self.lock.exists())
 
     def test_update_does_not_overwrite_a_lock_taken_meanwhile(self):
         state = self.taken_meanwhile("replace")

@@ -63,7 +63,9 @@ is English.
    another run: repeat the command once; still refused → for `acquire` end
    `refused (precondition: <the line>)`, for `release` name the line under
    *Lock* in §11 (`not released: <the line>`), otherwise go on as the step
-   says for a failure.
+   says for a failure. `release` answering `refused: the lock changed while
+   waiting (now <holder>)` means the lock is no longer this run's: never
+   repeat it or use `--force`; name the line under *Lock* in §11.
 9. **Every `BL new` of a run** (findings, leftovers, person steps,
    decisions, split parts) follows `/tandem-backlog` `SKILL.md` §0.2
    (quoting, no backslash on the command line) and §2.1 steps 2–7 (look for
@@ -134,7 +136,7 @@ with `--slug` and an ineligible or unknown item: exit 1 and
 |---|---|
 | `--slug` refused | end: `refused (not eligible: <reason>)`; nothing changed |
 | `"slug": null`, `--dry-run` | end with the dry-run message below |
-| `"slug": null` | `BL lock acquire` (exit 1 → end `refused (another run in progress: <holder>)`) → `BL run-log --outcome nothing-to-do --note '<skipped as slug=reason; …, at most 200 characters>'` → `BL check` (TOTAL: 0) → `git add backlog/RUNS.md` → commit `backlog: run found nothing to do` → `BL lock release` → end `nothing-to-do` |
+| `"slug": null` | `BL lock acquire` (exit 1 → end `refused (another run in progress: <holder>)`; a `refused: the run lock …` line: §0.8) → `BL run-log --outcome nothing-to-do --note '<skipped as slug=reason; …, at most 200 characters>'` → `BL check` (TOTAL: 0) → `git add backlog/RUNS.md` → commit `backlog: run found nothing to do` → `BL lock release` → end `nothing-to-do` |
 | a slug | `SLUG` = it; read `backlog/items/<SLUG>/desc.md`; `TITLE` = its title |
 
 **Dry run** (no lock, no change): read the item and plan step 3, then end
@@ -154,7 +156,8 @@ Not a dry run, a slug chosen:
 BL lock acquire --slug <SLUG>
 ```
 
-Exit 1 → end `refused (another run in progress: <holder>)`; nothing
+Exit 1 → end `refused (another run in progress: <holder>)` (a `refused: the run lock …`
+line: §0.8); nothing
 changed. From here on, every path runs `BL lock release --slug <SLUG>`
 before ending.
 
@@ -644,7 +647,7 @@ Owed to a person: <PERSON>                (or -)
 New Inbox items: <slug - title; …>        (or -)
 Report: specs/<BRANCH>/closing-report.md  (or -)
 Journal: backlog/RUNS.md (last row)       (or "no journal row: <why>")
-Lock: released | not acquired
+Lock: released | not acquired | not released: <the refused line, §0.8>
 main: <short HEAD of main> - nothing pushed
 ```
 

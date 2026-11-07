@@ -133,3 +133,39 @@ reachable with microsecond readers too.
 After the fixes: `LockHeldOpenTests` 13 OK; all three suites `Ran 257 tests in 222.385s OK`;
 `test_bin_help.py` OK; encoding guard `TOTAL: 0 finding(s)`; repro unchanged (0.53 / 0.56 s
 success, 5 s refused with the new wording).
+
+### Review 2 (refute-first agent) - MUST 0, SHOULD 2, NOTE 4
+
+Re-ran the measurement (5 s → one `refused:` line each, lock kept; 0.5 s → 0.53 / 0.52 s
+success), the suites (257 OK), negative control 1 (branch helpers + `main`'s `cmd_lock`: 12 of 13
+`LockHeldOpenTests` fail, 15 errors with subtests, each with the defect's error; only
+`test_no_reader_no_wait` passes), negative control 2 (pre-review `backlog.py` ca423122: exactly
+the S1 tests fail) and a 30 s stress run (3 readers, about 10,000 reads; 3 workers: 24
+acquisitions, 48 updates, 24 releases, never two holders - checked by an exclusive marker file -
+no traceback, no refusal, no `*.tmp~`). Review-1 fixes S1, S2, N1-N3 confirmed.
+
+- S1 (fixed): the tests that hold the lock left a `%TEMP%\bl242-*` folder each (4 per run):
+  `Base.tearDown` removed the folder before the cleanups ended the holder. `LockHeldOpenTests`
+  now runs its cleanups first (`tearDown` → `doCleanups()` → `super().tearDown()`); measured:
+  `%TEMP%\bl242-*` count 141 before and after a run of the class (the 141 are older runs').
+- S2 (fixed): `contracts/lock-commands.md` showed the pre-N1 wording and missed three outputs
+  (`refused: the lock changed while waiting …`, acquire's "kept appearing and disappearing",
+  `lock released` for a lock gone during the retries) - rewritten. The last one (FR-002) got a
+  test: `test_release_of_a_lock_gone_during_the_retries_is_released`.
+- N1 (fixed): the skill's steps 2 (lines with "another run in progress") now point a
+  `refused: the run lock …` line to §0.8; the §11 template has `not released: <the refused
+  line, §0.8>`; §0.8 says a release answering `the lock changed while waiting` is no longer this
+  run's lock - never repeated, never `--force`.
+- N2 (documented): check-then-act is down to microseconds per attempt; a force-release followed by
+  an acquire with the same slug, branch, host and `started` second would look unchanged - needs
+  OS locking to close, beyond the item. Older: `release` without `--slug` matches a just-created,
+  still-empty lock (slug `-`) - microseconds, not caused by 411.
+- N3 (documented): `write_text` ignores an error deleting its temporary file; with retries an AV
+  scanner holding them could leave several `*.tmp~` in `.git` - theoretical, older than 411, not
+  seen in either stress run.
+- N4 (not this feature's): stale worktrees of earlier reviews (`%TEMP%\rev325\neg` …) are
+  registered; left as they are.
+
+After the fixes: `LockHeldOpenTests` 14 OK; all three suites `Ran 258 tests in 220.846s OK`;
+`test_bin_help.py` OK; encoding guard `TOTAL: 0 finding(s)`. No third review: review 2 had no
+MUST finding and its fixes changed only tests, the contract and the skill's wording.
