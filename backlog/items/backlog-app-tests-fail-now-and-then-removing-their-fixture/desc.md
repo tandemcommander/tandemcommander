@@ -1,7 +1,7 @@
 ---
 title: Backlog app tests fail now and then removing their fixture folder with EPERM
 type: tech-debt
-status: new
+status: open
 severity: 3
 area: tooling
 source: review:412
@@ -51,3 +51,4 @@ Also seen, not verified as related: the commit-channel test writes `<fixture>-pl
 - 2026-11-07 — created (source review:412)
 - 2026-11-07 — edited Approach
 - 2026-11-07 — edited Notes
+- 2026-11-07 — moved to Next position 89
