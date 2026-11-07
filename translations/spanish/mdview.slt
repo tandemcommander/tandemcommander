@@ -76,7 +76,7 @@ COMMENT,"Versión en español"
 
 [STRINGTABLE 5]
 2197,1,"Copiar"
-2198,1,"Copie el código al portapapeles"
+2198,1,"Copiar el código al portapapeles"
 2199,1,"Copiado"
 2200,1,"Este archivo no está en UTF-8 válido; se muestra utilizando la página de códigos del sistema. Usa Archivo > Abrir como texto para tener control total."
 2201,1,"No se ha podido abrir el archivo."

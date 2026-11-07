@@ -86,13 +86,15 @@ bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
 // (the Windows clipboard convention, as the Code Viewer copies).
 std::wstring MdCodeClipboardText(const std::string& srcUtf8);
 
-// Feature 408 (review 1, M1): the text of the viewer's native notice after a copy -
-// 'copied' ("Copied"), then, on a second line, the first non-blank line of 'clip'
-// (an MdCodeClipboardText result) without its leading white space, cut at a whole
-// character to at most 'maxChars' characters plus an ellipsis. The page cannot
-// hide or restyle a native notice, so a copy is never silent and always says what
-// it copied. A blank 'clip' gives 'copied' alone.
-std::wstring MdCopyNoticeText(const std::wstring& copied, const std::wstring& clip, size_t maxChars);
+// Feature 408 (review 1 M1, review 2 S1): the text of the viewer's native notice after
+// a copy - 'copied' ("Copied"), then the first 'maxLines' non-blank lines of 'clip'
+// (an MdCodeClipboardText result), one per line, each trimmed and cut at a whole
+// character to at most 'maxChars' characters plus an ellipsis, and a last line "..."
+// (U+2026) when more non-blank lines follow. Controls and bidirectional formatting
+// characters are shown as spaces. The page cannot hide or restyle a native notice,
+// so a copy is never silent and shows what it copied, or that it copied more. A
+// blank 'clip' gives 'copied' alone.
+std::wstring MdCopyNoticeText(const std::wstring& copied, const std::wstring& clip, size_t maxChars, size_t maxLines);
 
 // Feature 408: classifies an activated address. MDCOPY_NONE: not in the
 // MD_COPY_FAMILY (the other link rules apply). MDCOPY_REFUSED: in the family but

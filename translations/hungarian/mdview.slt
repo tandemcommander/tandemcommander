@@ -76,7 +76,7 @@ COMMENT,"Magyar változat"
 
 [STRINGTABLE 5]
 2197,1,"Másolás"
-2198,1,"Másolja a kódot a vágólapra"
+2198,1,"Kód másolása a vágólapra"
 2199,1,"Másolva"
 2200,1,"Ez a fájl nem érvényes UTF-8 kódolású; a rendszer kódlapja alapján jelenik meg. A teljes vezérléshez válassza a Fájl > Megnyitás szövegként menüpontot."
 2201,1,"A fájl nem nyitható meg."

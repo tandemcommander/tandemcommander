@@ -76,7 +76,7 @@ COMMENT,"Česká verze"
 
 [STRINGTABLE 5]
 2197,1,"Kopírovat"
-2198,1,"Zkopírujte kód do schránky"
+2198,1,"Zkopírovat kód do schránky"
 2199,1,"Zkopírováno"
 2200,1,"Tento soubor není v platném formátu UTF-8; zobrazuje se pomocí systémové kódové stránky. Pro plnou kontrolu použijte Soubor > Otevřít jako text."
 2201,1,"Soubor se nepodařilo otevřít."

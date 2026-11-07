@@ -168,6 +168,14 @@ struct Gen
     // code block buffering
     int codeDepth;
     std::string codeBuf, codeLang;
+    // feature 408 (review 2): the block's source for the copy control. md4c writes a
+    // code line's indentation as spaces from a string of its own (tabs expanded), so
+    // the copy keeps a buffer of its own where that indentation is taken back from the
+    // document; codeBuf (what the page shows) is unchanged.
+    std::string copyBuf;
+    size_t copyIndent;  // spaces md4c announced and the copy has not written yet
+    const char* srcBeg; // the parsed document (md4c's line texts point into it)
+    const char* srcEnd;
     // feature 408: the copy control (NULL or an empty base = none)
     const MdCopyUi* copy;
     // raw HTML block
@@ -224,6 +232,111 @@ void EmitCell(Gen& g, const char* tag, const MD_BLOCK_TD_DETAIL* d)
     o += '>';
 }
 
+// Feature 408 (review 2, M1): the indentation of a code line as the document wrote it.
+// md4c announced 'n' columns of indentation (tabs expanded to the next multiple of 4,
+// container indentation removed) and the line's text starts at 'p' inside the
+// document. The whitespace right before 'p' that lies within those n columns is
+// copied as written; a tab that straddles the start of the indentation (part of it
+// belongs to the container or the code block's own indentation) contributes only its
+// columns inside the indentation, as spaces - CommonMark's rule. Anything that does
+// not add up gives the n spaces md4c wrote (what the page shows).
+static std::string RecoverIndent(const Gen& g, const char* p, size_t n)
+{
+    std::string spaces(n, ' ');
+    if (p < g.srcBeg || p > g.srcEnd)
+        return spaces;
+    const char* ls = p;
+    while (ls > g.srcBeg && ls[-1] != '\n' && ls[-1] != '\r')
+        ls--;
+    // visual columns from the line start (tab stops of 4; UTF-8 continuation bytes take none)
+    std::vector<size_t> startCol((size_t)(p - ls));
+    size_t col = 0;
+    for (const char* q = ls; q < p; q++)
+    {
+        startCol[(size_t)(q - ls)] = col;
+        unsigned char c = (unsigned char)*q;
+        if (c == '\t')
+            col = (col / 4 + 1) * 4;
+        else if ((c & 0xC0) != 0x80)
+            col++;
+    }
+    if (col < n)
+        return spaces;
+    const size_t target = col - n; // the column where the code's indentation begins
+    const char* k = p;
+    while (k > ls && (k[-1] == ' ' || k[-1] == '\t') && startCol[(size_t)(k - 1 - ls)] >= target)
+        k--;
+    std::string out;
+    size_t width = 0;
+    if (k > ls)
+    {
+        const char* t = k - 1; // the character before the run: may straddle the start
+        size_t st = startCol[(size_t)(t - ls)];
+        size_t en = (*t == '\t') ? (st / 4 + 1) * 4 : st + 1;
+        if (en > target)
+        {
+            if (*t != '\t')
+                return spaces; // a non-blank character inside the indentation: not ours to undo
+            out.append(en - target, ' ');
+            width += en - target;
+        }
+    }
+    else if (target > 0)
+        return spaces;
+    for (const char* q = k; q < p; q++)
+    {
+        out += *q;
+        size_t st = startCol[(size_t)(q - ls)];
+        width += (*q == '\t') ? (st / 4 + 1) * 4 - st : 1;
+    }
+    return width == n ? out : spaces;
+}
+
+static void FlushCopyIndent(Gen& g)
+{
+    if (g.copyIndent > 0)
+        g.copyBuf.append(g.copyIndent, ' ');
+    g.copyIndent = 0;
+}
+
+// The copy buffer's share of a code block's text callback (see Gen::copyBuf).
+static void CopyText(Gen& g, MD_TEXTTYPE type, const char* text, size_t size)
+{
+    if (g.copy == NULL || g.copy->base.empty())
+        return;
+    if (type == MD_TEXT_BR || type == MD_TEXT_SOFTBR)
+    {
+        FlushCopyIndent(g);
+        g.copyBuf += '\n';
+        return;
+    }
+    const bool inDoc = size > 0 && text >= g.srcBeg && text + size <= g.srcEnd;
+    if (!inDoc && size > 0)
+    {
+        bool blank = true;
+        for (size_t i = 0; i < size; i++)
+            if (text[i] != ' ')
+            {
+                blank = false;
+                break;
+            }
+        if (blank)
+        {
+            g.copyIndent += size; // md4c's indentation: written once the line's text shows where it was
+            return;
+        }
+    }
+    if (g.copyIndent > 0)
+    {
+        if (inDoc)
+            g.copyBuf += RecoverIndent(g, text, g.copyIndent);
+        else
+            g.copyBuf.append(g.copyIndent, ' ');
+        g.copyIndent = 0;
+    }
+    g.copyBuf.append(text, size);
+}
+
 void EmitCodeBlock(Gen& g)
 {
     std::string& o = *g.target;
@@ -236,7 +349,8 @@ void EmitCodeBlock(Gen& g)
     if (copyCtl)
     {
         size_t n = g.res->codeBlocks.size();
-        g.res->codeBlocks.push_back(g.codeBuf);
+        FlushCopyIndent(g);
+        g.res->codeBlocks.push_back(g.copyBuf);
         o += "<div class=\"tc-code\"><a class=\"tc-copy\" href=\"";
         Esc(o, g.copy->base, true);
         o += std::to_string(n);
@@ -373,6 +487,8 @@ int EnterBlock(MD_BLOCKTYPE type, void* detail, void* ud)
         MD_BLOCK_CODE_DETAIL* d = (MD_BLOCK_CODE_DETAIL*)detail;
         g.codeDepth = 1;
         g.codeBuf.clear();
+        g.copyBuf.clear();
+        g.copyIndent = 0;
         g.codeLang.clear();
         if (d)
         {
@@ -579,6 +695,7 @@ int Text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* ud)
     {
         if (type == MD_TEXT_BR || type == MD_TEXT_SOFTBR) g.codeBuf += '\n';
         else g.codeBuf.append(text, size);
+        CopyText(g, type, text, size);
         return 0;
     }
     std::string& o = *g.target;
@@ -626,24 +743,38 @@ std::wstring MdCodeClipboardText(const std::string& srcUtf8)
     return out;
 }
 
-std::wstring MdCopyNoticeText(const std::wstring& copied, const std::wstring& clip, size_t maxChars)
+// a character the notice must not show as is: C0/C1 controls (a tab included) and the
+// bidirectional embeddings, overrides and isolates (they could make a line read
+// otherwise than it is - review 2, S1)
+static bool NoticeHidden(wchar_t c)
+{
+    return c < 0x20 || (c >= 0x7F && c <= 0x9F) || (c >= 0x202A && c <= 0x202E) || (c >= 0x2066 && c <= 0x2069) ||
+           c == 0x200E || c == 0x200F || c == 0x061C;
+}
+
+std::wstring MdCopyNoticeText(const std::wstring& copied, const std::wstring& clip, size_t maxChars, size_t maxLines)
 {
     std::wstring out = copied;
+    size_t shown = 0;
     size_t i = 0;
     while (i < clip.size())
     {
         size_t e = clip.find(L'\n', i);
         if (e == std::wstring::npos)
             e = clip.size();
-        size_t s = i;
-        while (s < e && (clip[s] == L' ' || clip[s] == L'\t' || clip[s] == L'\r'))
-            s++;
-        size_t t = e;
-        while (t > s && (clip[t - 1] == L' ' || clip[t - 1] == L'\t' || clip[t - 1] == L'\r'))
-            t--;
-        if (t > s)
+        // the line with every hidden character as a space, then trimmed
+        std::wstring line;
+        for (size_t j = i; j < e; j++)
+            line += NoticeHidden(clip[j]) ? L' ' : clip[j];
+        size_t s = line.find_first_not_of(L' ');
+        if (s != std::wstring::npos)
         {
-            std::wstring line = clip.substr(s, t - s);
+            if (shown == maxLines)
+            {
+                out += L"\n\x2026"; // more lines follow than the notice shows
+                break;
+            }
+            line = line.substr(s, line.find_last_not_of(L' ') - s + 1);
             if (maxChars > 0 && line.size() > maxChars)
             {
                 size_t cut = maxChars;
@@ -654,7 +785,7 @@ std::wstring MdCopyNoticeText(const std::wstring& copied, const std::wstring& cl
             }
             out += L"\n";
             out += line;
-            break;
+            shown++;
         }
         i = e + 1;
     }
@@ -843,6 +974,9 @@ bool MdRenderHtml(const std::string& mdUtf8, const MdTheme& theme,
     parser.debug_log = NULL;
     parser.syntax = NULL;
 
+    g.copyIndent = 0;
+    g.srcBeg = md.data();
+    g.srcEnd = md.data() + md.size();
     md_parse(md.data(), (MD_SIZE)md.size(), &parser, &g);
 
     bool dark = theme.dark;

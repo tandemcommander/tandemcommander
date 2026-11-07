@@ -834,8 +834,20 @@ void CViewerWindow::ShowCopyNotice(const std::wstring& text)
     SendMessageW(CopyTip, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
     RECT tr;
     if (GetWindowRect(CopyTip, &tr))
-        SendMessageW(CopyTip, TTM_TRACKPOSITION, 0,
-                     MAKELPARAM(br.x - (tr.right - tr.left) - margin, br.y - (tr.bottom - tr.top) - margin));
+    {
+        int w = tr.right - tr.left, h = tr.bottom - tr.top;
+        int x = br.x - w - margin, y = br.y - h - margin;
+        // review 2 (N2): a viewer partly off the screen still shows its notice - keep it
+        // inside the work area of the viewer's monitor
+        MONITORINFO mi = {};
+        mi.cbSize = sizeof(mi);
+        if (GetMonitorInfoW(MonitorFromWindow(HWindow, MONITOR_DEFAULTTONEAREST), &mi))
+        {
+            x = max((int)mi.rcWork.left, min(x, (int)mi.rcWork.right - w));
+            y = max((int)mi.rcWork.top, min(y, (int)mi.rcWork.bottom - h));
+        }
+        SendMessageW(CopyTip, TTM_TRACKPOSITION, 0, MAKELPARAM((WORD)(short)x, (WORD)(short)y));
+    }
     SetTimer(HWindow, MD_COPYTIP_TIMER, MD_COPYTIP_MS, NULL);
 }
 
@@ -885,7 +897,7 @@ void CViewerWindow::CopyCodeBlock(size_t index)
         ok = SalamanderGeneral->CopyTextToClipboardW(text.c_str(), (int)text.size(), FALSE, HWindow);
     if (!ok)
         return; // no notice for a copy that did not happen (FR-005)
-    std::wstring notice = MdCopyNoticeText(SalamanderGeneral->LoadStrW(HLanguage, IDS_CODE_COPIED), text, 60);
+    std::wstring notice = MdCopyNoticeText(SalamanderGeneral->LoadStrW(HLanguage, IDS_CODE_COPIED), text, 60, 3);
 #ifdef _DEBUG
     if (sl > 0 && sl < _countof(seam))
     {

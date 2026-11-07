@@ -76,7 +76,7 @@ COMMENT,"Versiunea romana"
 
 [STRINGTABLE 5]
 2197,1,"Copiere"
-2198,1,"Copiați codul în clipboard"
+2198,1,"Copierea codului în clipboard"
 2199,1,"Copiat"
 2200,1,"Acest fișier nu este în format UTF-8 valid; este afișat folosind pagina de coduri a sistemului. Utilizați Fișier > Deschide ca text pentru control deplin."
 2201,1,"Fișierul nu a putut fi deschis."

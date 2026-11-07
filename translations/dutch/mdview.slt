@@ -76,7 +76,7 @@ COMMENT,"Nederlandse versie"
 
 [STRINGTABLE 5]
 2197,1,"Kopiëren"
-2198,1,"Kopieer de code naar het klembord"
+2198,1,"De code naar het klembord kopiëren"
 2199,1,"Gekopieerd"
 2200,1,"Dit bestand is geen geldige UTF-8; weergegeven met de codepagina van het systeem. Gebruik Bestand > Openen als tekst voor volledige controle."
 2201,1,"Het bestand kon niet worden geopend."

@@ -76,7 +76,7 @@ COMMENT,"Deutsche Version"
 
 [STRINGTABLE 5]
 2197,1,"Kopieren"
-2198,1,"Kopieren Sie den Code in die Zwischenablage"
+2198,1,"Code in die Zwischenablage kopieren"
 2199,1,"Kopiert"
 2200,1,"Diese Datei ist kein gültiges UTF-8; sie wird mit der System-Codepage angezeigt. Nutze „Datei > Als Text öffnen“, um die volle Kontrolle zu haben."
 2201,1,"Die Datei konnte nicht geöffnet werden."

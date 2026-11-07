@@ -75,7 +75,8 @@
       "IDS_MENU_VIEW": "&Zobrazit",
       "IDS_MENU_VIEW_FOLLOWSYS": "Použít motiv s&ystému",
       "#Graphite (dark)": "Grafit (tmavý)",
-      "#Nordic Dark": "Severský tmavý"
+      "#Nordic Dark": "Severský tmavý",
+      "IDS_CODE_COPY_TIP": "Zkopírovat kód do schránky"
     },
     "slovak": {
       "IDS_MENU_VIEW_WIDTH_NORMAL": "&Normálna",
@@ -83,13 +84,15 @@
       "IDS_MENU_VIEW_WIDTH_WIDER": "Š&iršia",
       "IDS_MENU_VIEW": "&Zobraziť",
       "IDS_MENU_VIEW_FOLLOWSYS": "Použiť motív s&ystému",
-      "#&Keep the rendering engine ready for instant viewing": "Udržiavať vy&kresľovací modul pripravený na okamžité zobrazenie"
+      "#&Keep the rendering engine ready for instant viewing": "Udržiavať vy&kresľovací modul pripravený na okamžité zobrazenie",
+      "IDS_CODE_COPY_TIP": "Skopírovať kód do schránky"
     },
     "german": {
       "IDS_MENU_VIEW_ZOOMOUT": "V&erkleinern\\tCtrl+-",
       "IDS_MENU_VIEW_WIDTH_FULL": "&Volle Fensterbreite",
       "IDS_MENU_VIEW_FOLLOWSYS": "S&ystemdesign folgen",
-      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Markdown-Dateien öffnen sich dann nach der ersten Anzeige sofort; dafür bleibt bis zum Sitzungsende etwas Speicher belegt."
+      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Markdown-Dateien öffnen sich dann nach der ersten Anzeige sofort; dafür bleibt bis zum Sitzungsende etwas Speicher belegt.",
+      "IDS_CODE_COPY_TIP": "Code in die Zwischenablage kopieren"
     },
     "french": {
       "IDS_MENU_VIEW_WIDTH_FULL": "&Toute la fenêtre",
@@ -100,26 +103,33 @@
     "dutch": {
       "IDS_MENU_VIEW": "Beel&d",
       "IDS_MENU_VIEW_FOLLOWSYS": "S&ysteemthema volgen",
-      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Markdown-bestanden openen dan na de eerste weergave direct; tot het einde van de sessie blijft wat geheugen bezet."
+      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Markdown-bestanden openen dan na de eerste weergave direct; tot het einde van de sessie blijft wat geheugen bezet.",
+      "IDS_CODE_COPY_TIP": "De code naar het klembord kopiëren"
     },
     "hungarian": {
       "IDS_MENU_VIEW": "&Nézet",
       "IDS_MENU_VIEW_FOLLOWSYS": "Rendszertéma k&övetése",
-      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "A Markdown-fájlok ezután az első megnyitás után azonnal megjelennek; a munkamenet végéig kevés memória foglalt marad."
+      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "A Markdown-fájlok ezután az első megnyitás után azonnal megjelennek; a munkamenet végéig kevés memória foglalt marad.",
+      "IDS_CODE_COPY_TIP": "Kód másolása a vágólapra"
     },
     "romanian": {
       "IDS_MENU_VIEW_ZOOMOUT": "Mi&cșorare\\tCtrl+-",
       "IDS_MENU_VIEW_WIDTH_WIDE": "&Largă",
       "IDS_MENU_VIEW_WIDTH_WIDER": "&Mai largă",
       "IDS_MENU_VIEW": "&Vizualizare",
-      "IDS_MENU_VIEW_FOLLOWSYS": "Urmează tema s&istemului"
+      "IDS_MENU_VIEW_FOLLOWSYS": "Urmează tema s&istemului",
+      "IDS_CODE_COPY_TIP": "Copierea codului în clipboard"
     },
     "spanish": {
       "IDS_MENU_VIEW_WIDTH_WIDER": "&Más ancho",
       "IDS_MENU_VIEW": "&Ver",
       "IDS_MENU_VIEW_FOLLOWSYS": "Seguir el tema del s&istema",
-      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Los archivos Markdown se abren al instante tras la primera vista; hasta el final de la sesión queda ocupada algo de memoria."
-    }
+      "#Markdown files then open instantly after the first view in a session, at the cost of a small amount of memory held for the rest of the session.": "Los archivos Markdown se abren al instante tras la primera vista; hasta el final de la sesión queda ocupada algo de memoria.",
+      "IDS_CODE_COPY_TIP": "Copiar el código al portapapeles"
+    },
+    "_feature_408": [
+      "Copy the code to the clipboard (IDS_CODE_COPY_TIP, the tooltip of the code block's Copy control): DeepL gave an imperative addressed to the reader in cs/sk/de/es/hu/ro/nl ('Zkopirujte...', 'Kopieren Sie...'); a tooltip names the action - infinitive or noun form, as fr already had (review 2 of feature 408)."
+    ]
   },
   "codeview": {
     "czech": {

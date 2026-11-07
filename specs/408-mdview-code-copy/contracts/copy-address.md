@@ -44,14 +44,25 @@ Only user-initiated navigations reach `ActivateLink` (shared host, 085 F3).
 ## The notice (review 1 M1, S1)
 
 A tracking tooltip window owned by the viewer, placed inside the bottom-right corner of
-the client area, text `MdCopyNoticeText(LoadStrW(IDS_CODE_COPIED), clip, 60)` - *Copied*
-and the first non-blank line of what was copied, at most 60 characters (cut at a whole
-character, ellipsis). Hidden after 2.5 s or when the window is destroyed. It is outside
+the client area (kept inside the monitor's work area), text
+`MdCopyNoticeText(LoadStrW(IDS_CODE_COPIED), clip, 60, 3)` - *Copied* and the first three
+non-blank lines of what was copied, each at most 60 characters (cut at a whole
+character, ellipsis), then a line `…` when more follow; controls and bidirectional
+formatting characters are shown as spaces (review 2 S1). Hidden after 2.5 s or when the window is destroyed. It is outside
 the page: the document's CSS can restyle the control, but cannot hide or fake the
-notice, so a copy is never silent and always names what it copied. No navigation
+notice, so a copy is never silent and shows what it copied (up to three lines, and
+that more follow). No navigation
 happens, so the keyboard focus stays on the control. A failed copy shows no notice.
 
 ## Copied text (`MdCodeClipboardText`)
+
+The source (`codeBlocks[n]`) is md4c's code text with each line's indentation taken
+back from the document (review 2 M1): md4c writes the indentation as spaces from a
+string of its own; the generator walks back from the line's text in the document and
+copies the whitespace within the indentation as written - a tab that straddles the
+start of the indentation gives its share as spaces (CommonMark). The page itself still
+shows md4c's spaces.
+
 
 UTF-8 -> UTF-16; one trailing LF removed; U+0000 removed (the page shows none; md4c
 repeats a NUL in its next text run); every LF not preceded by CR becomes CR LF.

