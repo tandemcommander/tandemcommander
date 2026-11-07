@@ -15,7 +15,7 @@
 ## Phase 2: Foundational
 
 - [ ] T006 Pure rules in `src/common/saliconset.h`: `SAL_ICONSET_PLUGIN_ID_COUNT` and the id table, `SalIconSetPluginId(dllName)`, `SalIconSetPluginFSIconIsIdentity(id)`, `SAL_ICONSET_NAME_PLUGIN` / `SAL_ICONSET_NAME_PLUGINFS`, `SalIconSetPluginFolder(set, dark)`, `SalIconSetBuildPluginPath(...)` sharing one path builder with `SalIconSetBuildPath` (whole or refused)
-- [ ] T007 `saltests` `TestPluginIcons417` in `src/saltests/saltests.cpp`: the id rule (all 31 `<id>\<id>.spl`, upper / mixed case, `<id>\other.spl`, `a\a.dll`, `a\a.spl\x`, absolute and UNC paths, `a/a.spl`, drive, empty, NULL, unknown id, non-ASCII), the FS identity rule, the folder (none in Classic), the path builder (exact fit, one byte short, UTF-8 dir); every id + both defaults present in both folders; the 66 files parsed (shapes, 16 x 16) and rasterized at 16 / 20 / 24 / 32 px with 416's coverage (>= 8 %) and legibility thresholds; no transparent-key colour; called from `main`
+- [ ] T007 `saltests` `TestPluginIcons417` in `src/saltests/saltests.cpp`: the id rule (all 31 `<id>\<id>.spl`, upper / mixed case, `<id>\other.spl`, `a\a.dll`, `a\a.spl\x`, absolute and UNC paths, `a/a.spl`, drive, empty, NULL, unknown id, non-ASCII), the FS identity rule, the folder (none in Classic), the path builder (exact fit, one byte short, UTF-8 dir); every id + both defaults present in both folders; the 66 files parsed (shapes, 16 x 16) and rasterized at 16 / 20 / 24 / 32 px with 416's coverage (>= 8 %) and legibility thresholds; no transparent-key colour; the files of the 20 ids enabled in `plugins.cfg` pairwise different (SC-003); called from `main`
 - [ ] T008 `tools/brand/fluent-icons/check_iconset.py`: the plug-in folders - expected names from `saliconset.h` (the id table) + the two defaults, both variants, nothing else, colours, the nanosvg tokenizer emulation, the palette contrast of the new tokens; docstring updated
 - [ ] T009 Loader in `src/svg.cpp` / `src/svg.h`: the folder kind in `LoadSetSVGImage`; `HICON CreateSetPluginSVGIcon(const char* name, int size)` for the active set (NULL in Classic / on a miss), sharing the rasterization of `CreateSetSVGIcon`
 - [ ] T010 Core helpers in `src/salamdr1.cpp` (declared in `src/consts.h`): `CreatePluginSetIcon(dllName, size, gray, fsIcon)` (gray copy by `CIconList::CreateAsCopy(.., TRUE)`), `CreatePluginSetDefaultIcon(fs, size)`, `PluginHasSetIcon(dllName)`; HANDLES-tracked icons
@@ -28,7 +28,7 @@
 - [ ] T012 [US1] "Has an icon" checks with `PluginHasSetIcon`: the Plugins-menu submenu item and the plug-in list menus in `src/plugins2.cpp`, View With in `src/fileswn5.cpp`
 - [ ] T013 [US1] Change Drive menu / drive bars: `CPlugins::AddItemsToChangeDrvMenu` in `src/plugins2.cpp` (`HIcon`, `HGrayIcon`, default FS icon)
 - [ ] T014 [US1] Tab of a plug-in FS in `src/tabwnd.cpp` (set icon, Fluent default `IconPluginFS`); check the cache is cleared on a colour change
-- [ ] T015 [US1] Directory line `CFilesWindow::UpdateDriveIcon` in `src/fileswn3.cpp`, drive-list row in `src/drivelst.cpp`, Disconnect dialog in `src/dialogs6.cpp` (set icon with `fsIcon = TRUE`, then `GetFSIcon`, then the default FS icon)
+- [ ] T015 [US1] Directory line `CFilesWindow::UpdateDriveIcon` in `src/fileswn3.cpp`, drive-list row in `src/drivelst.cpp`, Disconnect dialog in `src/dialogs6.cpp` (both FS-row sites: open and detached file systems, and the `CONNECTION_ICON_PLUGIN` default) (set icon with `fsIcon = TRUE`, then `GetFSIcon`, then the default FS icon)
 
 ## Phase 4: User Story 2 - Classic unchanged, switching without a restart (P1)
 
@@ -52,8 +52,8 @@
 
 ## Phase 7: Polish & evidence
 
-- [ ] T021 Probe `specs/417-fluent-plugin-icons/probe/plugin417_probe.ps1` (helpers of 098 and 416): CLASSIC-EQ-LIGHT/DARK vs `-Before`, FLUENT-LIGHT/DARK (per Plugins-bar icon cell differs from Classic and has >= 8 colours; drive-bar plug-in buttons differ), DIRLINE (RegEdit FS set icon; Folders FS equals Classic), MANAGER (the Plugins manager list differs in Fluent, equals in Classic), SWITCH / SWITCHBACK, OVR, FIT; registry backed up and restored; NOT DRIVEN rows for menus / hot states / DPI
-- [ ] T022 Build `.\build.cmd full`, `saltests`, `check_iconset.py`, `check_encoding.py --strict`; run the probe (before on the build of `main`, after on this build); record numbers in `fix-log.md`
+- [ ] T021 Probe `specs/417-fluent-plugin-icons/probe/plugin417_probe.ps1` (helpers of 098 and 416): CLASSIC-EQ-LIGHT/DARK vs `-Before` (Plugins bar, drive bar, the RegEdit FS directory line, the Plugins-manager list: 0 px each), FLUENT-LIGHT/DARK (per Plugins-bar icon cell differs from Classic and has >= 8 colours; drive-bar plug-in buttons differ), DIRLINE (RegEdit FS set icon; Folders FS equals Classic), MANAGER (the Plugins manager list differs in Fluent, equals in Classic), SWITCH / SWITCHBACK (Plugins bar, drive bar and the RegEdit FS directory line equal a fresh start in the target set), CACHE (the plug-ins' stored icon lists after a Fluent 2 session equal those after a Classic session - FR-010), OVR, FIT; registry backed up and restored; NOT DRIVEN rows for menus / hot states / DPI
+- [ ] T022 Build `.\build.cmd full`, `saltests`, `check_iconset.py`, `check_encoding.py --strict`, `clang-format --dry-run --Werror` on every changed C++ file (constitution: formatting verified); run the probe (before on the build of `main`, after on this build); record numbers in `fix-log.md`
 - [ ] T023 [P] `CHANGELOG.md` entry under `## [Unreleased]` (and the 416 entry's group name), `specs/FEATURE-HISTORY.md` entry, release-checklist lines (menus, hot states, 150 %), `closing-report.md`
 
 ## Dependencies & order

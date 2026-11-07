@@ -24,7 +24,8 @@ powershell -File tools\run_on_hidden_desktop.ps1 -Log specs\417-fluent-plugin-ic
 
 Expected rows: CLASSIC-EQ (0 px vs the build of main), FLUENT (every Plugins bar icon differs from Classic and is
 drawn; the drive bar's plug-in buttons differ), DIRLINE (RegEdit's directory line is its set icon; Folders' equals
-Classic), SWITCH / SWITCHBACK (no restart), OVR (an empty or missing set file = today's icon), MANAGER, FIT.
+Classic), SWITCH / SWITCHBACK (no restart), CACHE (the stored plug-in icons equal after Fluent 2 and Classic
+sessions), OVR (an empty or missing set file = today's icon), MANAGER, FIT.
 
 ## By hand (release checklist)
 

@@ -38,3 +38,12 @@ Not in scope (the plug-ins' own lists): `CPluginData::CreateImageList` (a plug-i
 `GetFSIcon` of the shipped FS plug-ins: FTP `FTPIcon`, SFTP `SFTPIcon`, RegEdit `IDI_REGEDT`, Undelete
 `IDI_FS`, Portables its plug-in icon, Nethood its main icon - identity icons; **Folders**: the shell icon of
 the current folder (`src/plugins/folders/fs2.cpp`) - kept (FR-003).
+
+## Analyze (speckit-analyze)
+
+Round 1: CRITICAL 1 (D1: no formatting gate - constitution *Development Workflow*), MEDIUM 3 (E1 FR-010 had no
+measurement; E2 the switch rows did not cover the directory line; B1 CLASSIC-EQ parts unnamed), LOW 3 (E3 SC-003
+not tested; U1 the second FS-row site of the Disconnect dialog; E4 the gray rule not tested on its own). Fixed in
+tasks.md: T022 clang-format check; T021 rows CACHE, SWITCH with the directory line, CLASSIC-EQ parts; T007
+pairwise-different files; T015 both sites. E4 accepted: the set icon's gray copy goes through
+`CIconList::CreateAsCopy(.., TRUE)`, the very code of today's `PluginIconsGray`.
