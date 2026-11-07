@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item dark-theme-panel-tabs-look-lower-than-in-the-default-theme (backlog/items/dark-theme-panel-tabs-look-lower-than-in-the-default-theme/desc.md) - implement exactly what it describes." From backlog item dark-theme-panel-tabs-look-lower-than-in-the-default-theme.
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: Does Dark get only the line that frames the tab strip, or the whole structure of the toolbar area (its frame and the lines between band rows)? → A: the whole structure, so that every row of the Dark window is where the default theme has it; a frame line only below the toolbar area would still leave the Dark toolbar area 4 px shorter and the window different (autonomous run: item - "the same in both themes", Approach)
+- Q: Which colours draw the Dark lines? → A: the Dark palette's counterparts of the light etched pair - COLOR_BTNSHADOW (1A1A1A) where the light theme has A0A0A0 and COLOR_BTNHIGHLIGHT (464646) where it has FFFFFF (autonomous run: rule - the Dark palette, `themes_palette.h`)
+- Q: Do the band grips appear in Dark too? → A: no - grips stay light-only as feature 028 decided; only the borders return (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The tabs look the same in both themes (Priority: P1)
