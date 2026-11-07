@@ -123,6 +123,7 @@
 #include "salfindseed.h"       // feature 398
 #include "salisowalk.h"        // feature 400
 #include "salisoxboxentry.h"   // feature 402
+#include "salfindsort.h"       // feature 407
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -14529,6 +14530,197 @@ static void TestRegHkcrBoth406()
     CHECK(!SalRegValueSame(REG_DWORD, &d1, 4, REG_DWORD, &d3, 4));
 }
 
+// feature 407 (GitHub #23): the Find window's result list - a second sort by the same column
+// reverses the order, folders stay before files in both directions, the header shows the arrow
+struct CFindSortItem407
+{
+    const char* Name;
+    int Path, Size, Date; // small numbers stand for the compared values
+    bool IsDir;
+};
+static int Cmp407(int a, int b) { return a < b ? -1 : (a > b ? 1 : 0); }
+static int CmpKey407(const CFindSortItem407& a, const CFindSortItem407& b, int key)
+{
+    switch (key)
+    {
+    case SAL_FIND_COL_NAME:
+        return Cmp407(strcmp(a.Name, b.Name), 0);
+    case SAL_FIND_COL_PATH:
+        return Cmp407(a.Path, b.Path);
+    case SAL_FIND_COL_SIZE:
+        return Cmp407(a.Size, b.Size);
+    default:
+        return Cmp407(a.Date, b.Date); // Date and Time both compare the last write time
+    }
+}
+// the comparison before feature 407 (CFoundFilesListView::CompareFunc at 1549e06a), ascending only
+static int OldCompare407(const CFindSortItem407& f1, const CFindSortItem407& f2, int sortBy)
+{
+    int res;
+    int next = sortBy;
+    do
+    {
+        if (f1.IsDir == f2.IsDir)
+            res = CmpKey407(f1, f2, next);
+        else
+            res = f1.IsDir ? -1 : 1;
+        if (next == sortBy)
+        {
+            if (sortBy != 0)
+                next = 0;
+            else
+                next = 1;
+        }
+        else if (next + 1 != sortBy)
+            next++;
+        else
+            next += 2;
+    } while (res == 0 && next <= 3);
+    return res;
+}
+// the comparison of feature 407 (the same shape as the new CompareFunc)
+static int NewCompare407(const CFindSortItem407& f1, const CFindSortItem407& f2, int sortBy, bool descending)
+{
+    int res = 0;
+    if (f1.IsDir == f2.IsDir)
+    {
+        int next = sortBy;
+        do
+        {
+            res = CmpKey407(f1, f2, next);
+            next = SalFindSortNextKey(next, sortBy);
+        } while (res == 0 && next <= SAL_FIND_COL_DATE);
+    }
+    return SalFindSortOrder(f1.IsDir, f2.IsDir, res, descending);
+}
+static std::string Sorted407(std::vector<CFindSortItem407> v, int sortBy, bool descending)
+{
+    std::sort(v.begin(), v.end(), [&](const CFindSortItem407& a, const CFindSortItem407& b)
+              { return NewCompare407(a, b, sortBy, descending) < 0; });
+    std::string s;
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        if (i > 0)
+            s += ",";
+        s += v[i].Name;
+    }
+    return s;
+}
+static void TestFindSort407()
+{
+    // the transitions of the remembered sort
+    CSalFindSortState none = SalFindSortNone();
+    CHECK(none.Column == SAL_FIND_SORT_NONE && !none.Descending);
+    CSalFindSortState s = SalFindSortNext(none, SAL_FIND_COL_DATE, true);
+    CHECK(s.Column == SAL_FIND_COL_DATE && !s.Descending); // the first request: ascending
+    s = SalFindSortNext(s, SAL_FIND_COL_DATE, true);
+    CHECK(s.Column == SAL_FIND_COL_DATE && s.Descending); // the same column again: reversed
+    s = SalFindSortNext(s, SAL_FIND_COL_DATE, true);
+    CHECK(s.Column == SAL_FIND_COL_DATE && !s.Descending); // and back
+    s = SalFindSortNext(s, SAL_FIND_COL_DATE, true);
+    CSalFindSortState other = SalFindSortNext(s, SAL_FIND_COL_NAME, true);
+    CHECK(s.Descending && other.Column == SAL_FIND_COL_NAME && !other.Descending); // another column: ascending
+    CSalFindSortState internal = SalFindSortNext(s, SAL_FIND_COL_DATE, false);
+    CHECK(internal.Column == SAL_FIND_COL_DATE && !internal.Descending); // an internal sort never toggles
+    internal = SalFindSortNext(none, SAL_FIND_COL_PATH, false);
+    CHECK(internal.Column == SAL_FIND_COL_PATH && !internal.Descending);
+    for (int c = SAL_FIND_COL_NAME; c <= SAL_FIND_COL_TIME; c++)
+    {
+        CSalFindSortState a = SalFindSortNext(none, c, true);
+        CSalFindSortState b = SalFindSortNext(a, c, true);
+        CSalFindSortState d = SalFindSortNext(b, (c + 1) % 5, true);
+        CHECK(a.Column == c && !a.Descending && b.Column == c && b.Descending && d.Column == (c + 1) % 5 && !d.Descending);
+    }
+
+    // which columns can sort (the old guards of SortItems and of the View menu)
+    for (int c = SAL_FIND_COL_NAME; c <= SAL_FIND_COL_TIME; c++)
+        CHECK(SalFindSortColumnAllowed(c, false, false) && SalFindSortColumnAllowed(c, false, true));
+    CHECK(!SalFindSortColumnAllowed(SAL_FIND_COL_ATTR, false, false)); // attributes never
+    CHECK(!SalFindSortColumnAllowed(SAL_FIND_COL_ATTR, true, true));
+    CHECK(!SalFindSortColumnAllowed(-1, false, false) && !SalFindSortColumnAllowed(6, false, false));
+    CHECK(SalFindSortColumnAllowed(SAL_FIND_COL_NAME, true, true) && SalFindSortColumnAllowed(SAL_FIND_COL_SIZE, true, true));
+    CHECK(!SalFindSortColumnAllowed(SAL_FIND_COL_NAME, true, false) && !SalFindSortColumnAllowed(SAL_FIND_COL_SIZE, true, false));
+    CHECK(!SalFindSortColumnAllowed(SAL_FIND_COL_PATH, true, true) && !SalFindSortColumnAllowed(SAL_FIND_COL_DATE, true, true) &&
+          !SalFindSortColumnAllowed(SAL_FIND_COL_TIME, true, true));
+
+    // the tie-break chains: the sorted column, then Name, Path, Size, Date without it
+    const int chains[5][5] = {{0, 1, 2, 3, -1}, {1, 0, 2, 3, -1}, {2, 0, 1, 3, -1}, {3, 0, 1, 2, -1}, {4, 0, 1, 2, 3}};
+    for (int sortBy = 0; sortBy < 5; sortBy++)
+    {
+        int key = sortBy;
+        int n = 0;
+        bool same = true;
+        while (n < 5 && chains[sortBy][n] != -1)
+        {
+            same = same && key == chains[sortBy][n];
+            n++;
+            key = SalFindSortNextKey(key, sortBy);
+            if (key > SAL_FIND_COL_DATE)
+                break;
+        }
+        CHECK(same && key > SAL_FIND_COL_DATE && (n == 5 || chains[sortBy][n] == -1));
+    }
+
+    // the folder rule and the direction
+    CHECK(SalFindSortOrder(true, false, 1, false) < 0 && SalFindSortOrder(true, false, 1, true) < 0);   // folders first
+    CHECK(SalFindSortOrder(false, true, -1, false) > 0 && SalFindSortOrder(false, true, -1, true) > 0); // in both directions
+    CHECK(SalFindSortOrder(false, false, -7, false) == -1 && SalFindSortOrder(false, false, -7, true) == 1);
+    CHECK(SalFindSortOrder(true, true, 3, false) == 1 && SalFindSortOrder(true, true, 3, true) == -1);
+    CHECK(SalFindSortOrder(false, false, 0, true) == 0 && SalFindSortOrder(true, true, 0, false) == 0);
+    CHECK(SalFindSortDirected(-5, false) == -1 && SalFindSortDirected(-5, true) == 1 && SalFindSortDirected(0, true) == 0);
+    CHECK(SalFindSortDirected(9, false) == 1 && SalFindSortDirected(9, true) == -1);
+
+    // the probe's fixture: folders dB 2008, dA 2014; files fC 2006 4 B, fA 2010 1 B, fD 2012 3 B, fB 2016 2 B
+    std::vector<CFindSortItem407> items = {
+        {"fA", 1, 1, 2010, false}, {"dB", 1, 0, 2008, true}, {"fD", 1, 3, 2012, false}, {"fC", 1, 4, 2006, false}, {"dA", 1, 0, 2014, true}, {"fB", 1, 2, 2016, false}};
+    CHECK(Sorted407(items, SAL_FIND_COL_DATE, false) == "dB,dA,fC,fA,fD,fB");
+    CHECK(Sorted407(items, SAL_FIND_COL_DATE, true) == "dA,dB,fB,fD,fA,fC");
+    CHECK(Sorted407(items, SAL_FIND_COL_TIME, true) == "dA,dB,fB,fD,fA,fC");
+    CHECK(Sorted407(items, SAL_FIND_COL_NAME, false) == "dA,dB,fA,fB,fC,fD");
+    CHECK(Sorted407(items, SAL_FIND_COL_NAME, true) == "dB,dA,fD,fC,fB,fA");
+    CHECK(Sorted407(items, SAL_FIND_COL_SIZE, false) == "dA,dB,fA,fB,fD,fC"); // equal folder sizes: by name
+    CHECK(Sorted407(items, SAL_FIND_COL_SIZE, true) == "dB,dA,fC,fD,fB,fA");  // every key reversed
+
+    // ascending is the old order, descending the exact reverse inside each group (all pairs, all columns)
+    std::vector<CFindSortItem407> pairs = {
+        {"a", 1, 5, 7, false}, {"a", 2, 5, 7, false}, {"b", 1, 5, 7, false}, {"a", 1, 6, 7, false}, {"a", 1, 5, 8, false}, {"a", 1, 5, 7, true}, {"c", 0, 0, 1, true}, {"b", 2, 4, 9, true}};
+    bool oldSame = true, reversed = true, foldersFirst = true;
+    for (int sortBy = 0; sortBy < 5; sortBy++)
+        for (size_t i = 0; i < pairs.size(); i++)
+            for (size_t j = 0; j < pairs.size(); j++)
+            {
+                int up = NewCompare407(pairs[i], pairs[j], sortBy, false);
+                int down = NewCompare407(pairs[i], pairs[j], sortBy, true);
+                oldSame = oldSame && up == OldCompare407(pairs[i], pairs[j], sortBy);
+                if (pairs[i].IsDir == pairs[j].IsDir)
+                    reversed = reversed && down == -up;
+                else
+                    foldersFirst = foldersFirst && down == up && up == (pairs[i].IsDir ? -1 : 1);
+            }
+    CHECK(oldSame);
+    CHECK(reversed);
+    CHECK(foldersFirst);
+
+    // the header arrows: only the sorted column, the other format bits kept
+    const int fmtRight = 0x0001; // HDF_RIGHT (the Size column is right-aligned)
+    CSalFindSortState up = {SAL_FIND_COL_SIZE, false};
+    CSalFindSortState down = {SAL_FIND_COL_SIZE, true};
+    CHECK(SalFindSortHeaderFormat(fmtRight, SAL_FIND_COL_SIZE, up) == (fmtRight | SAL_FIND_HDF_SORTUP));
+    CHECK(SalFindSortHeaderFormat(fmtRight | SAL_FIND_HDF_SORTUP, SAL_FIND_COL_SIZE, down) == (fmtRight | SAL_FIND_HDF_SORTDOWN));
+    CHECK(SalFindSortHeaderFormat(SAL_FIND_HDF_SORTDOWN, SAL_FIND_COL_NAME, up) == 0); // moved away: cleared
+    CHECK(SalFindSortHeaderFormat(fmtRight | SAL_FIND_HDF_SORTUP, SAL_FIND_COL_SIZE, SalFindSortNone()) == fmtRight);
+    CHECK(SalFindSortHeaderFormat(0, SAL_FIND_COL_ATTR, up) == 0);
+    CHECK(SAL_FIND_HDF_SORTUP == 0x0400 && SAL_FIND_HDF_SORTDOWN == 0x0200);
+
+    // the Registry Editor's Find: keys stay before values where its ascending order groups them
+    CHECK(SalFindSortGroupedDirected(-1, true, true, true) == -1);  // a key before a value, descending
+    CHECK(SalFindSortGroupedDirected(1, true, true, true) == 1);    // a value after a key, descending
+    CHECK(SalFindSortGroupedDirected(-1, true, true, false) == -1); // ascending unchanged
+    CHECK(SalFindSortGroupedDirected(-3, true, false, true) == 1);  // Path does not group: reversed
+    CHECK(SalFindSortGroupedDirected(-3, false, true, true) == 1);  // the same group: reversed
+    CHECK(SalFindSortGroupedDirected(5, false, false, false) == 1 && SalFindSortGroupedDirected(0, false, true, true) == 0);
+}
+
 // feature 294: the path of a source key below a target key that holds it - a Copy / Move of
 // Zdroj\K\K into Zdroj\ (target Zdroj\K) writes target\P for each subkey path P of the source, so
 // into the source itself when the source holds K (the remainder) below itself; Move then deleted it
@@ -27362,6 +27554,7 @@ int main(int argc, char** argv)
     TestRegKeyId292();
     TestRegHkcrHalf390();
     TestRegHkcrBoth406();
+    TestFindSort407();
     TestRegKeyIdBelow294();
     TestRegKeyIdLeadsBack391();
     TestDeleteAsDirLink197();

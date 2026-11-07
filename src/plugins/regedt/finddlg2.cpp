@@ -314,6 +314,7 @@ void CFindDialog::StartSearch()
     CALL_STACK_MESSAGE1("CFindDialog::StartSearch()");
     List->DestroyMembers();
     ListView_SetItemCountEx(List->HWindow, 0, 0);
+    List->ResetSort(); // feature 407: the search order again, no sort arrow
     UpdateWindow(List->HWindow);
     SetWindowText(GetDlgItem(HWindow, IDC_FOUND_FILES), LoadStr(IDS_FOUNDITEMS1));
     FoundVisibleCount = 0;

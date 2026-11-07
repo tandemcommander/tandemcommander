@@ -167,6 +167,7 @@ CFoundFilesListView::CFoundFilesListView(HWND dlg, int ctrlID, CFindDialog* find
     : Data(1000, 500), DataForRefine(1, 1000), CWindow(dlg, ctrlID)
 {
     FindDialog = findDialog;
+    SortState = SalFindSortNone(); // feature 407: the search order
     HANDLES(InitializeCriticalSection(&DataCriticalSection));
 
     // add this panel to the array of sources for enumerating files in viewers
@@ -450,25 +451,19 @@ void CFoundFilesListView::RestoreItemsState()
     }
 }
 
-void CFoundFilesListView::SortItems(int sortBy)
+// feature 407: can the result list sort by 'column' in the current search mode?
+static BOOL FindSortColumnAllowed(const CGrepData& grepData, int column)
 {
-    if (sortBy == 5)
-        return; // sorting by attributes is unsupported
+    // sorting by name and size works for duplicates only when searching for identical name and size
+    BOOL dupByNameAndSize = (grepData.FindDupFlags & FIND_DUPLICATES_NAME) != 0 &&
+                            (grepData.FindDupFlags & FIND_DUPLICATES_SIZE) != 0;
+    return SalFindSortColumnAllowed(column, grepData.FindDuplicates != FALSE, dupByNameAndSize != FALSE);
+}
 
-    BOOL enabledNameSize = TRUE;
-    BOOL enabledPathTime = TRUE;
-    if (FindDialog->GrepData.FindDuplicates)
-    {
-        enabledPathTime = FALSE; // path and time are irrelevant for duplicates
-        // sorting by name and size works for duplicates only
-        // when searching for identical name and size
-        enabledNameSize = (FindDialog->GrepData.FindDupFlags & FIND_DUPLICATES_NAME) &&
-                          (FindDialog->GrepData.FindDupFlags & FIND_DUPLICATES_SIZE);
-    }
-
-    if (!enabledNameSize && (sortBy == 0 || sortBy == 2))
-        return;
-    if (!enabledPathTime && (sortBy == 1 || sortBy == 3 || sortBy == 4))
+void CFoundFilesListView::SortItems(int sortBy, BOOL toggle)
+{
+    // attributes never; path, date and time are irrelevant for duplicates
+    if (!FindSortColumnAllowed(FindDialog->GrepData, sortBy))
         return;
 
     HCURSOR hCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
@@ -479,21 +474,21 @@ void CFoundFilesListView::SortItems(int sortBy)
     // if some items are still in data but not in the listview, transfer them
     FindDialog->UpdateListViewItems();
 
-    if (Data.Count > 0)
+    if (Data.Count > 0) // feature 407: an empty list remembers nothing (no arrow for an order it does not have)
     {
+        // feature 407: the same column again reverses the order (GitHub #23), another column starts ascending
+        SortState = SalFindSortNext(SortState, sortBy, toggle != FALSE);
+        BOOL descending = SortState.Descending;
+
         // save the selected and focused item state
         StoreItemsState();
 
-        // sort the array by the requested criterion
-        QuickSort(0, Data.Count - 1, sortBy);
+        // sort the array by the requested criterion (feature 407: once - it was sorted twice)
+        QuickSort(0, Data.Count - 1, sortBy, descending);
         if (FindDialog->GrepData.FindDuplicates)
         {
-            QuickSortDuplicates(0, Data.Count - 1, sortBy == 0);
+            QuickSortDuplicates(0, Data.Count - 1, sortBy == 0, descending);
             SetDifferentByGroup();
-        }
-        else
-        {
-            QuickSort(0, Data.Count - 1, sortBy);
         }
 
         // restore the item states
@@ -503,11 +498,40 @@ void CFoundFilesListView::SortItems(int sortBy)
         if (focusIndex != -1)
             ListView_EnsureVisible(HWindow, focusIndex, FALSE);
         ListView_RedrawItems(HWindow, 0, Data.Count - 1);
+        UpdateSortArrows();
         UpdateWindow(HWindow);
     }
 
     HANDLES(LeaveCriticalSection(&DataCriticalSection));
     SetCursor(hCursor);
+}
+
+void CFoundFilesListView::ResetSort()
+{
+    SortState = SalFindSortNone();
+    UpdateSortArrows();
+}
+
+void CFoundFilesListView::UpdateSortArrows()
+{
+    HWND header = ListView_GetHeader(HWindow);
+    if (header == NULL)
+        return;
+    int count = (int)SendMessageW(header, HDM_GETITEMCOUNT, 0, 0);
+    for (int i = 0; i < count; i++)
+    {
+        HDITEMW item;
+        ZeroMemory(&item, sizeof(item));
+        item.mask = HDI_FORMAT; // the format only: no text crosses here
+        if (!SendMessageW(header, HDM_GETITEMW, i, (LPARAM)&item))
+            continue;
+        int fmt = SalFindSortHeaderFormat(item.fmt, i, SortState);
+        if (fmt != item.fmt)
+        {
+            item.fmt = fmt;
+            SendMessageW(header, HDM_SETITEMW, i, (LPARAM)&item);
+        }
+    }
 }
 
 void CFoundFilesListView::SetDifferentByGroup()
@@ -538,7 +562,7 @@ void CFoundFilesListView::SetDifferentByGroup()
     }
 }
 
-void CFoundFilesListView::QuickSort(int left, int right, int sortBy)
+void CFoundFilesListView::QuickSort(int left, int right, int sortBy, BOOL descending)
 {
 
 LABEL_QuickSort2:
@@ -548,9 +572,9 @@ LABEL_QuickSort2:
 
     do
     {
-        while (CompareFunc(Data[i], pivot, sortBy) < 0 && i < right)
+        while (CompareFunc(Data[i], pivot, sortBy, descending) < 0 && i < right)
             i++;
-        while (CompareFunc(pivot, Data[j], sortBy) < 0 && j > left)
+        while (CompareFunc(pivot, Data[j], sortBy, descending) < 0 && j > left)
             j--;
 
         if (i <= j)
@@ -573,13 +597,13 @@ LABEL_QuickSort2:
         {
             if (j - left < right - i) // both halves need sorting: recurse on the smaller one and process the other via 'goto'
             {
-                QuickSort(left, j, sortBy);
+                QuickSort(left, j, sortBy, descending);
                 left = i;
                 goto LABEL_QuickSort2;
             }
             else
             {
-                QuickSort(i, right, sortBy);
+                QuickSort(i, right, sortBy, descending);
                 right = j;
                 goto LABEL_QuickSort2;
             }
@@ -600,13 +624,15 @@ LABEL_QuickSort2:
     }
 }
 
-int CFoundFilesListView::CompareFunc(CFoundFilesData* f1, CFoundFilesData* f2, int sortBy)
+int CFoundFilesListView::CompareFunc(CFoundFilesData* f1, CFoundFilesData* f2, int sortBy, BOOL descending)
 {
-    int res;
-    int next = sortBy;
-    do
+    // feature 407: folders before files in both directions; within a group the column and its
+    // tie-break columns (SalFindSortNextKey), reversed as a whole when descending (as the panel)
+    int res = 0;
+    if (f1->IsDir == f2->IsDir) // are the items from the same group (directories/files)?
     {
-        if (f1->IsDir == f2->IsDir) // are the items from the same group (directories/files)?
+        int next = sortBy;
+        do
         {
             switch (next)
             {
@@ -643,28 +669,14 @@ int CFoundFilesListView::CompareFunc(CFoundFilesData* f1, CFoundFilesData* f2, i
                 break;
             }
             }
-        }
-        else
-            res = f1->IsDir ? -1 : 1;
-
-        if (next == sortBy)
-        {
-            if (sortBy != 0)
-                next = 0;
-            else
-                next = 1;
-        }
-        else if (next + 1 != sortBy)
-            next++;
-        else
-            next += 2;
-    } while (res == 0 && next <= 3);
-
-    return res;
+            next = SalFindSortNextKey(next, sortBy);
+        } while (res == 0 && next <= SAL_FIND_COL_DATE);
+    }
+    return SalFindSortOrder(f1->IsDir != 0, f2->IsDir != 0, res, descending != FALSE);
 }
 
 // quick sort routine for duplicate mode; it uses a special comparator
-void CFoundFilesListView::QuickSortDuplicates(int left, int right, BOOL byName)
+void CFoundFilesListView::QuickSortDuplicates(int left, int right, BOOL byName, BOOL descending)
 {
 
 LABEL_QuickSortDuplicates:
@@ -674,9 +686,9 @@ LABEL_QuickSortDuplicates:
 
     do
     {
-        while (CompareDuplicatesFunc(Data[i], pivot, byName) < 0 && i < right)
+        while (CompareDuplicatesFunc(Data[i], pivot, byName, descending) < 0 && i < right)
             i++;
-        while (CompareDuplicatesFunc(pivot, Data[j], byName) < 0 && j > left)
+        while (CompareDuplicatesFunc(pivot, Data[j], byName, descending) < 0 && j > left)
             j--;
 
         if (i <= j)
@@ -699,13 +711,13 @@ LABEL_QuickSortDuplicates:
         {
             if (j - left < right - i) // both halves need sorting: recurse on the smaller one and use 'goto' for the other
             {
-                QuickSortDuplicates(left, j, byName);
+                QuickSortDuplicates(left, j, byName, descending);
                 left = i;
                 goto LABEL_QuickSortDuplicates;
             }
             else
             {
-                QuickSortDuplicates(i, right, byName);
+                QuickSortDuplicates(i, right, byName, descending);
                 right = j;
                 goto LABEL_QuickSortDuplicates;
             }
@@ -727,7 +739,7 @@ LABEL_QuickSortDuplicates:
 }
 
 // comparator for displayed duplicates; if 'byName', sorting is primarily by name, otherwise by size
-int CFoundFilesListView::CompareDuplicatesFunc(CFoundFilesData* f1, CFoundFilesData* f2, BOOL byName)
+int CFoundFilesListView::CompareDuplicatesFunc(CFoundFilesData* f1, CFoundFilesData* f2, BOOL byName, BOOL descending)
 {
     int res;
     if (byName)
@@ -790,7 +802,8 @@ int CFoundFilesListView::CompareDuplicatesFunc(CFoundFilesData* f1, CFoundFilesD
     }
     if (res == 0)
         res = RegSetStrICmp(f1->Path, f2->Path);
-    return res;
+    // feature 407: the whole key reversed - each duplicate group (same name and size) stays together
+    return SalFindSortDirected(res, descending != FALSE);
 }
 
 struct CUMDataFromFind
@@ -2086,6 +2099,7 @@ void CFindDialog::StartSearch(WORD command)
     EnumFileNamesChangeSourceUID(FoundFilesListView->HWindow, &(FoundFilesListView->EnumFileNamesSourceUID));
 
     ListView_SetItemCount(FoundFilesListView->HWindow, 0);
+    FoundFilesListView->ResetSort(); // feature 407: the list is in search order again, no sort arrow
     UpdateWindow(FoundFilesListView->HWindow);
 
     // release any errors held from the previous search
@@ -3375,20 +3389,12 @@ CFindDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             case CML_FIND_VIEW:
             {
-                BOOL enabledNameSize = TRUE;
-                BOOL enabledPathTime = TRUE;
-                if (GrepData.FindDuplicates)
-                {
-                    enabledPathTime = FALSE; // path and time are irrelevant for duplicates
-                    // sorting by name and size works for duplicates only
-                    // if the search was by the same name and size
-                    enabledNameSize = (GrepData.FindDupFlags & FIND_DUPLICATES_NAME) &&
-                                      (GrepData.FindDupFlags & FIND_DUPLICATES_SIZE);
-                }
-                popup->EnableItem(CM_FIND_NAME, FALSE, enabledNameSize && totalCount > 0);
-                popup->EnableItem(CM_FIND_PATH, FALSE, enabledPathTime && totalCount > 0);
-                popup->EnableItem(CM_FIND_TIME, FALSE, enabledPathTime && totalCount > 0);
-                popup->EnableItem(CM_FIND_SIZE, FALSE, enabledNameSize && totalCount > 0);
+                // feature 407: the same rule as SortItems (path and time are irrelevant for
+                // duplicates; name and size only if the search was by the same name and size)
+                popup->EnableItem(CM_FIND_NAME, FALSE, FindSortColumnAllowed(GrepData, SAL_FIND_COL_NAME) && totalCount > 0);
+                popup->EnableItem(CM_FIND_PATH, FALSE, FindSortColumnAllowed(GrepData, SAL_FIND_COL_PATH) && totalCount > 0);
+                popup->EnableItem(CM_FIND_TIME, FALSE, FindSortColumnAllowed(GrepData, SAL_FIND_COL_DATE) && totalCount > 0);
+                popup->EnableItem(CM_FIND_SIZE, FALSE, FindSortColumnAllowed(GrepData, SAL_FIND_COL_SIZE) && totalCount > 0);
                 break;
             }
 

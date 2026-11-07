@@ -83,8 +83,8 @@ void CFindDialog::OnHideDuplicateNames()
 
     HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-    // sort by path
-    FoundFilesListView->SortItems(1);
+    // sort by path (feature 407: ascending, never toggles - the duplicates must be adjacent)
+    FoundFilesListView->SortItems(SAL_FIND_COL_PATH, FALSE);
 
     // discard the item if it has the same path and name as the previous one
     int deletedCount = 0;

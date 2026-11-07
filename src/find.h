@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "salfindsort.h" // feature 407: the remembered sort of the result list
+
 // structure for adding messages to the Find Log; sent as the message parameter
 // of WM_USER_ADDLOG; parameters will be copied into the log data (can be deallocated after returning)
 #define FLI_INFO 0x00000000   // INFORMATION item
@@ -557,6 +559,9 @@ protected:
     CRITICAL_SECTION DataCriticalSection; // critical section for accessing data
     CFindDialog* FindDialog;
     TIndirectArray<CFoundFilesData> DataForRefine;
+    // feature 407: the column the list is sorted by and the direction (SAL_FIND_SORT_NONE = the
+    // search order); used only on the Find dialog's thread
+    CSalFindSortState SortState;
 
 public:
     int EnumFileNamesSourceUID; // UID of the source for name enumeration in viewers
@@ -572,12 +577,20 @@ public:
     void StoreItemsState();
     void RestoreItemsState();
 
-    int CompareFunc(CFoundFilesData* f1, CFoundFilesData* f2, int sortBy);
-    void QuickSort(int left, int right, int sortBy);
-    void SortItems(int sortBy);
+    int CompareFunc(CFoundFilesData* f1, CFoundFilesData* f2, int sortBy, BOOL descending);
+    void QuickSort(int left, int right, int sortBy, BOOL descending);
+    // feature 407: sorts by column 'sortBy'; 'toggle' (every user request: a header click, the View
+    // menu, Ctrl+F3..F6) reverses the direction when the list is already sorted by that column;
+    // without it (an internal sort) the order is ascending. A column that cannot sort, or an empty
+    // list, changes nothing (SalFindSortColumnAllowed).
+    void SortItems(int sortBy, BOOL toggle = TRUE);
+    // feature 407: a new search - the list is in search order again, no arrow in the header
+    void ResetSort();
+    // feature 407: the header's sort arrow on the sorted column only (HDF_SORTUP / HDF_SORTDOWN)
+    void UpdateSortArrows();
 
-    void QuickSortDuplicates(int left, int right, BOOL byName);
-    int CompareDuplicatesFunc(CFoundFilesData* f1, CFoundFilesData* f2, BOOL byName);
+    void QuickSortDuplicates(int left, int right, BOOL byName, BOOL descending);
+    int CompareDuplicatesFunc(CFoundFilesData* f1, CFoundFilesData* f2, BOOL byName, BOOL descending);
     void SetDifferentByGroup(); // sets the Different bit based on Group so that the Different bit alternates at group boundaries
 
     // interface for Data

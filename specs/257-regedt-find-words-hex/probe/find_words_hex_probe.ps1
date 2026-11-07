@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     Values under HKCU\Software\TcProbe257, the panel goes there, the plug-in's Find window
-    (Ctrl+Shift+G for the session, the 124 method) searches with Keys and Values off, Data and
+    (Ctrl+Shift+J for the session since feature 407 - Ctrl+Shift+G no longer reaches the plug-in; the 124 method) searches with Keys and Values off, Data and
     Include subkeys on; the names of the found rows are read (LVM_GETITEMTEXTW).
       RX-BAR       the control: regexp "bar" finds the three values that contain it
       WW-LINE2     regexp "bar" with Whole words: "foo bar" on the second line of a list is found,
@@ -147,7 +147,7 @@ $script:HotKeyNote = 'not set'
 function Kid([IntPtr]$Dlg, [int]$CtlId) { return @([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq $CtlId }) | Select-Object -First 1 }
 function Sync([int]$Id) { [void][Drv098f]::Send((Get-Main $Id), 0, 0, 0, 20000) }
 function U16([string]$s) { return [Text.Encoding]::Unicode.GetBytes($s) }
-# Registry Editor's Find command gets Ctrl+Shift+G for this session (the 118/121/124 method)
+# Registry Editor's Find command gets Ctrl+Shift+J for this session (the 118/121/124 method)
 function Set-HotKeys {
     $plugins = 'HKCU:\Software\Tandem Commander\Settings\Plugins'
     if (-not (Test-Path $plugins)) { return 'no Plugins key' }
@@ -159,7 +159,7 @@ function Set-HotKeys {
         if (-not (Test-Path $menu)) { $notes += 'regedt: no Menu key'; continue }
         $set = 0
         foreach ($mi in @(Get-ChildItem $menu)) {
-            if ((Get-ItemProperty $mi.PSPath -ErrorAction SilentlyContinue).ID -eq 1) { Set-ItemProperty -LiteralPath $mi.PSPath -Name 'HotKey' -Value 0x10347 -Type DWord; $set++ }
+            if ((Get-ItemProperty $mi.PSPath -ErrorAction SilentlyContinue).ID -eq 1) { Set-ItemProperty -LiteralPath $mi.PSPath -Name 'HotKey' -Value 0x1034A -Type DWord; $set++ }
         }
         $notes += ("regedt.spl id 1: {0}" -f $set)
     }
@@ -223,9 +223,9 @@ function Run-Find {
         [void](Do-ChangeDir $id $ProbeKeyPath)
         Sync $id; Start-Sleep -Milliseconds 1500
         $known = Get-Tops $id
-        $note = [Drv257]::ModKey((Get-LeftList $id), 0x47, 3)
+        $note = [Drv257]::ModKey((Get-LeftList $id), 0x4A, 3)
         $fw = Wait-NewWin $id $known 10
-        if ($fw -eq [IntPtr]::Zero) { foreach ($c in $Searches) { Row $c.Row 'FOUND' 'NOT DRIVEN' ("Ctrl+Shift+G opened no window (key: {0}; hot keys: {1})" -f $note, $script:HotKeyNote) }; return }
+        if ($fw -eq [IntPtr]::Zero) { foreach ($c in $Searches) { Row $c.Row 'FOUND' 'NOT DRIVEN' ("Ctrl+Shift+J opened no window (key: {0}; hot keys: {1})" -f $note, $script:HotKeyNote) }; return }
         Start-Sleep -Milliseconds 800
         if (-not (Kid $fw 136) -or -not (Kid $fw 149)) { foreach ($c in $Searches) { Row $c.Row 'FOUND' 'NOT DRIVEN' ('controls not found in ' + (WinDesc $fw)) }; return }
         foreach ($c in $Searches) { Search-Once $fw $c }

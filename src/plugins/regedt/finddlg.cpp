@@ -540,6 +540,7 @@ CFoundFilesListView::CFoundFilesListView(CFindDialog* searchDialog)
     CALL_STACK_MESSAGE_NONE
     //  CALL_STACK_MESSAGE1("CFoundFilesListView::CFoundFilesListView()");
     SearchDialog = searchDialog;
+    SortState = SalFindSortNone(); // feature 407: the search order
 }
 
 CFoundFilesListView::~CFoundFilesListView()
@@ -568,7 +569,7 @@ void CFoundFilesListView::RestoreItemsState()
         ListView_SetItemState(HWindow, i, Data[i]->State, LVIS_FOCUSED | LVIS_SELECTED);
 }
 
-int CFoundFilesListView::CompareFunc(CFoundFilesData* f1, CFoundFilesData* f2, int sortBy)
+int CFoundFilesListView::CompareFunc(CFoundFilesData* f1, CFoundFilesData* f2, int sortBy, BOOL descending)
 {
     CALL_STACK_MESSAGE_NONE
     //  CALL_STACK_MESSAGE2("CFoundFilesListView::CompareFunc(, , %d)", sortBy);
@@ -693,10 +694,12 @@ int CFoundFilesListView::CompareFunc(CFoundFilesData* f1, CFoundFilesData* f2, i
             next += 2;
     } while (res == 0 && next <= 4);
 
-    return res;
+    // feature 407: descending reverses the order; keys stay before values where the ascending
+    // order groups them (every column but Path)
+    return SalFindSortGroupedDirected(res, f1->IsDir != f2->IsDir, sortBy != CI_PATH, descending != FALSE);
 }
 
-void CFoundFilesListView::QuickSort(int left, int right, int sortBy)
+void CFoundFilesListView::QuickSort(int left, int right, int sortBy, BOOL descending)
 {
     CALL_STACK_MESSAGE_NONE
 
@@ -709,9 +712,9 @@ LABEL_QuickSort:
 
     do
     {
-        while (CompareFunc(Data[i], pivot, sortBy) < 0 && i < right)
+        while (CompareFunc(Data[i], pivot, sortBy, descending) < 0 && i < right)
             i++;
-        while (CompareFunc(pivot, Data[j], sortBy) < 0 && j > left)
+        while (CompareFunc(pivot, Data[j], sortBy, descending) < 0 && j > left)
             j--;
 
         if (i <= j)
@@ -725,8 +728,8 @@ LABEL_QuickSort:
     } while (i <= j);
 
     // the following "nice" code was replaced with one that saves a lot of stack (maximum log(N) recursion depth)
-    //  if (left < j) QuickSort(left, j, sortBy);
-    //  if (i < right) QuickSort(i, right, sortBy);
+    //  if (left < j) QuickSort(left, j, sortBy, descending);
+    //  if (i < right) QuickSort(i, right, sortBy, descending);
 
     if (left < j)
     {
@@ -734,13 +737,13 @@ LABEL_QuickSort:
         {
             if (j - left < right - i) // both "halves" must be sorted, so recurse into the smaller one and handle the other via "goto"
             {
-                QuickSort(left, j, sortBy);
+                QuickSort(left, j, sortBy, descending);
                 left = i;
                 goto LABEL_QuickSort;
             }
             else
             {
-                QuickSort(i, right, sortBy);
+                QuickSort(i, right, sortBy, descending);
                 right = j;
                 goto LABEL_QuickSort;
             }
@@ -770,24 +773,56 @@ void CFoundFilesListView::SortItems(int sortBy)
     // if we have any items in the data that are not in the list view, transfer them
     SearchDialog->UpdateListViewItems();
 
-    if (Data.Count > 0)
+    if (Data.Count > 0) // feature 407: an empty list remembers nothing
     {
+        // feature 407: the same column again reverses the order, another column starts ascending
+        SortState = SalFindSortNext(SortState, sortBy, true);
+
         // save the state of the selected and focused items
         StoreItemsState();
 
         // sort the array according to the requested criterion
-        QuickSort(0, Data.Count - 1, sortBy);
+        QuickSort(0, Data.Count - 1, sortBy, SortState.Descending);
 
         RestoreItemsState();
         int focusIndex = ListView_GetNextItem(HWindow, -1, LVNI_FOCUSED);
         if (focusIndex != -1)
             ListView_EnsureVisible(HWindow, focusIndex, FALSE);
         ListView_RedrawItems(HWindow, 0, Data.Count - 1);
+        UpdateSortArrows();
         UpdateWindow(HWindow);
     }
 
     DataCriticalSection.Leave();
     SetCursor(hCursor);
+}
+
+void CFoundFilesListView::ResetSort()
+{
+    SortState = SalFindSortNone();
+    UpdateSortArrows();
+}
+
+void CFoundFilesListView::UpdateSortArrows()
+{
+    HWND header = ListView_GetHeader(HWindow);
+    if (header == NULL)
+        return;
+    int count = (int)SendMessageW(header, HDM_GETITEMCOUNT, 0, 0);
+    for (int i = 0; i < count; i++)
+    {
+        HDITEMW item;
+        ZeroMemory(&item, sizeof(item));
+        item.mask = HDI_FORMAT; // the format only: no text crosses here
+        if (!SendMessageW(header, HDM_GETITEMW, i, (LPARAM)&item))
+            continue;
+        int fmt = SalFindSortHeaderFormat(item.fmt, i, SortState);
+        if (fmt != item.fmt)
+        {
+            item.fmt = fmt;
+            SendMessageW(header, HDM_SETITEMW, i, (LPARAM)&item);
+        }
+    }
 }
 
 CFoundFilesData*

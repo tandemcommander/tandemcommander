@@ -46,6 +46,7 @@
 #include "../../common/salmultisz.h"     // feature 189
 #include "../../common/salregfind.h"     // feature 257
 #include "../../common/salregkeyid.h"    // feature 292
+#include "../../common/salfindsort.h"    // feature 407
 #include "utils.h"
 #include "regedt.h"
 #include "dialogs.h"

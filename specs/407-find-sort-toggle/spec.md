@@ -150,4 +150,7 @@ it can sort by toggle and keep each duplicate group together.
 - Assumption (autonomous run): The header arrow is the standard one of Windows list headers; no
   new strings, menus or dialogs are added, so no translation work is needed.
 - Assumption (autonomous run): The Registry Editor plug-in has its own Find window with the same
-  limitation; it is not part of this item (the item names the core Find only).
+  limitation (measured: a second header click keeps the order, no arrow). It is fixed in this
+  feature as a finding on the way (stop-rules rule 11, severity 4 or less): the same toggle, the
+  arrow, the reset at a new search; its keys stay before values where its own ascending order
+  groups them (every column but Path, which it never grouped). It has no View menu sort commands.

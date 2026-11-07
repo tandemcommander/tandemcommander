@@ -112,6 +112,9 @@ protected:
     TIndirectArray<CFoundFilesData> Data;
     CCS DataCriticalSection; // critical section for accessing the data
     CFindDialog* SearchDialog;
+    // feature 407: the column the list is sorted by and the direction (SAL_FIND_SORT_NONE = the
+    // search order); used only on the Find dialog's thread
+    CSalFindSortState SortState;
 
 public:
     CFoundFilesListView(CFindDialog* searchDialog);
@@ -120,9 +123,15 @@ public:
     void StoreItemsState();
     void RestoreItemsState();
 
-    int CompareFunc(CFoundFilesData* f1, CFoundFilesData* f2, int sortBy);
-    void QuickSort(int left, int right, int sortBy);
+    int CompareFunc(CFoundFilesData* f1, CFoundFilesData* f2, int sortBy, BOOL descending);
+    void QuickSort(int left, int right, int sortBy, BOOL descending);
+    // feature 407: a column header click - the same column again reverses the order, another
+    // column starts ascending; an empty list changes nothing
     void SortItems(int sortBy);
+    // feature 407: a new search - the search order, no sort arrow
+    void ResetSort();
+    // feature 407: the header's sort arrow on the sorted column only
+    void UpdateSortArrows();
 
     // interface pro Data
     CFoundFilesData* At(int index);
