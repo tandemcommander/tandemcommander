@@ -1,7 +1,7 @@
 ---
 title: Markdown Viewer copy control: may a document make a click overwrite the clipboard
 type: decision
-status: new
+status: open
 severity: 4
 area: other-plugins
 source: review:408
@@ -56,3 +56,4 @@ A, with B as a later improvement if users ask: the copied text is always the doc
 ## Log
 
 - 2026-11-07 — created (source review:408)
+- 2026-11-07 — moved to Decisions for the maintainer position 4
