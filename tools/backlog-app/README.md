@@ -18,7 +18,10 @@ It changes nothing by itself: every change of the backlog goes through
 design and every measured result are in `specs/344-backlog-web-app/`; the
 changes of feature 371 (editing while a run is in progress, the running item
 in _In progress_, typed positions, the conversation) in
-`specs/371-backlog-app-live-editing/`.
+`specs/371-backlog-app-live-editing/`. The triage's _Place at_ chooser
+(feature 414, `specs/414-triage-position/`) moves an Inbox item into _Next_,
+_Decisions for the maintainer_ or _Person steps_ at a chosen position in one
+change; key `m` focuses its position field.
 
 ## Run
 

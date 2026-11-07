@@ -35,6 +35,50 @@ export function admittingSection(item: Pick<ItemRow, "type" | "who">): SectionNa
   return "Next";
 }
 
+/** The ordered sections an Inbox item can be placed into at a chosen position (feature 414). */
+export const TRIAGE_TARGETS: readonly SectionName[] = [
+  "Next",
+  "Decisions for the maintainer",
+  "Person steps",
+];
+
+/**
+ * The position the severity rule gives in a section: directly below the last row of at least the
+ * item's severity, so the item never jumps ahead of something judged more severe; 1 (the top) when
+ * every row is less severe or the section is empty.
+ *
+ * @param severity - The item's severity.
+ * @param sectionRows - The item rows of the section in their order (without the item itself).
+ * @returns The 1-based position.
+ */
+export function positionBySeverity(severity: number, sectionRows: Pick<ItemRow, "severity">[]): number {
+  let position = 1;
+  sectionRows.forEach((row, index) => {
+    if (row.severity >= severity) position = index + 2;
+  });
+  return position;
+}
+
+/**
+ * Reads a position typed in the triage's chooser (feature 414): a whole number of at least 1. A
+ * number past the end of the section is accepted - the backlog tool then appends the row - and
+ * says so, so the maintainer knows before confirming.
+ *
+ * @param text - What was typed.
+ * @param count - The number of item rows in the target section (the Inbox item is not among them).
+ * @returns The position and whether it is past the end, or a hint why it is refused.
+ */
+export function readTriagePosition(
+  text: string,
+  count: number,
+): { position: number; last: boolean } | { hint: string } {
+  const trimmed = text.trim();
+  if (!/^\d+$/.test(trimmed)) return { hint: "type a whole number: 1 is the top" };
+  const position = Number(trimmed);
+  if (position < 1) return { hint: "positions count from 1 (the top)" };
+  return { position, last: position > count + 1 };
+}
+
 /**
  * Suggests where an Inbox item goes.
  *
@@ -47,11 +91,7 @@ export function suggestPlacement(
   sectionRows: Pick<ItemRow, "severity">[],
 ): Placement {
   const section = admittingSection(item);
-  // Below the last row of at least the same severity; at the top when every row is less severe.
-  let position = 1;
-  sectionRows.forEach((row, index) => {
-    if (row.severity >= item.severity) position = index + 2;
-  });
+  const position = positionBySeverity(item.severity, sectionRows);
   const why =
     position === 1
       ? `severity ${item.severity} is higher than every item in ${section}`

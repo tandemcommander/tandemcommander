@@ -32,6 +32,7 @@ backlog app, feature 344):
 - Q: Which sections can the triage place an item into at a chosen position? → A: the three ordered sections *Next*, *Decisions for the maintainer* and *Person steps* (autonomous run: item *Expected*)
 - Q: What is the default position offered for a section? → A: the place the severity rule of the existing suggestion gives in that section - directly below the last item of at least the item's severity, the top when every item there is less severe (autonomous run: item *Expected* "the place `auto-triage` would pick by severity"; the app's suggestion already follows that rule)
 - Q: Do the existing one-key actions change (`n`, `d`, `p`)? → A: no; `n` still places at the suggested place, `d` and `p` still place at the end; the new chooser is added beside them (autonomous run: conservative - keeps the existing behaviour for every case the item does not name)
+- Q: (found while implementing) May the chooser send an item to a section its type and who do not admit? → A: no; the backlog tool refuses such a move ("belongs in 'Next', not 'Person steps'; change type / who with 'set' first", measured), so the chooser shows the other sections disabled with that reason, and `d` / `p` are disabled for such an item instead of being refused after the click (a finding fixed on the way, severity 2); changing type / who stays on the item page (autonomous run: rule - the tool's admission rule; conservative - refuse in the page rather than send a move that is refused)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -54,11 +55,11 @@ is empty, and the change tray holds one change.
 1. **Given** an Inbox item and three items in *Next*, **When** the maintainer chooses *Next*,
    types position 2 and confirms, **Then** the item is the second item of *Next* and no longer in
    the Inbox, by one move of the backlog tool.
-2. **Given** an Inbox item whose suggestion is *Next*, **When** the maintainer chooses *Person
-   steps* and confirms the default position, **Then** the item is in *Person steps* at the default
-   position the chooser showed.
-3. **Given** the chooser shows a section, **When** the maintainer switches to another section,
-   **Then** the position field shows the default of the newly chosen section.
+2. **Given** an Inbox person step and one item in *Person steps*, **When** the maintainer types
+   position 1 and confirms, **Then** the person step is the first item of *Person steps*.
+3. **Given** an Inbox item whose type and who belong in *Next*, **Then** the chooser shows
+   *Decisions for the maintainer* and *Person steps* disabled with the reason, and the *Person* /
+   *Decisions* buttons are disabled.
 
 ---
 
@@ -101,9 +102,10 @@ empty section and a section where every row is less severe.
 
 ### Functional Requirements
 
-- **FR-001**: The triage page MUST offer, for the current Inbox item, a choice of target section
-  among *Next*, *Decisions for the maintainer* and *Person steps*, preselected with the section of
-  the suggestion.
+- **FR-001**: The triage page MUST show, for the current Inbox item, the target sections *Next*,
+  *Decisions for the maintainer* and *Person steps*, preselected with the section the item's type
+  and who admit (the suggestion's section); the sections the backlog tool would refuse for the
+  item MUST be shown disabled with the reason.
 - **FR-002**: The triage page MUST offer a position field for the chosen section, filled with the
   default position of FR-004 and editable.
 - **FR-003**: Confirming the chooser (a button or Enter in the position field) MUST move the item
@@ -113,13 +115,15 @@ empty section and a section where every row is less severe.
 - **FR-004**: The default position for a section MUST be the place directly below the last item of
   that section whose severity is at least the item's severity, and 1 when no item there is that
   severe - the same rule the existing suggestion uses for its own section.
-- **FR-005**: Changing the chosen section MUST refill the position field with that section's default.
+- **FR-005**: The position field MUST follow the default of the chosen section (as the board
+  changes) until the maintainer types into it.
 - **FR-006**: A position that is not a whole number of at least 1 MUST be refused in the page with a
   hint, and nothing is sent; a position past the end MUST be accepted and placed last, the field's
   hint saying so.
 - **FR-007**: The existing actions MUST keep their behaviour: Accept / `n` (the suggested place),
-  Decisions / `d` and Person / `p` (the end of that section), park, reject, skip, the severity keys
-  and the AI proposal.
+  Decisions / `d` and Person / `p` (the end of that section - disabled for an item that section
+  does not admit, which the tool refused before), park, reject, skip, the severity keys and the AI
+  proposal.
 - **FR-008**: Keys typed into the position field or the section choice MUST NOT run the triage's
   single-key shortcuts; a key MUST bring the focus to the position field (so the chooser is usable
   from the keyboard alone), and Escape in the field MUST leave it without placing.

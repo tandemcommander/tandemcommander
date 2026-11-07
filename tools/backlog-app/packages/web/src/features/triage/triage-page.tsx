@@ -4,14 +4,18 @@
 /**
  * @file Inbox triage (FR-027; analysis A4 §3.6): the Inbox items one after another with a
  * suggested place, accepted, adjusted or skipped with single keys - `n` Next at the suggested
- * position, `d` Decisions, `p` Person steps, `k` park, `x` reject, `s` skip, digits set the
- * severity. The suggestion follows the admission rules and the severity order; *Check with AI*
- * asks the local Claude for a second opinion (a proposal, applied only on confirmation).
+ * position, `d` Decisions, `p` Person steps (both at the end; each only for an item whose type and
+ * who that section admits - the tool refuses the others), `k` park, `x` reject, `s` skip, digits
+ * set the severity. *Place at* (feature 414; key `m` focuses its position field) moves the
+ * item into any ordered section at a chosen position in one change, its default the place the
+ * severity rule gives there. The suggestion follows the admission rules and the severity order;
+ * *Check with AI* asks the local Claude for a second opinion (a proposal, applied only on
+ * confirmation).
  */
 
 import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { suggestPlacement, type ItemRowView, type SectionName } from "@backlog-app/shared";
+import { admittingSection, suggestPlacement, type ItemRowView, type SectionName } from "@backlog-app/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Alert, Card, Kbd } from "@/components/ui/primitives.tsx";
 import { ChangeProblemBox } from "@/components/change-problem.tsx";
@@ -22,6 +26,7 @@ import { useWriteAccess } from "@/features/gate/gate-banner.tsx";
 import { ItemView } from "@/features/item/item-view.tsx";
 import { ReasonDialog } from "@/features/item/dialogs.tsx";
 import { JobCard, useAiJob } from "@/features/ai/ai-job.tsx";
+import { focusTriagePosition, PlaceChooser } from "./place-chooser.tsx";
 
 /** The route. */
 const route = getRouteApi("/triage");
@@ -63,18 +68,18 @@ export function TriagePage() {
     board.data?.sections
       .find((s) => s.name === name)
       ?.rows.filter((r): r is ItemRowView => r.kind === "item") ?? [];
-  const suggestion = current
-    ? suggestPlacement(
-        current,
-        rowsOf(
-          current.type === "decision"
-            ? "Decisions for the maintainer"
-            : current.type === "person-step" || current.who === "person"
-              ? "Person steps"
-              : "Next",
-        ),
-      )
-    : null;
+  // The section the item's type and who admit: the backlog tool refuses a move to another one
+  // ("change type / who with 'set' first"), so Decisions / Person and the chooser offer only it.
+  const admitting = current ? admittingSection(current) : null;
+  const suggestion = current && admitting ? suggestPlacement(current, rowsOf(admitting)) : null;
+  /**
+   * Why the current item cannot go to a section, or empty.
+   *
+   * @param section - The section.
+   * @returns The reason.
+   */
+  const notAdmitted = (section: SectionName): string =>
+    admitting && section !== admitting ? `its type / who belong in ${admitting}` : "";
 
   /**
    * Places the current item.
@@ -119,8 +124,17 @@ export function TriagePage() {
         label: "Place as suggested",
         run: () => suggestion && place(suggestion.section, suggestion.position),
       },
-      { keys: "d", label: "To Decisions", run: () => place("Decisions for the maintainer") },
-      { keys: "p", label: "To Person steps", run: () => place("Person steps") },
+      {
+        keys: "d",
+        label: "To Decisions",
+        run: () => !notAdmitted("Decisions for the maintainer") && place("Decisions for the maintainer"),
+      },
+      {
+        keys: "p",
+        label: "To Person steps",
+        run: () => !notAdmitted("Person steps") && place("Person steps"),
+      },
+      { keys: "m", label: "Choose the place (section and position)", run: focusTriagePosition },
       { keys: "k", label: "Park", run: () => setReasonKind("park") },
       { keys: "x", label: "Reject", run: () => setReasonKind("reject") },
       { keys: "s", label: "Skip", run: skip },
@@ -198,15 +212,30 @@ export function TriagePage() {
             </Button>
           </Card>
         ) : null}
+        <PlaceChooser
+          key={current.slug}
+          severity={current.severity}
+          admitting={admitting ?? "Next"}
+          rowsOf={rowsOf}
+          disabledReason={access.writable ? "" : access.reason || "the backlog is read-only now"}
+          pending={mutation.isPending}
+          onPlace={(section, position) => place(section, position)}
+        />
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
-            disabled={!access.writable}
+            disabled={!access.writable || notAdmitted("Decisions for the maintainer") !== ""}
+            title={notAdmitted("Decisions for the maintainer") || undefined}
             onClick={() => place("Decisions for the maintainer")}
           >
             Decisions <Kbd>d</Kbd>
           </Button>
-          <Button variant="outline" disabled={!access.writable} onClick={() => place("Person steps")}>
+          <Button
+            variant="outline"
+            disabled={!access.writable || notAdmitted("Person steps") !== ""}
+            title={notAdmitted("Person steps") || undefined}
+            onClick={() => place("Person steps")}
+          >
             Person <Kbd>p</Kbd>
           </Button>
           <Button variant="outline" disabled={!access.writable} onClick={() => setReasonKind("park")}>

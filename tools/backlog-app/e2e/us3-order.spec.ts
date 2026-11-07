@@ -112,6 +112,112 @@ test("Q8/triage: n places the Inbox item at the suggested position", async ({ pa
   expect(sectionOrder(fixture.root, "next")).toContain("typed-path-with-a-pipe-brackets");
 });
 
+/** The fixture's one Inbox item (severity 2). */
+const INBOX_ITEM = "typed-path-with-a-pipe-brackets";
+
+test("414/triage: the chooser places at a typed position in one change, its default by severity", async ({
+  page,
+}) => {
+  const nextBefore = sectionOrder(fixture.root, "next");
+  expect(nextBefore).toEqual(["disk-map-context-menu-crash", "ftp-per-server-encoding-flag", ...EXTRA]);
+  await openApp(page, app, "/triage");
+  await expect(page.getByRole("heading", { name: /pipe/ })).toBeVisible();
+  const section = page.getByRole("combobox", { name: "Target section" });
+  const position = page.getByRole("textbox", { name: "Position in the target section" });
+  // Next holds five items of severity 3 or more: the severity-2 item's default is the end (6).
+  await expect(section).toHaveValue("Next");
+  await expect(position).toHaveValue("6");
+  // A bug of an agent belongs in Next: the tool refuses the other sections, so they cannot be chosen.
+  await expect(section.locator("option", { hasText: /^Person steps - / })).toBeDisabled();
+  await expect(section.locator("option", { hasText: /^Decisions for the maintainer - / })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /^Person/ })).toBeDisabled();
+  // A typed position: second in Next, by Enter in the field.
+  await position.fill("2");
+  await position.press("Enter");
+  await expect.poll(() => sectionOrder(fixture.root, "inbox")).toEqual([]);
+  expect(sectionOrder(fixture.root, "next")).toEqual([nextBefore[0], INBOX_ITEM, ...nextBefore.slice(1)]);
+  // One change: one move line in the item's log, one entry in the tray.
+  const shown = JSON.parse(backlog(fixture.root, ["show", INBOX_ITEM, "--json"])) as {
+    log: { text: string }[];
+  };
+  expect(shown.log.filter((l) => l.text.startsWith("moved to")).map((l) => l.text)).toEqual([
+    "moved to Next position 2",
+  ]);
+  await expect(page.getByRole("button", { name: /1 uncommitted change/ })).toBeVisible();
+  expect(Number(backlog(fixture.root, ["check"]).match(/TOTAL: (\d+)/)?.[1])).toBe(0);
+});
+
+test("414/triage: a person step goes into Person steps at a typed position", async ({ page }) => {
+  backlog(
+    fixture.root,
+    [
+      "--input-json",
+      "-",
+      "new",
+      "--type",
+      "person-step",
+      "--who",
+      "person",
+      "--severity",
+      "4",
+      "--area",
+      "tooling",
+      "--slug",
+      "e2e-person-inbox",
+    ],
+    JSON.stringify({ title: "E2E person inbox", problem: "p", evidence: "e", expected: "x" }),
+  );
+  git(fixture.root, ["add", "-A"]);
+  git(fixture.root, ["commit", "-q", "-m", "backlog: e2e person step"]);
+  expect(sectionOrder(fixture.root, "person")).toEqual(["release-0-1-10-person-checks"]);
+  await openApp(page, app, "/triage?at=e2e-person-inbox");
+  await expect(page.getByRole("heading", { name: /E2E person inbox/ })).toBeVisible();
+  const section = page.getByRole("combobox", { name: "Target section" });
+  const position = page.getByRole("textbox", { name: "Position in the target section" });
+  // Person steps holds one item of severity 5: the severity-4 item's default is below it (2).
+  await expect(section).toHaveValue("Person steps");
+  await expect(position).toHaveValue("2");
+  await expect(section.locator("option", { hasText: /^Next - / })).toBeDisabled();
+  await position.fill("1");
+  await page.getByRole("button", { name: /^Place/ }).click();
+  await expect
+    .poll(() => sectionOrder(fixture.root, "person"))
+    .toEqual(["e2e-person-inbox", "release-0-1-10-person-checks"]);
+  expect(sectionOrder(fixture.root, "inbox")).toEqual([INBOX_ITEM]);
+  expect(Number(backlog(fixture.root, ["check"]).match(/TOTAL: (\d+)/)?.[1])).toBe(0);
+});
+
+test("414/triage: m focuses the position; typing there runs no shortcut; a refusal sends nothing", async ({
+  page,
+}) => {
+  await openApp(page, app, "/triage");
+  await expect(page.getByRole("heading", { name: /pipe/ })).toBeVisible();
+  const position = page.getByRole("textbox", { name: "Position in the target section" });
+  await expect(position).toHaveValue("6");
+  await page.locator("body").press("m");
+  await expect(position).toBeFocused();
+  // Digits set the severity on the page - but not while typing into the field.
+  await page.keyboard.type("0");
+  await expect(position).toHaveValue("0");
+  await expect(page.getByText("positions count from 1 (the top)")).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Place/ })).toBeDisabled();
+  await position.press("Enter");
+  await position.press("Escape");
+  await expect(position).not.toBeFocused();
+  // Past the end is accepted and said to go last.
+  await position.fill("40");
+  await expect(page.getByText("past the end: the item goes last")).toBeVisible();
+  await position.press("Escape");
+  // Nothing was written: the item is still in the Inbox with its severity, no change in the tray.
+  const shown = JSON.parse(backlog(fixture.root, ["show", INBOX_ITEM, "--json"])) as {
+    section: string;
+    severity: number;
+  };
+  expect(shown.section).toBe("Inbox");
+  expect(shown.severity).toBe(2);
+  await expect(page.getByRole("button", { name: "0 uncommitted changes" })).toBeVisible();
+});
+
 test("Q8: block and unblock through their dialogs; a refusal writes nothing", async ({ page }) => {
   await openApp(page, app, "/items/e2e-alpha-item");
   await page.getByRole("button", { name: "Block" }).click();
@@ -181,6 +287,12 @@ test("Q9: a run's lock with the tree on main is read-only for the moment, read f
   await expect(page.getByRole("status").filter({ hasText: "Read-only" })).toContainText("is on main");
   await expect(page.getByRole("button", { name: "Block" })).toBeDisabled();
   await expect(page.getByText("read from main")).toBeVisible();
+  // The triage's chooser is read-only too (feature 414).
+  await openApp(page, app, "/triage");
+  // The banner and the triage's own notice both say why.
+  await expect(page.getByRole("status").filter({ hasText: "Read-only" }).first()).toContainText("is on main");
+  await expect(page.getByRole("textbox", { name: "Position in the target section" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /^Place/ })).toBeDisabled();
 });
 
 test("371: a typed position and Move to the top on the item page and in the table", async ({ page }) => {
