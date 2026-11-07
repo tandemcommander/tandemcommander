@@ -114,7 +114,6 @@ CLIP czech/ftp D500 #503 219>176 Celková povolená rychlost pro FTP klienta:
 CLIP czech/ftp D520 #3005 234>231 Výchozí nastavení pro držení připojení v činnosti
 CLIP czech/ftp D520 #3007 43>35 každých:
 CLIP czech/ftp D520 #3012 149>132 Výchozí režim přenosu souboru
-CLIP czech/ftp D520 #530 67>66 příklad masky
 CLIP czech/ftp D560 #566 117>108  Anonymní přihlášení
 CLIP czech/ftp D580 #3004 115>113 Režim přenosu souboru:
 CROSS czech/ftp D580 #3007 319>172 příkazy jsou odděleny středníkem (CWD []; HELP)
@@ -530,7 +529,6 @@ CLIP french/ftp D520 #593 549>482 Utiliser le cache pour les fichiers vus et les
 CLIP french/ftp D520 #3005 248>231 Réglages par défaut pour garder la connexion active
 CLIP french/ftp D520 #3012 180>132 Mode de transfert de fichier par défaut
 CLIP french/ftp D520 #525 168>162 Mode Automatique - ASCII pour:
-CLIP french/ftp D520 #530 85>66 aide des masques
 CLIP french/ftp D535 #536 498>495 Montrer le message "Vous quittez le serveur. Voulez-vous vous déconnecter ou garder la connexion?"
 CLIP french/ftp D535 #541 516>495 Montrer le message "Si vous voulez toujours lister les fichiers et répertoires cachés sur ce serveur FTP, ..."
 CLIP french/ftp D545 #3007 230>194 Annuler la connexion si elle est inactive pendant:
@@ -820,7 +818,6 @@ CLIP german/ftp D520 #588 311>288 Maximale Anzahl von gleichzeitigen Verbindunge
 CLIP german/ftp D520 #590 262>171 Geschwindigkeitsbeschränkung (gesamt) für Server:
 CLIP german/ftp D520 #3005 283>231 Standardeinstellungen zum Aufrechterhalten der Verbindung
 CLIP german/ftp D520 #3012 141>132 Standard-Übertragungsmodus
-CLIP german/ftp D520 #530 84>66 Masken Hinweise
 CLIP german/ftp D535 #541 545>495 Zeige Hinweis "Wenn Sie versteckte Dateien und Verzeichnisse auf diesem FTP-Server immer zeigen wollen ..."
 CLIP german/ftp D545 #3000 223>191 Größenbeschränkung des Caches im Speicher:
 CLIP german/ftp D545 #3004 268>191 Verzögerung zwischen den Verbindungswiederholungen:
@@ -1157,7 +1154,6 @@ CLIP romanian/ftp D520 #590 177>171 Totalul limitei vitezei pentru server:
 CLIP romanian/ftp D520 #3005 233>231 Setari default pentru pastrarea conexiunilor active
 CLIP romanian/ftp D520 #3007 46>35 la fiecare:
 CLIP romanian/ftp D520 #3012 160>132 Mod de transfer al fisierului default
-CLIP romanian/ftp D520 #530 93>66 indicii pentru masca
 CLIP romanian/ftp D535 #541 533>495 Arata mesajul "Daca doriti sa listati fisierele ascunse si directoarele in mod permanent pe acest server FTP, ..."
 CLIP romanian/ftp D545 #3004 192>191 Intarziere dintre incercarile de conectare:
 CLIP romanian/ftp D545 #3007 224>194 Anuleaza conexiunea datelor daca este idle de:
@@ -2048,7 +2044,6 @@ CLIP spanish/ftp D520 #3002 70>68 Servidor proxy:
 CLIP spanish/ftp D520 #590 193>171 Límite de velocidad total por servidor:
 CLIP spanish/ftp D520 #3005 283>231 Opciones por defecto para mantener activas las conexiones
 CLIP spanish/ftp D520 #3012 163>132 Modo de transferencia por defecto
-CLIP spanish/ftp D520 #530 115>66 sugerencias de plantillas
 CLIP spanish/ftp D560 #569 110>96 Guardar contraseña
 CLIP spanish/ftp D580 #3007 310>287 los comandos deben separarse por punto y coma (CWD []; HELP)
 CROSS spanish/ftp D580 #3007 319>172 los comandos deben separarse por punto y coma (CWD []; HELP)
@@ -2722,7 +2717,7 @@ checksum     clipped   12   crossing    0
 codeview     clipped   33   crossing    0
 dbviewer     clipped   48   crossing   25
 filecomp     clipped  123   crossing    2
-ftp          clipped  514   crossing   36
+ftp          clipped  509   crossing   36
 pictview     clipped  137   crossing  114
 regedt       clipped   17   crossing   90
 renamer      clipped   55   crossing   67
@@ -2731,4 +2726,4 @@ uncab        clipped   17   crossing    0
 undelete     clipped   25   crossing    1
 uniso        clipped   11   crossing    0
 zip          clipped  146   crossing   54
-TOTAL clipped 2168 crossing 551
+TOTAL clipped 2163 crossing 551

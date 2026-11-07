@@ -184,3 +184,31 @@ Findings and what was done:
 - NOTE checker docstring named "MS Shell Dlg 2" but measures "MS Shell Dlg" (older than 409):
   fixed in the docstring.
 - NOTE English D535 two lines 3 px lower: in the spec's edge cases.
+
+### Review 2 (independent agent, refute-first, covering the review-1 fixes) - no MUST
+
+Re-measured: corrected checker on main and on the branch matched by (language, module, dialog,
+control): hint rows 60 -> 0, ftp `#530` 5 -> 0, no new CLIP / CROSS row, `TOTAL clipped 2230 ->
+2163`, crossing 551 -> 551. Checker negative control (Czech D191 back to 51 du) ->
+`91>77`, the program's own number. A real `translate.merge --all` for salamand and ftp in a scratch
+worktree at HEAD: byte-identical; the German pin restores 10 rows set back to "Masken Hinweise";
+merge estimates of every enabled language fit 84 / 120 du (tightest fr / ro 83, es 119); no new
+overlap in any enabled `.slt`; Spanish Compare Directories on the hidden desktop FIT 87/126, INK,
+END PASS, registry identical. Callers (11 `CHyperLink`, `DisplayMore`, ftp `AttachHyperLink`)
+only show / hide / move the link.
+
+- SHOULD 1 - the "after 409" counts logged on the `translations-clipped-labels-*` items predated
+  the FTP fix (cs 133 / de 160 / es 144 / fr 267 / ro 130, now one lower each) and no item named the
+  ftp row: a corrected *Log* line added to the five items (hu, nl, sk were right).
+- NOTE 1 - `probe/layout_after.txt` predated the FTP fix: regenerated (`TOTAL clipped 2163
+  crossing 551`).
+- NOTE 2 - FTP page has no picture; proven by the checker, whose control widths match the program;
+  text widths are measured in the assumed font in both the checker and FIT - the INK pixel test and
+  the pictures are the independent proof, margins large (at most 93 of 126 px). Accepted.
+- NOTE 3 - wordings still differ (cs/sk FTP "příklad masky", nl three spellings) - older than 409,
+  cosmetic, the per-language items. Not changed.
+- NOTE 4 - checksum `IDC_LABEL_HINT` ("clipboard hint", `checksum D1000 #1005`) clipped in fr/de/ro -
+  a different link, already counted in the per-language items. Not changed.
+- NOTE 5 - the Czech reply said "na snímku" (the reporter might read it as their screenshot):
+  now "v našem testu".
+- NOTE 6 - old review worktrees of other features registered in git - not 409's; not touched.

@@ -3,7 +3,7 @@ state: draft (to be posted by the maintainer; then close issue #11)
 (draft of the reply to the issue thread)
 
 Díky za nahlášení. Odkaz „nápověda k masce“ byl v dialogu Porovnat adresáře užší než jeho český
-text, a protože je zarovnaný vpravo, část textu se nevešla (na snímku bylo vidět jen „nápověda k mas“).
+text, a protože je zarovnaný vpravo, část textu se nevešla (v našem testu bylo vidět jen „nápověda k mas“).
 Stejný odkaz byl oříznutý v dalších deseti dialozích (Vybrat / Odznačit soubory, Rozbalit, Převést,
 Kopírovat/Přesunout – další volby, Změnit filtr, konfigurace Koše, prohlížeče, rozbalovačů a asociací
 archivů) a skoro ve všech překladech.
