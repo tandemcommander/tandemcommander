@@ -101,7 +101,8 @@ No UI string, menu or dialog changed: no `.slt` refresh (stop-rules §2.13 not t
   first tab (feature 413).
 - The dark and the default theme side by side (also at a scaling other than 100 %): the tab strip
   looks equally high, the inactive panel's active tab is visible in the dark theme (a lighter grey
-  than its directory line, its title readable) (feature 413).
+  than its directory line, its title readable; the same for a user colour scheme whose caption
+  colour is close to the strip) (feature 413).
 
 ## Findings fixed on the way
 
@@ -149,8 +150,8 @@ After review 1: build SUCCEEDED, saltests **282,681 / 0**, encoding guard 0, `ta
 No MUST. Re-ran saltests (282,681 / 0), `tabs413_probe` (18 / 0 / 1), checked B2B2B2 (4.52:1) in
 the capture, the callers, the edge cases of review 1's rule against a Python copy; its
 `tabs404_probe` run was ended by the harness after MOUSE CANCELMODE (every row reached passed); the
-reviewer restored the registry from `%TEMP%	c404_backup.reg`, verified it identical (0F9AD87C...)
-and removed the fixture - checked afterwards here: no backup, no `%TEMP%	c404`, no process left.
+reviewer restored the registry from `%TEMP%\tc404_backup.reg`, verified it identical (0F9AD87C...)
+and removed the fixture - checked afterwards here: no backup, no `%TEMP%\tc404`, no process left.
 
 - **SHOULD 1 (fixed)**: when no step reached 24, `SalTabActiveFill` returned the halfway mix, which
   could be closer to the strip and the face than the caption colour (D0D0D0 with a white title in
@@ -178,3 +179,29 @@ Negative control of these fixes: the review-1 version of `saltabs.cpp` (`git sho
 
 After review 2: build SUCCEEDED, saltests **282,686 / 0**, encoding guard 0, `tabs413_probe`
 **22 / 0 / 1**, `tabs404_probe` **29 / 0 / 1**, `tabs405_probe` **7 / 0 / 1**.
+
+### Review 3 (refute-first agent, 2026-11-07)
+
+No MUST - "ready to close". Re-ran saltests (282,686 / 0), encoding guard 0, `tabs413_probe`
+(22 / 0 / 1; the TITLE rows find B2B2B2, not the folder icon - they would fail on AAAAAA, 4.13:1),
+`tabs404_probe` in full (29 / 0 / 1, registry identical), a Python negative control of 350c4e24
+(all 5 new checks fail on the review-1 rules) and property checks (200,000 random colour sets,
+1.3 million grey combinations: the fill never separates worse than the caption colour, never
+changes when the caption colour already separates, the title never drops below the asked
+contrast). Callers enumerated again: unchanged; `saltabs.cpp` is built only into `salamand` and
+`saltests`.
+
+- **SHOULD 1 (fixed)**: `data-model.md`, `research.md`, `spec.md` FR-005 / FR-007 and
+  `contracts/saltabs-413.md` still described the review-1 rules (halfway fallback, one pole); the
+  contract lacked `SalTabColorDistance`. Brought in step with `saltabs.h`.
+- **NOTE 1 (fixed)**: two real tab characters in this log where a backslash was meant (the
+  here-document trap of CLAUDE.md); replaced, checked with `grep -cP` (0 tabs).
+- NOTE 2 (recorded): every built-in colour scheme takes the caption colours from the system, so the
+  lift reaches the Dark theme's inactive panel and user-defined caption colours close to the strip
+  or the band; the release-checklist line names user colours too.
+- NOTE 3: the closing steps - done in the closing commit.
+- NOTE 4 (recorded, as before): defect 2 is not a size difference; the person check decides.
+- NOTE 5: clang-format was not on the reviewer's PATH; checked here with VS 2022's clang-format
+  17.0.3 (`--dry-run`): the lines this feature changed are formatted; the remaining warnings in the
+  four files are in untouched code (`saltabs.h` 80-90, `saltabs.cpp` 360, `tabwnd.cpp` 1274, the 405
+  test block of `saltests.cpp`).

@@ -11,11 +11,14 @@ int SalTabDragSlot(int count, int tabWidth, int draggedLeft, int from);
 
 // the active tab's fill: 'capBk', or - when it is within SALTAB_ACTIVE_MIN_CONTRAST (largest
 // channel) of 'stripBk' or 'face' - 'capBk' mixed toward 'capFg' by the smallest k / 100
-// (k <= 50) that separates it from both; never mixed under High Contrast (feature 413)
+// (k <= 50) that separates it from both, else the step (k = 0 included) that separates it best,
+// the smallest on a tie (review 2); never mixed under High Contrast (feature 413)
+int SalTabColorDistance(DWORD a, DWORD b); // the largest channel difference
 DWORD SalTabActiveFill(DWORD capBk, DWORD capFg, DWORD stripBk, DWORD face, BOOL highContrast);
 
 // review 1: the active tab's title on 'fill' - 'capFg' unless the fill was lifted and the title
-// lost the contrast it has on 'capBk' (at most 4.5:1 asked); then mixed toward white / black
+// lost the contrast it has on 'capBk' (at most 4.5:1 asked); then mixed toward the pole away from
+// the fill, toward the other pole when that one cannot give it (review 2)
 double SalTabContrastRatio(DWORD a, DWORD b);
 DWORD SalTabActiveText(DWORD capFg, DWORD capBk, DWORD fill);
 ```

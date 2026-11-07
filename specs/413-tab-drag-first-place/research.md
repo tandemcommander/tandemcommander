@@ -31,7 +31,9 @@
 
 - **Decision**: `SalTabActiveFill(capBk, capFg, stripBk, face, highContrast)`: capBk if both
   distances (largest channel) are at least 24 or under High Contrast; else the first
-  `SalTabMix(capBk, capFg, k / 100)` for k = 1 .. 50 with both distances at least 24; none -> k = 50.
+  `SalTabMix(capBk, capFg, k / 100)` for k = 1 .. 50 with both distances at least 24; none -> the step k = 0 .. 50 with the largest smaller
+  separation, the smallest k on a tie (review 2: the halfway mix could separate worse than the
+  caption colour).
 - **Rationale**: toward the caption text colour keeps the tab in the panel's caption colours (the
   text stays readable: it moves away from the fill only by the lift); hundredths give the smallest
   visible change; 24 < 31 leaves the default theme untouched. Dark inactive: 2D2D2D toward AAAAAA,

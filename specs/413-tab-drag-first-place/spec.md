@@ -118,14 +118,16 @@ active and the inactive panel.
 - **FR-005**: The active tab's fill MUST be the caption background colour unless that colour is
   within 24 (largest channel) of the strip background or of the face colour (the directory line's
   band under the tab); then it MUST be the caption colour mixed toward the caption text colour by
-  the smallest step (hundredths) that gives at least 24 from both, at most halfway; under High
+  the smallest step (hundredths, at most halfway) that gives at least 24 from both - when no step
+  does, the step that separates it best (the caption colour itself on a tie, review 2); under High
   Contrast it MUST stay the caption colour. The close glyph of the active tab MUST be computed on
   that fill.
 - **FR-006**: The default theme and the dark theme's active panel MUST stay pixel-identical to the
   look of feature 404.
 - **FR-007** (review 1): When the fill was lifted, the active tab's title MUST keep the contrast it
   has on the caption colour (at most 4.5:1 asked): the caption text colour, else mixed toward white
-  (or black) by the smallest hundredth that gives it.
+  (or black) by the smallest hundredth that gives it - toward the other pole when the first cannot
+  (review 2).
 
 ### Key Entities
 
