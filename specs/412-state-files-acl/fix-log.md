@@ -35,6 +35,41 @@ files already in its state folder with an empty, protected access list (`D:PAI`)
 
 ## Work
 
+- T001 baseline `npm run check` (tools/backlog-app): exit 0, 329 passed / 2 skipped.
+- `state-dir.ts`: `restrictToOwner()` returns `StateAccess { private, contents }`. The folder
+  alone (no `/T`) gets `/inheritance:r /grant:r <SID>:(OI)(CI)F SY:(OI)(CI)F`; then the contents:
+  `treeWithoutLinks()` (a `readdirSync(withFileTypes)` walk) -> one
+  `icacls <folder>\* /reset /T /C /Q`; a link or an unlistable folder -> `resetFolderByFolder()`
+  (`<dir>\* /reset /C /L /Q`, top-down, never into a link).
+- `main.ts`: the secret follows `access.private` as before; a note when the folder is private but
+  the contents reset failed.
+- `side-worktree.ts` `ensure()`: a `.git` that exists but reads with EACCES / EPERM -> `ApiError
+  tool-failed` "the side worktree of main cannot be read ... restart the backlog app", folder
+  kept. `exists()` stays a boolean (`revert()` uses it in failure paths).
+- Tests: `test/state-dir.test.ts` (5, Windows-only): usable + owner-only DACLs, repair of locked
+  files, an unlistable folder, an empty folder, a junction never followed;
+  `side-worktree.test.ts` +1: an unreadable `.git` refused without deleting, works after the
+  start's repair.
+- Negative controls: the old icacls call (only adapted to the new return shape) -> 4 of 5
+  state-dir tests fail (`D:P...` DACLs; the junction case: the outside file became
+  `D:PAI(A;;FR;;;BU)` - the old `/T` followed the junction and locked the owner out of a file
+  outside the folder); the old `ensure()` -> the side-worktree case fails with exactly the item's
+  `EPERM, Permission denied: \?\...\main-worktree`.
+- `npm run check`: exit 0, 336 passed / 2 skipped (19 files + 1 skipped).
+- Encoding guard `TOTAL: 0 finding(s)`; `build.cmd` `BUILD SUCCEEDED` (no product source changed;
+  saltests not needed). No UI string of the product changed (no `.slt` refresh).
+- Docs: no text describes the `/T` call (`tools/backlog-app/README.md`, `architecture/`).
+
+## Measurement after
+
+- `node ../../specs/412-state-files-acl/probe/measure_after.ts` (from tools/backlog-app): after
+  344's call `events.jsonl`, `main-worktree\.git`, `main-worktreeacklog\BACKLOG.md` = `D:PAI`
+  (EPERM); `restrictToOwner` -> `{"private":true,"contents":"reset"}`; after: all three
+  `D:AI(A;ID;FA;;;SY)(A;ID;FA;;;<SID>)` (readable).
+- Time on a tree like the real one (690 folders, 400 files): 1175 / 1149 ms; feature 344's call on
+  the same tree 1073 ms.
+- The maintainer's own state folder is left as it is: the next start of the app repairs it.
+
 ## Findings fixed on the way
 
 - **icacls `/T` follows a junction out of the state folder** (severity 3: unreachable in normal

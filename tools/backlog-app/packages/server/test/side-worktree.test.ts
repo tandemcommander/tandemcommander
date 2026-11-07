@@ -8,6 +8,7 @@
  * dirty worktree repaired, the folder deleted and recreated, and the primary HEAD read.
  */
 
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -140,6 +141,34 @@ describe("SideWorktree", () => {
     expect(existsSync(join(worktree.path, "leftover.txt"))).toBe(false);
     expect(await worktree.exists()).toBe(true);
   });
+
+  it.skipIf(process.platform !== "win32")(
+    "refuses an unreadable .git without deleting the worktree, and works again after the start's repair (412)",
+    async () => {
+      await worktree.ensure();
+      const base = await mainCommit();
+      const dotGit = join(worktree.path, ".git");
+      const icacls = join(process.env["SystemRoot"] ?? "C:\\Windows", "System32", "icacls.exe");
+      // The lock a start of feature 344 left: inheritance removed, nothing granted.
+      expect(spawnSync(icacls, [dotGit, "/inheritance:r", "/Q"], { windowsHide: true }).status).toBe(0);
+      try {
+        expect(() => readFileSync(dotGit)).toThrow();
+        expect(await worktree.exists()).toBe(false);
+        await expect(worktree.sync(base)).rejects.toThrow(/cannot be read/);
+        expect(existsSync(join(worktree.path, "backlog", "BACKLOG.md"))).toBe(true);
+        // The next start of the app repairs the state folder.
+        expect(new StateDir(join(root, ".git")).restrictToOwner()).toEqual({
+          private: true,
+          contents: "reset",
+        });
+        expect(await worktree.exists()).toBe(true);
+        await worktree.sync(base);
+        expect((await gitIn(worktree.path, ["rev-parse", "HEAD"])).trim()).toBe(base);
+      } finally {
+        spawnSync(icacls, [dotGit, "/reset", "/Q"], { windowsHide: true });
+      }
+    },
+  );
 
   it("reads the primary tree's HEAD: main, a branch, detached", async () => {
     expect(await worktree.primaryHead()).toBe("refs/heads/main");

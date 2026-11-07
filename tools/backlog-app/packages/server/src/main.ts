@@ -223,7 +223,11 @@ async function main(): Promise<void> {
   }
   // The launcher secret hands out sessions: it is stored only once the state folder is readable
   // by this user alone (review M2); otherwise it is turned off and not written.
-  const privateState = state.restrictToOwner();
+  const access = state.restrictToOwner();
+  const privateState = access.private;
+  if (access.private && access.contents === "failed") {
+    say("note: some files of the app's state folder could not be reset to the folder's permissions");
+  }
   if (!privateState) {
     auth.disableLauncherSecret();
     say("note: the app's state folder could not be made private - a second start cannot reuse this one");

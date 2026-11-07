@@ -117,6 +117,23 @@ export class SideWorktree {
    */
   async ensure(): Promise<void> {
     if (await this.exists()) return;
+    // A `.git` that is there but cannot be read is a permission problem (feature 412: a start of
+    // feature 344 left the state folder's files with an empty ACL), never a reason to delete.
+    const dotGit = join(this.path, ".git");
+    if (existsSync(dotGit)) {
+      try {
+        readFileSync(dotGit);
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === "EACCES" || code === "EPERM") {
+          throw new ApiError(
+            "tool-failed",
+            "the side worktree of main cannot be read (its .git file is not accessible) - restart the backlog app to repair the state folder's permissions",
+            String(error),
+          );
+        }
+      }
+    }
     // A folder without git's record (a crash between the two steps) is removed first.
     if (existsSync(this.path)) rmSync(this.path, { recursive: true, force: true });
     await this.prune();

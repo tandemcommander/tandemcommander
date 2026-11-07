@@ -12,7 +12,16 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  type Dirent,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { randomBytes } from "node:crypto";
 import type { ZodType } from "zod";
@@ -41,16 +50,22 @@ export class StateDir {
    * the app writes back into `backlog/`. Inside `.git` the folder inherits the repository's
    * permissions, which on a data drive commonly give every signed-in user Modify (review M2).
    *
-   * @returns True when the permissions were set; false when they could not be (no ACLs on the
-   *   drive, `icacls` missing) - the caller then must not store a secret there.
+   * On Windows the folder gets a protected ACL of the user and SYSTEM, inheritable; then every
+   * entry inside is reset to inherit only from it (feature 412: the former `/T` grant left every
+   * file already there with an empty ACL; the reset also repairs those). A link inside is never
+   * followed (`icacls /T` follows junctions): when the folder holds one, or a folder cannot be
+   * listed, the reset goes folder by folder.
+   *
+   * @returns Whether the folder itself is private (false: no ACLs on the drive, `icacls` missing -
+   *   the caller then must not store a secret there) and whether the contents were reset.
    */
-  restrictToOwner(): boolean {
+  restrictToOwner(): StateAccess {
     if (process.platform !== "win32") {
       try {
         chmodSync(this.path, 0o700);
-        return true;
+        return { private: true, contents: "reset" };
       } catch {
-        return false;
+        return { private: false, contents: "reset" };
       }
     }
     // Full System32 paths: Git for Windows puts its own tools before them on PATH.
@@ -60,15 +75,37 @@ export class StateDir {
       windowsHide: true,
     });
     const sid = /"(S-1-[\d-]+)"/.exec(who.stdout ?? "")?.[1];
-    if (who.status !== 0 || !sid) return false;
-    // Drop the inherited entries and grant only the owner and SYSTEM, on the folder and on every
-    // file already in it (/T); new files inherit (OI)(CI).
-    const icacls = spawnSync(
-      join(system32, "icacls.exe"),
-      [this.path, "/inheritance:r", "/grant:r", `*${sid}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F", "/T", "/C", "/Q"],
-      { encoding: "utf8", windowsHide: true },
-    );
-    return icacls.status === 0;
+    if (who.status !== 0 || !sid) return { private: false, contents: "failed" };
+    /**
+     * Runs `icacls`.
+     *
+     * @param args - Its arguments.
+     * @returns True on exit code 0.
+     */
+    const icacls = (args: string[]): boolean =>
+      spawnSync(join(system32, "icacls.exe"), args, { encoding: "utf8", windowsHide: true }).status === 0;
+    // The folder alone (no /T): drop the inherited entries, grant only the owner and SYSTEM.
+    if (
+      !icacls([
+        this.path,
+        "/inheritance:r",
+        "/grant:r",
+        `*${sid}:(OI)(CI)F`,
+        "*S-1-5-18:(OI)(CI)F",
+        "/C",
+        "/Q",
+      ])
+    ) {
+      return { private: false, contents: "failed" };
+    }
+    // The contents: inherit only. One call for the tree when it holds no link to follow.
+    if (treeWithoutLinks(this.path)) {
+      return {
+        private: true,
+        contents: icacls([join(this.path, "*"), "/reset", "/T", "/C", "/Q"]) ? "reset" : "failed",
+      };
+    }
+    return { private: true, contents: resetFolderByFolder(this.path, icacls) ? "reset" : "failed" };
   }
 
   /**
@@ -141,4 +178,64 @@ export class StateDir {
   remove(name: string): void {
     rmSync(this.file(name), { recursive: true, force: true });
   }
+}
+
+/** The result of {@link StateDir.restrictToOwner}. */
+export interface StateAccess {
+  /** The folder itself is readable and writable by the user (and SYSTEM) only. */
+  private: boolean;
+  /** Every entry inside inherits the folder's access (`reset`), or a reset failed. */
+  contents: "reset" | "failed";
+}
+
+/**
+ * Whether a folder tree can be reset in one `icacls /T` call: every folder of it can be listed
+ * and none of its entries is a link (a junction or symbolic link, which `/T` would follow).
+ *
+ * @param root - The folder.
+ * @returns True when the tree holds no link and every folder was listed.
+ */
+function treeWithoutLinks(root: string): boolean {
+  const pending = [root];
+  for (let folder = pending.pop(); folder !== undefined; folder = pending.pop()) {
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(folder, { withFileTypes: true });
+    } catch {
+      return false;
+    }
+    for (const entry of entries) {
+      if (entry.isSymbolicLink()) return false;
+      if (entry.isDirectory()) pending.push(join(folder, entry.name));
+    }
+  }
+  return true;
+}
+
+/**
+ * Resets the entries of a folder tree to inherited access one folder at a time, top-down, so a
+ * folder that could not be listed is listable once its parent's reset reached it. Links are reset
+ * as links (`/L`) and never descended into.
+ *
+ * @param root - The folder whose contents are reset (the folder itself is not).
+ * @param icacls - Runs `icacls` with arguments; true on success.
+ * @returns True when every reset succeeded and every folder could be listed.
+ */
+function resetFolderByFolder(root: string, icacls: (args: string[]) => boolean): boolean {
+  let ok = true;
+  const pending = [root];
+  for (let folder = pending.pop(); folder !== undefined; folder = pending.pop()) {
+    if (!icacls([join(folder, "*"), "/reset", "/C", "/L", "/Q"])) ok = false;
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(folder, { withFileTypes: true });
+    } catch {
+      ok = false;
+      continue;
+    }
+    for (const entry of entries) {
+      if (entry.isDirectory() && !entry.isSymbolicLink()) pending.push(join(folder, entry.name));
+    }
+  }
+  return ok;
 }
