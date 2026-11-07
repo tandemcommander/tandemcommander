@@ -1,6 +1,6 @@
-find_sort_probe (backlog item nefunkcni-prepinani-razeni-vysledku-hledani) after
+find_sort_probe (backlog item nefunkcni-prepinani-razeni-vysledku-hledani) after-review-1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 02:04; ACP 1250; registry key existed True
+Date    : 2026-11-07 02:21; ACP 1250; registry key existed True
 Fixture: dB 2008, dA 2014 (folders), fC.txt 4 B 2006, fA.txt 1 B 2010, fD.txt 3 B 2012, fB.txt 2 B 2016; arrows per column Name,Path,Size,Date,Time,Attr: ^ up, v down, - none
 
 menu-time  RUN    PASS        found: dA,dB,fA.txt,fB.txt,fC.txt,fD.txt [------]; 1 View>Date: dB,dA,fC.txt,fA.txt,fD.txt,fB.txt [---^--]; 2 View>Date: dA,dB,fB.txt,fD.txt,fA.txt,fC.txt [---v--]; 3 View>Date: dB,dA,fC.txt,fA.txt,fD.txt,fB.txt [---^--]
@@ -15,6 +15,10 @@ new-search RUN    PASS        found: dA,dB,fA.txt,fB.txt,fC.txt,fD.txt [------];
 new-search END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 attr       RUN    PASS        found: dA,dB,fA.txt,fB.txt,fC.txt,fD.txt [------]; 1 View>Date: dB,dA,fC.txt,fA.txt,fD.txt,fB.txt [---^--]; 2 click Attr: dB,dA,fC.txt,fA.txt,fD.txt,fB.txt [---^--]
 attr       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+click-path RUN    PASS        found: dA,dB,fA.txt,fB.txt,fC.txt,fD.txt [------]; 1 click Path: dA,dB,fA.txt,fB.txt,fC.txt,fD.txt [-^----]; 2 click Path: dB,dA,fD.txt,fC.txt,fB.txt,fA.txt [-v----]; 3 View>Path: dA,dB,fA.txt,fB.txt,fC.txt,fD.txt [-^----]
+click-path END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+dup        RUN    PASS        found: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [------]; 1 click Name: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [^-----]; 2 click Name: z@s3,z@s2,y@s3,y@s1,x@s2,x@s1 [v-----]; 3 click Path: z@s3,z@s2,y@s3,y@s1,x@s2,x@s1 [v-----]; 4 View>Date: z@s3,z@s2,y@s3,y@s1,x@s2,x@s1 [v-----]; 5 click Size: y@s1,y@s3,x@s1,x@s2,z@s2,z@s3 [--^---]; 6 click Size: z@s3,z@s2,x@s2,x@s1,y@s3,y@s1 [--v---]; 7 click Size: y@s1,y@s3,x@s1,x@s2,z@s2,z@s3 [--^---]; 8 dup again: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [------]
+dup        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
 
-Rows: PASS 12, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True
+Rows: PASS 16, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

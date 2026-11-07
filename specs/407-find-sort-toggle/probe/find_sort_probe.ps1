@@ -22,6 +22,13 @@
       new-search  sorted descending by date, then Find again: PASS = no arrow on any column, and
                   the next View > Date sorts ascending
       attr        a click on the Attributes header: PASS = the order and every arrow unchanged
+      click-path  the Path header twice, then View > Path (one path for all items): by name,
+                  then folders first with the names reversed, then ascending again (review 1)
+      dup         Find duplicates (CM_FIND_DUPLICATES 2292, its options dialog answered OK: same
+                  name and size) in %TEMP%\tcfsort\dup (pairs x / y / z in s1, s2, s3, one unique
+                  file): Name up, Name down with each group together; Path and View > Date
+                  refused (order and arrow unchanged); Size up, down, up; Find duplicates again:
+                  no arrow. The order is name@folder (review 1: the reviewer's dup probe)
     No real mouse or keyboard: clicks are posted WM_LBUTTONDOWN / UP to the header control,
     commands are WM_COMMAND. Driver of 311's probe (098's library). MUST run through
     tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -108,6 +115,21 @@ $DateDown = 'dA,dB,fB.txt,fD.txt,fA.txt,fC.txt'
 $NameUp = 'dA,dB,fA.txt,fB.txt,fC.txt,fD.txt'
 $SizeUp = 'dA,dB,fA.txt,fB.txt,fD.txt,fC.txt'       # folders: size 0 both, then by name
 $SizeDown = 'dB,dA,fC.txt,fD.txt,fB.txt,fA.txt'     # every key reversed
+$PathUp = 'dA,dB,fA.txt,fB.txt,fC.txt,fD.txt'       # one path for all: by name
+$PathDown = 'dB,dA,fD.txt,fC.txt,fB.txt,fA.txt'     # folders still first, names reversed
+# the duplicates fixture (review 1, the reviewer's dup probe): three pairs of files with the same
+# name and size in s1 / s2 / s3, one unique file; the order is name@folder
+$DupDir = $Root + '\dup'
+$DupItems = @(
+    @{ Name = 's1\x.txt'; Text = 'aa' }, @{ Name = 's2\x.txt'; Text = 'aa' },
+    @{ Name = 's1\y.txt'; Text = 'b' }, @{ Name = 's3\y.txt'; Text = 'b' },
+    @{ Name = 's2\z.txt'; Text = 'ccc' }, @{ Name = 's3\z.txt'; Text = 'ccc' }
+)
+$DupNameUp = 'x@s1,x@s2,y@s1,y@s3,z@s2,z@s3'
+$DupNameDown = 'z@s3,z@s2,y@s3,y@s1,x@s2,x@s1'   # each group together, the groups and members reversed
+$DupSizeUp = 'y@s1,y@s3,x@s1,x@s2,z@s2,z@s3'
+$DupSizeDown = 'z@s3,z@s2,x@s2,x@s1,y@s3,y@s1'
+$script:Mode = 'normal'
 
 function Find-Btn([IntPtr]$Dlg, [int]$CtlId) {
     return (@([Drv098f]::Kids($Dlg) | Where-Object { [Drv098f]::Cls($_) -eq 'Button' -and [Drv098f]::GetDlgCtrlID($_) -eq $CtlId }) | Select-Object -First 1)
@@ -122,6 +144,9 @@ function Get-Lv([IntPtr]$Dlg) { return (@([Drv098f]::Kids($Dlg) | Where-Object {
 function Get-Hdr([IntPtr]$Lv) { return (@([Drv098f]::Kids($Lv) | Where-Object { [Drv098f]::Cls($_) -eq 'SysHeader32' }) | Select-Object -First 1) }
 function Order([IntPtr]$Lv) {
     $n = [LvText127]::Count($Lv)
+    if ($script:Mode -eq 'dup') {
+        return ((@(0..($n - 1) | ForEach-Object { ([IO.Path]::GetFileNameWithoutExtension([LvText127]::Cell($Lv, $_, 0))) + '@' + ([LvText127]::Cell($Lv, $_, 1).TrimEnd('\') -split '\\')[-1] })) -join ',')
+    }
     return ((@(0..($n - 1) | ForEach-Object { [LvText127]::Cell($Lv, $_, 0) })) -join ',')
 }
 # the arrows of the six columns: '-' none, '^' up, 'v' down, '?' unreadable
@@ -143,23 +168,32 @@ function Click-Col([IntPtr]$Lv, [int]$Col) {
     [void][Drv098f]::Send($Lv, 0, 0, 0, 10000)
 }
 function Menu-Cmd([IntPtr]$Dlg, [int]$Cmd) { Post-Cmd $Dlg $Cmd; Start-Sleep -Milliseconds 700; [void][Drv098f]::Send($Dlg, 0, 0, 0, 10000) }
+function Want-Count { if ($script:Mode -eq 'dup') { return $DupItems.Count } else { return $Items.Count } }
 function Do-Find([IntPtr]$Dlg) {
-    Click (Find-Btn $Dlg 1)
+    if ($script:Mode -eq 'dup') {
+        # Find duplicates (CM_FIND_DUPLICATES 2292): its options dialog, OK with the defaults (same name and size)
+        $known = Get-Tops $script:RowId
+        Post-Cmd $Dlg 2292
+        $w = Wait-NewWin $script:RowId $known 10
+        if ($w -eq [IntPtr]::Zero) { throw 'Find duplicates opened no options dialog' }
+        Click-Ok $w
+    }
+    else { Click (Find-Btn $Dlg 1) }
     $sw = [Diagnostics.Stopwatch]::StartNew()
     $lv = Get-Lv $Dlg
-    while ($sw.Elapsed.TotalSeconds -lt 20 -and [LvText127]::Count($lv) -lt $Items.Count) { Start-Sleep -Milliseconds 200 }
+    while ($sw.Elapsed.TotalSeconds -lt 20 -and [LvText127]::Count($lv) -lt (Want-Count)) { Start-Sleep -Milliseconds 200 }
     Start-Sleep -Milliseconds 1500
 }
 function Open-Find([int]$Id) {
     $dlg = Open-ByCmd $Id 741 15
     if ($dlg -eq [IntPtr]::Zero) { throw 'Find (741) opened no window' }
     Start-Sleep -Milliseconds 600
-    Set-Field $dlg 2501 $FindDir
+    Set-Field $dlg 2501 $(if ($script:Mode -eq 'dup') { $DupDir } else { $FindDir })
     Set-Field $dlg 2505 '*'
     Do-Find $dlg
     $lv = Get-Lv $dlg
     $n = [LvText127]::Count($lv)
-    if ($n -ne $Items.Count) { throw ("Find found {0} items, not {1}: {2}" -f $n, $Items.Count, (Order $lv)) }
+    if ($n -ne (Want-Count)) { throw ("Find found {0} items, not {1}: {2}" -f $n, (Want-Count), (Order $lv)) }
     return $dlg
 }
 function Run-Row([string]$Case, [scriptblock]$Body) {
@@ -172,7 +206,8 @@ function Run-Row([string]$Case, [scriptblock]$Body) {
     finally { if ($script:RowId) { End-Row $Case $script:RowId $script:RowFatal $before } }
 }
 # runs $Steps (a list of @{ Do = scriptblock taking dlg, lv; Order = expected or $null; Arrows = expected or $null })
-function Seq-Row([string]$Case, $Steps) {
+function Seq-Row([string]$Case, $Steps, [string]$Mode = 'normal') {
+    $script:Mode = $Mode
     Run-Row $Case {
         $id = Start-Tc $StartDir; $script:RowId = $id
         $dlg = Open-Find $id
@@ -201,6 +236,7 @@ $ClickDate = { param($d, $l) Click-Col $l 3 }
 $ClickName = { param($d, $l) Click-Col $l 0 }
 $ClickSize = { param($d, $l) Click-Col $l 2 }
 $ClickAttr = { param($d, $l) Click-Col $l 5 }
+$ClickPath = { param($d, $l) Click-Col $l 1 }
 $FindAgain = { param($d, $l) Do-Find $d }
 $Cases = [ordered]@{}
 $Cases['menu-time'] = { Seq-Row 'menu-time' @(
@@ -225,6 +261,19 @@ $Cases['new-search'] = { Seq-Row 'new-search' @(
 $Cases['attr'] = { Seq-Row 'attr' @(
         @{ What = 'View>Date'; Do = $TimeCmd; Order = $DateUp; Arrows = '---^--' },
         @{ What = 'click Attr'; Do = $ClickAttr; Order = $DateUp; Arrows = '---^--' }) }
+$Cases['click-path'] = { Seq-Row 'click-path' @(
+        @{ What = 'click Path'; Do = $ClickPath; Order = $PathUp; Arrows = '-^----' },
+        @{ What = 'click Path'; Do = $ClickPath; Order = $PathDown; Arrows = '-v----' },
+        @{ What = 'View>Path'; Do = { param($d, $l) Menu-Cmd $d 2241 }; Order = $PathUp; Arrows = '-^----' }) }
+$Cases['dup'] = { Seq-Row 'dup' @(
+        @{ What = 'click Name'; Do = $ClickName; Order = $DupNameUp; Arrows = '^-----' },
+        @{ What = 'click Name'; Do = $ClickName; Order = $DupNameDown; Arrows = 'v-----' },
+        @{ What = 'click Path'; Do = $ClickPath; Order = $DupNameDown; Arrows = 'v-----' },
+        @{ What = 'View>Date'; Do = $TimeCmd; Order = $DupNameDown; Arrows = 'v-----' },
+        @{ What = 'click Size'; Do = $ClickSize; Order = $DupSizeUp; Arrows = '--^---' },
+        @{ What = 'click Size'; Do = $ClickSize; Order = $DupSizeDown; Arrows = '--v---' },
+        @{ What = 'click Size'; Do = $ClickSize; Order = $DupSizeUp; Arrows = '--^---' },
+        @{ What = 'dup again'; Do = $FindAgain; Order = $null; Arrows = '------' }) 'dup' }
 
 # ---- main --------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tcfsort_backup.reg'
@@ -240,6 +289,12 @@ try {
         if ($it.Dir) { NewDir $p; [IO.Directory]::SetLastWriteTime($LP + $p, $t) }
         else { WriteFile $p ('x' * $it.Size); [IO.File]::SetLastWriteTime($LP + $p, $t) }
     }
+    foreach ($it in $DupItems) {
+        $p = $DupDir + '\' + $it.Name
+        NewDir ([IO.Path]::GetDirectoryName($p))
+        WriteFile $p $it.Text
+    }
+    WriteFile ($DupDir + '\s1\u.txt') 'unique'
     Set-Config
     Out ("find_sort_probe (backlog item nefunkcni-prepinani-razeni-vysledku-hledani) {0}" -f $Label)
     Out ("Program : {0}" -f $Exe)

@@ -94,6 +94,41 @@ allowed columns toggle with the whole duplicates key reversed; an empty list cha
   - Regression: 311's `grep, grep-ctl, view-copy, view-copy-ctl` 8 / 0 (`regress_311.txt`); 257's
     9 / 0 (`regress_257.txt`).
   - Every run: registry restored and identical (SHA-256 B90B4B77...), fixture removed.
-- Not driven by a probe: duplicate mode (*Find duplicates* opens an options dialog) - covered by
-  `saltests` (allowed columns, reversed duplicates key) and by reading (C1 of the analysis).
+- Duplicate mode: first recorded here as "not driven, covered by saltests" - review 1 showed that
+  claim was too strong (saltests checks only the sign rule, not `CompareDuplicatesFunc`) and that
+  the options dialog can be answered; the probe now has the `dup` row (see *Review*).
 - Translations: no UI string, menu or dialog changed - no `.slt` refresh needed.
+
+## Review
+
+### Review 1 (refute-first agent, no MUST)
+
+Re-ran build, saltests (282,601 / 0), encoding guard, both probes (12 / 0, 9 / 0); enumerated the
+callers (`LVN_COLUMNCLICK`, `CM_FIND_NAME/PATH/TIME/SIZE` and the list keys, `OnHideDuplicateNames`,
+the Registry Editor's `LVN_COLUMNCLICK`); compiled copies of the three comparators against the real
+header: strict weak orders in both directions on 26 random items, 0 problems (its negative control
+with `SalFindSortDirected` instead of `SalFindSortGroupedDirected`: 1,650 problems); drove *Find
+duplicates* on the hidden desktop with a scratch probe, 8 / 8.
+
+- SHOULD 1 - the duplicate-mode claim was weaker than the fix-log said; removing
+  `SalFindSortDirected` from `CompareDuplicatesFunc` failed no check. **Fixed**: the reviewer's
+  scratch probe became the `dup` row of `find_sort_probe.ps1` (fixture `%TEMP%\tcfsort\dup`).
+  Negative control: that call replaced by `return res;`, rebuilt, `-Only dup` ->
+  `probe/result_negative_dup.txt` FAIL (step 2 keeps `x@s1,...`), source restored and rebuilt.
+- SHOULD 2 - no Path row in either probe. **Fixed**: `click-path` (core: Path up, down - folders
+  first, names reversed - and View > Path up again) and `PATH-1` / `PATH-2` (Registry Editor: the
+  exact reverse, values before keys, as its Path never grouped keys).
+- NOTE help text - **fixed**: `help/src/hh/salamand/basicwork_find.htm`, `finddlg_main.htm` say
+  that sorting by the same column again reverses the order, the arrow, folders first.
+- NOTE an Append refused by an invalid regular expression cleared the arrow of a list that kept
+  its sorted order - **fixed**: `StartSearch` resets at once except for an Append, and again just
+  before the search starts (after the checks that may refuse it).
+- NOTE CHANGELOG / FEATURE-HISTORY - done at closing (step 8).
+- NOTE first Name click after a search may only add the arrow; Date then Time keeps the order -
+  by the spec's rules, no change.
+- NOTE a held Ctrl+F3..F6 now flips the order on each auto-repeat - accepted (each press is a
+  request; the panel's Ctrl+F3 behaves the same).
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 282,601 / 0; encoding guard TOTAL 0;
+`find_sort_probe.ps1` 16 / 0 (`result_after.txt`, rows + click-path + dup);
+`regedt_sort_probe.ps1` 11 / 0 (`regedt_result_after.txt`).

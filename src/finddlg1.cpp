@@ -2099,7 +2099,10 @@ void CFindDialog::StartSearch(WORD command)
     EnumFileNamesChangeSourceUID(FoundFilesListView->HWindow, &(FoundFilesListView->EnumFileNamesSourceUID));
 
     ListView_SetItemCount(FoundFilesListView->HWindow, 0);
-    FoundFilesListView->ResetSort(); // feature 407: the list is in search order again, no sort arrow
+    // feature 407: the list is in search order again, no sort arrow (an Append keeps its sorted
+    // items until its search really starts - below, after the checks that may refuse it)
+    if (command != CM_FIND_APPEND)
+        FoundFilesListView->ResetSort();
     UpdateWindow(FoundFilesListView->HWindow);
 
     // release any errors held from the previous search
@@ -2207,6 +2210,7 @@ void CFindDialog::StartSearch(WORD command)
             GrepData.Grep = GrepData.SearchData.IsGood();
         }
     }
+    FoundFilesListView->ResetSort(); // feature 407: the new items come in search order
     SetFocus(FoundFilesListView->HWindow);
 
     BuildSerchForData();

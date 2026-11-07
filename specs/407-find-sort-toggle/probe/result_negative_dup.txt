@@ -1,0 +1,10 @@
+find_sort_probe (backlog item nefunkcni-prepinani-razeni-vysledku-hledani) negative-control-duplicates-direction-removed
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 02:20; ACP 1250; registry key existed True
+Fixture: dB 2008, dA 2014 (folders), fC.txt 4 B 2006, fA.txt 1 B 2010, fD.txt 3 B 2012, fB.txt 2 B 2016; arrows per column Name,Path,Size,Date,Time,Attr: ^ up, v down, - none
+
+dup        RUN    FAIL        found: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [------]; 1 click Name: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [^-----]; 2 click Name: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [v-----] <- expected z@s3,z@s2,y@s3,y@s1,x@s2,x@s1 [v-----]; 3 click Path: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [v-----] <- expected z@s3,z@s2,y@s3,y@s1,x@s2,x@s1 [v-----]; 4 View>Date: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [v-----] <- expected z@s3,z@s2,y@s3,y@s1,x@s2,x@s1 [v-----]; 5 click Size: y@s1,y@s3,x@s1,x@s2,z@s2,z@s3 [--^---]; 6 click Size: y@s1,y@s3,x@s1,x@s2,z@s2,z@s3 [--v---] <- expected z@s3,z@s2,x@s2,x@s1,y@s3,y@s1 [--v---]; 7 click Size: y@s1,y@s3,x@s1,x@s2,z@s2,z@s3 [--^---]; 8 dup again: x@s1,x@s2,y@s1,y@s3,z@s2,z@s3 [------]
+dup        END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+
+Rows: PASS 1, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

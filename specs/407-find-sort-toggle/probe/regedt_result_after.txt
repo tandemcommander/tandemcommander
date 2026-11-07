@@ -1,11 +1,13 @@
-regedt_sort_probe (feature 407) after
+regedt_sort_probe (feature 407) after-review-1
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 02:01; registry key existed True; hot keys: regedt.spl id 1: 1
+Date    : 2026-11-07 02:20; registry key existed True; hot keys: regedt.spl id 1: 1
 Rows: names without the probe407 prefix; arrows per column Name,Type,Data,Path,Size,Date,Time: ^ up, v down, - none
 
 SEARCH     RUN    PASS        vA,vB,vC,kA,kB [-------]
 NAME-1     RUN    PASS        kA,kB,vA,vB,vC [^------]
 NAME-2     RUN    PASS        kB,kA,vC,vB,vA [v------]
+PATH-1     RUN    PASS        kA,kB,vA,vB,vC [---^---]
+PATH-2     RUN    PASS        vC,vB,vA,kB,kA [---v---]
 SIZE-1     RUN    PASS        kA,kB,vA,vC,vB [----^--]
 SIZE-2     RUN    PASS        kB,kA,vB,vC,vA [----v--]
 DATA       RUN    PASS        kB,kA,vB,vC,vA [----v--]
@@ -14,4 +16,4 @@ AGAIN-SIZE RUN    PASS        kA,kB,vA,vC,vB [----^--]
 FIND       END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
 Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
 
-Rows: PASS 9, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; probe key removed: True; registry restored+identical: True
+Rows: PASS 11, FAIL 0, NOT DRIVEN 0. Left running: 0; fixture removed: True; probe key removed: True; registry restored+identical: True

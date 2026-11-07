@@ -14,6 +14,8 @@
       SEARCH   the found rows (all five)
       NAME-1   click Name: kA, kB, vA, vB, vC; arrow up on Name
       NAME-2   click Name again: kB, kA, vC, vB, vA (keys still first); arrow down
+      PATH-1   click Path (one path for all): kA, kB, vA, vB, vC; arrow up on Path (review 1)
+      PATH-2   click Path again: vC, vB, vA, kB, kA - the exact reverse (Path never grouped keys)
       SIZE-1   click Size: kA, kB, vA, vC, vB; arrow up on Size only
       SIZE-2   click Size again: kB, kA, vB, vC, vA; arrow down
       DATA     click Data: order and arrows unchanged (the column does not sort)
@@ -257,6 +259,10 @@ function Run-Find {
         if (($found -join ',') -cne 'kA,kB,vA,vB,vC') { Row 'SEARCH' 'FOUND' 'FAIL' ('found ' + ($found -join ',')); return }
         Step 'NAME-1' $lv { Click-Col $lv 0 } 'kA,kB,vA,vB,vC' '^------'
         Step 'NAME-2' $lv { Click-Col $lv 0 } 'kB,kA,vC,vB,vA' 'v------'
+        # Path does not group keys (upstream): one path for all, ties by name (keys first), the
+        # descending order is the exact reverse - values before keys (review 1)
+        Step 'PATH-1' $lv { Click-Col $lv 3 } 'kA,kB,vA,vB,vC' '---^---'
+        Step 'PATH-2' $lv { Click-Col $lv 3 } 'vC,vB,vA,kB,kA' '---v---'
         Step 'SIZE-1' $lv { Click-Col $lv 4 } 'kA,kB,vA,vC,vB' '----^--'
         Step 'SIZE-2' $lv { Click-Col $lv 4 } 'kB,kA,vB,vC,vA' '----v--'
         Step 'DATA' $lv { Click-Col $lv 2 } 'kB,kA,vB,vC,vA' '----v--'
