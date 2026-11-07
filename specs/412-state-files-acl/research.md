@@ -9,7 +9,7 @@
 
 ## R2 How to make the contents follow the folder
 
-- Decision: folder first (no `/T`), then `icacls <folder>\* /reset /T /C /Q`.
+- Decision: folder first (no `/T`), then `icacls <folder>\* /reset /T /Q`.
 - Rationale: `/reset` replaces an entry's DACL with the inherited one and clears protection; the
   folder grants only the owner and SYSTEM, inheritable; previously locked entries are repaired.
   Measured: every entry `D:AI` + inherited owner and SYSTEM, the hidden `.git` included; an empty
@@ -23,13 +23,19 @@
 
 - Decision: never follow a link; one `/T` call only when a walk with
   `readdirSync(dir, { withFileTypes: true })` found no `isSymbolicLink()` entry and listed every
-  folder; otherwise per folder top-down `icacls <dir>\* /reset /C /L /Q`, descending only into
+  folder; otherwise per folder top-down `icacls <dir>\* /reset /L /Q`, descending only into
   real folders.
 - Rationale: measured, `/reset /T` follows a junction (with and without `/L`) and reset an
   explicit ACE of a file outside the folder; without `/T`, `/L` resets the link entry itself.
   Node reports a junction as a symbolic link in `Dirent`.
 - Cost: 9 ms per `icacls` call; 691 folders in the real state folder -> the fast path keeps the
   start near 1 s; the slow path only happens with links (never created by the app or git here).
+
+## R3a Failures (review 2)
+
+- Decision: no `/C` on the calls whose exit code decides; a failed reset is repeated once with
+  `/C` (best effort for the other entries) and reported as `failed`.
+- Rationale: measured by review 2, `/C` makes `icacls` exit 0 although an entry failed.
 
 ## R4 The result of the step
 

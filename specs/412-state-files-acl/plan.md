@@ -9,8 +9,8 @@
 `icacls <folder> /inheritance:r /grant:r *<SID>:(OI)(CI)F *S-1-5-18:(OI)(CI)F /T` - on files the
 `(OI)(CI)` grant is dropped and they keep an empty protected DACL. The fix sets the folder's own
 ACL without `/T`, then resets the contents to inherit from it: one
-`icacls <folder>\* /reset /T /C /Q` when a walk found no link and listed every folder, otherwise
-folder by folder (`icacls <dir>\* /reset /C /L /Q`, top-down, never into a link). The side
+`icacls <folder>\* /reset /T /Q` when a walk found no link and listed every folder, otherwise
+folder by folder (`icacls <dir>\* /reset /L /Q`, top-down, never into a link). The side
 worktree's `ensure()` refuses with a clear error when its `.git` exists but cannot be read,
 instead of deleting the folder.
 

@@ -130,7 +130,7 @@ fails with a message about the permissions and the folder is still there.
 
 ## Assumptions
 
-- Assumption (autonomous run): the contents are reset with `icacls <folder>\* /reset /T /C /Q`
+- Assumption (autonomous run): the contents are reset with `icacls <folder>\* /reset /T /Q`
   after the folder's own access list is set without `/T` (the item's *Approach*, first option;
   measured to work at 23a9f24a, also on an empty folder and on hidden files).
 - Assumption (autonomous run): the maintainer's real state folder is not repaired by the run; the
