@@ -34,7 +34,7 @@ description: "Tasks for 406 - Registry Editor: Move of an HKCR key held by both 
 ## Phase 5: Polish
 
 - [X] T010 `python tools/check_encoding.py --strict` -> TOTAL: 0; fix-log.md complete (before / after, commands)
-- [ ] T011 Release checklist line for the elevated Move (owed to a person), closing report, FEATURE-HISTORY, CHANGELOG (SKILL.md step 8)
+- [X] T011 Release checklist line for the elevated Move (owed to a person), closing report, FEATURE-HISTORY, CHANGELOG (SKILL.md step 8)
 
 ## Dependencies
 

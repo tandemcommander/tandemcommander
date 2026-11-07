@@ -31,7 +31,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381, 397, 398 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
-| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391 |
+| Data-loss guards (same file, links, safe replace, pack over source) | 098, 099, 103, 105, 106, 107, 119, 249, 253, 263, 268, 272, 281, 292, 294, 296, 297, 343, 390, 391, 406 |
 | Archives in the core, disk cache, external archivers | 084, 095, 096, 097, 108, 109, 112, 144, 252, 260, 273, 275, 306, 308, 309, 310, 316, 317, 318, 319, 321, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 377, 378, 382, 383, 393, 394, 395, 396, 400, 401, 402, 403 |
 | ZIP plug-in | 086, 094, 106, 110, 113, 119, 271, 290, 320, 399 |
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
@@ -2291,7 +2291,7 @@ a few early ones are out of sequence).
   the force semantics of every release. Probe `probe/release_guard_probe.ps1` (E0-E6, M1-M3,
   U1-U4): 34 / 0, control 27 / 7; 118 rows M1-M4, X1 11 / 0. saltests 21,794 -> 21,829. Review: File > Exit / Esc through `CloseOrDefer` (MEDIUM); the abandon drops only Release's request (`DISKMAP_CLOSE_FROM_RELEASE` in `wParam`; second round).
 - 144-archive-key-repointed-drive: **the key choice of 109 compares with the identity the other panel
-  read at ITS open.** Measured on 0.1.10: both panels on `T:rc.zip`, the SUBST letter re-pointed
+  read at ITS open.** Measured on 0.1.10: both panels on `T:\arc.zip`, the SUBST letter re-pointed
   from A to B between the opens (twins: equal size and time) - the second panel's F3 showed A's
   member and its F4 edit was packed into B (B's member replaced, silently): `SetArchiveCacheKey109`
   read BOTH identities through the names at the second open, and both names named B. Now
@@ -6525,3 +6525,37 @@ a few early ones are out of sequence).
   7 / 0 / 1 NOT DRIVEN (RELEASED, NOBUTTON, HELD, STALE); `tabs404_probe` 29 / 0 / 1 unchanged; saltests
   282,518 -> 282,524 / 0 (`TestTabStrip405`); refute-first review 1: no MUST, 2 SHOULD fixed (a probe row
   for the pending-gesture cancel, results regenerated on the final build), NOTEs fixed (comment, manual).
+- 406-regedt-hkcr-both-halves: the Registry Editor's Move (F6, drag and drop) of a key that
+  `HKEY_CLASSES_ROOT` shows from both halves (it exists in `HKLM\Software\Classes` and in
+  `HKCU\Software\Classes`) copied the merged contents and then deleted the source through HKCR, which
+  removes only the user's half (measured: `RegDeleteKeyW(HKCR, ...)` returns 0 each time, the machine's
+  half intact) - no box, the machine's half still shown, success reported, even without elevation
+  (upstream; NOTE 2 of 390's review) - now 390's `SalRegHkcrDeleteHalf` returns `SAL_HKCR_DELETE_BOTH`
+  (appended) for two halves and `CopyOrMoveKeyRec` (`fs5.cpp`) deletes the machine's half first, then
+  the user's, each by its real path, errors in the existing "Unable to remove the original registry key."
+  box; without elevation the Move now ends with that box naming `HKEY_LOCAL_MACHINE\Software\Classes\...`
+  (access denied) and nothing of the source deleted. The merged view shows a user's value instead of a
+  machine value of the same name (measured), so the copy does not hold it: before the machine's half is
+  deleted `HkcrMachineHalfCopied` compares every machine value with the user's of the same name
+  (`SalRegValueSame` in `src/common/salregkeyid.h`: type, size, bytes) and the class names (a non-empty
+  machine class must equal the user's exactly); a hidden value refuses that half with
+  `ERROR_NOT_SUPPORTED` in the same box (297's precedent). 297's link test opens a source through HKCR,
+  which for two halves reaches only the user's: the machine's half is tested as a link too, before
+  anything is copied (`SafeHkcrMachineHalfNoLink`, refused the same way) - Windows ships links there
+  (`Wow6432Node\AppID`, `PROTOCOLS`, `TypeLib`; with a user's `Wow6432Node\TypeLib` an elevated Move of
+  `HKCR\Wow6432Node` would have deleted the 64-bit TypeLib registrations - review 2 / 3). Read errors
+  fail closed. Traps: the item said measuring needed elevation - the partial Move reproduces unelevated
+  with a user's half made for a machine-only key, and a stock link makes the link row drivable unelevated
+  too; the check's buffers must start doubled and grow, as the copy's (the reported maximum may be half
+  the size - review 1); a Bash here-document fed to Python wrote a backspace, a tab and a CR into the
+  fix-log (123's trap again - review 1); the maintainer's instances on the real desktop held
+  `regedt.spl` and blocked the probes until closed. Limits: the elevated Move (both halves really
+  removed) is a release-checklist line; a non-empty machine class and Quick Rename of such a key are by
+  reading; the check compares the halves at the delete, not the copy; a link on a higher element of the
+  machine path is followed as before 406 (the same physical key the panel shows). From backlog item
+  `registry-editor-hkcr-move-both-halves-leaves-machine-half`. Probe `hkcr406_probe.ps1` 6 / 7 FAIL ->
+  26 / 0 (English and Czech; review negative controls: the value check forced to "copied" fails
+  BOTHSHADOW, the link test off fails BOTHLINK); 390's 10 / 0, 292's 33 / 0, 294's 24 / 0, 296's 47 / 0,
+  297's 40 / 0; saltests 282,524 -> 282,544 / 0 (`TestRegHkcrBoth406`; negative control 5 failed);
+  three refute-first reviews (no MUST; 4 SHOULD fixed - fix-log control characters, growing value
+  buffers, the machine half's link test, its unelevated probe row).

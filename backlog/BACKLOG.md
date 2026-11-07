@@ -17,7 +17,6 @@ Last triaged: 2026-11-06
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Registry Editor: Move of an HKCR key held by both halves leaves its machine half](items/registry-editor-hkcr-move-both-halves-leaves-machine-half/desc.md) | bug | 4 | other-plugins | 406 |
 
 ## Next
 
