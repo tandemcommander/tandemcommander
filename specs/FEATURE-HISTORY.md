@@ -25,7 +25,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Area | Features |
 |------|----------|
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
-| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412, 414 |
+| Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412, 414, 415 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
 | Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123 |
 | Rebrand, identity | 046 |
@@ -6763,3 +6763,38 @@ a few early ones are out of sequence).
   `us3-order` 8 -> 12 (+ Q9 extended), `a11y` 3, `us1-live-edit` 1 - each new test with a negative
   control; six refute-first reviews (MUST 0 / 1 / 1 / 0 / 0 / 0 - fixed; SHOULD 2 / 0 / 1 / 2 / 2
   / 2 - fixed).
+- 415-live-run-dashboard: the backlog app's *Live run* page showed a summary card and one line per
+  `stream-json` event of the trace - a machine record; the cost appeared only at a `result` line (in
+  the 414 run after about three hours), tokens never - now the live page and the page of an ended
+  run are a dashboard a person reads: a progress head (percentage, elapsed, expected remaining and
+  end from the phase, the tasks and the median of earlier closed runs, the flow's steps with their
+  times), what happens now, live figures (the price at list prices between claude's reported
+  totals, tokens, context, tool calls, subagents, files, commits, usage limits), tabs Story (the
+  run told in sentences grouped by phase, coloured labels, outcomes, reads and edits collapsed,
+  subagent work folded), Critical (open / resolved; planned failures - measurements, negative
+  controls, mutants - are not critical), Decisions (the spec's clarifications, the agent's
+  statements), Gallery (the run's screenshots, a full-screen viewer with swipe and keys),
+  Architecture (the flow, the map of where the change happens, the plan's diagrams), Files,
+  Documents, Raw trace; and the item conversation (371) beside it, every message carrying a fresh
+  snapshot of the run (at most 8 000 characters, data). Pure folds in `packages/shared/src/runs/`
+  (`run-story.ts`, `run-metrics.ts`, `pricing.ts`, `run-progress.ts`, `time-index.ts`,
+  `command-parse.ts`); the server gives every event a time (anchors saved per run), serves the
+  run's insight, documents and gallery images (by key, only from the run's own list, only inside
+  the repository or `%TEMP%`; CSP `img-src blob:`). Traps: the output tokens of a streamed message
+  are only its start count (estimate characters x calibration 2.7, measured); one message spans
+  several lines (count it once by id); claude's lines carry no time (an app started mid-run put
+  hours on one time); a command is a build / test / probe only by what it runs, never by its text,
+  and the runs use both shells (`$o = .\build.cmd`, `cmd /c`, `foreach { }`, `& "…saltests.exe"`,
+  `BL="python …backlog.py"; $BL block`, `'\''`, `"$env:TEMP\x\"`, heredocs, comments) - read by a
+  quote-aware parser; a probe's "0 FAIL" is no failure; the phase markers of `RunState` (344) were
+  matched in text, so a note saying "block" put a closing run on the stop path and `git merge-base`
+  jumped to merge - now read from the programs (over the 264 real traces: blocked runs not shown
+  stopped 4 -> 0, closed runs not done 57 -> 1). Limits: an estimate before claude's first total;
+  planned failures are recognised by wording and by the phase (before implement and before any
+  source changed); the fixes after the fifth review were merged by the maintainer's decision
+  without a sixth review. From backlog item `backlog-app-live-run-human-dashboard`. Tests: vitest
+  366 -> 508 (shared: story, figures, command reading with 42 adversarial commands, review cases;
+  server: insight, times, snapshot, gate), Playwright `us7-live-dashboard` (the real loop with a
+  fake claude replaying a recorded trace; SC-003 within 3 s; axe in both themes) and the full suite
+  39/39; five refute-first reviews (MUST 1 / 0 / 1 / 3 / 1, SHOULD 5 / 5 / 4 / 7 / 4 - fixed, each
+  with negative controls).

@@ -23,6 +23,7 @@ import { SettingsStore } from "./settings/store.ts";
 import { HistoryService } from "./features/history.ts";
 import { WriteQueue } from "./backlog/write-queue.ts";
 import { ChangeTray } from "./backlog/tray.ts";
+import { RunInsightService } from "./runs/insight.ts";
 import { RunsService } from "./runs/service.ts";
 import { Notifications } from "./events/notifications.ts";
 import { FeaturesService } from "./features/records.ts";
@@ -68,6 +69,9 @@ export class Services {
 
   /** The live run and the run history. */
   readonly runs: RunsService;
+
+  /** Documents, decisions, gallery and estimate basis of runs (feature 415). */
+  readonly insight: RunInsightService;
 
   /** The notification log. */
   readonly notifications: Notifications;
@@ -126,6 +130,7 @@ export class Services {
     this.queue = new WriteQueue(this);
     this.tray = new ChangeTray(ctx);
     this.runs = new RunsService(this);
+    this.insight = new RunInsightService(this);
     this.notifications = new Notifications(ctx);
     this.features = new FeaturesService(this);
     this.release = new ReleaseService(this);

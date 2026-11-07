@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 /**
- * @file The live run (user story 2; FR-014): the run the loop works on now, updating while the page
- * is open - phase, tasks, the tool in flight, commits, attempts, cost, and the transcript following
- * its end. With no run, it says what the loop does and which item it would take.
+ * @file The live run (user story 2; FR-014; feature 415): the run the loop works on now as a
+ * dashboard a person reads - progress and the expected end, what happens now, live figures and
+ * price, the story in words, critical entries, decisions, screenshots, diagrams, documents, the raw
+ * transcript, and the chat about the item. With no run, it says what the loop does and which item
+ * it would take.
  */
 
 import { Link } from "@tanstack/react-router";
@@ -13,8 +15,8 @@ import { Skeleton } from "@/components/ui/primitives.tsx";
 import { useBoard, useLiveRun } from "@/lib/queries.ts";
 import { useAppStore } from "@/app/store.ts";
 import { loopLine } from "@/features/loop/loop-status.tsx";
-import { RunSummary } from "@/features/runs/run-summary.tsx";
-import { TraceView, useTraceStream } from "@/features/runs/trace-view.tsx";
+import { useTraceStream } from "@/features/runs/trace-view.tsx";
+import { RunDashboard } from "./run-dashboard.tsx";
 
 /**
  * The live page.
@@ -61,9 +63,7 @@ export function LivePage() {
   return (
     <div className="flex min-h-0 w-full flex-col gap-3 p-4">
       <h1 className="text-lg font-semibold">Live run</h1>
-      <RunSummary run={run} />
-      <TraceView events={trace.events} follow />
-      {!trace.connected ? <p className="text-xs text-muted-foreground">Connecting to the trace…</p> : null}
+      <RunDashboard run={run} events={trace.events} connected={trace.connected} live />
     </div>
   );
 }

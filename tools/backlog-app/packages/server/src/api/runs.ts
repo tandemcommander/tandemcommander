@@ -53,6 +53,27 @@ export function runRoutes(services: Services): Hono {
     return c.json(services.runs.events(id, from));
   });
 
+  // Feature 415 (contracts/http-api.md): documents, decisions, gallery and estimate of a run.
+  app.get("/runs/:id/insight", async (c) =>
+    c.json(await services.insight.insight(param(c.req.param("id"), RUN_ID_PATTERN, "run"))),
+  );
+
+  app.get("/runs/:id/documents/:name", async (c) =>
+    c.json(
+      await services.insight.document(
+        param(c.req.param("id"), RUN_ID_PATTERN, "run"),
+        param(c.req.param("name"), /^[a-z][a-z-]{1,30}$/, "document"),
+      ),
+    ),
+  );
+
+  app.get("/runs/:id/images/:key", async (c) => {
+    const id = param(c.req.param("id"), RUN_ID_PATTERN, "run");
+    const key = param(c.req.param("key"), /^[0-9a-f]{16}$/, "image");
+    const image = await services.insight.image(id, key);
+    return c.body(new Uint8Array(image.bytes), 200, { "Content-Type": image.type });
+  });
+
   app.get("/runs/:id/stream", (c) => {
     const id = param(c.req.param("id"), RUN_ID_PATTERN, "run");
     const resume = Number(c.req.header("last-event-id") ?? c.req.query("from") ?? "0");

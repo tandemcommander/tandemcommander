@@ -7,7 +7,9 @@
  * The content security policy loads nothing from the network (FR-004): scripts, styles, fonts and
  * images come only from the app itself; inline scripts are not allowed (the theme script is an
  * external file, research R3). Inline styles are allowed because the UI primitives position
- * popovers with style attributes. No `Access-Control-*` header is ever sent, so other origins
+ * popovers with style attributes. Images may also be `blob:` URLs: the run gallery (feature 415)
+ * fetches an image with the bearer token and shows it as an object URL the page itself made - the
+ * API has no cookie an `<img src>` could send. No `Access-Control-*` header is ever sent, so other origins
  * cannot read answers.
  */
 
@@ -28,7 +30,7 @@ export function contentSecurityPolicy(dev: boolean, port: number): string {
     "default-src 'self'",
     script,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    "img-src 'self' data: blob:",
     "font-src 'self'",
     connect,
     "object-src 'none'",

@@ -17,7 +17,8 @@ holding the lock, then plays `then`); idle [seconds] (holds the lock, no
 background task, two no-op wakeups, then sleeps - the loop must stop it);
 idle-busy [seconds] (the same wakeups while a background task runs, then
 the task ends, a working wakeup, and the run closes - never stopped);
-branch-hang [seconds] (371: a run on a feature branch as the skill makes
+replay [trace, pace, branch, feature, hold, then] (415: plays a recorded
+trace as the run's output); branch-hang [seconds] (371: a run on a feature branch as the skill makes
 it - start, the branch in the lock, a wait, the close, `returning` and the
 return to main with the backlog recipe when main moved).
 A finished run with `add: slug
@@ -33,6 +34,7 @@ limit-start and refuse work there too.
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -326,7 +328,35 @@ def play(step, slug):
     if do == "branch-hang":
         branch_run(slug, step)
         return 0
+    if do == "replay":
+        return replay(step, slug)
     raise SystemExit(f"fake: unknown step {do}")
+
+
+def replay(step, slug):
+    """415: plays a recorded trace as this run's output, holding the item.
+
+    Each line of `trace` (stream-json) is printed `pace` seconds after the
+    previous one; `{ROOT}` in a line becomes the repository root (JSON-escaped),
+    so a fixture trace can name files of the fixture.  `branch` is written into
+    the run lock (as `BL lock update` does after specify) and `feature`, a
+    folder, is copied to specs/<branch>/ (the feature's records); `hold`
+    seconds later the step `then` (default close) ends the run.
+    """
+    ensure_lock(slug)
+    branch = step.get("branch")
+    if branch:
+        bl("lock", "update", "--slug", slug, "--branch", branch)
+        if step.get("feature"):
+            shutil.copytree(step["feature"], ROOT / "specs" / branch, dirs_exist_ok=True)
+    root_json = json.dumps(str(ROOT))[1:-1]
+    pace = float(step.get("pace", 0.05))
+    for line in Path(step["trace"]).read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            print(line.replace("{ROOT}", root_json), flush=True)
+            time.sleep(pace)
+    time.sleep(float(step.get("hold", 0)))
+    return play({"do": step.get("then", "close")}, slug)
 
 
 def main():
@@ -347,7 +377,7 @@ def main():
                           "triage_env": os.environ.get("TANDEM_BACKLOG_LOOP_TRIAGE"),
                           "pid": os.getpid(), "cwd": str(ROOT)})
     plan_path.write_text(json.dumps(plan, indent=1), encoding="utf-8")
-    emit({"type": "system", "subtype": "init", "session_id": SESSION, "model": "fake-model"})
+    emit({"type": "system", "subtype": "init", "session_id": SESSION, "model": "fake-model", "cwd": str(ROOT)})
     note_call(status_at_start=git_out("status", "--porcelain"))  # 371: a run must start on a clean tree
     return play(step, slug)
 

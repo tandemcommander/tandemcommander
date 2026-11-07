@@ -23,6 +23,22 @@ in _In progress_, typed positions, the conversation) in
 _Decisions for the maintainer_ or _Person steps_ at a chosen position in one
 change; key `m` focuses its position field.
 
+The _Live run_ page and the page of an ended run are a dashboard a person reads
+(feature 415, `specs/415-live-run-dashboard/`): a progress bar with the
+elapsed time, the expected remaining time and end (an estimate from the phase,
+the tasks and earlier closed runs), what happens now, live figures (tokens, the
+price at list prices between claude's reported totals, context, usage limits),
+and tabs - the run's story in words with labels and outcomes, what is critical,
+the decisions of the spec, a gallery of the screenshots the run looked at (a
+full-screen viewer with swipe and arrow keys), diagrams of the flow and of where
+the change happens, the files, the feature's documents and the raw transcript.
+Beside it, while the item runs, the item's conversation: every message carries
+a fresh snapshot of the run. The rules that turn the trace into the story are
+pure and unit-tested in `packages/shared/src/runs/` (`run-story.ts`,
+`run-metrics.ts`, `pricing.ts`, `run-progress.ts`, `time-index.ts`);
+`node packages/shared/test/fold-real-trace.ts <trace.jsonl>` folds a real
+trace and prints what a reviewer checks.
+
 ## Run
 
 ```sh
@@ -71,7 +87,7 @@ browser (React 19, Vite build)          server (Node 24, Hono on node:http, 127.
   by both sides).
 - **packages/server** — `gate/` (the security gate), `backlog/` (tool calls,
   read model, write gate, edit lock, write queue, change tray), `loop/` (view,
-  monitor, control), `runs/` (trace tailer, run history), `features/`
+  monitor, control), `runs/` (trace tailer, run history, run insight: documents, decisions, gallery), `features/`
   (feature history, records, release readiness), `ai/` (Claude jobs and the
   apply step), `events/` (SSE hub, notifications), `api/` (routes).
 - **packages/web** — `app/` (router, layout, store, events), `lib/` (API

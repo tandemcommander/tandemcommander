@@ -11,7 +11,7 @@
  * JSON (a claude killed mid-write) becomes an `unparsable` event - shown, never fatal.
  */
 
-import type { TraceEvent, TraceEventKind } from "../schemas/runs.ts";
+import type { LimitInfo, TokenUsage, TraceEvent, TraceEventKind, TraceInfo } from "../schemas/runs.ts";
 
 /** Longest text kept in an event (the full line is available on demand). */
 const MAX_TEXT = 4000;
@@ -114,7 +114,140 @@ function event(
     summary: fields.summary ?? "",
     text: fields.text ?? null,
     isError: fields.isError ?? false,
+    ...(fields.info && Object.keys(fields.info).length > 0 ? { info: fields.info } : {}),
   };
+}
+
+/**
+ * A number of the stream, or 0.
+ *
+ * @param value - Any value.
+ * @returns The number, or 0 for anything else.
+ */
+function num(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * The token counts of a `message.usage` object.
+ *
+ * @param raw - The usage object of an assistant line.
+ * @returns The counts, or undefined when the line has none.
+ */
+function usageOf(raw: unknown): TokenUsage | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const u = raw as Raw;
+  const creation = (u["cache_creation"] ?? null) as Raw | null;
+  const write5m = creation ? num(creation["ephemeral_5m_input_tokens"]) : 0;
+  const write1h = creation ? num(creation["ephemeral_1h_input_tokens"]) : 0;
+  const writeAll = num(u["cache_creation_input_tokens"]);
+  return {
+    input: num(u["input_tokens"]),
+    output: num(u["output_tokens"]),
+    cacheRead: num(u["cache_read_input_tokens"]),
+    // Without the split, cache writes are counted as 5-minute writes (the cheaper rate).
+    cacheWrite5m: creation ? write5m : writeAll,
+    cacheWrite1h: write1h,
+  };
+}
+
+/**
+ * The cumulative totals of a `result` line: the sum of its `modelUsage` over the models.
+ *
+ * @param raw - The `modelUsage` object.
+ * @returns The totals and the models, or undefined.
+ */
+function totalsOf(raw: unknown): { totals: TokenUsage; models: string[] } | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const totals: TokenUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite5m: 0, cacheWrite1h: 0 };
+  const models: string[] = [];
+  for (const [model, value] of Object.entries(raw as Raw)) {
+    if (!value || typeof value !== "object") continue;
+    const m = value as Raw;
+    models.push(model);
+    totals.input += num(m["inputTokens"]);
+    totals.output += num(m["outputTokens"]);
+    totals.cacheRead += num(m["cacheReadInputTokens"]);
+    const w5 = num(m["cacheCreationEphemeral5mInputTokens"]);
+    const w1 = num(m["cacheCreationEphemeral1hInputTokens"]);
+    const all = num(m["cacheCreationInputTokens"]);
+    totals.cacheWrite5m += w5 + w1 > 0 ? w5 : all;
+    totals.cacheWrite1h += w1;
+  }
+  return models.length > 0 ? { totals, models } : undefined;
+}
+
+/**
+ * The utilisation of a `rate_limit_event`.
+ *
+ * @param info - Its `rate_limit_info`.
+ * @returns The limits.
+ */
+function limitsOf(info: Raw): LimitInfo {
+  const windows = (info["unifiedWindows"] ?? {}) as Raw;
+  /**
+   * The utilisation of one window.
+   *
+   * @param key - The window's key.
+   * @returns 0-1, or null.
+   */
+  const window = (key: string): number | null => {
+    const w = windows[key];
+    return w && typeof w === "object" && typeof (w as Raw)["utilization"] === "number"
+      ? ((w as Raw)["utilization"] as number)
+      : null;
+  };
+  return {
+    status: str(info["status"], "?"),
+    fiveHour: window("five_hour"),
+    sevenDay: window("seven_day"),
+    resetsAt: typeof info["resetsAt"] === "number" ? info["resetsAt"] : null,
+  };
+}
+
+/**
+ * The facts of a `result` line: its cumulative cost and tokens.
+ *
+ * @param raw - The line.
+ * @returns The facts.
+ */
+function resultInfo(raw: Raw): TraceInfo {
+  const info: TraceInfo = {};
+  if (typeof raw["total_cost_usd"] === "number") info.costUsd = raw["total_cost_usd"];
+  const totals = totalsOf(raw["modelUsage"]);
+  if (totals) {
+    info.totals = totals.totals;
+    info.totalsModels = totals.models;
+  }
+  return info;
+}
+
+/**
+ * The facts of a tool call's input the story needs (feature 415).
+ *
+ * @param name - The tool's name.
+ * @param input - Its input.
+ * @returns The facts.
+ */
+function toolInfo(name: string, input: unknown): TraceInfo {
+  const data = (input ?? {}) as Raw;
+  const info: TraceInfo = {};
+  const description = data["description"];
+  if (typeof description === "string" && description.trim()) info.description = clip(description.trim(), 300);
+  if (name === "Skill" && typeof data["skill"] === "string") {
+    const args = typeof data["args"] === "string" ? ` ${data["args"]}` : "";
+    info.description = clip(`${data["skill"]}${args}`.replace(/\s+/g, " ").trim(), 300);
+  }
+  for (const key of ["file_path", "notebook_path", "path"]) {
+    if (typeof data[key] === "string" && data[key]) {
+      info.filePath = data[key];
+      break;
+    }
+  }
+  if (typeof data["subagent_type"] === "string") info.subagentType = data["subagent_type"];
+  // The command with its lines (the summary has them joined): what runs is read from it.
+  if (typeof data["command"] === "string") info.command = clip(data["command"], 2000);
+  return info;
 }
 
 /**
@@ -177,6 +310,9 @@ export function normalizeTraceLine(
           event(base, "init", {
             name: str(raw["model"], ""),
             summary: `session ${str(raw["session_id"], "?")} · ${str(raw["model"], "")}`,
+            // The session's working directory is the repository root (feature 415: paths of
+            // the story are shown relative to it).
+            info: typeof raw["cwd"] === "string" ? { cwd: raw["cwd"] } : {},
           }),
         ];
       }
@@ -187,7 +323,14 @@ export function normalizeTraceLine(
         return [
           event(base, "task", {
             name: subtype,
+            toolUseId: typeof raw["tool_use_id"] === "string" ? raw["tool_use_id"] : null,
             summary: clip(str(raw["description"], str(raw["status"], subtype)), 200),
+            info: {
+              taskStatus: clip(
+                str(raw["status"], "") || str(raw["summary"], "") || str(raw["description"], ""),
+                200,
+              ),
+            },
           }),
         ];
       }
@@ -197,6 +340,28 @@ export function normalizeTraceLine(
       const message = (raw["message"] ?? {}) as Raw;
       const content = Array.isArray(message["content"]) ? (message["content"] as Raw[]) : [];
       const events: TraceEvent[] = [];
+      // The message's usage and size go with the first event of the line (feature 415): the same
+      // message id spans several lines, the metrics count it once.
+      let chars = 0;
+      for (const block of content) {
+        if (typeof block["text"] === "string") chars += block["text"].length;
+        if (block["type"] === "tool_use") chars += JSON.stringify(block["input"] ?? {}).length;
+      }
+      const lineInfo: TraceInfo = {};
+      if (typeof message["id"] === "string") lineInfo.messageId = message["id"];
+      if (typeof message["model"] === "string") lineInfo.model = message["model"];
+      const usage = usageOf(message["usage"]);
+      if (usage) lineInfo.usage = usage;
+      lineInfo.outputChars = chars;
+      /**
+       * The facts of the line for its first event only.
+       *
+       * @returns The facts, once.
+       */
+      const takeLineInfo = (): TraceInfo => {
+        if (events.length > 0) return {};
+        return lineInfo;
+      };
       for (const block of content) {
         const blockType = str(block["type"], "");
         if (blockType === "text" && typeof block["text"] === "string" && block["text"].trim()) {
@@ -205,6 +370,7 @@ export function normalizeTraceLine(
             event(base, "assistant-text", {
               summary: clip(text.replace(/\s+/g, " "), 200),
               text: clip(text),
+              info: takeLineInfo(),
             }),
           );
         } else if (blockType === "tool_use") {
@@ -215,11 +381,12 @@ export function normalizeTraceLine(
               toolUseId: typeof block["id"] === "string" ? block["id"] : null,
               summary: toolSummary(name, block["input"]),
               text: clip(JSON.stringify(block["input"] ?? {}, null, 1)),
+              info: { ...takeLineInfo(), ...toolInfo(name, block["input"]) },
             }),
           );
         } else if (blockType === "thinking") {
           // The thinking text itself is not shown (it can be long); only that it happened.
-          events.push(event(base, "thinking", { summary: "thinking" }));
+          events.push(event(base, "thinking", { summary: "thinking", info: takeLineInfo() }));
         }
       }
       return events;
@@ -238,6 +405,8 @@ export function normalizeTraceLine(
             summary: clip(text.replace(/\s+/g, " "), 200),
             text: clip(text),
             isError: block["is_error"] === true,
+            // The end of a long output holds the verdict (`BUILD SUCCEEDED`, a test summary).
+            ...(text.length > MAX_TEXT ? { info: { tail: text.slice(-1500) } } : {}),
           });
         });
     }
@@ -248,6 +417,7 @@ export function normalizeTraceLine(
           summary: `turn ended (${str(raw["subtype"], "?")})${typeof raw["total_cost_usd"] === "number" ? ` · $${raw["total_cost_usd"].toFixed(2)}` : ""}`,
           text: typeof raw["result"] === "string" ? clip(raw["result"]) : null,
           isError: raw["is_error"] === true,
+          info: resultInfo(raw),
         }),
       ];
     case "rate_limit_event": {
@@ -256,6 +426,7 @@ export function normalizeTraceLine(
         event(base, "rate-limit", {
           name: str(info["status"], ""),
           summary: `usage limit: ${str(info["status"], "?")}`,
+          info: { limits: limitsOf(info) },
         }),
       ];
     }

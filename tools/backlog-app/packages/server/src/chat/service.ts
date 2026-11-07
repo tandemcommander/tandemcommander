@@ -31,6 +31,7 @@ import type { Services } from "../services.ts";
 import { claudeCommand, promptPreamble, type ClaudeCommand } from "../ai/runner.ts";
 import { killTree, startProcess, type ProcessResult } from "../proc/spawn.ts";
 import { buildChatContext, repositoryFacts } from "./context.ts";
+import { buildLiveSnapshot } from "./live-snapshot.ts";
 
 /** The folder of the conversation files in the state folder. */
 const CHATS_FOLDER = "chats";
@@ -481,6 +482,31 @@ export class ChatService {
   }
 
   /**
+   * The live snapshot of the run working on an item (feature 415).
+   *
+   * @param slug - The item.
+   * @returns The snapshot, or null when no live run works on the item.
+   */
+  private async liveSnapshot(slug: string): Promise<string | null> {
+    const live = this.services.runs.liveInsight();
+    if (!live || live.slug !== slug) return null;
+    try {
+      const insight = await this.services.insight.insight(live.id);
+      return buildLiveSnapshot(
+        live,
+        { branch: insight.branch, featureFolder: insight.featureFolder, estimate: insight.estimate },
+        Date.now(),
+      );
+    } catch {
+      return buildLiveSnapshot(
+        live,
+        { branch: null, featureFolder: null, estimate: { medianSeconds: null, count: 0 } },
+        Date.now(),
+      );
+    }
+  }
+
+  /**
    * Sends a message: the reply streams to the listeners and the turn ends with `done`, `failed`
    * or `stopped`.
    *
@@ -512,9 +538,13 @@ export class ChatService {
       );
     }
     const first = conversation.turns.length === 0;
-    const message = first
+    const body = first
       ? firstMessage(await this.context(slug), await repositoryFacts(this.services), text)
       : text;
+    // While the loop works on the item, every message carries a fresh snapshot of the run as
+    // data (feature 415, contracts/chat-snapshot.md); the transcript keeps only the text.
+    const snapshot = await this.liveSnapshot(slug);
+    const message = snapshot ? `${snapshot}\n\n---\n\n${body}` : body;
     const turn: Turn = {
       id: (conversation.turns.at(-1)?.id ?? 0) + 1,
       at: new Date().toISOString(),

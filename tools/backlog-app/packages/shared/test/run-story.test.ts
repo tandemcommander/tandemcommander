@@ -1,0 +1,587 @@
+// SPDX-FileCopyrightText: 2026 Pavel Stupka
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+/**
+ * @file Tests of the story of a run (feature 415, `contracts/story-rules.md`): every row of the
+ * rules table, groups, subagents, attempts, limits, unreadable lines, criticals and their
+ * resolution, decisions, and the digest of the chat snapshot.
+ */
+
+import { describe, expect, it } from "vitest";
+import {
+  classifyCommand,
+  componentOf,
+  firstSentence,
+  judgeResult,
+  mustFinding,
+  relativePath,
+  RunStory,
+  type StoryEntry,
+} from "../src/runs/run-story.ts";
+import { checkSubjects, programsOf } from "../src/runs/command-parse.ts";
+import { isSourcePath } from "../src/runs/run-state.ts";
+import { attempt, call, eventsOf, result, say, turnEnd } from "./helpers/trace.ts";
+
+/**
+ * Folds lines into a story.
+ *
+ * @param lines - Trace lines.
+ * @param kind - Run kind.
+ * @returns The story.
+ */
+function story(lines: object[], kind: "item" | "triage" = "item"): RunStory {
+  const s = new RunStory(kind);
+  for (const e of eventsOf(lines)) s.apply(e);
+  return s;
+}
+
+/**
+ * The entries without phase lines.
+ *
+ * @param s - A story.
+ * @returns The entries.
+ */
+function actions(s: RunStory): StoryEntry[] {
+  return s.view().filter((e) => e.kind !== "phase");
+}
+
+/** Lines that bring a run into its implement phase (failures before it are measurements). */
+const IMPLEMENTING = [call("k0", "Skill", { skill: "speckit-implement" })];
+
+describe("commands", () => {
+  it("classifies the commands of a run", () => {
+    expect(classifyCommand(".\\build.cmd full").label).toBe("BUILD");
+    expect(classifyCommand('& "build\\saltests.exe"').label).toBe("TEST");
+    expect(classifyCommand("npm run check").label).toBe("TEST");
+    expect(classifyCommand("npx playwright test e2e/x.spec.ts").label).toBe("TEST");
+    expect(classifyCommand("powershell -File tools\\run_on_hidden_desktop.ps1 -Log x").label).toBe("PROBE");
+    expect(classifyCommand("python tools/check_encoding.py --strict").label).toBe("CHECK");
+    expect(classifyCommand("python -m translate.merge --module x").label).toBe("TRANSLATE");
+    expect(classifyCommand("git commit -m '[415] tasks' -m 'body'").title).toBe("Commits: [415] tasks");
+    expect(classifyCommand("git merge --ff-only 415-x").label).toBe("GIT");
+    expect(classifyCommand("bin/backlog.sh verify slug --note 'x'").title).toBe(
+      "Records the measurement in the backlog",
+    );
+    expect(classifyCommand("bin/backlog.sh lock acquire --slug x").title).toBe("Takes the run lock");
+    expect(classifyCommand("bin/backlog.sh block x --reason 'y'").label).toBe("STOP");
+    const added = classifyCommand("bin/backlog.sh new --title 'A new bug' --type bug");
+    expect(added.title).toBe("Adds an item to the backlog: A new bug");
+    expect(added.criticalOnOk).toContain("triage");
+    expect(classifyCommand("bin/backlog.sh new --title 'Check X' --type person-step").title).toContain(
+      "person step",
+    );
+    expect(classifyCommand("ls -la").title).toBe("Runs `ls -la`");
+  });
+
+  it("judges results", () => {
+    expect(judgeResult("build", "...\nBUILD SUCCEEDED", false)).toEqual({
+      outcome: "ok",
+      note: "build succeeded",
+    });
+    expect(judgeResult("build", "a.cpp(3): error C2065: x", true).outcome).toBe("fail");
+    expect(judgeResult("saltests", "saltests: 21,794 checks, 0 failed", false).note).toBe(
+      "21,794 checks, 0 failed",
+    );
+    expect(judgeResult("saltests", "saltests: 10 checks, 2 failed", true).outcome).toBe("fail");
+    expect(judgeResult("tests", "Tests  366 passed | 2 skipped", false)).toEqual({
+      outcome: "ok",
+      note: "366 passed",
+    });
+    expect(judgeResult("tests", "Tests  1 failed | 365 passed", true).note).toBe("1 failed, 365 passed");
+    // vitest: the Tests line counts the tests, not the "Test Files" line before it.
+    expect(
+      judgeResult("tests", "Test Files  20 passed (20)\n      Tests  366 passed | 2 skipped (368)", false)
+        .note,
+    ).toBe("366 passed");
+    expect(
+      judgeResult("tests", "Test Files  1 failed | 19 passed (20)\n      Tests  2 failed | 364 passed", true)
+        .note,
+    ).toBe("2 failed, 364 passed");
+    // playwright and pytest: the summary at the end.
+    expect(judgeResult("tests", "  ✓ a\n  12 passed (1.2m)", false).note).toBe("12 passed");
+    expect(judgeResult("tests", "==== 3 failed, 40 passed in 2s ====", true).note).toBe(
+      "3 failed, 40 passed",
+    );
+    expect(judgeResult("probe", "Rows: PASS 29, FAIL 0, NOT DRIVEN 1", false)).toEqual({
+      outcome: "ok",
+      note: "29 PASS",
+    });
+    expect(judgeResult("probe", "row 1 PASS\nrow 2 FAIL", false).outcome).toBe("fail");
+    expect(judgeResult("encoding", "TOTAL: 0 finding(s)", false).outcome).toBe("ok");
+    expect(judgeResult("encoding", "TOTAL: 3 finding(s)", true).note).toBe("3 findings");
+    expect(judgeResult("commit", "[415-x abc1234] subject", false).note).toBe("abc1234 on 415-x");
+    expect(judgeResult("plain", "x", true).outcome).toBe("warn");
+  });
+});
+
+describe("paths and sentences", () => {
+  it("cuts paths to the repository and names components", () => {
+    expect(relativePath("E:\\Projects\\tc\\tools\\backlog-app\\packages\\web\\src\\a.tsx")).toBe(
+      "tools/backlog-app/packages/web/src/a.tsx",
+    );
+    expect(relativePath("C:\\Users\\p\\AppData\\Local\\Temp\\rv407\\x.png")).toBe("%TEMP%/rv407/x.png");
+    // The session's root is exact; a repository in the temporary folder keeps its own paths.
+    expect(
+      relativePath(
+        "C:\\Users\\p\\AppData\\Local\\Temp\\repo-1\\src\\a.cpp",
+        "C:\\Users\\p\\AppData\\Local\\Temp\\repo-1",
+      ),
+    ).toBe("src/a.cpp");
+    expect(relativePath("C:\\Users\\p\\AppData\\Local\\Temp\\repo-1\\src\\plugins\\ftp\\a.cpp")).toBe(
+      "src/plugins/ftp/a.cpp",
+    );
+    expect(relativePath("E:\\R\\README.md", "e:\\r")).toBe("README.md");
+    expect(componentOf("tools/backlog-app/packages/web/src/a.tsx")).toBe("backlog-app/web");
+    expect(componentOf("src/plugins/ftp/ftp.cpp")).toBe("plugins/ftp");
+    expect(componentOf("src/common/salnameorder.h")).toBe("src/common");
+    expect(componentOf("specs/415-x/spec.md")).toBe("feature records");
+    expect(componentOf("%TEMP%/x.png")).toBe("temporary files");
+  });
+
+  it("takes the first sentence of prose, not a heading", () => {
+    expect(firstSentence("## Extension Hooks\n\nThe hook ran. Then more.")).toBe("The hook ran.");
+    expect(firstSentence("**Done**: all green")).toBe("Done: all green");
+  });
+
+  it("finds a reported MUST count only", () => {
+    expect(mustFinding("Review 3 has 1 MUST and 1 SHOULD")).toBe(true);
+    expect(mustFinding("Review 2 found one MUST: x")).toBe(true);
+    expect(mustFinding("Review 6: 0 MUST, 2 SHOULD")).toBe(false);
+    expect(mustFinding("The review found no MUST.")).toBe(false);
+    expect(mustFinding("Review 2's MUST is fixed.")).toBe(false);
+  });
+});
+
+describe("RunStory", () => {
+  it("tells a call by its description and its result's verdict", () => {
+    const s = story([
+      call("t1", "Bash", { command: ".\\build.cmd", description: "Build Debug x64" }),
+      result("t1", "...\nBUILD SUCCEEDED"),
+    ]);
+    const [entry] = actions(s);
+    expect(entry).toMatchObject({
+      label: "BUILD",
+      outcome: "ok",
+      title: "Build Debug x64 - build succeeded",
+    });
+    expect(entry?.critical).toBeNull();
+  });
+
+  it("makes a failed build critical and resolves it when a later build succeeds", () => {
+    let s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: "build.cmd" }),
+      result("t1", "BUILD FAILED", true),
+    ]);
+    expect(s.critical()).toHaveLength(1);
+    expect(s.critical()[0]?.critical).toContain("The build failed");
+    s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: "build.cmd" }),
+      result("t1", "BUILD FAILED", true),
+      call("t2", "Bash", { command: "build.cmd" }),
+      result("t2", "BUILD SUCCEEDED"),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(true);
+  });
+
+  it("does not make a negative control's, a mutant's or a measurement's failure critical", () => {
+    for (const description of [
+      "Run the negative control",
+      "Build and run saltests with the mutant",
+      "Run the probe before the fix",
+      "Run pixel rows on the pre-fix build",
+    ]) {
+      const s = story([
+        ...IMPLEMENTING,
+        call("t1", "Bash", { command: "npx vitest run x", description }),
+        result("t1", "Tests  1 failed", true),
+      ]);
+      expect(s.critical(), description).toHaveLength(0);
+      expect(actions(s).find((e) => e.tool === "Bash")?.outcome).toBe("warn");
+    }
+    // Before implementing, every failing check measures the problem.
+    const measuring = story([
+      call("k1", "Bash", { command: "bin/backlog.sh verify x --note y" }),
+      call("t1", "Bash", {
+        command: "powershell -File tools\\run_on_hidden_desktop.ps1 -CommandLine x.ps1",
+        description: "Run the probe",
+      }),
+      result("t1", "Rows: PASS 1, FAIL 3", true),
+    ]);
+    expect(measuring.critical()).toHaveLength(0);
+    expect(actions(measuring).find((e) => e.label === "PROBE")?.title).toContain(
+      "failed while measuring the problem",
+    );
+  });
+
+  it("blames only what failed in a combined command (review M1 of 415)", () => {
+    // A build that succeeded, then saltests that failed: the tests failed, not the build.
+    let s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", {
+        command: 'build.cmd; & "build\\saltests.exe"',
+        description: "Build and run saltests",
+      }),
+      result("t1", "BUILD SUCCEEDED\nsaltests: 10 checks, 2 failed", true),
+    ]);
+    expect(s.critical()[0]?.critical).toBe("Tests failed: 2 of 10 checks failed");
+    // A build, then a probe with failing rows: the probe failed.
+    s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", {
+        command: "build.cmd && run_on_hidden_desktop.ps1 p.ps1",
+        description: "Build and probe",
+      }),
+      result("t1", "build exit 0\nRows: PASS 3, FAIL 6", true),
+    ]);
+    expect(s.critical()[0]?.critical).toBe("A GUI probe failed: 6 FAIL, 3 PASS");
+    // A non-zero exit of a build command without the build's own words is not a failed build.
+    s = story([...IMPLEMENTING, call("t1", "Bash", { command: "build.cmd && ls" }), result("t1", "x", true)]);
+    expect(s.critical()).toHaveLength(0);
+    expect(actions(s).find((e) => e.tool === "Bash")?.outcome).toBe("warn");
+    // A search in saltests' sources is a search, not a test run.
+    s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: "grep -n Foo src/saltests/saltests.cpp" }),
+      result("t1", "", true),
+    ]);
+    expect(s.critical()).toHaveLength(0);
+    expect(actions(s).find((e) => e.tool === "Bash")?.label).toBe("SHELL");
+  });
+
+  it("resolves a failure only by a later pass of the same check", () => {
+    const probe = (id: string, script: string, out: string, err: boolean) => [
+      call(id, "Bash", {
+        command: `powershell -File tools\\run_on_hidden_desktop.ps1 -CommandLine "${script}.ps1"`,
+      }),
+      result(id, out, err),
+    ];
+    let s = story([
+      ...IMPLEMENTING,
+      ...probe("a", "probe_a", "Rows: PASS 1, FAIL 2", true),
+      ...probe("b", "probe_b", "Rows: PASS 5, FAIL 0", false),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(false);
+    s = story([
+      ...IMPLEMENTING,
+      ...probe("a", "probe_a", "Rows: PASS 1, FAIL 2", true),
+      ...probe("c", "probe_a", "Rows: PASS 3, FAIL 0", false),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(true);
+    expect(checkSubjects("npx playwright test e2e/us3-order.spec.ts")).toEqual(["tests:us3-order.spec.ts"]);
+    expect(checkSubjects("npm run check")).toEqual(["tests:npm check"]);
+    expect(checkSubjects('.\\build.cmd; & "build\\saltests.exe"')).toEqual(["build", "saltests"]);
+  });
+
+  it("starts implement at the first source change of a run without the implement skill (review S-B)", () => {
+    const s = story([
+      call("k1", "Skill", { skill: "speckit-tasks" }),
+      call("e0", "Edit", { file_path: "E:\\r\\specs\\415-x\\tasks.md" }),
+      result("e0", "ok"),
+      call("e1", "Edit", { file_path: "E:\\r\\src\\plugins\\ftp\\ftp.cpp" }),
+      result("e1", "ok"),
+      call("t1", "Bash", { command: "build.cmd", description: "Build Debug x64" }),
+      result("t1", "BUILD FAILED", true),
+    ]);
+    expect(s.state.timeline.map((t) => t.phase)).toContain("implement");
+    expect(s.state.phase).toBe("verify");
+    expect(s.critical()[0]?.critical).toBe("The build failed");
+  });
+
+  it("resolves a review's MUST finding when a later review has none or reports it fixed", () => {
+    for (const later of [
+      "Review 2 found no MUST.",
+      "Review 2's MUST is fixed.",
+      "Review 3: 0 MUST, 1 SHOULD.",
+    ]) {
+      const s = story([
+        ...IMPLEMENTING,
+        say("Review 1 found one MUST: the price is wrong.", { message: "m1" }),
+        say(later, { message: "m2" }),
+      ]);
+      expect(s.critical()[0]?.resolved, later).toBe(true);
+    }
+    const open = story([
+      ...IMPLEMENTING,
+      say("Review 1 found one MUST: x.", { message: "m1" }),
+      say("Fixing it now.", { message: "m2" }),
+    ]);
+    expect(open.critical()[0]?.resolved).toBe(false);
+  });
+
+  it("counts only sources of the repository as a change of the code (review 3 S2)", () => {
+    const root = "E:\\r";
+    expect(isSourcePath("E:\\r\\src\\a.cpp", root)).toBe(true);
+    expect(isSourcePath("E:\\r\\build\\p268\\probe.ps1", root)).toBe(false);
+    expect(isSourcePath("E:\\Projects\\tc_scratch\\p328\\x.ps1", root)).toBe(false);
+    expect(isSourcePath("E:\\r\\specs\\415-x\\probe\\p.ps1", root)).toBe(false);
+    expect(
+      isSourcePath(
+        "C:\\Users\\p\\AppData\\Local\\Temp\\repo\\src\\a.cpp",
+        "C:\\Users\\p\\AppData\\Local\\Temp\\repo",
+      ),
+    ).toBe(true);
+    // A scratch probe written outside the sources before measuring keeps the run measuring.
+    const s = story([
+      { type: "system", subtype: "init", cwd: root, model: "m" },
+      call("w1", "Write", { file_path: "E:\\r\\build\\p268\\dmg268_probe.ps1", content: "x" }),
+      result("w1", "ok"),
+      call("t1", "Bash", {
+        command: "powershell -File tools\\run_on_hidden_desktop.ps1 -CommandLine x.ps1",
+        description: "Run the before probe",
+      }),
+      result("t1", "Rows: PASS 0, FAIL 18", true),
+    ]);
+    expect(s.critical()).toHaveLength(0);
+  });
+
+  it("keeps a review's MUST open on loose wording, and does not open one reported fixed at once (review 3 S4)", () => {
+    for (const later of [
+      "The two SHOULD findings are fixed; the MUST is still open.",
+      "NOTE findings are fixed. Next: the MUST.",
+      "The MUST of review 1 was fixed, but review 2 brings it back.",
+    ]) {
+      const s = story([
+        ...IMPLEMENTING,
+        say("Review 2 has 1 MUST.", { message: "m1" }),
+        say(later, { message: "m2" }),
+      ]);
+      expect(s.critical()[0]?.resolved, later).toBe(false);
+    }
+    const atOnce = story([
+      ...IMPLEMENTING,
+      say("Review 1 found one MUST, which is fixed now.", { message: "m1" }),
+    ]);
+    expect(atOnce.critical()).toHaveLength(0);
+  });
+
+  it("knows more words of failures on purpose (review S-C)", () => {
+    for (const description of [
+      "Build and run saltests with the mutation",
+      "Run the probe with the guard removed",
+      "Build old handler, rerun before-probe",
+      "Run the tests with the redirect disabled",
+      "Run saltests with the mutated rule",
+      "Run the probe with control B",
+      "Build with the old sort bug and run the probe",
+      "Run the before probe on the installed 0.1.10",
+      "Rebuild with the file seam and run the before probe",
+      "Run the 081 regression on the HEAD plug-in build",
+    ]) {
+      const s = story([
+        ...IMPLEMENTING,
+        call("t1", "Bash", { command: "npx vitest run x", description }),
+        result("t1", "Tests  1 failed", true),
+      ]);
+      expect(s.critical(), description).toHaveLength(0);
+    }
+  });
+
+  it("knows what runs, not what the text mentions (review S-A of 415)", () => {
+    const heredoc = [
+      "cat >> specs/x/fix-log.md <<'END'",
+      ".\\build.cmd",
+      "BUILD FAILED",
+      "END",
+      "tail -3 specs/x/fix-log.md",
+    ].join("\n");
+    expect(programsOf("tasklist | grep -i msbuild")).toEqual(["tasklist", "grep"]);
+    expect(programsOf(heredoc)).toEqual(["cat", "tail"]);
+    expect(programsOf("cd tools/backlog-app && npx vitest run --project shared")).toEqual([
+      "cd",
+      "npx",
+      "npx vitest",
+    ]);
+    expect(programsOf("PYTHONIOENCODING=utf-8 python -X utf8 tools/check_encoding.py --strict")).toContain(
+      "check_encoding.py",
+    );
+    expect(programsOf("python -m translate.merge --module x")).toContain("-m translate.merge");
+    expect(programsOf("git -C E:/r commit -m 'x'")).toContain("git commit");
+    expect(programsOf("bash bin/backlog.sh new --title 'x'")).toContain("backlog.sh");
+    for (const command of [
+      "tasklist | grep -i msbuild",
+      "grep -n CP_ACP tools/check_encoding.py",
+      "sed -n 1,40p packages/shared/test/run-story.test.ts | grep vitest",
+      heredoc,
+    ])
+      expect(classifyCommand(command).label, command).toBe("SHELL");
+    // A failed build is not resolved by a command that only mentions the build; a saltests
+    // failure of a combined command is not resolved by a plain build, only by saltests passing.
+    const combined = 'build.cmd; & "build\\saltests.exe"';
+    let s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: "build.cmd" }),
+      result("t1", "BUILD FAILED", true),
+      call("t2", "Bash", { command: "tasklist | grep -i msbuild" }),
+      result("t2", "MSBuild.exe 1234"),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(false);
+    s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: combined }),
+      result("t1", "BUILD SUCCEEDED\nsaltests: 10 checks, 1 failed", true),
+      call("t2", "Bash", { command: "build.cmd" }),
+      result("t2", "BUILD SUCCEEDED"),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(false);
+    s = story([
+      ...IMPLEMENTING,
+      call("t1", "Bash", { command: combined }),
+      result("t1", "BUILD SUCCEEDED\nsaltests: 10 checks, 1 failed", true),
+      call("t2", "Bash", { command: '& "build\\saltests.exe"' }),
+      result("t2", "saltests: 10 checks, 0 failed"),
+    ]);
+    expect(s.critical()[0]?.resolved).toBe(true);
+  });
+
+  it("collapses consecutive reads and edits into one line each", () => {
+    const s = story([
+      call("r1", "Read", { file_path: "E:\\r\\src\\a.cpp" }),
+      call("r2", "Grep", { pattern: "Foo" }),
+      call("r3", "Read", { file_path: "E:\\r\\src\\b.cpp" }),
+      result("r1", "x"),
+      call("e1", "Edit", { file_path: "E:\\r\\src\\a.cpp" }),
+      call("e2", "Edit", { file_path: "E:\\r\\src\\a.cpp" }),
+      result("e1", "ok"),
+      result("e2", "ok"),
+    ]);
+    const [reads, edits] = actions(s);
+    expect(reads).toMatchObject({ kind: "group", label: "READ", childCount: 3 });
+    expect(reads?.title).toBe("Reads 2 files and searches 1 times: a.cpp, b.cpp");
+    expect(edits).toMatchObject({ kind: "group", label: "EDIT", childCount: 2, outcome: "ok" });
+    expect(edits?.title).toBe("Edits `a.cpp` (src)");
+    expect(s.files()).toEqual([{ path: "E:\\r\\src\\a.cpp", rel: "src/a.cpp", component: "src", edits: 2 }]);
+  });
+
+  it("shows a screenshot on its own line and lists it for the gallery", () => {
+    const s = story([
+      call("r1", "Read", { file_path: "E:\\r\\specs\\415-x\\probe\\shot.png" }),
+      result("r1", ""),
+    ]);
+    const [shot] = actions(s);
+    expect(shot).toMatchObject({ label: "SCREENSHOT", title: "Looks at the screenshot shot.png" });
+    expect(s.images().map((i) => i.path)).toEqual(["E:\\r\\specs\\415-x\\probe\\shot.png"]);
+  });
+
+  it("folds a subagent's work under its agent with its status and report", () => {
+    const s = story([
+      call("a1", "Agent", {
+        description: "Independent refute-first review",
+        subagent_type: "general-purpose",
+      }),
+      call("s1", "Bash", { command: "git diff", description: "Show the diff" }, { parent: "a1" }),
+      result("s1", "diff", false, "a1"),
+      say("I found nothing wrong.", { parent: "a1" }),
+      { type: "system", subtype: "task_progress", tool_use_id: "a1", description: "Running the tests" },
+      result("a1", "MUST: none. SHOULD: one."),
+    ]);
+    const [agent] = actions(s);
+    expect(agent).toMatchObject({
+      kind: "agent",
+      label: "REVIEW",
+      outcome: "ok",
+      status: "finished",
+      childCount: 2,
+    });
+    expect(agent?.title).toBe("Review agent: Independent refute-first review");
+    expect(agent?.children[0]).toMatchObject({ title: "Show the diff", outcome: "ok" });
+    expect(agent?.children[1]?.title).toBe("says: I found nothing wrong.");
+    expect(agent?.detail).toContain("SHOULD: one.");
+    // Subagent calls never become entries of their own.
+    expect(actions(s)).toHaveLength(1);
+  });
+
+  it("opens phase sections from the run's markers", () => {
+    const s = story([
+      call("k1", "Bash", { command: "bin/backlog.sh lock acquire --slug x" }),
+      call("k2", "Skill", { skill: "speckit-specify" }),
+      call("k3", "Skill", { skill: "speckit-plan" }),
+    ]);
+    const phases = s
+      .view()
+      .filter((e) => e.kind === "phase")
+      .map((e) => e.title);
+    expect(phases).toEqual([
+      "Choosing and locking the item",
+      "Writing the specification",
+      "Designing the solution",
+    ]);
+    expect(actions(s).find((e) => e.tool === "Skill")?.title).toBe("Runs Spec Kit *specify*");
+  });
+
+  it("flags decisions, review findings, new items and the stop path", () => {
+    const s = story([
+      say("I chose the conservative option: keep the old behaviour.", { message: "m1" }),
+      call("k1", "Skill", { skill: "speckit-implement" }),
+      call("a1", "Agent", { description: "review" }),
+      result("a1", "report"),
+      say("Review 1 found one MUST: the price is wrong.", { message: "m2" }),
+      call("b1", "Bash", { command: "bin/backlog.sh new --title 'Leftover' --type bug" }),
+      result("b1", "leftover"),
+      call("b2", "Bash", { command: "bin/backlog.sh block slug --reason 'x'" }),
+      result("b2", "blocked"),
+    ]);
+    expect(s.decisions().map((e) => e.title)).toEqual([
+      "I chose the conservative option: keep the old behaviour.",
+    ]);
+    const reasons = s.critical().map((e) => e.critical);
+    expect(reasons).toContain("The review reports a MUST finding");
+    expect(reasons).toContain("A new item waits for the maintainer's triage");
+    expect(reasons).toContain("The run stopped and blocked the item");
+    expect(reasons).toContain("The run took the stop path");
+  });
+
+  it("tells attempts, limits, error turns and unreadable lines", () => {
+    const s = story([
+      attempt(1),
+      call("t1", "Bash", { command: "sleep 1" }),
+      { type: "rate_limit_event", rate_limit_info: { status: "rejected" } },
+      attempt(2, "usage-limit"),
+      turnEnd(1, { input: 0, output: 0, read: 0, w5: 0, w1: 0 }, true),
+    ]);
+    const s2 = new RunStory("item");
+    for (const e of eventsOf(["{not json"])) s2.apply(e);
+    const entries = actions(s);
+    expect(entries.find((e) => e.tool === "Bash")).toMatchObject({ outcome: "warn", status: "cut off" });
+    expect(entries.find((e) => e.kind === "attempt")?.title).toBe(
+      "The run continues after usage-limit (attempt 2)",
+    );
+    expect(entries.find((e) => e.kind === "limit")?.importance).toBe("critical");
+    expect(entries.find((e) => e.kind === "turn")?.critical).toBe("A turn ended with an error");
+    expect(actions(s2)[0]).toMatchObject({ kind: "unreadable", label: "ERROR" });
+  });
+
+  it("knows what happens now and gives a digest", () => {
+    const s = story([
+      say("Building now.", { message: "m1" }),
+      call("t1", "Bash", { command: "build.cmd", description: "Build the core" }),
+    ]);
+    expect(s.now()).toMatchObject({ title: "Build the core", running: true, label: "BUILD" });
+    expect(s.latestMessage()?.title).toBe("Building now.");
+    const digest = s.digest(5);
+    expect(digest.at(-1)).toMatch(/BUILD running - Build the core$/);
+  });
+
+  it("replaces changed entries instead of mutating them", () => {
+    const s = new RunStory("item");
+    const events = eventsOf([call("t1", "Bash", { command: "ls" }), result("t1", "x")]);
+    s.apply(events[0]!);
+    const before = s.view().find((e) => e.tool === "Bash")!;
+    s.apply(events[1]!);
+    const after = s.view().find((e) => e.tool === "Bash")!;
+    expect(after).not.toBe(before);
+    expect(before.outcome).toBe("running");
+    expect(after.outcome).toBe("ok");
+  });
+
+  it("caps the children of a group", () => {
+    const lines = Array.from({ length: 250 }, (_, i) =>
+      call(`r${i}`, "Read", { file_path: `E:\\r\\src\\f${i}.cpp` }),
+    );
+    const [group] = actions(story(lines));
+    expect(group?.children).toHaveLength(200);
+    expect(group?.childCount).toBe(250);
+    expect(group?.title).toContain("and 247 more");
+  });
+});
