@@ -208,6 +208,16 @@ int SalTabColorDistance(DWORD a, DWORD b);
 // by 1/2; never mixed under High Contrast (feature 413)
 DWORD SalTabActiveFill(DWORD capBk, DWORD capFg, DWORD stripBk, DWORD face, BOOL highContrast);
 
+// the WCAG 2 contrast ratio of two colours (1..21)
+double SalTabContrastRatio(DWORD a, DWORD b);
+
+// the active tab's title colour on 'fill' (from SalTabActiveFill): 'capFg' when the fill is
+// the caption colour 'capBk' or when 'capFg' keeps on the fill the contrast it has on 'capBk'
+// (at most 4.5:1 is asked); else 'capFg' mixed toward white (a fill darker than the title) or
+// black by the smallest k / 100 that gives that contrast (feature 413: AAAAAA on the lifted
+// 454545 was 4.13:1)
+DWORD SalTabActiveText(DWORD capFg, DWORD capBk, DWORD fill);
+
 // where tab 'index' is shown while tab 'from' is dragged to slot 'slot' (the
 // order after the release is SalTabsMove(from, slot)); a cancel is slot == from
 int SalTabDragPosition(int from, int slot, int index);

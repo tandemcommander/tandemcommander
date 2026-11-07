@@ -2501,6 +2501,25 @@ static void TestTabStrip413()
           RGB(42, 42, 42));
     // High Contrast: never mixed
     CHECK(SalTabActiveFill(RGB(0, 0, 0), RGB(255, 255, 0), RGB(0, 0, 0), RGB(0, 0, 0), TRUE) == RGB(0, 0, 0));
+
+    // the title on the lifted fill (review 1): AAAAAA was 5.93:1 on 2D2D2D, 4.13:1 on 454545
+    CHECK(SalTabContrastRatio(RGB(170, 170, 170), RGB(45, 45, 45)) > 5.9);
+    CHECK(SalTabContrastRatio(RGB(170, 170, 170), RGB(69, 69, 69)) < 4.5);
+    CHECK(SalTabContrastRatio(RGB(0, 0, 0), RGB(255, 255, 255)) > 20.99);
+    DWORD text = SalTabActiveText(RGB(170, 170, 170), RGB(45, 45, 45), RGB(69, 69, 69));
+    CHECK(text == RGB(178, 178, 178)); // k = 9: 177.65 -> 178 (k = 8 gives 177: 4.49)
+    CHECK(SalTabContrastRatio(text, RGB(69, 69, 69)) >= 4.5);
+    CHECK(SalTabContrastRatio(RGB(177, 177, 177), RGB(69, 69, 69)) < 4.5);
+    // not lifted: the caption text stays
+    CHECK(SalTabActiveText(RGB(255, 255, 255), RGB(38, 79, 120), RGB(38, 79, 120)) == RGB(255, 255, 255));
+    CHECK(SalTabActiveText(RGB(0, 0, 0), RGB(191, 205, 219), RGB(191, 205, 219)) == RGB(0, 0, 0));
+    // a dark title on a lifted light fill goes toward black; the asked contrast is the original one
+    // when it is below 4.5
+    text = SalTabActiveText(RGB(90, 90, 90), RGB(200, 200, 200), RGB(186, 186, 186));
+    CHECK(SalTabContrastRatio(text, RGB(186, 186, 186)) >= SalTabContrastRatio(RGB(90, 90, 90), RGB(200, 200, 200)));
+    CHECK((text & 0xFF) < 90);
+    // a lifted fill on which the title keeps its contrast: unchanged
+    CHECK(SalTabActiveText(RGB(0, 0, 0), RGB(200, 200, 200), RGB(186, 186, 186)) == RGB(0, 0, 0));
 }
 
 // feature 079: crash report file name (src/common/salbugreport.cpp), contracts/crash-report.md C2

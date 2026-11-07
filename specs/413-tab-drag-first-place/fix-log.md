@@ -88,7 +88,7 @@ Result: `probe/result_before.txt` - PASS 11, FAIL 7, NOT DRIVEN 1.
 |---|---|
 | `python tools/check_encoding.py --strict` | `TOTAL: 0 finding(s)` |
 | `.\build.cmd` | BUILD SUCCEEDED |
-| saltests | **282,670 checks, 0 failed** |
+| saltests | **282,670 checks, 0 failed** (282,681 after review 1) |
 | `tabs413_probe` (`result_after.txt`) | **PASS 18, FAIL 0, NOT DRIVEN 1** - D -> D A B C, S -> S P Q R, B -> B D A C, T29 -> index 22; LOOK-DARK-INACTIVE 454545: 33 / 24; heights 29 / 23 / rows 3-28 unchanged |
 | `tabs404_probe` (`result_tabs404.txt`) | PASS 29, FAIL 0, NOT DRIVEN 1 (dark inactive vs the 413 baseline: 0 failing; all other looks vs the mockups unchanged) |
 | `tabs405_probe` (`result_tabs405.txt`) | PASS 7, FAIL 0, NOT DRIVEN 1; HELD now lands the dragged tab in place 0 (`B A A A B`, was `A B A A B` - the trap 405 recorded) |
@@ -100,7 +100,8 @@ No UI string, menu or dialog changed: no `.slt` refresh (stop-rules §2.13 not t
 - A real mouse drag of a non-first tab to the left end of the strip, in both panels: it becomes the
   first tab (feature 413).
 - The dark and the default theme side by side (also at a scaling other than 100 %): the tab strip
-  looks equally high, the inactive panel's active tab is visible in the dark theme (feature 413).
+  looks equally high, the inactive panel's active tab is visible in the dark theme (a lighter grey
+  than its directory line, its title readable) (feature 413).
 
 ## Findings fixed on the way
 
@@ -108,4 +109,37 @@ No UI string, menu or dialog changed: no `.slt` refresh (stop-rules §2.13 not t
 
 ## Review
 
-(below)
+### Review 1 (refute-first agent, 2026-11-07)
+
+No MUST. Re-ran build, saltests (282,670 / 0), `tabs413_probe -Label review` (18 / 0 / 1), an
+exhaustive old-vs-new comparison of `SalTabDragSlot` (1-9 tabs, 7 widths, every `from`, every
+clamped left: both ends always reached, only moving-left exact multiples change, monotonic) and the
+negative control (11 drag checks fail on the old rule).
+
+- **SHOULD 1 (fixed)**: on the lifted fill 454545 the inactive caption text AAAAAA has 4.13:1
+  (5.93:1 on 2D2D2D; the dark palette's pair is tested >= 4.5 in saltests). Fix: new pure rule
+  `SalTabActiveText(capFg, capBk, fill)` - the caption text unless the fill was lifted and the text
+  lost contrast; then mixed toward white (or black) by the smallest k / 100 that gives the contrast
+  it had on the caption colour, at most 4.5:1 asked. Dark inactive: AAAAAA -> B2B2B2 (4.53:1; B1B1B1
+  would be 4.49). `CTabWindow::Paint` sets `TabPaint.CapFg` from it (the title and the close glyph of
+  the active tab). saltests +11 checks (282,681 / 0); negative control (the rule returning `capFg`):
+  4 failed. The 404 baseline regenerated (against 404's own capture all 3,065 changed pixels lie in
+  x 250..385, y 3..28).
+- NOTE 1 (recorded): the dark inactive tab no longer has its directory line's colour (454545 over
+  a 2D2D2D path field); everywhere else the tab and the path share the caption colour. Named in the
+  release-checklist line.
+- NOTE 2 (recorded): defect 2 is not a size difference; the fix addresses the measured cause (the
+  invisible inactive-panel tab); the dark active panel is unchanged, and the dark strip still meets
+  the toolbar with a step of 9 (2D2D2D / 242424) where the default theme has the rebar's etched
+  line. The person check side by side decides whether more is wanted.
+- NOTE 3 (recorded): inside the tab box the 404 dark inactive baseline is this feature's own output -
+  it proves stability, not correctness; correctness is `tabs413_probe` LOOK and saltests.
+- NOTE 4 (recorded): the GUI before run used the first expectation set; the unit negative control
+  was reproduced by the reviewer.
+- NOTE 5 (done at closing): FEATURE-HISTORY 413 corrects 405's "not a defect"; CHANGELOG entry.
+
+T005: no comment in `src/tabwnd.cpp` / `saltabs.*` referred to the old slot 1 (Grep "slot 1",
+"lands in slot": nothing).
+
+After review 1: build SUCCEEDED, saltests **282,681 / 0**, encoding guard 0, `tabs413_probe`
+**18 / 0 / 1**, `tabs404_probe` **29 / 0 / 1**, `tabs405_probe` **7 / 0 / 1**.

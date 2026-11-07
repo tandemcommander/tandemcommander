@@ -50,7 +50,7 @@ struct CTabPaintColors
     CSalTabStripColors Strip;
     COLORREF Text;  // COLOR_BTNTEXT
     COLORREF CapBk; // the active tab's fill: the panel's caption background (active / inactive), see SalTabActiveFill
-    COLORREF CapFg;
+    COLORREF CapFg; // the active tab's title: the caption text colour, see SalTabActiveText
     BOOL Dark;
     BOOL HighContrast;
 };
@@ -1073,12 +1073,14 @@ void CTabWindow::Paint(HDC hdc)
     SalTabStripColorsGet(ThemeSysColor(COLOR_BTNFACE), ThemeSysColor(COLOR_BTNSHADOW), ThemeSysColor(COLOR_BTNHIGHLIGHT),
                          TabPaint.Text, TabPaint.Dark, TabPaint.HighContrast, GetSysColor(COLOR_HIGHLIGHT),
                          GetSysColor(COLOR_HIGHLIGHTTEXT), &TabPaint.Strip);
-    TabPaint.CapFg = GetCOLORREF(CurrentColors[activePanel ? ACTIVE_CAPTION_FG : INACTIVE_CAPTION_FG]);
-    // the caption colour, lifted when it would not stand out from the strip or from the
-    // directory line's band under the tab (the Dark theme's inactive panel, feature 413)
-    TabPaint.CapBk = SalTabActiveFill(GetCOLORREF(CurrentColors[activePanel ? ACTIVE_CAPTION_BK : INACTIVE_CAPTION_BK]),
-                                      TabPaint.CapFg, TabPaint.Strip.StripBk, ThemeSysColor(COLOR_BTNFACE),
+    // the caption colours, the fill lifted when it would not stand out from the strip or from
+    // the directory line's band under the tab (the Dark theme's inactive panel) and the title
+    // then kept as readable as on the caption colour (feature 413)
+    COLORREF capBk = GetCOLORREF(CurrentColors[activePanel ? ACTIVE_CAPTION_BK : INACTIVE_CAPTION_BK]);
+    COLORREF capFg = GetCOLORREF(CurrentColors[activePanel ? ACTIVE_CAPTION_FG : INACTIVE_CAPTION_FG]);
+    TabPaint.CapBk = SalTabActiveFill(capBk, capFg, TabPaint.Strip.StripBk, ThemeSysColor(COLOR_BTNFACE),
                                       TabPaint.HighContrast);
+    TabPaint.CapFg = SalTabActiveText(capFg, capBk, TabPaint.CapBk);
 
     RECT all = {0, 0, Width, Height};
     TabFillSolid(dc, &all, TabPaint.Strip.StripBk);

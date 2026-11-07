@@ -551,6 +551,45 @@ DWORD SalTabActiveFill(DWORD capBk, DWORD capFg, DWORD stripBk, DWORD face, BOOL
     return SalTabMix(capBk, capFg, 0.5);
 }
 
+static double SalTabLinear(int c)
+{
+    double v = c / 255.0;
+    return v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4);
+}
+
+static double SalTabLuminance(DWORD c)
+{
+    return 0.2126 * SalTabLinear((int)(c & 0xFF)) + 0.7152 * SalTabLinear((int)((c >> 8) & 0xFF)) +
+           0.0722 * SalTabLinear((int)((c >> 16) & 0xFF));
+}
+
+double SalTabContrastRatio(DWORD a, DWORD b)
+{
+    double la = SalTabLuminance(a) + 0.05;
+    double lb = SalTabLuminance(b) + 0.05;
+    return la > lb ? la / lb : lb / la;
+}
+
+DWORD SalTabActiveText(DWORD capFg, DWORD capBk, DWORD fill)
+{
+    if (fill == capBk)
+        return capFg;
+    double want = SalTabContrastRatio(capFg, capBk);
+    if (want > 4.5)
+        want = 4.5;
+    if (SalTabContrastRatio(capFg, fill) >= want)
+        return capFg;
+    DWORD toward = SalTabLuminance(capFg) >= SalTabLuminance(fill) ? RGB(255, 255, 255) : RGB(0, 0, 0);
+    int k;
+    for (k = 1; k <= 100; k++)
+    {
+        DWORD text = SalTabMix(capFg, toward, k / 100.0);
+        if (SalTabContrastRatio(text, fill) >= want)
+            return text;
+    }
+    return toward;
+}
+
 int SalTabDragPosition(int from, int slot, int index)
 {
     if (index == from)
