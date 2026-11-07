@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item run-lock-update-release-no-retry - implement exactly what it describes: `lock update` and `lock release` of `bin/backlog.sh` fail with PermissionError when another process has the run lock file open." From backlog item run-lock-update-release-no-retry.
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: How long do the lock commands retry a PermissionError before giving up? → A: 40 attempts at 50 ms (about 2 s), the window of `write_json_atomic` (autonomous run: item)
+- Q: How is a PermissionError that persists past the window reported? → A: one `refused: ...` line, exit 1, nothing changed - the run contract's "nothing was written" form (autonomous run: item + rule, SKILL.md §0.8)
+- Q: Are the loop's own lock readers in `tools/backlog/loop.py` changed? → A: no, they already retry; only `tools/backlog/backlog.py` changes (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A run's lock update and release succeed while the lock is being read (Priority: P1)
