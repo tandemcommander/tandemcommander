@@ -8,7 +8,7 @@ source: manual
 who: both
 created: 2026-11-07
 updated: 2026-11-07
-verified: -
+verified: 2026-11-07 e5d4552e
 effort: L
 feature: -
 related: []
@@ -131,3 +131,4 @@ At 9fd7cfb4, by reading:
 
 - 2026-11-07 — created (source manual)
 - 2026-11-07 — moved to Next position 1
+- 2026-11-07 — verified at e5d4552e: still present at e5d4552e: hidden-desktop capture, Plugins bar Fluent 2 vs Classic differ only in the 416 chevrons (242 px), plug-in FS icons on the drive bar identical
