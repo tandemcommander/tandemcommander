@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item ftp-panel-refresh-misses-change-under-another-name - a panel is not refreshed after a change made under another name of its server (localhost vs 127.0.0.1)." From backlog item ftp-panel-refresh-misses-change-under-another-name.
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: Which other connections count as "another name of its server" - another host only, or also another user / port (feature 345's rule for the upload cache)? → A: another host with the same user and port (autonomous run: item - its *Expected* names "the same user and port")
+- Q: Refresh the panel, or only mark its listing outdated? → A: refresh a panel showing the changed folder (same timing as under its own name); drop cached listings of folders not shown, so their next use lists them again (autonomous run: item - both options it allows, the refresh where the stale listing is on screen)
+- Q: May the refresh under another name reuse the panel's cached data of that path? → A: no - it behaves as a manual refresh (re-list, drop cached listings and viewer files of the path and its subpaths) (autonomous run: conservative - nothing cached under the panel's name was dropped by the notification)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The panel shows a change made through another name of its server (Priority: P1)
