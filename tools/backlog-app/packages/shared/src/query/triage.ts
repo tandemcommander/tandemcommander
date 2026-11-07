@@ -112,3 +112,36 @@ export function suggestPlacement(
         : `before the first item of ${section} less severe than ${item.severity}`;
   return { section, position, why };
 }
+
+/**
+ * Why the triage page's button for an AI proposal (`Place at <section> #<n>`) must not send it
+ * (feature 414, reviews 4 and 5), or empty. The page's move counts positions on the board it
+ * shows (without the running item); the AI counted on the tree of its job's start. The two agree
+ * only when no run was in progress then and none is now - otherwise the number is refused, as
+ * the server's Apply refuses it, and *Place at* of the chooser takes over. A section the item's
+ * type / who do not admit is refused too (the tool would refuse the move).
+ *
+ * @param proposal - The proposal's section and position, the running item at the job's start
+ * (`countedWithout`), the item the board hides now and the section the item's type / who admit.
+ * @returns The reason, or empty when the button may send it.
+ */
+export function aiPlacementBlock(proposal: {
+  section: SectionName | null;
+  position: number | null | undefined;
+  countedWithout: string | null;
+  hiddenNow: string | null;
+  admitting: SectionName | null;
+}): string {
+  const { section, position, countedWithout, hiddenNow, admitting } = proposal;
+  if (!section) return "";
+  if (position && countedWithout !== null) {
+    return "the AI counted this position in the run's tree, which differs from the board - use Place at";
+  }
+  if (position && hiddenNow !== null) {
+    return "a run started since the check: its position counts another list - use Place at";
+  }
+  if (TRIAGE_TARGETS.includes(section) && admitting !== null && section !== admitting) {
+    return `its type / who belong in ${admitting}`;
+  }
+  return "";
+}

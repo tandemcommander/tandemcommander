@@ -9,6 +9,7 @@
 import { describe, expect, it } from "vitest";
 import {
   admittingSection,
+  aiPlacementBlock,
   readTriagePosition,
   suggestPlacement,
   TRIAGE_TARGETS,
@@ -105,5 +106,36 @@ describe("readTriagePosition (feature 414)", () => {
     expect(readTriagePosition("4", 3)).toEqual({ position: 4, last: false });
     expect(readTriagePosition("5", 3)).toEqual({ position: 5, last: true });
     expect(readTriagePosition("99", 0)).toEqual({ position: 99, last: true });
+  });
+});
+
+describe("aiPlacementBlock (feature 414)", () => {
+  const base = {
+    section: "Next" as const,
+    position: 2,
+    countedWithout: null,
+    hiddenNow: null,
+    admitting: "Next" as const,
+  };
+
+  it("lets a proposal counted and placed with no run through", () => {
+    expect(aiPlacementBlock(base)).toBe("");
+    expect(aiPlacementBlock({ ...base, section: null })).toBe("");
+  });
+
+  it("refuses a position counted during a run, or placed during one", () => {
+    expect(aiPlacementBlock({ ...base, countedWithout: "x", hiddenNow: "x" })).toMatch(/run's tree/);
+    expect(aiPlacementBlock({ ...base, countedWithout: "x" })).toMatch(/run's tree/);
+    expect(aiPlacementBlock({ ...base, hiddenNow: "x" })).toMatch(/a run started/);
+    // Without a position (the end, or Parked / Rejected) the run does not matter.
+    expect(aiPlacementBlock({ ...base, position: null, countedWithout: "x", hiddenNow: "y" })).toBe("");
+    expect(aiPlacementBlock({ ...base, section: "Parked", position: null, hiddenNow: "y" })).toBe("");
+  });
+
+  it("refuses an ordered section the item's type / who do not admit", () => {
+    expect(aiPlacementBlock({ ...base, section: "Person steps", position: null })).toBe(
+      "its type / who belong in Next",
+    );
+    expect(aiPlacementBlock({ ...base, section: "Rejected", position: null })).toBe("");
   });
 });

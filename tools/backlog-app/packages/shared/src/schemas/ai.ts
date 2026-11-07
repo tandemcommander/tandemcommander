@@ -282,9 +282,10 @@ export const AiJobRecordSchema = AiJobSchema.extend({
   /** The model asked for, or null for claude's default. */
   model: z.string().nullable().default(null),
   /**
-   * The item a run worked on when the job started (feature 414, review 4), or null: the job's tree
-   * was the run's, where that item is in *In progress*, so the proposal's positions count without
-   * its row - applying them translates from that count, whatever runs at the time of applying.
+   * The item a run worked on when the job started (feature 414, reviews 4 and 5), or null. A job
+   * started during a run read the run's tree, whose `BACKLOG.md` differs from `main` (the running
+   * item, and every change landed on `main` since): its proposed positions mean no definite place
+   * on `main` and are refused when applied; a job started with no run counted `main`'s own rows.
    */
   countedWithout: z.string().nullable().default(null),
   /** The tray changes made when the maintainer applied the proposal, or null. */

@@ -18,6 +18,7 @@ import { getRouteApi, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   admittingSection,
+  aiPlacementBlock,
   suggestPlacement,
   TRIAGE_TARGETS,
   type ItemRowView,
@@ -190,19 +191,17 @@ export function TriagePage() {
           reason?: string;
         } | null)
       : null;
-  // The AI counted positions on the tree of its job's start (feature 414, review 4): when the
-  // running item the page hides now is not the one the job's tree lacked, its number means another
-  // place - the button refuses rather than guess; Place at takes over.
-  const proposalBasis = (ai.job as { countedWithout?: string | null } | null)?.countedWithout ?? null;
-  const pageBasis = board.data.running?.slug ?? null;
+  // The AI counted positions on the tree of its job's start; the page's move counts on the board
+  // it shows. Where they cannot agree (a run then or now) the button refuses rather than guess, and
+  // Place at of the chooser takes over (feature 414, reviews 4 and 5; `aiPlacementBlock`).
   const proposalSection = proposal?.section ?? null;
-  const proposalBlocked = !proposalSection
-    ? ""
-    : proposal?.position && proposalBasis !== pageBasis
-      ? "a run started or ended since the check: its position counts another list - use Place at"
-      : TRIAGE_TARGETS.includes(proposalSection)
-        ? notAdmitted(proposalSection)
-        : "";
+  const proposalBlocked = aiPlacementBlock({
+    section: proposalSection,
+    position: proposal?.position,
+    countedWithout: (ai.job as { countedWithout?: string | null } | null)?.countedWithout ?? null,
+    hiddenNow: board.data.running?.slug ?? null,
+    admitting,
+  });
   // Past the end goes as the last place, as the chooser sends it.
   const proposalPosition =
     proposalSection && proposal?.position && TRIAGE_TARGETS.includes(proposalSection)
@@ -301,7 +300,7 @@ export function TriagePage() {
                 onClick={() => place(proposal.section!, proposalPosition)}
               >
                 Place at {proposal.section}
-                {proposal.position ? ` #${proposal.position}` : ""}
+                {proposalPosition ? ` #${proposalPosition}` : ""}
               </Button>
             ) : null}
           </Card>

@@ -24,7 +24,7 @@ import type { AiJobRecord, BoardView, Tray } from "@backlog-app/shared";
 import { aiRoutes } from "../src/api/ai.ts";
 import { errorAnswer } from "../src/api/common.ts";
 import { AiJobRunner } from "../src/ai/runner.ts";
-import type { ApplyAnswer } from "../src/ai/apply.ts";
+import { AI_RUN_POSITION, type ApplyAnswer } from "../src/ai/apply.ts";
 import { fixtureRepo, gitIn, writeRunLock } from "./helpers/fixture-repo.ts";
 import { testApp, type TestApp } from "./helpers/services.ts";
 
@@ -360,12 +360,13 @@ describe("AI jobs", () => {
     expect(await mainNext()).toEqual([disk, slug, ftp]);
   });
 
-  it("applies a proposed position of a job started during a run as counted without the running item (414)", async () => {
+  it("refuses a proposed position of a job started during a run, and applies it without one (414)", async () => {
     const slug = "typed-path-with-a-pipe-brackets";
     const disk = "disk-map-context-menu-crash";
     const ftp = "ftp-per-server-encoding-flag";
-    // A run on its branch: the job reads the run's tree, where DISK is in In progress - Next = [FTP],
-    // its "2" is after FTP. main's Next is still [DISK, FTP].
+    // A run on its branch: the job reads the run's tree, which differs from main (DISK is in In
+    // progress there, and every change the app lands on main is missing): its "2" has no definite
+    // place on main (review 5).
     await gitIn(root, ["checkout", "-q", "-b", `345-${disk}`]);
     writeRunLock(root, 0, disk, `345-${disk}`);
     await app.refresh();
@@ -373,11 +374,47 @@ describe("AI jobs", () => {
     const during = await runJob("triage-check", { slug });
     expect(during.state, during.error ?? "").toBe("done");
     expect(during.countedWithout).toBe(disk);
-    const applied = await call("POST", `/api/ai/jobs/${during.id}/apply`, {
+    const refused = await call("POST", `/api/ai/jobs/${during.id}/apply`, {
       proposal: during.proposal,
+      base: {},
+    });
+    expect(refused.status, JSON.stringify(refused.json)).toBe(422);
+    expect((refused.json as { error: { message: string } }).error.message).toBe(AI_RUN_POSITION);
+    expect(await mainNext()).toEqual([disk, ftp]);
+    // The maintainer edits the proposal to no position: it is placed at the end of main's Next.
+    const applied = await call("POST", `/api/ai/jobs/${during.id}/apply`, {
+      proposal: { ...PLACE_2, position: null },
       base: {},
     });
     expect(applied.status, JSON.stringify(applied.json)).toBe(200);
     expect(await mainNext()).toEqual([disk, ftp, slug]);
+  });
+
+  it("refuses the position of a draft or an auto-triage plan row counted during a run (414)", async () => {
+    const slug = "typed-path-with-a-pipe-brackets";
+    const disk = "disk-map-context-menu-crash";
+    const ftp = "ftp-per-server-encoding-flag";
+    await gitIn(root, ["checkout", "-q", "-b", `345-${disk}`]);
+    writeRunLock(root, 0, disk, `345-${disk}`);
+    await app.refresh();
+    fake("ok", { ...DRAFT, place: { section: "Next", position: 1 } });
+    const draft = await runJob("draft-item", { text: "a sentence" });
+    expect(draft.state, draft.error ?? "").toBe("done");
+    const refusedDraft = await call("POST", `/api/ai/jobs/${draft.id}/apply`, {
+      proposal: draft.proposal,
+      base: {},
+    });
+    expect(refusedDraft.status, JSON.stringify(refusedDraft.json)).toBe(422);
+    expect((refusedDraft.json as { error: { message: string } }).error.message).toBe(AI_RUN_POSITION);
+    fake("ok", { items: [{ slug, ...PLACE_2 }] });
+    const plan = await runJob("auto-triage-plan", {});
+    expect(plan.state, plan.error ?? "").toBe("done");
+    const planned = await call("POST", `/api/ai/jobs/${plan.id}/apply`, {
+      proposal: plan.proposal,
+      base: {},
+    });
+    expect(planned.status, JSON.stringify(planned.json)).toBe(200);
+    expect((planned.json as ApplyAnswer).results).toEqual([{ slug, ok: false, refused: AI_RUN_POSITION }]);
+    expect(await mainNext()).toEqual([disk, ftp]);
   });
 });

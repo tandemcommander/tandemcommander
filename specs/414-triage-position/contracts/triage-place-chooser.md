@@ -19,7 +19,9 @@ UI contract of the triage page (`/triage`) of the backlog app; no API change.
 sent as the last place). While a run works on an item of the section, the server adds 1 to a
 position below that hidden row before calling the tool (`toolPosition`, reviews 2 and 3: the
 hidden row is the run lock's item the board overlays; the moved item itself is not counted) - for
-every route that passes a position (move, new item, set, decide) and for an applied AI proposal.
+every route that passes a position (move, new item, set, decide). An AI proposal's position
+counted during a run is refused on *Apply* (`AI_RUN_POSITION`) and by the page's AI button
+(`aiPlacementBlock`); one counted with no run is applied as counted.
 
 ## Unchanged
 

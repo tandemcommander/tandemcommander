@@ -61,3 +61,15 @@
   (measured by review 2 with the real loop: typed 3 landed at 2).
 - **Alternatives**: correct on the page (every caller would need the raw board); refuse positions
   during a run (loses the feature of 371).
+
+## R7 - AI proposals during a run (reviews 3-5)
+
+- **Decision**: an AI position counted during a run is refused when applied (and the triage page's
+  AI button is disabled then); a position counted with no run is applied as counted.
+- **Rationale**: a job started during a run reads the run's tree, whose `BACKLOG.md` lacks the
+  running item and every change the app has landed on `main` since - no translation gives a
+  definite place on `main` (review 5). Two translations were tried (reviews 3 and 4); refusing is
+  the conservative answer (stop-rules §1 step 4), and the chooser places exactly.
+- **Alternatives**: give the AI the page's rows in its input and let it count there, or let it name
+  the row to place before (a slug) - a change of the AI prompts and schemas of 344, beyond this
+  item.

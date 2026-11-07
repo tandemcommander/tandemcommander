@@ -28,7 +28,6 @@ import {
   type SectionName,
 } from "@backlog-app/shared";
 import type { Services } from "../services.ts";
-import { toolPosition } from "../backlog/positions.ts";
 import { fileHash, type Base, type StagedChange } from "../backlog/write-queue.ts";
 import { toolChangeForTray } from "../backlog/tray.ts";
 import { resolveRef } from "../repo/git.ts";
@@ -407,27 +406,24 @@ async function runOperations(
   };
 }
 
+/** Why an AI position counted during a run is not applied (feature 414, review 5). */
+export const AI_RUN_POSITION =
+  "the AI counted this position in the run's tree, which differs from main while a run is in " +
+  "progress (the running item and every change made since) - place the item with the triage " +
+  "page's Place at, or apply the proposal without a position";
+
 /**
- * A placement verdict with its position counted as the tool counts (feature 414, reviews 3 and 4):
- * a job started during a run read the run's tree, where the running item is no longer in its
- * section, so its positions count without that row (`AiJobRecord.countedWithout`); the tool
- * counts every row of `main`. The basis is the job's start, not the time of applying.
+ * Refuses an AI position that cannot be translated to the tool's count (feature 414, reviews 3-5):
+ * a job started during a run read the run's tree (its `BACKLOG.md` lacks the running item and
+ * every change the app landed on `main` since), so its number means no definite place on `main`.
+ * A job started with no run read `main`'s own tree: its number is the tool's count.
  *
- * @param services - The server's services.
- * @param row - The item.
- * @param verdict - The (edited) verdict.
+ * @param position - The proposed position, or null.
  * @param countedWithout - The running item at the job's start, or null.
- * @returns The verdict for the tool.
+ * @throws ApiError `refused` for a position of a job started during a run.
  */
-async function forTool<T extends { verdict: string; section: SectionName; position: number | null }>(
-  services: Services,
-  row: ItemRow,
-  verdict: T,
-  countedWithout: string | null,
-): Promise<T> {
-  if (verdict.verdict !== "place" || verdict.position === null) return verdict;
-  const position = await toolPosition(services, verdict.section, verdict.position, row.slug, countedWithout);
-  return { ...verdict, position: position ?? null };
+function assertCountable(position: number | null | undefined, countedWithout: string | null): void {
+  if (position && countedWithout !== null) throw new ApiError("refused", AI_RUN_POSITION);
 }
 
 /**
@@ -483,43 +479,26 @@ export async function applyProposal(
   switch (job.kind) {
     case "draft-item": {
       const draft = parsed.data as AiDraftItemResult;
+      assertCountable(draft.place?.position, job.countedWithout);
       answer = await runOperations(
         services,
         `new item ${draft.title.slice(0, 40)}`,
         base,
         null,
-        draftOperations(
-          draft.place && draft.place.position !== null
-            ? {
-                ...draft,
-                place: {
-                  ...draft.place,
-                  position:
-                    (await toolPosition(
-                      services,
-                      draft.place.section,
-                      draft.place.position,
-                      undefined,
-                      job.countedWithout,
-                    )) ?? null,
-                },
-              }
-            : draft,
-        ),
+        draftOperations(draft),
       );
       break;
     }
     case "triage-check": {
       const row = await rowOf(services, jobSlug ?? "");
+      const verdict = parsed.data as AiTriageCheckResult;
+      if (verdict.verdict === "place") assertCountable(verdict.position, job.countedWithout);
       answer = await runOperations(
         services,
         `triage ${row.slug}`,
         base,
         row.slug,
-        placementOperations(
-          row,
-          await forTool(services, row, parsed.data as AiTriageCheckResult, job.countedWithout),
-        ),
+        placementOperations(row, verdict),
       );
       break;
     }
@@ -555,12 +534,13 @@ export async function applyProposal(
       for (const entry of plan.items) {
         try {
           const row = await rowOf(services, entry.slug);
+          if (entry.verdict === "place") assertCountable(entry.position, job.countedWithout);
           const rowAnswer = await runOperations(
             services,
             `triage ${row.slug}`,
             first ? { board: base.board } : {},
             row.slug,
-            placementOperations(row, await forTool(services, row, entry, job.countedWithout)),
+            placementOperations(row, entry),
           );
           answer.changes.push(...rowAnswer.changes);
           answer.findings.push(...rowAnswer.findings);

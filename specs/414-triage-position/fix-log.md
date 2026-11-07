@@ -244,3 +244,37 @@ Findings and what was done:
 
 After the fixes: `npm run check` 360 passed / 2 skipped (20 files).
 - e2e after the review-4 fixes: `us3-order` + `a11y` + `us1-live-edit` 16 / 16 passed (3.2 min); encoding guard `TOTAL: 0 finding(s)`.
+
+### Review 5 (refute-first agent, 2026-11-07) - 0 MUST, 2 SHOULD, 4 NOTE
+
+It worked in its own copy (dependencies installed there, no links; this repository's `git status`
+empty and `node_modules` intact afterwards - checked by the run too: 362 entries). It re-ran
+`npm run check` (360 / 2), the build and `us3-order` 12 / 12; negative controls of review 4's AI
+tests worked; `countedWithout` correct for the cases covered, a record from disk without the field
+reads as null.
+
+- **SHOULD 1 - during a run the AI's list is the run's branch, which drifts from `main` by more
+  than the running row**: every change the app lands on `main` during the run is missing there
+  (reproduced with `filePosition`: main `[A, X(running), P, Q]`, branch `[P, Q]`, an AI "#2"
+  (between P and Q) applied as 2 -> above P). The same holds for a run started by hand before its
+  `BL start` (NOTE 1) and for a run starting while the AI reads (NOTE 2).
+  This was the third attempt at the AI's positions (review 3: correct by the running row; review
+  4: by the running row of the job's start); a *different* approach now (stop-rules §3): **refuse
+  rather than guess**. An AI position counted during a run (`countedWithout` set) is refused by
+  *Apply* (`apply.ts` `assertCountable`, `422 refused` with `AI_RUN_POSITION`: "place the item with
+  the triage page's Place at, or apply the proposal without a position") - for a triage check, a
+  draft's place and each auto-triage plan row (the plan goes on with its other rows); a position
+  counted with no run is `main`'s own count and is applied as counted. The translation of AI
+  positions is gone (`toolPosition` serves the page's routes only). On the triage page the AI's
+  *Place at* button follows the pure rule `aiPlacementBlock` (shared): refused when the job counted
+  during a run or a run hides an item now, or for a section the item's type / who do not admit.
+- **SHOULD 2 - the draft and plan paths had no test**: *refuses the position of a draft or an
+  auto-triage plan row counted during a run (414)*; the triage-check test now asserts the refusal
+  and that the proposal applied without a position lands at the end. Negative control (no refusal)
+  -> both tests fail.
+- NOTE 3 (the button's guard untested) - the guard is now `aiPlacementBlock` with unit checks in
+  `shared/test/triage.test.ts`.
+- NOTE 4 (the label showed the unclamped number) - the label shows the number sent.
+
+After the fixes: `npm run check` 364 passed / 2 skipped.
+- e2e after the review-5 fixes: `us3-order` + `a11y` + `us1-live-edit` 16 / 16 passed (3.2 min); encoding guard `TOTAL: 0 finding(s)`.
