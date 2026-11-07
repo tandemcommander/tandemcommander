@@ -217,3 +217,21 @@ uninstalling removes them as program files; nothing about credentials or crash r
   IMPORT (Classic from `-C file.reg` with the registry saying nothing: rebar / files / dirline 0 px vs Classic,
   stored 0x1), VALUE-2 stored 0x2 after closing (light and dark), CLASSIC-EQ 0 px, OVR-CLASSIC-BEFORE 2137 px
   (the defect on the build of main); registry restored, SHA-256 identical.
+
+### Review 2 (independent agent, refute-first) - MUST 0, SHOULD 0, NOTE 6
+
+Re-ran build, saltests (285482 / 0), check_iconset (0 problems) and the probe in a copy under %TEMP%
+(CLASSIC-EQ, DEFAULT, SWITCH, IMPORT, OVR: PASS 27, FAIL 0; registry identical); checked the three
+review-1 fixes, the callers of `CreateToolbarBitmaps` / `GetDriveIcon`, the stroke recolouring, the
+table numbers, path building, user data.
+- NOTE probe gap Classic -> Fluent 2 (taken over): row SWITCHBACK (Dark, Classic checked, Fluent 2 + OK)
+  added to the committed probe; run alone (`result_after_switchback.txt`): PASS 3 - rebar / files / dirline
+  0 px vs a Fluent 2 dark start without a restart, stored 0x0; registry identical.
+- NOTE accepted: a configuration imported at start-up that picks the other set may show the first set for a
+  moment before the rebuild (as Theme Mode); tab-strip icons after a switch are not captured (cleared on
+  every colour change, `tabwnd.cpp`); the generated icons keep colour under mask-transparent edge pixels
+  (only a drawing without the alpha channel would show it; none found, captures clean); the disabled
+  languages (zh-CN, ru, uk) have no rows for the new controls (refreshed only for enabled languages, as the
+  rule says - whoever enables one refreshes it); the licence location (decision recorded); removable drives
+  get the generic Fluent icon (no shell call on the medium) and the row mix-up is fixed in Fluent only (both
+  recorded decisions).

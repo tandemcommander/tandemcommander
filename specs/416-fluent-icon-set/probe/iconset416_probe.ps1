@@ -13,6 +13,7 @@
       DEFAULT-<theme>      no value = value 0 (identical), and differs from Classic; value 2 and a REG_SZ value
                            also give Fluent 2, with no error box; the file list's ".." carries the
                            navigation blue (#0F6CBD light / #62ABF5 dark) in Fluent 2 only
+      SWITCHBACK           Classic -> Fluent 2 + OK in Dark: the rebar equals a Fluent 2 dark start, stored 0
       SWITCH               Configuration (686) > Appearance: Fluent 2 checked; both previews drawn and
                            different; Classic clicked + OK -> the rebar equals the Classic capture without a
                            restart; after closing the value is 1; the next start shows Classic
@@ -202,6 +203,35 @@ function Row-Default([int]$Theme) {
         $bf = [Cap416]::CountColor($zero.Items, $blue, 6); $bc = [Cap416]::CountColor($cl.Items, $blue, 6)
         Row $n 'UPDIR-BLUE' (V ($bf -ge 8 -and $bc -eq 0)) ("pixels of #{0:X6} in the file list: Fluent 2 {1}, Classic {2}" -f $blue, $bf, $bc)
     } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+}
+# review 2: the way back - Classic -> Fluent 2 + OK, in the Dark theme, without a restart
+function Row-SwitchBack {
+    $n = 'SWITCHBACK'
+    if (-not (Want $n)) { return }
+    $id = 0
+    try {
+        if (-not $script:Caps.ContainsKey('fluent_t1')) { [void](Run-Look $Exe 1 0 'fluent_t1') }
+        Set-Look 1 1
+        $id = Start-At $Exe
+        [void](Serve $id 8)
+        $a = Open-Appearance $id
+        $f = Ctl $a.Page 6292; $c = Ctl $a.Page 6293
+        Row $n 'CLASSIC-CHECKED' (V ((Checked $c) -eq 1 -and (Checked $f) -eq 0)) ("Fluent {0}, Classic {1}" -f (Checked $f), (Checked $c))
+        [void][Cap416]::Send($f, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+        Start-Sleep -Milliseconds 300
+        $okBtn = @([Cap416]::Kids($a.Dlg) | Where-Object { [Cap416]::Cls($_) -eq 'Button' -and [Cap416]::GetDlgCtrlID($_) -eq 5 })[0]
+        Click $okBtn
+        $r = Serve $id 15
+        Start-Sleep -Milliseconds 1500
+        Key $id 0x28
+        Start-Sleep -Milliseconds 400
+        $g = Grab $id 'switchback_after_ok'
+        $d = Same $g $script:Caps['fluent_t1']
+        Row $n 'DARK-APPLIED-NO-RESTART' (V (Zero $d)) ((DiffText $d) + ' (vs Fluent dark); windows: ' + (Msgs $r))
+        Stop-Tc $id; $id = 0
+        Row $n 'STORED' (V ((Read-Set) -eq '0x0')) ("stored: {0}" -f (Read-Set))
+    } catch { Row $n 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally { if ($id) { Stop-Tc $id } }
 }
 function Row-Switch {
     $n = 'SWITCH'
@@ -407,6 +437,7 @@ try {
     Row-Default 0
     Row-Default 1
     Row-Switch
+    Row-SwitchBack
     Row-Page 0
     Row-Page 1
     Row-Fit

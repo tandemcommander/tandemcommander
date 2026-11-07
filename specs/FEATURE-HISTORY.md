@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416 |
 
 ## Feature notes
 
@@ -6798,3 +6798,40 @@ a few early ones are out of sequence).
   fake claude replaying a recorded trace; SC-003 within 3 s; axe in both themes) and the full suite
   39/39; five refute-first reviews (MUST 1 / 0 / 1 / 3 / 1, SHOULD 5 / 5 / 4 / 7 / 4 - fixed, each
   with negative controls).
+- 416-fluent-icon-set: **the toolbar, menu, drive-bar and `..` icons mixed four styles and faded in the
+  Dark theme** (Visual-Studio SVGs, 16-colour raster glyphs for the whole Selection group and Shared
+  Directories, Windows shell / imageres icons for the system folders and every drive) - now the
+  default set is **Fluent 2** (95 icons + 95 hand-made Dark variants built on Microsoft Fluent UI
+  System Icons 1.1.344, MIT; `src/res/iconsets/fluent/`, generator and pin in
+  `tools/brand/fluent-icons/`), and **Configuration > Appearance > Toolbar icons** switches to
+  **Classic** (pixel-identical to 0.2.0) with a preview strip per set, applied on OK without a
+  restart (`ColorsChanged(TRUE, FALSE, TRUE)` from `RefreshAfterConfiguration`, also after a settings
+  import). Stored as "Toolbar Icon Set" (REG_DWORD, read quietly; missing / unknown / wrong type =
+  Fluent 2), read early with Theme Mode because the first image lists are built before `LoadConfig`.
+  Fluent 2 also draws the 9 system-folder buttons, Shared Directories (the 0.2.0 row mix-up kept in
+  Classic), the Change Drive slots, the drive types of `GetDriveIcon` (drive bar, Change Drive menu,
+  directory line, tabs, Drive Information), Documents and Network, the `..` symbol (`UpDir` at the
+  three icon sizes) and the drop-down chevron (GRAYTEXT when disabled); a missing set file falls back
+  to the Classic icon of that site. Pure rules in `src/common/saliconset.h`; contract
+  `specs/416-fluent-icon-set/contracts/icon-set-files.md` (extends 029's). **Traps:** the vendored
+  nanosvg ignored an arc's sweep flag, so a circle written as two half arcs (as Fluent writes them)
+  cancelled out and drew nothing (DriveCD 0 %, Properties 1 %, Help 4 % coverage) - fixed with
+  upstream's sweep rule, which leaves every other arc unchanged (no Classic file has a path arc; the
+  tab strip's quarter arcs measured equal); `RenderSVGImage` filled the cell before parsing, so an
+  empty dark override blanked the button although 029's contract promised a fall-back - it now parses
+  first and draws only an image with shapes; the rasterizer writes blue first (DIB order, calibrated in
+  the test); legibility was measured as the contrast the strongest 5 % of a cell reach (a per-pixel
+  3:1 count fails every anti-aliased 1-px stroke at 16 px): Fluent's worst icon beats Classic's on
+  every theme x background (dark highlight 1.76 vs 1.10, dark bar 2.85 vs 1.78); the tree property
+  dialog's OK is id 5, not IDOK (posting IDOK ends it without the pages' Transfer); a configuration
+  imported at start-up (`-C`, `config.reg`) arrives after the early read, so `GraphicsIconSet` (the set
+  the image lists were built with) is compared after `LoadConfig`; a stored number of a later version is
+  kept (only a real change on the page writes); the merge can move an existing accelerator of the page
+  (Dutch Font button) - read back the whole dialog, not only the new rows. Limits: menus, hot / pressed
+  states and 125-200 % are not driven on the hidden desktop (offline rasterization at 20 / 24 / 32 px;
+  release-checklist lines); plug-in icons stay. From backlog item
+  `fluent-icon-set-with-switch-in-appearance`. Probe `iconset416_probe` 0 -> 39 PASS, 0 FAIL, 3 NOT
+  DRIVEN (Classic = build of main 0 px, switch both ways without restart, imported set, empty overrides
+  = no overrides while the build of main blanks 2137 px); saltests 285482 / 0; two refute-first reviews
+  (MUST 0 / 0, SHOULD 2 / 0 - an imported configuration did not rebuild the set, a Dutch accelerator
+  moved - fixed, NOTE 7 / 6).

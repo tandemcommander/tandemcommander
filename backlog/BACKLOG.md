@@ -17,7 +17,6 @@ Last triaged: 2026-11-07
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Fluent toolbar icon set by default, switchable to Classic in Appearance](items/fluent-icon-set-with-switch-in-appearance/desc.md) | feature | 5 | panels-ui | 416 |
 
 ## Next
 
