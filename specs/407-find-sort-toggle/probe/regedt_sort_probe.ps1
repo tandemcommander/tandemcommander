@@ -14,6 +14,10 @@
       SEARCH   the found rows (all five)
       NAME-1   click Name: kA, kB, vA, vB, vC; arrow up on Name
       NAME-2   click Name again: kB, kA, vC, vB, vA (keys still first); arrow down
+      PIX      what the header paints (PrintWindow, a pixel hash) before a sort, after NAME-1 and
+               after NAME-2: three different pictures (review 2: the dark theme painted no arrow
+               although the format bits were set). -Dark runs everything in the program's dark
+               theme ("Theme Mode" = 1); -PixDir <folder> saves the PNGs
       PATH-1   click Path (one path for all): kA, kB, vA, vB, vC; arrow up on Path (review 1)
       PATH-2   click Path again: vC, vB, vA, kB, kA - the exact reverse (Path never grouped keys)
       SIZE-1   click Size: kA, kB, vA, vC, vB; arrow up on Size only
@@ -32,7 +36,9 @@
 param(
     [Parameter(Mandatory = $true)][string]$Exe,
     [string]$Label,
-    [string]$OutFile
+    [string]$OutFile,
+    [switch]$Dark,
+    [string]$PixDir
 )
 $ErrorActionPreference = 'Stop'
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
@@ -231,8 +237,50 @@ function Search([IntPtr]$Fw) {
         $n = $m
     }
 }
+if (-not ('HdrPix407r' -as [type])) {
+    Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+public static class HdrPix407r
+{
+    [DllImport("user32.dll")] static extern bool PrintWindow(IntPtr h, IntPtr hdc, uint flags);
+    [StructLayout(LayoutKind.Sequential)] struct RECT { public int L, T, R, B; }
+    [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
+    // the FNV hash of the pixels the window paints (PrintWindow); the PNG when 'file' is given
+    public static string Shot(IntPtr h, string file)
+    {
+        RECT r; GetWindowRect(h, out r);
+        int w = r.R - r.L, ht = r.B - r.T;
+        if (w <= 0 || ht <= 0) return "empty";
+        using (var bmp = new Bitmap(w, ht, PixelFormat.Format32bppArgb))
+        {
+            using (var g = Graphics.FromImage(bmp))
+            {
+                IntPtr hdc = g.GetHdc();
+                PrintWindow(h, hdc, 0);
+                g.ReleaseHdc(hdc);
+            }
+            ulong hash = 1469598103934665603UL;
+            for (int y = 0; y < ht; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    hash ^= (ulong)bmp.GetPixel(x, y).ToArgb();
+                    hash *= 1099511628211UL;
+                }
+            if (!string.IsNullOrEmpty(file)) bmp.Save(file, ImageFormat.Png); // PowerShell passes $null as ""
+            return hash.ToString("X16");
+        }
+    }
+}
+'@
+}
+$script:Pix = @{}
 function Step([string]$RowName, [IntPtr]$Lv, [scriptblock]$Do, [string]$WantOrder, [string]$WantArrows) {
     & $Do
+    $hdr = @([Drv098f]::Kids($Lv) | Where-Object { [Drv098f]::Cls($_) -eq 'SysHeader32' }) | Select-Object -First 1
+    $script:Pix[$RowName] = [HdrPix407r]::Shot($hdr, $(if ($PixDir) { Join-Path $PixDir ('regedt_' + $(if ($Dark) { 'dark' } else { 'light' }) + '_' + $RowName + '.png') } else { $null }))
     $o = Order $Lv; $a = Arrows $Lv
     $ok = ((-not $WantOrder) -or ($o -ceq $WantOrder)) -and ($a -ceq $WantArrows)
     Row $RowName 'RUN' (V $ok) ("{0} [{1}]{2}" -f $o, $a, $(if ($ok) { '' } else { (' <- expected {0} [{1}]' -f $WantOrder, $WantArrows) }))
@@ -255,10 +303,15 @@ function Run-Find {
         # the Data column takes the rest of the width: narrow it so that every header item is visible
         [void][Drv407r]::SendR($lv, 0x101E, 2, 60)   # LVM_SETCOLUMNWIDTH
         Start-Sleep -Milliseconds 300
+        $hdr0 = @([Drv098f]::Kids($lv) | Where-Object { [Drv098f]::Cls($_) -eq 'SysHeader32' }) | Select-Object -First 1
+        $script:Pix['SEARCH'] = [HdrPix407r]::Shot($hdr0, $null)   # the picture before a sort, at the narrowed width
         $found = (Order $lv) -split ',' | Sort-Object
         if (($found -join ',') -cne 'kA,kB,vA,vB,vC') { Row 'SEARCH' 'FOUND' 'FAIL' ('found ' + ($found -join ',')); return }
         Step 'NAME-1' $lv { Click-Col $lv 0 } 'kA,kB,vA,vB,vC' '^------'
         Step 'NAME-2' $lv { Click-Col $lv 0 } 'kB,kA,vC,vB,vA' 'v------'
+        # review 2: the arrow is really painted - the header's pictures before a sort, up and down differ
+        $pa = $script:Pix['SEARCH']; $pb = $script:Pix['NAME-1']; $pc = $script:Pix['NAME-2']
+        Row 'PIX' 'RUN' (V (($pa -ne $pb) -and ($pb -ne $pc) -and ($pa -ne $pc))) ("{0} theme: header pictures none {1}, up {2}, down {3}" -f $(if ($Dark) { 'dark' } else { 'light' }), $pa, $pb, $pc)
         # Path does not group keys (upstream): one path for all, ties by name (keys first), the
         # descending order is the exact reverse - values before keys (review 1)
         Step 'PATH-1' $lv { Click-Col $lv 3 } 'kA,kB,vA,vB,vC' '---^---'
@@ -289,6 +342,7 @@ try {
     Set-ItemProperty -Path "HKCU:\$ProbeSub" -Name 'probe407vB' -Value 'xxxxxxxxx' -Type String
     Set-ItemProperty -Path "HKCU:\$ProbeSub" -Name 'probe407vC' -Value 'xxxx' -Type String
     Set-Config
+    if ($Dark) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Theme Mode' /t REG_DWORD /d 1 /f | Out-Null }   # review 2: the dark theme
     $script:HotKeyNote = Set-HotKeys
     Out ("regedt_sort_probe (feature 407) {0}" -f $Label)
     Out ("Program : {0}" -f $Exe)

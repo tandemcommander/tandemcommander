@@ -15,6 +15,7 @@
 #include "mainwnd.h"
 #include "themes.h"
 #include "themes_palette.h"
+#include "salsortarrow.h" // feature 407: the sort arrow of a dark header
 
 // theme-aware checkbox state glyphs for listviews (declared in gui.h, which
 // carries heavy include-order dependencies - forward-declare instead)
@@ -886,6 +887,85 @@ static LRESULT CALLBACK ThemeGrayscaleRemapSubclassProc(HWND hWnd, UINT uMsg, WP
     return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }
 
+LRESULT ThemePaintDarkHeaderItem(HWND hHeader, LPNMCUSTOMDRAW cd)
+{
+    HDC hDC = cd->hdc;
+    RECT r = cd->rc;
+
+    // background: the header's own (dark) theme part, so hover and
+    // pressed states match the default-painted area past the last column
+    int state = HIS_NORMAL;
+    if (cd->uItemState & CDIS_SELECTED)
+        state = HIS_PRESSED;
+    else if (cd->uItemState & CDIS_HOT)
+        state = HIS_HOT;
+    HTHEME hTheme = OpenThemeData(hHeader, L"Header");
+    if (hTheme != NULL)
+    {
+        DrawThemeBackground(hTheme, hDC, HP_HEADERITEM, state, &r, NULL);
+        CloseThemeData(hTheme);
+    }
+    else
+        FillRect(hDC, &r, ThemeSysColorBrush(COLOR_BTNFACE));
+
+    WCHAR text[260];
+    text[0] = 0;
+    HDITEMW hdi;
+    memset(&hdi, 0, sizeof(hdi));
+    hdi.mask = HDI_TEXT | HDI_FORMAT;
+    hdi.pszText = text;
+    hdi.cchTextMax = _countof(text);
+    SendMessage(hHeader, HDM_GETITEMW, cd->dwItemSpec, (LPARAM)&hdi);
+
+    HFONT hFont = (HFONT)SendMessage(hHeader, WM_GETFONT, 0, 0);
+    HFONT hOldFont = hFont != NULL ? (HFONT)SelectObject(hDC, hFont) : NULL;
+    int oldBkMode = SetBkMode(hDC, TRANSPARENT);
+    COLORREF textClr = ThemeSysColor(COLOR_BTNTEXT);
+    COLORREF oldClr = SetTextColor(hDC, textClr);
+    RECT tr = r;
+    tr.left += 6;
+    tr.right -= 6;
+    UINT dt = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_END_ELLIPSIS;
+    if ((hdi.fmt & HDF_JUSTIFYMASK) == HDF_RIGHT)
+        dt |= DT_RIGHT;
+    else if ((hdi.fmt & HDF_JUSTIFYMASK) == HDF_CENTER)
+        dt |= DT_CENTER;
+    DrawTextW(hDC, text, -1, &tr, dt);
+
+    // feature 407: the sort arrow the default painting drew - a chevron at the
+    // top centre, as Windows draws it in the light theme, in the label colour
+    if (hdi.fmt & (HDF_SORTUP | HDF_SORTDOWN))
+    {
+        TEXTMETRICW tm;
+        int fontHeight = GetTextMetricsW(hDC, &tm) ? tm.tmHeight : 16;
+        CSalArrowPoints ap;
+        if (SalSortArrowChevron(r.left, r.top, r.right, r.bottom, fontHeight, (hdi.fmt & HDF_SORTUP) != 0, &ap))
+        {
+            POINT pts[3];
+            for (int i = 0; i < 3; i++)
+            {
+                pts[i].x = ap.X[i];
+                pts[i].y = ap.Y[i];
+            }
+            HPEN pen = CreatePen(PS_SOLID, 1, textClr);
+            if (pen != NULL)
+            {
+                HPEN oldPen = (HPEN)SelectObject(hDC, pen);
+                Polyline(hDC, pts, 3);
+                SetPixel(hDC, pts[2].x, pts[2].y, textClr); // Polyline leaves out the last point
+                SelectObject(hDC, oldPen);
+                DeleteObject(pen);
+            }
+        }
+    }
+
+    SetTextColor(hDC, oldClr);
+    SetBkMode(hDC, oldBkMode);
+    if (hOldFont != NULL)
+        SelectObject(hDC, hOldFont);
+    return CDRF_SKIPDEFAULT;
+}
+
 // The DarkMode_ItemsView header paints a dark background but keeps the light
 // theme's BLACK label text (the app deliberately avoids the undocumented
 // SetPreferredAppMode), so every listview header rendered "Name"/"Hot Key"
@@ -911,54 +991,7 @@ static LRESULT CALLBACK ThemeListViewHeaderSubclassProc(HWND hWnd, UINT uMsg, WP
         if (cd->dwDrawStage == CDDS_PREPAINT)
             return CDRF_NOTIFYITEMDRAW;
         if (cd->dwDrawStage == CDDS_ITEMPREPAINT)
-        {
-            HDC hDC = cd->hdc;
-            RECT r = cd->rc;
-
-            // background: the header's own (dark) theme part, so hover and
-            // pressed states match the default-painted area past the last column
-            int state = HIS_NORMAL;
-            if (cd->uItemState & CDIS_SELECTED)
-                state = HIS_PRESSED;
-            else if (cd->uItemState & CDIS_HOT)
-                state = HIS_HOT;
-            HTHEME hTheme = OpenThemeData(nmh->hwndFrom, L"Header");
-            if (hTheme != NULL)
-            {
-                DrawThemeBackground(hTheme, hDC, HP_HEADERITEM, state, &r, NULL);
-                CloseThemeData(hTheme);
-            }
-            else
-                FillRect(hDC, &r, ThemeSysColorBrush(COLOR_BTNFACE));
-
-            WCHAR text[260];
-            text[0] = 0;
-            HDITEMW hdi;
-            memset(&hdi, 0, sizeof(hdi));
-            hdi.mask = HDI_TEXT | HDI_FORMAT;
-            hdi.pszText = text;
-            hdi.cchTextMax = _countof(text);
-            SendMessage(nmh->hwndFrom, HDM_GETITEMW, cd->dwItemSpec, (LPARAM)&hdi);
-
-            HFONT hFont = (HFONT)SendMessage(nmh->hwndFrom, WM_GETFONT, 0, 0);
-            HFONT hOldFont = hFont != NULL ? (HFONT)SelectObject(hDC, hFont) : NULL;
-            int oldBkMode = SetBkMode(hDC, TRANSPARENT);
-            COLORREF oldClr = SetTextColor(hDC, ThemeSysColor(COLOR_BTNTEXT));
-            RECT tr = r;
-            tr.left += 6;
-            tr.right -= 6;
-            UINT dt = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_END_ELLIPSIS;
-            if ((hdi.fmt & HDF_JUSTIFYMASK) == HDF_RIGHT)
-                dt |= DT_RIGHT;
-            else if ((hdi.fmt & HDF_JUSTIFYMASK) == HDF_CENTER)
-                dt |= DT_CENTER;
-            DrawTextW(hDC, text, -1, &tr, dt);
-            SetTextColor(hDC, oldClr);
-            SetBkMode(hDC, oldBkMode);
-            if (hOldFont != NULL)
-                SelectObject(hDC, hOldFont);
-            return CDRF_SKIPDEFAULT;
-        }
+            return ThemePaintDarkHeaderItem(nmh->hwndFrom, cd);
         return CDRF_DODEFAULT;
     }
 

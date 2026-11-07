@@ -223,6 +223,10 @@ void CFindDialog::UpdateListViewItems()
     if (List != NULL)
     {
         int count = List->GetCount();
+        // feature 407 (review 2): items found after a sort come unsorted at the end - the arrow
+        // would claim an order the list no longer has; the next click sorts ascending again
+        if (count > FoundVisibleCount)
+            List->ResetSort();
 
         // tell the list view the new item count
         ListView_SetItemCountEx(List->HWindow, count, LVSICF_NOINVALIDATEALL | LVSICF_NOSCROLL);

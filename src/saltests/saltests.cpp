@@ -124,6 +124,7 @@
 #include "salisowalk.h"        // feature 400
 #include "salisoxboxentry.h"   // feature 402
 #include "salfindsort.h"       // feature 407
+#include "salsortarrow.h"      // feature 407
 #include "../plugins/shared/splunicode.h" // feature 089: the plug-in converters, checked against the core's
 #include "../plugins/filecomp/fcproto.h" // feature 102: the fcremote.exe channel
 #include "../plugins/shared/splfiledlg.h" // feature 104: the plug-ins' Unicode file and folder pickers
@@ -14719,6 +14720,21 @@ static void TestFindSort407()
     CHECK(SalFindSortGroupedDirected(-3, true, false, true) == 1);  // Path does not group: reversed
     CHECK(SalFindSortGroupedDirected(-3, false, true, true) == 1);  // the same group: reversed
     CHECK(SalFindSortGroupedDirected(5, false, false, false) == 1 && SalFindSortGroupedDirected(0, false, true, true) == 0);
+
+    // the dark header's sort arrow (review 2): a chevron at the top centre, inside the item
+    CSalArrowPoints ap;
+    CHECK(SalSortArrowChevron(100, 0, 180, 24, 16, true, &ap)); // k = 4
+    CHECK(ap.X[0] == 136 && ap.X[1] == 140 && ap.X[2] == 144);  // centred
+    CHECK(ap.Y[1] == 1 && ap.Y[0] == 5 && ap.Y[2] == 5);        // up: the apex at the top
+    CHECK(SalSortArrowChevron(100, 0, 180, 24, 16, false, &ap));
+    CHECK(ap.Y[1] == 5 && ap.Y[0] == 1 && ap.Y[2] == 1 && ap.X[1] == 140);             // down: the apex below
+    CHECK(SalSortArrowChevron(0, 10, 50, 40, 8, true, &ap) && ap.X[2] - ap.X[0] == 6); // at least k = 3
+    CHECK(ap.Y[1] == 11 && ap.Y[0] == 14);                                             // from the item's top
+    CHECK(SalSortArrowChevron(0, 0, 9, 24, 16, true, &ap));                            // exactly 2k + 1 wide
+    CHECK(ap.X[0] >= 0 && ap.X[2] < 9);
+    CHECK(!SalSortArrowChevron(0, 0, 8, 24, 16, true, &ap));                 // too narrow: nothing
+    CHECK(!SalSortArrowChevron(0, 0, 80, 5, 16, false, &ap));                // too low: nothing
+    CHECK(SalSortArrowChevron(0, 0, 80, 6, 16, false, &ap) && ap.Y[1] == 5); // k + 2 high is enough
 }
 
 // feature 294: the path of a source key below a target key that holds it - a Copy / Move of

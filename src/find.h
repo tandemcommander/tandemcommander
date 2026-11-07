@@ -606,6 +606,10 @@ public:
     // may only be called  when the search thread is not running
     BOOL TakeDataForRefine();
     void DestroyDataForRefine();
+    // feature 407 (review 2): a refine refused before its search started (an invalid regular
+    // expression, no thread) gives the results back to the list instead of dropping them; FALSE
+    // when memory ran out (then they are dropped as before)
+    BOOL RestoreDataFromRefine();
     int GetDataForRefineCount();
     CFoundFilesData* GetDataForRefine(int index);
 

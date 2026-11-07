@@ -29,6 +29,15 @@
                   file): Name up, Name down with each group together; Path and View > Date
                   refused (order and arrow unchanged); Size up, down, up; Find duplicates again:
                   no arrow. The order is name@folder (review 1: the reviewer's dup probe)
+      refused     sorted by Date descending, then Intersect, Subtract and Append (2289-2291) with an
+                  invalid regular expression "(" - each refused by its error box: PASS = the six
+                  items, their order and the arrow kept (review 2: Intersect / Subtract emptied the
+                  list before), then View > Date ascending
+      pix-light   what the header paints (PrintWindow, a hash of the pixels): before a sort, after
+                  View > Date, after it again - PASS = three different pictures (review 2)
+      pix-dark    the same in the program's dark theme ("Theme Mode" = 1): the arrow is painted by
+                  the program there (features 044 / 049) - before review 2's fix the three
+                  pictures were identical. -PixDir <folder> saves the PNGs
     No real mouse or keyboard: clicks are posted WM_LBUTTONDOWN / UP to the header control,
     commands are WM_COMMAND. Driver of 311's probe (098's library). MUST run through
     tools\run_on_hidden_desktop.ps1. Registry exported, restored and verified.
@@ -39,7 +48,8 @@ param(
     [string]$Label,
     [string]$OutFile,
     [string[]]$Only,
-    [string]$Repo
+    [string]$Repo,
+    [string]$PixDir
 )
 $ErrorActionPreference = 'Stop'
 $Exe = (Resolve-Path -LiteralPath $Exe).Path
@@ -231,6 +241,95 @@ function Seq-Row([string]$Case, $Steps, [string]$Mode = 'normal') {
     }
 }
 
+# ---- review 2: what the header really paints (the format bits alone did not show the dark theme's
+# missing arrow) - PrintWindow of the header, an FNV hash of its pixels (the reviewer's pix row)
+if (-not ('HdrPix407' -as [type])) {
+    Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+public static class HdrPix407
+{
+    [DllImport("user32.dll")] static extern bool PrintWindow(IntPtr h, IntPtr hdc, uint flags);
+    [StructLayout(LayoutKind.Sequential)] struct RECT { public int L, T, R, B; }
+    [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
+    public static string Shot(IntPtr h, string file)
+    {
+        RECT r; GetWindowRect(h, out r);
+        int w = r.R - r.L, ht = r.B - r.T;
+        if (w <= 0 || ht <= 0) return "empty";
+        using (var bmp = new Bitmap(w, ht, PixelFormat.Format32bppArgb))
+        {
+            using (var g = Graphics.FromImage(bmp))
+            {
+                IntPtr hdc = g.GetHdc();
+                PrintWindow(h, hdc, 0);
+                g.ReleaseHdc(hdc);
+            }
+            ulong hash = 1469598103934665603UL;
+            for (int y = 0; y < ht; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    hash ^= (ulong)bmp.GetPixel(x, y).ToArgb();
+                    hash *= 1099511628211UL;
+                }
+            if (!string.IsNullOrEmpty(file)) bmp.Save(file, ImageFormat.Png); // PowerShell passes $null as ""
+            return hash.ToString("X16");
+        }
+    }
+}
+'@
+}
+# the header painted before any sort, after View > Date (up) and again (down): PASS = three different
+# pictures; -Dark: the program's dark theme (Configuration "Theme Mode" = 1 in the probe's registry)
+function Pix-Row([string]$Case, [bool]$Dark) {
+    $script:Mode = 'normal'
+    Run-Row $Case {
+        if ($Dark) { & reg.exe add "$RegKey\Settings\Configuration" /v 'Theme Mode' /t REG_DWORD /d 1 /f | Out-Null }
+        $id = Start-Tc $StartDir; $script:RowId = $id
+        $dlg = Open-Find $id
+        $lv = Get-Lv $dlg
+        $h = Get-Hdr $lv
+        $tag = $(if ($Dark) { 'dark' } else { 'light' })
+        $file = { param($n) if ($PixDir) { Join-Path $PixDir ('pix_' + $tag + '_' + $n + '.png') } else { $null } }
+        $h0 = [HdrPix407]::Shot($h, (& $file '0none')); $a0 = Arrows $lv
+        Menu-Cmd $dlg 2239; Start-Sleep -Milliseconds 400
+        $h1 = [HdrPix407]::Shot($h, (& $file '1up')); $a1 = Arrows $lv
+        Menu-Cmd $dlg 2239; Start-Sleep -Milliseconds 400
+        $h2 = [HdrPix407]::Shot($h, (& $file '2down')); $a2 = Arrows $lv
+        $script:RowFatal = Fatal-Win $id
+        $ok = ($h0 -ne $h1) -and ($h1 -ne $h2) -and ($h0 -ne $h2) -and ($a1 -ceq '---^--') -and ($a2 -ceq '---v--')
+        Row $Case 'RUN' (V $ok) ("{0}: none {1} [{2}]; up {3} [{4}]; down {5} [{6}]" -f $tag, $h0, $a0, $h1, $a1, $h2, $a2)
+        Close-Win $dlg; Start-Sleep -Milliseconds 500
+        [void](Serve $id 10)
+    }
+}
+
+# review 2 (NOTE 2): a refine or Append refused by an invalid regular expression - "Search file
+# content" (2508) and "Regular expression" (2513) on, Containing (2504) "(", the command posted, the
+# error box answered OK; the list must keep its items, their order and the arrow
+function Set-Check([IntPtr]$Dlg, [int]$CtlId, [bool]$On) {
+    $b = Find-Btn $Dlg $CtlId
+    if (-not $b) { throw "check box $CtlId not found" }
+    $res = [IntPtr]::Zero
+    [void][Drv098f]::SendMessageTimeoutW($b, 0x00F0, [IntPtr]::Zero, [IntPtr]::Zero, 0, 5000, [ref]$res)   # BM_GETCHECK
+    if (($res.ToInt64() -eq 1) -ne $On) { Click $b; Start-Sleep -Milliseconds 400 }
+}
+function Refused-Cmd([IntPtr]$Dlg, [int]$Cmd) {
+    Set-Check $Dlg 2508 $true
+    Set-Check $Dlg 2513 $true
+    Set-Field $Dlg 2504 '('
+    $known = Get-Tops $script:RowId
+    Post-Cmd $Dlg $Cmd
+    $w = Wait-NewWin $script:RowId $known 10
+    if ($w -eq [IntPtr]::Zero) { $script:BoxText = '<no box>'; return }   # (an emptied list offers no refine)
+    $script:BoxText = WinDesc $w
+    Click-Ok $w
+    Start-Sleep -Milliseconds 800
+    [void][Drv098f]::Send($Dlg, 0, 0, 0, 10000)
+}
+
 $TimeCmd = { param($d, $l) Menu-Cmd $d 2239 }
 $ClickDate = { param($d, $l) Click-Col $l 3 }
 $ClickName = { param($d, $l) Click-Col $l 0 }
@@ -274,6 +373,15 @@ $Cases['dup'] = { Seq-Row 'dup' @(
         @{ What = 'click Size'; Do = $ClickSize; Order = $DupSizeDown; Arrows = '--v---' },
         @{ What = 'click Size'; Do = $ClickSize; Order = $DupSizeUp; Arrows = '--^---' },
         @{ What = 'dup again'; Do = $FindAgain; Order = $null; Arrows = '------' }) 'dup' }
+$Cases['refused'] = { Seq-Row 'refused' @(
+        @{ What = 'View>Date'; Do = $TimeCmd; Order = $DateUp; Arrows = '---^--' },
+        @{ What = 'View>Date'; Do = $TimeCmd; Order = $DateDown; Arrows = '---v--' },
+        @{ What = 'Intersect refused'; Do = { param($d, $l) Refused-Cmd $d 2289 }; Order = $DateDown; Arrows = '---v--' },
+        @{ What = 'Subtract refused'; Do = { param($d, $l) Refused-Cmd $d 2290 }; Order = $DateDown; Arrows = '---v--' },
+        @{ What = 'Append refused'; Do = { param($d, $l) Refused-Cmd $d 2291 }; Order = $DateDown; Arrows = '---v--' },
+        @{ What = 'View>Date'; Do = $TimeCmd; Order = $DateUp; Arrows = '---^--' }) }
+$Cases['pix-light'] = { Pix-Row 'pix-light' $false }
+$Cases['pix-dark'] = { Pix-Row 'pix-dark' $true }
 
 # ---- main --------------------------------------------------------------------------
 $backup = Join-Path $env:TEMP 'tcfsort_backup.reg'

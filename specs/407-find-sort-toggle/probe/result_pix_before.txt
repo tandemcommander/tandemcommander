@@ -1,0 +1,12 @@
+find_sort_probe (backlog item nefunkcni-prepinani-razeni-vysledku-hledani) pix-before-review-2-fix
+Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
+Date    : 2026-11-07 02:34; ACP 1250; registry key existed True
+Fixture: dB 2008, dA 2014 (folders), fC.txt 4 B 2006, fA.txt 1 B 2010, fD.txt 3 B 2012, fB.txt 2 B 2016; arrows per column Name,Path,Size,Date,Time,Attr: ^ up, v down, - none
+
+pix-light  RUN    PASS        light: none D765ADC748435075 [------]; up 07C7B09492239644 [---^--]; down 0A17566A97167CC3 [---v--]
+pix-light  END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+pix-dark   RUN    FAIL        dark: none 97F0A18457397AAE [------]; up 97F0A18457397AAE [---^--]; down 97F0A18457397AAE [---v--]
+pix-dark   END    PASS        exit 0x00000000; alive True; WM_NULL True; stray 0; new reports 0
+Registry: restored; identical=True; SHA-256 before B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44 / after B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44
+
+Rows: PASS 3, FAIL 1, NOT DRIVEN 0. Left running: 0; fixture removed: True; registry restored+identical: True

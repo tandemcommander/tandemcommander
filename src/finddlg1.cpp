@@ -248,6 +248,34 @@ void CFoundFilesListView::DestroyDataForRefine()
     DataForRefine.DestroyMembers();
 }
 
+BOOL CFoundFilesListView::RestoreDataFromRefine()
+{
+    HANDLES(EnterCriticalSection(&DataCriticalSection));
+    BOOL ok = TRUE;
+    int moved = 0;
+    for (; moved < DataForRefine.Count; moved++)
+    {
+        Data.Add(DataForRefine[moved]);
+        if (!Data.IsGood())
+        {
+            Data.ResetState();
+            ok = FALSE;
+            break;
+        }
+    }
+    if (ok)
+        DataForRefine.DetachMembers(); // Data owns them now
+    else
+    {
+        // out of memory: as before 407, the results are dropped (never owned twice)
+        if (moved > 0)
+            Data.Detach(Data.Count - moved, moved);
+        DataForRefine.DestroyMembers();
+    }
+    HANDLES(LeaveCriticalSection(&DataCriticalSection));
+    return ok;
+}
+
 int CFoundFilesListView::GetDataForRefineCount()
 {
     return DataForRefine.Count;
@@ -1208,54 +1236,7 @@ CFoundFilesListView::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (cd->dwDrawStage == CDDS_PREPAINT)
                 return CDRF_NOTIFYITEMDRAW;
             if (cd->dwDrawStage == CDDS_ITEMPREPAINT)
-            {
-                HDC hDC = cd->hdc;
-                RECT r = cd->rc;
-
-                // background: the header's own (dark) theme part, so hover and
-                // pressed states match the default-painted area past the last column
-                int state = HIS_NORMAL;
-                if (cd->uItemState & CDIS_SELECTED)
-                    state = HIS_PRESSED;
-                else if (cd->uItemState & CDIS_HOT)
-                    state = HIS_HOT;
-                HTHEME hTheme = OpenThemeData(nmh->hwndFrom, L"Header");
-                if (hTheme != NULL)
-                {
-                    DrawThemeBackground(hTheme, hDC, HP_HEADERITEM, state, &r, NULL);
-                    CloseThemeData(hTheme);
-                }
-                else
-                    FillRect(hDC, &r, ThemeSysColorBrush(COLOR_BTNFACE));
-
-                WCHAR text[260];
-                text[0] = 0;
-                HDITEMW hdi;
-                memset(&hdi, 0, sizeof(hdi));
-                hdi.mask = HDI_TEXT | HDI_FORMAT;
-                hdi.pszText = text;
-                hdi.cchTextMax = _countof(text);
-                SendMessage(nmh->hwndFrom, HDM_GETITEMW, cd->dwItemSpec, (LPARAM)&hdi);
-
-                HFONT hFont = (HFONT)SendMessage(nmh->hwndFrom, WM_GETFONT, 0, 0);
-                HFONT hOldFont = hFont != NULL ? (HFONT)SelectObject(hDC, hFont) : NULL;
-                int oldBkMode = SetBkMode(hDC, TRANSPARENT);
-                COLORREF oldClr = SetTextColor(hDC, ThemeSysColor(COLOR_BTNTEXT));
-                RECT tr = r;
-                tr.left += 6;
-                tr.right -= 6;
-                UINT dt = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_END_ELLIPSIS;
-                if ((hdi.fmt & HDF_JUSTIFYMASK) == HDF_RIGHT)
-                    dt |= DT_RIGHT;
-                else if ((hdi.fmt & HDF_JUSTIFYMASK) == HDF_CENTER)
-                    dt |= DT_CENTER;
-                DrawTextW(hDC, text, -1, &tr, dt);
-                SetTextColor(hDC, oldClr);
-                SetBkMode(hDC, oldBkMode);
-                if (hOldFont != NULL)
-                    SelectObject(hDC, hOldFont);
-                return CDRF_SKIPDEFAULT;
-            }
+                return ThemePaintDarkHeaderItem(nmh->hwndFrom, cd); // feature 407: with the sort arrow
             return CDRF_DODEFAULT;
         }
         break;
@@ -2099,9 +2080,10 @@ void CFindDialog::StartSearch(WORD command)
     EnumFileNamesChangeSourceUID(FoundFilesListView->HWindow, &(FoundFilesListView->EnumFileNamesSourceUID));
 
     ListView_SetItemCount(FoundFilesListView->HWindow, 0);
-    // feature 407: the list is in search order again, no sort arrow (an Append keeps its sorted
-    // items until its search really starts - below, after the checks that may refuse it)
-    if (command != CM_FIND_APPEND)
+    // feature 407: a new list has no sort arrow; Append, Intersect and Subtract keep their sorted
+    // items (and the arrow) until their search really starts - below, after the checks that may
+    // refuse it (review 2: a refused refine gives its results back)
+    if (command == IDOK || command == CM_FIND_NOW || command == CM_FIND_DUPLICATES)
         FoundFilesListView->ResetSort();
     UpdateWindow(FoundFilesListView->HWindow);
 
@@ -2189,8 +2171,12 @@ void CFindDialog::StartSearch(WORD command)
                 else
                     strcpy(buf, GrepData.RegExp.GetLastErrorText());
                 SalMessageBox(HWindow, buf, LoadStr(IDS_ERRORFINDINGFILE), MB_OK | MB_ICONEXCLAMATION);
-                if (GrepData.Refine != 0)
-                    FoundFilesListView->DestroyDataForRefine();
+                if (GrepData.Refine != 0) // feature 407 (review 2): the refused refine keeps the results
+                {
+                    FoundFilesListView->RestoreDataFromRefine();
+                    GrepData.FoundVisibleCount = FoundFilesListView->GetCount(); // not "new" items: the sort stays
+                    UpdateListViewItems();
+                }
                 return; // error
             }
             GrepData.Grep = TRUE;
@@ -2233,8 +2219,12 @@ void CFindDialog::StartSearch(WORD command)
     if (GrepThread == NULL)
     {
         TRACE_E("Unable to start GrepThread thread.");
-        if (GrepData.Refine != 0)
-            FoundFilesListView->DestroyDataForRefine();
+        if (GrepData.Refine != 0) // feature 407 (review 2): the refused refine keeps the results
+        {
+            FoundFilesListView->RestoreDataFromRefine();
+            GrepData.FoundVisibleCount = FoundFilesListView->GetCount(); // not "new" items: the sort stays
+            UpdateListViewItems();
+        }
         return;
     }
 
@@ -2488,6 +2478,10 @@ void CFindDialog::UpdateListViewItems()
     if (FoundFilesListView != NULL)
     {
         int count = FoundFilesListView->GetCount();
+        // feature 407 (review 2): items found after a sort come unsorted at the end - the arrow
+        // would claim an order the list no longer has; the next sort request starts ascending
+        if (count > (int)GrepData.FoundVisibleCount)
+            FoundFilesListView->ResetSort();
 
         // inform the list view about the new item count
         ListView_SetItemCountEx(FoundFilesListView->HWindow,

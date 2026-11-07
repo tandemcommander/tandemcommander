@@ -56,6 +56,13 @@ void SetThemeMode(DWORD mode);
 // the Default theme is active (passthrough guarantee)
 void ThemeApplyToTopLevel(HWND hWindow);
 
+// paints one item of a list header in the dark theme (the CDDS_ITEMPREPAINT
+// stage of the header's NM_CUSTOMDRAW): the header's dark theme part, the label
+// in the light text colour and - feature 407 - the sort arrow of HDF_SORTUP /
+// HDF_SORTDOWN, which the default painting this replaces drew; returns
+// CDRF_SKIPDEFAULT (features 044, 049)
+LRESULT ThemePaintDarkHeaderItem(HWND hHeader, LPNMCUSTOMDRAW cd);
+
 // dark-themes a dialog: dark title bar + per-child SetWindowTheme dark
 // variants + listview/treeview colors; restores standard look when called
 // again after switching back to the Default theme

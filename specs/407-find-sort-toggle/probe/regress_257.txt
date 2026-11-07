@@ -1,6 +1,6 @@
 find_words_hex_probe (feature 257), expect: fixed
 Program : E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe
-Date    : 2026-11-07 02:03; registry key existed True; export SHA-256 B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44; hot keys: regedt.spl id 1: 1
+Date    : 2026-11-07 02:51; registry key existed True; export SHA-256 B90B4B777266D425473F26A282EE4E40C7A7F6F44CD3F78E0011CCC00976EC44; hot keys: regedt.spl id 1: 1
 ACP     : 1250; the quoted text's bytes: E8 41 42
 
 RX-BAR     FOUND  PASS        'bar' (hex 0, regexp 1, whole words 0): found [probe257ww1, probe257ww2, probe257ww3], expected [probe257ww1, probe257ww2, probe257ww3]

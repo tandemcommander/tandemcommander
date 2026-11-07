@@ -132,3 +132,47 @@ duplicates* on the hidden desktop with a scratch probe, 8 / 8.
 After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 282,601 / 0; encoding guard TOTAL 0;
 `find_sort_probe.ps1` 16 / 0 (`result_after.txt`, rows + click-path + dup);
 `regedt_sort_probe.ps1` 11 / 0 (`regedt_result_after.txt`).
+
+### Review 2 (refute-first agent, 1 MUST)
+
+Re-ran saltests (282,601 / 0), encoding guard, both probes (16 / 0, 11 / 0); enumerated the callers
+again (including the View menu enabling and the three resets); checked review 1's fixes.
+
+- **MUST 1 - no sort arrow in the dark theme** (FR-004, SC-002, the new help sentence). The dark
+  header items are painted by the program - the Find list's own `NM_CUSTOMDRAW` (feature 044) and
+  `ThemeListViewHeaderSubclassProc` (feature 049, also used by the plug-ins' dialogs through
+  `ThemeApplyToDialog`) - which return `CDRF_SKIPDEFAULT` after the background and the label, so
+  Windows never drew the arrow the format bits asked for. The probes read only the bits. The
+  reviewer's pixel row (PrintWindow of the header, a hash) showed one picture for none / up / down.
+  **Fixed**: one painter `ThemePaintDarkHeaderItem` (`src/themes.cpp`, declared in `themes.h`)
+  replaces the two copies; it draws the arrow as Windows does in the light theme - a chevron at the
+  top centre, in the label colour - with the geometry rule `SalSortArrowChevron`
+  (`src/common/salsortarrow.h`, saltests 12 checks: centred, apex up / down, at least k = 3, from the
+  item's top, refused when too narrow or too low). Probe rows `pix-light` / `pix-dark` in
+  `find_sort_probe.ps1` (from the reviewer's scratch row) and the `PIX` row and `-Dark` switch of
+  `regedt_sort_probe.ps1`. Before (the build of 7bd0f8bb): `probe/result_pix_before.txt` - pix-dark
+  FAIL, `97F0A18457397AAE` three times; after: `probe/result_pix_after.txt` / `result_after.txt`
+  PASS (three hashes), the PNGs in `probe/pix/` show the chevron (`pix_dark_1up.png`,
+  `pix_dark_2down.png`, `regedt_dark_NAME-2.png`). Probe trap: PowerShell passes `$null` to a C#
+  `string` as `""` - `Bitmap.Save("")` threw ("the path has an invalid form"); the helpers test
+  `IsNullOrEmpty`.
+- NOTE 1 - sorting while the search still runs: new results were appended under an arrow claiming
+  an order the list no longer had, and the next click reversed. **Fixed**: `UpdateListViewItems`
+  (core and Registry Editor) forgets the sort when the list grows (`count > FoundVisibleCount`) - the
+  next request sorts ascending, as before 407. By reading only (a search slow enough to sort during
+  it is not driven); the probes' rows that sort after a finished search are unchanged (22 / 0).
+- NOTE 2 - existing, outside 407: an Intersect / Subtract refused by an invalid regular expression
+  (or a thread that did not start) had already moved the results to the refine array and then
+  destroyed them - the result list was emptied (files untouched). Severity 3, met on the way:
+  **fixed** (stop-rules rule 11): `CFoundFilesListView::RestoreDataFromRefine` gives them back
+  (out of memory: dropped as before, never owned twice), the list keeps its order and its arrow;
+  `StartSearch` resets the sort at once only for Find / Find duplicates (the commands that empty the
+  list), Intersect / Subtract / Append only when their search really starts. Probe row `refused`:
+  before (the build without the restore) `probe/result_refused_before.txt` FAIL - the list empty after
+  the refused Intersect; after: PASS - Intersect, Subtract and Append refused, the six items, the
+  order and the arrow kept.
+
+After the fixes: `.\build.cmd` BUILD SUCCEEDED; saltests 282,613 / 0; encoding guard TOTAL 0;
+`find_sort_probe.ps1` 22 / 0 (`result_after.txt`); `regedt_sort_probe.ps1` 12 / 0 light
+(`regedt_result_after.txt`) and 12 / 0 dark (`regedt_result_after_dark.txt`); regression: 311's
+probe in full 26 / 0 (`regress_311.txt`), 257's 9 / 0 (`regress_257.txt`).
