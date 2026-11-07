@@ -1,7 +1,7 @@
 ---
 title: The mask hints link is clipped in translated dialogs (Compare Directories and 10 more)
 type: bug
-status: open
+status: in-progress
 severity: 3
 area: translations
 source: github#11
@@ -10,7 +10,7 @@ created: 2026-11-06
 updated: 2026-11-07
 verified: 2026-11-07 f38220a2
 effort: S
-feature: -
+feature: 409
 related: [translations-clipped-labels-cs, translations-clipped-labels-de, translations-clipped-labels-es, translations-clipped-labels-fr, translations-clipped-labels-hu, translations-clipped-labels-nl, translations-clipped-labels-ro, translations-clipped-labels-sk]
 depends-on: []
 reason: -
@@ -64,3 +64,4 @@ The maintainer decided on 2026-11-06 to keep this issue as its own small item in
 - 2026-11-06 — fields set from the issue text and labels; maintainer decision 2026-11-06: own item, not folded into translations-clipped-labels-cs
 - 2026-11-06 — moved to Next position 2
 - 2026-11-07 — verified at f38220a2: still present at f38220a2: layout_check.py --list shows 11 clipped #102 rows each in cs fr sk es, 10 in de, 1 in ro (D191 91>85 in cs)
+- 2026-11-07 — run started, feature 409
