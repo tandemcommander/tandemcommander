@@ -304,6 +304,24 @@ int main()
                                                          (blankLine.codeBlocks[0] == "a\n\t\nb\n" || blankLine.codeBlocks[0] == "a\n    \nb\n"));
         }
 
+        // review 3: invisible lines do not pass for shown lines; no cut inside a combining sequence
+        Check("408 notice: invisible-only lines are skipped",
+              MdCopyNoticeText(L"C", L"\x2800\x3164\r\n\x200B\xFEFF\r\nreal", 60, 3) == L"C\nreal");
+        Check("408 notice: the cut keeps a letter with its combining mark",
+              MdCopyNoticeText(L"C", L"abce\x0301z", 4, 3) == L"C\nabc\x2026" && MdCopyNoticeText(L"C", L"abcde\x0301", 4, 3) == L"C\nabcd\x2026");
+        Check("408 CSS: the control cannot be dragged", Has(h, "-webkit-user-drag:none;"));
+        {
+            // review 3 N5: past the output cap a skipped block was emitted again with the
+            // previous block's text (before 408 too)
+            MdRenderLimits lim;
+            lim.maxNodesText = 300;
+            std::string big = "```\nfirst\n```\n\n" + std::string(400, 'x') + "\n\n```\nsecond\n```\n";
+            MdHtmlResult c;
+            MdRenderHtml(big, *t, L"C:\\docs", c, L"", false, MDPW_NORMAL, &ui, lim);
+            Check("408 cap: a block past the cap is not emitted again", c.codeBlocks.size() == 1 && c.codeBlocks[0] == "first\n" &&
+                                                                         count(c.html, "<code>first") == 1);
+        }
+
         // the copied text
         Check("408 clip: CR LF, no last line break", MdCodeClipboardText("int a;\nint b;\n") == L"int a;\r\nint b;");
         Check("408 clip: only one last line break dropped", MdCodeClipboardText("a\n\n") == L"a\r\n");

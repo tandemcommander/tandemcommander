@@ -222,3 +222,47 @@ probe **18 PASS, 0 FAIL, 1 NOT DRIVEN** (NOTICE text `Copied\nalpha line 1\nbeta
 - N4: `.\build.cmd full release` -> **BUILD SUCCEEDED** (LTO); Release `mdview.spl` (320,000
   bytes) holds the family `https://mdcopy.invalid/` (UTF-16) and **not** the seam name
   `TC_MDVIEW_PROBE_COPY_LOG`; the Debug `mdview.spl` holds it (the seam is Debug-only).
+
+### Review 3 (refute-first agent) - no MUST, 2 SHOULD, 7 NOTEs
+
+The reviewer reproduced the harness 116/0, ran five mutations of its own (each caught),
+fuzzed the tab recovery (about 352,000 blocks, 0 failures), and confirmed pages without
+the control byte-identical to `main`.
+
+- **S1** FORGED-MD / FORGED-HTML could not see a fall-through to the browser (another
+  process). **Fixed**: the Debug seam also records what `ActivateLink` would hand to the
+  shell (`<seam>.shell`, contracts/probe-seam.md) instead of starting a browser; the
+  FORGED rows assert nothing was handed over, and a new row **LINK-HTTP** (an https link)
+  is their positive control (`handed to the shell: https://example.invalid/tc408`). Probe
+  traps met: my colour search took the orange emoji of block 0 for the orange link box
+  (now a match must hold 100 px to the right too); the second viewer window of
+  LINK-TCCOPY took the activation and later posted clicks were lost (that row now runs
+  last; it leaves View Source first).
+- **S2** a document can make a click overwrite the clipboard (the restyled genuine
+  control) - a trade-off for the maintainer: **decision item**
+  `markdown-viewer-copy-control-may-a-document-make-a-click` (Inbox; options A accept /
+  B undo in the notice / C ask before copying / D, E not possible or the 021 question;
+  recommendation A).
+- **N1** slower renders with the control (per-line allocation in the tab recovery):
+  **fixed** - `AppendIndent` appends straight into the copy buffer, no vector, no
+  temporaries. The reviewer's own timing program on the HEAD sources (19 MB documents,
+  without / with the control): 1103 / 1460 ms, 320 / 452 ms, 1220 / 1654 ms (before the
+  fix 1119 / 2457, 314 / 741, 1237 / 3056). Its fuzz on the new code: 117,660 blocks,
+  47,371 with tabs, **0 bad**.
+- **N2** the block was copied into the table: **fixed** (`std::move`).
+- **N3** invisible / blank-looking characters (U+00AD, U+200B, U+2060, U+FEFF, U+2028/9,
+  U+2800, U+3164, U+115F/1160, U+FFA0, U+3000, U+2000-200A, U+00A0, U+202F, U+205F)
+  now count as spaces in the notice, so a line of them is not a shown line; the 60-character
+  cut never separates a letter from a following combining mark. Harness rows.
+- **N4** the control could be dragged (dropping the address): **fixed**
+  (`-webkit-user-drag:none`), harness row.
+- **N5** past the 40 MB output cap a skipped code block was emitted again with the
+  previous block's text (before 408 too): **fixed** (`LeaveBlock` emits only a block
+  `EnterBlock` opened), harness row; negative control: the guard removed -> that row
+  fails (119/1).
+- **N6** each block is now wrapped in `div.tc-code`, so a document's own CSS selectors
+  like `li > pre` stop matching - accepted, a limit named in the changelog.
+- **N7** closing work - done at closing.
+
+After the fixes: harness **120 passed, 0 failed**; `.\build.cmd full` BUILD SUCCEEDED;
+probe **19 PASS, 0 FAIL, 1 NOT DRIVEN**.

@@ -276,6 +276,7 @@ Last triaged: 2026-11-06
 
 | Item | Type | Sev | Area | Source | Created |
 |---|---|---|---|---|---|
+| [Markdown Viewer copy control: may a document make a click overwrite the clipboard](items/markdown-viewer-copy-control-may-a-document-make-a-click/desc.md) | decision | 4 | other-plugins | review:408 | 2026-11-07 |
 
 ## Parked
 

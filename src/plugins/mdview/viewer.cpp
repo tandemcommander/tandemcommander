@@ -994,7 +994,28 @@ void CViewerWindow::ActivateLink(const std::wstring& uri)
             ch = (wchar_t)towlower(ch);
     }
     if (scheme == L"http" || scheme == L"https" || scheme == L"mailto")
+    {
+#ifdef _DEBUG
+        // probe seam (feature 408, review 3): a probe must see that nothing reached the
+        // shell - a browser would start in another process, invisible to its window checks
+        wchar_t seam[MAX_PATH];
+        DWORD sl = GetEnvironmentVariableW(L"TC_MDVIEW_PROBE_COPY_LOG", seam, _countof(seam));
+        if (sl > 0 && sl < _countof(seam))
+        {
+            std::wstring sf = std::wstring(seam) + L".shell";
+            std::string u8 = WToUtf8Str(uri);
+            HANDLE h = CreateFileW(sf.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (h != INVALID_HANDLE_VALUE)
+            {
+                DWORD wr = 0;
+                WriteFile(h, u8.data(), (DWORD)u8.size(), &wr, NULL);
+                CloseHandle(h);
+            }
+            return;
+        }
+#endif
         ShellExecuteW(HWindow, L"open", uri.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    }
     else
         SalamanderGeneral->SalMessageBox(HWindow, LoadStr(IDS_LINK_BLOCKED),
                                          LoadStr(IDS_WINDOW_TITLE), MB_OK | MB_ICONWARNING);

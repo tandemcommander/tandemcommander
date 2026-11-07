@@ -240,56 +240,83 @@ void EmitCell(Gen& g, const char* tag, const MD_BLOCK_TD_DETAIL* d)
 // belongs to the container or the code block's own indentation) contributes only its
 // columns inside the indentation, as spaces - CommonMark's rule. Anything that does
 // not add up gives the n spaces md4c wrote (what the page shows).
-static std::string RecoverIndent(const Gen& g, const char* p, size_t n)
+// the visual width of one character starting at column 'col' (tab stops of 4; UTF-8
+// continuation bytes take none)
+static size_t ColAfter(size_t col, char ch)
 {
-    std::string spaces(n, ' ');
+    unsigned char c = (unsigned char)ch;
+    if (c == '\t')
+        return (col / 4 + 1) * 4;
+    return (c & 0xC0) != 0x80 ? col + 1 : col;
+}
+
+// Appends the indentation of the line at 'p' to g.copyBuf (no temporary strings: this
+// runs for every indented code line - review 3, N1).
+static void AppendIndent(Gen& g, const char* p, size_t n)
+{
     if (p < g.srcBeg || p > g.srcEnd)
-        return spaces;
+    {
+        g.copyBuf.append(n, ' ');
+        return;
+    }
     const char* ls = p;
     while (ls > g.srcBeg && ls[-1] != '\n' && ls[-1] != '\r')
         ls--;
-    // visual columns from the line start (tab stops of 4; UTF-8 continuation bytes take none)
-    std::vector<size_t> startCol((size_t)(p - ls));
-    size_t col = 0;
+    // pass 1: the column of 'p' and where the blank run right before it starts
+    size_t colP = 0;
+    const char* run = ls;
     for (const char* q = ls; q < p; q++)
     {
-        startCol[(size_t)(q - ls)] = col;
-        unsigned char c = (unsigned char)*q;
-        if (c == '\t')
-            col = (col / 4 + 1) * 4;
-        else if ((c & 0xC0) != 0x80)
-            col++;
+        colP = ColAfter(colP, *q);
+        if (*q != ' ' && *q != '\t')
+            run = q + 1;
     }
-    if (col < n)
-        return spaces;
-    const size_t target = col - n; // the column where the code's indentation begins
+    if (colP < n)
+    {
+        g.copyBuf.append(n, ' ');
+        return;
+    }
+    const size_t target = colP - n; // the column where the code's indentation begins
+    // pass 2: k = the first blank of the run whose column is at or after 'target' (or p);
+    // afterwards 'col' is where the character before k ends - it may straddle 'target'
+    size_t col = 0;
     const char* k = p;
-    while (k > ls && (k[-1] == ' ' || k[-1] == '\t') && startCol[(size_t)(k - 1 - ls)] >= target)
-        k--;
-    std::string out;
-    size_t width = 0;
-    if (k > ls)
+    char prev = 0;
+    for (const char* q = ls; q < p; q++)
     {
-        const char* t = k - 1; // the character before the run: may straddle the start
-        size_t st = startCol[(size_t)(t - ls)];
-        size_t en = (*t == '\t') ? (st / 4 + 1) * 4 : st + 1;
-        if (en > target)
+        if (q >= run && col >= target)
         {
-            if (*t != '\t')
-                return spaces; // a non-blank character inside the indentation: not ours to undo
-            out.append(en - target, ' ');
-            width += en - target;
+            k = q;
+            break;
         }
+        prev = *q;
+        col = ColAfter(col, *q);
     }
-    else if (target > 0)
-        return spaces;
-    for (const char* q = k; q < p; q++)
+    size_t straddle = 0;
+    bool ok = true;
+    if (k > ls && col > target)
     {
-        out += *q;
-        size_t st = startCol[(size_t)(q - ls)];
-        width += (*q == '\t') ? (st / 4 + 1) * 4 - st : 1;
+        // the character before the indentation's first blank reaches into it; a
+        // non-blank character there is not ours to undo
+        ok = prev == '\t';
+        straddle = col - target;
     }
-    return width == n ? out : spaces;
+    else if (k == ls && target > 0)
+        ok = false;
+    size_t width = straddle;
+    for (const char* q = k; ok && q < p; q++)
+    {
+        size_t next = ColAfter(col, *q);
+        width += next - col;
+        col = next;
+    }
+    if (!ok || width != n)
+    {
+        g.copyBuf.append(n, ' '); // what md4c wrote (and the page shows)
+        return;
+    }
+    g.copyBuf.append(straddle, ' ');
+    g.copyBuf.append(k, (size_t)(p - k));
 }
 
 static void FlushCopyIndent(Gen& g)
@@ -329,7 +356,7 @@ static void CopyText(Gen& g, MD_TEXTTYPE type, const char* text, size_t size)
     if (g.copyIndent > 0)
     {
         if (inDoc)
-            g.copyBuf += RecoverIndent(g, text, g.copyIndent);
+            AppendIndent(g, text, g.copyIndent);
         else
             g.copyBuf.append(g.copyIndent, ' ');
         g.copyIndent = 0;
@@ -350,7 +377,8 @@ void EmitCodeBlock(Gen& g)
     {
         size_t n = g.res->codeBlocks.size();
         FlushCopyIndent(g);
-        g.res->codeBlocks.push_back(g.copyBuf);
+        g.res->codeBlocks.push_back(std::move(g.copyBuf));
+        g.copyBuf.clear();
         o += "<div class=\"tc-code\"><a class=\"tc-copy\" href=\"";
         Esc(o, g.copy->base, true);
         o += std::to_string(n);
@@ -550,7 +578,13 @@ int LeaveBlock(MD_BLOCKTYPE type, void* detail, void* ud)
         g.body += ">\n";
         break;
     }
-    case MD_BLOCK_CODE: EmitCodeBlock(g); g.codeDepth = 0; break;
+    case MD_BLOCK_CODE:
+        // feature 408 (review 3, N5): past the output cap EnterBlock returned early for
+        // this block (codeDepth stays 0) - emitting would repeat the previous block
+        if (g.codeDepth > 0)
+            EmitCodeBlock(g);
+        g.codeDepth = 0;
+        break;
     case MD_BLOCK_HTML: if (g.rawHtml > 0) g.rawHtml--; break;
     case MD_BLOCK_P: *g.target += "</p>\n"; break;
     case MD_BLOCK_TABLE: *g.target += "</table>\n"; break;
@@ -746,10 +780,21 @@ std::wstring MdCodeClipboardText(const std::string& srcUtf8)
 // a character the notice must not show as is: C0/C1 controls (a tab included) and the
 // bidirectional embeddings, overrides and isolates (they could make a line read
 // otherwise than it is - review 2, S1)
+static bool IsCombiningMark(wchar_t c)
+{
+    return (c >= 0x0300 && c <= 0x036F) || (c >= 0x1AB0 && c <= 0x1AFF) || (c >= 0x1DC0 && c <= 0x1DFF) ||
+           (c >= 0x20D0 && c <= 0x20FF) || (c >= 0xFE20 && c <= 0xFE2F) || c == 0x200D || (c >= 0xFE00 && c <= 0xFE0F);
+}
+
 static bool NoticeHidden(wchar_t c)
 {
     return c < 0x20 || (c >= 0x7F && c <= 0x9F) || (c >= 0x202A && c <= 0x202E) || (c >= 0x2066 && c <= 0x2069) ||
-           c == 0x200E || c == 0x200F || c == 0x061C;
+           c == 0x200E || c == 0x200F || c == 0x061C ||
+           // invisible or blank-looking characters (review 3, N3): a line of them must not
+           // pass for a shown line
+           c == 0x00AD || c == 0x200B || c == 0x2060 || c == 0xFEFF || c == 0x2028 || c == 0x2029 ||
+           c == 0x2800 || c == 0x3164 || c == 0x115F || c == 0x1160 || c == 0xFFA0 || c == 0x3000 ||
+           (c >= 0x2000 && c <= 0x200A) || c == 0x00A0 || c == 0x202F || c == 0x205F;
 }
 
 std::wstring MdCopyNoticeText(const std::wstring& copied, const std::wstring& clip, size_t maxChars, size_t maxLines)
@@ -778,8 +823,11 @@ std::wstring MdCopyNoticeText(const std::wstring& copied, const std::wstring& cl
             if (maxChars > 0 && line.size() > maxChars)
             {
                 size_t cut = maxChars;
-                // a whole character: never between the two halves of a surrogate pair
+                // a whole character: never between the two halves of a surrogate pair, and
+                // never between a letter and its combining marks (review 3, N3)
                 if (cut > 0 && line[cut - 1] >= 0xD800 && line[cut - 1] <= 0xDBFF)
+                    cut--;
+                while (cut > 0 && IsCombiningMark(line[cut]))
                     cut--;
                 line = line.substr(0, cut) + L"\x2026";
             }
@@ -852,7 +900,7 @@ static const char* CopyCss()
            ".tc-copy{position:absolute;top:6px;right:6px;z-index:1;padding:1px 9px;"
            "font:12px/1.6 'Segoe UI',system-ui,sans-serif;color:var(--fg);background:var(--bg);"
            "border:1px solid var(--tb);border-radius:4px;opacity:0;"
-           "user-select:none;-webkit-user-select:none;transition:opacity .12s;}"
+           "user-select:none;-webkit-user-select:none;-webkit-user-drag:none;transition:opacity .12s;}"
            ".tc-code:hover .tc-copy,.tc-copy:focus{opacity:1;}"
            "a.tc-copy:hover{text-decoration:none;color:var(--lka);border-color:var(--lka);}"
            ".tc-copy:focus-visible{outline:2px solid var(--lk);outline-offset:1px;}";

@@ -26,11 +26,14 @@
       NOSCROLL  after a wheel scroll (when the engine takes it), a copy of block 1 leaves every
                 block top where it was (NOT DRIVEN for the scrolled case when the wheel did not
                 scroll; the unscrolled check is part of COPY-0)
-      FORGED-MD click on the Markdown link to a forged copy address: no seam file, no window
+      FORGED-MD click on the Markdown link to a forged copy address: no seam file, no window,
+                nothing handed to the shell (Debug seam copy.txt.shell, review 3)
       FORGED-HTML the same for the raw-HTML link
       LINK      click on foo.txt: the viewer's local-target box opens (links unchanged)
       LINK-TCCOPY click on tc-copy-notes.md: a viewer window opens (review 1, M2)
-      KEY       after the foo.txt click, Tab moves to the next control in document order -
+      LINK-HTTP click on an https link: it reaches the shell (the seam records it instead of
+                starting a browser) - the positive control of FORGED-*'s shell check
+      KEY       after the last link click (the https link right above block 1), Tab moves to the next control in document order -
                 block 1's - and shows it; Enter: the seam file holds block 1 (NOT DRIVEN when
                 posted keys reach nothing)
       KEY-AGAIN Enter once more: the focus stayed on the control, block 1 is copied again
@@ -134,16 +137,19 @@ public static class Cp408
         return n;
     }
     // first row holding a pixel of the given kind: 0 magenta, 1 blue, 2 green
+    static bool Kind(Color c, int kind)
+    {
+        return kind == 0 ? (c.R > 200 && c.G < 110 && c.B > 200) : kind == 1 ? (c.B > 220 && c.R < 70 && c.G < 70) :
+               kind == 2 ? (c.G > 200 && c.R < 170 && c.B < 110) : kind == 3 ? (c.R > 220 && c.G > 200 && c.B < 90) :
+               (c.R > 220 && c.G > 90 && c.G < 190 && c.B < 80);
+    }
+    // the top-left of the first box of a kind: a match that is still a match 100 px to the
+    // right (the boxes are 300 px wide; an emoji in the text is not)
     public static string ColorBox(Bitmap b, int kind)
     {
         for (int y = 0; y < b.Height; y++)
-            for (int x = 0; x < b.Width; x += 2)
-            {
-                Color c = b.GetPixel(x, y);
-                bool m = kind == 0 ? (c.R > 200 && c.G < 110 && c.B > 200) : kind == 1 ? (c.B > 220 && c.R < 70 && c.G < 70) :
-                         kind == 2 ? (c.G > 200 && c.R < 170 && c.B < 110) : (c.R > 220 && c.G > 200 && c.B < 90);
-                if (m) return x + "," + y;
-            }
+            for (int x = 0; x + 100 < b.Width; x += 2)
+                if (Kind(b.GetPixel(x, y), kind) && Kind(b.GetPixel(x + 100, y), kind)) return x + "," + y;
         return "";
     }
     public static void Move(IntPtr h, int x, int y) { PostMessageW(h, 0x0200, IntPtr.Zero, (IntPtr)((y << 16) | (x & 0xFFFF))); }
@@ -169,7 +175,9 @@ function Put-Text([string]$Path, [string]$Text) {
     if (-not $Path.StartsWith($Root + '\')) { throw "outside the fixture: $Path" }
     [IO.File]::WriteAllBytes($LP + $Path, $Utf8.GetBytes($Text))
 }
-function Seam-Clear { if ([IO.File]::Exists($Seam)) { [IO.File]::Delete($Seam) } }
+function Seam-Clear { foreach ($f in @($Seam, ($Seam + '.shell'))) { if ([IO.File]::Exists($f)) { [IO.File]::Delete($f) } } }
+# what ActivateLink handed to the shell (Debug seam; a browser would start in another process)
+function Shell-Read { $f = $Seam + '.shell'; if ([IO.File]::Exists($f)) { return [IO.File]::ReadAllText($f, $Utf8) } else { return $null } }
 function Seam-Read { if ([IO.File]::Exists($Seam)) { return [IO.File]::ReadAllText($Seam, $Utf8) } else { return $null } }
 function Show([string]$s) { if ($null -eq $s) { return '<none>' }; return (Esc ($s -replace "`r", '\r' -replace "`n", '\n')) }
 function Shot([IntPtr]$W, [string]$Tag) {
@@ -229,6 +237,7 @@ $doc = "``````text`nalpha line 1`n" + $cz + "`n```````n`nShort.`n`n" +
 "<a href=`"" + $Forged + "`" style=`"display:block;width:300px;height:60px;background:#0000ff`"></a>`n`n" +
 "<a href=`"foo.txt`" style=`"display:block;width:300px;height:60px;background:#00ff00`"></a>`n`n" +
 "<a href=`"tc-copy-notes.md`" style=`"display:block;width:300px;height:60px;background:#ffff00`"></a>`n`n" +
+"<a href=`"https://example.invalid/tc408`" style=`"display:block;width:300px;height:60px;background:#ff8000`"></a>`n`n" +
 "Short.`n`n    indented one`n      indented two`n`nShort.`n`n- item`n`n  ```````n  in list`n  ```````n`n" + $filler + "`n"
 
 $backup = Join-Path $env:TEMP 'tc408_backup.reg'
@@ -365,7 +374,8 @@ try {
                     $got = Seam-Read
                     $desc = if ($nw -ne [IntPtr]::Zero) { WinDesc $nw } else { 'none' }
                     if ($nw -ne [IntPtr]::Zero) { Click-Ok $nw }
-                    Row $case[0] 'RUN' (V (($null -eq $got) -and ($nw -eq [IntPtr]::Zero))) ("click at {0},{1}: seam {2}; new window {3}" -f $x, $y, (Show $got), $desc)
+                    $sh = Shell-Read
+                    Row $case[0] 'RUN' (V (($null -eq $got) -and ($nw -eq [IntPtr]::Zero) -and ($null -eq $sh))) ("click at {0},{1}: seam {2}; new window {3}; handed to the shell {4}" -f $x, $y, (Show $got), $desc, (Show $sh))
                 }
                 $pt = [Cp408]::ColorBox($b7, 2)
                 if (-not $pt) { Row 'LINK' 'RUN' 'NOT DRIVEN' 'the green box was not found' }
@@ -376,22 +386,21 @@ try {
                     if ($nw -ne [IntPtr]::Zero) { Row 'LINK' 'RUN' (V ((FullText $nw) -like '*foo.txt*')) ('box: ' + (WinDesc $nw)); Click-Ok $nw }
                     else { Row 'LINK' 'RUN' 'FAIL' 'no window after the click on foo.txt' }
                 }
-                # LINK-TCCOPY (review 1, M2): a sibling file whose name starts "tc-copy-" opens
-                $py = [Cp408]::ColorBox($b7, 3)
-                if (-not $py) { Row 'LINK-TCCOPY' 'RUN' 'NOT DRIVEN' 'the yellow box was not found' }
+                # LINK-HTTP: positive control of the shell seam - an https link still reaches the
+                # shell (so FORGED-*'s "nothing handed to the shell" can fail)
+                $po = [Cp408]::ColorBox($b7, 4)
+                if (-not $po) { Row 'LINK-HTTP' 'RUN' 'NOT DRIVEN' 'the orange box was not found' }
                 else {
-                    $known = Get-Tops $id
-                    Post-Click $rk ([int]$py.Split(',')[0] + [int](40 * $scale)) ([int]$py.Split(',')[1] + [int](30 * $scale))
-                    $nw = Wait-NewWin $id $known 12
-                    if ($nw -ne [IntPtr]::Zero) {
-                        Start-Sleep -Milliseconds 1500
-                        Row 'LINK-TCCOPY' 'RUN' (V ([Drv098f]::Txt($nw) -like '*tc-copy-notes.md*')) ('new window: ' + (WinDesc $nw))
-                        [void][Drv098f]::PostMessageW($nw, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
-                        Start-Sleep -Milliseconds 1500
-                    }
-                    else { Row 'LINK-TCCOPY' 'RUN' 'FAIL' 'no window after the click on tc-copy-notes.md' }
+                    Seam-Clear
+                    # the foo.txt box was just dismissed: a click while the viewer is being
+                    # re-enabled is lost (measured)
+                    Start-Sleep -Milliseconds 1500
+                    Post-Click $rk ([int]$po.Split(',')[0] + [int](40 * $scale)) ([int]$po.Split(',')[1] + [int](30 * $scale))
+                    Start-Sleep -Milliseconds 1500
+                    $sh = Shell-Read
+                    Row 'LINK-HTTP' 'RUN' (V ($sh -ceq 'https://example.invalid/tc408')) ("handed to the shell: {0}" -f (Show $sh))
                 }
-                # KEY: the last click was the foo.txt link, so Tab moves to the next focusable
+                # KEY: the last click was the https link (LINK-HTTP), so Tab moves to the next focusable
                 # element in document order - block 1's control; Enter copies block 1
                 Seam-Clear
                 [Cp408]::Move($rk, 5, $b7.Height - 5)
@@ -428,6 +437,25 @@ try {
                 $got = Seam-Read
                 $title = [Drv098f]::Txt($w)
                 Row 'SOURCE' 'RUN' (V (($null -eq $got) -and ($title -like '*[Source]*'))) ("title '{0}'; seam {1}" -f (Esc $title), (Show $got))
+                # last in this start: the second viewer window it opens takes the activation, and
+                # posted clicks into the first one were lost afterwards (measured)
+                Post-Cmd $w 101   # back from View Source to the rendered page
+                Start-Sleep -Milliseconds 3000
+                # LINK-TCCOPY (review 1, M2): a sibling file whose name starts "tc-copy-" opens
+                $py = [Cp408]::ColorBox($b7, 3)
+                if (-not $py) { Row 'LINK-TCCOPY' 'RUN' 'NOT DRIVEN' 'the yellow box was not found' }
+                else {
+                    $known = Get-Tops $id
+                    Post-Click $rk ([int]$py.Split(',')[0] + [int](40 * $scale)) ([int]$py.Split(',')[1] + [int](30 * $scale))
+                    $nw = Wait-NewWin $id $known 12
+                    if ($nw -ne [IntPtr]::Zero) {
+                        Start-Sleep -Milliseconds 1500
+                        Row 'LINK-TCCOPY' 'RUN' (V ([Drv098f]::Txt($nw) -like '*tc-copy-notes.md*')) ('new window: ' + (WinDesc $nw))
+                        [void][Drv098f]::PostMessageW($nw, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+                        Start-Sleep -Milliseconds 1500
+                    }
+                    else { Row 'LINK-TCCOPY' 'RUN' 'FAIL' 'no window after the click on tc-copy-notes.md' }
+                }
             }
             [void][Drv098f]::PostMessageW($w, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
             Start-Sleep -Milliseconds 1500
