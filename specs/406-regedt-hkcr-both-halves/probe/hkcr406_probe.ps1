@@ -34,6 +34,11 @@
                  HKEY_LOCAL_MACHINE\Software\Classes\<Y> with (50) - the top key's own check
       BOTHCLASS  (review of 406) the user's half of <Y> is created with the class TcProbeClass (the
                  machine's class empty): not a reason to refuse - (5)
+      BOTHLINK   (review 3 of 406) HKLM\Software\Classes\Wow6432Node\AppID is a registry link shipped
+                 by Windows; an empty user's half makes HKCR\Wow6432Node\AppID held by both halves:
+                 the first box names the machine's key with (50) before anything is copied; nothing
+                 copied, the user's half and the machine's AppID subkeys unchanged (NOT DRIVEN when
+                 the key is no link or the user's half exists)
       BOTHSELF   (guard, feature 292) F6 of HKCR\<X> into \HKEY_CURRENT_USER\Software\Classes\ (its
                  own user's half): refused "Can't move a key to itself."; both halves unchanged
       END        each instance ends with exit code 0, no stray window, no report
@@ -180,6 +185,17 @@ public static class Reg406 {
         RegCloseKey(h);
         if (disp != 1) throw new Exception("the key existed already: " + path);
     }
+    [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
+    static extern int RegQueryValueExW(UIntPtr hKey, string name, IntPtr r, out int type, IntPtr data, ref int size);
+    // review 3 of 406: is HKLM\<path> itself a registry link (opened as a link, value SymbolicLinkValue of type REG_LINK)?
+    public static bool MachineIsLink(string path) {
+        UIntPtr h;
+        if (RegOpenKeyExW(HKLM, path, 8 /* REG_OPTION_OPEN_LINK */, 0x20019, out h) != 0) return false;
+        int type, size = 0;
+        int err = RegQueryValueExW(h, "SymbolicLinkValue", IntPtr.Zero, out type, IntPtr.Zero, ref size);
+        RegCloseKey(h);
+        return err == 0 && type == 6;
+    }
     public static string ClassOf(string path) { return ClassOf(path, false); }
     public static string ClassOf(string path, bool machine) {
         UIntPtr h;
@@ -297,6 +313,47 @@ function Halves-Facts($r) {
     $uk = $r.User0 -ceq $r.User1
     return @{ Ok = ($mk -and $uk); Text = ("machine's half unchanged: {0}; user's half unchanged: {1} (now '{2}')" -f $mk, $uk, (Esc $r.User1)) }
 }
+function Link-Row {
+    $name = 'Wow6432Node\AppID'
+    $userPs = 'HKCU:\Software\Classes\' + $name
+    $parentPs = 'HKCU:\Software\Classes\Wow6432Node'
+    if ($IsAdmin) { Row 'BOTHLINK' 'RUN' 'NOT DRIVEN' 'the probe runs elevated'; return }
+    if (-not [Reg406]::MachineIsLink('Software\Classes\' + $name)) { Row 'BOTHLINK' 'RUN' 'NOT DRIVEN' "HKLM\Software\Classes\$name is not a registry link on this machine"; return }
+    if (Test-Path -LiteralPath $userPs) { Row 'BOTHLINK' 'RUN' 'NOT DRIVEN' "the user's half of $name exists already"; return }
+    $parentMade = -not (Test-Path -LiteralPath $parentPs)
+    $mainName = $script:MachName
+    $before = Reports; $id = 0
+    try {
+        NewDir $StartDir
+        Remove-Item -LiteralPath $PlainPs -Recurse -Force -ErrorAction SilentlyContinue
+        New-Key ($PlainPs + '\Cil')
+        New-Key $userPs
+        [void](New-ItemProperty -LiteralPath $userPs -Name 'TcProbeU' -Value 'USER' -PropertyType String -Force)
+        $user0 = Snap-Tree $userPs
+        $mach0 = @(Get-ChildItem -LiteralPath 'HKLM:\Software\Classes\AppID' -ErrorAction SilentlyContinue).Count
+        Out ("BOTHLINK fixture: user's half '{0}' (its parent made by the probe: {1}); machine AppID subkeys {2}" -f (Esc $user0), $parentMade, $mach0)
+        $script:MachName = $name
+        $r = Run-Op ('\HKEY_CURRENT_USER\Software\' + $RegName + '\Cil\') 'cancel'
+        $id = $r.Id
+        $first = $(if ($r.Boxes.Count -ge 1) { $r.Boxes[0].Text } else { '' })
+        $want = 'HKEY_LOCAL_MACHINE\Software\Classes\' + $name
+        $ok = $first.Contains($Removesrc) -and $first.Contains($want + "`n") -and $first.Contains('(50)')
+        Row 'BOTHLINK' 'TEXT' (V $ok) ("expected the first box naming '{0}' with (50); {1}" -f $want, (Box-Facts $r))
+        $copied = @(Get-ChildItem -LiteralPath ($PlainPs + '\Cil') -Recurse -ErrorAction SilentlyContinue).Count
+        $user1 = Snap-Tree $userPs
+        $mach1 = @(Get-ChildItem -LiteralPath 'HKLM:\Software\Classes\AppID' -ErrorAction SilentlyContinue).Count
+        Row 'BOTHLINK' 'STATE' (V ($copied -eq 0 -and $user1 -ceq $user0 -and $mach1 -eq $mach0)) ("keys copied below Cil: {0}; user's half unchanged: {1}; machine AppID subkeys {2} -> {3}" -f $copied, ($user1 -ceq $user0), $mach0, $mach1)
+    }
+    catch { Row 'BOTHLINK' 'ERROR' 'FAIL' ($_.Exception.Message + ' @ ' + $_.ScriptStackTrace) }
+    finally {
+        if ($id) { Close-Boxes $id; End-P 'BOTHLINK' $id $before }
+        $script:MachName = $mainName
+        Remove-Item -LiteralPath $PlainPs -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $userPs -Recurse -Force -ErrorAction SilentlyContinue
+        if ($parentMade) { Remove-Item -LiteralPath $parentPs -Recurse -Force -ErrorAction SilentlyContinue }
+        if ((Test-Path -LiteralPath $userPs) -or ($parentMade -and (Test-Path -LiteralPath $parentPs))) { Row 'BOTHLINK' 'CLEANUP' 'FAIL' "the probe's user keys under Wow6432Node were not removed" }
+    }
+}
 $Removesrc = (Template 1061 'Unable to remove the original registry key. ').Trim()
 $script:MachName = $null
 $script:SubName = $null
@@ -371,6 +428,10 @@ try {
         }
         else { Row 'BOTHTOP' 'RUN' 'NOT DRIVEN' 'no machine-only extension key with values and no subkeys on this machine' }
         $script:MachName = $mainName
+        # review 3 of 406 (the reviewer's row): Windows ships HKLM\Software\Classes\Wow6432Node\AppID as a
+        # registry link (to ...\Classes\AppID); an empty user's half makes HKCR\Wow6432Node\AppID a key
+        # held by both halves whose machine's half is a link - refused before anything is copied, (50)
+        if (Want 'BOTHLINK') { Link-Row }
         if (Want 'BOTHSELF') {
             Make-Fixture ''
             $script:Mach0 = Snap-Tree (MachPs); $script:User0 = Snap-Tree (UserPs); $script:View0 = Snap-Tree (ViewPs)

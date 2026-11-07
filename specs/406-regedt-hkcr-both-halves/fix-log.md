@@ -174,3 +174,29 @@ Checks after review 2's fix (final binary): `.\build.cmd` BUILD SUCCEEDED; salte
 machine's half - no false refusal); 390's 10 / 0; 297's link probe 40 / 0; registry restored
 identical after each (runner `%TEMP%\tcmeasure\run_review2.ps1`).
 
+### Third review (independent agent, refute-first, on commit f36cf68d)
+
+No MUST. Re-measured: probe 23 / 0 on HEAD; control 1 (every machine half treated as a link) 12 PASS /
+11 FAIL - each both-halves row then gives (50) at the top key and copies nothing, so the probe's
+both-halves rows prove that non-links pass the new test; saltests 282544 / 0; clang-format clean.
+`SafeHkcrMachineHalfNoLink` (`fs5.cpp`, called right after the halves are read) runs before
+`SafeOpenKey` - nothing of the key read or written first; Skip keeps every parent, Cancel stops,
+Retry tests again, Skip All skips; another error = the open-error box; a vanished machine half = no
+link.
+
+| Finding | Done |
+|---|---|
+| SHOULD 1 the link refusal is drivable without elevation: Windows ships `HKLM\Software\Classes\Wow6432Node\AppID` (also `PROTOCOLS`, `TypeLib`) as a registry link; an empty user's `HKCU\Software\Classes\Wow6432Node\AppID` makes it a key held by both halves. Reviewer measured: HEAD 3 / 3 (the first box (50) naming the machine's key, 0 keys copied, 673 AppID subkeys untouched); link test off (= 0b48bc50) 1 / 2 FAIL - the copy starts and the first box is (5) for deleting `...\Wow6432Node\AppID\{FFE1E5FE-...}`, which elevated goes through the link to the real 64-bit `HKLM\Software\Classes\AppID\{...}` | fixed: probe row BOTHLINK (the reviewer's row, integrated; NOT DRIVEN when the key is no link or the user's half exists; removes the user keys it made, also `Wow6432Node` when it made it); the second release-checklist line (the elevated link case) removed again - now driven |
+| NOTE review 2's finding was reachable on a stock system: on this machine `HKCR\Wow6432Node\TypeLib` is held by both halves (a user's half exists, the machine's is a stock link) - an elevated Move of `HKCR\Wow6432Node` before f36cf68d would have deleted the 64-bit TypeLib registrations | refused now at the TypeLib level before anything below it is touched; recorded |
+| NOTE a link on a higher element of the machine path is still followed (e.g. Move `{x}` from `HKCR\Wow6432Node\AppID\`): it reaches the same physical key the panel shows and the copy read - as 390's machine-only delete, the delete through HKCR before it, and a plain HKLM Move; not new with 406. Inside the moved tree every level is tested (both halves: the new test; machine only: 297's test through HKCR, which reaches the machine half when no user's half exists - measured) | accepted, recorded |
+| NOTE test and delete by name, not by handle (a small window, as 297) | accepted |
+| NOTE stack frame: `CopyOrMoveKeyRec` 3464 bytes (Release /O2 listing without LTCG), the new helpers not inlined - ~256 levels ~0.9 MB of 3 MB | fine; LTCG not checked |
+
+Checks after review 3 (the final binary of f36cf68d; only the probe and the backlog changed): probe
+English 26 PASS / 0 FAIL / 0 NOT DRIVEN, Czech 26 / 0 / 0 (BOTHLINK: the first box "(50)" naming
+`HKEY_LOCAL_MACHINE\Software\Classes\Wow6432Node\AppID`, 0 keys copied, the user's half unchanged,
+673 -> 673 machine AppID subkeys; the user's `Wow6432Node\AppID` removed after the row); registry
+restored identical (runner `%TEMP%\tcmeasure\run_review3.ps1`).
+
+The fourth review is not required (no MUST in any review); every SHOULD of the three reviews is fixed.
+
