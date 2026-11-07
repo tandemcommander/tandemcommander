@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "Backlog item fluent-2-icons-for-the-plug-ins-appearance-group-renamed-to (backlog/items/fluent-2-icons-for-the-plug-ins-appearance-group-renamed-to/desc.md) - implement exactly what it describes." From backlog item fluent-2-icons-for-the-plug-ins-appearance-group-renamed-to.
 
+## Clarifications
+
+### Session 2026-11-07
+
+- Q: Where a menu shows no icon today for a shipped plug-in without an icon (e.g. DBViewer in View With), does Fluent 2 show its set icon there? → A: yes - in Fluent 2 a shipped plug-in with a usable set icon counts as a plug-in with an icon in every list; Classic keeps today's rule (autonomous run: item)
+- Q: Do the preview strips of the Appearance page change? → A: no - they stay the 10 toolbar buttons of 416; only the group label changes (autonomous run: conservative)
+- Q: How is a plug-in recognised as a shipped one - also by a signature or version? → A: only by its location and name (`<id>\<id>.spl` in the program's plug-ins folder, a known id); a different plug-in installed under a shipped plug-in's name gets that plug-in's icon - a cosmetic effect only (autonomous run: conservative)
+- Q: Which gray rule makes the gray copy of a set icon? → A: today's gray rule of plug-in icons (the brightness of each pixel, alpha kept) (autonomous run: item)
+- Q: Is the Plugins bar rebuilt on every colour or theme change, also in Classic? → A: yes - its image lists are rebuilt from the active set on every colour change; in Classic the result is pixel-identical (autonomous run: recommended)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Plug-in icons in the same style as the rest of the window (Priority: P1)
@@ -98,8 +108,9 @@ A user has a plug-in from another author, or an installation where a set file is
 - **FR-008**: With Classic active, every plug-in icon MUST be pixel-identical to the build of `main`.
 - **FR-009**: A change of the set (Appearance OK, a settings import) and a theme switch MUST rebuild the plug-in icons of the Plugins bar, the drive bars, the tabs and the directory lines at once, without a restart; menus and dialogs opened later use the active set.
 - **FR-010**: The plug-in icons stored in the configuration MUST stay the plug-ins' own icons; no set icon is ever written there, and the plug-in interface does not change.
-- **FR-011**: The gray copy of a set icon MUST be made by the same gray rule as today's gray copies of plug-in icons.
-- **FR-012**: The Appearance group label MUST read "Icon style" with the access key on "I"; the stored value keeps its name ("Toolbar Icon Set") and meaning; every enabled language gets the new label in the formal register, fitting its control.
+- **FR-011**: The gray copy of a set icon MUST be made by the same gray rule as today's gray copies of plug-in icons (each pixel's brightness, alpha kept).
+- **FR-015**: Every colour change (a theme switch, a set switch, a system colour change) MUST rebuild the Plugins bar's image lists from the active set.
+- **FR-012**: The Appearance group label MUST read "Icon style" with the access key on "I"; the stored value keeps its name ("Toolbar Icon Set") and meaning; every enabled language gets the new label in the formal register, fitting its control; the choices and their preview strips stay as in 416.
 - **FR-013**: The set MUST ship one file per known plug-in id plus the two default icons, each with a hand-made Dark variant, made by a committed generator from the pinned Fluent source of 416; the set checker MUST verify every name the program can ask for exists in both variants and passes the 416 file rules (no transparent-key colours, parseable by the program's SVG reader).
 - **FR-014**: Every set file MUST pass the 416 legibility criterion on the bar, on the menu highlight and in the Change Drive menu highlight, in Light and Dark, at 16, 20, 24 and 32 px.
 
@@ -124,7 +135,6 @@ A user has a plug-in from another author, or an installation where a set file is
 
 - Assumption (autonomous run): the generator and the approved design come from the maintainer's study (2026-11-07); the files are its output with the RegEdit drawing the maintainer approved in three rounds.
 - Assumption (autonomous run): "the plug-ins shipped with the program" are recognised by their DLL name (`<id>\<id>.spl` in the plug-ins folder) and a fixed list of 31 ids; files are also shipped for the plug-ins that are `off` in `plugins.cfg` (shipping a plug-in stays the maintainer's).
-- Assumption (autonomous run): the preview strips on the Appearance page stay the 10 toolbar buttons of 416 (the item asks only for the label).
 - Assumption (autonomous run): the plug-ins' own windows, toolbars and listed-item icons are out of scope (the item: "the plug-ins' own windows and toolbars" do not change).
 - Assumption (autonomous run): SFTP showing the generic plug in Classic (it never hands its bitmap to the program) is kept in Classic, because Classic must stay pixel-identical; Fluent 2 shows its set icon.
 - Assumption (autonomous run): `PRIVACY.md` is not affected: no network, no new stored data; the installer ships the new folder through its existing recursive entry, as 416's set.
