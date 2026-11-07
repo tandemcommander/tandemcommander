@@ -198,6 +198,9 @@ Each is one line of a longer story; the number is the feature whose entry in
 - Dark list headers are painted by the program (`ThemePaintDarkHeaderItem`, 044 / 049): a header
   format flag (sort arrow, …) is drawn there too, and a probe checks the painted pixels, not only
   the bits (407).
+- The top rebar has the same styles, grips and layout in both themes: Dark colours its lines by `RB_SETCOLORSCHEME`
+  and repaints a grip's light middle (`ThemeRebarCustomDraw`); never hide chrome in Dark to avoid light pixels -
+  it moves everything below (418).
 - Toolbar, menu, drive and `..` icons come from the active icon set (`saliconset.h`): a new button needs a
   Fluent 2 file and its dark variant (`tools/brand/fluent-icons/`, `check_iconset.py`); Classic is never restyled (416).
   A new plug-in of the tree needs its id in `SalIconSetPluginId` and a set icon + dark (`gen_fluent_plugins.py`, 417).

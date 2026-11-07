@@ -17,7 +17,6 @@ Last triaged: 2026-11-07
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Dark theme: panel tabs look lower than in the default theme](items/dark-theme-panel-tabs-look-lower-than-in-the-default-theme/desc.md) | bug | 3 | panels-ui | 418 |
 
 ## Next
 

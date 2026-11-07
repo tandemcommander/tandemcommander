@@ -64,9 +64,9 @@ Outcome: closed
 
 ## Owed to a person (the lines added to the release checklist)
 
-2 lines added to `manual-checks-owed-before-the-next-release` (feature 418): the Dark toolbar area and tabs side by
-side with Default at 125 / 150 / 200 % (rows, dark lines, band contents at the same place, no light pixel); High
-Contrast switched on and off with Dark selected (system colours, then the dark lines again).
+3 lines added to `manual-checks-owed-before-the-next-release` (feature 418): Default and Dark side by side at
+100-200 % (heights, dark lines, grips); toolbars moved by their grips with a real mouse in Dark (also with two
+drive bars); High Contrast switched on and off with Dark selected.
 
 ## CHANGELOG entry (no `## [Unreleased]` section in CHANGELOG.md - versions are the maintainer's)
 

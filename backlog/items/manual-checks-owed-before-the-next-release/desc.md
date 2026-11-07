@@ -61,6 +61,9 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Plugins bar (Options > Toolbars > Plugins Bar) hot and pressed with a real mouse, Fluent 2, both themes: no plug-in icon disappears; its drop-down menus open as before (feature 417)
 - [ ] Plug-in icons at 125 %, 150 % and 200 % display scaling, Fluent 2: sharp in the Plugins bar, the Plugins Manager, Alt+F1, the drive bar and the tab / Directory line of an FTP or Windows Registry file system (feature 417)
 - [ ] Configuration > Appearance in Czech and Spanish: the group now reads "Styl ikon" / "Estilo de iconos" (English "Icon style"), fits and reads well; Alt+I (Czech) reaches it (feature 417)
+- [ ] Default and Dark theme side by side at 100 %, 125 %, 150 % and 200 % display scaling: the toolbar area and the panel tabs at the same height, the Dark frame and the lines between toolbar rows dark (no light line), the toolbar grips at the same place and dark in Dark (no light stripe) (feature 418)
+- [ ] Toolbars moved by their grips with a real mouse in the Dark theme (also with two drive bars shown): the bands move as in the default theme, and no grip shows a light stripe while dragging or after (feature 418)
+- [ ] High Contrast switched on and then off (Windows Settings > Accessibility > Contrast themes) while the Dark theme is selected: the toolbar area takes the system colours, then the dark frame, lines and grips come back without a restart (feature 418)
 
 ## Log
 
@@ -78,3 +81,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-07 — edited Steps
 - 2026-11-07 — feature 416: 5 checks added
 - 2026-11-07 — feature 417: 4 checks added
+- 2026-11-07 — feature 418: 3 checks added

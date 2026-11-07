@@ -44,7 +44,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418 |
 
 ## Feature notes
 
@@ -6726,7 +6726,7 @@ a few early ones are out of sequence).
   "not a defect" - it was this one; a press activates the pressed tab (probe expectations); a C#
   ratio formatted with the session's decimal comma parsed as 452 in PowerShell (a false PASS);
   Bash here-documents again turned backslashes into tabs. Limits: the dark active panel and the
-  dark rebar (69 vs 77 px, bands without borders) are unchanged; the lifted tab no longer shares
+  dark rebar (69 vs 77 px, bands without borders) are unchanged (418 made it equal); the lifted tab no longer shares
   its directory line's colour; the `tabs404_probe` dark inactive baseline is the mockup with the
   active tab's box from this feature's capture (stability, not correctness); the look side by side
   and a real mouse drag are release-checklist lines. From backlog item
@@ -6866,3 +6866,29 @@ a few early ones are out of sequence).
   switch both ways and a theme switch without restart, cache equal, dark variants drawn, missing / empty file =
   today's icon); saltests 286943 / 0; three refute-first reviews (MUST 0 / 0 / 0, SHOULD 3 / 1 / 1 - fixed or
   done at closing, NOTE 5 / 5 / 4).
+- 418-dark-rebar-borders: **in the Dark theme the panel tabs looked lower than in the default theme** - measured:
+  the strip and the tabs were the same size in both themes; feature 028 had stripped the top rebar's
+  `WS_BORDER | RBS_BANDBORDERS` in Dark (the classic rebar drew them light), so the Dark toolbar area had no frame
+  and no lines between its rows, was 8 px shorter (69 vs 77) and the strip had no line above it; with grips shown
+  (the default) Dark also hid the grips (028: light-only), so every band's contents started ~9 px further left and
+  the toolbars could not be dragged at all - now the rebar keeps both styles and its grips in both themes;
+  `ThemeUpdateRebarStyle` (`themes.cpp`) sets its colour scheme (`RB_SETCOLORSCHEME`) to the Dark palette's
+  `COLOR_BTNHIGHLIGHT` / `COLOR_BTNSHADOW` (464646 / 1A1A1A) in Dark and `CLR_DEFAULT` in Default (frame and band
+  borders drawn dark where Default has A0A0A0 / FFFFFF; a scheme change repaints the non-client frame), and
+  `ThemeRebarCustomDraw` (`themes.cpp`, the rebar's `NM_CUSTOMDRAW` answered first in the main window's
+  `WM_NOTIFY`) repaints the light middle comctl32 fills a grip with (`GetSysColor(COLOR_BTNFACE)`, not the scheme)
+  with the band background at `CDDS_ITEMPOSTPAINT` (`rc` = the band's header, `dwItemSpec` = the band id -
+  measured; the band is found by its id, never by its rectangle: a hidden band keeps its old one). Default: no item
+  notifications, pixel-identical. Traps: `RB_GETBANDBORDERS` returns no value (a success test always failed); the
+  program saves its bars on exit, so probe starts must begin from one exported configuration; a rebar does not
+  wrap bands on a resize; the drive bars' bands are hidden during a drag (review 3 found the stripe there); the
+  directory lines' free-space figure changes between two starts; PowerShell names are case-insensitive (`$d` /
+  `$D`, `$lines` / the library's `$Lines`); a Git Bash `sed -i` stripped CRs and here-documents ate backslashes
+  again (repaired byte-wise). Rejected on the way: grips hidden with their room kept (`ThemeDarkGripRoom`, review
+  2: bands not draggable). Limits: 96 DPI only on the hidden desktop, a real-mouse drag and a High Contrast switch
+  at run time are release-checklist lines. From backlog item
+  `dark-theme-panel-tabs-look-lower-than-in-the-default-theme`. Probe `rebar418_probe` on main 12 FAIL (rows,
+  styles, lines, grips, title, drag) -> 25 PASS, 0 FAIL, 0 NOT DRIVEN (Default = build of main 0 px, run-time
+  switch = fresh start, extra bars, narrow window, drag in both themes); saltests 286948 / 0
+  (`TestDarkRebarEtchedPair418`); three refute-first reviews (MUST 0 / 0 / 0, SHOULD 1 / 0 / 1 - a checklist line
+  and the hidden-band match, fixed; the grips NOTE of review 1 and NOTE 1 of review 2 fixed here).
