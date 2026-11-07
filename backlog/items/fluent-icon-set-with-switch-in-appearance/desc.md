@@ -8,7 +8,7 @@ source: manual
 who: both
 created: 2026-11-07
 updated: 2026-11-07
-verified: -
+verified: 2026-11-07 e72ddd38
 effort: L
 feature: -
 related: []
@@ -112,3 +112,4 @@ The study also tried and rejected an own drawing ("Jasná linka", `novy-design.h
 
 - 2026-11-07 — created (source manual)
 - 2026-11-07 — moved to Next position 1
+- 2026-11-07 — verified at e72ddd38: still present at e72ddd38: one icon set only, no set setting in Appearance; RenderSVGImage has no NULL check after nsvgParse and an empty override blanks the button
