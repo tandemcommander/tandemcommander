@@ -638,8 +638,8 @@ static CSalUpdVersion UpdiNowVersion = {0, 0, 0}; // Install Now: the version be
 static unsigned char UpdiNowDigest[SALUPD_DIGEST_BYTES]; // ... and its installer's digest
 static CSalUpdArm UpdiNowBefore;                          // Install Now: that arm, as it was before the click
 
-// Review M1: TRUE while an installer of the product runs in this session (started by us at an exit,
-// by Install Now, by the start-up completion, or by the user) - no second one is started then. A
+// Review M1: TRUE while an installer of the product runs in this session (started by Install Now, the
+// automatic install, the start-up completion, or by the user) - no second one is started then. A
 // process of that name that cannot be examined counts as running.
 static BOOL UpdiInstallerRunning()
 {
@@ -1795,12 +1795,12 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
 
     if (decision == susaComplete)
     {
-        // Only the first instance completes: while another instance runs, the arm is its own
-        // (made by it, for its exit) and the installer would close that instance's windows. And
-        // never while an installer runs (review M1: e.g. the one the last exit started, the
-        // program was opened again before it finished).
+        // Only an instance alone completes: while another instance runs, the plan may be its own
+        // (its automatic install waits until it is alone) and the installer would close that
+        // instance's windows. And never while an installer runs (review M1). Feature 422: nothing
+        // installs at the exit - a plan left waiting is completed at a later start.
         if (!UpdiLastInstance())
-            TRACE_I("UpdInstall: another instance runs - the armed update waits for the last exit");
+            TRACE_I("UpdInstall: another instance runs - the planned update waits for a start alone");
         else if (UpdiInstallerRunning())
             TRACE_I("UpdInstall: an installer runs - the armed update is not started again now");
         else
@@ -1811,7 +1811,7 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
         // review 2 S1: an installer started earlier did not install it - offered, the user decides;
         // round 3 M1: and nothing installs it on its own any more (not a start, not the automatic
         // level) until the user clicks Install Now
-        // round 5 MUST: it is marked offered in every case (no exit installs it silently); the offer
+        // round 5 MUST: it is marked offered in every case (nothing installs it silently); the offer
         // is shown only by the last instance while no installer runs - another instance's Install Now
         // that fails restores its own arm (UpdiRestoreArmAfterFailedNow)
         arm.Source = SALUPD_ARM_OFFERED;

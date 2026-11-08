@@ -1009,6 +1009,14 @@ void CMainWindow::TrySilentUpdateInstall()
                                      (EditWindow != NULL && EditWindow->GetEditLine() != NULL &&
                                       EditWindow->GetEditLine()->HWindow != NULL &&
                                       GetWindowTextLengthW(EditWindow->GetEditLine()->HWindow) > 0));
+        // 422 review 2 S1: an open Find window (its typed criteria, the results of a finished search) - the
+        // installer's close takes an idle one without asking, 421's idle wait used to protect it
+        if (closeAgree && !typing)
+        {
+            TDirectArray<HWND> findWnds(10, 5);
+            FindDialogQueue.AddToArray(findWnds);
+            typing = findWnds.Count > 0;
+        }
         if (typing)
             closeAgree = FALSE;
         BOOL last = closeAgree && UpdInstall_IsLastInstance();

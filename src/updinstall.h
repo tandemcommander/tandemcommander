@@ -11,7 +11,8 @@
 // level and the armed update in the registry, the installation the program
 // runs from, the metered-connection test, the download worker, the
 // verification of a downloaded installer and the start of the installer (on
-// a click, at the program's exit, or at the next start). The rules are in
+// a click, by the automatic level while the program runs, or at the next start;
+// feature 422: never at the program's exit). The rules are in
 // common/salupdinstall.h (pure, tested by saltests).
 //
 // Contracts: specs/420-auto-update-install/contracts/*.md
@@ -65,7 +66,7 @@ struct CUpdDownloadDone
 // fetches the result announced by WM_USER_UPDATEDOWNLOAD_DONE; FALSE when there is none
 BOOL UpdInstall_TakeDownloadResult(CUpdDownloadDone* done);
 
-// arms the verified installer of 'release' for the exit (source SALUPD_ARM_USER / _AUTOMATIC);
+// plans the verified installer of 'release' (source SALUPD_ARM_USER / _AUTOMATIC);
 // an arm of the same version keeps its launch count
 void UpdInstall_Arm(const CSalUpdRelease& release, DWORD source);
 

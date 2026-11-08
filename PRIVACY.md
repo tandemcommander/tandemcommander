@@ -306,7 +306,7 @@ General → When a new version is found**, or in the notification window itself:
 - *Install it automatically as soon as it is downloaded*: after the check at
   start-up, the program downloads the installer and installs it without
   asking right away, unless something could be lost - a file operation or
-  search running, a modal dialog or menu open, something opened from an
+  search running or a Find window open, a modal dialog or menu open, something opened from an
   archive waiting to be packed back, a plug-in file system open, text typed
   in the command line, another copy of the program running; then it waits
   until that has ended. The program closes, the update is installed and the

@@ -332,7 +332,7 @@ function QuitChecked([int]$Id) {
     $before = @(Runs).Count
     $s = Quit $Id
     $new = @(Runs | Select-Object -Skip $before)
-    if (@($new | Where-Object { $_ -like 'exit|*' }).Count -gt 0) { $script:ExitRuns++ }
+    if ($new.Count -gt 0) { $script:ExitRuns++ } # 422 review 2: any installer started by the exit (all kinds read "now")
     return [pscustomobject]@{ Seconds = $s; NewRuns = $new.Count }
 }
 # the program killed - what an installer's close does when the user then cancels the installer
@@ -619,6 +619,23 @@ $Groups['F'] = {
     T 'F3' 'after' ($got -and (Runs)[0] -like $NowLike -and $t -eq 'kept/kept') ('the copy ended: {0}; the target kept "{1}"' -f (RunsStr), $t)
     Kill-Mine $id
     Remove-Item -LiteralPath ($PanelDir + '\a422.txt'), ($right + '\a422.txt') -Force -ErrorAction SilentlyContinue
+
+    # F4 (review 2 S1, the reviewer's row Z1) an open Find window with typed criteria holds the install; closed, it starts
+    Reset-State 2; Set-Env -Fixture 'rel-medium'
+    $id = Start-421; $main = Get-Main $id
+    $known = Get-Tops $id; Post-Cmd $main 741 # CM_FINDFILE
+    $find = $Z; $edits = @(); $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 10 -and $edits.Count -eq 0) {
+        foreach ($w in (Get-Tops $id)) { if ($known -notcontains $w) { $e = @([Drv098f]::Kids($w) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::IsWindowVisible($_) }); if ($e.Count) { $find = $w; $edits = $e; break } } }
+        Start-Sleep -Milliseconds 100
+    }
+    foreach ($e in $edits) { [void][Drv098f]::SetText($e, 'typed422', 5000); break }
+    $a = Wait-Arm 30; Start-Sleep -Seconds 8
+    T 'F4' 'find' ($find -ne $Z -and $null -ne $a -and (Runs).Count -eq 0 -and (SilentStr) -like '*typing=1*') ('Find window with typed criteria: {0}, {1}; {2}' -f (ArmStr $a), (RunsStr), (SilentStr))
+    if ($find -ne $Z) { Close-Win $find }
+    $got = Wait-Run 1 20
+    T 'F4' 'closed' ($got -and (Runs)[0] -like $NowLike) ('Find closed: ' + (RunsStr))
+    Kill-Mine $id
 }
 
 # R: regression rows that still apply

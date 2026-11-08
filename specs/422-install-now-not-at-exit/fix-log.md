@@ -64,5 +64,37 @@ completion), T3 negative control (the count reset by hand: it IS started - the c
   byte-exact.
 - Encoding guard → `TOTAL: 0 finding(s)`.
 
+## Review 1 (refute-first agent)
+
+| # | Finding | Done |
+|---|---|---|
+| M1 | A click's install (Install Now after Help > Check at the automatic level, Download & Install) whose installer ended without installing while the program ran dropped the plan; the next background check re-planned it and the silent install started it again on its own - reproduced (row Z1) | `SalUpdArmAfterInstallerFailed`: the launched plan is kept OFFERED with its count (an automatic plan offered, another restored plan as it is); saltests incl. a negative control; probe T4 (the reviewer's Z1) PASS |
+| N1 | `--updatetest` re-installs after a killed test install | accepted: a test plan launched counts as done; the switch never reaches a restart, a user cannot be locked out |
+| N2 | A launch that fails to start retries at the next starts (1 message each), capped at 3 | accepted: no process ran, the program was never closed |
+| N3 | The launch count was not verified before the installer starts | `UpdiLaunch` stores Launches+1, reads it back, and refuses to start the installer otherwise |
+| N4 | A newer release gets one automatic attempt after a cancelled older one | accepted: per version, no loop |
+| N5 | Remind Me Later on a user's check while a background plan exists: the next start installs it (FR-006) | accepted: as specified |
+| N6 | Spec assumption (level list) vs code (notification in the foreground) | the code's rule is the safer one - kept; T003's `UpdateNotice_IsChoosing` was not needed |
+| N7 | Stale comments mentioning the exit / Install When I Close | refreshed |
+| N8 | FEATURE-HISTORY | written at closing |
+
+After review 1: saltests `287236 / 0 failed`; probe **59 PASS / 0 FAIL**.
+
+## Review 2 (refute-first agent, fresh)
+
+No MUST. Both maintainer requirements verified route by route (silent install, start-up completion; Help,
+About, the level choice), with a negative control in a worktree (M1 reverted + the offer rule disabled:
+`287054 checks, 9 failed`).
+
+| # | Finding | Done |
+|---|---|---|
+| S1 | Without the idle wait, an open Find window (typed criteria, the results of a finished search) is closed by the installer - `DecideCloseApp` lets an idle Find window go; reproduced (row Z1) | an open Find window holds the automatic install like command-line text; probe F4 (the reviewer's Z1): held, starts after Find is closed - PASS; manual / `PRIVACY.md` list it |
+| N1 | Turning the check off (offered plan and file deleted) or deleting the installer from outside gives one more automatic attempt later | accepted: a user action resets it, no loop |
+| N2 | Probe X1 could never fail (every launch reads "now") | `QuitChecked` counts any installer started by an exit |
+| N3 | Stale comments | refreshed (`salupdinstall.h`, `updinstall.cpp/.h`, `upddlg.h`) |
+| N4 | The review-1 section of this log was not committed yet | committed with this round |
+
+After review 2: saltests `287236 / 0 failed`; probe **61 PASS / 0 FAIL / 0 NOT DRIVEN**.
+
 The maintainer's own `%LOCALAPPDATA%\Tandem Commander\Updates` files were moved to
 `%TEMP%\tc422_updates_backup` (SHA-256 recorded) for the probe runs and are moved back at the end.

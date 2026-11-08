@@ -46,7 +46,7 @@ enum CSalUpdLevel
 {
     sulNotify = 0,   // tell the user only (feature 123)
     sulOffer = 1,    // download, verify, offer Install Now - the default
-    sulAutomatic = 2 // download, verify, install when the program closes
+    sulAutomatic = 2 // download, verify, install right away after the start-up check (feature 422)
 };
 
 // a missing or unknown stored value is the default
@@ -460,8 +460,8 @@ inline BOOL SalUpdBuildInstallerArgs(CSalUpdLaunchKind, BOOL allUsers, BOOL noRe
 #define SALUPD_ARM_AUTOMATIC 2 // armed by the level "install automatically"
 // Round 3 M1: an installer started for it did not install it (cancelled, elevation declined, the
 // program was closed by it and it failed) - the update is only OFFERED: nothing installs it on its
-// own (not the start, not the automatic level) until the user clicks Install Now (Install When I
-// Close; its launch count and digest are kept
+// own (not the start, not the automatic level) until the user clicks Install Now; its launch count
+// and digest are kept
 #define SALUPD_ARM_OFFERED 3
 
 struct CSalUpdArm
@@ -661,11 +661,6 @@ inline BOOL SalUpdSilentInstallPlanned(BOOL hasArm, const CSalUpdArm& arm, const
            arm.Launches < SALUPD_MAX_LAUNCHES;
 }
 
-// Review 421 M1, feature 422: an installer started for 'arm' ended without installing it while the
-// program runs (cancelled, the administrator prompt declined). A click's plan is dropped as in 420; the
-// automatic level's plan becomes OFFERED with its launch count instead - dropped, the next check would
-// plan it afresh and the silent install would start the same installer (and its administrator prompt)
-// again on its own (the maintainer's lock-out trap). Returns TRUE and the arm to store when it is kept.
 // Feature 422 review M1: what stays planned after an installer ended without installing while the program
 // runs. 'restored' is the plan of before the launch (SalUpdArmAfterFailedNow), 'launched' the plan the launch
 // made (Install Now / Download & Install / the automatic install: Launches raised). The automatic level's
@@ -693,6 +688,9 @@ inline BOOL SalUpdArmAfterInstallerFailed(BOOL hasRestored, const CSalUpdArm& re
     return FALSE;
 }
 
+// Review 421 M1: the automatic level's plan whose installer did not install it becomes OFFERED with its
+// launch count (the restored-plan branch of SalUpdArmAfterInstallerFailed). Returns TRUE and the arm to
+// store when it is kept.
 inline BOOL SalUpdDeclinedArmKept(const CSalUpdArm& arm, CSalUpdArm* kept)
 {
     if (!arm.Present || arm.Source != SALUPD_ARM_AUTOMATIC)

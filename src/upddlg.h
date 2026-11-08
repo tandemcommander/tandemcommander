@@ -52,7 +52,7 @@ enum CUpdateNoticeForm
 {
     unfClassic, // feature 123: Download (in the browser), Remind Me Later, Skip This Version; feature 421:
                 // Download & Install first when it is offered
-    unfOffer    // a verified installer is offered: Install Now, Install When I Close, Remind Me Later, Skip
+    unfOffer    // a verified installer is offered: Install Now, Remind Me Later, Skip (422: no Install When I Close)
 };
 
 // feature 421: the release of this instance's open notification (FALSE when none is open)
