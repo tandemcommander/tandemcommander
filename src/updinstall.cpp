@@ -28,6 +28,7 @@ static const WCHAR* const UPDINST_VAL_DIGEST = L"Install Digest";
 static const WCHAR* const UPDINST_VAL_SOURCE = L"Install Source";
 static const WCHAR* const UPDINST_VAL_TEST = L"Install Test";
 static const WCHAR* const UPDINST_VAL_LAUNCHES = L"Install Launches";
+static const WCHAR* const UPDINST_VAL_CONFIRMED = L"Install Confirmed"; // round 6: Launches at the last confirmation
 static const WCHAR* const UPDINST_VAL_REFUSED = L"Download Refused"; // a version whose installer was not ours
 
 // the uninstall entry of the installer (setup/tandemcommander.iss, AppId)
@@ -144,6 +145,15 @@ BOOL UpdInstall_LoadArm(CSalUpdArm* arm)
     arm->Source = source;
     arm->Test = test != 0;
     arm->Launches = launches;
+    DWORD confirmed = 0; // round 6: optional (missing: never confirmed after a launch)
+    HKEY key2;
+    if (UpdateCheck_OpenStateKey(FALSE, &key2))
+    {
+        if (!UpdiReadDword(key2, UPDINST_VAL_CONFIRMED, &confirmed))
+            confirmed = 0;
+        NOHANDLES(RegCloseKey(key2));
+    }
+    arm->ConfirmedAt = confirmed <= launches ? confirmed : launches;
     return TRUE;
 }
 
@@ -160,6 +170,7 @@ static void UpdiSaveArm(const CSalUpdArm& arm)
     UpdiWriteDword(key, UPDINST_VAL_SOURCE, arm.Source);
     UpdiWriteDword(key, UPDINST_VAL_TEST, arm.Test ? 1 : 0);
     UpdiWriteDword(key, UPDINST_VAL_LAUNCHES, arm.Launches);
+    UpdiWriteDword(key, UPDINST_VAL_CONFIRMED, arm.ConfirmedAt);
     NOHANDLES(RegCloseKey(key));
 }
 
@@ -173,6 +184,7 @@ void UpdInstall_DropArm()
     NOHANDLES(RegDeleteValueW(key, UPDINST_VAL_SOURCE));
     NOHANDLES(RegDeleteValueW(key, UPDINST_VAL_TEST));
     NOHANDLES(RegDeleteValueW(key, UPDINST_VAL_LAUNCHES));
+    NOHANDLES(RegDeleteValueW(key, UPDINST_VAL_CONFIRMED));
     NOHANDLES(RegCloseKey(key));
 }
 
@@ -814,6 +826,7 @@ void UpdInstall_Arm(const CSalUpdRelease& release, DWORD source)
         old.Test == arm.Test)
     {
         arm.Launches = old.Launches; // review S1: the count is never restarted for the same version
+        arm.ConfirmedAt = old.ConfirmedAt; // round 6: only a click or a Yes confirms (UpdInstall_ConfirmArm)
         if (old.Source == SALUPD_ARM_USER)
             arm.Source = SALUPD_ARM_USER; // a click is not weakened by the automatic level
         else if (old.Source == SALUPD_ARM_OFFERED && source == SALUPD_ARM_AUTOMATIC)
@@ -861,14 +874,14 @@ BOOL UpdInstall_CheckReady(HWND parent, const CSalUpdRelease& release)
 // Round 4 MUST: the launch of Install Now failed (it could not be started, or the installer ended
 // without installing while the program runs) - the arm that existed before the click comes back with
 // the new launch count (an offered update stays only offered), a click on nothing armed leaves nothing
-static void UpdiRestoreArmAfterFailedNow()
+static void UpdiRestoreArmAfterFailedNow(BOOL started)
 {
     CSalUpdArm now;
     BOOL hasNow = UpdInstall_LoadArm(&now);
     if (!hasNow || SalUpdVersionCompare(now.Version, UpdiNowVersion) != 0)
         return; // another version was armed since (a newer check) - not ours to change
     BOOL keep = FALSE;
-    CSalUpdArm restored = SalUpdArmAfterFailedNow(UpdiNowPreArmed, UpdiNowBefore, now, &keep);
+    CSalUpdArm restored = SalUpdArmAfterFailedNow(UpdiNowPreArmed, UpdiNowBefore, now, started, &keep);
     if (keep)
         UpdiSaveArm(restored);
     else
@@ -877,18 +890,23 @@ static void UpdiRestoreArmAfterFailedNow()
                                                          << (keep ? restored.Source : 0));
 }
 
+// round 6: the user confirmed the plan of 'version' now - launches made so far are behind it
+static void UpdiConfirmArm(const CSalUpdVersion& version)
+{
+    CSalUpdArm arm;
+    if (UpdInstall_LoadArm(&arm) && SalUpdVersionCompare(arm.Version, version) == 0)
+    {
+        arm.ConfirmedAt = arm.Launches;
+        UpdiSaveArm(arm);
+    }
+}
+
 void UpdInstall_ArmByClick(const CSalUpdRelease& release)
 {
+    // round 5 / 6: a click while an installer of Install Now runs (in this or another instance) is
+    // confirmed at the current count - a failure of that installer keeps it (SalUpdArmAfterFailedNow)
     UpdInstall_Arm(release, SALUPD_ARM_USER);
-    if (SalUpdVersionCompare(UpdiNowVersion, release.Version) == 0) // launched (by Install Now) in this session
-    {
-        CSalUpdArm arm;
-        if (UpdInstall_LoadArm(&arm))
-        {
-            UpdiNowBefore = arm;
-            UpdiNowPreArmed = TRUE;
-        }
-    }
+    UpdiConfirmArm(release.Version);
 }
 
 BOOL UpdInstall_ExitArmAvailable(const CSalUpdVersion& version)
@@ -928,7 +946,7 @@ int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release)
     DWORD error;
     if (!UpdiLaunch(sulkNow, release.Version, held, TRUE, &error))
     {
-        UpdiRestoreArmAfterFailedNow();
+        UpdiRestoreArmAfterFailedNow(FALSE); // round 6: nothing ran
         UpdiReportRunError(parent, release.Version, error);
         return UPDNOW_FAILED;
     }
@@ -941,7 +959,7 @@ BOOL UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode)
     // program still runs - it was cancelled, the elevation was declined, or it could not close the
     // program. Review NOTE: a click that only asked for "now" does not turn into a silent install at
     // the exit; an update armed before (Install When I Close, the automatic level) stays armed.
-    UpdiRestoreArmAfterFailedNow(); // round 4 MUST: the click's arm gives way to the one before it
+    UpdiRestoreArmAfterFailedNow(TRUE); // round 4 MUST: the click's arm gives way to the one before it
     CSalUpdArm arm;
     BOOL armed = UpdInstall_LoadArm(&arm) && SalUpdVersionCompare(arm.Version, UpdiNowVersion) == 0;
     BOOL later = armed && UpdInstall_ArmHonoured(arm) && arm.Launches < SALUPD_MAX_LAUNCHES;
@@ -964,6 +982,8 @@ BOOL UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode)
         TRACE_I("UpdInstall: the user does not want the update at the exit - the arm is dropped");
         UpdInstall_DropArm();
     }
+    else if (later) // round 6: Yes confirms the plan - the exit may install it (also with other instances)
+        UpdiConfirmArm(UpdiNowVersion);
     // UX test 2 (item 4): when nothing stays planned the update must not just vanish - the offer
     // comes back (Install Now / Install When I Close / Remind Me Later / Skip)
     return !later || answer == IDNO;
@@ -1673,7 +1693,10 @@ void UpdInstall_CompleteArmed(HWND parent)
     UpdiWatchNotify = MainWindow != NULL ? MainWindow->HWindow : parent;
     DWORD error;
     if (!UpdiLaunch(sulkNow, arm.Version, held, TRUE, &error))
+    {
+        UpdiRestoreArmAfterFailedNow(FALSE); // round 6: nothing ran - the plan stays confirmed for the exit
         UpdiReportRunError(parent, arm.Version, error);
+    }
 }
 
 // TRUE when no other process of this executable runs in this session (an inaccessible one of the

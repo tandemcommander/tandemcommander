@@ -10532,27 +10532,44 @@ static void TestAutoUpdate420()
     {
         BOOL keep = FALSE;
         CSalUpdArm clickArm = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 2); // the click promoted it, launch counted
-        CSalUpdArm back = SalUpdArmAfterFailedNow(TRUE, offered, clickArm, &keep);
+        CSalUpdArm back = SalUpdArmAfterFailedNow(TRUE, offered, clickArm, TRUE, &keep);
         CHECK(keep && back.Source == SALUPD_ARM_OFFERED && back.Launches == 2);
         CHECK(!SalUpdArmHonoured(back, TRUE, sulAutomatic, TRUE)); // still never installed on its own
-        back = SalUpdArmAfterFailedNow(TRUE, once, clickArm, &keep);
+        back = SalUpdArmAfterFailedNow(TRUE, once, clickArm, TRUE, &keep);
         CHECK(keep && back.Source == SALUPD_ARM_AUTOMATIC && back.Launches == 2);
         CSalUpdArm userBefore = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 0);
-        back = SalUpdArmAfterFailedNow(TRUE, userBefore, clickArm, &keep);
+        back = SalUpdArmAfterFailedNow(TRUE, userBefore, clickArm, TRUE, &keep);
         CHECK(keep && back.Source == SALUPD_ARM_USER && back.Launches == 2); // Install When I Close stays
-        back = SalUpdArmAfterFailedNow(FALSE, none, clickArm, &keep);
+        back = SalUpdArmAfterFailedNow(FALSE, none, clickArm, TRUE, &keep);
         CHECK(!keep); // nothing was armed: nothing stays armed
         CSalUpdArm notCounted = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 0); // the launch failed before counting
-        back = SalUpdArmAfterFailedNow(TRUE, once, notCounted, &keep);
+        back = SalUpdArmAfterFailedNow(TRUE, once, notCounted, FALSE, &keep);
         CHECK(keep && back.Launches == 1); // the count never goes back
-        back = SalUpdArmAfterFailedNow(TRUE, Upd420Arm(0, 2, 0, SALUPD_ARM_USER, FALSE, 0), clickArm, &keep);
+        back = SalUpdArmAfterFailedNow(TRUE, Upd420Arm(0, 2, 0, SALUPD_ARM_USER, FALSE, 0), clickArm, TRUE, &keep);
         CHECK(!keep); // an arm of another version before: not restored over this one
         CSalUpdArm testClick = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, TRUE, 1); // round 5: a test session's click
-        back = SalUpdArmAfterFailedNow(TRUE, once, testClick, &keep);
+        back = SalUpdArmAfterFailedNow(TRUE, once, testClick, TRUE, &keep);
         CHECK(keep && !back.Test && back.Launches == 1 && back.Source == SALUPD_ARM_AUTOMATIC);
+        // round 6: a click confirmed the plan while the installer ran (here or in another instance)
+        CSalUpdArm clicked = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 1);
+        clicked.ConfirmedAt = 1;
+        back = SalUpdArmAfterFailedNow(FALSE, none, clicked, TRUE, &keep);
+        CHECK(keep && back.Source == SALUPD_ARM_USER && back.ConfirmedAt == 1);
+        // round 6: the installer could not be started - a confirmed plan stays confirmed, a gap stays
+        CSalUpdArm nowArm = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 1);
+        back = SalUpdArmAfterFailedNow(TRUE, userBefore, nowArm, FALSE, &keep);
+        CHECK(keep && back.Launches == 1 && back.ConfirmedAt == 1 && back.Source == SALUPD_ARM_USER);
+        CHECK(SalUpdExitDecision(back, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
+        back = SalUpdArmAfterFailedNow(TRUE, userBefore, nowArm, TRUE, &keep); // it ran and failed
+        CHECK(keep && back.Launches == 1 && back.ConfirmedAt == 0);
+        CHECK(!SalUpdExitDecision(back, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
+        CHECK(SalUpdStartupArmDecision(back, TRUE, FALSE, v020, TRUE) == susaOffer);
+        CSalUpdArm nowTwo = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, 2);
+        back = SalUpdArmAfterFailedNow(TRUE, offered, nowTwo, FALSE, &keep);
+        CHECK(keep && back.Source == SALUPD_ARM_OFFERED && back.Launches == 2 && back.ConfirmedAt == 1);
         CSalUpdArm gone;
         memset(&gone, 0, sizeof(gone));
-        back = SalUpdArmAfterFailedNow(TRUE, once, gone, &keep);
+        back = SalUpdArmAfterFailedNow(TRUE, once, gone, TRUE, &keep);
         CHECK(!keep);
     }
     // round 4 SHOULD: Install When I Close only while the exit can still install it
@@ -10592,7 +10609,13 @@ static void TestAutoUpdate420()
     CHECK(!SalUpdExitDecision(aut, TRUE, TRUE, FALSE, TRUE, FALSE, v020)); // another instance runs
     CHECK(!SalUpdExitDecision(aut, TRUE, TRUE, TRUE, FALSE, FALSE, v020)); // not installed by the installer
     CHECK(!SalUpdExitDecision(tired, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
-    CHECK(SalUpdExitDecision(twice, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
+    CHECK(!SalUpdExitDecision(twice, TRUE, TRUE, TRUE, TRUE, FALSE, v020)); // round 6: ran twice since it was planned
+    {
+        CSalUpdArm twiceConfirmed = twice;
+        twiceConfirmed.ConfirmedAt = 2; // the user confirmed it again (Yes) after the second launch
+        CHECK(SalUpdExitDecision(twiceConfirmed, TRUE, TRUE, TRUE, TRUE, FALSE, v020));
+        CHECK(SalUpdStartupArmDecision(twiceConfirmed, TRUE, FALSE, v020, TRUE) == susaComplete);
+    }
     CHECK(!SalUpdExitDecision(aut, TRUE, TRUE, TRUE, TRUE, FALSE, v021)); // already there
     CHECK(SalUpdExitDecision(test, TRUE, TRUE, TRUE, TRUE, TRUE, v020));  // test arm, test session
     CHECK(!SalUpdExitDecision(test, TRUE, TRUE, TRUE, TRUE, FALSE, v020));

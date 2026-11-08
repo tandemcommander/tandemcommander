@@ -1,9 +1,9 @@
-﻿<#
+<#
 .SYNOPSIS
     Feature 420 (automatic update) - behaviour probe of a Debug build.
     Rows follow specs/420-auto-update-install/spec.md, contracts/*.md and quickstart.md section 2.
     Groups: L levels, V verification, B buttons, X exit, S completion at the next start,
-    T test mode, Rv/Ux/R3/R4/R5 review findings, G Configuration > General. Every row prints PASS / FAIL / NOT DRIVEN.
+    T test mode, Rv/Ux/R3/R4/R5/R6 review findings, G Configuration > General. Every row prints PASS / FAIL / NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Backs up the product's registry key and
     restores it (verified by SHA-256); creates and removes the updates folder
     %LOCALAPPDATA%\Tandem Commander\Updates and a fake uninstall entry under
@@ -139,7 +139,7 @@ function FilesStr { $f = UpdFiles; if ($f.Count) { return ($f -join ', ') }; ret
 function Runs { if (Test-Path -LiteralPath $RunLog) { return , @(Get-Content -LiteralPath $RunLog | Where-Object { $_ }) }; return , @() }
 function Reset-State([int]$Level = -1) {
     foreach ($n in @('Last Attempt', 'Last Attempt Answered', 'Last Success', 'Latest Version', 'Latest Published', 'Skipped Version', 'Update Level',
-            'Install Version', 'Install Digest', 'Install Source', 'Install Test', 'Install Launches', 'Download Refused')) { Uc-Del $n }
+            'Install Version', 'Install Digest', 'Install Source', 'Install Test', 'Install Launches', 'Install Confirmed', 'Download Refused')) { Uc-Del $n }
     Stop-FakeSetup
     Uc-Set 'Check At Startup' 1
     if ($Level -ge 0) { Uc-Set 'Update Level' $Level }
@@ -797,9 +797,8 @@ $Groups['R5'] = {
         [void](Quit $idB); [void](Quit $id)
     }
     finally { Remove-Item Env:\TC_UPDATE_PROBE_LAUNCHFAIL -ErrorAction SilentlyContinue }
-    # B cannot tell that A confirmed its plan in this session: it keeps the arm and the installer and
-    # marks it only offered (the safe direction - no exit installs it silently; round 5, accepted)
-    T 'C' 'other-instance' ($null -ne $a0 -and $a0.Source -eq 1 -and $null -ne $a1 -and $a1.Source -eq 3 -and $a1.Launches -eq 1 -and (UpdFiles) -contains $InstallerName) ('A: Install When I Close + failed Install Now: {0}; check off, B starts: {1}, {2}' -f (ArmStr $a0), (ArmStr $a1), $files)
+    # round 6: the failed start left A's plan confirmed (Install Confirmed) - B leaves it as it is
+    T 'C' 'other-instance' ($null -ne $a0 -and $a0.Source -eq 1 -and $null -ne $a1 -and $a1.Source -eq 1 -and $a1.Launches -eq 1 -and (UpdFiles) -contains $InstallerName) ('A: Install When I Close + failed Install Now: {0}; check off, B starts: {1}, {2}' -f (ArmStr $a0), (ArmStr $a1), $files)
 
     # SHOULD 2, D: Install When I Close clicked while Install Now's installer runs; the installer ends
     # with 5 - the click stays (the question is asked; Yes keeps it)
@@ -817,6 +816,74 @@ $Groups['R5'] = {
     T 'D' 'click-kept' ($fD -eq 'offer' -and $a1.Source -eq 1 -and $boxText -like '*close*' -and $n -eq $Z -and (Runs).Count -eq 2 -and (Runs)[1] -like 'exit|*') ('form during the run {0}; after Install When I Close {1}; installer ends 5: {2}; Yes: {3}, notice {4}; exit ({5} s): {6}' -f $fD, (ArmStr $a0), (Esc $boxText), (ArmStr $a1), (Form $n), $s, (RunsStr))
 
     ND 'E' 'reshow-focus' 'the keyboard after the forced reshow (second failed Install Now) - the hidden desktop has no foreground window; owed to a person (release checklist)'
+}
+
+# R6: the findings of the sixth verification (fix-log, Round 6); rows from the reviewer's probe copy
+function Msg-Box([int]$Id) {
+    $n = [P420]::Notice([uint32]$Id)
+    $b = @(Get-Tops $Id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and $_ -ne $n })
+    if ($b.Count) { return $b[0] }; return $Z
+}
+$Groups['R6'] = {
+    # SHOULD 1, Y: level 2, Install Now's installer fails, "install it when you close?" -> Yes; a second
+    # window; both closed - the confirmed plan is installed at the last exit
+    Reset-State 2; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'automatic'; Press $h 1; [void](Wait-Run 1 10)
+    [void][Drv098f]::PostMessageW((Get-Main $id), 0x8000 + 424, [IntPtr]5, $Z)
+    Start-Sleep -Seconds 2
+    $b = Msg-Box $id; $bt = if ($b -ne $Z) { FullText $b } else { '<no message>' }
+    if ($b -ne $Z) { Post-Cmd $b 6; Start-Sleep -Milliseconds 800 }   # IDYES
+    $a0 = Arm
+    NoCheck
+    $idB = Start-420; Start-Sleep -Seconds 5; $a1 = Arm
+    $s1 = Quit $idB; Start-Sleep -Milliseconds 500; $s2 = Quit $id; $a2 = Arm
+    T 'Y' 'yes-kept' ($bt -like '*close*' -and $a1.Source -eq 2 -and (Runs).Count -eq 2 -and (Runs)[1] -like 'exit|*') ('question {0}; Yes: {1}; second window: {2}; B closed ({3} s), A closed ({4} s): {5}; afterwards {6}' -f (Esc $bt), (ArmStr $a0), (ArmStr $a1), $s1, $s2, (RunsStr), (ArmStr $a2))
+    # ... the exit's installer did not install it either (no process in the seam): the next start offers it
+    $id = Start-420; $n = Wait-Notice $id 15; $a3 = Arm; $f = Form $n
+    if ($n -ne $Z) { Press $n 2; [void](Gone $n 3) }
+    $s = Quit $id
+    T 'Y' 'next-start' ($f -eq 'offer' -and $a3.Source -eq 3 -and (Runs).Count -eq 2) ('next start: notice {0}, {1}; exit ({2} s): {3} line(s)' -f $f, (ArmStr $a3), $s, (Runs).Count)
+
+    # SHOULD 1, C2: level 1, check off: Install When I Close + failed start of Install Now in A; B started;
+    # B, then A closed - the plan is installed at the last exit
+    Reset-State 1; Set-Env
+    $env:TC_UPDATE_PROBE_LAUNCHFAIL = '1'
+    try {
+        $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 6296; [void](Gone $h 3)
+        Post-Cmd (Get-Main $id) 2217
+        $h = Wait-Form $id 'offer' 20; Press $h 1; Start-Sleep -Seconds 2; [void](Take-Box $id $h)
+        Start-Sleep -Seconds 1
+        $n = [P420]::Notice([uint32]$id); if ($n -ne $Z) { Press $n 2; [void](Gone $n 3) }
+        $a0 = Arm
+        Uc-Set 'Check At Startup' 0
+    }
+    finally { Remove-Item Env:\TC_UPDATE_PROBE_LAUNCHFAIL -ErrorAction SilentlyContinue }
+    $idB = Start-420; Start-Sleep -Seconds 5; $a1 = Arm   # B without the failing seam: its exit is logged
+    $s2 = Quit $id; Start-Sleep -Milliseconds 500; $s1 = Quit $idB
+    T 'C2' 'plan-kept' ($a0.Source -eq 1 -and $a1.Source -eq 1 -and (Runs).Count -eq 1 -and (Runs)[0] -like 'exit|*') ('A: Install When I Close + failed start: {0}; B started: {1}; A, B closed ({2} s, {3} s): {4}' -f (ArmStr $a0), (ArmStr $a1), $s2, $s1, (RunsStr))
+
+    # SHOULD 2, X: A's Install Now runs (nothing armed before); B: Install When I Close; A's installer
+    # fails - B's click stays (A asks; Yes)
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 1; [void](Wait-Run 1 10)
+    NoCheck
+    $idB = Start-420; Start-Sleep -Seconds 4; $aB = Arm
+    Post-Cmd (Get-Main $idB) 2217
+    $h = Wait-Form $idB 'offer' 20; $fB = Form $h; Press $h 6296; [void](Gone $h 3); $a0 = Arm
+    [void][Drv098f]::PostMessageW((Get-Main $id), 0x8000 + 424, [IntPtr]5, $Z)
+    Start-Sleep -Seconds 2
+    $b = Msg-Box $id; $bt = if ($b -ne $Z) { FullText $b } else { '<no message>' }
+    if ($b -ne $Z) { Post-Cmd $b 6; Start-Sleep -Milliseconds 800 }   # IDYES
+    $a1 = Arm
+    $s1 = Quit $id; Start-Sleep -Milliseconds 500; $s2 = Quit $idB
+    T 'X' 'b-click-kept' ($fB -eq 'offer' -and $null -ne $a1 -and $a1.Source -eq 1 -and $bt -like '*close*' -and (Runs).Count -eq 2 -and (Runs)[1] -like 'exit|*') ('A Install Now runs; B started: {0}; B form {1}, Install When I Close: {2}; A installer ends 5: {3}; then {4}; A, B closed ({5}, {6} s): {7}' -f (ArmStr $aB), $fB, (ArmStr $a0), (Esc $bt), (ArmStr $a1), $s1, $s2, (RunsStr))
+
+    # NOTE 1, E: Install Now started (nothing armed before), no failure report reached the window - a
+    # normal exit does not start the installer again
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 1; [void](Wait-Run 1 10); $a0 = Arm
+    $s = Quit $id
+    T 'E' 'now-arm-exit' ((Runs).Count -eq 1) ('Install Now launched: {0}; normal exit ({1} s): {2}' -f (ArmStr $a0), $s, (RunsStr))
 }
 
 $CfgKey = 'HKCU\Software\Tandem Commander\Settings\Configuration'

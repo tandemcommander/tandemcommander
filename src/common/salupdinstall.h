@@ -473,6 +473,10 @@ struct CSalUpdArm
     DWORD Source; // SALUPD_ARM_USER / SALUPD_ARM_AUTOMATIC / SALUPD_ARM_OFFERED (never honoured)
     BOOL Test;    // armed in test mode
     DWORD Launches;
+    // round 6: Launches when the user last confirmed the plan (Install When I Close, Yes to "install it
+    // when you close?", a start of the installer that failed before it ran). A launch after it means an
+    // installer ran and did not install it: the exit never installs it silently, the start offers it.
+    DWORD ConfirmedAt;
 };
 
 // An arm counts only while what armed it still holds: a click always; the automatic level
@@ -543,9 +547,9 @@ inline CSalUpdStartupArm SalUpdStartupArmDecision(const CSalUpdArm& arm, BOOL ho
         return susaDone; // a launched same-version install cannot be told from a failed one
     if (arm.Launches >= SALUPD_MAX_LAUNCHES)
         return susaGiveUp;
-    if (arm.Launches > 0)
-        return susaOffer; // started before and not installed: the user decides (item, Expected 5)
-    return susaComplete;
+    if (arm.Launches > arm.ConfirmedAt)
+        return susaOffer; // started since the user's last confirmation and not installed: the user decides
+    return susaComplete;   // never started since it was planned (or confirmed): the exit did not run it
 }
 
 // Review S1: the form a downloaded and verified installer is shown in at the automatic level - an arm
@@ -562,14 +566,30 @@ inline BOOL SalUpdAutomaticArmUsable(BOOL hasArm, const CSalUpdArm& arm, const C
 // the installer could not be started, or it ended without installing while the program runs - the
 // arm that existed before the click comes back with the new launch count (an offered update stays
 // only offered, an automatic one stays subject to the settings); a click on nothing armed leaves
-// nothing armed ('*keep' FALSE).
-inline CSalUpdArm SalUpdArmAfterFailedNow(BOOL hadArm, const CSalUpdArm& before, const CSalUpdArm& now, BOOL* keep)
+// nothing armed ('*keep' FALSE). Round 6: 'started' FALSE - the installer could not even be started:
+// the launch counts (the cap), but the plan confirmed before stays confirmed; a plan the user confirmed
+// after the launch (Install When I Close here or in another instance) is kept as it is.
+inline CSalUpdArm SalUpdArmAfterFailedNow(BOOL hadArm, const CSalUpdArm& before, const CSalUpdArm& now, BOOL started,
+                                          BOOL* keep)
 {
+    // a click confirmed the plan at its current count while the installer ran (our own arm always has
+    // ConfirmedAt < Launches after the launch): the user's newer choice stays
+    if (started && now.Present && now.Source == SALUPD_ARM_USER && now.ConfirmedAt >= now.Launches)
+    {
+        *keep = TRUE;
+        return now;
+    }
     CSalUpdArm result = before;
     *keep = hadArm && before.Present && now.Present && SalUpdVersionCompare(before.Version, now.Version) == 0;
     // round 5 NOTE: a launch of the other mode (a test session over a normal arm) is not counted
-    if (*keep && (before.Test != 0) == (now.Test != 0))
-        result.Launches = now.Launches > before.Launches ? now.Launches : before.Launches;
+    if (*keep && (before.Test != 0) == (now.Test != 0) && now.Launches > before.Launches)
+    {
+        if (!started) // nothing ran: the confirmation moves with the count (what ran before stays)
+            result.ConfirmedAt = before.ConfirmedAt + (now.Launches - before.Launches);
+        result.Launches = now.Launches;
+    }
+    if (result.ConfirmedAt > result.Launches)
+        result.ConfirmedAt = result.Launches;
     return result;
 }
 
@@ -607,6 +627,8 @@ inline BOOL SalUpdExitDecision(const CSalUpdArm& arm, BOOL honoured, BOOL normal
         return FALSE;
     if (arm.Launches >= SALUPD_MAX_LAUNCHES)
         return FALSE;
+    if (arm.Launches > arm.ConfirmedAt)
+        return FALSE; // round 6: an installer ran since the user's last confirmation (any instance)
     if (arm.Test)
         return testMode;
     return SalUpdVersionCompare(running, arm.Version) < 0;

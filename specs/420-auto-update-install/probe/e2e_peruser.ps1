@@ -41,7 +41,7 @@ function Uc-Del([string]$Name) { & cmd.exe /c "reg delete `"$UcKey`" /v `"$Name`
 function Uc-Get([string]$Name) { $p = Get-ItemProperty -LiteralPath ('Registry::' + $UcKey) -Name $Name -ErrorAction SilentlyContinue; if ($null -eq $p) { return $null }; return $p.$Name }
 function ArmStr { $v = Uc-Get 'Install Version'; if ($null -eq $v) { return 'no arm' }; return ('arm {0} source {1} test {2} launches {3}' -f $v, (Uc-Get 'Install Source'), (Uc-Get 'Install Test'), (Uc-Get 'Install Launches')) }
 function Reset-Uc {
-    foreach ($n in @('Last Attempt', 'Last Attempt Answered', 'Install Version', 'Install Digest', 'Install Source', 'Install Test', 'Install Launches')) { Uc-Del $n }
+    foreach ($n in @('Last Attempt', 'Last Attempt Answered', 'Install Version', 'Install Digest', 'Install Source', 'Install Test', 'Install Launches', 'Install Confirmed')) { Uc-Del $n }
     Uc-Set 'Check At Startup' 1; Uc-Set 'Update Level' 2
 }
 $script:LoaderIds = @{}

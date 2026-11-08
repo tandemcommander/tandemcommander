@@ -625,14 +625,19 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (Form == unfOffer && UpdInstall_ExitArmAvailable(Release.Version))
             {
-                // UX test 5: never armed without a verified installer
-                if (UpdInstall_CheckReady(HWindow, Release))
+                // UX test 5: never armed without a verified installer; round 6 NOTE: CheckReady may show
+                // a message box (the window can be replaced meanwhile) - nothing of the object after it
+                CSalUpdRelease release = Release;
+                HWND self = HWindow;
+                HWND parent = ::GetParent(HWindow);
+                if (UpdInstall_CheckReady(self, release))
                 {
-                    UpdInstall_ArmByClick(Release); // round 5: also while Install Now's installer runs
-                    DestroyWindow(HWindow);
+                    UpdInstall_ArmByClick(release); // round 5: also while Install Now's installer runs
+                    if (IsWindow(self))
+                        DestroyWindow(self);
                 }
-                else
-                    PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_FORM, unfClassic, 0);
+                else if (IsWindow(self))
+                    PostMessage(parent, WM_USER_UPDATENOTICE_FORM, unfClassic, 0);
             }
             return TRUE;
         }

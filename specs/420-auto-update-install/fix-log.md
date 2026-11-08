@@ -174,6 +174,25 @@ round 4 - no `.slt` refresh.
 Checks after round 5 fixes: encoding guard 0; `BUILD SUCCEEDED`; saltests **287,181 checks, 0 failed**;
 probe **92 PASS, 0 FAIL, 1 NOT DRIVEN** (R5 E, owed to a person; registry restored, SHA-256 equal).
 
+## Round 6 (independent agent: full review of `main...420` + GUI reproduction; MUST 0, SHOULD 2, NOTE 2)
+
+Zero MUST: no route to a silent install the user did not choose. Both SHOULDs were plans the user
+confirmed that were dropped without a word - one cause: an instance could not tell "an installer ran
+and did not install it" from "the user confirmed the plan again". Fixed at the root with one stored
+value instead of instance checks.
+
+| Finding | What | Done |
+|---|---|---|
+| R6 SHOULD 1 | (Y) level 2, Install Now's installer failed, the user answered **Yes** to "install it when you close?", a second window was opened - it turned the plan into an offer, both exits installed nothing and nothing was shown at the next start; (C2) the same with Install When I Close + a failed start and the check off - at the next start the arm and the installer were deleted | new arm value `Install Confirmed` (`CSalUpdArm::ConfirmedAt`): the launch count at the user's last confirmation - Install When I Close (`UpdInstall_ArmByClick`), Yes to the question, a start of the installer that failed before anything ran (the confirmation moves with the count, `SalUpdArmAfterFailedNow(..., started FALSE)`, also in `CompleteArmed`). The start-up decision offers only when `Launches > ConfirmedAt` (an installer ran since the confirmation), otherwise completes; **the exit refuses `Launches > ConfirmedAt`** - no instance, race or lost report can install silently an update whose installer ran since the user's last word. saltests; probe R6 Y yes-kept / next-start, C2; R5 C now asserts the plan kept |
+| R6 SHOULD 2 | (X) Install When I Close clicked in **another** window while this window's Install Now installer ran was undone when that installer failed | `SalUpdArmAfterFailedNow` keeps a user arm confirmed at its current count (our own arm always has `ConfirmedAt < Launches` after the launch) - a click here or in another instance stays; the question is asked, Yes keeps it; probe R6 X |
+| R6 NOTE 1 | Install Now's own arm (source 1) was honoured by the exit when the failure report never reached the window (posted during the close, after `Shutdown`, or exit code 0 without installing) | covered by the exit rule above (`Launches > ConfirmedAt`); probe R6 E |
+| R6 NOTE 2 | The Install When I Close handler read the dialog object after a nested message box (damaged file) | handled by the same pattern as Install Now (copies, `IsWindow`) |
+
+Checks after round 6 fixes: encoding guard 0; `BUILD SUCCEEDED`; saltests **287,190 checks, 0 failed**;
+probe **97 PASS, 0 FAIL, 1 NOT DRIVEN** (new group R6: 5 rows; after the NOTE 2 change groups B, Ux, R4-R6
+again 29 PASS); `e2e_peruser.ps1` against the **real GitHub** (15:05) **7 PASS, 0 FAIL**; registry restored
+(SHA-256 equal) after every run. `PRIVACY.md` names the new stored value (the starts already confirmed).
+
 ## Translations (stop-rules §2.13, module `salamand`)
 
 Round 2 (after review 1 / UX test 1): new `IDS_UPDATE_BUSY`, `IDS_UPDATE_INSTALL_LATER`,

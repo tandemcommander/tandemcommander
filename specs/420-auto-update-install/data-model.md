@@ -27,9 +27,10 @@ data (`HasAsset` FALSE); 123's acceptance of the record does not change.
 |---|---|---|
 | `Install Version` | REG_SZ `<a>.<b>.<c>` | the armed version; absent = nothing armed |
 | `Install Digest` | REG_SZ 64 lowercase hex | the digest the installer must have |
-| `Install Source` | REG_DWORD | 1 the user (a click), 2 the automatic level |
+| `Install Source` | REG_DWORD | 1 the user (a click), 2 the automatic level, 3 offered only (round 3: an installer ran and did not install it - never honoured) |
 | `Install Test` | REG_DWORD | 1 armed in test mode |
 | `Install Launches` | REG_DWORD | installer launches for this version (0..3; Install Now may count past 3) |
+| `Install Confirmed` | REG_DWORD | round 6: `Install Launches` at the user's last confirmation (Install When I Close, Yes to "install it when you close?", a start that failed before anything ran); optional, missing = 0. `Launches > Confirmed` = an installer ran since the user's last word: the exit refuses it, the start offers it |
 | `Download Refused` | REG_SZ | a version whose downloaded installer failed the signer / signature / version check - not downloaded again (ignored in test mode) |
 
 Invalid or partial values = nothing armed (all are removed together).
@@ -52,12 +53,12 @@ Invalid or partial values = nothing armed (all are removed together).
 | launches >= 3 | give up: nothing is started; the arm is kept with its count (review 1 S1), so a later check at the automatic level does not restart it - the update is only offered (Install Now) |
 | (at completion) the installer file fails verification / is missing | drop the state + file |
 | (at completion) an installer of the product runs | nothing now (review 1 M1); the arm waits |
-| launches > 0 (an installer was started and did not install it) | offer (notification), never started at the start; the arm stays (review 2 S1) |
+| launches > confirmed (an installer was started since the user's last confirmation and did not install it) | the arm becomes offered (source 3, round 3 / 5) in every instance; the offer is shown only by the last instance with no installer running (review 2 S1) |
 | otherwise | complete now (*Install Now* route) - only when no other instance of the executable runs in the session (fix-log F1: the arm then belongs to that instance's exit, and the installer would close its windows); otherwise the arm waits |
 
 ### Exit decision (`SalUpdExitDecision`)
 
-Install at exit only when: an honoured arm exists, launches < 3, the exit is normal (not
+Install at exit only when: an honoured arm exists, launches < 3, launches <= confirmed (round 6), the exit is normal (not
 `UnattendedClose`, not `CriticalShutdown`, `SM_SHUTTINGDOWN` 0 - recorded when the main window is
 destroyed, because an installer's close resets `UnattendedClose` before the end of the exit,
 fix-log F2), this is the last instance of this
