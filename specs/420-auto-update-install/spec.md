@@ -16,6 +16,16 @@ setting with three levels. Measured at `824e8f58`: nothing in the program downlo
 installer; the release record of the GitHub API carries a SHA-256 digest of the installer; the
 published installer is signed with the project's certificate.
 
+## Clarifications
+
+### Session 2026-11-08
+
+- Q: Does the next start ask before it completes an update the exit did not install? → A: No - it installs at once through the *Install Now* route (progress window, close, restart); the maintainer asked for completion, and the arm already was the user's or the level's consent (autonomous run: item).
+- Q: Does a check the user asks for (Help > Check for New Version, About > Check now) also download? → A: Yes, with the same level rules; the notification appears at once in today's form when no verified installer exists yet and is replaced by the downloaded form when the download completes (autonomous run: recommended - one behaviour for both checks).
+- Q: Does the About box's *Download* link change? → A: No, it still opens the browser download (autonomous run: conservative - unchanged behaviour for a case the item does not name).
+- Q: What happens to a downloaded installer when the user switches to *Notify me only*? → A: It stays on disk until it is superseded, its version is reached or the user skips it; it is never run while the level forbids it (autonomous run: conservative - nothing deleted that may be wanted again).
+- Q: What does *Remind Me Later* do on the downloaded-form notification? → A: Closes it; nothing is armed; the verified installer is reused at the next check without a new download (autonomous run: conservative).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Download in the background and offer the installation (Priority: P1)
@@ -182,6 +192,7 @@ notification only, no download.
 - **FR-013**: At start-up, an armed update whose version is still newer than the running one (or, in test mode, one never launched) MUST be completed at once by the *Install Now* route, at most 3 launches per version in total; after that the arm is dropped and the update is offered in the notification.
 - **FR-014**: At start-up an armed update whose version the running program has reached MUST be cleaned up (arm and installer removed).
 - **FR-015**: *Skip This Version* MUST drop an arm of that version and delete its installer.
+- **FR-015a**: A check the user asks for MUST follow the same level rules; when its result is a newer version without a verified installer yet, today's notification appears at once and is replaced by the downloaded form when the download completes. The About box's *Download* link stays a browser download.
 - **FR-016**: The restart command line of the update close MUST stay the identity-only command line of feature 080.
 
 **Test mode**
