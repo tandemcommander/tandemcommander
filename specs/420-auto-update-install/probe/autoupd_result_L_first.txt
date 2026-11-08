@@ -1,0 +1,15 @@
+﻿Feature 420 probe, 2026-11-08T11:43:13, exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe, registry backup C:\Users\pavel\AppData\Local\Temp\tc420_backup.reg
+--- group L
+L0         notify PASS        level 0: notice classic, asset requests 0, no files
+L1         offer  PASS        no level stored (default): notice offer, tandemcommander-0.2.0-x64-setup.exe, no arm, asset requests 1
+L1         hint   PASS        hint: The new version has been downloaded and verified. Install it now, or when you close Tandem Commander; your settings are kept.
+L1         exit   PASS        exit with an offered but not armed update: nothing started
+L2         auto   PASS        level 2: notice automatic, arm 0.2.0 source 2 test 0 launches 0, tandemcommander-0.2.0-x64-setup.exe
+L2         exit   PASS        normal exit after 1,26 s: exit|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /NORESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; arm 0.2.0 source 2 test 0 launches 1
+L3         off    PASS        check off, level 2: notice none, requests 0, no files, no arm
+L4         metered PASS        metered connection: notice classic, asset requests 0, no files
+L5         portable PASS        no matching uninstall entry (the real HKLM entry names Program Files): notice classic, asset requests 0, no files
+L6         nodigest PASS        rel-nodigest: notice classic, asset requests 0, no files
+L6         huge   PASS        rel-huge: notice classic, asset requests 0, no files
+Registry: restored; identical=True; SHA-256 before 6BE47F3139614B80B4238667F2F7FF900B02639CB5A4F24835A556378BCB56E5 / after 6BE47F3139614B80B4238667F2F7FF900B02639CB5A4F24835A556378BCB56E5
+TOTAL: 11 PASS, 0 FAIL, 0 NOT DRIVEN; registry restored: True

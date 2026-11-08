@@ -1,0 +1,48 @@
+Feature 420 probe, 2026-11-08T11:48:22, exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe, registry backup C:\Users\pavel\AppData\Local\Temp\tc420_backup.reg
+--- group Dbg
+t= 0,0 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=26 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 0,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 1,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 1,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 2,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 2,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 3,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 3,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 4,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 4,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 5,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 5,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 6,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 6,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 7,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 7,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 8,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 8,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 9,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t= 9,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t=10,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t=10,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t=11,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t=11,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t=12,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t=12,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t=13,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t=13,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t=14,0 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+t=14,5 15A0FEA #32770 vis=True notice=True kids=14 "Tandem Commander" | 150BB6 TandemCommanderMainWindowVer01 vis=True notice=False kids=28 "T420 - panel - Tandem Commander 0.2.0 (x64) ST"
+files: no files; no arm; requests: /latest/rel-good /latest/rel-tampered /repos/tandemcommander/tandemcommander/releases/assets/2 /dl/2
+S3 before start: arm 0.2.0 source 2 test 0 launches 0; tandemcommander-0.2.0-x64-setup.exe; processes: 
+S3 t=0: arm 0.2.0 source 2 test 0 launches 0; tandemcommander-0.2.0-x64-setup.exe; runs 0
+S3 t=0,5: no arm; no files; runs 0
+S3 t=1: no arm; no files; runs 0
+S3 t=1,5: no arm; no files; runs 0
+S3 t=2: no arm; no files; runs 0
+S3 t=2,5: no arm; no files; runs 0
+S3 t=3: no arm; no files; runs 0
+S3 t=3,5: no arm; no files; runs 0
+S3 t=4: no arm; no files; runs 0
+S3 t=4,5: no arm; no files; runs 0
+S3 t=5: no arm; no files; runs 0
+S3 t=5,5: no arm; no files; runs 0
+Registry: restored; identical=True; SHA-256 before 6BE47F3139614B80B4238667F2F7FF900B02639CB5A4F24835A556378BCB56E5 / after 6BE47F3139614B80B4238667F2F7FF900B02639CB5A4F24835A556378BCB56E5
+TOTAL: 0 PASS, 0 FAIL, 0 NOT DRIVEN; registry restored: True

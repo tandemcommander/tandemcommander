@@ -1295,6 +1295,8 @@ CSalUpdAfterCheck UpdInstall_AfterCheck(HWND mainWindow, const CSalUpdRelease& r
 
 static BOOL UpdiStarted = FALSE; // start-up completed: only such a run installs at its exit
 
+static BOOL UpdiLastInstance(); // below
+
 void UpdInstall_OnStartupComplete(HWND mainWindow)
 {
     CALL_STACK_MESSAGE1("UpdInstall_OnStartupComplete()");
@@ -1364,7 +1366,14 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
     }
 
     if (decision == susaComplete)
-        PostMessage(mainWindow, WM_USER_UPDATEINSTALL, 0, 0); // the update the exit did not install
+    {
+        // Only the first instance completes: while another instance runs, the arm is its own
+        // (made by it, for its exit) and the installer would close that instance's windows.
+        if (UpdiLastInstance())
+            PostMessage(mainWindow, WM_USER_UPDATEINSTALL, 0, 0); // the update the exit did not install
+        else
+            TRACE_I("UpdInstall: another instance runs - the armed update waits for the last exit");
+    }
 }
 
 void UpdInstall_CompleteArmed(HWND parent)
