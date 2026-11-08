@@ -19,6 +19,476 @@ application and every plugin. Versions up to 0.1.10 raised only the third number
 - **The window about a new version lets you choose how updates are handled, and installs with one click** (feature 421).
   - **Before:** the choice *When a new version is found* was only on the General page of the configuration, and with *Notify me only* the window offered just *Download*, which opened the installer in your web browser.
   - **Now:** the window shows *When a new version is found* and changes the setting at once. With *Notify me only* it offers **Download & Install**: Tandem Commander downloads the installer itself, shows how much has arrived (*Cancel Download* stops it), checks it - the checksum GitHub published, the project's signature and the version - and installs the update; *Download* still opens it in your web browser. A copy that was not installed by the installer says that it cannot update itself and offers only the browser download.
+- **Tandem Commander can update itself** (feature 420).
+  - **Before:** the program only said that a newer version exists; the installer had to be downloaded
+    in the browser and run by hand.
+  - **Now:** Configuration > General > *When a new version is found* (also offered in the window about
+    a new version): *Notify me only*, **Download it and offer installation** (the default), or *Install
+    it automatically as soon as it is downloaded*. The installer is downloaded in the background from
+    the project's GitHub release and checked (its checksum, its signature and the project's signing
+    certificate) before it is offered or run. *Install Now* closes the program, installs the update and
+    starts it again. An installation for all users asks for administrator rights (UAC). Nothing is
+    downloaded on its own on a metered connection.
+  - **Limitation:** a copy not installed by the installer (portable, unpacked) is only notified. An
+    update whose installer was cancelled or failed is not installed again on its own - it is offered.
+- **Dark theme: the panel tabs and the toolbar area now look the same as in the default theme** (feature 418).
+  - **Before:** in the Dark theme the toolbar area had no frame and no lines between its rows, was 8 pixels lower,
+    and the panel tabs sat higher with no line above them, so they looked lower than in the default theme; the
+    toolbar grips were hidden, so the toolbars' contents started further left and the toolbars could not be
+    moved.
+  - **Now:** the Dark theme has the default theme's layout - the same frame and lines, drawn in dark colours, the
+    tabs and everything below them at the same height, the toolbars' contents at the same place. The grips
+    are shown in the Dark theme too, drawn dark, so the toolbars can be moved by them there as well.
+- **Plug-in icons in the Fluent 2 style too** (feature 417).
+  - **Before:** with the new Fluent 2 icons (feature 416) the plug-ins kept their old small bitmaps - blurred at
+    larger display scaling, not adapted to the Dark theme, several plug-ins with only a generic plug icon and some
+    with the same icon (FTP and SFTP; CodeView and MdView).
+  - **Now:** every plug-in that comes with Tandem Commander has its own Fluent 2 icon, with a Dark variant, in the
+    Plugins bar, the Plugins menu, View With, the Plugins Manager, the Change Drive menu and drive bars, the
+    Disconnect dialog, and the tab and Directory line of a plug-in file system (the Folders file system keeps the
+    icon of the folder it shows). Choosing **Classic** gives back exactly the old icons. Plug-ins from other
+    authors keep their own icons; one without an icon gets the Fluent 2 default instead of the old plug. The
+    setting in **Configuration > Appearance** is now called **Icon style**, since it governs all icons.
+  - **Limitation:** the plug-ins' own windows and toolbars (PictView, DB Viewer, File Comparator, ...) keep their
+    look.
+- **Toolbar, menu and drive icons in one modern style - the old look one click away** (feature 416).
+  - **Before:** the toolbar mixed Visual-Studio-style icons with 16-colour bitmaps (the whole Selection
+    group, Shared Directories) and Windows icons (system folders, every drive on the drive bar); in the Dark
+    theme the blue arrows and accents faded into the dark bar.
+  - **Now:** the toolbars, menus, drive bar, Change Drive menu, the `..` symbol of the file list and the
+    toolbars of the configuration lists use one icon set, "Fluent 2" (built on Microsoft Fluent UI System
+    Icons, MIT licence, shipped with the program), with its own Dark variants. **Configuration > Appearance >
+    Toolbar icons** shows a preview of each set; choosing **Classic** and OK switches back at once, without a
+    restart, to exactly the icons of 0.2.0. A hand-made Dark icon that cannot be read no longer leaves an empty
+    button.
+  - **Limitation:** plug-in icons, cloud-service and WSL icons keep their own look; the button frames, the menu
+    highlight and the F-key bar are unchanged.
+- **A panel tab could not be dragged to the first place** (feature 413).
+  - **Before:** a tab dragged to the left end of the tab strip stopped there and landed in the
+    second place, in both panels; in the Dark theme the active tab of the inactive panel had
+    almost the colour of the strip and the same colour as the path line under it, so the strip
+    looked lower.
+  - **Now:** a tab dragged to either end of the strip becomes the first or the last tab (of the
+    tabs shown when not all fit). In the Dark theme the inactive panel's active tab is a lighter
+    grey with a readable title, so it shows as a tab like in the default theme.
+  - **Limitation:** the tab and the Dark theme's toolbar area keep their sizes - nothing was lower
+    in pixels; the lighter tab no longer has its path line's colour.
+- **An FTP panel did not show a change made through another name of its server** (feature 410).
+  - **Before:** after an upload, rename or delete through one name of a server (`localhost`), a panel showing the same folder through another name (`127.0.0.1`) with the same user and port kept the old listing until Ctrl+R; a folder visited earlier was shown from the listing cache and a file viewed earlier showed its old copy.
+  - **Now:** such a panel is listed again, and the cached listings and viewed files of the changed folder are dropped under every name with the same user and port. A panel whose connection has already closed is not reconnected for it; it lists the folder again at its next refresh.
+  - **Limitation:** another user or another port of the same server is not treated as the same server here; a panel at a parent folder of the changed one is not refreshed.
+- **The "mask hints" link was cut off in translated dialogs** (feature 409; GitHub #11). In
+  Compare Directories and ten more dialogs (Select / Unselect files, Unpack, Convert, Copy/Move
+  more options, Change filter, the Recycle Bin, Viewer, Unpackers and Archive associations
+  configuration pages) and in the FTP configuration, the link under a mask field lost letters in
+  most translations. It now has room to the left in every dialog, its right edge where it was;
+  German, French and Spanish use shorter wordings, the Romanian text is corrected ("hints for
+  masks"). On the Recycle Bin page the two lines under the mask field are 2 dialog units lower.
+  Other clipped labels of the translations remain (tracked per language).
+- **Markdown Viewer: no way to copy a code block but selecting it** (feature 408) - every
+  code block now has a *Copy* control in its top-right corner (on hover, or Tab); a click or
+  Enter puts the block's code on the clipboard exactly as written (tabs and line breaks
+  kept, no highlighting), and a small notice at the viewer's bottom right shows what was
+  copied. The viewer still runs no script. Limits: not on raw-HTML `<pre>` elements or in
+  View Source; a document's own CSS rules such as `li > pre` no longer match code blocks.
+  (GitHub #20)
+- **Find: a second click on a result column did not reverse the sort order** (feature 407,
+  GitHub #23). The Find window's results sorted every request ascending, so clicking the same
+  column header again, View > Date or Ctrl+F5 seemed to do nothing, and no column showed how the
+  list was sorted. Now the same column again reverses the order and another column starts
+  ascending; the sorted column shows the sort arrow (also in the dark theme); directories stay
+  before files in both directions, as in the panels; a new search forgets the sort. The Registry
+  Editor's Find window sorts the same way. An Intersect or Subtract refused because of an invalid
+  regular expression no longer empties the result list.
+- **Registry Editor: a Move of an `HKEY_CLASSES_ROOT` key held by both the machine's and the user's classes left the machine's half** (feature 406).
+  - **Before:** the Move copied the key and then deleted the source through `HKEY_CLASSES_ROOT`, which removes only the user's part; the machine's part stayed and was still shown, and the Move reported success - also without administrator rights.
+  - **Now:** both parts are deleted by their real paths, the machine's first; without administrator rights the Move ends with "Unable to remove the original registry key." naming the machine's key, and nothing of the source is deleted. The machine's part is never deleted while it holds a value hidden by the user's value of the same name, or when it is a registry link - the same box with "The request is not supported."
+  - **Limitation:** the refusal does not say why; a change of the user's part by another program between the copy and the delete is not seen.
+- **A tab switch that asked a question left the tab strip dragging a tab** (feature 405, GitHub issue #22).
+  - **Before:** clicking another panel tab when leaving the current one shows a question (the FTP plugin asking what to do with the connection) or an error box: the button's release went to that window, the strip kept waiting for a tab drag and held the mouse - the insert mark could follow the mouse, the next click was swallowed, and a press and move moved the tab where it was never meant to go.
+  - **Now:** after such a switch no drag starts and the strip does not keep the mouse; a tab moves only while the button is held from the press to the release.
+  - **Limitation:** a button held down through the question (answered with the keyboard) still drags the tab, as it is held from the press to the release.
+- **Panel tabs looked like Windows 95, the X closed a tab on the press, and a tab could not go to the other panel** (feature 404).
+  - **Before:** tabs were raised 3D boxes with jagged glyphs and no icons. A press on the X closed the tab at once, a drag showed only a thin insert mark, and the only way to show a tab in the other panel was to open the location again there.
+  - **Now:**
+    - The strip has the rounded Windows 11 look with an icon per tab: drive, folder, archive or plug-in.
+    - A dragged tab follows the mouse while the others slide aside, and Esc puts them back.
+    - The X closes the tab only when the button is released over it.
+    - The tab menu adds *Move to Other Panel* and *New Tab as Other Panel*.
+  - **Limitation:**
+    - The strip is 8 px taller (about half a list row less).
+    - A tab restored at start-up that is inside an archive shows a folder icon until it is first shown.
+    - The classic look is not kept as an option.
+- **A damaged disc image could end the program with an "Insufficient memory" box** (feature 403) - an
+  ISO 9660 (also Joliet or UDF-hybrid) image one of whose folders claimed a length of 2 GiB or more made
+  the ISO plug-in ask for an impossible amount of memory; both Abort and Ignore in the box ended Tandem
+  Commander. Now such a folder, one larger than 256 MiB, one running past the end of the image, or
+  nested folders whose buffers together would pass 256 MiB, is a folder that cannot be read: one "Error
+  reading directory structure" message, the rest of the image is listed and extracted, and Unpack with
+  "Delete archive after unpacking" keeps the image. Limit: a folder below the root gets at most 256 MiB
+  less the folders above it - far beyond any real disc.
+- **A damaged Xbox disc image no longer lists names made of bytes that are not in the image** (feature 402).
+  - **Before:** when a folder of an Xbox (XDVDFS) image ended inside the name of its last entry, the ISO
+    plug-in read the rest of the name from the program's memory: the file was listed and extracted under
+    a garbled name, nothing was reported, and Unpack with "Delete archive after unpacking" deleted the
+    image.
+  - **Now:** such an entry is treated as a damaged record: the error "Error reading directory structure"
+    is shown once, the entries before it and the rest of the image are still listed and extracted, and
+    the image is kept.
+  - **Limitation:** the rest of that folder after the damaged entry is not listed.
+- **A disc image whose two folders name one directory with different lengths lists both** (feature 401).
+  - **Before:** in a crafted or damaged ISO 9660 image where two folder records point to the same
+    directory with different lengths, the second folder was shown empty without any message, and a
+    whole Unpack with "Delete archive after unpacking" deleted the image although the files of the
+    longer folder were never extracted.
+  - **Now:** each folder lists the files its own record covers and Unpack extracts all of them; a
+    crafted folder that points back to itself with another length still opens at once.
+  - **Limitation:** an image made of many such records opens slowly; two folders with the same
+    start and the same length still list the second one empty.
+- **A disc image with a folder that cannot be read lists its later folders** (feature 400).
+  - **Before:** when the ISO plug-in could not read one folder of an ISO 9660, UDF or Xbox image
+    (its directory past the end of the image, a damaged record), every later folder of that image
+    was shown empty - its files could not be viewed or extracted, although they were readable.
+  - **Now:** every folder that can be read is listed, before and after the damaged one; the error
+    box is shown once per listing (not once per damaged folder), and a whole Unpack with "Delete
+    archive after unpacking" still keeps such an image. A crafted image whose folders point back
+    to themselves opens at once; an image whose two folders name one directory lists the second
+    one empty and is kept by such an Unpack.
+  - **Limitation:** the rest of a damaged folder itself is not listed; out of memory still ends
+    the listing of later folders.
+- **Adding files to or deleting files from a ZIP archive reached through a symbolic link failed
+  with "Cannot replace original archive with temporary working file"** (feature 399). The ZIP
+  plug-in now updates the archive the link leads to and the link stays a link; the temporary file
+  is made next to the real archive. Choosing Overwrite in Pack for a link name still replaces the
+  link itself.
+- **The viewer's Find showed a selected word with accented letters as garbage and could not find it** (feature 398).
+  - **Before:** with text selected in the internal viewer, Find was pre-filled with the selection's raw bytes read in the system code page: in a UTF-8 file `café` appeared as `cafĂ©` and Find answered "Cannot find the string"; a longer selection with such letters, Chinese letters or an emoji was refused with "The path specified is too long." although nothing was typed.
+  - **Now:** the Find field shows the selection as the viewer shows it, and a selected word of a UTF-8 file is found. A selection longer than the field holds (200 characters, or 200 bytes in UTF-8) is shortened to its beginning, at a whole letter, before it is shown.
+  - **Limitation:** in a file the viewer shows in a code page (not UTF-8), a word with accented letters is shown correctly in the field but still not found by Find (use Hex search); this is recorded for a later fix.
+- **Hex search turned letters outside the system code page into question marks** (feature 397).
+  With *Hex* ticked, Find's *Containing* field and the viewer's *Find* field changed quoted
+  letters the system code page does not have (Chinese, Japanese, Greek on a Czech system, …) into
+  `?` at the first key typed, and the search then looked for `?` bytes. The letters now stay as
+  typed and are searched as their UTF-8 bytes; the help with spacing hex digits works as before.
+  Limitation: a quoted text longer than 200 bytes in UTF-8 (about 67 Chinese letters) is refused
+  at OK, as every Find text is since feature 311.
+- **A TAR member whose name contains `..` was unpacked into a wrong folder, possibly over another file** (feature 396).
+  - **Before:** a TAR, cpio or rpm archive member stored under a name such as `sub/../a.txt`
+    (rare - GNU tar does not write such names) was listed and unpacked as `s\a.txt`: the first
+    letter of the dropped folder survived as a folder of its own. When the archive also held a
+    file `s/a.txt`, Unpack asked to overwrite it and with Yes replaced it with the other file's
+    data.
+  - **Now:** `..` removes the whole folder before it and never leads above the archive's root -
+    `sub/../a.txt` is listed and unpacked as `a.txt`, `../../empty` as `empty`. Names without
+    `..` are unchanged.
+  - **Limitation:** a name resolved this way can be the same as another member's name (`a.txt`
+    and `sub/../a.txt`); Unpack then asks to overwrite, as for two members stored under one name.
+    A hard link whose target name contains `..` is still reported, not extracted.
+- **Unpack deleted an archive whose file was stored under the name "." without a word** (feature 395).
+  - **Before:** a TAR, cpio or rpm archive that stored a file's data only under a name such as `.`,
+    `./` or an empty name (crafted archives) was unpacked without that file and without a
+    message; with "Delete archive after unpacking" the archive - the only copy of the data - was
+    deleted.
+  - **Now:** a whole Unpack reports such a file ("The filename, directory name, or volume label
+    syntax is incorrect" with the name in quotes), extracts the rest and keeps the archive. A
+    `.` folder (as `find . | cpio -o` writes it), an empty file, and a file whose data another
+    name of it receives stay silent as before.
+  - **Limitation:** two different files of an old-format (odc / binary) cpio that share a
+    truncated inode number count as one; the byte-swapped binary cpio format is not recognised
+    at all.
+- **A cpio or rpm file whose data was stored under the name "." was extracted empty** (feature 394).
+  - **Before:** when a newc / crc cpio archive or an rpm stored a hard-linked file's data with a
+    name such as `.` or `./`, unpacking wrote the file's other names as empty files and reported
+    success - with "Delete archive after unpacking" the archive, the only copy of the data, was
+    deleted.
+  - **Now:** the other names get the data; when the data comes before them in the archive they
+    are reported and the archive is kept; data of such a member that fails its crc checksum is
+    refused.
+  - **Limitation:** a file stored only under such a name (no other name) is still skipped
+    without a message (crafted archives only).
+- **A cpio archive or rpm package with a member name that is too long for the panel could not be opened at all** (feature 393).
+  - **Before:** a cpio archive or rpm package holding a member whose name no file system takes (for example 300 Chinese characters), whose folders are nested deeper than the panel can show, or with a folder named by more than 255 bytes inside another folder, refused to open with "Internal error: file data structure corrupted." - none of its other files could be reached.
+  - **Now:** such a member is left out of the listing and named once by the system's "file name too long" message with its whole path, as a TAR member has been since 0.2.0; every other member lists and extracts. Unpack (Alt+F9) extracts everything a file system takes, also the deep members, and keeps the archive when it was asked for a member it cannot write.
+  - **Limitation:** when the too-long name is the one that carries a hard-linked file's data and it comes first, the file's other names are reported instead of extracted (the archive is kept).
+- **A refused Change Filter edit no longer changes the panel's filter** (feature 392).
+  - **Before:** after "File mask is syntactically incorrect." and Cancel, the panel went on listing by the refused text (for example only `*.txt` files after typing `*.txt|`) until the filter dialog was opened again, and a tab's filter longer than 259 bytes was cut to its first 259 bytes.
+  - **Now:** a refused edit leaves the panel's filter exactly as it was - whole, and the panel lists by it.
+  - **Limitation:** a filter longer than 259 bytes still cannot be switched off with "Don't use filter" without shortening the text first.
+- **Registry Editor: Copy and Find no longer go round in circles through a registry link** (feature 391).
+  - **Before:** copying a key whose subkeys held a registry link pointing back at the key itself, at a key above it, or at the key the copy was being written into, copied the same keys over and over - a chain about 28 keys deep was written into the target before an error "Unable to open a registry key. (87)" stopped it. Find listed the same key up to 28 times and ended with the same error.
+  - **Now:** each key is copied and found once. Copy shows "Can't copy a key to itself." for the link that leads back (OK skips it and the copy goes on, Cancel stops); Find simply does not go through such a link again. A link pointing anywhere else is followed as before.
+  - **Limitation:** the message has no *Skip All*; registry links are made only by special tools, so most users never meet one.
+- **Registry Editor: moving a key from HKEY_CLASSES_ROOT into the user's Classes key did nothing** (feature 390).
+  - **Before:** moving (F6) a key that HKEY_CLASSES_ROOT shows only from the machine's settings into \HKEY_CURRENT_USER\Software\Classes\ made a copy for the user and then deleted that copy again instead of the original. No message appeared and nothing changed, although the move seemed to succeed.
+  - **Now:** after the copy, the original is deleted where it really is (HKEY_LOCAL_MACHINE\Software\Classes). Without administrator rights Windows refuses that, and "Unable to remove the original registry key." says so; the user's copy stays. With administrator rights the key is moved.
+  - **Limitation:** a key that exists for both the machine and the user is still removed only from the user's part when moved elsewhere.
+- **The User Menu's names to compare and the Change Icon file were cut at 259 bytes** (feature 389).
+  - **Before:** a full name to compare whose UTF-8 form was longer than 259 bytes (about 87 or more Chinese, Japanese or Korean letters in a short folder) was cut silently, and the User Menu command was started with another name. In Configuration > User Menu > Change Icon, such a file name was read in a code-page form: the program said it could not find the file, put SHELL32.DLL into the field and stored it as the item's icon; a name of 258 or 259 bytes was stored but lost at the next start ("Error Loading Configuration").
+  - **Now:** both dialogs say "The path specified is too long.", stay open and keep the whole text in the field; nothing is started or stored. Change Icon also refuses to list icons for such a name.
+  - **Limitation:** the limit stays 259 bytes, for Change Icon including the icon number the item stores (e.g. ",9"); a shorter path is the workaround.
+- **The Batch Renamer's "Include subdirectories" renamed files inside junctions and folder links** (feature 388).
+  - **Before:** with "Include subdirectories" the Renamer read every folder below the selection, also a junction or a directory symbolic link: the files of the folder the link points to - possibly outside what you selected - were offered and renamed, a link pointing back up listed the same files once per level until a "too long path name" box dropped the listing, and a selected junction listed its target's files.
+  - **Now:** a junction, directory symbolic link or volume mount point is never entered; it is listed as an item of its own (its name matched against the mask as a selected folder's) and a rename changes only the link's name. Plain folders, cloud (OneDrive) placeholders and deduplicated folders are read as before.
+  - **Limitation:** links below the selected folder are listed and renamed by the rule while plain subfolders are not; whether they should rather be skipped is an open decision.
+- **Registry Editor: View (F3) of a text value showed a cut text with a garbage character on
+  a UTF-8 or East Asian ANSI code page** (feature 387). A REG_SZ, REG_EXPAND_SZ or REG_MULTI_SZ
+  value with a letter outside ASCII is now written to the viewer whole; a text that cannot be
+  converted to the code page is shown as stored instead of as stale bytes, and a failed write
+  of the viewer's temporary file is reported. On single-byte code pages nothing changes
+  (letters the code page lacks still show as `?`).
+- **The Documents drive could open another folder when the Documents folder has a long name in letters that need several bytes** (feature 386).
+  - **Before:** with a Documents folder whose path needs more than 259 bytes inside the program (for example a folder named with 90 Chinese letters), the Documents button of the drive bar, *Documents* in the Alt+F1 / Alt+F2 menu and Ctrl+; opened the folder whose name is the first part of the real one - another folder, without a message; with a still longer one (about 520 bytes) they opened the Desktop. The "If the path is inaccessible, go to Documents" rescue path also went to the shortened folder.
+  - **Now:** the Documents folder is opened whole. The rescue path, which can hold only 259 bytes, no longer goes to another folder: for such a Documents folder it goes to the root of the Windows drive.
+  - **Limitation:** a Documents folder whose path is 260 characters or longer still opens the Desktop.
+- **FTP: an upload into one server folder could replace a file without asking because another
+  folder's listing was used** (feature 385). On a server with case-insensitive paths (Windows,
+  NetWare, OS/2, VMS, MVS, z/VM, Tandem, AS/400), folder names with letters outside ASCII were
+  compared by a code-page byte table: on code page 1250 the folders `Č` and `Ĝ` counted as one, so
+  an upload into `/Ĝ` while an upload into `/Č` was still open could store over an existing file
+  without the overwrite question; `Č` and `č` counted as two folders. Folder names are now compared
+  the way Windows compares file names; ASCII names behave as before. Not verified on a real VMS or
+  AS/400 server.
+- **An FTP file on an IBM z/VM server that lists names in the Windows code page was shown, deleted
+  and downloaded under another name when both its name and its file type had letters outside
+  ASCII** (feature 384).
+  - **Before:** `nameč.extč` was shown as `nameÄŤ.extč`. Delete, download and rename asked the
+    server for a file it did not have.
+  - **Now:** the name is built from the bytes the server listed and read once, so it is shown and
+    addressed as the server has it. This also covers a server that lists both UTF-8 and code-page
+    names, and the other server types whose listing rules join parts of a line.
+  - **Limitation:** checked against a test server that lists in the z/VM form, not a real z/VM
+    system.
+- **Copying or moving files into an archive folder typed in another case put them into a new folder beside it** (feature 383).
+  - **Before:** F5 or F6 from a disk panel with the target typed as `<archive>\DOCS\` while the archive holds the folder `Docs` packed the files into a new folder `DOCS` beside `Docs` (7z and ZIP); deeper paths (`\dOCS\sUB\`) and a new sub-folder (`\DOCS\New\`) did the same.
+  - **Now:** the typed folder is spelled as the archive spells it before packing, so the files land in `Docs` (a new sub-folder keeps the name you typed). An exact name always wins, two folders that differ only in case are never guessed, and a different letter that only looks alike to the old comparison (`Č` against `Ĝ`) is never taken for the existing folder.
+  - **Limitation:** a case difference of a non-ASCII letter (`Č` typed, `č` in the archive) still makes a second folder; when no panel shows the archive, it is listed once more before packing.
+- **A folder of an archive typed in another case opened the archive's root when another folder held names differing only in case** (feature 382).
+  - **Before:** opening `archive.tar\DOCS` (command line, Change Directory, a hot path) for the folder `Docs` of a TAR or 7z archive in which some other folder holds two names that differ only in case (`X\a.txt` and `X\A.txt`) showed the archive's root without a message; Select All and Copy (F5) then copied the whole root.
+  - **Now:** the folder opens under the archive's own spelling (`archive.tar\Docs`, also deeper paths such as `dOCS\SUB`) when exactly one folder of that name exists ignoring case; an exactly typed name always wins, and a file with the typed name stays focused as before.
+  - **Limitation:** when the typed name fits two folders that differ only in case (`Docs` and `DOCS`, typed `docs`), the archive's root is still shown without a message (recorded for a later fix).
+- **A cabinet with a name holding an unpaired surrogate could not be opened** (feature 381). A `.cab`
+  archive one of whose files was stored with a UTF-8 name containing an unpaired surrogate - a name
+  Windows allows - could not be opened or unpacked at all, not even its other files, and nothing
+  said why. Such a name is now listed and extracted under exactly that name. A name that is not
+  valid UTF-8 at all is still refused, which still fails the cabinet without a message (to be fixed
+  separately).
+- **Registry Editor: a too long relative path went to another key** (feature 380). In a deep
+  registry key, typing a path relative to it (Change Directory or `cd`) whose full path is over
+  259 bytes of UTF-8 sent the panel, without a message, to the path cut at 259 bytes - possibly
+  another existing key. The Registry Editor now refuses it with "too long path name" and the panel
+  stays; the name focused after a rename and the Find window's Focus are never cut either. Limit:
+  under a key deeper than 259 bytes relative paths are refused (type the whole path).
+- **A damaged UDF disc image could make the ISO plug-in read past its buffer** (feature 378).
+  - **Before:** a UDF disc image whose volume descriptor declared more partition maps than it holds (or a
+    map of length 0) was opened as if it were valid: the plug-in read past the descriptor it had read and, with
+    a map length of 0, could record billions of partition maps; such an image unpacked whatever the bytes past
+    the descriptor happened to give and "Delete archive after unpacking" deleted it.
+  - **Now:** the partition maps are read only inside the descriptor and its declared map table; a descriptor
+    whose maps do not fit is refused with "Error reading directory structure at sector #..." - a UDF-only image
+    does not open, an ISO 9660 + UDF image lists its ISO 9660 part, and a whole unpack keeps the image.
+  - **Limitation:** checked with images written by Windows' IMAPI2FS; an image whose first volume descriptor
+    is damaged is refused even when a later copy would be valid.
+- **A UDF 2.50 disc image written by Windows did not open in the ISO plug-in** (feature 377).
+  - **Before:** an image of UDF revision 2.50 (the revision of Blu-ray discs) written by Windows' own image writer showed "Cannot read sector #00000000." and "Error reading directory structure ... Incomplete content of ISO image." and listed no file; nothing could be extracted (the image was kept).
+  - **Now:** it lists and unpacks like the same files written as UDF 2.01, and Unpack with "Delete archive after unpacking" deletes it once everything is extracted.
+  - **Limitation:** tested with images written by Windows only; no real Blu-ray disc image was available.
+- **Opening a folder found by quick search briefly showed the whole parent folder** (feature 376).
+  - **Before:** when quick search showed only the matching items and you opened a matching folder (Enter, double click, Ctrl+PageDown), the panel first drew every item of the current folder on a plain background and only then the opened folder; with a large or slow folder the unfiltered list stayed visible for a moment.
+  - **Now:** the panel goes from the search view straight to the opened folder. Going back up still puts the cursor on the folder you opened.
+  - **Limitation:** other ways of leaving a folder while quick search is on (choosing a drive, Back/Forward, Change Directory, a hot path) can still show the unfiltered folder for a moment.
+- **Switching back to the program paused it for a moment while another program kept the clipboard open** (feature 375).
+  - **Before:** every time you switched back to Tandem Commander while another program held the clipboard open (a clipboard manager, remote-desktop clipboard sharing, a program that hangs), the window stopped responding for about 0.15 s while the program waited to check whether there was something to paste.
+  - **Now:** the program checks the clipboard once without waiting and looks again every half second for up to 5 seconds; menus that offer Paste look again when they open. Paste becomes available as soon as the other program releases the clipboard.
+  - **Limitation:** while the clipboard stays busy, Paste is not offered (as before); it may take up to half a second after the clipboard is released before the Paste toolbar button becomes enabled.
+- **The Change Drive menu and the drive bar had no way to the WSL Linux file systems** (feature 374).
+  - **Before:** to open a WSL distribution the user had to type `\\wsl.localhost\<distribution>` in Change Directory.
+  - **Now:** on a computer with WSL, Alt+F1 / Alt+F2 list `Linux - <distribution>` for every installed distribution (with the Linux penguin), and the drive bar has a penguin button - a drop-down when there are several distributions; choosing one opens `\\wsl.localhost\<distribution>`. The new check box *Linux Distributions (WSL)* on the *Change Drive Menu and Drive Bar* configuration page hides them. Building the menu does not start WSL.
+  - **Limitation:** the settings import from Altap Salamander / Open Salamander does not set the new option (those programs never had it); a distribution installed while the program runs appears on the drive bar after the next Alt+F1.
+- **`\\wsl.localhost` offers the WSL distributions** (feature 373).
+  - **Before:** typing `\\wsl.localhost`, `\\wsl.localhost\` or `\\wsl$` in Change Directory, or going up (Backspace, `..`) from `\\wsl.localhost\Ubuntu`, showed "(53) The network path was not found" instead of the list of shared folders that other servers offer.
+  - **Now:** the list shows the WSL distributions; picking one opens `\\wsl.localhost\<distribution>` (or `\\wsl$\<distribution>`). Other network places that are not Windows file servers but answer the same way through Windows get their list too. A server that does not exist still shows one error, after the same wait as before.
+  - **Limitation:** measured with the Windows WebDAV client service stopped; with it running, a server that does not exist may take longer to report - the wait window's Esc / Close still end the wait.
+- **Switching back to the program no longer freezes it with a WSL folder in a panel** (feature 372).
+  - **Before:** with a WSL folder (`\\wsl.localhost\Ubuntu`) or another network folder without change notification in a panel, every switch back to Tandem Commander stopped it for about half a second with the busy cursor; after the WSL distribution had stopped, the first switch back froze it for about two seconds.
+  - **Now:** the window answers at once; the folder is checked in the background and the panel is refreshed as before (new and removed items appear, a folder deleted meanwhile is left).
+  - **Limitation:** a short pause (~0.15 s) of every switch back, also with local folders, remains (the check of the clipboard for the paste commands); for a network folder that does not answer, the "press ESC to go to a fixed drive" window no longer appears - the panel keeps its listing until the folder answers.
+- **The information about a Nero disc image (.nrg) stopped the program or showed wrong sessions** (feature 370).
+  - **Before:** viewing a Nero image (F3) whose session information covers fewer tracks than the image
+    holds - or that has none - read past the end of that information: the information showed an
+    arbitrary track count, and a test build stopped. A session count of 2^31 or more was shown as -1 and
+    hid the later sessions; a session of 0 tracks was shown with the next session's tracks.
+  - **Now:** every session the image declares is shown with the tracks it really holds, and the tracks no
+    session covers are listed under "Tracks not in any session".
+  - **Limits:** a damaged image that declares very many sessions shows each of them, also the empty ones.
+- **A damaged session table in a Nero disc image (.nrg) lost a session's files** (feature 369).
+  - **Before:** when a Nero image's session information block had an unexpected size (damaged, or written
+    by another tool), the rest of its track table was read from the wrong place: unpacking gave only the
+    first session's files with the message "Unknown track type.", and the other session's files were not
+    extracted.
+  - **Now:** such a block is ignored and the rest of the table is read from its proper place. The image is
+    listed from what remains, and "Delete archive after unpacking" keeps the image because its listing is
+    known to be incomplete. Other blocks whose size does not match their contents no longer shift the
+    table either.
+  - **Limits:** with the block ignored, fewer sessions are listed, so some files may not be shown (no
+    message names them). A block whose size runs past the end of the file still ends the table, and the
+    image is then opened as a plain image (kept after unpacking).
+- **A file of 4 GiB or more in a disc image was extracted as a small fragment** (feature 368).
+  - **Before:** an ISO 9660 image that stores a file in several parts (every file of 4 GiB or more on a DVD or
+    Blu-ray image made by xorriso, mkisofs, ImgBurn and others) showed the file once per part, and unpacking or
+    copying it left only one part - for example 5,048 bytes of a 4 GiB file - after "Confirm File Overwrite"
+    questions; the image was kept.
+  - **Now:** such a file is listed once with its whole size and extracted whole, its parts joined in order.
+  - **Limits:** when the image's directory lacks the file's last part, the file is left out with the message
+    "Error reading directory structure" and "Delete archive after unpacking" keeps the image; the same happens to
+    such a file on a raw CD image of Mode 2 sectors.
+- **Video files in Form 2 sectors without the disc's Form 2 mark were extracted cut** (feature 367).
+  - **Before:** a Video CD-like disc image whose video file was stored in Mode 2 Form 2 sectors but not marked
+    as such in its directory record (no CD-XA record, mixed Form 1 + Form 2 attributes, or a Form 1 first
+    sector) extracted that file with only 2048 of every 2324 bytes of each sector, without a message, and
+    "Delete archive after unpacking" then deleted the image that held the full video.
+  - **Now:** each sector of such a file is read as its own header says - 2324 bytes of a Form 2 sector, 2048
+    of a Form 1 sector - and the file is listed with that size; the image is deleted only when every stream
+    was extracted whole.
+  - **Limits:** a sector whose header is damaged is read with 2048 bytes (the image is then kept when
+    "Delete archive after unpacking" is on); such files are read in full each time the image is listed.
+- **Video CD and SVCD video files extracted from a disc image were cut** (feature 366).
+  - **Before:** the video files of a Video CD / SVCD image (`MPEGAV/AVSEQnn.DAT`, `MPEG2/AVSEQnn.MPG`) were
+    extracted with only 2048 of every 2324 bytes of each sector - about 12 % of the video lost without a
+    message - and "Delete archive after unpacking" then deleted the image that held the full video.
+  - **Now:** files the disc marks as Mode 2 Form 2 are listed and extracted with all 2324 bytes of every
+    sector: an SVCD's video file equals the MPEG it was made from, a Video CD's holds it whole between the
+    disc's empty margins.
+  - **Limitation:** a file stored in Form 2 sectors without that mark (a damaged or unusual directory entry)
+    is still extracted as before; an `.iso` made of a Video CD holds only 2048 bytes a sector.
+- **A Nero (.nrg) or CloneCD (.img) disc image of several sessions was listed without its second session, and a file could be extracted with the wrong content** (feature 365).
+  - **Before:** in a Nero image burnt track-at-once, a raw (2352-byte) or Mode 2 data track was read with the wrong sector size, and an image with an ETN2 track table read only its first track entry, from the wrong place on the disc - the second session was not listed, and a file of the first session could be extracted with bytes of the second. A CloneCD image whose track positions count from the start of the disc was read as one session. "Delete archive after unpacking" kept these images, so nothing was deleted.
+  - **Now:** the sector size follows the track's mode, every track entry of the table is read with its own mode, start, end and disc position, and a CloneCD image is split into sessions by its table of contents - every session is listed and extracted with the right content. A table that cannot be read consistently keeps the image after a whole unpack. Nero images of the oldest format (v1) and tracks stored with subchannel data are not yet read this way.
+- **A UDF disc image with a folder stored in several pieces was listed cut, and Unpack with "Delete archive after unpacking" deleted the image** (feature 364).
+  - **Before:** the ISO plug-in read a UDF folder only up to its first piece (extent). On fragmented rewritable or packet-written media the folder's later files were not listed, and a whole Unpack (Alt+F9) with "Delete archive after unpacking" extracted only part of the tree and deleted the image. A folder whose piece was shorter than the folder's declared size was read short the same way.
+  - **Now:** every piece of a folder is read in order, so all its files are listed and extracted. A folder that still cannot be read whole (a piece not recorded on the disc, a list of pieces continued elsewhere, more than 32 pieces, pieces shorter than the folder's size) lists what can be read and marks the listing incomplete, so a whole Unpack keeps the image. Folders in one piece are read exactly as before.
+- **A damaged UDF disc image could make the ISO plug-in read past its buffer, list made-up `_` entries, and Unpack with "Delete archive after unpacking" deleted the image** (feature 363).
+  - **Before:** a file identifier in a UDF folder says how long its "implementation use" field and its name are, and the ISO plug-in believed it. With a damaged length (up to 64 KB) the name was read from memory past the folder data the plug-in holds; it came out empty and the entry was listed as `_` (a folder `_`, an empty file `_`), the listing went on without a mark, and a whole Unpack (Alt+F9) with "Delete archive after unpacking" extracted a wrong tree and deleted the image.
+  - **Now:** such an identifier is refused like an identifier with an invalid tag: "Invalid UDF Tag ID." is shown, the rest of that folder is not read, the listing is marked incomplete, and a whole Unpack extracts everything readable and keeps the image. Valid images list and unpack exactly as before.
+  - **Limitation:** an identifier longer than UDF allows but still inside the read data is read as before. Not tried with an image damaged by a real medium.
+- **A damaged UDF disc image could be deleted by Unpack although a folder of it was not extracted** (feature 362).
+  - **Before:** a UDF folder whose entry describes no folder data (no allocation descriptors, or a first extent too
+    short to hold even the folder's link to its parent) was listed as an empty folder without any warning; the
+    root such a folder showed an empty UDF part. Unpack of the whole image with "Delete archive after unpacking"
+    extracted the rest and deleted the image - the folder's files were lost.
+  - **Now:** such a folder is treated as unreadable: a sub-folder is still listed empty, but the listing is
+    incomplete, so the unpack reports failure and the image is kept; a damaged root shows "Bad root ICB. Cannot
+    read directory structure." Intact images, real empty folders and empty volumes list and unpack as before.
+  - **Limitation:** a folder stored in more than one piece on the disc, or whose only piece is shorter than its
+    recorded size, is still read only partly (recorded for a later fix).
+- **ISO plug-in: a damaged UDF disc image no longer makes Tandem Commander stop answering** (feature 361). A UDF
+  folder or file entry that declared a reserved allocation-descriptor type made the program hang while the image
+  was opened or unpacked, and an entry whose descriptor area reached past its sector was read past the buffer (a
+  crash with a bug report). Such an entry is now treated as unreadable: a damaged root folder shows "Bad root
+  ICB", a damaged sub-folder is left empty and the listing is marked incomplete, a damaged file is not extracted
+  ("cannot be extracted") - and Unpack with "Delete archive after unpacking" keeps the image. An entry whose
+  descriptor area is not a whole number of descriptors is refused too.
+- **A damaged UDF disc image of a CD-R / DVD-R / BD-R could corrupt memory in the ISO plug-in** (feature 360).
+  - **Before:** an image whose virtual allocation table (VAT) entry claimed more table data than the file's
+    length, a descriptor area longer than its sector, a reserved descriptor type or a length over 4 GB made the
+    plug-in write past its table buffer while the image was listed or unpacked - a crash, or memory corrupted
+    without notice.
+  - **Now:** such an entry is not taken as the table: the volume does not open ("Missing virtual allocation
+    table."), nothing is extracted, and "Delete archive after unpacking" keeps the image.
+  - **Limitation:** a table whose descriptors cover less than its length is still read (its tail is not
+    defined); other damaged UDF file entries are a separate fix.
+- **A cut UDF disc image of a CD-R / DVD-R could make Tandem Commander stop answering** (feature 359). A disc
+  image of a sequentially written UDF disc (with a virtual allocation table) that was cut short - for example a
+  raw 2352-byte-sector dump of an interrupted download - could make the program hang for ever when opened or
+  unpacked, so it had to be ended and other work in it was lost. Now the image does not open: the ISO plug-in
+  shows "Error reading virtual allocation table" (or "Missing virtual allocation table." when the cut file holds
+  part of the volume without its table), and the image is kept. Limitation: a raw 2352-byte dump of a whole
+  such disc still does not open.
+- **Opening or unpacking certain CD-R / DVD-R / BD-R disc images closed Tandem Commander** (feature 358).
+  - **Before:** a UDF disc image of a sequentially written disc (CD-R, DVD-R or BD-R written in UDF, for example
+    with mkudffs or by packet writing) whose file held more than the disc's volume - data or empty sectors after
+    it - showed "Missing virtual allocation table." and then Tandem Commander closed ("A problem has occurred,
+    forcing Tandem Commander to close"), on Enter and on Unpack (Alt+F9).
+  - **Now:** the message is shown and the image does not open; Tandem Commander keeps running, and a whole
+    Unpack with "Delete archive after unpacking" keeps the image. A disc image that also has an ISO 9660 part
+    lists that part and is kept by such an unpack. Images that end with their table open as before.
+  - **Limitation:** an image whose table is in the file but followed by other data still does not open.
+- **Unpack could delete an old-format disc image (Easy CD Creator, WinOnCD, Roxio, NTI, CIF, PDI) together with its second session** (feature 357).
+  - **Before:** a disc image in one of the older formats the ISO plug-in recognises without a cue sheet - Easy CD Creator, WinOnCD / Roxio `.c2d`, `.cif`, NTI `.ncd`, `.pdi`, Nero images without their footer, 2336- and 2332-byte sector images - showed only the files of its first session. When it held a second session, a whole Unpack (Alt+F9) with "Delete archive after unpacking" deleted the image, and the second session's files were lost.
+  - **Now:** a whole Unpack extracts what is listed and keeps the image when data lies past the listed volume (as features 354 and 355 do for cooked and raw images). A one-session image of those formats unpacks and is deleted as before.
+  - **Limitation:**
+    - No message says why the image was kept.
+    - An image of those formats that ends with more than 16 sectors of other data after its volume is now kept too.
+    - Only the first session is listed.
+    - Checked with crafted images, not with real images of those formats.
+- **Unpack could delete a UDF-only disc image together with a second image or other data stored after it** (feature 356).
+  - **Before:** a disc image with only a UDF file system (as Windows writes images, as Blu-ray discs are made) showed only the files of its first volume. When the file held another image or other data after that volume, a whole Unpack (Alt+F9) with "Delete archive after unpacking" deleted the image, and the data after the volume was lost.
+  - **Now:** a whole Unpack extracts what is listed and keeps the image when data lies past the UDF volume, or when where the volume ends cannot be read. A plain UDF image - one that ends where its volume ends, as Windows' image writer, mkudffs and disc authoring tools write them - unpacks and is deleted as before.
+  - **Limitation:**
+    - No message says why the image was kept.
+    - A UDF image followed by many empty sectors, and UDF images with blocks smaller than 2048 bytes, are now kept too.
+    - Up to 16 sectors after the volume are still not checked.
+    - Checked with images written by Windows and by mkudffs, not with a real Blu-ray disc image.
+- **Unpack could delete a raw multi-session disc image not named `.img`, losing all but its first session** (feature 355).
+  - **Before:** a raw disc image with a second session after the first showed only the first session's files. Examples: a `.bin` without its `.cue`, an Alcohol 120% `.mdf`, a raw dump named `.iso`. A whole Unpack (Alt+F9) with "Delete archive after unpacking" then deleted the image, and the later session's files were lost.
+  - **Now:** a whole Unpack extracts what is listed and keeps the image in these cases:
+    - it holds data past the volume it lists (more than a few sectors that are not empty);
+    - its volume's size does not fit the file.
+  - A raw one-session image unpacks and is deleted as before, also when it ends with an empty post-gap.
+  - **Limitation:**
+    - No message says why the image was kept.
+    - A `.bin` of a data + audio disc without its `.cue` is now kept too, because its audio tracks are not listed.
+    - The later sessions are still not listed.
+    - Images in some other formats (for example Easy CD Creator images) can still be deleted; this is recorded for a later fix.
+    - Checked with crafted images only.
+- **Unpack could delete a multi-session disc image of 2048-byte sectors, losing all but its first session** (feature 354).
+  - **Before:** a disc image of 2048-byte sectors (`.iso`, or an `.img` without a `.ccd`) holding a second session after the first - for example a copy of a multi-session CD - showed only the first session's files; a whole Unpack (Alt+F9) with "Delete archive after unpacking" then deleted the image, and the later session's files were lost.
+  - **Now:** when such an image holds data past the volume it lists (more than a few sectors, not just zero padding), or its volume's size does not fit the file, a whole Unpack extracts what is listed and keeps the image. A plain one-volume `.iso` - also one padded with zeros, as xorriso writes it - unpacks and is deleted as before.
+  - **Limitation:** no message says why the image was kept. Installation images with an appended partition (Ubuntu ISOs since 20.10, for example) are now kept too, because their partition is not listed. The later sessions are still not listed. A UDF-only image, and a raw (2352-byte) multi-session image not named `.img`, can still be deleted (recorded for later fixes). Checked with crafted images only.
+- **Unpack could delete a CloneCD disc image whose `.ccd` file was missing, losing all but its first session** (feature 353).
+  - **Before:** a CloneCD image (`.img`) without its `.ccd` file beside it was shown after the message "Missing .CCD file. Displayed image could be incomplete." with only its first session's files; a whole Unpack (Alt+F9) with "Delete archive after unpacking" then deleted the image, and the files of the later sessions were lost.
+  - **Now:** when such an image holds more data past the first session than the listing shows (or its first volume's size does not fit the file), a whole Unpack extracts what is listed and keeps the image. A single-session image without its `.ccd`, and a plain `.img` disk image, unpack and are deleted as before.
+  - **Limitation:** the later sessions are still not listed without the `.ccd`; a single-session CloneCD image with more than a few sectors after its data (padding, a post-gap, audio tracks) is now also kept. A multi-session image of 2048-byte sectors (`.iso` or plain `.img`) still lists one session and can be deleted (recorded for a later fix). Checked with crafted images only.
+- **A damaged CloneCD `.ccd` file could corrupt memory, and Unpack could then delete the disc image** (feature 352).
+  - **Before:** the ISO plug-in used the session number of each table-of-contents entry in a CloneCD `.ccd` file unchecked - a damaged or crafted `.ccd` naming a session it does not have wrote outside the plug-in's memory; in one measured case a whole Unpack (Alt+F9) with "Delete archive after unpacking" then went on and deleted the image. A `.ccd` whose session list did not match its tracks, or one of whose values was not a number, was read past its tables or with random values.
+  - **Now:** such a `.ccd` is refused with the existing message "Bad format of .CCD file. Displayed image could be incomplete." - the image is still shown as far as it can be read without it, and a whole Unpack keeps the image. A `.ccd` whose sessions and tracks do not match opens within bounds, and a whole Unpack keeps the image.
+  - **Limitation:** a real multi-session CloneCD image (its tracks numbered across the disc) is now always kept by a whole Unpack with "Delete archive after unpacking", without a message, until its sessions are read correctly (recorded for a later fix); an image whose `.ccd` is missing is handled as before. Checked with crafted images only.
+- **A CloneCD disc image of a data disc often did not open** (feature 351).
+  - **Before:** opening or unpacking a CloneCD image (`.img` with its `.ccd`) of a data CD showed "Unknown file format or not a valid ISO image" and extracted nothing in most tries - at random, depending on the memory's content; a track of a Nero (NRG) image that its track list does not describe could be read at a random position.
+  - **Now:** every track starts with defined values: a CloneCD data track is always examined for its file system, so the image opens every time; a Nero track the track list does not describe is treated as unknown - not listed, and a whole unpack keeps the image.
+  - **Limitation:** checked with crafted images only; a damaged `.ccd` whose entries name a session that does not exist is still read unchecked (recorded for a later fix).
+- **A damaged Nero (NRG) disc image could take a gigabyte of memory and freeze the window for a minute** (feature 350).
+  - **Before:** opening an NRG image whose CUEX chunk (its track list) was damaged - shorter than its header, longer than the image, or claiming millions of entries - made the ISO plug-in build one audio track from every 16 bytes up to the end of the file: a 100 MB image took about 1 GB of memory and 50 seconds to 3 minutes before "Unknown file format" or a listing of millions of tracks; a track list a few bytes longer than its entries made the image not open at all.
+  - **Now:** the plug-in reads such a track list only when it lies within the image and is no larger than any disc's can be, takes only the whole entries it holds and continues after it, so a damaged image opens at once with the tracks its intact parts describe, or is reported as not valid.
+  - **Limitation:** checked with crafted images only (two of them in Nero's real layout); an image whose tracks have extra index points still gets extra hidden tracks, as before.
+- **Files of a folder moved on a Mac were unpacked at the root of a disc image's HFS+ part** (feature 349).
+  - **Before:** in a disc image with an HFS+ part, a folder made first and moved (on a Mac) into a newer folder had its files listed at the root of `HFS (...)`, and Copy or Unpack wrote them there; when the moved folder was left out because its path was too long, its files still appeared at the root.
+  - **Now:** every file is listed and unpacked in its own folder whatever the order in which the image stores them; a left-out folder takes its whole contents with it. Folders of a damaged image that are each other's parents are left out with their contents, and Unpack with "Delete archive after unpacking" keeps such an image.
+  - **Limitation:** a file whose folder record is missing or damaged is still listed at the root of `HFS (...)`; checked with crafted images only, not yet with one made on a Mac.
+- **Two FTP uploads of one file as two users or through two ports of one server no longer
+  store it at once** (feature 348). An upload running as another user of a server (two accounts
+  that share a folder) or through another port of it (a forwarded port) and an upload of the
+  same file into a panel stored the file at the same time, and the first upload's file was
+  replaced without a question. Now the second upload's item is refused as "Target File Is
+  Locked By Another Operation" until the first one ends (Retry). Cost: while one file is being
+  written, a conflicting access to a file with the same server path and name on any other FTP
+  connection - also on an unrelated server (`/index.html` uploaded to staging and production at
+  once) - is refused and must be retried; two downloads still run together. Limit: a shared
+  folder that two accounts see under different absolute paths is still not recognised.
+- **Two FTP uploads of one file to one server under two of its names stored it at the same
+  time** (feature 347) - an upload to `localhost` and one to `127.0.0.1` (a server's name and
+  its address, same user and port) both stored the file and the first upload's file was replaced
+  without a question. Now the second one stops with "Target File Is Locked By Another Operation"
+  and can be retried when the first one ends. Two different servers with the same user, port,
+  folder and file name now also refuse each other's conflicting access while one of them runs.
+  Another user or port of one server is still told apart.
+- **Shift+F6 renames the focused file or folder right in the panel** (feature 346).
+  - **Before:** the keyboard offered only the Rename dialog (F2); the edit box over the name opened only when the already focused name was clicked slowly, and Shift+F6 did nothing.
+  - **Now:** Shift+F6, or Files > Rename in Place, opens the edit box over the focused item's name with the name (without the extension) selected; Enter renames, Esc cancels, the renamed item stays focused. F2 still opens the Rename dialog. On `..` and inside archives nothing happens; in FTP and SFTP panels it works as the slow click does.
+  - **Limitation:** Shift+F6 is now a program key: Plugins Manager no longer accepts it for a plug-in command (a binding made earlier is kept, but it never ran from the key).
+- **An FTP upload as another user or on another port of a server could replace a renamed or newly uploaded file without asking** (feature 345).
+  - **Before:** while an upload to an FTP server ran as one user (`ftp://v@...`) or on one port, a change made in an FTP panel connected to the same server as another user (two accounts that see the same folders) or on another port (a forwarded port) did not reach that upload: a file renamed in the panel to `b.txt` was then replaced by an uploaded `b.txt` without the "Target File Already Exists" question, and an upload into the panel could trust the panel's older listing after a file was stored as the other user or port.
+  - **Now:** a change made through any FTP connection (Create Directory, Quick Rename, Delete, Send FTP Command, an upload) makes every running upload through any other connection - another server name, user or port - list the folder again before it decides whether a name exists, and a panel listing taken before such a change is not trusted - the overwrite question appears. Nothing new is sent over the network beyond listing the folder again.
+  - **Limitation:** which accounts and ports share folders cannot be told, so two uploads through different connections - also to two unrelated servers - list their folders again after each other's changes, and a large folder's listing can be restarted for as long as the other upload keeps storing files - slower, never less safe. The panel's own refresh and the opened-file lock under two names are not covered yet (recorded for later fixes).
 
 ## [0.2.0] — 2026-10-25
 
