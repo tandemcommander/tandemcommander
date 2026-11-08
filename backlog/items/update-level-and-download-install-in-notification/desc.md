@@ -8,7 +8,7 @@ source: manual
 who: both
 created: 2026-11-08
 updated: 2026-11-08
-verified: -
+verified: 2026-11-08 1a25a164
 effort: L
 feature: -
 related: [new-version-check-123-person-steps]
@@ -58,3 +58,4 @@ The trigger was a misreading while testing 420: the maintainer ran the build tre
 - 2026-11-08 — created (source manual)
 - 2026-11-08 — extended: the automatic level shows no notification and installs as soon as the installer is verified (maintainer 2026-11-08)
 - 2026-11-08 — moved to Next position 1
+- 2026-11-08 — verified at 1a25a164: still true at 1a25a164 by reading: upddlg.cpp has no level control, classic form has only browser Download, ShowDownloadedUpdate shows unfAutomatic and arms for the exit
