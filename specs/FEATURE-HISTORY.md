@@ -27,7 +27,7 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | Build, signing, installer, winget, CI | 002, 050, 072, 077, 080, 091 |
 | Backlog and project tooling | 242, 243, 247, 265, 342, 344, 371, 411, 412, 414, 415, 419 |
 | Releases and pre-release reviews | 056, 068, 243, 343 |
-| Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123, 420 |
+| Translations (pipeline, policy, pins) | 038, 039, 055, 409; string additions in 084, 101, 106, 123, 420, 421 |
 | Rebrand, identity | 046 |
 | Encoding: UTF-8 / WTF-8 contracts, names, dialogs, titles | 052, 058, 066, 068, 069, 075, 092, 093, 100, 101, 121, 248, 256, 261, 264, 283, 289, 300, 379, 381, 397, 398 |
 | Long paths, buffers | 088, 095, 097, 098, 121, 251, 259, 270, 274, 276, 280, 286, 291, 293, 295, 298, 299, 301, 304, 305, 311, 315, 380, 386, 389, 392 |
@@ -37,14 +37,14 @@ into every session. `CLAUDE.md` keeps only the rules that follow from them.
 | 7zip plug-in (engine 26.03, RAR) | 087, 089, 093, 113 |
 | Plug-in interface 107/108, closing for an update (Restart Manager) | 080, 088, 118, 121, 245 |
 | WebView2 viewers (Markdown, Code) | 081, 085, 262, 314, 408 |
-| Privacy and security | 083, 085, 086, 090, 123, 420 |
+| Privacy and security | 083, 085, 086, 090, 123, 420, 421 |
 | FTP / SFTP | 051, 056, 085, 090, 094, 099, 116, 121, 258, 269, 277, 279, 288, 303, 323, 341, 345, 347, 348, 384, 385, 410 |
 | PictView | 105, 111, 120, 267 |
 | Undelete | 114, 115, 148, 324 |
 | File Comparator, Renamer, Database Viewer, Checksum, Disk Map, RegEdit | 102, 104, 117, 118, 121, 143, 147, 254, 257, 266, 278, 287, 387, 388 |
 | Crash reporting, antivirus findings | 077, 079 |
 | Cloud status icons | 058, 059 |
-| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418, 420 |
+| User-facing features (Command Shell, panel tabs, new version check, quick search filter, settings import, network drive names, UNC share lists) | 071, 078, 123, 244, 245, 246, 284, 285, 312, 313, 346, 372, 373, 374, 375, 376, 404, 405, 407, 413, 416, 417, 418, 420, 421 |
 
 ## Feature notes
 
@@ -6968,3 +6968,33 @@ a few early ones are out of sequence).
   `TestAutoUpdate420`); probe `autoupd_probe.ps1` 104 PASS / 0 FAIL / 1 NOT DRIVEN (a person); `e2e_peruser.ps1` **7 PASS against the
   real GitHub** (published 0.1.9 installed per user, this build over it, the real 0.2.0 installer
   installs at the exit and completes at the next start after a kill, one installer start).
+- 421-update-notice-levels: **the update level is chosen in the new-version window, Download & Install
+  installs with one click, and the automatic level installs without a window** - 420 offered the
+  level only on Configuration > General, the notify-only window only a browser *Download*, and the
+  automatic level showed a window and installed only at the exit. Now the window has *When a new
+  version is found* (stored at once; a step with the closed list settles for 1 s; enabled only for an
+  installed copy with the check on), the notify-only form offers *Download & Install* (420's download
+  and proof, also on a metered connection, progress in the hint, *Cancel Download*, then *Install
+  Now*), a copy not installed by the installer says it cannot update itself, and the automatic level
+  (*Install it automatically as soon as it is downloaded*) installs as *Install Now* as soon as
+  `DecideCloseApp` agrees, the command line is empty, no Quick Rename, the last instance, no installer
+  running and 30 s without input (not after a check the user asked for); once per session; 420's exit
+  / next-start install stays the fall-back. The automatic form and its texts are gone.
+  - **Trap: `SalamanderBusy` is TRUE while ANY message is dispatched** (a timer's too) - a
+    `DecideCloseApp()` from a message handler always says busy (080 calls it only from the exempt
+    `WM_QUERYENDSESSION`). Decisions that need the program idle run in the idle part of the main loop
+    (`salamdr1.cpp`, after `CannotCloseSalMainWnd` is cleared), with busy set around what they start.
+  - Pure rules `SalUpdDownloadInstallOffered`, `SalUpdNoticeLevelChange`, `SalUpdSilentInstallPlanned`,
+    `SalUpdSilentInstallDecision`, `SalUpdDeclinedArmKept` (review M1: No after a failed silent install
+    keeps the plan OFFERED with its count - dropped, the next check re-planned and re-ran the installer).
+  - Review 2: *Cancel Download* on the classic form of a check the user asked for is "not now" also
+    for the background download (`OnUpdateDownloadCancelled`); a notification in front is never closed
+    under the user. Translations: DeepL scrambled `Download && &Install` in every language and 420's pin
+    kept the old meaning of the level - all pinned (`_feature_421`).
+  - Owed to a person (release checklist): real UAC accept / decline for both routes, the restart on the
+    real desktop, the window in front at the end of the download, keyboard / Narrator, design in 8
+    languages. No `## [Unreleased]` section in `CHANGELOG.md`: the entry is in the closing report.
+  From backlog item `update-level-and-download-install-in-notification`. saltests -> 287,248 checks
+  (group `TestUpdateNotice421`); probe `notice421_probe.ps1` silent-install rows FAIL before the idle
+  move -> **57 PASS / 0 FAIL**; 420's probe with the busy seam 94 PASS, its 10 FAILs all on the removed
+  automatic form; two refute-first reviews (MUST in 1, none in 2).

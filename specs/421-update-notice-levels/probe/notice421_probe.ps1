@@ -490,6 +490,36 @@ $Groups['A'] = {
     Start-Sleep -Seconds 7
     $s = Quit $id; $r = Runs
     T 'A11' 'exit' ($r.Count -eq 2 -and $r[1] -like $ExitLike) ('no second silent start, normal exit after {0} s: {1}' -f $s, (RunsStr))
+
+    # A12 (review 2 S-A, the reviewer's row X1) a check the user asked for at the automatic level: Download &
+    # Install on the classic form shown during the background download, then Cancel Download - "not now":
+    # nothing starts on its own, the update is offered
+    Reset-State 2; NoCheck; Set-Env -Fixture 'rel-medium' -Idle $IdleBusy
+    $id = Start-421; Start-Sleep -Seconds 2
+    Post-Cmd (Get-Main $id) $CM_HELP_CHECKVERSION
+    $h = Wait-Notice $id 30; $f0 = Form $h
+    Press $h $ID_DLI; Start-Sleep -Milliseconds 400; $b1 = CtlText $h $ID_DLI
+    Press $h $ID_DLI; Start-Sleep -Milliseconds 400; $b2 = CtlText $h $ID_DLI
+    $got = Wait-Run 1 25; $h2 = [P421]::Notice([uint32]$id)
+    T 'A12' 'cancel' (-not $got -and $f0 -eq 'classic-dli' -and $b1 -eq 'Cancel Do&wnload' -and $b2 -eq 'Download && &Install' -and (Form $h2) -eq 'offer') ('form {0}, after the click "{1}", after Cancel "{2}"; 25 s later: {3}, form {4}, {5}; {6}' -f $f0, (Esc $b1), (Esc $b2), (RunsStr), (Form $h2), (ArmStr (Arm)), (SilentStr))
+    Kill-Mine $id
+
+    # A13 (review 1 S1 guard, the reviewer's row X2) text in the command line holds the silent install;
+    # cleared, it starts
+    Reset-State 2; NoCheck; Set-Env -Idle '0'
+    $id = Start-421; Start-Sleep -Seconds 2
+    $main = Get-Main $id
+    $edits = @([Drv098f]::Kids($main) | Where-Object { [Drv098f]::Cls($_) -eq 'Edit' -and [Drv098f]::Cls([Drv098f]::GetParent($_)) -eq 'ComboBox' })
+    if ($edits.Count -ge 1) { [void][Drv098f]::SetText($edits[0], 'echo probe421', 5000) }
+    $typed = if ($edits.Count -ge 1) { [Drv098f]::GetText($edits[0], 5000) } else { '<no edit>' }
+    Post-Cmd $main $CM_HELP_CHECKVERSION
+    $a = Wait-Arm 30; Start-Sleep -Seconds 8
+    $r1 = (Runs).Count; $s1 = SilentStr
+    T 'A13' 'cmdline' ($typed -eq 'echo probe421' -and $null -ne $a -and $r1 -eq 0 -and $s1 -like '*typing=1*') ('command line "{0}": {1}, runs {2}; {3}' -f $typed, (ArmStr $a), $r1, $s1)
+    if ($edits.Count -ge 1) { [void][Drv098f]::SetText($edits[0], '', 5000) }
+    $got = Wait-Run 1 20
+    T 'A13' 'cleared' ($got -and (Runs)[0] -like $NowLike) ('command line cleared: {0}; {1}' -f (RunsStr), (SilentStr))
+    Kill-Mine $id
 }
 
 # F: a file operation in progress holds the silent install (review S4)

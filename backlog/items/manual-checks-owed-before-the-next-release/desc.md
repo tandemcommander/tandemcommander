@@ -73,6 +73,11 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - [ ] Automatic update with a screen reader (Narrator) on the offer form: the buttons and the hint are read (feature 420)
 - [ ] Automatic update on the next real release (0.2.0 -> next) without `--updatetest`, default level: the notification offers the downloaded version, *Install Now* updates in one click; `%LOCALAPPDATA%\Tandem Commander\Updates` is empty afterwards except the installer's log (feature 420)
 - [ ] Before signing a release with a renewed code-signing certificate: its thumbprint was added to `SalUpdSignerThumbprints` (src/common/salupdinstall.h) in an earlier release (architecture/12-project-reference.md, "Automatic update") - otherwise installed copies only offer the browser download for that release (feature 420)
+- [ ] Update notification, all-users installation, level *Notify me only*: *Download & Install* shows the progress, then the real UAC prompt; accepted - the program closes, the update installs with a progress window and the program starts again on the real desktop, not elevated; declined - the message offers installing at close (feature 421)
+- [ ] Automatic level (*Install it automatically as soon as it is downloaded*) on the real desktop: no notification appears; after half a minute without keyboard or mouse use the installer starts with the UAC prompt (all users); decline it and answer No - from then on the update is only offered (the next check shows the offer, nothing starts on its own) (feature 421)
+- [ ] Automatic level, Help > Check for New Version while the notification is in front with its level list open when the download finishes: the window is not closed under you - it becomes the offer (the hidden desktop has no foreground window) (feature 421)
+- [ ] Notification with a real keyboard and mouse: the level list - arrow keys step without acting until a one-second pause, the open list acts when it closes; *Download & Install* is the default (Enter), *Cancel Download* stops it; Narrator reads the level label, the list and the buttons (feature 421)
+- [ ] Notification design in every language, light and dark, 100 / 150 / 200 %: the taller window with the level row, the button row with *Download & Install* (and *Cancel Download* fitting the same width), the portable hint of a copy not installed by the installer (feature 421)
 
 ## Log
 
@@ -94,3 +99,4 @@ Before the release, every line below is ticked (`BL step <slug> <n> --done`). Or
 - 2026-11-08 — edited Steps
 - 2026-11-08 — feature 419: one check added
 - 2026-11-08 — edited Steps
+- 2026-11-08 — feature 421: 5 checks added

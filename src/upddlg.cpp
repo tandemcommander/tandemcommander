@@ -745,6 +745,10 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (Downloading)
             {
                 UpdInstall_CancelDownloadAndInstall(); // stops the download when the click started it
+                // review 2 S-A: "not now" also for a background download that keeps running - the
+                // automatic level must not install this version silently seconds later
+                if (MainWindow != NULL)
+                    MainWindow->OnUpdateDownloadCancelled(Release.Version);
                 SetDownloading(FALSE);
                 return TRUE;
             }

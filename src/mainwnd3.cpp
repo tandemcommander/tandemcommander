@@ -748,6 +748,9 @@ static BOOL UpdateSilentUserAsked = FALSE;
 static BOOL UpdateSilentTried = FALSE; // started once in this session for UpdateSilentTriedVersion
 static CSalUpdVersion UpdateSilentTriedVersion = {0, 0, 0};
 static BOOL UpdateSilentDue = FALSE; // the idle part of the main loop is to look (TrySilentUpdateInstall)
+// review 2 S-A: the user cancelled Download & Install of this version in this session - offered, never silent
+static BOOL UpdateSilentCancelled = FALSE;
+static CSalUpdVersion UpdateSilentCancelledVersion = {0, 0, 0};
 #define UPDATESILENT_RETRY_MS 5000
 
 // how ShowDownloadedUpdate shows the notification
@@ -809,7 +812,13 @@ static void ShowDownloadedUpdate(CMainWindow* wnd, const CSalUpdRelease& release
         // installer ran since it was planned (or used up) is offered instead (420 round 6)
         CSalUpdArm planned;
         BOOL hasPlanned = UpdInstall_LoadArm(&planned);
-        if (SalUpdSilentInstallPlanned(hasPlanned, planned, release.Version))
+        // review 2: never closed under the user - a notification the user works in (it has the keyboard,
+        // a level list is open in it) and a version whose download the user cancelled are offered instead
+        HWND open = UpdateNotice_GetWindow();
+        // (not when the user just chose the automatic level in that very window - that is the choice)
+        BOOL userInIt = how != UPDSHOW_LEVEL && open != NULL && IsWindow(open) && GetForegroundWindow() == open;
+        BOOL cancelled = UpdateSilentCancelled && SalUpdVersionCompare(UpdateSilentCancelledVersion, release.Version) == 0;
+        if (SalUpdSilentInstallPlanned(hasPlanned, planned, release.Version) && !userInIt && !cancelled)
         {
             CSalUpdRelease shown;
             if (UpdateNotice_GetRelease(&shown) && SalUpdVersionCompare(shown.Version, release.Version) == 0)
@@ -980,25 +989,30 @@ void CMainWindow::TrySilentUpdateInstall()
         LASTINPUTINFO lii;
         lii.cbSize = sizeof(lii);
         DWORD idle = GetLastInputInfo(&lii) ? GetTickCount() - lii.dwTime : 0;
-        BOOL closeAgree = DecideCloseApp() == scadAgree;
+        DWORD idleNeeded = UpdInstall_SilentIdleNeededMs();
+        // review 2 note: while the idle wait cannot be met, the window and process enumerations are not made
+        BOOL looked = UpdateSilentUserAsked || idle >= idleNeeded;
+        CSalCloseAppDecision closeWhy = looked ? DecideCloseApp() : scadBusy;
+        BOOL closeAgree = looked && closeWhy == scadAgree;
         // review S1: what the installer's close does not ask about but the user would lose - text typed
         // in the command line, a Quick Rename edit in progress (the close agrees with both)
-        if (closeAgree && (QuickRenameWindowActive() ||
-                           (EditWindow != NULL && EditWindow->GetEditLine() != NULL &&
-                            EditWindow->GetEditLine()->HWindow != NULL &&
-                            GetWindowTextLengthW(EditWindow->GetEditLine()->HWindow) > 0)))
+        BOOL typing = closeAgree && (QuickRenameWindowActive() ||
+                                     (EditWindow != NULL && EditWindow->GetEditLine() != NULL &&
+                                      EditWindow->GetEditLine()->HWindow != NULL &&
+                                      GetWindowTextLengthW(EditWindow->GetEditLine()->HWindow) > 0));
+        if (typing)
             closeAgree = FALSE;
         BOOL last = closeAgree && UpdInstall_IsLastInstance();
         BOOL installer = last && UpdInstall_InstallerRunning();
         d = SalUpdSilentInstallDecision(hasArm, arm, release.Version, honoured, TRUE, UpdateTestMode, running, tried,
-                                        last, installer, closeAgree, idle, UpdInstall_SilentIdleNeededMs(),
-                                        UpdateSilentUserAsked);
+                                        last, installer, closeAgree, idle, idleNeeded, UpdateSilentUserAsked);
         TRACE_I("Update: silent install - close agrees " << closeAgree << ", last instance " << last
                                                          << ", idle " << idle << " ms: " << SalUpdSilentInstallName(d));
 #ifdef _DEBUG
-        char line[200];
-        _snprintf_s(line, _TRUNCATE, "%s close=%s last=%d installer=%d idle=%u asked=%d", SalUpdSilentInstallName(d),
-                    SalCloseAppDecisionName(DecideCloseApp()), last, installer, idle, UpdateSilentUserAsked);
+        char line[300];
+        _snprintf_s(line, _TRUNCATE, "%s looked=%d close=%s typing=%d agree=%d last=%d installer=%d idle=%u asked=%d",
+                    SalUpdSilentInstallName(d), looked, looked ? SalCloseAppDecisionName(closeWhy) : "-", typing,
+                    closeAgree, last, installer, idle, UpdateSilentUserAsked);
         UpdateSilentProbeLog(line);
 #endif // _DEBUG
     }
@@ -1046,6 +1060,18 @@ void CMainWindow::TrySilentUpdateInstall()
     UpdInstall_InstallNow(HWindow, copy);
     CannotCloseSalMainWnd = oldCannotClose;
     SalamanderBusy = oldBusy;
+}
+
+void CMainWindow::OnUpdateDownloadCancelled(const CSalUpdVersion& version)
+{
+    UpdateSilentCancelled = TRUE;
+    UpdateSilentCancelledVersion = version;
+    UpdateFlowUserAsked = FALSE;
+    if (UpdateSilentPending && SalUpdVersionCompare(UpdateSilentRelease.Version, version) == 0)
+    {
+        UpdateSilentPending = FALSE; // a wait already running for it ends too
+        KillTimer(HWindow, IDT_UPDATEAUTOINSTALL);
+    }
 }
 
 // feature 421: the level was changed in the notification - what it does to the open window

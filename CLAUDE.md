@@ -204,6 +204,9 @@ Each is one line of a longer story; the number is the feature whose entry in
 - Toolbar, menu, drive and `..` icons come from the active icon set (`saliconset.h`): a new button needs a
   Fluent 2 file and its dark variant (`tools/brand/fluent-icons/`, `check_iconset.py`); Classic is never restyled (416).
   A new plug-in of the tree needs its id in `SalIconSetPluginId` and a set icon + dark (`gen_fluent_plugins.py`, 417).
+- `SalamanderBusy` is TRUE while any message (a timer's too) is dispatched: `DecideCloseApp()` or any
+  "is the program idle?" decision made in a message handler always sees it busy - make it in the idle
+  part of the main loop (`salamdr1.cpp`) and set busy around what it starts (421).
 - Have an independent agent review a finished fix (refute-first); reviews
   rejected fixes that built and tested green in 075, 085, 087, 093, 098, 109,
   111, 117.

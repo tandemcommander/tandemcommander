@@ -109,6 +109,22 @@ to `%TEMP%\tc421_updates_backup` (SHA-256 recorded) for the probe runs and moved
 | N4 | Remind Me Later in the milliseconds between the download's end and its handling can bring the window back | accepted: harmless (the user sees the notice again) |
 | N5 | No `CHANGELOG.md` entry | the tree has no `## [Unreleased]` section; the entry is in `closing-report.md`, owed to the maintainer |
 
+## Review 2 (refute-first agent, fresh)
+
+No MUST; review 1's fixes verified (M1 re-arm routes enumerated, S1 guard driven by the reviewer, S2
+settle, S3 busy, S4 row). Findings:
+
+| # | Finding | Done |
+|---|---|---|
+| S-A | A check the user asked for at level 2: *Cancel Download* on the classic form shown during the background download did not stop the install - the background download went on, the window was replaced and the silent install started at once (user asked, no idle wait). Reproduced by the reviewer (row X1 FAIL) | `CMainWindow::OnUpdateDownloadCancelled`: a cancel is "not now" for that version in this session - the automatic level offers it, never installs it silently; a running wait for it ends. Probe A12 (the reviewer's X1): nothing starts in 25 s, the offer form is shown - PASS |
+| N1 | The classic window closes when the download ends even while the user works in it (level list open) | the silent branch does not close a notification that has the keyboard (foreground) - it shows the offer instead; not when the user chose the automatic level in that very window. The hidden desktop has no foreground window: NOT DRIVEN - a line of the release checklist |
+| N2 | The decision log printed a fresh `DecideCloseApp()`, not the guarded value | the log prints `looked / close / typing / agree`; probe A13 (the reviewer's X2) asserts `typing=1` while the command line holds text and the start after it is cleared - PASS |
+| N3 | Text typed between the launch and the installer's close is not guarded | accepted (severity 2): the same narrow window as 420's Install Now; 080's close rule decides the close |
+| N4 | Each 5 s look enumerated windows and processes even while the idle wait could not be met | skipped then (`looked`) |
+| N5 | The About box's *Check now* waits for idle | stricter than the public claim - kept |
+
+Probe after review 2: **57 PASS / 0 FAIL / 0 NOT DRIVEN**; `saltests` 287,248 / 0 failed.
+
 ## Translations (stop-rules 2.13)
 
 - Entries (step 0): new strings 14007-14012; changed `IDS_UPDATE_LEVEL_AUTO` (14098); removed

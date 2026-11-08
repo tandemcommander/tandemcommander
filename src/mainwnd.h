@@ -19,6 +19,7 @@ extern const int MIN_WIN_WIDTH;
 
 struct CCommandLineParams;
 struct CSalUpdRelease; // feature 420 (salupdcheck.h)
+struct CSalUpdVersion; // feature 421 (salupdcheck.h)
 
 // if the user disallows multiple instances, just activate the previous one
 BOOL CheckOnlyOneInstance(const CCommandLineParams* cmdLineParams);
@@ -638,6 +639,10 @@ public:
     BOOL SilentUpdateDue();
     // feature 421: the level was changed in the notification (WM_USER_UPDATENOTICE_LEVEL)
     void OnUpdateNoticeLevel(int level); // a CSalUpdLevel (salupdinstall.h)
+    // feature 421 review 2: the user cancelled Download & Install of 'version' (also when the download was
+    // the background one) - the automatic level then offers that version in this session, never installs
+    // it silently
+    void OnUpdateDownloadCancelled(const CSalUpdVersion& version);
 
     // called when closing a file system; the directory history stores FS
     // interfaces that must be set to NULL after closing (to prevent accidental match just because FS interfaces were allocated at the same address)

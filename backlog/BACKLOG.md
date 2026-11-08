@@ -17,7 +17,6 @@ Last triaged: 2026-11-08
 
 | # | Item | Type | Sev | Area | Feature |
 |---|---|---|---|---|---|
-| 1 | [Update notification: level choice, Download & Install, silent automatic install](items/update-level-and-download-install-in-notification/desc.md) | improvement | 4 | privacy-security | 421 |
 
 ## Next
 
