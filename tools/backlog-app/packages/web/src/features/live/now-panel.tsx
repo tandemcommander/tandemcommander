@@ -85,7 +85,8 @@ export function NowPanel({
           The agent's latest message
         </h2>
         {message ? (
-          <div className="mt-1 max-h-48 overflow-y-auto rounded-md border-l-4 border-primary/50 bg-primary/5 px-3 py-2">
+          // No scroll area of its own: the Overview view scrolls as a whole (feature 419).
+          <div className="mt-1 rounded-md border-l-4 border-primary/50 bg-primary/5 px-3 py-2">
             <Markdown className="text-sm">{message.detail ?? message.title}</Markdown>
           </div>
         ) : (

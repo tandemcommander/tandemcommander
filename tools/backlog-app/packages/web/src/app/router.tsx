@@ -88,8 +88,25 @@ const checkRoute = createRoute({ getParentRoute: () => rootRoute, path: "/check"
 /** The loop: state, control, its log. */
 const loopRoute = createRoute({ getParentRoute: () => rootRoute, path: "/loop", component: LoopPage });
 
-/** The live run. */
-const liveRoute = createRoute({ getParentRoute: () => rootRoute, path: "/live", component: LivePage });
+/**
+ * Reads the optional view of the run dashboard (feature 419): absent when the address names none,
+ * so links without it stay valid; the dashboard falls back to the overview for anything unknown.
+ *
+ * @param search - The raw search parameters.
+ * @returns The view parameter, if any.
+ */
+function runViewSearch(search: Record<string, unknown>): { view?: string } {
+  const view = text(search["view"]);
+  return view ? { view } : {};
+}
+
+/** The live run, with the chosen view of its dashboard. */
+const liveRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/live",
+  validateSearch: runViewSearch,
+  component: LivePage,
+});
 
 /** Run history. */
 const runsRoute = createRoute({
@@ -103,7 +120,12 @@ const runsRoute = createRoute({
 });
 
 /** One run with its transcript. */
-const runRoute = createRoute({ getParentRoute: () => rootRoute, path: "/runs/$id", component: RunPage });
+const runRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/runs/$id",
+  validateSearch: runViewSearch,
+  component: RunPage,
+});
 
 /** Inbox triage, optionally at one item. */
 const triageRoute = createRoute({

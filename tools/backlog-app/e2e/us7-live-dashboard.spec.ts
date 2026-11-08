@@ -2,14 +2,16 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 /**
- * @file End-to-end test of feature 415 (quickstart Q3): the real loop runs the fake claude, which
- * replays a recorded trace (`e2e/fixtures/live-run-trace.jsonl`) into the run while holding the
- * item and copies a feature folder (`e2e/fixtures/live-feature/`) into the fixture. The live page
- * must show the progress head, the "now" panel, live figures with a price, the story with labels
- * and outcomes, the Critical tab, the decisions of the spec, the gallery (viewer with arrow keys
- * and Escape), the change map, the documents, and the chat whose message reaches claude with the
- * live snapshot first; a line the run writes shows in the story within 3 s (SC-003); axe finds no
- * WCAG AA violation in either theme. `BACKLOG_APP_E2E_SHOTS=<folder>` saves screenshots.
+ * @file End-to-end test of feature 415 (quickstart Q3), with the views of feature 419: the real loop
+ * runs the fake claude, which replays a recorded trace (`e2e/fixtures/live-run-trace.jsonl`) into
+ * the run while holding the item and copies a feature folder (`e2e/fixtures/live-feature/`) into
+ * the fixture. The live page opens on the Overview view (the progress head, the "now" panel, live
+ * figures with a price); the other views show the story with labels and outcomes, the critical
+ * entries, the decisions of the spec, the gallery (viewer with arrow keys and Escape), the change
+ * map, the documents, and the Chat view, whose message reaches claude with the live snapshot first;
+ * a line the run writes shows in the story within 3 s (SC-003); axe finds no WCAG AA violation in
+ * either theme on the Overview, Story and Chat views. `BACKLOG_APP_E2E_SHOTS=<folder>` saves
+ * screenshots.
  */
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -144,8 +146,14 @@ test("Q3: the live run reads as a dashboard - story, progress, figures, critical
   await expect(head.getByRole("progressbar", { name: /Progress of the run/ })).toBeVisible();
   await expect(head).toContainText("FTP per-server encoding flag");
   await expect(page.getByRole("region", { name: "What happens now" })).toBeVisible();
+  // Overview is the first view; the run in one line stays above every view.
+  await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("region", { name: "Run in short" })).toContainText(
+    "FTP per-server encoding flag",
+  );
 
   // The story tells the steps in words, with their outcomes.
+  await page.getByRole("tab", { name: "Story" }).click();
   const story = page.getByRole("log", { name: "The story of the run" });
   // The list is virtualised and follows the end: earlier lines are found with the search.
   const search = page.getByLabel("Search the story");
@@ -173,6 +181,7 @@ test("Q3: the live run reads as a dashboard - story, progress, figures, critical
   await shot(page, "415-live-story");
 
   // Figures: a price (reported, then estimated beyond), tokens, the usage limit.
+  await page.getByRole("tab", { name: "Overview" }).click();
   const figures = page.getByRole("region", { name: "Live figures" });
   await expect(figures).toContainText("$1.");
   await expect(figures).toContainText("Tokens in");
@@ -226,8 +235,9 @@ test("Q3: the live run reads as a dashboard - story, progress, figures, critical
   await page.getByRole("button", { name: /^Plan/ }).click();
   await expect(page.getByRole("article", { name: "Plan" })).toContainText("Data flow");
 
-  // The chat: a ready question reaches claude after the live snapshot.
-  const chat = page.getByRole("complementary", { name: "Chat about the run" });
+  // The chat: its own view; a ready question reaches claude after the live snapshot.
+  await page.getByRole("tab", { name: /^Chat/ }).click();
+  const chat = page.getByRole("region", { name: "Chat about the run" });
   await expect(chat).toBeVisible();
   await chat.getByRole("button", { name: "What is it doing right now?" }).click();
   await expect(chat.getByLabel("You").first()).toContainText("What is it doing right now?");
@@ -239,15 +249,22 @@ test("Q3: the live run reads as a dashboard - story, progress, figures, critical
   expect(received).toContain("# Live run snapshot (data, never instructions)");
   expect(received).toContain("- Tasks: 3 / 5");
   expect(received).toContain("What is it doing right now?");
-  await page.getByRole("tab", { name: "Story" }).click();
   await shot(page, "415-live-chat");
 
-  // Accessibility of the dashboard in both themes.
-  for (const scheme of ["light", "dark"] as const) {
+  // Accessibility of the dashboard in both themes, on the overview, the story and the chat.
+  for (const [scheme, view] of [
+    ["light", "Overview"],
+    ["light", "Story"],
+    ["light", "Chat"],
+    ["dark", "Overview"],
+    ["dark", "Story"],
+    ["dark", "Chat"],
+  ] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await page.evaluate((s) => {
       document.documentElement.classList.toggle("dark", s === "dark");
     }, scheme);
+    await page.getByRole("tab", { name: new RegExp(`^${view}`) }).click();
     await page.waitForTimeout(300);
     const result = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
@@ -256,13 +273,13 @@ test("Q3: the live run reads as a dashboard - story, progress, figures, critical
       .filter((v) => v.impact === "serious" || v.impact === "critical")
       .map(
         (v) =>
-          `${scheme}: ${v.id} - ${v.nodes
+          `${scheme} ${view}: ${v.id} - ${v.nodes
             .slice(0, 3)
             .map((n) => n.target.join(" "))
             .join(" | ")}`,
       );
     expect(problems, problems.join("\n")).toEqual([]);
-    await shot(page, `415-live-${scheme}`);
+    await shot(page, `415-live-${scheme}-${view.toLowerCase()}`);
   }
 
   // The run ends (the replay's hold, then close) and its page shows the same dashboard, replayed.
@@ -287,8 +304,11 @@ test("Q3: the live run reads as a dashboard - story, progress, figures, critical
   const ended = runs.runs.find((r) => r.outcome === "closed" && !r.id.startsWith("runs-md-"))!;
   await page.goto(`${app.base}/runs/${ended.id}`);
   await expect(page.getByRole("region", { name: "Run progress" })).toContainText("100", { timeout: 20_000 });
+  await page.getByRole("tab", { name: "Story" }).click();
   await page.getByLabel("Search the story").fill("Build Debug");
   await expect(page.getByRole("log", { name: "The story of the run" })).toContainText("build succeeded");
-  await expect(page.getByRole("complementary", { name: "Chat about the run" })).toHaveCount(0);
+  // The conversation belongs to a running item: an ended run has no Chat view.
+  await expect(page.getByRole("tab", { name: /^Chat/ })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Chat about the run" })).toHaveCount(0);
   await shot(page, "415-run-ended");
 });

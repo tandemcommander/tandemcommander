@@ -11,7 +11,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoaderIcon, MessageSquareTextIcon, SendIcon, SquareIcon, Trash2Icon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { ChatContext, Conversation, Turn } from "@backlog-app/shared";
 import { Markdown } from "@/components/markdown.tsx";
@@ -20,6 +20,7 @@ import { Alert, Skeleton, Textarea } from "@/components/ui/primitives.tsx";
 import { apiGet, apiPost, ApiFailure } from "@/lib/api.ts";
 import { openStream } from "@/lib/sse.ts";
 import { cn, relativeTime } from "@/lib/utils.ts";
+import { chatSignature } from "@/features/live/run-views.ts";
 
 /**
  * The conversation of an item.
@@ -148,7 +149,7 @@ function TurnView({ turn, live }: { /** The turn. */ turn: Turn; /** Live text. 
               {progress.length} tool use{progress.length === 1 ? "" : "s"}
             </button>
             {showProgress ? (
-              <ul className="mt-1 max-h-40 overflow-y-auto font-mono text-xs text-muted-foreground">
+              <ul className="mt-1 font-mono text-xs text-muted-foreground">
                 {progress.map((p, i) => (
                   <li key={`${p.at}-${i}`} className="truncate">
                     {p.text}
@@ -167,23 +168,32 @@ function TurnView({ turn, live }: { /** The turn. */ turn: Turn; /** Live text. 
   );
 }
 
+/** How close to its end (px) the log counts as following the conversation. */
+const FOLLOW_SLACK = 80;
+
 /**
- * The conversation: transcript, composer, stop and a new conversation.
+ * The conversation: transcript, composer, stop and a new conversation. The transcript is the
+ * panel's one scroll area; a new message or answer scrolls only it (feature 419: never the page).
  *
- * @param props - The item, an optional row of ready questions, an introduction and whether the
- *   panel is the narrow column of the dashboard.
+ * @param props - The item, an optional row of ready questions, an introduction, the composer's
+ *   placeholder, whether the panel is shown, and a listener of what is new in the conversation.
  * @returns The element.
  */
 export function ChatPanel({
   slug,
   questions = [],
   intro,
-  compact = false,
+  placeholder = "Ask about this item… (Enter sends, Shift+Enter is a new line)",
+  shown = true,
+  onSignature,
 }: {
   /** The item. */ slug: string;
   /** Ready questions sent with one click. */ questions?: readonly string[];
   /** Text shown before the first message. */ intro?: string;
-  /** A narrow column (smaller composer). */ compact?: boolean;
+  /** The composer's placeholder. */ placeholder?: string;
+  /** The panel is shown (it stays mounted while another view of the dashboard is). */ shown?: boolean;
+  /** Told the conversation's signature once loaded and whenever it changes (`chatSignature`). */
+  onSignature?: (signature: string) => void;
 }) {
   const queryClient = useQueryClient();
   const conversation = useConversation(slug);
@@ -192,10 +202,33 @@ export function ChatPanel({
   const live = useLiveTurn(slug, running);
   const [text, setText] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
-  const bottom = useRef<HTMLDivElement>(null);
+  const log = useRef<HTMLDivElement>(null);
+  // The log follows the end until the reader scrolls up; a new turn brings it back.
+  const following = useRef(true);
+  const loaded = conversation.data !== undefined;
+  const signature = chatSignature(
+    turns.map((t) => (live && live.turn === t.id ? { state: t.state, assistant: live.text } : t)),
+  );
   useEffect(() => {
-    bottom.current?.scrollIntoView({ block: "end" });
-  }, [turns.length, live?.text.length]);
+    if (loaded) onSignature?.(signature);
+  }, [loaded, signature, onSignature]);
+  useEffect(() => {
+    following.current = true;
+  }, [turns.length]);
+  useLayoutEffect(() => {
+    const el = log.current;
+    if (el && following.current && shown) el.scrollTop = el.scrollHeight;
+  }, [turns.length, live?.text.length, live?.progress.length, shown, loaded]);
+  useEffect(() => {
+    const el = log.current;
+    if (!el || typeof ResizeObserver !== "function") return;
+    // Shown again, or the window changed: keep to the end while following.
+    const observer = new ResizeObserver(() => {
+      if (following.current) el.scrollTop = el.scrollHeight;
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const send = useMutation({
     mutationFn: (message: string) => apiPost<Turn>(`/api/items/${slug}/chat/messages`, { text: message }),
@@ -233,7 +266,16 @@ export function ChatPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 overflow-y-auto px-4 py-3" role="log" aria-label="The conversation">
+      <div
+        ref={log}
+        className="min-h-0 flex-1 overflow-y-auto px-4 py-3"
+        role="log"
+        aria-label="The conversation"
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          following.current = el.scrollHeight - el.scrollTop - el.clientHeight < FOLLOW_SLACK;
+        }}
+      >
         {conversation.isLoading ? <Skeleton className="h-20" /> : null}
         {turns.length === 0 && !conversation.isLoading ? (
           <p className="text-sm text-muted-foreground">
@@ -247,7 +289,6 @@ export function ChatPanel({
             <TurnView key={turn.id} turn={turn} live={live} />
           ))}
         </ol>
-        <div ref={bottom} />
       </div>
       <div className="flex flex-col gap-2 border-t px-4 py-3">
         {questions.length > 0 ? (
@@ -275,13 +316,9 @@ export function ChatPanel({
         >
           <Textarea
             aria-label="Your message"
-            placeholder={
-              compact
-                ? "Ask about the run… (Enter sends)"
-                : "Ask about this item… (Enter sends, Shift+Enter is a new line)"
-            }
+            placeholder={placeholder}
             value={text}
-            rows={compact ? 2 : 3}
+            rows={3}
             className="flex-1"
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
@@ -308,7 +345,7 @@ export function ChatPanel({
               disabled={reset.isPending || turns.length === 0}
               onClick={() => reset.mutate()}
             >
-              <Trash2Icon /> {compact ? "New" : "New conversation"}
+              <Trash2Icon /> New conversation
             </Button>
           </div>
         </form>

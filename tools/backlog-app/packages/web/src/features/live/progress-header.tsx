@@ -325,3 +325,70 @@ export function ProgressHeader({
     </section>
   );
 }
+
+/**
+ * The run in one line (feature 419, FR-010): the item, the step, the percentage and the times - shown
+ * above the row of views on every view, so a person reading the story or chatting still sees where
+ * the run is. The full head (*Run progress*, with the one progress bar) is on the Overview view.
+ *
+ * @param props - The run, the item's title, the estimate and the phase.
+ * @returns The element.
+ */
+export function RunSummaryLine({
+  run,
+  title,
+  progress,
+  phase,
+}: {
+  /** The run. */ run: Run;
+  /** The item's title, when known. */ title: string | null;
+  /** The estimate. */ progress: ProgressEstimate;
+  /** The current phase. */ phase: Phase;
+}) {
+  const percent = Math.round(progress.fraction * 100);
+  const stopped = phase === "stopped";
+  return (
+    <section
+      aria-label="Run in short"
+      className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-sm"
+    >
+      <span className="min-w-0 truncate font-medium">
+        {run.slug ? (
+          <Link
+            to="/items/$slug"
+            params={{ slug: run.slug }}
+            search={{ tab: "" }}
+            className="hover:underline"
+          >
+            {title ?? run.slug}
+          </Link>
+        ) : (
+          "Auto-triage"
+        )}
+      </span>
+      <span className="text-xs text-muted-foreground">
+        {run.kind === "triage" ? "Auto-triage of the Inbox" : PHASE_TITLES[phase]}
+      </span>
+      <span className="flex items-center gap-2">
+        <span className="h-1.5 w-24 overflow-hidden rounded-full bg-muted" aria-hidden>
+          <span
+            className={cn(
+              "block h-full rounded-full",
+              stopped ? "bg-bad" : progress.finished ? "bg-ok" : "bg-primary",
+            )}
+            style={{ width: `${Math.max(2, percent)}%` }}
+          />
+        </span>
+        <span className="font-medium tabular-nums">{percent} %</span>
+      </span>
+      <span className="text-xs text-muted-foreground tabular-nums">
+        {formatDuration(progress.elapsedSeconds)} elapsed ·{" "}
+        {stopped
+          ? "stopped"
+          : progress.finished
+            ? "finished"
+            : `≈ ${formatDuration(progress.remainingSeconds)} left`}
+      </span>
+    </section>
+  );
+}

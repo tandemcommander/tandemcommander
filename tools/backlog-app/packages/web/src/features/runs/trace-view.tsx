@@ -136,8 +136,10 @@ export function TraceView({
         </label>
         <span className="ml-auto text-xs text-muted-foreground">{visible.length} events</span>
       </div>
-      <div className="h-[60vh] min-h-64 rounded-md border">
+      {/* The list fills the view and is its one scroll area (feature 419). */}
+      <div className="relative min-h-0 flex-1 rounded-md border">
         <Virtuoso
+          style={{ position: "absolute", inset: 0 }}
           data={visible}
           followOutput={follow ? "smooth" : false}
           initialTopMostItemIndex={follow ? Math.max(0, visible.length - 1) : 0}

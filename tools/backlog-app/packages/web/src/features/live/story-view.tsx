@@ -18,7 +18,7 @@ import {
   SearchIcon,
   ShieldAlertIcon,
 } from "lucide-react";
-import { memo, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { localClock, type Decision, type StoryEntry } from "@backlog-app/shared";
 import { Markdown } from "@/components/markdown.tsx";
@@ -56,20 +56,25 @@ const StoryRow = memo(function StoryRow({
 }) {
   if (entry.kind === "phase") {
     return (
-      <div
-        className={cn(
-          "mt-3 flex items-center gap-2 border-y px-3 py-1.5",
-          entry.outcome === "fail" ? "border-bad/40 bg-bad/8" : "border-primary/25 bg-primary/6",
-        )}
-        role="heading"
-        aria-level={3}
-      >
-        <StoryIcon label="PHASE" className={entry.outcome === "fail" ? "border-bad/40 text-bad" : ""} />
-        <span className="text-sm font-semibold">{entry.title}</span>
-        <span className="text-xs text-muted-foreground tabular-nums">
-          {hhmm(entry.at)}
-          {duration !== null ? ` · ${formatDuration(duration)}` : ""}
-        </span>
+      // The gap above the heading is padding, not a margin: a margin left the list's measured
+      // height (a margin collapses out of the list's row), so the live story never reached its
+      // real end - 12 px short per phase (feature 419, measured).
+      <div className="pt-3">
+        <div
+          className={cn(
+            "flex items-center gap-2 border-y px-3 py-1.5",
+            entry.outcome === "fail" ? "border-bad/40 bg-bad/8" : "border-primary/25 bg-primary/6",
+          )}
+          role="heading"
+          aria-level={3}
+        >
+          <StoryIcon label="PHASE" className={entry.outcome === "fail" ? "border-bad/40 text-bad" : ""} />
+          <span className="text-sm font-semibold">{entry.title}</span>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {hhmm(entry.at)}
+            {duration !== null ? ` · ${formatDuration(duration)}` : ""}
+          </span>
+        </div>
       </div>
     );
   }
@@ -84,7 +89,7 @@ const StoryRow = memo(function StoryRow({
         <div
           className={cn(
             "min-w-0 flex-1 rounded-md border-l-4 px-3 py-1.5",
-            entry.label === "DECISION" && "border-warn/60 bg-warn/8",
+            entry.label === "DECISION" && "border-warn/60 bg-warn/5",
             entry.label === "REVIEW" && "border-bad/60 bg-bad/8",
             entry.label === "MESSAGE" && "border-primary/40 bg-primary/5",
           )}
@@ -192,7 +197,8 @@ const StoryRow = memo(function StoryRow({
               </ul>
             ) : null}
             {entry.detail ? (
-              <div className="max-h-80 overflow-y-auto rounded-md border bg-muted/40 px-2 py-1">
+              // No scroll area of its own: the line grows inside the story list (feature 419).
+              <div className="rounded-md border bg-muted/40 px-2 py-1">
                 <Markdown className="text-xs">{entry.detail}</Markdown>
               </div>
             ) : null}
@@ -202,6 +208,15 @@ const StoryRow = memo(function StoryRow({
     </div>
   );
 });
+
+/** How close to its end (px) the story counts as being at the end. */
+const FOLLOW_SLACK = 80;
+
+/** The reader's input that scrolls the story (a scroll without it is the list's own). */
+const READER_EVENTS = ["wheel", "touchmove", "keydown", "pointerdown"] as const;
+
+/** How long after the reader's input a scroll counts as the reader's (ms). */
+const READER_INPUT_MS = 1000;
 
 /**
  * The story tab.
@@ -222,8 +237,48 @@ export function StoryView({
   const [important, setImportant] = useState(false);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
-  const [atBottom, setAtBottom] = useState(true);
   const list = useRef<VirtuosoHandle>(null);
+  // While the run lives, the list keeps to its end until the reader scrolls away from it, and sticks
+  // again when the reader reaches the end (or presses "Latest"). Decided by the reader's own input
+  // (wheel, touch, keys, the scroll bar), never by the list's "at bottom" state or by scrolls the
+  // list makes itself: a new line taller than its estimate left that state false, and the list
+  // moves its own position while it measures lines - either stopped the story following (feature
+  // 419, measured).
+  const [stuck, setStuck] = useState(true);
+  const stuckRef = useRef(true);
+  const scroller = useRef<HTMLElement | null>(null);
+  const inputAt = useRef(0);
+  const stick = useCallback((value: boolean) => {
+    stuckRef.current = value;
+    setStuck(value);
+  }, []);
+  const onInput = useCallback(() => {
+    inputAt.current = Date.now();
+  }, []);
+  const onScroll = useCallback(() => {
+    const el = scroller.current;
+    if (!el) return;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < FOLLOW_SLACK) {
+      if (!stuckRef.current) stick(true);
+    } else if (stuckRef.current && Date.now() - inputAt.current < READER_INPUT_MS) stick(false);
+  }, [stick]);
+  const scrollerRef = useCallback(
+    (el: HTMLElement | Window | null) => {
+      const old = scroller.current;
+      if (old) {
+        old.removeEventListener("scroll", onScroll);
+        for (const name of READER_EVENTS) old.removeEventListener(name, onInput);
+      }
+      scroller.current = el instanceof HTMLElement ? el : null;
+      if (scroller.current) {
+        scroller.current.addEventListener("scroll", onScroll, { passive: true });
+        for (const name of READER_EVENTS) scroller.current.addEventListener(name, onInput, { passive: true });
+        // A new list (a changed filter) starts at its end while the run lives.
+        stick(true);
+      }
+    },
+    [onInput, onScroll, stick],
+  );
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return entries.filter((e) => {
@@ -265,7 +320,7 @@ export function StoryView({
     });
   };
   return (
-    <div className="flex min-h-0 flex-col gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative">
           <SearchIcon className="absolute top-1.5 left-2 size-4 text-muted-foreground" aria-hidden />
@@ -290,7 +345,8 @@ export function StoryView({
         </span>
       </div>
       <div
-        className="relative h-[68vh] min-h-72 rounded-lg border bg-card"
+        // The list fills the view and is its one scroll area (feature 419).
+        className="relative min-h-0 flex-1 rounded-lg border bg-card"
         aria-label="The story of the run"
         role="log"
       >
@@ -304,12 +360,18 @@ export function StoryView({
             // never leaves the live story stuck in the middle.
             key={`${query}|${routine}|${important}`}
             ref={list}
+            scrollerRef={scrollerRef}
+            style={{ height: "100%" }}
             data={visible}
             // While the run lives the list keeps to its end as lines arrive (several a second),
             // unless the reader scrolled up; "Latest" brings it back.
-            followOutput={(bottom) => (follow && bottom ? "auto" : false)}
-            atBottomStateChange={setAtBottom}
-            atBottomThreshold={80}
+            followOutput={() => (follow && stuckRef.current ? "auto" : false)}
+            // A line is often taller than estimated: once measured, a stuck list goes to its very
+            // end again (the measured height, not an estimate of an index).
+            totalListHeightChanged={() => {
+              const el = scroller.current;
+              if (follow && stuckRef.current && el) el.scrollTop = el.scrollHeight;
+            }}
             initialTopMostItemIndex={follow ? { index: "LAST", align: "end" } : 0}
             computeItemKey={(_, e) => e.id}
             itemContent={(_, entry) => (
@@ -322,10 +384,13 @@ export function StoryView({
             )}
           />
         )}
-        {follow && !atBottom && visible.length > 0 ? (
+        {follow && !stuck && visible.length > 0 ? (
           <button
             type="button"
-            onClick={() => list.current?.scrollToIndex({ index: visible.length - 1, behavior: "smooth" })}
+            onClick={() => {
+              stick(true);
+              list.current?.scrollToIndex({ index: "LAST", align: "end", behavior: "smooth" });
+            }}
             className="absolute right-4 bottom-3 flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow-md"
           >
             <ArrowDownIcon className="size-3.5" aria-hidden /> Latest

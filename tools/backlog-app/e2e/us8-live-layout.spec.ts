@@ -7,8 +7,10 @@
  * trace of feature 415 (`e2e/fixtures/live-run-trace.jsonl`) while holding the item, so the
  * story, the transcript and the figures are as long as a real run's. Every view of the run is
  * measured at several window sizes: the document and the frame's `main` must have nothing to
- * scroll, and the visible elements that scroll vertically are counted. A chat message must not
- * scroll anything outside the conversation. `BACKLOG_APP_E2E_MEASURE=<file>` writes the
+ * scroll, and the visible elements that scroll vertically are counted (feature 419). Then the chat:
+ * a message must not scroll anything outside the conversation, the chat spans the page, a draft
+ * survives a view switch, an answer arriving while another view is shown marks the Chat tab; the run
+ * in one line stays above the views; the chosen view is kept in the address. `BACKLOG_APP_E2E_MEASURE=<file>` writes the
  * measurements as JSON; `BACKLOG_APP_E2E_SHOTS=<folder>` saves screenshots.
  */
 
@@ -170,6 +172,8 @@ test.beforeEach(async () => {
     FAKE_CLAUDE_PLAN: plan,
     BACKLOG_APP_CLAUDE: join(APP_DIR, "packages", "server", "test", "fixtures", "fake-claude-chat.mjs"),
     FAKE_CHAT_STDIN_FILE: join(fixture.root, "..", `${base}-chat.txt`),
+    // Answers end about 3 s after the message, so one can arrive while another view is shown.
+    FAKE_CHAT_MODE: "slow",
   });
 });
 
@@ -199,33 +203,103 @@ test("the live run page never scrolls; each view has at most one scroll area", a
       trace: join(APP_DIR, "e2e", "fixtures", "live-run-trace.jsonl"),
       feature: join(APP_DIR, "e2e", "fixtures", "live-feature"),
       branch: "415-live-dash",
-      pace: 0.2,
+      pace: 0.35,
       hold: 240,
       then: "close",
     },
   ]);
+  const shots = process.env["BACKLOG_APP_E2E_SHOTS"];
   await page.setViewportSize(SIZES[0]);
   await openApp(page, app, "/loop");
   await page.getByRole("button", { name: "Start the loop…" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Start" }).click();
   await expect.poll(() => status().live, { timeout: 30_000 }).toBe(true);
-  await page.goto(`${app.base}/live`);
+  await page.goto(`${app.base}/live?view=story`);
   await expect(page.getByRole("tablist", { name: "Views of the run" })).toBeVisible({ timeout: 20_000 });
-  // The whole trace is in, so every view is as long as it gets.
+
+  // While lines arrive, the story keeps to its end; scrolled up by the reader it stays where the
+  // reader put it ("Latest" shows), and "Latest" brings it back (FR-014). The list moves its own
+  // position as it measures taller lines - that never counts as the reader's scroll.
+  const storyLog = page.getByRole("log", { name: "The story of the run" });
+  /**
+   * Where the story's scroll area stands.
+   *
+   * @returns How far from its end it is, and its position.
+   */
+  const story = async (): Promise<{ gap: number; top: number }> =>
+    storyLog.evaluate((log) => {
+      const all = [log, ...log.querySelectorAll("*")];
+      const el = all.find((e) => ["auto", "scroll"].includes(getComputedStyle(e).overflowY));
+      return el
+        ? { gap: el.scrollHeight - el.scrollTop - el.clientHeight, top: el.scrollTop }
+        : { gap: 0, top: 0 };
+    });
+  const overflow = async (): Promise<number> =>
+    storyLog.evaluate((log) => {
+      const all = [log, ...log.querySelectorAll("*")];
+      const el = all.find((e) => ["auto", "scroll"].includes(getComputedStyle(e).overflowY));
+      return el ? el.scrollHeight - el.clientHeight : 0;
+    });
+  await expect.poll(overflow, { timeout: 60_000, intervals: [100] }).toBeGreaterThan(150);
+  await page.waitForTimeout(600);
+  // At its real end (a margin that left the measured height kept it 60 px short in 415).
+  await expect
+    .soft(
+      async () => expect((await story()).gap).toBeLessThanOrEqual(2),
+      "the live story at its end while it grows",
+    )
+    .toPass({ timeout: 3000 });
+  if (!traceText().includes("Final marker line")) {
+    await storyLog.hover();
+    await page.mouse.wheel(0, -200);
+    await page.waitForTimeout(300);
+    const scrolled = await story();
+    await page.waitForTimeout(1500);
+    expect
+      .soft((await story()).top, "the story stays where the reader scrolled")
+      .toBeLessThanOrEqual(scrolled.top + 2);
+    await expect
+      .soft(storyLog.getByRole("button", { name: "Latest" }), "Latest after scrolling up")
+      .toBeVisible();
+    await storyLog.getByRole("button", { name: "Latest" }).click();
+    console.log("419 follow: the reader's scroll up was checked while lines arrived");
+  } else console.log("419 follow: the run's lines ended before the reader's scroll could be checked");
+  // The whole trace is in, so every view is as long as it gets; the story ends with its last line.
   await expect
     .poll(() => traceText().includes("Final marker line"), { timeout: 90_000, intervals: [200] })
     .toBe(true);
+  await expect.soft(storyLog, "the last line in the live story").toContainText("Final marker line", {
+    timeout: 3000,
+  });
+  await expect
+    .poll(async () => (await story()).gap, { message: "the story at its real end", timeout: 3000 })
+    .toBeLessThanOrEqual(2);
   await page.waitForTimeout(1500);
 
   const results: Measure[] = [];
   const tabs = page.getByRole("tablist", { name: "Views of the run" }).getByRole("tab");
   const names = (await tabs.allInnerTexts()).map((t) => t.replace(/\s*\d+$/, "").trim());
+  // Every part of the dashboard is a view of the one row (FR-002).
+  expect
+    .soft(names, "the views of the row")
+    .toEqual([
+      "Overview",
+      "Story",
+      "Critical",
+      "Decisions",
+      "Gallery",
+      "Architecture",
+      "Files",
+      "Documents",
+      "Raw trace",
+      "Chat",
+    ]);
   for (const size of SIZES) {
     await page.setViewportSize(size);
-    for (const name of names) {
+    for (const [index, name] of names.entries()) {
       const where = `${size.width}x${size.height}`;
       try {
-        await tabs.filter({ hasText: name }).first().click({ timeout: 3000 });
+        await tabs.nth(index).click({ timeout: 3000 });
       } catch {
         // Something covers the tab (the chat overlay of 415 below 1280 px): not reachable.
         results.push({ view: name, size: where, documentOver: 0, mainOver: 0, scrollers: [], covered: true });
@@ -233,10 +307,15 @@ test("the live run page never scrolls; each view has at most one scroll area", a
       }
       await page.waitForTimeout(400);
       results.push(await measure(page, name, where));
+      if (shots && (size === SIZES[0] || size === SIZES[3]))
+        await page.screenshot({
+          path: join(shots, `419-${where}-${name.replace(/\s+/g, "-").toLowerCase()}.png`),
+        });
     }
   }
 
-  // A chat message scrolls only the conversation (the page stays where it is).
+  // A chat message scrolls only the conversation (the page stays where it is); the chat spans the
+  // page's width.
   await page.setViewportSize(SIZES[0]);
   const chatTab = tabs.filter({ hasText: "Chat" });
   if ((await chatTab.count()) > 0) await chatTab.first().click();
@@ -250,6 +329,7 @@ test("the live run page never scrolls; each view has at most one scroll area", a
   await expect(page.getByLabel("Claude").first()).toContainText("You asked: What is it doing right now?", {
     timeout: 20_000,
   });
+  await expect(page.getByLabel("Claude").first()).not.toContainText("writing…", { timeout: 20_000 });
   await page.waitForTimeout(500);
   const afterChat = await main.evaluate((el) => ({
     main: el.scrollTop,
@@ -260,8 +340,66 @@ test("the live run page never scrolls; each view has at most one scroll area", a
     documentOver: afterChat.document,
     mainOver: afterChat.main,
   });
-  const shots = process.env["BACKLOG_APP_E2E_SHOTS"];
-  if (shots) await page.screenshot({ path: join(shots, "live-layout-chat.png") });
+  const chatRegion = page.getByRole("region", { name: "Chat about the run" });
+  const widths = {
+    chat: (await chatRegion.boundingBox())?.width ?? 0,
+    main: await main.evaluate((el) => el.clientWidth),
+  };
+  expect
+    .soft(widths.chat / widths.main, `the chat spans the page (${widths.chat} of ${widths.main} px)`)
+    .toBeGreaterThan(0.9);
+  if (shots) await page.screenshot({ path: join(shots, "419-chat-answered.png") });
+
+  // The run in one line stays above the story and the chat (FR-010).
+  const summary = page.getByRole("region", { name: "Run in short" });
+  for (const view of ["Story", "Chat"]) {
+    await tabs.filter({ hasText: view }).first().click();
+    await expect
+      .soft(summary, `the run in one line on ${view}`)
+      .toContainText("FTP per-server encoding flag");
+    await expect.soft(summary, `the percentage on ${view}`).toContainText(/\d+ %/);
+  }
+
+  // A draft survives a switch to another view and back (FR-008).
+  await tabs.filter({ hasText: "Chat" }).first().click();
+  const composer = page.getByRole("textbox", { name: "Your message" });
+  await composer.fill("A draft of feature 419");
+  await tabs.filter({ hasText: "Story" }).first().click();
+  await tabs.filter({ hasText: "Chat" }).first().click();
+  await expect.soft(composer, "the draft after a view switch").toHaveValue("A draft of feature 419");
+  await composer.fill("");
+
+  // An answer that arrives while another view is shown marks the Chat tab; opening Chat clears it
+  // (FR-009). The fake claude of this test ends an answer about 3 s after the message.
+  await page.getByRole("button", { name: "What are the risks or problems?" }).click();
+  await tabs.filter({ hasText: "Story" }).first().click();
+  const chatNamed = page.getByRole("tab", { name: /^Chat/ });
+  await expect
+    .soft(chatNamed, "the mark of a new answer")
+    .toHaveAccessibleName(/new answer/, { timeout: 20_000 });
+  // The story shown meanwhile is whole (it mounted while the chat stayed mounted, hidden).
+  await expect
+    .soft(page.getByRole("log", { name: "The story of the run" }), "the story beside a hidden chat")
+    .toContainText("Final marker line", { timeout: 10_000 });
+  if (shots) await page.screenshot({ path: join(shots, "419-chat-mark.png") });
+  await chatNamed.click();
+  await expect.soft(chatNamed, "the mark after opening Chat").toHaveAccessibleName("Chat");
+  // The answer of the second turn (the fake echoes the first line after its marker; from the second
+  // message on that is the live snapshot's heading, so the maintainer's text is checked on its own).
+  await expect.soft(page.getByLabel("You").nth(1)).toContainText("What are the risks or problems?");
+  await expect.soft(page.getByLabel("Claude").nth(1)).toContainText("You asked:", { timeout: 20_000 });
+
+  // The chosen view is in the address: a reload keeps it; an unknown view opens the overview (FR-011).
+  await tabs.filter({ hasText: "Documents" }).first().click();
+  await expect.soft(page, "the view in the address").toHaveURL(/[?&]view=documents/);
+  await page.reload();
+  await expect
+    .soft(page.getByRole("tab", { name: /^Documents/ }), "Documents after a reload")
+    .toHaveAttribute("aria-selected", "true", { timeout: 20_000 });
+  await page.goto(`${app.base}/live?view=nonsense`);
+  await expect
+    .soft(page.getByRole("tab", { name: "Overview" }), "an unknown view opens the overview")
+    .toHaveAttribute("aria-selected", "true", { timeout: 20_000 });
 
   const out = process.env["BACKLOG_APP_E2E_MEASURE"];
   if (out) writeFileSync(out, JSON.stringify(results, null, 2));
@@ -276,5 +414,11 @@ test("the live run page never scrolls; each view has at most one scroll area", a
         `${where}: more than one scroll area: ${r.scrollers.map((s) => `${s.label}|${s.cls}`).join(" ; ")}`,
       )
       .toBeLessThanOrEqual(1);
+    expect
+      .soft(
+        r.scrollers.filter((s) => s.nested).length,
+        `${where}: a scroll area inside another: ${r.scrollers.map((s) => s.label).join(" ; ")}`,
+      )
+      .toBe(0);
   }
 });

@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 /**
- * @file The run dashboard (feature 415): what a person reads to follow a run without knowing the
- * trace format - the progress head, what happens now, the live figures, and tabs: the story in
- * words, what is critical, the decisions, the screenshots, diagrams of the solution, the files and
- * commits, the feature's documents and the raw transcript. Beside it, while the item runs, the
- * conversation with Claude about the item; every message carries a fresh snapshot of the run.
- * The page changes nothing: it reads the trace stream and asks the server for the rest.
+ * @file The run dashboard (features 415 and 419): what a person reads to follow a run without
+ * knowing the trace format. One column that fills the page - the title with the run in one line,
+ * a row of views, and the chosen view below it: the overview (progress head, what happens now, live
+ * figures), the story in words, what is critical, the decisions, the screenshots, diagrams of the
+ * solution, the files and commits, the feature's documents, the raw transcript and, while the item
+ * runs, the conversation with Claude about it (every message carries a fresh snapshot of the run).
+ * The page itself never scrolls: each view has one scroll area of its own. The page changes
+ * nothing: it reads the trace stream and asks the server for the rest.
  */
 
-import { MessageSquareTextIcon, PanelRightCloseIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import type { Phase, Run, TraceEvent } from "@backlog-app/shared";
-import { Button } from "@/components/ui/button.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/overlays.tsx";
 import { useBoard } from "@/lib/queries.ts";
 import { useNow } from "@/lib/now.ts";
@@ -25,30 +25,13 @@ import { DocumentsView, FilesView } from "./documents-view.tsx";
 import { Gallery } from "./gallery.tsx";
 import { MetricsStrip } from "./metrics-strip.tsx";
 import { NowPanel } from "./now-panel.tsx";
-import { ProgressHeader, progressOf } from "./progress-header.tsx";
+import { ProgressHeader, progressOf, RunSummaryLine } from "./progress-header.tsx";
+import { availableViews, chatMark, viewFromAddress, type RunView } from "./run-views.ts";
 import { CriticalView, DecisionsView, StoryView } from "./story-view.tsx";
 import { useInsight, useRunView } from "./use-run-insight.ts";
 
-/** The tabs of the dashboard. */
-export const TABS = [
-  "story",
-  "critical",
-  "decisions",
-  "gallery",
-  "architecture",
-  "files",
-  "documents",
-  "trace",
-] as const;
-
-/** One tab. */
-type Tab = (typeof TABS)[number];
-
-/** Tabs that show what the server reads from the run's files (asked only while shown). */
-const INSIGHT_TABS: ReadonlySet<Tab> = new Set(["decisions", "gallery", "architecture", "documents"]);
-
-/** Storage key of the chat column's state. */
-const CHAT_KEY = "backlog-app.live.chat";
+/** Views that show what the server reads from the run's files (asked only while shown). */
+const INSIGHT_VIEWS: ReadonlySet<RunView> = new Set(["decisions", "gallery", "architecture", "documents"]);
 
 /** Ready questions of the live chat. */
 export const LIVE_QUESTIONS = [
@@ -59,26 +42,17 @@ export const LIVE_QUESTIONS = [
   "Explain the solution in simple words.",
 ] as const;
 
-/**
- * Whether the chat column starts open: remembered in the browser, else open on a wide window.
- *
- * @returns True when open.
- */
-function initialChat(): boolean {
-  try {
-    const stored = window.localStorage.getItem(CHAT_KEY);
-    if (stored === "open") return true;
-    if (stored === "closed") return false;
-  } catch {
-    // No storage: the default.
-  }
-  return typeof window.matchMedia === "function" ? window.matchMedia("(min-width: 1280px)").matches : true;
-}
+/** A view whose list or log is its one scroll area: it hands down the height it gets. */
+const FILL = "flex min-h-0 flex-1 flex-col";
+
+/** A view that scrolls as a whole, in one area of its own. */
+const SCROLL = "min-h-0 flex-1 overflow-y-auto";
 
 /**
  * The dashboard of a run.
  *
- * @param props - The run, its events, the stream's state and whether it is live.
+ * @param props - The run, its events, the stream's state, whether it is live, the page's heading
+ *   and the view the page's address names.
  * @returns The element.
  */
 export function RunDashboard({
@@ -86,17 +60,24 @@ export function RunDashboard({
   events,
   connected,
   live,
+  heading,
+  view: requested,
+  onViewChange,
 }: {
   /** The run. */ run: Run;
   /** The trace events so far. */ events: TraceEvent[];
   /** The stream is connected. */ connected: boolean;
   /** The run is live (follow the end, tick the clock, offer the chat). */ live: boolean;
+  /** The page's heading. */ heading: ReactNode;
+  /** The view the address names (anything; unknown means the overview). */ view: unknown;
+  /** Puts the chosen view into the address. */ onViewChange: (view: RunView) => void;
 }) {
-  const [tab, setTab] = useState<Tab>("story");
-  const [chat, setChat] = useState(initialChat);
+  const showChat = live && run.slug !== null;
+  const views = useMemo(() => availableViews(live, run.slug !== null), [live, run.slug]);
+  const view = viewFromAddress(requested, views);
   const nowMs = useNow(1000, live);
-  const view = useRunView(run.id, run.kind, events);
-  const insight = useInsight(run.id, live && INSIGHT_TABS.has(tab));
+  const runView = useRunView(run.id, run.kind, events);
+  const insight = useInsight(run.id, live && INSIGHT_VIEWS.has(view));
   const board = useBoard("");
   const title = useMemo(() => {
     if (run.title) return run.title;
@@ -106,30 +87,29 @@ export function RunDashboard({
   }, [board.data, run.slug, run.title]);
   // The fold of the full trace knows the phase as well as the server; before any event, the
   // server's phase.
-  const folded: Phase = events.length > 0 ? view.phase : run.phase;
+  const folded: Phase = events.length > 0 ? runView.phase : run.phase;
   // A closed run is finished even when its trace ends before the last marker (the close and the
   // merge are backlog commands of the loop's own, not always in the trace).
   const phase: Phase = !live && run.outcome === "closed" && folded !== "stopped" ? "done" : folded;
-  const timeline = events.length > 0 ? view.timeline : run.phaseTimeline;
+  const timeline = events.length > 0 ? runView.timeline : run.phaseTimeline;
   const progress = progressOf(run, phase, timeline, insight.data, nowMs);
   const reached = useMemo(() => new Set(timeline.map((t) => t.phase)), [timeline]);
-  const commits = run.commits.length > 0 ? run.commits : view.commits;
-  const openCritical = view.critical.filter((e) => !e.resolved).length;
+  const commits = run.commits.length > 0 ? run.commits : runView.commits;
+  const openCritical = runView.critical.filter((e) => !e.resolved).length;
   const images = insight.data?.images ?? [];
-  const showChat = live && run.slug !== null;
-  /**
-   * Opens or closes the chat column and remembers it.
-   *
-   * @param open - The new state.
-   */
-  const toggleChat = (open: boolean): void => {
-    setChat(open);
-    try {
-      window.localStorage.setItem(CHAT_KEY, open ? "open" : "closed");
-    } catch {
-      // Not remembered.
-    }
-  };
+
+  // The mark on the Chat tab: something new in the conversation since the reader last saw it.
+  const [chatSeen, setChatSeen] = useState<string | null>(null);
+  const [chatNow, setChatNow] = useState("");
+  const onSignature = useCallback((signature: string) => {
+    setChatNow(signature);
+    // The first report is what the conversation held when the page opened: nothing new.
+    setChatSeen((seen) => seen ?? signature);
+  }, []);
+  // While the chat is shown, everything in it is seen (adjusted during render, not in an effect).
+  if (view === "chat" && chatSeen !== null && chatSeen !== chatNow) setChatSeen(chatNow);
+  const marked = showChat && chatMark(chatSeen, chatNow, view === "chat");
+
   /**
    * A tab's label with a count.
    *
@@ -154,119 +134,131 @@ export function RunDashboard({
     </span>
   );
   return (
-    <div className="flex min-h-0 w-full gap-4">
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
-        <ProgressHeader
-          run={run}
-          title={title}
-          progress={progress}
-          phase={phase}
-          timeline={timeline}
-          nowMs={nowMs}
-          live={live}
-        />
-        <NowPanel
-          now={view.now}
-          message={view.latestMessage}
-          probe={run.guiProbeRunning}
-          nowMs={nowMs}
-          live={live}
-        />
-        <MetricsStrip
-          metrics={view.metrics}
-          commits={commits.length}
-          elapsedSeconds={progress.elapsedSeconds}
-        />
-        {showChat && !chat ? (
-          <div className="flex justify-end">
-            <Button variant="outline" size="sm" onClick={() => toggleChat(true)}>
-              <MessageSquareTextIcon /> Ask about the run
-            </Button>
-          </div>
-        ) : null}
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="flex min-h-0 flex-col">
-          <TabsList className="flex-wrap" aria-label="Views of the run">
-            <TabsTrigger value="story">{label("Story", null)}</TabsTrigger>
-            <TabsTrigger value="critical">{label("Critical", openCritical, openCritical > 0)}</TabsTrigger>
-            <TabsTrigger value="decisions">
-              {label("Decisions", (insight.data?.decisions.length ?? 0) + view.decisions.length)}
-            </TabsTrigger>
-            <TabsTrigger value="gallery">{label("Gallery", images.length || view.images.length)}</TabsTrigger>
-            <TabsTrigger value="architecture">{label("Architecture", null)}</TabsTrigger>
-            <TabsTrigger value="files">{label("Files", view.files.length)}</TabsTrigger>
-            <TabsTrigger value="documents">
-              {label("Documents", insight.data?.documents.length ?? null)}
-            </TabsTrigger>
-            <TabsTrigger value="trace">{label("Raw trace", null)}</TabsTrigger>
-          </TabsList>
-          <TabsContent value="story">
-            <StoryView entries={view.entries} follow={live} nowMs={nowMs} />
-            {live && !connected ? (
-              <p className="mt-1 text-xs text-muted-foreground">Connecting to the trace…</p>
-            ) : null}
-          </TabsContent>
-          <TabsContent value="critical">
-            <CriticalView entries={view.critical} />
-          </TabsContent>
-          <TabsContent value="decisions">
-            <DecisionsView
-              decisions={insight.data?.decisions ?? []}
-              assumptions={insight.data?.assumptions ?? []}
-              stated={view.decisions}
-              folder={insight.data?.featureFolder ?? null}
-            />
-          </TabsContent>
-          <TabsContent value="gallery">
-            <Gallery runId={run.id} images={images} />
-          </TabsContent>
-          <TabsContent value="architecture">
-            <ArchitectureView
-              phase={phase}
-              reached={reached}
-              live={live}
-              files={view.files}
-              diagrams={insight.data?.diagrams ?? []}
-              center={run.feature ? `Feature ${run.feature}` : (run.branch?.split("-")[0] ?? "The change")}
-              kind={run.kind}
-            />
-          </TabsContent>
-          <TabsContent value="files">
-            <FilesView files={view.files} commits={commits} />
-          </TabsContent>
-          <TabsContent value="documents">
-            <DocumentsView runId={run.id} insight={insight.data} live={live} />
-          </TabsContent>
-          <TabsContent value="trace">
-            <TraceView events={events} follow={live} />
-          </TabsContent>
-        </Tabs>
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <h1 className="text-lg font-semibold">{heading}</h1>
+        <RunSummaryLine run={run} title={title} progress={progress} phase={phase} />
       </div>
-      {showChat && chat ? (
-        <aside
-          aria-label="Chat about the run"
-          className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l bg-background shadow-xl min-[1280px]:sticky min-[1280px]:top-0 min-[1280px]:z-auto min-[1280px]:h-[calc(100vh-5rem)] min-[1280px]:w-[24rem] min-[1280px]:shrink-0 min-[1280px]:rounded-lg min-[1280px]:border min-[1280px]:shadow-none"
-        >
-          <div className="flex items-center gap-2 border-b px-4 py-2">
-            <MessageSquareTextIcon className="size-4 text-primary" aria-hidden />
-            <h2 className="text-sm font-semibold">Ask about the run</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto"
-              aria-label="Hide the chat"
-              onClick={() => toggleChat(false)}
-            >
-              <PanelRightCloseIcon />
-            </Button>
+      <Tabs
+        value={view}
+        onValueChange={(v) => onViewChange(viewFromAddress(v, views))}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <TabsList className="flex-wrap" aria-label="Views of the run">
+          <TabsTrigger value="overview">{label("Overview", null)}</TabsTrigger>
+          <TabsTrigger value="story">{label("Story", null)}</TabsTrigger>
+          <TabsTrigger value="critical">{label("Critical", openCritical, openCritical > 0)}</TabsTrigger>
+          <TabsTrigger value="decisions">
+            {label("Decisions", (insight.data?.decisions.length ?? 0) + runView.decisions.length)}
+          </TabsTrigger>
+          <TabsTrigger value="gallery">
+            {label("Gallery", images.length || runView.images.length)}
+          </TabsTrigger>
+          <TabsTrigger value="architecture">{label("Architecture", null)}</TabsTrigger>
+          <TabsTrigger value="files">{label("Files", runView.files.length)}</TabsTrigger>
+          <TabsTrigger value="documents">
+            {label("Documents", insight.data?.documents.length ?? null)}
+          </TabsTrigger>
+          <TabsTrigger value="trace">{label("Raw trace", null)}</TabsTrigger>
+          {showChat ? (
+            <TabsTrigger value="chat">
+              <span className="flex items-center gap-1.5">
+                Chat
+                {marked ? (
+                  <>
+                    <span className="size-2 rounded-full bg-primary" aria-hidden />
+                    <span className="sr-only">new answer</span>
+                  </>
+                ) : null}
+              </span>
+            </TabsTrigger>
+          ) : null}
+        </TabsList>
+        <TabsContent value="overview" className={SCROLL}>
+          <div className="flex flex-col gap-3">
+            <ProgressHeader
+              run={run}
+              title={title}
+              progress={progress}
+              phase={phase}
+              timeline={timeline}
+              nowMs={nowMs}
+              live={live}
+            />
+            <NowPanel
+              now={runView.now}
+              message={runView.latestMessage}
+              probe={run.guiProbeRunning}
+              nowMs={nowMs}
+              live={live}
+            />
+            <MetricsStrip
+              metrics={runView.metrics}
+              commits={commits.length}
+              elapsedSeconds={progress.elapsedSeconds}
+            />
           </div>
-          <ChatPanel
-            slug={run.slug!}
-            questions={LIVE_QUESTIONS}
-            compact
-            intro="Ask Claude about the run in progress: what it does, why, what it decided, what may go wrong. Every message carries a fresh snapshot of the run; Claude only reads."
+        </TabsContent>
+        <TabsContent value="story" className={FILL}>
+          <StoryView entries={runView.entries} follow={live} nowMs={nowMs} />
+          {live && !connected ? (
+            <p className="mt-1 text-xs text-muted-foreground">Connecting to the trace…</p>
+          ) : null}
+        </TabsContent>
+        <TabsContent value="critical" className={SCROLL}>
+          <CriticalView entries={runView.critical} />
+        </TabsContent>
+        <TabsContent value="decisions" className={SCROLL}>
+          <DecisionsView
+            decisions={insight.data?.decisions ?? []}
+            assumptions={insight.data?.assumptions ?? []}
+            stated={runView.decisions}
+            folder={insight.data?.featureFolder ?? null}
           />
-        </aside>
-      ) : null}
+        </TabsContent>
+        <TabsContent value="gallery" className={SCROLL}>
+          <Gallery runId={run.id} images={images} />
+        </TabsContent>
+        <TabsContent value="architecture" className={SCROLL}>
+          <ArchitectureView
+            phase={phase}
+            reached={reached}
+            live={live}
+            files={runView.files}
+            diagrams={insight.data?.diagrams ?? []}
+            center={run.feature ? `Feature ${run.feature}` : (run.branch?.split("-")[0] ?? "The change")}
+            kind={run.kind}
+          />
+        </TabsContent>
+        <TabsContent value="files" className={SCROLL}>
+          <FilesView files={runView.files} commits={commits} />
+        </TabsContent>
+        <TabsContent value="documents" className={SCROLL}>
+          <DocumentsView runId={run.id} insight={insight.data} live={live} />
+        </TabsContent>
+        <TabsContent value="trace" className={FILL}>
+          <TraceView events={events} follow={live} />
+        </TabsContent>
+        {showChat ? (
+          // Mounted while another view is shown: a draft and an answer being written survive a
+          // switch (FR-008).
+          <TabsContent value="chat" forceMount className={cn(FILL, "data-[state=inactive]:hidden")}>
+            <section
+              aria-label="Chat about the run"
+              className="flex min-h-0 flex-1 flex-col rounded-lg border"
+            >
+              <ChatPanel
+                slug={run.slug!}
+                questions={LIVE_QUESTIONS}
+                placeholder="Ask about the run… (Enter sends, Shift+Enter is a new line)"
+                shown={view === "chat"}
+                onSignature={onSignature}
+                intro="Ask Claude about the run in progress: what it does, why, what it decided, what may go wrong. Every message carries a fresh snapshot of the run; Claude only reads."
+              />
+            </section>
+          </TabsContent>
+        ) : null}
+      </Tabs>
     </div>
   );
 }

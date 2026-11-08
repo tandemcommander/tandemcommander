@@ -57,7 +57,8 @@ const TONE: Readonly<Record<Tone, string>> = {
   info: "border-info/35 bg-info/12 text-info",
   yellow: "border-sev-medium/35 bg-sev-medium/12 text-sev-medium",
   muted: "border-border bg-muted text-muted-foreground",
-  warn: "border-warn/40 bg-warn/14 text-warn",
+  // 10 %: the text keeps 4.5:1 also inside the decision box of the story (feature 419, measured 4.50).
+  warn: "border-warn/40 bg-warn/10 text-warn",
   bad: "border-bad/40 bg-bad/12 text-bad",
 };
 

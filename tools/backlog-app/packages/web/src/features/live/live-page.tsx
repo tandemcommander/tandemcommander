@@ -2,14 +2,15 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 /**
- * @file The live run (user story 2; FR-014; feature 415): the run the loop works on now as a
- * dashboard a person reads - progress and the expected end, what happens now, live figures and
- * price, the story in words, critical entries, decisions, screenshots, diagrams, documents, the raw
- * transcript, and the chat about the item. With no run, it says what the loop does and which item
- * it would take.
+ * @file The live run (user story 2; FR-014; features 415 and 419): the run the loop works on now
+ * as a dashboard a person reads - one view at a time (the overview with progress, the expected end
+ * and live figures, the story in words, critical entries, decisions, screenshots, diagrams,
+ * documents, the raw transcript, the chat about the item), the chosen one in the address
+ * (`?view=`). The page fills the window and never scrolls; each view scrolls by itself. With no
+ * run, it says what the loop does and which item it would take.
  */
 
-import { Link } from "@tanstack/react-router";
+import { getRouteApi, Link } from "@tanstack/react-router";
 import type { ItemRowView } from "@backlog-app/shared";
 import { Skeleton } from "@/components/ui/primitives.tsx";
 import { useBoard, useLiveRun } from "@/lib/queries.ts";
@@ -18,6 +19,9 @@ import { loopLine } from "@/features/loop/loop-status.tsx";
 import { useTraceStream } from "@/features/runs/trace-view.tsx";
 import { RunDashboard } from "./run-dashboard.tsx";
 
+/** The route (its `view` search parameter). */
+const route = getRouteApi("/live");
+
 /**
  * The live page.
  *
@@ -25,6 +29,8 @@ import { RunDashboard } from "./run-dashboard.tsx";
  */
 export function LivePage() {
   const live = useLiveRun();
+  const { view } = route.useSearch();
+  const navigate = route.useNavigate();
   const loop = useAppStore((s) => s.state?.loop ?? null);
   const board = useBoard("");
   const run = live.data?.run ?? null;
@@ -61,9 +67,17 @@ export function LivePage() {
     );
   }
   return (
-    <div className="flex min-h-0 w-full flex-col gap-3 p-4">
-      <h1 className="text-lg font-semibold">Live run</h1>
-      <RunDashboard run={run} events={trace.events} connected={trace.connected} live />
+    // Exactly as tall as the frame leaves: the page never scrolls (feature 419).
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden p-4">
+      <RunDashboard
+        run={run}
+        events={trace.events}
+        connected={trace.connected}
+        live
+        heading="Live run"
+        view={view}
+        onViewChange={(next) => void navigate({ search: { view: next }, replace: true })}
+      />
     </div>
   );
 }
