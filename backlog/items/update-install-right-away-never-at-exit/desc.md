@@ -1,7 +1,7 @@
 ---
 title: Updates install right away with a restart, never when Tandem Commander closes
 type: improvement
-status: open
+status: in-progress
 severity: 5
 area: privacy-security
 source: manual
@@ -10,7 +10,7 @@ created: 2026-11-08
 updated: 2026-11-08
 verified: 2026-11-08 95dc740e
 effort: M
-feature: -
+feature: 422
 related: []
 depends-on: []
 reason: -
@@ -56,3 +56,4 @@ Source: the maintainer's report and answers in the session of 2026-11-08 (questi
 - 2026-11-08 — moved to Next position 1
 - 2026-11-08 — maintainer decision 2026-11-08: the automatic level installs right away without an idle wait; installation at exit is removed completely (Install When I Close, the question after a failed Install Now, the automatic fall-back)
 - 2026-11-08 — verified at 95dc740e: still true at 95dc740e: probe 421 rows A2/L2 (user busy: nothing starts, the exit installs) and R1 (Install When I Close, exit install); exit route in salamdr1.cpp
+- 2026-11-08 — run started, feature 422
