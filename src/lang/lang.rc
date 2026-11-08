@@ -666,16 +666,22 @@ END
 // feature 420: a second install button (IDC_UPDN_INSTALLEXIT); the texts of IDOK and IDCANCEL
 // and of the hint depend on the form (classic / offer / automatic, contracts/ui.md) and are set at
 // run time; the visible buttons are laid out left to right, each as wide as its text needs.
-IDD_UPDATENOTICE DIALOGEX 0, 0, 330, 201
+// feature 421: Download & Install (IDC_UPDN_DLINSTALL, text set at run time, first of the classic
+// form when offered) and the level choice (IDC_UPDN_LEVELLABEL / IDC_UPDN_LEVEL) above the buttons;
+// the automatic form is gone (contracts/ui.md of 421).
+IDD_UPDATENOTICE DIALOGEX 0, 0, 330, 225
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Tandem Commander"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "&Download",IDOK,12,179,72,14,WS_GROUP
-    PUSHBUTTON      "",IDC_UPDN_INSTALLEXIT,90,179,72,14
-    PUSHBUTTON      "Remind Me &Later",IDCANCEL,168,179,72,14
-    PUSHBUTTON      "&Skip This Version",IDC_UPDN_SKIP,246,179,72,14
+    PUSHBUTTON      "",IDC_UPDN_DLINSTALL,12,203,72,14,WS_GROUP
+    DEFPUSHBUTTON   "&Download",IDOK,12,203,72,14,WS_GROUP
+    PUSHBUTTON      "",IDC_UPDN_INSTALLEXIT,90,203,72,14
+    PUSHBUTTON      "Remind Me &Later",IDCANCEL,168,203,72,14
+    PUSHBUTTON      "&Skip This Version",IDC_UPDN_SKIP,246,203,72,14
     CONTROL         "&Check for a new version at start-up",IDC_UPDN_ATSTARTUP,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,12,161,306,12
+    LTEXT           "Wh&en a new version is found:",IDC_UPDN_LEVELLABEL,12,176,306,8
+    COMBOBOX        IDC_UPDN_LEVEL,12,186,306,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_GROUP | WS_TABSTOP
     LTEXT           "",IDC_UPDN_NOTES,12,110,306,8,WS_TABSTOP
     LTEXT           "",IDC_UPDN_WORDMARK,12,7,170,22
     LTEXT           "A new version is available",IDC_UPDN_TITLE,12,32,220,13

@@ -46,13 +46,17 @@ HWND UpdateNotice_GetWindow();
 // A notification window of any instance of this user (ours included), or NULL.
 HWND UpdateNotice_FindAny();
 
-// Feature 420: the three forms of the notification (specs/420-auto-update-install/contracts/ui.md)
+// Feature 420: the forms of the notification; feature 421 removed the automatic one (the automatic
+// level installs without a window) - specs/421-update-notice-levels/contracts/ui.md
 enum CUpdateNoticeForm
 {
-    unfClassic,  // feature 123: Download (in the browser), Remind Me Later, Skip This Version
-    unfOffer,    // a verified installer is offered: Install Now, Install When I Close, Remind Me Later, Skip
-    unfAutomatic // a verified installer is armed for the exit: Install Now, OK, Skip
+    unfClassic, // feature 123: Download (in the browser), Remind Me Later, Skip This Version; feature 421:
+                // Download & Install first when it is offered
+    unfOffer    // a verified installer is offered: Install Now, Install When I Close, Remind Me Later, Skip
 };
+
+// feature 421: the release of this instance's open notification (FALSE when none is open)
+BOOL UpdateNotice_GetRelease(CSalUpdRelease* release);
 
 // Shows the notification for 'release' (owner: the main window). When one is
 // already open - in this or another instance - it is brought to the front

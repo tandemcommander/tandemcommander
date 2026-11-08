@@ -23,6 +23,8 @@ static BOOL UpdateNoticeAttached = FALSE; // the dialog object got its window (i
 #define UPDATEMANUAL_QUIET_MS 500
 #define UPDATEMANUAL_GIVEUP_MS 15000
 #define IDT_UPDATECHECKING 1
+#define IDT_UPDN_PROGRESS 2 // feature 421: the notification shows the progress of Download & Install
+#define UPDN_PROGRESS_MS 250
 
 //
 // ****************************************************************************
@@ -119,10 +121,18 @@ protected:
     void FitVersionFont(int ctrlID); // the largest of the three faces in which the control's text fits
     void DrawArrow(DRAWITEMSTRUCT* dis);
     void ApplyForm(); // feature 420: the buttons and the hint of the form, laid out left to right
+    // feature 421: the level choice (stored level; enabled for an installed copy with the check on)
+    void RefreshLevel();
+    // feature 421: the window shows (TRUE) or leaves (FALSE) the download of Download & Install
+    void SetDownloading(BOOL on);
+    void ShowProgress();
 
     CSalUpdRelease Release;
     BOOL Activate; // FALSE: the window must not take the activation or the keyboard when it appears
     CUpdateNoticeForm Form;
+    BOOL Eligible;    // feature 421: the copy was installed by the installer
+    BOOL DliOffered;  // feature 421: the classic form offers Download & Install
+    BOOL Downloading; // feature 421: Download & Install waits for its download
     CBitmap* HeaderBitmap;
     RECT WordmarkR;
     RECT LogoR;
@@ -139,6 +149,9 @@ CUpdateNoticeDialog::CUpdateNoticeDialog(HWND parent, const CSalUpdRelease& rele
     Release = release;
     Activate = activate;
     Form = form;
+    Eligible = FALSE;
+    DliOffered = FALSE;
+    Downloading = FALSE;
     HeaderBitmap = NULL;
     memset(&WordmarkR, 0, sizeof(WordmarkR));
     memset(&LogoR, 0, sizeof(LogoR));
@@ -214,47 +227,52 @@ void CUpdateNoticeDialog::FitVersionFont(int ctrlID)
 
 void CUpdateNoticeDialog::ApplyForm()
 {
-    // the texts of the form (the classic form keeps the dialog's own texts)
-    if (Form != unfClassic)
+    // feature 421: what this copy and this release allow
+    Eligible = UpdInstall_IsEligible(NULL);
+    DliOffered = Form == unfClassic && UpdInstall_DownloadInstallOffered(Release);
+
+    // the texts of the form (the classic form keeps the dialog's own texts, except the hint)
+    if (Form == unfOffer)
     {
         SetDlgItemTextW(HWindow, IDOK, LoadStrW(IDS_UPDATE_BTN_INSTALLNOW));
-        SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(Form == unfOffer ? IDS_UPDATE_HINT_OFFER : IDS_UPDATE_HINT_AUTO));
+        SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(IDS_UPDATE_HINT_OFFER));
     }
+    else if (DliOffered) // feature 421: Download & Install first, Download (browser) second
+    {
+        SetDlgItemTextW(HWindow, IDC_UPDN_DLINSTALL, LoadStrW(IDS_UPDATE_BTN_DLINSTALL));
+        SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(IDS_UPDATE_HINT_DLI));
+    }
+    else if (!Eligible) // feature 421: say why this copy offers only the browser download
+        SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(IDS_UPDATE_HINT_PORTABLE));
     // round 4 SHOULD: Install When I Close only while the exit can still install it (an update whose
     // installer was started three times without installing it is offered for Install Now only)
     BOOL exitOffered = Form == unfOffer && UpdInstall_ExitArmAvailable(Release.Version);
     if (exitOffered)
         SetDlgItemTextW(HWindow, IDC_UPDN_INSTALLEXIT, LoadStrW(IDS_UPDATE_BTN_INSTALLEXIT));
-    if (Form == unfAutomatic)
-        SetDlgItemTextW(HWindow, IDCANCEL, LoadStrW(IDS_UPDATE_BTN_OK)); // closes; the update stays armed
     HWND installExit = GetDlgItem(HWindow, IDC_UPDN_INSTALLEXIT);
     if (installExit != NULL && !exitOffered)
     {
         ShowWindow(installExit, SW_HIDE);
         EnableWindow(installExit, FALSE);
     }
-    if (Form == unfAutomatic) // UX test 3: Enter acknowledges (OK) - it must not close the program at once
+    HWND dlInstall = GetDlgItem(HWindow, IDC_UPDN_DLINSTALL);
+    if (dlInstall != NULL && !DliOffered)
+    {
+        ShowWindow(dlInstall, SW_HIDE);
+        EnableWindow(dlInstall, FALSE);
+    }
+    if (DliOffered) // clarification: Download & Install is the default button, as Install Now is on the offer
     {
         SendDlgItemMessage(HWindow, IDOK, BM_SETSTYLE, BS_PUSHBUTTON, FALSE);
-        SendDlgItemMessage(HWindow, IDCANCEL, BM_SETSTYLE, BS_DEFPUSHBUTTON, FALSE);
-        SendMessage(HWindow, DM_SETDEFID, IDCANCEL, 0);
-        // round 3: OK is the first tab stop (top of the z-order) - the first activation, whether by
-        // the keyboard or by a click on the window, focuses it without any message of ours
-        HWND ok = GetDlgItem(HWindow, IDCANCEL);
-        if (ok != NULL)
-        {
-            SetWindowLong(ok, GWL_STYLE, GetWindowLong(ok, GWL_STYLE) | WS_GROUP);
-            SetWindowPos(ok, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-        }
+        SendDlgItemMessage(HWindow, IDC_UPDN_DLINSTALL, BM_SETSTYLE, BS_DEFPUSHBUTTON, FALSE);
+        SendMessage(HWindow, DM_SETDEFID, IDC_UPDN_DLINSTALL, 0);
     }
 
     // the visible buttons left to right, each at least as wide as in the template and wide enough
-    // for its text (translations); the window grows when they do not fit
-    static const int idsUsual[4] = {IDOK, IDC_UPDN_INSTALLEXIT, IDCANCEL, IDC_UPDN_SKIP};
-    // round 4 NOTE: on the automatic form OK (the default, the first tab stop) is also the first button
-    // from the left - the order seen is the order Tab takes
-    static const int idsAutomatic[4] = {IDCANCEL, IDOK, IDC_UPDN_INSTALLEXIT, IDC_UPDN_SKIP};
-    const int* ids = Form == unfAutomatic ? idsAutomatic : idsUsual;
+    // for its text (translations); the window grows when they do not fit; feature 421: Download &
+    // Install (first in the template, the first tab stop) is also the first from the left
+    static const int ids[5] = {IDC_UPDN_DLINSTALL, IDOK, IDC_UPDN_INSTALLEXIT, IDCANCEL, IDC_UPDN_SKIP};
+    const int idCount = (int)_countof(ids);
     RECT gapR = {0, 0, 6, 0}; // the gap between buttons, in dialog units
     RECT padR = {0, 0, 8, 0}; // the margin left and right of a button's text
     MapDialogRect(HWindow, &gapR);
@@ -271,7 +289,7 @@ void CUpdateNoticeDialog::ApplyForm()
     HFONT font = (HFONT)SendMessage(HWindow, WM_GETFONT, 0, 0);
     HDC hDC = HANDLES(GetDC(HWindow));
     HFONT oldFont = font != NULL ? (HFONT)SelectObject(hDC, font) : NULL;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < idCount; i++)
     {
         HWND h = GetDlgItem(HWindow, ids[i]);
         if (h == NULL || (GetWindowLong(h, GWL_STYLE) & WS_VISIBLE) == 0) // the dialog itself is not shown yet
@@ -283,7 +301,15 @@ void CUpdateNoticeDialog::ApplyForm()
         int len = GetWindowTextW(h, text, _countof(text));
         RECT tr = {0, 0, 0, 0};
         DrawTextW(hDC, text, len, &tr, DT_CALCRECT | DT_SINGLELINE); // '&' is measured as the underline
-        int w = max(r.right - r.left, (tr.right - tr.left) + 2 * margin);
+        int textW = tr.right - tr.left;
+        if (ids[i] == IDC_UPDN_DLINSTALL) // feature 421: also wide enough for "Cancel Download" (no relayout later)
+        {
+            const WCHAR* cancel = LoadStrW(IDS_UPDATE_BTN_CANCELDL);
+            RECT cr = {0, 0, 0, 0};
+            DrawTextW(hDC, cancel, (int)wcslen(cancel), &cr, DT_CALCRECT | DT_SINGLELINE);
+            textW = max(textW, (int)(cr.right - cr.left));
+        }
+        int w = max(r.right - r.left, textW + 2 * margin);
         SetWindowPos(h, NULL, x, r.top, w, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE);
         x += w + gap;
     }
@@ -314,7 +340,7 @@ void CUpdateNoticeDialog::ApplyForm()
     {
         // UX test 8: fewer or narrower buttons share the row out to the right margin (as 123's form)
         int count = 0;
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < idCount; i++)
         {
             HWND h = GetDlgItem(HWindow, ids[i]);
             if (h != NULL && (GetWindowLong(h, GWL_STYLE) & WS_VISIBLE) != 0)
@@ -322,7 +348,7 @@ void CUpdateNoticeDialog::ApplyForm()
         }
         int extra = client.right - need;
         int pos = first.left;
-        for (int i = 0, k = 0; i < 4 && count > 0; i++)
+        for (int i = 0, k = 0; i < idCount && count > 0; i++)
         {
             HWND h = GetDlgItem(HWindow, ids[i]);
             if (h == NULL || (GetWindowLong(h, GWL_STYLE) & WS_VISIBLE) == 0)
@@ -341,7 +367,8 @@ void CUpdateNoticeDialog::ApplyForm()
     // UX test 1 / 2: the texts below the band span exactly the row of buttons (the same margins) -
     // also when the window grew, and whatever width a translation's layout gave them
     GetClientRect(HWindow, &client);
-    static const int texts[] = {IDC_UPDN_HINT, IDC_UPDN_ATSTARTUP, IDC_UPDN_RELEASED, IDC_UPDN_NOTES};
+    static const int texts[] = {IDC_UPDN_HINT, IDC_UPDN_ATSTARTUP, IDC_UPDN_RELEASED, IDC_UPDN_NOTES,
+                                IDC_UPDN_LEVELLABEL, IDC_UPDN_LEVEL};
     for (int i = 0; i < (int)_countof(texts); i++)
     {
         HWND h = GetDlgItem(HWindow, texts[i]);
@@ -349,7 +376,12 @@ void CUpdateNoticeDialog::ApplyForm()
         if (h != NULL && GetWindowRect(h, &r))
         {
             MapWindowPoints(NULL, HWindow, (POINT*)&r, 2);
-            SetWindowPos(h, NULL, first.left, r.top, client.right - 2 * first.left, r.bottom - r.top,
+            int height = r.bottom - r.top;
+            RECT dropped;
+            // feature 421: a drop-down list's height includes its list - keep it, or the list cannot open
+            if (texts[i] == IDC_UPDN_LEVEL && SendMessage(h, CB_GETDROPPEDCONTROLRECT, 0, (LPARAM)&dropped))
+                height = max(height, (int)(dropped.bottom - dropped.top));
+            SetWindowPos(h, NULL, first.left, r.top, client.right - 2 * first.left, height,
                          SWP_NOZORDER | SWP_NOACTIVATE);
         }
     }
@@ -359,6 +391,60 @@ void CUpdateNoticeDialog::ApplyForm()
     {
         MapWindowPoints(NULL, HWindow, (POINT*)&ar, 2);
         SetWindowPos(accent, NULL, 0, ar.top, client.right, ar.bottom - ar.top, SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+}
+
+void CUpdateNoticeDialog::RefreshLevel()
+{
+    HWND hLevel = GetDlgItem(HWindow, IDC_UPDN_LEVEL);
+    if (hLevel == NULL)
+        return;
+    if (SendMessageW(hLevel, CB_GETCOUNT, 0, 0) != 3)
+    {
+        SendMessageW(hLevel, CB_RESETCONTENT, 0, 0);
+        SendMessageW(hLevel, CB_ADDSTRING, 0, (LPARAM)LoadStrW(IDS_UPDATE_LEVEL_NOTIFY));
+        SendMessageW(hLevel, CB_ADDSTRING, 0, (LPARAM)LoadStrW(IDS_UPDATE_LEVEL_OFFER));
+        SendMessageW(hLevel, CB_ADDSTRING, 0, (LPARAM)LoadStrW(IDS_UPDATE_LEVEL_AUTO));
+    }
+    if (SendMessageW(hLevel, CB_GETDROPPEDSTATE, 0, 0) == 0) // never under the user's open list
+        SendMessageW(hLevel, CB_SETCURSEL, (WPARAM)(int)UpdInstall_GetLevel(), 0);
+    // as on Configuration > General: the level means something only while the check is on, and only
+    // for a copy installed by the installer (a portable copy is told why, ApplyForm)
+    BOOL enable = Eligible && IsDlgButtonChecked(HWindow, IDC_UPDN_ATSTARTUP) == BST_CHECKED;
+    EnableWindow(hLevel, enable);
+    EnableWindow(GetDlgItem(HWindow, IDC_UPDN_LEVELLABEL), enable);
+}
+
+void CUpdateNoticeDialog::ShowProgress()
+{
+    ULONGLONG received = 0, total = 0;
+    UpdInstall_GetDownloadProgress(Release.Version, &received, &total);
+    unsigned percent = total > 0 ? (unsigned)min((ULONGLONG)100, received * 100 / total) : 0;
+    WCHAR version[SALUPD_VERSION_TEXT_MAX];
+    char versionA[SALUPD_VERSION_TEXT_MAX];
+    SalUpdFormatVersion(Release.Version, versionA, sizeof(versionA));
+    int i = 0;
+    for (; versionA[i] != 0 && i < _countof(version) - 1; i++)
+        version[i] = (WCHAR)(unsigned char)versionA[i]; // a formatted version is ASCII
+    version[i] = 0;
+    WCHAR text[400];
+    _snwprintf_s(text, _TRUNCATE, LoadStrW(IDS_UPDATE_DLI_PROGRESS), version, percent);
+    SetDlgItemTextW(HWindow, IDC_UPDN_HINT, text);
+}
+
+void CUpdateNoticeDialog::SetDownloading(BOOL on)
+{
+    Downloading = on;
+    SetDlgItemTextW(HWindow, IDC_UPDN_DLINSTALL, LoadStrW(on ? IDS_UPDATE_BTN_CANCELDL : IDS_UPDATE_BTN_DLINSTALL));
+    if (on)
+    {
+        ShowProgress();
+        SetTimer(HWindow, IDT_UPDN_PROGRESS, UPDN_PROGRESS_MS, NULL);
+    }
+    else
+    {
+        KillTimer(HWindow, IDT_UPDN_PROGRESS);
+        SetDlgItemTextW(HWindow, IDC_UPDN_HINT, LoadStrW(IDS_UPDATE_HINT_DLI));
     }
 }
 
@@ -466,24 +552,24 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         CUpdateState state;
         UpdateCheck_LoadState(&state);
         CheckDlgButton(HWindow, IDC_UPDN_ATSTARTUP, state.CheckAtStartup ? BST_CHECKED : BST_UNCHECKED);
+        RefreshLevel(); // feature 421
 
         CCommonDialog::DialogProc(uMsg, wParam, lParam); // centres the window on its owner
-        if (Form == unfAutomatic)
+        if (DliOffered)
         {
-            // UX test 2 (MUST): OK is the default also in its drawing - set again after the base
-            // initialisation, which leaves the template's DEFPUSHBUTTON (Install Now) styled
+            // feature 421 (as 420's UX test 2 for the automatic form): Download & Install is the default
+            // also in its drawing - set again after the base initialisation, which leaves the
+            // template's DEFPUSHBUTTON (Download) styled
             SendDlgItemMessage(HWindow, IDOK, BM_SETSTYLE, BS_PUSHBUTTON, TRUE);
-            SendDlgItemMessage(HWindow, IDCANCEL, BM_SETSTYLE, BS_DEFPUSHBUTTON, TRUE);
-            SendMessage(HWindow, DM_SETDEFID, IDCANCEL, 0);
+            SendDlgItemMessage(HWindow, IDC_UPDN_DLINSTALL, BM_SETSTYLE, BS_DEFPUSHBUTTON, TRUE);
+            SendMessage(HWindow, DM_SETDEFID, IDC_UPDN_DLINSTALL, 0);
+            // shown again (another form, a reshow) while its download runs: the download state again
+            if (UpdInstall_IsInstallRequested(Release.Version))
+                SetDownloading(TRUE);
         }
         // TRUE lets the dialog manager give the keyboard focus to the first control - and with it
         // the activation, even for a window that is not visible yet. A notification that arrives
         // while the user works must take neither (contracts/ui.md, "Showing").
-        if (Activate && Form == unfAutomatic) // UX test 3: the keyboard starts on OK, not on Install Now
-        {
-            SetFocus(GetDlgItem(HWindow, IDCANCEL));
-            return FALSE;
-        }
         return Activate;
     }
 
@@ -494,9 +580,24 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             CUpdateState state;
             UpdateCheck_LoadState(&state);
             CheckDlgButton(HWindow, IDC_UPDN_ATSTARTUP, state.CheckAtStartup ? BST_CHECKED : BST_UNCHECKED);
-            // UX test 2: on the automatic form OK is the first tab stop (ApplyForm), so the dialog
-            // manager gives it the keyboard at the first activation itself. Round 3: moving the focus
-            // by a posted message here cancelled the click that activated the window.
+            RefreshLevel(); // feature 421: also the level
+            // Round 3 (420): never move the focus by a posted message here - it cancelled the click
+            // that activated the window.
+        }
+        break;
+    }
+
+    case WM_TIMER:
+    {
+        if (wParam == IDT_UPDN_PROGRESS) // feature 421
+        {
+            // the request ended: the main window took it (the installer starts, or the failure was
+            // reported), or it was dropped - the window offers its first state again
+            if (!UpdInstall_IsInstallRequested(Release.Version))
+                SetDownloading(FALSE);
+            else
+                ShowProgress();
+            return TRUE;
         }
         break;
     }
@@ -611,8 +712,50 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
             return TRUE;
         }
 
+        case IDC_UPDN_DLINSTALL: // feature 421: Download & Install / Cancel Download
+        {
+            if (!DliOffered)
+                return TRUE;
+            if (Downloading)
+            {
+                UpdInstall_CancelDownloadAndInstall(); // stops the download when the click started it
+                SetDownloading(FALSE);
+                return TRUE;
+            }
+            // a message box inside may outlive this window (420 round 5 NOTE): nothing of the object
+            // is used after the call unless the window still exists
+            CSalUpdRelease release = Release;
+            HWND self = HWindow;
+            HWND mainWnd = ::GetParent(HWindow);
+            int res = UpdInstall_DownloadAndInstall(self, mainWnd, release);
+            if (!IsWindow(self))
+                return TRUE;
+            if (res == UPDDLI_STARTED)
+                DestroyWindow(self); // the installer closes the program
+            else if (res == UPDDLI_DOWNLOADING)
+                SetDownloading(TRUE);
+            return TRUE; // UPDDLI_FAILED: the user was told; the window stays
+        }
+
+        case IDC_UPDN_LEVEL: // feature 421: the same setting as Configuration > General, written at once
+        {
+            if (HIWORD(wParam) == CBN_SELCHANGE)
+            {
+                int level = (int)SendDlgItemMessageW(HWindow, IDC_UPDN_LEVEL, CB_GETCURSEL, 0, 0);
+                if (level >= (int)sulNotify && level <= (int)sulAutomatic && level != (int)UpdInstall_GetLevel())
+                {
+                    UpdInstall_SetLevel((CSalUpdLevel)level);
+                    UpdInstall_OnSettingsChanged(); // a lowered level drops an automatic arm (420)
+                    // the main window applies it to this window (it may replace or close it)
+                    PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_LEVEL, (WPARAM)level, 0);
+                }
+            }
+            return TRUE;
+        }
+
         case IDC_UPDN_SKIP: // this version is not offered at start-up any more; a newer one is
         {
+            UpdInstall_CancelDownloadAndInstall(); // feature 421: a Download & Install of it stops
             if (!UpdateTestMode) // feature 420: a test writes none of 123's stored state
                 UpdateCheck_SetSkippedVersion(Release.Version);
             UpdInstall_SkipVersion(Release.Version); // feature 420: no arm, no installer of it any more
@@ -649,10 +792,7 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 BOOL on = IsDlgButtonChecked(HWindow, IDC_UPDN_ATSTARTUP) == BST_CHECKED;
                 UpdateCheck_SetCheckAtStartup(on);
                 UpdInstall_OnSettingsChanged(); // feature 420: an automatic arm needs the check on
-                // UX test 9: the automatic form must not keep promising the install at close - it
-                // becomes the offer (Install Now / Install When I Close stay the user's choice)
-                if (!on && Form == unfAutomatic)
-                    PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_FORM, unfOffer, 0);
+                RefreshLevel();                 // feature 421: the level choice follows the check box
             }
             return TRUE;
         }
@@ -666,6 +806,12 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         RemovePropW(HWindow, UPDATENOTICE_WINDOW_PROP);
         RemovePropA(HWindow, SALCLOSEAPP_WINDOW_PROP);
+        KillTimer(HWindow, IDT_UPDN_PROGRESS);
+        // feature 421: closing the window (Remind Me Later, Esc, Download, a replacement by another
+        // version) drops a Download & Install still waiting for its download - the user can no longer
+        // see or cancel it; a request the main window already took is not affected
+        if (Downloading && UpdInstall_IsInstallRequested(Release.Version))
+            UpdInstall_CancelDownloadAndInstall();
         if (UpdateNoticeWindow == HWindow)
             UpdateNoticeWindow = NULL;
         break;
@@ -677,6 +823,14 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 HWND UpdateNotice_GetWindow()
 {
     return UpdateNoticeWindow;
+}
+
+BOOL UpdateNotice_GetRelease(CSalUpdRelease* release)
+{
+    if (UpdateNoticeWindow == NULL || !IsWindow(UpdateNoticeWindow))
+        return FALSE;
+    *release = UpdateNoticeShownRelease;
+    return TRUE;
 }
 
 static BOOL CALLBACK UpdateNoticeEnumProc(HWND hwnd, LPARAM lParam)

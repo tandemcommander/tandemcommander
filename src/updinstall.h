@@ -78,6 +78,32 @@ void UpdInstall_Arm(const CSalUpdRelease& release, DWORD source);
 #define UPDNOW_DAMAGED -1
 int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release);
 
+// Feature 421: Download & Install on the classic form. Starts the download of 'release' (also on a
+// metered connection: a click) and remembers the request; the main window ('mainWindow') takes it with
+// UpdInstall_TakeInstallRequest when WM_USER_UPDATEDOWNLOAD_DONE arrives and starts the installer with
+// UpdInstall_InstallNow. A verified installer already present is started at once.
+#define UPDDLI_FAILED 0      // not started (the user was told when there is anything to tell)
+#define UPDDLI_STARTED 1     // the installer was started (Install Now)
+#define UPDDLI_DOWNLOADING 2 // the download runs; the request waits for it
+int UpdInstall_DownloadAndInstall(HWND parent, HWND mainWindow, const CSalUpdRelease& release);
+// IDS_UPDATE_DLI_FAILED for 'version'
+void UpdInstall_ReportDownloadFailed(HWND parent, const CSalUpdVersion& version);
+// drops the request; stops the download when the request started it
+void UpdInstall_CancelDownloadAndInstall();
+BOOL UpdInstall_IsInstallRequested(const CSalUpdVersion& version);
+// TRUE (and forgets the request) when a Download & Install of 'version' waits for its download
+BOOL UpdInstall_TakeInstallRequest(const CSalUpdVersion& version);
+// TRUE while the download of 'version' runs: the bytes received and the asset's size
+BOOL UpdInstall_GetDownloadProgress(const CSalUpdVersion& version, ULONGLONG* received, ULONGLONG* total);
+// SalUpdDownloadInstallOffered for this copy and 'release'
+BOOL UpdInstall_DownloadInstallOffered(const CSalUpdRelease& release);
+BOOL UpdInstall_IsRefused(const CSalUpdVersion& version);
+BOOL UpdInstall_InstallerRunning();
+BOOL UpdInstall_IsLastInstance();
+BOOL UpdInstall_HasVerified(const CSalUpdRelease& release);
+// the idle time the silent automatic install waits for (SALUPD_SILENT_IDLE_MS; a Debug probe seam)
+DWORD UpdInstall_SilentIdleNeededMs();
+
 // Install When I Close: is the downloaded installer still the verified one? FALSE (the user was
 // told, the file is deleted) when it is missing or changed.
 BOOL UpdInstall_CheckReady(HWND parent, const CSalUpdRelease& release);

@@ -633,3 +633,98 @@ inline BOOL SalUpdExitDecision(const CSalUpdArm& arm, BOOL honoured, BOOL normal
         return testMode;
     return SalUpdVersionCompare(running, arm.Version) < 0;
 }
+
+//
+// ****************************************************************************
+// Feature 421: the notification's choices and the silent automatic install
+// (specs/421-update-notice-levels/contracts/ui.md, research.md)
+//
+
+// Download & Install on the classic (notify-only) form: only for a copy installed by the installer,
+// a release whose installer can be proven (an asset with a published checksum within the size limit)
+// and a version whose installer was not refused before as not the project's (test mode ignores that,
+// as the background download of 420 does). A metered connection does not matter: it is a click.
+inline BOOL SalUpdDownloadInstallOffered(BOOL eligible, const CSalUpdRelease& release, BOOL refused, BOOL testMode)
+{
+    if (!eligible)
+        return FALSE;
+    if (!release.HasAsset || !release.HasDigest || release.AssetSize == 0 ||
+        release.AssetSize > SALUPD_MAX_INSTALLER_BYTES)
+        return FALSE;
+    return testMode || !refused;
+}
+
+// what a level chosen in the open notification does to it
+enum CSalUpdLevelChange
+{
+    sulchNone,     // nothing more than the stored value
+    sulchClassic,  // the offer form becomes the classic (notify-only) form
+    sulchFlow,     // 420's flow for the release: download (or a verified installer at once), then the
+                   // offer form replaces the classic one, or the automatic level installs it
+    sulchAutomatic // the offer form's update is planned for the automatic install (the window closes
+                   // when the plan may install silently)
+};
+
+// 'offerForm': the window shows the offer form (a verified installer), else the classic form;
+// 'downloadOffered': SalUpdDownloadInstallOffered for the window's release
+inline CSalUpdLevelChange SalUpdNoticeLevelChange(BOOL offerForm, CSalUpdLevel level, BOOL downloadOffered)
+{
+    if (!offerForm)
+        return (level != sulNotify && downloadOffered) ? sulchFlow : sulchNone;
+    if (level == sulNotify)
+        return sulchClassic;
+    if (level == sulAutomatic)
+        return sulchAutomatic;
+    return sulchNone;
+}
+
+// May the automatic level install the arm of 'version' without a window? Only the automatic level's
+// own plan whose installer never ran since it was planned or confirmed (420 round 6) and whose launches
+// are not used up; any other (a click's plan, an offered one, one whose installer ran and did not
+// install it) is shown in the offer form instead.
+inline BOOL SalUpdSilentInstallPlanned(BOOL hasArm, const CSalUpdArm& arm, const CSalUpdVersion& version)
+{
+    return hasArm && arm.Present && SalUpdVersionCompare(arm.Version, version) == 0 &&
+           arm.Source == SALUPD_ARM_AUTOMATIC && arm.Launches <= arm.ConfirmedAt &&
+           arm.Launches < SALUPD_MAX_LAUNCHES;
+}
+
+#define SALUPD_SILENT_IDLE_MS 30000 // no keyboard or mouse input for this long before a silent install
+
+enum CSalUpdSilentInstall
+{
+    susiNever, // this plan is not installed silently in this session (the exit / next start of 420 remain)
+    susiWait,  // not now - look again later
+    susiNow    // start the installer now
+};
+
+inline const char* SalUpdSilentInstallName(CSalUpdSilentInstall d)
+{
+    return d == susiNow ? "now" : d == susiWait ? "wait" : "never";
+}
+
+// The moment of the silent automatic install (research R1). 'honoured': SalUpdArmHonoured (the
+// level is still automatic, the check on or test mode); 'tried': this session already started it
+// for 'version'; 'lastInstance': no other instance of the program runs in the session;
+// 'installerRunning': an installer of the product runs; 'closeAgree': the program agrees to be
+// closed without asking anybody anything (the rule of an installer's close, 080/088); 'idleMs':
+// time since the last keyboard or mouse input; 'userAsked': the check was asked for by the user
+// (no idle wait).
+inline CSalUpdSilentInstall SalUpdSilentInstallDecision(BOOL hasArm, const CSalUpdArm& arm, const CSalUpdVersion& version,
+                                                        BOOL honoured, BOOL eligible, BOOL testMode,
+                                                        const CSalUpdVersion& running, BOOL tried, BOOL lastInstance,
+                                                        BOOL installerRunning, BOOL closeAgree, DWORD idleMs,
+                                                        DWORD idleNeededMs, BOOL userAsked)
+{
+    if (tried || !eligible || !honoured || !SalUpdSilentInstallPlanned(hasArm, arm, version))
+        return susiNever;
+    if ((arm.Test != 0) != (testMode != 0))
+        return susiNever; // a test plan only in a test session, a normal plan never in one
+    if (!arm.Test && SalUpdVersionCompare(running, arm.Version) >= 0)
+        return susiNever; // already reached
+    if (!lastInstance || installerRunning || !closeAgree)
+        return susiWait;
+    if (!userAsked && idleMs < idleNeededMs)
+        return susiWait;
+    return susiNow;
+}

@@ -1395,6 +1395,8 @@ struct COpenViewerData
 #define WM_USER_UPDATEINSTALL WM_APP + 423       // [0, 0]
 #define WM_USER_UPDATEINSTALL_DONE WM_APP + 424  // [exit code, 0]
 #define WM_USER_UPDATENOTICE_FORM WM_APP + 425   // [CUpdateNoticeForm, 0] - show the open notification in another form
+// feature 421: the level was changed in the notification - apply it to the open window (main window)
+#define WM_USER_UPDATENOTICE_LEVEL WM_APP + 426 // [CSalUpdLevel, 0]
 
 // states for Shift+F1 help mode
 #define HELP_INACTIVE 0 // not in Shift+F1 help mode (must be 0)
@@ -2007,6 +2009,7 @@ DWORD CfgSkillLevelToMenu(BYTE cfgSkillLevel);
 #define IDT_CFGMIGRATE_FAILED 954 // feature 343: retry showing the failed configuration move message (main window)
 #define IDT_AUTOREFRESHVERIFY 955 // feature 372: a panel without automatic refresh checks its folder 400 ms after a refresh (panel)
 #define IDT_CLIPCHECKRETRY 956    // feature 375: look again at a clipboard another program kept open (main window)
+#define IDT_UPDATEAUTOINSTALL 957 // feature 421: the silent automatic install waits for its moment (main window)
 
 // POZOR: skoro vsechny funkce v teto sekci pri chybe zobrazuji hlaseni o LOAD / SAVE
 //        konfigurace, coz z nich dela nevhodne pro bezny pristup do Registry,

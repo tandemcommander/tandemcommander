@@ -10622,6 +10622,103 @@ static void TestAutoUpdate420()
     CHECK(SalUpdExitDecision(user, TRUE, TRUE, TRUE, TRUE, TRUE, v020)); // a normal arm in a test session
 }
 
+// feature 421: the notification's level choice, Download & Install and the silent automatic install
+static void TestUpdateNotice421()
+{
+    BOOL ok;
+    CSalUpdRelease full = Upd420Parse("\"url\":\"" UPD420_API_7 "\",\"digest\":\"sha256:" UPD420_HEX "\",", &ok);
+    CHECK(ok && full.HasAsset && full.HasDigest && full.AssetSize > 0);
+
+    // --- Download & Install offered?
+    CHECK(SalUpdDownloadInstallOffered(TRUE, full, FALSE, FALSE));
+    CHECK(SalUpdDownloadInstallOffered(TRUE, full, FALSE, TRUE));
+    CHECK(!SalUpdDownloadInstallOffered(FALSE, full, FALSE, FALSE)); // not installed by the installer
+    CHECK(!SalUpdDownloadInstallOffered(FALSE, full, FALSE, TRUE));  // ... also in test mode
+    CHECK(!SalUpdDownloadInstallOffered(TRUE, full, TRUE, FALSE));   // refused before
+    CHECK(SalUpdDownloadInstallOffered(TRUE, full, TRUE, TRUE));     // test mode ignores the refusal
+    CSalUpdRelease part = full;
+    part.HasDigest = FALSE;
+    CHECK(!SalUpdDownloadInstallOffered(TRUE, part, FALSE, FALSE));
+    part = full;
+    part.HasAsset = FALSE;
+    CHECK(!SalUpdDownloadInstallOffered(TRUE, part, FALSE, TRUE));
+    part = full;
+    part.AssetSize = 0;
+    CHECK(!SalUpdDownloadInstallOffered(TRUE, part, FALSE, FALSE));
+    part.AssetSize = SALUPD_MAX_INSTALLER_BYTES;
+    CHECK(SalUpdDownloadInstallOffered(TRUE, part, FALSE, FALSE));
+    part.AssetSize = SALUPD_MAX_INSTALLER_BYTES + 1;
+    CHECK(!SalUpdDownloadInstallOffered(TRUE, part, FALSE, FALSE));
+    // negative control: a record of 123's shape (no download data) never offers it
+    CSalUpdRelease old = Upd420Parse("", &ok);
+    CHECK(ok && !SalUpdDownloadInstallOffered(TRUE, old, FALSE, TRUE));
+
+    // --- the level chosen in the open notification
+    CHECK(SalUpdNoticeLevelChange(FALSE, sulNotify, TRUE) == sulchNone);
+    CHECK(SalUpdNoticeLevelChange(FALSE, sulOffer, TRUE) == sulchFlow);
+    CHECK(SalUpdNoticeLevelChange(FALSE, sulAutomatic, TRUE) == sulchFlow);
+    CHECK(SalUpdNoticeLevelChange(FALSE, sulOffer, FALSE) == sulchNone); // nothing to download (portable, no data)
+    CHECK(SalUpdNoticeLevelChange(FALSE, sulAutomatic, FALSE) == sulchNone);
+    CHECK(SalUpdNoticeLevelChange(TRUE, sulNotify, TRUE) == sulchClassic);
+    CHECK(SalUpdNoticeLevelChange(TRUE, sulNotify, FALSE) == sulchClassic);
+    CHECK(SalUpdNoticeLevelChange(TRUE, sulOffer, TRUE) == sulchNone);
+    CHECK(SalUpdNoticeLevelChange(TRUE, sulAutomatic, TRUE) == sulchAutomatic);
+    CHECK(SalUpdNoticeLevelChange(TRUE, sulAutomatic, FALSE) == sulchAutomatic); // the installer is here already
+
+    // --- may the automatic level install silently?
+    CSalUpdVersion v019 = {0, 1, 9}, v020 = {0, 2, 0}, v021 = {0, 2, 1};
+    CSalUpdArm none;
+    memset(&none, 0, sizeof(none));
+    CSalUpdArm aut = none;
+    aut.Present = TRUE;
+    aut.Version = v020;
+    aut.Source = SALUPD_ARM_AUTOMATIC;
+    CHECK(SalUpdSilentInstallPlanned(TRUE, aut, v020));
+    CHECK(!SalUpdSilentInstallPlanned(FALSE, aut, v020));
+    CHECK(!SalUpdSilentInstallPlanned(TRUE, none, v020));
+    CHECK(!SalUpdSilentInstallPlanned(TRUE, aut, v021)); // another version
+    CSalUpdArm a = aut;
+    a.Source = SALUPD_ARM_USER; // a click's plan (Install When I Close): its own route
+    CHECK(!SalUpdSilentInstallPlanned(TRUE, a, v020));
+    a.Source = SALUPD_ARM_OFFERED;
+    CHECK(!SalUpdSilentInstallPlanned(TRUE, a, v020));
+    a = aut;
+    a.Launches = 1; // its installer ran and did not install it: offered, never silent again
+    CHECK(!SalUpdSilentInstallPlanned(TRUE, a, v020));
+    a.ConfirmedAt = 1; // the user said Yes afterwards
+    CHECK(SalUpdSilentInstallPlanned(TRUE, a, v020));
+    a.Launches = SALUPD_MAX_LAUNCHES;
+    a.ConfirmedAt = SALUPD_MAX_LAUNCHES;
+    CHECK(!SalUpdSilentInstallPlanned(TRUE, a, v020)); // used up
+
+    // --- the moment
+    const DWORD need = SALUPD_SILENT_IDLE_MS;
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need, need, FALSE) == susiNow);
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need - 1, need, FALSE) == susiWait); // the user works
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, 0, need, TRUE) == susiNow);         // the user asked
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, FALSE, FALSE, TRUE, need, need, TRUE) == susiWait);   // another instance
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, TRUE, TRUE, need, need, TRUE) == susiWait);     // an installer runs
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, FALSE, need, need, TRUE) == susiWait);   // something to lose
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v019, TRUE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);    // tried this session
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, FALSE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);  // level / check changed
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, FALSE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);  // not installed by the installer
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v020, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);   // reached
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, FALSE, v021, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);   // newer running
+    CHECK(SalUpdSilentInstallDecision(FALSE, aut, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);  // no arm
+    CHECK(SalUpdSilentInstallDecision(TRUE, aut, v020, TRUE, TRUE, TRUE, v019, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);   // a normal plan in a test session
+    a = aut;
+    a.Test = TRUE;
+    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, TRUE, v020, FALSE, TRUE, FALSE, TRUE, need, need, FALSE) == susiNow);     // test plan, test session, same version
+    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, FALSE, v020, FALSE, TRUE, FALSE, TRUE, need, need, FALSE) == susiNever);  // test plan, normal session
+    a = aut;
+    a.Launches = 1; // ran since planned
+    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, FALSE, v019, FALSE, TRUE, FALSE, TRUE, need, need, TRUE) == susiNever);
+    // "never" outranks "wait": a plan that may not install is not waited for
+    CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, FALSE, v019, FALSE, FALSE, TRUE, FALSE, 0, need, FALSE) == susiNever);
+    CHECK(strcmp(SalUpdSilentInstallName(susiNow), "now") == 0 && strcmp(SalUpdSilentInstallName(susiWait), "wait") == 0 &&
+          strcmp(SalUpdSilentInstallName(susiNever), "never") == 0);
+}
+
 // feature 125 (GitHub #5): a UNC path with a server and no share - the rules of saluncserver.h
 static void TestUncServer125()
 {
@@ -28730,6 +28827,7 @@ int main(int argc, char** argv)
     TestSmallBatch121();
     TestUpdateCheck123();
     TestAutoUpdate420();
+    TestUpdateNotice421();
     TestUncServer125();
     TestUncShareRoot284();
     TestUncShareListSignIn285();

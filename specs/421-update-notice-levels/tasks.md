@@ -14,7 +14,7 @@
 - [ ] T004 Extend the download worker in `src/updinstall.cpp` / `src/updinstall.h`: per-request metered bypass, progress counters, cancel of a running download, the Download & Install request (start / cancel / take / is-requested), `UpdInstall_IsRefused`, `UpdInstall_InstallerRunning`, `UpdInstall_IsLastInstance`; Debug seam `TC_UPDATE_PROBE_IDLE_MS`
 - [ ] T005 Add strings 14007-14012, change `IDS_UPDATE_LEVEL_AUTO`, remove `IDS_UPDATE_HINT_AUTO` / `IDS_UPDATE_BTN_OK` in `src/lang/texts.rc2` and `src/texts.rh2`
 - [ ] T006 Extend `IDD_UPDATENOTICE` in `src/lang/lang.rc` (+ ids in `src/lang/lang.rh`): level label + drop-down, Download & Install button, taller window
-- [ ] T007 Add `WM_USER_UPDATENOTICE_LEVEL` and `IDT_UPDATEAUTOINSTALL` next to the existing update messages / timers
+- [ ] T007 Add `WM_USER_UPDATENOTICE_LEVEL` and `IDT_UPDATEAUTOINSTALL` next to `WM_USER_UPDATENOTICE_FORM` / `IDT_UPDATENOTICE` in `src/consts.h`
 
 ## Phase 3: User Story 1 - Download & Install (P1)
 

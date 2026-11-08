@@ -1059,6 +1059,7 @@ struct CUpdDownloadContext
     HWND Notify;
     HANDLE CancelEvent; // manual-reset; signalled by a cancel, closed by the worker
     BOOL Cancelled;     // guarded by UpdiCS
+    BOOL IgnoreMetered; // feature 421: Download & Install - a click downloads also on a metered connection
     CSalUpdRelease Release;
 };
 
@@ -1068,7 +1069,13 @@ static CUpdDownloadContext* UpdiRunning = NULL; // guarded by UpdiCS
 static BOOL UpdiHasDone = FALSE;                // guarded by UpdiCS
 static CUpdDownloadDone UpdiDone;               // guarded by UpdiCS
 static BOOL UpdiShutDown = FALSE;               // guarded by UpdiCS
+static ULONGLONG UpdiReceived = 0;              // guarded by UpdiCS: bytes of the running download (421)
 static HANDLE UpdiThread = NULL;                // main thread only
+
+// feature 421: the request of Download & Install (main thread only)
+static BOOL UpdiInstallRequested = FALSE;
+static CSalUpdVersion UpdiInstallRequestVersion = {0, 0, 0};
+static BOOL UpdiInstallRequestStarted = FALSE; // the request started the download (a cancel stops it)
 
 static void UpdiEnsureCS()
 {
@@ -1226,6 +1233,10 @@ static BOOL UpdiDownloadBody(CUpdDownloadContext* ctx, CUpdiHop* hop, CUpdAsync*
             ok = FALSE;
             break;
         }
+        NOHANDLES(EnterCriticalSection(&UpdiCS)); // feature 421: the notification shows the progress
+        if (UpdiRunning == ctx)
+            UpdiReceived = total;
+        NOHANDLES(LeaveCriticalSection(&UpdiCS));
         DWORD written = 0;
         if (!WriteFile(file, buffer, read, &written, NULL) || written != read ||
             !BCRYPT_SUCCESS(BCryptHashData(hash, buffer, read, 0)))
@@ -1412,10 +1423,13 @@ static unsigned UpdiDownloadBodyThread(void* param)
     CUpdDownloadContext* ctx = (CUpdDownloadContext*)param;
     // review NOTE: the metered-connection test (a COM call) runs here, not on the main thread
     BOOL metered = FALSE;
-    HRESULT co = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    metered = UpdInstall_IsMetered();
-    if (SUCCEEDED(co))
-        CoUninitialize();
+    if (!ctx->IgnoreMetered) // feature 421: a click of Download & Install is the user's consent
+    {
+        HRESULT co = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+        metered = UpdInstall_IsMetered();
+        if (SUCCEEDED(co))
+            CoUninitialize();
+    }
     BOOL ok = !metered && UpdiDownload(ctx);
     TRACE_I("UpdInstall: download " << (metered ? "not started (metered connection)" : ok ? "verified" : "failed"));
     NOHANDLES(EnterCriticalSection(&UpdiCS));
@@ -1465,13 +1479,21 @@ static DWORD WINAPI UpdiDownloadThreadF(void* param)
     return UpdiDownloadEH(param);
 }
 
-static BOOL UpdiStartDownload(HWND mainWindow, const CSalUpdRelease& release)
+// '*alreadyRunning' (optional): the download of that version was already running (nothing new started)
+static BOOL UpdiStartDownload(HWND mainWindow, const CSalUpdRelease& release, BOOL ignoreMetered = FALSE,
+                              BOOL* alreadyRunning = NULL)
 {
     UpdiEnsureCS();
     BOOL started = FALSE;
+    if (alreadyRunning != NULL)
+        *alreadyRunning = FALSE;
     NOHANDLES(EnterCriticalSection(&UpdiCS));
     if (UpdiRunning != NULL)
+    {
         started = SalUpdVersionCompare(UpdiRunning->Release.Version, release.Version) == 0; // already on it
+        if (alreadyRunning != NULL)
+            *alreadyRunning = started;
+    }
     else if (!UpdiShutDown)
     {
         CUpdDownloadContext* ctx = (CUpdDownloadContext*)malloc(sizeof(CUpdDownloadContext));
@@ -1480,11 +1502,13 @@ static BOOL UpdiStartDownload(HWND mainWindow, const CSalUpdRelease& release)
             memset(ctx, 0, sizeof(*ctx));
             ctx->Notify = mainWindow;
             ctx->Release = release;
+            ctx->IgnoreMetered = ignoreMetered;
             ctx->CancelEvent = NOHANDLES(CreateEventW(NULL, TRUE, FALSE, NULL));
             if (ctx->CancelEvent != NULL)
             {
                 UpdiRunning = ctx;
                 UpdiHasDone = FALSE;
+                UpdiReceived = 0;
                 DWORD id;
                 HANDLE thread = HANDLES(CreateThread(NULL, 0, UpdiDownloadThreadF, ctx, 0, &id));
                 if (thread == NULL)
@@ -1562,6 +1586,168 @@ CSalUpdAfterCheck UpdInstall_AfterCheck(HWND mainWindow, const CSalUpdRelease& r
     if (!UpdiStartDownload(mainWindow, release))
         return suacNotify;
     return decision;
+}
+
+//
+// ****************************************************************************
+// feature 421: Download & Install, and what the notification and the silent install ask
+//
+
+static BOOL UpdiLastInstance(); // below
+
+BOOL UpdInstall_IsRefused(const CSalUpdVersion& version)
+{
+    return UpdiIsRefused(version);
+}
+
+BOOL UpdInstall_InstallerRunning()
+{
+    return UpdiInstallerRunning();
+}
+
+BOOL UpdInstall_IsLastInstance()
+{
+    return UpdiLastInstance();
+}
+
+BOOL UpdInstall_HasVerified(const CSalUpdRelease& release)
+{
+    return UpdiHasVerified(release);
+}
+
+BOOL UpdInstall_DownloadInstallOffered(const CSalUpdRelease& release)
+{
+    return SalUpdDownloadInstallOffered(UpdInstall_IsEligible(NULL), release, UpdiIsRefused(release.Version),
+                                        UpdateTestMode);
+}
+
+DWORD UpdInstall_SilentIdleNeededMs()
+{
+#ifdef _DEBUG
+    // test seam, Debug builds only: the idle time the silent install waits for (a probe cannot wait
+    // half a minute per row, and a huge value stands for "the user is working")
+    WCHAR seam[20];
+    DWORD len = GetEnvironmentVariableW(L"TC_UPDATE_PROBE_IDLE_MS", seam, _countof(seam));
+    if (len > 0 && len < _countof(seam))
+        return (DWORD)wcstoul(seam, NULL, 10);
+#endif // _DEBUG
+    return SALUPD_SILENT_IDLE_MS;
+}
+
+// stops the running download of 'version' and waits for its worker a moment (its '.part' file is
+// deleted by the worker; a new download of the same version must not meet the old one's file)
+static void UpdiCancelDownload(const CSalUpdVersion& version)
+{
+    if (UpdiCSInitialized == 0)
+        return;
+    BOOL cancelled = FALSE;
+    NOHANDLES(EnterCriticalSection(&UpdiCS));
+    if (UpdiRunning != NULL && SalUpdVersionCompare(UpdiRunning->Release.Version, version) == 0)
+    {
+        UpdiRunning->Cancelled = TRUE;
+        SetEvent(UpdiRunning->CancelEvent);
+        UpdiRunning = NULL;
+        UpdiHasDone = FALSE;
+        cancelled = TRUE;
+    }
+    NOHANDLES(LeaveCriticalSection(&UpdiCS));
+    if (cancelled && UpdiThread != NULL)
+    {
+        WaitForSingleObject(UpdiThread, 1500); // a cancelled worker abandons its request at once
+        AddAuxThread(UpdiThread);
+        UpdiThread = NULL;
+    }
+    TRACE_I("UpdInstall: download cancelled: " << cancelled);
+}
+
+void UpdInstall_ReportDownloadFailed(HWND parent, const CSalUpdVersion& version)
+{
+    char ver[SALUPD_VERSION_TEXT_MAX];
+    SalUpdFormatVersion(version, ver, sizeof(ver));
+    char text[1500];
+    _snprintf_s(text, _TRUNCATE, LoadStrU8(IDS_UPDATE_DLI_FAILED), ver);
+    char title[200];
+    lstrcpyn(title, LoadStrU8(IDS_UPDATE_INSTALL_TITLE), _countof(title));
+    SalMessageBox(parent, text, title, MB_OK | MB_ICONEXCLAMATION);
+}
+
+int UpdInstall_DownloadAndInstall(HWND parent, HWND mainWindow, const CSalUpdRelease& release)
+{
+    CALL_STACK_MESSAGE1("UpdInstall_DownloadAndInstall()");
+    if (!UpdInstall_DownloadInstallOffered(release))
+    {
+        // the button is not offered then; a race (e.g. refused meanwhile by another instance)
+        UpdInstall_ReportDownloadFailed(parent, release.Version);
+        return UPDDLI_FAILED;
+    }
+    if (UpdiInstallerRunning()) // one installer at a time (420 review M1)
+    {
+        char title[200];
+        lstrcpyn(title, LoadStrU8(IDS_UPDATE_INSTALL_TITLE), _countof(title));
+        SalMessageBox(parent, LoadStrU8(IDS_UPDATE_BUSY), title, MB_OK | MB_ICONINFORMATION);
+        return UPDDLI_FAILED;
+    }
+    if (UpdiHasVerified(release)) // the installer is here already: nothing to download
+    {
+        UpdiInstallRequested = FALSE;
+        int res = UpdInstall_InstallNow(parent, release);
+        return res == UPDNOW_STARTED ? UPDDLI_STARTED : UPDDLI_FAILED;
+    }
+    BOOL already = FALSE;
+    if (!UpdiStartDownload(mainWindow, release, TRUE, &already))
+    {
+        UpdiInstallRequested = FALSE;
+        UpdInstall_ReportDownloadFailed(parent, release.Version); // another version downloads, or closing
+        return UPDDLI_FAILED;
+    }
+    UpdiInstallRequested = TRUE;
+    UpdiInstallRequestVersion = release.Version;
+    UpdiInstallRequestStarted = !already;
+    TRACE_I("UpdInstall: Download & Install requested, download " << (already ? "already running" : "started"));
+    return UPDDLI_DOWNLOADING;
+}
+
+void UpdInstall_CancelDownloadAndInstall()
+{
+    if (!UpdiInstallRequested)
+        return;
+    UpdiInstallRequested = FALSE;
+    if (UpdiInstallRequestStarted)
+        UpdiCancelDownload(UpdiInstallRequestVersion);
+    UpdiInstallRequestStarted = FALSE;
+}
+
+BOOL UpdInstall_IsInstallRequested(const CSalUpdVersion& version)
+{
+    return UpdiInstallRequested && SalUpdVersionCompare(UpdiInstallRequestVersion, version) == 0;
+}
+
+BOOL UpdInstall_TakeInstallRequest(const CSalUpdVersion& version)
+{
+    BOOL taken = UpdInstall_IsInstallRequested(version);
+    if (taken)
+    {
+        UpdiInstallRequested = FALSE;
+        UpdiInstallRequestStarted = FALSE;
+    }
+    return taken;
+}
+
+BOOL UpdInstall_GetDownloadProgress(const CSalUpdVersion& version, ULONGLONG* received, ULONGLONG* total)
+{
+    *received = 0;
+    *total = 0;
+    if (UpdiCSInitialized == 0)
+        return FALSE;
+    NOHANDLES(EnterCriticalSection(&UpdiCS));
+    BOOL running = UpdiRunning != NULL && SalUpdVersionCompare(UpdiRunning->Release.Version, version) == 0;
+    if (running)
+    {
+        *received = UpdiReceived;
+        *total = UpdiRunning->Release.AssetSize;
+    }
+    NOHANDLES(LeaveCriticalSection(&UpdiCS));
+    return running;
 }
 
 //

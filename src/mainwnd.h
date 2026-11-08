@@ -628,8 +628,14 @@ public:
     // installer is downloading (a check the user asked for; the downloaded form replaces it later).
     // 'notify' FALSE: no classic form (the About dialog's line already tells the user); the downloaded
     // form is always shown (queued until nothing is in its way).
-    void StartUpdateFlow(const CSalUpdRelease& release, BOOL classicNow, BOOL notify);
+    // feature 421: 'userAsked' - the user asked for the check (the silent automatic install does not
+    // wait for the user to be idle); by default a check that shows the classic form at once
+    void StartUpdateFlow(const CSalUpdRelease& release, BOOL classicNow, BOOL notify, int userAsked = -1);
     void OnUpdateDownloadDone(); // WM_USER_UPDATEDOWNLOAD_DONE
+    // feature 421: the silent automatic install looks whether its moment came (IDT_UPDATEAUTOINSTALL)
+    void TrySilentUpdateInstall();
+    // feature 421: the level was changed in the notification (WM_USER_UPDATENOTICE_LEVEL)
+    void OnUpdateNoticeLevel(int level); // a CSalUpdLevel (salupdinstall.h)
 
     // called when closing a file system; the directory history stores FS
     // interfaces that must be set to NULL after closing (to prevent accidental match just because FS interfaces were allocated at the same address)
