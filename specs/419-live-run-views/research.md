@@ -80,7 +80,7 @@ which replays the recorded 415 trace. Every view is measured at 1920x1200, 1280x
 
 - **Decision**:
   - `ChatPanel` reports a signature of its conversation through an optional `onSignature` callback:
-    `chatSignature(turns, liveTextLength)` = the number of turns, the last turn's state and whether it has an
+    `chatSignature(turns)` = the number of turns, the last turn's state and whether it has an
     answer.
   - The dashboard remembers the signature it last saw while Chat was shown. The first signature reported
     counts as seen, so an existing conversation never marks on load.
@@ -109,7 +109,7 @@ which replays the recorded 415 trace. Every view is measured at 1920x1200, 1280x
 
 - **Decision**: the chat `<aside>` (*Chat about the run*), its open / close buttons, `initialChat` and the
   localStorage key `backlog-app.live.chat`.
-  - The chat's accessible region becomes the Chat view.
-  - The tab panel is labelled by its tab, and the conversation log keeps *The conversation*.
+  - The chat's accessible region becomes the Chat view: its tab panel carries the name *Chat about the run*
+    (the name `us7` addresses), and the conversation log keeps *The conversation*.
   - `us7` addresses the chat through the Chat tab's panel, and the ended-run check becomes "no Chat tab".
 - **Rationale**: FR-013. The overlay covered the tabs below 1280 px.

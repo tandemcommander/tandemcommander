@@ -34,7 +34,7 @@ Paths are relative to `tools/backlog-app/` unless they start with `specs/`.
 **Goal**: Overview and Chat are views of the same row; the chat column is gone.
 **Independent test**: `us7` reaches the chat through the Chat tab; `us8` sends a ready question with the page at rest.
 
-- [ ] T010 [US2] Rebuild `packages/web/src/features/live/run-dashboard.tsx` as one column: title row slot, tab row (Overview first, Chat last when available), every `TabsContent` `min-h-0 flex-1`, the scrolling box of the non-list views, Chat `forceMount` and hidden while inactive; remove the `<aside>`, the open / close buttons, `initialChat` and `CHAT_KEY`; the chosen view from and to the address (`replace: true`)
+- [ ] T010 [US2] Rebuild `packages/web/src/features/live/run-dashboard.tsx` as one column: title row slot, tab row (Overview first, Chat last when available), every `TabsContent` `min-h-0 flex-1`, the scrolling box of the non-list views, Chat `forceMount`, hidden while inactive, its panel named *Chat about the run*; remove the `<aside>`, the open / close buttons, `initialChat` and `CHAT_KEY`; the chosen view from and to the address (`replace: true`)
 - [ ] T011 [US2] `packages/web/src/features/chat/chat-panel.tsx`: scroll only its own log (`scrollTop`, near-bottom rule while an answer streams, at the end when shown again), no own scroll box for the tool-use list, an optional `onSignature` callback and a `fill` layout (full width)
 - [ ] T012 [US2] The mark on the Chat tab (`chatMark`, visually a dot, accessible text "new answer") in `packages/web/src/features/live/run-dashboard.tsx`
 - [ ] T013 [US2] Follow the new layout in `e2e/us7-live-dashboard.spec.ts` (Overview first, the chat through the Chat tab and its panel *Chat about the run*, the ended run without a Chat tab, axe in both themes)
@@ -45,7 +45,7 @@ Paths are relative to `tools/backlog-app/` unless they start with `specs/`.
 **Independent test**: `us8` checks *Run in short* on Story and Chat; a reload on Documents opens Documents.
 
 - [ ] T014 [US3] `RunSummaryLine` (section *Run in short*: title link, step, thin bar `aria-hidden`, percentage, elapsed, remaining / finished / stopped) in `packages/web/src/features/live/progress-header.tsx`, placed on the title row by `run-dashboard.tsx` (the pages pass their title)
-- [ ] T015 [US3] Add to `e2e/us8-live-layout.spec.ts`: *Run in short* visible on Story and Chat with the item's title and a percentage; `?view=documents` survives a reload; `?view=nonsense` opens Overview
+- [ ] T015 [US3] Add to `e2e/us8-live-layout.spec.ts`: *Run in short* visible on Story and Chat with the item's title and a percentage; `?view=documents` survives a reload; `?view=nonsense` opens Overview; a draft typed in the chat survives a switch to Story and back (FR-008); an answer that arrives while Story is shown marks the Chat tab, and opening Chat clears the mark (FR-009)
 
 ## Phase 6: Polish & cross-cutting
 
