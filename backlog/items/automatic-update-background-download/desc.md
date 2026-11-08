@@ -42,6 +42,14 @@ The decision of 2026-11-08, binding for the run:
 5. **The update keeps the install mode of the existing install, chosen explicitly**: the program reads where the Uninstall entry of the AppId (`{35C0B0DC-DB73-429C-AAA8-FBC41C937F66}_is1`) lives - HKLM passes `/ALLUSERS`, HKCU `/CURRENTUSER` - and does not rely on Inno Setup's `UsePreviousPrivileges`. A per-user install updates with no prompt at all; an all-users install shows the **UAC prompt, which is accepted** (also at the *automatic* level); declining it leaves the downloaded installer offered as in point 3. **No elevated service or scheduled task.** No Uninstall entry (a portable copy, a build tree) -> the levels act as *Notify only*.
 6. **Integrity before running** (mandatory): `WinVerifyTrust` plus a check that the signer is **our** certificate (`tools/codesign/codesign.cfg`, as `tools/winget/publish.ps1` checks it in 072), not merely any valid signature; a file that fails is deleted and never run; the version inside the installer equals the version the check announced.
 7. `PRIVACY.md` updated in the same change (the download is new network communication; a file stored under `%LOCALAPPDATA%`, removed after the install or when superseded).
+8. **Test mode: the whole update repeatable on the version already installed** (maintainer requirement 2026-11-08 - testing must never need a newer release). A command-line switch (proposed `-updatetest`; the run settles the name and records it) starts the program in a mode where:
+   - the check runs at once at start-up, ignoring the once-a-day interval, the *Skipped Version* and the stored check state of 123, and **writes none of that state** (the normal check is not disturbed by a test);
+   - the latest published release counts as *newer* even when it equals the running version (or is older - a build of an unreleased tree then installs the published release over itself; the notification says so);
+   - everything else is unchanged and runs for real: the chosen level (notify / download and offer / install at exit), the download, the host allow-list, **the signer check and the version check of the installer** (test mode never relaxes integrity - it can only reinstall our own signed published release, which the user could run by hand anyway), the install mode from the Uninstall entry, the Restart Manager close and the restart;
+   - the mode lasts only for that session: it is never stored in the configuration and is **not carried into the restart command line** (`SalRestartCommandLine`, `src/mainwnd3.cpp` `RegisterApplicationRestart`), so the program restarted after the install runs normally and the *automatic* level cannot loop; starting it again with the switch repeats the whole test;
+   - it is visible: the notification and the About line say *test mode*, and a trace line records it;
+   - a copy without the Uninstall entry (a build tree) acts as *Notify only* in test mode too - the test runs on an installed copy (per-user and all-users);
+   - it is documented for the maintainer (`architecture/12-project-reference.md` and the feature's entry), not in the user help; the release checklist lines of point *Probes* use it.
 
 ## Approach
 
@@ -50,7 +58,7 @@ The decision of 2026-11-08, binding for the run:
 - Closing for the installer goes through the existing Restart Manager route (080, 088, 118: decide at the question without side effects, act at the instruction with `UnattendedClose`).
 - winget users are unaffected in their tooling: winget reads the same Uninstall entry and the installer is the same.
 - Antivirus heuristics (076): a program that downloads and runs an `.exe` may be flagged more often; the signer check and the signed installer lower the risk - note it in the closing report.
-- Probes: an installer probe on the hidden desktop like 080's for both modes (per-user silent end to end; all-users up to the elevation request), the integrity refusals (unsigned, foreign-signed, truncated file), the redirect allow-list. A real UAC prompt and the interactive *Install now* flow go as lines into *Manual checks owed before the next release*.
+- Probes: an installer probe on the hidden desktop like 080's for both modes (per-user silent end to end; all-users up to the elevation request), the integrity refusals (unsigned, foreign-signed, truncated file), the redirect allow-list; the probes drive the test mode of point 8 (same version, repeated twice in a row, the restart without the switch). A real UAC prompt and the interactive *Install now* flow go as lines into *Manual checks owed before the next release*.
 - New UI strings (the setting, the notification buttons) need the two-stage `.slt` refresh in the same run.
 
 ## Notes
@@ -86,3 +94,4 @@ B as the new default, with one setting on Configuration > General in three level
 - 2026-11-08 — maintainer decision 2026-11-08: one setting on Configuration > General with three levels - notify only / download and offer installation (default, new and existing users) / install automatically at exit; the update keeps the mode of the existing install, chosen explicitly from the Uninstall key (HKLM -> /ALLUSERS, HKCU -> /CURRENTUSER); a UAC prompt for all-users installs is accepted, no elevated service
 - 2026-11-08 — decision converted to work
 - 2026-11-08 — moved to Next position 1
+- 2026-11-08 — extended: maintainer requirement 2026-11-08 - test mode (command-line switch, session only) that treats the published release as newer even on the same version, so the whole update can be repeated without a new release; integrity checks unchanged
