@@ -689,6 +689,20 @@ inline BOOL SalUpdSilentInstallPlanned(BOOL hasArm, const CSalUpdArm& arm, const
            arm.Launches < SALUPD_MAX_LAUNCHES;
 }
 
+// Review 421 M1: an installer started for 'arm' ended without installing it and the user answered No to
+// "install it when you close?". A click's plan (Install Now on nothing armed, Install When I Close) is
+// dropped as in 420; the automatic level's plan becomes OFFERED with its launch count instead - dropped,
+// the next check would plan it afresh and the silent install would start the same installer (and its
+// administrator prompt) again on its own. Returns TRUE and the arm to store when it is kept.
+inline BOOL SalUpdDeclinedArmKept(const CSalUpdArm& arm, CSalUpdArm* kept)
+{
+    if (!arm.Present || arm.Source != SALUPD_ARM_AUTOMATIC)
+        return FALSE;
+    *kept = arm;
+    kept->Source = SALUPD_ARM_OFFERED;
+    return TRUE;
+}
+
 #define SALUPD_SILENT_IDLE_MS 30000 // no keyboard or mouse input for this long before a silent install
 
 enum CSalUpdSilentInstall

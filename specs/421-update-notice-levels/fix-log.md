@@ -72,6 +72,43 @@ The maintainer's own `%LOCALAPPDATA%\Tandem Commander\Updates` held the files of
 of the day (the 0.2.0 installer and its setup log); the probe refuses a non-empty folder. They were moved
 to `%TEMP%\tc421_updates_backup` (SHA-256 recorded) for the probe runs and moved back afterwards.
 
+## Findings fixed on the way (rule 11, severity 5 or less)
+
+- **The silent install never ran** (severity 5, measured by the probe): see *Probe* above - the
+  decision moved to the idle part of the main loop.
+- **A lowered level left the downloaded update unannounced** (severity 3): Configuration > General
+  dropped the automatic plan while the silent install waited; nothing showed the update until the next
+  check a day later. Now the update is shown as the new level shows it (not for a skipped version, not
+  with the check off). Probe row L6: PASS.
+
+## Regression of 420
+
+- `specs/420-auto-update-install/probe/autoupd_probe.ps1` as it is: 82 PASS / 22 FAIL
+  (`probe/result_420_regression.txt`). Its rows set up level 2 without an idle seam; 421's silent
+  install then ran during their set-up (the hidden desktop had been idle for 30 s), so every row built
+  on "the update waits for the exit" saw an installer started.
+- With `TC_UPDATE_PROBE_IDLE_MS` huge ("the user works"; `probe/run_420_busy.ps1`): **94 PASS / 10 FAIL
+  / 1 NOT DRIVEN** (`probe/result_420_regression_busy.txt`). All 10 FAILs click the removed automatic
+  form or check it: L2 auto, B4 skip/exit, U3, U4, C click/tab (the form itself), Y yes-kept/next-start
+  and Q3 (their set-up presses *Install Now* on the automatic form). The NOT DRIVEN row is 420's
+  (owed to a person). No other 420 row changed. The scenarios of Y / Q3 for the silent install are 421's
+  rows A10 (No) and A11 (Yes).
+
+## Review 1 (refute-first agent)
+
+| # | Finding | Done |
+|---|---|---|
+| M1 | No after a failed silent install dropped the plan with its launch count; the next check planned it afresh and the silent install ran the same installer (UAC prompt) again | `SalUpdDeclinedArmKept`: the automatic plan stays OFFERED with its count (saltests + negative control); probe A10 (No → offered, the next start with a check offers, nothing runs) and A11 (Yes → confirmed, exit installs, no second silent start) PASS |
+| S1 | A requested check installs without the idle wait; `PRIVACY.md` claimed the wait and "no dialog open"; typed command-line text / Quick Rename are not covered by the close rule | the silent install also waits for an empty command line and no Quick Rename; `PRIVACY.md` and the manual state the exact conditions (modal dialog or menu, archive edits, plug-in file system, command line, other copy, idle unless the check was asked for) |
+| S2 | Arrow keys / wheel on the closed level drop-down acted on every step (one Down on the offer form planned the silent install and closed the window) | a step with the list closed is applied after a 1 s pause, at close-up, or when the list loses focus; probe L7 (2 then 1 within 0.3 s: nothing; one step: applied after the pause) PASS |
+| S3 | The idle-loop call ran `InstallNow`'s message boxes with the program "not busy" | `SalamanderBusy` / `CannotCloseSalMainWnd` set around `UpdInstall_InstallNow` (after the decision) |
+| S4 | No probe row for a running file operation | group F: a copy waiting on its overwrite question holds the install (`decline: file operations are running`), Skip ends it, the install starts, the target file is untouched - PASS |
+| N1 | 420 regression not accounted | section above |
+| N2 | Disabled languages (zh-CN, ru, uk) hold old bug-report texts at 14010-14012 | not built or shipped - noted only (rule 11); enabling one of them needs the refresh of 2.13 anyway, which replaces them |
+| N3 | Download & Install clicked again within ~5 s of Cancel can meet the old `.part` | accepted: rare (a request handle that does not report its closing), reported as a failed download, nothing lost; the browser download stays |
+| N4 | Remind Me Later in the milliseconds between the download's end and its handling can bring the window back | accepted: harmless (the user sees the notice again) |
+| N5 | No `CHANGELOG.md` entry | the tree has no `## [Unreleased]` section; the entry is in `closing-report.md`, owed to the maintainer |
+
 ## Translations (stop-rules 2.13)
 
 - Entries (step 0): new strings 14007-14012; changed `IDS_UPDATE_LEVEL_AUTO` (14098); removed
@@ -91,6 +128,7 @@ to `%TEMP%\tc421_updates_backup` (SHA-256 recorded) for the probe runs and moved
 
 ## Checks
 
-- `build.cmd` → BUILD SUCCEEDED.
-- `saltests` → `287240 checks, 0 failed` (420's closing: 287,190).
+- `build.cmd full` → BUILD SUCCEEDED (after the translations); `build.cmd` after review 1 → BUILD SUCCEEDED.
+- `saltests` → `287248 checks, 0 failed` (420's closing: 287,190).
 - Encoding guard → `TOTAL: 0 finding(s)`.
+- Probe 421 after review 1: **54 PASS / 0 FAIL / 0 NOT DRIVEN** (groups D, P, L, A, F, R).

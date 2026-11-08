@@ -162,8 +162,9 @@ function Set-Env([string]$Fixture = 'rel-good', [string]$Pretend = '0.1.9', [boo
     $env:TC_UPDATE_PROBE_RUNLOG = $RunLog
     $env:TC_UPDATECHECK_OPENLOG = $OpenLog
 }
-function Start-421([string[]]$Extra = @()) {
-    $a = @('-t', 'T421', '-l', ('"{0}"' -f $PanelDir), '-r', ('"{0}"' -f $PanelDir)) + $Extra
+function Start-421([string[]]$Extra = @(), [string]$Right = '') {
+    if (-not $Right) { $Right = $PanelDir }
+    $a = @('-t', 'T421', '-l', ('"{0}"' -f $PanelDir), '-r', ('"{0}"' -f $Right)) + $Extra
     $p = Start-Process -FilePath $Exe -ArgumentList $a -PassThru
     [void]$Started.Add($p.Id); [void]$p.Handle; $script:Procs[$p.Id] = $p
     $sw = [Diagnostics.Stopwatch]::StartNew()
@@ -366,6 +367,16 @@ $Groups['L'] = {
     $h = Wait-Form $id 'offer' 20
     T 'L6' 'lowered' ($null -ne $a -and $a.Source -eq 2 -and (Form $h) -eq 'offer' -and (Runs).Count -eq 0) ('planned {0}; level 1 stored meanwhile: form {1}, {2}; {3}' -f (ArmStr $a), (Form $h), (RunsStr), (SilentStr))
     Kill-Mine $id
+    # L7 (review S2) steps through the closed list do not act one by one: 2 then back to 1 within a
+    # moment leaves the offer as it is; one step to 0 acts after the pause
+    Reset-State 1; Set-Env -Idle '0'
+    $id = Start-421; $h = Wait-Form $id 'offer'
+    Choose-Level $h 2; Start-Sleep -Milliseconds 300; Choose-Level $h 1; Start-Sleep -Seconds 3
+    T 'L7' 'steps' ([Drv098f]::IsWindow($h) -and (Form $h) -eq 'offer' -and (Uc-Get 'Update Level') -eq 1 -and $null -eq (Arm) -and (Runs).Count -eq 0) ('2 then 1 within 0.3 s: window {0}, form {1}, stored {2}, {3}, {4}' -f [Drv098f]::IsWindow($h), (Form $h), (Uc-Get 'Update Level'), (ArmStr (Arm)), (RunsStr))
+    Choose-Level $h 0; Start-Sleep -Milliseconds 400; $early = (Uc-Get 'Update Level')
+    $h2 = Wait-Form $id 'classic-dli' 10
+    T 'L7' 'settle' ($early -eq 1 -and (Form $h2) -eq 'classic-dli' -and (Uc-Get 'Update Level') -eq 0) ('one step to 0: stored after 0.4 s {0}, then form {1}, stored {2}' -f $early, (Form $h2), (Uc-Get 'Update Level'))
+    Kill-Mine $id
 }
 
 # A: the silent automatic install (US4, FR-011 - FR-013)
@@ -451,6 +462,68 @@ $Groups['A'] = {
     $id = Start-421; $h = Wait-Form $id 'offer' 20; Start-Sleep -Seconds 6
     T 'A8' 'offer' ((Form $h) -eq 'offer' -and (Runs).Count -eq 0) ('plan {0} -> start: form {1}, {2}' -f (ArmStr $a), (Form $h), (RunsStr))
     Kill-Mine $id
+
+    # A10 (review M1) the silent install's installer ran and did not install it, the user answers No:
+    # the plan stays an offer with its count - the next check offers it, nothing starts on its own
+    Reset-State 2; Set-Env -Idle '0'
+    $id = Start-421; $got = Wait-Run 1 30
+    [void][Drv098f]::PostMessageW((Get-Main $id), (0x8000 + 424), [IntPtr]1223, $Z) # WM_USER_UPDATEINSTALL_DONE [exit code]
+    $m = Wait-MsgBox $id 10; $mt = if ($m -ne $Z) { FullText $m } else { '' }
+    if ($m -ne $Z) { Press $m 7 } # No
+    $h = Wait-Form $id 'offer' 10; $a = Arm
+    T 'A10' 'no' ($got -and $m -ne $Z -and $mt -like '*install it when you close*' -and $null -ne $a -and $a.Source -eq 3 -and $a.Launches -eq 1 -and (Form $h) -eq 'offer') ('installer ended (1223), "{0}" -> No: {1}, form {2}' -f (Tail $mt 70), (ArmStr $a), (Form $h))
+    Kill-Mine $id
+    Remove-Item -LiteralPath $RunLog -Force -ErrorAction SilentlyContinue
+    Uc-Del 'Last Attempt'; Uc-Del 'Last Attempt Answered' # the next check is due
+    $id = Start-421; $h = Wait-Form $id 'offer' 30; Start-Sleep -Seconds 8; $a = Arm
+    T 'A10' 'next' ((Form $h) -eq 'offer' -and (Runs).Count -eq 0 -and $null -ne $a -and $a.Source -eq 3) ('the next start with a check: form {0}, {1}, {2}' -f (Form $h), (RunsStr), (ArmStr $a))
+    Kill-Mine $id
+
+    # A11 (420's Y rows, for the silent install) the same, the user answers Yes: confirmed, the exit installs
+    Reset-State 2; Set-Env -Idle '0'
+    $id = Start-421; $got = Wait-Run 1 30
+    [void][Drv098f]::PostMessageW((Get-Main $id), (0x8000 + 424), [IntPtr]1223, $Z)
+    $m = Wait-MsgBox $id 10
+    if ($m -ne $Z) { Press $m 6 } # Yes
+    Start-Sleep -Seconds 2; $a = Arm; $n = [P421]::Notice([uint32]$id)
+    T 'A11' 'yes' ($got -and $m -ne $Z -and $null -ne $a -and $a.Source -eq 2 -and $a.Launches -eq 1 -and $a.Confirmed -eq 1 -and $n -eq $Z) ('installer ended -> Yes: {0}, notification {1}' -f (ArmStr $a), ($n -ne $Z))
+    Start-Sleep -Seconds 7
+    $s = Quit $id; $r = Runs
+    T 'A11' 'exit' ($r.Count -eq 2 -and $r[1] -like $ExitLike) ('no second silent start, normal exit after {0} s: {1}' -f $s, (RunsStr))
+}
+
+# F: a file operation in progress holds the silent install (review S4)
+$Groups['F'] = {
+    # A9 (review S4) a file operation in progress: nothing starts until it ends. A copy whose target exists
+    # waits on its overwrite question; the check is asked for by the user (no idle wait)
+    Reset-State 2; NoCheck; Set-Env -Idle '0'
+    $right = $Fx + '\right'
+    [void][IO.Directory]::CreateDirectory($right)
+    # the source in the right panel (active after the start), the existing target in the left one
+    Set-Content -LiteralPath ($right + '\a421.txt') -Value 'source' -Encoding ASCII
+    Set-Content -LiteralPath ($PanelDir + '\a421.txt') -Value 'target kept' -Encoding ASCII
+    $id = Start-421 @() $right; Start-Sleep -Seconds 2
+    $lists = @([Drv098f]::Kids((Get-Main $id)) | Where-Object { [Drv098f]::Cls($_) -eq 'SalamanderItemsBox' -and [Drv098f]::IsWindowVisible($_) })
+    foreach ($vk in @(0x24, 0x28)) { [void][Drv098f]::Send($lists[1], 0x0100, $vk, 1, 30000); [void][Drv098f]::Send($lists[1], 0x0101, $vk, 0xC0000001, 30000) } # Home, Down: a421.txt (".." first)
+    $copyDlg = Open-ByCmd $id 727 # CM_COPYFILES
+    Out ('F copy dialog: ' + $(if ($copyDlg -ne $Z) { WinDesc $copyDlg } else { 'none' }))
+    $known = @(Get-Tops $id)
+    if ($copyDlg -ne $Z) { Click-Ok $copyDlg }
+    $q = Wait-NewWin $id $known 10
+    Out ('F question: ' + $(if ($q -ne $Z) { WinDesc $q } else { 'none' }) + '; windows: ' + ((@(Get-Tops $id) | Where-Object { [Drv098f]::IsWindowVisible($_) } | ForEach-Object { WinDesc $_ }) -join ' || ') + '; target now "' + ((Get-Content -LiteralPath ($PanelDir + '\a421.txt')) -join '') + '"')
+    $qt = if ($q -ne $Z) { FullText $q } else { '' }
+    Post-Cmd (Get-Main $id) $CM_HELP_CHECKVERSION
+    $a = Wait-Arm 30; Start-Sleep -Seconds 8
+    $r1 = (Runs).Count; $s1 = SilentStr
+    T 'A9' 'fileop' ($copyDlg -ne $Z -and $q -ne $Z -and $null -ne $a -and $r1 -eq 0 -and $s1 -like '*file*') ('copy waiting on "{0}": {1}, runs {2}; {3}' -f (Tail $qt 80), (ArmStr $a), $r1, $s1)
+    if ($q -ne $Z) { Press $q 173 } # Skip: the operation ends without touching the target
+    $got = Wait-Run 1 20
+    if (-not $got) { Out ('F windows after Skip: ' + ((@(Get-Tops $id) | Where-Object { [Drv098f]::IsWindowVisible($_) } | ForEach-Object { WinDesc $_ }) -join ' || ') + '; ' + (SilentStr)) }
+    $leftText = (Get-Content -LiteralPath ($PanelDir + '\a421.txt')) -join ''
+    T 'A9' 'after' ($got -and (Runs)[0] -like $NowLike -and $leftText -eq 'target kept') ('the copy ended (Skip): {0}; the target kept "{1}"' -f (RunsStr), $leftText)
+    Kill-Mine $id
+    Remove-Item -LiteralPath ($PanelDir + '\a421.txt'), ($right + '\a421.txt') -Force -ErrorAction SilentlyContinue
+
 }
 
 # R: regression rows of 420 that still apply

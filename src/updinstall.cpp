@@ -992,8 +992,19 @@ BOOL UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode)
     int answer = SalMessageBox(parent, text, title, later ? (MB_YESNO | MB_ICONQUESTION) : (MB_OK | MB_ICONEXCLAMATION));
     if (answer == IDNO && later)
     {
-        TRACE_I("UpdInstall: the user does not want the update at the exit - the arm is dropped");
-        UpdInstall_DropArm();
+        // review 421 M1: the automatic level's plan stays as an offer (with its count) - dropped, the next
+        // check would plan it afresh and the silent install would run the same installer again
+        CSalUpdArm offered;
+        if (SalUpdDeclinedArmKept(arm, &offered))
+        {
+            TRACE_I("UpdInstall: the user does not want the update at the exit - the automatic plan is only offered now");
+            UpdiSaveArm(offered);
+        }
+        else
+        {
+            TRACE_I("UpdInstall: the user does not want the update at the exit - the arm is dropped");
+            UpdInstall_DropArm();
+        }
     }
     else if (later) // round 6: Yes confirms the plan - the exit may install it (also with other instances)
         UpdiConfirmArm(UpdiNowVersion);

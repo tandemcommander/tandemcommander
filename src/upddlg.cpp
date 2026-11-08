@@ -25,6 +25,8 @@ static BOOL UpdateNoticeAttached = FALSE; // the dialog object got its window (i
 #define IDT_UPDATECHECKING 1
 #define IDT_UPDN_PROGRESS 2 // feature 421: the notification shows the progress of Download & Install
 #define UPDN_PROGRESS_MS 250
+#define IDT_UPDN_LEVEL 3 // feature 421 review S2: a level stepped to with the list closed is applied after a pause
+#define UPDN_LEVEL_SETTLE_MS 1000
 
 //
 // ****************************************************************************
@@ -126,6 +128,8 @@ protected:
     // feature 421: the window shows (TRUE) or leaves (FALSE) the download of Download & Install
     void SetDownloading(BOOL on);
     void ShowProgress();
+    // feature 421: stores the level chosen in the drop-down and lets the main window act on it
+    void ApplyLevelChoice();
 
     CSalUpdRelease Release;
     BOOL Activate; // FALSE: the window must not take the activation or the keyboard when it appears
@@ -133,6 +137,7 @@ protected:
     BOOL Eligible;    // feature 421: the copy was installed by the installer
     BOOL DliOffered;  // feature 421: the classic form offers Download & Install
     BOOL Downloading; // feature 421: Download & Install waits for its download
+    BOOL LevelPending; // feature 421 review S2: a level stepped to with the closed list waits to be applied
     CBitmap* HeaderBitmap;
     RECT WordmarkR;
     RECT LogoR;
@@ -152,6 +157,7 @@ CUpdateNoticeDialog::CUpdateNoticeDialog(HWND parent, const CSalUpdRelease& rele
     Eligible = FALSE;
     DliOffered = FALSE;
     Downloading = FALSE;
+    LevelPending = FALSE;
     HeaderBitmap = NULL;
     memset(&WordmarkR, 0, sizeof(WordmarkR));
     memset(&LogoR, 0, sizeof(LogoR));
@@ -406,13 +412,28 @@ void CUpdateNoticeDialog::RefreshLevel()
         SendMessageW(hLevel, CB_ADDSTRING, 0, (LPARAM)LoadStrW(IDS_UPDATE_LEVEL_OFFER));
         SendMessageW(hLevel, CB_ADDSTRING, 0, (LPARAM)LoadStrW(IDS_UPDATE_LEVEL_AUTO));
     }
-    if (SendMessageW(hLevel, CB_GETDROPPEDSTATE, 0, 0) == 0) // never under the user's open list
+    // never under the user's open list, nor over a choice that waits to be applied
+    if (SendMessageW(hLevel, CB_GETDROPPEDSTATE, 0, 0) == 0 && !LevelPending)
         SendMessageW(hLevel, CB_SETCURSEL, (WPARAM)(int)UpdInstall_GetLevel(), 0);
     // as on Configuration > General: the level means something only while the check is on, and only
     // for a copy installed by the installer (a portable copy is told why, ApplyForm)
     BOOL enable = Eligible && IsDlgButtonChecked(HWindow, IDC_UPDN_ATSTARTUP) == BST_CHECKED;
     EnableWindow(hLevel, enable);
     EnableWindow(GetDlgItem(HWindow, IDC_UPDN_LEVELLABEL), enable);
+}
+
+void CUpdateNoticeDialog::ApplyLevelChoice()
+{
+    LevelPending = FALSE;
+    KillTimer(HWindow, IDT_UPDN_LEVEL);
+    int level = (int)SendDlgItemMessageW(HWindow, IDC_UPDN_LEVEL, CB_GETCURSEL, 0, 0);
+    if (level >= (int)sulNotify && level <= (int)sulAutomatic && level != (int)UpdInstall_GetLevel())
+    {
+        UpdInstall_SetLevel((CSalUpdLevel)level);
+        UpdInstall_OnSettingsChanged(); // a lowered level drops an automatic arm (420)
+        // the main window applies it to this window (it may replace or close it)
+        PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_LEVEL, (WPARAM)level, 0);
+    }
 }
 
 void CUpdateNoticeDialog::ShowProgress()
@@ -589,6 +610,11 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_TIMER:
     {
+        if (wParam == IDT_UPDN_LEVEL) // feature 421 review S2: the stepped level settled
+        {
+            ApplyLevelChoice();
+            return TRUE;
+        }
         if (wParam == IDT_UPDN_PROGRESS) // feature 421
         {
             // the request ended: the main window took it (the installer starts, or the failure was
@@ -739,16 +765,25 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case IDC_UPDN_LEVEL: // feature 421: the same setting as Configuration > General, written at once
         {
-            if (HIWORD(wParam) == CBN_SELCHANGE)
+            // review S2: with the list closed, an arrow key or the wheel steps through the levels - each
+            // step must not act (one Down on the offer form would plan the silent install and close the
+            // window); the choice is applied after a pause, when the list closes, or when it loses focus
+            switch (HIWORD(wParam))
             {
-                int level = (int)SendDlgItemMessageW(HWindow, IDC_UPDN_LEVEL, CB_GETCURSEL, 0, 0);
-                if (level >= (int)sulNotify && level <= (int)sulAutomatic && level != (int)UpdInstall_GetLevel())
+            case CBN_SELCHANGE:
+                if (SendDlgItemMessageW(HWindow, IDC_UPDN_LEVEL, CB_GETDROPPEDSTATE, 0, 0) == 0)
                 {
-                    UpdInstall_SetLevel((CSalUpdLevel)level);
-                    UpdInstall_OnSettingsChanged(); // a lowered level drops an automatic arm (420)
-                    // the main window applies it to this window (it may replace or close it)
-                    PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_LEVEL, (WPARAM)level, 0);
+                    LevelPending = TRUE;
+                    SetTimer(HWindow, IDT_UPDN_LEVEL, UPDN_LEVEL_SETTLE_MS, NULL);
                 }
+                break; // with the list open, its closing applies it
+            case CBN_CLOSEUP:
+                ApplyLevelChoice();
+                break;
+            case CBN_KILLFOCUS:
+                if (LevelPending)
+                    ApplyLevelChoice();
+                break;
             }
             return TRUE;
         }
@@ -807,6 +842,8 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         RemovePropW(HWindow, UPDATENOTICE_WINDOW_PROP);
         RemovePropA(HWindow, SALCLOSEAPP_WINDOW_PROP);
         KillTimer(HWindow, IDT_UPDN_PROGRESS);
+        if (LevelPending) // review S2: a stepped level is stored also when the window closes before the pause ends
+            ApplyLevelChoice();
         // feature 421: closing the window (Remind Me Later, Esc, Download, a replacement by another
         // version) drops a Download & Install still waiting for its download - the user can no longer
         // see or cancel it; a request the main window already took is not affected

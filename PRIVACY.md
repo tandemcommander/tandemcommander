@@ -305,9 +305,14 @@ General → When a new version is found**, or in the notification window itself:
   Close*. Nothing is installed until you choose one of them.
 - *Install it automatically as soon as it is downloaded*: the program
   downloads the installer and installs it without asking as soon as nothing
-  can be lost (no file operation or search running, no dialog open, no other
-  copy of the program running, no keyboard or mouse use for half a minute);
-  the program closes and starts again after the update. If you close the
+  can be lost: no file operation or search running, no modal dialog or menu
+  open, nothing opened from an archive waiting to be packed back, no plug-in
+  file system open, nothing typed in the command line, no other copy of the
+  program running, and - unless you asked for the check yourself - no
+  keyboard or mouse use for half a minute; the program closes and starts
+  again after the update. If its installer does not install it (for example
+  you decline the administrator's permission) and you do not want it at the
+  exit, it is only offered from then on. If you close the
   program first, it installs the update then; if that did not happen either
   (for example the computer was switched off), it installs it the next time
   the program starts.

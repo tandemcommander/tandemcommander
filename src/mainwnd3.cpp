@@ -981,6 +981,13 @@ void CMainWindow::TrySilentUpdateInstall()
         lii.cbSize = sizeof(lii);
         DWORD idle = GetLastInputInfo(&lii) ? GetTickCount() - lii.dwTime : 0;
         BOOL closeAgree = DecideCloseApp() == scadAgree;
+        // review S1: what the installer's close does not ask about but the user would lose - text typed
+        // in the command line, a Quick Rename edit in progress (the close agrees with both)
+        if (closeAgree && (QuickRenameWindowActive() ||
+                           (EditWindow != NULL && EditWindow->GetEditLine() != NULL &&
+                            EditWindow->GetEditLine()->HWindow != NULL &&
+                            GetWindowTextLengthW(EditWindow->GetEditLine()->HWindow) > 0)))
+            closeAgree = FALSE;
         BOOL last = closeAgree && UpdInstall_IsLastInstance();
         BOOL installer = last && UpdInstall_InstallerRunning();
         d = SalUpdSilentInstallDecision(hasArm, arm, release.Version, honoured, TRUE, UpdateTestMode, running, tried,
@@ -1029,8 +1036,16 @@ void CMainWindow::TrySilentUpdateInstall()
     UpdateSilentTriedVersion = release.Version;
     CSalUpdRelease copy = release;
     // as Install Now (research R2): verified again, the launch counted, a failure reported and the plan
-    // from before restored (the next start offers it instead of installing it)
+    // from before restored (the next start offers it instead of installing it). Review S3: called from the
+    // idle part of the main loop - busy (and not closable) while it runs, as the other idle actions that
+    // may show a message box are; the installer's own close comes after this returns.
+    BOOL oldBusy = SalamanderBusy;
+    BOOL oldCannotClose = CannotCloseSalMainWnd;
+    SalamanderBusy = TRUE;
+    CannotCloseSalMainWnd = TRUE;
     UpdInstall_InstallNow(HWindow, copy);
+    CannotCloseSalMainWnd = oldCannotClose;
+    SalamanderBusy = oldBusy;
 }
 
 // feature 421: the level was changed in the notification - what it does to the open window

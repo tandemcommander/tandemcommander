@@ -10717,6 +10717,24 @@ static void TestUpdateNotice421()
     CHECK(SalUpdSilentInstallDecision(TRUE, a, v020, TRUE, TRUE, FALSE, v019, FALSE, FALSE, TRUE, FALSE, 0, need, FALSE) == susiNever);
     CHECK(strcmp(SalUpdSilentInstallName(susiNow), "now") == 0 && strcmp(SalUpdSilentInstallName(susiWait), "wait") == 0 &&
           strcmp(SalUpdSilentInstallName(susiNever), "never") == 0);
+
+    // --- review M1: No after a failed launch of the automatic plan keeps it as an offer, with its count
+    CSalUpdArm kept;
+    a = aut;
+    a.Launches = 1; // restored after the failed launch: automatic, 1 launch, unconfirmed
+    CHECK(SalUpdDeclinedArmKept(a, &kept) && kept.Source == SALUPD_ARM_OFFERED && kept.Launches == 1 &&
+          kept.ConfirmedAt == 0 && SalUpdVersionCompare(kept.Version, v020) == 0);
+    // ... which the automatic level never plans again (420's rule) nor installs silently, and the exit refuses
+    CHECK(!SalUpdAutomaticArmUsable(TRUE, kept, v020));
+    CHECK(!SalUpdSilentInstallPlanned(TRUE, kept, v020));
+    CHECK(!SalUpdExitDecision(kept, SalUpdArmHonoured(kept, TRUE, sulAutomatic, FALSE), TRUE, TRUE, TRUE, FALSE, v019));
+    // negative control: the dropped arm (420's old behaviour) lets the next check plan it afresh - silent again
+    CHECK(SalUpdAutomaticArmUsable(FALSE, none, v020));
+    a.Source = SALUPD_ARM_USER; // a click's plan is dropped as in 420
+    CHECK(!SalUpdDeclinedArmKept(a, &kept));
+    a.Source = SALUPD_ARM_OFFERED;
+    CHECK(!SalUpdDeclinedArmKept(a, &kept));
+    CHECK(!SalUpdDeclinedArmKept(none, &kept));
 }
 
 // feature 125 (GitHub #5): a UNC path with a server and no share - the rules of saluncserver.h
