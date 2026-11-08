@@ -30,10 +30,28 @@ server does not answer or answers unexpectedly, nothing is shown at all.</p>
 It offers:</p>
 <dl>
 <dt><i>Download</i></dt>
-<dd>Opens the installer of the new version in your web browser, which downloads it.
-Tandem Commander downloads and installs nothing itself. Run the installer to update;
-it closes the running program, replaces its files and starts it again. Your settings
-are kept.</dd>
+<dd>Shown when the program does not download the installer itself (the setting
+<i>Notify me only</i>, a metered connection, a copy not installed by the installer, or a
+download that failed). Opens the installer of the new version in your web browser,
+which downloads it. Run the installer to update; it closes the running program,
+replaces its files and starts it again. Your settings are kept.</dd>
+
+<dt><i>Install Now</i></dt>
+<dd>Shown when the installer has already been downloaded and verified (the setting
+<i>When a new version is found</i> on the <a href="configuration_gener.htm">General</a>
+page). The program closes, the update is installed with a progress window, and the
+program starts again. Your settings are kept. For an installation for all users,
+Windows asks for an administrator's permission.</dd>
+
+<dt><i>Install When I Close</i></dt>
+<dd>The update is installed when you close Tandem Commander. If the program is not
+closed normally (for example Windows is shut down with it open), the update is installed
+the next time it starts.</dd>
+
+<dt><i>OK</i></dt>
+<dd>Shown with the setting <i>Install it automatically when I close Tandem
+Commander</i>: the update stays planned and is installed when you close the
+program.</dd>
 
 <dt><i>Remind Me Later</i></dt>
 <dd>Closes the window. The Esc key and the window's close button do the same. The
@@ -41,7 +59,8 @@ window is shown again after the next check that finds the version, not sooner th
 next day.</dd>
 
 <dt><i>Skip This Version</i></dt>
-<dd>Closes the window and does not show it at start-up again for this version. A still
+<dd>Closes the window and does not show it at start-up again for this version. A
+downloaded installer of it is deleted and it is not installed. A still
 newer version is announced as usual. The skipped version remains visible in the About
 box and through the Help menu command.</dd>
 
@@ -76,8 +95,17 @@ server.</p>
 fixed identification <code>TandemCommander-updatecheck</code>. It does not contain the
 version you have, any identifier of you, your computer or the installation, or anything
 about your files and settings. No cookies are used. As with any web request, the server
-sees the IP address the request comes from. The privacy statement (<code>PRIVACY.md</code>
-in the project's repository) describes this in full.</p>
+sees the IP address the request comes from.</p>
+
+<p>When the program downloads the installer itself, it asks <code>api.github.com</code> for
+the installer file of that release and follows GitHub's redirection only to GitHub's own
+download servers, with the fixed identification <code>TandemCommander-update</code>. The
+file is kept in <code>%LOCALAPPDATA%\Tandem Commander\Updates</code>. Before it is offered
+or run, the program checks that it is exactly the file GitHub published (its SHA-256
+checksum), that it is signed with the project's code-signing certificate, and that it is
+the installer of the announced version; a file that fails is deleted and never run. The
+privacy statement (<code>PRIVACY.md</code> in the project's repository) describes this in
+full.</p>
 
 <h4>Remarks</h4>
 <p>If you installed Tandem Commander with the Windows Package Manager, the command

@@ -9,7 +9,9 @@ network only as a result of something you do — for example connecting to an
 FTP or SFTP server, loading the images of a Markdown document, or clicking a
 web link. The exception is the check for a new version: unless you turn it
 off, the program asks GitHub about once a day, when it starts, which version
-of Tandem Commander is the latest (see *Checking for a new version*). What it
+of Tandem Commander is the latest, and when there is a newer one it downloads
+that version's installer from GitHub, so that you can install it with one click
+or when you close the program (see *Checking for a new version*). What it
 stores — settings, history and, if you choose, saved passwords — stays in
 your Windows user profile.
 
@@ -98,13 +100,29 @@ For the check for a new version (see *Checking for a new version*) the
 program keeps, in the same registry key under `Settings\Update Check`: whether the
 check at start-up is on, when it last tried and whether the server answered,
 when it last succeeded, the number and release date of the latest version it
-learned of, and a version you chose to skip. These values are written when
+learned of, a version you chose to skip, what the program does with a new
+version (*Update Level*), and, while an update waits to be installed, its
+version number, the SHA-256 checksum of its installer, whether you or the
+setting asked for it, and how many times the installer was started (the
+*Install* values). These values are written when
 they change, not with the rest of the settings, and *Clear History* does not
 remove them. Nothing from the server's answer is stored except that version
 number and date. An exported configuration contains these values too.
 Importing a configuration, or removing a damaged one, replaces or removes
 them; if the option is not part of what is imported, the check at start-up is
 on again.
+
+### Downloaded updates
+
+The installer of a new version that the program downloaded is kept in
+`%LOCALAPPDATA%\Tandem Commander\Updates` (named
+`tandemcommander-<version>-x64-setup.exe`; while it is being downloaded, with
+`.part` added), together with the installer's own log of the last
+installation (`setup-<version>.log`, the list of files it installed). A
+download that did not complete, and an installer of a version that is not
+newer than the one you run, are deleted at the next start; an installer that
+fails the checks described in *Checking for a new version* is deleted at once;
+choosing *Skip This Version* deletes it too.
 
 ### Saved connections
 
@@ -238,9 +256,9 @@ only if you choose so there, by Windows.
 
 ## When the program uses the network
 
-Apart from the check for a new version, the program does not contact the
-internet on its own: there is no telemetry and there are no crash-report
-uploads.
+Apart from the check for a new version and the download of the new version's
+installer, the program does not contact the internet on its own: there is no
+telemetry and there are no crash-report uploads.
 
 ### Checking for a new version
 
@@ -263,17 +281,55 @@ proxy server is set up — or Windows finds one automatically on your network �
 the request goes through it. The request goes to GitHub, not to the project or its
 author; GitHub's privacy statement describes what GitHub does with it.
 
-From the answer the program uses only the version number and the release
-date. It downloads and installs nothing itself. *Download* — in the
-notification window and in the About box — hands the address of the new
-version's installer on github.com to your web browser, which downloads the
-file (GitHub serves it from its download servers); *Release notes* opens the
-page of that release on github.com. Both happen only when you choose them.
+From the answer the program uses the version number, the release date and,
+for the new version's installer, the number GitHub gave the file, its size and
+its SHA-256 checksum.
+
+What happens with a newer version is chosen under **Options → Configuration →
+General → When a new version is found**:
+
+- *Notify me only*: the program downloads and installs nothing itself.
+  *Download* — in the notification window and in the About box — hands the
+  address of the new version's installer on github.com to your web browser,
+  which downloads the file; *Release notes* opens the page of that release on
+  github.com. Both happen only when you choose them.
+- *Download it and offer installation* (the default): the program downloads
+  the installer itself and then offers *Install Now* and *Install When I
+  Close*. Nothing is installed until you choose one of them.
+- *Install it automatically when I close Tandem Commander*: the program
+  downloads the installer and installs it when you close the program; if that
+  did not happen (for example the computer was switched off), it installs it
+  the next time the program starts.
+
+The download is one request to `api.github.com` for the installer file of that
+release (an address the program builds from the release's number, not one
+taken from the answer); GitHub answers with a redirection to its download
+servers (`release-assets.githubusercontent.com` or
+`objects.githubusercontent.com`), and the program follows no redirection to
+any other server. The requests carry the fixed identification
+`TandemCommander-update` and, in the request to `api.github.com`, two fixed
+lines saying which form of answer is expected; nothing else is sent — no cookies, no Windows credentials, nothing
+about you, your computer or your files. They use the proxy settings of Windows
+like the check. On a connection that Windows reports as metered, the program
+does not download in the background; the notification then offers the browser
+download as with *Notify me only*.
+
+Before the program offers or runs a downloaded installer, it checks on your
+computer, without contacting anyone, that the file has exactly the SHA-256
+checksum GitHub published for it, that it carries a valid digital signature
+made with the Tandem Commander project's code-signing certificate, and that it
+is the installer of the announced version; a file that fails any of these is
+deleted and never run. The installer is the same one you would download from
+the release page; it updates the installation the program runs from, in the
+same way as when you run it yourself (for an installation for all users,
+Windows asks for an administrator's permission). Only a copy installed by the
+installer updates itself; a copy started from elsewhere only tells you about
+new versions.
 
 To turn the check off, clear **Options → Configuration → General → Check for
 a new version of Tandem Commander at start-up**, or the same option in the
 notification window. The program then asks only when you choose the command
-yourself.
+yourself, and downloads or installs nothing on its own.
 
 ### Other network use
 
@@ -368,8 +424,8 @@ place:
 
 - your settings, history and saved passwords
   (`HKEY_CURRENT_USER\Software\Tandem Commander`);
-- crash reports, viewer engine data and a PictView wallpaper picture
-  (`%LOCALAPPDATA%\Tandem Commander`);
+- crash reports, viewer engine data, a PictView wallpaper picture and a
+  downloaded update (`%LOCALAPPDATA%\Tandem Commander`);
 - the three `Prev...` values PictView writes in
   `HKEY_CURRENT_USER\Control Panel\Desktop` (see *Desktop wallpaper*);
 - the folder `%APPDATA%\Tandem Commander`, which the program uses as the
@@ -417,7 +473,10 @@ project's repository.
 
 ---
 
-This statement describes Tandem Commander 0.2.0 (`CHANGELOG.md`). In 0.1.10,
+This statement describes Tandem Commander 0.2.0 (`CHANGELOG.md`). Up to and
+including 0.2.0 the program downloads and installs nothing itself: it keeps no
+`Update Level` and `Install` values and no `Updates` folder, and *Download*
+always hands the address to your web browser. In 0.1.10,
 the version before it, the settings are kept in the subkey `0.1` (the
 `Update Check` values under `0.1\Update Check`) and no `Moved To Settings`
 value is written; the program offers no import of settings from Altap

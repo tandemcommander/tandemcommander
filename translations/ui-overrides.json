@@ -317,7 +317,19 @@
       "IDC_CHECKNEWVERSION": "Kontrolovat &novou verzi programu Tandem Commander při spuštění",
       "IDS_CANNOTMOVEDIRINTOITSELF": "Nelze přesunout adresář do sebe sama ani do jednoho z jeho podadresářů.",
       "IDC_ICONSET_FLUENT": "Fl&uent 2",
-      "IDC_ICONSET_CLASSIC": "&Klasická"
+      "IDC_ICONSET_CLASSIC": "&Klasická",
+      "IDS_UPDATE_LEVEL_NOTIFY": "Pouze upozornit",
+      "IDS_UPDATE_LEVEL_OFFER": "Stáhnout a nabídnout instalaci",
+      "IDS_UPDATE_LEVEL_AUTO": "Automaticky nainstalovat při zavření programu Tandem Commander",
+      "IDS_UPDATE_BTN_INSTALLNOW": "Nainstalovat &nyní",
+      "IDS_UPDATE_BTN_INSTALLEXIT": "Nainstalovat při &zavření",
+      "IDS_UPDATE_HINT_OFFER": "Nová verze byla stažena a ověřena. Nainstalujte ji nyní, nebo až zavřete Tandem Commander; nastavení zůstane zachováno.",
+      "IDS_UPDATE_HINT_AUTO": "Nová verze byla stažena a ověřena. Nainstaluje se, až zavřete Tandem Commander; nastavení zůstane zachováno.",
+      "IDS_UPDATE_TESTMODE": "Testovací režim aktualizace: vydaná verze se považuje za novou.",
+      "IDS_UPDATE_ABOUT_TESTMODE": "Testovací režim aktualizace.",
+      "IDS_UPDATE_INSTALL_FAILED": "Aktualizace na verzi %s nebyla nainstalována (instalační program skončil s kódem %u).\\n\\nNainstaluje se, až zavřete Tandem Commander.",
+      "IDS_UPDATE_ERR_RUN": "Instalační program verze %s se nepodařilo spustit.\\n\\n%s",
+      "IDC_UPDATELEVEL_LABEL": "Když &je nalezena nová verze:"
     },
     "slovak": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Presunúť do druhého panelu",
@@ -355,7 +367,13 @@
       "IDC_QUICKSEARCH_FILTER": "Rýchle hľadanie: &text kdekoľvek v názve, zobraziť len zhody",
       "IDS_CFGMIGRATE_FAILED": "Program Tandem Commander nemohol presunúť vaše nastavenia na nové miesto v registri (HKEY_CURRENT_USER\\\\%s).\\n\\nTentoraz ich používa tam, kde sa nachádzajú (HKEY_CURRENT_USER\\\\%s), a pri ďalšom spustení to skúsi znova. Nič nebolo odstránené.",
       "IDC_ICONSET_FLUENT": "Fl&uent 2",
-      "IDC_ICONSET_CLASSIC": "&Klasická"
+      "IDC_ICONSET_CLASSIC": "&Klasická",
+      "IDS_UPDATE_LEVEL_NOTIFY": "Iba upozorniť",
+      "IDS_UPDATE_LEVEL_OFFER": "Stiahnuť a ponúknuť inštaláciu",
+      "IDS_UPDATE_LEVEL_AUTO": "Automaticky nainštalovať pri zatvorení programu Tandem Commander",
+      "IDS_UPDATE_BTN_INSTALLNOW": "Nainštalovať &teraz",
+      "IDS_UPDATE_BTN_INSTALLEXIT": "Nainštalovať pri &zatvorení",
+      "IDS_UPDATE_ABOUT_TESTMODE": "Testovací režim aktualizácie."
     },
     "german": {
       "IDS_MENU_TAB_MOVETOOTHER": "In das andere &Fenster verschieben",
@@ -408,7 +426,13 @@
       "IDC_QUICKSEARCH_FILTER": "Schnellsuche: Text überall im Namen &finden, nur Treffer anzeigen",
       "#mask hints": "Maskenhinweise",
       "#extended mask hints": "erweiterte Maskenhinweise",
-      "IDC_ICONSET_FLUENT": "Fl&uent 2"
+      "IDC_ICONSET_FLUENT": "Fl&uent 2",
+      "IDS_UPDATE_LEVEL_NOTIFY": "Nur benachrichtigen",
+      "IDS_UPDATE_LEVEL_OFFER": "Herunterladen und Installation anbieten",
+      "IDS_UPDATE_LEVEL_AUTO": "Beim Schließen von Tandem Commander automatisch installieren",
+      "IDS_UPDATE_BTN_INSTALLNOW": "Jetzt &installieren",
+      "IDS_UPDATE_BTN_INSTALLEXIT": "&Beim Schließen installieren",
+      "IDS_UPDATE_ABOUT_TESTMODE": "Update-Testmodus."
     },
     "french": {
       "IDS_MENU_TAB_MOVETOOTHER": "Dé&placer vers l'autre panneau",
@@ -450,7 +474,13 @@
       "IDC_QUICKSEARCH_FILTER": "Recherche rapide : texte &partout dans le nom, seuls les résultats affichés",
       "#mask hints": "aide sur les masques",
       "#extended mask hints": "aide sur les masques étendus",
-      "IDC_ICONSET_FLUENT": "Fl&uent 2"
+      "IDC_ICONSET_FLUENT": "Fl&uent 2",
+      "IDS_UPDATE_LEVEL_NOTIFY": "M’avertir uniquement",
+      "IDS_UPDATE_LEVEL_OFFER": "La télécharger et proposer l’installation",
+      "IDS_UPDATE_LEVEL_AUTO": "L’installer automatiquement à la fermeture de Tandem Commander",
+      "IDS_UPDATE_BTN_INSTALLNOW": "I&nstaller maintenant",
+      "IDS_UPDATE_BTN_INSTALLEXIT": "Installer à la &fermeture",
+      "IDS_UPDATE_ABOUT_TESTMODE": "Mode de test des mises à jour."
     },
     "dutch": {
       "IDS_MENU_TAB_MOVETOOTHER": "Naar ander paneel &verplaatsen",
@@ -485,7 +515,14 @@
       "IDS_CANNOTCOPYDIRTOITSELF": "Een map kan niet naar zichzelf worden gekopieerd.",
       "IDS_CANNOTMOVEDIRINTOITSELF": "Een map kan niet naar zichzelf of naar een van de submappen worden verplaatst.",
       "IDC_ICONSET_FLUENT": "Fl&uent 2",
-      "IDC_ICONSET_CLASSIC": "Kla&ssiek"
+      "IDC_ICONSET_CLASSIC": "Kla&ssiek",
+      "IDS_UPDATE_LEVEL_NOTIFY": "Alleen melden",
+      "IDS_UPDATE_LEVEL_OFFER": "Downloaden en installatie aanbieden",
+      "IDS_UPDATE_LEVEL_AUTO": "Automatisch installeren bij het sluiten van Tandem Commander",
+      "IDS_UPDATE_BTN_INSTALLNOW": "&Nu installeren",
+      "IDS_UPDATE_BTN_INSTALLEXIT": "Installeren bij &afsluiten",
+      "IDS_UPDATE_TESTMODE": "Testmodus voor updates: de gepubliceerde versie wordt als nieuw beschouwd.",
+      "IDS_UPDATE_ABOUT_TESTMODE": "Testmodus voor updates."
     },
     "hungarian": {
       "IDS_MENU_TAB_MOVETOOTHER": "Át&helyezés a másik panelre",
@@ -514,7 +551,13 @@
       "IDS_PACKINTOITSELF": "Egy archívumot nem lehet önmagába csomagolni. Hagyja ki az archívumot (vagy az azt tartalmazó mappát) a kiválasztásból.",
       "IDC_QUICKSEARCH_FILTER": "Gyorskeresés: szöveg a név &bármely részén, csak az egyezések látszanak",
       "IDS_QUICKSEARCH_STATUS": "Keresés: %s (%d / %d)",
-      "IDC_ICONSET_FLUENT": "Fl&uent 2"
+      "IDC_ICONSET_FLUENT": "Fl&uent 2",
+      "IDS_UPDATE_LEVEL_NOTIFY": "Csak értesítés",
+      "IDS_UPDATE_LEVEL_OFFER": "Letöltés és a telepítés felajánlása",
+      "IDS_UPDATE_LEVEL_AUTO": "Automatikus telepítés a Tandem Commander bezárásakor",
+      "IDS_UPDATE_BTN_INSTALLNOW": "Telepítés &most",
+      "IDS_UPDATE_BTN_INSTALLEXIT": "Telepítés &bezáráskor",
+      "IDS_UPDATE_ERR_RUN": "A(z) %s verzió telepítőjét nem sikerült elindítani.\\n\\n%s"
     },
     "romanian": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mutare în celălalt panou",
@@ -539,7 +582,14 @@
       "IDC_QUICKSEARCH_FILTER": "Căutare rapidă: text oriunde în n&ume, afișează doar potrivirile",
       "#mask hints": "indicii pentru măști",
       "#extended mask hints": "indicii pentru măști extinse",
-      "IDC_ICONSET_FLUENT": "Fl&uent 2"
+      "IDC_ICONSET_FLUENT": "Fl&uent 2",
+      "IDS_UPDATE_LEVEL_NOTIFY": "Doar notificare",
+      "IDS_UPDATE_LEVEL_OFFER": "Descărcare și oferirea instalării",
+      "IDS_UPDATE_LEVEL_AUTO": "Instalare automată la închiderea Tandem Commander",
+      "IDS_UPDATE_BTN_INSTALLNOW": "&Instalează acum",
+      "IDS_UPDATE_BTN_INSTALLEXIT": "Instalează la închi&dere",
+      "IDS_UPDATE_ABOUT_TESTMODE": "Modul de testare a actualizării.",
+      "IDS_UPDATE_INSTALL_FAILED": "Actualizarea la versiunea %s nu a fost instalată (instalarea s-a încheiat cu codul %u).\\n\\nAceasta va fi instalată când veți închide Tandem Commander."
     },
     "spanish": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mover al otro panel",
@@ -577,7 +627,12 @@
       "#mask hints": "ayuda de plantillas",
       "#extended mask hints": "ayuda de plantillas ampliadas",
       "IDC_ICONSET_FLUENT": "Flu&ent 2",
-      "IDC_ICONSET_GROUP": " Estilo &de iconos "
+      "IDC_ICONSET_GROUP": " Estilo &de iconos ",
+      "IDS_UPDATE_LEVEL_NOTIFY": "Solo notificar",
+      "IDS_UPDATE_LEVEL_OFFER": "Descargarla y ofrecer la instalación",
+      "IDS_UPDATE_LEVEL_AUTO": "Instalarla automáticamente al cerrar Tandem Commander",
+      "IDS_UPDATE_BTN_INSTALLNOW": "I&nstalar ahora",
+      "IDS_UPDATE_BTN_INSTALLEXIT": "Instalar al ce&rrar"
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -647,6 +702,11 @@
     ],
     "_feature_417": [
       "Configuration > Appearance: the group 'Toolbar icons' became 'Icon style' (it now governs the plug-in icons too). Spanish: DeepL gave the singular 'Estilo de icono'; the style of the icons is 'Estilo de iconos', accelerator d as before."
+    ],
+    "_feature_420": [
+      "Automatic update: the three items of the level list describe what the program does - DeepL made them commands to the reader (de 'Laden Sie ... herunter und bieten Sie ... an', fr 'Telechargez-la et proposez', es 'Descarguela y proponga', cs 'Stahnete si ji a nabidnete', sk 'Stiahnite si ju', hu 'Toltse le', ro 'Descarcati-o', nl 'Download het'); hu 'Csak akkor ertesits' (informal, 'only then') was wrong.",
+      "The About line of the test mode is a noun phrase: de/nl/ro made it 'update the test mode' (Testmodus aktualisieren / bijwerken, Actualizati modul).",
+      "Notification buttons: accelerators unique among the window's buttons and its check box per language (the classic Download button is not shown together with them); hu IDS_UPDATE_ERR_RUN failed validation (one %s and one \\n lost); ro 'Instalarea' lower case; cs pinned whole as in feature 123."
     ]
   },
   "zip": {

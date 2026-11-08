@@ -180,6 +180,29 @@ Alternative scripts in `src\vcxproj\`: `build.cmd` (simple), `rebuild.cmd` (inte
   validity line ("describes Tandem Commander <version>. Last updated …")
   with it, and on every release. Evidence for each claim:
   `specs/083-privacy-policy-winget/research.md` + `fix-log.md` claim map
+- **Automatic update** (feature 420): after the new-version check (123) the program downloads
+  the release's installer (`api.github.com/.../releases/assets/<id>`, redirects only to
+  `release-assets.githubusercontent.com` / `objects.githubusercontent.com`) into
+  `%LOCALAPPDATA%\Tandem Commander\Updates`, verifies it (record digest, Authenticode, signer
+  thumbprint pinned in `src/common/salupdinstall.h`, version resource) and offers it, or installs
+  it at exit / at the next start (level on Configuration > General). **A certificate rotation
+  moves the pin**: `SALUPD_SIGNER_THUMBPRINT` must equal `tools/codesign/codesign.cfg`
+  (`tools/check_update_pin.py`, run by `build.cmd`); installers signed with a certificate the
+  running version does not know are offered only as a browser download - so a release signed with
+  a new certificate cannot update older versions automatically; ship one release whose program
+  already pins the new thumbprint before signing with it. A release must keep the installer asset
+  name and publish its `digest` (GitHub does for every upload).
+  - **Test mode for the maintainer**: start an *installed* copy with `--updatetest` (new
+    multi-word options take two dashes). The check runs at once, the published release counts as
+    newer even when it is installed, nothing of the check's stored state is written; the download,
+    verification, chosen level, install mode, close and restart run for real; the mode is not
+    stored and not passed to the restart. Repeat as often as needed on the same version. A copy
+    that is not installed (a build tree) only notifies. With *Allow only one instance* on, a second
+    start activates the running instance and the switch has no effect.
+  - Debug-only probe seams (absent from Release): `TC_UPDATECHECK_URL` (also the download, loopback),
+    `TC_UPDATECHECK_PRETEND_VERSION`, `TC_UPDATE_PROBE_UNINSTALL`, `TC_UPDATE_PROBE_RUNLOG`,
+    `TC_UPDATE_PROBE_NORESTART`, `TC_UPDATE_PROBE_METERED`; probes in
+    `specs/420-auto-update-install/probe/`.
 
 ## Compiler Recommendation
 

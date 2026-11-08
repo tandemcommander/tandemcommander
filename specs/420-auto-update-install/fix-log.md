@@ -46,6 +46,32 @@ completed at the next start**. Logged in the item's *Log*.
 | F1 | A second instance started while the first held an automatic arm would "complete" the update at its start - the installer would close the first instance's windows | 5 | writing probe group X (design review of the start-up decision) | completion at start-up only when no other instance of the executable runs in the session (`UpdiLastInstance`); probe X1 |
 | F2 | **An installer's close (Restart Manager, feature 080) started a second installer at the end of the exit**: `UnattendedClose` is set only for the time of `WM_ENDSESSION`, `PrepareExit` read it after it was reset | 5 (would have run two installers at once after every Install Now / start-up completion) | end-to-end run E2 with the real installer: `Install Launches` 2 after one completion (negative control, `probe/result_e2e.txt` first run) | the exit kind is recorded in the main window's `WM_DESTROY` (`UpdInstall_Shutdown`), where the flag is still set; E2 `once`: 1 installer start, launches 1 |
 
+## Translations (stop-rules §2.13, module `salamand`)
+
+- Step 0, entries: new strings `IDS_UPDATE_LEVEL_NOTIFY/OFFER/AUTO`, `IDS_UPDATE_BTN_INSTALLNOW/INSTALLEXIT/OK`,
+  `IDS_UPDATE_HINT_OFFER/AUTO`, `IDS_UPDATE_TESTMODE`, `IDS_UPDATE_ABOUT_TESTMODE`, `IDS_UPDATE_INSTALL_FAILED`,
+  `IDS_UPDATE_ERR_RUN` (free slots 14096-14100, 14152-14154, 14156-14159 of existing bundles - no new
+  bundle); dialog `IDD_CFGPAGE_GENERAL`: new `IDC_UPDATELEVEL_LABEL` + `IDC_UPDATELEVEL`;
+  `IDD_UPDATENOTICE`: new button `IDC_UPDN_INSTALLEXIT` (text set at run time), geometry (330 x 193).
+  No English text of an existing entry changed - no `english_fallback` keys.
+- `build.cmd` -> `build_langs.cmd --export-templates --module salamand` (1/1).
+- Dry run: 12 unique gaps per language, ~673 characters (12 strings minus "OK" + the label).
+- Merge (`--formality prefer_more --budget 12768`): 12/12 translated, 5,808 DeepL characters; 1
+  validation failure (hu `IDS_UPDATE_ERR_RUN`: one `%s` and one `\n` lost - kept English).
+- Read-back: the level items became commands to the reader in all 8 languages (de "Laden Sie ...
+  herunter und bieten Sie ... an", fr "Téléchargez-la et proposez", cs "Stáhněte si ji a nabídněte",
+  ...); hu "Csak akkor értesíts" (informal, "only then"); the About test line became "update the
+  test mode" in de/nl/ro; ro capital "(Instalarea"; button accelerators checked against the
+  window's other buttons and its check box per language. Pinned in `ui-overrides.json`
+  (`salamand`, note `_feature_420`): the 3 level items and the 2 install buttons in every
+  language, Czech whole (as in 123), sk/de/fr/nl/ro About test line, nl test line, hu
+  `IDS_UPDATE_ERR_RUN`, ro install-failed message. Label accelerators of the General page checked
+  per language (all unique: cs j, de w, fr l, nl g, hu h, ro g, sk e, es s).
+- Second merge: pins applied (83 DeepL characters for the re-sent hu row, the pin wins);
+  `slt --verify`: 298 files, round-trip byte-exact; `build.cmd full`: `BUILD SUCCEEDED`
+  (21 modules x 8 languages). Layout drift committed with the pipeline's output (the
+  `IDD_UPDATENOTICE` rows follow the new English geometry).
+
 ## Probes
 
 | Probe | Result |
