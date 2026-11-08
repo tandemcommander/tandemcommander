@@ -323,13 +323,17 @@
       "IDS_UPDATE_LEVEL_AUTO": "Automaticky nainstalovat při zavření programu Tandem Commander",
       "IDS_UPDATE_BTN_INSTALLNOW": "Nainstalovat &nyní",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Nainstalovat při &zavření",
-      "IDS_UPDATE_HINT_OFFER": "Nová verze byla stažena a ověřena. Nainstalujte ji nyní, nebo až zavřete Tandem Commander; nastavení zůstane zachováno.",
+      "IDS_UPDATE_HINT_OFFER": "Nová verze byla stažena a ověřena. Tlačítko Nainstalovat nyní zavře Tandem Commander, nainstaluje aktualizaci a program znovu spustí; nastavení zůstane zachováno.",
       "IDS_UPDATE_HINT_AUTO": "Nová verze byla stažena a ověřena. Nainstaluje se, až zavřete Tandem Commander; nastavení zůstane zachováno.",
       "IDS_UPDATE_TESTMODE": "Testovací režim aktualizace: vydaná verze se považuje za novou.",
       "IDS_UPDATE_ABOUT_TESTMODE": "Testovací režim aktualizace.",
-      "IDS_UPDATE_INSTALL_FAILED": "Aktualizace na verzi %s nebyla nainstalována (instalační program skončil s kódem %u).\\n\\nNainstaluje se, až zavřete Tandem Commander.",
+      "IDS_UPDATE_INSTALL_FAILED": "Aktualizace na verzi %s nebyla nainstalována. Instalace byla zrušena nebo ji nebylo možné dokončit (kód %u).",
       "IDS_UPDATE_ERR_RUN": "Instalační program verze %s se nepodařilo spustit.\\n\\n%s",
-      "IDC_UPDATELEVEL_LABEL": "Když &je nalezena nová verze:"
+      "IDC_UPDATELEVEL_LABEL": "Když &je nalezena nová verze:",
+      "IDS_UPDATE_BUSY": "Aktualizace programu Tandem Commander se už instaluje. Zkuste to znovu, až instalace skončí.",
+      "IDS_UPDATE_INSTALL_LATER": "Chcete ji nainstalovat při zavření programu Tandem Commander?",
+      "IDS_UPDATE_INSTALL_TITLE": "Aktualizace programu Tandem Commander",
+      "IDS_UPDATE_ERR_DAMAGED": "Stažený instalační program verze %s chybí nebo byl změněn, a proto byl smazán.\\n\\nTlačítkem Stáhnout jej získáte ve webovém prohlížeči."
     },
     "slovak": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Presunúť do druhého panelu",
@@ -373,7 +377,8 @@
       "IDS_UPDATE_LEVEL_AUTO": "Automaticky nainštalovať pri zatvorení programu Tandem Commander",
       "IDS_UPDATE_BTN_INSTALLNOW": "Nainštalovať &teraz",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Nainštalovať pri &zatvorení",
-      "IDS_UPDATE_ABOUT_TESTMODE": "Testovací režim aktualizácie."
+      "IDS_UPDATE_ABOUT_TESTMODE": "Testovací režim aktualizácie.",
+      "IDS_UPDATE_HINT_OFFER": "Nová verzia bola stiahnutá a overená. Tlačidlo Nainštalovať teraz zatvorí Tandem Commander, nainštaluje aktualizáciu a program znova spustí; vaše nastavenia zostanú zachované."
     },
     "german": {
       "IDS_MENU_TAB_MOVETOOTHER": "In das andere &Fenster verschieben",
@@ -480,7 +485,8 @@
       "IDS_UPDATE_LEVEL_AUTO": "L’installer automatiquement à la fermeture de Tandem Commander",
       "IDS_UPDATE_BTN_INSTALLNOW": "I&nstaller maintenant",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Installer à la &fermeture",
-      "IDS_UPDATE_ABOUT_TESTMODE": "Mode de test des mises à jour."
+      "IDS_UPDATE_ABOUT_TESTMODE": "Mode de test des mises à jour.",
+      "IDS_UPDATE_TESTMODE": "Mode de test des mises à jour : la version publiée est considérée comme nouvelle."
     },
     "dutch": {
       "IDS_MENU_TAB_MOVETOOTHER": "Naar ander paneel &verplaatsen",
@@ -520,7 +526,7 @@
       "IDS_UPDATE_LEVEL_OFFER": "Downloaden en installatie aanbieden",
       "IDS_UPDATE_LEVEL_AUTO": "Automatisch installeren bij het sluiten van Tandem Commander",
       "IDS_UPDATE_BTN_INSTALLNOW": "&Nu installeren",
-      "IDS_UPDATE_BTN_INSTALLEXIT": "Installeren bij &afsluiten",
+      "IDS_UPDATE_BTN_INSTALLEXIT": "Installeren bij slui&ten",
       "IDS_UPDATE_TESTMODE": "Testmodus voor updates: de gepubliceerde versie wordt als nieuw beschouwd.",
       "IDS_UPDATE_ABOUT_TESTMODE": "Testmodus voor updates."
     },
@@ -557,7 +563,9 @@
       "IDS_UPDATE_LEVEL_AUTO": "Automatikus telepítés a Tandem Commander bezárásakor",
       "IDS_UPDATE_BTN_INSTALLNOW": "Telepítés &most",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Telepítés &bezáráskor",
-      "IDS_UPDATE_ERR_RUN": "A(z) %s verzió telepítőjét nem sikerült elindítani.\\n\\n%s"
+      "IDS_UPDATE_ERR_RUN": "A(z) %s verzió telepítőjét nem sikerült elindítani.\\n\\n%s",
+      "IDS_UPDATE_INSTALL_FAILED": "A(z) %s verzióra való frissítés nem lett telepítve. A telepítés megszakadt vagy nem fejeződhetett be (kód: %u).",
+      "IDS_UPDATE_ERR_DAMAGED": "A(z) %s verzió letöltött telepítője hiányzik vagy megváltozott, ezért törölve lett.\\n\\nA Letöltés gombbal a böngészőben töltheti le a telepítőt."
     },
     "romanian": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mutare în celălalt panou",
@@ -584,12 +592,13 @@
       "#extended mask hints": "indicii pentru măști extinse",
       "IDC_ICONSET_FLUENT": "Fl&uent 2",
       "IDS_UPDATE_LEVEL_NOTIFY": "Doar notificare",
-      "IDS_UPDATE_LEVEL_OFFER": "Descărcare și oferirea instalării",
+      "IDS_UPDATE_LEVEL_OFFER": "Descărcare și propunerea instalării",
       "IDS_UPDATE_LEVEL_AUTO": "Instalare automată la închiderea Tandem Commander",
-      "IDS_UPDATE_BTN_INSTALLNOW": "&Instalează acum",
-      "IDS_UPDATE_BTN_INSTALLEXIT": "Instalează la închi&dere",
+      "IDS_UPDATE_BTN_INSTALLNOW": "&Instalați acum",
+      "IDS_UPDATE_BTN_INSTALLEXIT": "Instalați la închi&dere",
       "IDS_UPDATE_ABOUT_TESTMODE": "Modul de testare a actualizării.",
-      "IDS_UPDATE_INSTALL_FAILED": "Actualizarea la versiunea %s nu a fost instalată (instalarea s-a încheiat cu codul %u).\\n\\nAceasta va fi instalată când veți închide Tandem Commander."
+      "IDS_UPDATE_INSTALL_FAILED": "Actualizarea la versiunea %s nu a fost instalată. Instalarea a fost anulată sau nu a putut fi finalizată (cod %u).",
+      "IDS_UPDATE_HINT_OFFER": "Noua versiune a fost descărcată și verificată. „Instalați acum” închide Tandem Commander, instalează actualizarea și repornește programul; setările dvs. sunt păstrate."
     },
     "spanish": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mover al otro panel",
@@ -706,7 +715,8 @@
     "_feature_420": [
       "Automatic update: the three items of the level list describe what the program does - DeepL made them commands to the reader (de 'Laden Sie ... herunter und bieten Sie ... an', fr 'Telechargez-la et proposez', es 'Descarguela y proponga', cs 'Stahnete si ji a nabidnete', sk 'Stiahnite si ju', hu 'Toltse le', ro 'Descarcati-o', nl 'Download het'); hu 'Csak akkor ertesits' (informal, 'only then') was wrong.",
       "The About line of the test mode is a noun phrase: de/nl/ro made it 'update the test mode' (Testmodus aktualisieren / bijwerken, Actualizati modul).",
-      "Notification buttons: accelerators unique among the window's buttons and its check box per language (the classic Download button is not shown together with them); hu IDS_UPDATE_ERR_RUN failed validation (one %s and one \\n lost); ro 'Instalarea' lower case; cs pinned whole as in feature 123."
+      "Notification buttons: accelerators unique among the window's buttons and its check box per language (the classic Download button is not shown together with them); hu IDS_UPDATE_ERR_RUN failed validation (one %s and one \\n lost); ro 'Instalarea' lower case; cs pinned whole as in feature 123.",
+      "Round 2 (review 1 + UX test 1): the hint names the button as it is pinned per language; ro formal register in the buttons and the hint (the window's other buttons say Reamintiti-mi / Omiteti); hu 'A(z) %s' - a fixed suffix after a version number is wrong for many versions; fr / nl one term in a window; cs pinned whole."
     ]
   },
   "zip": {

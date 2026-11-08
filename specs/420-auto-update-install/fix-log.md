@@ -65,7 +65,39 @@ completed at the next start**. Logged in the item's *Log*.
 | NOTE | saltests count in the fix-log stale | re-measured at the end |
 | NOTE | negative control: removing the user-info check of the redirect rule is not caught (the exact host comparison refuses those addresses anyway) | accepted (redundant check, documented) |
 
+## UX test 1 (independent agent, hidden desktop, 9 languages, light + dark, 17 flows)
+
+| # | Finding | Done |
+|---|---|---|
+| 1 MUST | A check the user asked for during the download: the classic form stayed, the offer was lost (level 1) or the update armed silently under the classic form (level 2) | the open classic form of that version is replaced by the downloaded form (without taking the keyboard); probe U1 |
+| 2 MUST | Answering the classic form during the download was ignored: Remind Me Later re-offered, Skip This Version at level 2 armed the skipped version and installed it at exit, Download led to a second (browser) download plus the offer | once the classic form was answered, the finished download shows / arms nothing (the verified file waits for the next check); a skipped version is never offered or armed by a download; probe U2 remind / skip |
+| 3 SHOULD | Enter on the automatic form = Install Now (closes the program at once) | OK is the default button and gets the keyboard on that form; probe U3 |
+| 4 SHOULD | The offer hint did not say that Install Now closes the program | "Install Now closes Tandem Commander, installs the update and starts it again"; hint 4 lines high |
+| 5 SHOULD | A missing / changed installer: "could not be started (2) <system text in the Windows language>", the offer stayed and Install When I Close armed nothing | `IDS_UPDATE_ERR_DAMAGED`, the file is deleted and the notification switches to the classic form; Install When I Close verifies first; probe U5 |
+| 6 SHOULD | The failure message: title "Check for New Version", "code 5" without words, a promise of another attempt, an empty version | title `IDS_UPDATE_INSTALL_TITLE`; "Setup was cancelled or could not finish (code %u)"; when the update stays planned a Yes/No question "install it when you close?" (No drops it); the launched version is used; probe IN armed / no |
+| 7 MUST (test mode) | About line clipped in fr / es / ro and contradicting the notification | in test mode the line is only "Update test mode." (+ the link) |
+| 8 NOTE | Layout: the grown window left the logo and texts behind; three buttons left 67-135 px empty | the logo moves and the texts widen with the window; visible buttons share the row out to the margin |
+| 9 NOTE | Clearing the check box on the automatic form cancelled the install silently | the arm rule is applied at once and the window becomes the offer form |
+| 10 SHOULD | ro buttons informal next to formal ones | pinned formal; list item reworded |
+| 11 NOTE | hu "%s-es" after a version number; two hints differ | "A(z) %s ..." pinned |
+| 12 NOTE | fr / nl two terms in one window | pinned to one term |
+| 13 NOTE | About's Download link + the program's download = two downloads | per the clarification (the About link stays a browser download); accepted |
+| 14 NOT DRIVEN | completion at the next start closes the program with only Setup's progress window as explanation; real UAC prompts | release checklist |
+
 ## Translations (stop-rules §2.13, module `salamand`)
+
+Round 2 (after review 1 / UX test 1): new `IDS_UPDATE_BUSY`, `IDS_UPDATE_INSTALL_LATER`,
+`IDS_UPDATE_INSTALL_TITLE`, `IDS_UPDATE_ERR_DAMAGED` (14002-14004, 14006, free slots of the bundle of
+14000); changed English of `IDS_UPDATE_HINT_OFFER` and `IDS_UPDATE_INSTALL_FAILED` -> `english_fallback`
+set for `STRINGTABLE:154:14153` and `STRINGTABLE:154:14158` in all 8 `.origin` files; dialog geometry of
+`IDD_UPDATENOTICE` (330 x 201, hint 4 lines). Dry run 6 gaps / ~554 characters per language; merge
+4,712 DeepL characters, 0 validation failures; read-back: cs and ro still carried the old pinned texts
+of the changed strings, ro hint informal ("setările tale", "Instalează acum"), sk hint named the button
+otherwise than its pin, hu "%s-es" again -> pins (cs whole, sk hint, ro buttons / list item / hint /
+failure, hu failure / damaged, fr test line, nl button "sluiten"); second merge 0 failures, `slt --verify`
+byte-exact, `build.cmd full` `BUILD SUCCEEDED`.
+
+Round 1:
 
 - Step 0, entries: new strings `IDS_UPDATE_LEVEL_NOTIFY/OFFER/AUTO`, `IDS_UPDATE_BTN_INSTALLNOW/INSTALLEXIT/OK`,
   `IDS_UPDATE_HINT_OFFER/AUTO`, `IDS_UPDATE_TESTMODE`, `IDS_UPDATE_ABOUT_TESTMODE`, `IDS_UPDATE_INSTALL_FAILED`,
