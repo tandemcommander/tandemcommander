@@ -11,11 +11,11 @@
 // 123 finds a newer release, the program downloads that release's installer,
 // proves that it is the published file, signed by the project and of the
 // announced version, and installs it - on the user's click, at the program's
-// exit, or at the next start when the exit did not do it. Every decision of
+// next start when it was not installed while the program ran (feature 422: never at the exit). Every decision of
 // that feature that can be made without Windows state lives here: the update
 // level, the redirect allow-list of the download, the signer pin, the rule for
 // the installer's version resource, the installer's command line, and the
-// decisions about an armed update at start-up and at exit.
+// decisions about an armed update at start-up.
 //
 // Header-only and free of core dependencies, so that saltests compiles it as
 // it is. No allocation, no I/O, no globals.
@@ -45,7 +45,7 @@
 enum CSalUpdLevel
 {
     sulNotify = 0,   // tell the user only (feature 123)
-    sulOffer = 1,    // download, verify, offer Install Now / Install When I Close - the default
+    sulOffer = 1,    // download, verify, offer Install Now - the default
     sulAutomatic = 2 // download, verify, install when the program closes
 };
 
@@ -456,11 +456,11 @@ inline BOOL SalUpdBuildInstallerArgs(CSalUpdLaunchKind, BOOL allUsers, BOOL noRe
 // The armed update (contracts/stored-state.md)
 //
 
-#define SALUPD_ARM_USER 1      // armed by a click (Install When I Close, Install Now)
+#define SALUPD_ARM_USER 1      // armed by a click (Install Now; Install When I Close of 420/421 builds)
 #define SALUPD_ARM_AUTOMATIC 2 // armed by the level "install automatically"
 // Round 3 M1: an installer started for it did not install it (cancelled, elevation declined, the
 // program was closed by it and it failed) - the update is only OFFERED: nothing installs it on its
-// own (not the exit, not the automatic level) until the user clicks Install Now / Install When I
+// own (not the start, not the automatic level) until the user clicks Install Now (Install When I
 // Close; its launch count and digest are kept
 #define SALUPD_ARM_OFFERED 3
 
@@ -474,7 +474,7 @@ struct CSalUpdArm
     DWORD Launches;
     // round 6: Launches when the user last confirmed the plan (Install When I Close, Yes to "install it
     // when you close?", a start of the installer that failed before it ran). A launch after it means an
-    // installer ran and did not install it: the exit never installs it silently, the start offers it.
+    // installer ran and did not install it: never started on its own again, the start offers it.
     DWORD ConfirmedAt;
 };
 
@@ -498,10 +498,10 @@ enum CSalUpdStartupArm
     susaGiveUp,    // SALUPD_MAX_LAUNCHES did not get there: nothing is started on its own any more; the
                    // arm is KEPT (review S1: a new arm of the same version keeps the count), so the
                    // update is only offered (Install Now) until a newer version or the version is reached
-    susaComplete,  // install it now (Install Now route) - the exit did not start the installer at all
+    susaComplete,  // install it now (Install Now route) - it was never launched since it was planned
     susaOffer      // review 2 S1: the installer WAS started and the version is still the old one (it
                    // was cancelled, the elevation declined, it failed) - offer it now, never force it
-                   // at the start; the arm stays (the exit tries again within SALUPD_MAX_LAUNCHES)
+                   // at the start; the arm stays, offered (feature 422: nothing installs at the exit)
 };
 
 inline const char* SalUpdStartupArmName(CSalUpdStartupArm d)
@@ -548,11 +548,11 @@ inline CSalUpdStartupArm SalUpdStartupArmDecision(const CSalUpdArm& arm, BOOL ho
         return susaGiveUp;
     if (arm.Launches > arm.ConfirmedAt)
         return susaOffer; // started since the user's last confirmation and not installed: the user decides
-    return susaComplete;   // never started since it was planned (or confirmed): the exit did not run it
+    return susaComplete;   // never started since it was planned (or confirmed): installed now
 }
 
 // Review S1: the form a downloaded and verified installer is shown in at the automatic level - an arm
-// of the same version whose launches are used up is not promised for the exit any more (offered only)
+// of the same version whose launches are used up is never planned again (offered only)
 inline BOOL SalUpdAutomaticArmUsable(BOOL hasArm, const CSalUpdArm& arm, const CSalUpdVersion& version)
 {
     if (!hasArm || SalUpdVersionCompare(arm.Version, version) != 0)
@@ -594,7 +594,7 @@ inline CSalUpdArm SalUpdArmAfterFailedNow(BOOL hadArm, const CSalUpdArm& before,
 
 // Round 4 NOTE: an update that can only be offered is not kept where no offer can come - with the
 // check at start-up off nothing shows the offer, so the arm and its installer (~8 MB) go - also one
-// whose launches are used up (the exit refuses it, only an offer could bring it back). A copy not
+// whose launches are used up (nothing starts it, only an offer could bring it back). A copy not
 // installed by the installer ('eligible' FALSE) touches nothing; a test session keeps its test arm.
 inline CSalUpdStartupArm SalUpdStartupOfferReachable(CSalUpdStartupArm decision, const CSalUpdArm& arm, BOOL checkOn,
                                                      BOOL testMode, BOOL eligible)
@@ -666,6 +666,33 @@ inline BOOL SalUpdSilentInstallPlanned(BOOL hasArm, const CSalUpdArm& arm, const
 // automatic level's plan becomes OFFERED with its launch count instead - dropped, the next check would
 // plan it afresh and the silent install would start the same installer (and its administrator prompt)
 // again on its own (the maintainer's lock-out trap). Returns TRUE and the arm to store when it is kept.
+// Feature 422 review M1: what stays planned after an installer ended without installing while the program
+// runs. 'restored' is the plan of before the launch (SalUpdArmAfterFailedNow), 'launched' the plan the launch
+// made (Install Now / Download & Install / the automatic install: Launches raised). The automatic level's
+// plan becomes OFFERED (SalUpdDeclinedArmKept); another restored plan stays as it is (its launch since the
+// last confirmation makes the start only offer it); with nothing restored - a click on nothing planned,
+// e.g. Install Now after Help > Check at the automatic level - the launched plan is kept OFFERED with its
+// count instead of being dropped: dropped, the next background check would plan it afresh and the silent
+// install would start the same installer on its own (the maintainer's lock-out trap). FALSE: nothing.
+inline BOOL SalUpdArmAfterInstallerFailed(BOOL hasRestored, const CSalUpdArm& restored, BOOL hasLaunched,
+                                          const CSalUpdArm& launched, CSalUpdArm* result)
+{
+    if (hasRestored && restored.Present)
+    {
+        *result = restored;
+        if (restored.Source == SALUPD_ARM_AUTOMATIC)
+            result->Source = SALUPD_ARM_OFFERED;
+        return TRUE;
+    }
+    if (hasLaunched && launched.Present)
+    {
+        *result = launched;
+        result->Source = SALUPD_ARM_OFFERED;
+        return TRUE;
+    }
+    return FALSE;
+}
+
 inline BOOL SalUpdDeclinedArmKept(const CSalUpdArm& arm, CSalUpdArm* kept)
 {
     if (!arm.Present || arm.Source != SALUPD_ARM_AUTOMATIC)

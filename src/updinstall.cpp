@@ -708,11 +708,26 @@ static BOOL UpdiLaunch(CSalUpdLaunchKind kind, const CSalUpdVersion& version, HA
         return FALSE;
     }
 
+    // the launch is counted BEFORE the installer starts - that stored count is what keeps an installer
+    // that closed the program and was cancelled from being started again on its own (feature 422, the
+    // maintainer's lock-out trap): when it cannot be stored and read back, the installer is not started
     CSalUpdArm arm;
+    BOOL counted = FALSE;
     if (UpdInstall_LoadArm(&arm) && SalUpdVersionCompare(arm.Version, version) == 0)
     {
-        arm.Launches++;
+        DWORD want = arm.Launches + 1;
+        arm.Launches = want;
         UpdiSaveArm(arm);
+        CSalUpdArm check;
+        counted = UpdInstall_LoadArm(&check) && SalUpdVersionCompare(check.Version, version) == 0 && check.Launches == want;
+    }
+    if (!counted)
+    {
+        TRACE_E("UpdInstall: the launch could not be counted - the installer is not started");
+        if (held != NULL)
+            NOHANDLES(CloseHandle(held));
+        *error = ERROR_WRITE_FAULT;
+        return FALSE;
     }
 
     size_t cmdSize = wcslen(exe) + wcslen(args) + 4;
@@ -833,7 +848,7 @@ void UpdInstall_Arm(const CSalUpdRelease& release, DWORD source)
             arm.Source = SALUPD_ARM_OFFERED; // round 3 M1: only a click arms an offered update again
     }
     UpdiSaveArm(arm);
-    TRACE_I("UpdInstall: armed for the exit, source " << arm.Source << ", test " << arm.Test);
+    TRACE_I("UpdInstall: planned, source " << arm.Source << ", test " << arm.Test);
 }
 
 static void UpdiReportRunError(HWND parent, const CSalUpdVersion& version, DWORD error)
@@ -932,17 +947,20 @@ BOOL UpdInstall_OnInstallerEnded(HWND parent, DWORD exitCode)
     // The installer of Install Now (or of the automatic install, or of the start-up completion) ended
     // with a failure while the program still runs - it was cancelled, the elevation was declined, or it
     // could not close the program.
+    // the plan the launch made (its count raised), before it gives way to the one of before the launch
+    CSalUpdArm launched;
+    BOOL hasLaunched = UpdInstall_LoadArm(&launched) && SalUpdVersionCompare(launched.Version, UpdiNowVersion) == 0;
     UpdiRestoreArmAfterFailedNow(TRUE); // round 4 MUST: the click's arm gives way to the one before it
     CSalUpdArm arm;
     BOOL armed = UpdInstall_LoadArm(&arm) && SalUpdVersionCompare(arm.Version, UpdiNowVersion) == 0;
-    // feature 422 (the maintainer's lock-out trap): the automatic level's plan is only offered from now on,
-    // with its count - it is never started on its own again (not now, not at a start, not after a check);
-    // another plan restored here has a launch since its confirmation, which the start only offers
-    CSalUpdArm offered;
-    if (armed && SalUpdDeclinedArmKept(arm, &offered))
+    // feature 422 (the maintainer's lock-out trap): it is never started on its own again (not now, not at a
+    // start, not after a check) - an automatic plan becomes offered, and a click on nothing planned keeps
+    // the launched plan offered with its count (review M1: dropped, the next check re-planned it silently)
+    CSalUpdArm kept;
+    if (SalUpdArmAfterInstallerFailed(armed, arm, hasLaunched, launched, &kept))
     {
-        TRACE_I("UpdInstall: the installer did not install the update - the automatic plan is only offered now");
-        UpdiSaveArm(offered);
+        TRACE_I("UpdInstall: the installer did not install the update - planned now with source " << kept.Source);
+        UpdiSaveArm(kept);
     }
     // feature 422: no question about installing at close any more - nothing installs at the exit
     char ver[SALUPD_VERSION_TEXT_MAX] = "";
@@ -1786,13 +1804,13 @@ void UpdInstall_OnStartupComplete(HWND mainWindow)
         else if (UpdiInstallerRunning())
             TRACE_I("UpdInstall: an installer runs - the armed update is not started again now");
         else
-            PostMessage(mainWindow, WM_USER_UPDATEINSTALL, 0, 0); // the update the exit did not install
+            PostMessage(mainWindow, WM_USER_UPDATEINSTALL, 0, 0); // a plan never launched: installed now
     }
     else if (decision == susaOffer)
     {
         // review 2 S1: an installer started earlier did not install it - offered, the user decides;
-        // round 3 M1: and nothing installs it on its own any more (not the exit, not the automatic
-        // level) until the user clicks Install Now or Install When I Close
+        // round 3 M1: and nothing installs it on its own any more (not a start, not the automatic
+        // level) until the user clicks Install Now
         // round 5 MUST: it is marked offered in every case (no exit installs it silently); the offer
         // is shown only by the last instance while no installer runs - another instance's Install Now
         // that fails restores its own arm (UpdiRestoreArmAfterFailedNow)
@@ -1829,16 +1847,16 @@ void UpdInstall_CompleteArmed(HWND parent)
         UpdiDeleteFiles(arm.Version);
         return;
     }
-    TRACE_I("UpdInstall: completing the update the exit did not install");
+    TRACE_I("UpdInstall: completing a planned update never launched");
     UpdiNowVersion = arm.Version;
     memcpy(UpdiNowDigest, arm.Digest, sizeof(UpdiNowDigest));
-    UpdiNowPreArmed = TRUE; // armed before: a failure keeps it for the exit (and counts its launch)
+    UpdiNowPreArmed = TRUE; // armed before: a failure keeps it, offered (and counts its launch)
     UpdiNowBefore = arm;
     UpdiWatchNotify = MainWindow != NULL ? MainWindow->HWindow : parent;
     DWORD error;
     if (!UpdiLaunch(sulkNow, arm.Version, held, TRUE, &error))
     {
-        UpdiRestoreArmAfterFailedNow(FALSE); // round 6: nothing ran - the plan stays confirmed for the exit
+        UpdiRestoreArmAfterFailedNow(FALSE); // round 6: nothing ran - the plan stays confirmed (the next start)
         UpdiReportRunError(parent, arm.Version, error);
     }
 }

@@ -6855,7 +6855,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
         return 0;
     }
 
-    case WM_USER_UPDATEINSTALL: // feature 420: an armed update the exit did not install
+    case WM_USER_UPDATEINSTALL: // feature 420: a planned update not installed while the program ran
     {
         if (wParam == 1) // review 2: its installer ran and did not install it - offered, not forced
         {
@@ -6863,7 +6863,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
             if (UpdInstall_GetArmedRelease(&release))
                 ShowDownloadedUpdate(this, release, UPDSHOW_QUEUE, FALSE);
         }
-        else // the exit did not start the installer at all - completed now
+        else // never launched since it was planned - completed now
             UpdInstall_CompleteArmed(HWindow);
         return 0;
     }

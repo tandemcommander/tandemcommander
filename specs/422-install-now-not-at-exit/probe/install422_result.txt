@@ -1,9 +1,9 @@
-﻿Feature 422 probe, 2026-11-08T20:17:42, exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe, registry backup C:\Users\pavel\AppData\Local\Temp\tc422_backup.reg
+﻿Feature 422 probe, 2026-11-08T20:37:02, exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe, registry backup C:\Users\pavel\AppData\Local\Temp\tc422_backup.reg
 --- group D
 D1         form   PASS        level 0: form classic-dli, button "Download && &Install", default id 6301, asset requests 0
 D1         hint   PASS        hint: Download && Install downloads the installer, checks it and installs the update; Tandem Commander then starts again and your settings are kept. Download opens it in your web browser.
 D1         level  PASS        level choice: selected 0 of 3, enabled True, label "Wh&en a new version is found:"
-D2         progress PASS        during the download: cancel button True, per cent seen 0,7,15,22,28,34,40,47,53,59,66,72,78,84,91,100, last hint "Downloading and checking the installer of version 0.2.0... 100 %"
+D2         progress PASS        during the download: cancel button True, per cent seen 0,8,15,22,28,34,40,47,53,59,66,72,78,84,94, last hint "Downloading and checking the installer of version 0.2.0... 94 %"
 D2         install PASS        after the download: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; notice gone True; arm 0.2.0 source 1 test 0 launches 1 confirmed 0
 D2         level  PASS        the stored level stays 0
 D3         cancel PASS        files during the download "tandemcommander-0.2.0-x64-setup.exe.part", after cancel: no files; nothing started; button "Download && &Install"
@@ -24,7 +24,7 @@ P2         portable PASS        level 2: form classic, level choice enabled Fals
 --- group L
 L1         flow   PASS        classic, level 1 chosen: form offer, stored 1, tandemcommander-0.2.0-x64-setup.exe, selected 1, no arm
 L2         auto   PASS        offer, level 2 chosen: window True, form offer, stored 2, no arm, nothing started
-L2         exit   PASS        normal exit after 1,27 s: nothing started
+L2         exit   PASS        normal exit after 1,48 s: nothing started
 L3         auto   PASS        classic, level 2 chosen: form offer, nothing started, stored 2
 L4         checkbox PASS        enabled True -> check off False (stored 0) -> on True
 L5         buttons PASS        form offer, a control 6296 False, default 1
@@ -35,7 +35,7 @@ L7         settle PASS        one step to 0: stored after 0.4 s 1, then form cla
 A1         right-away PASS        level 2: installer started 1 s after the start, notification seen False; now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; arm 0.2.0 source 1 test 0 launches 1 confirmed 0; 1 decisions, last: now close=agree typing=0 agree=1 last=1 installer=0
 A1         once   PASS        7 s later: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
 A2         wait   PASS        command line text: arm 0.2.0 source 2 test 0 launches 0 confirmed 0, nothing started; 2 decisions, last: wait close=agree typing=1 agree=0 last=0 installer=0
-A2         exit   PASS        normal exit while it waits (1,27 s): nothing started; arm 0.2.0 source 2 test 0 launches 0 confirmed 0
+A2         exit   PASS        normal exit while it waits (1,22 s): nothing started; arm 0.2.0 source 2 test 0 launches 0 confirmed 0
 A2         next-start PASS        plan arm 0.2.0 source 2 test 0 launches 0 confirmed 0 -> next start: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
 A3         busy   PASS        About open (True): arm 0.2.0 source 2 test 0 launches 0 confirmed 0, runs 0
 A3         after  PASS        About closed: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
@@ -56,8 +56,9 @@ A10        cancel PASS        form classic-dli, "Cancel Do&wnload", "Download &&
 T1         silent PASS        launched, killed as by the installer (arm 0.2.0 source 1 test 0 launches 1 confirmed 0); three starts: check: form offer, runs 0 | no check: form none, runs 0 | check: form offer, runs 0; arm 0.2.0 source 3 test 0 launches 1 confirmed 0
 T2         completion PASS        plan arm 0.2.0 source 2 test 0 launches 0 confirmed 0; the start completed it: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; killed (arm 0.2.0 source 2 test 0 launches 1 confirmed 0); three starts: no check: form offer, runs 0 | check: form offer, runs 0 | no check: form none, runs 0
 T3         control PASS        count reset to 0: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"
+T4         click  PASS        Install Now failed while running: arm 0.2.0 source 3 test 0 launches 1 confirmed 0; next start with a check: form offer, nothing started
 --- group F
-F copy dialog: [ ''] ; question: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 6, 08.11.2026, 20:23:55, A | [Static id=1151] With file: | [Static id=184] 6, 08.11.2026, 20:23:55, A | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel; runs so far 0
+F copy dialog: [ ''] ; question: [#32770 'Confirm File Overwrite'] [Static id=1150] Overwrite file: | [Static id=182] 6, 08.11.2026, 20:43:29, A | [Static id=1151] With file: | [Static id=184] 6, 08.11.2026, 20:43:29, A | [Button id=6] &Yes | [Button id=185] &All | [Button id=173] &Skip | [Button id=174] S&kip All | [Button id=2] Cancel; runs so far 0
 F2         fileop PASS        copy waiting on its question: arm 0.2.0 source 2 test 0 launches 0 confirmed 0, nothing started; 3 decisions, last: wait close=decline: file operations are running typing=0 agree=0 last=0 installer=0
 F3         after  PASS        the copy ended: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; the target kept "kept/kept"
 --- group R
@@ -67,4 +68,4 @@ R3         browser PASS        Download (browser): opened "https://github.com/ta
 --- group X
 X1         no-exit-install PASS        exits that started an installer: 0
 Registry: restored; identical=True; SHA-256 before 6DBC2BCB2FFA26900FF158CC5B40BD3D490C2C34296FAAAB159DCF3EBFC85D95 / after 6DBC2BCB2FFA26900FF158CC5B40BD3D490C2C34296FAAAB159DCF3EBFC85D95
-TOTAL: 58 PASS, 0 FAIL, 0 NOT DRIVEN; registry restored: True
+TOTAL: 59 PASS, 0 FAIL, 0 NOT DRIVEN; registry restored: True

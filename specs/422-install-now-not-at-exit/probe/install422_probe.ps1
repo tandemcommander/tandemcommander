@@ -566,6 +566,22 @@ $Groups['T'] = {
     $id = Restart-421 $false; $got = Wait-Run 1 20
     T 'T3' 'control' ($got -and (Runs)[0] -like $NowLike) ('count reset to 0: ' + (RunsStr))
     Kill-Mine $id
+    # T4 (review M1, the reviewer's row Z1) a click on nothing planned: level 2, Help > Check, Install Now,
+    # the installer ends without installing while the program runs (declined UAC) - the next start with a
+    # check must not start it on its own
+    Reset-State 2; NoCheck; Set-Env
+    $id = Start-421; Start-Sleep -Seconds 2
+    Post-Cmd (Get-Main $id) $CM_HELP_CHECKVERSION
+    $h = Wait-Form $id 'offer' 30
+    Press $h $ID_OK; $got = Wait-Run 1 10
+    [void][Drv098f]::PostMessageW((Get-Main $id), (0x8000 + 424), [IntPtr]1223, $Z)
+    $m = Wait-MsgBox $id 10; if ($m -ne $Z) { Click-Ok $m }
+    Start-Sleep -Seconds 1; $a = Arm
+    $q = QuitChecked $id
+    Remove-Item -LiteralPath $RunLog -Force -ErrorAction SilentlyContinue
+    $id = Restart-421 $true; $h2 = Wait-Form $id 'offer' 25; Start-Sleep -Seconds 6
+    T 'T4' 'click' ($got -and $m -ne $Z -and $null -ne $a -and $a.Source -eq 3 -and $a.Launches -eq 1 -and $q.NewRuns -eq 0 -and (Runs).Count -eq 0 -and (Form $h2) -eq 'offer') ('Install Now failed while running: {0}; next start with a check: form {1}, {2}' -f (ArmStr $a), (Form $h2), (RunsStr))
+    Kill-Mine $id
 }
 
 # F: something the user would lose holds the automatic install - typed command-line text, then a file

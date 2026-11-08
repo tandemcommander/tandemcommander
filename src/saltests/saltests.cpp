@@ -10693,7 +10693,7 @@ static void TestUpdateNotice421()
     a.Launches = 1; // restored after the failed launch: automatic, 1 launch, unconfirmed
     CHECK(SalUpdDeclinedArmKept(a, &kept) && kept.Source == SALUPD_ARM_OFFERED && kept.Launches == 1 &&
           kept.ConfirmedAt == 0 && SalUpdVersionCompare(kept.Version, v020) == 0);
-    // ... which the automatic level never plans again (420's rule) nor installs silently, and the exit refuses
+    // ... which the automatic level never plans again (420's rule) nor installs silently (and nothing installs at the exit)
     CHECK(!SalUpdAutomaticArmUsable(TRUE, kept, v020));
     CHECK(!SalUpdSilentInstallPlanned(TRUE, kept, v020));
     // negative control: the dropped arm (420's old behaviour) lets the next check plan it afresh - silent again
@@ -10728,6 +10728,29 @@ static void TestUpdateNotice421()
     CHECK(SalUpdStartupArmDecision(launched, TRUE, FALSE, v019, TRUE) == susaGiveUp);
     // negative control: a plan never launched is completed at the start (that is the intended install)
     CHECK(SalUpdStartupArmDecision(aut, TRUE, FALSE, v019, TRUE) == susaComplete);
+
+    // --- 422 review M1: a click on nothing planned (Install Now after Help > Check at the automatic level,
+    // Download & Install), its installer ended without installing while the program runs
+    CSalUpdArm clicked = aut;
+    clicked.Source = SALUPD_ARM_USER;
+    clicked.Launches = 1;
+    clicked.ConfirmedAt = 0;
+    CSalUpdArm after;
+    CHECK(SalUpdArmAfterInstallerFailed(FALSE, none, TRUE, clicked, &after) && after.Source == SALUPD_ARM_OFFERED &&
+          after.Launches == 1 && SalUpdVersionCompare(after.Version, v020) == 0);
+    CHECK(!SalUpdAutomaticArmUsable(TRUE, after, v020) && !SalUpdSilentInstallPlanned(TRUE, after, v020) &&
+          SalUpdStartupArmDecision(after, FALSE, FALSE, v019, TRUE) == susaNone); // never started on its own
+    // negative control (the defect the review reproduced): nothing kept - the next check plans it afresh
+    CHECK(SalUpdAutomaticArmUsable(FALSE, none, v020));
+    // a restored automatic plan becomes offered; another restored plan stays as it is
+    CSalUpdArm restoredAut = aut;
+    restoredAut.Launches = 1;
+    CHECK(SalUpdArmAfterInstallerFailed(TRUE, restoredAut, TRUE, clicked, &after) && after.Source == SALUPD_ARM_OFFERED &&
+          after.Launches == 1);
+    CSalUpdArm restoredUser = clicked;
+    CHECK(SalUpdArmAfterInstallerFailed(TRUE, restoredUser, TRUE, clicked, &after) && after.Source == SALUPD_ARM_USER &&
+          SalUpdStartupArmDecision(after, TRUE, FALSE, v019, TRUE) == susaOffer);
+    CHECK(!SalUpdArmAfterInstallerFailed(FALSE, none, FALSE, none, &after));
     a.Source = SALUPD_ARM_OFFERED;
     CHECK(!SalUpdDeclinedArmKept(a, &kept));
     CHECK(!SalUpdDeclinedArmKept(none, &kept));
