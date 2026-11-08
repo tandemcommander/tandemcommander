@@ -1394,6 +1394,7 @@ struct COpenViewerData
 #define WM_USER_UPDATEDOWNLOAD_DONE WM_APP + 422 // [0, 0]
 #define WM_USER_UPDATEINSTALL WM_APP + 423       // [0, 0]
 #define WM_USER_UPDATEINSTALL_DONE WM_APP + 424  // [exit code, 0]
+#define WM_USER_UPDATENOTICE_FORM WM_APP + 425   // [CUpdateNoticeForm, 0] - show the open notification in another form
 
 // states for Shift+F1 help mode
 #define HELP_INACTIVE 0 // not in Shift+F1 help mode (must be 0)

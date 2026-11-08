@@ -365,6 +365,45 @@ inline BOOL SalUpdKeepUpdateFile(CSalUpdFileKind kind, const CSalUpdVersion& fil
 // The installer's command line (contracts/installer-launch.md)
 //
 
+// Feature 420 review M1: the name of a running installer of the product - the Inno Setup loader
+// "tandemcommander-<ver>-x64-setup.exe" or its extracted "tandemcommander-<ver>-x64-setup.tmp"
+// (ASCII case ignored, as Windows compares names). While one runs, no other is started: two setups
+// replacing the same files at once could leave a mixed installation.
+inline BOOL SalUpdIsInstallerProcessName(const WCHAR* name)
+{
+    static const char prefix[] = "tandemcommander-";
+    static const char exeSuffix[] = "-x64-setup.exe";
+    static const char tmpSuffix[] = "-x64-setup.tmp";
+    if (name == NULL)
+        return FALSE;
+    int len = (int)wcslen(name);
+    if (len <= 16 + 14)
+        return FALSE;
+    for (int i = 0; i < 16; i++)
+    {
+        if (SalUpdLowerAscii(name[i]) != (WCHAR)prefix[i])
+            return FALSE;
+    }
+    BOOL exe = TRUE, tmp = TRUE;
+    for (int i = 0; i < 14; i++)
+    {
+        WCHAR c = SalUpdLowerAscii(name[len - 14 + i]);
+        if (c != (WCHAR)exeSuffix[i])
+            exe = FALSE;
+        if (c != (WCHAR)tmpSuffix[i])
+            tmp = FALSE;
+    }
+    if (!exe && !tmp)
+        return FALSE;
+    // between them a version: digits and dots only
+    for (int i = 16; i < len - 14; i++)
+    {
+        if (!(name[i] >= L'0' && name[i] <= L'9') && name[i] != L'.')
+            return FALSE;
+    }
+    return TRUE;
+}
+
 enum CSalUpdLaunchKind
 {
     sulkNow, // Install Now and the completion at start-up: progress window, close, restart
@@ -434,7 +473,9 @@ enum CSalUpdStartupArm
     susaDropAll,   // forget the arm and delete its installer
     susaDropState, // forget the arm, keep the file (it may be offered again)
     susaDone,      // the running version reached it: forget the arm and delete its installer
-    susaGiveUp,    // SALUPD_MAX_LAUNCHES did not get there: forget the arm; the update is offered again
+    susaGiveUp,    // SALUPD_MAX_LAUNCHES did not get there: nothing is started on its own any more; the
+                   // arm is KEPT (review S1: a new arm of the same version keeps the count), so the
+                   // update is only offered (Install Now) until a newer version or the version is reached
     susaComplete   // install it now (Install Now route) - the exit did not do it
 };
 
@@ -464,6 +505,8 @@ inline CSalUpdStartupArm SalUpdStartupArmDecision(const CSalUpdArm& arm, BOOL ho
 {
     if (!arm.Present)
         return susaNone;
+    if (!eligible)
+        return susaNone; // a copy not installed by the installer leaves the installed copy's arm alone (review)
     if (arm.Test && !testMode)
         return susaDropAll; // a test never installs in a normal session
     if (!honoured)
@@ -474,9 +517,14 @@ inline CSalUpdStartupArm SalUpdStartupArmDecision(const CSalUpdArm& arm, BOOL ho
         return susaDone; // a launched same-version install cannot be told from a failed one
     if (arm.Launches >= SALUPD_MAX_LAUNCHES)
         return susaGiveUp;
-    if (!eligible)
-        return susaDropAll;
     return susaComplete;
+}
+
+// Review S1: the form a downloaded and verified installer is shown in at the automatic level - an arm
+// of the same version whose launches are used up is not promised for the exit any more (offered only)
+inline BOOL SalUpdAutomaticArmUsable(BOOL hasArm, const CSalUpdArm& arm, const CSalUpdVersion& version)
+{
+    return !hasArm || SalUpdVersionCompare(arm.Version, version) != 0 || arm.Launches < SALUPD_MAX_LAUNCHES;
 }
 
 // data-model.md, "Exit decision". 'normalExit': not an installer's close, not a critical

@@ -138,13 +138,25 @@ function FilesStr { $f = UpdFiles; if ($f.Count) { return ($f -join ', ') }; ret
 function Runs { if (Test-Path -LiteralPath $RunLog) { return , @(Get-Content -LiteralPath $RunLog | Where-Object { $_ }) }; return , @() }
 function Reset-State([int]$Level = -1) {
     foreach ($n in @('Last Attempt', 'Last Attempt Answered', 'Last Success', 'Latest Version', 'Latest Published', 'Skipped Version', 'Update Level',
-            'Install Version', 'Install Digest', 'Install Source', 'Install Test', 'Install Launches')) { Uc-Del $n }
+            'Install Version', 'Install Digest', 'Install Source', 'Install Test', 'Install Launches', 'Download Refused')) { Uc-Del $n }
+    Stop-FakeSetup
     Uc-Set 'Check At Startup' 1
     if ($Level -ge 0) { Uc-Set 'Update Level' $Level }
     if (Test-Path -LiteralPath $Upd) { Remove-Item -LiteralPath $Upd -Recurse -Force }
     Remove-Item -LiteralPath $RunLog, $OpenLog -Force -ErrorAction SilentlyContinue
 }
 function NoCheck { Uc-Set 'Last Attempt' ([DateTime]::UtcNow.ToFileTimeUtc()) 'QWord'; Uc-Set 'Last Attempt Answered' 1 }
+# a process that looks like a running installer of the product (review M1): a copy of timeout.exe
+# under the installer's name in the fixture folder, waiting
+$script:FakeSetup = $null
+function Start-FakeSetup {
+    $p = $Fx + '\fake\tandemcommander-0.2.0-x64-setup.exe'
+    [void][IO.Directory]::CreateDirectory((Split-Path $p))
+    Copy-Item -LiteralPath (Join-Path $env:WINDIR 'System32\timeout.exe') -Destination $p -Force
+    $script:FakeSetup = Start-Process -FilePath $p -ArgumentList @('/t', '120', '/nobreak') -PassThru -WindowStyle Hidden
+    Start-Sleep -Milliseconds 500
+}
+function Stop-FakeSetup { if ($script:FakeSetup -and -not $script:FakeSetup.HasExited) { Stop-Process -Id $script:FakeSetup.Id -Force; [void]$script:FakeSetup.WaitForExit(5000) }; $script:FakeSetup = $null }
 
 # ---- the program ------------------------------------------------------------------------
 function Set-Env([string]$Fixture = 'rel-good', [string]$Pretend = '0.1.9', [bool]$Eligible = $true, [bool]$Metered = $false) {
@@ -220,7 +232,7 @@ $Groups['L'] = {
     $f = UpdFiles
     T 'L1' 'offer' ((Form $h) -eq 'offer' -and $f.Count -eq 1 -and $f[0] -eq $InstallerName -and $null -eq (Arm) -and (AssetReqs) -gt $before) ('no level stored (default): notice {0}, {1}, {2}, asset requests {3}' -f (Form $h), (FilesStr), (ArmStr (Arm)), ((AssetReqs) - $before))
     $hint = CtlText $h 6248
-    T 'L1' 'hint' ($hint -like '*downloaded and verified*when you close*') ('hint: ' + (Esc $hint))
+    T 'L1' 'hint' ($hint -like '*downloaded and verified*Install Now closes Tandem Commander*') ('hint: ' + (Esc $hint))
     [void](Quit $id)
     T 'L1' 'exit' ((Runs).Count -eq 0) ('exit with an offered but not armed update: ' + (RunsStr))
 
@@ -347,8 +359,14 @@ $Groups['S'] = {
     }
     NoCheck
     $id = Start-420; Start-Sleep -Seconds 6
-    T 'S1' 'giveup' ((Runs).Count -eq 3 -and $null -eq (Arm) -and (UpdFiles) -contains $InstallerName) ('fourth start after 3 launches: {0} launches logged, {1}, {2}' -f (Runs).Count, (ArmStr (Arm)), (FilesStr))
-    [void](Quit $id)
+    $a = Arm
+    T 'S1' 'giveup' ((Runs).Count -eq 3 -and $null -ne $a -and $a.Launches -eq 3 -and (UpdFiles) -contains $InstallerName) ('fourth start after 3 launches: {0} launches logged, {1}, {2}' -f (Runs).Count, (ArmStr $a), (FilesStr))
+    Kill-Wait $id
+    # review S1: the next check at the automatic level does not start a new count - the update is only offered
+    Uc-Del 'Last Attempt'
+    $id = Start-420; $h = Wait-Notice $id 40; Start-Sleep -Seconds 2; $h = [P420]::Notice([uint32]$id); $f = Form $h; $a = Arm
+    $s = Quit $id
+    T 'S1' 'nocycle' ($f -eq 'offer' -and $null -ne $a -and $a.Launches -eq 3 -and (Runs).Count -eq 3) ('a new check after the launches were used up: notice {0}, {1}, after the exit ({2} s) {3} launches logged' -f $f, (ArmStr $a), $s, (Runs).Count)
 
     Reset-State 2; Set-Env
     $id = Start-420; [void](Wait-Form $id 'automatic'); Kill-Wait $id
@@ -421,6 +439,153 @@ $Groups['T'] = {
 }
 
 # G: Configuration > General (FR-001, US3)
+# Rv: the findings of the first independent review (fix-log, Review 1)
+$Groups['Rv'] = {
+    # M1: never a second installer - start-up completion, Install Now, exit
+    Reset-State 2; Set-Env
+    $id = Start-420; [void](Wait-Form $id 'automatic'); Kill-Wait $id
+    Start-FakeSetup; NoCheck
+    $id = Start-420; Start-Sleep -Seconds 6; $a = Arm
+    T 'M1' 'start' ((Runs).Count -eq 0 -and $null -ne $a -and $a.Launches -eq 0) ('armed, an installer of the product runs, the program starts: {0}; {1}' -f (RunsStr), (ArmStr $a))
+    $s = Quit $id
+    T 'M1' 'exit' ((Runs).Count -eq 0) ('the same, normal exit after {0} s: {1}' -f $s, (RunsStr))
+    Stop-FakeSetup; NoCheck
+    $id = Start-420; [void](Wait-Run 1 20)
+    T 'M1' 'after' ((Runs).Count -eq 1 -and (Runs)[0] -like 'now|*') ('the installer ended, next start: ' + (RunsStr))
+    Kill-Wait $id
+
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'
+    Start-FakeSetup
+    Press $h 1; Start-Sleep -Seconds 2
+    $box = @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and $_ -ne $h })
+    $boxText = if ($box.Count) { (FullText $box[0]) } else { '<no message>' }
+    T 'M1' 'now' ((Runs).Count -eq 0 -and $boxText -like '*already being installed*' -and $null -eq (Arm)) ('Install Now while an installer runs: {0}; message: {1}; {2}' -f (RunsStr), (Esc $boxText), (ArmStr (Arm)))
+    if ($box.Count) { Close-Win $box[0]; Start-Sleep -Milliseconds 400 }
+    Stop-FakeSetup
+    [void](Quit $id)
+
+    # S2: the settings changed while the installer downloaded
+    Reset-State 1; Set-Env 'rel-slow'
+    $id = Start-420
+    $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 20 -and (Reqs '/dl/10').Count -eq 0) { Start-Sleep -Milliseconds 100 }
+    Uc-Set 'Update Level' 0
+    $h = Wait-Notice $id 120; Start-Sleep -Seconds 1; $f = Form ([P420]::Notice([uint32]$id))
+    T 'S2' 'notify' ($f -eq 'classic' -and $null -eq (Arm)) ('"notify me only" chosen during the download: notice {0}, {1}' -f $f, (ArmStr (Arm)))
+    [void](Quit $id)
+    Reset-State 2; Set-Env 'rel-slow'
+    $id = Start-420
+    $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 20 -and (Reqs '/dl/10').Count -eq 0) { Start-Sleep -Milliseconds 100 }
+    Uc-Set 'Check At Startup' 0
+    $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 120 -and -not ((UpdFiles) -contains $InstallerName)) { Start-Sleep -Milliseconds 500 }
+    Start-Sleep -Seconds 2; $h = [P420]::Notice([uint32]$id)
+    T 'S2' 'off' ($h -eq $Z -and $null -eq (Arm)) ('the check turned off during the download (level 2): notice {0}, {1}, {2}' -f (Form $h), (ArmStr (Arm)), (FilesStr))
+    [void](Quit $id)
+
+    # refused installer: not downloaded again by the next check
+    Reset-State 1; Set-Env 'rel-foreign'
+    $id = Start-420; $h = Wait-Notice $id 40; Start-Sleep -Seconds 3; [void](Quit $id)
+    $ref = Uc-Get 'Download Refused'
+    Uc-Del 'Last Attempt'; Set-Env 'rel-good'; $before = AssetReqs
+    $id = Start-420; $h = Wait-Notice $id 30; Start-Sleep -Seconds 2; $f = Form ([P420]::Notice([uint32]$id))
+    T 'RF' 'again' ($ref -eq '0.2.0' -and $f -eq 'classic' -and (AssetReqs) -eq $before) ('a foreign-signed installer was refused (Download Refused = {0}); the next check: notice {1}, asset requests {2}' -f $ref, $f, ((AssetReqs) - $before))
+    [void](Quit $id)
+
+    # a copy not installed by the installer leaves the installed copy's arm and files alone
+    Reset-State 2; Set-Env
+    $id = Start-420; [void](Wait-Form $id 'automatic'); Kill-Wait $id
+    NoCheck; Set-Env -Eligible $false
+    $id = Start-420; Start-Sleep -Seconds 6; $a = Arm
+    T 'PC' 'alone' ($null -ne $a -and $a.Launches -eq 0 -and (UpdFiles) -contains $InstallerName -and (Runs).Count -eq 0) ('a portable copy started while the installed copy has an arm: {0}, {1}, {2}' -f (ArmStr $a), (FilesStr), (RunsStr))
+    $s = Quit $id
+    T 'PC' 'exit' ((Runs).Count -eq 0 -and $null -ne (Arm)) ('its exit after {0} s: {1}, {2}' -f $s, (RunsStr), (ArmStr (Arm)))
+
+    # Install Now that fails while the program runs: reported, not turned into a silent install at the exit
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'
+    Press $h 1; [void](Wait-Run 1 10)
+    [void][Drv098f]::PostMessageW((Get-Main $id), 0x8000 + 424, [IntPtr]5, $Z)   # WM_USER_UPDATEINSTALL_DONE, code 5
+    Start-Sleep -Seconds 2
+    $box = @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' })
+    $boxText = if ($box.Count) { (FullText $box[0]) } else { '<no message>' }
+    T 'IN' 'failed' ($boxText -like '*was not installed*code 5*' -and $boxText -notlike '*when you close*' -and $null -eq (Arm)) ('Install Now, the installer ended with 5: message {0}; {1}' -f (Esc $boxText), (ArmStr (Arm)))
+    if ($box.Count) { Close-Win $box[0]; Start-Sleep -Milliseconds 400 }
+    $s = Quit $id
+    T 'IN' 'exit' ((Runs).Count -eq 1) ('then a normal exit ({0} s): {1}' -f $s, (RunsStr))
+
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'
+    Press $h 6296; [void](Gone $h 3)
+    # Help > Check for New Version: the verified installer is offered at once; Install Now on an armed update
+    Post-Cmd (Get-Main $id) 2217
+    $h = Wait-Form $id 'offer' 20
+    Press $h 1; [void](Wait-Run 1 10)
+    [void][Drv098f]::PostMessageW((Get-Main $id), 0x8000 + 424, [IntPtr]5, $Z)   # its installer ended with 5
+    Start-Sleep -Seconds 2
+    $box = @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' })
+    $boxText = if ($box.Count) { (FullText $box[0]) } else { '<no message>' }
+    $yes = if ($box.Count) { Buttons $box[0] | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 6 } | Select-Object -First 1 } else { $null }
+    if ($yes) { Click $yes; Start-Sleep -Milliseconds 600 }
+    T 'IN' 'armed' ($null -ne (Arm) -and $null -ne $yes -and $boxText -like '*install it when you close*') ('an update armed by Install When I Close, failure report answered Yes: {0}; message {1}' -f (ArmStr (Arm)), (Esc $boxText))
+    [void][Drv098f]::PostMessageW((Get-Main $id), 0x8000 + 424, [IntPtr]1, $Z)
+    Start-Sleep -Seconds 2
+    $box = @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' })
+    $no = if ($box.Count) { Buttons $box[0] | Where-Object { [Drv098f]::GetDlgCtrlID($_) -eq 7 } | Select-Object -First 1 } else { $null }
+    if ($no) { Click $no; Start-Sleep -Milliseconds 600 }
+    T 'IN' 'no' ($null -ne $no -and $null -eq (Arm)) ('the same, answered No: {0}' -f (ArmStr (Arm)))
+    [void](Quit $id)
+}
+
+# Ux: the findings of the independent UI / UX test (fix-log, UX test 1)
+$Groups['Ux'] = {
+    # 1, 2: Help > Check for New Version while the installer downloads (~4 s)
+    Reset-State 1; Set-Env 'rel-medium'; NoCheck
+    $id = Start-420; Start-Sleep -Seconds 1
+    Post-Cmd (Get-Main $id) 2217
+    $h = Wait-Notice $id 15; $f1 = Form $h
+    $h2 = Wait-Form $id 'offer' 40; $f2 = Form $h2
+    T 'U1' 'replace' ($f1 -eq 'classic' -and $f2 -eq 'offer') ('a check the user asked for during the download: first {0}, after the download {1}' -f $f1, $f2)
+    [void](Quit $id)
+
+    Reset-State 1; Set-Env 'rel-medium'; NoCheck
+    $id = Start-420; Start-Sleep -Seconds 1
+    Post-Cmd (Get-Main $id) 2217
+    $h = Wait-Notice $id 15; $f1 = Form $h; Press $h 2; [void](Gone $h 3)
+    $sw = [Diagnostics.Stopwatch]::StartNew(); while ($sw.Elapsed.TotalSeconds -lt 40 -and -not ((UpdFiles) -contains $InstallerName)) { Start-Sleep -Milliseconds 300 }
+    Start-Sleep -Seconds 3; $n = [P420]::Notice([uint32]$id)
+    T 'U2' 'remind' ($f1 -eq 'classic' -and $n -eq $Z -and $null -eq (Arm) -and (UpdFiles) -contains $InstallerName) ('Remind Me Later on the classic form during the download: afterwards notice {0}, {1}, {2}' -f (Form $n), (ArmStr (Arm)), (FilesStr))
+    [void](Quit $id)
+
+    Reset-State 2; Set-Env 'rel-medium'; NoCheck
+    $id = Start-420; Start-Sleep -Seconds 1
+    Post-Cmd (Get-Main $id) 2217
+    $h = Wait-Notice $id 15; Press $h 6250; [void](Gone $h 3)
+    Start-Sleep -Seconds 10; $n = [P420]::Notice([uint32]$id)
+    $s = Quit $id
+    T 'U2' 'skip' ($n -eq $Z -and $null -eq (Arm) -and (Runs).Count -eq 0 -and (Uc-Get 'Skipped Version') -eq '0.2.0') ('Skip This Version (level 2) during the download: notice {0}, {1}, exit ({2} s): {3}' -f (Form $n), (ArmStr (Arm)), $s, (RunsStr))
+
+    # 3: the automatic form - Enter is OK
+    Reset-State 2; Set-Env; NoCheck
+    $id = Start-420; Start-Sleep -Seconds 1
+    Post-Cmd (Get-Main $id) 2217
+    $h = Wait-Form $id 'automatic' 40
+    $def = [P420]::SendR($h, 0x0400, 0, 0, 3000)   # DM_GETDEFID
+    T 'U3' 'default' ((Form $h) -eq 'automatic' -and ($def -band 0xFFFF) -eq 2) ('automatic form: default button id {0} (2 = OK)' -f ($def -band 0xFFFF))
+    [void](Quit $id)
+
+    # 5: the downloaded installer disappeared before Install Now
+    Reset-State 1; Set-Env
+    $id = Start-420; $h = Wait-Form $id 'offer'
+    Remove-Item -LiteralPath (Join-Path $Upd $InstallerName) -Force
+    Press $h 1; Start-Sleep -Seconds 2
+    $box = @(Get-Tops $id | Where-Object { [Drv098f]::Cls($_) -eq '#32770' -and $_ -ne $h })
+    $boxText = if ($box.Count) { (FullText $box[0]) } else { '<no message>' }
+    if ($box.Count) { Close-Win $box[0]; Start-Sleep -Milliseconds 800 }
+    $f = Form ([P420]::Notice([uint32]$id))
+    T 'U5' 'damaged' ($boxText -like '*missing or has changed*' -and $f -eq 'classic' -and (Runs).Count -eq 0 -and $null -eq (Arm)) ('Install Now without the file: message {0}; then notice {1}; {2}' -f (Esc $boxText), $f, (ArmStr (Arm)))
+    [void](Quit $id)
+}
+
 $CfgKey = 'HKCU\Software\Tandem Commander\Settings\Configuration'
 function Cfg-General { & cmd.exe /c "reg add `"$CfgKey`" /v `"Last Focused Page`" /t REG_DWORD /d 0 /f >nul 2>&1" }
 $Groups['G'] = {
@@ -517,6 +682,7 @@ try {
 }
 finally {
     foreach ($i in @($Started)) { if (Test-Alive $i) { Kill-Mine $i } }
+    Stop-FakeSetup
     Stop-Server
     & cmd.exe /c "reg delete HKCU\Software\TC420Probe /f >nul 2>&1"
     if (Test-Path -LiteralPath $Upd) { Remove-Item -LiteralPath $Upd -Recurse -Force }

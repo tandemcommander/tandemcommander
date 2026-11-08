@@ -2592,6 +2592,11 @@
 #define IDS_UPDATE_ABOUT_TESTMODE       14157 // About dialog, test mode, followed by the normal line
 #define IDS_UPDATE_INSTALL_FAILED       14158 // %s = version, %u = the installer's exit code
 #define IDS_UPDATE_ERR_RUN              14159 // %s = version, %s = the system's reason
+// feature 420 review: free slots of the bundle of 14000
+#define IDS_UPDATE_BUSY                 14002 // an installer of the product is already running
+#define IDS_UPDATE_INSTALL_LATER        14003 // appended to IDS_UPDATE_INSTALL_FAILED when the update stays planned (a Yes/No question)
+#define IDS_UPDATE_INSTALL_TITLE        14004 // title of the messages about installing an update
+#define IDS_UPDATE_ERR_DAMAGED          14006 // %s = version: the downloaded installer is missing or changed
 
 // Translation of Open Salamander into your language is not finished. Please join the translation effort.
 #define IDS_SLGINCOMPLETE_TITLE         14150

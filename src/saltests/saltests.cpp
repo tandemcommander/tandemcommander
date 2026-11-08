@@ -10496,7 +10496,22 @@ static void TestAutoUpdate420()
     CHECK(SalUpdStartupArmDecision(testLaunched, TRUE, TRUE, v020, TRUE) == susaDone);
     CSalUpdArm tired = Upd420Arm(0, 2, 1, SALUPD_ARM_USER, FALSE, SALUPD_MAX_LAUNCHES);
     CHECK(SalUpdStartupArmDecision(tired, TRUE, FALSE, v020, TRUE) == susaGiveUp);
-    CHECK(SalUpdStartupArmDecision(aut, TRUE, FALSE, v020, FALSE) == susaDropAll);
+    CHECK(SalUpdStartupArmDecision(aut, TRUE, FALSE, v020, FALSE) == susaNone);  // review: a portable copy...
+    CHECK(SalUpdStartupArmDecision(test, TRUE, FALSE, v020, FALSE) == susaNone); // ...touches no arm of the installed one
+    CHECK(SalUpdStartupArmDecision(tired, TRUE, FALSE, v020, FALSE) == susaNone);
+    // review S1: used-up launches keep the arm (no new automatic arm restarts the count)
+    CHECK(!SalUpdAutomaticArmUsable(TRUE, tired, tired.Version));
+    CHECK(SalUpdAutomaticArmUsable(TRUE, tired, v030)); // a newer version starts afresh
+    CHECK(SalUpdAutomaticArmUsable(TRUE, aut, aut.Version) && SalUpdAutomaticArmUsable(FALSE, none, v021));
+    // review M1: a running installer of the product, by its process name
+    CHECK(SalUpdIsInstallerProcessName(L"tandemcommander-0.2.0-x64-setup.exe"));
+    CHECK(SalUpdIsInstallerProcessName(L"TandemCommander-12.34.5-X64-Setup.TMP"));
+    const WCHAR* notInstallers[] = {L"tandemcommander.exe", L"tandemcommander-0.2.0-x64-setup.exe.part",
+                                    L"tandemcommander--x64-setup.exe", L"tandemcommander-0.2a-x64-setup.exe",
+                                    L"tandemcommander-0.2.0-x86-setup.exe", L"setup.exe", L"", L"unins000.exe"};
+    for (int i = 0; i < (int)(sizeof(notInstallers) / sizeof(notInstallers[0])); i++)
+        CHECK(!SalUpdIsInstallerProcessName(notInstallers[i]));
+    CHECK(!SalUpdIsInstallerProcessName(NULL));
     CHECK(SalUpdStartupArmDecision(aut, TRUE, FALSE, v020, TRUE) == susaComplete); // the exit did not do it
     CSalUpdArm twice = Upd420Arm(0, 2, 1, SALUPD_ARM_AUTOMATIC, FALSE, SALUPD_MAX_LAUNCHES - 1);
     CHECK(SalUpdStartupArmDecision(twice, TRUE, FALSE, v020, TRUE) == susaComplete); // the last try

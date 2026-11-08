@@ -15,6 +15,7 @@ HWND UpdateAboutWindow = NULL;
 static HWND UpdateNoticeWindow = NULL;     // this instance's notification
 static CSalUpdVersion UpdateNoticeVersion; // the version it announces (valid while the window exists)
 static CUpdateNoticeForm UpdateNoticeForm = unfClassic; // feature 420: its form (valid while the window exists)
+static CSalUpdRelease UpdateNoticeShownRelease;         // feature 420: its release (valid while the window exists)
 static BOOL UpdateManualWaiting = FALSE;
 static BOOL UpdateNoticeAttached = FALSE; // the dialog object got its window (it then deletes itself)
 
@@ -229,6 +230,12 @@ void CUpdateNoticeDialog::ApplyForm()
         ShowWindow(installExit, SW_HIDE);
         EnableWindow(installExit, FALSE);
     }
+    if (Form == unfAutomatic) // UX test 3: Enter acknowledges (OK) - it must not close the program at once
+    {
+        SendDlgItemMessage(HWindow, IDOK, BM_SETSTYLE, BS_PUSHBUTTON, FALSE);
+        SendDlgItemMessage(HWindow, IDCANCEL, BM_SETSTYLE, BS_DEFPUSHBUTTON, FALSE);
+        SendMessage(HWindow, DM_SETDEFID, IDCANCEL, 0);
+    }
 
     // the visible buttons left to right, each at least as wide as in the template and wide enough
     // for its text (translations); the window grows when they do not fit
@@ -273,10 +280,58 @@ void CUpdateNoticeDialog::ApplyForm()
     int need = x - gap + first.left; // the same margin on the right as on the left
     if (need > client.right)
     {
+        // UX test 8: the window grows - the artwork keeps its place at the right edge and the texts
+        // below the band use the new width
+        int grow = need - client.right;
         RECT wr;
         GetWindowRect(HWindow, &wr);
-        SetWindowPos(HWindow, NULL, 0, 0, wr.right - wr.left + need - client.right, wr.bottom - wr.top,
+        SetWindowPos(HWindow, NULL, 0, 0, wr.right - wr.left + grow, wr.bottom - wr.top,
                      SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+        static const int widen[] = {IDC_UPDN_HINT, IDC_UPDN_ATSTARTUP, IDC_UPDN_RELEASED, IDC_UPDN_NOTES, IDC_UPDN_ACCENT};
+        for (int i = 0; i < (int)_countof(widen); i++)
+        {
+            HWND h = GetDlgItem(HWindow, widen[i]);
+            RECT r;
+            if (h != NULL && GetWindowRect(h, &r))
+            {
+                MapWindowPoints(NULL, HWindow, (POINT*)&r, 2);
+                SetWindowPos(h, NULL, 0, 0, r.right - r.left + grow, r.bottom - r.top, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+            }
+        }
+        HWND logo = GetDlgItem(HWindow, IDC_UPDN_LOGO); // a placeholder: its rectangle is read later
+        RECT lr;
+        if (logo != NULL && GetWindowRect(logo, &lr))
+        {
+            MapWindowPoints(NULL, HWindow, (POINT*)&lr, 2);
+            SetWindowPos(logo, NULL, lr.left + grow, lr.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+        }
+    }
+    else if (need < client.right)
+    {
+        // UX test 8: fewer or narrower buttons share the row out to the right margin (as 123's form)
+        int count = 0;
+        for (int i = 0; i < 4; i++)
+        {
+            HWND h = GetDlgItem(HWindow, ids[i]);
+            if (h != NULL && (GetWindowLong(h, GWL_STYLE) & WS_VISIBLE) != 0)
+                count++;
+        }
+        int extra = client.right - need;
+        int pos = first.left;
+        for (int i = 0, k = 0; i < 4 && count > 0; i++)
+        {
+            HWND h = GetDlgItem(HWindow, ids[i]);
+            if (h == NULL || (GetWindowLong(h, GWL_STYLE) & WS_VISIBLE) == 0)
+                continue;
+            RECT r;
+            GetWindowRect(h, &r);
+            MapWindowPoints(NULL, HWindow, (POINT*)&r, 2);
+            int add = extra / count + (k < extra % count ? 1 : 0);
+            k++;
+            int w = r.right - r.left + add;
+            SetWindowPos(h, NULL, pos, r.top, w, r.bottom - r.top, SWP_NOZORDER | SWP_NOACTIVATE);
+            pos += w + gap;
+        }
     }
 }
 
@@ -316,6 +371,7 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         UpdateNoticeWindow = HWindow;
         UpdateNoticeVersion = Release.Version;
         UpdateNoticeForm = Form;
+        UpdateNoticeShownRelease = Release;
         UpdateNoticeAttached = TRUE;
         ApplyForm(); // feature 420: first - the window may grow, and the header band follows its width
         SetPropW(HWindow, UPDATENOTICE_WINDOW_PROP, (HANDLE)(INT_PTR)1);
@@ -388,6 +444,11 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         // TRUE lets the dialog manager give the keyboard focus to the first control - and with it
         // the activation, even for a window that is not visible yet. A notification that arrives
         // while the user works must take neither (contracts/ui.md, "Showing").
+        if (Activate && Form == unfAutomatic) // UX test 3: the keyboard starts on OK, not on Install Now
+        {
+            SetFocus(GetDlgItem(HWindow, IDCANCEL));
+            return FALSE;
+        }
         return Activate;
     }
 
@@ -478,9 +539,12 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (Form != unfClassic) // feature 420: Install Now - the installer closes the program
             {
-                if (UpdInstall_InstallNow(HWindow, Release))
+                int res = UpdInstall_InstallNow(HWindow, Release);
+                if (res == UPDNOW_STARTED)
                     DestroyWindow(HWindow);
-                return TRUE; // on failure the user was told; the window stays
+                else if (res == UPDNOW_DAMAGED) // UX test 5: the browser download is all that is left
+                    PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_FORM, unfClassic, 0);
+                return TRUE; // otherwise the user was told; the window stays
             }
             char url[SALUPD_URL_MAX];
             if (SalUpdInstallerUrl(Release.Version, url, sizeof(url)) && UpdateCheck_OpenUrl(HWindow, url))
@@ -509,8 +573,14 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             if (Form == unfOffer)
             {
-                UpdInstall_Arm(Release, SALUPD_ARM_USER);
-                DestroyWindow(HWindow);
+                // UX test 5: never armed without a verified installer
+                if (UpdInstall_CheckReady(HWindow, Release))
+                {
+                    UpdInstall_Arm(Release, SALUPD_ARM_USER);
+                    DestroyWindow(HWindow);
+                }
+                else
+                    PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_FORM, unfClassic, 0);
             }
             return TRUE;
         }
@@ -518,7 +588,15 @@ CUpdateNoticeDialog::DialogProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
         case IDC_UPDN_ATSTARTUP: // the same setting as Configuration > General, written at once
         {
             if (HIWORD(wParam) == BN_CLICKED)
-                UpdateCheck_SetCheckAtStartup(IsDlgButtonChecked(HWindow, IDC_UPDN_ATSTARTUP) == BST_CHECKED);
+            {
+                BOOL on = IsDlgButtonChecked(HWindow, IDC_UPDN_ATSTARTUP) == BST_CHECKED;
+                UpdateCheck_SetCheckAtStartup(on);
+                UpdInstall_OnSettingsChanged(); // feature 420: an automatic arm needs the check on
+                // UX test 9: the automatic form must not keep promising the install at close - it
+                // becomes the offer (Install Now / Install When I Close stay the user's choice)
+                if (!on && Form == unfAutomatic)
+                    PostMessage(::GetParent(HWindow), WM_USER_UPDATENOTICE_FORM, unfOffer, 0);
+            }
             return TRUE;
         }
 
@@ -568,6 +646,15 @@ CUpdateNoticeForm UpdateNotice_GetForm()
     return UpdateNoticeForm;
 }
 
+void UpdateNotice_Reshow(HWND mainWindow, CUpdateNoticeForm form)
+{
+    if (UpdateNoticeWindow == NULL || !IsWindow(UpdateNoticeWindow) || UpdateNoticeForm == form)
+        return;
+    CSalUpdRelease release = UpdateNoticeShownRelease;
+    BOOL active = GetForegroundWindow() == UpdateNoticeWindow; // the user works with it: it stays in front
+    UpdateNotice_Show(mainWindow, release, active, form);
+}
+
 void UpdateNotice_Show(HWND mainWindow, const CSalUpdRelease& release, BOOL activate, CUpdateNoticeForm form)
 {
     CALL_STACK_MESSAGE3("UpdateNotice_Show(, , %d, %d)", activate, (int)form);
@@ -577,8 +664,8 @@ void UpdateNotice_Show(HWND mainWindow, const CSalUpdRelease& release, BOOL acti
     if (UpdateNoticeWindow != NULL && IsWindow(UpdateNoticeWindow) &&
         (SalUpdVersionCompare(UpdateNoticeVersion, release.Version) != 0 || UpdateNoticeForm != form))
     {
-        if (!activate && GetForegroundWindow() == UpdateNoticeWindow)
-            activate = TRUE; // the user is looking at it: the replacement takes its place in front
+        // review NOTE: the replacement does not take the keyboard by itself - an Enter meant for the
+        // classic form's Download must not land on Install Now
         UpdateNotice_Close();
     }
 

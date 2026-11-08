@@ -46,6 +46,25 @@ completed at the next start**. Logged in the item's *Log*.
 | F1 | A second instance started while the first held an automatic arm would "complete" the update at its start - the installer would close the first instance's windows | 5 | writing probe group X (design review of the start-up decision) | completion at start-up only when no other instance of the executable runs in the session (`UpdiLastInstance`); probe X1 |
 | F2 | **An installer's close (Restart Manager, feature 080) started a second installer at the end of the exit**: `UnattendedClose` is set only for the time of `WM_ENDSESSION`, `PrepareExit` read it after it was reset | 5 (would have run two installers at once after every Install Now / start-up completion) | end-to-end run E2 with the real installer: `Install Launches` 2 after one completion (negative control, `probe/result_e2e.txt` first run) | the exit kind is recorded in the main window's `WM_DESTROY` (`UpdInstall_Shutdown`), where the flag is still set; E2 `once`: 1 installer start, launches 1 |
 
+## Review 1 (independent agent, refute-first, static + one saltests negative control)
+
+| Finding | What | Done |
+|---|---|---|
+| MUST M1 | Two installers at once: the start-up completion (program reopened while the exit's installer still runs), an exit after Install Now before the Restart Manager closes the program, Install Now twice - nothing checked for a running setup; the `.iss` has no `SetupMutex` | `SalUpdIsInstallerProcessName` (saltests) + `UpdiInstallerRunning` (Toolhelp, same session): no start-up completion, no exit install, and Install Now answers `IDS_UPDATE_BUSY` while an installer of the product runs. The installer (`.iss`) is not changed (maintainer-owned; published installers would not have it anyway). Probe rows M1 start / exit / after / now |
+| SHOULD S1 | The 3-launch cap was restarted by the next check (give-up dropped the arm, the automatic level re-armed with 0 launches) - an elevation prompt after every exit, cycle after cycle | give-up keeps the arm with its count; `SalUpdAutomaticArmUsable`: a used-up arm of the same version is offered (Install Now), not promised for the exit; probe S1 giveup / nocycle |
+| SHOULD S2 | Level or check option changed during a download: still offered / armed | `ShowDownloadedUpdate` reads both again: check off -> nothing; *Notify me only* -> classic form; probe S2 notify / off |
+| SHOULD S3 | `PRIVACY.md`: "Nothing from the server's answer is stored except that version number and date" - the digest is stored now | sentence corrected (and the new *Download Refused* value listed) |
+| SHOULD S4 | The restart after an **all-users** update (elevated Setup, `/RESTARTAPPLICATIONS`) unverified - could the program come back elevated? | Not new: a manual update of an all-users installation runs the same elevated Setup with the same Restart Manager restart (feature 080, its check owed to a person). Added to the release checklist (a person with a real UAC prompt). |
+| NOTE | verification-to-run gap: the handle was closed after `CreateProcessW` | the installer inherits the deny-write handle (`PROC_THREAD_ATTRIBUTE_HANDLE_LIST`), the file stays the verified one while it runs |
+| NOTE | a portable copy sharing the registry dropped the installed copy's arm and cleaned its folder | start-up decision `susaNone` and no clean-up for a copy that is not eligible; saltests + probe PC |
+| NOTE | a cancelled Install Now (or declined UAC) turned into a silent install at the next exit | an arm created by the click is dropped when its installer fails while the program runs; the message says "will be installed when you close" only when the update stays armed (`IDS_UPDATE_INSTALL_LATER`); probe IN |
+| NOTE | Enter meant for Download could land on Install Now when the downloaded form replaced a focused classic one | the replacement no longer takes the keyboard by itself |
+| NOTE | after a certificate rotation every daily check downloaded 8 MB again | a refused (signer / unsigned / version) download is remembered (`Download Refused`, not in test mode); probe RF |
+| NOTE | metered test was a COM call on the UI thread | moved to the download worker (MTA) |
+| NOTE | `PRIVACY.md` "describes 0.2.0" next to "up to 0.2.0 nothing" | reworded until the release sets the validity line |
+| NOTE | saltests count in the fix-log stale | re-measured at the end |
+| NOTE | negative control: removing the user-info check of the redirect rule is not caught (the exact host comparison refuses those addresses anyway) | accepted (redundant check, documented) |
+
 ## Translations (stop-rules §2.13, module `salamand`)
 
 - Step 0, entries: new strings `IDS_UPDATE_LEVEL_NOTIFY/OFFER/AUTO`, `IDS_UPDATE_BTN_INSTALLNOW/INSTALLEXIT/OK`,

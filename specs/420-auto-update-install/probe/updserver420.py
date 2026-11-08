@@ -28,6 +28,7 @@ Variants (asset id: what the program gets):
     9  portrd     302 to http://127.0.0.1:1/x (another port)                      -> refused (redirect)
     10 slow       the good file at 20 KB per second                                -> (exit-time row)
     11 loop       302 to itself (more redirects than allowed)                      -> refused
+    12 medium     the good file at about 2 MB per second (~4 s)                    -> verified
 Records without download data:
     rel-nodigest  the good asset without "digest"                                  -> notify only
     rel-huge      the good asset with "size" 70 MB                                 -> notify only
@@ -78,7 +79,7 @@ def data_of(variant):
 def digest_and_size(variant):
     """What the record announces for a variant."""
     good = FILES['good']
-    if variant in (2, 6, 10):
+    if variant in (2, 6, 10, 12):
         return hashlib.sha256(good).hexdigest(), len(good)
     if variant == 7:
         return hashlib.sha256(good).hexdigest(), len(good) - 1
@@ -94,7 +95,7 @@ def record(name):
     rec['published_at'] = '2026-10-25T17:35:47Z'
     variant = name[4:]
     ids = {'good': 1, 'tampered': 2, 'foreign': 3, 'unsigned': 4, 'older': 5, 'truncated': 6, 'extra': 7,
-           'foreignrd': 8, 'portrd': 9, 'slow': 10, 'loop': 11, 'nodigest': 1, 'huge': 1}
+           'foreignrd': 8, 'portrd': 9, 'slow': 10, 'loop': 11, 'medium': 12, 'nodigest': 1, 'huge': 1}
     vid = ids.get(variant)
     if vid is None:
         return None
@@ -178,6 +179,15 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/octet-stream')
             self.send_header('Content-Length', str(len(d)))
             self.end_headers()
+            if vid == 12:
+                try:
+                    for i in range(0, len(d), 262144):
+                        self.wfile.write(d[i:i + 262144])
+                        self.wfile.flush()
+                        time.sleep(0.12)
+                except (ConnectionError, OSError):
+                    log({'method': 'END', 'path': p, 'note': 'client left'})
+                return
             if vid == 10:
                 try:
                     for i in range(0, len(d), 2048):

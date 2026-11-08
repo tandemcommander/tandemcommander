@@ -70,9 +70,17 @@ BOOL UpdInstall_TakeDownloadResult(CUpdDownloadDone* done);
 void UpdInstall_Arm(const CSalUpdRelease& release, DWORD source);
 
 // Install Now: verifies the installer of 'release' again, arms it (source user) and starts it
-// (kind "now"); the update close of feature 080 then ends the program. FALSE (the user was
-// told) when the installer could not be verified or started.
-BOOL UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release);
+// (kind "now"); the update close of feature 080 then ends the program. The user is told about
+// every failure: UPDNOW_DAMAGED - the downloaded installer is missing or not the verified one (it
+// is deleted; only the browser download is left), UPDNOW_FAILED - busy or could not be started.
+#define UPDNOW_STARTED 1
+#define UPDNOW_FAILED 0
+#define UPDNOW_DAMAGED -1
+int UpdInstall_InstallNow(HWND parent, const CSalUpdRelease& release);
+
+// Install When I Close: is the downloaded installer still the verified one? FALSE (the user was
+// told, the file is deleted) when it is missing or changed.
+BOOL UpdInstall_CheckReady(HWND parent, const CSalUpdRelease& release);
 
 // Skip This Version: drops an arm of that version and deletes its installer
 void UpdInstall_SkipVersion(const CSalUpdVersion& version);

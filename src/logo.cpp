@@ -465,12 +465,11 @@ void CAboutDialog::RefreshUpdateLine()
     }
     }
 
-    if (UpdateTestMode) // feature 420: the session runs with --updatetest
-    {
-        WCHAR withTest[_countof(text) + 100];
-        _snwprintf_s(withTest, _TRUNCATE, L"%s %s", LoadStrW(IDS_UPDATE_ABOUT_TESTMODE), text);
-        lstrcpynW(text, withTest, _countof(text)); // UI text; a long translation would only lose its end
-    }
+    // Feature 420 (UX test 7): the session runs with --updatetest - the line says so instead of the
+    // stored state (which the test does not write and which would contradict the notification); the
+    // link (Check now / Download) stays
+    if (UpdateTestMode)
+        lstrcpynW(text, LoadStrW(IDS_UPDATE_ABOUT_TESTMODE), _countof(text));
 
     HWND hText = GetDlgItem(HWindow, IDC_ABOUT_UPDATE);
     HWND hLink = GetDlgItem(HWindow, IDC_ABOUT_UPDATELINK);

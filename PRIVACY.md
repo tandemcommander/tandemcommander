@@ -104,10 +104,13 @@ learned of, a version you chose to skip, what the program does with a new
 version (*Update Level*), and, while an update waits to be installed, its
 version number, the SHA-256 checksum of its installer, whether you or the
 setting asked for it, and how many times the installer was started (the
-*Install* values). These values are written when
+*Install* values), and a version whose downloaded installer was refused because
+it was not the project's (*Download Refused*), so that it is not downloaded
+again. These values are written when
 they change, not with the rest of the settings, and *Clear History* does not
 remove them. Nothing from the server's answer is stored except that version
-number and date. An exported configuration contains these values too.
+number and date and, while an update waits to be installed, the checksum of
+its installer. An exported configuration contains these values too.
 Importing a configuration, or removing a damaged one, replaces or removes
 them; if the option is not part of what is imported, the check at start-up is
 on again.
@@ -473,10 +476,11 @@ project's repository.
 
 ---
 
-This statement describes Tandem Commander 0.2.0 (`CHANGELOG.md`). Up to and
-including 0.2.0 the program downloads and installs nothing itself: it keeps no
-`Update Level` and `Install` values and no `Updates` folder, and *Download*
-always hands the address to your web browser. In 0.1.10,
+This statement describes Tandem Commander 0.2.0 (`CHANGELOG.md`) together with
+the automatic update prepared for the next version (described above); 0.2.0
+itself downloads and installs nothing: it keeps no `Update Level`, `Install` and
+`Download Refused` values and no `Updates` folder, and *Download* always hands
+the address to your web browser. In 0.1.10,
 the version before it, the settings are kept in the subkey `0.1` (the
 `Update Check` values under `0.1\Update Check`) and no `Moved To Settings`
 value is written; the program offers no import of settings from Altap

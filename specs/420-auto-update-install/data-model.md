@@ -29,7 +29,8 @@ data (`HasAsset` FALSE); 123's acceptance of the record does not change.
 | `Install Digest` | REG_SZ 64 lowercase hex | the digest the installer must have |
 | `Install Source` | REG_DWORD | 1 the user (a click), 2 the automatic level |
 | `Install Test` | REG_DWORD | 1 armed in test mode |
-| `Install Launches` | REG_DWORD | installer launches for this version (0..3) |
+| `Install Launches` | REG_DWORD | installer launches for this version (0..3; Install Now may count past 3) |
+| `Download Refused` | REG_SZ | a version whose downloaded installer failed the signer / signature / version check - not downloaded again (ignored in test mode) |
 
 Invalid or partial values = nothing armed (all are removed together).
 
@@ -43,18 +44,22 @@ Invalid or partial values = nothing armed (all are removed together).
 | Condition (in order) | Decision |
 |---|---|
 | nothing armed | none |
+| the running copy is not eligible (portable copy, build tree) | none - the installed copy's arm and files are left alone (review 1) |
 | `Install Test` and not test mode now | drop (state + file) |
 | not honoured | drop the state (file kept, rule of the clarifications) |
 | not test: running version >= armed | done: drop the state + file |
 | test: launches > 0 | done: drop the state + file |
-| launches >= 3 | give up: drop the state (offer through the notification later) |
-| the installer file fails verification / is missing / not eligible | drop the state + file |
-| otherwise | complete now (*Install Now* route) |
+| launches >= 3 | give up: nothing is started; the arm is kept with its count (review 1 S1), so a later check at the automatic level does not restart it - the update is only offered (Install Now) |
+| (at completion) the installer file fails verification / is missing | drop the state + file |
+| (at completion) an installer of the product runs | nothing now (review 1 M1); the arm waits |
+| otherwise | complete now (*Install Now* route) - only when no other instance of the executable runs in the session (fix-log F1: the arm then belongs to that instance's exit, and the installer would close its windows); otherwise the arm waits |
 
 ### Exit decision (`SalUpdExitDecision`)
 
 Install at exit only when: an honoured arm exists, launches < 3, the exit is normal (not
-`UnattendedClose`, not `CriticalShutdown`, `SM_SHUTTINGDOWN` 0), this is the last instance of this
+`UnattendedClose`, not `CriticalShutdown`, `SM_SHUTTINGDOWN` 0 - recorded when the main window is
+destroyed, because an installer's close resets `UnattendedClose` before the end of the exit,
+fix-log F2), this is the last instance of this
 executable in this session, the installation is eligible, and the file verifies. Not test-mode
 specific (a test arm at a test-mode exit installs; started later without the switch it is dropped).
 

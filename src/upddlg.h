@@ -65,6 +65,10 @@ void UpdateNotice_Show(HWND mainWindow, const CSalUpdRelease& release, BOOL acti
 // the form of this instance's open notification (valid while UpdateNotice_GetWindow() != NULL)
 CUpdateNoticeForm UpdateNotice_GetForm();
 
+// Shows this instance's open notification again in 'form' (WM_USER_UPDATENOTICE_FORM, posted by
+// the notification itself: it cannot destroy itself inside its own command). Nothing when none is open.
+void UpdateNotice_Reshow(HWND mainWindow, CUpdateNoticeForm form);
+
 // Destroys this instance's notification without a question (program exit, an
 // installer closing the program). The same as "Remind Me Later".
 void UpdateNotice_Close();

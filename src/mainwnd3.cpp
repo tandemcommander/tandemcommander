@@ -731,20 +731,51 @@ static void QueueUpdateNotice(CMainWindow* wnd, const CSalUpdRelease& release, C
     wnd->TryShowUpdateNotice();
 }
 
+// feature 420 (UX test 1, 2): a check the user asked for showed the classic form at once while the
+// installer downloads; when the download ends, the classic form is replaced when it is still open,
+// and nothing more happens when the user already answered it (Remind Me Later, Skip, Download)
+static BOOL UpdateClassicDuringDownload = FALSE;
+static CSalUpdVersion UpdateClassicVersion;
+
+// how ShowDownloadedUpdate shows the notification
+#define UPDSHOW_QUEUE 0   // when nothing is in its way, without the keyboard when the user works (123)
+#define UPDSHOW_NOW 1     // at once, activated (a check the user asked for)
+#define UPDSHOW_REPLACE 2 // at once in place of our open classic form, without taking the keyboard
+
 // feature 420: a verified installer of 'release' is in the updates folder - offer it, or arm it
 // for the exit at the automatic level (contracts/ui.md)
-static void ShowDownloadedUpdate(CMainWindow* wnd, const CSalUpdRelease& release, BOOL activateNow)
+static void ShowDownloadedUpdate(CMainWindow* wnd, const CSalUpdRelease& release, int how)
 {
+    BOOL activateNow = how == UPDSHOW_NOW;
+    // review S2: the settings are read again - they may have changed while the installer downloaded
+    CUpdateState state;
+    UpdateCheck_LoadState(&state);
+    CSalUpdLevel level = UpdInstall_GetLevel();
+    if (!state.CheckAtStartup && !UpdateTestMode)
+        return; // the check was turned off meanwhile: nothing is offered or armed
+    if (level == sulNotify) // "notify me only" was chosen meanwhile: feature 123's notification
+    {
+        if (how == UPDSHOW_REPLACE)
+            return; // the classic form is on screen already
+        if (activateNow)
+            UpdateNotice_Show(wnd->HWindow, release, TRUE, unfClassic);
+        else
+            QueueUpdateNotice(wnd, release, unfClassic);
+        return;
+    }
     CUpdateNoticeForm form = unfOffer;
-    if (UpdInstall_GetLevel() == sulAutomatic)
+    CSalUpdArm arm;
+    BOOL hasArm = UpdInstall_LoadArm(&arm);
+    // review S1: an arm whose launches are used up is not promised for the exit again - offered only
+    if (level == sulAutomatic && SalUpdAutomaticArmUsable(hasArm, arm, release.Version))
     {
         UpdInstall_Arm(release, SALUPD_ARM_AUTOMATIC);
         form = unfAutomatic;
     }
-    if (activateNow)
+    if (how != UPDSHOW_QUEUE)
     {
         UpdateNoticePending = FALSE;
-        UpdateNotice_Show(wnd->HWindow, release, TRUE, form);
+        UpdateNotice_Show(wnd->HWindow, release, activateNow, form);
     }
     else
         QueueUpdateNotice(wnd, release, form);
@@ -758,12 +789,16 @@ void CMainWindow::StartUpdateFlow(const CSalUpdRelease& release, BOOL classicNow
     {
         if (ready) // a verified installer from an earlier session
         {
-            ShowDownloadedUpdate(this, release, classicNow);
+            ShowDownloadedUpdate(this, release, classicNow ? UPDSHOW_NOW : UPDSHOW_QUEUE);
             return;
         }
         UpdateFlowNotify = notify;
         if (classicNow && notify) // a check the user asked for answers at once
+        {
             UpdateNotice_Show(HWindow, release, TRUE, unfClassic);
+            UpdateClassicDuringDownload = TRUE;
+            UpdateClassicVersion = release.Version;
+        }
         return; // the downloaded form follows (WM_USER_UPDATEDOWNLOAD_DONE)
     }
     if (!notify)
@@ -784,14 +819,27 @@ void CMainWindow::OnUpdateDownloadDone()
     CUpdDownloadDone done;
     if (!UpdInstall_TakeDownloadResult(&done))
         return;
+    // UX test 1, 2: a classic form shown for this version while the installer downloaded
+    BOOL classicShown = UpdateClassicDuringDownload &&
+                        SalUpdVersionCompare(UpdateClassicVersion, done.Release.Version) == 0;
+    UpdateClassicDuringDownload = FALSE;
+    HWND open = UpdateNotice_GetWindow();
+    BOOL classicOpen = open != NULL && IsWindow(open) && UpdateNotice_GetForm() == unfClassic;
+    if (classicShown && !classicOpen)
+        return; // the user already answered it: the verified installer waits for the next check
     if (done.Ok)
     {
-        ShowDownloadedUpdate(this, done.Release, FALSE); // the downloaded form always: it is a new offer
+        // a version skipped meanwhile (also on another instance's notification) is neither offered nor armed
+        CUpdateState state;
+        UpdateCheck_LoadState(&state);
+        if (!UpdateTestMode && state.HasSkipped && SalUpdVersionCompare(state.Skipped, done.Release.Version) == 0)
+            return;
+        // the downloaded form: in place of the classic one still open, else when nothing is in its way
+        ShowDownloadedUpdate(this, done.Release, classicShown ? UPDSHOW_REPLACE : UPDSHOW_QUEUE);
         return;
     }
     // no verified installer: 123's notification, unless it is already on screen
-    HWND open = UpdateNotice_GetWindow();
-    if (UpdateFlowNotify && (open == NULL || UpdateNotice_GetForm() != unfClassic))
+    if (UpdateFlowNotify && !classicOpen)
         QueueUpdateNotice(this, done.Release, unfClassic);
 }
 
@@ -6554,6 +6602,13 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
     case WM_USER_UPDATEINSTALL_DONE: // feature 420: Install Now's installer ended with a failure
     {
         UpdInstall_OnInstallerEnded(HWindow, (DWORD)wParam);
+        return 0;
+    }
+
+    case WM_USER_UPDATENOTICE_FORM: // feature 420: the notification asks to be shown in another form
+    {
+        if (wParam <= (WPARAM)unfAutomatic)
+            UpdateNotice_Reshow(HWindow, (CUpdateNoticeForm)wParam);
         return 0;
     }
 
