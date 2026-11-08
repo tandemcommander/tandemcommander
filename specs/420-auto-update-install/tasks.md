@@ -50,7 +50,7 @@
 
 ## Phase 9: Verification
 
-- [ ] T022 Probe `specs/420-auto-update-install/probe/autoupd_probe.ps1` + fixture server `updserver420.py` (groups L, V, B, X, S, T of quickstart §2), registry backup / restore; run before (HEAD of main: no download) and after
+- [ ] T022 Probe `specs/420-auto-update-install/probe/autoupd_probe.ps1` + fixture server `updserver420.py` (groups L, V, B, X, S, T of quickstart §2; X also measures the exit time while a slow download runs (SC-006), T also checks that the restart registration carries no `--updatetest` (FR-016)), registry backup / restore; run before (HEAD of main: no download) and after
 - [ ] T023 End-to-end probe `specs/420-auto-update-install/probe/e2e_peruser.ps1` (quickstart §3): at-exit install and completion at the next start with the real published installer over a per-user test installation; uninstall afterwards
 - [ ] T024 Release build string search: the Debug seams `TC_UPDATE_PROBE_*` absent from the Release `tandemcommander.exe`
 

@@ -178,7 +178,7 @@ notification only, no download.
 
 **Download**
 - **FR-005**: The installer MUST be downloaded only from the address constructed from the validated release (the GitHub API asset address built from the numeric asset id, which must equal the record's own `url`), over HTTPS, with redirects followed only to `release-assets.githubusercontent.com` or `objects.githubusercontent.com` over HTTPS, at most 3 hops, without cookies or Windows credentials.
-- **FR-006**: The download MUST be written to a `.part` file in `%LOCALAPPDATA%\Tandem Commander\Updates`, limited to the record's size (and at most 64 MB), hashed while written, and renamed to the installer's name only when complete and matching; a leftover `.part` and installers of versions not newer than the running one (except during test mode) MUST be deleted at start-up.
+- **FR-006**: The download MUST be written to a `.part` file in `%LOCALAPPDATA%\Tandem Commander\Updates`, limited to the record's size (and at most 64 MB), hashed while written, and renamed to the installer's name only when complete and matching; a leftover `.part` and installers of versions not newer than the running one MUST be deleted at start-up; a test-mode start deletes every installer except the one of an arm it completes (test mode always downloads afresh).
 - **FR-007**: A download MUST be abandonable at program exit within the same bounds as the check (the exit never waits for the network).
 
 **Verification**
