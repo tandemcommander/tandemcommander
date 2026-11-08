@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Backlog item update-level-and-download-install-in-notification - implement exactly what it describes (the update level can be chosen in the new-version notification; the notify-only notification offers Download & Install; a copy not installed by the installer says it updates only through the browser; the automatic level shows no notification and installs as soon as the installer is downloaded and verified, when nothing can be lost)." From backlog item update-level-and-download-install-in-notification.
 
+## Clarifications
+
+### Session 2026-11-08
+
+- Q: Is *Download & Install* the default button (Enter) of the notify-only form of an installed copy? → A: Yes, as *Install Now* is on the offer form; *Download* keeps its access key (autonomous run: recommended)
+- Q: Does the About box's *Download* link also get a *Download & Install*? → A: No - the About box keeps its browser link; the notification (also after Help > Check for New Version) is the place to install (autonomous run: conservative)
+- Q: Where is the download progress shown? → A: In the hint line of the notification, in whole per cent; the button row keeps its layout rules (autonomous run: conservative)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Download & Install from the notification (Priority: P1)
@@ -101,7 +109,8 @@ With the level *Install it automatically as soon as it is downloaded*, the progr
 - **FR-005**: The notify-only form of an installed copy MUST offer *Download & Install* when the release has an installer asset with a published checksum within the size limit and the installer was not refused before (test mode ignores the refusal).
 - **FR-006**: *Download & Install* MUST download with 420's download and verification (the asset address built from the validated number, the redirect allow-list, the published SHA-256 checksum, the signer pin, the version resource) and MUST start the verified installer as *Install Now* does (the same command line, the same plan and launch count, the same failure handling).
 - **FR-007**: *Download & Install* MUST download also on a metered connection (an explicit click).
-- **FR-008**: While it downloads, the window MUST show the progress in per cent and offer *Cancel Download*; cancelling (or closing the window) MUST stop the download it started and leave no partial file.
+- **FR-005a**: *Download & Install* MUST be the default button of that form; the About box's *Download* link stays a browser link.
+- **FR-008**: While it downloads, the window MUST show the progress in whole per cent in its hint line and offer *Cancel Download*; cancelling (or closing the window) MUST stop the download it started and leave no partial file.
 - **FR-009**: A failed download or verification MUST be reported with a message that points to the browser *Download*, and the window MUST return to its first state.
 - **FR-010**: A copy not installed by the installer MUST NOT offer *Download & Install*; its level choice MUST be disabled and its hint MUST say that it cannot update itself and is updated by the browser download.
 - **FR-011**: At the automatic level, a downloaded and verified installer MUST NOT be announced by a notification; the update is planned (420's automatic plan) and installed by FR-012. When the plan cannot be used for a silent install (its installer ran since the last confirmation, its launches are used up, the version was skipped), the offer form is shown instead.
