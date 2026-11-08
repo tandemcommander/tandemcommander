@@ -103,8 +103,9 @@ when it last succeeded, the number and release date of the latest version it
 learned of, a version you chose to skip, what the program does with a new
 version (*Update Level*), and, while an update waits to be installed, its
 version number, the SHA-256 checksum of its installer, whether you or the
-setting asked for it, how many times the installer was started and how many
-of those starts you had already confirmed (the *Install* values), and a version whose downloaded installer was refused because
+setting asked for it, how many times the installer was started and up to
+which of those starts the planned installation still counts as confirmed by
+you (the *Install* values), and a version whose downloaded installer was refused because
 it was not the project's (*Download Refused*), so that it is not downloaded
 again. These values are written when
 they change, not with the rest of the settings, and *Clear History* does not

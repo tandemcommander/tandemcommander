@@ -193,6 +193,22 @@ probe **97 PASS, 0 FAIL, 1 NOT DRIVEN** (new group R6: 5 rows; after the NOTE 2 
 again 29 PASS); `e2e_peruser.ps1` against the **real GitHub** (15:05) **7 PASS, 0 FAIL**; registry restored
 (SHA-256 equal) after every run. `PRIVACY.md` names the new stored value (the starts already confirmed).
 
+## Round 7 (independent agent: full review focused on `Install Confirmed` + GUI reproduction; MUST 0, SHOULD 1, NOTE 4)
+
+Zero MUST; every writer and reader of the arm checked (no silent install the user did not confirm,
+no loop - every repeat needs a click or stops at the cap).
+
+| Finding | What | Done |
+|---|---|---|
+| R7 SHOULD | The exit's own failed **start** of the installer was not treated like the other failed starts: `Launches` rose, `Install Confirmed` did not - with the check off the next start deleted the confirmed plan and its installer, with it on the plan was only offered | `UpdInstall_RunAtExit`: a failed `UpdiLaunch` keeps the plan confirmed (`SalUpdArmAfterFailedNow(..., started FALSE)`) - the next start completes it; probe R7 A check0 / check1 (reviewer's reproduction: FAIL before) |
+| R7 NOTE | `spec.md` scenario 3 and FR-013 still described the round-2 behaviour (the exit retries) | rewritten: an installer that ran since the user's last confirmation is only offered until the user confirms again; a failed start keeps the plan |
+| R7 NOTE | `PRIVACY.md` wording ("how many of those starts you had already confirmed") imprecise - the value also moves with starts that failed before anything ran | "up to which of those starts the planned installation still counts as confirmed by you" |
+| R7 NOTE | stale comment `UpdInstall_ConfirmArm` | `UpdiConfirmArm` |
+| R7 NOTE | the probe printed no `Install Confirmed` | `ArmStr` prints it; R6 Y / X and R7 assert it |
+
+Checks after round 7 fixes: `BUILD SUCCEEDED`; saltests **287,190 checks, 0 failed**; probe **99 PASS,
+0 FAIL, 1 NOT DRIVEN** (registry restored, SHA-256 equal).
+
 ## Translations (stop-rules §2.13, module `salamand`)
 
 Round 2 (after review 1 / UX test 1): new `IDS_UPDATE_BUSY`, `IDS_UPDATE_INSTALL_LATER`,

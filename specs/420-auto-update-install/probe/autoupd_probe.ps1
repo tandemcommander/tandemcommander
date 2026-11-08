@@ -3,7 +3,7 @@
     Feature 420 (automatic update) - behaviour probe of a Debug build.
     Rows follow specs/420-auto-update-install/spec.md, contracts/*.md and quickstart.md section 2.
     Groups: L levels, V verification, B buttons, X exit, S completion at the next start,
-    T test mode, Rv/Ux/R3/R4/R5/R6 review findings, G Configuration > General. Every row prints PASS / FAIL / NOT DRIVEN.
+    T test mode, Rv/Ux/R3/R4/R5/R6/R7 review findings, G Configuration > General. Every row prints PASS / FAIL / NOT DRIVEN.
     MUST run through tools\run_on_hidden_desktop.ps1. Backs up the product's registry key and
     restores it (verified by SHA-256); creates and removes the updates folder
     %LOCALAPPDATA%\Tandem Commander\Updates and a fake uninstall entry under
@@ -131,9 +131,9 @@ function Uc-Snapshot { $k = Get-ItemProperty -LiteralPath ('Registry::' + $UcKey
 function Arm {
     $v = Uc-Get 'Install Version'
     if ($null -eq $v) { return $null }
-    return [pscustomobject]@{ Version = $v; Source = (Uc-Get 'Install Source'); Test = (Uc-Get 'Install Test'); Launches = (Uc-Get 'Install Launches'); Digest = (Uc-Get 'Install Digest') }
+    return [pscustomobject]@{ Version = $v; Source = (Uc-Get 'Install Source'); Test = (Uc-Get 'Install Test'); Launches = (Uc-Get 'Install Launches'); Confirmed = (Uc-Get 'Install Confirmed'); Digest = (Uc-Get 'Install Digest') }
 }
-function ArmStr($a) { if ($null -eq $a) { return 'no arm' }; return ('arm {0} source {1} test {2} launches {3}' -f $a.Version, $a.Source, $a.Test, $a.Launches) }
+function ArmStr($a) { if ($null -eq $a) { return 'no arm' }; return ('arm {0} source {1} test {2} launches {3} confirmed {4}' -f $a.Version, $a.Source, $a.Test, $a.Launches, $a.Confirmed) }
 function UpdFiles { if (Test-Path -LiteralPath $Upd) { return , @(Get-ChildItem -LiteralPath $Upd -File | ForEach-Object { $_.Name }) }; return , @() }
 function FilesStr { $f = UpdFiles; if ($f.Count) { return ($f -join ', ') }; return 'no files' }
 function Runs { if (Test-Path -LiteralPath $RunLog) { return , @(Get-Content -LiteralPath $RunLog | Where-Object { $_ }) }; return , @() }
@@ -837,7 +837,7 @@ $Groups['R6'] = {
     NoCheck
     $idB = Start-420; Start-Sleep -Seconds 5; $a1 = Arm
     $s1 = Quit $idB; Start-Sleep -Milliseconds 500; $s2 = Quit $id; $a2 = Arm
-    T 'Y' 'yes-kept' ($bt -like '*close*' -and $a1.Source -eq 2 -and (Runs).Count -eq 2 -and (Runs)[1] -like 'exit|*') ('question {0}; Yes: {1}; second window: {2}; B closed ({3} s), A closed ({4} s): {5}; afterwards {6}' -f (Esc $bt), (ArmStr $a0), (ArmStr $a1), $s1, $s2, (RunsStr), (ArmStr $a2))
+    T 'Y' 'yes-kept' ($bt -like '*close*' -and $a0.Launches -eq 1 -and $a0.Confirmed -eq 1 -and $a1.Source -eq 2 -and (Runs).Count -eq 2 -and (Runs)[1] -like 'exit|*') ('question {0}; Yes: {1}; second window: {2}; B closed ({3} s), A closed ({4} s): {5}; afterwards {6}' -f (Esc $bt), (ArmStr $a0), (ArmStr $a1), $s1, $s2, (RunsStr), (ArmStr $a2))
     # ... the exit's installer did not install it either (no process in the seam): the next start offers it
     $id = Start-420; $n = Wait-Notice $id 15; $a3 = Arm; $f = Form $n
     if ($n -ne $Z) { Press $n 2; [void](Gone $n 3) }
@@ -876,7 +876,7 @@ $Groups['R6'] = {
     if ($b -ne $Z) { Post-Cmd $b 6; Start-Sleep -Milliseconds 800 }   # IDYES
     $a1 = Arm
     $s1 = Quit $id; Start-Sleep -Milliseconds 500; $s2 = Quit $idB
-    T 'X' 'b-click-kept' ($fB -eq 'offer' -and $null -ne $a1 -and $a1.Source -eq 1 -and $bt -like '*close*' -and (Runs).Count -eq 2 -and (Runs)[1] -like 'exit|*') ('A Install Now runs; B started: {0}; B form {1}, Install When I Close: {2}; A installer ends 5: {3}; then {4}; A, B closed ({5}, {6} s): {7}' -f (ArmStr $aB), $fB, (ArmStr $a0), (Esc $bt), (ArmStr $a1), $s1, $s2, (RunsStr))
+    T 'X' 'b-click-kept' ($fB -eq 'offer' -and $null -ne $a1 -and $a1.Source -eq 1 -and $a1.Confirmed -eq $a1.Launches -and $bt -like '*close*' -and (Runs).Count -eq 2 -and (Runs)[1] -like 'exit|*') ('A Install Now runs; B started: {0}; B form {1}, Install When I Close: {2}; A installer ends 5: {3}; then {4}; A, B closed ({5}, {6} s): {7}' -f (ArmStr $aB), $fB, (ArmStr $a0), (Esc $bt), (ArmStr $a1), $s1, $s2, (RunsStr))
 
     # NOTE 1, E: Install Now started (nothing armed before), no failure report reached the window - a
     # normal exit does not start the installer again
@@ -884,6 +884,27 @@ $Groups['R6'] = {
     $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 1; [void](Wait-Run 1 10); $a0 = Arm
     $s = Quit $id
     T 'E' 'now-arm-exit' ((Runs).Count -eq 1) ('Install Now launched: {0}; normal exit ({1} s): {2}' -f (ArmStr $a0), $s, (RunsStr))
+}
+
+# R7: the finding of the seventh verification (fix-log, Round 7) - the exit cannot start the installer
+$Groups['R7'] = {
+    foreach ($checkOn in @(0, 1)) {
+        Reset-State 1; Set-Env
+        $env:TC_UPDATE_PROBE_LAUNCHFAIL = '1'
+        try {
+            $id = Start-420; $h = Wait-Form $id 'offer'; Press $h 6296; [void](Gone $h 3)
+            $a0 = Arm
+            NoCheck
+            $s0 = Quit $id
+        }
+        finally { Remove-Item Env:\TC_UPDATE_PROBE_LAUNCHFAIL -ErrorAction SilentlyContinue }
+        $a1 = Arm; $f1 = FilesStr
+        Uc-Set 'Check At Startup' $checkOn
+        NoCheck
+        $id = Start-420; [void](Wait-Run 1 15); $n = [P420]::Notice([uint32]$id); $a2 = Arm
+        Kill-Wait $id   # the completion's installer would close the program
+        T 'A' ('exit-start-failed-check' + $checkOn) ($a1.Source -eq 1 -and $a1.Launches -eq 1 -and $a1.Confirmed -eq 1 -and (Runs).Count -eq 1 -and (Runs)[0] -like 'now|*' -and $n -eq $Z) ('Install When I Close: {0}; exit, the start fails ({1} s): {2}, {3}; check {4}, next start: notice {5}, {6}; started: {7}' -f (ArmStr $a0), $s0, (ArmStr $a1), $f1, $checkOn, (Form $n), (ArmStr $a2), (RunsStr))
+    }
 }
 
 $CfgKey = 'HKCU\Software\Tandem Commander\Settings\Configuration'

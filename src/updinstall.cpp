@@ -826,7 +826,7 @@ void UpdInstall_Arm(const CSalUpdRelease& release, DWORD source)
         old.Test == arm.Test)
     {
         arm.Launches = old.Launches; // review S1: the count is never restarted for the same version
-        arm.ConfirmedAt = old.ConfirmedAt; // round 6: only a click or a Yes confirms (UpdInstall_ConfirmArm)
+        arm.ConfirmedAt = old.ConfirmedAt; // round 6: only a click or a Yes confirms (UpdiConfirmArm)
         if (old.Source == SALUPD_ARM_USER)
             arm.Source = SALUPD_ARM_USER; // a click is not weakened by the automatic level
         else if (old.Source == SALUPD_ARM_OFFERED && source == SALUPD_ARM_AUTOMATIC)
@@ -1801,7 +1801,21 @@ void UpdInstall_RunAtExit()
         NOHANDLES(CloseHandle(held));
         return; // the arm stays; that instance's exit (or the next start) installs it
     }
-    UpdiLaunch(sulkExit, UpdiExitVersion, held, FALSE, &error); // a failure: offered at the next start
+    CSalUpdArm before;
+    BOOL hadArm = UpdInstall_LoadArm(&before);
+    if (!UpdiLaunch(sulkExit, UpdiExitVersion, held, FALSE, &error))
+    {
+        // round 7 SHOULD: the installer could not be started - nothing ran, the plan stays confirmed
+        // (the next start completes it, as after a failed start of Install Now or of the completion)
+        CSalUpdArm now;
+        BOOL keep = FALSE;
+        if (hadArm && UpdInstall_LoadArm(&now) && SalUpdVersionCompare(now.Version, UpdiExitVersion) == 0)
+        {
+            CSalUpdArm kept = SalUpdArmAfterFailedNow(TRUE, before, now, FALSE, &keep);
+            if (keep)
+                UpdiSaveArm(kept);
+        }
+    }
 }
 
 BOOL UpdInstall_GetArmedRelease(CSalUpdRelease* release)
