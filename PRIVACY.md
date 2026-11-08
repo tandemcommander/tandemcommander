@@ -290,20 +290,27 @@ for the new version's installer, the number GitHub gave the file, its size and
 its SHA-256 checksum.
 
 What happens with a newer version is chosen under **Options → Configuration →
-General → When a new version is found**:
+General → When a new version is found**, or in the notification window itself:
 
-- *Notify me only*: the program downloads and installs nothing itself.
+- *Notify me only*: the program downloads and installs nothing on its own.
   *Download* — in the notification window and in the About box — hands the
   address of the new version's installer on github.com to your web browser,
   which downloads the file; *Release notes* opens the page of that release on
-  github.com. Both happen only when you choose them.
+  github.com. *Download & Install* in the notification window makes the
+  program download the installer itself (the download described below, also
+  on a metered connection, because you asked for it), check it and install
+  it. Each of these happens only when you choose it.
 - *Download it and offer installation* (the default): the program downloads
   the installer itself and then offers *Install Now* and *Install When I
   Close*. Nothing is installed until you choose one of them.
-- *Install it automatically when I close Tandem Commander*: the program
-  downloads the installer and installs it when you close the program; if that
-  did not happen (for example the computer was switched off), it installs it
-  the next time the program starts.
+- *Install it automatically as soon as it is downloaded*: the program
+  downloads the installer and installs it without asking as soon as nothing
+  can be lost (no file operation or search running, no dialog open, no other
+  copy of the program running, no keyboard or mouse use for half a minute);
+  the program closes and starts again after the update. If you close the
+  program first, it installs the update then; if that did not happen either
+  (for example the computer was switched off), it installs it the next time
+  the program starts.
 
 The download is one request to `api.github.com` for the installer file of that
 release (an address the program builds from the release's number, not one

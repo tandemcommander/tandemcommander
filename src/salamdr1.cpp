@@ -5203,6 +5203,11 @@ MENU_TEMPLATE_ITEM MsgBoxButtons[] =
                                     OpenReadmeInNotepad[0] = 0;
                                 }
                                 CannotCloseSalMainWnd = FALSE;
+                                // feature 421: the silent automatic install looks at its moment only here -
+                                // the program is idle (SalamanderBusy is TRUE while any message is
+                                // dispatched, a timer's too, and a modal loop never reaches this point)
+                                if (!SalamanderBusy && MainWindow != NULL && MainWindow->SilentUpdateDue())
+                                    MainWindow->TrySilentUpdateInstall();
                             }
                         }
                     }

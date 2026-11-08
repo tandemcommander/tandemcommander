@@ -1,0 +1,21 @@
+Feature 421 probe, 2026-11-08T16:42:11, exe E:\Projects\tandemcommander\build\tandemcommander\Debug_x64\tandemcommander.exe, registry backup C:\Users\pavel\AppData\Local\Temp\tc421_backup.reg
+--- group D
+D1         form   PASS        level 0: form classic-dli, button "Download && &Install", default id 6301, asset requests 0
+D1         hint   PASS        hint: Download && Install downloads the installer, checks it and installs the update; Tandem Commander then starts again and your settings are kept. Download opens it in your web browser.
+D1         level  PASS        level choice: selected 0 of 3, enabled True, label "Wh&en a new version is found:"
+D2         progress PASS        during the download: cancel button True, hint "Downloading and checking the installer of version 0.2.0... 0 %"
+D2         install PASS        after the download: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log"; notice gone True; arm 0.2.0 source 1 test 0 launches 1 confirmed 0
+D2         level  PASS        the stored level stays 0
+D3         cancel PASS        files during the download "tandemcommander-0.2.0-x64-setup.exe.part", after cancel: no files; nothing started; button "Download && &Install"
+D4         later  PASS        Remind Me Later during the download: gone True, no files, nothing started
+D5         message PASS        message: [Static id=2477] The installer of version 0.2.0 could not be downloaded, or it did not pass the check. Use Download to get the installer in your web browser. | [Button id=1] OK
+D5         state  PASS        after it: nothing started, button "Download && &Install", no files
+D6         nodigest PASS        form classic, default 1, hint "The download opens in your web browser. Run the installer to update; your settings are kept."
+D7         refused PASS        refused 0.2.0: form classic
+D7         test   PASS        refused 0.2.0, --updatetest: form classic-dli
+D8         metered PASS        metered: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log", asset requests 1
+D9         notify PASS        offer, level 0 chosen: form classic-dli, stored 0, selected 0
+D9         ready  PASS        Download & Install with the verified installer: now|"C:\Users\pavel\AppData\Local\Tandem Commander\Updates\tandemcommander-0.2.0-x64-setup.exe" /SP- /SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /CURRENTUSER /LOG="C:\Users\pavel\AppData\Local\Tandem Commander\Updates\setup-0.2.0.log", new asset requests 0
+D10        skip   PASS        Skip during the download: gone True, no files, nothing started, skipped 0.2.0
+Registry: restored; identical=True; SHA-256 before F7AA8D8FEA408B9880F91B971F32C55AB609AFCF4050A9D7A175C2CFD670A039 / after F7AA8D8FEA408B9880F91B971F32C55AB609AFCF4050A9D7A175C2CFD670A039
+TOTAL: 17 PASS, 0 FAIL, 0 NOT DRIVEN; registry restored: True

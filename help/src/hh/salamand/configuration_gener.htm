@@ -134,21 +134,28 @@ sends.</dd>
 <dd>What Tandem Commander does when the check finds a newer version. Available while the
 check above is on.
 <ul>
-<li><i>Notify me only</i> &ndash; the window offers <b>Download</b>, which opens the
-installer's address in your web browser.</li>
+<li><i>Notify me only</i> &ndash; the window offers <b>Download &amp; Install</b>, which
+downloads the installer, checks it and installs the update, and <b>Download</b>, which
+opens the installer's address in your web browser. Nothing is downloaded until you
+choose one of them.</li>
 <li><i>Download it and offer installation</i> (the default) &ndash; the installer is
 downloaded in the background and verified; the window then offers <b>Install Now</b>
 (the program closes, the update is installed with a progress window, and the program
 starts again) and <b>Install When I Close</b>.</li>
-<li><i>Install it automatically when I close Tandem Commander</i> &ndash; the installer
-is downloaded and verified, and the update is installed when you close the program. If
-that does not happen (for example Windows was shut down with the program open), it is
-installed the next time the program starts.</li>
+<li><i>Install it automatically as soon as it is downloaded</i> &ndash; the installer is
+downloaded and verified, and the update is installed without a window as soon as nothing
+can be lost: no file operation or search runs, no dialog is open, nothing opened from an
+archive waits to be packed back, no other copy of Tandem Commander runs, and you have not
+used the keyboard or mouse for half a minute. The program closes, the update is installed
+with a progress window, and the program starts again. If you close the program first, the
+update is installed then; if that does not happen either (for example Windows was shut
+down with the program open), it is installed the next time the program starts.</li>
 </ul>
-Only a copy installed by the installer updates itself; a copy started from elsewhere only
-tells you about new versions. An update of an installation for all users asks for an
+The same choice is offered in the window that announces a new version. Only a copy
+installed by the installer updates itself; a copy started from elsewhere only tells you
+about new versions. An update of an installation for all users asks for an
 administrator's permission. On a metered connection nothing is downloaded in the
-background.</dd>
+background (<b>Download &amp; Install</b> downloads, because you asked for it).</dd>
 
 </dl>
 

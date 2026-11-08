@@ -1,5 +1,10 @@
 # Contract - user interface (feature 420)
 
+> **Superseded in part by feature 421** (`specs/421-update-notice-levels/contracts/ui.md`): the
+> notification has a level choice and *Download & Install* on its classic form; the automatic form
+> below is gone - the automatic level installs without a window as soon as nothing can be lost; the
+> third level reads *Install it automatically as soon as it is downloaded*.
+
 ## Configuration > General
 
 Under *Check for a new version of Tandem Commander at start-up*: label *&When a new version is

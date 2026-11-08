@@ -29,12 +29,22 @@ server does not answer or answers unexpectedly, nothing is shown at all.</p>
 <p>The window shows the version you have, the new version and the date it was released.
 It offers:</p>
 <dl>
+<dt><i>Download &amp; Install</i></dt>
+<dd>Shown when the program has not downloaded the installer itself (the setting
+<i>Notify me only</i>, a metered connection, or a download that failed) and the copy was
+installed by the installer. The program downloads the installer of the new version,
+shows how much of it has arrived, checks it as described below and installs the update:
+the program closes, the update is installed with a progress window, and the program
+starts again. Your settings are kept. While it downloads, the button reads <i>Cancel
+Download</i>; closing the window cancels the download too. If the download fails or the
+file does not pass the check, you are told so and can use <i>Download</i>.</dd>
 <dt><i>Download</i></dt>
 <dd>Shown when the program does not download the installer itself (the setting
 <i>Notify me only</i>, a metered connection, a copy not installed by the installer, or a
 download that failed). Opens the installer of the new version in your web browser,
 which downloads it. Run the installer to update; it closes the running program,
-replaces its files and starts it again. Your settings are kept.</dd>
+replaces its files and starts it again. Your settings are kept. A copy not installed by
+the installer says so in the window: it cannot update itself.</dd>
 
 <dt><i>Install Now</i></dt>
 <dd>Shown when the installer has already been downloaded and verified (the setting
@@ -48,10 +58,6 @@ Windows asks for an administrator's permission.</dd>
 closed normally (for example Windows is shut down with it open), the update is installed
 the next time it starts.</dd>
 
-<dt><i>OK</i></dt>
-<dd>Shown with the setting <i>Install it automatically when I close Tandem
-Commander</i>: the update stays planned and is installed when you close the
-program.</dd>
 
 <dt><i>Remind Me Later</i></dt>
 <dd>Closes the window. The Esc key and the window's close button do the same. The
@@ -71,7 +77,20 @@ open.</dd>
 <dt><i>Check for a new version at start-up</i></dt>
 <dd>The same option as on the <a href="configuration_gener.htm">General</a> page of the
 configuration. Clearing it takes effect at once.</dd>
+<dt><i>When a new version is found</i></dt>
+<dd>The same setting as on the <a href="configuration_gener.htm">General</a> page,
+changed at once: choosing <i>Download it and offer installation</i> downloads the
+installer and then offers <i>Install Now</i>; choosing <i>Install it automatically as soon
+as it is downloaded</i> closes the window and installs the update when nothing can be
+lost; choosing <i>Notify me only</i> turns the offer back into <i>Download &amp;
+Install</i> and <i>Download</i>. Available while the check at start-up is on, and only
+for a copy installed by the installer.</dd>
 </dl>
+<p>With the setting <i>Install it automatically as soon as it is downloaded</i> the window
+does not appear at all: the update is installed without asking (see the
+<a href="configuration_gener.htm">General</a> page for when). A version you skipped is
+never installed on its own; choose <b>Help</b> | <b>Check for New Version</b> to have it
+offered.</p>
 
 <p>The window does not block the program: you can leave it open and continue working.
 Several running copies of Tandem Commander show only one such window.</p>

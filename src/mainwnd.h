@@ -632,8 +632,10 @@ public:
     // wait for the user to be idle); by default a check that shows the classic form at once
     void StartUpdateFlow(const CSalUpdRelease& release, BOOL classicNow, BOOL notify, int userAsked = -1);
     void OnUpdateDownloadDone(); // WM_USER_UPDATEDOWNLOAD_DONE
-    // feature 421: the silent automatic install looks whether its moment came (IDT_UPDATEAUTOINSTALL)
+    // feature 421: the silent automatic install looks whether its moment came - called from the idle
+    // part of the main message loop when SilentUpdateDue() (set by IDT_UPDATEAUTOINSTALL)
     void TrySilentUpdateInstall();
+    BOOL SilentUpdateDue();
     // feature 421: the level was changed in the notification (WM_USER_UPDATENOTICE_LEVEL)
     void OnUpdateNoticeLevel(int level); // a CSalUpdLevel (salupdinstall.h)
 

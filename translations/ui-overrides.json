@@ -320,11 +320,10 @@
       "IDC_ICONSET_CLASSIC": "&Klasická",
       "IDS_UPDATE_LEVEL_NOTIFY": "Pouze upozornit",
       "IDS_UPDATE_LEVEL_OFFER": "Stáhnout a nabídnout instalaci",
-      "IDS_UPDATE_LEVEL_AUTO": "Automaticky nainstalovat při zavření programu Tandem Commander",
+      "IDS_UPDATE_LEVEL_AUTO": "Automaticky nainstalovat hned po stažení",
       "IDS_UPDATE_BTN_INSTALLNOW": "Nainstalovat &nyní",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Nainstalovat při &zavření",
       "IDS_UPDATE_HINT_OFFER": "Nová verze byla stažena a ověřena. Tlačítko Nainstalovat nyní zavře Tandem Commander, nainstaluje aktualizaci a program znovu spustí; nastavení zůstane zachováno.",
-      "IDS_UPDATE_HINT_AUTO": "Nová verze byla stažena a ověřena. Nainstaluje se, až zavřete Tandem Commander; nastavení zůstane zachováno.",
       "IDS_UPDATE_TESTMODE": "Testovací režim aktualizace: vydaná verze se považuje za novou.",
       "IDS_UPDATE_ABOUT_TESTMODE": "Testovací režim aktualizace.",
       "IDS_UPDATE_INSTALL_FAILED": "Aktualizace na verzi %s nebyla nainstalována. Instalace byla zrušena nebo ji nebylo možné dokončit (kód %u).",
@@ -333,7 +332,13 @@
       "IDS_UPDATE_BUSY": "Aktualizace programu Tandem Commander se už instaluje. Zkuste to znovu, až instalace skončí.",
       "IDS_UPDATE_INSTALL_LATER": "Chcete ji nainstalovat při zavření programu Tandem Commander?",
       "IDS_UPDATE_INSTALL_TITLE": "Aktualizace programu Tandem Commander",
-      "IDS_UPDATE_ERR_DAMAGED": "Stažený instalační program verze %s chybí nebo byl změněn, a proto byl smazán.\\n\\nTlačítkem Stáhnout jej získáte ve webovém prohlížeči."
+      "IDS_UPDATE_ERR_DAMAGED": "Stažený instalační program verze %s chybí nebo byl změněn, a proto byl smazán.\\n\\nTlačítkem Stáhnout jej získáte ve webovém prohlížeči.",
+      "IDS_UPDATE_BTN_DLINSTALL": "Stáhnout && &nainstalovat",
+      "IDS_UPDATE_BTN_CANCELDL": "&Zrušit stahování",
+      "IDS_UPDATE_HINT_DLI": "Tlačítko Stáhnout && nainstalovat stáhne instalační program, zkontroluje jej a nainstaluje aktualizaci; Tandem Commander se pak znovu spustí a nastavení zůstane zachováno. Tlačítko Stáhnout jej otevře ve webovém prohlížeči.",
+      "IDS_UPDATE_HINT_PORTABLE": "Tato kopie programu Tandem Commander nebyla nainstalována instalačním programem, a proto se nemůže aktualizovat sama. Tlačítko Stáhnout otevře instalační program ve webovém prohlížeči; aktualizujte jeho spuštěním.",
+      "IDS_UPDATE_DLI_PROGRESS": "Stahování a kontrola instalačního programu verze %s... %u %%",
+      "IDS_UPDATE_DLI_FAILED": "Instalační program verze %s se nepodařilo stáhnout nebo neprošel kontrolou.\\n\\nTlačítkem Stáhnout jej získáte ve webovém prohlížeči."
     },
     "slovak": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Presunúť do druhého panelu",
@@ -374,12 +379,18 @@
       "IDC_ICONSET_CLASSIC": "&Klasická",
       "IDS_UPDATE_LEVEL_NOTIFY": "Iba upozorniť",
       "IDS_UPDATE_LEVEL_OFFER": "Stiahnuť a ponúknuť inštaláciu",
-      "IDS_UPDATE_LEVEL_AUTO": "Automaticky nainštalovať pri zatvorení programu Tandem Commander",
+      "IDS_UPDATE_LEVEL_AUTO": "Automaticky nainštalovať hneď po stiahnutí",
       "IDS_UPDATE_BTN_INSTALLNOW": "Nainštalovať &teraz",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Nainštalovať pri &zatvorení",
       "IDS_UPDATE_ABOUT_TESTMODE": "Testovací režim aktualizácie.",
       "IDS_UPDATE_HINT_OFFER": "Nová verzia bola stiahnutá a overená. Tlačidlo Nainštalovať teraz zatvorí Tandem Commander, nainštaluje aktualizáciu a program znova spustí; vaše nastavenia zostanú zachované.",
-      "IDS_UPDATE_INSTALL_LATER": "Chcete ju nainštalovať pri zatvorení programu Tandem Commander?"
+      "IDS_UPDATE_INSTALL_LATER": "Chcete ju nainštalovať pri zatvorení programu Tandem Commander?",
+      "IDS_UPDATE_BTN_DLINSTALL": "Stiahnuť && na&inštalovať",
+      "IDS_UPDATE_BTN_CANCELDL": "&Zrušiť sťahovanie",
+      "IDS_UPDATE_HINT_DLI": "Tlačidlo Stiahnuť && nainštalovať stiahne inštalačný program, skontroluje ho a nainštaluje aktualizáciu; Tandem Commander sa potom znova spustí a vaše nastavenia zostanú zachované. Tlačidlo Stiahnuť ho otvorí vo webovom prehliadači.",
+      "IDS_UPDATE_HINT_PORTABLE": "Táto kópia programu Tandem Commander nebola nainštalovaná inštalačným programom, preto sa nemôže aktualizovať sama. Tlačidlo Stiahnuť otvorí inštalačný program vo webovom prehliadači; aktualizujte jeho spustením.",
+      "IDS_UPDATE_DLI_PROGRESS": "Sťahuje sa a kontroluje inštalačný program verzie %s... %u %%",
+      "IDS_UPDATE_DLI_FAILED": "Inštalačný program verzie %s sa nepodarilo stiahnuť alebo neprešiel kontrolou.\\n\\nTlačidlom Stiahnuť ho získate vo webovom prehliadači."
     },
     "german": {
       "IDS_MENU_TAB_MOVETOOTHER": "In das andere &Fenster verschieben",
@@ -435,11 +446,17 @@
       "IDC_ICONSET_FLUENT": "Fl&uent 2",
       "IDS_UPDATE_LEVEL_NOTIFY": "Nur benachrichtigen",
       "IDS_UPDATE_LEVEL_OFFER": "Herunterladen und Installation anbieten",
-      "IDS_UPDATE_LEVEL_AUTO": "Beim Schließen von Tandem Commander automatisch installieren",
+      "IDS_UPDATE_LEVEL_AUTO": "Automatisch installieren, sobald es heruntergeladen ist",
       "IDS_UPDATE_BTN_INSTALLNOW": "Jetzt &installieren",
       "IDS_UPDATE_BTN_INSTALLEXIT": "&Beim Schließen installieren",
       "IDS_UPDATE_ABOUT_TESTMODE": "Update-Testmodus.",
-      "IDS_UPDATE_ERR_DAMAGED": "Das heruntergeladene Installationsprogramm der Version %s fehlt oder wurde verändert und wurde gelöscht.\\n\\nMit „Download“ erhalten Sie das Installationsprogramm in Ihrem Webbrowser."
+      "IDS_UPDATE_ERR_DAMAGED": "Das heruntergeladene Installationsprogramm der Version %s fehlt oder wurde verändert und wurde gelöscht.\\n\\nMit „Download“ erhalten Sie das Installationsprogramm in Ihrem Webbrowser.",
+      "IDS_UPDATE_BTN_DLINSTALL": "Download && &installieren",
+      "IDS_UPDATE_BTN_CANCELDL": "Do&wnload abbrechen",
+      "IDS_UPDATE_HINT_DLI": "„Download && installieren“ lädt das Installationsprogramm herunter, prüft es und installiert das Update; anschließend wird Tandem Commander neu gestartet, und Ihre Einstellungen bleiben erhalten. „Download“ öffnet es in Ihrem Webbrowser.",
+      "IDS_UPDATE_HINT_PORTABLE": "Diese Kopie von Tandem Commander wurde nicht mit dem Installationsprogramm installiert und kann sich daher nicht selbst aktualisieren. „Download“ öffnet das Installationsprogramm in Ihrem Webbrowser; führen Sie es aus, um zu aktualisieren.",
+      "IDS_UPDATE_DLI_PROGRESS": "Installationsprogramm der Version %s wird heruntergeladen und geprüft... %u %%",
+      "IDS_UPDATE_DLI_FAILED": "Das Installationsprogramm der Version %s konnte nicht heruntergeladen werden oder hat die Prüfung nicht bestanden.\\n\\nVerwenden Sie „Download“, um das Installationsprogramm in Ihrem Webbrowser herunterzuladen."
     },
     "french": {
       "IDS_MENU_TAB_MOVETOOTHER": "Dé&placer vers l'autre panneau",
@@ -484,13 +501,17 @@
       "IDC_ICONSET_FLUENT": "Fl&uent 2",
       "IDS_UPDATE_LEVEL_NOTIFY": "M’avertir uniquement",
       "IDS_UPDATE_LEVEL_OFFER": "La télécharger et proposer l’installation",
-      "IDS_UPDATE_LEVEL_AUTO": "L’installer automatiquement à la fermeture de Tandem Commander",
+      "IDS_UPDATE_LEVEL_AUTO": "L’installer automatiquement dès qu’elle est téléchargée",
       "IDS_UPDATE_BTN_INSTALLNOW": "I&nstaller maintenant",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Installer à la &fermeture",
       "IDS_UPDATE_ABOUT_TESTMODE": "Mode de test des mises à jour.",
       "IDS_UPDATE_TESTMODE": "Mode de test des mises à jour : la version publiée est considérée comme nouvelle.",
       "IDS_UPDATE_INSTALL_LATER": "Souhaitez-vous l’installer à la fermeture de Tandem Commander ?",
-      "IDS_UPDATE_ERR_DAMAGED": "Le programme d’installation téléchargé de la version %s est manquant ou a été modifié et a été supprimé.\\n\\nUtilisez « Télécharger » pour obtenir le programme d’installation dans votre navigateur Web."
+      "IDS_UPDATE_ERR_DAMAGED": "Le programme d’installation téléchargé de la version %s est manquant ou a été modifié et a été supprimé.\\n\\nUtilisez « Télécharger » pour obtenir le programme d’installation dans votre navigateur Web.",
+      "IDS_UPDATE_BTN_DLINSTALL": "Télécharger && &installer",
+      "IDS_UPDATE_BTN_CANCELDL": "&Annuler le téléchargement",
+      "IDS_UPDATE_HINT_DLI": "« Télécharger && installer » télécharge le programme d’installation, le vérifie et installe la mise à jour ; Tandem Commander redémarre ensuite et vos paramètres sont conservés. « Télécharger » l’ouvre dans votre navigateur Web.",
+      "IDC_UPDN_LEVELLABEL": "Lorsqu’un&e nouvelle version est détectée :"
     },
     "dutch": {
       "IDS_MENU_TAB_MOVETOOTHER": "Naar ander paneel &verplaatsen",
@@ -528,13 +549,18 @@
       "IDC_ICONSET_CLASSIC": "Kla&ssiek",
       "IDS_UPDATE_LEVEL_NOTIFY": "Alleen melden",
       "IDS_UPDATE_LEVEL_OFFER": "Downloaden en installatie aanbieden",
-      "IDS_UPDATE_LEVEL_AUTO": "Automatisch installeren bij het sluiten van Tandem Commander",
+      "IDS_UPDATE_LEVEL_AUTO": "Automatisch installeren zodra het is gedownload",
       "IDS_UPDATE_BTN_INSTALLNOW": "&Nu installeren",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Installeren bij slui&ten",
       "IDS_UPDATE_TESTMODE": "Testmodus voor updates: de gepubliceerde versie wordt als nieuw beschouwd.",
       "IDS_UPDATE_ABOUT_TESTMODE": "Testmodus voor updates.",
       "IDS_UPDATE_ERR_DAMAGED": "Het gedownloade installatieprogramma van versie %s ontbreekt of is gewijzigd en is verwijderd.\\n\\nGebruik ‘Download’ om het installatieprogramma via uw webbrowser op te halen.",
-      "IDS_UPDATE_INSTALL_LATER": "Wilt u deze installeren wanneer u Tandem Commander sluit?"
+      "IDS_UPDATE_INSTALL_LATER": "Wilt u deze installeren wanneer u Tandem Commander sluit?",
+      "IDS_UPDATE_BTN_DLINSTALL": "Download && &installeren",
+      "IDS_UPDATE_BTN_CANCELDL": "Do&wnload annuleren",
+      "IDS_UPDATE_HINT_DLI": "‘Download && installeren’ downloadt het installatieprogramma, controleert het en installeert de update; daarna wordt Tandem Commander opnieuw gestart en blijven uw instellingen behouden. ‘Download’ opent het in uw webbrowser.",
+      "IDS_UPDATE_HINT_PORTABLE": "Dit exemplaar van Tandem Commander is niet met het installatieprogramma geïnstalleerd en kan zichzelf daarom niet bijwerken. ‘Download’ opent het installatieprogramma in uw webbrowser; voer het uit om bij te werken.",
+      "IDS_UPDATE_DLI_FAILED": "Het installatieprogramma van versie %s kon niet worden gedownload of heeft de controle niet doorstaan.\\n\\nGebruik ‘Download’ om het installatieprogramma in uw webbrowser te downloaden."
     },
     "hungarian": {
       "IDS_MENU_TAB_MOVETOOTHER": "Át&helyezés a másik panelre",
@@ -566,14 +592,18 @@
       "IDC_ICONSET_FLUENT": "Fl&uent 2",
       "IDS_UPDATE_LEVEL_NOTIFY": "Csak értesítés",
       "IDS_UPDATE_LEVEL_OFFER": "Letöltés és a telepítés felajánlása",
-      "IDS_UPDATE_LEVEL_AUTO": "Automatikus telepítés a Tandem Commander bezárásakor",
+      "IDS_UPDATE_LEVEL_AUTO": "Automatikus telepítés, amint letöltődött",
       "IDS_UPDATE_BTN_INSTALLNOW": "Telepítés &most",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Telepítés &bezáráskor",
       "IDS_UPDATE_ERR_RUN": "A(z) %s verzió telepítőjét nem sikerült elindítani.\\n\\n%s",
       "IDS_UPDATE_INSTALL_FAILED": "A(z) %s verzióra való frissítés nem lett telepítve. A telepítés megszakadt vagy nem fejeződhetett be (kód: %u).",
       "IDS_UPDATE_ERR_DAMAGED": "A(z) %s verzió letöltött telepítője hiányzik vagy megváltozott, ezért törölve lett.\\n\\nA Letöltés gombbal a böngészőben töltheti le a telepítőt.",
       "IDS_UPDATE_INSTALL_LATER": "Szeretné telepíteni a frissítést a Tandem Commander bezárásakor?",
-      "IDS_UPDATE_HINT_AUTO": "Az új verzió letöltése és ellenőrzése megtörtént. A frissítés a Tandem Commander bezárásakor települ; a beállítások megmaradnak."
+      "IDS_UPDATE_BTN_DLINSTALL": "Letöltés && &telepítés",
+      "IDS_UPDATE_BTN_CANCELDL": "Letöltés meg&szakítása",
+      "IDS_UPDATE_HINT_DLI": "A „Letöltés && telepítés” letölti a telepítőt, ellenőrzi, majd telepíti a frissítést; ezután a Tandem Commander újraindul, a beállítások megmaradnak. A „Letöltés” a webböngészőben nyitja meg a telepítőt.",
+      "IDS_UPDATE_DLI_FAILED": "A(z) %s verzió telepítője nem tölthető le, vagy nem felelt meg az ellenőrzésnek.\\n\\nA telepítőt a Letöltés gombbal töltheti le a webböngészőben.",
+      "IDS_UPDATE_DLI_PROGRESS": "A(z) %s verzió telepítőjének letöltése és ellenőrzése... %u %%"
     },
     "romanian": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mutare în celălalt panou",
@@ -601,13 +631,16 @@
       "IDC_ICONSET_FLUENT": "Fl&uent 2",
       "IDS_UPDATE_LEVEL_NOTIFY": "Doar notificare",
       "IDS_UPDATE_LEVEL_OFFER": "Descărcare și propunerea instalării",
-      "IDS_UPDATE_LEVEL_AUTO": "Instalare automată la închiderea Tandem Commander",
+      "IDS_UPDATE_LEVEL_AUTO": "Instalare automată imediat după descărcare",
       "IDS_UPDATE_BTN_INSTALLNOW": "&Instalați acum",
       "IDS_UPDATE_BTN_INSTALLEXIT": "Instalați la închi&dere",
       "IDS_UPDATE_ABOUT_TESTMODE": "Modul de testare a actualizării.",
       "IDS_UPDATE_INSTALL_FAILED": "Actualizarea la versiunea %s nu a fost instalată. Instalarea a fost anulată sau nu a putut fi finalizată (cod %u).",
       "IDS_UPDATE_HINT_OFFER": "Noua versiune a fost descărcată și verificată. „Instalați acum” închide Tandem Commander, instalează actualizarea și repornește programul; setările dvs. sunt păstrate.",
-      "IDS_UPDATE_INSTALL_LATER": "Doriți să o instalați la închiderea Tandem Commander?"
+      "IDS_UPDATE_INSTALL_LATER": "Doriți să o instalați la închiderea Tandem Commander?",
+      "IDS_UPDATE_BTN_DLINSTALL": "Descărcare && &instalare",
+      "IDS_UPDATE_BTN_CANCELDL": "&Anulați descărcarea",
+      "IDS_UPDATE_HINT_DLI": "„Descărcare && instalare” descarcă programul de instalare, îl verifică și instalează actualizarea; apoi Tandem Commander pornește din nou, iar setările dvs. sunt păstrate. „Descărcare” îl deschide în browserul dvs. web."
     },
     "spanish": {
       "IDS_MENU_TAB_MOVETOOTHER": "&Mover al otro panel",
@@ -648,9 +681,13 @@
       "IDC_ICONSET_GROUP": " Estilo &de iconos ",
       "IDS_UPDATE_LEVEL_NOTIFY": "Solo notificar",
       "IDS_UPDATE_LEVEL_OFFER": "Descargarla y ofrecer la instalación",
-      "IDS_UPDATE_LEVEL_AUTO": "Instalarla automáticamente al cerrar Tandem Commander",
+      "IDS_UPDATE_LEVEL_AUTO": "Instalarla automáticamente en cuanto se haya descargado",
       "IDS_UPDATE_BTN_INSTALLNOW": "I&nstalar ahora",
-      "IDS_UPDATE_BTN_INSTALLEXIT": "Instalar al ce&rrar"
+      "IDS_UPDATE_BTN_INSTALLEXIT": "Instalar al ce&rrar",
+      "IDS_UPDATE_BTN_DLINSTALL": "Descargar e &instalar",
+      "IDS_UPDATE_BTN_CANCELDL": "Cancelar desc&arga",
+      "IDS_UPDATE_HINT_DLI": "«Descargar e instalar» descarga el instalador, lo comprueba e instala la actualización; a continuación, Tandem Commander se reinicia y se conservan sus ajustes. «Descargar» lo abre en su navegador web.",
+      "IDC_UPDN_LEVELLABEL": "Cuando s&e encuentre una nueva versión:"
     },
     "_feature_078": [
       "Panel tabs (feature 078): the term for a tab follows each language's platform",
@@ -727,6 +764,13 @@
       "Notification buttons: accelerators unique among the window's buttons and its check box per language (the classic Download button is not shown together with them); hu IDS_UPDATE_ERR_RUN failed validation (one %s and one \\n lost); ro 'Instalarea' lower case; cs pinned whole as in feature 123.",
       "Round 2 (review 1 + UX test 1): the hint names the button as it is pinned per language; ro formal register in the buttons and the hint (the window's other buttons say Reamintiti-mi / Omiteti); hu 'A(z) %s' - a fixed suffix after a version number is wrong for many versions; fr / nl one term in a window; cs pinned whole.",
       "Round 3 (review 2 + UX test 2): IDS_UPDATE_ERR_DAMAGED names the Download button as the window labels it (de 'D&ownload' -> Download, nl '&Download' -> Download); IDS_UPDATE_INSTALL_LATER refers back to 'the update' - feminine in sk (aktualizacia: ju, 'pri zatvoreni' as the button), ro (actualizarea: o), hu 'a frissitest' (not 'the program'), nl 'de update' (deze, 'sluit' as the other texts); fr one apostrophe form in a window (typographic); hu the two hints open alike."
+    ],
+    "_feature_421": [
+      "IDS_UPDATE_LEVEL_AUTO: the level now installs as soon as the installer is downloaded - the pins of 420 said \"when Tandem Commander closes\".",
+      "IDS_UPDATE_BTN_DLINSTALL: DeepL scrambled the doubled ampersand of \"Download && &Install\" in every language (e.g. \"&-&&installatie\"); the button name repeats the language's Download button and the access key avoids the other keys of the notification (hu Cancel: L was Download; es Cancel: C was the check box; sk: n was Remind Me Later).",
+      "IDS_UPDATE_HINT_DLI / HINT_PORTABLE / DLI_FAILED: name the buttons exactly as the buttons read (de / nl: \"Download\", not \"Herunterladen\" / \"Downloaden\"); de / hu / sk / cs progress and failure texts reworded for grammar (no article before a participle, A(z) before a number) and the established term (sk: inštalačný program).",
+      "IDC_UPDN_LEVELLABEL: the same text as the General page label IDC_UPDATELEVEL_LABEL (fr typographic apostrophe, es subjunctive), with its own access key.",
+      "IDS_UPDATE_HINT_AUTO and IDS_UPDATE_BTN_OK were removed with the automatic form - their pins too."
     ]
   },
   "zip": {

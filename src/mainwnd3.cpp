@@ -747,6 +747,7 @@ static CSalUpdRelease UpdateSilentRelease;
 static BOOL UpdateSilentUserAsked = FALSE;
 static BOOL UpdateSilentTried = FALSE; // started once in this session for UpdateSilentTriedVersion
 static CSalUpdVersion UpdateSilentTriedVersion = {0, 0, 0};
+static BOOL UpdateSilentDue = FALSE; // the idle part of the main loop is to look (TrySilentUpdateInstall)
 #define UPDATESILENT_RETRY_MS 5000
 
 // how ShowDownloadedUpdate shows the notification
@@ -763,7 +764,7 @@ static void StartSilentUpdateInstall(CMainWindow* wnd, const CSalUpdRelease& rel
     UpdateSilentUserAsked = userAsked;
     TRACE_I("Update: the silent automatic install waits for its moment (user asked " << userAsked << ")");
     SetTimer(wnd->HWindow, IDT_UPDATEAUTOINSTALL, UPDATESILENT_RETRY_MS, NULL);
-    wnd->TrySilentUpdateInstall(); // perhaps now already
+    UpdateSilentDue = TRUE; // perhaps now already: the next idle moment of the main loop looks
 }
 
 // feature 420: a verified installer of 'release' is in the updates folder - offer it, or (feature
@@ -928,10 +929,36 @@ void CMainWindow::OnUpdateDownloadDone()
         QueueUpdateNotice(this, done.Release, unfClassic);
 }
 
-// feature 421: the silent automatic install - is this its moment? (research R1)
+BOOL CMainWindow::SilentUpdateDue()
+{
+    return UpdateSilentDue;
+}
+
+#ifdef _DEBUG
+// test seam, Debug builds only: a probe reads the decisions of the silent install
+static void UpdateSilentProbeLog(const char* text)
+{
+    WCHAR logName[MAX_PATH];
+    DWORD len = GetEnvironmentVariableW(L"TC_UPDATE_PROBE_SILENTLOG", logName, _countof(logName));
+    if (len == 0 || len >= _countof(logName))
+        return;
+    HANDLE f = NOHANDLES(CreateFileW(logName, FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
+                                     FILE_ATTRIBUTE_NORMAL, NULL));
+    if (f == INVALID_HANDLE_VALUE)
+        return;
+    DWORD written;
+    WriteFile(f, text, (DWORD)strlen(text), &written, NULL);
+    WriteFile(f, "\r\n", 2, &written, NULL);
+    NOHANDLES(CloseHandle(f));
+}
+#endif // _DEBUG
+
+// feature 421: the silent automatic install - is this its moment? (research R1). Called only from the
+// idle part of the main message loop: DecideCloseApp() inside any message handler sees the program busy.
 void CMainWindow::TrySilentUpdateInstall()
 {
     CALL_STACK_MESSAGE1("CMainWindow::TrySilentUpdateInstall()");
+    UpdateSilentDue = FALSE;
     if (!UpdateSilentPending)
     {
         KillTimer(HWindow, IDT_UPDATEAUTOINSTALL);
@@ -961,7 +988,22 @@ void CMainWindow::TrySilentUpdateInstall()
                                         UpdateSilentUserAsked);
         TRACE_I("Update: silent install - close agrees " << closeAgree << ", last instance " << last
                                                          << ", idle " << idle << " ms: " << SalUpdSilentInstallName(d));
+#ifdef _DEBUG
+        char line[200];
+        _snprintf_s(line, _TRUNCATE, "%s close=%s last=%d installer=%d idle=%u asked=%d", SalUpdSilentInstallName(d),
+                    SalCloseAppDecisionName(DecideCloseApp()), last, installer, idle, UpdateSilentUserAsked);
+        UpdateSilentProbeLog(line);
+#endif // _DEBUG
     }
+#ifdef _DEBUG
+    else
+    {
+        char line[200];
+        _snprintf_s(line, _TRUNCATE, "%s (plan: arm %d source %u launches %u confirmed %u honoured %d tried %d)",
+                    SalUpdSilentInstallName(d), hasArm, arm.Source, arm.Launches, arm.ConfirmedAt, honoured, tried);
+        UpdateSilentProbeLog(line);
+    }
+#endif // _DEBUG
     if (d == susiWait)
         return; // the timer looks again
     UpdateSilentPending = FALSE;
@@ -6713,7 +6755,7 @@ MENU_TEMPLATE_ITEM AddToSystemMenu[] =
 
         case IDT_UPDATEAUTOINSTALL: // feature 421: the silent automatic install waits for its moment
         {
-            TrySilentUpdateInstall();
+            UpdateSilentDue = TRUE; // looked at in the idle part of the main loop (TrySilentUpdateInstall)
             break;
         }
 
