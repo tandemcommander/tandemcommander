@@ -156,3 +156,26 @@ of margins existed there too.
   Overview, Story and Chat in both themes) and `us8-live-layout`.
 - `python tools/check_encoding.py --strict`: `TOTAL: 0 finding(s)`. `.\build.cmd`: `BUILD SUCCEEDED` (the product is
   unchanged). No product UI strings changed: no `.slt` refresh, no `saltests` run.
+
+## Review
+
+### Review 1 (independent agent, refute-first): MUST 0, SHOULD 1, NOTE 5
+
+The reviewer re-ran `us8` on the branch (pass, 41 cases at 0 px), checked with a spec of its own that nothing is
+cut off at 1920x1200, 820x640 and 1280x560 with the gate banner, and checked the chat position across a view
+switch, the history (Back goes to `/runs`), the arrow keys of the tab row and the links without `?view=`. No way
+to lose data was found.
+
+| # | Finding | What was done |
+|---|---|---|
+| S1 | `us8` did not prove FR-004 or FR-007. The reviewer put the story list back to `h-[68vh]` and the chat back to `scrollIntoView`, and `us8` still passed. `measure` only counted `overflow-y: auto` elements, and nothing measured content cut off by the page root or the root's position | `us8` now also measures, per view: <br>- `rootOver` (the page root's own overflow, must be 0); <br>- `panelGap` (the view reaches the page's bottom, <= 2 px); <br>- `fillGap` for Story, Raw trace and Chat: the story log, the transcript's scroll area and the chat's composer must reach the view's bottom (<= 2 px; measured 0-1). <br>After the chat answer, the `scrollTop` of every ancestor of the conversation log is summed, and an init script counts `scrollIntoView` calls inside the chat, which must be 0 (with nothing left that can scroll, a page measure alone cannot see that request). <br>The page root became `overflow-y-auto` instead of `overflow-hidden`: below the supported sizes it scrolls rather than cuts the views off (NOTE 5), and at the supported sizes any overflow now shows in the scroll-area count and in `rootOver`. <br>The first form of `fillGap` (the lowest of all elements outside a scroll area) still let the 68vh story pass, because the story's wrapper stretches anyway; it now measures the part that must fill. <br>Mutation run (`probe/result_mutation_review1.txt`): story list `h-[68vh]`, transcript `h-[60vh]` and the chat back to `scrollIntoView`: `us8` fails on all three (the chat spy; Story at 1920x1200; Raw trace at 1920x1200 and 1280x800). Sources restored from git, client rebuilt |
+| N2 | Opening a line of the following live story made the list jump (the opened line moved up 110 px) | Found with a temporary `[419dbg]` log (removed). <br>1. `toggle` set `stuck = false`, but a scroll right after (the list adjusting) was taken for the reader's move, because the click's `pointerdown` counted as scrolling input. A `pointerdown` now counts only on the scroll area itself (its scroll bar), and sticking again needs the reader's own move down to the end. <br>2. Still 110 px: react-virtuoso treats any *function* `followOutput` as "follow" and, after every new prop (every render: the arrow function was new), pulls a growing list to its end for 100 ms ("scrolling to bottom due to increased size" in its source). `followOutput` is now the value `follow && stuck ? "auto" : false`. <br>`us8` row "an opened line stays where it was" (<= 2 px) and "Latest after opening a line" |
+| N3 | The story's search, filters and opened lines reset on every view switch | Kept by the dashboard (`StoryFilters`, `STORY_FILTERS`, a controlled `StoryView`); `us8` row "the story's search after a view switch". The scroll position of an ended run's story is not kept (a live story returns to its end): accepted |
+| N4 | A new chat turn sent while scrolled up came into view only at the next text change (`following = true` in a `useEffect` after the scrolling `useLayoutEffect`) | Merged into the same layout effect (a ref of the turns seen) |
+| N5 | Below the supported sizes (820x480) the chat composer was cut off by the root's `overflow-hidden` | The root is `overflow-y-auto` (see S1) |
+| N6 | A single wheel notch up within 80 px of the end could be overtaken by the catch-up | A reader's move up unsticks even within the slack, and the catch-up waits 400 ms after the reader's input |
+
+After the fixes:
+- `npm run check`: clean, Vitest 519 passed;
+- `us8` and `us7`: pass;
+- mutation run: fails as above.

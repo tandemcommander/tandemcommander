@@ -1,0 +1,9 @@
+
+  ✘  1 e2e\us8-live-layout.spec.ts:235:1 › the live run page never scrolls; each view has at most one scroll area (58.9s)
+    Error: the chat asked the browser to scroll an element into view (that scrolls the page too)
+    Error: Story at 1920x1200: the list or log does not fill the view
+    Error: Raw trace at 1920x1200: the list or log does not fill the view
+    Error: Raw trace at 1280x800: the list or log does not fill the view
+    test-results\us8-live-layout-the-live-r-5889e-has-at-most-one-scroll-area\test-failed-1.png
+  1 failed
+

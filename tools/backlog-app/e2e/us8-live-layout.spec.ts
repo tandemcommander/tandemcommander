@@ -91,7 +91,7 @@ interface Measure {
  * @returns The measurement.
  */
 async function measure(page: Page, view: string, size: string): Promise<Measure> {
-  const found = await page.evaluate(() => {
+  const found = await page.evaluate((shown) => {
     const scrolls = (el: Element): boolean => {
       const style = getComputedStyle(el);
       return (
@@ -114,16 +114,19 @@ async function measure(page: Page, view: string, size: string): Promise<Measure>
       const box = root.getBoundingClientRect();
       const panelBox = panel.getBoundingClientRect();
       panelGap = box.bottom - parseFloat(getComputedStyle(root).paddingBottom) - panelBox.bottom;
+      // The part that must reach the view's bottom: the story's list, the transcript's scroll area,
+      // the chat's composer (below a log that takes the rest). A wrapper that merely stretches does
+      // not count - a list of fixed height inside it leaves a gap here.
       const scrolling = (el: Element): boolean => ["auto", "scroll"].includes(getComputedStyle(el).overflowY);
-      let lowest = panelBox.top;
-      for (const el of panel.querySelectorAll("*")) {
-        let inside = false;
-        for (let up = el.parentElement; up && up !== panel; up = up.parentElement)
-          if (scrolling(up)) inside = true;
-        if (!inside && el.getClientRects().length > 0)
-          lowest = Math.max(lowest, el.getBoundingClientRect().bottom);
-      }
-      fillGap = panelBox.bottom - lowest;
+      const target =
+        shown === "Story"
+          ? panel.querySelector('[aria-label="The story of the run"]')
+          : shown === "Raw trace"
+            ? ([...panel.querySelectorAll("*")].find(scrolling) ?? null)
+            : shown === "Chat"
+              ? (panel.querySelector("form")?.parentElement ?? null)
+              : null;
+      if (target) fillGap = panelBox.bottom - target.getBoundingClientRect().bottom;
     }
     const list = [...document.querySelectorAll("body *")].filter(
       (el) => el.tagName !== "MAIN" && !el.closest("nav") && scrolls(el),
@@ -155,7 +158,7 @@ async function measure(page: Page, view: string, size: string): Promise<Measure>
         };
       }),
     };
-  });
+  }, view);
   return { view, size, ...found };
 }
 
@@ -244,6 +247,20 @@ test("the live run page never scrolls; each view has at most one scroll area", a
   ]);
   const shots = process.env["BACKLOG_APP_E2E_SHOTS"];
   await page.setViewportSize(SIZES[0]);
+  // Counts what asks the browser to scroll an element of the chat into view: such a request scrolls
+  // every scrollable element around it, the page included (FR-007).
+  await page.addInitScript(() => {
+    const original = Element.prototype.scrollIntoView;
+    (window as unknown as { chatScrollIntoView: number }).chatScrollIntoView = 0;
+    Element.prototype.scrollIntoView = function (
+      this: Element,
+      ...args: Parameters<Element["scrollIntoView"]>
+    ) {
+      if (this.closest('[aria-label="Chat about the run"], [aria-label="The conversation"]'))
+        (window as unknown as { chatScrollIntoView: number }).chatScrollIntoView++;
+      return original.apply(this, args);
+    };
+  });
   await openApp(page, app, "/loop");
   await page.getByRole("button", { name: "Start the loop…" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Start" }).click();
@@ -423,6 +440,12 @@ test("the live run page never scrolls; each view has at most one scroll area", a
     documentOver: afterChat.document,
     mainOver: afterChat.main,
   });
+  expect
+    .soft(
+      await page.evaluate(() => (window as unknown as { chatScrollIntoView: number }).chatScrollIntoView),
+      "the chat asked the browser to scroll an element into view (that scrolls the page too)",
+    )
+    .toBe(0);
   const chatRegion = page.getByRole("region", { name: "Chat about the run" });
   const widths = {
     chat: (await chatRegion.count()) > 0 ? ((await chatRegion.boundingBox())?.width ?? 0) : 0,
