@@ -67,8 +67,9 @@ export function LivePage() {
     );
   }
   return (
-    // Exactly as tall as the frame leaves: the page never scrolls (feature 419).
-    <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden p-4">
+    // Exactly as tall as the frame leaves: the page never scrolls (feature 419); below the
+    // smallest supported window (820x640) it scrolls rather than cut its views off.
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto p-4" data-run-page>
       <RunDashboard
         run={run}
         events={trace.events}

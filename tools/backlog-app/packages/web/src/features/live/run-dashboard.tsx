@@ -27,7 +27,7 @@ import { MetricsStrip } from "./metrics-strip.tsx";
 import { NowPanel } from "./now-panel.tsx";
 import { ProgressHeader, progressOf, RunSummaryLine } from "./progress-header.tsx";
 import { availableViews, chatMark, viewFromAddress, type RunView } from "./run-views.ts";
-import { CriticalView, DecisionsView, StoryView } from "./story-view.tsx";
+import { CriticalView, DecisionsView, STORY_FILTERS, StoryView, type StoryFilters } from "./story-view.tsx";
 import { useInsight, useRunView } from "./use-run-insight.ts";
 
 /** Views that show what the server reads from the run's files (asked only while shown). */
@@ -98,6 +98,8 @@ export function RunDashboard({
   const openCritical = runView.critical.filter((e) => !e.resolved).length;
   const images = insight.data?.images ?? [];
 
+  // The story's search, filters and opened lines survive a switch to another view and back.
+  const [storyFilters, setStoryFilters] = useState<StoryFilters>(STORY_FILTERS);
   // The mark on the Chat tab: something new in the conversation since the reader last saw it.
   const [chatSeen, setChatSeen] = useState<string | null>(null);
   const [chatNow, setChatNow] = useState("");
@@ -200,7 +202,13 @@ export function RunDashboard({
           </div>
         </TabsContent>
         <TabsContent value="story" className={FILL}>
-          <StoryView entries={runView.entries} follow={live} nowMs={nowMs} />
+          <StoryView
+            entries={runView.entries}
+            follow={live}
+            nowMs={nowMs}
+            filters={storyFilters}
+            onFilters={setStoryFilters}
+          />
           {live && !connected ? (
             <p className="mt-1 text-xs text-muted-foreground">Connecting to the trace…</p>
           ) : null}

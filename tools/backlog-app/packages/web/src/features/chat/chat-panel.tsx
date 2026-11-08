@@ -212,10 +212,11 @@ export function ChatPanel({
   useEffect(() => {
     if (loaded) onSignature?.(signature);
   }, [loaded, signature, onSignature]);
-  useEffect(() => {
-    following.current = true;
-  }, [turns.length]);
+  // A new turn brings the log back to its end at once (in the same layout pass that scrolls).
+  const turnsSeen = useRef(0);
   useLayoutEffect(() => {
+    if (turns.length > turnsSeen.current) following.current = true;
+    turnsSeen.current = turns.length;
     const el = log.current;
     if (el && following.current && shown) el.scrollTop = el.scrollHeight;
   }, [turns.length, live?.text.length, live?.progress.length, shown, loaded]);

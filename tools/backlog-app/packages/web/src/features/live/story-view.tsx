@@ -212,31 +212,57 @@ const StoryRow = memo(function StoryRow({
 /** How close to its end (px) the story counts as being at the end. */
 const FOLLOW_SLACK = 80;
 
-/** The reader's input that scrolls the story (a scroll without it is the list's own). */
+/**
+ * The reader's input that scrolls the story (a scroll without it is the list's own). A pointer press
+ * counts only on the scroll area itself - its scroll bar - not on a line inside it: opening a line is
+ * reading, and the list adjusting itself after it must not stick it to the end again.
+ */
 const READER_EVENTS = ["wheel", "touchmove", "keydown", "pointerdown"] as const;
 
 /** How long after the reader's input a scroll counts as the reader's (ms). */
 const READER_INPUT_MS = 1000;
 
+/** How long after the reader's input the list does not catch up with its end itself (ms). */
+const READER_QUIET_MS = 400;
+
+/**
+ * What the reader chose in the story: the search, the two filters and the opened lines. Kept by the
+ * dashboard, so they survive a switch to another view and back (feature 419).
+ */
+export interface StoryFilters {
+  /** The search text. */
+  query: string;
+  /** Show routine steps. */
+  routine: boolean;
+  /** Only what matters. */
+  important: boolean;
+  /** The opened lines. */
+  open: ReadonlySet<string>;
+}
+
+/** The story as it opens. */
+export const STORY_FILTERS: StoryFilters = { query: "", routine: false, important: false, open: new Set() };
+
 /**
  * The story tab.
  *
- * @param props - The entries, whether to follow the end, and now.
+ * @param props - The entries, whether to follow the end, now, and the reader's choices.
  * @returns The element.
  */
 export function StoryView({
   entries,
   follow,
   nowMs,
+  filters,
+  onFilters,
 }: {
   /** The entries, oldest first. */ entries: StoryEntry[];
   /** Follow the end (live). */ follow: boolean;
   /** Now. */ nowMs: number;
+  /** The reader's choices. */ filters: StoryFilters;
+  /** Changes the reader's choices. */ onFilters: (update: (prev: StoryFilters) => StoryFilters) => void;
 }) {
-  const [routine, setRoutine] = useState(false);
-  const [important, setImportant] = useState(false);
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
+  const { routine, important, query, open } = filters;
   const list = useRef<VirtuosoHandle>(null);
   // While the run lives, the list keeps to its end until the reader scrolls away from it, and sticks
   // again when the reader reaches the end (or presses "Latest"). Decided by the reader's own input
@@ -248,19 +274,28 @@ export function StoryView({
   const stuckRef = useRef(true);
   const scroller = useRef<HTMLElement | null>(null);
   const inputAt = useRef(0);
+  const lastTop = useRef(0);
   const stick = useCallback((value: boolean) => {
     stuckRef.current = value;
     setStuck(value);
   }, []);
-  const onInput = useCallback(() => {
+  const onInput = useCallback((event: Event) => {
+    if (event.type === "pointerdown" && event.target !== scroller.current) return;
     inputAt.current = Date.now();
   }, []);
   const onScroll = useCallback(() => {
     const el = scroller.current;
     if (!el) return;
-    if (el.scrollHeight - el.scrollTop - el.clientHeight < FOLLOW_SLACK) {
-      if (!stuckRef.current) stick(true);
-    } else if (stuckRef.current && Date.now() - inputAt.current < READER_INPUT_MS) stick(false);
+    const byReader = Date.now() - inputAt.current < READER_INPUT_MS;
+    // The reader moving up leaves the end, even by one notch within the slack.
+    if (byReader && el.scrollTop < lastTop.current - 1) {
+      if (stuckRef.current) stick(false);
+    } else if (el.scrollHeight - el.scrollTop - el.clientHeight < FOLLOW_SLACK) {
+      // Back at the end by the reader's own move down to it; a line that grew (opened) or the list
+      // adjusting itself is not that.
+      if (!stuckRef.current && byReader && el.scrollTop > lastTop.current + 1) stick(true);
+    } else if (stuckRef.current && byReader) stick(false);
+    lastTop.current = el.scrollTop;
   }, [stick]);
   const scrollerRef = useCallback(
     (el: HTMLElement | Window | null) => {
@@ -270,6 +305,7 @@ export function StoryView({
         for (const name of READER_EVENTS) old.removeEventListener(name, onInput);
       }
       scroller.current = el instanceof HTMLElement ? el : null;
+      lastTop.current = 0;
       if (scroller.current) {
         scroller.current.addEventListener("scroll", onScroll, { passive: true });
         for (const name of READER_EVENTS) scroller.current.addEventListener(name, onInput, { passive: true });
@@ -312,11 +348,13 @@ export function StoryView({
    * @param id - The entry.
    */
   const toggle = (id: string): void => {
-    setOpen((prev) => {
-      const next = new Set(prev);
+    // Reading one line pauses the following: the list must not move the line away ("Latest" goes on).
+    if (follow && stuckRef.current) stick(false);
+    onFilters((prev) => {
+      const next = new Set(prev.open);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      return next;
+      return { ...prev, open: next };
     });
   };
   return (
@@ -328,16 +366,33 @@ export function StoryView({
             aria-label="Search the story"
             placeholder="Search the story"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              onFilters((prev) => ({ ...prev, query: value }));
+            }}
             className="w-56 pl-7"
           />
         </div>
         <label className="flex items-center gap-1.5 text-xs">
-          <input type="checkbox" checked={important} onChange={(e) => setImportant(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={important}
+            onChange={(e) => {
+              const value = e.target.checked;
+              onFilters((prev) => ({ ...prev, important: value }));
+            }}
+          />
           Only what matters
         </label>
         <label className="flex items-center gap-1.5 text-xs">
-          <input type="checkbox" checked={routine} onChange={(e) => setRoutine(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={routine}
+            onChange={(e) => {
+              const value = e.target.checked;
+              onFilters((prev) => ({ ...prev, routine: value }));
+            }}
+          />
           Show routine steps
         </label>
         <span className="ml-auto text-xs text-muted-foreground">
@@ -364,13 +419,17 @@ export function StoryView({
             style={{ height: "100%" }}
             data={visible}
             // While the run lives the list keeps to its end as lines arrive (several a second),
-            // unless the reader scrolled up; "Latest" brings it back.
-            followOutput={() => (follow && stuckRef.current ? "auto" : false)}
+            // unless the reader scrolled up; "Latest" brings it back. A value, not a function: the
+            // list takes any function as "follow" and, after each new one (every render), pulls a
+            // growing list to its end - an opened line jumped away (feature 419, review 1).
+            followOutput={follow && stuck ? "auto" : false}
             // A line is often taller than estimated: once measured, a stuck list goes to its very
             // end again (the measured height, not an estimate of an index).
             totalListHeightChanged={() => {
               const el = scroller.current;
-              if (follow && stuckRef.current && el) el.scrollTop = el.scrollHeight;
+              // Not right after the reader's input: the reader's own scroll is not overtaken.
+              if (follow && stuckRef.current && el && Date.now() - inputAt.current > READER_QUIET_MS)
+                el.scrollTop = el.scrollHeight;
             }}
             initialTopMostItemIndex={follow ? { index: "LAST", align: "end" } : 0}
             computeItemKey={(_, e) => e.id}

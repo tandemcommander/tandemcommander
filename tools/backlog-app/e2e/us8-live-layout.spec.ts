@@ -71,6 +71,15 @@ interface Measure {
   scrollers: Scroller[];
   /** The view's tab could not be clicked: something covers it. */
   covered?: boolean;
+  /** How far the page's own root overflows (content it would cut off or scroll); null without one. */
+  rootOver?: number | null;
+  /** The space between the shown view and the page's bottom edge (the view fills the height). */
+  panelGap?: number | null;
+  /**
+   * The space between the shown view's bottom and its lowest content outside a scroll area (a list
+   * or log that fills the view leaves none).
+   */
+  fillGap?: number | null;
 }
 
 /**
@@ -94,12 +103,37 @@ async function measure(page: Page, view: string, size: string): Promise<Measure>
     };
     const doc = document.scrollingElement ?? document.documentElement;
     const main = document.querySelector("main");
+    // The page's root (feature 419) and the view shown in it.
+    const root = document.querySelector("[data-run-page]");
+    const panel = document.querySelector("[role=tabpanel][data-state=active]");
+    let rootOver: number | null = null;
+    let panelGap: number | null = null;
+    let fillGap: number | null = null;
+    if (root && panel) {
+      rootOver = root.scrollHeight - root.clientHeight;
+      const box = root.getBoundingClientRect();
+      const panelBox = panel.getBoundingClientRect();
+      panelGap = box.bottom - parseFloat(getComputedStyle(root).paddingBottom) - panelBox.bottom;
+      const scrolling = (el: Element): boolean => ["auto", "scroll"].includes(getComputedStyle(el).overflowY);
+      let lowest = panelBox.top;
+      for (const el of panel.querySelectorAll("*")) {
+        let inside = false;
+        for (let up = el.parentElement; up && up !== panel; up = up.parentElement)
+          if (scrolling(up)) inside = true;
+        if (!inside && el.getClientRects().length > 0)
+          lowest = Math.max(lowest, el.getBoundingClientRect().bottom);
+      }
+      fillGap = panelBox.bottom - lowest;
+    }
     const list = [...document.querySelectorAll("body *")].filter(
       (el) => el.tagName !== "MAIN" && !el.closest("nav") && scrolls(el),
     );
     return {
       documentOver: doc.scrollHeight - doc.clientHeight,
       mainOver: main ? main.scrollHeight - main.clientHeight : 0,
+      rootOver,
+      panelGap,
+      fillGap,
       scrollers: list.map((el) => {
         let parent = el.parentElement;
         let nested = false;
@@ -314,6 +348,48 @@ test("the live run page never scrolls; each view has at most one scroll area", a
     }
   }
 
+  // The story's search survives a switch to another view and back (review 1).
+  await page.setViewportSize(SIZES[0]);
+  await tabs.filter({ hasText: "Story" }).first().click();
+  const storySearch = page.getByLabel("Search the story");
+  await storySearch.fill("marker");
+  await tabs.filter({ hasText: "Overview" }).first().click();
+  await tabs.filter({ hasText: "Story" }).first().click();
+  await expect.soft(storySearch, "the story's search after a view switch").toHaveValue("marker");
+  await storySearch.fill("");
+  // Opening a line of the following live story keeps the line where it was: reading pauses the
+  // following, "Latest" offers the way back (review 1).
+  await expect.soft(async () => expect((await story()).gap).toBeLessThanOrEqual(2)).toPass({ timeout: 3000 });
+  const closed = storyLog.locator('button[aria-expanded="false"]');
+  // The cleared search builds the list anew: wait for its lines (an empty list is "at its end").
+  await closed
+    .first()
+    .waitFor({ state: "visible", timeout: 10_000 })
+    .catch(() => undefined);
+  await page.waitForTimeout(500);
+  if ((await closed.count()) > 0) {
+    // The last line fully in sight (the list also renders lines below its edge; clicking one of
+    // those would first scroll it into view). The element itself: once opened it no longer
+    // matches the "closed" locator.
+    const logBox = (await storyLog.boundingBox()) ?? { y: 0, height: 0 };
+    let line = await closed.first().elementHandle();
+    for (const candidate of await closed.all()) {
+      const box = await candidate.boundingBox();
+      if (box && box.y >= logBox.y && box.y + box.height <= logBox.y + logBox.height - 4)
+        line = await candidate.elementHandle();
+    }
+    if (!line) throw new Error("no story line to open");
+    const before = (await line.boundingBox())?.y ?? 0;
+    await line.click();
+    await page.waitForTimeout(800);
+    const after = (await line.boundingBox())?.y ?? -999;
+    expect.soft(Math.abs(after - before), "an opened line stays where it was").toBeLessThanOrEqual(2);
+    await expect
+      .soft(storyLog.getByRole("button", { name: "Latest" }), "Latest after opening a line")
+      .toBeVisible();
+    await line.click();
+  } else expect.soft(false, "an openable line in the story").toBe(true);
+
   // A chat message scrolls only the conversation (the page stays where it is); the chat spans the
   // page's width.
   await page.setViewportSize(SIZES[0]);
@@ -334,10 +410,14 @@ test("the live run page never scrolls; each view has at most one scroll area", a
   });
   await expect(page.getByLabel("Claude").first()).not.toContainText("writing…", { timeout: 20_000 });
   await page.waitForTimeout(500);
-  const afterChat = await main.evaluate((el) => ({
-    main: el.scrollTop,
-    document: document.scrollingElement!.scrollTop,
-  }));
+  const afterChat = await main.evaluate((el) => {
+    // Every element around the conversation's log (the page's root, main, the document) keeps its
+    // position; only the log itself scrolls.
+    const log = document.querySelector('[aria-label="The conversation"]');
+    let around = 0;
+    for (let up = log?.parentElement ?? null; up; up = up.parentElement) around += up.scrollTop;
+    return { main: el.scrollTop + around, document: document.scrollingElement!.scrollTop };
+  });
   results.push({
     ...(await measure(page, "after a chat answer", "1920x1200")),
     documentOver: afterChat.document,
@@ -413,6 +493,16 @@ test("the live run page never scrolls; each view has at most one scroll area", a
     expect.soft(r.covered ?? false, `${where}: the view's tab is covered`).toBe(false);
     expect.soft(r.documentOver, `${where}: the document scrolls`).toBeLessThanOrEqual(0);
     expect.soft(r.mainOver, `${where}: the page (main) scrolls`).toBeLessThanOrEqual(0);
+    if (!r.covered && r.view !== "after a chat answer") {
+      expect.soft(r.rootOver ?? 1, `${where}: the page's root cuts off or scrolls`).toBeLessThanOrEqual(0);
+      expect
+        .soft(r.panelGap ?? 99, `${where}: the view does not reach the page's bottom`)
+        .toBeLessThanOrEqual(2);
+      if (["Story", "Raw trace", "Chat"].includes(r.view))
+        expect
+          .soft(r.fillGap ?? 99, `${where}: the list or log does not fill the view`)
+          .toBeLessThanOrEqual(2);
+    }
     expect
       .soft(
         r.scrollers.length,
