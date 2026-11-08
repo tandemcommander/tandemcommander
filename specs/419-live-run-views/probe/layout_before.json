@@ -1,0 +1,313 @@
+[
+  {
+    "view": "Story",
+    "size": "1920x1200",
+    "documentOver": 0,
+    "mainOver": 319,
+    "scrollers": [
+      {
+        "tag": "DIV",
+        "label": "The story of the run",
+        "cls": "",
+        "over": 512,
+        "height": 814,
+        "nested": false
+      }
+    ]
+  },
+  {
+    "view": "Critical",
+    "size": "1920x1200",
+    "documentOver": 0,
+    "mainOver": 57,
+    "scrollers": []
+  },
+  {
+    "view": "Decisions",
+    "size": "1920x1200",
+    "documentOver": 0,
+    "mainOver": 57,
+    "scrollers": []
+  },
+  {
+    "view": "Gallery",
+    "size": "1920x1200",
+    "documentOver": 0,
+    "mainOver": 57,
+    "scrollers": []
+  },
+  {
+    "view": "Architecture",
+    "size": "1920x1200",
+    "documentOver": 0,
+    "mainOver": 393,
+    "scrollers": []
+  },
+  {
+    "view": "Files",
+    "size": "1920x1200",
+    "documentOver": 0,
+    "mainOver": 57,
+    "scrollers": []
+  },
+  {
+    "view": "Documents",
+    "size": "1920x1200",
+    "documentOver": 0,
+    "mainOver": 57,
+    "scrollers": []
+  },
+  {
+    "view": "Raw trace",
+    "size": "1920x1200",
+    "documentOver": 0,
+    "mainOver": 223,
+    "scrollers": [
+      {
+        "tag": "DIV",
+        "label": "radix-_r_e_-trigger-trace",
+        "cls": "",
+        "over": 782,
+        "height": 718,
+        "nested": false
+      }
+    ]
+  },
+  {
+    "view": "Story",
+    "size": "1280x800",
+    "documentOver": 0,
+    "mainOver": 695,
+    "scrollers": [
+      {
+        "tag": "DIV",
+        "label": "The story of the run",
+        "cls": "",
+        "over": 799,
+        "height": 542,
+        "nested": false
+      }
+    ]
+  },
+  {
+    "view": "Critical",
+    "size": "1280x800",
+    "documentOver": 0,
+    "mainOver": 367,
+    "scrollers": []
+  },
+  {
+    "view": "Decisions",
+    "size": "1280x800",
+    "documentOver": 0,
+    "mainOver": 481,
+    "scrollers": []
+  },
+  {
+    "view": "Gallery",
+    "size": "1280x800",
+    "documentOver": 0,
+    "mainOver": 238,
+    "scrollers": []
+  },
+  {
+    "view": "Architecture",
+    "size": "1280x800",
+    "documentOver": 0,
+    "mainOver": 982,
+    "scrollers": []
+  },
+  {
+    "view": "Files",
+    "size": "1280x800",
+    "documentOver": 0,
+    "mainOver": 308,
+    "scrollers": []
+  },
+  {
+    "view": "Documents",
+    "size": "1280x800",
+    "documentOver": 0,
+    "mainOver": 462,
+    "scrollers": []
+  },
+  {
+    "view": "Raw trace",
+    "size": "1280x800",
+    "documentOver": 0,
+    "mainOver": 631,
+    "scrollers": [
+      {
+        "tag": "DIV",
+        "label": "radix-_r_e_-trigger-trace",
+        "cls": "",
+        "over": 1042,
+        "height": 478,
+        "nested": false
+      }
+    ]
+  },
+  {
+    "view": "Story",
+    "size": "1024x700",
+    "documentOver": 0,
+    "mainOver": 716,
+    "scrollers": [
+      {
+        "tag": "DIV",
+        "label": "The story of the run",
+        "cls": "",
+        "over": 779,
+        "height": 474,
+        "nested": false
+      }
+    ]
+  },
+  {
+    "view": "Critical",
+    "size": "1024x700",
+    "documentOver": 0,
+    "mainOver": 456,
+    "scrollers": []
+  },
+  {
+    "view": "Decisions",
+    "size": "1024x700",
+    "documentOver": 0,
+    "mainOver": 610,
+    "scrollers": []
+  },
+  {
+    "view": "Gallery",
+    "size": "1024x700",
+    "documentOver": 0,
+    "mainOver": 347,
+    "scrollers": []
+  },
+  {
+    "view": "Architecture",
+    "size": "1024x700",
+    "documentOver": 0,
+    "mainOver": 0,
+    "scrollers": [],
+    "covered": true
+  },
+  {
+    "view": "Files",
+    "size": "1024x700",
+    "documentOver": 0,
+    "mainOver": 0,
+    "scrollers": [],
+    "covered": true
+  },
+  {
+    "view": "Documents",
+    "size": "1024x700",
+    "documentOver": 0,
+    "mainOver": 0,
+    "scrollers": [],
+    "covered": true
+  },
+  {
+    "view": "Raw trace",
+    "size": "1024x700",
+    "documentOver": 0,
+    "mainOver": 0,
+    "scrollers": [],
+    "covered": true
+  },
+  {
+    "view": "Story",
+    "size": "820x640",
+    "documentOver": 0,
+    "mainOver": 930,
+    "scrollers": [
+      {
+        "tag": "DIV",
+        "label": "The story of the run",
+        "cls": "",
+        "over": 820,
+        "height": 433,
+        "nested": false
+      }
+    ]
+  },
+  {
+    "view": "Critical",
+    "size": "820x640",
+    "documentOver": 0,
+    "mainOver": 711,
+    "scrollers": []
+  },
+  {
+    "view": "Decisions",
+    "size": "820x640",
+    "documentOver": 0,
+    "mainOver": 886,
+    "scrollers": []
+  },
+  {
+    "view": "Gallery",
+    "size": "820x640",
+    "documentOver": 0,
+    "mainOver": 0,
+    "scrollers": [],
+    "covered": true
+  },
+  {
+    "view": "Architecture",
+    "size": "820x640",
+    "documentOver": 0,
+    "mainOver": 0,
+    "scrollers": [],
+    "covered": true
+  },
+  {
+    "view": "Files",
+    "size": "820x640",
+    "documentOver": 0,
+    "mainOver": 0,
+    "scrollers": [],
+    "covered": true
+  },
+  {
+    "view": "Documents",
+    "size": "820x640",
+    "documentOver": 0,
+    "mainOver": 0,
+    "scrollers": [],
+    "covered": true
+  },
+  {
+    "view": "Raw trace",
+    "size": "820x640",
+    "documentOver": 0,
+    "mainOver": 879,
+    "scrollers": [
+      {
+        "tag": "DIV",
+        "label": "radix-_r_e_-trigger-trace",
+        "cls": "",
+        "over": 1146,
+        "height": 382,
+        "nested": false
+      }
+    ]
+  },
+  {
+    "view": "after a chat answer",
+    "size": "1920x1200",
+    "documentOver": 0,
+    "mainOver": 0,
+    "scrollers": [
+      {
+        "tag": "DIV",
+        "label": "The story of the run",
+        "cls": "",
+        "over": 578,
+        "height": 814,
+        "nested": false
+      }
+    ]
+  }
+]
