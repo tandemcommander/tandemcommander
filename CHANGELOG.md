@@ -10,6 +10,16 @@ numbering*): a release with new features raises MINOR, a fixes-only release
 raises PATCH. Each release also carries an internal build number shared by the
 application and every plugin. Versions up to 0.1.10 raised only the third number.
 
+## [Unreleased]
+
+- **Updates are installed right away, never when you close Tandem Commander** (feature 422).
+  - **Before:** with *Install it automatically* the update was installed only when you closed the program, and the window about a new version offered *Install When I Close*; after a failed installation the program asked whether to install it when you close.
+  - **Now:** with the setting *Install it automatically as soon as it is downloaded*, the update found by the check at start-up is installed at once: Tandem Commander closes, the update is installed with a progress window, and the program starts again. It waits only while something could be lost - a copy or search running, a Find window or a dialog open, text typed in the command line, another copy of the program running - and continues as soon as that has ended. Nothing is ever installed when you close the program; an update not installed while the program ran is installed at its next start. *Help → Check for New Version* and the About box always show the window with *Install Now* and never install on their own. If you cancel an installation or decline the administrator's permission, it is never started on its own again - the update is only offered, so you can always get back into the program.
+  - **Limitation:** an installation for all users asks for an administrator's permission also when the automatic installation starts on its own.
+- **The window about a new version lets you choose how updates are handled, and installs with one click** (feature 421).
+  - **Before:** the choice *When a new version is found* was only on the General page of the configuration, and with *Notify me only* the window offered just *Download*, which opened the installer in your web browser.
+  - **Now:** the window shows *When a new version is found* and changes the setting at once. With *Notify me only* it offers **Download & Install**: Tandem Commander downloads the installer itself, shows how much has arrived (*Cancel Download* stops it), checks it - the checksum GitHub published, the project's signature and the version - and installs the update; *Download* still opens it in your web browser. A copy that was not installed by the installer says that it cannot update itself and offers only the browser download.
+
 ## [0.2.0] — 2026-10-25
 
 **Build 195.** Feature release. Quick search finds the typed text anywhere in
